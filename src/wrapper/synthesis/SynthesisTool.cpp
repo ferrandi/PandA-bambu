@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -48,6 +48,7 @@
 
 /// supported synthesis tools
 #include "DesignCompilerWrapper.hpp"
+#include "bash_flow_wrapper.hpp"
 #include "lattice_flow_wrapper.hpp"
 #include "map_wrapper.hpp"
 #include "ngdbuild_wrapper.hpp"
@@ -88,8 +89,14 @@
 #include "DesignParameters.hpp"
 #include "xml_script_command.hpp"
 
-SynthesisTool::SynthesisTool(const ParameterConstRef& _Param, std::string _tool_exec, const target_deviceRef& _device, const std::string& _flow_name, std::string _output_dir)
-    : device(_device), Param(_Param), debug_level(Param->getOption<int>(OPT_debug_level)), output_level(Param->getOption<unsigned int>(OPT_output_level)), tool_exec(std::move(_tool_exec)), output_dir(std::move(_output_dir))
+SynthesisTool::SynthesisTool(const ParameterConstRef& _Param, std::string _tool_exec, const target_deviceRef& _device,
+                             const std::string& _flow_name, std::string _output_dir)
+    : device(_device),
+      Param(_Param),
+      debug_level(Param->getOption<int>(OPT_debug_level)),
+      output_level(Param->getOption<unsigned int>(OPT_output_level)),
+      tool_exec(std::move(_tool_exec)),
+      output_dir(std::move(_output_dir))
 {
    /// creating the output directory
    create_output_directory(_flow_name);
@@ -104,7 +111,8 @@ bool SynthesisTool::has_scripts() const
    return !script_map.empty() || !xml_script_nodes.empty();
 }
 
-SynthesisToolRef SynthesisTool::create_synthesis_tool(type_t type, const ParameterConstRef& _Param, const std::string& _output_dir, const target_deviceRef& _device)
+SynthesisToolRef SynthesisTool::create_synthesis_tool(type_t type, const ParameterConstRef& _Param,
+                                                      const std::string& _output_dir, const target_deviceRef& _device)
 {
    switch(type)
    {
@@ -158,6 +166,8 @@ SynthesisToolRef SynthesisTool::create_synthesis_tool(type_t type, const Paramet
          break;
       case NXPYTHON_FLOW:
          return SynthesisToolRef(new nxpython_flow_wrapper(_Param, _output_dir, _device));
+      case BASH_FLOW:
+         return SynthesisToolRef(new bash_flow_wrapper(_Param, _output_dir, _device));
          break;
 #if(0 && HAVE_EXPERIMENTAL)
       case PRIME_TIME:
@@ -317,7 +327,8 @@ xml_nodeRef SynthesisTool::xwrite() const
    return root;
 }
 
-std::string SynthesisTool::generate_bare_script(const std::vector<xml_script_node_tRef>& nodes, const DesignParametersRef& dp)
+std::string SynthesisTool::generate_bare_script(const std::vector<xml_script_node_tRef>& nodes,
+                                                const DesignParametersRef& dp)
 {
    std::string script;
    for(const auto& node : nodes)
@@ -333,9 +344,8 @@ std::string SynthesisTool::generate_bare_script(const std::vector<xml_script_nod
 
 xml_set_variable_tRef SynthesisTool::get_reserved_parameter(const std::string& name)
 {
-   for(auto i = xml_reserved_vars.begin(); i != xml_reserved_vars.end(); ++i)
+   for(auto& node : xml_reserved_vars)
    {
-      const xml_set_variable_tRef& node = *i;
       if(name == node->name)
       {
          return node;

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -134,6 +134,9 @@ struct StateInfo : public NodeInfo
    /// set of moved operations ending in this state
    std::list<vertex> moved_ending_op;
 
+   /// ID of the loop this state belongs to
+   unsigned int loopId;
+
    /**
     * Implementation of print method for this kind of node. It simply prints the list of operations contained into this
     * state
@@ -144,13 +147,21 @@ struct StateInfo : public NodeInfo
    /**
     * Constructor
     */
-   StateInfo() : funId(0), is_dummy(false), is_duplicated(false), sourceBb(0), isOriginalState(false), clonedState(NULL_VERTEX), all_paths(false)
+   StateInfo()
+       : funId(0),
+         is_dummy(false),
+         is_duplicated(false),
+         sourceBb(0),
+         isOriginalState(false),
+         clonedState(NULL_VERTEX),
+         all_paths(false),
+         loopId(0)
    {
    }
 };
 /// refcount definition
-typedef refcount<StateInfo> StateInfoRef;
-typedef refcount<const StateInfo> StateInfoConstRef;
+using StateInfoRef = refcount<StateInfo>;
+using StateInfoConstRef = refcount<const StateInfo>;
 
 enum transition_type : int
 {
@@ -182,7 +193,7 @@ class TransitionInfo : public EdgeInfo
    bool epp_incrementValid{false};
 
  public:
-   TransitionInfo(OpGraphConstRef g) : op_function_graph(g)
+   explicit TransitionInfo(OpGraphConstRef g) : op_function_graph(g)
    {
    }
 
@@ -235,8 +246,8 @@ class TransitionInfo : public EdgeInfo
    }
 };
 /// refcount about edge info
-typedef refcount<TransitionInfo> TransitionInfoRef;
-typedef refcount<const TransitionInfo> TransitionInfoConstRef;
+using TransitionInfoRef = refcount<TransitionInfo>;
+using TransitionInfoConstRef = refcount<const TransitionInfo>;
 
 /**
  * Structure holding information about the whole graph.
@@ -272,8 +283,8 @@ struct StateTransitionGraphInfo : public GraphInfo
    friend class StateTransitionGraph_constructor;
 };
 /// definition of the refcount
-typedef refcount<StateTransitionGraphInfo> StateTransitionGraphInfoRef;
-typedef refcount<const StateTransitionGraphInfo> StateTransitionGraphInfoConstRef;
+using StateTransitionGraphInfoRef = refcount<StateTransitionGraphInfo>;
+using StateTransitionGraphInfoConstRef = refcount<const StateTransitionGraphInfo>;
 
 /**
  * This structure defines the bulk for the state transition graph
@@ -286,7 +297,8 @@ class StateTransitionGraphsCollection : public graphs_collection
     * @param state_transition_graph_info is the info to be associated with the graph
     * @param parameters is the set of input parameters
     */
-   StateTransitionGraphsCollection(const StateTransitionGraphInfoRef state_transition_graph_info, const ParameterConstRef parameters);
+   StateTransitionGraphsCollection(const StateTransitionGraphInfoRef state_transition_graph_info,
+                                   const ParameterConstRef parameters);
 
    /**
     * Destructor
@@ -301,15 +313,16 @@ class StateTransitionGraphsCollection : public graphs_collection
     * @param info is the information to be associated
     * @return the created edge
     */
-   inline EdgeDescriptor AddEdge(const vertex source, const vertex target, const int selector, const TransitionInfoRef info)
+   inline EdgeDescriptor AddEdge(const vertex source, const vertex target, const int selector,
+                                 const TransitionInfoRef info)
    {
       THROW_ASSERT(not ExistsEdge(source, target), "Trying to create an already existing edge");
       return InternalAddEdge(source, target, selector, RefcountCast<EdgeInfo>(info));
    }
 };
 /// refcount definition of the class
-typedef refcount<StateTransitionGraphsCollection> StateTransitionGraphsCollectionRef;
-typedef refcount<const StateTransitionGraphsCollection> StateTransitionGraphsCollectionConstRef;
+using StateTransitionGraphsCollectionRef = refcount<StateTransitionGraphsCollection>;
+using StateTransitionGraphsCollectionConstRef = refcount<const StateTransitionGraphsCollection>;
 
 /**
  * Class used to describe a state transition graph
@@ -330,7 +343,8 @@ struct StateTransitionGraph : public graph
     * @param selector is the selector used to filter the bulk graph.
     * @param sub is the set of vertices on which the graph is filtered.
     */
-   StateTransitionGraph(const StateTransitionGraphsCollectionRef state_transition_graphs_collection, int selector, CustomUnorderedSet<vertex>& sub);
+   StateTransitionGraph(const StateTransitionGraphsCollectionRef state_transition_graphs_collection, int selector,
+                        CustomUnorderedSet<vertex>& sub);
 
    /**
     * Destructor
@@ -369,7 +383,9 @@ struct StateTransitionGraph : public graph
     */
    inline vertex GetVertex(unsigned int state_id) const
    {
-      THROW_ASSERT(CGetStateTransitionGraphInfo()->state_id_to_vertex.find(state_id) != CGetStateTransitionGraphInfo()->state_id_to_vertex.end(), "State ID " + STR(state_id) + " was not stored");
+      THROW_ASSERT(CGetStateTransitionGraphInfo()->state_id_to_vertex.find(state_id) !=
+                       CGetStateTransitionGraphInfo()->state_id_to_vertex.end(),
+                   "State ID " + STR(state_id) + " was not stored");
       return CGetStateTransitionGraphInfo()->state_id_to_vertex.at(state_id);
    }
 
@@ -417,8 +433,8 @@ struct StateTransitionGraph : public graph
    void WriteDot(const std::string& file_name, const int detail_level = 0) const;
 };
 /// refcount definition of the class
-typedef refcount<StateTransitionGraph> StateTransitionGraphRef;
-typedef refcount<const StateTransitionGraph> StateTransitionGraphConstRef;
+using StateTransitionGraphRef = refcount<StateTransitionGraph>;
+using StateTransitionGraphConstRef = refcount<const StateTransitionGraph>;
 
 /**
  * Functor template used to write the content of the nodes to a dotty file.
@@ -475,5 +491,72 @@ class TransitionWriter : public EdgeWriter
     * Functor actually called by the boost library to perform the writing
     */
    void operator()(std::ostream& out, const EdgeDescriptor& e) const override;
+};
+
+class last_intermediate_state
+{
+ public:
+   last_intermediate_state(StateTransitionGraphConstRef input_state_graph, bool enable)
+       : state_graph(input_state_graph), pipeline(enable)
+   {
+   }
+
+   vertex operator()(vertex top, vertex bottom)
+   {
+      if(not pipeline)
+      {
+         return top;
+      }
+      graph::in_edge_iterator in_edge, in_edge_end;
+#if HAVE_ASSERTS
+      bool multiple_in_edges = false;
+#endif
+      vertex ret_v = NULL_VERTEX;
+      for(boost::tie(in_edge, in_edge_end) = boost::in_edges(bottom, *state_graph); in_edge != in_edge_end; ++in_edge)
+      {
+         ret_v = boost::source(*in_edge, *state_graph);
+         THROW_ASSERT(not multiple_in_edges, "A pipeline should not contain phi operations");
+#if HAVE_ASSERTS
+         multiple_in_edges = true;
+#endif
+      }
+      THROW_ASSERT(multiple_in_edges, "No input edge found");
+      return ret_v;
+   }
+
+ private:
+   const StateTransitionGraphConstRef state_graph;
+   bool pipeline;
+};
+
+class next_unique_state
+{
+ public:
+   explicit next_unique_state(StateTransitionGraphConstRef input_state_graph) : state_graph(input_state_graph)
+   {
+   }
+
+   vertex operator()(vertex state)
+   {
+      graph::out_edge_iterator out_edge, out_edge_end;
+#if HAVE_ASSERTS
+      bool multiple_out_edges = false;
+#endif
+      vertex next_state = NULL_VERTEX;
+      for(boost::tie(out_edge, out_edge_end) = boost::out_edges(state, *state_graph); out_edge != out_edge_end;
+          ++out_edge)
+      {
+         next_state = boost::target(*out_edge, *state_graph);
+         THROW_ASSERT(not multiple_out_edges, "First state has multiple out edges");
+#if HAVE_ASSERTS
+         multiple_out_edges = true;
+#endif
+      }
+      THROW_ASSERT(multiple_out_edges, "No output edge found");
+      return next_state;
+   }
+
+ private:
+   const StateTransitionGraphConstRef state_graph;
 };
 #endif

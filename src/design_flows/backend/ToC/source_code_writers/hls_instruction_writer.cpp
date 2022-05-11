@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -60,6 +60,7 @@
 
 /// Backend include
 #include "c_writer.hpp"
+#include "tree_helper.hpp"
 #include "tree_manager.hpp"
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
@@ -67,7 +68,10 @@
 /// Parameter include
 #include "Parameter.hpp"
 
-HLSInstructionWriter::HLSInstructionWriter(const application_managerConstRef _app_man, const IndentedOutputStreamRef _indented_output_stream, const ParameterConstRef _parameters) : InstructionWriter(_app_man, _indented_output_stream, _parameters)
+HLSInstructionWriter::HLSInstructionWriter(const application_managerConstRef _app_man,
+                                           const IndentedOutputStreamRef _indented_output_stream,
+                                           const ParameterConstRef _parameters)
+    : InstructionWriter(_app_man, _indented_output_stream, _parameters)
 {
 }
 
@@ -75,80 +79,50 @@ HLSInstructionWriter::~HLSInstructionWriter() = default;
 
 void HLSInstructionWriter::declareFunction(const unsigned int function_id)
 {
+   bool flag_pp = parameters->isOption(OPT_pretty_print) ||
+                  (parameters->isOption(OPT_discrepancy) && parameters->getOption<bool>(OPT_discrepancy));
    // All I have to do is to change main in _main
    const BehavioralHelperConstRef behavioral_helper = AppM->CGetFunctionBehavior(function_id)->CGetBehavioralHelper();
-   std::string stringTemp = AppM->CGetFunctionBehavior(function_id)->CGetBehavioralHelper()->print_type(function_id, false, true, false, 0, var_pp_functorConstRef(new std_var_pp_functor(behavioral_helper)));
-
-   bool flag_cpp = AppM->get_tree_manager()->is_CPP() && !parameters->isOption(OPT_pretty_print) && (!parameters->isOption(OPT_discrepancy) || !parameters->getOption<bool>(OPT_discrepancy));
-
+   std::string stringTemp = AppM->CGetFunctionBehavior(function_id)
+                                ->CGetBehavioralHelper()
+                                ->print_type(function_id, false, true, false, 0,
+                                             var_pp_functorConstRef(new std_var_pp_functor(behavioral_helper)));
    std::string name = AppM->CGetFunctionBehavior(function_id)->CGetBehavioralHelper()->get_function_name();
-   if(name == "main")
-   {
-      boost::replace_all(stringTemp, " main(", " _main("); /// the assumption is strong but the code that prints the name of the function is under our control ;-)
-   }
-   if(flag_cpp)
+
+   if(!flag_pp)
    {
       tree_nodeRef fd_node = AppM->get_tree_manager()->get_tree_node_const(function_id);
       auto* fd = GetPointer<function_decl>(fd_node);
-      std::string simple_name;
-      std::string mangled_name;
-      tree_nodeRef id_name = GET_NODE(fd->name);
-      if(id_name->get_kind() == identifier_node_K)
+      std::string fname;
+      tree_helper::get_mangled_fname(fd, fname);
+      auto HLSMgr = GetPointer<const HLS_manager>(AppM);
+      if(HLSMgr && HLSMgr->design_interface_typename_orig_signature.find(fname) !=
+                       HLSMgr->design_interface_typename_orig_signature.end())
       {
-         auto* in = GetPointer<identifier_node>(id_name);
-         if(!in->operator_flag)
-            simple_name = in->strg;
-      }
-      if(fd->mngl)
-      {
-         tree_nodeRef mangled_id_name = GET_NODE(fd->mngl);
-         if(mangled_id_name->get_kind() == identifier_node_K)
+         auto searchString = " " + name + "(";
+         stringTemp = stringTemp.substr(0, stringTemp.find(searchString) + searchString.size());
+         const auto& typenameArgs = HLSMgr->design_interface_typename_orig_signature.find(fname)->second;
+         bool firstPar = true;
+         for(const auto& argType : typenameArgs)
          {
-            auto* in = GetPointer<identifier_node>(mangled_id_name);
-            if(!in->operator_flag)
-               mangled_name = in->strg;
-         }
-      }
-      if(mangled_name != "")
-      {
-         auto pos = stringTemp.find(mangled_name.c_str());
-         if(pos == std::string::npos)
-         {
-            pos = stringTemp.find(name.c_str());
-            THROW_ASSERT(pos != std::string::npos, "unexpected condition");
-         }
-         auto newStr = stringTemp.substr(0, pos);
-         newStr += string_demangle(mangled_name);
-         stringTemp = newStr;
-      }
-      else
-      {
-         if(simple_name != "")
-         {
-            auto HLSMgr = GetPointer<const HLS_manager>(AppM);
-            if(HLSMgr && simple_name == name && HLSMgr->design_interface_typename_signature.find(name) != HLSMgr->design_interface_typename_signature.end())
+            if(firstPar)
             {
-               auto searchString = " " + name + "(";
-               stringTemp = stringTemp.substr(0, stringTemp.find(searchString) + searchString.size());
-               const auto& typenameArgs = HLSMgr->design_interface_typename_signature.find(name)->second;
-               bool firstPar = true;
-               for(auto argType : typenameArgs)
-               {
-                  if(firstPar)
-                  {
-                     stringTemp += argType;
-                     firstPar = false;
-                  }
-                  else
-                     stringTemp += ", " + argType;
-               }
-               stringTemp += ")";
+               stringTemp += argType;
+               firstPar = false;
             }
             else
-               boost::replace_all(stringTemp, " " + name + "(", " " + simple_name + "(");
+            {
+               stringTemp += ", " + argType;
+            }
          }
-         boost::replace_all(stringTemp, "/*&*/*", "&");
+         stringTemp += ")";
       }
+   }
+   // boost::replace_all(stringTemp, "/*&*/*", "&");
+   if(name == "main")
+   {
+      boost::replace_all(stringTemp, " main(", " _main("); /// the assumption is strong but the code that prints the
+                                                           /// name of the function is under our control ;-)
    }
 
    indented_output_stream->Append(stringTemp);

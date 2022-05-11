@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -76,7 +76,9 @@ CMOS_technology::CMOS_technology(const ParameterConstRef& param) : target_techno
       if(Param->isOption(OPT_target_technology_file))
       {
          std::string file_name = Param->getOption<std::string>(OPT_target_technology_file);
-         PRINT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "(target technology) Loading information about the target technology from file \"" + file_name + "\"");
+         PRINT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
+                       "(target technology) Loading information about the target technology from file \"" + file_name +
+                           "\"");
          if(!boost::filesystem::exists(file_name))
          {
             THROW_ERROR("Technology information file " + file_name + " does not exist!");
@@ -143,17 +145,23 @@ void CMOS_technology::initialize()
 #endif
 
    /// it represents the height of the cell based on the manufacturing information
-   set_parameter("cell_height", get_parameter<float>("pitch_grid_y") * get_parameter<float>("grid_cell_height") * get_parameter<float>("manufacturing_grid_size"));
+   set_parameter("cell_height", get_parameter<float>("pitch_grid_y") * get_parameter<float>("grid_cell_height") *
+                                    get_parameter<float>("manufacturing_grid_size"));
    /// it represents the width of each single cell column based on the manufacturing information
-   set_parameter("column_width", get_parameter<float>("pitch_grid_x") * get_parameter<float>("manufacturing_grid_size"));
+   set_parameter("column_width",
+                 get_parameter<float>("pitch_grid_x") * get_parameter<float>("manufacturing_grid_size"));
    std::cerr.setf(std::ios::fixed);
    std::cerr.precision(3);
-   PRINT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "   Manufacturing grid size: " << get_parameter<double>("manufacturing_grid_size"));
-   PRINT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "   Grid cell height: " << get_parameter<unsigned int>("grid_cell_height"));
+   PRINT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level,
+                 "   Manufacturing grid size: " << get_parameter<double>("manufacturing_grid_size"));
+   PRINT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level,
+                 "   Grid cell height: " << get_parameter<unsigned int>("grid_cell_height"));
    PRINT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "   Cell height: " << get_parameter<double>("cell_height"));
    PRINT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "   Column width: " << get_parameter<double>("column_width"));
-   PRINT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "   Pitch Grid X: " << get_parameter<unsigned int>("pitch_grid_x"));
-   PRINT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "   Pitch Grid Y: " << get_parameter<unsigned int>("pitch_grid_y"));
+   PRINT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level,
+                 "   Pitch Grid X: " << get_parameter<unsigned int>("pitch_grid_x"));
+   PRINT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level,
+                 "   Pitch Grid Y: " << get_parameter<unsigned int>("pitch_grid_y"));
 #if !RELEASE
    PRINT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "   Power net: " << get_parameter<std::string>("pwr_name"));
    PRINT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "   Ground net: " << get_parameter<std::string>("gnd_name"));

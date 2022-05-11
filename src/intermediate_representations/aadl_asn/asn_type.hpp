@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2015-2020 Politecnico di Milano
+ *              Copyright (C) 2015-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -182,7 +182,7 @@ class SequenceAsnType : public AsnType
    /**
     * Constructor
     */
-   explicit SequenceAsnType(std::list<std::pair<std::string, AsnTypeRef>> element_type_list);
+   explicit SequenceAsnType(std::list<std::pair<std::string, AsnTypeRef>> _fields);
 };
 
 class SequenceOfAsnType : public AsnType
@@ -209,7 +209,7 @@ class SetAsnType : public AsnType
    /**
     * Constructor
     */
-   explicit SetAsnType(std::list<std::pair<std::string, AsnTypeRef>> element_type_list);
+   explicit SetAsnType(std::list<std::pair<std::string, AsnTypeRef>> _fields);
 };
 
 class SetOfAsnType : public AsnType
@@ -227,6 +227,6 @@ class SetOfAsnType : public AsnType
    SetOfAsnType(std::string element, const std::string& size);
 };
 
-typedef refcount<AsnType> AsnTypeRef;
-typedef refcount<const AsnType> AsnTypeConstRef;
+using AsnTypeRef = refcount<AsnType>;
+using AsnTypeConstRef = refcount<const AsnType>;
 #endif

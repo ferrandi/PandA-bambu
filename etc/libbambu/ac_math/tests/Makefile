@@ -8,12 +8,15 @@ endif
 
 AC_MATH_INC = $(TESTS_DIR)/../include
 
-ifeq "$(GCC_EXEC)" ""
-GCC_EXEC = g++
+ifeq "$(CXX)" ""
+CXX = g++
 endif
 
+ifneq "$(CXXFLAGS)" ""
+CXXUSERFLAGS = $(CXXFLAGS)
+endif
 
-CXXFLAGS = -O2 -std=c++14 -DAC_TYPES_INIT
+CXXFLAGS = -O2 -std=c++14 -DAC_TYPES_INIT $(CXXUSERFLAGS)
 LDFLAGS = -s -static-libstdc++
 WD = $(shell pwd)
 GCOV_ENABLED = false
@@ -26,7 +29,7 @@ GENHTML = $(GCOV_HOME)/genhtml
 CXXFLAGS += -coverage
 LDFLAGS += -lgcov
 GCOV_OPTS := --gcov-tool $(GCOV) --quiet --rc geninfo_auto_base=1 --rc lcov_branch_coverage=1 --external
-GCCVER = $(shell $(GCC_EXEC) -dumpversion)
+GCCVER = $(shell $(CXX) -dumpversion)
 GCOV_FILT_PAT := '/usr/include/*' '/usr/lib/*' '$(GCCVER)/*' 
 endif
 
@@ -80,7 +83,7 @@ ifeq "$(GCOV_ENABLED)" "true"
 	-@$(RM) *.gcda *.gcno
 endif
 	-@$(ECHO) "------------------------------ Compile  $< ----------------------------------"
-	@$(GCC_EXEC) $(CXXFLAGS) -I$(AC_TYPES_INC) -I$(AC_MATH_INC) $< $(LDFLAGS) $(LINK_LIBNAMES) -o $@ $(DIE)
+	@$(CXX) $(CXXFLAGS) -I$(AC_TYPES_INC) -I$(AC_MATH_INC) $< $(LDFLAGS) $(LINK_LIBNAMES) -o $@ $(DIE)
 ifeq "$(GCOV_ENABLED)" "true"
 	-@$(ECHO) "------------------------------ Prep     $< ----------------------------------"
 	-@$(RM) *.info

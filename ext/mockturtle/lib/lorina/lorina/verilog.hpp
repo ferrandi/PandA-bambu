@@ -1,5 +1,5 @@
 /* lorina: C++ parsing library
- * Copyright (C) 2018  EPFL
+ * Copyright (C) 2018-2021  EPFL
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -28,15 +28,17 @@
   \brief Implements simplistic Verilog parser
 
   \author Heinz Riener
+  \author Mathias Soeken
+  \author Siang-Yun (Sonia) Lee
 */
 
 #pragma once
 
-#include <lorina/common.hpp>
-#include <lorina/diagnostics.hpp>
-#include <lorina/detail/utils.hpp>
-#include <lorina/detail/tokenizer.hpp>
-#include <lorina/verilog_regex.hpp>
+#include "common.hpp"
+#include "diagnostics.hpp"
+#include "detail/utils.hpp"
+#include "detail/tokenizer.hpp"
+#include "verilog_regex.hpp"
 #include <iostream>
 #include <queue>
 
@@ -1070,6 +1072,15 @@ public:
     for ( const auto& i : inputs )
       on_action.declare_known( i );
 
+    if ( std::smatch m; std::regex_match( size, m, verilog_regex::const_size_range ) )
+    {
+      const auto a = std::stoul( m[1].str() );
+      const auto b = std::stoul( m[2].str() );
+      for ( auto j = std::min( a, b ); j <= std::max( a, b ); ++j )
+        for ( const auto& i : inputs )
+          on_action.declare_known( fmt::format( "{}[{}]", i, j ) );
+    }
+
     return true;
   }
 
@@ -1421,7 +1432,7 @@ private:
  * \param in Input stream
  * \param reader A VERILOG reader with callback methods invoked for parsed primitives
  * \param diag An optional diagnostic engine with callback methods for parse errors
- * \return Success if parsing have been successful, or parse error if parsing have failed
+ * \return Success if parsing has been successful, or parse error if parsing has failed
  */
 inline return_code read_verilog( std::istream& in, const verilog_reader& reader, diagnostic_engine* diag = nullptr )
 {
@@ -1445,12 +1456,26 @@ inline return_code read_verilog( std::istream& in, const verilog_reader& reader,
  * \param filename Name of the file
  * \param reader A VERILOG reader with callback methods invoked for parsed primitives
  * \param diag An optional diagnostic engine with callback methods for parse errors
- * \return Success if parsing have been successful, or parse error if parsing have failed
+ * \return Success if parsing has been successful, or parse error if parsing has failed
  */
 inline return_code read_verilog( const std::string& filename, const verilog_reader& reader, diagnostic_engine* diag = nullptr )
 {
   std::ifstream in( detail::word_exp_filename( filename ), std::ifstream::in );
-  return read_verilog( in, reader, diag );
+  if ( !in.is_open() )
+  {
+    if ( diag )
+    {
+      diag->report( diagnostic_level::fatal,
+                    fmt::format( "could not open file `{0}`", filename ) );
+    }
+    return return_code::parse_error;
+  }
+  else
+  {
+    auto const ret = read_verilog( in, reader, diag );
+    in.close();
+    return ret;
+  }
 }
 
 } // namespace lorina

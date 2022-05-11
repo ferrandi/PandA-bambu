@@ -48,11 +48,19 @@ using namespace ac_math;
 //   These simple functions allow executing the ac_matrixmul() function
 //   using multiple data types at the same time. Template parameters are
 //   used to configure the bit-widths of the types.
-template <unsigned M, unsigned N, unsigned P, int Wfi1, int Ifi1, bool Sfi1, int Wfi2, int Ifi2, bool Sfi2, int outWfi, int outIfi, bool outSfi>
-void test_ac_matrixmul(const ac_fixed<Wfi1, Ifi1, Sfi1, AC_TRN, AC_WRAP> A1[M][N], const ac_fixed<Wfi2, Ifi2, Sfi2, AC_TRN, AC_WRAP> B1[N][P], ac_fixed<outWfi, outIfi, outSfi, AC_TRN, AC_WRAP> C1[M][P],
-                       const ac_complex<ac_fixed<Wfi1, Ifi1, Sfi1, AC_TRN, AC_WRAP>> A2[M][N], const ac_complex<ac_fixed<Wfi2, Ifi2, Sfi2, AC_TRN, AC_WRAP>> B2[N][P], ac_complex<ac_fixed<outWfi, outIfi, outSfi, AC_TRN, AC_WRAP>> C2[M][P],
-                       const ac_matrix<ac_fixed<Wfi1, Ifi1, Sfi1, AC_TRN, AC_WRAP>, M, N>& A3, const ac_matrix<ac_fixed<Wfi2, Ifi2, Sfi2, AC_TRN, AC_WRAP>, N, P>& B3, ac_matrix<ac_fixed<outWfi, outIfi, outSfi, AC_TRN, AC_WRAP>, M, P>& C3,
-                       const ac_matrix<ac_complex<ac_fixed<Wfi1, Ifi1, Sfi1, AC_TRN, AC_WRAP>>, M, N>& A4, const ac_matrix<ac_complex<ac_fixed<Wfi2, Ifi2, Sfi2, AC_TRN, AC_WRAP>>, N, P>& B4,
+template <unsigned M, unsigned N, unsigned P, int Wfi1, int Ifi1, bool Sfi1, int Wfi2, int Ifi2, bool Sfi2, int outWfi,
+          int outIfi, bool outSfi>
+void test_ac_matrixmul(const ac_fixed<Wfi1, Ifi1, Sfi1, AC_TRN, AC_WRAP> A1[M][N],
+                       const ac_fixed<Wfi2, Ifi2, Sfi2, AC_TRN, AC_WRAP> B1[N][P],
+                       ac_fixed<outWfi, outIfi, outSfi, AC_TRN, AC_WRAP> C1[M][P],
+                       const ac_complex<ac_fixed<Wfi1, Ifi1, Sfi1, AC_TRN, AC_WRAP>> A2[M][N],
+                       const ac_complex<ac_fixed<Wfi2, Ifi2, Sfi2, AC_TRN, AC_WRAP>> B2[N][P],
+                       ac_complex<ac_fixed<outWfi, outIfi, outSfi, AC_TRN, AC_WRAP>> C2[M][P],
+                       const ac_matrix<ac_fixed<Wfi1, Ifi1, Sfi1, AC_TRN, AC_WRAP>, M, N>& A3,
+                       const ac_matrix<ac_fixed<Wfi2, Ifi2, Sfi2, AC_TRN, AC_WRAP>, N, P>& B3,
+                       ac_matrix<ac_fixed<outWfi, outIfi, outSfi, AC_TRN, AC_WRAP>, M, P>& C3,
+                       const ac_matrix<ac_complex<ac_fixed<Wfi1, Ifi1, Sfi1, AC_TRN, AC_WRAP>>, M, N>& A4,
+                       const ac_matrix<ac_complex<ac_fixed<Wfi2, Ifi2, Sfi2, AC_TRN, AC_WRAP>>, N, P>& B4,
                        ac_matrix<ac_complex<ac_fixed<outWfi, outIfi, outSfi, AC_TRN, AC_WRAP>>, M, P>& C4)
 {
    ac_matrixmul<M, N, P>(A1, B1, C1);
@@ -183,8 +191,10 @@ void matrixmul_tb(const ac_complex<T_in_A> A[M][N], const ac_complex<T_in_B> B[N
          double sumimag = 0;
          for(int k = 0; k < (int)N; k++)
          {
-            sumreal = sumreal + A[i][k].r().to_double() * B[k][j].r().to_double() - A[i][k].i().to_double() * B[k][j].i().to_double();
-            sumimag = sumimag + A[i][k].r().to_double() * B[k][j].i().to_double() + A[i][k].i().to_double() * B[k][j].r().to_double();
+            sumreal = sumreal + A[i][k].r().to_double() * B[k][j].r().to_double() -
+                      A[i][k].i().to_double() * B[k][j].i().to_double();
+            sumimag = sumimag + A[i][k].r().to_double() * B[k][j].i().to_double() +
+                      A[i][k].i().to_double() * B[k][j].r().to_double();
             ;
          }
          C_tb[i][j].r() = sumreal;
@@ -254,7 +264,8 @@ double compare_matrices(const ac_complex<T_op> C[M][P], const ac_complex<double>
 //   multiplication using the standard C double types. The maximum error for each
 //   type is accumulated in variables defined in the calling function.
 
-template <unsigned M, unsigned N, unsigned P, int Wfi1, int Ifi1, bool Sfi1, int Wfi2, int Ifi2, bool Sfi2, int outWfi, int outIfi, bool outSfi>
+template <unsigned M, unsigned N, unsigned P, int Wfi1, int Ifi1, bool Sfi1, int Wfi2, int Ifi2, bool Sfi2, int outWfi,
+          int outIfi, bool outSfi>
 int test_driver(double& cumulative_max_error, double& cumulative_max_error_cmplx, const double allowed_error)
 {
    bool passed = true;
@@ -301,7 +312,8 @@ int test_driver(double& cumulative_max_error, double& cumulative_max_error_cmplx
    copy_to_A_ac_matrix<M, N>(cmplx_A_c_array, cmplx_A_ac_matrix);
    copy_to_B_ac_matrix<N, P>(cmplx_B_c_array, cmplx_B_ac_matrix);
 
-   test_ac_matrixmul(A_c_array, B_c_array, C_c_array, cmplx_A_c_array, cmplx_B_c_array, cmplx_C_c_array, A_ac_matrix, B_ac_matrix, C_ac_matrix, cmplx_A_ac_matrix, cmplx_B_ac_matrix, cmplx_C_ac_matrix);
+   test_ac_matrixmul(A_c_array, B_c_array, C_c_array, cmplx_A_c_array, cmplx_B_c_array, cmplx_C_c_array, A_ac_matrix,
+                     B_ac_matrix, C_ac_matrix, cmplx_A_ac_matrix, cmplx_B_ac_matrix, cmplx_C_ac_matrix);
 
    ac_fixed<outWfi, outIfi, outSfi, AC_TRN, AC_WRAP> C_ac_matrix_converted[M][P];
    ac_complex<ac_fixed<outWfi, outIfi, outSfi, AC_TRN, AC_WRAP>> C_cmplx_ac_matrix_converted[M][P];
@@ -321,7 +333,8 @@ int test_driver(double& cumulative_max_error, double& cumulative_max_error_cmplx
 
    // Put max overall error in a separate variable.
    double max_error_overall = max_error > max_error_ac_matrix ? max_error : max_error_ac_matrix;
-   double max_error_cmplx_overall = max_error_cmplx > max_error_cmplx_ac_matrix ? max_error_cmplx : max_error_cmplx_ac_matrix;
+   double max_error_cmplx_overall =
+       max_error_cmplx > max_error_cmplx_ac_matrix ? max_error_cmplx : max_error_cmplx_ac_matrix;
 
    passed = (max_error_overall < allowed_error) && (max_error_cmplx_overall < allowed_error);
 
@@ -352,9 +365,11 @@ int main(int argc, char* argv[])
    double allowed_error = 0.5;
 
    cout << "=============================================================================" << endl;
-   cout << "Testing function: ac_matrixmul(), for scalar and complex datatypes - allowed error = " << allowed_error << endl;
+   cout << "Testing function: ac_matrixmul(), for scalar and complex datatypes - allowed error = " << allowed_error
+        << endl;
 
-   // template <unsigned M, unsigned N, unsigned P, int Wfi1, int Ifi1, bool Sfi1, int Wfi2, int Ifi2, bool Sfi2, int outWfi, int outIfi, bool outSfi>
+   // template <unsigned M, unsigned N, unsigned P, int Wfi1, int Ifi1, bool Sfi1, int Wfi2, int Ifi2, bool Sfi2, int
+   // outWfi, int outIfi, bool outSfi>
    test_driver<6, 12, 8, 20, 11, false, 24, 12, false, 50, 26, false>(max_error, cmplx_max_error, allowed_error);
    test_driver<9, 8, 4, 18, 12, true, 23, 13, true, 52, 24, true>(max_error, cmplx_max_error, allowed_error);
    test_driver<8, 7, 9, 17, 13, true, 23, 13, true, 49, 28, true>(max_error, cmplx_max_error, allowed_error);

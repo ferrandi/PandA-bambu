@@ -36,8 +36,11 @@
    _FP_FRAC_DECL_##wc(X)
 
 /* Test whether the qNaN bit denotes a signaling NaN.  */
-#define _FP_FRAC_SNANP(fs, X) ((_FP_QNANNEGATEDP) ? (_FP_FRAC_HIGH_RAW_##fs(X) & _FP_QNANBIT_##fs) : !(_FP_FRAC_HIGH_RAW_##fs(X) & _FP_QNANBIT_##fs))
-#define _FP_FRAC_SNANP_SEMIRAW(fs, X) ((_FP_QNANNEGATEDP) ? (_FP_FRAC_HIGH_##fs(X) & _FP_QNANBIT_SH_##fs) : !(_FP_FRAC_HIGH_##fs(X) & _FP_QNANBIT_SH_##fs))
+#define _FP_FRAC_SNANP(fs, X)                                             \
+   ((_FP_QNANNEGATEDP) ? (_FP_FRAC_HIGH_RAW_##fs(X) & _FP_QNANBIT_##fs) : \
+                         !(_FP_FRAC_HIGH_RAW_##fs(X) & _FP_QNANBIT_##fs))
+#define _FP_FRAC_SNANP_SEMIRAW(fs, X) \
+   ((_FP_QNANNEGATEDP) ? (_FP_FRAC_HIGH_##fs(X) & _FP_QNANBIT_SH_##fs) : !(_FP_FRAC_HIGH_##fs(X) & _FP_QNANBIT_SH_##fs))
 
 /*
  * Finish truly unpacking a native fp value by classifying the kind
@@ -94,21 +97,22 @@
 
 /* A semi-raw value has overflowed to infinity.  Adjust the mantissa
    and exponent appropriately.  */
-#define _FP_OVERFLOW_SEMIRAW(fs, wc, X)                                                                                       \
-   do                                                                                                                         \
-   {                                                                                                                          \
-      if(FP_ROUNDMODE == FP_RND_NEAREST || (FP_ROUNDMODE == FP_RND_PINF && !X##_s) || (FP_ROUNDMODE == FP_RND_MINF && X##_s)) \
-      {                                                                                                                       \
-         X##_e = _FP_EXPMAX_##fs;                                                                                             \
-         _FP_FRAC_SET_##wc(X, _FP_ZEROFRAC_##wc);                                                                             \
-      }                                                                                                                       \
-      else                                                                                                                    \
-      {                                                                                                                       \
-         X##_e = _FP_EXPMAX_##fs - 1;                                                                                         \
-         _FP_FRAC_SET_##wc(X, _FP_MAXFRAC_##wc);                                                                              \
-      }                                                                                                                       \
-      FP_SET_EXCEPTION(FP_EX_INEXACT);                                                                                        \
-      FP_SET_EXCEPTION(FP_EX_OVERFLOW);                                                                                       \
+#define _FP_OVERFLOW_SEMIRAW(fs, wc, X)                                               \
+   do                                                                                 \
+   {                                                                                  \
+      if(FP_ROUNDMODE == FP_RND_NEAREST || (FP_ROUNDMODE == FP_RND_PINF && !X##_s) || \
+         (FP_ROUNDMODE == FP_RND_MINF && X##_s))                                      \
+      {                                                                               \
+         X##_e = _FP_EXPMAX_##fs;                                                     \
+         _FP_FRAC_SET_##wc(X, _FP_ZEROFRAC_##wc);                                     \
+      }                                                                               \
+      else                                                                            \
+      {                                                                               \
+         X##_e = _FP_EXPMAX_##fs - 1;                                                 \
+         _FP_FRAC_SET_##wc(X, _FP_MAXFRAC_##wc);                                      \
+      }                                                                               \
+      FP_SET_EXCEPTION(FP_EX_INEXACT);                                                \
+      FP_SET_EXCEPTION(FP_EX_OVERFLOW);                                               \
    } while(0)
 
 /* Check for a semi-raw value being a signaling NaN and raise the
@@ -221,127 +225,128 @@
  * extracted -- but that is ok, we can regenerate them now.
  */
 
-#define _FP_PACK_CANONICAL(fs, wc, X)                                                                                                   \
-   do                                                                                                                                   \
-   {                                                                                                                                    \
-      {                                                                                                                                 \
-         if(X##_c == FP_CLS_NORMAL)                                                                                                     \
-         {                                                                                                                              \
-            X##_e += _FP_EXPBIAS_##fs;                                                                                                  \
-            if(X##_e > 0)                                                                                                               \
-            {                                                                                                                           \
-               _FP_ROUND(wc, X);                                                                                                        \
-               if(_FP_FRAC_OVERP_##wc(fs, X))                                                                                           \
-               {                                                                                                                        \
-                  _FP_FRAC_CLEAR_OVERP_##wc(fs, X);                                                                                     \
-                  X##_e++;                                                                                                              \
-               }                                                                                                                        \
-               _FP_FRAC_SRL_##wc(X, _FP_WORKBITS);                                                                                      \
-               if(X##_e >= _FP_EXPMAX_##fs)                                                                                             \
-               {                                                                                                                        \
-                  /* overflow */                                                                                                        \
-                  switch(FP_ROUNDMODE)                                                                                                  \
-                  {                                                                                                                     \
-                     case FP_RND_NEAREST:                                                                                               \
-                        X##_c = FP_CLS_INF;                                                                                             \
-                        break;                                                                                                          \
-                     case FP_RND_PINF:                                                                                                  \
-                        if(!X##_s)                                                                                                      \
-                           X##_c = FP_CLS_INF;                                                                                          \
-                        break;                                                                                                          \
-                     case FP_RND_MINF:                                                                                                  \
-                        if(X##_s)                                                                                                       \
-                           X##_c = FP_CLS_INF;                                                                                          \
-                        break;                                                                                                          \
-                  }                                                                                                                     \
-                  if(X##_c == FP_CLS_INF)                                                                                               \
-                  {                                                                                                                     \
-                     /* Overflow to infinity */                                                                                         \
-                     X##_e = _FP_EXPMAX_##fs;                                                                                           \
-                     _FP_FRAC_SET_##wc(X, _FP_ZEROFRAC_##wc);                                                                           \
-                  }                                                                                                                     \
-                  else                                                                                                                  \
-                  {                                                                                                                     \
-                     /* Overflow to maximum normal */                                                                                   \
-                     X##_e = _FP_EXPMAX_##fs - 1;                                                                                       \
-                     _FP_FRAC_SET_##wc(X, _FP_MAXFRAC_##wc);                                                                            \
-                  }                                                                                                                     \
-                  FP_SET_EXCEPTION(FP_EX_OVERFLOW);                                                                                     \
-                  FP_SET_EXCEPTION(FP_EX_INEXACT);                                                                                      \
-               }                                                                                                                        \
-            }                                                                                                                           \
-            else                                                                                                                        \
-            {                                                                                                                           \
-               /* we've got a denormalized number */                                                                                    \
-               int _FP_PACK_CANONICAL_is_tiny = 1;                                                                                      \
-               if(_FP_TININESS_AFTER_ROUNDING && X##_e == 0)                                                                            \
-               {                                                                                                                        \
-                  FP_DECL_##fs(_FP_PACK_CANONICAL_T);                                                                                   \
-                  _FP_FRAC_COPY_##wc(_FP_PACK_CANONICAL_T, X);                                                                          \
-                  _FP_PACK_CANONICAL_T##_s = X##_s;                                                                                     \
-                  _FP_PACK_CANONICAL_T##_e = X##_e;                                                                                     \
-                  _FP_ROUND(wc, _FP_PACK_CANONICAL_T);                                                                                  \
-                  if(_FP_FRAC_OVERP_##wc(fs, _FP_PACK_CANONICAL_T))                                                                     \
-                     _FP_PACK_CANONICAL_is_tiny = 0;                                                                                    \
-               }                                                                                                                        \
-               X##_e = -X##_e + 1;                                                                                                      \
-               if(X##_e <= _FP_WFRACBITS_##fs)                                                                                          \
-               {                                                                                                                        \
-                  _FP_FRAC_SRS_##wc(X, X##_e, _FP_WFRACBITS_##fs);                                                                      \
-                  _FP_ROUND(wc, X);                                                                                                     \
-                  if(_FP_FRAC_HIGH_##fs(X) & (_FP_OVERFLOW_##fs >> 1))                                                                  \
-                  {                                                                                                                     \
-                     X##_e = 1;                                                                                                         \
-                     _FP_FRAC_SET_##wc(X, _FP_ZEROFRAC_##wc);                                                                           \
-                     FP_SET_EXCEPTION(FP_EX_INEXACT);                                                                                   \
-                  }                                                                                                                     \
-                  else                                                                                                                  \
-                  {                                                                                                                     \
-                     X##_e = 0;                                                                                                         \
-                     _FP_FRAC_SRL_##wc(X, _FP_WORKBITS);                                                                                \
-                  }                                                                                                                     \
-                  if(_FP_PACK_CANONICAL_is_tiny && ((FP_CUR_EXCEPTIONS & FP_EX_INEXACT) || (FP_TRAPPING_EXCEPTIONS & FP_EX_UNDERFLOW))) \
-                     FP_SET_EXCEPTION(FP_EX_UNDERFLOW);                                                                                 \
-               }                                                                                                                        \
-               else                                                                                                                     \
-               {                                                                                                                        \
-                  /* underflow to zero */                                                                                               \
-                  X##_e = 0;                                                                                                            \
-                  if(!_FP_FRAC_ZEROP_##wc(X))                                                                                           \
-                  {                                                                                                                     \
-                     _FP_FRAC_SET_##wc(X, _FP_MINFRAC_##wc);                                                                            \
-                     _FP_ROUND(wc, X);                                                                                                  \
-                     _FP_FRAC_LOW_##wc(X) >>= (_FP_WORKBITS);                                                                           \
-                  }                                                                                                                     \
-                  FP_SET_EXCEPTION(FP_EX_UNDERFLOW);                                                                                    \
-               }                                                                                                                        \
-            }                                                                                                                           \
-         }                                                                                                                              \
-                                                                                                                                        \
-         else if(X##_c == FP_CLS_ZERO)                                                                                                  \
-         {                                                                                                                              \
-            X##_e = 0;                                                                                                                  \
-            _FP_FRAC_SET_##wc(X, _FP_ZEROFRAC_##wc);                                                                                    \
-         }                                                                                                                              \
-                                                                                                                                        \
-         else if(X##_c == FP_CLS_INF)                                                                                                   \
-         {                                                                                                                              \
-            X##_e = _FP_EXPMAX_##fs;                                                                                                    \
-            _FP_FRAC_SET_##wc(X, _FP_ZEROFRAC_##wc);                                                                                    \
-         }                                                                                                                              \
-                                                                                                                                        \
-         else /*if(X##_c == FP_CLS_NAN)*/                                                                                               \
-         {                                                                                                                              \
-            X##_e = _FP_EXPMAX_##fs;                                                                                                    \
-            if(!_FP_KEEPNANFRACP)                                                                                                       \
-            {                                                                                                                           \
-               _FP_FRAC_SET_##wc(X, _FP_NANFRAC_##fs);                                                                                  \
-               X##_s = _FP_NANSIGN_##fs;                                                                                                \
-            }                                                                                                                           \
-            else                                                                                                                        \
-               _FP_SETQNAN(fs, wc, X);                                                                                                  \
-         }                                                                                                                              \
-      }                                                                                                                                 \
+#define _FP_PACK_CANONICAL(fs, wc, X)                                                                     \
+   do                                                                                                     \
+   {                                                                                                      \
+      {                                                                                                   \
+         if(X##_c == FP_CLS_NORMAL)                                                                       \
+         {                                                                                                \
+            X##_e += _FP_EXPBIAS_##fs;                                                                    \
+            if(X##_e > 0)                                                                                 \
+            {                                                                                             \
+               _FP_ROUND(wc, X);                                                                          \
+               if(_FP_FRAC_OVERP_##wc(fs, X))                                                             \
+               {                                                                                          \
+                  _FP_FRAC_CLEAR_OVERP_##wc(fs, X);                                                       \
+                  X##_e++;                                                                                \
+               }                                                                                          \
+               _FP_FRAC_SRL_##wc(X, _FP_WORKBITS);                                                        \
+               if(X##_e >= _FP_EXPMAX_##fs)                                                               \
+               {                                                                                          \
+                  /* overflow */                                                                          \
+                  switch(FP_ROUNDMODE)                                                                    \
+                  {                                                                                       \
+                     case FP_RND_NEAREST:                                                                 \
+                        X##_c = FP_CLS_INF;                                                               \
+                        break;                                                                            \
+                     case FP_RND_PINF:                                                                    \
+                        if(!X##_s)                                                                        \
+                           X##_c = FP_CLS_INF;                                                            \
+                        break;                                                                            \
+                     case FP_RND_MINF:                                                                    \
+                        if(X##_s)                                                                         \
+                           X##_c = FP_CLS_INF;                                                            \
+                        break;                                                                            \
+                  }                                                                                       \
+                  if(X##_c == FP_CLS_INF)                                                                 \
+                  {                                                                                       \
+                     /* Overflow to infinity */                                                           \
+                     X##_e = _FP_EXPMAX_##fs;                                                             \
+                     _FP_FRAC_SET_##wc(X, _FP_ZEROFRAC_##wc);                                             \
+                  }                                                                                       \
+                  else                                                                                    \
+                  {                                                                                       \
+                     /* Overflow to maximum normal */                                                     \
+                     X##_e = _FP_EXPMAX_##fs - 1;                                                         \
+                     _FP_FRAC_SET_##wc(X, _FP_MAXFRAC_##wc);                                              \
+                  }                                                                                       \
+                  FP_SET_EXCEPTION(FP_EX_OVERFLOW);                                                       \
+                  FP_SET_EXCEPTION(FP_EX_INEXACT);                                                        \
+               }                                                                                          \
+            }                                                                                             \
+            else                                                                                          \
+            {                                                                                             \
+               /* we've got a denormalized number */                                                      \
+               int _FP_PACK_CANONICAL_is_tiny = 1;                                                        \
+               if(_FP_TININESS_AFTER_ROUNDING && X##_e == 0)                                              \
+               {                                                                                          \
+                  FP_DECL_##fs(_FP_PACK_CANONICAL_T);                                                     \
+                  _FP_FRAC_COPY_##wc(_FP_PACK_CANONICAL_T, X);                                            \
+                  _FP_PACK_CANONICAL_T##_s = X##_s;                                                       \
+                  _FP_PACK_CANONICAL_T##_e = X##_e;                                                       \
+                  _FP_ROUND(wc, _FP_PACK_CANONICAL_T);                                                    \
+                  if(_FP_FRAC_OVERP_##wc(fs, _FP_PACK_CANONICAL_T))                                       \
+                     _FP_PACK_CANONICAL_is_tiny = 0;                                                      \
+               }                                                                                          \
+               X##_e = -X##_e + 1;                                                                        \
+               if(X##_e <= _FP_WFRACBITS_##fs)                                                            \
+               {                                                                                          \
+                  _FP_FRAC_SRS_##wc(X, X##_e, _FP_WFRACBITS_##fs);                                        \
+                  _FP_ROUND(wc, X);                                                                       \
+                  if(_FP_FRAC_HIGH_##fs(X) & (_FP_OVERFLOW_##fs >> 1))                                    \
+                  {                                                                                       \
+                     X##_e = 1;                                                                           \
+                     _FP_FRAC_SET_##wc(X, _FP_ZEROFRAC_##wc);                                             \
+                     FP_SET_EXCEPTION(FP_EX_INEXACT);                                                     \
+                  }                                                                                       \
+                  else                                                                                    \
+                  {                                                                                       \
+                     X##_e = 0;                                                                           \
+                     _FP_FRAC_SRL_##wc(X, _FP_WORKBITS);                                                  \
+                  }                                                                                       \
+                  if(_FP_PACK_CANONICAL_is_tiny &&                                                        \
+                     ((FP_CUR_EXCEPTIONS & FP_EX_INEXACT) || (FP_TRAPPING_EXCEPTIONS & FP_EX_UNDERFLOW))) \
+                     FP_SET_EXCEPTION(FP_EX_UNDERFLOW);                                                   \
+               }                                                                                          \
+               else                                                                                       \
+               {                                                                                          \
+                  /* underflow to zero */                                                                 \
+                  X##_e = 0;                                                                              \
+                  if(!_FP_FRAC_ZEROP_##wc(X))                                                             \
+                  {                                                                                       \
+                     _FP_FRAC_SET_##wc(X, _FP_MINFRAC_##wc);                                              \
+                     _FP_ROUND(wc, X);                                                                    \
+                     _FP_FRAC_LOW_##wc(X) >>= (_FP_WORKBITS);                                             \
+                  }                                                                                       \
+                  FP_SET_EXCEPTION(FP_EX_UNDERFLOW);                                                      \
+               }                                                                                          \
+            }                                                                                             \
+         }                                                                                                \
+                                                                                                          \
+         else if(X##_c == FP_CLS_ZERO)                                                                    \
+         {                                                                                                \
+            X##_e = 0;                                                                                    \
+            _FP_FRAC_SET_##wc(X, _FP_ZEROFRAC_##wc);                                                      \
+         }                                                                                                \
+                                                                                                          \
+         else if(X##_c == FP_CLS_INF)                                                                     \
+         {                                                                                                \
+            X##_e = _FP_EXPMAX_##fs;                                                                      \
+            _FP_FRAC_SET_##wc(X, _FP_ZEROFRAC_##wc);                                                      \
+         }                                                                                                \
+                                                                                                          \
+         else /*if(X##_c == FP_CLS_NAN)*/                                                                 \
+         {                                                                                                \
+            X##_e = _FP_EXPMAX_##fs;                                                                      \
+            if(!_FP_KEEPNANFRACP)                                                                         \
+            {                                                                                             \
+               _FP_FRAC_SET_##wc(X, _FP_NANFRAC_##fs);                                                    \
+               X##_s = _FP_NANSIGN_##fs;                                                                  \
+            }                                                                                             \
+            else                                                                                          \
+               _FP_SETQNAN(fs, wc, X);                                                                    \
+         }                                                                                                \
+      }                                                                                                   \
    } while(0)
 
 /* This one accepts raw argument and not cooked,  returns
@@ -1140,65 +1145,68 @@
  * cooked.  The return is -1,0,1 for normal values, 2 otherwise.
  */
 
-#define _FP_CMP(fs, wc, ret, X, Y, un)                                                                                   \
-   do                                                                                                                    \
-   {                                                                                                                     \
-      /* NANs are unordered */                                                                                           \
-      if((X##_e == _FP_EXPMAX_##fs && !_FP_FRAC_ZEROP_##wc(X)) || (Y##_e == _FP_EXPMAX_##fs && !_FP_FRAC_ZEROP_##wc(Y))) \
-      {                                                                                                                  \
-         ret = un;                                                                                                       \
-      }                                                                                                                  \
-      else                                                                                                               \
-      {                                                                                                                  \
-         int __is_zero_x;                                                                                                \
-         int __is_zero_y;                                                                                                \
-                                                                                                                         \
-         __is_zero_x = (!X##_e && _FP_FRAC_ZEROP_##wc(X)) ? 1 : 0;                                                       \
-         __is_zero_y = (!Y##_e && _FP_FRAC_ZEROP_##wc(Y)) ? 1 : 0;                                                       \
-                                                                                                                         \
-         if(__is_zero_x && __is_zero_y)                                                                                  \
-            ret = 0;                                                                                                     \
-         else if(__is_zero_x)                                                                                            \
-            ret = Y##_s ? 1 : -1;                                                                                        \
-         else if(__is_zero_y)                                                                                            \
-            ret = X##_s ? -1 : 1;                                                                                        \
-         else if(X##_s != Y##_s)                                                                                         \
-            ret = X##_s ? -1 : 1;                                                                                        \
-         else if(X##_e > Y##_e)                                                                                          \
-            ret = X##_s ? -1 : 1;                                                                                        \
-         else if(X##_e < Y##_e)                                                                                          \
-            ret = X##_s ? 1 : -1;                                                                                        \
-         else if(_FP_FRAC_GT_##wc(X, Y))                                                                                 \
-            ret = X##_s ? -1 : 1;                                                                                        \
-         else if(_FP_FRAC_GT_##wc(Y, X))                                                                                 \
-            ret = X##_s ? 1 : -1;                                                                                        \
-         else                                                                                                            \
-            ret = 0;                                                                                                     \
-      }                                                                                                                  \
+#define _FP_CMP(fs, wc, ret, X, Y, un)                             \
+   do                                                              \
+   {                                                               \
+      /* NANs are unordered */                                     \
+      if((X##_e == _FP_EXPMAX_##fs && !_FP_FRAC_ZEROP_##wc(X)) ||  \
+         (Y##_e == _FP_EXPMAX_##fs && !_FP_FRAC_ZEROP_##wc(Y)))    \
+      {                                                            \
+         ret = un;                                                 \
+      }                                                            \
+      else                                                         \
+      {                                                            \
+         int __is_zero_x;                                          \
+         int __is_zero_y;                                          \
+                                                                   \
+         __is_zero_x = (!X##_e && _FP_FRAC_ZEROP_##wc(X)) ? 1 : 0; \
+         __is_zero_y = (!Y##_e && _FP_FRAC_ZEROP_##wc(Y)) ? 1 : 0; \
+                                                                   \
+         if(__is_zero_x && __is_zero_y)                            \
+            ret = 0;                                               \
+         else if(__is_zero_x)                                      \
+            ret = Y##_s ? 1 : -1;                                  \
+         else if(__is_zero_y)                                      \
+            ret = X##_s ? -1 : 1;                                  \
+         else if(X##_s != Y##_s)                                   \
+            ret = X##_s ? -1 : 1;                                  \
+         else if(X##_e > Y##_e)                                    \
+            ret = X##_s ? -1 : 1;                                  \
+         else if(X##_e < Y##_e)                                    \
+            ret = X##_s ? 1 : -1;                                  \
+         else if(_FP_FRAC_GT_##wc(X, Y))                           \
+            ret = X##_s ? -1 : 1;                                  \
+         else if(_FP_FRAC_GT_##wc(Y, X))                           \
+            ret = X##_s ? 1 : -1;                                  \
+         else                                                      \
+            ret = 0;                                               \
+      }                                                            \
    } while(0)
 
 /* Simplification for strict equality.  */
 
-#define _FP_CMP_EQ(fs, wc, ret, X, Y)                                                                                    \
-   do                                                                                                                    \
-   {                                                                                                                     \
-      /* NANs are unordered */                                                                                           \
-      if((X##_e == _FP_EXPMAX_##fs && !_FP_FRAC_ZEROP_##wc(X)) || (Y##_e == _FP_EXPMAX_##fs && !_FP_FRAC_ZEROP_##wc(Y))) \
-      {                                                                                                                  \
-         ret = 1;                                                                                                        \
-      }                                                                                                                  \
-      else                                                                                                               \
-      {                                                                                                                  \
-         ret = !(X##_e == Y##_e && _FP_FRAC_EQ_##wc(X, Y) && (X##_s == Y##_s || (!X##_e && _FP_FRAC_ZEROP_##wc(X))));    \
-      }                                                                                                                  \
+#define _FP_CMP_EQ(fs, wc, ret, X, Y)                                                                                 \
+   do                                                                                                                 \
+   {                                                                                                                  \
+      /* NANs are unordered */                                                                                        \
+      if((X##_e == _FP_EXPMAX_##fs && !_FP_FRAC_ZEROP_##wc(X)) ||                                                     \
+         (Y##_e == _FP_EXPMAX_##fs && !_FP_FRAC_ZEROP_##wc(Y)))                                                       \
+      {                                                                                                               \
+         ret = 1;                                                                                                     \
+      }                                                                                                               \
+      else                                                                                                            \
+      {                                                                                                               \
+         ret = !(X##_e == Y##_e && _FP_FRAC_EQ_##wc(X, Y) && (X##_s == Y##_s || (!X##_e && _FP_FRAC_ZEROP_##wc(X)))); \
+      }                                                                                                               \
    } while(0)
 
 /* Version to test unordered.  */
 
-#define _FP_CMP_UNORD(fs, wc, ret, X, Y)                                                                                      \
-   do                                                                                                                         \
-   {                                                                                                                          \
-      ret = ((X##_e == _FP_EXPMAX_##fs && !_FP_FRAC_ZEROP_##wc(X)) || (Y##_e == _FP_EXPMAX_##fs && !_FP_FRAC_ZEROP_##wc(Y))); \
+#define _FP_CMP_UNORD(fs, wc, ret, X, Y)                              \
+   do                                                                 \
+   {                                                                  \
+      ret = ((X##_e == _FP_EXPMAX_##fs && !_FP_FRAC_ZEROP_##wc(X)) || \
+             (Y##_e == _FP_EXPMAX_##fs && !_FP_FRAC_ZEROP_##wc(Y)));  \
    } while(0)
 
 /*
@@ -1346,187 +1354,192 @@
 
 /* Convert integer to fp.  Output is raw.  RTYPE is unsigned even if
    input is signed.  */
-#define _FP_FROM_INT(fs, wc, X, r, rsize, rtype)                                                                                                                     \
-   do                                                                                                                                                                \
-   {                                                                                                                                                                 \
-      if(r)                                                                                                                                                          \
-      {                                                                                                                                                              \
-         rtype ur_;                                                                                                                                                  \
-                                                                                                                                                                     \
-         if((X##_s = (r < 0)))                                                                                                                                       \
-            r = -(rtype)r;                                                                                                                                           \
-                                                                                                                                                                     \
-         ur_ = (rtype)r;                                                                                                                                             \
-         (void)((rsize <= _FP_W_TYPE_SIZE) ? ({                                                                                                                      \
-            int lz_;                                                                                                                                                 \
-            __FP_CLZ(lz_, (_FP_W_TYPE)ur_);                                                                                                                          \
-            X##_e = _FP_EXPBIAS_##fs + _FP_W_TYPE_SIZE - 1 - lz_;                                                                                                    \
-         }) :                                                                                                                                                        \
-                                             ((rsize <= 2 * _FP_W_TYPE_SIZE) ? ({                                                                                    \
-                                                int lz_;                                                                                                             \
-                                                __FP_CLZ_2(lz_, (_FP_W_TYPE)(ur_ >> _FP_W_TYPE_SIZE), (_FP_W_TYPE)ur_);                                              \
-                                                X##_e = (_FP_EXPBIAS_##fs + 2 * _FP_W_TYPE_SIZE - 1 - lz_);                                                          \
-                                             }) :                                                                                                                    \
-                                                                               (abort(), 0)));                                                                       \
-                                                                                                                                                                     \
-         if(rsize - 1 + _FP_EXPBIAS_##fs >= _FP_EXPMAX_##fs && X##_e >= _FP_EXPMAX_##fs)                                                                             \
-         {                                                                                                                                                           \
-            /* Exponent too big; overflow to infinity.  (May also                                                                                                    \
-          happen after rounding below.)  */                                                                                                                          \
-            _FP_OVERFLOW_SEMIRAW(fs, wc, X);                                                                                                                         \
-            goto pack_semiraw;                                                                                                                                       \
-         }                                                                                                                                                           \
-                                                                                                                                                                     \
-         if(rsize <= _FP_FRACBITS_##fs || X##_e < _FP_EXPBIAS_##fs + _FP_FRACBITS_##fs)                                                                              \
-         {                                                                                                                                                           \
-            /* Exactly representable; shift left.  */                                                                                                                \
-            _FP_FRAC_DISASSEMBLE_##wc(X, ur_, rsize);                                                                                                                \
-            if(_FP_EXPBIAS_##fs + _FP_FRACBITS_##fs - 1 - X##_e > 0)                                                                                                 \
-               _FP_FRAC_SLL_##wc(X, (_FP_EXPBIAS_##fs + _FP_FRACBITS_##fs - 1 - X##_e));                                                                             \
-         }                                                                                                                                                           \
-         else                                                                                                                                                        \
-         {                                                                                                                                                           \
-            /* More bits in integer than in floating type; need to                                                                                                   \
-          round.  */                                                                                                                                                 \
-            if(_FP_EXPBIAS_##fs + _FP_WFRACBITS_##fs - 1 < X##_e)                                                                                                    \
-               ur_ = ((ur_ >> (X##_e - _FP_EXPBIAS_##fs - _FP_WFRACBITS_##fs + 1)) | ((ur_ << (rsize - (X##_e - _FP_EXPBIAS_##fs - _FP_WFRACBITS_##fs + 1))) != 0)); \
-            _FP_FRAC_DISASSEMBLE_##wc(X, ur_, rsize);                                                                                                                \
-            if((_FP_EXPBIAS_##fs + _FP_WFRACBITS_##fs - 1 - X##_e) > 0)                                                                                              \
-               _FP_FRAC_SLL_##wc(X, (_FP_EXPBIAS_##fs + _FP_WFRACBITS_##fs - 1 - X##_e));                                                                            \
-            _FP_FRAC_HIGH_##fs(X) &= ~(_FP_W_TYPE)_FP_IMPLBIT_SH_##fs;                                                                                               \
-         pack_semiraw:                                                                                                                                               \
-            _FP_PACK_SEMIRAW(fs, wc, X);                                                                                                                             \
-         }                                                                                                                                                           \
-      }                                                                                                                                                              \
-      else                                                                                                                                                           \
-      {                                                                                                                                                              \
-         X##_s = 0;                                                                                                                                                  \
-         X##_e = 0;                                                                                                                                                  \
-         _FP_FRAC_SET_##wc(X, _FP_ZEROFRAC_##wc);                                                                                                                    \
-      }                                                                                                                                                              \
+#define _FP_FROM_INT(fs, wc, X, r, rsize, rtype)                                                      \
+   do                                                                                                 \
+   {                                                                                                  \
+      if(r)                                                                                           \
+      {                                                                                               \
+         rtype ur_;                                                                                   \
+                                                                                                      \
+         if((X##_s = (r < 0)))                                                                        \
+            r = -(rtype)r;                                                                            \
+                                                                                                      \
+         ur_ = (rtype)r;                                                                              \
+         (void)((rsize <= _FP_W_TYPE_SIZE) ?                                                          \
+                    ({                                                                                \
+                       int lz_;                                                                       \
+                       __FP_CLZ(lz_, (_FP_W_TYPE)ur_);                                                \
+                       X##_e = _FP_EXPBIAS_##fs + _FP_W_TYPE_SIZE - 1 - lz_;                          \
+                    }) :                                                                              \
+                    ((rsize <= 2 * _FP_W_TYPE_SIZE) ? ({                                              \
+                       int lz_;                                                                       \
+                       __FP_CLZ_2(lz_, (_FP_W_TYPE)(ur_ >> _FP_W_TYPE_SIZE), (_FP_W_TYPE)ur_);        \
+                       X##_e = (_FP_EXPBIAS_##fs + 2 * _FP_W_TYPE_SIZE - 1 - lz_);                    \
+                    }) :                                                                              \
+                                                      (abort(), 0)));                                 \
+                                                                                                      \
+         if(rsize - 1 + _FP_EXPBIAS_##fs >= _FP_EXPMAX_##fs && X##_e >= _FP_EXPMAX_##fs)              \
+         {                                                                                            \
+            /* Exponent too big; overflow to infinity.  (May also                                     \
+          happen after rounding below.)  */                                                           \
+            _FP_OVERFLOW_SEMIRAW(fs, wc, X);                                                          \
+            goto pack_semiraw;                                                                        \
+         }                                                                                            \
+                                                                                                      \
+         if(rsize <= _FP_FRACBITS_##fs || X##_e < _FP_EXPBIAS_##fs + _FP_FRACBITS_##fs)               \
+         {                                                                                            \
+            /* Exactly representable; shift left.  */                                                 \
+            _FP_FRAC_DISASSEMBLE_##wc(X, ur_, rsize);                                                 \
+            if(_FP_EXPBIAS_##fs + _FP_FRACBITS_##fs - 1 - X##_e > 0)                                  \
+               _FP_FRAC_SLL_##wc(X, (_FP_EXPBIAS_##fs + _FP_FRACBITS_##fs - 1 - X##_e));              \
+         }                                                                                            \
+         else                                                                                         \
+         {                                                                                            \
+            /* More bits in integer than in floating type; need to                                    \
+          round.  */                                                                                  \
+            if(_FP_EXPBIAS_##fs + _FP_WFRACBITS_##fs - 1 < X##_e)                                     \
+               ur_ = ((ur_ >> (X##_e - _FP_EXPBIAS_##fs - _FP_WFRACBITS_##fs + 1)) |                  \
+                      ((ur_ << (rsize - (X##_e - _FP_EXPBIAS_##fs - _FP_WFRACBITS_##fs + 1))) != 0)); \
+            _FP_FRAC_DISASSEMBLE_##wc(X, ur_, rsize);                                                 \
+            if((_FP_EXPBIAS_##fs + _FP_WFRACBITS_##fs - 1 - X##_e) > 0)                               \
+               _FP_FRAC_SLL_##wc(X, (_FP_EXPBIAS_##fs + _FP_WFRACBITS_##fs - 1 - X##_e));             \
+            _FP_FRAC_HIGH_##fs(X) &= ~(_FP_W_TYPE)_FP_IMPLBIT_SH_##fs;                                \
+         pack_semiraw:                                                                                \
+            _FP_PACK_SEMIRAW(fs, wc, X);                                                              \
+         }                                                                                            \
+      }                                                                                               \
+      else                                                                                            \
+      {                                                                                               \
+         X##_s = 0;                                                                                   \
+         X##_e = 0;                                                                                   \
+         _FP_FRAC_SET_##wc(X, _FP_ZEROFRAC_##wc);                                                     \
+      }                                                                                               \
    } while(0)
 
 /* Extend from a narrower floating-point format to a wider one.  Input
    and output are raw.  */
-#define FP_EXTEND(dfs, sfs, dwc, swc, D, S)                                                                                                                                                                                                      \
-   do                                                                                                                                                                                                                                            \
-   {                                                                                                                                                                                                                                             \
-      if(_FP_FRACBITS_##dfs < _FP_FRACBITS_##sfs || (_FP_EXPMAX_##dfs - _FP_EXPBIAS_##dfs < _FP_EXPMAX_##sfs - _FP_EXPBIAS_##sfs) || (_FP_EXPBIAS_##dfs < _FP_EXPBIAS_##sfs + _FP_FRACBITS_##sfs - 1 && _FP_EXPBIAS_##dfs != _FP_EXPBIAS_##sfs)) \
-         abort();                                                                                                                                                                                                                                \
-      D##_s = S##_s;                                                                                                                                                                                                                             \
-      _FP_FRAC_COPY_##dwc##_##swc(D, S);                                                                                                                                                                                                         \
-      if(_FP_EXP_NORMAL(sfs, swc, S))                                                                                                                                                                                                            \
-      {                                                                                                                                                                                                                                          \
-         D##_e = S##_e + _FP_EXPBIAS_##dfs - _FP_EXPBIAS_##sfs;                                                                                                                                                                                  \
-         _FP_FRAC_SLL_##dwc(D, (_FP_FRACBITS_##dfs - _FP_FRACBITS_##sfs));                                                                                                                                                                       \
-      }                                                                                                                                                                                                                                          \
-      else                                                                                                                                                                                                                                       \
-      {                                                                                                                                                                                                                                          \
-         if(S##_e == 0)                                                                                                                                                                                                                          \
-         {                                                                                                                                                                                                                                       \
-            if(NO_DENORM || _FP_FRAC_ZEROP_##swc(S))                                                                                                                                                                                             \
-               D##_e = 0;                                                                                                                                                                                                                        \
-            else if(_FP_EXPBIAS_##dfs < _FP_EXPBIAS_##sfs + _FP_FRACBITS_##sfs - 1)                                                                                                                                                              \
-            {                                                                                                                                                                                                                                    \
-               FP_SET_EXCEPTION(FP_EX_DENORM);                                                                                                                                                                                                   \
-               _FP_FRAC_SLL_##dwc(D, (_FP_FRACBITS_##dfs - _FP_FRACBITS_##sfs));                                                                                                                                                                 \
-               D##_e = 0;                                                                                                                                                                                                                        \
-            }                                                                                                                                                                                                                                    \
-            else                                                                                                                                                                                                                                 \
-            {                                                                                                                                                                                                                                    \
-               int _lz;                                                                                                                                                                                                                          \
-               FP_SET_EXCEPTION(FP_EX_DENORM);                                                                                                                                                                                                   \
-               _FP_FRAC_CLZ_##swc(_lz, S);                                                                                                                                                                                                       \
-               _FP_FRAC_SLL_##dwc(D, _lz + _FP_FRACBITS_##dfs - _FP_FRACTBITS_##sfs);                                                                                                                                                            \
-               D##_e = (_FP_EXPBIAS_##dfs - _FP_EXPBIAS_##sfs + 1 + _FP_FRACXBITS_##sfs - _lz);                                                                                                                                                  \
-            }                                                                                                                                                                                                                                    \
-         }                                                                                                                                                                                                                                       \
-         else                                                                                                                                                                                                                                    \
-         {                                                                                                                                                                                                                                       \
-            D##_e = _FP_EXPMAX_##dfs;                                                                                                                                                                                                            \
-            if(!_FP_FRAC_ZEROP_##swc(S))                                                                                                                                                                                                         \
-            {                                                                                                                                                                                                                                    \
-               if(_FP_FRAC_SNANP(sfs, S))                                                                                                                                                                                                        \
-                  FP_SET_EXCEPTION(FP_EX_INVALID);                                                                                                                                                                                               \
-               _FP_FRAC_SLL_##dwc(D, (_FP_FRACBITS_##dfs - _FP_FRACBITS_##sfs));                                                                                                                                                                 \
-               _FP_SETQNAN(dfs, dwc, D);                                                                                                                                                                                                         \
-            }                                                                                                                                                                                                                                    \
-         }                                                                                                                                                                                                                                       \
-      }                                                                                                                                                                                                                                          \
+#define FP_EXTEND(dfs, sfs, dwc, swc, D, S)                                                                          \
+   do                                                                                                                \
+   {                                                                                                                 \
+      if(_FP_FRACBITS_##dfs < _FP_FRACBITS_##sfs ||                                                                  \
+         (_FP_EXPMAX_##dfs - _FP_EXPBIAS_##dfs < _FP_EXPMAX_##sfs - _FP_EXPBIAS_##sfs) ||                            \
+         (_FP_EXPBIAS_##dfs < _FP_EXPBIAS_##sfs + _FP_FRACBITS_##sfs - 1 && _FP_EXPBIAS_##dfs != _FP_EXPBIAS_##sfs)) \
+         abort();                                                                                                    \
+      D##_s = S##_s;                                                                                                 \
+      _FP_FRAC_COPY_##dwc##_##swc(D, S);                                                                             \
+      if(_FP_EXP_NORMAL(sfs, swc, S))                                                                                \
+      {                                                                                                              \
+         D##_e = S##_e + _FP_EXPBIAS_##dfs - _FP_EXPBIAS_##sfs;                                                      \
+         _FP_FRAC_SLL_##dwc(D, (_FP_FRACBITS_##dfs - _FP_FRACBITS_##sfs));                                           \
+      }                                                                                                              \
+      else                                                                                                           \
+      {                                                                                                              \
+         if(S##_e == 0)                                                                                              \
+         {                                                                                                           \
+            if(NO_DENORM || _FP_FRAC_ZEROP_##swc(S))                                                                 \
+               D##_e = 0;                                                                                            \
+            else if(_FP_EXPBIAS_##dfs < _FP_EXPBIAS_##sfs + _FP_FRACBITS_##sfs - 1)                                  \
+            {                                                                                                        \
+               FP_SET_EXCEPTION(FP_EX_DENORM);                                                                       \
+               _FP_FRAC_SLL_##dwc(D, (_FP_FRACBITS_##dfs - _FP_FRACBITS_##sfs));                                     \
+               D##_e = 0;                                                                                            \
+            }                                                                                                        \
+            else                                                                                                     \
+            {                                                                                                        \
+               int _lz;                                                                                              \
+               FP_SET_EXCEPTION(FP_EX_DENORM);                                                                       \
+               _FP_FRAC_CLZ_##swc(_lz, S);                                                                           \
+               _FP_FRAC_SLL_##dwc(D, _lz + _FP_FRACBITS_##dfs - _FP_FRACTBITS_##sfs);                                \
+               D##_e = (_FP_EXPBIAS_##dfs - _FP_EXPBIAS_##sfs + 1 + _FP_FRACXBITS_##sfs - _lz);                      \
+            }                                                                                                        \
+         }                                                                                                           \
+         else                                                                                                        \
+         {                                                                                                           \
+            D##_e = _FP_EXPMAX_##dfs;                                                                                \
+            if(!_FP_FRAC_ZEROP_##swc(S))                                                                             \
+            {                                                                                                        \
+               if(_FP_FRAC_SNANP(sfs, S))                                                                            \
+                  FP_SET_EXCEPTION(FP_EX_INVALID);                                                                   \
+               _FP_FRAC_SLL_##dwc(D, (_FP_FRACBITS_##dfs - _FP_FRACBITS_##sfs));                                     \
+               _FP_SETQNAN(dfs, dwc, D);                                                                             \
+            }                                                                                                        \
+         }                                                                                                           \
+      }                                                                                                              \
    } while(0)
 
 /* Truncate from a wider floating-point format to a narrower one.
    Input and output are semi-raw.  */
-#define FP_TRUNC(dfs, sfs, dwc, swc, D, S)                                                                                                                      \
-   do                                                                                                                                                           \
-   {                                                                                                                                                            \
-      if(_FP_FRACBITS_##sfs < _FP_FRACBITS_##dfs || (_FP_EXPBIAS_##sfs < _FP_EXPBIAS_##dfs + _FP_FRACBITS_##dfs - 1 && _FP_EXPBIAS_##sfs != _FP_EXPBIAS_##dfs)) \
-         abort();                                                                                                                                               \
-      D##_s = S##_s;                                                                                                                                            \
-      if(_FP_EXP_NORMAL(sfs, swc, S))                                                                                                                           \
-      {                                                                                                                                                         \
-         D##_e = S##_e + _FP_EXPBIAS_##dfs - _FP_EXPBIAS_##sfs;                                                                                                 \
-         if(D##_e >= _FP_EXPMAX_##dfs)                                                                                                                          \
-            _FP_OVERFLOW_SEMIRAW(dfs, dwc, D);                                                                                                                  \
-         else                                                                                                                                                   \
-         {                                                                                                                                                      \
-            if(D##_e <= 0)                                                                                                                                      \
-            {                                                                                                                                                   \
-               if(D##_e < 1 - _FP_FRACBITS_##dfs)                                                                                                               \
-               {                                                                                                                                                \
-                  _FP_FRAC_SET_##swc(S, _FP_ZEROFRAC_##swc);                                                                                                    \
-                  _FP_FRAC_LOW_##swc(S) |= 1;                                                                                                                   \
-               }                                                                                                                                                \
-               else                                                                                                                                             \
-               {                                                                                                                                                \
-                  _FP_FRAC_HIGH_##sfs(S) |= _FP_IMPLBIT_SH_##sfs;                                                                                               \
-                  _FP_FRAC_SRS_##swc(S, (_FP_WFRACBITS_##sfs - _FP_WFRACBITS_##dfs + 1 - D##_e), _FP_WFRACBITS_##sfs);                                          \
-               }                                                                                                                                                \
-               D##_e = 0;                                                                                                                                       \
-            }                                                                                                                                                   \
-            else                                                                                                                                                \
-               _FP_FRAC_SRS_##swc(S, (_FP_WFRACBITS_##sfs - _FP_WFRACBITS_##dfs), _FP_WFRACBITS_##sfs);                                                         \
-            _FP_FRAC_COPY_##dwc##_##swc(D, S);                                                                                                                  \
-         }                                                                                                                                                      \
-      }                                                                                                                                                         \
-      else                                                                                                                                                      \
-      {                                                                                                                                                         \
-         if(S##_e == 0)                                                                                                                                         \
-         {                                                                                                                                                      \
-            D##_e = 0;                                                                                                                                          \
-            if(NO_DENORM || _FP_FRAC_ZEROP_##swc(S))                                                                                                            \
-               _FP_FRAC_SET_##dwc(D, _FP_ZEROFRAC_##dwc);                                                                                                       \
-            else                                                                                                                                                \
-            {                                                                                                                                                   \
-               FP_SET_EXCEPTION(FP_EX_DENORM);                                                                                                                  \
-               if(_FP_EXPBIAS_##sfs < _FP_EXPBIAS_##dfs + _FP_FRACBITS_##dfs - 1)                                                                               \
-               {                                                                                                                                                \
-                  _FP_FRAC_SRS_##swc(S, (_FP_WFRACBITS_##sfs - _FP_WFRACBITS_##dfs), _FP_WFRACBITS_##sfs);                                                      \
-                  _FP_FRAC_COPY_##dwc##_##swc(D, S);                                                                                                            \
-               }                                                                                                                                                \
-               else                                                                                                                                             \
-               {                                                                                                                                                \
-                  _FP_FRAC_SET_##dwc(D, _FP_ZEROFRAC_##dwc);                                                                                                    \
-                  _FP_FRAC_LOW_##dwc(D) |= 1;                                                                                                                   \
-               }                                                                                                                                                \
-            }                                                                                                                                                   \
-         }                                                                                                                                                      \
-         else                                                                                                                                                   \
-         {                                                                                                                                                      \
-            D##_e = _FP_EXPMAX_##dfs;                                                                                                                           \
-            if(_FP_FRAC_ZEROP_##swc(S))                                                                                                                         \
-               _FP_FRAC_SET_##dwc(D, _FP_ZEROFRAC_##dwc);                                                                                                       \
-            else                                                                                                                                                \
-            {                                                                                                                                                   \
-               _FP_CHECK_SIGNAN_SEMIRAW(sfs, swc, S);                                                                                                           \
-               _FP_FRAC_SRL_##swc(S, (_FP_WFRACBITS_##sfs - _FP_WFRACBITS_##dfs));                                                                              \
-               _FP_FRAC_COPY_##dwc##_##swc(D, S);                                                                                                               \
-               /* Semi-raw NaN must have all workbits cleared.  */                                                                                              \
-               _FP_FRAC_LOW_##dwc(D) &= ~(_FP_W_TYPE)((1 << _FP_WORKBITS) - 1);                                                                                 \
-               _FP_SETQNAN_SEMIRAW(dfs, dwc, D);                                                                                                                \
-            }                                                                                                                                                   \
-         }                                                                                                                                                      \
-      }                                                                                                                                                         \
+#define FP_TRUNC(dfs, sfs, dwc, swc, D, S)                                                                             \
+   do                                                                                                                  \
+   {                                                                                                                   \
+      if(_FP_FRACBITS_##sfs < _FP_FRACBITS_##dfs ||                                                                    \
+         (_FP_EXPBIAS_##sfs < _FP_EXPBIAS_##dfs + _FP_FRACBITS_##dfs - 1 && _FP_EXPBIAS_##sfs != _FP_EXPBIAS_##dfs))   \
+         abort();                                                                                                      \
+      D##_s = S##_s;                                                                                                   \
+      if(_FP_EXP_NORMAL(sfs, swc, S))                                                                                  \
+      {                                                                                                                \
+         D##_e = S##_e + _FP_EXPBIAS_##dfs - _FP_EXPBIAS_##sfs;                                                        \
+         if(D##_e >= _FP_EXPMAX_##dfs)                                                                                 \
+            _FP_OVERFLOW_SEMIRAW(dfs, dwc, D);                                                                         \
+         else                                                                                                          \
+         {                                                                                                             \
+            if(D##_e <= 0)                                                                                             \
+            {                                                                                                          \
+               if(D##_e < 1 - _FP_FRACBITS_##dfs)                                                                      \
+               {                                                                                                       \
+                  _FP_FRAC_SET_##swc(S, _FP_ZEROFRAC_##swc);                                                           \
+                  _FP_FRAC_LOW_##swc(S) |= 1;                                                                          \
+               }                                                                                                       \
+               else                                                                                                    \
+               {                                                                                                       \
+                  _FP_FRAC_HIGH_##sfs(S) |= _FP_IMPLBIT_SH_##sfs;                                                      \
+                  _FP_FRAC_SRS_##swc(S, (_FP_WFRACBITS_##sfs - _FP_WFRACBITS_##dfs + 1 - D##_e), _FP_WFRACBITS_##sfs); \
+               }                                                                                                       \
+               D##_e = 0;                                                                                              \
+            }                                                                                                          \
+            else                                                                                                       \
+               _FP_FRAC_SRS_##swc(S, (_FP_WFRACBITS_##sfs - _FP_WFRACBITS_##dfs), _FP_WFRACBITS_##sfs);                \
+            _FP_FRAC_COPY_##dwc##_##swc(D, S);                                                                         \
+         }                                                                                                             \
+      }                                                                                                                \
+      else                                                                                                             \
+      {                                                                                                                \
+         if(S##_e == 0)                                                                                                \
+         {                                                                                                             \
+            D##_e = 0;                                                                                                 \
+            if(NO_DENORM || _FP_FRAC_ZEROP_##swc(S))                                                                   \
+               _FP_FRAC_SET_##dwc(D, _FP_ZEROFRAC_##dwc);                                                              \
+            else                                                                                                       \
+            {                                                                                                          \
+               FP_SET_EXCEPTION(FP_EX_DENORM);                                                                         \
+               if(_FP_EXPBIAS_##sfs < _FP_EXPBIAS_##dfs + _FP_FRACBITS_##dfs - 1)                                      \
+               {                                                                                                       \
+                  _FP_FRAC_SRS_##swc(S, (_FP_WFRACBITS_##sfs - _FP_WFRACBITS_##dfs), _FP_WFRACBITS_##sfs);             \
+                  _FP_FRAC_COPY_##dwc##_##swc(D, S);                                                                   \
+               }                                                                                                       \
+               else                                                                                                    \
+               {                                                                                                       \
+                  _FP_FRAC_SET_##dwc(D, _FP_ZEROFRAC_##dwc);                                                           \
+                  _FP_FRAC_LOW_##dwc(D) |= 1;                                                                          \
+               }                                                                                                       \
+            }                                                                                                          \
+         }                                                                                                             \
+         else                                                                                                          \
+         {                                                                                                             \
+            D##_e = _FP_EXPMAX_##dfs;                                                                                  \
+            if(_FP_FRAC_ZEROP_##swc(S))                                                                                \
+               _FP_FRAC_SET_##dwc(D, _FP_ZEROFRAC_##dwc);                                                              \
+            else                                                                                                       \
+            {                                                                                                          \
+               _FP_CHECK_SIGNAN_SEMIRAW(sfs, swc, S);                                                                  \
+               _FP_FRAC_SRL_##swc(S, (_FP_WFRACBITS_##sfs - _FP_WFRACBITS_##dfs));                                     \
+               _FP_FRAC_COPY_##dwc##_##swc(D, S);                                                                      \
+               /* Semi-raw NaN must have all workbits cleared.  */                                                     \
+               _FP_FRAC_LOW_##dwc(D) &= ~(_FP_W_TYPE)((1 << _FP_WORKBITS) - 1);                                        \
+               _FP_SETQNAN_SEMIRAW(dfs, dwc, D);                                                                       \
+            }                                                                                                          \
+         }                                                                                                             \
+      }                                                                                                                \
    } while(0)
 
 /*
@@ -1541,11 +1554,11 @@
    do                                                           \
    {                                                            \
       if(sizeof(_FP_W_TYPE) == sizeof(unsigned int))            \
-         r = __builtin_clz(x);                                  \
+         r = clz(x);                                            \
       else if(sizeof(_FP_W_TYPE) == sizeof(unsigned long))      \
-         r = __builtin_clzl(x);                                 \
+         r = clzl(x);                                           \
       else if(sizeof(_FP_W_TYPE) == sizeof(unsigned long long)) \
-         r = __builtin_clzll(x);                                \
+         r = clzll(x);                                          \
       else                                                      \
          abort();                                               \
    } while(0)

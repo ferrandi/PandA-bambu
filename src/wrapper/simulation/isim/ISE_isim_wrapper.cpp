@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -43,11 +43,6 @@
  *
  */
 
-/// Autoheader include
-#include "config_XILINX_SETTINGS.hpp"
-
-#include "config_HAVE_XILINX.hpp"
-
 /// Includes the class definition
 #include "ISE_isim_wrapper.hpp"
 
@@ -69,7 +64,8 @@
 #include <fstream>
 
 // constructor
-ISE_isim_wrapper::ISE_isim_wrapper(const ParameterConstRef& _Param, std::string _suffix) : SimulationTool(_Param), suffix(std::move(_suffix))
+ISE_isim_wrapper::ISE_isim_wrapper(const ParameterConstRef& _Param, std::string _suffix)
+    : SimulationTool(_Param), suffix(std::move(_suffix))
 {
    PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Creating the ISIM wrapper...");
    boost::filesystem::create_directory(ISIM_SUBDIR + suffix + "/");
@@ -80,12 +76,10 @@ ISE_isim_wrapper::~ISE_isim_wrapper() = default;
 
 void ISE_isim_wrapper::CheckExecution()
 {
-#if !HAVE_XILINX
-   THROW_ERROR("Xilinx tools not correctly configured!");
-#endif
 }
 
-std::string ISE_isim_wrapper::create_project_script(const std::string& top_filename, const std::list<std::string>& file_list)
+std::string ISE_isim_wrapper::create_project_script(const std::string& top_filename,
+                                                    const std::list<std::string>& file_list)
 {
    std::string project_filename = ISIM_SUBDIR + suffix + "/" + top_filename + ".prj";
    std::ofstream prj_file(project_filename.c_str());
@@ -118,14 +112,15 @@ std::string ISE_isim_wrapper::create_project_script(const std::string& top_filen
       {
          prj_file << language << " "
                   << "work"
-                  << " " << boost::filesystem::current_path().string() << "/" << filename << std::endl;
+                  << " " << boost::filesystem::path(GetCurrentPath()).string() << "/" << filename << std::endl;
       }
    }
    prj_file.close();
    return project_filename;
 }
 
-void ISE_isim_wrapper::GenerateScript(std::ostringstream& script, const std::string& top_filename, const std::list<std::string>& file_list)
+void ISE_isim_wrapper::GenerateScript(std::ostringstream& script, const std::string& top_filename,
+                                      const std::list<std::string>& file_list)
 {
    std::string project_file = create_project_script(top_filename, file_list);
    PRINT_OUT_MEX(OUTPUT_LEVEL_VERY_PEDANTIC, output_level, "Project file: " + project_file);
@@ -133,7 +128,7 @@ void ISE_isim_wrapper::GenerateScript(std::ostringstream& script, const std::str
    log_file = ISIM_SUBDIR + suffix + "/" + top_filename + "_isim.log";
 
    script << "#configuration" << std::endl;
-   auto setupscr = STR(XILINX_SETTINGS);
+   auto setupscr = Param->isOption(OPT_xilinx_settings) ? Param->getOption<std::string>(OPT_xilinx_settings) : "";
    if(!setupscr.empty() && setupscr != "0")
    {
       if(boost::algorithm::starts_with(setupscr, "export"))

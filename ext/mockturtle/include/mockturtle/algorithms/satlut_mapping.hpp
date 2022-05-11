@@ -1,5 +1,5 @@
 /* mockturtle: C++ logic network library
- * Copyright (C) 2018-2019  EPFL
+ * Copyright (C) 2018-2021  EPFL
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -27,6 +27,7 @@
   \file satlut_mapping.hpp
   \brief SAT LUT mapping
 
+  \author Heinz Riener
   \author Mathias Soeken
 */
 
@@ -35,6 +36,7 @@
 #include <cmath>
 
 #include "../generators/sorting.hpp"
+#include "../utils/include/percy.hpp"
 #include "../utils/node_map.hpp"
 #include "../utils/progress_bar.hpp"
 #include "../utils/stopwatch.hpp"
@@ -44,7 +46,6 @@
 #include "cut_enumeration/mf_cut.hpp"
 
 #include <fmt/format.h>
-#include <percy/solvers/bsat2.hpp>
 
 namespace mockturtle
 {
@@ -124,14 +125,14 @@ std::vector<int> cardinality_network( Solver& solver, std::vector<int> const& va
   auto logn = static_cast<uint32_t>( ceil( log2( vars.size() ) ) );
   auto current = vars;
 
-  if ( current.size() != ( 1u << logn ) )
+  if ( current.size() != static_cast<uint64_t>( 1u ) << logn )
   {
-    current.resize( 1u << logn, next_var );
+    current.resize( static_cast<uint64_t>( 1u ) << logn, next_var );
     lits[0] = pabc::Abc_Var2Lit( next_var++, 1 );
     solver.add_clause( lits, lits + 1);
   }
 
-  batcher_sorting_network( current.size(), [&]( auto a, auto b ) {
+  batcher_sorting_network( static_cast<uint32_t>( current.size() ), [&]( auto a, auto b ) {
     auto va = current[a];
     auto vb = current[b];
     auto va_next = next_var++;

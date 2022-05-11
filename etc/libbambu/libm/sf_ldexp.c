@@ -28,14 +28,14 @@
 
 float ldexpf(float value, int exp)
 {
-   if(!__finitef(value) || value == (float)0.0)
+   if(!finitef(value) || value == (float)0.0)
       return value;
    value = scalbnf(value, exp);
 #ifdef WITH_ERRNO
-   if(!__finitef(value) || value == (float)0.0)
+   if(!finitef(value) || value == (float)0.0)
       errno = ERANGE;
 #else
-   if(!__finitef(value) || value == (float)0.0)
+   if(!finitef(value) || value == (float)0.0)
       return (value - value) / (value - value);
 #endif
    return value;

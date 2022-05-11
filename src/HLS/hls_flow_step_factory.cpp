@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -68,6 +68,7 @@
 #include "control_flow_checker.hpp"
 #include "controller_cs.hpp"
 #include "fsm_controller.hpp"
+#include "pipeline_controller.hpp"
 #if HAVE_EXPERIMENTAL
 #include "ParallelController.hpp"
 #endif
@@ -214,19 +215,16 @@
 /// HLS/memory
 #include "mem_dominator_allocation.hpp"
 #include "mem_dominator_allocation_cs.hpp"
-#include "mem_xml_allocation.hpp"
 
 /// HLS/module_allocation includes
 #include "add_library.hpp"
 #include "allocation.hpp"
-#include "hls_bit_value.hpp"
 #include "hls_function_bit_value.hpp"
 #if HAVE_FROM_PRAGMA_BUILT
 #include "omp_allocation.hpp"
 #endif
 
 /// HLS/scheduling include
-#include "fixed_scheduling.hpp"
 #if HAVE_ILP_BUILT && HAVE_EXPERIMENTAL
 #include "ilp_scheduling.hpp"
 #include "ilp_scheduling_new.hpp"
@@ -279,7 +277,9 @@
 #include "string_manipulation.hpp" // for GET_CLASS
 #include "xml_helper.hpp"
 
-HLSFlowStepFactory::HLSFlowStepFactory(const DesignFlowManagerConstRef _design_flow_manager, const HLS_managerRef _HLS_mgr, const ParameterConstRef _parameters) : DesignFlowStepFactory(_design_flow_manager, _parameters), HLS_mgr(_HLS_mgr)
+HLSFlowStepFactory::HLSFlowStepFactory(const DesignFlowManagerConstRef _design_flow_manager,
+                                       const HLS_managerRef _HLS_mgr, const ParameterConstRef _parameters)
+    : DesignFlowStepFactory(_design_flow_manager, _parameters), HLS_mgr(_HLS_mgr)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
 }
@@ -291,16 +291,22 @@ const std::string HLSFlowStepFactory::GetPrefix() const
    return "HLS";
 }
 
-DesignFlowStepRef HLSFlowStepFactory::CreateHLSFlowStep(const HLSFlowStep_Type type, const unsigned int funId, const HLSFlowStepSpecializationConstRef hls_flow_step_specialization) const
+DesignFlowStepRef
+HLSFlowStepFactory::CreateHLSFlowStep(const HLSFlowStep_Type type, const unsigned int funId,
+                                      const HLSFlowStepSpecializationConstRef hls_flow_step_specialization) const
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                  "-->Creating step " + (funId ? HLSFunctionStep::ComputeSignature(type, hls_flow_step_specialization, funId) : HLS_step::ComputeSignature(type, hls_flow_step_specialization)) + " (" + HLS_step::EnumToName(type) + ")");
+                  "-->Creating step " +
+                      (funId ? HLSFunctionStep::ComputeSignature(type, hls_flow_step_specialization, funId) :
+                               HLS_step::ComputeSignature(type, hls_flow_step_specialization)) +
+                      " (" + HLS_step::EnumToName(type) + ")");
    DesignFlowStepRef design_flow_step = DesignFlowStepRef();
    switch(type)
    {
       case HLSFlowStep_Type::ADD_LIBRARY:
       {
-         design_flow_step = DesignFlowStepRef(new add_library(parameters, HLS_mgr, funId, design_flow_manager.lock(), hls_flow_step_specialization));
+         design_flow_step = DesignFlowStepRef(
+             new add_library(parameters, HLS_mgr, funId, design_flow_manager.lock(), hls_flow_step_specialization));
          break;
       }
       case HLSFlowStep_Type::ALLOCATION:
@@ -311,12 +317,14 @@ DesignFlowStepRef HLSFlowStepFactory::CreateHLSFlowStep(const HLSFlowStep_Type t
 #if HAVE_EXPERIMENTAL
       case HLSFlowStep_Type::AREA_ESTIMATION:
       {
-         design_flow_step = DesignFlowStepRef(new area_estimation(parameters, HLS_mgr, funId, design_flow_manager.lock()));
+         design_flow_step =
+             DesignFlowStepRef(new area_estimation(parameters, HLS_mgr, funId, design_flow_manager.lock()));
          break;
       }
       case HLSFlowStep_Type::AXI4LITE_INTERFACE_GENERATION:
       {
-         design_flow_step = DesignFlowStepRef(new axi4lite_interface(parameters, HLS_mgr, funId, design_flow_manager.lock()));
+         design_flow_step =
+             DesignFlowStepRef(new axi4lite_interface(parameters, HLS_mgr, funId, design_flow_manager.lock()));
          break;
       }
 #endif
@@ -332,56 +340,66 @@ DesignFlowStepRef HLSFlowStepFactory::CreateHLSFlowStep(const HLSFlowStep_Type t
       }
       case HLSFlowStep_Type::CDFC_MODULE_BINDING:
       {
-         design_flow_step = DesignFlowStepRef(new cdfc_module_binding(parameters, HLS_mgr, funId, design_flow_manager.lock(), hls_flow_step_specialization));
+         design_flow_step = DesignFlowStepRef(new cdfc_module_binding(
+             parameters, HLS_mgr, funId, design_flow_manager.lock(), hls_flow_step_specialization));
          break;
       }
 #if HAVE_EXPERIMENTAL
       case HLSFlowStep_Type::CHAINING_BASED_LIVENESS:
       {
-         design_flow_step = DesignFlowStepRef(new chaining_based_liveness(parameters, HLS_mgr, funId, design_flow_manager.lock()));
+         design_flow_step =
+             DesignFlowStepRef(new chaining_based_liveness(parameters, HLS_mgr, funId, design_flow_manager.lock()));
          break;
       }
 #endif
       case HLSFlowStep_Type::CHORDAL_COLORING_REGISTER_BINDING:
       {
-         design_flow_step = DesignFlowStepRef(new chordal_coloring_register(parameters, HLS_mgr, funId, design_flow_manager.lock()));
+         design_flow_step =
+             DesignFlowStepRef(new chordal_coloring_register(parameters, HLS_mgr, funId, design_flow_manager.lock()));
          break;
       }
       case HLSFlowStep_Type::CLASSIC_DATAPATH_CREATOR:
       {
-         design_flow_step = DesignFlowStepRef(new classic_datapath(parameters, HLS_mgr, funId, design_flow_manager.lock()));
+         design_flow_step =
+             DesignFlowStepRef(new classic_datapath(parameters, HLS_mgr, funId, design_flow_manager.lock()));
          break;
       }
       case HLSFlowStep_Type::DATAPATH_CS_CREATOR:
       {
-         design_flow_step = DesignFlowStepRef(new datapath_cs(parameters, HLS_mgr, funId, design_flow_manager.lock(), HLSFlowStep_Type::DATAPATH_CS_CREATOR));
+         design_flow_step = DesignFlowStepRef(new datapath_cs(parameters, HLS_mgr, funId, design_flow_manager.lock(),
+                                                              HLSFlowStep_Type::DATAPATH_CS_CREATOR));
          break;
       }
       case HLSFlowStep_Type::DATAPATH_CS_PARALLEL_CREATOR:
       {
-         design_flow_step = DesignFlowStepRef(new datapath_parallel_cs(parameters, HLS_mgr, funId, design_flow_manager.lock(), HLSFlowStep_Type::DATAPATH_CS_PARALLEL_CREATOR));
+         design_flow_step = DesignFlowStepRef(new datapath_parallel_cs(
+             parameters, HLS_mgr, funId, design_flow_manager.lock(), HLSFlowStep_Type::DATAPATH_CS_PARALLEL_CREATOR));
          break;
       }
       case HLSFlowStep_Type::CLASSICAL_HLS_SYNTHESIS_FLOW:
       {
-         design_flow_step = DesignFlowStepRef(new ClassicalHLSSynthesisFlow(parameters, HLS_mgr, design_flow_manager.lock()));
+         design_flow_step =
+             DesignFlowStepRef(new ClassicalHLSSynthesisFlow(parameters, HLS_mgr, design_flow_manager.lock()));
          break;
       }
 #if HAVE_EXPERIMENTAL
       case HLSFlowStep_Type::CLOCK_SLACK_ESTIMATION:
       {
-         design_flow_step = DesignFlowStepRef(new clock_slack_estimation(parameters, HLS_mgr, design_flow_manager.lock()));
+         design_flow_step =
+             DesignFlowStepRef(new clock_slack_estimation(parameters, HLS_mgr, design_flow_manager.lock()));
          break;
       }
 #endif
       case HLSFlowStep_Type::COLORING_REGISTER_BINDING:
       {
-         design_flow_step = DesignFlowStepRef(new vertex_coloring_register(parameters, HLS_mgr, funId, design_flow_manager.lock()));
+         design_flow_step =
+             DesignFlowStepRef(new vertex_coloring_register(parameters, HLS_mgr, funId, design_flow_manager.lock()));
          break;
       }
       case HLSFlowStep_Type::CONTROL_FLOW_CHECKER:
       {
-         design_flow_step = DesignFlowStepRef(new ControlFlowChecker(parameters, HLS_mgr, funId, design_flow_manager.lock()));
+         design_flow_step =
+             DesignFlowStepRef(new ControlFlowChecker(parameters, HLS_mgr, funId, design_flow_manager.lock()));
          break;
       }
       case HLSFlowStep_Type::C_TESTBENCH_EXECUTION:
@@ -391,17 +409,21 @@ DesignFlowStepRef HLSFlowStepFactory::CreateHLSFlowStep(const HLSFlowStep_Type t
       }
       case HLSFlowStep_Type::DOMINATOR_FUNCTION_ALLOCATION:
       {
-         design_flow_step = DesignFlowStepRef(new fun_dominator_allocation(parameters, HLS_mgr, design_flow_manager.lock()));
+         design_flow_step =
+             DesignFlowStepRef(new fun_dominator_allocation(parameters, HLS_mgr, design_flow_manager.lock()));
          break;
       }
       case HLSFlowStep_Type::DOMINATOR_MEMORY_ALLOCATION:
       {
-         design_flow_step = DesignFlowStepRef(new mem_dominator_allocation(parameters, HLS_mgr, design_flow_manager.lock(), hls_flow_step_specialization));
+         design_flow_step = DesignFlowStepRef(new mem_dominator_allocation(
+             parameters, HLS_mgr, design_flow_manager.lock(), hls_flow_step_specialization));
          break;
       }
       case HLSFlowStep_Type::DOMINATOR_MEMORY_ALLOCATION_CS:
       {
-         design_flow_step = DesignFlowStepRef(new mem_dominator_allocation_cs(parameters, HLS_mgr, design_flow_manager.lock(), hls_flow_step_specialization, HLSFlowStep_Type::DOMINATOR_MEMORY_ALLOCATION_CS));
+         design_flow_step = DesignFlowStepRef(new mem_dominator_allocation_cs(
+             parameters, HLS_mgr, design_flow_manager.lock(), hls_flow_step_specialization,
+             HLSFlowStep_Type::DOMINATOR_MEMORY_ALLOCATION_CS));
          break;
       }
       case HLSFlowStep_Type::DRY_RUN_EVALUATION:
@@ -418,7 +440,8 @@ DesignFlowStepRef HLSFlowStepFactory::CreateHLSFlowStep(const HLSFlowStep_Type t
 #endif
       case HLSFlowStep_Type::EASY_MODULE_BINDING:
       {
-         design_flow_step = DesignFlowStepRef(new easy_module_binding(parameters, HLS_mgr, funId, design_flow_manager.lock()));
+         design_flow_step =
+             DesignFlowStepRef(new easy_module_binding(parameters, HLS_mgr, funId, design_flow_manager.lock()));
          break;
       }
 #if HAVE_EXPERIMENTAL
@@ -430,18 +453,21 @@ DesignFlowStepRef HLSFlowStepFactory::CreateHLSFlowStep(const HLSFlowStep_Type t
 #endif
       case HLSFlowStep_Type::LIST_BASED_SCHEDULING:
       {
-         design_flow_step = DesignFlowStepRef(new parametric_list_based(parameters, HLS_mgr, funId, design_flow_manager.lock(), hls_flow_step_specialization));
+         design_flow_step = DesignFlowStepRef(new parametric_list_based(
+             parameters, HLS_mgr, funId, design_flow_manager.lock(), hls_flow_step_specialization));
          break;
       }
 #if HAVE_EXPERIMENTAL
       case HLSFlowStep_Type::EDGES_REDUCTION_EVALUATION:
       {
-         design_flow_step = DesignFlowStepRef(new edges_reduction_evaluation(parameters, HLS_mgr, funId, design_flow_manager.lock()));
+         design_flow_step =
+             DesignFlowStepRef(new edges_reduction_evaluation(parameters, HLS_mgr, funId, design_flow_manager.lock()));
          break;
       }
       case HLSFlowStep_Type::EPDG_SCHED_CHAINING:
       {
-         design_flow_step = DesignFlowStepRef(new epdg_sched_based_chaining_computation(parameters, HLS_mgr, funId, design_flow_manager.lock()));
+         design_flow_step = DesignFlowStepRef(
+             new epdg_sched_based_chaining_computation(parameters, HLS_mgr, funId, design_flow_manager.lock()));
          break;
       }
 #endif
@@ -453,7 +479,8 @@ DesignFlowStepRef HLSFlowStepFactory::CreateHLSFlowStep(const HLSFlowStep_Type t
 #if HAVE_EXPERIMENTAL
       case HLSFlowStep_Type::EXPLORE_MUX_DESIGN_FLOW:
       {
-         design_flow_step = DesignFlowStepRef(new explore_mux_hls(parameters, HLS_mgr, funId, design_flow_manager.lock()));
+         design_flow_step =
+             DesignFlowStepRef(new explore_mux_hls(parameters, HLS_mgr, funId, design_flow_manager.lock()));
          break;
       }
       case HLSFlowStep_Type::EXPORT_PCORE:
@@ -462,37 +489,37 @@ DesignFlowStepRef HLSFlowStepFactory::CreateHLSFlowStep(const HLSFlowStep_Type t
          break;
       }
 #endif
-      case HLSFlowStep_Type::FIXED_SCHEDULING:
-      {
-         design_flow_step = DesignFlowStepRef(new fixed_scheduling(parameters, HLS_mgr, funId, design_flow_manager.lock()));
-         break;
-      }
 #if HAVE_EXPERIMENTAL
       case HLSFlowStep_Type::FSL_INTERFACE_GENERATION:
       {
-         design_flow_step = DesignFlowStepRef(new FSL_interface(parameters, HLS_mgr, funId, design_flow_manager.lock()));
+         design_flow_step =
+             DesignFlowStepRef(new FSL_interface(parameters, HLS_mgr, funId, design_flow_manager.lock()));
          break;
       }
 #endif
       case HLSFlowStep_Type::FSM_CONTROLLER_CREATOR:
       {
-         design_flow_step = DesignFlowStepRef(new fsm_controller(parameters, HLS_mgr, funId, design_flow_manager.lock()));
+         design_flow_step =
+             DesignFlowStepRef(new fsm_controller(parameters, HLS_mgr, funId, design_flow_manager.lock()));
          break;
       }
       case HLSFlowStep_Type::FSM_CS_CONTROLLER_CREATOR:
       {
-         design_flow_step = DesignFlowStepRef(new controller_cs(parameters, HLS_mgr, funId, design_flow_manager.lock(), HLSFlowStep_Type::FSM_CS_CONTROLLER_CREATOR));
+         design_flow_step = DesignFlowStepRef(new controller_cs(parameters, HLS_mgr, funId, design_flow_manager.lock(),
+                                                                HLSFlowStep_Type::FSM_CS_CONTROLLER_CREATOR));
          break;
       }
       case HLSFlowStep_Type::FSM_NI_SSA_LIVENESS:
       {
-         design_flow_step = DesignFlowStepRef(new FSM_NI_SSA_liveness(parameters, HLS_mgr, funId, design_flow_manager.lock()));
+         design_flow_step =
+             DesignFlowStepRef(new FSM_NI_SSA_liveness(parameters, HLS_mgr, funId, design_flow_manager.lock()));
          break;
       }
 #if HAVE_EXPERIMENTAL
       case HLSFlowStep_Type::FU_REG_BINDING_DESIGN_FLOW:
       {
-         design_flow_step = DesignFlowStepRef(new fu_reg_binding_hls(parameters, HLS_mgr, funId, design_flow_manager.lock()));
+         design_flow_step =
+             DesignFlowStepRef(new fu_reg_binding_hls(parameters, HLS_mgr, funId, design_flow_manager.lock()));
          break;
       }
 #endif
@@ -504,47 +531,49 @@ DesignFlowStepRef HLSFlowStepFactory::CreateHLSFlowStep(const HLSFlowStep_Type t
 #if HAVE_EXPERIMENTAL
       case HLSFlowStep_Type::GENERATE_RESP:
       {
-         design_flow_step = DesignFlowStepRef(new generate_resp(parameters, HLS_mgr, funId, design_flow_manager.lock()));
+         design_flow_step =
+             DesignFlowStepRef(new generate_resp(parameters, HLS_mgr, funId, design_flow_manager.lock()));
          break;
       }
 #endif
 #if HAVE_SIMULATION_WRAPPER_BUILT
       case HLSFlowStep_Type::GENERATE_SIMULATION_SCRIPT:
       {
-         design_flow_step = DesignFlowStepRef(new GenerateSimulationScripts(parameters, HLS_mgr, design_flow_manager.lock()));
+         design_flow_step =
+             DesignFlowStepRef(new GenerateSimulationScripts(parameters, HLS_mgr, design_flow_manager.lock()));
          break;
       }
 #endif
       case HLSFlowStep_Type::GENERATE_SYNTHESIS_SCRIPT:
       {
-         design_flow_step = DesignFlowStepRef(new GenerateSynthesisScripts(parameters, HLS_mgr, design_flow_manager.lock()));
+         design_flow_step =
+             DesignFlowStepRef(new GenerateSynthesisScripts(parameters, HLS_mgr, design_flow_manager.lock()));
          break;
       }
 #if HAVE_TASTE
       case HLSFlowStep_Type::GENERATE_TASTE_HDL_ARCHITECTURE:
       {
-         design_flow_step = DesignFlowStepRef(new GenerateTasteHDLArchitecture(parameters, HLS_mgr, design_flow_manager.lock()));
+         design_flow_step =
+             DesignFlowStepRef(new GenerateTasteHDLArchitecture(parameters, HLS_mgr, design_flow_manager.lock()));
          break;
       }
       case HLSFlowStep_Type::GENERATE_TASTE_SYNTHESIS_SCRIPT:
       {
-         design_flow_step = DesignFlowStepRef(new GenerateTasteSynthesisScript(parameters, HLS_mgr, design_flow_manager.lock()));
+         design_flow_step =
+             DesignFlowStepRef(new GenerateTasteSynthesisScript(parameters, HLS_mgr, design_flow_manager.lock()));
          break;
       }
 #endif
-      case HLSFlowStep_Type::HLS_BIT_VALUE:
-      {
-         design_flow_step = DesignFlowStepRef(new HLSBitValue(parameters, HLS_mgr, design_flow_manager.lock()));
-         break;
-      }
       case HLSFlowStep_Type::HLS_FUNCTION_BIT_VALUE:
       {
-         design_flow_step = DesignFlowStepRef(new HLSFunctionBitValue(parameters, HLS_mgr, funId, design_flow_manager.lock()));
+         design_flow_step =
+             DesignFlowStepRef(new HLSFunctionBitValue(parameters, HLS_mgr, funId, design_flow_manager.lock()));
          break;
       }
       case HLSFlowStep_Type::HLS_SYNTHESIS_FLOW:
       {
-         design_flow_step = DesignFlowStepRef(new HLSSynthesisFlow(parameters, HLS_mgr, funId, design_flow_manager.lock()));
+         design_flow_step =
+             DesignFlowStepRef(new HLSSynthesisFlow(parameters, HLS_mgr, funId, design_flow_manager.lock()));
          break;
       }
       case HLSFlowStep_Type::HW_PATH_COMPUTATION:
@@ -554,24 +583,28 @@ DesignFlowStepRef HLSFlowStepFactory::CreateHLSFlowStep(const HLSFlowStep_Type t
       }
       case HLSFlowStep_Type::HW_DISCREPANCY_ANALYSIS:
       {
-         design_flow_step = DesignFlowStepRef(new HWDiscrepancyAnalysis(parameters, HLS_mgr, design_flow_manager.lock()));
+         design_flow_step =
+             DesignFlowStepRef(new HWDiscrepancyAnalysis(parameters, HLS_mgr, design_flow_manager.lock()));
          break;
       }
 #if HAVE_ILP_BUILT && HAVE_EXPERIMENTAL
       case HLSFlowStep_Type::ILP_NEW_FORM_SCHEDULING:
       {
-         design_flow_step = DesignFlowStepRef(new ilp_scheduling_new(parameters, HLS_mgr, funId, design_flow_manager.lock()));
+         design_flow_step =
+             DesignFlowStepRef(new ilp_scheduling_new(parameters, HLS_mgr, funId, design_flow_manager.lock()));
          break;
       }
       case HLSFlowStep_Type::ILP_SCHEDULING:
       {
-         design_flow_step = DesignFlowStepRef(new ilp_scheduling(parameters, HLS_mgr, funId, design_flow_manager.lock()));
+         design_flow_step =
+             DesignFlowStepRef(new ilp_scheduling(parameters, HLS_mgr, funId, design_flow_manager.lock()));
          break;
       }
 #endif
       case HLSFlowStep_Type::INITIALIZE_HLS:
       {
-         design_flow_step = DesignFlowStepRef(new InitializeHLS(parameters, HLS_mgr, funId, design_flow_manager.lock()));
+         design_flow_step =
+             DesignFlowStepRef(new InitializeHLS(parameters, HLS_mgr, funId, design_flow_manager.lock()));
          break;
       }
       case HLSFlowStep_Type::INTERFACE_CS_GENERATION:
@@ -582,130 +615,157 @@ DesignFlowStepRef HLSFlowStepFactory::CreateHLSFlowStep(const HLSFlowStep_Type t
 #if HAVE_EXPERIMENTAL
       case HLSFlowStep_Type::K_COFAMILY_REGISTER_BINDING:
       {
-         design_flow_step = DesignFlowStepRef(new k_cofamily_register(parameters, HLS_mgr, funId, design_flow_manager.lock()));
+         design_flow_step =
+             DesignFlowStepRef(new k_cofamily_register(parameters, HLS_mgr, funId, design_flow_manager.lock()));
          break;
       }
       case HLSFlowStep_Type::LEFT_EDGE_REGISTER_BINDING:
       {
-         design_flow_step = DesignFlowStepRef(new left_edge_register(parameters, HLS_mgr, funId, design_flow_manager.lock()));
+         design_flow_step =
+             DesignFlowStepRef(new left_edge_register(parameters, HLS_mgr, funId, design_flow_manager.lock()));
          break;
       }
 #endif
 #if HAVE_EXPERIMENTAL
       case HLSFlowStep_Type::MEMORY_CONFLICT_GRAPH:
       {
-         design_flow_step = DesignFlowStepRef(new mem_conflict_graph(parameters, HLS_mgr, funId, design_flow_manager.lock()));
+         design_flow_step =
+             DesignFlowStepRef(new mem_conflict_graph(parameters, HLS_mgr, funId, design_flow_manager.lock()));
          break;
       }
 #endif
       case HLSFlowStep_Type::MINIMAL_INTERFACE_GENERATION:
       {
-         design_flow_step = DesignFlowStepRef(new minimal_interface(parameters, HLS_mgr, funId, design_flow_manager.lock()));
+         design_flow_step =
+             DesignFlowStepRef(new minimal_interface(parameters, HLS_mgr, funId, design_flow_manager.lock()));
          break;
       }
       case HLSFlowStep_Type::INFERRED_INTERFACE_GENERATION:
       {
-         design_flow_step = DesignFlowStepRef(new minimal_interface(parameters, HLS_mgr, funId, design_flow_manager.lock()));
+         design_flow_step =
+             DesignFlowStepRef(new minimal_interface(parameters, HLS_mgr, funId, design_flow_manager.lock()));
          break;
       }
       case HLSFlowStep_Type::MINIMAL_TESTBENCH_GENERATION:
       {
-         design_flow_step = DesignFlowStepRef(new MinimalInterfaceTestbench(parameters, HLS_mgr, design_flow_manager.lock()));
+         design_flow_step =
+             DesignFlowStepRef(new MinimalInterfaceTestbench(parameters, HLS_mgr, design_flow_manager.lock()));
          break;
       }
       case HLSFlowStep_Type::MUX_INTERCONNECTION_BINDING:
       {
-         design_flow_step = DesignFlowStepRef(new mux_connection_binding(parameters, HLS_mgr, funId, design_flow_manager.lock()));
+         design_flow_step =
+             DesignFlowStepRef(new mux_connection_binding(parameters, HLS_mgr, funId, design_flow_manager.lock()));
          break;
       }
 #if HAVE_EXPERIMENTAL
       case HLSFlowStep_Type::NPI_INTERFACE_GENERATION:
       {
-         design_flow_step = DesignFlowStepRef(new NPI_interface(parameters, HLS_mgr, funId, design_flow_manager.lock()));
+         design_flow_step =
+             DesignFlowStepRef(new NPI_interface(parameters, HLS_mgr, funId, design_flow_manager.lock()));
          break;
       }
       case HLSFlowStep_Type::NUM_AF_EDGES_EVALUATION:
       {
-         design_flow_step = DesignFlowStepRef(new NumAFEdgesEvaluation(parameters, HLS_mgr, funId, design_flow_manager.lock()));
+         design_flow_step =
+             DesignFlowStepRef(new NumAFEdgesEvaluation(parameters, HLS_mgr, funId, design_flow_manager.lock()));
          break;
       }
 #endif
 #if HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
       case HLSFlowStep_Type::OMP_ALLOCATION:
       {
-         design_flow_step = DesignFlowStepRef(new OmpAllocation(parameters, HLS_mgr, funId, design_flow_manager.lock()));
+         design_flow_step =
+             DesignFlowStepRef(new OmpAllocation(parameters, HLS_mgr, funId, design_flow_manager.lock()));
          break;
       }
 #endif
 #if HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
       case HLSFlowStep_Type::OMP_BODY_LOOP_SYNTHESIS_FLOW:
       {
-         design_flow_step = DesignFlowStepRef(new OmpBodyLoopSynthesisFlow(parameters, HLS_mgr, funId, design_flow_manager.lock()));
+         design_flow_step =
+             DesignFlowStepRef(new OmpBodyLoopSynthesisFlow(parameters, HLS_mgr, funId, design_flow_manager.lock()));
          break;
       }
 #endif
 #if HAVE_EXPERIMENTAL && HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
       case HLSFlowStep_Type::OMP_FOR_WRAPPER_SYNTHESIS_FLOW:
       {
-         design_flow_step = DesignFlowStepRef(new OmpForWrapperSynthesisFlow(parameters, HLS_mgr, funId, design_flow_manager.lock()));
+         design_flow_step =
+             DesignFlowStepRef(new OmpForWrapperSynthesisFlow(parameters, HLS_mgr, funId, design_flow_manager.lock()));
          break;
       }
 #endif
 #if HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
       case HLSFlowStep_Type::OMP_FOR_WRAPPER_CS_SYNTHESIS_FLOW:
       {
-         design_flow_step = DesignFlowStepRef(new OmpForWrapperCSSynthesisFlow(parameters, HLS_mgr, funId, design_flow_manager.lock()));
+         design_flow_step = DesignFlowStepRef(
+             new OmpForWrapperCSSynthesisFlow(parameters, HLS_mgr, funId, design_flow_manager.lock()));
          break;
       }
 #endif
 #if HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
       case HLSFlowStep_Type::OMP_FUNCTION_ALLOCATION:
       {
-         design_flow_step = DesignFlowStepRef(new OmpFunctionAllocation(parameters, HLS_mgr, design_flow_manager.lock()));
+         design_flow_step =
+             DesignFlowStepRef(new OmpFunctionAllocation(parameters, HLS_mgr, design_flow_manager.lock()));
          break;
       }
 #endif
 #if HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
       case HLSFlowStep_Type::OMP_FUNCTION_ALLOCATION_CS:
       {
-         design_flow_step = DesignFlowStepRef(new OmpFunctionAllocationCS(parameters, HLS_mgr, design_flow_manager.lock()));
+         design_flow_step =
+             DesignFlowStepRef(new OmpFunctionAllocationCS(parameters, HLS_mgr, design_flow_manager.lock()));
          break;
       }
 #endif
 #if HAVE_EXPERIMENTAL
       case HLSFlowStep_Type::PARALLEL_CONTROLLER_CREATOR:
       {
-         design_flow_step = DesignFlowStepRef(new ParallelController(parameters, HLS_mgr, funId, design_flow_manager.lock()));
+         design_flow_step =
+             DesignFlowStepRef(new ParallelController(parameters, HLS_mgr, funId, design_flow_manager.lock()));
          break;
       }
 #endif
+      case HLSFlowStep_Type::PIPELINE_CONTROLLER_CREATOR:
+      {
+         design_flow_step =
+             DesignFlowStepRef(new pipeline_controller(parameters, HLS_mgr, funId, design_flow_manager.lock()));
+         break;
+      }
       case HLSFlowStep_Type::PORT_SWAPPING:
       {
-         design_flow_step = DesignFlowStepRef(new port_swapping(parameters, HLS_mgr, funId, design_flow_manager.lock()));
+         design_flow_step =
+             DesignFlowStepRef(new port_swapping(parameters, HLS_mgr, funId, design_flow_manager.lock()));
          break;
       }
       case HLSFlowStep_Type::SCHED_CHAINING:
       {
-         design_flow_step = DesignFlowStepRef(new sched_based_chaining_computation(parameters, HLS_mgr, funId, design_flow_manager.lock()));
+         design_flow_step = DesignFlowStepRef(
+             new sched_based_chaining_computation(parameters, HLS_mgr, funId, design_flow_manager.lock()));
          break;
       }
 #if HAVE_ILP_BUILT
       case HLSFlowStep_Type::SDC_SCHEDULING:
       {
-         design_flow_step = DesignFlowStepRef(new SDCScheduling(parameters, HLS_mgr, funId, design_flow_manager.lock(), hls_flow_step_specialization));
+         design_flow_step = DesignFlowStepRef(
+             new SDCScheduling(parameters, HLS_mgr, funId, design_flow_manager.lock(), hls_flow_step_specialization));
          break;
       }
 #endif
 #if HAVE_ILP_BUILT && HAVE_EXPERIMENTAL
       case HLSFlowStep_Type::SILP_SCHEDULING:
       {
-         design_flow_step = DesignFlowStepRef(new silp_scheduling(parameters, HLS_mgr, funId, design_flow_manager.lock()));
+         design_flow_step =
+             DesignFlowStepRef(new silp_scheduling(parameters, HLS_mgr, funId, design_flow_manager.lock()));
          break;
       }
 #endif
       case HLSFlowStep_Type::SIMULATION_EVALUATION:
       {
-         design_flow_step = DesignFlowStepRef(new SimulationEvaluation(parameters, HLS_mgr, design_flow_manager.lock()));
+         design_flow_step =
+             DesignFlowStepRef(new SimulationEvaluation(parameters, HLS_mgr, design_flow_manager.lock()));
          break;
       }
       case HLSFlowStep_Type::STANDARD_HLS_FLOW:
@@ -723,7 +783,8 @@ DesignFlowStepRef HLSFlowStepFactory::CreateHLSFlowStep(const HLSFlowStep_Type t
 #if HAVE_TASTE
       case HLSFlowStep_Type::TASTE_INTERFACE_GENERATION:
       {
-         design_flow_step = DesignFlowStepRef(new TasteInterfaceGeneration(parameters, HLS_mgr, funId, design_flow_manager.lock()));
+         design_flow_step =
+             DesignFlowStepRef(new TasteInterfaceGeneration(parameters, HLS_mgr, funId, design_flow_manager.lock()));
          break;
       }
 #endif
@@ -734,17 +795,20 @@ DesignFlowStepRef HLSFlowStepFactory::CreateHLSFlowStep(const HLSFlowStep_Type t
       }
       case HLSFlowStep_Type::TESTBENCH_MEMORY_ALLOCATION:
       {
-         design_flow_step = DesignFlowStepRef(new TestbenchMemoryAllocation(parameters, HLS_mgr, design_flow_manager.lock()));
+         design_flow_step =
+             DesignFlowStepRef(new TestbenchMemoryAllocation(parameters, HLS_mgr, design_flow_manager.lock()));
          break;
       }
       case HLSFlowStep_Type::TESTBENCH_VALUES_C_GENERATION:
       {
-         design_flow_step = DesignFlowStepRef(new TestbenchValuesCGeneration(parameters, HLS_mgr, design_flow_manager.lock()));
+         design_flow_step =
+             DesignFlowStepRef(new TestbenchValuesCGeneration(parameters, HLS_mgr, design_flow_manager.lock()));
          break;
       }
       case HLSFlowStep_Type::TESTBENCH_VALUES_XML_GENERATION:
       {
-         design_flow_step = DesignFlowStepRef(new TestbenchValuesXMLGeneration(parameters, HLS_mgr, design_flow_manager.lock()));
+         design_flow_step =
+             DesignFlowStepRef(new TestbenchValuesXMLGeneration(parameters, HLS_mgr, design_flow_manager.lock()));
          break;
       }
       case HLSFlowStep_Type::TEST_VECTOR_PARSER:
@@ -755,7 +819,8 @@ DesignFlowStepRef HLSFlowStepFactory::CreateHLSFlowStep(const HLSFlowStep_Type t
 #if HAVE_EXPERIMENTAL
       case HLSFlowStep_Type::TIME_ESTIMATION:
       {
-         design_flow_step = DesignFlowStepRef(new time_estimation(parameters, HLS_mgr, funId, design_flow_manager.lock()));
+         design_flow_step =
+             DesignFlowStepRef(new time_estimation(parameters, HLS_mgr, funId, design_flow_manager.lock()));
          break;
       }
 #endif
@@ -767,33 +832,40 @@ DesignFlowStepRef HLSFlowStepFactory::CreateHLSFlowStep(const HLSFlowStep_Type t
 
       case HLSFlowStep_Type::TOP_ENTITY_CS_CREATION:
       {
-         design_flow_step = DesignFlowStepRef(new top_entity_cs(parameters, HLS_mgr, funId, design_flow_manager.lock(), HLSFlowStep_Type::TOP_ENTITY_CS_CREATION));
+         design_flow_step = DesignFlowStepRef(new top_entity_cs(parameters, HLS_mgr, funId, design_flow_manager.lock(),
+                                                                HLSFlowStep_Type::TOP_ENTITY_CS_CREATION));
          break;
       }
 
       case HLSFlowStep_Type::TOP_ENTITY_CS_PARALLEL_CREATION:
       {
-         design_flow_step = DesignFlowStepRef(new top_entity_parallel_cs(parameters, HLS_mgr, funId, design_flow_manager.lock(), HLSFlowStep_Type::TOP_ENTITY_CS_PARALLEL_CREATION));
+         design_flow_step =
+             DesignFlowStepRef(new top_entity_parallel_cs(parameters, HLS_mgr, funId, design_flow_manager.lock(),
+                                                          HLSFlowStep_Type::TOP_ENTITY_CS_PARALLEL_CREATION));
          break;
       }
       case HLSFlowStep_Type::TOP_ENTITY_MEMORY_MAPPED_CREATION:
       {
-         design_flow_step = DesignFlowStepRef(new TopEntityMemoryMapped(parameters, HLS_mgr, funId, design_flow_manager.lock()));
+         design_flow_step =
+             DesignFlowStepRef(new TopEntityMemoryMapped(parameters, HLS_mgr, funId, design_flow_manager.lock()));
          break;
       }
       case HLSFlowStep_Type::UNIQUE_MODULE_BINDING:
       {
-         design_flow_step = DesignFlowStepRef(new unique_binding(parameters, HLS_mgr, funId, design_flow_manager.lock()));
+         design_flow_step =
+             DesignFlowStepRef(new unique_binding(parameters, HLS_mgr, funId, design_flow_manager.lock()));
          break;
       }
       case HLSFlowStep_Type::UNIQUE_REGISTER_BINDING:
       {
-         design_flow_step = DesignFlowStepRef(new unique_binding_register(parameters, HLS_mgr, funId, design_flow_manager.lock()));
+         design_flow_step =
+             DesignFlowStepRef(new unique_binding_register(parameters, HLS_mgr, funId, design_flow_manager.lock()));
          break;
       }
       case HLSFlowStep_Type::VALUES_SCHEME_STORAGE_VALUE_INSERTION:
       {
-         design_flow_step = DesignFlowStepRef(new values_scheme(parameters, HLS_mgr, funId, design_flow_manager.lock()));
+         design_flow_step =
+             DesignFlowStepRef(new values_scheme(parameters, HLS_mgr, funId, design_flow_manager.lock()));
          break;
       }
 #if HAVE_VCD_BUILT
@@ -815,22 +887,26 @@ DesignFlowStepRef HLSFlowStepFactory::CreateHLSFlowStep(const HLSFlowStep_Type t
       }
       case HLSFlowStep_Type::WB4_INTERFACE_GENERATION:
       {
-         design_flow_step = DesignFlowStepRef(new WB4_interface(parameters, HLS_mgr, funId, design_flow_manager.lock()));
+         design_flow_step =
+             DesignFlowStepRef(new WB4_interface(parameters, HLS_mgr, funId, design_flow_manager.lock()));
          break;
       }
       case HLSFlowStep_Type::WB4_INTERCON_INTERFACE_GENERATION:
       {
-         design_flow_step = DesignFlowStepRef(new WB4Intercon_interface(parameters, HLS_mgr, funId, design_flow_manager.lock()));
+         design_flow_step =
+             DesignFlowStepRef(new WB4Intercon_interface(parameters, HLS_mgr, funId, design_flow_manager.lock()));
          break;
       }
       case HLSFlowStep_Type::WB4_TESTBENCH_GENERATION:
       {
-         design_flow_step = DesignFlowStepRef(new WishboneInterfaceTestbench(parameters, HLS_mgr, design_flow_manager.lock()));
+         design_flow_step =
+             DesignFlowStepRef(new WishboneInterfaceTestbench(parameters, HLS_mgr, design_flow_manager.lock()));
          break;
       }
       case HLSFlowStep_Type::WEIGHTED_CLIQUE_REGISTER_BINDING:
       {
-         design_flow_step = DesignFlowStepRef(new weighted_clique_register(parameters, HLS_mgr, funId, design_flow_manager.lock(), hls_flow_step_specialization));
+         design_flow_step = DesignFlowStepRef(new weighted_clique_register(
+             parameters, HLS_mgr, funId, design_flow_manager.lock(), hls_flow_step_specialization));
          break;
       }
       case HLSFlowStep_Type::WRITE_HLS_SUMMARY:
@@ -845,11 +921,6 @@ DesignFlowStepRef HLSFlowStepFactory::CreateHLSFlowStep(const HLSFlowStep_Type t
          break;
       }
 #endif
-      case HLSFlowStep_Type::XML_MEMORY_ALLOCATOR:
-      {
-         design_flow_step = DesignFlowStepRef(new mem_xml_allocation(parameters, HLS_mgr, design_flow_manager.lock()));
-         break;
-      }
       case HLSFlowStep_Type::UNKNOWN:
       {
          THROW_UNREACHABLE("");
@@ -862,20 +933,21 @@ DesignFlowStepRef HLSFlowStepFactory::CreateHLSFlowStep(const HLSFlowStep_Type t
    return design_flow_step;
 }
 
-const DesignFlowStepSet HLSFlowStepFactory::CreateHLSFlowSteps(const CustomUnorderedSet<std::pair<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef>>& hls_flow_steps) const
+const DesignFlowStepSet HLSFlowStepFactory::CreateHLSFlowSteps(
+    const CustomUnorderedSet<std::pair<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef>>& hls_flow_steps) const
 {
    const CallGraphManagerConstRef call_graph_manager = HLS_mgr->CGetCallGraphManager();
    DesignFlowStepSet ret;
 
    for(const auto& hls_flow_step : hls_flow_steps)
    {
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Creating step " + HLS_step::EnumToName(hls_flow_step.first));
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                     "-->Creating step " + HLS_step::EnumToName(hls_flow_step.first));
       switch(hls_flow_step.first)
       {
          case HLSFlowStep_Type::DRY_RUN_EVALUATION:
          case HLSFlowStep_Type::EVALUATION:
          case HLSFlowStep_Type::GENERATE_HDL:
-         case HLSFlowStep_Type::HLS_BIT_VALUE:
          case HLSFlowStep_Type::TEST_VECTOR_PARSER:
          case HLSFlowStep_Type::TESTBENCH_MEMORY_ALLOCATION:
          case HLSFlowStep_Type::TESTBENCH_VALUES_C_GENERATION:
@@ -948,7 +1020,6 @@ const DesignFlowStepSet HLSFlowStepFactory::CreateHLSFlowSteps(const CustomUnord
          case HLSFlowStep_Type::EXPLORE_MUX_DESIGN_FLOW:
          case HLSFlowStep_Type::EXPORT_PCORE:
 #endif
-         case HLSFlowStep_Type::FIXED_SCHEDULING:
 #if HAVE_EXPERIMENTAL
          case HLSFlowStep_Type::FSL_INTERFACE_GENERATION:
 #endif
@@ -1006,6 +1077,7 @@ const DesignFlowStepSet HLSFlowStepFactory::CreateHLSFlowSteps(const CustomUnord
 #if HAVE_EXPERIMENTAL
          case HLSFlowStep_Type::PARALLEL_CONTROLLER_CREATOR:
 #endif
+         case HLSFlowStep_Type::PIPELINE_CONTROLLER_CREATOR:
          case HLSFlowStep_Type::PORT_SWAPPING:
          case HLSFlowStep_Type::SCHED_CHAINING:
 #if HAVE_ILP_BUILT
@@ -1039,34 +1111,41 @@ const DesignFlowStepSet HLSFlowStepFactory::CreateHLSFlowSteps(const CustomUnord
          case HLSFlowStep_Type::WB4_INTERFACE_GENERATION:
          case HLSFlowStep_Type::WB4_TESTBENCH_GENERATION:
          case HLSFlowStep_Type::WEIGHTED_CLIQUE_REGISTER_BINDING:
-         case HLSFlowStep_Type::XML_MEMORY_ALLOCATOR:
          default:
             THROW_UNREACHABLE("Step not expected: " + HLS_step::EnumToName(hls_flow_step.first));
       }
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Created step " + HLS_step::EnumToName(hls_flow_step.first));
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                     "<--Created step " + HLS_step::EnumToName(hls_flow_step.first));
    }
    return ret;
 }
 
-const DesignFlowStepSet HLSFlowStepFactory::CreateHLSFlowSteps(const std::pair<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef>& hls_flow_step) const
+const DesignFlowStepSet HLSFlowStepFactory::CreateHLSFlowSteps(
+    const std::pair<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef>& hls_flow_step) const
 {
    CustomUnorderedSet<std::pair<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef>> hls_flow_steps;
    hls_flow_steps.insert(hls_flow_step);
    return CreateHLSFlowSteps(hls_flow_steps);
 }
 
-const DesignFlowStepSet HLSFlowStepFactory::CreateHLSFlowSteps(const HLSFlowStep_Type type, const HLSFlowStepSpecializationConstRef hls_flow_step_specialization) const
+const DesignFlowStepSet
+HLSFlowStepFactory::CreateHLSFlowSteps(const HLSFlowStep_Type type,
+                                       const HLSFlowStepSpecializationConstRef hls_flow_step_specialization) const
 {
-   const std::pair<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef> hls_flow_step(type, hls_flow_step_specialization);
+   const std::pair<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef> hls_flow_step(type,
+                                                                                      hls_flow_step_specialization);
    return CreateHLSFlowSteps(hls_flow_step);
 }
 
-const DesignFlowStepRef HLSFlowStepFactory::CreateHLSFlowStep(const std::pair<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef>& hls_flow_step) const
+const DesignFlowStepRef HLSFlowStepFactory::CreateHLSFlowStep(
+    const std::pair<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef>& hls_flow_step) const
 {
    return *CreateHLSFlowSteps(hls_flow_step).cbegin();
 }
 
-const DesignFlowStepRef HLSFlowStepFactory::CreateHLSFlowStep(const HLSFlowStep_Type type, const HLSFlowStepSpecializationConstRef hls_flow_step_specialization) const
+const DesignFlowStepRef
+HLSFlowStepFactory::CreateHLSFlowStep(const HLSFlowStep_Type type,
+                                      const HLSFlowStepSpecializationConstRef hls_flow_step_specialization) const
 {
    return *CreateHLSFlowSteps(type, hls_flow_step_specialization).cbegin();
 }

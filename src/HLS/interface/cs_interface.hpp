@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2016-2020 Politecnico di Milano
+ *              Copyright (c) 2016-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -50,9 +50,12 @@ class cs_interface : public module_interface
    /**
     * Constructor
     */
-   cs_interface(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStep_Type hls_flow_step_type = HLSFlowStep_Type::INTERFACE_CS_GENERATION);
+   cs_interface(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId,
+                const DesignFlowManagerConstRef design_flow_manager,
+                const HLSFlowStep_Type hls_flow_step_type = HLSFlowStep_Type::INTERFACE_CS_GENERATION);
 
-   void build_wrapper(structural_objectRef wrappedObj, structural_objectRef interfaceObj, structural_managerRef SM_minimal_interface);
+   void build_wrapper(structural_objectRef wrappedObj, structural_objectRef interfaceObj,
+                      structural_managerRef SM_minimal_interface);
    /**
     * Destructor
     */
@@ -62,7 +65,7 @@ class cs_interface : public module_interface
     * Execute the step
     * @return the exit status of this step
     */
-   virtual DesignFlowStep_Status InternalExec();
+   virtual DesignFlowStep_Status InternalExec() override;
 
  protected:
    /**
@@ -84,7 +87,8 @@ class cs_interface : public module_interface
     * @param memory_module
     * @param circuit
     */
-   void manage_extern_global_port_top(const structural_managerRef SM, const structural_objectRef memory_module, const structural_objectRef circuit);
+   void manage_extern_global_port_top(const structural_managerRef SM, const structural_objectRef memory_module,
+                                      const structural_objectRef circuit);
 
    /**
     * @brief instantiate_component_parallel
@@ -92,7 +96,8 @@ class cs_interface : public module_interface
     * @param clock_port
     * @param reset_port
     */
-   void instantiate_component_parallel(const structural_managerRef SM, structural_objectRef clock_port, structural_objectRef reset_port);
+   void instantiate_component_parallel(const structural_managerRef SM, structural_objectRef clock_port,
+                                       structural_objectRef reset_port);
 
    /**
     * @brief add_parameter_port
@@ -100,6 +105,7 @@ class cs_interface : public module_interface
     * @param circuit
     * @param top_module
     */
-   void add_parameter_port(const structural_managerRef SM, structural_objectRef circuit, structural_objectRef top_module);
+   void add_parameter_port(const structural_managerRef SM, structural_objectRef circuit,
+                           structural_objectRef top_module);
 };
 #endif // CS_INTERFACE_H

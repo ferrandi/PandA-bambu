@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -98,7 +98,7 @@ CONSTREF_FORWARD_DECL(Parameter);
 CONSTREF_FORWARD_DECL(technology_manager);
 /// RefCount type definition of the library_manager class structure for representing libraries
 REF_FORWARD_DECL(library_manager);
-typedef refcount<std::istream> fileIO_istreamRef;
+using fileIO_istreamRef = refcount<std::istream>;
 /// RefCount type definition of the structural_manager class structure
 REF_FORWARD_DECL(structural_manager);
 REF_FORWARD_DECL(technology_manager);
@@ -131,7 +131,7 @@ class technology_manager
    //@}
 
    /// definition of the type for identifying the libraries
-   typedef CustomUnorderedMap<std::string, library_managerRef> library_map_type;
+   using library_map_type = CustomUnorderedMap<std::string, library_managerRef>;
 
  private:
    /// class containing all the parameters
@@ -190,7 +190,8 @@ class technology_manager
     * Build a resource based on the given characteristics and structural representation.
     * @param is_builtin specifies if the resource is builtin or not
     */
-   void add_resource(const std::string& Library, const std::string& fu_name, const structural_managerRef CM = structural_managerRef(), const bool is_builtin = false);
+   void add_resource(const std::string& Library, const std::string& fu_name,
+                     const structural_managerRef CM = structural_managerRef(), const bool is_builtin = false);
 #endif
 
    /**
@@ -202,8 +203,9 @@ class technology_manager
    /**
     * Add a storage unit to the library
     */
-   void add_storage(const std::string& s_name, const structural_managerRef CM, const std::string& Library, const unsigned int bits = 32, const unsigned int words = 1024, const unsigned int readinputs = 2, const unsigned int writeinputs = 2,
-                    const unsigned int readwriteinputs = 2);
+   void add_storage(const std::string& s_name, const structural_managerRef CM, const std::string& Library,
+                    const unsigned int bits = 32, const unsigned int words = 1024, const unsigned int readinputs = 2,
+                    const unsigned int writeinputs = 2, const unsigned int readwriteinputs = 2);
 #endif
    //@}
 
@@ -281,7 +283,8 @@ class technology_manager
     * @param Library is library name where the unit is stored
     * @return the initiation_time for (fu_name, op_name).
     */
-   ControlStep get_initiation_time(const std::string& fu_name, const std::string& op_name, const std::string& Library) const;
+   ControlStep get_initiation_time(const std::string& fu_name, const std::string& op_name,
+                                   const std::string& Library) const;
 
    /**
     * Return the execution time for a given operation type and a given component.
@@ -326,27 +329,31 @@ class technology_manager
     * @param file is the stream associated of the file
     * @param TM is the refcount version of this.
     */
-   static void gload(const std::string& file_name, const fileIO_istreamRef file, const technology_managerRef TM, const ParameterConstRef Param);
+   static void gload(const std::string& file_name, const fileIO_istreamRef file, const technology_managerRef TM,
+                     const ParameterConstRef Param);
 #endif
 
    /**
     * add library elements operation node to an xml tree.
     * @param rootnode is the root node at which the xml representation of the operation is attached.
     */
-   void xwrite(xml_element* rootnode, TargetDevice_Type dv_type, const CustomOrderedSet<std::string>& libraries = CustomOrderedSet<std::string>());
+   void xwrite(xml_element* rootnode, TargetDevice_Type dv_type,
+               const CustomOrderedSet<std::string>& libraries = CustomOrderedSet<std::string>());
 
 #if HAVE_FROM_LIBERTY
    /**
     * Write the technology libraries in the liberty format
     */
-   void lib_write(const std::string& filename, TargetDevice_Type dv_type, const CustomOrderedSet<std::string>& libraries = CustomOrderedSet<std::string>());
+   void lib_write(const std::string& filename, TargetDevice_Type dv_type,
+                  const CustomOrderedSet<std::string>& libraries = CustomOrderedSet<std::string>());
 #endif
 
 #if HAVE_EXPERIMENTAL
    /**
     *
     */
-   void lef_write(const std::string& filename, TargetDevice_Type dv_type, const CustomOrderedSet<std::string>& libraries = CustomOrderedSet<std::string>());
+   void lef_write(const std::string& filename, TargetDevice_Type dv_type,
+                  const CustomOrderedSet<std::string>& libraries = CustomOrderedSet<std::string>());
    //@}
 #endif
 
@@ -373,7 +380,9 @@ class technology_manager
    friend std::ostream& operator<<(std::ostream& os, const technology_managerRef& s)
    {
       if(s)
+      {
          s->print(os);
+      }
       return os;
    }
    //@}
@@ -391,6 +400,6 @@ class technology_manager
    TimeStamp CGetSetupHoldTimeStamp() const;
 };
 
-typedef refcount<technology_manager> technology_managerRef;
+using technology_managerRef = refcount<technology_manager>;
 
 #endif

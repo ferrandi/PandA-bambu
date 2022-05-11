@@ -185,11 +185,16 @@ int main()
    std::ofstream outfile(filename);
    outfile << "const unsigned n_segments_lut = " << nsegments << ";" << endl;
    outfile << "const int n_frac_bits = " << nfrac_bits << ";" << endl;
-   outfile << "static const ac_fixed<" << m_int_bits << " + n_frac_bits, " << m_int_bits << ", " << is_neg_m_s << "> m_lut[n_segments_lut] = " << mstr << ";" << endl;
-   outfile << "static const ac_fixed<" << c_int_bits << " + n_frac_bits, " << c_int_bits << ", " << is_neg_c_s << "> c_lut[n_segments_lut] = " << cstr << ";" << endl;
-   outfile << "static const ac_fixed<" << x_min_int_bits << " + n_frac_bits, " << x_min_int_bits << ", " << is_neg_x_min_s << "> x_min_lut = " << o_ac_f(x_min, nfrac_bits) << ";" << endl;
-   outfile << "static const ac_fixed<" << x_max_int_bits << " + n_frac_bits, " << x_max_int_bits << ", " << is_neg_x_max_s << "> x_max_lut = " << o_ac_f(x_max, nfrac_bits) << ";" << endl;
-   outfile << "static const ac_fixed<" << p_c_int_bits << " + n_frac_bits, " << p_c_int_bits << ", false> sc_constant_lut = " << o_ac_f(prop_constant, nfrac_bits) << ";" << endl;
+   outfile << "static const ac_fixed<" << m_int_bits << " + n_frac_bits, " << m_int_bits << ", " << is_neg_m_s
+           << "> m_lut[n_segments_lut] = " << mstr << ";" << endl;
+   outfile << "static const ac_fixed<" << c_int_bits << " + n_frac_bits, " << c_int_bits << ", " << is_neg_c_s
+           << "> c_lut[n_segments_lut] = " << cstr << ";" << endl;
+   outfile << "static const ac_fixed<" << x_min_int_bits << " + n_frac_bits, " << x_min_int_bits << ", "
+           << is_neg_x_min_s << "> x_min_lut = " << o_ac_f(x_min, nfrac_bits) << ";" << endl;
+   outfile << "static const ac_fixed<" << x_max_int_bits << " + n_frac_bits, " << x_max_int_bits << ", "
+           << is_neg_x_max_s << "> x_max_lut = " << o_ac_f(x_max, nfrac_bits) << ";" << endl;
+   outfile << "static const ac_fixed<" << p_c_int_bits << " + n_frac_bits, " << p_c_int_bits
+           << ", false> sc_constant_lut = " << o_ac_f(prop_constant, nfrac_bits) << ";" << endl;
    outfile.close();
 
    cout << endl;

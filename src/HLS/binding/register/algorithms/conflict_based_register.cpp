@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -57,8 +57,11 @@
 /// HLS/binding/storage_value_insertion includes
 #include "storage_value_information.hpp"
 
-conflict_based_register::conflict_based_register(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr, unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager, const HLSFlowStep_Type _hls_flow_step_type)
-    : reg_binding_creator(_Param, _HLSMgr, _funId, _design_flow_manager, _hls_flow_step_type)
+conflict_based_register::conflict_based_register(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr,
+                                                 unsigned int _funId,
+                                                 const DesignFlowManagerConstRef _design_flow_manager,
+                                                 const HLSFlowStep_Type _hls_flow_step_type)
+    : reg_binding_creator(_Param, _HLSMgr, _funId, _design_flow_manager, _hls_flow_step_type), cg(nullptr)
 {
 }
 
@@ -69,14 +72,15 @@ void conflict_based_register::create_conflict_graph()
    THROW_ASSERT(HLS->Rliv, "Liveness analysis not yet computed");
 
    unsigned int cg_num_vertices = HLS->storage_value_information->get_number_of_storage_values();
-   for(unsigned int vi = 0; vi < cg_num_vertices; ++vi)
-      boost::add_vertex(cg);
+   cg = new conflict_graph(cg_num_vertices);
    color_vec.resize(cg_num_vertices);
-   color = boost::iterator_property_map<cg_vertices_size_type*, cg_vertex_index_map, cg_vertices_size_type, cg_vertices_size_type&>(&color_vec.front(), boost::get(boost::vertex_index, cg));
+   color =
+       boost::iterator_property_map<cg_vertices_size_type*, cg_vertex_index_map, cg_vertices_size_type,
+                                    cg_vertices_size_type&>(&color_vec.front(), boost::get(boost::vertex_index, *cg));
    /// conflict graph creation
    const std::list<vertex>& support = HLS->Rliv->get_support();
 
-   const std::list<vertex>::const_iterator vEnd = support.end();
+   const auto vEnd = support.end();
    for(auto vIt = support.begin(); vIt != vEnd; ++vIt)
    {
       const CustomOrderedSet<unsigned int>& live = HLS->Rliv->get_live_in(*vIt);
@@ -89,27 +93,25 @@ void conflict_based_register::create_conflict_graph()
          while(k_inner != k_end)
          {
             boost::graph_traits<conflict_graph>::edge_descriptor e1;
-            bool in1;
             unsigned int tail = HLS->storage_value_information->get_storage_value_index(*vIt, *k);
             THROW_ASSERT(tail < cg_num_vertices, "wrong conflict graph index");
             unsigned int head = HLS->storage_value_information->get_storage_value_index(*vIt, *k_inner);
             THROW_ASSERT(head < cg_num_vertices, "wrong conflict graph index");
-            tie(e1, in1) = boost::add_edge(boost::vertex(tail, cg), boost::vertex(head, cg), cg);
-            THROW_ASSERT(in1, "unable to add edge");
+            boost::add_edge(boost::vertex(tail, *cg), boost::vertex(head, *cg), *cg);
             ++k_inner;
          }
       }
    }
    /// variables of different size are in conflict
    for(unsigned int vj = 1; vj < cg_num_vertices; ++vj)
+   {
       for(unsigned int vi = 0; vi < vj; ++vi)
       {
          if(!HLS->storage_value_information->are_value_bitsize_compatible(vi, vj))
          {
             boost::graph_traits<conflict_graph>::edge_descriptor e1;
-            bool in1;
-            tie(e1, in1) = boost::add_edge(boost::vertex(vi, cg), boost::vertex(vj, cg), cg);
-            THROW_ASSERT(in1, "unable to add edge");
+            boost::add_edge(boost::vertex(vi, *cg), boost::vertex(vj, *cg), *cg);
          }
       }
+   }
 }

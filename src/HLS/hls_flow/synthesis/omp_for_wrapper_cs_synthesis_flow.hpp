@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2016-2020 Politecnico di Milano
+ *              Copyright (c) 2016-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -49,14 +49,17 @@ class OmpForWrapperCSSynthesisFlow : public HLSFunctionStep
     * Return the set of analyses in relationship with this design step
     * @param relationship_type is the type of relationship to be considered
     */
-   virtual const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const;
+   virtual const CustomUnorderedSet<
+       std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
+   ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
  public:
    /**
     * Constructor.
     * @param design_flow_manager is the design flow manager
     */
-   OmpForWrapperCSSynthesisFlow(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager);
+   OmpForWrapperCSSynthesisFlow(const ParameterConstRef _parameters, const HLS_managerRef HLSMgr, unsigned int funId,
+                                const DesignFlowManagerConstRef design_flow_manager);
 
    /**
     * Destructor
@@ -67,6 +70,6 @@ class OmpForWrapperCSSynthesisFlow : public HLSFunctionStep
     * Execute the step
     * @return the exit status of this step
     */
-   virtual DesignFlowStep_Status InternalExec();
+   virtual DesignFlowStep_Status InternalExec() override;
 };
 #endif // OMPFORWRAPPERCSSYNTHESISFLOW_H

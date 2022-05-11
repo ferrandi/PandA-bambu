@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -76,7 +76,9 @@ class weighted_clique_register : public compatibility_based_register
     * Constructor of the class.
     * @param design_flow_manager is the design flow manager
     */
-   weighted_clique_register(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr, unsigned int _funId, const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStepSpecializationConstRef hls_flow_step_specialization);
+   weighted_clique_register(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr, unsigned int _funId,
+                            const DesignFlowManagerConstRef design_flow_manager,
+                            const HLSFlowStepSpecializationConstRef hls_flow_step_specialization);
 
    /**
     * Destructor of the class.

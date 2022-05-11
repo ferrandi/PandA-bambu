@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -63,7 +63,8 @@ class LatticeWrapper : public SynthesisTool
     * @param output_dir is the directory where to save all the results
     * @param default_output_dir is the default output directory
     */
-   LatticeWrapper(const ParameterConstRef& Param, const std::string& tool_exec, const target_deviceRef& device, const std::string& output_dir, const std::string& default_output_dir);
+   LatticeWrapper(const ParameterConstRef& Param, const std::string& tool_exec, const target_deviceRef& device,
+                  const std::string& output_dir, const std::string& default_output_dir);
 
    /**
     * Destructor
@@ -91,6 +92,6 @@ class LatticeWrapper : public SynthesisTool
    std::string get_command_line(const DesignParametersRef& dp) const override;
 };
 /// Refcount definition for the class
-typedef refcount<LatticeWrapper> LatticeWrapperRef;
+using LatticeWrapperRef = refcount<LatticeWrapper>;
 
 #endif

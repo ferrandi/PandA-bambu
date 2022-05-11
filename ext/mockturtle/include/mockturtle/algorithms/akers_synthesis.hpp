@@ -1,5 +1,5 @@
 /* mockturtle: C++ logic network library
- * Copyright (C) 2018-2019  EPFL
+ * Copyright (C) 2018-2021  EPFL
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -27,7 +27,12 @@
   \file akers_synthesis.hpp
   \brief Akers synthesis
 
+  \author Alessandro Tempia Calvino
   \author Eleonora Testa
+  \author Heinz Riener
+  \author Marcel Walter
+  \author Mathias Soeken
+  \author Siang-Yun (Sonia) Lee
 */
 
 #pragma once
@@ -43,6 +48,7 @@
 #include <vector>
 
 #include <kitty/bit_operations.hpp>
+#include <kitty/constructors.hpp>
 #include <kitty/cube.hpp>
 #include <kitty/dynamic_truth_table.hpp>
 
@@ -608,7 +614,7 @@ private:
     c_to_f[0x30] = ntk.get_constant( false );
     c_to_f[0x31] = ntk.get_constant( true );
 
-    for ( auto i = 0; i < func.num_vars(); ++i )
+    for ( auto i = 0u; i < func.num_vars(); ++i )
     {
       auto pi = *begin++; // should take the leaves values
       c_to_f[0x41 + i] = !pi;
@@ -633,6 +639,9 @@ private:
       if ( reduce == 0 )
         table.reduce();
     }
+
+    if ( ntk.node_to_index( ntk.get_node( c_to_f[last_gate_id] ) ) == 0 )
+      return ntk.get_constant( 0 ^ ntk.is_complemented( c_to_f[last_gate_id] ) );
 
     return c_to_f[last_gate_id];
   }
@@ -807,6 +816,29 @@ signal<Ntk> akers_synthesis( Ntk& ntk, kitty::dynamic_truth_table const& func, k
   assert( func.num_vars() == care.num_vars() );
   assert( std::distance( begin, end ) == func.num_vars() );
 
+  auto pi = begin;
+
+  if ( is_const0( func ) )
+    return ntk.get_constant( 0 );
+  auto tt_1 = unary_not( func );
+  if ( is_const0( tt_1 ) )
+    return ntk.get_constant( 1 );
+
+  for ( auto i = 0u; i < func.num_vars(); i++ )
+  {
+    create_nth_var( tt_1, i );
+    auto it = *pi++;
+    if ( tt_1 == func )
+    {
+      return it;
+    }
+    tt_1 = unary_not( tt_1 );
+    if ( tt_1 == func )
+    {
+      return !it;
+    }
+  }
+
   detail::akers_synthesis_impl<Ntk, LeavesIterator> tt( ntk, func, care, begin, end );
   return tt.run();
 }
@@ -836,7 +868,7 @@ Ntk akers_synthesis( kitty::dynamic_truth_table const& func, kitty::dynamic_trut
   Ntk ntk;
   std::vector<signal<Ntk>> pis;
 
-  for ( auto i = 0; i < func.num_vars(); ++i )
+  for ( auto i = 0u; i < func.num_vars(); ++i )
   {
     pis.push_back( ntk.create_pi() );
   }

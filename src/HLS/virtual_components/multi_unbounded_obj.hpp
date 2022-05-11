@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -56,13 +56,15 @@ class multi_unbounded_obj : public generic_obj
 {
    vertex fsm_state;
    CustomOrderedSet<vertex> ops;
+   generic_objRef mu_enable;
 
  public:
    /**
     * This is the constructor of the multi_unbounded_obj class, with a given id
     * @param _name is the name of the multi_unbounded_obj
     */
-   explicit multi_unbounded_obj(vertex _fsm_state, const CustomOrderedSet<vertex>& _ops, const std::string& _name) : generic_obj(MULTI_UNBOUNDED_OBJ, _name), fsm_state(_fsm_state), ops(_ops)
+   explicit multi_unbounded_obj(vertex _fsm_state, const CustomOrderedSet<vertex>& _ops, const std::string& _name)
+       : generic_obj(MULTI_UNBOUNDED_OBJ, _name), fsm_state(_fsm_state), ops(_ops)
    {
    }
 
@@ -83,9 +85,26 @@ class multi_unbounded_obj : public generic_obj
    {
       return ops;
    }
+   /**
+    * Gets the write enable object for the given register
+    * @return a set of sets where each of them can enable register write (when all conditions contained are
+    *        true)
+    */
+   generic_objRef get_mu_enable() const
+   {
+      return mu_enable;
+   }
+
+   /**
+    * Sets the write enable for given register
+    */
+   void set_mu_enable(const generic_objRef& mu_en)
+   {
+      mu_enable = mu_en;
+   }
 };
 
 /// RefCount definition for multi_unbounded_obj class
-typedef refcount<multi_unbounded_obj> multi_unbounded_objRef;
+using multi_unbounded_objRef = refcount<multi_unbounded_obj>;
 
 #endif

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -32,7 +32,7 @@
  */
 /**
  * @file extract_patterns.hpp
- * @brief Class extracting patterns extending the GCC IR. An example is the ternary_plus_expr.
+ * @brief Class extracting patterns extending the GCC/CLANG IR. An example is the ternary_plus_expr.
  *
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  * $Revision$
@@ -57,19 +57,13 @@ class statement_list;
 //@}
 
 /**
- * @brief Class extracting patterns extending the GCC IR.
+ * @brief Class extracting patterns extending the GCC/CLANG IR.
  */
 class extract_patterns : public FunctionFrontendFlowStep
 {
  private:
-   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
-
-   /**
-    * look for ternary plus expressions
-    * @param sl is the statement list
-    * @param TM is the tree manager
-    */
-   void ternary_plus_expr_extraction(statement_list* sl, tree_managerRef TM);
+   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>>
+   ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
  public:
    /**
@@ -79,14 +73,15 @@ class extract_patterns : public FunctionFrontendFlowStep
     * @param function_id is the identifier of the function
     * @param design_flow_manager is the design flow manager
     */
-   extract_patterns(const ParameterConstRef _Param, const application_managerRef _AppM, unsigned int function_id, const DesignFlowManagerConstRef design_flow_manager);
+   extract_patterns(const ParameterConstRef _Param, const application_managerRef _AppM, unsigned int function_id,
+                    const DesignFlowManagerConstRef design_flow_manager);
 
    /**
     *  Destructor
     */
    ~extract_patterns() override;
    /**
-    * Extract patterns from the GCC IR.
+    * Extract patterns from the GCC/CLANG IR.
     * @return the exit status of this step
     */
    DesignFlowStep_Status InternalExec() override;

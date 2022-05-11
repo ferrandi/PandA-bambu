@@ -7,12 +7,12 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                 URL: http://trac.ws.dei.polimi.it/panda
  *                      Microarchitectures Laboratory
- *                       Politecnico di Milano - DEI
+ *                       Politecnico di Milano - DEIB
  *             ***********************************************
- *              Copyright (c) 2004-2020 Politecnico di Milano
+ *              Copyright (c) 2004-2022 Politecnico di Milano
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -25,11 +25,11 @@
  *   GNU General Public License for more details.
  *
  *   You should have received a copy of the GNU General Public License
- *   along with this program; if not, write to the 
+ *   along with this program; if not, write to the
  *   Free Software Foundation, Inc.,
  *   51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA.
  *
-*/
+ */
 /**
  * @file printf_verilog_generator.cpp
  * @brief Snippet for the printf dynamimc generator.
@@ -41,45 +41,51 @@
  * $Date$
  * Last modified by $Author$
  *
-*/
+ */
 std::string fsm;
 std::string case_statement;
 
 std::stringstream _npString;
-_npString<<(std::max(_np,2));
-std::string selector_dimension=_npString.str();
+_npString << ((_np < 2) ? 2 : _np);
+std::string selector_dimension = _npString.str();
 
 std::stringstream _np1String;
-_np1String<<(std::max(_np-1, 1));
-std::string selector_left=_np1String.str();
+_np1String << (((_np - 1) < 1) ? 1 : (_np - 1));
+std::string selector_left = _np1String.str();
 
-int selector=1;
-for(int i=0;i<_np;i++){
+int selector = 1;
+for(int i = 0; i < _np; i++)
+{
    std::stringstream _selector_string;
-   _selector_string<<selector;
+   _selector_string << selector;
    std::stringstream _index_string;
-   _index_string<<(i+1);
-   case_statement+="            "+selector_dimension+"'d"+_selector_string.str()+":\n             begin\n               data1="+_p[i].name+";\n               data1_size=BITSIZE_in"+_index_string.str()+";\n             end\n";
-   selector*=2;
+   _index_string << (i + 1);
+   case_statement += "            " + selector_dimension + "'d" + _selector_string.str() +
+                     ":\n             begin\n               data1=" + _p[i].name +
+                     ";\n               data1_size=BITSIZE_in" + _index_string.str() + ";\n             end\n";
+   selector *= 2;
 }
-case_statement+="            default:\n\
+case_statement += "            default:\n\
              begin\n\
                data1 = 64'b0;\n\
                data1_size = 8'b0;\n\
              end\n";
 
 std::string sensitivity;
-for(int i=0;i<_np;i++){
-  sensitivity += " or " + _p[i].name;
+for(int i = 0; i < _np; i++)
+{
+   sensitivity += " or " + _p[i].name;
 }
-if(_np>1){
-  case_statement="case (_present_selector)\n"+case_statement+"          endcase";
+if(_np > 1)
+{
+   case_statement = "case (_present_selector)\n" + case_statement + "          endcase";
 }
-else{
-  case_statement="";
+else
+{
+   case_statement = "";
 }
 
-fsm="\
+fsm = "\
 // synthesis translate_off\n\
 function real bits32_to_real64;\n\
   input [31:0] fin1;\n\
@@ -122,8 +128,10 @@ parameter [2:0] S_0 = 3'd0,\n\
   S_7 = 3'd7;\n\
 reg [2:0] _present_state 1INIT_ZERO_VALUE;\n\
 reg [2:0] _next_state;\n\
-reg ["+selector_left+":0] _present_selector 1INIT_ZERO_VALUE;\n\
-reg ["+selector_left+":0] _next_selector;\n\
+reg [" +
+      selector_left + ":0] _present_selector 1INIT_ZERO_VALUE;\n\
+reg [" +
+      selector_left + ":0] _next_selector;\n\
 reg [63:0] data1;\n\
 reg [7:0] _present_data2 1INIT_ZERO_VALUE;\n\
 reg [7:0] _next_data2;\n\
@@ -136,7 +144,8 @@ reg write_done;\n\
         _present_state <= S_0;\n\
         _present_pointer <= {BITSIZE_Mout_addr_ram{1'b0}};\n\
         _present_pointer1 <= {BITSIZE_Mout_addr_ram{1'b0}};\n\
-        _present_selector <="+selector_dimension+"'d0;\n\
+        _present_selector <=" +
+      selector_dimension + "'d0;\n\
         _present_data2 <= 8'b0;\n\
       end\n\
     else\n\
@@ -148,7 +157,8 @@ reg write_done;\n\
         _present_data2 <= _next_data2;\n\
       end\n\
 \n\
-  always @(_present_state or _present_pointer or _present_pointer1 or _present_selector or start_port or M_DataRdy or Min_we_ram or Min_oe_ram or Min_Wdata_ram or Min_addr_ram or Min_data_ram_size" + sensitivity + " or _present_data2 or M_Rdata_ram)\n\
+  always @(_present_state or _present_pointer or _present_pointer1 or _present_selector or start_port or M_DataRdy or Min_we_ram or Min_oe_ram or Min_Wdata_ram or Min_addr_ram or Min_data_ram_size" +
+      sensitivity + " or _present_data2 or M_Rdata_ram)\n\
       begin\n\
         Mout_we_ram = Min_we_ram;\n\
         Mout_Wdata_ram = Min_Wdata_ram;\n\
@@ -161,7 +171,8 @@ reg write_done;\n\
         _next_pointer1 = _present_pointer1;\n\
         _next_selector = _present_selector;\n\
         _next_data2 = _present_data2;\n\
-        "+ case_statement + "\n\
+        " +
+      case_statement + "\n\
         case (_present_state)\n\
           S_0:\n\
             if(start_port)\n\
@@ -169,7 +180,8 @@ reg write_done;\n\
                 _next_pointer=0;\n\
                 _next_pointer1=0;\n\
                 _next_state=S_1;  \n\
-                _next_selector="+selector_dimension+"'d2;\n \
+                _next_selector=" +
+      selector_dimension + "'d2;\n \
               end\n\
             \n\
          S_1:\n\

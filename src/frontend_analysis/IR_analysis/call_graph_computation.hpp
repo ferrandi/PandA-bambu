@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -71,29 +71,15 @@ REF_FORWARD_DECL(tree_node);
 class call_graph_computation : public ApplicationFrontendFlowStep
 {
  private:
-   /// The CallGraphManager used to modify the call graph
-   const CallGraphManagerRef CGM;
-
-   /// Index of current function
-   unsigned int current;
-
-   /// set of already examined addr_expr used to avoid circular recursion
-   CustomOrderedSet<tree_nodeRef> already_visited;
-
-   /**
-    * Recursive analysis of the tree nodes looking for call expressions.
-    * @param TM is the tree manager.
-    * @param tn is current tree node.
-    * @param node_stmt is the analyzed tree node
-    * @param call_type is the type of call to be added
-    */
-   void call_graph_computation_recursive(const tree_managerRef& TM, const tree_nodeRef& tn, unsigned int node_stmt, enum FunctionEdgeInfo::CallType call_type);
+   /// Already visited tree node (used to avoid infinite recursion)
+   CustomUnorderedSet<unsigned int> already_visited;
 
    /**
     * Return the set of analyses in relationship with this design step
     * @param relationship_type is the type of relationship to be considered
     */
-   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>>
+   ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
  public:
    /**
@@ -102,7 +88,8 @@ class call_graph_computation : public ApplicationFrontendFlowStep
     * @param AppM is the application manager
     * @param design_flow_manager is the design flow manager
     */
-   call_graph_computation(const ParameterConstRef Param, const application_managerRef AppM, const DesignFlowManagerConstRef design_flow_manager);
+   call_graph_computation(const ParameterConstRef _parameters, const application_managerRef AppM,
+                          const DesignFlowManagerConstRef design_flow_manager);
 
    /**
     *  Destructor

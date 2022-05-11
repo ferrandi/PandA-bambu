@@ -12,9 +12,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#
 
-load("@rules_cc//cc:defs.bzl", "cc_library", "cc_test")
 load(
     "//absl:copts/configure_copts.bzl",
     "ABSL_DEFAULT_COPTS",
@@ -24,7 +22,7 @@ load(
 
 package(default_visibility = ["//visibility:public"])
 
-licenses(["notice"])  # Apache 2.0
+licenses(["notice"])
 
 cc_library(
     name = "any",
@@ -35,6 +33,7 @@ cc_library(
         ":bad_any_cast",
         "//absl/base:config",
         "//absl/base:core_headers",
+        "//absl/base:fast_type_id",
         "//absl/meta:type_traits",
         "//absl/utility",
     ],
@@ -204,6 +203,44 @@ cc_test(
         ":optional",
         "//absl/base:config",
         "//absl/base:exception_safety_testing",
+        "@com_google_googletest//:gtest_main",
+    ],
+)
+
+cc_library(
+    name = "conformance_testing",
+    testonly = 1,
+    hdrs = [
+        "internal/conformance_aliases.h",
+        "internal/conformance_archetype.h",
+        "internal/conformance_profile.h",
+        "internal/conformance_testing.h",
+        "internal/conformance_testing_helpers.h",
+        "internal/parentheses.h",
+        "internal/transform_args.h",
+    ],
+    copts = ABSL_TEST_COPTS,
+    linkopts = ABSL_DEFAULT_LINKOPTS,
+    deps = [
+        "//absl/algorithm:container",
+        "//absl/meta:type_traits",
+        "//absl/strings",
+        "//absl/utility",
+        "@com_google_googletest//:gtest",
+    ],
+)
+
+cc_test(
+    name = "conformance_testing_test",
+    size = "small",
+    srcs = [
+        "internal/conformance_testing_test.cc",
+    ],
+    copts = ABSL_TEST_COPTS,
+    linkopts = ABSL_DEFAULT_LINKOPTS,
+    deps = [
+        ":conformance_testing",
+        "//absl/meta:type_traits",
         "@com_google_googletest//:gtest_main",
     ],
 )

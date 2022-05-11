@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -52,8 +52,14 @@
 #include "state_transition_graph.hpp"
 #include "state_transition_graph_manager.hpp"
 
-StateTransitionGraph_constructor::StateTransitionGraph_constructor(const StateTransitionGraphsCollectionRef _state_transition_graphs_collection, const HLS_managerConstRef _HLSMgr, unsigned int _funId)
-    : state_index(0), state_transition_graphs_collection(_state_transition_graphs_collection), state_transition_graph(new StateTransitionGraph(state_transition_graphs_collection, -1)), HLSMgr(_HLSMgr), funId(_funId)
+StateTransitionGraph_constructor::StateTransitionGraph_constructor(
+    const StateTransitionGraphsCollectionRef _state_transition_graphs_collection, const HLS_managerConstRef _HLSMgr,
+    unsigned int _funId)
+    : state_index(0),
+      state_transition_graphs_collection(_state_transition_graphs_collection),
+      state_transition_graph(new StateTransitionGraph(state_transition_graphs_collection, -1)),
+      HLSMgr(_HLSMgr),
+      funId(_funId)
 {
 }
 
@@ -61,15 +67,21 @@ void StateTransitionGraph_constructor::create_entry_state()
 {
    vertex newVertex = state_transition_graphs_collection->AddVertex(NodeInfoRef(new StateInfo()));
    const StateInfoRef state_info = state_transition_graph->GetStateInfo(newVertex);
-   const OpGraphInfoConstRef cfg = HLSMgr.lock()->CGetFunctionBehavior(funId)->CGetOpGraph(FunctionBehavior::CFG)->CGetOpGraphInfo();
+   const OpGraphInfoConstRef cfg =
+       HLSMgr.lock()->CGetFunctionBehavior(funId)->CGetOpGraph(FunctionBehavior::CFG)->CGetOpGraphInfo();
    state_info->HLSMgr = HLSMgr;
    state_info->funId = funId;
    state_info->name = "ENTRY";
    state_info->executing_operations.push_back(cfg->entry_vertex);
    state_info->starting_operations.push_back(cfg->entry_vertex);
    state_info->ending_operations.push_back(cfg->entry_vertex);
-   state_info->BB_ids.insert(HLSMgr.lock()->CGetFunctionBehavior(funId)->CGetOpGraph(FunctionBehavior::CFG)->CGetOpNodeInfo(cfg->entry_vertex)->bb_index);
-   //   state_info->BB_ids.insert(GET_BB_INDEX(HLSMgr.lock()->CGetFunctionBehavior(funId)->CGetOpGraph(FunctionBehavior::CFG).get(), cfg->entry_vertex));
+   state_info->BB_ids.insert(HLSMgr.lock()
+                                 ->CGetFunctionBehavior(funId)
+                                 ->CGetOpGraph(FunctionBehavior::CFG)
+                                 ->CGetOpNodeInfo(cfg->entry_vertex)
+                                 ->bb_index);
+   //   state_info->BB_ids.insert(GET_BB_INDEX(HLSMgr.lock()->CGetFunctionBehavior(funId)->CGetOpGraph(FunctionBehavior::CFG).get(),
+   //   cfg->entry_vertex));
    state_transition_graph->GetStateTransitionGraphInfo()->entry_node = newVertex;
 }
 
@@ -77,19 +89,24 @@ void StateTransitionGraph_constructor::create_exit_state()
 {
    vertex newVertex = state_transition_graphs_collection->AddVertex(NodeInfoRef(new StateInfo()));
    const StateInfoRef state_info = state_transition_graph->GetStateInfo(newVertex);
-   const OpGraphInfoConstRef cfg = HLSMgr.lock()->CGetFunctionBehavior(funId)->CGetOpGraph(FunctionBehavior::CFG)->CGetOpGraphInfo();
+   const OpGraphInfoConstRef cfg =
+       HLSMgr.lock()->CGetFunctionBehavior(funId)->CGetOpGraph(FunctionBehavior::CFG)->CGetOpGraphInfo();
    state_info->HLSMgr = HLSMgr;
    state_info->funId = funId;
    state_info->name = "EXIT";
    state_info->executing_operations.push_back(cfg->exit_vertex);
    state_info->starting_operations.push_back(cfg->exit_vertex);
    state_info->ending_operations.push_back(cfg->exit_vertex);
-   state_info->BB_ids.insert(GET_BB_INDEX(HLSMgr.lock()->CGetFunctionBehavior(funId)->CGetOpGraph(FunctionBehavior::CFG).get(), cfg->exit_vertex));
+   state_info->BB_ids.insert(GET_BB_INDEX(
+       HLSMgr.lock()->CGetFunctionBehavior(funId)->CGetOpGraph(FunctionBehavior::CFG).get(), cfg->exit_vertex));
 
    state_transition_graph->GetStateTransitionGraphInfo()->exit_node = newVertex;
 }
 
-vertex StateTransitionGraph_constructor::create_state(const std::list<vertex>& exec_op, const std::list<vertex>& start_op, const std::list<vertex>& end_op, const CustomOrderedSet<unsigned int>& BB_ids)
+vertex StateTransitionGraph_constructor::create_state(const std::list<vertex>& exec_op,
+                                                      const std::list<vertex>& start_op,
+                                                      const std::list<vertex>& end_op,
+                                                      const CustomOrderedSet<unsigned int>& BB_ids)
 {
    vertex newVertex = state_transition_graphs_collection->AddVertex(NodeInfoRef(new StateInfo()));
    const StateInfoRef state_info = state_transition_graph->GetStateInfo(newVertex);
@@ -111,20 +128,25 @@ vertex StateTransitionGraph_constructor::create_state(const std::list<vertex>& e
 EdgeDescriptor StateTransitionGraph_constructor::connect_state(const vertex& src, const vertex& tgt, int type)
 {
    if(type == TransitionInfo::StateTransitionType::ST_EDGE_FEEDBACK)
+   {
       state_transition_graph->GetStateTransitionGraphInfo()->is_a_dag = false;
+   }
    // get the vertex iterator
    VertexIterator vIterBeg, vIterEnd;
    boost::tie(vIterBeg, vIterEnd) = boost::vertices(*state_transition_graph);
    // check that source and target have been already added
-   THROW_ASSERT(std::find(vIterBeg, vIterEnd, src) != vIterEnd and std::find(vIterBeg, vIterEnd, tgt) != vIterEnd, "Source vertex or target one is not present into graph");
+   THROW_ASSERT(std::find(vIterBeg, vIterEnd, src) != vIterEnd and std::find(vIterBeg, vIterEnd, tgt) != vIterEnd,
+                "Source vertex or target one is not present into graph");
    EdgeDescriptor e;
    bool exists;
    boost::tie(e, exists) = boost::edge(src, tgt, *state_transition_graphs_collection);
-   THROW_ASSERT((not exists) or (not(state_transition_graph->GetSelector(e) & type)), "transition already present with the same selector");
+   THROW_ASSERT((not exists) or (not(state_transition_graph->GetSelector(e) & type)),
+                "transition already present with the same selector");
    // edge creation
    if(not exists)
    {
-      const TransitionInfoRef eInfo = TransitionInfoRef(new TransitionInfo(HLSMgr.lock()->CGetFunctionBehavior(funId)->CGetOpGraph(FunctionBehavior::CFG)));
+      const TransitionInfoRef eInfo = TransitionInfoRef(
+          new TransitionInfo(HLSMgr.lock()->CGetFunctionBehavior(funId)->CGetOpGraph(FunctionBehavior::CFG)));
       e = state_transition_graphs_collection->AddEdge(src, tgt, type, eInfo);
    }
    else
@@ -140,14 +162,16 @@ void StateTransitionGraph_constructor::set_condition(const EdgeDescriptor& e, tr
    state_transition_graph->GetTransitionInfo(e)->ops.insert(op);
 }
 
-void StateTransitionGraph_constructor::set_unbounded_condition(const EdgeDescriptor& e, transition_type t, const CustomOrderedSet<vertex>& ops, vertex ref_state)
+void StateTransitionGraph_constructor::set_unbounded_condition(const EdgeDescriptor& e, transition_type t,
+                                                               const CustomOrderedSet<vertex>& ops, vertex ref_state)
 {
    state_transition_graph->GetTransitionInfo(e)->t = t;
    state_transition_graph->GetTransitionInfo(e)->ops = ops;
    state_transition_graph->GetTransitionInfo(e)->ref_state = ref_state;
 }
 
-void StateTransitionGraph_constructor::set_switch_condition(const EdgeDescriptor& e, vertex op, const CustomOrderedSet<unsigned>& labels, bool has_default)
+void StateTransitionGraph_constructor::set_switch_condition(const EdgeDescriptor& e, vertex op,
+                                                            const CustomOrderedSet<unsigned>& labels, bool has_default)
 {
    state_transition_graph->GetTransitionInfo(e)->t = CASE_COND;
    state_transition_graph->GetTransitionInfo(e)->ops.insert(op);
@@ -159,7 +183,8 @@ void StateTransitionGraph_constructor::copy_condition(const EdgeDescriptor& dest
 {
    state_transition_graph->GetTransitionInfo(dest)->t = state_transition_graph->GetTransitionInfo(source)->t;
    state_transition_graph->GetTransitionInfo(dest)->ops = state_transition_graph->GetTransitionInfo(source)->ops;
-   state_transition_graph->GetTransitionInfo(dest)->has_default = state_transition_graph->GetTransitionInfo(source)->has_default;
+   state_transition_graph->GetTransitionInfo(dest)->has_default =
+       state_transition_graph->GetTransitionInfo(source)->has_default;
    state_transition_graph->GetTransitionInfo(dest)->labels = state_transition_graph->GetTransitionInfo(source)->labels;
 }
 

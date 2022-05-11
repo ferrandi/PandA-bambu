@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -64,144 +64,146 @@ class network_flow
 
    struct nf_name_t
    {
-      typedef boost::vertex_property_tag kind;
+      using kind = boost::vertex_property_tag;
    };
 
    struct nf_index_t
    {
-      typedef boost::vertex_property_tag kind;
+      using kind = boost::vertex_property_tag;
    };
 
    struct nf_distance_t
    {
-      typedef boost::vertex_property_tag kind;
+      using kind = boost::vertex_property_tag;
    };
 
    struct nf_potential_t
    {
-      typedef boost::vertex_property_tag kind;
+      using kind = boost::vertex_property_tag;
    };
 
    struct nf_imbalance_t
    {
-      typedef boost::vertex_property_tag kind;
+      using kind = boost::vertex_property_tag;
    };
 
    struct nf_balance_t
    {
-      typedef boost::vertex_property_tag kind;
+      using kind = boost::vertex_property_tag;
    };
 
    struct nf_vertex_description_t
    {
-      typedef boost::vertex_property_tag kind;
+      using kind = boost::vertex_property_tag;
    };
 
    /**edge tags*/
 
    struct nf_cost_t
    {
-      typedef boost::edge_property_tag kind;
+      using kind = boost::edge_property_tag;
    };
 
    struct nf_capacity_t
    {
-      typedef boost::edge_property_tag kind;
+      using kind = boost::edge_property_tag;
    };
 
    struct nf_flow_t
    {
-      typedef boost::edge_property_tag kind;
+      using kind = boost::edge_property_tag;
    };
 
    struct nf_reduced_cost_t
    {
-      typedef boost::edge_property_tag kind;
+      using kind = boost::edge_property_tag;
    };
 
    struct nf_residual_capacity_t
    {
-      typedef boost::edge_property_tag kind;
+      using kind = boost::edge_property_tag;
    };
 
    struct nf_pseudo_flow_t
    {
-      typedef boost::edge_property_tag kind;
+      using kind = boost::edge_property_tag;
    };
 
    struct nf_edge_description_t
    {
-      typedef boost::edge_property_tag kind;
+      using kind = boost::edge_property_tag;
    };
 
    /**vertex properties*/
 
-   typedef boost::property<nf_vertex_description_t, std::string> vertex_nf_description_property;
+   using vertex_nf_description_property = boost::property<nf_vertex_description_t, std::string>;
 
-   typedef boost::property<nf_balance_t, double, vertex_nf_description_property> vertex_nf_balance_property;
+   using vertex_nf_balance_property = boost::property<nf_balance_t, double, vertex_nf_description_property>;
 
-   typedef boost::property<nf_imbalance_t, double, vertex_nf_balance_property> vertex_nf_imbalance_property;
+   using vertex_nf_imbalance_property = boost::property<nf_imbalance_t, double, vertex_nf_balance_property>;
 
-   typedef boost::property<nf_potential_t, double, vertex_nf_imbalance_property> vertex_nf_potential_property;
+   using vertex_nf_potential_property = boost::property<nf_potential_t, double, vertex_nf_imbalance_property>;
 
-   typedef boost::property<nf_distance_t, double, vertex_nf_potential_property> vertex_nf_distance_property;
+   using vertex_nf_distance_property = boost::property<nf_distance_t, double, vertex_nf_potential_property>;
 
-   typedef boost::property<nf_index_t, long unsigned int, vertex_nf_distance_property> vertex_nf_index_property;
+   using vertex_nf_index_property = boost::property<nf_index_t, unsigned long, vertex_nf_distance_property>;
 
-   typedef boost::property<nf_name_t, std::string, vertex_nf_index_property> vertex_nf_property;
+   using vertex_nf_property = boost::property<nf_name_t, std::string, vertex_nf_index_property>;
 
    /**edge properties*/
 
-   typedef boost::property<nf_edge_description_t, std::string> edge_nf_description_property;
+   using edge_nf_description_property = boost::property<nf_edge_description_t, std::string>;
 
-   typedef boost::property<nf_pseudo_flow_t, double, edge_nf_description_property> edge_nf_pseudo_flow_property;
+   using edge_nf_pseudo_flow_property = boost::property<nf_pseudo_flow_t, double, edge_nf_description_property>;
 
-   typedef boost::property<nf_residual_capacity_t, double, edge_nf_pseudo_flow_property> edge_nf_residual_capacity_property;
+   using edge_nf_residual_capacity_property =
+       boost::property<nf_residual_capacity_t, double, edge_nf_pseudo_flow_property>;
 
-   typedef boost::property<nf_reduced_cost_t, double, edge_nf_residual_capacity_property> edge_nf_reduced_cost_property;
+   using edge_nf_reduced_cost_property = boost::property<nf_reduced_cost_t, double, edge_nf_residual_capacity_property>;
 
-   typedef boost::property<nf_flow_t, double, edge_nf_reduced_cost_property> edge_nf_flow_property;
+   using edge_nf_flow_property = boost::property<nf_flow_t, double, edge_nf_reduced_cost_property>;
 
-   typedef boost::property<nf_capacity_t, double, edge_nf_flow_property> edge_nf_capacity_property;
+   using edge_nf_capacity_property = boost::property<nf_capacity_t, double, edge_nf_flow_property>;
 
-   typedef boost::property<nf_cost_t, double, edge_nf_capacity_property> edge_nf_property;
+   using edge_nf_property = boost::property<nf_cost_t, double, edge_nf_capacity_property>;
 
  public:
    /**definition of the Network Flow Graph*/
-   typedef boost::adjacency_list<boost::vecS, boost::vecS, boost::bidirectionalS, vertex_nf_property, edge_nf_property> network_flow_graph_type;
+   using network_flow_graph_type =
+       boost::adjacency_list<boost::vecS, boost::vecS, boost::bidirectionalS, vertex_nf_property, edge_nf_property>;
 
  private:
    /**vertex maps*/
 
-   typedef boost::property_map<network_flow_graph_type, nf_vertex_description_t>::type pmap_nf_vertex_description_t;
+   using pmap_nf_vertex_description_t = boost::property_map<network_flow_graph_type, nf_vertex_description_t>::type;
 
-   typedef boost::property_map<network_flow_graph_type, nf_balance_t>::type pmap_nf_balance_t;
+   using pmap_nf_balance_t = boost::property_map<network_flow_graph_type, nf_balance_t>::type;
 
-   typedef boost::property_map<network_flow_graph_type, nf_imbalance_t>::type pmap_nf_imbalance_t;
+   using pmap_nf_imbalance_t = boost::property_map<network_flow_graph_type, nf_imbalance_t>::type;
 
-   typedef boost::property_map<network_flow_graph_type, nf_potential_t>::type pmap_nf_potential_t;
+   using pmap_nf_potential_t = boost::property_map<network_flow_graph_type, nf_potential_t>::type;
 
-   typedef boost::property_map<network_flow_graph_type, nf_distance_t>::type pmap_nf_distance_t;
+   using pmap_nf_distance_t = boost::property_map<network_flow_graph_type, nf_distance_t>::type;
 
-   typedef boost::property_map<network_flow_graph_type, nf_index_t>::type pmap_nf_index_t;
+   using pmap_nf_index_t = boost::property_map<network_flow_graph_type, nf_index_t>::type;
 
-   typedef boost::property_map<network_flow_graph_type, nf_name_t>::type pmap_nf_name_t;
+   using pmap_nf_name_t = boost::property_map<network_flow_graph_type, nf_name_t>::type;
 
    /**edge maps*/
 
-   typedef boost::property_map<network_flow_graph_type, nf_edge_description_t>::type pmap_nf_edge_description_t;
+   using pmap_nf_edge_description_t = boost::property_map<network_flow_graph_type, nf_edge_description_t>::type;
 
-   typedef boost::property_map<network_flow_graph_type, nf_pseudo_flow_t>::type pmap_nf_pseudo_flow_t;
+   using pmap_nf_pseudo_flow_t = boost::property_map<network_flow_graph_type, nf_pseudo_flow_t>::type;
 
-   typedef boost::property_map<network_flow_graph_type, nf_residual_capacity_t>::type pmap_nf_residual_capacity_t;
+   using pmap_nf_residual_capacity_t = boost::property_map<network_flow_graph_type, nf_residual_capacity_t>::type;
 
-   typedef boost::property_map<network_flow_graph_type, nf_reduced_cost_t>::type pmap_nf_reduced_cost_t;
+   using pmap_nf_reduced_cost_t = boost::property_map<network_flow_graph_type, nf_reduced_cost_t>::type;
 
-   typedef boost::property_map<network_flow_graph_type, nf_flow_t>::type pmap_nf_flow_t;
+   using pmap_nf_flow_t = boost::property_map<network_flow_graph_type, nf_flow_t>::type;
 
-   typedef boost::property_map<network_flow_graph_type, nf_capacity_t>::type pmap_nf_capacity_t;
+   using pmap_nf_capacity_t = boost::property_map<network_flow_graph_type, nf_capacity_t>::type;
 
-   typedef boost::property_map<network_flow_graph_type, nf_cost_t>::type pmap_nf_cost_t;
+   using pmap_nf_cost_t = boost::property_map<network_flow_graph_type, nf_cost_t>::type;
 
  public:
    /**Network flow graph pointer*/
@@ -243,7 +245,7 @@ class network_flow
     * Constructor of the class.
     * @param debug_level_ is the debug level
     */
-   explicit network_flow(int debug_level_);
+   explicit network_flow(int _debug_level);
 
    /**
     * Destructor of the class.
@@ -269,7 +271,8 @@ class network_flow
    bool print_graph(const char* file_name = "network_flow.dot");
 
  private:
-   typedef std::pair<network_flow_graph_type::vertex_descriptor, network_flow_graph_type::vertex_descriptor> vertex_pair;
+   using vertex_pair =
+       std::pair<network_flow_graph_type::vertex_descriptor, network_flow_graph_type::vertex_descriptor>;
    CustomOrderedSet<vertex_pair> inserted_edges; // used to remember the edges added to represent the residual network
 
    int debug_level; // the debug level
@@ -304,10 +307,12 @@ class network_flow
     * @param target is the target vertex
     * @param P is the shortest path from source to target
     */
-   void generic_label_correcting_algorithm(network_flow_graph_type::vertex_descriptor source, network_flow_graph_type::vertex_descriptor target, std::vector<network_flow_graph_type::edge_descriptor>* P);
+   void generic_label_correcting_algorithm(network_flow_graph_type::vertex_descriptor source,
+                                           network_flow_graph_type::vertex_descriptor target,
+                                           std::vector<network_flow_graph_type::edge_descriptor>* P);
 };
 
 /// refcount definition of the class
-typedef refcount<network_flow> network_flowRef;
+using network_flowRef = refcount<network_flow>;
 
 #endif

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -35,7 +35,8 @@
  * @brief implementation of loops finding algorithm
  *
  * Loops are detection described in
- * in Vugranam C. Sreedhar, Guang R. Gao, Yong-Fong Lee: Identifying Loops Using DJ Graphs. ACM Trans. Program. Lang. Syst. 18(6): 649-658 (1996)
+ * in Vugranam C. Sreedhar, Guang R. Gao, Yong-Fong Lee: Identifying Loops Using DJ Graphs. ACM Trans. Program. Lang.
+ * Syst. 18(6): 649-658 (1996)
  *
  * @author Marco Garatti <m.garatti@gmail.com>
  * @author Marco Lattuada <marco.lattuada@polimi.it>
@@ -114,15 +115,23 @@ struct djgraph_dfs_tree_visitor : public boost::default_dfs_visitor
     * @param parent_depth_search_spanning_tree is the dfs spanning tree
     * @param parameters is the set of input parameters
     */
-   djgraph_dfs_tree_visitor(CustomUnorderedMap<vertex, unsigned int>& _vertex_level, CustomUnorderedMap<vertex, unsigned int>& _dfs_order, unsigned int& _max_level, vertex2obj<vertex>& _parent_depth_search_spanning_tree, const ParameterConstRef parameters)
-       : vertex_level(_vertex_level), dfs_order(_dfs_order), dfs_number(0), max_level(_max_level), parent_depth_search_spanning_tree(_parent_depth_search_spanning_tree), debug_level(parameters->get_class_debug_level(GET_CLASS(*this)))
+   djgraph_dfs_tree_visitor(CustomUnorderedMap<vertex, unsigned int>& _vertex_level,
+                            CustomUnorderedMap<vertex, unsigned int>& _dfs_order, unsigned int& _max_level,
+                            vertex2obj<vertex>& _parent_depth_search_spanning_tree, const ParameterConstRef parameters)
+       : vertex_level(_vertex_level),
+         dfs_order(_dfs_order),
+         dfs_number(0),
+         max_level(_max_level),
+         parent_depth_search_spanning_tree(_parent_depth_search_spanning_tree),
+         debug_level(parameters->get_class_debug_level(GET_CLASS(*this)))
    {
    }
 
    template <class Vertex, class Graph>
    void discover_vertex(Vertex v, Graph& g)
    {
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Discovered vertex BB" + STR(g.CGetBBNodeInfo(v)->block->number));
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                     "---Discovered vertex BB" + STR(g.CGetBBNodeInfo(v)->block->number));
       /// Set the dfs order
       dfs_order[v] = dfs_number++;
       /// and the vertex level
@@ -173,7 +182,10 @@ struct djgraph_dfs_tree_visitor : public boost::default_dfs_visitor
    }
 };
 
-Loops::Loops(const FunctionBehaviorRef _FB, const ParameterConstRef parameters) : FB(FunctionBehaviorRef(_FB.get(), null_deleter())), Param(parameters), debug_level(parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE))
+Loops::Loops(const FunctionBehaviorRef _FB, const ParameterConstRef parameters)
+    : FB(FunctionBehaviorRef(_FB.get(), null_deleter())),
+      Param(parameters),
+      debug_level(parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE))
 {
    /// Detect loops
    DetectLoops();
@@ -197,7 +209,9 @@ bool Loops::is_edge_in_list(CustomUnorderedSet<vertex_pair>& l, vertex source, v
 
 static bool check_ancestor(vertex x, vertex y, const vertex2obj<vertex>& parent_depth_search_spanning_tree)
 {
-   return ((x != y && y == parent_depth_search_spanning_tree(x)) || (x != parent_depth_search_spanning_tree(x) && check_ancestor(parent_depth_search_spanning_tree(x), y, parent_depth_search_spanning_tree)));
+   return ((x != y && y == parent_depth_search_spanning_tree(x)) ||
+           (x != parent_depth_search_spanning_tree(x) &&
+            check_ancestor(parent_depth_search_spanning_tree(x), y, parent_depth_search_spanning_tree)));
 }
 
 void Loops::DetectLoops()
@@ -285,20 +299,28 @@ void Loops::DetectLoops()
    /// spanning tree construction and vertex labeling
    std::vector<boost::default_color_type> color_vec(boost::num_vertices(*djg));
    djgraph_dfs_tree_visitor vis(vertex_level_rel, dfs_order, max_level, parent_depth_search_spanning_tree, Param);
-   boost::depth_first_visit(*djg, entry, vis, boost::make_iterator_property_map(color_vec.begin(), boost::get(boost::vertex_index, *djg), boost::white_color));
+   boost::depth_first_visit(
+       *djg, entry, vis,
+       boost::make_iterator_property_map(color_vec.begin(), boost::get(boost::vertex_index, *djg), boost::white_color));
    std::vector<std::list<vertex>> level_vertices_rel(max_level + 1);
    /// compute the level_vertices_rel
    for(auto vl_pair : vertex_level_rel)
    {
       auto& curr_list = level_vertices_rel[vl_pair.second];
       auto pos = curr_list.begin();
-      const std::list<vertex>::iterator pos_end = curr_list.end();
+      const auto pos_end = curr_list.end();
       while(pos_end != pos && dfs_order.find(vl_pair.first)->second > dfs_order.find(*pos)->second)
+      {
          ++pos;
+      }
       if(pos == pos_end)
+      {
          curr_list.push_back(vl_pair.first);
+      }
       else
+      {
          curr_list.insert(pos, vl_pair.first);
+      }
    }
 
    /// Detect the sp-back edges
@@ -323,7 +345,8 @@ void Loops::DetectLoops()
       bool irreducible = false;
       for(auto v : level_vertices_rel[lev])
       {
-         PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Considering BB" + boost::lexical_cast<std::string>(cfg->CGetBBNodeInfo(v)->block->number));
+         PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                       "Considering BB" + boost::lexical_cast<std::string>(cfg->CGetBBNodeInfo(v)->block->number));
          const LoopRef loop = LoopRef(new Loop(cfg, v));
          bool reducible = false;
          CustomOrderedSet<vertex> visited;
@@ -335,7 +358,9 @@ void Loops::DetectLoops()
             if(is_edge_in_list(cj_edges, m, n) && is_edge_in_list(sp_back_edges, m, n))
             {
                PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                             "Irreducible loop found: SP-BACK-EDGE=" + boost::lexical_cast<std::string>(cfg->CGetBBNodeInfo(m)->block->number) + "->" + boost::lexical_cast<std::string>(cfg->CGetBBNodeInfo(n)->block->number));
+                             "Irreducible loop found: SP-BACK-EDGE=" +
+                                 boost::lexical_cast<std::string>(cfg->CGetBBNodeInfo(m)->block->number) + "->" +
+                                 boost::lexical_cast<std::string>(cfg->CGetBBNodeInfo(n)->block->number));
                irreducible = true;
             }
             if(is_edge_in_list(bj_edges, m, n))
@@ -346,7 +371,9 @@ void Loops::DetectLoops()
                DetectReducibleLoop(djg, visited, loop, m, n);
 
                PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                             "Found a reducible Loop: SP-BACK-EDGE=" + boost::lexical_cast<std::string>(cfg->CGetBBNodeInfo(m)->block->number) + "->" + boost::lexical_cast<std::string>(cfg->CGetBBNodeInfo(n)->block->number));
+                             "Found a reducible Loop: SP-BACK-EDGE=" +
+                                 boost::lexical_cast<std::string>(cfg->CGetBBNodeInfo(m)->block->number) + "->" +
+                                 boost::lexical_cast<std::string>(cfg->CGetBBNodeInfo(n)->block->number));
             }
          }
          if(reducible)
@@ -368,7 +395,9 @@ void Loops::DetectLoops()
       CustomUnorderedSet<vertex> blocks;
       curr_loop->get_recursively_bb(blocks);
       for(auto curr_sp_back_edge : sp_back_edges)
-         if(blocks.find(curr_sp_back_edge.first) != blocks.end() && blocks.find(curr_sp_back_edge.second) != blocks.end())
+      {
+         if(blocks.find(curr_sp_back_edge.first) != blocks.end() &&
+            blocks.find(curr_sp_back_edge.second) != blocks.end())
          {
             curr_loop->add_sp_back_edge(curr_sp_back_edge.first, curr_sp_back_edge.second);
             if(!curr_loop->IsReducible())
@@ -376,21 +405,29 @@ void Loops::DetectLoops()
                curr_loop->add_entry(curr_sp_back_edge.second);
                vertex entry_imm_dom = dom->get_immediate_dominator(curr_sp_back_edge.second);
                for(auto cur_bb : blocks)
+               {
                   if(entry_imm_dom == dom->get_immediate_dominator(cur_bb))
+                  {
                      curr_loop->add_entry(cur_bb);
+                  }
+               }
             }
          }
+      }
       THROW_ASSERT(curr_loop->get_sp_back_edges().size() > 0, "wrongly computed loop back edges");
    }
    PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Added spanning tree back edges at " + function_name);
 }
 
-void Loops::DetectReducibleLoop(const BBGraphRef djg, CustomOrderedSet<vertex>& visited, LoopRef l, vertex real_node, vertex header)
+void Loops::DetectReducibleLoop(const BBGraphRef djg, CustomOrderedSet<vertex>& visited, LoopRef l, vertex real_node,
+                                vertex header)
 {
    graph::in_edge_iterator e_iter, e_iter_end;
 
    if(real_node == header)
+   {
       return;
+   }
    visited.insert(real_node);
 
    if(block_to_loop.find(real_node) == block_to_loop.end())
@@ -419,13 +456,17 @@ void Loops::DetectReducibleLoop(const BBGraphRef djg, CustomOrderedSet<vertex>& 
    {
       vertex source = boost::source(*e_iter, *djg);
       if(visited.find(source) == visited.end())
+      {
          DetectReducibleLoop(djg, visited, l, source, header);
+      }
    }
 }
 
-void Loops::DetectIrreducibleLoop(const BBGraphRef djg, unsigned int min_level, unsigned int max_level, std::vector<std::list<vertex>>& level_vertices_rel)
+void Loops::DetectIrreducibleLoop(const BBGraphRef djg, unsigned int min_level, unsigned int max_level,
+                                  std::vector<std::list<vertex>>& level_vertices_rel)
 {
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Detecting irreducible loop - Min level " + STR(min_level) + " - Max level " + STR(max_level));
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                  "-->Detecting irreducible loop - Min level " + STR(min_level) + " - Max level " + STR(max_level));
    CustomOrderedSet<vertex> u;
 
    /// Populate u with all the non-visited node whose level is >= min_level
@@ -433,7 +474,8 @@ void Loops::DetectIrreducibleLoop(const BBGraphRef djg, unsigned int min_level, 
    {
       for(auto v : level_vertices_rel[level])
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Inserting BB" + STR(djg->CGetBBNodeInfo(v)->block->number) + " into set to be analyzed");
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                        "---Inserting BB" + STR(djg->CGetBBNodeInfo(v)->block->number) + " into set to be analyzed");
          u.insert(v);
       }
    }
@@ -443,7 +485,10 @@ void Loops::DetectIrreducibleLoop(const BBGraphRef djg, unsigned int min_level, 
    {
       unsigned int max_dfs = 0;
       vertex min_ord_ver = *(u.begin());
-      PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "DetectIrreducibleLoop: starting vertex=" + boost::lexical_cast<std::string>(FB->GetBBGraph(FunctionBehavior::BB)->CGetBBNodeInfo(min_ord_ver)->block->number));
+      PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                    "DetectIrreducibleLoop: starting vertex=" +
+                        boost::lexical_cast<std::string>(
+                            FB->GetBBGraph(FunctionBehavior::BB)->CGetBBNodeInfo(min_ord_ver)->block->number));
       CustomUnorderedMap<vertex, unsigned int> dfs_order;
       std::list<vertex> s;
       CustomUnorderedMap<vertex, unsigned int> lowlink;
@@ -464,12 +509,16 @@ bool Loops::stack_contains(std::list<vertex> stack, vertex v)
    {
       vertex current_node = *stack_iter;
       if(current_node == v)
+      {
          return true;
+      }
    }
    return false;
 }
 
-void Loops::tarjan_scc(const BBGraphRef djg, vertex v, CustomUnorderedMap<vertex, unsigned int>& dfs_order, CustomUnorderedMap<vertex, unsigned int>& lowlink, std::list<vertex>& s, CustomOrderedSet<vertex>& u, unsigned int& max_dfs)
+void Loops::tarjan_scc(const BBGraphRef djg, vertex v, CustomUnorderedMap<vertex, unsigned int>& dfs_order,
+                       CustomUnorderedMap<vertex, unsigned int>& lowlink, std::list<vertex>& s,
+                       CustomOrderedSet<vertex>& u, unsigned int& max_dfs)
 {
    dfs_order[v] = max_dfs++;
    lowlink[v] = dfs_order[v];
@@ -493,7 +542,9 @@ void Loops::tarjan_scc(const BBGraphRef djg, vertex v, CustomUnorderedMap<vertex
    }
 
    if(s.back() == v && lowlink[v] == dfs_order[v])
+   {
       s.pop_back();
+   }
    else if(lowlink[v] == dfs_order[v])
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Checking if we have to build a new irreducible loop");
@@ -514,7 +565,8 @@ void Loops::tarjan_scc(const BBGraphRef djg, vertex v, CustomUnorderedMap<vertex
       CustomUnorderedSet<LoopRef> nested_loops;
       for(const auto candidate : candidate_body_loop)
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing candidate BB" + STR(djg->CGetBBNodeInfo(candidate)->block->number));
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                        "-->Analyzing candidate BB" + STR(djg->CGetBBNodeInfo(candidate)->block->number));
          if(block_to_loop.find(candidate) != block_to_loop.end())
          {
             const auto candidate_nesting_loop = block_to_loop.find(candidate)->second;
@@ -537,27 +589,33 @@ void Loops::tarjan_scc(const BBGraphRef djg, vertex v, CustomUnorderedMap<vertex
       if(real_body_loop.size())
       {
          LoopRef l = LoopRef(new Loop(djg));
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Creating data structure for irreducible loop " + STR(l->GetId()));
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                        "-->Creating data structure for irreducible loop " + STR(l->GetId()));
          for(const auto body_loop_vertex : real_body_loop)
          {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Adding BB" + STR(djg->CGetBBNodeInfo(body_loop_vertex)->block->number));
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                           "---Adding BB" + STR(djg->CGetBBNodeInfo(body_loop_vertex)->block->number));
             l->add_block(body_loop_vertex);
             block_to_loop[body_loop_vertex] = l;
          }
          for(const auto& nested_loop : nested_loops)
          {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Setting " + STR(l->GetId()) + " as parent of " + STR(nested_loop->GetId()));
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                           "---Setting " + STR(l->GetId()) + " as parent of " + STR(nested_loop->GetId()));
             nested_loop->SetParent(l);
             l->AddChild(nested_loop);
          }
          modifiable_loops_list.push_back(l);
          const_loops_list.push_back(l);
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Created data structure for irreducible loop " + STR(l->GetId()));
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Checking if we have to build a new irreducible loop: Yes");
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                        "<--Created data structure for irreducible loop " + STR(l->GetId()));
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                        "<--Checking if we have to build a new irreducible loop: Yes");
       }
       else
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Checking if we have to build a new irreducible loop: No");
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                        "<--Checking if we have to build a new irreducible loop: No");
       }
    }
 }
@@ -577,8 +635,12 @@ const LoopConstRef Loops::CGetLoop(unsigned int id) const
    std::list<LoopConstRef>::const_iterator it, it_end;
    it_end = const_loops_list.end();
    for(it = const_loops_list.begin(); it != it_end; ++it)
+   {
       if((*it)->GetId() == id)
+      {
          return *it;
+      }
+   }
    THROW_UNREACHABLE("Loop with id " + boost::lexical_cast<std::string>(id) + " doesn't exist");
    return LoopConstRef();
 }
@@ -588,8 +650,12 @@ const LoopRef Loops::GetLoop(unsigned int id)
    std::list<LoopRef>::const_iterator it, it_end;
    it_end = modifiable_loops_list.end();
    for(it = modifiable_loops_list.begin(); it != it_end; ++it)
+   {
       if((*it)->GetId() == id)
+      {
          return *it;
+      }
+   }
    THROW_UNREACHABLE("Loop with id " + boost::lexical_cast<std::string>(id) + " doesn't exist");
    return LoopRef();
 }
@@ -604,9 +670,9 @@ void Loops::WriteDot(const std::string& file_name
                      ,
                      const ProfilingInformationConstRef profiling_information
 #endif
-                     ) const
+) const
 {
-   std::string output_directory = Param->getOption<std::string>(OPT_dot_directory);
+   auto output_directory = Param->getOption<std::string>(OPT_dot_directory);
    output_directory += FB->CGetBehavioralHelper()->get_function_name() + "/";
    const BBGraphRef cfg = FB->GetBBGraph(FunctionBehavior::BB);
    std::ofstream dot((output_directory + file_name).c_str());
@@ -616,27 +682,45 @@ void Loops::WriteDot(const std::string& file_name
       dot << loop->GetId() << " [label=\"LoopId=" << loop->GetId() << " - Depth: " << loop->depth;
 #if HAVE_HOST_PROFILING_BUILT
       if(profiling_information)
-         dot << "\\nAvg. Iterations=" << profiling_information->GetLoopAvgIterations(loop) << "- Max Iterations=" << profiling_information->GetLoopMaxIterations(loop->GetId());
+      {
+         dot << "\\nAvg. Iterations=" << profiling_information->GetLoopAvgIterations(loop)
+             << "- Max Iterations=" << profiling_information->GetLoopMaxIterations(loop->GetId());
+      }
 #endif
       dot << "\\nType:";
       if(loop->loop_type & SINGLE_EXIT_LOOP)
+      {
          dot << " Single-Exit";
+      }
       if(loop->loop_type == UNKNOWN_LOOP)
+      {
          dot << " Generic";
+      }
       if(loop->loop_type & WHILE_LOOP)
+      {
          dot << " While";
+      }
       if(loop->loop_type & FOR_LOOP)
+      {
          dot << " For";
+      }
       if(loop->loop_type & DOALL_LOOP)
+      {
          dot << " DoAll";
+      }
       if(loop->loop_type & DO_WHILE_LOOP)
+      {
          dot << " DoWhile";
+      }
       if(loop->loop_type & COUNTABLE_LOOP)
       {
-         dot << " Countable[" << STR(loop->lower_bound) << ":" << STR(loop->increment) << ":" << STR(loop->upper_bound) << (loop->close_interval ? "]" : ")");
+         dot << " Countable[" << STR(loop->lower_bound) << ":" << STR(loop->increment) << ":" << STR(loop->upper_bound)
+             << (loop->close_interval ? "]" : ")");
       }
       if(loop->loop_type & PIPELINABLE_LOOP)
+      {
          dot << " Pipelinable";
+      }
       dot << "\\nBlocks:";
       const CustomUnorderedSet<vertex>& blocks = loop->get_blocks();
       CustomUnorderedSet<vertex>::const_iterator bb, bb_end = blocks.end();
@@ -680,9 +764,13 @@ void Loops::BuildZeroLoop()
    }
 
    if(not const_loops_list.empty())
+   {
       zero_loop->is_innermost_loop = false;
+   }
    else
+   {
       zero_loop->is_innermost_loop = true;
+   }
 
    std::list<LoopRef>::iterator loop, loop_end = modifiable_loops_list.end();
    for(loop = modifiable_loops_list.begin(); loop != loop_end; ++loop)
@@ -697,7 +785,9 @@ void Loops::BuildZeroLoop()
          for(child_block = children_blocks.begin(); child_block != child_block_end; ++child_block)
          {
             if(zero_loop->blocks.find(*child_block) != zero_loop->blocks.end())
+            {
                zero_loop->blocks.erase(zero_loop->blocks.find(*child_block));
+            }
          }
       }
    }

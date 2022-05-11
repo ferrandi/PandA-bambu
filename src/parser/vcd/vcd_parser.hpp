@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -76,7 +76,8 @@ class vcd_sig_info
     */
    CustomUnorderedMap<std::string, size_t> vcd_id_to_bit;
 
-   vcd_sig_info(std::string _type, const bool _is_vec, const size_t _msb, const size_t _lsb) : type(std::move(_type)), is_vec(_is_vec), msb(_msb), lsb(_lsb)
+   vcd_sig_info(const std::string& _type, const bool _is_vec, const size_t _msb, const size_t _lsb)
+       : type(_type), is_vec(_is_vec), msb(_msb), lsb(_lsb)
    {
    }
 };
@@ -97,7 +98,7 @@ class vcd_parser
     * the value type is a UnorderedSetStd containing all the names of the
     * signal that have to be selected in that scope
     */
-   typedef UnorderedMapStd<std::string, UnorderedSetStdStable<std::string>> vcd_filter_t;
+   using vcd_filter_t = UnorderedMapStd<std::string, UnorderedSetStdStable<std::string>>;
 
    /**
     * this type is the result of a parse.
@@ -105,7 +106,7 @@ class vcd_parser
     * the secondary key is the name of the signal.
     * the value type is std::list of sig_variation representing the waveform
     */
-   typedef UnorderedMapStd<std::string, CustomUnorderedMapStable<std::string, std::list<sig_variation>>> vcd_trace_t;
+   using vcd_trace_t = UnorderedMapStd<std::string, CustomUnorderedMapStable<std::string, std::list<sig_variation>>>;
 
    /**
     * parses a file selecting only a predefined set of signals.
@@ -208,7 +209,8 @@ class vcd_parser
     * @param [in] msb: most significant bit of the signal
     * @param [in] lsb: less significant bit of the signal
     */
-   void vcd_add_signal(const std::string& scope, const std::string& name, const std::string& vcd_id, const std::string& type, const bool isvect, const unsigned int msb, const unsigned int lsb);
+   void vcd_add_signal(const std::string& scope, const std::string& name, const std::string& vcd_id,
+                       const std::string& type, const bool isvect, const unsigned int msb, const unsigned int lsb);
 
    /**
     * check if the port vectors declarations are consistent

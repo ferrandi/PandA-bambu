@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -64,31 +64,45 @@ void system_verilog_writer::write_NP_functionalities(const structural_objectRef&
    auto* mod = GetPointer<module>(cir);
    THROW_ASSERT(mod, "Expected a component object");
    const NP_functionalityRef& np = mod->get_NP_functionality();
-   THROW_ASSERT(np, "NP Behavioral description is missing for module: " + HDL_manager::convert_to_identifier(this, GET_TYPE_NAME(cir)));
+   THROW_ASSERT(np, "NP Behavioral description is missing for module: " +
+                        HDL_manager::convert_to_identifier(this, GET_TYPE_NAME(cir)));
    std::string beh_desc = np->get_NP_functionality(NP_functionality::SYSTEM_VERILOG_PROVIDED);
-   THROW_ASSERT(beh_desc != "", "SYSTEM VERILOG behavioral description is missing for module: " + HDL_manager::convert_to_identifier(this, GET_TYPE_NAME(cir)));
+   THROW_ASSERT(beh_desc != "", "SYSTEM VERILOG behavioral description is missing for module: " +
+                                    HDL_manager::convert_to_identifier(this, GET_TYPE_NAME(cir)));
    remove_escaped(beh_desc);
    /// manage reset by preprocessing the behavioral description
    if(!parameters->getOption<bool>(OPT_level_reset))
    {
       if(parameters->getOption<std::string>(OPT_sync_reset) == "async")
+      {
          boost::replace_all(beh_desc, "1RESET_EDGE", "or negedge " + std::string(RESET_PORT_NAME));
+      }
       else
+      {
          boost::replace_all(beh_desc, "1RESET_EDGE", "");
+      }
       boost::replace_all(beh_desc, "1RESET_VALUE", std::string(RESET_PORT_NAME) + " == 1'b0");
    }
    else
    {
       if(parameters->getOption<std::string>(OPT_sync_reset) == "async")
+      {
          boost::replace_all(beh_desc, "1RESET_EDGE", "or posedge " + std::string(RESET_PORT_NAME));
+      }
       else
+      {
          boost::replace_all(beh_desc, "1RESET_EDGE", "");
+      }
       boost::replace_all(beh_desc, "1RESET_VALUE", std::string(RESET_PORT_NAME) + " == 1'b1");
    }
    if(parameters->getOption<bool>(OPT_reg_init_value))
+   {
       boost::replace_all(beh_desc, "1INIT_ZERO_VALUE", "=0");
+   }
    else
+   {
       boost::replace_all(beh_desc, "1INIT_ZERO_VALUE", "");
+   }
    indented_output_stream->Append(beh_desc);
 }
 

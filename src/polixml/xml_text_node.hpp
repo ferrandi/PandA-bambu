@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -70,18 +70,25 @@ class xml_text_node : public xml_node
       {
          // remove \t \n \r and spaces at the beginning
          size_t len_index = escaped.length();
-         while(len_index > 0 && (escaped[len_index - 1] == ' ' || escaped[len_index - 1] == '\t' || escaped[len_index - 1] == '\r' || escaped[len_index - 1] == '\n'))
+         while(len_index > 0 && (escaped[len_index - 1] == ' ' || escaped[len_index - 1] == '\t' ||
+                                 escaped[len_index - 1] == '\r' || escaped[len_index - 1] == '\n'))
+         {
             len_index--;
+         }
          if(len_index > 0)
          {
             unsigned int index = 0;
             while(escaped[index] == ' ' || escaped[index] == '\t' || escaped[index] == '\r' || escaped[index] == '\n')
+            {
                index++;
+            }
             os << escaped.substr(index, len_index - index);
          }
       }
       else
+      {
          os << escaped;
+      }
    }
 
    /** Get the text of this content node.
@@ -94,8 +101,8 @@ class xml_text_node : public xml_node
    }
 
    /** Set the text of this content node
-    * @param content The text. This must be unescaped, meaning that the predefined entities will be created for you where necessary.
-    * See get_content().
+    * @param content The text. This must be unescaped, meaning that the predefined entities will be created for you
+    * where necessary. See get_content().
     */
    void set_content(const std::string& content)
    {

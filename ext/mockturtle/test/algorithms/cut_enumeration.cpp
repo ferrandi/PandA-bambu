@@ -34,7 +34,7 @@ TEST_CASE( "enumerate cuts for an AIG", "[cut_enumeration]" )
       return;
 
     auto const& set = cuts.cuts( aig.node_to_index( n ) );
-    CHECK( to_vector( set[set.size() - 1] ) == std::vector<uint32_t>{aig.node_to_index( n )} );
+    CHECK( to_vector( set[static_cast<uint32_t>( set.size() - 1 )] ) == std::vector<uint32_t>{aig.node_to_index( n )} );
   } );
 
   const auto i1 = aig.node_to_index( aig.get_node( f1 ) );
@@ -158,18 +158,18 @@ TEST_CASE( "compute XOR network cuts in 2-LUT network", "[cut_enumeration]" )
   cut_enumeration_params ps;
   const auto cuts = cut_enumeration<klut_network, true>( klut, ps );
 
-  CHECK( cuts.cuts( g1 ).size() == 2u );
-  CHECK( cuts.cuts( g3 ).size() == 2u );
+  CHECK( cuts.cuts( klut.node_to_index( klut.get_node( g1 ) ) ).size() == 2u );
+  CHECK( cuts.cuts( klut.node_to_index( klut.get_node( g3 ) ) ).size() == 2u );
 
-  for ( auto const& cut : cuts.cuts( g1 ) ) {
+  for ( auto const& cut : cuts.cuts( klut.node_to_index( klut.get_node( g1 ) ) ) ) {
     CHECK( cut->size() == 1u );
   }
 
-  for ( auto const& cut : cuts.cuts( g3 ) ) {
+  for ( auto const& cut : cuts.cuts( klut.node_to_index( klut.get_node( g3 ) ) ) ) {
     CHECK( cut->size() == 1u );
   }
 
-  for ( auto const& cut : cuts.cuts( g5 ) ) {
+  for ( auto const& cut : cuts.cuts( klut.node_to_index( klut.get_node( g5 ) ) ) ) {
     if ( cut->size() == 2u && *cut->begin() == 2u ) {
       CHECK( cuts.truth_table( *cut )._bits[0] == 0x6u );
     }

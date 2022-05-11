@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -54,7 +54,8 @@
 #include "operations_graph_constructor.hpp"
 #include "string_manipulation.hpp" // for GET_CLASS
 
-OpOrderComputation::OpOrderComputation(const ParameterConstRef _Param, const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager)
+OpOrderComputation::OpOrderComputation(const ParameterConstRef _Param, const application_managerRef _AppM,
+                                       unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager)
     : FunctionFrontendFlowStep(_AppM, _function_id, OP_ORDER_COMPUTATION, _design_flow_manager, _Param)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
@@ -62,14 +63,15 @@ OpOrderComputation::OpOrderComputation(const ParameterConstRef _Param, const app
 
 OpOrderComputation::~OpOrderComputation() = default;
 
-const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> OpOrderComputation::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
+OpOrderComputation::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
    {
       case(DEPENDENCE_RELATIONSHIP):
       {
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(OP_FEEDBACK_EDGES_IDENTIFICATION, SAME_FUNCTION));
+         relationships.insert(std::make_pair(OP_FEEDBACK_EDGES_IDENTIFICATION, SAME_FUNCTION));
          break;
       }
       case(INVALIDATION_RELATIONSHIP):
@@ -115,7 +117,8 @@ DesignFlowStep_Status OpOrderComputation::InternalExec()
    while(!to_visit.empty())
    {
       vertex actual = to_visit.front();
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Checking vertex " + GET_NAME(cfg, actual) + " : " + boost::lexical_cast<std::string>(index));
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                     "-->Checking vertex " + GET_NAME(cfg, actual) + " : " + boost::lexical_cast<std::string>(index));
       to_visit.pop_front();
       MARK[actual] = true;
       function_behavior->lm->add(actual, index++);
@@ -128,12 +131,13 @@ DesignFlowStep_Status OpOrderComputation::InternalExec()
          bool toadd = true;
          vertex next = boost::target(*o, *cfg);
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Considering successor " + GET_NAME(cfg, next));
-         /// Checking if all successor's predecessors have been examinated
+         /// Checking if all successor's predecessors have been analyzed
          for(boost::tie(i, i_end) = boost::in_edges(next, *cfg); i != i_end; i++)
          {
             if(!MARK[boost::source(*i, *cfg)])
             {
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Not adding because of predecessor " + GET_NAME(cfg, boost::source(*i, *cfg)));
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                              "---Not adding because of predecessor " + GET_NAME(cfg, boost::source(*i, *cfg)));
                toadd = false;
                break;
             }
@@ -141,7 +145,9 @@ DesignFlowStep_Status OpOrderComputation::InternalExec()
          if(toadd)
          {
             if(Cget_edge_info<OpEdgeInfo>(*o, *cfg) && CFG_TRUE_CHECK(cfg, *o))
+            {
                then = next;
+            }
             /// Vertex can be added to list
             if(next != then)
             {

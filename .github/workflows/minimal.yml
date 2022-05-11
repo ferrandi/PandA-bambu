@@ -1,0 +1,914 @@
+name: Minimal
+
+on:
+  pull_request:
+
+  workflow_dispatch:
+
+concurrency:
+  group: minimal-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  build-args: --enable-glpk --enable-flopoco --enable-opt --with-opt-level=2 --enable-release
+  dist-pkg: bambu-dist
+  dist-dir: dist
+  bcompiler-dir: compiler
+  report-dir: test-reports
+  storage-url: ${{secrets.CI_STORAGE_URL}}
+  storage-user: "${{secrets.CI_STORAGE_USER}}"
+  storage-token: "${{secrets.CI_STORAGE_TOKEN}}"
+  host_jobs: $J
+
+jobs:
+  build:
+    runs-on: [self-hosted, classA]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+      - name: Env setup
+        id: host
+        shell: bash
+        run: |
+          echo "Current host supports ${{env.host_jobs}} parallel jobs"
+          echo "::set-output name=jobs::${{env.host_jobs}}"
+      - name: Prepare ccache timestamp
+        id: ccache_cache_timestamp
+        shell: bash
+        run: |
+          echo "::set-output name=timestamp::$(date -u +'%Y-%m-%d-%H;%M;%S')"
+      - name: ccache cache files
+        uses: actions/cache@v2
+        with:
+          path: .ccache
+          key: panda-build-ccache-${{ steps.ccache_cache_timestamp.outputs.timestamp }}
+          restore-keys: |
+            panda-build-ccache-
+      - name: Download clang compilers
+        shell: bash
+        run: |
+          set -e
+          export XZ_OPT='-T0'
+          mkdir ${{env.dist-dir}}
+          wget https://github.com/llvm/llvm-project/releases/download/llvmorg-12.0.1/clang+llvm-12.0.1-x86_64-linux-gnu-ubuntu-16.04.tar.xz -nv -O - | tar -C ${{env.dist-dir}} -xJf - &
+          wget https://github.com/llvm/llvm-project/releases/download/llvmorg-11.1.0/clang+llvm-11.1.0-x86_64-linux-gnu-ubuntu-16.04.tar.xz -nv -O - | tar -C ${{env.dist-dir}} -xJf - &
+          wget https://releases.llvm.org/7.0.1/clang+llvm-7.0.1-x86_64-linux-gnu-ubuntu-16.04.tar.xz -nv -O - | tar -C ${{env.dist-dir}} -xJf - &
+          wget https://releases.llvm.org/6.0.1/clang+llvm-6.0.1-x86_64-linux-gnu-ubuntu-16.04.tar.xz -nv -O - | tar -C ${{env.dist-dir}} -xJf - &
+          wget https://releases.llvm.org/5.0.2/clang+llvm-5.0.2-x86_64-linux-gnu-ubuntu-16.04.tar.xz -nv -O - | tar -C ${{env.dist-dir}} -xJf - &
+          wget https://releases.llvm.org/4.0.0/clang+llvm-4.0.0-x86_64-linux-gnu-ubuntu-16.04.tar.xz -nv -O - | tar -C ${{env.dist-dir}} -xJf - &
+          wait
+      - name: Download gcc 4.9
+        uses: ./.github/actions/storage-download
+        with:
+          name: gcc-4.9-bambu-Ubuntu_16.04
+          path: ./${{env.dist-dir}}
+          storage-url: "${{env.storage-url}}"
+          storage-path: compilers
+          username: "${{env.storage-user}}"
+          password: "${{env.storage-token}}"
+      - name: Download gcc 5
+        uses: ./.github/actions/storage-download
+        with:
+          name: gcc-5-bambu-Ubuntu_16.04
+          path: ./${{env.dist-dir}}
+          storage-url: "${{env.storage-url}}"
+          storage-path: compilers
+          username: "${{env.storage-user}}"
+          password: "${{env.storage-token}}"
+      - name: Download gcc 6
+        uses: ./.github/actions/storage-download
+        with:
+          name: gcc-6-bambu-Ubuntu_16.04
+          path: ./${{env.dist-dir}}
+          storage-url: "${{env.storage-url}}"
+          storage-path: compilers
+          username: "${{env.storage-user}}"
+          password: "${{env.storage-token}}"
+      - name: Download gcc 7
+        uses: ./.github/actions/storage-download
+        with:
+          name: gcc-7-bambu-Ubuntu_16.04
+          path: ./${{env.dist-dir}}
+          storage-url: "${{env.storage-url}}"
+          storage-path: compilers
+          username: "${{env.storage-user}}"
+          password: "${{env.storage-token}}"
+      - name: Download gcc 8
+        uses: ./.github/actions/storage-download
+        with:
+          name: gcc-8-bambu-Ubuntu_16.04
+          path: ./${{env.bcompiler-dir}}
+          storage-url: "${{env.storage-url}}"
+          storage-path: compilers
+          username: "${{env.storage-user}}"
+          password: "${{env.storage-token}}"
+      - name: Build Bambu application
+        id: build
+        uses: ./.github/actions/generate-bin
+        with:
+          config-args: ${{env.build-args}} --enable-Werror CC=gcc-8 CXX=g++-8 --with-gcc8=/bin/false
+          jobs: ${{steps.host.outputs.jobs}}
+      - name: Upload Panda install directory
+        uses: ./.github/actions/storage-upload
+        with:
+          name: ${{env.dist-pkg}}
+          path: ${{steps.build.outputs.appimage}}
+          storage-url: "${{env.storage-url}}"
+          username: "${{env.storage-user}}"
+          password: "${{env.storage-token}}"
+          storage-compression: false
+
+  ACMath-tests:
+    runs-on: [self-hosted]
+    container:
+      image: bambuhls/appimage:focal
+      env:
+        J: ${{env.host_jobs}}
+    strategy:
+      matrix:
+        compiler: [gcc, gcc_c++17, clang, clang_c++17]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+      - name: Install clang
+        if: ${{ startsWith(matrix.compiler, 'clang') }}
+        shell: bash
+        run: |
+          apt-get update
+          DEBIAN_FRONTEND=noninteractive apt-get -y install --no-install-recommends clang
+      - name: Launch ACMath tests for ${{matrix.compiler}}
+        working-directory: ./etc/libbambu/ac_math
+        shell: bash
+        run: ./ac_math_test_${{matrix.compiler}}.sh
+
+  specific-test:
+    needs: [build, ACMath-tests]
+    runs-on: [self-hosted]
+    strategy:
+      fail-fast: false
+      matrix:
+        id: ["", "2", "3", "4", "5", "6"]
+    env:
+      args: -c=--simulator=VERILATOR
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+      - name: Download Bambu AppImage
+        uses: ./.github/actions/storage-download
+        with:
+          name: ${{env.dist-pkg}}
+          storage-url: "${{env.storage-url}}"
+          username: "${{env.storage-user}}"
+          password: "${{env.storage-token}}"
+      - name: Setup binaries
+        id: setup
+        shell: bash
+        run: |
+          mkdir bin
+          ln -s $PWD/*.AppImage bin/bambu
+          ln -s $PWD/*.AppImage bin/spider
+          echo "::set-output name=local-bin::$PWD/bin"
+      - name: Launch Bambu specific tests ${{matrix.id}}
+        shell: bash
+        run: |
+          export PATH=${{steps.setup.outputs.local-bin}}:$PATH
+          mkdir ${{env.report-dir}}
+          ./panda_regressions/hls/bambu_specific_test${{matrix.id}}.sh --returnfail --junitdir="${{env.report-dir}}" --csv="${{env.report-dir}}/perf.csv" ${{env.args}}
+      - name: Compare results
+        id: perf-check
+        uses: ./.github/actions/perf-check
+        with:
+          test-id: bambu_specific_test${{matrix.id}}
+          new-results: ${{env.report-dir}}/perf.csv
+          storage-url: "${{env.storage-url}}"
+          username: "${{env.storage-user}}"
+          password: "${{env.storage-token}}"
+      - name: Add performance results
+        if: ${{ steps.perf-check.outputs.is-better == 0 }}
+        shell: bash
+        run: |
+          mv ${{ steps.perf-check.outputs.compare-csv }} ${{env.report-dir}}
+      - name: Upload test reports
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v2
+        with:
+          name: bambu_specific_test${{matrix.id}}
+          path: ${{env.report-dir}}
+
+  gcc_regression_simple:
+    needs: [build, specific-test]
+    runs-on: [self-hosted, mentor]
+    env:
+      outname: ${{matrix.setup}}_regression_simple
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - setup: gcc-4.9
+            script: generic_gcc_regression_simple_eg_ext_pipelined.sh
+            args: -c=--compiler=I386_GCC49 -c=--reset-type=sync -c=--simulator=VERILATOR
+          - setup: clang-4.0
+            script: generic_gcc_regression_simple_eg.sh
+            args: -c=--compiler=I386_CLANG4 -c=--simulator=MODELSIM
+          - setup: clang-5.0
+            script: generic_gcc_regression_simple_eg_ext_pipelined.sh
+            args: -c=--compiler=I386_CLANG5 -c=--simulator=VERILATOR
+          - setup: clang-6.0
+            script: generic_gcc_regression_simple_bambu.sh
+            args: -c=--compiler=I386_CLANG6 -c=--simulator=MODELSIM
+          - setup: clang-7
+            script: generic_gcc_regression_simple_bambu.sh
+            args: -c=--compiler=I386_CLANG7 -c=--simulator=VERILATOR
+          - setup: clang-11
+            script: generic_gcc_regression_simple_bambu.sh
+            args: -c=--compiler=I386_CLANG11 -c=--simulator=VERILATOR
+          - setup: clang-12
+            script: generic_gcc_regression_simple_eg_ext_pipelined.sh
+            args: -c=--compiler=I386_CLANG12 -c=--simulator=VERILATOR
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+      - name: Download Bambu AppImage
+        uses: ./.github/actions/storage-download
+        with:
+          name: ${{env.dist-pkg}}
+          storage-url: "${{env.storage-url}}"
+          username: "${{env.storage-user}}"
+          password: "${{env.storage-token}}"
+      - name: Setup binaries
+        id: setup
+        shell: bash
+        run: |
+          mkdir bin
+          ln -s $PWD/*.AppImage bin/bambu
+          ln -s $PWD/*.AppImage bin/spider
+          echo "::set-output name=local-bin::$PWD/bin"
+      - name: Launch GCC regression test suite
+        id: suite
+        shell: bash
+        run: |
+          export PATH=${{steps.setup.outputs.local-bin}}:$PATH
+          mkdir ${{env.report-dir}}
+          echo "::set-output name=test-reports-dir::$PWD/${{env.report-dir}}"
+          ./panda_regressions/hls/${{matrix.script}} --returnfail --junitdir="${{env.report-dir}}" --csv="${{env.report-dir}}/perf.csv" ${{matrix.args}}
+      - name: Compare results
+        id: perf-check
+        uses: ./.github/actions/perf-check
+        with:
+          test-id: ${{env.outname}}
+          new-results: ${{env.report-dir}}/perf.csv
+          storage-url: "${{env.storage-url}}"
+          username: "${{env.storage-user}}"
+          password: "${{env.storage-token}}"
+      - name: Add performance results
+        if: ${{ steps.perf-check.outputs.is-better == 0 }}
+        shell: bash
+        run: |
+          mv ${{ steps.perf-check.outputs.compare-csv }} ${{env.report-dir}}
+      - name: Upload test reports
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{env.outname}}
+          path: ${{steps.suite.outputs.test-reports-dir}}
+
+  gcc_regression_simple-pretty_print:
+    needs: [build, specific-test]
+    runs-on: [self-hosted]
+    env:
+      setup: gcc-4.9
+      script: generic_gcc_regression_simple_bambu_pretty_print.sh
+      args: -c=--compiler=I386_GCC49 -c=--simulator=VERILATOR
+      outname: gcc-4.9_regression_simple-pretty_print
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+      - name: Download Bambu AppImage
+        uses: ./.github/actions/storage-download
+        with:
+          name: ${{env.dist-pkg}}
+          storage-url: "${{env.storage-url}}"
+          username: "${{env.storage-user}}"
+          password: "${{env.storage-token}}"
+      - name: Setup binaries
+        id: setup
+        shell: bash
+        run: |
+          mkdir bin
+          ln -s $PWD/*.AppImage bin/bambu
+          ln -s $PWD/*.AppImage bin/spider
+          echo "::set-output name=local-bin::$PWD/bin"
+      - name: Launch GCC regression test suite with pretty-print
+        id: suite
+        shell: bash
+        run: |
+          export PATH=${{steps.setup.outputs.local-bin}}:$PATH
+          mkdir ${{env.report-dir}}
+          echo "::set-output name=test-reports-dir::$PWD/${{env.report-dir}}"
+          ./panda_regressions/hls/${{env.script}} --returnfail --junitdir="${{env.report-dir}}" --csv="${{env.report-dir}}/perf.csv" ${{env.args}}
+      - name: Compare results
+        id: perf-check
+        uses: ./.github/actions/perf-check
+        with:
+          test-id: ${{env.outname}}
+          new-results: ${{env.report-dir}}/perf.csv
+          storage-url: "${{env.storage-url}}"
+          username: "${{env.storage-user}}"
+          password: "${{env.storage-token}}"
+      - name: Add performance results
+        if: ${{ steps.perf-check.outputs.is-better == 0 }}
+        shell: bash
+        run: |
+          mv ${{ steps.perf-check.outputs.compare-csv }} ${{env.report-dir}}
+      - name: Upload test reports
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{env.outname}}
+          path: ${{steps.suite.outputs.test-reports-dir}}
+
+  gcc_regression_simple-vhdl:
+    needs: [build, specific-test]
+    runs-on: [self-hosted, mentor]
+    env:
+      setup: gcc-7
+      script: generic_gcc_regression_simple_bambu_vhdl.sh
+      args: -c=--compiler=I386_GCC7 -c=--simulator=MODELSIM
+      outname: gcc-7_regression_simple-vhdl
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+      - name: Download Bambu AppImage
+        uses: ./.github/actions/storage-download
+        with:
+          name: ${{env.dist-pkg}}
+          storage-url: "${{env.storage-url}}"
+          username: "${{env.storage-user}}"
+          password: "${{env.storage-token}}"
+      - name: Setup binaries
+        id: setup
+        shell: bash
+        run: |
+          mkdir bin
+          ln -s $PWD/*.AppImage bin/bambu
+          ln -s $PWD/*.AppImage bin/spider
+          echo "::set-output name=local-bin::$PWD/bin"
+      - name: Launch GCC regression test suite with VHDL target
+        id: suite
+        shell: bash
+        run: |
+          export PATH=${{steps.setup.outputs.local-bin}}:$PATH
+          mkdir ${{env.report-dir}}
+          echo "::set-output name=test-reports-dir::$PWD/${{env.report-dir}}"
+          ./panda_regressions/hls/${{env.script}} --returnfail --junitdir="${{env.report-dir}}" --csv="${{env.report-dir}}/perf.csv" ${{env.args}}
+      - name: Compare results
+        id: perf-check
+        uses: ./.github/actions/perf-check
+        with:
+          test-id: ${{env.outname}}
+          new-results: ${{env.report-dir}}/perf.csv
+          storage-url: "${{env.storage-url}}"
+          username: "${{env.storage-user}}"
+          password: "${{env.storage-token}}"
+      - name: Add performance results
+        if: ${{ steps.perf-check.outputs.is-better == 0 }}
+        shell: bash
+        run: |
+          mv ${{ steps.perf-check.outputs.compare-csv }} ${{env.report-dir}}
+      - name: Upload test reports
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{env.outname}}
+          path: ${{steps.suite.outputs.test-reports-dir}}
+
+  discrepancy-test:
+    needs: [build, specific-test]
+    runs-on: [self-hosted, classA]
+    env:
+      setup: gcc-7
+      script: generic_discrepancy_eg_bambu.sh
+      args: -c=--compiler=I386_GCC7
+      outname: gcc-7_discrepancy
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+      - name: Download Bambu AppImage
+        uses: ./.github/actions/storage-download
+        with:
+          name: ${{env.dist-pkg}}
+          storage-url: "${{env.storage-url}}"
+          username: "${{env.storage-user}}"
+          password: "${{env.storage-token}}"
+      - name: Setup binaries
+        id: setup
+        shell: bash
+        run: |
+          mkdir bin
+          ln -s $PWD/*.AppImage bin/bambu
+          ln -s $PWD/*.AppImage bin/spider
+          echo "::set-output name=local-bin::$PWD/bin"
+      - name: Launch Bambu discrepancy tests
+        id: suite
+        shell: bash
+        run: |
+          export PATH=${{steps.setup.outputs.local-bin}}:$PATH
+          mkdir ${{env.report-dir}}
+          echo "::set-output name=test-reports-dir::$PWD/${{env.report-dir}}"
+          ./panda_regressions/hls/${{env.script}} --returnfail --junitdir="${{env.report-dir}}" --csv="${{env.report-dir}}/perf.csv" ${{env.args}}
+      - name: Upload test reports
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{env.outname}}
+          path: ${{steps.suite.outputs.test-reports-dir}}
+
+  softfloat-preliminary:
+    runs-on: [self-hosted]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+      - name: Env setup
+        id: host
+        shell: bash
+        run: |
+          echo "Current host supports ${{env.host_jobs}} parallel jobs"
+          echo "::set-output name=jobs::${{env.host_jobs}}"
+      - name: Verify SoftFloat implementation
+        uses: ./.github/actions/docker-runner
+        with:
+          script: ./panda_regressions/hls/test_softfloat.sh
+          jobs: ${{steps.host.outputs.jobs}}
+
+  softfloat-tests:
+    needs: [build, softfloat-preliminary]
+    runs-on: [self-hosted, mentor]
+    env:
+      script: multi_softfloat-tests.sh
+      args: -c=--simulator=VERILATOR
+      outname: multi_softfloat-tests
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+      - name: Download Bambu AppImage
+        uses: ./.github/actions/storage-download
+        with:
+          name: ${{env.dist-pkg}}
+          storage-url: "${{env.storage-url}}"
+          username: "${{env.storage-user}}"
+          password: "${{env.storage-token}}"
+      - name: Setup binaries
+        id: setup
+        shell: bash
+        run: |
+          mkdir bin
+          ln -s $PWD/*.AppImage bin/bambu
+          ln -s $PWD/*.AppImage bin/spider
+          echo "::set-output name=local-bin::$PWD/bin"
+      - name: Launch SoftFloat test suite
+        id: suite
+        shell: bash
+        run: |
+          export PATH=${{steps.setup.outputs.local-bin}}:$PATH
+          mkdir ${{env.report-dir}}
+          echo "::set-output name=test-reports-dir::$PWD/${{env.report-dir}}"
+          ./panda_regressions/hls/${{env.script}} --returnfail --junitdir="${{env.report-dir}}" --csv="${{env.report-dir}}/perf.csv" ${{env.args}}
+      - name: Compare results
+        id: perf-check
+        uses: ./.github/actions/perf-check
+        with:
+          test-id: ${{env.outname}}
+          new-results: ${{env.report-dir}}/perf.csv
+          storage-url: "${{env.storage-url}}"
+          username: "${{env.storage-user}}"
+          password: "${{env.storage-token}}"
+      - name: Add performance results
+        if: ${{ steps.perf-check.outputs.is-better == 0 }}
+        shell: bash
+        run: |
+          mv ${{ steps.perf-check.outputs.compare-csv }} ${{env.report-dir}}
+      - name: Upload test reports
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{env.outname}}
+          path: ${{steps.suite.outputs.test-reports-dir}}
+
+  libm-preliminary:
+    runs-on: [self-hosted]
+    strategy:
+      matrix:
+        func: [expf, logf, powf, sinecosine, sqrt, sqrtf]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+      - name: Env setup
+        id: host
+        shell: bash
+        run: |
+          echo "Current host supports ${{env.host_jobs}} parallel jobs"
+          echo "::set-output name=jobs::${{env.host_jobs}}"
+      - name: Verify ${{matrix.func}} implementation
+        uses: ./.github/actions/docker-runner
+        with:
+          script: ./panda_regressions/hls/test_libm_${{matrix.func}}.sh
+          jobs: ${{steps.host.outputs.jobs}}
+
+  libm-tests:
+    needs: [build, libm-preliminary, softfloat-tests]
+    runs-on: [self-hosted, mentor]
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - setup: gcc-4.9
+            args: -c=--compiler=I386_GCC49 -c=--simulator=MODELSIM
+          - setup: clang-4.0
+            args: -c=--compiler=I386_CLANG4 -c=--simulator=VERILATOR
+          - setup: clang-5.0
+            args: -c=--compiler=I386_CLANG5 -c=--simulator=VERILATOR
+          - setup: clang-6.0
+            args: -c=--compiler=I386_CLANG6 -c=--simulator=VERILATOR
+          - setup: clang-7
+            args: -c=--compiler=I386_CLANG7 -c=--simulator=VERILATOR
+          - setup: clang-11
+            args: -c=--compiler=I386_CLANG11 -c=--simulator=MODELSIM
+          - setup: clang-12
+            args: -c=--compiler=I386_CLANG12 -c=--simulator=VERILATOR
+    env:
+      script: generic_libm-tests.sh
+      args: -c=--speculative-sdc-scheduling
+      outname: ${{matrix.setup}}_libm
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+      - name: Download Bambu AppImage
+        uses: ./.github/actions/storage-download
+        with:
+          name: ${{env.dist-pkg}}
+          storage-url: "${{env.storage-url}}"
+          username: "${{env.storage-user}}"
+          password: "${{env.storage-token}}"
+      - name: Setup binaries
+        id: setup
+        shell: bash
+        run: |
+          mkdir bin
+          ln -s $PWD/*.AppImage bin/bambu
+          ln -s $PWD/*.AppImage bin/spider
+          echo "::set-output name=local-bin::$PWD/bin"
+      - name: Launch LibM test suite
+        id: suite
+        shell: bash
+        run: |
+          export PATH=${{steps.setup.outputs.local-bin}}:$PATH
+          mkdir ${{env.report-dir}}
+          echo "::set-output name=test-reports-dir::$PWD/${{env.report-dir}}"
+          ./panda_regressions/hls/${{env.script}} --returnfail --junitdir="${{env.report-dir}}" --csv="${{env.report-dir}}/perf.csv" ${{matrix.args}} ${{env.args}}
+      - name: Compare results
+        id: perf-check
+        uses: ./.github/actions/perf-check
+        with:
+          test-id: ${{env.outname}}
+          new-results: ${{env.report-dir}}/perf.csv
+          storage-url: "${{env.storage-url}}"
+          username: "${{env.storage-user}}"
+          password: "${{env.storage-token}}"
+      - name: Add performance results
+        if: ${{ steps.perf-check.outputs.is-better == 0 }}
+        shell: bash
+        run: |
+          mv ${{ steps.perf-check.outputs.compare-csv }} ${{env.report-dir}}
+      - name: Upload test reports
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{env.outname}}
+          path: ${{steps.suite.outputs.test-reports-dir}}
+
+  CHStone-multi:
+    needs: [build]
+    runs-on: [self-hosted, mentor]
+    env:
+      script: multi_CHStone-frontend.sh
+      args: -c=--simulator=MODELSIM
+      outname: multi_CHStone-frontend
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+      - name: Download Bambu AppImage
+        uses: ./.github/actions/storage-download
+        with:
+          name: ${{env.dist-pkg}}
+          storage-url: "${{env.storage-url}}"
+          username: "${{env.storage-user}}"
+          password: "${{env.storage-token}}"
+      - name: Setup binaries
+        id: setup
+        shell: bash
+        run: |
+          mkdir bin
+          ln -s $PWD/*.AppImage bin/bambu
+          ln -s $PWD/*.AppImage bin/spider
+          echo "::set-output name=local-bin::$PWD/bin"
+      - name: Launch CHStone test suite
+        id: suite
+        shell: bash
+        run: |
+          export PATH=${{steps.setup.outputs.local-bin}}:$PATH
+          mkdir ${{env.report-dir}}
+          echo "::set-output name=test-reports-dir::$PWD/${{env.report-dir}}"
+          ./panda_regressions/hls/${{env.script}} --returnfail --junitdir="${{env.report-dir}}" --csv="${{env.report-dir}}/perf.csv" ${{env.args}}
+      - name: Compare results
+        id: perf-check
+        uses: ./.github/actions/perf-check
+        with:
+          test-id: ${{env.outname}}
+          new-results: ${{env.report-dir}}/perf.csv
+          storage-url: "${{env.storage-url}}"
+          username: "${{env.storage-user}}"
+          password: "${{env.storage-token}}"
+      - name: Add performance results
+        if: ${{ steps.perf-check.outputs.is-better == 0 }}
+        shell: bash
+        run: |
+          mv ${{ steps.perf-check.outputs.compare-csv }} ${{env.report-dir}}
+      - name: Upload test reports
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{env.outname}}
+          path: ${{steps.suite.outputs.test-reports-dir}}
+
+  Panda-bench-yosys:
+    needs: [build]
+    runs-on: [self-hosted]
+    env:
+      outname: panda_bench_yosys
+      script: ./examples/panda_bench_yosys.sh
+      nproc: 4
+      parallel: 5
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+      - name: Download Bambu AppImage
+        uses: ./.github/actions/storage-download
+        with:
+          name: ${{env.dist-pkg}}
+          storage-url: "${{env.storage-url}}"
+          username: "${{env.storage-user}}"
+          password: "${{env.storage-token}}"
+      - name: Setup exec script
+        id: setup
+        shell: bash
+        run: |
+          cat > docker_exec.sh << EOF
+          mkdir bin
+          ./*.AppImage --appimage-extract > /dev/null
+          rm ./*.AppImage
+          ln -s \$PWD/squashfs-root/usr/bin/bambu bin/bambu
+          ln -s \$PWD/squashfs-root/usr/bin/spider bin/spider
+          echo "::set-output name=local-bin::\$PWD/bin"
+          echo "::set-output name=appdir::\$PWD/squashfs-root"
+          export PATH=\$PWD/bin:\$PATH
+          export APPDIR=\$PWD/squashfs-root
+          export NPROC=${{env.nproc}}
+          export J=${{env.parallel}}
+          mkdir ${{env.report-dir}}
+          echo "::set-output name=test-reports-dir::$PWD/${{env.report-dir}}"
+          ${{env.script}} --returnfail --junitdir="${{env.report-dir}}" --csv="${{env.report-dir}}/perf.csv" ${{env.args}}
+          EOF
+          chmod +x docker_exec.sh
+      - name: Launch test suite
+        id: suite
+        uses: ./.github/actions/yosys-runner
+        with:
+          script: ./docker_exec.sh
+      - name: Upload test reports
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{env.outname}}
+          path: ${{steps.suite.outputs.test-reports-dir}}
+
+  CHStone-memarch:
+    needs: [build, CHStone-multi]
+    runs-on: [self-hosted, altera, intelFPGA, lattice, mentor, xilinx]
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - compiler: "I386_GCC7"
+            args: ""
+          - compiler: "I386_GCC7"
+            args: "-c=-wH"
+          - compiler: "I386_CLANG11"
+            args: "-c=--speculative-sdc-scheduling"
+    env:
+      script: generic_CHStone-memarch.sh
+      args: -c=--simulator=MODELSIM -c=--compiler=${{matrix.compiler}}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+      - name: Download Bambu AppImage
+        uses: ./.github/actions/storage-download
+        with:
+          name: ${{env.dist-pkg}}
+          storage-url: "${{env.storage-url}}"
+          username: "${{env.storage-user}}"
+          password: "${{env.storage-token}}"
+      - name: Setup binaries
+        id: setup
+        shell: bash
+        run: |
+          mkdir bin
+          ln -s $PWD/*.AppImage bin/bambu
+          ln -s $PWD/*.AppImage bin/spider
+          echo "::set-output name=local-bin::$PWD/bin"
+      - name: Launch CHStone test suite
+        id: suite
+        shell: bash
+        run: |
+          export PATH=${{steps.setup.outputs.local-bin}}:$PATH
+          mkdir ${{env.report-dir}}
+          echo "::set-output name=test-reports-dir::$PWD/${{env.report-dir}}"
+          ./panda_regressions/hls/${{env.script}} --returnfail --junitdir="${{env.report-dir}}" --csv="${{env.report-dir}}/perf.csv" ${{env.args}} ${{matrix.args}}
+      - name: Generate out name
+        if: ${{ always() }}
+        id: get
+        shell: bash
+        run: |
+          OUTNAME="$(echo '${{matrix.compiler}}' | sed 's/I386_//g' | tr '[:upper:]' '[:lower:]')_CHStone-memarch_"
+          if [[ "${{matrix.args}}" = *-c=--speculative-sdc-scheduling* ]]; then
+            OUTNAME+="w-spec"
+          else
+            OUTNAME+="wo-spec"
+          fi
+          if [[ "${{matrix.args}}" = *-c=-wH* ]]; then
+            OUTNAME+="-vhdl"
+          else
+            OUTNAME+="-verilog"
+          fi
+          echo "::set-output name=outname::$OUTNAME"
+      - name: Upload test reports
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{steps.get.outputs.outname}}
+          path: ${{steps.suite.outputs.test-reports-dir}}
+
+  omp-simd:
+    needs: [build]
+    runs-on: [self-hosted, mentor]
+    strategy:
+      fail-fast: false
+      matrix:
+        device: [5SGXEA7N2F45C1, xc7vx690t-3ffg1930-VVD]
+    env:
+      outname: omp_simd_${{matrix.device}}
+      script: ./examples/omp_simd/generic_omp_simd.sh
+      args: -c=--simulator=MODELSIM -c=--compiler=I386_GCC49 -c=--clock-period=10 -c=--device-name=${{matrix.device}}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+      - name: Download Bambu AppImage
+        uses: ./.github/actions/storage-download
+        with:
+          name: ${{env.dist-pkg}}
+          storage-url: "${{env.storage-url}}"
+          username: "${{env.storage-user}}"
+          password: "${{env.storage-token}}"
+      - name: Setup binaries
+        id: setup
+        shell: bash
+        run: |
+          mkdir bin
+          ln -s $PWD/*.AppImage bin/bambu
+          ln -s $PWD/*.AppImage bin/spider
+          echo "::set-output name=local-bin::$PWD/bin"
+      - name: Launch omp simd evaluation on ${{matrix.device}}
+        shell: bash
+        run: |
+          export PATH=${{steps.setup.outputs.local-bin}}:$PATH
+          mkdir ${{env.report-dir}}
+          ${{env.script}} --returnfail --junitdir="${{env.report-dir}}" --csv="${{env.report-dir}}/perf.csv" ${{env.args}}
+      - name: Compare results
+        id: perf-check
+        uses: ./.github/actions/perf-check
+        with:
+          test-id: ${{env.outname}}
+          new-results: ${{env.report-dir}}/perf.csv
+          storage-url: "${{env.storage-url}}"
+          username: "${{env.storage-user}}"
+          password: "${{env.storage-token}}"
+      - name: Add performance results
+        if: ${{ steps.perf-check.outputs.is-better == 0 }}
+        shell: bash
+        run: |
+          mv ${{ steps.perf-check.outputs.compare-csv }} ${{env.report-dir}}
+      - name: Upload test reports
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{env.outname}}
+          path: ${{env.report-dir}}
+
+  Panda-bench:
+    needs: [build]
+    runs-on: [self-hosted, altera, intelFPGA, lattice, mentor, xilinx]
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - test: altera
+            datapoints: CYCLES,PERIOD,AREA,REGISTERS,DSPS,BRAMS
+          - test: hw
+            args: -c=--evaluation=PERIOD,AREA,FREQUENCY,CLOCK_SLACK,REGISTERS,DSPS,BRAMS
+            datapoints: PERIOD,AREA,REGISTERS,DSPS,BRAMS
+          - test: lattice
+            datapoints: CYCLES,PERIOD,AREA,REGISTERS,DSPS,BRAMS
+          - test: sim
+            datapoints: CYCLES
+          - test: xilinx_ise
+            datapoints: CYCLES,PERIOD,AREA,REGISTERS,DSPS,BRAMS
+          - test: xilinx_vvd
+            datapoints: CYCLES,PERIOD,AREA,REGISTERS,DSPS,BRAMS
+    env:
+      outname: panda_bench_${{matrix.test}}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+      - name: Download Bambu AppImage
+        uses: ./.github/actions/storage-download
+        with:
+          name: ${{env.dist-pkg}}
+          storage-url: "${{env.storage-url}}"
+          username: "${{env.storage-user}}"
+          password: "${{env.storage-token}}"
+      - name: Setup binaries
+        id: setup
+        shell: bash
+        run: |
+          mkdir bin
+          ln -s $PWD/*.AppImage bin/bambu
+          ln -s $PWD/*.AppImage bin/spider
+          echo "::set-output name=local-bin::$PWD/bin"
+      - name: Launch Panda bench ${{matrix.test}}
+        id: suite
+        shell: bash
+        run: |
+          export PATH=${{steps.setup.outputs.local-bin}}:$PATH
+          mkdir ${{env.report-dir}}
+          echo "::set-output name=test-reports-dir::$PWD/${{env.report-dir}}"
+          ./examples/panda_bench_${{matrix.test}}.sh --returnfail --junitdir="${{env.report-dir}}" --csv="${{env.report-dir}}/perf.csv" ${{matrix.args}}
+      - name: Compare results
+        id: perf-check
+        uses: ./.github/actions/perf-check
+        with:
+          test-id: ${{env.outname}}
+          new-results: ${{env.report-dir}}/perf.csv
+          datapoints: ${{matrix.datapoints}}
+          storage-url: "${{env.storage-url}}"
+          username: "${{env.storage-user}}"
+          password: "${{env.storage-token}}"
+      - name: Add performance results
+        if: ${{ steps.perf-check.outputs.is-better == 0 }}
+        shell: bash
+        run: |
+          mv ${{ steps.perf-check.outputs.compare-csv }} ${{env.report-dir}}
+      - name: Upload test reports
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{env.outname}}
+          path: ${{steps.suite.outputs.test-reports-dir}}
+
+  Make-checks:
+    needs: [build]
+    runs-on: [self-hosted, lattice, mentor, xilinx]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+      - name: Download Bambu AppImage
+        uses: ./.github/actions/storage-download
+        with:
+          name: ${{env.dist-pkg}}
+          storage-url: "${{env.storage-url}}"
+          username: "${{env.storage-user}}"
+          password: "${{env.storage-token}}"
+      - name: Setup binaries
+        id: setup
+        shell: bash
+        run: |
+          mkdir bin
+          ln -s $PWD/*.AppImage bin/bambu
+          ln -s $PWD/*.AppImage bin/spider
+          ln -s $PWD/*.AppImage bin/tree-panda-gcc
+          echo "::set-output name=local-bin::$PWD/bin"
+      - name: Launch script
+        shell: bash
+        run: |
+          export PATH=${{steps.setup.outputs.local-bin}}:$PATH
+          ./examples/cpp_examples/fir_filter/bambu.sh
+          ./examples/cpp_examples/gcd_example/bambu.sh
+          ./examples/crypto_designs/multi.sh

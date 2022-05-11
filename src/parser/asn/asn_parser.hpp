@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2015-2020 Politecnico di Milano
+ *              Copyright (C) 2015-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -67,7 +67,7 @@ struct AsnParserData
     */
    AsnParserData(const AadlInformationRef aadl_information, const ParameterConstRef parameters);
 };
-typedef refcount<AsnParserData> AsnParserDataRef;
+using AsnParserDataRef = refcount<AsnParserData>;
 
 class AsnParser : public ParserFlowStep
 {
@@ -90,7 +90,8 @@ class AsnParser : public ParserFlowStep
     * @param AppM is the application manager
     * @param parameters is the set of input parameters
     */
-   AsnParser(const DesignFlowManagerConstRef design_flow_manager, const std::string& file_name, const application_managerRef AppM, const ParameterConstRef parameters);
+   AsnParser(const DesignFlowManagerConstRef design_flow_manager, const std::string& file_name,
+             const application_managerRef AppM, const ParameterConstRef parameters);
 
    /**
     * Destuctor

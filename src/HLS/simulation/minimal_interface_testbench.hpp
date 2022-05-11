@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -52,9 +52,12 @@
 class MinimalInterfaceTestbench : public TestbenchGenerationBaseStep
 {
  protected:
-   std::string memory_aggregate_slices(unsigned int i, long long int bitsize, long long int Mout_addr_ram_bitsize) const;
+   std::string memory_aggregate_slices(unsigned int i, long long int bitsize,
+                                       long long int Mout_addr_ram_bitsize) const;
 
-   void cond_load(long long int Mout_addr_ram_bitsize, std::string post_slice1, const std::string& post_slice2, const std::string& res_string, unsigned int i, const std::string& in_else, const std::string& mem_aggregate) const;
+   void cond_load(long long int Mout_addr_ram_bitsize, std::string post_slice1, const std::string& post_slice2,
+                  const std::string& res_string, unsigned int i, const std::string& in_else,
+                  const std::string& mem_aggregate) const;
 
    void write_call(bool hasMultiIrq) const override;
 
@@ -64,10 +67,11 @@ class MinimalInterfaceTestbench : public TestbenchGenerationBaseStep
 
    void write_signals(const tree_managerConstRef TreeM, bool& withMemory, bool& hasMultiIrq) const override;
 
-   void write_slave_initializations(bool withMemory) const override;
+   void write_slave_initializations(bool with_memory) const override;
 
    /// specialize read_input_value_from_file for interface PI_RNONE
-   void read_input_value_from_file_RNONE(const std::string& input_name, bool& first_valid_input, unsigned bitsize) const;
+   void read_input_value_from_file_RNONE(const std::string& input_name, bool& first_valid_input,
+                                         unsigned bitsize) const;
 
    void write_file_reading_operations() const override;
 
@@ -79,7 +83,8 @@ class MinimalInterfaceTestbench : public TestbenchGenerationBaseStep
    /**
     * Constructor
     */
-   MinimalInterfaceTestbench(const ParameterConstRef _Param, const HLS_managerRef _AppM, const DesignFlowManagerConstRef design_flow_manager);
+   MinimalInterfaceTestbench(const ParameterConstRef _Param, const HLS_managerRef _AppM,
+                             const DesignFlowManagerConstRef design_flow_manager);
 
    /**
     * Destructor

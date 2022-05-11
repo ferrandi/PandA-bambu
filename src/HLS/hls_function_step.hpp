@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -50,6 +50,12 @@
 class HLSFunctionStep : public HLS_step
 {
  protected:
+   /// last bb version of the called functions
+   std::map<unsigned int, unsigned int> last_bb_ver;
+
+   /// The version of bit value IR representation on which this step was applied
+   std::map<unsigned int, unsigned int> last_bitvalue_ver;
+
    /// identifier of the function to be processed (0 means that it is a global step)
    const unsigned int funId;
 
@@ -58,6 +64,9 @@ class HLSFunctionStep : public HLS_step
 
    /// The version of bb intermediate representation on which this step was applied
    unsigned int bb_version;
+
+   /// The version of bitvalue on which this step was applied
+   unsigned int bitvalue_version;
 
    /// The version of memory representation on which this step was applied
    unsigned int memory_version;
@@ -68,6 +77,9 @@ class HLSFunctionStep : public HLS_step
     */
    virtual DesignFlowStep_Status InternalExec() = 0;
 
+ private:
+   bool HasToBeExecuted0() const;
+
  public:
    /**
     * Constructor
@@ -76,8 +88,10 @@ class HLSFunctionStep : public HLS_step
     * @param design_flow_manager is the design flow manager
     * @param hls_flow_step_type is the type of this hls flow step
     */
-   HLSFunctionStep(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStep_Type hls_flow_step_type,
-                   const HLSFlowStepSpecializationConstRef hls_flow_step_specialization = HLSFlowStepSpecializationConstRef());
+   HLSFunctionStep(
+       const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId,
+       const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStep_Type hls_flow_step_type,
+       const HLSFlowStepSpecializationConstRef hls_flow_step_specialization = HLSFlowStepSpecializationConstRef());
 
    /**
     * Destructor
@@ -108,7 +122,9 @@ class HLSFunctionStep : public HLS_step
     * @param function_id is the index of the function
     * @return the corresponding signature
     */
-   static const std::string ComputeSignature(const HLSFlowStep_Type hls_flow_step_type, const HLSFlowStepSpecializationConstRef hls_flow_step_specialization, const unsigned int function_id);
+   static const std::string ComputeSignature(const HLSFlowStep_Type hls_flow_step_type,
+                                             const HLSFlowStepSpecializationConstRef hls_flow_step_specialization,
+                                             const unsigned int function_id);
 
    /**
     * Return the name of this design step
@@ -121,7 +137,8 @@ class HLSFunctionStep : public HLS_step
     * @param dependencies is where relationships will be stored
     * @param relationship_type is the type of relationship to be computed
     */
-   void ComputeRelationships(DesignFlowStepSet& relationship, const DesignFlowStep::RelationshipType relationship_type) override;
+   void ComputeRelationships(DesignFlowStepSet& design_flow_step_set,
+                             const DesignFlowStep::RelationshipType relationship_type) override;
 
    /**
     * Execute the step

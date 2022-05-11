@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -67,7 +67,8 @@ class lattice_flow_wrapper : public LatticeWrapper
     * Constructor
     * @param Param is the set of parameters
     */
-   lattice_flow_wrapper(const ParameterConstRef& Param, const std::string& _output_dir, const target_deviceRef& _device);
+   lattice_flow_wrapper(const ParameterConstRef& Param, const std::string& _output_dir,
+                        const target_deviceRef& _device);
 
    /**
     * Destructor
@@ -75,6 +76,6 @@ class lattice_flow_wrapper : public LatticeWrapper
    ~lattice_flow_wrapper() override;
 };
 /// Refcount definition for the class
-typedef refcount<lattice_flow_wrapper> lattice_flow_wrapperRef;
+using lattice_flow_wrapperRef = refcount<lattice_flow_wrapper>;
 
 #endif

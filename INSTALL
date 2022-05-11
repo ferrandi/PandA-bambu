@@ -14,42 +14,30 @@ In order to install the PandA framework, you need to perform the following steps
 
 4) Create the directory for the building:
    $mkdir obj
+
+5) Move into the building directory:
    $cd obj
 
-5) Configure PandA:
+6) Configure PandA:
    $../configure [--enable-<ext-feature>...] --prefix=/opt/panda
 
 Currently accepted parameters are:
 
-  --enable-flopoco: add floating point support by leveraging FloPoCo Library 
-                   http://flopoco.gforge.inria.fr/
-  --enable-xilinx: enable Xilinx RTL synthesis and simulation tools execution 
-                   within the framework
-  --enable-altera: enable Altera RTL synthesis tool execution within the framework
-  --enable-lattice: enable Lattice RTL synthesis tool execution within the framework
-  --enable-nanoxplore: enable BRAVE FPGA NanoXplore RTL synthesis tool execution within the framework
-  --enable-modelsim: enable Modelsim-based simulation directly within the framework
-  --with-mentor-license=<license-file/license-server>
-  --with-nanoxplore-license=<license-file/license-server>
-  --enable-icarus: enable Icarus-based simulation
-                   http://iverilog.icarus.com/
-  --enable-verilator: enable Verilator-based simulation
-                   http://www.veripool.org/wiki/verilator
-  --enable-debug: add debugging symbols to the binaries 
-  --enable-opt: Compile the framework with GCC optimizations enabled
-  --enable-release: Remove further tests not useful in a production environment
+  --enable-flopoco:  add floating point support by leveraging FloPoCo Library 
+                     http://flopoco.gforge.inria.fr/
+  --enable-debug  :  add debugging symbols to the binaries 
+  --enable-opt    :  Compile the framework with GCC optimizations enabled
+  --enable-release:  Remove further tests not useful in a production environment
 
 Note that the scripts for synthesis and simulation are generated even if the 
 corresponding tools are not configured as described above. In this case, the 
-synthesis/simulation has to be performed using the standard shell command line.
+synthesis/simulation will exploit the system PATH variable.
 Since FloPoCo generates a VHDL-based description, co-simulation requires a
 mixed-language simulator. Both Modelsim from Mentor and XSIM/ISIM from Xilinx
 have such support.
 
 The suggested configuration is
-../configure --prefix=/opt/panda --enable-flopoco --enable-icarus --enable-verilator --enable-xilinx --enable-modelsim --enable-altera --enable-nanoxplore --enable-opt --enable-lattice --enable-release --with-mentor-license=<license-string> --with-nanoxplore-license=<license-string>
-
-Options --enable-xilinx, --enable-modelsim, --enable-altera, --enable-lattice, --enable-nanoxplore, --with-mentor-license=<license-string>, and --with-nanoxplore-license=<license-string> require that third-party tools have been installed before PandA is configured. Details on where these third-party tools are searched are provided at the end of this file.
+../configure --prefix=/opt/panda --enable-flopoco --enable-opt --enable-release 
 
 7) Compile the tool:
   $make
@@ -95,6 +83,64 @@ Ubuntu packages
 
 The following packages have to be installed under Ubuntu to compile PandA
 
+Ubuntu 20.04 64bit:
+- autoconf
+- autoconf-archive
+- automake
+- libtool
+- g++
+- gcc-7
+- g++-7
+- gcc-8
+- g++-8
+- gcc-7-plugin-dev
+- gcc-8-plugin-dev
+- gcc-7-multilib
+- g++-7-multilib
+- g++-8-multilib
+- gfortran-7
+- gfortran-7-multilib
+- gfortran-8
+- gfortran-8-multilib
+- clang-6.0
+- libclang-6.0-dev
+- clang-7
+- libclang-7-dev
+- clang-8
+- libclang-8-dev
+- clang-9
+- libclang-9-dev
+- clang-10
+- libclang-10-dev
+- clang-11
+- libclang-11-dev
+- clang-12
+- libclang-12-dev
+- libbdd-dev
+- libboost-all-dev
+- libmpc-dev
+- libmpfr-dev
+- libxml2-dev
+- liblzma-dev
+- libmpfi-dev
+- zlib1g-dev
+- libicu-dev
+- bison
+- doxygen
+- flex
+- graphviz
+- iverilog
+- verilator
+- pkg-config
+- libsuitesparse-dev
+- libglpk-dev
+- make
+
+
+In a single line:
+sudo apt-get install autoconf autoconf-archive automake libtool g++ gcc-7 g++-7 gcc-8 g++-8 gcc-7-plugin-dev  gcc-8-plugin-dev gcc-7-multilib gcc-8-multilib g++-7-multilib g++-8-multilib gfortran-7 gfortran-7-multilib gfortran-8 gfortran-8-multilib libclang-6.0-dev clang-6.0 libclang-6.0-dev clang-7 libclang-7-dev clang-8 libclang-8-dev clang-9 libclang-9-dev clang-10 libclang-10-dev clang-11 libclang-11-dev clang-12 libclang-12-dev libbdd-dev libboost-all-dev libmpc-dev libmpfr-dev libxml2-dev liblzma-dev libmpfi-dev zlib1g-dev libicu-dev bison doxygen flex graphviz iverilog verilator make libsuitesparse-dev libglpk-dev
+
+
 Ubuntu 18.04 64bit:
 - autoconf
 - autoconf-archive
@@ -120,7 +166,6 @@ Ubuntu 18.04 64bit:
 - gcc-5-multilib
 - gcc-6-multilib
 - gcc-7-multilib
-- gcc-7-multilib
 - g++-4.8-multilib
 - g++-5-multilib
 - g++-6-multilib
@@ -144,6 +189,10 @@ Ubuntu 18.04 64bit:
 - libclang-6.0-dev
 - clang-7
 - libclang-7-dev
+- clang-8
+- libclang-8-dev
+- clang-9
+- libclang-9-dev
 - libbdd-dev
 - libboost-all-dev
 - libmpc-dev
@@ -166,7 +215,7 @@ Ubuntu 18.04 64bit:
 
 
 In a single line:
-sudo apt-get install autoconf autoconf-archive automake libtool g++ gcc-4.8 g++-4.8 gcc-5 g++-5 gcc-6 g++-6 gcc-7 g++-7 gcc-8 g++-8 gcc-4.8-plugin-dev gcc-5-plugin-dev gcc-6-plugin-dev gcc-7-plugin-dev  gcc-8-plugin-dev gcc-4.8-multilib gcc-5-multilib gcc-6-multilib gcc-7-multilib gcc-8-multilib g++-4.8-multilib g++-5-multilib g++-6-multilib g++-7-multilib g++-8-multilib gfortran-4.8 gfortran-4.8-multilib gfortran-5 gfortran-5-multilib gfortran-6 gfortran-6-multilib gfortran-7 gfortran-7-multilib gfortran-8 gfortran-8-multilib clang-4.0 libclang-4.0-dev libclang-6.0-dev clang-6.0 libclang-6.0-dev clang-7 libclang-7-dev libbdd-dev libboost-all-dev libmpc-dev libmpfr-dev libxml2-dev liblzma-dev libmpfi-dev zlib1g-dev libicu-dev bison doxygen flex graphviz iverilog verilator make libsuitesparse-dev libglpk-dev
+sudo apt-get install autoconf autoconf-archive automake libtool g++ gcc-4.8 g++-4.8 gcc-5 g++-5 gcc-6 g++-6 gcc-7 g++-7 gcc-8 g++-8 gcc-4.8-plugin-dev gcc-5-plugin-dev gcc-6-plugin-dev gcc-7-plugin-dev  gcc-8-plugin-dev gcc-4.8-multilib gcc-5-multilib gcc-6-multilib gcc-7-multilib gcc-8-multilib g++-4.8-multilib g++-5-multilib g++-6-multilib g++-7-multilib g++-8-multilib gfortran-4.8 gfortran-4.8-multilib gfortran-5 gfortran-5-multilib gfortran-6 gfortran-6-multilib gfortran-7 gfortran-7-multilib gfortran-8 gfortran-8-multilib clang-4.0 libclang-4.0-dev libclang-6.0-dev clang-6.0 libclang-6.0-dev clang-7 libclang-7-dev clang-8 libclang-8-dev clang-9 libclang-9-dev libbdd-dev libboost-all-dev libmpc-dev libmpfr-dev libxml2-dev liblzma-dev libmpfi-dev zlib1g-dev libicu-dev bison doxygen flex graphviz iverilog verilator make libsuitesparse-dev libglpk-dev
 
 
 Ubuntu 17.04 64bit and Ubuntu 17.04 32bit:
@@ -385,36 +434,26 @@ Debian packages
 
 The following packages have to be installed under Debian to compile PandA.
 
-Debian unstable (sid):
+Debian testing (bullseye) and unstable (sid):
 - autoconf
 - autoconf-archive
 - libtool
 - make
 - g++
-- gcc-5
-- g++-5
-- gcc-6
-- g++-6
-- gcc-7
-- g++-7
 - gcc-8
 - g++-8
-- gcc-5-plugin-dev
-- gcc-6-plugin-dev
-- gcc-7-plugin-dev
 - gcc-8-plugin-dev
-- gcc-5-multilib
-- gcc-6-multilib
-- gcc-7-multilib
 - gcc-8-multilib
 - gfortran
 - gfortran-multilib 
-- clang-4.0
-- libclang-4.0-dev
-- clang-5.0
-- libclang-5.0-dev
 - clang-6.0
 - libclang-6.0-dev
+- clang-7
+- libclang-7-dev
+- clang-8
+- libclang-8-dev
+- clang-9
+- libclang-9-dev
 - libbdd-dev
 - libboost-all-dev
 - libmpc-dev
@@ -436,7 +475,7 @@ Debian unstable (sid):
 - make
 
 In a single line (as root user):
-apt install autoconf autoconf-archive libtool make g++ gcc-5 g++-5 gcc-6 g++-6 gcc-7 g++-7 gcc-5-plugin-dev gcc-6-plugin-dev gcc-7-plugin-dev gcc-8-plugin-dev gcc-5-multilib gcc-6-multilib gcc-7-multilib gcc-8-multilib gfortran gfortran-multilib clang-4.0 libclang-4.0-dev clang-5.0 libclang-5.0-dev clang-6.0 libclang-6.0-dev libbdd-dev libboost-all-dev libmpc-dev libmpfr-dev libxml2-dev liblzma-dev libmpfi-dev zlib1g-dev libicu-dev bison doxygen flex graphviz iverilog verilator pkg-config
+apt install autoconf autoconf-archive libtool make g++ gcc-8-plugin-dev gcc-8-multilib gfortran gfortran-multilib clang-6.0 libclang-6.0-dev clang-7 libclang-7-dev clang-8 libclang-8-dev clang-9 libclang-9-dev libbdd-dev libboost-all-dev libmpc-dev libmpfr-dev libxml2-dev liblzma-dev libmpfi-dev zlib1g-dev libicu-dev bison doxygen flex graphviz iverilog verilator pkg-config libsuitesparse-dev libglpk-dev
 
 Debian 9 (Stretch):
 - autoconf
@@ -600,7 +639,7 @@ In a single line:
 sudo pacman -S base-devel multilib-devel boost iverilog gcc-multilib autoconf-archive verilator mpfi clang llvm gcc gcc-fortran git tar suitesparse glpk readline
 
 A working configure example is:
-../configure --prefix=$HOME/panda --enable-verilator --enable-glpk --enable-opt --enable-flopoco --with-opt-level=fast
+../configure --prefix=$HOME/panda --enable-glpk --enable-opt --enable-flopoco --with-opt-level=fast
 
 Mac OSX
 *************
@@ -611,9 +650,10 @@ Here the list of commands required:
      $sudo cp /opt/local/bin/greadlink /opt/local/bin/readlink
      $git clone https://github.com/ferrandi/PandA-bambu.git
      $cd PandA-bambu
+     $export PATH=/opt/local/bin:/opt/local/sbin:$PATH
      $make -f Makefile.init
      $mkdir build
-     $cd build && ../configure --prefix=$HOME/panda --enable-icarus --enable-glpk --enable-opt --enable-flopoco --with-opt-level=fast --with-clang6=/opt/local/bin/clang-mp-6.0 --with-gcc8=/opt/local/bin/gcc-mp-8 LDFLAGS=-L/opt/local/lib CPPFLAGS=-I/opt/local/include/ && make -j3 && make install && make clean
+     $cd build && ../configure --prefix=$HOME/panda --enable-glpk --enable-opt --enable-flopoco --with-opt-level=fast --disable-Werror --with-clang6=/opt/local/bin/clang-mp-6.0 --with-gcc8=/opt/local/bin/gcc-mp-8 LDFLAGS=-L/opt/local/lib CPPFLAGS=-I/opt/local/include/ && make -j3 && make install && make clean
 
 
 
@@ -629,21 +669,23 @@ In case ISE is installed in /opt/Xilinx/14.6/ the solution is:
   $sudo ln -s /usr/lib/x86_64-linux-gnu/libstdc++.so.6
 
 
-Notes on Debian/Ubuntu and Lattice Diamond 3.9
+Notes on Debian/Ubuntu and Lattice Diamond 3.12
 *************
 
 Lattice Diamond is currently distributed in rpm form for Linux distributions. To convert an rpm archive file into a .deb you can use the following instructions:
   $sudo apt-get install alien
-  $sudo alien --scripts diamond_3_9-base_x64-99-2-x86_64-linux.rpm
+  $sudo alien --scripts diamond_3_12-base-240-2-x86_64-linux.rpm
 once the package has been converted you can install with:
-  $sudo dpkg -i diamond-3-9-base-x64_3.9-100_amd64.deb
+  $sudo dpkg -i diamond-3-12-base_3.12-241_amd64.deb
+
+Device LFE5U85F8BG756C requires a free license available from Lattice Semiconductor. Check this link to get the license: http://www.latticesemi.com/Support/Licensing/
 
 
 Notes on NanoXplore tools
 *************
 The tested version of NanoXplore tools is the 2.9.4.
-The configuration of the PandA framework may require to add this option to the configure script:
-  --with-nanoxplore-bypass=<operating-system-distribution>
+The PandA framework may require to add this option at runtime:
+  --nanoxplore-bypass=<operating-system-distribution>
 where possible value can be:
   x86_64_UBUNTU_14
   x86_64_UBUNTU_16
@@ -654,8 +696,8 @@ where possible value can be:
 Notes on Modelsim
 *************
 
-PandA/bambu supports both Modelsim full version and Student/Free version by adding --enable-modelsim option to the PandA configure.
-When the Free/Student version of Modelsim is used, PandA/bambu should be configured by further adding the --disable-mentor-optimizer option. The Student/Free version does not have the optimization feature.
+PandA/bambu supports both Modelsim full version and Student/Free version.
+When the Free/Student version of Modelsim is used, PandA/bambu should be executed by further adding the --mentor-optimizer=0 option. The Student/Free version does not have the optimization feature.
 
 
 Notes on backend installation directories
@@ -668,11 +710,11 @@ For Mentor it checks this set of directories /opt/mentor and /opt/mentor/*
 For Xilinx ISE it checks these sets of directories /opt/Xilinx/* and /opt/Xilinx/*/ISE*
 For Xilinx VIVADO it checks this set of directories /opt/Xilinx/* and /opt/Xilinx/Vivado/*
 For BRAVE FPGA NanoXplore it checks this set of directories /opt/NanoXplore/NXmap/*
-Anyway, it is possible to specify a different position of the filesystem for the configuration script to look into.
+Anyway, it is possible to specify a different position of the filesystem for the application to look into.
 This is the list of options that may be useful for this purpose:
-  --with-altera-dir=DIR  where the root where ALTERA tools are installed
-  --with-lattice-dir=DIR  where the root where LATTICE tools are installed
-  --with-mentor-dir=DIR  where the root where MENTOR tools are installed
-  --with-xilinx-root-dir=DIR  where the root where XILINX tools are installed
-  --with-nanoxplore-dir=DIR  where the root where BRAVE FPGA NanoXplore tools are installed
+  --altera-root=DIR  where the root where ALTERA tools are installed
+  --lattice-root=DIR  where the root where LATTICE tools are installed
+  --mentor-root=DIR  where the root where MENTOR tools are installed
+  --xilinx-root=DIR  where the root where XILINX tools are installed
+  --nanoxplore-root=DIR  where the root where BRAVE FPGA NanoXplore tools are installed
 

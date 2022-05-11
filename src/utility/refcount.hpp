@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -64,9 +64,9 @@ struct null_deleter
 #define RefcountCast std::dynamic_pointer_cast
 
 #else
-#include <boost/smart_ptr/shared_ptr.hpp> // for shared_ptr
-#include <boost/smart_ptr/weak_ptr.hpp>   // for weak_ptr
-#include <cstddef>                        // for size_t
+#include <boost/smart_ptr/shared_ptr.hpp>
+#include <boost/smart_ptr/weak_ptr.hpp>
+#include <cstddef>
 
 #define refcount boost::shared_ptr
 #define Wrefcount boost::weak_ptr
@@ -237,6 +237,18 @@ template <class T, class U>
 inline T* GetPointer(const refcount<U>& t)
 {
    return dynamic_cast<T*>(t.get());
+}
+
+/**
+ * Template function used to hide static_cast
+ * The template parameter T represents a type of an object having as a base class U.
+ * @param t is a refcount<U> containing the pointer
+ * @return the pointer casted to the T class
+ */
+template <class T, class U>
+inline T* GetPointerS(const refcount<U>& t)
+{
+   return static_cast<T*>(t.get());
 }
 
 #include <functional>

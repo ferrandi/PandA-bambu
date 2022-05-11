@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -40,10 +40,7 @@
 /// Header include
 #include "NanoXploreBackendFlow.hpp"
 
-#include "config_HAVE_NANOXPLORE.hpp"
-#include "config_NANOXPLORE_BYPASS.hpp"
-#include "config_NANOXPLORE_LICENSE.hpp"
-#include "config_NANOXPLORE_SETTINGS.hpp"
+#include "config_PANDA_DATA_INSTALLDIR.hpp"
 
 /// constants include
 #include "synthesis_constants.hpp"
@@ -59,13 +56,9 @@
 
 #include "Parameter.hpp"
 #include "fileIO.hpp"
+#include "string_manipulation.hpp" // for GET_CLASS
 #include "xml_dom_parser.hpp"
 #include "xml_script_command.hpp"
-
-/// circuit include
-#include "structural_objects.hpp"
-
-#include "string_manipulation.hpp" // for GET_CLASS
 
 #define NANOXPLORE_FE "NANOXPLORE_FE"
 #define NANOXPLORE_LUTS "NANOXPLORE_LUTS"
@@ -76,27 +69,44 @@
 #define NANOXPLORE_MEM "NANOXPLORE_MEM"
 #define NANOXPLORE_POWER "NANOXPLORE_POWER"
 
-#define NANOXPLORE_LICENSE_SET std::string("export LM_LICENSE_FILE=") + STR(NANOXPLORE_LICENSE) + std::string(";")
-#define NANOXPLORE_BYPASS_SET std::string("export NANOXPLORE_BYPASS=") + STR(NANOXPLORE_BYPASS) + std::string(";")
+#define NANOXPLORE_BYPASS_SET(NANOXPLORE_BYPASS) \
+   (std::string("export NANOXPLORE_BYPASS=") + STR(NANOXPLORE_BYPASS) + std::string(";"))
 
-NanoXploreBackendFlow::NanoXploreBackendFlow(const ParameterConstRef _Param, const std::string& _flow_name, const target_managerRef _target) : BackendFlow(_Param, _flow_name, _target)
+NanoXploreBackendFlow::NanoXploreBackendFlow(const ParameterConstRef _Param, const std::string& _flow_name,
+                                             const target_managerRef _target)
+    : BackendFlow(_Param, _flow_name, _target)
 {
    debug_level = _Param->get_class_debug_level(GET_CLASS(*this));
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Creating NanoXplore Backend Flow ::.");
+   if(!Param->isOption(OPT_nanoxplore_settings))
+   {
+      THROW_WARNING("NanoXplore install directory was not specified, fallback on path. Specifying NanoXplore root "
+                    "through --nanoxplore-root option is preferred.");
+   }
+   const auto lic_path = std::getenv("LM_LICENSE_FILE");
+   if(!lic_path || std::string(lic_path) == "")
+   {
+      THROW_WARNING("NanoXplore license file has not been specified. User must set LM_LICENSE_FILE variable to point "
+                    "to the license file location.");
+   }
+   const auto bypass_name = std::getenv("NANOXPLORE_BYPASS");
+   if((!bypass_name || std::string(bypass_name) == "") && !Param->isOption(OPT_nanoxplore_bypass))
+   {
+      THROW_WARNING("NanoXplore bypass was not specified. User may set NANOXPLORE_BYPASS variable or use "
+                    "--nanoxplore-bypass option.");
+   }
 
-   default_data["NG-medium"] =
-#include "NG-medium.data"
-       ;
-   default_data["NG-large"] =
-#include "NG-large.data"
-       ;
+   default_data["NG-medium"] = "NG-medium.data";
+   default_data["NG-large"] = "NG-large.data";
 
    XMLDomParserRef parser;
    if(Param->isOption(OPT_target_device_script))
    {
-      std::string xml_file_path = Param->getOption<std::string>(OPT_target_device_script);
+      auto xml_file_path = Param->getOption<std::string>(OPT_target_device_script);
       if(!boost::filesystem::exists(xml_file_path))
+      {
          THROW_ERROR("File \"" + xml_file_path + "\" does not exist!");
+      }
       INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "---Importing scripts from file: " + xml_file_path);
       parser = XMLDomParserRef(new XMLDomParser(xml_file_path));
    }
@@ -105,13 +115,22 @@ NanoXploreBackendFlow::NanoXploreBackendFlow(const ParameterConstRef _Param, con
       const target_deviceRef device = target->get_target_device();
       std::string device_string;
       if(device->has_parameter("family"))
+      {
          device_string = device->get_parameter<std::string>("family");
+      }
       else
+      {
          device_string = "NG-medium";
+      }
       if(default_data.find(device_string) == default_data.end())
+      {
          THROW_ERROR("Device family \"" + device_string + "\" not supported!");
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "---Importing default scripts for target device family: " + device_string);
-      parser = XMLDomParserRef(new XMLDomParser(device_string, default_data[device_string]));
+      }
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level,
+                     "---Importing default scripts for target device family: " + device_string);
+      parser = XMLDomParserRef(
+          new XMLDomParser(relocate_compiler_path(PANDA_DATA_INSTALLDIR "/panda/wrapper/synthesis/nanoxplore/") +
+                           default_data[device_string]));
    }
    parse_flow(parser);
 }
@@ -135,7 +154,9 @@ void NanoXploreBackendFlow::xparse_utilization(const std::string& fn)
          {
             const auto* EnodeC = GetPointer<const xml_element>(iter_int);
             if(!EnodeC)
+            {
                continue;
+            }
 
             if(EnodeC->get_name() == "application")
             {
@@ -144,13 +165,17 @@ void NanoXploreBackendFlow::xparse_utilization(const std::string& fn)
                {
                   const auto* nodeS = GetPointer<const xml_element>(iter_sec);
                   if(!nodeS)
+                  {
                      continue;
+                  }
 
                   if(nodeS->get_name() == "section")
                   {
                      std::string stringID;
                      if(CE_XVM(stringID, nodeS))
+                     {
                         LOAD_XVM(stringID, nodeS);
+                     }
                      if(stringID == "NANOXPLORE_SYNTHESIS_SUMMARY")
                      {
                         const xml_node::node_list list_item = nodeS->get_children();
@@ -158,10 +183,14 @@ void NanoXploreBackendFlow::xparse_utilization(const std::string& fn)
                         {
                            const auto* nodeIt = GetPointer<const xml_element>(it_item);
                            if(!nodeIt or nodeIt->get_name() != "item")
+                           {
                               continue;
+                           }
 
                            if(CE_XVM(stringID, nodeIt))
+                           {
                               LOAD_XVM(stringID, nodeIt);
+                           }
 
                            std::string value;
                            if(CE_XVM(value, nodeIt))
@@ -201,7 +230,7 @@ void NanoXploreBackendFlow::xparse_utilization(const std::string& fn)
 void NanoXploreBackendFlow::CheckSynthesisResults()
 {
    PRINT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "Analyzing NanoXplore synthesis results");
-   std::string report_filename = actual_parameters->parameter_values[PARAM_nxpython_report];
+   const auto report_filename = GetPath(actual_parameters->parameter_values[PARAM_nxpython_report]);
    xparse_utilization(report_filename);
 
    THROW_ASSERT(design_values.find(NANOXPLORE_FE) != design_values.end(), "Missing logic elements");
@@ -222,15 +251,22 @@ void NanoXploreBackendFlow::CheckSynthesisResults()
       auto del_val = design_values[NANOXPLORE_SLACK];
       double exec_time = clk_val - del_val;
       if(clk_val < del_val)
+      {
          THROW_ERROR("the timing analysis is not consistent with the specified clock period");
+      }
       lut_m->set_timing_value(LUT_model::COMBINATIONAL_DELAY, exec_time);
    }
    else
-      lut_m->set_timing_value(LUT_model::COMBINATIONAL_DELAY, 0);
-   if((output_level >= OUTPUT_LEVEL_VERY_PEDANTIC or (Param->IsParameter("DumpingTimingReport") and Param->GetParameter<int>("DumpingTimingReport"))) and
-      ((actual_parameters->parameter_values.find(PARAM_nxpython_timing_report) != actual_parameters->parameter_values.end() and ExistFile(actual_parameters->parameter_values.find(PARAM_nxpython_timing_report)->second))))
    {
-      CopyStdout(actual_parameters->parameter_values.find(PARAM_nxpython_timing_report)->second);
+      lut_m->set_timing_value(LUT_model::COMBINATIONAL_DELAY, 0);
+   }
+   if((output_level >= OUTPUT_LEVEL_VERY_PEDANTIC ||
+       (Param->IsParameter("DumpingTimingReport") && Param->GetParameter<int>("DumpingTimingReport"))) &&
+      ((actual_parameters->parameter_values.find(PARAM_nxpython_timing_report) !=
+            actual_parameters->parameter_values.end() &&
+        ExistFile(GetPath(actual_parameters->parameter_values.at(PARAM_nxpython_timing_report))))))
+   {
+      CopyStdout(GetPath(actual_parameters->parameter_values.at(PARAM_nxpython_timing_report)));
    }
 }
 
@@ -238,39 +274,33 @@ void NanoXploreBackendFlow::WriteFlowConfiguration(std::ostream& script)
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Writing flow configuration");
    std::string setupscr;
-   if(STR(NANOXPLORE_SETTINGS) != "0")
+   if(Param->isOption(OPT_nanoxplore_settings))
    {
-      setupscr = STR(NANOXPLORE_SETTINGS);
+      setupscr = Param->getOption<std::string>(OPT_nanoxplore_settings);
    }
-   if(setupscr.size() and setupscr != "0")
+   if(setupscr.size() && setupscr != "0")
    {
       script << "#configuration" << std::endl;
       if(boost::algorithm::starts_with(setupscr, "export"))
+      {
          script << setupscr + " >& /dev/null; ";
+      }
       else
+      {
          script << ". " << setupscr << " >& /dev/null; ";
+      }
       script << std::endl << std::endl;
    }
-   auto nanoxplore_license = STR(NANOXPLORE_LICENSE);
-   if(!nanoxplore_license.empty() && nanoxplore_license != "0")
+   if(Param->isOption(OPT_nanoxplore_bypass))
    {
-      script << NANOXPLORE_LICENSE_SET << std::endl;
-   }
-   auto nanoxplore_bypass = STR(NANOXPLORE_BYPASS);
-   if(!nanoxplore_bypass.empty() && nanoxplore_bypass != "0")
-   {
-      script << NANOXPLORE_BYPASS_SET << std::endl;
+      script << NANOXPLORE_BYPASS_SET(Param->getOption<std::string>(OPT_nanoxplore_bypass)) << std::endl;
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Written flow configuration");
 }
 
 void NanoXploreBackendFlow::ExecuteSynthesis()
 {
-#if HAVE_NANOXPLORE
    BackendFlow::ExecuteSynthesis();
-#else
-   THROW_ERROR("NanoXplore tools not configured; Execution of the synthesis flow is not possible");
-#endif
 }
 
 void NanoXploreBackendFlow::InitDesignParameters()
@@ -280,12 +310,14 @@ void NanoXploreBackendFlow::InitDesignParameters()
    /// determine if power optimization has to be performed
    bool xpwr_enabled = false;
    if(Param->isOption("power_optimization") && Param->getOption<bool>("power_optimization"))
+   {
       xpwr_enabled = true;
+   }
    actual_parameters->parameter_values[PARAM_power_optimization] = STR(xpwr_enabled);
    const target_deviceRef device = target->get_target_device();
-   std::string device_name = device->get_parameter<std::string>("model");
-   std::string package = device->get_parameter<std::string>("package");
-   std::string speed_grade = device->get_parameter<std::string>("speed_grade");
+   auto device_name = device->get_parameter<std::string>("model");
+   auto package = device->get_parameter<std::string>("package");
+   auto speed_grade = device->get_parameter<std::string>("speed_grade");
    std::string device_string = device_name + package + speed_grade;
    actual_parameters->parameter_values[PARAM_target_device] = device_string;
 
@@ -295,7 +327,9 @@ void NanoXploreBackendFlow::InitDesignParameters()
    for(unsigned int v = 0; v < file_list.size(); v++)
    {
       if(v)
+      {
          sources_macro_list += ", ";
+      }
       sources_macro_list += "'" + file_list[v] + "'";
    }
    actual_parameters->parameter_values[PARAM_nxpython_sources_macro_list] = sources_macro_list;

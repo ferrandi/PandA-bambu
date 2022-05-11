@@ -1,5 +1,5 @@
 /* mockturtle: C++ logic network library
- * Copyright (C) 2018-2019  EPFL
+ * Copyright (C) 2018-2021  EPFL
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -27,8 +27,8 @@
   \file akers.hpp
   \brief Resynthesis with Akers synthesis
 
+  \author Heinz Riener
   \author Mathias Soeken
-  \author Eleonora Testa
 */
 
 #pragma once
@@ -67,7 +67,7 @@ class akers_resynthesis
 {
 public:
   template<typename LeavesIterator, typename Fn>
-  void operator()( Ntk& ntk, kitty::dynamic_truth_table const& function, LeavesIterator begin, LeavesIterator end, Fn&& fn )
+  void operator()( Ntk& ntk, kitty::dynamic_truth_table const& function, LeavesIterator begin, LeavesIterator end, Fn&& fn ) const
   {
     fn( akers_synthesis<Ntk>( ntk, function, ~function.construct(), begin, end ) );
   }

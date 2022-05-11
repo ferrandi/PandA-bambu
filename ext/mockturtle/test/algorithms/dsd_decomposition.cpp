@@ -3,7 +3,7 @@
 #include <kitty/constructors.hpp>
 #include <kitty/dynamic_truth_table.hpp>
 #include <mockturtle/algorithms/dsd_decomposition.hpp>
-#include <mockturtle/algorithms/shannon_decomposition.hpp>
+#include <mockturtle/algorithms/decomposition.hpp>
 #include <mockturtle/algorithms/simulation.hpp>
 #include <mockturtle/networks/aig.hpp>
 #include <mockturtle/networks/klut.hpp>
@@ -101,7 +101,9 @@ TEST_CASE( "DSD decomposition on random functions of different size", "[dsd_deco
       std::generate( pis.begin(), pis.end(), [&]() { return ntk.create_pi(); } );
 
       auto on_prime = [&]( kitty::dynamic_truth_table const& func, std::vector<aig_network::signal> const& pis ) {
-        return shannon_decomposition( ntk, func, pis );
+        std::vector<uint32_t> vars( func.num_vars() );
+        std::iota( vars.begin(), vars.end(), 0u );
+        return shannon_decomposition( ntk, func, vars, pis );
       };
 
       ntk.create_po( dsd_decomposition( ntk, func, pis, on_prime ) );

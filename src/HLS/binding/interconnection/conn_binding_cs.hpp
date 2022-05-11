@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2016-2020 Politecnico di Milano
+ *              Copyright (c) 2016-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -61,7 +61,7 @@ class conn_binding_cs : public conn_binding
     * @param HLS
     * @param SM
     */
-   void add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, const structural_managerRef SM);
+   void add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, const structural_managerRef SM) override;
 
  protected:
    /**

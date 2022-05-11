@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -66,27 +66,32 @@
 #endif
 
 /// Wrapper include
-#include "gcc_wrapper.hpp"
+#include "compiler_wrapper.hpp"
 
 /// Utility include
 #include "Parameter.hpp"
 #include "fileIO.hpp"
 #include "string_manipulation.hpp" // for GET_CLASS
 
-create_tree_manager::create_tree_manager(const ParameterConstRef _parameters, const application_managerRef _AppM, const DesignFlowManagerConstRef _design_flow_manager)
+create_tree_manager::create_tree_manager(const ParameterConstRef _parameters, const application_managerRef _AppM,
+                                         const DesignFlowManagerConstRef _design_flow_manager)
     : ApplicationFrontendFlowStep(_AppM, CREATE_TREE_MANAGER, _design_flow_manager, _parameters),
-      gcc_wrapper(new GccWrapper(parameters, parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler), parameters->getOption<GccWrapper_OptimizationSet>(OPT_gcc_optimization_set)))
+      compiler_wrapper(
+          new CompilerWrapper(parameters, parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler),
+                              parameters->getOption<CompilerWrapper_OptimizationSet>(OPT_gcc_optimization_set)))
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
 }
 
 create_tree_manager::~create_tree_manager() = default;
 
-void create_tree_manager::ComputeRelationships(DesignFlowStepSet& relationship, const DesignFlowStep::RelationshipType relationship_type)
+void create_tree_manager::ComputeRelationships(DesignFlowStepSet& relationship,
+                                               const DesignFlowStep::RelationshipType relationship_type)
 {
    ApplicationFrontendFlowStep::ComputeRelationships(relationship, relationship_type);
 #if HAVE_FROM_AADL_ASN_BUILT
-   if(relationship_type == DEPENDENCE_RELATIONSHIP and parameters->getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_AADL)
+   if(relationship_type == DEPENDENCE_RELATIONSHIP and
+      parameters->getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_AADL)
    {
       const auto input_files = AppM->input_files;
       for(const auto& input_file : input_files)
@@ -97,7 +102,9 @@ void create_tree_manager::ComputeRelationships(DesignFlowStepSet& relationship, 
             const auto signature = ParserFlowStep::ComputeSignature(ParserFlowStep_Type::AADL, input_file.first);
             vertex parser_step = design_flow_manager.lock()->GetDesignFlowStep(signature);
             const DesignFlowGraphConstRef design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
-            const DesignFlowStepRef design_flow_step = parser_step != NULL_VERTEX ? design_flow_graph->CGetDesignFlowStepInfo(parser_step)->design_flow_step : design_flow_manager.lock()->CreateFlowStep(signature);
+            const DesignFlowStepRef design_flow_step =
+                parser_step != NULL_VERTEX ? design_flow_graph->CGetDesignFlowStepInfo(parser_step)->design_flow_step :
+                                             design_flow_manager.lock()->CreateFlowStep(signature);
             relationship.insert(design_flow_step);
          }
          else if(file_format == Parameters_FileFormat::FF_ASN)
@@ -105,7 +112,9 @@ void create_tree_manager::ComputeRelationships(DesignFlowStepSet& relationship, 
             const auto signature = ParserFlowStep::ComputeSignature(ParserFlowStep_Type::ASN, input_file.first);
             vertex parser_step = design_flow_manager.lock()->GetDesignFlowStep(signature);
             const DesignFlowGraphConstRef design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
-            const DesignFlowStepRef design_flow_step = parser_step != NULL_VERTEX ? design_flow_graph->CGetDesignFlowStepInfo(parser_step)->design_flow_step : design_flow_manager.lock()->CreateFlowStep(signature);
+            const DesignFlowStepRef design_flow_step =
+                parser_step != NULL_VERTEX ? design_flow_graph->CGetDesignFlowStepInfo(parser_step)->design_flow_step :
+                                             design_flow_manager.lock()->CreateFlowStep(signature);
             relationship.insert(design_flow_step);
          }
       }
@@ -113,24 +122,28 @@ void create_tree_manager::ComputeRelationships(DesignFlowStepSet& relationship, 
 #endif
 }
 
-const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> create_tree_manager::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
+create_tree_manager::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
    {
       case(DEPENDENCE_RELATIONSHIP):
-      case(INVALIDATION_RELATIONSHIP):
       {
          break;
       }
       case(PRECEDENCE_RELATIONSHIP):
       {
 #if HAVE_FROM_PRAGMA_BUILT
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(PRAGMA_SUBSTITUTION, WHOLE_APPLICATION));
+         relationships.insert(std::make_pair(PRAGMA_SUBSTITUTION, WHOLE_APPLICATION));
 #endif
 #if HAVE_ZEBU_BUILT
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(SIZEOF_SUBSTITUTION, WHOLE_APPLICATION));
+         relationships.insert(std::make_pair(SIZEOF_SUBSTITUTION, WHOLE_APPLICATION));
 #endif
+         break;
+      }
+      case(INVALIDATION_RELATIONSHIP):
+      {
          break;
       }
       default:
@@ -141,12 +154,19 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
    return relationships;
 }
 
+bool create_tree_manager::HasToBeExecuted() const
+{
+   return true;
+}
+
 DesignFlowStep_Status create_tree_manager::Exec()
 {
    const tree_managerRef TreeM = AppM->get_tree_manager();
 
    if(!parameters->isOption(OPT_input_file))
+   {
       THROW_ERROR("At least one source file has to be passed to the tool");
+   }
 
    /// parsing of archive files
    if(parameters->isOption(OPT_archive_files))
@@ -160,16 +180,13 @@ DesignFlowStep_Status create_tree_manager::Exec()
             THROW_ERROR("File " + archive_file + " does not exist");
          }
          std::string temporary_directory_pattern;
-         temporary_directory_pattern = parameters->getOption<std::string>(OPT_output_temporary_directory) + "/temp-archive-dir";
+         temporary_directory_pattern =
+             parameters->getOption<std::string>(OPT_output_temporary_directory) + "/temp-archive-dir";
          // The %s are required by the mkdtemp function
          boost::filesystem::path temp_path = temporary_directory_pattern + "-%%%%-%%%%-%%%%-%%%%";
-
          boost::filesystem::path temp_path_obtained = boost::filesystem::unique_path(temp_path);
          boost::filesystem::create_directories(temp_path_obtained);
-
-         boost::filesystem::path local_archive_file = archive_file;
-         if(local_archive_file.is_relative())
-            local_archive_file = boost::filesystem::current_path() / local_archive_file;
+         boost::filesystem::path local_archive_file = GetPath(archive_file);
 
          std::string command = "cd " + temp_path_obtained.string() + "; ar x " + local_archive_file.string();
          int ret = PandaSystem(parameters, command);
@@ -188,7 +205,9 @@ DesignFlowStep_Status create_tree_manager::Exec()
             TreeM->merge_tree_managers(TM_new);
          }
          if(not(parameters->getOption<bool>(OPT_no_clean)))
+         {
             boost::filesystem::remove_all(temp_path_obtained);
+         }
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Read " + archive_file);
       }
    }
@@ -202,14 +221,18 @@ DesignFlowStep_Status create_tree_manager::Exec()
             INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "");
             INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "");
             INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "");
-            INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "*********************************************************************************");
-            INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "*               Building internal representation from raw files                 *");
-            INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "*********************************************************************************");
+            INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level,
+                           "*********************************************************************************");
+            INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level,
+                           "*               Building internal representation from raw files                 *");
+            INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level,
+                           "*********************************************************************************");
          }
          else
          {
             INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "");
-            INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, " =============== Building internal representation from raw files ===============");
+            INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
+                           " =============== Building internal representation from raw files ===============");
          }
       }
       const auto raw_files = parameters->getOption<const CustomSet<std::string>>(OPT_input_file);
@@ -228,20 +251,21 @@ DesignFlowStep_Status create_tree_manager::Exec()
    else
    {
 #if !RELEASE
-      // if a XML configuration file has been specified for the GCC parameters
+      // if a XML configuration file has been specified for the GCC/CLANG parameters
       if(parameters->isOption(OPT_gcc_read_xml))
-         gcc_wrapper->ReadXml(parameters->getOption<std::string>(OPT_gcc_read_xml));
+         compiler_wrapper->ReadXml(parameters->getOption<std::string>(OPT_gcc_read_xml));
 #endif
-      gcc_wrapper->FillTreeManager(TreeM, AppM->input_files);
+      compiler_wrapper->FillTreeManager(TreeM, AppM->input_files);
 
 #if !RELEASE
       if(parameters->isOption(OPT_gcc_write_xml))
-         gcc_wrapper->WriteXml(parameters->getOption<std::string>(OPT_gcc_write_xml));
+         compiler_wrapper->WriteXml(parameters->getOption<std::string>(OPT_gcc_write_xml));
 #endif
 
       if(debug_level >= DEBUG_LEVEL_PEDANTIC)
       {
-         std::string raw_file_name = parameters->getOption<std::string>(OPT_output_temporary_directory) + "after_raw_merge.raw";
+         std::string raw_file_name =
+             parameters->getOption<std::string>(OPT_output_temporary_directory) + "after_raw_merge.raw";
          std::ofstream raw_file(raw_file_name.c_str());
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Tree-Manager dumped for debug purpose");
          raw_file << TreeM;
@@ -250,9 +274,4 @@ DesignFlowStep_Status create_tree_manager::Exec()
    }
 
    return DesignFlowStep_Status::SUCCESS;
-}
-
-bool create_tree_manager::HasToBeExecuted() const
-{
-   return true;
 }

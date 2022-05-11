@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -82,6 +82,6 @@ class vivado_flow_wrapper : public XilinxWrapper
    ~vivado_flow_wrapper() override;
 };
 /// Refcount definition for the class
-typedef refcount<vivado_flow_wrapper> vivado_flow_wrapperRef;
+using vivado_flow_wrapperRef = refcount<vivado_flow_wrapper>;
 
 #endif

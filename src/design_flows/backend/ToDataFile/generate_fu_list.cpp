@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2015-2020 Politecnico di Milano
+ *              Copyright (C) 2015-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -72,13 +72,16 @@
 /// utility include
 #include "string_manipulation.hpp"
 
-GenerateFuList::GenerateFuList(const target_managerRef _target, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters)
-    : DesignFlowStep(_design_flow_manager, _parameters), ToDataFileStep(_design_flow_manager, ToDataFileStep_Type::GENERATE_FU_LIST, _parameters), FunctionalUnitStep(_target, _design_flow_manager, _parameters)
+GenerateFuList::GenerateFuList(const target_managerRef _target, const DesignFlowManagerConstRef _design_flow_manager,
+                               const ParameterConstRef _parameters)
+    : DesignFlowStep(_design_flow_manager, _parameters),
+      ToDataFileStep(_design_flow_manager, ToDataFileStep_Type::GENERATE_FU_LIST, _parameters),
+      FunctionalUnitStep(_target, _design_flow_manager, _parameters)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
    if(parameters->getOption<std::string>(OPT_component_name) != "all")
    {
-      std::string to_be_splitted(parameters->getOption<std::string>(OPT_component_name));
+      auto to_be_splitted(parameters->getOption<std::string>(OPT_component_name));
       const auto splitted = SplitString(to_be_splitted, ",");
       for(const auto& component_to_be_characterized : splitted)
       {
@@ -97,7 +100,8 @@ DesignFlowStep_Status GenerateFuList::Exec()
       for(const auto& fu : fus)
       {
          component = fu.first;
-         if(components_to_be_characterized.empty() or components_to_be_characterized.find(component) != components_to_be_characterized.end())
+         if(components_to_be_characterized.empty() or
+            components_to_be_characterized.find(component) != components_to_be_characterized.end())
          {
             AnalyzeFu(fu.second);
          }
@@ -116,34 +120,50 @@ DesignFlowStep_Status GenerateFuList::Exec()
    return DesignFlowStep_Status::SUCCESS;
 }
 
-void GenerateFuList::ComputeRelationships(DesignFlowStepSet& relationship, const DesignFlowStep::RelationshipType relationship_type)
+void GenerateFuList::ComputeRelationships(DesignFlowStepSet& relationship,
+                                          const DesignFlowStep::RelationshipType relationship_type)
 {
    switch(relationship_type)
    {
       case DEPENDENCE_RELATIONSHIP:
       {
          const DesignFlowGraphConstRef design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
-         const auto* technology_flow_step_factory = GetPointer<const TechnologyFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("Technology"));
+         const auto* technology_flow_step_factory = GetPointer<const TechnologyFlowStepFactory>(
+             design_flow_manager.lock()->CGetDesignFlowStepFactory("Technology"));
          {
-            const std::string technology_flow_signature = TechnologyFlowStep::ComputeSignature(TechnologyFlowStep_Type::LOAD_FILE_TECHNOLOGY);
-            const vertex technology_flow_step = design_flow_manager.lock()->GetDesignFlowStep(technology_flow_signature);
+            const std::string technology_flow_signature =
+                TechnologyFlowStep::ComputeSignature(TechnologyFlowStep_Type::LOAD_FILE_TECHNOLOGY);
+            const vertex technology_flow_step =
+                design_flow_manager.lock()->GetDesignFlowStep(technology_flow_signature);
             const DesignFlowStepRef technology_design_flow_step =
-                technology_flow_step ? design_flow_graph->CGetDesignFlowStepInfo(technology_flow_step)->design_flow_step : technology_flow_step_factory->CreateTechnologyFlowStep(TechnologyFlowStep_Type::LOAD_FILE_TECHNOLOGY);
+                technology_flow_step ?
+                    design_flow_graph->CGetDesignFlowStepInfo(technology_flow_step)->design_flow_step :
+                    technology_flow_step_factory->CreateTechnologyFlowStep(
+                        TechnologyFlowStep_Type::LOAD_FILE_TECHNOLOGY);
             relationship.insert(technology_design_flow_step);
          }
          {
-            const std::string technology_flow_signature = TechnologyFlowStep::ComputeSignature(TechnologyFlowStep_Type::LOAD_DEVICE_TECHNOLOGY);
-            const vertex technology_flow_step = design_flow_manager.lock()->GetDesignFlowStep(technology_flow_signature);
+            const std::string technology_flow_signature =
+                TechnologyFlowStep::ComputeSignature(TechnologyFlowStep_Type::LOAD_DEVICE_TECHNOLOGY);
+            const vertex technology_flow_step =
+                design_flow_manager.lock()->GetDesignFlowStep(technology_flow_signature);
             const DesignFlowStepRef technology_design_flow_step =
-                technology_flow_step ? design_flow_graph->CGetDesignFlowStepInfo(technology_flow_step)->design_flow_step : technology_flow_step_factory->CreateTechnologyFlowStep(TechnologyFlowStep_Type::LOAD_DEVICE_TECHNOLOGY);
+                technology_flow_step ?
+                    design_flow_graph->CGetDesignFlowStepInfo(technology_flow_step)->design_flow_step :
+                    technology_flow_step_factory->CreateTechnologyFlowStep(
+                        TechnologyFlowStep_Type::LOAD_DEVICE_TECHNOLOGY);
             relationship.insert(technology_design_flow_step);
          }
          if(debug_level >= DEBUG_LEVEL_VERY_PEDANTIC)
          {
-            const std::string technology_flow_signature = TechnologyFlowStep::ComputeSignature(TechnologyFlowStep_Type::WRITE_TECHNOLOGY);
-            const vertex technology_flow_step = design_flow_manager.lock()->GetDesignFlowStep(technology_flow_signature);
+            const std::string technology_flow_signature =
+                TechnologyFlowStep::ComputeSignature(TechnologyFlowStep_Type::WRITE_TECHNOLOGY);
+            const vertex technology_flow_step =
+                design_flow_manager.lock()->GetDesignFlowStep(technology_flow_signature);
             const DesignFlowStepRef technology_design_flow_step =
-                technology_flow_step ? design_flow_graph->CGetDesignFlowStepInfo(technology_flow_step)->design_flow_step : technology_flow_step_factory->CreateTechnologyFlowStep(TechnologyFlowStep_Type::WRITE_TECHNOLOGY);
+                technology_flow_step ?
+                    design_flow_graph->CGetDesignFlowStepInfo(technology_flow_step)->design_flow_step :
+                    technology_flow_step_factory->CreateTechnologyFlowStep(TechnologyFlowStep_Type::WRITE_TECHNOLOGY);
             relationship.insert(technology_design_flow_step);
          }
          break;
@@ -181,7 +201,9 @@ const DesignFlowStepFactoryConstRef GenerateFuList::CGetDesignFlowStepFactory() 
    return ToDataFileStep::CGetDesignFlowStepFactory();
 }
 
-void GenerateFuList::AnalyzeCell(functional_unit* fu, const unsigned int, const std::vector<std::string>&, const size_t, const std::vector<std::string>&, const size_t, const unsigned int constPort, const bool is_commutative, size_t)
+void GenerateFuList::AnalyzeCell(functional_unit* fu, const unsigned int, const std::vector<std::string>&, const size_t,
+                                 const std::vector<std::string>&, const size_t, const unsigned int constPort,
+                                 const bool is_commutative, size_t)
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing " + fu->get_name());
    const structural_objectRef obj = fu->CM->get_circ();
@@ -194,7 +216,9 @@ void GenerateFuList::AnalyzeCell(functional_unit* fu, const unsigned int, const 
    {
       has_first_synthesis_id = constPort;
       if(current_list != "")
+      {
          cells.insert(current_list);
+      }
       current_list = component + "-" + fu->get_name();
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed " + fu->get_name());

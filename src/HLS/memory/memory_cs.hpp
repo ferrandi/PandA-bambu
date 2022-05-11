@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2016-2020 Politecnico di Milano
+ *              Copyright (c) 2016-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -50,12 +50,19 @@ class memory_cs : public memory
    /**
     * Constructor
     */
-   memory_cs(const tree_managerRef TreeM, unsigned int off_base_address, unsigned int max_bram, bool null_pointer_check, bool initial_internal_address_p, unsigned int initial_internal_address, const unsigned int _address_bitsize);
+   memory_cs(const tree_managerRef _TreeM, unsigned long long int _off_base_address, unsigned int max_bram,
+             bool _null_pointer_check, bool initial_internal_address_p, unsigned int initial_internal_address,
+             const unsigned int _address_bitsize)
+       : memory(_TreeM, _off_base_address, max_bram, _null_pointer_check, initial_internal_address_p,
+                initial_internal_address, _address_bitsize),
+         bus_tag_bitsize(0)
+   {
+   }
 
    /**
     * Destructor
     */
-   virtual ~memory_cs();
+   virtual ~memory_cs() = default;
 
    /**
     * set the bus tag bitsize

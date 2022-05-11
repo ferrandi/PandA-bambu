@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -52,7 +52,9 @@
 #include "dbgPrintHelper.hpp"
 #include "string_manipulation.hpp" // for GET_CLASS
 
-LoadFileTechnology::LoadFileTechnology(const technology_managerRef _TM, const target_deviceRef _target, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters)
+LoadFileTechnology::LoadFileTechnology(const technology_managerRef _TM, const target_deviceRef _target,
+                                       const DesignFlowManagerConstRef _design_flow_manager,
+                                       const ParameterConstRef _parameters)
     : TechnologyFlowStep(_TM, _target, _design_flow_manager, TechnologyFlowStep_Type::LOAD_FILE_TECHNOLOGY, _parameters)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
@@ -71,7 +73,8 @@ DesignFlowStep_Status LoadFileTechnology::Exec()
    return DesignFlowStep_Status::SUCCESS;
 }
 
-const CustomUnorderedSet<TechnologyFlowStep_Type> LoadFileTechnology::ComputeTechnologyRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<TechnologyFlowStep_Type>
+LoadFileTechnology::ComputeTechnologyRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<TechnologyFlowStep_Type> relationships;
    switch(relationship_type)

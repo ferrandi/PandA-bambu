@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -68,7 +68,7 @@ struct DesignParameters
    std::string chain_name;
 
    /// Parameters map type
-   typedef std::map<std::string, std::string> map_t;
+   using map_t = std::map<std::string, std::string>;
 
    /// Map between the name of the parameter and the corresponding string-based value
    map_t parameter_values;
@@ -108,7 +108,9 @@ struct DesignParameters
          THROW_ERROR("Parameter \"" + name + "\" not yet defined");
       }
       else
+      {
          parameter_values[name] = value;
+      }
    }
 
    /**
@@ -127,6 +129,6 @@ struct DesignParameters
    }
 };
 /// refcount definition of the class
-typedef refcount<DesignParameters> DesignParametersRef;
+using DesignParametersRef = refcount<DesignParameters>;
 
 #endif

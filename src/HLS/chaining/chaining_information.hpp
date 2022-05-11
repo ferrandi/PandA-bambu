@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -115,7 +115,7 @@ class ChainingInformation
     * @param op1 is the first vertex
     * @param op2 is the second vertex
     */
-   bool may_be_chained_ops(vertex op1, vertex op2) const;
+   bool may_be_chained_ops(vertex tgt, vertex src) const;
 
    /**
     * put into relation the vertices whith respect the chained vertices connected with the input
@@ -132,5 +132,5 @@ class ChainingInformation
    void add_chained_vertices_out(vertex op1, vertex tgt);
 };
 /// refcount definition of the class
-typedef refcount<ChainingInformation> ChainingInformationRef;
+using ChainingInformationRef = refcount<ChainingInformation>;
 #endif

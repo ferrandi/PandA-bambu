@@ -59,7 +59,8 @@
       X = X >> (N);                                                                            \
    } while(0)
 
-#define __FP_FRAC_SRS_1(X, N, sz) (X = (X >> (N) | (__builtin_constant_p(N) && (N) == 1 ? X & 1 : (X << (_FP_W_TYPE_SIZE - (N))) != 0)))
+#define __FP_FRAC_SRS_1(X, N, sz) \
+   (X = (X >> (N) | (__builtin_constant_p(N) && (N) == 1 ? X & 1 : (X << (_FP_W_TYPE_SIZE - (N))) != 0)))
 
 #define _FP_FRAC_ADD_1(R, X, Y) (R##_f = X##_f + Y##_f)
 #define _FP_FRAC_SUB_1(R, X, Y) (R##_f = X##_f - Y##_f)
@@ -148,15 +149,16 @@
       (val) = _flo.flt;            \
    } while(0)
 #else
-#define _FP_PACK_RAW_1(fs, val, X)                                                                                                                                                          \
-   do                                                                                                                                                                                       \
-   {                                                                                                                                                                                        \
-      union _FP_UNION_##fs _flo;                                                                                                                                                            \
-                                                                                                                                                                                            \
-      _flo.bits.coded = (X##_f & ((1 << (_FP_FRACBITS_##fs - (_FP_IMPLBIT_##fs != 0))) - 1)) | ((X##_e & ((1 << _FP_EXPBITS_##fs) - 1)) << (_FP_FRACBITS_##fs - (_FP_IMPLBIT_##fs != 0))) | \
-                        ((X##_s & 1) << (_FP_FRACBITS_##fs - (_FP_IMPLBIT_##fs != 0) + _FP_EXPBITS_##fs));                                                                                  \
-                                                                                                                                                                                            \
-      (val) = _flo.flt;                                                                                                                                                                     \
+#define _FP_PACK_RAW_1(fs, val, X)                                                                                   \
+   do                                                                                                                \
+   {                                                                                                                 \
+      union _FP_UNION_##fs _flo;                                                                                     \
+                                                                                                                     \
+      _flo.bits.coded = (X##_f & ((1 << (_FP_FRACBITS_##fs - (_FP_IMPLBIT_##fs != 0))) - 1)) |                       \
+                        ((X##_e & ((1 << _FP_EXPBITS_##fs) - 1)) << (_FP_FRACBITS_##fs - (_FP_IMPLBIT_##fs != 0))) | \
+                        ((X##_s & 1) << (_FP_FRACBITS_##fs - (_FP_IMPLBIT_##fs != 0) + _FP_EXPBITS_##fs));           \
+                                                                                                                     \
+      (val) = _flo.flt;                                                                                              \
    } while(0)
 #endif
 
@@ -171,13 +173,14 @@
       _flo->bits.sign = X##_s;                                   \
    } while(0)
 #else
-#define _FP_PACK_RAW_1_P(fs, val, X)                                                                                                                                                         \
-   do                                                                                                                                                                                        \
-   {                                                                                                                                                                                         \
-      union _FP_UNION_##fs* _flo = (union _FP_UNION_##fs*)(val);                                                                                                                             \
-                                                                                                                                                                                             \
-      _flo->bits.coded = (X##_f & ((1 << (_FP_FRACBITS_##fs - (_FP_IMPLBIT_##fs != 0))) - 1)) | ((X##_e & ((1 << _FP_EXPBITS_##fs) - 1)) << (_FP_FRACBITS_##fs - (_FP_IMPLBIT_##fs != 0))) | \
-                         ((X##_s & 1) << (_FP_FRACBITS_##fs - (_FP_IMPLBIT_##fs != 0) + _FP_EXPBITS_##fs));                                                                                  \
+#define _FP_PACK_RAW_1_P(fs, val, X)                                                                                  \
+   do                                                                                                                 \
+   {                                                                                                                  \
+      union _FP_UNION_##fs* _flo = (union _FP_UNION_##fs*)(val);                                                      \
+                                                                                                                      \
+      _flo->bits.coded = (X##_f & ((1 << (_FP_FRACBITS_##fs - (_FP_IMPLBIT_##fs != 0))) - 1)) |                       \
+                         ((X##_e & ((1 << _FP_EXPBITS_##fs) - 1)) << (_FP_FRACBITS_##fs - (_FP_IMPLBIT_##fs != 0))) | \
+                         ((X##_s & 1) << (_FP_FRACBITS_##fs - (_FP_IMPLBIT_##fs != 0) + _FP_EXPBITS_##fs));           \
    } while(0)
 #endif
 

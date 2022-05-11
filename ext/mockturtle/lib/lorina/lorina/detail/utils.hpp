@@ -1,5 +1,5 @@
 /* lorina: C++ parsing library
- * Copyright (C) 2017-2018  EPFL
+ * Copyright (C) 2018-2021  EPFL
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -55,6 +55,50 @@ namespace lorina
 namespace detail
 {
 
+/* https://stackoverflow.com/questions/6089231/getting-std-ifstream-to-handle-lf-cr-and-crlf */
+inline std::istream& getline( std::istream& is, std::string& t )
+{
+  t.clear();
+
+  /* The characters in the stream are read one-by-one using a std::streambuf.
+   * That is faster than reading them one-by-one using the std::istream.
+   * Code that uses streambuf this way must be guarded by a sentry object.
+   * The sentry object performs various tasks,
+   * such as thread synchronization and updating the stream state.
+   */
+
+  std::istream::sentry se( is, true );
+  std::streambuf* sb = is.rdbuf();
+
+  for ( ;; )
+  {
+    int const c = sb->sbumpc();
+    switch ( c )
+    {
+    /* deal with file endings */
+    case '\n':
+      return is;
+    case '\r':
+      if ( sb->sgetc() == '\n' )
+      {
+        sb->sbumpc();
+      }
+      return is;
+
+    /* handle the case when the last line has no line ending */
+    case std::streambuf::traits_type::eof():
+      if ( t.empty() )
+      {
+        is.setstate( std::ios::eofbit );
+      }
+      return is;
+
+    default:
+      t += (char)c;
+    }
+  }
+}
+
 /* std::apply in C++14 taken from https://stackoverflow.com/a/36656413 */
 template<typename Function, typename Tuple, size_t ... I>
 auto apply(Function f, Tuple t, std::index_sequence<I ...>)
@@ -80,15 +124,18 @@ public:
 
   void declare_known( const std::string& known )
   {
-    _waits_for[ known ];
+    _known.emplace( known );
   }
-  
+
   void call_deferred( const std::vector<std::string>& inputs, const std::string& output, Args... params )
   {
     /* do we have all inputs */
     std::unordered_set<std::string> unknown;
     for ( const auto& input : inputs )
     {
+      if ( _known.find( input ) != _known.end() )
+        continue;
+
       auto it = _waits_for.find( input );
       if ( it == _waits_for.end() || !it->second.empty() )
       {
@@ -110,8 +157,14 @@ public:
       return;
     }
 
-    /* trigger computation */
-    _waits_for[output]; /* init empty, makes sure nothing is waiting for this output */
+    /* trigger dependency computation */
+    compute_dependencies( output );
+  }
+
+  void compute_dependencies( const std::string& output )
+  {
+     /* init empty, makes sure nothing is waiting for this output */
+    _waits_for[output];
     std::stack<std::string> computed;
     computed.push( output );
     while ( !computed.empty() )
@@ -149,8 +202,9 @@ public:
     }
     return deps;
   }
-  
+
 private:
+  std::unordered_set<std::string> _known;
   std::unordered_map<std::string, std::unordered_set<std::string>> _triggers;
   std::unordered_map<std::string, std::unordered_set<std::string>> _waits_for;
   std::function<void(Args...)> f;
@@ -199,7 +253,7 @@ inline void foreach_line_in_file_escape( std::istream& in, const std::function<b
 {
   std::string line, line2;
 
-  while ( getline( in, line ) )
+  while ( !getline( in, line ).eof() )
   {
     trim( line );
 
@@ -207,9 +261,12 @@ inline void foreach_line_in_file_escape( std::istream& in, const std::function<b
     {
       line.pop_back();
       trim( line );
+
+      /* check if failbit has been set */
       if ( !getline( in, line2 ) )
       {
         assert( false );
+        std::abort();
       }
       line += line2;
     }
@@ -228,12 +285,22 @@ inline std::vector<std::string> split( const std::string& str, const std::string
 
   size_t last = 0;
   size_t next = 0;
+  std::string substring;
   while ( ( next = str.find( sep, last ) ) != std::string::npos )
   {
-    result.push_back( trim_copy( str.substr( last, next - last ) ) );
+    substring = str.substr( last, next - last );
+    if ( substring.length() > 0 )
+    {
+      std::string sub = str.substr( last, next - last );
+      sub.erase( std::remove( sub.begin(), sub.end(), ' ' ), sub.end() );
+      result.push_back( sub );
+    }
     last = next + 1;
   }
-  result.push_back( trim_copy( str.substr( last ) ) );
+
+  substring = str.substr( last );
+  substring.erase( std::remove( substring.begin(), substring.end(), ' ' ), substring.end() );
+  result.push_back( substring );
 
   return result;
 }
@@ -272,6 +339,11 @@ inline std::string basename( const std::string& filepath )
   return std::string( ::basename( const_cast<char*>( filepath.c_str() ) ) );
 }
 #endif
+
+inline bool starts_with( std::string const& s, std::string const& match )
+{
+  return ( s.substr( 0, match.size() ) == match );
+}
 
 } // namespace detail
 } // namespace lorina

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -47,7 +47,8 @@
 #include "Parameter.hpp"
 #include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
 
-ClassicalHLSSynthesisFlow::ClassicalHLSSynthesisFlow(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, const DesignFlowManagerConstRef _design_flow_manager)
+ClassicalHLSSynthesisFlow::ClassicalHLSSynthesisFlow(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr,
+                                                     const DesignFlowManagerConstRef _design_flow_manager)
     : HLS_step(_parameters, _HLSMgr, _design_flow_manager, HLSFlowStep_Type::CLASSICAL_HLS_SYNTHESIS_FLOW)
 {
    composed = true;
@@ -55,49 +56,67 @@ ClassicalHLSSynthesisFlow::ClassicalHLSSynthesisFlow(const ParameterConstRef _pa
 
 ClassicalHLSSynthesisFlow::~ClassicalHLSSynthesisFlow() = default;
 
-const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ClassicalHLSSynthesisFlow::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
+ClassicalHLSSynthesisFlow::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;
    switch(relationship_type)
    {
       case DEPENDENCE_RELATIONSHIP:
       {
-         ret.insert(std::make_tuple(parameters->getOption<HLSFlowStep_Type>(OPT_function_allocation_algorithm), HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::WHOLE_APPLICATION));
-         ret.insert(std::make_tuple(parameters->getOption<HLSFlowStep_Type>(OPT_memory_allocation_algorithm), HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::WHOLE_APPLICATION));
-         ret.insert(std::make_tuple(HLSFlowStep_Type::GENERATE_HDL, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::TOP_FUNCTION));
+         ret.insert(std::make_tuple(parameters->getOption<HLSFlowStep_Type>(OPT_function_allocation_algorithm),
+                                    HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::WHOLE_APPLICATION));
+         ret.insert(std::make_tuple(parameters->getOption<HLSFlowStep_Type>(OPT_memory_allocation_algorithm),
+                                    HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::WHOLE_APPLICATION));
+         ret.insert(std::make_tuple(HLSFlowStep_Type::GENERATE_HDL, HLSFlowStepSpecializationConstRef(),
+                                    HLSFlowStep_Relationship::TOP_FUNCTION));
 #if HAVE_TASTE
          if(parameters->getOption<bool>(OPT_generate_taste_architecture))
          {
-            ret.insert(std::make_tuple(HLSFlowStep_Type::GENERATE_TASTE_HDL_ARCHITECTURE, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::WHOLE_APPLICATION));
-            ret.insert(std::make_tuple(HLSFlowStep_Type::GENERATE_TASTE_SYNTHESIS_SCRIPT, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::WHOLE_APPLICATION));
+            ret.insert(std::make_tuple(HLSFlowStep_Type::GENERATE_TASTE_HDL_ARCHITECTURE,
+                                       HLSFlowStepSpecializationConstRef(),
+                                       HLSFlowStep_Relationship::WHOLE_APPLICATION));
+            ret.insert(std::make_tuple(HLSFlowStep_Type::GENERATE_TASTE_SYNTHESIS_SCRIPT,
+                                       HLSFlowStepSpecializationConstRef(),
+                                       HLSFlowStep_Relationship::WHOLE_APPLICATION));
          }
          else
 #endif
-             if(parameters->isOption(OPT_top_functions_names) and parameters->getOption<const std::list<std::string>>(OPT_top_functions_names).size() == 1)
+             if(parameters->isOption(OPT_top_functions_names) and
+                parameters->getOption<const std::list<std::string>>(OPT_top_functions_names).size() == 1)
          {
-            ret.insert(std::make_tuple(HLSFlowStep_Type::GENERATE_SYNTHESIS_SCRIPT, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::WHOLE_APPLICATION));
+            ret.insert(std::make_tuple(HLSFlowStep_Type::GENERATE_SYNTHESIS_SCRIPT, HLSFlowStepSpecializationConstRef(),
+                                       HLSFlowStep_Relationship::WHOLE_APPLICATION));
          }
          if(parameters->isOption(OPT_export_core_mode))
          {
-            ret.insert(std::make_tuple(parameters->getOption<HLSFlowStep_Type>(OPT_export_core_mode), HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::WHOLE_APPLICATION));
+            ret.insert(std::make_tuple(parameters->getOption<HLSFlowStep_Type>(OPT_export_core_mode),
+                                       HLSFlowStepSpecializationConstRef(),
+                                       HLSFlowStep_Relationship::WHOLE_APPLICATION));
          }
          if(output_level >= OUTPUT_LEVEL_VERBOSE)
          {
-            ret.insert(std::make_tuple(HLSFlowStep_Type::WRITE_HLS_SUMMARY, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::WHOLE_APPLICATION));
+            ret.insert(std::make_tuple(HLSFlowStep_Type::WRITE_HLS_SUMMARY, HLSFlowStepSpecializationConstRef(),
+                                       HLSFlowStep_Relationship::WHOLE_APPLICATION));
          }
          if(parameters->getOption<int>(OPT_evaluation))
          {
-            ret.insert(std::make_tuple(HLSFlowStep_Type::EVALUATION, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::TOP_FUNCTION));
+            ret.insert(std::make_tuple(HLSFlowStep_Type::EVALUATION, HLSFlowStepSpecializationConstRef(),
+                                       HLSFlowStep_Relationship::TOP_FUNCTION));
          }
          if(parameters->getOption<bool>(OPT_generate_testbench))
          {
-            ret.insert(std::make_tuple(HLSFlowStep_Type::GENERATE_SIMULATION_SCRIPT, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::WHOLE_APPLICATION));
-            ret.insert(std::make_tuple(HLSFlowStep_Type::TESTBENCH_GENERATION, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::WHOLE_APPLICATION));
+            ret.insert(std::make_tuple(HLSFlowStep_Type::GENERATE_SIMULATION_SCRIPT,
+                                       HLSFlowStepSpecializationConstRef(),
+                                       HLSFlowStep_Relationship::WHOLE_APPLICATION));
+            ret.insert(std::make_tuple(HLSFlowStep_Type::TESTBENCH_GENERATION, HLSFlowStepSpecializationConstRef(),
+                                       HLSFlowStep_Relationship::WHOLE_APPLICATION));
          }
 #if HAVE_VCD_BUILT
          if(parameters->isOption(OPT_discrepancy) && parameters->getOption<bool>(OPT_discrepancy))
          {
-            ret.insert(std::make_tuple(HLSFlowStep_Type::VCD_UTILITY, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::TOP_FUNCTION));
+            ret.insert(std::make_tuple(HLSFlowStep_Type::VCD_UTILITY, HLSFlowStepSpecializationConstRef(),
+                                       HLSFlowStep_Relationship::TOP_FUNCTION));
          }
 #endif
          break;

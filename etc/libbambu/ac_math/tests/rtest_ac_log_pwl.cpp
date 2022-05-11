@@ -59,7 +59,8 @@ double abs_double(double x)
 //   ac_fixed inputs.
 
 template <int Wfi, int Ifi, int outWfi, int outIfi, bool outSfi>
-void test_ac_log_pwl(const ac_fixed<Wfi, Ifi, false, AC_TRN, AC_WRAP>& in, ac_fixed<outWfi, outIfi, outSfi, AC_TRN, AC_WRAP>& log_out)
+void test_ac_log_pwl(const ac_fixed<Wfi, Ifi, false, AC_TRN, AC_WRAP>& in,
+                     ac_fixed<outWfi, outIfi, outSfi, AC_TRN, AC_WRAP>& log_out)
 {
    log_out = ac_log_pwl<ac_fixed<outWfi, outIfi, outSfi, AC_TRN, AC_WRAP>>(in);
 }
@@ -158,18 +159,20 @@ int test_driver(double& cumulative_max_error_log, const double allowed_error, bo
       double actual_log = log_out.to_double();
       double this_error_log;
 
-      // Calculate absolute value of error for log2 and log output. Since the scaling of outputs that lie outside the range of normalization of log2 is done
-      // using an addition instead of a shift, the absolute value should work out as an error metric for all outputs, large and small, provided that the
-      // output has enough precision.
+      // Calculate absolute value of error for log2 and log output. Since the scaling of outputs that lie outside the
+      // range of normalization of log2 is done using an addition instead of a shift, the absolute value should work out
+      // as an error metric for all outputs, large and small, provided that the output has enough precision.
       this_error_log = abs_double(expected_log - actual_log) * 100.0;
 
       // This comparison is only carried out once there is an old value to compare with
       if(compare_log)
       {
-         // Figuring out what the normalized value was for the input is a good way to figure out where the discontinuity occured w.r.t. the PWL segments.
+         // Figuring out what the normalized value was for the input is a good way to figure out where the discontinuity
+         // occured w.r.t. the PWL segments.
          ac_fixed<Wfi, 0, false, AC_TRN, AC_WRAP> norm_input;
          ac_normalize(input, norm_input);
-         // if by any chance the function output has dropped in value, print out at what point the problem has occured and throw a runtime assertion.
+         // if by any chance the function output has dropped in value, print out at what point the problem has occured
+         // and throw a runtime assertion.
          if(old_output_log > actual_log)
          {
             cout << endl;                                            // LCOV_EXCL_LINE

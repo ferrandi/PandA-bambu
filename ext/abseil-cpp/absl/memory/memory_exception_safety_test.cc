@@ -22,13 +22,11 @@
 #include "absl/base/internal/exception_safety_testing.h"
 
 namespace absl {
+ABSL_NAMESPACE_BEGIN
 namespace {
 
 constexpr int kLength = 50;
 using Thrower = testing::ThrowingValue<testing::TypeSpec::kEverythingThrows>;
-using ThrowerStorage =
-    absl::aligned_storage_t<sizeof(Thrower), alignof(Thrower)>;
-using ThrowerList = std::array<ThrowerStorage, kLength>;
 
 TEST(MakeUnique, CheckForLeaks) {
   constexpr int kValue = 321;
@@ -53,6 +51,7 @@ TEST(MakeUnique, CheckForLeaks) {
 }
 
 }  // namespace
+ABSL_NAMESPACE_END
 }  // namespace absl
 
 #endif  // ABSL_HAVE_EXCEPTIONS

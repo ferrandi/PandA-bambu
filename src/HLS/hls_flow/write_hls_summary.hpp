@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -50,7 +50,8 @@ class WriteHLSSummary : public HLS_step
     * Return the set of analyses in relationship with this design step
     * @param relationship_type is the type of relationship to be considered
     */
-   const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+   const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
+   ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
  public:
    /**
@@ -59,7 +60,8 @@ class WriteHLSSummary : public HLS_step
     * @param hls_mgr is the HLS manager
     * @param design_flow_manager is the design flow manager
     */
-   WriteHLSSummary(const ParameterConstRef parameters, const HLS_managerRef hls_mgr, const DesignFlowManagerConstRef design_flow_manager);
+   WriteHLSSummary(const ParameterConstRef parameters, const HLS_managerRef hls_mgr,
+                   const DesignFlowManagerConstRef design_flow_manager);
 
    /**
     * Destructor

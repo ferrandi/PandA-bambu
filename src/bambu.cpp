@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -108,8 +108,8 @@
 /// utility include
 #include "cpu_time.hpp"
 
-/// wrapper/treegcc includes
-#include "gcc_wrapper.hpp"
+/// wrapper/compiler includes
+#include "compiler_wrapper.hpp"
 
 /**
  * Main file used to perform high-level synthesis starting from a C specification.
@@ -146,7 +146,8 @@ int main(int argc, char* argv[])
                cat_args += std::string(argv[i]) + " ";
             }
 
-            INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, parameters->getOption<int>(OPT_output_level), " ==  Bambu executed with: " + cat_args + "\n");
+            INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, parameters->getOption<int>(OPT_output_level),
+                           " ==  Bambu executed with: " + cat_args + "\n");
             THROW_ERROR("Bad Parameters format");
             break;
          }
@@ -171,14 +172,17 @@ int main(int argc, char* argv[])
 
       auto output_level = parameters->getOption<int>(OPT_output_level);
       if(output_level >= OUTPUT_LEVEL_MINIMUM)
+      {
          parameters->PrintFullHeader(std::cerr);
+      }
 
       // Include sysdir
       if(parameters->getOption<bool>(OPT_gcc_include_sysdir))
       {
-         const GccWrapperRef gcc_wrapper(new GccWrapper(parameters, GccWrapper_CompilerTarget::CT_NO_GCC, GccWrapper_OptimizationSet::O0));
+         const CompilerWrapperRef compiler_wrapper(new CompilerWrapper(
+             parameters, CompilerWrapper_CompilerTarget::CT_NO_COMPILER, CompilerWrapper_OptimizationSet::O0));
          std::vector<std::string> system_includes;
-         gcc_wrapper->GetSystemIncludes(system_includes);
+         compiler_wrapper->GetSystemIncludes(system_includes);
          std::vector<std::string>::const_iterator system_include, system_include_end = system_includes.end();
          for(system_include = system_includes.begin(); system_include != system_include_end; ++system_include)
          {
@@ -193,8 +197,9 @@ int main(int argc, char* argv[])
 
       if(parameters->getOption<bool>(OPT_gcc_config))
       {
-         const GccWrapperRef gcc_wrapper(new GccWrapper(parameters, GccWrapper_CompilerTarget::CT_NO_GCC, GccWrapper_OptimizationSet::O0));
-         gcc_wrapper->GetGccConfig();
+         const CompilerWrapperRef compiler_wrapper(new CompilerWrapper(
+             parameters, CompilerWrapper_CompilerTarget::CT_NO_COMPILER, CompilerWrapper_OptimizationSet::O0));
+         compiler_wrapper->GetCompilerConfig();
          if(not(parameters->getOption<bool>(OPT_no_clean)))
          {
             boost::filesystem::remove_all(parameters->getOption<std::string>(OPT_output_temporary_directory));
@@ -211,7 +216,8 @@ int main(int argc, char* argv[])
          return EXIT_SUCCESS;
       }
       STOP_TIME(cpu_time);
-      PRINT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "Parameters parsed in " + print_cpu_time(cpu_time) + " seconds\n");
+      PRINT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level,
+                    "Parameters parsed in " + print_cpu_time(cpu_time) + " seconds\n");
 
       // up to now all parameters have been parsed and data structures created, so synthesis can start
 
@@ -225,37 +231,47 @@ int main(int argc, char* argv[])
       START_TIME(HLSMgr->HLS_execution_time);
       // create the datastructures (inside application_manager) where the problem specification is contained
       const DesignFlowManagerRef design_flow_manager(new DesignFlowManager(parameters));
-      const DesignFlowStepFactoryConstRef frontend_flow_step_factory(new FrontendFlowStepFactory(HLSMgr, design_flow_manager, parameters));
+      const DesignFlowStepFactoryConstRef frontend_flow_step_factory(
+          new FrontendFlowStepFactory(HLSMgr, design_flow_manager, parameters));
       design_flow_manager->RegisterFactory(frontend_flow_step_factory);
-      const DesignFlowStepFactoryConstRef hls_flow_step_factory(new HLSFlowStepFactory(design_flow_manager, HLSMgr, parameters));
+      const DesignFlowStepFactoryConstRef hls_flow_step_factory(
+          new HLSFlowStepFactory(design_flow_manager, HLSMgr, parameters));
       design_flow_manager->RegisterFactory(hls_flow_step_factory);
-      const DesignFlowStepFactoryConstRef c_backend_step_factory(new CBackendStepFactory(design_flow_manager, HLSMgr, parameters));
+      const DesignFlowStepFactoryConstRef c_backend_step_factory(
+          new CBackendStepFactory(design_flow_manager, HLSMgr, parameters));
       design_flow_manager->RegisterFactory(c_backend_step_factory);
-      const DesignFlowStepFactoryConstRef technology_flow_step_factory(new TechnologyFlowStepFactory(HLS_T->get_technology_manager(), HLS_T->get_target_device(), design_flow_manager, parameters));
+      const DesignFlowStepFactoryConstRef technology_flow_step_factory(new TechnologyFlowStepFactory(
+          HLS_T->get_technology_manager(), HLS_T->get_target_device(), design_flow_manager, parameters));
       design_flow_manager->RegisterFactory(technology_flow_step_factory);
 #if HAVE_FROM_AADL_ASN_BUILT
-      const DesignFlowStepFactoryConstRef parser_flow_step_factory(new ParserFlowStepFactory(design_flow_manager, HLSMgr, parameters));
+      const DesignFlowStepFactoryConstRef parser_flow_step_factory(
+          new ParserFlowStepFactory(design_flow_manager, HLSMgr, parameters));
       design_flow_manager->RegisterFactory(parser_flow_step_factory);
 #endif
 
       if(parameters->isOption(OPT_dry_run_evaluation) and parameters->getOption<bool>(OPT_dry_run_evaluation))
       {
-         design_flow_manager->AddStep(GetPointer<const HLSFlowStepFactory>(hls_flow_step_factory)->CreateHLSFlowStep(HLSFlowStep_Type::EVALUATION, 0));
+         design_flow_manager->AddStep(GetPointer<const HLSFlowStepFactory>(hls_flow_step_factory)
+                                          ->CreateHLSFlowStep(HLSFlowStep_Type::EVALUATION, 0));
          design_flow_manager->Exec();
          return EXIT_SUCCESS;
       }
 
-      if(parameters->getOption<bool>(OPT_find_max_cfg_transformations))
+      if(parameters->getOption<bool>(OPT_find_max_transformations))
       {
-         const DesignFlowStepRef find_max_cfg_transformations = GetPointer<const FrontendFlowStepFactory>(frontend_flow_step_factory)->CreateApplicationFrontendFlowStep(FrontendFlowStepType::FIND_MAX_CFG_TRANSFORMATIONS);
-         design_flow_manager->AddStep(find_max_cfg_transformations);
+         const DesignFlowStepRef find_max_transformations =
+             GetPointer<const FrontendFlowStepFactory>(frontend_flow_step_factory)
+                 ->CreateApplicationFrontendFlowStep(FrontendFlowStepType::FIND_MAX_TRANSFORMATIONS);
+         design_flow_manager->AddStep(find_max_transformations);
          design_flow_manager->Exec();
          return EXIT_FAILURE;
       }
       if(parameters->isOption(OPT_test_multiple_non_deterministic_flows))
       {
          const DesignFlowStepFactoryRef design_flow_factory(new DesignFlowFactory(design_flow_manager, parameters));
-         const DesignFlowStepRef non_deterministic_flows = GetPointer<const DesignFlowFactory>(design_flow_factory)->CreateDesignFlow(DesignFlow_Type::NON_DETERMINISTIC_FLOWS);
+         const DesignFlowStepRef non_deterministic_flows =
+             GetPointer<const DesignFlowFactory>(design_flow_factory)
+                 ->CreateDesignFlow(DesignFlow_Type::NON_DETERMINISTIC_FLOWS);
          design_flow_manager->AddStep(non_deterministic_flows);
          design_flow_manager->Exec();
          return EXIT_SUCCESS;
@@ -264,28 +280,35 @@ int main(int argc, char* argv[])
       /// pretty printing
       if(parameters->isOption(OPT_pretty_print))
       {
-         std::string outFileName = parameters->getOption<std::string>(OPT_pretty_print);
-         const DesignFlowStepRef c_backend = GetPointer<const CBackendStepFactory>(c_backend_step_factory)->CreateCBackendStep(CBackend::CB_SEQUENTIAL, outFileName, CBackendInformationConstRef());
+         auto outFileName = parameters->getOption<std::string>(OPT_pretty_print);
+         const DesignFlowStepRef c_backend =
+             GetPointer<const CBackendStepFactory>(c_backend_step_factory)
+                 ->CreateCBackendStep(CBackend::CB_SEQUENTIAL, outFileName, CBackendInformationConstRef());
          design_flow_manager->AddStep(c_backend);
       }
 
 #if HAVE_PRAGMA_BUILT && HAVE_EXPERIMENTAL
       if(parameters->isOption(OPT_parse_pragma) && parameters->getOption<bool>(OPT_parse_pragma))
       {
-         const DesignFlowStepFactoryConstRef ag_frontend_flow_step_factory(new ActorGraphFlowStepFactory(HLSMgr, design_flow_manager, parameters));
+         const DesignFlowStepFactoryConstRef ag_frontend_flow_step_factory(
+             new ActorGraphFlowStepFactory(HLSMgr, design_flow_manager, parameters));
          design_flow_manager->RegisterFactory(ag_frontend_flow_step_factory);
          DesignFlowStepSet design_flow_steps;
          CustomOrderedSet<unsigned int> input_functions = HLSMgr->get_functions_with_body();
          for(const auto input_fun_id : input_functions)
          {
-            const DesignFlowStepRef design_flow_step = GetPointer<const ActorGraphFlowStepFactory>(ag_frontend_flow_step_factory)->CreateActorGraphStep(ACTOR_GRAPHS_CREATOR, input_fun_id);
+            const DesignFlowStepRef design_flow_step =
+                GetPointer<const ActorGraphFlowStepFactory>(ag_frontend_flow_step_factory)
+                    ->CreateActorGraphStep(ACTOR_GRAPHS_CREATOR, input_fun_id);
             design_flow_steps.insert(design_flow_step);
          }
          design_flow_manager->AddSteps(design_flow_steps);
       }
 #endif
-      std::pair<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef> hls_flow_step(parameters->getOption<HLSFlowStep_Type>(OPT_synthesis_flow), HLSFlowStepSpecializationConstRef());
-      design_flow_manager->AddSteps(GetPointer<const HLSFlowStepFactory>(hls_flow_step_factory)->CreateHLSFlowSteps(hls_flow_step));
+      std::pair<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef> hls_flow_step(
+          parameters->getOption<HLSFlowStep_Type>(OPT_synthesis_flow), HLSFlowStepSpecializationConstRef());
+      design_flow_manager->AddSteps(
+          GetPointer<const HLSFlowStepFactory>(hls_flow_step_factory)->CreateHLSFlowSteps(hls_flow_step));
       design_flow_manager->Exec();
       if(not(parameters->getOption<bool>(OPT_no_clean)))
       {
@@ -295,12 +318,14 @@ int main(int argc, char* argv[])
       {
          std::ofstream ofile(parameters->getOption<std::string>(OPT_output_file), std::ios::out);
          for(auto files : {HLSMgr->aux_files, HLSMgr->hdl_files})
+         {
             for(auto file : files)
             {
                std::cerr << "File name: " << file << "\n";
                std::ifstream ifile(file, std::ios::in);
                ofile << ifile.rdbuf();
             }
+         }
       }
       return EXIT_SUCCESS; // Bambu tool has completed execution without errors
    }
@@ -309,25 +334,33 @@ int main(int argc, char* argv[])
    catch(const char* str)
    {
       if(EXIT_SUCCESS == exit_code)
+      {
          exit_code = EXIT_FAILURE;
+      }
       std::cerr << str << std::endl;
    }
    catch(const std::string& str)
    {
       if(EXIT_SUCCESS == exit_code)
+      {
          exit_code = EXIT_FAILURE;
+      }
       std::cerr << str << std::endl;
    }
    catch(std::exception& e)
    {
       std::cerr << e.what() << std::endl;
       if(EXIT_SUCCESS == exit_code)
+      {
          exit_code = EXIT_FAILURE;
+      }
    }
    catch(...)
    {
       if(EXIT_SUCCESS == exit_code)
+      {
          exit_code = EXIT_FAILURE;
+      }
       std::cerr << "Unknown error type" << std::endl;
    }
 
@@ -341,7 +374,9 @@ int main(int argc, char* argv[])
       case EXIT_FAILURE:
       {
          if(parameters)
+         {
             parameters->PrintBugReport(std::cout);
+         }
          break;
       }
       default:

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -72,8 +72,7 @@ REF_FORWARD_DECL(xml_ite_block_t);
 #define TAG_FOREACH "foreach"
 
 /// Node types.
-typedef enum
-{
+using xml_script_node_enum_t = enum xml_script_node_enum_t {
    NODE_UNKNOWN = 0,
    NODE_ENTRY = 1,
    NODE_VARIABLE = 2,
@@ -82,7 +81,7 @@ typedef enum
    NODE_SHELL = 5,
    NODE_ITE_BLOCK = 6,
    NODE_FOREACH = 7
-} xml_script_node_enum_t;
+};
 
 /** \class xml_script_node_t
  * This is the abstract class which describes a generic synthesis script node,
@@ -144,7 +143,7 @@ class xml_script_node_t
    }
    virtual ~xml_script_node_t();
 };
-typedef refcount<xml_script_node_t> xml_script_node_tRef;
+using xml_script_node_tRef = refcount<xml_script_node_t>;
 
 /** \class xml_set_entry_t
  * String entry of a multiple values variable (set).
@@ -167,7 +166,7 @@ class xml_set_entry_t : public xml_script_node_t
 
    bool checkCondition(const DesignParametersRef& dp) const override;
 };
-typedef refcount<xml_set_entry_t> xml_set_entry_tRef;
+using xml_set_entry_tRef = refcount<xml_set_entry_t>;
 
 /** \class xml_set_variable_t
  * Variable assignment, either single value or multiple entries set.
@@ -192,7 +191,7 @@ class xml_set_variable_t : public xml_script_node_t
 
    bool checkCondition(const DesignParametersRef& dp) const override;
 };
-typedef refcount<xml_set_variable_t> xml_set_variable_tRef;
+using xml_set_variable_tRef = refcount<xml_set_variable_t>;
 
 /** \class xml_parameter_t
  * Command line parameter. Just like a variable, it can be either a single
@@ -208,7 +207,8 @@ class xml_parameter_t : public xml_script_node_t
    std::string separator;
    bool curlyBrackets;
 
-   xml_parameter_t(const std::string* _name, const std::string* _singleValue, const std::string* _condition, const std::string& _separator, bool _curlyBrackets);
+   xml_parameter_t(const std::string* _name, const std::string* _singleValue, const std::string* _condition,
+                   const std::string& _separator, bool _curlyBrackets);
    explicit xml_parameter_t(const xml_element* element);
 
    ~xml_parameter_t() override;
@@ -220,7 +220,7 @@ class xml_parameter_t : public xml_script_node_t
 
    bool checkCondition(const DesignParametersRef& dp) const override;
 };
-typedef refcount<xml_parameter_t> xml_parameter_tRef;
+using xml_parameter_tRef = refcount<xml_parameter_t>;
 
 /** \class xml_command_t
  * Command line of the synthesis tool.
@@ -234,7 +234,8 @@ class xml_command_t : public xml_script_node_t
    std::string* condition;
    std::string* output;
 
-   xml_command_t(const std::string* _name, const std::string* _value, const std::string* _condition, const std::string* _output);
+   xml_command_t(const std::string* _name, const std::string* _value, const std::string* _condition,
+                 const std::string* _output);
    explicit xml_command_t(const xml_element* element);
 
    ~xml_command_t() override;
@@ -246,7 +247,7 @@ class xml_command_t : public xml_script_node_t
 
    bool checkCondition(const DesignParametersRef& dp) const override;
 };
-typedef refcount<xml_command_t> xml_command_tRef;
+using xml_command_tRef = refcount<xml_command_t>;
 
 /** \class xml_shell_t
  * Command line of the native shell.
@@ -260,7 +261,8 @@ class xml_shell_t : public xml_script_node_t
    std::string* condition;
    std::string* output;
 
-   xml_shell_t(const std::string* _name, const std::string* _value, const std::string* _condition, const std::string* _output);
+   xml_shell_t(const std::string* _name, const std::string* _value, const std::string* _condition,
+               const std::string* _output);
    explicit xml_shell_t(const xml_element* element);
 
    ~xml_shell_t() override;
@@ -272,7 +274,7 @@ class xml_shell_t : public xml_script_node_t
 
    bool checkCondition(const DesignParametersRef& dp) const override;
 };
-typedef refcount<xml_shell_t> xml_shell_tRef;
+using xml_shell_tRef = refcount<xml_shell_t>;
 
 /** \class xml_ite_block_t
  * If/Then/Else block, evaluated at compile-time.
@@ -296,7 +298,7 @@ class xml_ite_block_t : public xml_script_node_t
 
    bool checkCondition(const DesignParametersRef& dp) const override;
 };
-typedef refcount<xml_ite_block_t> xml_ite_block_tRef;
+using xml_ite_block_tRef = refcount<xml_ite_block_t>;
 
 /** \class xml_foreach_t
  * Foreach block, where the set of script nodes is applied to each parameter
@@ -317,6 +319,6 @@ struct xml_foreach_t : public xml_script_node_t
 
    void clean() override;
 };
-typedef refcount<xml_foreach_t> xml_foreach_tRef;
+using xml_foreach_tRef = refcount<xml_foreach_t>;
 
 #endif

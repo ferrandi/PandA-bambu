@@ -6,8 +6,8 @@ if BUILD_EXT
    DIST_SUBDIRS += ext
 endif
 
-SUBDIRS += panda_regressions src etc examples style
-DIST_SUBDIRS += panda_regressions src etc examples style documentation
+SUBDIRS += panda_regressions panda_unit src etc examples style
+DIST_SUBDIRS += panda_regressions panda_unit src etc examples style documentation
 
 #########################################################
 # Documentation section and rules
@@ -89,7 +89,7 @@ dist-hook:
         $(distdir)/ext/flopoco/src/ExpressionScanner.cpp $(distdir)/ext/flopoco/src/ExpressionParser.cpp \
 	$(distdir)/src/parser/polixml/xmlLexer.cpp $(distdir)/src/parser/polixml/xmlParser.hpp $(distdir)/src/parser/polixml/xmlParser.h $(distdir)/src/parser/polixml/xmlParser.cpp \
 	$(distdir)/src/parser/rtlgcc/rtlLexer.cpp $(distdir)/src/parser/rtlgcc/rtlParser.hpp $(distdir)/src/parser/rtlgcc/rtlParser.h $(distdir)/src/parser/rtlgcc/rtlParser.cpp \
-	$(distdir)/src/parser/treegcc/treeLexer.cpp $(distdir)/src/parser/treegcc/treeParser.hpp $(distdir)/src/parser/treegcc/treeParser.h $(distdir)/src/parser/treegcc/treeParser.cpp \
+	$(distdir)/src/parser/compiler/treeLexer.cpp $(distdir)/src/parser/compiler/treeParser.hpp $(distdir)/src/parser/compiler/treeParser.h $(distdir)/src/parser/compiler/treeParser.cpp \
 	$(distdir)/src/parser/aadl/aadl_lexer.cpp $(distdir)/src/parser/aadl/aadl_yparser.hpp $(distdir)/src/parser/aadl/aadl_yparser.h $(distdir)/src/parser/aadl/aadl_yparser.cpp \
 	$(distdir)/src/parser/asn/asn_lexer.cpp $(distdir)/src/parser/asn/asn_yparser.hpp $(distdir)/src/parser/asn/asn_yparser.h $(distdir)/src/parser/asn/asn_yparser.cpp \
 	$(distdir)/src/parser/discrepancy/discrepancyLexer.cpp $(distdir)/src/parser/discrepancy/discrepancyParser.hpp $(distdir)/src/parser/discrepancy/discrepancyParser.h $(distdir)/src/parser/discrepancy/discrepancyParser.cpp \

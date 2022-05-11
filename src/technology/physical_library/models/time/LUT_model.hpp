@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -57,12 +57,7 @@ CONSTREF_FORWARD_DECL(technology_manager);
 class LUT_model : public time_model
 {
  public:
-   typedef enum
-   {
-      COMBINATIONAL_DELAY,
-      MINIMUM_PERIOD_POST_MAP,
-      MINIMUM_PERIOD_POST_PAR
-   } value_t;
+   using value_t = enum { COMBINATIONAL_DELAY, MINIMUM_PERIOD_POST_MAP, MINIMUM_PERIOD_POST_PAR };
 
  protected:
    /// timing characterization
@@ -102,6 +97,6 @@ class LUT_model : public time_model
    double get_timing_value(value_t val) const;
 };
 
-typedef refcount<LUT_model> LUT_modelRef;
+using LUT_modelRef = refcount<LUT_model>;
 
 #endif

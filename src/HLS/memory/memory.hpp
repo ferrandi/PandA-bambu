@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -87,7 +87,7 @@ class memory
    std::map<unsigned int, memory_symbolRef> in_vars;
 
    /// for each var store the address space rangesize associated with it
-   std::map<unsigned int, unsigned int> rangesize;
+   std::map<unsigned int, unsigned long long int> rangesize;
 
    /// set of variables allocated in registers of the interface
    std::map<unsigned int, std::map<unsigned int, memory_symbolRef>> parameter;
@@ -115,25 +115,25 @@ class memory
    CustomOrderedSet<unsigned int> actual_parm_loaded;
 
    /// it represents the next address that is available for internal allocation
-   unsigned int next_base_address;
+   unsigned long long int next_base_address;
 
    /// is the start internal address
-   unsigned int internal_base_address_start;
+   unsigned long long int internal_base_address_start;
 
    /// is the maximum amount of private memory allocated
-   unsigned int maximum_private_memory_size;
+   unsigned long long int maximum_private_memory_size;
 
    /// total amount of internal memory allocated
-   unsigned int total_amount_of_private_memory;
+   unsigned long long int total_amount_of_private_memory;
 
    /// total amount of parameter memory
-   unsigned int total_amount_of_parameter_memory;
+   unsigned long long int total_amount_of_parameter_memory;
 
    /// it represents the base address of the external memory
-   unsigned int off_base_address;
+   unsigned long long int off_base_address;
 
    /// it represents the next address that is available to allocate a variable out of the top module
-   unsigned int next_off_base_address;
+   unsigned long long int next_off_base_address;
 
    /// bus data bitsize
    unsigned int bus_data_bitsize;
@@ -152,9 +152,6 @@ class memory
 
    /// Spec accesses data having an address unknown at compile time
    bool use_unknown_addresses;
-
-   /// true when at least one pointer conversion happen
-   bool pointer_conversion;
 
    /// true when LOADs or STOREs perform unaligned accesses
    bool unaligned_accesses;
@@ -194,28 +191,36 @@ class memory
 
    const unsigned& bus_addr_bitsize;
 
+   bool enable_hls_bit_value;
+
    /**
     * Alignment utility function
     */
-   void align(unsigned int& address, unsigned int alignment)
+   void align(unsigned long long int& address, unsigned int alignment)
    {
       if(address % alignment != 0)
+      {
          address = ((address / alignment) + 1) * alignment;
+      }
    }
 
  public:
    /**
     * Constructor
     */
-   memory(const tree_managerRef TreeM, unsigned int off_base_address, unsigned int max_bram, bool null_pointer_check, bool initial_internal_address_p, unsigned int initial_internal_address, const unsigned& _bus_addr_bitsize);
+   memory(const tree_managerRef TreeM, unsigned long long int off_base_address, unsigned int max_bram,
+          bool null_pointer_check, bool initial_internal_address_p, unsigned long long initial_internal_address,
+          const unsigned& _bus_addr_bitsize);
 
    /**
     * Destructor
     */
    virtual ~memory();
 
-   static memoryRef create_memory(const ParameterConstRef _parameters, const tree_managerRef _TreeM, unsigned int _off_base_address, unsigned int max_bram, bool _null_pointer_check, bool initial_internal_address_p, unsigned int initial_internal_address,
-                                  const unsigned int& _address_bitsize);
+   static memoryRef create_memory(const ParameterConstRef _parameters, const tree_managerRef _TreeM,
+                                  unsigned long long int _off_base_address, unsigned int max_bram,
+                                  bool _null_pointer_check, bool initial_internal_address_p,
+                                  unsigned int initial_internal_address, const unsigned int& _address_bitsize);
 
    /**
     * Return variables allocated out of the top module
@@ -225,17 +230,18 @@ class memory
    /**
     * Allocates a variable to the set of variables allocated outside to outermost function
     */
-   void add_external_variable(unsigned int var);
+   void add_external_variable(unsigned int var, const std::string& var_name);
 
    /**
-    * Allocates a variable to the set of variables allocated outside to outermost function. The corresponding symbol is already provided
+    * Allocates a variable to the set of variables allocated outside to outermost function. The corresponding symbol is
+    * already provided
     */
    void add_external_symbol(unsigned int var, const memory_symbolRef m_sym);
 
    /**
     * Allocates a variable to the set of variables allocated internally to the given function
     */
-   void add_internal_variable(unsigned int funID_scope, unsigned int var);
+   void add_internal_variable(unsigned int funID_scope, unsigned int var, const std::string& var_name);
 
    /**
     * allocate a proxy for the variable for the specified function
@@ -250,7 +256,7 @@ class memory
     * @param var is the variable that has to be reserved
     * @param alignment is the address alignment
     */
-   void compute_next_base_address(unsigned int& address, unsigned int var, unsigned int alignment);
+   void compute_next_base_address(unsigned long long& address, unsigned int var, unsigned int alignment);
 
    /**
     * return the proxied internal variables associated with the function
@@ -287,7 +293,8 @@ class memory
    bool is_read_only_variable(unsigned var) const;
 
    /**
-    * Allocates a variable to the set of variables allocated internally to the given function. The corresponding symbol is already provided
+    * Allocates a variable to the set of variables allocated internally to the given function. The corresponding symbol
+    * is already provided
     */
    void add_internal_symbol(unsigned int funID_scope, unsigned int var, const memory_symbolRef m_sym);
 
@@ -324,7 +331,7 @@ class memory
    /**
     * Allocates a parameter to the set of the interface registers
     */
-   void add_parameter(unsigned int funID_scope, unsigned int var, bool is_last);
+   void add_parameter(unsigned int funID_scope, unsigned int var, const std::string& var_name, bool is_last);
 
    /**
     * Allocates a parameter to the set of the interface registers
@@ -378,37 +385,37 @@ class memory
    /**
     * Get the current base address of the given call site
     */
-   unsigned int get_callSite_base_address(unsigned int var) const;
+   unsigned long long get_callSite_base_address(unsigned int var) const;
 
    /**
     * Get the current base address of the given variable
     */
-   unsigned int get_internal_base_address(unsigned int var) const;
+   unsigned long long int get_internal_base_address(unsigned int var) const;
 
    /**
     * Get the current base address of the given variable
     */
-   unsigned int get_external_base_address(unsigned int var) const;
+   unsigned long long get_external_base_address(unsigned int var) const;
 
    /**
     * Get the current base address of the given variable
     */
-   unsigned int get_parameter_base_address(unsigned int funId, unsigned int var) const;
+   unsigned long long int get_parameter_base_address(unsigned int funId, unsigned int var) const;
 
    /**
     * Get the current base address of the given variable
     */
-   unsigned int get_base_address(unsigned int var, unsigned int funId) const;
+   unsigned long long int get_base_address(unsigned int var, unsigned int funId) const;
 
    /**
     * Get the first address of the function address space.
     */
-   unsigned int get_first_address(unsigned int funId) const;
+   unsigned long long get_first_address(unsigned int funId) const;
 
    /**
     * Get the last address of the function address space.
     */
-   unsigned int get_last_address(unsigned int funId, const application_managerRef AppM) const;
+   unsigned long long get_last_address(unsigned int funId, const application_managerRef AppM) const;
 
    /**
     * Return the symbol associated with the given variable
@@ -419,7 +426,7 @@ class memory
     * return the address space rangesize associated with the given var
     * @param var is the variable considered
     */
-   unsigned int get_rangesize(unsigned int var) const;
+   unsigned long long get_rangesize(unsigned int var) const;
 
    /**
     * Check if there is a base address for the given call site.
@@ -442,9 +449,13 @@ class memory
    void increment_n_mem_operations(unsigned int var)
    {
       if(n_mem_operations_per_var.find(var) == n_mem_operations_per_var.end())
+      {
          n_mem_operations_per_var[var] = 1;
+      }
       else
+      {
          ++n_mem_operations_per_var[var];
+      }
    }
 
    /**
@@ -505,7 +516,7 @@ class memory
    /**
     * Return the first memory address not yet allocated
     */
-   unsigned int get_memory_address() const;
+   unsigned long long get_memory_address() const;
 
    /**
     * Explicitly allocate a certain space in the external memory
@@ -515,17 +526,17 @@ class memory
    /**
     * Returns the amount of memory allocated internally to the module
     */
-   unsigned int get_allocated_space() const;
+   unsigned long long get_allocated_space() const;
 
    /**
     * Return the total amount of memory allocated for the memory mapped parameters
     */
-   unsigned int get_allocated_parameters_memory() const;
+   unsigned long long get_allocated_parameters_memory() const;
 
    /**
     * Returns the amount of memory allocated internally but not private
     */
-   unsigned int get_allocated_intern_memory() const
+   unsigned long long int get_allocated_intern_memory() const
    {
       return next_base_address - internal_base_address_start;
    }
@@ -533,7 +544,7 @@ class memory
    /**
     * return the maximum address allocated
     */
-   unsigned int get_max_address() const;
+   unsigned long long int get_max_address() const;
 
    /**
     * set the bus data bitsize
@@ -688,23 +699,6 @@ class memory
    {
       return use_unknown_addresses;
    }
-
-   /**
-    * set if a pointer conversion happen
-    */
-   void set_pointer_conversion(bool accesses)
-   {
-      pointer_conversion = accesses;
-   }
-
-   /**
-    *return true in case at least one pointer conversion happen
-    */
-   bool has_pointer_conversion() const
-   {
-      return pointer_conversion;
-   }
-
    /**
     * set if LOADs or STOREs perform unaligned accesses
     */
@@ -808,14 +802,33 @@ class memory
    void xwrite(xml_element* node);
 
    /**
+    * Writes the current memory allocation into an XML description
+    */
+   void xwrite2(xml_element* node);
+
+   /**
+    * Writes the current memory allocation into an XML description
+    */
+   void xwrite(const std::string& filename);
+
+   /**
     * @return return the number of internal symbols non private
     */
    unsigned int count_non_private_internal_symbols() const;
 
    /// return true in case the current memory object and the passed one are different
    bool notEQ(refcount<memory> ref) const;
+
+   void set_enable_hls_bit_value(bool value)
+   {
+      enable_hls_bit_value = value;
+   }
+   bool get_enable_hls_bit_value()
+   {
+      return enable_hls_bit_value;
+   }
 };
 /// refcount definition of the class
-typedef refcount<memory> memoryRef;
+using memoryRef = refcount<memory>;
 
 #endif

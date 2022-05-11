@@ -19,4 +19,4 @@ cppcheck --enable=all --force --suppress=unusedFunction --suppress=unmatchedSupp
    -I${dir_script}/../../src/polixml \
    -I${dir_script}/../../src/tree \
    -I${dir_script}/../../src/utility \
-   $@
+   "$@"

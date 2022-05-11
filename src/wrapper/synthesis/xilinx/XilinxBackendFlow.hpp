@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -52,7 +52,6 @@ REF_FORWARD_DECL(target_device);
 
 #define PARAM_ucf_file "ucf_file"
 #define PARAM_xcf_file "xcf_file"
-#define PARAM_power_optimization "power_optimization"
 #define PARAM_vivado_sources_macro_list "vivado_sources_macro_list"
 #define PARAM_yosys_vivado_sources_macro_list "yosys_vivado_sources_macro_list"
 #define PARAM_vivado_report "vivado_report"
@@ -108,13 +107,13 @@ class XilinxBackendFlow : public BackendFlow
    /**
     * Fixed the parsing of timing results from xst
     */
-   void parse_timing(const std::string& fn);
+   void parse_timing(const std::string& log_file);
 
  public:
    /**
     * Constructor
     */
-   XilinxBackendFlow(const ParameterConstRef Param, const std::string& flow_name, const target_managerRef manager);
+   XilinxBackendFlow(const ParameterConstRef Param, const std::string& flow_name, const target_managerRef _target);
 
    /**
     * Destructor
@@ -132,6 +131,6 @@ class XilinxBackendFlow : public BackendFlow
    void ExecuteSynthesis() override;
 };
 /// Refcount definition for the class
-typedef refcount<XilinxBackendFlow> XilinxBackendFlowRef;
+using XilinxBackendFlowRef = refcount<XilinxBackendFlow>;
 
 #endif

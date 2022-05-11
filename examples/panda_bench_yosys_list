@@ -1,0 +1,8 @@
+--benchmark-name=ars-un arf_res_sharing/module.c --top-fname=arf --generate-tb=BENCHMARKS_ROOT/arf_res_sharing/test.xml --generate-interface=WB4 --cprf=0.9 --skip-pipe-parameter=1
+--benchmark-name=ars-co arf_res_sharing/module.c --top-fname=arf --generate-tb=BENCHMARKS_ROOT/arf_res_sharing/test.xml --generate-interface=WB4 --cprf=0.9 --skip-pipe-parameter=1 arf_res_sharing/constraints_STD.xml
+
+crypto_designs/Keccak.c --top-fname=kekka_coproc --generate-tb=BENCHMARKS_ROOT/crypto_designs/test.xml -O3 --generate-interface=INFER
+
+mm/module.c --benchmark-name=mm --top-fname=mm --generate-tb=BENCHMARKS_ROOT/mm/test.xml -O3 --flopoco
+
+mm_float/module.c --benchmark-name=mm_float --top-fname=mm --generate-tb=BENCHMARKS_ROOT/mm_float/test.xml -O3

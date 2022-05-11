@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -62,7 +62,8 @@ class HLSInstructionWriter : public InstructionWriter
     * @param indented_output_stream is the output stream on which source code has to be written
     * @param parameters is the set of input parameters
     */
-   HLSInstructionWriter(const application_managerConstRef app_man, const IndentedOutputStreamRef indented_output_stream, const ParameterConstRef parameters);
+   HLSInstructionWriter(const application_managerConstRef app_man, const IndentedOutputStreamRef indented_output_stream,
+                        const ParameterConstRef parameters);
 
    /**
     * Destructor

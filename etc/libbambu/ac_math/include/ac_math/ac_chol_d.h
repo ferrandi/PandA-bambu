@@ -146,7 +146,9 @@ using namespace std;
 
 namespace ac_math
 {
-   template <bool use_pwl = false, int delta_w = 0, int delta_i = 0, ac_q_mode int_Q = AC_RND, ac_o_mode int_O = AC_SAT, int W, int I, bool S, ac_q_mode Q, ac_o_mode O, int outW, int outI, bool outS, ac_q_mode outQ, ac_o_mode outO, unsigned M>
+   template <bool use_pwl = false, int delta_w = 0, int delta_i = 0, ac_q_mode int_Q = AC_RND, ac_o_mode int_O = AC_SAT,
+             int W, int I, bool S, ac_q_mode Q, ac_o_mode O, int outW, int outI, bool outS, ac_q_mode outQ,
+             ac_o_mode outO, unsigned M>
    void ac_chol_d(const ac_fixed<W, I, S, Q, O> A[M][M], ac_fixed<outW, outI, outS, outQ, outO> L[M][M])
    {
       // Make this go false if the input matrix is not positive definite (checking is done later)
@@ -155,7 +157,8 @@ namespace ac_math
       typedef ac_fixed<outW, outI, outS, outQ, outO> T_out;
       T_out L_int[M][M];
       // Define type for the intermediate variables
-      // Add an extra bit to W and I for intermediate variable type if the output is unsigned, and make sure that i_s_t is signed.
+      // Add an extra bit to W and I for intermediate variable type if the output is unsigned, and make sure that i_s_t
+      // is signed.
       typedef class ac_fixed<outW + delta_w, outI + delta_i, true, int_Q, int_O> i_s_t;
       // Unsigned versions of i_s_t and T_out
       typedef ac_fixed<outW, outI, false, outQ, outO> T_out_u;
@@ -169,13 +172,13 @@ namespace ac_math
       ARRAY_AC_FIXED_LJJ_K:
          for(unsigned k = 0; k < M; k++)
          {
-            sum_Ajj_Ljk_sq -= (k < j) ? L_int[j][k] * L_int[j][k] : 0;
+            sum_Ajj_Ljk_sq -= (k < j) ? (i_s_t)(L_int[j][k] * L_int[j][k]) : (i_s_t)0;
          }
 
          // Use a macro to activate the AC_ASSERT
 #ifdef ASSERT_ON_INVALID_INPUT
-         // Check to make sure that the matrix is positive definite. If "sum_Ajj_Ljk_sq" is negative/zero, then the diagonal
-         // element will be complex/infinite, which is not valid. This condition will not be encountered if the
+         // Check to make sure that the matrix is positive definite. If "sum_Ajj_Ljk_sq" is negative/zero, then the
+         // diagonal element will be complex/infinite, which is not valid. This condition will not be encountered if the
          // input matrix is positive definite
          AC_ASSERT(sum_Ajj_Ljk_sq > 0, "Input matrix is not positive definite");
 #endif
@@ -220,14 +223,14 @@ namespace ac_math
          ARRAY_AC_FIXED_LIJ_K:
             for(unsigned k = 0; k < M; k++)
             {
-               sum_Aij_Lik_Ljk -= (k < j) ? L_int[i][k] * L_int[j][k] : 0;
+               sum_Aij_Lik_Ljk -= (k < j) ? (i_s_t)(L_int[i][k] * L_int[j][k]) : (i_s_t)0;
             }
             // Keep diagonal elements as they are
             // Initialize non-diagonal elements above diagonal to 0
             // Initialize non-diagonal elements below diagonal to appropriate calculated value.
             if(i != j)
             {
-               L_int[i][j] = (i > j) ? (T_out)(recip_Ljj * sum_Aij_Lik_Ljk) : 0;
+               L_int[i][j] = (i > j) ? (T_out)(recip_Ljj * sum_Aij_Lik_Ljk) : (T_out)0;
             }
          }
       }
@@ -317,8 +320,11 @@ namespace ac_math
    //
    // ----------------------------------------------------------------------------------------------
 
-   template <bool use_pwl = false, int delta_w = 0, int delta_i = 0, ac_q_mode int_Q = AC_RND, ac_o_mode int_O = AC_SAT, int W, int I, bool S, ac_q_mode Q, ac_o_mode O, int outW, int outI, bool outS, ac_q_mode outQ, ac_o_mode outO, unsigned M>
-   void ac_chol_d(const ac_complex<ac_fixed<W, I, S, Q, O>> A[M][M], ac_complex<ac_fixed<outW, outI, outS, outQ, outO>> L[M][M])
+   template <bool use_pwl = false, int delta_w = 0, int delta_i = 0, ac_q_mode int_Q = AC_RND, ac_o_mode int_O = AC_SAT,
+             int W, int I, bool S, ac_q_mode Q, ac_o_mode O, int outW, int outI, bool outS, ac_q_mode outQ,
+             ac_o_mode outO, unsigned M>
+   void ac_chol_d(const ac_complex<ac_fixed<W, I, S, Q, O>> A[M][M],
+                  ac_complex<ac_fixed<outW, outI, outS, outQ, outO>> L[M][M])
    {
       // Make this go false if the input matrix is not positive definite (checking is done later)
       bool pos_def = true;
@@ -327,7 +333,8 @@ namespace ac_math
       typedef ac_fixed<outW, outI, outS, outQ, outO> T_out;
       ac_complex<T_out> L_int[M][M];
       // Define type for the intermediate variables
-      // Add an extra bit to W and I for intermediate variable type if the output is unsigned, and make sure that i_s_t is signed.
+      // Add an extra bit to W and I for intermediate variable type if the output is unsigned, and make sure that i_s_t
+      // is signed.
       typedef ac_fixed<outW + delta_w, outI + delta_i, true, int_Q, int_O> i_s_t;
       typedef ac_fixed<outW, outI, false, outQ, outO> T_out_fixed_u;
       typedef ac_fixed<i_s_t::width, i_s_t::i_width, false, i_s_t::q_mode, i_s_t::o_mode> i_s_t_u;
@@ -340,14 +347,14 @@ namespace ac_math
       ARRAY_AC_COMP_AC_FIXED_LJJ_K:
          for(unsigned k = 0; k < M; k++)
          {
-            sum_Ajj_Ljk_sq -= (k < j) ? L_int[j][k].mag_sqr() : 0;
+            sum_Ajj_Ljk_sq -= (k < j) ? (i_s_t)(L_int[j][k].mag_sqr()) : (i_s_t)0;
          }
 
          // Use a macro to activate the AC_ASSERT
 #ifdef ASSERT_ON_INVALID_INPUT
          // Check to make sure that the input matrix is positive definite. If "sum_Ajj_Ljk_sq" is negative/zero, then
-         // the diagonal element will be complex/infinite, which is not valid. This condition will not be encountered if the
-         // input matrix is positive definite
+         // the diagonal element will be complex/infinite, which is not valid. This condition will not be encountered if
+         // the input matrix is positive definite
          AC_ASSERT(sum_Ajj_Ljk_sq > 0, "Input matrix is not positive definite");
 #endif
 
@@ -368,7 +375,8 @@ namespace ac_math
             ac_math::ac_sqrt_pwl((i_s_t_u)sum_Ajj_Ljk_sq, int_Ljj);
             L_int[j][j].r() = int_Ljj;
             L_int[j][j].i() = 0;
-            // Store inverse of real part of diagonal element in separate variable (i.e. "recip_Ljj") for later calculations.
+            // Store inverse of real part of diagonal element in separate variable (i.e. "recip_Ljj") for later
+            // calculations.
             ac_math::ac_inverse_sqrt_pwl((i_s_t_u)sum_Ajj_Ljk_sq, recip_Ljj);
          }
          else
@@ -400,15 +408,16 @@ namespace ac_math
          ARRAY_AC_COMP_AC_FIXED_LIJ_K:
             for(unsigned k = 0; k < M; k++)
             {
-               sum_Aij_Lik_Ljk -= (k < j) ? L_int[i][k] * L_int[j][k].conj() : 0;
+               sum_Aij_Lik_Ljk -=
+                   (k < j) ? (ac_complex<i_s_t>)(L_int[i][k] * L_int[j][k].conj()) : (ac_complex<i_s_t>)0;
             }
             // Keep diagonal elements as they are
             // Initialize non-diagonal elements above diagonal to 0
             // Initialize non-diagonal elements below diagonal to appropriate calculated value.
             if(i != j)
             {
-               L_int[i][j].r() = (i > j) ? (T_out)(recip_Ljj * sum_Aij_Lik_Ljk.r()) : 0;
-               L_int[i][j].i() = (i > j) ? (T_out)(recip_Ljj * sum_Aij_Lik_Ljk.i()) : 0;
+               L_int[i][j].r() = (i > j) ? (T_out)(recip_Ljj * sum_Aij_Lik_Ljk.r()) : (T_out)0;
+               L_int[i][j].i() = (i > j) ? (T_out)(recip_Ljj * sum_Aij_Lik_Ljk.i()) : (T_out)0;
             }
          }
       }
@@ -449,7 +458,8 @@ namespace ac_math
 // Function: indirect_chol_d
 // Helper function for using ac_chol_d on ac_matrix objects
 
-template <bool use_pwl = false, int delta_w = 0, int delta_i = 0, ac_q_mode int_Q = AC_RND, ac_o_mode int_O = AC_SAT, class T1, unsigned M1, class T2>
+template <bool use_pwl = false, int delta_w = 0, int delta_i = 0, ac_q_mode int_Q = AC_RND, ac_o_mode int_O = AC_SAT,
+          class T1, unsigned M1, class T2>
 void indirect_chol_d(const ac_matrix<T1, M1, M1>& input, ac_matrix<T2, M1, M1>& output)
 {
    // Extract 2D array member data, and pass it over to the 2D array implementation.
@@ -516,8 +526,11 @@ namespace ac_math
    //
    // -------------------------------------------------------------------------------
 
-   template <bool use_pwl = false, int delta_w = 0, int delta_i = 0, ac_q_mode int_Q = AC_RND, ac_o_mode int_O = AC_SAT, int W, int I, bool S, ac_q_mode Q, ac_o_mode O, int outW, int outI, bool outS, ac_q_mode outQ, ac_o_mode outO, unsigned M>
-   void ac_chol_d(const ac_matrix<ac_fixed<W, I, S, Q, O>, M, M>& A, ac_matrix<ac_fixed<outW, outI, outS, outQ, outO>, M, M>& L)
+   template <bool use_pwl = false, int delta_w = 0, int delta_i = 0, ac_q_mode int_Q = AC_RND, ac_o_mode int_O = AC_SAT,
+             int W, int I, bool S, ac_q_mode Q, ac_o_mode O, int outW, int outI, bool outS, ac_q_mode outQ,
+             ac_o_mode outO, unsigned M>
+   void ac_chol_d(const ac_matrix<ac_fixed<W, I, S, Q, O>, M, M>& A,
+                  ac_matrix<ac_fixed<outW, outI, outS, outQ, outO>, M, M>& L)
    {
       indirect_chol_d<use_pwl, delta_w, delta_i, int_Q, int_O>(A, L);
    }
@@ -575,8 +588,11 @@ namespace ac_math
    //
    // ----------------------------------------------------------------------------------------------
 
-   template <bool use_pwl = false, int delta_w = 0, int delta_i = 0, ac_q_mode int_Q = AC_RND, ac_o_mode int_O = AC_SAT, int W, int I, bool S, ac_q_mode Q, ac_o_mode O, int outW, int outI, bool outS, ac_q_mode outQ, ac_o_mode outO, unsigned M>
-   void ac_chol_d(const ac_matrix<ac_complex<ac_fixed<W, I, S, Q, O>>, M, M>& A, ac_matrix<ac_complex<ac_fixed<outW, outI, outS, outQ, outO>>, M, M>& L)
+   template <bool use_pwl = false, int delta_w = 0, int delta_i = 0, ac_q_mode int_Q = AC_RND, ac_o_mode int_O = AC_SAT,
+             int W, int I, bool S, ac_q_mode Q, ac_o_mode O, int outW, int outI, bool outS, ac_q_mode outQ,
+             ac_o_mode outO, unsigned M>
+   void ac_chol_d(const ac_matrix<ac_complex<ac_fixed<W, I, S, Q, O>>, M, M>& A,
+                  ac_matrix<ac_complex<ac_fixed<outW, outI, outS, outQ, outO>>, M, M>& L)
    {
       indirect_chol_d<use_pwl, delta_w, delta_i, int_Q, int_O>(A, L);
    }

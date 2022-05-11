@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -63,9 +63,11 @@
 #include "schedule.hpp"
 
 const double time_model::execution_time_DEFAULT = 0;
-const ControlStep time_model::initiation_time_DEFAULT = ControlStep(0u); /// zero means that the operation is not pipelined
-const unsigned int time_model::cycles_time_DEFAULT = 0;                  /// zero means that the operation last in ceil(execution_time/clock_period)
-const double time_model::stage_period_DEFAULT = 0;                       /// zero means a non-pipelined operation
+const ControlStep time_model::initiation_time_DEFAULT =
+    ControlStep(0u); /// zero means that the operation is not pipelined
+const unsigned int time_model::cycles_time_DEFAULT =
+    0; /// zero means that the operation last in ceil(execution_time/clock_period)
+const double time_model::stage_period_DEFAULT = 0; /// zero means a non-pipelined operation
 
 time_model::time_model(const ParameterConstRef _Param_)
     : statistical_delay(ComputeStatisticalDelay(execution_time_DEFAULT, 250)),
@@ -170,7 +172,9 @@ unsigned int time_model::xload_timing_path(xml_element* node)
    {
       auto* Enode = GetPointer<xml_element>(info);
       if(!Enode)
+      {
          continue;
+      }
 
       if(Enode->get_name() == "path_element")
       {

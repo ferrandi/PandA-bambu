@@ -1,9 +1,35 @@
-/*!
- \file majority_n.hpp
- \brief Generate majority-n networks using BDD and sorter network based methods
- 
- \author Dewmini Sudara
+/* mockturtle: C++ logic network library
+ * Copyright (C) 2018-2021  EPFL
+ *
+ * Permission is hereby granted, free of charge, to any person
+ * obtaining a copy of this software and associated documentation
+ * files (the "Software"), to deal in the Software without
+ * restriction, including without limitation the rights to use,
+ * copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the
+ * Software is furnished to do so, subject to the following
+ * conditions:
+ *
+ * The above copyright notice and this permission notice shall be
+ * included in all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+ * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+ * OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+ * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+ * HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+ * WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+ * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+ * OTHER DEALINGS IN THE SOFTWARE.
  */
+/*!
+  \file majority_n.hpp
+  \brief Generate majority-n networks using BDD and sorter network based methods
+
+  \author Dewmini Sudara
+  \author Heinz Riener
+  \author Mathias Soeken
+*/
 
 #include <array>
 #include <vector>
@@ -45,7 +71,7 @@ namespace mockturtle
     template <typename Ntk, typename SizeT, SizeT N>
     signal<Ntk> majority_n_bubble_sort( Ntk& ntk, std::array<signal<Ntk>, N> const& xs ) {
         std::vector<signal<Ntk>> sigs( xs.begin(), xs.end() );
-        bubble_sorting_network( sigs.size(), [&sigs, &ntk]( auto i, auto j ){
+        bubble_sorting_network( static_cast<uint32_t>( sigs.size() ), [&sigs, &ntk]( auto i, auto j ){
             signal<Ntk> lhs = ntk.create_and( sigs[i], sigs[j] );
             signal<Ntk> rhs = ntk.create_or( sigs[i], sigs[j] );
             sigs[i] = lhs;

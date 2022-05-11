@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2015-2020 Politecnico di Milano
+ *              Copyright (c) 2015-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -53,7 +53,7 @@ class OmpAllocation : public allocation
    /**
     * Integrate technology libraries with special functional units
     */
-   virtual void IntegrateTechnologyLibraries();
+   virtual void IntegrateTechnologyLibraries() override;
 
    /**
     * Add the module implementing panda_pthread_mutex
@@ -65,7 +65,8 @@ class OmpAllocation : public allocation
     * Constructor.
     * @param design_flow_manager is the design flow manager
     */
-   OmpAllocation(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager);
+   OmpAllocation(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId,
+                 const DesignFlowManagerConstRef design_flow_manager);
 
    /**
     * Destructor.

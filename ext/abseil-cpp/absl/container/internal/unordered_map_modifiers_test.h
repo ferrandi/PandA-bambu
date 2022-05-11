@@ -23,6 +23,7 @@
 #include "absl/container/internal/hash_policy_testing.h"
 
 namespace absl {
+ABSL_NAMESPACE_BEGIN
 namespace container_internal {
 
 template <class UnordMap>
@@ -78,6 +79,38 @@ TYPED_TEST_P(ModifiersTest, InsertRange) {
   TypeParam m;
   m.insert(values.begin(), values.end());
   ASSERT_THAT(items(m), ::testing::UnorderedElementsAreArray(values));
+}
+
+TYPED_TEST_P(ModifiersTest, InsertWithinCapacity) {
+  using T = hash_internal::GeneratedType<TypeParam>;
+  using V = typename TypeParam::mapped_type;
+  T val = hash_internal::Generator<T>()();
+  TypeParam m;
+  m.reserve(10);
+  const size_t original_capacity = m.bucket_count();
+  m.insert(val);
+  EXPECT_EQ(m.bucket_count(), original_capacity);
+  T val2 = {val.first, hash_internal::Generator<V>()()};
+  m.insert(val2);
+  EXPECT_EQ(m.bucket_count(), original_capacity);
+}
+
+TYPED_TEST_P(ModifiersTest, InsertRangeWithinCapacity) {
+#if !defined(__GLIBCXX__)
+  using T = hash_internal::GeneratedType<TypeParam>;
+  std::vector<T> base_values;
+  std::generate_n(std::back_inserter(base_values), 10,
+                  hash_internal::Generator<T>());
+  std::vector<T> values;
+  while (values.size() != 100) {
+    std::copy_n(base_values.begin(), 10, std::back_inserter(values));
+  }
+  TypeParam m;
+  m.reserve(10);
+  const size_t original_capacity = m.bucket_count();
+  m.insert(values.begin(), values.end());
+  EXPECT_EQ(m.bucket_count(), original_capacity);
+#endif
 }
 
 TYPED_TEST_P(ModifiersTest, InsertOrAssign) {
@@ -265,9 +298,10 @@ TYPED_TEST_P(ModifiersTest, Swap) {
 // TODO(alkis): Write tests for merge.
 
 REGISTER_TYPED_TEST_CASE_P(ModifiersTest, Clear, Insert, InsertHint,
-                           InsertRange, InsertOrAssign, InsertOrAssignHint,
-                           Emplace, EmplaceHint, TryEmplace, TryEmplaceHint,
-                           Erase, EraseRange, EraseKey, Swap);
+                           InsertRange, InsertWithinCapacity,
+                           InsertRangeWithinCapacity, InsertOrAssign,
+                           InsertOrAssignHint, Emplace, EmplaceHint, TryEmplace,
+                           TryEmplaceHint, Erase, EraseRange, EraseKey, Swap);
 
 template <typename Type>
 struct is_unique_ptr : std::false_type {};
@@ -284,6 +318,8 @@ class UniquePtrModifiersTest : public ::testing::Test {
                   "std::unique_ptr value type.");
   }
 };
+
+GTEST_ALLOW_UNINSTANTIATED_PARAMETERIZED_TEST(UniquePtrModifiersTest);
 
 TYPED_TEST_SUITE_P(UniquePtrModifiersTest);
 
@@ -309,6 +345,7 @@ TYPED_TEST_P(UniquePtrModifiersTest, TryEmplace) {
 REGISTER_TYPED_TEST_SUITE_P(UniquePtrModifiersTest, TryEmplace);
 
 }  // namespace container_internal
+ABSL_NAMESPACE_END
 }  // namespace absl
 
 #endif  // ABSL_CONTAINER_INTERNAL_UNORDERED_MAP_MODIFIERS_TEST_H_

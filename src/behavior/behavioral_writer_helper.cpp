@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -87,9 +87,11 @@ BBWriter::BBWriter(const BBGraph* _g, CustomUnorderedSet<vertex> _annotated)
       annotated(std::move(_annotated))
 #if HAVE_HLS_BUILT
       ,
-      schedule(GetPointer<const HLS_manager>(_g->CGetBBGraphInfo()->AppM) and GetPointer<const HLS_manager>(_g->CGetBBGraphInfo()->AppM)->get_HLS(helper->get_function_index()) ?
-                   GetPointer<const HLS_manager>(_g->CGetBBGraphInfo()->AppM)->get_HLS(helper->get_function_index())->Rsch :
-                   ScheduleConstRef())
+      schedule(
+          (GetPointer<const HLS_manager>(_g->CGetBBGraphInfo()->AppM) and
+           GetPointer<const HLS_manager>(_g->CGetBBGraphInfo()->AppM)->get_HLS(helper->get_function_index())) ?
+              GetPointer<const HLS_manager>(_g->CGetBBGraphInfo()->AppM)->get_HLS(helper->get_function_index())->Rsch :
+              ScheduleConstRef())
 #endif
 {
 }
@@ -102,7 +104,9 @@ void BBWriter::operator()(std::ostream& out, const vertex& v) const
    {
       out << "[color=blue,shape=Msquare, ";
       if(annotated.find(v) != annotated.end())
+      {
          out << " style=filled, fillcolor=black, fontcolor=white,";
+      }
       out << "label=\"ENTRY";
    }
    else if(v == info->exit_vertex)
@@ -118,10 +122,13 @@ void BBWriter::operator()(std::ostream& out, const vertex& v) const
    {
       out << "[shape=box";
       if(annotated.find(v) != annotated.end())
+      {
          out << ", style=filled, fillcolor=black, fontcolor=white";
+      }
       if(bb_node_info and bb_node_info->block)
       {
-         out << ", label=\"BB" << bb_node_info->block->number << " - GCCLI: " << bb_node_info->block->loop_id << " - HPL: " << bb_node_info->block->hpl << " - Cer: " << bb_node_info->cer;
+         out << ", label=\"BB" << bb_node_info->block->number << " - GCCLI: " << bb_node_info->block->loop_id
+             << " - HPL: " << bb_node_info->block->hpl << " - Cer: " << bb_node_info->cer;
          out << " - Loop " << bb_node_info->loop_id;
 #if HAVE_HOST_PROFILING_BUILT
          out << " - Executions: " << function_behavior->CGetProfilingInformation()->GetBBExecutions(v);
@@ -133,19 +140,25 @@ void BBWriter::operator()(std::ostream& out, const vertex& v) const
          for(const auto& phi : bb_node_info->block->CGetPhiList())
          {
             const var_pp_functorConstRef svpf(new std_var_pp_functor(helper));
-            std::string res = STR(phi->index);
+            auto res = STR(phi->index);
 #if HAVE_HLS_BUILT
             if(schedule)
+            {
                res += " " + schedule->PrintTimingInformation(phi->index) + " ";
+            }
 #endif
-            res += " -> " + helper->print_node(phi->index, nullptr, svpf);
+            res += " -> " + helper->PrintNode(phi, nullptr, svpf);
             std::string temp;
             for(char re : res)
             {
                if(re == '\"')
+               {
                   temp += "\\\"";
+               }
                else if(re != '\n')
+               {
                   temp += re;
+               }
             }
             out << temp << "\\l";
          }
@@ -153,16 +166,20 @@ void BBWriter::operator()(std::ostream& out, const vertex& v) const
       if(bb_node_info and bb_node_info->block->CGetStmtList().size() and helper)
       {
          if(bb_node_info->block->CGetPhiList().empty())
+         {
             out << "\\n";
+         }
          for(const auto& statement : bb_node_info->block->CGetStmtList())
          {
             const var_pp_functorConstRef svpf(new std_var_pp_functor(helper));
-            std::string res = STR(GET_INDEX_NODE(statement));
+            auto res = STR(GET_INDEX_NODE(statement));
 #if HAVE_HLS_BUILT
             if(schedule)
+            {
                res += " " + schedule->PrintTimingInformation(statement->index) + " ";
+            }
 #endif
-            res += " -> " + helper->print_node(statement->index, nullptr, svpf);
+            res += " -> " + helper->PrintNode(statement, nullptr, svpf);
             const tree_nodeRef node = GET_NODE(statement);
             switch(node->get_kind())
             {
@@ -218,9 +235,13 @@ void BBWriter::operator()(std::ostream& out, const vertex& v) const
             for(char re : res)
             {
                if(re == '\"')
+               {
                   temp += "\\\"";
+               }
                else if(re != '\n')
+               {
                   temp += re;
+               }
             }
             out << temp << "\\l";
          }
@@ -229,56 +250,104 @@ void BBWriter::operator()(std::ostream& out, const vertex& v) const
    out << "\"]";
 }
 
-OpEdgeWriter::OpEdgeWriter(const OpGraph* operation_graph) : EdgeWriter(operation_graph, 0), BH(operation_graph->CGetOpGraphInfo()->BH)
+OpEdgeWriter::OpEdgeWriter(const OpGraph* operation_graph)
+    : EdgeWriter(operation_graph, 0), BH(operation_graph->CGetOpGraphInfo()->BH)
 {
 }
 
 void OpEdgeWriter::operator()(std::ostream& out, const EdgeDescriptor& e) const
 {
    if((FB_CFG_SELECTOR)&selector & printing_graph->GetSelector(e))
+   {
       out << "[color=gold";
+   }
    else if((CFG_SELECTOR)&selector & printing_graph->GetSelector(e))
+   {
       out << "[fontcolor=red3";
-   else if((FB_CDG_SELECTOR)&selector & printing_graph->GetSelector(e) && FB_DFG_SELECTOR & selector & printing_graph->GetSelector(e))
+   }
+   else if((FB_CDG_SELECTOR)&selector & printing_graph->GetSelector(e) &&
+           FB_DFG_SELECTOR & selector & printing_graph->GetSelector(e))
+   {
       out << "[color=gold,style=dotted";
+   }
    else if((FB_CDG_SELECTOR)&selector & printing_graph->GetSelector(e))
+   {
       out << "[color=gold";
-   else if(((CDG_SELECTOR)&selector & printing_graph->GetSelector(e)) && ((DFG_SELECTOR)&selector & printing_graph->GetSelector(e)))
+   }
+   else if(((CDG_SELECTOR)&selector & printing_graph->GetSelector(e)) &&
+           ((DFG_SELECTOR)&selector & printing_graph->GetSelector(e)))
+   {
       out << "[color=red3,style=dotted";
+   }
    else if((CDG_SELECTOR)&selector & printing_graph->GetSelector(e))
+   {
       out << "[color=red3";
+   }
    else if((FB_DFG_SELECTOR)&selector & printing_graph->GetSelector(e))
+   {
       out << "[color=lightblue";
+   }
    else if((DFG_SCA_SELECTOR)&selector & printing_graph->GetSelector(e))
+   {
       out << "[color=blue, style=dotted";
+   }
    else if((DFG_AGG_SELECTOR)&selector & printing_graph->GetSelector(e))
+   {
       out << "[color=blue";
+   }
    else if((FB_ADG_SELECTOR)&selector & printing_graph->GetSelector(e))
+   {
       out << "[color=lawngreen";
+   }
    else if((ADG_SELECTOR)&selector & printing_graph->GetSelector(e))
+   {
       out << "[color=green4";
+   }
    else if((FB_ODG_SELECTOR)&selector & printing_graph->GetSelector(e))
+   {
       out << "[color=lawngreen";
+   }
    else if((ODG_SELECTOR)&selector & printing_graph->GetSelector(e))
+   {
       out << "[color=green4";
+   }
    else if((CDG_SELECTOR)&selector & printing_graph->GetSelector(e))
+   {
       out << "[color=red3";
+   }
    else if((DFG_SELECTOR)&selector & printing_graph->GetSelector(e))
+   {
       out << "[color=blue";
+   }
    else if((FB_CDG_SELECTOR)&selector & printing_graph->GetSelector(e))
+   {
       out << "[color=gold";
+   }
    else if((FB_DFG_SELECTOR)&selector & printing_graph->GetSelector(e))
+   {
       out << "[color=lightblue";
+   }
    else if((FLG_SELECTOR)&selector & printing_graph->GetSelector(e))
+   {
       out << "[color=red3";
+   }
    else if((DEBUG_SELECTOR)&selector & printing_graph->GetSelector(e))
+   {
       out << "[color=red3";
-   else if((CSG_SELECTOR)&selector & printing_graph->GetSelector(e) && DFG_SELECTOR & selector & printing_graph->GetSelector(e))
+   }
+   else if((CSG_SELECTOR)&selector & printing_graph->GetSelector(e) &&
+           DFG_SELECTOR & selector & printing_graph->GetSelector(e))
+   {
       out << "[color=pink,style=dotted";
+   }
    else if((CSG_SELECTOR)&selector & printing_graph->GetSelector(e))
+   {
       out << "[color=pink";
+   }
    else if((FB_FLG_SELECTOR)&selector & printing_graph->GetSelector(e))
+   {
       out << "[color=pink";
+   }
 
    const auto* edge_info = Cget_edge_info<OpEdgeInfo>(e, *printing_graph);
 
@@ -323,30 +392,53 @@ void OpEdgeWriter::operator()(std::ostream& out, const EdgeDescriptor& e) const
    out << "]";
 }
 
-BBEdgeWriter::BBEdgeWriter(const BBGraph* _g) : EdgeWriter(_g, 0), BH(_g->CGetBBGraphInfo()->AppM->CGetFunctionBehavior(_g->CGetBBGraphInfo()->function_index)->CGetBehavioralHelper())
+BBEdgeWriter::BBEdgeWriter(const BBGraph* _g)
+    : EdgeWriter(_g, 0),
+      BH(_g->CGetBBGraphInfo()
+             ->AppM->CGetFunctionBehavior(_g->CGetBBGraphInfo()->function_index)
+             ->CGetBehavioralHelper())
 {
 }
 
 void BBEdgeWriter::operator()(std::ostream& out, const EdgeDescriptor& e) const
 {
    if(FB_CFG_SELECTOR & printing_graph->GetSelector(e))
+   {
       out << "[fontcolor=blue, color=gold";
+   }
    else if(CFG_SELECTOR & printing_graph->GetSelector(e))
+   {
       out << "[fontcolor=blue, color=red3";
+   }
    else if(CDG_SELECTOR & printing_graph->GetSelector(e))
+   {
       out << "[fontcolor=blue, color=red3";
+   }
    else if(D_SELECTOR & printing_graph->GetSelector(e))
+   {
       out << "[fontcolor=blue";
+   }
    else if(PD_SELECTOR & printing_graph->GetSelector(e))
+   {
       out << "[fontcolor=blue";
+   }
    else if(ECFG_SELECTOR & printing_graph->GetSelector(e))
+   {
       out << "[fontcolor=blue, color=gold";
+   }
    else if(J_SELECTOR & printing_graph->GetSelector(e))
+   {
       out << "[fontcolor=blue, color=gold";
+   }
    else if(PP_SELECTOR & printing_graph->GetSelector(e))
+   {
       out << "[fontcolor=blue, color=gold";
+   }
    else
-      THROW_UNREACHABLE("Not supported graph type in printing: " + STR(printing_graph->GetSelector(e)) + " " + STR(PP_SELECTOR));
+   {
+      THROW_UNREACHABLE("Not supported graph type in printing: " + STR(printing_graph->GetSelector(e)) + " " +
+                        STR(PP_SELECTOR));
+   }
    const BBEdgeInfoConstRef bb_edge_info = dynamic_cast<const BBGraph*>(printing_graph)->CGetBBEdgeInfo(e);
    if(selector & PP_SELECTOR)
    {
@@ -375,7 +467,8 @@ void BBEdgeWriter::operator()(std::ostream& out, const EdgeDescriptor& e) const
    out << "]";
 }
 
-OpWriter::OpWriter(const OpGraph* operation_graph, const int _detail_level) : VertexWriter(operation_graph, _detail_level), helper(operation_graph->CGetOpGraphInfo()->BH)
+OpWriter::OpWriter(const OpGraph* operation_graph, const int _detail_level)
+    : VertexWriter(operation_graph, _detail_level), helper(operation_graph->CGetOpGraphInfo()->BH)
 {
 }
 
@@ -383,23 +476,41 @@ void OpWriter::operator()(std::ostream& out, const vertex& v) const
 {
    const auto* op_graph = dynamic_cast<const OpGraph*>(printing_graph);
    if(GET_TYPE(printing_graph, v) & (TYPE_IF | TYPE_SWITCH))
+   {
       out << "[color=red,shape=diamond,";
+   }
    else if(GET_TYPE(printing_graph, v) & TYPE_LOAD)
+   {
       out << "[color=green,shape=box,";
+   }
    else if(GET_TYPE(printing_graph, v) & TYPE_STORE)
+   {
       out << "[color=red,shape=box,";
+   }
    else if(GET_TYPE(printing_graph, v) & TYPE_EXTERNAL)
+   {
       out << "[color=green,shape=box,";
+   }
    else if(GET_TYPE(printing_graph, v) & TYPE_MEMCPY)
+   {
       out << "[color=burlywood,shape=diamond,";
+   }
    else if(GET_TYPE(printing_graph, v) & TYPE_GOTO)
+   {
       out << "[color=yellow,shape=box,";
+   }
    else if(GET_TYPE(printing_graph, v) & TYPE_ASSIGN)
+   {
       out << "[color=burlywood,shape=box,";
+   }
    else if(GET_TYPE(printing_graph, v) & (TYPE_ENTRY | TYPE_EXIT))
+   {
       out << "[color=blue,shape=Msquare,";
+   }
    else
+   {
       out << "[";
+   }
    out << "label=\"" << GET_NAME(printing_graph, v);
 #if HAVE_HLS_BUILT
    out << " - " << op_graph->CGetOpNodeInfo(v)->GetOperation();
@@ -409,7 +520,8 @@ void OpWriter::operator()(std::ostream& out, const vertex& v) const
    {
       out << "\\n";
       null_deleter null_del;
-      out << helper->print_vertex(OpGraphConstRef(dynamic_cast<const OpGraph*>(printing_graph), null_del), v, svpf, true);
+      out << helper->print_vertex(OpGraphConstRef(dynamic_cast<const OpGraph*>(printing_graph), null_del), v, svpf,
+                                  true);
       if(detail_level >= 1)
       {
          out << "\\n";
@@ -420,7 +532,9 @@ void OpWriter::operator()(std::ostream& out, const vertex& v) const
 }
 
 #if HAVE_HLS_BUILT
-TimedOpWriter::TimedOpWriter(const OpGraph* op_graph, const hlsConstRef _HLS, const CustomSet<unsigned int> _critical_paths) : OpWriter(op_graph, 0), HLS(_HLS), critical_paths(_critical_paths)
+TimedOpWriter::TimedOpWriter(const OpGraph* op_graph, const hlsConstRef _HLS,
+                             const CustomSet<unsigned int> _critical_paths)
+    : OpWriter(op_graph, 0), HLS(_HLS), critical_paths(_critical_paths)
 {
 }
 
@@ -446,7 +560,8 @@ void TimedOpWriter::operator()(std::ostream& out, const vertex& v) const
    {
       out << "\\n";
       null_deleter null_del;
-      out << helper->print_vertex(OpGraphConstRef(dynamic_cast<const OpGraph*>(printing_graph), null_del), v, svpf, true);
+      out << helper->print_vertex(OpGraphConstRef(dynamic_cast<const OpGraph*>(printing_graph), null_del), v, svpf,
+                                  true);
       if(detail_level >= 1)
       {
          out << "\\n";
@@ -456,7 +571,9 @@ void TimedOpWriter::operator()(std::ostream& out, const vertex& v) const
    out << "\"]";
 }
 
-TimedOpEdgeWriter::TimedOpEdgeWriter(const OpGraph* _operation_graph, const hlsConstRef _HLS, CustomSet<unsigned int> _critical_paths) : OpEdgeWriter(_operation_graph), HLS(_HLS), critical_paths(std::move(_critical_paths))
+TimedOpEdgeWriter::TimedOpEdgeWriter(const OpGraph* _operation_graph, const hlsConstRef _HLS,
+                                     CustomSet<unsigned int> _critical_paths)
+    : OpEdgeWriter(_operation_graph), HLS(_HLS), critical_paths(std::move(_critical_paths))
 {
 }
 
@@ -473,7 +590,9 @@ void TimedOpEdgeWriter::operator()(std::ostream& out, const EdgeDescriptor& e) c
       out << "color=red,";
    }
    const ControlStep u_control_step(AbsControlStep::UNKNOWN);
-   out << "label=" << HLS->allocation_information->GetConnectionTime(source_id, target_id, AbsControlStep(op_graph->CGetOpNodeInfo(target)->bb_index, u_control_step));
+   out << "label="
+       << HLS->allocation_information->GetConnectionTime(
+              source_id, target_id, AbsControlStep(op_graph->CGetOpNodeInfo(target)->bb_index, u_control_step));
    out << "]";
 }
 #endif

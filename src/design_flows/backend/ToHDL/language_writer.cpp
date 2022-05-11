@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -32,7 +32,8 @@
  */
 /**
  * @file language_writer.cpp
- * @brief This classes starting from a structural representation write different HDL based descriptions (VHDL, Verilog, SystemC).
+ * @brief This classes starting from a structural representation write different HDL based descriptions (VHDL, Verilog,
+ * SystemC).
  *
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  * @author Christian Pilato <pilato@elet.polimi.it>
@@ -69,7 +70,9 @@
 #include "indented_output_stream.hpp"
 
 language_writer::language_writer(char open_char, char close_char, const ParameterConstRef _parameters)
-    : indented_output_stream(new IndentedOutputStream(open_char, close_char, 2)), parameters(_parameters), debug_level(_parameters->getOption<int>(OPT_debug_level))
+    : indented_output_stream(new IndentedOutputStream(open_char, close_char, 2)),
+      parameters(_parameters),
+      debug_level(_parameters->getOption<int>(OPT_debug_level))
 {
 }
 
@@ -90,7 +93,9 @@ unsigned int language_writer::bitnumber(long long unsigned int n)
    return count;
 }
 
-language_writerRef language_writer::create_writer(const HDLWriter_Language language, const technology_managerConstRef _TM, const ParameterConstRef _parameters)
+language_writerRef language_writer::create_writer(const HDLWriter_Language language,
+                                                  const technology_managerConstRef _TM,
+                                                  const ParameterConstRef _parameters)
 {
    THROW_ASSERT(_parameters, "");
    switch(language)

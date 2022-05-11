@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -52,11 +52,17 @@ class fun_dominator_allocation : public function_allocation
    /// True if this step has yet been executed
    bool already_executed;
 
+   /// list of trivial function that does not require to be proxied
+   static const std::set<std::string> simple_functions;
+
  public:
    /**
     * Constructor
     */
-   fun_dominator_allocation(const ParameterConstRef Param, const HLS_managerRef HLSMgr, const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStep_Type hls_flow_step_type = HLSFlowStep_Type::DOMINATOR_FUNCTION_ALLOCATION);
+   fun_dominator_allocation(
+       const ParameterConstRef _parameters, const HLS_managerRef HLSMgr,
+       const DesignFlowManagerConstRef design_flow_manager,
+       const HLSFlowStep_Type hls_flow_step_type = HLSFlowStep_Type::DOMINATOR_FUNCTION_ALLOCATION);
 
    /**
     * Destructor
@@ -74,7 +80,8 @@ class fun_dominator_allocation : public function_allocation
     * @param dependencies is where relationships will be stored
     * @param relationship_type is the type of relationship to be computed
     */
-   void ComputeRelationships(DesignFlowStepSet& relationship, const DesignFlowStep::RelationshipType relationship_type) override;
+   void ComputeRelationships(DesignFlowStepSet& relationship,
+                             const DesignFlowStep::RelationshipType relationship_type) override;
 
    /**
     * Check if this step has actually to be executed

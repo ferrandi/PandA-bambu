@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -32,7 +32,8 @@
  */
 /**
  * @file maxclique_dsatur_coloring.hpp
- * @brief Boost-based implementation of an exact sequential coloring algorithm based on the work of Olivier Coudert and Daniel Brelaz.
+ * @brief Boost-based implementation of an exact sequential coloring algorithm based on the work of Olivier Coudert and
+ * Daniel Brelaz.
  *
  * As a starting point it has been used the exact sequential vertex coloring implementation of Michael A. Trick.
  * For more details see
@@ -101,7 +102,8 @@ namespace boost
          size_type c1 = ColorCount[i1], c2 = ColorCount[i2];
          return !((c1 > c2) || ((c1 == c2) && (DegreeCount[i1] > DegreeCount[i2])));
       }
-      heap_compare_functor(const std::vector<size_type>& _ColorCount, const std::vector<size_type>& _DegreeCount) : ColorCount(_ColorCount), DegreeCount(_DegreeCount)
+      heap_compare_functor(const std::vector<size_type>& _ColorCount, const std::vector<size_type>& _DegreeCount)
+          : ColorCount(_ColorCount), DegreeCount(_DegreeCount)
       {
       }
 
@@ -148,7 +150,7 @@ namespace boost
          // to the current vertex.
          size_type j = 0;
 
-         // Scan through all useable colors, find the smallest possible
+         // Scan through all usable colors, find the smallest possible
          // color that is not used by neighbors.  Note that if mark[j]
          // is equal to i, color j is used by one of the current vertex's
          // neighbors.
@@ -225,7 +227,8 @@ namespace boost
       typedef typename IG_GraphTraits::vertex_descriptor IG_Vertex;
 
     public:
-      maxclique_dsatur_coloring_helper(const VertexListGraph& _G, ColorMap& _CM, const size_type _num_node, size_type& _lb)
+      maxclique_dsatur_coloring_helper(const VertexListGraph& _G, ColorMap& _CM, const size_type _num_node,
+                                       size_type& _lb)
           : num_node(_num_node),
             BestColoring(_num_node + 1),
             ColorClass(_num_node, _num_node - 1),
@@ -487,7 +490,8 @@ namespace boost
          return 0;
       size_type lb = 0, val;
       typedef CustomUnorderedSet<Vertex> SET_container;
-      maxclique_dsatur_coloring_helper<VertexListGraph, ColorMap, size_type, SET_container> MDCH(G, color, num_node, lb);
+      maxclique_dsatur_coloring_helper<VertexListGraph, ColorMap, size_type, SET_container> MDCH(G, color, num_node,
+                                                                                                 lb);
 
       // size_type best_clique=0;
       // unsigned int num_prob = 0, max_prob = 10000;

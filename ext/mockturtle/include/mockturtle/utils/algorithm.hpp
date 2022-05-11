@@ -1,5 +1,5 @@
 /* mockturtle: C++ logic network library
- * Copyright (C) 2018-2019  EPFL
+ * Copyright (C) 2018-2021  EPFL
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -27,6 +27,8 @@
   \file algorithm.hpp
   \brief STL-like algorithm extensions
 
+  \author Heinz Riener
+  \author Marcel Walter
   \author Mathias Soeken
 */
 
@@ -100,6 +102,35 @@ Iterator max_element_unary( Iterator first, Iterator last, UnaryOperation&& fn, 
     }
   }
   return best;
+}
+
+template<class T, typename = std::enable_if_t<std::is_integral_v<T>>>
+constexpr auto range( T begin, T end )
+{
+  struct iterator
+  {
+    using value_type = T;
+
+    value_type curr_;
+    bool operator!=( iterator const& other ) const { return curr_ != other.curr_; }
+    iterator& operator++() { ++curr_; return *this; }
+    iterator operator++(int) { auto copy = *this; ++(*this); return copy; }
+    value_type operator*() const { return curr_; }
+  };
+  struct iterable_wrapper
+  {
+    T begin_;
+    T end_;
+    auto begin() { return iterator{begin_}; }
+    auto end() { return iterator{end_}; }
+  };
+  return iterable_wrapper{begin, end};
+}
+
+template<class T, typename = std::enable_if_t<std::is_integral_v<T>>>
+constexpr auto range( T end )
+{
+  return range<T>( {}, end );
 }
 
 } /* namespace mockturtle */

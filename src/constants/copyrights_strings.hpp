@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -54,23 +54,24 @@
    "MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE."
 
 #define COPYING3_SHORT_NROW 17
-#define COPYING3_SHORT_MACRO                                                                                                                \
-   static const char* COPYING3_SHORT[COPYING3_SHORT_NROW] = {"************************************************************************\n",  \
-                                                             "The following text holds for all the components tagged with PANDA_LGPLv3.\n", \
-                                                             "They are all part of the BAMBU/PANDA IP LIBRARY.\n",                          \
-                                                             "This library is free software; you can redistribute it and/or\n",             \
-                                                             "modify it under the terms of the GNU Lesser General Public\n",                \
-                                                             "License as published by the Free Software Foundation; either\n",              \
-                                                             "version 3 of the License, or (at your option) any later version.\n",          \
-                                                             "\n",                                                                          \
-                                                             "This library is distributed in the hope that it will be useful,\n",           \
-                                                             "but WITHOUT ANY WARRANTY; without even the implied warranty of\n",            \
-                                                             "MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU\n",         \
-                                                             "Lesser General Public License for more details.\n",                           \
-                                                             "\n",                                                                          \
-                                                             "You should have received a copy of the GNU Lesser General Public\n",          \
-                                                             "License along with the PandA framework; see the files COPYING.LIB\n",         \
-                                                             "If not, see <http://www.gnu.org/licenses/>.\n",                               \
-                                                             "************************************************************************\n\n"};
+#define COPYING3_SHORT_MACRO                                                          \
+   static const char* COPYING3_SHORT[COPYING3_SHORT_NROW] = {                         \
+       "************************************************************************\n",  \
+       "The following text holds for all the components tagged with PANDA_LGPLv3.\n", \
+       "They are all part of the BAMBU/PANDA IP LIBRARY.\n",                          \
+       "This library is free software; you can redistribute it and/or\n",             \
+       "modify it under the terms of the GNU Lesser General Public\n",                \
+       "License as published by the Free Software Foundation; either\n",              \
+       "version 3 of the License, or (at your option) any later version.\n",          \
+       "\n",                                                                          \
+       "This library is distributed in the hope that it will be useful,\n",           \
+       "but WITHOUT ANY WARRANTY; without even the implied warranty of\n",            \
+       "MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU\n",         \
+       "Lesser General Public License for more details.\n",                           \
+       "\n",                                                                          \
+       "You should have received a copy of the GNU Lesser General Public\n",          \
+       "License along with the PandA framework; see the files COPYING.LIB\n",         \
+       "If not, see <http://www.gnu.org/licenses/>.\n",                               \
+       "************************************************************************\n\n"};
 
 #endif

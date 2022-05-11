@@ -16,10 +16,10 @@
 
 float fdimf(float x, float y)
 {
-   int c = __fpclassifyf(x);
+   int c = fpclassifyf(x);
    if(c == FP_NAN)
       return (x);
-   if(__fpclassifyf(y) == FP_NAN)
+   if(fpclassifyf(y) == FP_NAN)
       return (y);
    if(c == FP_INFINITE)
       return HUGE_VALF;

@@ -22,7 +22,7 @@
 // The `Notification` object maintains a private boolean "notified" state that
 // transitions to `true` at most once. The `Notification` class provides the
 // following primary member functions:
-//   * `HasBeenNotified() `to query its state
+//   * `HasBeenNotified()` to query its state
 //   * `WaitForNotification*()` to have threads wait until the "notified" state
 //      is `true`.
 //   * `Notify()` to set the notification's "notified" state to `true` and
@@ -57,6 +57,7 @@
 #include "absl/time/time.h"
 
 namespace absl {
+ABSL_NAMESPACE_BEGIN
 
 // -----------------------------------------------------------------------------
 // Notification
@@ -73,7 +74,9 @@ class Notification {
   // Notification::HasBeenNotified()
   //
   // Returns the value of the notification's internal "notified" state.
-  bool HasBeenNotified() const;
+  bool HasBeenNotified() const {
+    return HasBeenNotifiedInternal(&this->notified_yet_);
+  }
 
   // Notification::WaitForNotification()
   //
@@ -105,10 +108,16 @@ class Notification {
   void Notify();
 
  private:
+  static inline bool HasBeenNotifiedInternal(
+      const std::atomic<bool>* notified_yet) {
+    return notified_yet->load(std::memory_order_acquire);
+  }
+
   mutable Mutex mutex_;
   std::atomic<bool> notified_yet_;  // written under mutex_
 };
 
+ABSL_NAMESPACE_END
 }  // namespace absl
 
 #endif  // ABSL_SYNCHRONIZATION_NOTIFICATION_H_

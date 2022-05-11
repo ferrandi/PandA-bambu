@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -91,9 +91,13 @@ HLS_manager::HLS_manager(const ParameterConstRef _Param, const HLS_targetRef _HL
 {
 #if HAVE_TASTE
    if(Param->isOption(OPT_context_switch))
+   {
       ;
+   }
    else
+   {
       Rfuns = functionsRef(new functions());
+   }
 #endif
 }
 
@@ -102,9 +106,13 @@ HLS_manager::~HLS_manager() = default;
 hlsRef HLS_manager::get_HLS(unsigned int funId) const
 {
    if(!funId)
+   {
       return hlsRef();
+   }
    if(hlsMap.find(funId) == hlsMap.end())
+   {
       return hlsRef();
+   }
    return hlsMap.find(funId)->second;
 }
 
@@ -125,15 +133,25 @@ hlsRef HLS_manager::create_HLS(const HLS_managerRef HLSMgr, unsigned int functio
       const std::string function_name = tree_helper::name_function(HLSMgr->get_tree_manager(), functionId);
       HLS_constraintsRef HLS_C = HLS_constraintsRef(new HLS_constraints(HLSMgr->get_parameter(), function_name));
       for(auto globalRC : HLSMgr->global_resource_constraints)
+      {
          if(HLS_C->get_number_fu(globalRC.first.first, globalRC.first.second) == INFINITE_UINT)
+         {
             HLS_C->set_number_fu(globalRC.first.first, globalRC.first.second, globalRC.second);
-      HLSMgr->hlsMap[functionId] = hlsRef(new hls(HLSMgr->get_parameter(), functionId, Operations, HLSMgr->get_HLS_target(), HLS_C));
+         }
+      }
+      HLSMgr->hlsMap[functionId] =
+          hlsRef(new hls(HLSMgr->get_parameter(), functionId, Operations, HLSMgr->get_HLS_target(), HLS_C));
       if(HLSMgr->design_interface_constraints.find(functionId) != HLSMgr->design_interface_constraints.end())
       {
-         const auto& function_design_interface_constraints = HLSMgr->design_interface_constraints.find(functionId)->second;
+         const auto& function_design_interface_constraints =
+             HLSMgr->design_interface_constraints.find(functionId)->second;
          for(const auto& lib_resmap : function_design_interface_constraints)
+         {
             for(const auto& res_num : lib_resmap.second)
+            {
                HLS_C->set_number_fu(res_num.first, lib_resmap.first, res_num.second);
+            }
+         }
       }
    }
    else
@@ -143,45 +161,54 @@ hlsRef HLS_manager::create_HLS(const HLS_managerRef HLSMgr, unsigned int functio
    return HLSMgr->hlsMap[functionId];
 }
 
-std::string HLS_manager::get_constant_string(unsigned int node, unsigned int precision)
+std::string HLS_manager::get_constant_string(unsigned int node_id, unsigned int precision)
 {
    std::string trimmed_value;
-   if(tree_helper::is_real(TM, tree_helper::get_type_index(TM, node)))
+   const auto node = TM->CGetTreeReindex(node_id);
+   const auto node_type = tree_helper::CGetType(node);
+   if(tree_helper::IsRealType(node_type))
    {
-      THROW_ASSERT(tree_helper::size(TM, tree_helper::get_type_index(TM, node)) == precision, "real precision mistmatch");
-      tree_nodeRef rc_node = TM->get_tree_node_const(node);
-      auto* rc = GetPointer<real_cst>(rc_node);
+      THROW_ASSERT(tree_helper::Size(node_type) == precision, "real precision mismatch");
+      const auto rc = GetPointerS<const real_cst>(GET_CONST_NODE(node));
       std::string C_value = rc->valr;
       if(C_value == "Inf")
+      {
          C_value = rc->valx;
+      }
+      if(C_value == "Nan" && rc->valx[0] == '-')
+      {
+         C_value = "-__Nan";
+      }
       trimmed_value = convert_fp_to_string(C_value, precision);
    }
-   else if(tree_helper::is_a_vector(TM, tree_helper::get_type_index(TM, node)))
+   else if(tree_helper::IsVectorType(node_type))
    {
-      tree_nodeRef vc_node = TM->get_tree_node_const(node);
-      auto* vc = GetPointer<vector_cst>(vc_node);
+      const auto vc = GetPointerS<const vector_cst>(GET_CONST_NODE(node));
       auto n_elm = static_cast<unsigned int>(vc->list_of_valu.size());
       unsigned int elm_prec = precision / n_elm;
       trimmed_value = "";
       for(unsigned int i = 0; i < n_elm; ++i)
+      {
          trimmed_value = get_constant_string(GET_INDEX_NODE(vc->list_of_valu[i]), elm_prec) + trimmed_value;
+      }
    }
-   else if(tree_helper::is_a_complex(TM, tree_helper::get_type_index(TM, node)))
+   else if(tree_helper::IsComplexType(node_type))
    {
-      tree_nodeRef cc_node = TM->get_tree_node_const(node);
-      auto* cc = GetPointer<complex_cst>(cc_node);
+      const auto cc = GetPointerS<const complex_cst>(GET_CONST_NODE(node));
       auto* rcc = GetPointer<real_cst>(GET_NODE(cc->real));
       std::string trimmed_value_r;
       if(rcc)
       {
          std::string C_value_r = rcc->valr;
          if(C_value_r == "Inf")
+         {
             C_value_r = rcc->valx;
+         }
          trimmed_value_r = convert_fp_to_string(C_value_r, precision / 2);
       }
       else
       {
-         auto* ic = GetPointer<integer_cst>(GET_NODE(cc->real));
+         auto* ic = GetPointerS<integer_cst>(GET_NODE(cc->real));
          THROW_ASSERT(ic, "expected an integer_cst");
          auto ull_value = static_cast<unsigned long long int>(tree_helper::get_integer_cst_value(ic));
          trimmed_value_r = convert_to_binary(ull_value, precision / 2);
@@ -192,12 +219,14 @@ std::string HLS_manager::get_constant_string(unsigned int node, unsigned int pre
       {
          std::string C_value_i = icc->valr;
          if(C_value_i == "Inf")
+         {
             C_value_i = icc->valx;
+         }
          trimmed_value_i = convert_fp_to_string(C_value_i, precision / 2);
       }
       else
       {
-         auto* ic = GetPointer<integer_cst>(GET_NODE(cc->imag));
+         auto* ic = GetPointerS<integer_cst>(GET_NODE(cc->imag));
          THROW_ASSERT(ic, "expected an integer_cst");
          auto ull_value = static_cast<unsigned long long int>(tree_helper::get_integer_cst_value(ic));
          trimmed_value_i = convert_to_binary(ull_value, precision / 2);
@@ -206,8 +235,7 @@ std::string HLS_manager::get_constant_string(unsigned int node, unsigned int pre
    }
    else
    {
-      tree_nodeRef ic_node = TM->get_tree_node_const(node);
-      auto* ic = GetPointer<integer_cst>(ic_node);
+      const auto ic = GetPointerS<const integer_cst>(GET_CONST_NODE(node));
       auto ull_value = static_cast<unsigned long long int>(tree_helper::get_integer_cst_value(ic));
       trimmed_value = convert_to_binary(ull_value, precision);
    }
@@ -217,7 +245,9 @@ std::string HLS_manager::get_constant_string(unsigned int node, unsigned int pre
 const BackendFlowRef HLS_manager::get_backend_flow()
 {
    if(!back_flow)
+   {
       back_flow = BackendFlow::CreateFlow(Param, "Synthesis", HLS_T);
+   }
    return back_flow;
 }
 
@@ -256,18 +286,22 @@ void HLS_manager::xwrite(const std::string& filename)
 std::vector<HLS_manager::io_binding_type> HLS_manager::get_required_values(unsigned int fun_id, const vertex& v) const
 {
    const OpGraphConstRef cfg = CGetFunctionBehavior(fun_id)->CGetOpGraph(FunctionBehavior::CFG);
-   const unsigned int node_id = cfg->CGetOpNodeInfo(v)->GetNodeId();
+   const auto& node = cfg->CGetOpNodeInfo(v)->node;
    std::vector<io_binding_type> required;
-   if(node_id != ENTRY_ID and node_id != EXIT_ID)
-      tree_helper::get_required_values(TM, required, TM->get_tree_node_const(node_id), node_id);
+   if(node)
+   {
+      tree_helper::get_required_values(required, node);
+   }
    return required;
 }
 
 bool HLS_manager::is_register_compatible(unsigned int var) const
 {
-   return tree_helper::is_ssa_name(TM, var) and not tree_helper::is_virtual(TM, var) and // virtual ssa_name is not considered
-          not tree_helper::is_parameter(TM, var) and                                     // parameters have been already stored in a register by the calling function
-          not Rmem->has_base_address(var);                                               // ssa_name allocated in memory
+   return tree_helper::is_ssa_name(TM, var) and
+          not tree_helper::is_virtual(TM, var) and // virtual ssa_name is not considered
+          not tree_helper::is_parameter(
+              TM, var) and                 // parameters have been already stored in a register by the calling function
+          not Rmem->has_base_address(var); // ssa_name allocated in memory
 }
 
 bool HLS_manager::is_reading_writing_function(unsigned funID) const
@@ -281,8 +315,11 @@ bool HLS_manager::is_reading_writing_function(unsigned funID) const
 bool HLS_manager::IsSingleWriteMemory() const
 {
    if(Param->getOption<bool>(OPT_gcc_serialize_memory_accesses))
+   {
       return true;
-   return get_HLS_target() and get_HLS_target()->get_target_device()->has_parameter("is_single_write_memory") and get_HLS_target()->get_target_device()->get_parameter<std::string>("is_single_write_memory") == "1";
+   }
+   return get_HLS_target() and get_HLS_target()->get_target_device()->has_parameter("is_single_write_memory") and
+          get_HLS_target()->get_target_device()->get_parameter<std::string>("is_single_write_memory") == "1";
 }
 
 unsigned int HLS_manager::GetMemVersion() const

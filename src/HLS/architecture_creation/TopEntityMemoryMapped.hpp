@@ -11,7 +11,7 @@
  *                     Politecnico di Milano - DEIB
  *                      System Architectures Group
  *           ***********************************************
- *            Copyright (C) 2004-2020 Politecnico di Milano
+ *            Copyright (C) 2004-2022 Politecnico di Milano
  *
  * This file is part of the PandA framework.
  *
@@ -70,7 +70,8 @@ class TopEntityMemoryMapped : public top_entity
     * @param HLSMgr The HLS manager.
     * @param funId The tree index of the synthesized function.
     */
-   TopEntityMemoryMapped(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager);
+   TopEntityMemoryMapped(const ParameterConstRef _parameters, const HLS_managerRef HLSMgr, unsigned int funId,
+                         const DesignFlowManagerConstRef design_flow_manager);
 
    /**
     * Destructor.
@@ -91,7 +92,7 @@ class TopEntityMemoryMapped : public top_entity
 
    void insertMemoryMappedRegister(structural_managerRef SM, structural_objectRef wrappedObj);
 
-   void insertStartDoneLogic(structural_managerRef SM, structural_objectRef wrapperObj);
+   void insertStartDoneLogic(structural_managerRef SM, structural_objectRef wrappedObj);
 
    void insertStatusRegister(structural_managerRef SM, structural_objectRef wrappedObj);
 

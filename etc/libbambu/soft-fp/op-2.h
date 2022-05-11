@@ -67,27 +67,32 @@
                                     }))
 
 /* Right shift with sticky-lsb.  */
-#define _FP_FRAC_SRST_2(X, S, N, sz)                                                                                                 \
-   (void)(((N) < _FP_W_TYPE_SIZE) ? ({                                                                                               \
-      S = (__builtin_constant_p(N) && (N) == 1 ? X##_f0 & 1 : (X##_f0 << (_FP_W_TYPE_SIZE - (N))) != 0);                             \
-      X##_f0 = (X##_f1 << (_FP_W_TYPE_SIZE - (N)) | X##_f0 >> (N));                                                                  \
-      X##_f1 >>= (N);                                                                                                                \
-   }) :                                                                                                                              \
-                                    ({                                                                                               \
-                                       S = ((((N) == _FP_W_TYPE_SIZE ? 0 : (X##_f1 << (2 * _FP_W_TYPE_SIZE - (N)))) | X##_f0) != 0); \
-                                       X##_f0 = (X##_f1 >> ((N)-_FP_W_TYPE_SIZE));                                                   \
-                                       X##_f1 = 0;                                                                                   \
-                                    }))
+#define _FP_FRAC_SRST_2(X, S, N, sz)                                                                                \
+   (void)(((N) < _FP_W_TYPE_SIZE) ?                                                                                 \
+              ({                                                                                                    \
+                 S = (__builtin_constant_p(N) && (N) == 1 ? X##_f0 & 1 : (X##_f0 << (_FP_W_TYPE_SIZE - (N))) != 0); \
+                 X##_f0 = (X##_f1 << (_FP_W_TYPE_SIZE - (N)) | X##_f0 >> (N));                                      \
+                 X##_f1 >>= (N);                                                                                    \
+              }) :                                                                                                  \
+              ({                                                                                                    \
+                 S = ((((N) == _FP_W_TYPE_SIZE ? 0 : (X##_f1 << (2 * _FP_W_TYPE_SIZE - (N)))) | X##_f0) != 0);      \
+                 X##_f0 = (X##_f1 >> ((N)-_FP_W_TYPE_SIZE));                                                        \
+                 X##_f1 = 0;                                                                                        \
+              }))
 
-#define _FP_FRAC_SRS_2(X, N, sz)                                                                                                                                              \
-   (void)(((N) < _FP_W_TYPE_SIZE) ? ({                                                                                                                                        \
-      X##_f0 = (X##_f1 << (_FP_W_TYPE_SIZE - (N)) | X##_f0 >> (N) | (__builtin_constant_p(N) && (N) == 1 ? X##_f0 & 1 : (X##_f0 << (_FP_W_TYPE_SIZE - (N))) != 0));           \
-      X##_f1 >>= (N);                                                                                                                                                         \
-   }) :                                                                                                                                                                       \
-                                    ({                                                                                                                                        \
-                                       X##_f0 = (X##_f1 >> ((N)-_FP_W_TYPE_SIZE) | ((((N) == _FP_W_TYPE_SIZE ? 0 : (X##_f1 << (2 * _FP_W_TYPE_SIZE - (N)))) | X##_f0) != 0)); \
-                                       X##_f1 = 0;                                                                                                                            \
-                                    }))
+#define _FP_FRAC_SRS_2(X, N, sz)                                                                                      \
+   (void)(((N) < _FP_W_TYPE_SIZE) ?                                                                                   \
+              ({                                                                                                      \
+                 X##_f0 =                                                                                             \
+                     (X##_f1 << (_FP_W_TYPE_SIZE - (N)) | X##_f0 >> (N) |                                             \
+                      (__builtin_constant_p(N) && (N) == 1 ? X##_f0 & 1 : (X##_f0 << (_FP_W_TYPE_SIZE - (N))) != 0)); \
+                 X##_f1 >>= (N);                                                                                      \
+              }) :                                                                                                    \
+              ({                                                                                                      \
+                 X##_f0 = (X##_f1 >> ((N)-_FP_W_TYPE_SIZE) |                                                          \
+                           ((((N) == _FP_W_TYPE_SIZE ? 0 : (X##_f1 << (2 * _FP_W_TYPE_SIZE - (N)))) | X##_f0) != 0)); \
+                 X##_f1 = 0;                                                                                          \
+              }))
 
 #define _FP_FRAC_ADDI_2(X, I) __FP_FRAC_ADDI_2(X##_f1, X##_f0, I)
 
@@ -236,19 +241,21 @@
 
 /* Given a 1W * 1W => 2W primitive, do the extended multiplication.  */
 
-#define _FP_MUL_MEAT_DW_2_wide(wfracbits, R, X, Y, doit)                                                                                                                          \
-   do                                                                                                                                                                             \
-   {                                                                                                                                                                              \
-      _FP_FRAC_DECL_2(_b);                                                                                                                                                        \
-      _FP_FRAC_DECL_2(_c);                                                                                                                                                        \
-                                                                                                                                                                                  \
-      doit(_FP_FRAC_WORD_4(R, 1), _FP_FRAC_WORD_4(R, 0), X##_f0, Y##_f0);                                                                                                         \
-      doit(_b_f1, _b_f0, X##_f0, Y##_f1);                                                                                                                                         \
-      doit(_c_f1, _c_f0, X##_f1, Y##_f0);                                                                                                                                         \
-      doit(_FP_FRAC_WORD_4(R, 3), _FP_FRAC_WORD_4(R, 2), X##_f1, Y##_f1);                                                                                                         \
-                                                                                                                                                                                  \
-      __FP_FRAC_ADD_3(_FP_FRAC_WORD_4(R, 3), _FP_FRAC_WORD_4(R, 2), _FP_FRAC_WORD_4(R, 1), 0, _b_f1, _b_f0, _FP_FRAC_WORD_4(R, 3), _FP_FRAC_WORD_4(R, 2), _FP_FRAC_WORD_4(R, 1)); \
-      __FP_FRAC_ADD_3(_FP_FRAC_WORD_4(R, 3), _FP_FRAC_WORD_4(R, 2), _FP_FRAC_WORD_4(R, 1), 0, _c_f1, _c_f0, _FP_FRAC_WORD_4(R, 3), _FP_FRAC_WORD_4(R, 2), _FP_FRAC_WORD_4(R, 1)); \
+#define _FP_MUL_MEAT_DW_2_wide(wfracbits, R, X, Y, doit)                                                    \
+   do                                                                                                       \
+   {                                                                                                        \
+      _FP_FRAC_DECL_2(_b);                                                                                  \
+      _FP_FRAC_DECL_2(_c);                                                                                  \
+                                                                                                            \
+      doit(_FP_FRAC_WORD_4(R, 1), _FP_FRAC_WORD_4(R, 0), X##_f0, Y##_f0);                                   \
+      doit(_b_f1, _b_f0, X##_f0, Y##_f1);                                                                   \
+      doit(_c_f1, _c_f0, X##_f1, Y##_f0);                                                                   \
+      doit(_FP_FRAC_WORD_4(R, 3), _FP_FRAC_WORD_4(R, 2), X##_f1, Y##_f1);                                   \
+                                                                                                            \
+      __FP_FRAC_ADD_3(_FP_FRAC_WORD_4(R, 3), _FP_FRAC_WORD_4(R, 2), _FP_FRAC_WORD_4(R, 1), 0, _b_f1, _b_f0, \
+                      _FP_FRAC_WORD_4(R, 3), _FP_FRAC_WORD_4(R, 2), _FP_FRAC_WORD_4(R, 1));                 \
+      __FP_FRAC_ADD_3(_FP_FRAC_WORD_4(R, 3), _FP_FRAC_WORD_4(R, 2), _FP_FRAC_WORD_4(R, 1), 0, _c_f1, _c_f0, \
+                      _FP_FRAC_WORD_4(R, 3), _FP_FRAC_WORD_4(R, 2), _FP_FRAC_WORD_4(R, 1));                 \
    } while(0)
 
 #define _FP_MUL_MEAT_2_wide(wfracbits, R, X, Y, doit)               \
@@ -270,30 +277,33 @@
    Do only 3 multiplications instead of four. This one is for machines
    where multiplication is much more expensive than subtraction.  */
 
-#define _FP_MUL_MEAT_DW_2_wide_3mul(wfracbits, R, X, Y, doit)                                                                                                    \
-   do                                                                                                                                                            \
-   {                                                                                                                                                             \
-      _FP_FRAC_DECL_2(_b);                                                                                                                                       \
-      _FP_FRAC_DECL_2(_c);                                                                                                                                       \
-      _FP_W_TYPE _d;                                                                                                                                             \
-      int _c1, _c2;                                                                                                                                              \
-                                                                                                                                                                 \
-      _b_f0 = X##_f0 + X##_f1;                                                                                                                                   \
-      _c1 = _b_f0 < X##_f0;                                                                                                                                      \
-      _b_f1 = Y##_f0 + Y##_f1;                                                                                                                                   \
-      _c2 = _b_f1 < Y##_f0;                                                                                                                                      \
-      doit(_d, _FP_FRAC_WORD_4(R, 0), X##_f0, Y##_f0);                                                                                                           \
-      doit(_FP_FRAC_WORD_4(R, 2), _FP_FRAC_WORD_4(R, 1), _b_f0, _b_f1);                                                                                          \
-      doit(_c_f1, _c_f0, X##_f1, Y##_f1);                                                                                                                        \
-                                                                                                                                                                 \
-      _b_f0 &= -_c2;                                                                                                                                             \
-      _b_f1 &= -_c1;                                                                                                                                             \
-      __FP_FRAC_ADD_3(_FP_FRAC_WORD_4(R, 3), _FP_FRAC_WORD_4(R, 2), _FP_FRAC_WORD_4(R, 1), (_c1 & _c2), 0, _d, 0, _FP_FRAC_WORD_4(R, 2), _FP_FRAC_WORD_4(R, 1)); \
-      __FP_FRAC_ADDI_2(_FP_FRAC_WORD_4(R, 3), _FP_FRAC_WORD_4(R, 2), _b_f0);                                                                                     \
-      __FP_FRAC_ADDI_2(_FP_FRAC_WORD_4(R, 3), _FP_FRAC_WORD_4(R, 2), _b_f1);                                                                                     \
-      __FP_FRAC_DEC_3(_FP_FRAC_WORD_4(R, 3), _FP_FRAC_WORD_4(R, 2), _FP_FRAC_WORD_4(R, 1), 0, _d, _FP_FRAC_WORD_4(R, 0));                                        \
-      __FP_FRAC_DEC_3(_FP_FRAC_WORD_4(R, 3), _FP_FRAC_WORD_4(R, 2), _FP_FRAC_WORD_4(R, 1), 0, _c_f1, _c_f0);                                                     \
-      __FP_FRAC_ADD_2(_FP_FRAC_WORD_4(R, 3), _FP_FRAC_WORD_4(R, 2), _c_f1, _c_f0, _FP_FRAC_WORD_4(R, 3), _FP_FRAC_WORD_4(R, 2));                                 \
+#define _FP_MUL_MEAT_DW_2_wide_3mul(wfracbits, R, X, Y, doit)                                                     \
+   do                                                                                                             \
+   {                                                                                                              \
+      _FP_FRAC_DECL_2(_b);                                                                                        \
+      _FP_FRAC_DECL_2(_c);                                                                                        \
+      _FP_W_TYPE _d;                                                                                              \
+      int _c1, _c2;                                                                                               \
+                                                                                                                  \
+      _b_f0 = X##_f0 + X##_f1;                                                                                    \
+      _c1 = _b_f0 < X##_f0;                                                                                       \
+      _b_f1 = Y##_f0 + Y##_f1;                                                                                    \
+      _c2 = _b_f1 < Y##_f0;                                                                                       \
+      doit(_d, _FP_FRAC_WORD_4(R, 0), X##_f0, Y##_f0);                                                            \
+      doit(_FP_FRAC_WORD_4(R, 2), _FP_FRAC_WORD_4(R, 1), _b_f0, _b_f1);                                           \
+      doit(_c_f1, _c_f0, X##_f1, Y##_f1);                                                                         \
+                                                                                                                  \
+      _b_f0 &= -_c2;                                                                                              \
+      _b_f1 &= -_c1;                                                                                              \
+      __FP_FRAC_ADD_3(_FP_FRAC_WORD_4(R, 3), _FP_FRAC_WORD_4(R, 2), _FP_FRAC_WORD_4(R, 1), (_c1 & _c2), 0, _d, 0, \
+                      _FP_FRAC_WORD_4(R, 2), _FP_FRAC_WORD_4(R, 1));                                              \
+      __FP_FRAC_ADDI_2(_FP_FRAC_WORD_4(R, 3), _FP_FRAC_WORD_4(R, 2), _b_f0);                                      \
+      __FP_FRAC_ADDI_2(_FP_FRAC_WORD_4(R, 3), _FP_FRAC_WORD_4(R, 2), _b_f1);                                      \
+      __FP_FRAC_DEC_3(_FP_FRAC_WORD_4(R, 3), _FP_FRAC_WORD_4(R, 2), _FP_FRAC_WORD_4(R, 1), 0, _d,                 \
+                      _FP_FRAC_WORD_4(R, 0));                                                                     \
+      __FP_FRAC_DEC_3(_FP_FRAC_WORD_4(R, 3), _FP_FRAC_WORD_4(R, 2), _FP_FRAC_WORD_4(R, 1), 0, _c_f1, _c_f0);      \
+      __FP_FRAC_ADD_2(_FP_FRAC_WORD_4(R, 3), _FP_FRAC_WORD_4(R, 2), _c_f1, _c_f0, _FP_FRAC_WORD_4(R, 3),          \
+                      _FP_FRAC_WORD_4(R, 2));                                                                     \
    } while(0)
 
 #define _FP_MUL_MEAT_2_wide_3mul(wfracbits, R, X, Y, doit)          \
@@ -347,82 +357,90 @@
    SETFETZ is a macro which will disable all FPU exceptions and set rounding
    towards zero,  RESETFE should optionally reset it back.  */
 
-#define _FP_MUL_MEAT_2_120_240_double(wfracbits, R, X, Y, setfetz, resetfe)                                                                                                                                                                       \
-   do                                                                                                                                                                                                                                             \
-   {                                                                                                                                                                                                                                              \
-      static const double _const[] = {/* 2^-24 */ 5.9604644775390625e-08, /* 2^-48 */ 3.5527136788005009e-15, /* 2^-72 */ 2.1175823681357508e-22, /* 2^-96 */ 1.2621774483536189e-29, /* 2^28 */ 2.68435456e+08,          /* 2^4 */ 1.600000e+01, \
-                                      /* 2^-20 */ 9.5367431640625e-07,    /* 2^-44 */ 5.6843418860808015e-14, /* 2^-68 */ 3.3881317890172014e-21, /* 2^-92 */ 2.0194839173657902e-28, /* 2^-116 */ 1.2037062152420224e-35};                       \
-      double _a240, _b240, _c240, _d240, _e240, _f240, _g240, _h240, _i240, _j240, _k240;                                                                                                                                                         \
-      union {                                                                                                                                                                                                                                     \
-         double d;                                                                                                                                                                                                                                \
-         UDItype i;                                                                                                                                                                                                                               \
-      } _l240, _m240, _n240, _o240, _p240, _q240, _r240, _s240;                                                                                                                                                                                   \
-      UDItype _t240, _u240, _v240, _w240, _x240, _y240 = 0;                                                                                                                                                                                       \
-                                                                                                                                                                                                                                                  \
-      if(wfracbits < 106 || wfracbits > 120)                                                                                                                                                                                                      \
-         abort();                                                                                                                                                                                                                                 \
-                                                                                                                                                                                                                                                  \
-      setfetz;                                                                                                                                                                                                                                    \
-                                                                                                                                                                                                                                                  \
-      _e240 = (double)(long)(X##_f0 & 0xffffff);                                                                                                                                                                                                  \
-      _j240 = (double)(long)(Y##_f0 & 0xffffff);                                                                                                                                                                                                  \
-      _d240 = (double)(long)((X##_f0 >> 24) & 0xffffff);                                                                                                                                                                                          \
-      _i240 = (double)(long)((Y##_f0 >> 24) & 0xffffff);                                                                                                                                                                                          \
-      _c240 = (double)(long)(((X##_f1 << 16) & 0xffffff) | (X##_f0 >> 48));                                                                                                                                                                       \
-      _h240 = (double)(long)(((Y##_f1 << 16) & 0xffffff) | (Y##_f0 >> 48));                                                                                                                                                                       \
-      _b240 = (double)(long)((X##_f1 >> 8) & 0xffffff);                                                                                                                                                                                           \
-      _g240 = (double)(long)((Y##_f1 >> 8) & 0xffffff);                                                                                                                                                                                           \
-      _a240 = (double)(long)(X##_f1 >> 32);                                                                                                                                                                                                       \
-      _f240 = (double)(long)(Y##_f1 >> 32);                                                                                                                                                                                                       \
-      _e240 *= _const[3];                                                                                                                                                                                                                         \
-      _j240 *= _const[3];                                                                                                                                                                                                                         \
-      _d240 *= _const[2];                                                                                                                                                                                                                         \
-      _i240 *= _const[2];                                                                                                                                                                                                                         \
-      _c240 *= _const[1];                                                                                                                                                                                                                         \
-      _h240 *= _const[1];                                                                                                                                                                                                                         \
-      _b240 *= _const[0];                                                                                                                                                                                                                         \
-      _g240 *= _const[0];                                                                                                                                                                                                                         \
-      _s240.d = _e240 * _j240;                                                                                                                                                                                                                    \
-      _r240.d = _d240 * _j240 + _e240 * _i240;                                                                                                                                                                                                    \
-      _q240.d = _c240 * _j240 + _d240 * _i240 + _e240 * _h240;                                                                                                                                                                                    \
-      _p240.d = _b240 * _j240 + _c240 * _i240 + _d240 * _h240 + _e240 * _g240;                                                                                                                                                                    \
-      _o240.d = _a240 * _j240 + _b240 * _i240 + _c240 * _h240 + _d240 * _g240 + _e240 * _f240;                                                                                                                                                    \
-      _n240.d = _a240 * _i240 + _b240 * _h240 + _c240 * _g240 + _d240 * _f240;                                                                                                                                                                    \
-      _m240.d = _a240 * _h240 + _b240 * _g240 + _c240 * _f240;                                                                                                                                                                                    \
-      _l240.d = _a240 * _g240 + _b240 * _f240;                                                                                                                                                                                                    \
-      _k240 = _a240 * _f240;                                                                                                                                                                                                                      \
-      _r240.d += _s240.d;                                                                                                                                                                                                                         \
-      _q240.d += _r240.d;                                                                                                                                                                                                                         \
-      _p240.d += _q240.d;                                                                                                                                                                                                                         \
-      _o240.d += _p240.d;                                                                                                                                                                                                                         \
-      _n240.d += _o240.d;                                                                                                                                                                                                                         \
-      _m240.d += _n240.d;                                                                                                                                                                                                                         \
-      _l240.d += _m240.d;                                                                                                                                                                                                                         \
-      _k240 += _l240.d;                                                                                                                                                                                                                           \
-      _s240.d -= ((_const[10] + _s240.d) - _const[10]);                                                                                                                                                                                           \
-      _r240.d -= ((_const[9] + _r240.d) - _const[9]);                                                                                                                                                                                             \
-      _q240.d -= ((_const[8] + _q240.d) - _const[8]);                                                                                                                                                                                             \
-      _p240.d -= ((_const[7] + _p240.d) - _const[7]);                                                                                                                                                                                             \
-      _o240.d += _const[7];                                                                                                                                                                                                                       \
-      _n240.d += _const[6];                                                                                                                                                                                                                       \
-      _m240.d += _const[5];                                                                                                                                                                                                                       \
-      _l240.d += _const[4];                                                                                                                                                                                                                       \
-      if(_s240.d != 0.0)                                                                                                                                                                                                                          \
-         _y240 = 1;                                                                                                                                                                                                                               \
-      if(_r240.d != 0.0)                                                                                                                                                                                                                          \
-         _y240 = 1;                                                                                                                                                                                                                               \
-      if(_q240.d != 0.0)                                                                                                                                                                                                                          \
-         _y240 = 1;                                                                                                                                                                                                                               \
-      if(_p240.d != 0.0)                                                                                                                                                                                                                          \
-         _y240 = 1;                                                                                                                                                                                                                               \
-      _t240 = (DItype)_k240;                                                                                                                                                                                                                      \
-      _u240 = _l240.i;                                                                                                                                                                                                                            \
-      _v240 = _m240.i;                                                                                                                                                                                                                            \
-      _w240 = _n240.i;                                                                                                                                                                                                                            \
-      _x240 = _o240.i;                                                                                                                                                                                                                            \
-      R##_f1 = ((_t240 << (128 - (wfracbits - 1))) | ((_u240 & 0xffffff) >> ((wfracbits - 1) - 104)));                                                                                                                                            \
-      R##_f0 = (((_u240 & 0xffffff) << (168 - (wfracbits - 1))) | ((_v240 & 0xffffff) << (144 - (wfracbits - 1))) | ((_w240 & 0xffffff) << (120 - (wfracbits - 1))) | ((_x240 & 0xffffff) >> ((wfracbits - 1) - 96)) | _y240);                    \
-      resetfe;                                                                                                                                                                                                                                    \
+#define _FP_MUL_MEAT_2_120_240_double(wfracbits, R, X, Y, setfetz, resetfe)                                           \
+   do                                                                                                                 \
+   {                                                                                                                  \
+      static const double _const[] = {                                                                                \
+          /* 2^-24 */ 5.9604644775390625e-08, /* 2^-48 */ 3.5527136788005009e-15,                                     \
+          /* 2^-72 */ 2.1175823681357508e-22, /* 2^-96 */ 1.2621774483536189e-29,                                     \
+          /* 2^28 */ 2.68435456e+08,          /* 2^4 */ 1.600000e+01,                                                 \
+          /* 2^-20 */ 9.5367431640625e-07,    /* 2^-44 */ 5.6843418860808015e-14,                                     \
+          /* 2^-68 */ 3.3881317890172014e-21, /* 2^-92 */ 2.0194839173657902e-28,                                     \
+          /* 2^-116 */ 1.2037062152420224e-35};                                                                       \
+      double _a240, _b240, _c240, _d240, _e240, _f240, _g240, _h240, _i240, _j240, _k240;                             \
+      union                                                                                                           \
+      {                                                                                                               \
+         double d;                                                                                                    \
+         UDItype i;                                                                                                   \
+      } _l240, _m240, _n240, _o240, _p240, _q240, _r240, _s240;                                                       \
+      UDItype _t240, _u240, _v240, _w240, _x240, _y240 = 0;                                                           \
+                                                                                                                      \
+      if(wfracbits < 106 || wfracbits > 120)                                                                          \
+         abort();                                                                                                     \
+                                                                                                                      \
+      setfetz;                                                                                                        \
+                                                                                                                      \
+      _e240 = (double)(long)(X##_f0 & 0xffffff);                                                                      \
+      _j240 = (double)(long)(Y##_f0 & 0xffffff);                                                                      \
+      _d240 = (double)(long)((X##_f0 >> 24) & 0xffffff);                                                              \
+      _i240 = (double)(long)((Y##_f0 >> 24) & 0xffffff);                                                              \
+      _c240 = (double)(long)(((X##_f1 << 16) & 0xffffff) | (X##_f0 >> 48));                                           \
+      _h240 = (double)(long)(((Y##_f1 << 16) & 0xffffff) | (Y##_f0 >> 48));                                           \
+      _b240 = (double)(long)((X##_f1 >> 8) & 0xffffff);                                                               \
+      _g240 = (double)(long)((Y##_f1 >> 8) & 0xffffff);                                                               \
+      _a240 = (double)(long)(X##_f1 >> 32);                                                                           \
+      _f240 = (double)(long)(Y##_f1 >> 32);                                                                           \
+      _e240 *= _const[3];                                                                                             \
+      _j240 *= _const[3];                                                                                             \
+      _d240 *= _const[2];                                                                                             \
+      _i240 *= _const[2];                                                                                             \
+      _c240 *= _const[1];                                                                                             \
+      _h240 *= _const[1];                                                                                             \
+      _b240 *= _const[0];                                                                                             \
+      _g240 *= _const[0];                                                                                             \
+      _s240.d = _e240 * _j240;                                                                                        \
+      _r240.d = _d240 * _j240 + _e240 * _i240;                                                                        \
+      _q240.d = _c240 * _j240 + _d240 * _i240 + _e240 * _h240;                                                        \
+      _p240.d = _b240 * _j240 + _c240 * _i240 + _d240 * _h240 + _e240 * _g240;                                        \
+      _o240.d = _a240 * _j240 + _b240 * _i240 + _c240 * _h240 + _d240 * _g240 + _e240 * _f240;                        \
+      _n240.d = _a240 * _i240 + _b240 * _h240 + _c240 * _g240 + _d240 * _f240;                                        \
+      _m240.d = _a240 * _h240 + _b240 * _g240 + _c240 * _f240;                                                        \
+      _l240.d = _a240 * _g240 + _b240 * _f240;                                                                        \
+      _k240 = _a240 * _f240;                                                                                          \
+      _r240.d += _s240.d;                                                                                             \
+      _q240.d += _r240.d;                                                                                             \
+      _p240.d += _q240.d;                                                                                             \
+      _o240.d += _p240.d;                                                                                             \
+      _n240.d += _o240.d;                                                                                             \
+      _m240.d += _n240.d;                                                                                             \
+      _l240.d += _m240.d;                                                                                             \
+      _k240 += _l240.d;                                                                                               \
+      _s240.d -= ((_const[10] + _s240.d) - _const[10]);                                                               \
+      _r240.d -= ((_const[9] + _r240.d) - _const[9]);                                                                 \
+      _q240.d -= ((_const[8] + _q240.d) - _const[8]);                                                                 \
+      _p240.d -= ((_const[7] + _p240.d) - _const[7]);                                                                 \
+      _o240.d += _const[7];                                                                                           \
+      _n240.d += _const[6];                                                                                           \
+      _m240.d += _const[5];                                                                                           \
+      _l240.d += _const[4];                                                                                           \
+      if(_s240.d != 0.0)                                                                                              \
+         _y240 = 1;                                                                                                   \
+      if(_r240.d != 0.0)                                                                                              \
+         _y240 = 1;                                                                                                   \
+      if(_q240.d != 0.0)                                                                                              \
+         _y240 = 1;                                                                                                   \
+      if(_p240.d != 0.0)                                                                                              \
+         _y240 = 1;                                                                                                   \
+      _t240 = (DItype)_k240;                                                                                          \
+      _u240 = _l240.i;                                                                                                \
+      _v240 = _m240.i;                                                                                                \
+      _w240 = _n240.i;                                                                                                \
+      _x240 = _o240.i;                                                                                                \
+      R##_f1 = ((_t240 << (128 - (wfracbits - 1))) | ((_u240 & 0xffffff) >> ((wfracbits - 1) - 104)));                \
+      R##_f0 =                                                                                                        \
+          (((_u240 & 0xffffff) << (168 - (wfracbits - 1))) | ((_v240 & 0xffffff) << (144 - (wfracbits - 1))) |        \
+           ((_w240 & 0xffffff) << (120 - (wfracbits - 1))) | ((_x240 & 0xffffff) >> ((wfracbits - 1) - 96)) | _y240); \
+      resetfe;                                                                                                        \
    } while(0)
 
 /*

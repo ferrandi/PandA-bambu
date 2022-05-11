@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -45,20 +45,22 @@
 
 #include "reg_binding_creator.hpp"
 
-#include <boost/graph/adjacency_list.hpp>
+#include <boost/graph/adjacency_matrix.hpp>
 
 class conflict_based_register : public reg_binding_creator
 {
  protected:
-   typedef boost::adjacency_list<boost::vecS, boost::vecS, boost::undirectedS> conflict_graph;
-   typedef boost::graph_traits<conflict_graph>::vertex_descriptor cg_vertex_descriptor;
-   typedef boost::graph_traits<conflict_graph>::vertices_size_type cg_vertices_size_type;
-   typedef boost::property_map<conflict_graph, boost::vertex_index_t>::const_type cg_vertex_index_map;
+   using conflict_graph = boost::adjacency_matrix<boost::undirectedS>;
+   using cg_vertex_descriptor = boost::graph_traits<conflict_graph>::vertex_descriptor;
+   using cg_vertices_size_type = boost::graph_traits<conflict_graph>::vertices_size_type;
+   using cg_vertex_index_map = boost::property_map<conflict_graph, boost::vertex_index_t>::const_type;
 
    /// conflict graph
-   conflict_graph cg;
+   conflict_graph* cg;
 
-   boost::iterator_property_map<cg_vertices_size_type*, cg_vertex_index_map, cg_vertices_size_type, cg_vertices_size_type&> color;
+   boost::iterator_property_map<cg_vertices_size_type*, cg_vertex_index_map, cg_vertices_size_type,
+                                cg_vertices_size_type&>
+       color;
 
  private:
    std::vector<cg_vertices_size_type> color_vec;
@@ -69,7 +71,9 @@ class conflict_based_register : public reg_binding_creator
     * @param design_flow_manager is the design flow manager
     * @param hls_flow_step_type is the register binding algorithm
     */
-   conflict_based_register(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStep_Type hls_flow_step_type);
+   conflict_based_register(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId,
+                           const DesignFlowManagerConstRef design_flow_manager,
+                           const HLSFlowStep_Type hls_flow_step_type);
 
    /**
     * Destructor of the class.

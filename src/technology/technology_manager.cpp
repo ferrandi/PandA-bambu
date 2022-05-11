@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -109,11 +109,14 @@ void technology_manager::print(std::ostream& os) const
    }
 }
 
-bool technology_manager::can_implement(const std::string& fu_name, const std::string& op_name, const std::string& Library) const
+bool technology_manager::can_implement(const std::string& fu_name, const std::string& op_name,
+                                       const std::string& Library) const
 {
    technology_nodeRef node = get_fu(fu_name, Library);
    if(!node)
+   {
       return false;
+   }
    return GetPointer<functional_unit>(node)->get_operation(op_name) ? true : false;
 }
 
@@ -121,26 +124,32 @@ technology_nodeRef technology_manager::get_fu(const std::string& fu_name, const 
 {
    THROW_ASSERT(Library.size(), "Library not specified for component " + fu_name);
    if(library_map.find(Library) != library_map.end() and library_map.find(Library)->second->is_fu(fu_name))
+   {
       return library_map.find(Library)->second->get_fu(fu_name);
+   }
    return technology_nodeRef();
 }
 
-ControlStep technology_manager::get_initiation_time(const std::string& fu_name, const std::string& op_name, const std::string& Library) const
+ControlStep technology_manager::get_initiation_time(const std::string& fu_name, const std::string& op_name,
+                                                    const std::string& Library) const
 {
    technology_nodeRef node = get_fu(fu_name, Library);
    THROW_ASSERT(GetPointer<functional_unit>(node), "Unit " + fu_name + " not stored into library (" + Library + ")");
    technology_nodeRef node_op = GetPointer<functional_unit>(node)->get_operation(op_name);
-   THROW_ASSERT(GetPointer<operation>(node_op), "Operation " + op_name + " not stored into " + fu_name + " library (" + Library + ")");
+   THROW_ASSERT(GetPointer<operation>(node_op),
+                "Operation " + op_name + " not stored into " + fu_name + " library (" + Library + ")");
    THROW_ASSERT(GetPointer<operation>(node_op)->time_m, "Missing timing information");
    return GetPointer<operation>(node_op)->time_m->get_initiation_time();
 }
 
-double technology_manager::get_execution_time(const std::string& fu_name, const std::string& op_name, const std::string& Library) const
+double technology_manager::get_execution_time(const std::string& fu_name, const std::string& op_name,
+                                              const std::string& Library) const
 {
    technology_nodeRef node = get_fu(fu_name, Library);
    THROW_ASSERT(GetPointer<functional_unit>(node), "Unit " + fu_name + " not stored into library (" + Library + ")");
    technology_nodeRef node_op = GetPointer<functional_unit>(node)->get_operation(op_name);
-   THROW_ASSERT(GetPointer<operation>(node_op), "Operation " + op_name + " not stored into " + fu_name + " library (" + Library + ")");
+   THROW_ASSERT(GetPointer<operation>(node_op),
+                "Operation " + op_name + " not stored into " + fu_name + " library (" + Library + ")");
    THROW_ASSERT(GetPointer<operation>(node_op)->time_m, "Missing timing information");
    return GetPointer<operation>(node_op)->time_m->get_execution_time();
 }
@@ -149,7 +158,8 @@ double technology_manager::get_area(const std::string& fu_name, const std::strin
 {
    technology_nodeRef node = get_fu(fu_name, Library);
    THROW_ASSERT(GetPointer<functional_unit>(node), "Unit " + fu_name + " not stored into library (" + Library + ")");
-   THROW_ASSERT(GetPointer<functional_unit>(node)->area_m, "Unit " + fu_name + "(" + Library + ") does not store area model");
+   THROW_ASSERT(GetPointer<functional_unit>(node)->area_m,
+                "Unit " + fu_name + "(" + Library + ") does not store area model");
    return GetPointer<functional_unit>(node)->area_m->get_area_value();
 }
 
@@ -172,7 +182,8 @@ double technology_manager::get_width(const std::string&fu_name, const std::strin
 #endif
 
 #if HAVE_CIRCUIT_BUILT
-void technology_manager::add_resource(const std::string& Library, const std::string& fu_name, const structural_managerRef CM, const bool is_builtin)
+void technology_manager::add_resource(const std::string& Library, const std::string& fu_name,
+                                      const structural_managerRef CM, const bool is_builtin)
 {
    technology_nodeRef curr = get_fu(fu_name, Library);
    if(!curr)
@@ -193,7 +204,8 @@ void technology_manager::add_resource(const std::string& Library, const std::str
 }
 #endif
 
-void technology_manager::add_operation(const std::string& Library, const std::string& fu_name, const std::string& operation_name)
+void technology_manager::add_operation(const std::string& Library, const std::string& fu_name,
+                                       const std::string& operation_name)
 {
    THROW_ASSERT(library_map.find(Library) != library_map.end(), "Library \"" + Library + "\" not found");
    THROW_ASSERT(library_map[Library]->is_fu(fu_name), "Unit \"" + fu_name + "\" not found in library \"" + Library);
@@ -211,7 +223,9 @@ void technology_manager::add(const technology_nodeRef curr, const std::string& L
    {
       bool std = true;
       if(Library == CG_LIBRARY || Library == DESIGN)
+      {
          std = false;
+      }
       library_managerRef lib(new library_manager(Library, Param, std));
       library_map[Library] = lib;
       libraries.push_back(Library);
@@ -230,7 +244,9 @@ void technology_manager::xload(const xml_element* node, const target_deviceRef d
    {
       const auto* Enode = GetPointer<const xml_element>(iter);
       if(!Enode)
+      {
          continue;
+      }
       if(Enode->get_name() == "information")
       {
          const attribute_sequence::attribute_list& attr_list = Enode->get_attributes();
@@ -263,37 +279,53 @@ void technology_manager::xload(const xml_element* node, const target_deviceRef d
          {
             const library_manager::fu_map_type& fus = LM->get_library_fu();
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Updating library " + library_name);
-            for(auto f = fus.begin(); f != fus.end(); ++f)
+            for(const auto& fu : fus)
             {
-               if(library_map[library_name]->is_fu(f->first))
+               if(library_map[library_name]->is_fu(fu.first))
                {
                   /// First part of the condition is for skip template
-                  if(not GetPointer<const functional_unit>(library_map[library_name]->get_fu(f->first)) or
-                     GetPointer<const functional_unit>(library_map[library_name]->get_fu(f->first))->characterization_timestamp <= GetPointer<const functional_unit>(f->second)->characterization_timestamp)
+                  if(not GetPointer<const functional_unit>(library_map[library_name]->get_fu(fu.first)) or
+                     GetPointer<const functional_unit>(library_map[library_name]->get_fu(fu.first))
+                             ->characterization_timestamp <=
+                         GetPointer<const functional_unit>(fu.second)->characterization_timestamp)
                   {
-                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                    "-->Updating " + f->first +
-                                        (GetPointer<const functional_unit>(library_map[library_name]->get_fu(f->first)) ?
-                                             " characterized at " + STR(GetPointer<const functional_unit>(f->second)->characterization_timestamp) + " - Previous characterization is at " +
-                                                 STR(GetPointer<const functional_unit>(library_map[library_name]->get_fu(f->first))->characterization_timestamp) :
-                                             ""));
-                     library_map[library_name]->update(f->second);
+                     INDENT_DBG_MEX(
+                         DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                         "-->Updating " + fu.first +
+                             (GetPointer<const functional_unit>(library_map[library_name]->get_fu(fu.first)) ?
+                                  " characterized at " +
+                                      STR(GetPointer<const functional_unit>(fu.second)->characterization_timestamp) +
+                                      " - Previous characterization is at " +
+                                      STR(GetPointer<const functional_unit>(library_map[library_name]->get_fu(fu.first))
+                                              ->characterization_timestamp) :
+                                  ""));
+                     library_map[library_name]->update(fu.second);
                   }
                   else
                   {
-                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                    "-->Not updating " + f->first +
-                                        (GetPointer<const functional_unit>(library_map[library_name]->get_fu(f->first)) ?
-                                             " characterized at " + STR(GetPointer<const functional_unit>(f->second)->characterization_timestamp) + " - Previous characterization is at " +
-                                                 STR(GetPointer<const functional_unit>(library_map[library_name]->get_fu(f->first))->characterization_timestamp) :
-                                             ""));
+                     INDENT_DBG_MEX(
+                         DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                         "-->Not updating " + fu.first +
+                             (GetPointer<const functional_unit>(library_map[library_name]->get_fu(fu.first)) ?
+                                  " characterized at " +
+                                      STR(GetPointer<const functional_unit>(fu.second)->characterization_timestamp) +
+                                      " - Previous characterization is at " +
+                                      STR(GetPointer<const functional_unit>(library_map[library_name]->get_fu(fu.first))
+                                              ->characterization_timestamp) :
+                                  ""));
                   }
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
                }
                else
                {
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Loading " + f->first + (GetPointer<const functional_unit>(f->second) ? " characterized at " + STR(GetPointer<const functional_unit>(f->second)->characterization_timestamp) : ""));
-                  library_map[library_name]->add(f->second);
+                  INDENT_DBG_MEX(
+                      DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                      "-->Loading " + fu.first +
+                          (GetPointer<const functional_unit>(fu.second) ?
+                               " characterized at " +
+                                   STR(GetPointer<const functional_unit>(fu.second)->characterization_timestamp) :
+                               ""));
+                  library_map[library_name]->add(fu.second);
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
                }
             }
@@ -312,7 +344,8 @@ void technology_manager::xload(const xml_element* node, const target_deviceRef d
 }
 
 #if HAVE_BOOLEAN_PARSER_BUILT
-void technology_manager::gload(const std::string& file_name, const fileIO_istreamRef file, const technology_managerRef TM, const ParameterConstRef Param)
+void technology_manager::gload(const std::string& file_name, const fileIO_istreamRef file,
+                               const technology_managerRef TM, const ParameterConstRef Param)
 {
    std::string library_name = file_name.substr(0, file_name.find_last_of("."));
 
@@ -349,7 +382,8 @@ void technology_manager::gload(const std::string& file_name, const fileIO_istrea
 }
 #endif
 
-void technology_manager::xwrite(xml_element* rootnode, TargetDevice_Type dv_type, const CustomOrderedSet<std::string>& _libraries)
+void technology_manager::xwrite(xml_element* rootnode, TargetDevice_Type dv_type,
+                                const CustomOrderedSet<std::string>& _libraries)
 {
    /// Set of libraries sorted by name
    CustomOrderedSet<std::string> sorted_libraries;
@@ -360,7 +394,9 @@ void technology_manager::xwrite(xml_element* rootnode, TargetDevice_Type dv_type
    for(const auto& library : sorted_libraries)
    {
       if(library == "design")
+      {
          continue;
+      }
       if(_libraries.empty() || _libraries.count(library))
       {
          if(get_library_manager(library)->get_library_fu().size())
@@ -372,7 +408,8 @@ void technology_manager::xwrite(xml_element* rootnode, TargetDevice_Type dv_type
 }
 
 #if HAVE_FROM_LIBERTY
-void technology_manager::lib_write(const std::string& filename, TargetDevice_Type dv_type, const CustomOrderedSet<std::string>& local_libraries)
+void technology_manager::lib_write(const std::string& filename, TargetDevice_Type dv_type,
+                                   const CustomOrderedSet<std::string>& local_libraries)
 {
    unsigned int output_level = Param->getOption<unsigned int>(OPT_output_level);
    try
@@ -413,7 +450,8 @@ void technology_manager::lib_write(const std::string& filename, TargetDevice_Typ
 #endif
 
 #if HAVE_EXPERIMENTAL
-void technology_manager::lef_write(const std::string& filename, TargetDevice_Type dv_type, const CustomOrderedSet<std::string>& _libraries)
+void technology_manager::lef_write(const std::string& filename, TargetDevice_Type dv_type,
+                                   const CustomOrderedSet<std::string>& _libraries)
 {
    unsigned int output_level = Param->getOption<unsigned int>(OPT_output_level);
    try
@@ -460,7 +498,9 @@ std::string technology_manager::get_library(const std::string& Name) const
       Library = librarie;
       THROW_ASSERT(library_map.find(Library) != library_map.end(), "Library " + Library + " not found");
       if(library_map.find(Library)->second->is_fu(Name))
+      {
          return Library;
+      }
    }
    /// empty string. it means that the cell is not contained into any library
    return "";
@@ -469,8 +509,11 @@ std::string technology_manager::get_library(const std::string& Name) const
 #if HAVE_PHYSICAL_LIBRARY_MODELS_BUILT
 size_t technology_manager::get_library_count(const std::string& Name) const
 {
-   if(std::find(libraries.begin(), libraries.end(), Name) != libraries.end() && library_map.find(Name) != library_map.end())
+   if(std::find(libraries.begin(), libraries.end(), Name) != libraries.end() &&
+      library_map.find(Name) != library_map.end())
+   {
       return library_map.find(Name)->second->get_gate_count();
+   }
 
    return 0;
 }
@@ -491,11 +534,15 @@ void technology_manager::erase_library(const std::string& Name)
 {
    library_map.erase(Name);
    if(std::find(libraries.begin(), libraries.end(), Name) != libraries.end())
+   {
       libraries.erase(std::find(libraries.begin(), libraries.end(), Name));
+   }
 }
 
 #if HAVE_CIRCUIT_BUILT
-void technology_manager::add_storage(const std::string& s_name, const structural_managerRef CM, const std::string& Library, const unsigned int bits, const unsigned int words, const unsigned int readinputs, const unsigned int writeinputs,
+void technology_manager::add_storage(const std::string& s_name, const structural_managerRef CM,
+                                     const std::string& Library, const unsigned int bits, const unsigned int words,
+                                     const unsigned int readinputs, const unsigned int writeinputs,
                                      const unsigned int readwriteinputs)
 {
    technology_nodeRef curr_storage = technology_nodeRef(new storage_unit);
@@ -518,13 +565,23 @@ bool technology_manager::IsBuiltin(const std::string& component_name) const
 const functional_unit* technology_manager::CGetSetupHoldFU() const
 {
    const technology_nodeConstRef f_unit_as = get_fu("ASSIGN_SINGLE_UNSIGNED_FU", LIBRARY_STD_FU);
-   THROW_ASSERT(f_unit_as, "Library miss component: ASSIGN_SINGLE_UNSIGNED_FU");
-   return GetPointer<const functional_unit>(f_unit_as);
+   if(f_unit_as)
+   {
+      return GetPointer<const functional_unit>(f_unit_as);
+   }
+   else
+   {
+      return nullptr;
+   }
 }
 
 double technology_manager::CGetSetupHoldTime() const
 {
    const auto fu_as = CGetSetupHoldFU();
+   if(!fu_as)
+   {
+      return 0.1;
+   }
    const technology_nodeConstRef op_as_node = fu_as->get_operation("ASSIGN_SINGLE");
    const auto op_ASSIGN = GetPointer<const operation>(op_as_node);
    THROW_ASSERT(op_ASSIGN->time_m->get_execution_time() > 0.0, "expected a setup time greater than zero");
@@ -533,5 +590,13 @@ double technology_manager::CGetSetupHoldTime() const
 
 TimeStamp technology_manager::CGetSetupHoldTimeStamp() const
 {
-   return CGetSetupHoldFU()->characterization_timestamp;
+   auto fu = CGetSetupHoldFU();
+   if(fu)
+   {
+      return CGetSetupHoldFU()->characterization_timestamp;
+   }
+   else
+   {
+      return TimeStamp();
+   }
 }

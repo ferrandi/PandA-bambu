@@ -30,12 +30,15 @@
 #include <variant>
 
 namespace absl {
+ABSL_NAMESPACE_BEGIN
 using std::bad_variant_access;
+ABSL_NAMESPACE_END
 }  // namespace absl
 
 #else  // ABSL_USES_STD_VARIANT
 
 namespace absl {
+ABSL_NAMESPACE_BEGIN
 
 // -----------------------------------------------------------------------------
 // bad_variant_access
@@ -67,10 +70,11 @@ class bad_variant_access : public std::exception {
 
 namespace variant_internal {
 
-[[noreturn]] void ThrowBadVariantAccess();
-[[noreturn]] void Rethrow();
+[[noreturn]] ABSL_DLL void ThrowBadVariantAccess();
+[[noreturn]] ABSL_DLL void Rethrow();
 
 }  // namespace variant_internal
+ABSL_NAMESPACE_END
 }  // namespace absl
 
 #endif  // ABSL_USES_STD_VARIANT

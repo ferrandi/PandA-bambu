@@ -1,11 +1,21 @@
 Change Log
 ==========
 
-v0.2 (not yet released)
+v0.3 (not yet released)
 -----------------------
+
+* I/O:
+    - Read GENLIB files using *lorina* (`genlib_reader`) `#421 <https://github.com/lsils/mockturtle/pull/421>`_
+* Algorithms:
+    - Logic resynthesis engines for MIGs (`mig_resyn_engines` `#414 <https://github.com/lsils/mockturtle/pull/414>`_) and AIGs/XAGs (`xag_resyn_engines` `#425 <https://github.com/lsils/mockturtle/pull/425>`_)
+
+v0.2 (February 16, 2021)
+------------------------
 
 * Network interface:
     - `is_function` `#148 <https://github.com/lsils/mockturtle/pull/148>`_
+    - `is_nary_and`, `is_nary_or`, `is_nary_xor` `#304 <https://github.com/lsils/mockturtle/pull/304>`_
+    - `substitute_nodes` `#412 <https://github.com/lsils/mockturtle/pull/412>`_
 * Framework for performing quality and performance experiments `#140 <https://github.com/lsils/mockturtle/pull/140>`_
 * Algorithms:
     - CNF generation (`generate_cnf`) `#145 <https://github.com/lsils/mockturtle/pull/145>`_
@@ -18,15 +28,38 @@ v0.2 (not yet released)
     - Cleanup LUT networks (`cleanup_luts`) `#191 <https://github.com/lsils/mockturtle/pull/191>`_
     - Extract linear subcircuits in XAGs (`extract_linear_circuit` and `merge_linear_circuit`) `#204 <https://github.com/lsils/mockturtle/pull/204>`_
     - Linear resynthesis using Paar algorithm (`linear_resynthesis_paar`) `#211 <https://github.com/lsils/mockturtle/pull/211>`_
+    - XAG optimization by computing transitive linear fanin `#232 <https://github.com/lsils/mockturtle/pull/232>`_
+    - SAT-based satisfiability don't cares checker (`satisfiability_dont_cares_checker`) `#236 <https://github.com/lsils/mockturtle/pull/236>`_
+    - XAG optimization based on satisfiability don't cares (`xag_dont_cares_optimization`) `#237 <https://github.com/lsils/mockturtle/pull/237>`_
+    - XMG optimization based on satisfiability don't cares (`xmg_dont_cares_optimization`) `#239 <https://github.com/lsils/mockturtle/pull/239>`_
+    - Create circuit based on spectral equivalence transformation sequences and NPN transformations (`apply_spectral_transformations` `apply_npn_transformations`) `#263 <https://github.com/lsils/mockturtle/pull/263>`_ `#301 <https://github.com/lsils/mockturtle/pull/301>`_
+    - Exact linear resynthesis using SAT (`exact_linear_resynthesis`, `exact_linear_synthesis`) `#265 <https://github.com/lsils/mockturtle/pull/265>`_
+    - XAG optimization by linear resynthesis (`linear_resynthesis_optimization`, `exact_linear_resynthesis_optimization`) `#296 <https://github.com/lsils/mockturtle/pull/296>`_
+    - Davio decomposition (`positive_davio_decomposition`, `positive_davio_decomposition`) `#308 <https://github.com/lsils/mockturtle/pull/308>`_
+    - Collapse network into single node per output network `#309 <https://github.com/lsils/mockturtle/pull/309>`_
+    - Generic balancing algorithm `#340 <https://github.com/lsils/mockturtle/pull/340>`_
+    - Check functional equivalence (`circuit_validator`) `#346 <https://github.com/lsils/mockturtle/pull/346>`_
+    - Restructured resubstitution framework (`resubstitution`), simulation-guided resubstitution (`sim_resub`) `#373 <https://github.com/lsils/mockturtle/pull/373>`_
+    - Functional reduction (`functional_reduction`) `#380 <https://github.com/lsils/mockturtle/pull/380>`_
+    - Network fuzz testing (`network_fuzz_tester`) `#408 <https://github.com/lsils/mockturtle/pull/408>`_
 * Views:
     - Assign names to signals and outputs (`names_view`) `#181 <https://github.com/lsils/mockturtle/pull/181>`_ `#184 <https://github.com/lsils/mockturtle/pull/184>`_
+    - Creates a CNF while creating a network (`cnf_view`) `#274 <https://github.com/lsils/mockturtle/pull/274>`_
+    - Revised window view (`window_view`) `#381 <https://github.com/lsils/mockturtle/pull/381>`_
+    - In-place and out-of-place color view (`color_view`, `out_of_place_color_view`) `#381 <https://github.com/lsils/mockturtle/pull/381>`_
+    - Counting number of buffers and splitters in AQFP technology (`aqfp_view`) `#349 <https://github.com/lsils/mockturtle/pull/349>`_
 * I/O:
     - Write networks to DIMACS files for CNF (`write_dimacs`) `#146 <https://github.com/lsils/mockturtle/pull/146>`_
     - Read BLIF files using *lorina* (`blif_reader`) `#167 <https://github.com/lsils/mockturtle/pull/167>`_
     - Write networks to BLIF files (`write_blif`) `#169 <https://github.com/lsils/mockturtle/pull/169>`_ `#184 <https://github.com/lsils/mockturtle/pull/184>`_
+    - Write networks to AIGER files (`write_aiger`) `#379 <https://github.com/lsils/mockturtle/pull/379>`_
+* Utils
+    - Create circuit from integer index list (`encode`, `decode`, `insert`, `to_index_list_string`) `#385 <https://github.com/lsils/mockturtle/pull/385>`_
 * Resynthesis functions:
     - Resynthesis function based on DSD decomposition (`dsd_resynthesis`) `#182 <https://github.com/lsils/mockturtle/pull/182>`_
     - Resynthesis function based on Shannon decomposition (`shannon_resynthesis`) `#185 <https://github.com/lsils/mockturtle/pull/185>`_
+    - Resynthesis function based on Davio decomposition (`positive_davio_resynthesis`, `negative_davio_resynthesis`) `#308 <https://github.com/lsils/mockturtle/pull/308>`_
+    - Exact resynthesis function for XMGs using XOR3 and majority gates (`exact_xmg_resynthesis`) `#328 <https://github.com/lsils/mockturtle/pull/328>`_
 * Generators:
     - Sideways sum generator (`sideways_sum_adder`, contributed by Jovan Blanuša) `#159 <https://github.com/lsils/mockturtle/pull/159>`_
     - Carry lookahead adder (`carry_lookahead_adder_inplace`) `#171 <https://github.com/lsils/mockturtle/pull/171>`_
@@ -35,8 +68,17 @@ v0.2 (not yet released)
     - Create modulus vector from hex string for modular arithmetic functions (`bool_vector_from_hex`) `#176 <https://github.com/lsils/mockturtle/pull/176>`_
     - Modular addition based on Hiasat and modular subtraction `#177 <https://github.com/lsils/mockturtle/pull/177>`_
     - Majority-9 networks (`majority5`, `majority7`, `majority9_12`, `majority9_13`) `#185 <https://github.com/lsils/mockturtle/pull/185>`_
+    - Modular multiplication of Montgomery numbers (`montgomery_multiplication`) `#227 <https://github.com/lsils/mockturtle/pull/227>`_
+    - Constant modular multiplication (`modular_constant_multiplier`) `#227 <https://github.com/lsils/mockturtle/pull/227>`_
+    - Out-of-place modular addition, subtraction, and multiplication (`modular_adder`, `modular_subtractor`, `modular_multiplication`) `#234 <https://github.com/lsils/mockturtle/pull/234>`_
+    - Create self-dualization of a logic network (`self_dualize_aig`) `#331 <https://github.com/lsils/mockturtle/pull/331>`_
+    - Binary decoder (`binary_decoder`) `#342 <https://github.com/lsils/mockturtle/pull/342>`_
+    - 2^k MUX (`binary_mux` and `binary_mux_klein_paterson`) `#342 <https://github.com/lsils/mockturtle/pull/342>`_
+    - Random logic networks for XAGs (`random_logic_generator`) `#366 <https://github.com/lsils/mockturtle/pull/366>`_
 * Properties:
     - Costs based on multiplicative complexity (`multiplicative_complexity` and `multiplicative_complexity_depth`) `#170 <https://github.com/lsils/mockturtle/pull/170>`_
+* Utils:
+    - Computing windows and manipulating cuts (`create_window_impl`, `collect_nodes`, `collect_inputs`, `collect_outputs`, `expand0_towards_tfi`, `expand_towards_tfi`, `expand_towards_tfo`, `levelized_expand_towards_tfo`) `#381 <https://github.com/lsils/mockturtle/pull/381>`_
 
 v0.1 (March 31, 2019)
 ---------------------

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -93,7 +93,7 @@ class HLSFlowStepSpecialization
    virtual const std::string GetSignature() const = 0;
 };
 /// const refcount definition of the class
-typedef refcount<const HLSFlowStepSpecialization> HLSFlowStepSpecializationConstRef;
+using HLSFlowStepSpecializationConstRef = refcount<const HLSFlowStepSpecialization>;
 
 enum class HLSFlowStep_Type
 {
@@ -141,7 +141,6 @@ enum class HLSFlowStep_Type
    EXPLORE_MUX_DESIGN_FLOW,
    EXPORT_PCORE,
 #endif
-   FIXED_SCHEDULING,
 #if HAVE_EXPERIMENTAL
    FSL_INTERFACE_GENERATION,
 #endif
@@ -161,7 +160,6 @@ enum class HLSFlowStep_Type
    GENERATE_TASTE_HDL_ARCHITECTURE,
    GENERATE_TASTE_SYNTHESIS_SCRIPT,
 #endif
-   HLS_BIT_VALUE,
    HLS_FUNCTION_BIT_VALUE,
    HLS_SYNTHESIS_FLOW,
    HW_PATH_COMPUTATION,
@@ -209,6 +207,7 @@ enum class HLSFlowStep_Type
 #if HAVE_EXPERIMENTAL
    PARALLEL_CONTROLLER_CREATOR,
 #endif
+   PIPELINE_CONTROLLER_CREATOR,
    PORT_SWAPPING,
    SCHED_CHAINING,
 #if HAVE_ILP_BUILT
@@ -255,7 +254,6 @@ enum class HLSFlowStep_Type
 #if HAVE_EXPERIMENTAL
    XML_HLS_SYNTHESIS_FLOW,
 #endif
-   XML_MEMORY_ALLOCATOR,
 };
 
 enum class HLSFlowStep_Relationship
@@ -286,7 +284,9 @@ class HLS_step : public DesignFlowStep
     * Return the set of analyses in relationship with this design step
     * @param relationship_type is the type of relationship to be considered
     */
-   virtual const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const;
+   virtual const CustomUnorderedSet<
+       std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
+   ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const;
 
  public:
    /**
@@ -296,7 +296,8 @@ class HLS_step : public DesignFlowStep
     * @param design_flow_manager is the design flow manager
     * @param hls_flow_step_type is the type of this hls flow step
     */
-   HLS_step(const ParameterConstRef Param, const HLS_managerRef HLSMgr, const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStep_Type hls_flow_step_type,
+   HLS_step(const ParameterConstRef _parameters, const HLS_managerRef HLSMgr,
+            const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStep_Type hls_flow_step_type,
             const HLSFlowStepSpecializationConstRef hls_flow_step_specialization = HLSFlowStepSpecializationConstRef());
 
    /**
@@ -316,7 +317,8 @@ class HLS_step : public DesignFlowStep
     * @param hls_flow_step_specialization is how the step has to be specialized
     * @return the corresponding signature
     */
-   static const std::string ComputeSignature(const HLSFlowStep_Type hls_flow_step_type, const HLSFlowStepSpecializationConstRef hls_flow_step_specialization);
+   static const std::string ComputeSignature(const HLSFlowStep_Type hls_flow_step_type,
+                                             const HLSFlowStepSpecializationConstRef hls_flow_step_specialization);
 
    /**
     * Return the name of this design step
@@ -346,10 +348,11 @@ class HLS_step : public DesignFlowStep
     * @param dependencies is where relationships will be stored
     * @param relationship_type is the type of relationship to be computed
     */
-   void ComputeRelationships(DesignFlowStepSet& relationship, const DesignFlowStep::RelationshipType relationship_type) override;
+   void ComputeRelationships(DesignFlowStepSet& design_flow_step_set,
+                             const DesignFlowStep::RelationshipType relationship_type) override;
 };
 /// refcount definition of the class
-typedef refcount<HLS_step> HLS_stepRef;
+using HLS_stepRef = refcount<HLS_step>;
 
 /**
  * Definition of hash function for HLSFlowStep_Type
@@ -368,14 +371,18 @@ namespace std
 } // namespace std
 
 /**
- * Definition of hash function for std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>
+ * Definition of hash function for std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef,
+ * HLSFlowStep_Relationship>
  */
 namespace std
 {
    template <>
-   struct hash<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> : public unary_function<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>, size_t>
+   struct hash<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
+       : public unary_function<
+             std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>, size_t>
    {
-      size_t operator()(std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship> step) const
+      size_t
+      operator()(std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship> step) const
       {
          std::size_t ret = 0;
          hash<int> hasher;
@@ -393,7 +400,8 @@ namespace std
 namespace std
 {
    template <>
-   struct hash<std::pair<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef>> : public unary_function<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef>, size_t>
+   struct hash<std::pair<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef>>
+       : public unary_function<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef>, size_t>
    {
       size_t operator()(std::pair<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef> step) const
       {

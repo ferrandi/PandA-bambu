@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -60,7 +60,7 @@ struct check_clique
 
    virtual void update_after_join(C_vertex&, C_vertex&) = 0;
 
-   virtual void initialize_structures(boost_cc_compatibility_graph&, std::map<C_vertex, vertex_type>&) = 0;
+   virtual void initialize_structures(boost_cc_compatibility_graph&, CustomUnorderedMap<C_vertex, vertex_type>&) = 0;
 };
 
 template <typename vertex_type>
@@ -89,7 +89,7 @@ struct no_check_clique : public check_clique<vertex_type>
    void update_after_join(C_vertex&, C_vertex&) override
    {
    }
-   void initialize_structures(boost_cc_compatibility_graph&, std::map<C_vertex, vertex_type>&) override
+   void initialize_structures(boost_cc_compatibility_graph&, CustomUnorderedMap<C_vertex, vertex_type>&) override
    {
    }
 };

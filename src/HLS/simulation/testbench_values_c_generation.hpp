@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2018-2020 Politecnico di Milano
+ *              Copyright (c) 2018-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -66,16 +66,13 @@ class TestbenchValuesCGeneration : public HLS_step
    const std::string output_directory;
 
    /**
-    * Initialize the step (i.e., like a constructor, but executed just before exec
-    */
-   virtual void Initialize();
-
-   /**
     * Compute the relationship of this step
     * @param relationship_type is the type of relationship to be considered
     * @return the steps in relationship with this
     */
-   virtual const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const;
+   virtual const CustomUnorderedSet<
+       std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
+   ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const;
 
  public:
    /**
@@ -85,7 +82,8 @@ class TestbenchValuesCGeneration : public HLS_step
     * @param design_flow_manager is the design flow manager
     *
     */
-   TestbenchValuesCGeneration(const ParameterConstRef parameters, const HLS_managerRef hls_manager, const DesignFlowManagerConstRef design_flow_manager);
+   TestbenchValuesCGeneration(const ParameterConstRef parameters, const HLS_managerRef hls_manager,
+                              const DesignFlowManagerConstRef design_flow_manager);
 
    /**
     * Destructor.
@@ -109,6 +107,7 @@ class TestbenchValuesCGeneration : public HLS_step
     * @param dependencies is where relationships will be stored
     * @param relationship_type is the type of relationship to be computed
     */
-   void ComputeRelationships(DesignFlowStepSet& relationship, const DesignFlowStep::RelationshipType relationship_type);
+   void ComputeRelationships(DesignFlowStepSet& design_flow_step_set,
+                             const DesignFlowStep::RelationshipType relationship_type);
 };
 #endif

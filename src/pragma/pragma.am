@@ -9,7 +9,7 @@ libpragma_la_CPPFLAGS = \
    -I$(top_srcdir)/src/graph \
    -I$(top_srcdir)/src/machine \
    -I$(top_srcdir)/src/parser/pragma \
-   -I$(top_srcdir)/src/parser/treegcc \
+   -I$(top_srcdir)/src/parser/compiler \
    -I$(top_srcdir)/src/tree \
    -I$(top_srcdir)/src/utility \
    $(AM_CPPFLAGS)

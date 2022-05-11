@@ -1,5 +1,5 @@
 /* mockturtle: C++ logic network library
- * Copyright (C) 2018-2019  EPFL
+ * Copyright (C) 2018-2021  EPFL
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -56,7 +56,7 @@ struct json_table
   {
     for ( auto const& column : columns )
     {
-      max_widths_.push_back( column.size() );
+      max_widths_.push_back( static_cast<uint32_t>( column.size() ) );
     }
     entries_.push_back( columns );
     for ( auto const& row : data )
@@ -105,7 +105,7 @@ private:
         cell = fmt::format( "{}", static_cast<bool>( data ) );
       }
 
-      max_widths_[ctr] = std::max<uint32_t>( max_widths_[ctr], cell.size() );
+      max_widths_[ctr] = std::max( max_widths_[ctr], static_cast<uint32_t>( cell.size() ) );
       ++ctr;
       entry.push_back( cell );
     }
@@ -361,39 +361,132 @@ private:
 };
 
 // clang-format off
-static constexpr uint32_t adder      = 0b00000000000000000001;
-static constexpr uint32_t bar        = 0b00000000000000000010;
-static constexpr uint32_t div        = 0b00000000000000000100;
-static constexpr uint32_t hyp        = 0b00000000000000001000;
-static constexpr uint32_t log2       = 0b00000000000000010000;
-static constexpr uint32_t max        = 0b00000000000000100000;
-static constexpr uint32_t multiplier = 0b00000000000001000000;
-static constexpr uint32_t sin        = 0b00000000000010000000;
-static constexpr uint32_t sqrt       = 0b00000000000100000000;
-static constexpr uint32_t square     = 0b00000000001000000000;
-static constexpr uint32_t arbiter    = 0b00000000010000000000;
-static constexpr uint32_t cavlc      = 0b00000000100000000000;
-static constexpr uint32_t ctrl       = 0b00000001000000000000;
-static constexpr uint32_t dec        = 0b00000010000000000000;
-static constexpr uint32_t i2c        = 0b00000100000000000000;
-static constexpr uint32_t int2float  = 0b00001000000000000000;
-static constexpr uint32_t mem_ctrl   = 0b00010000000000000000;
-static constexpr uint32_t priority   = 0b00100000000000000000;
-static constexpr uint32_t router     = 0b01000000000000000000;
-static constexpr uint32_t voter      = 0b10000000000000000000;
-static constexpr uint32_t arithmetic = 0b00000000001111111111;
-static constexpr uint32_t random     = 0b11111111110000000000;
-static constexpr uint32_t all        = 0b11111111111111111111;
+/* EPFL benchmarks */
+static constexpr uint64_t adder           = 0b0000000000000000000000000000000000000000000000000000000000000001;
+static constexpr uint64_t bar             = 0b0000000000000000000000000000000000000000000000000000000000000010;
+static constexpr uint64_t div             = 0b0000000000000000000000000000000000000000000000000000000000000100;
+static constexpr uint64_t hyp             = 0b0000000000000000000000000000000000000000000000000000000000001000;
+static constexpr uint64_t log2            = 0b0000000000000000000000000000000000000000000000000000000000010000;
+static constexpr uint64_t max             = 0b0000000000000000000000000000000000000000000000000000000000100000;
+static constexpr uint64_t multiplier      = 0b0000000000000000000000000000000000000000000000000000000001000000;
+static constexpr uint64_t sin             = 0b0000000000000000000000000000000000000000000000000000000010000000;
+static constexpr uint64_t sqrt            = 0b0000000000000000000000000000000000000000000000000000000100000000;
+static constexpr uint64_t square          = 0b0000000000000000000000000000000000000000000000000000001000000000;
+static constexpr uint64_t arbiter         = 0b0000000000000000000000000000000000000000000000000000010000000000;
+static constexpr uint64_t cavlc           = 0b0000000000000000000000000000000000000000000000000000100000000000;
+static constexpr uint64_t ctrl            = 0b0000000000000000000000000000000000000000000000000001000000000000;
+static constexpr uint64_t dec             = 0b0000000000000000000000000000000000000000000000000010000000000000;
+static constexpr uint64_t i2c             = 0b0000000000000000000000000000000000000000000000000100000000000000;
+static constexpr uint64_t int2float       = 0b0000000000000000000000000000000000000000000000001000000000000000;
+static constexpr uint64_t mem_ctrl        = 0b0000000000000000000000000000000000000000000000010000000000000000;
+static constexpr uint64_t priority        = 0b0000000000000000000000000000000000000000000000100000000000000000;
+static constexpr uint64_t router          = 0b0000000000000000000000000000000000000000000001000000000000000000;
+static constexpr uint64_t voter           = 0b0000000000000000000000000000000000000000000010000000000000000000;
+static constexpr uint64_t arithmetic      = 0b0000000000000000000000000000000000000000000000000000001111111111;
+static constexpr uint64_t random          = 0b0000000000000000000000000000000000000000000011111111110000000000;
+static constexpr uint64_t epfl            = 0b0000000000000000000000000000000000000000000011111111111111111111;
+
+/* IWLS 2005 benchmarks */
+static constexpr uint64_t ac97_ctrl       = 0b0000000000000000000000000000000000000000000100000000000000000000;
+static constexpr uint64_t aes_core        = 0b0000000000000000000000000000000000000000001000000000000000000000;
+static constexpr uint64_t des_area        = 0b0000000000000000000000000000000000000000010000000000000000000000;
+static constexpr uint64_t des_perf        = 0b0000000000000000000000000000000000000000100000000000000000000000;
+static constexpr uint64_t DMA             = 0b0000000000000000000000000000000000000001000000000000000000000000;
+static constexpr uint64_t DSP             = 0b0000000000000000000000000000000000000010000000000000000000000000;
+static constexpr uint64_t ethernet        = 0b0000000000000000000000000000000000000100000000000000000000000000;
+static constexpr uint64_t iwls05_i2c      = 0b0000000000000000000000000000000000001000000000000000000000000000;
+static constexpr uint64_t leon2           = 0b0000000000000000000000000000000000010000000000000000000000000000;
+static constexpr uint64_t leon3_opt       = 0b0000000000000000000000000000000000100000000000000000000000000000;
+static constexpr uint64_t leon3           = 0b0000000000000000000000000000000001000000000000000000000000000000;
+static constexpr uint64_t leon3mp         = 0b0000000000000000000000000000000010000000000000000000000000000000;
+static constexpr uint64_t iwls05_mem_ctrl = 0b0000000000000000000000000000000100000000000000000000000000000000;
+static constexpr uint64_t netcard         = 0b0000000000000000000000000000001000000000000000000000000000000000;
+static constexpr uint64_t pci_bridge32    = 0b0000000000000000000000000000010000000000000000000000000000000000;
+static constexpr uint64_t RISC            = 0b0000000000000000000000000000100000000000000000000000000000000000;
+static constexpr uint64_t sasc            = 0b0000000000000000000000000001000000000000000000000000000000000000;
+static constexpr uint64_t simple_spi      = 0b0000000000000000000000000010000000000000000000000000000000000000;
+static constexpr uint64_t spi             = 0b0000000000000000000000000100000000000000000000000000000000000000;
+static constexpr uint64_t ss_pcm          = 0b0000000000000000000000001000000000000000000000000000000000000000;
+static constexpr uint64_t systemcaes      = 0b0000000000000000000000010000000000000000000000000000000000000000;
+static constexpr uint64_t systemcdes      = 0b0000000000000000000000100000000000000000000000000000000000000000;
+static constexpr uint64_t tv80            = 0b0000000000000000000001000000000000000000000000000000000000000000;
+static constexpr uint64_t usb_funct       = 0b0000000000000000000010000000000000000000000000000000000000000000;
+static constexpr uint64_t usb_phy         = 0b0000000000000000000100000000000000000000000000000000000000000000;
+static constexpr uint64_t vga_lcd         = 0b0000000000000000001000000000000000000000000000000000000000000000;
+static constexpr uint64_t wb_conmax       = 0b0000000000000000010000000000000000000000000000000000000000000000;
+static constexpr uint64_t iwls            = 0b0000000000000000011111111111111111111111111100000000000000000000;
+
+/* ISCAS benchmarks */
+static constexpr uint64_t c17             = 0b0000000000000000100000000000000000000000000000000000000000000000;
+static constexpr uint64_t c432            = 0b0000000000000001000000000000000000000000000000000000000000000000;
+static constexpr uint64_t c499            = 0b0000000000000010000000000000000000000000000000000000000000000000;
+static constexpr uint64_t c880            = 0b0000000000000100000000000000000000000000000000000000000000000000;
+static constexpr uint64_t c1355           = 0b0000000000001000000000000000000000000000000000000000000000000000;
+static constexpr uint64_t c1908           = 0b0000000000010000000000000000000000000000000000000000000000000000;
+static constexpr uint64_t c2670           = 0b0000000000100000000000000000000000000000000000000000000000000000;
+static constexpr uint64_t c3540           = 0b0000000001000000000000000000000000000000000000000000000000000000;
+static constexpr uint64_t c5315           = 0b0000000010000000000000000000000000000000000000000000000000000000;
+static constexpr uint64_t c6288           = 0b0000000100000000000000000000000000000000000000000000000000000000;
+static constexpr uint64_t c7552           = 0b0000001000000000000000000000000000000000000000000000000000000000;
+static constexpr uint64_t iscas           = 0b0000001111111111100000000000000000000000000000000000000000000000;
+
+static constexpr uint64_t all             = 0b0000001111111111111111111111111111111111111111111111111111111111;
 // clang-format on
 
 static const char* benchmarks[] = {
     "adder", "bar", "div", "hyp", "log2", "max", "multiplier", "sin", "sqrt", "square",
-    "arbiter", "cavlc", "ctrl", "dec", "i2c", "int2float", "mem_ctrl", "priority", "router", "voter"};
+    "arbiter", "cavlc", "ctrl", "dec", "i2c", "int2float", "mem_ctrl", "priority", "router", "voter",
 
-std::vector<std::string> epfl_benchmarks( uint32_t selection = all )
+    "ac97_ctrl", "aes_core", "des_area", "des_perf", "DMA", "DSP", "ethernet", "iwls05_i2c", "leon2",
+    "leon3_opt", "leon3", "leon3mp", "iwls05_mem_ctrl", "netcard", "pci_bridge32", "RISC", "sasc",
+    "simple_spi", "spi", "ss_pcm", "systemcaes", "systemcdes", "tv80", "usb_funct", "usb_phy",
+    "vga_lcd", "wb_conmax",
+
+    "c17", "c432", "c499", "c880", "c1355", "c1908", "c2670", "c3540", "c5315", "c6288", "c7552"};
+
+std::vector<std::string> epfl_benchmarks( uint64_t selection = epfl )
 {
   std::vector<std::string> result;
   for ( uint32_t i = 0u; i < 20u; ++i )
+  {
+    if ( ( selection >> i ) & 1 )
+    {
+      result.push_back( benchmarks[i] );
+    }
+  }
+  return result;
+}
+
+std::vector<std::string> iwls_benchmarks( uint64_t selection = iwls )
+{
+  std::vector<std::string> result;
+  for ( uint32_t i = 20u; i < 47u; ++i )
+  {
+    if ( ( selection >> i ) & 1 )
+    {
+      result.push_back( benchmarks[i] );
+    }
+  }
+  return result;
+}
+
+std::vector<std::string> iscas_benchmarks( uint64_t selection = iscas )
+{
+  std::vector<std::string> result;
+  for ( uint32_t i = 47u; i < 58u; ++i )
+  {
+    if ( ( selection >> i ) & 1 )
+    {
+      result.push_back( benchmarks[i] );
+    }
+  }
+  return result;
+}
+
+std::vector<std::string> all_benchmarks( uint64_t selection = all )
+{
+  std::vector<std::string> result;
+  for ( uint32_t i = 0u; i < 58u; ++i )
   {
     if ( ( selection >> i ) & 1 )
     {
@@ -413,10 +506,10 @@ std::string benchmark_path( std::string const& benchmark_name )
 }
 
 template<class Ntk>
-bool abc_cec( Ntk const& ntk, std::string const& benchmark )
+inline bool abc_cec_impl( Ntk const& ntk, std::string const& benchmark_fullpath )
 {
   mockturtle::write_bench( ntk, "/tmp/test.bench" );
-  std::string command = fmt::format( "abc -q \"cec -n {} /tmp/test.bench\"", benchmark_path( benchmark ) );
+  std::string command = fmt::format( "abc -q \"cec -n {} /tmp/test.bench\"", benchmark_fullpath );
 
   std::array<char, 128> buffer;
   std::string result;
@@ -430,7 +523,24 @@ bool abc_cec( Ntk const& ntk, std::string const& benchmark )
     result += buffer.data();
   }
 
-  return result.size() >= 23 && result.substr( 0u, 23u ) == "Networks are equivalent";
+  /* search for one line which says "Networks are equivalent" and ignore all other debug output from ABC */
+  std::stringstream ss( result );
+  std::string line;
+  while ( std::getline( ss, line, '\n' ) )
+  {
+    if ( line.size() >= 23u && line.substr( 0u, 23u ) == "Networks are equivalent" )
+    {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+template<class Ntk>
+inline bool abc_cec( Ntk const& ntk, std::string const& benchmark )
+{
+  return abc_cec_impl( ntk, benchmark_path( benchmark ) );
 }
 
 } // namespace experiments

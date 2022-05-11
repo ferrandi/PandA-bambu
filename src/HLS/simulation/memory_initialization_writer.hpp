@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2018-2020 Politecnico di Milano
+ *              Copyright (c) 2018-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -79,12 +79,29 @@ class MemoryInitializationWriter : public MemoryInitializationWriterBase
     * @param testbench_generation_memory_type is the type of initialization being printed
     * @param parameters is the set of input parameters
     */
-   MemoryInitializationWriter(std::ofstream& output_stream, const tree_managerConstRef TM, const BehavioralHelperConstRef behavioral_helper, const unsigned long int reserved_mem_bytes, const tree_nodeConstRef function_parameter,
-                              const TestbenchGeneration_MemoryType testbench_generation_memory_type, const ParameterConstRef parameters);
+   MemoryInitializationWriter(std::ofstream& output_stream, const tree_managerConstRef TM,
+                              const BehavioralHelperConstRef behavioral_helper,
+                              const unsigned long int reserved_mem_bytes, const tree_nodeConstRef function_parameter,
+                              const TestbenchGeneration_MemoryType testbench_generation_memory_type,
+                              const ParameterConstRef parameters);
 
    /**
     * Process an element
     */
    void Process(const std::string& content) override;
+
+   /**
+    * In this case the function does not activate anything
+    */
+   void ActivateFileInit(const std::string&) override
+   {
+   }
+
+   /**
+    * do nothing
+    */
+   void FinalizeFileInit() override
+   {
+   }
 };
 #endif

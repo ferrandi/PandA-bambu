@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2015-2020 Politecnico di Milano
+ *              Copyright (c) 2015-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -32,7 +32,8 @@
  */
 /**
  * @file parallel_memory_conn_binding.hpp
- * @brief Data structure used to store the interconnection binding of datapath elements when parallel memory controller is adopted
+ * @brief Data structure used to store the interconnection binding of datapath elements when parallel memory controller
+ * is adopted
  *
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
@@ -49,7 +50,7 @@ class ParallelMemoryConnBinding : public conn_binding
    /**
     * Constructor.
     */
-   ParallelMemoryConnBinding(const BehavioralHelperConstRef BH, const ParameterConstRef parameters);
+   ParallelMemoryConnBinding(const BehavioralHelperConstRef _behavioral_helper, const ParameterConstRef parameters);
 
    /**
     * Destructor.
@@ -59,6 +60,6 @@ class ParallelMemoryConnBinding : public conn_binding
    /**
     * Add the interconnection to the structural representation of the datapath
     */
-   void add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, const structural_managerRef SM);
+   void add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, const structural_managerRef SM) override;
 };
 #endif

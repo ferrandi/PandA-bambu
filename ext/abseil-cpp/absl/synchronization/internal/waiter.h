@@ -24,6 +24,10 @@
 #include <pthread.h>
 #endif
 
+#ifdef __linux__
+#include <linux/futex.h>
+#endif
+
 #ifdef ABSL_HAVE_SEMAPHORE_H
 #include <semaphore.h>
 #endif
@@ -32,6 +36,7 @@
 #include <cstdint>
 
 #include "absl/base/internal/thread_identity.h"
+#include "absl/synchronization/internal/futex.h"
 #include "absl/synchronization/internal/kernel_timeout.h"
 
 // May be chosen at compile time via -DABSL_FORCE_WAITER_MODE=<index>
@@ -44,7 +49,7 @@
 #define ABSL_WAITER_MODE ABSL_FORCE_WAITER_MODE
 #elif defined(_WIN32) && _WIN32_WINNT >= _WIN32_WINNT_VISTA
 #define ABSL_WAITER_MODE ABSL_WAITER_MODE_WIN32
-#elif defined(__linux__)
+#elif defined(ABSL_INTERNAL_HAVE_FUTEX)
 #define ABSL_WAITER_MODE ABSL_WAITER_MODE_FUTEX
 #elif defined(ABSL_HAVE_SEMAPHORE_H)
 #define ABSL_WAITER_MODE ABSL_WAITER_MODE_SEM
@@ -53,6 +58,7 @@
 #endif
 
 namespace absl {
+ABSL_NAMESPACE_BEGIN
 namespace synchronization_internal {
 
 // Waiter is an OS-specific semaphore.
@@ -90,8 +96,8 @@ class Waiter {
   }
 
   // How many periods to remain idle before releasing resources
-#ifndef THREAD_SANITIZER
-  static const int kIdlePeriods = 60;
+#ifndef ABSL_HAVE_THREAD_SANITIZER
+  static constexpr int kIdlePeriods = 60;
 #else
   // Memory consumption under ThreadSanitizer is a serious concern,
   // so we release resources sooner. The value of 1 leads to 1 to 2 second
@@ -123,13 +129,6 @@ class Waiter {
   std::atomic<int> wakeups_;
 
 #elif ABSL_WAITER_MODE == ABSL_WAITER_MODE_WIN32
-  // We can't include Windows.h in our headers, so we use aligned storage
-  // buffers to define the storage of SRWLOCK and CONDITION_VARIABLE.
-  using SRWLockStorage =
-      typename std::aligned_storage<sizeof(void*), alignof(void*)>::type;
-  using ConditionVariableStorage =
-      typename std::aligned_storage<sizeof(void*), alignof(void*)>::type;
-
   // WinHelper - Used to define utilities for accessing the lock and
   // condition variable storage once the types are complete.
   class WinHelper;
@@ -137,8 +136,10 @@ class Waiter {
   // REQUIRES: WinHelper::GetLock(this) must be held.
   void InternalCondVarPoke();
 
-  SRWLockStorage mu_storage_;
-  ConditionVariableStorage cv_storage_;
+  // We can't include Windows.h in our headers, so we use aligned charachter
+  // buffers to define the storage of SRWLOCK and CONDITION_VARIABLE.
+  alignas(void*) unsigned char mu_storage_[sizeof(void*)];
+  alignas(void*) unsigned char cv_storage_[sizeof(void*)];
   int waiter_count_;
   int wakeup_count_;
 
@@ -148,6 +149,7 @@ class Waiter {
 };
 
 }  // namespace synchronization_internal
+ABSL_NAMESPACE_END
 }  // namespace absl
 
 #endif  // ABSL_SYNCHRONIZATION_INTERNAL_WAITER_H_

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -46,51 +46,18 @@
 /// Superclass include
 #include "function_frontend_flow_step.hpp"
 
-#include "refcount.hpp"
-
-/**
- * @name forward declarations
- */
-//@{
-REF_FORWARD_DECL(BehavioralHelper);
-REF_FORWARD_DECL(tree_manager);
-REF_FORWARD_DECL(tree_node);
-//@}
-
-#include "custom_map.hpp"
-#include "custom_set.hpp"
-#include <list>
-#include <string>
-#include <vector>
-
 /**
  * Update ssa_name with information about how many times it is used
  */
 class use_counting : public FunctionFrontendFlowStep
 {
  private:
-   /// Counters
-   std::map<unsigned int, unsigned int> counter;
-
-   /**
-    * Update counters with information concerning tree_node tn
-    *@param tn is the tree_node to be analyzed
-    *@param ssa_uses is the vector containing the ssa_nodes "used" by the tree_node tn
-    */
-   void analyze_node(tree_nodeRef& tn, CustomOrderedSet<tree_nodeRef>& ssa_uses);
-
    /**
     * Return the set of analyses in relationship with this design step
     * @param relationship_type is the type of relationship to be considered
     */
-   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
-
-   /**
-    * Compute the relationships of a step with other steps
-    * @param dependencies is where relationships will be stored
-    * @param relationship_type is the type of relationship to be computed
-    */
-   void ComputeRelationships(DesignFlowStepSet& relationship, const DesignFlowStep::RelationshipType relationship_type) override;
+   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>>
+   ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
  public:
    /**
@@ -100,7 +67,8 @@ class use_counting : public FunctionFrontendFlowStep
     * @param function_id is the identifier of the function
     * @param design_flow_manager is the design flow manager
     */
-   use_counting(const ParameterConstRef Param, const application_managerRef AppM, unsigned int function_id, const DesignFlowManagerConstRef design_flow_manager);
+   use_counting(const ParameterConstRef _parameters, const application_managerRef AppM, unsigned int function_id,
+                const DesignFlowManagerConstRef design_flow_manager);
 
    /**
     *  Destructor

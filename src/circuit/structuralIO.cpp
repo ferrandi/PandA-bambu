@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -62,7 +62,8 @@ structural_managerRef read_structural_File(const std::string& fn, const Paramete
       {
          // Walk the tree:
          CM = structural_managerRef(new structural_manager(Param));
-         structural_type_descriptorRef build_type = structural_type_descriptorRef(new structural_type_descriptor("BUILD"));
+         structural_type_descriptorRef build_type =
+             structural_type_descriptorRef(new structural_type_descriptor("BUILD"));
          CM->set_top_info("BUILD", build_type);
          const xml_element* node = parser.get_document()->get_root_node(); // deleted by DomParser.
          structural_manager::xload(node, CM);

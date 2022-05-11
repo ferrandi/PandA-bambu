@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -51,7 +51,8 @@
 /// Header include
 #include "simple_indent.hpp"
 
-simple_indent::simple_indent(char o, char c, unsigned int d) : indent_spaces(0), opening_char(o), closing_char(c), delta(d), is_line_start(true)
+simple_indent::simple_indent(char o, char c, unsigned int d)
+    : indent_spaces(0), opening_char(o), closing_char(c), delta(d), is_line_start(true)
 {
 }
 

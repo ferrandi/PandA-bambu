@@ -1,0 +1,147 @@
+[
+  {
+    "entries": [
+      {
+        "benchmark": "adder",
+        "equivalent": true,
+        "gain": 127,
+        "runtime": 0.06293122470378876,
+        "size": 1020
+      },
+      {
+        "benchmark": "bar",
+        "equivalent": true,
+        "gain": 0,
+        "runtime": 0.055317867547273636,
+        "size": 3336
+      },
+      {
+        "benchmark": "div",
+        "equivalent": true,
+        "gain": 5218,
+        "runtime": 76.69324493408203,
+        "size": 57247
+      },
+      {
+        "benchmark": "hyp",
+        "equivalent": true,
+        "gain": 6305,
+        "runtime": 147.6929931640625,
+        "size": 214335
+      },
+      {
+        "benchmark": "log2",
+        "equivalent": true,
+        "gain": 522,
+        "runtime": 19.900320053100586,
+        "size": 32060
+      },
+      {
+        "benchmark": "max",
+        "equivalent": true,
+        "gain": 3,
+        "runtime": 0.05850469321012497,
+        "size": 2865
+      },
+      {
+        "benchmark": "multiplier",
+        "equivalent": true,
+        "gain": 91,
+        "runtime": 1.3532203435897827,
+        "size": 27062
+      },
+      {
+        "benchmark": "sin",
+        "equivalent": true,
+        "gain": 92,
+        "runtime": 2.563305377960205,
+        "size": 5416
+      },
+      {
+        "benchmark": "sqrt",
+        "equivalent": true,
+        "gain": 4195,
+        "runtime": 42.06993865966797,
+        "size": 24618
+      },
+      {
+        "benchmark": "square",
+        "equivalent": true,
+        "gain": 346,
+        "runtime": 1.428206205368042,
+        "size": 18484
+      },
+      {
+        "benchmark": "arbiter",
+        "equivalent": true,
+        "gain": 0,
+        "runtime": 0.24237634241580963,
+        "size": 11839
+      },
+      {
+        "benchmark": "cavlc",
+        "equivalent": true,
+        "gain": 19,
+        "runtime": 0.02373042143881321,
+        "size": 693
+      },
+      {
+        "benchmark": "ctrl",
+        "equivalent": true,
+        "gain": 67,
+        "runtime": 0.00992374774068594,
+        "size": 174
+      },
+      {
+        "benchmark": "dec",
+        "equivalent": true,
+        "gain": 0,
+        "runtime": 0.011482873931527138,
+        "size": 304
+      },
+      {
+        "benchmark": "i2c",
+        "equivalent": true,
+        "gain": 77,
+        "runtime": 0.04038527235388756,
+        "size": 1342
+      },
+      {
+        "benchmark": "int2float",
+        "equivalent": true,
+        "gain": 24,
+        "runtime": 0.008397926576435566,
+        "size": 260
+      },
+      {
+        "benchmark": "mem_ctrl",
+        "equivalent": true,
+        "gain": 1403,
+        "runtime": 4.762147426605225,
+        "size": 46836
+      },
+      {
+        "benchmark": "priority",
+        "equivalent": true,
+        "gain": 126,
+        "runtime": 0.06392306834459305,
+        "size": 978
+      },
+      {
+        "benchmark": "router",
+        "equivalent": true,
+        "gain": 0,
+        "runtime": 0.009761467576026917,
+        "size": 257
+      },
+      {
+        "benchmark": "voter",
+        "equivalent": true,
+        "gain": 3204,
+        "runtime": 5.274948596954346,
+        "size": 13758
+      }
+    ],
+    "version": "df695e1"
+  }
+]

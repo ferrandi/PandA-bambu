@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -358,7 +358,8 @@ struct omp_parallel_pragma : public omp_pragma
    {
    }
 
-   /// map between the clauses that can be associated with the OpenMP parallel pragma and their value (e.g. number of threads)
+   /// map between the clauses that can be associated with the OpenMP parallel pragma and their value (e.g. number of
+   /// threads)
    CustomUnorderedMapUnstable<std::string, std::string> clauses;
 
    /// flag to check if this pragma is shortcut with a OpenMP sections pragma
@@ -586,7 +587,8 @@ struct omp_for_pragma : public omp_pragma
    {
    }
 
-   /// map between the clauses that can be associated with the OpenMP parallel pragma and their value (e.g. number of threads)
+   /// map between the clauses that can be associated with the OpenMP parallel pragma and their value (e.g. number of
+   /// threads)
    CustomUnorderedMapUnstable<std::string, std::string> clauses;
 
    /// Redefinition of get_kind_text.
@@ -615,7 +617,8 @@ struct omp_simd_pragma : public omp_pragma
    {
    }
 
-   /// map between the clauses that can be associated with the OpenMP parallel pragma and their value (e.g. number of threads)
+   /// map between the clauses that can be associated with the OpenMP parallel pragma and their value (e.g. number of
+   /// threads)
    CustomUnorderedMapUnstable<std::string, std::string> clauses;
 
    /// Redefinition of get_kind_text.
@@ -644,7 +647,8 @@ struct omp_declare_simd_pragma : public omp_pragma
    {
    }
 
-   /// map between the clauses that can be associated with the OpenMP parallel pragma and their value (e.g. number of threads)
+   /// map between the clauses that can be associated with the OpenMP parallel pragma and their value (e.g. number of
+   /// threads)
    CustomUnorderedMapUnstable<std::string, std::string> clauses;
 
    /// Redefinition of get_kind_text.

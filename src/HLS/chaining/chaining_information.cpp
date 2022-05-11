@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -51,9 +51,11 @@
 
 struct ChainingSet
 {
-   typedef boost::property_map<OpGraph, boost::vertex_index_t>::const_type const_vertex_index_pmap_t;
-   typedef boost::iterator_property_map<std::vector<std::size_t>::iterator, boost::identity_property_map, std::vector<std::size_t>::value_type> rank_pmap_type;
-   typedef boost::iterator_property_map<std::vector<std::size_t>::iterator, boost::identity_property_map, std::vector<std::size_t>::value_type> pred_pmap_type;
+   using const_vertex_index_pmap_t = boost::property_map<OpGraph, boost::vertex_index_t>::const_type;
+   using rank_pmap_type = boost::iterator_property_map<std::vector<std::size_t>::iterator, boost::identity_property_map,
+                                                       std::vector<std::size_t>::value_type>;
+   using pred_pmap_type = boost::iterator_property_map<std::vector<std::size_t>::iterator, boost::identity_property_map,
+                                                       std::vector<std::size_t>::value_type>;
 
    const_vertex_index_pmap_t cindex_pmap;
 
@@ -85,7 +87,8 @@ struct ChainingSet
    }
 };
 
-ChainingInformation::ChainingInformation(const HLS_managerConstRef _HLS_mgr, const unsigned int _function_id) : HLS_mgr(_HLS_mgr), function_id(_function_id)
+ChainingInformation::ChainingInformation(const HLS_managerConstRef _HLS_mgr, const unsigned int _function_id)
+    : HLS_mgr(_HLS_mgr), function_id(_function_id)
 {
 }
 
@@ -101,7 +104,8 @@ size_t ChainingInformation::get_representative_out(vertex op1) const
 
 void ChainingInformation::Initialize()
 {
-   const OpGraphConstRef flow_graph = HLS_mgr.lock()->CGetFunctionBehavior(function_id)->CGetOpGraph(FunctionBehavior::FLSAODG);
+   const OpGraphConstRef flow_graph =
+       HLS_mgr.lock()->CGetFunctionBehavior(function_id)->CGetOpGraph(FunctionBehavior::FLSAODG);
    const hlsRef HLS = HLS_mgr.lock()->get_HLS(function_id);
 
    HLS->chaining_information->chaining_relation = ChainingSetRef(new ChainingSet(flow_graph));
@@ -121,8 +125,10 @@ bool ChainingInformation::is_chained_vertex(vertex v) const
 
 bool ChainingInformation::may_be_chained_ops(vertex tgt, vertex src) const
 {
-   return (chaining_relation->ds.find_set(chaining_relation->get_index0(tgt)) == chaining_relation->ds.find_set(chaining_relation->get_index1(src)) ||
-           chaining_relation->ds.find_set(chaining_relation->get_index1(tgt)) == chaining_relation->ds.find_set(chaining_relation->get_index0(src)));
+   return (chaining_relation->ds.find_set(chaining_relation->get_index0(tgt)) ==
+               chaining_relation->ds.find_set(chaining_relation->get_index1(src)) ||
+           chaining_relation->ds.find_set(chaining_relation->get_index1(tgt)) ==
+               chaining_relation->ds.find_set(chaining_relation->get_index0(src)));
 }
 
 void ChainingInformation::add_chained_vertices_in(vertex op1, vertex src)

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -66,7 +66,8 @@ class modelsimWrapper : public SimulationTool
    /**
     * Generates the proper simulation script
     */
-   void GenerateScript(std::ostringstream& script, const std::string& top_filename, const std::list<std::string>& file_list) override;
+   void GenerateScript(std::ostringstream& script, const std::string& top_filename,
+                       const std::list<std::string>& file_list) override;
 
  public:
    /**
@@ -91,6 +92,6 @@ class modelsimWrapper : public SimulationTool
    void Clean() const override;
 };
 /// Refcount definition for the modelsimWrapper class
-typedef refcount<modelsimWrapper> modelsimWrapperRef;
+using modelsimWrapperRef = refcount<modelsimWrapper>;
 
 #endif

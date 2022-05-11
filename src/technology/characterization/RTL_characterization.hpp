@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -106,7 +106,9 @@ class RTLCharacterization : public FunctionalUnitStep
    /**
     * Performing the specialization of the given object
     */
-   void specialize_fu(const module* mod, unsigned int prec, unsigned int bus_data_bitsize, unsigned int bus_addr_bitsize, unsigned int bus_size_bitsize, unsigned int bus_tag_bitsize, size_t portsize_value);
+   void specialize_fu(const module* mod, unsigned int prec, unsigned int bus_data_bitsize,
+                      unsigned int bus_addr_bitsize, unsigned int bus_size_bitsize, unsigned int bus_tag_bitsize,
+                      size_t portsize_value);
 
    /**
     * Generate the output file
@@ -136,10 +138,14 @@ class RTLCharacterization : public FunctionalUnitStep
     */
    void fix_muxes();
 
-   void add_input_register(structural_objectRef port_in, const std::string& register_library, const std::string& port_prefix, structural_objectRef reset_port, structural_objectRef circuit, structural_objectRef clock_port, structural_objectRef e_port,
+   void add_input_register(structural_objectRef port_in, const std::string& register_library,
+                           const std::string& port_prefix, structural_objectRef reset_port,
+                           structural_objectRef circuit, structural_objectRef clock_port, structural_objectRef e_port,
                            structural_managerRef SM);
 
-   void add_output_register(structural_managerRef SM, structural_objectRef e_port, structural_objectRef circuit, structural_objectRef reset_port, structural_objectRef port_out, const std::string& port_prefix, structural_objectRef clock_port,
+   void add_output_register(structural_managerRef SM, structural_objectRef e_port, structural_objectRef circuit,
+                            structural_objectRef reset_port, structural_objectRef port_out,
+                            const std::string& port_prefix, structural_objectRef clock_port,
                             const std::string& register_library);
 
    /**
@@ -164,7 +170,9 @@ class RTLCharacterization : public FunctionalUnitStep
     * @param constPort is the index of the constant port
     * @param is_commutative is true if all the operations are commutative
     */
-   virtual void AnalyzeCell(functional_unit* fu, const unsigned int prec, const std::vector<std::string>& portsize_parameters, const size_t portsize_index, const std::vector<std::string>& pipe_parameters, const size_t stage_index,
+   virtual void AnalyzeCell(functional_unit* fu, const unsigned int prec,
+                            const std::vector<std::string>& portsize_parameters, const size_t portsize_index,
+                            const std::vector<std::string>& pipe_parameters, const size_t stage_index,
                             const unsigned int constPort, const bool is_commutative, size_t max_lut_size);
 
  public:
@@ -175,7 +183,8 @@ class RTLCharacterization : public FunctionalUnitStep
     * @param design_flow_manager is the design flow manager
     * @param parameters is the set of input parameters
     */
-   RTLCharacterization(const target_managerRef target, const std::string& component, const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
+   RTLCharacterization(const target_managerRef target, const std::string& _cells,
+                       const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
 
    /**
     * Destructor
@@ -210,7 +219,8 @@ class RTLCharacterization : public FunctionalUnitStep
     * @param dependencies is where relationships will be stored
     * @param relationship_type is the type of relationship to be computed
     */
-   virtual void ComputeRelationships(DesignFlowStepSet& relationship, const DesignFlowStep::RelationshipType relationship_type);
+   virtual void ComputeRelationships(DesignFlowStepSet& relationship,
+                                     const DesignFlowStep::RelationshipType relationship_type);
 
    /**
     * Return the factory to create this type of steps

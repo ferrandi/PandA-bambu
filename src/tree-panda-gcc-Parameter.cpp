@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -41,19 +41,6 @@
  */
 
 /// Autoheader include
-#include "config_HAVE_I386_CLANG4_COMPILER.hpp"
-#include "config_HAVE_I386_CLANG5_COMPILER.hpp"
-#include "config_HAVE_I386_CLANG6_COMPILER.hpp"
-#include "config_HAVE_I386_CLANG7_COMPILER.hpp"
-#include "config_HAVE_I386_GCC45_COMPILER.hpp"
-#include "config_HAVE_I386_GCC46_COMPILER.hpp"
-#include "config_HAVE_I386_GCC47_COMPILER.hpp"
-#include "config_HAVE_I386_GCC48_COMPILER.hpp"
-#include "config_HAVE_I386_GCC49_COMPILER.hpp"
-#include "config_HAVE_I386_GCC5_COMPILER.hpp"
-#include "config_HAVE_I386_GCC6_COMPILER.hpp"
-#include "config_HAVE_I386_GCC7_COMPILER.hpp"
-#include "config_HAVE_I386_GCC8_COMPILER.hpp"
 #include "config_HAVE_MAPPING_BUILT.hpp"
 #include "config_RELEASE.hpp"
 
@@ -88,7 +75,7 @@
 #include <getopt.h>
 
 /// Wrapper include
-#include "gcc_wrapper.hpp"
+#include "compiler_wrapper.hpp"
 
 #define OPT_PRINT_FILE_NAME 256
 #define OPT_INCLUDE 257
@@ -106,7 +93,8 @@
 #define OPT_MINUS_MAP 269
 #define OPT_GC_SECTIONS 270
 
-tree_panda_gcc_parameter::tree_panda_gcc_parameter(const std::string& _program_name, int _argc, char** const _argv) : Parameter(_program_name, _argc, _argv)
+tree_panda_gcc_parameter::tree_panda_gcc_parameter(const std::string& _program_name, int _argc, char** const _argv)
+    : Parameter(_program_name, _argc, _argv)
 {
    SetDefaults();
 }
@@ -148,12 +136,14 @@ int tree_panda_gcc_parameter::Exec()
 
       // no more options are available
       if(next_option == -1)
+      {
          break;
+      }
 
       switch(next_option)
       {
          case 'o':
-            setOption(OPT_output_file, optarg);
+            setOption(OPT_output_file, GetPath(optarg));
             break;
          case 'S':
          {
@@ -177,9 +167,13 @@ int tree_panda_gcc_parameter::Exec()
                ///
                std::string parameter(optarg);
                if(boost::algorithm::starts_with(parameter, "td="))
-                  setOption(OPT_gcc_standard, parameter.substr(parameter.find("=") + 1));
+               {
+                  setOption(OPT_gcc_standard, parameter.substr(parameter.find('=') + 1));
+               }
                else
+               {
                   THROW_ERROR("unexpected parameter: " + parameter);
+               }
             }
             break;
          }
@@ -187,11 +181,17 @@ int tree_panda_gcc_parameter::Exec()
          {
             std::string gcc_extra_options;
             if(optarg != nullptr)
+            {
                gcc_extra_options = "-M" + std::string(optarg);
+            }
             else
+            {
                gcc_extra_options = "-M";
+            }
             if(isOption(OPT_gcc_extra_options))
+            {
                gcc_extra_options = getOption<std::string>(OPT_gcc_extra_options) + " " + gcc_extra_options;
+            }
             setOption(OPT_gcc_extra_options, gcc_extra_options);
             break;
          }
@@ -206,7 +206,9 @@ int tree_panda_gcc_parameter::Exec()
                std::string gcc_extra_options;
                gcc_extra_options = "-i" + std::string(optarg);
                if(isOption(OPT_gcc_extra_options))
+               {
                   gcc_extra_options = getOption<std::string>(OPT_gcc_extra_options) + " " + gcc_extra_options;
+               }
                setOption(OPT_gcc_extra_options, gcc_extra_options);
             }
             break;
@@ -215,7 +217,9 @@ int tree_panda_gcc_parameter::Exec()
          {
             std::string gcc_extra_options = "-include " + std::string(optarg);
             if(isOption(OPT_gcc_extra_options))
+            {
                gcc_extra_options = getOption<std::string>(OPT_gcc_extra_options) + " " + gcc_extra_options;
+            }
             setOption(OPT_gcc_extra_options, gcc_extra_options);
             break;
          }
@@ -224,7 +228,9 @@ int tree_panda_gcc_parameter::Exec()
             std::string parameter(optarg);
             std::string gcc_extra_options = "-n" + std::string(parameter);
             if(isOption(OPT_gcc_extra_options))
+            {
                gcc_extra_options = getOption<std::string>(OPT_gcc_extra_options) + " " + gcc_extra_options;
+            }
             setOption(OPT_gcc_extra_options, gcc_extra_options);
             break;
          }
@@ -238,7 +244,9 @@ int tree_panda_gcc_parameter::Exec()
             std::string parameter(optarg);
             std::string gcc_extra_options = "-MF " + std::string(parameter);
             if(isOption(OPT_gcc_extra_options))
+            {
                gcc_extra_options = getOption<std::string>(OPT_gcc_extra_options) + " " + gcc_extra_options;
+            }
             setOption(OPT_gcc_extra_options, gcc_extra_options);
             break;
          }
@@ -247,7 +255,9 @@ int tree_panda_gcc_parameter::Exec()
             std::string parameter(optarg);
             std::string gcc_extra_options = "-MT " + std::string(parameter);
             if(isOption(OPT_gcc_extra_options))
+            {
                gcc_extra_options = getOption<std::string>(OPT_gcc_extra_options) + " " + gcc_extra_options;
+            }
             setOption(OPT_gcc_extra_options, gcc_extra_options);
             break;
          }
@@ -256,7 +266,9 @@ int tree_panda_gcc_parameter::Exec()
             std::string parameter(optarg);
             std::string gcc_extra_options = "-MQ " + std::string(parameter);
             if(isOption(OPT_gcc_extra_options))
+            {
                gcc_extra_options = getOption<std::string>(OPT_gcc_extra_options) + " " + gcc_extra_options;
+            }
             setOption(OPT_gcc_extra_options, gcc_extra_options);
             break;
          }
@@ -264,7 +276,9 @@ int tree_panda_gcc_parameter::Exec()
          {
             std::string gcc_extra_options = "-x " + std::string(optarg);
             if(isOption(OPT_gcc_extra_options))
+            {
                gcc_extra_options = getOption<std::string>(OPT_gcc_extra_options) + " " + gcc_extra_options;
+            }
             setOption(OPT_gcc_extra_options, gcc_extra_options);
             break;
          }
@@ -272,16 +286,20 @@ int tree_panda_gcc_parameter::Exec()
          {
             std::string gcc_extra_options = "-t";
             if(isOption(OPT_gcc_extra_options))
+            {
                gcc_extra_options = getOption<std::string>(OPT_gcc_extra_options) + " " + gcc_extra_options;
+            }
             setOption(OPT_gcc_extra_options, gcc_extra_options);
             break;
          }
          case OPT_PRINT_FILE_NAME:
          {
-            const GccWrapper_OptimizationSet optimization_set = getOption<GccWrapper_OptimizationSet>(OPT_gcc_optimization_set);
+            const CompilerWrapper_OptimizationSet optimization_set =
+                getOption<CompilerWrapper_OptimizationSet>(OPT_gcc_optimization_set);
             refcount<tree_panda_gcc_parameter> param(this, null_deleter());
-            GccWrapperRef Wrap = GccWrapperRef(new GccWrapper(param, GccWrapper_CompilerTarget::CT_NO_GCC, optimization_set));
-            Wrap->QueryGccConfig("--print-file-name=" + std::string(optarg));
+            CompilerWrapperRef Wrap = CompilerWrapperRef(
+                new CompilerWrapper(param, CompilerWrapper_CompilerTarget::CT_NO_COMPILER, optimization_set));
+            Wrap->QueryCompilerConfig("--print-file-name=" + std::string(optarg));
             return EXIT_SUCCESS;
          }
          case OPT_START_GROUP:
@@ -302,9 +320,13 @@ int tree_panda_gcc_parameter::Exec()
             bool exit_success = false;
             bool res = ManageGccOptions(next_option, optarg);
             if(res)
+            {
                res = ManageDefaultOptions(next_option, optarg, exit_success);
+            }
             if(exit_success)
+            {
                return EXIT_SUCCESS;
+            }
             if(res)
             {
                return PARAMETER_NOTPARSED;
@@ -330,7 +352,7 @@ int tree_panda_gcc_parameter::Exec()
          {
             object_files = getOption<std::string>(OPT_obj_files) + STR_CST_string_separator;
          }
-         setOption(OPT_obj_files, object_files + argv[optind]);
+         setOption(OPT_obj_files, object_files + GetPath(argv[optind]));
       }
       else if(GetExtension(argv[optind]) == "a")
       {
@@ -339,7 +361,7 @@ int tree_panda_gcc_parameter::Exec()
          {
             archive_files = getOption<std::string>(OPT_archive_files) + STR_CST_string_separator;
          }
-         setOption(OPT_archive_files, archive_files + argv[optind]);
+         setOption(OPT_archive_files, archive_files + GetPath(argv[optind]));
       }
       else
       {
@@ -348,7 +370,7 @@ int tree_panda_gcc_parameter::Exec()
          {
             input_file = getOption<std::string>(OPT_input_file) + STR_CST_string_separator;
          }
-         setOption(OPT_input_file, input_file + argv[optind]);
+         setOption(OPT_input_file, input_file + GetPath(argv[optind]));
       }
       optind++;
    }
@@ -365,7 +387,8 @@ void tree_panda_gcc_parameter::CheckParameters()
 
 void tree_panda_gcc_parameter::PrintHelp(std::ostream& os) const
 {
-   os << "Usage: " << getOption<std::string>(OPT_program_name) << " [options] <input_file1> [<input_file2> ... <input_fileN>]" << std::endl;
+   os << "Usage: " << getOption<std::string>(OPT_program_name)
+      << " [options] <input_file1> [<input_file2> ... <input_fileN>]" << std::endl;
    os << std::endl;
    os << "Options: \n"
       << "\n";
@@ -383,9 +406,9 @@ void tree_panda_gcc_parameter::PrintProgramName(std::ostream& os) const
    os << "********************************************************************************" << std::endl;
    os << "   _                                             _" << std::endl;
    os << "  | |_ _ __ ___  ___       _ __   __ _ _ __   __| | __ _        __ _  ___ ___" << std::endl;
-   os << "  | __| '__/ _ \\/ _ \\_____| '_ \\ / _` | '_ \\ / _` |/ _` |_____ / _` |/ __/ __|" << std::endl;
+   os << R"(  | __| '__/ _ \/ _ \_____| '_ \ / _` | '_ \ / _` |/ _` |_____ / _` |/ __/ __|)" << std::endl;
    os << "  | |_| | |  __/  __/_____| |_) | (_| | | | | (_| | (_| |_____| (_| | (_| (__" << std::endl;
-   os << "   \\__|_|  \\___|\\___|     | .__/ \\__,_|_| |_|\\__,_|\\__,_|      \\__, |\\___\\___|" << std::endl;
+   os << R"(   \__|_|  \___|\___|     | .__/ \__,_|_| |_|\__,_|\__,_|      \__, |\___\___|)" << std::endl;
    os << "                          |_|                                  |___/" << std::endl;
    os << "********************************************************************************" << std::endl;
 }
@@ -398,7 +421,7 @@ void tree_panda_gcc_parameter::SetDefaults()
    /// Output level
    setOption(OPT_output_level, OUTPUT_LEVEL_NONE);
 
-   setOption(OPT_gcc_opt_level, GccWrapper_OptimizationSet::O0);
+   setOption(OPT_compiler_opt_level, CompilerWrapper_OptimizationSet::O0);
 
    setOption(OPT_print_dot, false);
 
@@ -414,83 +437,9 @@ void tree_panda_gcc_parameter::SetDefaults()
 #endif
 
    // -- GCC options -- //
-#if HAVE_I386_GCC47_COMPILER
-   setOption(OPT_default_compiler, static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC47));
-#elif HAVE_I386_GCC46_COMPILER
-   setOption(OPT_default_compiler, static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC46));
-#elif HAVE_I386_GCC45_COMPILER
-   setOption(OPT_default_compiler, static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC45));
-#elif HAVE_I386_GCC48_COMPILER
-   setOption(OPT_default_compiler, static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC48));
-#elif HAVE_I386_GCC49_COMPILER
-   setOption(OPT_default_compiler, static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC49));
-#elif HAVE_I386_GCC5_COMPILER
-   setOption(OPT_default_compiler, static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC5));
-#elif HAVE_I386_GCC6_COMPILER
-   setOption(OPT_default_compiler, static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC6));
-#elif HAVE_I386_GCC7_COMPILER
-   setOption(OPT_default_compiler, static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC7));
-#elif HAVE_I386_GCC8_COMPILER
-   setOption(OPT_default_compiler, static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC8));
-#elif HAVE_I386_CLANG4_COMPILER
-   setOption(OPT_default_compiler, static_cast<int>(GccWrapper_CompilerTarget::CT_I386_CLANG4));
-#elif HAVE_I386_CLANG5_COMPILER
-   setOption(OPT_default_compiler, static_cast<int>(GccWrapper_CompilerTarget::CT_I386_CLANG5));
-#elif HAVE_I386_CLANG6_COMPILER
-   setOption(OPT_default_compiler, static_cast<int>(GccWrapper_CompilerTarget::CT_I386_CLANG6));
-#elif HAVE_I386_CLANG7_COMPILER
-   setOption(OPT_default_compiler, static_cast<int>(GccWrapper_CompilerTarget::CT_I386_CLANG7));
-#else
-   THROW_ERROR("No GCC compiler available");
-#endif
-   setOption(OPT_compatible_compilers, 0
-#if HAVE_I386_GCC45_COMPILER
-                                           | static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC45)
-#endif
-#if HAVE_I386_GCC46_COMPILER
-                                           | static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC46)
-#endif
-#if HAVE_I386_GCC47_COMPILER
-                                           | static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC47)
-#endif
-#if HAVE_I386_GCC48_COMPILER
-                                           | static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC48)
-#endif
-#if HAVE_I386_GCC49_COMPILER
-                                           | static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC49)
-#endif
-#if HAVE_I386_GCC5_COMPILER
-                                           | static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC5)
-#endif
-#if HAVE_I386_GCC6_COMPILER
-                                           | static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC6)
-#endif
-#if HAVE_I386_GCC7_COMPILER
-                                           | static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC7)
-#endif
-#if HAVE_I386_GCC8_COMPILER
-                                           | static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC8)
-#endif
-#if HAVE_I386_CLANG4_COMPILER
-                                           | static_cast<int>(GccWrapper_CompilerTarget::CT_I386_CLANG4)
-#endif
-#if HAVE_I386_CLANG5_COMPILER
-                                           | static_cast<int>(GccWrapper_CompilerTarget::CT_I386_CLANG5)
-#endif
-#if HAVE_I386_CLANG6_COMPILER
-                                           | static_cast<int>(GccWrapper_CompilerTarget::CT_I386_CLANG6)
-#endif
-#if HAVE_I386_CLANG7_COMPILER
-                                           | static_cast<int>(GccWrapper_CompilerTarget::CT_I386_CLANG7)
-#endif
-#if HAVE_ARM_COMPILER
-                                           | static_cast<int>(GccWrapper_CompilerTarget::CT_ARM_GCC)
-#endif
-#if HAVE_SPARC_COMPILER
-                                           | static_cast<int>(GccWrapper_CompilerTarget::CT_SPARC_GCC)
-#endif
-   );
-   setOption(OPT_gcc_m32_mx32, "-m32 -mno-sse2 ");
+   setOption(OPT_default_compiler, CompilerWrapper::getDefaultCompiler());
+   setOption(OPT_compatible_compilers, CompilerWrapper::getCompatibleCompilers());
+   setOption(OPT_gcc_m32_mx32, "-m32 -mno-sse2");
    setOption(OPT_without_transformation, true);
    setOption(OPT_precision, 3);
    setOption(OPT_compute_size_of, true);
@@ -500,9 +449,9 @@ void tree_panda_gcc_parameter::SetDefaults()
    setOption(OPT_gcc_openmp_simd, 0);
    setOption(OPT_no_clean, false);
 #if HAVE_BAMBU_BUILT
-   setOption(OPT_gcc_optimization_set, GccWrapper_OptimizationSet::OBAMBU);
+   setOption(OPT_gcc_optimization_set, CompilerWrapper_OptimizationSet::OBAMBU);
 #elif HAVE_ZEBU_BUILT
-   setOption(OPT_gcc_optimization_set, GccWrapper_OptimizationSet::OZEBU);
+   setOption(OPT_gcc_optimization_set, CompilerWrapper_OptimizationSet::OZEBU);
 #else
    setOption(OPT_gcc_optimization_set, OS_OZEBU);
 #endif

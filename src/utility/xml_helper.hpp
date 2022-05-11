@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -49,7 +49,8 @@
 /// WRITE XML Value Macro. Insert a value in an XML tree.
 #define WRITE_XVM(variable, node) (node)->set_attribute(#variable, boost::lexical_cast<std::string>(variable))
 
-/// WRITE XML Name Value Macro. Insert a value in an XML tree given the name of the attribute. The name is converted in a string.
+/// WRITE XML Name Value Macro. Insert a value in an XML tree given the name of the attribute. The name is converted in
+/// a string.
 #define WRITE_XNVM(variable, value, node) (node)->set_attribute(#variable, value)
 
 /// WRITE XML Name Value Macro second version. Insert a value in an XML tree given the name of the attribute.
@@ -57,13 +58,16 @@
 
 /// WRITE XML Name Value Macro third version. Insert a value in an XML tree given the name of the attribute; it sets the
 /// attribute with "value" field. It adds a child to node with variable name
-#define WRITE_VALUE(variable, node) WRITE_XNVM(value, boost::lexical_cast<std::string>(variable), (node)->add_child(#variable))
+#define WRITE_VALUE(variable, node) \
+   WRITE_XNVM(value, boost::lexical_cast<std::string>(variable), (node)->add_child(#variable))
 
 /// LOAD XML Value Macro. Set a variable starting from an XML value. Conversion is performed if needed.
-#define LOAD_XVM(variable, node) variable = boost::lexical_cast<BOOST_TYPEOF_TPL(variable)>((node)->get_attribute(#variable)->get_value())
+#define LOAD_XVM(variable, node) \
+   variable = boost::lexical_cast<BOOST_TYPEOF_TPL(variable)>((node)->get_attribute(#variable)->get_value())
 
 /// LOAD XML Value for field Macro. Set a variable starting from an XML value. Conversion is performed if needed.
-#define LOAD_XVFM(variable, node, field) variable = boost::lexical_cast<BOOST_TYPEOF_TPL(variable)>((node)->get_attribute(#field)->get_value())
+#define LOAD_XVFM(variable, node, field) \
+   variable = boost::lexical_cast<BOOST_TYPEOF_TPL(variable)>((node)->get_attribute(#field)->get_value())
 
 /// under windows long double numbers are not correctly managed. This hack solves the problem
 #define LOAD_XVM_LD(variable, node) variable = strtold(((node)->get_attribute(#variable)->get_value()).c_str(), nullptr)
@@ -72,7 +76,7 @@
 /// Conversion is performed if needed.
 #define LOAD_VALUE(variable, node)     \
    if((node)->get_name() == #variable) \
-   variable = boost::lexical_cast<BOOST_TYPEOF_TPL(variable)>((node)->get_attribute("value")->get_value())
+   (variable) = boost::lexical_cast<BOOST_TYPEOF_TPL(variable)>((node)->get_attribute("value")->get_value())
 
 /// LOAD XML Value Macro. Set a variable starting from an XML attribute composed of name and value.
 /// Conversion is performed if needed.

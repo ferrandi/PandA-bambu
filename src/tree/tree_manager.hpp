@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -71,8 +71,11 @@ enum kind : int;
 REF_FORWARD_DECL(tree_manager);
 CONSTREF_FORWARD_DECL(tree_node);
 REF_FORWARD_DECL(tree_node);
+REF_FORWARD_DECL(application_manager);
 enum class TreeVocabularyTokenTypes_TokenEnum;
 //@}
+
+#define BUILTIN_SRCP "<built-in>:0:0"
 
 /**
  * This class manages the tree structures extracted from the raw file.
@@ -129,7 +132,7 @@ class tree_manager
    /// this table stores all identifier_nodes with their nodeID.
    CustomUnorderedMapUnstable<std::string, unsigned int> identifiers_unique_table;
 
-   CustomUnorderedMap<std::pair<long long int, unsigned int>, tree_nodeRef> unique_integer_cst_map;
+   CustomUnorderedMap<std::pair<std::string, unsigned int>, tree_nodeRef> unique_cst_map;
 
    /// Set of parameters
    const ParameterConstRef Param;
@@ -144,7 +147,8 @@ class tree_manager
    unsigned int collapse_into_counter;
 
    /**
-    * check for decl_node and return true if not suitable for symbol table or otherwise its symbol_name and symbol_scope.
+    * check for decl_node and return true if not suitable for symbol table or otherwise its symbol_name and
+    * symbol_scope.
     * @param tn is the tree node to be examinated
     * @param TM is a refcount to this TODO: could be removed?
     * @param symbol_name is where symbol name will be stored
@@ -152,26 +156,35 @@ class tree_manager
     * @param node_id is the index of the tree node
     * @return true if symbol has not to be inserted into symbol table
     */
-   bool check_for_decl(const tree_nodeRef& tn, const tree_managerRef& TM, std::string& symbol_name, std::string& symbol_scope, unsigned int node_id, const CustomUnorderedMap<unsigned int, std::string>& global_type_unql_symbol_table);
+   bool check_for_decl(const tree_nodeRef& tn, const tree_managerRef& TM, std::string& symbol_name,
+                       std::string& symbol_scope, unsigned int node_id,
+                       const CustomUnorderedMap<unsigned int, std::string>& global_type_unql_symbol_table);
 
    /**
     * check for type and return true if not suitable for symbol table or otherwise its symbol_name and symbol_scope.
     */
-   bool check_for_type(const tree_nodeRef& tn, const tree_managerRef& TM, std::string& symbol_name, std::string& symbol_scope, const CustomUnorderedMapUnstable<std::string, unsigned int>& global_type_symbol_table, unsigned int node_id);
+   bool check_for_type(const tree_nodeRef& tn, const tree_managerRef& TM, std::string& symbol_name,
+                       std::string& symbol_scope,
+                       const CustomUnorderedMapUnstable<std::string, unsigned int>& global_type_symbol_table,
+                       unsigned int node_id);
 
    /**
-    * Erase the information about variable usage (remove stmt from use_stmts attribute) in ssa variables recursively contained in node tn.
+    * Erase the information about variable usage (remove stmt from use_stmts attribute) in ssa variables recursively
+    * contained in node tn.
     * @param tn is the node from which the recursion begin.
     * @param stmt is the statement that is removed from the usage vector of ssa variables.
     */
    void erase_usage_info(const tree_nodeRef& tn, const tree_nodeRef& stmt);
 
    /**
-    * Insert the information about variable usage (insert stmt in use_stmts attribute) in ssa variables recursively contained in node tn.
+    * Insert the information about variable usage (insert stmt in use_stmts attribute) in ssa variables recursively
+    * contained in node tn.
     * @param tn is the node from which the recursion begin.
     * @param stmt is the statement that is inserted in the usage vector of ssa variables.
     */
    void insert_usage_info(const tree_nodeRef& tn, const tree_nodeRef& stmt);
+
+   tree_nodeRef create_unique_const(const std::string& val, const tree_nodeConstRef& type);
 
  public:
    /**
@@ -184,7 +197,8 @@ class tree_manager
     * @param stmt is the statement from which the recursion originates (necessary to update ssa_nodes usage information)
     * @param definition is true if old_node is a ssa_name in the left part of a gimple_assign
     */
-   void RecursiveReplaceTreeNode(tree_nodeRef& tn, const tree_nodeRef old_node, const tree_nodeRef& new_node, const tree_nodeRef& stmt, bool definition); // NOLINT
+   void RecursiveReplaceTreeNode(tree_nodeRef& tn, const tree_nodeRef old_node, const tree_nodeRef& new_node,
+                                 const tree_nodeRef& stmt, bool definition); // NOLINT
 
    /**
     * This is the constructor of the tree_manager which initializes the vector of functions.
@@ -249,7 +263,8 @@ class tree_manager
 
    /**
     * Factory method.
-    * It creates a tree_node of type equal tree_node_type by using a relation (tree_node_schema) between tree node fields and their values.
+    * It creates a tree_node of type equal tree_node_type by using a relation (tree_node_schema) between tree node
+    * fields and their values.
     * @param node_id is the node id of the created object.
     * @param tree_node_type is the type of the node added to the tree_manager expressed as a treeVocabularyTokenTypes.
     * @param tree_node_schema expresses the value of the field of the tree node created.
@@ -260,14 +275,16 @@ class tree_manager
     * TM->create_tree_node(identifier_node_id, TOK(TOK_IDENTIFIER_NODE), identifier_schema);
     * will add an identifier node to the tree_manager TM.
     */
-   void create_tree_node(const unsigned int node_id, enum kind tree_node_type, std::map<TreeVocabularyTokenTypes_TokenEnum, std::string>& tree_node_schema);
+   void create_tree_node(const unsigned int node_id, enum kind tree_node_type,
+                         std::map<TreeVocabularyTokenTypes_TokenEnum, std::string>& tree_node_schema);
 
    /**
     * if there exist return the node id of a tree node compatible with the tree_node_schema and of type tree_node_type.
     * @param tree_node_type is the type of the node added to the tree_manager expressed as a treeVocabularyTokenTypes.
     * @param tree_node_schema expresses the value of the field of the tree node created.
     */
-   unsigned int find(enum kind tree_node_type, const std::map<TreeVocabularyTokenTypes_TokenEnum, std::string>& tree_node_schema);
+   unsigned int find(enum kind tree_node_type,
+                     const std::map<TreeVocabularyTokenTypes_TokenEnum, std::string>& tree_node_schema);
 
    /**
     * Return a new node id in the intermediate representation.
@@ -307,11 +324,27 @@ class tree_manager
 
    /**
     * Return the index of a function given its name
-    * @param tm is the tree_manager
     * @param function_name is the name of the function
     * @return the treenode_index of the function_decl
     */
+   /// FIXME: to be remove after substitution with GetFunction
    unsigned int function_index(const std::string& function_name) const;
+
+   /**
+    * Return the index of a function given its name
+    * @param tm is the tree_manager
+    * @param function_name is the name of the function
+    * @return the tree node of the function_decl
+    */
+   tree_nodeRef GetFunction(const std::string& function_name) const;
+
+   /**
+    * Return the index of a function given its mangled name
+    * @param tm is the tree_manager
+    * @param function_name is the mangled name of the function
+    * @return the treenode_index of the function_decl
+    */
+   unsigned int function_index_mngl(const std::string& function_name) const;
 
    /**
     * Function that prints the class tree_manager.
@@ -330,7 +363,7 @@ class tree_manager
    /**
     * Friend definition of the << operator.
     */
-   friend std::ostream& operator<<(std::ostream& os, tree_manager& s)
+   friend std::ostream& operator<<(std::ostream& os, const tree_manager& s)
    {
       s.print(os);
       return os;
@@ -342,7 +375,9 @@ class tree_manager
    friend std::ostream& operator<<(std::ostream& os, const tree_managerRef& s)
    {
       if(s)
+      {
          s->print(os);
+      }
       return os;
    }
 
@@ -353,7 +388,9 @@ class tree_manager
     * @param tn is the top tree node of the tree to be collapsed
     * @param removed_nodes is the set of nodes removed during collapsing
     */
-   void collapse_into(const unsigned int& funID, CustomUnorderedMapUnstable<unsigned int, unsigned int>& stmt_to_bloc, const tree_nodeRef& tn, CustomUnorderedSet<unsigned int>& removed_nodes);
+   void collapse_into(const unsigned int& funID, CustomUnorderedMapUnstable<unsigned int, unsigned int>& stmt_to_bloc,
+                      const tree_nodeRef& tn, CustomUnorderedSet<unsigned int>& removed_nodes,
+                      const application_managerRef AppM);
 
    /// increment the number a parallel loop
    void add_parallel_loop();
@@ -365,7 +402,7 @@ class tree_manager
     * merge two tree manager: this with TM_source
     * @param TM_source is one of the tree_manager.
     */
-   void merge_tree_managers(const tree_managerRef& TM_source);
+   void merge_tree_managers(const tree_managerRef& source_tree_manager);
 
    /**
     * Increment the number of added gotos
@@ -437,15 +474,23 @@ class tree_manager
     * @param old_node is the node whose occurrences have to be replace
     * @param new_node is thenode that replaces occurrences of old_node
     */
-   void ReplaceTreeNode(const tree_nodeRef& tn, const tree_nodeRef& old_node, const tree_nodeRef& new_node);
+   void ReplaceTreeNode(const tree_nodeRef& stmt, const tree_nodeRef& old_node, const tree_nodeRef& new_node);
 
    /**
     * memoization of integer constants
     * @param value is the integer value
     * @param type_index is the type of the integer constant
-    * @return a tree reindex node for the integer value with as type type_index
+    * @return a tree reindex node for the integer value with as type type
     */
-   tree_nodeRef CreateUniqueIntegerCst(long long int value, unsigned int type_index);
+   tree_nodeRef CreateUniqueIntegerCst(long long int value, const tree_nodeConstRef& type);
+
+   /**
+    * memoization of integer constants
+    * @param value is the real value
+    * @param type_index is the type of the real constant
+    * @return a tree reindex node for the real value with as type type
+    */
+   tree_nodeRef CreateUniqueRealCst(long double value, const tree_nodeConstRef& type);
 
    /**
     * @brief is_CPP return true in case we have at least one CPP source code
@@ -466,6 +511,6 @@ class tree_manager
     */
    bool check_ssa_uses(unsigned int fun_id) const;
 };
-typedef refcount<tree_manager> tree_managerRef;
-typedef refcount<const tree_manager> tree_managerConstRef;
+using tree_managerRef = refcount<tree_manager>;
+using tree_managerConstRef = refcount<const tree_manager>;
 #endif

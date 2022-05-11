@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2015-2020 Politecnico di Milano
+ *              Copyright (C) 2015-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -71,7 +71,8 @@ class HDLVarDeclFix : public VarDeclFix
     * @param design_flow_manager is the design flow manager
     * @param parameters is the set of input parameters
     */
-   HDLVarDeclFix(const application_managerRef AppM, unsigned int fun_id, const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
+   HDLVarDeclFix(const application_managerRef AppM, unsigned int _function_id,
+                 const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
 
    /**
     * Destructor

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -166,7 +166,7 @@ class pragma_manager
 
    void addFunctionCallPragmas(const std::string& Name, const CustomUnorderedSet<std::string>& Pragmas);
 
-   unsigned int addBlackBoxPragma(const std::string& function_name);
+   unsigned int addBlackBoxPragma(const std::string& function_name, unsigned int function_id);
 
    void setGenericPragma(unsigned int number, const std::string& line);
 
@@ -177,7 +177,7 @@ class pragma_manager
     * @param line is the string containing the pragma
     * @return the index of the created pragma node
     */
-   unsigned int AddOmpSimdPragma(const std::string& line) const;
+   unsigned int AddOmpSimdPragma(const std::string& line, unsigned int function_id) const;
 
    /**
     * Check if a omp for pragma is associated with the loop
@@ -186,21 +186,24 @@ class pragma_manager
     * @param bb_vertex is the basic block to which for operation belongs
     * @return true if there is an associated pragma
     */
-   bool CheckOmpFor(const application_managerConstRef app_man, const unsigned int function_index, const vertex bb_operation_vertex) const;
+   bool CheckOmpFor(const application_managerConstRef app_man, const unsigned int function_index,
+                    const vertex bb_operation_vertex) const;
 
    /**
     * Check if a omp for pragma is associated with the loop; if yes, add the gimple_for
     * @param function_index is the index of the function
     * @param bb_vertex is the basic block to which for operation belongs
     */
-   void CheckAddOmpFor(const unsigned int function_index, const vertex bb_operation_vertex);
+   void CheckAddOmpFor(const unsigned int function_index, const vertex bb_operation_vertex,
+                       const application_managerRef AppM);
 
    /**
     * Check if a omp simd pragma is associated with the loop; if yes, add information to the loop
     * @param function_index is the index of the function
     * @param bb_vertex is the basic block to which for operation belongs
     */
-   void CheckAddOmpSimd(const unsigned int function_index, const vertex bb_operation_vertex);
+   void CheckAddOmpSimd(const unsigned int function_index, const vertex bb_operation_vertex,
+                        const application_managerRef AppM);
 
    /**
     * Get mapping of a function given by the pragma
@@ -224,7 +227,7 @@ class pragma_manager
 };
 
 /// Refcount definition for the class
-typedef refcount<const pragma_manager> pragma_managerConstRef;
-typedef refcount<pragma_manager> pragma_managerRef;
+using pragma_managerConstRef = refcount<const pragma_manager>;
+using pragma_managerRef = refcount<pragma_manager>;
 
 #endif

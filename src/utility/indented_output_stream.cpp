@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -53,7 +53,8 @@
 /// In global_variables.hpp
 extern size_t indentation;
 
-IndentedOutputStream::IndentedOutputStream(char o, char c, unsigned int d) : indent_spaces(0), opening_char(o), closing_char(c), delta(d), is_line_start(true)
+IndentedOutputStream::IndentedOutputStream(char o, char c, unsigned int d)
+    : indent_spaces(0), opening_char(o), closing_char(c), delta(d), is_line_start(true)
 {
 }
 

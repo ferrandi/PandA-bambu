@@ -43,6 +43,7 @@
 #include "absl/strings/str_cat.h"
 
 namespace absl {
+ABSL_NAMESPACE_BEGIN
 namespace strings_internal {
 
 //
@@ -228,10 +229,11 @@ std::string JoinAlgorithm(Iterator start, Iterator end, absl::string_view s,
   std::string result;
   if (start != end) {
     // Sums size
-    size_t result_size = start->size();
+    auto&& start_value = *start;
+    size_t result_size = start_value.size();
     for (Iterator it = start; ++it != end;) {
       result_size += s.size();
-      result_size += it->size();
+      result_size += (*it).size();
     }
 
     if (result_size > 0) {
@@ -239,13 +241,15 @@ std::string JoinAlgorithm(Iterator start, Iterator end, absl::string_view s,
 
       // Joins strings
       char* result_buf = &*result.begin();
-      memcpy(result_buf, start->data(), start->size());
-      result_buf += start->size();
+
+      memcpy(result_buf, start_value.data(), start_value.size());
+      result_buf += start_value.size();
       for (Iterator it = start; ++it != end;) {
         memcpy(result_buf, s.data(), s.size());
         result_buf += s.size();
-        memcpy(result_buf, it->data(), it->size());
-        result_buf += it->size();
+        auto&& value = *it;
+        memcpy(result_buf, value.data(), value.size());
+        result_buf += value.size();
       }
     }
   }
@@ -307,6 +311,7 @@ std::string JoinRange(const Range& range, absl::string_view separator) {
 }
 
 }  // namespace strings_internal
+ABSL_NAMESPACE_END
 }  // namespace absl
 
 #endif  // ABSL_STRINGS_INTERNAL_STR_JOIN_INTERNAL_H_

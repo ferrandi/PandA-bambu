@@ -1,5 +1,5 @@
 /* kitty: C++ truth table library
- * Copyright (C) 2017-2019  EPFL
+ * Copyright (C) 2017-2021  EPFL
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -57,8 +57,8 @@ struct dynamic_truth_table
 
     \param num_vars Number of variables
   */
-  explicit dynamic_truth_table( int num_vars )
-      : _bits( ( num_vars <= 6 ) ? 1 : ( 1 << ( num_vars - 6 ) ) ),
+  explicit dynamic_truth_table( uint32_t num_vars )
+      : _bits( ( num_vars <= 6 ) ? 1u : ( 1u << ( num_vars - 6 ) ) ),
         _num_vars( num_vars )
   {
   }
@@ -133,11 +133,11 @@ struct dynamic_truth_table
   /*! \brief Assign other truth table.
 
     This replaces the current truth table with another truth table.  The truth
-    table type is arbitrary.  The vector of bits is resized accordingly.
+    table type has to be complete.  The vector of bits is resized accordingly.
 
     \param other Other truth table
   */
-  template<class TT, typename = std::enable_if_t<is_truth_table<TT>::value>>
+  template<class TT, typename = std::enable_if_t<is_truth_table<TT>::value && is_complete_truth_table<TT>::value>>
   dynamic_truth_table& operator=( const TT& other )
   {
     _bits.resize( other.num_blocks() );
@@ -169,10 +169,13 @@ struct dynamic_truth_table
   /*! \cond PRIVATE */
 public: /* fields */
   std::vector<uint64_t> _bits;
-  int _num_vars;
+  uint32_t _num_vars;
   /*! \endcond */
 };
 
 template<>
 struct is_truth_table<kitty::dynamic_truth_table> : std::true_type {};
+
+template<>
+struct is_complete_truth_table<kitty::dynamic_truth_table> : std::true_type {};
 } // namespace kitty

@@ -50,7 +50,8 @@ using namespace ac_math;
 //   ac_fixed inputs.
 
 template <int Wfi, int Ifi, int outWfi, int outIfi, bool outSfi>
-void test_ac_log2_cordic(const ac_fixed<Wfi, Ifi, false, AC_TRN, AC_WRAP>& in, ac_fixed<outWfi, outIfi, outSfi, AC_TRN, AC_WRAP>& log2_out)
+void test_ac_log2_cordic(const ac_fixed<Wfi, Ifi, false, AC_TRN, AC_WRAP>& in,
+                         ac_fixed<outWfi, outIfi, outSfi, AC_TRN, AC_WRAP>& log2_out)
 {
    ac_log2_cordic(in, log2_out);
 }
@@ -82,7 +83,8 @@ using namespace std;
 //   in variables defined in the calling function.
 
 template <int Wfi, int Ifi, int outWfi, int outIfi, bool outSfi>
-int test_driver(double& cumulative_max_error_log2, const double allowed_error, const double threshold, bool details = false)
+int test_driver(double& cumulative_max_error_log2, const double allowed_error, const double threshold,
+                bool details = false)
 {
    ac_fixed<Wfi + 2, Ifi + 1, false, AC_TRN, AC_WRAP> i; // make loop variable slightly larger
    ac_fixed<Wfi, Ifi, false, AC_TRN, AC_WRAP> input;

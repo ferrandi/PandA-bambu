@@ -1,3 +1,1 @@
 EXTRA_DIST += %D%/bambu.sh %D%/constraints_STD.xml %D%/main_test.c %D%/module1.c %D%/module1.v %D%/module2.c %D%/module2.v %D%/module_lib.h %D%/module_lib.xml %D%/printer1.c %D%/printer1.v %D%/printer2.c %D%/printer2.v %D%/README.txt %D%/test.xml %D%/top.c
-TESTS+=%D%/bambu.sh
-

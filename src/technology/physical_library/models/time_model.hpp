@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -81,11 +81,7 @@ class time_model
    std::map<std::string, std::map<std::string, double>> pin_to_pin_delay;
 
    /// type of the timing path
-   typedef enum
-   {
-      POST_SYNTHESIS = 1,
-      POST_LAYOUT = 2
-   } path_t;
+   using path_t = enum { POST_SYNTHESIS = 1, POST_LAYOUT = 2 };
 
  protected:
    /// class containing all the parameters
@@ -114,7 +110,7 @@ class time_model
    /**
     * Constructor.
     */
-   explicit time_model(const ParameterConstRef Param);
+   explicit time_model(const ParameterConstRef _Param_);
 
    /**
     * Destructor.
@@ -165,6 +161,6 @@ class time_model
    //@}
 };
 /// refcount definition of the class
-typedef refcount<time_model> time_modelRef;
+using time_modelRef = refcount<time_model>;
 
 #endif

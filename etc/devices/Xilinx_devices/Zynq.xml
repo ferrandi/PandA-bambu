@@ -123,7 +123,6 @@
       <param name="equivalent_register_removal on" condition="${__connect_iob__}">Remove redundant registers during global optimization (default is on)-[need -global_opt].</param>-
       <param name="mt 2">Multi-threading. Default is "off". When "on", software will decide how many processors it should use (depending on what's available).</param>
       <param name="ir off">Do not use RLOC constraints to generate RPMs. Default is "off". Use RLOCs to group logic together within a Slice, but not to control the relative placement of Slices with respect to each other.</param>
-      <param name="pr off">Pack internal flops/latches into input IOBs (i), output IOBs (o), both types of IOBs (b), or internal fabric such as slices, BRAMs, or DSP blocks (off). (default is off).</param>
       <param name="lc auto">LUT Combining.  Merges pairs of Look Up Tables (LUTs) with common inputs into single dual output LUT6s in order to improve area.</param>
       <param name="power on" condition="${__power_optimization__}">Power optimizations.</param>
       <param name="x" condition="!${__time_constrained__}">Enable Performance Evaluation Mode. In this mode, the tools will ignore any timing constraints specified in a constraints file and auto-generate timing constraints to drive tool performance.</param>

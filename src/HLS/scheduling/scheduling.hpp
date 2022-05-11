@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -89,7 +89,9 @@ class Scheduling : public HLSFunctionStep
     * @param cdg is the controlling dependency graph.
     * @param switch_set is filled with the switch tags in case the source of e is a switch vertex.
     */
-   unsigned int compute_b_tag(const EdgeDescriptor& e, const OpGraphConstRef cdg, CustomOrderedSet<unsigned int>::const_iterator& switch_it, CustomOrderedSet<unsigned int>::const_iterator& switch_it_end) const;
+   unsigned int compute_b_tag(const EdgeDescriptor& e, const OpGraphConstRef cdg,
+                              CustomOrderedSet<unsigned int>::const_iterator& switch_it,
+                              CustomOrderedSet<unsigned int>::const_iterator& switch_it_end) const;
 
    /**
     * Return the number of branches associated with the controlling vertex.
@@ -125,7 +127,8 @@ class Scheduling : public HLSFunctionStep
     * @param relationship_type is the type of relationship to be considered
     * @return the steps in relationship with this
     */
-   const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+   const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
+   ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
  public:
    /**
@@ -133,8 +136,10 @@ class Scheduling : public HLSFunctionStep
     * @param design_flow_manager is the design flow manager
     * @param hls_flow_step_type is the type of scheduling
     */
-   Scheduling(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStep_Type hls_flow_step_type,
-              const HLSFlowStepSpecializationConstRef hls_flow_step_specialization = HLSFlowStepSpecializationConstRef());
+   Scheduling(
+       const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId,
+       const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStep_Type hls_flow_step_type,
+       const HLSFlowStepSpecializationConstRef hls_flow_step_specialization = HLSFlowStepSpecializationConstRef());
 
    /**
     * Destructor.

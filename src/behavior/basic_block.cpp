@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -129,11 +129,13 @@ unsigned long long BBEdgeInfo::get_epp_value() const
    return epp_value;
 }
 
-BBGraphInfo::BBGraphInfo(const application_managerConstRef _AppM, const unsigned int _function_index) : GraphInfo(), AppM(_AppM), function_index(_function_index), entry_vertex(NULL_VERTEX), exit_vertex(NULL_VERTEX)
+BBGraphInfo::BBGraphInfo(const application_managerConstRef _AppM, const unsigned int _function_index)
+    : GraphInfo(), AppM(_AppM), function_index(_function_index), entry_vertex(NULL_VERTEX), exit_vertex(NULL_VERTEX)
 {
 }
 
-BBGraphsCollection::BBGraphsCollection(const BBGraphInfoRef bb_graph_info, const ParameterConstRef _parameters) : graphs_collection(RefcountCast<GraphInfo>(bb_graph_info), _parameters)
+BBGraphsCollection::BBGraphsCollection(const BBGraphInfoRef bb_graph_info, const ParameterConstRef _parameters)
+    : graphs_collection(RefcountCast<GraphInfo>(bb_graph_info), _parameters)
 {
 }
 
@@ -143,7 +145,8 @@ BBGraph::BBGraph(const BBGraphsCollectionRef _g, int _selector) : graph(_g.get()
 {
 }
 
-BBGraph::BBGraph(const BBGraphsCollectionRef _g, int _selector, CustomUnorderedSet<vertex>& sub) : graph(_g.get(), _selector, sub)
+BBGraph::BBGraph(const BBGraphsCollectionRef _g, int _selector, CustomUnorderedSet<vertex>& sub)
+    : graph(_g.get(), _selector, sub)
 {
 }
 
@@ -156,10 +159,15 @@ void BBGraph::WriteDot(const std::string& file_name, const int detail_level) con
 void BBGraph::WriteDot(const std::string& file_name, const CustomUnorderedSet<vertex>& annotated, const int) const
 {
    const auto bb_graph_info = CGetBBGraphInfo();
-   const auto function_name = bb_graph_info->AppM->CGetFunctionBehavior(bb_graph_info->function_index)->CGetBehavioralHelper()->get_function_name();
-   std::string output_directory = collection->parameters->getOption<std::string>(OPT_dot_directory) + "/" + function_name + "/";
+   const auto function_name = bb_graph_info->AppM->CGetFunctionBehavior(bb_graph_info->function_index)
+                                  ->CGetBehavioralHelper()
+                                  ->get_function_name();
+   std::string output_directory =
+       collection->parameters->getOption<std::string>(OPT_dot_directory) + "/" + function_name + "/";
    if(not boost::filesystem::exists(output_directory))
+   {
       boost::filesystem::create_directories(output_directory);
+   }
    const std::string full_name = output_directory + file_name;
    const VertexWriterConstRef bb_writer(new BBWriter(this, annotated));
    const EdgeWriterConstRef bb_edge_writer(new BBEdgeWriter(this));
@@ -173,35 +181,44 @@ size_t BBGraph::num_bblocks() const
 
 bool BBEdgeInfo::cdg_edge_T() const
 {
-   return labels.find(CDG_SELECTOR) != labels.end() and labels.find(CDG_SELECTOR)->second.find(T_COND) != labels.find(CDG_SELECTOR)->second.end();
+   return labels.find(CDG_SELECTOR) != labels.end() and
+          labels.find(CDG_SELECTOR)->second.find(T_COND) != labels.find(CDG_SELECTOR)->second.end();
 }
 
 bool BBEdgeInfo::cdg_edge_F() const
 {
-   return labels.find(CDG_SELECTOR) != labels.end() and labels.find(CDG_SELECTOR)->second.find(F_COND) != labels.find(CDG_SELECTOR)->second.end();
+   return labels.find(CDG_SELECTOR) != labels.end() and
+          labels.find(CDG_SELECTOR)->second.find(F_COND) != labels.find(CDG_SELECTOR)->second.end();
 }
 
 bool BBEdgeInfo::cfg_edge_T() const
 {
-   return labels.find(CFG_SELECTOR) != labels.end() and labels.find(CFG_SELECTOR)->second.find(T_COND) != labels.find(CFG_SELECTOR)->second.end();
+   return labels.find(CFG_SELECTOR) != labels.end() and
+          labels.find(CFG_SELECTOR)->second.find(T_COND) != labels.find(CFG_SELECTOR)->second.end();
 }
 
 bool BBEdgeInfo::cfg_edge_F() const
 {
-   return labels.find(CFG_SELECTOR) != labels.end() and labels.find(CFG_SELECTOR)->second.find(F_COND) != labels.find(CFG_SELECTOR)->second.end();
+   return labels.find(CFG_SELECTOR) != labels.end() and
+          labels.find(CFG_SELECTOR)->second.find(F_COND) != labels.find(CFG_SELECTOR)->second.end();
 }
 
 bool BBEdgeInfo::switch_p() const
 {
-   return !cdg_edge_T() and !cdg_edge_F() and !cfg_edge_T() and !cfg_edge_F() and (labels.find(CDG_SELECTOR) != labels.end() or labels.find(CFG_SELECTOR) != labels.end());
+   return !cdg_edge_T() and !cdg_edge_F() and !cfg_edge_T() and !cfg_edge_F() and
+          (labels.find(CDG_SELECTOR) != labels.end() or labels.find(CFG_SELECTOR) != labels.end());
 }
 
 const CustomOrderedSet<unsigned int> BBEdgeInfo::get_labels(const int selector) const
 {
    if(labels.find(selector) != labels.end())
+   {
       return labels.find(selector)->second;
+   }
    else
+   {
       return CustomOrderedSet<unsigned int>();
+   }
 }
 
 #if !HAVE_UNORDERED

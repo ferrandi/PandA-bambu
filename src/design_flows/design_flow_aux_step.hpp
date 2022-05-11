@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -48,11 +48,10 @@
 #include <string>               // for string
 
 /// Identifier of the auxiliary design flow steps
-typedef enum
-{
+using AuxDesignFlowStepType = enum AuxDesignFlowStepType {
    DESIGN_FLOW_ENTRY, //! Entry point for the design flow
    DESIGN_FLOW_EXIT   //! Exit point for the design flow
-} AuxDesignFlowStepType;
+};
 
 /**
  * Class describing auxiliary steps in design flow
@@ -74,7 +73,8 @@ class AuxDesignFlowStep : public DesignFlowStep
     * @param design_flow_manager is the design flow manager
     * @param parameters is the set of input parameters
     */
-   AuxDesignFlowStep(std::string name, const AuxDesignFlowStepType type, const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
+   AuxDesignFlowStep(std::string name, const AuxDesignFlowStepType type,
+                     const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
 
    /**
     * Destructor
@@ -111,7 +111,8 @@ class AuxDesignFlowStep : public DesignFlowStep
     * @param dependencies is where relationships will be stored
     * @param relationship_type is the type of relationship to be computed
     */
-   void ComputeRelationships(DesignFlowStepSet& relationship, const DesignFlowStep::RelationshipType relationship_type) override;
+   void ComputeRelationships(DesignFlowStepSet& relationship,
+                             const DesignFlowStep::RelationshipType relationship_type) override;
 
    /**
     * Compute the signature of a sdf design flow step

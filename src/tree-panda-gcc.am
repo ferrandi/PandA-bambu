@@ -17,11 +17,11 @@ tree_panda_gcc_CPPFLAGS = \
    -I$(top_srcdir)/src/graph \
    -I$(top_srcdir)/src/frontend_analysis \
    -I$(top_srcdir)/src/parser/machine \
-   -I$(top_srcdir)/src/parser/treegcc \
+   -I$(top_srcdir)/src/parser/compiler \
    -I$(top_srcdir)/src/HLS/ \
    -I$(top_srcdir)/src/HLS/interface \
    -I$(top_srcdir)/src/tree \
-   -I$(top_srcdir)/src/wrapper/treegcc \
+   -I$(top_srcdir)/src/wrapper/compiler \
    $(AM_CPPFLAGS)
 
 if BUILD_LIB_CODE_ESTIMATION

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -32,9 +32,9 @@
  */
 /**
  * @file ASICBackendFlow.hpp
- * @brief Wrapper to implement a synthesis tools by Altera
+ * @brief Wrapper to implement a synthesis tools
  *
- * A object used to invoke synthesis tools by Altera
+ * A object used to invoke synthesis tools
  *
  * @author Christian Pilato <pilato@elet.polimi.it>
  * $Date$
@@ -55,7 +55,7 @@ class ASICBackendFlow : public BackendFlow
    void WriteFlowConfiguration(std::ostream& script) override;
 
    /**
-    * Checks the synthesis results and fills the corresponding datastructures
+    * Checks the synthesis results and fills the corresponding data structures
     */
    void CheckSynthesisResults() override;
 
@@ -81,6 +81,6 @@ class ASICBackendFlow : public BackendFlow
    ~ASICBackendFlow() override;
 };
 /// Refcount definition for the class
-typedef refcount<ASICBackendFlow> ASICBackendFlowRef;
+using ASICBackendFlowRef = refcount<ASICBackendFlow>;
 
 #endif

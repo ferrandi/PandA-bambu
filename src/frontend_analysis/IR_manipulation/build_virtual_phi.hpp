@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -60,23 +60,12 @@ class BuildVirtualPhi : public FunctionFrontendFlowStep
    /// The tree manager
    const tree_managerRef TM;
 
-   /// the tree manipulation
-   tree_manipulationRef tree_man;
-
-   /// The graph of basic blocks
-   BBGraphRef basic_block_graph;
-
-   /// Cache of created phi - first key is the used ssa - second key is the basic block where is created
-   TreeNodeMap<CustomUnorderedMapStable<vertex, tree_nodeRef>> added_phis;
-
-   /// Cache of reaching defs - first key is the used ssa - second key is the basic block to be considered
-   TreeNodeMap<CustomUnorderedMapStable<vertex, tree_nodeRef>> reaching_defs;
-
    /**
     * Return the set of analyses in relationship with this design step
     * @param relationship_type is the type of relationship to be considered
     */
-   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>>
+   ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
  public:
    /**
@@ -86,7 +75,8 @@ class BuildVirtualPhi : public FunctionFrontendFlowStep
     * @param design_flow_manager is the design flow manager
     * @param parameters is the set of input parameters
     */
-   BuildVirtualPhi(const application_managerRef AppM, unsigned int function_id, const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
+   BuildVirtualPhi(const application_managerRef AppM, unsigned int function_id,
+                   const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
 
    /**
     *  Destructor
@@ -98,17 +88,7 @@ class BuildVirtualPhi : public FunctionFrontendFlowStep
     */
    DesignFlowStep_Status InternalExec() override;
 
-   /**
-    * Initialize the step (i.e., like a constructor, but executed just before exec
-    */
-   void Initialize() override;
-
-   /**
-    * Check if this step has actually to be executed
-    * @return true if the step has to be executed
-    */
-   bool HasToBeExecuted() const override;
-
-   void ComputeRelationships(DesignFlowStepSet& relationship, const DesignFlowStep::RelationshipType relationship_type) override;
+   void ComputeRelationships(DesignFlowStepSet& relationship,
+                             const DesignFlowStep::RelationshipType relationship_type) override;
 };
 #endif

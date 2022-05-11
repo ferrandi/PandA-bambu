@@ -1,5 +1,5 @@
 /* mockturtle: C++ logic network library
- * Copyright (C) 2018-2019  EPFL
+ * Copyright (C) 2018-2021  EPFL
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -27,6 +27,7 @@
   \file collapse_mapped.hpp
   \brief Collapses mapped network into k-LUT network
 
+  \author Heinz Riener
   \author Mathias Soeken
 */
 
@@ -195,6 +196,8 @@ public:
 
     /* outputs */
     ntk.foreach_po( [&]( auto const& f, auto index ) {
+      (void)index;
+
       if ( ntk.is_complemented( f ) && node_driver_type[f] == driver_type::mixed )
       {
         dest.create_po( opposites[ntk.get_node( f )] );

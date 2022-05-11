@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2018-2020 Politecnico di Milano
+ *              Copyright (C) 2018-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -41,6 +41,12 @@
 
 #include "llvm/IR/LegacyPassManager.h"
 #include "llvm/IR/Module.h"
+#include "llvm/Analysis/AssumptionCache.h"
+#include "llvm/Analysis/LazyValueInfo.h"
+#include "llvm/Analysis/LoopInfo.h"
+#include "llvm/Analysis/MemoryDependenceAnalysis.h"
+#include "llvm/Analysis/TargetLibraryInfo.h"
+#include "llvm/Analysis/TargetTransformInfo.h"
 #include "llvm/IR/PassManager.h"
 #include "llvm/InitializePasses.h"
 #include "llvm/Pass.h"
@@ -48,17 +54,33 @@
 #include "llvm/Support/raw_ostream.h"
 #include "llvm/Transforms/IPO/PassManagerBuilder.h"
 #include "llvm/Transforms/Utils/LoopUtils.h"
-
+#if __clang_major__ != 4
+#include "llvm/Analysis/MemorySSA.h"
+#else
+#include "llvm/Transforms/Utils/MemorySSA.h"
+#endif
+#if __clang_major__ >= 10
+#include "llvm/Support/CommandLine.h"
+#endif
 namespace llvm
 {
-   cl::opt<std::string> outdir_nameGE("pandaGE-outputdir", cl::desc("Specify the directory where the gimple raw file will be written"), cl::value_desc("directory path"));
-   cl::opt<std::string> InFileGE("pandaGE-infile", cl::desc("Specify the name of the compiled source file"), cl::value_desc("filename path"));
+   cl::opt<std::string> outdir_nameGE("pandaGE-outputdir",
+                                      cl::desc("Specify the directory where the gimple raw file will be written"),
+                                      cl::value_desc("directory path"));
+   cl::opt<std::string> InFileGE("pandaGE-infile", cl::desc("Specify the name of the compiled source file"),
+                                 cl::value_desc("filename path"));
    struct CLANG_VERSION_SYMBOL(_plugin_dumpGimpleEmpty) : public ModulePass
    {
       static char ID;
       CLANG_VERSION_SYMBOL(_plugin_dumpGimpleEmpty)() : ModulePass(ID)
       {
-         initializeLoopPassPass(*PassRegistry::getPassRegistry());
+         initializeLoopInfoWrapperPassPass(*PassRegistry::getPassRegistry());            //
+         initializeLazyValueInfoWrapperPassPass(*PassRegistry::getPassRegistry());       //
+         initializeMemorySSAWrapperPassPass(*PassRegistry::getPassRegistry());           //
+         initializeTargetTransformInfoWrapperPassPass(*PassRegistry::getPassRegistry()); //
+         initializeTargetLibraryInfoWrapperPassPass(*PassRegistry::getPassRegistry());   //
+         initializeAssumptionCacheTrackerPass(*PassRegistry::getPassRegistry());         //
+         initializeDominatorTreeWrapperPassPass(*PassRegistry::getPassRegistry());       //
       }
       bool runOnModule(Module& M) override
       {
@@ -78,7 +100,14 @@ namespace llvm
       void getAnalysisUsage(AnalysisUsage& AU) const override
       {
          AU.setPreservesAll();
-         getLoopAnalysisUsage(AU);
+         AU.addRequired<LoopInfoWrapperPass>(); //
+         AU.addPreserved<MemorySSAWrapperPass>();
+         AU.addRequired<MemorySSAWrapperPass>();           //
+         AU.addRequired<LazyValueInfoWrapperPass>();       //
+         AU.addRequired<TargetTransformInfoWrapperPass>(); //
+         AU.addRequired<TargetLibraryInfoWrapperPass>();   //
+         AU.addRequired<AssumptionCacheTracker>();         //
+         AU.addRequired<DominatorTreeWrapperPass>();       //
       }
    };
 
@@ -88,7 +117,9 @@ namespace llvm
 
 #ifndef _WIN32
 
-static llvm::RegisterPass<llvm::CLANG_VERSION_SYMBOL(_plugin_dumpGimpleEmpty)> XPass(CLANG_VERSION_STRING(_plugin_dumpGimpleEmpty), "Dump gimple ssa raw format starting from LLVM IR: LLVM pass", false /* Only looks at CFG */, false /* Analysis Pass */);
+static llvm::RegisterPass<llvm::CLANG_VERSION_SYMBOL(_plugin_dumpGimpleEmpty)>
+    XPass(CLANG_VERSION_STRING(_plugin_dumpGimpleEmpty), "Dump gimple ssa raw format starting from LLVM IR: LLVM pass",
+          false /* Only looks at CFG */, false /* Analysis Pass */);
 #endif
 // This function is of type PassManagerBuilder::ExtensionFn
 static void loadPass(const llvm::PassManagerBuilder&, llvm::legacy::PassManagerBase& PM)
@@ -97,13 +128,15 @@ static void loadPass(const llvm::PassManagerBuilder&, llvm::legacy::PassManagerB
 }
 // These constructors add our pass to a list of global extensions.
 #if ADD_RSP
-static llvm::RegisterStandardPasses CLANG_VERSION_SYMBOL(_plugin_dumpGimpleEmptyLoader_Ox)(llvm::PassManagerBuilder::EP_OptimizerLast, loadPass);
+static llvm::RegisterStandardPasses
+    CLANG_VERSION_SYMBOL(_plugin_dumpGimpleEmptyLoader_Ox)(llvm::PassManagerBuilder::EP_OptimizerLast, loadPass);
 #endif
 
 #ifdef _WIN32
 using namespace llvm;
 
-INITIALIZE_PASS_BEGIN(clang7_plugin_dumpGimpleEmpty, "clang7_plugin_dumpGimpleEmpty", "Dump gimple ssa raw format starting from LLVM IR: LLVM pass", false, false)
+INITIALIZE_PASS_BEGIN(clang7_plugin_dumpGimpleEmpty, "clang7_plugin_dumpGimpleEmpty",
+                      "Dump gimple ssa raw format starting from LLVM IR: LLVM pass", false, false)
 INITIALIZE_PASS_DEPENDENCY(MemoryDependenceWrapperPass)
 INITIALIZE_PASS_DEPENDENCY(MemorySSAWrapperPass)
 INITIALIZE_PASS_DEPENDENCY(LazyValueInfoWrapperPass)
@@ -113,7 +146,8 @@ INITIALIZE_PASS_DEPENDENCY(TargetLibraryInfoWrapperPass)
 INITIALIZE_PASS_DEPENDENCY(AssumptionCacheTracker)
 INITIALIZE_PASS_DEPENDENCY(DominatorTreeWrapperPass)
 INITIALIZE_PASS_DEPENDENCY(DominanceFrontierWrapperPass)
-INITIALIZE_PASS_END(clang7_plugin_dumpGimpleEmpty, "clang7_plugin_dumpGimpleEmpty", "Dump gimple ssa raw format starting from LLVM IR: LLVM pass", false, false)
+INITIALIZE_PASS_END(clang7_plugin_dumpGimpleEmpty, "clang7_plugin_dumpGimpleEmpty",
+                    "Dump gimple ssa raw format starting from LLVM IR: LLVM pass", false, false)
 
 namespace llvm
 {

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2015-2020 Politecnico di Milano
+ *              Copyright (C) 2015-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -63,11 +63,13 @@ BooleanAsnType::BooleanAsnType() : AsnType(AsnType_Kind::BOOLEAN)
 {
 }
 
-ChoiceAsnType::ChoiceAsnType(std::list<std::pair<std::string, AsnTypeRef>> _element_type_list) : AsnType(AsnType_Kind::CHOICE), element_type_list(std::move(_element_type_list))
+ChoiceAsnType::ChoiceAsnType(std::list<std::pair<std::string, AsnTypeRef>> _element_type_list)
+    : AsnType(AsnType_Kind::CHOICE), element_type_list(std::move(_element_type_list))
 {
 }
 
-EnumeratedAsnType::EnumeratedAsnType(std::list<std::pair<std::string, unsigned int>> _named_number_list) : AsnType(AsnType_Kind::ENUMERATED), named_number_list(std::move(_named_number_list))
+EnumeratedAsnType::EnumeratedAsnType(std::list<std::pair<std::string, unsigned int>> _named_number_list)
+    : AsnType(AsnType_Kind::ENUMERATED), named_number_list(std::move(_named_number_list))
 {
 }
 
@@ -80,8 +82,8 @@ OctetStringAsnType::OctetStringAsnType(const std::string& _size) : AsnType(AsnTy
    THROW_ASSERT(_size.find("SIZE") != std::string::npos, _size);
    THROW_ASSERT(_size.find("(") != std::string::npos, _size);
    THROW_ASSERT(_size.find(")") != std::string::npos, _size);
-   const auto temp = _size.substr(_size.find("(") + 1);
-   const auto temp2 = temp.substr(0, temp.find(")"));
+   const auto temp = _size.substr(_size.find('(') + 1);
+   const auto temp2 = temp.substr(0, temp.find(')'));
    size = boost::lexical_cast<size_t>(temp2);
 }
 
@@ -95,24 +97,28 @@ RedefineAsnType::RedefineAsnType(std::string _name) : AsnType(AsnType_Kind::REDE
 {
 }
 
-SequenceAsnType::SequenceAsnType(std::list<std::pair<std::string, AsnTypeRef>> _fields) : AsnType(AsnType_Kind::SEQUENCE), fields(std::move(_fields))
+SequenceAsnType::SequenceAsnType(std::list<std::pair<std::string, AsnTypeRef>> _fields)
+    : AsnType(AsnType_Kind::SEQUENCE), fields(std::move(_fields))
 {
 }
 
-SequenceOfAsnType::SequenceOfAsnType(std::string _element, const std::string& _size) : AsnType(AsnType_Kind::SEQUENCEOF), element(std::move(_element))
+SequenceOfAsnType::SequenceOfAsnType(std::string _element, const std::string& _size)
+    : AsnType(AsnType_Kind::SEQUENCEOF), element(std::move(_element))
 {
    THROW_ASSERT(_size.find("SIZE") != std::string::npos, _size);
    THROW_ASSERT(_size.find("(") != std::string::npos, _size);
    THROW_ASSERT(_size.find(")") != std::string::npos, _size);
-   const auto temp = _size.substr(_size.find("(") + 1);
-   const auto temp2 = temp.substr(0, temp.find(")"));
+   const auto temp = _size.substr(_size.find('(') + 1);
+   const auto temp2 = temp.substr(0, temp.find(')'));
    size = boost::lexical_cast<size_t>(temp2);
 }
 
-SetAsnType::SetAsnType(std::list<std::pair<std::string, AsnTypeRef>> _fields) : AsnType(AsnType_Kind::SET), fields(std::move(_fields))
+SetAsnType::SetAsnType(std::list<std::pair<std::string, AsnTypeRef>> _fields)
+    : AsnType(AsnType_Kind::SET), fields(std::move(_fields))
 {
 }
 
-SetOfAsnType::SetOfAsnType(std::string _element, const std::string& _size) : AsnType(AsnType_Kind::SETOF), element(std::move(_element)), size(boost::lexical_cast<size_t>(_size))
+SetOfAsnType::SetOfAsnType(std::string _element, const std::string& _size)
+    : AsnType(AsnType_Kind::SETOF), element(std::move(_element)), size(boost::lexical_cast<size_t>(_size))
 {
 }

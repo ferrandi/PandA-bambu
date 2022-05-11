@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -83,7 +83,8 @@ struct vertex2obj : public CustomUnorderedMapUnstable<vertex, data_obj>
     * Function that print the name and the operation performed by the vertex.
     * @param os is the output stream
     */
-   virtual void print_rowHead(std::ostream& os, const graph* data, typename vertex2obj<data_obj>::const_iterator& it) const
+   virtual void print_rowHead(std::ostream& os, const graph* data,
+                              typename vertex2obj<data_obj>::const_iterator& it) const
    {
       if(data)
       {
@@ -94,7 +95,9 @@ struct vertex2obj : public CustomUnorderedMapUnstable<vertex, data_obj>
          os.width(0);
       }
       else
+      {
          os << it->first;
+      }
    }
    /**
     * Function that prints the class vertex2obj.
@@ -108,12 +111,18 @@ struct vertex2obj : public CustomUnorderedMapUnstable<vertex, data_obj>
          print_rowHead(os, data, i);
          print_el(os, data, i);
          if(data)
+         {
             os << std::endl;
+         }
          else
+         {
             os << " ";
+         }
       }
       if(!data)
+      {
          os << std::endl;
+      }
    }
 
    const data_obj operator()(const vertex& __k) const
@@ -125,14 +134,16 @@ struct vertex2obj : public CustomUnorderedMapUnstable<vertex, data_obj>
    void resize(Iterator left, Iterator right, data_type val)
    {
       for(; left != right; left++)
+      {
          this->operator[](*left) = val;
+      }
    }
 
    /**
     * Friend definition of the << operator.
     * @param os is the output stream
     */
-   friend std::ostream& operator<<(std::ostream& os, vertex2obj& s)
+   friend std::ostream& operator<<(std::ostream& os, const vertex2obj& s)
    {
       s.print(os);
       return os;
@@ -145,7 +156,9 @@ struct vertex2obj : public CustomUnorderedMapUnstable<vertex, data_obj>
    friend std::ostream& operator<<(std::ostream& os, const vertex2obj* s)
    {
       if(s)
+      {
          s->print(os);
+      }
       return os;
    }
 };

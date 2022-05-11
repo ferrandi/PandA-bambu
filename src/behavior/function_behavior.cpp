@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -66,15 +66,19 @@
 #include "loops.hpp"                            // for ProfilingInformatio...
 #include "op_graph.hpp"                         // for OpGraph, OpGraphCon...
 #include "operations_graph_constructor.hpp"     // for OpGraphRef, operati...
-#include <boost/graph/adjacency_list.hpp>       // for adjacency_list
-#include <boost/graph/filtered_graph.hpp>       // for filtered_graph<>::v...
-#include <boost/iterator/filter_iterator.hpp>   // for filter_iterator
-#include <boost/iterator/iterator_facade.hpp>   // for operator!=, operator++
-#include <boost/tuple/tuple.hpp>                // for tie
-#include <list>                                 // for list, _List_const_i...
-#include <ostream>                              // for operator<<, basic_o...
-#include <string>                               // for operator+, char_traits
-#include <utility>                              // for pair
+#include "tree_helper.hpp"
+#include "tree_manager.hpp" // for pipeline_enabled
+#include "tree_node.hpp"    // for pipeline_enabled
+#include "utility.hpp"
+#include <boost/graph/adjacency_list.hpp>     // for adjacency_list
+#include <boost/graph/filtered_graph.hpp>     // for filtered_graph<>::v...
+#include <boost/iterator/filter_iterator.hpp> // for filter_iterator
+#include <boost/iterator/iterator_facade.hpp> // for operator!=, operator++
+#include <boost/tuple/tuple.hpp>              // for tie
+#include <list>                               // for list, _List_const_i...
+#include <ostream>                            // for operator<<, basic_o...
+#include <string>                             // for operator+, char_traits
+#include <utility>                            // for pair
 #if HAVE_HOST_PROFILING_BUILT
 #include "profiling_information.hpp" // for BBGraphConstRef
 #endif
@@ -92,13 +96,16 @@
 #pragma GCC diagnostic push
 #pragma GCC diagnostic error "-Weffc++"
 #endif
-memory_access::memory_access(unsigned int _node_id, unsigned int _base_address, unsigned int _offset) : node_id(_node_id), base_address(_base_address), offset(_offset)
+memory_access::memory_access(unsigned int _node_id, unsigned int _base_address, unsigned int _offset)
+    : node_id(_node_id), base_address(_base_address), offset(_offset)
 {
 }
 
-FunctionBehavior::FunctionBehavior(const application_managerConstRef _AppM, const BehavioralHelperRef _helper, const ParameterConstRef _parameters)
+FunctionBehavior::FunctionBehavior(const application_managerConstRef _AppM, const BehavioralHelperRef _helper,
+                                   const ParameterConstRef _parameters)
     : helper(_helper),
-      bb_graphs_collection(new BBGraphsCollection(BBGraphInfoRef(new BBGraphInfo(_AppM, _helper->get_function_index())), _parameters)),
+      bb_graphs_collection(
+          new BBGraphsCollection(BBGraphInfoRef(new BBGraphInfo(_AppM, _helper->get_function_index())), _parameters)),
       op_graphs_collection(new OpGraphsCollection(OpGraphInfoRef(new OpGraphInfo(helper)), _parameters)),
       bb(new BBGraph(bb_graphs_collection, CFG_SELECTOR)),
       extended_bb(new BBGraph(bb_graphs_collection, CFG_SELECTOR | ECFG_SELECTOR)),
@@ -124,7 +131,8 @@ FunctionBehavior::FunctionBehavior(const application_managerConstRef _AppM, cons
       fflaoddg(new OpGraph(op_graphs_collection, FLG_SELECTOR | FADG_SELECTOR | FODG_SELECTOR | FDFG_SELECTOR)),
       flsaodg(new OpGraph(op_graphs_collection, FLG_SELECTOR | SDG_SELECTOR | ADG_SELECTOR | ODG_SELECTOR)),
 #ifndef NDEBUG
-      flsaoddg(new OpGraph(op_graphs_collection, FLG_SELECTOR | SDG_SELECTOR | ADG_SELECTOR | ODG_SELECTOR | DEBUG_SELECTOR)),
+      flsaoddg(new OpGraph(op_graphs_collection,
+                           FLG_SELECTOR | SDG_SELECTOR | ADG_SELECTOR | ODG_SELECTOR | DEBUG_SELECTOR)),
 #endif
       fflsaodg(new OpGraph(op_graphs_collection, FLG_SELECTOR | FSDG_SELECTOR | FADG_SELECTOR | FODG_SELECTOR)),
       saodg(new OpGraph(op_graphs_collection, SDG_SELECTOR | ADG_SELECTOR | ODG_SELECTOR)),
@@ -139,14 +147,21 @@ FunctionBehavior::FunctionBehavior(const application_managerConstRef _AppM, cons
       epdg_bulk(new EpdGraphsCollection(saodg, _parameters)),
       cepdg(new EpdGraph(epdg_bulk, EpdEdgeInfo::EDGE_CONTROL /*| EpdEdgeInfo::EDGE_CONTROL_FLOW*/)),
       depdg(new EpdGraph(epdg_bulk, EpdEdgeInfo::EDGE_DATA_RAW | EpdEdgeInfo::EDGE_DATA_WAW_WAR)),
-      cdepdg(new EpdGraph(epdg_bulk, EpdEdgeInfo::EDGE_DATA_RAW | EpdEdgeInfo::EDGE_DATA_WAW_WAR | EpdEdgeInfo::EDGE_CONTROL)),
-      cdcfepdg(new EpdGraph(epdg_bulk, EpdEdgeInfo::EDGE_DATA_RAW | EpdEdgeInfo::EDGE_DATA_WAW_WAR | EpdEdgeInfo::EDGE_CONTROL | EpdEdgeInfo::EDGE_CONTROL_FLOW)),
-      epdg(new EpdGraph(epdg_bulk, EpdEdgeInfo::EDGE_DATA_RAW | EpdEdgeInfo::EDGE_DATA_WAW_WAR | EpdEdgeInfo::EDGE_CONTROL | EpdEdgeInfo::EDGE_OUTPUT | EpdEdgeInfo::EDGE_CONTROL_FLOW)),
-      fepdg(new EpdGraph(epdg_bulk, EpdEdgeInfo::EDGE_DATA_RAW | EpdEdgeInfo::EDGE_DATA_WAW_WAR | EpdEdgeInfo::EDGE_CONTROL | EpdEdgeInfo::EDGE_FEEDBACK | EpdEdgeInfo::EDGE_OUTPUT | EpdEdgeInfo::EDGE_CONTROL_FLOW)),
+      cdepdg(new EpdGraph(epdg_bulk,
+                          EpdEdgeInfo::EDGE_DATA_RAW | EpdEdgeInfo::EDGE_DATA_WAW_WAR | EpdEdgeInfo::EDGE_CONTROL)),
+      cdcfepdg(new EpdGraph(epdg_bulk, EpdEdgeInfo::EDGE_DATA_RAW | EpdEdgeInfo::EDGE_DATA_WAW_WAR |
+                                           EpdEdgeInfo::EDGE_CONTROL | EpdEdgeInfo::EDGE_CONTROL_FLOW)),
+      epdg(new EpdGraph(epdg_bulk, EpdEdgeInfo::EDGE_DATA_RAW | EpdEdgeInfo::EDGE_DATA_WAW_WAR |
+                                       EpdEdgeInfo::EDGE_CONTROL | EpdEdgeInfo::EDGE_OUTPUT |
+                                       EpdEdgeInfo::EDGE_CONTROL_FLOW)),
+      fepdg(new EpdGraph(epdg_bulk, EpdEdgeInfo::EDGE_DATA_RAW | EpdEdgeInfo::EDGE_DATA_WAW_WAR |
+                                        EpdEdgeInfo::EDGE_CONTROL | EpdEdgeInfo::EDGE_FEEDBACK |
+                                        EpdEdgeInfo::EDGE_OUTPUT | EpdEdgeInfo::EDGE_CONTROL_FLOW)),
       afg(new EpdGraph(epdg_bulk, EpdEdgeInfo::EDGE_AF_STANDARD)),
       fafg(new EpdGraph(epdg_bulk, EpdEdgeInfo::EDGE_AF_STANDARD | EpdEdgeInfo::EDGE_AF_FEEDBACK)),
       prg_bulk(new ParallelRegionsGraphsCollection(_parameters)),
-      prg(new ParallelRegionsGraph(prg_bulk, ParallelRegionsEdgeInfo::EDGE_CONTROL | ParallelRegionsEdgeInfo::EDGE_DATA)),
+      prg(new ParallelRegionsGraph(prg_bulk,
+                                   ParallelRegionsEdgeInfo::EDGE_CONTROL | ParallelRegionsEdgeInfo::EDGE_DATA)),
 #endif
       agg_virtualg(new OpGraph(op_graphs_collection, DFG_AGG_SELECTOR | ADG_AGG_SELECTOR)),
 #if HAVE_HOST_PROFILING_BUILT
@@ -164,14 +179,15 @@ FunctionBehavior::FunctionBehavior(const application_managerConstRef _AppM, cons
       parm_decl_stored(),
       parameters(_parameters),
       dereference_unknown_address(false),
-      pointer_type_conversion(false),
       unaligned_accesses(false),
       bb_version(1),
       bitvalue_version(1),
       has_globals(false),
       has_undefined_function_receiveing_pointers(false),
       state_variables(),
-      pipelining_enabled(_parameters->isOption(OPT_pipelining) && _parameters->getOption<bool>(OPT_pipelining)),
+      pipeline_enabled(false),
+      simple_pipeline(false),
+      initiation_time(1),
       bb_reachability(),
       feedback_bb_reachability(),
       ogc(new operations_graph_constructor(op_graphs_collection)),
@@ -187,14 +203,88 @@ FunctionBehavior::FunctionBehavior(const application_managerConstRef _AppM, cons
       memory_info(),
       packed_vars(false)
 {
+   THROW_ASSERT(_AppM->get_tree_manager()->GetTreeNode(_helper->get_function_index())->get_kind() == function_decl_K,
+                "Called function_behavior on a node which is not a function_decl");
+   auto* decl_node = GetPointer<function_decl>(_AppM->get_tree_manager()->GetTreeNode(_helper->get_function_index()));
+   std::string fname;
+   tree_helper::get_mangled_fname(decl_node, fname);
+   if(!_parameters->isOption(OPT_pipelining))
+   {
+      pipeline_enabled = decl_node->is_pipelined();
+      simple_pipeline = decl_node->is_simple_pipeline();
+      initiation_time = decl_node->get_initiation_time();
+      if(pipeline_enabled && simple_pipeline)
+      {
+         INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, _parameters->getOption<int>(OPT_output_level),
+                        "Required pipelining with II=1 for function: " + fname);
+      }
+      else if(pipeline_enabled)
+      {
+         INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, _parameters->getOption<int>(OPT_output_level),
+                        "Required pipelining with II=" + STR(initiation_time) + " for function: " + fname);
+      }
+   }
+   else
+   {
+      auto tmp_string = _parameters->getOption<std::string>(OPT_pipelining);
+      if(tmp_string == "no-@ll")
+      {
+         // force no pipelining
+      }
+      else if(tmp_string == "@ll")
+      {
+         pipeline_enabled = true;
+         simple_pipeline = true;
+         INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, _parameters->getOption<int>(OPT_output_level),
+                        "Required pipelining with II=1 for function: " + fname);
+      }
+      else
+      {
+         const auto funcs_values = convert_string_to_vector<std::string>(tmp_string, ",");
+         for(auto fun_pipeline : funcs_values)
+         {
+            if(!fun_pipeline.empty() && fun_pipeline.at(0) == '=')
+            {
+               fun_pipeline = fun_pipeline.substr(1);
+            }
+            const auto splitted = SplitString(fun_pipeline, "=");
+            if(!splitted.empty() &&
+               (fname == splitted.at(0) || (fname.find("__float") == 0 && fname.find(splitted.at(0)) == 0)))
+            {
+               if(splitted.size() == 1)
+               {
+                  pipeline_enabled = true;
+                  simple_pipeline = true;
+                  INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, _parameters->getOption<int>(OPT_output_level),
+                                 "Required pipelining with II=1 for function: " + fname);
+               }
+               else if(splitted.size() == 2)
+               {
+                  pipeline_enabled = true;
+                  initiation_time = boost::lexical_cast<int>(splitted.at(1));
+                  if(initiation_time == 1)
+                  {
+                     simple_pipeline = true;
+                  }
+                  INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, _parameters->getOption<int>(OPT_output_level),
+                                 "Required pipelining with II=" + STR(initiation_time) + " for function: " + fname);
+               }
+            }
+         }
+      }
+   }
 }
 
 FunctionBehavior::~FunctionBehavior()
 {
    if(dominators)
+   {
       delete dominators;
+   }
    if(post_dominators)
+   {
       delete post_dominators;
+   }
 }
 
 OpGraphRef FunctionBehavior::GetOpGraph(FunctionBehavior::graph_type gt)
@@ -332,7 +422,8 @@ const BehavioralHelperConstRef FunctionBehavior::CGetBehavioralHelper() const
 }
 
 /// optimization in case the subset is equal to the whole set of vertices is possible
-const OpGraphConstRef FunctionBehavior::CGetOpGraph(FunctionBehavior::graph_type gt, const OpVertexSet& statements) const
+const OpGraphConstRef FunctionBehavior::CGetOpGraph(FunctionBehavior::graph_type gt,
+                                                    const OpVertexSet& statements) const
 {
    /// This "transformation" is necessary because of graph constructor
    CustomUnorderedSet<vertex> subset;
@@ -382,7 +473,8 @@ const OpGraphConstRef FunctionBehavior::CGetOpGraph(FunctionBehavior::graph_type
          return OpGraphRef(new OpGraph(op_graphs_collection, SAODG_SELECTOR, subset));
 
       case FSAODG:
-         return OpGraphRef(new OpGraph(op_graphs_collection, FSDG_SELECTOR | FADG_SELECTOR | FODG_SELECTOR | FDFG_SELECTOR, subset));
+         return OpGraphRef(
+             new OpGraph(op_graphs_collection, FSDG_SELECTOR | FADG_SELECTOR | FODG_SELECTOR | FDFG_SELECTOR, subset));
 
       case FLSAODG:
          return OpGraphRef(new OpGraph(op_graphs_collection, SAODG_SELECTOR | FLG_SELECTOR, subset));
@@ -393,13 +485,16 @@ const OpGraphConstRef FunctionBehavior::CGetOpGraph(FunctionBehavior::graph_type
 #endif
 
       case FFLSAODG:
-         return OpGraphRef(new OpGraph(op_graphs_collection, FLG_SELECTOR | FSDG_SELECTOR | FADG_SELECTOR | FODG_SELECTOR, subset));
+         return OpGraphRef(
+             new OpGraph(op_graphs_collection, FLG_SELECTOR | FSDG_SELECTOR | FADG_SELECTOR | FODG_SELECTOR, subset));
 
       case FLAODDG:
-         return OpGraphRef(new OpGraph(op_graphs_collection, DFG_SELECTOR | ADG_SELECTOR | ODG_SELECTOR | FLG_SELECTOR, subset));
+         return OpGraphRef(
+             new OpGraph(op_graphs_collection, DFG_SELECTOR | ADG_SELECTOR | ODG_SELECTOR | FLG_SELECTOR, subset));
 
       case FFLAODDG:
-         return OpGraphRef(new OpGraph(op_graphs_collection, FLG_SELECTOR | FADG_SELECTOR | FODG_SELECTOR | FDFG_SELECTOR));
+         return OpGraphRef(
+             new OpGraph(op_graphs_collection, FLG_SELECTOR | FADG_SELECTOR | FODG_SELECTOR | FDFG_SELECTOR));
 
       case FLG:
          return OpGraphRef(new OpGraph(op_graphs_collection, FLG_SELECTOR, subset));
@@ -573,12 +668,7 @@ void FunctionBehavior::add_dynamic_address(unsigned int node_id)
    /// the object may be written once you have the address
 }
 
-void FunctionBehavior::erase_dynamic_address(unsigned int node_id)
-{
-   dynamic_address.erase(node_id);
-}
-
-void FunctionBehavior::erase_all_dynamic_addresses()
+void FunctionBehavior::clean_dynamic_address()
 {
    dynamic_address.clear();
 }
@@ -611,6 +701,11 @@ const CustomOrderedSet<unsigned int>& FunctionBehavior::get_function_mem() const
    return mem_nodeID;
 }
 
+void FunctionBehavior::clean_function_mem()
+{
+   mem_nodeID.clear();
+}
+
 const CustomOrderedSet<unsigned int>& FunctionBehavior::get_dynamic_address() const
 {
    return dynamic_address;
@@ -621,14 +716,29 @@ const CustomOrderedSet<unsigned int>& FunctionBehavior::get_parm_decl_copied() c
    return parm_decl_copied;
 }
 
+void FunctionBehavior::clean_parm_decl_copied()
+{
+   parm_decl_copied.clear();
+}
+
 const CustomOrderedSet<unsigned int>& FunctionBehavior::get_parm_decl_loaded() const
 {
    return parm_decl_loaded;
 }
 
+void FunctionBehavior::clean_parm_decl_loaded()
+{
+   parm_decl_loaded.clear();
+}
+
 const CustomOrderedSet<unsigned int>& FunctionBehavior::get_parm_decl_stored() const
 {
    return parm_decl_stored;
+}
+
+void FunctionBehavior::clean_parm_decl_stored()
+{
+   parm_decl_stored.clear();
 }
 
 CustomOrderedSet<unsigned int> FunctionBehavior::get_local_variables(const application_managerConstRef AppM) const
@@ -640,21 +750,16 @@ CustomOrderedSet<unsigned int> FunctionBehavior::get_local_variables(const appli
    VertexIterator v, vEnd;
    for(boost::tie(v, vEnd) = boost::vertices(*cfg); v != vEnd; v++)
    {
-      CustomSet<unsigned int> varsTemp = cfg->CGetOpNodeInfo(*v)->cited_variables;
+      const auto& varsTemp = cfg->CGetOpNodeInfo(*v)->cited_variables;
       vars.insert(varsTemp.begin(), varsTemp.end());
    }
-   const std::list<unsigned int>& funParams = helper->get_parameters();
-   for(unsigned int funParam : funParams)
+   for(const auto& funParam : helper->GetParameters())
    {
-      if(vars.find(funParam) != vars.end())
-         vars.erase(funParam);
+      vars.erase(funParam->index);
    }
-
-   const CustomSet<unsigned int>& gblVariables = AppM->get_global_variables();
-   for(unsigned int gblVariable : gblVariables)
+   for(const auto& gblVariable : AppM->GetGlobalVariables())
    {
-      if(vars.find(gblVariable) != vars.end())
-         vars.erase(gblVariable);
+      vars.erase(gblVariable->index);
    }
    return vars;
 }
@@ -668,7 +773,9 @@ bool op_vertex_order_by_map::operator()(const vertex x, const vertex y) const
 
 bool FunctionBehavior::CheckBBReachability(const vertex first_basic_block, const vertex second_basic_block) const
 {
-   if(bb_reachability.find(first_basic_block) != bb_reachability.end() and bb_reachability.find(first_basic_block)->second.find(second_basic_block) != bb_reachability.find(first_basic_block)->second.end())
+   if(bb_reachability.find(first_basic_block) != bb_reachability.end() and
+      bb_reachability.find(first_basic_block)->second.find(second_basic_block) !=
+          bb_reachability.find(first_basic_block)->second.end())
    {
       return true;
    }
@@ -678,13 +785,16 @@ bool FunctionBehavior::CheckBBReachability(const vertex first_basic_block, const
    }
 }
 
-bool FunctionBehavior::CheckBBFeedbackReachability(const vertex first_basic_block, const vertex second_basic_block) const
+bool FunctionBehavior::CheckBBFeedbackReachability(const vertex first_basic_block,
+                                                   const vertex second_basic_block) const
 {
    if(CheckBBReachability(first_basic_block, second_basic_block))
    {
       return true;
    }
-   if(feedback_bb_reachability.find(first_basic_block) != feedback_bb_reachability.end() and feedback_bb_reachability.find(first_basic_block)->second.find(second_basic_block) != feedback_bb_reachability.find(first_basic_block)->second.end())
+   if(feedback_bb_reachability.find(first_basic_block) != feedback_bb_reachability.end() and
+      feedback_bb_reachability.find(first_basic_block)->second.find(second_basic_block) !=
+          feedback_bb_reachability.find(first_basic_block)->second.end())
    {
       return true;
    }
@@ -708,8 +818,10 @@ bool FunctionBehavior::CheckReachability(const vertex first_operation, const ver
    if(first_bb_vertex == second_bb_vertex)
    {
       THROW_ASSERT(map_levels.size(), "");
-      THROW_ASSERT(map_levels.find(first_operation) != map_levels.end(), "Level of " + GET_NAME(cfg, first_operation) + " not found");
-      THROW_ASSERT(map_levels.find(second_operation) != map_levels.end(), "Level of " + GET_NAME(cfg, second_operation) + " not found");
+      THROW_ASSERT(map_levels.find(first_operation) != map_levels.end(),
+                   "Level of " + GET_NAME(cfg, first_operation) + " not found");
+      THROW_ASSERT(map_levels.find(second_operation) != map_levels.end(),
+                   "Level of " + GET_NAME(cfg, second_operation) + " not found");
       if(map_levels.find(first_operation)->second < map_levels.find(second_operation)->second)
       {
          return true;

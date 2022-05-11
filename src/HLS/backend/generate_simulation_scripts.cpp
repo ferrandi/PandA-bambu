@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -40,13 +40,6 @@
 
 // include class header
 #include "generate_simulation_scripts.hpp"
-
-// include Autoheaders
-#include "config_headers/config_HAVE_LATTICE.hpp"
-#if HAVE_LATTICE
-#include "config_headers/config_LATTICE_PMI_MUL.hpp"
-#include "config_headers/config_LATTICE_PMI_TDPBE.hpp"
-#endif
 
 // include from ./
 #include "Parameter.hpp"
@@ -87,7 +80,8 @@
 #include "dbgPrintHelper.hpp"
 #include "utility.hpp"
 
-GenerateSimulationScripts::GenerateSimulationScripts(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, const DesignFlowManagerConstRef _design_flow_manager)
+GenerateSimulationScripts::GenerateSimulationScripts(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr,
+                                                     const DesignFlowManagerConstRef _design_flow_manager)
     : HLS_step(_parameters, _HLSMgr, _design_flow_manager, HLSFlowStep_Type::GENERATE_SIMULATION_SCRIPT)
 {
    debug_level = _parameters->get_class_debug_level(GET_CLASS(*this));
@@ -95,15 +89,18 @@ GenerateSimulationScripts::GenerateSimulationScripts(const ParameterConstRef _pa
 
 GenerateSimulationScripts::~GenerateSimulationScripts() = default;
 
-const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> GenerateSimulationScripts::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
+GenerateSimulationScripts::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;
    switch(relationship_type)
    {
       case DEPENDENCE_RELATIONSHIP:
       {
-         ret.insert(std::make_tuple(HLSFlowStep_Type::GENERATE_HDL, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::TOP_FUNCTION));
-         ret.insert(std::make_tuple(HLSFlowStep_Type::TESTBENCH_GENERATION, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::TOP_FUNCTION));
+         ret.insert(std::make_tuple(HLSFlowStep_Type::GENERATE_HDL, HLSFlowStepSpecializationConstRef(),
+                                    HLSFlowStep_Relationship::TOP_FUNCTION));
+         ret.insert(std::make_tuple(HLSFlowStep_Type::TESTBENCH_GENERATION, HLSFlowStepSpecializationConstRef(),
+                                    HLSFlowStep_Relationship::TOP_FUNCTION));
          break;
       }
       case INVALIDATION_RELATIONSHIP:
@@ -130,21 +127,15 @@ DesignFlowStep_Status GenerateSimulationScripts::Exec()
    const std::string suffix = "_beh";
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Generating simulation scripts");
    std::list<std::string> full_list;
-   for(const auto& aux_file : HLSMgr->aux_files)
+   std::copy(HLSMgr->aux_files.begin(), HLSMgr->aux_files.end(), std::back_inserter(full_list));
+   std::copy(HLSMgr->hdl_files.begin(), HLSMgr->hdl_files.end(), std::back_inserter(full_list));
+   if(parameters->isOption(OPT_lattice_pmi_tdpbe) && parameters->isOption(OPT_lattice_pmi_mul) &&
+      BackendFlow::DetermineBackendFlowType(HLSMgr->get_HLS_target()->get_target_device(), parameters) ==
+          BackendFlow::LATTICE_FPGA)
    {
-      full_list.push_back(aux_file);
+      full_list.push_back(parameters->getOption<std::string>(OPT_lattice_pmi_tdpbe));
+      full_list.push_back(parameters->getOption<std::string>(OPT_lattice_pmi_mul));
    }
-   for(const auto& hdl_file : HLSMgr->hdl_files)
-   {
-      full_list.push_back(hdl_file);
-   }
-#if HAVE_LATTICE
-   if(BackendFlow::DetermineBackendFlowType(HLSMgr->get_HLS_target()->get_target_device(), parameters) == BackendFlow::LATTICE_FPGA)
-   {
-      full_list.push_back(std::string(LATTICE_PMI_TDPBE));
-      full_list.push_back(std::string(LATTICE_PMI_MUL));
-   }
-#endif
    THROW_ASSERT(HLSMgr->RSim->filename_bench != "", "Testbench not yet set");
    full_list.push_back(HLSMgr->RSim->filename_bench);
 

@@ -1,4 +1,28 @@
 /* mockturtle: C++ logic network library
+ * Copyright (C) 2018-2021  EPFL
+ *
+ * Permission is hereby granted, free of charge, to any person
+ * obtaining a copy of this software and associated documentation
+ * files (the "Software"), to deal in the Software without
+ * restriction, including without limitation the rights to use,
+ * copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the
+ * Software is furnished to do so, subject to the following
+ * conditions:
+ *
+ * The above copyright notice and this permission notice shall be
+ * included in all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+ * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+ * OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+ * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+ * HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+ * WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+ * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+ * OTHER DEALINGS IN THE SOFTWARE.
+ */
+/* mockturtle: C++ logic network library
  * Copyright (C) 2018-2019  EPFL EPFL
  *
  * Permission is hereby granted, free of charge, to any person
@@ -27,6 +51,7 @@
   \file interface.hpp
   \brief Type traits and checkers for the network interface
 
+  \author Heinz Riener
   \author Mathias Soeken
 */
 
@@ -111,7 +136,7 @@ public:
    *
    * \param name Optional name for the input
    */
-  signal create_pi( std::string const& name = {} );
+  signal create_pi( std::string const& name = std::string() );
 
   /*! \brief Creates a primary output in the network.
    *
@@ -123,7 +148,7 @@ public:
    * \param s Signal that drives the created primary output
    * \param name Optional name for the output
    */
-  void create_po( signal const& s, std::string const& name = {} );
+  void create_po( signal const& s, std::string const& name = std::string() );
 
   /*! \brief Creates a register output in the network.
    *
@@ -141,7 +166,7 @@ public:
    *
    * \param name Optional name for the register output
    */
-  signal create_ro( std::string const& name = {} );
+  signal create_ro( std::string const& name = std::string() );
 
   /*! \brief Creates a register input in the network.
    *
@@ -163,7 +188,7 @@ public:
    * \param s Signal that drives the created primary output
    * \param name Optional name for the output
    */
-  void create_ri( signal const& s, std::string const& name = {} );
+  void create_ri( signal const& s, std::string const& name = std::string() );
 
   /*! \brief Checks whether the network is combinational.
    *
@@ -335,6 +360,15 @@ public:
    */
   void substitute_node( node const& old_node, signal const& new_signal );
 
+  /*! \brief Perform multiple node-signal replacements in a network.
+   *
+   * This method replaces all occurrences of a node with a signal for
+   * all pairs (node, signal) in the substitution list.
+   *
+   * \brief substitutions A list of (node, signal) replacement pairs
+   */
+  void substitute_nodes( std::list<std::pair<node, signal>> substitutions );
+
   /*! \brief Replaces a child node by a new signal in a node.
    *
    * If ``n`` has a child pointing to ``old_node``, then it will be replaced by
@@ -362,14 +396,17 @@ public:
    */
   void replace_in_outputs( node const& old_node, signal const& new_signal );
 
-  /*! \brief Removes a node from the hash table.
+  /*! \brief Removes a node (and potentially its fanins) from the hash table .
    *
-   * The node will be marked dead.  This status can be checked with ``is_dead``.
-   * The node is no longer visited in the ``foreach_node`` and ``foreach_gate``
-   * methods.  It still contributes to the overall ``size`` of the network, but
-   * ``num_gates`` does not take dead nodes into account.  Taking out a node
-   * does not change the indexes of other nodes.  The node will be removed from
-   * the hash table.
+   * The node will be marked dead.  This status can be checked with
+   * ``is_dead``.  The node is no longer visited in the
+   * ``foreach_node`` and ``foreach_gate`` methods.  It still
+   * contributes to the overall ``size`` of the network, but
+   * ``num_gates`` does not take dead nodes into account.  Taking out
+   * a node does not change the indexes of other nodes.  The node will
+   * be removed from the hash table.  The reference counters of all
+   * fanin will be decremented and take_out_node will be recursively
+   * invoked on all fanins if their fanout count reach 0.
    */
   void take_out_node( node const& n );
 
@@ -446,13 +483,13 @@ public:
   /*! \brief Returns true, if node is on critical path */
   bool is_on_critical_path( node const& n ) const;
 
-  /*! \brief Returns true if node is an AND gate. */
+  /*! \brief Returns true if node is a 2-input AND gate. */
   bool is_and( node const& n ) const;
 
-  /*! \brief Returns true if node is an OR gate. */
+  /*! \brief Returns true if node is a 2-input OR gate. */
   bool is_or( node const& n ) const;
 
-  /*! \brief Returns true if node is an XOR gate. */
+  /*! \brief Returns true if node is a 2-input XOR gate. */
   bool is_xor( node const& n ) const;
 
   /*! \brief Returns true if node is a majority-of-3 gate. */
@@ -463,6 +500,15 @@ public:
 
   /*! \brief Returns true if node is a 3-input XOR gate. */
   bool is_xor3( node const& n ) const;
+
+  /*! \brief Returns true if node is a primitive n-ary AND gate. */
+  bool is_nary_and( node const& n ) const;
+
+  /*! \brief Returns true if node is a primitive n-ary OR gate. */
+  bool is_nary_or( node const& n ) const;
+
+  /*! \brief Returns true if node is a primitive n-ary XOR gate. */
+  bool is_nary_xor( node const& n ) const;
 
   /*! \brief Returns true if node is a general function node. */
   bool is_function( node const& n ) const;
@@ -907,15 +953,67 @@ public:
   /*! \brief Sets the visited value of a node. */
   void set_visited( node const& n, uint32_t v ) const;
 
-  /*! \brief An id that can be used as a visited flag.
-   *
-   * By using the traversal is, one can reuse multiple visited flags over
-   * several levels.
-   */
+  /*! \brief Returns the current traversal id. */
   uint32_t trav_id() const;
 
   /*! \brief Increment the current traversal id. */
   void incr_trav_id() const;
+#pragma endregion
+
+#pragma beginregion Color values
+  /* Color values offer a more recent and flexible mechanism to manage
+     and manipulate traversal ids. */
+
+  /*! \brief Returns a new color and increases the current color. */
+  uint32_t new_color() const;
+
+  /*! \brief Returns the current color. */
+  uint32_t current_color() const;
+
+  /*! \brief Resets all nodes colors to value `color`. */
+  void clear_colors( uint32_t color = 0 ) const;
+
+  /*! \brief Returns the color of a node. */
+  auto color( node const& n ) const;
+
+  /*! \brief Returns the color of a node. */
+  auto color( signal const& n ) const;
+
+  /*! \brief Assigns the current color to a node. */
+  void paint( node const& n ) const;
+
+  /*! \brief Assigns `color` to a node. */
+  void paint( node const& n, uint32_t color ) const;
+
+  /*! \brief Copies the color from `other` to `n`. */
+  void paint( node const& n, node const& other ) const;
+
+  /*! \brief Evaluates a predicate on the color of a node.
+   *
+   * The predicate `pred` is any callable that must have the signature
+   * ``bool(color_type)``, where `color_type` is the
+   * implementation-dependent type returned by the method `color`.
+   */
+  template<typename Pred>
+  bool eval_color( node const& n, Pred&& pred ) const;
+
+  /*! \brief Evaluates a predicate on the colors of two nodes.
+   *
+   * The predicate `pred` is any callable that must have the signature
+   * ``bool(color_type,color_type)``, where `color_type` is the
+   * implementation-dependent type returned by the method `color`.
+   */
+  template<typename Pred>
+  bool eval_color( node const& a, node const& b, Pred&& pred ) const;
+
+  /*! \brief Evaluates a predicate on the colors of the fanins of a node.
+   *
+   * The predicate `pred` is any callable that must have the signature
+   * ``bool(color_type)``, where `color_type` is the
+   * implementation-dependent type returned by the method `color`.
+   */
+  template<typename Pred>
+  bool eval_fanins_color( node const& n, Pred&& pred ) const;
 #pragma endregion
 
 #pragma region Signal naming
@@ -936,7 +1034,7 @@ public:
 
   /*! \brief Returns the name of an output signal. */
   std::string get_output_name( uint32_t index ) const;
-#end endregion
+#pragma endregion
 
 #pragma region General methods
   /*! \brief Returns network events object.

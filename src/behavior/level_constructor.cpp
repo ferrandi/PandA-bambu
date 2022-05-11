@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -42,7 +42,9 @@
  */
 #include "level_constructor.hpp"
 
-level_constructor::level_constructor(std::map<vertex, unsigned int>& _map_levels_true, std::deque<vertex>& _deque_levels_true) : map_levels_true(_map_levels_true), deque_levels_true(_deque_levels_true)
+level_constructor::level_constructor(std::map<vertex, unsigned int>& _map_levels_true,
+                                     std::deque<vertex>& _deque_levels_true)
+    : map_levels_true(_map_levels_true), deque_levels_true(_deque_levels_true)
 {
 }
 

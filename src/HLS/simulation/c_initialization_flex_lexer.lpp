@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2018-2020 Politecnico di Milano
+ *              Copyright (c) 2018-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -75,6 +75,7 @@ using namespace std;
 #pragma GCC diagnostic ignored "-Wold-style-cast"
 #pragma GCC diagnostic ignored "-Wswitch-default"
 #pragma GCC diagnostic ignored "-Wzero-as-null-pointer-constant"
+#pragma GCC diagnostic ignored "-Wimplicit-fallthrough"
 
 CInitializationFlexLexer::CInitializationFlexLexer(const ParameterConstRef parameters, std::istream* argin, std::ostream* argout) :
    yyFlexLexer(argin, argout),
@@ -87,7 +88,7 @@ CInitializationFlexLexer::~CInitializationFlexLexer()
 }
 #ifndef __clang_analyzer__
 %}
-number [\-]?([0-9]|0\.)[0-9\.e\-\+]*|0|\+Inf|\-Inf|\+NaN|\-NaN|\+qNaN|\-qNaN|\+QNaN|\-QNaN
+number [\-]?(0[xX])?([0-9a-fA-F]|0\.)[0-9a-fA-F\.p\-\+]*|0|\+Inf|\-Inf|\+NaN|\-NaN|\+qNaN|\-qNaN|\+QNaN|\-QNaN
 
 %%
 {number} {lvalp->content = YYText(); return TOK_CI_NUMBER;}

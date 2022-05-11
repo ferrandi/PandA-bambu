@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -71,7 +71,9 @@ class mux_conn : public connection_obj
     * @param live_variable is the set of data transfers
     * @param _mux_tree is mux tree for the new connection
     */
-   mux_conn(const CustomOrderedSet<data_transfer>& _live_variable, std::vector<std::pair<generic_objRef, unsigned int>> _mux_tree) : connection_obj(BY_MUX, _live_variable), mux_tree(std::move(_mux_tree))
+   mux_conn(const CustomOrderedSet<data_transfer>& _live_variable,
+            const std::vector<std::pair<generic_objRef, unsigned int>>& _mux_tree)
+       : connection_obj(BY_MUX, _live_variable), mux_tree(_mux_tree)
    {
    }
 
@@ -109,6 +111,6 @@ class mux_conn : public connection_obj
    }
 };
 /// refcount definition of the class
-typedef refcount<mux_conn> mux_connRef;
+using mux_connRef = refcount<mux_conn>;
 
 #endif

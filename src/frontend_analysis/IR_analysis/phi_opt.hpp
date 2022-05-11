@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -32,7 +32,7 @@
  */
 /**
  * @file phi_opt.hpp
- * @brief Analysis step that optimize the phis starting from the GCC IR
+ * @brief Analysis step that optimize the phis starting from the IR
  *
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  * $Revision$
@@ -49,6 +49,8 @@
 /// Utility include
 #include "refcount.hpp"
 
+#include "tree_node.hpp"
+
 /**
  * @name forward declarations
  */
@@ -57,7 +59,6 @@ REF_FORWARD_DECL(bloc);
 REF_FORWARD_DECL(Schedule);
 REF_FORWARD_DECL(tree_manager);
 CONSTREF_FORWARD_DECL(tree_manipulation);
-REF_FORWARD_DECL(tree_node);
 class statement_list;
 class gimple_cond;
 class gimple_phi;
@@ -131,7 +132,8 @@ class PhiOpt : public FunctionFrontendFlowStep
    void ApplyIfMerge(const unsigned int bb_index);
 
    /**
-    * Transform the control flow graph by eliminating an empty basic block dominated by gimple_cond without modifying phi
+    * Transform the control flow graph by eliminating an empty basic block dominated by gimple_cond without modifying
+    * phi
     * @param bb_index is the index of the empty basic block
     */
    void ApplyIfNothing(const unsigned int bb_index);
@@ -149,7 +151,8 @@ class PhiOpt : public FunctionFrontendFlowStep
    void ApplyMultiMerge(const unsigned int bb_index);
 
    /**
-    * Transform the control flow graph by eliminating an empty basic block dominated by gimple_multi_way_if without modifying phi
+    * Transform the control flow graph by eliminating an empty basic block dominated by gimple_multi_way_if without
+    * modifying phi
     * @param bb_index is the index of the empty basic block
     */
    void ApplyMultiNothing(const unsigned int bb_index);
@@ -183,11 +186,14 @@ class PhiOpt : public FunctionFrontendFlowStep
     */
    void RemoveCondExpr(const tree_nodeRef statement);
 
+   void ReplaceVirtualUses(const tree_nodeRef& old_vssa, const TreeNodeSet& new_ssa) const;
+
    /**
     * Return the set of analyses in relationship with this design step
     * @param relationship_type is the type of relationship to be considered
     */
-   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>>
+   ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
  public:
    /**
@@ -197,7 +203,8 @@ class PhiOpt : public FunctionFrontendFlowStep
     * @param design_flow_manager is the design flow manager
     * @param parameters is the set of input parameters
     */
-   PhiOpt(const application_managerRef AppM, unsigned int function_id, const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
+   PhiOpt(const application_managerRef AppM, unsigned int function_id,
+          const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
 
    /**
     *  Destructor
@@ -213,12 +220,5 @@ class PhiOpt : public FunctionFrontendFlowStep
     * Initialize the step (i.e., like a constructor, but executed just before exec
     */
    void Initialize() override;
-
-   /**
-    * Compute the relationships of a step with other steps
-    * @param dependencies is where relationships will be stored
-    * @param relationship_type is the type of relationship to be computed
-    */
-   void ComputeRelationships(DesignFlowStepSet& relationship, const DesignFlowStep::RelationshipType relationship_type) override;
 };
 #endif

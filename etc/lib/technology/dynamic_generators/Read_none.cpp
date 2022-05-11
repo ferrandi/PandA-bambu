@@ -10,9 +10,9 @@
  *                              PandA Project
  *                 URL: http://trac.ws.dei.polimi.it/panda
  *                      Microarchitectures Laboratory
- *                       Politecnico di Milano - DEI
+ *                       Politecnico di Milano - DEIB
  *             ***********************************************
- *              Copyright (c) 2018-2020 Politecnico di Milano
+ *              Copyright (c) 2018-2022 Politecnico di Milano
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -29,15 +29,14 @@
  *   Free Software Foundation, Inc.,
  *   51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA.
  *
-*/
+ */
 /**
  * @file Read_none.cpp
  * @brief Snippet for the Read_none dynamic generator.
  *
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  *
-*/
+ */
 
-std::cout << "assign " << _ports_out[0].name << " = "<< _ports_in[1].name <<" >> (8*"<< _ports_in[0].name <<");" <<std::endl;
-
-
+std::cout << "assign " << _ports_out[0].name << " = " << _ports_in[1].name << " >> (8*" << _ports_in[0].name << ");"
+          << std::endl;

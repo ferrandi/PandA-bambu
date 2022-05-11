@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2015-2020 Politecnico di Milano
+ *              Copyright (C) 2015-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -50,15 +50,15 @@ class UnfoldedCallGraph : public RawGraph
    ~UnfoldedCallGraph() = default;
 };
 
-typedef boost::graph_traits<UnfoldedCallGraph>::vertex_descriptor UnfoldedVertexDescriptor;
-typedef boost::graph_traits<UnfoldedCallGraph>::vertex_iterator UnfoldedVertexIterator;
+using UnfoldedVertexDescriptor = boost::graph_traits<UnfoldedCallGraph>::vertex_descriptor;
+using UnfoldedVertexIterator = boost::graph_traits<UnfoldedCallGraph>::vertex_iterator;
 #define UNFOLDED_NULL_VERTEX boost::graph_traits<UnfoldedCallGraph>::null_vertex()
 
-typedef boost::graph_traits<UnfoldedCallGraph>::in_edge_iterator UnfoldedInEdgeIterator;
-typedef boost::graph_traits<UnfoldedCallGraph>::out_edge_iterator UnfoldedOutEdgeIterator;
-typedef boost::graph_traits<UnfoldedCallGraph>::edge_iterator UnfoldedEdgeIterator;
-typedef boost::graph_traits<UnfoldedCallGraph>::edge_descriptor UnfoldedEdgeDescriptor;
+using UnfoldedInEdgeIterator = boost::graph_traits<UnfoldedCallGraph>::in_edge_iterator;
+using UnfoldedOutEdgeIterator = boost::graph_traits<UnfoldedCallGraph>::out_edge_iterator;
+using UnfoldedEdgeIterator = boost::graph_traits<UnfoldedCallGraph>::edge_iterator;
+using UnfoldedEdgeDescriptor = boost::graph_traits<UnfoldedCallGraph>::edge_descriptor;
 
-typedef refcount<UnfoldedCallGraph> UnfoldedCallGraphRef;
-typedef refcount<const UnfoldedCallGraph> UnfoldedCallGraphConstRef;
+using UnfoldedCallGraphRef = refcount<UnfoldedCallGraph>;
+using UnfoldedCallGraphConstRef = refcount<const UnfoldedCallGraph>;
 #endif

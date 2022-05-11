@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -59,10 +59,11 @@
 #include "fileIO.hpp"
 #include "string_manipulation.hpp" // for GET_CLASS
 
-#define OUTPUT_FILE "__stdouterr"
+#define OUTPUT_FILE GetPath("__stdouterr")
 
 // constructor
-ToolManager::ToolManager(const ParameterConstRef& _Param) : Param(_Param), local(true), debug_level(_Param->get_class_debug_level(GET_CLASS(*this)))
+ToolManager::ToolManager(const ParameterConstRef& _Param)
+    : Param(_Param), local(true), debug_level(_Param->get_class_debug_level(GET_CLASS(*this)))
 {
 }
 
@@ -75,7 +76,8 @@ ToolManager::~ToolManager()
    }
 }
 
-int ToolManager::execute_command(const std::string& _command_, const std::string& error_message, const std::string& log_file, bool permissive, bool throw_message)
+int ToolManager::execute_command(const std::string& _command_, const std::string& error_message,
+                                 const std::string& log_file, bool permissive, bool throw_message)
 {
    /// on Ubuntu sh is different from bash so we enforce it
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Executing command: " + _command_);
@@ -109,7 +111,8 @@ int ToolManager::execute_command(const std::string& _command_, const std::string
    }
 }
 
-int ToolManager::check_command(const std::string& _tool_, const std::string& setupscr, const std::string& _host_, bool permissive)
+int ToolManager::check_command(const std::string& _tool_, const std::string& setupscr, const std::string& _host_,
+                               bool permissive)
 {
    std::string command;
    if(!_host_.empty())
@@ -146,12 +149,18 @@ int ToolManager::check_command(const std::string& _tool_, const std::string& set
    }
 
    command += ">& " + std::string(OUTPUT_FILE);
-   const auto ret = execute_command(command, "Problems in checking \"" + _tool_ + "\" executable" + (!_host_.empty() ? " on host \"" + _host_ + "\"" + (!setupscr.empty() ? " with this setup script \"" + setupscr + "\"!" : "") : ""),
-                                    Param->getOption<std::string>(OPT_output_temporary_directory) + "/check_command_output", permissive, false);
+   const auto ret = execute_command(
+       command,
+       "Problems in checking \"" + _tool_ + "\" executable" +
+           (!_host_.empty() ? " on host \"" + _host_ + "\"" +
+                                  (!setupscr.empty() ? " with this setup script \"" + setupscr + "\"!" : "") :
+                              ""),
+       Param->getOption<std::string>(OPT_output_temporary_directory) + "/check_command_output", permissive, false);
    return ret;
 }
 
-void ToolManager::configure(const std::string& _tool_, const std::string& setupscr, const std::string& _host_, const std::string& _remote_path_, bool force_remote)
+void ToolManager::configure(const std::string& _tool_, const std::string& setupscr, const std::string& _host_,
+                            const std::string& _remote_path_, bool force_remote)
 {
    setup_script = setupscr;
    /// check if the command is locally available
@@ -201,7 +210,8 @@ void ToolManager::configure(const std::string& _tool_, const std::string& setups
       {
          command = "ssh " + _host_ + " ";
          command += "'mkdir -p " + _remote_path_ + "' >& " + std::string(OUTPUT_FILE);
-         execute_command(command, "Remote path cannot be created on the host machine \"" + host + "\"!", Param->getOption<std::string>(OPT_output_temporary_directory) + "/configure_output");
+         execute_command(command, "Remote path cannot be created on the host machine \"" + host + "\"!",
+                         Param->getOption<std::string>(OPT_output_temporary_directory) + "/configure_output");
       }
       remote_path = _remote_path_;
    }
@@ -271,7 +281,9 @@ std::string ToolManager::determine_paths(std::string& file_name, bool overwrite)
       command += "else ";
       command += "   false; ";
       command += "fi'";
-      int ret = execute_command(command, "Login problems on host \"" + host + "\"!", Param->getOption<std::string>(OPT_output_temporary_directory) + "/determine_paths_output", true);
+      int ret = execute_command(
+          command, "Login problems on host \"" + host + "\"!",
+          Param->getOption<std::string>(OPT_output_temporary_directory) + "/determine_paths_output", true);
       if(ret == -1)
       {
          copy = true;
@@ -315,12 +327,14 @@ void ToolManager::prepare_input_files(const std::vector<std::string>& files)
       move_to_host.push_back(host + ":" + remote_path);
       move_to_host.push_back(">& " + std::string(OUTPUT_FILE));
       std::string command = create_command_line(move_to_host);
-      execute_command(command, "Input files cannot be moved on the host machine", Param->getOption<std::string>(OPT_output_temporary_directory) + "/prepare_input_files_output");
+      execute_command(command, "Input files cannot be moved on the host machine",
+                      Param->getOption<std::string>(OPT_output_temporary_directory) + "/prepare_input_files_output");
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Prepared input files");
 }
 
-int ToolManager::execute(const std::vector<std::string>& parameters, const std::vector<std::string>& input_files, const std::vector<std::string>& output_files, const std::string& log_file, bool permissive)
+int ToolManager::execute(const std::vector<std::string>& parameters, const std::vector<std::string>& input_files,
+                         const std::vector<std::string>& output_files, const std::string& log_file, bool permissive)
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Invoking tool execution");
    THROW_ASSERT(!log_file.empty(), "Log file is empty");
@@ -353,7 +367,8 @@ void ToolManager::remove_files(const std::vector<std::string>& input_files, cons
    std::vector<std::string> removing(1, "rm -rf");
    for(const auto& file : files)
    {
-      if(boost::filesystem::exists(file) and std::find(input_files.begin(), input_files.end(), file) == input_files.end())
+      if(boost::filesystem::exists(file) and
+         std::find(input_files.begin(), input_files.end(), file) == input_files.end())
       {
          removing.push_back(file);
          boost::filesystem::remove(file);
@@ -364,7 +379,8 @@ void ToolManager::remove_files(const std::vector<std::string>& input_files, cons
       return;
    }
    std::string command = local ? create_command_line(removing) : create_remote_command_line(removing);
-   execute_command(command, "Files cannot correctly removed", Param->getOption<std::string>(OPT_output_temporary_directory) + "/remove_files_output");
+   execute_command(command, "Files cannot correctly removed",
+                   Param->getOption<std::string>(OPT_output_temporary_directory) + "/remove_files_output");
 }
 
 void ToolManager::check_output_files(const std::vector<std::string>& files)
@@ -392,6 +408,7 @@ void ToolManager::check_output_files(const std::vector<std::string>& files)
       std::string command = create_command_line(move_from_host);
       auto output_level = Param->getOption<unsigned int>(OPT_output_level);
       PRINT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, " Moving output files from the host machine...");
-      execute_command(command, "Generated files cannot be moved from the host machine", Param->getOption<std::string>(OPT_output_temporary_directory) + "/check_output_files_output");
+      execute_command(command, "Generated files cannot be moved from the host machine",
+                      Param->getOption<std::string>(OPT_output_temporary_directory) + "/check_output_files_output");
    }
 }

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2014-2020 Politecnico di Milano
+ *              Copyright (C) 2014-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -62,7 +62,6 @@ REF_FORWARD_DECL(SDCSorter);
 
 class SDCScheduling : public Scheduling
 {
- protected:
    /// The operation graph used to perform scheduling
    OpGraphConstRef op_graph;
 
@@ -88,23 +87,23 @@ class SDCScheduling : public Scheduling
    double margin;
 
    /// Map operation-stage to variable index
-   CustomMap<std::pair<vertex, unsigned int>, unsigned int> operation_to_varindex;
+   CustomUnorderedMap<std::pair<vertex, unsigned int>, unsigned int> operation_to_varindex;
 
    /// The set of unbounded operations
-   CustomSet<vertex> unbounded_operations;
+   // CustomSet<vertex> unbounded_operations;
 
    /// For each shared resource, the operations mapped on it
-   CustomMap<unsigned int, CustomSet<vertex>> sharing_operations;
+   CustomUnorderedMap<unsigned int, CustomSet<vertex>> sharing_operations;
 
    /// Set of reachable operations (in scheduling graph)
-   CustomMap<vertex, CustomSet<vertex>> full_reachability_map;
+   // CustomMap<vertex, CustomSet<vertex>> full_reachability_map;
 
    /// The set of limited resources
-   CustomSet<unsigned int> limited_resources;
+   CustomUnorderedSet<unsigned int> limited_resources;
 
 #ifndef NDEBUG
    /// The set of temporary flow edges added to the op_graph
-   CustomSet<EdgeDescriptor> temp_edges;
+   CustomUnorderedSet<EdgeDescriptor> temp_edges;
 #endif
 
    /**
@@ -136,7 +135,8 @@ class SDCScheduling : public Scheduling
     * @param target is the second operation
     * @param simultaneous tells if the two operations can be executed in the same clock cycle (chained) or not
     */
-   void AddDependenceConstraint(const meilp_solverRef solver, const vertex first_operation, const vertex second_operation, const bool simultaneous) const;
+   void AddDependenceConstraint(const meilp_solverRef solver, const vertex source, const vertex target,
+                                const bool simultaneous) const;
 
    /**
     * Add constraints to force consecutive execution of different pipeline stages
@@ -150,11 +150,12 @@ class SDCScheduling : public Scheduling
     * @param relationship_type is the type of relationship to be considered
     * @return the steps in relationship with this
     */
-   const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+   const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
+   ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
  public:
-   /// Result of SPECULATIVE_LOOP: the list of movement to be performed (first element is the operation, second element is the old basic block, third element is the new basic block)
-   /// Movements have to be performed in order
+   /// Result of SPECULATIVE_LOOP: the list of movement to be performed (first element is the operation, second element
+   /// is the old basic block, third element is the new basic block) Movements have to be performed in order
    std::list<std::vector<unsigned int>> movements_list;
 
    /**
@@ -165,7 +166,9 @@ class SDCScheduling : public Scheduling
     * @param design_flow_manager is the hls design flow
     * @param hls_flow_step_specialization specifies how specialize this step
     */
-   SDCScheduling(const ParameterConstRef parameters, const HLS_managerRef HLSMgr, unsigned int function_id, const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStepSpecializationConstRef hls_flow_step_specialization);
+   SDCScheduling(const ParameterConstRef parameters, const HLS_managerRef HLSMgr, unsigned int function_id,
+                 const DesignFlowManagerConstRef design_flow_manager,
+                 const HLSFlowStepSpecializationConstRef hls_flow_step_specialization);
 
    /**
     * Destructor
@@ -177,7 +180,8 @@ class SDCScheduling : public Scheduling
     * @param dependencies is where relationships will be stored
     * @param relationship_type is the type of relationship to be computed
     */
-   void ComputeRelationships(DesignFlowStepSet& relationship, const DesignFlowStep::RelationshipType relationship_type) override;
+   void ComputeRelationships(DesignFlowStepSet& relationship,
+                             const DesignFlowStep::RelationshipType relationship_type) override;
 
    /**
     * Check if this step has actually to be executed

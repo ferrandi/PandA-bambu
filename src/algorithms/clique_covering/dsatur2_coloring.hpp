@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -32,7 +32,8 @@
  */
 /**
  * @file dsatur2_coloring.hpp
- * @brief Boost-based implementation of a heuristic sequential coloring algorithm based on the work of Daniel Brelaz (Version 2).
+ * @brief Boost-based implementation of a heuristic sequential coloring algorithm based on the work of Daniel Brelaz
+ * (Version 2).
  *
  * Some ideas come from the Michael A. Trick's implementation of DSATUR heuristic of Daniel Brelaz.
  * For more details see
@@ -102,7 +103,9 @@ namespace boost
          size_type c1 = ColorCount[i1], c2 = ColorCount[i2];
          return !((c1 > c2) || ((c1 == c2) && (DegreeCount[i1] > DegreeCount[i2])));
       }
-      dsatur2_heap_compare_functor(const std::vector<size_type>& _ColorCount, const std::vector<size_type>& _DegreeCount) : ColorCount(_ColorCount), DegreeCount(_DegreeCount)
+      dsatur2_heap_compare_functor(const std::vector<size_type>& _ColorCount,
+                                   const std::vector<size_type>& _DegreeCount)
+          : ColorCount(_ColorCount), DegreeCount(_DegreeCount)
       {
       }
 
@@ -117,8 +120,8 @@ namespace boost
    class dsatur2_coloring_helper
    {
     private:
-      typedef graph_traits<VertexListGraph> GraphTraits;
-      typedef typename GraphTraits::vertex_descriptor Vertex;
+      using GraphTraits = graph_traits<VertexListGraph>;
+      using Vertex = typename GraphTraits::vertex_descriptor;
       const size_type num_node;
       std::vector<bool> valid;
       typename boost::numeric::ublas::matrix<bool> ColorAdj;
@@ -131,14 +134,21 @@ namespace boost
 
     public:
       dsatur2_coloring_helper(const VertexListGraph& _G, ColorMap& _CM, const size_type _num_node)
-          : num_node(_num_node), valid(_num_node, true), ColorAdj(_num_node, _num_node), ColorCount(_num_node, 0), DegreeCount(_num_node), G(_G), CM(_CM), HCF(ColorCount, DegreeCount)
+          : num_node(_num_node),
+            valid(_num_node, true),
+            ColorAdj(_num_node, _num_node),
+            ColorCount(_num_node, 0),
+            DegreeCount(_num_node),
+            G(_G),
+            CM(_CM),
+            HCF(ColorCount, DegreeCount)
       {
          unsigned int i, iheap = 0;
          heap_container = new size_type[_num_node];
          for(i = 0; i < num_node; i++)
          {
             Vertex v = boost::vertex(i, G);
-            DegreeCount[i] = degree(v, _G);
+            DegreeCount[i] = out_degree(v, _G);
             heap_container[iheap] = i;
             iheap++;
          }
@@ -160,7 +170,9 @@ namespace boost
          {
             node1 = get(vertex_index, G, *v);
             if(!ColorAdj(node1, color))
+            {
                ColorCount[node1]++;
+            }
             ColorAdj(node1, color) = true;
             DegreeCount[node1]--;
             // assert(DegreeCount[node1] >= 0);
@@ -188,7 +200,9 @@ namespace boost
                }
             }
             if(j <= max_color)
+            {
                continue;
+            }
             /// not able to color so we have to increase the maximum color available
             max_color++;
             put(CM, boost::vertex(v, G), max_color);
@@ -204,11 +218,13 @@ namespace boost
    template <typename VertexListGraph, typename ColorMap>
    typename property_traits<ColorMap>::value_type dsatur2_coloring(const VertexListGraph& G, ColorMap color)
    {
-      typedef typename property_traits<ColorMap>::value_type size_type;
+      using size_type = typename property_traits<ColorMap>::value_type;
 
       const size_type num_node = num_vertices(G);
       if(num_node == 0)
+      {
          return 0;
+      }
       dsatur2_coloring_helper<VertexListGraph, ColorMap, size_type> MDCH(G, color, num_node);
 
       return MDCH.SeqColor();

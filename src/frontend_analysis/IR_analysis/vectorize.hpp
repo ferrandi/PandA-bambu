@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -53,16 +53,17 @@ CONSTREF_FORWARD_DECL(tree_node);
 REF_FORWARD_DECL(tree_node);
 
 /// Enum used to classify the statement according to the required transformation
-typedef enum
-{
+using Transformation = enum Transformation {
    NONE,     /**No transformation is required */
-   COND_CON, /**Statement is the condition of the loop; it can remain a scalar since all the destinations are the same, but operand can be a vector */
+   COND_CON, /**Statement is the condition of the loop; it can remain a scalar since all the destinations are the same,
+                but operand can be a vector */
    COND_DIV, /**Statement is the condition of the loop */
-   INC,      /**Statement is the increment of the simd outer loop: it has to be transformed in vector modifying the increment */
-   INIT,     /**Statement is the phi initializing the induction variable of the simd outer loop */
-   SCALAR,   /**Scalar operation has to be transformed into multiple scalar operation */
-   SIMD,     /**Scalar operation has to be transformed into vector */
-} Transformation;
+   INC, /**Statement is the increment of the simd outer loop: it has to be transformed in vector modifying the increment
+         */
+   INIT,   /**Statement is the phi initializing the induction variable of the simd outer loop */
+   SCALAR, /**Scalar operation has to be transformed into multiple scalar operation */
+   SIMD,   /**Scalar operation has to be transformed into vector */
+};
 
 class Vectorize : public FunctionFrontendFlowStep
 {
@@ -79,19 +80,15 @@ class Vectorize : public FunctionFrontendFlowStep
    /// The tree_manipulation
    const tree_manipulationRef tree_man;
 
-   /// THe increment of induction variables; id is the index of the ssa name defined in the init gimple
+   /// The increment of induction variables; id is the index of the ssa name defined in the init gimple
    CustomMap<unsigned int, long long int> iv_increment;
 
    /// Enum used to classify the loop according to the required transformation
-   typedef enum
-   {
+   using SimdLoop = enum {
       SIMD_NONE,  /** No transformation is required */
       SIMD_INNER, /** Loop is nested in a outer simd loop */
       SIMD_OUTER  /** Loop is a outer simd */
-   } SimdLoop;
-
-   /// Map gimple node index to basic block index
-   CustomMap<unsigned int, unsigned int> gimple_id_to_bb;
+   };
 
    /// Loop classification
    CustomMap<unsigned int, SimdLoop> simd_loop_type;
@@ -137,7 +134,8 @@ class Vectorize : public FunctionFrontendFlowStep
     * @param created_statements is the list of statements created during transformation
     * @return the tree node of the transformed node
     */
-   unsigned int Transform(const unsigned int tree_node_index, const size_t parallel_degree, const size_t scalar_index, std::list<tree_nodeRef>& created_statements, std::vector<tree_nodeRef>& created_phis);
+   unsigned int Transform(const unsigned int tree_node_index, const size_t parallel_degree, const size_t scalar_index,
+                          std::list<tree_nodeRef>& new_stmt_list, std::vector<tree_nodeRef>& new_phi_list);
 
    /**
     * Duplicate increment statement and update uses of defined variable when necessary
@@ -166,7 +164,8 @@ class Vectorize : public FunctionFrontendFlowStep
     * Return the set of analyses in relationship with this design step
     * @param relationship_type is the type of relationship to be considered
     */
-   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>>
+   ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
  public:
    /**
@@ -176,7 +175,8 @@ class Vectorize : public FunctionFrontendFlowStep
     * @param DesignFlowManagerConstRef is the design flow manager
     * @param parameters is the set of input parameters
     */
-   Vectorize(const application_managerRef AppM, unsigned int function_id, const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
+   Vectorize(const application_managerRef AppM, unsigned int function_id,
+             const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
 
    /**
     *  Destructor

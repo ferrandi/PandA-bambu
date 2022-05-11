@@ -1,0 +1,14 @@
+adpcm/adpcm.c ECP3_CHStone_constraints/adpcm_constraints.xml --skip-pipe-parameter=1
+aes/aes.c
+blowfish/bf.c
+dfadd/dfadd.c
+dfdiv/dfdiv.c --benchmark-name=dfdiv
+dfdiv/dfdiv.c --benchmark-name=dfdiv_hls_div --hls-div ECP3_CHStone_constraints/dfdiv_hls_div_constraints.xml
+dfmul/dfmul.c
+dfsin/dfsin.c --benchmark-name=dfsin
+dfsin/dfsin.c --benchmark-name=dfsin_hls_div --hls-div ECP3_CHStone_constraints/dfsin_hls_div_constraints.xml
+gsm/gsm.c
+jpeg/main.c --benchmark-name=jpeg ECP3_CHStone_constraints/jpeg_constraints.xml -Os --aligned-access
+mips/mips.c
+motion/mpeg2.c
+sha/sha_driver.c

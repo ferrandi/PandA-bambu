@@ -69,3 +69,9 @@ main_test(void)
   if (__builtin_strlen (foo) != 11)
     abort ();
 }
+
+int main()
+{
+   main_test();
+   return 0;
+}

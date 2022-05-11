@@ -32,6 +32,7 @@
 #include "absl/synchronization/internal/kernel_timeout.h"
 
 namespace absl {
+ABSL_NAMESPACE_BEGIN
 
 class Mutex;
 
@@ -77,7 +78,7 @@ class PerThreadSem {
   // !t.has_timeout() => Wait(t) will return true.
   static inline bool Wait(KernelTimeout t);
 
-  // White-listed callers.
+  // Permitted callers.
   friend class PerThreadSemTest;
   friend class absl::Mutex;
   friend absl::base_internal::ThreadIdentity* CreateThreadIdentity();
@@ -85,6 +86,7 @@ class PerThreadSem {
 };
 
 }  // namespace synchronization_internal
+ABSL_NAMESPACE_END
 }  // namespace absl
 
 // In some build configurations we pass --detect-odr-violations to the
@@ -94,20 +96,20 @@ class PerThreadSem {
 // By changing our extension points to be extern "C", we dodge this
 // check.
 extern "C" {
-void AbslInternalPerThreadSemPost(
+void ABSL_INTERNAL_C_SYMBOL(AbslInternalPerThreadSemPost)(
     absl::base_internal::ThreadIdentity* identity);
-bool AbslInternalPerThreadSemWait(
+bool ABSL_INTERNAL_C_SYMBOL(AbslInternalPerThreadSemWait)(
     absl::synchronization_internal::KernelTimeout t);
 }  // extern "C"
 
 void absl::synchronization_internal::PerThreadSem::Post(
     absl::base_internal::ThreadIdentity* identity) {
-  AbslInternalPerThreadSemPost(identity);
+  ABSL_INTERNAL_C_SYMBOL(AbslInternalPerThreadSemPost)(identity);
 }
 
 bool absl::synchronization_internal::PerThreadSem::Wait(
     absl::synchronization_internal::KernelTimeout t) {
-  return AbslInternalPerThreadSemWait(t);
+  return ABSL_INTERNAL_C_SYMBOL(AbslInternalPerThreadSemWait)(t);
 }
 
 #endif  // ABSL_SYNCHRONIZATION_INTERNAL_PER_THREAD_SEM_H_

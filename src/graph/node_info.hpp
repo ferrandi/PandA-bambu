@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -52,8 +52,9 @@
 
 REF_FORWARD_DECL(NodeInfo);
 
-struct NodeInfo
+class NodeInfo
 {
+ public:
    /// Constructor
    NodeInfo();
 
@@ -84,7 +85,9 @@ struct NodeInfo
    friend std::ostream& operator<<(std::ostream& os, const NodeInfoRef& s)
    {
       if(s)
+      {
          s->print(os);
+      }
       return os;
    }
 };
@@ -92,5 +95,5 @@ struct NodeInfo
 /**
  * RefCount type definition of the NodeInfo class structure
  */
-typedef refcount<NodeInfo> NodeInfoRef;
+using NodeInfoRef = refcount<NodeInfo>;
 #endif

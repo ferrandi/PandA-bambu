@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -69,7 +69,8 @@ class nxpython_flow_wrapper : public NanoXploreWrapper
     * Constructor
     * @param Param is the set of parameters
     */
-   nxpython_flow_wrapper(const ParameterConstRef& Param, const std::string& _output_dir, const target_deviceRef& _device);
+   nxpython_flow_wrapper(const ParameterConstRef& Param, const std::string& _output_dir,
+                         const target_deviceRef& _device);
 
    /**
     * Destructor
@@ -77,6 +78,6 @@ class nxpython_flow_wrapper : public NanoXploreWrapper
    ~nxpython_flow_wrapper() override;
 };
 /// Refcount definition for the class
-typedef refcount<nxpython_flow_wrapper> nxpython_flow_wrapperRef;
+using nxpython_flow_wrapperRef = refcount<nxpython_flow_wrapper>;
 
 #endif

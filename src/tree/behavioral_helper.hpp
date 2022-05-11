@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -71,10 +71,12 @@ CONSTREF_FORWARD_DECL(OpGraph);
 CONSTREF_FORWARD_DECL(Parameter);
 CONSTREF_FORWARD_DECL(tree_manager);
 REF_FORWARD_DECL(tree_node);
+CONSTREF_FORWARD_DECL(tree_node);
 CONSTREF_FORWARD_DECL(var_pp_functor);
+class TreeNodeConstSet;
 //@}
 
-typedef unsigned int tree_class;
+using tree_class = unsigned int;
 
 #define INTERNAL "internal_"
 
@@ -133,7 +135,8 @@ class BehavioralHelper
     * @param body specifies if function body is available
     * @param parameters is the set of input parameters
     */
-   BehavioralHelper(const application_managerRef AppM, unsigned int index, bool body, const ParameterConstRef parameters);
+   BehavioralHelper(const application_managerRef AppM, unsigned int index, bool body,
+                    const ParameterConstRef parameters);
 
    /**
     * Destructor
@@ -146,7 +149,9 @@ class BehavioralHelper
     * @param bool tells if the type hype has been already recognized as system
     * @return a pair composed by the filename and the line:column of the definition
     */
-   virtual std::tuple<std::string, unsigned int, unsigned int> get_definition(unsigned int index, bool& is_system) const;
+   /// FIXME: to be remove after substitution with tree_helper::GetSourcePath
+   virtual std::tuple<std::string, unsigned int, unsigned int> get_definition(unsigned int index,
+                                                                              bool& is_system) const;
 
    /**
     * Print the operations corrisponding to the vertex
@@ -155,28 +160,29 @@ class BehavioralHelper
     * @param vppf is the functor used to dump the variable var.
     * @param dot tells if the output is a dot graph
     */
-   std::string print_vertex(const OpGraphConstRef g, const vertex v, const var_pp_functorConstRef vppf, const bool dot = false) const;
+   std::string print_vertex(const OpGraphConstRef g, const vertex v, const var_pp_functorConstRef vppf,
+                            const bool dot = false) const;
 
    /**
     * Print the initialization part
-    * @param index is the initialization expression.
+    * @param var is the initialization expression.
     * @param vppf is the functor used to dump the variable var.
     */
-   virtual std::string print_init(unsigned int index, const var_pp_functorConstRef vppf) const;
+   virtual std::string PrintInit(const tree_nodeConstRef& var, const var_pp_functorConstRef vppf) const;
 
    /**
     * Print the attributes associated to a variable
     * @param index is the attribute node
     * @param vppf is the functor used to dump the variable var.
     */
-   virtual std::string print_attributes(unsigned int index, const var_pp_functorConstRef vppf, bool first = true) const;
+   virtual std::string print_attributes(unsigned int var, const var_pp_functorConstRef vppf, bool first = true) const;
 
    /**
     * Print the name of the variable associated to the index
     * @param index is the considered variable.
     * @return the name of the variable
     */
-   std::string PrintVariable(unsigned int index) const;
+   std::string PrintVariable(unsigned int var) const;
 
    /**
     * Invalidate cached variable name
@@ -185,11 +191,12 @@ class BehavioralHelper
    void InvaildateVariableName(const unsigned int index);
 
    /**
-    * Print the constant associated with index.
-    * @param index is the constant id.
+    * Print the constant associated with var
+    * @param var is the constant tree node
     * @param vppf is the functor used to dump the variable var.
     */
-   virtual std::string print_constant(unsigned int var, const var_pp_functorConstRef vppf = var_pp_functorConstRef()) const;
+   virtual std::string PrintConstant(const tree_nodeConstRef& var,
+                                     const var_pp_functorConstRef vppf = var_pp_functorConstRef()) const;
 
    /**
     * Print a type and its variable in case var is not zero.
@@ -202,8 +209,10 @@ class BehavioralHelper
     * @param prefix is the string to be appended at the begining of the printing
     * @return the printed string
     */
-   virtual std::string print_type(unsigned int type, bool global = false, bool print_qualifiers = false, bool print_storage = false, unsigned int var = 0, const var_pp_functorConstRef vppf = var_pp_functorConstRef(), const std::string& prefix = "",
-                                  const std::string& tail = "") const;
+   virtual std::string print_type(unsigned int type, bool global = false, bool print_qualifiers = false,
+                                  bool print_storage = false, unsigned int var = 0,
+                                  const var_pp_functorConstRef vppf = var_pp_functorConstRef(),
+                                  const std::string& prefix = "", const std::string& tail = "") const;
 
    /**
     * Print the declaration of a non built-in type.
@@ -216,7 +225,7 @@ class BehavioralHelper
     * @param index is the index of a C object
     * @return the size in bit
     */
-   virtual unsigned int get_size(unsigned int index) const;
+   virtual unsigned int get_size(unsigned int var) const;
 
    /**
     * Return the name of the function
@@ -234,7 +243,9 @@ class BehavioralHelper
     * @param function_is is the index of the function
     * @return the index of the type
     */
-   unsigned int GetFunctionReturnType(unsigned int function) const;
+   unsigned int
+   /// FIXME: to be remove after substitution with tree_helper::GetFunctionReturnType
+   GetFunctionReturnType(unsigned int function) const;
 
    /**
     * Return true if index is a variable or a type of type bool
@@ -274,19 +285,19 @@ class BehavioralHelper
    /**
     * Return true if index is a variable or a type of type struct
     */
-   virtual bool is_a_struct(unsigned int index) const;
+   virtual bool is_a_struct(unsigned int variable) const;
 
    /**
     * Return true if index is a variable of a type of type union
     * @param index is the index of the variable or of the type
     * @return true if variable or type is of type union
     */
-   virtual bool is_an_union(unsigned int index) const;
+   virtual bool is_an_union(unsigned int variable) const;
 
    /**
     * Return true if index is a variable or a type of type array
     */
-   virtual bool is_an_array(unsigned int index) const;
+   virtual bool is_an_array(unsigned int variable) const;
 
    /**
     * Return true if index is a variable or a type of type vector
@@ -296,37 +307,37 @@ class BehavioralHelper
    /**
     * Return true if index is a variable or a type of type pointer
     */
-   virtual bool is_a_pointer(unsigned int index) const;
+   virtual bool is_a_pointer(unsigned int variable) const;
 
    /**
     * Return true if the index is an indirect ref.
     * @param index is a variable.
     */
-   virtual bool is_an_indirect_ref(unsigned int index) const;
+   virtual bool is_an_indirect_ref(unsigned int variable) const;
 
    /**
     * Return true if the index is an array ref
     * @param index is a variable.
     */
-   virtual bool is_an_array_ref(unsigned int index) const;
+   virtual bool is_an_array_ref(unsigned int variable) const;
 
    /**
     * Return true if the index is a component ref
     * @param index is the index
     */
-   virtual bool is_a_component_ref(unsigned int index) const;
+   virtual bool is_a_component_ref(unsigned int variable) const;
 
    /**
     * Return true if the index is an addr_expr
     * @param index is the index
     */
-   virtual bool is_an_addr_expr(unsigned int index) const;
+   virtual bool is_an_addr_expr(unsigned int variable) const;
 
    /**
     * Return true if the index is a mem_ref
     * @param index is the index
     */
-   virtual bool is_a_mem_ref(unsigned int index) const;
+   virtual bool is_a_mem_ref(unsigned int variable) const;
 
    /**
     * check if a given index is a static declaration
@@ -347,26 +358,26 @@ class BehavioralHelper
     * @param index is a nodeID.
     * @return true if it's a constant object
     */
-   virtual bool is_a_constant(unsigned int index) const;
+   virtual bool is_a_constant(unsigned int obj) const;
 
    /**
     * Return true if index is a result_decl
     */
-   virtual bool is_a_result_decl(unsigned int index) const;
+   virtual bool is_a_result_decl(unsigned int obj) const;
 
    /**
     * Return true if index is a realpart_expr
     * @param index is the index of the node
     * @return true if index is a realpart_expr
     */
-   virtual bool is_a_realpart_expr(unsigned int index) const;
+   virtual bool is_a_realpart_expr(unsigned int obj) const;
 
    /**
     * Return true if index is a imagpart_expr
     * @param index is the index of the node
     * @return true if index is a imagpart_expr
     */
-   virtual bool is_a_imagpart_expr(unsigned int index) const;
+   virtual bool is_a_imagpart_expr(unsigned int obj) const;
 
    /**
     * Return true if function is an operating system function
@@ -391,50 +402,50 @@ class BehavioralHelper
     * Return the variable of an indirect ref.
     * @param index is an indirect_ref object.
     */
-   virtual unsigned int get_indirect_ref_var(unsigned int index) const;
+   virtual unsigned int get_indirect_ref_var(unsigned int obj) const;
 
    /**
     * Return the array variable of an array ref.
     * @param index is an indirect_ref object.
     */
-   virtual unsigned int get_array_ref_array(unsigned int index) const;
+   virtual unsigned int get_array_ref_array(unsigned int obj) const;
 
    /**
     * Return the index variable of an array ref.
     * @param index is an indirect_ref object.
     */
-   virtual unsigned int get_array_ref_index(unsigned int index) const;
+   virtual unsigned int get_array_ref_index(unsigned int obj) const;
 
    /**
     * Return the record variable of a component ref.
     * @param index is a component_ref object.
     */
-   virtual unsigned int get_component_ref_record(unsigned int index) const;
+   virtual unsigned int get_component_ref_record(unsigned int obj) const;
 
    /**
     * Return the field index of a component ref.
     * @param index is an component_ref object.
     */
-   virtual unsigned int get_component_ref_field(unsigned int index) const;
+   virtual unsigned int get_component_ref_field(unsigned int obj) const;
 
    /**
     * Return the base of a mem ref.
     * @param index is a mem_ref object.
     */
-   virtual unsigned int get_mem_ref_base(unsigned int index) const;
+   virtual unsigned int get_mem_ref_base(unsigned int obj) const;
 
    /**
     * Return the offset of a mem ref.
     * @param index is a mem_ref object.
     */
-   virtual unsigned int get_mem_ref_offset(unsigned int index) const;
+   virtual unsigned int get_mem_ref_offset(unsigned int obj) const;
 
    /**
     * Return the index of the operand if index is addr_expr, a realpart_expr or a imagpart_expr
     * @param index is the index of the expression
     * @return the index of the operand
     */
-   virtual unsigned int get_operand_from_unary_expr(unsigned int index) const;
+   virtual unsigned int get_operand_from_unary_expr(unsigned int obj) const;
 
    /**
     * Return the index of the variable base of a ssa var
@@ -447,7 +458,7 @@ class BehavioralHelper
     * Return the intermediate variable of an operation. It returns 0 when there is not an intermediate variable.
     * @param index is an operation.
     */
-   virtual unsigned int get_intermediate_var(unsigned int index) const;
+   virtual unsigned int get_intermediate_var(unsigned int obj) const;
 
    /**
     * Return the type of the variable
@@ -466,18 +477,23 @@ class BehavioralHelper
     * @param index is the type of the array
     * @return the type of the element
     */
-   unsigned int GetElements(const unsigned int index) const;
+   unsigned int GetElements(const unsigned int type) const;
 
    /**
     * Returns the types of the parameters
     * @return the types of the parameters
     */
-   virtual const CustomUnorderedSet<unsigned int> GetParameterTypes() const;
+   virtual TreeNodeConstSet GetParameterTypes() const;
 
    /**
     * Return the list of index of original parameters of the function
     */
    const std::list<unsigned int> get_parameters() const;
+
+   /**
+    * Return the list of index of original parameters of the function
+    */
+   std::vector<tree_nodeRef> GetParameters() const;
 
    /**
     * Return true if function has implementation
@@ -586,7 +602,8 @@ class BehavioralHelper
     * @param left_part is the tree_node of the left part
     * @param right_part is tree_node of the right part
     */
-   virtual void create_gimple_modify_stmt(unsigned int function_decl_nid, blocRef& block, tree_nodeRef left_part, tree_nodeRef right_part);
+   virtual void create_gimple_modify_stmt(unsigned int function_decl_nid, blocRef& block, tree_nodeRef left_part,
+                                          tree_nodeRef right_part);
 
    /**
     * Print the declaration of a non built-in type.
@@ -600,20 +617,16 @@ class BehavioralHelper
    virtual bool is_empty_return(unsigned int index) const;
 
    /**
-    * return the nodeID of the original gimple_phi in case the statement comes from a splitted phi node
-    * @param nodeID is the statement nodeID
-    */
-   virtual unsigned int is_coming_from_phi_node(unsigned int nodeID) const;
-
-   /**
     * Print the operations corresponding to the node
-    * @param index is the index of the node
+    * @param node is the node to print
     * @param v is the vertex of the operation
     * @param vppf is the functor used to dump the variable var.
     * The stream on which string is printed is the one associate with the identer
     * @return the string corrisponding to the node
     */
-   virtual std::string print_node(unsigned int index, vertex v, const var_pp_functorConstRef vppf) const;
+   virtual std::string PrintNode(const tree_nodeConstRef& node, vertex v, const var_pp_functorConstRef vppf) const;
+
+   virtual std::string PrintNode(unsigned int node_id, vertex v, const var_pp_functorConstRef vppf) const;
 
    /**
     * This method returns true if the node specified in the parameters is
@@ -642,16 +655,17 @@ class BehavioralHelper
     * when the variable var is equal to 4(a) and the vppf is an instance of std_var_pp_functor.
     * @param var is the considered variable.
     * @param vppf is the functor used to dump the variable var.
-    * @param print_init tells if the init has to be printed
+    * @param init_has_to_be_printed tells if the init has to be printed
     */
-   std::string PrintVarDeclaration(unsigned int var, const var_pp_functorConstRef vppf, bool init_has_to_be_printed) const;
+   std::string PrintVarDeclaration(unsigned int var, const var_pp_functorConstRef vppf,
+                                   bool init_has_to_be_printed) const;
 
    /**
     * Return the unqualified version of a type
     * @param type is the type
     * @return the unqualified version of the type if it exists, 0 otherwise
     */
-   unsigned int GetUnqualified(const unsigned int type) const;
+   unsigned int GetUnqualified(const unsigned int index) const;
 
    /**
     * rename a variable
@@ -666,11 +680,11 @@ class BehavioralHelper
    static void clear_renaming_table();
 
    /**
-    * return the types used in type casting by nodeid
-    * @param nodeid is the statement analyzed
-    * @param types is the set of types type-casted by nodeid
+    * return the types used in type casting by tn
+    * @param tn is the statement analyzed
+    * @param types is the set of types type-casted by tn
     */
-   virtual void get_typecast(unsigned int nodeid, CustomUnorderedSet<unsigned int>& types) const;
+   virtual void GetTypecast(const tree_nodeConstRef& tn, TreeNodeConstSet& types) const;
 
    /**
     * Return true if node is the default ssa_name
@@ -752,7 +766,7 @@ class BehavioralHelper
 /**
  * RefCount type definition of the tree_to_graph class structure
  */
-typedef refcount<BehavioralHelper> BehavioralHelperRef;
-typedef refcount<const BehavioralHelper> BehavioralHelperConstRef;
+using BehavioralHelperRef = refcount<BehavioralHelper>;
+using BehavioralHelperConstRef = refcount<const BehavioralHelper>;
 
 #endif

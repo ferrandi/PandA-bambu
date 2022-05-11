@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -83,6 +83,7 @@ class OpVertexSet;
 CONSTREF_FORWARD_DECL(Parameter);
 CONSTREF_FORWARD_DECL(application_manager);
 CONSTREF_FORWARD_DECL(tree_manager);
+CONSTREF_FORWARD_DECL(tree_node);
 
 /**
  * Class simply used to drive the backend in order to print C code
@@ -115,15 +116,17 @@ class CBackend : public DesignFlowStep
     * @param funParams is the list of function parameters
     * @param computed_variables is the set where the computed variables will be stored
     */
-   void compute_variables(const OpGraphConstRef inGraph, const CustomUnorderedSet<unsigned int>& gblVariables, std::list<unsigned int>& funParams, CustomUnorderedSet<unsigned int>& computed_variables);
+   void compute_variables(const OpGraphConstRef inGraph, const CustomUnorderedSet<unsigned int>& gblVariables,
+                          std::list<unsigned int>& funParams, CustomUnorderedSet<unsigned int>& vars);
 
    /**
     * Analyze a variable or a type to identify the includes to be added
-    * @param index is the index of the variable or of the type
+    * @param tn is the variable or the type
     * @param BH is the behavioral helper
     * @param includes is where include has to be inseted
     */
-   virtual void AnalyzeInclude(unsigned int index, const BehavioralHelperConstRef BH, CustomOrderedSet<std::string>& includes);
+   virtual void AnalyzeInclude(const tree_nodeConstRef& tn, const BehavioralHelperConstRef& BH,
+                               CustomOrderedSet<std::string>& includes);
 
    /**
     * Writes the file header, i.e the comments at the beginning of the file
@@ -142,12 +145,12 @@ class CBackend : public DesignFlowStep
     * @param dependencies is where relationships will be stored
     * @param relationship_type is the type of relationship to be computed
     */
-   void ComputeRelationships(DesignFlowStepSet& relationship, const DesignFlowStep::RelationshipType relationship_type) override;
+   void ComputeRelationships(DesignFlowStepSet& relationship,
+                             const DesignFlowStep::RelationshipType relationship_type) override;
 
  public:
    /// The types of backend
-   typedef enum
-   {
+   using Type = enum {
 #if HAVE_HOST_PROFILING_BUILT
       CB_BBP, /** Sequential c with instrumentation for basic block profiling */
 #endif
@@ -177,7 +180,7 @@ class CBackend : public DesignFlowStep
       CB_PARALLEL, /**< Parallel c without instrumentation */
 #endif
       CB_SEQUENTIAL, /**< Sequential c without instrumentation */
-   } Type;
+   };
 
    /// The type of this instance
    const Type c_backend_type;
@@ -201,7 +204,9 @@ class CBackend : public DesignFlowStep
     * @param file_name is the file to be created
     * @param Param is the set of input parameters
     */
-   CBackend(const Type type, const CBackendInformationConstRef c_backend_information, const DesignFlowManagerConstRef design_flow_manager, const application_managerConstRef AppM, std::string file_name, const ParameterConstRef Param);
+   CBackend(const Type type, const CBackendInformationConstRef c_backend_information,
+            const DesignFlowManagerConstRef design_flow_manager, const application_managerConstRef AppM,
+            std::string file_name, const ParameterConstRef _parameters);
 
  public:
    /**
@@ -253,6 +258,6 @@ class CBackend : public DesignFlowStep
     */
    const CWriterRef GetCWriter() const;
 };
-typedef refcount<CBackend> CBackendRef;
-typedef refcount<const CBackend> CBackendConstRef;
+using CBackendRef = refcount<CBackend>;
+using CBackendConstRef = refcount<const CBackend>;
 #endif

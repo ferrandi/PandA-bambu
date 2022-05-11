@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -33,7 +33,8 @@
 /**
  * @file port_swapping.cpp
  * @brief Implementation of the port swapping algorithm described in the following paper:
- *   Hao Cong, Song Chen and T. Yoshimura, "Port assignment for interconnect reduction in high-level synthesis," Proceedings of Technical Program of 2012 VLSI Design, Automation and Test, Hsinchu, 2012, pp. 1-4.
+ *   Hao Cong, Song Chen and T. Yoshimura, "Port assignment for interconnect reduction in high-level synthesis,"
+ * Proceedings of Technical Program of 2012 VLSI Design, Automation and Test, Hsinchu, 2012, pp. 1-4.
  *
  * @author Alessandro Comodi <alessandro.comodi@mail.polimi.it>
  * @author Davide Conficconi <davide.conficconi@mail.polimi.it>
@@ -51,20 +52,22 @@
 
 #include "allocation_information.hpp"
 #include "fu_binding.hpp"
+#include "function_behavior.hpp"
 #include "hls.hpp"
 #include "hls_manager.hpp"
 #include "liveness.hpp"
 #include "reg_binding.hpp"
 #include "storage_value_information.hpp"
 
-/// parser/treegcc include
+/// parser/compiler include
 #include "token_interface.hpp"
 
 /// STD include
 #include <random>
 
 #include "behavioral_helper.hpp"
-#include "dbgPrintHelper.hpp"      // for DEBUG_LEVEL_
+#include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
+#include "fileIO.hpp"
 #include "string_manipulation.hpp" // for GET_CLASS
 #include "tree_helper.hpp"
 
@@ -72,7 +75,8 @@
 #define SET_B 1
 #define SET_AB 2
 
-port_swapping::port_swapping(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr, unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager)
+port_swapping::port_swapping(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr, unsigned int _funId,
+                             const DesignFlowManagerConstRef _design_flow_manager)
     : HLSFunctionStep(_Param, _HLSMgr, _funId, _design_flow_manager, HLSFlowStep_Type::PORT_SWAPPING)
 {
    debug_level = _Param->get_class_debug_level(GET_CLASS(*this));
@@ -80,7 +84,8 @@ port_swapping::port_swapping(const ParameterConstRef _Param, const HLS_managerRe
 
 port_swapping::~port_swapping() = default;
 
-const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> port_swapping::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
+port_swapping::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;
    switch(relationship_type)
@@ -89,9 +94,28 @@ const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationC
       {
          if(HLSMgr->get_HLS(funId))
          {
-            ret.insert(std::make_tuple(HLSMgr->get_HLS(funId)->module_binding_algorithm, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
+            if(HLSMgr->GetFunctionBehavior(funId)->is_simple_pipeline())
+            {
+               ret.insert(std::make_tuple(HLSFlowStep_Type::UNIQUE_MODULE_BINDING, HLSFlowStepSpecializationConstRef(),
+                                          HLSFlowStep_Relationship::SAME_FUNCTION));
+            }
+            else
+            {
+               ret.insert(std::make_tuple(HLSMgr->get_HLS(funId)->module_binding_algorithm,
+                                          HLSFlowStepSpecializationConstRef(),
+                                          HLSFlowStep_Relationship::SAME_FUNCTION));
+            }
          }
-         ret.insert(std::make_tuple(parameters->getOption<HLSFlowStep_Type>(OPT_register_allocation_algorithm), HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
+         if(HLSMgr->GetFunctionBehavior(funId)->is_simple_pipeline())
+         {
+            ret.insert(std::make_tuple(HLSFlowStep_Type::UNIQUE_REGISTER_BINDING, HLSFlowStepSpecializationConstRef(),
+                                       HLSFlowStep_Relationship::SAME_FUNCTION));
+         }
+         else
+         {
+            ret.insert(std::make_tuple(parameters->getOption<HLSFlowStep_Type>(OPT_register_allocation_algorithm),
+                                       HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
+         }
          break;
       }
       case INVALIDATION_RELATIONSHIP:
@@ -111,7 +135,8 @@ const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationC
 //
 //  This function calculates the levels of all the vertices in a spanning tree
 //
-void port_swapping::vertex_levels(std::vector<PSE>& spt_edges, PSVertex root, size_t num_vertices_g, std::vector<PSVSet>& vset)
+void port_swapping::vertex_levels(const std::vector<PSE>& spt_edges, PSVertex root, size_t num_vertices_g,
+                                  std::vector<PSVSet>& vset)
 {
    PSVSet set;
    set.v = root;
@@ -122,9 +147,9 @@ void port_swapping::vertex_levels(std::vector<PSE>& spt_edges, PSVertex root, si
    bool flag = false;
    while(vset.size() < num_vertices_g)
    {
-      for(auto i : spt_edges)
+      for(const auto& i : spt_edges)
       {
-         for(auto j : vset)
+         for(const auto j : vset)
          {
             if(j.v == i.first)
             {
@@ -134,15 +159,23 @@ void port_swapping::vertex_levels(std::vector<PSE>& spt_edges, PSVertex root, si
                break;
             }
          }
-         for(auto lvl : vset)
+         for(const auto lvl : vset)
+         {
             if(lvl.v == set.v)
+            {
                flag = false;
+            }
+         }
          if(flag)
          {
             if(set.level % 2 == 0)
+            {
                set.belongs = SET_A;
+            }
             else
+            {
                set.belongs = SET_B;
+            }
             vset.push_back(set);
          }
          flag = false;
@@ -153,20 +186,22 @@ void port_swapping::vertex_levels(std::vector<PSE>& spt_edges, PSVertex root, si
 //
 //  This function calculates the distances between two vertices in a spanning tree
 //
-int port_swapping::vertex_distance(std::vector<PSE>& spt_edges, PSVertex root, PSVertex dest, std::vector<PSVSet>& vset)
+int port_swapping::vertex_distance(const std::vector<PSE>& spt_edges, PSVertex root, PSVertex dest,
+                                   std::vector<PSVSet>& vset)
 {
    PSVSet set;
    set.v = root;
    set.level = 0;
+   set.belongs = SET_A;
    vset.push_back(set);
    int distance = 0;
    bool flag = false;
    bool found = false;
    while(!found)
    {
-      for(auto i : spt_edges)
+      for(const auto& i : spt_edges)
       {
-         for(auto j : vset)
+         for(const auto& j : vset)
          {
             if(j.v == i.first)
             {
@@ -193,11 +228,17 @@ int port_swapping::vertex_distance(std::vector<PSE>& spt_edges, PSVertex root, P
                break;
             }
          }
-         for(auto lvl : vset)
+         for(const auto& lvl : vset)
+         {
             if(lvl.v == set.v)
+            {
                flag = false;
+            }
+         }
          if(flag)
+         {
             vset.push_back(set);
+         }
          flag = false;
       }
    }
@@ -206,16 +247,18 @@ int port_swapping::vertex_distance(std::vector<PSE>& spt_edges, PSVertex root, P
    return distance;
 }
 
-port_swapping::PSVertex port_swapping::find_max_degree(CustomOrderedSet<std::pair<PSVertex, unsigned int>>& dSet)
+port_swapping::PSVertex port_swapping::find_max_degree(const CustomOrderedSet<std::pair<PSVertex, unsigned int>>& dSet)
 {
    long unsigned int max = 0;
    PSVertex v = 0;
-   for(auto e : dSet)
+   for(const auto& e : dSet)
+   {
       if(e.second > max)
       {
          max = e.second;
          v = e.first;
       }
+   }
    return v;
 }
 
@@ -223,20 +266,29 @@ void port_swapping::update_degree(PSGraph g2, CustomOrderedSet<std::pair<PSVerte
 {
    auto g2_vertices = boost::vertices(g2);
    for(auto iterator = g2_vertices.first; iterator != g2_vertices.second; ++iterator)
+   {
       dSet.insert(std::make_pair(*iterator, boost::out_degree(*iterator, g2)));
+   }
 }
 
-port_swapping::PSVertex port_swapping::get_co_tree_vertex(PSVertex v, std::vector<PSE>& e)
+port_swapping::PSVertex port_swapping::get_co_tree_vertex(PSVertex v, const std::vector<PSE>& e)
 {
-   for(auto ed : e)
+   for(const auto& ed : e)
+   {
       if(v == ed.second)
+      {
          return ed.first;
+      }
       else if(v == ed.first)
+      {
          return ed.second;
+      }
+   }
    return v;
 }
 
-void port_swapping::port_swapping_algorithm(PSGraph g, std::vector<PSMultiStart>& vector_sets, size_t num_vertices_g, PSVertex root)
+void port_swapping::port_swapping_algorithm(PSGraph& g, std::vector<PSMultiStart>& vector_sets, size_t num_vertices_g,
+                                            PSVertex root)
 {
    //
    // Generating the Spanning Tree starting from Graph g
@@ -252,6 +304,7 @@ void port_swapping::port_swapping_algorithm(PSGraph g, std::vector<PSMultiStart>
    for(size_t count = 1; count < num_components; count++)
    {
       for(size_t i = 0; i < num_vertices_g; i++)
+      {
          if(component[i] == count)
          {
             auto connection_ver_2 = PSVertex(i);
@@ -259,9 +312,12 @@ void port_swapping::port_swapping_algorithm(PSGraph g, std::vector<PSMultiStart>
             connection_ver_1 = connection_ver_2;
             break;
          }
+      }
    }
 
-   boost::random_spanning_tree(g, generator, boost::root_vertex(root).predecessor_map(boost::make_iterator_property_map(p.begin(), boost::get(boost::vertex_index, g))));
+   boost::random_spanning_tree(g, generator,
+                               boost::root_vertex(root).predecessor_map(
+                                   boost::make_iterator_property_map(p.begin(), boost::get(boost::vertex_index, g))));
 
    //
    // Generating a list of edges following the predecessor map created
@@ -285,7 +341,9 @@ void port_swapping::port_swapping_algorithm(PSGraph g, std::vector<PSMultiStart>
    auto edge = boost::edges(g);
    std::vector<PSE> g_edges;
    for(auto iterator = edge.first; iterator != edge.second; ++iterator)
+   {
       g_edges.push_back(PSE(source(*iterator, g), target(*iterator, g)));
+   }
 
    //
    // Calculating the levels of the various vertices in the
@@ -298,10 +356,15 @@ void port_swapping::port_swapping_algorithm(PSGraph g, std::vector<PSMultiStart>
    std::vector<PSE> co_tree_edges;
    for(auto e : g_edges)
    {
-      if(find(spt_edges.begin(), spt_edges.end(), PSE(source(e, g), target(e, g))) != spt_edges.end() || find(spt_edges.begin(), spt_edges.end(), PSE(target(e, g), source(e, g))) != spt_edges.end())
+      if(find(spt_edges.begin(), spt_edges.end(), PSE(source(e, g), target(e, g))) != spt_edges.end() ||
+         find(spt_edges.begin(), spt_edges.end(), PSE(target(e, g), source(e, g))) != spt_edges.end())
+      {
          continue;
+      }
       else
+      {
          co_tree_edges.push_back(PSE(source(e, g), target(e, g)));
+      }
    }
 
    //
@@ -313,12 +376,16 @@ void port_swapping::port_swapping_algorithm(PSGraph g, std::vector<PSMultiStart>
    {
       loop_size.clear();
       if(vertex_distance(spt_edges, e.first, e.second, loop_size) % 2 != 0)
+      {
          odd_co_tree_edges.push_back(e);
+      }
    }
 
    PSGraph g2(num_vertices_g);
    for(auto e : odd_co_tree_edges)
+   {
       add_edge(e.first, e.second, g2);
+   }
 
    CustomOrderedSet<std::pair<PSVertex, unsigned int>> degree_set;
    CustomOrderedSet<PSVertex> cover_set;
@@ -348,7 +415,9 @@ void port_swapping::port_swapping_algorithm(PSGraph g, std::vector<PSMultiStart>
    std::vector<PSVSet> temp_set;
    PSVSet v;
    for(auto vs : vset)
+   {
       temp_set.push_back(vs);
+   }
 
    vset.clear();
 
@@ -363,7 +432,9 @@ void port_swapping::port_swapping_algorithm(PSGraph g, std::vector<PSMultiStart>
          abCardinality++;
       }
       else
+      {
          vset.push_back(set);
+      }
    }
 
    PSMultiStart run;
@@ -377,7 +448,7 @@ void port_swapping::port_swapping_algorithm(PSGraph g, std::vector<PSMultiStart>
    return;
 }
 
-std::vector<std::pair<port_swapping::PSVertex, unsigned int>> port_swapping::p_swap(PSGraph g)
+std::vector<std::pair<port_swapping::PSVertex, unsigned int>> port_swapping::p_swap(PSGraph& g)
 {
    auto g_vertices = vertices(g);
    std::vector<PSMultiStart> vector_sets;
@@ -391,30 +462,39 @@ std::vector<std::pair<port_swapping::PSVertex, unsigned int>> port_swapping::p_s
    long unsigned int max = boost::num_vertices(g);
    PSMultiStart best_candidate;
    for(auto vset : vector_sets)
+   {
       if(vset.cardinality < max)
       {
          max = vset.cardinality;
          best_candidate = vset;
       }
+   }
 
    std::vector<std::pair<PSVertex, unsigned int>> return_values;
    for(auto vertex_set : best_candidate.vset)
+   {
       return_values.push_back(std::make_pair(vertex_set.v, vertex_set.belongs));
+   }
    return return_values;
 }
 
 bool port_swapping::is_commutative_op(const std::string& operation)
 {
-   return operation == STOK(TOK_PLUS_EXPR) || operation == STOK(TOK_POINTER_PLUS_EXPR) || operation == STOK(TOK_MULT_EXPR) || operation == STOK(TOK_BIT_IOR_EXPR) || operation == STOK(TOK_BIT_XOR_EXPR) || operation == STOK(TOK_BIT_AND_EXPR) ||
-          operation == STOK(TOK_EQ_EXPR) || operation == STOK(TOK_NE_EXPR) || operation == STOK(TOK_WIDEN_SUM_EXPR) || operation == STOK(TOK_WIDEN_MULT_EXPR);
+   return operation == STOK(TOK_PLUS_EXPR) || operation == STOK(TOK_POINTER_PLUS_EXPR) ||
+          operation == STOK(TOK_MULT_EXPR) || operation == STOK(TOK_BIT_IOR_EXPR) ||
+          operation == STOK(TOK_BIT_XOR_EXPR) || operation == STOK(TOK_BIT_AND_EXPR) ||
+          operation == STOK(TOK_EQ_EXPR) || operation == STOK(TOK_NE_EXPR) || operation == STOK(TOK_WIDEN_SUM_EXPR) ||
+          operation == STOK(TOK_WIDEN_MULT_EXPR);
 }
 
-unsigned int port_swapping::get_results(PSVertex operand, std::vector<std::pair<PSVertex, unsigned int>> results)
+unsigned int port_swapping::get_results(PSVertex operand, const std::vector<std::pair<PSVertex, unsigned int>>& results)
 {
    for(auto res : results)
    {
       if(res.first == operand)
+      {
          return res.second;
+      }
    }
    return 0;
 }
@@ -426,12 +506,12 @@ DesignFlowStep_Status port_swapping::InternalExec()
    const BehavioralHelperConstRef behavioral_helper = FB->CGetBehavioralHelper();
    const tree_managerRef TreeM = HLSMgr->get_tree_manager();
 
-   typedef struct
+   using Operands = struct
    {
       vertex op;
       PSVertex first_op;
       PSVertex second_op;
-   } Operands;
+   };
 
    std::map<std::pair<unsigned int, unsigned int>, std::vector<vertex>> fu_map;
    std::map<std::tuple<unsigned int, unsigned int, unsigned int>, PSVertex> op_vertex_map;
@@ -461,12 +541,16 @@ DesignFlowStep_Status port_swapping::InternalExec()
 
    for(const auto& fu : fu_map)
    {
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Functional Unit ID: " + HLS->allocation_information->get_string_name(fu.first.first));
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                     "-->Functional Unit ID: " + HLS->allocation_information->get_string_name(fu.first.first));
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Functional Unit INDEX: " + STR(fu.first.second));
       for(const auto& fu_operation : fu.second)
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Operation: " + GET_NAME(data, fu_operation) + " (" + data->CGetOpNodeInfo(fu_operation)->GetOperation() + ")");
-         std::vector<HLS_manager::io_binding_type> var_read = HLSMgr->get_required_values(HLS->functionId, fu_operation);
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                        "---Operation: " + GET_NAME(data, fu_operation) + " (" +
+                            data->CGetOpNodeInfo(fu_operation)->GetOperation() + ")");
+         std::vector<HLS_manager::io_binding_type> var_read =
+             HLSMgr->get_required_values(HLS->functionId, fu_operation);
          THROW_ASSERT(var_read.size() == 2, STR(var_read.size()) + " Vertices in op has wrong size!");
          for(unsigned int var_num = 0; var_num < var_read.size(); var_num++)
          {
@@ -474,17 +558,17 @@ DesignFlowStep_Status port_swapping::InternalExec()
             unsigned int tree_var = std::get<0>(var_read[var_num]);
             if(tree_var == 0)
             {
-               INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Constant: " + STR(std::get<1>(var_read[var_num])));
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                              "---Constant: " + STR(std::get<1>(var_read[var_num])));
                key_value = std::make_tuple(0, 0, std::get<1>(var_read[var_num]));
             }
             else
             {
-               INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Read: " + behavioral_helper->PrintVariable(tree_var));
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                              "-->Read: " + behavioral_helper->PrintVariable(tree_var));
                const CustomOrderedSet<vertex>& running_states = HLS->Rliv->get_state_where_run(fu_operation);
-               const CustomOrderedSet<vertex>::const_iterator rs_it_end = running_states.end();
-               for(auto rs_it = running_states.begin(); rs_it != rs_it_end; ++rs_it)
+               for(const auto state : running_states)
                {
-                  vertex state = *rs_it;
                   if(tree_helper::is_parameter(TreeM, tree_var) || !HLS->Rliv->has_op_where_defined(tree_var))
                   {
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Param operand");
@@ -500,25 +584,33 @@ DesignFlowStep_Status port_swapping::InternalExec()
                         {
                            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Chained operand");
                            if(HLS->Rfu->get_index(def_op) != INFINITE_UINT)
+                           {
                               key_value = std::make_tuple(2, HLS->Rfu->get_assign(def_op), HLS->Rfu->get_index(def_op));
+                           }
                            else
+                           {
                               key_value = std::make_tuple(2, 0, tree_var);
+                           }
                         }
                         else if(HLS->storage_value_information->is_a_storage_value(state, tree_var))
                         {
-                           unsigned int storage_value = HLS->storage_value_information->get_storage_value_index(state, tree_var);
+                           unsigned int storage_value =
+                               HLS->storage_value_information->get_storage_value_index(state, tree_var);
                            unsigned int r_index = HLS->Rreg->get_register(storage_value);
-                           INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Register: " + STR(r_index));
+                           INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Register: " + STR(r_index));
                            key_value = std::make_tuple(3, 0, r_index);
                         }
                         else
+                        {
                            THROW_UNREACHABLE("unexpected");
+                        }
                      }
                      else
                      {
-                        unsigned int storage_value = HLS->storage_value_information->get_storage_value_index(state, tree_var);
+                        unsigned int storage_value =
+                            HLS->storage_value_information->get_storage_value_index(state, tree_var);
                         unsigned int r_index = HLS->Rreg->get_register(storage_value);
-                        INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Register: " + STR(r_index));
+                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Register: " + STR(r_index));
                         key_value = std::make_tuple(3, 0, r_index);
                      }
                   }
@@ -531,7 +623,7 @@ DesignFlowStep_Status port_swapping::InternalExec()
             if(op_vertex_map.find(key_value) == op_vertex_map.end())
             {
                v_input = boost::add_vertex(g);
-               INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Vertex: " + STR(v_input));
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Vertex: " + STR(v_input));
                op_vertex_map[key_value] = v_input;
             }
             vertices_in_op[var_num] = op_vertex_map.at(key_value);
@@ -552,7 +644,8 @@ DesignFlowStep_Status port_swapping::InternalExec()
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "PORT_SWAPPING STARTING");
       if(DEBUG_LEVEL_VERY_PEDANTIC <= debug_level)
       {
-         std::ofstream file("starting-graph_" + HLS->allocation_information->get_string_name(fu.first.first) + "_" + STR(fu.first.second) + ".dot");
+         std::ofstream file(GetPath("starting-graph_" + HLS->allocation_information->get_string_name(fu.first.first) +
+                                    "_" + STR(fu.first.second) + ".dot"));
          boost::write_graphviz(file, g);
          file.close();
       }
@@ -561,13 +654,15 @@ DesignFlowStep_Status port_swapping::InternalExec()
 
 #ifndef NDEBUG
       for(auto res : results)
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Vertex: " + STR(res.first) + " Belongs To: " + STR(res.second));
+      {
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                        "---Vertex: " + STR(res.first) + " Belongs To: " + STR(res.second));
+      }
 #endif
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
-
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Printing Results");
 
-      for(auto opt : operands)
+      for(const auto& opt : operands)
       {
          unsigned int op1, op2;
          op1 = get_results(opt.first_op, results);
@@ -576,15 +671,18 @@ DesignFlowStep_Status port_swapping::InternalExec()
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "--- Error in the algorithm");
          }
-         else if((op1 == SET_A && op2 == SET_B) || (op1 == SET_AB && op2 == SET_B) || (op1 == SET_A && op2 == SET_AB) || (op1 == SET_AB && op2 == SET_AB))
+         else if((op1 == SET_A && op2 == SET_B) || (op1 == SET_AB && op2 == SET_B) || (op1 == SET_A && op2 == SET_AB) ||
+                 (op1 == SET_AB && op2 == SET_AB))
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "--- No swap to do");
             HLS->Rfu->set_ports_are_swapped(opt.op, false);
          }
          else if((op1 == SET_AB && op2 == SET_A) || (op1 == SET_B && op2 == SET_AB))
          {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "--> Swap ports in operation: " + GET_NAME(data, opt.op));
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "--- Vertices swapped: " + STR(opt.first_op) + " and " + STR(opt.second_op));
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                           "--> Swap ports in operation: " + GET_NAME(data, opt.op));
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                           "--- Vertices swapped: " + STR(opt.first_op) + " and " + STR(opt.second_op));
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
             HLS->Rfu->set_ports_are_swapped(opt.op, true);
             changed = true;
@@ -599,11 +697,16 @@ DesignFlowStep_Status port_swapping::InternalExec()
 
    if(n_swaps)
    {
-      INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "-->Port swapping: number of operations swapped= " + STR(n_swaps));
+      INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level,
+                     "-->Port swapping: number of operations swapped= " + STR(n_swaps));
       INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "<--");
    }
    if(changed)
+   {
       return DesignFlowStep_Status::SUCCESS;
+   }
    else
+   {
       return DesignFlowStep_Status::UNCHANGED;
+   }
 }

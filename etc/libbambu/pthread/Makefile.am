@@ -84,3 +84,39 @@ libpthread_clang7_a_SOURCES = pthread.c
 libpthread_clang7_a_CFLAGS = --compiler=I386_CLANG7 $(common_treegccflags_clang)
 endif
 
+if BUILD_I386_CLANG8
+pkglib_LIBRARIES += libpthread_clang8.a
+libpthread_clang8_a_SOURCES = pthread.c
+libpthread_clang8_a_CFLAGS = --compiler=I386_CLANG8 $(common_treegccflags_clang)
+endif
+
+if BUILD_I386_CLANG9
+pkglib_LIBRARIES += libpthread_clang9.a
+libpthread_clang9_a_SOURCES = pthread.c
+libpthread_clang9_a_CFLAGS = --compiler=I386_CLANG9 $(common_treegccflags_clang)
+endif
+
+if BUILD_I386_CLANG10
+pkglib_LIBRARIES += libpthread_clang10.a
+libpthread_clang10_a_SOURCES = pthread.c
+libpthread_clang10_a_CFLAGS = --compiler=I386_CLANG10 $(common_treegccflags_clang)
+endif
+
+if BUILD_I386_CLANG11
+pkglib_LIBRARIES += libpthread_clang11.a
+libpthread_clang11_a_SOURCES = pthread.c
+libpthread_clang11_a_CFLAGS = --compiler=I386_CLANG11 $(common_treegccflags_clang)
+endif
+
+if BUILD_I386_CLANGVVD
+pkglib_LIBRARIES += libpthread_clangvvd.a
+libpthread_clangvvd_a_SOURCES = pthread.c
+libpthread_clangvvd_a_CFLAGS = --compiler=I386_CLANGVVD $(common_treegccflags_clang)
+endif
+
+if BUILD_I386_CLANG12
+pkglib_LIBRARIES += libpthread_clang12.a
+libpthread_clang12_a_SOURCES = pthread.c
+libpthread_clang12_a_CFLAGS = --compiler=I386_CLANG12 $(common_treegccflags_clang)
+endif
+

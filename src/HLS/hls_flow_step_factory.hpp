@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -72,7 +72,8 @@ class HLSFlowStepFactory : public DesignFlowStepFactory
     * @param HLS_manager is the HLS manager
     * @param parameters is the set of input parameters
     */
-   HLSFlowStepFactory(const DesignFlowManagerConstRef design_flow_manager, const HLS_managerRef _HLS_manager, const ParameterConstRef parameters);
+   HLSFlowStepFactory(const DesignFlowManagerConstRef design_flow_manager, const HLS_managerRef _HLS_mgr,
+                      const ParameterConstRef parameters);
 
    /**
     * Destructor
@@ -90,25 +91,34 @@ class HLSFlowStepFactory : public DesignFlowStepFactory
     * @param funId is the index of the function to be scheduled
     * @param hls_flow_step_specialization contains information about how specialize the single step
     */
-   DesignFlowStepRef CreateHLSFlowStep(const HLSFlowStep_Type hls_flow_step_type, const unsigned int funId, const HLSFlowStepSpecializationConstRef hls_flow_step_specialization = HLSFlowStepSpecializationConstRef()) const;
+   DesignFlowStepRef CreateHLSFlowStep(const HLSFlowStep_Type hls_flow_step_type, const unsigned int funId,
+                                       const HLSFlowStepSpecializationConstRef hls_flow_step_specialization =
+                                           HLSFlowStepSpecializationConstRef()) const;
 
    /**
     * Create the frontend design flow steps
     * @param hls_flow_steps is the set of steps to be created
     */
-   const DesignFlowStepSet CreateHLSFlowSteps(const CustomUnorderedSet<std::pair<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef>>& hls_flow_steps) const;
+   const DesignFlowStepSet CreateHLSFlowSteps(
+       const CustomUnorderedSet<std::pair<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef>>& hls_flow_steps) const;
 
    /**
     * The same as CreateHLSFlowSteps, but just for one step
     */
-   const DesignFlowStepSet CreateHLSFlowSteps(const std::pair<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef>& hls_flow_step) const;
+   const DesignFlowStepSet
+   CreateHLSFlowSteps(const std::pair<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef>& hls_flow_step) const;
    /**
     * The same as CreateHLSFlowSteps, but just for one step, with an even
     * simpler syntax
     */
-   const DesignFlowStepSet CreateHLSFlowSteps(const HLSFlowStep_Type type, const HLSFlowStepSpecializationConstRef hls_flow_step_specialization) const;
-   const DesignFlowStepRef CreateHLSFlowStep(const std::pair<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef>& hls_flow_step) const;
+   const DesignFlowStepSet
+   CreateHLSFlowSteps(const HLSFlowStep_Type type,
+                      const HLSFlowStepSpecializationConstRef hls_flow_step_specialization) const;
+   const DesignFlowStepRef
+   CreateHLSFlowStep(const std::pair<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef>& hls_flow_step) const;
 
-   const DesignFlowStepRef CreateHLSFlowStep(const HLSFlowStep_Type type, const HLSFlowStepSpecializationConstRef hls_flow_step_specialization) const;
+   const DesignFlowStepRef
+   CreateHLSFlowStep(const HLSFlowStep_Type type,
+                     const HLSFlowStepSpecializationConstRef hls_flow_step_specialization) const;
 };
 #endif

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2015-2020 Politecnico di Milano
+ *              Copyright (c) 2015-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -66,7 +66,8 @@
 #include "dbgPrintHelper.hpp"
 #include "utility.hpp"
 
-OmpFunctionAllocation::OmpFunctionAllocation(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, const DesignFlowManagerConstRef _design_flow_manager)
+OmpFunctionAllocation::OmpFunctionAllocation(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr,
+                                             const DesignFlowManagerConstRef _design_flow_manager)
     : fun_dominator_allocation(_parameters, _HLSMgr, _design_flow_manager, HLSFlowStep_Type::OMP_FUNCTION_ALLOCATION)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
@@ -82,7 +83,26 @@ DesignFlowStep_Status OmpFunctionAllocation::Exec()
    const auto TM = HLSMgr->get_tree_manager();
    fun_dominator_allocation::Exec();
    const auto call_graph_manager = HLSMgr->CGetCallGraphManager();
-   const auto call_graph = call_graph_manager->CGetCallGraph();
+   auto root_functions = call_graph_manager->GetRootFunctions();
+   if(parameters->isOption(OPT_top_design_name)) // top design function become the top_vertex
+   {
+      const auto top_rtldesign_function =
+          HLSMgr->get_tree_manager()->GetFunction(parameters->getOption<std::string>(OPT_top_design_name));
+      if(top_rtldesign_function && root_functions.count(top_rtldesign_function->index))
+      {
+         root_functions.clear();
+         root_functions.insert(top_rtldesign_function->index);
+      }
+   }
+   CustomUnorderedSet<vertex> vertex_subset;
+   for(const auto f_id : root_functions)
+   {
+      for(const auto reached_f_id : call_graph_manager->GetReachedBodyFunctionsFrom(f_id))
+      {
+         vertex_subset.insert(call_graph_manager->GetVertex(reached_f_id));
+      }
+   }
+   const auto call_graph = call_graph_manager->CGetCallSubGraph(vertex_subset);
    std::list<vertex> sorted_functions;
    call_graph->TopologicalSort(sorted_functions);
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Computing functions to be parallelized");
@@ -91,7 +111,9 @@ DesignFlowStep_Status OmpFunctionAllocation::Exec()
       const auto function_id = call_graph_manager->get_function(function);
       if(HLSMgr->CGetFunctionBehavior(function_id)->CGetBehavioralHelper()->GetOmpForDegree())
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Found omp for wrapper " + HLSMgr->CGetFunctionBehavior(function_id)->CGetBehavioralHelper()->get_function_name());
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                        "---Found omp for wrapper " +
+                            HLSMgr->CGetFunctionBehavior(function_id)->CGetBehavioralHelper()->get_function_name());
          omp_functions->omp_for_wrappers.insert(function_id);
          continue;
       }
@@ -100,35 +122,45 @@ DesignFlowStep_Status OmpFunctionAllocation::Exec()
       {
          const auto source = boost::source(*ie, *call_graph);
          const auto source_id = call_graph_manager->get_function(source);
-         if(omp_functions->omp_for_wrappers.find(source_id) != omp_functions->omp_for_wrappers.end() or omp_functions->parallelized_functions.find(source_id) != omp_functions->parallelized_functions.end())
+         if(omp_functions->omp_for_wrappers.find(source_id) != omp_functions->omp_for_wrappers.end() or
+            omp_functions->parallelized_functions.find(source_id) != omp_functions->parallelized_functions.end())
          {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Found function to be parallelized: " + HLSMgr->CGetFunctionBehavior(function_id)->CGetBehavioralHelper()->get_function_name());
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                           "---Found function to be parallelized: " +
+                               HLSMgr->CGetFunctionBehavior(function_id)->CGetBehavioralHelper()->get_function_name());
             omp_functions->parallelized_functions.insert(function_id);
             break;
          }
       }
    }
-   const auto panda_pthread_mutex = call_graph_manager->GetVertex(TM->function_index("panda_pthread_mutex"));
+   const auto panda_pthread_mutex = call_graph_manager->GetVertex(TM->GetFunction("panda_pthread_mutex")->index);
    InEdgeIterator ie, ie_end;
    for(boost::tie(ie, ie_end) = boost::in_edges(panda_pthread_mutex, *call_graph); ie != ie_end; ie++)
    {
       omp_functions->locking_functions.insert(call_graph_manager->get_function(boost::source(*ie, *call_graph)));
    }
    auto current_locks_allocation_candidates = omp_functions->locking_functions;
-   CustomOrderedSet<unsigned int> reached_body_functions = call_graph_manager->GetReachedBodyFunctions();
+   const auto reached_body_functions = call_graph_manager->GetReachedBodyFunctions();
    for(const auto function : boost::adaptors::reverse(sorted_functions))
    {
       const auto function_id = call_graph_manager->get_function(function);
       if(reached_body_functions.find(function_id) == reached_body_functions.end())
+      {
          continue;
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing function " + HLSMgr->CGetFunctionBehavior(function_id)->CGetBehavioralHelper()->get_function_name());
+      }
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                     "-->Analyzing function " +
+                         HLSMgr->CGetFunctionBehavior(function_id)->CGetBehavioralHelper()->get_function_name());
       if(current_locks_allocation_candidates.find(function_id) != current_locks_allocation_candidates.end())
       {
          current_locks_allocation_candidates.erase(current_locks_allocation_candidates.find(function_id));
 #ifndef NDEBUG
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Other locks allocation candidates are:");
          for(const auto current_locks_allocation_candidate : current_locks_allocation_candidates)
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---" + HLSMgr->CGetFunctionBehavior(current_locks_allocation_candidate)->CGetBehavioralHelper()->get_function_name());
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                           "---" + HLSMgr->CGetFunctionBehavior(current_locks_allocation_candidate)
+                                       ->CGetBehavioralHelper()
+                                       ->get_function_name());
 #endif
          if(current_locks_allocation_candidates.size() == 0)
          {
@@ -139,7 +171,9 @@ DesignFlowStep_Status OmpFunctionAllocation::Exec()
                {
                   const auto source_id = call_graph_manager->get_function(boost::source(*ie, *call_graph));
                   if(reached_body_functions.find(source_id) == reached_body_functions.end())
+                  {
                      current_locks_allocation_candidates.insert(source_id);
+                  }
                }
                if(omp_functions->omp_for_wrappers.find(function_id) != omp_functions->omp_for_wrappers.end())
                {
@@ -161,7 +195,9 @@ DesignFlowStep_Status OmpFunctionAllocation::Exec()
             {
                const auto source_id = call_graph_manager->get_function(boost::source(*ie, *call_graph));
                if(reached_body_functions.find(source_id) == reached_body_functions.end())
+               {
                   current_locks_allocation_candidates.insert(source_id);
+               }
             }
             if(omp_functions->omp_for_wrappers.find(function_id) != omp_functions->omp_for_wrappers.end())
             {

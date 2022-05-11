@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -86,8 +86,10 @@ class xml_attribute : public xml_node
       convert_unescaped(escaped);
       /// replace '\n' character with the escaped version "\\n"
       std::string::size_type lPos = 0;
-      while((lPos = escaped.find("\n", lPos)) != std::string::npos)
+      while((lPos = escaped.find('\n', lPos)) != std::string::npos)
+      {
          escaped.replace(lPos++, 1, "\\n");
+      }
       os << get_name() << "=\"" << escaped << "\"";
    }
 
@@ -111,7 +113,7 @@ class xml_attribute : public xml_node
 
 struct attribute_sequence
 {
-   typedef std::list<xml_attribute*> attribute_list;
+   using attribute_list = std::list<xml_attribute*>;
    /**
     * Print the class.
     * @param os is the stream.
@@ -159,9 +161,13 @@ struct attribute_sequence
    xml_attribute* get_attribute(const std::string& name) const
    {
       if(a_map.find(name) == a_map.end())
+      {
          return nullptr;
+      }
       else
+      {
          return a_map.find(name)->second.get();
+      }
    }
    /** Remove the attribute with this name.
     * @param name The name of the attribute to be removed

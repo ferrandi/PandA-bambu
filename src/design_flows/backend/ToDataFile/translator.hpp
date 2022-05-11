@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -102,22 +102,13 @@ class Translator
    {
     public:
       /// Text format
-      typedef enum
-      {
-         BOOST_PP_SEQ_FOR_EACH(TF_ENUM, BOOST_PP_EMPTY, TEXT_FORMAT)
-      } TextFormat;
+      using TextFormat = enum { BOOST_PP_SEQ_FOR_EACH(TF_ENUM, BOOST_PP_EMPTY, TEXT_FORMAT) };
 
       /// Comparison operator
-      typedef enum
-      {
-         BOOST_PP_SEQ_FOR_EACH(CO_ENUM, BOOST_PP_EMPTY, COMPARISON_OPERATOR)
-      } ComparisonOperator;
+      using ComparisonOperator = enum { BOOST_PP_SEQ_FOR_EACH(CO_ENUM, BOOST_PP_EMPTY, COMPARISON_OPERATOR) };
 
       /// Total format
-      typedef enum
-      {
-         BOOST_PP_SEQ_FOR_EACH(TOF_ENUM, BOOST_PP_EMPTY, TOTAL_FORMAT)
-      } TotalFormat;
+      using TotalFormat = enum { BOOST_PP_SEQ_FOR_EACH(TOF_ENUM, BOOST_PP_EMPTY, TOTAL_FORMAT) };
 
     private:
       /// Map string->enum for text format
@@ -215,7 +206,8 @@ class Translator
     * @param latex_column_formats is where read data will be put
     * @param max_column_width is where maximum column width will be stored
     */
-   void read_column_formats(const XMLDomParserRef parser, std::list<LatexColumnFormat>& latex_column_formats, size_t& max_column_width) const;
+   void read_column_formats(const XMLDomParserRef parser, std::list<LatexColumnFormat>& latex_column_formats,
+                            size_t& max_column_width) const;
 
  public:
    /**
@@ -230,14 +222,16 @@ class Translator
     * @param input is the data
     * @param output is where the data will be stored
     */
-   void Translate(CustomUnorderedMap<std::string, long double> input, std::map<enum rtl_kind, std::map<enum mode_kind, long double>>& output) const;
+   void Translate(CustomUnorderedMap<std::string, long double> input,
+                  std::map<enum rtl_kind, std::map<enum mode_kind, long double>>& output) const;
 
    /**
     * Write rtl data to xml
     * @param data is the data to be written
     * @param file_name is the name of the file where data will be written
     */
-   void write_to_xml(const std::map<enum rtl_kind, std::map<enum mode_kind, long double>>& data, std::string file_name) const;
+   void write_to_xml(const std::map<enum rtl_kind, std::map<enum mode_kind, long double>>& data,
+                     std::string file_name) const;
 #endif
 
    /**
@@ -246,15 +240,20 @@ class Translator
     * @param data is the data to be written
     * @param file_name is the name of the file where data will be written
     */
-   void write_to_csv(const std::map<std::string, CustomOrderedSet<std::string>>& tags, const CustomUnorderedMap<std::string, CustomUnorderedMapStable<std::string, CustomUnorderedMapStable<std::string, long double>>>& results,
-                     const std::string& file_name) const;
+   void
+   write_to_csv(const std::map<std::string, CustomOrderedSet<std::string>>& tags,
+                const CustomUnorderedMap<
+                    std::string,
+                    CustomUnorderedMapStable<std::string, CustomUnorderedMapStable<std::string, long double>>>& results,
+                const std::string& file_name) const;
 
    /**
     * Write text data in csv format
     * @param results is the data to be written
     * @param file_name is the name of the file
     */
-   void write_to_csv(const std::map<std::string, CustomMap<std::string, std::string>>& results, const std::string& file_name) const;
+   void write_to_csv(const std::map<std::string, CustomMap<std::string, std::string>>& results,
+                     const std::string& file_name) const;
 
    /**
     * Write profiling analysis to pa
@@ -262,15 +261,20 @@ class Translator
     * @param data is the data to be written
     * @param file_name is the name of the file where data will be written
     */
-   void write_to_pa(const std::map<std::string, CustomOrderedSet<std::string>>& tags, const CustomUnorderedMap<std::string, CustomUnorderedMapStable<std::string, CustomUnorderedMapStable<std::string, long double>>>& results,
-                    const std::string& file_name) const;
+   void
+   write_to_pa(const std::map<std::string, CustomOrderedSet<std::string>>& tags,
+               const CustomUnorderedMap<
+                   std::string,
+                   CustomUnorderedMapStable<std::string, CustomUnorderedMapStable<std::string, long double>>>& results,
+               const std::string& file_name) const;
 
    /**
     * Write data in latex table format
     * @param results is the data to be written
     * @param file_name is the name of the files
     */
-   void write_to_latex(std::map<std::string, CustomMap<std::string, std::string>>& results, const Parameters_FileFormat input_format, const std::string& file_name) const;
+   void write_to_latex(std::map<std::string, CustomMap<std::string, std::string>>& results,
+                       const Parameters_FileFormat input_format, const std::string& file_name) const;
 
    /**
     * Merget profiling analysis
@@ -280,10 +284,18 @@ class Translator
     * @param merge_data are the data to be merged with the first profiling analysis
     * @param output_data is where data will be stored
     */
-   void merge_pa(const std::map<std::string, CustomOrderedSet<std::string>>& tags, const CustomUnorderedMap<std::string, CustomOrderedSet<std::string>>& keys,
-                 const CustomUnorderedMap<std::string, CustomUnorderedMapStable<std::string, CustomUnorderedMapStable<std::string, long double>>>& input_data,
-                 const CustomUnorderedMap<std::string, CustomUnorderedMapStable<std::string, CustomUnorderedMapStable<std::string, long double>>>& merge_data,
-                 CustomUnorderedMap<std::string, CustomUnorderedMapStable<std::string, CustomUnorderedMapStable<std::string, long double>>>& output_data) const;
+   void merge_pa(
+       const std::map<std::string, CustomOrderedSet<std::string>>& tags,
+       const CustomUnorderedMap<std::string, CustomOrderedSet<std::string>>& keys,
+       const CustomUnorderedMap<
+           std::string, CustomUnorderedMapStable<std::string, CustomUnorderedMapStable<std::string, long double>>>&
+           input_data,
+       const CustomUnorderedMap<
+           std::string, CustomUnorderedMapStable<std::string, CustomUnorderedMapStable<std::string, long double>>>&
+           merge_data,
+       CustomUnorderedMap<std::string,
+                          CustomUnorderedMapStable<std::string, CustomUnorderedMapStable<std::string, long double>>>&
+           output_data) const;
 
    /**
     * Collapse columns of data considering super classes and remove selected rows
@@ -291,8 +303,9 @@ class Translator
     * @param column_names are the names of the column
     * @param Param is the set of input parameters
     */
-   static void AggregateAndClean(std::map<std::string, std::map<std::string, long double>>& data, CustomOrderedSet<std::string>& column_names, const ParameterConstRef param);
+   static void AggregateAndClean(std::map<std::string, std::map<std::string, long double>>& data,
+                                 CustomOrderedSet<std::string>& column_names, const ParameterConstRef param);
 };
 
-typedef refcount<const Translator> TranslatorConstRef;
+using TranslatorConstRef = refcount<const Translator>;
 #endif

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2015-2020 Politecnico di Milano
+ *              Copyright (C) 2015-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -80,13 +80,14 @@ class CondExprRestructuring : public FunctionFrontendFlowStep
     * @param first is true if first operand has to be considered, false if second oeprand has to be considered
     * @return the chained gimple_assignment if all conditions hold
     */
-   tree_nodeRef IsCondExprChain(const tree_nodeConstRef tn, const bool first) const;
+   tree_nodeRef IsCondExprChain(const tree_nodeConstRef tn, const bool first, bool is_third_node) const;
 
    /**
     * Return the set of analyses in relationship with this design step
     * @param relationship_type is the type of relationship to be considered
     */
-   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>>
+   ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
  public:
    /**
@@ -96,7 +97,8 @@ class CondExprRestructuring : public FunctionFrontendFlowStep
     * @param design_flow_manager is the design flow manager
     * @param parameters is the set of input parameters
     */
-   CondExprRestructuring(const application_managerRef AppM, unsigned int function_id, const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
+   CondExprRestructuring(const application_managerRef AppM, unsigned int function_id,
+                         const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
 
    /**
     *  Destructor

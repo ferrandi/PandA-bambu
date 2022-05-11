@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -69,18 +69,19 @@
 /**
  * RefCount type definition for the input stream object.
  */
-typedef refcount<std::istream> fileIO_istreamRef;
-typedef refcount<const std::istream> fileIO_istreamConstRef;
+using fileIO_istreamRef = refcount<std::istream>;
+using fileIO_istreamConstRef = refcount<const std::istream>;
 
 /**
  * RefCount type definition for the input stream object.
  */
-typedef refcount<std::ostream> fileIO_ostreamRef;
+using fileIO_ostreamRef = refcount<std::ostream>;
 
 /**
  * this function returns an istream compressed or not.
- * It first check for a compressed file, then search for the compressed version of the file and finally in case no compressed file is found it look for the plain text file.
- * this function is mainly based on the gzstream wrapper and on zlib library.
+ * It first check for a compressed file, then search for the compressed version of the file and finally in case no
+ * compressed file is found it look for the plain text file. this function is mainly based on the gzstream wrapper and
+ * on zlib library.
  * @param name is the file name.
  * @return the refcount to the istream
  */
@@ -149,7 +150,9 @@ inline void CopyStdout(const std::string& filename)
    {
       size_t wBytes = fwrite(buffer, 1, nBytes, stdout);
       if(wBytes < nBytes)
+      {
          break;
+      }
    }
    fclose(filese);
 }
@@ -231,7 +234,7 @@ inline std::string GetDirectory(const boost::filesystem::path file)
  */
 inline std::string GetExtension(const std::string& file)
 {
-   return file.find(".") == std::string::npos ? "" : file.substr(file.find_last_of(".") + 1);
+   return file.find('.') == std::string::npos ? "" : file.substr(file.find_last_of('.') + 1);
 }
 
 inline std::string GetExtension(boost::filesystem::path file)
@@ -245,13 +248,53 @@ inline std::string GetExtension(const char* file)
 
 inline std::string GetCurrentPath()
 {
-   std::string current_dir = boost::filesystem::current_path().string();
+   std::string current_dir;
+   if(getenv("OWD"))
+   {
+      current_dir = getenv("OWD");
+   }
+   else
+   {
+      current_dir = boost::filesystem::current_path().string();
+   }
 #ifdef _WIN32
    boost::replace_all(current_dir, "\\", "/");
 #endif
    return current_dir;
 }
 
+inline std::string GetPath(const std::string& path)
+{
+   boost::filesystem::path local_path_file = path;
+   if(local_path_file.is_relative())
+   {
+      local_path_file = boost::filesystem::path(GetCurrentPath()) / local_path_file;
+   }
+   return local_path_file.string();
+}
+
+inline std::string relocate_compiler_path(const std::string& path)
+{
+   if(getenv("MINGW_INST_DIR"))
+   {
+      std::string app_prefix = getenv("MINGW_INST_DIR");
+      return app_prefix + path;
+   }
+   else if(getenv("APPDIR"))
+   {
+      std::string app_prefix = getenv("APPDIR");
+      return app_prefix + path;
+   }
+#ifdef _WIN32
+   else
+      return "c:/msys64/" + path;
+#else
+   else
+   {
+      return path;
+   }
+#endif
+}
 inline bool ExistFile(const std::string& file)
 {
    return boost::filesystem::exists(file);
@@ -275,7 +318,9 @@ inline void CopyFile(boost::filesystem::path file_source, boost::filesystem::pat
       }
    }
    else
+   {
       boost::filesystem::copy_file(file_source, file_target, boost::filesystem::copy_option::overwrite_if_exists);
+   }
 }
 
 /**
@@ -293,19 +338,28 @@ inline std::string BuildPath(const std::string& first_part, const std::string se
  * @param Param is the set of input parameters
  * @param system_command is the  to be executed
  * @param output is the file where output has to be saved
- * @param type specifies which streams have to be saved; possible values are 0 (none), 1 (stdout), 2 (stderr), 3(stdout and stderr)
+ * @param type specifies which streams have to be saved; possible values are 0 (none), 1 (stdout), 2 (stderr), 3(stdout
+ * and stderr)
  * @param background specifies if the command has to be executed in background
  * @param timeout is the timeout for the command (in minutes)
  * @return the value returned by the shell
  */
-inline int PandaSystem(const ParameterConstRef Param, const std::string& system_command, const std::string& output = "", const unsigned int type = 3, const bool background = false, const size_t timeout = 0)
+inline int PandaSystem(const ParameterConstRef Param, const std::string& system_command, const std::string& output = "",
+                       const unsigned int type = 3, const bool background = false, const size_t timeout = 0)
 {
    static size_t counter = 0;
-   const std::string actual_output = output == "" ? Param->getOption<std::string>(OPT_output_temporary_directory) + STR_CST_file_IO_shell_output_file + "_" + boost::lexical_cast<std::string>(counter) : output;
-   const std::string script_file_name = Param->getOption<std::string>(OPT_output_temporary_directory) + STR_CST_file_IO_shell_script + "_" + boost::lexical_cast<std::string>(counter++);
+   const std::string actual_output = output == "" ? Param->getOption<std::string>(OPT_output_temporary_directory) +
+                                                        STR_CST_file_IO_shell_output_file + "_" +
+                                                        boost::lexical_cast<std::string>(counter) :
+                                                    GetPath(output);
+   const std::string script_file_name = Param->getOption<std::string>(OPT_output_temporary_directory) +
+                                        STR_CST_file_IO_shell_script + "_" +
+                                        boost::lexical_cast<std::string>(counter++);
    counter++;
    std::ofstream script_file(script_file_name.c_str());
    script_file << "#!/bin/bash" << std::endl;
+   script_file << "ulimit -s 131072" << std::endl;
+   script_file << "cd " << GetCurrentPath() << std::endl;
    THROW_ASSERT(not background or timeout == 0, "Background and timeout cannot be specified at the same time");
    if(background)
    {
@@ -384,11 +438,14 @@ inline int PandaSystem(const ParameterConstRef Param, const std::string& system_
    script_file.close();
    if(timeout != 0)
    {
-      const std::string timeout_file_name = Param->getOption<std::string>(OPT_output_temporary_directory) + STR_CST_file_IO_shell_script + "_" + boost::lexical_cast<std::string>(counter++);
+      const std::string timeout_file_name = Param->getOption<std::string>(OPT_output_temporary_directory) +
+                                            STR_CST_file_IO_shell_script + "_" +
+                                            boost::lexical_cast<std::string>(counter++);
       counter++;
       std::ofstream timeout_file(timeout_file_name.c_str());
       timeout_file << "#!/bin/bash" << std::endl;
-      timeout_file << "timeout --foreground " << boost::lexical_cast<std::string>(timeout) << "m bash -f " << script_file_name << std::endl;
+      timeout_file << "timeout --foreground " << boost::lexical_cast<std::string>(timeout) << "m bash -f "
+                   << script_file_name << std::endl;
       timeout_file.close();
       const std::string command = "bash -f " + timeout_file_name + "";
       return system(command.c_str());

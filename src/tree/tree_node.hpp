@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -77,6 +77,7 @@ REF_FORWARD_DECL(bloc);
 REF_FORWARD_DECL(tree_manager);
 CONSTREF_FORWARD_DECL(tree_node);
 REF_FORWARD_DECL(tree_node);
+REF_FORWARD_DECL(Range);
 template <class value>
 class TreeNodeMap;
 enum class TreeVocabularyTokenTypes_TokenEnum;
@@ -94,26 +95,41 @@ REF_FORWARD_DECL(WeightInformation);
       return std::string(#meth);              \
    }
 
-#define NON_LEAF_TREE_NODES (tree_node)(WeightedNode)(attr)(srcp)(PointToSolution)(decl_node)(expr_node)(gimple_node)(unary_expr)(binary_expr)(ternary_expr)(quaternary_expr)(type_node)(memory_tag)(cst_node)
+#define NON_LEAF_TREE_NODES                                                                                            \
+   (tree_node)(WeightedNode)(attr)(srcp)(PointToSolution)(decl_node)(expr_node)(gimple_node)(unary_expr)(binary_expr)( \
+       ternary_expr)(quaternary_expr)(type_node)(memory_tag)(cst_node)
 
 /// sequence of all objects
-#define VISITED_OBJ_SEQ1 NON_LEAF_TREE_NODES UNARY_EXPRESSION_TREE_NODES BINARY_EXPRESSION_TREE_NODES TERNARY_EXPRESSION_TREE_NODES
-#define VISITED_OBJ_SEQ2 QUATERNARY_EXPRESSION_TREE_NODES GIMPLE_NODES MISCELLANEOUS_EXPR_TREE_NODES MISCELLANEOUS_OBJ_TREE_NODES TYPE_NODE_TREE_NODES CONST_OBJ_TREE_NODES DECL_NODE_TREE_NODES BASIC_BLOCK_TREE_NODES PANDA_EXTENSION_TREE_NODES
+#define VISITED_OBJ_SEQ1 \
+   NON_LEAF_TREE_NODES UNARY_EXPRESSION_TREE_NODES BINARY_EXPRESSION_TREE_NODES TERNARY_EXPRESSION_TREE_NODES
+#define VISITED_OBJ_SEQ2                                                                                    \
+   QUATERNARY_EXPRESSION_TREE_NODES GIMPLE_NODES MISCELLANEOUS_EXPR_TREE_NODES MISCELLANEOUS_OBJ_TREE_NODES \
+       TYPE_NODE_TREE_NODES CONST_OBJ_TREE_NODES DECL_NODE_TREE_NODES BASIC_BLOCK_TREE_NODES                \
+           PANDA_EXTENSION_TREE_NODES
 
 /// sequence of obj that have to be specialized
-#define OBJ_SPECIALIZED_SEQ                                                                                                                                                                                                                                 \
-   (tree_node)(WeightedNode)(attr)(srcp)(decl_node)(expr_node)(gimple_node)(unary_expr)(binary_expr)(ternary_expr)(quaternary_expr)(type_node)(memory_tag)(cst_node)(error_mark)(array_type)(gimple_asm)(baselink)(gimple_bind)(binfo)(block)(call_expr)(   \
-       aggr_init_expr)(gimple_call)(case_label_expr)(cast_expr)(complex_cst)(complex_type)(gimple_cond)(const_decl)(constructor)(enumeral_type)(expr_stmt)(field_decl)(function_decl)(function_type)(gimple_assign)(gimple_goto)(handler)(identifier_node)( \
-       integer_cst)(integer_type)(gimple_label)(lut_expr)(method_type)(namespace_decl)(overload)(parm_decl)(gimple_phi)(pointer_type)(real_cst)(real_type)(record_type)(reference_type)(result_decl)(gimple_return)(return_stmt)(type_pack_expansion)(      \
-       expr_pack_expansion)(scope_ref)(ssa_name)(statement_list)(string_cst)(gimple_switch)(template_decl)(template_parm_index)(tree_list)(tree_vec)(try_block)(type_decl)(union_type)(var_decl)(vector_cst)(vector_type)(type_argument_pack)(              \
-       nontype_argument_pack)(target_expr)(target_mem_ref)(target_mem_ref461)(bloc)(null_node)(gimple_pragma)(issue_pragma)(blackbox_pragma)(profiling_pragma)(statistical_profiling)(map_pragma)(call_hw_pragma)(call_point_hw_pragma)(omp_pragma)(        \
-       omp_critical_pragma)(omp_declare_simd_pragma)(omp_for_pragma)(omp_parallel_pragma)(omp_sections_pragma)(omp_parallel_sections_pragma)(omp_section_pragma)(omp_simd_pragma)(omp_target_pragma)(omp_task_pragma)(gimple_while)(gimple_for)(            \
-       gimple_multi_way_if)(tree_reindex)
+#define OBJ_SPECIALIZED_SEQ                                                                                           \
+   (tree_node)(WeightedNode)(attr)(srcp)(decl_node)(expr_node)(gimple_node)(unary_expr)(binary_expr)(ternary_expr)(   \
+       quaternary_expr)(type_node)(memory_tag)(cst_node)(error_mark)(array_type)(gimple_asm)(baselink)(gimple_bind)(  \
+       binfo)(block)(call_expr)(aggr_init_expr)(gimple_call)(case_label_expr)(cast_expr)(complex_cst)(complex_type)(  \
+       gimple_cond)(const_decl)(constructor)(enumeral_type)(expr_stmt)(field_decl)(function_decl)(function_type)(     \
+       gimple_assign)(gimple_goto)(handler)(identifier_node)(integer_cst)(integer_type)(gimple_label)(lut_expr)(      \
+       method_type)(namespace_decl)(overload)(parm_decl)(gimple_phi)(pointer_type)(real_cst)(real_type)(record_type)( \
+       reference_type)(result_decl)(gimple_return)(return_stmt)(type_pack_expansion)(expr_pack_expansion)(scope_ref)( \
+       ssa_name)(statement_list)(string_cst)(gimple_switch)(template_decl)(template_parm_index)(tree_list)(tree_vec)( \
+       try_block)(type_decl)(union_type)(var_decl)(vector_cst)(vector_type)(type_argument_pack)(                      \
+       nontype_argument_pack)(target_expr)(target_mem_ref)(target_mem_ref461)(bloc)(null_node)(gimple_pragma)(        \
+       issue_pragma)(blackbox_pragma)(profiling_pragma)(statistical_profiling)(map_pragma)(call_hw_pragma)(           \
+       call_point_hw_pragma)(omp_pragma)(omp_critical_pragma)(omp_declare_simd_pragma)(omp_for_pragma)(               \
+       omp_parallel_pragma)(omp_sections_pragma)(omp_parallel_sections_pragma)(omp_section_pragma)(omp_simd_pragma)(  \
+       omp_target_pragma)(omp_task_pragma)(gimple_while)(gimple_for)(gimple_multi_way_if)(tree_reindex)
 
-#define OBJ_NOT_SPECIALIZED_SEQ                                                                                                                                                                                                                     \
-   (translation_unit_decl)(label_decl)(void_type)(template_type_parm)(set_type)(qual_union_type)(offset_type)(lang_type)(CharType)(nullptr_type)(boolean_type)(typename_type)(none)(vec_new_expr)                                                   \
-       UNARY_EXPRESSION_TREE_NODES BINARY_EXPRESSION_TREE_NODES TERNARY_EXPRESSION_TREE_NODES(ctor_initializer)(trait_expr)(template_id_expr)(placeholder_expr)(new_expr)(gimple_resx)(gimple_predict)(gimple_nop)QUATERNARY_EXPRESSION_TREE_NODES( \
-           modop_expr)(PointToSolution)(omp_atomic_pragma)(using_decl)(void_cst)
+#define OBJ_NOT_SPECIALIZED_SEQ                                                                                  \
+   (translation_unit_decl)(label_decl)(void_type)(template_type_parm)(set_type)(qual_union_type)(offset_type)(   \
+       lang_type)(CharType)(nullptr_type)(boolean_type)(typename_type)(none)(vec_new_expr)                       \
+       UNARY_EXPRESSION_TREE_NODES BINARY_EXPRESSION_TREE_NODES TERNARY_EXPRESSION_TREE_NODES(ctor_initializer)( \
+           trait_expr)(template_id_expr)(placeholder_expr)(new_expr)(gimple_resx)(gimple_predict)(gimple_nop)    \
+           QUATERNARY_EXPRESSION_TREE_NODES(modop_expr)(PointToSolution)(omp_atomic_pragma)(using_decl)(void_cst)
 
 #include "visitor.hpp"
 
@@ -122,8 +138,8 @@ class tree_node_visitor : public object_visitor
 };
 
 /**
- * Abstract pure class for the tree structure. This node and in particular its refCount type will be used to describe all
- * nodes readed from the tree gcc raw structure.
+ * Abstract pure class for the tree structure. This node and in particular its refCount type will be used to describe
+ * all nodes read from the tree GCC raw structure.
  */
 class tree_node
 {
@@ -136,7 +152,7 @@ class tree_node
 
  public:
    /**
-    * Represent the index readed from the raw file and the index-1 of the vector
+    * Represent the index read from the raw file and the index-1 of the vector
     * of tree_node associated to the functions vector present in the tree_manager.
     */
    const unsigned int index;
@@ -207,8 +223,8 @@ class tree_node
 /**
  * RefCount type definition of the tree_node class structure
  */
-typedef refcount<tree_node> tree_nodeRef;
-typedef refcount<const tree_node> tree_nodeConstRef;
+using tree_nodeRef = refcount<tree_node>;
+using tree_nodeConstRef = refcount<const tree_node>;
 
 /**
  * A set of const tree node
@@ -337,11 +353,17 @@ class TreeNodeMap : public OrderedMapStd<tree_nodeRef, value, TreeNodeSorter>
  * @return the pointer to t
  */
 #ifndef NDEBUG
-#define GET_NODE(t) (t ? (GetPointer<tree_reindex>(t) ? (GetPointer<tree_reindex>(t))->actual_tree_node : throw_error(t, #t, __PRETTY_FUNCTION__, __FILE__, __LINE__)) : throw_error(t, #t, __PRETTY_FUNCTION__, __FILE__, __LINE__))
-#define GET_CONST_NODE(t) (t ? (GetPointer<const tree_reindex>(t) ? (GetPointer<const tree_reindex>(t))->actual_tree_node : throw_error(t, #t, __PRETTY_FUNCTION__, __FILE__, __LINE__)) : throw_error(t, #t, __PRETTY_FUNCTION__, __FILE__, __LINE__))
+#define GET_NODE(t)                                                                                           \
+   ((t) ? ((t)->get_kind() == tree_reindex_K ? (GetPointerS<tree_reindex>(t))->actual_tree_node :             \
+                                               throw_error(t, #t, __PRETTY_FUNCTION__, __FILE__, __LINE__)) : \
+          throw_error(t, #t, __PRETTY_FUNCTION__, __FILE__, __LINE__))
+#define GET_CONST_NODE(t)                                                                                     \
+   ((t) ? ((t)->get_kind() == tree_reindex_K ? (GetPointerS<const tree_reindex>(t))->actual_tree_node :       \
+                                               throw_error(t, #t, __PRETTY_FUNCTION__, __FILE__, __LINE__)) : \
+          throw_error(t, #t, __PRETTY_FUNCTION__, __FILE__, __LINE__))
 #else
-#define GET_NODE(t) (GetPointer<tree_reindex>(t))->actual_tree_node
-#define GET_CONST_NODE(t) (GetPointer<const tree_reindex>(t))->actual_tree_node
+#define GET_NODE(t) (GetPointerS<tree_reindex>(t))->actual_tree_node
+#define GET_CONST_NODE(t) (GetPointerS<const tree_reindex>(t))->actual_tree_node
 #endif
 
 /**
@@ -350,7 +372,9 @@ class TreeNodeMap : public OrderedMapStd<tree_nodeRef, value, TreeNodeSorter>
  * @return the index of t in tree_manager
  */
 #define GET_INDEX_NODE(t) (GET_NODE(t))->index
+// unsigned int GET_INDEX_NODE(const tree_nodeRef& t);
 #define GET_INDEX_CONST_NODE(t) (GET_CONST_NODE(t))->index
+// unsigned int GET_INDEX_CONST_NODE(const tree_nodeConstRef& t);
 
 /**
  * This macro collects all case labels for unary_expr objects.
@@ -360,6 +384,7 @@ class TreeNodeMap : public OrderedMapStd<tree_nodeRef, value, TreeNodeSorter>
 #define CASE_UNARY_EXPRESSION       \
    abs_expr_K:                      \
    case addr_expr_K:                \
+   case alignof_expr_K:             \
    case arrow_expr_K:               \
    case bit_not_expr_K:             \
    case buffer_ref_K:               \
@@ -406,6 +431,7 @@ class TreeNodeMap : public OrderedMapStd<tree_nodeRef, value, TreeNodeSorter>
  */
 #define CASE_NON_ADDR_UNARY_EXPRESSION \
    abs_expr_K:                         \
+   case alignof_expr_K:                \
    case arrow_expr_K:                  \
    case bit_not_expr_K:                \
    case buffer_ref_K:                  \
@@ -524,7 +550,11 @@ class TreeNodeMap : public OrderedMapStd<tree_nodeRef, value, TreeNodeSorter>
    case vec_extractodd_expr_K:     \
    case vec_interleavehigh_expr_K: \
    case vec_interleavelow_expr_K:  \
-   case extract_bit_expr_K
+   case extract_bit_expr_K:        \
+   case sat_plus_expr_K:           \
+   case sat_minus_expr_K:          \
+   case extractvalue_expr_K:       \
+   case extractelement_expr_K
 
 /**
  * This macro collects all case labels for ternary_expr objects.
@@ -544,7 +574,11 @@ class TreeNodeMap : public OrderedMapStd<tree_nodeRef, value, TreeNodeSorter>
    case ternary_plus_expr_K:    \
    case ternary_pm_expr_K:      \
    case ternary_mp_expr_K:      \
-   case ternary_mm_expr_K
+   case ternary_mm_expr_K:      \
+   case fshl_expr_K:            \
+   case fshr_expr_K:            \
+   case insertvalue_expr_K:     \
+   case insertelement_expr_K
 
 /**
  * This macro collects all case labels for quaternary_expr objects.
@@ -641,7 +675,8 @@ class TreeNodeMap : public OrderedMapStd<tree_nodeRef, value, TreeNodeSorter>
    case nontype_argument_pack_K: \
    case cast_expr_K:             \
    case expr_pack_expansion_K
-/// NOTE that cast_expr is a unary expression but it could not be included in the CASE_UNARY_EXPRESSION because the operand could be null
+/// NOTE that cast_expr is a unary expression but it could not be included in the CASE_UNARY_EXPRESSION because the
+/// operand could be null
 
 /**
  * This macro collects all case labels for declaration nodes
@@ -738,17 +773,18 @@ struct WeightedNode : public tree_node
 /**
  * struct definition of the field attr on function_decl, field_decl, var_decl tree node.
  * The tree walker structure of this field is:
- * (TOK_NEW | TOK_DELETE | TOK_ASSIGN | TOK_MEMBER | TOK_PUBLIC | TOK_PRIVATE | TOK_PROTECTED | TOK_NORETURN | TOK_VOLATILE | TOK_NOINLINE | TOK_ALWAYS_INLINE | TOK_USED |
- *  TOK_UNUSED | TOK_CONST | TOK_TRANSPARENT_UNION | TOK_CONSTRUCTOR | TOK_DESTRUCTOR |
- *  TOK_MODE | TOK_SECTION | TOK_ALIGNED | TOK_WEAK | TOK_ALIAS | TOK_NO_INSTRUMENT_FUNCTION | TOK_MALLOC | TOK_NO_STACK_LIMIT |
- *  TOK_PURE | TOK_DEPRECATED | TOK_VECTOR_SIZE | TOK_VISIBILITY | TOK_TLS_MODEL | TOK_NONNULL | TOK_NOTHROW | TOK_MAY_ALIAS |
- *  TOK_WARN_UNUSED_RES | TOK_FORMAT | TOK_FORMAT_ARG | TOK_NULL |
- *  TOK_GLOBAL_INIT | TOK_GLOBAL_FINI | TOK_CONVERSION | TOK_VIRTUAL | TOK_LSHIFT | TOK_PSEUDO | TOK_TEMPL | TOK_MUTABLE
- *  TOK_VECNEW | TOK_VECDELETE | TOK_POS | TOK_NEG | TOK_ADDR | TOK_DEREF | TOK_NOT | TOK_LNOT | TOK_PREINC | TOK_PREDEC | TOK_PLUSASSIGN | TOK_PLUS |
- *  TOK_MINUSASSIGN | TOK_MINUS | TOK_MULTASSIGN | TOK_MULT | TOK_DIVASSIGN | TOK_DIV | TOK_MODASSIGN | TOK_MOD | TOK_ANDASSIGN | TOK_AND |
- *  TOK_ORASSIGN |TOK_OR | TOK_XORASSIGN | TOK_XOR | TOK_LSHIFTASSIGN | TOK_RSHIFTASSIGN | TOK_RSHIFT | TOK_EQ | TOK_NE | TOK_LT | TOK_GT |
- *  TOK_LE | TOK_GE | TOK_LAND | TOK_LOR | TOK_COMPOUND | TOK_MEMREF | TOK_REF | TOK_SUBS | TOK_POSTINC | TOK_POSTDEC | TOK_CALL |
- *  TOK_THUNK | TOK_THIS_ADJUSTING | TOK_RESULT_ADJUSTING )*
+ * (TOK_NEW | TOK_DELETE | TOK_ASSIGN | TOK_MEMBER | TOK_PUBLIC | TOK_PRIVATE | TOK_PROTECTED | TOK_NORETURN |
+ * TOK_VOLATILE | TOK_NOINLINE | TOK_ALWAYS_INLINE | TOK_USED | TOK_UNUSED | TOK_CONST | TOK_TRANSPARENT_UNION |
+ * TOK_CONSTRUCTOR | TOK_DESTRUCTOR | TOK_MODE | TOK_SECTION | TOK_ALIGNED | TOK_WEAK | TOK_ALIAS |
+ * TOK_NO_INSTRUMENT_FUNCTION | TOK_MALLOC | TOK_NO_STACK_LIMIT | TOK_PURE | TOK_DEPRECATED | TOK_VECTOR_SIZE |
+ * TOK_VISIBILITY | TOK_TLS_MODEL | TOK_NONNULL | TOK_NOTHROW | TOK_MAY_ALIAS | TOK_WARN_UNUSED_RES | TOK_FORMAT |
+ * TOK_FORMAT_ARG | TOK_NULL | TOK_GLOBAL_INIT | TOK_GLOBAL_FINI | TOK_CONVERSION | TOK_VIRTUAL | TOK_LSHIFT |
+ * TOK_PSEUDO | TOK_TEMPL | TOK_MUTABLE TOK_VECNEW | TOK_VECDELETE | TOK_POS | TOK_NEG | TOK_ADDR | TOK_DEREF | TOK_NOT
+ * | TOK_LNOT | TOK_PREINC | TOK_PREDEC | TOK_PLUSASSIGN | TOK_PLUS | TOK_MINUSASSIGN | TOK_MINUS | TOK_MULTASSIGN |
+ * TOK_MULT | TOK_DIVASSIGN | TOK_DIV | TOK_MODASSIGN | TOK_MOD | TOK_ANDASSIGN | TOK_AND | TOK_ORASSIGN |TOK_OR |
+ * TOK_XORASSIGN | TOK_XOR | TOK_LSHIFTASSIGN | TOK_RSHIFTASSIGN | TOK_RSHIFT | TOK_EQ | TOK_NE | TOK_LT | TOK_GT |
+ *  TOK_LE | TOK_GE | TOK_LAND | TOK_LOR | TOK_COMPOUND | TOK_MEMREF | TOK_REF | TOK_SUBS | TOK_POSTINC | TOK_POSTDEC |
+ * TOK_CALL | TOK_THUNK | TOK_THIS_ADJUSTING | TOK_RESULT_ADJUSTING )*
  */
 struct attr
 {
@@ -770,31 +806,31 @@ struct attr
    }
 
    /// Return true if there is TOK_CONSTRUCTOR in the list of attributes
-   bool is_constructor();
+   bool is_constructor() const;
 
    /// Return true if there is TOK_DESTRUCTOR in the list of attributes
-   bool is_destructor();
+   bool is_destructor() const;
 
    /// Return true if there is TOK_MEMBER in the list of attributes
-   bool is_member();
+   bool is_member() const;
 
    /// returns true if there is a TOK_CALL in the list of attributes
-   bool is_call();
+   bool is_call() const;
 
    /// returns true if there is a TOK_NEW in the list of attributes
-   bool is_new();
+   bool is_new() const;
 
    /// returns true if there is a TOK_PUBLIC in the list of attributes
-   bool is_public();
+   bool is_public() const;
 
    /// returns true if there is a TOK_PRIVATE in the list of attributes
-   bool is_private();
+   bool is_private() const;
 
    /// returns true if there is a TOK_PROTECTED in the list of attributes
-   bool is_protected();
+   bool is_protected() const;
 
    /// returns true if there is a TOK_BITFIELD in the list of attributes
-   bool is_bitfield();
+   bool is_bitfield() const;
 
    /**
     * virtual function used to traverse the tree_node data structure.
@@ -976,7 +1012,7 @@ struct PointToInformation
     */
    ~PointToInformation();
 };
-typedef refcount<PointToInformation> PointToInformationRef;
+using PointToInformationRef = refcount<PointToInformation>;
 
 /**
  * struct definition of the common part of an expression
@@ -1081,7 +1117,7 @@ struct PointToSolution
       GETID(variables) = 0
    };
 };
-typedef refcount<PointToSolution> PointToSolutionRef;
+using PointToSolutionRef = refcount<PointToSolution>;
 
 /**
  * struct definition of the common part of a gimple  with virtual operands
@@ -1100,15 +1136,6 @@ struct gimple_node : public srcp, public WeightedNode
    /// whole memory operand def
    tree_nodeRef memdef;
 
-   /// vuses of this statement
-   TreeNodeSet vuses;
-
-   /**
-    * Add a vuse
-    * @param vuse is the vuse
-    */
-   void AddVuse(const tree_nodeRef& vuse);
-
    /// vdef of this statement
    tree_nodeRef vdef;
 
@@ -1116,7 +1143,17 @@ struct gimple_node : public srcp, public WeightedNode
     * Add a vdef
     * @param vdef is the vdef
     */
-   void AddVdef(const tree_nodeRef& vdef);
+   void SetVdef(const tree_nodeRef& vdef);
+
+   /// vuses of this statement
+   TreeNodeSet vuses;
+
+   /**
+    * Add a vuse
+    * @param vuse is the vuse
+    * @return bool True if vuse has been added, false if vuse already exists
+    */
+   bool AddVuse(const tree_nodeRef& vuse);
 
    /// vovers of this statement
    TreeNodeSet vovers;
@@ -1124,8 +1161,9 @@ struct gimple_node : public srcp, public WeightedNode
    /**
     * Add a vover
     * @param vover is the vover
+    * @return bool True if vover has been added, false if vover already exists
     */
-   void AddVover(const tree_nodeRef& vover);
+   bool AddVover(const tree_nodeRef& vover);
 
    /// list of pragmas associated to the function
    std::vector<tree_nodeRef> pragmas;
@@ -1280,7 +1318,7 @@ struct ternary_expr : public expr_node
 };
 
 /**
- * struct definition of the quaternary node structures.
+ * struct definition of the Quaternary node structures.
  * The tree walker structure is for example:
  * node_expr: #(TOK_NODE_EXPR type op op op op)
  */
@@ -1291,16 +1329,16 @@ struct quaternary_expr : public expr_node
    {
    }
 
-   /// The first operand of the quaternary expression
+   /// The first operand of the Quaternary expression
    tree_nodeRef op0;
 
-   /// The second operand of the quaternary expression
+   /// The second operand of the Quaternary expression
    tree_nodeRef op1;
 
-   /// The third operand of the quaternary expression
+   /// The third operand of the Quaternary expression
    tree_nodeRef op2;
 
-   /// The fourth operand of the quaternary expression
+   /// The fourth operand of the Quaternary expression
    tree_nodeRef op3;
 
    /**
@@ -1333,8 +1371,8 @@ struct type_node : public tree_node
 
    /**
     * qual is the set of type qualifiers for this type.
-    * here is represented as token type: (TOK_QUAL_R | TOK_QUAL_V | TOK_QUAL_VR | TOK_QUAL_C | TOK_QUAL_CR | TOK_QUAL_CV | TOK_QUAL_CVR )
-    * (macro: TYPE_QUAL_CONST, TYPE_QUAL_VOLATILE, TYPE_QUAL_RESTRICT)
+    * here is represented as token type: (TOK_QUAL_R | TOK_QUAL_V | TOK_QUAL_VR | TOK_QUAL_C | TOK_QUAL_CR | TOK_QUAL_CV
+    * | TOK_QUAL_CVR ) (macro: TYPE_QUAL_CONST, TYPE_QUAL_VOLATILE, TYPE_QUAL_RESTRICT)
     */
    TreeVocabularyTokenTypes_TokenEnum qual;
 
@@ -1542,7 +1580,8 @@ struct array_type : public type_node
    /// field elts is the type of an array element (tree-dump.c use the macro TREE_TYPE)
    tree_nodeRef elts;
 
-   /// field domn is the type to index by (tree-dump.c use the macro TYPE_DOMAIN). Its range of values specifies the array length.
+   /// field domn is the type to index by (tree-dump.c use the macro TYPE_DOMAIN). Its range of values specifies the
+   /// array length.
    tree_nodeRef domn;
 
    /// Redefinition of get_kind_text.
@@ -1567,15 +1606,20 @@ struct array_type : public type_node
 };
 
 /**
+ * This struct represent alignof_expr
+ */
+CREATE_TREE_NODE_CLASS(alignof_expr, unary_expr);
+
+/**
  * This struct represent arrow_expr
  */
 CREATE_TREE_NODE_CLASS(arrow_expr, unary_expr);
 
 /**
  * This struct specifies the gimple_asm node.
- * Used to represent an inline assembly statement.  ASM_STRING returns a STRING_CST for the instruction (e.g., "mov x, y").
- * ASM_OUTPUTS, ASM_INPUTS, and ASM_CLOBBERS represent the outputs, inputs, and clobbers for the statement.
- * The tree walker structure of this node is:
+ * Used to represent an inline assembly statement.  ASM_STRING returns a STRING_CST for the instruction (e.g., "mov x,
+ * y"). ASM_OUTPUTS, ASM_INPUTS, and ASM_CLOBBERS represent the outputs, inputs, and clobbers for the statement. The
+ * tree walker structure of this node is:
  * #(TOK_GIMPLE_ASM type (TOK_VOLATILE)? str (out)? in (clob)?)
  */
 struct gimple_asm : public gimple_node
@@ -1678,7 +1722,8 @@ struct gimple_bind : public expr_node
    /// vars is the operand 0 (GIMPLE_BIND_VARS), this is a chain of VAR_DECL nodes for the variables.
    std::vector<tree_nodeRef> list_of_vars;
 
-   /// body is the operand 1 (GIMPLE_BIND_BODY), this is the body, the expression to be computed using the variables. The value of operand 1 becomes that of the GIMPLE_BIND.
+   /// body is the operand 1 (GIMPLE_BIND_BODY), this is the body, the expression to be computed using the variables.
+   /// The value of operand 1 becomes that of the GIMPLE_BIND.
    tree_nodeRef body;
 
    /**
@@ -1786,11 +1831,10 @@ CREATE_TREE_NODE_CLASS(bit_and_expr, binary_expr);
 
 /**
  * This struct specifies the bit_field_ref node.
- * Reference to a group of bits within an object.  Similar to COMPONENT_REF except the position is given explicitly rather than via a FIELD_DECL.
- * Operand 0 is the structure or union expression;
- * operand 1 is a tree giving the number of bits being referenced;
- * operand 2 is a tree giving the position of the first referenced bit.
- * The field can be either a signed or unsigned field; BIT_FIELD_REF_UNSIGNED says which.
+ * Reference to a group of bits within an object.  Similar to COMPONENT_REF except the position is given explicitly
+ * rather than via a FIELD_DECL. Operand 0 is the structure or union expression; operand 1 is a tree giving the number
+ * of bits being referenced; operand 2 is a tree giving the position of the first referenced bit. The field can be
+ * either a signed or unsigned field; BIT_FIELD_REF_UNSIGNED says which.
  */
 CREATE_TREE_NODE_CLASS(bit_field_ref, ternary_expr);
 
@@ -1820,8 +1864,8 @@ CREATE_TREE_NODE_CLASS(bit_xor_expr, binary_expr);
 
 /**
  * This struct specifies the block node.
- * A symbol binding block.  These are arranged in a tree, where the BLOCK_SUBBLOCKS field contains a chain of subblocks chained through the BLOCK_CHAIN field.
- * The tree walker structure of this node is:
+ * A symbol binding block.  These are arranged in a tree, where the BLOCK_SUBBLOCKS field contains a chain of sub-blocks
+ * chained through the BLOCK_CHAIN field. The tree walker structure of this node is:
  * #(TOK_BLOCK)
  */
 struct block : public tree_node
@@ -2011,8 +2055,8 @@ CREATE_TREE_NODE_CLASS(card_expr, unary_expr);
 /**
  * This struct specifies the case_label_expr node.
  * Used to represent a case label. The operands are CASE_LOW (operand 0) and CASE_HIGH (operand 1), respectively.
- * If CASE_LOW is NULL_TREE, the label is a 'default' label. If CASE_HIGH is NULL_TREE, the label is a normal case label.CASE_LABEL (operand 2) is the corresponding LABEL_DECL.
- * The tree walker structure of this node is:
+ * If CASE_LOW is NULL_TREE, the label is a 'default' label. If CASE_HIGH is NULL_TREE, the label is a normal case
+ * label.CASE_LABEL (operand 2) is the corresponding LABEL_DECL. The tree walker structure of this node is:
  * #(TOK_CASE_LABEL_EXPR  type op (op)? (TOK_DEFAULT)? got);
  */
 struct case_label_expr : public expr_node
@@ -2330,8 +2374,8 @@ CREATE_TREE_NODE_CLASS(component_ref, ternary_expr);
 
 /**
  * This struct specifies the compound_expr node.
- * Contains two expressions to compute, one followed by the other. The first value is ignored.  The second one's value is used.
- * The type of the first expression need not agree with the other types.
+ * Contains two expressions to compute, one followed by the other. The first value is ignored.  The second one's value
+ * is used. The type of the first expression need not agree with the other types.
  */
 CREATE_TREE_NODE_CLASS(compound_expr, binary_expr);
 
@@ -2340,7 +2384,8 @@ CREATE_TREE_NODE_CLASS(compound_expr, binary_expr);
  * Conditional expression ( ... ? ... : ...  in C).
  * Operand 0 is the condition. Operand 1 is the then-value. Operand 2 is the else-value.
  * Operand 0 may be of any type. Operand 1 must have the same type as the entire expression, unless
- * it unconditionally throws an exception, in which case it should have VOID_TYPE.  The same constraints apply to operand 2.
+ * it unconditionally throws an exception, in which case it should have VOID_TYPE.  The same constraints apply to
+ * operand 2.
  */
 CREATE_TREE_NODE_CLASS(cond_expr, ternary_expr);
 
@@ -2575,7 +2620,7 @@ struct enumeral_type : public type_node
 /**
  * This struct specifies the eq_expr node.
  * Relational operators. EQ_EXPR is allowed for any types.
- * The operands will have the same type, and the value is always the type used by the language for booleans.
+ * The operands will have the same type, and the value is always the type used by the language for Boolean.
  */
 CREATE_TREE_NODE_CLASS(eq_expr, binary_expr);
 
@@ -2759,7 +2804,8 @@ CREATE_TREE_NODE_CLASS(floor_mod_expr, binary_expr);
 /**
  * struct definition of the function_decl tree node.
  * The tree walker structure of this node is:
- * #(TOK_FUNCTION_DECL decl_node (TOK_C| TOK_OPERATOR (TOK_STRING)*)? attr (args)? (TOK_UNDEFINED)? (TOK_EXTERN | TOK_STATIC) (body)?)
+ * #(TOK_FUNCTION_DECL decl_node (TOK_C| TOK_OPERATOR (TOK_STRING)*)? attr (args)? (TOK_UNDEFINED)? (TOK_EXTERN |
+ * TOK_STATIC) (body)?)
  */
 struct function_decl : public decl_node, public attr
 {
@@ -2787,6 +2833,15 @@ struct function_decl : public decl_node, public attr
    /// True if function read from memory somehow
    bool reading_memory;
 
+   /// True if pipelining is enabled for the function
+   bool pipeline_enabled;
+
+   /// True if the pipeline does not contain any unbounded operation
+   bool simple_pipeline;
+
+   /// Used for pipelined with unbounded operations
+   int initiation_time;
+
 #if HAVE_FROM_PRAGMA_BUILT
    /// If different from zero, the parallel degree of the contained openmp loop
    size_t omp_for_wrapper;
@@ -2810,13 +2865,16 @@ struct function_decl : public decl_node, public attr
    /// fn field is the initial declaration for this function declaration
    tree_nodeRef fn;
 
-   /// for each bit of the ssa variable tells if it is equal to U,X,0,1
+   /// for each bit of the SSA variable tells if it is equal to U,X,0,1
    std::string bit_values;
+
+   /// Range information about bounds of the function return value (valid for real_type too)
+   RangeRef range;
 
    /**
     * tmpl_parms holds template parameters
     * It is a TREE_LIST, his VALU field is a TREE_VEC whose LIST_OF_OP holds template parameters.
-    * The instantion of parameter "list_of_op[i]" is "list_of_op[i]" hold in tmpl_args.
+    * The instantiation of parameter "list_of_op[i]" is "list_of_op[i]" hold in tmpl_args.
     */
    tree_nodeRef tmpl_parms;
 
@@ -2885,7 +2943,7 @@ struct function_decl : public decl_node, public attr
    /// return true if is a declaration of constructor
    bool is_constructor();
 
-   /// Return true if is a declaration of destructor
+   /// Return true if is a declaration of Destructor
    bool is_destructor();
 
    /// returns true if is a declaration of an operator
@@ -2899,6 +2957,19 @@ struct function_decl : public decl_node, public attr
 
    /// returns true if is a declaration of a protected function
    bool is_protected();
+
+   /// returns true if is a declaration of a pipelined function
+   bool is_pipelined();
+
+   void set_pipelining(bool v);
+
+   bool is_simple_pipeline();
+
+   void set_simple_pipeline(bool v);
+
+   int get_initiation_time();
+
+   void set_initiation_time(int time);
 
    /// Redefinition of get_kind_text.
    GET_KIND_TEXT(function_decl)
@@ -2984,12 +3055,12 @@ struct function_type : public type_node
 /**
  * This struct specifies the ge_expr node.
  * Relational operator. GE_EXPR is allowed only for integer (or pointer or enumerate) or real types.
- * The operands will have the same type, and the value is always the type used by the language for booleans.
+ * The operands will have the same type, and the value is always the type used by the language for Boolean.
  */
 CREATE_TREE_NODE_CLASS(ge_expr, binary_expr);
 
 /**
- * This struct specifies the gimple_assign node (gcc 4.3 tree node).
+ * This struct specifies the gimple_assign node (GCC 4.3 tree node).
  * Assignment expression. The first operand is the what to set; the second, the new value.
  */
 struct gimple_assign : public gimple_node
@@ -3005,9 +3076,6 @@ struct gimple_assign : public gimple_node
 
    /// The predicate
    tree_nodeRef predicate;
-
-   /// in case the statement comes from a phi node split points to the original gimple_phi (PandA extension)
-   tree_nodeRef orig;
 
    bool init_assignment;
 
@@ -3111,7 +3179,7 @@ CREATE_TREE_NODE_CLASS(goto_subroutine, binary_expr);
 /**
  * This struct specifies the gt_expr node.
  * Relational operator. GT_EXPR is allowed only for integer (or pointer or enumerate) or real types.
- * The operands will have the same type, and the value is always the type used by the language for booleans.
+ * The operands will have the same type, and the value is always the type used by the language for Boolean.
  */
 CREATE_TREE_NODE_CLASS(gt_expr, binary_expr);
 
@@ -3360,7 +3428,7 @@ CREATE_TREE_NODE_CLASS(lang_type, type_node);
 /**
  * This struct specifies the le_expr node.
  * Relational operator.LE_EXPR is allowed only for integer (or pointer or enumerate) or real types.
- * The operands will have the same type, and the value is always the type used by the language for booleans.
+ * The operands will have the same type, and the value is always the type used by the language for Boolean.
  */
 CREATE_TREE_NODE_CLASS(le_expr, binary_expr);
 
@@ -3392,7 +3460,7 @@ CREATE_TREE_NODE_CLASS(lshift_expr, binary_expr);
 /**
  * This struct specifies the lt_expr node.
  * Relational operator. LT_EXPR is allowed only for integer (or pointer or enumerate) or real types.
- * The operands will have the same type, and the value is always the type used by the language for booleans.
+ * The operands will have the same type, and the value is always the type used by the language for Boolean.
  */
 CREATE_TREE_NODE_CLASS(lt_expr, binary_expr);
 
@@ -3409,7 +3477,7 @@ CREATE_TREE_NODE_CLASS(max_expr, binary_expr);
 
 /**
  * Memory addressing.  Operands are a pointer and a tree constant integer
- * byte offset of the pointer type that when dereferenced yields the
+ * byte offset of the pointer type that when de-referenced yields the
  * type of the base object the pointer points into and which is used for
  * TBAA purposes.
  * The type of the MEM_REF is the type the bytes at the memory location
@@ -3541,7 +3609,7 @@ struct namespace_decl : public decl_node
 /**
  * This struct specifies the ne_expr node.
  * Relational operators. NE_EXPR is allowed for any types.
- * The operands will have the same type, and the value is always the type used by the language for booleans.
+ * The operands will have the same type, and the value is always the type used by the language for Boolean.
  */
 CREATE_TREE_NODE_CLASS(ne_expr, binary_expr);
 
@@ -3573,7 +3641,7 @@ CREATE_TREE_NODE_CLASS(nop_expr, unary_expr);
  * a reference to a vtable, but it needn't be.  Operands are:
  * OBJ_TYPE_REF_EXPR: An expression that evaluates the value to use.
  * OBJ_TYPE_REF_OBJECT: Is the object on whose behalf the lookup is
- * being performed.  Through this the optimizers may be able to statically
+ * being performed.  Through this the optimizer may be able to statically
  * determine the dynamic type of the object.
  * OBJ_TYPE_REF_TOKEN: Something front-end specific used to resolve the
  * reference to something simpler, usually to the address of a DECL.
@@ -3676,7 +3744,7 @@ struct parm_decl : public decl_node
    bool register_flag;
 
    /**
-    * readonly_flag means readonly parameter
+    * readonly_flag means read-onlyy parameter
     * (macro TREE_READONLY)
     */
    bool readonly_flag;
@@ -3686,11 +3754,11 @@ struct parm_decl : public decl_node
     */
    tree_nodeRef smt_ann;
 
-   /// for each bit of the ssa variable tells if it is equal to U,X,0,1
-   std::string bit_values;
-
    /// PointToInformation associated with this ssa_name if the corresponding variable is a pointer
    const PointToInformationRef point_to_information;
+
+   /// Range information about bounds of the function parameter (valid for real_type too)
+   RangeRef range;
 
    /// Redefinition of get_kind_text.
    GET_KIND_TEXT(parm_decl)
@@ -3730,10 +3798,10 @@ struct gimple_phi : public gimple_node
    friend class parm2ssa;
 
    /// The type of the def edge
-   typedef std::pair<tree_nodeRef, unsigned int> DefEdge;
+   using DefEdge = std::pair<tree_nodeRef, unsigned int>;
 
    /// The type of the def edge list
-   typedef std::list<DefEdge> DefEdgeList;
+   using DefEdgeList = std::list<DefEdge>;
 
  private:
    /** store the list pairs: <def, edge>. Each tuple contains the incoming reaching
@@ -3741,7 +3809,7 @@ struct gimple_phi : public gimple_node
     */
    DefEdgeList list_of_def_edge;
 
-   /// True if ssa uses are updated
+   /// True if SSA uses are updated
    bool updated_ssa_uses;
 
  public:
@@ -3769,7 +3837,7 @@ struct gimple_phi : public gimple_node
     * @param def_edge is the def edge to be removed
     * @param update_uses specifies if the uses have to be updated
     */
-   void RemoveDefEdge(const tree_managerRef& TM, const DefEdge& def_edge);
+   void RemoveDefEdge(const tree_managerRef& TM, const DefEdge& to_be_removed);
 
    /**
     * Add a defedge
@@ -3852,10 +3920,10 @@ struct gimple_predict : public gimple_node
 
 /**
  * This struct specifies the placeholder_expr node.
- * Such a "self-references" is done using a PLACEHOLDER_EXPR.  This is a node that will later be replaced with the object being referenced.
- * Its type is that of the object and selects which object to use from a chain of references (see below).  No other slots are used in the PLACEHOLDER_EXPR.
- * This node denotes a record to later be substituted before evaluating this expression.
- * The type of this expression is used to find the record to replace it.
+ * Such a "self-references" is done using a PLACEHOLDER_EXPR.  This is a node that will later be replaced with the
+ * object being referenced. Its type is that of the object and selects which object to use from a chain of references
+ * (see below).  No other slots are used in the PLACEHOLDER_EXPR. This node denotes a record to later be substituted
+ * before evaluating this expression. The type of this expression is used to find the record to replace it.
  */
 CREATE_TREE_NODE_CLASS(placeholder_expr, expr_node);
 
@@ -4506,34 +4574,36 @@ CREATE_TREE_NODE_CLASS(sizeof_expr, unary_expr);
 struct ssa_name : public tree_node
 {
  private:
-   /// The uses of this ssa: it is a map since the same ssa can be used multiple times in the same statement
-   /// Key is the index of the tree node instad of tree node because in this way gimple_node can updated uses
-   /// of a ssa without using the tree manager to get the tree reindex of itself
+   /// The uses of this SSA: it is a map since the same SSA can be used multiple times in the same statement
+   /// Key is the index of the tree node instead of tree node because in this way gimple_node can updated uses
+   /// of a SSA without using the tree manager to get the tree re-index of itself
    TreeNodeMap<size_t> use_stmts;
 
-   /// in case ssa_name is not volatile the statement which defines it; statements could be more than one because of gimple_phi splitting
+   /// in case ssa_name is not volatile the statement which defines it; statements could be more than one because of
+   /// gimple_phi splitting
    TreeNodeSet def_stmts;
 
  public:
    /// constructor
    explicit ssa_name(unsigned int i);
 
-   /// starting from gcc 4.7.2 ssa_name has a type
+   /// starting from GCC 4.7.2 ssa_name has a type
    tree_nodeRef type;
 
    /// var is the variable being referenced (macro SSA_NAME_VAR).
    tree_nodeRef var;
 
-   /// vers is the SSA version number of this SSA name.(macro SSA_NAME_VERSION). Note that in tree SSA, version numbers are not per variable and may be recycled
+   /// vers is the SSA version number of this SSA name.(macro SSA_NAME_VERSION). Note that in tree SSA, version numbers
+   /// are not per variable and may be recycled
    unsigned int vers;
 
    /// original SSA version number from GCC
    unsigned int orig_vers;
 
-   /// in case a ssa_name is never defined this boolean member is true
+   /// in case a ssa_name is never defined this Boolean member is true
    bool volatile_flag;
 
-   /// flag for virtual ssa
+   /// flag for virtual SSA
    bool virtual_flag;
 
    /**
@@ -4546,8 +4616,8 @@ struct ssa_name : public tree_node
    bool default_flag;
 
    /**
-    * Add use of this ssa
-    * @param statement is the statement which used this ssa
+    * Add use of this SSA
+    * @param statement is the statement which used this SSA
     */
    void AddUseStmt(const tree_nodeRef& use_stmt);
 
@@ -4564,19 +4634,22 @@ struct ssa_name : public tree_node
    size_t CGetNumberUses() const;
 
    /**
-    * Remove a use of this ssa
-    * @param use_stmt is the statement which uses this ssa
+    * Remove a use of this SSA
+    * @param use_stmt is the statement which uses this SSA
     */
    void RemoveUse(const tree_nodeRef& use_stmt);
 
-   /// minimum values this ssa may reach
+   /// minimum values this SSA may reach
    tree_nodeRef min;
 
-   /// maximum values this ssa may reach
+   /// maximum values this SSA may reach
    tree_nodeRef max;
 
-   /// for each bit of the ssa variable tells if it is equal to U,X,0,1
+   /// for each bit of the SSA variable tells if it is equal to U,X,0,1
    std::string bit_values;
+
+   /// Range information about numerical values of the SSA variable
+   RangeRef range;
 
    /// point to solution
    PointToSolutionRef use_set;
@@ -4788,8 +4861,8 @@ struct gimple_switch : public gimple_node
 /**
  * This struct implements the target_expr node.
  * For TARGET_EXPR, operand 0 is the target of an initialization; operand 1 is the initializer for the target;
- * and operand 2 is the cleanup for this node, if any; operand 3 is the saved initializer after this node has been expanded once, this is so we can re-expand the tree later.
- * The tree walker structure of this node is:
+ * and operand 2 is the cleanup for this node, if any; operand 3 is the saved initializer after this node has been
+ * expanded once, this is so we can re-expand the tree later. The tree walker structure of this node is:
  * #(TOK_TARGET_EXPR type decl (((init) (clnp)?) | ((clnp) (init)?))?)
  */
 
@@ -4983,7 +5056,7 @@ struct template_decl : public decl_node
    /// rslt is null for struct templates and declaration for object to be created for non-struct templates
    tree_nodeRef rslt;
 
-   /// inst field holds the template instantiatin vector.
+   /// inst field holds the template instantiation vector.
    tree_nodeRef inst;
 
    /// prms field holds the specialization parameters vector.
@@ -5065,7 +5138,8 @@ struct template_parm_index : public tree_node
    int orig_level;
 
    /// constructor
-   explicit template_parm_index(unsigned int i) : tree_node(i), constant_flag(false), readonly_flag(false), idx(0), level(0), orig_level(0)
+   explicit template_parm_index(unsigned int i)
+       : tree_node(i), constant_flag(false), readonly_flag(false), idx(0), level(0), orig_level(0)
    {
    }
 
@@ -5227,9 +5301,9 @@ CREATE_TREE_NODE_CLASS(translation_unit_decl, decl_node);
 
 /**
  * This struct specifies the tree_list node.
- * This node has the TREE_VALUE and TREE_PURPOSE fields. These nodes are made into lists by chaining through the TREE_CHAIN field.
- * The elements of the list live in the TREE_VALUE fields, while TREE_PURPOSE fields are occasionally used as well to get the effect of Lisp association lists.
- * The tree walker structure of this node is:
+ * This node has the TREE_VALUE and TREE_PURPOSE fields. These nodes are made into lists by chaining through the
+ * TREE_CHAIN field. The elements of the list live in the TREE_VALUE fields, while TREE_PURPOSE fields are occasionally
+ * used as well to get the effect of Lisp association lists. The tree walker structure of this node is:
  * #(TOK_TREE_LIST  (purp)? valu (chan)?);
  */
 struct tree_list : public WeightedNode
@@ -5283,7 +5357,7 @@ struct tree_vec : public tree_node
    {
    }
 
-   /// lngt is the lenght of the array (list_of_op) stored in tree_vec node.(macro TREE_VEC_LENGTH)
+   /// lngt is the length of the array (list_of_op) stored in tree_vec node.(macro TREE_VEC_LENGTH)
    size_t lngt;
 
    /// list_of_op is the array of tree node stored in tree_vec node.(macro TREE_VEC_ELT)
@@ -5351,8 +5425,8 @@ CREATE_TREE_NODE_CLASS(truth_and_expr, binary_expr);
 
 /**
  * This struct specifies the truth_andif_expr node.
- * ANDIF allow the second operand not to be computed if the value of the expression is determined from the first operand.
- * The operand may have BOOLEAN_TYPE or INTEGER_TYPE. The argument will be either zero or one.
+ * ANDIF allow the second operand not to be computed if the value of the expression is determined from the first
+ * operand. The operand may have BOOLEAN_TYPE or INTEGER_TYPE. The argument will be either zero or one.
  */
 CREATE_TREE_NODE_CLASS(truth_andif_expr, binary_expr);
 
@@ -5437,7 +5511,8 @@ CREATE_TREE_NODE_CLASS(try_catch_expr, binary_expr);
 /**
  * This struct specifies the try_finally node.
  * Evaluate the first operand.
- * The second operand is a cleanup expression which is evaluated on any exit (normal, exception, or jump out) from this expression.
+ * The second operand is a cleanup expression which is evaluated on any exit (normal, exception, or jump out) from this
+ * expression.
  */
 CREATE_TREE_NODE_CLASS(try_finally, binary_expr);
 
@@ -5632,7 +5707,8 @@ CREATE_TREE_NODE_CLASS(va_arg_expr, unary_expr);
 /**
  * struct definition of the label_decl tree node.
  * The tree walker structure of this node is:
- * #(TOK_VAR_DECL decl_node attr (TOK_STATIC TOK_STATIC | TOK_STATIC | TOK_EXTERN)? (init)? (size)? algn used (TOK_REGISTER)?)
+ * #(TOK_VAR_DECL decl_node attr (TOK_STATIC TOK_STATIC | TOK_STATIC | TOK_EXTERN)? (init)? (size)? algn used
+ * (TOK_REGISTER)?)
  */
 struct var_decl : public decl_node, public attr
 {
@@ -5948,12 +6024,13 @@ struct vector_type : public type_node
 
 /**
  * This struct specifies the view_convert_expr node.
- * Represents viewing something of one type as being of a second type. This corresponds to an "Unchecked Conversion" in Ada and roughly to
- * the idiom *(type2 *)&X in C.  The only operand is the value to be viewed as being of another type.  It is undefined if the type of the
- * input and of the expression have different sizes.
+ * Represents viewing something of one type as being of a second type. This corresponds to an "Unchecked Conversion" in
+ * Ada and roughly to the idiom *(type2 *)&X in C.  The only operand is the value to be viewed as being of another type.
+ * It is undefined if the type of the input and of the expression have different sizes.
  *
- * This code may also be used within the LHS of a MODIFY_EXPR, in which case no actual data motion may occur.  TREE_ADDRESSABLE will be set in
- * this case and GCC must abort if it could not do the operation without generating insns.
+ * This code may also be used within the LHS of a MODIFY_EXPR, in which case no actual data motion may occur.
+ * TREE_ADDRESSABLE will be set in this case and GCC must abort if it could not do the operation without generating
+ * insns.
  */
 CREATE_TREE_NODE_CLASS(view_convert_expr, unary_expr);
 
@@ -5978,10 +6055,11 @@ CREATE_TREE_NODE_CLASS(vtable_ref, ternary_expr);
  * Specify a value to compute along with its corresponding cleanup.
  * Operand 0 argument is an expression whose value needs a cleanup.
  * Operand 1 is the cleanup expression for the object.
- * Operand 2 is an RTL_EXPR which will eventually represent that value. The RTL_EXPR is used in this expression, which is how the expression manages to act on the proper value.
- * The cleanup is executed by the first enclosing CLEANUP_POINT_EXPR, if it exists, otherwise it is the responsibility of the caller to manually
- * call expand_start_target_temps/expand_end_target_temps, as needed.
- * This differs from TRY_CATCH_EXPR in that operand 2 is always evaluated when an exception isn't thrown when cleanups are run.
+ * Operand 2 is an RTL_EXPR which will eventually represent that value. The RTL_EXPR is used in this expression, which
+ * is how the expression manages to act on the proper value. The cleanup is executed by the first enclosing
+ * CLEANUP_POINT_EXPR, if it exists, otherwise it is the responsibility of the caller to manually call
+ * expand_start_target_temps/expand_end_target_temps, as needed. This differs from TRY_CATCH_EXPR in that operand 2 is
+ * always evaluated when an exception isn't thrown when cleanups are run.
  */
 CREATE_TREE_NODE_CLASS(with_cleanup_expr, ternary_expr);
 
@@ -6081,11 +6159,59 @@ struct lut_expr : public expr_node
 };
 
 /**
- * @brief extract_bit_expr extracts a bit value from a ssa/integer const
- * op0 is the ssa variable
+ * @brief extract_bit_expr extracts a bit value from a SSA/integer const
+ * op0 is the SSA variable
  * op1 is the bit position
- * return a boolean value
+ * return a Boolean value
  */
 CREATE_TREE_NODE_CLASS(extract_bit_expr, binary_expr);
+
+/**
+ * This struct specifies the sat_plus_expr node.
+ * Simple arithmetic.
+ */
+CREATE_TREE_NODE_CLASS(sat_plus_expr, binary_expr);
+
+/**
+ * This struct specifies the sat_minus_expr node.
+ * Simple arithmetic.
+ */
+CREATE_TREE_NODE_CLASS(sat_minus_expr, binary_expr);
+
+/**
+ * This struct specifies the fshl_expr node.
+ * Simple arithmetic.
+ */
+CREATE_TREE_NODE_CLASS(fshl_expr, ternary_expr);
+
+/**
+ * This struct specifies the fshr_expr node.
+ * Simple arithmetic.
+ */
+CREATE_TREE_NODE_CLASS(fshr_expr, ternary_expr);
+
+/**
+ * This struct specifies the extractvalue_expr node.
+ * extract a value from an aggregate.
+ */
+CREATE_TREE_NODE_CLASS(extractvalue_expr, binary_expr);
+
+/**
+ * This struct specifies the insertvalue_expr node.
+ * insert a value into an aggregate.
+ */
+CREATE_TREE_NODE_CLASS(insertvalue_expr, ternary_expr);
+
+/**
+ * This struct specifies the extractelement_expr node.
+ * extract a value from a vector.
+ */
+CREATE_TREE_NODE_CLASS(extractelement_expr, binary_expr);
+
+/**
+ * This struct specifies the insertelement_expr node.
+ * insert a value into a vector.
+ */
+CREATE_TREE_NODE_CLASS(insertelement_expr, ternary_expr);
 
 #endif

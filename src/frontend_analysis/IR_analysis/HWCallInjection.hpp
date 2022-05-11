@@ -11,7 +11,7 @@
  *                     Politecnico di Milano - DEIB
  *                      System Architectures Group
  *           ***********************************************
- *            Copyright (C) 2004-2020 Politecnico di Milano
+ *            Copyright (C) 2004-2022 Politecnico di Milano
  *
  * This file is part of the PandA framework.
  *
@@ -34,13 +34,9 @@
 
 #include "function_frontend_flow_step.hpp"
 
-#include "custom_map.hpp"
-#include <list>
-
 #include "refcount.hpp"
 
 REF_FORWARD_DECL(bloc);
-REF_FORWARD_DECL(HWCallInjection);
 REF_FORWARD_DECL(tree_node);
 
 class HWCallInjection : public FunctionFrontendFlowStep
@@ -48,17 +44,14 @@ class HWCallInjection : public FunctionFrontendFlowStep
  private:
    static unsigned int builtinWaitCallDeclIdx;
 
-   /// True if already executed
-   bool already_executed;
+   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>>
+   ComputeFrontendRelationships(const DesignFlowStep::RelationshipType RT) const override;
 
-   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType RT) const override;
-
-   bool isHardwareCall(tree_nodeRef FD);
-
-   void buildBuiltinCall(const blocRef block, const tree_nodeRef stmt);
+   void buildBuiltinCall(const blocRef& block, const tree_nodeRef& stmt);
 
  public:
-   HWCallInjection(const ParameterConstRef Param, const application_managerRef AppM, unsigned int funId, const DesignFlowManagerConstRef DFM);
+   HWCallInjection(const ParameterConstRef Param, const application_managerRef AppM, unsigned int funId,
+                   const DesignFlowManagerConstRef DFM);
 
    ~HWCallInjection() override;
 

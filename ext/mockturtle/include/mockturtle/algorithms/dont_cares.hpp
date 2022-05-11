@@ -1,5 +1,5 @@
 /* mockturtle: C++ logic network library
- * Copyright (C) 2018-2019  EPFL
+ * Copyright (C) 2018-2021  EPFL
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -27,7 +27,10 @@
   \file dont_cares.hpp
   \brief Compute don't cares
 
+  \author Eleonora Testa
+  \author Heinz Riener
   \author Mathias Soeken
+  \author Siang-Yun (Sonia) Lee
 */
 
 #pragma once
@@ -35,12 +38,18 @@
 #include <cstdint>
 #include <vector>
 
-#include "../traits.hpp"
+#include "../algorithms/cnf.hpp"
 #include "../algorithms/reconv_cut.hpp"
 #include "../algorithms/simulation.hpp"
+#include "../traits.hpp"
+#include "../utils/node_map.hpp"
+#include "../utils/include/percy.hpp"
 #include "../views/fanout_view.hpp"
+#include "../views/topo_view.hpp"
 #include "../views/window_view.hpp"
+#include "../views/color_view.hpp"
 
+#include <fmt/format.h>
 #include <kitty/bit_operations.hpp>
 #include <kitty/dynamic_truth_table.hpp>
 
@@ -58,20 +67,27 @@ namespace mockturtle
  * \param max_tfi_inputs Maximum number of inputs in the transitive fanin.
  */
 template<class Ntk>
-kitty::dynamic_truth_table satisfiability_dont_cares( Ntk const& ntk, std::vector<node<Ntk>> const& leaves, uint32_t max_tfi_inputs = 10u )
+kitty::dynamic_truth_table satisfiability_dont_cares( Ntk const& ntk, std::vector<node<Ntk>> const& leaves, uint64_t max_tfi_inputs = 16u )
 {
-  auto extended_leaves = reconv_cut( reconv_cut_params{max_tfi_inputs} )( ntk, leaves );
+  reconvergence_driven_cut_parameters ps;
+  ps.max_leaves = max_tfi_inputs;
+  reconvergence_driven_cut_statistics st;
+
+  detail::reconvergence_driven_cut_impl<Ntk, false, false> cuts( ntk, ps, st ) ;
+  auto const extended_leaves = cuts.run( leaves ).first;
 
   fanout_view<Ntk> fanout_ntk{ntk};
   fanout_ntk.clear_visited();
+  color_view<Ntk> color_ntk{fanout_ntk};
 
-  window_view<fanout_view<Ntk>> window_ntk{fanout_ntk, extended_leaves, leaves, false};
+  std::vector<node<Ntk>> gates{collect_nodes( color_ntk, extended_leaves, leaves )};
+  window_view window_ntk{color_ntk, extended_leaves, leaves, gates};
 
   default_simulator<kitty::dynamic_truth_table> sim( window_ntk.num_pis() );
   const auto tts = simulate_nodes<kitty::dynamic_truth_table>( window_ntk, sim );
 
   /* first create care and then invert */
-  kitty::dynamic_truth_table care( leaves.size() );
+  kitty::dynamic_truth_table care( static_cast<uint32_t>( leaves.size() ) );
   for ( auto i = 0u; i < ( 1u << window_ntk.num_pis() ); ++i )
   {
     uint32_t entry{0u};
@@ -100,8 +116,10 @@ kitty::dynamic_truth_table observability_dont_cares( Ntk const& ntk, node<Ntk> c
 {
   fanout_view<Ntk> fanout_ntk{ntk};
   fanout_ntk.clear_visited();
+  color_view<Ntk> color_ntk{fanout_ntk};
 
-  window_view<fanout_view<Ntk>> window_ntk{fanout_ntk, leaves, roots, false};
+  std::vector<node<Ntk>> gates{collect_nodes( color_ntk, leaves, roots )};
+  window_view window_ntk{color_ntk, leaves, roots, gates};
 
   default_simulator<kitty::dynamic_truth_table> sim( window_ntk.num_pis() );
   unordered_node_map<kitty::dynamic_truth_table, Ntk> node_to_value0( ntk );
@@ -113,12 +131,193 @@ kitty::dynamic_truth_table observability_dont_cares( Ntk const& ntk, node<Ntk> c
   node_to_value1[n] = ~sim.compute_constant( ntk.constant_value( ntk.get_node( ntk.get_constant( false ) ) ) );
   simulate_nodes( ntk, node_to_value1, sim );
 
-  kitty::dynamic_truth_table care( leaves.size() );
+  kitty::dynamic_truth_table care( static_cast<uint32_t>( leaves.size() ) );
   for ( const auto& r : roots )
   {
     care |= node_to_value0[r] ^ node_to_value1[r];
   }
   return ~care;
 }
+
+namespace detail {
+
+template<class Ntk, class TT>
+void clearTFO_rec( Ntk const& ntk, unordered_node_map<TT, Ntk>& tts, node<Ntk> const& n, std::set<node<Ntk>>& roots, int level )
+{
+  if ( ntk.visited( n ) == ntk.trav_id() ) /* visited */
+  {
+    return;
+  }
+  ntk.set_visited( n, ntk.trav_id() );
+
+  tts.erase( n );
+
+  if ( level == 0 )
+  {
+    roots.insert( n );
+    return;
+  }
+
+  ntk.foreach_fanout( n, [&]( auto const& fo ){
+    clearTFO_rec( ntk, tts, fo, roots, level - 1 );
+  });
+}
+
+template<class Ntk>
+void simulate_TFO_rec( Ntk const& ntk, node<Ntk> const& n, partial_simulator const& sim, unordered_node_map<kitty::partial_truth_table, Ntk>& tts, int level )
+{
+  if ( ntk.visited( n ) == ntk.trav_id() ) /* visited */
+  {
+    return;
+  }
+  ntk.set_visited( n, ntk.trav_id() );
+
+  if ( !tts.has( n ) )
+  {
+    simulate_node<Ntk>( ntk, n, tts, sim );
+  }
+  else
+  {
+    assert( tts[n].num_bits() == sim.num_bits() );
+  }
+
+  if ( level == 0 )
+  {
+    return;
+  }
+
+  ntk.foreach_fanout( n, [&]( auto const& fo ){
+    simulate_TFO_rec( ntk, fo, sim, tts, level - 1 );
+  });
+}
+
+} /* namespace detail */
+
+/*! \brief Compute the observability don't care patterns in a partial_simulator with respect to a node.
+ *
+ * A pattern is unobservable w.r.t. a node `n` if under this input assignment,
+ * replacing `n` with `!n` does not affect the value of any primary output or
+ * any leaf node of `levels` levels of transitive fanout cone.
+ *
+ * Return value: a `partial_truth_table` with the same length as `sim.num_bits()`.
+ * A `1` in it corresponds to an unobservable pattern.
+ *
+ * \param sim The `partial_simulator` containing the patterns to be tested.
+ * \param tts Stores the simulation signatures of each node. Can be empty or incomplete.
+ * \param levels Level of tansitive fanout to consider. -1 = consider until PO.
+ */
+template<class Ntk>
+kitty::partial_truth_table observability_dont_cares( Ntk const& ntk, node<Ntk> const& n, partial_simulator const& sim, unordered_node_map<kitty::partial_truth_table, Ntk>& tts, int levels = -1 )
+{
+  std::set<node<Ntk>> roots;
+  unordered_node_map<kitty::partial_truth_table, Ntk> tts_roots( ntk );
+
+  /* Make sure n is up-to-date and record its truth table. */
+  if ( !tts.has( n ) || tts[n].num_bits() != sim.num_bits() )
+  {
+    simulate_node<Ntk>( ntk, n, tts, sim );
+  }
+  auto const tt_n = tts[n];
+
+  /* Clear (mark) TFO nodes and collect roots (leaves). */
+  ntk.incr_trav_id();
+  detail::clearTFO_rec( ntk, tts, n, roots, levels );
+  ntk.foreach_po( [&]( auto const& f )
+  {
+    if ( ntk.visited( ntk.get_node( f ) ) == ntk.trav_id() ) /* PO is in TFO */
+    {
+      roots.insert( ntk.get_node( f ) );
+    }
+  });
+
+  /* Simulate the negated version and collect TTs of roots. */
+  tts[n] = ~tt_n;
+  ntk.incr_trav_id();
+  detail::simulate_TFO_rec( ntk, n, sim, tts, levels );
+  for ( const auto& r : roots )
+  {
+    tts_roots[r] = tts[r];
+  }
+
+  /* Revert the negation and simulate again */
+  tts[n] = tt_n;
+  ntk.incr_trav_id();
+  detail::clearTFO_rec( ntk, tts, n, roots, levels );
+  ntk.incr_trav_id();
+  detail::simulate_TFO_rec( ntk, n, sim, tts, levels );
+
+  kitty::partial_truth_table care( sim.num_bits() );
+  for ( const auto& r : roots )
+  {
+    if ( tts[r].num_bits() == sim.num_bits() )
+    {
+      care |= tts[r] ^ tts_roots[r];
+    }
+  }
+  return ~care;
+}
+
+/*! \brief Check if a pattern is observable with respect to a node.
+ *
+ * A pattern is unobservable w.r.t. a node `n` if under this input assignment,
+ * replacing `n` with `!n` does not affect the value of any primary output or
+ * any leaf node of `levels` levels of transitive fanout cone.
+ *
+ * \param levels Level of tansitive fanout to consider. -1 = consider until PO.
+ */
+template<class Ntk>
+bool pattern_is_observable( Ntk const& ntk, node<Ntk> const& n, std::vector<bool> const& pattern, int levels = -1 )
+{
+  partial_simulator sim( ntk.num_pis(), 0 );
+  sim.add_pattern( pattern );
+  unordered_node_map<kitty::partial_truth_table, Ntk> tts( ntk );
+
+  auto const care = observability_dont_cares( ntk, n, sim, tts, levels );
+  return !kitty::is_const0( care );
+}
+
+/*! \brief SAT-based satisfiability don't cares checker
+ *
+ * Initialize this class with a network and then call `is_dont_care` on a node
+ * to check whether the given assignment is a satisfiability don't care.
+ *
+ * The assignment is assumed to be directly at the inputs of the gate, not
+ * taking into account possible complemented fanins.
+ */
+template<class Ntk>
+struct satisfiability_dont_cares_checker
+{
+  explicit satisfiability_dont_cares_checker( Ntk const& ntk )
+      : ntk_( ntk ),
+        literals_( node_literals( ntk ) )
+  {
+    init();
+  }
+
+  bool is_dont_care( node<Ntk> const& n, std::vector<bool> const& assignment )
+  {
+    if ( ntk_.fanin_size( n ) != assignment.size() ) return false;
+
+    std::vector<pabc::lit> assumptions( assignment.size() );
+    ntk_.foreach_fanin( n, [&]( auto const& f, auto i ) {
+      assumptions[i] = lit_not_cond( literals_[ntk_.get_node( f )], assignment[i] == ntk_.is_complemented( f )  );
+    } );
+
+    return solver_.solve( &assumptions[0], &assumptions[0] + assumptions.size(), 0 ) == percy::failure;
+  }
+
+private:
+  void init()
+  {
+    generate_cnf<Ntk>( ntk_, [&]( auto const& clause ) {
+      solver_.add_clause( clause );
+    }, literals_ );
+  }
+
+private:
+  Ntk const& ntk_;
+  percy::bsat_wrapper solver_;
+  node_map<uint32_t, Ntk> literals_;
+};
 
 } /* namespace mockturtle */

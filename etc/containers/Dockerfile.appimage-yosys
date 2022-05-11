@@ -1,0 +1,17 @@
+ARG VARIANT=focal
+
+FROM bambuhls/yosys:${VARIANT} as yosys
+FROM bambuhls/iverilog:${VARIANT} as iverilog
+
+FROM bambuhls/appimage:${VARIANT} as base
+
+RUN apt-get update && apt-get install --no-install-recommends -y \
+    binutils curl graphviz libffi-dev libgomp1 libpython3.8 libreadline-dev libtcl \
+    python3 qt5-default qt5-image-formats-plugins tcl-dev tcl-tclreadline tzdata xdot \
+    && apt-get clean -y && rm -rf /var/lib/apt/lists/* /tmp/library-scripts \
+    && strip --remove-section=.note.ABI-tag /usr/lib/x86_64-linux-gnu/libQt5Core.so
+
+COPY --from=yosys /opt/yosys /opt/yosys
+COPY --from=yosys /opt/openroad /opt/openroad
+COPY --from=iverilog /opt/iverilog /opt/iverilog
+ENV PATH /opt/openroad/bin:/opt/yosys/bin:/opt/iverilog/bin:$PATH

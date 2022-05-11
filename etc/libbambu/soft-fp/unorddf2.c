@@ -27,10 +27,7 @@
    License along with the GNU C Library; if not, see
    <http://www.gnu.org/licenses/>.  */
 
-#include "double.h"
-#include "soft-fp.h"
-
-CMPtype __unorddf2(DFtype a, DFtype b)
+static __FORCE_INLINE CMPtype __unorddf2(DFtype a, DFtype b)
 {
    FP_DECL_EX;
    FP_DECL_D(A);

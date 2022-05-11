@@ -6,14 +6,6 @@ check_PROGRAMS = sollya
 AM_YFLAGS = -d
 AM_LFLAGS = -o$(LEX_OUTPUT_ROOT).c
 
-BUILT_SOURCES = \
-miniparser.h \
-parser.h \
-internparser.h \
-lexer.c \
-minilexer.c \
-internlexer.c 
-
 bin_PROGRAMS = sollya
 sollya_SOURCES = \
 mpfi-compat.c \
@@ -141,6 +133,9 @@ worstcase.h \
 xml.c \
 xml.h 
 
+BUILT_SOURCES = internparser.c internparser.h miniparser.c miniparser.h parser.c parser.h lexer.c internlexer.c minilexer.c
+
+CLEANFILES = $(BUILT_SOURCES) *.output
 
 LIBTOOL_DEPS = @LIBTOOL_DEPS@
 libtool: $(LIBTOOL_DEPS)

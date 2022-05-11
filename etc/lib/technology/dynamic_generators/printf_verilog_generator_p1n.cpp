@@ -10,9 +10,9 @@
  *                              PandA Project
  *                 URL: http://trac.ws.dei.polimi.it/panda
  *                      Microarchitectures Laboratory
- *                       Politecnico di Milano - DEI
+ *                       Politecnico di Milano - DEIB
  *             ***********************************************
- *              Copyright (c) 2015-2020 Politecnico di Milano
+ *              Copyright (c) 2015-2022 Politecnico di Milano
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -25,11 +25,11 @@
  *   GNU General Public License for more details.
  *
  *   You should have received a copy of the GNU General Public License
- *   along with this program; if not, write to the 
+ *   along with this program; if not, write to the
  *   Free Software Foundation, Inc.,
  *   51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA.
  *
-*/
+ */
 /**
  * @file printf_verilog_generator_p1n.cpp
  * @brief Snippet for the printf dynamimc generator when a parallel bus architecture is considered.
@@ -37,46 +37,52 @@
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
-*/
+ */
 std::string fsm;
 std::string case_statement;
 
 std::stringstream _npString;
-_npString<<(std::max(_np,2));
-std::string selector_dimension=_npString.str();
+_npString << ((_np < 2) ? 2 : _np);
+std::string selector_dimension = _npString.str();
 
 std::stringstream _np1String;
-_np1String<<(std::max(_np-1, 1));
-std::string selector_left=_np1String.str();
+_np1String << (((_np - 1) < 1) ? 1 : (_np - 1));
+std::string selector_left = _np1String.str();
 
-int selector=1;
-for(int i=0;i<_np;i++){
+int selector = 1;
+for(int i = 0; i < _np; i++)
+{
    std::stringstream _selector_string;
-   _selector_string<<selector;
+   _selector_string << selector;
    std::stringstream _index_string;
-   _index_string<<(i+1);
-   case_statement+="            "+selector_dimension+"'d"+_selector_string.str()+":\n             begin\n               data1="+_p[i].name+";\n               data1_size=BITSIZE_in"+_index_string.str()+";\n             end\n";
-   selector*=2;
+   _index_string << (i + 1);
+   case_statement += "            " + selector_dimension + "'d" + _selector_string.str() +
+                     ":\n             begin\n               data1=" + _p[i].name +
+                     ";\n               data1_size=BITSIZE_in" + _index_string.str() + ";\n             end\n";
+   selector *= 2;
 }
-case_statement+="            default:\n\
+case_statement += "            default:\n\
              begin\n\
                data1 = 64'b0;\n\
                data1_size = 8'b0;\n\
              end\n";
 
 std::string sensitivity;
-for(int i=0;i<_np;i++){
-  sensitivity += " or " + _p[i].name;
+for(int i = 0; i < _np; i++)
+{
+   sensitivity += " or " + _p[i].name;
 }
-if(_np>1){
-  case_statement="case (_present_selector)\n"+case_statement+"          endcase";
+if(_np > 1)
+{
+   case_statement = "case (_present_selector)\n" + case_statement + "          endcase";
 }
-else{
-  case_statement="";
+else
+{
+   case_statement = "";
 }
 
-
-fsm="\
+fsm =
+    "\
 // synthesis translate_off\n\
 function real bits32_to_real64;\n\
   input [31:0] fin1;\n\
@@ -106,10 +112,16 @@ reg mem_sel_LOAD;\n\
 wire mem_done_port;\n\
 reg done_port;\n\
 reg mem_start_port;\n\
-wire [" + data_bus_bitsize + "-1:0] mem_out1;\n\
-reg [" + addr_bus_bitsize + "-1:0] mem_in2;\n\
-reg [" + size_bus_bitsize + "-1:0] mem_in3;\n\
-  MEMORY_CTRL_P1N #(.BITSIZE_in1(" + data_bus_bitsize + "), .BITSIZE_in2(" + addr_bus_bitsize + "), .BITSIZE_in3(" + size_bus_bitsize + "), .BITSIZE_in4(1), .BITSIZE_out1(" + data_bus_bitsize + "), .BITSIZE_Min_oe_ram(BITSIZE_Min_oe_ram), .PORTSIZE_Min_oe_ram(PORTSIZE_Min_oe_ram), .BITSIZE_Min_we_ram(BITSIZE_Min_we_ram), .PORTSIZE_Min_we_ram(PORTSIZE_Min_we_ram), .BITSIZE_Mout_oe_ram(BITSIZE_Mout_oe_ram), .PORTSIZE_Mout_oe_ram(PORTSIZE_Mout_oe_ram), .BITSIZE_Mout_we_ram(BITSIZE_Mout_we_ram), .PORTSIZE_Mout_we_ram(PORTSIZE_Mout_we_ram), .BITSIZE_M_DataRdy(BITSIZE_M_DataRdy), .PORTSIZE_M_DataRdy(PORTSIZE_M_DataRdy), .BITSIZE_Min_addr_ram(BITSIZE_Min_addr_ram), .PORTSIZE_Min_addr_ram(PORTSIZE_Min_addr_ram), .BITSIZE_Mout_addr_ram(BITSIZE_Mout_addr_ram), .PORTSIZE_Mout_addr_ram(PORTSIZE_Mout_addr_ram), .BITSIZE_M_Rdata_ram(BITSIZE_M_Rdata_ram), .PORTSIZE_M_Rdata_ram(PORTSIZE_M_Rdata_ram), .BITSIZE_Min_Wdata_ram(BITSIZE_Min_Wdata_ram), .PORTSIZE_Min_Wdata_ram(PORTSIZE_Min_Wdata_ram), .BITSIZE_Mout_Wdata_ram(BITSIZE_Mout_Wdata_ram), .PORTSIZE_Mout_Wdata_ram(PORTSIZE_Mout_Wdata_ram), .BITSIZE_Min_data_ram_size(BITSIZE_Min_data_ram_size), .PORTSIZE_Min_data_ram_size(PORTSIZE_Min_data_ram_size), .BITSIZE_Mout_data_ram_size(BITSIZE_Mout_data_ram_size), .PORTSIZE_Mout_data_ram_size(PORTSIZE_Mout_data_ram_size), .BITSIZE_access_allowed(BITSIZE_access_allowed), .PORTSIZE_access_allowed(PORTSIZE_access_allowed), .BITSIZE_access_request(BITSIZE_access_request), .PORTSIZE_access_request(PORTSIZE_access_request)) MEMORY_CTRL_P1N_instance (.done_port(mem_done_port), .out1(mem_out1), .Mout_oe_ram(Mout_oe_ram), .Mout_we_ram(Mout_we_ram), .Mout_addr_ram(Mout_addr_ram), .Mout_Wdata_ram(Mout_Wdata_ram), .Mout_data_ram_size(Mout_data_ram_size), .access_request(access_request), .clock(clock), .start_port(mem_start_port), .in1(0), .in2(mem_in2), .in3(mem_in3), .in4(1), .sel_LOAD(mem_sel_LOAD), .sel_STORE(1'b0), .Min_oe_ram(Min_oe_ram), .Min_we_ram(Min_we_ram), .Min_addr_ram(Min_addr_ram), .M_Rdata_ram(M_Rdata_ram), .Min_Wdata_ram(Min_Wdata_ram), .Min_data_ram_size(Min_data_ram_size), .M_DataRdy(M_DataRdy), .access_allowed(access_allowed));\n\
+wire [" +
+    data_bus_bitsize + "-1:0] mem_out1;\n\
+reg [" +
+    addr_bus_bitsize + "-1:0] mem_in2;\n\
+reg [" +
+    size_bus_bitsize + "-1:0] mem_in3;\n\
+  MEMORY_CTRL_P1N #(.BITSIZE_in1(" +
+    data_bus_bitsize + "), .BITSIZE_in2(" + addr_bus_bitsize + "), .BITSIZE_in3(" + size_bus_bitsize +
+    "), .BITSIZE_in4(1), .BITSIZE_out1(" + data_bus_bitsize +
+    "), .BITSIZE_Min_oe_ram(BITSIZE_Min_oe_ram), .PORTSIZE_Min_oe_ram(PORTSIZE_Min_oe_ram), .BITSIZE_Min_we_ram(BITSIZE_Min_we_ram), .PORTSIZE_Min_we_ram(PORTSIZE_Min_we_ram), .BITSIZE_Mout_oe_ram(BITSIZE_Mout_oe_ram), .PORTSIZE_Mout_oe_ram(PORTSIZE_Mout_oe_ram), .BITSIZE_Mout_we_ram(BITSIZE_Mout_we_ram), .PORTSIZE_Mout_we_ram(PORTSIZE_Mout_we_ram), .BITSIZE_M_DataRdy(BITSIZE_M_DataRdy), .PORTSIZE_M_DataRdy(PORTSIZE_M_DataRdy), .BITSIZE_Min_addr_ram(BITSIZE_Min_addr_ram), .PORTSIZE_Min_addr_ram(PORTSIZE_Min_addr_ram), .BITSIZE_Mout_addr_ram(BITSIZE_Mout_addr_ram), .PORTSIZE_Mout_addr_ram(PORTSIZE_Mout_addr_ram), .BITSIZE_M_Rdata_ram(BITSIZE_M_Rdata_ram), .PORTSIZE_M_Rdata_ram(PORTSIZE_M_Rdata_ram), .BITSIZE_Min_Wdata_ram(BITSIZE_Min_Wdata_ram), .PORTSIZE_Min_Wdata_ram(PORTSIZE_Min_Wdata_ram), .BITSIZE_Mout_Wdata_ram(BITSIZE_Mout_Wdata_ram), .PORTSIZE_Mout_Wdata_ram(PORTSIZE_Mout_Wdata_ram), .BITSIZE_Min_data_ram_size(BITSIZE_Min_data_ram_size), .PORTSIZE_Min_data_ram_size(PORTSIZE_Min_data_ram_size), .BITSIZE_Mout_data_ram_size(BITSIZE_Mout_data_ram_size), .PORTSIZE_Mout_data_ram_size(PORTSIZE_Mout_data_ram_size), .BITSIZE_access_allowed(BITSIZE_access_allowed), .PORTSIZE_access_allowed(PORTSIZE_access_allowed), .BITSIZE_access_request(BITSIZE_access_request), .PORTSIZE_access_request(PORTSIZE_access_request)) MEMORY_CTRL_P1N_instance (.done_port(mem_done_port), .out1(mem_out1), .Mout_oe_ram(Mout_oe_ram), .Mout_we_ram(Mout_we_ram), .Mout_addr_ram(Mout_addr_ram), .Mout_Wdata_ram(Mout_Wdata_ram), .Mout_data_ram_size(Mout_data_ram_size), .access_request(access_request), .clock(clock), .start_port(mem_start_port), .in1(0), .in2(mem_in2), .in3(mem_in3), .in4(1), .sel_LOAD(mem_sel_LOAD), .sel_STORE(1'b0), .Min_oe_ram(Min_oe_ram), .Min_we_ram(Min_we_ram), .Min_addr_ram(Min_addr_ram), .M_Rdata_ram(M_Rdata_ram), .Min_Wdata_ram(Min_Wdata_ram), .Min_data_ram_size(Min_data_ram_size), .M_DataRdy(M_DataRdy), .access_allowed(access_allowed));\n\
 \n\
 parameter [2:0] S_0 = 3'd0,\n\
   S_1 = 3'd1,\n\
@@ -121,8 +133,10 @@ parameter [2:0] S_0 = 3'd0,\n\
   S_7 = 3'd7;\n\
 reg [2:0] _present_state 1INIT_ZERO_VALUE;\n\
 reg [2:0] _next_state;\n\
-reg ["+selector_left+":0] _present_selector 1INIT_ZERO_VALUE;\n\
-reg ["+selector_left+":0] _next_selector;\n\
+reg [" +
+    selector_left + ":0] _present_selector 1INIT_ZERO_VALUE;\n\
+reg [" +
+    selector_left + ":0] _next_selector;\n\
 reg [63:0] data1;\n\
 reg [7:0] _present_data2 1INIT_ZERO_VALUE;\n\
 reg [7:0] _next_data2;\n\
@@ -135,7 +149,8 @@ reg write_done;\n\
         _present_state <= S_0;\n\
         _present_pointer <= {BITSIZE_Mout_addr_ram{1'b0}};\n\
         _present_pointer1 <= {BITSIZE_Mout_addr_ram{1'b0}};\n\
-        _present_selector <="+selector_dimension+"'d0;\n\
+        _present_selector <=" +
+    selector_dimension + "'d0;\n\
         _present_data2 <= 8'b0;\n\
       end\n\
     else\n\
@@ -147,7 +162,8 @@ reg write_done;\n\
         _present_data2 <= _next_data2;\n\
       end\n\
 \n\
-  always @(_present_state or _present_pointer or _present_pointer1 or _present_selector or start_port or M_DataRdy[0] or Min_we_ram or Min_oe_ram or Min_Wdata_ram or Min_addr_ram or Min_data_ram_size" + sensitivity + " or _present_data2 or mem_done_port or M_Rdata_ram[7:0])\n\
+  always @(_present_state or _present_pointer or _present_pointer1 or _present_selector or start_port or M_DataRdy[0] or Min_we_ram or Min_oe_ram or Min_Wdata_ram or Min_addr_ram or Min_data_ram_size" +
+    sensitivity + " or _present_data2 or mem_done_port or M_Rdata_ram[7:0])\n\
       begin\n\
         _next_state = _present_state;\n\
         _next_pointer = _present_pointer;\n\
@@ -157,9 +173,12 @@ reg write_done;\n\
         done_port = 1'b0;\n\
         mem_sel_LOAD = 1'b0;\n\
         mem_start_port = 1'b0;\n\
-        mem_in2=" + addr_bus_bitsize + "'d0;\n\
-        mem_in3=" + size_bus_bitsize + "'d0;\n\
-        "+ case_statement + "\n\
+        mem_in2=" +
+    addr_bus_bitsize + "'d0;\n\
+        mem_in3=" +
+    size_bus_bitsize + "'d0;\n\
+        " +
+    case_statement + "\n\
         case (_present_state)\n\
           S_0:\n\
             if(start_port)\n\
@@ -167,7 +186,8 @@ reg write_done;\n\
                 _next_pointer=0;\n\
                 _next_pointer1=0;\n\
                 _next_state=S_1;  \n\
-                _next_selector="+selector_dimension+"'d2;\n \
+                _next_selector=" +
+    selector_dimension + "'d2;\n \
               end\n\
             \n\
          S_1:\n\
@@ -774,4 +794,3 @@ reg write_done;\n\
   end\n";
 
 std::cout << fsm;
-

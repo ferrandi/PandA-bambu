@@ -32,7 +32,8 @@ class CbcBranchUserDecision : public CbcBranchDecision
        return code +1 for up branch preferred, -1 for down
 
   */
-   virtual int betterBranch(CbcBranchingObject* thisOne, CbcBranchingObject* bestSoFar, double changeUp, int numberInfeasibilitiesUp, double changeDown, int numberInfeasibilitiesDown);
+   virtual int betterBranch(CbcBranchingObject* thisOne, CbcBranchingObject* bestSoFar, double changeUp,
+                            int numberInfeasibilitiesUp, double changeDown, int numberInfeasibilitiesDown);
 
    /** \brief Compare N branching objects. Return index of best
        and sets way of branching in chosen object.
@@ -41,7 +42,9 @@ class CbcBranchUserDecision : public CbcBranchDecision
      This is reccommended version as it can be more sophisticated
    */
 
-   virtual int bestBranch(CbcBranchingObject** objects, int numberObjects, int numberUnsatisfied, double* changeUp, int* numberInfeasibilitiesUp, double* changeDown, int* numberInfeasibilitiesDown, double objectiveValue);
+   virtual int bestBranch(CbcBranchingObject** objects, int numberObjects, int numberUnsatisfied, double* changeUp,
+                          int* numberInfeasibilitiesUp, double* changeDown, int* numberInfeasibilitiesDown,
+                          double objectiveValue);
 
  private:
    /// Illegal Assignment operator

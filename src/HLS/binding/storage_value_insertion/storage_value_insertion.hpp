@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -59,7 +59,8 @@ class storage_value_insertion : public HLSFunctionStep
     * @param relationship_type is the type of relationship to be considered
     * @return the steps in relationship with this
     */
-   const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+   const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
+   ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
  public:
    /**
@@ -67,7 +68,9 @@ class storage_value_insertion : public HLSFunctionStep
     * @param design_flow_manager is the design flow manager
     * @param hls_flow_step_type is the type of storage value insertion algorithm
     */
-   storage_value_insertion(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStep_Type hls_flow_step_type);
+   storage_value_insertion(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId,
+                           const DesignFlowManagerConstRef design_flow_manager,
+                           const HLSFlowStep_Type hls_flow_step_type);
 
    /**
     * Destructor.

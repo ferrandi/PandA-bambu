@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -64,8 +64,9 @@ REF_FORWARD_DECL(BackendFlow);
 class HLS_manager : public application_manager
 {
  public:
-   /// tuple set used to represent the required values or the constant default value associated with the inputs of a node
-   typedef std::tuple<unsigned int, unsigned int> io_binding_type;
+   /// tuple set used to represent the required values or the constant default value associated with the inputs of a
+   /// node
+   using io_binding_type = std::tuple<unsigned int, unsigned int>;
 
  private:
    /// information about the target device/technology for the synthesis
@@ -82,7 +83,7 @@ class HLS_manager : public application_manager
 
  public:
    /// base address for memory space addressing
-   unsigned int base_address;
+   unsigned long long int base_address;
 
    /// HLS execution time
    long HLS_execution_time;
@@ -114,18 +115,29 @@ class HLS_manager : public application_manager
    std::map<std::string, std::map<std::string, std::string>> design_interface;
    /// store the design interface array size coming from an xml file: function_name->parameter_name->interface_arraysize
    std::map<std::string, std::map<std::string, std::string>> design_interface_arraysize;
+   /// store the design interface array size coming from an xml file:
+   /// function_name->parameter_name->interface_attribute2
+   std::map<std::string, std::map<std::string, std::string>> design_interface_attribute2;
+   /// store the design interface array size coming from an xml file:
+   /// function_name->parameter_name->interface_attribute3
+   std::map<std::string, std::map<std::string, std::string>> design_interface_attribute3;
    /// store the design interface typenames coming from an xml file: function_name->parameter_name->interface_typename
    std::map<std::string, std::map<std::string, std::string>> design_interface_typename;
    /// store the design interface signature coming from an xml file: function_name->typename_signature
    std::map<std::string, std::vector<std::string>> design_interface_typename_signature;
-   /// store the design interface typename includes coming from an xml file: function_name->parameter_name->interface_typenameinclude
+   /// store the design interface original signature coming from an xml file: function_name->typename_signature
+   std::map<std::string, std::vector<std::string>> design_interface_typename_orig_signature;
+   /// store the design interface typename includes coming from an xml file:
+   /// function_name->parameter_name->interface_typenameinclude
    std::map<std::string, std::map<std::string, std::string>> design_interface_typenameinclude;
    /// store the design interface read references of parameters: function_name->bb_index->parameter_name->list_of_loads
    std::map<std::string, std::map<unsigned, std::map<std::string, std::list<unsigned>>>> design_interface_loads;
-   /// store the design interface write references of parameters: function_name->bb_index->parameter_name->list_of_stores
+   /// store the design interface write references of parameters:
+   /// function_name->bb_index->parameter_name->list_of_stores
    std::map<std::string, std::map<unsigned, std::map<std::string, std::list<unsigned>>>> design_interface_stores;
 
-   /// store the constraints on resources added to manage the I/O interfaces: function_id->library_name->resource_function_name->number of resources
+   /// store the constraints on resources added to manage the I/O interfaces:
+   /// function_id->library_name->resource_function_name->number of resources
    std::map<unsigned, std::map<std::string, std::map<std::string, unsigned int>>> design_interface_constraints;
 
    /// global resource constraints
@@ -213,7 +225,7 @@ class HLS_manager : public application_manager
    unsigned int UpdateMemVersion();
 };
 /// refcount definition of the class
-typedef refcount<HLS_manager> HLS_managerRef;
-typedef refcount<const HLS_manager> HLS_managerConstRef;
+using HLS_managerRef = refcount<HLS_manager>;
+using HLS_managerConstRef = refcount<const HLS_manager>;
 
 #endif

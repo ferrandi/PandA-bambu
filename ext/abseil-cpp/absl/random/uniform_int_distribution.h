@@ -40,6 +40,7 @@
 #include "absl/random/internal/wide_multiply.h"
 
 namespace absl {
+ABSL_NAMESPACE_BEGIN
 
 // absl::uniform_int_distribution<T>
 //
@@ -96,7 +97,7 @@ class uniform_int_distribution {
     result_type lo_;
     unsigned_type range_;
 
-    static_assert(std::is_integral<result_type>::value,
+    static_assert(random_internal::IsIntegral<result_type>::value,
                   "Class-template absl::uniform_int_distribution<> must be "
                   "parameterized using an integral type.");
   };  // param_type
@@ -124,7 +125,7 @@ class uniform_int_distribution {
   template <typename URBG>
   result_type operator()(
       URBG& gen, const param_type& param) {  // NOLINT(runtime/references)
-    return param.a() + Generate(gen, param.range());
+    return static_cast<result_type>(param.a() + Generate(gen, param.range()));
   }
 
   result_type a() const { return param_.a(); }
@@ -195,7 +196,7 @@ typename random_internal::make_unsigned_bits<IntType>::type
 uniform_int_distribution<IntType>::Generate(
     URBG& g,  // NOLINT(runtime/references)
     typename random_internal::make_unsigned_bits<IntType>::type R) {
-    random_internal::FastUniformBits<unsigned_type> fast_bits;
+  random_internal::FastUniformBits<unsigned_type> fast_bits;
   unsigned_type bits = fast_bits(g);
   const unsigned_type Lim = R + 1;
   if ((R & Lim) == 0) {
@@ -268,6 +269,7 @@ uniform_int_distribution<IntType>::Generate(
   return helper::hi(product);
 }
 
+ABSL_NAMESPACE_END
 }  // namespace absl
 
 #endif  // ABSL_RANDOM_UNIFORM_INT_DISTRIBUTION_H_

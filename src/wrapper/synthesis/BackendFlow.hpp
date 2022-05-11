@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -65,7 +65,7 @@ REF_FORWARD_DECL(structural_manager);
 REF_FORWARD_DECL(technology_node);
 REF_FORWARD_DECL(XMLDomParser);
 class xml_element;
-typedef refcount<std::istream> fileIO_istreamRef;
+using fileIO_istreamRef = refcount<std::istream>;
 
 #include "custom_map.hpp"
 #include "custom_set.hpp"
@@ -91,14 +91,13 @@ struct BackendStep
    /// output directory
    std::string out_dir;
 };
-typedef refcount<BackendStep> BackendStepRef;
+using BackendStepRef = refcount<BackendStep>;
 
 class BackendFlow
 {
  public:
    /// implemented flow
-   typedef enum
-   {
+   using type_t = enum {
       UNKNOWN,
       ASIC,
       XILINX_FPGA,
@@ -108,7 +107,8 @@ class BackendFlow
       ALTERA_FPGA,
       LATTICE_FPGA,
       NANOXPLORE_FPGA,
-   } type_t;
+      GENERIC,
+   };
 
  protected:
    /// class containing all the parameters
@@ -135,10 +135,10 @@ class BackendFlow
    /// root node of the configuration device
    xml_element* root;
 
-   /// pointer to the datastructure containing information about the resources
+   /// pointer to the data structure containing information about the resources
    area_modelRef area_m;
 
-   /// pointer to the datastructure containing timing information
+   /// pointer to the data structure containing timing information
    time_modelRef time_m;
 
    /// ordered list of synthesis steps
@@ -173,7 +173,7 @@ class BackendFlow
    virtual void WriteFlowConfiguration(std::ostream& script) = 0;
 
    /**
-    * Checks the synthesis results and fills the corresponding datastructures
+    * Checks the synthesis results and fills the corresponding data structures
     */
    virtual void CheckSynthesisResults() = 0;
 
@@ -182,9 +182,9 @@ class BackendFlow
     * Constructor
     * @param Param is the reference to the class containing all the parameters
     * @param flow_name is a string representing the name of the flow
-    * @param target is the datastructure containing all the information about the target of the synthesis
+    * @param target is the data structure containing all the information about the target of the synthesis
     */
-   BackendFlow(const ParameterConstRef Param, std::string flow_name, const target_managerRef target);
+   BackendFlow(const ParameterConstRef Param, std::string flow_name, const target_managerRef _manager);
 
    /**
     * Destructor
@@ -194,7 +194,8 @@ class BackendFlow
    /**
     * Creates the flow specification based on the given parameters
     */
-   static BackendFlowRef CreateFlow(const ParameterConstRef Param, const std::string& flow_name, const target_managerRef target);
+   static BackendFlowRef CreateFlow(const ParameterConstRef Param, const std::string& flow_name,
+                                    const target_managerRef target);
 
    /**
     * Determines the type of the backend flow based on the target device
@@ -204,7 +205,9 @@ class BackendFlow
    /**
     * Generates the synthesis scripts for the specified design
     */
-   virtual std::string GenerateSynthesisScripts(const std::string& fu_name, const structural_managerRef SM, const std::list<std::string>& hdl_files, const std::list<std::string>& aux_files);
+   virtual std::string GenerateSynthesisScripts(const std::string& fu_name, const structural_managerRef SM,
+                                                const std::list<std::string>& hdl_files,
+                                                const std::list<std::string>& aux_files);
 
    /**
     * Executes the synthesis with the implemented flow
@@ -214,7 +217,8 @@ class BackendFlow
    /**
     * Executes the synthesis with the implemented flow
     */
-   void Execute(const std::string& top_id, const std::string& top_normalized, const std::string& filestring, const std::string& filename_bench, const std::string& clock, double clk_period, bool syntax_check);
+   void Execute(const std::string& top_id, const std::string& top_normalized, const std::string& filestring,
+                const std::string& filename_bench, const std::string& clock, double clk_period, bool syntax_check);
 
    /**
     * Creates the scripts for the specified tools in the right order, along with the overall configuration.
@@ -258,7 +262,8 @@ class BackendFlow
    /**
     * Sets parameters
     */
-   void set_initial_parameters(const DesignParametersRef& flow_parameters, const CustomOrderedSet<std::string>& undefined_parameters);
+   void set_initial_parameters(const DesignParametersRef& flow_parameters,
+                               const CustomOrderedSet<std::string>& undefined_parameters);
 
    /**
     * Sets actual parameters
@@ -276,6 +281,6 @@ class BackendFlow
    time_modelRef get_timing_results() const;
 };
 /// refcount definition of the class
-typedef refcount<BackendFlow> BackendFlowRef;
+using BackendFlowRef = refcount<BackendFlow>;
 
 #endif

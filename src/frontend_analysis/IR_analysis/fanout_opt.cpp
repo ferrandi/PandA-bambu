@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2017-2020 Politecnico di Milano
+ *              Copyright (C) 2017-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -79,15 +79,18 @@
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
 
-fanout_opt::fanout_opt(const ParameterConstRef _parameters, const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager)
-    : FunctionFrontendFlowStep(_AppM, _function_id, FANOUT_OPT, _design_flow_manager, _parameters), TM(_AppM->get_tree_manager())
+fanout_opt::fanout_opt(const ParameterConstRef _parameters, const application_managerRef _AppM,
+                       unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager)
+    : FunctionFrontendFlowStep(_AppM, _function_id, FANOUT_OPT, _design_flow_manager, _parameters),
+      TM(_AppM->get_tree_manager())
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
 }
 
 fanout_opt::~fanout_opt() = default;
 
-const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> fanout_opt::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
+fanout_opt::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
@@ -98,8 +101,10 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
          {
             case DesignFlowStep_Status::SUCCESS:
             {
-               if(not parameters->getOption<int>(OPT_gcc_openmp_simd))
+               if(!parameters->getOption<int>(OPT_gcc_openmp_simd))
+               {
                   relationships.insert(std::make_pair(BIT_VALUE, SAME_FUNCTION));
+               }
                break;
             }
             case DesignFlowStep_Status::SKIPPED:
@@ -123,8 +128,8 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
       }
       case DEPENDENCE_RELATIONSHIP:
       {
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(CSE_STEP, SAME_FUNCTION));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(EXTRACT_PATTERNS, SAME_FUNCTION));
+         relationships.insert(std::make_pair(CSE_STEP, SAME_FUNCTION));
+         relationships.insert(std::make_pair(EXTRACT_PATTERNS, SAME_FUNCTION));
          break;
       }
       default:
@@ -139,9 +144,15 @@ bool fanout_opt::is_dest_relevant(tree_nodeRef t, bool)
    if(GET_NODE(t)->get_kind() == gimple_assign_K)
    {
       auto* temp_assign = GetPointer<gimple_assign>(GET_NODE(t));
-      if(GET_NODE(temp_assign->op1)->get_kind() == mult_expr_K || GET_NODE(temp_assign->op1)->get_kind() == widen_mult_expr_K || GET_NODE(temp_assign->op1)->get_kind() == ternary_plus_expr_K || GET_NODE(temp_assign->op1)->get_kind() == ternary_mm_expr_K ||
-         GET_NODE(temp_assign->op1)->get_kind() == ternary_pm_expr_K || GET_NODE(temp_assign->op1)->get_kind() == ternary_mp_expr_K)
+      if(GET_NODE(temp_assign->op1)->get_kind() == mult_expr_K ||
+         GET_NODE(temp_assign->op1)->get_kind() == widen_mult_expr_K ||
+         GET_NODE(temp_assign->op1)->get_kind() == ternary_plus_expr_K ||
+         GET_NODE(temp_assign->op1)->get_kind() == ternary_mm_expr_K ||
+         GET_NODE(temp_assign->op1)->get_kind() == ternary_pm_expr_K ||
+         GET_NODE(temp_assign->op1)->get_kind() == ternary_mp_expr_K)
+      {
          return true;
+      }
    }
    return false;
 }
@@ -149,59 +160,70 @@ bool fanout_opt::is_dest_relevant(tree_nodeRef t, bool)
 DesignFlowStep_Status fanout_opt::InternalExec()
 {
    if(parameters->IsParameter("disable-fanout_opt"))
-      return DesignFlowStep_Status::SKIPPED;
+   {
+      return DesignFlowStep_Status::UNCHANGED;
+   }
    bool IR_changed = false;
 
    tree_nodeRef temp = TM->get_tree_node_const(function_id);
    auto* fd = GetPointer<function_decl>(temp);
    auto* sl = GetPointer<statement_list>(GET_NODE(fd->body));
-   const tree_manipulationRef tree_man = tree_manipulationRef(new tree_manipulation(TM, parameters));
+   const tree_manipulationRef tree_man = tree_manipulationRef(new tree_manipulation(TM, parameters, AppM));
 
    for(auto block : sl->list_of_bloc)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Examining BB" + STR(block.first));
       for(const auto& stmt : block.second->CGetStmtList())
       {
-#ifndef NDEBUG
          if(not AppM->ApplyNewTransformation())
          {
             break;
          }
-#endif
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Examining statement " + GET_NODE(stmt)->ToString());
          if(GET_NODE(stmt)->get_kind() == gimple_assign_K)
          {
             auto* ga = GetPointer<gimple_assign>(GET_NODE(stmt));
-            const std::string srcp_default = ga->include_name + ":" + STR(ga->line_number) + ":" + STR(ga->column_number);
+            const std::string srcp_default =
+                ga->include_name + ":" + STR(ga->line_number) + ":" + STR(ga->column_number);
             if(GET_NODE(ga->op0)->get_kind() == ssa_name_K)
             {
                auto* ssa_defined = GetPointer<ssa_name>(GET_NODE(ga->op0));
                if(ssa_defined->CGetNumberUses() > 1)
                {
-                  unsigned assigned_ssa_type_index;
-                  const tree_nodeRef assigned_ssa_type_node = tree_helper::get_type_node(GET_NODE(ga->op0), assigned_ssa_type_index);
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---the assigned ssa_name " + STR(GET_NODE(ga->op0)) + " has type " + assigned_ssa_type_node->ToString());
+                  const auto assigned_ssa_type_node = tree_helper::CGetType(ga->op0);
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                 "---the assigned ssa_name " + STR(GET_NODE(ga->op0)) + " has type " +
+                                     STR(assigned_ssa_type_node));
                   bool is_first_stmt = true;
                   std::list<tree_nodeRef> list_of_dest_statements;
                   for(auto dest_statement : ssa_defined->CGetUseStmts())
                   {
                      if(is_first_stmt)
+                     {
                         is_first_stmt = false;
+                     }
                      else if(is_dest_relevant(dest_statement.first, false))
+                     {
                         list_of_dest_statements.push_back(dest_statement.first);
+                     }
                   }
                   for(auto dest_statement : list_of_dest_statements)
                   {
-                     tree_nodeRef temp_assign = tree_man->CreateGimpleAssign(assigned_ssa_type_node, ssa_defined->min, ssa_defined->max, ga->op0, block.first, srcp_default);
-                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---create a temporary assignment " + temp_assign->ToString());
-                     block.second->PushAfter(temp_assign, stmt);
+                     tree_nodeRef temp_assign =
+                         tree_man->CreateGimpleAssign(assigned_ssa_type_node, ssa_defined->min, ssa_defined->max,
+                                                      ga->op0, function_id, block.first, srcp_default);
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                    "---create a temporary assignment " + temp_assign->ToString());
+                     block.second->PushAfter(temp_assign, stmt, AppM);
                      tree_nodeRef temp_ssa_var = GetPointer<gimple_assign>(GET_NODE(temp_assign))->op0;
                      GetPointer<gimple_assign>(GET_NODE(temp_assign))->keep = true;
                      GetPointer<gimple_assign>(GET_NODE(temp_assign))->temporary_address = ga->temporary_address;
                      GetPointer<ssa_name>(GET_NODE(temp_ssa_var))->SetDefStmt(temp_assign);
-                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---dest statement before replacement " + dest_statement->ToString());
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                    "---dest statement before replacement " + dest_statement->ToString());
                      TM->ReplaceTreeNode(dest_statement, ga->op0, temp_ssa_var);
-                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---dest statement after replacement " + dest_statement->ToString());
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                    "---dest statement after replacement " + dest_statement->ToString());
                      IR_changed = true;
                   }
                }
@@ -225,9 +247,13 @@ DesignFlowStep_Status fanout_opt::InternalExec()
                for(auto dest_statement : ssa_defined->CGetUseStmts())
                {
                   if(is_first_stmt)
+                  {
                      is_first_stmt = false;
+                  }
                   else if(is_dest_relevant(dest_statement.first, true))
+                  {
                      list_of_dest_statements.push_back(dest_statement.first);
+                  }
                }
                for(auto dest_statement : list_of_dest_statements)
                {
@@ -239,7 +265,8 @@ DesignFlowStep_Status fanout_opt::InternalExec()
                   }
                   tree_nodeRef new_res_var;
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---starting from phi " + phi->ToString());
-                  auto new_phi = tree_man->create_phi_node(new_res_var, list_of_def_edge, gp->scpe, block.first);
+                  auto new_phi = tree_man->create_phi_node(new_res_var, list_of_def_edge,
+                                                           GET_INDEX_CONST_NODE(gp->scpe), block.first);
                   auto new_res_var_ssa = GetPointer<ssa_name>(GET_NODE(new_res_var));
                   new_res_var_ssa->min = ssa_defined->min;
                   new_res_var_ssa->max = ssa_defined->max;
@@ -247,9 +274,11 @@ DesignFlowStep_Status fanout_opt::InternalExec()
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---created a new phi " + new_phi->ToString());
                   block.second->AddPhi(new_phi);
                   GetPointer<gimple_phi>(GET_NODE(new_phi))->keep = true;
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---dest statement before replacement " + dest_statement->ToString());
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                 "---dest statement before replacement " + dest_statement->ToString());
                   TM->ReplaceTreeNode(dest_statement, gp->res, new_res_var);
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---dest statement after replacement " + dest_statement->ToString());
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                 "---dest statement after replacement " + dest_statement->ToString());
                   IR_changed = true;
                }
             }
@@ -259,7 +288,9 @@ DesignFlowStep_Status fanout_opt::InternalExec()
       if(IR_changed && schedule)
       {
          for(const auto& stmt : block.second->CGetStmtList())
+         {
             schedule->UpdateTime(GET_INDEX_NODE(stmt));
+         }
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Considered BB" + STR(block.first));
    }
@@ -270,7 +301,8 @@ DesignFlowStep_Status fanout_opt::InternalExec()
 void fanout_opt::Initialize()
 {
 #if HAVE_BAMBU_BUILT && HAVE_ILP_BUILT
-   if(GetPointer<const HLS_manager>(AppM) and GetPointer<const HLS_manager>(AppM)->get_HLS(function_id) and GetPointer<const HLS_manager>(AppM)->get_HLS(function_id)->Rsch)
+   if(GetPointer<const HLS_manager>(AppM) and GetPointer<const HLS_manager>(AppM)->get_HLS(function_id) and
+      GetPointer<const HLS_manager>(AppM)->get_HLS(function_id)->Rsch)
    {
       schedule = GetPointer<const HLS_manager>(AppM)->get_HLS(function_id)->Rsch;
    }

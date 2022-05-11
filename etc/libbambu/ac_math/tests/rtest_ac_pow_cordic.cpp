@@ -50,7 +50,9 @@ using namespace ac_math;
 //   ac_fixed inputs.
 
 template <int baseW, int baseI, int expW, int expI, bool expS, int outW, int outI>
-void test_ac_pow_cordic(const ac_fixed<baseW, baseI, false, AC_TRN, AC_WRAP>& base, const ac_fixed<expW, expI, expS, AC_TRN, AC_WRAP>& exponent, ac_fixed<outW, outI, false, AC_TRN, AC_WRAP>& out_pow)
+void test_ac_pow_cordic(const ac_fixed<baseW, baseI, false, AC_TRN, AC_WRAP>& base,
+                        const ac_fixed<expW, expI, expS, AC_TRN, AC_WRAP>& exponent,
+                        ac_fixed<outW, outI, false, AC_TRN, AC_WRAP>& out_pow)
 {
    ac_pow_cordic(base, exponent, out_pow);
 }

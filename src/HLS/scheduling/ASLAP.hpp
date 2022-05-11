@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -111,6 +111,9 @@ class ASLAP
 
    /// multiplier used to take into account chaining during asap/alap computation
    unsigned int ctrl_step_multiplier;
+
+   /// relevant vertex for the aslap scheduling
+   const CustomUnorderedSet<vertex>& operations;
    /**
     * Modify the ALAP scheduling taking into account also technology constraints.
     * @param ALL is the allocation manager.
@@ -182,7 +185,9 @@ class ASLAP
     * @param beh_graph is the graph on which asap and alap is computed.
     * @param parameters is the set of input parameters
     */
-   ASLAP(const HLS_managerConstRef hls_manager, const hlsRef HLS, const bool speculation, const OpVertexSet& operations, const ParameterConstRef parameters, unsigned int _ctrl_step_multiplier);
+   ASLAP(const HLS_managerConstRef hls_manager, const hlsRef HLS, const bool speculation,
+         const CustomUnorderedSet<vertex>& operations, const ParameterConstRef parameters,
+         unsigned int _ctrl_step_multiplier);
 
    /**
     * Destructor.
@@ -254,7 +259,8 @@ class ASLAP
     *                 to true
     * @param  est_upper_bound is an upper estimation of the control steps (used by ).
     */
-   void compute_ALAP(ALAP_method met, const ScheduleConstRef partial_schedule = ScheduleConstRef(), bool* feasible = nullptr, const ControlStep = ControlStep(0u));
+   void compute_ALAP(ALAP_method met, const ScheduleConstRef partial_schedule = ScheduleConstRef(),
+                     bool* feasible = nullptr, const ControlStep = ControlStep(0u));
 
    /**
     * Returns the ALAP vector of the vertices.
@@ -281,7 +287,8 @@ class ASLAP
     *                 to true
     * @param partial_schedule is a partial schedule that has to be taken into account
     */
-   void update_ALAP(const ControlStep maxc, bool* feasible = nullptr, const ScheduleConstRef partial_schedule = ScheduleConstRef());
+   void update_ALAP(const ControlStep maxc, bool* feasible = nullptr,
+                    const ScheduleConstRef partial_schedule = ScheduleConstRef());
 
    /**
     * Friend definition of the << operator.
@@ -298,6 +305,6 @@ class ASLAP
    const OpGraphConstRef CGetOpGraph() const;
 };
 
-typedef refcount<ASLAP> ASLAPRef;
+using ASLAPRef = refcount<ASLAP>;
 
 #endif

@@ -1,4 +1,28 @@
 /* mockturtle: C++ logic network library
+ * Copyright (C) 2018-2021  EPFL
+ *
+ * Permission is hereby granted, free of charge, to any person
+ * obtaining a copy of this software and associated documentation
+ * files (the "Software"), to deal in the Software without
+ * restriction, including without limitation the rights to use,
+ * copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the
+ * Software is furnished to do so, subject to the following
+ * conditions:
+ *
+ * The above copyright notice and this permission notice shall be
+ * included in all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+ * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+ * OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+ * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+ * HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+ * WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+ * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+ * OTHER DEALINGS IN THE SOFTWARE.
+ */
+/* mockturtle: C++ logic network library
  * Copyright (C) 2018-2019  EPFL EPFL
  *
  * Permission is hereby granted, free of charge, to any person
@@ -27,6 +51,7 @@
   \file write_verilog.hpp
   \brief Write networks to structural Verilog format
 
+  \author Heinz Riener
   \author Mathias Soeken
 */
 
@@ -38,7 +63,6 @@
 #include <string>
 
 #include <lorina/verilog.hpp>
-#include <ez/direct_iterator.hpp>
 #include <fmt/format.h>
 
 #include "../traits.hpp"
@@ -263,6 +287,30 @@ void write_verilog( Ntk const& ntk, std::ostream& os, write_verilog_params const
     }
     else
     {
+      if constexpr ( has_is_nary_and_v<Ntk> )
+      {
+        if ( ntk.is_nary_and( n ) )
+        {
+          writer.on_assign( node_names[n], detail::format_fanin<Ntk>( ntk, n, node_names ), "&" );
+          return true;
+        }
+      }
+      if constexpr ( has_is_nary_or_v<Ntk> )
+      {
+        if ( ntk.is_nary_or( n ) )
+        {
+          writer.on_assign( node_names[n], detail::format_fanin<Ntk>( ntk, n, node_names ), "|" );
+          return true;
+        }
+      }
+      if constexpr ( has_is_nary_xor_v<Ntk> )
+      {
+        if ( ntk.is_nary_xor( n ) )
+        {
+          writer.on_assign( node_names[n], detail::format_fanin<Ntk>( ntk, n, node_names ), "^" );
+          return true;
+        }
+      }
       writer.on_assign_unknown_gate( node_names[n] );
     }
 

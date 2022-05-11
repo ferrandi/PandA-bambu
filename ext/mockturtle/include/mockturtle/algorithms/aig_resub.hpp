@@ -1,5 +1,5 @@
 /* mockturtle: C++ logic network library
- * Copyright (C) 2018-2019  EPFL
+ * Copyright (C) 2018-2021  EPFL
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -27,7 +27,10 @@
   \file aig_resub.hpp
   \brief Resubstitution
 
+  \author Eleonora Testa
   \author Heinz Riener
+  \author Mathias Soeken
+  \author Siang-Yun (Sonia) Lee
 */
 
 #pragma once
@@ -128,7 +131,7 @@ struct aig_resub_stats
   }
 }; /* aig_resub_stats */
 
-template<typename Ntk, typename Simulator>
+template<typename Ntk, typename Simulator, typename TT>
 struct aig_resub_functor
 {
 public:
@@ -180,8 +183,11 @@ public:
   {
   }
 
-  std::optional<signal> operator()( node const& root, uint32_t required, uint32_t max_inserts, uint32_t num_mffc, uint32_t& last_gain )
+  std::optional<signal> operator()( node const& root, TT care, uint32_t required, uint32_t max_inserts, uint32_t num_mffc, uint32_t& last_gain )
   {
+    (void)care;
+    assert(is_const0(~care));
+    
     /* consider constants */
     auto g = call_with_stopwatch( st.time_resubC, [&]() {
         return resub_const( root, required );
@@ -320,6 +326,20 @@ public:
       {
         udivs.negative_divisors.emplace_back( ntk.make_signal( d ) );
         continue;
+      }
+
+      if ( true ) // ( ps.fix_bug )
+      {
+        if ( kitty::implies( ~tt_d, tt ) )
+        {
+          udivs.positive_divisors.emplace_back( !ntk.make_signal( d ) );
+          continue;
+        }
+        if ( kitty::implies( tt, ~tt_d ) )
+        {
+          udivs.negative_divisors.emplace_back( !ntk.make_signal( d ) );
+          continue;
+        }
       }
 
       udivs.next_candidates.emplace_back( ntk.make_signal( d ) );
@@ -737,43 +757,59 @@ void aig_resubstitution( Ntk& ntk, resubstitution_params const& ps = {}, resubst
   static_assert( has_value_v<Ntk>, "Ntk does not implement the has_value method" );
   static_assert( has_visited_v<Ntk>, "Ntk does not implement the has_visited method" );
 
-  using resub_view_t = fanout_view2<depth_view<Ntk>>;
+  using resub_view_t = fanout_view<depth_view<Ntk>>;
   depth_view<Ntk> depth_view{ntk};
   resub_view_t resub_view{depth_view};
 
-  resubstitution_stats st;
   if ( ps.max_pis == 8 )
   {
-    using truthtable_t = kitty::static_truth_table<8>;
-    using simulator_t = detail::simulator<resub_view_t, truthtable_t>;
-    using resubstitution_functor_t = aig_resub_functor<resub_view_t, simulator_t>;
-    typename resubstitution_functor_t::stats resub_st;
-    detail::resubstitution_impl<resub_view_t, simulator_t, resubstitution_functor_t> p( resub_view, ps, st, resub_st );
+    using truthtable_t = kitty::static_truth_table<8u>;
+    using truthtable_dc_t = kitty::dynamic_truth_table;
+    using resub_impl_t = detail::resubstitution_impl<resub_view_t, typename detail::window_based_resub_engine<resub_view_t, truthtable_t, truthtable_dc_t, aig_resub_functor<resub_view_t, typename detail::window_simulator<resub_view_t, truthtable_t>, truthtable_dc_t>>>;
+
+    resubstitution_stats st;
+    typename resub_impl_t::engine_st_t engine_st;
+    typename resub_impl_t::collector_st_t collector_st;
+
+    resub_impl_t p( resub_view, ps, st, engine_st, collector_st );
     p.run();
+
     if ( ps.verbose )
     {
       st.report();
-      resub_st.report();
+      collector_st.report();
+      engine_st.report();
+    }
+
+    if ( pst )
+    {
+      *pst = st;
     }
   }
   else
   {
     using truthtable_t = kitty::dynamic_truth_table;
-    using simulator_t = detail::simulator<resub_view_t, truthtable_t>;
-    using resubstitution_functor_t = aig_resub_functor<resub_view_t, simulator_t>;
-    typename resubstitution_functor_t::stats resub_st;
-    detail::resubstitution_impl<resub_view_t, simulator_t, resubstitution_functor_t> p( resub_view, ps, st, resub_st );
+    using truthtable_dc_t = kitty::dynamic_truth_table;
+    using resub_impl_t = detail::resubstitution_impl<resub_view_t, typename detail::window_based_resub_engine<resub_view_t, truthtable_t, truthtable_dc_t, aig_resub_functor<resub_view_t, typename detail::window_simulator<resub_view_t, truthtable_t>, truthtable_dc_t>>>;
+
+    resubstitution_stats st;
+    typename resub_impl_t::engine_st_t engine_st;
+    typename resub_impl_t::collector_st_t collector_st;
+
+    resub_impl_t p( resub_view, ps, st, engine_st, collector_st );
     p.run();
+
     if ( ps.verbose )
     {
       st.report();
-      resub_st.report();
+      collector_st.report();
+      engine_st.report();
     }
-  }
 
-  if ( pst )
-  {
-    *pst = st;
+    if ( pst )
+    {
+      *pst = st;
+    }
   }
 }
 

@@ -61,7 +61,8 @@
 #define POOL_SIZE 384 * 1024
 #define MIN_POOL_ALLOC_QUANTAS 16
 
-union SAMM_header_union {
+union SAMM_header_union
+{
    struct
    {
       // Pointer to the next block in the free list
@@ -334,7 +335,8 @@ void*
    unsigned int bitsize, temp = POOL_SIZE;
    count_leading_zero_macro(32, temp, bitsize);
    bitsize = 32 - bitsize;
-   unsigned long long int dsize = ((unsigned long long int)(nmemb & ((1ULL << bitsize) - 1))) * ((unsigned long long int)(size & ((1ULL << bitsize) - 1)));
+   unsigned long long int dsize = ((unsigned long long int)(nmemb & ((1ULL << bitsize) - 1))) *
+                                  ((unsigned long long int)(size & ((1ULL << bitsize) - 1)));
    unsigned int totsize = (unsigned int)dsize;
    upsize = (dsize >> bitsize) & ((1ULL << bitsize) - 1);
 

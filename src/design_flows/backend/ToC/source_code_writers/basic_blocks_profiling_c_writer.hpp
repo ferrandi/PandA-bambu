@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2015-2020 Politecnico di Milano
+ *              Copyright (C) 2015-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -32,7 +32,8 @@
  */
 /**
  * @file basic_blocks_profiling_c_writer.hpp
- * @brief This file contains the routines necessary to create a C executable program with instrumented edges for profiling of executions of single basic blocks
+ * @brief This file contains the routines necessary to create a C executable program with instrumented edges for
+ * profiling of executions of single basic blocks
  *
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
@@ -76,7 +77,8 @@ class BasicBlocksProfilingCWriter : public EdgeCWriter
    void print_edge(EdgeDescriptor e, unsigned int index) override;
 
    /**
-    * Print operation requested for record information about a path which exit from a loop and immediately enter in another
+    * Print operation requested for record information about a path which exit from a loop and immediately enter in
+    * another
     * @param e is the edge
     */
    void print_loop_switching(EdgeDescriptor e) override;
@@ -90,7 +92,9 @@ class BasicBlocksProfilingCWriter : public EdgeCWriter
     * @param Param is the set of parameters
     * @param verbose tells if annotations
     */
-   BasicBlocksProfilingCWriter(const application_managerConstRef _AppM, const InstructionWriterRef instruction_writer, const IndentedOutputStreamRef indented_output_stream, const ParameterConstRef Param, bool verbose = true);
+   BasicBlocksProfilingCWriter(const application_managerConstRef _AppM, const InstructionWriterRef instruction_writer,
+                               const IndentedOutputStreamRef indented_output_stream, const ParameterConstRef Param,
+                               bool verbose = true);
 
    /**
     * Destructor

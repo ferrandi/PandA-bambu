@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -74,23 +74,21 @@ class short_circuit_taf : public FunctionFrontendFlowStep
    /**
     * Check if a basic block is a merging BB for a short circuit.
     */
-   bool check_merging_candidate(unsigned int& bb1, unsigned int& bb2, unsigned int merging_candidate, bool& bb1_true, bool& bb2_true, std::map<unsigned int, blocRef>& list_of_bloc);
+   bool check_merging_candidate(unsigned int& bb1, unsigned int& bb2, unsigned int merging_candidate, bool& bb1_true,
+                                bool& bb2_true, const std::map<unsigned int, blocRef>& list_of_bloc);
 
    /**
     * create the or/and expression required by short circuit collapsing
     */
-   bool create_gimple_cond(unsigned int bb1, unsigned int bb2, bool bb1_true, std::map<unsigned int, blocRef>& list_of_bloc, bool or_type, unsigned int merging_candidate);
+   bool create_gimple_cond(unsigned int bb1, unsigned int bb2, bool bb1_true,
+                           const std::map<unsigned int, blocRef>& list_of_bloc, bool or_type,
+                           unsigned int merging_candidate);
 
    /**
     * restructure the CFG eliminating all BBs not needed after short circuit collapsing
     */
-   void restructure_CFG(unsigned int bb1, unsigned int bb2, unsigned int merging_candidate, std::map<unsigned int, blocRef>& list_of_bloc);
-
-   /**
-    * Return the set of analyses in relationship with this design step
-    * @param relationship_type is the type of relationship to be considered
-    */
-   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+   void restructure_CFG(unsigned int bb1, unsigned int bb2, unsigned int merging_candidate,
+                        std::map<unsigned int, blocRef>& list_of_bloc);
 
    /**
     * @brief check if phi could create problem to the short circuit collapsing
@@ -98,9 +96,14 @@ class short_circuit_taf : public FunctionFrontendFlowStep
     * @param list_of_bloc is the list of basic blocks
     * @return true in case the short circuit merging can be performed
     */
-   bool check_phis(unsigned int curr_bb, std::map<unsigned int, blocRef>& list_of_bloc);
+   bool check_phis(unsigned int curr_bb, const std::map<unsigned int, blocRef>& list_of_bloc);
 
-   void fix_multi_way_if(unsigned int curr_bb, std::map<unsigned int, blocRef>& list_of_bloc, unsigned int succ);
+   /**
+    * Return the set of analyses in relationship with this design step
+    * @param relationship_type is the type of relationship to be considered
+    */
+   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>>
+   ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
  public:
    /**
@@ -110,7 +113,8 @@ class short_circuit_taf : public FunctionFrontendFlowStep
     * @param function_id is the identifier of the function
     * @param DesignFlowManagerConstRef is the design flow manager
     */
-   short_circuit_taf(const ParameterConstRef _Param, const application_managerRef _AppM, unsigned int function_id, const DesignFlowManagerConstRef design_flow_manager);
+   short_circuit_taf(const ParameterConstRef _Param, const application_managerRef _AppM, unsigned int function_id,
+                     const DesignFlowManagerConstRef design_flow_manager);
 
    /**
     *  Destructor
@@ -126,5 +130,11 @@ class short_circuit_taf : public FunctionFrontendFlowStep
     * Initialize the step (i.e., like a constructor, but executed just before exec
     */
    void Initialize() override;
+
+   /**
+    * Check if this step has actually to be executed
+    * @return true if the step has to be executed
+    */
+   bool HasToBeExecuted() const override;
 };
 #endif

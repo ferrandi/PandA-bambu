@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2015-2020 Politecnico di Milano
+ *              Copyright (C) 2015-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -103,7 +103,8 @@ class TechnologyFlowStep : public DesignFlowStep
     * Return the set of analyses in relationship with this design step
     * @param relationship_type is the type of relationship to be considered
     */
-   virtual const CustomUnorderedSet<TechnologyFlowStep_Type> ComputeTechnologyRelationships(const DesignFlowStep::RelationshipType relationship_type) const = 0;
+   virtual const CustomUnorderedSet<TechnologyFlowStep_Type>
+   ComputeTechnologyRelationships(const DesignFlowStep::RelationshipType relationship_type) const = 0;
 
  public:
    /**
@@ -114,7 +115,9 @@ class TechnologyFlowStep : public DesignFlowStep
     * @param technology_flow_step_type is the type of this step
     * @param parameters is the set of input parameters
     */
-   TechnologyFlowStep(const technology_managerRef _TM, const target_deviceRef target, const DesignFlowManagerConstRef design_flow_manager, const TechnologyFlowStep_Type technology_flow_step_type, const ParameterConstRef parameters);
+   TechnologyFlowStep(const technology_managerRef _TM, const target_deviceRef target,
+                      const DesignFlowManagerConstRef design_flow_manager,
+                      const TechnologyFlowStep_Type technology_flow_step_type, const ParameterConstRef parameters);
 
    /**
     * Return a unified identifier of this design step
@@ -147,7 +150,8 @@ class TechnologyFlowStep : public DesignFlowStep
     * @param dependencies is where relationships will be stored
     * @param relationship_type is the type of relationship to be computed
     */
-   void ComputeRelationships(DesignFlowStepSet& relationship, const DesignFlowStep::RelationshipType relationship_type) override;
+   void ComputeRelationships(DesignFlowStepSet& steps,
+                             const DesignFlowStep::RelationshipType relationship_type) override;
 
    /**
     * Return the factory to create this type of steps

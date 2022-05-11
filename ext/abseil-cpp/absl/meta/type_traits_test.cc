@@ -347,21 +347,6 @@ class Base {
   virtual ~Base() {}
 };
 
-// In GCC/Clang, std::is_trivially_constructible requires that the destructor is
-// trivial. However, MSVC doesn't require that. This results in different
-// behavior when checking is_trivially_constructible on any type with
-// nontrivial destructor. Since absl::is_trivially_default_constructible and
-// absl::is_trivially_copy_constructible both follows Clang/GCC's interpretation
-// and check is_trivially_destructible, it results in inconsistency with
-// std::is_trivially_xxx_constructible on MSVC. This macro is used to work
-// around this issue in test. In practice, a trivially constructible type
-// should also be trivially destructible.
-// GCC bug 51452: https://gcc.gnu.org/bugzilla/show_bug.cgi?id=51452
-// LWG issue 2116: http://cplusplus.github.io/LWG/lwg-active.html#2116
-#ifndef _MSC_VER
-#define ABSL_TRIVIALLY_CONSTRUCTIBLE_VERIFY_TRIVIALLY_DESTRUCTIBLE 1
-#endif
-
 // Old versions of libc++, around Clang 3.5 to 3.6, consider deleted destructors
 // as also being trivial. With the resolution of CWG 1928 and CWG 1734, this
 // is no longer considered true and has thus been amended.
@@ -499,11 +484,9 @@ TEST(TypeTraitsTest, TestTrivialDefaultCtor) {
   EXPECT_FALSE(
       absl::is_trivially_default_constructible<DeletedDefaultCtor>::value);
 
-#ifdef ABSL_TRIVIALLY_CONSTRUCTIBLE_VERIFY_TRIVIALLY_DESTRUCTIBLE
   // types with nontrivial destructor are nontrivial
   EXPECT_FALSE(
       absl::is_trivially_default_constructible<NontrivialDestructor>::value);
-#endif
 
   // types with vtables
   EXPECT_FALSE(absl::is_trivially_default_constructible<Base>::value);
@@ -607,11 +590,9 @@ TEST(TypeTraitsTest, TestTrivialMoveCtor) {
   EXPECT_FALSE(
       absl::is_trivially_move_constructible<NonCopyableOrMovable>::value);
 
-#ifdef ABSL_TRIVIALLY_CONSTRUCTIBLE_VERIFY_TRIVIALLY_DESTRUCTIBLE
   // type with nontrivial destructor are nontrivial move construbtible
   EXPECT_FALSE(
       absl::is_trivially_move_constructible<NontrivialDestructor>::value);
-#endif
 
   // types with vtables
   EXPECT_FALSE(absl::is_trivially_move_constructible<Base>::value);
@@ -682,11 +663,9 @@ TEST(TypeTraitsTest, TestTrivialCopyCtor) {
   EXPECT_FALSE(
       absl::is_trivially_copy_constructible<NonCopyableOrMovable>::value);
 
-#ifdef ABSL_TRIVIALLY_CONSTRUCTIBLE_VERIFY_TRIVIALLY_DESTRUCTIBLE
   // type with nontrivial destructor are nontrivial copy construbtible
   EXPECT_FALSE(
       absl::is_trivially_copy_constructible<NontrivialDestructor>::value);
-#endif
 
   // types with vtables
   EXPECT_FALSE(absl::is_trivially_copy_constructible<Base>::value);
@@ -961,6 +940,34 @@ TEST(TypeTraitsTest, TestTriviallyCopyable) {
       absl::type_traits_internal::is_trivially_copyable<Trivial&&>::value);
   EXPECT_FALSE(
       absl::type_traits_internal::is_trivially_copyable<Trivial&>::value);
+}
+
+TEST(TypeTraitsTest, TestRemoveCVRef) {
+  EXPECT_TRUE(
+      (std::is_same<typename absl::remove_cvref<int>::type, int>::value));
+  EXPECT_TRUE(
+      (std::is_same<typename absl::remove_cvref<int&>::type, int>::value));
+  EXPECT_TRUE(
+      (std::is_same<typename absl::remove_cvref<int&&>::type, int>::value));
+  EXPECT_TRUE((
+      std::is_same<typename absl::remove_cvref<const int&>::type, int>::value));
+  EXPECT_TRUE(
+      (std::is_same<typename absl::remove_cvref<int*>::type, int*>::value));
+  // Does not remove const in this case.
+  EXPECT_TRUE((std::is_same<typename absl::remove_cvref<const int*>::type,
+                            const int*>::value));
+  EXPECT_TRUE((std::is_same<typename absl::remove_cvref<int[2]>::type,
+                            int[2]>::value));
+  EXPECT_TRUE((std::is_same<typename absl::remove_cvref<int(&)[2]>::type,
+                            int[2]>::value));
+  EXPECT_TRUE((std::is_same<typename absl::remove_cvref<int(&&)[2]>::type,
+                            int[2]>::value));
+  EXPECT_TRUE((std::is_same<typename absl::remove_cvref<const int[2]>::type,
+                            int[2]>::value));
+  EXPECT_TRUE((std::is_same<typename absl::remove_cvref<const int(&)[2]>::type,
+                            int[2]>::value));
+  EXPECT_TRUE((std::is_same<typename absl::remove_cvref<const int(&&)[2]>::type,
+                            int[2]>::value));
 }
 
 #define ABSL_INTERNAL_EXPECT_ALIAS_EQUIVALENCE(trait_name, ...)          \
