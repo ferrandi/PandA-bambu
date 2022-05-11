@@ -2089,7 +2089,7 @@ void TestbenchGenerationBaseStep::write_auxiliary_signal_declaration() const
    writer->write("reg [3:0] __state, __next_state;\n");
    writer->write("reg start_results_comparison;\n");
    writer->write("reg next_start_port;\n");
-   writer->write("reg parse_inputs;\n");
+   writer->write("integer currTime;\n");
 }
 
 void TestbenchGenerationBaseStep::begin_initial_block() const
@@ -2234,7 +2234,6 @@ void TestbenchGenerationBaseStep::testbench_controller_machine() const
    }
    writer->write("     start_next_sim = 0;\n");
    writer->write("     next_start_port = 0;\n");
-   writer->write("     parse_inputs = 0;\n");
    writer->write("     case (__state)\n");
    writer->write("       0:\n");
    writer->write("         begin\n");
@@ -2261,25 +2260,25 @@ void TestbenchGenerationBaseStep::testbench_controller_machine() const
    writer->write("            __next_state = 2;\n");
    writer->write("         end\n");
    writer->write("       2:\n");
-   writer->write("         begin\n");
-   writer->write("            next_start_port = 1;\n");
-   writer->write("            parse_inputs = 1;\n");
-   writer->write("            if (done_port == 1'b1)\n");
-   writer->write("              begin\n");
-   writer->write("                __next_state = 4;\n");
-   writer->write("              end\n");
-   writer->write("            else\n");
-   writer->write("              __next_state = 3;\n");
-   writer->write("         end\n");
+   writer->write("         if(currTime > 100)\n");
+   writer->write("           begin\n");
+   writer->write("              next_start_port = 1;\n");
+   writer->write("              if (done_port == 1'b1)\n");
+   writer->write("                begin\n");
+   writer->write("                  __next_state = 4;\n");
+   writer->write("                end\n");
+   writer->write("              else\n");
+   writer->write("                __next_state = 3;\n");
+   writer->write("           end\n");
+   writer->write("         else\n");
+   writer->write("           __next_state = 2;\n");
    writer->write("       3:\n");
    writer->write("         if (done_port == 1'b1)\n");
    writer->write("           begin\n");
    writer->write("              __next_state = 4;\n");
    writer->write("           end\n");
-   writer->write("         else begin\n");
-   writer->write("           next_start_port = 1;\n");
+   writer->write("         else\n");
    writer->write("           __next_state = 3;\n");
-   writer->write("         end\n");
    writer->write("       4:\n");
    writer->write("         begin\n");
    writer->write("            start_results_comparison = 1;\n");
@@ -2423,6 +2422,7 @@ void TestbenchGenerationBaseStep::write_max_simulation_time_control() const
    writer->write("always @(posedge " CLOCK_PORT_NAME ")\n");
    writer->write(STR(STD_OPENING_CHAR));
    writer->write("begin\n");
+   writer->write("currTime = $time;\n");
    writer->write("if (($time - startTime)/`CLOCK_PERIOD > `SIMULATION_LENGTH)\n");
    writer->write(STR(STD_OPENING_CHAR));
    writer->write("begin\n");
@@ -2513,10 +2513,9 @@ void TestbenchGenerationBaseStep::begin_file_reading_operation() const
    writer->write("always @ (posedge " + STR(CLOCK_PORT_NAME) + ")\n");
    writer->write(STR(STD_OPENING_CHAR));
    writer->write("begin\n");
-   writer->write("if (parse_inputs == 1'b1)\n");
+   writer->write("if (next_" + STR(START_PORT_NAME) + " == 1'b1)\n");
    writer->write(STR(STD_OPENING_CHAR));
    writer->write("begin\n");
-   writer->write("parse_inputs = 0;\n");
 }
 
 void TestbenchGenerationBaseStep::end_file_reading_operation() const
