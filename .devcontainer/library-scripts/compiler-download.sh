@@ -6,7 +6,7 @@ install_dir="$1"
 shift
 compilers_list="$1"
 shift
-bambuhls_compiler_url="https://release.bambuhls.eu:8080/compiler"
+bambuhls_compiler_url="https://release.bambuhls.eu/compiler"
 
 inflate() {
    echo "Installing $1 into $2"
