@@ -43,31 +43,31 @@ inflate() {
          wget https://releases.llvm.org/4.0.0/clang+llvm-4.0.0-x86_64-linux-gnu-ubuntu-16.04.tar.xz -nv -O - | tar -C $2 -xJf - &
          ;;
       gcc-4.5 )
-         wget https://release.bambuhls.eu:8080/compiler/gcc-4.5-bambu-Ubuntu_16.04.tar.xz --no-check-certificate -nv -O - | tar -C $2 -xJf - 
+         wget https://release.bambuhls.eu/compiler/gcc-4.5-bambu-Ubuntu_16.04.tar.xz --no-check-certificate -nv -O - | tar -C $2 -xJf - 
          ;;
       gcc-4.6 )
-         wget https://release.bambuhls.eu:8080/compiler/gcc-4.6-bambu-Ubuntu_16.04.tar.xz --no-check-certificate -nv -O - | tar -C $2 -xJf - 
+         wget https://release.bambuhls.eu/compiler/gcc-4.6-bambu-Ubuntu_16.04.tar.xz --no-check-certificate -nv -O - | tar -C $2 -xJf - 
          ;;
       gcc-4.7 )
-         wget https://release.bambuhls.eu:8080/compiler/gcc-4.7-bambu-Ubuntu_16.04.tar.xz --no-check-certificate -nv -O - | tar -C $2 -xJf - 
+         wget https://release.bambuhls.eu/compiler/gcc-4.7-bambu-Ubuntu_16.04.tar.xz --no-check-certificate -nv -O - | tar -C $2 -xJf - 
          ;;
       gcc-4.8 )
-         wget https://release.bambuhls.eu:8080/compiler/gcc-4.8-bambu-Ubuntu_16.04.tar.xz --no-check-certificate -nv -O - | tar -C $2 -xJf - 
+         wget https://release.bambuhls.eu/compiler/gcc-4.8-bambu-Ubuntu_16.04.tar.xz --no-check-certificate -nv -O - | tar -C $2 -xJf - 
          ;;
       gcc-4.9 )
-         wget https://release.bambuhls.eu:8080/compiler/gcc-4.9-bambu-Ubuntu_16.04.tar.xz --no-check-certificate -nv -O - | tar -C $2 -xJf - 
+         wget https://release.bambuhls.eu/compiler/gcc-4.9-bambu-Ubuntu_16.04.tar.xz --no-check-certificate -nv -O - | tar -C $2 -xJf - 
          ;;
       gcc-5 )
-         wget https://release.bambuhls.eu:8080/compiler/gcc-5-bambu-Ubuntu_16.04.tar.xz --no-check-certificate -nv -O - | tar -C $2 -xJf - 
+         wget https://release.bambuhls.eu/compiler/gcc-5-bambu-Ubuntu_16.04.tar.xz --no-check-certificate -nv -O - | tar -C $2 -xJf - 
          ;;
       gcc-6 )
-         wget https://release.bambuhls.eu:8080/compiler/gcc-6-bambu-Ubuntu_16.04.tar.xz --no-check-certificate -nv -O - | tar -C $2 -xJf - 
+         wget https://release.bambuhls.eu/compiler/gcc-6-bambu-Ubuntu_16.04.tar.xz --no-check-certificate -nv -O - | tar -C $2 -xJf - 
          ;;
       gcc-7 )
-         wget https://release.bambuhls.eu:8080/compiler/gcc-7-bambu-Ubuntu_16.04.tar.xz --no-check-certificate -nv -O - | tar -C $2 -xJf - 
+         wget https://release.bambuhls.eu/compiler/gcc-7-bambu-Ubuntu_16.04.tar.xz --no-check-certificate -nv -O - | tar -C $2 -xJf - 
          ;;
       gcc-8 )
-         wget https://release.bambuhls.eu:8080/compiler/gcc-8-bambu-Ubuntu_16.04.tar.xz --no-check-certificate -nv -O - | tar -C $2 -xJf - 
+         wget https://release.bambuhls.eu/compiler/gcc-8-bambu-Ubuntu_16.04.tar.xz --no-check-certificate -nv -O - | tar -C $2 -xJf - 
          ;;
       * )
          ;;
