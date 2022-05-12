@@ -1,1 +1,1 @@
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://github.com/ferrandi/PandA-bambu/tree/doc/isc2022/documentation/tutorial_isc_2022)
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/ferrandi/PandA-bambu/blob/doc/isc2022/documentation/tutorial_ics_2022/bambu.ipynb)
