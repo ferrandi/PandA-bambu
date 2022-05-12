@@ -227,7 +227,7 @@ void MinimalInterfaceTestbench::write_memory_handler() const
    }
 
    writer->write_comment("OffChip Memory write\n");
-   writer->write("always @(*)\n");
+   writer->write("always @(posedge " + std::string(CLOCK_PORT_NAME) + ")\n");
    writer->write("begin");
    writer->write(STR(STD_OPENING_CHAR) + "\n");
 
