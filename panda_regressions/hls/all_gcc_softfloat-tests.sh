@@ -5,7 +5,7 @@ script_dir="$(dirname $(readlink -e $0))"
 BATCH_ARGS=("--simulate" "--soft-float" "--max-ulp=0" "--experimental-setup=BAMBU-PERFORMANCE-MP")
 OUT_SUFFIX="all_gcc_softfloat-tests"
 
-$script_dir/../../etc/scripts/test_panda.py --tool=bambu \
+python3 $script_dir/../../etc/scripts/test_panda.py --tool=bambu \
    --args="--configuration-name=GCC45-wp-NN --compiler=I386_GCC45 ${BATCH_ARGS[*]}" \
    --args="--configuration-name=GCC46-wp-NN --compiler=I386_GCC46 ${BATCH_ARGS[*]}" \
    --args="--configuration-name=GCC47-wp-NN --compiler=I386_GCC47 ${BATCH_ARGS[*]}" \

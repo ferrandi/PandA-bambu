@@ -1,0 +1,7 @@
+<?xml version="1.0"?>
+<function>
+  <testbench command="0" param1="10" param2="655360" />
+  <testbench command="1" param1="10" param2="655360" />
+  <testbench command="2" param1="10" param2="655360" />
+  <testbench command="3" param1="10" param2="655360" />
+</function>

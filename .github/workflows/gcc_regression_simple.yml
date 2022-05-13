@@ -7,7 +7,7 @@ on:
         description: "Bambu AppImage name"
         required: false
         type: string
-        default: bambu-examples
+        default: bambu-grs
       compilers:
         description: "Front-end compiler string"
         required: false
@@ -47,7 +47,7 @@ jobs:
     uses: ./.github/workflows/reusable-grs.yml
     with:
       package-name: ${{needs.build.outputs.package-name}}
-      test-compilers: ${{github.event.inputs.test-compiler}}
+      test-compilers: ${{github.event.inputs.test-compilers}}
       additional-args: ${{github.event.inputs.additional-args}}
     secrets:
       CI_STORAGE_URL: ${{secrets.CI_STORAGE_URL}}

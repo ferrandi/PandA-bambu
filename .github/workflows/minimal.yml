@@ -41,7 +41,7 @@ jobs:
         compiler: [gcc, gcc_c++17, clang, clang_c++17]
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Install clang
         if: ${{ startsWith(matrix.compiler, 'clang') }}
         shell: bash
@@ -64,7 +64,7 @@ jobs:
       args: -c=--simulator=VERILATOR
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Download Bambu AppImage
         uses: ./.github/actions/storage-download
         with:
@@ -96,13 +96,13 @@ jobs:
           username: "${{env.storage-user}}"
           password: "${{env.storage-token}}"
       - name: Add performance results
-        if: ${{ steps.perf-check.outputs.is-better == 0 }}
+        if: ${{ steps.perf-check.outputs.compare-csv != '' }}
         shell: bash
         run: |
           mv ${{ steps.perf-check.outputs.compare-csv }} ${{env.report-dir}}
       - name: Upload test reports
         if: ${{ always() }}
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: bambu_specific_test${{matrix.id}}
           path: ${{env.report-dir}}
@@ -139,7 +139,7 @@ jobs:
             args: -c=--compiler=I386_CLANG12 -c=--simulator=VERILATOR
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Download Bambu AppImage
         uses: ./.github/actions/storage-download
         with:
@@ -173,13 +173,13 @@ jobs:
           username: "${{env.storage-user}}"
           password: "${{env.storage-token}}"
       - name: Add performance results
-        if: ${{ steps.perf-check.outputs.is-better == 0 }}
+        if: ${{ steps.perf-check.outputs.compare-csv != '' }}
         shell: bash
         run: |
           mv ${{ steps.perf-check.outputs.compare-csv }} ${{env.report-dir}}
       - name: Upload test reports
         if: ${{ always() }}
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: ${{env.outname}}
           path: ${{steps.suite.outputs.test-reports-dir}}
@@ -194,7 +194,7 @@ jobs:
       outname: gcc-4.9_regression_simple-pretty_print
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Download Bambu AppImage
         uses: ./.github/actions/storage-download
         with:
@@ -228,13 +228,13 @@ jobs:
           username: "${{env.storage-user}}"
           password: "${{env.storage-token}}"
       - name: Add performance results
-        if: ${{ steps.perf-check.outputs.is-better == 0 }}
+        if: ${{ steps.perf-check.outputs.compare-csv != '' }}
         shell: bash
         run: |
           mv ${{ steps.perf-check.outputs.compare-csv }} ${{env.report-dir}}
       - name: Upload test reports
         if: ${{ always() }}
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: ${{env.outname}}
           path: ${{steps.suite.outputs.test-reports-dir}}
@@ -249,7 +249,7 @@ jobs:
       outname: gcc-7_regression_simple-vhdl
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Download Bambu AppImage
         uses: ./.github/actions/storage-download
         with:
@@ -283,13 +283,13 @@ jobs:
           username: "${{env.storage-user}}"
           password: "${{env.storage-token}}"
       - name: Add performance results
-        if: ${{ steps.perf-check.outputs.is-better == 0 }}
+        if: ${{ steps.perf-check.outputs.compare-csv != '' }}
         shell: bash
         run: |
           mv ${{ steps.perf-check.outputs.compare-csv }} ${{env.report-dir}}
       - name: Upload test reports
         if: ${{ always() }}
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: ${{env.outname}}
           path: ${{steps.suite.outputs.test-reports-dir}}
@@ -304,7 +304,7 @@ jobs:
       outname: gcc-7_discrepancy
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Download Bambu AppImage
         uses: ./.github/actions/storage-download
         with:
@@ -330,7 +330,7 @@ jobs:
           ./panda_regressions/hls/${{env.script}} --returnfail --junitdir="${{env.report-dir}}" --csv="${{env.report-dir}}/perf.csv" ${{env.args}}
       - name: Upload test reports
         if: ${{ always() }}
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: ${{env.outname}}
           path: ${{steps.suite.outputs.test-reports-dir}}
@@ -339,7 +339,7 @@ jobs:
     runs-on: [self-hosted]
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Env setup
         id: host
         shell: bash
@@ -361,7 +361,7 @@ jobs:
       outname: multi_softfloat-tests
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Download Bambu AppImage
         uses: ./.github/actions/storage-download
         with:
@@ -395,13 +395,13 @@ jobs:
           username: "${{env.storage-user}}"
           password: "${{env.storage-token}}"
       - name: Add performance results
-        if: ${{ steps.perf-check.outputs.is-better == 0 }}
+        if: ${{ steps.perf-check.outputs.compare-csv != '' }}
         shell: bash
         run: |
           mv ${{ steps.perf-check.outputs.compare-csv }} ${{env.report-dir}}
       - name: Upload test reports
         if: ${{ always() }}
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: ${{env.outname}}
           path: ${{steps.suite.outputs.test-reports-dir}}
@@ -413,7 +413,7 @@ jobs:
         func: [expf, logf, powf, sinecosine, sqrt, sqrtf]
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Env setup
         id: host
         shell: bash
@@ -453,7 +453,7 @@ jobs:
       outname: ${{matrix.setup}}_libm
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Download Bambu AppImage
         uses: ./.github/actions/storage-download
         with:
@@ -487,13 +487,13 @@ jobs:
           username: "${{env.storage-user}}"
           password: "${{env.storage-token}}"
       - name: Add performance results
-        if: ${{ steps.perf-check.outputs.is-better == 0 }}
+        if: ${{ steps.perf-check.outputs.compare-csv != '' }}
         shell: bash
         run: |
           mv ${{ steps.perf-check.outputs.compare-csv }} ${{env.report-dir}}
       - name: Upload test reports
         if: ${{ always() }}
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: ${{env.outname}}
           path: ${{steps.suite.outputs.test-reports-dir}}
@@ -507,7 +507,7 @@ jobs:
       outname: multi_CHStone-frontend
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Download Bambu AppImage
         uses: ./.github/actions/storage-download
         with:
@@ -541,13 +541,13 @@ jobs:
           username: "${{env.storage-user}}"
           password: "${{env.storage-token}}"
       - name: Add performance results
-        if: ${{ steps.perf-check.outputs.is-better == 0 }}
+        if: ${{ steps.perf-check.outputs.compare-csv != '' }}
         shell: bash
         run: |
           mv ${{ steps.perf-check.outputs.compare-csv }} ${{env.report-dir}}
       - name: Upload test reports
         if: ${{ always() }}
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: ${{env.outname}}
           path: ${{steps.suite.outputs.test-reports-dir}}
@@ -562,7 +562,7 @@ jobs:
       parallel: 5
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Download Bambu AppImage
         uses: ./.github/actions/storage-download
         with:
@@ -598,7 +598,7 @@ jobs:
           script: ./docker_exec.sh
       - name: Upload test reports
         if: ${{ always() }}
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: ${{env.outname}}
           path: ${{steps.suite.outputs.test-reports-dir}}
@@ -621,7 +621,7 @@ jobs:
       args: -c=--simulator=MODELSIM -c=--compiler=${{matrix.compiler}}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Download Bambu AppImage
         uses: ./.github/actions/storage-download
         with:
@@ -664,7 +664,7 @@ jobs:
           echo "::set-output name=outname::$OUTNAME"
       - name: Upload test reports
         if: ${{ always() }}
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: ${{steps.get.outputs.outname}}
           path: ${{steps.suite.outputs.test-reports-dir}}
@@ -682,7 +682,7 @@ jobs:
       args: -c=--simulator=MODELSIM -c=--compiler=I386_GCC49 -c=--clock-period=10 -c=--device-name=${{matrix.device}}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Download Bambu AppImage
         uses: ./.github/actions/storage-download
         with:
@@ -714,13 +714,13 @@ jobs:
           username: "${{env.storage-user}}"
           password: "${{env.storage-token}}"
       - name: Add performance results
-        if: ${{ steps.perf-check.outputs.is-better == 0 }}
+        if: ${{ steps.perf-check.outputs.compare-csv != '' }}
         shell: bash
         run: |
           mv ${{ steps.perf-check.outputs.compare-csv }} ${{env.report-dir}}
       - name: Upload test reports
         if: ${{ always() }}
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: ${{env.outname}}
           path: ${{env.report-dir}}
@@ -739,6 +739,8 @@ jobs:
             datapoints: PERIOD,AREA,REGISTERS,DSPS,BRAMS
           - test: lattice
             datapoints: CYCLES,PERIOD,AREA,REGISTERS,DSPS,BRAMS
+          - test: nanoxplore
+            datapoints: CYCLES,PERIOD,AREA,REGISTERS,DSPS,BRAMS
           - test: sim
             datapoints: CYCLES
           - test: xilinx_ise
@@ -749,7 +751,7 @@ jobs:
       outname: panda_bench_${{matrix.test}}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Download Bambu AppImage
         uses: ./.github/actions/storage-download
         with:
@@ -784,13 +786,13 @@ jobs:
           username: "${{env.storage-user}}"
           password: "${{env.storage-token}}"
       - name: Add performance results
-        if: ${{ steps.perf-check.outputs.is-better == 0 }}
+        if: ${{ steps.perf-check.outputs.compare-csv != '' }}
         shell: bash
         run: |
           mv ${{ steps.perf-check.outputs.compare-csv }} ${{env.report-dir}}
       - name: Upload test reports
         if: ${{ always() }}
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: ${{env.outname}}
           path: ${{steps.suite.outputs.test-reports-dir}}
@@ -800,7 +802,7 @@ jobs:
     runs-on: [self-hosted, lattice, mentor, xilinx]
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Download Bambu AppImage
         uses: ./.github/actions/storage-download
         with:

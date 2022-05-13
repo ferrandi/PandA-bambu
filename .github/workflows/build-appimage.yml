@@ -61,7 +61,6 @@ env:
   compilers: ${{inputs.compilers}}${{github.event.inputs.compilers}}
   build-compiler: ${{inputs.build-compiler}}${{github.event.inputs.build-compiler}}
   configure: ${{inputs.configure}}${{github.event.inputs.configure}}
-  compilers-dist-url: https://release.bambuhls.eu:8080/compiler
   storage-url: ${{secrets.CI_STORAGE_URL}}
   storage-user: ${{secrets.CI_STORAGE_USER}}
   storage-token: ${{secrets.CI_STORAGE_TOKEN}}
@@ -78,7 +77,7 @@ jobs:
       package-name: ${{env.package-name}}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           ref: ${{github.event.inputs.branch}}
       - name: Env setup
@@ -93,105 +92,35 @@ jobs:
               env_id+="${{env.build-compiler}}"
             fi
           fi
+          echo "::set-output name=version::$(cat configure.ac | grep AC_INIT | sed -E 's/.*,(.*),.*/\1/g;s/ //g')"
           echo "::set-output name=env_id::$env_id"
           echo "::set-output name=timestamp::$(date -u +'%Y-%m-%d-%H;%M;%S')"
       - name: CCache cache files
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: .ccache
-          key: panda-build-ccache-${{ steps.setup.outputs.timestamp }}
+          key: panda-build-ccache-${{steps.setup.outputs.version}}-${{ steps.setup.outputs.timestamp }}
           restore-keys: |
-            panda-build-ccache-
+            panda-build-ccache-${{steps.setup.outputs.version}}-
       - name: Autoconf cache files
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: .autoconf
-          key: panda-build-autoconf-${{ steps.setup.outputs.env_id }}
+          key: panda-build-autoconf-${{steps.setup.outputs.version}}-${{ steps.setup.outputs.env_id }}-${{ steps.setup.outputs.timestamp }}
+          restore-keys: |
+            panda-build-autoconf-${{steps.setup.outputs.version}}-${{ steps.setup.outputs.env_id }}-
       - name: Download compilers
         shell: bash
         run: |
-          set -e
-          export XZ_OPT='-T0'
-
-          inflate() {
-            echo "Installing $1"
-            case $1 in
-              clang-12 )
-                wget https://github.com/llvm/llvm-project/releases/download/llvmorg-12.0.1/clang+llvm-12.0.1-x86_64-linux-gnu-ubuntu-16.04.tar.xz -nv -O - | tar -C $2 -xJf - &
-                ;;
-              clang-11 )
-                wget https://github.com/llvm/llvm-project/releases/download/llvmorg-11.1.0/clang+llvm-11.1.0-x86_64-linux-gnu-ubuntu-16.04.tar.xz -nv -O - | tar -C $2 -xJf - &
-                ;;
-              clang-10 )
-                wget https://github.com/llvm/llvm-project/releases/download/llvmorg-10.0.1/clang+llvm-10.0.1-x86_64-linux-gnu-ubuntu-16.04.tar.xz -nv -O - | tar -C $2 -xJf - &
-                ;;
-              clang-9 )
-                wget https://github.com/llvm/llvm-project/releases/download/llvmorg-9.0.1/clang+llvm-9.0.1-x86_64-linux-gnu-ubuntu-16.04.tar.xz -nv -O - | tar -C $2 -xJf - &
-                ;;
-              clang-8 )
-                wget https://releases.llvm.org/8.0.0/clang+llvm-8.0.0-x86_64-linux-gnu-ubuntu-16.04.tar.xz -nv -O - | tar -C $2 -xJf - &
-                ;;
-              clang-7 )
-                wget https://releases.llvm.org/7.0.1/clang+llvm-7.0.1-x86_64-linux-gnu-ubuntu-16.04.tar.xz -nv -O - | tar -C $2 -xJf - &
-                ;;
-              clang-6 )
-                wget https://releases.llvm.org/6.0.1/clang+llvm-6.0.1-x86_64-linux-gnu-ubuntu-16.04.tar.xz -nv -O - | tar -C $2 -xJf - &
-                ;;
-              clang-5 )
-                wget https://releases.llvm.org/5.0.2/clang+llvm-5.0.2-x86_64-linux-gnu-ubuntu-16.04.tar.xz -nv -O - | tar -C $2 -xJf - &
-                ;;
-              clang-4 )
-                wget https://releases.llvm.org/4.0.0/clang+llvm-4.0.0-x86_64-linux-gnu-ubuntu-16.04.tar.xz -nv -O - | tar -C $2 -xJf - &
-                ;;
-              gcc-4.5 )
-                wget ${{env.compilers-dist-url}}/gcc-4.5-bambu-Ubuntu_16.04.tar.xz --no-check-certificate -nv -O - | tar -C $2 -xJf - 
-                ;;
-              gcc-4.6 )
-                wget ${{env.compilers-dist-url}}/gcc-4.6-bambu-Ubuntu_16.04.tar.xz --no-check-certificate -nv -O - | tar -C $2 -xJf - 
-                ;;
-              gcc-4.7 )
-                wget ${{env.compilers-dist-url}}/gcc-4.7-bambu-Ubuntu_16.04.tar.xz --no-check-certificate -nv -O - | tar -C $2 -xJf - 
-                ;;
-              gcc-4.8 )
-                wget ${{env.compilers-dist-url}}/gcc-4.8-bambu-Ubuntu_16.04.tar.xz --no-check-certificate -nv -O - | tar -C $2 -xJf - 
-                ;;
-              gcc-4.9 )
-                wget ${{env.compilers-dist-url}}/gcc-4.9-bambu-Ubuntu_16.04.tar.xz --no-check-certificate -nv -O - | tar -C $2 -xJf - 
-                ;;
-              gcc-5 )
-                wget ${{env.compilers-dist-url}}/gcc-5-bambu-Ubuntu_16.04.tar.xz --no-check-certificate -nv -O - | tar -C $2 -xJf - 
-                ;;
-              gcc-6 )
-                wget ${{env.compilers-dist-url}}/gcc-6-bambu-Ubuntu_16.04.tar.xz --no-check-certificate -nv -O - | tar -C $2 -xJf - 
-                ;;
-              gcc-7 )
-                wget ${{env.compilers-dist-url}}/gcc-7-bambu-Ubuntu_16.04.tar.xz --no-check-certificate -nv -O - | tar -C $2 -xJf - 
-                ;;
-              gcc-8 )
-                wget ${{env.compilers-dist-url}}/gcc-8-bambu-Ubuntu_16.04.tar.xz --no-check-certificate -nv -O - | tar -C $2 -xJf - 
-                ;;
-              * )
-                echo "Unknown compiler required"
-                exit 1
-                ;;
-            esac
-          } 
-          IFS=',' read -r -a compilers <<< "${{env.compilers}}"
-          compilers=( $(IFS=$'\n'; echo "${compilers[*]}" | sort -V) )
           mkdir ${{env.dist-dir}}
-          for compiler in "${compilers[@]}"
-          do
-            inflate $compiler ${{env.dist-dir}}
-          done
-          wait
+          bash ./.devcontainer/library-scripts/compiler-download.sh "${{env.dist-dir}}" "${{env.compilers}}"
           if [[ ! -z "${{env.build-compiler}}" ]]; then
             mkdir ${{env.bcompiler-dir}}
-            inflate ${{env.build-compiler}} ${{env.bcompiler-dir}}
+            bash ./.devcontainer/library-scripts/compiler-download.sh "${{env.bcompiler-dir}}" "${{env.build-compiler}}"
           fi
-          wait
       - name: Build Bambu application
         id: build
-        uses: ./.github/actions/generate-bin
+        uses: ./.github/actions/generate-appimage
         with:
           config-args: ${{env.configure}} --enable-Werror
           jobs: ${{steps.setup.outputs.jobs}}
@@ -212,4 +141,4 @@ jobs:
           APP_FILE="${{env.package-name}}.AppImage"
           STORAGE_URL="${{env.storage-url}}/${{env.storage-path}}/$APP_FILE"
           curl -L --fail -u '${{env.storage-user}}':'${{env.storage-token}}' -T "${{steps.build.outputs.appimage}}" "$STORAGE_URL"
-          echo "::notice:: New release available at https://release.bambuhls.eu:8080/appimage/$APP_FILE"
+          echo "::notice New release available at https://release.bambuhls.eu/appimage/$APP_FILE"

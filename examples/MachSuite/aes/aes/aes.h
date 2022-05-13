@@ -41,7 +41,7 @@ struct bench_args_t {
 int INPUT_SIZE = sizeof(struct bench_args_t);
 
 
-void run_benchmark( void *vargs ) {
+__attribute((noinline)) void run_benchmark( void *vargs ) {
   struct bench_args_t *args = (struct bench_args_t *)vargs;
   aes256_encrypt_ecb( &(args->ctx), args->k, args->buf );
 }

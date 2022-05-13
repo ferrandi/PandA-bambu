@@ -227,6 +227,7 @@ static void loadPass(const llvm::PassManagerBuilder&, llvm::legacy::PassManagerB
    PM.add(llvm::createArgumentPromotionPass(256));
    PM.add(llvm::createInstructionCombiningPass(true));
    PM.add(llvm::createBreakCriticalEdgesPass());
+   PM.add(llvm::createUnifyFunctionExitNodesPass());
 
    PM.add(new llvm::CLANG_VERSION_SYMBOL(_plugin_dumpGimpleSSA) < false > ());
 }

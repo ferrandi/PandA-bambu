@@ -19,7 +19,9 @@
 ###
 set -e
 
-workspace_dir=$PWD
+workspace_dir="$PWD"
+dist_dir="$workspace_dir/dist"
+build_dir="$workspace_dir/build"
 ccache_dir="$workspace_dir/.ccache"
 autoconf_cache_dir="$workspace_dir/.autoconf"
 
@@ -40,9 +42,9 @@ cat > ~/.ccache/ccache.conf << EOF
 max_size = 5.0G
 cache_dir = $ccache_dir
 EOF
-if [[ -d "dist" ]]; then
+if [[ -d "$dist_dir" ]]; then
    echo "Pre-initialized dist dir found. Installing system wide..."
-   cp -r dist/. /
+   cp -r $dist_dir/. /
 fi
 
 if [[ -d "compiler" ]]; then
@@ -59,12 +61,12 @@ do
    NO_DELETE+=" -o -name $(basename $bin)"
 done
 NO_DELETE+=" ${CLANG_EXES[@]/#/-o -name }"
-find dist/clang+llvm-*/bin '(' -type f -o -type l ')' ! '(' $NO_DELETE ')' -delete
-rm -f dist/clang+llvm*/lib/*.a
-rm -rf dist/clang+llvm*/share
-rm -rf dist/usr/share
+find $dist_dir/clang+llvm-*/bin '(' -type f -o -type l ')' ! '(' $NO_DELETE ')' -delete
+rm -f $dist_dir/clang+llvm*/lib/*.a
+rm -rf $dist_dir/clang+llvm*/share
+rm -rf $dist_dir/usr/share
 
-mkdir -p "$workspace_dir/dist/usr/bin"
+mkdir -p "$dist_dir/usr/bin"
 for clang_exe in $CLANG_BINS
 do
    CLANG_VER=$(sed 's/clang-//g' <<< "$(basename $clang_exe)")
@@ -74,7 +76,7 @@ do
    do
       if [[ -f "$CLANG_DIR/$app" ]]; then
          ln -sf "$CLANG_DIR/$app" "/usr/bin/$app-$CLANG_VER"
-         ln -sf "../..$CLANG_DIR/$app" "$workspace_dir/dist/usr/bin/$app-$CLANG_VER"
+         ln -sf "../..$CLANG_DIR/$app" "$dist_dir/usr/bin/$app-$CLANG_VER"
       fi
    done
    echo "Generating ccache alias for clang-$CLANG_VER"
@@ -89,7 +91,7 @@ do
    ln -sf ../../bin/ccache "/usr/lib/ccache/$(basename $compiler)"
 done
 
-max_gcc_ver="$(ls -x -v -1a dist/usr/include/c++ 2> /dev/null | tail -1)"
+max_gcc_ver="$(ls -x -v -1a $dist_dir/usr/include/c++ 2> /dev/null | tail -1)"
 if [[ -z "${max_gcc_ver}" ]]
 then
   echo "At least one gcc version must be bundled in the AppImage"
@@ -102,8 +104,8 @@ make -f Makefile.init
 echo "::endgroup::"
 
 echo "::group::Configure build environment"
-mkdir build
-cd build
+mkdir -p $build_dir
+cd $build_dir
 if [[ -d "$autoconf_cache_dir" ]]; then
    echo "Restoring autoconf cache"
    mv $autoconf_cache_dir/* .
@@ -116,25 +118,25 @@ do
    mkdir -p $mirror_dir
    cp $cache $mirror_dir
 done
-cd ..
+cd $workspace_dir
 echo "::endgroup::"
 
 echo "::group::Build Bambu"
-make --directory=build -j$J install-strip DESTDIR="$workspace_dir/dist"
+make --directory=$build_dir -j$J install-strip DESTDIR="$dist_dir"
 echo "::endgroup"
 
 echo "::group::Package Appimage"
 
 echo "Inflating libraries..."
-mkdir dist/lib
-mkdir dist/lib/x86_64-linux-gnu/
-cp -d /lib/x86_64-linux-gnu/libtinfo.so* dist/lib/x86_64-linux-gnu/
-cp -d /usr/lib/x86_64-linux-gnu/libicu*.so* dist/lib/x86_64-linux-gnu/
-cp -d /usr/lib/libbdd.so* dist/usr/lib/
+mkdir $dist_dir/lib
+mkdir $dist_dir/lib/x86_64-linux-gnu/
+cp -d /lib/x86_64-linux-gnu/libtinfo.so* $dist_dir/lib/x86_64-linux-gnu/
+cp -d /usr/lib/x86_64-linux-gnu/libicu*.so* $dist_dir/lib/x86_64-linux-gnu/
+cp -d /usr/lib/libbdd.so* $dist_dir/usr/lib/
 
 echo "Inflating metadata..."
-cp style/img/panda.png.in dist/bambu.png
-cat > dist/bambu.desktop << EOF
+cp style/img/panda.png.in $dist_dir/bambu.png
+cat > $dist_dir/bambu.desktop << EOF
 [Desktop Entry]
 Name=bambu
 Exec=tool_select.sh
@@ -143,9 +145,11 @@ Type=Application
 Terminal=true
 Categories=Development;
 EOF
-cat > dist/usr/bin/tool_select.sh << EOF
+cat > $dist_dir/usr/bin/tool_select.sh << EOF
 #!/bin/bash
 export LC_ALL="C"
+unset PYTHONHOME  # Python is not bundled with this AppImage
+unset PYTHONPATH
 BINARY_NAME=\$(basename "\$ARGV0")
 BINARY_PATH="\$APPDIR/usr/bin/\$BINARY_NAME"
 if [ "\$BINARY_NAME" == "debug_terminal" ]; then
@@ -156,12 +160,12 @@ if [ ! -e "\$BINARY_PATH" ]; then
 fi
 \$BINARY_PATH "\$@"
 EOF
-chmod a+x dist/usr/bin/tool_select.sh
+chmod a+x $dist_dir/usr/bin/tool_select.sh
 
 echo "Generating appimage..."
-curl -L https://github.com/AppImage/AppImageKit/releases/download/continuous/AppRun-x86_64 -o dist/AppRun -s
-chmod +x dist/AppRun
-ARCH=x86_64 appimagetool dist 2> /dev/null
+curl -L https://github.com/AppImage/AppImageKit/releases/download/continuous/AppRun-x86_64 -o $dist_dir/AppRun -s
+chmod +x $dist_dir/AppRun
+ARCH=x86_64 appimagetool $dist_dir 2> /dev/null
 
 echo "::set-output name=appimage::$(ls *.AppImage)"
 echo "::set-output name=dist-dir::dist"

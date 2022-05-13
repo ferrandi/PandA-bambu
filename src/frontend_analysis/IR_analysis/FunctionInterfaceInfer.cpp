@@ -1626,7 +1626,7 @@ void FunctionInterfaceInfer::create_resource(const std::set<std::string>& operat
    }
 }
 
-static boost::regex signature_param_typename("((?:\\w+\\s*)+(?:<[^>]*>)?\\s*[\\*&]?\\s*)");
+static const boost::regex signature_param_typename("((?:\\w+\\s*)+(?:<[^>]*>)?\\s*[\\*&]?\\s*)");
 
 bool FunctionInterfaceInfer::HasToBeExecuted() const
 {

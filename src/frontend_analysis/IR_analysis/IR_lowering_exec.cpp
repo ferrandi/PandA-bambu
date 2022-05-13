@@ -1332,7 +1332,7 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                   unsigned int type_index = tree_helper::get_type_index(TM, GET_INDEX_NODE(rpe->op));
                   const auto op_type = TM->GetTreeReindex(type_index);
                   auto size_complex = tree_helper::Size(op_type);
-                  auto align = (size_complex / 2 > ALGN_POINTER) ? ALGN_POINTER : size_complex / 2;
+                  auto align = size_complex / 2;
                   const auto pt = tree_man->GetPointerType(op_type, align);
 
                   const auto ae_cr = tree_man->create_unary_operation(pt, rpe->op, srcp_default, addr_expr_K);
@@ -1367,7 +1367,7 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                   unsigned int type_index = tree_helper::get_type_index(TM, GET_INDEX_NODE(ipe->op));
                   tree_nodeRef op_type = TM->GetTreeReindex(type_index);
                   auto size_complex = tree_helper::Size(op_type);
-                  auto align = (size_complex / 2 > ALGN_POINTER) ? ALGN_POINTER : size_complex / 2;
+                  auto align = size_complex / 2;
                   tree_nodeRef pt = tree_man->GetPointerType(op_type, align);
 
                   tree_nodeRef ae_cr = tree_man->create_unary_operation(pt, ipe->op, srcp_default, addr_expr_K);

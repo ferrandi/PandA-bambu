@@ -76,7 +76,8 @@ REF_FORWARD_DECL(bloc);
 #define ALGN_UNSIGNED_LONG_LONG_INT 64
 #define ALGN_VOID 8
 #define ALGN_BOOLEAN 8
-#define ALGN_POINTER 32
+#define ALGN_POINTER_M64 64
+#define ALGN_POINTER_M32 32
 
 #define PREC_BIT_SIZE 64
 #define PREC_UNSIGNED_INT 32
@@ -91,7 +92,8 @@ REF_FORWARD_DECL(bloc);
 #define SIZE_VALUE_INT 32
 #define SIZE_VALUE_BOOL 8
 #define SIZE_VALUE_FUNCTION 8
-#define SIZE_VALUE_POINTER 32
+#define SIZE_VALUE_POINTER_M32 32
+#define SIZE_VALUE_POINTER_M64 64
 
 #define MIN_VALUE_BIT_SIZE 0
 #define MIN_VALUE_UNSIGNED_INT 0
@@ -368,7 +370,7 @@ class tree_manipulation
     * @param  ptd type pointed by the pointer type (tree_reindex).
     * @return the tree_reindex node of the pointer type.
     */
-   tree_nodeRef GetPointerType(const tree_nodeConstRef& ptd, unsigned int algn) const;
+   tree_nodeRef GetPointerType(const tree_nodeConstRef& ptd, unsigned int algn = 0) const;
 
    /**
     * @brief create an integer type starting from a given prec

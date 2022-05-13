@@ -38,7 +38,7 @@ jobs:
   setup:
     runs-on: [self-hosted]
     env:
-      grs-scripts: '"generic_gcc_regression_simple_bambu_pretty_print.sh --skip_list 20071029-1",generic_gcc_regression_simple_bambu.sh,generic_gcc_regression_simple_eg_ext_pipelined.sh,generic_gcc_regression_simple_eg.sh'
+      grs-scripts: \"generic_gcc_regression_simple_bambu_pretty_print.sh --skip_list 20071029-1\",generic_gcc_regression_simple_bambu.sh,generic_gcc_regression_simple_eg_ext_pipelined.sh,generic_gcc_regression_simple_eg.sh
     outputs:
       grs-matrix: ${{steps.matrix.outputs.grs}}
       libm-matrix: ${{steps.matrix.outputs.libm}}
@@ -72,27 +72,27 @@ jobs:
                   to_json_obj_rec "$string" "$@"
                 fi
               done
-              [ ! -z "$out" ] && echo "$(sed -e 's/,$//' <<< $out)]}"
+              [ ! -z "$out" ] && echo "$(sed -e 's/,$//' <<< $out)"
             fi
           }
           args="$([ -z "${{env.additional-args}}"] && echo "\"\"" || echo "${{env.additional-args}}")"
           grs_array="$(to_json_obj_rec "" "script" "${{env.grs-scripts}}" "args" "${args}" "compiler" "${{env.test-compilers}}")"
           echo "::set-output name=grs::{\"include\":[${grs_array}]}"
           libm_array="$(to_json_obj_rec "" "args" "${args}" "compiler" "${{env.test-compilers}}")"
-          echo "::set-output name=json::{\"include\":[${libm_array}]}"
+          echo "::set-output name=libm::{\"include\":[${libm_array}]}"
 
-  grs-vhdl:
+  regressions:
     needs: [setup]
     runs-on: [self-hosted, long]
     env:
       args: -c=--simulator=MODELSIM -c=-wH
     strategy:
       fail-fast: false
-      max-parallel: 1
+      max-parallel: 2
       matrix: ${{fromJson(needs.setup.outputs.grs-matrix)}}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Download Bambu AppImage
         uses: ./.github/actions/storage-download
         with:
@@ -130,17 +130,17 @@ jobs:
           ./panda_regressions/hls/${{matrix.script}} --returnfail --junitdir="$out_dir" --csv="$out_dir/perf.csv" --table="$out_dir/perf.tex" -c=--compiler=${{matrix.compiler}} ${{env.args}} ${{matrix.args}}
       - name: Upload test reports
         if: ${{ always() }}
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: ${{steps.get.outputs.outname}}
           path: ${{steps.suite.outputs.test-reports-dir}}
 
-  libm-vhdl:
-    needs: [setup]
+  libm:
+    needs: [setup, regressions]
     runs-on: [self-hosted, long]
     strategy:
       fail-fast: false
-      max-parallel: 1
+      max-parallel: 2
       matrix: ${{fromJson(needs.setup.outputs.libm-matrix)}}
     env:
       script: generic_libm-tests.sh
@@ -148,7 +148,7 @@ jobs:
       basename: libm-vhdl
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Download Bambu AppImage
         uses: ./.github/actions/storage-download
         with:
@@ -186,7 +186,7 @@ jobs:
           ./panda_regressions/hls/${{env.script}} --returnfail --junitdir="$out_dir" --csv="$out_dir/perf.csv" --table="$out_dir/perf.tex" -c=--compiler=${{matrix.compiler}} ${{env.args}} ${{matrix.args}}
       - name: Upload test reports
         if: ${{ always() }}
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: ${{steps.get.outputs.outname}}
           path: ${{steps.suite.outputs.test-reports-dir}}

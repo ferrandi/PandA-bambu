@@ -1067,7 +1067,7 @@ bool soft_float_cg_ext::signature_lowering(function_decl* f_decl) const
    if(changed_type)
    {
       // Replace function type reference when modifications have been applied
-      f_decl->type = is_ptr_type ? tree_man->GetPointerType(f_type, ALGN_POINTER) : f_type;
+      f_decl->type = is_ptr_type ? tree_man->GetPointerType(f_type) : f_type;
    }
    return changed_parm || changed_type;
 }
@@ -1585,7 +1585,7 @@ bool soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef& current_statement
          const auto called_fd = GetPointerS<const function_decl>(GET_CONST_NODE(fn));
          ae->type = GET_CONST_NODE(called_fd->type)->get_kind() == pointer_type_K ?
                         called_fd->type :
-                        tree_man->GetPointerType(called_fd->type, ALGN_POINTER);
+                        tree_man->GetPointerType(called_fd->type);
          modified = true;
       }
       if(tree_helper::print_function_name(TreeM, GetPointerS<const function_decl>(GET_CONST_NODE(fn))) ==
@@ -2794,7 +2794,7 @@ std::string FloatFormat::ToString() const
 FloatFormatRef FloatFormat::FromString(std::string ff_str)
 {
    std::replace(ff_str.begin(), ff_str.end(), '_', '-');
-   static boost::regex fp_format("^e(\\d+)m(\\d+)b([_-]?\\d+)(\\D)(\\D)(\\D*)(\\d?)$");
+   static const boost::regex fp_format("^e(\\d+)m(\\d+)b([_-]?\\d+)(\\D)(\\D)(\\D*)(\\d?)$");
    boost::cmatch what;
    if(boost::regex_search(ff_str.data(), what, fp_format))
    {

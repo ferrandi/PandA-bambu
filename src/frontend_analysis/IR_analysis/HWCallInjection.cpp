@@ -317,8 +317,7 @@ void HWCallInjection::buildBuiltinCall(const blocRef& block, const tree_nodeRef&
          {
             std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> addrExprReturnValueMap;
             const auto typeRetVar = tree_helper::CGetType(retVar);
-            addrExprReturnValueMap[TOK(TOK_TYPE)] =
-                STR(GET_INDEX_NODE(IRman->GetPointerType(typeRetVar, ALGN_POINTER)));
+            addrExprReturnValueMap[TOK(TOK_TYPE)] = STR(GET_INDEX_NODE(IRman->GetPointerType(typeRetVar)));
             addrExprReturnValueMap[TOK(TOK_OP)] = STR(GET_INDEX_CONST_NODE(retVar));
             addrExprReturnValueMap[TOK(TOK_SRCP)] = srcp_str;
             TM->create_tree_node(addrExprReturnValue, addr_expr_K, addrExprReturnValueMap);

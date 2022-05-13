@@ -3,7 +3,7 @@ script_dir="$(dirname $(readlink -e $0))"
 BATCH_ARGS=("-lm" "--simulate" "--experimental-setup=BAMBU" "--expose-globals" "--compiler=I386_GCC49")
 OUT_SUFFIX="bambu_specific_test3"
 
-$script_dir/../../etc/scripts/test_panda.py --tool=bambu  \
+python3 $script_dir/../../etc/scripts/test_panda.py --tool=bambu  \
    --args="--configuration-name=O3-none --hls-div=none -O3 ${BATCH_ARGS[*]}" \
    --args="--configuration-name=O3-as   --hls-div=as   -O3 ${BATCH_ARGS[*]}" \
    --args="--configuration-name=O3-nr1  --hls-div=nr1  -O3 ${BATCH_ARGS[*]}" \
