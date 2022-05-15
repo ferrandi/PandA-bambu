@@ -119,7 +119,7 @@ void MinimalInterfaceTestbench::cond_load_from_queue(long long int Mout_addr_ram
                  STR(Mout_addr_ram_bitsize * Mout_addr_ram_n_ports) + ":" +
                  boost::lexical_cast<std::string>(i * Mout_addr_ram_bitsize) + "+(" + queue_type + "-1)*" +
                  STR(Mout_addr_ram_bitsize * Mout_addr_ram_n_ports) + "] < (base_addr + MEMSIZE)))" + " ? " +
-                 mem_aggregate + " : " + in_else + ";\n");
+                 mem_aggregate + " : {" + STR(Mout_addr_ram_bitsize) + in_else + "};\n");
 }
 
 void MinimalInterfaceTestbench::write_call(bool) const
@@ -346,7 +346,7 @@ void MinimalInterfaceTestbench::write_memory_handler() const
          writer->write("begin");
          writer->write(STR(STD_OPENING_CHAR) + "\n");
          cond_load_from_queue(Mout_addr_ram_bitsize, Mout_addr_ram_n_ports, "`MEM_DELAY_READ", post_slice,
-                              "M_Rdata_ram_temp", i, STR(M_Rdata_ram_bitsize) + "0", mem_aggregate);
+                              "M_Rdata_ram_temp", i, STR(M_Rdata_ram_bitsize) + "{1'b0}", mem_aggregate);
          writer->write(STR(STD_CLOSING_CHAR));
          writer->write("end\n");
          writer->write(STR(STD_CLOSING_CHAR));
