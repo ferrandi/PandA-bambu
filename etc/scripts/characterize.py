@@ -148,7 +148,7 @@ def ComputeDirectory(line):
                 component_name = token[len("--characterize="):token.find(',')]
             else:
                 component_name = token[len("--characterize="):]
-    new_dir = os.path.join(abs_path, device_name, component_name)
+    new_dir = os.path.join(out_path, device_name, component_name)
     return new_dir
 
 
@@ -217,44 +217,67 @@ def find_file(name, path):
             return os.path.join(root, name)
 
 
+def positive_integer(value):
+    pos_int = int(value)
+    if pos_int <= 0:
+        raise argparse.ArgumentTypeError(
+            "%s must be a positive integer" % value)
+    return pos_int
+
+
+class StoreOrUpdateMin(argparse.Action):
+    first_parsed = True
+
+    def __call__(self, parser, namespace, values, option_string=None):
+        if self.first_parsed == True:
+            self.first_parsed = False
+            setattr(namespace, self.dest, values)
+        else:
+            setattr(namespace, self.dest, min(namespace.j, values))
+
+
 parser = argparse.ArgumentParser(
     description="Characterize device", fromfile_prefix_chars='@')
 parser.add_argument('-c', "--commonargs",
                     help="A set of arguments to be passed to eucalyptus", nargs='*', action='append')
+parser.add_argument("--devices", help="The devices to be characterized")
+parser.add_argument("--technology-files",
+                    help="The technology files containing the components")
 parser.add_argument(
-    '-j', help="The number of jobs which execute the characterizations (default=\"1\")", default=1, type=int)
+    "--update", help="The components whose characterations have to be updated", default="all")
+parser.add_argument(
+    "--list-only", help="Only generate the list of characterizations (default=\"device_fu_list\").", default="")
+parser.add_argument(
+    "--from-list", help="Perform characterization of components from previously generated list", default="")
+parser.add_argument('-j', help="The number of jobs which execute the characterizations (default=\"1\")",
+                    default=int(os.getenv('J', "1")), type=positive_integer, action=StoreOrUpdateMin)
 parser.add_argument(
     '-o', "--output", help="The directory where output files we be put (default=\"output\")", default="output")
 parser.add_argument('-s', "--spiderargs",
                     help="A set of arguments to be passed to spider", nargs='*', action='append')
 parser.add_argument(
     '-t', "--timeout", help="Timeout for tool execution (default=60m)", default="1440m")
-parser.add_argument("--devices", help="The devices to be characterized")
-parser.add_argument("--eucalyptus", help="The eucalyptus executable (default=eucalyptus)",
-                    default="eucalyptus")
 parser.add_argument("--fix", help="Correct the characterization times",
                     default=False, action="store_true")
 parser.add_argument("--no-clean", help="Do not clean produced files",
                     default=False, action="store_true")
 parser.add_argument("--restart", help="Restart last execution (default=false)",
                     default=False, action="store_true")
-parser.add_argument("--spider", help="The spider executable (default=spider)",
-                    default="spider")
 parser.add_argument("--stop", help="Stop the execution on first error (default=false)",
                     default=False, action="store_true")
-parser.add_argument("--technology-files",
-                    help="The technology files containing the components")
+parser.add_argument("--mail", help="Send a mail with the result")
+parser.add_argument("--eucalyptus", help="The eucalyptus executable (default=eucalyptus)",
+                    default="eucalyptus")
+parser.add_argument("--spider", help="The spider executable (default=spider)",
+                    default="spider")
 parser.add_argument("--ulimit", help="The ulimit options",
                     default="-f 8388608 -s 32768-v 16777216 ")
-parser.add_argument(
-    "--update", help="The components whose characterations have to be updated", default="all")
-parser.add_argument("--mail", help="Send a mail with the result")
 
 args = parser.parse_args()
 logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
 
 # The absolute path of current script
-abs_script = os.path.abspath(sys.argv[0])
+abs_script = os.path.dirname(os.path.abspath(sys.argv[0]))
 
 # The absolute path of panda
 abs_panda = os.path.abspath(os.path.join(abs_script, "../../"))
@@ -270,13 +293,7 @@ else:
         if os.path.isfile(exe_file) and os.access(exe_file, os.X_OK):
             spider = exe_file
 if spider == "":
-    if args.spider != "opt/panda/bin/spider":
-        if not os.path.isfile(args.spider):
-            logging.error(args.spider + " does not exist")
-        else:
-            logging.error(args.spider + " is not an executable")
-    else:
-        logging.error("spider not found")
+    logging.error("spider not found")
     sys.exit(1)
 logging.info("Spider found: " + spider)
 
@@ -291,13 +308,7 @@ else:
         if os.path.isfile(exe_file) and os.access(exe_file, os.X_OK):
             eucalyptus = exe_file
 if eucalyptus == "":
-    if args.eucalyptus != "opt/panda/bin/eucalyptus":
-        if not os.path.isfile(args.eucalyptus):
-            logging.error(args.eucalyptus + " does not exist")
-        else:
-            logging.error(args.eucalyptus + " is not an executable")
-    else:
-        logging.error("eucalyptus not found")
+    logging.error("eucalyptus not found")
     sys.exit(1)
 logging.info("Eucalyptus found: " + eucalyptus)
 
@@ -314,7 +325,7 @@ if args.mail != None:
 
 
 # Create the folder and enter in it
-abs_path = os.path.abspath(args.output)
+out_path = os.path.abspath(args.output)
 
 # Check if output directory exists, if yes abort
 if os.path.exists(args.output) and not args.restart:
@@ -322,77 +333,107 @@ if os.path.exists(args.output) and not args.restart:
                   " already exists. Please remove it or specify a different one with -o")
     sys.exit(1)
 
-if args.restart:
-    if not os.path.exists(abs_path):
-        args.restart = False
-if not args.restart:
-    os.mkdir(abs_path)
-os.chdir(abs_path)
+device_fu_list_name = os.path.join(out_path, "device_fu_list")
+if args.list_only != "":
+    device_fu_list_name = args.list_only
 
-
-# Check technology files
-if args.fix:
-    empty_technology_file = open(os.path.join(abs_path, "empty.xml"), "w")
-    empty_technology_file.write("<?xml version=\"1.0\"?>")
-    empty_technology_file.write("<technology/>")
-    empty_technology_file.close()
-    args.technology_files = os.path.join(abs_path, "empty.xml")
-else:
-    if args.technology_files == None:
-        logging.error("Missing technology files")
-        sys.exit(1)
-
-# Check devices
-if args.devices == None:
-    logging.error("Missing devices")
+# Check if device FUs list exists, if yes abort
+if os.path.exists(device_fu_list_name) and not args.restart:
+    logging.error("Device FUs list " + device_fu_list_name +
+                  " already exists. Please remove it.")
     sys.exit(1)
 
-device_files = []
-
-# Computing device file
-for device in args.devices.split(","):
-    vendor_dirs_root = os.path.join(abs_panda, "devices")
-    device_file = ""
-    for vendor_dir in ["Altera_devices", "Lattice_devices", "Xilinx_devices", "NanoXplore_devices", "Generic_devices"]:
-        if os.path.exists(os.path.join(vendor_dirs_root, vendor_dir, device + "-seed.xml")):
-            device_file = os.path.join(
-                vendor_dirs_root, vendor_dir, device + "-seed.xml")
-    if device_file == "":
-        logging.error("seed file for " + device + " not found")
+if args.from_list != "":
+    device_fu_list_name = args.from_list
+    if not os.path.exists(device_fu_list_name):
+        logging.error("Device FUs list " + device_fu_list_name + " not found.")
         sys.exit(1)
-    device_files.append(device_file)
 
-device_fu_list = open(os.path.join(abs_path, "device_fu_list"), "w")
+if args.restart:
+    if not os.path.exists(out_path):
+        args.restart = False
+if not args.restart:
+    os.mkdir(out_path)
 
-# Create device_fu_list
-for device in device_files:
-    spider_args = ' '.join(args.technology_files.split(',')) + " fu_list"
-    spider_command = [spider]
-    spider_command.append(device)
-    spider_command.append("--components=" + args.update)
-    spider_command.extend(shlex.split(spider_args))
-    logging.info("Executing " + ' '.join(spider_command))
-    return_value = subprocess.call(spider_command)
+if args.from_list == "":
+    # Check technology files
+    if args.fix:
+        empty_technology_file = open(os.path.join(out_path, "empty.xml"), "w")
+        empty_technology_file.write("<?xml version=\"1.0\"?>")
+        empty_technology_file.write("<technology/>")
+        empty_technology_file.close()
+        args.technology_files = os.path.join(out_path, "empty.xml")
+    else:
+        if args.technology_files == None:
+            logging.error("Missing technology files")
+            sys.exit(1)
 
-    lines = open("fu_list").readlines()
-    for line in lines:
-        arg_line = "--target-datafile=" + device + " --characterize=" + line.rstrip()
-        if args.commonargs != None and len(args.commonargs) > 0:
-            for commonarg in args.commonargs:
-                arg_line += " " + commonarg[0]
-        device_fu_list.write(arg_line + '\n')
-device_fu_list.close()
+    # Check devices
+    if args.devices == None:
+        logging.error("Missing devices")
+        sys.exit(1)
+
+    device_files = []
+
+    # Computing device file
+    for device in args.devices.split(","):
+        vendor_dirs_root = os.path.join(abs_panda, "etc/devices")
+        device_file = ""
+        for vendor_dir in ["Altera_devices", "Lattice_devices", "Xilinx_devices", "NanoXplore_devices", "Generic_devices"]:
+            if os.path.exists(os.path.join(vendor_dirs_root, vendor_dir, device + "-seed.xml")):
+                device_file = os.path.join(
+                    vendor_dirs_root, vendor_dir, device + "-seed.xml")
+        if device_file == "":
+            logging.error("seed file for " + device + " not found")
+            sys.exit(1)
+        device_files.append(device_file)
+
+    device_fu_list = open(device_fu_list_name, "w")
+
+    # Create device_fu_list
+    for device in device_files:
+        spider_args = ' '.join(
+            map(os.path.abspath, args.technology_files.split(','))) + " /tmp/fu_list"
+        spider_command = [spider]
+        spider_command.append(device)
+        spider_command.append("--components=" + args.update)
+        spider_command.extend(shlex.split(spider_args))
+        logging.info("Executing " + ' '.join(spider_command))
+        return_value = subprocess.call(spider_command)
+        fus = open("/tmp/fu_list").readlines()
+        os.remove("/tmp/fu_list")
+
+        for line in fus:
+            arg_line = "--target-datafile=" + device + " --characterize=" + line.rstrip()
+            if args.commonargs != None and len(args.commonargs) > 0:
+                for commonarg in args.commonargs:
+                    arg_line += " " + commonarg[0]
+            device_fu_list.write(arg_line.replace(
+                abs_panda, 'PANDA_ROOT') + '\n')
+
+    device_fu_list.close()
+else:
+    device_fu_list = open(device_fu_list_name, "r")
+    lines = device_fu_list.readlines()
+    device_fu_list.close()
+    device_fu_list_name = os.path.join(out_path, "device_fu_list")
+    device_fu_list = open(device_fu_list_name, "w")
+    for arg_line in lines:
+        device_fu_list.write(arg_line.replace('PANDA_ROOT', abs_panda))
+    device_fu_list.close()
+
+if args.list_only != "":
+    sys.exit(0)
 
 # Create directories
 if not args.restart:
     for device in args.devices.split(","):
-        os.makedirs(os.path.join(abs_path, device))
-    lines = open("device_fu_list").readlines()
+        os.makedirs(os.path.join(out_path, device))
+    lines = open(device_fu_list_name).readlines()
     for line in lines:
         new_dir = ComputeDirectory(line)
         logging.info("      Creating directory " + new_dir)
         os.makedirs(new_dir)
-
 
 # Create threads
 logging.info("   Launching tool")
@@ -406,7 +447,7 @@ children = [None] * args.j
 killing = False
 for thread_index in range(args.j):
     threads.insert(thread_index, threading.Thread(
-        target=execute_characterization, args=("device_fu_list", thread_index)))
+        target=execute_characterization, args=(device_fu_list_name, thread_index)))
     threads[thread_index].daemon = True
     threads[thread_index].start()
 
@@ -420,27 +461,27 @@ except KeyboardInterrupt:
     sys.exit(1)
 
 # Collect results
-CollectResults(abs_path)
+CollectResults(out_path)
 
 # Generate technology files
 if not killing:
     for device in args.devices.split(","):
-        if os.path.isdir(os.path.join(abs_path, device)):
+        if os.path.isdir(os.path.join(out_path, device)):
             # In this point device is the folder containing all the characterations of a device
             local_args = ""
-            for characterization in os.listdir(os.path.join(abs_path, device)):
-                if os.path.exists(os.path.join(abs_path, device, characterization, "characterization.xml")):
+            for characterization in os.listdir(os.path.join(out_path, device)):
+                if os.path.exists(os.path.join(out_path, device, characterization, "characterization.xml")):
                     local_args = local_args + " " + \
-                        os.path.join(abs_path, device,
+                        os.path.join(out_path, device,
                                      characterization, "characterization.xml")
             local_command = [spider]
             # If this is not the first characterization, add the previous
             old_characterization = find_file(
-                device + ".xml", os.path.join(abs_panda, "devices"))
+                device + ".xml", os.path.join(abs_panda, "etc/devices"))
             if old_characterization != None:
                 local_args = local_args + " " + old_characterization
             seed_file = find_file(device + "-seed.xml",
-                                  os.path.join(abs_panda, "devices"))
+                                  os.path.join(abs_panda, "etc/devices"))
             if seed_file != None:
                 local_args = local_args + " " + seed_file
             local_args = local_args + " " + device + ".xml"
@@ -461,7 +502,7 @@ if args.mail != None:
         outcome = str(passed_characterization) + \
             "/" + str(total_characterization)
     full_name = "Eucalyptus"
-    report_file_name = os.path.join(abs_path, "report")
+    report_file_name = os.path.join(out_path, "report")
     local_command = "cat " + report_file_name + " | mutt -s \"" + \
         full_name + ": " + outcome + "\" " + args.mail
     subprocess.call(local_command, shell=True)
