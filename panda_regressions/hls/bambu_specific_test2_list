@@ -2,7 +2,7 @@ bambu_specific_test2/duff_device.c --top-fname=duff --generate-tb=BENCHMARKS_ROO
 bambu_specific_test2/irr1_a.c --top-fname=duff  bambu_specific_test2/irr3_b.c --generate-tb=BENCHMARKS_ROOT/bambu_specific_test2/dd_test1.xml --experimental-setup=BAMBU
 bambu_specific_test2/irr2.c --top-fname=irr2_test --generate-tb=a=2,b=5,c=10 --experimental-setup=BAMBU
 bambu_specific_test2/irr3_a.c --top-fname=irr3_test  bambu_specific_test2/irr3_b.c --generate-tb=a=2,b=5,c=10 --experimental-setup=BAMBU
-bambu_specific_test2/irr4_a.c --top-fname=irr4_test  bambu_specific_test2/irr4_b.c --experimental-setup=BAMBU
+bambu_specific_test2/irr4_a.c --top-fname=irr4_test  bambu_specific_test2/irr4_b.c --generate-tb=a=2,b=5,c=10 --experimental-setup=BAMBU
 bambu_specific_test2/par-bool1.c --top-fname=exam --generate-tb=a=2,b=5,c=10,d=3,e=4,f=5,cond=1 --speculative-sdc-scheduling --experimental-setup=BAMBU
 bambu_specific_test2/port_swapping_test.c --top-fname=function bambu_specific_test2/ps_constraints.xml --no-chaining --experimental-setup=BAMBU
 bambu_specific_test2/port_swapping_test2.c --top-fname=function bambu_specific_test2/ps_constraints.xml --no-chaining --experimental-setup=BAMBU
