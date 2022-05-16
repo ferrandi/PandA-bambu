@@ -434,10 +434,9 @@ void CompilerWrapper::CompileFile(const std::string& original_file_name, std::st
                   "-->Compiling " + original_file_name + "(transformed in " + real_file_name);
 
    /// The gcc output
-   const std::string gcc_output_file_name =
-       Param->getOption<std::string>(OPT_output_temporary_directory) + STR_CST_gcc_output;
+   const auto gcc_output_file_name = Param->getOption<std::string>(OPT_output_temporary_directory) + STR_CST_gcc_output;
 
-   const Compiler compiler = GetCompiler();
+   const auto compiler = GetCompiler();
    std::string command = compiler.gcc;
    if(cm == CompilerWrapper_CompilerMode::CM_ANALYZER && !compiler.is_clang)
    {
@@ -509,7 +508,7 @@ void CompilerWrapper::CompileFile(const std::string& original_file_name, std::st
    }
    command += " " + compiler.extra_options + " ";
 
-   bool isWholeProgram =
+   const auto isWholeProgram =
        Param->isOption(OPT_gcc_optimizations) &&
        Param->getOption<std::string>(OPT_gcc_optimizations).find("whole-program") != std::string::npos &&
        Param->getOption<std::string>(OPT_gcc_optimizations).find("no-whole-program") == std::string::npos;
@@ -521,10 +520,10 @@ void CompilerWrapper::CompileFile(const std::string& original_file_name, std::st
          THROW_ERROR("Reading from standard input which does not contain any function definition");
       }
       static int empty_counter = 0;
-      const std::string temp_file_name = Param->getOption<std::string>(OPT_output_temporary_directory) + "/empty_" +
-                                         boost::lexical_cast<std::string>(empty_counter++) + ".c";
+      const auto temp_file_name =
+          Param->getOption<std::string>(OPT_output_temporary_directory) + "/empty_" + STR(empty_counter++) + ".c";
       CopyFile(original_file_name, temp_file_name);
-      const std::string append_command = R"(`echo -e "\nvoid __empty_function__(){}" >> )" + temp_file_name + "`";
+      const auto append_command = R"(`echo -e "\nvoid __empty_function__(){}" > )" + temp_file_name + "`";
       int ret = PandaSystem(Param, append_command);
       if(IsError(ret))
       {
@@ -591,14 +590,13 @@ void CompilerWrapper::CompileFile(const std::string& original_file_name, std::st
    else if((Param->isOption(OPT_gcc_E) && Param->getOption<bool>(OPT_gcc_E)) ||
            (Param->isOption(OPT_gcc_S) && Param->getOption<bool>(OPT_gcc_S)))
    {
-      ;
-#if HAVE_FROM_RTL_BUILT
-      else if(Param->getOption<bool>(OPT_use_rtl))
-      {
-         command += " -c -fplugin=" + compiler.rtl_plugin;
-      }
-#endif
    }
+#if HAVE_FROM_RTL_BUILT
+   else if(Param->getOption<bool>(OPT_use_rtl))
+   {
+      command += " -c -fplugin=" + compiler.rtl_plugin;
+   }
+#endif
    else if(cm == CompilerWrapper_CompilerMode::CM_STD)
    {
       std::string fname;
@@ -625,7 +623,6 @@ void CompilerWrapper::CompileFile(const std::string& original_file_name, std::st
             {
                command += " -mllvm -add-noalias";
             }
-            std::string extern_symbols;
             std::vector<std::string> xml_files;
             if(Param->isOption(OPT_xml_memory_allocation))
             {
@@ -636,70 +633,14 @@ void CompilerWrapper::CompileFile(const std::string& original_file_name, std::st
                /// load xml memory allocation file
                auto source_file = real_file_name;
                const auto output_temporary_directory = Param->getOption<std::string>(OPT_output_temporary_directory);
-               std::string leaf_name = GetLeafFileName(source_file);
-               auto XMLfilename = output_temporary_directory + "/" + leaf_name + ".memory_allocation.xml";
+               const auto leaf_name = GetLeafFileName(source_file);
+               const auto XMLfilename = output_temporary_directory + "/" + leaf_name + ".memory_allocation.xml";
                if((boost::filesystem::exists(boost::filesystem::path(XMLfilename))))
                {
                   xml_files.push_back(XMLfilename);
                }
             }
-            for(const auto& XMLfilename : xml_files)
-            {
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->parsing " + XMLfilename);
-               XMLDomParser parser(XMLfilename);
-               parser.Exec();
-               if(parser)
-               {
-                  const xml_element* node = parser.get_document()->get_root_node(); // deleted by DomParser.
-                  const xml_node::node_list list = node->get_children();
-                  for(const auto& l : list)
-                  {
-                     const xml_element* child = GetPointer<xml_element>(l);
-                     if(!child)
-                     {
-                        continue;
-                     }
-                     if(child->get_name() == "memory_allocation")
-                     {
-                        for(const auto& it : child->get_children())
-                        {
-                           const xml_element* mem_node = GetPointer<xml_element>(it);
-                           if(!mem_node)
-                           {
-                              continue;
-                           }
-                           if(mem_node->get_name() == "object")
-                           {
-                              std::string is_internal;
-                              if(!CE_XVM(is_internal, mem_node))
-                              {
-                                 THROW_ERROR("expected the is_internal attribute");
-                              }
-                              LOAD_XVM(is_internal, mem_node);
-                              if(is_internal == "T")
-                              {
-                              }
-                              else if(is_internal == "F")
-                              {
-                                 if(!CE_XVM(name, mem_node))
-                                 {
-                                    THROW_ERROR("expected the name attribute");
-                                 }
-                                 std::string name;
-                                 LOAD_XVM(name, mem_node);
-                                 extern_symbols = extern_symbols + name + ",";
-                              }
-                              else
-                              {
-                                 THROW_ERROR("unexpected value for is_internal attribute");
-                              }
-                           }
-                        }
-                     }
-                  }
-               }
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--parsed file " + XMLfilename);
-            }
+            const auto extern_symbols = ReadExternalSymbols(xml_files);
             if(!extern_symbols.empty())
             {
                command += " -mllvm -panda-ESL=" + extern_symbols;
@@ -714,7 +655,7 @@ void CompilerWrapper::CompileFile(const std::string& original_file_name, std::st
                command += " -fplugin=" + compiler.CSROA_plugin_obj + " -mllvm -panda-KN=" + fname;
                if(Param->IsParameter("max-CSROA"))
                {
-                  auto max_CSROA = Param->GetParameter<int>("max-CSROA");
+                  const auto max_CSROA = Param->GetParameter<int>("max-CSROA");
                   command += " -mllvm -csroa-max-transformations=" + STR(max_CSROA);
                }
             }
@@ -734,7 +675,7 @@ void CompilerWrapper::CompileFile(const std::string& original_file_name, std::st
          {
             command += " -mllvm -panda-topfname=" + fname;
          }
-         command += "  -emit-llvm";
+         command += " -emit-llvm";
       }
       else
       {
@@ -744,8 +685,7 @@ void CompilerWrapper::CompileFile(const std::string& original_file_name, std::st
    }
    else if(cm == CompilerWrapper_CompilerMode::CM_LTO)
    {
-      command += " -c -flto -o " + Param->getOption<std::string>(OPT_output_temporary_directory) + "/" +
-                 GetBaseName(real_file_name) + ".o ";
+      command += " -c -flto";
    }
    else
    {
@@ -766,13 +706,15 @@ void CompilerWrapper::CompileFile(const std::string& original_file_name, std::st
       }
       else
       {
-         ;
-         temporary_file_run_o =
-             boost::filesystem::path(Param->getOption<std::string>(OPT_output_temporary_directory) + "/" +
-                                     boost::filesystem::unique_path(std::string(STR_CST_gcc_obj_file)).string())
-                 .string();
+         temporary_file_run_o = Param->getOption<std::string>(OPT_output_temporary_directory) + "/" +
+                                boost::filesystem::unique_path(std::string(STR_CST_gcc_obj_file)).string();
          command += " -o " + temporary_file_run_o;
       }
+   }
+   else
+   {
+      command += " -o " + Param->getOption<std::string>(OPT_output_temporary_directory) + "/" +
+                 GetBaseName(real_file_name) + ".o ";
    }
 
    /// manage optimization level
@@ -798,7 +740,7 @@ void CompilerWrapper::CompileFile(const std::string& original_file_name, std::st
    else
    {
       boost::filesystem::path file_path(original_file_name);
-      std::string extension = GetExtension(file_path);
+      const auto extension = GetExtension(file_path);
       /// assembler files are not allowed so in some cases we pass a C file renamed with extension .S
       if(extension == "S")
       {
@@ -835,10 +777,8 @@ void CompilerWrapper::CompileFile(const std::string& original_file_name, std::st
       if(boost::filesystem::exists(boost::filesystem::path(gcc_output_file_name)))
       {
          CopyStdout(gcc_output_file_name);
-         THROW_ERROR_CODE(COMPILING_EC, "Front-end compiler returns an error during compilation " +
-                                            boost::lexical_cast<std::string>(errno));
-         THROW_ERROR("Front-end compiler returns an error during compilation " +
-                     boost::lexical_cast<std::string>(errno));
+         THROW_ERROR_CODE(COMPILING_EC, "Front-end compiler returns an error during compilation " + STR(errno));
+         THROW_ERROR("Front-end compiler returns an error during compilation " + STR(errno));
       }
       else
       {
@@ -867,8 +807,7 @@ void CompilerWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::st
    }
 
    /// check for aligned option
-   const CompilerWrapper_OptimizationSet optimization_level =
-       Param->getOption<CompilerWrapper_OptimizationSet>(OPT_compiler_opt_level);
+   const auto optimization_level = Param->getOption<CompilerWrapper_OptimizationSet>(OPT_compiler_opt_level);
    if(optimization_level == CompilerWrapper_OptimizationSet::O3 ||
       optimization_level == CompilerWrapper_OptimizationSet::O4 ||
       optimization_level == CompilerWrapper_OptimizationSet::O5)
@@ -876,20 +815,18 @@ void CompilerWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::st
       if(optimization_flags.find("tree-vectorize") == optimization_flags.end() ||
          optimization_flags.find("tree-vectorize")->second)
       {
-         bool assume_aligned_access_p =
-             Param->isOption(OPT_aligned_access) && Param->getOption<bool>(OPT_aligned_access);
-         if(assume_aligned_access_p)
+         if(Param->isOption(OPT_aligned_access) && Param->getOption<bool>(OPT_aligned_access))
          {
             THROW_ERROR("Option --aligned-access cannot be used with -O3 or -ftree-vectorize");
          }
       }
    }
-   const Compiler compiler = GetCompiler();
+   const auto compiler = GetCompiler();
 
 #if HAVE_I386_CLANG4_COMPILER || HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER ||    \
     HAVE_I386_CLANG7_COMPILER || HAVE_I386_CLANG8_COMPILER || HAVE_I386_CLANG9_COMPILER ||    \
-    HAVE_I386_CLANG10_COMPILER || HAVE_I386_CLANG11_COMPILER || HAVE_I386_CLANG11_COMPILER || \
-    HAVE_I386_CLANG12_COMPILER || HAVE_I386_CLANG12_COMPILER || HAVE_I386_CLANGVVD_COMPILER
+    HAVE_I386_CLANG10_COMPILER || HAVE_I386_CLANG11_COMPILER || HAVE_I386_CLANG12_COMPILER || \
+    HAVE_I386_CLANGVVD_COMPILER
    if(Param->IsParameter("disable-pragma-parsing") && Param->GetParameter<int>("disable-pragma-parsing") == 1)
    {
       INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "Pragma analysis disabled");
@@ -941,7 +878,7 @@ void CompilerWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::st
    THROW_WARNING("pragma analysis requires CLANG");
 #endif
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Starting compilation of single files");
-   bool enable_LTO = (compiler.is_clang && source_files.size() > 1);
+   const auto enable_LTO = compiler.is_clang;
    for(auto& source_file : source_files)
    {
       if(already_processed_files.find(source_file.first) != already_processed_files.end())
@@ -953,23 +890,21 @@ void CompilerWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::st
       {
          already_processed_files.insert(source_file.first);
       }
-      std::string leaf_name = source_file.second == "-" ? "stdin-" : GetLeafFileName(source_file.second);
+      auto leaf_name = source_file.second == "-" ? "stdin-" : GetLeafFileName(source_file.second);
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Compiling file " + source_file.second);
       /// create obj
       CompileFile(source_file.first, source_file.second, frontend_compiler_parameters, source_files.size() > 1,
                   enable_LTO ? CompilerWrapper_CompilerMode::CM_LTO : CompilerWrapper_CompilerMode::CM_STD, costTable);
       if(!Param->isOption(OPT_gcc_E) && !Param->isOption(OPT_gcc_S) && !enable_LTO)
       {
-         if(!(boost::filesystem::exists(
-                boost::filesystem::path(output_temporary_directory + "/" + leaf_name + STR_CST_gcc_tree_suffix))))
+         if(!boost::filesystem::exists(output_temporary_directory + "/" + leaf_name + STR_CST_gcc_tree_suffix))
          {
             THROW_WARNING("Raw not created for file " + output_temporary_directory + "/" + leaf_name);
             CompileFile(source_file.first, source_file.second, frontend_compiler_parameters, source_files.size() > 1,
                         CompilerWrapper_CompilerMode::CM_EMPTY, costTable);
             /// Recomputing leaf_name since source_file.second should be modified in the previous call
             leaf_name = source_file.second == "-" ? "stdin-" : GetLeafFileName(source_file.second);
-            if(not(boost::filesystem::exists(
-                   boost::filesystem::path(output_temporary_directory + "/" + leaf_name + STR_CST_gcc_empty_suffix))))
+            if(!boost::filesystem::exists(output_temporary_directory + "/" + leaf_name + STR_CST_gcc_empty_suffix))
             {
                THROW_ERROR(output_temporary_directory + "/" + leaf_name + STR_CST_gcc_empty_suffix +
                            " not found: impossible to create raw file for " + source_file.second);
@@ -980,17 +915,15 @@ void CompilerWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::st
                            "---Renaming " + source_file.second + STR_CST_gcc_empty_suffix + " in " +
                                source_file.second + STR_CST_gcc_tree_suffix);
          }
-         boost::filesystem::path obj =
-             boost::filesystem::path(output_temporary_directory + "/" + leaf_name + STR_CST_gcc_tree_suffix);
-         tree_managerRef TreeM = ParseTreeFile(Param, obj.string());
+         const auto obj = output_temporary_directory + "/" + leaf_name + STR_CST_gcc_tree_suffix;
+         const auto TreeM = ParseTreeFile(Param, obj);
 
 #if HAVE_FROM_RTL_BUILT
-         if((Param->getOption<bool>(OPT_use_rtl)) &&
-            boost::filesystem::exists(boost::filesystem::path(leaf_name + STR_CST_gcc_rtl_suffix)))
+         if((Param->getOption<bool>(OPT_use_rtl)) && boost::filesystem::exists(leaf_name + STR_CST_gcc_rtl_suffix))
          {
-            obj = boost::filesystem::path(leaf_name + STR_CST_gcc_rtl_suffix);
-            parse_rtl_File(obj.string(), TreeM, debug_level);
-            rename_file(obj, boost::filesystem::path(output_temporary_directory + leaf_name + STR_CST_gcc_rtl_suffix));
+            obj = leaf_name + STR_CST_gcc_rtl_suffix;
+            parse_rtl_File(obj, TreeM, debug_level);
+            rename_file(obj, output_temporary_directory + leaf_name + STR_CST_gcc_rtl_suffix);
          }
 #endif
 #if !NPROFILE
@@ -1008,42 +941,49 @@ void CompilerWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::st
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
       }
    }
+
+   const auto leaf_name = GetLeafFileName(source_files.begin()->second);
+   const auto output_file_name = output_temporary_directory + STR_CST_gcc_output;
+   auto temporary_file_o_bc = output_temporary_directory + "/" + GetBaseName(leaf_name) + ".o ";
    if(enable_LTO)
    {
-      std::string object_files;
-      for(auto& source_file : source_files)
+      if(compiler.is_clang)
       {
-         std::string leaf_name =
-             source_file.second == "-" ? "stdin-" : GetBaseName(GetLeafFileName(source_file.second));
-         if((boost::filesystem::exists(boost::filesystem::path(output_temporary_directory + "/" + leaf_name + ".o"))))
+         std::string object_files;
+         for(const auto& source_file : source_files)
          {
-            object_files += boost::filesystem::path(output_temporary_directory + "/" + leaf_name + ".o").string() + " ";
+            const auto filename =
+                source_file.second == "-" ? "stdin-" : GetBaseName(GetLeafFileName(source_file.second));
+            if((boost::filesystem::exists(output_temporary_directory + "/" + filename + ".o")))
+            {
+               object_files += output_temporary_directory + "/" + filename + ".o ";
+            }
+         }
+         temporary_file_o_bc = output_temporary_directory + "/" +
+                               boost::filesystem::unique_path(std::string(STR_CST_llvm_obj_file)).string();
+         const auto command = compiler.llvm_link + " " + object_files + " -o " + temporary_file_o_bc;
+         const auto ret = PandaSystem(Param, command, output_file_name);
+         if(IsError(ret))
+         {
+            PRINT_OUT_MEX(OUTPUT_LEVEL_NONE, 0, "Error in llvm-link");
+            if(boost::filesystem::exists(boost::filesystem::path(output_file_name)))
+            {
+               CopyStdout(output_file_name);
+               THROW_ERROR_CODE(COMPILING_EC, "llvm-link returns an error during compilation " + STR(errno));
+               THROW_ERROR("llvm-link returns an error during compilation " + STR(errno));
+            }
+            else
+            {
+               THROW_ERROR("Error in llvm-link invocation");
+            }
          }
       }
-      auto temporary_file_o_bc =
-          boost::filesystem::path(Param->getOption<std::string>(OPT_output_temporary_directory) + "/" +
-                                  boost::filesystem::unique_path(std::string(STR_CST_llvm_obj_file)).string())
-              .string();
-      std::string command = compiler.llvm_link + " " + object_files + " -o " + temporary_file_o_bc;
-      const std::string llvm_link_output_file_name =
-          Param->getOption<std::string>(OPT_output_temporary_directory) + STR_CST_gcc_output;
-      int ret = PandaSystem(Param, command, llvm_link_output_file_name);
-      if(IsError(ret))
+      else
       {
-         PRINT_OUT_MEX(OUTPUT_LEVEL_NONE, 0, "Error in llvm-link");
-         if(boost::filesystem::exists(boost::filesystem::path(llvm_link_output_file_name)))
-         {
-            CopyStdout(llvm_link_output_file_name);
-            THROW_ERROR_CODE(COMPILING_EC, "llvm-link returns an error during compilation " +
-                                               boost::lexical_cast<std::string>(errno));
-            THROW_ERROR("llvm-link returns an error during compilation " + boost::lexical_cast<std::string>(errno));
-         }
-         else
-         {
-            THROW_ERROR("Error in llvm-link invocation");
-         }
+         THROW_ERROR("LTO compilation not yet implemented for the chosen front-end compiler");
       }
-      bool isWholeProgram =
+
+      const auto isWholeProgram =
           Param->isOption(OPT_gcc_optimizations) &&
           Param->getOption<std::string>(OPT_gcc_optimizations).find("whole-program") != std::string::npos &&
           Param->getOption<std::string>(OPT_gcc_optimizations).find("no-whole-program") == std::string::npos;
@@ -1064,10 +1004,26 @@ void CompilerWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::st
             addTFNPlugin = false;
          }
       }
+      const auto real_file_names = [&]() {
+         std::string list;
+         for(const auto& fsname : source_files)
+         {
+            if(list.empty())
+            {
+               list = fsname.second;
+            }
+            else
+            {
+               list += "," + fsname.second;
+            }
+         }
+         return list;
+      }();
 
-      if(addTFNPlugin)
+      if(compiler.is_clang)
       {
-         if(compiler.is_clang)
+         std::string command;
+         if(addTFNPlugin)
          {
             command = compiler.llvm_opt;
 #ifndef _WIN32
@@ -1075,9 +1031,8 @@ void CompilerWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::st
             boost::replace_all(renamed_plugin, ".so", "_opt.so");
             command += " -load=" + renamed_plugin;
 #endif
-            command += " -internalize-outputdir=" + Param->getOption<std::string>(OPT_output_temporary_directory);
+            command += " -internalize-outputdir=" + output_temporary_directory;
             command += " -panda-TFN=" + fname;
-            std::string extern_symbols;
             std::vector<std::string> xml_files;
             if(Param->isOption(OPT_xml_memory_allocation))
             {
@@ -1085,73 +1040,17 @@ void CompilerWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::st
             }
             else
             {
-               for(auto& entry :
+               for(const auto& entry :
                    boost::make_iterator_range(boost::filesystem::directory_iterator(output_temporary_directory), {}))
                {
-                  auto source_file = GetLeafFileName(entry.path().string());
+                  const auto source_file = GetLeafFileName(entry.path().string());
                   if(source_file.find(".memory_allocation.xml") != std::string::npos)
                   {
                      xml_files.push_back(source_file);
                   }
                }
             }
-            for(auto XMLfilename : xml_files)
-            {
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->parsing " + XMLfilename);
-               XMLDomParser parser(XMLfilename);
-               parser.Exec();
-               if(parser)
-               {
-                  const xml_element* node = parser.get_document()->get_root_node(); // deleted by DomParser.
-                  const xml_node::node_list list = node->get_children();
-                  for(const auto& l : list)
-                  {
-                     const xml_element* child = GetPointer<xml_element>(l);
-                     if(!child)
-                     {
-                        continue;
-                     }
-                     if(child->get_name() == "memory_allocation")
-                     {
-                        for(const auto& it : child->get_children())
-                        {
-                           const xml_element* mem_node = GetPointer<xml_element>(it);
-                           if(!mem_node)
-                           {
-                              continue;
-                           }
-                           if(mem_node->get_name() == "object")
-                           {
-                              std::string is_internal;
-                              if(!CE_XVM(is_internal, mem_node))
-                              {
-                                 THROW_ERROR("expected the is_internal attribute");
-                              }
-                              LOAD_XVM(is_internal, mem_node);
-                              if(is_internal == "T")
-                              {
-                              }
-                              else if(is_internal == "F")
-                              {
-                                 if(!CE_XVM(name, mem_node))
-                                 {
-                                    THROW_ERROR("expected the name attribute");
-                                 }
-                                 std::string name;
-                                 LOAD_XVM(name, mem_node);
-                                 extern_symbols = extern_symbols + name + ",";
-                              }
-                              else
-                              {
-                                 THROW_ERROR("unexpected value for is_internal attribute");
-                              }
-                           }
-                        }
-                     }
-                  }
-               }
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--parsed file " + XMLfilename);
-            }
+            const auto extern_symbols = ReadExternalSymbols(xml_files);
             if(!extern_symbols.empty())
             {
                command += " -panda-ESL=" + extern_symbols;
@@ -1163,23 +1062,18 @@ void CompilerWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::st
             }
             command += " -" + compiler.topfname_plugin_name;
             command += " " + temporary_file_o_bc;
-            temporary_file_o_bc =
-                boost::filesystem::path(Param->getOption<std::string>(OPT_output_temporary_directory) + "/" +
-                                        boost::filesystem::unique_path(std::string(STR_CST_llvm_obj_file)).string())
-                    .string();
+            temporary_file_o_bc = output_temporary_directory + "/" +
+                                  boost::filesystem::unique_path(std::string(STR_CST_llvm_obj_file)).string();
             command += " -o " + temporary_file_o_bc;
-            const std::string tfn_output_file_name =
-                Param->getOption<std::string>(OPT_output_temporary_directory) + STR_CST_gcc_output;
-            ret = PandaSystem(Param, command, tfn_output_file_name);
+            auto ret = PandaSystem(Param, command, output_file_name);
             if(IsError(ret))
             {
                PRINT_OUT_MEX(OUTPUT_LEVEL_NONE, 0, "Error in opt");
-               if(boost::filesystem::exists(boost::filesystem::path(tfn_output_file_name)))
+               if(boost::filesystem::exists(boost::filesystem::path(output_file_name)))
                {
-                  CopyStdout(tfn_output_file_name);
-                  THROW_ERROR_CODE(COMPILING_EC, "opt returns an error during compilation " +
-                                                     boost::lexical_cast<std::string>(errno));
-                  THROW_ERROR("opt returns an error during compilation " + boost::lexical_cast<std::string>(errno));
+                  CopyStdout(output_file_name);
+                  THROW_ERROR_CODE(COMPILING_EC, "opt returns an error during compilation " + STR(errno));
+                  THROW_ERROR("opt returns an error during compilation " + STR(errno));
                }
                else
                {
@@ -1190,25 +1084,19 @@ void CompilerWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::st
             command = compiler.llvm_opt;
             command += " " + temporary_file_o_bc;
             command +=
-                " --internalize-public-api-file=" + Param->getOption<std::string>(OPT_output_temporary_directory) +
-                "external-symbols.txt -internalize ";
-            temporary_file_o_bc =
-                boost::filesystem::path(Param->getOption<std::string>(OPT_output_temporary_directory) + "/" +
-                                        boost::filesystem::unique_path(std::string(STR_CST_llvm_obj_file)).string())
-                    .string();
+                " --internalize-public-api-file=" + output_temporary_directory + "external-symbols.txt -internalize ";
+            temporary_file_o_bc = output_temporary_directory + "/" +
+                                  boost::filesystem::unique_path(std::string(STR_CST_llvm_obj_file)).string();
             command += " -o " + temporary_file_o_bc;
-            const std::string int_output_file_name =
-                Param->getOption<std::string>(OPT_output_temporary_directory) + STR_CST_gcc_output;
-            ret = PandaSystem(Param, command, int_output_file_name);
+            ret = PandaSystem(Param, command, output_file_name);
             if(IsError(ret))
             {
                PRINT_OUT_MEX(OUTPUT_LEVEL_NONE, 0, "Error in opt");
-               if(boost::filesystem::exists(boost::filesystem::path(int_output_file_name)))
+               if(boost::filesystem::exists(output_file_name))
                {
-                  CopyStdout(int_output_file_name);
-                  THROW_ERROR_CODE(COMPILING_EC, "opt returns an error during compilation " +
-                                                     boost::lexical_cast<std::string>(errno));
-                  THROW_ERROR("opt returns an error during compilation " + boost::lexical_cast<std::string>(errno));
+                  CopyStdout(output_file_name);
+                  THROW_ERROR_CODE(COMPILING_EC, "opt returns an error during compilation " + STR(errno));
+                  THROW_ERROR("opt returns an error during compilation " + STR(errno));
                }
                else
                {
@@ -1216,71 +1104,39 @@ void CompilerWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::st
                }
             }
          }
-         else
-         {
-            THROW_ERROR("LTO compilation not yet implemented for the chosen front-end compiler");
-         }
-      }
-      if(compiler.is_clang)
-      {
+
          const auto recipe = clang_recipes(
              optimization_level, Param->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler),
              compiler.expandMemOps_plugin_obj, compiler.expandMemOps_plugin_name, compiler.GepiCanon_plugin_obj,
              compiler.GepiCanon_plugin_name, compiler.CSROA_plugin_obj, compiler.CSROA_plugin_name, fname);
          command = compiler.llvm_opt + recipe + temporary_file_o_bc;
-         temporary_file_o_bc =
-             boost::filesystem::path(Param->getOption<std::string>(OPT_output_temporary_directory) + "/" +
-                                     boost::filesystem::unique_path(std::string(STR_CST_llvm_obj_file)).string())
-                 .string();
+         temporary_file_o_bc = output_temporary_directory + "/" +
+                               boost::filesystem::unique_path(std::string(STR_CST_llvm_obj_file)).string();
          command += " -o " + temporary_file_o_bc;
-         const std::string o2_output_file_name =
-             Param->getOption<std::string>(OPT_output_temporary_directory) + STR_CST_gcc_output;
-         ret = PandaSystem(Param, command, o2_output_file_name);
+         auto ret = PandaSystem(Param, command, output_file_name);
          if(IsError(ret))
          {
             PRINT_OUT_MEX(OUTPUT_LEVEL_NONE, 0, "Error in opt");
-            if(boost::filesystem::exists(boost::filesystem::path(o2_output_file_name)))
+            if(boost::filesystem::exists(boost::filesystem::path(output_file_name)))
             {
-               CopyStdout(o2_output_file_name);
-               THROW_ERROR_CODE(COMPILING_EC,
-                                "opt returns an error during compilation " + boost::lexical_cast<std::string>(errno));
-               THROW_ERROR("opt returns an error during compilation " + boost::lexical_cast<std::string>(errno));
+               CopyStdout(output_file_name);
+               THROW_ERROR_CODE(COMPILING_EC, "opt returns an error during compilation " + STR(errno));
+               THROW_ERROR("opt returns an error during compilation " + STR(errno));
             }
             else
             {
                THROW_ERROR("Error in opt invocation");
             }
          }
-      }
-      else
-      {
-         THROW_ERROR("LTO compilation not yet implemented for the chosen front-end compiler");
-      }
 
-      std::string real_file_names;
-      bool first_file = true;
-      for(const auto& fsname : source_files)
-      {
-         if(first_file)
-         {
-            real_file_names = fsname.second;
-            first_file = false;
-         }
-         else
-         {
-            real_file_names = real_file_names + "," + fsname.second;
-         }
-      }
-      if(compiler.is_clang)
-      {
          command = compiler.llvm_opt;
 #ifndef _WIN32
          auto renamed_plugin = compiler.ssa_plugin_obj;
          boost::replace_all(renamed_plugin, ".so", "_opt.so");
          command += " -load=" + renamed_plugin;
 #endif
-         command += " -panda-outputdir=" + Param->getOption<std::string>(OPT_output_temporary_directory) +
-                    " -panda-infile=" + real_file_names + " -panda-cost-table=\"" + costTable + "\"";
+         command += " -panda-outputdir=" + output_temporary_directory + " -panda-infile=" + real_file_names +
+                    " -panda-cost-table=\"" + costTable + "\"";
          if(addTFNPlugin)
          {
             command += " -panda-topfname=" + fname;
@@ -1289,24 +1145,19 @@ void CompilerWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::st
                     "-lazy-value-info -aa -assumption-cache-tracker -targetlibinfo -loops -simplifycfg -mem2reg "
                     "-globalopt -break-crit-edges -dse -adce -loop-load-elim";
          command += " " + temporary_file_o_bc;
-         temporary_file_o_bc =
-             boost::filesystem::path(Param->getOption<std::string>(OPT_output_temporary_directory) + "/" +
-                                     boost::filesystem::unique_path(std::string(STR_CST_llvm_obj_file)).string())
-                 .string();
+         temporary_file_o_bc = output_temporary_directory + "/" +
+                               boost::filesystem::unique_path(std::string(STR_CST_llvm_obj_file)).string();
          command += " -o " + temporary_file_o_bc;
          command += " -" + compiler.ssa_plugin_name;
-         const std::string gimpledump_output_file_name =
-             Param->getOption<std::string>(OPT_output_temporary_directory) + STR_CST_gcc_output;
-         ret = PandaSystem(Param, command, gimpledump_output_file_name);
+         ret = PandaSystem(Param, command, output_file_name);
          if(IsError(ret))
          {
             PRINT_OUT_MEX(OUTPUT_LEVEL_NONE, 0, "Error in opt");
-            if(boost::filesystem::exists(boost::filesystem::path(gimpledump_output_file_name)))
+            if(boost::filesystem::exists(output_file_name))
             {
-               CopyStdout(gimpledump_output_file_name);
-               THROW_ERROR_CODE(COMPILING_EC,
-                                "opt returns an error during compilation " + boost::lexical_cast<std::string>(errno));
-               THROW_ERROR("opt returns an error during compilation " + boost::lexical_cast<std::string>(errno));
+               CopyStdout(output_file_name);
+               THROW_ERROR_CODE(COMPILING_EC, "opt returns an error during compilation " + STR(errno));
+               THROW_ERROR("opt returns an error during compilation " + STR(errno));
             }
             else
             {
@@ -1316,18 +1167,16 @@ void CompilerWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::st
       }
       else
       {
-         THROW_ERROR("LTO compilation not yet implemented for the chosen front-end compiler");
+         THROW_ERROR("OPT compilation not available for the chosen front-end compiler");
       }
-      std::string leaf_name = GetLeafFileName(source_files.begin()->second);
-      if(not(boost::filesystem::exists(
-             boost::filesystem::path(output_temporary_directory + "/" + leaf_name + STR_CST_gcc_tree_suffix))))
+
+      if(!boost::filesystem::exists(output_temporary_directory + "/" + leaf_name + STR_CST_gcc_tree_suffix))
       {
          THROW_ERROR(output_temporary_directory + "/" + leaf_name + STR_CST_gcc_tree_suffix +
                      " not found: impossible to create raw file for " + real_file_names);
       }
-      boost::filesystem::path obj =
-          boost::filesystem::path(output_temporary_directory + "/" + leaf_name + STR_CST_gcc_tree_suffix);
-      tree_managerRef TreeM = ParseTreeFile(Param, obj.string());
+      const auto obj = output_temporary_directory + "/" + leaf_name + STR_CST_gcc_tree_suffix;
+      const auto TreeM = ParseTreeFile(Param, obj);
 #if !NPROFILE
       long int merge_time = 0;
       START_TIME(merge_time);
@@ -3062,7 +2911,7 @@ void CompilerWrapper::GetSystemIncludes(std::vector<std::string>& includes) cons
    if(IsError(ret))
    {
       util_print_cpu_stats(std::cerr);
-      THROW_ERROR("Error in retrieving gcc system include. Error is " + boost::lexical_cast<std::string>(ret));
+      THROW_ERROR("Error in retrieving gcc system include. Error is " + STR(ret));
    }
 
    std::string list_of_dirs;
@@ -3226,8 +3075,8 @@ void CompilerWrapper::CreateExecutable(const std::list<std::string>& file_names,
    if(IsError(ret))
    {
       CopyStdout(gcc_output_file_name);
-      THROW_ERROR_CODE(COMPILING_EC, "Front-end compiler returns an error during compilation " +
-                                         boost::lexical_cast<std::string>(errno) + " - Command is " + command);
+      THROW_ERROR_CODE(COMPILING_EC, "Front-end compiler returns an error during compilation " + STR(errno) +
+                                         " - Command is " + command);
    }
    else
    {
@@ -3370,12 +3219,12 @@ std::string CompilerWrapper::WriteOptimizationsString()
    std::map<std::string, int>::const_iterator it2, it2_end = optimization_values.end();
    for(it2 = optimization_values.begin(); it2 != it2_end; ++it2)
    {
-      optimizations += std::string("-f") + it2->first + "=" + boost::lexical_cast<std::string>(it2->second) + " ";
+      optimizations += std::string("-f") + it2->first + "=" + STR(it2->second) + " ";
    }
    std::map<std::string, int>::const_iterator it3, it3_end = parameter_values.end();
    for(it3 = parameter_values.begin(); it3 != it3_end; ++it3)
    {
-      optimizations += "--param " + it3->first + "=" + boost::lexical_cast<std::string>(it3->second) + " ";
+      optimizations += "--param " + it3->first + "=" + STR(it3->second) + " ";
    }
    return optimizations;
 }
@@ -3639,7 +3488,7 @@ void CompilerWrapper::WriteXml(const std::string& file_name) const
    {
       xml_element* parameter_value_xml = parameter_values_xml->add_child_element(STR_XML_gcc_parameter_value);
       parameter_value_xml->set_attribute(STR_XML_gcc_name, parameter_value->first);
-      parameter_value_xml->set_attribute(STR_XML_gcc_value, boost::lexical_cast<std::string>(parameter_value->second));
+      parameter_value_xml->set_attribute(STR_XML_gcc_value, STR(parameter_value->second));
    }
    xml_element* optimization_flags_xml = optimizations->add_child_element(STR_XML_gcc_parameter_values);
    std::map<std::string, bool>::const_iterator optimization_flag,
@@ -3649,8 +3498,7 @@ void CompilerWrapper::WriteXml(const std::string& file_name) const
    {
       xml_element* optimization_flag_xml = optimization_flags_xml->add_child_element(STR_XML_gcc_optimization_flag);
       optimization_flag_xml->set_attribute(STR_XML_gcc_name, optimization_flag->first);
-      optimization_flag_xml->set_attribute(STR_XML_gcc_value,
-                                           boost::lexical_cast<std::string>(optimization_flag->second));
+      optimization_flag_xml->set_attribute(STR_XML_gcc_value, STR(optimization_flag->second));
    }
    xml_element* optimization_values_xml = optimizations->add_child_element(STR_XML_gcc_parameter_values);
    std::map<std::string, int>::const_iterator optimization_value,
@@ -3660,8 +3508,7 @@ void CompilerWrapper::WriteXml(const std::string& file_name) const
    {
       xml_element* optimization_value_xml = optimization_values_xml->add_child_element(STR_XML_gcc_optimization_value);
       optimization_value_xml->set_attribute(STR_XML_gcc_name, optimization_value->first);
-      optimization_value_xml->set_attribute(STR_XML_gcc_value,
-                                            boost::lexical_cast<std::string>(optimization_value->second));
+      optimization_value_xml->set_attribute(STR_XML_gcc_value, STR(optimization_value->second));
    }
    document.write_to_file_formatted(file_name);
 }
@@ -4917,4 +4764,67 @@ std::string CompilerWrapper::getCompilerVersion(int pc)
 #endif
    THROW_ERROR("");
    return "";
+}
+
+std::string CompilerWrapper::ReadExternalSymbols(const std::vector<std::string>& xml_files) const
+{
+   std::string extern_symbols;
+   for(const auto& XMLfilename : xml_files)
+   {
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->parsing " + XMLfilename);
+      XMLDomParser parser(XMLfilename);
+      parser.Exec();
+      if(parser)
+      {
+         const xml_element* node = parser.get_document()->get_root_node(); // deleted by DomParser.
+         const xml_node::node_list list = node->get_children();
+         for(const auto& l : list)
+         {
+            const xml_element* child = GetPointer<xml_element>(l);
+            if(!child)
+            {
+               continue;
+            }
+            if(child->get_name() == "memory_allocation")
+            {
+               for(const auto& it : child->get_children())
+               {
+                  const xml_element* mem_node = GetPointer<xml_element>(it);
+                  if(!mem_node)
+                  {
+                     continue;
+                  }
+                  if(mem_node->get_name() == "object")
+                  {
+                     std::string is_internal;
+                     if(!CE_XVM(is_internal, mem_node))
+                     {
+                        THROW_ERROR("expected the is_internal attribute");
+                     }
+                     LOAD_XVM(is_internal, mem_node);
+                     if(is_internal == "T")
+                     {
+                     }
+                     else if(is_internal == "F")
+                     {
+                        if(!CE_XVM(name, mem_node))
+                        {
+                           THROW_ERROR("expected the name attribute");
+                        }
+                        std::string name;
+                        LOAD_XVM(name, mem_node);
+                        extern_symbols = extern_symbols + name + ",";
+                     }
+                     else
+                     {
+                        THROW_ERROR("unexpected value for is_internal attribute");
+                     }
+                  }
+               }
+            }
+         }
+      }
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--parsed file " + XMLfilename);
+   }
+   return extern_symbols;
 }

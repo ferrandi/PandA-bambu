@@ -191,10 +191,10 @@ enum class CompilerWrapper_CompilerTarget
 
 enum class CompilerWrapper_CompilerMode
 {
-   CM_STD = 0,
-   CM_EMPTY,
-   CM_ANALYZER,
-   CM_LTO
+   CM_EMPTY = 0,
+   CM_ANALYZER = 1,
+   CM_STD = 2,
+   CM_LTO = 4
 };
 
 /**
@@ -376,6 +376,8 @@ class CompilerWrapper
                              const std::string& GepiCanon_plugin_obj, const std::string& GepiCanon_plugin_name,
                              const std::string& CSROA_plugin_obj, const std::string& CSROA_plugin_name,
                              const std::string& fname);
+
+   std::string ReadExternalSymbols(const std::vector<std::string>& xml_files) const;
 
  public:
    /// The version of the frontend compiler
