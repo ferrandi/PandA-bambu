@@ -125,20 +125,15 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           name: ${{env.device_fu_list}}
-      - name: Launch Bambu specific tests ${{matrix.id}}
+      - name: Launch Bambu specific tests ${{matrix.index}}
         shell: bash
         run: |
           export PATH=${{steps.setup.outputs.local-bin}}:$PATH
           start=$((${{matrix.index}}*${{env.batch_size}}))
           tail -n+${start} ${{env.device_fu_list}} | head -n${{env.batch_size}} > current_list
           python3 etc/scripts/characterize.py --from-list current_list
-          xmls=("`find output -type f -path '**/characterization.xml'`")
-          for i in $xmls
-          do
-            out="$(sed -E 's/output/${{env.upload-dir}}/' <<< $i)"
-            mkdir -p "$(dirname $out)"
-            cp $i $out
-          done
+          mkdir -p ${{env.upload-dir}}
+          mv ${{env.device}}.xml ${{env.upload-dir}}/${{env.device}}.${{matrix.index}}.xml
       - name: Upload characterization batch ${{matrix.index}}
         uses: actions/upload-artifact@v3
         with:
@@ -173,11 +168,11 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           name: ${{env.device}}
-      - name: Launch Bambu specific tests ${{matrix.id}}
+      - name: Merge characterization results
         shell: bash
         run: |
           export PATH=${{steps.setup.outputs.local-bin}}:$PATH
-          spider $(find ${{env.upload-dir}} -type f) ${{env.tech_root}}/${{env.device}}-seed.xml ${{env.outfile}}
+          spider $(find ${{env.upload-dir}} -type f) ${{env.outfile}}
       - name: Upload device characterization
         uses: actions/upload-artifact@v3
         with:
