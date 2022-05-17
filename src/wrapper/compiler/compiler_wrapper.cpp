@@ -687,13 +687,17 @@ void CompilerWrapper::CompileFile(const std::string& original_file_name, std::st
    {
       command += " -c -flto";
    }
+   else if(cm == CompilerWrapper_CompilerMode::CM_OPT)
+   {
+      command += " -c -Xclang -emit-llvm-bc";
+   }
    else
    {
       THROW_ERROR("compilation mode not yet implemented");
    }
 
    std::string temporary_file_run_o;
-   if(cm != CompilerWrapper_CompilerMode::CM_LTO)
+   if(cm != CompilerWrapper_CompilerMode::CM_LTO && cm != CompilerWrapper_CompilerMode::CM_OPT)
    {
       if((Param->isOption(OPT_gcc_E) && Param->getOption<bool>(OPT_gcc_E)) ||
          (Param->isOption(OPT_gcc_S) && Param->getOption<bool>(OPT_gcc_S)))
@@ -719,7 +723,7 @@ void CompilerWrapper::CompileFile(const std::string& original_file_name, std::st
 
    /// manage optimization level
    auto local_parameters_line = parameters_line;
-   if(cm == CompilerWrapper_CompilerMode::CM_LTO)
+   if(cm == CompilerWrapper_CompilerMode::CM_LTO || cm == CompilerWrapper_CompilerMode::CM_OPT)
    {
       boost::replace_all(local_parameters_line, "-O4", "");
       boost::replace_all(local_parameters_line, "-O3", "");
@@ -756,7 +760,7 @@ void CompilerWrapper::CompileFile(const std::string& original_file_name, std::st
       START_TIME(gcc_compilation_time);
    }
 #endif
-   int ret = PandaSystem(Param, command, gcc_output_file_name);
+   const auto ret = PandaSystem(Param, command, gcc_output_file_name);
 #if !NPROFILE
    if(output_level >= OUTPUT_LEVEL_VERBOSE)
    {
@@ -767,14 +771,14 @@ void CompilerWrapper::CompileFile(const std::string& original_file_name, std::st
 
    if(!((Param->isOption(OPT_gcc_E) && Param->getOption<bool>(OPT_gcc_E)) ||
         (Param->isOption(OPT_gcc_S) && Param->getOption<bool>(OPT_gcc_S)) ||
-        cm == CompilerWrapper_CompilerMode::CM_LTO))
+        cm == CompilerWrapper_CompilerMode::CM_LTO || cm == CompilerWrapper_CompilerMode::CM_OPT))
    {
       std::remove(temporary_file_run_o.c_str());
    }
    if(IsError(ret))
    {
       PRINT_OUT_MEX(OUTPUT_LEVEL_NONE, 0, "Error in compilation");
-      if(boost::filesystem::exists(boost::filesystem::path(gcc_output_file_name)))
+      if(boost::filesystem::exists(gcc_output_file_name))
       {
          CopyStdout(gcc_output_file_name);
          THROW_ERROR_CODE(COMPILING_EC, "Front-end compiler returns an error during compilation " + STR(errno));
@@ -878,7 +882,20 @@ void CompilerWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::st
    THROW_WARNING("pragma analysis requires CLANG");
 #endif
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Starting compilation of single files");
-   const auto enable_LTO = compiler.is_clang;
+   const auto user_llvm_opt = [&]() -> std::string {
+      if(Param->IsParameter("llvm-opt"))
+      {
+         auto val = Param->GetParameter<std::string>("llvm-opt");
+         if(val != "0")
+         {
+            boost::replace_all(val, ",", " ");
+            return " " + val;
+         }
+      }
+      return "";
+   }();
+   const auto enable_OPT = compiler.is_clang && user_llvm_opt.size();
+   const auto enable_LTO = compiler.is_clang && (source_files.size() > 1);
    for(auto& source_file : source_files)
    {
       if(already_processed_files.find(source_file.first) != already_processed_files.end())
@@ -894,8 +911,11 @@ void CompilerWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::st
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Compiling file " + source_file.second);
       /// create obj
       CompileFile(source_file.first, source_file.second, frontend_compiler_parameters, source_files.size() > 1,
-                  enable_LTO ? CompilerWrapper_CompilerMode::CM_LTO : CompilerWrapper_CompilerMode::CM_STD, costTable);
-      if(!Param->isOption(OPT_gcc_E) && !Param->isOption(OPT_gcc_S) && !enable_LTO)
+                  enable_LTO ?
+                      CompilerWrapper_CompilerMode::CM_LTO :
+                      (enable_OPT ? CompilerWrapper_CompilerMode::CM_OPT : CompilerWrapper_CompilerMode::CM_STD),
+                  costTable);
+      if(!Param->isOption(OPT_gcc_E) && !Param->isOption(OPT_gcc_S) && !(enable_LTO || enable_OPT))
       {
          if(!boost::filesystem::exists(output_temporary_directory + "/" + leaf_name + STR_CST_gcc_tree_suffix))
          {
@@ -966,7 +986,7 @@ void CompilerWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::st
          if(IsError(ret))
          {
             PRINT_OUT_MEX(OUTPUT_LEVEL_NONE, 0, "Error in llvm-link");
-            if(boost::filesystem::exists(boost::filesystem::path(output_file_name)))
+            if(boost::filesystem::exists(output_file_name))
             {
                CopyStdout(output_file_name);
                THROW_ERROR_CODE(COMPILING_EC, "llvm-link returns an error during compilation " + STR(errno));
@@ -982,7 +1002,10 @@ void CompilerWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::st
       {
          THROW_ERROR("LTO compilation not yet implemented for the chosen front-end compiler");
       }
+   }
 
+   if(enable_OPT || enable_LTO)
+   {
       const auto isWholeProgram =
           Param->isOption(OPT_gcc_optimizations) &&
           Param->getOption<std::string>(OPT_gcc_optimizations).find("whole-program") != std::string::npos &&
@@ -1109,7 +1132,7 @@ void CompilerWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::st
              optimization_level, Param->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler),
              compiler.expandMemOps_plugin_obj, compiler.expandMemOps_plugin_name, compiler.GepiCanon_plugin_obj,
              compiler.GepiCanon_plugin_name, compiler.CSROA_plugin_obj, compiler.CSROA_plugin_name, fname);
-         command = compiler.llvm_opt + recipe + temporary_file_o_bc;
+         command = compiler.llvm_opt + recipe + user_llvm_opt + " " + temporary_file_o_bc;
          temporary_file_o_bc = output_temporary_directory + "/" +
                                boost::filesystem::unique_path(std::string(STR_CST_llvm_obj_file)).string();
          command += " -o " + temporary_file_o_bc;
@@ -3697,135 +3720,23 @@ std::string CompilerWrapper::clang_recipes(
                               "-" +
                               CSROA_plugin_name + "D ";
          }
-         complex_recipe += "-ipsccp -globalopt -dse -loop-unroll "
-                           "-instcombine "
-                           "-libcalls-shrinkwrap "
-                           "-tailcallelim "
-                           "-simplifycfg "
-                           "-reassociate "
-                           "-domtree "
-                           "-loops "
-                           "-loop-simplify "
-                           "-lcssa-verification "
-                           "-lcssa "
-                           "-basicaa "
-                           "-aa "
-                           "-scalar-evolution "
-                           "-loop-rotate "
-                           "-licm "
-                           "-loop-unswitch "
-                           "-simplifycfg "
-                           "-domtree "
-                           "-basicaa "
-                           "-aa "
-                           " -dse -loop-unroll "
-                           "-instcombine "
-                           "-loops "
-                           "-loop-simplify "
-                           "-lcssa-verification "
-                           "-lcssa "
-                           "-scalar-evolution "
-                           "-indvars "
-                           "-loop-idiom "
-                           "-loop-deletion "
-                           "-loop-unroll "
-                           "-mldst-motion "
-                           "-aa "
-                           "-memdep "
-                           "-lazy-branch-prob "
-                           "-lazy-block-freq "
-                           "-opt-remark-emitter "
-                           "-gvn "
-                           "-basicaa "
-                           "-aa "
-                           "-memdep "
-                           "-memcpyopt "
-                           "-sccp "
-                           "-domtree "
-                           "-demanded-bits "
-                           "-bdce "
-                           "-basicaa "
-                           "-aa "
-                           " -dse -loop-unroll "
-                           "-instcombine "
-                           "-lazy-value-info "
-                           "-jump-threading "
-                           "-correlated-propagation "
-                           "-domtree "
-                           "-basicaa "
-                           "-aa "
-                           "-memdep "
-                           "-dse "
-                           "-loops "
-                           "-loop-simplify "
-                           "-lcssa-verification "
-                           "-lcssa "
-                           "-aa "
-                           "-scalar-evolution "
-                           "-licm "
-                           "-postdomtree "
-                           "-adce "
-                           "-simplifycfg "
-                           "-domtree "
-                           "-basicaa "
-                           "-aa "
-                           " -loop-unroll "
-                           "-instcombine "
-                           "-barrier "
-                           "-elim-avail-extern "
-                           "-basiccg "
-                           "-rpo-functionattrs "
-                           "-globals-aa "
-                           "-float2int "
-                           "-domtree "
-                           "-loops "
-                           "-loop-simplify "
-                           "-lcssa-verification "
-                           "-lcssa "
-                           "-basicaa "
-                           "-aa "
-                           "-scalar-evolution "
-                           "-loop-rotate "
-                           "-loop-accesses "
-                           "-lazy-branch-prob "
-                           "-lazy-block-freq "
-                           "-opt-remark-emitter "
-                           "-loop-distribute "
-                           "-loop-simplify "
-                           "-lcssa-verification "
-                           "-lcssa "
-                           "-branch-prob "
-                           "-block-freq "
-                           "-scalar-evolution "
-                           "-basicaa "
-                           "-aa "
-                           "-loop-accesses "
-                           "-demanded-bits "
-                           "-lazy-branch-prob "
-                           "-lazy-block-freq "
-                           "-opt-remark-emitter "
-                           "-loop-vectorize "
-                           "-loop-simplify "
-                           "-scalar-evolution "
-                           "-aa "
-                           "-loop-accesses "
-                           "-loop-load-elim "
-                           "-basicaa "
-                           "-aa "
-                           " -dse -loop-unroll "
-                           "-instcombine "
-                           "-simplifycfg "
-                           "-domtree "
-                           "-basicaa "
-                           "-aa "
-                           " -dse -loop-unroll "
-                           "-instcombine "
-                           "-loops "
-                           "-loop-simplify "
-                           "-lcssa-verification "
-                           "-lcssa "
-                           "-scalar-evolution "
-                           "-loop-unroll ";
+         complex_recipe +=
+             "-ipsccp -globalopt -dse -loop-unroll -instcombine -libcalls-shrinkwrap -tailcallelim -simplifycfg "
+             "-reassociate -domtree -loops -loop-simplify -lcssa-verification -lcssa -basicaa -aa -scalar-evolution "
+             "-loop-rotate -licm -loop-unswitch -simplifycfg -domtree -basicaa -aa -dse -loop-unroll -instcombine "
+             "-loops -loop-simplify -lcssa-verification -lcssa -scalar-evolution -indvars -loop-idiom -loop-deletion "
+             "-loop-unroll -mldst-motion -aa -memdep -lazy-branch-prob -lazy-block-freq -opt-remark-emitter -gvn "
+             "-basicaa -aa -memdep -memcpyopt -sccp -domtree -demanded-bits -bdce -basicaa -aa -dse -loop-unroll "
+             "-instcombine -lazy-value-info -jump-threading -correlated-propagation -domtree -basicaa -aa -memdep -dse "
+             "-loops -loop-simplify -lcssa-verification -lcssa -aa -scalar-evolution -licm -postdomtree -adce "
+             "-simplifycfg -domtree -basicaa -aa -loop-unroll -instcombine -barrier -elim-avail-extern -basiccg "
+             "-rpo-functionattrs -globals-aa -float2int -domtree -loops -loop-simplify -lcssa-verification -lcssa "
+             "-basicaa -aa -scalar-evolution -loop-rotate -loop-accesses -lazy-branch-prob -lazy-block-freq "
+             "-opt-remark-emitter -loop-distribute -loop-simplify -lcssa-verification -lcssa -branch-prob -block-freq "
+             "-scalar-evolution -basicaa -aa -loop-accesses -demanded-bits -lazy-branch-prob -lazy-block-freq "
+             "-opt-remark-emitter -loop-vectorize -loop-simplify -scalar-evolution -aa -loop-accesses -loop-load-elim "
+             "-basicaa -aa  -dse -loop-unroll -instcombine -simplifycfg -domtree -basicaa -aa -dse -loop-unroll "
+             "-instcombine -loops -loop-simplify -lcssa-verification -lcssa -scalar-evolution -loop-unroll ";
          if(Param->IsParameter("enable-CSROA") && Param->GetParameter<int>("enable-CSROA") == 1
 #ifndef _WIN32
             && !GepiCanon_plugin_obj.empty() && !CSROA_plugin_obj.empty()
@@ -3834,36 +3745,13 @@ std::string CompilerWrapper::clang_recipes(
          {
             complex_recipe += " -" + expandMemOps_plugin_name + " -" + CSROA_plugin_name + "WI ";
          }
-         complex_recipe += "-domtree -basicaa -aa -memdep -dse -aa -memoryssa -early-cse-memssa -constprop -ipsccp "
-                           "-globaldce -domtree -mem2reg -deadargelim -basiccg -argpromotion -domtree -loops "
-                           "-loop-simplify -lcssa-verification -lcssa -basicaa -aa "
-                           "-scalar-evolution -loop-unroll "
-                           " -dse -loop-unroll "
-                           "-instcombine "
-                           "-loop-simplify "
-                           "-lcssa-verification "
-                           "-lcssa "
-                           "-scalar-evolution "
-                           "-licm "
-                           "-alignment-from-assumptions "
-                           "-strip-dead-prototypes "
-                           "-globaldce "
-                           "-constmerge "
-                           "-domtree "
-                           "-loops "
-                           "-branch-prob "
-                           "-block-freq "
-                           "-loop-simplify "
-                           "-lcssa-verification "
-                           "-lcssa "
-                           "-basicaa "
-                           "-aa "
-                           "-scalar-evolution "
-                           "-branch-prob "
-                           "-block-freq "
-                           "-loop-sink "
-                           "-instsimplify ";
-         // complex_recipe += complex_recipe;
+         complex_recipe +=
+             "-domtree -basicaa -aa -memdep -dse -aa -memoryssa -early-cse-memssa -constprop -ipsccp -globaldce "
+             "-domtree -mem2reg -deadargelim -basiccg -argpromotion -domtree -loops -loop-simplify -lcssa-verification "
+             "-lcssa -basicaa -aa -scalar-evolution -loop-unroll -dse -loop-unroll -instcombine -loop-simplify "
+             "-lcssa-verification -lcssa -scalar-evolution -licm -alignment-from-assumptions -strip-dead-prototypes "
+             "-globaldce -constmerge -domtree -loops -branch-prob -block-freq -loop-simplify -lcssa-verification "
+             "-lcssa -basicaa -aa -scalar-evolution -branch-prob -block-freq -loop-sink -instsimplify ";
          recipe += complex_recipe;
       }
       else

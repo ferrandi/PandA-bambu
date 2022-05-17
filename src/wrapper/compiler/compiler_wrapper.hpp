@@ -194,7 +194,8 @@ enum class CompilerWrapper_CompilerMode
    CM_EMPTY = 0,
    CM_ANALYZER = 1,
    CM_STD = 2,
-   CM_LTO = 4
+   CM_OPT = 4,
+   CM_LTO = 8
 };
 
 /**
