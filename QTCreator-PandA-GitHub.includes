@@ -404,7 +404,7 @@ ext/mockturtle/lib/json/nlohmann
 ext/mockturtle/lib/abcsat
 ext/mockturtle/lib/abcsat/abc
 ext/abseil-cpp
-/usr/local/llvm-10.0.0/include
+/opt/clang+llvm-13.0.0-x86_64-linux-gnu-ubuntu-20.04/include/
 
 ext/mockturtle/lib/abcresub/abcresub
 ext/mockturtle/lib/parallel_hashmap/parallel_hashmap

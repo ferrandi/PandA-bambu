@@ -1285,9 +1285,9 @@ void CompilerWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::st
          {
             command += " -panda-topfname=" + fname;
          }
-         command +=
-             " -domfrontier -domtree -memdep -memoryssa -lazy-value-info -aa -assumption-cache-tracker -targetlibinfo "
-             "-loops -simplifycfg -mem2reg -globalopt -break-crit-edges -dse -adce -loop-load-elim";
+         command += " -vectorize-loops=false -vectorize-slp=false -domfrontier -domtree -memdep -memoryssa "
+                    "-lazy-value-info -aa -assumption-cache-tracker -targetlibinfo -loops -simplifycfg -mem2reg "
+                    "-globalopt -break-crit-edges -dse -adce -loop-load-elim";
          command += " " + temporary_file_o_bc;
          temporary_file_o_bc =
              boost::filesystem::path(Param->getOption<std::string>(OPT_output_temporary_directory) + "/" +
@@ -2968,9 +2968,10 @@ CompilerWrapper::Compiler CompilerWrapper::GetCompiler() const
       compiler.is_clang = true;
       compiler.gcc = flag_cpp ? relocate_compiler_path(I386_CLANGPPVVD_EXE) : relocate_compiler_path(I386_CLANGVVD_EXE);
       compiler.cpp = relocate_compiler_path(I386_CLANG_CPPVVD_EXE);
-      compiler.extra_options = " -D_FORTIFY_SOURCE=0 " + gcc_extra_options +
-                               (flag_cpp ? EXTRA_CLANGPP_COMPILER_OPTION : "") + " -target fpga64-xilinx-linux-gnu";
+      compiler.extra_options =
+          " -D_FORTIFY_SOURCE=0 " + gcc_extra_options + (flag_cpp ? EXTRA_CLANGPP_COMPILER_OPTION : "");
       compiler.extra_options += " " + Param->getOption<std::string>(OPT_gcc_m32_mx32);
+      compiler.extra_options += " -target fpga64-xilinx-linux-gnu";
       compiler.empty_plugin_obj = clang_plugin_dir + I386_CLANGVVD_EMPTY_PLUGIN + plugin_ext;
       compiler.empty_plugin_name = I386_CLANGVVD_EMPTY_PLUGIN;
       compiler.ssa_plugin_obj =
@@ -3187,9 +3188,10 @@ void CompilerWrapper::CreateExecutable(const std::list<std::string>& file_names,
 
    command += (no_frontend_compiler_parameters ? "" : frontend_compiler_parameters) + " " +
               AddSourceCodeIncludes(file_names) + " " + compiler_linking_parameters + " ";
-   if(!has_cpp_file && command.find("--std=c++14") != std::string::npos)
+   static const boost::regex c_std("[-]{1,2}std=c\\+\\+\\w+");
+   if(!has_cpp_file)
    {
-      boost::replace_all(command, "--std=c++14", "");
+      command = boost::regex_replace(command, c_std, "");
    }
 
    command += "-D__NO_INLINE__ "; /// needed to avoid problem with glibc inlines
@@ -3202,7 +3204,9 @@ void CompilerWrapper::CreateExecutable(const std::list<std::string>& file_names,
 
 #ifdef _WIN32
    if(local_compiler_extra_options.find("-m32") != std::string::npos)
+   {
       boost::replace_all(local_compiler_extra_options, "-m32", "");
+   }
 #endif
 
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Extra options are " + local_compiler_extra_options);
@@ -3809,6 +3813,7 @@ std::string CompilerWrapper::clang_recipes(
             && !GepiCanon_plugin_obj.empty() && !CSROA_plugin_obj.empty()
 #endif
          )
+         {
             complex_recipe +=
                 "-" + GepiCanon_plugin_name +
                 "PS "
@@ -3824,11 +3829,13 @@ std::string CompilerWrapper::clang_recipes(
                 "FV "
                 "-ipsccp -globaldce -domtree -mem2reg -deadargelim -basiccg -argpromotion -domtree -loops "
                 "-loop-simplify -lcssa-verification -lcssa -basicaa -aa -scalar-evolution -loop-unroll -simplifycfg ";
+         }
          if(Param->IsParameter("enable-CSROA") && Param->GetParameter<int>("enable-CSROA") == 1
 #ifndef _WIN32
             && !GepiCanon_plugin_obj.empty() && !CSROA_plugin_obj.empty()
 #endif
          )
+         {
             complex_recipe += "-" + expandMemOps_plugin_name +
                               " "
                               "-" +
@@ -3842,6 +3849,7 @@ std::string CompilerWrapper::clang_recipes(
                               "BVR "
                               "-" +
                               CSROA_plugin_name + "D ";
+         }
          complex_recipe += "-ipsccp -globalopt -dse -loop-unroll "
                            "-instcombine "
                            "-libcalls-shrinkwrap "
@@ -3976,7 +3984,9 @@ std::string CompilerWrapper::clang_recipes(
             && !GepiCanon_plugin_obj.empty() && !CSROA_plugin_obj.empty()
 #endif
          )
+         {
             complex_recipe += " -" + expandMemOps_plugin_name + " -" + CSROA_plugin_name + "WI ";
+         }
          complex_recipe += "-domtree -basicaa -aa -memdep -dse -aa -memoryssa -early-cse-memssa -constprop -ipsccp "
                            "-globaldce -domtree -mem2reg -deadargelim -basiccg -argpromotion -domtree -loops "
                            "-loop-simplify -lcssa-verification -lcssa -basicaa -aa "
@@ -4129,7 +4139,8 @@ std::string CompilerWrapper::clang_recipes(
    {
       const auto opt_level =
           optimization_level == CompilerWrapper_OptimizationSet::O0 ? "1" : WriteOptimizationLevel(optimization_level);
-      recipe += " -O" + opt_level + " --disable-vector-combine -scalarizer ";
+      recipe +=
+          " -O" + opt_level + " --disable-vector-combine -vectorize-loops=false -vectorize-slp=false -scalarizer ";
       recipe += " -" + expandMemOps_plugin_name;
       /*
             recipe += " -" + GepiCanon_plugin_name +
@@ -4150,7 +4161,8 @@ std::string CompilerWrapper::clang_recipes(
    {
       const auto opt_level =
           optimization_level == CompilerWrapper_OptimizationSet::O0 ? "1" : WriteOptimizationLevel(optimization_level);
-      recipe += " -O" + opt_level + " --disable-vector-combine -scalarizer ";
+      recipe +=
+          " -O" + opt_level + " --disable-vector-combine -vectorize-loops=false -vectorize-slp=false -scalarizer ";
       recipe += " -" + expandMemOps_plugin_name;
       /*
             recipe += " -" + GepiCanon_plugin_name +

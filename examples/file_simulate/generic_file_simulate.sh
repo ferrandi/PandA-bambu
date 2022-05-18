@@ -5,7 +5,7 @@ script_dir="$(dirname $(readlink -e $0))"
 BATCH_ARGS=("--no-iob" "--simulate" "--experimental-setup=BAMBU" "--generate-tb=$script_dir/test.xml" "--file-input-data=$script_dir/test.xml")
 OUT_SUFFIX="output_file_simulate"
 
-$script_dir/../../etc/scripts/test_panda.py --tool=bambu \
+python3 $script_dir/../../etc/scripts/test_panda.py --tool=bambu \
    --args="--configuration-name=mem-11 --channels-type=MEM_ACC_11 ${BATCH_ARGS[*]}"\
    --args="--configuration-name=mem-NN --channels-type=MEM_ACC_NN ${BATCH_ARGS[*]}"\
    $script_dir -t120m \

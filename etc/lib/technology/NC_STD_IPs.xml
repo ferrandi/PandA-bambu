@@ -2808,15 +2808,26 @@ end process;
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="register_SHIFT in1 out1 CONTROLLER_LENGTH" VERILOG_PROVIDED=
-"reg [CONTROLLER_LENGTH-1:0] reg_out1 1INIT_ZERO_VALUE;
-assign out1 = reg_out1[CONTROLLER_LENGTH-1];
-always @(posedge clock)
-  if(1RESET_VALUE)
-    reg_out1 &lt;= {CONTROLLER_LENGTH{1&apos;b0}};
-  else
-    reg_out1 &lt;= (reg_out1 &lt;&lt; 1) | in1;
+          <NP_functionality LIBRARY="register_SHIFT CONTROLLER_LENGTH" VERILOG_PROVIDED=
+"
+generate if (CONTROLLER_LENGTH == 0) 
+begin
+  assign out1 = in1;
+end
+else
+begin
+  reg [CONTROLLER_LENGTH-1:0] reg_out1 1INIT_ZERO_VALUE;
+  assign out1 = reg_out1[CONTROLLER_LENGTH-1];
+  always @(posedge clock)
+    if(1RESET_VALUE)
+      reg_out1 &lt;= {CONTROLLER_LENGTH{1&apos;b0}};
+    else
+      reg_out1 &lt;= (reg_out1 &lt;&lt; 1) | in1;
+end
+endgenerate
 " VHDL_PROVIDED="
+begin
+zero_case: if CONTROLLER_LENGTH /= 0 generate 
 signal reg_out1 : std_logic_vector(CONTROLLER_LENGTH-1 downto 0) 1INIT_ZERO_VALUE;
 begin
 out1 &lt;= reg_out1(CONTROLLER_LENGTH-1);
@@ -2831,6 +2842,12 @@ begin
     end if;
   end if;
 end process;
+end generate zero_case;
+
+nonzero_case: if CONTROLLER_LENGTH = 0 generate 
+  out1 &lt;= in1;
+end generate nonzero_case;
+
 "/>
         </component_o>
       </circuit>

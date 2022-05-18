@@ -232,6 +232,26 @@ void Parameter::CheckParameters()
          THROW_ERROR("not able to create directory " + dot_directory);
       }
    }
+
+   if(isOption(OPT_gcc_m32_mx32))
+   {
+      const auto mopt = getOption<std::string>(OPT_gcc_m32_mx32);
+      if(mopt == "-m32" &&
+         CompilerWrapper::hasCompilerGCCM32(getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler)))
+      {
+         setOption(OPT_gcc_m32_mx32, "-m32 -mno-sse2");
+      }
+      else if((mopt == "-m32" && !CompilerWrapper::hasCompilerCLANGM32(
+                                     getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler))) ||
+              (mopt == "-mx32" &&
+               !CompilerWrapper::hasCompilerMX32(getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler))) ||
+              (mopt == "-m64" &&
+               !CompilerWrapper::hasCompilerM64(getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler))))
+      {
+         THROW_ERROR("Option " + mopt + " not supported by " +
+                     CompilerWrapper::getCompilerSuffix(OPT_default_compiler) + " compiler.");
+      }
+   }
 }
 
 Parameter::~Parameter() = default;
@@ -678,41 +698,15 @@ bool Parameter::ManageGccOptions(int next_option, char* optarg_param)
             const std::string opt_level = std::string(optarg_param);
             if(opt_level == "32")
             {
-               if(CompilerWrapper::hasCompilerGCCM32(getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler)))
-               {
-                  setOption(OPT_gcc_m32_mx32, "-m32 -mno-sse2");
-               }
-               else if(CompilerWrapper::hasCompilerCLANGM32(
-                           getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler)))
-               {
-                  setOption(OPT_gcc_m32_mx32, "-m32");
-               }
-               else
-               {
-                  THROW_ERROR("Option -m32 not supported");
-               }
+               setOption(OPT_gcc_m32_mx32, "-m32");
             }
             else if(opt_level == "x32")
             {
-               if(CompilerWrapper::hasCompilerMX32(getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler)))
-               {
-                  setOption(OPT_gcc_m32_mx32, "-mx32");
-               }
-               else
-               {
-                  THROW_ERROR("Option -mx32 not supported");
-               }
+               setOption(OPT_gcc_m32_mx32, "-mx32");
             }
             else if(opt_level == "64")
             {
-               if(CompilerWrapper::hasCompilerM64(getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler)))
-               {
-                  setOption(OPT_gcc_m32_mx32, "-m64");
-               }
-               else
-               {
-                  THROW_ERROR("Option -m64 not supported");
-               }
+               setOption(OPT_gcc_m32_mx32, "-m64");
             }
          }
          break;

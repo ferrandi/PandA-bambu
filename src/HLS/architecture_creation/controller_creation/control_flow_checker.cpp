@@ -695,6 +695,7 @@ void ControlFlowChecker::add_present_state(structural_objectRef circuit, unsigne
 
 void ControlFlowChecker::add_notifiers(structural_objectRef circuit)
 {
+   const auto curr_address_bitsize = HLSMgr->get_address_bitsize();
    structural_managerRef& SM = HLS->control_flow_checker;
    /// define boolean type for the start port
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "  * Adding notifier signals...");
@@ -702,11 +703,13 @@ void ControlFlowChecker::add_notifiers(structural_objectRef circuit)
    structural_objectRef pm = SM->add_port(NOTIFIER_PORT_MISMATCH, port_o::OUT, circuit,
                                           structural_type_descriptorRef(new structural_type_descriptor("bool", 0)));
    GetPointer<port_o>(pm)->set_is_memory(true);
-   structural_objectRef pmi = SM->add_port(NOTIFIER_PORT_MISMATCH_ID, port_o::OUT, circuit,
-                                           structural_type_descriptorRef(new structural_type_descriptor("bool", 32)));
+   structural_objectRef pmi =
+       SM->add_port(NOTIFIER_PORT_MISMATCH_ID, port_o::OUT, circuit,
+                    structural_type_descriptorRef(new structural_type_descriptor("bool", curr_address_bitsize)));
    GetPointer<port_o>(pmi)->set_is_memory(true);
-   structural_objectRef pmo = SM->add_port(NOTIFIER_PORT_MISMATCH_OFFSET, port_o::OUT, circuit,
-                                           structural_type_descriptorRef(new structural_type_descriptor("bool", 32)));
+   structural_objectRef pmo =
+       SM->add_port(NOTIFIER_PORT_MISMATCH_OFFSET, port_o::OUT, circuit,
+                    structural_type_descriptorRef(new structural_type_descriptor("bool", curr_address_bitsize)));
    GetPointer<port_o>(pmo)->set_is_memory(true);
    PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "  - notifier signals added!");
 }

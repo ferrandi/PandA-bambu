@@ -1,30 +1,30 @@
-name: 'Storage downlaod'
-description: 'Download a file or directory from private storage'
+name: "Storage downlaod"
+description: "Download a file or directory from private storage"
 inputs:
   name:
-    description: 'Storage id of the package to download'
+    description: "Storage id of the package to download"
     required: true
   storage-url:
-    description: 'Url of private storage'
+    description: "Url of private storage"
     required: true
   path:
-    description: 'Path were the package is downloaded'
+    description: "Path were the package is downloaded"
     required: false
-    default: './'
+    default: "./"
   username:
-    description: 'Username for private storage access'
+    description: "Username for private storage access"
     required: false
-    default: ''
+    default: ""
   password:
-    description: 'Password for private storage access'
+    description: "Password for private storage access"
     required: false
-    default: ''
+    default: ""
   storage-path:
-    description: 'Custom storage path'
+    description: "Custom storage path"
     required: false
-    default: ''
+    default: ""
 runs:
-  using: 'composite'
+  using: "composite"
   steps:
     - name: Download package
       id: dwn
@@ -35,7 +35,7 @@ runs:
         if [[ ! -z "${{inputs.storage-path}}" ]]; then
           PKG_URL="${{inputs.storage-url}}/${{inputs.storage-path}}/${{inputs.name}}"
         else
-          PKG_URL="${{inputs.storage-url}}/${{github.ref}}/${{inputs.name}}"
+          PKG_URL="${{inputs.storage-url}}/${{github.head_ref}}/${{inputs.name}}"
         fi
         PKG_URL+=".gh.pkg"
         CURL_CMD='curl -L --fail '
@@ -43,12 +43,20 @@ runs:
           CURL_CMD+='-u ${{inputs.username}}:${{inputs.password}} '
         fi
         echo "Downloading package information"
-        STORAGE_COMPRESSED="$($CURL_CMD -s $PKG_URL.nfo)"
-        echo "Downloading from $PKG_URL to ${{inputs.path}}"
+        PKG_NFO="$($CURL_CMD -s $PKG_URL.nfo)"
+        STORAGE_COMPRESSED="$(head -1 <<< $PKG_NFO)"
         mkdir -p "${{inputs.path}}"
-        if [[ "$STORAGE_COMPRESSED" != "false" ]]; then
-          $CURL_CMD $PKG_URL | tar -C "${{inputs.path}}" -xJf -
-        else
-          $CURL_CMD $PKG_URL | tar -C "${{inputs.path}}" -xf -
+        if sha1sum --quiet --check <<< $(tail -n +2 <<< $PKG_NFO); then
+          echo "Content already available at ${{inputs.path}}"
+          echo "Download skipped"
+          exit 0
         fi
+        echo "Downloading from $PKG_URL to ${{inputs.path}}"
+        TAR_CMD="tar -C "${{inputs.path}}" "
+        if [[ "$STORAGE_COMPRESSED" != "false" ]]; then
+          TAR_CMD+="-xJf"
+        else
+          TAR_CMD+="-xf"
+        fi
+        $CURL_CMD $PKG_URL | $TAR_CMD -
         echo "Content restored in '${{inputs.path}}'"

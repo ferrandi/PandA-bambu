@@ -218,7 +218,7 @@ void classic_datapath::add_ports()
    const structural_managerRef SM = this->HLS->datapath;
    const structural_objectRef circuit = SM->get_circ();
    const FunctionBehaviorConstRef FB = HLSMgr->CGetFunctionBehavior(funId);
-
+   const auto curr_address_bitsize = HLSMgr->get_address_bitsize();
    const BehavioralHelperConstRef BH = FB->CGetBehavioralHelper();
 
    const std::list<unsigned int>& function_parameters = BH->get_parameters();
@@ -237,7 +237,7 @@ void classic_datapath::add_ports()
          !HLSMgr->Rmem->has_parameter_base_address(function_parameter, HLS->functionId) &&
          !HLSMgr->Rmem->is_parm_decl_stored(function_parameter))
       {
-         port_type = structural_type_descriptorRef(new structural_type_descriptor("bool", 32));
+         port_type = structural_type_descriptorRef(new structural_type_descriptor("bool", curr_address_bitsize));
       }
       else
       {

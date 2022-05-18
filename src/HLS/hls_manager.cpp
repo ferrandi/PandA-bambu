@@ -79,7 +79,7 @@
 #endif
 
 HLS_manager::HLS_manager(const ParameterConstRef _Param, const HLS_targetRef _HLS_T)
-    : application_manager(FunctionExpanderConstRef(new FunctionExpander()), true, false, _Param),
+    : application_manager(FunctionExpanderConstRef(new FunctionExpander()), false, _Param),
       HLS_T(_HLS_T),
       memory_version(1),
       base_address(0),

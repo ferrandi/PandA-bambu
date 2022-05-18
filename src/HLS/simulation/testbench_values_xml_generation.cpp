@@ -90,7 +90,6 @@
 #include "dbgPrintHelper.hpp"
 #include "string_manipulation.hpp"
 #include "utility.hpp"
-#include <boost/regex.hpp>
 
 void TestbenchValuesXMLGeneration::Initialize()
 {

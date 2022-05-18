@@ -4412,7 +4412,8 @@ bool tree_helper::is_parameter(const tree_managerConstRef& TM, const unsigned in
    {
       return false;
    }
-   return GET_NODE(sn->CGetDefStmt())->get_kind() == gimple_nop_K && GET_NODE(sn->var)->get_kind() == parm_decl_K;
+   return GET_NODE(sn->CGetDefStmt())->get_kind() == gimple_nop_K && sn->var &&
+          GET_NODE(sn->var)->get_kind() == parm_decl_K;
 }
 
 bool tree_helper::is_ssa_name(const tree_managerConstRef& TM, const unsigned int index)
