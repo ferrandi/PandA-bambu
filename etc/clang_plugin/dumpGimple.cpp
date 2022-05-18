@@ -103,6 +103,9 @@
 #include "llvm/eSSA.hpp"
 
 #include "CustomScalarReplacementOfAggregatesPass.hpp"
+#if __clang_major__ > 5
+#include "TreeHeightReduction.hpp"
+#endif
 
 #include <cxxabi.h>
 #include <iomanip>
@@ -6541,11 +6544,11 @@ namespace llvm
                               llvm::errs() << "Found a global var that is an invariant: " << *GV << "\n";
                               for(llvm::BasicBlock::iterator CurInst = BI->begin(); CurInst != II;)
                               {
-                                 llvm::Constant* Val;
-                                 llvm::Constant* Ptr;
-                                 assert(
-                                     dyn_cast<llvm::StoreInst>(CurInst) &&
-                                     removableStore(dyn_cast<llvm::StoreInst>(CurInst), GV, TLI, *DL, Ptr, Val, false));
+                                 llvm::Constant* Val = nullptr;
+                                 llvm::Constant* Ptr = nullptr;
+                                 auto resRS =
+                                     removableStore(dyn_cast<llvm::StoreInst>(CurInst), GV, TLI, *DL, Ptr, Val, false);
+                                 assert(dyn_cast<llvm::StoreInst>(CurInst) && resRS);
                                  MutatedMemory[Ptr] = Val;
 
                                  auto me = CurInst;
@@ -6566,8 +6569,8 @@ namespace llvm
                               ++GuardInst;
                               if(GuardInst != IE)
                               {
-                                 llvm::Constant* Val;
-                                 llvm::Constant* Ptr;
+                                 llvm::Constant* Val = nullptr;
+                                 llvm::Constant* Ptr = nullptr;
                                  llvm::StoreInst* SI = dyn_cast<llvm::StoreInst>(GuardInst);
                                  auto Removable = SI && removableStore(SI, GV, TLI, *DL, Ptr, Val, true);
                                  if(Removable)
@@ -7170,6 +7173,11 @@ namespace llvm
       moduleContext = &M.getContext();
       TopFunctionName = _TopFunctionName;
       bool res = false;
+#if __clang_major__ > 5
+      TreeHeightReduction THR;
+      res |= THR.runOnModule(M, modulePass);
+#endif
+
 #if PRINT_DBG_MSG
       llvm::errs() << "Computing e-SSA\n";
 #endif
@@ -7245,7 +7253,6 @@ namespace llvm
             }
          }
       }
-
       if(!earlyAnalysis)
       {
          for(const auto& globalVar : M.getGlobalList())
