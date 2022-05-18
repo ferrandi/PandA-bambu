@@ -48,7 +48,8 @@
       <cmd name="def get_res(log_lines):" />
       <cmd name="    num_re = re.compile(r&quot;(\d+)&quot;)" />
       <cmd name="    first_num = lambda str: num_re.search(str).group(1)" />
-      <cmd name="    table_lines = first_table_after('List of Pins:', log_lines)" />
+      <cmd name="    table_lines = first_table_after('List of Pins:', log_lines)" condition="!${__connect_iob__}" />
+      <cmd name="    table_lines = first_table_after('Ports used in current design.', log_lines)" condition="${__connect_iob__}" />
       <cmd name="    rows = parse_ascii_table(table_lines)" />
       <cmd name="    pin_table = dict(zip(rows[1], rows[2]))" />
       <cmd name="    lines = log_lines[log_lines.index(next(iter(filter(lambda x: 'Reporting routed project' in x, log_lines)), None)):]" />
@@ -78,8 +79,8 @@
       <cmd name="    os.remove(dir + '/pads.py')" condition="!${__connect_iob__}" />
       <cmd name="sys.path.append(dir)" />
       <cmd name="project = createProject(dir)" />
-      <cmd name="project.setVariantName('NG-LARGE-EMBEDDED')" condition="!${__connect_iob__}" />
-      <cmd name="project.setVariantName('NG-LARGE')" condition="${__connect_iob__}" />
+      <cmd name="project.setVariantName('${__target_family__}-EMBEDDED')" condition="!${__connect_iob__}" />
+      <cmd name="project.setVariantName('${__target_family__}')" condition="${__connect_iob__}" />
       <cmd name="project.setTopCellName('${__top_id__}')" />
       <cmd name="project.addFiles('${__VHDL_library__}', [${__nxpython_sources_macro_list__}])" condition="${__has_VHDL_library__}" />
       <cmd name="project.addFiles([${__nxpython_sources_macro_list__}])" condition="!${__has_VHDL_library__}" />

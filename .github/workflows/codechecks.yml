@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: codechecks-${{ github.ref }}
+  group: codechecks-${{ github.head_ref }}
   cancel-in-progress: true
 
 env:

@@ -9,7 +9,7 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: minimal-${{ github.ref }}
+  group: minimal-${{ github.head_ref }}
   cancel-in-progress: true
 
 env:

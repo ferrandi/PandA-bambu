@@ -11,30 +11,30 @@ env:
 jobs:
   remove-dist:
     runs-on: [self-hosted]
+    env:
+      pr_url: ${{env.storage-url}}/${{github.head_ref}}
     steps:
       - name: Remove PR storage directory
         shell: bash
         run: |
-          set -e
-          PRDIR_URL="${{env.storage-url}}/refs/pull/${{github.event.number}}/"
           AUTH=''
           if [[ ! -z '${{env.storage-user}}' ]]; then
             AUTH='-u ${{env.storage-user}}:${{env.storage-token}} '
           fi
-          curl -L --fail -X DELETE $AUTH "$PRDIR_URL"
+          curl -L -X DELETE $AUTH "${{env.pr_url}}/"
   update-results:
-    if: github.event.pull_request.merged == true && github.base_ref == 'main'
+    if: github.event.pull_request.merged == true
     runs-on: [self-hosted]
+    env:
+      pr_url: ${{env.storage-url}}/results/${{github.head_ref}}
+      base_url: ${{env.storage-url}}/results/${{github.base_ref}}
     steps:
-      - name: Update main performance results
+      - name: Update base branch performance results
         shell: bash
         run: |
-          set -e
-          PR_URL="${{env.storage-url}}/results/refs/pull/${{github.event.number}}"
-          MAIN_URL="${{env.storage-url}}/results/main"
           AUTH=''
           if [[ ! -z '${{env.storage-user}}' ]]; then
             AUTH='-u ${{env.storage-user}}:${{env.storage-token}} '
           fi
-          curl -L --fail -X MOVE $AUTH --header "Destination:$MAIN_URL/" "$PR_URL/merge/"
-          curl -L --fail -X DELETE $AUTH "$PR_URL/"
+          curl -L -X MOVE $AUTH --header "Destination:${{env.base_url}}/" "${{env.pr_url}}/"
+          curl -L -X DELETE $AUTH "${{env.pr_url}}/"
