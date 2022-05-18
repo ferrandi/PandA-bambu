@@ -33,7 +33,8 @@
       <cmd name="    lines = lines[lines.index(next(iter(filter(lambda x: table_header in x, lines)), None)):]" />
       <cmd name="    lines = lines[lines.index(next(iter(filter(lambda x: table_row in x, lines)), None)):]" />
       <cmd name="    ltrim = lines[0].find(table_corner)" />
-      <cmd name="    lines = lines[:lines.index(next(iter(filter(lambda x: all(t not in x[ltrim:] for t in [table_row, table_edge]), lines)), None))]" />
+      <cmd name="    try: lines = lines[:lines.index(next(iter(filter(lambda x: all(t not in x[ltrim:] for t in [table_row, table_edge]), lines)), None))]" />
+      <cmd name="    except Exception: None" />
       <cmd name="    return list(map(lambda x: x[ltrim:], filter(lambda x: any(t in x[ltrim:] for t in [table_row, table_edge]), lines)))" />
       <cmd name="def parse_ascii_table(table_lines):" />
       <cmd name="    rows = []" />
