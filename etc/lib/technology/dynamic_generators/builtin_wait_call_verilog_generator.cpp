@@ -199,7 +199,7 @@ for(idx = 1; idx <= _np - 3; ++idx)
    if(idx != _np - 3)
    {
       std::cout << "  else if (step == S_" << idx << ") begin\n"
-                << "    Mout_we_ram = 1'b1 & active_request;\n"
+                << "    Mout_we_ram = active_request;\n"
                 << "    Mout_addr_ram = (in1 + paramAddressRead) & {BITSIZE_Mout_addr_ram{active_request}};\n"
                 << "    Mout_Wdata_ram = " << _p[idx + 1].name << " & {BITSIZE_Mout_Wdata_ram{active_request}};\n"
                 << "    Mout_data_ram_size = " << _p[idx + 1].type_size << " & {BITSIZE_Mout_data_ram_size{active_request}};\n"
@@ -214,7 +214,7 @@ for(idx = 1; idx <= _np - 3; ++idx)
    else
    {
       std::cout << "  else if (step == S_" << idx << ") begin\n"
-                << "    Mout_we_ram = 1'b1 & active_request;\n"
+                << "    Mout_we_ram = active_request;\n"
                 << "    Mout_addr_ram = (in1 + paramAddressRead) & {BITSIZE_Mout_addr_ram{active_request}};\n"
                 << "    Mout_Wdata_ram = " << _p[idx + 1].name << " & {BITSIZE_Mout_Wdata_ram{active_request}};\n"
                 << "    Mout_data_ram_size = " << _p[idx + 1].type_size << " & {BITSIZE_Mout_data_ram_size{active_request}};\n"
@@ -230,7 +230,7 @@ for(idx = 1; idx <= _np - 3; ++idx)
 if(_np > 2)
 {
    std::cout << "  else if (step == S_" << idx << ") begin\n"
-             << "     Mout_we_ram = 1'b1 & active_request;\n"
+             << "     Mout_we_ram = active_request;\n"
              << "     Mout_addr_ram = (in1 + paramAddressRead) & {BITSIZE_Mout_addr_ram{active_request}};\n"
              << "     Mout_Wdata_ram = " << _p[idx + 1].name << " & {BITSIZE_Mout_Wdata_ram{active_request}};\n"
              << "     Mout_data_ram_size = " << _p[idx + 1].type_size << " & {BITSIZE_Mout_data_ram_size{active_request}};\n"
@@ -245,7 +245,7 @@ if(_np > 2)
 }
 
 std::cout << "  else if (step == S_" << idx << ") begin\n"
-          << "    Mout_we_ram = 1'b1 & active_request;\n"
+          << "    Mout_we_ram = active_request;\n"
           << "    Mout_addr_ram = in1 & {BITSIZE_Mout_addr_ram{active_request}};\n"
           << "    Mout_Wdata_ram = unlock_address & {BITSIZE_Mout_Wdata_ram{active_request}};\n"
           << "    Mout_data_ram_size = BITSIZE_Mout_Wdata_ram & {BITSIZE_Mout_data_ram_size{active_request}};\n"
@@ -273,7 +273,7 @@ idx++;
 if(_np > 2 && _specializing_string != "")
 {
    std::cout << "  else if (step == S_" << idx << ") begin\n"
-             << "      Mout_oe_ram = 1'b1 & active_request;\n"
+             << "      Mout_oe_ram = active_request;\n"
              << "      Mout_addr_ram = (in1 + paramAddressRead) & {BITSIZE_Mout_addr_ram{active_request}};\n"
              << "      Mout_data_ram_size = " << _specializing_string << " & {BITSIZE_Mout_data_ram_size{active_request}};\n"
              << "    if (M_DataRdy == 1'b1) begin\n"
@@ -287,7 +287,7 @@ if(_np > 2 && _specializing_string != "")
    idx++;
 
    std::cout << "  else if (step == S_" << idx << ") begin\n"
-             << "    Mout_we_ram = 1'b1 & active_request;\n"
+             << "    Mout_we_ram = active_request;\n"
              << "    Mout_addr_ram = " << _p[_np - 1].name << " & {BITSIZE_Mout_addr_ram{active_request}};\n"
              << "    Mout_Wdata_ram = readValue & {BITSIZE_Mout_Wdata_ram{active_request}};\n"
              << "    Mout_data_ram_size = " << _specializing_string << " & {BITSIZE_Mout_data_ram_size{active_request}};\n"
