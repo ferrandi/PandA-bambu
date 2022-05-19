@@ -61,7 +61,7 @@ std::string fsm = "\
   reg [7:0] data1_size;\n\
   \n\
   assign out1 = {1'b0,temp_out1[30:0]};\
-  always @ (posedge clock 1RESET_EDGE)\n\
+  always @(posedge clock 1RESET_EDGE)\n\
   begin\n\
     if (1RESET_VALUE)\n\
     begin\n\
@@ -140,7 +140,7 @@ std::string fsm = "\
               _next_pointer=_present_pointer+1'd1;\n\
               _next_index=_present_index+1'd1;\n\
               _next_state=S_1;\n\
-             active_request_next =1'b1;\n\
+              active_request_next =1'b1;\n\
              end\n\
            end\n\
       endcase\n \

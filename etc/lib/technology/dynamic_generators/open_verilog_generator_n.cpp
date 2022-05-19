@@ -75,7 +75,7 @@ std::string fsm = "\
       end\n\
   \n\
   assign out1 = {1'b0,temp_out1[30:0]};\
-  always @ (posedge clock 1RESET_EDGE)\n\
+  always @(posedge clock 1RESET_EDGE)\n\
   begin\n\
     if (1RESET_VALUE)\n\
     begin\n\

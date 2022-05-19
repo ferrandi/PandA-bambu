@@ -159,7 +159,7 @@ reg write_done;\n\
         _present_data2 <= _next_data2;\n\
       end\n\
 \n\
-  always @ (posedge clock 1RESET_EDGE)\n\
+  always @(posedge clock 1RESET_EDGE)\n\
   begin\n\
     if (1RESET_VALUE)\n\
     begin\n\
