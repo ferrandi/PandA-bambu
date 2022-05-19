@@ -203,7 +203,7 @@ reg write_done;\n\
            begin\n\
              Mout_addr_ram[BITSIZE_Mout_addr_ram-1:0]=(in1[BITSIZE_Mout_addr_ram-1:0]+_present_pointer) & {BITSIZE_Mout_addr_ram{active_request}};\n\
              Mout_data_ram_size={{BITSIZE_Mout_data_ram_size-4{1'b0}}, 4'd8} & {BITSIZE_Mout_data_ram_size{active_request}};\n\
-             Mout_oe_ram=active_reqeust;\n\
+             Mout_oe_ram=active_request;\n\
              if(M_DataRdy)\n\
              begin\n\
                 _next_data2 = M_Rdata_ram[7:0];\n\
