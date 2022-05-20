@@ -851,11 +851,11 @@ namespace llvm
       {
          const alloca_var* av = reinterpret_cast<const alloca_var*>(t);
          const llvm::Instruction* ti = av->alloc_inst;
-         if (MDNode* N = ti->getMetadata("annotation"))
+         if(MDNode* N = ti->getMetadata("annotation"))
          {
             std::string allocaname = std::string(cast<MDString>(N->getOperand(0))->getString());
             if(identifierTable.find(allocaname) == identifierTable.end())
-              identifierTable.insert(allocaname);
+               identifierTable.insert(allocaname);
             const void* an = identifierTable.find(allocaname)->c_str();
             return assignCode(an, GT(IDENTIFIER_NODE));
          }
@@ -3547,6 +3547,27 @@ namespace llvm
       {
          const void* vdef = getSSA(ma, g, currentFunction, false);
          serialize_child("vdef", vdef);
+         llvm::MemoryAccess* defAccess = ma->getDefiningAccess();
+         auto da = dyn_cast<llvm::MemoryUseOrDef>(defAccess);
+         if(da)
+         {
+            auto defvuseStmt = da->getMemoryInst();
+            if((((dyn_cast<llvm::LoadInst>(inst) && dyn_cast<llvm::LoadInst>(inst)->isVolatile()) ||
+                 (dyn_cast<llvm::StoreInst>(inst) && dyn_cast<llvm::StoreInst>(inst)->isVolatile()))) ||
+               (defvuseStmt &&
+                ((dyn_cast<llvm::LoadInst>(defvuseStmt) && dyn_cast<llvm::LoadInst>(defvuseStmt)->isVolatile()) ||
+                 (dyn_cast<llvm::StoreInst>(defvuseStmt) && dyn_cast<llvm::StoreInst>(defvuseStmt)->isVolatile()))))
+            {
+               bool isDefault = false;
+               const void* def_stmt = getVirtualDefStatement(defAccess, isDefault, MSSA, currentFunction);
+               const void* vuse = getSSA(ma, def_stmt, currentFunction, isDefault);
+               if(!isDefault)
+               {
+                  serialize_child("vuse", vuse);
+               }
+            }
+         }
+
          std::set<llvm::MemoryAccess*> visited;
          auto startingMA = MSSA.getMemoryAccess(inst);
          if(isa<llvm::CallInst>(inst) || isa<llvm::InvokeInst>(inst) || isa<llvm::FenceInst>(inst))
@@ -6541,11 +6562,11 @@ namespace llvm
                               llvm::errs() << "Found a global var that is an invariant: " << *GV << "\n";
                               for(llvm::BasicBlock::iterator CurInst = BI->begin(); CurInst != II;)
                               {
-                                 llvm::Constant* Val;
-                                 llvm::Constant* Ptr;
-                                 assert(
-                                     dyn_cast<llvm::StoreInst>(CurInst) &&
-                                     removableStore(dyn_cast<llvm::StoreInst>(CurInst), GV, TLI, *DL, Ptr, Val, false));
+                                 llvm::Constant* Val = nullptr;
+                                 llvm::Constant* Ptr = nullptr;
+                                 auto resRS =
+                                     removableStore(dyn_cast<llvm::StoreInst>(CurInst), GV, TLI, *DL, Ptr, Val, false);
+                                 assert(dyn_cast<llvm::StoreInst>(CurInst) && resRS);
                                  MutatedMemory[Ptr] = Val;
 
                                  auto me = CurInst;
@@ -6566,8 +6587,8 @@ namespace llvm
                               ++GuardInst;
                               if(GuardInst != IE)
                               {
-                                 llvm::Constant* Val;
-                                 llvm::Constant* Ptr;
+                                 llvm::Constant* Val = nullptr;
+                                 llvm::Constant* Ptr = nullptr;
                                  llvm::StoreInst* SI = dyn_cast<llvm::StoreInst>(GuardInst);
                                  auto Removable = SI && removableStore(SI, GV, TLI, *DL, Ptr, Val, true);
                                  if(Removable)
@@ -7245,7 +7266,6 @@ namespace llvm
             }
          }
       }
-
       if(!earlyAnalysis)
       {
          for(const auto& globalVar : M.getGlobalList())
