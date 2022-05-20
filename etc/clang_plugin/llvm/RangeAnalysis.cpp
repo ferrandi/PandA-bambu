@@ -118,7 +118,11 @@
 #ifdef LOG_TRANSACTIONS
 std::error_code _log_ErrorInfo;
 llvm::Twine _log_fileName = "/tmp/ratransactions";
+#if __clang_major__ >= 13
+llvm::raw_fd_ostream _log_file(_log_fileName.str().c_str(), _log_ErrorInfo, llvm::sys::fs::OF_Text);
+#else
 llvm::raw_fd_ostream _log_file(_log_fileName.str().c_str(), _log_ErrorInfo, llvm::sys::fs::F_Text);
+#endif
 #define LOG_TRANSACTION(str) _log_file << str << "\n"
 #define FINISH_LOG _log_file.close();
 #else
@@ -6116,7 +6120,11 @@ namespace RangeAnalysis
    void ConstraintGraph::printToFile(const Function& F, const std::string& FileName)
    {
       std::error_code ErrorInfo;
+#if __clang_major__ >= 13
+      raw_fd_ostream file(FileName, ErrorInfo, sys::fs::OF_Text);
+#else
       raw_fd_ostream file(FileName, ErrorInfo, sys::fs::F_Text);
+#endif
 
       if(!file.has_error())
       {

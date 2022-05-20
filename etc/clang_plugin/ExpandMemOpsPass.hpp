@@ -111,7 +111,11 @@ namespace llvm
       {
          if(llvm::VectorType* VTy = dyn_cast<llvm::VectorType>(Type))
          {
+#if __clang_major__ >= 12
+            return (VTy->getElementCount().getValue() * VTy->getElementType()->getPrimitiveSizeInBits()) / 8;
+#else
             return (VTy->getNumElements() * VTy->getElementType()->getPrimitiveSizeInBits()) / 8;
+#endif
          }
          return Type->getPrimitiveSizeInBits() / 8;
       }

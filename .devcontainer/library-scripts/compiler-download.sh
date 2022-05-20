@@ -11,6 +11,9 @@ bambuhls_compiler_url="https://release.bambuhls.eu/compiler"
 inflate() {
    echo "Installing $1 into $2"
    case $1 in
+      clang-13 )
+         wget https://github.com/llvm/llvm-project/releases/download/llvmorg-13.0.1/clang+llvm-13.0.1-x86_64-linux-gnu-ubuntu-18.04.tar.xz -nv -O - | tar -C $2 -xJf - &
+         ;;
       clang-12 )
          wget https://github.com/llvm/llvm-project/releases/download/llvmorg-12.0.1/clang+llvm-12.0.1-x86_64-linux-gnu-ubuntu-16.04.tar.xz -nv -O - | tar -C $2 -xJf - &
          ;;

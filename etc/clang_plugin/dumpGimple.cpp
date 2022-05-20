@@ -59,6 +59,7 @@
 #include "llvm/IR/Constants.h"
 #include "llvm/IR/DebugInfo.h"
 #include "llvm/IR/DebugInfoMetadata.h"
+#include "llvm/IR/DerivedTypes.h"
 #include "llvm/IR/Dominators.h"
 #include "llvm/IR/Function.h"
 #include "llvm/IR/GetElementPtrTypeIterator.h"
@@ -263,27 +264,23 @@ namespace llvm
 #undef DEFTREECODE
 #undef DEFGSCODE
 
-#define DEFTREECODE(SYM, STRING, TYPE, NARGS)                                                                       \
-   ((TYPE) == tcc_unary ?                                                                                           \
-        GIMPLE_UNARY_RHS :                                                                                          \
-        ((TYPE) == tcc_binary || (TYPE) == tcc_comparison) ?                                                        \
-        GIMPLE_BINARY_RHS :                                                                                         \
-        ((TYPE) == tcc_constant || (TYPE) == tcc_declaration || (TYPE) == tcc_reference) ?                          \
-        GIMPLE_SINGLE_RHS :                                                                                         \
-        (GT(SYM) == GT(TRUTH_AND_EXPR) || GT(SYM) == GT(TRUTH_OR_EXPR) || GT(SYM) == GT(TRUTH_XOR_EXPR)) ?          \
-        GIMPLE_BINARY_RHS :                                                                                         \
-        GT(SYM) == GT(TRUTH_NOT_EXPR) ?                                                                             \
-        GIMPLE_UNARY_RHS :                                                                                          \
-        (GT(SYM) == GT(COND_EXPR) || GT(SYM) == GT(WIDEN_MULT_PLUS_EXPR) || GT(SYM) == GT(WIDEN_MULT_MINUS_EXPR) || \
-         GT(SYM) == GT(DOT_PROD_EXPR) || GT(SYM) == GT(SAD_EXPR) || GT(SYM) == GT(REALIGN_LOAD_EXPR) ||             \
-         GT(SYM) == GT(VEC_COND_EXPR) || GT(SYM) == GT(VEC_PERM_EXPR) || GT(SYM) == GT(BIT_INSERT_EXPR) ||          \
-         GT(SYM) == GT(FMA_EXPR) || GT(SYM) == GT(FSHL_EXPR) || GT(SYM) == GT(FSHR_EXPR) ||                         \
-         GT(SYM) == GT(INSERTELEMENT)) ?                                                                            \
-        GIMPLE_TERNARY_RHS :                                                                                        \
-        (GT(SYM) == GT(CONSTRUCTOR) || GT(SYM) == GT(OBJ_TYPE_REF) || GT(SYM) == GT(ASSERT_EXPR) ||                 \
-         GT(SYM) == GT(ADDR_EXPR) || GT(SYM) == GT(WITH_SIZE_EXPR) || GT(SYM) == GT(SSA_NAME)) ?                    \
-        GIMPLE_SINGLE_RHS :                                                                                         \
-        GIMPLE_INVALID_RHS),
+#define DEFTREECODE(SYM, STRING, TYPE, NARGS)                                                                   \
+   ((TYPE) == tcc_unary                                                              ? GIMPLE_UNARY_RHS :       \
+    ((TYPE) == tcc_binary || (TYPE) == tcc_comparison)                               ? GIMPLE_BINARY_RHS :      \
+    ((TYPE) == tcc_constant || (TYPE) == tcc_declaration || (TYPE) == tcc_reference) ? GIMPLE_SINGLE_RHS :      \
+    (GT(SYM) == GT(TRUTH_AND_EXPR) || GT(SYM) == GT(TRUTH_OR_EXPR) || GT(SYM) == GT(TRUTH_XOR_EXPR)) ?          \
+                                                                                       GIMPLE_BINARY_RHS :      \
+    GT(SYM) == GT(TRUTH_NOT_EXPR)                                                    ? GIMPLE_UNARY_RHS :       \
+    (GT(SYM) == GT(COND_EXPR) || GT(SYM) == GT(WIDEN_MULT_PLUS_EXPR) || GT(SYM) == GT(WIDEN_MULT_MINUS_EXPR) || \
+     GT(SYM) == GT(DOT_PROD_EXPR) || GT(SYM) == GT(SAD_EXPR) || GT(SYM) == GT(REALIGN_LOAD_EXPR) ||             \
+     GT(SYM) == GT(VEC_COND_EXPR) || GT(SYM) == GT(VEC_PERM_EXPR) || GT(SYM) == GT(BIT_INSERT_EXPR) ||          \
+     GT(SYM) == GT(FMA_EXPR) || GT(SYM) == GT(FSHL_EXPR) || GT(SYM) == GT(FSHR_EXPR) ||                         \
+     GT(SYM) == GT(INSERTELEMENT)) ?                                                                            \
+                                    GIMPLE_TERNARY_RHS :                                                        \
+    (GT(SYM) == GT(CONSTRUCTOR) || GT(SYM) == GT(OBJ_TYPE_REF) || GT(SYM) == GT(ASSERT_EXPR) ||                 \
+     GT(SYM) == GT(ADDR_EXPR) || GT(SYM) == GT(WITH_SIZE_EXPR) || GT(SYM) == GT(SSA_NAME)) ?                    \
+                                    GIMPLE_SINGLE_RHS :                                                         \
+                                    GIMPLE_INVALID_RHS),
 #define END_OF_BASE_TREE_CODES GIMPLE_INVALID_RHS,
 #define DEFGSCODE(SYM, NAME, GSSCODE) GIMPLE_INVALID_RHS,
    const DumpGimpleRaw::gimple_rhs_class DumpGimpleRaw::gimple_rhs_class_table[] = {
@@ -851,11 +848,11 @@ namespace llvm
       {
          const alloca_var* av = reinterpret_cast<const alloca_var*>(t);
          const llvm::Instruction* ti = av->alloc_inst;
-         if (MDNode* N = ti->getMetadata("annotation"))
+         if(MDNode* N = ti->getMetadata("annotation"))
          {
             std::string allocaname = std::string(cast<MDString>(N->getOperand(0))->getString());
             if(identifierTable.find(allocaname) == identifierTable.end())
-              identifierTable.insert(allocaname);
+               identifierTable.insert(allocaname);
             const void* an = identifierTable.find(allocaname)->c_str();
             return assignCode(an, GT(IDENTIFIER_NODE));
          }
@@ -3993,7 +3990,11 @@ namespace llvm
             auto type = val->getType();
             if(dyn_cast<llvm::ArrayType>(type) || dyn_cast<llvm::VectorType>(type))
             {
+#if __clang_major__ >= 13
+               for(unsigned index = 0; index < val->getElementCount().getValue(); ++index)
+#else
                for(unsigned index = 0; index < val->getNumElements(); ++index)
+#endif
                {
                   if(uicTable.find(index) == uicTable.end())
                      uicTable[index] = assignCodeAuto(
@@ -4006,7 +4007,11 @@ namespace llvm
             else
             {
                const void* ty = TREE_TYPE(t);
+#if __clang_major__ >= 13
+               for(unsigned index = 0; index < val->getElementCount().getValue(); ++index)
+#else
                for(unsigned index = 0; index < val->getNumElements(); ++index)
+#endif
                {
                   auto op = val->getStructElement(index);
                   const void* valu = getOperand(op, nullptr);
@@ -5664,7 +5669,11 @@ namespace llvm
    {
       if(llvm::VectorType* VTy = dyn_cast<llvm::VectorType>(Type))
       {
+#if __clang_major__ >= 12
+         return (VTy->getElementCount().getValue() * VTy->getElementType()->getPrimitiveSizeInBits()) / 8;
+#else
          return (VTy->getNumElements() * VTy->getElementType()->getPrimitiveSizeInBits()) / 8;
+#endif
       }
       return Type->getPrimitiveSizeInBits() / 8;
    }
@@ -6064,7 +6073,7 @@ namespace llvm
       return res;
    }
 
-   static bool isSimpleEnoughPointerToCommitLocal(llvm::Constant* C)
+   static bool isSimpleEnoughPointerToCommitLocal(llvm::Constant* C, const llvm::DataLayout& DL)
    {
       // Conservatively, avoid aggregate types. This is because we don't
       // want to worry about them partially overlapping other stores.
@@ -6096,8 +6105,12 @@ namespace llvm
             // notional bounds of the corresponding static array types.
             if(!CE->isGEPWithNoNotionalOverIndexing())
                return false;
-
+#if __clang_major__ >= 13
+            return ConstantFoldLoadThroughGEPConstantExpr(GV->getInitializer(), CE,
+                                                          C->getType()->getPointerElementType(), DL);
+#else
             return ConstantFoldLoadThroughGEPConstantExpr(GV->getInitializer(), CE);
+#endif
 
             // A constantexpr bitcast from a pointer to another pointer is a no-op,
             // and we know how to evaluate it by moving the bitcast from the pointer
@@ -6185,11 +6198,21 @@ namespace llvm
       auto initType = Init->getType();
       uint64_t NumElts = 0;
       if(dyn_cast<llvm::ArrayType>(initType))
+      {
          NumElts = dyn_cast<llvm::ArrayType>(initType)->getNumElements();
+      }
       else if(dyn_cast<llvm::VectorType>(initType))
+      {
+#if __clang_major__ >= 12
+         NumElts = dyn_cast<llvm::VectorType>(initType)->getElementCount().getValue();
+#else
          NumElts = dyn_cast<llvm::VectorType>(initType)->getNumElements();
+#endif
+      }
       else
+      {
          llvm_unreachable("unexpected case");
+      }
 
       // Break up the array into elements.
       for(uint64_t i = 0, e = NumElts; i != e; ++i)
@@ -6289,15 +6312,29 @@ namespace llvm
             Elts.clear();
             unsigned NumElts = 0;
             if(auto* STy = dyn_cast<llvm::StructType>(Ty))
+            {
                NumElts = STy->getNumElements();
+            }
             else if(auto* ATy = dyn_cast<llvm::ArrayType>(Ty))
+            {
                NumElts = ATy->getNumElements();
+            }
             else if(auto* VTy = dyn_cast<llvm::VectorType>(Ty))
+            {
+#if __clang_major__ >= 12
+               NumElts = VTy->getElementCount().getValue();
+#else
                NumElts = VTy->getNumElements();
+#endif
+            }
             else
+            {
                llvm_unreachable("unexpected case");
+            }
             for(unsigned i = 0, e = NumElts; i != e; ++i)
+            {
                Elts.push_back(Init->getAggregateElement(i));
+            }
          }
       };
 
@@ -6337,7 +6374,7 @@ namespace llvm
          Ptr = FoldedPtr;
          // llvm::errs() << "; To: " << *Ptr << "\n";
       }
-      if(!isSimpleEnoughPointerToCommitLocal(Ptr))
+      if(!isSimpleEnoughPointerToCommitLocal(Ptr, DL))
       {
          // If this is too complex for us to commit, reject it.
          // llvm::errs() << "Pointer is too complex for us to evaluate store.";
@@ -6443,7 +6480,13 @@ namespace llvm
             // Handle a constantexpr getelementptr.
             case llvm::Instruction::GetElementPtr:
                if(auto* I = getInitializerLocal(CE->getOperand(0)))
+               {
+#if __clang_major__ >= 13
+                  return llvm::ConstantFoldLoadThroughGEPConstantExpr(I, CE, P->getType()->getPointerElementType(), DL);
+#else
                   return llvm::ConstantFoldLoadThroughGEPConstantExpr(I, CE);
+#endif
+               }
                break;
                // Handle a constantexpr bitcast.
             case llvm::Instruction::BitCast:

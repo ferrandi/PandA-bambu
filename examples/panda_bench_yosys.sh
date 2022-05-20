@@ -1,6 +1,6 @@
 #!/bin/bash
 script_dir="$(dirname $(readlink -e $0))"
-BATCH_ARGS=("--no-iob" "--clock-period=5" "--compiler=I386_CLANG12" "--evaluation")
+BATCH_ARGS=("--no-iob" "--clock-period=5" "--compiler=I386_CLANG13" "--evaluation")
 OUT_SUFFIX="pb_yosys"
 
 python3 $script_dir/../etc/scripts/test_panda.py --tool=bambu \

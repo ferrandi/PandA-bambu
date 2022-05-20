@@ -64,7 +64,10 @@
 #define GT(code) tree_codes::code
 #define LOCAL_BUFFER_LEN 512
 
-#if __clang_major__ == 12
+#if __clang_major__ == 13
+#define CLANG_VERSION_SYMBOL(SYMBOL) clang13##SYMBOL
+#define CLANG_VERSION_STRING(SYMBOL) "clang13" #SYMBOL
+#elif __clang_major__ == 12
 #define CLANG_VERSION_SYMBOL(SYMBOL) clang12##SYMBOL
 #define CLANG_VERSION_STRING(SYMBOL) "clang12" #SYMBOL
 #elif __clang_major__ == 11
