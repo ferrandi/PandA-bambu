@@ -59,8 +59,7 @@ std::cout << "always @(*)\n";
 std::cout << "begin\n";
 std::cout << "  for(ii=0; ii<PORTSIZE_" << _ports_out[1].name << "; ii=ii+1)\n";
 std::cout << "    " << _ports_out[1].name << "[(BITSIZE_" << _ports_out[1].name << ")*ii+:BITSIZE_"
-          << _ports_out[1].name << "] = " << _ports_in[4].name << " >> (8*" << _ports_in[3].name << "[(BITSIZE_"
-          << _ports_in[3].name << ")*ii+:BITSIZE_" << _ports_in[3].name << "]);" << std::endl;
+          << _ports_out[1].name << "] = " << _ports_in[4].name << ";" << std::endl;
 std::cout << "end\n";
 
 std::cout << "always @(*)\n";
