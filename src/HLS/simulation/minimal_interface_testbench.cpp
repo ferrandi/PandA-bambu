@@ -148,25 +148,17 @@ void MinimalInterfaceTestbench::update_memory_queue(std::string port_name, std::
    writer->write("always @(posedge " + std::string(CLOCK_PORT_NAME) + ")\n");
    writer->write("begin");
    writer->write(STR(STD_OPENING_CHAR) + "\n");
-   writer->write("for(i = " + delay_type + " - 1; i == 1; i = i - 1)");
-   writer->write(STR(STD_OPENING_CHAR) + "\n");
-   writer->write(port_name + "_queue_next[i*" + STR(size) + " +: " + STR(size) + "] <= " + port_name +
-                 "_queue_curr[(i-1)*" + STR(size) + " +: " + STR(size) + "];\n");
-   writer->write(STR(STD_CLOSING_CHAR));
-   writer->write(port_name + "_queue_next[" + STR(size - 1) + ":0] <=" + port_name + "_queue_curr[" + STR(size - 1) +
-                 ":0];\n");
+   writer->write(port_name + "_queue_next["+ delay_type + "*" + STR(size) + " : " + STR(size) + "] <= " + port_name +
+                 "_queue_curr[("+ delay_type + "-1) *" + STR(size) + " : 0];\n");
    writer->write(STR(STD_CLOSING_CHAR));
    writer->write("end\n\n");
 
    writer->write("always @(*)\n");
    writer->write("begin");
    writer->write(STR(STD_OPENING_CHAR) + "\n");
-   writer->write("for(i = " + delay_type + " - 1; i == 1; i = i - 1)");
-   writer->write(STR(STD_OPENING_CHAR) + "\n");
-   writer->write(port_name + "_queue_curr[i*" + STR(size) + " +: " + STR(size) + "] = " + port_name +
-                 "_queue_next[(i-1)*" + STR(size) + " +: " + STR(size) + "];\n");
-   writer->write(STR(STD_CLOSING_CHAR));
-   writer->write(port_name + "_queue_curr[" + STR(size - 1) + ":0] =" + port_name + ";\n");
+   writer->write(port_name + "_queue_curr[" + delay_type + "*" + STR(size) + " : " + STR(size) + "] <= " + port_name +
+                 "_queue_next[" + delay_type + "*" + STR(size) + " : " + STR(size) + "];\n");
+   writer->write(port_name + "_queue_curr[" + STR(size - 1) + ":0] = " + port_name + ";\n");
    writer->write(STR(STD_CLOSING_CHAR));
    writer->write("end\n\n");
 }
@@ -403,7 +395,8 @@ void MinimalInterfaceTestbench::write_memory_handler() const
             post_slice = "[" + boost::lexical_cast<std::string>(i) + "]";
          }
          writer->write("always @(*)\n");
-         writer->write("begin");
+         writer->write("begin\n");
+         writer->write("M_DataRdy_temp" + post_slice + " =0;");
          writer->write(STR(STD_OPENING_CHAR) + "\n");
          writer->write("if(Mout_we_ram_queue_curr[" + STR(Mout_we_ram_bitsize * Mout_we_ram_n_ports) +
                        "*(`MEM_DELAY_WRITE-1) + " + boost::lexical_cast<std::string>(i * Mout_we_ram_bitsize) +
@@ -426,7 +419,9 @@ void MinimalInterfaceTestbench::write_memory_handler() const
                        STR(Mout_addr_ram_bitsize * Mout_addr_ram_n_ports) + "] < (base_addr + MEMSIZE));");
          writer->write(STR(STD_CLOSING_CHAR) + "\n");
          writer->write("end\n");
-         writer->write("else\n");
+         writer->write("else if(Mout_oe_ram_queue_curr[" + STR(Mout_oe_ram_bitsize * Mout_oe_ram_n_ports) +
+                       "*(`MEM_DELAY_READ-1) + " + boost::lexical_cast<std::string>(i * Mout_oe_ram_bitsize) +
+                       "] === 1'b1)\n");
          writer->write("begin");
          writer->write(STR(STD_OPENING_CHAR) + "\n");
          writer->write("M_DataRdy_temp" + post_slice + " =");
@@ -443,13 +438,11 @@ void MinimalInterfaceTestbench::write_memory_handler() const
                        STR(Mout_addr_ram_bitsize * Mout_addr_ram_n_ports) + ":" +
                        boost::lexical_cast<std::string>(i * Mout_addr_ram_bitsize) + "+(`MEM_DELAY_READ-1)*" +
                        STR(Mout_addr_ram_bitsize * Mout_addr_ram_n_ports) +
-                       "] < (base_addr + MEMSIZE) && Mout_oe_ram_queue_curr[" +
-                       STR(Mout_oe_ram_bitsize * Mout_oe_ram_n_ports) + "*(`MEM_DELAY_READ-1) + " +
-                       boost::lexical_cast<std::string>(i * Mout_oe_ram_bitsize) + "] == 1);");
+                       "] < (base_addr + MEMSIZE));");
          writer->write(STR(STD_CLOSING_CHAR) + "\n");
          writer->write("end");
          writer->write(STR(STD_CLOSING_CHAR) + "\n");
-         writer->write("end\n");
+         writer->write("end\n\n");
       }
       writer->write("assign M_DataRdy = M_DataRdy_temp;\n\n");
    }
