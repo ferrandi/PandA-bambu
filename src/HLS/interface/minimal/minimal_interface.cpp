@@ -265,8 +265,10 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
       }
    }
 
-   auto do_not_expose_globals_case = [&] {
-      auto manage_feedback1 = [&](const std::string& portS, const std::string& portM) {
+   auto do_not_expose_globals_case = [&]
+   {
+      auto manage_feedback1 = [&](const std::string& portS, const std::string& portM)
+      {
          structural_objectRef port1, port2;
          structural_objectRef sign;
          /// slave INs connections
@@ -287,7 +289,8 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
          portsToSigConnect[port2] = sign;
          portsToSkip.insert(wrappedObj->find_member(portS, port_o_K, wrappedObj));
       };
-      auto manage_feedback2 = [&](const std::string& portSin, const std::string& portSout, const std::string& portM) {
+      auto manage_feedback2 = [&](const std::string& portSin, const std::string& portSout, const std::string& portM)
+      {
          structural_objectRef port1In, port1Out, port2;
          structural_objectRef sign;
          /// slave INs connections
@@ -460,12 +463,13 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
             }
             if(is_memory_splitted)
             {
-               shared_memory_module->SetParameter("MEMORY_INIT_file_a", "\"\"" + init_filename + "\"\"");
-               shared_memory_module->SetParameter("MEMORY_INIT_file_b", "\"\"0_" + init_filename + "\"\"");
+               shared_memory_module->SetParameter("MEMORY_INIT_file_a", "\"\"" + GetPath(init_filename) + "\"\"");
+               shared_memory_module->SetParameter("MEMORY_INIT_file_b",
+                                                  "\"\"" + GetPath("0_" + init_filename) + "\"\"");
             }
             else
             {
-               shared_memory_module->SetParameter("MEMORY_INIT_file", "\"\"" + init_filename + "\"\"");
+               shared_memory_module->SetParameter("MEMORY_INIT_file", "\"\"" + GetPath(init_filename) + "\"\"");
             }
             shared_memory_module->SetParameter("n_elements", STR(vec_size));
             shared_memory_module->SetParameter("data_size", STR(bus_data_bitsize));
@@ -1319,9 +1323,8 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
       auto port_name = GetPointer<port_o>(port_out)->get_id();
       if(GetPointer<port_o>(port_out)->get_port_interface() != port_o::port_interface::PI_DEFAULT)
       {
-         auto check_interfaces = [&](std::set<port_o::port_interface> interfList) -> bool {
-            return interfList.find(GetPointer<port_o>(port_out)->get_port_interface()) != interfList.end();
-         };
+         auto check_interfaces = [&](std::set<port_o::port_interface> interfList) -> bool
+         { return interfList.find(GetPointer<port_o>(port_out)->get_port_interface()) != interfList.end(); };
          if(check_interfaces({port_o::port_interface::PI_WNONE,        port_o::port_interface::PI_WVALID,
                               port_o::port_interface::PI_RACK,         port_o::port_interface::PI_READ,
                               port_o::port_interface::PI_WRITE,        port_o::port_interface::PI_ADDRESS,

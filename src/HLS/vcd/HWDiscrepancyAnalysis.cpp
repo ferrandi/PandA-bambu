@@ -825,7 +825,7 @@ DesignFlowStep_Status HWDiscrepancyAnalysis::Exec()
       }
       init_file << NumberToBinaryString(invalid_epp_id, data_word_size) << std::endl;
       init_file.close();
-      GetPointer<module>(curr_module)->SetParameter("MEMORY_INIT_file", "\"\"" + init_filename + "\"\"");
+      GetPointer<module>(curr_module)->SetParameter("MEMORY_INIT_file", "\"\"" + GetPath(init_filename) + "\"\"");
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Initialized checker for scope " + i.first);
       scope_id++;
    }
