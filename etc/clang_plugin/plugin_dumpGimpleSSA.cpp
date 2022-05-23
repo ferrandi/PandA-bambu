@@ -133,7 +133,7 @@ namespace llvm
          boost::char_separator<char> sep(",");
          boost::tokenizer<boost::char_separator<char>> FileTokenizer(InFile, sep);
          std::map<std::string, std::vector<std::string>> Fun2Params;
-         for(auto file_string : FileTokenizer)
+         for(const auto& file_string : FileTokenizer)
          {
             auto parms_file_name = create_file_basename_string(outdir_name, file_string) + ".params.txt";
             ErrorOr<std::unique_ptr<MemoryBuffer>> BufOrErr = MemoryBuffer::getFile(parms_file_name);
