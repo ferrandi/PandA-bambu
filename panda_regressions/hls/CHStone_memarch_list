@@ -17,6 +17,7 @@ CHStone/blowfish/bf.c --benchmark-name=bf-EP2C70F896C6    --device-name=EP2C70F8
 CHStone/blowfish/bf.c --benchmark-name=bf-EP2C70F896C6-R  --device-name=EP2C70F896C6-R
 CHStone/blowfish/bf.c --benchmark-name=bf-nx1h35S         --device-name=nx1h35S
 CHStone/blowfish/bf.c --benchmark-name=bf-nx1h140tsp      --device-name=nx1h140tsp
+CHStone/blowfish/bf.c --benchmark-name=bf-nx2h540tsc      --device-name=nx2h540tsc
 
 CHStone/gsm/gsm.c --benchmark-name=gsm-xc7z020         --device-name=xc7z020-1clg484
 CHStone/gsm/gsm.c --benchmark-name=gsm-xc5vlx50        --device-name=xc5vlx50-3ff1153
@@ -37,3 +38,4 @@ CHStone/gsm/gsm.c --benchmark-name=gsm-EP2C70F896C6    --device-name=EP2C70F896C
 CHStone/gsm/gsm.c --benchmark-name=gsm-EP2C70F896C6-R  --device-name=EP2C70F896C6-R
 CHStone/gsm/gsm.c --benchmark-name=gsm-nx1h35S         --device-name=nx1h35S
 CHStone/gsm/gsm.c --benchmark-name=gsm-nx1h140tsp      --device-name=nx1h140tsp
+CHStone/gsm/gsm.c --benchmark-name=gsm-nx2h540tsc      --device-name=nx2h540tsc
