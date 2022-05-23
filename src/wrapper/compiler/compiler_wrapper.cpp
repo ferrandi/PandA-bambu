@@ -557,6 +557,10 @@ void CompilerWrapper::CompileFile(const std::string& original_file_name, std::st
          command += " -c -fplugin=" + compiler.empty_plugin_obj +
                     " -mllvm -pandaGE-outputdir=" + Param->getOption<std::string>(OPT_output_temporary_directory) +
                     " -mllvm -pandaGE-infile=" + real_file_name;
+         if(compiler.is_llvm_legacy)
+         {
+            command += " -flegacy-pass-manager";
+         }
       }
       else
       {
@@ -645,6 +649,10 @@ void CompilerWrapper::CompileFile(const std::string& original_file_name, std::st
                                                           HLSFlowStep_Type::INFERRED_INTERFACE_GENERATION)
             {
                command += " -mllvm -add-noalias";
+               if(compiler.is_llvm_legacy)
+               {
+                  command += " -flegacy-pass-manager";
+               }
             }
             std::string extern_symbols;
             std::vector<std::string> xml_files;
@@ -756,6 +764,10 @@ void CompilerWrapper::CompileFile(const std::string& original_file_name, std::st
             command += " -mllvm -panda-topfname=" + fname;
          }
          command += "  -emit-llvm";
+         if(compiler.is_llvm_legacy)
+         {
+            command += " -flegacy-pass-manager";
+         }
       }
       else
       {
@@ -3002,6 +3014,7 @@ CompilerWrapper::Compiler CompilerWrapper::GetCompiler() const
    if(static_cast<int>(preferred_compiler) & static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_CLANG13))
    {
       compiler.is_clang = true;
+      compiler.is_llvm_legacy = true;
       compiler.gcc = flag_cpp ? relocate_compiler_path(I386_CLANGPP13_EXE) : relocate_compiler_path(I386_CLANG13_EXE);
       compiler.cpp = relocate_compiler_path(I386_CLANG_CPP13_EXE);
       compiler.extra_options =

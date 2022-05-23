@@ -262,7 +262,11 @@ class CompilerWrapper
 #endif
       /// true when compiler is based on clang/llvm
       bool is_clang;
-      Compiler() : is_clang(false)
+
+      /// true in case we have to use legacy pass manager in LLVM
+      bool is_llvm_legacy;
+
+      Compiler() : is_clang(false), is_llvm_legacy(false)
       {
       }
    };
