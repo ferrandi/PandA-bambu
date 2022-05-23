@@ -148,16 +148,26 @@ void MinimalInterfaceTestbench::update_memory_queue(std::string port_name, std::
    writer->write("always @(posedge " + std::string(CLOCK_PORT_NAME) + ")\n");
    writer->write("begin");
    writer->write(STR(STD_OPENING_CHAR) + "\n");
-   writer->write(port_name + "_queue_next["+ delay_type + "*" + STR(size) + " : " + STR(size) + "] <= " + port_name +
-                 "_queue_curr[("+ delay_type + "-1) *" + STR(size) + " : 0];\n");
+   writer->write("if(" + delay_type + " != 1)\n");
+   writer->write("begin");
+   writer->write(STR(STD_OPENING_CHAR) + "\n");
+   writer->write(port_name + "_queue_next[" + delay_type + "*" + STR(size) + " : " + STR(size) + "] <= " + port_name +
+                 "_queue_curr[(" + delay_type + "-1) *" + STR(size) + " : 0];\n");
+   writer->write(STR(STD_CLOSING_CHAR));
+   writer->write("end\n");
    writer->write(STR(STD_CLOSING_CHAR));
    writer->write("end\n\n");
 
    writer->write("always @(*)\n");
    writer->write("begin");
    writer->write(STR(STD_OPENING_CHAR) + "\n");
+   writer->write("if(" + delay_type + " != 1)\n");
+   writer->write("begin\n");
+   writer->write(STR(STD_OPENING_CHAR) + "\n");
    writer->write(port_name + "_queue_curr[" + delay_type + "*" + STR(size) + " : " + STR(size) + "] <= " + port_name +
                  "_queue_next[" + delay_type + "*" + STR(size) + " : " + STR(size) + "];\n");
+   writer->write(STR(STD_CLOSING_CHAR));
+   writer->write("end\n");
    writer->write(port_name + "_queue_curr[" + STR(size - 1) + ":0] = " + port_name + ";\n");
    writer->write(STR(STD_CLOSING_CHAR));
    writer->write("end\n\n");
@@ -404,10 +414,6 @@ void MinimalInterfaceTestbench::write_memory_handler() const
          writer->write("begin");
          writer->write(STR(STD_OPENING_CHAR) + "\n");
          writer->write("M_DataRdy_temp" + post_slice + " =");
-         if(Sout_DataRdy_port)
-         {
-            writer->write("Sout_DataRdy" + post_slice + " | ");
-         }
          writer->write("(base_addr <= Mout_addr_ram_queue_curr[" +
                        boost::lexical_cast<std::string>((i + 1) * Mout_addr_ram_bitsize - 1) +
                        "+(`MEM_DELAY_WRITE-1)*" + STR(Mout_addr_ram_bitsize * Mout_addr_ram_n_ports) + ":" +
@@ -425,10 +431,6 @@ void MinimalInterfaceTestbench::write_memory_handler() const
          writer->write("begin");
          writer->write(STR(STD_OPENING_CHAR) + "\n");
          writer->write("M_DataRdy_temp" + post_slice + " =");
-         if(Sout_DataRdy_port)
-         {
-            writer->write("Sout_DataRdy" + post_slice + " | ");
-         }
          writer->write("(base_addr <= Mout_addr_ram_queue_curr[" +
                        boost::lexical_cast<std::string>((i + 1) * Mout_addr_ram_bitsize - 1) + "+(`MEM_DELAY_READ-1)*" +
                        STR(Mout_addr_ram_bitsize * Mout_addr_ram_n_ports) + ":" +
@@ -437,14 +439,20 @@ void MinimalInterfaceTestbench::write_memory_handler() const
                        boost::lexical_cast<std::string>((i + 1) * Mout_addr_ram_bitsize - 1) + "+(`MEM_DELAY_READ-1)*" +
                        STR(Mout_addr_ram_bitsize * Mout_addr_ram_n_ports) + ":" +
                        boost::lexical_cast<std::string>(i * Mout_addr_ram_bitsize) + "+(`MEM_DELAY_READ-1)*" +
-                       STR(Mout_addr_ram_bitsize * Mout_addr_ram_n_ports) +
-                       "] < (base_addr + MEMSIZE));");
+                       STR(Mout_addr_ram_bitsize * Mout_addr_ram_n_ports) + "] < (base_addr + MEMSIZE));");
          writer->write(STR(STD_CLOSING_CHAR) + "\n");
          writer->write("end");
          writer->write(STR(STD_CLOSING_CHAR) + "\n");
          writer->write("end\n\n");
       }
-      writer->write("assign M_DataRdy = M_DataRdy_temp;\n\n");
+      if(Sout_DataRdy_port)
+      {
+         writer->write("assign M_DataRdy = M_DataRdy_temp | Sout_DataRdy;\n\n");
+      }
+      else
+      {
+         writer->write("assign M_DataRdy = M_DataRdy_temp;\n\n");
+      }
    }
 
    /// Master inputs set up
