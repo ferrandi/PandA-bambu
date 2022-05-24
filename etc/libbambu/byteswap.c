@@ -1,5 +1,5 @@
 /**
- * puts primitive adapted to the PandA infrastructure by Fabrizio Ferrandi from Politecnico di Milano.
+ * swap primitive adapted to the PandA infrastructure by Fabrizio Ferrandi from Politecnico di Milano.
  * October, 3 2014.
  *
  */
