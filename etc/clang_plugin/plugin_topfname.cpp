@@ -52,6 +52,10 @@
 #include "llvm/Support/raw_ostream.h"
 #include "llvm/Transforms/IPO.h"
 #include "llvm/Transforms/IPO/PassManagerBuilder.h"
+#if __clang_major__ >= 13
+#include "llvm/Passes/PassBuilder.h"
+#include "llvm/Passes/PassPlugin.h"
+#endif
 
 #include <cxxabi.h>
 #include <sstream>
@@ -107,13 +111,25 @@ namespace llvm
    llvm::StringSet<> PreserveSymbolList::ExternalNames;
    static PreserveSymbolList preservedSyms;
 
-   struct CLANG_VERSION_SYMBOL(_plugin_topfname) : public ModulePass
+   struct CLANG_VERSION_SYMBOL(_plugin_topfname)
+       : public ModulePass
+#if __clang_major__ >= 13
+         ,
+         PassInfoMixin<CLANG_VERSION_SYMBOL(_plugin_topfname)>
+#endif
    {
       static char ID;
       static const std::set<std::string> builtinsNames;
+
       CLANG_VERSION_SYMBOL(_plugin_topfname)() : ModulePass(ID)
       {
       }
+
+      CLANG_VERSION_SYMBOL(_plugin_topfname)
+      (const CLANG_VERSION_SYMBOL(_plugin_topfname) &) : CLANG_VERSION_SYMBOL(_plugin_topfname)()
+      {
+      }
+
       std::string getDemangled(const std::string& declname)
       {
          int status;
@@ -220,10 +236,20 @@ namespace llvm
 
          return changed;
       }
+
+#if __clang_major__ >= 13
+      llvm::PreservedAnalyses run(llvm::Module& M, llvm::ModuleAnalysisManager&)
+      {
+         const auto changed = runOnModule(M);
+         return (changed ? llvm::PreservedAnalyses::none() : llvm::PreservedAnalyses::all());
+      }
+#endif
+
       StringRef getPassName() const override
       {
          return CLANG_VERSION_STRING(_plugin_topfname);
       }
+
       void getAnalysisUsage(AnalysisUsage& AU) const override
       {
       }
@@ -246,6 +272,27 @@ static llvm::RegisterPass<llvm::CLANG_VERSION_SYMBOL(_plugin_topfname)>
 #endif
 
 #if ADD_RSP
+
+#if __clang_major__ >= 13
+
+llvm::PassPluginLibraryInfo CLANG_PLUGIN_INFO(_plugin_topfname)()
+{
+   return {LLVM_PLUGIN_API_VERSION, CLANG_VERSION_STRING(_plugin_topfname), "v0.12", [](llvm::PassBuilder& PB) {
+              PB.registerPipelineEarlySimplificationEPCallback(
+                  [](llvm::ModulePassManager& MPM, llvm::PassBuilder::OptimizationLevel) {
+                     MPM.addPass(llvm::CLANG_VERSION_SYMBOL(_plugin_topfname)());
+                     return true;
+                  });
+           }};
+}
+
+// This part is the new way of registering your pass
+extern "C" ::llvm::PassPluginLibraryInfo LLVM_ATTRIBUTE_WEAK llvmGetPassPluginInfo()
+{
+   return CLANG_PLUGIN_INFO(_plugin_topfname)();
+}
+#endif
+
 // This function is of type PassManagerBuilder::ExtensionFn
 static void loadPass(const llvm::PassManagerBuilder&, llvm::legacy::PassManagerBase& PM)
 {
@@ -258,17 +305,14 @@ static llvm::RegisterStandardPasses
     CLANG_VERSION_SYMBOL(_plugin_topfname_Ox)(llvm::PassManagerBuilder::EP_ModuleOptimizerEarly, loadPass);
 #endif
 
-#ifdef _WIN32
-using namespace llvm;
-
-INITIALIZE_PASS_BEGIN(clang7_plugin_topfname, "clang7_plugin_topfname", "Make all private/static but the top function",
-                      false, false)
-INITIALIZE_PASS_END(clang7_plugin_topfname, "clang7_plugin_topfname", "Make all private/static but the top function",
-                    false, false)
-namespace llvm
-{
-   void clang7_plugin_topfname_init()
-   {
-   }
-} // namespace llvm
-#endif
+// using namespace llvm;
+//
+// namespace llvm
+// {
+//    void CLANG_PLUGIN_INIT(_plugin_topfname)(PassRegistry&);
+// } // namespace llvm
+//
+// INITIALIZE_PASS_BEGIN(CLANG_VERSION_SYMBOL(_plugin_topfname), CLANG_VERSION_STRING(_plugin_topfname),
+//                       "Make all private/static but the top function", false, false)
+// INITIALIZE_PASS_END(CLANG_VERSION_SYMBOL(_plugin_topfname), CLANG_VERSION_STRING(_plugin_topfname),
+//                     "Make all private/static but the top function", false, false)

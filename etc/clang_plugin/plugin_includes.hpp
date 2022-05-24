@@ -48,12 +48,20 @@
 
 #include "llvm/ADT/APFloat.h"
 #include "llvm/ADT/Hashing.h"
+#include "llvm/Analysis/AssumptionCache.h"
+#include "llvm/Analysis/LazyValueInfo.h"
+#include "llvm/Analysis/LoopInfo.h"
+#include "llvm/Analysis/TargetLibraryInfo.h"
+#include "llvm/Analysis/TargetTransformInfo.h"
+#include "llvm/IR/Dominators.h"
+#include "llvm/IR/Function.h"
 #include "llvm/IR/GlobalObject.h"
 #include "llvm/IR/LLVMContext.h"
 #include "llvm/Support/raw_ostream.h"
 #if __clang_major__ != 4
 #include "llvm/Transforms/Utils/PredicateInfo.h"
 #endif
+#include "llvm/ADT/STLExtras.h"
 #include <deque>
 #include <list>
 #include <map>
@@ -67,36 +75,58 @@
 #if __clang_major__ == 13
 #define CLANG_VERSION_SYMBOL(SYMBOL) clang13##SYMBOL
 #define CLANG_VERSION_STRING(SYMBOL) "clang13" #SYMBOL
+#define CLANG_PLUGIN_INIT(SYMBOL) initializeclang13##SYMBOL##Pass
+#define CLANG_PLUGIN_INFO(SYMBOL) getclang13##SYMBOL##PluginInfo
 #elif __clang_major__ == 12
 #define CLANG_VERSION_SYMBOL(SYMBOL) clang12##SYMBOL
 #define CLANG_VERSION_STRING(SYMBOL) "clang12" #SYMBOL
+#define CLANG_PLUGIN_INIT(SYMBOL) initializeclang12##SYMBOL##Pass
+#define CLANG_PLUGIN_INFO(SYMBOL) getclang12##SYMBOL##PluginInfo
 #elif __clang_major__ == 11
 #define CLANG_VERSION_SYMBOL(SYMBOL) clang11##SYMBOL
 #define CLANG_VERSION_STRING(SYMBOL) "clang11" #SYMBOL
+#define CLANG_PLUGIN_INIT(SYMBOL) initializeclang11##SYMBOL##Pass
+#define CLANG_PLUGIN_INFO(SYMBOL) getclang11##SYMBOL##PluginInfo
 #elif __clang_major__ == 10
 #define CLANG_VERSION_SYMBOL(SYMBOL) clang10##SYMBOL
 #define CLANG_VERSION_STRING(SYMBOL) "clang10" #SYMBOL
+#define CLANG_PLUGIN_INIT(SYMBOL) initializeclang10##SYMBOL##Pass
+#define CLANG_PLUGIN_INFO(SYMBOL) getclang10##SYMBOL##PluginInfo
 #elif __clang_major__ == 9
 #define CLANG_VERSION_SYMBOL(SYMBOL) clang9##SYMBOL
 #define CLANG_VERSION_STRING(SYMBOL) "clang9" #SYMBOL
+#define CLANG_PLUGIN_INIT(SYMBOL) initializeclang9##SYMBOL##Pass
+#define CLANG_PLUGIN_INFO(SYMBOL) getclang9##SYMBOL##PluginInfo
 #elif __clang_major__ == 8
 #define CLANG_VERSION_SYMBOL(SYMBOL) clang8##SYMBOL
 #define CLANG_VERSION_STRING(SYMBOL) "clang8" #SYMBOL
+#define CLANG_PLUGIN_INIT(SYMBOL) initializeclang8##SYMBOL##Pass
+#define CLANG_PLUGIN_INFO(SYMBOL) getclang8##SYMBOL##PluginInfo
 #elif __clang_major__ == 7 && !defined(VVD)
 #define CLANG_VERSION_SYMBOL(SYMBOL) clang7##SYMBOL
 #define CLANG_VERSION_STRING(SYMBOL) "clang7" #SYMBOL
+#define CLANG_PLUGIN_INIT(SYMBOL) initializeclang7##SYMBOL##Pass
+#define CLANG_PLUGIN_INFO(SYMBOL) getclang7##SYMBOL##PluginInfo
 #elif __clang_major__ == 7 && defined(VVD)
 #define CLANG_VERSION_SYMBOL(SYMBOL) clangvvd##SYMBOL
 #define CLANG_VERSION_STRING(SYMBOL) "clangvvd" #SYMBOL
+#define CLANG_PLUGIN_INIT(SYMBOL) initializeclangvvd##SYMBOL##Pass
+#define CLANG_PLUGIN_INFO(SYMBOL) getclangvvd##SYMBOL##PluginInfo
 #elif __clang_major__ == 6
 #define CLANG_VERSION_SYMBOL(SYMBOL) clang6##SYMBOL
 #define CLANG_VERSION_STRING(SYMBOL) "clang6" #SYMBOL
+#define CLANG_PLUGIN_INIT(SYMBOL) initializeclang6##SYMBOL##Pass
+#define CLANG_PLUGIN_INFO(SYMBOL) getclang6##SYMBOL##PluginInfo
 #elif __clang_major__ == 5
 #define CLANG_VERSION_SYMBOL(SYMBOL) clang5##SYMBOL
 #define CLANG_VERSION_STRING(SYMBOL) "clang5" #SYMBOL
+#define CLANG_PLUGIN_INIT(SYMBOL) initializeclang5##SYMBOL##Pass
+#define CLANG_PLUGIN_INFO(SYMBOL) getclang5##SYMBOL##PluginInfo
 #elif __clang_major__ == 4
 #define CLANG_VERSION_SYMBOL(SYMBOL) clang4##SYMBOL
 #define CLANG_VERSION_STRING(SYMBOL) "clang4" #SYMBOL
+#define CLANG_PLUGIN_INIT(SYMBOL) initializeclang4##SYMBOL##Pass
+#define CLANG_PLUGIN_INFO(SYMBOL) getclang4##SYMBOL##PluginInfo
 #else
 #error
 #endif
@@ -139,6 +169,15 @@ namespace llvm
 #if __clang_major__ >= 11
       bool changed;
 #endif
+
+      llvm::function_ref<llvm::TargetLibraryInfo&(llvm::Function&)> GetTLI;
+      llvm::function_ref<llvm::TargetTransformInfo&(llvm::Function&)> GetTTI;
+      llvm::function_ref<llvm::DominatorTree&(llvm::Function&)> GetDomTree;
+      llvm::function_ref<llvm::LoopInfo&(llvm::Function&)> GetLI;
+      llvm::function_ref<llvm::MemorySSA&(llvm::Function&)> GetMSSA;
+      llvm::function_ref<llvm::LazyValueInfo&(llvm::Function&)> GetLVI;
+      llvm::function_ref<llvm::AssumptionCache&(llvm::Function&)> GetAC;
+
       bool earlyAnalysis;
       /* Serialize column control */
       const int SOL_COLUMN = 25;       /* Start of line column.  */
@@ -239,7 +278,6 @@ namespace llvm
       std::map<const llvm::Argument*, std::string> argNameTable;
       const llvm::DataLayout* DL;
       /// current module pass
-      llvm::ModulePass* modulePass;
       llvm::LLVMContext* moduleContext;
       std::string TopFunctionName;
 
@@ -759,18 +797,23 @@ namespace llvm
 
       void computeValueRange(const llvm::Module& M);
       void ValueRangeOptimizer(llvm::Module& M);
-      bool LoadStoreOptimizer(llvm::Module& M);
       void
       computeMAEntryDefs(const llvm::Function* F,
                          std::map<const llvm::Function*, std::map<const void*, std::set<const llvm::Instruction*>>>&
-                             CurrentListofMAEntryDef,
-                         llvm::ModulePass* modulePass);
+                             CurrentListofMAEntryDef);
 
     public:
       DumpGimpleRaw(const std::string& _outdir_name, const std::string& _InFile, bool onlyGlobals,
                     std::map<std::string, std::vector<std::string>>* fun2params, bool early);
 
-      bool runOnModule(llvm::Module& M, llvm::ModulePass* modulePass, const std::string& TopFunctionName);
+      bool exec(llvm::Module& M, const std::string& _TopFunctionName,
+                llvm::function_ref<llvm::TargetLibraryInfo&(llvm::Function&)> GetTLI,
+                llvm::function_ref<llvm::TargetTransformInfo&(llvm::Function&)> GetTTI,
+                llvm::function_ref<llvm::DominatorTree&(llvm::Function&)> GetDomTree,
+                llvm::function_ref<llvm::LoopInfo&(llvm::Function&)> GetLI,
+                llvm::function_ref<llvm::MemorySSA&(llvm::Function&)> GetMSSA,
+                llvm::function_ref<llvm::LazyValueInfo&(llvm::Function&)> GetLVI,
+                llvm::function_ref<llvm::AssumptionCache&(llvm::Function&)> GetAC);
    };
 } // namespace llvm
 

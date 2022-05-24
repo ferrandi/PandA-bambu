@@ -46,13 +46,12 @@
 #ifndef ESSA_HPP
 #define ESSA_HPP
 
+#include <llvm/ADT/STLExtras.h>
+#include <llvm/IR/Dominators.h>
+#include <llvm/IR/Function.h>
+
 #define DEBUG_ESSA 0
 
-namespace llvm
-{
-   class Function;
-   class ModulePass;
-} // namespace llvm
 class eSSA
 {
  public:
@@ -62,7 +61,7 @@ class eSSA
    ~eSSA()
    {
    }
-   bool runOnFunction(llvm::Function& fun, llvm::ModulePass* modulePass, bool* changed);
+   bool exec(llvm::Function& fun, bool* changed, llvm::function_ref<llvm::DominatorTree&(llvm::Function&)> GetDomTree);
 };
 
 #endif
