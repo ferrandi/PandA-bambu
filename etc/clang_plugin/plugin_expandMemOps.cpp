@@ -58,6 +58,10 @@
 #include "llvm/Transforms/Utils/LowerMemIntrinsics.h"
 #endif
 #include "llvm/Analysis/TargetTransformInfo.h"
+#if __clang_major__ >= 13
+#include "llvm/Passes/PassBuilder.h"
+#include "llvm/Passes/PassPlugin.h"
+#endif
 
 #include <cxxabi.h>
 
@@ -72,7 +76,12 @@ namespace llvm
 
 namespace llvm
 {
-   struct CLANG_VERSION_SYMBOL(_plugin_expandMemOps) : public ModulePass
+   struct CLANG_VERSION_SYMBOL(_plugin_expandMemOps)
+       : public ModulePass
+#if __clang_major__ >= 13
+         ,
+         PassInfoMixin<CLANG_VERSION_SYMBOL(_plugin_expandMemOps)>
+#endif
    {
     private:
       bool addrIsOfIntArrayType(llvm::Value* DstAddr, unsigned& Align, const llvm::DataLayout* DL)
@@ -416,7 +425,12 @@ namespace llvm
          initializeLoopPassPass(*PassRegistry::getPassRegistry());
       }
 
-      bool runOnModule(Module& M) override
+      CLANG_VERSION_SYMBOL(_plugin_expandMemOps)
+      (const CLANG_VERSION_SYMBOL(_plugin_expandMemOps) &) : CLANG_VERSION_SYMBOL(_plugin_expandMemOps)()
+      {
+      }
+
+      bool exec(Module& M, llvm::function_ref<llvm::TargetTransformInfo&(llvm::Function&)> GetTTI)
       {
          if(skipModule(M))
             return false;
@@ -475,8 +489,7 @@ namespace llvm
 #if __clang_major__ != 4
                   else
                   {
-                     const llvm::TargetTransformInfo& TTI =
-                         getAnalysis<llvm::TargetTransformInfoWrapperPass>().getTTI(F);
+                     const llvm::TargetTransformInfo& TTI = GetTTI(F);
                      llvm::expandMemCpyAsLoop(Memcpy, TTI);
                      do_erase = true;
                   }
@@ -501,10 +514,34 @@ namespace llvm
          }
          return res;
       }
+
+      bool runOnModule(Module& M) override
+      {
+         auto GetTTI = [&](llvm::Function& F) -> llvm::TargetTransformInfo& {
+            return getAnalysis<llvm::TargetTransformInfoWrapperPass>().getTTI(F);
+         };
+
+         return exec(M, GetTTI);
+      }
+
+#if __clang_major__ >= 13
+      llvm::PreservedAnalyses run(llvm::Module& M, llvm::ModuleAnalysisManager& MAM)
+      {
+         auto& FAM = MAM.getResult<FunctionAnalysisManagerModuleProxy>(M).getManager();
+         auto GetTTI = [&](llvm::Function& F) -> llvm::TargetTransformInfo& {
+            return FAM.getResult<llvm::TargetIRAnalysis>(F);
+         };
+
+         const auto changed = exec(M, GetTTI);
+         return (changed ? llvm::PreservedAnalyses::none() : llvm::PreservedAnalyses::all());
+      }
+#endif
+
       StringRef getPassName() const override
       {
          return CLANG_VERSION_STRING(_plugin_expandMemOps);
       }
+
       void getAnalysisUsage(AnalysisUsage& AU) const override
       {
          getLoopAnalysisUsage(AU);
@@ -522,29 +559,50 @@ static llvm::RegisterPass<llvm::CLANG_VERSION_SYMBOL(_plugin_expandMemOps)>
           false /* Only looks at CFG */, false /* Analysis Pass */);
 #endif
 
+#if ADD_RSP
+
+#if __clang_major__ >= 13
+
+llvm::PassPluginLibraryInfo CLANG_PLUGIN_INFO(_plugin_expandMemOps)()
+{
+   return {LLVM_PLUGIN_API_VERSION, CLANG_VERSION_STRING(_plugin_expandMemOps), "v0.12", [](llvm::PassBuilder& PB) {
+              PB.registerPipelineEarlySimplificationEPCallback(
+                  [](llvm::ModulePassManager& MPM, llvm::PassBuilder::OptimizationLevel) {
+                     MPM.addPass(llvm::CLANG_VERSION_SYMBOL(_plugin_expandMemOps)());
+                     return true;
+                  });
+              PB.registerAnalysisRegistrationCallback([](llvm::FunctionAnalysisManager& FAM) {
+                 FAM.registerPass([&] { return llvm::TargetIRAnalysis(); });
+              });
+           }};
+}
+
+// This part is the new way of registering your pass
+extern "C" ::llvm::PassPluginLibraryInfo LLVM_ATTRIBUTE_WEAK llvmGetPassPluginInfo()
+{
+   return CLANG_PLUGIN_INFO(_plugin_expandMemOps)();
+}
+#endif
+
 // This function is of type PassManagerBuilder::ExtensionFn
 static void loadPass(const llvm::PassManagerBuilder&, llvm::legacy::PassManagerBase& PM)
 {
    PM.add(new llvm::CLANG_VERSION_SYMBOL(_plugin_expandMemOps)());
 }
 
-#if ADD_RSP
 // These constructors add our pass to a list of global extensions.
 static llvm::RegisterStandardPasses
     CLANG_VERSION_SYMBOL(_plugin_expandMemOps_Ox)(llvm::PassManagerBuilder::EP_ModuleOptimizerEarly, loadPass);
 #endif
 
-#ifdef _WIN32
-using namespace llvm;
-
-INITIALIZE_PASS_BEGIN(clang7_plugin_expandMemOps, "clang7_plugin_expandMemOps", "expand all memset,memcpy and memmove",
-                      false, false)
-INITIALIZE_PASS_END(clang7_plugin_expandMemOps, "clang7_plugin_expandMemOps", "expand all memset,memcpy and memmove",
-                    false, false)
-namespace llvm
-{
-   void clang7_plugin_expandMemOps_init()
-   {
-   }
-} // namespace llvm
-#endif
+// using namespace llvm;
+//
+// namespace llvm
+// {
+//    void CLANG_PLUGIN_INIT(_plugin_expandMemOps)(PassRegistry&);
+// } // namespace llvm
+//
+// INITIALIZE_PASS_BEGIN(CLANG_VERSION_SYMBOL(_plugin_expandMemOps), CLANG_VERSION_STRING(_plugin_expandMemOps),
+//                       "expand all memset,memcpy and memmove", false, false)
+// INITIALIZE_PASS_END(CLANG_VERSION_SYMBOL(_plugin_expandMemOps), CLANG_VERSION_STRING(_plugin_expandMemOps),
+//                     "expand all memset,memcpy and memmove", false, false)

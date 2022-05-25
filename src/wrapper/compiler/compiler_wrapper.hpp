@@ -201,6 +201,12 @@ enum class CompilerWrapper_CompilerMode
    CM_LTO
 };
 
+enum CompilerWrapper_LLVMPassType
+{
+   LLVMPT_Frontend = 1,
+   LLVMPT_Backend = 2
+};
+
 /**
  * @class CompilerWrapper
  * Main class for wrapping the frontend compiler. It allows an XML configuration file to be specified where the
@@ -263,10 +269,7 @@ class CompilerWrapper
       /// true when compiler is based on clang/llvm
       bool is_clang;
 
-      /// true in case we have to use legacy pass manager in LLVM
-      bool is_llvm_legacy;
-
-      Compiler() : is_clang(false), is_llvm_legacy(false)
+      Compiler() : is_clang(false)
       {
       }
    };
@@ -383,6 +386,8 @@ class CompilerWrapper
                              const std::string& GepiCanon_plugin_obj, const std::string& GepiCanon_plugin_name,
                              const std::string& CSROA_plugin_obj, const std::string& CSROA_plugin_name,
                              const std::string& fname);
+
+   std::string load_plugin(const std::string& plugin_obj, CompilerWrapper_CompilerTarget target, int pass_type);
 
  public:
    /// The version of the frontend compiler

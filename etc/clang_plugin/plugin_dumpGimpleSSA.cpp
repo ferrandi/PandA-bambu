@@ -69,6 +69,7 @@
 #endif
 #include "llvm/CodeGen/Passes.h"
 #include "llvm/InitializePasses.h"
+#include "llvm/Support/CommandLine.h"
 #include "llvm/Support/MemoryBuffer.h"
 #include "llvm/Transforms/IPO.h"
 #include "llvm/Transforms/Scalar.h"
@@ -76,7 +77,20 @@
 #if __clang_major__ >= 7 && !defined(VVD)
 #include "llvm/Transforms/Utils.h"
 #endif
+#if __clang_major__ >= 13
+#include "llvm/Analysis/CGSCCPassManager.h"
+#include "llvm/Passes/PassBuilder.h"
+#include "llvm/Passes/PassPlugin.h"
+#include "llvm/Transforms/IPO/ArgumentPromotion.h"
+#include "llvm/Transforms/IPO/GlobalOpt.h"
+#include "llvm/Transforms/InstCombine/InstCombine.h"
+#include "llvm/Transforms/Scalar/LowerAtomic.h"
+#include "llvm/Transforms/Utils/BreakCriticalEdges.h"
+#include "llvm/Transforms/Utils/Mem2Reg.h"
+#include "llvm/Transforms/Utils/UnifyFunctionExitNodes.h"
+#endif
 #include <sstream>
+#include <string>
 
 #include <boost/tokenizer.hpp>
 
@@ -92,12 +106,18 @@ namespace llvm
    cl::opt<std::string> InFile("panda-infile", cl::desc("Specify the name of the compiled source file"),
                                cl::value_desc("filename path"));
 
-   template <bool earlyAnalysis>
-   struct CLANG_VERSION_SYMBOL(_plugin_dumpGimpleSSA) : public ModulePass
+   struct CLANG_VERSION_SYMBOL(_plugin_dumpGimpleSSA)
+       : public ModulePass
+#if __clang_major__ >= 13
+         ,
+         PassInfoMixin<CLANG_VERSION_SYMBOL(_plugin_dumpGimpleSSA)>
+#endif
    {
       static char ID;
+      bool earlyAnalysis;
 
-      CLANG_VERSION_SYMBOL(_plugin_dumpGimpleSSA)() : ModulePass(ID)
+      CLANG_VERSION_SYMBOL(_plugin_dumpGimpleSSA)
+      (bool _earlyAnalysis = false) : ModulePass(ID), earlyAnalysis(_earlyAnalysis)
       {
          initializeLoopInfoWrapperPassPass(*PassRegistry::getPassRegistry());            //
          initializeLazyValueInfoWrapperPassPass(*PassRegistry::getPassRegistry());       //
@@ -108,7 +128,13 @@ namespace llvm
          initializeDominatorTreeWrapperPassPass(*PassRegistry::getPassRegistry());       //
       }
 
-      std::string create_file_basename_string(const std::string& on, const std::string& original_filename)
+      CLANG_VERSION_SYMBOL(_plugin_dumpGimpleSSA)
+      (const CLANG_VERSION_SYMBOL(_plugin_dumpGimpleSSA) & other)
+          : CLANG_VERSION_SYMBOL(_plugin_dumpGimpleSSA)(other.earlyAnalysis)
+      {
+      }
+
+      std::string create_file_basename_string(const std::string& on, const std::string& original_filename) const
       {
          std::size_t found = original_filename.find_last_of("/\\");
          std::string dump_base_name;
@@ -123,12 +149,24 @@ namespace llvm
          return on + "/" + dump_base_name;
       }
 
-      bool runOnModule(Module& M) override
+      bool exec(Module& M, llvm::function_ref<llvm::TargetLibraryInfo&(llvm::Function&)> GetTLI,
+                llvm::function_ref<llvm::TargetTransformInfo&(llvm::Function&)> GetTTI,
+                llvm::function_ref<llvm::DominatorTree&(llvm::Function&)> GetDomTree,
+                llvm::function_ref<llvm::LoopInfo&(llvm::Function&)> GetLI,
+                llvm::function_ref<llvm::MemorySSA&(llvm::Function&)> GetMSSA,
+                llvm::function_ref<llvm::LazyValueInfo&(llvm::Function&)> GetLVI,
+                llvm::function_ref<llvm::AssumptionCache&(llvm::Function&)> GetAC)
       {
+         llvm::errs() << "Running module pass\n";
          if(outdir_name.empty())
-            return false;
+         {
+            llvm::report_fatal_error("-panda-outdir parameter not specified");
+         }
          if(InFile.empty())
+         {
             llvm::report_fatal_error("-panda-infile parameter not specified");
+         }
+
          /// load parameter names
          boost::char_separator<char> sep(",");
          boost::tokenizer<boost::char_separator<char>> FileTokenizer(InFile, sep);
@@ -170,51 +208,157 @@ namespace llvm
          if(!TopFunctionName.empty())
             llvm::errs() << "Top function name: " << TopFunctionName << "\n";
 #endif
-         auto res = gimpleRawWriter.runOnModule(M, this, TopFunctionName);
+
+         auto res = gimpleRawWriter.exec(M, TopFunctionName, GetTLI, GetTTI, GetDomTree, GetLI, GetMSSA, GetLVI, GetAC);
          return res;
       }
+
+      bool runOnModule(Module& M) override
+      {
+#if __clang_major__ >= 10
+         auto GetTLI = [&](llvm::Function& F) -> llvm::TargetLibraryInfo& {
+            return getAnalysis<llvm::TargetLibraryInfoWrapperPass>().getTLI(F);
+         };
+#else
+         auto GetTLI = [&](llvm::Function&) -> llvm::TargetLibraryInfo& {
+            return getAnalysis<llvm::TargetLibraryInfoWrapperPass>().getTLI();
+         };
+#endif
+         auto GetTTI = [&](llvm::Function& F) -> llvm::TargetTransformInfo& {
+            return getAnalysis<llvm::TargetTransformInfoWrapperPass>().getTTI(F);
+         };
+         auto GetDomTree = [&](llvm::Function& F) -> llvm::DominatorTree& {
+            return getAnalysis<llvm::DominatorTreeWrapperPass>(F).getDomTree();
+         };
+         auto GetLI = [&](llvm::Function& F) -> llvm::LoopInfo& {
+            return getAnalysis<llvm::LoopInfoWrapperPass>(F).getLoopInfo();
+         };
+         auto GetMSSA = [&](llvm::Function& F) -> llvm::MemorySSA& {
+            return getAnalysis<llvm::MemorySSAWrapperPass>(F).getMSSA();
+         };
+         auto GetLVI = [&](llvm::Function& F) -> llvm::LazyValueInfo& {
+            return getAnalysis<llvm::LazyValueInfoWrapperPass>(F).getLVI();
+         };
+         auto GetAC = [&](llvm::Function& F) -> llvm::AssumptionCache& {
+            return getAnalysis<llvm::AssumptionCacheTracker>().getAssumptionCache(F);
+         };
+
+         return exec(M, GetTLI, GetTTI, GetDomTree, GetLI, GetMSSA, GetLVI, GetAC);
+      }
+
+#if __clang_major__ >= 13
+      llvm::PreservedAnalyses run(llvm::Module& M, llvm::ModuleAnalysisManager& MAM)
+      {
+         auto& FAM = MAM.getResult<FunctionAnalysisManagerModuleProxy>(M).getManager();
+
+         auto GetTLI = [&](llvm::Function& F) -> llvm::TargetLibraryInfo& {
+            return FAM.getResult<llvm::TargetLibraryAnalysis>(F);
+         };
+         auto GetTTI = [&](llvm::Function& F) -> llvm::TargetTransformInfo& {
+            return FAM.getResult<llvm::TargetIRAnalysis>(F);
+         };
+         auto GetDomTree = [&](llvm::Function& F) -> llvm::DominatorTree& {
+            return FAM.getResult<llvm::DominatorTreeAnalysis>(F);
+         };
+         auto GetLI = [&](llvm::Function& F) -> llvm::LoopInfo& { return FAM.getResult<llvm::LoopAnalysis>(F); };
+         auto GetMSSA = [&](llvm::Function& F) -> llvm::MemorySSA& {
+            return FAM.getResult<llvm::MemorySSAAnalysis>(F).getMSSA();
+         };
+         auto GetLVI = [&](llvm::Function& F) -> llvm::LazyValueInfo& {
+            return FAM.getResult<llvm::LazyValueAnalysis>(F);
+         };
+         auto GetAC = [&](llvm::Function& F) -> llvm::AssumptionCache& {
+            return FAM.getResult<llvm::AssumptionAnalysis>(F);
+         };
+
+         const auto changed = exec(M, GetTLI, GetTTI, GetDomTree, GetLI, GetMSSA, GetLVI, GetAC);
+         return (changed ? llvm::PreservedAnalyses::none() : llvm::PreservedAnalyses::all());
+      }
+#endif
+
       StringRef getPassName() const override
       {
          return CLANG_VERSION_STRING(_plugin_dumpGimpleSSA);
       }
+
       void getAnalysisUsage(AnalysisUsage& AU) const override
       {
-         AU.addRequired<LoopInfoWrapperPass>(); //
+         AU.addRequired<LoopInfoWrapperPass>();
          AU.addPreserved<MemorySSAWrapperPass>();
-         AU.addRequired<MemorySSAWrapperPass>();           //
-         AU.addRequired<LazyValueInfoWrapperPass>();       //
-         AU.addRequired<TargetTransformInfoWrapperPass>(); //
-         AU.addRequired<TargetLibraryInfoWrapperPass>();   //
-         AU.addRequired<AssumptionCacheTracker>();         //
-         AU.addRequired<DominatorTreeWrapperPass>();       //
+         AU.addRequired<MemorySSAWrapperPass>();
+         AU.addRequired<LazyValueInfoWrapperPass>();
+         AU.addRequired<TargetTransformInfoWrapperPass>();
+         AU.addRequired<TargetLibraryInfoWrapperPass>();
+         AU.addRequired<AssumptionCacheTracker>();
+         AU.addRequired<DominatorTreeWrapperPass>();
       }
    };
-   template <>
-   char CLANG_VERSION_SYMBOL(_plugin_dumpGimpleSSA)<false>::ID = 0;
-   template <>
-   char CLANG_VERSION_SYMBOL(_plugin_dumpGimpleSSA)<true>::ID = 0;
+
+   char CLANG_VERSION_SYMBOL(_plugin_dumpGimpleSSA)::ID = 0;
 
 } // namespace llvm
 
 // Currently there is no difference between c++ or c serialization
-#ifndef _WIN32
+#if !defined(_WIN32)
 #if CPP_LANGUAGE
 // static llvm::RegisterPass<llvm::CLANG_VERSION_SYMBOL(_plugin_dumpGimpleSSA)<true>>
 // XPassEarly(CLANG_VERSION_STRING(_plugin_dumpGimpleSSACppEarly), "Custom Value Range Based optimization step: LLVM
 // pass", false /* Only looks at CFG */, false /* Analysis Pass */);
-static llvm::RegisterPass<llvm::CLANG_VERSION_SYMBOL(_plugin_dumpGimpleSSA) < false> >
+static llvm::RegisterPass<llvm::CLANG_VERSION_SYMBOL(_plugin_dumpGimpleSSA)>
     XPass(CLANG_VERSION_STRING(_plugin_dumpGimpleSSACpp), "Dump gimple ssa raw format starting from LLVM IR: LLVM pass",
           false /* Only looks at CFG */, false /* Analysis Pass */);
 #else
 // static llvm::RegisterPass<llvm::CLANG_VERSION_SYMBOL(_plugin_dumpGimpleSSA)<true>>
 // XPassEarly(CLANG_VERSION_STRING(_plugin_dumpGimpleSSAEarly), "Custom Value Range Based optimization step: LLVM pass",
 // false /* Only looks at CFG */, false /* Analysis Pass */);
-static llvm::RegisterPass<llvm::CLANG_VERSION_SYMBOL(_plugin_dumpGimpleSSA) < false> >
+static llvm::RegisterPass<llvm::CLANG_VERSION_SYMBOL(_plugin_dumpGimpleSSA)>
     XPass(CLANG_VERSION_STRING(_plugin_dumpGimpleSSA), "Dump gimple ssa raw format starting from LLVM IR: LLVM pass",
           false /* Only looks at CFG */, false /* Analysis Pass */);
 #endif
 #endif
+
 #if ADD_RSP
+
+#if __clang_major__ >= 13
+
+llvm::PassPluginLibraryInfo CLANG_PLUGIN_INFO(_plugin_dumpGimpleSSA)()
+{
+   return {LLVM_PLUGIN_API_VERSION, CLANG_VERSION_STRING(_plugin_dumpGimpleSSA), "v0.12", [](llvm::PassBuilder& PB) {
+              PB.registerOptimizerLastEPCallback(
+                  [](llvm::ModulePassManager& MPM, llvm::PassBuilder::OptimizationLevel) {
+                     llvm::FunctionPassManager FPM1;
+                     FPM1.addPass(llvm::LowerAtomicPass());
+                     FPM1.addPass(llvm::PromotePass());
+                     MPM.addPass(llvm::createModuleToFunctionPassAdaptor(std::move(FPM1)));
+                     MPM.addPass(llvm::GlobalOptPass());
+                     MPM.addPass(llvm::createModuleToPostOrderCGSCCPassAdaptor(llvm::ArgumentPromotionPass(256)));
+                     llvm::FunctionPassManager FPM2;
+                     FPM2.addPass(llvm::InstCombinePass());
+                     FPM2.addPass(llvm::BreakCriticalEdgesPass());
+                     FPM2.addPass(llvm::UnifyFunctionExitNodesPass());
+                     MPM.addPass(llvm::createModuleToFunctionPassAdaptor(std::move(FPM2)));
+                     MPM.addPass(llvm::CLANG_VERSION_SYMBOL(_plugin_dumpGimpleSSA)());
+                     return true;
+                  });
+              PB.registerAnalysisRegistrationCallback([](llvm::FunctionAnalysisManager& FAM) {
+                 FAM.registerPass([&] { return llvm::LoopAnalysis(); });
+                 FAM.registerPass([&] { return llvm::MemorySSAAnalysis(); });
+                 FAM.registerPass([&] { return llvm::LazyValueAnalysis(); });
+                 FAM.registerPass([&] { return llvm::TargetIRAnalysis(); });
+                 FAM.registerPass([&] { return llvm::TargetLibraryAnalysis(); });
+                 FAM.registerPass([&] { return llvm::AssumptionAnalysis(); });
+                 FAM.registerPass([&] { return llvm::DominatorTreeAnalysis(); });
+              });
+           }};
+}
+
+// This part is the new way of registering your pass
+extern "C" ::llvm::PassPluginLibraryInfo LLVM_ATTRIBUTE_WEAK llvmGetPassPluginInfo()
+{
+   return CLANG_PLUGIN_INFO(_plugin_dumpGimpleSSA)();
+}
+#endif
+
 // This function is of type PassManagerBuilder::ExtensionFn
 static void loadPass(const llvm::PassManagerBuilder&, llvm::legacy::PassManagerBase& PM)
 {
@@ -229,7 +373,7 @@ static void loadPass(const llvm::PassManagerBuilder&, llvm::legacy::PassManagerB
    PM.add(llvm::createBreakCriticalEdgesPass());
    PM.add(llvm::createUnifyFunctionExitNodesPass());
 
-   PM.add(new llvm::CLANG_VERSION_SYMBOL(_plugin_dumpGimpleSSA) < false > ());
+   PM.add(new llvm::CLANG_VERSION_SYMBOL(_plugin_dumpGimpleSSA)());
 }
 
 static llvm::RegisterStandardPasses llvmtoolLoader_Ox(llvm::PassManagerBuilder::EP_OptimizerLast, loadPass);
@@ -247,28 +391,23 @@ static llvm::RegisterStandardPasses llvmtoolLoader_Ox(llvm::PassManagerBuilder::
 // loadPassEarly);
 #endif
 
-#ifdef _WIN32
-using namespace llvm;
-
-INITIALIZE_PASS_BEGIN(clang7_plugin_dumpGimpleSSA<false>, "clang7_plugin_dumpGimpleSSA",
-                      "Dump gimple ssa raw format starting from LLVM IR: LLVM pass", false, false)
-INITIALIZE_PASS_DEPENDENCY(MemoryDependenceWrapperPass)
-INITIALIZE_PASS_DEPENDENCY(MemorySSAWrapperPass)
-INITIALIZE_PASS_DEPENDENCY(LazyValueInfoWrapperPass)
-INITIALIZE_PASS_DEPENDENCY(AAResultsWrapperPass)
-INITIALIZE_PASS_DEPENDENCY(TargetTransformInfoWrapperPass)
-INITIALIZE_PASS_DEPENDENCY(TargetLibraryInfoWrapperPass)
-INITIALIZE_PASS_DEPENDENCY(AssumptionCacheTracker)
-INITIALIZE_PASS_DEPENDENCY(DominatorTreeWrapperPass)
-INITIALIZE_PASS_DEPENDENCY(DominanceFrontierWrapperPass)
-INITIALIZE_PASS_END(clang7_plugin_dumpGimpleSSA<false>, "clang7_plugin_dumpGimpleSSA",
-                    "Dump gimple ssa raw format starting from LLVM IR: LLVM pass", false, false)
-
-namespace llvm
-{
-   void clang7_plugin_dumpGimpleSSA_init()
-   {
-   }
-} // namespace llvm
-
-#endif
+// namespace llvm
+// {
+//    void CLANG_PLUGIN_INIT(_plugin_dumpGimpleSSA)(PassRegistry&);
+// } // namespace llvm
+//
+// using namespace llvm;
+//
+// INITIALIZE_PASS_BEGIN(CLANG_VERSION_SYMBOL(_plugin_dumpGimpleSSA), CLANG_VERSION_STRING(_plugin_dumpGimpleSSA),
+//                       "Dump gimple ssa raw format starting from LLVM IR: LLVM pass", false, false)
+// INITIALIZE_PASS_DEPENDENCY(MemoryDependenceWrapperPass)
+// INITIALIZE_PASS_DEPENDENCY(MemorySSAWrapperPass)
+// INITIALIZE_PASS_DEPENDENCY(LazyValueInfoWrapperPass)
+// INITIALIZE_PASS_DEPENDENCY(AAResultsWrapperPass)
+// INITIALIZE_PASS_DEPENDENCY(TargetTransformInfoWrapperPass)
+// INITIALIZE_PASS_DEPENDENCY(TargetLibraryInfoWrapperPass)
+// INITIALIZE_PASS_DEPENDENCY(AssumptionCacheTracker)
+// INITIALIZE_PASS_DEPENDENCY(DominatorTreeWrapperPass)
+// INITIALIZE_PASS_DEPENDENCY(DominanceFrontierWrapperPass)
+// INITIALIZE_PASS_END(CLANG_VERSION_SYMBOL(_plugin_dumpGimpleSSA), CLANG_VERSION_STRING(_plugin_dumpGimpleSSA),
+//                     "Dump gimple ssa raw format starting from LLVM IR: LLVM pass", false, false)

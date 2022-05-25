@@ -375,7 +375,14 @@ namespace llvm
 
    DumpGimpleRaw::DumpGimpleRaw(const std::string& _outdir_name, const std::string& _InFile, bool _onlyGlobals,
                                 std::map<std::string, std::vector<std::string>>* _fun2params, bool early)
-       : earlyAnalysis(early),
+       : GetTLI([](llvm::Function&) -> llvm::TargetLibraryInfo& { return *((llvm::TargetLibraryInfo*)nullptr); }),
+         GetTTI([](llvm::Function&) -> llvm::TargetTransformInfo& { return *((llvm::TargetTransformInfo*)nullptr); }),
+         GetDomTree([](llvm::Function&) -> llvm::DominatorTree& { return *((llvm::DominatorTree*)nullptr); }),
+         GetLI([](llvm::Function&) -> llvm::LoopInfo& { return *((llvm::LoopInfo*)nullptr); }),
+         GetMSSA([](llvm::Function&) -> llvm::MemorySSA& { return *((llvm::MemorySSA*)nullptr); }),
+         GetLVI([](llvm::Function&) -> llvm::LazyValueInfo& { return *((llvm::LazyValueInfo*)nullptr); }),
+         GetAC([](llvm::Function&) -> llvm::AssumptionCache& { return *((llvm::AssumptionCache*)nullptr); }),
+         earlyAnalysis(early),
          outdir_name(_outdir_name),
          InFile(_InFile),
          filename(create_file_name_string(_outdir_name, _InFile)),
@@ -387,7 +394,6 @@ namespace llvm
          onlyGlobals(_onlyGlobals),
          fun2params(_fun2params),
          DL(nullptr),
-         modulePass(nullptr),
          moduleContext(nullptr),
          last_used_index(0),
          column(0),
@@ -1528,12 +1534,7 @@ namespace llvm
          av.alloc_inst = inst;
          std::set<const llvm::User*> visited;
          visited.insert(inst);
-#if __clang_major__ >= 10
-         const llvm::TargetLibraryInfo& TLI =
-             modulePass->getAnalysis<llvm::TargetLibraryInfoWrapperPass>().getTLI(*inst->getFunction());
-#else
-         const llvm::TargetLibraryInfo& TLI = modulePass->getAnalysis<llvm::TargetLibraryInfoWrapperPass>().getTLI();
-#endif
+         const auto& TLI = GetTLI(*const_cast<llvm::Function*>(inst->getFunction()));
          av.addr = temporary_addr_check(inst, visited, TLI);
          allocaVar = assignCode(&av, GT(ALLOCAVAR_DECL));
       }
@@ -1966,13 +1967,7 @@ namespace llvm
             if(operand->getType()->isPointerTy() && PtoSets_AA)
             {
                auto varId = PtoSets_AA->PE(operand);
-#if __clang_major__ >= 10
-               const llvm::TargetLibraryInfo& TLI =
-                   modulePass->getAnalysis<llvm::TargetLibraryInfoWrapperPass>().getTLI(*currentFunction);
-#else
-               const llvm::TargetLibraryInfo& TLI =
-                   modulePass->getAnalysis<llvm::TargetLibraryInfoWrapperPass>().getTLI();
-#endif
+               const auto& TLI = GetTLI(*const_cast<llvm::Function*>(currentFunction));
                if(is_PTS(varId, TLI, true))
                {
                   const std::vector<u32>* pts = PtoSets_AA->pointsToSet(varId);
@@ -3475,11 +3470,7 @@ namespace llvm
          return false;
       llvm::Instruction* inst = const_cast<llvm::Instruction*>(reinterpret_cast<const llvm::Instruction*>(g));
       llvm::Function* currentFunction = inst->getFunction();
-#if __clang_major__ >= 11
-      auto& MSSA = modulePass->getAnalysis<llvm::MemorySSAWrapperPass>(*currentFunction, &changed).getMSSA();
-#else
-      auto& MSSA = modulePass->getAnalysis<llvm::MemorySSAWrapperPass>(*currentFunction).getMSSA();
-#endif
+      llvm::MemorySSA& MSSA = GetMSSA(*currentFunction);
       return MSSA.getMemoryAccess(inst);
    }
 
@@ -3541,11 +3532,7 @@ namespace llvm
       assert(TREE_CODE(g) != GT(GIMPLE_PHI_VIRTUAL));
       llvm::Instruction* inst = const_cast<llvm::Instruction*>(reinterpret_cast<const llvm::Instruction*>(g));
       llvm::Function* currentFunction = inst->getFunction();
-#if __clang_major__ >= 11
-      auto& MSSA = modulePass->getAnalysis<llvm::MemorySSAWrapperPass>(*currentFunction, &changed).getMSSA();
-#else
-      auto& MSSA = modulePass->getAnalysis<llvm::MemorySSAWrapperPass>(*currentFunction).getMSSA();
-#endif
+      auto& MSSA = GetMSSA(*currentFunction);
       const llvm::MemoryUseOrDef* ma = MSSA.getMemoryAccess(inst);
       if(ma->getValueID() == llvm::Value::MemoryUseVal || ma->getValueID() == llvm::Value::MemoryDefVal)
       {
@@ -3730,34 +3717,14 @@ namespace llvm
          {
             llvm::BasicBlock* BB = inst->getParent();
             llvm::Function* currentFunction = inst->getFunction();
-            assert(modulePass);
-#if __clang_major__ >= 11
-            llvm::LazyValueInfo& LVI =
-                modulePass->getAnalysis<llvm::LazyValueInfoWrapperPass>(*currentFunction, &changed).getLVI();
-#else
-            llvm::LazyValueInfo& LVI =
-                modulePass->getAnalysis<llvm::LazyValueInfoWrapperPass>(*currentFunction).getLVI();
-#endif
+            llvm::LazyValueInfo& LVI = GetLVI(*currentFunction);
             unsigned long long int zeroMask = 0;
 #if __clang_major__ != 4
             llvm::KnownBits KnownOneZero;
-            auto AC = modulePass->getAnalysis<llvm::AssumptionCacheTracker>().getAssumptionCache(*currentFunction);
-#if __clang_major__ >= 11
-            auto& DT = modulePass->getAnalysis<llvm::DominatorTreeWrapperPass>(*currentFunction, &changed).getDomTree();
-#else
-            auto& DT = modulePass->getAnalysis<llvm::DominatorTreeWrapperPass>(*currentFunction).getDomTree();
-#endif
+            auto AC = GetAC(*currentFunction);
+            auto& DT = GetDomTree(*currentFunction);
             KnownOneZero = llvm::computeKnownBits(inst, *DL, 0, &AC, inst, &DT);
             zeroMask = KnownOneZero.Zero.getZExtValue();
-#else
-            //         llvm::APInt KnownZero;
-            //         llvm::APInt KnownOne;
-            //         auto AC =
-            //         modulePass->getAnalysis<llvm::AssumptionCacheTracker>().getAssumptionCache(*currentFunction);
-            //         const auto& DT =
-            //         modulePass->getAnalysis<llvm::DominatorTreeWrapperPass>(*currentFunction).getDomTree();
-            //         llvm::computeKnownBits(inst,KnownZero, KnownOne, *DL, 0, &AC, inst, &DT);
-            //         zeroMask = KnownZero.getZExtValue();
 #endif
             auto ty = inst->getType();
             auto obj_size = ty->isSized() ? DL->getTypeAllocSizeInBits(ty) : 8ULL;
@@ -3864,6 +3831,7 @@ namespace llvm
       else
          return nullptr;
    }
+
    const void* DumpGimpleRaw::getMaxValue(const void* t)
    {
       const ssa_name* ssa = reinterpret_cast<const ssa_name*>(t);
@@ -3890,35 +3858,14 @@ namespace llvm
          {
             llvm::BasicBlock* BB = inst->getParent();
             llvm::Function* currentFunction = inst->getFunction();
-            assert(modulePass);
-#if __clang_major__ >= 11
-            llvm::LazyValueInfo& LVI =
-                modulePass->getAnalysis<llvm::LazyValueInfoWrapperPass>(*currentFunction, &changed).getLVI();
-#else
-            llvm::LazyValueInfo& LVI =
-                modulePass->getAnalysis<llvm::LazyValueInfoWrapperPass>(*currentFunction).getLVI();
-#endif
+            auto& LVI = GetLVI(*currentFunction);
             unsigned long long int zeroMask = 0;
 #if __clang_major__ != 4
             llvm::KnownBits KnownOneZero;
-            auto AC = modulePass->getAnalysis<llvm::AssumptionCacheTracker>().getAssumptionCache(*currentFunction);
-#if __clang_major__ >= 11
-            const auto& DT =
-                modulePass->getAnalysis<llvm::DominatorTreeWrapperPass>(*currentFunction, &changed).getDomTree();
-#else
-            const auto& DT = modulePass->getAnalysis<llvm::DominatorTreeWrapperPass>(*currentFunction).getDomTree();
-#endif
+            auto AC = GetAC(*currentFunction);
+            const auto& DT = GetDomTree(*currentFunction);
             KnownOneZero = llvm::computeKnownBits(inst, *DL, 0, &AC, inst, &DT);
             zeroMask = KnownOneZero.Zero.getZExtValue();
-#else
-            //         llvm::APInt KnownZero;
-            //         llvm::APInt KnownOne;
-            //         auto AC =
-            //         modulePass->getAnalysis<llvm::AssumptionCacheTracker>().getAssumptionCache(*currentFunction);
-            //         const auto& DT =
-            //         modulePass->getAnalysis<llvm::DominatorTreeWrapperPass>(*currentFunction).getDomTree();
-            //         llvm::computeKnownBits(inst,KnownZero, KnownOne, *DL, 0, &AC, inst, &DT);
-            //         zeroMask = KnownZero.getZExtValue();
 #endif
             auto ty = inst->getType();
             auto obj_size = ty->isSized() ? DL->getTypeAllocSizeInBits(ty) : 8ULL;
@@ -4567,11 +4514,7 @@ namespace llvm
          llvm::errs() << "@" << code_name << " @" << index << "\n";
          inst->print(llvm::errs());
          llvm::errs() << "\n";
-#if __clang_major__ >= 11
-         auto& MSSA = modulePass->getAnalysis<llvm::MemorySSAWrapperPass>(*currentFunction, &changed).getMSSA();
-#else
-         auto& MSSA = modulePass->getAnalysis<llvm::MemorySSAWrapperPass>(*currentFunction).getMSSA();
-#endif
+         auto& MSSA = GetMSSA(*currentFunction);
          if(MSSA.getMemoryAccess(inst))
             llvm::errs() << "| " << *MSSA.getMemoryAccess(inst) << "\n";
       }
@@ -4631,13 +4574,8 @@ namespace llvm
             std::set<const llvm::User*> visited;
             auto currInst = reinterpret_cast<const llvm::User*>(g);
             visited.insert(currInst);
-#if __clang_major__ >= 10
             auto castInst = reinterpret_cast<const llvm::Instruction*>(g);
-            const llvm::TargetLibraryInfo& TLI =
-                modulePass->getAnalysis<llvm::TargetLibraryInfoWrapperPass>().getTLI(*castInst->getFunction());
-#else
-            const llvm::TargetLibraryInfo& TLI = modulePass->getAnalysis<llvm::TargetLibraryInfoWrapperPass>().getTLI();
-#endif
+            const llvm::TargetLibraryInfo& TLI = GetTLI(*const_cast<llvm::Function*>(castInst->getFunction()));
             if(temporary_addr_check(currInst, visited, TLI))
                serialize_string("addr");
             break;
@@ -4907,12 +4845,7 @@ namespace llvm
       const llvm::Function::BasicBlockListType& bblist =
           *reinterpret_cast<const llvm::Function::BasicBlockListType*>(t);
       llvm::Function* currentFunction = const_cast<llvm::Function*>(bblist.front().getParent());
-      assert(modulePass);
-#if __clang_major__ >= 11
-      auto& LI = modulePass->getAnalysis<llvm::LoopInfoWrapperPass>(*currentFunction, &changed).getLoopInfo();
-#else
-      auto& LI = modulePass->getAnalysis<llvm::LoopInfoWrapperPass>(*currentFunction).getLoopInfo();
-#endif
+      auto& LI = GetLI(*currentFunction);
       std::map<const llvm::Loop*, unsigned> loopLabes;
       if(!LI.empty())
       {
@@ -4937,11 +4870,7 @@ namespace llvm
             }
          }
       }
-#if __clang_major__ >= 11
-      auto& MSSA = modulePass->getAnalysis<llvm::MemorySSAWrapperPass>(*currentFunction, &changed).getMSSA();
-#else
-      auto& MSSA = modulePass->getAnalysis<llvm::MemorySSAWrapperPass>(*currentFunction).getMSSA();
-#endif
+      auto& MSSA = GetMSSA(*currentFunction);
 
       for(const auto& BB : bblist)
       {
@@ -6035,8 +5964,7 @@ namespace llvm
       {
          auto& F = *currFuncIterator;
 #if __clang_major__ != 4
-         const llvm::TargetTransformInfo& TTI =
-             modulePass->getAnalysis<llvm::TargetTransformInfoWrapperPass>().getTTI(F);
+         const llvm::TargetTransformInfo& TTI = GetTTI(F);
 #endif
          auto fname = std::string(getName(&F));
          llvm::SmallVector<llvm::MemIntrinsic*, 4> MemCalls;
@@ -6574,9 +6502,6 @@ namespace llvm
    }
    bool DumpGimpleRaw::RebuildConstants(llvm::Module& M)
    {
-#if __clang_major__ < 10
-      llvm::TargetLibraryInfo& TLI = modulePass->getAnalysis<llvm::TargetLibraryInfoWrapperPass>().getTLI();
-#endif
       llvm::SmallPtrSet<llvm::GlobalVariable*, 8> Invariants;
       llvm::SmallPtrSet<llvm::Instruction*, 8> Stores;
       auto res = false;
@@ -6585,9 +6510,7 @@ namespace llvm
       {
          auto& F = *currFuncIterator;
          auto fname = std::string(getName(&F));
-#if __clang_major__ >= 10
-         llvm::TargetLibraryInfo& TLI = modulePass->getAnalysis<llvm::TargetLibraryInfoWrapperPass>().getTLI(F);
-#endif
+         llvm::TargetLibraryInfo& TLI = GetTLI(F);
          std::list<llvm::Instruction*> deadList;
          for(llvm::Function::iterator BI = F.begin(), BE = F.end(); BI != BE; ++BI)
          {
@@ -6732,8 +6655,7 @@ namespace llvm
                I->eraseFromParent();
          if(!deadList.empty())
          {
-            const llvm::TargetTransformInfo& TTI =
-                modulePass->getAnalysis<llvm::TargetTransformInfoWrapperPass>().getTTI(F);
+            const llvm::TargetTransformInfo& TTI = GetTTI(F);
             for(llvm::Function::iterator BBIt = F.begin(); BBIt != F.end();)
                llvm::SimplifyInstructionsInBlock(&*BBIt++, &TLI);
             for(llvm::Function::iterator BBIt = F.begin(); BBIt != F.end();)
@@ -6821,33 +6743,19 @@ namespace llvm
       {
          if(!fun.isIntrinsic() && !fun.isDeclaration())
          {
-            bool res = eSSAHelper.runOnFunction(fun, modulePass, changed);
+            bool res = eSSAHelper.exec(fun, changed, GetDomTree);
             *changed = *changed || res;
          }
       }
-   }
-
-   void DumpGimpleRaw::computeValueRange(const llvm::Module& M)
-   {
-#if __clang_major__ < 10
-      RA = new RangeAnalysis::InterProceduralRACropDFSHelper();
-      RA->runOnModule(M, modulePass, PtoSets_AA);
-#endif
    }
 
    void DumpGimpleRaw::ValueRangeOptimizer(llvm::Module& M)
    {
       if(RA)
       {
-#if __clang_major__ < 10
-         llvm::TargetLibraryInfo& TLI = modulePass->getAnalysis<llvm::TargetLibraryInfoWrapperPass>().getTLI();
-#endif
-
          for(llvm::Function& F : M)
          {
-#if __clang_major__ >= 10
-            llvm::TargetLibraryInfo& TLI = modulePass->getAnalysis<llvm::TargetLibraryInfoWrapperPass>().getTLI(F);
-#endif
+            llvm::TargetLibraryInfo& TLI = GetTLI(F);
 #ifdef DEBUG_RA
             llvm::errs() << "ValueRangeOptimizer: Analysis for function: " << getName(&F) << "\n";
 #endif
@@ -6941,8 +6849,7 @@ namespace llvm
                   I->eraseFromParent();
             if(!deadList.empty())
             {
-               //               const llvm::TargetTransformInfo& TTI =
-               //               modulePass->getAnalysis<llvm::TargetTransformInfoWrapperPass>().getTTI(F);
+               //               const llvm::TargetTransformInfo& TTI = GetTTI(F);
                for(llvm::Function::iterator BBIt = F.begin(); BBIt != F.end();)
                   llvm::SimplifyInstructionsInBlock(&*BBIt++, &TLI);
                //               for(llvm::Function::iterator BBIt = F.begin(); BBIt != F.end();)
@@ -6957,271 +6864,12 @@ namespace llvm
       }
    }
 
-   bool DumpGimpleRaw::LoadStoreOptimizer(llvm::Module& M)
-   {
-      bool changed = false;
-      for(llvm::Function& F : M)
-      {
-         std::list<llvm::Instruction*> StoreLoadList;
-         std::list<llvm::BasicBlock*> BBlist;
-         for(auto& BB : F.getBasicBlockList())
-            BBlist.push_back(&BB);
-         for(auto BB : BBlist)
-         {
-            auto curInstIterator = BB->getInstList().begin();
-            while(curInstIterator != BB->getInstList().end())
-            {
-#if HAVE_LIBBDD
-               llvm::Instruction* I = &*curInstIterator;
-               if(dyn_cast<llvm::StoreInst>(I) || dyn_cast<llvm::LoadInst>(I))
-               {
-                  auto PO = dyn_cast<llvm::StoreInst>(I) ? dyn_cast<llvm::StoreInst>(I)->getPointerOperand() :
-                                                           dyn_cast<llvm::LoadInst>(I)->getPointerOperand();
-                  auto PTS = PtoSets_AA->pointsToSet(PO);
-                  if(PTS->size() > 1)
-                  {
-                     bool res = true;
-                     for(auto var : *PTS)
-                     {
-                        auto varValue = PtoSets_AA->getValue(var);
-                        if(!varValue)
-                        {
-                           res = false;
-                           break;
-                        }
-                        auto vid = varValue->getValueID();
-                        if(vid != llvm::Value::InstructionVal + llvm::Instruction::Alloca &&
-                           vid != llvm::Value::GlobalVariableVal)
-                        {
-                           res = false;
-                           break;
-                        }
-                        auto AI = llvm::dyn_cast<const llvm::AllocaInst>(varValue);
-                        auto GV = llvm::dyn_cast<const llvm::GlobalVariable>(varValue);
-                        if(AI && AI->getAllocatedType()->isAggregateType() && !AI->getAllocatedType()->isArrayTy())
-                        {
-                           res = false;
-                           break;
-                        }
-                        else if(GV && GV->getValueType()->isAggregateType() && !GV->getValueType()->isArrayTy())
-                        {
-                           res = false;
-                           break;
-                        }
-                     }
-                     if(res)
-                     {
-                        StoreLoadList.push_back(I);
-                     }
-                  }
-               }
-#endif
-               ++curInstIterator;
-            }
-         }
-#if HAVE_LIBBDD
-         for(auto& I : StoreLoadList)
-         {
-            if(llvm::StoreInst* SI = dyn_cast<llvm::StoreInst>(I))
-            {
-               auto PO = SI->getPointerOperand();
-               auto PTS = PtoSets_AA->pointsToSet(PO);
-               llvm::IRBuilder<> Builder(SI);
-               llvm::errs() << "Store to be optimized: ";
-               SI->print(llvm::errs());
-               llvm::errs() << "\n";
-               llvm::errs() << "PO to be used: ";
-               PO->print(llvm::errs());
-               llvm::errs() << "\n";
-               llvm::errs() << "Var to be written: ";
-               SI->getValueOperand()->print(llvm::errs());
-               llvm::errs() << "\n";
-               llvm::BasicBlock* BB0 = SI->getParent();
-               auto LastBB = BB0->splitBasicBlock(SI);
-               llvm::BasicBlock* PrevBB = BB0;
-               llvm::IRBuilder<> Builder0(BB0->getTerminator());
-               auto ptrToInt1 = Builder0.CreatePtrToInt(PO, llvm::Type::getInt64Ty(F.getContext()));
-
-               for(auto var : *PTS)
-               {
-                  auto varValue = PtoSets_AA->getValue(var);
-                  auto AI = llvm::dyn_cast<const llvm::AllocaInst>(varValue);
-                  auto GV = llvm::dyn_cast<const llvm::GlobalVariable>(varValue);
-                  assert(AI || GV);
-                  llvm::Type* objType;
-                  if(AI)
-                     objType = AI->getAllocatedType();
-                  else if(GV)
-                     objType = GV->getValueType();
-                  else
-                     llvm_unreachable("unexpected condition");
-
-                  if(objType->isArrayTy())
-                  {
-                     auto gep1 = Builder0.CreateBitCast(const_cast<llvm::Value*>(varValue), PO->getType());
-
-                     auto ptrToInt2 = Builder0.CreatePtrToInt(gep1, llvm::Type::getInt64Ty(F.getContext()));
-                     auto sub1 = Builder0.CreateSub(ptrToInt1, ptrToInt2);
-
-                     auto sge1 = Builder0.CreateICmpSGE(sub1, Builder0.getInt64(0));
-                     auto varValueSize = objType->isSized() ? DL->getTypeAllocSize(objType) : 1ULL;
-
-                     auto ult1 = Builder0.CreateICmpULT(sub1, Builder0.getInt64(varValueSize));
-                     auto and1 = Builder0.CreateAnd(sge1, ult1);
-
-                     llvm::BasicBlock* TrueBB = llvm::BasicBlock::Create(F.getContext(), "StoreBB", &F, LastBB);
-                     llvm::BasicBlock* FalseBB = llvm::BasicBlock::Create(F.getContext(), "StoreBB", &F, LastBB);
-                     PrevBB->getTerminator()->eraseFromParent();
-                     Builder.SetInsertPoint(PrevBB);
-                     Builder.CreateCondBr(and1, TrueBB, FalseBB);
-                     if(PrevBB == BB0)
-                        Builder0.SetInsertPoint(BB0->getTerminator());
-                     PrevBB = FalseBB;
-                     llvm::IRBuilder<> FalseBuilder(FalseBB);
-                     FalseBuilder.CreateBr(LastBB);
-
-                     llvm::IRBuilder<> StoreBuilder(TrueBB);
-                     auto bitcast1 = StoreBuilder.CreateBitCast(gep1, llvm::Type::getInt8PtrTy(F.getContext()));
-                     auto gep3 = StoreBuilder.CreateGEP(bitcast1, sub1);
-                     auto bitcast2 = StoreBuilder.CreateBitCast(gep3, PO->getType());
-                     StoreBuilder.CreateStore(SI->getValueOperand(), bitcast2);
-                     StoreBuilder.CreateBr(LastBB);
-                     changed = true;
-                  }
-                  else
-                  {
-                     auto gep1 = Builder0.CreateBitCast(const_cast<llvm::Value*>(varValue), PO->getType());
-                     auto eq1 = Builder0.CreateICmpEQ(PO, gep1);
-                     llvm::BasicBlock* TrueBB = llvm::BasicBlock::Create(F.getContext(), "StoreBB", &F, LastBB);
-                     llvm::BasicBlock* FalseBB = llvm::BasicBlock::Create(F.getContext(), "StoreBB", &F, LastBB);
-                     PrevBB->getTerminator()->eraseFromParent();
-                     Builder.SetInsertPoint(PrevBB);
-                     Builder.CreateCondBr(eq1, TrueBB, FalseBB);
-                     if(PrevBB == BB0)
-                        Builder0.SetInsertPoint(BB0->getTerminator());
-                     PrevBB = FalseBB;
-                     llvm::IRBuilder<> FalseBuilder(FalseBB);
-                     FalseBuilder.CreateBr(LastBB);
-                     llvm::IRBuilder<> StoreBuilder(TrueBB);
-                     StoreBuilder.CreateStore(SI->getValueOperand(), gep1);
-                     StoreBuilder.CreateBr(LastBB);
-                     changed = true;
-                  }
-               }
-            }
-            else if(llvm::LoadInst* LI = dyn_cast<llvm::LoadInst>(I))
-            {
-               auto PO = LI->getPointerOperand();
-               auto PTS = PtoSets_AA->pointsToSet(PO);
-
-               llvm::BasicBlock* BB0 = LI->getParent();
-               auto LastBB = BB0->splitBasicBlock(LI);
-               llvm::BasicBlock* PrevBB = BB0;
-               llvm::IRBuilder<> Builder0(BB0->getTerminator());
-               auto ptrToInt1 = Builder0.CreatePtrToInt(PO, llvm::Type::getInt64Ty(F.getContext()));
-               llvm::IRBuilder<> Builder(LI);
-               auto phi1 = Builder.CreatePHI(LI->getType(), 1 + PTS->size());
-               LI->replaceAllUsesWith(phi1);
-               unsigned index = 0;
-
-               for(auto var : *PTS)
-               {
-                  ++index;
-                  auto varValue = PtoSets_AA->getValue(var);
-                  auto AI = llvm::dyn_cast<const llvm::AllocaInst>(varValue);
-                  auto GV = llvm::dyn_cast<const llvm::GlobalVariable>(varValue);
-                  assert(AI || GV);
-                  llvm::Type* objType;
-                  if(AI)
-                     objType = AI->getAllocatedType();
-                  else if(GV)
-                     objType = GV->getValueType();
-                  else
-                     llvm_unreachable("unexpected condition");
-
-                  if(objType->isArrayTy())
-                  {
-                     auto gep1 = Builder0.CreateBitCast(const_cast<llvm::Value*>(varValue), PO->getType());
-
-                     auto ptrToInt2 = Builder0.CreatePtrToInt(gep1, llvm::Type::getInt64Ty(F.getContext()));
-                     auto sub1 = Builder0.CreateSub(ptrToInt1, ptrToInt2);
-
-                     auto sge1 = Builder0.CreateICmpSGE(sub1, Builder0.getInt64(0));
-                     auto varValueSize = objType->isSized() ? DL->getTypeAllocSize(objType) : 1ULL;
-
-                     auto ult1 = Builder0.CreateICmpULT(sub1, Builder0.getInt64(varValueSize));
-                     auto and1 = Builder0.CreateAnd(sge1, ult1);
-
-                     llvm::BasicBlock* TrueBB = llvm::BasicBlock::Create(F.getContext(), "StoreBB", &F, LastBB);
-                     llvm::BasicBlock* FalseBB = llvm::BasicBlock::Create(F.getContext(), "StoreBB", &F, LastBB);
-                     PrevBB->getTerminator()->eraseFromParent();
-                     Builder.SetInsertPoint(PrevBB);
-                     Builder.CreateCondBr(and1, TrueBB, FalseBB);
-                     if(PrevBB == BB0)
-                        Builder0.SetInsertPoint(BB0->getTerminator());
-                     PrevBB = FalseBB;
-                     llvm::IRBuilder<> FalseBuilder(FalseBB);
-                     FalseBuilder.CreateBr(LastBB);
-
-                     llvm::IRBuilder<> LoadBuilder(TrueBB);
-                     auto bitcast1 = LoadBuilder.CreateBitCast(gep1, llvm::Type::getInt8PtrTy(F.getContext()));
-                     auto gep3 = LoadBuilder.CreateGEP(bitcast1, sub1);
-                     auto bitcast2 = LoadBuilder.CreateBitCast(gep3, PO->getType());
-                     auto load1 = LoadBuilder.CreateLoad(bitcast2);
-                     phi1->addIncoming(load1, TrueBB);
-                     LoadBuilder.CreateBr(LastBB);
-                     if(index == PTS->size())
-                        phi1->addIncoming(llvm::UndefValue::get(I->getType()), FalseBB);
-                     changed = true;
-                  }
-                  else
-                  {
-                     auto gep1 = Builder0.CreateBitCast(const_cast<llvm::Value*>(varValue), PO->getType());
-                     auto eq1 = Builder0.CreateICmpEQ(PO, gep1);
-                     llvm::BasicBlock* TrueBB = llvm::BasicBlock::Create(F.getContext(), "LoadBB", &F, LastBB);
-                     llvm::BasicBlock* FalseBB = llvm::BasicBlock::Create(F.getContext(), "LoadBB", &F, LastBB);
-                     PrevBB->getTerminator()->eraseFromParent();
-                     Builder.SetInsertPoint(PrevBB);
-                     Builder.CreateCondBr(eq1, TrueBB, FalseBB);
-                     if(PrevBB == BB0)
-                        Builder0.SetInsertPoint(BB0->getTerminator());
-                     PrevBB = FalseBB;
-                     llvm::IRBuilder<> FalseBuilder(FalseBB);
-                     FalseBuilder.CreateBr(LastBB);
-
-                     llvm::IRBuilder<> LoadBuilder(TrueBB);
-                     auto load1 = LoadBuilder.CreateLoad(gep1);
-                     phi1->addIncoming(load1, TrueBB);
-                     LoadBuilder.CreateBr(LastBB);
-                     if(index == PTS->size())
-                        phi1->addIncoming(llvm::UndefValue::get(I->getType()), FalseBB);
-                     changed = true;
-                  }
-               }
-            }
-            else
-               llvm_unreachable("unexpected condition");
-         }
-#endif
-         for(auto& I : StoreLoadList)
-            I->eraseFromParent();
-      }
-      // M.print(llvm::errs(),nullptr);
-      return changed;
-   }
-
    void DumpGimpleRaw::computeMAEntryDefs(
        const llvm::Function* F,
        std::map<const llvm::Function*, std::map<const void*, std::set<const llvm::Instruction*>>>&
-           CurrentListofMAEntryDef,
-       llvm::ModulePass* modulePass)
+           CurrentListofMAEntryDef)
    {
-#if __clang_major__ >= 11
-      auto& MSSA =
-          modulePass->getAnalysis<llvm::MemorySSAWrapperPass>(*const_cast<llvm::Function*>(F), &changed).getMSSA();
-#else
-      auto& MSSA = modulePass->getAnalysis<llvm::MemorySSAWrapperPass>(*const_cast<llvm::Function*>(F)).getMSSA();
-#endif
+      auto& MSSA = GetMSSA(*const_cast<llvm::Function*>(F));
       for(const auto& BB : F->getBasicBlockList())
       {
          for(const auto& inst : BB)
@@ -7245,19 +6893,35 @@ namespace llvm
          }
       }
    }
-   bool DumpGimpleRaw::runOnModule(llvm::Module& M, llvm::ModulePass* _modulePass, const std::string& _TopFunctionName)
+
+   bool DumpGimpleRaw::exec(llvm::Module& M, const std::string& _TopFunctionName,
+                            llvm::function_ref<llvm::TargetLibraryInfo&(llvm::Function&)> _GetTLI,
+                            llvm::function_ref<llvm::TargetTransformInfo&(llvm::Function&)> _GetTTI,
+                            llvm::function_ref<llvm::DominatorTree&(llvm::Function&)> _GetDomTree,
+                            llvm::function_ref<llvm::LoopInfo&(llvm::Function&)> _GetLI,
+                            llvm::function_ref<llvm::MemorySSA&(llvm::Function&)> _GetMSSA,
+                            llvm::function_ref<llvm::LazyValueInfo&(llvm::Function&)> _GetLVI,
+                            llvm::function_ref<llvm::AssumptionCache&(llvm::Function&)> _GetAC)
    {
       DL = &M.getDataLayout();
-      modulePass = _modulePass;
+      GetTLI = _GetTLI;
+      GetTTI = _GetTTI;
+      GetDomTree = _GetDomTree;
+      GetLI = _GetLI;
+      GetMSSA = _GetMSSA;
+      GetLVI = _GetLVI;
+      GetAC = _GetAC;
       moduleContext = &M.getContext();
       TopFunctionName = _TopFunctionName;
       bool res = false;
+#if __clang_major__ < 13
 #if PRINT_DBG_MSG
       llvm::errs() << "Computing e-SSA\n";
 #endif
       compute_eSSA(M, &res);
 #if PRINT_DBG_MSG
       llvm::errs() << "Computed e-SSA\n";
+#endif
 #endif
       if(!earlyAnalysis)
       {
@@ -7295,18 +6959,19 @@ namespace llvm
             PtoSets_AA = new Staged_Flow_Sensitive_AA(starting_function);
 #endif
             PtoSets_AA->computePointToSet(M);
-            //            auto changed = LoadStoreOptimizer(M);
-            //            res = res | changed;
          }
       }
 #endif
 
+#if __clang_major__ < 10
 #if PRINT_DBG_MSG
       llvm::errs() << "Performing value-range analysis\n";
 #endif
-      computeValueRange(M);
+      RA = new RangeAnalysis::InterProceduralRACropDFSHelper();
+      RA->exec(M, PtoSets_AA, GetDomTree, GetLVI, GetAC, GetMSSA);
 #if PRINT_DBG_MSG
       llvm::errs() << "Performed value-range analysis\n";
+#endif
 #endif
 
 #ifdef DEBUG_RA
@@ -7323,7 +6988,7 @@ namespace llvm
          {
             if(!fun.isDeclaration() && !fun.isIntrinsic())
             {
-               computeMAEntryDefs(&fun, CurrentListofMAEntryDef, modulePass);
+               computeMAEntryDefs(&fun, CurrentListofMAEntryDef);
             }
          }
       }
