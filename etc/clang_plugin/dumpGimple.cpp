@@ -854,11 +854,11 @@ namespace llvm
       {
          const alloca_var* av = reinterpret_cast<const alloca_var*>(t);
          const llvm::Instruction* ti = av->alloc_inst;
-         if (MDNode* N = ti->getMetadata("annotation"))
+         if(MDNode* N = ti->getMetadata("annotation"))
          {
             std::string allocaname = std::string(cast<MDString>(N->getOperand(0))->getString());
             if(identifierTable.find(allocaname) == identifierTable.end())
-              identifierTable.insert(allocaname);
+               identifierTable.insert(allocaname);
             const void* an = identifierTable.find(allocaname)->c_str();
             return assignCode(an, GT(IDENTIFIER_NODE));
          }
@@ -3550,6 +3550,27 @@ namespace llvm
       {
          const void* vdef = getSSA(ma, g, currentFunction, false);
          serialize_child("vdef", vdef);
+         llvm::MemoryAccess* defAccess = ma->getDefiningAccess();
+         auto da = dyn_cast<llvm::MemoryUseOrDef>(defAccess);
+         if(da)
+         {
+            auto defvuseStmt = da->getMemoryInst();
+            if((((dyn_cast<llvm::LoadInst>(inst) && dyn_cast<llvm::LoadInst>(inst)->isVolatile()) ||
+                 (dyn_cast<llvm::StoreInst>(inst) && dyn_cast<llvm::StoreInst>(inst)->isVolatile()))) ||
+               (defvuseStmt &&
+                ((dyn_cast<llvm::LoadInst>(defvuseStmt) && dyn_cast<llvm::LoadInst>(defvuseStmt)->isVolatile()) ||
+                 (dyn_cast<llvm::StoreInst>(defvuseStmt) && dyn_cast<llvm::StoreInst>(defvuseStmt)->isVolatile()))))
+            {
+               bool isDefault = false;
+               const void* def_stmt = getVirtualDefStatement(defAccess, isDefault, MSSA, currentFunction);
+               const void* vuse = getSSA(ma, def_stmt, currentFunction, isDefault);
+               if(!isDefault)
+               {
+                  serialize_child("vuse", vuse);
+               }
+            }
+         }
+
          std::set<llvm::MemoryAccess*> visited;
          auto startingMA = MSSA.getMemoryAccess(inst);
          if(isa<llvm::CallInst>(inst) || isa<llvm::InvokeInst>(inst) || isa<llvm::FenceInst>(inst))
