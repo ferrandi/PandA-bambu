@@ -201,12 +201,6 @@ enum class CompilerWrapper_CompilerMode
    CM_LTO
 };
 
-enum CompilerWrapper_LLVMPassType
-{
-   LLVMPT_Frontend = 1,
-   LLVMPT_Backend = 2
-};
-
 /**
  * @class CompilerWrapper
  * Main class for wrapping the frontend compiler. It allows an XML configuration file to be specified where the
@@ -387,7 +381,7 @@ class CompilerWrapper
                              const std::string& CSROA_plugin_obj, const std::string& CSROA_plugin_name,
                              const std::string& fname);
 
-   std::string load_plugin(const std::string& plugin_obj, CompilerWrapper_CompilerTarget target, int pass_type);
+   std::string load_plugin(const std::string& plugin_obj, CompilerWrapper_CompilerTarget target);
 
  public:
    /// The version of the frontend compiler

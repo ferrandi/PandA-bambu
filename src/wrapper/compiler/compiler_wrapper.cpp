@@ -554,13 +554,11 @@ void CompilerWrapper::CompileFile(const std::string& original_file_name, std::st
       real_file_name = temp_file_name;
       if(compiler.is_clang)
       {
-         command +=
-             " -c" +
-             load_plugin(compiler.empty_plugin_obj,
-                         Param->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler),
-                         CompilerWrapper_LLVMPassType::LLVMPT_Backend | CompilerWrapper_LLVMPassType::LLVMPT_Frontend) +
-             " -mllvm -pandaGE-outputdir=" + Param->getOption<std::string>(OPT_output_temporary_directory) +
-             " -mllvm -pandaGE-infile=" + real_file_name;
+         command += " -c" +
+                    load_plugin(compiler.empty_plugin_obj,
+                                Param->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler)) +
+                    " -mllvm -pandaGE-outputdir=" + Param->getOption<std::string>(OPT_output_temporary_directory) +
+                    " -mllvm -pandaGE-infile=" + real_file_name;
       }
       else
       {
@@ -645,9 +643,7 @@ void CompilerWrapper::CompileFile(const std::string& original_file_name, std::st
          {
             command +=
                 load_plugin(compiler.topfname_plugin_obj,
-                            Param->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler),
-                            CompilerWrapper_LLVMPassType::LLVMPT_Backend |
-                                CompilerWrapper_LLVMPassType::LLVMPT_Frontend) +
+                            Param->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler)) +
                 " -mllvm -internalize-outputdir=" + Param->getOption<std::string>(OPT_output_temporary_directory) +
                 " -mllvm -panda-TFN=" + fname;
             if(Param->isOption(OPT_interface_type) && Param->getOption<HLSFlowStep_Type>(OPT_interface_type) ==
@@ -742,9 +738,7 @@ void CompilerWrapper::CompileFile(const std::string& original_file_name, std::st
                !compiler.CSROA_plugin_obj.empty() && !compiler.expandMemOps_plugin_obj.empty())
             {
                command += load_plugin(compiler.CSROA_plugin_obj,
-                                      Param->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler),
-                                      CompilerWrapper_LLVMPassType::LLVMPT_Backend |
-                                          CompilerWrapper_LLVMPassType::LLVMPT_Frontend) +
+                                      Param->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler)) +
                           " -mllvm -panda-KN=" + fname;
                if(Param->IsParameter("max-CSROA"))
                {
@@ -762,9 +756,8 @@ void CompilerWrapper::CompileFile(const std::string& original_file_name, std::st
       if(compiler.is_clang)
       {
          command += " -c" +
-                    load_plugin(
-                        compiler.ssa_plugin_obj, Param->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler),
-                        CompilerWrapper_LLVMPassType::LLVMPT_Backend | CompilerWrapper_LLVMPassType::LLVMPT_Frontend) +
+                    load_plugin(compiler.ssa_plugin_obj,
+                                Param->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler)) +
                     " -mllvm -panda-outputdir=" + Param->getOption<std::string>(OPT_output_temporary_directory) +
                     " -mllvm -panda-infile=" + real_file_name;
          if(addTopFName)
@@ -5051,26 +5044,13 @@ std::string CompilerWrapper::getCompilerVersion(int pc)
    return "";
 }
 
-std::string CompilerWrapper::load_plugin(const std::string& plugin_obj, CompilerWrapper_CompilerTarget target,
-                                         int pass_type)
+std::string CompilerWrapper::load_plugin(const std::string& plugin_obj, CompilerWrapper_CompilerTarget target)
 {
-   std::string str;
 #if HAVE_I386_CLANG13_COMPILER
    if(target == CompilerWrapper_CompilerTarget::CT_I386_CLANG13)
    {
-      if(pass_type & CompilerWrapper_LLVMPassType::LLVMPT_Backend)
-      {
-         str += " -fpass-plugin=" + plugin_obj;
-      }
-      if(pass_type & CompilerWrapper_LLVMPassType::LLVMPT_Frontend)
-      {
-         str += " -Xclang -load -Xclang " + plugin_obj;
-      }
+      return " -fpass-plugin=" + plugin_obj + " -Xclang -load -Xclang " + plugin_obj;
    }
-   else
 #endif
-   {
-      str = " -fplugin=" + plugin_obj;
-   }
-   return str;
+   return " -fplugin=" + plugin_obj;
 }
