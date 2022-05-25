@@ -264,27 +264,23 @@ namespace llvm
 #undef DEFTREECODE
 #undef DEFGSCODE
 
-#define DEFTREECODE(SYM, STRING, TYPE, NARGS)                                                                       \
-   ((TYPE) == tcc_unary ?                                                                                           \
-        GIMPLE_UNARY_RHS :                                                                                          \
-        ((TYPE) == tcc_binary || (TYPE) == tcc_comparison) ?                                                        \
-        GIMPLE_BINARY_RHS :                                                                                         \
-        ((TYPE) == tcc_constant || (TYPE) == tcc_declaration || (TYPE) == tcc_reference) ?                          \
-        GIMPLE_SINGLE_RHS :                                                                                         \
-        (GT(SYM) == GT(TRUTH_AND_EXPR) || GT(SYM) == GT(TRUTH_OR_EXPR) || GT(SYM) == GT(TRUTH_XOR_EXPR)) ?          \
-        GIMPLE_BINARY_RHS :                                                                                         \
-        GT(SYM) == GT(TRUTH_NOT_EXPR) ?                                                                             \
-        GIMPLE_UNARY_RHS :                                                                                          \
-        (GT(SYM) == GT(COND_EXPR) || GT(SYM) == GT(WIDEN_MULT_PLUS_EXPR) || GT(SYM) == GT(WIDEN_MULT_MINUS_EXPR) || \
-         GT(SYM) == GT(DOT_PROD_EXPR) || GT(SYM) == GT(SAD_EXPR) || GT(SYM) == GT(REALIGN_LOAD_EXPR) ||             \
-         GT(SYM) == GT(VEC_COND_EXPR) || GT(SYM) == GT(VEC_PERM_EXPR) || GT(SYM) == GT(BIT_INSERT_EXPR) ||          \
-         GT(SYM) == GT(FMA_EXPR) || GT(SYM) == GT(FSHL_EXPR) || GT(SYM) == GT(FSHR_EXPR) ||                         \
-         GT(SYM) == GT(INSERTELEMENT)) ?                                                                            \
-        GIMPLE_TERNARY_RHS :                                                                                        \
-        (GT(SYM) == GT(CONSTRUCTOR) || GT(SYM) == GT(OBJ_TYPE_REF) || GT(SYM) == GT(ASSERT_EXPR) ||                 \
-         GT(SYM) == GT(ADDR_EXPR) || GT(SYM) == GT(WITH_SIZE_EXPR) || GT(SYM) == GT(SSA_NAME)) ?                    \
-        GIMPLE_SINGLE_RHS :                                                                                         \
-        GIMPLE_INVALID_RHS),
+#define DEFTREECODE(SYM, STRING, TYPE, NARGS)                                                                   \
+   ((TYPE) == tcc_unary                                                              ? GIMPLE_UNARY_RHS :       \
+    ((TYPE) == tcc_binary || (TYPE) == tcc_comparison)                               ? GIMPLE_BINARY_RHS :      \
+    ((TYPE) == tcc_constant || (TYPE) == tcc_declaration || (TYPE) == tcc_reference) ? GIMPLE_SINGLE_RHS :      \
+    (GT(SYM) == GT(TRUTH_AND_EXPR) || GT(SYM) == GT(TRUTH_OR_EXPR) || GT(SYM) == GT(TRUTH_XOR_EXPR)) ?          \
+                                                                                       GIMPLE_BINARY_RHS :      \
+    GT(SYM) == GT(TRUTH_NOT_EXPR)                                                    ? GIMPLE_UNARY_RHS :       \
+    (GT(SYM) == GT(COND_EXPR) || GT(SYM) == GT(WIDEN_MULT_PLUS_EXPR) || GT(SYM) == GT(WIDEN_MULT_MINUS_EXPR) || \
+     GT(SYM) == GT(DOT_PROD_EXPR) || GT(SYM) == GT(SAD_EXPR) || GT(SYM) == GT(REALIGN_LOAD_EXPR) ||             \
+     GT(SYM) == GT(VEC_COND_EXPR) || GT(SYM) == GT(VEC_PERM_EXPR) || GT(SYM) == GT(BIT_INSERT_EXPR) ||          \
+     GT(SYM) == GT(FMA_EXPR) || GT(SYM) == GT(FSHL_EXPR) || GT(SYM) == GT(FSHR_EXPR) ||                         \
+     GT(SYM) == GT(INSERTELEMENT)) ?                                                                            \
+                                    GIMPLE_TERNARY_RHS :                                                        \
+    (GT(SYM) == GT(CONSTRUCTOR) || GT(SYM) == GT(OBJ_TYPE_REF) || GT(SYM) == GT(ASSERT_EXPR) ||                 \
+     GT(SYM) == GT(ADDR_EXPR) || GT(SYM) == GT(WITH_SIZE_EXPR) || GT(SYM) == GT(SSA_NAME)) ?                    \
+                                    GIMPLE_SINGLE_RHS :                                                         \
+                                    GIMPLE_INVALID_RHS),
 #define END_OF_BASE_TREE_CODES GIMPLE_INVALID_RHS,
 #define DEFGSCODE(SYM, NAME, GSSCODE) GIMPLE_INVALID_RHS,
    const DumpGimpleRaw::gimple_rhs_class DumpGimpleRaw::gimple_rhs_class_table[] = {
@@ -379,7 +375,7 @@ namespace llvm
          GetTTI([](llvm::Function&) -> llvm::TargetTransformInfo& { return *((llvm::TargetTransformInfo*)nullptr); }),
          GetDomTree([](llvm::Function&) -> llvm::DominatorTree& { return *((llvm::DominatorTree*)nullptr); }),
          GetLI([](llvm::Function&) -> llvm::LoopInfo& { return *((llvm::LoopInfo*)nullptr); }),
-         GetMSSA([](llvm::Function&) -> llvm::MemorySSA& { return *((llvm::MemorySSA*)nullptr); }),
+         GetMSSA([](llvm::Function&) -> MemorySSAAnalysisResult& { return *((MemorySSAAnalysisResult*)nullptr); }),
          GetLVI([](llvm::Function&) -> llvm::LazyValueInfo& { return *((llvm::LazyValueInfo*)nullptr); }),
          GetAC([](llvm::Function&) -> llvm::AssumptionCache& { return *((llvm::AssumptionCache*)nullptr); }),
          earlyAnalysis(early),
@@ -3470,7 +3466,7 @@ namespace llvm
          return false;
       llvm::Instruction* inst = const_cast<llvm::Instruction*>(reinterpret_cast<const llvm::Instruction*>(g));
       llvm::Function* currentFunction = inst->getFunction();
-      llvm::MemorySSA& MSSA = GetMSSA(*currentFunction);
+      llvm::MemorySSA& MSSA = GetMSSA(*currentFunction).getMSSA();
       return MSSA.getMemoryAccess(inst);
    }
 
@@ -3532,7 +3528,7 @@ namespace llvm
       assert(TREE_CODE(g) != GT(GIMPLE_PHI_VIRTUAL));
       llvm::Instruction* inst = const_cast<llvm::Instruction*>(reinterpret_cast<const llvm::Instruction*>(g));
       llvm::Function* currentFunction = inst->getFunction();
-      auto& MSSA = GetMSSA(*currentFunction);
+      auto& MSSA = GetMSSA(*currentFunction).getMSSA();
       const llvm::MemoryUseOrDef* ma = MSSA.getMemoryAccess(inst);
       if(ma->getValueID() == llvm::Value::MemoryUseVal || ma->getValueID() == llvm::Value::MemoryDefVal)
       {
@@ -4437,7 +4433,9 @@ namespace llvm
 #endif
       unsigned int index;
       if(t == nullptr)
+      {
          return;
+      }
       if(llvm2index.find(t) != llvm2index.end())
       {
          index = llvm2index.find(t)->second;
@@ -4514,12 +4512,14 @@ namespace llvm
          llvm::errs() << "@" << code_name << " @" << index << "\n";
          inst->print(llvm::errs());
          llvm::errs() << "\n";
-         auto& MSSA = GetMSSA(*currentFunction);
+         auto& MSSA = GetMSSA(*currentFunction).getMSSA();
          if(MSSA.getMemoryAccess(inst))
             llvm::errs() << "| " << *MSSA.getMemoryAccess(inst) << "\n";
       }
       else
+      {
          llvm::errs() << "@" << code_name << "\n";
+      }
 #endif
       /* Print the node index.  */
       serialize_index(index);
@@ -4870,7 +4870,7 @@ namespace llvm
             }
          }
       }
-      auto& MSSA = GetMSSA(*currentFunction);
+      auto& MSSA = GetMSSA(*currentFunction).getMSSA();
 
       for(const auto& BB : bblist)
       {
@@ -5876,7 +5876,9 @@ namespace llvm
       }
 #if PRINT_DBG_MSG
       else
+      {
          llvm::errs() << "memset cannot be optimized\n";
+      }
 #endif
       llvm::IRBuilder<> Builder(OrigBB->getTerminator());
 
@@ -5934,19 +5936,19 @@ namespace llvm
                      if(val && !isa<llvm::Constant>(val) && MetaDataMap.find(val) == MetaDataMap.end())
                      {
                         MetaDataMap[val] = dbgInstrCall->getRawVariable();
-                        //                        auto DIExpr = dbgInstrCall->getExpression();
-                        //                        if(DIExpr)
-                        {
-                           //                           llvm::errs() << "Inst: ";
-                           //                           inst.print(llvm::errs());
-                           //                           llvm::errs() << "\n";
-                           //                           llvm::errs() << "Value: ";
-                           //                           val->print(llvm::errs());
-                           //                           llvm::errs() << "\n";
-                           //                           llvm::errs() << "Metadata: ";
-                           //                           dbgInstrCall->getRawVariable()->print(llvm::errs());
-                           //                           llvm::errs() <<"\n";
-                        }
+                        // auto DIExpr = dbgInstrCall->getExpression();
+                        // if(DIExpr)
+                        // {
+                        //    llvm::errs() << "Inst: ";
+                        //    inst.print(llvm::errs());
+                        //    llvm::errs() << "\n";
+                        //    llvm::errs() << "Value: ";
+                        //    val->print(llvm::errs());
+                        //    llvm::errs() << "\n";
+                        //    llvm::errs() << "Metadata: ";
+                        //    dbgInstrCall->getRawVariable()->print(llvm::errs());
+                        //    llvm::errs() <<"\n";
+                        // }
                      }
                   }
                }
@@ -5974,11 +5976,9 @@ namespace llvm
             {
                if(llvm::MemIntrinsic* InstrCall = dyn_cast<llvm::MemIntrinsic>(II))
                {
-#if PRINT_DBG_MSG
-                  llvm::errs() << "Found a memIntrinsic Call\n";
-#endif
                   MemCalls.push_back(InstrCall);
 #if PRINT_DBG_MSG
+                  llvm::errs() << "Found a memIntrinsic Call\n";
                   if(llvm::MemCpyInst* Memcpy = dyn_cast<llvm::MemCpyInst>(InstrCall))
                   {
                      if(llvm::ConstantInt* CI = dyn_cast<llvm::ConstantInt>(Memcpy->getLength()))
@@ -6869,7 +6869,7 @@ namespace llvm
        std::map<const llvm::Function*, std::map<const void*, std::set<const llvm::Instruction*>>>&
            CurrentListofMAEntryDef)
    {
-      auto& MSSA = GetMSSA(*const_cast<llvm::Function*>(F));
+      auto& MSSA = GetMSSA(*const_cast<llvm::Function*>(F)).getMSSA();
       for(const auto& BB : F->getBasicBlockList())
       {
          for(const auto& inst : BB)
@@ -6877,13 +6877,17 @@ namespace llvm
             const llvm::MemoryUseOrDef* ma = MSSA.getMemoryAccess(&inst);
             if(ma && ma->getValueID() == llvm::Value::MemoryDefVal)
             {
-               auto defMA = MSSA.getWalker()->getClobberingMemoryAccess(&inst);
+               auto defMA = MSSA.getWalker()->getClobberingMemoryAccess(MSSA.getMemoryAccess(&inst));
                if(MSSA.isLiveOnEntryDef(defMA))
+               {
                   CurrentListofMAEntryDef[F][nullptr].insert(&inst);
+               }
                else if(defMA->getValueID() == llvm::Value::MemoryPhiVal)
+               {
                   CurrentListofMAEntryDef[F][gimple_phi_virtual_result(
                                                  getVirtualGimplePhi(dyn_cast<llvm::MemoryPhi>(defMA), MSSA))]
                       .insert(&inst);
+               }
                else
                {
                   assert(defMA->getValueID() == llvm::Value::MemoryDefVal);
@@ -6899,7 +6903,7 @@ namespace llvm
                             llvm::function_ref<llvm::TargetTransformInfo&(llvm::Function&)> _GetTTI,
                             llvm::function_ref<llvm::DominatorTree&(llvm::Function&)> _GetDomTree,
                             llvm::function_ref<llvm::LoopInfo&(llvm::Function&)> _GetLI,
-                            llvm::function_ref<llvm::MemorySSA&(llvm::Function&)> _GetMSSA,
+                            llvm::function_ref<MemorySSAAnalysisResult&(llvm::Function&)> _GetMSSA,
                             llvm::function_ref<llvm::LazyValueInfo&(llvm::Function&)> _GetLVI,
                             llvm::function_ref<llvm::AssumptionCache&(llvm::Function&)> _GetAC)
    {
@@ -6914,7 +6918,7 @@ namespace llvm
       moduleContext = &M.getContext();
       TopFunctionName = _TopFunctionName;
       bool res = false;
-#if __clang_major__ < 13
+
 #if PRINT_DBG_MSG
       llvm::errs() << "Computing e-SSA\n";
 #endif
@@ -6922,46 +6926,37 @@ namespace llvm
 #if PRINT_DBG_MSG
       llvm::errs() << "Computed e-SSA\n";
 #endif
-#endif
+
       if(!earlyAnalysis)
       {
 #if PRINT_DBG_MSG
          llvm::errs() << "Building metadata\n";
 #endif
          buildMetaDataMap(M);
-      }
-      res = !earlyAnalysis && lowerMemIntrinsics(M);
+         res |= lowerMemIntrinsics(M);
 
-      auto res_RC = (!earlyAnalysis && RebuildConstants(M));
+         res |= RebuildConstants(M);
 
-      res = res || res_RC;
-      auto res_LI = (!earlyAnalysis && lowerIntrinsics(M));
-      res = res || res_LI;
+         res |= lowerIntrinsics(M);
 #if HAVE_LIBBDD
-      if(!earlyAnalysis && !onlyGlobals)
-      {
-         std::string starting_function = TopFunctionName;
-         if(starting_function == "")
+         if(!onlyGlobals)
          {
-            const llvm::Function* main = M.getFunction("main");
-            if(main)
-               starting_function = "main";
-         }
-         if(starting_function != "")
-         {
+            if(TopFunctionName != "")
+            {
 #define ANDERSEN 1
 #if PRINT_DBG_MSG
-            llvm::errs() << "Performing alias analysis\n";
+               llvm::errs() << "Performing alias analysis\n";
 #endif
 #if ANDERSEN
-            PtoSets_AA = new Andersen_AA(starting_function);
+               PtoSets_AA = new Andersen_AA(TopFunctionName);
 #else
-            PtoSets_AA = new Staged_Flow_Sensitive_AA(starting_function);
+               PtoSets_AA = new Staged_Flow_Sensitive_AA(TopFunctionName);
 #endif
-            PtoSets_AA->computePointToSet(M);
+               PtoSets_AA->computePointToSet(M);
+            }
          }
-      }
 #endif
+      }
 
 #if __clang_major__ < 10
 #if PRINT_DBG_MSG
@@ -6982,19 +6977,19 @@ namespace llvm
       assert(!llvm::verifyModule(M, &llvm::errs()));
 #endif
 
-      if(!earlyAnalysis && !onlyGlobals)
-      {
-         for(const auto& fun : M.getFunctionList())
-         {
-            if(!fun.isDeclaration() && !fun.isIntrinsic())
-            {
-               computeMAEntryDefs(&fun, CurrentListofMAEntryDef);
-            }
-         }
-      }
-
       if(!earlyAnalysis)
       {
+         if(!onlyGlobals)
+         {
+            for(const auto& fun : M.getFunctionList())
+            {
+               if(!fun.isDeclaration() && !fun.isIntrinsic())
+               {
+                  computeMAEntryDefs(&fun, CurrentListofMAEntryDef);
+               }
+            }
+         }
+
          for(const auto& globalVar : M.getGlobalList())
          {
 #if PRINT_DBG_MSG
@@ -7003,28 +6998,29 @@ namespace llvm
 #endif
             SerializeGimpleGlobalTreeNode(assignCodeAuto(&globalVar));
          }
-      }
-      if(!earlyAnalysis && !onlyGlobals)
-      {
-         for(const auto& fun : M.getFunctionList())
+         if(!onlyGlobals)
          {
-            if(fun.isIntrinsic())
+            for(const auto& fun : M.getFunctionList())
             {
+               if(fun.isIntrinsic())
+               {
 #if PRINT_DBG_MSG
-               llvm::errs() << "Function intrinsic skipped: " << getName(&fun) << "|" << ValueTyNames[fun.getValueID()]
-                            << "\n";
+                  llvm::errs() << "Function intrinsic skipped: " << getName(&fun) << "|"
+                               << ValueTyNames[fun.getValueID()] << "\n";
 #endif
-            }
-            else
-            {
+               }
+               else
+               {
 #if PRINT_DBG_MSG
-               llvm::errs() << "Found function: " << getName(&fun) << "|" << ValueTyNames[fun.getValueID()] << "\n";
+                  llvm::errs() << "Found function: " << getName(&fun) << "|" << ValueTyNames[fun.getValueID()] << "\n";
 #endif
-               SerializeGimpleGlobalTreeNode(assignCodeAuto(&fun));
+                  SerializeGimpleGlobalTreeNode(assignCodeAuto(&fun));
+               }
             }
+            CurrentListofMAEntryDef.clear();
          }
-         CurrentListofMAEntryDef.clear();
       }
+
 #if HAVE_LIBBDD
       if(PtoSets_AA)
       {
@@ -7032,9 +7028,12 @@ namespace llvm
          PtoSets_AA = nullptr;
       }
 #endif
+
       if(RA)
       {
+#if PRINT_DBG_MSG
          RA->printRanges(M, llvm::errs());
+#endif
          delete RA;
       }
       // M.print(llvm::errs(), nullptr);

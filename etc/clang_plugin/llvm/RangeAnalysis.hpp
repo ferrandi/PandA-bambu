@@ -98,6 +98,11 @@
 #include "llvm/ADT/StringRef.h"
 #include "llvm/Analysis/AssumptionCache.h"
 #include "llvm/Analysis/LazyValueInfo.h"
+#if __clang_major__ > 4
+#include "llvm/Analysis/MemorySSA.h"
+#else
+#include "llvm/Transforms/Utils/MemorySSA.h"
+#endif
 #include "llvm/IR/BasicBlock.h"
 #include "llvm/IR/Dominators.h"
 #include "llvm/IR/InstrTypes.h"
@@ -124,6 +129,11 @@ namespace llvm
 
 class Andersen_AA;
 
+#if __clang_major__ >= 13
+using MemorySSAAnalysisResult = llvm::MemorySSAAnalysis::Result;
+#else
+using MemorySSAAnalysisResult = llvm::MemorySSAWrapperPass;
+#endif
 namespace RangeAnalysis
 {
    // Comment the line below to enable the debug of SCCs and optimize the code
@@ -1237,13 +1247,13 @@ namespace RangeAnalysis
                 bool* changed, llvm::function_ref<llvm::DominatorTree&(llvm::Function&)> GetDomTree,
                 llvm::function_ref<llvm::LazyValueInfo&(llvm::Function&)> GetLVI,
                 llvm::function_ref<llvm::AssumptionCache&(llvm::Function&)> GetAC,
-                llvm::function_ref<llvm::MemorySSA&(llvm::Function&)> GetMSSA);
+                llvm::function_ref<MemorySSAAnalysisResult&(llvm::Function&)> GetMSSA);
       /// Add StoreOp in the graph
       void
       addStoreOp(const llvm::StoreInst* SI, Andersen_AA* PtoSets_AA, bool arePointersResolved,
                  llvm::DenseMap<const llvm::Function*, llvm::SmallPtrSet<const llvm::Instruction*, 6>>& Function2Store,
                  const llvm::DataLayout* DL, bool* changed,
-                 llvm::function_ref<llvm::MemorySSA&(llvm::Function&)> GetMSSA);
+                 llvm::function_ref<MemorySSAAnalysisResult&(llvm::Function&)> GetMSSA);
 
       /// Takes an instruction and creates an operation.
       void buildOperations(
@@ -1252,7 +1262,7 @@ namespace RangeAnalysis
           bool* changed, llvm::function_ref<llvm::DominatorTree&(llvm::Function&)> GetDomTree,
           llvm::function_ref<llvm::LazyValueInfo&(llvm::Function&)> GetLVI,
           llvm::function_ref<llvm::AssumptionCache&(llvm::Function&)> GetAC,
-          llvm::function_ref<llvm::MemorySSA&(llvm::Function&)> GetMSSA);
+          llvm::function_ref<MemorySSAAnalysisResult&(llvm::Function&)> GetMSSA);
       void buildValueBranchMap(const llvm::BranchInst* br, const llvm::DataLayout* DL);
       void buildValueSwitchMap(const llvm::SwitchInst* sw, const llvm::DataLayout* DL);
       void buildValueMaps(const llvm::Function& F, const llvm::DataLayout* DL);
@@ -1268,7 +1278,7 @@ namespace RangeAnalysis
       llvm::SmallPtrSet<const llvm::Value*, 6> ComputeConflictingStores(
           const llvm::StoreInst* SI, const llvm::Value* GV, const llvm::Instruction* instr, Andersen_AA* PtoSets_AA,
           llvm::DenseMap<const llvm::Function*, llvm::SmallPtrSet<const llvm::Instruction*, 6>>& Function2Store,
-          bool* changed, llvm::function_ref<llvm::MemorySSA&(llvm::Function&)> GetMSSA);
+          bool* changed, llvm::function_ref<MemorySSAAnalysisResult&(llvm::Function&)> GetMSSA);
 
     protected:
       // Perform the widening and narrowing operations
@@ -1314,7 +1324,7 @@ namespace RangeAnalysis
                  bool* changed, llvm::function_ref<llvm::DominatorTree&(llvm::Function&)> GetDomTree,
                  llvm::function_ref<llvm::LazyValueInfo&(llvm::Function&)> GetLVI,
                  llvm::function_ref<llvm::AssumptionCache&(llvm::Function&)> GetAC,
-                 llvm::function_ref<llvm::MemorySSA&(llvm::Function&)> GetMSSA);
+                 llvm::function_ref<MemorySSAAnalysisResult&(llvm::Function&)> GetMSSA);
       void buildVarNodes(const llvm::DataLayout* DL);
       void buildSymbolicIntersectMap();
       UseMap buildUseMap(const llvm::SmallPtrSet<VarNode*, 32>& component);
@@ -1459,7 +1469,7 @@ namespace RangeAnalysis
                 llvm::function_ref<llvm::DominatorTree&(llvm::Function&)> GetDomTree,
                 llvm::function_ref<llvm::LazyValueInfo&(llvm::Function&)> GetLVI,
                 llvm::function_ref<llvm::AssumptionCache&(llvm::Function&)> GetAC,
-                llvm::function_ref<llvm::MemorySSA&(llvm::Function&)> GetMSSA);
+                llvm::function_ref<MemorySSAAnalysisResult&(llvm::Function&)> GetMSSA);
       static unsigned getMaxBitWidth(const llvm::Module& M);
 
     private:

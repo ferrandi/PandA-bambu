@@ -571,9 +571,6 @@ llvm::PassPluginLibraryInfo CLANG_PLUGIN_INFO(_plugin_expandMemOps)()
                      MPM.addPass(llvm::CLANG_VERSION_SYMBOL(_plugin_expandMemOps)());
                      return true;
                   });
-              PB.registerAnalysisRegistrationCallback([](llvm::FunctionAnalysisManager& FAM) {
-                 FAM.registerPass([&] { return llvm::TargetIRAnalysis(); });
-              });
            }};
 }
 

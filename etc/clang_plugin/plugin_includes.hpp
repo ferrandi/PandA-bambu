@@ -51,6 +51,11 @@
 #include "llvm/Analysis/AssumptionCache.h"
 #include "llvm/Analysis/LazyValueInfo.h"
 #include "llvm/Analysis/LoopInfo.h"
+#if __clang_major__ > 4
+#include "llvm/Analysis/MemorySSA.h"
+#else
+#include "llvm/Transforms/Utils/MemorySSA.h"
+#endif
 #include "llvm/Analysis/TargetLibraryInfo.h"
 #include "llvm/Analysis/TargetTransformInfo.h"
 #include "llvm/IR/Dominators.h"
@@ -162,6 +167,12 @@ namespace RangeAnalysis
 }
 class Andersen_AA;
 
+#if __clang_major__ >= 13
+using MemorySSAAnalysisResult = llvm::MemorySSAAnalysis::Result;
+#else
+using MemorySSAAnalysisResult = llvm::MemorySSAWrapperPass;
+#endif
+
 namespace llvm
 {
    class DumpGimpleRaw
@@ -174,7 +185,7 @@ namespace llvm
       llvm::function_ref<llvm::TargetTransformInfo&(llvm::Function&)> GetTTI;
       llvm::function_ref<llvm::DominatorTree&(llvm::Function&)> GetDomTree;
       llvm::function_ref<llvm::LoopInfo&(llvm::Function&)> GetLI;
-      llvm::function_ref<llvm::MemorySSA&(llvm::Function&)> GetMSSA;
+      llvm::function_ref<MemorySSAAnalysisResult&(llvm::Function&)> GetMSSA;
       llvm::function_ref<llvm::LazyValueInfo&(llvm::Function&)> GetLVI;
       llvm::function_ref<llvm::AssumptionCache&(llvm::Function&)> GetAC;
 
@@ -811,7 +822,7 @@ namespace llvm
                 llvm::function_ref<llvm::TargetTransformInfo&(llvm::Function&)> GetTTI,
                 llvm::function_ref<llvm::DominatorTree&(llvm::Function&)> GetDomTree,
                 llvm::function_ref<llvm::LoopInfo&(llvm::Function&)> GetLI,
-                llvm::function_ref<llvm::MemorySSA&(llvm::Function&)> GetMSSA,
+                llvm::function_ref<MemorySSAAnalysisResult&(llvm::Function&)> GetMSSA,
                 llvm::function_ref<llvm::LazyValueInfo&(llvm::Function&)> GetLVI,
                 llvm::function_ref<llvm::AssumptionCache&(llvm::Function&)> GetAC);
    };

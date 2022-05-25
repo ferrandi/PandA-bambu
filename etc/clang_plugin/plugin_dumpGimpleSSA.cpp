@@ -107,17 +107,25 @@ namespace llvm
                                cl::value_desc("filename path"));
 
    struct CLANG_VERSION_SYMBOL(_plugin_dumpGimpleSSA)
-       : public ModulePass
-#if __clang_major__ >= 13
-         ,
-         PassInfoMixin<CLANG_VERSION_SYMBOL(_plugin_dumpGimpleSSA)>
+       :
+#if __clang_major__ < 13
+         public ModulePass
+#else
+         public PassInfoMixin<CLANG_VERSION_SYMBOL(_plugin_dumpGimpleSSA)>
 #endif
    {
+#if __clang_major__ < 13
       static char ID;
+#endif
       bool earlyAnalysis;
 
       CLANG_VERSION_SYMBOL(_plugin_dumpGimpleSSA)
-      (bool _earlyAnalysis = false) : ModulePass(ID), earlyAnalysis(_earlyAnalysis)
+      (bool _earlyAnalysis = false)
+          :
+#if __clang_major__ < 13
+            ModulePass(ID),
+#endif
+            earlyAnalysis(_earlyAnalysis)
       {
          initializeLoopInfoWrapperPassPass(*PassRegistry::getPassRegistry());            //
          initializeLazyValueInfoWrapperPassPass(*PassRegistry::getPassRegistry());       //
@@ -128,11 +136,13 @@ namespace llvm
          initializeDominatorTreeWrapperPassPass(*PassRegistry::getPassRegistry());       //
       }
 
+#if __clang_major__ >= 13
       CLANG_VERSION_SYMBOL(_plugin_dumpGimpleSSA)
       (const CLANG_VERSION_SYMBOL(_plugin_dumpGimpleSSA) & other)
           : CLANG_VERSION_SYMBOL(_plugin_dumpGimpleSSA)(other.earlyAnalysis)
       {
       }
+#endif
 
       std::string create_file_basename_string(const std::string& on, const std::string& original_filename) const
       {
@@ -153,7 +163,7 @@ namespace llvm
                 llvm::function_ref<llvm::TargetTransformInfo&(llvm::Function&)> GetTTI,
                 llvm::function_ref<llvm::DominatorTree&(llvm::Function&)> GetDomTree,
                 llvm::function_ref<llvm::LoopInfo&(llvm::Function&)> GetLI,
-                llvm::function_ref<llvm::MemorySSA&(llvm::Function&)> GetMSSA,
+                llvm::function_ref<MemorySSAAnalysisResult&(llvm::Function&)> GetMSSA,
                 llvm::function_ref<llvm::LazyValueInfo&(llvm::Function&)> GetLVI,
                 llvm::function_ref<llvm::AssumptionCache&(llvm::Function&)> GetAC)
       {
@@ -213,6 +223,7 @@ namespace llvm
          return res;
       }
 
+#if __clang_major__ < 13
       bool runOnModule(Module& M) override
       {
 #if __clang_major__ >= 10
@@ -233,8 +244,8 @@ namespace llvm
          auto GetLI = [&](llvm::Function& F) -> llvm::LoopInfo& {
             return getAnalysis<llvm::LoopInfoWrapperPass>(F).getLoopInfo();
          };
-         auto GetMSSA = [&](llvm::Function& F) -> llvm::MemorySSA& {
-            return getAnalysis<llvm::MemorySSAWrapperPass>(F).getMSSA();
+         auto GetMSSA = [&](llvm::Function& F) -> MemorySSAAnalysisResult& {
+            return getAnalysis<llvm::MemorySSAWrapperPass>(F);
          };
          auto GetLVI = [&](llvm::Function& F) -> llvm::LazyValueInfo& {
             return getAnalysis<llvm::LazyValueInfoWrapperPass>(F).getLVI();
@@ -245,36 +256,6 @@ namespace llvm
 
          return exec(M, GetTLI, GetTTI, GetDomTree, GetLI, GetMSSA, GetLVI, GetAC);
       }
-
-#if __clang_major__ >= 13
-      llvm::PreservedAnalyses run(llvm::Module& M, llvm::ModuleAnalysisManager& MAM)
-      {
-         auto& FAM = MAM.getResult<FunctionAnalysisManagerModuleProxy>(M).getManager();
-
-         auto GetTLI = [&](llvm::Function& F) -> llvm::TargetLibraryInfo& {
-            return FAM.getResult<llvm::TargetLibraryAnalysis>(F);
-         };
-         auto GetTTI = [&](llvm::Function& F) -> llvm::TargetTransformInfo& {
-            return FAM.getResult<llvm::TargetIRAnalysis>(F);
-         };
-         auto GetDomTree = [&](llvm::Function& F) -> llvm::DominatorTree& {
-            return FAM.getResult<llvm::DominatorTreeAnalysis>(F);
-         };
-         auto GetLI = [&](llvm::Function& F) -> llvm::LoopInfo& { return FAM.getResult<llvm::LoopAnalysis>(F); };
-         auto GetMSSA = [&](llvm::Function& F) -> llvm::MemorySSA& {
-            return FAM.getResult<llvm::MemorySSAAnalysis>(F).getMSSA();
-         };
-         auto GetLVI = [&](llvm::Function& F) -> llvm::LazyValueInfo& {
-            return FAM.getResult<llvm::LazyValueAnalysis>(F);
-         };
-         auto GetAC = [&](llvm::Function& F) -> llvm::AssumptionCache& {
-            return FAM.getResult<llvm::AssumptionAnalysis>(F);
-         };
-
-         const auto changed = exec(M, GetTLI, GetTTI, GetDomTree, GetLI, GetMSSA, GetLVI, GetAC);
-         return (changed ? llvm::PreservedAnalyses::none() : llvm::PreservedAnalyses::all());
-      }
-#endif
 
       StringRef getPassName() const override
       {
@@ -292,14 +273,45 @@ namespace llvm
          AU.addRequired<AssumptionCacheTracker>();
          AU.addRequired<DominatorTreeWrapperPass>();
       }
+#else
+      llvm::PreservedAnalyses run(llvm::Module& M, llvm::ModuleAnalysisManager& MAM)
+      {
+         MAM.invalidate(M, llvm::PreservedAnalyses::none());
+         auto& FAM = MAM.getResult<FunctionAnalysisManagerModuleProxy>(M).getManager();
+         auto GetTLI = [&](llvm::Function& F) -> llvm::TargetLibraryInfo& {
+            return FAM.getResult<llvm::TargetLibraryAnalysis>(F);
+         };
+         auto GetTTI = [&](llvm::Function& F) -> llvm::TargetTransformInfo& {
+            return FAM.getResult<llvm::TargetIRAnalysis>(F);
+         };
+         auto GetDomTree = [&](llvm::Function& F) -> llvm::DominatorTree& {
+            return FAM.getResult<llvm::DominatorTreeAnalysis>(F);
+         };
+         auto GetLI = [&](llvm::Function& F) -> llvm::LoopInfo& { return FAM.getResult<llvm::LoopAnalysis>(F); };
+         auto GetMSSA = [&](llvm::Function& F) -> MemorySSAAnalysisResult& {
+            return FAM.getResult<llvm::MemorySSAAnalysis>(F);
+         };
+         auto GetLVI = [&](llvm::Function& F) -> llvm::LazyValueInfo& {
+            return FAM.getResult<llvm::LazyValueAnalysis>(F);
+         };
+         auto GetAC = [&](llvm::Function& F) -> llvm::AssumptionCache& {
+            return FAM.getResult<llvm::AssumptionAnalysis>(F);
+         };
+
+         const auto changed = exec(M, GetTLI, GetTTI, GetDomTree, GetLI, GetMSSA, GetLVI, GetAC);
+         return (changed ? llvm::PreservedAnalyses::none() : llvm::PreservedAnalyses::all());
+      }
+#endif
    };
 
+#if __clang_major__ < 13
    char CLANG_VERSION_SYMBOL(_plugin_dumpGimpleSSA)::ID = 0;
+#endif
 
 } // namespace llvm
 
 // Currently there is no difference between c++ or c serialization
-#if !defined(_WIN32)
+#if !defined(_WIN32) && __clang_major__ < 13
 #if CPP_LANGUAGE
 // static llvm::RegisterPass<llvm::CLANG_VERSION_SYMBOL(_plugin_dumpGimpleSSA)<true>>
 // XPassEarly(CLANG_VERSION_STRING(_plugin_dumpGimpleSSACppEarly), "Custom Value Range Based optimization step: LLVM
@@ -340,15 +352,6 @@ llvm::PassPluginLibraryInfo CLANG_PLUGIN_INFO(_plugin_dumpGimpleSSA)()
                      MPM.addPass(llvm::CLANG_VERSION_SYMBOL(_plugin_dumpGimpleSSA)());
                      return true;
                   });
-              PB.registerAnalysisRegistrationCallback([](llvm::FunctionAnalysisManager& FAM) {
-                 FAM.registerPass([&] { return llvm::LoopAnalysis(); });
-                 FAM.registerPass([&] { return llvm::MemorySSAAnalysis(); });
-                 FAM.registerPass([&] { return llvm::LazyValueAnalysis(); });
-                 FAM.registerPass([&] { return llvm::TargetIRAnalysis(); });
-                 FAM.registerPass([&] { return llvm::TargetLibraryAnalysis(); });
-                 FAM.registerPass([&] { return llvm::AssumptionAnalysis(); });
-                 FAM.registerPass([&] { return llvm::DominatorTreeAnalysis(); });
-              });
            }};
 }
 
@@ -357,8 +360,7 @@ extern "C" ::llvm::PassPluginLibraryInfo LLVM_ATTRIBUTE_WEAK llvmGetPassPluginIn
 {
    return CLANG_PLUGIN_INFO(_plugin_dumpGimpleSSA)();
 }
-#endif
-
+#else
 // This function is of type PassManagerBuilder::ExtensionFn
 static void loadPass(const llvm::PassManagerBuilder&, llvm::legacy::PassManagerBase& PM)
 {
@@ -389,6 +391,7 @@ static llvm::RegisterStandardPasses llvmtoolLoader_Ox(llvm::PassManagerBuilder::
 
 // static llvm::RegisterStandardPasses llvmtoolLoader_O0(llvm::PassManagerBuilder::EP_ModuleOptimizerEarly,
 // loadPassEarly);
+#endif
 #endif
 
 // namespace llvm

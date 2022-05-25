@@ -4301,7 +4301,7 @@ namespace RangeAnalysis
        bool* changed, llvm::function_ref<llvm::DominatorTree&(llvm::Function&)> GetDomTree,
        llvm::function_ref<llvm::LazyValueInfo&(llvm::Function&)> GetLVI,
        llvm::function_ref<llvm::AssumptionCache&(llvm::Function&)> GetAC,
-       llvm::function_ref<llvm::MemorySSA&(llvm::Function&)> GetMSSA)
+       llvm::function_ref<MemorySSAAnalysisResult&(llvm::Function&)> GetMSSA)
    {
       auto bw = LI->getType()->getPrimitiveSizeInBits();
       Range intersection(Regular, bw, Min, Max);
@@ -4585,7 +4585,7 @@ namespace RangeAnalysis
    static void
    recurseUpMemoryAccess(const llvm::Function* fun,
                          llvm::DenseSet<std::pair<const llvm::Instruction*, const llvm::Function*>>& toBeAnalyzedInstr,
-                         bool* changed, llvm::function_ref<llvm::MemorySSA&(llvm::Function&)> GetMSSA)
+                         bool* changed, llvm::function_ref<MemorySSAAnalysisResult&(llvm::Function&)> GetMSSA)
    {
       for(auto fuse : fun->users())
       {
@@ -4594,7 +4594,7 @@ namespace RangeAnalysis
             //            llvm::errs() << "    recurseUpMemoryAccess-instr-" << instr->getFunction()->getName() << ": ";
             //            instr->print(llvm::errs());
             //            llvm::errs() << "\n";
-            const auto& MSSA = GetMSSA(*const_cast<llvm::Function*>(instr->getFunction()));
+            const auto& MSSA = GetMSSA(*const_cast<llvm::Function*>(instr->getFunction())).getMSSA();
             auto funMA = MSSA.getMemoryAccess(instr);
             if(!funMA)
             {
@@ -4627,12 +4627,12 @@ namespace RangeAnalysis
    llvm::SmallPtrSet<const llvm::Value*, 6> ConstraintGraph::ComputeConflictingStores(
        const llvm::StoreInst* SI, const llvm::Value* GV, const llvm::Instruction* instr0, Andersen_AA* PtoSets_AA,
        llvm::DenseMap<const Function*, SmallPtrSet<const Instruction*, 6>>& Function2Store, bool* changed,
-       llvm::function_ref<llvm::MemorySSA&(llvm::Function&)> GetMSSA)
+       llvm::function_ref<MemorySSAAnalysisResult&(llvm::Function&)> GetMSSA)
    {
       llvm::SmallPtrSet<const llvm::Value*, 6> res;
       llvm::DenseSet<std::pair<const llvm::Instruction*, const llvm::Function*>> toBeAnalyzed;
       llvm::DenseSet<std::pair<const llvm::Instruction*, const llvm::Function*>> Analyzed;
-      const auto& MSSA0 = GetMSSA(*const_cast<llvm::Function*>(instr0->getFunction()));
+      const auto& MSSA0 = GetMSSA(*const_cast<llvm::Function*>(instr0->getFunction())).getMSSA();
       const llvm::MemoryUseOrDef* ma0 = MSSA0.getMemoryAccess(instr0);
       auto immDefAcc0 = ma0->getDefiningAccess();
       if(!MSSA0.isLiveOnEntryDef(immDefAcc0))
@@ -4671,7 +4671,7 @@ namespace RangeAnalysis
                       recurseComputeConflictingStores(visited, mInstr, GV, res, PtoSets_AA, Function2Store, changed);
                   if(!GVfound)
                   {
-                     const auto& MSSAm = GetMSSA(*const_cast<llvm::Function*>(mInstr->getFunction()));
+                     const auto& MSSAm = GetMSSA(*const_cast<llvm::Function*>(mInstr->getFunction())).getMSSA();
                      const llvm::MemoryUseOrDef* mam = MSSAm.getMemoryAccess(mInstr);
                      auto immDefAccm = mam->getDefiningAccess();
                      if(!MSSAm.isLiveOnEntryDef(immDefAccm))
@@ -4733,7 +4733,7 @@ namespace RangeAnalysis
    void ConstraintGraph::addStoreOp(const llvm::StoreInst* SI, Andersen_AA* PtoSets_AA, bool arePointersResolved,
                                     llvm::DenseMap<const Function*, SmallPtrSet<const Instruction*, 6>>& Function2Store,
                                     const llvm::DataLayout* DL, bool* changed,
-                                    llvm::function_ref<llvm::MemorySSA&(llvm::Function&)> GetMSSA)
+                                    llvm::function_ref<MemorySSAAnalysisResult&(llvm::Function&)> GetMSSA)
    {
 #if HAVE_LIBBDD
       if(arePointersResolved)
@@ -4805,7 +4805,7 @@ namespace RangeAnalysis
                                     bool* changed, llvm::function_ref<llvm::DominatorTree&(llvm::Function&)> GetDomTree,
                                     llvm::function_ref<llvm::LazyValueInfo&(llvm::Function&)> GetLVI,
                                     llvm::function_ref<llvm::AssumptionCache&(llvm::Function&)> GetAC,
-                                    llvm::function_ref<llvm::MemorySSA&(llvm::Function&)> GetMSSA)
+                                    llvm::function_ref<MemorySSAAnalysisResult&(llvm::Function&)> GetMSSA)
    {
       if(auto LI = dyn_cast<LoadInst>(I))
       {
@@ -5360,7 +5360,7 @@ namespace RangeAnalysis
                                     bool* changed, llvm::function_ref<llvm::DominatorTree&(llvm::Function&)> GetDomTree,
                                     llvm::function_ref<llvm::LazyValueInfo&(llvm::Function&)> GetLVI,
                                     llvm::function_ref<llvm::AssumptionCache&(llvm::Function&)> GetAC,
-                                    llvm::function_ref<llvm::MemorySSA&(llvm::Function&)> GetMSSA)
+                                    llvm::function_ref<MemorySSAAnalysisResult&(llvm::Function&)> GetMSSA)
    {
       this->func = &F;
       buildValueMaps(F, DL);
@@ -6871,7 +6871,7 @@ namespace RangeAnalysis
                                              llvm::function_ref<llvm::DominatorTree&(llvm::Function&)> GetDomTree,
                                              llvm::function_ref<llvm::LazyValueInfo&(llvm::Function&)> GetLVI,
                                              llvm::function_ref<llvm::AssumptionCache&(llvm::Function&)> GetAC,
-                                             llvm::function_ref<llvm::MemorySSA&(llvm::Function&)> GetMSSA)
+                                             llvm::function_ref<MemorySSAAnalysisResult&(llvm::Function&)> GetMSSA)
    {
       changed = false;
       // Constraint Graph
