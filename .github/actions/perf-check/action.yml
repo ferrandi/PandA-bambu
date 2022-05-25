@@ -37,7 +37,7 @@ runs:
       shell: bash
       run: |
         set -e
-        PKG_URL="${{inputs.storage-url}}/results/${{github.ref}}/${{inputs.test-id}}.csv"
+        PKG_URL="${{inputs.storage-url}}/results/${{github.head_ref}}/${{inputs.test-id}}.csv"
         CURL_CMD=""
         if [[ ! -z '${{inputs.username}}' ]]; then
           CURL_CMD+='-u ${{inputs.username}}:${{inputs.password}} '
@@ -56,7 +56,7 @@ runs:
         set -e
         PKG_URL="${{inputs.storage-url}}/results/main/${{inputs.test-id}}.csv"
         COMMIT_SHA="${{github.sha}}"
-        COMPARE_CSV="${{inputs.test-id}}.$(echo '${{github.ref}}' | sed 's/\//_/g')_${COMMIT_SHA:0:7}.csv"
+        COMPARE_CSV="${{inputs.test-id}}.$(echo '${{github.head_ref}}' | sed 's/\//_/g')_${COMMIT_SHA:0:7}.csv"
         score=""
         outcsv=""
         CURL_CMD=""

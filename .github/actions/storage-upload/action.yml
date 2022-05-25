@@ -50,7 +50,7 @@ runs:
         if [[ ! -z "${{inputs.storage-path}}" ]]; then
           PKG_URL="${{inputs.storage-url}}/${{inputs.storage-path}}/$PKG_FILE"
         else
-          PKG_URL="${{inputs.storage-url}}/${{github.ref}}/$PKG_FILE"
+          PKG_URL="${{inputs.storage-url}}/${{github.head_ref}}/$PKG_FILE"
         fi
         CURL_CMD='curl -L --fail -T- '
         if [[ ! -z '${{inputs.username}}' ]]; then

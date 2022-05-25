@@ -94,8 +94,9 @@ NanoXploreBackendFlow::NanoXploreBackendFlow(const ParameterConstRef _Param, con
                     "--nanoxplore-bypass option.");
    }
 
-   default_data["NG-medium"] = "NG-medium.data";
-   default_data["NG-large"] = "NG-large.data";
+   default_data["NG-MEDIUM"] = "NG.data";
+   default_data["NG-LARGE"] = "NG.data";
+   default_data["NG-ULTRA"] = "NG.data";
 
    XMLDomParserRef parser;
    if(Param->isOption(OPT_target_device_script))
@@ -118,7 +119,7 @@ NanoXploreBackendFlow::NanoXploreBackendFlow(const ParameterConstRef _Param, con
       }
       else
       {
-         device_string = "NG-medium";
+         device_string = "NG-MEDIUM";
       }
       if(default_data.find(device_string) == default_data.end())
       {
@@ -306,12 +307,14 @@ void NanoXploreBackendFlow::InitDesignParameters()
       xpwr_enabled = true;
    }
    actual_parameters->parameter_values[PARAM_power_optimization] = STR(xpwr_enabled);
-   const target_deviceRef device = target->get_target_device();
-   auto device_name = device->get_parameter<std::string>("model");
-   auto package = device->get_parameter<std::string>("package");
-   auto speed_grade = device->get_parameter<std::string>("speed_grade");
+   const auto device = target->get_target_device();
+   const auto family = device->get_parameter<std::string>("family");
+   const auto device_name = device->get_parameter<std::string>("model");
+   const auto package = device->get_parameter<std::string>("package");
+   const auto speed_grade = device->get_parameter<std::string>("speed_grade");
    std::string device_string = device_name + package + speed_grade;
    actual_parameters->parameter_values[PARAM_target_device] = device_string;
+   actual_parameters->parameter_values[PARAM_target_family] = family;
 
    std::string HDL_files = actual_parameters->parameter_values[PARAM_HDL_files];
    std::vector<std::string> file_list = convert_string_to_vector<std::string>(HDL_files, ";");

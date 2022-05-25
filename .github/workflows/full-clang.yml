@@ -10,7 +10,7 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: full-clang-${{ github.ref }}
+  group: full-clang-${{ github.head_ref }}
   cancel-in-progress: true
 
 jobs:

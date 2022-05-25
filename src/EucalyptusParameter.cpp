@@ -679,7 +679,7 @@ void EucalyptusParameter::SetDefaults()
    setOption(OPT_sync_reset, "no");
    setOption(OPT_reg_init_value, false);
 
-   setOption(OPT_output_directory, "work");
+   setOption(OPT_output_directory, GetCurrentPath() + "/HLS_output/");
    setOption(OPT_rtl, true);
    setOption(OPT_level_reset, false);
 #if HAVE_EXPERIMENTAL
