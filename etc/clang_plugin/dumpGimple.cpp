@@ -3563,6 +3563,27 @@ namespace llvm
       {
          const void* vdef = getSSA(ma, g, currentFunction, false);
          serialize_child("vdef", vdef);
+         llvm::MemoryAccess* defAccess = ma->getDefiningAccess();
+         auto da = dyn_cast<llvm::MemoryUseOrDef>(defAccess);
+         if(da)
+         {
+            auto defvuseStmt = da->getMemoryInst();
+            if((((dyn_cast<llvm::LoadInst>(inst) && dyn_cast<llvm::LoadInst>(inst)->isVolatile()) ||
+                 (dyn_cast<llvm::StoreInst>(inst) && dyn_cast<llvm::StoreInst>(inst)->isVolatile()))) ||
+               (defvuseStmt &&
+                ((dyn_cast<llvm::LoadInst>(defvuseStmt) && dyn_cast<llvm::LoadInst>(defvuseStmt)->isVolatile()) ||
+                 (dyn_cast<llvm::StoreInst>(defvuseStmt) && dyn_cast<llvm::StoreInst>(defvuseStmt)->isVolatile()))))
+            {
+               bool isDefault = false;
+               const void* def_stmt = getVirtualDefStatement(defAccess, isDefault, MSSA, currentFunction);
+               const void* vuse = getSSA(ma, def_stmt, currentFunction, isDefault);
+               if(!isDefault)
+               {
+                  serialize_child("vuse", vuse);
+               }
+            }
+         }
+
          std::set<llvm::MemoryAccess*> visited;
          auto startingMA = MSSA.getMemoryAccess(inst);
          if(isa<llvm::CallInst>(inst) || isa<llvm::InvokeInst>(inst) || isa<llvm::FenceInst>(inst))
@@ -6546,11 +6567,11 @@ namespace llvm
                               llvm::errs() << "Found a global var that is an invariant: " << *GV << "\n";
                               for(llvm::BasicBlock::iterator CurInst = BI->begin(); CurInst != II;)
                               {
-                                 llvm::Constant* Val;
-                                 llvm::Constant* Ptr;
-                                 assert(
-                                     dyn_cast<llvm::StoreInst>(CurInst) &&
-                                     removableStore(dyn_cast<llvm::StoreInst>(CurInst), GV, TLI, *DL, Ptr, Val, false));
+                                 llvm::Constant* Val = nullptr;
+                                 llvm::Constant* Ptr = nullptr;
+                                 auto resRS =
+                                     removableStore(dyn_cast<llvm::StoreInst>(CurInst), GV, TLI, *DL, Ptr, Val, false);
+                                 assert(dyn_cast<llvm::StoreInst>(CurInst) && resRS);
                                  MutatedMemory[Ptr] = Val;
 
                                  auto me = CurInst;
@@ -6571,8 +6592,8 @@ namespace llvm
                               ++GuardInst;
                               if(GuardInst != IE)
                               {
-                                 llvm::Constant* Val;
-                                 llvm::Constant* Ptr;
+                                 llvm::Constant* Val = nullptr;
+                                 llvm::Constant* Ptr = nullptr;
                                  llvm::StoreInst* SI = dyn_cast<llvm::StoreInst>(GuardInst);
                                  auto Removable = SI && removableStore(SI, GV, TLI, *DL, Ptr, Val, true);
                                  if(Removable)
