@@ -264,23 +264,27 @@ namespace llvm
 #undef DEFTREECODE
 #undef DEFGSCODE
 
-#define DEFTREECODE(SYM, STRING, TYPE, NARGS)                                                                   \
-   ((TYPE) == tcc_unary                                                              ? GIMPLE_UNARY_RHS :       \
-    ((TYPE) == tcc_binary || (TYPE) == tcc_comparison)                               ? GIMPLE_BINARY_RHS :      \
-    ((TYPE) == tcc_constant || (TYPE) == tcc_declaration || (TYPE) == tcc_reference) ? GIMPLE_SINGLE_RHS :      \
-    (GT(SYM) == GT(TRUTH_AND_EXPR) || GT(SYM) == GT(TRUTH_OR_EXPR) || GT(SYM) == GT(TRUTH_XOR_EXPR)) ?          \
-                                                                                       GIMPLE_BINARY_RHS :      \
-    GT(SYM) == GT(TRUTH_NOT_EXPR)                                                    ? GIMPLE_UNARY_RHS :       \
-    (GT(SYM) == GT(COND_EXPR) || GT(SYM) == GT(WIDEN_MULT_PLUS_EXPR) || GT(SYM) == GT(WIDEN_MULT_MINUS_EXPR) || \
-     GT(SYM) == GT(DOT_PROD_EXPR) || GT(SYM) == GT(SAD_EXPR) || GT(SYM) == GT(REALIGN_LOAD_EXPR) ||             \
-     GT(SYM) == GT(VEC_COND_EXPR) || GT(SYM) == GT(VEC_PERM_EXPR) || GT(SYM) == GT(BIT_INSERT_EXPR) ||          \
-     GT(SYM) == GT(FMA_EXPR) || GT(SYM) == GT(FSHL_EXPR) || GT(SYM) == GT(FSHR_EXPR) ||                         \
-     GT(SYM) == GT(INSERTELEMENT)) ?                                                                            \
-                                    GIMPLE_TERNARY_RHS :                                                        \
-    (GT(SYM) == GT(CONSTRUCTOR) || GT(SYM) == GT(OBJ_TYPE_REF) || GT(SYM) == GT(ASSERT_EXPR) ||                 \
-     GT(SYM) == GT(ADDR_EXPR) || GT(SYM) == GT(WITH_SIZE_EXPR) || GT(SYM) == GT(SSA_NAME)) ?                    \
-                                    GIMPLE_SINGLE_RHS :                                                         \
-                                    GIMPLE_INVALID_RHS),
+#define DEFTREECODE(SYM, STRING, TYPE, NARGS)                                                                       \
+   ((TYPE) == tcc_unary ?                                                                                           \
+        GIMPLE_UNARY_RHS :                                                                                          \
+        ((TYPE) == tcc_binary || (TYPE) == tcc_comparison) ?                                                        \
+        GIMPLE_BINARY_RHS :                                                                                         \
+        ((TYPE) == tcc_constant || (TYPE) == tcc_declaration || (TYPE) == tcc_reference) ?                          \
+        GIMPLE_SINGLE_RHS :                                                                                         \
+        (GT(SYM) == GT(TRUTH_AND_EXPR) || GT(SYM) == GT(TRUTH_OR_EXPR) || GT(SYM) == GT(TRUTH_XOR_EXPR)) ?          \
+        GIMPLE_BINARY_RHS :                                                                                         \
+        GT(SYM) == GT(TRUTH_NOT_EXPR) ?                                                                             \
+        GIMPLE_UNARY_RHS :                                                                                          \
+        (GT(SYM) == GT(COND_EXPR) || GT(SYM) == GT(WIDEN_MULT_PLUS_EXPR) || GT(SYM) == GT(WIDEN_MULT_MINUS_EXPR) || \
+         GT(SYM) == GT(DOT_PROD_EXPR) || GT(SYM) == GT(SAD_EXPR) || GT(SYM) == GT(REALIGN_LOAD_EXPR) ||             \
+         GT(SYM) == GT(VEC_COND_EXPR) || GT(SYM) == GT(VEC_PERM_EXPR) || GT(SYM) == GT(BIT_INSERT_EXPR) ||          \
+         GT(SYM) == GT(FMA_EXPR) || GT(SYM) == GT(FSHL_EXPR) || GT(SYM) == GT(FSHR_EXPR) ||                         \
+         GT(SYM) == GT(INSERTELEMENT)) ?                                                                            \
+        GIMPLE_TERNARY_RHS :                                                                                        \
+        (GT(SYM) == GT(CONSTRUCTOR) || GT(SYM) == GT(OBJ_TYPE_REF) || GT(SYM) == GT(ASSERT_EXPR) ||                 \
+         GT(SYM) == GT(ADDR_EXPR) || GT(SYM) == GT(WITH_SIZE_EXPR) || GT(SYM) == GT(SSA_NAME)) ?                    \
+        GIMPLE_SINGLE_RHS :                                                                                         \
+        GIMPLE_INVALID_RHS),
 #define END_OF_BASE_TREE_CODES GIMPLE_INVALID_RHS,
 #define DEFGSCODE(SYM, NAME, GSSCODE) GIMPLE_INVALID_RHS,
    const DumpGimpleRaw::gimple_rhs_class DumpGimpleRaw::gimple_rhs_class_table[] = {
@@ -593,6 +597,9 @@ namespace llvm
                   case llvm::Intrinsic::smin:
                   case llvm::Intrinsic::umax:
                   case llvm::Intrinsic::umin:
+#if __clang_major__ > 12
+                  case llvm::Intrinsic::bitreverse:
+#endif
                      return assignCode(t, GT(GIMPLE_ASSIGN));
 #endif
                   default:
@@ -793,6 +800,35 @@ namespace llvm
             return "__llvm_umin";
          }
 #endif
+#if __clang_major__ > 12
+         case llvm::Intrinsic::bitreverse:
+         {
+            auto funType = cast<llvm::FunctionType>(fd->getValueType());
+            if(funType->getParamType(0)->isIntegerTy())
+            {
+               auto bitsize = funType->getParamType(0)->getScalarSizeInBits();
+               if(bitsize == 8)
+               {
+                  return "__llvm_bitreverse_i8";
+               }
+               else if(bitsize == 16)
+               {
+                  return "__llvm_bitreverse_i16";
+               }
+               else if(bitsize == 32)
+               {
+                  return "__llvm_bitreverse_i32";
+               }
+               else if(bitsize == 64)
+               {
+                  return "__llvm_bitreverse_i64";
+               }
+            }
+            fd->print(llvm::errs());
+            llvm_unreachable("Plugin Error");
+         }
+#endif
+
          case llvm::Intrinsic::rint:
          {
             if(fd->getReturnType()->isFloatTy())
@@ -5614,6 +5650,9 @@ namespace llvm
          case llvm::Intrinsic::smin:
          case llvm::Intrinsic::umax:
          case llvm::Intrinsic::umin:
+#if __clang_major__ > 12
+         case llvm::Intrinsic::bitreverse:
+#endif
 #endif
             return true;
          default:
