@@ -5055,6 +5055,7 @@ std::string CompilerWrapper::load_plugin(const std::string& plugin_obj, Compiler
                                          int pass_type)
 {
    std::string str;
+#if HAVE_I386_CLANG13_COMPILER
    if(target == CompilerWrapper_CompilerTarget::CT_I386_CLANG13)
    {
       if(pass_type & CompilerWrapper_LLVMPassType::LLVMPT_Backend)
@@ -5067,6 +5068,7 @@ std::string CompilerWrapper::load_plugin(const std::string& plugin_obj, Compiler
       }
    }
    else
+#endif
    {
       str = " -fplugin=" + plugin_obj;
    }
