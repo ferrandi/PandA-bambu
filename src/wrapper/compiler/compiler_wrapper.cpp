@@ -5068,7 +5068,7 @@ std::string CompilerWrapper::load_plugin(const std::string& plugin_obj, Compiler
    }
    else
    {
-      str = " -fplugin " + plugin_obj;
+      str = " -fplugin=" + plugin_obj;
    }
    return str;
 }
