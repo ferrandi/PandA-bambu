@@ -44,12 +44,12 @@ cache_dir = $ccache_dir
 EOF
 if [[ -d "$dist_dir" ]]; then
    echo "Pre-initialized dist dir found. Installing system wide..."
-   cp -r $dist_dir/. /
+   rsync -rtpl $dist_dir/. /
 fi
 
 if [[ -d "compiler" ]]; then
    echo "Bambu compiler dir found. Installing system wide..."
-   cp -r compiler/. /
+   rsync -rtpl compiler/. /
 fi
 
 GCC_BINS=("`find /usr/bin -type f -regextype posix-extended -regex '.*g(cc|\+\+)-[0-9]+\.?[0-9]?'`")
