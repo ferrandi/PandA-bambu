@@ -61,15 +61,55 @@
 #include "llvm/Support/Debug.h"
 #include "llvm/Support/raw_ostream.h"
 #include "llvm/Transforms/Scalar.h"
+#include <cstdlib>
+#include <map>
 #include <queue>
+#include <sstream>
+#include <string>
 #include <utility>
 #include <vector>
 
 #define THR_NAME "tree-height-reduction"
 #define DEBUG_TYPE THR_NAME
 
+#if __cplusplus > 201103L
+#define STR(x) std::to_string(x)
+#else
+inline std::string __to_string(long long value)
+{
+   char buf[16];
+   int len = std::sprintf(&buf[0], "%lld", value);
+   return std::string(buf, len);
+}
+#define STR(x) __to_string(x)
+#endif
+
 namespace llvm
 {
+   static inline unsigned int resize_to_1_8_16_32_64(unsigned int value)
+   {
+      if(value == 1)
+      {
+         return 1;
+      }
+      else if(value <= 8)
+      {
+         return 8;
+      }
+      else if(value <= 16)
+      {
+         return 16;
+      }
+      else if(value <= 32)
+      {
+         return 32;
+      }
+      else
+      {
+         return 64;
+      }
+   }
+
    template <typename T>
    static bool isUsedAtCmpInst(Instruction* I)
    {
@@ -132,6 +172,8 @@ namespace llvm
          }
       }
 
+      static std::map<std::pair<std::string, std::string>, double> InstructionLatencyTable;
+
       // BFS: Breadth First Search
       static std::vector<Node*> getNodesAndLeavesByBFS(Node* N)
       {
@@ -168,7 +210,7 @@ namespace llvm
       }
 
       /// Set latency of current node.
-      void setLatency(int L)
+      void setLatency(double L)
       {
          Latency = L;
       }
@@ -211,13 +253,13 @@ namespace llvm
       }
 
       /// Get latency of current node.
-      int getLatency() const
+      double getLatency() const
       {
          return Latency;
       }
 
       /// Get total cost of current node.
-      int getTotalCost() const
+      double getTotalCost() const
       {
          return TotalCost;
       }
@@ -275,65 +317,92 @@ namespace llvm
          }
       }
 
-      int getInstructionLatency(const Instruction* I) const
+      double getInstructionLatency(const Instruction* I) const
       {
+         const auto getCost = [&](unsigned bits, const std::string& op) -> double {
+            auto key = std::make_pair(op, STR(bits));
+            if(InstructionLatencyTable.find(key) != InstructionLatencyTable.end())
+            {
+               return InstructionLatencyTable.find(key)->second;
+            }
+            else
+            {
+               llvm::errs() << "latency not defined for " << op << " " << bits << "\n";
+               return 0.0;
+            }
+         };
+         auto ty = I->getType();
+         auto bits = resize_to_1_8_16_32_64(ty->getScalarSizeInBits());
          switch(I->getOpcode())
          {
             case Instruction::GetElementPtr:
             case Instruction::Add:
             case Instruction::Sub:
-               return 1;
+               return getCost(bits, "plus_expr");
             case Instruction::Mul:
-               return 2;
+               return getCost(bits, "mult_expr");
             case Instruction::Ret:
             case Instruction::PHI:
             case Instruction::Br:
                return 0;
             case Instruction::FAdd:
             case Instruction::FSub:
-               return 4;
+               return getCost(bits, "Fplus_expr");
             case Instruction::FMul:
-               return 3;
+               return getCost(bits, "Fmult_expr");
             case Instruction::UDiv:
             case Instruction::SDiv:
+               return getCost(bits, "trunc_div_expr");
             case Instruction::FDiv:
+               return getCost(bits, "Frdiv_expr");
             case Instruction::URem:
             case Instruction::SRem:
+               return getCost(bits, "trunc_mod_expr");
             case Instruction::FRem:
-               return 32;
+            {
+               llvm_unreachable("floating point remainder not foreseen yet");
+               return 0;
+            }
             case Instruction::Shl:
+               return getCost(bits, "lshift_expr");
             case Instruction::LShr:
             case Instruction::AShr:
+               return getCost(bits, "rshift_expr");
             case Instruction::And:
+               return getCost(bits, "bit_and_expr");
             case Instruction::Or:
+               return getCost(bits, "bit_ior_expr");
             case Instruction::Xor:
-               return 0;
+               return getCost(bits, "bit_xor_expr");
 #if __clang_major__ >= 10
             case Instruction::FNeg:
-               return 4;
+               return 0;
 #endif
             case Instruction::Select:
+               return getCost(bits, "cond_expr");
             case Instruction::ICmp:
                return 0;
             case Instruction::FCmp:
-               return 2;
+               return getCost(bits, "Fplus_expr"); // simplified
             case Instruction::Store:
-               return 1;
+               return getCost(32, "store_expr");
             case Instruction::Load:
-               return 2;
+               return getCost(32, "load_expr");
             case Instruction::ZExt:
             case Instruction::SExt:
+               return 0;
+            case Instruction::PtrToInt:
+            case Instruction::IntToPtr:
+            case Instruction::Trunc:
                return 0;
             case Instruction::FPToUI:
             case Instruction::FPToSI:
             case Instruction::FPExt:
-            case Instruction::PtrToInt:
-            case Instruction::IntToPtr:
             case Instruction::SIToFP:
             case Instruction::UIToFP:
-            case Instruction::Trunc:
             case Instruction::FPTrunc:
-               return 2;
+               return getCost(32, "nop_expr");
+               ;
             case Instruction::BitCast:
             case Instruction::AddrSpaceCast:
             case Instruction::ExtractElement:
@@ -377,7 +446,7 @@ namespace llvm
       // Update left or right node's latency of current node.
       void updateLeftOrRightNodeLatency(UpdateLatecy UL)
       {
-         const int _Latency = getLatency();
+         const auto _Latency = getLatency();
 
          Node* SubNode = nullptr;
          switch(UL)
@@ -397,7 +466,7 @@ namespace llvm
          }
 
          assert(SubNode && "Left or right node should not be nullptr.");
-         const int SubNodeLatency = SubNode->getLatency();
+         const auto SubNodeLatency = SubNode->getLatency();
          if(SubNodeLatency > _Latency)
             setLatency(SubNodeLatency);
          setTotalCost(getTotalCost() + SubNode->getTotalCost());
@@ -419,9 +488,9 @@ namespace llvm
       Node *Left, *Right;
 
       // Instruction latency.
-      int Latency;
+      double Latency;
       // Total cost of nodes under current nodes.
-      int TotalCost;
+      double TotalCost;
    };
 
    static std::vector<Node*> getOnlyNodes(Node* N)
@@ -488,16 +557,40 @@ namespace llvm
       }
    }
 
+   std::map<std::pair<std::string, std::string>, double> Node::InstructionLatencyTable;
+
    class TreeHeightReduction
    {
+      void __split(std::vector<std::string>& cont, const std::string& str, char delim)
+      {
+         std::stringstream ss(str);
+         std::string token;
+         while(std::getline(ss, token, delim))
+            cont.push_back(token);
+      }
+      void __buildMap(const std::string& input, std::map<std::pair<std::string, std::string>, double>& _map)
+      {
+         std::vector<std::string> vec_value;
+         __split(vec_value, input, ',');
+         for(std::vector<std::string>::iterator el = vec_value.begin(); el != vec_value.end(); ++el)
+         {
+            std::vector<std::string> vec_pair;
+            __split(vec_pair, *el, '=');
+            std::vector<std::string> key_pair;
+            __split(key_pair, vec_pair.at(0), '|');
+            _map[std::make_pair(key_pair.at(0), key_pair.at(1))] = std::atof(vec_pair.at(1).c_str());
+         }
+      }
+
     public:
       explicit TreeHeightReduction()
       {
       }
 
-      bool runOnModule(const llvm::Module& M, llvm::ModulePass* modulePass, bool DisableIntTHR = false,
-                       bool EnableFpTHR = false)
+      bool runOnModule(const llvm::Module& M, llvm::ModulePass* modulePass, const std::string& costTable,
+                       bool DisableIntTHR = false, bool EnableFpTHR = false)
       {
+         __buildMap(costTable, Node::InstructionLatencyTable);
          bool changed = false;
          for(auto& fun : M.getFunctionList())
          {

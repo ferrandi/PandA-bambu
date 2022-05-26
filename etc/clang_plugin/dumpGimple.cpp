@@ -7187,7 +7187,8 @@ namespace llvm
          }
       }
    }
-   bool DumpGimpleRaw::runOnModule(llvm::Module& M, llvm::ModulePass* _modulePass, const std::string& _TopFunctionName)
+   bool DumpGimpleRaw::runOnModule(llvm::Module& M, llvm::ModulePass* _modulePass, const std::string& _TopFunctionName,
+                                   const std::string& costTable)
    {
       DL = &M.getDataLayout();
       modulePass = _modulePass;
@@ -7195,8 +7196,11 @@ namespace llvm
       TopFunctionName = _TopFunctionName;
       bool res = false;
 #if __clang_major__ > 5
-      TreeHeightReduction THR;
-      res |= THR.runOnModule(M, modulePass);
+      if(!costTable.empty())
+      {
+         TreeHeightReduction THR;
+         res |= THR.runOnModule(M, modulePass, costTable);
+      }
 #endif
 
 #if PRINT_DBG_MSG

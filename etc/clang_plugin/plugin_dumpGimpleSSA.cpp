@@ -94,6 +94,8 @@ namespace llvm
                                     cl::value_desc("directory path"));
    cl::opt<std::string> InFile("panda-infile", cl::desc("Specify the name of the compiled source file"),
                                cl::value_desc("filename path"));
+   cl::opt<std::string> CostTable("panda-cost-table", cl::desc("Specify the cost per operation"),
+                                  cl::value_desc("cost table"));
 
    template <bool earlyAnalysis>
    struct CLANG_VERSION_SYMBOL(_plugin_dumpGimpleSSA) : public ModulePass
@@ -176,7 +178,7 @@ namespace llvm
          if(!TopFunctionName.empty())
             llvm::errs() << "Top function name: " << TopFunctionName << "\n";
 #endif
-         auto res = gimpleRawWriter.runOnModule(M, this, TopFunctionName);
+         auto res = gimpleRawWriter.runOnModule(M, this, TopFunctionName, CostTable);
          return res;
       }
       StringRef getPassName() const override

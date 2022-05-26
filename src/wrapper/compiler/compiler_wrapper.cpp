@@ -359,7 +359,6 @@
 #include "compiler_wrapper.hpp"
 
 /// Behavior include
-#include "application_manager.hpp"
 
 /// Constants include
 #include "compiler_constants.hpp"
@@ -429,7 +428,7 @@ CompilerWrapper::~CompilerWrapper() = default;
 
 void CompilerWrapper::CompileFile(const std::string& original_file_name, std::string& real_file_name,
                                   const std::string& parameters_line, bool multiple_files,
-                                  CompilerWrapper_CompilerMode cm)
+                                  CompilerWrapper_CompilerMode cm, const std::string& costTable)
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                   "-->Compiling " + original_file_name + "(transformed in " + real_file_name);
@@ -730,7 +729,7 @@ void CompilerWrapper::CompileFile(const std::string& original_file_name, std::st
       {
          command += " -c -fplugin=" + compiler.ssa_plugin_obj +
                     " -mllvm -panda-outputdir=" + Param->getOption<std::string>(OPT_output_temporary_directory) +
-                    " -mllvm -panda-infile=" + real_file_name;
+                    " -mllvm -panda-infile=" + real_file_name + " -mllvm -panda-cost-table=\"" + costTable + "\"";
          if(addTopFName)
          {
             command += " -mllvm -panda-topfname=" + fname;
@@ -856,7 +855,8 @@ void CompilerWrapper::CompileFile(const std::string& original_file_name, std::st
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Compiled file");
 }
 
-void CompilerWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::string, std::string>& source_files)
+void CompilerWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::string, std::string>& source_files,
+                                      const std::string& costTable)
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Invoking front-end compiler");
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
@@ -934,7 +934,7 @@ void CompilerWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::st
             analyzing_compiling_parameters += Param->getOption<std::string>(OPT_gcc_includes) + " ";
          }
          CompileFile(source_file.first, source_file.second, analyzing_compiling_parameters, source_files.size() > 1,
-                     CompilerWrapper_CompilerMode::CM_ANALYZER);
+                     CompilerWrapper_CompilerMode::CM_ANALYZER, costTable);
       }
    }
 #else
@@ -957,7 +957,7 @@ void CompilerWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::st
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Compiling file " + source_file.second);
       /// create obj
       CompileFile(source_file.first, source_file.second, frontend_compiler_parameters, source_files.size() > 1,
-                  enable_LTO ? CompilerWrapper_CompilerMode::CM_LTO : CompilerWrapper_CompilerMode::CM_STD);
+                  enable_LTO ? CompilerWrapper_CompilerMode::CM_LTO : CompilerWrapper_CompilerMode::CM_STD, costTable);
       if(!Param->isOption(OPT_gcc_E) && !Param->isOption(OPT_gcc_S) && !enable_LTO)
       {
          if(!(boost::filesystem::exists(
@@ -965,7 +965,7 @@ void CompilerWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::st
          {
             THROW_WARNING("Raw not created for file " + output_temporary_directory + "/" + leaf_name);
             CompileFile(source_file.first, source_file.second, frontend_compiler_parameters, source_files.size() > 1,
-                        CompilerWrapper_CompilerMode::CM_EMPTY);
+                        CompilerWrapper_CompilerMode::CM_EMPTY, costTable);
             /// Recomputing leaf_name since source_file.second should be modified in the previous call
             leaf_name = source_file.second == "-" ? "stdin-" : GetLeafFileName(source_file.second);
             if(not(boost::filesystem::exists(
@@ -1280,7 +1280,7 @@ void CompilerWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::st
          command += " -load=" + renamed_plugin;
 #endif
          command += " -panda-outputdir=" + Param->getOption<std::string>(OPT_output_temporary_directory) +
-                    " -panda-infile=" + real_file_names;
+                    " -panda-infile=" + real_file_names + " -mllvm -panda-cost-table=\"" + costTable + "\"";
          if(addTFNPlugin)
          {
             command += " -panda-topfname=" + fname;

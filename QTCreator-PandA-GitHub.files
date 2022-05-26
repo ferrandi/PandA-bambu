@@ -1890,6 +1890,7 @@ src/constants/compiler_xml.hpp
 src/constants/constants.hpp
 src/constants/constraints_xml.hpp
 src/constants/copyrights_strings.hpp
+src/constants/cost_latency_table.hpp
 src/constants/data_xml.hpp
 src/constants/experimental_setup_xml.hpp
 src/constants/file_IO_constants.hpp
