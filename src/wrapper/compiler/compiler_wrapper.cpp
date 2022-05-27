@@ -1280,7 +1280,7 @@ void CompilerWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::st
          command += " -load=" + renamed_plugin;
 #endif
          command += " -panda-outputdir=" + Param->getOption<std::string>(OPT_output_temporary_directory) +
-                    " -panda-infile=" + real_file_names + " -mllvm -panda-cost-table=\"" + costTable + "\"";
+                    " -panda-infile=" + real_file_names + " -panda-cost-table=\"" + costTable + "\"";
          if(addTFNPlugin)
          {
             command += " -panda-topfname=" + fname;
