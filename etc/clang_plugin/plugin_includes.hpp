@@ -56,6 +56,9 @@
 #else
 #include "llvm/Transforms/Utils/MemorySSA.h"
 #endif
+#if __clang_major__ > 5
+#include "llvm/Analysis/OptimizationRemarkEmitter.h"
+#endif
 #include "llvm/Analysis/TargetLibraryInfo.h"
 #include "llvm/Analysis/TargetTransformInfo.h"
 #include "llvm/IR/Dominators.h"
@@ -188,6 +191,9 @@ namespace llvm
       llvm::function_ref<MemorySSAAnalysisResult&(llvm::Function&)> GetMSSA;
       llvm::function_ref<llvm::LazyValueInfo&(llvm::Function&)> GetLVI;
       llvm::function_ref<llvm::AssumptionCache&(llvm::Function&)> GetAC;
+#if __clang_major__ > 5
+      llvm::function_ref<llvm::OptimizationRemarkEmitter&(llvm::Function&)> GetORE;
+#endif
 
       bool earlyAnalysis;
       /* Serialize column control */
@@ -824,7 +830,11 @@ namespace llvm
                 llvm::function_ref<llvm::LoopInfo&(llvm::Function&)> GetLI,
                 llvm::function_ref<MemorySSAAnalysisResult&(llvm::Function&)> GetMSSA,
                 llvm::function_ref<llvm::LazyValueInfo&(llvm::Function&)> GetLVI,
-                llvm::function_ref<llvm::AssumptionCache&(llvm::Function&)> GetAC, const std::string& costTable);
+                llvm::function_ref<llvm::AssumptionCache&(llvm::Function&)> GetAC,
+#if __clang_major__ > 5
+                llvm::function_ref<llvm::OptimizationRemarkEmitter&(llvm::Function&)> GetORE,
+#endif
+                const std::string& costTable);
    };
 } // namespace llvm
 

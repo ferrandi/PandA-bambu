@@ -173,7 +173,11 @@ namespace llvm
                 llvm::function_ref<llvm::LoopInfo&(llvm::Function&)> GetLI,
                 llvm::function_ref<MemorySSAAnalysisResult&(llvm::Function&)> GetMSSA,
                 llvm::function_ref<llvm::LazyValueInfo&(llvm::Function&)> GetLVI,
-                llvm::function_ref<llvm::AssumptionCache&(llvm::Function&)> GetAC)
+                llvm::function_ref<llvm::AssumptionCache&(llvm::Function&)> GetAC,
+#if __clang_major__ > 5
+                llvm::function_ref<llvm::OptimizationRemarkEmitter&(llvm::Function&)> GetORE,
+#endif
+                const std::string& costTable)
       {
          llvm::errs() << "Running module pass\n";
          if(outdir_name.empty())
@@ -227,7 +231,11 @@ namespace llvm
             llvm::errs() << "Top function name: " << TopFunctionName << "\n";
 #endif
 
-         auto res = gimpleRawWriter.exec(M, TopFunctionName, GetTLI, GetTTI, GetDomTree, GetLI, GetMSSA, GetLVI, GetAC, CostTable);
+         auto res = gimpleRawWriter.exec(M, TopFunctionName, GetTLI, GetTTI, GetDomTree, GetLI, GetMSSA, GetLVI, GetAC,
+#if __clang_major__ > 5
+                                         GetORE,
+#endif
+                                         costTable);
          return res;
       }
 
@@ -261,8 +269,21 @@ namespace llvm
          auto GetAC = [&](llvm::Function& F) -> llvm::AssumptionCache& {
             return getAnalysis<llvm::AssumptionCacheTracker>().getAssumptionCache(F);
          };
+#if __clang_major__ > 5
+         auto GetORE = [&](llvm::Function& F) -> llvm::OptimizationRemarkEmitter& {
+#if __clang_major__ >= 11
+            return getAnalysis<llvm::OptimizationRemarkEmitterWrapperPass>(F).getORE();
+#else
+            return getAnalysis<llvm::OptimizationRemarkEmitterWrapperPass>(F).getORE();
+#endif
+         };
+#endif
 
-         return exec(M, GetTLI, GetTTI, GetDomTree, GetLI, GetMSSA, GetLVI, GetAC);
+         return exec(M, GetTLI, GetTTI, GetDomTree, GetLI, GetMSSA, GetLVI, GetAC,
+#if __clang_major__ > 5
+                     GetORE,
+#endif
+                     CostTable);
       }
 
       StringRef getPassName() const override
@@ -308,8 +329,11 @@ namespace llvm
          auto GetAC = [&](llvm::Function& F) -> llvm::AssumptionCache& {
             return FAM.getResult<llvm::AssumptionAnalysis>(F);
          };
+         auto GetORE = [&](llvm::Function& F) -> llvm::OptimizationRemarkEmitter& {
+            return FAM.getResult<llvm::OptimizationRemarkEmitterAnalysis>(F);
+         };
 
-         const auto changed = exec(M, GetTLI, GetTTI, GetDomTree, GetLI, GetMSSA, GetLVI, GetAC);
+         const auto changed = exec(M, GetTLI, GetTTI, GetDomTree, GetLI, GetMSSA, GetLVI, GetAC, GetORE, CostTable);
          return (changed ? llvm::PreservedAnalyses::none() : llvm::PreservedAnalyses::all());
       }
 #endif
@@ -423,5 +447,6 @@ static llvm::RegisterStandardPasses llvmtoolLoader_Ox(llvm::PassManagerBuilder::
 // INITIALIZE_PASS_DEPENDENCY(AssumptionCacheTracker)
 // INITIALIZE_PASS_DEPENDENCY(DominatorTreeWrapperPass)
 // INITIALIZE_PASS_DEPENDENCY(DominanceFrontierWrapperPass)
+// INITIALIZE_PASS_DEPENDENCY(OptimizationRemarkEmitterWrapperPass)
 // INITIALIZE_PASS_END(CLANG_VERSION_SYMBOL(_plugin_dumpGimpleSSA), CLANG_VERSION_STRING(_plugin_dumpGimpleSSA),
 //                     "Dump gimple ssa raw format starting from LLVM IR: LLVM pass", false, false)

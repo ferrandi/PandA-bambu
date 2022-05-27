@@ -5044,7 +5044,11 @@ std::string CompilerWrapper::getCompilerVersion(int pc)
    return "";
 }
 
-std::string CompilerWrapper::load_plugin(const std::string& plugin_obj, CompilerWrapper_CompilerTarget target)
+std::string CompilerWrapper::load_plugin(const std::string& plugin_obj, CompilerWrapper_CompilerTarget
+#if HAVE_I386_CLANG13_COMPILER
+                                                                            target
+#endif
+)
 {
 #if HAVE_I386_CLANG13_COMPILER
    if(target == CompilerWrapper_CompilerTarget::CT_I386_CLANG13)

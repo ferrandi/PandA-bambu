@@ -268,12 +268,16 @@ namespace llvm
 #undef DEFGSCODE
 
 #define DEFTREECODE(SYM, STRING, TYPE, NARGS)                                                                       \
-   ((TYPE) == tcc_unary                                                              ? GIMPLE_UNARY_RHS :       \
-    ((TYPE) == tcc_binary || (TYPE) == tcc_comparison)                               ? GIMPLE_BINARY_RHS :      \
-    ((TYPE) == tcc_constant || (TYPE) == tcc_declaration || (TYPE) == tcc_reference) ? GIMPLE_SINGLE_RHS :      \
+   ((TYPE) == tcc_unary ?                                                                                           \
+        GIMPLE_UNARY_RHS :                                                                                          \
+        ((TYPE) == tcc_binary || (TYPE) == tcc_comparison) ?                                                        \
+        GIMPLE_BINARY_RHS :                                                                                         \
+        ((TYPE) == tcc_constant || (TYPE) == tcc_declaration || (TYPE) == tcc_reference) ?                          \
+        GIMPLE_SINGLE_RHS :                                                                                         \
         (GT(SYM) == GT(TRUTH_AND_EXPR) || GT(SYM) == GT(TRUTH_OR_EXPR) || GT(SYM) == GT(TRUTH_XOR_EXPR)) ?          \
         GIMPLE_BINARY_RHS :                                                                                         \
-    GT(SYM) == GT(TRUTH_NOT_EXPR)                                                    ? GIMPLE_UNARY_RHS :       \
+        GT(SYM) == GT(TRUTH_NOT_EXPR) ?                                                                             \
+        GIMPLE_UNARY_RHS :                                                                                          \
         (GT(SYM) == GT(COND_EXPR) || GT(SYM) == GT(WIDEN_MULT_PLUS_EXPR) || GT(SYM) == GT(WIDEN_MULT_MINUS_EXPR) || \
          GT(SYM) == GT(DOT_PROD_EXPR) || GT(SYM) == GT(SAD_EXPR) || GT(SYM) == GT(REALIGN_LOAD_EXPR) ||             \
          GT(SYM) == GT(VEC_COND_EXPR) || GT(SYM) == GT(VEC_PERM_EXPR) || GT(SYM) == GT(BIT_INSERT_EXPR) ||          \
@@ -5963,23 +5967,23 @@ namespace llvm
                         //                        auto DIExpr = dbgInstrCall->getExpression();
                         //                        if(DIExpr)
                         // {
-                           //                           llvm::errs() << "Inst: ";
-                           //                           inst.print(llvm::errs());
-                           //                           llvm::errs() << "\n";
-                           //                           llvm::errs() << "Value: ";
-                           //                           val->print(llvm::errs());
-                           //                           llvm::errs() << "\n";
-                           //                           llvm::errs() << "Metadata: ";
-                           //                           dbgInstrCall->getRawVariable()->print(llvm::errs());
-                           //                           llvm::errs() <<"\n";
+                        //                           llvm::errs() << "Inst: ";
+                        //                           inst.print(llvm::errs());
+                        //                           llvm::errs() << "\n";
+                        //                           llvm::errs() << "Value: ";
+                        //                           val->print(llvm::errs());
+                        //                           llvm::errs() << "\n";
+                        //                           llvm::errs() << "Metadata: ";
+                        //                           dbgInstrCall->getRawVariable()->print(llvm::errs());
+                        //                           llvm::errs() <<"\n";
                         // }
-                        }
                      }
                   }
                }
             }
          }
       }
+   }
 
    /// Intrinsic lowering
    bool DumpGimpleRaw::lowerMemIntrinsics(llvm::Module& M)
@@ -6325,7 +6329,7 @@ namespace llvm
             for(unsigned i = 0, e = NumElts; i != e; ++i)
             {
                Elts.push_back(Init->getAggregateElement(i));
-         }
+            }
          }
       };
 
@@ -6929,7 +6933,11 @@ namespace llvm
                             llvm::function_ref<llvm::LoopInfo&(llvm::Function&)> _GetLI,
                             llvm::function_ref<MemorySSAAnalysisResult&(llvm::Function&)> _GetMSSA,
                             llvm::function_ref<llvm::LazyValueInfo&(llvm::Function&)> _GetLVI,
-                            llvm::function_ref<llvm::AssumptionCache&(llvm::Function&)> _GetAC, const std::string& costTable)
+                            llvm::function_ref<llvm::AssumptionCache&(llvm::Function&)> _GetAC,
+#if __clang_major__ > 5
+                            llvm::function_ref<llvm::OptimizationRemarkEmitter&(llvm::Function&)> GetORE,
+#endif
+                            const std::string& costTable)
    {
       DL = &M.getDataLayout();
       GetTLI = _GetTLI;
@@ -6946,7 +6954,7 @@ namespace llvm
       if(!costTable.empty())
       {
          TreeHeightReduction THR;
-         res |= THR.runOnModule(M, modulePass, costTable);
+         res |= THR.runOnModule(M, GetLI, GetORE, costTable);
       }
 #endif
 
@@ -6971,21 +6979,21 @@ namespace llvm
          res |= lowerIntrinsics(M);
 #if HAVE_LIBBDD
          if(!onlyGlobals)
-      {
-            if(TopFunctionName != "")
          {
+            if(TopFunctionName != "")
+            {
 #define ANDERSEN 1
 #if PRINT_DBG_MSG
-            llvm::errs() << "Performing alias analysis\n";
+               llvm::errs() << "Performing alias analysis\n";
 #endif
 #if ANDERSEN
                PtoSets_AA = new Andersen_AA(TopFunctionName);
 #else
                PtoSets_AA = new Staged_Flow_Sensitive_AA(TopFunctionName);
 #endif
-            PtoSets_AA->computePointToSet(M);
+               PtoSets_AA->computePointToSet(M);
+            }
          }
-      }
 #endif
       }
 
@@ -7011,15 +7019,15 @@ namespace llvm
       if(!earlyAnalysis)
       {
          if(!onlyGlobals)
-      {
-         for(const auto& fun : M.getFunctionList())
          {
-            if(!fun.isDeclaration() && !fun.isIntrinsic())
+            for(const auto& fun : M.getFunctionList())
             {
+               if(!fun.isDeclaration() && !fun.isIntrinsic())
+               {
                   computeMAEntryDefs(&fun, CurrentListofMAEntryDef);
+               }
             }
          }
-      }
 
          for(const auto& globalVar : M.getGlobalList())
          {
@@ -7030,26 +7038,26 @@ namespace llvm
             SerializeGimpleGlobalTreeNode(assignCodeAuto(&globalVar));
          }
          if(!onlyGlobals)
-      {
-         for(const auto& fun : M.getFunctionList())
          {
-            if(fun.isIntrinsic())
+            for(const auto& fun : M.getFunctionList())
             {
+               if(fun.isIntrinsic())
+               {
 #if PRINT_DBG_MSG
                   llvm::errs() << "Function intrinsic skipped: " << getName(&fun) << "|"
                                << ValueTyNames[fun.getValueID()] << "\n";
 #endif
-            }
-            else
-            {
+               }
+               else
+               {
 #if PRINT_DBG_MSG
-               llvm::errs() << "Found function: " << getName(&fun) << "|" << ValueTyNames[fun.getValueID()] << "\n";
+                  llvm::errs() << "Found function: " << getName(&fun) << "|" << ValueTyNames[fun.getValueID()] << "\n";
 #endif
-               SerializeGimpleGlobalTreeNode(assignCodeAuto(&fun));
+                  SerializeGimpleGlobalTreeNode(assignCodeAuto(&fun));
+               }
             }
+            CurrentListofMAEntryDef.clear();
          }
-         CurrentListofMAEntryDef.clear();
-      }
       }
 
 #if HAVE_LIBBDD
