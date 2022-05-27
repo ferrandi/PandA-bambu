@@ -116,7 +116,7 @@ void read_technology_File(const std::string& fn, const technology_managerRef& TM
                input_libraries.push_back(librarie);
             }
          }
-         /// FIXME: setting paraemeters
+         /// FIXME: setting parameters
          const_cast<Parameter*>(Param.get())
              ->setOption(OPT_input_libraries, convert_vector_to_string<std::string>(input_libraries, ";"));
       }

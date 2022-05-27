@@ -706,7 +706,9 @@ void FunctionInterfaceInfer::create_resource_Read_simple(const std::set<std::str
          port_data_name = "_" + argName_string + (interfaceType == "fifo" ? "_dout" : (IO_port ? "_i" : ""));
       }
       auto inPort = CM->add_port(port_data_name, port_o::IN, interface_top, dataType);
-      GetPointer<port_o>(inPort)->set_port_interface(port_o::port_interface::PI_RNONE);
+      GetPointer<port_o>(inPort)->set_port_interface((interfaceType == "axis" || interfaceType == "fifo") ?
+                                                         port_o::port_interface::PI_FDOUT :
+                                                         port_o::port_interface::PI_RNONE);
       if(interfaceType == "acknowledge" || interfaceType == "handshake")
       {
          auto inPort_o_ack =
@@ -739,7 +741,7 @@ void FunctionInterfaceInfer::create_resource_Read_simple(const std::set<std::str
       CM->add_NP_functionality(interface_top, NP_functionality::LIBRARY, "in1 out1");
       CM->add_NP_functionality(interface_top, NP_functionality::VERILOG_GENERATOR, "Read_" + interfaceType + ".cpp");
       TechMan->add_resource(INTERFACE_LIBRARY, ResourceName, CM);
-      for(auto fdName : operations)
+      for(const auto& fdName : operations)
       {
          TechMan->add_operation(INTERFACE_LIBRARY, ResourceName, fdName);
       }
@@ -752,7 +754,7 @@ void FunctionInterfaceInfer::create_resource_Read_simple(const std::set<std::str
          fu->logical_type = functional_unit::COMBINATIONAL;
       }
 
-      for(auto fdName : operations)
+      for(const auto& fdName : operations)
       {
          auto* op = GetPointer<operation>(fu->get_operation(fdName));
          op->time_m = time_model::create_model(device->get_type(), parameters);
@@ -870,7 +872,9 @@ void FunctionInterfaceInfer::create_resource_Write_simple(const std::set<std::st
          port_data_name = "_" + argName_string + (interfaceType == "fifo" ? "_din" : (IO_port ? "_o" : ""));
       }
       auto inPort_o = CM->add_port(port_data_name, port_o::OUT, interface_top, dataType);
-      GetPointer<port_o>(inPort_o)->set_port_interface(port_o::port_interface::PI_WNONE);
+      GetPointer<port_o>(inPort_o)->set_port_interface((interfaceType == "axis" || interfaceType == "fifo") ?
+                                                           port_o::port_interface::PI_FDIN :
+                                                           port_o::port_interface::PI_WNONE);
       if(interfaceType == "acknowledge" || interfaceType == "handshake")
       {
          auto inPort_o_ack =
@@ -914,7 +918,7 @@ void FunctionInterfaceInfer::create_resource_Write_simple(const std::set<std::st
                                   "Write_" + interfaceType + ((isDiffSize && !isAVH) ? "DS" : "") + ".cpp");
       }
       TechMan->add_resource(INTERFACE_LIBRARY, ResourceName, CM);
-      for(auto fdName : operations)
+      for(const auto& fdName : operations)
       {
          TechMan->add_operation(INTERFACE_LIBRARY, ResourceName, fdName);
       }
@@ -1612,7 +1616,7 @@ void FunctionInterfaceInfer::create_resource(const std::set<std::string>& operat
    }
 }
 
-static boost::regex signature_param_typename("((?:\\w+\\s*)+(?:<[^>]*>)?\\s*[\\*&]?\\s*)");
+static const boost::regex signature_param_typename("((?:\\w+\\s*)+(?:<[^>]*>)?\\s*[\\*&]?\\s*)");
 
 bool FunctionInterfaceInfer::HasToBeExecuted() const
 {

@@ -60,3 +60,15 @@ int __isnan(unsigned long long x, unsigned char __exp_bits, unsigned char __frac
       return 0;
    }
 }
+
+#if defined(__llvm__) || defined(__CLANG__)
+int isnanf(float f)
+{
+   return __isnan(*((unsigned int*)&f), IEEE32_SPEC);
+}
+
+int isnan(double d)
+{
+   return __isnan(*((unsigned long long*)&d), IEEE64_SPEC);
+}
+#endif

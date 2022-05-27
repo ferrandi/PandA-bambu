@@ -35,7 +35,7 @@ runs:
         if [[ ! -z "${{inputs.storage-path}}" ]]; then
           PKG_URL="${{inputs.storage-url}}/${{inputs.storage-path}}/${{inputs.name}}"
         else
-          PKG_URL="${{inputs.storage-url}}/${{github.ref}}/${{inputs.name}}"
+          PKG_URL="${{inputs.storage-url}}/${{github.head_ref}}/${{inputs.name}}"
         fi
         PKG_URL+=".gh.pkg"
         CURL_CMD='curl -L --fail '

@@ -320,11 +320,18 @@ lib_IR_manipulation_la_CPPFLAGS = \
    -I$(top_srcdir)/src/graph \
    -I$(top_srcdir)/src/parser/compiler \
    -I$(top_srcdir)/src/rtl \
+   -I$(top_srcdir)/src/technology/physical_library \
+   -I$(top_srcdir)/src/technology/target_device \
    -I$(top_srcdir)/src/tree \
    -I$(top_srcdir)/src/utility \
    -I$(top_srcdir)/src/utility/probability_distribution \
    -I$(top_srcdir)/src/wrapper/compiler \
    $(AM_CPPFLAGS)
+
+if BUILD_BAMBU
+lib_IR_manipulation_la_CPPFLAGS += \
+   -I$(top_srcdir)/src/technology/physical_library/models
+endif
 
 if BUILD_LIB_FROM_PRAGMA
   lib_IR_manipulation_la_CPPFLAGS += \

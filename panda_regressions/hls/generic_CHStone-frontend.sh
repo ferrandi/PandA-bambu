@@ -7,7 +7,7 @@ ggo_require_compiler=1
 BATCH_ARGS=("--simulate" "-fwhole-program" "--clock-period=15" "-D'printf(fmt, ...)='" "--channels-type=MEM_ACC_NN" "--experimental-setup=BAMBU")
 OUT_SUFFIX="${compiler}_CHStone-frontend"
 
-$script_dir/../../etc/scripts/test_panda.py --tool=bambu \
+python3 $script_dir/../../etc/scripts/test_panda.py --tool=bambu \
    --args="--configuration-name=${compiler}-O0-wp-NN -O0 ${BATCH_ARGS[*]}" \
    --args="--configuration-name=${compiler}-O1-wp-NN -O1 ${BATCH_ARGS[*]}" \
    --args="--configuration-name=${compiler}-O2-wp-NN -O2 ${BATCH_ARGS[*]}" \

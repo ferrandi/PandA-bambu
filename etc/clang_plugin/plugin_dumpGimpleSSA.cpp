@@ -47,6 +47,9 @@
 #include "llvm/Analysis/LazyValueInfo.h"
 #include "llvm/Analysis/LoopInfo.h"
 #include "llvm/Analysis/MemoryDependenceAnalysis.h"
+#if __clang_major__ > 5
+#include "llvm/Analysis/OptimizationRemarkEmitter.h"
+#endif
 #include "llvm/Analysis/TargetLibraryInfo.h"
 #include "llvm/Analysis/TargetTransformInfo.h"
 #include "llvm/Analysis/TypeBasedAliasAnalysis.h"
@@ -91,6 +94,8 @@ namespace llvm
                                     cl::value_desc("directory path"));
    cl::opt<std::string> InFile("panda-infile", cl::desc("Specify the name of the compiled source file"),
                                cl::value_desc("filename path"));
+   cl::opt<std::string> CostTable("panda-cost-table", cl::desc("Specify the cost per operation"),
+                                  cl::value_desc("cost table"));
 
    template <bool earlyAnalysis>
    struct CLANG_VERSION_SYMBOL(_plugin_dumpGimpleSSA) : public ModulePass
@@ -106,6 +111,9 @@ namespace llvm
          initializeTargetLibraryInfoWrapperPassPass(*PassRegistry::getPassRegistry());   //
          initializeAssumptionCacheTrackerPass(*PassRegistry::getPassRegistry());         //
          initializeDominatorTreeWrapperPassPass(*PassRegistry::getPassRegistry());       //
+#if __clang_major__ > 5
+         initializeOptimizationRemarkEmitterWrapperPassPass(*PassRegistry::getPassRegistry());
+#endif
       }
 
       std::string create_file_basename_string(const std::string& on, const std::string& original_filename)
@@ -170,7 +178,7 @@ namespace llvm
          if(!TopFunctionName.empty())
             llvm::errs() << "Top function name: " << TopFunctionName << "\n";
 #endif
-         auto res = gimpleRawWriter.runOnModule(M, this, TopFunctionName);
+         auto res = gimpleRawWriter.runOnModule(M, this, TopFunctionName, CostTable);
          return res;
       }
       StringRef getPassName() const override
@@ -187,6 +195,9 @@ namespace llvm
          AU.addRequired<TargetLibraryInfoWrapperPass>();   //
          AU.addRequired<AssumptionCacheTracker>();         //
          AU.addRequired<DominatorTreeWrapperPass>();       //
+#if __clang_major__ > 5
+         AU.addRequired<OptimizationRemarkEmitterWrapperPass>();
+#endif
       }
    };
    template <>
@@ -227,6 +238,7 @@ static void loadPass(const llvm::PassManagerBuilder&, llvm::legacy::PassManagerB
    PM.add(llvm::createArgumentPromotionPass(256));
    PM.add(llvm::createInstructionCombiningPass(true));
    PM.add(llvm::createBreakCriticalEdgesPass());
+   PM.add(llvm::createUnifyFunctionExitNodesPass());
 
    PM.add(new llvm::CLANG_VERSION_SYMBOL(_plugin_dumpGimpleSSA) < false > ());
 }

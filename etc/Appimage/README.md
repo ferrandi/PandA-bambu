@@ -14,7 +14,7 @@ Be aware that not all bundled tools are completely relocatable, thus it may be n
 In this directory we have a set of Vagrant scripts which will produce an AppImage of bambu.
 
 ## Generating with Docker
-To generate the PandA Bambu AppImage using docker please see the github action under *.github/actions/generate-bin* and in particular the [*entrypoint.sh*](/.github/actions/generate-bin/entrypoint.sh) script.<br>
+To generate the PandA Bambu AppImage using docker please see the github action under *.github/actions/generate-appimage* and in particular the [*entrypoint.sh*](/.github/actions/generate-appimage/entrypoint.sh) script.<br>
 If needed you may find all the custom compiled GCC distributions we are testing against at https://release.bambuhls.eu/compiler/gcc-&lt;version&gt;-bambu-Ubuntu_16.04.tar.xz. <br>
 Currently supported versions: 
 - gcc-4.5

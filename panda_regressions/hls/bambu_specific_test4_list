@@ -36,6 +36,7 @@ bambu_specific_test4/simple_c4_array_64bits.c --generate-tb=a="{1,2,3,4,5,6,7,8}
 bambu_specific_test4/simple_c4_array_8bits.c --generate-tb=a="{1,2,3,4,5,6,7,8}",b="{1,2,3,4,5,6,7,8}",c="{1,2,3,4,5,6,7,8}",d="{0,0,0,0,0,0,0,0}" --top-fname=sum3numbers 
 bambu_specific_test4/simple_c4_array_8bits.c --generate-tb=a="{1,2,3,4,5,6,7,8}",b="{1,2,3,4,5,6,7,8}",c="{1,2,3,4,5,6,7,8}",d="{0,0,0,0,0,0,0,0}" --top-fname=sum3numbers  -funroll-loops --benchmark-name=simple_c4_array_8bits_unroll
 bambu_specific_test4/simple_c4_axis.c --generate-tb=a=1,b=2,c=3,d=6 --top-fname=sum3numbers 
+bambu_specific_test4/simple_c4_fifo_multiple.c --generate-tb=a="{1,2,3,4,5,6,7,8}",b="{2,3,4,5,6,7,8,9}",c="{3,4,5,6,7,8,9,10}",d="{0,0,0,0,0,0,0,0}" --top-fname=sum3numbers 
 bambu_specific_test4/simple_c4_fifo.c --generate-tb=a=1,b=2,c=3,d=6 --top-fname=sum3numbers 
 bambu_specific_test4/simple_c4_handshake.c --generate-tb=a=1,b=2,c=3,d=6 --top-fname=sum3numbers 
 bambu_specific_test4/simple_test.c --generate-tb=a="-7" --top-fname=test

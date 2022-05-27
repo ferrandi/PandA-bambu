@@ -224,13 +224,17 @@ flopoco_wrapper::flopoco_wrapper(int
    {
       target = new flopoco::CycloneII();
    }
-   else if("NG-medium" == FU_target)
+   else if("NG-MEDIUM" == FU_target)
    {
       target = new flopoco::Virtex5();
    }
-   else if("NG-large" == FU_target)
+   else if("NG-LARGE" == FU_target)
    {
       target = new flopoco::Virtex5();
+   }
+   else if("NG-ULTRA" == FU_target)
+   {
+      target = new flopoco::Virtex6();
    }
    else if(FU_target.find("Generic") != std::string::npos)
    {

@@ -82,6 +82,29 @@
 
 #include "math_function.hpp"
 
+static unsigned int local_port_size(const structural_objectRef portInst)
+{
+   auto port_bitwidth =
+       GetPointer<port_o>(portInst)->get_typeRef()->size * GetPointer<port_o>(portInst)->get_typeRef()->vector_size;
+   unsigned bitsize = 0;
+   if(port_bitwidth <= 512)
+   {
+      bitsize = resize_to_1_8_16_32_64_128_256_512(port_bitwidth);
+   }
+   else
+   {
+      if(port_bitwidth % 8)
+      {
+         bitsize = 8 * (port_bitwidth / 8) + 8;
+      }
+      else
+      {
+         bitsize = port_bitwidth;
+      }
+   }
+   return bitsize;
+}
+
 MinimalInterfaceTestbench::MinimalInterfaceTestbench(const ParameterConstRef _parameters, const HLS_managerRef _AppM,
                                                      const DesignFlowManagerConstRef _design_flow_manager)
     : TestbenchGenerationBaseStep(_parameters, _AppM, _design_flow_manager,
@@ -752,6 +775,26 @@ void MinimalInterfaceTestbench::write_interface_handler() const
                writer->write(STR(STD_CLOSING_CHAR));
                writer->write("end\n");
             }
+
+            if(InterfaceType == port_o::port_interface::PI_FDOUT)
+            {
+               orig_port_name = portInst->get_id();
+               auto size_dout = std::string("_dout").size();
+               auto terminate = orig_port_name.size() > size_dout ? orig_port_name.size() - size_dout : 0;
+               std::string valid_suffix = "_read";
+               if(orig_port_name.substr(terminate) != "_dout")
+               {
+                  valid_suffix = "_TVALID";
+                  size_dout = std::string("_TDATA").size();
+                  terminate = orig_port_name.size() > size_dout ? orig_port_name.size() - size_dout : 0;
+                  THROW_ASSERT(orig_port_name.substr(terminate) == "_TDATA",
+                               "unexpected case" + orig_port_name.substr(terminate));
+               }
+               auto size_string = orig_port_name.size() - size_dout;
+               auto par_name = orig_port_name.substr(0, size_string);
+               auto bitsize = local_port_size(portInst);
+               write_read_fifo_manager(par_name, orig_port_name, bitsize, valid_suffix);
+            }
          }
       }
    }
@@ -920,6 +963,18 @@ void MinimalInterfaceTestbench::write_output_signal_declaration() const
                           writer->type_converter_size(portInst));
             writer->write("ex_" + HDL_manager::convert_to_identifier(writer.get(), port_name) + ";\n");
          }
+         else if(GetPointer<port_o>(portInst)->get_port_interface() == port_o::port_interface::PI_FDIN)
+         {
+            writer->write("reg " + writer->type_converter(portInst->get_typeRef()) +
+                          writer->type_converter_size(portInst));
+            writer->write("ex_" + HDL_manager::convert_to_identifier(writer.get(), port_name) + ";\n");
+            writer->write("reg " + writer->type_converter(portInst->get_typeRef()) +
+                          writer->type_converter_size(portInst));
+            writer->write("registered_" + HDL_manager::convert_to_identifier(writer.get(), port_name) +
+                          " [0:MEMSIZE-1];\n");
+            writer->write("integer fifo_counter_" + HDL_manager::convert_to_identifier(writer.get(), port_name) +
+                          ";\n");
+         }
       }
       writer->write("\n");
    }
@@ -1060,7 +1115,7 @@ void MinimalInterfaceTestbench::read_input_value_from_file_RNONE(const std::stri
                              STR((bitsize - bitsize_index) / 8 - 1) + " - base_addr]";
          }
          mem_aggregate += "}";
-         writer->write("assign " + input_name + " = " + mem_aggregate + ";\n");
+         writer->write(input_name + " = " + mem_aggregate + ";\n");
          size_t escaped_pos = input_name.find('\\');
          std::string nonescaped_name = input_name;
          if(escaped_pos != std::string::npos)
@@ -1080,6 +1135,37 @@ void MinimalInterfaceTestbench::read_input_value_from_file_RNONE(const std::stri
    }
 }
 
+void MinimalInterfaceTestbench::write_read_fifo_manager(std::string par, const std::string& pi_dout_name,
+                                                        unsigned bitsize, std::string valid_suffix) const
+{
+   writer->write("\n");
+   writer->write_comment("Manage fifo signals for " + pi_dout_name +
+                         " --------------------------------------------------------------\n");
+   writer->write("always @ (posedge " + std::string(CLOCK_PORT_NAME) + ")\n");
+   writer->write(STR(STD_OPENING_CHAR));
+   writer->write("begin\n");
+   writer->write("if(" + par + valid_suffix + " == 1'b1)\n");
+   writer->write("begin");
+   writer->write(STR(STD_OPENING_CHAR) + "\n");
+   writer->write("paddr" + pi_dout_name + " <= paddr" + pi_dout_name + " + " + STR(bitsize / 8) + ";\n");
+   writer->write(STR(STD_CLOSING_CHAR));
+   writer->write("end\n");
+   std::string mem_aggregate = "{";
+   for(unsigned int bitsize_index = 0; bitsize_index < bitsize; bitsize_index = bitsize_index + 8)
+   {
+      if(bitsize_index)
+      {
+         mem_aggregate += ", ";
+      }
+      mem_aggregate += "_bambu_testbench_mem_[paddr" + pi_dout_name + " + " + STR((bitsize - bitsize_index) / 8 - 1) +
+                       " - base_addr]";
+   }
+   mem_aggregate += "}";
+   writer->write(STR(STD_CLOSING_CHAR));
+   writer->write("end\n");
+   writer->write("always @ (*) " + pi_dout_name + " = " + mem_aggregate + ";\n");
+}
+
 void MinimalInterfaceTestbench::write_file_reading_operations() const
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Write file reading operations");
@@ -1088,7 +1174,7 @@ void MinimalInterfaceTestbench::write_file_reading_operations() const
    bool first_valid_input = true;
    /// iterate over all interface ports
    const auto& DesignSignature = HLSMgr->RSim->simulationArgSignature;
-   for(auto par : DesignSignature)
+   for(const auto& par : DesignSignature)
    {
       auto portInst = mod->find_member(par, port_o_K, cir);
       if(!portInst)
@@ -1128,28 +1214,12 @@ void MinimalInterfaceTestbench::write_file_reading_operations() const
       }
       else if(InterfaceType == port_o::port_interface::PI_RNONE)
       {
-         auto port_bitwidth = GetPointer<port_o>(portInst)->get_typeRef()->size *
-                              GetPointer<port_o>(portInst)->get_typeRef()->vector_size;
-         unsigned bitsize = 0;
-         if(port_bitwidth <= 512)
-         {
-            bitsize = resize_to_1_8_16_32_64_128_256_512(port_bitwidth);
-         }
-         else
-         {
-            if(port_bitwidth % 8)
-            {
-               bitsize = 8 * (port_bitwidth / 8) + 8;
-            }
-            else
-            {
-               bitsize = port_bitwidth;
-            }
-         }
+         unsigned bitsize = local_port_size(portInst);
          read_input_value_from_file_RNONE(input_name, first_valid_input, bitsize);
       }
       else if(InterfaceType == port_o::port_interface::PI_WNONE || InterfaceType == port_o::port_interface::PI_DIN ||
-              InterfaceType == port_o::port_interface::PI_DOUT)
+              InterfaceType == port_o::port_interface::PI_DOUT || InterfaceType == port_o::port_interface::PI_FDOUT ||
+              InterfaceType == port_o::port_interface::PI_FDIN)
       {
          read_input_value_from_file("paddr" + input_name, first_valid_input);
       }

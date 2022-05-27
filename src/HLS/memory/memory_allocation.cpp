@@ -223,6 +223,7 @@ void memory_allocation::finalize_memory_allocation()
    THROW_ASSERT(func_list.size(), "Empty list of functions to be analyzed");
    bool use_unknown_address = false;
    bool has_unaligned_accesses = false;
+   auto m64P = parameters->getOption<std::string>(OPT_gcc_m32_mx32).find("-m64") != std::string::npos;
    bool assume_aligned_access_p =
        parameters->isOption(OPT_aligned_access) && parameters->getOption<bool>(OPT_aligned_access);
    const tree_managerRef TreeM = HLSMgr->get_tree_manager();
@@ -499,7 +500,7 @@ void memory_allocation::finalize_memory_allocation()
          }
          else
          {
-            addr_bus_bitsize = 32;
+            addr_bus_bitsize = m64P ? 64 : 32;
          }
          for(const auto& par : behavioral_helper->GetParameters())
          {
@@ -571,16 +572,16 @@ void memory_allocation::finalize_memory_allocation()
    }
    else if(use_unknown_address)
    {
-      addr_bus_bitsize = 32;
+      addr_bus_bitsize = m64P ? 64 : 32;
    }
    else if(has_intern_shared_data && parameters->getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) !=
                                          MemoryAllocation_Policy::ALL_BRAM)
    {
-      addr_bus_bitsize = 32;
+      addr_bus_bitsize = m64P ? 64 : 32;
    }
    else if(HLSMgr->Rmem->get_memory_address() - HLSMgr->base_address > 0)
    {
-      addr_bus_bitsize = 32;
+      addr_bus_bitsize = m64P ? 64 : 32;
    }
    else
    {

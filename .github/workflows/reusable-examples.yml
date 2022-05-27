@@ -69,7 +69,7 @@ jobs:
             batch: "5SGXEA7N2F45C1_10.0"
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Download Bambu AppImage
         uses: ./.github/actions/storage-download
         with:
@@ -118,7 +118,7 @@ jobs:
           done
       - name: Upload test reports
         if: ${{ always() }}
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: ${{steps.get.outputs.outname}}
           path: ${{steps.batch.outputs.test-reports-dir}}
@@ -170,7 +170,7 @@ jobs:
             batch: "xc7vx690t-3ffg1930-VVD_10.0"
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Download Bambu AppImage
         uses: ./.github/actions/storage-download
         with:
@@ -219,7 +219,7 @@ jobs:
           done
       - name: Upload test reports
         if: ${{ always() }}
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: ${{steps.get.outputs.outname}}
           path: ${{steps.batch.outputs.test-reports-dir}}
@@ -259,7 +259,7 @@ jobs:
             batch: "LFE335EA8FN484C_15.0"
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Download Bambu AppImage
         uses: ./.github/actions/storage-download
         with:
@@ -308,7 +308,7 @@ jobs:
           done
       - name: Upload test reports
         if: ${{ always() }}
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: ${{steps.get.outputs.outname}}
           path: ${{steps.batch.outputs.test-reports-dir}}

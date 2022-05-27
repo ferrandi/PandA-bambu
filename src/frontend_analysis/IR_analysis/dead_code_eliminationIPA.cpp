@@ -321,7 +321,7 @@ bool dead_code_eliminationIPA::signature_opt(const tree_managerRef& TM, function
    });
    const auto ftype =
        tree_man->GetFunctionType(GetPointerS<const function_type>(GET_CONST_NODE(fd->type))->retn, argsT);
-   const auto ftype_ptr = tree_man->GetPointerType(ftype, ALGN_POINTER);
+   const auto ftype_ptr = tree_man->GetPointerType(ftype);
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Erasing unused arguments from call points");
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
    for(boost::tie(ie, ie_end) = boost::in_edges(function_v, *CG); ie != ie_end; ie++)

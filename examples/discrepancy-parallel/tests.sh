@@ -1,7 +1,7 @@
 #!/bin/bash
 # Add --no-clean to measure the file sizes.
 script_dir="$(dirname $(readlink -e $0))"
-$script_dir/../../etc/scripts/test_panda.py --tool=bambu \
+python3 $script_dir/../../etc/scripts/test_panda.py --tool=bambu \
 	--args="--configuration-name=baseline --simulate --std=c11 --compiler=I386_GCC6 --disable-function-proxy " \
 	--args="--configuration-name=vcd --simulate --generate-vcd --std=c11 --compiler=I386_GCC6 --disable-function-proxy " \
 	--args="--configuration-name=discrepancy --simulate --std=c11 --discrepancy --discrepancy-no-load-pointers --discrepancy-force-uninitialized --compiler=I386_GCC6 --disable-function-proxy" \

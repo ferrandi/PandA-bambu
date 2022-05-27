@@ -4,7 +4,7 @@ script_dir="$(dirname $(readlink -e $0))"
 BATCH_ARGS=("-lm" "--simulate" "--expose-globals" "--compiler=I386_GCC49")
 OUT_SUFFIX="bambu_specific_test2"
 
-$script_dir/../../etc/scripts/test_panda.py --tool=bambu  \
+python3 $script_dir/../../etc/scripts/test_panda.py --tool=bambu  \
    --args="--configuration-name=O0 -O0 ${BATCH_ARGS[*]}" \
    --args="--configuration-name=O1 -O1 ${BATCH_ARGS[*]}" \
    --args="--configuration-name=O2 -O2 ${BATCH_ARGS[*]}" \

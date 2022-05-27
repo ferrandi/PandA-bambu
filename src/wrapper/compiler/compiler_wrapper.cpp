@@ -359,7 +359,6 @@
 #include "compiler_wrapper.hpp"
 
 /// Behavior include
-#include "application_manager.hpp"
 
 /// Constants include
 #include "compiler_constants.hpp"
@@ -429,7 +428,7 @@ CompilerWrapper::~CompilerWrapper() = default;
 
 void CompilerWrapper::CompileFile(const std::string& original_file_name, std::string& real_file_name,
                                   const std::string& parameters_line, bool multiple_files,
-                                  CompilerWrapper_CompilerMode cm)
+                                  CompilerWrapper_CompilerMode cm, const std::string& costTable)
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                   "-->Compiling " + original_file_name + "(transformed in " + real_file_name);
@@ -730,7 +729,7 @@ void CompilerWrapper::CompileFile(const std::string& original_file_name, std::st
       {
          command += " -c -fplugin=" + compiler.ssa_plugin_obj +
                     " -mllvm -panda-outputdir=" + Param->getOption<std::string>(OPT_output_temporary_directory) +
-                    " -mllvm -panda-infile=" + real_file_name;
+                    " -mllvm -panda-infile=" + real_file_name + " -mllvm -panda-cost-table=\"" + costTable + "\"";
          if(addTopFName)
          {
             command += " -mllvm -panda-topfname=" + fname;
@@ -856,7 +855,8 @@ void CompilerWrapper::CompileFile(const std::string& original_file_name, std::st
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Compiled file");
 }
 
-void CompilerWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::string, std::string>& source_files)
+void CompilerWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::string, std::string>& source_files,
+                                      const std::string& costTable)
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Invoking front-end compiler");
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
@@ -934,7 +934,7 @@ void CompilerWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::st
             analyzing_compiling_parameters += Param->getOption<std::string>(OPT_gcc_includes) + " ";
          }
          CompileFile(source_file.first, source_file.second, analyzing_compiling_parameters, source_files.size() > 1,
-                     CompilerWrapper_CompilerMode::CM_ANALYZER);
+                     CompilerWrapper_CompilerMode::CM_ANALYZER, costTable);
       }
    }
 #else
@@ -957,7 +957,7 @@ void CompilerWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::st
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Compiling file " + source_file.second);
       /// create obj
       CompileFile(source_file.first, source_file.second, frontend_compiler_parameters, source_files.size() > 1,
-                  enable_LTO ? CompilerWrapper_CompilerMode::CM_LTO : CompilerWrapper_CompilerMode::CM_STD);
+                  enable_LTO ? CompilerWrapper_CompilerMode::CM_LTO : CompilerWrapper_CompilerMode::CM_STD, costTable);
       if(!Param->isOption(OPT_gcc_E) && !Param->isOption(OPT_gcc_S) && !enable_LTO)
       {
          if(!(boost::filesystem::exists(
@@ -965,7 +965,7 @@ void CompilerWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::st
          {
             THROW_WARNING("Raw not created for file " + output_temporary_directory + "/" + leaf_name);
             CompileFile(source_file.first, source_file.second, frontend_compiler_parameters, source_files.size() > 1,
-                        CompilerWrapper_CompilerMode::CM_EMPTY);
+                        CompilerWrapper_CompilerMode::CM_EMPTY, costTable);
             /// Recomputing leaf_name since source_file.second should be modified in the previous call
             leaf_name = source_file.second == "-" ? "stdin-" : GetLeafFileName(source_file.second);
             if(not(boost::filesystem::exists(
@@ -1280,14 +1280,14 @@ void CompilerWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::st
          command += " -load=" + renamed_plugin;
 #endif
          command += " -panda-outputdir=" + Param->getOption<std::string>(OPT_output_temporary_directory) +
-                    " -panda-infile=" + real_file_names;
+                    " -panda-infile=" + real_file_names + " -mllvm -panda-cost-table=\"" + costTable + "\"";
          if(addTFNPlugin)
          {
             command += " -panda-topfname=" + fname;
          }
-         command +=
-             " -domfrontier -domtree -memdep -memoryssa -lazy-value-info -aa -assumption-cache-tracker -targetlibinfo "
-             "-loops -simplifycfg -mem2reg -globalopt -break-crit-edges -dse -adce -loop-load-elim";
+         command += " -vectorize-loops=false -vectorize-slp=false -domfrontier -domtree -memdep -memoryssa "
+                    "-lazy-value-info -aa -assumption-cache-tracker -targetlibinfo -loops -simplifycfg -mem2reg "
+                    "-globalopt -break-crit-edges -dse -adce -loop-load-elim";
          command += " " + temporary_file_o_bc;
          temporary_file_o_bc =
              boost::filesystem::path(Param->getOption<std::string>(OPT_output_temporary_directory) + "/" +
@@ -2968,9 +2968,10 @@ CompilerWrapper::Compiler CompilerWrapper::GetCompiler() const
       compiler.is_clang = true;
       compiler.gcc = flag_cpp ? relocate_compiler_path(I386_CLANGPPVVD_EXE) : relocate_compiler_path(I386_CLANGVVD_EXE);
       compiler.cpp = relocate_compiler_path(I386_CLANG_CPPVVD_EXE);
-      compiler.extra_options = " -D_FORTIFY_SOURCE=0 " + gcc_extra_options +
-                               (flag_cpp ? EXTRA_CLANGPP_COMPILER_OPTION : "") + " -target fpga64-xilinx-linux-gnu";
+      compiler.extra_options =
+          " -D_FORTIFY_SOURCE=0 " + gcc_extra_options + (flag_cpp ? EXTRA_CLANGPP_COMPILER_OPTION : "");
       compiler.extra_options += " " + Param->getOption<std::string>(OPT_gcc_m32_mx32);
+      compiler.extra_options += " -target fpga64-xilinx-linux-gnu";
       compiler.empty_plugin_obj = clang_plugin_dir + I386_CLANGVVD_EMPTY_PLUGIN + plugin_ext;
       compiler.empty_plugin_name = I386_CLANGVVD_EMPTY_PLUGIN;
       compiler.ssa_plugin_obj =
@@ -3187,9 +3188,10 @@ void CompilerWrapper::CreateExecutable(const std::list<std::string>& file_names,
 
    command += (no_frontend_compiler_parameters ? "" : frontend_compiler_parameters) + " " +
               AddSourceCodeIncludes(file_names) + " " + compiler_linking_parameters + " ";
-   if(!has_cpp_file && command.find("--std=c++14") != std::string::npos)
+   static const boost::regex c_std("[-]{1,2}std=c\\+\\+\\w+");
+   if(!has_cpp_file)
    {
-      boost::replace_all(command, "--std=c++14", "");
+      command = boost::regex_replace(command, c_std, "");
    }
 
    command += "-D__NO_INLINE__ "; /// needed to avoid problem with glibc inlines
@@ -3202,7 +3204,9 @@ void CompilerWrapper::CreateExecutable(const std::list<std::string>& file_names,
 
 #ifdef _WIN32
    if(local_compiler_extra_options.find("-m32") != std::string::npos)
+   {
       boost::replace_all(local_compiler_extra_options, "-m32", "");
+   }
 #endif
 
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Extra options are " + local_compiler_extra_options);
@@ -3809,6 +3813,7 @@ std::string CompilerWrapper::clang_recipes(
             && !GepiCanon_plugin_obj.empty() && !CSROA_plugin_obj.empty()
 #endif
          )
+         {
             complex_recipe +=
                 "-" + GepiCanon_plugin_name +
                 "PS "
@@ -3824,11 +3829,13 @@ std::string CompilerWrapper::clang_recipes(
                 "FV "
                 "-ipsccp -globaldce -domtree -mem2reg -deadargelim -basiccg -argpromotion -domtree -loops "
                 "-loop-simplify -lcssa-verification -lcssa -basicaa -aa -scalar-evolution -loop-unroll -simplifycfg ";
+         }
          if(Param->IsParameter("enable-CSROA") && Param->GetParameter<int>("enable-CSROA") == 1
 #ifndef _WIN32
             && !GepiCanon_plugin_obj.empty() && !CSROA_plugin_obj.empty()
 #endif
          )
+         {
             complex_recipe += "-" + expandMemOps_plugin_name +
                               " "
                               "-" +
@@ -3842,6 +3849,7 @@ std::string CompilerWrapper::clang_recipes(
                               "BVR "
                               "-" +
                               CSROA_plugin_name + "D ";
+         }
          complex_recipe += "-ipsccp -globalopt -dse -loop-unroll "
                            "-instcombine "
                            "-libcalls-shrinkwrap "
@@ -3976,7 +3984,9 @@ std::string CompilerWrapper::clang_recipes(
             && !GepiCanon_plugin_obj.empty() && !CSROA_plugin_obj.empty()
 #endif
          )
+         {
             complex_recipe += " -" + expandMemOps_plugin_name + " -" + CSROA_plugin_name + "WI ";
+         }
          complex_recipe += "-domtree -basicaa -aa -memdep -dse -aa -memoryssa -early-cse-memssa -constprop -ipsccp "
                            "-globaldce -domtree -mem2reg -deadargelim -basiccg -argpromotion -domtree -loops "
                            "-loop-simplify -lcssa-verification -lcssa -basicaa -aa "
@@ -4129,7 +4139,8 @@ std::string CompilerWrapper::clang_recipes(
    {
       const auto opt_level =
           optimization_level == CompilerWrapper_OptimizationSet::O0 ? "1" : WriteOptimizationLevel(optimization_level);
-      recipe += " -O" + opt_level + " --disable-vector-combine -scalarizer ";
+      recipe +=
+          " -O" + opt_level + " --disable-vector-combine -vectorize-loops=false -vectorize-slp=false -scalarizer ";
       recipe += " -" + expandMemOps_plugin_name;
       /*
             recipe += " -" + GepiCanon_plugin_name +
@@ -4150,7 +4161,8 @@ std::string CompilerWrapper::clang_recipes(
    {
       const auto opt_level =
           optimization_level == CompilerWrapper_OptimizationSet::O0 ? "1" : WriteOptimizationLevel(optimization_level);
-      recipe += " -O" + opt_level + " --disable-vector-combine -scalarizer ";
+      recipe +=
+          " -O" + opt_level + " --disable-vector-combine -vectorize-loops=false -vectorize-slp=false -scalarizer ";
       recipe += " -" + expandMemOps_plugin_name;
       /*
             recipe += " -" + GepiCanon_plugin_name +
