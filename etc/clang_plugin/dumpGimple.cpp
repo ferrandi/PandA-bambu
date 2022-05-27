@@ -103,6 +103,9 @@
 #include "llvm/eSSA.hpp"
 
 #include "CustomScalarReplacementOfAggregatesPass.hpp"
+#if __clang_major__ > 5
+#include "TreeHeightReduction.hpp"
+#endif
 
 #include <cxxabi.h>
 #include <iomanip>
@@ -7184,13 +7187,22 @@ namespace llvm
          }
       }
    }
-   bool DumpGimpleRaw::runOnModule(llvm::Module& M, llvm::ModulePass* _modulePass, const std::string& _TopFunctionName)
+   bool DumpGimpleRaw::runOnModule(llvm::Module& M, llvm::ModulePass* _modulePass, const std::string& _TopFunctionName,
+                                   const std::string& costTable)
    {
       DL = &M.getDataLayout();
       modulePass = _modulePass;
       moduleContext = &M.getContext();
       TopFunctionName = _TopFunctionName;
       bool res = false;
+#if __clang_major__ > 5
+      if(!costTable.empty())
+      {
+         TreeHeightReduction THR;
+         res |= THR.runOnModule(M, modulePass, costTable);
+      }
+#endif
+
 #if PRINT_DBG_MSG
       llvm::errs() << "Computing e-SSA\n";
 #endif

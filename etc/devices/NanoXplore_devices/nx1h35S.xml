@@ -2,7 +2,7 @@
 <target>
   <device>
     <vendor value="NanoXplore"/>
-    <family value="NG-medium"/>
+    <family value="NG-MEDIUM"/>
     <model value="nx1h35S"/>
     <package value="LG625V"/>
     <speed_grade value="std"/>
