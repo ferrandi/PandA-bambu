@@ -2909,7 +2909,7 @@ double AllocationInformation::compute_normalized_area(unsigned int fu_s1) const
    {
       resource_area = 0.0;
    }
-   return (resource_area / mux_area) + get_DSPs(fu_s1);
+   return (resource_area / mux_area) + 3 * get_DSPs(fu_s1);
 }
 
 unsigned int AllocationInformation::get_n_complex_operations() const

@@ -46,6 +46,9 @@
 #include "llvm/Analysis/TargetLibraryInfo.h"
 #include "llvm/Analysis/TargetTransformInfo.h"
 #include "llvm/IR/LegacyPassManager.h"
+#if __clang_major__ > 5
+#include "llvm/Analysis/OptimizationRemarkEmitter.h"
+#endif
 #include "llvm/IR/Module.h"
 #include "llvm/IR/PassManager.h"
 #include "llvm/InitializePasses.h"
@@ -93,6 +96,9 @@ namespace llvm
          initializeTargetLibraryInfoWrapperPassPass(*PassRegistry::getPassRegistry());
          initializeAssumptionCacheTrackerPass(*PassRegistry::getPassRegistry());
          initializeDominatorTreeWrapperPassPass(*PassRegistry::getPassRegistry());
+#if __clang_major__ > 5
+         initializeOptimizationRemarkEmitterWrapperPassPass(*PassRegistry::getPassRegistry());
+#endif
       }
 
 #if __clang_major__ >= 13
@@ -108,7 +114,12 @@ namespace llvm
                 llvm::function_ref<llvm::LoopInfo&(llvm::Function&)> GetLI,
                 llvm::function_ref<MemorySSAAnalysisResult&(llvm::Function&)> GetMSSA,
                 llvm::function_ref<llvm::LazyValueInfo&(llvm::Function&)> GetLVI,
-                llvm::function_ref<llvm::AssumptionCache&(llvm::Function&)> GetAC)
+                llvm::function_ref<llvm::AssumptionCache&(llvm::Function&)> GetAC
+#if __clang_major__ > 5
+                ,
+                llvm::function_ref<llvm::OptimizationRemarkEmitter&(llvm::Function&)> GetORE
+#endif
+      )
       {
          if(outdir_nameGE.empty())
             return false;
@@ -116,7 +127,11 @@ namespace llvm
             llvm::report_fatal_error("-pandaGE-infile parameter not specified");
          DumpGimpleRaw gimpleRawWriter(outdir_nameGE, InFileGE, true, nullptr, false);
          const std::string empty;
-         auto res = gimpleRawWriter.exec(M, empty, GetTLI, GetTTI, GetDomTree, GetLI, GetMSSA, GetLVI, GetAC);
+         auto res = gimpleRawWriter.exec(M, empty, GetTLI, GetTTI, GetDomTree, GetLI, GetMSSA, GetLVI, GetAC,
+#if __clang_major__ > 5
+                                         GetORE,
+#endif
+                                         empty);
          return res;
       }
 
@@ -150,7 +165,22 @@ namespace llvm
          auto GetAC = [&](llvm::Function& F) -> llvm::AssumptionCache& {
             return getAnalysis<llvm::AssumptionCacheTracker>().getAssumptionCache(F);
          };
-         return exec(M, GetTLI, GetTTI, GetDomTree, GetLI, GetMSSA, GetLVI, GetAC);
+#if __clang_major__ > 5
+         auto GetORE = [&](llvm::Function& F) -> llvm::OptimizationRemarkEmitter& {
+#if __clang_major__ >= 11
+            return getAnalysis<llvm::OptimizationRemarkEmitterWrapperPass>(F).getORE();
+#else
+            return getAnalysis<llvm::OptimizationRemarkEmitterWrapperPass>(F).getORE();
+#endif
+         };
+#endif
+
+         return exec(M, GetTLI, GetTTI, GetDomTree, GetLI, GetMSSA, GetLVI, GetAC
+#if __clang_major__ > 5
+                     ,
+                     GetORE
+#endif
+         );
 #else
          assert(false && "Call to runOnModule not expected");
          return false;
@@ -173,6 +203,9 @@ namespace llvm
          AU.addRequired<TargetLibraryInfoWrapperPass>();
          AU.addRequired<AssumptionCacheTracker>();
          AU.addRequired<DominatorTreeWrapperPass>();
+#if __clang_major__ > 5
+         AU.addRequired<OptimizationRemarkEmitterWrapperPass>();
+#endif
       }
 
 #if __clang_major__ >= 13
@@ -199,8 +232,11 @@ namespace llvm
          auto GetAC = [&](llvm::Function& F) -> llvm::AssumptionCache& {
             return FAM.getResult<llvm::AssumptionAnalysis>(F);
          };
+         auto GetORE = [&](llvm::Function& F) -> llvm::OptimizationRemarkEmitter& {
+            return FAM.getResult<llvm::OptimizationRemarkEmitterAnalysis>(F);
+         };
 
-         const auto changed = exec(M, GetTLI, GetTTI, GetDomTree, GetLI, GetMSSA, GetLVI, GetAC);
+         const auto changed = exec(M, GetTLI, GetTTI, GetDomTree, GetLI, GetMSSA, GetLVI, GetAC, GetORE);
          return (changed ? llvm::PreservedAnalyses::none() : llvm::PreservedAnalyses::all());
       }
 #endif
@@ -274,5 +310,6 @@ static llvm::RegisterStandardPasses
 // INITIALIZE_PASS_DEPENDENCY(AssumptionCacheTracker)
 // INITIALIZE_PASS_DEPENDENCY(DominatorTreeWrapperPass)
 // INITIALIZE_PASS_DEPENDENCY(DominanceFrontierWrapperPass)
+// INITIALIZE_PASS_DEPENDENCY(OptimizationRemarkEmitterWrapperPass)
 // INITIALIZE_PASS_END(CLANG_VERSION_SYMBOL(_plugin_dumpGimpleEmpty), CLANG_VERSION_STRING(_plugin_dumpGimpleEmpty),
 //                     "Dump gimple ssa raw format starting from LLVM IR: LLVM pass", false, false)

@@ -104,6 +104,9 @@
 #include "llvm/eSSA.hpp"
 
 #include "CustomScalarReplacementOfAggregatesPass.hpp"
+#if __clang_major__ > 5
+#include "TreeHeightReduction.hpp"
+#endif
 
 #include <cxxabi.h>
 #include <iomanip>
@@ -264,23 +267,27 @@ namespace llvm
 #undef DEFTREECODE
 #undef DEFGSCODE
 
-#define DEFTREECODE(SYM, STRING, TYPE, NARGS)                                                                   \
-   ((TYPE) == tcc_unary                                                              ? GIMPLE_UNARY_RHS :       \
-    ((TYPE) == tcc_binary || (TYPE) == tcc_comparison)                               ? GIMPLE_BINARY_RHS :      \
-    ((TYPE) == tcc_constant || (TYPE) == tcc_declaration || (TYPE) == tcc_reference) ? GIMPLE_SINGLE_RHS :      \
-    (GT(SYM) == GT(TRUTH_AND_EXPR) || GT(SYM) == GT(TRUTH_OR_EXPR) || GT(SYM) == GT(TRUTH_XOR_EXPR)) ?          \
-                                                                                       GIMPLE_BINARY_RHS :      \
-    GT(SYM) == GT(TRUTH_NOT_EXPR)                                                    ? GIMPLE_UNARY_RHS :       \
-    (GT(SYM) == GT(COND_EXPR) || GT(SYM) == GT(WIDEN_MULT_PLUS_EXPR) || GT(SYM) == GT(WIDEN_MULT_MINUS_EXPR) || \
-     GT(SYM) == GT(DOT_PROD_EXPR) || GT(SYM) == GT(SAD_EXPR) || GT(SYM) == GT(REALIGN_LOAD_EXPR) ||             \
-     GT(SYM) == GT(VEC_COND_EXPR) || GT(SYM) == GT(VEC_PERM_EXPR) || GT(SYM) == GT(BIT_INSERT_EXPR) ||          \
-     GT(SYM) == GT(FMA_EXPR) || GT(SYM) == GT(FSHL_EXPR) || GT(SYM) == GT(FSHR_EXPR) ||                         \
-     GT(SYM) == GT(INSERTELEMENT)) ?                                                                            \
-                                    GIMPLE_TERNARY_RHS :                                                        \
-    (GT(SYM) == GT(CONSTRUCTOR) || GT(SYM) == GT(OBJ_TYPE_REF) || GT(SYM) == GT(ASSERT_EXPR) ||                 \
-     GT(SYM) == GT(ADDR_EXPR) || GT(SYM) == GT(WITH_SIZE_EXPR) || GT(SYM) == GT(SSA_NAME)) ?                    \
-                                    GIMPLE_SINGLE_RHS :                                                         \
-                                    GIMPLE_INVALID_RHS),
+#define DEFTREECODE(SYM, STRING, TYPE, NARGS)                                                                       \
+   ((TYPE) == tcc_unary ?                                                                                           \
+        GIMPLE_UNARY_RHS :                                                                                          \
+        ((TYPE) == tcc_binary || (TYPE) == tcc_comparison) ?                                                        \
+        GIMPLE_BINARY_RHS :                                                                                         \
+        ((TYPE) == tcc_constant || (TYPE) == tcc_declaration || (TYPE) == tcc_reference) ?                          \
+        GIMPLE_SINGLE_RHS :                                                                                         \
+        (GT(SYM) == GT(TRUTH_AND_EXPR) || GT(SYM) == GT(TRUTH_OR_EXPR) || GT(SYM) == GT(TRUTH_XOR_EXPR)) ?          \
+        GIMPLE_BINARY_RHS :                                                                                         \
+        GT(SYM) == GT(TRUTH_NOT_EXPR) ?                                                                             \
+        GIMPLE_UNARY_RHS :                                                                                          \
+        (GT(SYM) == GT(COND_EXPR) || GT(SYM) == GT(WIDEN_MULT_PLUS_EXPR) || GT(SYM) == GT(WIDEN_MULT_MINUS_EXPR) || \
+         GT(SYM) == GT(DOT_PROD_EXPR) || GT(SYM) == GT(SAD_EXPR) || GT(SYM) == GT(REALIGN_LOAD_EXPR) ||             \
+         GT(SYM) == GT(VEC_COND_EXPR) || GT(SYM) == GT(VEC_PERM_EXPR) || GT(SYM) == GT(BIT_INSERT_EXPR) ||          \
+         GT(SYM) == GT(FMA_EXPR) || GT(SYM) == GT(FSHL_EXPR) || GT(SYM) == GT(FSHR_EXPR) ||                         \
+         GT(SYM) == GT(INSERTELEMENT)) ?                                                                            \
+        GIMPLE_TERNARY_RHS :                                                                                        \
+        (GT(SYM) == GT(CONSTRUCTOR) || GT(SYM) == GT(OBJ_TYPE_REF) || GT(SYM) == GT(ASSERT_EXPR) ||                 \
+         GT(SYM) == GT(ADDR_EXPR) || GT(SYM) == GT(WITH_SIZE_EXPR) || GT(SYM) == GT(SSA_NAME)) ?                    \
+        GIMPLE_SINGLE_RHS :                                                                                         \
+        GIMPLE_INVALID_RHS),
 #define END_OF_BASE_TREE_CODES GIMPLE_INVALID_RHS,
 #define DEFGSCODE(SYM, NAME, GSSCODE) GIMPLE_INVALID_RHS,
    const DumpGimpleRaw::gimple_rhs_class DumpGimpleRaw::gimple_rhs_class_table[] = {
@@ -5957,18 +5964,18 @@ namespace llvm
                      if(val && !isa<llvm::Constant>(val) && MetaDataMap.find(val) == MetaDataMap.end())
                      {
                         MetaDataMap[val] = dbgInstrCall->getRawVariable();
-                        // auto DIExpr = dbgInstrCall->getExpression();
-                        // if(DIExpr)
+                        //                        auto DIExpr = dbgInstrCall->getExpression();
+                        //                        if(DIExpr)
                         // {
-                        //    llvm::errs() << "Inst: ";
-                        //    inst.print(llvm::errs());
-                        //    llvm::errs() << "\n";
-                        //    llvm::errs() << "Value: ";
-                        //    val->print(llvm::errs());
-                        //    llvm::errs() << "\n";
-                        //    llvm::errs() << "Metadata: ";
-                        //    dbgInstrCall->getRawVariable()->print(llvm::errs());
-                        //    llvm::errs() <<"\n";
+                        //                           llvm::errs() << "Inst: ";
+                        //                           inst.print(llvm::errs());
+                        //                           llvm::errs() << "\n";
+                        //                           llvm::errs() << "Value: ";
+                        //                           val->print(llvm::errs());
+                        //                           llvm::errs() << "\n";
+                        //                           llvm::errs() << "Metadata: ";
+                        //                           dbgInstrCall->getRawVariable()->print(llvm::errs());
+                        //                           llvm::errs() <<"\n";
                         // }
                      }
                   }
@@ -6926,7 +6933,11 @@ namespace llvm
                             llvm::function_ref<llvm::LoopInfo&(llvm::Function&)> _GetLI,
                             llvm::function_ref<MemorySSAAnalysisResult&(llvm::Function&)> _GetMSSA,
                             llvm::function_ref<llvm::LazyValueInfo&(llvm::Function&)> _GetLVI,
-                            llvm::function_ref<llvm::AssumptionCache&(llvm::Function&)> _GetAC)
+                            llvm::function_ref<llvm::AssumptionCache&(llvm::Function&)> _GetAC,
+#if __clang_major__ > 5
+                            llvm::function_ref<llvm::OptimizationRemarkEmitter&(llvm::Function&)> GetORE,
+#endif
+                            const std::string& costTable)
    {
       DL = &M.getDataLayout();
       GetTLI = _GetTLI;
@@ -6939,6 +6950,13 @@ namespace llvm
       moduleContext = &M.getContext();
       TopFunctionName = _TopFunctionName;
       bool res = false;
+#if __clang_major__ > 5
+      if(!costTable.empty())
+      {
+         TreeHeightReduction THR;
+         res |= THR.runOnModule(M, GetLI, GetORE, costTable);
+      }
+#endif
 
 #if PRINT_DBG_MSG
       llvm::errs() << "Computing e-SSA\n";
