@@ -75,30 +75,24 @@ namespace llvm
    cl::opt<std::string> InFileGE("pandaGE-infile", cl::desc("Specify the name of the compiled source file"),
                                  cl::value_desc("filename path"));
    struct CLANG_VERSION_SYMBOL(_plugin_dumpGimpleEmpty)
-       :
-#if __clang_major__ < 13
-         public ModulePass
-#else
+       : public ModulePass
+#if __clang_major__ >= 13
+         ,
          public PassInfoMixin<CLANG_VERSION_SYMBOL(_plugin_dumpGimpleEmpty)>
 #endif
    {
-#if __clang_major__ < 13
       static char ID;
-#endif
 
       CLANG_VERSION_SYMBOL(_plugin_dumpGimpleEmpty)
-      ()
-#if __clang_major__ < 13
-          : ModulePass(ID)
-#endif
+      () : ModulePass(ID)
       {
-         initializeLoopInfoWrapperPassPass(*PassRegistry::getPassRegistry());            //
-         initializeLazyValueInfoWrapperPassPass(*PassRegistry::getPassRegistry());       //
-         initializeMemorySSAWrapperPassPass(*PassRegistry::getPassRegistry());           //
-         initializeTargetTransformInfoWrapperPassPass(*PassRegistry::getPassRegistry()); //
-         initializeTargetLibraryInfoWrapperPassPass(*PassRegistry::getPassRegistry());   //
-         initializeAssumptionCacheTrackerPass(*PassRegistry::getPassRegistry());         //
-         initializeDominatorTreeWrapperPassPass(*PassRegistry::getPassRegistry());       //
+         initializeLoopInfoWrapperPassPass(*PassRegistry::getPassRegistry());
+         initializeLazyValueInfoWrapperPassPass(*PassRegistry::getPassRegistry());
+         initializeMemorySSAWrapperPassPass(*PassRegistry::getPassRegistry());
+         initializeTargetTransformInfoWrapperPassPass(*PassRegistry::getPassRegistry());
+         initializeTargetLibraryInfoWrapperPassPass(*PassRegistry::getPassRegistry());
+         initializeAssumptionCacheTrackerPass(*PassRegistry::getPassRegistry());
+         initializeDominatorTreeWrapperPassPass(*PassRegistry::getPassRegistry());
       }
 
 #if __clang_major__ >= 13
@@ -126,9 +120,9 @@ namespace llvm
          return res;
       }
 
-#if __clang_major__ < 13
       bool runOnModule(Module& M) override
       {
+#if __clang_major__ < 13
 #if __clang_major__ >= 10
          auto GetTLI = [&](llvm::Function& F) -> llvm::TargetLibraryInfo& {
             return getAnalysis<llvm::TargetLibraryInfoWrapperPass>().getTLI(F);
@@ -156,8 +150,11 @@ namespace llvm
          auto GetAC = [&](llvm::Function& F) -> llvm::AssumptionCache& {
             return getAnalysis<llvm::AssumptionCacheTracker>().getAssumptionCache(F);
          };
-
          return exec(M, GetTLI, GetTTI, GetDomTree, GetLI, GetMSSA, GetLVI, GetAC);
+#else
+         assert(false && "Call to runOnModule not expected");
+         return false;
+#endif
       }
 
       StringRef getPassName() const override
@@ -177,7 +174,8 @@ namespace llvm
          AU.addRequired<AssumptionCacheTracker>();
          AU.addRequired<DominatorTreeWrapperPass>();
       }
-#else
+
+#if __clang_major__ >= 13
       llvm::PreservedAnalyses run(llvm::Module& M, llvm::ModuleAnalysisManager& MAM)
       {
          MAM.invalidate(M, llvm::PreservedAnalyses::none());
@@ -208,31 +206,34 @@ namespace llvm
 #endif
    };
 
-#if __clang_major__ < 13
    char CLANG_VERSION_SYMBOL(_plugin_dumpGimpleEmpty)::ID = 0;
-#endif
 
 } // namespace llvm
 
-#if !defined(_WIN32) && __clang_major__ < 13
-
+#if !defined(_WIN32)
 static llvm::RegisterPass<llvm::CLANG_VERSION_SYMBOL(_plugin_dumpGimpleEmpty)>
     XPass(CLANG_VERSION_STRING(_plugin_dumpGimpleEmpty), "Dump gimple ssa raw format starting from LLVM IR: LLVM pass",
           false /* Only looks at CFG */, false /* Analysis Pass */);
 #endif
 
-#if ADD_RSP
-
 #if __clang_major__ >= 13
-
 llvm::PassPluginLibraryInfo CLANG_PLUGIN_INFO(_plugin_dumpGimpleEmpty)()
 {
    return {LLVM_PLUGIN_API_VERSION, CLANG_VERSION_STRING(_plugin_dumpGimpleEmpty), "v0.12", [](llvm::PassBuilder& PB) {
+              const auto load = [](llvm::ModulePassManager& MPM) {
+                 MPM.addPass(llvm::CLANG_VERSION_SYMBOL(_plugin_dumpGimpleEmpty)());
+                 return true;
+              };
+              PB.registerPipelineParsingCallback([&](llvm::StringRef Name, llvm::ModulePassManager& MPM,
+                                                     llvm::ArrayRef<llvm::PassBuilder::PipelineElement>) {
+                 if(Name == CLANG_VERSION_STRING(_plugin_dumpGimpleEmpty))
+                 {
+                    return load(MPM);
+                 }
+                 return false;
+              });
               PB.registerOptimizerLastEPCallback(
-                  [](llvm::ModulePassManager& MPM, llvm::PassBuilder::OptimizationLevel) {
-                     MPM.addPass(llvm::CLANG_VERSION_SYMBOL(_plugin_dumpGimpleEmpty)());
-                     return true;
-                  });
+                  [&](llvm::ModulePassManager& MPM, llvm::PassBuilder::OptimizationLevel) { return load(MPM); });
            }};
 }
 
@@ -242,7 +243,7 @@ extern "C" ::llvm::PassPluginLibraryInfo LLVM_ATTRIBUTE_WEAK llvmGetPassPluginIn
    return CLANG_PLUGIN_INFO(_plugin_dumpGimpleEmpty)();
 }
 #else
-
+#if ADD_RSP
 // This function is of type PassManagerBuilder::ExtensionFn
 static void loadPass(const llvm::PassManagerBuilder&, llvm::legacy::PassManagerBase& PM)
 {

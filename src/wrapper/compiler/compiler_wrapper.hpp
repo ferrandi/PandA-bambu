@@ -383,6 +383,8 @@ class CompilerWrapper
 
    std::string load_plugin(const std::string& plugin_obj, CompilerWrapper_CompilerTarget target);
 
+   std::string load_plugin_opt(std::string plugin_obj, CompilerWrapper_CompilerTarget target);
+
  public:
    /// The version of the frontend compiler
    static std::string current_compiler_version;

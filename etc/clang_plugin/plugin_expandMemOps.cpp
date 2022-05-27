@@ -80,7 +80,7 @@ namespace llvm
        : public ModulePass
 #if __clang_major__ >= 13
          ,
-         PassInfoMixin<CLANG_VERSION_SYMBOL(_plugin_expandMemOps)>
+         public PassInfoMixin<CLANG_VERSION_SYMBOL(_plugin_expandMemOps)>
 #endif
    {
     private:
@@ -419,21 +419,28 @@ namespace llvm
 
     public:
       static char ID;
+
       CLANG_VERSION_SYMBOL(_plugin_expandMemOps)() : ModulePass(ID)
       {
          initializeTargetTransformInfoWrapperPassPass(*PassRegistry::getPassRegistry());
          initializeLoopPassPass(*PassRegistry::getPassRegistry());
       }
 
+#if __clang_major__ >= 13
       CLANG_VERSION_SYMBOL(_plugin_expandMemOps)
       (const CLANG_VERSION_SYMBOL(_plugin_expandMemOps) &) : CLANG_VERSION_SYMBOL(_plugin_expandMemOps)()
       {
       }
+#endif
 
       bool exec(Module& M, llvm::function_ref<llvm::TargetTransformInfo&(llvm::Function&)> GetTTI)
       {
+#if __clang_major__ < 13
          if(skipModule(M))
+         {
             return false;
+         }
+#endif
          auto DL = &M.getDataLayout();
          auto res = false;
          auto currFuncIterator = M.getFunctionList().begin();
@@ -520,8 +527,18 @@ namespace llvm
          auto GetTTI = [&](llvm::Function& F) -> llvm::TargetTransformInfo& {
             return getAnalysis<llvm::TargetTransformInfoWrapperPass>().getTTI(F);
          };
-
          return exec(M, GetTTI);
+      }
+
+      StringRef getPassName() const override
+      {
+         return CLANG_VERSION_STRING(_plugin_expandMemOps);
+      }
+
+      void getAnalysisUsage(AnalysisUsage& AU) const override
+      {
+         getLoopAnalysisUsage(AU);
+         AU.addRequired<TargetTransformInfoWrapperPass>();
       }
 
 #if __clang_major__ >= 13
@@ -536,17 +553,6 @@ namespace llvm
          return (changed ? llvm::PreservedAnalyses::none() : llvm::PreservedAnalyses::all());
       }
 #endif
-
-      StringRef getPassName() const override
-      {
-         return CLANG_VERSION_STRING(_plugin_expandMemOps);
-      }
-
-      void getAnalysisUsage(AnalysisUsage& AU) const override
-      {
-         getLoopAnalysisUsage(AU);
-         AU.addRequired<TargetTransformInfoWrapperPass>();
-      }
    };
 
    char CLANG_VERSION_SYMBOL(_plugin_expandMemOps)::ID = 0;
@@ -559,18 +565,24 @@ static llvm::RegisterPass<llvm::CLANG_VERSION_SYMBOL(_plugin_expandMemOps)>
           false /* Only looks at CFG */, false /* Analysis Pass */);
 #endif
 
-#if ADD_RSP
-
 #if __clang_major__ >= 13
-
 llvm::PassPluginLibraryInfo CLANG_PLUGIN_INFO(_plugin_expandMemOps)()
 {
    return {LLVM_PLUGIN_API_VERSION, CLANG_VERSION_STRING(_plugin_expandMemOps), "v0.12", [](llvm::PassBuilder& PB) {
+              const auto load = [](llvm::ModulePassManager& MPM) {
+                 MPM.addPass(llvm::CLANG_VERSION_SYMBOL(_plugin_expandMemOps)());
+                 return true;
+              };
+              PB.registerPipelineParsingCallback([&](llvm::StringRef Name, llvm::ModulePassManager& MPM,
+                                                     llvm::ArrayRef<llvm::PassBuilder::PipelineElement>) {
+                 if(Name == CLANG_VERSION_STRING(_plugin_expandMemOps))
+                 {
+                    return load(MPM);
+                 }
+                 return false;
+              });
               PB.registerPipelineEarlySimplificationEPCallback(
-                  [](llvm::ModulePassManager& MPM, llvm::PassBuilder::OptimizationLevel) {
-                     MPM.addPass(llvm::CLANG_VERSION_SYMBOL(_plugin_expandMemOps)());
-                     return true;
-                  });
+                  [&](llvm::ModulePassManager& MPM, llvm::PassBuilder::OptimizationLevel) { return load(MPM); });
            }};
 }
 
@@ -579,8 +591,8 @@ extern "C" ::llvm::PassPluginLibraryInfo LLVM_ATTRIBUTE_WEAK llvmGetPassPluginIn
 {
    return CLANG_PLUGIN_INFO(_plugin_expandMemOps)();
 }
-#endif
-
+#else
+#if ADD_RSP
 // This function is of type PassManagerBuilder::ExtensionFn
 static void loadPass(const llvm::PassManagerBuilder&, llvm::legacy::PassManagerBase& PM)
 {
@@ -590,6 +602,7 @@ static void loadPass(const llvm::PassManagerBuilder&, llvm::legacy::PassManagerB
 // These constructors add our pass to a list of global extensions.
 static llvm::RegisterStandardPasses
     CLANG_VERSION_SYMBOL(_plugin_expandMemOps_Ox)(llvm::PassManagerBuilder::EP_ModuleOptimizerEarly, loadPass);
+#endif
 #endif
 
 // using namespace llvm;

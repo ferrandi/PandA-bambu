@@ -1370,8 +1370,6 @@ bool remove_intrinsic(llvm::Function& function)
 
 bool select_lowering(llvm::Function& function)
 {
-   llvm::errs() << "select_lowering\n";
-   function.print(llvm::errs());
    std::vector<llvm::Instruction*> inst_to_remove;
 
    for(llvm::BasicBlock& bb : function)
@@ -1452,8 +1450,6 @@ bool select_lowering(llvm::Function& function)
 
 bool canonical_idxs(llvm::Function& function)
 {
-   llvm::errs() << "canonical_idxs\n";
-   function.print(llvm::errs());
    llvm::Type* idx_ty = llvm::Type::getInt32Ty(function.getContext());
 
    for(llvm::BasicBlock& bb : function)
@@ -1677,8 +1673,6 @@ bool remove_meta(llvm::Function& function)
 
 bool gepi_explicitation(llvm::Function& function)
 {
-   llvm::errs() << "gepi_explicitation\n";
-   function.print(llvm::errs());
    std::deque<llvm::Use*> ops_to_explicit;
    for(auto& bb : function)
    {

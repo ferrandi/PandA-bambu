@@ -71,11 +71,12 @@ namespace llvm
        : public GepiCanonicalizationPass
 #if __clang_major__ >= 13
          ,
-         llvm::PassInfoMixin<CLANG_VERSION_SYMBOL(_plugin_GepiCanon) < OPT_SELECTION> >
+         public PassInfoMixin<CLANG_VERSION_SYMBOL(_plugin_GepiCanon) < OPT_SELECTION> >
 #endif
    {
     public:
       static char ID;
+
       CLANG_VERSION_SYMBOL(_plugin_GepiCanon)() : GepiCanonicalizationPass(ID, OPT_SELECTION)
       {
          initializeTargetTransformInfoWrapperPassPass(*PassRegistry::getPassRegistry());
@@ -91,14 +92,6 @@ namespace llvm
       {
          return GepiCanonicalizationPass::runOnFunction(function);
       }
-
-#if __clang_major__ >= 13
-      llvm::PreservedAnalyses run(llvm::Function& Func, llvm::FunctionAnalysisManager& FAM)
-      {
-         const auto changed = runOnFunction(Func);
-         return (changed ? llvm::PreservedAnalyses::none() : llvm::PreservedAnalyses::all());
-      }
-#endif
 
       StringRef getPassName() const override
       {
@@ -121,6 +114,14 @@ namespace llvm
          else if(OPT_SELECTION == SROA_codeSimplification)
             return CLANG_VERSION_STRING(_plugin_GepiCanon) "CSIMPL";
       }
+
+#if __clang_major__ >= 13
+      llvm::PreservedAnalyses run(llvm::Function& Func, llvm::FunctionAnalysisManager& FAM)
+      {
+         const auto changed = runOnFunction(Func);
+         return (changed ? llvm::PreservedAnalyses::none() : llvm::PreservedAnalyses::all());
+      }
+#endif
    };
 
    template <int OPT_SELECTION>
@@ -130,41 +131,85 @@ namespace llvm
 
 #ifndef _WIN32
 static llvm::RegisterPass<llvm::CLANG_VERSION_SYMBOL(_plugin_GepiCanon) < SROA_ptrIteratorSimplification> >
-    XPassPS(CLANG_VERSION_STRING(_plugin_GepiCanon) "PS", "GepiCanonicalizationPass", true /* Only looks at CFG */,
+    XPassPS(CLANG_VERSION_STRING(_plugin_GepiCanonPS), "GepiCanonicalizationPass", true /* Only looks at CFG */,
             false /* Analysis Pass */);
 static llvm::RegisterPass<llvm::CLANG_VERSION_SYMBOL(_plugin_GepiCanon) < SROA_chunkOperationsLowering> >
-    XPassCOL(CLANG_VERSION_STRING(_plugin_GepiCanon) "COL", "GepiCanonicalizationPass", true /* Only looks at CFG */,
+    XPassCOL(CLANG_VERSION_STRING(_plugin_GepiCanonCOL), "GepiCanonicalizationPass", true /* Only looks at CFG */,
              false /* Analysis Pass */);
 static llvm::RegisterPass<llvm::CLANG_VERSION_SYMBOL(_plugin_GepiCanon) < SROA_bitcastVectorRemoval> >
-    XPassBVR(CLANG_VERSION_STRING(_plugin_GepiCanon) "BVR", "GepiCanonicalizationPass", true /* Only looks at CFG */,
+    XPassBVR(CLANG_VERSION_STRING(_plugin_GepiCanonBVR), "GepiCanonicalizationPass", true /* Only looks at CFG */,
              false /* Analysis Pass */);
 static llvm::RegisterPass<llvm::CLANG_VERSION_SYMBOL(_plugin_GepiCanon) < SROA_intrinsic> >
-    XPassLTR(CLANG_VERSION_STRING(_plugin_GepiCanon) "LTR", "GepiCanonicalizationPass", true /* Only looks at CFG */,
+    XPassLTR(CLANG_VERSION_STRING(_plugin_GepiCanonLTR), "GepiCanonicalizationPass", true /* Only looks at CFG */,
              false /* Analysis Pass */);
 static llvm::RegisterPass<llvm::CLANG_VERSION_SYMBOL(_plugin_GepiCanon) < SROA_selectLowering> >
-    XPassSL(CLANG_VERSION_STRING(_plugin_GepiCanon) "SL", "GepiCanonicalizationPass", true /* Only looks at CFG */,
+    XPassSL(CLANG_VERSION_STRING(_plugin_GepiCanonSL), "GepiCanonicalizationPass", true /* Only looks at CFG */,
             false /* Analysis Pass */);
 static llvm::RegisterPass<llvm::CLANG_VERSION_SYMBOL(_plugin_GepiCanon) < SROA_canonicalIdxs> >
-    XPassCIDX(CLANG_VERSION_STRING(_plugin_GepiCanon) "CIDX", "GepiCanonicalizationPass", true /* Only looks at CFG */,
+    XPassCIDX(CLANG_VERSION_STRING(_plugin_GepiCanonCIDX), "GepiCanonicalizationPass", true /* Only looks at CFG */,
               false /* Analysis Pass */);
 static llvm::RegisterPass<llvm::CLANG_VERSION_SYMBOL(_plugin_GepiCanon) < SROA_cleanLCSSA> >
-    XPassCLCSSA(CLANG_VERSION_STRING(_plugin_GepiCanon) "CLCSSA", "GepiCanonicalizationPass",
-                true /* Only looks at CFG */, false /* Analysis Pass */);
+    XPassCLCSSA(CLANG_VERSION_STRING(_plugin_GepiCanonCLCSSA), "GepiCanonicalizationPass", true /* Only looks at CFG */,
+                false /* Analysis Pass */);
 static llvm::RegisterPass<llvm::CLANG_VERSION_SYMBOL(_plugin_GepiCanon) < SROA_gepiExplicitation> >
-    XPassGEXP(CLANG_VERSION_STRING(_plugin_GepiCanon) "GEXP", "GepiCanonicalizationPass", true /* Only looks at CFG */,
+    XPassGEXP(CLANG_VERSION_STRING(_plugin_GepiCanonGEXP), "GepiCanonicalizationPass", true /* Only looks at CFG */,
               false /* Analysis Pass */);
 static llvm::RegisterPass<llvm::CLANG_VERSION_SYMBOL(_plugin_GepiCanon) < SROA_codeSimplification> >
-    XPassCSIMPL(CLANG_VERSION_STRING(_plugin_GepiCanon) "CSIMPL", "GepiCanonicalizationPass",
-                true /* Only looks at CFG */, false /* Analysis Pass */);
+    XPassCSIMPL(CLANG_VERSION_STRING(_plugin_GepiCanonCSIMPL), "GepiCanonicalizationPass", true /* Only looks at CFG */,
+                false /* Analysis Pass */);
 #endif
 
-#if ADD_RSP
-
 #if __clang_major__ >= 13
-
 llvm::PassPluginLibraryInfo CLANG_PLUGIN_INFO(_plugin_GepiCanon)()
 {
    return {LLVM_PLUGIN_API_VERSION, CLANG_VERSION_STRING(_plugin_GepiCanon), "v0.12", [](llvm::PassBuilder& PB) {
+              PB.registerPipelineParsingCallback([](llvm::StringRef Name, llvm::ModulePassManager& MPM,
+                                                    llvm::ArrayRef<llvm::PassBuilder::PipelineElement>) {
+                 llvm::FunctionPassManager FPM;
+                 if(Name == CLANG_VERSION_STRING(_plugin_GepiCanonPS))
+                 {
+                    FPM.addPass(llvm::CLANG_VERSION_SYMBOL(_plugin_GepiCanon) < SROA_ptrIteratorSimplification > ());
+                 }
+                 else if(Name == CLANG_VERSION_STRING(_plugin_GepiCanonCOL))
+                 {
+                    FPM.addPass(llvm::CLANG_VERSION_SYMBOL(_plugin_GepiCanon) < SROA_chunkOperationsLowering > ());
+                 }
+                 else if(Name == CLANG_VERSION_STRING(_plugin_GepiCanonBVR))
+                 {
+                    FPM.addPass(llvm::CLANG_VERSION_SYMBOL(_plugin_GepiCanon) < SROA_bitcastVectorRemoval > ());
+                 }
+                 else if(Name == CLANG_VERSION_STRING(_plugin_GepiCanonLTR))
+                 {
+                    FPM.addPass(llvm::CLANG_VERSION_SYMBOL(_plugin_GepiCanon) < SROA_intrinsic > ());
+                 }
+                 else if(Name == CLANG_VERSION_STRING(_plugin_GepiCanonSL))
+                 {
+                    FPM.addPass(llvm::CLANG_VERSION_SYMBOL(_plugin_GepiCanon) < SROA_selectLowering > ());
+                 }
+                 else if(Name == CLANG_VERSION_STRING(_plugin_GepiCanonCIDX))
+                 {
+                    FPM.addPass(llvm::CLANG_VERSION_SYMBOL(_plugin_GepiCanon) < SROA_canonicalIdxs > ());
+                 }
+                 else if(Name == CLANG_VERSION_STRING(_plugin_GepiCanonCLCSSA))
+                 {
+                    FPM.addPass(llvm::CLANG_VERSION_SYMBOL(_plugin_GepiCanon) < SROA_cleanLCSSA > ());
+                 }
+                 else if(Name == CLANG_VERSION_STRING(_plugin_GepiCanonGEXP))
+                 {
+                    FPM.addPass(llvm::CLANG_VERSION_SYMBOL(_plugin_GepiCanon) < SROA_gepiExplicitation > ());
+                 }
+                 else if(Name == CLANG_VERSION_STRING(_plugin_GepiCanonCSIMPL))
+                 {
+                    FPM.addPass(llvm::CLANG_VERSION_SYMBOL(_plugin_GepiCanon) < SROA_codeSimplification > ());
+                 }
+                 else
+                 {
+                    return false;
+                 }
+                 FPM.addPass(llvm::VerifierPass());
+                 MPM.addPass(llvm::createModuleToFunctionPassAdaptor(std::move(FPM)));
+                 return true;
+              });
               PB.registerPipelineEarlySimplificationEPCallback(
                   [](llvm::ModulePassManager& MPM, llvm::PassBuilder::OptimizationLevel) {
                      llvm::FunctionPassManager FPM;
@@ -198,8 +243,8 @@ extern "C" ::llvm::PassPluginLibraryInfo LLVM_ATTRIBUTE_WEAK llvmGetPassPluginIn
 {
    return CLANG_PLUGIN_INFO(_plugin_GepiCanon)();
 }
-#endif
-
+#else
+#if ADD_RSP
 // This function is of type PassManagerBuilder::ExtensionFn
 static void loadPass(const llvm::PassManagerBuilder&, llvm::legacy::PassManagerBase& PM)
 {
@@ -227,7 +272,7 @@ static void loadPass(const llvm::PassManagerBuilder&, llvm::legacy::PassManagerB
 // These constructors add our pass to a list of global extensions.
 static llvm::RegisterStandardPasses
     CLANG_VERSION_SYMBOL(_plugin_GepiCanon_Ox)(llvm::PassManagerBuilder::EP_ModuleOptimizerEarly, loadPass);
-
+#endif
 #endif
 
 // using namespace llvm;

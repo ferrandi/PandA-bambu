@@ -51,6 +51,7 @@
 #include "llvm/Support/FileSystem.h"
 #include "llvm/Support/raw_ostream.h"
 #include "llvm/Transforms/IPO.h"
+#include "llvm/Transforms/IPO/Internalize.h"
 #include "llvm/Transforms/IPO/PassManagerBuilder.h"
 #if __clang_major__ >= 13
 #include "llvm/Passes/PassBuilder.h"
@@ -58,13 +59,75 @@
 #endif
 
 #include <cxxabi.h>
+#include <list>
+#include <set>
 #include <sstream>
+#include <string>
 
 #define PRINT_DBG_MSG 0
 
-namespace llvm
+// Helper to load an API list to preserve and expose it as a functor for internalization.
+class PreserveSymbolList
 {
-   struct CLANG_VERSION_SYMBOL(_plugin_topfname);
+ public:
+   PreserveSymbolList()
+   {
+   }
+
+   explicit PreserveSymbolList(const std::list<std::string>& symbolList)
+   {
+      ExternalNames.insert(symbolList.begin(), symbolList.end());
+   }
+
+   void addSymbols(const std::list<std::string>& symbolList)
+   {
+      ExternalNames.insert(symbolList.begin(), symbolList.end());
+   }
+
+   bool operator()(const llvm::GlobalValue& GV)
+   {
+      return ExternalNames.count(GV.getName());
+   }
+
+ private:
+   // Contains the set of symbols loaded to preserve
+   static llvm::StringSet<> ExternalNames;
+};
+llvm::StringSet<> PreserveSymbolList::ExternalNames;
+static PreserveSymbolList preservedSyms;
+
+#define DEF_BUILTIN(X, N, C, T, LT, B, F, NA, AT, IM, COND) N,
+static const std::set<std::string> builtinsNames = {
+#include "gcc/builtins.def"
+};
+#undef DEF_BUILTIN
+
+static bool is_builtin_fn(const std::string& declname)
+{
+   return builtinsNames.count(std::string("__builtin_") + declname) + builtinsNames.count(declname);
+}
+
+static std::string getDemangled(const std::string& declname)
+{
+   int status;
+   char* demangled_outbuffer = abi::__cxa_demangle(declname.c_str(), nullptr, nullptr, &status);
+   if(status == 0)
+   {
+      std::string res = declname;
+      if(std::string(demangled_outbuffer).find_last_of('(') != std::string::npos)
+      {
+         res = demangled_outbuffer;
+         auto parPos = res.find('(');
+         assert(parPos != std::string::npos);
+         res = res.substr(0, parPos);
+      }
+      free(demangled_outbuffer);
+      return res;
+   }
+
+   assert(demangled_outbuffer == nullptr);
+
+   return declname;
 }
 
 namespace llvm
@@ -83,87 +146,35 @@ namespace llvm
    static cl::opt<bool> add_noalias("add-noalias", cl::init(false), cl::desc("Force noalias to pointer parameters"),
                                     cl::value_desc("specify if pointer parameters are noalias"));
 
-   // Helper to load an API list to preserve and expose it as a functor for internalization.
-   class PreserveSymbolList
-   {
-    public:
-      PreserveSymbolList()
-      {
-      }
-      explicit PreserveSymbolList(const std::list<std::string>& symbolList)
-      {
-         ExternalNames.insert(symbolList.begin(), symbolList.end());
-      }
-
-      void addSymbols(const std::list<std::string>& symbolList)
-      {
-         ExternalNames.insert(symbolList.begin(), symbolList.end());
-      }
-      bool operator()(const llvm::GlobalValue& GV)
-      {
-         return ExternalNames.count(GV.getName());
-      }
-
-    private:
-      // Contains the set of symbols loaded to preserve
-      static llvm::StringSet<> ExternalNames;
-   };
-   llvm::StringSet<> PreserveSymbolList::ExternalNames;
-   static PreserveSymbolList preservedSyms;
-
    struct CLANG_VERSION_SYMBOL(_plugin_topfname)
        : public ModulePass
 #if __clang_major__ >= 13
          ,
-         PassInfoMixin<CLANG_VERSION_SYMBOL(_plugin_topfname)>
+         public PassInfoMixin<CLANG_VERSION_SYMBOL(_plugin_topfname)>
 #endif
    {
       static char ID;
-      static const std::set<std::string> builtinsNames;
 
-      CLANG_VERSION_SYMBOL(_plugin_topfname)() : ModulePass(ID)
+      CLANG_VERSION_SYMBOL(_plugin_topfname)
+      () : ModulePass(ID)
       {
       }
 
+#if __clang_major__ >= 13
       CLANG_VERSION_SYMBOL(_plugin_topfname)
       (const CLANG_VERSION_SYMBOL(_plugin_topfname) &) : CLANG_VERSION_SYMBOL(_plugin_topfname)()
       {
       }
+#endif
 
-      std::string getDemangled(const std::string& declname)
-      {
-         int status;
-         char* demangled_outbuffer = abi::__cxa_demangle(declname.c_str(), nullptr, nullptr, &status);
-         if(status == 0)
-         {
-            std::string res = declname;
-            if(std::string(demangled_outbuffer).find_last_of('(') != std::string::npos)
-            {
-               res = demangled_outbuffer;
-               auto parPos = res.find('(');
-               assert(parPos != std::string::npos);
-               res = res.substr(0, parPos);
-            }
-            free(demangled_outbuffer);
-            return res;
-         }
-
-         assert(demangled_outbuffer == nullptr);
-
-         return declname;
-      }
-      bool is_builtin_fn(const std::string& declname) const
-      {
-         return builtinsNames.find(std::string("__builtin_") + declname) != builtinsNames.end() ||
-                builtinsNames.find(declname) != builtinsNames.end();
-      }
-
-      bool runOnModule(Module& M) override
+      bool exec(Module& M)
       {
          bool changed = false;
          bool hasTopFun = false;
          if(TopFunctionName_TFP.empty())
+         {
             return false;
+         }
          std::list<std::string> symbolList;
          if(!ExternSymbolsList.empty())
          {
@@ -184,7 +195,9 @@ namespace llvm
                std::string funName = fun.getName().data();
                auto demangled = getDemangled(funName);
                if(is_builtin_fn(funName) || is_builtin_fn(demangled))
+               {
                   symbolList.push_back(funName);
+               }
                if(!fun.hasInternalLinkage() && (funName == TopFunctionName_TFP || demangled == TopFunctionName_TFP))
                {
                   symbolList.push_back(funName);
@@ -204,7 +217,9 @@ namespace llvm
             }
          }
          if(!hasTopFun)
+         {
             return changed;
+         }
 #if PRINT_DBG_MSG
          llvm::errs() << "Top function name: " << TopFunctionName_TFP << "\n";
 #endif
@@ -237,13 +252,10 @@ namespace llvm
          return changed;
       }
 
-#if __clang_major__ >= 13
-      llvm::PreservedAnalyses run(llvm::Module& M, llvm::ModuleAnalysisManager&)
+      bool runOnModule(Module& M) override
       {
-         const auto changed = runOnModule(M);
-         return (changed ? llvm::PreservedAnalyses::none() : llvm::PreservedAnalyses::all());
+         return exec(M);
       }
-#endif
 
       StringRef getPassName() const override
       {
@@ -253,15 +265,17 @@ namespace llvm
       void getAnalysisUsage(AnalysisUsage& AU) const override
       {
       }
+
+#if __clang_major__ >= 13
+      llvm::PreservedAnalyses run(llvm::Module& M, llvm::ModuleAnalysisManager&)
+      {
+         const auto changed = exec(M);
+         return (changed ? llvm::PreservedAnalyses::none() : llvm::PreservedAnalyses::all());
+      }
+#endif
    };
 
    char CLANG_VERSION_SYMBOL(_plugin_topfname)::ID = 0;
-
-#define DEF_BUILTIN(X, N, C, T, LT, B, F, NA, AT, IM, COND) N,
-   const std::set<std::string> CLANG_VERSION_SYMBOL(_plugin_topfname)::builtinsNames = {
-#include "gcc/builtins.def"
-   };
-#undef DEF_BUILTIN
 
 } // namespace llvm
 
@@ -271,18 +285,25 @@ static llvm::RegisterPass<llvm::CLANG_VERSION_SYMBOL(_plugin_topfname)>
           false /* Only looks at CFG */, false /* Analysis Pass */);
 #endif
 
-#if ADD_RSP
-
 #if __clang_major__ >= 13
-
 llvm::PassPluginLibraryInfo CLANG_PLUGIN_INFO(_plugin_topfname)()
 {
    return {LLVM_PLUGIN_API_VERSION, CLANG_VERSION_STRING(_plugin_topfname), "v0.12", [](llvm::PassBuilder& PB) {
+              const auto load = [](llvm::ModulePassManager& MPM) {
+                 MPM.addPass(llvm::CLANG_VERSION_SYMBOL(_plugin_topfname)());
+                 MPM.addPass(llvm::InternalizePass(preservedSyms));
+                 return true;
+              };
+              PB.registerPipelineParsingCallback([&](llvm::StringRef Name, llvm::ModulePassManager& MPM,
+                                                     llvm::ArrayRef<llvm::PassBuilder::PipelineElement>) {
+                 if(Name == CLANG_VERSION_STRING(_plugin_topfname))
+                 {
+                    return load(MPM);
+                 }
+                 return false;
+              });
               PB.registerPipelineEarlySimplificationEPCallback(
-                  [](llvm::ModulePassManager& MPM, llvm::PassBuilder::OptimizationLevel) {
-                     MPM.addPass(llvm::CLANG_VERSION_SYMBOL(_plugin_topfname)());
-                     return true;
-                  });
+                  [&](llvm::ModulePassManager& MPM, llvm::PassBuilder::OptimizationLevel) { return load(MPM); });
            }};
 }
 
@@ -291,18 +312,19 @@ extern "C" ::llvm::PassPluginLibraryInfo LLVM_ATTRIBUTE_WEAK llvmGetPassPluginIn
 {
    return CLANG_PLUGIN_INFO(_plugin_topfname)();
 }
-#endif
-
+#else
+#if ADD_RSP
 // This function is of type PassManagerBuilder::ExtensionFn
 static void loadPass(const llvm::PassManagerBuilder&, llvm::legacy::PassManagerBase& PM)
 {
    PM.add(new llvm::CLANG_VERSION_SYMBOL(_plugin_topfname)());
-   PM.add(llvm::createInternalizePass(llvm::preservedSyms));
+   PM.add(llvm::createInternalizePass(preservedSyms));
 }
 
 // These constructors add our pass to a list of global extensions.
 static llvm::RegisterStandardPasses
     CLANG_VERSION_SYMBOL(_plugin_topfname_Ox)(llvm::PassManagerBuilder::EP_ModuleOptimizerEarly, loadPass);
+#endif
 #endif
 
 // using namespace llvm;

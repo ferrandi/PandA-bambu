@@ -107,25 +107,17 @@ namespace llvm
                                cl::value_desc("filename path"));
 
    struct CLANG_VERSION_SYMBOL(_plugin_dumpGimpleSSA)
-       :
-#if __clang_major__ < 13
-         public ModulePass
-#else
+       : public ModulePass
+#if __clang_major__ >= 13
+         ,
          public PassInfoMixin<CLANG_VERSION_SYMBOL(_plugin_dumpGimpleSSA)>
 #endif
    {
-#if __clang_major__ < 13
       static char ID;
-#endif
       bool earlyAnalysis;
 
       CLANG_VERSION_SYMBOL(_plugin_dumpGimpleSSA)
-      (bool _earlyAnalysis = false)
-          :
-#if __clang_major__ < 13
-            ModulePass(ID),
-#endif
-            earlyAnalysis(_earlyAnalysis)
+      (bool _earlyAnalysis = false) : ModulePass(ID), earlyAnalysis(_earlyAnalysis)
       {
          initializeLoopInfoWrapperPassPass(*PassRegistry::getPassRegistry());            //
          initializeLazyValueInfoWrapperPassPass(*PassRegistry::getPassRegistry());       //
@@ -167,7 +159,6 @@ namespace llvm
                 llvm::function_ref<llvm::LazyValueInfo&(llvm::Function&)> GetLVI,
                 llvm::function_ref<llvm::AssumptionCache&(llvm::Function&)> GetAC)
       {
-         llvm::errs() << "Running module pass\n";
          if(outdir_name.empty())
          {
             llvm::report_fatal_error("-panda-outdir parameter not specified");
@@ -223,9 +214,9 @@ namespace llvm
          return res;
       }
 
-#if __clang_major__ < 13
       bool runOnModule(Module& M) override
       {
+#if __clang_major__ < 13
 #if __clang_major__ >= 10
          auto GetTLI = [&](llvm::Function& F) -> llvm::TargetLibraryInfo& {
             return getAnalysis<llvm::TargetLibraryInfoWrapperPass>().getTLI(F);
@@ -253,8 +244,11 @@ namespace llvm
          auto GetAC = [&](llvm::Function& F) -> llvm::AssumptionCache& {
             return getAnalysis<llvm::AssumptionCacheTracker>().getAssumptionCache(F);
          };
-
          return exec(M, GetTLI, GetTTI, GetDomTree, GetLI, GetMSSA, GetLVI, GetAC);
+#else
+         assert(false && "Call to runOnModule not expected");
+         return false;
+#endif
       }
 
       StringRef getPassName() const override
@@ -273,7 +267,8 @@ namespace llvm
          AU.addRequired<AssumptionCacheTracker>();
          AU.addRequired<DominatorTreeWrapperPass>();
       }
-#else
+
+#if __clang_major__ >= 13
       llvm::PreservedAnalyses run(llvm::Module& M, llvm::ModuleAnalysisManager& MAM)
       {
          MAM.invalidate(M, llvm::PreservedAnalyses::none());
@@ -304,14 +299,12 @@ namespace llvm
 #endif
    };
 
-#if __clang_major__ < 13
    char CLANG_VERSION_SYMBOL(_plugin_dumpGimpleSSA)::ID = 0;
-#endif
 
 } // namespace llvm
 
 // Currently there is no difference between c++ or c serialization
-#if !defined(_WIN32) && __clang_major__ < 13
+#if !defined(_WIN32)
 #if CPP_LANGUAGE
 // static llvm::RegisterPass<llvm::CLANG_VERSION_SYMBOL(_plugin_dumpGimpleSSA)<true>>
 // XPassEarly(CLANG_VERSION_STRING(_plugin_dumpGimpleSSACppEarly), "Custom Value Range Based optimization step: LLVM
@@ -329,29 +322,35 @@ static llvm::RegisterPass<llvm::CLANG_VERSION_SYMBOL(_plugin_dumpGimpleSSA)>
 #endif
 #endif
 
-#if ADD_RSP
-
 #if __clang_major__ >= 13
-
 llvm::PassPluginLibraryInfo CLANG_PLUGIN_INFO(_plugin_dumpGimpleSSA)()
 {
    return {LLVM_PLUGIN_API_VERSION, CLANG_VERSION_STRING(_plugin_dumpGimpleSSA), "v0.12", [](llvm::PassBuilder& PB) {
+              const auto load = [](llvm::ModulePassManager& MPM) {
+                 llvm::FunctionPassManager FPM1;
+                 FPM1.addPass(llvm::LowerAtomicPass());
+                 FPM1.addPass(llvm::PromotePass());
+                 MPM.addPass(llvm::createModuleToFunctionPassAdaptor(std::move(FPM1)));
+                 MPM.addPass(llvm::GlobalOptPass());
+                 MPM.addPass(llvm::createModuleToPostOrderCGSCCPassAdaptor(llvm::ArgumentPromotionPass(256)));
+                 llvm::FunctionPassManager FPM2;
+                 FPM2.addPass(llvm::InstCombinePass());
+                 FPM2.addPass(llvm::BreakCriticalEdgesPass());
+                 FPM2.addPass(llvm::UnifyFunctionExitNodesPass());
+                 MPM.addPass(llvm::createModuleToFunctionPassAdaptor(std::move(FPM2)));
+                 MPM.addPass(llvm::CLANG_VERSION_SYMBOL(_plugin_dumpGimpleSSA)());
+                 return true;
+              };
+              PB.registerPipelineParsingCallback([&](llvm::StringRef Name, llvm::ModulePassManager& MPM,
+                                                     llvm::ArrayRef<llvm::PassBuilder::PipelineElement>) {
+                 if(Name == CLANG_VERSION_STRING(_plugin_dumpGimpleSSA))
+                 {
+                    return load(MPM);
+                 }
+                 return false;
+              });
               PB.registerOptimizerLastEPCallback(
-                  [](llvm::ModulePassManager& MPM, llvm::PassBuilder::OptimizationLevel) {
-                     llvm::FunctionPassManager FPM1;
-                     FPM1.addPass(llvm::LowerAtomicPass());
-                     FPM1.addPass(llvm::PromotePass());
-                     MPM.addPass(llvm::createModuleToFunctionPassAdaptor(std::move(FPM1)));
-                     MPM.addPass(llvm::GlobalOptPass());
-                     MPM.addPass(llvm::createModuleToPostOrderCGSCCPassAdaptor(llvm::ArgumentPromotionPass(256)));
-                     llvm::FunctionPassManager FPM2;
-                     FPM2.addPass(llvm::InstCombinePass());
-                     FPM2.addPass(llvm::BreakCriticalEdgesPass());
-                     FPM2.addPass(llvm::UnifyFunctionExitNodesPass());
-                     MPM.addPass(llvm::createModuleToFunctionPassAdaptor(std::move(FPM2)));
-                     MPM.addPass(llvm::CLANG_VERSION_SYMBOL(_plugin_dumpGimpleSSA)());
-                     return true;
-                  });
+                  [&](llvm::ModulePassManager& MPM, llvm::PassBuilder::OptimizationLevel) { return load(MPM); });
            }};
 }
 
@@ -361,6 +360,7 @@ extern "C" ::llvm::PassPluginLibraryInfo LLVM_ATTRIBUTE_WEAK llvmGetPassPluginIn
    return CLANG_PLUGIN_INFO(_plugin_dumpGimpleSSA)();
 }
 #else
+#if ADD_RSP
 // This function is of type PassManagerBuilder::ExtensionFn
 static void loadPass(const llvm::PassManagerBuilder&, llvm::legacy::PassManagerBase& PM)
 {

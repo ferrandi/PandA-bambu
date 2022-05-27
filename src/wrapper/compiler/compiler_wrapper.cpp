@@ -1100,9 +1100,8 @@ void CompilerWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::st
          {
             command = compiler.llvm_opt;
 #ifndef _WIN32
-            auto renamed_plugin = compiler.topfname_plugin_obj;
-            boost::replace_all(renamed_plugin, ".so", "_opt.so");
-            command += " -load=" + renamed_plugin;
+            command += load_plugin_opt(compiler.topfname_plugin_obj,
+                                       Param->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler));
 #endif
             command += " -internalize-outputdir=" + Param->getOption<std::string>(OPT_output_temporary_directory);
             command += " -panda-TFN=" + fname;
@@ -1304,9 +1303,8 @@ void CompilerWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::st
       {
          command = compiler.llvm_opt;
 #ifndef _WIN32
-         auto renamed_plugin = compiler.ssa_plugin_obj;
-         boost::replace_all(renamed_plugin, ".so", "_opt.so");
-         command += " -load=" + renamed_plugin;
+         command += load_plugin_opt(compiler.ssa_plugin_obj,
+                                    Param->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler));
 #endif
          command += " -panda-outputdir=" + Param->getOption<std::string>(OPT_output_temporary_directory) +
                     " -panda-infile=" + real_file_names;
@@ -1315,8 +1313,17 @@ void CompilerWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::st
             command += " -panda-topfname=" + fname;
          }
          command += " -vectorize-loops=false -vectorize-slp=false -domfrontier -domtree -memdep -memoryssa "
-                    "-lazy-value-info -aa -assumption-cache-tracker -targetlibinfo -loops -simplifycfg -mem2reg "
-                    "-globalopt -break-crit-edges -dse -adce -loop-load-elim";
+                    "-lazy-value-info -aa ";
+#if HAVE_I386_CLANG13_COMPILER
+         command += Param->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) !=
+                            CompilerWrapper_CompilerTarget::CT_I386_CLANG13 ?
+                        "-assumption-cache-tracker " :
+                        "";
+#else
+         command += "-assumption-cache-tracker ";
+#endif
+         command +=
+             "-targetlibinfo -loops -simplifycfg -mem2reg  -globalopt -break-crit-edges -dse -adce -loop-load-elim";
          command += " " + temporary_file_o_bc;
          temporary_file_o_bc =
              boost::filesystem::path(Param->getOption<std::string>(OPT_output_temporary_directory) + "/" +
@@ -3835,16 +3842,14 @@ std::string CompilerWrapper::clang_recipes(
 {
    std::string recipe = "";
 #ifndef _WIN32
-   auto renamed_pluginEMO = expandMemOps_plugin_obj;
-   boost::replace_all(renamed_pluginEMO, ".so", "_opt.so");
-   recipe += " -load=" + renamed_pluginEMO;
+   recipe +=
+       load_plugin_opt(expandMemOps_plugin_obj, Param->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler));
 #endif
 #ifndef _WIN32
    if(!GepiCanon_plugin_obj.empty())
    {
-      auto renamed_pluginGC = GepiCanon_plugin_obj;
-      boost::replace_all(renamed_pluginGC, ".so", "_opt.so");
-      recipe += " -load=" + renamed_pluginGC;
+      recipe +=
+          load_plugin_opt(GepiCanon_plugin_obj, Param->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler));
    }
 #endif
 
@@ -3855,9 +3860,8 @@ std::string CompilerWrapper::clang_recipes(
    )
    {
 #ifndef _WIN32
-      auto renamed_pluginCSROA = CSROA_plugin_obj;
-      boost::replace_all(renamed_pluginCSROA, ".so", "_opt.so");
-      recipe += " -load=" + renamed_pluginCSROA;
+      recipe +=
+          load_plugin_opt(CSROA_plugin_obj, Param->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler));
 #endif
       recipe += " -panda-KN=" + fname;
       if(Param->IsParameter("max-CSROA"))
@@ -5044,7 +5048,11 @@ std::string CompilerWrapper::getCompilerVersion(int pc)
    return "";
 }
 
-std::string CompilerWrapper::load_plugin(const std::string& plugin_obj, CompilerWrapper_CompilerTarget target)
+std::string CompilerWrapper::load_plugin(const std::string& plugin_obj, CompilerWrapper_CompilerTarget
+#if HAVE_I386_CLANG13_COMPILER
+                                                                            target
+#endif
+)
 {
 #if HAVE_I386_CLANG13_COMPILER
    if(target == CompilerWrapper_CompilerTarget::CT_I386_CLANG13)
@@ -5053,4 +5061,21 @@ std::string CompilerWrapper::load_plugin(const std::string& plugin_obj, Compiler
    }
 #endif
    return " -fplugin=" + plugin_obj;
+}
+
+std::string CompilerWrapper::load_plugin_opt(std::string plugin_obj, CompilerWrapper_CompilerTarget
+#if HAVE_I386_CLANG13_COMPILER
+                                                                         target
+#endif
+)
+{
+   boost::replace_all(plugin_obj, ".so", "_opt.so");
+   auto flags = " -load=" + plugin_obj;
+#if HAVE_I386_CLANG13_COMPILER
+   if(target == CompilerWrapper_CompilerTarget::CT_I386_CLANG13)
+   {
+      flags += " -load-pass-plugin=" + plugin_obj;
+   }
+#endif
+   return flags;
 }
