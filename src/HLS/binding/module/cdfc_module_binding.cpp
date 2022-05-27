@@ -153,8 +153,7 @@ struct spec_hierarchical_clustering : public hierarchical_clustering<>
 #endif
 #include "string_manipulation.hpp" // for GET_CLASS
 
-#define TOOSMALL_NORMALIZED_RESOURCE_AREA 0.9
-#define DEFAULT_SMALL_NORMALIZED_RESOURCE_AREA 1.0
+#define DEFAULT_SMALL_NORMALIZED_RESOURCE_AREA 2.0
 #define MODULE_BINDING_MUX_MARGIN 1.0
 #define DSP_MARGIN 1.0
 #define CLOCK_MARGIN 0.97
@@ -973,7 +972,7 @@ static inline bool compute_condition1(const std::string& lib_name,
 static inline bool compute_condition2(bool cond1, unsigned int fu_prec, double resource_area,
                                       const double small_normalized_resource_area)
 {
-   bool cond2 = cond1 && (fu_prec <= 8 || resource_area <= small_normalized_resource_area);
+   bool cond2 = cond1 && (fu_prec <= 8 || resource_area < small_normalized_resource_area);
 
    return cond2;
 }
@@ -1101,8 +1100,7 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
    long falseloop_cputime = 0;
    long weight_cputime = 0;
    long slack_cputime = 0;
-   CustomMap<unsigned int, long> clique_iteration_cputime;
-   bool clique_covering_executed = false;
+   long clique_iteration_cputime = 0;
    unsigned int n_performance_conflicts = 0;
 
    /// in case no vertices was left we have done
@@ -1249,6 +1247,8 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
       if(output_level >= OUTPUT_LEVEL_MINIMUM)
       {
          STOP_TIME(slack_cputime);
+         INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
+                        "---Slack computed in " + print_cpu_time(slack_cputime) + " seconds");
       }
 
       boost::graph_traits<graph>::vertices_size_type n_vert = boost::num_vertices(*fdfg);
@@ -1661,6 +1661,8 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
       if(output_level >= OUTPUT_LEVEL_MINIMUM)
       {
          STOP_TIME(weight_cputime);
+         INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
+                        "---Weight computation completed in " + print_cpu_time(weight_cputime) + " seconds");
       }
 
       const cdfc_graphRef CG = cdfc_graphRef(new cdfc_graph(
@@ -1848,6 +1850,8 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
       if(output_level >= OUTPUT_LEVEL_MINIMUM)
       {
          STOP_TIME(falseloop_cputime);
+         INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
+                        "---False-loop computation completed in " + print_cpu_time(falseloop_cputime) + " seconds");
       }
 
       if(parameters->getOption<bool>(OPT_print_dot))
@@ -1969,10 +1973,9 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
             regb->Exec();
          }
 
-         clique_iteration_cputime[iteration] = 0;
          if(output_level >= OUTPUT_LEVEL_VERBOSE)
          {
-            START_TIME(clique_iteration_cputime[iteration]);
+            START_TIME(clique_iteration_cputime);
          }
          for(const auto& partition : partitions)
          {
@@ -2478,7 +2481,10 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
          }
          if(output_level >= OUTPUT_LEVEL_VERBOSE)
          {
-            STOP_TIME(clique_iteration_cputime[iteration]);
+            STOP_TIME(clique_iteration_cputime);
+            INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level,
+                           "---Iteration " + STR(iteration) + " completed in " +
+                               print_cpu_time(clique_iteration_cputime) + " seconds");
          }
       }
       std::swap(fu_best, fu);
@@ -2486,10 +2492,11 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
       std::swap(total_resource_area_best, total_resource_area);
       std::swap(total_area_muxes_best, total_area_muxes);
       std::swap(total_DSPs_best, total_DSPs);
-      clique_covering_executed = true;
       if(output_level >= OUTPUT_LEVEL_MINIMUM)
       {
          STOP_TIME(clique_cputime);
+         INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
+                        "---Clique covering computation completed in " + print_cpu_time(clique_cputime) + " seconds");
       }
    }
 
@@ -2503,40 +2510,13 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
                   "---Number of modules instantiated: " + STR(total_modules_allocated));
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
-                  "---Number of possible conflicts for possible false paths introduced by resource sharing: " +
-                      STR(n_performance_conflicts));
+                  "---Number of performance conflicts: " + STR(n_performance_conflicts));
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
                   "---Estimated resources area (no Muxes and address logic): " + STR(total_resource_area));
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Estimated area of MUX21: " + STR(total_area_muxes));
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
                   "---Total estimated area: " + STR(total_area_muxes + total_resource_area));
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Estimated number of DSPs: " + STR(total_DSPs));
-   INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
-                  "---Slack computed in " + print_cpu_time(slack_cputime) + " seconds");
-   if(clique_covering_executed)
-   {
-      INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
-                     "---False-loop computation completed in " + print_cpu_time(falseloop_cputime) + " seconds");
-      INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
-                     "---Weight computation completed in " + print_cpu_time(weight_cputime) + " seconds");
-      if(output_level == OUTPUT_LEVEL_MINIMUM)
-      {
-         INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
-                        "---Clique covering computation completed in " + print_cpu_time(clique_cputime) + " seconds");
-      }
-      else
-      {
-         INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "---Clique covering computation:");
-         INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "-->");
-         for(const auto& iteration : clique_iteration_cputime)
-         {
-            INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level,
-                           "---Iteration " + STR(iteration.first) + " completed in " +
-                               print_cpu_time(iteration.second) + " seconds");
-         }
-         INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "<--");
-      }
-   }
    if(output_level >= OUTPUT_LEVEL_MINIMUM and output_level <= OUTPUT_LEVEL_PEDANTIC)
    {
       STOP_TIME(step_time);

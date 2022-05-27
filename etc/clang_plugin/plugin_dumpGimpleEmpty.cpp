@@ -39,14 +39,17 @@
  */
 #include "plugin_includes.hpp"
 
-#include "llvm/IR/LegacyPassManager.h"
-#include "llvm/IR/Module.h"
 #include "llvm/Analysis/AssumptionCache.h"
 #include "llvm/Analysis/LazyValueInfo.h"
 #include "llvm/Analysis/LoopInfo.h"
 #include "llvm/Analysis/MemoryDependenceAnalysis.h"
 #include "llvm/Analysis/TargetLibraryInfo.h"
 #include "llvm/Analysis/TargetTransformInfo.h"
+#include "llvm/IR/LegacyPassManager.h"
+#if __clang_major__ > 5
+#include "llvm/Analysis/OptimizationRemarkEmitter.h"
+#endif
+#include "llvm/IR/Module.h"
 #include "llvm/IR/PassManager.h"
 #include "llvm/InitializePasses.h"
 #include "llvm/Pass.h"
@@ -62,6 +65,7 @@
 #if __clang_major__ >= 10
 #include "llvm/Support/CommandLine.h"
 #endif
+
 namespace llvm
 {
    cl::opt<std::string> outdir_nameGE("pandaGE-outputdir",
@@ -81,6 +85,9 @@ namespace llvm
          initializeTargetLibraryInfoWrapperPassPass(*PassRegistry::getPassRegistry());   //
          initializeAssumptionCacheTrackerPass(*PassRegistry::getPassRegistry());         //
          initializeDominatorTreeWrapperPassPass(*PassRegistry::getPassRegistry());       //
+#if __clang_major__ > 5
+         initializeOptimizationRemarkEmitterWrapperPassPass(*PassRegistry::getPassRegistry());
+#endif
       }
       bool runOnModule(Module& M) override
       {
@@ -90,7 +97,7 @@ namespace llvm
             llvm::report_fatal_error("-pandaGE-infile parameter not specified");
          DumpGimpleRaw gimpleRawWriter(outdir_nameGE, InFileGE, true, nullptr, false);
          const std::string empty;
-         auto res = gimpleRawWriter.runOnModule(M, this, empty);
+         auto res = gimpleRawWriter.runOnModule(M, this, empty, empty);
          return res;
       }
       StringRef getPassName() const override
@@ -108,6 +115,9 @@ namespace llvm
          AU.addRequired<TargetLibraryInfoWrapperPass>();   //
          AU.addRequired<AssumptionCacheTracker>();         //
          AU.addRequired<DominatorTreeWrapperPass>();       //
+#if __clang_major__ > 5
+         AU.addRequired<OptimizationRemarkEmitterWrapperPass>();
+#endif
       }
    };
 

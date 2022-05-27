@@ -767,7 +767,8 @@ namespace llvm
       DumpGimpleRaw(const std::string& _outdir_name, const std::string& _InFile, bool onlyGlobals,
                     std::map<std::string, std::vector<std::string>>* fun2params, bool early);
 
-      bool runOnModule(llvm::Module& M, llvm::ModulePass* modulePass, const std::string& TopFunctionName);
+      bool runOnModule(llvm::Module& M, llvm::ModulePass* modulePass, const std::string& TopFunctionName,
+                       const std::string& costTable);
    };
 } // namespace llvm
 

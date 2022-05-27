@@ -127,6 +127,33 @@
 #include "dbgPrintHelper.hpp"
 #include "string_manipulation.hpp" // for GET_CLASS
 
+class OpVertexSchedSorter : std::binary_function<vertex, vertex, bool>
+{
+ private:
+   /// reference to the scheduling
+   const ScheduleConstRef sch;
+
+ public:
+   /**
+    * Constructor
+    * @param op_graph is the operation graph to which vertices belong
+    */
+   explicit OpVertexSchedSorter(const ScheduleConstRef _sch) : sch(_sch)
+   {
+   }
+
+   /**
+    * Compare scheduling of two vertices
+    * @param x is the first vertex
+    * @param y is the second vertex
+    * @return true if x has been scheduled before than y
+    */
+   bool operator()(const vertex x, const vertex y) const
+   {
+      return sch->get_cstep(x) < sch->get_cstep(y);
+   }
+};
+
 BB_based_stg::BB_based_stg(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, unsigned _funId,
                            const DesignFlowManagerConstRef _design_flow_manager)
     : STG_creator(_parameters, _HLSMgr, _funId, _design_flow_manager, HLSFlowStep_Type::BB_STG_CREATOR)
@@ -140,26 +167,6 @@ void BB_based_stg::Initialize()
 {
    HLSFunctionStep::Initialize();
    HLS->STG = StateTransitionGraphManagerRef(new StateTransitionGraphManager(HLSMgr, HLS, parameters));
-}
-
-static void add_in_sched_order(std::list<vertex>& statement_list, vertex stmt, const ScheduleConstRef sch,
-                               const OpGraphConstRef ASSERT_PARAMETER(dfg))
-{
-   THROW_ASSERT(sch->is_scheduled(stmt), "First vertex is not scheduled");
-   auto it_end = statement_list.end();
-   std::list<vertex>::iterator it;
-   THROW_ASSERT(std::find(statement_list.begin(), statement_list.end(), stmt) == statement_list.end(),
-                "Statement already ordered: " + GET_NAME(dfg, stmt));
-
-   for(it = statement_list.begin(); it != it_end; ++it)
-   {
-      THROW_ASSERT(sch->is_scheduled(*it), "Second vertex is not scheduled");
-      if(sch->get_cstep(*it) > sch->get_cstep(stmt))
-      {
-         break;
-      }
-   }
-   statement_list.insert(it, stmt);
 }
 
 const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
@@ -326,11 +333,11 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                      "-->Building STG of BB" + STR(fbb->CGetBBNodeInfo(*vit)->block->number));
       const BBNodeInfoConstRef operations = fbb->CGetBBNodeInfo(*vit);
-      std::list<vertex> ordered_operations;
-      auto ops_it_end = operations->statements_list.end();
-      for(auto ops_it = operations->statements_list.begin(); ops_it_end != ops_it; ++ops_it)
+      OpVertexSchedSorter schSorter(sch);
+      std::multiset<vertex, OpVertexSchedSorter> ordered_operations(schSorter);
+      for(auto ops : operations->statements_list)
       {
-         add_in_sched_order(ordered_operations, *ops_it, sch, dfgRef);
+         ordered_operations.insert(ops);
       }
       if(boost::in_degree(*vit, *fbb) == 1)
       {
@@ -340,10 +347,9 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
          vertex bb_src = boost::source(*ie, *fbb);
          if(bb_src == bb_entry)
          {
-            auto stmt_it_end = ordered_operations.end();
-            for(auto stmt_it = ordered_operations.begin(); stmt_it_end != stmt_it; ++stmt_it)
+            for(auto stmt : ordered_operations)
             {
-               if(has_registered_inputs || (GET_TYPE(dfgRef, *stmt_it) & TYPE_PHI))
+               if(has_registered_inputs || (GET_TYPE(dfgRef, stmt) & TYPE_PHI))
                {
                   /// add an empty state before the current basic block
                   std::list<vertex> exec_ops, start_ops, end_ops;
@@ -374,10 +380,8 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
       ControlStep max_cstep = ControlStep(0u);
       ControlStep min_cstep = ControlStep(std::numeric_limits<unsigned int>::max());
 
-      auto stmt_it_end = ordered_operations.end();
-      for(auto stmt_it = ordered_operations.begin(); stmt_it_end != stmt_it; ++stmt_it)
+      for(auto op : ordered_operations)
       {
-         vertex op = *stmt_it;
          if(GET_TYPE(dfgRef, op) & (TYPE_GOTO))
          {
             continue;
