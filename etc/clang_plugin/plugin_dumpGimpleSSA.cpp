@@ -47,6 +47,9 @@
 #include "llvm/Analysis/LazyValueInfo.h"
 #include "llvm/Analysis/LoopInfo.h"
 #include "llvm/Analysis/MemoryDependenceAnalysis.h"
+#if __clang_major__ > 5
+#include "llvm/Analysis/OptimizationRemarkEmitter.h"
+#endif
 #include "llvm/Analysis/TargetLibraryInfo.h"
 #include "llvm/Analysis/TargetTransformInfo.h"
 #include "llvm/Analysis/TypeBasedAliasAnalysis.h"
@@ -105,6 +108,8 @@ namespace llvm
                                     cl::value_desc("directory path"));
    cl::opt<std::string> InFile("panda-infile", cl::desc("Specify the name of the compiled source file"),
                                cl::value_desc("filename path"));
+   cl::opt<std::string> CostTable("panda-cost-table", cl::desc("Specify the cost per operation"),
+                                  cl::value_desc("cost table"));
 
    struct CLANG_VERSION_SYMBOL(_plugin_dumpGimpleSSA)
        :
@@ -134,6 +139,9 @@ namespace llvm
          initializeTargetLibraryInfoWrapperPassPass(*PassRegistry::getPassRegistry());   //
          initializeAssumptionCacheTrackerPass(*PassRegistry::getPassRegistry());         //
          initializeDominatorTreeWrapperPassPass(*PassRegistry::getPassRegistry());       //
+#if __clang_major__ > 5
+         initializeOptimizationRemarkEmitterWrapperPassPass(*PassRegistry::getPassRegistry());
+#endif
       }
 
 #if __clang_major__ >= 13
@@ -219,7 +227,7 @@ namespace llvm
             llvm::errs() << "Top function name: " << TopFunctionName << "\n";
 #endif
 
-         auto res = gimpleRawWriter.exec(M, TopFunctionName, GetTLI, GetTTI, GetDomTree, GetLI, GetMSSA, GetLVI, GetAC);
+         auto res = gimpleRawWriter.exec(M, TopFunctionName, GetTLI, GetTTI, GetDomTree, GetLI, GetMSSA, GetLVI, GetAC, CostTable);
          return res;
       }
 
@@ -272,6 +280,9 @@ namespace llvm
          AU.addRequired<TargetLibraryInfoWrapperPass>();
          AU.addRequired<AssumptionCacheTracker>();
          AU.addRequired<DominatorTreeWrapperPass>();
+#if __clang_major__ > 5
+         AU.addRequired<OptimizationRemarkEmitterWrapperPass>();
+#endif
       }
 #else
       llvm::PreservedAnalyses run(llvm::Module& M, llvm::ModuleAnalysisManager& MAM)

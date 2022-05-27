@@ -452,6 +452,7 @@ etc/clang_plugin/GepiCanonicalizationPass.hpp
 etc/clang_plugin/HardekopfLin_AA.cpp
 etc/clang_plugin/HardekopfLin_AA.hpp
 etc/clang_plugin/PtrIteratorSimplifyPass.hpp
+etc/clang_plugin/TreeHeightReduction.hpp
 etc/clang_plugin/bambuS2S.cpp
 etc/clang_plugin/dumpGimple.cpp
 etc/clang_plugin/llvm/RangeAnalysis.cpp
@@ -1889,6 +1890,7 @@ src/constants/compiler_xml.hpp
 src/constants/constants.hpp
 src/constants/constraints_xml.hpp
 src/constants/copyrights_strings.hpp
+src/constants/cost_latency_table.hpp
 src/constants/data_xml.hpp
 src/constants/experimental_setup_xml.hpp
 src/constants/file_IO_constants.hpp

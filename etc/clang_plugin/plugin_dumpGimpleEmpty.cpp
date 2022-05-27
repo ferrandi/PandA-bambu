@@ -46,6 +46,9 @@
 #include "llvm/Analysis/TargetLibraryInfo.h"
 #include "llvm/Analysis/TargetTransformInfo.h"
 #include "llvm/IR/LegacyPassManager.h"
+#if __clang_major__ > 5
+#include "llvm/Analysis/OptimizationRemarkEmitter.h"
+#endif
 #include "llvm/IR/Module.h"
 #include "llvm/IR/PassManager.h"
 #include "llvm/InitializePasses.h"
@@ -99,6 +102,9 @@ namespace llvm
          initializeTargetLibraryInfoWrapperPassPass(*PassRegistry::getPassRegistry());   //
          initializeAssumptionCacheTrackerPass(*PassRegistry::getPassRegistry());         //
          initializeDominatorTreeWrapperPassPass(*PassRegistry::getPassRegistry());       //
+#if __clang_major__ > 5
+         initializeOptimizationRemarkEmitterWrapperPassPass(*PassRegistry::getPassRegistry());
+#endif
       }
 
 #if __clang_major__ >= 13
@@ -122,7 +128,7 @@ namespace llvm
             llvm::report_fatal_error("-pandaGE-infile parameter not specified");
          DumpGimpleRaw gimpleRawWriter(outdir_nameGE, InFileGE, true, nullptr, false);
          const std::string empty;
-         auto res = gimpleRawWriter.exec(M, empty, GetTLI, GetTTI, GetDomTree, GetLI, GetMSSA, GetLVI, GetAC);
+         auto res = gimpleRawWriter.exec(M, empty, empty, GetTLI, GetTTI, GetDomTree, GetLI, GetMSSA, GetLVI, GetAC);
          return res;
       }
 
@@ -176,6 +182,10 @@ namespace llvm
          AU.addRequired<TargetLibraryInfoWrapperPass>();
          AU.addRequired<AssumptionCacheTracker>();
          AU.addRequired<DominatorTreeWrapperPass>();
+#if __clang_major__ > 5
+         AU.addRequired<OptimizationRemarkEmitterWrapperPass>();
+#endif
+
       }
 #else
       llvm::PreservedAnalyses run(llvm::Module& M, llvm::ModuleAnalysisManager& MAM)

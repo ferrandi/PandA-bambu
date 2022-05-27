@@ -824,7 +824,7 @@ namespace llvm
                 llvm::function_ref<llvm::LoopInfo&(llvm::Function&)> GetLI,
                 llvm::function_ref<MemorySSAAnalysisResult&(llvm::Function&)> GetMSSA,
                 llvm::function_ref<llvm::LazyValueInfo&(llvm::Function&)> GetLVI,
-                llvm::function_ref<llvm::AssumptionCache&(llvm::Function&)> GetAC);
+                llvm::function_ref<llvm::AssumptionCache&(llvm::Function&)> GetAC, const std::string& costTable);
    };
 } // namespace llvm
 

@@ -137,8 +137,8 @@ class application_manager
     * @param allow_recursive_functions specifies if recursive functions are allowed
     * @param _Param is the reference to the class containing all the parameters
     */
-   application_manager(const FunctionExpanderConstRef function_expander,
-                       const bool allow_recursive_functions, const ParameterConstRef _Param);
+   application_manager(const FunctionExpanderConstRef function_expander, const bool allow_recursive_functions,
+                       const ParameterConstRef _Param);
 
    /**
     * Destructor

@@ -312,7 +312,7 @@ class CompilerWrapper
     * @param cm is the mode in which we compile
     */
    void CompileFile(const std::string& original_file_name, std::string& real_file_name,
-                    const std::string& parameters_line, bool multiple_files, CompilerWrapper_CompilerMode cm);
+                    const std::string& parameters_line, bool multiple_files, CompilerWrapper_CompilerMode cm, const std::string &costTable);
 
    /**
     * Return the compiler for a given target
@@ -410,7 +410,8 @@ class CompilerWrapper
     * @param source_files are the source files to be compiled; key is the original source code file, value is the
     * transformed source code file
     */
-   void FillTreeManager(const tree_managerRef TM, std::map<std::string, std::string>& source_files);
+   void FillTreeManager(const tree_managerRef TM, std::map<std::string, std::string>& source_files,
+                        const std::string& costTable);
 
    /**
     * Return the list of the frontend compiler system includes
