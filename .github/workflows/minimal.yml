@@ -51,7 +51,7 @@ jobs:
       - name: Launch ACMath tests for ${{matrix.compiler}}
         working-directory: ./etc/libbambu/ac_math
         shell: bash
-        run: ./ac_math_test_${{matrix.compiler}}.sh -j${env.host_jobs}
+        run: ./ac_math_test_${{matrix.compiler}}.sh
 
   specific-test:
     needs: [build, ACMath-tests]
