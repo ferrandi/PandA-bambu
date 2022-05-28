@@ -113,6 +113,36 @@
         <operation operation_name="STORE" cycles="2" initiation_time="1" stage_period="9.0800000000000001"/>
       </cell>
       <cell>
+        <name>ARRAY_1D_STD_BRAM_N1</name>
+        <attribute name="area" value_type="float64">859</attribute>
+        <attribute name="REGISTERS" value_type="float64">418</attribute>
+        <attribute name="SLICE_LUTS" value_type="float64">492</attribute>
+        <attribute name="BRAM" value_type="float64">4</attribute>
+        <characterization_timestamp>2019-10-10T19:27:39</characterization_timestamp>
+        <operation operation_name="LOAD" cycles="2" initiation_time="1" stage_period="12.295999999999999"/>
+        <operation operation_name="STORE" execution_time="12.295999999999999"/>
+      </cell>
+      <cell>
+        <name>ARRAY_1D_STD_BRAM_N1_3</name>
+        <attribute name="area" value_type="float64">864</attribute>
+        <attribute name="REGISTERS" value_type="float64">487</attribute>
+        <attribute name="SLICE_LUTS" value_type="float64">492</attribute>
+        <attribute name="BRAM" value_type="float64">4</attribute>
+        <characterization_timestamp>2019-10-10T19:27:32</characterization_timestamp>
+        <operation operation_name="LOAD" cycles="3" initiation_time="1" stage_period="12.234"/>
+        <operation operation_name="STORE" execution_time="12.234"/>
+      </cell>
+      <cell>
+        <name>ARRAY_1D_STD_BRAM_N1_4</name>
+        <attribute name="area" value_type="float64">869</attribute>
+        <attribute name="REGISTERS" value_type="float64">596</attribute>
+        <attribute name="SLICE_LUTS" value_type="float64">492</attribute>
+        <attribute name="BRAM" value_type="float64">4</attribute>
+        <characterization_timestamp>2019-10-10T19:27:25</characterization_timestamp>
+        <operation operation_name="LOAD" cycles="4" initiation_time="1" stage_period="9.0540000000000003"/>
+        <operation operation_name="STORE" cycles="2" initiation_time="1" stage_period="9.0540000000000003"/>
+      </cell>
+      <cell>
         <name>ARRAY_1D_STD_BRAM_N1_SDS</name>
         <attribute name="area" value_type="float64">568</attribute>
         <attribute name="REGISTERS" value_type="float64">482</attribute>
@@ -171,6 +201,36 @@
         <characterization_timestamp>2022-05-22T09:53:07</characterization_timestamp>
         <operation operation_name="LOAD" cycles="4" initiation_time="1" stage_period="7.9779999999999998"/>
         <operation operation_name="STORE" cycles="2" initiation_time="1" stage_period="7.9779999999999998"/>
+      </cell>
+      <cell>
+        <name>ARRAY_1D_STD_BRAM_NN</name>
+        <attribute name="area" value_type="float64">1059</attribute>
+        <attribute name="REGISTERS" value_type="float64">542</attribute>
+        <attribute name="SLICE_LUTS" value_type="float64">571</attribute>
+        <attribute name="BRAM" value_type="float64">4</attribute>
+        <characterization_timestamp>2019-10-10T19:28:23</characterization_timestamp>
+        <operation operation_name="LOAD" cycles="2" initiation_time="1" stage_period="12.25"/>
+        <operation operation_name="STORE" execution_time="12.25"/>
+      </cell>
+      <cell>
+        <name>ARRAY_1D_STD_BRAM_NN_3</name>
+        <attribute name="area" value_type="float64">1065</attribute>
+        <attribute name="REGISTERS" value_type="float64">612</attribute>
+        <attribute name="SLICE_LUTS" value_type="float64">571</attribute>
+        <attribute name="BRAM" value_type="float64">4</attribute>
+        <characterization_timestamp>2019-10-10T19:30:57</characterization_timestamp>
+        <operation operation_name="LOAD" cycles="3" initiation_time="1" stage_period="12.243"/>
+        <operation operation_name="STORE" execution_time="12.243"/>
+      </cell>
+      <cell>
+        <name>ARRAY_1D_STD_BRAM_NN_4</name>
+        <attribute name="area" value_type="float64">1071</attribute>
+        <attribute name="REGISTERS" value_type="float64">722</attribute>
+        <attribute name="SLICE_LUTS" value_type="float64">571</attribute>
+        <attribute name="BRAM" value_type="float64">4</attribute>
+        <characterization_timestamp>2019-10-10T19:30:56</characterization_timestamp>
+        <operation operation_name="LOAD" cycles="4" initiation_time="1" stage_period="8.9019999999999992"/>
+        <operation operation_name="STORE" cycles="2" initiation_time="1" stage_period="8.9019999999999992"/>
       </cell>
       <cell>
         <name>ARRAY_1D_STD_BRAM_NN_SDS</name>
@@ -291,6 +351,24 @@
         <characterization_timestamp>2022-05-22T10:02:37</characterization_timestamp>
         <operation operation_name="LOAD" cycles="4" initiation_time="1" stage_period="8.6950000000000003"/>
         <operation operation_name="STORE" cycles="2" initiation_time="1" stage_period="8.6950000000000003"/>
+      </cell>
+      <cell>
+        <name>ARRAY_1D_STD_DISTRAM_N1_SDS</name>
+        <attribute name="area" value_type="float64">2553</attribute>
+        <attribute name="REGISTERS" value_type="float64">1172</attribute>
+        <attribute name="SLICE_LUTS" value_type="float64">1957</attribute>
+        <characterization_timestamp>2019-10-12T16:35:09</characterization_timestamp>
+        <operation operation_name="LOAD" execution_time="10.042999999999999"/>
+        <operation operation_name="STORE" execution_time="10.042999999999999"/>
+      </cell>
+      <cell>
+        <name>ARRAY_1D_STD_DISTRAM_NN_SDS</name>
+        <attribute name="area" value_type="float64">2427</attribute>
+        <attribute name="REGISTERS" value_type="float64">1046</attribute>
+        <attribute name="SLICE_LUTS" value_type="float64">1957</attribute>
+        <characterization_timestamp>2019-10-12T16:35:07</characterization_timestamp>
+        <operation operation_name="LOAD" execution_time="13.956999999999999"/>
+        <operation operation_name="STORE" execution_time="13.956999999999999"/>
       </cell>
       <cell>
         <name>ARRAY_1D_STD_DISTRAM_SDS</name>
