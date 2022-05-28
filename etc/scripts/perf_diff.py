@@ -181,7 +181,7 @@ def main():
     print('Valid pairs compared: ' + str(len(perf_dict)) +
           '/' + str(len(base_bench_dict)))
     if len(perf_dict) == 0:
-        exit(-1)
+        exit(0)
 
     if user_score:
         selected_datapoints.append(score_col)
