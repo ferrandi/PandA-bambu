@@ -106,7 +106,7 @@ technology/target_device/FPGA/xc7z020-1clg484-YOSYS-VVD.data \
 technology/target_device/FPGA/LFE335EA8FN484C.data \
 technology/target_device/FPGA/LFE5UM85F8BG756C.data \
 technology/target_device/FPGA/LFE5U85F8BG756C.data \
-technology/target_device/FPGA/nx1h35S.data technology/target_device/FPGA/nx1h140tsp.data \
+technology/target_device/FPGA/nx1h35S.data technology/target_device/FPGA/nx1h140tsp.data technology/target_device/FPGA/nx2h540tsc.data \
 technology/target_device/FPGA/nangate45.data\
 technology/target_device/FPGA/asap7-BC.data \
 technology/target_device/FPGA/asap7-TC.data \
@@ -123,7 +123,7 @@ technology/target_device/FPGA/xc7z020-1clg484-YOSYS-VVD.data \
 technology/target_device/FPGA/LFE335EA8FN484C.data \
 technology/target_device/FPGA/LFE5UM85F8BG756C.data \
 technology/target_device/FPGA/LFE5U85F8BG756C.data \
-technology/target_device/FPGA/nx1h35S.data technology/target_device/FPGA/nx1h140tsp.data \
+technology/target_device/FPGA/nx1h35S.data technology/target_device/FPGA/nx1h140tsp.data technology/target_device/FPGA/nx2h540tsc.data \
 technology/target_device/FPGA/nangate45.data\
 technology/target_device/FPGA/asap7-BC.data\
 technology/target_device/FPGA/asap7-TC.data\
@@ -202,6 +202,9 @@ technology/target_device/FPGA/nx1h35S.data: $(top_srcdir)/etc/devices/NanoXplore
 technology/target_device/FPGA/nx1h140tsp.data: $(top_srcdir)/etc/devices/NanoXplore_devices/nx1h140tsp.xml
 	gzip -c  $(top_srcdir)/etc/devices/NanoXplore_devices/nx1h140tsp.xml > technology/target_device/FPGA/nx1h140tsp.data
 
+technology/target_device/FPGA/nx2h540tsc.data: $(top_srcdir)/etc/devices/NanoXplore_devices/nx2h540tsc.xml
+	gzip -c  $(top_srcdir)/etc/devices/NanoXplore_devices/nx2h540tsc.xml > technology/target_device/FPGA/nx2h540tsc.data
+
 technology/target_device/FPGA/nangate45.data: $(top_srcdir)/etc/devices/Generic_devices/nangate45.xml
 	gzip -c  $(top_srcdir)/etc/devices/Generic_devices/nangate45.xml > technology/target_device/FPGA/nangate45.data
 
@@ -228,7 +231,7 @@ technology_target_device_FPGA__DATA = technology/target_device/FPGA/xc4vlx100-10
                                       technology/target_device/FPGA/LFE335EA8FN484C.data \
                                       technology/target_device/FPGA/LFE5UM85F8BG756C.data \
                                       technology/target_device/FPGA/LFE5U85F8BG756C.data \
-                                      technology/target_device/FPGA/nx1h35S.data technology/target_device/FPGA/nx1h140tsp.data \
+                                      technology/target_device/FPGA/nx1h35S.data technology/target_device/FPGA/nx1h140tsp.data technology/target_device/FPGA/nx2h540tsc.data \
                                       technology/target_device/FPGA/nangate45.data \
                                       technology/target_device/FPGA/asap7-BC.data\
                                       technology/target_device/FPGA/asap7-TC.data\

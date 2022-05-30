@@ -72,6 +72,8 @@
 #include "string_manipulation.hpp" // for GET_CLASS
 #include <boost/algorithm/string/case_conv.hpp>
 
+#include <utility/fileIO.hpp>
+
 ControlFlowChecker::ControlFlowChecker(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr,
                                        unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager)
     : HLSFunctionStep(_Param, _HLSMgr, _funId, _design_flow_manager, HLSFlowStep_Type::CONTROL_FLOW_CHECKER)
@@ -294,7 +296,8 @@ static std::string create_control_flow_checker(size_t epp_trace_bitsize, const u
              "end\n\n";
 
    // helper functions
-   const auto encode_one_hot = [](unsigned int nstates, unsigned int val) -> std::string {
+   const auto encode_one_hot = [](unsigned int nstates, unsigned int val) -> std::string
+   {
       std::string res;
       for(unsigned int i = 0; i < nstates; ++i)
       {
@@ -303,7 +306,8 @@ static std::string create_control_flow_checker(size_t epp_trace_bitsize, const u
       return res;
    };
    const auto compute_state_string = [one_hot_encoding, max_value, state_bitsize,
-                                      encode_one_hot](unsigned int state_id) -> std::string {
+                                      encode_one_hot](unsigned int state_id) -> std::string
+   {
       return one_hot_encoding ? (STR(state_bitsize) + "'b" + encode_one_hot(max_value + 1, state_id)) :
                                 (STR(state_bitsize) + "'d" + STR(state_id));
    };
@@ -401,9 +405,8 @@ static std::string create_control_flow_checker(size_t epp_trace_bitsize, const u
                 "end\n\n";
    }
 
-   const auto epp_val_string = [epp_trace_bitsize](size_t val) -> std::string {
-      return STR(epp_trace_bitsize) + "'d" + STR(val);
-   };
+   const auto epp_val_string = [epp_trace_bitsize](size_t val) -> std::string
+   { return STR(epp_trace_bitsize) + "'d" + STR(val); };
    result += "// compute EPP increments and resets\n"
              "always @(*)\n"
              "begin\n\n"
@@ -766,7 +769,7 @@ DesignFlowStep_Status ControlFlowChecker::InternalExec()
    GetPointer<module>(checker_circuit)->SetParameter("STATE_BITSIZE", STR(state_bitsize));
    GetPointer<module>(checker_circuit)->SetParameter("EPP_TRACE_BITSIZE", STR(epp_trace_bitsize));
    GetPointer<module>(checker_circuit)->SetParameter("EPP_TRACE_METADATA_BITSIZE", STR(0));
-   GetPointer<module>(checker_circuit)->SetParameter("MEMORY_INIT_file", R"(""trace.mem"")");
+   GetPointer<module>(checker_circuit)->SetParameter("MEMORY_INIT_file", GetPath("trace.mem"));
    GetPointer<module>(checker_circuit)->SetParameter("EPP_TRACE_LENGTH", STR(0));
    GetPointer<module>(checker_circuit)->SetParameter("EPP_MISMATCH_ID", STR(0));
    GetPointer<module>(checker_circuit)->SetParameter("EPP_TRACE_INITIAL_METADATA", STR(0));

@@ -2167,7 +2167,7 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
                   if(*it == "MEMORY_INIT_file" && op_name == BUILTIN_WAIT_CALL)
                   {
                      unsigned int index = data->CGetOpNodeInfo(mapped_operation)->GetNodeId();
-                     std::string parameterAddressFileName = "function_addresses_" + STR(index) + ".mem";
+                     const auto parameterAddressFileName = "function_addresses_" + STR(index) + ".mem";
                      std::ofstream parameterAddressFile(GetPath(parameterAddressFileName));
 
                      const tree_nodeRef call = TreeM->GetTreeNode(index);
@@ -2204,7 +2204,7 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
                         parameterAddressFile << str_address << "\n";
                      }
                      parameterAddressFile.close();
-                     fu_module->SetParameter("MEMORY_INIT_file", "\"\"" + parameterAddressFileName + "\"\"");
+                     fu_module->SetParameter("MEMORY_INIT_file", "\"\"" + GetPath(parameterAddressFileName) + "\"\"");
                   }
                }
             }
@@ -2375,12 +2375,12 @@ void fu_binding::specialize_memory_unit(const HLS_managerRef HLSMgr, const hlsRe
    THROW_ASSERT(vec_size, "at least one element is expected");
    if(is_memory_splitted)
    {
-      fu_module->SetParameter("MEMORY_INIT_file_a", "\"\"" + init_filename + "\"\"");
-      fu_module->SetParameter("MEMORY_INIT_file_b", "\"\"0_" + init_filename + "\"\"");
+      fu_module->SetParameter("MEMORY_INIT_file_a", "\"\"" + GetPath(init_filename) + "\"\"");
+      fu_module->SetParameter("MEMORY_INIT_file_b", "\"\"" + GetPath("0_" + init_filename) + "\"\"");
    }
    else
    {
-      fu_module->SetParameter("MEMORY_INIT_file", "\"\"" + init_filename + "\"\"");
+      fu_module->SetParameter("MEMORY_INIT_file", "\"\"" + GetPath(init_filename) + "\"\"");
    }
 
    /// specialize the number of elements in the array

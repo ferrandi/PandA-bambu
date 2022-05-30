@@ -105,6 +105,7 @@ void FPGA_device::load_devices(const target_deviceRef device)
    default_device_data["LFE5U85F8BG756C"] = "LFE5U85F8BG756C.data";
    default_device_data["nx1h35S"] = "nx1h35S.data";
    default_device_data["nx1h140tsp"] = "nx1h140tsp.data";
+   default_device_data["nx2h540tsc"] = "nx2h540tsc.data";
 
    default_device_data["nangate45"] = "nangate45.data";
    default_device_data["asap7-BC"] = "asap7-BC.data";
