@@ -145,32 +145,41 @@ void MinimalInterfaceTestbench::write_call(bool) const
 void MinimalInterfaceTestbench::update_memory_queue(std::string port_name, std::string delay_type,
                                                     long long int size) const
 {
-   writer->write("always @(posedge " + std::string(CLOCK_PORT_NAME) + ")\n");
-   writer->write("begin");
+   writer->write("generate");
    writer->write(STR(STD_OPENING_CHAR) + "\n");
    writer->write("if(" + delay_type + " != 1)\n");
+   writer->write("begin");
+   writer->write(STR(STD_OPENING_CHAR) + "\n");
+   writer->write("always @(posedge " + std::string(CLOCK_PORT_NAME) + ")\n");
    writer->write("begin");
    writer->write(STR(STD_OPENING_CHAR) + "\n");
    writer->write(port_name + "_queue_next[" + delay_type + "*" + STR(size) + " -1 : " + STR(size) +
                  "] <= " + port_name + "_queue_curr[(" + delay_type + "-1) *" + STR(size) + " -1 : 0];\n");
    writer->write(STR(STD_CLOSING_CHAR));
    writer->write("end\n");
-   writer->write(STR(STD_CLOSING_CHAR));
-   writer->write("end\n\n");
-
    writer->write("always @(*)\n");
    writer->write("begin");
    writer->write(STR(STD_OPENING_CHAR) + "\n");
-   writer->write("if(" + delay_type + " != 1)\n");
-   writer->write("begin\n");
-   writer->write(STR(STD_OPENING_CHAR) + "\n");
    writer->write(port_name + "_queue_curr[" + delay_type + "*" + STR(size) + " -1 : " + STR(size) + "] = " + port_name +
                  "_queue_next[" + delay_type + "*" + STR(size) + " -1 : " + STR(size) + "];\n");
-   writer->write(STR(STD_CLOSING_CHAR));
-   writer->write("end\n");
    writer->write(port_name + "_queue_curr[" + STR(size - 1) + " :0] = " + port_name + ";\n");
    writer->write(STR(STD_CLOSING_CHAR));
-   writer->write("end\n\n");
+   writer->write("end\n");
+   writer->write(STR(STD_CLOSING_CHAR));
+   writer->write("end\n");
+   writer->write("else\n");
+   writer->write("begin");
+   writer->write(STR(STD_OPENING_CHAR) + "\n");
+   writer->write("always @(*)\n");
+   writer->write("begin");
+   writer->write(STR(STD_OPENING_CHAR) + "\n");
+   writer->write(port_name + "_queue_curr[" + STR(size - 1) + " :0] = " + port_name + ";\n");
+   writer->write(STR(STD_CLOSING_CHAR));
+   writer->write("end\n");
+   writer->write(STR(STD_CLOSING_CHAR));
+   writer->write("end\n");
+   writer->write(STR(STD_CLOSING_CHAR));
+   writer->write("endgenerate\n\n");
 }
 
 void MinimalInterfaceTestbench::write_memory_handler() const
