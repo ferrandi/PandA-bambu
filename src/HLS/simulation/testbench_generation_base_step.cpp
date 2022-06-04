@@ -539,7 +539,8 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
                auto InterfaceType = GetPointer<port_o>(portInst)->get_port_interface();
                if(InterfaceType == port_o::port_interface::PI_DOUT)
                {
-                  const auto manage_pidout = [&](const std::string& portID) {
+                  const auto manage_pidout = [&](const std::string& portID)
+                  {
                      auto port_name = portInst->get_id();
                      auto terminate = port_name.size() > 3 ? port_name.size() - std::string("_d" + portID).size() : 0;
                      THROW_ASSERT(port_name.substr(terminate) == "_d" + portID, "inconsistent interface");
@@ -639,7 +640,8 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
                auto InterfaceType = GetPointer<port_o>(portInst)->get_port_interface();
                if(InterfaceType == port_o::port_interface::PI_DIN)
                {
-                  const auto manage_pidin = [&](const std::string& portID) {
+                  const auto manage_pidin = [&](const std::string& portID)
+                  {
                      auto port_name = portInst->get_id();
                      auto terminate = port_name.size() > 3 ? port_name.size() - std::string("_q" + portID).size() : 0;
                      THROW_ASSERT(port_name.substr(terminate) == "_q" + portID, "inconsistent interface");
@@ -975,29 +977,29 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
                   }
                   else
                   {
-                     std::string mem_aggregated;
-
-                     mem_aggregated = "{";
-                     for(unsigned int bitsize_index = 0; bitsize_index < bitsize; bitsize_index = bitsize_index + 8)
-                     {
-                        if(bitsize_index)
-                        {
-                           mem_aggregated += ", ";
-                        }
-                        mem_aggregated += "_bambu_testbench_mem_[" + nonescaped_name + " + " +
-                                          STR((bitsize - bitsize_index) / 8 - 1) + "+ _i_ * " + STR(bitsize / 8) +
-                                          " - base_addr]";
-                     }
-                     mem_aggregated += "}";
-
                      if(output_level >= OUTPUT_LEVEL_VERY_PEDANTIC)
                      {
+                        std::string mem_aggregated;
+
+                        mem_aggregated = "{";
+                        for(unsigned int bitsize_index = 0; bitsize_index < bitsize; bitsize_index = bitsize_index + 8)
+                        {
+                           if(bitsize_index)
+                           {
+                              mem_aggregated += ", ";
+                           }
+                           mem_aggregated += "_bambu_testbench_mem_[" + nonescaped_name + " + " +
+                                             STR((bitsize - bitsize_index) / 8 - 1) + " - base_addr + ";
+                        }
+                        mem_aggregated += "}";
+
                         writer->write("$display(\"" + nonescaped_name + " = %d _bambu_testbench_mem_[" +
                                       nonescaped_name + " + %d - base_addr] = %d  expected = %d \\n\", " +
                                       mem_aggregated + " == " + output_name + ", _i_, " + mem_aggregated + ", " +
                                       output_name + ");\n");
                      }
-                     writer->write("if (" + mem_aggregated + " !== " + output_name + ")\n");
+                     writer->write("if (_bambu_testbench_mem_[(" + port_name +
+                                   " - base_addr) + _i_] !== " + output_name + ")\n");
                   }
                   writer->write(STR(STD_OPENING_CHAR));
                   writer->write("begin\n");

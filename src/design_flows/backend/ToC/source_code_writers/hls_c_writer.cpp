@@ -861,7 +861,7 @@ void HLSCWriter::WriteExpectedResults(const BehavioralHelperConstRef behavioral_
                indented_output_stream->Append("fprintf(__bambu_testbench_fp, \"\\n\");\n");
                indented_output_stream->Append("}\n");
             }
-            else
+            else if(!tree_helper::IsUnsignedIntegerType(base_type))
             {
                if(splitted.size() == 1 && flag_cpp && reference_type_p)
                {
@@ -878,7 +878,7 @@ void HLSCWriter::WriteExpectedResults(const BehavioralHelperConstRef behavioral_
                                                  STR(base_type_bitsize) + ");\n");
                   indented_output_stream->Append("fprintf(__bambu_testbench_fp, \"\\n\");\n");
                }
-               else
+               else /* AXI addresses have base_type unsigned int and they are treated differently */
                {
                   indented_output_stream->Append("for (__testbench_index2 = 0; __testbench_index2 < " +
                                                  STR(splitted.size()) + "; ++__testbench_index2)\n{\n");
@@ -893,6 +893,29 @@ void HLSCWriter::WriteExpectedResults(const BehavioralHelperConstRef behavioral_
                   indented_output_stream->Append("_Dec2Bin_(__bambu_testbench_fp, " + param + "[__testbench_index2], " +
                                                  STR(base_type_bitsize) + ");\n");
                   indented_output_stream->Append("fprintf(__bambu_testbench_fp, \"\\n\");\n");
+                  indented_output_stream->Append("}\n");
+               }
+            }
+            else
+            {
+               const auto pointedType_node = tree_helper::CGetPointedType(pt_node);
+               const auto reserved_mem_bytes =
+                   hls_c_backend_information->HLSMgr->RSim->param_mem_size.at(v_idx).at(GET_INDEX_CONST_NODE(par));
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                              "---Reserved memory " + STR(reserved_mem_bytes) + " bytes");
+               const auto element_size = tree_helper::Size(pointedType_node) / 8;
+               THROW_ASSERT(reserved_mem_bytes % element_size == 0, STR(reserved_mem_bytes) + "/" + STR(element_size));
+               const auto num_elements = reserved_mem_bytes / element_size;
+               THROW_ASSERT(num_elements, STR(reserved_mem_bytes) + "/" + STR(element_size));
+               if(num_elements > 1 || !reference_type_p)
+               {
+                  indented_output_stream->Append("for(int i0 = 0; i0 < " + STR(num_elements) + "; i0++)\n");
+                  indented_output_stream->Append("{\n");
+               }
+               WriteParamInMemory(behavioral_helper, param + (reference_type_p ? "" : "[i0]"), pointedType_node->index,
+                                  1, false);
+               if(num_elements > 1 || !reference_type_p)
+               {
                   indented_output_stream->Append("}\n");
                }
             }
@@ -1089,7 +1112,8 @@ void HLSCWriter::WriteSimulatorInitMemory(const unsigned int function_id)
          }
 
          /// Retrieve the space to be reserved in memory
-         const auto reserved_mem_bytes = [&]() -> size_t {
+         const auto reserved_mem_bytes = [&]() -> size_t
+         {
             if(is_memory)
             {
                const auto ret_value = tree_helper::Size(TM->CGetTreeReindex(l)) / 8;
@@ -1113,7 +1137,8 @@ void HLSCWriter::WriteSimulatorInitMemory(const unsigned int function_id)
             std::string bits_offset = "";
             std::vector<std::string> splitted = SplitString(test_v, ",");
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Processing c++ init " + test_v);
-            const auto isAllZero = [&]() -> bool {
+            const auto isAllZero = [&]() -> bool
+            {
                if(splitted.size() == 0)
                {
                   return false;
