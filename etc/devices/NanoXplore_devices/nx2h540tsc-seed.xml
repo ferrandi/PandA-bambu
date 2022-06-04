@@ -13,9 +13,8 @@
     <DSPs_rx_sizes value="16" />
     <DSPs_ry_sizes value="16" />
     <max_lut_size value="4" />
-    <RelativeConnectionOffset value="3" />
-    <OutputDSPConnectionRatio value="7" />
-    <OutputCarryConnectionRatio value="7" />
+    <OutputDSPConnectionRatio value="3" />
+    <OutputCarryConnectionRatio value="3" />
     <use_soft_64_mul value="1" />
   </device>
   <technology>
