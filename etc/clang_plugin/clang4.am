@@ -342,7 +342,7 @@ clang4_my_OrderedInstructions.o : $(top_srcdir)/etc/clang_plugin/llvm/my_Ordered
 	  $(I386_CLANG4_PLUGIN_COMPILER) $$compile_options -c $(top_srcdir)/etc/clang_plugin/llvm/my_OrderedInstructions.cpp $(CLANG_PLUGIN_ADDITIONAL_OPTIONS) -o clang4_my_OrderedInstructions.o;\
 	fi;
 
-clang4_dumpGimple.o : $(top_srcdir)/etc/clang_plugin/dumpGimple.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp $(top_srcdir)/etc/clang_plugin/HardekopfLin_AA.hpp
+clang4_dumpGimple.o : $(top_srcdir)/etc/clang_plugin/dumpGimple.cpp $(top_srcdir)/etc/clang_plugin/TreeHeightReduction.hpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp $(top_srcdir)/etc/clang_plugin/HardekopfLin_AA.hpp
 	case $(host_os) in \
 	  mingw*) \
 	    compile_options=' -fPIC $(I386_LLVM4_CXXFLAGS) -DPANDA_PLUGIN_VERSION="$(PANDA_PLUGIN_VERSION)" $(WFLAGS) -I.'; \

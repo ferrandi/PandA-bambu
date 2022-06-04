@@ -2,6 +2,8 @@
 Ninth public release of PandA framework.
 
 New features introduced:
+- Added an LLVM based tree height reduction step.
+- Updated support to NanoXplore NXmap
 
 =========== PANDA 0.9.7 ===========
 Sun 20 March 2022, PandA release 0.9.7
