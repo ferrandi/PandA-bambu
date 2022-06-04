@@ -112,14 +112,14 @@
       <cmd name="#print 'Warnings: ', getWarningCount()" />
 
       <cmd name="if NXMAPversion == 2:" />
-      <cmd name="    fr = open(os.path.join(outdir, 'Timing_Constraints_Report.timing'), &quot;r&quot;)" />
+      <cmd name="    fr = open(os.path.join(outdir, 'logs/Timing_Constraints_Report.timing'), &quot;r&quot;)" />
       <cmd name="elif NXMAPversion == 3:" />
       <cmd name="    fr = open(glob.glob(outdir + '/Timing_Constraints_Report_Routed_*.timing')[0], &quot;r&quot;)" />
       <cmd name="lines = fr.readlines()" />
       <cmd name="fr.close()" />
       <cmd name="design_slack = get_timing(lines)" />
       <cmd name="if NXMAPversion == 2:" />
-      <cmd name="    fr = open(os.path.join(outdir, 'general.log'), &quot;r&quot;)" />
+      <cmd name="    fr = open(os.path.join(outdir, 'logs/general.log'), &quot;r&quot;)" />
       <cmd name="elif NXMAPversion == 3:" />
       <cmd name="    fr = open(os.path.join(outdir, 'progress.rpt'), &quot;r&quot;)" />
       <cmd name="lines = fr.readlines()" />
