@@ -828,11 +828,6 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
                !portInst->get_typeRef()->treenode ||
                !tree_helper::is_a_pointer(TreeM, portInst->get_typeRef()->treenode))
             {
-               if(!portInst->get_typeRef()->treenode)
-               {
-                  std::cout << "No treenode " << portInst->get_id() << "\n";
-               }
-               std::cout << "I was here " << portInst->get_id() << "\n";
                continue;
             }
 
