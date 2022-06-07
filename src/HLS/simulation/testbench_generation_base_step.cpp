@@ -974,24 +974,11 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
                   {
                      if(output_level >= OUTPUT_LEVEL_VERY_PEDANTIC)
                      {
-                        std::string mem_aggregated;
-
-                        mem_aggregated = "{";
-                        for(unsigned int bitsize_index = 0; bitsize_index < bitsize; bitsize_index = bitsize_index + 8)
-                        {
-                           if(bitsize_index)
-                           {
-                              mem_aggregated += ", ";
-                           }
-                           mem_aggregated += "_bambu_testbench_mem_[" + nonescaped_name + " + " +
-                                             STR((bitsize - bitsize_index) / 8 - 1) + " - base_addr + ";
-                        }
-                        mem_aggregated += "}";
-
-                        writer->write("$display(\"" + nonescaped_name + " = %d _bambu_testbench_mem_[" +
-                                      nonescaped_name + " + %d - base_addr] = %d  expected = %d \\n\", " +
-                                      mem_aggregated + " == " + output_name + ", _i_, " + mem_aggregated + ", " +
-                                      output_name + ");\n");
+                        writer->write(
+                            "$display(\"" + nonescaped_name + " = %d _bambu_testbench_mem_[" + nonescaped_name +
+                            " + %d - base_addr] = %d  expected = %d \\n\", _bambu_testbench_mem_[(" + port_name +
+                            " - base_addr) + _i_] == " + output_name + ", _i_, _bambu_testbench_mem_[(" + port_name +
+                            " - base_addr) + _i_], " + output_name + ");\n");
                      }
                      writer->write("if (_bambu_testbench_mem_[(" + port_name +
                                    " - base_addr) + _i_] !== " + output_name + ")\n");
