@@ -173,17 +173,15 @@ if BUILD_SYNTHESIS
     -I$(top_builddir)/src/wrapper/synthesis/nanoxplore \
     $(AM_CPPFLAGS)
   lib_NanoXplorewrapper_la_LDFLAGS = $(BOOST_FILESYSTEM_LIB)
-wrapper/synthesis/nanoxplore/NanoXploreBackendFlow.cpp : wrapper/synthesis/nanoxplore/NG-medium.data wrapper/synthesis/nanoxplore/NG-large.data
+wrapper/synthesis/nanoxplore/NanoXploreBackendFlow.cpp : wrapper/synthesis/nanoxplore/NG.data 
 #The tab in this rule can't be replaced by blanks
-wrapper/synthesis/nanoxplore/NG-medium.data: $(top_srcdir)/etc/devices/NanoXplore_devices/NG-medium.xml
-	gzip -c $(top_srcdir)/etc/devices/NanoXplore_devices/NG-medium.xml > wrapper/synthesis/nanoxplore/NG-medium.data
-wrapper/synthesis/nanoxplore/NG-large.data: $(top_srcdir)/etc/devices/NanoXplore_devices/NG-large.xml
-	gzip -c  $(top_srcdir)/etc/devices/NanoXplore_devices/NG-large.xml > wrapper/synthesis/nanoxplore/NG-large.data
+wrapper/synthesis/nanoxplore/NG.data: $(top_srcdir)/etc/devices/NanoXplore_devices/NG.xml
+	gzip -c $(top_srcdir)/etc/devices/NanoXplore_devices/NG.xml > wrapper/synthesis/nanoxplore/NG.data
 
 wrapper_dir = $(pkgdatadir)/wrapper
 wrapper_synthesis_dir = $(wrapper_dir)/synthesis
 wrapper_synthesis_nanoxplore_dir = $(wrapper_synthesis_dir)/nanoxplore
-wrapper_synthesis_nanoxplore__DATA = wrapper/synthesis/nanoxplore/NG-medium.data wrapper/synthesis/nanoxplore/NG-large.data
+wrapper_synthesis_nanoxplore__DATA = wrapper/synthesis/nanoxplore/NG.data
 
   noinst_HEADERS += \
    wrapper/synthesis/nanoxplore/NanoXploreBackendFlow.hpp \

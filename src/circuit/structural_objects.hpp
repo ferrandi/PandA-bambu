@@ -702,6 +702,8 @@ struct port_o : public structural_object
       PI_READ,
       PI_FULL_N,
       PI_WRITE,
+      PI_FDIN,
+      PI_FDOUT,
       PI_ADDRESS,
       PI_CHIPENABLE,
       PI_WRITEENABLE,

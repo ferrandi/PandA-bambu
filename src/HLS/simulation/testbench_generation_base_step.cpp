@@ -508,7 +508,7 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
    if(interface_type == HLSFlowStep_Type::INFERRED_INTERFACE_GENERATION)
    {
       const auto& DesignSignature = HLSMgr->RSim->simulationArgSignature;
-      for(auto par : DesignSignature)
+      for(const auto& par : DesignSignature)
       {
          auto portInst = mod->find_member(par, port_o_K, cir);
          if(!portInst)
@@ -539,8 +539,7 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
                auto InterfaceType = GetPointer<port_o>(portInst)->get_port_interface();
                if(InterfaceType == port_o::port_interface::PI_DOUT)
                {
-                  const auto manage_pidout = [&](const std::string& portID)
-                  {
+                  const auto manage_pidout = [&](const std::string& portID) {
                      auto port_name = portInst->get_id();
                      auto terminate = port_name.size() > 3 ? port_name.size() - std::string("_d" + portID).size() : 0;
                      THROW_ASSERT(port_name.substr(terminate) == "_d" + portID, "inconsistent interface");
@@ -640,8 +639,7 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
                auto InterfaceType = GetPointer<port_o>(portInst)->get_port_interface();
                if(InterfaceType == port_o::port_interface::PI_DIN)
                {
-                  const auto manage_pidin = [&](const std::string& portID)
-                  {
+                  const auto manage_pidin = [&](const std::string& portID) {
                      auto port_name = portInst->get_id();
                      auto terminate = port_name.size() > 3 ? port_name.size() - std::string("_q" + portID).size() : 0;
                      THROW_ASSERT(port_name.substr(terminate) == "_q" + portID, "inconsistent interface");
@@ -720,32 +718,12 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
          }
          THROW_ASSERT(portInst, "unexpected condition: " + par);
          auto InterfaceType = GetPointer<port_o>(portInst)->get_port_interface();
+         auto port_name = portInst->get_id();
          if(InterfaceType == port_o::port_interface::PI_WNONE)
          {
-            auto port_name = portInst->get_id();
             auto port_vld = mod->find_member(port_name + "_vld", port_o_K, cir);
             auto has_valid =
                 port_vld && GetPointer<port_o>(port_vld)->get_port_interface() == port_o::port_interface::PI_WVALID;
-            if(!port_vld)
-            {
-               auto terminate = port_name.size() > 4 ? port_name.size() - sizeof("_din") + 1 : 0;
-               if(port_name.substr(terminate) == "_din")
-               {
-                  port_vld = mod->find_member(port_name.substr(0, terminate) + "_write", port_o_K, cir);
-                  has_valid = port_vld &&
-                              GetPointer<port_o>(port_vld)->get_port_interface() == port_o::port_interface::PI_WRITE;
-               }
-               else
-               {
-                  terminate = port_name.size() > 6 ? port_name.size() - sizeof("_TDATA") + 1 : 0;
-                  if(port_name.substr(terminate) == "_TDATA")
-                  {
-                     port_vld = mod->find_member(port_name.substr(0, terminate) + "_TVALID", port_o_K, cir);
-                     has_valid = port_vld && GetPointer<port_o>(port_vld)->get_port_interface() ==
-                                                 port_o::port_interface::PI_M_AXIS_TVALID;
-                  }
-               }
-            }
             writer->write("always @(negedge " CLOCK_PORT_NAME ")\n");
             writer->write(STR(STD_OPENING_CHAR));
             writer->write("begin\n");
@@ -753,6 +731,42 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
             writer->write(STR(STD_OPENING_CHAR));
             writer->write("begin\n");
             writer->write("registered_" + port_name + " <= " + port_name + ";\n");
+            writer->write(STR(STD_CLOSING_CHAR));
+            writer->write("end\n");
+            writer->write(STR(STD_CLOSING_CHAR));
+            writer->write("end\n");
+         }
+         else if(InterfaceType == port_o::port_interface::PI_FDIN)
+         {
+            auto terminate = port_name.size() > 4 ? port_name.size() - sizeof("_din") + 1 : 0;
+            structural_objectRef port_vld;
+            if(port_name.substr(terminate) == "_din")
+            {
+               port_vld = mod->find_member(port_name.substr(0, terminate) + "_write", port_o_K, cir);
+               THROW_ASSERT(port_vld &&
+                                GetPointer<port_o>(port_vld)->get_port_interface() == port_o::port_interface::PI_WRITE,
+                            "unexpected condition");
+            }
+            else
+            {
+               terminate = port_name.size() > 6 ? port_name.size() - sizeof("_TDATA") + 1 : 0;
+               if(port_name.substr(terminate) == "_TDATA")
+               {
+                  port_vld = mod->find_member(port_name.substr(0, terminate) + "_TVALID", port_o_K, cir);
+                  THROW_ASSERT(port_vld && GetPointer<port_o>(port_vld)->get_port_interface() ==
+                                               port_o::port_interface::PI_M_AXIS_TVALID,
+                               "unexpected condition");
+               }
+            }
+
+            writer->write("always @(negedge " CLOCK_PORT_NAME ")\n");
+            writer->write(STR(STD_OPENING_CHAR));
+            writer->write("begin\n");
+            writer->write("if (" + port_vld->get_id() + " == 1)\n");
+            writer->write(STR(STD_OPENING_CHAR));
+            writer->write("begin\n");
+            writer->write("registered_" + port_name + "[fifo_counter_" + port_name + "] <= " + port_name + ";\n");
+            writer->write("fifo_counter_" + port_name + " <= fifo_counter_" + port_name + " + 1;\n");
             writer->write(STR(STD_CLOSING_CHAR));
             writer->write("end\n");
             writer->write(STR(STD_CLOSING_CHAR));
@@ -772,7 +786,7 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
       interface_type == HLSFlowStep_Type::INTERFACE_CS_GENERATION)
    {
       const auto& DesignSignature = HLSMgr->RSim->simulationArgSignature;
-      for(auto par : DesignSignature)
+      for(const auto& par : DesignSignature)
       {
          auto portInst = mod->find_member(par, port_o_K, cir);
          if(!portInst)
@@ -1012,7 +1026,8 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
             writer->write(STR(STD_CLOSING_CHAR));
             writer->write("end\n");
          }
-         else if(InterfaceType == port_o::port_interface::PI_RNONE || InterfaceType == port_o::port_interface::PI_DIN)
+         else if(InterfaceType == port_o::port_interface::PI_RNONE || InterfaceType == port_o::port_interface::PI_DIN ||
+                 InterfaceType == port_o::port_interface::PI_FDOUT)
          {
             writer->write("\n");
             writer->write_comment("OPTIONAL - skip expected value for " + portInst->get_id() +
@@ -1072,8 +1087,140 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
          else if(InterfaceType == port_o::port_interface::PI_WNONE)
          {
             auto orig_name = portInst->get_id();
-            auto port_to_be_compared = orig_name;
-            port_to_be_compared = "registered_" + port_to_be_compared;
+            auto port_to_be_compared = "registered_" + orig_name;
+            std::string output_name = "ex_" + orig_name;
+            writer->write("\n");
+            writer->write_comment("OPTIONAL - Read a value for " + orig_name +
+                                  " --------------------------------------------------------------\n");
+
+            writer->write("_i_ = 0;\n");
+            writer->write("while (_ch_ == \"/\" || _ch_ == \"\\n\" || _ch_ == \"o\")\n");
+            writer->write(STR(STD_OPENING_CHAR));
+            writer->write("begin\n");
+            {
+               writer->write("if (_ch_ == \"o\")\n");
+               writer->write(STR(STD_OPENING_CHAR));
+               writer->write("begin\n");
+               {
+                  writer->write("compare_outputs = 1;\n");
+                  writer->write(R"(_r_ = $fscanf(file,"%b\n", )" + output_name + "); ");
+                  writer->write_comment("expected format: bbb...b (example: 00101110)\n");
+                  writer->write("if (_r_ != 1)\n");
+                  writer->write(STR(STD_OPENING_CHAR));
+                  writer->write("begin\n");
+                  {
+                     writer->write_comment("error\n");
+                     writer->write("$display(\"ERROR - Unknown error while reading the file. Character found: %c\", "
+                                   "_ch_[7:0]);\n");
+                     writer->write("$fclose(res_file);\n");
+                     writer->write("$fclose(file);\n");
+                     writer->write("$finish;\n");
+                  }
+                  writer->write(STR(STD_CLOSING_CHAR));
+                  writer->write("end\n");
+                  writer->write("else\n");
+                  writer->write(STR(STD_OPENING_CHAR));
+                  writer->write("begin\n");
+                  {
+                     if(output_level >= OUTPUT_LEVEL_VERY_PEDANTIC)
+                     {
+                        writer->write("$display(\"Value found for output " + orig_name + ": %b\", " + output_name +
+                                      ");\n");
+                     }
+                  }
+                  writer->write(STR(STD_CLOSING_CHAR));
+                  writer->write("end\n");
+
+                  if(portInst->get_typeRef()->type == structural_type_descriptor::REAL)
+                  {
+                     if(GET_TYPE_SIZE(portInst) == 32)
+                     {
+                        writer->write("$display(\" " + orig_name +
+                                      " = %20.20f   expected = %20.20f \", bits32_to_real64(" + port_to_be_compared +
+                                      "), bits32_to_real64(" + output_name + "));\n");
+                        writer->write(R"($display(" FP error %f \n", compute_ulp32()" + port_to_be_compared + ", " +
+                                      output_name + "));\n");
+                        writer->write("if (compute_ulp32(" + port_to_be_compared + ", " + output_name + ") > " +
+                                      STR(parameters->getOption<double>(OPT_max_ulp)) + ")\n");
+                     }
+                     else if(GET_TYPE_SIZE(portInst) == 64)
+                     {
+                        writer->write("$display(\" " + orig_name + " = %20.20f   expected = %20.20f \", $bitstoreal(" +
+                                      port_to_be_compared + "), $bitstoreal(" + output_name + "));\n");
+                        writer->write(R"($display(" FP error %f \n", compute_ulp64()" + port_to_be_compared + ", " +
+                                      output_name + "));\n");
+                        writer->write("if (compute_ulp64(" + port_to_be_compared + ", " + output_name + ") > " +
+                                      STR(parameters->getOption<double>(OPT_max_ulp)) + ".0)\n");
+                     }
+                     else
+                     {
+                        THROW_ERROR_CODE(NODE_NOT_YET_SUPPORTED_EC,
+                                         "floating point precision not yet supported: " + STR(GET_TYPE_SIZE(portInst)));
+                     }
+                  }
+                  else
+                  {
+                     if(GET_TYPE_SIZE(portInst) > 64)
+                     {
+                        writer->write("$display(\" " + orig_name + " = %x   expected = %x \\n\", " +
+                                      port_to_be_compared + ", " + output_name + ");\n");
+                     }
+                     else
+                     {
+                        writer->write("$display(\" " + orig_name + " = %d   expected = %d \\n\", " +
+                                      port_to_be_compared + ", " + output_name + ");\n");
+                     }
+                     writer->write("if (" + port_to_be_compared + " !== " + output_name + ")\n");
+                  }
+                  writer->write(STR(STD_OPENING_CHAR));
+                  writer->write("begin\n");
+                  writer->write("success = 0;\n");
+                  writer->write(STR(STD_CLOSING_CHAR));
+                  writer->write("end\n");
+
+                  writer->write("_i_ = _i_ + 1;\n");
+                  writer->write("_ch_ = $fgetc(file);\n");
+               }
+               writer->write(STR(STD_CLOSING_CHAR));
+               writer->write("end\n");
+
+               writer->write("else\n");
+               writer->write(STR(STD_OPENING_CHAR));
+               writer->write("begin\n");
+               {
+                  writer->write_comment("skip comments and empty lines\n");
+                  writer->write("_r_ = $fgets(line, file);\n");
+                  writer->write("_ch_ = $fgetc(file);\n");
+               }
+               writer->write(STR(STD_CLOSING_CHAR));
+               writer->write("end\n");
+            }
+            writer->write(STR(STD_CLOSING_CHAR));
+            writer->write("end\n");
+
+            writer->write("if (_ch_ == \"e\")\n");
+            writer->write(STR(STD_OPENING_CHAR));
+            writer->write("begin\n");
+            writer->write("_r_ = $fgets(line, file);\n");
+            writer->write("_ch_ = $fgetc(file);\n");
+            writer->write(STR(STD_CLOSING_CHAR));
+            writer->write("end\n");
+            writer->write("else\n");
+            writer->write("begin\n");
+            writer->write(STR(STD_OPENING_CHAR));
+            writer->write_comment("error\n");
+            writer->write(
+                "$display(\"ERROR - Unknown error while reading the file. Character found: %c\", _ch_[7:0]);\n");
+            writer->write("$fclose(res_file);\n");
+            writer->write("$fclose(file);\n");
+            writer->write("$finish;\n");
+            writer->write(STR(STD_CLOSING_CHAR));
+            writer->write("end\n");
+         }
+         else if(InterfaceType == port_o::port_interface::PI_FDIN)
+         {
+            auto orig_name = portInst->get_id();
+            auto port_to_be_compared = "registered_" + orig_name + "[_i_]";
             std::string output_name = "ex_" + orig_name;
             writer->write("\n");
             writer->write_comment("OPTIONAL - Read a value for " + orig_name +
@@ -2012,7 +2159,7 @@ void TestbenchGenerationBaseStep::write_auxiliary_signal_declaration() const
    {
       const auto& DesignSignature = HLSMgr->RSim->simulationArgSignature;
       bool writeP = false;
-      for(auto par : DesignSignature)
+      for(const auto& par : DesignSignature)
       {
          auto portInst = mod->find_member(par, port_o_K, cir);
          if(!portInst)
@@ -2047,7 +2194,8 @@ void TestbenchGenerationBaseStep::write_auxiliary_signal_declaration() const
          auto InterfaceType = GetPointer<port_o>(portInst)->get_port_interface();
          std::string input_name = HDL_manager::convert_to_identifier(writer.get(), portInst->get_id());
          if(InterfaceType == port_o::port_interface::PI_RNONE || InterfaceType == port_o::port_interface::PI_WNONE ||
-            InterfaceType == port_o::port_interface::PI_DIN || InterfaceType == port_o::port_interface::PI_DOUT)
+            InterfaceType == port_o::port_interface::PI_DIN || InterfaceType == port_o::port_interface::PI_DOUT ||
+            InterfaceType == port_o::port_interface::PI_FDOUT || InterfaceType == port_o::port_interface::PI_FDIN)
          {
             writer->write("reg [31:0] paddr" + input_name + ";\n");
             writeP = true;
@@ -2182,6 +2330,10 @@ void TestbenchGenerationBaseStep::initialize_input_signals(const tree_managerCon
          {
             writer->write("ex_" + port_obj->get_id() + " = 0;\n");
             writer->write("registered_" + port_obj->get_id() + " = 0;\n");
+         }
+         else if(interfaceType == port_o::port_interface::PI_FDIN)
+         {
+            writer->write("fifo_counter_" + port_obj->get_id() + " = 0;\n");
          }
          else if(interfaceType == port_o::port_interface::PI_DOUT)
          {

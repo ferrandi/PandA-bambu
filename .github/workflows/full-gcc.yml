@@ -10,7 +10,7 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: full-gcc-${{ github.ref }}
+  group: full-gcc-${{ github.head_ref }}
   cancel-in-progress: true
 
 jobs:

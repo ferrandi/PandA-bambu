@@ -2,7 +2,7 @@
 <target>
   <device>
     <vendor value="NanoXplore"/>
-    <family value="NG-large"/>
+    <family value="NG-LARGE"/>
     <model value="nx1h140TSP"/>
     <package value="LG625V"/>
     <speed_grade value="std"/>
