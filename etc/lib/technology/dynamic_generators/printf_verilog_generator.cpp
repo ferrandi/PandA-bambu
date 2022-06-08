@@ -117,6 +117,8 @@ reg Mout_we_ram;\n\
 reg [BITSIZE_Mout_addr_ram-1:0] Mout_addr_ram;\n\
 reg [BITSIZE_Mout_Wdata_ram-1:0] Mout_Wdata_ram;\n\
 reg [BITSIZE_Mout_data_ram_size-1:0] Mout_data_ram_size;\n\
+reg active_request;\n\
+reg active_request_next;\n\
 \n\
 parameter [2:0] S_0 = 3'd0,\n\
   S_1 = 3'd1,\n\
@@ -157,6 +159,17 @@ reg write_done;\n\
         _present_data2 <= _next_data2;\n\
       end\n\
 \n\
+  always @(posedge clock 1RESET_EDGE)\n\
+  begin\n\
+    if (1RESET_VALUE)\n\
+    begin\n\
+      active_request <= 0;\n\
+    end\n\
+    else\n\
+    begin\n\
+      active_request <= active_request_next;\n\
+    end\n\
+  end\n\
   always @(_present_state or _present_pointer or _present_pointer1 or _present_selector or start_port or M_DataRdy or Min_we_ram or Min_oe_ram or Min_Wdata_ram or Min_addr_ram or Min_data_ram_size" +
       sensitivity + " or _present_data2 or M_Rdata_ram)\n\
       begin\n\
@@ -166,6 +179,7 @@ reg write_done;\n\
         Mout_addr_ram=Min_addr_ram;\n\
         Mout_data_ram_size=Min_data_ram_size;\n\
         done_port = 1'b0;\n\
+        active_request_next =1'b0;\n\
         _next_state = _present_state;\n\
         _next_pointer = _present_pointer;\n\
         _next_pointer1 = _present_pointer1;\n\
@@ -180,15 +194,16 @@ reg write_done;\n\
                 _next_pointer=0;\n\
                 _next_pointer1=0;\n\
                 _next_state=S_1;  \n\
+                active_request_next =1'b1;\n\
                 _next_selector=" +
       selector_dimension + "'d2;\n \
               end\n\
             \n\
          S_1:\n\
            begin\n\
-             Mout_addr_ram[BITSIZE_Mout_addr_ram-1:0]=in1[BITSIZE_Mout_addr_ram-1:0]+_present_pointer;\n\
-             Mout_data_ram_size={{BITSIZE_Mout_data_ram_size-4{1'b0}}, 4'd8};\n\
-             Mout_oe_ram=1'b1;\n\
+             Mout_addr_ram[BITSIZE_Mout_addr_ram-1:0]=(in1[BITSIZE_Mout_addr_ram-1:0]+_present_pointer) & {BITSIZE_Mout_addr_ram{active_request}};\n\
+             Mout_data_ram_size={{BITSIZE_Mout_data_ram_size-4{1'b0}}, 4'd8} & {BITSIZE_Mout_data_ram_size{active_request}};\n\
+             Mout_oe_ram=active_request;\n\
              if(M_DataRdy)\n\
              begin\n\
                 _next_data2 = M_Rdata_ram[7:0];\n\
@@ -211,9 +226,13 @@ reg write_done;\n\
                end\n\
 // synthesis translate_on\n\
                _next_state=S_1;\n\
+              active_request_next =1'b1;\n\
              end\n\
              else if(_present_data2==8'd37)\n\
+             begin\n\
                _next_state=S_3;\n\
+               active_request_next =1'b1;\n\
+             end\n\
              else if(_present_data2==8'd0)\n\
              begin\n\
                done_port = 1'b1;\n\
@@ -222,9 +241,9 @@ reg write_done;\n\
            end\n\
          S_3:\n\
            begin\n\
-             Mout_addr_ram=in1[BITSIZE_Mout_addr_ram-1:0]+_present_pointer;\n\
-             Mout_data_ram_size={{BITSIZE_Mout_data_ram_size-4{1'b0}}, 4'd8};\n\
-             Mout_oe_ram=1'b1;\n\
+             Mout_addr_ram=(in1[BITSIZE_Mout_addr_ram-1:0]+_present_pointer) & {BITSIZE_Mout_addr_ram{active_request}};\n\
+             Mout_data_ram_size={{BITSIZE_Mout_data_ram_size-4{1'b0}}, 4'd8} & {BITSIZE_Mout_data_ram_size{active_request}};\n\
+             Mout_oe_ram=active_request;\n\
              if(M_DataRdy)\n\
              begin\n\
                 _next_data2 = M_Rdata_ram[7:0];\n\
@@ -242,6 +261,7 @@ reg write_done;\n\
                8'd37: //%%\n\
                begin\n\
                  _next_state=S_1;\n\
+                 active_request_next =1'b1;\n\
 // synthesis translate_off\n\
                  if(!write_done)\n\
                  begin\n\
@@ -597,6 +617,7 @@ reg write_done;\n\
                8'd115: //String\n\
                begin\n\
                  _next_state=S_7;\n\
+                 active_request_next =1'b1;\n\
                  _next_pointer1=0;\n\
                end\n\
                8'd117: //unsigned int %u TO BE FIXED\n\
@@ -792,19 +813,23 @@ reg write_done;\n\
 // synthesis translate_on\n\
                  end\n\
                default:\n\
+               begin\n\
                  _next_state=S_3;\n\
+                 active_request_next =1'b1;\n\
+               end\n\
              endcase\n\
            end\n\
          S_6:\n\
            begin\n\
              _next_selector=_present_selector<<1;\n\
              _next_state=S_1;\n\
+             active_request_next =1'b1;\n\
            end\n\
          S_7:\n\
            begin\n\
-             Mout_addr_ram=data1[BITSIZE_Mout_addr_ram-1:0]+_present_pointer1;\n\
-             Mout_data_ram_size={{BITSIZE_Mout_data_ram_size-4{1'b0}}, 4'd8};\n\
-             Mout_oe_ram=1'b1;\n\
+             Mout_addr_ram=(data1[BITSIZE_Mout_addr_ram-1:0]+_present_pointer1) & {BITSIZE_Mout_addr_ram{active_request}};\n\
+             Mout_data_ram_size={{BITSIZE_Mout_data_ram_size-4{1'b0}}, 4'd8} & {BITSIZE_Mout_data_ram_size{active_request}};\n\
+             Mout_oe_ram=active_request;\n\
              if(M_DataRdy)\n\
              begin\n\
                _next_data2 = M_Rdata_ram[7:0];\n\
@@ -827,6 +852,7 @@ reg write_done;\n\
                end\n\
 // synthesis translate_on\n\
                _next_state=S_7;\n\
+               active_request_next =1'b1;\n\
              end\n\
              else\n\
                _next_state=S_6;\n\
