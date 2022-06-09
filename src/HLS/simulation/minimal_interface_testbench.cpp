@@ -884,7 +884,17 @@ void MinimalInterfaceTestbench::write_input_signal_declaration(const tree_manage
          {
             port_name = START_PORT_NAME;
          }
-         writer->write(HDL_manager::convert_to_identifier(writer.get(), port_name) + ";\n");
+         /* Add next_* to any input AXI signals */
+         if(GetPointer<port_o>(port_obj)->get_port_interface() >= port_o::port_interface::M_AXI_AWVALID &&
+            GetPointer<port_o>(port_obj)->get_port_interface() <= port_o::port_interface::M_AXI_BUSER)
+         {
+            std::string ptName = HDL_manager::convert_to_identifier(writer.get(), port_name);
+            writer->write(ptName + ", next_" + ptName + ";\n");
+         }
+         else
+         {
+            writer->write(HDL_manager::convert_to_identifier(writer.get(), port_name) + ";\n");
+         }
          if(port_obj->get_typeRef()->treenode > 0 &&
             tree_helper::IsPointerType(TreeM->CGetTreeReindex(port_obj->get_typeRef()->treenode)))
          {

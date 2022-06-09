@@ -715,7 +715,10 @@ void HLSCWriter::WriteExpectedResults(const BehavioralHelperConstRef behavioral_
    std::string fname;
    tree_helper::get_mangled_fname(fd, fname);
    auto& DesignInterfaceTypename = hls_c_backend_information->HLSMgr->design_interface_typename;
+   auto& DesignInterfaceSpecifier = hls_c_backend_information->HLSMgr->design_interface;
    bool hasInterface = DesignInterfaceTypename.find(fname) != DesignInterfaceTypename.end();
+   bool hasSpecifier = DesignInterfaceSpecifier.find(fname) != DesignInterfaceSpecifier.end();
+
    bool is_fortran = (Param->isOption(OPT_input_format) &&
                       Param->getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_FORTRAN);
 
@@ -863,7 +866,40 @@ void HLSCWriter::WriteExpectedResults(const BehavioralHelperConstRef behavioral_
             }
             else
             {
-               if(splitted.size() == 1 && flag_cpp && reference_type_p)
+               std::string interfaceSpecifier = "";
+               if(hasSpecifier)
+               {
+                  interfaceSpecifier = DesignInterfaceSpecifier.at(fname).at(param);
+               }
+               /* m_axi interfaces require writing the full results in a row, not a single byte */
+               if(interfaceSpecifier == "m_axi")
+               {
+                  /// Retrieve the space to be reserved in memory
+                  const auto pointedType_node = tree_helper::CGetPointedType(pt_node);
+                  const auto reserved_mem_bytes =
+                      hls_c_backend_information->HLSMgr->RSim->param_mem_size.at(v_idx).at(GET_INDEX_CONST_NODE(par));
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                 "---Reserved memory " + STR(reserved_mem_bytes) + " bytes");
+                  const auto element_size = tree_helper::Size(pointedType_node) / 8;
+                  THROW_ASSERT(reserved_mem_bytes % element_size == 0,
+                               STR(reserved_mem_bytes) + "/" + STR(element_size));
+                  const auto num_elements = reserved_mem_bytes / element_size;
+                  THROW_ASSERT(num_elements, STR(reserved_mem_bytes) + "/" + STR(element_size));
+                  indented_output_stream->Append("{\n");
+                  if(num_elements > 1 || !reference_type_p)
+                  {
+                     indented_output_stream->Append("for(unsigned int i0 = 0; i0 < " + STR(num_elements) + "; i0++)\n");
+                     indented_output_stream->Append("{\n");
+                  }
+                  WriteParamInMemory(behavioral_helper, param + (reference_type_p ? "" : "[i0]"),
+                                     pointedType_node->index, 1, false);
+                  if(num_elements > 1 || !reference_type_p)
+                  {
+                     indented_output_stream->Append("}\n");
+                  }
+                  indented_output_stream->Append("}\n");
+               }
+               else if(splitted.size() == 1 && flag_cpp && reference_type_p)
                {
                   if(output_level > OUTPUT_LEVEL_MINIMUM)
                   {
@@ -1089,7 +1125,8 @@ void HLSCWriter::WriteSimulatorInitMemory(const unsigned int function_id)
          }
 
          /// Retrieve the space to be reserved in memory
-         const auto reserved_mem_bytes = [&]() -> size_t {
+         const auto reserved_mem_bytes = [&]() -> size_t
+         {
             if(is_memory)
             {
                const auto ret_value = tree_helper::Size(TM->CGetTreeReindex(l)) / 8;
@@ -1113,7 +1150,8 @@ void HLSCWriter::WriteSimulatorInitMemory(const unsigned int function_id)
             std::string bits_offset = "";
             std::vector<std::string> splitted = SplitString(test_v, ",");
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Processing c++ init " + test_v);
-            const auto isAllZero = [&]() -> bool {
+            const auto isAllZero = [&]() -> bool
+            {
                if(splitted.size() == 0)
                {
                   return false;
