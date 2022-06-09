@@ -5,6 +5,7 @@ New features introduced:
 - Added an LLVM based tree height reduction step.
 - Updated support to NanoXplore NXmap
 - Added support for AXI Master interface.
+- Improved regression test, benchmarking, and integration flow through GitHub Actions workflows
 
 =========== PANDA 0.9.7 ===========
 Sun 20 March 2022, PandA release 0.9.7
