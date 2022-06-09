@@ -3,6 +3,7 @@ Ninth public release of PandA framework.
 
 New features introduced:
 - Added an LLVM based tree height reduction step.
+- Updated support to NanoXplore NXmap
 - Added support for AXI Master interface.
 
 =========== PANDA 0.9.7 ===========
