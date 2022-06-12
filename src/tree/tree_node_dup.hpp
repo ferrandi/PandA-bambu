@@ -62,9 +62,10 @@ REF_FORWARD_DECL(application_manager);
 
 enum tree_node_dup_mode
 {
-   DEFAULT = 0, // Nodes are duplicated
-   RENAME = 1,  // SSA variables are renamed during duplication
-   FULL = 2     // All nodes are duplicated (including decl nodes) and SSA variables are renamed
+   DEFAULT = 0,  // Nodes are duplicated
+   RENAME = 1,   // SSA variables are renamed during duplication
+   FUNCTION = 4, // All nodes including declarations are duplicated (first function_decl only)
+   FULL = 8      // All nodes including declarations are duplicated
 };
 
 struct tree_node_dup : public tree_node_mask
@@ -92,7 +93,7 @@ struct tree_node_dup : public tree_node_mask
     * @param mode required duplication mode
     * @return the node_id of the created object or of tn.
     */
-   unsigned int create_tree_node(const tree_nodeRef& tn, tree_node_dup_mode mode = tree_node_dup_mode::DEFAULT);
+   unsigned int create_tree_node(const tree_nodeRef& tn, int mode = tree_node_dup_mode::DEFAULT);
 
  private:
    /// remap old indexes in new indexes
@@ -120,7 +121,7 @@ struct tree_node_dup : public tree_node_mask
    /// current basic block source
    blocRef source_bloc;
    /// enables full nodes duplication
-   tree_node_dup_mode mode;
+   int mode;
 
    unsigned int get_bbi(unsigned int old_bb);
 

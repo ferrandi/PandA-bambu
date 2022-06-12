@@ -2797,7 +2797,7 @@ tree_nodeRef tree_manipulation::CloneFunction(const tree_nodeRef& tn, const std:
       const auto clone_mngl = create_identifier_node(fmngl + fsuffix);
       remapping[GET_INDEX_CONST_NODE(fd->mngl)] = GET_INDEX_CONST_NODE(clone_mngl);
    }
-   const auto clone_fd = tnd.create_tree_node(GET_NODE(tn), tree_node_dup_mode::FULL);
+   const auto clone_fd = tnd.create_tree_node(GET_NODE(tn), tree_node_dup_mode::FUNCTION);
    return TreeM->GetTreeReindex(clone_fd);
 }
 
