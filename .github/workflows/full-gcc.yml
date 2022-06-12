@@ -112,3 +112,18 @@ jobs:
       CI_STORAGE_URL: ${{secrets.CI_STORAGE_URL}}
       CI_STORAGE_USER: ${{secrets.CI_STORAGE_USER}}
       CI_STORAGE_TOKEN: ${{secrets.CI_STORAGE_TOKEN}}
+
+  success:
+    if: ${{always()}}
+    needs: [grs, grs-vhdl, examples]
+    runs-on: [self-hosted]
+    steps:
+      - name: Check GCC Regression Simple status
+        if: ${{ needs.grs.result != 'success' }}
+        run: exit 1
+      - name: Check GCC Regression Simple VHDL status
+        if: ${{ needs.grs-vhdl.result != 'success' }}
+        run: exit 1
+      - name: Check Examples status
+        if: ${{ needs.examples.result != 'success' }}
+        run: exit 1

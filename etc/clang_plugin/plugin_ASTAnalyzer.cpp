@@ -663,15 +663,17 @@ namespace clang
             {
                file_loc_arg_attr[filename][loc][pname]["attribute2"] = tmp;
             }
-            else if(tmp == "bundle")
+
+            PP.Lex(Tok);
+            if(Tok.is(tok::identifier) && PP.getSpelling(Tok) == "bundle")
             {
                bundle_parse();
+               end_parse();
             }
-            else
+            else if(Tok.isNot(tok::eod))
             {
                print_error("axi malformed");
             }
-            end_parse();
          };
          const std::map<std::string, std::function<void()>> interface_parser = {
              {"none", end_parse},      {"none_registered", end_parse},

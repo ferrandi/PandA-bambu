@@ -1,0 +1,6 @@
+<?xml version="1.0"?>
+<function>
+   <testbench a="{31, -15, 7}" n_ptr="{0}" />
+   <testbench a="{-10, 8, 350, -378, 1000}" n_ptr="{4}" />
+   <testbench a="{1, 2, 3, 4, 5}" n_ptr="{5}" />
+</function>
