@@ -41,6 +41,7 @@
 /// Header include
 #include "allocation.hpp"
 #include "HDL_manager.hpp"            // for structural_managerRef, langu...
+#include "ModuleGeneratorManager.hpp" // for structural_objectRef, struct...
 #include "NP_functionality.hpp"       // for NP_functionalityRef
 #include "Parameter.hpp"              // for ParameterConstRef
 #include "allocation_information.hpp" // for technology_nodeRef, node_kin...
@@ -67,7 +68,6 @@
 #include "library_manager.hpp" // for library_managerRef, library_...
 #include "memory.hpp"
 #include "memory_allocation.hpp"
-#include "moduleGenerator.hpp"     // for structural_objectRef, struct...
 #include "op_graph.hpp"            // for STORE, ADDR_EXPR, ASSERT_EXPR
 #include "schedule.hpp"            // for FunctionBehaviorConstRef
 #include "string_manipulation.hpp" // for STR GET_CLASS
@@ -2221,7 +2221,8 @@ DesignFlowStep_Status allocation::InternalExec()
                {
                   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Unit has to be specialized");
                   bool varargs_fu = GetPointer<module>(structManager_obj->get_circ())->is_var_args();
-                  moduleGeneratorRef modGen = moduleGeneratorRef(new moduleGenerator(HLSMgr, parameters));
+                  ModuleGeneratorManagerRef modGen =
+                      ModuleGeneratorManagerRef(new ModuleGeneratorManager(HLSMgr, parameters));
                   if(varargs_fu)
                   {
                      std::vector<HLS_manager::io_binding_type> required_variables =
@@ -3160,7 +3161,8 @@ void allocation::IntegrateTechnologyLibraries()
                                             ->get_NP_functionality()
                                             ->exist_NP_functionality(NP_functionality::VHDL_GENERATOR)))
                {
-                  moduleGeneratorRef modGen = moduleGeneratorRef(new moduleGenerator(HLSMgr, parameters));
+                  ModuleGeneratorManagerRef modGen =
+                      ModuleGeneratorManagerRef(new ModuleGeneratorManager(HLSMgr, parameters));
                   std::string new_shared_fu_name = shared_fu_name + "_modgen";
                   modGen->create_generic_module(shared_fu_name, libraryManager->get_library_name(), TM,
                                                 new_shared_fu_name, HLS_T->get_target_device()->get_type(), HLSMgr);

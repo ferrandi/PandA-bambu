@@ -4381,7 +4381,7 @@ out1 &lt;= resize(in1, BITSIZE_out1) or resize(in2, BITSIZE_out1);"/>
             <structural_type_descriptor type="BOOL" size="1"/>
             <connected_objects/>
           </port_o>
-          <NP_functionality LIBRARY="out1 Min_addr_ram Mout_addr_ram M_Rdata_ram Min_Wdata_ram Mout_Wdata_ram Min_data_ram_size Mout_data_ram_size" VERILOG_GENERATOR="printf_verilog_generator.cpp"/>
+          <NP_functionality LIBRARY="out1 Min_addr_ram Mout_addr_ram M_Rdata_ram Min_Wdata_ram Mout_Wdata_ram Min_data_ram_size Mout_data_ram_size" VERILOG_GENERATOR="PrintfModuleGenerator"/>
         </component_o>
       </circuit>
     </cell>

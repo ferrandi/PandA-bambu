@@ -31,7 +31,7 @@
  *
  */
 /**
- * @file moduleGenerator.cpp
+ * @file ModuleGeneratorManager.cpp
  * @brief
  *
  *
@@ -43,7 +43,7 @@
  *
  */
 /// header include
-#include "moduleGenerator.hpp"
+#include "ModuleGeneratorManager.hpp"
 
 /// Autoheader include
 #include "config_BOOST_INCLUDE_DIR.hpp"
@@ -98,6 +98,7 @@
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
 
+#include "ModuleGenerator.hpp"
 #include "call_graph_manager.hpp"
 
 #include "compiler_wrapper.hpp"
@@ -106,7 +107,7 @@
 #include "math_function.hpp"
 #include "string_manipulation.hpp" // for GET_CLASS
 
-moduleGenerator::moduleGenerator(const HLS_managerConstRef _HLSMgr, const ParameterConstRef _parameters)
+ModuleGeneratorManager::ModuleGeneratorManager(const HLS_managerRef _HLSMgr, const ParameterConstRef _parameters)
     : HLSMgr(_HLSMgr),
       parameters(_parameters),
       debug_level(_parameters->get_class_debug_level(GET_CLASS(*this))),
@@ -118,12 +119,12 @@ moduleGenerator::moduleGenerator(const HLS_managerConstRef _HLSMgr, const Parame
    }
 }
 
-moduleGenerator::~moduleGenerator() = default;
+ModuleGeneratorManager::~ModuleGeneratorManager() = default;
 
 #define NAMESEPARATOR "_"
 
-structural_type_descriptorRef moduleGenerator::getDataType(unsigned int variable,
-                                                           const FunctionBehaviorConstRef function_behavior) const
+structural_type_descriptorRef
+ModuleGeneratorManager::getDataType(unsigned int variable, const FunctionBehaviorConstRef function_behavior) const
 {
    return structural_type_descriptorRef(
        new structural_type_descriptor(variable, function_behavior->CGetBehavioralHelper()));
@@ -142,9 +143,9 @@ static unsigned int resize_to_8_or_greater(unsigned int value)
 }
 
 std::string
-moduleGenerator::get_specialized_name(unsigned int firstIndexToSpecialize,
-                                      std::vector<std::tuple<unsigned int, unsigned int>>& required_variables,
-                                      const FunctionBehaviorConstRef FB) const
+ModuleGeneratorManager::get_specialized_name(unsigned int firstIndexToSpecialize,
+                                             std::vector<std::tuple<unsigned int, unsigned int>>& required_variables,
+                                             const FunctionBehaviorConstRef FB) const
 {
    std::string fuName = "";
    unsigned int index = 0;
@@ -163,259 +164,58 @@ moduleGenerator::get_specialized_name(unsigned int firstIndexToSpecialize,
    return fuName;
 }
 
-std::string moduleGenerator::GenerateHDL(const module* mod, const std::string& hdl_template,
-                                         std::vector<std::tuple<unsigned int, unsigned int>>& required_variables,
-                                         const std::string& specializing_string, const FunctionBehaviorConstRef FB,
-                                         const std::string& path_dynamic_generators, const HDLWriter_Language language)
+std::string ModuleGeneratorManager::GenerateHDL(const module* mod, const std::string& hdl_template,
+                                                std::vector<std::tuple<unsigned int, unsigned int>>& required_variables,
+                                                const std::string& /* specializing_string */,
+                                                const FunctionBehaviorConstRef FB, const HDLWriter_Language language)
 {
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level,
-                 "dynamic_generators @ Reading cpp-template input file '"
-                     << (path_dynamic_generators + "/" + hdl_template).c_str() << "'...");
+                 "dynamic_generators @ Loading generator class '" << hdl_template << "'...");
 
-   boost::filesystem::path cpp_input_file_path = path_dynamic_generators + "/" + hdl_template;
-
-   std::string cpp_input = "";
-   std::string line;
-   boost::filesystem::ifstream cpp_infile(cpp_input_file_path);
-   if(cpp_infile)
-   {
-      while(std::getline(cpp_infile, line))
-      {
-         cpp_input += line + "\n";
-      }
-   }
-   else
-   {
-      THROW_ERROR("Unable to open file " + hdl_template);
-   }
+   const auto module_generator = ModuleGenerator::Create(hdl_template, HLSMgr);
+   THROW_ASSERT(module_generator, "Unknown module generator required: " + hdl_template);
 
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "dynamic_generators @ Starting dynamic hdl generation...");
 
-   std::string cpp_code_header = "";
-   std::string cpp_code_body = "";
-   std::string cpp_code_footer = "";
-
-   PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level,
-                 "dynamic_generators @ Initializing temporary c++ file for Verilog generation...");
-
-   cpp_code_header += "#include <iostream>\n";
-   cpp_code_header += "#include <string>\n";
-   cpp_code_header += "#include <fstream>\n";
-   cpp_code_header += "#include <sstream>\n";
-   cpp_code_header += "#include <fcntl.h>\n";
-   cpp_code_header += "#include <cmath>\n";
-   cpp_code_header += "#include <cstdlib>\n\n";
-
-   cpp_code_header += "inline void __replaceStringInPlace(std::string& subject, const std::string& search,\n";
-   cpp_code_header += "                                                   const std::string& replace) {\n";
-   cpp_code_header += "   size_t pos = 0;\n";
-   cpp_code_header += "   while ((pos = subject.find(search, pos)) != std::string::npos) {\n";
-   cpp_code_header += "      subject.replace(pos, search.length(), replace);\n";
-   cpp_code_header += "      pos += replace.length();\n";
-   cpp_code_header += "   }\n";
-   cpp_code_header += "}\n";
-
-   cpp_code_header += "#if __cplusplus > 201103L\n";
-   cpp_code_header += "#define STR(x) std::to_string(x)\n";
-   cpp_code_header += "#else\n";
-   cpp_code_header += "inline std::string __to_string(long long value)\n";
-   cpp_code_header += "{\n";
-   cpp_code_header += "   char buf[16];\n";
-   cpp_code_header += "   int len = std::sprintf(&buf[0], \"%lld\", value);\n";
-   cpp_code_header += "   return std::string(buf, len);\n";
-   cpp_code_header += "}\n";
-   cpp_code_header += "#define STR(x) __to_string(x)\n";
-   cpp_code_header += "#endif\n\n";
-
-   cpp_code_header += "#define RUPNP2_2(x)   (        (x) | (   (x) >> 1) )\n";
-   cpp_code_header += "#define RUPNP2_4(x)   ( RUPNP2_2(x) | ( RUPNP2_2(x) >> 2) )\n";
-   cpp_code_header += "#define RUPNP2_8(x)   ( RUPNP2_4(x) | ( RUPNP2_4(x) >> 4) )\n";
-   cpp_code_header += "#define RUPNP2_16(x)  ( RUPNP2_8(x) | ( RUPNP2_8(x) >> 8) )\n";
-   cpp_code_header += "#define RUPNP2_32(x)  (RUPNP2_16(x) | (RUPNP2_16(x) >>16) )\n";
-   cpp_code_header += "#define RUPNP2(x)     (RUPNP2_32(x-1) + 1)\n";
-   cpp_code_header += "int main(int argc, char **argv)\n";
-   cpp_code_header += "{\n";
-   cpp_code_header += "   struct parameter\n";
-   cpp_code_header += "   {\n";
-   cpp_code_header += "         std::string name;\n";
-   cpp_code_header += "         std::string type;\n";
-   cpp_code_header += "         unsigned int type_size;\n";
-   cpp_code_header += "         unsigned int alignment;\n";
-   cpp_code_header += "   };\n";
-
-   cpp_code_footer += "\n\n\n";
-   cpp_code_footer += "   return 0;\n}\n";
-
-   PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "dynamic_generators @ Importing XML description...");
-
-   cpp_code_body += "";
-
-   PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "dynamic_generators @ Setting up parameters structure...");
-
-   auto parNum = static_cast<unsigned int>(required_variables.size());
-
-   cpp_code_body += "   int _np = " + STR(parNum) + ";\n";
-   cpp_code_body += "   parameter _p[" + STR(parNum) + "];\n";
-
-   int portNum = 0;
-
-   for(auto& required_variable : required_variables)
+   std::vector<ModuleGenerator::parameter> _p;
    {
-      structural_type_descriptorRef typeRef = getDataType(std::get<0>(required_variable), FB);
-      cpp_code_body += "   _p[" + STR(portNum) + "].name = \"in" + STR(portNum + 1) + "\";\n";
-      cpp_code_body += "   _p[" + STR(portNum) + "].type = \"" + typeRef->get_name() + "\";\n";
-      unsigned int dataSize = typeRef->vector_size != 0 ? typeRef->vector_size : typeRef->size;
-      cpp_code_body += "   _p[" + STR(portNum) + "].type_size = " + STR(resize_to_8_or_greater(dataSize)) + ";\n";
-      cpp_code_body += "   _p[" + STR(portNum) + "].alignment = 0;\n";
-      portNum++;
-   }
-
-   cpp_code_body += "   parameter _ports_in[" + STR(mod->get_in_port_size()) + "];\n";
-   cpp_code_body += "   int _np_in = " + STR(mod->get_in_port_size()) + ";\n";
-   cpp_code_body += "   parameter _ports_out[" + STR(mod->get_out_port_size()) + "];\n";
-   cpp_code_body += "   int _np_out = " + STR(mod->get_out_port_size()) + ";\n";
-   if(mod->get_in_out_port_size())
-   {
-      cpp_code_body += "   parameter _ports_inout[" + STR(mod->get_in_out_port_size()) + "];\n";
-   }
-
-   for(unsigned int i = 0; i < mod->get_in_port_size(); ++i)
-   {
-      structural_objectRef port_in = mod->get_in_port(i);
-      cpp_code_body += "   _ports_in[" + STR(i) + "].name = \"" + port_in->get_id() + "\";\n";
-      cpp_code_body += "   _ports_in[" + STR(i) + "].type = \"" + port_in->get_typeRef()->get_name() + "\";\n";
-      unsigned int dataSize =
-          port_in->get_typeRef()->vector_size != 0 ? port_in->get_typeRef()->vector_size : port_in->get_typeRef()->size;
-      cpp_code_body += "   _ports_in[" + STR(i) + "].type_size = " + STR(dataSize) + ";\n";
-      cpp_code_body +=
-          "   _ports_in[" + STR(i) + "].alignment = " + STR(GetPointer<port_o>(port_in)->get_port_alignment()) + ";\n";
-   }
-   for(unsigned int i = 0; i < mod->get_out_port_size(); ++i)
-   {
-      structural_objectRef port_out = mod->get_out_port(i);
-      cpp_code_body += "   _ports_out[" + STR(i) + "].name = \"" + port_out->get_id() + "\";\n";
-      cpp_code_body += "   _ports_out[" + STR(i) + "].type = \"" + port_out->get_typeRef()->get_name() + "\";\n";
-      unsigned int dataSize = port_out->get_typeRef()->vector_size != 0 ? port_out->get_typeRef()->vector_size :
-                                                                          port_out->get_typeRef()->size;
-      cpp_code_body += "   _ports_out[" + STR(i) + "].type_size = " + STR(dataSize) + ";\n";
-      cpp_code_body += "   _ports_out[" + STR(i) +
-                       "].alignment = " + STR(GetPointer<port_o>(port_out)->get_port_alignment()) + ";\n";
-   }
-   for(unsigned int i = 0; i < mod->get_in_out_port_size(); ++i)
-   {
-      structural_objectRef port_inout = mod->get_out_port(i);
-      cpp_code_body += "   _ports_inout[" + STR(i) + "].name = \"" + port_inout->get_id() + "\";\n";
-      cpp_code_body += "   _ports_inout[" + STR(i) + "].type = \"" + port_inout->get_typeRef()->get_name() + "\";\n";
-      unsigned int dataSize = port_inout->get_typeRef()->vector_size != 0 ? port_inout->get_typeRef()->vector_size :
-                                                                            port_inout->get_typeRef()->size;
-      cpp_code_body += "   _ports_inout[" + STR(i) + "].type_size = " + STR(dataSize) + ";\n";
-      cpp_code_body += "   _ports_inout[" + STR(i) +
-                       "].alignment = " + STR(GetPointer<port_o>(port_inout)->get_port_alignment()) + ";\n";
-   }
-
-   cpp_code_body += "std::string data_bus_bitsize = \"" + STR(HLSMgr->Rmem->get_bus_data_bitsize()) + "\";\n";
-   cpp_code_body += "std::string addr_bus_bitsize = \"" + STR(HLSMgr->get_address_bitsize()) + "\";\n";
-   cpp_code_body += "std::string size_bus_bitsize = \"" + STR(HLSMgr->Rmem->get_bus_size_bitsize()) + "\";\n";
-   cpp_code_body += "std::string _specializing_string = \"" + specializing_string + "\";\n";
-   if(parameters->isOption(OPT_context_switch))
-   {
-      cpp_code_body += "std::string tag_bus_bitsize = \"" +
-                       STR(GetPointer<memory_cs>(HLSMgr->Rmem)->get_bus_tag_bitsize()) + "\";\n";
-   }
-   if(parameters->isOption(OPT_channels_number) && parameters->getOption<unsigned int>(OPT_channels_number) > 1)
-   {
-      cpp_code_body +=
-          "unsigned int _number_of_channels = " + STR(parameters->getOption<unsigned int>(OPT_channels_number)) + ";\n";
-   }
-
-   cpp_code_body += "\n\n\n";
-
-   cpp_code_body += cpp_input;
-
-   std::string cpp_code = cpp_code_header + cpp_code_body + cpp_code_footer;
-
-   PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "dynamic_generators @ Creating temp c++ file...");
-
-   static int progress_counter = 0;
-   std::fstream File;
-   const std::string temp_generator_filename =
-       output_directory + STR(progress_counter) +
-       (language == HDLWriter_Language::VERILOG ? "temp_verilog_generator.cpp" : "temp_vhdl_generator.cpp");
-   const std::string temp_generator_exec =
-       output_directory + STR(progress_counter) +
-       (language == HDLWriter_Language::VERILOG ? "temp_verilog_generator" : "temp_vhdl_generator");
-   const std::string temp_generated_filename =
-       output_directory + STR(progress_counter) +
-       (language == HDLWriter_Language::VERILOG ? "temp_verilog_file.v" : "temp_vhdl_file.vhd");
-   ++progress_counter;
-
-   File.open(temp_generator_filename, std::ios::out);
-   if(File.is_open())
-   {
-      File << cpp_code;
-   }
-   File.close();
-
-   const CompilerWrapperConstRef compiler_wrapper(
-       new CompilerWrapper(parameters, parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler),
-                           CompilerWrapper_OptimizationSet::O0));
-   std::string compiler_flags = " -lstdc++ -lm";
-   // setup source files
-   std::list<std::string> file_sources;
-   file_sources.push_front(temp_generator_filename);
-   compiler_wrapper->CreateExecutable(file_sources, temp_generator_exec, compiler_flags, true);
-
-   PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "dynamic_generators @ Executing temp c++ file...");
-   auto err = PandaSystem(parameters, temp_generator_exec, temp_generated_filename);
-   if(IsError(err))
-   {
-      THROW_ERROR("Error in generating " + temp_generated_filename);
-   }
-
-   PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "dynamic_generators @ Verilog file generated successfully!...");
-   PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "dynamic_generators @ Importing HDL...");
-
-   std::string HDLOutput = "";
-   line = "";
-   std::ifstream HDLFile(temp_generated_filename);
-   if(HDLFile.is_open())
-   {
-      while(HDLFile.good())
+      auto portNum = 0U;
+      for(auto& required_variable : required_variables)
       {
-         getline(HDLFile, line);
-         HDLOutput += line + "\n";
+         const auto typeRef = getDataType(std::get<0>(required_variable), FB);
+         struct ModuleGenerator::parameter param;
+         param.name = "in" + STR(portNum + 1U);
+         param.type = typeRef->get_name();
+         const auto dataSize = typeRef->vector_size != 0U ? typeRef->vector_size : typeRef->size;
+         param.type_size = resize_to_8_or_greater(dataSize);
+         param.alignment = 0U;
+         _p.push_back(std::move(param));
+         portNum++;
       }
-      HDLFile.close();
-   }
-   else
-   {
-      THROW_ERROR("dynamic_generators @ Unable to open file " + temp_generated_filename);
    }
 
-   if(!parameters->isOption(OPT_no_clean) || !parameters->getOption<bool>(OPT_no_clean))
-   {
-      PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "dynamic_generators @ Deleting all temp files...");
-      boost::filesystem::remove_all(output_directory);
-   }
-   PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "dynamic_generators @ DONE");
+   std::stringstream HDLOutput;
+   module_generator->Exec(HDLOutput, mod, _p, language);
 
+   PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "dynamic_generators @ HDL code generated successfully!");
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "dynamic_generators @ The generated Dynamic-HDL is:");
-   PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, HDLOutput);
+   PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, HDLOutput.str());
 
-   return HDLOutput;
+   return HDLOutput.str();
 }
 
-void moduleGenerator::add_port_parameters(structural_objectRef generated_port, structural_objectRef original_port)
+void ModuleGeneratorManager::add_port_parameters(structural_objectRef generated_port,
+                                                 structural_objectRef original_port)
 {
    original_port->copy(generated_port);
    generated_port->get_typeRef()->size = original_port->get_typeRef()->size;
    generated_port->get_typeRef()->vector_size = original_port->get_typeRef()->vector_size;
 }
 
-void moduleGenerator::specialize_fu(std::string fuName, vertex ve, std::string libraryId,
-                                    const technology_managerRef TM, const FunctionBehaviorConstRef FB,
-                                    std::string new_fu_name, std::map<std::string, technology_nodeRef>& new_fu,
-                                    TargetDevice_Type dv_type)
+void ModuleGeneratorManager::specialize_fu(std::string fuName, vertex ve, std::string libraryId,
+                                           const technology_managerRef TM, const FunctionBehaviorConstRef FB,
+                                           std::string new_fu_name, std::map<std::string, technology_nodeRef>& new_fu,
+                                           TargetDevice_Type dv_type)
 {
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Found variable component: " + fuName);
    std::vector<std::tuple<unsigned int, unsigned int>> required_variables =
@@ -673,8 +473,8 @@ void moduleGenerator::specialize_fu(std::string fuName, vertex ve, std::string l
           writer == HDLWriter_Language::VERILOG ? NP_functionality::VERILOG_GENERATOR :
                                                   NP_functionality::VHDL_GENERATOR);
       PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, new_fu_name + ": Generating dynamic hdl code");
-      std::string hdl_code = GenerateHDL(GetPointer<module>(top), hdl_template, required_variables, specializing_string,
-                                         FB, parameters->getOption<std::string>("dynamic_generators_dir"), writer);
+      std::string hdl_code =
+          GenerateHDL(GetPointer<module>(top), hdl_template, required_variables, specializing_string, FB, writer);
 
       CM->add_NP_functionality(top,
                                writer == HDLWriter_Language::VERILOG ? NP_functionality::VERILOG_PROVIDED :
@@ -702,9 +502,9 @@ void moduleGenerator::specialize_fu(std::string fuName, vertex ve, std::string l
    }
 }
 
-void moduleGenerator::create_generic_module(const std::string& fuName, const std::string& libraryId,
-                                            const technology_managerRef TM, const std::string& new_fu_name,
-                                            TargetDevice_Type dv_type, const application_managerRef AppM)
+void ModuleGeneratorManager::create_generic_module(const std::string& fuName, const std::string& libraryId,
+                                                   const technology_managerRef TM, const std::string& new_fu_name,
+                                                   TargetDevice_Type dv_type, const application_managerRef AppM)
 {
    const library_managerRef libraryManager = TM->get_library_manager(libraryId);
    technology_nodeRef techNode_obj = libraryManager->get_fu(fuName);
@@ -777,7 +577,6 @@ void moduleGenerator::create_generic_module(const std::string& fuName, const std
    auto inPortSize = static_cast<unsigned int>(fu_module->get_in_port_size());
    auto outPortSize = static_cast<unsigned int>(fu_module->get_out_port_size());
 
-   std::vector<std::tuple<unsigned int, unsigned int>> required_variables;
    const FunctionBehaviorConstRef FB;
    structural_objectRef generated_port;
    std::string port_name = "";
@@ -882,8 +681,9 @@ void moduleGenerator::create_generic_module(const std::string& fuName, const std
    std::string hdl_template = fu_module->get_NP_functionality()->get_NP_functionality(
        writer == HDLWriter_Language::VERILOG ? NP_functionality::VERILOG_GENERATOR : NP_functionality::VHDL_GENERATOR);
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, new_fu_name + ": Generating dynamic HDL code");
-   std::string hdl_code = GenerateHDL(GetPointer<module>(top), hdl_template, required_variables, specializing_string,
-                                      FB, parameters->getOption<std::string>("dynamic_generators_dir"), writer);
+   std::vector<std::tuple<unsigned int, unsigned int>> required_variables;
+   std::string hdl_code =
+       GenerateHDL(GetPointer<module>(top), hdl_template, required_variables, specializing_string, FB, writer);
    CM->add_NP_functionality(top,
                             writer == HDLWriter_Language::VERILOG ? NP_functionality::VERILOG_PROVIDED :
                                                                     NP_functionality::VHDL_PROVIDED,

@@ -31,7 +31,7 @@
  *
  */
 /**
- * @file moduleGenerator.hpp
+ * @file ModuleGeneratorManager.hpp
  * @brief
  *
  *
@@ -60,8 +60,8 @@
 
 CONSTREF_FORWARD_DECL(FunctionBehavior);
 enum class HDLWriter_Language;
-CONSTREF_FORWARD_DECL(HLS_manager);
 CONSTREF_FORWARD_DECL(Parameter);
+REF_FORWARD_DECL(HLS_manager);
 REF_FORWARD_DECL(structural_object);
 REF_FORWARD_DECL(structural_type_descriptor);
 REF_FORWARD_DECL(technology_manager);
@@ -69,11 +69,11 @@ REF_FORWARD_DECL(technology_node);
 REF_FORWARD_DECL(application_manager);
 class module;
 
-class moduleGenerator
+class ModuleGeneratorManager
 {
  protected:
    /// The HLS manager
-   const HLS_managerConstRef HLSMgr;
+   const HLS_managerRef HLSMgr;
 
    /// The set of input parameters
    const ParameterConstRef parameters;
@@ -89,12 +89,12 @@ class moduleGenerator
     * @param HLSMgr is the HLS manager
     * @param parameters is the set of input parameters
     */
-   moduleGenerator(const HLS_managerConstRef HLSMgr, const ParameterConstRef parameters);
+   ModuleGeneratorManager(const HLS_managerRef HLSMgr, const ParameterConstRef parameters);
 
    /**
     * Destructor.
     */
-   virtual ~moduleGenerator();
+   virtual ~ModuleGeneratorManager();
 
    structural_type_descriptorRef getDataType(unsigned int variable,
                                              const FunctionBehaviorConstRef function_behavior) const;
@@ -104,7 +104,7 @@ class moduleGenerator
    std::string GenerateHDL(const module* mod, const std::string& hdl_template,
                            std::vector<std::tuple<unsigned int, unsigned int>>& required_variables,
                            const std::string& specializing_string, const FunctionBehaviorConstRef FB,
-                           const std::string& path_dynamic_generators, HDLWriter_Language);
+                           HDLWriter_Language language);
 
    std::string get_specialized_name(unsigned int firstIndexToSpecialize,
                                     std::vector<std::tuple<unsigned int, unsigned int>>& required_variables,
@@ -118,5 +118,5 @@ class moduleGenerator
                               const std::string& new_fu_name, TargetDevice_Type dv_type,
                               const application_managerRef AppM);
 };
-using moduleGeneratorRef = refcount<moduleGenerator>;
+using ModuleGeneratorManagerRef = refcount<ModuleGeneratorManager>;
 #endif

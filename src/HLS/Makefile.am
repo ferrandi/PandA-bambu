@@ -757,41 +757,6 @@ lib_allocation_la_SOURCES = \
 #DOCUMENTATION STUFF
 PRJ_DOC += module_allocation/main_allocation.doc module_allocation/allocation.doc module_allocation/binding_constraints.doc
 
-noinst_LTLIBRARIES += lib_module_generator.la
-lib_module_generator_la_CPPFLAGS = \
-   -I$(top_srcdir)/src \
-   -I$(top_srcdir)/src/algorithms/graph_helpers \
-   -I$(top_srcdir)/src/constants \
-   -I$(top_srcdir)/src/design_flows  \
-   -I$(top_srcdir)/src/design_flows/backend/ToC/progModels  \
-   -I$(top_srcdir)/src/design_flows/backend/ToC/source_code_writers  \
-   -I$(top_srcdir)/src/design_flows/backend/ToHDL  \
-   -I$(top_srcdir)/src/behavior  \
-   -I$(top_srcdir)/src/HLS/binding \
-   -I$(top_srcdir)/src/HLS/binding/interconnection \
-   -I$(top_srcdir)/src/HLS/binding/module \
-   -I$(top_srcdir)/src/HLS/binding/register \
-   -I$(top_srcdir)/src/circuit  \
-   -I$(top_srcdir)/src/frontend_analysis \
-   -I$(top_srcdir)/src/frontend_analysis/IR_analysis \
-   -I$(top_srcdir)/src/graph \
-   -I$(top_srcdir)/src/HLS \
-   -I$(top_srcdir)/src/HLS/memory \
-   -I$(top_srcdir)/src/HLS/scheduling \
-   -I$(top_srcdir)/src/parser/polixml \
-   -I$(top_srcdir)/src/polixml \
-   -I$(top_srcdir)/src/technology \
-   -I$(top_srcdir)/src/technology/physical_library \
-   -I$(top_srcdir)/src/technology/physical_library/models \
-   -I$(top_srcdir)/src/technology/target_device \
-   -I$(top_srcdir)/src/tree  \
-   -I$(top_srcdir)/src/utility \
-   -I$(top_srcdir)/src/wrapper/flopoco \
-   -I$(top_srcdir)/src/wrapper/compiler \
-   $(AM_CPPFLAGS)
-noinst_HEADERS += module_generator/moduleGenerator.hpp
-lib_module_generator_la_SOURCES = module_generator/moduleGenerator.cpp
-
 noinst_LTLIBRARIES += lib_scheduling.la
 lib_scheduling_la_CPPFLAGS = \
    -I$(top_srcdir)/src \
@@ -823,15 +788,15 @@ lib_scheduling_la_CPPFLAGS = \
    -I$(top_srcdir)/src/utility \
    $(AM_CPPFLAGS)
 if BUILD_COIN_OR
-lib_scheduling_la_CPPFLAGS += \
-                             -DHAVE_CONFIG_H \
-                             -I$(COIN_OR_DIR)/Cbc/src \
-                             -I$(COIN_OR_DIR)/Cgl/src \
-                             -I$(COIN_OR_DIR)/Cgl/src/CglProbing \
-                             -I$(COIN_OR_DIR)/CoinUtils/src \
-                             -I$(COIN_OR_DIR)/Osi/src/Osi \
-                             -I$(top_builddir)/$(COIN_OR_OBJDIR)/CoinUtils/src \
-                             -I$(top_srcdir)/src/HLS/scheduling/newilp_scheduling
+   lib_scheduling_la_CPPFLAGS += \
+      -DHAVE_CONFIG_H \
+      -I$(COIN_OR_DIR)/Cbc/src \
+      -I$(COIN_OR_DIR)/Cgl/src \
+      -I$(COIN_OR_DIR)/Cgl/src/CglProbing \
+      -I$(COIN_OR_DIR)/CoinUtils/src \
+      -I$(COIN_OR_DIR)/Osi/src/Osi \
+      -I$(top_builddir)/$(COIN_OR_OBJDIR)/CoinUtils/src \
+      -I$(top_srcdir)/src/HLS/scheduling/newilp_scheduling
 endif
 noinst_HEADERS += \
    scheduling/ASLAP.hpp \
@@ -994,11 +959,21 @@ lib_HLS_la_SOURCES = \
    hls_target.cpp
 
 lib_HLS_la_LIBADD = \
-           lib_architecture_creation.la lib_hls_backend.la lib_binding.la \
-           lib_hls_flow.la lib_scheduling.la lib_allocation.la lib_function_allocation.la \
-           lib_stg.la lib_liveness.la lib_HLS_memory.la \
            $(top_builddir)/src/HLS/simulation/lib_simulation.la \
-           lib_module_generator.la lib_virtual_components.la lib_hls_chaining.la lib_evaluation.la lib_interface.la 
+           lib_allocation.la \
+           lib_architecture_creation.la \
+           lib_binding.la \
+           lib_evaluation.la \
+           lib_function_allocation.la \
+           lib_hls_backend.la \
+           lib_hls_chaining.la \
+           lib_hls_flow.la \
+           lib_HLS_memory.la \
+           lib_interface.la \
+           lib_liveness.la \
+           lib_scheduling.la \
+           lib_stg.la \
+           lib_virtual_components.la
 
 if BUILD_LIB_VCD
    lib_HLS_la_CPPFLAGS += \
@@ -1016,58 +991,58 @@ if BUILD_LIB_ILP
 endif
 
 if BUILD_LIB_VCD
-noinst_LTLIBRARIES += lib_vcd.la
-lib_vcd_la_CPPFLAGS = \
-   -I$(top_srcdir)/src \
-   -I$(top_srcdir)/src/behavior \
-   -I$(top_srcdir)/src/circuit \
-   -I$(top_srcdir)/src/constants  \
-   -I$(top_srcdir)/src/design_flows \
-   -I$(top_srcdir)/src/design_flows/backend/ToHDL \
-   -I$(top_srcdir)/src/graph \
-   -I$(top_srcdir)/src/HLS \
-   -I$(top_srcdir)/src/HLS/binding/module \
-   -I$(top_srcdir)/src/HLS/binding/register \
-   -I$(top_srcdir)/src/HLS/binding/storage_value_insertion \
-   -I$(top_srcdir)/src/HLS/function_allocation \
-   -I$(top_srcdir)/src/HLS/memory \
-   -I$(top_srcdir)/src/HLS/module_allocation \
-   -I$(top_srcdir)/src/HLS/scheduling \
-   -I$(top_srcdir)/src/HLS/stg \
-   -I$(top_srcdir)/src/HLS/virtual_components \
-   -I$(top_srcdir)/src/intermediate_representations \
-   -I$(top_srcdir)/src/intermediate_representations/hls \
-   -I$(top_srcdir)/src/parser/vcd \
-   -I$(top_srcdir)/src/parser/discrepancy \
-   -I$(top_srcdir)/src/technology/physical_library \
-   -I$(top_srcdir)/src/technology \
-   -I$(top_srcdir)/src/technology/target_device \
-   -I$(top_srcdir)/src/tree \
-   -I$(top_srcdir)/src/utility \
-   -I$(top_srcdir)/src/design_flows/backend/ToC/progModels \
-   -I$(top_srcdir)/src/design_flows/backend/ToC \
-   -I$(top_srcdir)/src/frontend_analysis \
-   $(AM_CPPFLAGS)
-noinst_HEADERS += \
-   vcd/CallGraphUnfolding.hpp \
-   vcd/CallSitesCollectorVisitor.hpp \
-   vcd/Discrepancy.hpp \
-   vcd/HWPathComputation.hpp \
-   vcd/HWDiscrepancyAnalysis.hpp \
-   vcd/UnfoldedFunctionInfo.hpp \
-   vcd/UnfoldedCallInfo.hpp \
-   vcd/UnfoldedCallGraph.hpp \
-   vcd/VcdSignalSelection.hpp \
-   vcd/vcd_trace_head.hpp \
-   vcd/vcd_utility.hpp
-lib_vcd_la_SOURCES = \
-   vcd/CallGraphUnfolding.cpp \
-   vcd/CallSitesCollectorVisitor.cpp \
-   vcd/HWPathComputation.cpp \
-   vcd/HWDiscrepancyAnalysis.cpp \
-   vcd/vcd_trace_head.cpp \
-   vcd/VcdSignalSelection.cpp \
-   vcd/vcd_utility.cpp
+   noinst_LTLIBRARIES += lib_vcd.la
+   lib_vcd_la_CPPFLAGS = \
+      -I$(top_srcdir)/src \
+      -I$(top_srcdir)/src/behavior \
+      -I$(top_srcdir)/src/circuit \
+      -I$(top_srcdir)/src/constants  \
+      -I$(top_srcdir)/src/design_flows \
+      -I$(top_srcdir)/src/design_flows/backend/ToHDL \
+      -I$(top_srcdir)/src/graph \
+      -I$(top_srcdir)/src/HLS \
+      -I$(top_srcdir)/src/HLS/binding/module \
+      -I$(top_srcdir)/src/HLS/binding/register \
+      -I$(top_srcdir)/src/HLS/binding/storage_value_insertion \
+      -I$(top_srcdir)/src/HLS/function_allocation \
+      -I$(top_srcdir)/src/HLS/memory \
+      -I$(top_srcdir)/src/HLS/module_allocation \
+      -I$(top_srcdir)/src/HLS/scheduling \
+      -I$(top_srcdir)/src/HLS/stg \
+      -I$(top_srcdir)/src/HLS/virtual_components \
+      -I$(top_srcdir)/src/intermediate_representations \
+      -I$(top_srcdir)/src/intermediate_representations/hls \
+      -I$(top_srcdir)/src/parser/vcd \
+      -I$(top_srcdir)/src/parser/discrepancy \
+      -I$(top_srcdir)/src/technology/physical_library \
+      -I$(top_srcdir)/src/technology \
+      -I$(top_srcdir)/src/technology/target_device \
+      -I$(top_srcdir)/src/tree \
+      -I$(top_srcdir)/src/utility \
+      -I$(top_srcdir)/src/design_flows/backend/ToC/progModels \
+      -I$(top_srcdir)/src/design_flows/backend/ToC \
+      -I$(top_srcdir)/src/frontend_analysis \
+      $(AM_CPPFLAGS)
+   noinst_HEADERS += \
+      vcd/CallGraphUnfolding.hpp \
+      vcd/CallSitesCollectorVisitor.hpp \
+      vcd/Discrepancy.hpp \
+      vcd/HWPathComputation.hpp \
+      vcd/HWDiscrepancyAnalysis.hpp \
+      vcd/UnfoldedFunctionInfo.hpp \
+      vcd/UnfoldedCallInfo.hpp \
+      vcd/UnfoldedCallGraph.hpp \
+      vcd/VcdSignalSelection.hpp \
+      vcd/vcd_trace_head.hpp \
+      vcd/vcd_utility.hpp
+   lib_vcd_la_SOURCES = \
+      vcd/CallGraphUnfolding.cpp \
+      vcd/CallSitesCollectorVisitor.cpp \
+      vcd/HWPathComputation.cpp \
+      vcd/HWDiscrepancyAnalysis.cpp \
+      vcd/vcd_trace_head.cpp \
+      vcd/VcdSignalSelection.cpp \
+      vcd/vcd_utility.cpp
    lib_HLS_la_LIBADD += lib_vcd.la
 endif
 
@@ -1082,6 +1057,48 @@ constraints_STD.data: $(top_srcdir)/etc/lib/technology/constraints_STD.xml
 	$(top_srcdir)/etc/scripts/add_escape.sh $(top_srcdir)/etc/lib/technology/constraints_STD.xml constraints_STD.data
 constraints_STD_ALUs.data: $(top_srcdir)/etc/lib/technology/constraints_STD_ALUs.xml
 	$(top_srcdir)/etc/scripts/add_escape.sh $(top_srcdir)/etc/lib/technology/constraints_STD_ALUs.xml constraints_STD_ALUs.data
+
+
+noinst_LTLIBRARIES += lib_module_generator.la
+lib_module_generator_la_CPPFLAGS = \
+   -I$(top_srcdir)/src \
+   -I$(top_srcdir)/src/algorithms/graph_helpers \
+   -I$(top_srcdir)/src/constants \
+   -I$(top_srcdir)/src/design_flows \
+   -I$(top_srcdir)/src/design_flows/backend/ToC/progModels \
+   -I$(top_srcdir)/src/design_flows/backend/ToC/source_code_writers \
+   -I$(top_srcdir)/src/design_flows/backend/ToHDL \
+   -I$(top_srcdir)/src/behavior \
+   -I$(top_srcdir)/src/HLS/binding \
+   -I$(top_srcdir)/src/HLS/binding/interconnection \
+   -I$(top_srcdir)/src/HLS/binding/module \
+   -I$(top_srcdir)/src/HLS/binding/register \
+   -I$(top_srcdir)/src/circuit \
+   -I$(top_srcdir)/src/frontend_analysis \
+   -I$(top_srcdir)/src/frontend_analysis/IR_analysis \
+   -I$(top_srcdir)/src/graph \
+   -I$(top_srcdir)/src/HLS \
+   -I$(top_srcdir)/src/HLS/memory \
+   -I$(top_srcdir)/src/HLS/scheduling \
+   -I$(top_srcdir)/src/parser/polixml \
+   -I$(top_srcdir)/src/polixml \
+   -I$(top_srcdir)/src/technology \
+   -I$(top_srcdir)/src/technology/physical_library \
+   -I$(top_srcdir)/src/technology/physical_library/models \
+   -I$(top_srcdir)/src/technology/target_device \
+   -I$(top_srcdir)/src/tree \
+   -I$(top_srcdir)/src/utility \
+   -I$(top_srcdir)/src/wrapper/flopoco \
+   -I$(top_srcdir)/src/wrapper/compiler \
+   $(AM_CPPFLAGS)
+noinst_HEADERS += \
+   module_generator/ModuleGeneratorManager.hpp \
+   module_generator/ModuleGenerator.hpp \
+   module_generator/PrintfModuleGenerator.hpp
+lib_module_generator_la_SOURCES = \
+   module_generator/ModuleGeneratorManager.cpp \
+   module_generator/ModuleGenerator.cpp \
+   module_generator/PrintfModuleGenerator.cpp
 
 #Documentation stuff
 DOX_TAGFILES = src src/graph src/HLS src/behavior src/circuit src/technology src/parser/HLS_constraintsIO src/HLS/controller src/HLS/scheduling src/HLS/module_allocation src/HLS/binding src/HLS/binding/register src/HLS/binding/storage_value_insertion src/HLS/binding/module src/HLS/binding/interconnection src/HLS/controller src/HLS/datapath src/HLS/hls_flow src/HLS/evaluation src/HLS/target /src/HLS/chaining src/HLS/function_allocation 
