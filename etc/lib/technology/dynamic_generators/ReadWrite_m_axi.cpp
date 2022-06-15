@@ -31,145 +31,406 @@
  *
  */
 /**
- * @file ReadWrite_array.cpp
- * @brief Snippet for the ReadWrite_array dynamic generator.
+ * @file ReadWrite_m_axi.cpp
+ * @brief Snippet for the ReadWrite_m_axi dynamic generator.
  *
- * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
+ * @author Ankur Limaye <ankur.limaye@pnnl.gov>
+ * @author Michele Fiorito <michele.fiorito@polimi.it>
  *
  */
 
-bool isAlignedPowerOfTwo = _ports_out[1].alignment == RUPNP2(_ports_out[1].alignment);
-std::cout << "//" << (isAlignedPowerOfTwo ? "T" : "F") << "\n";
-std::cout << "integer ii=0;\n";
-std::cout << "reg [" << _ports_out[1].type_size << "-1:0] " << _ports_out[1].name << ";\n";
-if(_np_out == 5)
-   std::cout << "reg [" << _ports_out[4].type_size << "-1:0] " << _ports_out[4].name << ";\n";
-if(_np_in == 8)
-   std::cout << "reg [(PORTSIZE_" << _ports_out[0].name << "*BITSIZE_" << _ports_out[0].name << ")+(-1):0] "
-             << _ports_out[0].name << ";\n";
-
-unsigned int log2nbyte =
-    _ports_out[1].alignment == 1 ? 0 : (32u - static_cast<unsigned>(__builtin_clz(_ports_out[1].alignment - 1)));
-
-unsigned addressMaxValue = _ports_out[1].alignment * static_cast<unsigned>(atoi(_specializing_string.data())) - 1;
-unsigned int nbitAddress = addressMaxValue == 1 ? 1 : (32u - static_cast<unsigned>(__builtin_clz(addressMaxValue)));
-
-if(log2nbyte > 0)
+enum in_port
 {
-   std::cout << "reg [(PORTSIZE_" << _ports_in[3].name << "*" << log2nbyte << ")+(-1):0] " << _ports_in[6].name
-             << "_0;\n";
-   std::cout << "always @(*)\n";
-   std::cout << "begin\n";
-   std::cout << "  for(ii=0; ii<PORTSIZE_" << _ports_in[3].name << "; ii=ii+1)\n";
-   if(isAlignedPowerOfTwo)
-      std::cout << "    " << _ports_in[6].name << "_0[" << log2nbyte << "*ii+:" << log2nbyte
-                << "] = " << _ports_in[6].name << "[(BITSIZE_" << _ports_in[6].name << ")*ii+:" << log2nbyte << "];\n";
-   else
-      std::cout << "    " << _ports_in[6].name << "_0[" << log2nbyte << "*ii+:" << log2nbyte
-                << "] = " << _ports_in[6].name << "[2+(BITSIZE_" << _ports_in[6].name << ")*ii+:" << nbitAddress - 2
-                << "] % " << log2nbyte - 2 << "'d" << _ports_out[1].alignment / 4 << ";\n";
-   std::cout << "end\n";
-}
-if(log2nbyte > 0 && _np_in == 8)
+   clock = 0,
+   reset,
+   start_port,
+   in1,
+   in2,
+   in3,
+   in4,
+   AWREADY,
+   WREADY,
+   BID,
+   BRESP,
+   BUSER,
+   BVALID,
+   ARREADY,
+   RID,
+   RDATA,
+   RRESP,
+   RLAST,
+   RUSER,
+   RVALID,
+   _n_ptr,
+};
+
+enum out_port
 {
-   std::cout << "reg [(PORTSIZE_" << _ports_in[3].name << "*" << log2nbyte << ")+(-1):0] " << _ports_in[6].name
-             << "_reg;\n";
-   std::cout << "always @(posedge clock 1RESET_EDGE)\n";
-   std::cout << "  if (1RESET_VALUE)\n";
-   std::cout << "    " << _ports_in[6].name << "_reg <= 0;\n";
-   std::cout << "  else\n";
-   std::cout << "    for(ii=0; ii<PORTSIZE_" << _ports_in[3].name << "; ii=ii+1)\n";
-   std::cout << "      " << _ports_in[6].name << "_reg[" << log2nbyte << "*ii+:" << log2nbyte
-             << "] <= " << _ports_in[6].name << "_0[" << log2nbyte << "*ii+:" << log2nbyte << "];\n";
-}
-std::cout << "always @(*)\n";
-std::cout << "begin\n";
-std::cout << "  " << _ports_out[1].name << " = {" << _ports_out[1].type_size << "{1'b1}};\n";
-std::cout << "  for(ii=0; ii<PORTSIZE_" << _ports_in[3].name << "; ii=ii+1)\n";
-std::cout << "  begin\n";
-std::cout << "    if(" << _ports_in[2].name << "[ii])\n";
-std::cout << "    begin\n";
-if(isAlignedPowerOfTwo)
-   std::cout << "      " << _ports_out[1].name << " = " << _ports_out[1].name << " & (" << _ports_in[6].name
-             << "[(BITSIZE_" << _ports_in[6].name << ")*ii+:" << nbitAddress << "] / " << _ports_out[1].alignment
-             << ");\n";
-else
-   std::cout << "      " << _ports_out[1].name << " = " << _ports_out[1].name << " & (" << _ports_in[6].name
-             << "[2+(BITSIZE_" << _ports_in[6].name << ")*ii+:" << nbitAddress - 2 << "] / "
-             << _ports_out[1].alignment / 4 << ");\n";
-std::cout << "    end\n";
-std::cout << "  end\n";
-std::cout << "end\n";
+   done_port = 0,
+   out1,
+   AWID,
+   AWADDR,
+   AWLEN,
+   AWSIZE,
+   AWBURST,
+   AWLOCK,
+   AWCACHE,
+   AWPROT,
+   AWQOS,
+   AWREGION,
+   AWUSER,
+   AWVALID,
+   WID,
+   WDATA,
+   WSTRB,
+   WLAST,
+   WUSER,
+   WVALID,
+   BREADY,
+   ARID,
+   ARADDR,
+   ARLEN,
+   ARSIZE,
+   ARBURST,
+   ARLOCK,
+   ARCACHE,
+   ARPROT,
+   ARQOS,
+   ARREGION,
+   ARUSER,
+   ARVALID,
+   RREADY
+};
 
-std::cout << "assign " << _ports_out[2].name << " = |" << _ports_in[2].name << ";\n";
+std::cout << R"(
+`ifndef _SIM_HAVE_CLOG2
+  `define CLOG2(x) \
+    (x <= 2) ? 1 : \
+    (x <= 4) ? 2 : \
+    (x <= 8) ? 3 : \
+    (x <= 16) ? 4 : \
+    (x <= 32) ? 5 : \
+    (x <= 64) ? 6 : \
+    (x <= 128) ? 7 : \
+    -1
+`endif
 
-if(_np_in == 8)
-{
-   std::cout << "always @(*)\n";
-   std::cout << "begin\n";
-   std::cout << "  for(ii=0; ii<PORTSIZE_" << _ports_out[0].name << "; ii=ii+1)\n";
-   if(log2nbyte > 0)
-      std::cout << "    " << _ports_out[0].name << "[(BITSIZE_" << _ports_out[0].name << ")*ii+:BITSIZE_"
-                << _ports_out[0].name << "] = " << _ports_in[7].name << " >> {" << _ports_in[6].name << "_reg["
-                << log2nbyte << "*ii+:" << log2nbyte << "],3'b0};" << std::endl;
-   else
-      std::cout << "    " << _ports_out[0].name << "[(BITSIZE_" << _ports_out[0].name << ")*ii+:BITSIZE_"
-                << _ports_out[0].name << "] = " << _ports_in[7].name << ";" << std::endl;
+)";
 
-   std::cout << "end\n";
-}
+std::cout << "assign " << _ports_out[AWID].name << " = 'b0;\n";
+std::cout << "assign " << _ports_out[AWLOCK].name << " = 'b0;\n";
+std::cout << "assign " << _ports_out[AWCACHE].name << " = 'b0;\n";
+std::cout << "assign " << _ports_out[AWPROT].name << " = 'b0;\n";
+std::cout << "assign " << _ports_out[AWQOS].name << " = 'b0;\n";
+std::cout << "assign " << _ports_out[AWREGION].name << " = 'b0;\n";
+std::cout << "assign " << _ports_out[AWUSER].name << " = 'b0;\n";
+std::cout << "assign " << _ports_out[WID].name << " = 'b0;\n";
+std::cout << "assign " << _ports_out[WUSER].name << " = 'b0;\n";
+std::cout << "assign " << _ports_out[ARID].name << " = 'b0;\n";
+std::cout << "assign " << _ports_out[ARLOCK].name << " = 'b0;\n";
+std::cout << "assign " << _ports_out[ARCACHE].name << " = 'b0;\n";
+std::cout << "assign " << _ports_out[ARPROT].name << " = 'b0;\n";
+std::cout << "assign " << _ports_out[ARQOS].name << " = 'b0;\n";
+std::cout << "assign " << _ports_out[ARREGION].name << " = 'b0;\n";
+std::cout << "assign " << _ports_out[ARUSER].name << " = 'b0;\n";
 
-if(_np_out == 5)
-   std::cout << "assign " << _ports_out[3].name << " = (|" << _ports_in[2].name << ") & (|" << _ports_in[3].name
-             << ");\n";
+std::cout << R"(
+localparam [2:0] S_IDLE = 3'b000,
+  S_RD_BURST = 3'b001,
+  S_WR_BURST = 3'b101;
+)";
 
-if(_np_out == 5)
-{
-   std::cout << "always @(*)\n";
-   std::cout << "begin\n";
-   std::cout << "  " << _ports_out[4].name << " = 0;\n";
-   std::cout << "  for(ii=0; ii<PORTSIZE_" << _ports_in[3].name << "; ii=ii+1)\n";
-   std::cout << "  begin\n";
-   std::cout << "    if(ii==0 || " << _ports_in[2].name << "[ii])\n";
-   if(log2nbyte > 0)
-      std::cout << "      " << _ports_out[4].name << " = (" << _ports_in[4].name << "[(BITSIZE_" << _ports_in[4].name
-                << ")*ii+:BITSIZE_" << _ports_in[4].name << "]>=" << _ports_out[4].type_size << ")?"
-                << _ports_in[5].name << "[(BITSIZE_" << _ports_in[5].name << ")*ii+:BITSIZE_" << _ports_in[5].name
-                << "]:(" << _ports_out[4].name << "^((((BITSIZE_" << _ports_in[5].name << ">" << _ports_out[4].type_size
-                << "?" << _ports_in[5].name << "[(BITSIZE_" << _ports_in[5].name << ")*ii+:BITSIZE_"
-                << _ports_in[5].name << "]:{{(" << _ports_out[4].type_size << "< BITSIZE_" << _ports_in[5].name
-                << " ? 1 : " << _ports_out[4].type_size << "-BITSIZE_" << _ports_in[5].name << "){1'b0}},"
-                << _ports_in[5].name << "[(BITSIZE_" << _ports_in[5].name << ")*ii+:BITSIZE_" << _ports_in[5].name
-                << "]})<<{" << _ports_in[6].name << "_0[" << log2nbyte << "*ii+:" << log2nbyte << "],3'b0})^"
-                << _ports_out[4].name << ") & (((" << _ports_in[4].name << "[(BITSIZE_" << _ports_in[4].name
-                << ")*ii+:BITSIZE_" << _ports_in[4].name << "]+{" << _ports_in[6].name << "_0[" << log2nbyte
-                << "*ii+:" << log2nbyte << "],3'b0})>" << _ports_out[4].type_size << ") ? ((({("
-                << _ports_out[4].type_size << "){1'b1}})>>({" << _ports_in[6].name << "_0[" << log2nbyte
-                << "*ii+:" << log2nbyte << "],3'b0}))<<({" << _ports_in[6].name << "_0[" << log2nbyte
-                << "*ii+:" << log2nbyte << "],3'b0})) : ((((({(" << _ports_out[4].type_size << "){1'b1}})>>({"
-                << _ports_in[6].name << "_0[" << log2nbyte << "*ii+:" << log2nbyte << "],3'b0}))<<({"
-                << _ports_in[6].name << "_0[" << log2nbyte << "*ii+:" << log2nbyte << "],3'b0}))<<("
-                << _ports_out[4].type_size << "-" << _ports_in[4].name << "[(BITSIZE_" << _ports_in[4].name
-                << ")*ii+:BITSIZE_" << _ports_in[4].name << "]-{" << _ports_in[6].name << "_0[" << log2nbyte
-                << "*ii+:" << log2nbyte << "],3'b0}))>>(" << _ports_out[4].type_size << "-" << _ports_in[4].name
-                << "[(BITSIZE_" << _ports_in[4].name << ")*ii+:BITSIZE_" << _ports_in[4].name << "]-{"
-                << _ports_in[6].name << "_0[" << log2nbyte << "*ii+:" << log2nbyte << "],3'b0})))));\n";
-   else
-      std::cout << "      " << _ports_out[4].name << " = (" << _ports_in[4].name << "[(BITSIZE_" << _ports_in[4].name
-                << ")*ii+:BITSIZE_" << _ports_in[4].name << "]>=" << _ports_out[4].type_size << ")?"
-                << _ports_in[5].name << "[(BITSIZE_" << _ports_in[5].name << ")*ii+:BITSIZE_" << _ports_in[5].name
-                << "]:(" << _ports_out[4].name << "^((((BITSIZE_" << _ports_in[5].name << ">" << _ports_out[4].type_size
-                << "?" << _ports_in[5].name << "[(BITSIZE_" << _ports_in[5].name << ")*ii+:BITSIZE_"
-                << _ports_in[5].name << "]:{{(" << _ports_out[4].type_size << "< BITSIZE_" << _ports_in[5].name
-                << " ? 1 : " << _ports_out[4].type_size << "-BITSIZE_" << _ports_in[5].name << "){1'b0}},"
-                << _ports_in[5].name << "[(BITSIZE_" << _ports_in[5].name << ")*ii+:BITSIZE_" << _ports_in[5].name
-                << "]}))^" << _ports_out[4].name << ") & (((" << _ports_in[4].name << "[(BITSIZE_" << _ports_in[4].name
-                << ")*ii+:BITSIZE_" << _ports_in[4].name << "])>" << _ports_out[4].type_size << ") ? ((({("
-                << _ports_out[4].type_size << "){1'b1}}))) : ((((({(" << _ports_out[4].type_size << "){1'b1}})))<<("
-                << _ports_out[4].type_size << "-" << _ports_in[4].name << "[(BITSIZE_" << _ports_in[4].name
-                << ")*ii+:BITSIZE_" << _ports_in[4].name << "]))>>(" << _ports_out[4].type_size << "-"
-                << _ports_in[4].name << "[(BITSIZE_" << _ports_in[4].name << ")*ii+:BITSIZE_" << _ports_in[4].name
-                << "])))));\n";
-   std::cout << "  end\n";
-   std::cout << "end\n";
-}
+std::cout << R"(
+reg [2:0] _present_state, _next_state;
+)";
+std::cout << "reg [BITSIZE_" + _ports_out[AWADDR].name + "+(-1):0] axi_awaddr, next_axi_awaddr;\n";
+std::cout << "reg [BITSIZE_" + _ports_out[ARADDR].name + "+(-1):0] axi_araddr, next_axi_araddr;\n";
+std::cout << "reg [BITSIZE_" + _ports_out[WDATA].name + "+(-1):0] axi_wdata, next_axi_wdata;\n";
+std::cout << "reg [2:0] AWSIZE, next_AWSIZE;\n";
+std::cout << "reg [(BITSIZE_" + _ports_out[WDATA].name + "/8)+(-1):0] WSTRB, next_WSTRB;\n";
+std::cout << "reg [1:0] AWBURST, next_AWBURST;\n";
+std::cout << "reg [7:0] AWLEN, next_AWLEN;\n";
+std::cout << "reg AWREADY, next_AWREADY;\n";
+std::cout << "reg [2:0] ARSIZE, next_ARSIZE;\n";
+std::cout << "reg [1:0] ARBURST, next_ARBURST;\n";
+std::cout << "reg [7:0] ARLEN, next_ARLEN;\n";
+/* This register will most likely be oversized. The actual size would be the logarithm of the size of WDATA in bytes,
+ * but I don't think that it's possible to use the log when declaring a reg */
+std::cout << "reg [(BITSIZE_" + _ports_out[WDATA].name + "/8)+(-1):0] misalignment;\n";
+std::cout << "reg [(BITSIZE_" + _ports_out[WDATA].name + ")+(-1):0] read_mask, next_read_mask;\n";
+
+std::cout << R"(
+reg axi_awvalid, next_axi_awvalid;
+reg axi_wlast, next_axi_wlast;
+reg axi_wvalid, next_axi_wvalid;
+reg axi_bready, next_axi_bready;
+reg axi_arvalid, next_axi_arvalid;
+reg axi_rready, next_axi_rready;
+
+reg first_read, next_first_read;
+
+reg acc_done, next_acc_done;
+)";
+std::cout << "reg [BITSIZE_" + _ports_in[RDATA].name + "+(-1):0] acc_rdata, next_acc_rdata;\n";
+
+std::cout << "generate\n";
+std::cout << "  assign " << _ports_out[AWLEN].name << " = AWLEN;\n";
+std::cout << "  assign " << _ports_out[AWSIZE].name << " = AWSIZE;\n";
+std::cout << "  assign " << _ports_out[AWBURST].name << " = AWBURST;\n";
+std::cout << "  assign " << _ports_out[WSTRB].name << " = WSTRB;\n";
+std::cout << "  assign " << _ports_out[ARLEN].name << " = ARLEN;\n";
+std::cout << "  assign " << _ports_out[ARSIZE].name << " = ARSIZE;\n";
+std::cout << "  assign " << _ports_out[ARBURST].name << " = ARBURST;\n";
+std::cout << "endgenerate\n";
+
+// Assign reg values
+std::cout << "assign " << _ports_out[AWADDR].name << " = axi_awaddr;\n";
+std::cout << "assign " << _ports_out[AWVALID].name << " = axi_awvalid;\n";
+std::cout << "assign " << _ports_out[WDATA].name << " = axi_wdata;\n";
+std::cout << "assign " << _ports_out[WLAST].name << " = axi_wlast;\n";
+std::cout << "assign " << _ports_out[WVALID].name << " = axi_wvalid;\n";
+std::cout << "assign " << _ports_out[BREADY].name << " = axi_bready;\n";
+std::cout << "assign " << _ports_out[ARADDR].name << " = axi_araddr;\n";
+std::cout << "assign " << _ports_out[ARVALID].name << " = axi_arvalid;\n";
+std::cout << "assign " << _ports_out[RREADY].name << " = axi_rready;\n";
+std::cout << R"(
+assign done_port = acc_done;
+assign out1 = acc_done ? acc_rdata : 'b0;
+
+initial begin
+  _present_state = S_IDLE;
+  axi_awaddr = 'b0;
+  axi_awvalid = 1'b0;
+  axi_wdata = 'b0;
+  axi_wlast = 1'b0;
+  axi_wvalid = 1'b0;
+  axi_bready = 1'b0;
+  axi_araddr = 'b0;
+  axi_arvalid = 1'b0;
+  axi_rready = 1'b0;
+  acc_done = 1'b0;
+  acc_rdata = 'b0;
+  AWLEN = 'b0;
+  AWBURST = 'b0;
+  ARLEN = 'b0;
+  ARBURST = 'b0;
+end
+  
+always @(*) begin
+  _next_state = S_IDLE;
+  next_axi_awaddr = axi_awaddr;
+  next_axi_awvalid = axi_awvalid;
+  next_axi_wdata = 'b0;
+  next_axi_wlast = 1'b0;
+  next_axi_wvalid = 1'b0;
+  next_axi_bready = 1'b0;
+  next_axi_araddr = axi_araddr;
+  next_axi_arvalid = 1'b0;
+  next_axi_rready = 1'b0;
+  next_acc_done = acc_done;
+  next_acc_rdata = acc_rdata;
+  next_AWSIZE = AWSIZE;
+  next_AWBURST = AWBURST;
+  next_AWLEN = AWLEN;
+  next_ARSIZE = ARSIZE;
+  next_ARBURST = ARBURST;
+  next_ARLEN = ARLEN;
+  misalignment = 0;
+  next_first_read = first_read;
+  next_read_mask = read_mask;
+  next_AWREADY = AWREADY;
+  next_WSTRB = WSTRB;
+
+  case (_present_state)
+    S_IDLE: begin
+      next_axi_awaddr = 'b0;
+      next_axi_awvalid = 1'b0;
+      next_axi_wdata = 'b0;
+      next_axi_wvalid = 1'b0;
+      next_axi_bready = 1'b1;
+      next_axi_araddr = 'b0;
+      next_axi_arvalid = 1'd0;
+      next_axi_rready = 1'b1;
+      next_acc_done = 1'b0;
+      next_acc_rdata = 'b0;
+      next_AWSIZE = 'b0;
+      next_AWBURST = 'b0;
+      next_AWLEN = 'b0;
+      next_WSTRB = 'b0;
+      next_ARSIZE = 'b0;
+      next_ARBURST = 'b0;
+      next_ARLEN = 'b0;
+      next_first_read = 'b0;
+      next_read_mask = 'b0;
+      next_acc_rdata = 'b0;
+      next_AWREADY = 'b0;
+)";
+std::cout << "      if (" << _ports_in[start_port].name << " && !" << _ports_in[in1].name << ") begin\n";
+std::cout << R"(        `ifdef _SIM_HAVE_CLOG2
+          next_ARSIZE = $clog2(in2 / 8);
+        `else
+          next_ARSIZE = `CLOG2(in2 / 8);
+        `endif
+        next_axi_bready = 1'b0;
+        next_axi_rready = 1'b1;
+)";
+std::cout << "        next_first_read = 1'b1;\n";
+std::cout << "        next_axi_araddr = " << _ports_in[in4].name << ";\n";
+std::cout << "        misalignment = " << _ports_in[in4].name << " % (1 << next_ARSIZE);\n";
+std::cout << "        if(misalignment > 'b0) begin\n";
+std::cout << "          next_ARLEN = 'b1;\n";
+std::cout << "          next_ARBURST = 'b1;\n";
+std::cout << "          next_read_mask = -(1 << (misalignment * 8));\n";
+std::cout << "        end else begin\n";
+std::cout << "          next_ARLEN = 'b0;\n";
+std::cout << "          next_ARBURST = 'b0;\n";
+std::cout << "        end\n";
+std::cout << "        next_axi_arvalid = 1'b1;\n";
+std::cout << "        _next_state = S_RD_BURST;\n";
+std::cout << "      end else if (" << _ports_in[start_port].name << " && " << _ports_in[in1].name << ") begin\n";
+std::cout << "        next_axi_awaddr = " << _ports_in[in4].name << ";\n";
+std::cout << "        next_axi_awvalid = 1'b1;\n";
+std::cout << "        `ifdef _SIM_HAVE_CLOG2\n";
+std::cout << "          next_AWSIZE = $clog2(in2 / 8);\n";
+std::cout << "        `else\n";
+std::cout << "          next_AWSIZE = `CLOG2(in2 / 8);\n";
+std::cout << "        `endif\n";
+/* Compute the misalignment, assert all the bits to the left of the misaligned one */
+std::cout << "        misalignment = " << _ports_in[in4].name << " % (1 << next_AWSIZE);\n";
+std::cout << "        next_WSTRB = -(1 << misalignment);\n";
+std::cout << "        next_axi_wdata = " << _ports_in[in3].name << ";\n";
+std::cout << R"(        next_axi_wvalid = 1'b1;
+        next_axi_wlast = !(misalignment > 'b0);
+        if(next_axi_wlast) begin
+          next_AWBURST = 2'b00;
+          next_AWLEN = 8'b00000000;
+        end else begin
+          next_AWBURST = 2'b01;
+          next_AWLEN = 8'b00000001;
+        end
+        next_axi_rready = 1'b0;
+        _next_state = S_WR_BURST;
+      end else begin
+        _next_state = S_IDLE;
+      end
+    end
+
+    S_RD_BURST: begin
+)";
+std::cout << "      if(" << _ports_in[ARREADY].name << ") begin\n";
+std::cout << R"(        next_axi_arvalid = 1'b0;
+        next_ARSIZE = 'b0;
+        next_ARBURST = 'b0;
+        next_ARLEN = 'b0;
+        next_axi_araddr = 'b0;
+        next_axi_arvalid = 1'b0;
+      end
+      else begin
+        next_axi_arvalid = axi_arvalid;
+        next_axi_araddr = axi_araddr;
+      end
+      _next_state = S_RD_BURST;
+      next_axi_rready = 1'b1;
+      
+)";
+std::cout << "      if(" << _ports_in[RVALID].name << ") begin\n";
+std::cout << "        if(" << _ports_in[RLAST].name << ") begin\n";
+std::cout << "          next_acc_rdata = next_acc_rdata + (" << _ports_in[RDATA].name << " & (~read_mask));\n";
+std::cout << "          next_axi_rready = 1'b0;\n";
+std::cout << "          next_acc_done = 1'b1;\n";
+std::cout << "          _next_state = S_IDLE;\n";
+std::cout << "        end else if (first_read) begin\n";
+std::cout << "          next_acc_rdata = " << _ports_in[RDATA].name << " & read_mask;\n";
+std::cout << R"(          next_acc_done = 1'b0;
+          next_first_read = 1'b0;
+          _next_state = S_RD_BURST;
+        end
+      end else begin
+        _next_state = S_RD_BURST;
+      end
+    end
+
+    S_WR_BURST : begin 
+    _next_state = S_WR_BURST;
+)";
+std::cout << "      if(!" << _ports_in[WREADY].name << ") begin\n";
+std::cout << "        next_axi_wvalid = axi_wvalid;\n";
+std::cout << "        next_axi_wlast = axi_wlast;\n";
+std::cout << "        next_axi_wdata = axi_wdata;\n";
+std::cout << "      end\n";
+std::cout << "      if(" << _ports_in[AWREADY].name << ") begin";
+std::cout << R"(
+        next_AWSIZE = 'b0;
+        next_AWBURST = 'b0;
+        next_AWLEN = 'b0;
+        next_axi_awvalid = 'b0;
+        next_axi_awaddr = 'b0;
+        next_AWREADY = 1'b1;
+      end
+)";
+
+std::cout << "      if (next_AWREADY &&" << _ports_in[WREADY].name << " && !WSTRB[0]) begin";
+std::cout << R"(
+        /* If the last transfer was not aligned and the slave is ready, transfer the rest */
+        next_WSTRB = ~WSTRB;
+        next_axi_wdata = axi_wdata;
+        next_axi_wvalid = 1'b1;
+        next_axi_wlast = 1'b1;
+      end
+      else if (next_AWREADY && !WSTRB[0]) begin
+        /* If it's an aligned transfer but the slave is not ready, just keep the signals */
+        next_axi_wdata = axi_wdata;
+        next_axi_wvalid = axi_wvalid;
+        next_WSTRB = WSTRB;
+        next_axi_wlast = axi_wlast;
+      end
+      if(!next_AWREADY) begin
+        next_axi_awvalid = axi_awvalid;
+        next_axi_awaddr = axi_awaddr;
+        next_axi_wvalid = axi_wvalid;
+        next_axi_wdata = axi_wdata;
+      end 
+      /* If the last transfer was complete, deassert the validity bits and check if you can go back to
+      IDLE */
+)";
+std::cout << "      if (" << _ports_in[BVALID].name << ") begin";
+std::cout << R"(        next_acc_done = 1'b1;
+        next_axi_wvalid = 1'b0;
+        next_axi_wdata = 'b0;
+        next_WSTRB = 'b0;
+        next_axi_wlast = 1'b0;
+        _next_state = S_IDLE;
+      end
+    end
+  endcase
+end
+
+always @(posedge clock) begin
+  _present_state <= _next_state;
+
+  axi_awaddr <= next_axi_awaddr;
+  axi_awvalid <= next_axi_awvalid;
+  axi_wdata <= next_axi_wdata;
+  axi_wlast <= next_axi_wlast;
+  axi_wvalid <= next_axi_wvalid;
+  axi_bready <= next_axi_bready;
+  axi_araddr <= next_axi_araddr;
+  axi_arvalid <= next_axi_arvalid;
+  axi_rready <= next_axi_rready;
+  acc_done <= next_acc_done;
+  acc_rdata <= next_acc_rdata;
+  AWSIZE <= next_AWSIZE;
+  AWBURST <= next_AWBURST;
+  AWLEN <= next_AWLEN;
+  WSTRB <= next_WSTRB;
+  ARSIZE <= next_ARSIZE;
+  ARBURST <= next_ARBURST;
+  ARLEN <= next_ARLEN;
+  first_read <= next_first_read;
+  read_mask <= next_read_mask;
+  AWREADY <= next_AWREADY;
+
+  if (!reset) begin
+    _present_state <= S_IDLE;
+  end
+end)";

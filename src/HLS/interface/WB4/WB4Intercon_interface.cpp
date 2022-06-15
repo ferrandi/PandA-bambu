@@ -349,5 +349,5 @@ static void buildCircuit(structural_managerRef SM, structural_objectRef wrappedO
 
    interconModule->SetParameter("MASTERS", STR(masters.size() + 1));
    interconModule->SetParameter("SLAVES", STR(slaves.size() + 1));
-   interconModule->SetParameter("MEMORY_INIT_file", "\"\"" + baseAddressFileName + "\"\"");
+   interconModule->SetParameter("MEMORY_INIT_file", "\"\"" + GetPath(baseAddressFileName) + "\"\"");
 }

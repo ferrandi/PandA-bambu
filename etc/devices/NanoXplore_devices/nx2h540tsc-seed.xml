@@ -2,9 +2,9 @@
 <target>
   <device>
     <vendor value="NanoXplore" />
-    <family value="NG-LARGE" />
-    <model value="nx1h140TSP" />
-    <package value="LG625V" />
+    <family value="NG-ULTRA" />
+    <model value="nx2h540tsc" />
+    <package value="LF1760" />
     <speed_grade value="std" />
     <BRAM_bitsize_min value="8" />
     <BRAM_bitsize_max value="128" />
@@ -13,9 +13,8 @@
     <DSPs_rx_sizes value="16" />
     <DSPs_ry_sizes value="16" />
     <max_lut_size value="4" />
-    <RelativeConnectionOffset value="3" />
-    <OutputDSPConnectionRatio value="7" />
-    <OutputCarryConnectionRatio value="7" />
+    <OutputDSPConnectionRatio value="3" />
+    <OutputCarryConnectionRatio value="3" />
     <use_soft_64_mul value="1" />
   </device>
   <technology>

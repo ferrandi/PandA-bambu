@@ -33,17 +33,16 @@
       <cmd name="    lines = lines[lines.index(next(iter(filter(lambda x: table_header in x, lines)), None)):]" />
       <cmd name="    lines = lines[lines.index(next(iter(filter(lambda x: table_row in x, lines)), None)):]" />
       <cmd name="    ltrim = lines[0].find(table_corner)" />
-      <cmd name="    lines = lines[:lines.index(next(iter(filter(lambda x: all(t not in x[ltrim:] for t in [table_row, table_edge]), lines)), None))]" />
+      <cmd name="    try: lines = lines[:lines.index(next(iter(filter(lambda x: all(t not in x[ltrim:] for t in [table_row, table_edge]), lines)), None))]" />
+      <cmd name="    except Exception: None" />
       <cmd name="    return list(map(lambda x: x[ltrim:], filter(lambda x: any(t in x[ltrim:] for t in [table_row, table_edge]), lines)))" />
       <cmd name="def parse_ascii_table(table_lines):" />
       <cmd name="    rows = []" />
       <cmd name="    for line in table_lines:" />
-      <cmd name="        if table_row in line:" />
-      <cmd name="            continue" />
+      <cmd name="        if table_row in line: continue" />
       <cmd name="        splitted_line = list(map(str.strip, filter(lambda x: x!=table_edge, line.split(table_edge))))[1:-1]" />
       <cmd name="        rows.append(['']*len(splitted_line))" />
-      <cmd name="        for i in range(len(splitted_line)):" />
-      <cmd name="            rows[-1][i]=splitted_line[i]" />
+      <cmd name="        for i in range(len(splitted_line)): rows[-1][i] = splitted_line[i]" />
       <cmd name="    return rows" />
       <cmd name="def get_res(log_lines):" />
       <cmd name="    num_re = re.compile(r&quot;(\d+)&quot;)" />
@@ -72,53 +71,57 @@
       <cmd name="    table_lines = first_table_after('Reporting timing constraints', log_lines)" />
       <cmd name="    rows = parse_ascii_table(table_lines)" />
       <cmd name="    timing_table = dict(zip(rows[1], rows[2]))" />
+      <cmd name="    unit = timing_table['Setup/Recovery'][-2:]" />
+      <cmd name="    value = float(timing_table['Setup/Recovery'][:-2])" />
+      <cmd name="    if unit == 'ns': return str(value)" />
+      <cmd name="    elif unit == 'ps': return str(value / 1000.0)" />
       <cmd name="    return timing_table['Setup/Recovery'][:-2]" />
 
-      <cmd name="dir = '.'" />
-      <cmd name="if path.exists(dir + '/pads.py'):" condition="!${__connect_iob__}" />
-      <cmd name="    os.remove(dir + '/pads.py')" condition="!${__connect_iob__}" />
+      <cmd name="dir = os.getcwd()" />
+      <cmd name="outdir = '${__nxpython_outdir__}/output'" />
+      <cmd name="if path.exists(os.path.join(dir, 'pads.py')): os.remove(os.path.join(dir, 'pads.py'))" condition="!${__connect_iob__}" />
       <cmd name="sys.path.append(dir)" />
-      <cmd name="project = createProject(dir)" />
+      <cmd name="project = createProject(outdir)" />
+      <cmd name="if NXMAPversion == 3: setLogDirectory(outdir)" />
       <cmd name="project.setVariantName('${__target_family__}-EMBEDDED')" condition="!${__connect_iob__}" />
       <cmd name="project.setVariantName('${__target_family__}')" condition="${__connect_iob__}" />
       <cmd name="project.setTopCellName('${__top_id__}')" />
       <cmd name="project.addFiles('${__VHDL_library__}', [${__nxpython_sources_macro_list__}])" condition="${__has_VHDL_library__}" />
       <cmd name="project.addFiles([${__nxpython_sources_macro_list__}])" condition="!${__has_VHDL_library__}" />
       <cmd name="project.setOptions({'ManageAsynchronousReadPort': 'Yes', 'ManageUnconnectedOutputs': 'Ground', 'ManageUnconnectedSignals': 'Ground','DefaultRAMMapping': 'RAM', 'MaxRegisterCount': '12500'})" />
+      <cmd name="project.setOptions({'MappingEffort': 'High', 'TimingDriven': 'Yes'})" />
+      <cmd name="if NXMAPversion == 3: project.setOptions({'MappingEffort': 'High', 'TimingDriven': 'Yes', 'DensityEffort': 'Medium', 'BypassingEffort': 'High', 'PartitioningEffort': 'High', 'PolishingEffort': 'High', 'RoutingEffort': 'High'})" />
       <cmd name="project.createClock('getClockNet(${__clk_name__})', '${__clk_name__}', int(math.floor(float(${__clk_period__}) * float(1000))))" />
       <cmd name="from ${__backend_script_extensions__} import ${__backend_script_extensions__}" condition="${__has_script_extensions__}" />
-      <cmd name="if path.exists(dir + '/pads.py'):" />
+      <cmd name="if path.exists(os.path.join(dir, 'pads.py')):" />
       <cmd name="    from pads import pads" />
       <cmd name="    project.addPads(pads)" />
-      <cmd name="project.save('native'+prjEXT)" />
-      <cmd name="if not project.synthesize():" />
-      <cmd name="    sys.exit(1)" />
-      <cmd name="project.save('synthesized'+prjEXT)" />
-      <cmd name="if not project.place():" />
-      <cmd name="    sys.exit(1)" />
-      <cmd name="project.save('placed'+prjEXT)" />
-      <cmd name="if NXMAPversion == 2 and not path.exists(dir + '/pads.py'):" />
-      <cmd name="    project.savePorts('pads.py')" />
-      <cmd name="if not project.route():" />
-      <cmd name="    sys.exit(1)" />
-      <cmd name="project.save('routed'+prjEXT)" />
+      <cmd name="project.save(os.path.join(outdir, 'native'+prjEXT))" />
+      <cmd name="if not project.synthesize(): sys.exit(1)" />
+      <cmd name="project.save(os.path.join(outdir, 'synthesized'+prjEXT))" />
+      <cmd name="if not project.place(): sys.exit(1)" />
+      <cmd name="project.save(os.path.join(outdir, 'placed'+prjEXT))" />
+      <cmd name="if NXMAPversion == 2 and not path.exists(os.path.join(dir, 'pads.py')): project.savePorts(os.path.join(dir, 'pads.py'))" />
+      <cmd name="if not project.route(): sys.exit(1)" />
+      <cmd name="project.save(os.path.join(outdir, 'routed'+prjEXT))" />
       <cmd name="analyzer = project.createAnalyzer()" />
       <cmd name="analyzer.launch()" />
-      <cmd name="project.generateBitstream('bitfile.nxb')" />
+      <cmd name="analyzer.destroy()" />
+      <cmd name="project.generateBitstream(os.path.join(outdir, 'bitfile.nxb'))" />
       <cmd name="#print 'Errors: ', getErrorCount()" />
       <cmd name="#print 'Warnings: ', getWarningCount()" />
 
       <cmd name="if NXMAPversion == 2:" />
-      <cmd name="    fr = open(dir + '/logs/Timing_Constraints_Report.timing', &quot;r&quot;)" />
+      <cmd name="    fr = open(os.path.join(outdir, 'logs/Timing_Constraints_Report.timing'), &quot;r&quot;)" />
       <cmd name="elif NXMAPversion == 3:" />
-      <cmd name="    fr = open(glob.glob(dir + '/logsPython/Timing_Constraints_Report_Routed_*.timing')[0], &quot;r&quot;)" />
+      <cmd name="    fr = open(glob.glob(outdir + '/Timing_Constraints_Report_Routed_*.timing')[0], &quot;r&quot;)" />
       <cmd name="lines = fr.readlines()" />
       <cmd name="fr.close()" />
       <cmd name="design_slack = get_timing(lines)" />
       <cmd name="if NXMAPversion == 2:" />
-      <cmd name="    fr = open(dir + '/logs/general.log', &quot;r&quot;)" />
+      <cmd name="    fr = open(os.path.join(outdir, 'logs/general.log'), &quot;r&quot;)" />
       <cmd name="elif NXMAPversion == 3:" />
-      <cmd name="    fr = open(dir + '/logsPython/progress.rpt', &quot;r&quot;)" />
+      <cmd name="    fr = open(os.path.join(outdir, 'progress.rpt'), &quot;r&quot;)" />
       <cmd name="lines = fr.readlines()" />
       <cmd name="fr.close()" />
       <cmd name="FunctionalElements, LUTs, TotalRegisters, TotalMemBlocks, TotalIOPins, TotalDSPs = get_res(lines) " />
