@@ -31,7 +31,7 @@
  *
  */
 /**
- * @file PrintfModuleGenerator.hpp
+ * @file WriteHandshakeModuleGenerator.hpp
  * @brief
  *
  *
@@ -42,15 +42,15 @@
  * Last modified by $Author$
  *
  */
-#ifndef _PRINTF_GENERATOR_HPP_
-#define _PRINTF_GENERATOR_HPP_
+#ifndef _WRITE_HANDSHAKE_MODULE_GENERATOR_HPP_
+#define _WRITE_HANDSHAKE_MODULE_GENERATOR_HPP_
 
 #include "ModuleGenerator.hpp"
 
-class PrintfModuleGenerator : public ModuleGenerator::Registrar<PrintfModuleGenerator>
+class WriteHandshakeModuleGenerator : public ModuleGenerator::Registrar<WriteHandshakeModuleGenerator>
 {
  public:
-   PrintfModuleGenerator(const HLS_managerRef& HLSMgr);
+   WriteHandshakeModuleGenerator(const HLS_managerRef& HLSMgr);
 
    void InternalExec(std::ostream& out, const module* mod, unsigned int function_id, vertex op_v,
                      const HDLWriter_Language language, const std::vector<ModuleGenerator::parameter>& _p,

@@ -46,6 +46,7 @@
 #define _MODULE_GENERATOR_FACTORY_HPP_
 
 #include "Factory.hpp"
+#include "graph.hpp"
 #include "refcount.hpp"
 
 #include <functional>
@@ -79,14 +80,16 @@ class ModuleGenerator : public Factory<ModuleGenerator, const HLS_managerRef&>
    {
    }
 
-   virtual void InternalExec(std::ostream& out, const module* mod, const HDLWriter_Language language,
-                             const std::vector<parameter>& _p, const std::vector<parameter>& _ports_in,
-                             const std::vector<parameter>& _ports_out, const std::vector<parameter>& _ports_inout) = 0;
+   virtual void InternalExec(std::ostream& out, const module* mod, unsigned int function_id, vertex op_v,
+                             const HDLWriter_Language language, const std::vector<parameter>& _p,
+                             const std::vector<parameter>& _ports_in, const std::vector<parameter>& _ports_out,
+                             const std::vector<parameter>& _ports_inout) = 0;
 
  public:
    virtual ~ModuleGenerator() = default;
 
-   void Exec(std::ostream& out, const module* mod, const std::vector<parameter>& _p, const HDLWriter_Language language);
+   void Exec(std::ostream& out, const module* mod, unsigned int function_id, vertex op_v,
+             const std::vector<parameter>& _p, const HDLWriter_Language language);
 };
 
 #endif

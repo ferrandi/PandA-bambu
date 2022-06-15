@@ -204,8 +204,9 @@ inline T ceil_log2(T x)
 
 /// Return the smallest n such tat
 template <typename T, std::enable_if_t<std::is_unsigned<T>::value, bool> = true>
-inline T round_to_power2(T x)
+constexpr inline T round_to_power2(T _x)
 {
+   unsigned long long x = _x;
    x--;
    x |= x >> 1;
    x |= x >> 2;
@@ -214,7 +215,7 @@ inline T round_to_power2(T x)
    x |= x >> 16;
    x |= x >> 32;
    x++;
-   return x;
+   return static_cast<T>(x);
 }
 
 #endif

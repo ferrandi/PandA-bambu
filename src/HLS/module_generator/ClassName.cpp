@@ -31,7 +31,7 @@
  *
  */
 /**
- * @file PrintfModuleGenerator.hpp
+ * @file ClassNameModuleGenerator.cpp
  * @brief
  *
  *
@@ -42,21 +42,21 @@
  * Last modified by $Author$
  *
  */
-#ifndef _PRINTF_GENERATOR_HPP_
-#define _PRINTF_GENERATOR_HPP_
 
-#include "ModuleGenerator.hpp"
+#include "ClassNameModuleGenerator.hpp"
 
-class PrintfModuleGenerator : public ModuleGenerator::Registrar<PrintfModuleGenerator>
+#include "language_writer.hpp"
+
+ClassNameModuleGenerator::ClassNameModuleGenerator(const HLS_managerRef& _HLSMgr) : Registrar(_HLSMgr)
 {
- public:
-   PrintfModuleGenerator(const HLS_managerRef& HLSMgr);
+}
 
-   void InternalExec(std::ostream& out, const module* mod, unsigned int function_id, vertex op_v,
-                     const HDLWriter_Language language, const std::vector<ModuleGenerator::parameter>& _p,
-                     const std::vector<ModuleGenerator::parameter>& _ports_in,
-                     const std::vector<ModuleGenerator::parameter>& _ports_out,
-                     const std::vector<ModuleGenerator::parameter>& _ports_inout) final;
-};
-
-#endif
+void ClassNameModuleGenerator::InternalExec(std::ostream& out, const module* /* mod */, unsigned int /* function_id */,
+                                            vertex /* op_v */, const HDLWriter_Language /* language */,
+                                            const std::vector<ModuleGenerator::parameter>& /* _p */,
+                                            const std::vector<ModuleGenerator::parameter>& /* _ports_in */,
+                                            const std::vector<ModuleGenerator::parameter>& /* _ports_out */,
+                                            const std::vector<ModuleGenerator::parameter>& /* _ports_inout */)
+{
+   out << "ClassName" << std::endl;
+}

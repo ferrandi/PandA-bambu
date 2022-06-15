@@ -31,32 +31,33 @@
  *
  */
 /**
- * @file PrintfModuleGenerator.hpp
+ * @file ReadNoneModuleGenerator.cpp
  * @brief
  *
  *
  *
  * @author Michele Fiorito <michele.fiorito@polimi.it>
+ * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  * $Revision$
  * $Date$
  * Last modified by $Author$
  *
  */
-#ifndef _PRINTF_GENERATOR_HPP_
-#define _PRINTF_GENERATOR_HPP_
 
-#include "ModuleGenerator.hpp"
+#include "ReadNoneModuleGenerator.hpp"
 
-class PrintfModuleGenerator : public ModuleGenerator::Registrar<PrintfModuleGenerator>
+#include "language_writer.hpp"
+
+ReadNoneModuleGenerator::ReadNoneModuleGenerator(const HLS_managerRef& _HLSMgr) : Registrar(_HLSMgr)
 {
- public:
-   PrintfModuleGenerator(const HLS_managerRef& HLSMgr);
+}
 
-   void InternalExec(std::ostream& out, const module* mod, unsigned int function_id, vertex op_v,
-                     const HDLWriter_Language language, const std::vector<ModuleGenerator::parameter>& _p,
-                     const std::vector<ModuleGenerator::parameter>& _ports_in,
-                     const std::vector<ModuleGenerator::parameter>& _ports_out,
-                     const std::vector<ModuleGenerator::parameter>& _ports_inout) final;
-};
-
-#endif
+void ReadNoneModuleGenerator::InternalExec(std::ostream& out, const module* /* mod */, unsigned int /* function_id */,
+                                           vertex /* op_v */, const HDLWriter_Language /* language */,
+                                           const std::vector<ModuleGenerator::parameter>& /* _p */,
+                                           const std::vector<ModuleGenerator::parameter>& _ports_in,
+                                           const std::vector<ModuleGenerator::parameter>& _ports_out,
+                                           const std::vector<ModuleGenerator::parameter>& /* _ports_inout */)
+{
+   out << "assign " << _ports_out[0].name << " = " << _ports_in[1].name << " >> (8*" << _ports_in[0].name << ");\n";
+}

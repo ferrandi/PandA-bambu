@@ -2270,13 +2270,11 @@ DesignFlowStep_Status allocation::InternalExec()
                   {
                      if(varargs_fu)
                      {
-                        modGen->specialize_fu(fu_name, vert, lib_name, TM, function_behavior, specialized_fuName,
-                                              new_fu, HLS_T->get_target_device()->get_type());
+                        modGen->specialize_fu(fu_name, vert, lib_name, function_behavior, specialized_fuName, new_fu);
                      }
                      else
                      {
-                        modGen->create_generic_module(fu_name, lib_name, TM, specialized_fuName,
-                                                      HLS_T->get_target_device()->get_type(), HLSMgr);
+                        modGen->create_generic_module(fu_name, lib_name, specialized_fuName);
                         const library_managerRef libraryManager = TM->get_library_manager(lib_name);
                         technology_nodeRef new_techNode_obj = libraryManager->get_fu(specialized_fuName);
                         THROW_ASSERT(new_techNode_obj, "not expected");
@@ -3164,8 +3162,7 @@ void allocation::IntegrateTechnologyLibraries()
                   ModuleGeneratorManagerRef modGen =
                       ModuleGeneratorManagerRef(new ModuleGeneratorManager(HLSMgr, parameters));
                   std::string new_shared_fu_name = shared_fu_name + "_modgen";
-                  modGen->create_generic_module(shared_fu_name, libraryManager->get_library_name(), TM,
-                                                new_shared_fu_name, HLS_T->get_target_device()->get_type(), HLSMgr);
+                  modGen->create_generic_module(shared_fu_name, libraryManager->get_library_name(), new_shared_fu_name);
                   techNode_obj = libraryManager->get_fu(new_shared_fu_name);
                   THROW_ASSERT(techNode_obj, "function not yet built: " + new_shared_fu_name);
                }

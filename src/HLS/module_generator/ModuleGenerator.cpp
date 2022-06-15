@@ -55,8 +55,8 @@ ModuleGenerator::parameter::parameter(const structural_objectRef& port)
 {
 }
 
-void ModuleGenerator::Exec(std::ostream& out, const module* mod, const std::vector<parameter>& _p,
-                           const HDLWriter_Language language)
+void ModuleGenerator::Exec(std::ostream& out, const module* mod, unsigned int function_id, vertex op_v,
+                           const std::vector<parameter>& _p, const HDLWriter_Language language)
 {
    std::vector<parameter> _ports_in(mod->get_in_port_size(), parameter());
    for(auto i = 0U; i < _ports_in.size(); ++i)
@@ -73,5 +73,5 @@ void ModuleGenerator::Exec(std::ostream& out, const module* mod, const std::vect
    {
       _ports_inout[i] = parameter(mod->get_in_out_port(i));
    }
-   InternalExec(out, mod, language, _p, _ports_in, _ports_out, _ports_inout);
+   InternalExec(out, mod, function_id, op_v, language, _p, _ports_in, _ports_out, _ports_inout);
 }

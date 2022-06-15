@@ -31,32 +31,41 @@
  *
  */
 /**
- * @file PrintfModuleGenerator.hpp
+ * @file WriteNoneModuleGenerator.cpp
  * @brief
  *
  *
  *
  * @author Michele Fiorito <michele.fiorito@polimi.it>
+ * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  * $Revision$
  * $Date$
  * Last modified by $Author$
  *
  */
-#ifndef _PRINTF_GENERATOR_HPP_
-#define _PRINTF_GENERATOR_HPP_
 
-#include "ModuleGenerator.hpp"
+#include "WriteNoneModuleGenerator.hpp"
 
-class PrintfModuleGenerator : public ModuleGenerator::Registrar<PrintfModuleGenerator>
+#include "language_writer.hpp"
+
+WriteNoneModuleGenerator::WriteNoneModuleGenerator(const HLS_managerRef& _HLSMgr) : Registrar(_HLSMgr)
 {
- public:
-   PrintfModuleGenerator(const HLS_managerRef& HLSMgr);
+}
 
-   void InternalExec(std::ostream& out, const module* mod, unsigned int function_id, vertex op_v,
-                     const HDLWriter_Language language, const std::vector<ModuleGenerator::parameter>& _p,
-                     const std::vector<ModuleGenerator::parameter>& _ports_in,
-                     const std::vector<ModuleGenerator::parameter>& _ports_out,
-                     const std::vector<ModuleGenerator::parameter>& _ports_inout) final;
-};
-
-#endif
+void WriteNoneModuleGenerator::InternalExec(std::ostream& out, const module* /* mod */, unsigned int /* function_id */,
+                                            vertex /* op_v */, const HDLWriter_Language language,
+                                            const std::vector<ModuleGenerator::parameter>& /* _p */,
+                                            const std::vector<ModuleGenerator::parameter>& _ports_in,
+                                            const std::vector<ModuleGenerator::parameter>& _ports_out,
+                                            const std::vector<ModuleGenerator::parameter>& /* _ports_inout */)
+{
+   if(language == HDLWriter_Language::VHDL)
+   {
+      out << "begin\n  \\" << _ports_out[0].name << "\\ <= std_logic_vector(resize(unsigned(" << _ports_in[1].name
+          << "), " << _ports_out[0].type_size << "));\n";
+   }
+   else
+   {
+      out << "assign " << _ports_out[0].name << " = " << _ports_in[1].name << ";\n";
+   }
+}

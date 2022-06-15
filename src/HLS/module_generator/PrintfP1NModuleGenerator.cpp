@@ -31,44 +31,43 @@
  *
  */
 /**
- * @file PrintfModuleGenerator.cpp
+ * @file PrintfP1NModuleGenerator.cpp
  * @brief
  *
  *
  *
  * @author Michele Fiorito <michele.fiorito@polimi.it>
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
- * @author Alessandro Nacci <alenacci@gmail.com>
- * @author Gianluca Durelli <durellinux@gmail.com>
+ * @author Marco Lattuada <marco.lattuada@polimi.it>
  * $Revision$
  * $Date$
  * Last modified by $Author$
  *
  */
 
-#include "PrintfModuleGenerator.hpp"
+#include "PrintfP1NModuleGenerator.hpp"
 
-#include "exceptions.hpp"
+#include "hls_manager.hpp"
 #include "language_writer.hpp"
+#include "memory.hpp"
 
-PrintfModuleGenerator::PrintfModuleGenerator(const HLS_managerRef& _HLSMgr) : Registrar(_HLSMgr)
+PrintfP1NModuleGenerator::PrintfP1NModuleGenerator(const HLS_managerRef& _HLSMgr) : Registrar(_HLSMgr)
 {
 }
 
-void PrintfModuleGenerator::InternalExec(std::ostream& out, const module* /* mod */, unsigned int /* function_id */,
-                                         vertex /* op_v */, const HDLWriter_Language language,
-                                         const std::vector<ModuleGenerator::parameter>& _p,
-                                         const std::vector<ModuleGenerator::parameter>& /* _ports_in */,
-                                         const std::vector<ModuleGenerator::parameter>& /* _ports_out */,
-                                         const std::vector<ModuleGenerator::parameter>& /* _ports_inout */)
+void PrintfP1NModuleGenerator::InternalExec(std::ostream& out, const module* /* mod */, unsigned int /* function_id */,
+                                            vertex /* op_v */, const HDLWriter_Language /* language */,
+                                            const std::vector<ModuleGenerator::parameter>& _p,
+                                            const std::vector<ModuleGenerator::parameter>& /* _ports_in */,
+                                            const std::vector<ModuleGenerator::parameter>& /* _ports_out */,
+                                            const std::vector<ModuleGenerator::parameter>& /* _ports_inout */)
 {
-   if(language != HDLWriter_Language::VERILOG)
-   {
-      THROW_UNREACHABLE("Unsupported output language.");
-   }
+   const auto data_bus_bitsize = STR(HLSMgr->Rmem->get_bus_data_bitsize());
+   const auto addr_bus_bitsize = STR(HLSMgr->get_address_bitsize());
+   const auto size_bus_bitsize = STR(HLSMgr->Rmem->get_bus_size_bitsize());
 
-   const auto selector_dimension = STR(_p.size() < 2 ? 2 : _p.size());
-   const auto selector_left = STR(((_p.size() - 1) < 1) ? 1 : (_p.size() - 1));
+   const auto selector_dimension = STR(_p.size() < 2U ? 2U : _p.size());
+   const auto selector_left = STR(((_p.size() - 1U) < 1U) ? 1U : (_p.size() - 1U));
 
    std::string sensitivity;
    for(auto i = 0U; i < _p.size(); i++)
@@ -131,12 +130,44 @@ void PrintfModuleGenerator::InternalExec(std::ostream& out, const module* /* mod
        "reg [BITSIZE_Mout_addr_ram-1:0] _next_pointer;\n"
        "reg [BITSIZE_Mout_addr_ram-1:0] _present_pointer1 1INIT_ZERO_VALUE;\n"
        "reg [BITSIZE_Mout_addr_ram-1:0] _next_pointer1;\n"
+       "reg mem_sel_LOAD;\n"
+       "wire mem_done_port;\n"
        "reg done_port;\n"
-       "reg Mout_oe_ram;\n"
-       "reg Mout_we_ram;\n"
-       "reg [BITSIZE_Mout_addr_ram-1:0] Mout_addr_ram;\n"
-       "reg [BITSIZE_Mout_Wdata_ram-1:0] Mout_Wdata_ram;\n"
-       "reg [BITSIZE_Mout_data_ram_size-1:0] Mout_data_ram_size;\n"
+       "reg mem_start_port;\n"
+       "wire [" +
+       data_bus_bitsize +
+       "-1:0] mem_out1;\n"
+       "reg [" +
+       addr_bus_bitsize +
+       "-1:0] mem_in2;\n"
+       "reg [" +
+       size_bus_bitsize +
+       "-1:0] mem_in3;\n"
+       "  MEMORY_CTRL_P1N #(.BITSIZE_in1(" +
+       data_bus_bitsize + "), .BITSIZE_in2(" + addr_bus_bitsize + "), .BITSIZE_in3(" + size_bus_bitsize +
+       "), .BITSIZE_in4(1), .BITSIZE_out1(" + data_bus_bitsize +
+       "), .BITSIZE_Min_oe_ram(BITSIZE_Min_oe_ram), .PORTSIZE_Min_oe_ram(PORTSIZE_Min_oe_ram), "
+       ".BITSIZE_Min_we_ram(BITSIZE_Min_we_ram), .PORTSIZE_Min_we_ram(PORTSIZE_Min_we_ram), "
+       ".BITSIZE_Mout_oe_ram(BITSIZE_Mout_oe_ram), .PORTSIZE_Mout_oe_ram(PORTSIZE_Mout_oe_ram), "
+       ".BITSIZE_Mout_we_ram(BITSIZE_Mout_we_ram), .PORTSIZE_Mout_we_ram(PORTSIZE_Mout_we_ram), "
+       ".BITSIZE_M_DataRdy(BITSIZE_M_DataRdy), .PORTSIZE_M_DataRdy(PORTSIZE_M_DataRdy), "
+       ".BITSIZE_Min_addr_ram(BITSIZE_Min_addr_ram), .PORTSIZE_Min_addr_ram(PORTSIZE_Min_addr_ram), "
+       ".BITSIZE_Mout_addr_ram(BITSIZE_Mout_addr_ram), .PORTSIZE_Mout_addr_ram(PORTSIZE_Mout_addr_ram), "
+       ".BITSIZE_M_Rdata_ram(BITSIZE_M_Rdata_ram), .PORTSIZE_M_Rdata_ram(PORTSIZE_M_Rdata_ram), "
+       ".BITSIZE_Min_Wdata_ram(BITSIZE_Min_Wdata_ram), .PORTSIZE_Min_Wdata_ram(PORTSIZE_Min_Wdata_ram), "
+       ".BITSIZE_Mout_Wdata_ram(BITSIZE_Mout_Wdata_ram), .PORTSIZE_Mout_Wdata_ram(PORTSIZE_Mout_Wdata_ram), "
+       ".BITSIZE_Min_data_ram_size(BITSIZE_Min_data_ram_size), "
+       ".PORTSIZE_Min_data_ram_size(PORTSIZE_Min_data_ram_size), "
+       ".BITSIZE_Mout_data_ram_size(BITSIZE_Mout_data_ram_size), "
+       ".PORTSIZE_Mout_data_ram_size(PORTSIZE_Mout_data_ram_size), .BITSIZE_access_allowed(BITSIZE_access_allowed), "
+       ".PORTSIZE_access_allowed(PORTSIZE_access_allowed), .BITSIZE_access_request(BITSIZE_access_request), "
+       ".PORTSIZE_access_request(PORTSIZE_access_request)) MEMORY_CTRL_P1N_instance (.done_port(mem_done_port), "
+       ".out1(mem_out1), .Mout_oe_ram(Mout_oe_ram), .Mout_we_ram(Mout_we_ram), .Mout_addr_ram(Mout_addr_ram), "
+       ".Mout_Wdata_ram(Mout_Wdata_ram), .Mout_data_ram_size(Mout_data_ram_size), .access_request(access_request), "
+       ".clock(clock), .start_port(mem_start_port), .in1(0), .in2(mem_in2), .in3(mem_in3), .in4(1), "
+       ".sel_LOAD(mem_sel_LOAD), .sel_STORE(1'b0), .Min_oe_ram(Min_oe_ram), .Min_we_ram(Min_we_ram), "
+       ".Min_addr_ram(Min_addr_ram), .M_Rdata_ram(M_Rdata_ram), .Min_Wdata_ram(Min_Wdata_ram), "
+       ".Min_data_ram_size(Min_data_ram_size), .M_DataRdy(M_DataRdy), .access_allowed(access_allowed));\n"
        "\n"
        "parameter [2:0] S_0 = 3'd0,\n"
        "  S_1 = 3'd1,\n"
@@ -181,21 +212,24 @@ void PrintfModuleGenerator::InternalExec(std::ostream& out, const module* /* mod
        "      end\n"
        "\n"
        "  always @(_present_state or _present_pointer or _present_pointer1 or _present_selector or start_port or "
-       "M_DataRdy or Min_we_ram or Min_oe_ram or Min_Wdata_ram or Min_addr_ram or Min_data_ram_size" +
+       "M_DataRdy[0] or Min_we_ram or Min_oe_ram or Min_Wdata_ram or Min_addr_ram or Min_data_ram_size" +
        sensitivity +
-       " or _present_data2 or M_Rdata_ram)\n"
+       " or _present_data2 or mem_done_port or M_Rdata_ram[7:0])\n"
        "      begin\n"
-       "        Mout_we_ram = Min_we_ram;\n"
-       "        Mout_Wdata_ram = Min_Wdata_ram;\n"
-       "        Mout_oe_ram=Min_oe_ram;\n"
-       "        Mout_addr_ram=Min_addr_ram;\n"
-       "        Mout_data_ram_size=Min_data_ram_size;\n"
-       "        done_port = 1'b0;\n"
        "        _next_state = _present_state;\n"
        "        _next_pointer = _present_pointer;\n"
        "        _next_pointer1 = _present_pointer1;\n"
        "        _next_selector = _present_selector;\n"
        "        _next_data2 = _present_data2;\n"
+       "        done_port = 1'b0;\n"
+       "        mem_sel_LOAD = 1'b0;\n"
+       "        mem_start_port = 1'b0;\n"
+       "        mem_in2=" +
+       addr_bus_bitsize +
+       "'d0;\n"
+       "        mem_in3=" +
+       size_bus_bitsize +
+       "'d0;\n"
        "        " +
        case_statement +
        "\n"
@@ -213,12 +247,13 @@ void PrintfModuleGenerator::InternalExec(std::ostream& out, const module* /* mod
        "            \n"
        "         S_1:\n"
        "           begin\n"
-       "             Mout_addr_ram[BITSIZE_Mout_addr_ram-1:0]=in1[BITSIZE_Mout_addr_ram-1:0]+_present_pointer;\n"
-       "             Mout_data_ram_size={{BITSIZE_Mout_data_ram_size-4{1'b0}}, 4'd8};\n"
-       "             Mout_oe_ram=1'b1;\n"
-       "             if(M_DataRdy)\n"
+       "             mem_in2 = in1[BITSIZE_Mout_addr_ram-1:0]+_present_pointer;\n"
+       "             mem_in3 = {{BITSIZE_Mout_data_ram_size-4{1'b0}}, 4'd8};\n"
+       "             mem_sel_LOAD=1'b1;\n"
+       "             mem_start_port=1'b1;\n"
+       "             if(mem_done_port)\n"
        "             begin\n"
-       "                _next_data2 = M_Rdata_ram[7:0];\n"
+       "                _next_data2 = mem_out1[7:0];\n"
        "                _next_state=S_2;\n"
        "// synthesis translate_off\n"
        "                write_done=1'b0;\n"
@@ -249,12 +284,12 @@ void PrintfModuleGenerator::InternalExec(std::ostream& out, const module* /* mod
        "           end\n"
        "         S_3:\n"
        "           begin\n"
-       "             Mout_addr_ram=in1[BITSIZE_Mout_addr_ram-1:0]+_present_pointer;\n"
-       "             Mout_data_ram_size={{BITSIZE_Mout_data_ram_size-4{1'b0}}, 4'd8};\n"
-       "             Mout_oe_ram=1'b1;\n"
-       "             if(M_DataRdy)\n"
+       "             mem_in2 = in1[BITSIZE_Mout_addr_ram-1:0]+_present_pointer;\n"
+       "             mem_in3 = {{BITSIZE_Mout_data_ram_size-4{1'b0}}, 4'd8};\n"
+       "             mem_sel_LOAD=1'b1;\n"
+       "             if(mem_done_port)\n"
        "             begin\n"
-       "                _next_data2 = M_Rdata_ram[7:0];\n"
+       "                _next_data2 = mem_out1[7:0];\n"
        "                _next_state=S_5;\n"
        "// synthesis translate_off\n"
        "                write_done=1'b0;\n"
@@ -770,54 +805,6 @@ void PrintfModuleGenerator::InternalExec(std::ostream& out, const module* /* mod
        "                   $finish;\n"
        "// synthesis translate_on\n"
        "                 end\n"
-       "               8'd97: //Hex float %a\n"
-       "                 if(data1_size ==8'd64)\n"
-       "                 begin\n"
-       "// synthesis translate_off\n"
-       "                   if(!write_done)\n"
-       "                   begin\n"
-       "                     $write(\"%0h\",data1);\n"
-       "                     write_done=1'b1;\n"
-       "                   end\n"
-       "// synthesis translate_on\n"
-       "                 end\n"
-       "                 else if(data1_size ==8'd32)\n"
-       "                 begin\n"
-       "// synthesis translate_off\n"
-       "                   if(!write_done)\n"
-       "                   begin\n"
-       "                     $write(\"%0h\",data1[31:0]);\n"
-       "                     write_done=1'b1;\n"
-       "                   end\n"
-       "// synthesis translate_on\n"
-       "                 end\n"
-       "                 else if(data1_size ==8'd16)\n"
-       "                 begin\n"
-       "// synthesis translate_off\n"
-       "                   if(!write_done)\n"
-       "                   begin\n"
-       "                     $write(\"%0h\",data1[15:0]);\n"
-       "                     write_done=1'b1;\n"
-       "                   end\n"
-       "// synthesis translate_on\n"
-       "                 end\n"
-       "                 else if(data1_size ==8'd8)\n"
-       "                 begin\n"
-       "// synthesis translate_off\n"
-       "                   if(!write_done)\n"
-       "                   begin\n"
-       "                     $write(\"%0h\",data1[7:0]);\n"
-       "                     write_done=1'b1;\n"
-       "                   end\n"
-       "// synthesis translate_on\n"
-       "                 end\n"
-       "                 else\n"
-       "                 begin\n"
-       "// synthesis translate_off\n"
-       "                   $display(\"ERROR - Hex precision not supported %d\", data1_size);\n"
-       "                   $finish;\n"
-       "// synthesis translate_on\n"
-       "                 end\n"
        "               default:\n"
        "                 _next_state=S_3;\n"
        "             endcase\n"
@@ -829,12 +816,12 @@ void PrintfModuleGenerator::InternalExec(std::ostream& out, const module* /* mod
        "           end\n"
        "         S_7:\n"
        "           begin\n"
-       "             Mout_addr_ram=data1[BITSIZE_Mout_addr_ram-1:0]+_present_pointer1;\n"
-       "             Mout_data_ram_size={{BITSIZE_Mout_data_ram_size-4{1'b0}}, 4'd8};\n"
-       "             Mout_oe_ram=1'b1;\n"
-       "             if(M_DataRdy)\n"
+       "             mem_in2 = data1[BITSIZE_Mout_addr_ram-1:0]+_present_pointer1;\n"
+       "             mem_in3 = {{BITSIZE_Mout_data_ram_size-4{1'b0}}, 4'd8};\n"
+       "             mem_sel_LOAD=1'b1;\n"
+       "             if(mem_done_port)\n"
        "             begin\n"
-       "               _next_data2 = M_Rdata_ram[7:0];\n"
+       "               _next_data2 = mem_out1[7:0];\n"
        "               _next_state=S_4;\n"
        "// synthesis translate_off\n"
        "               write_done=1'b0;\n"
