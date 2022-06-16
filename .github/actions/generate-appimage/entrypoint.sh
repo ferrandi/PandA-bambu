@@ -133,6 +133,7 @@ mkdir $dist_dir/lib/x86_64-linux-gnu/
 cp -d /lib/x86_64-linux-gnu/libtinfo.so* $dist_dir/lib/x86_64-linux-gnu/
 cp -d /usr/lib/x86_64-linux-gnu/libamd.so* $dist_dir/lib/x86_64-linux-gnu/
 cp -d /usr/lib/x86_64-linux-gnu/libcolamd.so* $dist_dir/lib/x86_64-linux-gnu/
+cp -d /usr/lib/x86_64-linux-gnu/libglpk.so* $dist_dir/lib/x86_64-linux-gnu/
 cp -d /usr/lib/x86_64-linux-gnu/libicu*.so* $dist_dir/lib/x86_64-linux-gnu/
 cp -d /usr/lib/x86_64-linux-gnu/libsuitesparseconfig.so* $dist_dir/lib/x86_64-linux-gnu/
 cp -d /usr/lib/libboost_filesystem.so* $dist_dir/lib/
