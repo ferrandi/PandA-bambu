@@ -49,6 +49,7 @@
 #include "function_behavior.hpp"
 #include "hls_manager.hpp"
 #include "language_writer.hpp"
+#include "math_function.hpp"
 #include "op_graph.hpp"
 #include "structural_objects.hpp"
 #include "tree_helper.hpp"
@@ -100,7 +101,7 @@ void BuiltinWaitCallModuleGenerator::InternalExec(std::ostream& out, const modul
    }
    else if(_p.size() > 3U)
    {
-      out << "reg [" << static_cast<size_t>(ceil(log2(_p.size() - 2U))) << "-1:0] index;\n\n";
+      out << "reg [" << ceil_log2(_p.size() - 2U) << "-1:0] index;\n\n";
    }
    if(_p.size() > 2U)
    {
