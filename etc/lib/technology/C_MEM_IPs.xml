@@ -3475,12 +3475,16 @@ ARRAY_1D_STD_BRAM_NN_instance : ARRAY_1D_STD_BRAM_NN_SDS_BUS_BASE generic map (B
             <structural_type_descriptor type="BOOL" size="1" />
             <connected_objects />
           </port_o>
+          <port_o id="M_back_pressure" dir="IN" is_memory="1" is_master="1">
+            <structural_type_descriptor type="BOOL" size="1" />
+            <connected_objects />
+          </port_o>
           <NP_functionality LIBRARY="MEMORY_CTRL in1 in2 in3 out1 Min_addr_ram Mout_addr_ram M_Rdata_ram Min_Wdata_ram Mout_Wdata_ram Min_data_ram_size Mout_data_ram_size" VERILOG_PROVIDED="wire  [BITSIZE_in2-1:0] tmp_addr;
 wire int_sel_LOAD;
 wire int_sel_STORE;
 
-assign int_sel_LOAD = (in4 &amp; sel_LOAD) &amp; start_port;
-assign int_sel_STORE = (in4 &amp; sel_STORE)  &amp; start_port;
+assign int_sel_LOAD = (in4 &amp;&amp; sel_LOAD) &amp;&amp; (start_port || M_back_pressure);
+assign int_sel_STORE = (in4 &amp;&amp; sel_STORE)  &amp;&amp; (start_port || M_back_pressure);
 assign tmp_addr = in2;
 assign Mout_addr_ram = (int_sel_LOAD || int_sel_STORE) ? tmp_addr : Min_addr_ram;
 assign Mout_oe_ram = int_sel_LOAD ? 1&apos;b1 : Min_oe_ram;
@@ -3599,14 +3603,18 @@ assign done_port = (M_DataRdy &amp;&amp; (in4 &amp;&amp; (sel_STORE || sel_LOAD)
             <structural_type_descriptor type="BOOL" size="1" />
             <connected_objects />
           </port_o>
+          <port_o id="M_back_pressure" dir="IN" is_memory="1" is_master="1">
+            <structural_type_descriptor type="BOOL" size="1" />
+            <connected_objects />
+          </port_o>
           <NP_functionality LIBRARY="MEMORY_CTRL_D10 in1 in2 in3 out1 Min_addr_ram Mout_addr_ram M_Rdata_ram Min_Wdata_ram Mout_Wdata_ram Min_data_ram_size Mout_data_ram_size" VERILOG_PROVIDED="wire [BITSIZE_in2-1:0] tmp_addr;
 reg [BITSIZE_out1-1:0] delayed_out1 1INIT_ZERO_VALUE;
 reg delayed_M_DataRdy 1INIT_ZERO_VALUE;
 wire int_sel_LOAD;
 wire int_sel_STORE;
 
-assign int_sel_LOAD = (in4 &amp; sel_LOAD) &amp; start_port;
-assign int_sel_STORE = (in4 &amp; sel_STORE)  &amp; start_port;
+assign int_sel_LOAD = (in4 &amp;&amp; sel_LOAD) &amp;&amp; (start_port || M_back_pressure);
+assign int_sel_STORE = (in4 &amp;&amp; sel_STORE)  &amp;&amp; (start_port || M_back_pressure);
 
 assign tmp_addr = in2;
 assign Mout_addr_ram = (int_sel_LOAD || int_sel_STORE) ? tmp_addr : Min_addr_ram;
@@ -3730,6 +3738,10 @@ assign done_port = (delayed_M_DataRdy &amp; (in4 &amp; (sel_STORE || sel_LOAD)))
             <structural_type_descriptor type="BOOL" size="1" />
             <connected_objects />
           </port_o>
+          <port_o id="M_back_pressure" dir="IN" is_memory="1" is_master="1">
+            <structural_type_descriptor type="BOOL" size="1" />
+            <connected_objects />
+          </port_o>
           <NP_functionality LIBRARY="MEMORY_CTRL_D11 in1 in2 in3 out1 Min_addr_ram Mout_addr_ram M_Rdata_ram Min_Wdata_ram Mout_Wdata_ram Min_data_ram_size Mout_data_ram_size" VERILOG_PROVIDED="wire  [BITSIZE_in2-1:0] tmp_addr;
 reg delayed_sel_LOAD 1INIT_ZERO_VALUE;
 reg delayed_sel_STORE 1INIT_ZERO_VALUE;
@@ -3739,8 +3751,8 @@ reg [BITSIZE_in3-1:0] delayed_in3 1INIT_ZERO_VALUE;
 wire int_sel_LOAD;
 wire int_sel_STORE;
 
-assign int_sel_LOAD = (in4 &amp; delayed_sel_LOAD) &amp; start_port;
-assign int_sel_STORE = (in4 &amp; delayed_sel_STORE)  &amp; start_port;
+assign int_sel_LOAD = (in4 &amp;&amp; delayed_sel_LOAD) &amp;&amp; (start_port || M_back_pressure);
+assign int_sel_STORE = (in4 &amp;&amp; delayed_sel_STORE)  &amp;&amp; (start_port || M_back_pressure);
 
 always @(posedge clock)
   delayed_sel_LOAD &lt;= sel_LOAD;
@@ -3871,6 +3883,10 @@ assign done_port = (M_DataRdy &amp; (in4 &amp; (delayed_sel_STORE || delayed_sel
             <structural_type_descriptor type="BOOL" size="1" />
             <connected_objects />
           </port_o>
+          <port_o id="M_back_pressure" dir="IN" is_memory="1" is_master="1">
+            <structural_type_descriptor type="BOOL" size="1" />
+            <connected_objects />
+          </port_o>
           <NP_functionality LIBRARY="MEMORY_CTRL_D21 in1 in2 in3 out1 Min_addr_ram Mout_addr_ram M_Rdata_ram Min_Wdata_ram Mout_Wdata_ram Min_data_ram_size Mout_data_ram_size" VERILOG_PROVIDED="wire  [BITSIZE_in2-1:0] tmp_addr;
 reg [BITSIZE_out1-1:0] delayed_out1 1INIT_ZERO_VALUE;
 reg delayed_M_DataRdy 1INIT_ZERO_VALUE;
@@ -3882,13 +3898,13 @@ reg [BITSIZE_in3-1:0] delayed_in3 1INIT_ZERO_VALUE;
 wire int_sel_LOAD;
 wire int_sel_STORE;
 
-assign int_sel_LOAD = (in4 &amp; delayed_sel_LOAD) &amp; start_port;
-assign int_sel_STORE = (in4 &amp; delayed_sel_STORE)  &amp; start_port;
+assign int_sel_LOAD = (in4 &amp;&amp; delayed_sel_LOAD) &amp;&amp; (start_port || M_back_pressure);
+assign int_sel_STORE = (in4 &amp;&amp; delayed_sel_STORE)  &amp;&amp; (start_port || M_back_pressure);
 
 always @(posedge clock)
-  delayed_sel_LOAD &lt;= sel_LOAD&amp;!M_DataRdy&amp;!delayed_M_DataRdy;
+  delayed_sel_LOAD &lt;= sel_LOAD &amp;&amp; !M_DataRdy &amp;&amp; !delayed_M_DataRdy;
 always @(posedge clock)
-  delayed_sel_STORE &lt;= sel_STORE&amp;!M_DataRdy&amp;!delayed_M_DataRdy;
+  delayed_sel_STORE &lt;= sel_STORE &amp;&amp; !M_DataRdy &amp;&amp; !delayed_M_DataRdy;
 always @(posedge clock)
   delayed_in1 &lt;= in1;
 always @(posedge clock)
