@@ -234,7 +234,7 @@ technology_nodeRef allocation::extract_bambu_provided(const std::string& library
    std::string function_name;
    bool build_proxy = false;
    bool build_wrapper = false;
-   const auto bambu_provided_resource = functions::get_function_name_cleaned(bambu_provided_resource_);
+   const auto bambu_provided_resource = functions::GetFUName(bambu_provided_resource_, HLSMgr);
    if(HLSMgr->Rfuns->is_a_proxied_function(bambu_provided_resource))
    {
       if(HLSMgr->Rfuns->is_a_shared_function(funId, bambu_provided_resource))
@@ -1126,7 +1126,7 @@ void allocation::add_tech_constraint(technology_nodeRef cur_fu, unsigned int tec
    else
    {
       PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
-                    "Constrained " + STR(pos) + "=" + cur_fu->get_name() + "->" << STR(tech_constrain_value));
+                    "Constrained " + STR(pos) + "=" + cur_fu->get_name() + "->" + STR(tech_constrain_value));
       allocation_information->tech_constraints.push_back(tech_constrain_value);
    }
 }
@@ -1336,7 +1336,7 @@ bool allocation::check_type_and_precision(operation* curr_op, node_kind_prec_inf
 
 bool allocation::check_proxies(const library_managerRef library, const std::string& fu_name_)
 {
-   const auto fu_name = functions::get_function_name_cleaned(fu_name_);
+   const auto fu_name = functions::GetFUName(fu_name_, HLSMgr);
    if(HLSMgr->Rfuns->is_a_proxied_function(fu_name))
    {
       return true;
@@ -2298,8 +2298,7 @@ DesignFlowStep_Status allocation::InternalExec()
                std::string library_name = lib_name;
                if(bambu_provided_resource != "")
                {
-                  if(HLSMgr->Rfuns->is_a_proxied_function(
-                         functions::get_function_name_cleaned(bambu_provided_resource)))
+                  if(HLSMgr->Rfuns->is_a_proxied_function(functions::GetFUName(bambu_provided_resource, HLSMgr)))
                   {
                      library_name = PROXY_LIBRARY;
                   }
@@ -2331,8 +2330,7 @@ DesignFlowStep_Status allocation::InternalExec()
                {
                   functionalUnitName = specialized_fuName;
                   techMap = fu_list.find(new_fu.find(functionalUnitName)->second);
-                  PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
-                                "Specialized unit: " + new_fu.find(functionalUnitName)->first);
+                  PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Specialized unit: " + functionalUnitName);
                   if(techMap != fu_list.end() && techMap->second.find(max_prec) != techMap->second.end() &&
                      techMap->second.find(max_prec)->second.find(constant_id) !=
                          techMap->second.find(max_prec)->second.end())
@@ -2342,9 +2340,9 @@ DesignFlowStep_Status allocation::InternalExec()
                   else
                   {
                      PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
-                                   "Insert into list of unit to add: " + new_fu.find(functionalUnitName)->first +
-                                       " prec=" + STR(max_prec) + " constant_id=" + STR(std::get<0>(constant_id)) +
-                                       "-" + STR(std::get<1>(constant_id)));
+                                   "Insert into list of unit to add: " + functionalUnitName + " prec=" + STR(max_prec) +
+                                       " constant_id=" + STR(std::get<0>(constant_id)) + "-" +
+                                       STR(std::get<1>(constant_id)));
                      fu_list[new_fu.find(functionalUnitName)->second][max_prec][constant_id] = current_id;
                      allocation_information->precision_map[current_id] = max_prec;
                      if(channels_type == CHANNELS_TYPE_MEM_ACC_NN && memory_ctrl_type != "")
@@ -3140,7 +3138,8 @@ void allocation::IntegrateTechnologyLibraries()
    {
       for(const auto& shared_fu_name : HLSMgr->Rfuns->get_shared_functions(funId))
       {
-         PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, " - adding proxy function wrapper " + shared_fu_name);
+         PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, DEBUG_LEVEL_INFINITE,
+                       " - adding proxy function wrapper " + shared_fu_name);
          const std::string library_name = TM->get_library(shared_fu_name);
          if(library_name != "")
          {

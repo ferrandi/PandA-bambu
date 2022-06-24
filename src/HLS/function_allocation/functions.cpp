@@ -47,7 +47,11 @@
 #include "exceptions.hpp"
 #include "function_behavior.hpp"
 #include "hls_manager.hpp"
+#include "hls_target.hpp"
+#include "library_manager.hpp"
 #include "string_manipulation.hpp" //STR
+#include "technology_manager.hpp"
+#include "technology_node.hpp"
 
 #include <boost/algorithm/string/predicate.hpp>
 
@@ -112,22 +116,16 @@ unsigned int functions::get_proxy_mapping(const std::string& fun) const
    return proxied_functions.at(fun);
 }
 
-std::string functions::get_function_name_cleaned(const std::string& original_function_name)
+std::string functions::GetFUName(const std::string& fname, const HLS_managerRef HLSMgr)
 {
-   if(original_function_name.find(STR_CST_interface_parameter_keyword) != std::string::npos &&
-      boost::algorithm::ends_with(original_function_name, "_array"))
-   {
-      return original_function_name.substr(0, original_function_name.find(STR_CST_interface_parameter_keyword) +
-                                                  std::string(STR_CST_interface_parameter_keyword).length());
-   }
-   else
-   {
-      return original_function_name;
-   }
+   const auto HLS_T = HLSMgr->get_HLS_target();
+   const auto TechM = HLS_T->get_technology_manager();
+   const auto fu_node = TechM->GetFunctionFU(fname);
+   return fu_node ? fu_node->get_name() : fname;
 }
 
-std::string functions::get_function_name_cleaned(unsigned int funID, const HLS_managerRef HLSMgr)
+std::string functions::GetFUName(unsigned int funID, const HLS_managerRef HLSMgr)
 {
    const auto original_function_name = HLSMgr->CGetFunctionBehavior(funID)->CGetBehavioralHelper()->get_function_name();
-   return get_function_name_cleaned(original_function_name);
+   return GetFUName(original_function_name, HLSMgr);
 }
