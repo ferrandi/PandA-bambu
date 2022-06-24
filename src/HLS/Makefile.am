@@ -1105,23 +1105,23 @@ noinst_HEADERS += \
    module_generator/PrintfModuleGenerator.hpp \
    module_generator/PrintfNModuleGenerator.hpp \
    module_generator/PrintfP1NModuleGenerator.hpp \
-   module_generator/ReadAcknowledgeModuleGenerator.hpp \
-   module_generator/ReadAXISModuleGenerator.hpp \
-   module_generator/ReadFIFOModuleGenerator.hpp \
-   module_generator/ReadHandshakeModuleGenerator.hpp \
-   module_generator/ReadNoneModuleGenerator.hpp \
-   module_generator/ReadValidModuleGenerator.hpp \
-   module_generator/ReadWriteArrayModuleGenerator.hpp \
-   module_generator/ReadWriteDPArrayModuleGenerator.hpp \
-   module_generator/ReadWriteMAXIModuleGenerator.hpp \
-   module_generator/WriteAcknowledgeModuleGenerator.hpp \
-   module_generator/WriteAXISModuleGenerator.hpp \
-   module_generator/WriteFIFOModuleGenerator.hpp \
-   module_generator/WriteHandshakeModuleGenerator.hpp \
-   module_generator/WriteNoneDSModuleGenerator.hpp \
-   module_generator/WriteNoneModuleGenerator.hpp \
-   module_generator/WriteNoneRegisteredModuleGenerator.hpp \
-   module_generator/WriteValidModuleGenerator.hpp
+   module_generator/Read_acknowledgeModuleGenerator.hpp \
+   module_generator/Read_axisModuleGenerator.hpp \
+   module_generator/Read_fifoModuleGenerator.hpp \
+   module_generator/Read_handshakeModuleGenerator.hpp \
+   module_generator/Read_noneModuleGenerator.hpp \
+   module_generator/Read_validModuleGenerator.hpp \
+   module_generator/ReadWrite_arrayModuleGenerator.hpp \
+   module_generator/ReadWriteDP_arrayModuleGenerator.hpp \
+   module_generator/ReadWrite_m_axiModuleGenerator.hpp \
+   module_generator/Write_acknowledgeModuleGenerator.hpp \
+   module_generator/Write_axisModuleGenerator.hpp \
+   module_generator/Write_fifoModuleGenerator.hpp \
+   module_generator/Write_handshakeModuleGenerator.hpp \
+   module_generator/Write_noneDSModuleGenerator.hpp \
+   module_generator/Write_noneModuleGenerator.hpp \
+   module_generator/Write_none_registeredModuleGenerator.hpp \
+   module_generator/Write_validModuleGenerator.hpp
 lib_module_generator_la_SOURCES = \
    module_generator/ASMModuleGenerator.cpp \
    module_generator/BuiltinWaitCallModuleGenerator.cpp \
@@ -1136,23 +1136,23 @@ lib_module_generator_la_SOURCES = \
    module_generator/PrintfModuleGenerator.cpp \
    module_generator/PrintfNModuleGenerator.cpp \
    module_generator/PrintfP1NModuleGenerator.cpp \
-   module_generator/ReadAcknowledgeModuleGenerator.cpp \
-   module_generator/ReadAXISModuleGenerator.cpp \
-   module_generator/ReadFIFOModuleGenerator.cpp \
-   module_generator/ReadHandshakeModuleGenerator.cpp \
-   module_generator/ReadNoneModuleGenerator.cpp \
-   module_generator/ReadValidModuleGenerator.cpp \
-   module_generator/ReadWriteArrayModuleGenerator.cpp \
-   module_generator/ReadWriteDPArrayModuleGenerator.cpp \
-   module_generator/ReadWriteMAXIModuleGenerator.cpp \
-   module_generator/WriteAcknowledgeModuleGenerator.cpp \
-   module_generator/WriteAXISModuleGenerator.cpp \
-   module_generator/WriteFIFOModuleGenerator.cpp \
-   module_generator/WriteHandshakeModuleGenerator.cpp \
-   module_generator/WriteNoneDSModuleGenerator.cpp \
-   module_generator/WriteNoneModuleGenerator.cpp \
-   module_generator/WriteNoneRegisteredModuleGenerator.cpp \
-   module_generator/WriteValidModuleGenerator.cpp
+   module_generator/Read_acknowledgeModuleGenerator.cpp \
+   module_generator/Read_axisModuleGenerator.cpp \
+   module_generator/Read_fifoModuleGenerator.cpp \
+   module_generator/Read_handshakeModuleGenerator.cpp \
+   module_generator/Read_noneModuleGenerator.cpp \
+   module_generator/Read_validModuleGenerator.cpp \
+   module_generator/ReadWrite_arrayModuleGenerator.cpp \
+   module_generator/ReadWriteDP_arrayModuleGenerator.cpp \
+   module_generator/ReadWrite_m_axiModuleGenerator.cpp \
+   module_generator/Write_acknowledgeModuleGenerator.cpp \
+   module_generator/Write_axisModuleGenerator.cpp \
+   module_generator/Write_fifoModuleGenerator.cpp \
+   module_generator/Write_handshakeModuleGenerator.cpp \
+   module_generator/Write_noneDSModuleGenerator.cpp \
+   module_generator/Write_noneModuleGenerator.cpp \
+   module_generator/Write_none_registeredModuleGenerator.cpp \
+   module_generator/Write_validModuleGenerator.cpp
 
 #Documentation stuff
 DOX_TAGFILES = src src/graph src/HLS src/behavior src/circuit src/technology src/parser/HLS_constraintsIO src/HLS/controller src/HLS/scheduling src/HLS/module_allocation src/HLS/binding src/HLS/binding/register src/HLS/binding/storage_value_insertion src/HLS/binding/module src/HLS/binding/interconnection src/HLS/controller src/HLS/datapath src/HLS/hls_flow src/HLS/evaluation src/HLS/target /src/HLS/chaining src/HLS/function_allocation 

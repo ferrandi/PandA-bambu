@@ -739,7 +739,8 @@ void FunctionInterfaceInfer::create_resource_Read_simple(const std::set<std::str
       }
 
       CM->add_NP_functionality(interface_top, NP_functionality::LIBRARY, "in1 out1");
-      CM->add_NP_functionality(interface_top, NP_functionality::VERILOG_GENERATOR, "Read_" + interfaceType + ".cpp");
+      CM->add_NP_functionality(interface_top, NP_functionality::VERILOG_GENERATOR,
+                               "Read_" + interfaceType + "ModuleGenerator");
       TechMan->add_resource(INTERFACE_LIBRARY, ResourceName, CM);
       for(const auto& fdName : operations)
       {
@@ -910,12 +911,12 @@ void FunctionInterfaceInfer::create_resource_Write_simple(const std::set<std::st
          writer == HDLWriter_Language::VHDL)
       {
          CM->add_NP_functionality(interface_top, NP_functionality::VHDL_GENERATOR,
-                                  "Write_" + interfaceType + ((isDiffSize && !isAVH) ? "DS" : "") + "_VHDL.cpp");
+                                  "Write_" + interfaceType + ((isDiffSize && !isAVH) ? "DS" : "") + "ModuleGenerator");
       }
       else
       {
          CM->add_NP_functionality(interface_top, NP_functionality::VERILOG_GENERATOR,
-                                  "Write_" + interfaceType + ((isDiffSize && !isAVH) ? "DS" : "") + ".cpp");
+                                  "Write_" + interfaceType + ((isDiffSize && !isAVH) ? "DS" : "") + "ModuleGenerator");
       }
       TechMan->add_resource(INTERFACE_LIBRARY, ResourceName, CM);
       for(const auto& fdName : operations)
@@ -1086,7 +1087,7 @@ void FunctionInterfaceInfer::create_resource_array(const std::set<std::string>& 
 
       CM->add_NP_functionality(interface_top, NP_functionality::LIBRARY, "in1 in2 in3 in4 out1");
       CM->add_NP_functionality(interface_top, NP_functionality::VERILOG_GENERATOR,
-                               read_write_string + interfaceType + ".cpp");
+                               read_write_string + interfaceType + "ModuleGenerator");
       TechMan->add_resource(INTERFACE_LIBRARY, ResourceName, CM);
       const auto fu = GetPointerS<functional_unit>(TechMan->get_fu(ResourceName, INTERFACE_LIBRARY));
       fu->area_m = area_model::create_model(device_type, parameters);
@@ -1419,7 +1420,7 @@ void FunctionInterfaceInfer::create_resource_m_axi(const std::set<std::string>& 
 
       CM->add_NP_functionality(interface_top, NP_functionality::LIBRARY, "in1 in2 in3 in4 out1" + param_ports);
       CM->add_NP_functionality(interface_top, NP_functionality::VERILOG_GENERATOR,
-                               "ReadWrite_" + interfaceType + ".cpp");
+                               "ReadWrite_" + interfaceType + "ModuleGenerator");
       TechMan->add_resource(INTERFACE_LIBRARY, ResourceName, CM);
 
       const auto fu = GetPointerS<functional_unit>(TechMan->get_fu(ResourceName, INTERFACE_LIBRARY));
