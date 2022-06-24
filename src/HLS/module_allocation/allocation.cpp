@@ -2274,7 +2274,7 @@ DesignFlowStep_Status allocation::InternalExec()
                      }
                      else
                      {
-                        modGen->create_generic_module(fu_name, lib_name, specialized_fuName);
+                        modGen->create_generic_module(fu_name, vert, function_behavior, lib_name, specialized_fuName);
                         const library_managerRef libraryManager = TM->get_library_manager(lib_name);
                         technology_nodeRef new_techNode_obj = libraryManager->get_fu(specialized_fuName);
                         THROW_ASSERT(new_techNode_obj, "not expected");
@@ -3158,10 +3158,24 @@ void allocation::IntegrateTechnologyLibraries()
                                             ->get_NP_functionality()
                                             ->exist_NP_functionality(NP_functionality::VHDL_GENERATOR)))
                {
-                  ModuleGeneratorManagerRef modGen =
-                      ModuleGeneratorManagerRef(new ModuleGeneratorManager(HLSMgr, parameters));
+                  const ModuleGeneratorManagerRef modGen(new ModuleGeneratorManager(HLSMgr, parameters));
                   std::string new_shared_fu_name = shared_fu_name + "_modgen";
-                  modGen->create_generic_module(shared_fu_name, libraryManager->get_library_name(), new_shared_fu_name);
+                  const auto fnode = [&]() -> tree_nodeRef {
+                     const auto fu = GetPointer<const functional_unit>(techNode_obj);
+                     for(const auto& op : fu->get_operations())
+                     {
+                        const auto op_fnode = HLSMgr->get_tree_manager()->GetFunction(op->get_name());
+                        if(op_fnode)
+                        {
+                           return op_fnode;
+                        }
+                     }
+                     return nullptr;
+                  }();
+                  THROW_ASSERT(fnode, "Expected valid function node");
+                  modGen->create_generic_module(shared_fu_name, nullptr,
+                                                HLSMgr->CGetFunctionBehavior(GET_INDEX_CONST_NODE(fnode)),
+                                                libraryManager->get_library_name(), new_shared_fu_name);
                   techNode_obj = libraryManager->get_fu(new_shared_fu_name);
                   THROW_ASSERT(techNode_obj, "function not yet built: " + new_shared_fu_name);
                }

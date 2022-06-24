@@ -81,8 +81,6 @@ class ModuleGeneratorManager
    /// The debug level
    const int debug_level;
 
-   const std::string output_directory;
-
  public:
    /**
     * Constructor.
@@ -112,7 +110,8 @@ class ModuleGeneratorManager
    void specialize_fu(std::string fuName, vertex ve, std::string libraryId, const FunctionBehaviorConstRef FB,
                       std::string new_fu_name, std::map<std::string, technology_nodeRef>& new_fu);
 
-   void create_generic_module(const std::string& fuName, const std::string& libraryId, const std::string& new_fu_name);
+   void create_generic_module(const std::string& fuName, vertex ve, const FunctionBehaviorConstRef FB,
+                              const std::string& libraryId, const std::string& new_fu_name);
 };
 using ModuleGeneratorManagerRef = refcount<ModuleGeneratorManager>;
 #endif

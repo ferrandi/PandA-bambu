@@ -109,15 +109,8 @@
 #include "string_manipulation.hpp" // for GET_CLASS
 
 ModuleGeneratorManager::ModuleGeneratorManager(const HLS_managerRef _HLSMgr, const ParameterConstRef _parameters)
-    : HLSMgr(_HLSMgr),
-      parameters(_parameters),
-      debug_level(_parameters->get_class_debug_level(GET_CLASS(*this))),
-      output_directory(parameters->getOption<std::string>(OPT_output_directory) + "/module-generation/")
+    : HLSMgr(_HLSMgr), parameters(_parameters), debug_level(_parameters->get_class_debug_level(GET_CLASS(*this)))
 {
-   if(!boost::filesystem::exists(output_directory))
-   {
-      boost::filesystem::create_directories(output_directory);
-   }
 }
 
 ModuleGeneratorManager::~ModuleGeneratorManager() = default;
@@ -175,9 +168,10 @@ std::string ModuleGeneratorManager::GenerateHDL(
    const auto module_generator = ModuleGenerator::Create(hdl_template, HLSMgr);
    THROW_ASSERT(module_generator, "Unknown module generator required: " + hdl_template);
 
-   PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "ModuleGeneratorManager @ Starting dynamic hdl generation...");
+   PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "ModuleGeneratorManager @ Starting dynamic HDL generation...");
 
    std::vector<ModuleGenerator::parameter> _p;
+   if(required_variables.size())
    {
       auto portNum = 0U;
       const auto FB = HLSMgr->CGetFunctionBehavior(function_id);
@@ -232,66 +226,51 @@ void ModuleGeneratorManager::specialize_fu(std::string fuName, vertex ve, std::s
 
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Specializing: " + fuName + " as " + new_fu_name);
 
-   if(new_fu.find(new_fu_name) != new_fu.end())
+   if(new_fu.count(new_fu_name))
    {
       PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, new_fu_name + " already in the library");
       PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Specialization completed");
    }
    else
    {
-      structural_objectRef top;
-      structural_managerRef CM;
-      unsigned int n_ports =
+      const auto n_ports =
           parameters->isOption(OPT_channels_number) ? parameters->getOption<unsigned int>(OPT_channels_number) : 0;
 
-      std::string NP_parameters;
-
-      // std::cout<<"Start creation"<<std::endl;
-
-      CM = structural_managerRef(new structural_manager(parameters));
-      structural_type_descriptorRef module_type =
-          structural_type_descriptorRef(new structural_type_descriptor(new_fu_name));
+      const structural_managerRef CM(new structural_manager(parameters));
+      const structural_type_descriptorRef module_type(new structural_type_descriptor(new_fu_name));
       CM->set_top_info(new_fu_name, module_type);
-      top = CM->get_circ();
-      GetPointer<module>(top)->set_generated();
+      const auto top = CM->get_circ();
+      const auto top_module = GetPointerS<module>(top);
+      top_module->set_generated();
       /// add description and license
-      GetPointer<module>(top)->set_description(fu_module->get_description());
-      GetPointer<module>(top)->set_copyright(fu_module->get_copyright());
-      GetPointer<module>(top)->set_authors(fu_module->get_authors());
-      GetPointer<module>(top)->set_license(fu_module->get_license());
+      top_module->set_description(fu_module->get_description());
+      top_module->set_copyright(fu_module->get_copyright());
+      top_module->set_authors(fu_module->get_authors());
+      top_module->set_license(fu_module->get_license());
       for(const auto& module_parameter : fu_module->GetParameters())
       {
-         GetPointer<module>(top)->AddParameter(module_parameter.first,
-                                               fu_module->GetDefaultParameter(module_parameter.first));
-         GetPointer<module>(top)->SetParameter(module_parameter.first, module_parameter.second);
+         top_module->AddParameter(module_parameter.first, fu_module->GetDefaultParameter(module_parameter.first));
+         top_module->SetParameter(module_parameter.first, module_parameter.second);
       }
-      auto multiplicitiy = fu_module->get_multi_unit_multiplicity();
-      GetPointer<module>(top)->set_multi_unit_multiplicity(multiplicitiy);
+      const auto multiplicitiy = fu_module->get_multi_unit_multiplicity();
+      top_module->set_multi_unit_multiplicity(multiplicitiy);
 
-      // std::cout<<"Module created, adding ports"<<std::endl;
+      auto param_list = fu_module->get_NP_functionality()->get_NP_functionality(NP_functionality::LIBRARY);
 
-      std::string param_list = fu_module->get_NP_functionality()->get_NP_functionality(NP_functionality::LIBRARY);
-
-      /*Adding ports*/
-      auto inPortSize = static_cast<unsigned int>(fu_module->get_in_port_size());
-      auto outPortSize = static_cast<unsigned int>(fu_module->get_out_port_size());
-
-      structural_objectRef generated_port;
       std::string port_name = "";
-      unsigned int currentPort = 0;
-      unsigned int toSkip = 0;
+      auto toSkip = 0U;
       PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Adding input ports");
-      for(currentPort = 0; currentPort < inPortSize; currentPort++)
+      for(auto currentPort = 0U; currentPort < fu_module->get_in_port_size(); currentPort++)
       {
          structural_objectRef curr_port = fu_module->get_in_port(currentPort);
          if(port_name == CLOCK_PORT_NAME || port_name == RESET_PORT_NAME || port_name == START_PORT_NAME)
          {
             ++toSkip;
          }
-         if(GetPointer<port_o>(curr_port)->get_is_var_args())
+         if(GetPointerS<port_o>(curr_port)->get_is_var_args())
          {
-            unsigned portNum = 1;
-            unsigned indexPort = 0;
+            auto portNum = 1U;
+            auto indexPort = 0U;
             for(auto& required_variable : required_variables)
             {
                if(indexPort >= (currentPort - toSkip))
@@ -309,9 +288,10 @@ void ModuleGeneratorManager::specialize_fu(std::string fuName, vertex ve, std::s
                   }
 
                   port_name = "in" + STR(portNum + currentPort - toSkip);
+                  structural_objectRef generated_port;
                   if(curr_port->get_kind() == port_vector_o_K)
                   {
-                     auto ps = GetPointer<port_o>(curr_port)->get_ports_size();
+                     const auto ps = GetPointerS<port_o>(curr_port)->get_ports_size();
                      THROW_ASSERT(multiplicitiy == ps, "unexpected condition " + STR(multiplicitiy) + " " + STR(ps));
                      generated_port = CM->add_port_vector(port_name, port_o::IN, ps, top, dt);
                   }
@@ -325,21 +305,17 @@ void ModuleGeneratorManager::specialize_fu(std::string fuName, vertex ve, std::s
                   portNum++;
                }
                ++indexPort;
-               // std::cout<<"Added port NAME: "<<generated_port->get_id()<<" TYPE:
-               // "<<generated_port->get_typeRef()->get_name()<<" CLOCK:
-               // "<<GetPointer<port_o>(generated_port)->get_is_clock()<<"
-               // DATA_SIZE:"<<STR(generated_port->get_typeRef()->size)<<"
-               // VECTOR_SIZE:"<<STR(generated_port->get_typeRef()->vector_size)<<std::endl;
             }
          }
          else
          {
             port_name = curr_port->get_id();
+            structural_objectRef generated_port;
             if(curr_port->get_kind() == port_vector_o_K)
             {
                if(multiplicitiy)
                {
-                  auto ps = GetPointer<port_o>(curr_port)->get_ports_size();
+                  const auto ps = GetPointerS<const port_o>(curr_port)->get_ports_size();
                   THROW_ASSERT(multiplicitiy == ps, "unexpected condition");
                   generated_port = CM->add_port_vector(port_name, port_o::IN, ps, top, curr_port->get_typeRef());
                }
@@ -353,24 +329,19 @@ void ModuleGeneratorManager::specialize_fu(std::string fuName, vertex ve, std::s
                generated_port = CM->add_port(port_name, port_o::IN, top, curr_port->get_typeRef());
             }
             add_port_parameters(generated_port, curr_port);
-            // std::cout<<"Added port NAME: "<<generated_port->get_id()<<" TYPE:
-            // "<<generated_port->get_typeRef()->get_name()<<" CLOCK:
-            // "<<GetPointer<port_o>(generated_port)->get_is_clock()<<"
-            // DATA_SIZE:"<<STR(generated_port->get_typeRef()->size)<<"
-            // VECTOR_SIZE:"<<STR(generated_port->get_typeRef()->vector_size)<<std::endl;
          }
       }
 
       PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Adding output ports");
-
-      for(currentPort = 0; currentPort < outPortSize; currentPort++)
+      for(auto currentPort = 0U; currentPort < fu_module->get_out_port_size(); currentPort++)
       {
-         structural_objectRef curr_port = fu_module->get_out_port(currentPort);
+         const auto curr_port = fu_module->get_out_port(currentPort);
+         structural_objectRef generated_port;
          if(curr_port->get_kind() == port_vector_o_K)
          {
             if(multiplicitiy)
             {
-               auto ps = GetPointer<port_o>(curr_port)->get_ports_size();
+               const auto ps = GetPointerS<const port_o>(curr_port)->get_ports_size();
                THROW_ASSERT(multiplicitiy == ps, "unexpected condition");
                generated_port =
                    CM->add_port_vector(curr_port->get_id(), port_o::OUT, ps, top, curr_port->get_typeRef());
@@ -388,8 +359,7 @@ void ModuleGeneratorManager::specialize_fu(std::string fuName, vertex ve, std::s
          add_port_parameters(generated_port, curr_port);
       }
 
-      NP_parameters = new_fu_name + std::string(" ") + param_list;
-      CM->add_NP_functionality(top, NP_functionality::LIBRARY, NP_parameters);
+      CM->add_NP_functionality(top, NP_functionality::LIBRARY, new_fu_name + " " + param_list);
       if(fu_module->get_NP_functionality()->exist_NP_functionality(NP_functionality::IP_COMPONENT))
       {
          CM->add_NP_functionality(
@@ -397,27 +367,27 @@ void ModuleGeneratorManager::specialize_fu(std::string fuName, vertex ve, std::s
              fu_module->get_NP_functionality()->get_NP_functionality(NP_functionality::IP_COMPONENT));
       }
 
-      const auto np = fu_module->get_NP_functionality();
       const auto writer = [&]() -> HDLWriter_Language {
          /// default language
+         const auto np = fu_module->get_NP_functionality();
          const auto required_language =
              static_cast<HDLWriter_Language>(parameters->getOption<unsigned int>(OPT_writer_language));
-         if(required_language == HDLWriter_Language::VERILOG and
+         if(required_language == HDLWriter_Language::VERILOG &&
             np->exist_NP_functionality(NP_functionality::VERILOG_GENERATOR))
          {
             return HDLWriter_Language::VERILOG;
          }
-         if(required_language == HDLWriter_Language::VHDL and
+         if(required_language == HDLWriter_Language::VHDL &&
             np->exist_NP_functionality(NP_functionality::VHDL_GENERATOR))
          {
             return HDLWriter_Language::VHDL;
          }
-         if(parameters->isOption(OPT_mixed_design) && not parameters->getOption<bool>(OPT_mixed_design))
+         if(parameters->isOption(OPT_mixed_design) && !parameters->getOption<bool>(OPT_mixed_design))
          {
             THROW_ERROR("Missing VHDL GENERATOR for " + fuName);
          }
-         if(not np->exist_NP_functionality(NP_functionality::VERILOG_GENERATOR) and
-            not np->exist_NP_functionality(NP_functionality::VHDL_GENERATOR))
+         if(!np->exist_NP_functionality(NP_functionality::VERILOG_GENERATOR) &&
+            !np->exist_NP_functionality(NP_functionality::VHDL_GENERATOR))
          {
             THROW_ERROR("Missing GENERATOR for " + fuName);
          }
@@ -431,41 +401,40 @@ void ModuleGeneratorManager::specialize_fu(std::string fuName, vertex ve, std::s
          }
       }();
 
-      std::string hdl_template = fu_module->get_NP_functionality()->get_NP_functionality(
+      const auto hdl_template = fu_module->get_NP_functionality()->get_NP_functionality(
           writer == HDLWriter_Language::VERILOG ? NP_functionality::VERILOG_GENERATOR :
                                                   NP_functionality::VHDL_GENERATOR);
-      PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, new_fu_name + ": Generating dynamic hdl code");
-      std::string hdl_code =
-          GenerateHDL(hdl_template, GetPointer<module>(top), FB->CGetBehavioralHelper()->get_function_index(), ve,
-                      required_variables, writer);
+      PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, new_fu_name + ": Generating dynamic HDL code");
+      const auto hdl_code = GenerateHDL(hdl_template, top_module, FB->CGetBehavioralHelper()->get_function_index(), ve,
+                                        required_variables, writer);
 
       CM->add_NP_functionality(top,
                                writer == HDLWriter_Language::VERILOG ? NP_functionality::VERILOG_PROVIDED :
                                                                        NP_functionality::VHDL_PROVIDED,
                                hdl_code);
 
-      technology_nodeRef new_techNode_obj = technology_nodeRef(new functional_unit);
-      if(GetPointer<functional_unit>(techNode_obj)->area_m)
+      const technology_nodeRef new_techNode_obj(new functional_unit);
+      auto fu = GetPointerS<functional_unit>(new_techNode_obj);
+      if(GetPointerS<const functional_unit>(techNode_obj)->area_m)
       {
-         GetPointer<functional_unit>(new_techNode_obj)->area_m = area_model::create_model(dv_type, parameters);
+         fu->area_m = area_model::create_model(dv_type, parameters);
       }
-      GetPointer<functional_unit>(new_techNode_obj)->functional_unit_name = new_fu_name;
-      GetPointer<functional_unit>(new_techNode_obj)->CM = CM;
-
+      fu->functional_unit_name = new_fu_name;
+      fu->CM = CM;
       new_fu.insert(std::make_pair(new_fu_name, new_techNode_obj));
-
       PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, new_fu_name + " created successfully");
 
-      std::vector<technology_nodeRef> op_vec = GetPointer<functional_unit>(techNode_obj)->get_operations();
-      for(auto techNode_fu : op_vec)
+      const auto op_vec = GetPointerS<const functional_unit>(techNode_obj)->get_operations();
+      for(const auto& techNode_fu : op_vec)
       {
-         GetPointer<functional_unit>(new_techNode_obj)->add(techNode_fu);
+         fu->add(techNode_fu);
       }
       PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Specialization completed");
    }
 }
 
-void ModuleGeneratorManager::create_generic_module(const std::string& fuName, const std::string& libraryId,
+void ModuleGeneratorManager::create_generic_module(const std::string& fuName, vertex ve,
+                                                   const FunctionBehaviorConstRef FB, const std::string& libraryId,
                                                    const std::string& new_fu_name)
 {
    const auto HLS_T = HLSMgr->get_HLS_target();
@@ -479,57 +448,40 @@ void ModuleGeneratorManager::create_generic_module(const std::string& fuName, co
    const auto fu_obj = structManager_obj->get_circ();
    const auto fu_module = GetPointer<const module>(fu_obj);
    THROW_ASSERT(fu_module, "");
-   structural_objectRef top;
-   structural_managerRef CM;
    const auto n_ports =
        parameters->isOption(OPT_channels_number) ? parameters->getOption<unsigned int>(OPT_channels_number) : 0;
 
-   CM = structural_managerRef(new structural_manager(parameters));
-   structural_type_descriptorRef module_type =
-       structural_type_descriptorRef(new structural_type_descriptor(new_fu_name));
+   const structural_managerRef CM(new structural_manager(parameters));
+   const structural_type_descriptorRef module_type(new structural_type_descriptor(new_fu_name));
    CM->set_top_info(new_fu_name, module_type);
-   top = CM->get_circ();
-   GetPointer<module>(top)->set_generated();
+   const auto top = CM->get_circ();
+   const auto top_module = GetPointerS<module>(top);
+   top_module->set_generated();
    /// add description and license
-   GetPointer<module>(top)->set_description(fu_module->get_description());
-   GetPointer<module>(top)->set_copyright(fu_module->get_copyright());
-   GetPointer<module>(top)->set_authors(fu_module->get_authors());
-   GetPointer<module>(top)->set_license(fu_module->get_license());
+   top_module->set_description(fu_module->get_description());
+   top_module->set_copyright(fu_module->get_copyright());
+   top_module->set_authors(fu_module->get_authors());
+   top_module->set_license(fu_module->get_license());
    for(const auto& module_parameter : fu_module->GetParameters())
    {
-      GetPointer<module>(top)->AddParameter(module_parameter.first,
-                                            fu_module->GetDefaultParameter(module_parameter.first));
-      GetPointer<module>(top)->SetParameter(module_parameter.first, module_parameter.second);
+      top_module->AddParameter(module_parameter.first, fu_module->GetDefaultParameter(module_parameter.first));
+      top_module->SetParameter(module_parameter.first, module_parameter.second);
    }
-   auto multiplicitiy = fu_module->get_multi_unit_multiplicity();
-   GetPointer<module>(top)->set_multi_unit_multiplicity(multiplicitiy);
+   const auto multiplicitiy = fu_module->get_multi_unit_multiplicity();
+   top_module->set_multi_unit_multiplicity(multiplicitiy);
 
-   std::string param_list = fu_module->get_NP_functionality()->get_NP_functionality(NP_functionality::LIBRARY);
-
-   /*Adding ports*/
-   auto inPortSize = static_cast<unsigned int>(fu_module->get_in_port_size());
-   auto outPortSize = static_cast<unsigned int>(fu_module->get_out_port_size());
-
-   const FunctionBehaviorConstRef FB;
-   structural_objectRef generated_port;
-   std::string port_name = "";
-   unsigned int currentPort = 0;
-   unsigned int toSkip = 0;
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Adding input ports");
-   for(currentPort = 0; currentPort < inPortSize; currentPort++)
+   for(auto currentPort = 0U; currentPort < fu_module->get_in_port_size(); currentPort++)
    {
       structural_objectRef curr_port = fu_module->get_in_port(currentPort);
-      if(port_name == CLOCK_PORT_NAME || port_name == RESET_PORT_NAME || port_name == START_PORT_NAME)
-      {
-         ++toSkip;
-      }
-      THROW_ASSERT(!GetPointer<port_o>(curr_port)->get_is_var_args(), "unexpected condition");
-      port_name = curr_port->get_id();
+      THROW_ASSERT(!GetPointer<const port_o>(curr_port)->get_is_var_args(), "unexpected condition");
+      structural_objectRef generated_port;
+      const auto port_name = curr_port->get_id();
       if(curr_port->get_kind() == port_vector_o_K)
       {
          if(multiplicitiy)
          {
-            auto ps = GetPointer<port_o>(curr_port)->get_ports_size();
+            auto ps = GetPointerS<const port_o>(curr_port)->get_ports_size();
             THROW_ASSERT(multiplicitiy == ps, "unexpected condition");
             generated_port = CM->add_port_vector(port_name, port_o::IN, ps, top, curr_port->get_typeRef());
          }
@@ -546,15 +498,15 @@ void ModuleGeneratorManager::create_generic_module(const std::string& fuName, co
    }
 
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Adding output ports");
-
-   for(currentPort = 0; currentPort < outPortSize; currentPort++)
+   for(auto currentPort = 0U; currentPort < fu_module->get_out_port_size(); currentPort++)
    {
-      structural_objectRef curr_port = fu_module->get_out_port(currentPort);
+      const auto curr_port = fu_module->get_out_port(currentPort);
+      structural_objectRef generated_port;
       if(curr_port->get_kind() == port_vector_o_K)
       {
          if(multiplicitiy)
          {
-            auto ps = GetPointer<port_o>(curr_port)->get_ports_size();
+            const auto ps = GetPointerS<const port_o>(curr_port)->get_ports_size();
             THROW_ASSERT(multiplicitiy == ps, "unexpected condition");
             generated_port = CM->add_port_vector(curr_port->get_id(), port_o::OUT, ps, top, curr_port->get_typeRef());
          }
@@ -571,7 +523,8 @@ void ModuleGeneratorManager::create_generic_module(const std::string& fuName, co
       add_port_parameters(generated_port, curr_port);
    }
 
-   const auto NP_parameters = new_fu_name + std::string(" ") + param_list;
+   const auto NP_parameters =
+       new_fu_name + " " + fu_module->get_NP_functionality()->get_NP_functionality(NP_functionality::LIBRARY);
    CM->add_NP_functionality(top, NP_functionality::LIBRARY, NP_parameters);
    if(fu_module->get_NP_functionality()->exist_NP_functionality(NP_functionality::IP_COMPONENT))
    {
@@ -579,9 +532,9 @@ void ModuleGeneratorManager::create_generic_module(const std::string& fuName, co
                                fu_module->get_NP_functionality()->get_NP_functionality(NP_functionality::IP_COMPONENT));
    }
 
-   const auto np = fu_module->get_NP_functionality();
    const auto writer = [&]() -> HDLWriter_Language {
       /// default language
+      const auto np = fu_module->get_NP_functionality();
       const auto required_language =
           static_cast<HDLWriter_Language>(parameters->getOption<unsigned int>(OPT_writer_language));
       if(required_language == HDLWriter_Language::VERILOG &&
@@ -615,23 +568,22 @@ void ModuleGeneratorManager::create_generic_module(const std::string& fuName, co
        writer == HDLWriter_Language::VERILOG ? NP_functionality::VERILOG_GENERATOR : NP_functionality::VHDL_GENERATOR);
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, new_fu_name + ": Generating dynamic HDL code");
    std::vector<std::tuple<unsigned int, unsigned int>> required_variables;
-   const auto hdl_code =
-       GenerateHDL(hdl_template, GetPointer<module>(top), FB->CGetBehavioralHelper()->get_function_index(), nullptr,
-                   required_variables, writer);
+   const auto hdl_code = GenerateHDL(hdl_template, top_module, FB->CGetBehavioralHelper()->get_function_index(), ve,
+                                     required_variables, writer);
    CM->add_NP_functionality(top,
                             writer == HDLWriter_Language::VERILOG ? NP_functionality::VERILOG_PROVIDED :
                                                                     NP_functionality::VHDL_PROVIDED,
                             hdl_code);
 
-   technology_nodeRef new_techNode_obj = technology_nodeRef(new functional_unit);
-   GetPointer<functional_unit>(new_techNode_obj)->functional_unit_name = new_fu_name;
-   GetPointer<functional_unit>(new_techNode_obj)->CM = CM;
+   const technology_nodeRef new_techNode_obj(new functional_unit);
+   GetPointerS<functional_unit>(new_techNode_obj)->functional_unit_name = new_fu_name;
+   GetPointerS<functional_unit>(new_techNode_obj)->CM = CM;
    TechM->add_resource(libraryId, new_fu_name, CM);
-   auto* fu = GetPointer<functional_unit>(TechM->get_fu(new_fu_name, libraryId));
+   auto fu = GetPointerS<functional_unit>(TechM->get_fu(new_fu_name, libraryId));
    fu->area_m = area_model::create_model(dv_type, parameters);
    fu->area_m->set_area_value(0);
-   const auto& op_vec = GetPointer<functional_unit>(techNode_obj)->get_operations();
-   for(auto techNode_fu : op_vec)
+   const auto& op_vec = GetPointerS<functional_unit>(techNode_obj)->get_operations();
+   for(const auto& techNode_fu : op_vec)
    {
       fu->add(techNode_fu);
    }
