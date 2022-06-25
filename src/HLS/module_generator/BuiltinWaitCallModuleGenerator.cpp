@@ -184,11 +184,14 @@ void BuiltinWaitCallModuleGenerator::InternalExec(std::ostream& out, const modul
    }
 
    auto idx = 1U;
-   for(idx = 1U; idx <= _p.size() - 3U; ++idx)
+   if(_p.size() > 3U)
    {
-      out << "     else if (step == S_" << idx << ") begin\n"
-          << "       index = " << idx - 1U << ";\n"
-          << "     end\n";
+      for(idx = 1U; idx <= _p.size() - 3U; ++idx)
+      {
+         out << "     else if (step == S_" << idx << ") begin\n"
+             << "       index = " << idx - 1U << ";\n"
+             << "     end\n";
+      }
    }
 
    if(_p.size() > 2U)
@@ -237,35 +240,39 @@ void BuiltinWaitCallModuleGenerator::InternalExec(std::ostream& out, const modul
        << "    end\n"
        << "  end\n";
    idx = 1U;
-   for(idx = 1U; idx <= _p.size() - 3U; ++idx)
+
+   if(_p.size() > 3U)
    {
-      if(idx != _p.size() - 3U)
+      for(idx = 1U; idx <= _p.size() - 3U; ++idx)
       {
-         out << "  else if (step == S_" << idx << ") begin\n"
-             << "    Mout_we_ram = 1'b1;\n"
-             << "    Mout_addr_ram = in1 + paramAddressRead;\n"
-             << "    Mout_Wdata_ram = " << _p[idx + 1U].name << ";\n"
-             << "    Mout_data_ram_size = " << _p[idx + 1U].type_size << ";\n"
-             << "    if (M_DataRdy == 1'b1) begin\n"
-             << "      next_step = S_" << idx + 1U << ";\n"
-             << "    end else begin\n"
-             << "      next_step = S_" << idx << ";\n"
-             << "    end\n"
-             << "  end\n";
-      }
-      else
-      {
-         out << "  else if (step == S_" << idx << ") begin\n"
-             << "    Mout_we_ram = 1'b1;\n"
-             << "    Mout_addr_ram = in1 + paramAddressRead;\n"
-             << "    Mout_Wdata_ram = " << _p[idx + 1U].name << ";\n"
-             << "    Mout_data_ram_size = " << _p[idx + 1U].type_size << ";\n"
-             << "    if (M_DataRdy == 1'b1) begin\n"
-             << "      next_step = in2[0] ? S_" << idx + 2U << " : S_" << idx + 1U << ";\n"
-             << "    end else begin\n"
-             << "      next_step = S_" << idx << ";\n"
-             << "    end\n"
-             << "  end\n";
+         if(idx != _p.size() - 3U)
+         {
+            out << "  else if (step == S_" << idx << ") begin\n"
+                << "    Mout_we_ram = 1'b1;\n"
+                << "    Mout_addr_ram = in1 + paramAddressRead;\n"
+                << "    Mout_Wdata_ram = " << _p[idx + 1U].name << ";\n"
+                << "    Mout_data_ram_size = " << _p[idx + 1U].type_size << ";\n"
+                << "    if (M_DataRdy == 1'b1) begin\n"
+                << "      next_step = S_" << idx + 1U << ";\n"
+                << "    end else begin\n"
+                << "      next_step = S_" << idx << ";\n"
+                << "    end\n"
+                << "  end\n";
+         }
+         else
+         {
+            out << "  else if (step == S_" << idx << ") begin\n"
+                << "    Mout_we_ram = 1'b1;\n"
+                << "    Mout_addr_ram = in1 + paramAddressRead;\n"
+                << "    Mout_Wdata_ram = " << _p[idx + 1U].name << ";\n"
+                << "    Mout_data_ram_size = " << _p[idx + 1U].type_size << ";\n"
+                << "    if (M_DataRdy == 1'b1) begin\n"
+                << "      next_step = in2[0] ? S_" << idx + 2U << " : S_" << idx + 1U << ";\n"
+                << "    end else begin\n"
+                << "      next_step = S_" << idx << ";\n"
+                << "    end\n"
+                << "  end\n";
+         }
       }
    }
    if(_p.size() > 2U)
