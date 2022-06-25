@@ -1334,18 +1334,17 @@ bool allocation::check_type_and_precision(operation* curr_op, node_kind_prec_inf
    return false;
 }
 
-bool allocation::check_proxies(const library_managerRef library, const std::string& fu_name_)
+bool allocation::check_proxies(const library_managerRef library, const std::string& fu_name)
 {
-   const auto fu_name = functions::GetFUName(fu_name_, HLSMgr);
    if(HLSMgr->Rfuns->is_a_proxied_function(fu_name))
    {
       return true;
    }
    if(library->get_library_name() == PROXY_LIBRARY)
    {
-      if(boost::algorithm::starts_with(fu_name, WRAPPED_PROXY_PREFIX))
+      if(fu_name.find(WRAPPED_PROXY_PREFIX) == 0)
       {
-         std::string original_function_name = fu_name.substr(std::string(WRAPPED_PROXY_PREFIX).size());
+         const auto original_function_name = fu_name.substr(sizeof(WRAPPED_PROXY_PREFIX) - 1);
          if(!HLSMgr->Rfuns->is_a_shared_function(funId, original_function_name))
          {
             return true;
@@ -1353,9 +1352,8 @@ bool allocation::check_proxies(const library_managerRef library, const std::stri
       }
       else
       {
-         THROW_ASSERT(fu_name.compare(0, std::string(PROXY_PREFIX).size(), PROXY_PREFIX) == 0,
-                      "expected a proxy module");
-         std::string original_function_name = fu_name.substr(std::string(PROXY_PREFIX).size());
+         THROW_ASSERT(fu_name.find(PROXY_PREFIX) == 0, "expected a proxy module");
+         const auto original_function_name = fu_name.substr(sizeof(PROXY_PREFIX) - 1);
          if(!HLSMgr->Rfuns->is_a_proxied_shared_function(funId, original_function_name))
          {
             return true;
