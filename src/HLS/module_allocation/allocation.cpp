@@ -1342,7 +1342,7 @@ bool allocation::check_proxies(const library_managerRef library, const std::stri
    }
    if(library->get_library_name() == PROXY_LIBRARY)
    {
-      if(fu_name.find(WRAPPED_PROXY_PREFIX) == 0)
+      if(boost::algorithm::starts_with(fu_name, WRAPPED_PROXY_PREFIX))
       {
          const auto original_function_name = fu_name.substr(sizeof(WRAPPED_PROXY_PREFIX) - 1);
          if(!HLSMgr->Rfuns->is_a_shared_function(funId, original_function_name))
@@ -1352,7 +1352,7 @@ bool allocation::check_proxies(const library_managerRef library, const std::stri
       }
       else
       {
-         THROW_ASSERT(fu_name.find(PROXY_PREFIX) == 0, "expected a proxy module");
+         THROW_ASSERT(boost::algorithm::starts_with(fu_name, PROXY_PREFIX), "expected a proxy module");
          const auto original_function_name = fu_name.substr(sizeof(PROXY_PREFIX) - 1);
          if(!HLSMgr->Rfuns->is_a_proxied_shared_function(funId, original_function_name))
          {
@@ -2217,25 +2217,23 @@ DesignFlowStep_Status allocation::InternalExec()
                                              ->exist_NP_functionality(NP_functionality::VHDL_GENERATOR));
                if(has_to_be_generated)
                {
-                  PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Unit has to be specialized");
-                  bool varargs_fu = GetPointer<module>(structManager_obj->get_circ())->is_var_args();
-                  ModuleGeneratorManagerRef modGen =
-                      ModuleGeneratorManagerRef(new ModuleGeneratorManager(HLSMgr, parameters));
+                  PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Unit has to be specialized.");
+                  const ModuleGeneratorManagerRef modGen(new ModuleGeneratorManager(HLSMgr, parameters));
+                  const auto varargs_fu = GetPointer<module>(structManager_obj->get_circ())->is_var_args();
                   if(varargs_fu)
                   {
-                     std::vector<HLS_manager::io_binding_type> required_variables =
-                         HLSMgr->get_required_values(funId, vert);
+                     const auto required_variables = HLSMgr->get_required_values(funId, vert);
                      std::string asm_unique_id;
                      if(g->CGetOpNodeInfo(vert)->GetOperation() == GIMPLE_ASM)
                      {
                         asm_unique_id = STR(g->CGetOpNodeInfo(vert)->GetNodeId());
                      }
-                     unsigned int firstIndexToSpecialize = 0;
-                     auto mod = GetPointer<module>(structManager_obj->get_circ());
-                     for(auto Pindex = 0u; Pindex < mod->get_in_port_size(); ++Pindex)
+                     auto firstIndexToSpecialize = 0U;
+                     const auto mod = GetPointer<module>(structManager_obj->get_circ());
+                     for(auto Pindex = 0U; Pindex < mod->get_in_port_size(); ++Pindex)
                      {
-                        const structural_objectRef& port_obj = mod->get_in_port(Pindex);
-                        auto port_name = port_obj->get_id();
+                        const auto& port_obj = mod->get_in_port(Pindex);
+                        const auto& port_name = port_obj->get_id();
                         if(GetPointer<port_o>(port_obj)->get_is_var_args())
                         {
                            break;
@@ -2257,9 +2255,9 @@ DesignFlowStep_Status allocation::InternalExec()
                      current_op = current_fu->get_name() + "_modgen";
                   }
                   specialized_fuName = current_op;
-                  std::string fu_name = current_fu->get_name();
+                  const auto& fu_name = current_fu->get_name();
 
-                  std::string check_lib = TM->get_library(specialized_fuName);
+                  const auto check_lib = TM->get_library(specialized_fuName);
                   if(check_lib == lib_name)
                   {
                      new_fu[specialized_fuName] = get_fu(specialized_fuName);
@@ -2273,8 +2271,8 @@ DesignFlowStep_Status allocation::InternalExec()
                      else
                      {
                         modGen->create_generic_module(fu_name, vert, function_behavior, lib_name, specialized_fuName);
-                        const library_managerRef libraryManager = TM->get_library_manager(lib_name);
-                        technology_nodeRef new_techNode_obj = libraryManager->get_fu(specialized_fuName);
+                        const auto libraryManager = TM->get_library_manager(lib_name);
+                        const auto new_techNode_obj = libraryManager->get_fu(specialized_fuName);
                         THROW_ASSERT(new_techNode_obj, "not expected");
                         new_fu.insert(std::make_pair(specialized_fuName, new_techNode_obj));
                      }
@@ -2308,15 +2306,14 @@ DesignFlowStep_Status allocation::InternalExec()
                   current_fu = extract_bambu_provided(library_name, curr_op, bambu_provided_resource);
                }
 
-               unsigned int max_prec =
-                   node_info->input_prec.begin() == node_info->input_prec.end() ?
-                       0 :
-                       *std::max_element(node_info->input_prec.begin(), node_info->input_prec.end());
+               auto max_prec = node_info->input_prec.empty() ?
+                                   0U :
+                                   *std::max_element(node_info->input_prec.begin(), node_info->input_prec.end());
                if(isMemory || lib_is_proxy_or_work || tech_constrain_value != INFINITE_UINT ||
                   bambu_provided_resource != "")
                {
                   constant_id = HLS_manager::io_binding_type(0, 0);
-                  max_prec = 0;
+                  max_prec = 0U;
                }
 
                std::map<technology_nodeRef,
@@ -2429,15 +2426,14 @@ DesignFlowStep_Status allocation::InternalExec()
                {
                   if(boost::algorithm::starts_with(functionalUnitName, WRAPPED_PROXY_PREFIX))
                   {
-                     std::string original_function_name =
-                         functionalUnitName.substr(std::string(WRAPPED_PROXY_PREFIX).size());
+                     const auto original_function_name = functionalUnitName.substr(sizeof(WRAPPED_PROXY_PREFIX) - 1);
                      allocation_information->proxy_wrapped_units[specializedId] = original_function_name;
                   }
                   else
                   {
-                     THROW_ASSERT(functionalUnitName.compare(0, std::string(PROXY_PREFIX).size(), PROXY_PREFIX) == 0,
+                     THROW_ASSERT(boost::algorithm::starts_with(functionalUnitName, PROXY_PREFIX),
                                   "expected a proxy module");
-                     std::string original_function_name = functionalUnitName.substr(std::string(PROXY_PREFIX).size());
+                     const auto original_function_name = functionalUnitName.substr(sizeof(PROXY_PREFIX) - 1);
                      allocation_information->proxy_function_units[specializedId] = original_function_name;
                   }
                }

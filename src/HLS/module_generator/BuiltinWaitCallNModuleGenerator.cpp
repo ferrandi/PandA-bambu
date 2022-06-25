@@ -103,87 +103,101 @@ void BuiltinWaitCallNModuleGenerator::InternalExec(std::ostream& out, const modu
    {
       out << "reg [" << ceil_log2(_p.size() - 2U) << "-1:0] index;\n\n";
    }
+
    if(_p.size() > 2U)
    {
       out << "wire [BITSIZE_Mout_addr_ram-1:0] paramAddressRead;\n\n";
    }
+
    out << "reg [31:0] step 1INIT_ZERO_VALUE;\n"
        << "reg [31:0] next_step;\n"
        << "reg done_port;\n"
-          "reg [PORTSIZE_Sout_DataRdy-1:0] Sout_DataRdy;\n"
-          "reg [PORTSIZE_Mout_oe_ram-1:0] Mout_oe_ram;\n"
-          "reg [PORTSIZE_Mout_we_ram-1:0] Mout_we_ram;\n"
-          "reg [PORTSIZE_Mout_addr_ram*BITSIZE_Mout_addr_ram-1:0] Mout_addr_ram;\n"
-          "reg [PORTSIZE_Mout_Wdata_ram*BITSIZE_Mout_Wdata_ram-1:0] Mout_Wdata_ram;\n"
-          "reg [PORTSIZE_Mout_data_ram_size*BITSIZE_Mout_data_ram_size-1:0] Mout_data_ram_size;\n\n";
+       << "reg [PORTSIZE_Sout_DataRdy-1:0] Sout_DataRdy;\n"
+       << "reg [PORTSIZE_Mout_oe_ram-1:0] Mout_oe_ram;\n"
+       << "reg [PORTSIZE_Mout_we_ram-1:0] Mout_we_ram;\n"
+       << "reg [PORTSIZE_Mout_addr_ram*BITSIZE_Mout_addr_ram-1:0] Mout_addr_ram;\n"
+       << "reg [PORTSIZE_Mout_Wdata_ram*BITSIZE_Mout_Wdata_ram-1:0] Mout_Wdata_ram;\n"
+       << "reg [PORTSIZE_Mout_data_ram_size*BITSIZE_Mout_data_ram_size-1:0] Mout_data_ram_size;\n\n";
+
    if(retval_size)
-      out << "reg [" << retval_size
-          << "-1:0] readValue 1INIT_ZERO_VALUE;\n"
-             "reg ["
-          << retval_size << "-1:0] next_readValue;\n\n";
+   {
+      out << "reg [" << retval_size << "-1:0] readValue 1INIT_ZERO_VALUE;\n"
+          << "reg [" << retval_size << "-1:0] next_readValue;\n\n";
+   }
 
    if(_p.size() > 2U)
-      out << "reg [BITSIZE_Mout_addr_ram-1:0] paramAddress [" << _p.size() - 2U << "-1:0];\n\n";
+   {
+      out << "reg [BITSIZE_Mout_addr_ram-1:0] paramAddress [" << (_p.size() - 2U) << "-1:0];\n\n";
+   }
 
    out << "function [PORTSIZE_S_addr_ram-1:0] check_condition;\n"
-          "  input [PORTSIZE_S_addr_ram*BITSIZE_S_addr_ram-1:0] m;\n"
-          "  integer i1;\n"
-          "begin\n"
-          "  for(i1 = 0; i1 < PORTSIZE_S_addr_ram; i1 = i1 + 1)\n"
-          "  begin\n"
-          "    check_condition[i1] = m[i1*BITSIZE_S_addr_ram +:BITSIZE_S_addr_ram] == unlock_address;\n"
-          "  end\n"
-          "end\n"
-          "endfunction\n";
+       << "  input [PORTSIZE_S_addr_ram*BITSIZE_S_addr_ram-1:0] m;\n"
+       << "  integer i1;\n"
+       << "  begin\n"
+       << "    for(i1 = 0; i1 < PORTSIZE_S_addr_ram; i1 = i1 + 1)\n"
+       << "    begin\n"
+       << "      check_condition[i1] = m[i1*BITSIZE_S_addr_ram +:BITSIZE_S_addr_ram] == unlock_address;\n"
+       << "    end\n"
+       << "  end\n"
+       << "endfunction\n";
 
    out << "wire [PORTSIZE_S_addr_ram-1:0] internal;\n";
 
-   const auto n_iterations = retval_size ? _p.size() + 3U : _p.size();
-
    out << "parameter [31:0] ";
+   const auto n_iterations = retval_size ? (_p.size() + 3U) : _p.size();
    for(auto idx = 0U; idx <= n_iterations; ++idx)
+   {
       if(idx != n_iterations)
+      {
          out << "S_" << idx << " = 32'd" << idx << ",\n";
+      }
       else
+      {
          out << "S_" << idx << " = 32'd" << idx << ";\n";
+      }
+   }
 
    if(_p.size() > 2U)
+   {
       out << "initial\n"
-             "   begin\n"
-             "     $readmemb(MEMORY_INIT_file, paramAddress, 0, "
-          << _p.size() - 2U
-          << "-1);\n"
-             "   end\n\n\n";
+          << "   begin\n"
+          << "     $readmemb(MEMORY_INIT_file, paramAddress, 0, " << (_p.size() - 2U) << "-1);\n"
+          << "   end\n\n\n";
+   }
 
    if(_p.size() > 2U)
    {
       out << "assign paramAddressRead = paramAddress[index];\n";
    }
-   out << "assign Sout_Rdata_ram = Sin_Rdata_ram;\n";
-   out << "assign internal = check_condition(S_addr_ram);\n";
+   out << "assign Sout_Rdata_ram = Sin_Rdata_ram;\n"
+       << "assign internal = check_condition(S_addr_ram);\n";
 
    // State machine
    out << "always @ (posedge clock 1RESET_EDGE)\n"
-          "  if (1RESET_VALUE)\n"
-          "  begin\n"
-          "    step <= 0;\n";
+       << "  if (1RESET_VALUE)\n"
+       << "  begin\n"
+       << "    step <= 0;\n";
 
    if(retval_size)
    {
       if(retval_size == 1U)
+      {
          out << "    readValue <= {1'b0};\n";
+      }
       else
+      {
          out << "    readValue <= {" << retval_size << " {1'b0}};\n";
+      }
       out << "  end else begin\n"
-             "    step <= next_step;\n"
-             "    readValue <= next_readValue;\n"
-             "  end\n\n";
+          << "    step <= next_step;\n"
+          << "    readValue <= next_readValue;\n"
+          << "  end\n\n";
    }
    else
    {
       out << "  end else begin\n"
-             "    step <= next_step;\n"
-             "  end\n\n";
+          << "    step <= next_step;\n"
+          << "  end\n\n";
    }
 
    if(_p.size() > 2U)
@@ -209,7 +223,7 @@ void BuiltinWaitCallNModuleGenerator::InternalExec(std::ostream& out, const modu
    if(_p.size() > 2U)
    {
       out << "    else if (step == S_" << idx << ") begin\n"
-          << "      index = " << idx - 1U << ";\n"
+          << "      index = " << (idx - 1U) << ";\n"
           << "    end\n";
       idx++;
    }
@@ -221,7 +235,7 @@ void BuiltinWaitCallNModuleGenerator::InternalExec(std::ostream& out, const modu
    if(_p.size() > 2U && retval_size)
    {
       out << "  else if (step == S_" << idx << ") begin\n"
-          << "    index = " << idx - 4U << ";\n"
+          << "    index = " << (idx - 4U) << ";\n"
           << "  end\n";
       idx++;
    }
@@ -244,9 +258,13 @@ void BuiltinWaitCallNModuleGenerator::InternalExec(std::ostream& out, const modu
    out << "  if (step == S_0) begin\n"
        << "    if (start_port == 1'b1) begin\n";
    if(_p.size() == 3U)
+   {
       out << "      next_step = in2[0] ? S_2 : S_1;\n";
+   }
    else
+   {
       out << "      next_step = S_1;\n";
+   }
    out << "    end else begin\n"
        << "      next_step = S_0;\n"
        << "    end\n"
@@ -294,7 +312,7 @@ void BuiltinWaitCallNModuleGenerator::InternalExec(std::ostream& out, const modu
           << "     Mout_Wdata_ram[BITSIZE_Mout_Wdata_ram-1:0] = " << _p[idx + 1U].name << ";\n"
           << "     Mout_data_ram_size[BITSIZE_Mout_data_ram_size-1:0] = " << _p[idx + 1U].type_size << ";\n"
           << "   if (M_DataRdy[0] == 1'b1) begin\n"
-          << "     next_step = S_" << idx + 1U << ";\n"
+          << "     next_step = S_" << (idx + 1U) << ";\n"
           << "   end else begin\n"
           << "     next_step = S_" << idx << ";\n"
           << "   end\n"
@@ -308,7 +326,7 @@ void BuiltinWaitCallNModuleGenerator::InternalExec(std::ostream& out, const modu
        << "    Mout_Wdata_ram[BITSIZE_Mout_Wdata_ram-1:0] = unlock_address;\n"
        << "    Mout_data_ram_size[BITSIZE_Mout_data_ram_size-1:0] = 32;\n"
        << "    if (M_DataRdy[0] == 1'b1) begin\n"
-       << "      next_step = S_" << idx + 1U << ";\n"
+       << "      next_step = S_" << (idx + 1U) << ";\n"
        << "    end else begin\n"
        << "      next_step = S_" << idx << ";\n"
        << "    end"
@@ -318,11 +336,11 @@ void BuiltinWaitCallNModuleGenerator::InternalExec(std::ostream& out, const modu
    out << "  else if (step == S_" << idx << ") begin\n"
        << "    if (|(S_we_ram & internal)) begin\n"
        << "      Sout_DataRdy = (S_we_ram & internal) | Sin_DataRdy;\n"
-       << "      next_step = in2[0] ? S_" << (retval_size ? idx + 1U : 0U) << " : S_0;\n"
+       << "      next_step = in2[0] ? S_" << (retval_size ? (idx + 1U) : 0U) << " : S_0;\n"
        << "      done_port = in2[0] ? 1'b0 : 1'b1;\n"
-       << "    end else begin\n";
-   out << "      next_step = S_" << idx << ";\n";
-   out << "    end\n"
+       << "    end else begin\n"
+       << "      next_step = S_" << idx << ";\n"
+       << "    end\n"
        << "  end\n";
    idx++;
 
@@ -333,7 +351,7 @@ void BuiltinWaitCallNModuleGenerator::InternalExec(std::ostream& out, const modu
           << "      Mout_addr_ram[BITSIZE_Mout_addr_ram-1:0] = in1 + paramAddressRead ;\n"
           << "      Mout_data_ram_size[BITSIZE_Mout_data_ram_size-1:0] = " << retval_size << ";\n"
           << "    if (M_DataRdy[0] == 1'b1) begin\n"
-          << "      next_step = S_" << idx + 1U << ";\n"
+          << "      next_step = S_" << (idx + 1U) << ";\n"
           << "      next_readValue = M_Rdata_ram;\n"
           << "    end else begin\n"
           << "      next_step = S_" << idx << ";\n"

@@ -104,7 +104,7 @@ class ModuleGeneratorManager
                            HDLWriter_Language language);
 
    std::string get_specialized_name(unsigned int firstIndexToSpecialize,
-                                    std::vector<std::tuple<unsigned int, unsigned int>>& required_variables,
+                                    const std::vector<std::tuple<unsigned int, unsigned int>>& required_variables,
                                     const FunctionBehaviorConstRef FB) const;
 
    void specialize_fu(std::string fuName, vertex ve, std::string libraryId, const FunctionBehaviorConstRef FB,

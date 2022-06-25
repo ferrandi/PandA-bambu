@@ -456,9 +456,14 @@ lib_function_allocation_la_CPPFLAGS = \
    -I$(top_srcdir)/src/technology/physical_library \
    -I$(top_srcdir)/src/technology/target_device \
    $(AM_CPPFLAGS)
-noinst_HEADERS += function_allocation/function_allocation.hpp function_allocation/fun_dominator_allocation.hpp function_allocation/functions.hpp
+noinst_HEADERS += \
+   function_allocation/function_allocation.hpp \
+   function_allocation/fun_dominator_allocation.hpp \
+   function_allocation/functions.hpp
 lib_function_allocation_la_SOURCES = \
-   function_allocation/function_allocation.cpp function_allocation/fun_dominator_allocation.cpp function_allocation/functions.cpp
+   function_allocation/function_allocation.cpp \
+   function_allocation/fun_dominator_allocation.cpp \
+   function_allocation/functions.cpp
 
 if BUILD_LIB_FROM_PRAGMA
    lib_function_allocation_la_CPPFLAGS += \

@@ -136,22 +136,19 @@ static unsigned int resize_to_8_or_greater(unsigned int value)
    }
 }
 
-std::string
-ModuleGeneratorManager::get_specialized_name(unsigned int firstIndexToSpecialize,
-                                             std::vector<std::tuple<unsigned int, unsigned int>>& required_variables,
-                                             const FunctionBehaviorConstRef FB) const
+std::string ModuleGeneratorManager::get_specialized_name(
+    unsigned int firstIndexToSpecialize, const std::vector<std::tuple<unsigned int, unsigned int>>& required_variables,
+    const FunctionBehaviorConstRef FB) const
 {
    std::string fuName = "";
-   unsigned int index = 0;
-   for(auto& required_variable : required_variables)
+   auto index = 0U;
+   for(const auto& required_variable : required_variables)
    {
       if(index >= firstIndexToSpecialize)
       {
-         unsigned int dataSize = getDataType(std::get<0>(required_variable), FB)->vector_size != 0 ?
-                                     getDataType(std::get<0>(required_variable), FB)->vector_size :
-                                     getDataType(std::get<0>(required_variable), FB)->size;
-         structural_type_descriptorRef typeRef = getDataType(std::get<0>(required_variable), FB);
-         fuName = fuName + NAMESEPARATOR + typeRef->get_name() + STR(resize_to_8_or_greater(dataSize));
+         const auto typeRef = getDataType(std::get<0>(required_variable), FB);
+         const auto dataSize = typeRef->vector_size != 0U ? typeRef->vector_size : typeRef->size;
+         fuName += NAMESEPARATOR + typeRef->get_name() + STR(resize_to_8_or_greater(dataSize));
       }
       ++index;
    }

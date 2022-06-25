@@ -110,38 +110,45 @@ void BuiltinWaitCallModuleGenerator::InternalExec(std::ostream& out, const modul
    out << "reg [31:0] step 1INIT_ZERO_VALUE;\n"
        << "reg [31:0] next_step;\n"
        << "reg done_port;\n"
-          "reg Sout_DataRdy;\n"
-          "reg Mout_oe_ram;\n"
-          "reg Mout_we_ram;\n"
-          "reg [BITSIZE_Mout_addr_ram-1:0] Mout_addr_ram;\n"
-          "reg [BITSIZE_Mout_Wdata_ram-1:0] Mout_Wdata_ram;\n"
-          "reg [BITSIZE_Mout_data_ram_size-1:0] Mout_data_ram_size;\n\n";
+       << "reg Sout_DataRdy;\n"
+       << "reg Mout_oe_ram;\n"
+       << "reg Mout_we_ram;\n"
+       << "reg [BITSIZE_Mout_addr_ram-1:0] Mout_addr_ram;\n"
+       << "reg [BITSIZE_Mout_Wdata_ram-1:0] Mout_Wdata_ram;\n"
+       << "reg [BITSIZE_Mout_data_ram_size-1:0] Mout_data_ram_size;\n\n";
    if(retval_size)
-      out << "reg [" << retval_size
-          << "-1:0] readValue 1INIT_ZERO_VALUE;\n"
-             "reg ["
-          << retval_size << "-1:0] next_readValue;\n"
-          << std::endl;
+   {
+      out << "reg [" << retval_size << "-1:0] readValue 1INIT_ZERO_VALUE;\n"
+          << "reg [" << retval_size << "-1:0] next_readValue;\n\n";
+   }
 
    if(_p.size() > 2U)
+   {
       out << "reg [BITSIZE_Mout_addr_ram-1:0] paramAddress [" << (_p.size() - 2U) << "-1:0];\n\n";
+   }
 
    const auto n_iterations = retval_size ? (_p.size() + 3U) : _p.size();
 
    out << "parameter [31:0] ";
    for(auto idx = 0U; idx <= n_iterations; ++idx)
+   {
       if(idx != n_iterations)
+      {
          out << "S_" << idx << " = 32'd" << idx << ",\n";
+      }
       else
+      {
          out << "S_" << idx << " = 32'd" << idx << ";\n";
+      }
+   }
 
    if(_p.size() > 2U)
+   {
       out << "initial\n"
-             "   begin\n"
-             "     $readmemb(MEMORY_INIT_file, paramAddress, 0, "
-          << _p.size() - 2U
-          << "-1);\n"
-             "   end\n\n\n";
+          << "   begin\n"
+          << "     $readmemb(MEMORY_INIT_file, paramAddress, 0, " << (_p.size() - 2U) << "-1);\n"
+          << "   end\n\n\n";
+   }
 
    if(_p.size() > 2U)
    {
@@ -151,26 +158,30 @@ void BuiltinWaitCallModuleGenerator::InternalExec(std::ostream& out, const modul
 
    // State machine
    out << "always @ (posedge clock 1RESET_EDGE)\n"
-          "  if (1RESET_VALUE)\n"
-          "  begin\n"
-          "    step <= 0;\n";
+       << "  if (1RESET_VALUE)\n"
+       << "  begin\n"
+       << "    step <= 0;\n";
 
    if(retval_size)
    {
       if(retval_size == 1U)
+      {
          out << "    readValue <= {1'b0};\n";
+      }
       else
+      {
          out << "    readValue <= {" << retval_size << " {1'b0}};\n";
+      }
       out << "  end else begin\n"
-             "    step <= next_step;\n"
-             "    readValue <= next_readValue;\n"
-             "  end\n\n";
+          << "    step <= next_step;\n"
+          << "    readValue <= next_readValue;\n"
+          << "  end\n\n";
    }
    else
    {
       out << "  end else begin\n"
-             "    step <= next_step;\n"
-             "  end\n\n";
+          << "    step <= next_step;\n"
+          << "  end\n\n";
    }
 
    if(_p.size() > 2U)
@@ -227,14 +238,17 @@ void BuiltinWaitCallModuleGenerator::InternalExec(std::ostream& out, const modul
        << "  Mout_Wdata_ram = Min_Wdata_ram;\n"
        << "  Mout_oe_ram = Min_oe_ram;\n"
        << "  Mout_addr_ram = Min_addr_ram;\n"
-       << "  Mout_data_ram_size = Min_data_ram_size;\n";
-
-   out << "  if (step == S_0) begin\n"
+       << "  Mout_data_ram_size = Min_data_ram_size;\n"
+       << "  if (step == S_0) begin\n"
        << "    if (start_port == 1'b1) begin\n";
    if(_p.size() == 3U)
+   {
       out << "      next_step = in2[0] ? S_2 : S_1;\n";
+   }
    else
+   {
       out << "      next_step = S_1;\n";
+   }
    out << "    end else begin\n"
        << "      next_step = S_0;\n"
        << "    end\n"
@@ -309,9 +323,9 @@ void BuiltinWaitCallModuleGenerator::InternalExec(std::ostream& out, const modul
        << "      Sout_DataRdy = 1'b1;\n"
        << "      next_step = in2[0] ? S_" << (retval_size ? idx + 1U : 0U) << " : S_0;\n"
        << "      done_port = in2[0] ? 1'b0 : 1'b1;\n"
-       << "    end else begin\n";
-   out << "      next_step = S_" << idx << ";\n";
-   out << "    end\n"
+       << "    end else begin\n"
+       << "      next_step = S_" << idx << ";\n"
+       << "    end\n"
        << "  end\n";
    idx++;
 

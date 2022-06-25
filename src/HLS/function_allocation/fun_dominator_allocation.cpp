@@ -506,5 +506,5 @@ DesignFlowStep_Status fun_dominator_allocation::Exec()
 
 bool fun_dominator_allocation::HasToBeExecuted() const
 {
-   return not already_executed;
+   return !already_executed;
 }

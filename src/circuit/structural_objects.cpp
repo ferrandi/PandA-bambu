@@ -690,7 +690,7 @@ void structural_object::set_id(const std::string& s)
    id = s;
 }
 
-const std::string structural_object::get_id() const
+const std::string& structural_object::get_id() const
 {
    return id;
 }

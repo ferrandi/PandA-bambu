@@ -477,7 +477,7 @@ class structural_object
    /**
     * Return the identifier associated with the structural_object.
     */
-   const std::string get_id() const;
+   const std::string& get_id() const;
 
    /**
     * Set the type of the structural_object.
