@@ -584,6 +584,7 @@ jobs:
           echo "::set-output name=appdir::\$PWD/squashfs-root"
           export PATH=\$PWD/bin:\$PATH
           export APPDIR=\$PWD/squashfs-root
+          export LD_LIBRARY_PATH=\$APPDIR/usr/lib/:\$APPDIR/usr/lib/i386-linux-gnu/:\$APPDIR/usr/lib/x86_64-linux-gnu/:\$APPDIR/usr/lib32/:\$APPDIR/usr/lib64/:\$APPDIR/lib/:\$APPDIR/lib/i386-linux-gnu/:\$APPDIR/lib/x86_64-linux-gnu/:\$APPDIR/lib32/:\$APPDIR/lib64/:
           export NPROC=${{env.nproc}}
           export J=${{env.parallel}}
           mkdir ${{env.report-dir}}
