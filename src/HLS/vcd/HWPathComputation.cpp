@@ -212,7 +212,12 @@ void HWCallPathCalculator::examine_edge(const EdgeDescriptor& e, const UnfoldedC
       return;
    }
 
-   const std::string called_fu_name = functions::GetFUName(BH->get_function_name(), HLSMgr);
+   const auto called_fu_name = [&]() {
+      const auto fu_name = functions::GetFUName(BH->get_function_name(), HLSMgr);
+      return boost::algorithm::starts_with(fu_name, WRAPPED_PROXY_PREFIX) ?
+                 fu_name.substr(sizeof(WRAPPED_PROXY_PREFIX) - 1) :
+                 fu_name;
+   }();
    std::string called_scope;
    if(HLSMgr->Rfuns->is_a_proxied_function(called_fu_name))
    {
