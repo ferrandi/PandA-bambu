@@ -86,31 +86,37 @@ void ASMModuleGenerator::InternalExec(std::ostream& out, const module* /* mod */
       /// remove possible dialects
       auto open_curl = false;
       auto count_pipes = 0U;
+      const auto skip_count = language == HDLWriter_Language::VHDL ? 3U : 2U;
       char prec_char = '\0';
       for(auto i = 0U; i < asm_string.size(); ++i)
       {
          const auto& current_char = asm_string[i];
          if(current_char == '{' && prec_char != '%')
+         {
             open_curl = true;
+         }
          else if(current_char == '}' && prec_char != '%')
          {
             open_curl = false;
             count_pipes = 0U;
          }
          else if(open_curl && current_char == '|' && prec_char != '%')
+         {
             ++count_pipes;
-         else if(open_curl && count_pipes != 2U)
-            ;
-         else if(open_curl && count_pipes == 2U)
+         }
+         else if(open_curl && count_pipes != skip_count)
+         {
+         }
+         else if(open_curl && count_pipes == skip_count)
+         {
             out << current_char;
+         }
          else
+         {
             out << current_char;
+         }
          prec_char = current_char;
       }
       out << "\n";
-      if(language == HDLWriter_Language::VHDL)
-      {
-         out << "end\n";
-      }
    }
 }
