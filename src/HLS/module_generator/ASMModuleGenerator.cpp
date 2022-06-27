@@ -72,6 +72,8 @@ void ASMModuleGenerator::InternalExec(std::ostream& out, const module* /* mod */
    boost::replace_all(asm_string, "%%", "&percent;");
    boost::replace_all(asm_string, "&percent;", "%");
    boost::replace_all(asm_string, "\n", "\\n");
+   boost::replace_all(asm_string, "\\\"", "\"");
+   boost::replace_all(asm_string, "\\\'", "\'");
 
    if(asm_string.empty())
    {
