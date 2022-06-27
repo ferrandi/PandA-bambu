@@ -62,6 +62,7 @@
 #include <string>
 #include <tuple>
 
+
 /// utility includes
 #include "custom_set.hpp"
 #include "dbgPrintHelper.hpp"
@@ -144,7 +145,7 @@ DesignFlowStep_Status datapath_parallel_cs::InternalExec()
 
    instantiate_component_parallel(clock, reset);
 
-   CustomOrderedSet<structural_objectRef> memory_modules;
+   std::vector<structural_objectRef> memory_modules;
    const auto& SM = this->HLS->datapath;
    const auto circuit = SM->get_circ();
    const auto omp_functions = GetPointerS<const OmpFunctions>(HLSMgr->Rfuns);
@@ -176,7 +177,7 @@ DesignFlowStep_Status datapath_parallel_cs::InternalExec()
       const auto kernel_module_name = kernel_function_name + "_" + STR(i);
       kernel_mod = SM->add_module_from_technology_library(kernel_module_name, kernel_function_name, kernel_library,
                                                           circuit, HLS->HLS_T->get_technology_manager());
-      memory_modules.insert(kernel_mod);
+      memory_modules.push_back(kernel_mod);
       connect_module_kernel(kernel_mod, i);
       // setting num of kernel in each scheduler
       GetPointer<module>(kernel_mod)
@@ -409,7 +410,7 @@ void datapath_parallel_cs::resize_dimension_bus_port(unsigned int vector_size, s
 }
 
 void datapath_parallel_cs::manage_extern_global_port_parallel(
-    const structural_managerRef SM, const CustomOrderedSet<structural_objectRef>& memory_modules,
+    const structural_managerRef SM, const std::vector<structural_objectRef>& memory_modules,
     const structural_objectRef circuit)
 {
    structural_objectRef cir_port;
