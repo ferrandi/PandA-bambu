@@ -62,7 +62,6 @@
 #include <string>
 #include <tuple>
 
-
 /// utility includes
 #include "custom_set.hpp"
 #include "dbgPrintHelper.hpp"
@@ -409,9 +408,9 @@ void datapath_parallel_cs::resize_dimension_bus_port(unsigned int vector_size, s
    GetPointer<port_o>(port)->add_n_ports(vector_size, port);
 }
 
-void datapath_parallel_cs::manage_extern_global_port_parallel(
-    const structural_managerRef SM, const std::vector<structural_objectRef>& memory_modules,
-    const structural_objectRef circuit)
+void datapath_parallel_cs::manage_extern_global_port_parallel(const structural_managerRef SM,
+                                                              const std::vector<structural_objectRef>& memory_modules,
+                                                              const structural_objectRef circuit)
 {
    structural_objectRef cir_port;
    structural_objectRef mem_paral_port;
