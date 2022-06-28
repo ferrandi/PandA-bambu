@@ -59,8 +59,7 @@ std::string Quartus13Wrapper::get_command_line(const DesignParametersRef& dp) co
 {
    std::ostringstream s;
    s << get_tool_exec() << " -t ";
-   THROW_ASSERT(Param->isOption(OPT_quartus_13_64bit), "");
-   if(Param->getOption<bool>(OPT_quartus_13_64bit))
+   if(Param->isOption(OPT_quartus_13_64bit) && Param->getOption<bool>(OPT_quartus_13_64bit))
    {
       s << " --64bit ";
    }

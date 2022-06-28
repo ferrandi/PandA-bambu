@@ -55,15 +55,25 @@ class MinimalInterfaceTestbench : public TestbenchGenerationBaseStep
    std::string memory_aggregate_slices(unsigned int i, long long int bitsize,
                                        long long int Mout_addr_ram_bitsize) const;
 
-   void cond_load(long long int Mout_addr_ram_bitsize, std::string post_slice1, const std::string& post_slice2,
-                  const std::string& res_string, unsigned int i, const std::string& in_else,
-                  const std::string& mem_aggregate) const;
+   std::string memory_aggregate_slices_queue(unsigned int i, long long int bitsize, long long int Mout_addr_ram_bitsize,
+                                             std::string queue_type) const;
+
+   void cond_load(long long int Mout_addr_ram_bitsize, const std::string& post_slice2, const std::string& res_string,
+                  unsigned int i, const std::string& in_else, const std::string& mem_aggregate) const;
+
+   void cond_load_from_queue(long long int Mout_addr_ram_bitsize, std::string queue_type,
+                             const std::string& post_slice2, const std::string& res_string, unsigned int i,
+                             const std::string& in_else, const std::string& mem_aggregate) const;
 
    void write_call(bool hasMultiIrq) const override;
+
+   void update_memory_queue(std::string port_name, std::string delay_type) const;
 
    void write_memory_handler() const override;
 
    void write_interface_handler() const override;
+
+   void write_signal_queue(std::string port_name, std::string delay_type) const;
 
    void write_signals(const tree_managerConstRef TreeM, bool& withMemory, bool& hasMultiIrq) const override;
 
@@ -73,7 +83,8 @@ class MinimalInterfaceTestbench : public TestbenchGenerationBaseStep
    void read_input_value_from_file_RNONE(const std::string& input_name, bool& first_valid_input,
                                          unsigned bitsize) const;
 
-   void write_read_fifo_manager(std::string par, const std::string& pi_dout_name, unsigned bitsize, std::string valid_suffix) const;
+   void write_read_fifo_manager(std::string par, const std::string& pi_dout_name, unsigned bitsize,
+                                std::string valid_suffix) const;
 
    void write_file_reading_operations() const override;
 

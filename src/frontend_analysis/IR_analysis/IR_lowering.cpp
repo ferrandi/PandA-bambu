@@ -360,7 +360,7 @@ static void synth_mult(struct algorithm& alg_out, unsigned long long t, const st
    if((t & 1) == 0)
    {
    do_alg_shift:
-      m = floor_log2(t & -t); /* m = number of low zero bits */
+      m = static_cast<int>(floor_log2(t & -t)); /* m = number of low zero bits */
       if(m < maxm)
       {
          q = t >> m;
@@ -483,7 +483,7 @@ static void synth_mult(struct algorithm& alg_out, unsigned long long t, const st
 
       /** We may be able to calculate a * -7, a * -15, a * -31, etc
       quickly with a - a * n for some appropriate constant n.  */
-      m = exact_log2(-orig_t + 1);
+      m = static_cast<int>(exact_log2(-orig_t + 1));
       if(m >= 0 && m < maxm)
       {
          op_cost = 1 /*shiftsub1_cost[speed][mode][m]*/;
@@ -519,7 +519,7 @@ static void synth_mult(struct algorithm& alg_out, unsigned long long t, const st
       COST_LIMIT) the search.  */
 
 do_alg_addsub_factor:
-   for(m = floor_log2(t - 1); m >= 2; m--)
+   for(m = static_cast<int>(floor_log2(t - 1)); m >= 2; m--)
    {
       unsigned long long int d;
 
@@ -612,7 +612,7 @@ do_alg_addsub_factor:
    do_alg_add_t2_m:
       q = t - 1;
       q = q & -q;
-      m = exact_log2(q);
+      m = static_cast<int>(exact_log2(q));
       if(m >= 0 && m < maxm)
       {
          op_cost = 1 /*shiftadd_cost[speed][mode][m]*/;
@@ -638,7 +638,7 @@ do_alg_addsub_factor:
    do_alg_sub_t2_m:
       q = t + 1;
       q = q & -q;
-      m = exact_log2(q);
+      m = static_cast<int>(exact_log2(q));
       if(m >= 0 && m < maxm)
       {
          op_cost = 1 /*shiftsub0_cost[speed][mode][m]*/;
@@ -1047,7 +1047,7 @@ tree_nodeRef IR_lowering::expand_smod_pow2(const tree_nodeRef& op0, unsigned lon
                                            const std::string& srcp_default)
 {
    unsigned long long int masklow;
-   const auto logd = floor_log2(d);
+   const unsigned long long int logd = floor_log2(d);
    const auto bt = tree_man->GetBooleanType();
 
    const auto const0 = TM->CreateUniqueIntegerCst(0, type);
@@ -1064,7 +1064,7 @@ tree_nodeRef IR_lowering::expand_smod_pow2(const tree_nodeRef& op0, unsigned lon
    block->PushBefore(signmask_nop, stmt, AppM);
    const auto signmask_var = GetPointer<gimple_assign>(GET_NODE(signmask_nop))->op0;
 
-   if(logd < 0)
+   if(logd == UINT64_MAX)
    {
       THROW_ERROR("unexpected condition");
    }
@@ -1142,7 +1142,7 @@ tree_nodeRef IR_lowering::expand_sdiv_pow2(const tree_nodeRef& op0, unsigned lon
    block->PushBefore(t2_ga, stmt, AppM);
 
    const auto t2_ga_var = GetPointer<gimple_assign>(GET_NODE(t2_ga))->op0;
-   const auto logdConst = TM->CreateUniqueIntegerCst(logd, type);
+   const auto logdConst = TM->CreateUniqueIntegerCst(static_cast<long long>(logd), type);
    return tree_man->create_binary_operation(type, t2_ga_var, logdConst, srcp_default, rshift_expr_K);
 }
 
@@ -1249,8 +1249,8 @@ tree_nodeRef IR_lowering::expand_MC(const tree_nodeRef& op0, const integer_cst* 
          auto coeff = static_cast<unsigned long long int>(ext_op1);
          if(EXACT_POWER_OF_2_OR_ZERO_P(coeff))
          {
-            int l_shift = floor_log2(coeff);
-            tree_nodeRef l_shift_node = TM->CreateUniqueIntegerCst(static_cast<long long int>(l_shift), type_expr);
+            const auto l_shift = floor_log2(coeff);
+            const auto l_shift_node = TM->CreateUniqueIntegerCst(static_cast<long long int>(l_shift), type_expr);
             return tree_man->create_binary_operation(type_expr, op0, l_shift_node, srcp_default, lshift_expr_K);
          }
          else

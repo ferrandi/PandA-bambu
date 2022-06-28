@@ -455,7 +455,7 @@ void TestbenchGenerationBaseStep::write_initial_block(const std::string& simulat
              */
             std::string sigscope = sig_scope.first;
             boost::replace_all(sigscope, STR(HIERARCHY_SEPARATOR), ".");
-            for(const std::string& signame : sig_scope.second)
+            for(const auto& signame : sig_scope.second)
             {
                writer->write("$dumpvars(1, " + sigscope + signame + ");\n");
             }
@@ -539,8 +539,7 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
                auto InterfaceType = GetPointer<port_o>(portInst)->get_port_interface();
                if(InterfaceType == port_o::port_interface::PI_DOUT)
                {
-                  const auto manage_pidout = [&](const std::string& portID)
-                  {
+                  const auto manage_pidout = [&](const std::string& portID) {
                      auto port_name = portInst->get_id();
                      auto terminate = port_name.size() > 3 ? port_name.size() - std::string("_d" + portID).size() : 0;
                      THROW_ASSERT(port_name.substr(terminate) == "_d" + portID, "inconsistent interface");
@@ -640,8 +639,7 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
                auto InterfaceType = GetPointer<port_o>(portInst)->get_port_interface();
                if(InterfaceType == port_o::port_interface::PI_DIN)
                {
-                  const auto manage_pidin = [&](const std::string& portID)
-                  {
+                  const auto manage_pidin = [&](const std::string& portID) {
                      auto port_name = portInst->get_id();
                      auto terminate = port_name.size() > 3 ? port_name.size() - std::string("_q" + portID).size() : 0;
                      THROW_ASSERT(port_name.substr(terminate) == "_q" + portID, "inconsistent interface");
@@ -1996,15 +1994,24 @@ void TestbenchGenerationBaseStep::write_hdl_testbench_prolog() const
       parameters->getOption<std::string>(OPT_bram_high_latency) == "_3")
    {
       writer->write("`define MEM_DELAY_READ 3\n\n");
+      writer->write("`define MEM_MAX_DELAY " + (stoi(parameters->getOption<std::string>(OPT_mem_delay_write)) > 3 ?
+                                                parameters->getOption<std::string>(OPT_mem_delay_write) : 
+                                                "_3")  + "\n\n");
    }
    else if(parameters->getOption<std::string>(OPT_bram_high_latency) != "" &&
            parameters->getOption<std::string>(OPT_bram_high_latency) == "_4")
    {
       writer->write("`define MEM_DELAY_READ 4\n\n");
+      writer->write("`define MEM_MAX_DELAY " + (stoi(parameters->getOption<std::string>(OPT_mem_delay_write)) > 4 ?
+                                                parameters->getOption<std::string>(OPT_mem_delay_write) : 
+                                                "_4")  + "\n\n");
    }
    else if(parameters->getOption<std::string>(OPT_bram_high_latency) == "")
    {
-      writer->write("`define MEM_DELAY_READ " + parameters->getOption<std::string>(OPT_mem_delay_read) + "\n\n");
+      writer->write("`define MEM_DELAY_READ " + parameters->getOption<std::string>(OPT_mem_delay_read) + "\n\n");  
+      writer->write("`define MEM_MAX_DELAY " + (stoi(parameters->getOption<std::string>(OPT_mem_delay_write)) > stoi(parameters->getOption<std::string>(OPT_mem_delay_read)) ?
+                                                parameters->getOption<std::string>(OPT_mem_delay_write) : 
+                                                parameters->getOption<std::string>(OPT_mem_delay_read))  + "\n\n");
    }
    else
    {

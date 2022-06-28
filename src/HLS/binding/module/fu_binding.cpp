@@ -595,6 +595,7 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Adding functional units to circuit");
    const structural_managerRef SM = HLS->datapath;
+   const auto TechM = HLS->HLS_T->get_technology_manager();
 
    /// unique id identifier
    unsigned int unique_id = 0;
@@ -621,7 +622,7 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
          !HLSMgr->Rmem->is_parm_decl_stored(function_parameter))
       {
          PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Managing parameter copy: " + STR(function_parameter));
-         const technology_nodeRef fu_lib_unit = HLS->HLS_T->get_technology_manager()->get_fu(MEMCPY_STD, WORK_LIBRARY);
+         const technology_nodeRef fu_lib_unit = TechM->get_fu(MEMCPY_STD, WORK_LIBRARY);
          THROW_ASSERT(fu_lib_unit,
                       "functional unit not available: check the library given. Component: " + std::string(MEMCPY_STD));
          structural_objectRef curr_gate =
@@ -636,7 +637,7 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
 
          structural_objectRef const_obj = SM->add_module_from_technology_library(
              "memcpy_dest_" + HLSMgr->Rmem->get_symbol(function_parameter, HLS->functionId)->get_symbol_name(),
-             CONSTANT_STD, LIBRARY_STD, circuit, HLS->HLS_T->get_technology_manager());
+             CONSTANT_STD, LIBRARY_STD, circuit, TechM);
          const_obj->SetParameter("value",
                                  HLSMgr->Rmem->get_symbol(function_parameter, HLS->functionId)->get_symbol_name());
          std::string name = "out_const_memcpy_dest_" +
@@ -662,11 +663,11 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
             auto synch_reset = parameters->getOption<std::string>(OPT_sync_reset);
             if(synch_reset == "sync")
             {
-               delay_unit = HLS->HLS_T->get_technology_manager()->get_fu(flipflop_SR, LIBRARY_STD);
+               delay_unit = TechM->get_fu(flipflop_SR, LIBRARY_STD);
             }
             else
             {
-               delay_unit = HLS->HLS_T->get_technology_manager()->get_fu(flipflop_AR, LIBRARY_STD);
+               delay_unit = TechM->get_fu(flipflop_AR, LIBRARY_STD);
             }
             THROW_ASSERT(delay_unit, "");
             structural_objectRef delay_gate =
@@ -714,8 +715,7 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
          if(parameters->getOption<MemoryAllocation_ChannelsType>(OPT_channels_type) ==
             MemoryAllocation_ChannelsType::MEM_ACC_NN)
          {
-            const technology_nodeRef fu_lib_unit =
-                HLS->HLS_T->get_technology_manager()->get_fu(MEMSTORE_STDN, LIBRARY_STD_FU);
+            const technology_nodeRef fu_lib_unit = TechM->get_fu(MEMSTORE_STDN, LIBRARY_STD_FU);
             THROW_ASSERT(fu_lib_unit, "functional unit not available: check the library given. Component: " +
                                           std::string(MEMSTORE_STDN));
             curr_gate = add_gate(HLSMgr, HLS, fu_lib_unit, "parameter_manager_" + STR(function_parameter),
@@ -724,8 +724,7 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
          }
          else
          {
-            const technology_nodeRef fu_lib_unit =
-                HLS->HLS_T->get_technology_manager()->get_fu(MEMSTORE_STD, LIBRARY_STD_FU);
+            const technology_nodeRef fu_lib_unit = TechM->get_fu(MEMSTORE_STD, LIBRARY_STD_FU);
             THROW_ASSERT(fu_lib_unit, "functional unit not available: check the library given. Component: " +
                                           std::string(MEMSTORE_STD));
             curr_gate = add_gate(HLSMgr, HLS, fu_lib_unit, "parameter_manager_" + STR(function_parameter),
@@ -743,7 +742,7 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
          size->type_resize(STD_GET_SIZE(in_par->get_typeRef()));
          structural_objectRef size_const_obj = SM->add_module_from_technology_library(
              "size_par_" + HLSMgr->Rmem->get_symbol(function_parameter, HLS->functionId)->get_symbol_name(),
-             CONSTANT_STD, LIBRARY_STD, circuit, HLS->HLS_T->get_technology_manager());
+             CONSTANT_STD, LIBRARY_STD, circuit, TechM);
          const std::string parameter_value =
              (static_cast<HDLWriter_Language>(parameters->getOption<unsigned int>(OPT_writer_language)) ==
               HDLWriter_Language::VHDL) ?
@@ -765,7 +764,7 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
          addr->type_resize(bus_addr_bitsize);
          structural_objectRef const_obj = SM->add_module_from_technology_library(
              "addr_par_" + HLSMgr->Rmem->get_symbol(function_parameter, HLS->functionId)->get_symbol_name(),
-             CONSTANT_STD, LIBRARY_STD, circuit, HLS->HLS_T->get_technology_manager());
+             CONSTANT_STD, LIBRARY_STD, circuit, TechM);
          const_obj->SetParameter("value",
                                  HLSMgr->Rmem->get_symbol(function_parameter, HLS->functionId)->get_symbol_name());
          std::string name =
@@ -786,11 +785,11 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
             auto synch_reset = parameters->getOption<std::string>(OPT_sync_reset);
             if(synch_reset == "sync")
             {
-               delay_unit = HLS->HLS_T->get_technology_manager()->get_fu(flipflop_SR, LIBRARY_STD);
+               delay_unit = TechM->get_fu(flipflop_SR, LIBRARY_STD);
             }
             else
             {
-               delay_unit = HLS->HLS_T->get_technology_manager()->get_fu(flipflop_AR, LIBRARY_STD);
+               delay_unit = TechM->get_fu(flipflop_AR, LIBRARY_STD);
             }
             structural_objectRef delay_gate =
                 add_gate(HLSMgr, HLS, delay_unit, "start_delayed_" + STR(function_parameter), OpVertexSet(op_graph),
@@ -1166,23 +1165,22 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
    {
       CustomOrderedSet<unsigned int> addressed_functions = cg_man->GetAddressedFunctions();
 
-      structural_objectRef constBitZero = SM->add_module_from_technology_library(
-          "constBitZero", CONSTANT_STD, LIBRARY_STD, circuit, HLS->HLS_T->get_technology_manager());
+      structural_objectRef constBitZero =
+          SM->add_module_from_technology_library("constBitZero", CONSTANT_STD, LIBRARY_STD, circuit, TechM);
       structural_objectRef signBitZero =
           SM->add_sign("bitZero", circuit, circuit->find_member(CLOCK_PORT_NAME, port_o_K, circuit)->get_typeRef());
       SM->add_connection(signBitZero, constBitZero->find_member("out1", port_o_K, constBitZero));
 
-      for(const auto Itr : addressed_functions)
+      for(const auto& f_id : addressed_functions)
       {
-         std::string FUName = functions::get_function_name_cleaned(tree_helper::name_function(TreeM, Itr));
+         const auto FUName = functions::GetFUName(tree_helper::name_function(TreeM, f_id), HLSMgr);
 
          if(HLSMgr->Rfuns->is_a_proxied_function(FUName))
          {
             continue;
          }
 
-         structural_objectRef FU = SM->add_module_from_technology_library(FUName + "_i0", FUName, WORK_LIBRARY, circuit,
-                                                                          HLS->HLS_T->get_technology_manager());
+         const auto FU = SM->add_module_from_technology_library(FUName + "_i0", FUName, WORK_LIBRARY, circuit, TechM);
 
          if(std::find(memory_modules.begin(), memory_modules.end(), FU) == memory_modules.end())
          {
@@ -1190,10 +1188,10 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
          }
 
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                        "---Considering additional top: " + FUName + "@" + STR(Itr));
-         if(HLSMgr->Rfuns->has_proxied_shared_functions(Itr))
+                        "---Considering additional top: " + FUName + "@" + STR(f_id));
+         if(HLSMgr->Rfuns->has_proxied_shared_functions(f_id))
          {
-            auto proxied_shared_functions = HLSMgr->Rfuns->get_proxied_shared_functions(Itr);
+            auto proxied_shared_functions = HLSMgr->Rfuns->get_proxied_shared_functions(f_id);
             for(auto name : proxied_shared_functions)
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---  proxy shared function: " + name);
@@ -1210,15 +1208,14 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
                             circuit->find_member(RESET_PORT_NAME, port_o_K, circuit));
 
          for(const auto additional_parameter :
-             HLSMgr->CGetFunctionBehavior(Itr)->CGetBehavioralHelper()->get_parameters())
+             HLSMgr->CGetFunctionBehavior(f_id)->CGetBehavioralHelper()->get_parameters())
          {
             std::string parameterName =
-                HLSMgr->CGetFunctionBehavior(Itr)->CGetBehavioralHelper()->PrintVariable(additional_parameter);
+                HLSMgr->CGetFunctionBehavior(f_id)->CGetBehavioralHelper()->PrintVariable(additional_parameter);
 
             structural_objectRef parameterPort = FU->find_member(parameterName, port_o_K, FU);
-            structural_objectRef constZeroParam =
-                SM->add_module_from_technology_library("zeroParam_" + FUName + "_" + parameterName, CONSTANT_STD,
-                                                       LIBRARY_STD, circuit, HLS->HLS_T->get_technology_manager());
+            structural_objectRef constZeroParam = SM->add_module_from_technology_library(
+                "zeroParam_" + FUName + "_" + parameterName, CONSTANT_STD, LIBRARY_STD, circuit, TechM);
             structural_objectRef constZeroOutPort = constZeroParam->find_member("out1", port_o_K, constZeroParam);
             const std::string parameter_value =
                 (static_cast<HDLWriter_Language>(parameters->getOption<unsigned int>(OPT_writer_language)) ==
