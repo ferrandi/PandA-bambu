@@ -3132,8 +3132,7 @@ void allocation::IntegrateTechnologyLibraries()
    {
       for(const auto& shared_fu_name : HLSMgr->Rfuns->get_shared_functions(funId))
       {
-         PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, DEBUG_LEVEL_INFINITE,
-                       " - adding proxy function wrapper " + shared_fu_name);
+         PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, " - adding proxy function wrapper " + shared_fu_name);
          const std::string library_name = TM->get_library(shared_fu_name);
          if(library_name != "")
          {
