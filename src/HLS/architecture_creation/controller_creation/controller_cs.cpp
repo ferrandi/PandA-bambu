@@ -91,7 +91,7 @@ void controller_cs::add_common_ports(structural_objectRef circuit, structural_ma
 
 void controller_cs::add_selector_register_file_port(structural_objectRef circuit, structural_managerRef SM)
 {
-   int num_slots = ceil_log2(parameters->getOption<unsigned long long int>(OPT_context_switch));
+   auto num_slots = ceil_log2(parameters->getOption<unsigned long long int>(OPT_context_switch));
    if(!num_slots)
    {
       num_slots = 1;

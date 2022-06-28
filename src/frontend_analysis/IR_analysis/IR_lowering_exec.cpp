@@ -322,7 +322,7 @@ static unsigned long long int choose_multiplier(unsigned long long int d, int n,
    long long int nh;
 
    /* lgup = ceil(log2(divisor)); */
-   lgup = ceil_log2(d);
+   lgup = static_cast<int>(ceil_log2(d));
 
    THROW_ASSERT(lgup <= n, "unexpected condition");
 
@@ -475,7 +475,7 @@ void IR_lowering::division_by_a_constant(const std::pair<unsigned int, blocRef>&
                   auto d = static_cast<unsigned long long int>(ext_op1);
                   if(EXACT_POWER_OF_2_OR_ZERO_P(d))
                   {
-                     pre_shift = floor_log2(d);
+                     pre_shift = static_cast<int>(floor_log2(d));
                      tree_nodeRef new_op1;
                      if(rem_flag)
                      {
@@ -534,7 +534,7 @@ void IR_lowering::division_by_a_constant(const std::pair<unsigned int, blocRef>&
                            initial right shift.  */
                         if(mh != 0 && (d & 1) == 0)
                         {
-                           pre_shift = floor_log2(d & -d);
+                           pre_shift = static_cast<int>(floor_log2(d & -d));
                            mh = choose_multiplier(d >> pre_shift, data_bitsize, precision - pre_shift, &ml, &post_shift,
                                                   &dummy);
                            THROW_ASSERT(!mh, "unexpected condition");
@@ -920,7 +920,7 @@ void IR_lowering::division_by_a_constant(const std::pair<unsigned int, blocRef>&
                unsigned long long int ml;
                unsigned int size = tree_helper::Size(tree_helper::CGetType(type_expr));
 
-               pre_shift = floor_log2(static_cast<unsigned long long int>(d & -d));
+               pre_shift = static_cast<int>(floor_log2(static_cast<unsigned long long int>(d & -d)));
                ml = invert_mod2n(static_cast<unsigned long long int>(d >> pre_shift), size);
                tree_nodeRef pre_shift_node = TM->CreateUniqueIntegerCst(pre_shift, type_expr);
                tree_nodeRef ml_node = TM->CreateUniqueIntegerCst(static_cast<long long int>(ml), type_expr);

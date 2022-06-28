@@ -110,7 +110,7 @@
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="out1" VERILOG_GENERATOR="asm_verilog_generator.cpp" VHDL_GENERATOR="asm_vhdl_generator.cpp"/>
+          <NP_functionality LIBRARY="out1" VERILOG_GENERATOR="ASMModuleGenerator" VHDL_GENERATOR="ASMModuleGenerator"/>
         </component_o>
       </circuit>
     </cell>

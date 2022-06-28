@@ -108,7 +108,7 @@ void fu_binding_cs::instantiate_component_kernel(const HLS_managerRef HLSMgr, co
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Starting setting parameter scheduler!");
    GetPointer<module>(scheduler_mod)
        ->SetParameter("NUM_TASKS", STR(parameters->getOption<unsigned int>(OPT_context_switch)));
-   int addr_acc = ceil_log2(parameters->getOption<unsigned long long>(OPT_num_accelerators));
+   auto addr_acc = ceil_log2(parameters->getOption<unsigned long long>(OPT_num_accelerators));
    if(!addr_acc)
    {
       addr_acc = 1;
@@ -216,7 +216,8 @@ void fu_binding_cs::connect_selector_kernel(const hlsRef HLS)
 {
    const structural_managerRef SM = HLS->datapath;
    const structural_objectRef circuit = SM->get_circ();
-   int num_slots = ceil_log2(parameters->getOption<unsigned long long int>(OPT_context_switch)); // resize selector-port
+   auto num_slots =
+       ceil_log2(parameters->getOption<unsigned long long int>(OPT_context_switch)); // resize selector-port
    if(!num_slots)
    {
       num_slots = 1;
@@ -264,17 +265,17 @@ void fu_binding_cs::set_atomic_memory_parameter(const hlsRef HLS)
       if(curr_gate->ExistsParameter("TAG_MEM_REQ"))
       {
          unsigned long long int tag_num = 0;
-         int addr_tasks = ceil_log2(parameters->getOption<unsigned long long int>(OPT_context_switch));
+         auto addr_tasks = ceil_log2(parameters->getOption<unsigned long long int>(OPT_context_switch));
          if(!addr_tasks)
          {
             addr_tasks = 1;
          }
-         int addr_acc = ceil_log2(parameters->getOption<unsigned long long>(OPT_num_accelerators));
+         auto addr_acc = ceil_log2(parameters->getOption<unsigned long long>(OPT_num_accelerators));
          if(!addr_acc)
          {
             addr_acc = 1;
          }
-         int bit_atomic = addr_tasks + addr_acc;
+         const auto bit_atomic = addr_tasks + addr_acc;
          if(bit_atomic >= 64)
          {
             THROW_ERROR("too large tag value for TAG_MEM_REQ");
