@@ -204,8 +204,8 @@ void technology_manager::add_resource(const std::string& Library, const std::str
 }
 #endif
 
-void technology_manager::add_operation(const std::string& Library, const std::string& fu_name,
-                                       const std::string& operation_name)
+technology_nodeRef technology_manager::add_operation(const std::string& Library, const std::string& fu_name,
+                                                     const std::string& operation_name)
 {
    THROW_ASSERT(library_map.count(Library), "Library \"" + Library + "\" not found");
    THROW_ASSERT(library_map.at(Library)->is_fu(fu_name), "Unit \"" + fu_name + "\" not found in library \"" + Library);
@@ -216,6 +216,7 @@ void technology_manager::add_operation(const std::string& Library, const std::st
    THROW_ASSERT(fu, "");
    fu->add(curr_op);
    function_fu[operation_name] = curr;
+   return curr_op;
 }
 
 void technology_manager::add(const technology_nodeRef curr, const std::string& Library)
