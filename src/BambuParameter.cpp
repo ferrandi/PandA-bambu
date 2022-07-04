@@ -4227,7 +4227,7 @@ void BambuParameter::SetDefaults()
 
    /// High-level synthesis contraints dump -- //
    setOption("dumpConstraints", false);
-   setOption("dumpConstraints_file", "Constraints.XML");
+   setOption("dumpConstraints_file", "Constraints.xml");
 
    /// -- Scheduling -- //
    /// Scheduling algorithm (default is list based one)

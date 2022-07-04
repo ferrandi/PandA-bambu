@@ -2111,7 +2111,7 @@ DesignFlowStep_Status parametric_list_based::InternalExec()
       xml_document document;
       xml_element* nodeRoot = document.create_root_node("hls");
       HLS->xwrite(nodeRoot, FB->CGetOpGraph(FunctionBehavior::FDFG));
-      document.write_to_file_formatted(function_name + "_scheduling.XML");
+      document.write_to_file_formatted(function_name + "_scheduling.xml");
    }
    return DesignFlowStep_Status::SUCCESS;
 }
