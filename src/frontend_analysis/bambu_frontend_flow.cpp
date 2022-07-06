@@ -140,6 +140,7 @@ BambuFrontendFlow::ComputeFrontendRelationships(const DesignFlowStep::Relationsh
          relationships.insert(std::make_pair(SPLIT_RETURN, WHOLE_APPLICATION));
          relationships.insert(std::make_pair(STRING_CST_FIX, WHOLE_APPLICATION));
          relationships.insert(std::make_pair(SWITCH_FIX, WHOLE_APPLICATION));
+         relationships.insert(std::make_pair(LOOPS_ANALYSIS_BAMBU, WHOLE_APPLICATION));
 
          relationships.insert(std::make_pair(MULTI_WAY_IF, WHOLE_APPLICATION));
 #if HAVE_ILP_BUILT
@@ -163,7 +164,6 @@ BambuFrontendFlow::ComputeFrontendRelationships(const DesignFlowStep::Relationsh
          {
             relationships.insert(std::make_pair(EXTRACT_OMP_ATOMIC, WHOLE_APPLICATION));
             relationships.insert(std::make_pair(EXTRACT_OMP_FOR, WHOLE_APPLICATION));
-            relationships.insert(std::make_pair(LOOPS_ANALYSIS_BAMBU, WHOLE_APPLICATION));
          }
          if(parameters->getOption<int>(OPT_gcc_openmp_simd))
          {
