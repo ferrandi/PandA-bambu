@@ -337,7 +337,7 @@ DesignFlowStep_Status LoopsAnalysisBambu::InternalExec()
       {
          loop->lower_bound = tree_helper::GetConstValue(init);
          loop->upper_bound = tree_helper::GetConstValue(cond_be->op1);
-         auto cond_type = cond_be->get_kind();
+         const auto cond_type = cond_be->get_kind();
          if(cond_type == ge_expr_K || cond_type == le_expr_K || cond_type == unge_expr_K || cond_type == unle_expr_K)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Close interval");
