@@ -38,37 +38,26 @@
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  *
  */
-
-/// Autoheader include
-#include "config_HAVE_PRAGMA_BUILT.hpp"
-
-/// Header include
 #include "loops_analysis_bambu.hpp"
 
-///. include
 #include "Parameter.hpp"
-
-/// algorithms/loops_detection include
-#include "loop.hpp"
-#include "loops.hpp"
-
-/// behavior include
 #include "application_manager.hpp"
 #include "basic_block.hpp"
-#include "function_behavior.hpp"
-
-/// pragma include
-#if HAVE_PRAGMA_BUILT
-#include "pragma_manager.hpp"
-#endif
-
-/// tree include
 #include "ext_tree_node.hpp"
-#include "string_manipulation.hpp" // for GET_CLASS
+#include "function_behavior.hpp"
+#include "loop.hpp"
+#include "loops.hpp"
+#include "string_manipulation.hpp"
 #include "tree_basic_block.hpp"
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
 #include "tree_reindex.hpp"
+
+#if HAVE_PRAGMA_BUILT
+#include "pragma_manager.hpp"
+#endif
+
+#include "config_HAVE_PRAGMA_BUILT.hpp"
 
 LoopsAnalysisBambu::LoopsAnalysisBambu(const ParameterConstRef _parameters, const application_managerRef _AppM,
                                        unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager)

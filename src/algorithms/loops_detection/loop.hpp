@@ -104,13 +104,13 @@
 
 #include "custom_map.hpp"
 #include "custom_set.hpp"
-#include "graph.hpp" // for vertex
+#include "graph.hpp"
 #include "panda_types.hpp"
-#include "refcount.hpp" // for REF_FORWARD_DECL
+#include "refcount.hpp"
 
-#include <cstddef> // for size_t
-#include <list>    // for list, list<>::co...
-#include <utility> // for pair
+#include <cstddef>
+#include <list>
+#include <utility>
 
 /**
  * @name Constants identifying the type of the loops
