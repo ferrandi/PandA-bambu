@@ -35,37 +35,29 @@
  * @brief Analysis step performing loops analysis.
  *
  * @author Marco Lattuada <marco.lattuada@polimi.it>
+ * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  *
  */
-
-/// Autoheader include
-#include "config_HAVE_PRAGMA_BUILT.hpp"
-
-/// Header include
 #include "loops_analysis_bambu.hpp"
 
-///. include
 #include "Parameter.hpp"
-
-/// algorithms/loops_detection include
-#include "loop.hpp"
-#include "loops.hpp"
-
-/// behavior include
 #include "application_manager.hpp"
 #include "basic_block.hpp"
-#include "function_behavior.hpp"
-
-/// pragma include
-#include "pragma_manager.hpp"
-
-/// tree include
 #include "ext_tree_node.hpp"
-#include "string_manipulation.hpp" // for GET_CLASS
+#include "function_behavior.hpp"
+#include "loop.hpp"
+#include "loops.hpp"
+#include "string_manipulation.hpp"
 #include "tree_basic_block.hpp"
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
 #include "tree_reindex.hpp"
+
+#if HAVE_PRAGMA_BUILT
+#include "pragma_manager.hpp"
+#endif
+
+#include "config_HAVE_PRAGMA_BUILT.hpp"
 
 LoopsAnalysisBambu::LoopsAnalysisBambu(const ParameterConstRef _parameters, const application_managerRef _AppM,
                                        unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager)
@@ -85,7 +77,6 @@ LoopsAnalysisBambu::ComputeFrontendRelationships(const DesignFlowStep::Relations
       case(DEPENDENCE_RELATIONSHIP):
       {
          relationships.insert(std::make_pair(BB_FEEDBACK_EDGES_IDENTIFICATION, SAME_FUNCTION));
-         relationships.insert(std::make_pair(DOM_POST_DOM_COMPUTATION, SAME_FUNCTION));
          relationships.insert(std::make_pair(LOOPS_COMPUTATION, SAME_FUNCTION));
          relationships.insert(std::make_pair(EXTRACT_GIMPLE_COND_OP, SAME_FUNCTION));
          const auto is_simd = tree_helper::has_omp_simd(GetPointer<const statement_list>(
@@ -117,11 +108,10 @@ DesignFlowStep_Status LoopsAnalysisBambu::InternalExec()
 {
    const auto TM = AppM->get_tree_manager();
    DesignFlowStep_Status return_value = DesignFlowStep_Status::UNCHANGED;
-   const auto bb = function_behavior->CGetBBGraph(FunctionBehavior::BB);
    const auto fbb = function_behavior->CGetBBGraph(FunctionBehavior::FBB);
-   const auto pdt = function_behavior->CGetBBGraph(FunctionBehavior::POST_DOM_TREE);
    for(const auto& loop : function_behavior->GetLoops()->GetModifiableList())
    {
+      loop->loop_type = UNKNOWN_LOOP;
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing loop " + STR(loop->GetId()));
       if(!loop->IsReducible())
       {
@@ -129,68 +119,57 @@ DesignFlowStep_Status LoopsAnalysisBambu::InternalExec()
          continue;
       }
       const vertex header = loop->GetHeader();
+#if HAVE_PRAGMA_BUILT
       const auto PM = AppM->get_pragma_manager();
-      PM->CheckAddOmpFor(function_id, header, AppM);
-      PM->CheckAddOmpSimd(function_id, header, AppM);
-      bool do_while = false;
-      size_t feedback_edges = 0;
-      InEdgeIterator ei, ei_end;
-      for(boost::tie(ei, ei_end) = boost::in_edges(header, *fbb); ei != ei_end; ei++)
+      if(PM)
       {
-         if((FB_CFG_SELECTOR)&fbb->GetSelector(*ei))
-         {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Feedback edge");
-            feedback_edges++;
-            if(boost::source(*ei, *fbb) == boost::target(*ei, *fbb))
-            {
-               do_while = true;
-               loop->loop_type &= ~UNKNOWN_LOOP;
-               loop->loop_type |= DO_WHILE_LOOP;
-               continue;
-            }
-            vertex current_dom = boost::target(*ei, *fbb);
-            while(current_dom != boost::source(*ei, *fbb) and boost::in_degree(current_dom, *pdt) == 1)
-            {
-               InEdgeIterator pdt_ei, pdt_ei_end;
-               boost::tie(pdt_ei, pdt_ei_end) = boost::in_edges(current_dom, *pdt);
-               current_dom = boost::source(*pdt_ei, *pdt);
-            }
-            if(current_dom == boost::source(*ei, *fbb))
-            {
-               do_while = true;
-               loop->loop_type &= ~UNKNOWN_LOOP;
-               loop->loop_type |= DO_WHILE_LOOP;
-            }
-         }
+         PM->CheckAddOmpFor(function_id, header, AppM);
+         PM->CheckAddOmpSimd(function_id, header, AppM);
       }
-      if(feedback_edges != 1)
+#endif
+      const auto nexit = loop->num_exits();
+      if(nexit != 1)
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--More than a feedback loop");
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Multiple exits loop");
          continue;
       }
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Single feedback loop");
-
-      /// Get last basic block of the loop
-      const vertex last_bb = [&]() -> vertex {
-         for(boost::tie(ei, ei_end) = boost::in_edges(header, *fbb); ei != ei_end; ei++)
-         {
-            if((FB_CFG_SELECTOR)&fbb->GetSelector(*ei))
-            {
-               return boost::source(*ei, *fbb);
-            }
-         }
-         return NULL_VERTEX;
-      }();
-      const unsigned int last_bb_index = fbb->CGetBBNodeInfo(last_bb)->block->number;
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Last basic block is BB" + STR(last_bb_index));
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Single exit loop considered");
+      loop->loop_type |= SINGLE_EXIT_LOOP;
+      const auto exit_vertex = *loop->exit_block_iter_begin();
+      bool do_while = false;
+      if(exit_vertex == header && loop->num_blocks() != 1)
+      {
+         /// while loop
+         loop->loop_type &= ~UNKNOWN_LOOP;
+         loop->loop_type |= WHILE_LOOP;
+      }
+      else
+      {
+         /// do while loop
+         loop->loop_type &= ~UNKNOWN_LOOP;
+         loop->loop_type |= DO_WHILE_LOOP;
+         do_while = true;
+      }
       /// Get exit condition of the loop
-      const tree_nodeRef last_stmt =
-          GET_NODE(fbb->CGetBBNodeInfo(do_while ? last_bb : header)->block->CGetStmtList().back());
+      const tree_nodeRef last_stmt = GET_NODE(fbb->CGetBBNodeInfo(exit_vertex)->block->CGetStmtList().back());
       if(last_stmt->get_kind() != gimple_cond_K)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Multi way if in the header");
          continue;
       }
+      const auto SPBE = loop->get_sp_back_edges();
+      if(SPBE.size() > 1)
+      {
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--More than one feedback edge");
+         continue;
+      }
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Single feedback loop");
+      const auto sourceSPBE1 = SPBE.begin()->first;
+      const unsigned int sourceSPBE1_index = fbb->CGetBBNodeInfo(sourceSPBE1)->block->number;
+      EdgeDescriptor e;
+      bool found;
+      boost::tie(e, found) = boost::edge(sourceSPBE1, SPBE.begin()->second, *fbb);
+
       const auto op = GET_NODE(GetPointerS<const gimple_cond>(last_stmt)->op0);
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                      "---Condition operand (" + op->get_kind_text() + ") is " + op->ToString());
@@ -210,7 +189,7 @@ DesignFlowStep_Status LoopsAnalysisBambu::InternalExec()
       const auto cond_def = GET_NODE(*(cond_defs.begin()));
       if(cond_def->get_kind() != gimple_assign_K)
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Condition variable not defined in a gimple_stmt");
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Condition not defined by gimple_assign");
          continue;
       }
       const auto cond = GET_NODE(GetPointer<const gimple_assign>(cond_def)->op1);
@@ -220,7 +199,7 @@ DesignFlowStep_Status LoopsAnalysisBambu::InternalExec()
          cond->get_kind() != uneq_expr_K and cond->get_kind() != ungt_expr_K && cond->get_kind() != unge_expr_K &&
          cond->get_kind() != unle_expr_K && cond->get_kind() != unlt_expr_K)
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Condition is not a comparison");
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Condition is not a simple comparison");
          continue;
       }
       /// We assume that induction variable is the left one; if it is not, analysis will fail
@@ -254,7 +233,7 @@ DesignFlowStep_Status LoopsAnalysisBambu::InternalExec()
          }
          for(const auto& def_edge : gp->CGetDefEdgesList())
          {
-            if(def_edge.second == last_bb_index)
+            if(def_edge.second == sourceSPBE1_index)
             {
                const auto temp_sn = GetPointer<const ssa_name>(GET_NODE(def_edge.first));
                if(!temp_sn)
@@ -289,7 +268,7 @@ DesignFlowStep_Status LoopsAnalysisBambu::InternalExec()
       if(GET_NODE(be->op1)->get_kind() != integer_cst_K)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                        "<--Induction variable is not incremnted or decremented of a constant");
+                        "<--Induction variable is not incremented or decremented by a constant");
          continue;
       }
       const auto second_induction_variable = GET_NODE(be->op0);
@@ -322,7 +301,7 @@ DesignFlowStep_Status LoopsAnalysisBambu::InternalExec()
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                            "---" + def_edge.first->ToString() + " comes from " + STR(def_edge.second));
-            if(def_edge.second != last_bb_index)
+            if(def_edge.second != sourceSPBE1_index)
             {
                return def_edge.first;
             }
@@ -330,7 +309,7 @@ DesignFlowStep_Status LoopsAnalysisBambu::InternalExec()
          return tree_nodeRef();
       }();
       loop->main_iv = first_operand->index;
-      loop->initialization_tree_node_id = init->index;
+      loop->init = init;
       loop->init_gimple_id = def2->index;
       loop->inc_id = ga->index;
       if(GET_NODE(be->op1)->get_kind() == integer_cst_K)
@@ -347,21 +326,29 @@ DesignFlowStep_Status LoopsAnalysisBambu::InternalExec()
                      "---Comparison is " + STR(cond) + " (" + cond->get_kind_text() + ")");
       if(GET_NODE(init)->get_kind() == integer_cst_K && GET_NODE(cond_be->op1)->get_kind() == integer_cst_K)
       {
+         const auto cond_type = cond_be->get_kind();
          loop->lower_bound = tree_helper::GetConstValue(init);
          loop->upper_bound = tree_helper::GetConstValue(cond_be->op1);
-         if(cond_be->get_kind() == ge_expr_K || cond_be->get_kind() == le_expr_K ||
-            cond_be->get_kind() == unge_expr_K || cond_be->get_kind() == unle_expr_K)
+         if(cond_type == ge_expr_K || cond_type == le_expr_K || cond_type == unge_expr_K || cond_type == unle_expr_K)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Close interval");
             loop->close_interval = true;
          }
          loop->loop_type |= COUNTABLE_LOOP;
       }
-      else
+      if(init)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Initialization " + init->ToString());
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Bound " + GET_NODE(be->op1)->ToString());
       }
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Bound " + GET_NODE(loop->upper_bound_tn)->ToString());
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                     "---Increment " + GET_NODE(loop->increment_tn)->ToString());
+      /// very simple condition
+      if(do_while && loop->is_innermost() && loop->num_blocks() == 1)
+      {
+         loop->loop_type |= PIPELINABLE_LOOP;
+      }
+
       return_value = DesignFlowStep_Status::SUCCESS;
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed loop " + STR(loop->GetId()));
    }
