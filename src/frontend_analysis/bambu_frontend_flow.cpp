@@ -141,6 +141,7 @@ BambuFrontendFlow::ComputeFrontendRelationships(const DesignFlowStep::Relationsh
          relationships.insert(std::make_pair(SPLIT_RETURN, WHOLE_APPLICATION));
          relationships.insert(std::make_pair(STRING_CST_FIX, WHOLE_APPLICATION));
          relationships.insert(std::make_pair(SWITCH_FIX, WHOLE_APPLICATION));
+         relationships.insert(std::make_pair(LOOPS_ANALYSIS_BAMBU, WHOLE_APPLICATION));
 
 #if HAVE_EXPERIMENTAL
          if(parameters->getOption<bool>(OPT_speculative))
@@ -194,7 +195,6 @@ BambuFrontendFlow::ComputeFrontendRelationships(const DesignFlowStep::Relationsh
          {
             relationships.insert(std::make_pair(EXTRACT_OMP_ATOMIC, WHOLE_APPLICATION));
             relationships.insert(std::make_pair(EXTRACT_OMP_FOR, WHOLE_APPLICATION));
-            relationships.insert(std::make_pair(LOOPS_ANALYSIS_BAMBU, WHOLE_APPLICATION));
 #if HAVE_EXPERIMENTAL
             if(!parameters->isOption(OPT_context_switch))
             {
