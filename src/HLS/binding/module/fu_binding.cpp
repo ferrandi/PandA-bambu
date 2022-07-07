@@ -44,6 +44,7 @@
  */
 
 #include "fu_binding.hpp"
+
 #include "fu_binding_cs.hpp"
 #include "funit_obj.hpp"
 
@@ -265,31 +266,31 @@ unsigned int fu_binding::get_index(vertex const& v) const
 
 structural_objectRef fu_binding::add_gate(const HLS_managerRef HLSMgr, const hlsRef HLS, const technology_nodeRef fu,
                                           const std::string& name, const OpVertexSet& ops,
-                                          structural_objectRef clock_port, structural_objectRef reset_port)
+                                          structural_objectRef clock_port, structural_objectRef reset_port) const
 {
-   const FunctionBehaviorConstRef FB = HLSMgr->CGetFunctionBehavior(HLS->functionId);
-   const OpGraphConstRef data = FB->CGetOpGraph(FunctionBehavior::CFG);
-   const structural_managerRef SM = HLS->datapath;
-   const structural_objectRef circuit = SM->get_circ();
-   structural_objectRef curr_gate = structural_objectRef(new component_o(debug_level, circuit));
+   const auto FB = HLSMgr->CGetFunctionBehavior(HLS->functionId);
+   const auto data = FB->CGetOpGraph(FunctionBehavior::CFG);
+   const auto& SM = HLS->datapath;
+   const auto circuit = SM->get_circ();
+   structural_objectRef curr_gate(new component_o(debug_level, circuit));
    /// creating structural_manager starting from technology_node
    structural_objectRef curr_lib_instance;
-   if(GetPointer<functional_unit>(fu)->fu_template_name == "")
+   if(GetPointerS<functional_unit>(fu)->fu_template_name == "")
    {
       curr_lib_instance = GetPointer<functional_unit>(fu)->CM->get_circ();
    }
    else
    {
-      std::string template_name = GetPointer<functional_unit>(fu)->fu_template_name;
-      std::string library_name = HLS->HLS_T->get_technology_manager()->get_library(template_name);
+      const auto template_name = GetPointer<functional_unit>(fu)->fu_template_name;
+      const auto library_name = HLS->HLS_T->get_technology_manager()->get_library(template_name);
       curr_lib_instance =
-          GetPointer<functional_unit>(GetPointer<functional_unit_template>(
-                                          HLS->HLS_T->get_technology_manager()->get_fu(template_name, library_name))
-                                          ->FU)
+          GetPointerS<functional_unit>(GetPointerS<functional_unit_template>(
+                                           HLS->HLS_T->get_technology_manager()->get_fu(template_name, library_name))
+                                           ->FU)
               ->CM->get_circ();
    }
    THROW_ASSERT(curr_lib_instance, "structural description not provided: check the library given. Component: " +
-                                       GetPointer<functional_unit>(fu)->functional_unit_name);
+                                       GetPointerS<functional_unit>(fu)->functional_unit_name);
 
    curr_lib_instance->copy(curr_gate);
    if(ops.size() == 1)
@@ -298,22 +299,22 @@ structural_objectRef fu_binding::add_gate(const HLS_managerRef HLSMgr, const hls
    }
    else
    {
-      THROW_ASSERT(not name.empty(), "cannot name the added gate if the name is empty");
+      THROW_ASSERT(!name.empty(), "cannot name the added gate if the name is empty");
       curr_gate->set_id(name);
    }
 
    /// connecting clock and reset ports, if any
-   structural_objectRef port_ck = curr_gate->find_member(CLOCK_PORT_NAME, port_o_K, curr_gate);
+   const auto port_ck = curr_gate->find_member(CLOCK_PORT_NAME, port_o_K, curr_gate);
    if(port_ck)
    {
       SM->add_connection(clock_port, port_ck);
    }
-   structural_objectRef port_rst = curr_gate->find_member(RESET_PORT_NAME, port_o_K, curr_gate);
+   const auto port_rst = curr_gate->find_member(RESET_PORT_NAME, port_o_K, curr_gate);
    if(port_rst)
    {
       SM->add_connection(reset_port, port_rst);
    }
-   GetPointer<module>(circuit)->add_internal_object(curr_gate);
+   GetPointerS<module>(circuit)->add_internal_object(curr_gate);
 
    return curr_gate;
 }
@@ -598,7 +599,7 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
    const auto TechM = HLS->HLS_T->get_technology_manager();
 
    /// unique id identifier
-   unsigned int unique_id = 0;
+   unsigned int unique_id = 0U;
 
    /// initialize resource sharing to false
    has_resource_sharing_p = !HLS->Rreg->is_all_regs_without_enable(); // it assumes that HLS->Rreg->add_to_SM is called
@@ -1457,147 +1458,163 @@ void fu_binding::join_merge_split(
     std::map<structural_objectRef, std::list<structural_objectRef>, jms_sorter>& primary_outs,
     const structural_objectRef circuit, unsigned int& _unique_id)
 {
-   std::string js_name = "join_signal";
-   std::string js_library = HLS->HLS_T->get_technology_manager()->get_library(js_name);
-   std::string ss_name = "split_signal";
-   std::string ss_library = HLS->HLS_T->get_technology_manager()->get_library(ss_name);
-   const auto po_end = primary_outs.end();
-   for(auto po = primary_outs.begin(); po != po_end; ++po)
-   {
-      std::string bus_merger_res_name = "bus_merger";
-      std::string bus_merger_inst_name = bus_merger_res_name + po->first->get_id() + STR(_unique_id) + "_";
-      ++_unique_id;
-      std::string bm_library = HLS->HLS_T->get_technology_manager()->get_library(bus_merger_res_name);
-      structural_objectRef bus_merger_mod = SM->add_module_from_technology_library(
-          bus_merger_inst_name, bus_merger_res_name, bm_library, circuit, HLS->HLS_T->get_technology_manager());
+   const auto js_name = "join_signal";
+   const auto js_library = HLS->HLS_T->get_technology_manager()->get_library(js_name);
+   const auto ss_name = "split_signal";
+   const auto ss_library = HLS->HLS_T->get_technology_manager()->get_library(ss_name);
+   const auto bus_merger_res_name = "bus_merger";
+   const auto bm_library = HLS->HLS_T->get_technology_manager()->get_library(bus_merger_res_name);
 
-      structural_objectRef bm_in_port = GetPointer<module>(bus_merger_mod)->get_in_port(0);
-      GetPointer<port_o>(bm_in_port)->add_n_ports(static_cast<unsigned int>(po->second.size()), bm_in_port);
-      if(po->first->get_kind() == port_vector_o_K)
+   for(const auto& po : primary_outs)
+   {
+      const auto& bus_port = po.first;
+      const auto& merged_ports = po.second;
+
+      if(merged_ports.size() == 1U)
       {
-         port_o::resize_std_port(GetPointer<port_o>(po->first)->get_ports_size() *
-                                     STD_GET_SIZE(po->first->get_typeRef()),
-                                 0, 0, bm_in_port);
+         SM->add_connection(merged_ports.front(), bus_port);
       }
       else
       {
-         port_o::resize_std_port(STD_GET_SIZE(po->first->get_typeRef()), 0, 0, bm_in_port);
-      }
-      auto it_el = po->second.begin();
-      for(unsigned int in_id = 0; in_id < po->second.size(); ++in_id, ++it_el)
-      {
-         structural_objectRef sign_in;
-         if(po->first->get_kind() == port_vector_o_K)
+         const auto bus_merger_inst_name = bus_merger_res_name + bus_port->get_id() + STR(_unique_id++) + "_";
+         const auto bus_merger_mod = SM->add_module_from_technology_library(
+             bus_merger_inst_name, bus_merger_res_name, bm_library, circuit, HLS->HLS_T->get_technology_manager());
+         const auto bm_in_port = GetPointerS<module>(bus_merger_mod)->get_in_port(0U);
+         GetPointerS<port_o>(bm_in_port)->add_n_ports(static_cast<unsigned int>(merged_ports.size()), bm_in_port);
+         if(bus_port->get_kind() == port_vector_o_K)
          {
-            sign_in =
-                SM->add_sign_vector("sig_in_vector_" + bus_merger_inst_name + STR(in_id),
-                                    GetPointer<port_o>(*it_el)->get_ports_size(), circuit, (*it_el)->get_typeRef());
-            structural_objectRef js_mod =
-                SM->add_module_from_technology_library(js_name + bus_merger_inst_name + STR(in_id), js_name, js_library,
-                                                       circuit, HLS->HLS_T->get_technology_manager());
-            structural_objectRef js_in_port = GetPointer<module>(js_mod)->get_in_port(0);
-            GetPointer<port_o>(js_in_port)
-                ->add_n_ports(static_cast<unsigned int>(GetPointer<port_o>(*it_el)->get_ports_size()), js_in_port);
-            port_o::resize_std_port(STD_GET_SIZE((*it_el)->get_typeRef()), 0, 0, js_in_port);
-            SM->add_connection(sign_in, *it_el);
-            SM->add_connection(sign_in, js_in_port);
-            structural_objectRef js_out_port = GetPointer<module>(js_mod)->get_out_port(0);
-            port_o::resize_std_port(GetPointer<port_o>(po->first)->get_ports_size() *
-                                        STD_GET_SIZE(po->first->get_typeRef()),
-                                    0, 0, js_out_port);
-            structural_type_descriptorRef sig_type = structural_type_descriptorRef(new structural_type_descriptor);
-            po->first->get_typeRef()->copy(sig_type);
-            sign_in = SM->add_sign("sig_in_" + bus_merger_inst_name + STR(in_id), circuit, sig_type);
-            if(sig_type->type == structural_type_descriptor::BOOL)
+            port_o::resize_std_port(GetPointerS<port_o>(bus_port)->get_ports_size() *
+                                        STD_GET_SIZE(bus_port->get_typeRef()),
+                                    0U, DEBUG_LEVEL_NONE, bm_in_port);
+         }
+         else
+         {
+            port_o::resize_std_port(STD_GET_SIZE(bus_port->get_typeRef()), 0U, DEBUG_LEVEL_NONE, bm_in_port);
+         }
+         auto in_id = 0U;
+         for(const auto& merged_port : merged_ports)
+         {
+            if(bus_port->get_kind() == port_vector_o_K)
             {
-               sig_type->type = structural_type_descriptor::VECTOR_BOOL;
-               sign_in->type_resize(1, GetPointer<port_o>(po->first)->get_ports_size() *
-                                           STD_GET_SIZE(po->first->get_typeRef()));
+               const auto sign_v_in = SM->add_sign_vector("sig_in_vector_" + bus_merger_inst_name + STR(in_id),
+                                                          GetPointerS<port_o>(merged_port)->get_ports_size(), circuit,
+                                                          merged_port->get_typeRef());
+               const auto js_mod =
+                   SM->add_module_from_technology_library(js_name + bus_merger_inst_name + STR(in_id), js_name,
+                                                          js_library, circuit, HLS->HLS_T->get_technology_manager());
+               const auto js_in_port = GetPointerS<module>(js_mod)->get_in_port(0U);
+               GetPointerS<port_o>(js_in_port)
+                   ->add_n_ports(static_cast<unsigned int>(GetPointerS<port_o>(merged_port)->get_ports_size()),
+                                 js_in_port);
+               port_o::resize_std_port(STD_GET_SIZE((merged_port)->get_typeRef()), 0U, DEBUG_LEVEL_NONE, js_in_port);
+               SM->add_connection(sign_v_in, merged_port);
+               SM->add_connection(sign_v_in, js_in_port);
+               const auto js_out_port = GetPointerS<module>(js_mod)->get_out_port(0U);
+               port_o::resize_std_port(GetPointerS<port_o>(bus_port)->get_ports_size() *
+                                           STD_GET_SIZE(bus_port->get_typeRef()),
+                                       0U, DEBUG_LEVEL_NONE, js_out_port);
+               structural_type_descriptorRef sig_type(new structural_type_descriptor);
+               bus_port->get_typeRef()->copy(sig_type);
+               const auto sign_in = SM->add_sign("sig_in_" + bus_merger_inst_name + STR(in_id), circuit, sig_type);
+               if(sig_type->type == structural_type_descriptor::BOOL)
+               {
+                  sig_type->type = structural_type_descriptor::VECTOR_BOOL;
+                  sign_in->type_resize(1U, GetPointerS<port_o>(bus_port)->get_ports_size() *
+                                               STD_GET_SIZE(bus_port->get_typeRef()));
+               }
+               else
+               {
+                  sign_in->type_resize(GetPointer<port_o>(bus_port)->get_ports_size() *
+                                       STD_GET_SIZE(bus_port->get_typeRef()));
+               }
+               SM->add_connection(sign_in, js_out_port);
+               SM->add_connection(sign_in, GetPointer<port_o>(bm_in_port)->get_port(in_id));
             }
             else
             {
-               sign_in->type_resize(GetPointer<port_o>(po->first)->get_ports_size() *
-                                    STD_GET_SIZE(po->first->get_typeRef()));
+               const auto sign_in =
+                   SM->add_sign("sig_in_" + bus_merger_inst_name + STR(in_id), circuit, bus_port->get_typeRef());
+               SM->add_connection(sign_in, merged_port);
+               SM->add_connection(sign_in, GetPointerS<port_o>(bm_in_port)->get_port(in_id));
             }
-            SM->add_connection(sign_in, js_out_port);
-            SM->add_connection(sign_in, GetPointer<port_o>(bm_in_port)->get_port(in_id));
+            in_id += 1U;
+         }
+         const auto bm_out_port = GetPointerS<module>(bus_merger_mod)->get_out_port(0);
+         if(bus_port->get_kind() == port_vector_o_K)
+         {
+            port_o::resize_std_port(GetPointerS<port_o>(bus_port)->get_ports_size() *
+                                        STD_GET_SIZE(bus_port->get_typeRef()),
+                                    0U, DEBUG_LEVEL_NONE, bm_out_port);
          }
          else
          {
-            sign_in = SM->add_sign("sig_in_" + bus_merger_inst_name + STR(in_id), circuit, po->first->get_typeRef());
-            SM->add_connection(sign_in, *it_el);
-            SM->add_connection(sign_in, GetPointer<port_o>(bm_in_port)->get_port(in_id));
+            port_o::resize_std_port(STD_GET_SIZE(bus_port->get_typeRef()), 0U, DEBUG_LEVEL_NONE, bm_out_port);
          }
-      }
-      structural_objectRef bm_out_port = GetPointer<module>(bus_merger_mod)->get_out_port(0);
-      if(po->first->get_kind() == port_vector_o_K)
-      {
-         port_o::resize_std_port(GetPointer<port_o>(po->first)->get_ports_size() *
-                                     STD_GET_SIZE(po->first->get_typeRef()),
-                                 0, 0, bm_out_port);
-      }
-      else
-      {
-         port_o::resize_std_port(STD_GET_SIZE(po->first->get_typeRef()), 0, 0, bm_out_port);
-      }
-      structural_objectRef sign_out;
-      if(po->first->get_kind() == port_vector_o_K)
-      {
-         structural_objectRef ss_mod = SM->add_module_from_technology_library(
-             ss_name + bus_merger_inst_name, ss_name, ss_library, circuit, HLS->HLS_T->get_technology_manager());
-         structural_type_descriptorRef sig_type = structural_type_descriptorRef(new structural_type_descriptor);
-         po->first->get_typeRef()->copy(sig_type);
-         sign_out = SM->add_sign("sig_out_" + bus_merger_inst_name, circuit, sig_type);
-         if(sig_type->type == structural_type_descriptor::BOOL)
+         if(bus_port->get_kind() == port_vector_o_K)
          {
-            sig_type->type = structural_type_descriptor::VECTOR_BOOL;
-            sign_out->type_resize(1, GetPointer<port_o>(po->first)->get_ports_size() *
-                                         STD_GET_SIZE(po->first->get_typeRef()));
+            const auto ss_mod = SM->add_module_from_technology_library(
+                ss_name + bus_merger_inst_name, ss_name, ss_library, circuit, HLS->HLS_T->get_technology_manager());
+            structural_type_descriptorRef sig_type(new structural_type_descriptor);
+            bus_port->get_typeRef()->copy(sig_type);
+            const auto sign_out = SM->add_sign("sig_out_" + bus_merger_inst_name, circuit, sig_type);
+            if(sig_type->type == structural_type_descriptor::BOOL)
+            {
+               sig_type->type = structural_type_descriptor::VECTOR_BOOL;
+               sign_out->type_resize(1, GetPointer<port_o>(bus_port)->get_ports_size() *
+                                            STD_GET_SIZE(bus_port->get_typeRef()));
+            }
+            else
+            {
+               sign_out->type_resize(GetPointer<port_o>(bus_port)->get_ports_size() *
+                                     STD_GET_SIZE(bus_port->get_typeRef()));
+            }
+            const auto ss_in_port = GetPointerS<module>(ss_mod)->get_in_port(0U);
+            port_o::resize_std_port(GetPointer<port_o>(bus_port)->get_ports_size() *
+                                        STD_GET_SIZE(bus_port->get_typeRef()),
+                                    0U, DEBUG_LEVEL_NONE, ss_in_port);
+            SM->add_connection(sign_out, bm_out_port);
+            SM->add_connection(sign_out, ss_in_port);
+            const auto ss_out_port = GetPointerS<module>(ss_mod)->get_out_port(0U);
+            GetPointerS<port_o>(ss_out_port)
+                ->add_n_ports(static_cast<unsigned int>(GetPointerS<port_o>(bus_port)->get_ports_size()), ss_out_port);
+            port_o::resize_std_port(STD_GET_SIZE(bus_port->get_typeRef()), 0U, DEBUG_LEVEL_NONE, ss_out_port);
+            if(bus_port->get_owner() != circuit)
+            {
+               const auto sign_out_vector = SM->add_sign_vector("sig_out_vector_" + bus_merger_inst_name,
+                                                                GetPointerS<port_o>(bus_port)->get_ports_size(),
+                                                                circuit, bus_port->get_typeRef());
+               SM->add_connection(sign_out_vector, ss_out_port);
+               SM->add_connection(sign_out_vector, bus_port);
+            }
+            else
+            {
+               SM->add_connection(ss_out_port, bus_port);
+            }
          }
          else
          {
-            sign_out->type_resize(GetPointer<port_o>(po->first)->get_ports_size() *
-                                  STD_GET_SIZE(po->first->get_typeRef()));
+            if(bus_port->get_owner() != circuit)
+            {
+               structural_type_descriptorRef sig_type(new structural_type_descriptor);
+               bm_out_port->get_typeRef()->copy(sig_type);
+               const auto sign_out = SM->add_sign("sig_out_" + bus_merger_inst_name, circuit, sig_type);
+               if(sig_type->type == structural_type_descriptor::BOOL)
+               {
+                  sig_type->type = structural_type_descriptor::VECTOR_BOOL;
+                  sign_out->type_resize(1, STD_GET_SIZE(bus_port->get_typeRef()));
+               }
+               else
+               {
+                  sign_out->type_resize(STD_GET_SIZE(bus_port->get_typeRef()));
+               }
+               SM->add_connection(sign_out, bm_out_port);
+               SM->add_connection(sign_out, bus_port);
+            }
+            else
+            {
+               SM->add_connection(bm_out_port, bus_port);
+            }
          }
-         SM->add_connection(sign_out, bm_out_port);
-         structural_objectRef ss_in_port = GetPointer<module>(ss_mod)->get_in_port(0);
-         port_o::resize_std_port(GetPointer<port_o>(po->first)->get_ports_size() *
-                                     STD_GET_SIZE(po->first->get_typeRef()),
-                                 0, 0, ss_in_port);
-         SM->add_connection(sign_out, ss_in_port);
-         structural_objectRef ss_out_port = GetPointer<module>(ss_mod)->get_out_port(0);
-         GetPointer<port_o>(ss_out_port)
-             ->add_n_ports(static_cast<unsigned int>(GetPointer<port_o>(po->first)->get_ports_size()), ss_out_port);
-         port_o::resize_std_port(STD_GET_SIZE(po->first->get_typeRef()), 0, 0, ss_out_port);
-         if(po->first->get_owner() != circuit)
-         {
-            structural_objectRef sign_out_vector =
-                SM->add_sign_vector("sig_out_vector_" + bus_merger_inst_name,
-                                    GetPointer<port_o>(po->first)->get_ports_size(), circuit, po->first->get_typeRef());
-            SM->add_connection(ss_out_port, sign_out_vector);
-            SM->add_connection(sign_out_vector, po->first);
-         }
-         else
-         {
-            SM->add_connection(ss_out_port, po->first);
-         }
-      }
-      else
-      {
-         structural_type_descriptorRef sig_type = structural_type_descriptorRef(new structural_type_descriptor);
-         bm_out_port->get_typeRef()->copy(sig_type);
-         sign_out = SM->add_sign("sig_out_" + bus_merger_inst_name, circuit, sig_type);
-         if(sig_type->type == structural_type_descriptor::BOOL)
-         {
-            sig_type->type = structural_type_descriptor::VECTOR_BOOL;
-            sign_out->type_resize(1, STD_GET_SIZE(po->first->get_typeRef()));
-         }
-         else
-         {
-            sign_out->type_resize(STD_GET_SIZE(po->first->get_typeRef()));
-         }
-         SM->add_connection(sign_out, bm_out_port);
-         SM->add_connection(sign_out, po->first);
       }
    }
 }
@@ -1614,6 +1631,27 @@ void fu_binding::manage_memory_ports_parallel_chained(const HLS_managerRef, cons
 {
    std::map<structural_objectRef, std::list<structural_objectRef>, jms_sorter> primary_outs;
    structural_objectRef cir_port;
+   const auto vector_to_port = [](structural_objectRef& a, structural_objectRef& b) {
+      if(a->get_kind() != b->get_kind())
+      {
+         if(a->get_kind() == port_vector_o_K)
+         {
+            THROW_ASSERT(b->get_kind() == port_o_K, "");
+            const auto port_v = GetPointerS<const port_o>(a);
+            THROW_ASSERT(port_v->get_ports_size() == 1U,
+                         "Multiple ports: " + STR(port_v->get_ports_size()) + " in " + port_v->get_path());
+            a = port_v->get_port(0U);
+         }
+         else if(b->get_kind() == port_vector_o_K)
+         {
+            THROW_ASSERT(a->get_kind() == port_o_K, "");
+            const auto port_v = GetPointerS<const port_o>(b);
+            THROW_ASSERT(port_v->get_ports_size() == 1U,
+                         "Multiple ports: " + STR(port_v->get_ports_size()) + " in " + port_v->get_path());
+            b = port_v->get_port(0U);
+         }
+      }
+   };
    for(const auto& memory_module : memory_modules)
    {
       for(unsigned int j = 0; j < GetPointer<module>(memory_module)->get_in_port_size(); ++j)
@@ -1641,10 +1679,23 @@ void fu_binding::manage_memory_ports_parallel_chained(const HLS_managerRef, cons
             }
             else
             {
-               SM->add_connection(cir_port, port_i);
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                              port_i->get_path() + " <-> " + cir_port->get_path());
+               vector_to_port(port_i, cir_port);
+               THROW_ASSERT(port_i->get_kind() == cir_port->get_kind(),
+                            "unexpected condition: " + port_i->get_path() + "(" + port_i->get_kind_text() +
+                                ") != " + cir_port->get_path() + "(" + cir_port->get_kind_text() + ")");
+               if(port_i->get_kind() == port_vector_o_K &&
+                  GetPointerS<port_o>(port_i)->get_ports_size() > GetPointerS<port_o>(cir_port)->get_ports_size())
+               {
+                  const auto n_ports =
+                      GetPointerS<port_o>(port_i)->get_ports_size() - GetPointerS<port_o>(cir_port)->get_ports_size();
+                  GetPointerS<port_o>(cir_port)->add_n_ports(n_ports, cir_port);
+               }
             }
          }
       }
+
       for(unsigned int j = 0; j < GetPointer<module>(memory_module)->get_out_port_size(); j++)
       {
          structural_objectRef port_i = GetPointer<module>(memory_module)->get_out_port(j);
@@ -1666,6 +1717,22 @@ void fu_binding::manage_memory_ports_parallel_chained(const HLS_managerRef, cons
                   cir_port = SM->add_port(port_name, port_o::OUT, circuit, port_i->get_typeRef());
                }
                port_o::fix_port_properties(port_i, cir_port);
+            }
+            else
+            {
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                              port_i->get_path() + " <-> " + cir_port->get_path());
+               vector_to_port(port_i, cir_port);
+               THROW_ASSERT(port_i->get_kind() == cir_port->get_kind(),
+                            "unexpected condition: " + port_i->get_path() + "(" + port_i->get_kind_text() +
+                                ") != " + cir_port->get_path() + "(" + cir_port->get_kind_text() + ")");
+               if(port_i->get_kind() == port_vector_o_K &&
+                  GetPointerS<port_o>(port_i)->get_ports_size() > GetPointerS<port_o>(cir_port)->get_ports_size())
+               {
+                  auto n_ports =
+                      GetPointerS<port_o>(port_i)->get_ports_size() - GetPointerS<port_o>(cir_port)->get_ports_size();
+                  GetPointerS<port_o>(cir_port)->add_n_ports(n_ports, cir_port);
+               }
             }
             if(std::find(primary_outs[cir_port].begin(), primary_outs[cir_port].end(), port_i) ==
                primary_outs[cir_port].end())
