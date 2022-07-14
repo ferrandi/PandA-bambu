@@ -1469,14 +1469,18 @@ void fu_binding::join_merge_split(
    {
       const auto& bus_port = po.first;
       const auto& merged_ports = po.second;
+      const auto bus_merger_inst_name = bus_merger_res_name + bus_port->get_id() + STR(_unique_id++) + "_";
+      structural_objectRef out_port;
 
       if(merged_ports.size() == 1U)
       {
-         SM->add_connection(merged_ports.front(), bus_port);
+         out_port = merged_ports.front();
+         THROW_ASSERT(out_port->get_kind() == bus_port->get_kind(), "Out port has type " + bus_port->get_kind_text() +
+                                                                        " while internal port has type " +
+                                                                        out_port->get_kind_text());
       }
       else
       {
-         const auto bus_merger_inst_name = bus_merger_res_name + bus_port->get_id() + STR(_unique_id++) + "_";
          const auto bus_merger_mod = SM->add_module_from_technology_library(
              bus_merger_inst_name, bus_merger_res_name, bm_library, circuit, HLS->HLS_T->get_technology_manager());
          const auto bm_in_port = GetPointerS<module>(bus_merger_mod)->get_in_port(0U);
@@ -1539,16 +1543,16 @@ void fu_binding::join_merge_split(
             }
             in_id += 1U;
          }
-         const auto bm_out_port = GetPointerS<module>(bus_merger_mod)->get_out_port(0);
+         out_port = GetPointerS<module>(bus_merger_mod)->get_out_port(0);
          if(bus_port->get_kind() == port_vector_o_K)
          {
             port_o::resize_std_port(GetPointerS<port_o>(bus_port)->get_ports_size() *
                                         STD_GET_SIZE(bus_port->get_typeRef()),
-                                    0U, DEBUG_LEVEL_NONE, bm_out_port);
+                                    0U, DEBUG_LEVEL_NONE, out_port);
          }
          else
          {
-            port_o::resize_std_port(STD_GET_SIZE(bus_port->get_typeRef()), 0U, DEBUG_LEVEL_NONE, bm_out_port);
+            port_o::resize_std_port(STD_GET_SIZE(bus_port->get_typeRef()), 0U, DEBUG_LEVEL_NONE, out_port);
          }
          if(bus_port->get_kind() == port_vector_o_K)
          {
@@ -1572,49 +1576,34 @@ void fu_binding::join_merge_split(
             port_o::resize_std_port(GetPointer<port_o>(bus_port)->get_ports_size() *
                                         STD_GET_SIZE(bus_port->get_typeRef()),
                                     0U, DEBUG_LEVEL_NONE, ss_in_port);
-            SM->add_connection(sign_out, bm_out_port);
+            SM->add_connection(sign_out, out_port);
             SM->add_connection(sign_out, ss_in_port);
-            const auto ss_out_port = GetPointerS<module>(ss_mod)->get_out_port(0U);
-            GetPointerS<port_o>(ss_out_port)
-                ->add_n_ports(static_cast<unsigned int>(GetPointerS<port_o>(bus_port)->get_ports_size()), ss_out_port);
-            port_o::resize_std_port(STD_GET_SIZE(bus_port->get_typeRef()), 0U, DEBUG_LEVEL_NONE, ss_out_port);
-            if(bus_port->get_owner() != circuit)
-            {
-               const auto sign_out_vector = SM->add_sign_vector("sig_out_vector_" + bus_merger_inst_name,
-                                                                GetPointerS<port_o>(bus_port)->get_ports_size(),
-                                                                circuit, bus_port->get_typeRef());
-               SM->add_connection(sign_out_vector, ss_out_port);
-               SM->add_connection(sign_out_vector, bus_port);
-            }
-            else
-            {
-               SM->add_connection(ss_out_port, bus_port);
-            }
+            out_port = GetPointerS<module>(ss_mod)->get_out_port(0U);
+            GetPointerS<port_o>(out_port)->add_n_ports(
+                static_cast<unsigned int>(GetPointerS<port_o>(bus_port)->get_ports_size()), out_port);
+            port_o::resize_std_port(STD_GET_SIZE(bus_port->get_typeRef()), 0U, DEBUG_LEVEL_NONE, out_port);
+         }
+      }
+      THROW_ASSERT(out_port, "");
+      if(bus_port->get_owner() != circuit)
+      {
+         structural_objectRef sig;
+         if(bus_port->get_kind() == port_vector_o_K)
+         {
+            sig =
+                SM->add_sign_vector("sig_out_vector_" + bus_merger_inst_name,
+                                    GetPointerS<port_o>(bus_port)->get_ports_size(), circuit, bus_port->get_typeRef());
          }
          else
          {
-            if(bus_port->get_owner() != circuit)
-            {
-               structural_type_descriptorRef sig_type(new structural_type_descriptor);
-               bm_out_port->get_typeRef()->copy(sig_type);
-               const auto sign_out = SM->add_sign("sig_out_" + bus_merger_inst_name, circuit, sig_type);
-               if(sig_type->type == structural_type_descriptor::BOOL)
-               {
-                  sig_type->type = structural_type_descriptor::VECTOR_BOOL;
-                  sign_out->type_resize(1, STD_GET_SIZE(bus_port->get_typeRef()));
-               }
-               else
-               {
-                  sign_out->type_resize(STD_GET_SIZE(bus_port->get_typeRef()));
-               }
-               SM->add_connection(sign_out, bm_out_port);
-               SM->add_connection(sign_out, bus_port);
-            }
-            else
-            {
-               SM->add_connection(bm_out_port, bus_port);
-            }
+            sig = SM->add_sign("sig_out_" + bus_merger_inst_name, circuit, bus_port->get_typeRef());
          }
+         SM->add_connection(sig, out_port);
+         SM->add_connection(sig, bus_port);
+      }
+      else
+      {
+         SM->add_connection(out_port, bus_port);
       }
    }
 }
