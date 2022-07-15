@@ -235,7 +235,7 @@ def main():
         print(row_format.format(
             perf_sd[0], *[diff_string(x + 1.0) for x in perf_sd[1:]]))
 
-    print('' + len(bad_perf), file=sys.stderr)
+    print(str(len(bad_perf)), file=sys.stderr)
     if args.returnfail:
         exit(len(bad_perf))
     exit(0)
