@@ -1596,7 +1596,7 @@ void fu_binding::join_merge_split(
          }
          else
          {
-            sig = SM->add_sign("sig_out_" + bus_merger_inst_name, circuit, bus_port->get_typeRef());
+            sig = SM->add_sign("sig_out_" + bus_merger_inst_name, circuit, out_port->get_typeRef());
          }
          SM->add_connection(sig, out_port);
          SM->add_connection(sig, bus_port);
