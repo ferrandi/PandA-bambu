@@ -455,15 +455,16 @@ void fu_binding::manage_killing_memory_proxies(
          return ports;
       }();
       std::map<structural_objectRef, std::list<structural_objectRef>, jms_sorter> to_be_merged;
+      const auto var_suffix = "_" + STR(var);
       for(const auto& proxied_unit : proxies)
       {
-         const auto port_out = proxied_unit->find_member("proxy_out1_" + STR(var), port_o_K, proxied_unit);
+         const auto port_out = proxied_unit->find_member("proxy_out1" + var_suffix, port_o_K, proxied_unit);
          THROW_ASSERT(port_out, "missing proxied proxy_out1 port");
          SM->add_connection(storage_port_out_sign, port_out);
 
          for(const auto& pport : proxy_ports)
          {
-            const auto port = proxied_unit->find_member(pport->get_id(), port_o_K, proxied_unit);
+            const auto port = proxied_unit->find_member(pport->get_id() + var_suffix, port_o_K, proxied_unit);
             if(port)
             {
                to_be_merged[pport].push_back(port);
