@@ -1291,7 +1291,7 @@ DesignFlowStep_Status SDCScheduling::InternalExec()
                coeffs[static_cast<int>(operation_to_varindex.at(std::make_pair(operation, 0)))] = 1.0;
                coeffs[static_cast<int>(operation_to_varindex.at(std::make_pair(
                    other_operation, allocation_information->GetCycleLatency(other_operation) - 1)))] = -1.0;
-               /// last cannot be scheduleded with unbounded operations
+               /// last cannot be scheduled with unbounded operations
                if(!allocation_information->is_operation_bounded(filtered_op_graph, other_operation,
                                                                 allocation_information->GetFuType(other_operation)))
                {
