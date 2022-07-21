@@ -3135,7 +3135,7 @@ void allocation::IntegrateTechnologyLibraries()
          if(library_name.size())
          {
             const auto libraryManager = TechM->get_library_manager(library_name);
-            const auto techNode_obj = libraryManager->get_fu(shared_fu_name);
+            auto techNode_obj = libraryManager->get_fu(shared_fu_name);
             THROW_ASSERT(techNode_obj, "function not yet built: " + shared_fu_name);
             const auto wrapped_fu_name = WRAPPED_PROXY_PREFIX + shared_fu_name;
             auto wrapper_tn = TechM->get_fu(wrapped_fu_name, PROXY_LIBRARY);

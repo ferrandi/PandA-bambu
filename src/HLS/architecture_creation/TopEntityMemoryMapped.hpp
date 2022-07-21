@@ -105,13 +105,6 @@ class TopEntityMemoryMapped : public top_entity
 
    void forwardPorts(structural_managerRef SM, structural_objectRef wrappedObj);
 
-   std::list<std::string> ParametersName;
-   std::list<structural_objectRef> AddedComponents;
-   bool needMemoryMappedRegisters{false};
-
-   /// true when the module is a root function
-   bool is_root_function{false};
-
    void resizing_IO(module* fu_module, unsigned int max_n_ports) const;
 
    void Initialize() override;
