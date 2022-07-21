@@ -525,4 +525,76 @@ CXXFLAGS = -Wno-error=undef -Wno-unknown-pragmas -Wno-sign-conversion -Wno-conve
 
 #define FMT_HEADER_ONLY 1
 
+###############################################à
+# extra file for gbbs and parlay library
+EXTRA_DIST += \
+gbbs/LICENSE\
+gbbs/CODEOWNERS\
+gbbs/README.md\
+gbbs/parlay/LICENSE\
+gbbs/parlay/.clang-format\
+gbbs/parlay/.clang-tidy\
+gbbs/parlay/.cppcheck-suppress\
+gbbs/parlay/README.md\
+gbbs/parlay/.valgrind-suppress
+
+noinst_HEADERS = \
+gbbs/graph.h\
+gbbs/intersect.h\
+gbbs/edge_map_data.h\
+gbbs/edge_map_utils.h\
+gbbs/edge_map_blocked.h\
+gbbs/edge_array.h\
+gbbs/macros.h\
+gbbs/vertex_subset.h\
+gbbs/compressed_vertex.h\
+gbbs/vertex.h\
+gbbs/flags.h\
+gbbs/bridge.h\
+gbbs/parlay/parallel.h\
+gbbs/parlay/random.h\
+gbbs/parlay/primitives.h\
+gbbs/parlay/monoid.h\
+gbbs/parlay/hash_table.h\
+gbbs/parlay/alloc.h\
+gbbs/parlay/sequence.h\
+gbbs/parlay/utilities.h\
+gbbs/parlay/range.h\
+gbbs/parlay/io.h\
+gbbs/parlay/internal/integer_sort.h\
+gbbs/parlay/internal/group_by.h\
+gbbs/parlay/internal/posix/file_map_impl_posix.h\
+gbbs/parlay/internal/quicksort.h\
+gbbs/parlay/internal/uninitialized_storage.h\
+gbbs/parlay/internal/get_time.h\
+gbbs/parlay/internal/stream_delayed.h\
+gbbs/parlay/internal/uninitialized_sequence.h\
+gbbs/parlay/internal/memory_size.h\
+gbbs/parlay/internal/file_map.h\
+gbbs/parlay/internal/sample_sort.h\
+gbbs/parlay/internal/counting_sort.h\
+gbbs/parlay/internal/debug_uninitialized.h\
+gbbs/parlay/internal/work_stealing_job.h\
+gbbs/parlay/internal/block_delayed.h\
+gbbs/parlay/internal/collect_reduce.h\
+gbbs/parlay/internal/transpose.h\
+gbbs/parlay/internal/windows/file_map_impl_windows.h\
+gbbs/parlay/internal/binary_search.h\
+gbbs/parlay/internal/merge.h\
+gbbs/parlay/internal/merge_sort.h\      
+gbbs/parlay/internal/concurrent_stack.h\
+gbbs/parlay/internal/block_allocator.h\
+gbbs/parlay/internal/sequence_ops.h\
+gbbs/parlay/internal/sequence_base.h\
+gbbs/parlay/internal/bucket_sort.h\
+gbbs/parlay/internal/scheduler_plugins/opencilk.h\
+gbbs/parlay/internal/scheduler_plugins/tbb.h\
+gbbs/parlay/internal/scheduler_plugins/sequential.h\
+gbbs/parlay/internal/scheduler_plugins/cilkplus.h\
+gbbs/parlay/internal/scheduler_plugins/omp.h\
+gbbs/parlay/type_traits.h\
+gbbs/parlay/scheduler.h\
+gbbs/parlay/delayed_sequence.h\
+gbbs/parlay/kth_smallest2.h\
+gbbs/parlay/slice.h
 
