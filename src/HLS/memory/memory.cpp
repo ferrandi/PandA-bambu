@@ -37,6 +37,7 @@
  *
  * @author Christian Pilato <pilato@elet.polimi.it>
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
+ * @author Michele Fiorito <michele.fiorito@polimi.it>
  * $Revision$
  * $Date$
  * Last modified by $Author$
@@ -74,10 +75,18 @@
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
 
+/**
+ * Alignment utility function
+ */
+static inline unsigned long long int align(unsigned long long int address, unsigned long long int alignment)
+{
+   return ((address / alignment) + (address % alignment != 0)) * alignment;
+}
+
 /// we start to allocate from internal_base_address_alignment byte to align address to internal_base_address_alignment
 /// bits we can use address 0 in some cases but it is not safe in general.
 
-memory::memory(const tree_managerRef _TreeM, unsigned long long int _off_base_address, unsigned int max_bram,
+memory::memory(const tree_managerConstRef _TreeM, unsigned long long int _off_base_address, unsigned int max_bram,
                bool _null_pointer_check, bool initial_internal_address_p,
                unsigned long long int initial_internal_address, const unsigned int& _bus_addr_bitsize)
     : TreeM(_TreeM),
@@ -101,7 +110,7 @@ memory::memory(const tree_managerRef _TreeM, unsigned long long int _off_base_ad
       bus_addr_bitsize(_bus_addr_bitsize),
       enable_hls_bit_value(false)
 {
-   unsigned int max_bus_size = 2 * max_bram;
+   const auto max_bus_size = 2U * max_bram;
    external_base_address_alignment = internal_base_address_alignment = max_bus_size / 8;
    if(null_pointer_check && !initial_internal_address_p)
    {
@@ -109,7 +118,7 @@ memory::memory(const tree_managerRef _TreeM, unsigned long long int _off_base_ad
    }
    else if(initial_internal_address_p && initial_internal_address != 0)
    {
-      align(initial_internal_address, internal_base_address_alignment);
+      initial_internal_address = align(initial_internal_address, internal_base_address_alignment);
       next_base_address = internal_base_address_start = initial_internal_address;
    }
    else
@@ -120,7 +129,7 @@ memory::memory(const tree_managerRef _TreeM, unsigned long long int _off_base_ad
 
 memory::~memory() = default;
 
-memoryRef memory::create_memory(const ParameterConstRef _parameters, const tree_managerRef _TreeM,
+memoryRef memory::create_memory(const ParameterConstRef _parameters, const tree_managerConstRef _TreeM,
                                 unsigned long long _off_base_address, unsigned int max_bram, bool _null_pointer_check,
                                 bool initial_internal_address_p, unsigned int initial_internal_address,
                                 const unsigned int& _address_bitsize)
@@ -142,7 +151,8 @@ std::map<unsigned int, memory_symbolRef> memory::get_ext_memory_variables() cons
    return external;
 }
 
-void memory::compute_next_base_address(unsigned long long int& address, unsigned int var, unsigned long long alignment)
+unsigned long long int memory::compute_next_base_address(unsigned long long int address, unsigned int var,
+                                                         unsigned long long int alignment) const
 {
    const auto node = TreeM->CGetTreeReindex(var);
    unsigned long long size = 0;
@@ -151,16 +161,15 @@ void memory::compute_next_base_address(unsigned long long int& address, unsigned
    // identify it.  For this case we are allocating a word.
    if(GetPointer<const gimple_call>(GET_CONST_NODE(node)))
    {
-      size = (bus_addr_bitsize % 8 == 0) ? bus_addr_bitsize / 8 : (bus_addr_bitsize / 8) + 1;
+      size = compute_n_bytes(bus_addr_bitsize);
    }
    else
    {
       /// compute the next base address
       size = compute_n_bytes(tree_helper::Size(tree_helper::CGetType(node)));
    }
-   address += size;
    /// align the memory address
-   align(address, alignment);
+   return align(address + size, alignment);
 }
 
 void memory::add_internal_variable(unsigned int funID_scope, unsigned int var, const std::string& var_name)
@@ -174,7 +183,7 @@ void memory::add_internal_variable(unsigned int funID_scope, unsigned int var, c
    {
       if(null_pointer_check)
       {
-         align(internal_base_address_start, tree_helper::get_var_alignment(TreeM, var));
+         internal_base_address_start = align(internal_base_address_start, tree_helper::get_var_alignment(TreeM, var));
          m_sym = memory_symbolRef(new memory_symbol(var, var_name, internal_base_address_start, funID_scope));
       }
       else
@@ -184,7 +193,7 @@ void memory::add_internal_variable(unsigned int funID_scope, unsigned int var, c
    }
    else
    {
-      align(next_base_address, tree_helper::get_var_alignment(TreeM, var));
+      next_base_address = align(next_base_address, tree_helper::get_var_alignment(TreeM, var));
       m_sym = memory_symbolRef(new memory_symbol(var, var_name, next_base_address, funID_scope));
    }
    add_internal_symbol(funID_scope, var, m_sym);
@@ -247,19 +256,17 @@ void memory::add_internal_symbol(unsigned int funID_scope, unsigned int var, con
 
    if(is_private_memory(var))
    {
-      unsigned long long int allocated_memory = compute_n_bytes(tree_helper::Size(TreeM->CGetTreeReindex(var)));
-      rangesize[var] = allocated_memory;
-      align(rangesize[var], internal_base_address_alignment);
+      const unsigned long long allocated_memory = compute_n_bytes(tree_helper::Size(TreeM->CGetTreeReindex(var)));
+      rangesize[var] = align(allocated_memory, internal_base_address_alignment);
       total_amount_of_private_memory += allocated_memory;
       maximum_private_memory_size = std::max(maximum_private_memory_size, allocated_memory);
    }
    else
    {
-      unsigned long long int address = m_sym->get_address();
-      unsigned long long int address_orig = address;
-      compute_next_base_address(address, var, internal_base_address_alignment);
-      next_base_address = std::max(next_base_address, address);
-      rangesize[var] = next_base_address - address_orig;
+      const auto address = m_sym->get_address();
+      const auto new_address = compute_next_base_address(address, var, internal_base_address_alignment);
+      next_base_address = std::max(next_base_address, new_address);
+      rangesize[var] = next_base_address - address;
    }
 }
 
@@ -278,7 +285,7 @@ unsigned int memory::count_non_private_internal_symbols() const
 
 void memory::add_external_variable(unsigned int var, const std::string& var_name)
 {
-   align(next_off_base_address, tree_helper::get_var_alignment(TreeM, var));
+   next_off_base_address = align(next_off_base_address, tree_helper::get_var_alignment(TreeM, var));
    memory_symbolRef m_sym = memory_symbolRef(new memory_symbol(var, var_name, next_off_base_address, 0));
    add_external_symbol(var, m_sym);
 }
@@ -294,9 +301,8 @@ void memory::add_external_symbol(unsigned int var, const memory_symbolRef m_sym)
       THROW_WARNING("The variable " + STR(var) + " has been already set as a parameter");
    }
    external[var] = m_sym;
-   unsigned long long int address = m_sym->get_address();
-   compute_next_base_address(address, var, external_base_address_alignment);
-   next_off_base_address = std::max(next_off_base_address, address);
+   const auto new_address = compute_next_base_address(m_sym->get_address(), var, external_base_address_alignment);
+   next_off_base_address = std::max(next_off_base_address, new_address);
 }
 
 void memory::add_private_memory(unsigned int var)
@@ -320,9 +326,9 @@ void memory::add_parameter(unsigned int funID_scope, unsigned int var, const std
    add_parameter_symbol(funID_scope, var, m_sym);
    if(is_last)
    {
-      unsigned long long int address = next_base_address;
+      const auto address = next_base_address;
       /// align in case is not aligned
-      align(next_base_address, internal_base_address_alignment);
+      next_base_address = align(next_base_address, internal_base_address_alignment);
       total_amount_of_parameter_memory += next_base_address - address;
    }
 }
@@ -339,8 +345,8 @@ void memory::add_parameter_symbol(unsigned int funID_scope, unsigned int var, co
    }
    /// allocation of the parameters
    params[var] = parameter[funID_scope][var] = m_sym;
-   unsigned long long int address = m_sym->get_address();
-   compute_next_base_address(next_base_address, var, parameter_alignment);
+   const auto address = m_sym->get_address();
+   next_base_address = compute_next_base_address(next_base_address, var, parameter_alignment);
    next_base_address = std::max(next_base_address, address);
    total_amount_of_parameter_memory += next_base_address - address;
 }
@@ -368,7 +374,7 @@ bool memory::is_private_memory(unsigned int var) const
 
 bool memory::is_sds_var(unsigned int var) const
 {
-   THROW_ASSERT(has_sds_var(var), "variable not classified" + STR(var));
+   THROW_ASSERT(has_sds_var(var), "variable not classified " + STR(var));
    return same_data_size_accesses.find(var)->second;
 }
 
@@ -386,36 +392,36 @@ bool memory::is_parameter(unsigned int funID_scope, unsigned int var) const
 unsigned long long int memory::get_callSite_base_address(unsigned int var) const
 {
    THROW_ASSERT(callSites.find(var) != callSites.end(), "Variable not yet allocated");
-   return callSites.find(var)->second->get_address();
+   return callSites.at(var)->get_address();
 }
 
 unsigned long long int memory::get_internal_base_address(unsigned int var) const
 {
    THROW_ASSERT(in_vars.find(var) != in_vars.end(), "Variable not yet allocated");
-   return in_vars.find(var)->second->get_address();
+   return in_vars.at(var)->get_address();
 }
 
 unsigned long long int memory::get_external_base_address(unsigned int var) const
 {
    THROW_ASSERT(external.find(var) != external.end(), "Variable not yet allocated");
-   return external.find(var)->second->get_address();
+   return external.at(var)->get_address();
 }
 
 unsigned long long int memory::get_parameter_base_address(unsigned int funId, unsigned int var) const
 {
    THROW_ASSERT(parameter.find(funId) != parameter.end(), "Function not yet allocated");
-   THROW_ASSERT(parameter.find(funId)->second.find(var) != parameter.find(funId)->second.end(),
-                "Function not yet allocated");
-   return parameter.find(funId)->second.find(var)->second->get_address();
+   THROW_ASSERT(parameter.at(funId).find(var) != parameter.at(funId).end(), "Function not yet allocated");
+   return parameter.at(funId).at(var)->get_address();
 }
 
 std::map<unsigned int, memory_symbolRef> memory::get_function_vars(unsigned int funID_scope) const
 {
-   if(internal.find(funID_scope) == internal.end())
+   const auto internal_it = internal.find(funID_scope);
+   if(internal_it == internal.end())
    {
       return std::map<unsigned int, memory_symbolRef>();
    }
-   return internal.find(funID_scope)->second;
+   return internal_it->second;
 }
 
 std::map<unsigned int, memory_symbolRef> memory::get_function_parameters(unsigned int funID_scope) const
@@ -424,7 +430,7 @@ std::map<unsigned int, memory_symbolRef> memory::get_function_parameters(unsigne
    {
       return std::map<unsigned int, memory_symbolRef>();
    }
-   return parameter.find(funID_scope)->second;
+   return parameter.at(funID_scope);
 }
 
 bool memory::has_callSite_base_address(unsigned int var) const
@@ -478,23 +484,25 @@ unsigned long long memory::get_base_address(unsigned int var, unsigned int funId
 
 unsigned long long int memory::get_first_address(unsigned int funId) const
 {
-   THROW_ASSERT(internal.count(funId), "");
-   const auto& internalVars = internal.at(funId);
    unsigned long long int minAddress = UINT_MAX;
-   for(const auto& internalVar : internalVars)
+   const auto internal_it = internal.find(funId);
+   if(internal_it != internal.end())
    {
-      unsigned int var = internalVar.first;
-      if(internalVar.second && !is_private_memory(var) && !has_parameter_base_address(var, funId))
+      for(const auto& internalVar : internal_it->second)
       {
-         minAddress = std::min(minAddress, internalVar.second->get_address());
+         const auto& var = internalVar.first;
+         if(internalVar.second && !is_private_memory(var) && !has_parameter_base_address(var, funId))
+         {
+            minAddress = std::min(minAddress, internalVar.second->get_address());
+         }
       }
    }
    if(minAddress == UINT_MAX)
    {
-      const std::map<unsigned int, memory_symbolRef>& paramsVar = (parameter.find(funId)->second);
+      const auto& paramsVar = parameter.at(funId);
       for(const auto& itr : paramsVar)
       {
-         unsigned int var = itr.first;
+         const auto& var = itr.first;
          if(!is_private_memory(var))
          {
             minAddress = std::min(minAddress, itr.second->get_address());
@@ -506,31 +514,34 @@ unsigned long long int memory::get_first_address(unsigned int funId) const
 
 unsigned long long int memory::get_last_address(unsigned int funId, const application_managerRef AppMgr) const
 {
-   const CustomOrderedSet<unsigned int> calledSet = AppMgr->CGetCallGraphManager()->get_called_by(funId);
-   const std::map<unsigned int, memory_symbolRef>& internalVars = (internal.find(funId)->second);
    unsigned long long int maxAddress = 0;
-   for(const auto& internalVar : internalVars)
+   const auto internal_it = internal.find(funId);
+   if(internal_it != internal.end())
    {
-      unsigned int var = internalVar.first;
-      if(!is_private_memory(var) && !has_parameter_base_address(var, funId) && has_base_address(var))
+      for(const auto& internalVar : internal_it->second)
       {
-         maxAddress = std::max(maxAddress,
-                               internalVar.second->get_address() + tree_helper::Size(TreeM->CGetTreeReindex(var)) / 8);
+         const auto& var = internalVar.first;
+         if(!is_private_memory(var) && !has_parameter_base_address(var, funId) && has_base_address(var))
+         {
+            maxAddress = std::max(maxAddress, internalVar.second->get_address() +
+                                                  tree_helper::Size(TreeM->CGetTreeReindex(var)) / 8);
+         }
       }
    }
    if(AppMgr->hasToBeInterfaced(funId))
    {
-      const std::map<unsigned int, memory_symbolRef>& paramsVar = get_function_parameters(funId);
+      const auto& paramsVar = get_function_parameters(funId);
       for(const auto& itr : paramsVar)
       {
-         unsigned int var = itr.first;
+         const auto& var = itr.first;
          maxAddress =
              std::max(maxAddress, itr.second->get_address() + tree_helper::Size(TreeM->CGetTreeReindex(var)) / 8);
       }
    }
-   for(unsigned int Itr : calledSet)
+   const auto calledSet = AppMgr->CGetCallGraphManager()->get_called_by(funId);
+   for(const auto Itr : calledSet)
    {
-      if(not AppMgr->hasToBeInterfaced(Itr))
+      if(!AppMgr->hasToBeInterfaced(Itr))
       {
          maxAddress = std::max(get_last_address(Itr, AppMgr), maxAddress);
       }
@@ -544,30 +555,35 @@ memory_symbolRef memory::get_symbol(unsigned int var, unsigned int funId) const
    THROW_ASSERT(has_base_address(var), "Variable not yet allocated: @" + STR(var));
    if(has_callSite_base_address(var))
    {
-      return callSites.find(var)->second;
+      return callSites.at(var);
    }
    if(has_internal_base_address(var))
    {
-      return in_vars.find(var)->second;
+      return in_vars.at(var);
    }
    if(funId && has_parameter_base_address(var, funId))
    {
-      auto itr = parameter.find(funId);
-      return itr->second.find(var)->second;
+      return parameter.at(funId).at(var);
    }
-   return external.find(var)->second;
+   return external.at(var);
 }
 
 unsigned long long int memory::get_rangesize(unsigned int var) const
 {
    THROW_ASSERT(has_base_address(var), "Variable not yet allocated: @" + STR(var));
-   return rangesize.find(var)->second;
+   return rangesize.at(var);
 }
 
 void memory::reserve_space(unsigned long long space)
 {
    next_off_base_address += space;
-   align(next_off_base_address, internal_base_address_alignment);
+   next_off_base_address = align(next_off_base_address, internal_base_address_alignment);
+}
+
+void memory::reserve_internal_space(unsigned long long int space)
+{
+   next_base_address += space;
+   next_base_address = align(next_base_address, internal_base_address_alignment);
 }
 
 unsigned long long int memory::get_allocated_space() const
@@ -578,6 +594,16 @@ unsigned long long int memory::get_allocated_space() const
 unsigned long long int memory::get_allocated_parameters_memory() const
 {
    return total_amount_of_parameter_memory;
+}
+
+unsigned long long int memory::get_allocated_internal_memory() const
+{
+   return next_base_address - internal_base_address_start;
+}
+
+unsigned long long int memory::get_next_internal_base_address() const
+{
+   return next_base_address;
 }
 
 unsigned long long memory::get_max_address() const
@@ -621,7 +647,7 @@ void memory::set_internal_base_address_alignment(unsigned long long _internal_ba
                     !(_internal_base_address_alignment & (_internal_base_address_alignment - 1)),
                 "alignment must be a power of two");
    internal_base_address_alignment = _internal_base_address_alignment;
-   align(internal_base_address_start, internal_base_address_alignment);
+   internal_base_address_start = align(internal_base_address_start, internal_base_address_alignment);
    next_base_address = internal_base_address_start;
 }
 
@@ -640,36 +666,35 @@ void memory::propagate_memory_parameters(const structural_objectRef src, const s
       }
    }
 
-   auto* srcModule = GetPointer<module>(src);
+   const auto srcModule = GetPointer<const module>(src);
    // std::cout << srcModule->get_id() << std::endl;
    if(srcModule)
    {
       for(unsigned int i = 0; i < srcModule->get_internal_objects_size(); ++i)
       {
-         structural_objectRef subModule = srcModule->get_internal_object(i);
+         const auto subModule = srcModule->get_internal_object(i);
          if(subModule->ExistsParameter(MEMORY_PARAMETER))
          {
-            std::vector<std::string> current_src_parameters =
+            const auto current_src_parameters =
                 convert_string_to_vector<std::string>(subModule->GetParameter(MEMORY_PARAMETER), ";");
             for(const auto& current_src_parameter : current_src_parameters)
             {
-               std::vector<std::string> current_parameter =
-                   convert_string_to_vector<std::string>(current_src_parameter, "=");
+               const auto current_parameter = convert_string_to_vector<std::string>(current_src_parameter, "=");
                res_parameters[current_parameter[0]] = current_parameter[1];
             }
          }
       }
    }
 
-   if(not tgt->get_circ()->ExistsParameter(MEMORY_PARAMETER))
+   if(!tgt->get_circ()->ExistsParameter(MEMORY_PARAMETER))
    {
       tgt->get_circ()->AddParameter(MEMORY_PARAMETER, "");
    }
-   std::vector<std::string> current_tgt_parameters =
+   const auto current_tgt_parameters =
        convert_string_to_vector<std::string>(tgt->get_circ()->GetParameter(MEMORY_PARAMETER), ";");
-   for(auto& current_tgt_parameter : current_tgt_parameters)
+   for(const auto& current_tgt_parameter : current_tgt_parameters)
    {
-      std::vector<std::string> current_parameter = convert_string_to_vector<std::string>(current_tgt_parameter, "=");
+      const auto current_parameter = convert_string_to_vector<std::string>(current_tgt_parameter, "=");
       if(res_parameters.find(current_parameter[0]) != res_parameters.end() &&
          res_parameters[current_parameter[0]] != current_parameter[1])
       {
@@ -685,7 +710,7 @@ void memory::propagate_memory_parameters(const structural_objectRef src, const s
    }
 
    std::string memory_parameters;
-   for(auto& res_parameter : res_parameters)
+   for(const auto& res_parameter : res_parameters)
    {
       if(memory_parameters.size())
       {
@@ -698,15 +723,15 @@ void memory::propagate_memory_parameters(const structural_objectRef src, const s
 
 void memory::add_memory_parameter(const structural_managerRef SM, const std::string& name, const std::string& value)
 {
-   if(not SM->get_circ()->ExistsParameter(MEMORY_PARAMETER))
+   if(!SM->get_circ()->ExistsParameter(MEMORY_PARAMETER))
    {
       SM->get_circ()->AddParameter(MEMORY_PARAMETER, "");
    }
    auto memory_parameters = SM->get_circ()->GetParameter(MEMORY_PARAMETER) + ";";
-   std::vector<std::string> current_parameters = convert_string_to_vector<std::string>(memory_parameters, ";");
+   const auto current_parameters = convert_string_to_vector<std::string>(memory_parameters, ";");
    for(const auto& l : current_parameters)
    {
-      std::vector<std::string> current_parameter = convert_string_to_vector<std::string>(l, "=");
+      const auto current_parameter = convert_string_to_vector<std::string>(l, "=");
       THROW_ASSERT(current_parameter.size() == 2, "expected two elements");
       if(current_parameter[0] == name)
       {
@@ -724,44 +749,44 @@ void memory::add_memory_parameter(const structural_managerRef SM, const std::str
 
 void memory::xwrite(xml_element* node)
 {
-   xml_element* Enode = node->add_child_element("HLS_memory");
-   unsigned long long int base_address = off_base_address;
+   const auto Enode = node->add_child_element("HLS_memory");
+   const auto base_address = off_base_address;
    WRITE_XVM(base_address, Enode);
-   if(internal.size() or parameter.size())
+   if(internal.size() || parameter.size())
    {
-      xml_element* IntNode = Enode->add_child_element("internal_memory");
+      const auto IntNode = Enode->add_child_element("internal_memory");
       for(auto iIt = internal.begin(); iIt != internal.end(); ++iIt)
       {
-         xml_element* ScopeNode = IntNode->add_child_element("scope");
-         std::string id = "@" + STR(iIt->first);
+         const auto ScopeNode = IntNode->add_child_element("scope");
+         const auto id = "@" + STR(iIt->first);
          WRITE_XVM(id, ScopeNode);
-         std::string name = tree_helper::name_function(TreeM, iIt->first);
+         const auto name = tree_helper::name_function(TreeM, iIt->first);
          WRITE_XVM(name, ScopeNode);
          for(auto vIt = iIt->second.begin(); vIt != iIt->second.end(); ++vIt)
          {
-            xml_element* VarNode = ScopeNode->add_child_element("variable");
-            std::string variable = "@" + STR(vIt->second->get_variable());
+            const auto VarNode = ScopeNode->add_child_element("variable");
+            const auto variable = "@" + STR(vIt->second->get_variable());
             WRITE_XNVM(id, variable, VarNode);
-            unsigned long long int address = vIt->second->get_address();
+            const auto address = vIt->second->get_address();
             WRITE_XVM(address, VarNode);
-            std::string var_symbol_name = vIt->second->get_symbol_name();
+            const auto var_symbol_name = vIt->second->get_symbol_name();
             WRITE_XNVM(name, var_symbol_name, VarNode);
-            std::string var_name = vIt->second->get_name();
+            const auto var_name = vIt->second->get_name();
             WRITE_XNVM(name, var_name, VarNode);
          }
          if(parameter.find(iIt->first) != parameter.end())
          {
-            auto params0 = parameter.find(iIt->first)->second;
+            const auto params0 = parameter.at(iIt->first);
             for(auto vIt = params0.begin(); vIt != params0.end(); ++vIt)
             {
-               xml_element* VarNode = ScopeNode->add_child_element("parameter");
-               std::string variable = "@" + STR(vIt->second->get_variable());
+               const auto VarNode = ScopeNode->add_child_element("parameter");
+               const auto variable = "@" + STR(vIt->second->get_variable());
                WRITE_XNVM(id, variable, VarNode);
-               unsigned long long int address = vIt->second->get_address();
+               const auto address = vIt->second->get_address();
                WRITE_XVM(address, VarNode);
-               std::string var_symbol_name = vIt->second->get_symbol_name();
+               const auto var_symbol_name = vIt->second->get_symbol_name();
                WRITE_XNVM(symbol, var_symbol_name, VarNode);
-               std::string var_name = vIt->second->get_symbol_name();
+               const auto var_name = vIt->second->get_symbol_name();
                WRITE_XNVM(symbol, var_name, VarNode);
             }
          }
@@ -774,22 +799,22 @@ void memory::xwrite(xml_element* node)
             {
                continue;
             }
-            xml_element* ScopeNode = IntNode->add_child_element("scope");
-            std::string id = "@" + STR(iIt->first);
+            const auto ScopeNode = IntNode->add_child_element("scope");
+            const auto id = "@" + STR(iIt->first);
             WRITE_XVM(id, ScopeNode);
-            std::string name = tree_helper::name_function(TreeM, iIt->first);
+            const auto name = tree_helper::name_function(TreeM, iIt->first);
             WRITE_XVM(name, ScopeNode);
-            auto params0 = parameter.find(iIt->first)->second;
+            const auto params0 = parameter.find(iIt->first)->second;
             for(auto vIt = params0.begin(); vIt != params0.end(); ++vIt)
             {
-               xml_element* VarNode = ScopeNode->add_child_element("parameter");
-               std::string variable = "@" + STR(vIt->second->get_variable());
+               const auto VarNode = ScopeNode->add_child_element("parameter");
+               const auto variable = "@" + STR(vIt->second->get_variable());
                WRITE_XNVM(id, variable, VarNode);
                unsigned long long int address = vIt->second->get_address();
                WRITE_XVM(address, VarNode);
-               std::string var_symbol_name = vIt->second->get_symbol_name();
+               const auto var_symbol_name = vIt->second->get_symbol_name();
                WRITE_XNVM(symbol, var_symbol_name, VarNode);
-               std::string var_name = vIt->second->get_symbol_name();
+               const auto var_name = vIt->second->get_symbol_name();
                WRITE_XNVM(symbol, var_name, VarNode);
             }
          }
@@ -797,15 +822,15 @@ void memory::xwrite(xml_element* node)
    }
    if(external.size())
    {
-      xml_element* ExtNode = Enode->add_child_element("external_memory");
+      const auto ExtNode = Enode->add_child_element("external_memory");
       for(auto eIt = external.begin(); eIt != external.end(); ++eIt)
       {
-         xml_element* VarNode = ExtNode->add_child_element("variable");
-         std::string variable = "@" + STR(eIt->second->get_variable());
+         const auto VarNode = ExtNode->add_child_element("variable");
+         const auto variable = "@" + STR(eIt->second->get_variable());
          WRITE_XNVM(id, variable, VarNode);
-         unsigned long long int address = eIt->second->get_address();
+         const auto address = eIt->second->get_address();
          WRITE_XVM(address, VarNode);
-         std::string var_name = eIt->second->get_symbol_name();
+         const auto var_name = eIt->second->get_symbol_name();
          WRITE_XNVM(symbol, var_name, VarNode);
       }
    }
@@ -1035,25 +1060,25 @@ bool memory::notEQ(refcount<memory> ref) const
 
 void memory::xwrite2(xml_element* node)
 {
-   xml_element* Enode = node->add_child_element("memory_allocation");
-   unsigned long long int base_address = off_base_address;
+   const auto Enode = node->add_child_element("memory_allocation");
+   const auto base_address = off_base_address;
    WRITE_XVM(base_address, Enode);
-   for(auto int_obj : internal)
+   for(const auto& int_obj : internal)
    {
-      for(auto var_obj : int_obj.second)
+      for(const auto& var_obj : int_obj.second)
       {
-         xml_element* ObjNode = Enode->add_child_element("object");
-         std::string scope = tree_helper::name_function(TreeM, int_obj.first);
+         const auto ObjNode = Enode->add_child_element("object");
+         const auto scope = tree_helper::name_function(TreeM, int_obj.first);
          WRITE_XVM(scope, ObjNode);
-         std::string name = var_obj.second->get_name();
+         const auto name = var_obj.second->get_name();
          WRITE_XVM(name, ObjNode);
          WRITE_XNVM(is_internal, "T", ObjNode);
       }
    }
-   for(auto ext_obj : external)
+   for(const auto& ext_obj : external)
    {
-      xml_element* ObjNode = Enode->add_child_element("object");
-      std::string name = ext_obj.second->get_name();
+      const auto ObjNode = Enode->add_child_element("object");
+      const auto name = ext_obj.second->get_name();
       WRITE_XVM(name, ObjNode);
       WRITE_XNVM(is_internal, "F", ObjNode);
    }
@@ -1064,7 +1089,7 @@ void memory::xwrite(const std::string& filename)
    try
    {
       xml_document document;
-      xml_element* nodeRoot = document.create_root_node("memory");
+      const auto nodeRoot = document.create_root_node("memory");
       xwrite2(nodeRoot);
       document.write_to_file_formatted(filename);
    }
