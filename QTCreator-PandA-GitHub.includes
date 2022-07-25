@@ -414,3 +414,11 @@ ext/mockturtle/lib/bill/bill/sat/solver
 ext/mockturtle/lib/bill/bill/sat/solver/abc
 ext/mockturtle/lib/bill/bill/utils
 ext/mockturtle/lib/bill/bill/dd
+src/algorithms/sdc_solver
+ext/
+ext/gbbs
+ext/gbbs/parlay
+ext/gbbs/parlay/internal
+ext/gbbs/parlay/internal/posix
+ext/gbbs/parlay/internal/scheduler_plugins
+ext/gbbs/parlay/internal/windows
