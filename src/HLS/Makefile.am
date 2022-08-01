@@ -766,6 +766,8 @@ noinst_LTLIBRARIES += lib_scheduling.la
 lib_scheduling_la_CPPFLAGS = \
    -I$(top_srcdir)/src \
    -I$(top_srcdir)/src/algorithms/clique_covering \
+   -I$(top_srcdir)/src/algorithms/sdc_solver \
+   -I$(top_srcdir)/src/algorithms/sssp_solver \
    -I$(top_srcdir)/src/behavior \
    -I$(top_srcdir)/src/circuit \
    -I$(top_srcdir)/src/constants \
@@ -827,6 +829,12 @@ if BUILD_LIB_ILP
       -I$(top_srcdir)/src/frontend_analysis/IR_analysis \
       -I$(top_srcdir)/src/ilp
 endif
+noinst_HEADERS += \
+      scheduling/sdc_scheduling_base.hpp \
+      scheduling/sdc_scheduling2.hpp
+lib_scheduling_la_SOURCES += \
+      scheduling/sdc_scheduling2.cpp
+
 PRJ_DOC += scheduling/scheduling.doc
 
 noinst_LTLIBRARIES += lib_stg.la

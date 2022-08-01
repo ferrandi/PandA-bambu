@@ -1658,7 +1658,7 @@ void parametric_list_based::compute_starting_ending_time_asap(
          }
          if(cs == cs_prev && HLS->allocation_information->is_one_cycle_direct_access_memory_unit(from_fu_type) &&
             (!HLS->allocation_information->is_readonly_memory_unit(from_fu_type) ||
-             (!HLS->Param->isOption(OPT_rom_duplication) || !parameters->getOption<bool>(OPT_rom_duplication))) &&
+             (!parameters->isOption(OPT_rom_duplication) || !parameters->getOption<bool>(OPT_rom_duplication))) &&
             HLSMgr->Rmem->get_maximum_references(HLS->allocation_information->is_memory_unit(from_fu_type) ?
                                                      HLS->allocation_information->get_memory_var(from_fu_type) :
                                                      HLS->allocation_information->get_proxy_memory_var(from_fu_type)) >

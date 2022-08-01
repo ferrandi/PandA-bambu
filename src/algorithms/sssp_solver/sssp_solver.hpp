@@ -31,43 +31,43 @@
  *
  */
 /**
- * @file sdc_solver.cpp
- * @brief class interface for the Parallel solver of system of difference constraints.
+ * @file sssp_solver.cpp
+ * @brief class interface for the Parallel solver of single source shortest path problem.
  *
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  *
  */
-#ifndef SDC_SOLVER_HPP
-#define SDC_SOLVER_HPP
+#ifndef SSSP_SOLVER_HPP
+#define SSSP_SOLVER_HPP
 
 #include <map>
 
-class sdc_solver
+class sssp_solver
 {
    /// internal data structure storing the constraint graph's edges
-   std::map<std::pair<unsigned, unsigned>, int> constraints;
-   /// internal procedure to solve the system of difference constraints
-   bool solve_SDC_internal(std::map<unsigned int, int>& vals, bool negate_solution);
+   std::map<std::pair<unsigned, unsigned>, double> g_edges;
+   /// internal procedure to solve the single source shortest path problem
+   bool solve_SSSP_internal(unsigned int src_sssp, std::map<unsigned int, double>& vals, bool negate_solution);
 
  public:
-   /// add constraints to the SDC problem in the form V_j - V_i <= weight
-   void add_constraint(unsigned int i, unsigned int j, int weight)
+   /// add edges to the graph problem
+   void add_edge(unsigned int src, unsigned int tgt, double weight)
    {
-      auto key = std::make_pair(i, j);
-      if(constraints.find(key) == constraints.end())
+      auto key = std::make_pair(src, tgt);
+      if(g_edges.find(key) == g_edges.end())
       {
-         constraints[key] = weight;
+         g_edges[key] = weight;
       }
-      else if(constraints.at(key) > weight)
+      else if(g_edges.at(key) > weight)
       {
-         constraints.at(key) = weight;
+         g_edges.at(key) = weight;
       }
    }
-   /// solve the SDC problem
+   /// solve the SSSP problem
    /// @return true in case the problem is feasible
-   bool solve_SDC(std::map<unsigned int, int>& vals);
-   /// same as solve_SDC but all vals are negated
-   bool solve_SDCNeg(std::map<unsigned int, int>& vals);
+   bool solve_SSSP(unsigned int src_sssp, std::map<unsigned int, double>& vals);
+   /// same as solve_SSSP but all vals are negated
+   bool solve_SSSPNeg(unsigned int src_sssp, std::map<unsigned int, double>& vals);
 };
 
 #endif

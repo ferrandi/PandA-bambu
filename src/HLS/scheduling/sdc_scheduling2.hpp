@@ -31,15 +31,15 @@
  *
  */
 /**
- * @file sdc_scheduling.hpp
- * @brief Class definition of the sdc scheduling
+ * @file sdc_scheduling2.hpp
+ * @brief New SDC scheduler
  *
- * @author Marco Lattuada <lattuada@elet.polimi.it>
+  @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  *
  */
 
-#ifndef SDC_SCHEDULING_HPP
-#define SDC_SCHEDULING_HPP
+#ifndef SDC_SCHEDULING2_HPP
+#define SDC_SCHEDULING2_HPP
 
 /// Superclass include
 #include "sdc_scheduling_base.hpp"
@@ -52,13 +52,11 @@
 #include <set>
 
 CONSTREF_FORWARD_DECL(AllocationInformation);
-class bb_vertex_order_by_map;
 CONSTREF_FORWARD_DECL(BBGraph);
 CONSTREF_FORWARD_DECL(BehavioralHelper);
 REF_FORWARD_DECL(fu_binding);
-REF_FORWARD_DECL(meilp_solver);
 
-class SDCScheduling : public SDCScheduling_base
+class SDCScheduling2 : public SDCScheduling_base
 {
    /// The operation graph used to perform scheduling
    OpGraphConstRef op_graph;
@@ -85,58 +83,12 @@ class SDCScheduling : public SDCScheduling_base
    double margin;
 
    /// Map operation-stage to variable index
-   CustomUnorderedMap<std::pair<vertex, unsigned int>, unsigned int> operation_to_varindex;
-
-   /// The set of unbounded operations
-   // CustomSet<vertex> unbounded_operations;
-
-   /// For each shared resource, the operations mapped on it
-   CustomUnorderedMap<unsigned int, CustomSet<vertex>> sharing_operations;
-
-   /// Set of reachable operations (in scheduling graph)
-   // CustomMap<vertex, CustomSet<vertex>> full_reachability_map;
-
-   /// The set of limited resources
-   CustomUnorderedSet<unsigned int> limited_resources;
-
-#ifndef NDEBUG
-   /// The set of temporary flow edges added to the op_graph
-   CustomUnorderedSet<EdgeDescriptor> temp_edges;
-#endif
+   CustomUnorderedMap<vertex, unsigned int> operation_to_varindex;
 
    /**
     * Initialize the step
     */
    void Initialize() override;
-
-   /**
-    * Add constraints to force execution in different steps of operations which cannot be chained
-    * @param solver is the solver to which constraints have to be added
-    * @param op_graph is the operation graph
-    * @param operation is the first operation to be considered
-    */
-   void AddDelayConstraints(const meilp_solverRef solver, const OpGraphConstRef filtered_op_graph,
-#ifndef NDEBUG
-                            const OpGraphConstRef debug_filtered_op_graph,
-#endif
-                            const std::set<vertex, bb_vertex_order_by_map>& loop_bbs);
-
-   /**
-    * Add constraints to force consecutive execution of dependent operations
-    * @param solver is the solver to which constraints have to be added
-    * @param source is the first operation
-    * @param target is the second operation
-    * @param simultaneous tells if the two operations can be executed in the same clock cycle (chained) or not
-    */
-   void AddDependenceConstraint(const meilp_solverRef solver, const vertex source, const vertex target,
-                                const bool simultaneous) const;
-
-   /**
-    * Add constraints to force consecutive execution of different pipeline stages
-    * @param solver is the solver to which constraints have to be added
-    * @param operation is the pipelined operation
-    */
-   void AddStageConstraints(const meilp_solverRef solver, const vertex operation) const;
 
    /**
     * Compute the relationship of this step
@@ -155,14 +107,14 @@ class SDCScheduling : public SDCScheduling_base
     * @param design_flow_manager is the hls design flow
     * @param hls_flow_step_specialization specifies how specialize this step
     */
-   SDCScheduling(const ParameterConstRef parameters, const HLS_managerRef HLSMgr, unsigned int function_id,
-                 const DesignFlowManagerConstRef design_flow_manager,
-                 const HLSFlowStepSpecializationConstRef hls_flow_step_specialization);
+   SDCScheduling2(const ParameterConstRef parameters, const HLS_managerRef HLSMgr, unsigned int function_id,
+                  const DesignFlowManagerConstRef design_flow_manager,
+                  const HLSFlowStepSpecializationConstRef hls_flow_step_specialization);
 
    /**
     * Destructor
     */
-   ~SDCScheduling() override;
+   ~SDCScheduling2() override;
 
    /**
     * Compute the relationships of a step with other steps

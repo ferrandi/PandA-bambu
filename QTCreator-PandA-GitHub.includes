@@ -422,3 +422,4 @@ ext/gbbs/parlay/internal
 ext/gbbs/parlay/internal/posix
 ext/gbbs/parlay/internal/scheduler_plugins
 ext/gbbs/parlay/internal/windows
+src/algorithms/sssp_solver

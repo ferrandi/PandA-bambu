@@ -234,6 +234,7 @@
 #if HAVE_ILP_BUILT
 #include "sdc_scheduling.hpp"
 #endif
+#include "sdc_scheduling2.hpp"
 #if HAVE_ILP_BUILT && HAVE_EXPERIMENTAL
 #include "silp_scheduling.hpp"
 #endif
@@ -746,14 +747,24 @@ HLSFlowStepFactory::CreateHLSFlowStep(const HLSFlowStep_Type type, const unsigne
              new sched_based_chaining_computation(parameters, HLS_mgr, funId, design_flow_manager.lock()));
          break;
       }
-#if HAVE_ILP_BUILT
       case HLSFlowStep_Type::SDC_SCHEDULING:
       {
-         design_flow_step = DesignFlowStepRef(
-             new SDCScheduling(parameters, HLS_mgr, funId, design_flow_manager.lock(), hls_flow_step_specialization));
+#if HAVE_ILP_BUILT
+         if(parameters->IsParameter("new-SDC") && parameters->GetParameter<int>("new-SDC") == 1)
+         {
+#endif
+            design_flow_step = DesignFlowStepRef(new SDCScheduling2(
+                parameters, HLS_mgr, funId, design_flow_manager.lock(), hls_flow_step_specialization));
+#if HAVE_ILP_BUILT
+         }
+         else
+         {
+            design_flow_step = DesignFlowStepRef(new SDCScheduling(
+                parameters, HLS_mgr, funId, design_flow_manager.lock(), hls_flow_step_specialization));
+         }
+#endif
          break;
       }
-#endif
 #if HAVE_ILP_BUILT && HAVE_EXPERIMENTAL
       case HLSFlowStep_Type::SILP_SCHEDULING:
       {

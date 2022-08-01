@@ -64,6 +64,16 @@ if BUILD_LIB_SDC_SOLVER
   lib_sdc_solver_la_SOURCES = algorithms/sdc_solver/sdc_solver.cpp
   lib_algorithms_la_LIBADD += lib_sdc_solver.la
 endif
+if BUILD_LIB_SSSP_SOLVER
+  noinst_LTLIBRARIES += lib_sssp_solver.la
+  noinst_HEADERS += algorithms/sssp_solver/sssp_solver.hpp
+  lib_sssp_solver_la_CPPFLAGS = \
+   -isystem $(top_srcdir)/ext/\
+   -I$(top_srcdir)/src/utility \
+   $(AM_CPPFLAGS)
+  lib_sssp_solver_la_SOURCES = algorithms/sssp_solver/sssp_solver.cpp
+  lib_algorithms_la_LIBADD += lib_sssp_solver.la
+endif
 
 
 

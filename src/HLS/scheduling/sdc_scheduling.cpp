@@ -237,8 +237,8 @@ class SDCSorter : std::binary_function<vertex, vertex, bool>
 SDCScheduling::SDCScheduling(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr,
                              unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager,
                              const HLSFlowStepSpecializationConstRef _hls_flow_step_specialization)
-    : Scheduling(_parameters, _HLSMgr, _function_id, _design_flow_manager, HLSFlowStep_Type::SDC_SCHEDULING,
-                 _hls_flow_step_specialization),
+    : SDCScheduling_base(_parameters, _HLSMgr, _function_id, _design_flow_manager, HLSFlowStep_Type::SDC_SCHEDULING,
+                         _hls_flow_step_specialization),
       clock_period(0.0),
       margin(0.0)
 {
@@ -1658,7 +1658,7 @@ void SDCScheduling::Initialize()
    //       }
    //    }
    // }
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Computed unbounded operations");
+   // INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Computed unbounded operations");
    limited_resources.clear();
    const auto resource_types_number = allocation_information->get_number_fu_types();
    for(auto resource_type = 0U; resource_type != resource_types_number; resource_type++)

@@ -425,6 +425,10 @@ const BehavioralHelperConstRef FunctionBehavior::CGetBehavioralHelper() const
 const OpGraphConstRef FunctionBehavior::CGetOpGraph(FunctionBehavior::graph_type gt,
                                                     const OpVertexSet& statements) const
 {
+   if(statements.size() == boost::num_vertices(*op_graphs_collection))
+   {
+      return CGetOpGraph(gt);
+   }
    /// This "transformation" is necessary because of graph constructor
    CustomUnorderedSet<vertex> subset;
    subset.insert(statements.begin(), statements.end());

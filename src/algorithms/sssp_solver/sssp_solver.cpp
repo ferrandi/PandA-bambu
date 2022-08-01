@@ -31,16 +31,19 @@
  *
  */
 /**
- * @file sdc_solver.cpp
- * @brief Parallel solver of system of difference constraints exploiting a parallel General Weight SSSP (Bellman-Ford)
- * adapted from GBBS/ParlayLib libraries (see https://paralg.github.io/gbbs/ and https://github.com/ParAlg/parlaylib)
+ * @file sssp_solver.cpp
+ * @brief Parallel solver of the single source shortest path problem. The code was derived by adapting the Parallel
+ * General Weight SSSP (Bellman-Ford) described in the GBBS/ParlayLib libraries (see https://paralg.github.io/gbbs/ and
+ * https://github.com/ParAlg/parlaylib)
  *
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  *
  */
 
-#include "sdc_solver.hpp"
+#include "sssp_solver.hpp"
+
 #define NDEBUG
+
 #include "gbbs/edge_map_data.h"
 #include "gbbs/graph.h"
 #include "gbbs/vertex_subset.h"
@@ -152,35 +155,24 @@ namespace gbbs
 
 } // namespace gbbs
 
-bool sdc_solver::solve_SDC_internal(std::map<unsigned int, int>& vals, bool negate_solution)
+bool sssp_solver::solve_SSSP_internal(unsigned int src_sssp, std::map<unsigned int, double>& vals, bool negate_solution)
 {
    /// prepare the data structure
-   using edge = std::tuple<gbbs::uintE, gbbs::uintE, int>;
+   using edge = std::tuple<gbbs::uintE, gbbs::uintE, double>;
    gbbs::sequence<edge> edges;
-   std::set<unsigned> visited;
    unsigned max_vertex_id = 0;
-   for(auto t : constraints)
+   for(auto t : g_edges)
    {
       auto src = t.first.first;
-      max_vertex_id = std::max(src + 1, max_vertex_id);
+      max_vertex_id = std::max(src, max_vertex_id);
       auto tgt = t.first.second;
-      max_vertex_id = std::max(tgt + 1, max_vertex_id);
+      max_vertex_id = std::max(tgt, max_vertex_id);
       auto w = t.second;
-      if(visited.find(src) == visited.end())
-      {
-         visited.insert(src);
-         edges.push_back(std::make_tuple(0, src + 1, 0));
-      }
-      if(visited.find(tgt) == visited.end())
-      {
-         visited.insert(tgt);
-         edges.push_back(std::make_tuple(0, tgt + 1, 0));
-      }
-      edges.push_back(std::make_tuple(src + 1, tgt + 1, w));
+      edges.push_back(std::make_tuple(src, tgt, w));
    }
    auto G = gbbs::asym_graph_from_edges(edges, max_vertex_id + 1, /* is_sorted = */ false);
    bool res = true;
-   auto distances = gbbs::BellmanFord(G, 0, res);
+   auto distances = gbbs::BellmanFord(G, src_sssp, res);
    if(!res)
    {
       return res;
@@ -189,29 +181,18 @@ bool sdc_solver::solve_SDC_internal(std::map<unsigned int, int>& vals, bool nega
    vals.clear();
    for(auto dist : distances)
    {
-      std::cout << "V" << i << "=" << dist << "\n";
-      if(i != 0)
-      {
-         if(visited.find(i - 1) == visited.end())
-         {
-            vals[i - 1] = 0;
-         }
-         else
-         {
-            vals[i - 1] = negate_solution ? -dist : dist;
-         }
-      }
+      // std::cout << "V" << i << "=" << dist << "\n";
+      vals[i] = negate_solution ? -dist : dist;
       ++i;
    }
    return true;
 }
 
-bool sdc_solver::solve_SDCNeg(std::map<unsigned int, int>& vals)
+bool sssp_solver::solve_SSSP(unsigned int src_sssp, std::map<unsigned int, double>& vals)
 {
-   return solve_SDC_internal(vals, true);
+   return solve_SSSP_internal(src_sssp, vals, false);
 }
-
-bool sdc_solver::solve_SDC(std::map<unsigned int, int>& vals)
+bool sssp_solver::solve_SSSPNeg(unsigned int src_sssp, std::map<unsigned int, double>& vals)
 {
-   return solve_SDC_internal(vals, false);
+   return solve_SSSP_internal(src_sssp, vals, true);
 }

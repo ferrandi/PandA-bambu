@@ -1798,6 +1798,9 @@ src/HLS/scheduling/scheduling.cpp
 src/HLS/scheduling/scheduling.hpp
 src/HLS/scheduling/sdc_scheduling.cpp
 src/HLS/scheduling/sdc_scheduling.hpp
+src/HLS/scheduling/sdc_scheduling2.cpp
+src/HLS/scheduling/sdc_scheduling2.hpp
+src/HLS/scheduling/sdc_scheduling_base.hpp
 src/HLS/simulation/CTestbenchExecution.cpp
 src/HLS/simulation/CTestbenchExecution.hpp
 src/HLS/simulation/SimulationInformation.hpp
@@ -1906,6 +1909,8 @@ src/algorithms/loops_detection/loops.cpp
 src/algorithms/loops_detection/loops.hpp
 src/algorithms/sdc_solver/sdc_solver.cpp
 src/algorithms/sdc_solver/sdc_solver.hpp
+src/algorithms/sssp_solver/sssp_solver.cpp
+src/algorithms/sssp_solver/sssp_solver.hpp
 src/bambu.cpp
 src/behavior/application_manager.cpp
 src/behavior/application_manager.hpp
