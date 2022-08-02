@@ -61,7 +61,10 @@ wire valid,tagsmatch;
 	assign cachehit=tagsmatch&valid;
 
 	// Tag and valid bit cache
-	STD_SP_BRAM #(.BITSIZE_data_out(ADDRESSWIDTH - LOG2CACHEDEPTH + 1)) tagcache (
+	STD_SP_BRAM #(
+		.BITSIZE_data_out(ADDRESSWIDTH - LOG2CACHEDEPTH + 1),
+	   .ADDRESS_SIZE(LOG2CACHEDEPTH)
+	) tagcache (
 				.clock (clk),
                 .write_enable(tagwrite),
 				.address_in (M_address[LOG2CACHEDEPTH-1:0]),
@@ -69,8 +72,10 @@ wire valid,tagsmatch;
 				.data_out ({valid,oldtag}));
 	
 	//Ram used to store data
-	STD_SP_BRAM #(.BITSIZE_data_out(DATAWIDTH))
-	   data_cache (
+	STD_SP_BRAM #(
+		.BITSIZE_data_out(DATAWIDTH),
+   	.ADDRESS_SIZE(LOG2CACHEDEPTH)
+) data_cache (
 				.clock (clk),
 				.write_enable(datawrite),
 				.address_in(M_address[LOG2CACHEDEPTH-1:0]),

@@ -137,7 +137,7 @@ std::cout << "assign " << _ports_out[ARUSER].name << " = 'b0;\n";
 std::cout << R"(
 localparam [2:0] S_IDLE = 3'b000,
   S_RD_BURST = 3'b001,
-  S_WR_BURST = 3'b101;
+  S_WR_BURST = 3'b101 `ifdef CACHE , S_RD_CACHE = 3'b111, S_STALL_CACHE = 3'b010 `endif;
 )";
 
 std::cout << R"(
@@ -173,6 +173,46 @@ reg acc_done, next_acc_done;
 )";
 std::cout << "reg [BITSIZE_" + _ports_in[RDATA].name + "+(-1):0] acc_rdata, next_acc_rdata;\n";
 
+std::cout << R"(
+  `ifdef CACHE 
+    reg   [BITSIZE_)" +
+                 _ports_out[AWADDR].name + R"(+(-1):0]     M_address, next_M_address;
+    wire  [BITSIZE_)" +
+                 _ports_out[RDATA].name + R"(+(-1):0]    M_rddata;
+    reg   [BITSIZE_)" +
+                 _ports_out[WDATA].name + R"(+(-1):0]    M_wrdata, next_M_wrdata;
+    reg               M_write, next_M_write;
+    reg               M_read, next_M_read;
+    wire              M_wait;
+    
+    wire  [BITSIZE_)" +
+                 _ports_out[AWADDR].name + R"(+(-1):0]    S_address;
+    wire  [BITSIZE_)" +
+                 _ports_out[RDATA].name + R"(+(-1):0]    S_rddata;
+    wire  [BITSIZE_)" +
+                 _ports_out[WDATA].name + R"(+(-1):0]    S_wrdata;
+    wire              S_write;
+    wire              S_read;
+    wire              S_wait;
+    
+    cache_top cache(
+      .clk(clock),
+      .M_address(M_address),
+      .M_rddata(M_rddata),
+      .M_wrdata(M_wrdata),
+      .M_write(M_write),
+      .M_read(M_read),
+      .M_wait (M_wait),
+      .S_address(S_address),
+      .S_rddata(S_rddata),
+      .S_wrdata(S_wrdata),
+      .S_write (S_write),
+      .S_read(S_read),
+      .S_wait(S_wait)
+    );
+  `endif 
+)";
+
 std::cout << "generate\n";
 std::cout << "  assign " << _ports_out[AWLEN].name << " = AWLEN;\n";
 std::cout << "  assign " << _ports_out[AWSIZE].name << " = AWSIZE;\n";
@@ -182,6 +222,14 @@ std::cout << "  assign " << _ports_out[ARLEN].name << " = ARLEN;\n";
 std::cout << "  assign " << _ports_out[ARSIZE].name << " = ARSIZE;\n";
 std::cout << "  assign " << _ports_out[ARBURST].name << " = ARBURST;\n";
 std::cout << "endgenerate\n";
+std::cout << "`ifdef CACHE\n";
+std::cout << "  assign S_wait = S_read                                    ? !" << _ports_out[RREADY].name << " || !"
+          << _ports_in[RVALID].name << " :\n";
+std::cout << "                  S_write && _present_state == S_WR_BURST   ? !" << _ports_in[WREADY].name << " || !"
+          << _ports_out[WVALID].name << " :\n";
+std::cout << "                  1'b0;\n";
+std::cout << "  assign S_rddata = " << _ports_in[RVALID].name << " ? " << _ports_in[RDATA].name << " : 'b0;\n";
+std::cout << "`endif\n";
 
 // Assign reg values
 std::cout << "assign " << _ports_out[AWADDR].name << " = axi_awaddr;\n";
@@ -240,6 +288,12 @@ always @(*) begin
   next_read_mask = read_mask;
   next_AWREADY = AWREADY;
   next_WSTRB = WSTRB;
+  `ifdef CACHE
+      next_M_address = 'b0;
+      next_M_read = 1'b0;
+      next_M_write = 1'b0;
+      next_M_wrdata = 'b0;
+  `endif  
 
   case (_present_state)
     S_IDLE: begin
@@ -266,27 +320,43 @@ always @(*) begin
       next_AWREADY = 'b0;
 )";
 std::cout << "      if (" << _ports_in[start_port].name << " && !" << _ports_in[in1].name << ") begin\n";
-std::cout << R"(        `ifdef _SIM_HAVE_CLOG2
-          next_ARSIZE = $clog2(in2 / 8);
-        `else
-          next_ARSIZE = `CLOG2(in2 / 8);
-        `endif
-        next_axi_bready = 1'b0;
-        next_axi_rready = 1'b1;
+std::cout << R"(
+        `ifdef CACHE
+          next_M_read = 1'b1;
+          next_first_read = 1'b1;
+          `ifndef _SIM_HAVE_CLOG2
+            misalignment = in4 % (1 << `CLOG2(in2/8));
+          `else
+            misalignment = in4 % (1 << $clog2(in2/8));
+          `endif
+          
+          next_M_address = in4 - misalignment;
+          next_read_mask = -(1 << (misalignment * 8));
+          _next_state = S_RD_CACHE;
+        `else        
+          `ifdef _SIM_HAVE_CLOG2
+            next_ARSIZE = $clog2(in2 / 8);
+          `else
+            next_ARSIZE = `CLOG2(in2 / 8);
+          `endif
+          next_axi_bready = 1'b0;
+          next_axi_rready = 1'b1;
 )";
-std::cout << "        next_first_read = 1'b1;\n";
-std::cout << "        next_axi_araddr = " << _ports_in[in4].name << ";\n";
-std::cout << "        misalignment = " << _ports_in[in4].name << " % (1 << next_ARSIZE);\n";
-std::cout << "        if(misalignment > 'b0) begin\n";
-std::cout << "          next_ARLEN = 'b1;\n";
-std::cout << "          next_ARBURST = 'b1;\n";
-std::cout << "          next_read_mask = -(1 << (misalignment * 8));\n";
-std::cout << "        end else begin\n";
-std::cout << "          next_ARLEN = 'b0;\n";
-std::cout << "          next_ARBURST = 'b0;\n";
-std::cout << "        end\n";
-std::cout << "        next_axi_arvalid = 1'b1;\n";
-std::cout << "        _next_state = S_RD_BURST;\n";
+std::cout << "          next_first_read = 1'b1;\n";
+std::cout << "          next_axi_araddr = " << _ports_in[in4].name << ";\n";
+std::cout << "          misalignment = " << _ports_in[in4].name << " % (1 << next_ARSIZE);\n";
+std::cout << "          if(misalignment > 'b0) begin\n";
+std::cout << "            next_ARLEN = 'b1;\n";
+std::cout << "            next_ARBURST = 'b1;\n";
+std::cout << "            next_read_mask = -(1 << (misalignment * 8));\n";
+std::cout << "          end else begin\n";
+std::cout << "            next_ARLEN = 'b0;\n";
+std::cout << "            next_ARBURST = 'b0;\n";
+std::cout << "            next_read_mask = -1;\n";
+std::cout << "          end\n";
+std::cout << "          next_axi_arvalid = 1'b1;\n";
+std::cout << "          _next_state = S_RD_BURST;\n";
+std::cout << "        `endif\n";
 std::cout << "      end else if (" << _ports_in[start_port].name << " && " << _ports_in[in1].name << ") begin\n";
 std::cout << "        next_axi_awaddr = " << _ports_in[in4].name << ";\n";
 std::cout << "        next_axi_awvalid = 1'b1;\n";
@@ -309,13 +379,91 @@ std::cout << R"(        next_axi_wvalid = 1'b1;
           next_AWLEN = 8'b00000001;
         end
         next_axi_rready = 1'b0;
+        `ifdef CACHE
+          next_M_address = in4 - misalignment;
+          next_M_write = 1'b1;
+          next_M_wrdata = in3;
+        `endif
         _next_state = S_WR_BURST;
       end else begin
         _next_state = S_IDLE;
       end
     end
 
+    `ifdef CACHE
+      S_RD_CACHE : begin
+        next_M_address = M_address;
+        next_M_read = M_read;
+        if(M_wait && !S_wait)
+          _next_state = S_RD_CACHE;
+        else if(S_wait) begin   /* Cache miss */
+          `ifdef _SIM_HAVE_CLOG2
+            next_ARSIZE = $clog2(in2 / 8);
+          `else
+            next_ARSIZE = `CLOG2(in2 / 8);
+          `endif
+          next_axi_bready = 1'b0;
+          next_axi_rready = 1'b1;
+          if(read_mask != -1 && first_read) begin
+            next_ARLEN = 'b1;
+            next_ARBURST = 'b1;
+          end else begin
+            next_ARLEN = 'b0;
+            next_ARBURST = 'b0;
+            if(read_mask != -1) begin
+              next_axi_arvalid = 1'b1;
+              next_axi_araddr = M_address;
+            end
+          end
+          if(first_read) begin
+            next_axi_arvalid = 1'b1;
+            next_axi_araddr = in4;      
+          end
+          _next_state = S_RD_BURST;
+        end else begin  /* Cache hit */
+          /* Data is ready */
+          if(!M_wait) begin
+            if(first_read) begin
+              next_acc_rdata = M_rddata & read_mask;
+              next_first_read = 1'b0;
+              if(read_mask != -1) begin
+                next_M_address = M_address + (1 << `ifdef _SIM_HAVE_CLOG2 $clog2(in2 / 8) `else `CLOG2(in2 / 8) `endif);
+                _next_state = S_RD_CACHE;
+              end
+              else begin
+                next_acc_done = 1'b1;
+                next_M_address = 'b0;
+                next_M_read = 1'b0;
+                _next_state = S_IDLE;
+              end
+            end
+            else begin
+              next_acc_rdata = acc_rdata | ()" +
+                 _ports_in[RDATA].name + R"( & (~read_mask));
+              next_acc_done = 1'b1;
+              next_M_address = 'b0;
+              next_M_read = 1'b0;
+              _next_state = S_IDLE; 
+            end
+          end
+        end
+      end
+
+      S_STALL_CACHE: begin
+        _next_state = S_RD_BURST;
+        next_axi_rready = 1'b0;
+        next_M_address = M_address;
+        next_M_read = M_read;
+      end
+    `endif
+
     S_RD_BURST: begin
+)";
+std::cout << R"(
+      `ifdef CACHE 
+        next_M_address = M_address;
+        next_M_read = M_read;
+      `endif
 )";
 std::cout << "      if(" << _ports_in[ARREADY].name << ") begin\n";
 std::cout << R"(        next_axi_arvalid = 1'b0;
@@ -333,18 +481,42 @@ std::cout << R"(        next_axi_arvalid = 1'b0;
       next_axi_rready = 1'b1;
       
 )";
-std::cout << "      if(" << _ports_in[RVALID].name << ") begin\n";
-std::cout << "        if(" << _ports_in[RLAST].name << ") begin\n";
-std::cout << "          next_acc_rdata = next_acc_rdata + (" << _ports_in[RDATA].name << " & (~read_mask));\n";
-std::cout << "          next_axi_rready = 1'b0;\n";
-std::cout << "          next_acc_done = 1'b1;\n";
-std::cout << "          _next_state = S_IDLE;\n";
-std::cout << "        end else if (first_read) begin\n";
-std::cout << "          next_acc_rdata = " << _ports_in[RDATA].name << " & read_mask;\n";
-std::cout << R"(          next_acc_done = 1'b0;
-          next_first_read = 1'b0;
-          _next_state = S_RD_BURST;
-        end
+std::cout << "      if(" << _ports_in[RVALID].name << " && axi_rready) begin\n";
+std::cout << R"(          if(!first_read) begin
+            next_acc_rdata = acc_rdata | ()" +
+                 _ports_in[RDATA].name + R"( & (~read_mask));
+            next_axi_rready = 1'b0;
+            next_acc_done = 1'b1;
+            `ifdef CACHE
+              next_M_address = 'b0;
+              next_M_read = 1'b0;
+            `endif
+            _next_state = S_IDLE;
+          end else if()" +
+                 _ports_in[RLAST].name + R"() begin
+            next_acc_rdata = )" +
+                 _ports_in[RDATA].name + R"( & read_mask;
+            `ifdef CACHE
+              next_M_address = 'b0;
+              next_M_read = 1'b0;
+            `endif
+)";
+std::cout << "            next_axi_rready = 1'b0;\n";
+std::cout << "            next_acc_done = 1'b1;\n";
+std::cout << "            _next_state = S_IDLE;\n";
+std::cout << "          end else if (first_read) begin\n";
+std::cout << "            next_acc_rdata = " << _ports_in[RDATA].name << " & read_mask;\n";
+std::cout << R"(            `ifdef CACHE
+              next_M_address = M_address + (1 << `ifdef _SIM_HAVE_CLOG2 $clog2(in2 / 8) `else `CLOG2(in2 / 8) `endif);
+              next_M_read = 1'b1;
+              next_axi_rready = 1'b0;
+              _next_state = S_STALL_CACHE;
+            `else
+              _next_state = S_RD_BURST;
+            `endif
+            next_acc_done = 1'b0;
+            next_first_read = 1'b0;
+          end
       end else begin
         _next_state = S_RD_BURST;
       end
@@ -352,6 +524,11 @@ std::cout << R"(          next_acc_done = 1'b0;
 
     S_WR_BURST : begin 
     _next_state = S_WR_BURST;
+    `ifdef CACHE
+      next_M_address = M_address;
+      next_M_write = M_write;
+      next_M_wrdata = M_wrdata;
+    `endif
 )";
 std::cout << "      if(!" << _ports_in[WREADY].name << ") begin\n";
 std::cout << "        next_axi_wvalid = axi_wvalid;\n";
@@ -376,6 +553,9 @@ std::cout << R"(
         next_axi_wdata = axi_wdata;
         next_axi_wvalid = 1'b1;
         next_axi_wlast = 1'b1;
+        `ifdef CACHE
+          next_M_address = M_address + (1 << `ifdef _SIM_HAVE_CLOG2 $clog2(in2 / 8) `else `CLOG2(in2 / 8) `endif);
+        `endif
       end
       else if (next_AWREADY && !WSTRB[0]) begin
         /* If it's an aligned transfer but the slave is not ready, just keep the signals */
@@ -393,12 +573,17 @@ std::cout << R"(
       /* If the last transfer was complete, deassert the validity bits and check if you can go back to
       IDLE */
 )";
-std::cout << "      if (" << _ports_in[BVALID].name << ") begin";
+std::cout << "      if (" << _ports_in[BVALID].name << ") begin\n";
 std::cout << R"(        next_acc_done = 1'b1;
         next_axi_wvalid = 1'b0;
         next_axi_wdata = 'b0;
         next_WSTRB = 'b0;
         next_axi_wlast = 1'b0;
+        `ifdef CACHE
+          next_M_wrdata = 'b0;
+          next_M_write = 1'b0;
+          next_M_address = 'b0;
+        `endif
         _next_state = S_IDLE;
       end
     end
@@ -429,7 +614,13 @@ always @(posedge clock) begin
   first_read <= next_first_read;
   read_mask <= next_read_mask;
   AWREADY <= next_AWREADY;
-
+  `ifdef CACHE
+    M_address <= next_M_address;
+    M_wrdata <= next_M_wrdata;
+    M_write <= next_M_write;
+    M_read <= next_M_read;
+  `endif
+    
   if (!reset) begin
     _present_state <= S_IDLE;
   end

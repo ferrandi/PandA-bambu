@@ -6,3 +6,6 @@ sample:
 
 samplegenall:
 	sh genall.sh 32 16 24 samplegenall
+
+clean:
+	rm cachegen
