@@ -249,8 +249,6 @@ DesignFlowStep_Status SDCScheduling2::InternalExec()
       const bb_vertex_order_by_map comp_i(bb_map_levels);
       std::set<vertex, bb_vertex_order_by_map> loop_bbs(comp_i);
       OpVertexSet loop_operations(op_graph);
-      CustomUnorderedSet<vertex> Loop_operations;
-      std::list<vertex> Loop_operations_list;
       VertexIterator bb, bb_end;
       for(boost::tie(bb, bb_end) = boost::vertices(*basic_block_graph); bb != bb_end; bb++)
       {
@@ -260,8 +258,6 @@ DesignFlowStep_Status SDCScheduling2::InternalExec()
             for(const auto stmt : basic_block_graph->CGetBBNodeInfo(*bb)->statements_list)
             {
                loop_operations.insert(stmt);
-               Loop_operations.insert(stmt);
-               Loop_operations_list.push_back(stmt);
             }
          }
       }
@@ -279,7 +275,7 @@ DesignFlowStep_Status SDCScheduling2::InternalExec()
       /// Compute variables
       /// Map real operation-stage to variable index
       unsigned int next_var_index = 0;
-      for(const auto loop_operation : Loop_operations_list)
+      for(const auto loop_operation : loop_operations)
       {
          INDENT_DBG_MEX(
              DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
@@ -294,7 +290,7 @@ DesignFlowStep_Status SDCScheduling2::InternalExec()
 
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Adding dependencies constraints");
       /// Add dependence constraints: target can start in the same clock cycle in which source ends
-      for(const auto operation : Loop_operations_list)
+      for(const auto operation : loop_operations)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                         "-->Adding dependencies starting from " + GET_NAME(filtered_op_graph, operation));
@@ -354,7 +350,7 @@ DesignFlowStep_Status SDCScheduling2::InternalExec()
       std::set<unsigned int> op_multicycles;
       std::list<vertex> unbounded_operations;
       auto setupDelay = allocation_information->get_setup_hold_time();
-      for(const auto operation : Loop_operations_list)
+      for(const auto operation : loop_operations)
       {
          auto opFuType = allocation_information->GetFuType(operation);
          auto timeLatency = allocation_information->GetTimeLatency(operation, opFuType);
@@ -420,7 +416,7 @@ DesignFlowStep_Status SDCScheduling2::InternalExec()
             }
          }
       }
-      for(const auto operation : Loop_operations_list)
+      for(const auto operation : loop_operations)
       {
          std::map<unsigned int, double> vals;
          auto op_varindex = operation_to_varindex.at(operation);
@@ -493,7 +489,12 @@ DesignFlowStep_Status SDCScheduling2::InternalExec()
          std::set<vertex, SDCSorter2> basic_block_sorted_operations(sdc_sorter);
          for(const auto operation : basic_block_graph->CGetBBNodeInfo(basic_block)->statements_list)
          {
-            basic_block_sorted_operations.insert(operation);
+            const auto fu_type = allocation_information->GetFuType(operation);
+            const unsigned int resources_number = allocation_information->get_number_fu(fu_type);
+            if(resources_number < INFINITE_UINT && !allocation_information->is_vertex_bounded(fu_type))
+            {
+               basic_block_sorted_operations.insert(operation);
+            }
          }
          if(debug_level >= DEBUG_LEVEL_VERY_PEDANTIC)
          {
@@ -514,61 +515,56 @@ DesignFlowStep_Status SDCScheduling2::InternalExec()
             /// Resource constraints
             const auto fu_type = allocation_information->GetFuType(operation);
             const unsigned int resources_number = allocation_information->get_number_fu(fu_type);
-            if(allocation_information->get_number_fu(fu_type) < INFINITE_UINT &&
-               !allocation_information->is_vertex_bounded(fu_type))
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Mapped on a shared resource");
+            const auto& old_sequences = constrained_operations_sequences[basic_block][fu_type];
+            if(old_sequences.size())
             {
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Mapped on a shared resource");
-               const auto& old_sequences = constrained_operations_sequences[basic_block][fu_type];
-               if(old_sequences.size())
+               CustomOrderedSet<std::list<vertex>> new_sequences;
+               for(auto old_sequence : old_sequences)
                {
-                  CustomOrderedSet<std::list<vertex>> new_sequences;
-                  for(auto old_sequence : old_sequences)
+                  if(debug_level >= DEBUG_LEVEL_VERY_PEDANTIC)
                   {
-                     if(debug_level >= DEBUG_LEVEL_VERY_PEDANTIC)
+                     std::string old_sequence_string;
+                     for(const auto temp : old_sequence)
                      {
-                        std::string old_sequence_string;
-                        for(const auto temp : old_sequence)
-                        {
-                           old_sequence_string += GET_NAME(filtered_op_graph, temp) + "-";
-                        }
-                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                       "-->Considering sequence " + old_sequence_string);
+                        old_sequence_string += GET_NAME(filtered_op_graph, temp) + "-";
                      }
-                     old_sequence.push_back(operation);
-                     if(old_sequence.size() > resources_number)
-                     {
-                        const auto front = old_sequence.front();
-                        old_sequence.pop_front();
-                        const std::string name = allocation_information->get_fu_name(fu_type).first + "_" +
-                                                 GET_NAME(op_graph, front) + "_" + GET_NAME(op_graph, operation);
-                        auto frontII = allocation_information->get_initiation_time(fu_type, front);
-                        auto cycles = allocation_information->GetCycleLatency(front);
-                        auto w = (frontII > 0 ? -static_cast<int>(frontII.GetContent()) : -static_cast<int>(cycles));
-                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                       "---Resource constraint " + GET_NAME(op_graph, front) + "-" +
-                                           GET_NAME(op_graph, operation) + " " + STR(w));
-                        solver.add_constraint(operation_to_varindex.at(front), operation_to_varindex.at(operation), w);
-                     }
-                     if(debug_level >= DEBUG_LEVEL_VERY_PEDANTIC)
-                     {
-                        std::string old_sequence_string;
-                        for(const auto temp : old_sequence)
-                        {
-                           old_sequence_string += GET_NAME(filtered_op_graph, temp) + "-";
-                        }
-                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                       "<--New sequence " + old_sequence_string);
-                     }
-                     new_sequences.insert(old_sequence);
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                    "-->Considering sequence " + old_sequence_string);
                   }
-                  constrained_operations_sequences[basic_block][fu_type] = new_sequences;
+                  old_sequence.push_back(operation);
+                  if(old_sequence.size() > resources_number)
+                  {
+                     const auto front = old_sequence.front();
+                     old_sequence.pop_front();
+                     const std::string name = allocation_information->get_fu_name(fu_type).first + "_" +
+                                              GET_NAME(op_graph, front) + "_" + GET_NAME(op_graph, operation);
+                     auto frontII = allocation_information->get_initiation_time(fu_type, front);
+                     auto cycles = allocation_information->GetCycleLatency(front);
+                     auto w = (frontII > 0 ? -static_cast<int>(frontII.GetContent()) : -static_cast<int>(cycles));
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                    "---Resource constraint " + GET_NAME(op_graph, front) + "-" +
+                                        GET_NAME(op_graph, operation) + " " + STR(w));
+                     solver.add_constraint(operation_to_varindex.at(front), operation_to_varindex.at(operation), w);
+                  }
+                  if(debug_level >= DEBUG_LEVEL_VERY_PEDANTIC)
+                  {
+                     std::string old_sequence_string;
+                     for(const auto temp : old_sequence)
+                     {
+                        old_sequence_string += GET_NAME(filtered_op_graph, temp) + "-";
+                     }
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--New sequence " + old_sequence_string);
+                  }
+                  new_sequences.insert(old_sequence);
                }
-               else
-               {
-                  std::list<vertex> temp;
-                  temp.push_back(operation);
-                  constrained_operations_sequences[basic_block][fu_type].insert(temp);
-               }
+               constrained_operations_sequences[basic_block][fu_type] = new_sequences;
+            }
+            else
+            {
+               std::list<vertex> temp;
+               temp.push_back(operation);
+               constrained_operations_sequences[basic_block][fu_type].insert(temp);
             }
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                            "<--Considered " + GET_NAME(filtered_op_graph, operation));
@@ -621,7 +617,7 @@ DesignFlowStep_Status SDCScheduling2::InternalExec()
 
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Solution:");
       ControlStep last_relative_step = ControlStep(0u);
-      for(const auto operation : Loop_operations_list)
+      for(const auto operation : loop_operations)
       {
          const unsigned int begin_variable = operation_to_varindex.at(operation);
          ControlStep current_control_step = ControlStep(static_cast<unsigned int>(vals[begin_variable]));
