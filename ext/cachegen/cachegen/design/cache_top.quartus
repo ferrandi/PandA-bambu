@@ -1,0 +1,14 @@
+FILES
+{
+	VERILOG_FILE = cache_top.v;
+	VERILOG_FILE = cam.v;
+	VERILOG_FILE = encoder.v;
+}
+COMPILER_SETTINGS_LIST
+{
+	COMPILER_SETTINGS = cache_top;
+}
+SIMULATOR_SETTINGS_LIST
+{
+	SIMULATOR_SETTINGS = cache_top;
+}

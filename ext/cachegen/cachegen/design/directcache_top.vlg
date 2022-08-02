@@ -1,0 +1,222 @@
+parameter idle=0,taglookup=1,readdata=3,waitmemread=4,write=6;
+
+input clk;
+											//Master
+input [ADDRESSWIDTH-1:0]	M_address;
+output [DATAWIDTH-1:0]		M_rddata;
+input [DATAWIDTH-1:0]		M_wrdata;
+input 						M_write;
+input 						M_read;
+output 						M_wait;
+`ifdef CACHEHIT
+output 						cache_hit;
+`endif
+											//Slave
+output [ADDRESSWIDTH-1:0]	S_address;
+input [DATAWIDTH-1:0]		S_rddata;
+output [DATAWIDTH-1:0]		S_wrdata;
+output						S_write;
+output 						S_read;
+input 						S_wait;
+
+
+
+//Control Signals
+reg tagwrite;
+reg datawrite;
+reg countup;
+reg cachereadswitch,writefrommem;	// mux controls
+reg M_wait;
+`ifdef INTERCEPT
+	reg S_read;
+	reg S_write;
+`endif
+
+//Control inputs
+wire cachehit;
+
+reg [3:0] state,nextstate;
+
+wire [DATAWIDTH-1:0] Cache_rddata,Cache_wrdata;
+wire [ADDRESSWIDTH-1:LOG2CACHEDEPTH] oldtag;
+wire valid,tagsmatch;
+
+	`ifdef CACHEHIT
+		assign cache_hit=cachehit;
+	`endif
+	assign M_rddata=(cachereadswitch) ? Cache_rddata : S_rddata;
+	assign S_address=M_address;
+	assign S_wrdata=M_wrdata;
+	assign Cache_wrdata = (writefrommem) ? S_rddata : M_wrdata;
+	`ifdef INTERCEPT
+	`else
+		assign S_read=M_read;
+		assign S_write=M_write;
+	`endif
+
+	lpm_compare comparator(	.dataa(M_address[ADDRESSWIDTH-1:LOG2CACHEDEPTH]),
+							.datab(oldtag),
+							.aeb(tagsmatch));
+		defparam comparator.LPM_WIDTH=ADDRESSWIDTH-LOG2CACHEDEPTH;
+	assign cachehit=tagsmatch&valid;
+
+	// Tag and valid bit cache
+	altsyncram	tagcache (
+				.wren_a (tagwrite),
+				.clock0 (clk),
+				.address_a (M_address[LOG2CACHEDEPTH-1:0]),
+				.address_b (M_address[LOG2CACHEDEPTH-1:0]),
+				.data_a ({1,M_address[ADDRESSWIDTH-1:LOG2CACHEDEPTH]}),
+				.q_b ({valid,oldtag}));
+	defparam
+		tagcache.operation_mode = "DUAL_PORT",
+		tagcache.width_a = ADDRESSWIDTH-LOG2CACHEDEPTH+1,
+		tagcache.widthad_a = LOG2CACHEDEPTH,
+		tagcache.numwords_a = CACHEDEPTH,
+		tagcache.width_b = ADDRESSWIDTH-LOG2CACHEDEPTH+1,
+		tagcache.widthad_b = LOG2CACHEDEPTH,
+		tagcache.numwords_b = CACHEDEPTH,
+		tagcache.lpm_type = "altsyncram",
+		tagcache.width_byteena_a = 1,
+				`ifdef ONECYCLEREAD
+					tagcache.outdata_reg_b = "UNREGISTERED",
+				`else
+					tagcache.outdata_reg_b = "CLOCK0",
+				`endif
+		tagcache.indata_aclr_a = "NONE",
+		tagcache.wrcontrol_aclr_a = "NONE",
+		tagcache.address_aclr_a = "NONE",
+		tagcache.address_reg_b = "CLOCK0",
+		tagcache.address_aclr_b = "NONE",
+		tagcache.outdata_aclr_b = "NONE",
+		tagcache.read_during_write_mode_mixed_ports = "OLD_DATA",
+		tagcache.ram_block_type = "AUTO",
+		tagcache.intended_device_family = "Stratix";
+
+	//Ram used to store data
+	altsyncram	data_cache (
+				.wren_a (datawrite),
+				.clock0 (clk),
+				.address_a (M_address[LOG2CACHEDEPTH-1:0]),
+				.address_b (M_address[LOG2CACHEDEPTH-1:0]),
+				.data_a (Cache_wrdata),
+				.q_b (Cache_rddata));
+	defparam
+		data_cache.operation_mode = "DUAL_PORT",
+		data_cache.width_a = DATAWIDTH,
+		data_cache.widthad_a = LOG2CACHEDEPTH,
+		data_cache.numwords_a = CACHEDEPTH,
+		data_cache.width_b = DATAWIDTH,
+		data_cache.widthad_b = LOG2CACHEDEPTH,
+		data_cache.numwords_b = CACHEDEPTH,
+		data_cache.lpm_type = "altsyncram",
+		data_cache.width_byteena_a = 1,
+		`ifdef ONECYCLEREAD
+			data_cache.outdata_reg_b = "UNREGISTERED",
+		`else
+			data_cache.outdata_reg_b = "CLOCK0",
+		`endif
+		data_cache.indata_aclr_a = "NONE",
+		data_cache.wrcontrol_aclr_a = "NONE",
+		data_cache.address_aclr_a = "NONE",
+		data_cache.address_reg_b = "CLOCK0",
+		data_cache.address_aclr_b = "NONE",
+		data_cache.outdata_aclr_b = "NONE",
+		data_cache.read_during_write_mode_mixed_ports = "DONT_CARE",
+		data_cache.ram_block_type = "AUTO",
+		data_cache.intended_device_family = "Stratix";
+
+
+	// ******************* Cache Controller **********************//
+	always @(posedge clk)
+		state<=nextstate;
+
+	always @(M_read or M_write or state or S_wait or cachehit)
+	begin
+ 		tagwrite<=0;
+		datawrite<=0;
+		cachereadswitch<=0; writefrommem<=0;
+		M_wait<=0;
+		`ifdef INTERCEPT
+			S_read<=0;
+			S_write<=0;
+		`endif
+		case(state)
+		idle: 
+			if (M_read==0 && M_write==0)
+				nextstate<=idle;
+			else if (M_read==1 && M_write==0)
+			begin
+				M_wait<=1;
+				`ifdef ONECYCLEREAD
+					nextstate<=readdata;
+				`else
+					nextstate<=taglookup;
+				`endif
+			end
+			else //is a write request
+			begin
+				M_wait<=1;
+				datawrite<=1; 	//write to data cache
+				tagwrite<=1;
+				`ifdef INTERCEPT
+					S_write<=1;
+				`endif
+				nextstate<=write;
+			end
+		write:
+			if (S_wait)
+			begin
+				`ifdef INTERCEPT
+					S_write<=1;
+				`endif
+				M_wait<=1;
+				nextstate<=write;
+			end
+			else
+				nextstate<=idle;
+		`ifdef ONECYCLEREAD
+		`else
+		taglookup:
+		begin
+			nextstate<=readdata;
+			M_wait<=1;
+		end
+		`endif
+		readdata:
+			if (cachehit)
+			begin
+				cachereadswitch<=1;
+				nextstate<=idle;
+			end
+			else
+			begin
+				M_wait<=1;
+				`ifdef INTERCEPT
+					S_read<=1;
+				`endif
+				nextstate<=waitmemread;
+			end
+		waitmemread:
+			if (S_wait)
+			begin
+				`ifdef INTERCEPT
+					S_read<=1;
+				`endif
+				M_wait<=1;
+				nextstate<=waitmemread;
+			end
+			else
+			begin
+				tagwrite<=1;
+				datawrite<=1;
+				writefrommem<=1;
+				nextstate<=idle;
+			end
+		default:
+			nextstate<=idle;
+		endcase
+	end
+
+
+endmodule

@@ -1,0 +1,14 @@
+#define CAMMODULE "module cam(clk,clken,pattern,wrpos,wren,writeerase_,pos);\n"
+#define CAMPARAM "parameter outdata_reg_b = \"CLOCK0\";\n"
+#define CAMINPUT1 "input        clk,clken;\n"
+#define CAMINPUT2 "input  [%d:0] pattern;\n"
+#define CAMINPUT3 "input  [%d:0] wrpos;\n"
+#define CAMINPUT4 "input        wren,writeerase_;\n"
+#define CAMOUTPUT1 "output [%d:0] pos;\n\n"
+#define CAMWIRES "wire [15:0] "
+
+#define CAMINST1 ";\n\ncam16x5 cam%d(clk,clken,pattern[%d:%d],wrpos[3:0],wren"
+#define CAMINST2 "%s,writeerase_,p%d[15:0]);\n\tdefparam cam%d.outdata_reg_b=outdata_reg_b"
+
+#define CAMOUT ";\n\nassign pos={"
+#define CAMEND "};\nendmodule\n\n"

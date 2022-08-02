@@ -1,0 +1,11 @@
+#define CACHEINT "`%s INTERCEPT \n"
+#define CACHECHIT "`%s CACHEHIT \n"
+#define CACHETWO "`%s TWOCYCLEREAD \n"
+#define CACHEDEBUG "`undef DEBUG \n"
+
+#define CACHEMOD "module cache_top(clk,M_address,M_rddata,M_wrdata,M_write,M_read,M_wait,\n"
+#define CACHECHITOUT "`ifdef CACHEHIT  cache_hit,  `endif\n"
+#define CACHESLAVE "S_address,S_rddata,S_wrdata,S_write,S_read,S_wait\n"
+#define CACHEDEBUGOUTS "`ifdef DEBUG ,cachehit,Cache_wrpos,tagpos, oldtag `endif\n"
+#define CACHEWIDTHS ");\nparameter ADDRESSWIDTH=%d;\nparameter DATAWIDTH=%d;\n"
+#define CACHEDEPTH "parameter CACHEDEPTH=%d;\nparameter LOG2CACHEDEPTH=%d;\n\n"

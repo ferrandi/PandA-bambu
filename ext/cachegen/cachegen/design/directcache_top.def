@@ -1,0 +1,9 @@
+#define DCACHEINT "`%s INTERCEPT \n"
+#define DCACHECHIT "`%s CACHEHIT \n"
+#define DCACHEONE "`%s ONECYCLEREAD \n"
+
+#define DCACHEMOD "module cache_top(clk,M_address,M_rddata,M_wrdata,M_write,M_read,M_wait,\n"
+#define DCACHECHITOUT "`ifdef CACHEHIT  cache_hit,  `endif\n"
+#define DCACHESLAVE "S_address,S_rddata,S_wrdata,S_write,S_read,S_wait\n"
+#define DCACHEWIDTHS ");\nparameter ADDRESSWIDTH=%d;\nparameter DATAWIDTH=%d;\n"
+#define DCACHEDEPTH "parameter CACHEDEPTH=%d;\nparameter LOG2CACHEDEPTH=%d;\n\n"

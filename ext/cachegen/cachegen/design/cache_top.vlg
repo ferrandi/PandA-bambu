@@ -1,0 +1,286 @@
+parameter idle=0,taglookup=1,tagcompare=2,readdata=3,waitmemread=4,write=6,waitmemwrite=7;
+
+input clk;
+											//Master
+input [ADDRESSWIDTH-1:0]	M_address;
+output [DATAWIDTH-1:0]		M_rddata;
+input [DATAWIDTH-1:0]		M_wrdata;
+input 						M_write;
+input 						M_read;
+output 						M_wait;
+`ifdef CACHEHIT
+output 						cache_hit;
+`endif
+											//Slave
+output [ADDRESSWIDTH-1:0]	S_address;
+input [DATAWIDTH-1:0]		S_rddata;
+output [DATAWIDTH-1:0]		S_wrdata;
+output						S_write;
+output 						S_read;
+input 						S_wait;
+
+`ifdef DEBUG							//DEBUG
+output						cachehit, Cache_wrpos,tagpos;
+output [ADDRESSWIDTH-1:0] oldtag;
+`endif
+
+//Replacement variable
+reg [LOG2CACHEDEPTH-1:0] Cache_wrpos;
+
+//Control Signals
+reg latchintag;
+reg tagwrite, tagdelete;
+reg datawrite;
+reg countup;
+reg cachereadswitch,writefrommem,lookupoldtag;	// mux controls
+reg M_wait;
+reg pause_n;
+`ifdef INTERCEPT
+	reg S_read;
+	reg S_write;
+`endif
+
+//Control inputs
+wire cachehit;
+
+reg [3:0] state,nextstate;
+
+wire [ADDRESSWIDTH-1:0] oldtag;
+wire [CACHEDEPTH-1:0] tagpos_onehot;
+wire [LOG2CACHEDEPTH-1:0] tagpos_1,tagpos;
+wire [DATAWIDTH-1:0] Cache_rddata,Cache_wrdata;
+
+	`ifdef CACHEHIT
+		assign cache_hit=|tagpos_onehot;
+	`endif
+	assign M_rddata=(cachereadswitch) ? Cache_rddata : S_rddata;
+	assign S_address=M_address;
+	assign S_wrdata=M_wrdata;
+	assign Cache_wrdata = (writefrommem) ? S_rddata : M_wrdata;
+`ifdef INTERCEPT
+`else
+	assign S_read=M_read;
+	assign S_write=M_write;
+`endif
+
+
+
+/**************** Pipeline stage 1 ***************/
+	//Cam used to handle tags (lookups, writes, and deletes)
+	cam taghandlerinst(	.clk(clk),
+								.clken(pause_n),
+								.pattern((lookupoldtag) ? oldtag : M_address[ADDRESSWIDTH-1:0]),
+								.wrpos(Cache_wrpos),
+								.wren(tagwrite|tagdelete),
+								.writeerase_(~tagdelete),
+								.pos(tagpos_onehot)	);
+			`ifdef TWOCYCLEREAD
+				defparam taghandlerinst.outdata_reg_b="UNREGISTERED";
+			`else
+				defparam taghandlerinst.outdata_reg_b="CLOCK0";			
+			`endif
+
+/**************** Pipeline stage 2 ***************/
+	//encode address
+	encoder encoderinst(tagpos_onehot,tagpos_1);
+
+	//wide or indicating match found
+	dffe (|tagpos_onehot,clk,1,1,1,cachehit);
+
+	`ifdef DEBUG 
+		lpm_ff	tagpos_reg (
+					.enable (pause_n),
+					.clock (clk),
+					.data (tagpos_1),
+					.q (tagpos));
+		defparam
+			tagpos_reg.lpm_width = LOG2CACHEDEPTH,
+			tagpos_reg.lpm_type = "LPM_FF",
+			tagpos_reg.lpm_fftype = "DFF";
+	`endif
+
+/**************** Pipeline stage 3 ***************/
+	//Ram used to store data
+	altsyncram	data_cache (
+				.wren_a (datawrite),
+				.clock0 (clk),
+				.clocken0 (pause_n),
+				.address_a (Cache_wrpos),
+				.address_b (tagpos_1),
+				.data_a (Cache_wrdata),
+				.q_b (Cache_rddata));
+	defparam
+		data_cache.operation_mode = "DUAL_PORT",
+		data_cache.width_a = DATAWIDTH,
+		data_cache.widthad_a = LOG2CACHEDEPTH,
+		data_cache.numwords_a = CACHEDEPTH,
+		data_cache.width_b = DATAWIDTH,
+		data_cache.widthad_b = LOG2CACHEDEPTH,
+		data_cache.numwords_b = CACHEDEPTH,
+		data_cache.lpm_type = "altsyncram",
+		data_cache.width_byteena_a = 1,
+		data_cache.outdata_reg_b = "UNREGISTERED",
+		data_cache.indata_aclr_a = "NONE",
+		data_cache.wrcontrol_aclr_a = "NONE",
+		data_cache.address_aclr_a = "NONE",
+		data_cache.address_reg_b = "CLOCK0",
+		data_cache.address_aclr_b = "NONE",
+		data_cache.outdata_aclr_b = "NONE",
+		data_cache.read_during_write_mode_mixed_ports = "DONT_CARE",
+		data_cache.ram_block_type = "AUTO",
+		data_cache.intended_device_family = "Stratix";
+
+// Tag cross referencer used to help erase previous entries.
+	altsyncram	tagcrossref (
+				.wren_a (datawrite),
+				.clock0 (clk),
+				.clocken0 (pause_n),
+				.address_a (Cache_wrpos),
+				.address_b ((countup) ? Cache_wrpos+1 : Cache_wrpos),
+				.data_a (M_address),
+				.q_b (oldtag));
+	defparam
+		tagcrossref.operation_mode = "DUAL_PORT",
+		tagcrossref.width_a = ADDRESSWIDTH,
+		tagcrossref.widthad_a = LOG2CACHEDEPTH,
+		tagcrossref.numwords_a = CACHEDEPTH,
+		tagcrossref.width_b = ADDRESSWIDTH,
+		tagcrossref.widthad_b = LOG2CACHEDEPTH,
+		tagcrossref.numwords_b = CACHEDEPTH,
+		tagcrossref.lpm_type = "altsyncram",
+		tagcrossref.width_byteena_a = 1,
+		tagcrossref.outdata_reg_b = "UNREGISTERED",
+		tagcrossref.indata_aclr_a = "NONE",
+		tagcrossref.wrcontrol_aclr_a = "NONE",
+		tagcrossref.address_aclr_a = "NONE",
+		tagcrossref.address_reg_b = "CLOCK0",
+		tagcrossref.address_aclr_b = "NONE",
+		tagcrossref.outdata_aclr_b = "NONE",
+		tagcrossref.read_during_write_mode_mixed_ports = "OLD_DATA",
+		tagcrossref.ram_block_type = "AUTO",
+		tagcrossref.intended_device_family = "Stratix";
+
+	//Counter Replacement Algorithm - maybe try something better
+	lpm_counter	lpm_counter_component (
+				.clock (clk),
+				.cnt_en (countup),
+				.q (Cache_wrpos));
+	defparam
+		lpm_counter_component.lpm_width = LOG2CACHEDEPTH,
+		lpm_counter_component.lpm_type = "LPM_COUNTER",
+		lpm_counter_component.lpm_direction = "UP";
+
+	//Cache Controller - inputs are M_read, M_write, cachehit and S_wait
+		
+	always @(posedge clk)
+		state<=nextstate;
+
+	always @(M_read or M_write or state or S_wait or cachehit)
+	begin
+		latchintag<=0;
+ 		tagwrite<=0; tagdelete<=0;
+		datawrite<=0;
+		countup<=0;
+		pause_n<=1;
+		cachereadswitch<=0; writefrommem<=0; lookupoldtag<=0;
+		M_wait<=0;
+		`ifdef INTERCEPT
+			S_read<=0;
+			S_write<=0;
+		`endif
+		case(state)
+		idle: 
+			if (M_read==0 && M_write==0)
+				nextstate<=idle;
+			else if (M_read==1 && M_write==0)
+			begin
+				latchintag<=1;
+				M_wait<=1;
+				`ifdef TWOCYCLEREAD
+					nextstate<=tagcompare;
+				`else
+					nextstate<=taglookup;
+				`endif
+			end
+			else //is a write request
+			begin
+				M_wait<=1;
+				datawrite<=1; 	//write to data cache & write new val to Xref
+				lookupoldtag<=1;	//consider combining into one signal
+				tagdelete<=1;
+				`ifdef INTERCEPT
+					S_write<=1;
+				`endif
+				nextstate<=write;
+			end
+		write:
+			if (S_wait)
+			begin
+				`ifdef INTERCEPT
+					S_write<=1;
+				`endif
+				pause_n<=0;
+				M_wait<=1;
+				nextstate<=write;
+			end
+			else
+			begin
+				countup<=1;
+				tagwrite<=1;	//write new tag entry
+				nextstate<=idle;
+			end
+		`ifdef TWOCYCLEREAD
+		`else
+		taglookup:
+			begin
+				nextstate<=tagcompare;
+				M_wait<=1;
+			end
+		`endif
+		tagcompare:
+		begin
+			nextstate<=readdata;
+			M_wait<=1;
+		end
+		readdata:
+			if (cachehit)
+			begin
+				cachereadswitch<=1;
+				nextstate<=idle;
+			end
+			else
+			begin
+				M_wait<=1;
+				`ifdef INTERCEPT
+					S_read<=1;
+				`endif
+				pause_n<=0;
+				lookupoldtag<=1;	//delete old tag
+				tagdelete<=1;
+				nextstate<=waitmemread;
+			end
+		waitmemread:
+			if (S_wait)
+			begin
+				`ifdef INTERCEPT
+					S_read<=1;
+				`endif
+				M_wait<=1;
+				nextstate<=waitmemread;
+			end
+			else
+			begin
+				tagwrite<=1;
+				datawrite<=1;
+				countup<=1;
+				writefrommem<=1;
+				nextstate<=idle;
+			end
+		default:
+			nextstate<=idle;
+		endcase
+	end
+
+
+endmodule
+
