@@ -54,8 +54,6 @@ class cs_interface : public module_interface
                 const DesignFlowManagerConstRef design_flow_manager,
                 const HLSFlowStep_Type hls_flow_step_type = HLSFlowStep_Type::INTERFACE_CS_GENERATION);
 
-   void build_wrapper(structural_objectRef wrappedObj, structural_objectRef interfaceObj,
-                      structural_managerRef SM_minimal_interface);
    /**
     * Destructor
     */

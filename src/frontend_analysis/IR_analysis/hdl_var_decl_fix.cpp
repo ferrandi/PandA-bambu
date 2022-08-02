@@ -108,8 +108,7 @@ DesignFlowStep_Status HDLVarDeclFix::InternalExec()
    /// Fixing names of parameters
    const tree_nodeRef curr_tn = TM->GetTreeNode(function_id);
    auto* fd = GetPointer<function_decl>(curr_tn);
-   std::string fname;
-   tree_helper::get_mangled_fname(fd, fname);
+   std::string fname = function_behavior->CGetBehavioralHelper()->get_mangled_function_name();
    auto HLSMgr = GetPointer<HLS_manager>(AppM);
 
    if(HLSMgr && !HLSMgr->design_interface.empty() &&

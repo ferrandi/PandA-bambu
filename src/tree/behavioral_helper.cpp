@@ -127,6 +127,9 @@ BehavioralHelper::BehavioralHelper(const application_managerRef _AppM, unsigned 
       body(_body),
       opaque(!_body)
 {
+   auto fnode = TM->get_tree_node_const(function_index);
+   auto fd = GetPointer<function_decl>(fnode);
+   tree_helper::get_mangled_fname(fd, mangled_function_name);
 }
 
 BehavioralHelper::~BehavioralHelper() = default;
@@ -1081,6 +1084,11 @@ unsigned int BehavioralHelper::get_size(unsigned int var) const
 std::string BehavioralHelper::get_function_name() const
 {
    return function_name;
+}
+
+std::string BehavioralHelper::get_mangled_function_name() const
+{
+   return mangled_function_name;
 }
 
 unsigned int BehavioralHelper::get_function_index() const

@@ -156,9 +156,8 @@ class CallGraphManager
     * @param tree_manager is the tree manager
     * @param Param is the set of input parameters
     */
-   CallGraphManager(const FunctionExpanderConstRef function_expander,
-                    const bool allow_recursive_functions, const tree_managerConstRef tree_manager,
-                    const ParameterConstRef Param);
+   CallGraphManager(const FunctionExpanderConstRef function_expander, const bool allow_recursive_functions,
+                    const tree_managerConstRef tree_manager, const ParameterConstRef Param);
 
    /**
     * Destructor

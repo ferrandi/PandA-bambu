@@ -113,6 +113,9 @@ class BehavioralHelper
    /// Name of the function
    std::string function_name;
 
+   /// Mangled name of the function
+   std::string mangled_function_name;
+
    /// Flag to check if behavioral_graph_manager contains the function implementation
    bool body;
 
@@ -231,6 +234,12 @@ class BehavioralHelper
     * Return the name of the function
     */
    std::string get_function_name() const;
+
+   /**
+    * @brief get_mangled_function_name returns the mangled function name
+    * @return the function name
+    */
+   std::string get_mangled_function_name() const;
 
    /**
     * Return the index of the function

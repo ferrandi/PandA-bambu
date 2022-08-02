@@ -333,12 +333,12 @@ const std::string ParametricListBasedSpecialization::GetSignature() const
 parametric_list_based::parametric_list_based(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr,
                                              unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager,
                                              const HLSFlowStepSpecializationConstRef _hls_flow_step_specialization)
-    : Scheduling(_parameters, _HLSMgr, _funId, _design_flow_manager, HLSFlowStep_Type::LIST_BASED_SCHEDULING,
-                 _hls_flow_step_specialization ?
-                     _hls_flow_step_specialization :
-                     HLSFlowStepSpecializationConstRef(
-                         new ParametricListBasedSpecialization(static_cast<ParametricListBased_Metric>(
-                             _parameters->getOption<unsigned int>(OPT_scheduling_priority))))),
+    : schedulingBaseStep(_parameters, _HLSMgr, _funId, _design_flow_manager, HLSFlowStep_Type::LIST_BASED_SCHEDULING,
+                         _hls_flow_step_specialization ?
+                             _hls_flow_step_specialization :
+                             HLSFlowStepSpecializationConstRef(
+                                 new ParametricListBasedSpecialization(static_cast<ParametricListBased_Metric>(
+                                     _parameters->getOption<unsigned int>(OPT_scheduling_priority))))),
       parametric_list_based_metric(GetPointer<const ParametricListBasedSpecialization>(hls_flow_step_specialization)
                                        ->parametric_list_based_metric),
       ending_time(OpGraphConstRef()),
@@ -362,12 +362,12 @@ void parametric_list_based::ComputeRelationships(DesignFlowStepSet& relationship
       relationship.insert(design_flow_step);
    }
 #endif
-   Scheduling::ComputeRelationships(relationship, relationship_type);
+   schedulingBaseStep::ComputeRelationships(relationship, relationship_type);
 }
 
 void parametric_list_based::Initialize()
 {
-   Scheduling::Initialize();
+   schedulingBaseStep::Initialize();
    const FunctionBehaviorConstRef FB = HLSMgr->CGetFunctionBehavior(funId);
    ending_time = OpVertexMap<double>(FB->CGetOpGraph(FunctionBehavior::CFG));
 }
@@ -603,16 +603,8 @@ void parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
    /// select the type of graph
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "   Selecting the type of the graph...");
 
-   if(speculation)
-   {
-      flow_graph = FB->CGetOpGraph(FunctionBehavior::SG);
-      flow_graph_with_feedbacks = FB->CGetOpGraph(FunctionBehavior::SG);
-   }
-   else
-   {
-      flow_graph = FB->CGetOpGraph(FunctionBehavior::FLSAODG);
-      flow_graph_with_feedbacks = FB->CGetOpGraph(FunctionBehavior::FFLSAODG);
-   }
+   flow_graph = FB->CGetOpGraph(FunctionBehavior::FLSAODG);
+   flow_graph_with_feedbacks = FB->CGetOpGraph(FunctionBehavior::FFLSAODG);
 
    /// Number of operation to be scheduled
    size_t operations_number = Operations.size();
@@ -625,7 +617,7 @@ void parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
    if(parametric_list_based_metric == ParametricListBased_Metric::STATIC_MOBILITY or
       parametric_list_based_metric == ParametricListBased_Metric::DYNAMIC_MOBILITY)
    {
-      aslap = ASLAPRef(new ASLAP(HLSMgr, HLS, speculation, operations, parameters, CTRL_STEP_MULTIPLIER));
+      aslap = ASLAPRef(new ASLAP(HLSMgr, HLS, operations, parameters, CTRL_STEP_MULTIPLIER));
       if(HLS->Rsch->num_scheduled() == 0)
       {
          aslap->compute_ASAP();
@@ -725,50 +717,8 @@ void parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
       add_to_priority_queues(priority_queues, ready_resources, *rv);
    }
 
-   const auto TM = HLSMgr->get_tree_manager();
-   auto fnode = TM->get_tree_node_const(funId);
-   auto fd = GetPointer<function_decl>(fnode);
-   std::string fname;
-   tree_helper::get_mangled_fname(fd, fname);
    CustomUnorderedSet<vertex> RW_stmts;
-   if(HLSMgr->design_interface_loads.find(fname) != HLSMgr->design_interface_loads.end())
-   {
-      for(const auto& bb2arg2stmtsR : HLSMgr->design_interface_loads.at(fname))
-      {
-         for(const auto& arg2stms : bb2arg2stmtsR.second)
-         {
-            if(arg2stms.second.size() > 0)
-            {
-               for(const auto& stmt : arg2stms.second)
-               {
-                  THROW_ASSERT(flow_graph->CGetOpGraphInfo()->tree_node_to_operation.find(stmt) !=
-                                   flow_graph->CGetOpGraphInfo()->tree_node_to_operation.end(),
-                               "unexpected condition: STMT=" + STR(stmt));
-                  RW_stmts.insert(flow_graph->CGetOpGraphInfo()->tree_node_to_operation.at(stmt));
-               }
-            }
-         }
-      }
-   }
-   if(HLSMgr->design_interface_stores.find(fname) != HLSMgr->design_interface_stores.end())
-   {
-      for(const auto& bb2arg2stmtsW : HLSMgr->design_interface_stores.at(fname))
-      {
-         for(const auto& arg2stms : bb2arg2stmtsW.second)
-         {
-            if(arg2stms.second.size() > 0)
-            {
-               for(const auto& stmt : arg2stms.second)
-               {
-                  THROW_ASSERT(flow_graph->CGetOpGraphInfo()->tree_node_to_operation.find(stmt) !=
-                                   flow_graph->CGetOpGraphInfo()->tree_node_to_operation.end(),
-                               "unexpected condition");
-                  RW_stmts.insert(flow_graph->CGetOpGraphInfo()->tree_node_to_operation.at(stmt));
-               }
-            }
-         }
-      }
-   }
+   compute_RW_stmts(RW_stmts, flow_graph, HLSMgr, funId);
 
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "   Starting scheduling...");
    unsigned int already_sch = schedule->num_scheduled();
@@ -2038,7 +1988,6 @@ DesignFlowStep_Status parametric_list_based::InternalExec()
 #endif
       ctrl_steps = HLS->Rsch->get_csteps();
    }
-   HLS->Rsch->set_spec(get_spec());
 
    /// Find the minimum slack
    double min_slack = std::numeric_limits<double>::max();
@@ -3272,7 +3221,7 @@ const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationC
 parametric_list_based::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret =
-       Scheduling::ComputeHLSRelationships(relationship_type);
+       schedulingBaseStep::ComputeHLSRelationships(relationship_type);
    switch(relationship_type)
    {
       case DEPENDENCE_RELATIONSHIP:

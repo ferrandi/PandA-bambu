@@ -73,83 +73,11 @@
 
 CONSTREF_FORWARD_DECL(Schedule);
 
-/**
- * Class used to sort operation using ALAP in ascending order as primary key and ASAP ascending order as secondary key
- */
-struct SDCSorter2 : std::binary_function<vertex, vertex, bool>
-{
- private:
-   /// The function behavior
-   const FunctionBehaviorConstRef function_behavior;
-
-   /// The operation graph
-   const OpGraphConstRef op_graph;
-
-   /// The index basic block map
-   const CustomUnorderedMap<unsigned int, vertex>& bb_index_map;
-
- public:
-   /**
-    * Constructor
-    * @param _asap is the asap information
-    * @param _alap is the alap information
-    * @param _function_behavior is the function behavior
-    * @param _op_graph is the operation graph
-    * @param _statements_list is the list of the statements of the basic block
-    * @param _parameters is the set of input parameters
-    */
-   explicit SDCSorter2(const FunctionBehaviorConstRef _function_behavior, const OpGraphConstRef _op_graph)
-       : function_behavior(_function_behavior),
-         op_graph(_op_graph),
-         bb_index_map(_function_behavior->CGetBBGraph(FunctionBehavior::BB)->CGetBBGraphInfo()->bb_index_map)
-   {
-   }
-
-   /**
-    * Compare position of two vertices
-    * @param x is the first vertex
-    * @param y is the second vertex
-    * @return true if x precedes y in topological sort, false otherwise
-    */
-   bool operator()(const vertex& x, const vertex& y) const
-   {
-      const auto first_bb_index = op_graph->CGetOpNodeInfo(x)->bb_index;
-      const auto second_bb_index = op_graph->CGetOpNodeInfo(y)->bb_index;
-      if(first_bb_index != second_bb_index)
-      {
-         const auto first_bb_vertex = bb_index_map.at(first_bb_index);
-         const auto second_bb_vertex = bb_index_map.at(second_bb_index);
-         if(function_behavior->CheckBBReachability(first_bb_vertex, second_bb_vertex))
-         {
-            return true;
-         }
-         if(function_behavior->CheckBBReachability(second_bb_vertex, first_bb_vertex))
-         {
-            return false;
-         }
-      }
-      if(x != y)
-      {
-         if(function_behavior->CheckReachability(x, y))
-         {
-            return true;
-         }
-         if(function_behavior->CheckReachability(y, x))
-         {
-            return false;
-         }
-      }
-      return x < y;
-   }
-};
-
 SDCScheduling2::SDCScheduling2(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr,
                                unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager,
                                const HLSFlowStepSpecializationConstRef _hls_flow_step_specialization)
     : SDCScheduling_base(_parameters, _HLSMgr, _function_id, _design_flow_manager, HLSFlowStep_Type::SDC_SCHEDULING,
-                         _hls_flow_step_specialization),
-      clock_period(0.0),
-      margin(0.0)
+                         _hls_flow_step_specialization)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
 }
@@ -178,14 +106,14 @@ void SDCScheduling2::ComputeRelationships(DesignFlowStepSet& relationship,
          }
       }
    }
-   Scheduling::ComputeRelationships(relationship, relationship_type);
+   schedulingBaseStep::ComputeRelationships(relationship, relationship_type);
 }
 
 const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
 SDCScheduling2::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret =
-       Scheduling::ComputeHLSRelationships(relationship_type);
+       schedulingBaseStep::ComputeHLSRelationships(relationship_type);
    switch(relationship_type)
    {
       case DEPENDENCE_RELATIONSHIP:
@@ -224,7 +152,7 @@ bool SDCScheduling2::HasToBeExecuted() const
 {
    if(bb_version == 0)
    {
-      return Scheduling::HasToBeExecuted();
+      return schedulingBaseStep::HasToBeExecuted();
    }
    else
    {
@@ -232,9 +160,384 @@ bool SDCScheduling2::HasToBeExecuted() const
    }
 }
 
+void SDCScheduling2::sdc_schedule(std::map<vertex, int>& vals_vertex, const hlsRef HLS, const HLS_managerRef HLSMgr,
+                                  unsigned function_id, const OpVertexSet& loop_operations,
+                                  const std::set<vertex, bb_vertex_order_by_map>& loop_bbs,
+                                  const BBGraphConstRef basic_block_graph, const OpGraphConstRef filtered_op_graph,
+                                  const AllocationInformationConstRef allocation_information,
+                                  const ParameterConstRef parameters, int debug_level)
+{
+   memoryConstRef Rmem = HLSMgr->Rmem;
+   auto clock_period = HLS->HLS_C->get_clock_period() * HLS->HLS_C->get_clock_period_resource_fraction();
+   auto FB = HLSMgr->CGetFunctionBehavior(function_id);
+   auto behavioral_helper = FB->CGetBehavioralHelper();
+   const OpGraphConstRef filtered_dfg_graph = FB->CGetOpGraph(FunctionBehavior::DFG, loop_operations);
+   /// Create the solver for the scheduling problem.
+   /// In particular, we use the reverse constraint graph to obtain the ALAP version of the SDC scheduling problem.
+   sdc_solver solver;
+   /// Map operation-stage to variable index
+   CustomUnorderedMap<vertex, unsigned int> operation_to_varindex;
+
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Computing variables");
+   /// Compute variables
+   /// Map real operation-stage to variable index
+   unsigned int next_var_index = 0;
+   for(const auto loop_operation : loop_operations)
+   {
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                     "---Creating variables for " + GET_NAME(filtered_op_graph, loop_operation) + " (executed by " +
+                         " " +
+                         allocation_information->get_fu_name(allocation_information->GetFuType(loop_operation)).first +
+                         ")  " + ": " + STR(next_var_index));
+      operation_to_varindex[loop_operation] = next_var_index;
+      next_var_index++;
+   }
+
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Computed " + STR(next_var_index) + " vertices");
+
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Adding dependencies constraints");
+   /// Add dependence constraints: target can start in the same clock cycle in which source ends
+   for(const auto operation : loop_operations)
+   {
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                     "-->Adding dependencies starting from " + GET_NAME(filtered_op_graph, operation));
+      OutEdgeIterator oe, oe_end;
+      for(boost::tie(oe, oe_end) = boost::out_edges(operation, *filtered_op_graph); oe != oe_end; oe++)
+      {
+         auto tgt = boost::target(*oe, *filtered_op_graph);
+         if(filtered_op_graph->CGetOpNodeInfo(operation)->GetNodeId() == ENTRY_ID)
+         {
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                           "---Added dependence constraint 0 " + GET_NAME(filtered_op_graph, operation) + "-" +
+                               GET_NAME(filtered_op_graph, tgt));
+            solver.add_constraint(operation_to_varindex.at(operation), operation_to_varindex.at(tgt), 0);
+         }
+         else
+         {
+            auto chainingP = allocation_information->CanBeChained(operation, tgt);
+            /// check first chaining
+            if(!chainingP)
+            {
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                              "---Added no-chaining constraint -1 " + GET_NAME(filtered_op_graph, operation) + "-" +
+                                  GET_NAME(filtered_op_graph, tgt));
+               solver.add_constraint(operation_to_varindex.at(operation), operation_to_varindex.at(tgt), -1);
+            }
+            /// Not control dependence
+            else if(filtered_op_graph->GetSelector(*oe) & ~CDG_SELECTOR)
+            {
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                              "---Added dependence constraint 0 " + GET_NAME(filtered_op_graph, operation) + "-" +
+                                  GET_NAME(filtered_op_graph, tgt));
+               solver.add_constraint(operation_to_varindex.at(operation), operation_to_varindex.at(tgt), 0);
+            }
+            /// Non speculable operation
+            else if(!behavioral_helper->CanBeSpeculated(filtered_op_graph->CGetOpNodeInfo(tgt)->GetNodeId()))
+            {
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                              "---Added dependence constraint -1 " + GET_NAME(filtered_op_graph, operation) + "-" +
+                                  GET_NAME(filtered_op_graph, tgt));
+               solver.add_constraint(operation_to_varindex.at(operation), operation_to_varindex.at(tgt), -1);
+            }
+            else
+            {
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                              "---Skipped dependence -> " + GET_NAME(filtered_op_graph, tgt));
+            }
+         }
+      }
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                     "<--Added dependencies starting from " + GET_NAME(filtered_op_graph, operation));
+   }
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Added dependencies constraints");
+
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Adding timing constraints");
+   sssp_solver ssspSolver;
+   std::map<unsigned int, double> op_timing;
+   std::set<unsigned int> op_multicycles;
+   std::list<vertex> unbounded_operations;
+   auto setupDelay = allocation_information->get_setup_hold_time();
+   for(const auto operation : loop_operations)
+   {
+      auto opFuType = allocation_information->GetFuType(operation);
+      auto timeLatency = allocation_information->GetTimeLatency(operation, opFuType);
+      auto isPipelined = allocation_information->get_initiation_time(opFuType, operation) > 0;
+      auto op_varindex = operation_to_varindex.at(operation);
+      auto is_cond_op = GET_TYPE(filtered_dfg_graph, operation) & (TYPE_IF | TYPE_MULTIIF | TYPE_SWITCH);
+      auto cycles = allocation_information->GetCycleLatency(operation);
+      if(is_cond_op)
+      {
+         op_timing[op_varindex] = allocation_information->estimate_controller_delay_fb();
+      }
+      else
+      {
+         op_timing[op_varindex] = (isPipelined ? timeLatency.second : timeLatency.first);
+         auto addCtrlDelay = parameters->getOption<double>(OPT_scheduling_mux_margins) != 0.0;
+         if(addCtrlDelay)
+         {
+            op_timing[op_varindex] += allocation_information->EstimateControllerDelay();
+         }
+      }
+      if(!allocation_information->is_operation_bounded(filtered_dfg_graph, operation, opFuType))
+      {
+         unbounded_operations.push_back(operation);
+      }
+      if(cycles > 1)
+      {
+         op_multicycles.insert(op_varindex);
+      }
+
+      OutEdgeIterator oe, oe_end;
+      for(boost::tie(oe, oe_end) = boost::out_edges(operation, *filtered_dfg_graph); oe != oe_end; oe++)
+      {
+         if(filtered_dfg_graph->GetSelector(*oe) & ~FB_DFG_SELECTOR)
+         {
+            auto tgt = boost::target(*oe, *filtered_dfg_graph);
+
+            const double edge_delay = [&]() -> double {
+               const auto operation_bb = filtered_dfg_graph->CGetOpNodeInfo(operation)->bb_index;
+               const auto tgt_bb = filtered_dfg_graph->CGetOpNodeInfo(operation)->bb_index;
+               auto connection_contrib =
+                   operation_bb == tgt_bb ? allocation_information->GetConnectionTime(
+                                                operation, tgt, AbsControlStep(operation_bb, AbsControlStep::UNKNOWN)) :
+                                            0.0;
+               auto fsm_correction =
+                   (allocation_information->is_one_cycle_direct_access_memory_unit(opFuType) &&
+                    (!allocation_information->is_readonly_memory_unit(opFuType) ||
+                     (!parameters->isOption(OPT_rom_duplication) ||
+                      !parameters->getOption<bool>(OPT_rom_duplication))) &&
+                    Rmem->get_maximum_references(allocation_information->is_memory_unit(opFuType) ?
+                                                     allocation_information->get_memory_var(opFuType) :
+                                                     allocation_information->get_proxy_memory_var(opFuType)) >
+                        allocation_information->get_number_channels(opFuType)) ?
+                       allocation_information->EstimateControllerDelay() :
+                       0.0;
+               return fsm_correction + connection_contrib +
+                      (isPipelined ? (cycles - 1) * clock_period + timeLatency.second : timeLatency.first);
+            }();
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                           "---DFG dependence delay " + GET_NAME(filtered_op_graph, operation) + "-" +
+                               GET_NAME(filtered_op_graph, tgt) + " " + STR(edge_delay));
+            ssspSolver.add_edge(op_varindex, operation_to_varindex.at(tgt), -edge_delay);
+         }
+      }
+   }
+   for(const auto operation : loop_operations)
+   {
+      std::map<unsigned int, double> vals;
+      auto op_varindex = operation_to_varindex.at(operation);
+      ssspSolver.solve_SSSPNeg(op_varindex, vals);
+      double max_delay = 0.0;
+      for(auto del : vals)
+      {
+         if(del.second > 0.0)
+         {
+            auto localDelay = del.second + op_timing.at(del.first) + setupDelay;
+            int w = static_cast<int>(std::ceil((localDelay) / clock_period)) - 1;
+            max_delay = std::max(max_delay, localDelay);
+            solver.add_constraint(op_varindex, del.first, -w);
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                           "---timing constraint " + GET_NAME(filtered_op_graph, operation) + "-" + STR(del.first) +
+                               " " + STR(w) + " " + STR(localDelay));
+         }
+      }
+      const auto operation_bb = basic_block_graph->CGetBBGraphInfo()->bb_index_map.at(
+          filtered_dfg_graph->CGetOpNodeInfo(operation)->bb_index);
+      auto laststmt = *(basic_block_graph->CGetBBNodeInfo(operation_bb)->statements_list.rbegin());
+      if(laststmt != operation)
+      {
+         auto laststmt_type = GET_TYPE(filtered_dfg_graph, laststmt);
+         if((laststmt_type & (TYPE_IF | TYPE_MULTIIF)) != 0)
+         {
+            int w = 0;
+            if(max_delay != 0.0)
+            {
+               w = static_cast<int>(std::ceil((max_delay) / clock_period)) - 1;
+            }
+            auto laststmt_index = operation_to_varindex.at(laststmt);
+            solver.add_constraint(op_varindex, laststmt_index, -w);
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                           "---last statement constraint " + GET_NAME(filtered_op_graph, operation) + "-" +
+                               GET_NAME(filtered_op_graph, laststmt) + " " + STR(w) + " " + STR(max_delay));
+         }
+      }
+   }
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Added timing constraint");
+
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Adding sorting constraint");
+   SDCSorter sdc_sorter(FB, filtered_op_graph);
+
+   /// For each basic block, for each functional unit fu, the list of the last n operations executed (n is the number
+   /// of resource of type fu) - Value is a set since there can be different paths reaching current basic block
+   CustomMap<vertex, CustomMap<unsigned int, CustomOrderedSet<std::list<vertex>>>> constrained_operations_sequences;
+   for(const auto basic_block : loop_bbs)
+   {
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                     "-->Adding sorting constraints for BB" +
+                         STR(basic_block_graph->CGetBBNodeInfo(basic_block)->block->number));
+
+      InEdgeIterator ie, ie_end;
+      for(boost::tie(ie, ie_end) = boost::in_edges(basic_block, *basic_block_graph); ie != ie_end; ie++)
+      {
+         const auto source = boost::source(*ie, *basic_block_graph);
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                        "-->Considering source BB" + STR(basic_block_graph->CGetBBNodeInfo(source)->block->number));
+         if(loop_bbs.count(source))
+         {
+            for(const auto& fu_type : constrained_operations_sequences[source])
+            {
+               constrained_operations_sequences[basic_block][fu_type.first].insert(fu_type.second.begin(),
+                                                                                   fu_type.second.end());
+            }
+         }
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
+      }
+      std::set<vertex, SDCSorter> basic_block_sorted_operations(sdc_sorter);
+      for(const auto operation : basic_block_graph->CGetBBNodeInfo(basic_block)->statements_list)
+      {
+         const auto fu_type = allocation_information->GetFuType(operation);
+         const unsigned int resources_number = allocation_information->get_number_fu(fu_type);
+         if(resources_number < INFINITE_UINT && !allocation_information->is_vertex_bounded(fu_type))
+         {
+            basic_block_sorted_operations.insert(operation);
+         }
+      }
+      if(debug_level >= DEBUG_LEVEL_VERY_PEDANTIC)
+      {
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Ordered statements");
+#ifndef NDEBUG
+         for(const auto debug_operation : basic_block_sorted_operations)
+         {
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                           "---" + GET_NAME(filtered_op_graph, debug_operation));
+         }
+#endif
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
+      }
+      for(const auto operation : basic_block_sorted_operations)
+      {
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                        "-->Considering " + GET_NAME(filtered_op_graph, operation));
+         /// Resource constraints
+         const auto fu_type = allocation_information->GetFuType(operation);
+         const unsigned int resources_number = allocation_information->get_number_fu(fu_type);
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Mapped on a shared resource");
+         const auto& old_sequences = constrained_operations_sequences[basic_block][fu_type];
+         if(old_sequences.size())
+         {
+            CustomOrderedSet<std::list<vertex>> new_sequences;
+            for(auto old_sequence : old_sequences)
+            {
+               if(debug_level >= DEBUG_LEVEL_VERY_PEDANTIC)
+               {
+                  std::string old_sequence_string;
+                  for(const auto temp : old_sequence)
+                  {
+                     old_sequence_string += GET_NAME(filtered_op_graph, temp) + "-";
+                  }
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                 "-->Considering sequence " + old_sequence_string);
+               }
+               old_sequence.push_back(operation);
+               if(old_sequence.size() > resources_number)
+               {
+                  const auto front = old_sequence.front();
+                  old_sequence.pop_front();
+                  const std::string name = allocation_information->get_fu_name(fu_type).first + "_" +
+                                           GET_NAME(filtered_op_graph, front) + "_" +
+                                           GET_NAME(filtered_op_graph, operation);
+                  auto frontII = allocation_information->get_initiation_time(fu_type, front);
+                  auto cycles = allocation_information->GetCycleLatency(front);
+                  auto w = (frontII > 0 ? -static_cast<int>(frontII.GetContent()) : -static_cast<int>(cycles));
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                 "---Resource constraint " + GET_NAME(filtered_op_graph, front) + "-" +
+                                     GET_NAME(filtered_op_graph, operation) + " " + STR(w));
+                  solver.add_constraint(operation_to_varindex.at(front), operation_to_varindex.at(operation), w);
+               }
+               if(debug_level >= DEBUG_LEVEL_VERY_PEDANTIC)
+               {
+                  std::string old_sequence_string;
+                  for(const auto temp : old_sequence)
+                  {
+                     old_sequence_string += GET_NAME(filtered_op_graph, temp) + "-";
+                  }
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--New sequence " + old_sequence_string);
+               }
+               new_sequences.insert(old_sequence);
+            }
+            constrained_operations_sequences[basic_block][fu_type] = new_sequences;
+         }
+         else
+         {
+            std::list<vertex> temp;
+            temp.push_back(operation);
+            constrained_operations_sequences[basic_block][fu_type].insert(temp);
+         }
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                        "<--Considered " + GET_NAME(filtered_op_graph, operation));
+      }
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                     "<--Added sorting constraints for BB" +
+                         STR(basic_block_graph->CGetBBNodeInfo(basic_block)->block->number));
+   }
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Added sorting constraints");
+
+   CustomUnorderedSet<vertex> RW_stmts;
+   compute_RW_stmts(RW_stmts, filtered_op_graph, HLSMgr, function_id);
+   std::map<unsigned, int> vals;
+   bool restart_sdc_solver;
+   do
+   {
+      restart_sdc_solver = false;
+      auto ilp_result = solver.solve_SDCNeg(vals);
+      if(!ilp_result)
+      {
+         THROW_ERROR("Error in finding ilp solution");
+      }
+
+      /// refine the scheduling by adding some further constraints.
+      /// Some constraints are not easy to be defined before the scheduling has been computed.
+      if(!unbounded_operations.empty())
+      {
+         std::map<int, std::set<unsigned>> reverse_vals;
+         for(auto val : vals)
+         {
+            reverse_vals[val.second].insert(val.first);
+         }
+         for(auto operation : unbounded_operations)
+         {
+            auto op_varindex = operation_to_varindex.at(operation);
+            auto sched_step = vals.at(op_varindex);
+            for(auto op : reverse_vals.at(sched_step))
+            {
+               if(op != op_varindex && op_multicycles.find(op) != op_multicycles.end())
+               {
+                  restart_sdc_solver = true;
+                  solver.add_constraint(op_varindex, op, -1);
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                 "---added a precedence constraint between an unbounded operation and a multi-cycle "
+                                 "operation " +
+                                     GET_NAME(filtered_op_graph, operation) + "-" + STR(op));
+               }
+            }
+         }
+      }
+   } while(restart_sdc_solver);
+   for(const auto operation : loop_operations)
+   {
+      auto op_varindex = operation_to_varindex.at(operation);
+      vals_vertex[operation] = vals.at(op_varindex);
+   }
+}
+
 DesignFlowStep_Status SDCScheduling2::InternalExec()
 {
    const FunctionBehaviorConstRef FB = HLSMgr->CGetFunctionBehavior(funId);
+   auto basic_block_graph = FB->CGetBBGraph(FunctionBehavior::BB);
+   auto allocation_information = HLS->allocation_information;
+   auto res_binding = HLS->Rfu;
+   auto op_graph = FB->CGetOpGraph(FunctionBehavior::FLSAODG);
+
    const BBGraphConstRef dominators = FB->CGetBBGraph(FunctionBehavior::DOM_TREE);
    const LoopsConstRef loops = FB->CGetLoops();
    const std::map<vertex, unsigned int>& bb_map_levels = FB->get_bb_map_levels();
@@ -242,7 +545,6 @@ DesignFlowStep_Status SDCScheduling2::InternalExec()
    for(const auto& loop : loops->GetList())
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Scheduling loop " + STR(loop->GetId()));
-      operation_to_varindex.clear();
       const unsigned int loop_id = loop->GetId();
 
       /// Vertices not yet added to any tree
@@ -262,365 +564,15 @@ DesignFlowStep_Status SDCScheduling2::InternalExec()
          }
       }
       const OpGraphConstRef filtered_op_graph = FB->CGetOpGraph(FunctionBehavior::FLSAODG, loop_operations);
-      const OpGraphConstRef filtered_dfg_graph = FB->CGetOpGraph(FunctionBehavior::DFG, loop_operations);
-      /// Create the solver for the scheduling problem.
-      /// In particular, we use the reverse constraint graph to obtain the ALAP version of the SDC scheduling problem.
-      sdc_solver solver;
-
-      if(debug_level >= DEBUG_LEVEL_VERY_PEDANTIC)
-      {
-         filtered_op_graph->WriteDot("Loop_" + STR(loop_id) + "_to_be_scheduled.dot");
-      }
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Computing variables");
-      /// Compute variables
-      /// Map real operation-stage to variable index
-      unsigned int next_var_index = 0;
-      for(const auto loop_operation : loop_operations)
-      {
-         INDENT_DBG_MEX(
-             DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-             "---Creating variables for " + GET_NAME(filtered_op_graph, loop_operation) + " (executed by " + " " +
-                 allocation_information->get_fu_name(allocation_information->GetFuType(loop_operation)).first + ")  " +
-                 ": " + STR(next_var_index));
-         operation_to_varindex[loop_operation] = next_var_index;
-         next_var_index++;
-      }
-
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Computed " + STR(next_var_index) + " vertices");
-
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Adding dependencies constraints");
-      /// Add dependence constraints: target can start in the same clock cycle in which source ends
-      for(const auto operation : loop_operations)
-      {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                        "-->Adding dependencies starting from " + GET_NAME(filtered_op_graph, operation));
-         OutEdgeIterator oe, oe_end;
-         for(boost::tie(oe, oe_end) = boost::out_edges(operation, *filtered_op_graph); oe != oe_end; oe++)
-         {
-            auto tgt = boost::target(*oe, *filtered_op_graph);
-            if(filtered_op_graph->CGetOpNodeInfo(operation)->GetNodeId() == ENTRY_ID)
-            {
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                              "---Added dependence constraint 0 " + GET_NAME(op_graph, operation) + "-" +
-                                  GET_NAME(op_graph, tgt));
-               solver.add_constraint(operation_to_varindex.at(operation), operation_to_varindex.at(tgt), 0);
-            }
-            else
-            {
-               auto chainingP = allocation_information->CanBeChained(operation, tgt);
-               /// check first chaining
-               if(!chainingP)
-               {
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                 "---Added no-chaining constraint -1 " + GET_NAME(op_graph, operation) + "-" +
-                                     GET_NAME(op_graph, tgt));
-                  solver.add_constraint(operation_to_varindex.at(operation), operation_to_varindex.at(tgt), -1);
-               }
-               /// Not control dependence
-               else if(filtered_op_graph->GetSelector(*oe) & ~CDG_SELECTOR)
-               {
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                 "---Added dependence constraint 0 " + GET_NAME(op_graph, operation) + "-" +
-                                     GET_NAME(op_graph, tgt));
-                  solver.add_constraint(operation_to_varindex.at(operation), operation_to_varindex.at(tgt), 0);
-               }
-               /// Non speculable operation
-               else if(!behavioral_helper->CanBeSpeculated(filtered_op_graph->CGetOpNodeInfo(tgt)->GetNodeId()))
-               {
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                 "---Added dependence constraint -1 " + GET_NAME(op_graph, operation) + "-" +
-                                     GET_NAME(op_graph, tgt));
-                  solver.add_constraint(operation_to_varindex.at(operation), operation_to_varindex.at(tgt), -1);
-               }
-               else
-               {
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                 "---Skipped dependence -> " + GET_NAME(filtered_op_graph, tgt));
-               }
-            }
-         }
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                        "<--Added dependencies starting from " + GET_NAME(filtered_op_graph, operation));
-      }
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Added dependencies constraints");
-
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Adding timing constraints");
-      sssp_solver ssspSolver;
-      std::map<unsigned int, double> op_timing;
-      std::set<unsigned int> op_multicycles;
-      std::list<vertex> unbounded_operations;
-      auto setupDelay = allocation_information->get_setup_hold_time();
-      for(const auto operation : loop_operations)
-      {
-         auto opFuType = allocation_information->GetFuType(operation);
-         auto timeLatency = allocation_information->GetTimeLatency(operation, opFuType);
-         auto isPipelined = allocation_information->get_initiation_time(opFuType, operation) > 0;
-         auto op_varindex = operation_to_varindex.at(operation);
-         auto is_cond_op = GET_TYPE(filtered_dfg_graph, operation) & (TYPE_IF | TYPE_MULTIIF | TYPE_SWITCH);
-         auto cycles = allocation_information->GetCycleLatency(operation);
-         if(is_cond_op)
-         {
-            op_timing[op_varindex] = allocation_information->estimate_controller_delay_fb();
-         }
-         else
-         {
-            op_timing[op_varindex] = (isPipelined ? timeLatency.second : timeLatency.first);
-            auto addCtrlDelay = parameters->getOption<double>(OPT_scheduling_mux_margins) != 0.0;
-            if(addCtrlDelay)
-            {
-               op_timing[op_varindex] += allocation_information->EstimateControllerDelay();
-            }
-         }
-         if(!allocation_information->is_operation_bounded(filtered_dfg_graph, operation, opFuType))
-         {
-            unbounded_operations.push_back(operation);
-         }
-         if(cycles > 1)
-         {
-            op_multicycles.insert(op_varindex);
-         }
-
-         OutEdgeIterator oe, oe_end;
-         for(boost::tie(oe, oe_end) = boost::out_edges(operation, *filtered_dfg_graph); oe != oe_end; oe++)
-         {
-            if(filtered_dfg_graph->GetSelector(*oe) & ~FB_DFG_SELECTOR)
-            {
-               auto tgt = boost::target(*oe, *filtered_dfg_graph);
-
-               const double edge_delay = [&]() -> double {
-                  const auto operation_bb = filtered_dfg_graph->CGetOpNodeInfo(operation)->bb_index;
-                  const auto tgt_bb = filtered_dfg_graph->CGetOpNodeInfo(operation)->bb_index;
-                  auto connection_contrib =
-                      operation_bb == tgt_bb ?
-                          allocation_information->GetConnectionTime(
-                              operation, tgt, AbsControlStep(operation_bb, AbsControlStep::UNKNOWN)) :
-                          0.0;
-                  auto fsm_correction = (allocation_information->is_one_cycle_direct_access_memory_unit(opFuType) &&
-                                         (!allocation_information->is_readonly_memory_unit(opFuType) ||
-                                          (!parameters->isOption(OPT_rom_duplication) ||
-                                           !parameters->getOption<bool>(OPT_rom_duplication))) &&
-                                         HLSMgr->Rmem->get_maximum_references(
-                                             allocation_information->is_memory_unit(opFuType) ?
-                                                 allocation_information->get_memory_var(opFuType) :
-                                                 allocation_information->get_proxy_memory_var(opFuType)) >
-                                             allocation_information->get_number_channels(opFuType)) ?
-                                            allocation_information->EstimateControllerDelay() :
-                                            0.0;
-                  return fsm_correction + connection_contrib +
-                         (isPipelined ? (cycles - 1) * clock_period + timeLatency.second : timeLatency.first);
-               }();
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                              "---DFG dependence delay " + GET_NAME(op_graph, operation) + "-" +
-                                  GET_NAME(op_graph, tgt) + " " + STR(edge_delay));
-               ssspSolver.add_edge(op_varindex, operation_to_varindex.at(tgt), -edge_delay);
-            }
-         }
-      }
-      for(const auto operation : loop_operations)
-      {
-         std::map<unsigned int, double> vals;
-         auto op_varindex = operation_to_varindex.at(operation);
-         ssspSolver.solve_SSSPNeg(op_varindex, vals);
-         double max_delay = 0.0;
-         for(auto del : vals)
-         {
-            if(del.second > 0.0)
-            {
-               auto localDelay = del.second + op_timing.at(del.first) + setupDelay;
-               int w = static_cast<int>(std::ceil((localDelay) / clock_period)) - 1;
-               max_delay = std::max(max_delay, localDelay);
-               solver.add_constraint(op_varindex, del.first, -w);
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                              "---timing constraint " + GET_NAME(op_graph, operation) + "-" + STR(del.first) + " " +
-                                  STR(w) + " " + STR(localDelay));
-            }
-         }
-         const auto operation_bb = basic_block_graph->CGetBBGraphInfo()->bb_index_map.at(
-             filtered_dfg_graph->CGetOpNodeInfo(operation)->bb_index);
-         auto laststmt = *(basic_block_graph->CGetBBNodeInfo(operation_bb)->statements_list.rbegin());
-         if(laststmt != operation)
-         {
-            auto laststmt_type = GET_TYPE(filtered_dfg_graph, laststmt);
-            if((laststmt_type & (TYPE_IF | TYPE_MULTIIF)) != 0)
-            {
-               int w = 0;
-               if(max_delay != 0.0)
-               {
-                  w = static_cast<int>(std::ceil((max_delay) / clock_period)) - 1;
-               }
-               auto laststmt_index = operation_to_varindex.at(laststmt);
-               solver.add_constraint(op_varindex, laststmt_index, -w);
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                              "---last statement constraint " + GET_NAME(op_graph, operation) + "-" +
-                                  GET_NAME(op_graph, laststmt) + " " + STR(w) + " " + STR(max_delay));
-            }
-         }
-      }
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Added timing constraint");
-
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Adding sorting constraint");
-      SDCSorter2 sdc_sorter(FB, filtered_op_graph);
-
-      /// For each basic block, for each functional unit fu, the list of the last n operations executed (n is the number
-      /// of resource of type fu) - Value is a set since there can be different paths reaching current basic block
-      CustomMap<vertex, CustomMap<unsigned int, CustomOrderedSet<std::list<vertex>>>> constrained_operations_sequences;
-      for(const auto basic_block : loop_bbs)
-      {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                        "-->Adding sorting constraints for BB" +
-                            STR(basic_block_graph->CGetBBNodeInfo(basic_block)->block->number));
-
-         InEdgeIterator ie, ie_end;
-         for(boost::tie(ie, ie_end) = boost::in_edges(basic_block, *basic_block_graph); ie != ie_end; ie++)
-         {
-            const auto source = boost::source(*ie, *basic_block_graph);
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                           "-->Considering source BB" + STR(basic_block_graph->CGetBBNodeInfo(source)->block->number));
-            if(loop_bbs.count(source))
-            {
-               for(const auto& fu_type : constrained_operations_sequences[source])
-               {
-                  constrained_operations_sequences[basic_block][fu_type.first].insert(fu_type.second.begin(),
-                                                                                      fu_type.second.end());
-               }
-            }
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
-         }
-         std::set<vertex, SDCSorter2> basic_block_sorted_operations(sdc_sorter);
-         for(const auto operation : basic_block_graph->CGetBBNodeInfo(basic_block)->statements_list)
-         {
-            const auto fu_type = allocation_information->GetFuType(operation);
-            const unsigned int resources_number = allocation_information->get_number_fu(fu_type);
-            if(resources_number < INFINITE_UINT && !allocation_information->is_vertex_bounded(fu_type))
-            {
-               basic_block_sorted_operations.insert(operation);
-            }
-         }
-         if(debug_level >= DEBUG_LEVEL_VERY_PEDANTIC)
-         {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Ordered statements");
-#ifndef NDEBUG
-            for(const auto debug_operation : basic_block_sorted_operations)
-            {
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                              "---" + GET_NAME(filtered_op_graph, debug_operation));
-            }
-#endif
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
-         }
-         for(const auto operation : basic_block_sorted_operations)
-         {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                           "-->Considering " + GET_NAME(filtered_op_graph, operation));
-            /// Resource constraints
-            const auto fu_type = allocation_information->GetFuType(operation);
-            const unsigned int resources_number = allocation_information->get_number_fu(fu_type);
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Mapped on a shared resource");
-            const auto& old_sequences = constrained_operations_sequences[basic_block][fu_type];
-            if(old_sequences.size())
-            {
-               CustomOrderedSet<std::list<vertex>> new_sequences;
-               for(auto old_sequence : old_sequences)
-               {
-                  if(debug_level >= DEBUG_LEVEL_VERY_PEDANTIC)
-                  {
-                     std::string old_sequence_string;
-                     for(const auto temp : old_sequence)
-                     {
-                        old_sequence_string += GET_NAME(filtered_op_graph, temp) + "-";
-                     }
-                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                    "-->Considering sequence " + old_sequence_string);
-                  }
-                  old_sequence.push_back(operation);
-                  if(old_sequence.size() > resources_number)
-                  {
-                     const auto front = old_sequence.front();
-                     old_sequence.pop_front();
-                     const std::string name = allocation_information->get_fu_name(fu_type).first + "_" +
-                                              GET_NAME(op_graph, front) + "_" + GET_NAME(op_graph, operation);
-                     auto frontII = allocation_information->get_initiation_time(fu_type, front);
-                     auto cycles = allocation_information->GetCycleLatency(front);
-                     auto w = (frontII > 0 ? -static_cast<int>(frontII.GetContent()) : -static_cast<int>(cycles));
-                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                    "---Resource constraint " + GET_NAME(op_graph, front) + "-" +
-                                        GET_NAME(op_graph, operation) + " " + STR(w));
-                     solver.add_constraint(operation_to_varindex.at(front), operation_to_varindex.at(operation), w);
-                  }
-                  if(debug_level >= DEBUG_LEVEL_VERY_PEDANTIC)
-                  {
-                     std::string old_sequence_string;
-                     for(const auto temp : old_sequence)
-                     {
-                        old_sequence_string += GET_NAME(filtered_op_graph, temp) + "-";
-                     }
-                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--New sequence " + old_sequence_string);
-                  }
-                  new_sequences.insert(old_sequence);
-               }
-               constrained_operations_sequences[basic_block][fu_type] = new_sequences;
-            }
-            else
-            {
-               std::list<vertex> temp;
-               temp.push_back(operation);
-               constrained_operations_sequences[basic_block][fu_type].insert(temp);
-            }
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                           "<--Considered " + GET_NAME(filtered_op_graph, operation));
-         }
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                        "<--Added sorting constraints for BB" +
-                            STR(basic_block_graph->CGetBBNodeInfo(basic_block)->block->number));
-      }
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Added sorting constraints");
-
-      std::map<unsigned, int> vals;
-      bool restart_sdc_solver;
-      do
-      {
-         restart_sdc_solver = false;
-         auto ilp_result = solver.solve_SDCNeg(vals);
-         if(!ilp_result)
-         {
-            THROW_ERROR("Error in finding ilp solution");
-         }
-
-         /// refine the scheduling by adding some further constraints.
-         /// Some constraints are not easy to be defined before the scheduling has been computed.
-         if(!unbounded_operations.empty())
-         {
-            std::map<int, std::set<unsigned>> reverse_vals;
-            for(auto val : vals)
-            {
-               reverse_vals[val.second].insert(val.first);
-            }
-            for(auto operation : unbounded_operations)
-            {
-               auto op_varindex = operation_to_varindex.at(operation);
-               auto sched_step = vals.at(op_varindex);
-               for(auto op : reverse_vals.at(sched_step))
-               {
-                  if(op != op_varindex && op_multicycles.find(op) != op_multicycles.end())
-                  {
-                     restart_sdc_solver = true;
-                     solver.add_constraint(op_varindex, op, -1);
-                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                    "---added a precedence constraint between an unbounded operation and a multi-cycle "
-                                    "operation " +
-                                        GET_NAME(op_graph, operation) + "-" + STR(op));
-                  }
-               }
-            }
-         }
-      } while(restart_sdc_solver);
+      std::map<vertex, int> vals;
+      sdc_schedule(vals, HLS, HLSMgr, funId, loop_operations, loop_bbs, basic_block_graph, filtered_op_graph,
+                   allocation_information, parameters, debug_level);
 
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Solution:");
       ControlStep last_relative_step = ControlStep(0u);
       for(const auto operation : loop_operations)
       {
-         const unsigned int begin_variable = operation_to_varindex.at(operation);
-         ControlStep current_control_step = ControlStep(static_cast<unsigned int>(vals[begin_variable]));
+         ControlStep current_control_step = ControlStep(static_cast<unsigned int>(vals.at(operation)));
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                         "---" + GET_NAME(filtered_op_graph, operation) + " scheduled at relative step " +
                             STR(current_control_step));
@@ -824,15 +776,6 @@ DesignFlowStep_Status SDCScheduling2::InternalExec()
 void SDCScheduling2::Initialize()
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Initializing SDCScheduling2");
-   Scheduling::Initialize();
-   const FunctionBehaviorConstRef FB = HLSMgr->CGetFunctionBehavior(funId);
-   op_graph = FB->CGetOpGraph(FunctionBehavior::FLSAODG);
-   behavioral_helper = FB->CGetBehavioralHelper();
-   feedback_op_graph = FB->CGetOpGraph(FunctionBehavior::FFLSAODG);
-   allocation_information = HLS->allocation_information;
-   res_binding = HLS->Rfu;
-   clock_period = HLS->HLS_C->get_clock_period() * HLS->HLS_C->get_clock_period_resource_fraction();
-   margin = allocation_information->GetClockPeriodMargin();
-   basic_block_graph = FB->CGetBBGraph(FunctionBehavior::BB);
+   schedulingBaseStep::Initialize();
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Initialized SDCScheduling2");
 }

@@ -143,37 +143,7 @@ BambuFrontendFlow::ComputeFrontendRelationships(const DesignFlowStep::Relationsh
          relationships.insert(std::make_pair(SWITCH_FIX, WHOLE_APPLICATION));
          relationships.insert(std::make_pair(LOOPS_ANALYSIS_BAMBU, WHOLE_APPLICATION));
 
-#if HAVE_EXPERIMENTAL
-         if(parameters->getOption<bool>(OPT_speculative))
-         {
-            relationships.insert(std::make_pair(SPECULATION_EDGES_COMPUTATION, WHOLE_APPLICATION));
-         }
-         if(parameters->getOption<HLSFlowStep_Type>(OPT_controller_architecture) ==
-            HLSFlowStep_Type::PARALLEL_CONTROLLER_CREATOR)
-         {
-            // Silvia: this is the transformation to disable for testing
-            // relationships.insert(std::make_pair(SPLIT_PHINODES, WHOLE_APPLICATION));
-            // relationships.insert(std::make_pair(VIRTUAL_PHI_NODES_SPLIT, WHOLE_APPLICATION));
-            if(parameters->isOption(OPT_chaining) and parameters->getOption<bool>(OPT_chaining))
-            {
-               relationships.insert(std::make_pair(PARALLEL_REGIONS_GRAPH_COMPUTATION, WHOLE_APPLICATION));
-            }
-            relationships.insert(std::make_pair(EXTENDED_PDG_COMPUTATION, WHOLE_APPLICATION));
-            if(parameters->isOption("pdg-reduction") and parameters->getOption<bool>("pdg-reduction"))
-            {
-               relationships.insert(std::make_pair(REDUCED_PDG_COMPUTATION, WHOLE_APPLICATION));
-            }
-         }
-         else
-         {
-            if(!parameters->getOption<int>(OPT_gcc_openmp_simd))
-            {
-               relationships.insert(std::make_pair(MULTI_WAY_IF, WHOLE_APPLICATION));
-            }
-         }
-#else
          relationships.insert(std::make_pair(MULTI_WAY_IF, WHOLE_APPLICATION));
-#endif
 #if HAVE_ILP_BUILT
          if(parameters->getOption<HLSFlowStep_Type>(OPT_scheduling_algorithm) == HLSFlowStep_Type::SDC_SCHEDULING)
          {

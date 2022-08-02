@@ -58,7 +58,7 @@
 #include "op_graph.hpp"
 #include "refcount.hpp"
 #include "rehashed_heap.hpp"
-#include "scheduling.hpp"
+#include "scheduling_base_step.hpp"
 
 /**
  * @name forward declarations
@@ -141,7 +141,7 @@ class ParametricListBasedSpecialization : public HLSFlowStepSpecialization
 /**
  * Class managing list based scheduling algorithms.
  */
-class parametric_list_based : public Scheduling
+class parametric_list_based : public schedulingBaseStep
 {
  private:
    static const double EPSILON;

@@ -41,12 +41,14 @@
 #ifndef SDC_SCHEDULING_BASE_HPP
 #define SDC_SCHEDULING_BASE_HPP
 
-#include "scheduling.hpp"
+#include "scheduling_base_step.hpp"
+
+CONSTREF_FORWARD_DECL(FunctionBehavior);
 
 #include <list>
 #include <vector>
 
-class SDCScheduling_base : public Scheduling
+class SDCScheduling_base : public schedulingBaseStep
 {
  public:
    /// Result of SPECULATIVE_LOOP: the list of movement to be performed (first element is the operation, second element
@@ -56,9 +58,46 @@ class SDCScheduling_base : public Scheduling
    SDCScheduling_base(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, unsigned int _funId,
                       const DesignFlowManagerConstRef _design_flow_manager, const HLSFlowStep_Type _hls_flow_step_type,
                       const HLSFlowStepSpecializationConstRef _hls_flow_step_specialization)
-       : Scheduling(_parameters, _HLSMgr, _funId, _design_flow_manager, _hls_flow_step_type,
-                    _hls_flow_step_specialization)
+       : schedulingBaseStep(_parameters, _HLSMgr, _funId, _design_flow_manager, _hls_flow_step_type,
+                            _hls_flow_step_specialization)
    {
    }
 };
+
+/**
+ * Class used to sort operation using ALAP in ascending order as primary key and ASAP ascending order as secondary key
+ */
+struct SDCSorter : std::binary_function<vertex, vertex, bool>
+{
+ private:
+   /// The function behavior
+   const FunctionBehaviorConstRef function_behavior;
+
+   /// The operation graph
+   const OpGraphConstRef op_graph;
+
+   /// The index basic block map
+   const CustomUnorderedMap<unsigned int, vertex>& bb_index_map;
+
+ public:
+   /**
+    * Constructor
+    * @param _asap is the asap information
+    * @param _alap is the alap information
+    * @param _function_behavior is the function behavior
+    * @param _op_graph is the operation graph
+    * @param _statements_list is the list of the statements of the basic block
+    * @param _parameters is the set of input parameters
+    */
+   explicit SDCSorter(const FunctionBehaviorConstRef _function_behavior, const OpGraphConstRef _op_graph);
+
+   /**
+    * Compare position of two vertices
+    * @param x is the first vertex
+    * @param y is the second vertex
+    * @return true if x precedes y in topological sort, false otherwise
+    */
+   bool operator()(const vertex& x, const vertex& y) const;
+};
+
 #endif

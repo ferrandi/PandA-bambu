@@ -811,13 +811,13 @@ noinst_HEADERS += \
    scheduling/priority.hpp \
    scheduling/rehashed_heap.hpp \
    scheduling/schedule.hpp \
-   scheduling/scheduling.hpp
+   scheduling/scheduling_base_step.hpp
 lib_scheduling_la_SOURCES = \
    scheduling/ASLAP.cpp \
    scheduling/parametric_list_based.cpp \
    scheduling/priority.cpp \
    scheduling/schedule.cpp \
-   scheduling/scheduling.cpp
+   scheduling/scheduling_base_step.cpp
 if BUILD_LIB_ILP
    noinst_HEADERS += \
       scheduling/sdc_scheduling.hpp
@@ -833,6 +833,7 @@ noinst_HEADERS += \
       scheduling/sdc_scheduling_base.hpp \
       scheduling/sdc_scheduling2.hpp
 lib_scheduling_la_SOURCES += \
+      scheduling/sdc_scheduling_base.cpp \
       scheduling/sdc_scheduling2.cpp
 
 PRJ_DOC += scheduling/scheduling.doc

@@ -259,8 +259,7 @@
 #define OPT_FP_EXC (1 + OPT_FP_RND)
 #define OPT_SOFT_FP (1 + OPT_FP_EXC)
 #define OPT_STG (1 + OPT_SOFT_FP)
-#define OPT_SPECULATIVE (1 + OPT_STG)
-#define INPUT_OPT_TEST_MULTIPLE_NON_DETERMINISTIC_FLOWS (1 + OPT_SPECULATIVE)
+#define INPUT_OPT_TEST_MULTIPLE_NON_DETERMINISTIC_FLOWS (1 + OPT_STG)
 #define INPUT_OPT_TEST_SINGLE_NON_DETERMINISTIC_FLOW (1 + INPUT_OPT_TEST_MULTIPLE_NON_DETERMINISTIC_FLOWS)
 #define OPT_TESTBENCH (1 + INPUT_OPT_TEST_SINGLE_NON_DETERMINISTIC_FLOW)
 #define OPT_TESTBENCH_EXTRA_GCC_FLAGS (1 + OPT_TESTBENCH)
@@ -1174,7 +1173,6 @@ int BambuParameter::Exec()
       {"ilp-newform", no_argument, nullptr, OPT_ILP_NEWFORM},
       {"silp", no_argument, nullptr, OPT_SILP},
 #endif
-      {"speculative", no_argument, nullptr, OPT_SPECULATIVE},
       {"no-chaining", no_argument, nullptr, 0},
       /// Finite state machine options
       {"stg", required_argument, nullptr, OPT_STG},
@@ -1629,11 +1627,6 @@ int BambuParameter::Exec()
             break;
          }
 #endif
-         case OPT_SPECULATIVE: // enable scheduling with speculative computation
-         {
-            setOption(OPT_speculative, true);
-            break;
-         }
 #endif
          case OPT_STG:
          {
@@ -4243,8 +4236,6 @@ void BambuParameter::SetDefaults()
    setOption(OPT_ilp_solver, meilp_solver::LP_SOLVE);
 #endif
 #endif
-   /// speculative execution flag
-   setOption(OPT_speculative, false);
 
    /// -- Module binding -- //
    /// module binding algorithm

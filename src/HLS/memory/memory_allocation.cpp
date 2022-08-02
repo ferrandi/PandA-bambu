@@ -324,11 +324,7 @@ void memory_allocation::finalize_memory_allocation()
                     "Analyzing function for bus size: " + behavioral_helper->get_function_name());
       const OpGraphConstRef g = function_behavior->CGetOpGraph(FunctionBehavior::CFG);
       graph::vertex_iterator v, v_end;
-      const auto TM = HLSMgr->get_tree_manager();
-      const auto fnode = TM->CGetTreeReindex(fun_id);
-      const auto fd = GetPointerS<const function_decl>(GET_CONST_NODE(fnode));
-      std::string fname;
-      tree_helper::get_mangled_fname(fd, fname);
+      std::string fname = behavioral_helper->get_mangled_function_name();
       CustomUnorderedSet<vertex> RW_stmts;
       if(HLSMgr->design_interface_loads.find(fname) != HLSMgr->design_interface_loads.end())
       {
@@ -516,6 +512,8 @@ void memory_allocation::finalize_memory_allocation()
                maximum_bus_size = std::max(tree_helper::Size(par), maximum_bus_size);
             }
          }
+         const auto TM = HLSMgr->get_tree_manager();
+         const auto fnode = TM->CGetTreeReindex(fun_id);
          const auto function_return = tree_helper::GetFunctionReturnType(fnode);
          if(function_return)
          {

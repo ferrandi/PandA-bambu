@@ -178,10 +178,7 @@ DesignFlowStep_Status TestbenchValuesXMLGeneration::Exec()
    {
       mem.push_back(ma.second);
    }
-
-   std::string fname;
-   const auto fnode = TM->CGetTreeNode(function_id);
-   tree_helper::get_mangled_fname(GetPointer<const function_decl>(fnode), fname);
+   std::string fname = behavioral_helper->get_mangled_function_name();
    const auto& DesignInterfaceTypename = HLSMgr->design_interface_typename;
    const auto DesignInterfaceArgsTypename_it = DesignInterfaceTypename.find(fname);
 
@@ -390,6 +387,7 @@ DesignFlowStep_Status TestbenchValuesXMLGeneration::Exec()
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                      "<--Written expected content of pointer parameters at the end of the execution");
+      const auto fnode = TM->CGetTreeNode(function_id);
       const auto return_type = tree_helper::GetFunctionReturnType(fnode);
       if(return_type)
       {

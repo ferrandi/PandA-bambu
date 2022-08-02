@@ -35,6 +35,7 @@
  * @brief Data structure representing the entire HLS information
  *
  * @author Christian Pilato <pilato@elet.polimi.it>
+ * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  * $Revision$
  * $Date$
  * Last modified by $Author$

@@ -64,7 +64,6 @@ REF_FORWARD_DECL(hls);
 CONSTREF_FORWARD_DECL(HLS_manager);
 CONSTREF_FORWARD_DECL(OpGraph);
 CONSTREF_FORWARD_DECL(Parameter);
-class graph;
 class OpVertexSet;
 enum class Allocation_MinMax;
 //@}
@@ -185,9 +184,8 @@ class ASLAP
     * @param beh_graph is the graph on which asap and alap is computed.
     * @param parameters is the set of input parameters
     */
-   ASLAP(const HLS_managerConstRef hls_manager, const hlsRef HLS, const bool speculation,
-         const CustomUnorderedSet<vertex>& operations, const ParameterConstRef parameters,
-         unsigned int _ctrl_step_multiplier);
+   ASLAP(const HLS_managerConstRef hls_manager, const hlsRef HLS, const CustomUnorderedSet<vertex>& operations,
+         const ParameterConstRef parameters, unsigned int _ctrl_step_multiplier);
 
    /**
     * Destructor.

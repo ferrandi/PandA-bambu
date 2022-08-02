@@ -145,29 +145,29 @@ void HLSCWriter::WriteHeader()
 
    // get the root function to be tested by the testbench
    const auto top_function_ids = AppM->CGetCallGraphManager()->GetRootFunctions();
-   THROW_ASSERT(top_function_ids.size() == 1, "Multiple top function");
-   const auto function_id = *(top_function_ids.begin());
-   const auto fnode = TM->CGetTreeNode(function_id);
-   const auto fd = GetPointerS<const function_decl>(fnode);
-   std::string fname;
-   tree_helper::get_mangled_fname(fd, fname);
-   auto& DesignInterfaceInclude = hls_c_backend_information->HLSMgr->design_interface_typenameinclude;
-   if(DesignInterfaceInclude.find(fname) != DesignInterfaceInclude.end())
+   for(auto function_id : top_function_ids)
    {
-      CustomOrderedSet<std::string> includes;
-      const auto& DesignInterfaceArgsInclude = DesignInterfaceInclude.find(fname)->second;
-      for(const auto& argInclude : DesignInterfaceArgsInclude)
+      const BehavioralHelperConstRef behavioral_helper =
+          AppM->CGetFunctionBehavior(function_id)->CGetBehavioralHelper();
+      std::string fname = behavioral_helper->get_mangled_function_name();
+      auto& DesignInterfaceInclude = hls_c_backend_information->HLSMgr->design_interface_typenameinclude;
+      if(DesignInterfaceInclude.find(fname) != DesignInterfaceInclude.end())
       {
-         includes.insert(argInclude.second);
-      }
-      for(const auto& inc : includes)
-      {
-         if(inc != "")
+         CustomOrderedSet<std::string> includes;
+         const auto& DesignInterfaceArgsInclude = DesignInterfaceInclude.find(fname)->second;
+         for(const auto& argInclude : DesignInterfaceArgsInclude)
          {
-            indented_output_stream->Append("#include \"" + inc + "\"\n");
+            includes.insert(argInclude.second);
          }
+         for(const auto& inc : includes)
+         {
+            if(inc != "")
+            {
+               indented_output_stream->Append("#include \"" + inc + "\"\n");
+            }
+         }
+         indented_output_stream->Append("\n");
       }
-      indented_output_stream->Append("\n");
    }
 }
 
@@ -360,10 +360,7 @@ void HLSCWriter::WriteParamDecl(const BehavioralHelperConstRef behavioral_helper
    hls_c_backend_information->HLSMgr->RSim->simulationArgSignature.clear();
    if(flag_cpp)
    {
-      auto fnode = TM->GetTreeNode(behavioral_helper->get_function_index());
-      auto fd = GetPointer<function_decl>(fnode);
-      std::string fname;
-      tree_helper::get_mangled_fname(fd, fname);
+      std::string fname = behavioral_helper->get_mangled_function_name();
       auto& DesignInterfaceTypename = hls_c_backend_information->HLSMgr->design_interface_typename;
       if(DesignInterfaceTypename.find(fname) != DesignInterfaceTypename.end())
       {
@@ -455,10 +452,7 @@ void HLSCWriter::WriteParamInitialization(const BehavioralHelperConstRef behavio
          bool is_a_true_pointer = true;
          if(flag_cpp)
          {
-            const auto fnode = TM->CGetTreeNode(behavioral_helper->get_function_index());
-            const auto fd = GetPointerS<const function_decl>(fnode);
-            std::string fname;
-            tree_helper::get_mangled_fname(fd, fname);
+            std::string fname = behavioral_helper->get_mangled_function_name();
             auto& DesignInterfaceTypename = hls_c_backend_information->HLSMgr->design_interface_typename;
             if(DesignInterfaceTypename.find(fname) != DesignInterfaceTypename.end())
             {
@@ -667,10 +661,7 @@ void HLSCWriter::WriteTestbenchFunctionCall(const BehavioralHelperConstRef behav
          }
          if(flag_cpp && behavioral_helper->is_a_pointer(p))
          {
-            const auto fnode = TM->CGetTreeNode(behavioral_helper->get_function_index());
-            const auto fd = GetPointerS<const function_decl>(fnode);
-            std::string fname;
-            tree_helper::get_mangled_fname(fd, fname);
+            std::string fname = behavioral_helper->get_mangled_function_name();
             const auto& DesignInterfaceTypenameOrig =
                 hls_c_backend_information->HLSMgr->design_interface_typename_orig_signature;
             if(DesignInterfaceTypenameOrig.find(fname) != DesignInterfaceTypenameOrig.end())
@@ -710,10 +701,7 @@ void HLSCWriter::WriteExpectedResults(const BehavioralHelperConstRef behavioral_
                                       const std::map<std::string, std::string>& curr_test_vector, const unsigned v_idx)
 {
    const HLSFlowStep_Type interface_type = Param->getOption<HLSFlowStep_Type>(OPT_interface_type);
-   const auto fnode = TM->CGetTreeReindex(behavioral_helper->get_function_index());
-   const auto fd = GetPointerS<const function_decl>(GET_CONST_NODE(fnode));
-   std::string fname;
-   tree_helper::get_mangled_fname(fd, fname);
+   std::string fname = behavioral_helper->get_mangled_function_name();
    auto& DesignInterfaceTypename = hls_c_backend_information->HLSMgr->design_interface_typename;
    auto& DesignInterfaceSpecifier = hls_c_backend_information->HLSMgr->design_interface;
    bool hasInterface = DesignInterfaceTypename.find(fname) != DesignInterfaceTypename.end();
@@ -965,7 +953,7 @@ void HLSCWriter::WriteExpectedResults(const BehavioralHelperConstRef behavioral_
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Generated code for expected results of " + param);
    }
-
+   const auto fnode = TM->CGetTreeNode(behavioral_helper->get_function_index());
    const auto ret_type = tree_helper::GetFunctionReturnType(fnode);
    if(ret_type)
    {
@@ -1018,8 +1006,7 @@ void HLSCWriter::WriteSimulatorInitMemory(const unsigned int function_id)
    std::transform(address.begin(), address.end(), std::back_inserter(mem),
                   [](const std::pair<unsigned long long, unsigned int>& ma) { return ma.second; });
 
-   std::string fname;
-   tree_helper::get_mangled_fname(GetPointerS<const function_decl>(TM->CGetTreeNode(function_id)), fname);
+   std::string fname = behavioral_helper->get_mangled_function_name();
    const auto& DesignInterfaceTypename = hls_c_backend_information->HLSMgr->design_interface_typename;
    const auto DesignInterfaceArgsTypename_it = DesignInterfaceTypename.find(fname);
 
@@ -1125,8 +1112,7 @@ void HLSCWriter::WriteSimulatorInitMemory(const unsigned int function_id)
          }
 
          /// Retrieve the space to be reserved in memory
-         const auto reserved_mem_bytes = [&]() -> size_t
-         {
+         const auto reserved_mem_bytes = [&]() -> size_t {
             if(is_memory)
             {
                const auto ret_value = tree_helper::Size(TM->CGetTreeReindex(l)) / 8;
@@ -1150,8 +1136,7 @@ void HLSCWriter::WriteSimulatorInitMemory(const unsigned int function_id)
             std::string bits_offset = "";
             std::vector<std::string> splitted = SplitString(test_v, ",");
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Processing c++ init " + test_v);
-            const auto isAllZero = [&]() -> bool
-            {
+            const auto isAllZero = [&]() -> bool {
                if(splitted.size() == 0)
                {
                   return false;

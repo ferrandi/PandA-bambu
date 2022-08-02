@@ -160,10 +160,6 @@ class Schedule
    /// The key is an operation graph edge
    CustomMap<std::pair<unsigned int, unsigned int>, double> connection_times;
 
-   /// Map for speculation property of each operation vertex. If true, it means that vertex is speculative executed,
-   /// false otherwise
-   CustomUnorderedMap<vertex, bool> spec;
-
    /// slack map
    std::map<vertex, double> op_slack;
 
@@ -236,22 +232,6 @@ class Schedule
     * @param file_name is the file name
     */
    void WriteDot(const std::string& file_name) const;
-
-   /**
-    * Sets the speculation map
-    */
-   void set_spec(const CustomUnorderedMap<vertex, bool>& spec_map)
-   {
-      spec = spec_map;
-   }
-
-   /**
-    * Returns the speculation map
-    */
-   CustomUnorderedMap<vertex, bool> get_spec() const
-   {
-      return spec;
-   }
 
    /**
     * Sets the starting clock cycle for the given operation

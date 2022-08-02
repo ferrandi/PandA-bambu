@@ -73,11 +73,9 @@
 #include "tree_reindex.hpp"
 
 application_manager::application_manager(const FunctionExpanderConstRef function_expander,
-                                         const bool _allow_recursive_functions,
-                                         const ParameterConstRef _Param)
+                                         const bool _allow_recursive_functions, const ParameterConstRef _Param)
     : TM(new tree_manager(_Param)),
-      call_graph_manager(
-          new CallGraphManager(function_expander, _allow_recursive_functions, TM, _Param)),
+      call_graph_manager(new CallGraphManager(function_expander, _allow_recursive_functions, TM, _Param)),
       Param(_Param),
       address_bitsize(
           _Param->isOption(OPT_addr_bus_bitsize) ?

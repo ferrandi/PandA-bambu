@@ -91,10 +91,7 @@ void HLSInstructionWriter::declareFunction(const unsigned int function_id)
 
    if(!flag_pp)
    {
-      tree_nodeRef fd_node = AppM->get_tree_manager()->get_tree_node_const(function_id);
-      auto* fd = GetPointer<function_decl>(fd_node);
-      std::string fname;
-      tree_helper::get_mangled_fname(fd, fname);
+      std::string fname = behavioral_helper->get_mangled_function_name();
       auto HLSMgr = GetPointer<const HLS_manager>(AppM);
       if(HLSMgr && HLSMgr->design_interface_typename_orig_signature.find(fname) !=
                        HLSMgr->design_interface_typename_orig_signature.end())

@@ -44,47 +44,22 @@
 /// Superclass include
 #include "sdc_scheduling_base.hpp"
 
-/// Utility include
+#include "basic_block.hpp"
 #include "custom_map.hpp"
 #include "custom_set.hpp"
 #include "hash_helper.hpp"
+#include "op_graph.hpp"
 #include "utility.hpp"
 #include <set>
 
 CONSTREF_FORWARD_DECL(AllocationInformation);
-CONSTREF_FORWARD_DECL(BBGraph);
 CONSTREF_FORWARD_DECL(BehavioralHelper);
+CONSTREF_FORWARD_DECL(FunctionBehavior);
+CONSTREF_FORWARD_DECL(memory);
 REF_FORWARD_DECL(fu_binding);
 
 class SDCScheduling2 : public SDCScheduling_base
 {
-   /// The operation graph used to perform scheduling
-   OpGraphConstRef op_graph;
-
-   /// The basic block cfg graph
-   BBGraphConstRef basic_block_graph;
-
-   /// The operation graph with feedback used to perform scheduling
-   OpGraphConstRef feedback_op_graph;
-
-   /// The behavioral helper
-   BehavioralHelperConstRef behavioral_helper;
-
-   /// The allocation
-   AllocationInformationConstRef allocation_information;
-
-   /// The binding
-   fu_bindingRef res_binding;
-
-   /// The clock period
-   double clock_period;
-
-   /// The margin which has to be introduced with respect to clock period
-   double margin;
-
-   /// Map operation-stage to variable index
-   CustomUnorderedMap<vertex, unsigned int> operation_to_varindex;
-
    /**
     * Initialize the step
     */
@@ -135,5 +110,12 @@ class SDCScheduling2 : public SDCScheduling_base
     * @return the exit status of this step
     */
    DesignFlowStep_Status InternalExec() override;
+
+   static void sdc_schedule(std::map<vertex, int>& vals_vertex, const hlsRef HLS, const HLS_managerRef HLSMgr,
+                            unsigned function_id, const OpVertexSet& loop_operations,
+                            const std::set<vertex, bb_vertex_order_by_map>& loop_bbs,
+                            const BBGraphConstRef basic_block_graph, const OpGraphConstRef filtered_op_graph,
+                            const AllocationInformationConstRef allocation_information,
+                            const ParameterConstRef parameters, int debug_level);
 };
 #endif
