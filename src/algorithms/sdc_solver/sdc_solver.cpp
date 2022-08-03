@@ -40,6 +40,7 @@
  */
 
 #include "sdc_solver.hpp"
+#undef NDEBUG
 #define NDEBUG
 #include "gbbs/edge_map_data.h"
 #include "gbbs/graph.h"
@@ -135,7 +136,7 @@ namespace gbbs
             return SP;
          }
          auto em_f = BF_F<W, Distance>(SP.begin(), Visited.begin());
-         auto output = edgeMap(G, Frontier, em_f, G.m / 10, sparse_blocked | dense_forward);
+         auto output = edgeMap(G, Frontier, em_f, static_cast<int>(G.m / 10), sparse_blocked | dense_forward);
          vertexMap(output, BF_Vertex_F(Visited.begin()));
          // std::cout << output.size() << "\n";
          Frontier = std::move(output);
