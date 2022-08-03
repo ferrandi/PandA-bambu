@@ -690,7 +690,7 @@ void structural_object::set_id(const std::string& s)
    id = s;
 }
 
-const std::string structural_object::get_id() const
+const std::string& structural_object::get_id() const
 {
    return id;
 }
@@ -856,7 +856,7 @@ std::string structural_object::GetDefaultParameter(std::string name) const
    return default_parameters.at(name);
 }
 
-CustomMap<std::string, std::string> structural_object::GetParameters()
+CustomMap<std::string, std::string> structural_object::GetParameters() const
 {
    CustomMap<std::string, std::string> ret;
    for(const auto& default_parameter : default_parameters)

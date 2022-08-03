@@ -67,7 +67,7 @@ void reg_binding_cs::specialise_reg(structural_objectRef& reg, unsigned int r)
 {
    reg_binding::specialise_reg(reg, r);
    auto mem_dimension = HLS->Param->getOption<unsigned int>(OPT_context_switch);
-   int dimension = ceil_log2(HLS->Param->getOption<unsigned long long int>(OPT_context_switch));
+   auto dimension = ceil_log2(HLS->Param->getOption<unsigned long long int>(OPT_context_switch));
    if(!dimension)
    {
       dimension = 1;

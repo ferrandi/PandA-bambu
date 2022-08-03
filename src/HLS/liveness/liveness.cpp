@@ -272,7 +272,7 @@ bool liveness::are_in_conflict(vertex op1, vertex op2) const
       vertex bb_2 = bb_index_map.find(bb_index2)->second;
 
       auto loops = HLSMgr->GetFunctionBehavior(HLS->functionId)->GetLoops()->GetList();
-      for(const auto &loop : loops)
+      for(const auto& loop : loops)
       {
          int initiation_time = FB->get_initiation_time();
          THROW_ASSERT(loop->num_blocks() != 1, "The loop has more than one basic block");

@@ -145,9 +145,15 @@ class functions
     */
    unsigned int get_proxy_mapping(const std::string& fun) const;
 
-   static std::string get_function_name_cleaned(const std::string& original_function_name);
+   /**
+    * Return FU used to implement given function
+    * @param fname function name
+    * @param HLSMgr HLS manager reference
+    * @return std::string Functional unit with fname in the supported operations' set
+    */
+   static std::string GetFUName(const std::string& fname, const HLS_managerRef HLSMgr);
 
-   static std::string get_function_name_cleaned(unsigned funID, const HLS_managerRef HLSMgr);
+   static std::string GetFUName(unsigned funID, const HLS_managerRef HLSMgr);
 };
 /// refcount definition of the class
 using functionsRef = refcount<functions>;

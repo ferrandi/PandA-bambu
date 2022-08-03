@@ -10,6 +10,7 @@ noinst_HEADERS += \
    utility/custom_set.hpp \
    utility/dbgPrintHelper.hpp \
    utility/exceptions.hpp \
+   utility/Factory.hpp \
    utility/fileIO.hpp \
    utility/gzstream.hpp \
    utility/hash_helper.hpp \

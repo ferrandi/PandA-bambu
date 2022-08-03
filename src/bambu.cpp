@@ -317,9 +317,9 @@ int main(int argc, char* argv[])
       if(parameters->isOption(OPT_serialize_output) && parameters->isOption(OPT_output_file))
       {
          std::ofstream ofile(parameters->getOption<std::string>(OPT_output_file), std::ios::out);
-         for(const auto &files : {HLSMgr->aux_files, HLSMgr->hdl_files})
+         for(const auto& files : {HLSMgr->aux_files, HLSMgr->hdl_files})
          {
-            for(const auto &file : files)
+            for(const auto& file : files)
             {
                std::cerr << "File name: " << file << "\n";
                std::ifstream ifile(file, std::ios::in);

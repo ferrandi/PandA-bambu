@@ -478,7 +478,7 @@ class structural_object
    /**
     * Return the identifier associated with the structural_object.
     */
-   const std::string get_id() const;
+   const std::string& get_id() const;
 
    /**
     * Set the type of the structural_object.
@@ -544,7 +544,7 @@ class structural_object
     * return the whole set of parameters
     * @return the whole set of parameters
     */
-   CustomMap<std::string, std::string> GetParameters();
+   CustomMap<std::string, std::string> GetParameters() const;
 
    /**
     * Add a parameter
