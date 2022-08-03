@@ -230,7 +230,7 @@
 #include "ilp_scheduling_new.hpp"
 #endif
 #include "parametric_list_based.hpp"
-#include "scheduling.hpp"
+#include "scheduling_base_step.hpp"
 #if HAVE_ILP_BUILT
 #include "sdc_scheduling.hpp"
 #endif
