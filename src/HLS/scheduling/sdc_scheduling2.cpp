@@ -256,7 +256,11 @@ void SDCScheduling2::sdc_schedule(std::map<vertex, int>& vals_vertex, const hlsR
    std::map<unsigned int, double> op_timing;
    std::set<unsigned int> op_multicycles;
    std::list<vertex> unbounded_operations;
+   std::set<unsigned int> indirect_ld_st_operations;
+   std::set<unsigned> indirect_rw_ext_operations;
    auto setupDelay = allocation_information->get_setup_hold_time();
+   CustomUnorderedSet<vertex> RW_stmts;
+   compute_RW_stmts(RW_stmts, filtered_op_graph, HLSMgr, function_id);
    for(const auto operation : loop_operations)
    {
       auto opFuType = allocation_information->GetFuType(operation);
@@ -264,6 +268,9 @@ void SDCScheduling2::sdc_schedule(std::map<vertex, int>& vals_vertex, const hlsR
       auto isPipelined = allocation_information->get_initiation_time(opFuType, operation) > 0;
       auto op_varindex = operation_to_varindex.at(operation);
       auto is_cond_op = GET_TYPE(filtered_dfg_graph, operation) & (TYPE_IF | TYPE_MULTIIF | TYPE_SWITCH);
+      auto is_ld_st = GET_TYPE(filtered_dfg_graph, operation) & (TYPE_LOAD | TYPE_STORE);
+      auto is_rw_ext = RW_stmts.find(operation) == RW_stmts.end() &&
+                       (GET_TYPE(filtered_dfg_graph, operation) & (TYPE_EXTERNAL | TYPE_RW));
       auto cycles = allocation_information->GetCycleLatency(operation);
       if(is_cond_op)
       {
@@ -281,6 +288,14 @@ void SDCScheduling2::sdc_schedule(std::map<vertex, int>& vals_vertex, const hlsR
       if(!allocation_information->is_operation_bounded(filtered_dfg_graph, operation, opFuType))
       {
          unbounded_operations.push_back(operation);
+      }
+      if(is_ld_st && !allocation_information->is_direct_access_memory_unit(opFuType))
+      {
+         indirect_ld_st_operations.insert(op_varindex);
+      }
+      if(is_rw_ext)
+      {
+         indirect_rw_ext_operations.insert(op_varindex);
       }
       if(cycles > 1)
       {
@@ -448,7 +463,7 @@ void SDCScheduling2::sdc_schedule(std::map<vertex, int>& vals_vertex, const hlsR
                                            GET_NAME(filtered_op_graph, operation);
                   auto frontII = allocation_information->get_initiation_time(fu_type, front);
                   auto cycles = allocation_information->GetCycleLatency(front);
-                  auto w = (frontII > 0 ? -static_cast<int>(frontII.GetContent()) : -static_cast<int>(cycles));
+                  auto w = (frontII > 0 ? -from_strongtype_cast<int>(frontII) : -static_cast<int>(cycles));
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                  "---Resource constraint " + GET_NAME(filtered_op_graph, front) + "-" +
                                      GET_NAME(filtered_op_graph, operation) + " " + STR(w));
@@ -482,8 +497,6 @@ void SDCScheduling2::sdc_schedule(std::map<vertex, int>& vals_vertex, const hlsR
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Added sorting constraints");
 
-   CustomUnorderedSet<vertex> RW_stmts;
-   compute_RW_stmts(RW_stmts, filtered_op_graph, HLSMgr, function_id);
    std::map<unsigned, int> vals;
    bool restart_sdc_solver;
    do
@@ -497,20 +510,55 @@ void SDCScheduling2::sdc_schedule(std::map<vertex, int>& vals_vertex, const hlsR
 
       /// refine the scheduling by adding some further constraints.
       /// Some constraints are not easy to be defined before the scheduling has been computed.
-      if(!unbounded_operations.empty())
+      std::map<int, std::set<unsigned>> reverse_vals;
+      auto cond1 = !indirect_rw_ext_operations.empty();
+      auto cond2 = !unbounded_operations.empty() && !op_multicycles.empty();
+      if(cond1 || cond2)
       {
-         std::map<int, std::set<unsigned>> reverse_vals;
          for(auto val : vals)
          {
             reverse_vals[val.second].insert(val.first);
          }
+      }
+      if(cond1)
+      {
+         std::set<unsigned> visited;
+         for(auto op_varindex : indirect_rw_ext_operations)
+         {
+            visited.insert(op_varindex);
+            auto sched_step = vals.at(op_varindex);
+            for(auto op : reverse_vals.at(sched_step))
+            {
+               if(visited.find(op) == visited.end() &&
+                  (indirect_rw_ext_operations.find(op) != indirect_rw_ext_operations.end()))
+               {
+                  restart_sdc_solver = true;
+                  solver.add_constraint(op_varindex, op, -1);
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                 "---added a precedence constraint between an RW operation and another RW operation " +
+                                     STR(op_varindex) + "-" + STR(op));
+               }
+               else if(op != op_varindex && (indirect_ld_st_operations.find(op) != indirect_ld_st_operations.end()))
+               {
+                  restart_sdc_solver = true;
+                  solver.add_constraint(op_varindex, op, -1);
+                  INDENT_DBG_MEX(
+                      DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                      "---added a precedence constraint between an RW operation and an indirect load/store operation " +
+                          STR(op_varindex) + "-" + STR(op));
+               }
+            }
+         }
+      }
+      if(cond2)
+      {
          for(auto operation : unbounded_operations)
          {
             auto op_varindex = operation_to_varindex.at(operation);
             auto sched_step = vals.at(op_varindex);
             for(auto op : reverse_vals.at(sched_step))
             {
-               if(op != op_varindex && op_multicycles.find(op) != op_multicycles.end())
+               if(op != op_varindex && (op_multicycles.find(op) != op_multicycles.end()))
                {
                   restart_sdc_solver = true;
                   solver.add_constraint(op_varindex, op, -1);
@@ -522,6 +570,7 @@ void SDCScheduling2::sdc_schedule(std::map<vertex, int>& vals_vertex, const hlsR
             }
          }
       }
+
    } while(restart_sdc_solver);
    for(const auto operation : loop_operations)
    {
