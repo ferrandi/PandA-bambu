@@ -1242,7 +1242,6 @@ void FunctionInterfaceInfer::create_resource_m_axi(const std::set<std::string>& 
       const auto Port_rdata =
           CM->add_port("_m_axi_" + portNameSpecializer + "_RDATA", port_o::IN, interface_top, Intype);
       GetPointerS<port_o>(Port_rdata)->set_port_interface(port_o::port_interface::M_AXI_RDATA);
-      param_ports += " _m_axi_" + portNameSpecializer + "_RDATA";
 
       const auto Port_rresp =
           CM->add_port("_m_axi_" + portNameSpecializer + "_RRESP", port_o::IN, interface_top, respType);
@@ -1270,7 +1269,6 @@ void FunctionInterfaceInfer::create_resource_m_axi(const std::set<std::string>& 
       const auto Port_awaddr =
           CM->add_port("_m_axi_" + portNameSpecializer + "_AWADDR", port_o::OUT, interface_top, address_interface_type);
       GetPointerS<port_o>(Port_awaddr)->set_port_interface(port_o::port_interface::M_AXI_AWADDR);
-      param_ports += " _m_axi_" + portNameSpecializer + "_AWADDR";
 
       const auto Port_awlen =
           CM->add_port("_m_axi_" + portNameSpecializer + "_AWLEN", port_o::OUT, interface_top, lenType);
@@ -1319,7 +1317,6 @@ void FunctionInterfaceInfer::create_resource_m_axi(const std::set<std::string>& 
       const auto Port_wdata =
           CM->add_port("_m_axi_" + portNameSpecializer + "_WDATA", port_o::OUT, interface_top, Intype);
       GetPointerS<port_o>(Port_wdata)->set_port_interface(port_o::port_interface::M_AXI_WDATA);
-      param_ports += " _m_axi_" + portNameSpecializer + "_WDATA";
 
       const auto Port_wstrb =
           CM->add_port("_m_axi_" + portNameSpecializer + "_WSTRB", port_o::OUT, interface_top, strbType);
@@ -1348,7 +1345,6 @@ void FunctionInterfaceInfer::create_resource_m_axi(const std::set<std::string>& 
       const auto Port_araddr =
           CM->add_port("_m_axi_" + portNameSpecializer + "_ARADDR", port_o::OUT, interface_top, address_interface_type);
       GetPointerS<port_o>(Port_araddr)->set_port_interface(port_o::port_interface::M_AXI_ARADDR);
-      param_ports += " _m_axi_" + portNameSpecializer + "_ARADDR";
 
       const auto Port_arlen =
           CM->add_port("_m_axi_" + portNameSpecializer + "_ARLEN", port_o::OUT, interface_top, lenType);
