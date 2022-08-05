@@ -2058,8 +2058,6 @@ src/frontend_analysis/IR_analysis/hls_div_cg_ext.cpp
 src/frontend_analysis/IR_analysis/hls_div_cg_ext.hpp
 src/frontend_analysis/IR_analysis/InterfaceInfer.cpp
 src/frontend_analysis/IR_analysis/InterfaceInfer.hpp
-src/frontend_analysis/IR_analysis/FunctionInterfaceInfer.cpp
-src/frontend_analysis/IR_analysis/FunctionInterfaceInfer.hpp
 src/frontend_analysis/IR_analysis/loops_analysis_bambu.cpp
 src/frontend_analysis/IR_analysis/loops_analysis_bambu.hpp
 src/frontend_analysis/IR_analysis/lut_transformation.cpp

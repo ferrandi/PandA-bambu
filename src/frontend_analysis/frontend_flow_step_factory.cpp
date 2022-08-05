@@ -173,7 +173,6 @@
 #include "hls_div_cg_ext.hpp"
 #endif
 #if HAVE_BAMBU_BUILT
-#include "FunctionInterfaceInfer.hpp"
 #include "IR_lowering.hpp"
 #include "InterfaceInfer.hpp"
 #endif
@@ -445,7 +444,6 @@ FrontendFlowStepFactory::GenerateFrontendStep(FrontendFlowStepType frontend_flow
 #if HAVE_BAMBU_BUILT
       case HLS_DIV_CG_EXT:
       case HWCALL_INJECTION:
-      case FUNCTION_INTERFACE_INFER:
       case IR_LOWERING:
 #endif
       case LOOP_COMPUTATION:
@@ -851,7 +849,6 @@ FrontendFlowStepFactory::CreateApplicationFrontendFlowStep(const FrontendFlowSte
 #if HAVE_BAMBU_BUILT
       case HLS_DIV_CG_EXT:
       case HWCALL_INJECTION:
-      case FUNCTION_INTERFACE_INFER:
       case IR_LOWERING:
 #endif
       case LOOP_COMPUTATION:
@@ -1254,11 +1251,6 @@ FrontendFlowStepFactory::CreateFunctionFrontendFlowStep(const FrontendFlowStepTy
       case HWCALL_INJECTION:
       {
          return DesignFlowStepRef(new HWCallInjection(parameters, AppM, function_id, design_flow_manager.lock()));
-      }
-      case FUNCTION_INTERFACE_INFER:
-      {
-         return DesignFlowStepRef(
-             new FunctionInterfaceInfer(AppM, function_id, design_flow_manager.lock(), parameters));
       }
       case IR_LOWERING:
       {
