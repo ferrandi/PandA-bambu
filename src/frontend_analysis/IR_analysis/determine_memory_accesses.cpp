@@ -829,10 +829,9 @@ void determine_memory_accesses::analyze_node(const tree_nodeConstRef& _tn, bool 
                }
                const auto FBcalled = AppM->GetFunctionBehavior(calledFundID);
                /// check if the actual parameter has been allocated in memory
-               if(function_behavior->is_variable_mem(actual_par->index) &&
-                  AppM->isParmUsed(calledFundID, formal_par->index))
+               const auto formal_ssa_index = AppM->getSSAFromParm(calledFundID, formal_par->index);
+               if(function_behavior->is_variable_mem(actual_par->index) && formal_ssa_index)
                {
-                  const auto formal_ssa_index = AppM->getSSAFromParm(calledFundID, formal_par->index);
                   const auto formal_ssa_node = TM->CGetTreeNode(formal_ssa_index);
                   const auto formal_ssa = GetPointerS<const ssa_name>(formal_ssa_node);
                   const auto is_singleton = formal_ssa->use_set->is_a_singleton() &&
@@ -853,7 +852,7 @@ void determine_memory_accesses::analyze_node(const tree_nodeConstRef& _tn, bool 
                      }
                   }
                }
-               else if(!AppM->isParmUsed(calledFundID, formal_par->index))
+               else if(!formal_ssa_index)
                {
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                  "---Parameter is not used in the function body.");
@@ -1074,10 +1073,9 @@ void determine_memory_accesses::analyze_node(const tree_nodeConstRef& _tn, bool 
                }
                const auto FBcalled = AppM->GetFunctionBehavior(calledFundID);
                /// check if the actual parameter has been allocated in memory
-               if(function_behavior->is_variable_mem(actual_par->index) &&
-                  AppM->isParmUsed(calledFundID, formal_par->index))
+               const auto formal_ssa_index = AppM->getSSAFromParm(calledFundID, formal_par->index);
+               if(function_behavior->is_variable_mem(actual_par->index) && formal_ssa_index)
                {
-                  const auto formal_ssa_index = AppM->getSSAFromParm(calledFundID, formal_par->index);
                   const auto formal_ssa_node = TM->CGetTreeNode(formal_ssa_index);
                   const auto formal_ssa = GetPointer<const ssa_name>(formal_ssa_node);
                   const auto is_singleton = formal_ssa->use_set->is_a_singleton() &&
@@ -1099,7 +1097,7 @@ void determine_memory_accesses::analyze_node(const tree_nodeConstRef& _tn, bool 
                      }
                   }
                }
-               else if(!AppM->isParmUsed(calledFundID, formal_par->index))
+               else if(!formal_ssa_index)
                {
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                  "---Parameter is not used in the function body.");

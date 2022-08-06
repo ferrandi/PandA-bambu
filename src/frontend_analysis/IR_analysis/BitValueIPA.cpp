@@ -228,6 +228,11 @@ DesignFlowStep_Status BitValueIPA::Exec()
       for(const auto& parm_decl_node : fd->list_of_args)
       {
          const auto p_decl_id = AppM->getSSAFromParm(fu_id, GET_INDEX_CONST_NODE(parm_decl_node));
+         if(!p_decl_id)
+         {
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Parameter not used " + STR(parm_decl_node));
+            continue;
+         }
          const auto parmssa = TM->GetTreeNode(p_decl_id);
          THROW_ASSERT(parmssa->get_kind() == ssa_name_K, "expected an ssa variable");
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
@@ -435,6 +440,11 @@ DesignFlowStep_Status BitValueIPA::Exec()
                break;
             }
             const auto pd_id = AppM->getSSAFromParm(fu_id, GET_INDEX_NODE(pd));
+            if(!pd_id)
+            {
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Parameter not used " + STR(pd));
+               continue;
+            }
             const auto parmssa = TM->CGetTreeNode(pd_id);
             THROW_ASSERT(parmssa->get_kind() == ssa_name_K, "expected an ssa variable");
             INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,

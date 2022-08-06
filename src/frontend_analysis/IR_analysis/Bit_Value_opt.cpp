@@ -297,7 +297,12 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
    /// in case propagate constants from parameters
    for(const auto& parm_decl_node : fd->list_of_args)
    {
-      const unsigned int p_decl_id = AppM->getSSAFromParm(function_id, GET_INDEX_CONST_NODE(parm_decl_node));
+      const auto p_decl_id = AppM->getSSAFromParm(function_id, GET_INDEX_CONST_NODE(parm_decl_node));
+      if(!p_decl_id)
+      {
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Parameter not used " + STR(parm_decl_node));
+         continue;
+      }
       if(tree_helper::is_real(TM, p_decl_id) || tree_helper::is_a_complex(TM, p_decl_id))
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
