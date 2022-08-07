@@ -79,21 +79,72 @@
 
 std::vector<std::string> CheckSystemType::systemIncPath;
 
-CustomUnorderedMapUnstable<std::string, std::string> CheckSystemType::inclNameToPath;
+const CustomUnorderedMap<std::string, std::string> CheckSystemType::inclNameToPath = {
+    {FILENAME_NORM("i386-linux-gnu/bits/ipc.h"), FILENAME_NORM("sys/ipc.h")},
+    {FILENAME_NORM("i386-linux-gnu/bits/sem.h"), FILENAME_NORM("sys/sem.h")},
+    {FILENAME_NORM("i386-linux-gnu/bits/mathcalls.h"), FILENAME_NORM("math.h")},
+    {FILENAME_NORM("i386-linux-gnu/bits/math-finite.h"), FILENAME_NORM("math.h")},
+    {FILENAME_NORM("i386-linux-gnu/bits/types.h"), FILENAME_NORM("sys/types.h")},
+    {FILENAME_NORM("i386-linux-gnu/bits/stat.h"), FILENAME_NORM("sys/stat.h")},
+    {FILENAME_NORM("i386-linux-gnu/bits/mman.h"), FILENAME_NORM("sys/mman.h")},
+    {FILENAME_NORM("i386-linux-gnu/bits/in.h"), FILENAME_NORM("netinet/in.h")},
+    {FILENAME_NORM("i386-linux-gnu/bits/errno.h"), FILENAME_NORM("errno.h")},
+    {FILENAME_NORM("i386-linux-gnu/bits/fcntl.h"), FILENAME_NORM("fcntl.h")},
+    {FILENAME_NORM("i386-linux-gnu/bits/link.h"), FILENAME_NORM("link.h")},
+    {FILENAME_NORM("i386-linux-gnu/bits/shm.h"), FILENAME_NORM("sys/shm.h")},
+    {FILENAME_NORM("i386-linux-gnu/bits/stdio.h"), FILENAME_NORM("stdio.h")},
+    {FILENAME_NORM("i386-linux-gnu/bits/resource.h"), FILENAME_NORM("sys/resource.h")},
+    {FILENAME_NORM("i386-linux-gnu/bits/sigthread.h"), FILENAME_NORM("pthread.h")},
+    {FILENAME_NORM("i386-linux-gnu/bits/string2.h"), FILENAME_NORM("string.h")},
+    {FILENAME_NORM("i386-linux-gnu/bits/time.h"), FILENAME_NORM("sys/time.h")},
+    {FILENAME_NORM("i386-linux-gnu/bits/pthreadtypes.h"), FILENAME_NORM("pthread.h")},
+    {FILENAME_NORM("i386-linux-gnu/bits/sched.h"), FILENAME_NORM("sched.h")},
+    {FILENAME_NORM("i386-linux-gnu/bits/stdio2.h"), FILENAME_NORM("stdio.h")},
+    {FILENAME_NORM("bits/ipc.h"), FILENAME_NORM("sys/ipc.h")},
+    {FILENAME_NORM("bits/sem.h"), FILENAME_NORM("sys/sem.h")},
+    {FILENAME_NORM("bits/mathcalls.h"), FILENAME_NORM("math.h")},
+    {FILENAME_NORM("bits/math-finite."), FILENAME_NORM("math.h")},
+    {FILENAME_NORM("bits/types.h"), FILENAME_NORM("sys/types.h")},
+    {FILENAME_NORM("bits/stat.h"), FILENAME_NORM("sys/stat.h")},
+    {FILENAME_NORM("bits/mman.h"), FILENAME_NORM("sys/mman.h")},
+    {FILENAME_NORM("bits/in.h"), FILENAME_NORM("netinet/in.h")},
+    {FILENAME_NORM("bits/errno.h"), FILENAME_NORM("errno.h")},
+    {FILENAME_NORM("bits/fcntl.h"), FILENAME_NORM("fcntl.h")},
+    {FILENAME_NORM("bits/link.h"), FILENAME_NORM("link.h")},
+    {FILENAME_NORM("bits/shm.h"), FILENAME_NORM("sys/shm.h")},
+    {FILENAME_NORM("bits/stdio.h"), FILENAME_NORM("stdio.h")},
+    {FILENAME_NORM("bits/resource.h"), FILENAME_NORM("sys/resource.h")},
+    {FILENAME_NORM("bits/sigthread.h"), FILENAME_NORM("pthread.h")},
+    {FILENAME_NORM("bits/string2.h"), FILENAME_NORM("string.h")},
+    {FILENAME_NORM("bits/time.h"), FILENAME_NORM("sys/time.h")},
+    {FILENAME_NORM("bits/pthreadtypes.h"), FILENAME_NORM("pthread.h")},
+    {FILENAME_NORM("bits/sched.h"), FILENAME_NORM("sched.h")},
+    {FILENAME_NORM("bits/stdio2.h"), FILENAME_NORM("stdio.h")},
+    {FILENAME_NORM("libio.h"), FILENAME_NORM("stdio.h")},
+    {FILENAME_NORM("libm/math_private_kernels.h"), FILENAME_NORM("math.h")},
+    {FILENAME_NORM("libm/math_private.h"), FILENAME_NORM("math.h")},
+    {FILENAME_NORM("libm/math_privatef.h"), FILENAME_NORM("math.h")}};
 
-CustomUnorderedMapUnstable<std::string, std::string> CheckSystemType::rename_function;
+const CustomUnorderedMap<std::string, std::string> CheckSystemType::rename_function = {{"_IO_putc", "putc"},
+                                                                                       {"_IO_getc", "getc"}};
 
-CustomUnorderedMapUnstable<std::string, std::string> CheckSystemType::rename_types;
+const CustomUnorderedMap<std::string, std::string> CheckSystemType::rename_types = {{"__time_t", "long int"},
+                                                                                    {"__suseconds_t", "long int"}};
 
-CustomUnorderedSet<std::string> CheckSystemType::library_system_functions;
+const CustomUnorderedSet<std::string> CheckSystemType::library_system_functions = {
+    {"__errno_location", "exit", "abort"},
+};
 
-CustomUnorderedSet<std::string> CheckSystemType::library_system_includes;
+const CustomUnorderedSet<std::string> CheckSystemType::library_system_includes = {{"math.h"}};
 
 #if HAVE_LEON3
-CustomUnorderedSet<std::string> CheckSystemType::not_supported_leon3_functions;
+const CustomUnorderedSet<std::string> CheckSystemType::not_supported_leon3_functions = {{"fopen"}};
 #endif
 
-CustomUnorderedMapUnstable<std::string, std::string> CheckSystemType::undefined_library_function_include;
+const CustomUnorderedMap<std::string, std::string> CheckSystemType::undefined_library_function_include = {
+    {"atof", "stdlib.h"},     {"atoi", "stdlib.h"},   {"srand48", "stdlib.h"},
+    {"va_start", "stdarg.h"}, {"va_end", "stdarg.h"}, {"lgamma", "math.h"},
+    {"lgammaf", "math.h"},    {"lgamma_r", "math.h"}, {"lgammaf_r", "math.h"}};
 
 CheckSystemType::CheckSystemType(const ParameterConstRef _parameters, const application_managerRef _AppM,
                                  unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager)
@@ -103,9 +154,9 @@ CheckSystemType::CheckSystemType(const ParameterConstRef _parameters, const appl
       already_executed(false)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
-   if(inclNameToPath.size() == 0)
+   if(systemIncPath.size() == 0)
    {
-      build_include_structures();
+      build_include_structures(parameters);
    }
 }
 
@@ -157,7 +208,7 @@ DesignFlowStep_Status CheckSystemType::InternalExec()
 
    for(const auto f : AppM->get_functions_without_body())
    {
-      recursive_examinate(TM->CGetTreeReindex(f), f, already_visited);
+      recursive_examinate(TM->CGetTreeReindex(f), already_visited);
    }
 
    for(const auto& bbi_bb : sl->list_of_bloc)
@@ -176,14 +227,15 @@ DesignFlowStep_Status CheckSystemType::InternalExec()
    return DesignFlowStep_Status::SUCCESS;
 }
 
-void CheckSystemType::recursive_examinate(const tree_nodeRef& tn, CustomUnorderedSet<unsigned int>& already_visited)
+void CheckSystemType::recursive_examinate(const tree_nodeRef& tn,
+                                          CustomUnorderedSet<unsigned int>& already_visited) const
 {
    THROW_ASSERT(tn->get_kind() == tree_reindex_K, "Not Passed a tree_reindex");
    recursive_examinate(GET_NODE(tn), GET_INDEX_NODE(tn), already_visited);
 }
 
 void CheckSystemType::recursive_examinate(const tree_nodeRef& curr_tn, const unsigned int index,
-                                          CustomUnorderedSet<unsigned int>& already_visited)
+                                          CustomUnorderedSet<unsigned int>& already_visited) const
 {
    THROW_ASSERT(curr_tn, "Empty current tree node");
    if(already_visited.count(index))
@@ -247,9 +299,7 @@ void CheckSystemType::recursive_examinate(const tree_nodeRef& curr_tn, const uns
             const auto sr = GetPointer<srcp>(curr_tn);
             if(!is_system && sr && sr->include_name != "")
             {
-               std::string new_include;
-               getRealInclName(include, new_include);
-               sr->include_name = new_include;
+               sr->include_name = getRealInclName(include);
             }
             fd = GetPointer<function_decl>(curr_tn);
             if(fd)
@@ -279,7 +329,7 @@ void CheckSystemType::recursive_examinate(const tree_nodeRef& curr_tn, const uns
          {
             dn->library_system_flag = true;
             const auto sr = GetPointer<srcp>(curr_tn);
-            sr->include_name = undefined_library_function_include[tree_helper::print_function_name(TM, fd)];
+            sr->include_name = undefined_library_function_include.at(tree_helper::print_function_name(TM, fd));
          }
          // Checking for implicit declaration
          if(curr_tn->get_kind() == function_decl_K)
@@ -311,7 +361,7 @@ void CheckSystemType::recursive_examinate(const tree_nodeRef& curr_tn, const uns
             {
                const auto in = GetPointerS<identifier_node>(GET_NODE(fd->name));
 #if HAVE_LEON3
-               if(not_supported_leon3_functions.find(in->strg) != not_supported_leon3_functions.end())
+               if(not_supported_leon3_functions.count(in->strg))
                {
                   if(parameters->getOption<bool>(OPT_without_operating_system))
                   {
@@ -783,9 +833,7 @@ void CheckSystemType::recursive_examinate(const tree_nodeRef& curr_tn, const uns
             const auto sr = GetPointer<srcp>(curr_tn);
             if(!is_system && sr && sr->include_name != "")
             {
-               std::string new_include;
-               getRealInclName(include, new_include);
-               sr->include_name = new_include;
+               sr->include_name = getRealInclName(include);
             }
          }
          break;
@@ -897,7 +945,7 @@ bool CheckSystemType::is_system_include(std::string include) const
       return true;
    }
    std::string include_p(FILENAME_NORM(include));
-   for(auto& i : systemIncPath)
+   for(const auto& i : systemIncPath)
    {
       if(include_p.compare(0, i.size() + 1, i + "/") == 0)
       {
@@ -909,69 +957,14 @@ bool CheckSystemType::is_system_include(std::string include) const
    return false;
 }
 
-void CheckSystemType::build_include_structures()
+void CheckSystemType::build_include_structures(ParameterConstRef parameters)
 {
-   // Ok, now I put here the includes which must be modified
-   inclNameToPath[FILENAME_NORM("i386-linux-gnu/bits/ipc.h")] = FILENAME_NORM("sys/ipc.h");
-   inclNameToPath[FILENAME_NORM("i386-linux-gnu/bits/sem.h")] = FILENAME_NORM("sys/sem.h");
-   inclNameToPath[FILENAME_NORM("i386-linux-gnu/bits/mathcalls.h")] = FILENAME_NORM("math.h");
-   inclNameToPath[FILENAME_NORM("i386-linux-gnu/bits/math-finite.h")] = FILENAME_NORM("math.h");
-   inclNameToPath[FILENAME_NORM("i386-linux-gnu/bits/types.h")] = FILENAME_NORM("sys/types.h");
-   inclNameToPath[FILENAME_NORM("i386-linux-gnu/bits/stat.h")] = FILENAME_NORM("sys/stat.h");
-   inclNameToPath[FILENAME_NORM("i386-linux-gnu/bits/mman.h")] = FILENAME_NORM("sys/mman.h");
-   inclNameToPath[FILENAME_NORM("i386-linux-gnu/bits/in.h")] = FILENAME_NORM("netinet/in.h");
-   inclNameToPath[FILENAME_NORM("i386-linux-gnu/bits/errno.h")] = FILENAME_NORM("errno.h");
-   inclNameToPath[FILENAME_NORM("i386-linux-gnu/bits/fcntl.h")] = FILENAME_NORM("fcntl.h");
-   inclNameToPath[FILENAME_NORM("i386-linux-gnu/bits/link.h")] = FILENAME_NORM("link.h");
-   inclNameToPath[FILENAME_NORM("i386-linux-gnu/bits/shm.h")] = FILENAME_NORM("sys/shm.h");
-   inclNameToPath[FILENAME_NORM("i386-linux-gnu/bits/stdio.h")] = FILENAME_NORM("stdio.h");
-   inclNameToPath[FILENAME_NORM("i386-linux-gnu/bits/resource.h")] = FILENAME_NORM("sys/resource.h");
-   inclNameToPath[FILENAME_NORM("i386-linux-gnu/bits/sigthread.h")] = FILENAME_NORM("pthread.h");
-   inclNameToPath[FILENAME_NORM("i386-linux-gnu/bits/string2.h")] = FILENAME_NORM("string.h");
-   inclNameToPath[FILENAME_NORM("i386-linux-gnu/bits/time.h")] = FILENAME_NORM("sys/time.h");
-   inclNameToPath[FILENAME_NORM("i386-linux-gnu/bits/pthreadtypes.h")] = FILENAME_NORM("pthread.h");
-   inclNameToPath[FILENAME_NORM("i386-linux-gnu/bits/sched.h")] = FILENAME_NORM("sched.h");
-   inclNameToPath[FILENAME_NORM("i386-linux-gnu/bits/stdio2.h")] = FILENAME_NORM("stdio.h");
-   inclNameToPath[FILENAME_NORM("bits/ipc.h")] = FILENAME_NORM("sys/ipc.h");
-   inclNameToPath[FILENAME_NORM("bits/sem.h")] = FILENAME_NORM("sys/sem.h");
-   inclNameToPath[FILENAME_NORM("bits/mathcalls.h")] = FILENAME_NORM("math.h");
-   inclNameToPath[FILENAME_NORM("bits/math-finite.h")] = FILENAME_NORM("math.h");
-   inclNameToPath[FILENAME_NORM("bits/types.h")] = FILENAME_NORM("sys/types.h");
-   inclNameToPath[FILENAME_NORM("bits/stat.h")] = FILENAME_NORM("sys/stat.h");
-   inclNameToPath[FILENAME_NORM("bits/mman.h")] = FILENAME_NORM("sys/mman.h");
-   inclNameToPath[FILENAME_NORM("bits/in.h")] = FILENAME_NORM("netinet/in.h");
-   inclNameToPath[FILENAME_NORM("bits/errno.h")] = FILENAME_NORM("errno.h");
-   inclNameToPath[FILENAME_NORM("bits/fcntl.h")] = FILENAME_NORM("fcntl.h");
-   inclNameToPath[FILENAME_NORM("bits/link.h")] = FILENAME_NORM("link.h");
-   inclNameToPath[FILENAME_NORM("bits/shm.h")] = FILENAME_NORM("sys/shm.h");
-   inclNameToPath[FILENAME_NORM("bits/stdio.h")] = FILENAME_NORM("stdio.h");
-   inclNameToPath[FILENAME_NORM("bits/resource.h")] = FILENAME_NORM("sys/resource.h");
-   inclNameToPath[FILENAME_NORM("bits/sigthread.h")] = FILENAME_NORM("pthread.h");
-   inclNameToPath[FILENAME_NORM("bits/string2.h")] = FILENAME_NORM("string.h");
-   inclNameToPath[FILENAME_NORM("bits/time.h")] = FILENAME_NORM("sys/time.h");
-   inclNameToPath[FILENAME_NORM("bits/pthreadtypes.h")] = FILENAME_NORM("pthread.h");
-   inclNameToPath[FILENAME_NORM("bits/sched.h")] = FILENAME_NORM("sched.h");
-   inclNameToPath[FILENAME_NORM("bits/stdio2.h")] = FILENAME_NORM("stdio.h");
-   inclNameToPath[FILENAME_NORM("libio.h")] = FILENAME_NORM("stdio.h");
-
-   /// libbambu/libm
-   inclNameToPath[FILENAME_NORM("libm/math_private_kernels.h")] = FILENAME_NORM("math.h");
-   inclNameToPath[FILENAME_NORM("libm/math_private.h")] = FILENAME_NORM("math.h");
-   inclNameToPath[FILENAME_NORM("libm/math_privatef.h")] = FILENAME_NORM("math.h");
-   //   inclNameToPath[FILENAME_NORM("softfloat/bambu.h")] = FILENAME_NORM("stdio.h");
-   //   inclNameToPath[FILENAME_NORM("softfloat/softfloat.h")] = FILENAME_NORM("stdio.h");
-
-   /// libbambu/soft-fp
-   //   inclNameToPath[FILENAME_NORM("soft-fp/single.h")] = FILENAME_NORM("math.h");
-   //   inclNameToPath[FILENAME_NORM("soft-fp/soft-fp.h")] = FILENAME_NORM("math.h");
-   //   inclNameToPath[FILENAME_NORM("soft-fp/bambu-arch.h")] = FILENAME_NORM("stdlib.h");
-
-   std::vector<std::string> Splitted;
    const CompilerWrapperConstRef compiler_wrapper(new CompilerWrapper(
        parameters, CompilerWrapper_CompilerTarget::CT_NO_COMPILER, CompilerWrapper_OptimizationSet::O0));
+   std::vector<std::string> Splitted;
    compiler_wrapper->GetSystemIncludes(Splitted);
 
-   for(auto& tok_iter : Splitted)
+   for(const auto& tok_iter : Splitted)
    {
       if(tok_iter != "")
       {
@@ -1015,65 +1008,35 @@ void CheckSystemType::build_include_structures()
       systemIncPath.push_back(LIBBAMBU_SRCDIR);
    }
 #endif
-
-   /// Building the rename function map
-   rename_function["_IO_putc"] = "putc";
-   rename_function["_IO_getc"] = "getc";
-
-   /// Building the rename type map
-   rename_types["__time_t"] = "long int";
-   rename_types["__suseconds_t"] = "long int";
-
-   /// Building library system function
-   library_system_includes.insert("math.h");
-   library_system_functions.insert("__errno_location");
-   library_system_functions.insert("exit");
-   library_system_functions.insert("abort");
-
-#if HAVE_LEON3
-   /// Building not supported function
-   not_supported_leon3_functions.insert("fopen");
-#endif
-
-   undefined_library_function_include["atof"] = "stdlib.h";
-   undefined_library_function_include["atoi"] = "stdlib.h";
-   undefined_library_function_include["srand48"] = "stdlib.h";
-   undefined_library_function_include["va_start"] = "stdarg.h";
-   undefined_library_function_include["va_end"] = "stdarg.h";
-   undefined_library_function_include["lgamma"] = "math.h";
-   undefined_library_function_include["lgammaf"] = "math.h";
-   undefined_library_function_include["lgamma_r"] = "math.h";
-   undefined_library_function_include["lgammaf_r"] = "math.h";
 }
 
-void CheckSystemType::getRealInclName(const std::string& include, std::string& real_name) const
+std::string CheckSystemType::getRealInclName(const std::string& include)
 {
    // Now I have to see if one of the elements in systemIncPath is the start of the include:
    // in case I eliminate it && look the remaining part of the string in the map
    std::string include_p(FILENAME_NORM(include));
-   for(auto& i : systemIncPath)
+   for(const auto& i : systemIncPath)
    {
       if(include_p.compare(0, i.size() + 1, i + "/") == 0)
       {
-         std::string trimmed = include_p.substr(i.size() + 1);
+         const auto trimmed = include_p.substr(i.size() + 1);
          if(inclNameToPath.find(trimmed) != inclNameToPath.end())
          {
-            real_name = inclNameToPath.find(trimmed)->second;
+            return inclNameToPath.find(trimmed)->second;
 #if HAVE_BAMBU_BUILT
          }
          else if(LIBBAMBU_SRCDIR == i && boost::algorithm::starts_with(trimmed, "libm/"))
          {
-            real_name = FILENAME_NORM("math.h");
+            return FILENAME_NORM("math.h");
 #endif
          }
          else
          {
-            real_name = trimmed;
+            return trimmed;
          }
-         return;
       }
    }
 
    // If, finally, the include is not a system one I simply print it back as it is
-   real_name = include;
+   return include;
 }
