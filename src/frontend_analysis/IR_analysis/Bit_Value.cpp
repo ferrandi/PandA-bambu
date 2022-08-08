@@ -1215,7 +1215,7 @@ void Bit_Value::initialize()
    {
       const auto parmssa_id = AppM->getSSAFromParm(function_id, GET_INDEX_CONST_NODE(parm_decl_node));
       const auto parm_type = tree_helper::CGetType(parm_decl_node);
-      if(!parmssa_id || !IsHandledByBitvalue(parm_type))
+      if(!IsHandledByBitvalue(parm_type))
       {
          continue;
       }

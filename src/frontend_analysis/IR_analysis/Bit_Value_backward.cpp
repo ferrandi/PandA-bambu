@@ -142,23 +142,16 @@ std::deque<bit_lattice> Bit_Value::backward_chain(const tree_nodeConstRef& ssa_n
                if(GET_INDEX_CONST_NODE(*a_it) == ssa_nid)
                {
                   const auto p_decl_id = AppM->getSSAFromParm(called_id, GET_INDEX_CONST_NODE(*f_it));
+                  const auto parmssa = TM->CGetTreeNode(p_decl_id);
+                  const auto pd = GetPointerS<const ssa_name>(parmssa);
                   std::deque<bit_lattice> tmp;
-                  if(p_decl_id)
+                  if(pd->bit_values.empty())
                   {
-                     const auto parmssa = TM->CGetTreeNode(p_decl_id);
-                     const auto pd = GetPointerS<const ssa_name>(parmssa);
-                     if(pd->bit_values.empty())
-                     {
-                        tmp = create_u_bitstring(BitLatticeManipulator::Size(parmssa));
-                     }
-                     else
-                     {
-                        tmp = string_to_bitstring(pd->bit_values);
-                     }
+                     tmp = create_u_bitstring(BitLatticeManipulator::Size(parmssa));
                   }
                   else
                   {
-                     tmp = create_u_bitstring(BitLatticeManipulator::Size(*f_it));
+                     tmp = string_to_bitstring(pd->bit_values);
                   }
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---param: " + bitstring_to_string(tmp));
                   user_res = found ? inf(user_res, tmp, ssa_node) : tmp;
@@ -309,15 +302,14 @@ void Bit_Value::backward()
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing argument " + STR(parm_decl_node));
       const auto parmssa_id = AppM->getSSAFromParm(function_id, GET_INDEX_CONST_NODE(parm_decl_node));
-      const auto parm_type = tree_helper::CGetType(parm_decl_node);
-      if(!parmssa_id || !IsHandledByBitvalue(parm_type))
+      const auto parmssa = TM->CGetTreeReindex(parmssa_id);
+      if(!IsHandledByBitvalue(parmssa))
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
-                        "<--argument " + STR(parm_decl_node) + " of type " + STR(parm_type) +
+                        "<--argument " + STR(parmssa) + " of type " + STR(tree_helper::CGetType(parmssa)) +
                             " not considered id: " + STR(parmssa_id));
          continue;
       }
-      const auto parmssa = TM->CGetTreeReindex(parmssa_id);
       auto res = get_current_or_best(parmssa);
       if(bitstring_constant(res))
       {
@@ -1229,23 +1221,16 @@ std::deque<bit_lattice> Bit_Value::backward_transfer(const gimple_assign* ga, un
                if(GET_INDEX_CONST_NODE(*a_it) == res_nid)
                {
                   const auto p_decl_id = AppM->getSSAFromParm(called_id, GET_INDEX_CONST_NODE(*f_it));
+                  const auto parmssa = TM->CGetTreeNode(p_decl_id);
+                  const auto pd = GetPointerS<const ssa_name>(parmssa);
                   std::deque<bit_lattice> tmp;
-                  if(p_decl_id)
+                  if(pd->bit_values.empty())
                   {
-                     const auto parmssa = TM->CGetTreeNode(p_decl_id);
-                     const auto pd = GetPointerS<const ssa_name>(parmssa);
-                     if(pd->bit_values.empty())
-                     {
-                        tmp = create_u_bitstring(BitLatticeManipulator::Size(parmssa));
-                     }
-                     else
-                     {
-                        tmp = string_to_bitstring(pd->bit_values);
-                     }
+                     tmp = create_u_bitstring(BitLatticeManipulator::Size(parmssa));
                   }
                   else
                   {
-                     tmp = create_u_bitstring(BitLatticeManipulator::Size(*f_it));
+                     tmp = string_to_bitstring(pd->bit_values);
                   }
 
                   res = found ? inf(res, tmp, res_nid) : tmp;

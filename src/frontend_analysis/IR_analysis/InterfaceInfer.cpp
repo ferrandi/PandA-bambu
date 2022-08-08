@@ -431,7 +431,9 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                if(interfaceType != "default")
                {
                   const auto arg_ssa_id = AppM->getSSAFromParm(top_id, arg_id);
-                  if(!arg_ssa_id)
+                  const auto arg_ssa = TM->GetTreeReindex(arg_ssa_id);
+                  THROW_ASSERT(GET_CONST_NODE(arg_ssa)->get_kind() == ssa_name_K, "");
+                  if(GetPointerS<const ssa_name>(GET_CONST_NODE(arg_ssa))->CGetUseStmts().empty())
                   {
                      THROW_WARNING("Parameter '" + arg_name + "' not used by any statement");
                      if(tree_helper::IsPointerType(arg_type))
@@ -477,7 +479,7 @@ DesignFlowStep_Status InterfaceInfer::Exec()
 
                      std::list<tree_nodeRef> writeStmt;
                      std::list<tree_nodeRef> readStmt;
-                     classifyArg(sl, TM->GetTreeReindex(arg_ssa_id), writeStmt, readStmt);
+                     classifyArg(sl, arg_ssa, writeStmt, readStmt);
                      const auto isRead = !readStmt.empty();
                      const auto isWrite = !writeStmt.empty();
 
@@ -690,7 +692,10 @@ void InterfaceInfer::classifyArgRecurse(CustomOrderedSet<unsigned>& Visited, tre
          const auto call_arg_id = GET_INDEX_CONST_NODE(call_fd->list_of_args[par_index]);
 
          const auto call_arg_ssa_id = AppM->getSSAFromParm(call_fd->index, call_arg_id);
-         if(call_arg_ssa_id)
+         const auto TM = AppM->get_tree_manager();
+         const auto call_arg_ssa = TM->CGetTreeReindex(call_arg_ssa_id);
+         THROW_ASSERT(GET_CONST_NODE(call_arg_ssa)->get_kind() == ssa_name_K, "");
+         if(GetPointerS<const ssa_name>(GET_CONST_NODE(call_arg_ssa))->CGetUseStmts().size())
          {
             const auto call_arg_name = [&]() {
                const auto pd = GetPointerS<const parm_decl>(GET_CONST_NODE(call_fd->list_of_args[par_index]));
@@ -720,10 +725,8 @@ void InterfaceInfer::classifyArgRecurse(CustomOrderedSet<unsigned>& Visited, tre
                HLSMgr->design_interface_attribute3[call_fname][call_arg_name] =
                    HLSMgr->design_interface_attribute3.at(orig_fname).at(orig_arg_name);
             }
-            const auto TM = AppM->get_tree_manager();
-            const auto call_ssa = TM->CGetTreeReindex(call_arg_ssa_id);
             const auto call_sl = GetPointerS<const statement_list>(GET_CONST_NODE(call_fd->body));
-            classifyArgRecurse(Visited, call_ssa, call_sl, writeStmt, readStmt);
+            classifyArgRecurse(Visited, call_arg_ssa, call_sl, writeStmt, readStmt);
             INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Sub-function done");
          }
       }
