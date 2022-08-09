@@ -104,8 +104,6 @@ eucalyptus_LDADD = lib_eucalyptus.la @PTHREAD_HACK@
 eucalyptus_LDFLAGS = $(AM_LDFLAGS)
 
 if BUILD_LIB_HLS
-   eucalyptus_LDADD += \
-      $(top_builddir)/src/HLS/lib_HLS.la
    # The following is necessary to allow static self-registration of Factory derived classes
    eucalyptus_LDFLAGS += -Wl,--whole-archive,$(top_builddir)/src/HLS/.libs/lib_module_generator.a,--no-whole-archive
 endif
