@@ -598,3 +598,19 @@ gbbs/parlay/delayed_sequence.h\
 gbbs/parlay/kth_smallest2.h\
 gbbs/parlay/slice.h
 
+###############################################à
+# extra file for or-tools library
+EXTRA_DIST += \
+  or-tools/LICENSE\
+  or-tools/README.md
+
+noinst_HEADERS = \
+or-tools/ortools/util/permutation.h\
+or-tools/ortools/util/zvector.h\
+or-tools/ortools/base/integral_types.h\
+or-tools/ortools/base/macros.h\
+or-tools/ortools/graph/ebert_graph.h\
+or-tools/ortools/graph/linear_assignment.h\
+or-tools/ortools/graph/assignment.h
+
+
