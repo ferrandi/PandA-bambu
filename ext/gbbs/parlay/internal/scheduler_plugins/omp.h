@@ -5,21 +5,23 @@
 #include <omp.h>
 
 namespace parlay {
-
 // IWYU pragma: private, include "../../parallel.h"
 
-inline size_t num_workers() { return omp_get_max_threads(); }
-inline size_t worker_id() { return omp_get_thread_num(); }
-
-template <class F>
-inline void parallel_for(size_t start, size_t end, F f, long, bool) {
-  _Pragma("omp parallel for")
-    for(size_t i=start; i<end; i++) f(i);
+inline size_t num_workers() {
+  return omp_get_max_threads();
+}
+inline size_t worker_id() {
+  return omp_get_thread_num();
 }
 
-bool in_par_do = false;
+template<class F>
+inline void parallel_for(size_t start, size_t end, F f, long, bool) {
+  _Pragma("omp parallel for") for (size_t i = start; i < end; i++) f(i);
+}
 
-template <typename Lf, typename Rf>
+static bool in_par_do = false;
+
+template<typename Lf, typename Rf>
 inline void par_do(Lf left, Rf right, bool) {
   if (!in_par_do) {
     in_par_do = true;  // at top level start up tasking
@@ -31,7 +33,7 @@ inline void par_do(Lf left, Rf right, bool) {
     right();
 #pragma omp taskwait
     in_par_do = false;
-  } else {   // already started
+  } else {  // already started
 #pragma omp task
     left();
 #pragma omp task
@@ -44,4 +46,3 @@ inline void par_do(Lf left, Rf right, bool) {
 
 #endif
 #endif  // PARLAY_INTERNAL_SCHEDULER_PLUGINS_OMP_H_
-

@@ -30,7 +30,7 @@
 #include "parallel.h"
 #include "range.h"
 #include "slice.h"
-#include "type_traits.h"      // IWYU pragma: keep  // for is_trivially_relocatable
+#include "type_traits.h"  // IWYU pragma: keep  // for is_trivially_relocatable
 
 #include "internal/sequence_base.h"
 
@@ -52,7 +52,6 @@ using sequence_default_allocator = std::allocator<T>;
 #endif
 }  // namespace internal
 
-
 // A sequence is a dynamic array supporting parallel modification operations.
 // It is designed to be a fully-parallel drop-in replacement for std::vector.
 //
@@ -61,15 +60,15 @@ using sequence_default_allocator = std::allocator<T>;
 //  Allocator:  an allocator for type T
 //  EnableSSO:  true to enable small-size optimization
 //
-template<typename T, typename Allocator = internal::sequence_default_allocator<T>, bool EnableSSO = std::is_same<T, char>::value>
+template<typename T, typename Allocator = internal::sequence_default_allocator<T>,
+         bool EnableSSO = std::is_same<T, char>::value>
 class sequence : protected sequence_internal::sequence_base<T, Allocator, EnableSSO> {
 
   // Ensure that T is not const or volatile
   static_assert(std::is_same<typename std::remove_cv<T>::type, T>::value,
                 "sequences must have a non-const, non-volatile value_type");
 
- public:
-
+   public:
   // --------------- Container requirements ---------------
 
   using value_type = T;
@@ -92,10 +91,10 @@ class sequence : protected sequence_internal::sequence_base<T, Allocator, Enable
   using sequence_base_type = sequence_internal::sequence_base<T, Allocator, EnableSSO>;
   using allocator_type = Allocator;
 
-  using sequence_base_type::storage;
   using sequence_base_type::_max_size;
   using sequence_base_type::copy_granularity;
   using sequence_base_type::initialization_granularity;
+  using sequence_base_type::storage;
 
   // creates an empty sequence
   sequence() : sequence_base_type() {}
@@ -171,8 +170,8 @@ class sequence : protected sequence_internal::sequence_base<T, Allocator, Enable
 
   value_type& at(size_t i) {
     if (i >= size()) {
-      std::cerr << "sequence access out of bounds: length = " << std::to_string(size()) <<
-                              ", index = " << std::to_string(i) << std::endl;
+      std::cerr << "sequence access out of bounds: length = " << std::to_string(size())
+                << ", index = " << std::to_string(i) << std::endl;
       std::abort();
     } else {
       return storage.at(i);
@@ -181,8 +180,8 @@ class sequence : protected sequence_internal::sequence_base<T, Allocator, Enable
 
   const value_type& at(size_t i) const {
     if (i >= size()) {
-      std::cerr << "sequence access out of bounds: length = " << std::to_string(size()) <<
-                              ", index = " << std::to_string(i) << std::endl;
+      std::cerr << "sequence access out of bounds: length = " << std::to_string(size())
+                << ", index = " << std::to_string(i) << std::endl;
       std::abort();
     } else {
       return storage.at(i);
@@ -209,8 +208,7 @@ class sequence : protected sequence_internal::sequence_base<T, Allocator, Enable
   //
   // Note: cppcheck flags all implicit constructors. This one is okay since
   // we want to convert initializer lists into sequences.
-  sequence(std::initializer_list<value_type> l) :
-      sequence_base_type() {  // cppcheck-suppress noExplicitConstructor
+  sequence(std::initializer_list<value_type> l) : sequence_base_type() {  // cppcheck-suppress noExplicitConstructor
     initialize_range(std::begin(l), std::end(l),
                      typename std::iterator_traits<decltype(std::begin(l))>::iterator_category());
   }
@@ -340,7 +338,6 @@ class sequence : protected sequence_internal::sequence_base<T, Allocator, Enable
 
   void clear() { storage.clear(); }
 
-
   void resize(size_t new_size, const value_type& v = value_type()) {
     auto current = size();
     if (new_size < current) {
@@ -451,7 +448,7 @@ class sequence : protected sequence_internal::sequence_base<T, Allocator, Enable
   static sequence_type uninitialized(size_t n) { return sequence_type(n, _uninitialized_tag{}); }
 
 #ifdef _MSC_VER
-  #pragma warning(push)
+#pragma warning(push)
 #pragma warning(disable : 4267)  // conversion from 'size_t' to *, possible loss of data
 #endif
 
@@ -489,8 +486,7 @@ class sequence : protected sequence_internal::sequence_base<T, Allocator, Enable
   }
 
   template<typename F>
-  sequence(size_t n, F&& f, _from_function_tag, size_t granularity = 0) :
-      sequence_base_type() {
+  sequence(size_t n, F&& f, _from_function_tag, size_t granularity = 0) : sequence_base_type() {
     storage.initialize_capacity(n);
     storage.set_size(n);
     auto buffer = storage.data();
@@ -507,7 +503,7 @@ class sequence : protected sequence_internal::sequence_base<T, Allocator, Enable
     auto buffer = storage.data();
     parallel_for(
         0, n,
-        [&](size_t i) {                 // Calling initialize with
+        [&](size_t i) {                    // Calling initialize with
           storage.initialize(buffer + i);  // no arguments performs
         },
         initialization_granularity(n));  // value initialization
@@ -741,9 +737,8 @@ inline auto to_short_sequence(R&& r) -> short_sequence<range_value_type_t<R>> {
 //  2) Sequences that are not small-size optimized are just a
 //     pointer/length pair, which are trivially relocatable
 template<typename T, typename Alloc, bool EnableSSO>
-struct is_trivially_relocatable<sequence<T, Alloc, EnableSSO>>
-    : std::bool_constant<is_trivially_relocatable_v<Alloc>> {};
-
+struct is_trivially_relocatable<sequence<T, Alloc, EnableSSO>> :
+    std::bool_constant<is_trivially_relocatable_v<Alloc>> {};
 
 }  // namespace parlay
 
@@ -755,17 +750,15 @@ inline void swap(parlay::sequence<T, Allocator, EnableSSO>& a, parlay::sequence<
   a.swap(b);
 }
 
-
-
 // exchange the values of a and b
 template<typename T, typename Allocator, bool EnableSSO>
 struct hash<parlay::sequence<T, Allocator, EnableSSO>> {
   std::size_t operator()(parlay::sequence<T, Allocator, EnableSSO> const& s) const noexcept {
     size_t hash = 5381;
-      for (size_t i = 0; i < s.size(); i++) {
-        hash = ((hash << 5) + hash) + std::hash<T>{}(s[i]);
-      }
-      return hash;
+    for (size_t i = 0; i < s.size(); i++) {
+      hash = ((hash << 5) + hash) + std::hash<T>{}(s[i]);
+    }
+    return hash;
   }
 };
 

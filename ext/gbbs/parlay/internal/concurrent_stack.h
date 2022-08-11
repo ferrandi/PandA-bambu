@@ -25,7 +25,7 @@
 
 namespace parlay {
 
-template <typename T>
+template<typename T>
 class concurrent_stack {
   struct Node {
     T value;
@@ -41,26 +41,23 @@ class concurrent_stack {
     size_t length(Node* n) {
       if (n == nullptr) {
         return 0;
-      }
-      else {
+      } else {
         return n->length;
       }
     }
 
-   public:
-    locking_concurrent_stack() : head(nullptr) {
-
-    }
+     public:
+    locking_concurrent_stack() : head(nullptr) {}
 
     size_t size() { return length(head); }
 
     void push(Node* newNode) {
       std::lock_guard<std::mutex> lock(stack_mutex);
       newNode->next = head;
-      newNode->length  = length(head) + 1;
+      newNode->length = length(head) + 1;
       head = newNode;
     }
-    
+
     Node* pop() {
       std::lock_guard<std::mutex> lock(stack_mutex);
       Node* result = head;
@@ -72,12 +69,12 @@ class concurrent_stack {
   locking_concurrent_stack a;
   locking_concurrent_stack b;
 
- public:
+   public:
   size_t size() { return a.size(); }
 
   void push(T v) {
     Node* x = b.pop();
-    if (!x) x = (Node*) ::operator new(sizeof(Node));
+    if (!x) x = (Node*)::operator new(sizeof(Node));
     x->value = v;
     a.push(x);
   }
@@ -93,8 +90,10 @@ class concurrent_stack {
   // assumes no push or pop in progress
   void clear() {
     Node* x;
-    while ((x = a.pop())) ::operator delete(x);
-    while ((x = b.pop())) ::operator delete(x);
+    while ((x = a.pop()))
+      ::operator delete(x);
+    while ((x = b.pop()))
+      ::operator delete(x);
   }
 
   concurrent_stack() {}

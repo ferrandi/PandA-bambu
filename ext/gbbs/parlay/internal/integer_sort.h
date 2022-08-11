@@ -16,7 +16,6 @@
 #include "../slice.h"
 #include "../utilities.h"
 
-
 namespace parlay {
 namespace internal {
 
@@ -33,12 +32,9 @@ constexpr size_t PARLAY_INTEGER_SORT_BASE_CASE_SIZE = 1 << 17;
 #endif
 
 // a bottom up radix sort
-template <typename InIterator, typename OutIterator, class GetKey>
-void seq_radix_sort_(slice<InIterator, InIterator> In,
-                     slice<OutIterator, OutIterator> Out,
-                     GetKey const &g,
-                     size_t bits,
-                     bool inplace = true) {
+template<typename InIterator, typename OutIterator, class GetKey>
+void seq_radix_sort_(slice<InIterator, InIterator> In, slice<OutIterator, OutIterator> Out, GetKey const &g,
+                     size_t bits, bool inplace = true) {
   size_t n = In.size();
   if (n == 0) return;
   size_t counts[max_buckets + 1];
@@ -48,50 +44,40 @@ void seq_radix_sort_(slice<InIterator, InIterator> In,
     size_t round_bits = (std::min)(radix, bits);
     size_t num_buckets = (size_t{1} << round_bits);
     size_t mask = num_buckets - 1;
-    
+
     if (swapped) {
-      auto get_key = [&](size_t i) -> size_t {
-        return (g(Out[i]) >> bit_offset) & mask;
-      };
+      auto get_key = [&](size_t i) -> size_t { return (g(Out[i]) >> bit_offset) & mask; };
       seq_count_sort_<uninitialized_relocate_tag>(Out, In, delayed_seq<size_t>(n, get_key), counts, num_buckets);
     }
-    
+
     else {
-      auto get_key = [&](size_t i) -> size_t {
-        return (g(In[i]) >> bit_offset) & mask;
-      };
+      auto get_key = [&](size_t i) -> size_t { return (g(In[i]) >> bit_offset) & mask; };
 
       seq_count_sort_<uninitialized_relocate_tag>(In, Out, delayed_seq<size_t>(n, get_key), counts, num_buckets);
-      
     }
-                    
+
     bits = bits - round_bits;
     bit_offset = bit_offset + round_bits;
     swapped = !swapped;
   }
-  
+
   if (swapped && inplace) {
     uninitialized_relocate_n(In.begin(), Out.begin(), In.size());
-  }
-  else if (!swapped && !inplace) {
+  } else if (!swapped && !inplace) {
     uninitialized_relocate_n(Out.begin(), In.begin(), Out.size());
   }
 }
 
-
 // wrapper to reduce copies and avoid modifying In when not inplace
 // In and Tmp can be the same, but Out must be different
-template <typename inplace_tag, typename assignment_tag, typename InIterator, typename OutIterator, typename TmpIterator, class GetKey>
-void seq_radix_sort(slice<InIterator, InIterator> In,
-                    slice<OutIterator, OutIterator> Out,
-   [[maybe_unused]] slice<TmpIterator, TmpIterator> Tmp,
-                    GetKey const &g,
-                    size_t key_bits) {
+template<typename inplace_tag, typename assignment_tag, typename InIterator, typename OutIterator, typename TmpIterator,
+         class GetKey>
+void seq_radix_sort(slice<InIterator, InIterator> In, slice<OutIterator, OutIterator> Out,
+                    [[maybe_unused]] slice<TmpIterator, TmpIterator> Tmp, GetKey const &g, size_t key_bits) {
   if constexpr (inplace_tag::value == true) {
     static_assert(std::is_same_v<assignment_tag, uninitialized_relocate_tag>);
     seq_radix_sort_(In, Out, g, key_bits, true);
-  }
-  else {
+  } else {
     bool odd = ((key_bits - 1) / radix) & 1;
     size_t n = In.size();
     if (odd) {
@@ -100,8 +86,7 @@ void seq_radix_sort(slice<InIterator, InIterator> In,
       // has the ability to memcpy multiple elements at once
       if constexpr (std::is_same_v<assignment_tag, uninitialized_relocate_tag>) {
         uninitialized_relocate_n(Tmp.begin(), In.begin(), Tmp.size());
-      }
-      else {
+      } else {
         for (size_t i = 0; i < n; i++)
           assign_uninitialized(Tmp[i], In[i]);
       }
@@ -109,8 +94,7 @@ void seq_radix_sort(slice<InIterator, InIterator> In,
     } else {
       if constexpr (std::is_same_v<assignment_tag, uninitialized_relocate_tag>) {
         uninitialized_relocate_n(Out.begin(), In.begin(), Out.size());
-      }
-      else {
+      } else {
         for (size_t i = 0; i < n; i++)
           assign_uninitialized(Out[i], In[i]);
       }
@@ -135,14 +119,11 @@ void seq_radix_sort(slice<InIterator, InIterator> In,
 // In to Out, or uninitialized_relocate_tag if the input is to be (destructively) moved from In to
 // Out.
 //
-template <typename inplace_tag, typename assignment_tag,
-          typename InIterator, typename OutIterator, typename TmpIterator, typename Get_Key>
-sequence<size_t> integer_sort_r(slice<InIterator, InIterator> In,
-                                slice<OutIterator, OutIterator> Out,
-                                slice<TmpIterator, TmpIterator> Tmp,
-                                Get_Key const &g, size_t key_bits,
-                                size_t num_buckets,
-                                float parallelism = 1.0) {
+template<typename inplace_tag, typename assignment_tag, typename InIterator, typename OutIterator, typename TmpIterator,
+         typename Get_Key>
+sequence<size_t> integer_sort_r(slice<InIterator, InIterator> In, slice<OutIterator, OutIterator> Out,
+                                slice<TmpIterator, TmpIterator> Tmp, Get_Key const &g, size_t key_bits,
+                                size_t num_buckets, float parallelism = 1.0) {
   // Parameter In
   //  [Preconditions]
   //  - In owns valid initialized memory
@@ -161,7 +142,7 @@ sequence<size_t> integer_sort_r(slice<InIterator, InIterator> In,
   //  - Out points to uninitialized memory
   //  [Postconditions]
   //  - If inplace_tag is std::true_type, then Out points to uninitialized memory
-  //  - If inplace_tag is std::false_type, then Out points to the resulting sorted objects  
+  //  - If inplace_tag is std::false_type, then Out points to the resulting sorted objects
   //
   // Parameter Tmp
   //  [Preconditions]
@@ -178,17 +159,17 @@ sequence<size_t> integer_sort_r(slice<InIterator, InIterator> In,
                                range_value_type_t<slice<OutIterator, OutIterator>>>);
   static_assert(std::is_same_v<range_value_type_t<slice<InIterator, InIterator>>,
                                range_value_type_t<slice<TmpIterator, TmpIterator>>>);
-                               
+
   // assignment_type can only be one of uninitialized_copy_tag or uninitialized_relocate_tag
-  static_assert(std::is_same_v<assignment_tag, uninitialized_copy_tag> || std::is_same_v<assignment_tag, uninitialized_relocate_tag>);
-  
+  static_assert(std::is_same_v<assignment_tag, uninitialized_copy_tag> ||
+                std::is_same_v<assignment_tag, uninitialized_relocate_tag>);
+
   // assignment_tag is only allowed to be uninitialized_copy_tag if inplace_tag is std::false type
   static_assert(inplace_tag::value == false || std::is_same_v<assignment_tag, uninitialized_relocate_tag>);
-  
 
   using T = typename slice<InIterator, InIterator>::value_type;
   timer t("integer sort", false);
-  
+
   size_t n = In.size();
   size_t cache_per_thread = 1000000;
   auto sz = 2 * (size_t)sizeof(T) * n / cache_per_thread;
@@ -211,19 +192,18 @@ sequence<size_t> integer_sort_r(slice<InIterator, InIterator> In,
       // to save on performing every copy individually.
       if constexpr (std::is_same_v<assignment_tag, uninitialized_relocate_tag>) {
         uninitialized_relocate_n(Out.begin(), In.begin(), Out.size());
-      }
-      else {
+      } else {
         parallel_for(0, In.size(), [&](size_t i) {
-          assign_uninitialized(Out[i], In[i]);     // Copy from In[i] to Out[i]
+          assign_uninitialized(Out[i], In[i]);  // Copy from In[i] to Out[i]
         });
-      }  
+      }
     }
     return sequence<size_t>();
   }
   // for small inputs or little parallelism use sequential radix sort
   else if ((n < PARLAY_INTEGER_SORT_BASE_CASE_SIZE || parallelism < .0001) && !return_offsets) {
     seq_radix_sort<inplace_tag, assignment_tag>(In, Out, Tmp, g, key_bits);
-    return sequence<size_t>(); 
+    return sequence<size_t>();
   }
   // few bits, just do a single parallel count sort
   else if (key_bits <= base_bits) {
@@ -231,18 +211,18 @@ sequence<size_t> integer_sort_r(slice<InIterator, InIterator> In,
     auto f = [&](size_t i) { return static_cast<size_t>(g(In[i]) & mask); };
     auto get_bits = delayed_seq<size_t>(n, f);
     size_t num_bkts = (num_buckets == 0) ? (size_t{1} << key_bits) : num_buckets;
-    
+
     // only uses one bucket optimization (last argument) if inplace
-    std::tie(offsets, one_bucket) = count_sort<assignment_tag>(In, Out,
-      make_slice(get_bits), num_bkts, parallelism, inplace_tag::value);
+    std::tie(offsets, one_bucket) =
+        count_sort<assignment_tag>(In, Out, make_slice(get_bits), num_bkts, parallelism, inplace_tag::value);
     t.next("count sort");
-  
+
     if constexpr (inplace_tag::value == true) {
       if (!one_bucket) {
         uninitialized_relocate_n(In.begin(), Out.begin(), In.size());
       }
     }
-    
+
     if (return_offsets)
       return offsets;
     else
@@ -259,15 +239,15 @@ sequence<size_t> integer_sort_r(slice<InIterator, InIterator> In,
     auto get_bits = delayed_seq<size_t>(n, f);
 
     // divide into buckets
-    std::tie(offsets, one_bucket) = count_sort<assignment_tag>(In,
-        Out, make_slice(get_bits), num_outer_buckets, parallelism, !return_offsets);
+    std::tie(offsets, one_bucket) =
+        count_sort<assignment_tag>(In, Out, make_slice(get_bits), num_outer_buckets, parallelism, !return_offsets);
     if (parallelism == 1.0) t.next("recursive count sort");
 
     // if all but one bucket are empty, try again on lower bits
     if (one_bucket) {
       return integer_sort_r<inplace_tag, assignment_tag>(In, Out, Tmp, g, shift_bits, 0, parallelism);
     }
-    
+
     // After this point, Out is guaranteed to be initialized
 
     sequence<size_t> inner_offsets(return_offsets ? num_buckets + 1 : 0);
@@ -284,7 +264,7 @@ sequence<size_t> integer_sort_r(slice<InIterator, InIterator> In,
           sequence<size_t> r;
 
           r = integer_sort_r<typename std::negation<inplace_tag>::type, uninitialized_relocate_tag>(
-            a, b, a, g, shift_bits, num_inner_buckets, (parallelism * (end - start)) / (n + 1));
+              a, b, a, g, shift_bits, num_inner_buckets, (parallelism * (end - start)) / (n + 1));
 
           if (return_offsets) {
             size_t bstart = (std::min)(i * num_inner_buckets, num_buckets);
@@ -310,40 +290,31 @@ sequence<size_t> integer_sort_r(slice<InIterator, InIterator> In,
 // If num_buckets is non-zero then the output sequence will contain
 // the offsets of each bucket (num_bucket of them)
 // num_bucket must be less than or equal to 2^bits
-template <typename inplace_tag, typename assignment_tag, typename InIterator, typename OutIterator, typename TmpIterator, typename Get_Key>
-sequence<size_t> integer_sort_(slice<InIterator, InIterator> In,
-                               slice<OutIterator, OutIterator> Out,
-                               slice<TmpIterator, TmpIterator> Tmp,
-                               Get_Key const &g,
-                               size_t bits,
-                               size_t num_buckets) {
+template<typename inplace_tag, typename assignment_tag, typename InIterator, typename OutIterator, typename TmpIterator,
+         typename Get_Key>
+sequence<size_t> integer_sort_(slice<InIterator, InIterator> In, slice<OutIterator, OutIterator> Out,
+                               slice<TmpIterator, TmpIterator> Tmp, Get_Key const &g, size_t bits, size_t num_buckets) {
   if (bits == 0) {
     auto get_key = [&](size_t i) { return static_cast<size_t>(g(In[i])); };
     auto keys = delayed_seq<size_t>(In.size(), get_key);
     bits = log2_up(internal::reduce(make_slice(keys), maxm<size_t>()) + 1);
   }
-  return integer_sort_r<inplace_tag, assignment_tag>(
-    In, Out, Tmp, g, bits, num_buckets);
+  return integer_sort_r<inplace_tag, assignment_tag>(In, Out, Tmp, g, bits, num_buckets);
 }
 
-template <typename Iterator, typename Get_Key>
-void integer_sort_inplace(slice<Iterator, Iterator> In,
-                          Get_Key const &g, size_t bits = 0) {
+template<typename Iterator, typename Get_Key>
+void integer_sort_inplace(slice<Iterator, Iterator> In, Get_Key const &g, size_t bits = 0) {
   using value_type = typename slice<Iterator, Iterator>::value_type;
   auto Tmp = internal::uninitialized_sequence<value_type>(In.size());
   integer_sort_<std::true_type, uninitialized_relocate_tag>(In, make_slice(Tmp), In, g, bits, 0);
 }
 
-
-template <typename Iterator, typename Get_Key>
-auto integer_sort(slice<Iterator, Iterator> In,
-                  Get_Key const &g,
-                  size_t bits = 0) {
+template<typename Iterator, typename Get_Key>
+auto integer_sort(slice<Iterator, Iterator> In, Get_Key const &g, size_t bits = 0) {
   using value_type = typename slice<Iterator, Iterator>::value_type;
   auto Out = sequence<value_type>::uninitialized(In.size());
   auto Tmp = uninitialized_sequence<value_type>(In.size());
-  integer_sort_<std::false_type, uninitialized_copy_tag>(
-    In, make_slice(Out), make_slice(Tmp), g, bits, 0);
+  integer_sort_<std::false_type, uninitialized_copy_tag>(In, make_slice(Out), make_slice(Tmp), g, bits, 0);
   return Out;
 }
 
@@ -353,7 +324,7 @@ auto integer_sort(slice<Iterator, Iterator> In,
 // will be the same as the next (i.e. offset[i+1]-offset[i] specifies
 // how many i there are.
 // The last element contains the size of the input.
-template <typename Tint = size_t, typename Iterator, typename Get_Key>
+template<typename Tint = size_t, typename Iterator, typename Get_Key>
 sequence<Tint> get_counts(slice<Iterator, Iterator> In, Get_Key const &g, size_t num_buckets) {
   size_t n = In.size();
   if (n == 0) {
@@ -368,11 +339,10 @@ sequence<Tint> get_counts(slice<Iterator, Iterator> In, Get_Key const &g, size_t
     };
   });
   ends[g(In[n - 1])] = n;
-  return sequence<Tint>::from_function(num_buckets,
-                        [&](size_t i) { return ends[i] - starts[i]; });
+  return sequence<Tint>::from_function(num_buckets, [&](size_t i) { return ends[i] - starts[i]; });
 }
 
-template <typename Tint = size_t, typename Iterator, typename Get_Key>
+template<typename Tint = size_t, typename Iterator, typename Get_Key>
 auto integer_sort_with_counts(slice<Iterator, Iterator> In, Get_Key const &g, size_t num_buckets) {
   using T = typename slice<Iterator, Iterator>::value_type;
   if (In.size() == 0) {

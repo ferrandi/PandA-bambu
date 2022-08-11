@@ -13,10 +13,14 @@ namespace parlay {
 
 // IWYU pragma: private, include "../../parallel.h"
 
-inline size_t num_workers() { return tbb::this_task_arena::max_concurrency(); }
-inline size_t worker_id() { return tbb::task_arena::current_thread_index(); }
+inline size_t num_workers() {
+  return tbb::this_task_arena::max_concurrency();
+}
+inline size_t worker_id() {
+  return tbb::task_arena::current_thread_index();
+}
 
-template <class F>
+template<class F>
 inline void parallel_for(size_t start, size_t end, F f, long granularity, bool) {
   if (end > start) {
     if (granularity == 0) {
@@ -25,8 +29,7 @@ inline void parallel_for(size_t start, size_t end, F f, long granularity, bool) 
           f(i);
         }
       });
-    }
-    else {
+    } else {
       size_t n_blocks = (end - start + granularity - 1) / granularity;
       size_t block_size = (end - start + n_blocks - 1) / n_blocks;
       tbb::parallel_for(size_t{0}, n_blocks, [&](size_t b) {
@@ -38,7 +41,7 @@ inline void parallel_for(size_t start, size_t end, F f, long granularity, bool) 
   }
 }
 
-template <typename Lf, typename Rf>
+template<typename Lf, typename Rf>
 inline void par_do(Lf left, Rf right, bool) {
   tbb::parallel_invoke(left, right);
 }
@@ -47,4 +50,3 @@ inline void par_do(Lf left, Rf right, bool) {
 
 #endif
 #endif  // PARLAY_INTERNAL_SCHEDULER_PLUGINS_TBB_HPP_
-

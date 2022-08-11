@@ -20,7 +20,7 @@
 #include <utility>
 
 #include "../parallel.h"
-#include "../type_traits.h"      // IWYU pragma: keep  // for is_trivially_relocatable
+#include "../type_traits.h"  // IWYU pragma: keep  // for is_trivially_relocatable
 #include "../utilities.h"
 
 #ifdef PARLAY_DEBUG_UNINITIALIZED
@@ -158,9 +158,9 @@ struct sequence_base {
       // we need a lot of warning suppressions, unfortunately
       std::byte tmp[sizeof(*this)];
       // cppcheck-suppress memsetClass
-      std::memcpy(std::addressof(tmp), static_cast<void*>(this), sizeof(*this));    // NOLINT
+      std::memcpy(std::addressof(tmp), static_cast<void*>(this), sizeof(*this));  // NOLINT
       // cppcheck-suppress memsetClass
-      std::memcpy(static_cast<void*>(this), &other, sizeof(*this));                 // NOLINT
+      std::memcpy(static_cast<void*>(this), &other, sizeof(*this));  // NOLINT
       // cppcheck-suppress memsetClass
       std::memcpy(static_cast<void*>(std::addressof(other)), &tmp, sizeof(*this));  // NOLINT
     }
@@ -396,7 +396,6 @@ struct sequence_base {
       const value_type* data() const { return elements.data(); }
     };
 
-
     // Store either a short or a long sequence. By default, we
     // store an empty short sequence, which can be represented
     // by a zero-initialized object.
@@ -452,20 +451,22 @@ struct sequence_base {
 
     value_type* data() {
       if constexpr (use_sso) {
-        if (is_small()) return _data.short_mode.data();
-        else return _data.long_mode.data();
-      }
-      else {
+        if (is_small())
+          return _data.short_mode.data();
+        else
+          return _data.long_mode.data();
+      } else {
         return _data.long_mode.data();
       }
     }
 
     const value_type* data() const {
       if constexpr (use_sso) {
-        if (is_small()) return _data.short_mode.data();
-        else return _data.long_mode.data();
-      }
-      else {
+        if (is_small())
+          return _data.short_mode.data();
+        else
+          return _data.long_mode.data();
+      } else {
         return _data.long_mode.data();
       }
     }

@@ -32,15 +32,14 @@ template<typename T, typename F>
 class delayed_sequence;
 
 // Factory function that can infer the type of the function
-template <typename T, typename F>
-delayed_sequence<T, F> delayed_seq (size_t, F);
+template<typename T, typename F>
+delayed_sequence<T, F> delayed_seq(size_t, F);
 
 // A delayed sequence is an iterator range that generates its
 // elements on demand.
 template<typename T, typename F>
 class delayed_sequence {
- public:
-  
+   public:
   // Types exposed by standard containers (although
   // delayed_sequence is not itself a container).
   //
@@ -57,13 +56,12 @@ class delayed_sequence {
   using const_reverse_iterator = reverse_iterator;
   using difference_type = std::ptrdiff_t;
   using size_type = size_t;
- 
+
   // ------------------------------------------------
   //    Internal iterator for a delayed sequence
   // ------------------------------------------------
   class iterator {
-   public:
-
+     public:
     // Iterator traits
     using iterator_category = std::random_access_iterator_tag;
     using value_type = T;
@@ -91,7 +89,7 @@ class delayed_sequence {
 
 #ifdef _MSC_VER
 #pragma warning(push)
-#pragma warning(disable: 4267) // conversion from 'size_t' to *, possible loss of data
+#pragma warning(disable : 4267)  // conversion from 'size_t' to *, possible loss of data
 #endif
 
     // Dereference by value
@@ -109,13 +107,9 @@ class delayed_sequence {
       return *this;
     }
 
-    bool operator==(const iterator& other) const {
-      return index == other.index;
-    }
+    bool operator==(const iterator& other) const { return index == other.index; }
 
-    bool operator!=(const iterator& other) const {
-      return index != other.index;
-    }
+    bool operator!=(const iterator& other) const { return index != other.index; }
 
     // ---- Requirements for bidirectional iterator ----
 
@@ -133,21 +127,13 @@ class delayed_sequence {
 
     // ---- Requirements for random access iterator ----
 
-    bool operator<(const iterator& other) const {
-      return index < other.index;
-    }
+    bool operator<(const iterator& other) const { return index < other.index; }
 
-    bool operator>(const iterator& other) const {
-      return index > other.index;
-    }
+    bool operator>(const iterator& other) const { return index > other.index; }
 
-    bool operator<=(const iterator& other) const {
-      return index <= other.index;
-    }
+    bool operator<=(const iterator& other) const { return index <= other.index; }
 
-    bool operator>=(const iterator& other) const {
-      return index >= other.index;
-    }
+    bool operator>=(const iterator& other) const { return index >= other.index; }
 
     iterator& operator+=(size_t delta) {
       assert(index + delta <= parent->last);
@@ -172,13 +158,12 @@ class delayed_sequence {
     }
 
     std::ptrdiff_t operator-(const iterator& other) const {
-      return static_cast<std::ptrdiff_t>(index)
-        - static_cast<std::ptrdiff_t>(other.index);
+      return static_cast<std::ptrdiff_t>(index) - static_cast<std::ptrdiff_t>(other.index);
     }
 
 #ifdef _MSC_VER
 #pragma warning(push)
-#pragma warning(disable: 4267) // conversion from 'size_t' to *, possible loss of data
+#pragma warning(disable : 4267)  // conversion from 'size_t' to *, possible loss of data
 #endif
 
     T operator[](size_t i) const { return parent->f(index + i); }
@@ -187,33 +172,30 @@ class delayed_sequence {
 #pragma warning(pop)
 #endif
 
-   private:
+     private:
+    iterator(const delayed_sequence* _parent, size_t _index) : parent(_parent), index(_index) {}
 
-    iterator(const delayed_sequence* _parent, size_t _index)
-      : parent(_parent), index(_index) { }
-   
     const delayed_sequence<T, F>* parent;
     size_t index;
   };
-  
+
   // ----------- Constructors and Factories ---------------
 
   static auto constant(size_t n, T value) {
-    return delayed_seq<T>(n,
-      [val = std::move(value)](size_t) { return val; });
+    return delayed_seq<T>(n, [val = std::move(value)](size_t) { return val; });
   }
 
-  delayed_sequence(size_t n, F _f)
-    : first(0), last(n), f(std::move(_f)) { }
+  delayed_sequence(size_t n, F _f) : first(0), last(n), f(std::move(_f)) {}
 
-  delayed_sequence(size_t _first, size_t _last, F _f)
-    : first(_first), last(_last), f(std::move(_f)) { }
-    
+  delayed_sequence(size_t _first, size_t _last, F _f) : first(_first), last(_last), f(std::move(_f)) {}
+
   // Default copy & move, constructor and assignment
   delayed_sequence(const delayed_sequence<T, F>&) = default;
-  delayed_sequence(delayed_sequence<T, F>&&) = default;                           // NOLINT: A default move constructor is noexcept whenever possible
+  delayed_sequence(delayed_sequence<T, F>&&) =
+      default;  // NOLINT: A default move constructor is noexcept whenever possible
   delayed_sequence<T, F>& operator=(const delayed_sequence<T, F>&) = default;
-  delayed_sequence<T, F>& operator=(delayed_sequence<T, F>&&) = default;          // NOLINT: A default move assignment is noexcept whenever possible
+  delayed_sequence<T, F>& operator=(delayed_sequence<T, F>&&) =
+      default;  // NOLINT: A default move assignment is noexcept whenever possible
 
   // ---------------- Iterator Pairs --------------------
 
@@ -222,18 +204,18 @@ class delayed_sequence {
 
   const_iterator cbegin() const { return begin(); }
   const_iterator cend() const { return end(); }
-  
+
   reverse_iterator rbegin() const { return std::make_reverse_iterator(end()); }
   reverse_iterator rend() const { return std::make_reverse_iterator(begin()); }
-  
+
   const_reverse_iterator crbegin() const { return rbegin(); }
   const_reverse_iterator crend() const { return rend(); }
-  
+
   // ---------------- Other operations --------------------
 
 #ifdef _MSC_VER
 #pragma warning(push)
-#pragma warning(disable: 4267) // conversion from 'size_t' to *, possible loss of data
+#pragma warning(disable : 4267)  // conversion from 'size_t' to *, possible loss of data
 #endif
 
   // Subscript access
@@ -243,10 +225,9 @@ class delayed_sequence {
   T at(size_t i) const {
     if (i < first || i >= last) {
       std::cerr << "Delayed sequence access out of"
-                              "range at " << std::to_string(i) <<
-                              "for a sequence with bounds [" <<
-                              std::to_string(first) << ", " <<
-                              std::to_string(last) << ")" << std::endl;
+                   "range at "
+                << std::to_string(i) << "for a sequence with bounds [" << std::to_string(first) << ", "
+                << std::to_string(last) << ")" << std::endl;
       std::abort();
     }
     return f(i);
@@ -261,7 +242,7 @@ class delayed_sequence {
   // Return the last element
   T back() const {
     assert(!empty());
-    return f(last-1);
+    return f(last - 1);
   }
 
 #ifdef _MSC_VER
@@ -273,25 +254,21 @@ class delayed_sequence {
     assert(first <= last);
     return last - first;
   }
-  
+
   // Is empty?
-  bool empty() const {
-    return size() == 0;
-  }
-  
+  bool empty() const { return size() == 0; }
+
   // Swap this with another delayed sequence
-  void swap(delayed_sequence<T, F>& other) {
-    std::swap(*this, other);
-  }
-  
- private:
+  void swap(delayed_sequence<T, F>& other) { std::swap(*this, other); }
+
+   private:
   size_t first, last;
   F f;
 };
 
 // Factory function that can infer the type of the function
-template <typename T, typename F>
-delayed_sequence<T, F> delayed_seq (size_t n, F f) {
+template<typename T, typename F>
+delayed_sequence<T, F> delayed_seq(size_t n, F f) {
   return delayed_sequence<T, F>(n, std::move(f));
 }
 

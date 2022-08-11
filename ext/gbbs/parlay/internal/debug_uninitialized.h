@@ -40,13 +40,13 @@ struct UninitializedTracker {
   // cppcheck-suppress noExplicitConstructor
   /* implicit */ UninitializedTracker(int _x) : x(_x), initialized(true) {}
 
-  UninitializedTracker(const UninitializedTracker &other) {
+  UninitializedTracker(const UninitializedTracker& other) {
     assert(other.initialized && "Attempting to copy an uninitialized object!");
     x = other.x;
     initialized = true;
   }
 
-  UninitializedTracker &operator=(const UninitializedTracker &other) {
+  UninitializedTracker& operator=(const UninitializedTracker& other) {
     assert(initialized && "Attempting to assign to an uninitialized object!");
     assert(other.initialized && "Copy assigning an uninitialized object!");
     x = other.x;
@@ -77,18 +77,18 @@ struct UninitializedTracker {
   }
 
   int x;
-  volatile bool initialized;   // Volatile required to prevent optimizing out the store in the destructor
+  volatile bool initialized;  // Volatile required to prevent optimizing out the store in the destructor
 };
 
 }  // namespace internal
 }  // namespace parlay
 
 namespace std {
-  // Specialize the swap function for UninitializedTracker
-  inline void swap(parlay::internal::UninitializedTracker& a, parlay::internal::UninitializedTracker& b) {
-    a.swap(b);
-  }
+// Specialize the swap function for UninitializedTracker
+inline void swap(parlay::internal::UninitializedTracker& a, parlay::internal::UninitializedTracker& b) {
+  a.swap(b);
 }
+}  // namespace std
 
 // Macros for testing initialized/uninitializedness
 
@@ -108,13 +108,13 @@ namespace std {
 // are required to appropriately flag all newly allocated memory as being
 // uninitialized. False positives will occur if this macro is invoked on
 // memory that is not managed by one of these containers.
-#define PARLAY_ASSERT_UNINITIALIZED(x)                                                       \
-do {                                                                                         \
-  using PARLAY_AU_T = std::remove_cv_t<std::remove_reference_t<decltype(x)>>;                \
-  if constexpr (std::is_same_v<PARLAY_AU_T, ::parlay::internal::UninitializedTracker>) {     \
-    assert(!((x).initialized) && "Memory required to be uninitialized is initialized!");     \
-  }                                                                                          \
-} while (0)
+#define PARLAY_ASSERT_UNINITIALIZED(x)                                                                                 \
+  do {                                                                                                                 \
+    using PARLAY_AU_T = std::remove_cv_t<std::remove_reference_t<decltype(x)>>;                                        \
+    if constexpr (std::is_same_v<PARLAY_AU_T, ::parlay::internal::UninitializedTracker>) {                             \
+      assert(!((x).initialized) && "Memory required to be uninitialized is initialized!");                             \
+    }                                                                                                                  \
+  } while (0)
 
 // Checks that the given UninitializedTracker object is initialized
 //
@@ -130,13 +130,13 @@ do {                                                                            
 // are required to appropriately flag all newly allocated memory as being
 // uninitialized. False positives will occur if this macro is invoked on
 // memory that is not managed by one of these containers.
-#define PARLAY_ASSERT_INITIALIZED(x)                                                         \
-do {                                                                                         \
-  using PARLAY_AI_T = std::remove_cv_t<std::remove_reference_t<decltype(x)>>;                \
-  if constexpr (std::is_same_v<PARLAY_AI_T, ::parlay::internal::UninitializedTracker>) {     \
-    assert((x).initialized && "Memory required to be initialized is uninitialized!");        \
-  }                                                                                          \
-} while (0)
+#define PARLAY_ASSERT_INITIALIZED(x)                                                                                   \
+  do {                                                                                                                 \
+    using PARLAY_AI_T = std::remove_cv_t<std::remove_reference_t<decltype(x)>>;                                        \
+    if constexpr (std::is_same_v<PARLAY_AI_T, ::parlay::internal::UninitializedTracker>) {                             \
+      assert((x).initialized && "Memory required to be initialized is uninitialized!");                                \
+    }                                                                                                                  \
+  } while (0)
 
 #else
 #define PARLAY_ASSERT_UNINITIALIZED(x)

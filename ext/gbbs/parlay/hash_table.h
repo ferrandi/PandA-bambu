@@ -15,7 +15,6 @@
 #include "utilities.h"
 #include "primitives.h"
 
-
 namespace parlay {
 
 // A "history independent" hash table that supports insertion, and searching
@@ -29,9 +28,9 @@ namespace parlay {
 // but insertions cannot happen in parallel with searches or deletions
 // and searches cannot happen in parallel with deletions
 // i.e. each of the three types of operations have to happen in phase
-template <class HASH>
+template<class HASH>
 class hashtable {
- private:
+   private:
   using eType = typename HASH::eType;
   using kType = typename HASH::kType;
   size_t m;
@@ -55,22 +54,19 @@ class hashtable {
   index firstIndex(kType v) { return hashToRange(hashStruct.hash(v)); }
   index incrementIndex(index h) { return (h + 1 == m) ? 0 : h + 1; }
   index decrementIndex(index h) { return (h == 0) ? m - 1 : h - 1; }
-  bool lessIndex(index a, index b) {
-    return (a < b) ? (2 * (b - a) < m) : (2 * (a - b) > m);
-  }
+  bool lessIndex(index a, index b) { return (a < b) ? (2 * (b - a) < m) : (2 * (a - b) > m); }
   bool lessEqIndex(index a, index b) { return a == b || lessIndex(a, b); }
 
- public:
+   public:
   // Size is the maximum number of values the hash table will hold.
   // Overfilling the table could put it into an infinite loop.
-  hashtable(size_t size, HASH hashF, double load = 1.5)
-    : m(100 + static_cast<size_t>(load * size)),
+  hashtable(size_t size, HASH hashF, double load = 1.5) :
+      m(100 + static_cast<size_t>(load * size)),
       empty(hashF.empty()),
       hashStruct(hashF),
-      TA(sequence<eType>(m, empty)) {
-  }
+      TA(sequence<eType>(m, empty)) {}
 
-  ~hashtable() { };
+  ~hashtable(){};
 
   // prioritized linear probing
   //   a new key will bump an existing key up if it has a higher priority
@@ -139,8 +135,7 @@ class hashtable {
     if (c == empty) return true;
 
     // find first location with priority less or equal to v's priority
-    while ((cmp = (c == empty) ? 1 : hashStruct.cmp(v, hashStruct.getKey(c))) <
-           0) {
+    while ((cmp = (c == empty) ? 1 : hashStruct.cmp(v, hashStruct.getKey(c))) < 0) {
       j = incrementIndex(j);
       c = TA[j];
     }
@@ -232,8 +227,7 @@ class hashtable {
 
   // returns all the current entries compacted into a sequence
   sequence<eType> entries() {
-    return filter(make_slice(TA),
-                  [&] (eType v) { return v != empty; });
+    return filter(make_slice(TA), [&](eType v) { return v != empty; });
   }
 
   index findIndex(kType v) {
@@ -276,7 +270,7 @@ class hashtable {
 
 // Example for hashing numeric values.
 // T must be some integer type
-template <class T>
+template<class T>
 struct hash_numeric {
   using eType = T;
   using kType = T;
@@ -292,8 +286,8 @@ struct hash_numeric {
     // not use atomics. This will break for types that
     // do not inline perfectly inside a std::atomic (i.e.,
     // any type that the standard library chooses to lock)
-    return std::atomic_compare_exchange_strong_explicit(
-      reinterpret_cast<std::atomic<eType>*>(p), &o, n, std::memory_order_relaxed, std::memory_order_relaxed);
+    return std::atomic_compare_exchange_strong_explicit(reinterpret_cast<std::atomic<eType>*>(p), &o, n,
+                                                        std::memory_order_relaxed, std::memory_order_relaxed);
   }
 };
 

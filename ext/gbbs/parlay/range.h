@@ -24,7 +24,7 @@
 #ifndef PARLAY_RANGE_H_
 #define PARLAY_RANGE_H_
 
-#include <iterator>       // IWYU pragma: keep
+#include <iterator>  // IWYU pragma: keep
 #include <type_traits>
 
 #ifdef __cpp_concepts
@@ -38,13 +38,15 @@ namespace parlay {
 // this can be replaced with the concept:
 //   std::ranges::SizedSentinal
 template<class S, class I>
-concept SizedSentinel =
-  requires(const I& i, const S& s) {
-    i == s; s == i; i != s; s != i;
-    s - i; requires std::is_same_v<decltype(s - i),
-            typename std::iterator_traits<I>::difference_type>;
-    i - s; requires std::is_same_v<decltype(i - s),
-            typename std::iterator_traits<I>::difference_type>;
+concept SizedSentinel = requires(const I& i, const S& s) {
+  i == s;
+  s == i;
+  i != s;
+  s != i;
+  s - i;
+  requires std::is_same_v<decltype(s - i), typename std::iterator_traits<I>::difference_type>;
+  i - s;
+  requires std::is_same_v<decltype(i - s), typename std::iterator_traits<I>::difference_type>;
 };
 
 // An iterator type It is a random access iterator if it supports
@@ -57,10 +59,7 @@ concept SizedSentinel =
 //   std::ranges::RandomAccessIterator.
 template<typename It>
 concept RandomAccessIterator = requires(It) {
-  requires std::is_same<
-    typename std::iterator_traits<It>::iterator_category,
-    std::random_access_iterator_tag
-  >::value;
+  requires std::is_same<typename std::iterator_traits<It>::iterator_category, std::random_access_iterator_tag>::value;
 };
 
 // A Parlay range is any object that admits an iterator range
@@ -78,15 +77,15 @@ concept Range = requires(T&& t) {
   requires SizedSentinel<decltype(std::end(t)), decltype(std::begin(t))>;
 };
 
-}
+}  // namespace parlay
 
 #define PARLAY_RANGE_TYPE parlay::Range
-#define PARLAY_RANGE parlay::Range auto
+#define PARLAY_RANGE      parlay::Range auto
 
 #else
 
 #define PARLAY_RANGE_TYPE typename
-#define PARLAY_RANGE auto
+#define PARLAY_RANGE      auto
 
 #endif  // __cpp_concepts
 
@@ -101,21 +100,16 @@ auto size(const R& r) {
   return std::end(r) - std::begin(r);
 }
 
-
 // Deduce the underlying value type of a range
 template<typename T>
 struct range_value_type {
-  using type = typename std::remove_cv<
-               typename std::remove_reference<
-                 decltype(
-                   *std::begin(std::declval<T&>())
-                 )
-               >::type>::type;
+  using type =
+      typename std::remove_cv<typename std::remove_reference<decltype(*std::begin(std::declval<T&>()))>::type>::type;
 };
 
 template<typename T>
 using range_value_type_t = typename range_value_type<T>::type;
 
-}
+}  // namespace parlay
 
 #endif  // PARLAY_RANGE_H

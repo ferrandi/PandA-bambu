@@ -28,18 +28,20 @@ namespace parlay {
 //    if start past end of file then returns an empty string.
 // If null_terminate is true, a null terminator (an extra '0' character)
 // is be appended to the sequence.
-inline chars chars_from_file(const std::string& filename,
-           bool null_terminate=false, size_t start=0, size_t end=0) {
-  std::ifstream file (filename, std::ios::in | std::ios::binary | std::ios::ate);
+inline chars chars_from_file(const std::string& filename, bool null_terminate = false, size_t start = 0,
+                             size_t end = 0) {
+  std::ifstream file(filename, std::ios::in | std::ios::binary | std::ios::ate);
   assert(file.is_open());
   size_t length = static_cast<size_t>(file.tellg());
-  start = (std::min)(start,length);
-  if (end == 0) end = length;
-  else end = (std::min)(end,length);
+  start = (std::min)(start, length);
+  if (end == 0)
+    end = length;
+  else
+    end = (std::min)(end, length);
   size_t n = end - start;
-  file.seekg (start, std::ios::beg);
+  file.seekg(start, std::ios::beg);
   auto chars = chars::uninitialized(n + null_terminate);
-  file.read (chars.data(), n);
+  file.read(chars.data(), n);
   file.close();
   if (null_terminate) {
     chars[n] = 0;
@@ -54,7 +56,7 @@ inline void chars_to_stream(const chars& S, std::ostream& os) {
 
 // Writes a character sequence to a file, returns 0 if successful
 inline void chars_to_file(const chars& S, const std::string& filename) {
-  std::ofstream file_stream (filename, std::ios::out | std::ios::binary);
+  std::ofstream file_stream(filename, std::ios::out | std::ios::binary);
   assert(file_stream.is_open());
   chars_to_stream(S, file_stream);
 }
@@ -65,7 +67,7 @@ inline std::ostream& operator<<(std::ostream& os, const chars& s) {
   return os;
 }
 
-}
+}  // namespace parlay
 
 #include "internal/file_map.h"  // IWYU pragma: export
 
@@ -79,7 +81,7 @@ namespace internal {
 
 #ifdef _MSC_VER
 #pragma warning(push)
-#pragma warning(disable: 4146) // unary minus operator applied to unsigned type, result still unsigned
+#pragma warning(disable : 4146)  // unary minus operator applied to unsigned type, result still unsigned
 #endif
 
 // Interpret a character sequence as an integral type _Integer.
@@ -112,8 +114,7 @@ _Integer chars_to_int_t(slice<It, It> str) {
       if (str[i] == '+') i++;
       return -read_digits();
     }
-  }
-  else {
+  } else {
     auto read_digits = [&]() {
       _Integer r = 0;
       while (i < str.size() && std::isdigit(static_cast<unsigned char>(str[i])))
@@ -145,13 +146,10 @@ _Integer chars_to_int_t(slice<It, It> str) {
 template<typename _Float, size_t _max_len, int64_t _max_exp, int64_t _max_man, typename _FallbackF>
 _Float chars_to_float_t(const chars& s, _FallbackF fallback) {
 
-  static const _Float pow_ten[] = {
-    _Float{1e0},  _Float{1e1},  _Float{1e2},  _Float{1e3},  _Float{1e4},
-    _Float{1e5},  _Float{1e6},  _Float{1e7},  _Float{1e8},  _Float{1e9},
-    _Float{1e10}, _Float{1e11}, _Float{1e12}, _Float{1e13}, _Float{1e14},
-    _Float{1e15}, _Float{1e16}, _Float{1e17}, _Float{1e18}, _Float{1e19},
-    _Float{1e20}, _Float{1e21}, _Float{1e22}
-  };
+  static const _Float pow_ten[] = {_Float{1e0},  _Float{1e1},  _Float{1e2},  _Float{1e3},  _Float{1e4},  _Float{1e5},
+                                   _Float{1e6},  _Float{1e7},  _Float{1e8},  _Float{1e9},  _Float{1e10}, _Float{1e11},
+                                   _Float{1e12}, _Float{1e13}, _Float{1e14}, _Float{1e15}, _Float{1e16}, _Float{1e17},
+                                   _Float{1e18}, _Float{1e19}, _Float{1e20}, _Float{1e21}, _Float{1e22}};
 
   // Fast Path
   auto str = make_slice(s);
@@ -161,107 +159,117 @@ _Float chars_to_float_t(const chars& s, _FallbackF fallback) {
     uint64_t r = 0;
     int64_t exponent = 0;
     bool is_negative = false;
-    
+
     while (std::isspace(static_cast<unsigned char>(str[i]))) {
       i++;
     }
-    
+
     // Detect sign
     if (str[i] == '-') {
       is_negative = true;
       i++;
-    }
-    else if (str[i] == '+') {
+    } else if (str[i] == '+') {
       i++;
     }
-    
+
     // Catches inf and nan
     if (str[i] == 'i' || str[i] == 'n') {
       return fallback(s);
     }
-    
+
     // Read digits
     while (i < sz && std::isdigit(static_cast<unsigned char>(str[i]))) {
       r = r * 10 + (str[i++] - '0');
     }
-    
+
     // Whole number. No decimal point and no exponent. Easy.
     if (i == sz) {
       if (r < (uint64_t{1} << _max_man)) {
         _Float res = static_cast<_Float>(r);
         if (is_negative) res = -res;
         return res;
-      }
-      else {
+      } else {
         return fallback(s);
       }
     }
-    
+
     // Found the exponent. No decimal point
     if (str[i] == 'e' || str[i] == 'E') {
-      exponent = internal::chars_to_int_t<uint64_t>(str.cut(i+1, sz));
+      exponent = internal::chars_to_int_t<uint64_t>(str.cut(i + 1, sz));
       i = sz;
     }
     // Found the decimal point. Continue looking until we find an exponent or the end
     else {
       assert(str[i] == '.' || str[i] == ',');
       int64_t period = i++;
-      
+
       while (i < sz && std::isdigit(static_cast<unsigned char>(str[i]))) {
         r = r * 10 + (str[i++] - '0');
       }
-      
+
       exponent = -(static_cast<int64_t>(i) - period - 1);
-      
+
       if (i < sz && (str[i] == 'e' || str[i] == 'E')) {
-        exponent += internal::chars_to_int_t<uint64_t>(str.cut(i+1, sz));
+        exponent += internal::chars_to_int_t<uint64_t>(str.cut(i + 1, sz));
         i = sz;
       }
     }
 
     assert(i == sz);
-    
+
     // We can represent this exactly!
     if (-_max_exp <= exponent && exponent <= _max_exp && r < (uint64_t{1} << _max_man)) {
       _Float result = static_cast<_Float>(r);
       _Float tens = exponent > 0 ? pow_ten[exponent] : pow_ten[-exponent];
-      if (exponent < 0) result = result / tens;
-      else if (exponent > 0) result = result * tens;
+      if (exponent < 0)
+        result = result / tens;
+      else if (exponent > 0)
+        result = result * tens;
       if (is_negative) result = -result;
       return result;
     }
   }
-  
+
   // Slow path: Just fall back to std::stof/std::stod/std::stold
   return fallback(s);
 }
 
+}  // namespace internal
+
+inline int chars_to_int(const chars& s) {
+  return internal::chars_to_int_t<int>(make_slice(s));
+}
+inline long chars_to_long(const chars& s) {
+  return internal::chars_to_int_t<long>(make_slice(s));
+}
+inline long long chars_to_long_long(const chars& s) {
+  return internal::chars_to_int_t<long long>(make_slice(s));
 }
 
-inline int chars_to_int(const chars& s) { return internal::chars_to_int_t<int>(make_slice(s)); }
-inline long chars_to_long(const chars& s) { return internal::chars_to_int_t<long>(make_slice(s)); }
-inline long long chars_to_long_long(const chars& s) { return internal::chars_to_int_t<long long>(make_slice(s)); }
-
-inline unsigned int chars_to_uint(const chars& s) { return internal::chars_to_int_t<unsigned int>(make_slice(s)); }
-inline unsigned long chars_to_ulong(const chars& s) { return internal::chars_to_int_t<unsigned long>(make_slice(s)); }
-inline unsigned long long chars_to_ulong_long(const chars& s) { return internal::chars_to_int_t<unsigned long long>(make_slice(s)); }
-
+inline unsigned int chars_to_uint(const chars& s) {
+  return internal::chars_to_int_t<unsigned int>(make_slice(s));
+}
+inline unsigned long chars_to_ulong(const chars& s) {
+  return internal::chars_to_int_t<unsigned long>(make_slice(s));
+}
+inline unsigned long long chars_to_ulong_long(const chars& s) {
+  return internal::chars_to_int_t<unsigned long long>(make_slice(s));
+}
 
 inline float chars_to_float(const chars& s) {
-  return internal::chars_to_float_t<float, 10, 10, 24>(s, [](const auto& str) {
-    return std::stof(std::string(std::begin(str), std::end(str))); });
+  return internal::chars_to_float_t<float, 10, 10, 24>(
+      s, [](const auto& str) { return std::stof(std::string(std::begin(str), std::end(str))); });
 }
 
 inline double chars_to_double(const chars& s) {
-  return internal::chars_to_float_t<double, 18, 22, 53>(s, [](const auto& str) {
-    return std::stod(std::string(std::begin(str), std::end(str))); });
+  return internal::chars_to_float_t<double, 18, 22, 53>(
+      s, [](const auto& str) { return std::stod(std::string(std::begin(str), std::end(str))); });
 }
 
 inline long double chars_to_long_double(const chars& s) {
-  return internal::chars_to_float_t<long double, 18, 22, 53>(s, [](const auto& str) {
-    return std::stold(std::string(std::begin(str), std::end(str))); });
+  return internal::chars_to_float_t<long double, 18, 22, 53>(
+      s, [](const auto& str) { return std::stold(std::string(std::begin(str), std::end(str))); });
 }
-
 
 // ----------------------------------------------------------------------------
 //                                Formatting
@@ -301,7 +309,7 @@ inline chars to_chars(long v) {
 }
 
 inline chars to_chars(int v) {
-  return to_chars((long) v);
+  return to_chars((long)v);
 };
 
 inline chars to_chars(unsigned long v) {
@@ -312,7 +320,7 @@ inline chars to_chars(unsigned long v) {
 }
 
 inline chars to_chars(unsigned int v) {
-  return to_chars((unsigned long) v);
+  return to_chars((unsigned long)v);
 };
 
 inline chars to_chars(double v) {
@@ -323,7 +331,7 @@ inline chars to_chars(double v) {
 }
 
 inline chars to_chars(float v) {
-  return to_chars((double) v);
+  return to_chars((double)v);
 };
 
 inline chars to_chars(const std::string& s) {
@@ -337,10 +345,8 @@ inline chars to_chars(const char* s) {
 
 template<typename A, typename B>
 chars to_chars(const std::pair<A, B>& P) {
-  sequence<chars> s = {
-      to_chars('('), to_chars(P.first),
-      to_chars(std::string(", ")),
-      to_chars(P.second), to_chars(')')};
+  sequence<chars> s = {to_chars('('), to_chars(P.first), to_chars(std::string(", ")), to_chars(P.second),
+                       to_chars(')')};
   return flatten(s);
 }
 

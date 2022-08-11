@@ -20,7 +20,7 @@ class uninitialized_storage {
   using value_type = T;
   typename std::aligned_storage<sizeof(T), alignof(T)>::type storage;
 
- public:
+   public:
   uninitialized_storage() {
 #ifdef PARLAY_DEBUG_UNINITIALIZED
     // If uninitialized memory debugging is turned on, make sure that
@@ -33,18 +33,12 @@ class uninitialized_storage {
   }
 
 #ifdef PARLAY_DEBUG_UNINITIALIZED
-  ~uninitialized_storage() {
-    PARLAY_ASSERT_UNINITIALIZED(*get());
-  }
+  ~uninitialized_storage() { PARLAY_ASSERT_UNINITIALIZED(*get()); }
 #endif
 
-  value_type* get() {
-    return std::launder(reinterpret_cast<value_type*>(std::addressof(storage)));
-  }
+  value_type* get() { return std::launder(reinterpret_cast<value_type*>(std::addressof(storage))); }
 
-  const value_type* get() const {
-    return std::launder(reinterpret_cast<value_type*>(std::addressof(storage)));
-  }
+  const value_type* get() const { return std::launder(reinterpret_cast<value_type*>(std::addressof(storage))); }
 };
 
 }  // namespace internal

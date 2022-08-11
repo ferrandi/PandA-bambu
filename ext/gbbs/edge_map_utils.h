@@ -34,236 +34,253 @@
 
 #include "macros.h"
 
-namespace gbbs {
+namespace gbbs
+{
+   // Standard version of edgeMapDense.
+   template <typename data, typename std::enable_if<std::is_same<data, gbbs::empty>::value, int>::type = 0>
+   inline auto get_emdense_gen(bool* next)
+   {
+      return [next](uintE ngh, bool m = false) __attribute__((always_inline))
+      {
+         if(m)
+            next[ngh] = 1;
+      };
+   }
 
-// Standard version of edgeMapDense.
-template <typename data,
-          typename std::enable_if<std::is_same<data, gbbs::empty>::value,
-                                  int>::type = 0>
-inline auto get_emdense_gen(bool* next) {
-  return [next](uintE ngh, bool m = false) __attribute__((always_inline)) {
-    if (m) next[ngh] = 1;
-  };
-}
+   template <typename data, typename std::enable_if<!std::is_same<data, gbbs::empty>::value, int>::type = 0>
+   inline auto get_emdense_gen(std::tuple<bool, data>* next)
+   {
+      return [next](uintE ngh, std::optional<data> m = std::nullopt) __attribute__((always_inline))
+      {
+         if(m.has_value())
+            next[ngh] = std::make_tuple(1, *m);
+      };
+   }
 
-template <typename data,
-          typename std::enable_if<!std::is_same<data, gbbs::empty>::value,
-                                  int>::type = 0>
-inline auto get_emdense_gen(std::tuple<bool, data>* next) {
-  return [next](uintE ngh, std::optional<data> m = std::nullopt)
-      __attribute__((always_inline)) {
-    if (m.has_value()) next[ngh] = std::make_tuple(1, *m);
-  };
-}
+   // Standard version of edgeMapDenseForward.
+   template <typename data, typename std::enable_if<std::is_same<data, gbbs::empty>::value, int>::type = 0>
+   inline auto get_emdense_forward_gen(bool* next)
+   {
+      return [next](uintE ngh, bool m = false) __attribute__((always_inline))
+      {
+         if(m)
+            next[ngh] = 1;
+      };
+   }
 
-// Standard version of edgeMapDenseForward.
-template <typename data,
-          typename std::enable_if<std::is_same<data, gbbs::empty>::value,
-                                  int>::type = 0>
-inline auto get_emdense_forward_gen(bool* next) {
-  return [next](uintE ngh, bool m = false) __attribute__((always_inline)) {
-    if (m) next[ngh] = 1;
-  };
-}
+   template <typename data, typename std::enable_if<!std::is_same<data, gbbs::empty>::value, int>::type = 0>
+   inline auto get_emdense_forward_gen(std::tuple<bool, data>* next)
+   {
+      return [next](uintE ngh, std::optional<data> m = std::nullopt) __attribute__((always_inline))
+      {
+         if(m.has_value())
+            next[ngh] = std::make_tuple(1, *m);
+      };
+   }
 
-template <typename data,
-          typename std::enable_if<!std::is_same<data, gbbs::empty>::value,
-                                  int>::type = 0>
-inline auto get_emdense_forward_gen(std::tuple<bool, data>* next) {
-  return [next](uintE ngh, std::optional<data> m = std::nullopt)
-      __attribute__((always_inline)) {
-    if (m.has_value()) next[ngh] = std::make_tuple(1, *m);
-  };
-}
+   // Standard version of edgeMapSparse.
+   template <typename data, typename std::enable_if<std::is_same<data, gbbs::empty>::value, int>::type = 0>
+   inline auto get_emsparse_gen_full(uintE* outEdges)
+   {
+      return [outEdges](uintE ngh, uintT offset, bool m) __attribute__((always_inline))
+      {
+         if(m)
+         {
+            outEdges[offset] = ngh;
+         }
+         else
+         {
+            outEdges[offset] = UINT_E_MAX;
+         }
+      };
+   }
 
-// Standard version of edgeMapSparse.
-template <typename data,
-          typename std::enable_if<std::is_same<data, gbbs::empty>::value,
-                                  int>::type = 0>
-inline auto get_emsparse_gen_full(uintE* outEdges) {
-  return [outEdges](uintE ngh, uintT offset, bool m)
-      __attribute__((always_inline)) {
-    if (m) {
-      outEdges[offset] = ngh;
-    } else {
-      outEdges[offset] = UINT_E_MAX;
-    }
-  };
-}
+   template <typename data, typename std::enable_if<!std::is_same<data, gbbs::empty>::value, int>::type = 0>
+   inline auto get_emsparse_gen_full(std::tuple<uintE, data>* outEdges)
+   {
+      return [outEdges](uintE ngh, uintT offset, std::optional<data> m = std::nullopt) __attribute__((always_inline))
+      {
+         if(m.has_value())
+         {
+            outEdges[offset] = std::make_tuple(ngh, *m);
+         }
+         else
+         {
+            std::get<0>(outEdges[offset]) = UINT_E_MAX;
+         }
+      };
+   }
 
-template <typename data,
-          typename std::enable_if<!std::is_same<data, gbbs::empty>::value,
-                                  int>::type = 0>
-inline auto get_emsparse_gen_full(std::tuple<uintE, data>* outEdges) {
-  return [outEdges](uintE ngh, uintT offset,
-                    std::optional<data> m = std::nullopt)
-      __attribute__((always_inline)) {
-    if (m.has_value()) {
-      outEdges[offset] = std::make_tuple(ngh, *m);
-    } else {
-      std::get<0>(outEdges[offset]) = UINT_E_MAX;
-    }
-  };
-}
+   template <typename data>
+   inline auto get_emsparse_gen_empty(std::tuple<uintE, data>* outEdges)
+   {
+      return [outEdges](uintE ngh, uintT offset) __attribute__((always_inline))
+      {
+         std::get<0>(outEdges[offset]) = UINT_E_MAX;
+      };
+   }
 
-template <typename data>
-inline auto get_emsparse_gen_empty(std::tuple<uintE, data>* outEdges) {
-  return [outEdges](uintE ngh, uintT offset) __attribute__((always_inline)) {
-    std::get<0>(outEdges[offset]) = UINT_E_MAX;
-  };
-}
+   // edgeMapSparse_no_filter
+   // Version of edgeMapSparse that binary-searches and packs out blocks of the
+   // next frontier.
+   template <typename data, typename std::enable_if<std::is_same<data, gbbs::empty>::value, int>::type = 0>
+   inline auto get_emsparse_blocked_gen(uintE* outEdges)
+   {
+      return [outEdges](uintE ngh, uintT offset, bool m = false) __attribute__((always_inline))
+      {
+         if(m)
+         {
+            outEdges[offset] = ngh;
+            return true;
+         }
+         return false;
+      };
+   }
 
-// edgeMapSparse_no_filter
-// Version of edgeMapSparse that binary-searches and packs out blocks of the
-// next frontier.
-template <typename data,
-          typename std::enable_if<std::is_same<data, gbbs::empty>::value,
-                                  int>::type = 0>
-inline auto get_emsparse_blocked_gen(uintE* outEdges) {
-  return [outEdges](uintE ngh, uintT offset, bool m = false)
-      __attribute__((always_inline)) {
-    if (m) {
-      outEdges[offset] = ngh;
-      return true;
-    }
-    return false;
-  };
-}
+   template <typename data, typename std::enable_if<!std::is_same<data, gbbs::empty>::value, int>::type = 0>
+   inline auto get_emsparse_blocked_gen(uintE* outEdges)
+   {
+      return [outEdges](uintE ngh, uintT offset, std::optional<data> m = std::nullopt) __attribute__((always_inline))
+      {
+         if(m.has_value())
+         {
+            outEdges[offset] = ngh;
+            return true;
+         }
+         return false;
+      };
+   }
 
-template <typename data,
-          typename std::enable_if<!std::is_same<data, gbbs::empty>::value,
-                                  int>::type = 0>
-inline auto get_emsparse_blocked_gen(uintE* outEdges) {
-  return [outEdges](uintE ngh, uintT offset,
-                    std::optional<data> m = std::nullopt)
-      __attribute__((always_inline)) {
-    if (m.has_value()) {
-      outEdges[offset] = ngh;
-      return true;
-    }
-    return false;
-  };
-}
+   template <typename data, typename std::enable_if<std::is_same<data, gbbs::empty>::value, int>::type = 0>
+   inline auto get_emblock_gen(uintE* outEdges)
+   {
+      return [outEdges](uintE ngh, uintT offset, bool m = false) __attribute__((always_inline))
+      {
+         if(m)
+         {
+            outEdges[offset] = ngh;
+            return true;
+         }
+         return false;
+      };
+   }
 
-template <typename data,
-          typename std::enable_if<std::is_same<data, gbbs::empty>::value,
-                                  int>::type = 0>
-inline auto get_emblock_gen(uintE* outEdges) {
-  return [outEdges](uintE ngh, uintT offset, bool m = false)
-      __attribute__((always_inline)) {
-    if (m) {
-      outEdges[offset] = ngh;
-      return true;
-    }
-    return false;
-  };
-}
+   template <typename data, typename std::enable_if<!std::is_same<data, gbbs::empty>::value, int>::type = 0>
+   inline auto get_emblock_gen(std::tuple<uintE, data>* outEdges)
+   {
+      return [outEdges](uintE ngh, uintT offset, std::optional<data> m = std::nullopt) __attribute__((always_inline))
+      {
+         if(m.has_value())
+         {
+            outEdges[offset] = std::make_tuple(ngh, *m);
+            return true;
+         }
+         return false;
+      };
+   }
 
-template <typename data,
-          typename std::enable_if<!std::is_same<data, gbbs::empty>::value,
-                                  int>::type = 0>
-inline auto get_emblock_gen(std::tuple<uintE, data>* outEdges) {
-  return [outEdges](uintE ngh, uintT offset,
-                    std::optional<data> m = std::nullopt)
-      __attribute__((always_inline)) {
-    if (m.has_value()) {
-      outEdges[offset] = std::make_tuple(ngh, *m);
-      return true;
-    }
-    return false;
-  };
-}
+   // Gen-functions that produce no output
+   template <typename data, typename std::enable_if<std::is_same<data, gbbs::empty>::value, int>::type = 0>
+   inline auto get_emsparse_nooutput_gen()
+   {
+      return [&](uintE ngh, uintE offset, bool m = false) {};
+   }
 
-// Gen-functions that produce no output
-template <typename data,
-          typename std::enable_if<std::is_same<data, gbbs::empty>::value,
-                                  int>::type = 0>
-inline auto get_emsparse_nooutput_gen() {
-  return [&](uintE ngh, uintE offset, bool m = false) {};
-}
+   template <typename data, typename std::enable_if<!std::is_same<data, gbbs::empty>::value, int>::type = 0>
+   inline auto get_emsparse_nooutput_gen()
+   {
+      return [&](uintE ngh, uintE offset, std::optional<data> m = std::nullopt) {};
+   }
 
-template <typename data,
-          typename std::enable_if<!std::is_same<data, gbbs::empty>::value,
-                                  int>::type = 0>
-inline auto get_emsparse_nooutput_gen() {
-  return [&](uintE ngh, uintE offset, std::optional<data> m = std::nullopt) {};
-}
+   template <typename data>
+   inline auto get_emsparse_nooutput_gen_empty()
+   {
+      return [&](uintE ngh, uintE offset) {};
+   }
 
-template <typename data>
-inline auto get_emsparse_nooutput_gen_empty() {
-  return [&](uintE ngh, uintE offset) {};
-}
+   template <typename data, typename std::enable_if<std::is_same<data, gbbs::empty>::value, int>::type = 0>
+   inline auto get_emdense_nooutput_gen()
+   {
+      return [&](uintE ngh, bool m = false) {};
+   }
 
-template <typename data,
-          typename std::enable_if<std::is_same<data, gbbs::empty>::value,
-                                  int>::type = 0>
-inline auto get_emdense_nooutput_gen() {
-  return [&](uintE ngh, bool m = false) {};
-}
+   template <typename data, typename std::enable_if<!std::is_same<data, gbbs::empty>::value, int>::type = 0>
+   inline auto get_emdense_nooutput_gen()
+   {
+      return [&](uintE ngh, std::optional<data> m = std::nullopt) {};
+   }
 
-template <typename data,
-          typename std::enable_if<!std::is_same<data, gbbs::empty>::value,
-                                  int>::type = 0>
-inline auto get_emdense_nooutput_gen() {
-  return [&](uintE ngh, std::optional<data> m = std::nullopt) {};
-}
+   template <typename data, typename std::enable_if<std::is_same<data, gbbs::empty>::value, int>::type = 0>
+   inline auto get_emdense_forward_nooutput_gen()
+   {
+      return [&](uintE ngh, bool m = false) {};
+   }
 
-template <typename data,
-          typename std::enable_if<std::is_same<data, gbbs::empty>::value,
-                                  int>::type = 0>
-inline auto get_emdense_forward_nooutput_gen() {
-  return [&](uintE ngh, bool m = false) {};
-}
+   template <typename data, typename std::enable_if<!std::is_same<data, gbbs::empty>::value, int>::type = 0>
+   inline auto get_emdense_forward_nooutput_gen()
+   {
+      return [&](uintE ngh, std::optional<data> m = std::nullopt) {};
+   }
 
-template <typename data,
-          typename std::enable_if<!std::is_same<data, gbbs::empty>::value,
-                                  int>::type = 0>
-inline auto get_emdense_forward_nooutput_gen() {
-  return [&](uintE ngh, std::optional<data> m = std::nullopt) {};
-}
+   template <class W, class F>
+   struct Wrap_F
+   {
+      F f;
+      Wrap_F(F _f) : f(_f)
+      {
+      }
+      inline bool update(const uintE& s, const uintE& d, const W& e)
+      {
+         return f.update(s, d);
+      }
+      inline bool updateAtomic(const uintE& s, const uintE& d, const W& e)
+      {
+         return f.updateAtomic(s, d);
+      }
+      inline bool cond(const uintE& d)
+      {
+         return f.cond(d);
+      }
+   };
 
-template <class W, class F>
-struct Wrap_F {
-  F f;
-  Wrap_F(F _f) : f(_f) {}
-  inline bool update(const uintE& s, const uintE& d, const W& e) {
-    return f.update(s, d);
-  }
-  inline bool updateAtomic(const uintE& s, const uintE& d, const W& e) {
-    return f.updateAtomic(s, d);
-  }
-  inline bool cond(const uintE& d) { return f.cond(d); }
-};
+   template <class W, class D, class F>
+   struct Wrap_Default_F
+   {
+      F f;
+      D def;
+      Wrap_Default_F(F _f, D _def) : f(_f), def(_def)
+      {
+      }
+      inline bool update(const uintE& s, const uintE& d, const W& e)
+      {
+         return f.update(s, d, def);
+      }
+      inline bool updateAtomic(const uintE& s, const uintE& d, const W& e)
+      {
+         return f.updateAtomic(s, d, def);
+      }
+      inline bool cond(const uintE& d)
+      {
+         return f.cond(d);
+      }
+   };
 
-template <class W, class D, class F>
-struct Wrap_Default_F {
-  F f;
-  D def;
-  Wrap_Default_F(F _f, D _def) : f(_f), def(_def) {}
-  inline bool update(const uintE& s, const uintE& d, const W& e) {
-    return f.update(s, d, def);
-  }
-  inline bool updateAtomic(const uintE& s, const uintE& d, const W& e) {
-    return f.updateAtomic(s, d, def);
-  }
-  inline bool cond(const uintE& d) { return f.cond(d); }
-};
+   template <class W, class F>
+   inline auto wrap_em_f(F f) -> Wrap_F<W, F>
+   {
+      return Wrap_F<W, F>(f);
+   }
 
-template <class W, class F>
-inline auto wrap_em_f(F f) -> Wrap_F<W, F> {
-  return Wrap_F<W, F>(f);
-}
+   template <class W, class D, class F, typename std::enable_if<!std::is_same<W, D>::value, int>::type = 0>
+   inline auto wrap_with_default(F f, D def) -> Wrap_Default_F<W, D, F>
+   {
+      return Wrap_Default_F<W, D, F>(f, def);
+   }
 
-template <class W, class D, class F,
-          typename std::enable_if<!std::is_same<W, D>::value, int>::type = 0>
-inline auto wrap_with_default(F f, D def) -> Wrap_Default_F<W, D, F> {
-  return Wrap_Default_F<W, D, F>(f, def);
-}
+   template <class W, class D, class F, typename std::enable_if<std::is_same<W, D>::value, int>::type = 0>
+   inline auto wrap_with_default(F f, D def) -> decltype(f)
+   {
+      return f;
+   }
 
-template <class W, class D, class F,
-          typename std::enable_if<std::is_same<W, D>::value, int>::type = 0>
-inline auto wrap_with_default(F f, D def) -> decltype(f) {
-  return f;
-}
-
-}  // namespace gbbs
+} // namespace gbbs

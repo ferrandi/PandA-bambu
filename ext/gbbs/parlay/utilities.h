@@ -23,7 +23,7 @@
 
 namespace parlay {
 
-template <typename Lf, typename Rf>
+template<typename Lf, typename Rf>
 static void par_do_if(bool do_parallel, Lf left, Rf right, bool cons = false) {
   if (do_parallel)
     par_do(left, right, cons);
@@ -33,13 +33,13 @@ static void par_do_if(bool do_parallel, Lf left, Rf right, bool cons = false) {
   }
 }
 
-template <typename Lf, typename Mf, typename Rf>
+template<typename Lf, typename Mf, typename Rf>
 inline void par_do3(Lf left, Mf mid, Rf right) {
   auto left_mid = [&]() { par_do(left, mid); };
   par_do(left_mid, right);
 }
 
-template <typename Lf, typename Mf, typename Rf>
+template<typename Lf, typename Mf, typename Rf>
 static void par_do3_if(bool do_parallel, Lf left, Mf mid, Rf right) {
   if (do_parallel)
     par_do3(left, mid, right);
@@ -50,7 +50,7 @@ static void par_do3_if(bool do_parallel, Lf left, Mf mid, Rf right) {
   }
 }
 
-template <class T>
+template<class T>
 size_t log2_up(T);
 
 struct empty {};
@@ -63,19 +63,19 @@ const flags fl_time = 4;
 const flags fl_conservative = 8;
 const flags fl_inplace = 16;
 
-template <typename T>
+template<typename T>
 inline void assign_uninitialized(T& a, const T& b) {
   PARLAY_ASSERT_UNINITIALIZED(a);
   new (static_cast<T*>(std::addressof(a))) T(b);
 }
 
-template <typename T>
+template<typename T>
 inline auto assign_uninitialized(T& a, T&& b) -> typename std::enable_if_t<std::is_rvalue_reference_v<T&&>> {
   PARLAY_ASSERT_UNINITIALIZED(a);
   new (static_cast<T*>(std::addressof(a))) T(std::move(b));  // NOLINT: b is guaranteed to be an rvalue reference
 }
 
-template <typename T>
+template<typename T>
 inline void move_uninitialized(T& a, T& b) {
   PARLAY_ASSERT_UNINITIALIZED(a);
   new (static_cast<T*>(std::addressof(a))) T(std::move(b));
@@ -134,7 +134,7 @@ inline uint64_t hash64_2(uint64_t x) {
 
 /* Atomic write-add, write-min, and write-max */
 
-template <typename T, typename EV>
+template<typename T, typename EV>
 inline void write_add(std::atomic<T>* a, EV b) {
   T newV, oldV;
   do {
@@ -143,7 +143,7 @@ inline void write_add(std::atomic<T>* a, EV b) {
   } while (!std::atomic_compare_exchange_weak(a, &oldV, newV));
 }
 
-template <typename T, typename F>
+template<typename T, typename F>
 inline bool write_min(std::atomic<T>* a, T b, F less) {
   T c;
   bool r = 0;
@@ -153,7 +153,7 @@ inline bool write_min(std::atomic<T>* a, T b, F less) {
   return r;
 }
 
-template <typename T, typename F>
+template<typename T, typename F>
 inline bool write_max(std::atomic<T>* a, T b, F less) {
   T c;
   bool r = 0;
@@ -165,7 +165,7 @@ inline bool write_max(std::atomic<T>* a, T b, F less) {
 
 // returns the log base 2 rounded up (works on ints or longs or unsigned
 // versions)
-template <class T>
+template<class T>
 size_t log2_up(T i) {
   assert(i > 0);
   size_t a = 0;
@@ -238,8 +238,7 @@ template<typename T>
 inline void uninitialized_relocate(T* to, T* from) noexcept(is_nothrow_relocatable<T>::value) {
   if constexpr (is_trivially_relocatable<T>::value) {
     std::memcpy(static_cast<void*>(to), static_cast<void*>(from), sizeof(T));
-  }
-  else {
+  } else {
     static_assert(std::is_move_constructible<T>::value);
     static_assert(std::is_destructible<T>::value);
     PARLAY_ASSERT_UNINITIALIZED(*to);
@@ -271,26 +270,32 @@ inline void uninitialized_relocate_n_a(It1 to, It2 from, size_t n, Alloc& alloc)
   if constexpr (trivially_relocatable && contiguous && trivial_alloc) {
     constexpr size_t chunk_size = 1024 * sizeof(size_t) / sizeof(T);
     const size_t n_chunks = (n + chunk_size - 1) / chunk_size;
-    parallel_for(0, n_chunks, [&](size_t i) {
-      size_t n_objects = (std::min)(chunk_size, n - i * chunk_size);
-      size_t n_bytes = sizeof(T) * n_objects;
-      void* src = static_cast<void*>(std::addressof(*(from + i * chunk_size)));
-      void* dest = static_cast<void*>(std::addressof(*(to + i * chunk_size)));
-      std::memcpy(dest, src, n_bytes);
-    }, 1);
-  // The next best thing -- If the objects are trivially relocatable and the allocator
-  // has no special behaviour, so long as the iterators are random access, we can still
-  // relocate everything in parallel, just not by memcpying multiple objects at a time
+    parallel_for(
+        0, n_chunks,
+        [&](size_t i) {
+          size_t n_objects = (std::min)(chunk_size, n - i * chunk_size);
+          size_t n_bytes = sizeof(T) * n_objects;
+          void* src = static_cast<void*>(std::addressof(*(from + i * chunk_size)));
+          void* dest = static_cast<void*>(std::addressof(*(to + i * chunk_size)));
+          std::memcpy(dest, src, n_bytes);
+        },
+        1);
+    // The next best thing -- If the objects are trivially relocatable and the allocator
+    // has no special behaviour, so long as the iterators are random access, we can still
+    // relocate everything in parallel, just not by memcpying multiple objects at a time
   } else if constexpr (trivially_relocatable && random_access && trivial_alloc) {
     constexpr size_t chunk_size = 1024 * sizeof(size_t) / sizeof(T);
     const size_t n_chunks = (n + chunk_size - 1) / chunk_size;
-    parallel_for(0, n_chunks, [&](size_t i) {
-      for (size_t j = 0; j < chunk_size && (j + i *chunk_size < n); j++) {
-        void* src = static_cast<void*>(std::addressof(from[j + i * chunk_size]));
-        void* dest = static_cast<void*>(std::addressof(to[j + i * chunk_size]));
-        std::memcpy(dest, src, sizeof(T));
-      }
-    }, 1);
+    parallel_for(
+        0, n_chunks,
+        [&](size_t i) {
+          for (size_t j = 0; j < chunk_size && (j + i * chunk_size < n); j++) {
+            void* src = static_cast<void*>(std::addressof(from[j + i * chunk_size]));
+            void* dest = static_cast<void*>(std::addressof(to[j + i * chunk_size]));
+            std::memcpy(dest, src, sizeof(T));
+          }
+        },
+        1);
   }
   // The iterators are not random access, but we can still relocate, just not in parallel
   else if constexpr (trivially_relocatable && trivial_alloc) {
@@ -341,13 +346,12 @@ inline void uninitialized_relocate_n(Iterator1 to, Iterator2 from, size_t n) {
   uninitialized_relocate_n_a(to, from, n, a);
 }
 
-
 /* For inplace sorting / merging, we sometimes need to move values
    around and sometimes we want to make copies. We use tag dispatch
    to choose between moving and copying, so that the move algorithm
    can be written agnostic to which one it uses. We also account for
    moving / copying between uninitialized memory.
-   
+
    Usage:
      assign_dispatch(dest, val, tag_type())
 
@@ -357,8 +361,8 @@ inline void uninitialized_relocate_n(Iterator1 to, Iterator2 from, size_t n) {
     copy_assign_tag:                 The value is copy assigned into dest from val
     uninitialized_copy_tag:          The value is copy constructed from val into dest
     uninitialized_relocate_tag:      The value is destructively moved from val into dest
-   
-*/   
+
+*/
 
 struct move_assign_tag {};
 struct uninitialized_move_tag {};
@@ -395,7 +399,6 @@ template<typename T>
 void assign_dispatch(T& dest, T& val, uninitialized_relocate_tag) {
   uninitialized_relocate(&dest, &val);
 }
-
 
 }  // namespace parlay
 

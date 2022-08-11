@@ -38,7 +38,7 @@ using _uninitialized_sequence_default_allocator = std::allocator<T>;
 //
 template<typename T, typename Alloc = _uninitialized_sequence_default_allocator<T>>
 class uninitialized_sequence {
- public:
+   public:
   using value_type = T;
   using reference = T&;
   using const_reference = const T&;
@@ -54,17 +54,13 @@ class uninitialized_sequence {
 
   using allocator_type = Alloc;
 
- private:
+   private:
   struct uninitialized_sequence_impl : public allocator_type {
     size_t n;
     value_type* data;
-    explicit uninitialized_sequence_impl(size_t _n, const allocator_type& alloc)
-             : allocator_type(alloc),
-               n(_n),
-               data(std::allocator_traits<allocator_type>::allocate(*this, n)) { }
-    ~uninitialized_sequence_impl() {
-      std::allocator_traits<allocator_type>::deallocate(*this, data, n);
-    }
+    explicit uninitialized_sequence_impl(size_t _n, const allocator_type& alloc) :
+        allocator_type(alloc), n(_n), data(std::allocator_traits<allocator_type>::allocate(*this, n)) {}
+    ~uninitialized_sequence_impl() { std::allocator_traits<allocator_type>::deallocate(*this, data, n); }
 
     // Delete copy for uninitialized sequences
     uninitialized_sequence_impl(const uninitialized_sequence_impl&) = delete;
@@ -85,9 +81,7 @@ class uninitialized_sequence {
       // each object of type UninitializedTracker is destroyed or still
       // uninitialized by the time this sequence is destroyed
       auto buffer = impl.data;
-      parallel_for(0, impl.n, [&](size_t i) {
-        PARLAY_ASSERT_UNINITIALIZED(buffer[i]);
-      });
+      parallel_for(0, impl.n, [&](size_t i) { PARLAY_ASSERT_UNINITIALIZED(buffer[i]); });
 #endif
       n = 0;
       data = nullptr;
@@ -97,18 +91,15 @@ class uninitialized_sequence {
 
   } impl;
 
- public:
-  explicit uninitialized_sequence(size_t n, const allocator_type& alloc = {})
-           : impl(n, alloc) {
+   public:
+  explicit uninitialized_sequence(size_t n, const allocator_type& alloc = {}) : impl(n, alloc) {
 #ifdef PARLAY_DEBUG_UNINITIALIZED
     // If uninitialized memory debugging is turned on, make sure that
     // each object of type UninitializedTracker is appropriately set
     // to its uninitialized state.
     if constexpr (std::is_same_v<value_type, UninitializedTracker>) {
       auto buffer = impl.data;
-      parallel_for(0, n, [&](size_t i) {
-        buffer[i].initialized = false;
-      });
+      parallel_for(0, n, [&](size_t i) { buffer[i].initialized = false; });
     }
 #endif
   }
@@ -125,9 +116,7 @@ class uninitialized_sequence {
   // uninitialized by the time this sequence is destroyed
   ~uninitialized_sequence() {
     auto buffer = impl.data;
-    parallel_for(0, impl.n, [&](size_t i) {
-      PARLAY_ASSERT_UNINITIALIZED(buffer[i]);
-    });
+    parallel_for(0, impl.n, [&](size_t i) { PARLAY_ASSERT_UNINITIALIZED(buffer[i]); });
   }
 #else
   ~uninitialized_sequence() = default;
@@ -167,23 +156,22 @@ class uninitialized_sequence {
 
   value_type& at(size_t i) {
     if (i >= size()) {
-      std::cerr << "uninitialized_sequence access out of bounds: length = " <<
-                            std::to_string(size()) << ", index = " << std::to_string(i) << std::endl;
+      std::cerr << "uninitialized_sequence access out of bounds: length = " << std::to_string(size())
+                << ", index = " << std::to_string(i) << std::endl;
       std::abort();
-    }
-    else {
+    } else {
       return impl.data[i];
     }
   }
 
   const value_type& at(size_t i) const {
     if (i >= size()) {
-      std::cerr << "uninitialized_sequence access out of bounds: length = " +
-                              std::to_string(size()) + ", index = " + std::to_string(i) << std::endl;
+      std::cerr << "uninitialized_sequence access out of bounds: length = " + std::to_string(size()) +
+                       ", index = " + std::to_string(i)
+                << std::endl;
       std::abort();
 
-    }
-    else {
+    } else {
       return impl.data[i];
     }
   }

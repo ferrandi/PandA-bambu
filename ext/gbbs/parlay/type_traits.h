@@ -36,7 +36,7 @@ namespace parlay {
 */
 
 template<size_t K>
-struct priority_tag : priority_tag<K-1> {};
+struct priority_tag : priority_tag<K - 1> {};
 
 template<>
 struct priority_tag<0> {};
@@ -63,8 +63,9 @@ template<typename It>
 inline constexpr bool is_contiguous_iterator_v = is_contiguous_iterator<It>::value;
 
 template<typename It>
-struct is_random_access_iterator : std::bool_constant<
-    std::is_base_of_v<std::random_access_iterator_tag, typename std::iterator_traits<It>::iterator_category>> {};
+struct is_random_access_iterator :
+    std::bool_constant<
+        std::is_base_of_v<std::random_access_iterator_tag, typename std::iterator_traits<It>::iterator_category>> {};
 
 template<typename It>
 inline constexpr bool is_random_access_iterator_v = is_random_access_iterator<It>::value;
@@ -102,27 +103,25 @@ inline constexpr bool is_random_access_iterator_v = is_random_access_iterator<It
 
 namespace internal {
 
-  // Detect the existence of the .destroy method of the type Alloc
-  template<typename Alloc, typename T>
-  auto trivial_allocator(Alloc& a, T *p, priority_tag<2>)
-    -> decltype(void(a.destroy(p)), std::false_type());
+// Detect the existence of the .destroy method of the type Alloc
+template<typename Alloc, typename T>
+auto trivial_allocator(Alloc& a, T* p, priority_tag<2>) -> decltype(void(a.destroy(p)), std::false_type());
 
-  // Detect the existence of the .construct method of the type Alloc
-  template<typename Alloc, typename T>
-  auto trivial_allocator(Alloc& a, T *p, priority_tag<1>)
+// Detect the existence of the .construct method of the type Alloc
+template<typename Alloc, typename T>
+auto trivial_allocator(Alloc& a, T* p, priority_tag<1>)
     -> decltype(void(a.construct(p, std::declval<T&&>())), std::false_type());
 
-  // By default, if no .construct or .destroy methods are found, assume
-  // that the allocator is trivial
-  template<typename Alloc, typename T>
-  auto trivial_allocator(Alloc& a, T* p, priority_tag<0>)
-    -> std::true_type;
+// By default, if no .construct or .destroy methods are found, assume
+// that the allocator is trivial
+template<typename Alloc, typename T>
+auto trivial_allocator(Alloc& a, T* p, priority_tag<0>) -> std::true_type;
 
 }  // namespace internal
 
 template<typename Alloc, typename T>
-struct is_trivial_allocator
-    : decltype(internal::trivial_allocator<Alloc, T>(std::declval<Alloc&>(), nullptr, priority_tag<2>())) {};
+struct is_trivial_allocator :
+    decltype(internal::trivial_allocator<Alloc, T>(std::declval<Alloc&>(), nullptr, priority_tag<2>())) {};
 
 template<typename Alloc, typename T>
 inline constexpr bool is_trivial_allocator_v = is_trivial_allocator<Alloc, T>::value;
@@ -155,15 +154,14 @@ struct is_trivial_allocator<std::allocator<T>, T> : std::true_type {};
     https://quuxplusone.github.io/blog/code/object-relocation-in-terms-of-move-plus-destroy-draft-7.html
 */
 
-template <typename T>
+template<typename T>
 struct is_trivially_relocatable :
-        std::bool_constant<std::is_trivially_move_constructible<T>::value &&
-                           std::is_trivially_destructible<T>::value> { };
+    std::bool_constant<std::is_trivially_move_constructible<T>::value && std::is_trivially_destructible<T>::value> {};
 
-template <typename T> struct is_nothrow_relocatable :
-        std::bool_constant<is_trivially_relocatable<T>::value ||
-                           (std::is_nothrow_move_constructible<T>::value &&
-                            std::is_nothrow_destructible<T>::value)> { };
+template<typename T>
+struct is_nothrow_relocatable :
+    std::bool_constant<is_trivially_relocatable<T>::value ||
+                       (std::is_nothrow_move_constructible<T>::value && std::is_nothrow_destructible<T>::value)> {};
 
 template<typename T>
 inline constexpr bool is_trivially_relocatable_v = is_trivially_relocatable<T>::value;
@@ -179,11 +177,10 @@ inline constexpr bool is_nothrow_relocatable_v = is_nothrow_relocatable<T>::valu
 template<typename T>
 struct is_trivially_relocatable<std::allocator<T>> : std::true_type {};
 
-template <typename T1, typename T2>
-struct is_trivially_relocatable<std::pair<T1,T2>> : 
-    std::bool_constant<is_trivially_relocatable<T1>::value &&
-		       is_trivially_relocatable<T2>::value> {};
+template<typename T1, typename T2>
+struct is_trivially_relocatable<std::pair<T1, T2>> :
+    std::bool_constant<is_trivially_relocatable<T1>::value && is_trivially_relocatable<T2>::value> {};
 
 }  // namespace parlay
 
-#endif //PARLAY_TYPE_TRAITS_H
+#endif  // PARLAY_TYPE_TRAITS_H

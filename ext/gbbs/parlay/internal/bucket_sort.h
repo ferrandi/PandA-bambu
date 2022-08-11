@@ -11,14 +11,12 @@
 namespace parlay {
 namespace internal {
 
-template <typename InIterator, typename OutIterator, typename KT>
-void radix_step_(slice<InIterator, InIterator> A,
-                 slice<OutIterator, OutIterator> B,
-                 KT* keys,
-                 size_t* counts,
+template<typename InIterator, typename OutIterator, typename KT>
+void radix_step_(slice<InIterator, InIterator> A, slice<OutIterator, OutIterator> B, KT* keys, size_t* counts,
                  size_t m) {
   size_t n = A.size();
-  for (size_t i = 0; i < m; i++) counts[i] = 0;
+  for (size_t i = 0; i < m; i++)
+    counts[i] = 0;
   for (size_t j = 0; j < n; j++) {
     size_t k = keys[j];
     counts[k]++;
@@ -52,12 +50,8 @@ void radix_step_(slice<InIterator, InIterator> A,
 // move_assign_tag, uninitialized_copy_tag, uninitialized_move_tag,
 // or unintialized_relocate_tag. Specifies the mode by which
 // values are relocated from In to Out.
-template <typename assignment_tag, typename InIterator, typename OutIterator>
-void to_balanced_tree(InIterator In,
-                      OutIterator Out,
-                      size_t root,
-                      size_t l,
-                      size_t r) {
+template<typename assignment_tag, typename InIterator, typename OutIterator>
+void to_balanced_tree(InIterator In, OutIterator Out, size_t root, size_t l, size_t r) {
   size_t n = r - l;
   size_t m = l + n / 2;
   assign_dispatch(Out[root], In[m], assignment_tag());
@@ -71,26 +65,22 @@ void to_balanced_tree(InIterator In,
 // the pivots via their indices? Copying the elements is
 // bad because it doesn't work non-copyable types, but
 // there should be some middle ground.
-template <typename Iterator, typename BinaryOp>
-bool get_buckets(slice<Iterator, Iterator> A,
-                 unsigned char* buckets,
-                 BinaryOp f,
-                 size_t rounds) {
+template<typename Iterator, typename BinaryOp>
+bool get_buckets(slice<Iterator, Iterator> A, unsigned char* buckets, BinaryOp f, size_t rounds) {
   size_t n = A.size();
   size_t num_buckets = (size_t{1} << rounds);
   size_t over_sample = 1 + n / (num_buckets * 400);
   size_t sample_set_size = num_buckets * over_sample;
   size_t num_pivots = num_buckets - 1;
-  
-  auto sample_set = sequence<size_t>::from_function(sample_set_size,
-    [&](size_t i) { return static_cast<size_t>(hash64(i) % n); });
+
+  auto sample_set =
+      sequence<size_t>::from_function(sample_set_size, [&](size_t i) { return static_cast<size_t>(hash64(i) % n); });
 
   // sort the samples
-  quicksort(sample_set.begin(), sample_set_size, [&](size_t i, size_t j) {
-    return f(A[i], A[j]); });
+  quicksort(sample_set.begin(), sample_set_size, [&](size_t i, size_t j) { return f(A[i], A[j]); });
 
-  auto pivots = sequence<size_t>::from_function(
-      num_pivots, [&](size_t i) { return sample_set[over_sample * (i + 1)]; });
+  auto pivots =
+      sequence<size_t>::from_function(num_pivots, [&](size_t i) { return sample_set[over_sample * (i + 1)]; });
 
   if (!f(A[pivots[0]], A[pivots[num_pivots - 1]])) return true;
 
@@ -99,23 +89,20 @@ bool get_buckets(slice<Iterator, Iterator> A,
 
   for (size_t i = 0; i < n; i++) {
     size_t j = 0;
-    for (size_t k = 0; k < rounds; k++) j = 1 + 2 * j + !f(A[i], A[pivot_tree[j]]);
+    for (size_t k = 0; k < rounds; k++)
+      j = 1 + 2 * j + !f(A[i], A[pivot_tree[j]]);
     assert(j - num_pivots <= (std::numeric_limits<unsigned char>::max)());
     buckets[i] = static_cast<unsigned char>(j - num_pivots);
   }
   return false;
 }
 
-template <typename InIterator, typename OutIterator, typename BinaryOp>
-void base_sort(slice<InIterator, InIterator> in,
-               slice<OutIterator, OutIterator> out,
-               BinaryOp f,
-               bool stable,
+template<typename InIterator, typename OutIterator, typename BinaryOp>
+void base_sort(slice<InIterator, InIterator> in, slice<OutIterator, OutIterator> out, BinaryOp f, bool stable,
                bool inplace) {
   if (stable) {
     merge_sort_(in, out, f, inplace);
-  }
-  else {
+  } else {
     quicksort(in.begin(), in.size(), f);
     if (!inplace) {
       uninitialized_relocate_n(out.begin(), in.begin(), in.size());
@@ -123,11 +110,8 @@ void base_sort(slice<InIterator, InIterator> in,
   }
 }
 
-template <typename InIterator, typename OutIterator, typename BinaryOp>
-void bucket_sort_r(slice<InIterator, InIterator> in,
-                   slice<OutIterator, OutIterator> out,
-                   BinaryOp f,
-                   bool stable,
+template<typename InIterator, typename OutIterator, typename BinaryOp>
+void bucket_sort_r(slice<InIterator, InIterator> in, slice<OutIterator, OutIterator> out, BinaryOp f, bool stable,
                    bool inplace) {
   size_t n = in.size();
   size_t bits = 4;
@@ -142,7 +126,7 @@ void bucket_sort_r(slice<InIterator, InIterator> in,
       base_sort(in, out, f, stable, inplace);
     } else {
       radix_step_(in, out, buckets, counts.data(), num_buckets);
-      auto loop = [&] (size_t j) {
+      auto loop = [&](size_t j) {
         size_t start = counts[j];
         size_t end = (j == num_buckets - 1) ? n : counts[j + 1];
         bucket_sort_r(out.cut(start, end), in.cut(start, end), f, stable, !inplace);
@@ -152,7 +136,7 @@ void bucket_sort_r(slice<InIterator, InIterator> in,
   }
 }
 
-template <typename Iterator, typename BinaryOp>
+template<typename Iterator, typename BinaryOp>
 void bucket_sort(slice<Iterator, Iterator> in, BinaryOp f, bool stable = false) {
   using T = typename slice<Iterator, Iterator>::value_type;
   size_t n = in.size();

@@ -34,7 +34,7 @@
 #include <stdexcept>
 #include <string>
 #include <thread>
-#include <type_traits>    // IWYU pragma: keep
+#include <type_traits>  // IWYU pragma: keep
 #include <vector>
 
 #include "internal/work_stealing_job.h"
@@ -42,7 +42,7 @@
 namespace parlay {
 
 // Deque from Arora, Blumofe, and Plaxton (SPAA, 1998).
-template <typename Job>
+template<typename Job>
 struct Deque {
   using qidx = unsigned int;
   using tag_t = unsigned int;
@@ -84,8 +84,7 @@ struct Deque {
     auto old_age = age.load(std::memory_order_relaxed);    // atomic load
     auto local_bot = bot.load(std::memory_order_relaxed);  // atomic load
     if (local_bot > old_age.top) {
-      auto job =
-          deq[old_age.top].job.load(std::memory_order_relaxed);  // atomic load
+      auto job = deq[old_age.top].job.load(std::memory_order_relaxed);  // atomic load
       auto new_age = old_age;
       new_age.top = new_age.top + 1;
       if (age.compare_exchange_strong(old_age, new_age))
@@ -103,16 +102,14 @@ struct Deque {
       local_bot--;
       bot.store(local_bot, std::memory_order_relaxed);  // shared store
       std::atomic_thread_fence(std::memory_order_seq_cst);
-      auto job =
-          deq[local_bot].job.load(std::memory_order_relaxed);  // atomic load
-      auto old_age = age.load(std::memory_order_relaxed);      // atomic load
+      auto job = deq[local_bot].job.load(std::memory_order_relaxed);  // atomic load
+      auto old_age = age.load(std::memory_order_relaxed);             // atomic load
       if (local_bot > old_age.top)
         result = job;
       else {
         bot.store(0, std::memory_order_relaxed);  // shared store
         auto new_age = age_t{old_age.tag + 1, 0};
-        if ((local_bot == old_age.top) &&
-            age.compare_exchange_strong(old_age, new_age))
+        if ((local_bot == old_age.top) && age.compare_exchange_strong(old_age, new_age))
           result = job;
         else {
           age.store(new_age, std::memory_order_relaxed);  // shared store
@@ -125,26 +122,24 @@ struct Deque {
   }
 };
 
-template <typename Job>
+template<typename Job>
 struct scheduler {
- public:
+   public:
   // see comments under wait(..)
   static bool const conservative = false;
   unsigned int num_threads;
 
   static thread_local unsigned int thread_id;
 
-  scheduler()
-      : num_threads(init_num_workers()),
-        num_deques(2 * num_threads),
-        deques(num_deques),
-        attempts(num_deques),
-        spawned_threads(),
-        finished_flag(false) {
+  scheduler() :
+      num_threads(init_num_workers()),
+      num_deques(2 * num_threads),
+      deques(num_deques),
+      attempts(num_deques),
+      spawned_threads(),
+      finished_flag(false) {
     // Stopping condition
-    auto finished = [this]() {
-      return finished_flag.load(std::memory_order_relaxed);
-    };
+    auto finished = [this]() { return finished_flag.load(std::memory_order_relaxed); };
 
     // Spawn num_threads many threads on startup
     thread_id = 0;  // thread-local write
@@ -170,12 +165,13 @@ struct scheduler {
   }
 
   // Wait for condition: finished().
-  template <typename F>
+  template<typename F>
   void wait(F finished, bool conservative = false) {
     // Conservative avoids deadlock if scheduler is used in conjunction
     // with user locks enclosing a wait.
     if (conservative) {
-      while (!finished()) std::this_thread::yield();
+      while (!finished())
+        std::this_thread::yield();
     }
     // If not conservative, schedule within the wait.
     // Can deadlock if a stolen job uses same lock as encloses the wait.
@@ -217,7 +213,7 @@ struct scheduler {
     exit(-1);
   }
 
- private:
+   private:
   // Align to avoid false sharing.
   struct alignas(128) attempt {
     size_t val;
@@ -230,7 +226,7 @@ struct scheduler {
   std::atomic<int> finished_flag;
 
   // Start an individual scheduler task.  Runs until finished().
-  template <typename F>
+  template<typename F>
   void start(F finished) {
     while (true) {
       Job* job = get_job(finished);
@@ -247,7 +243,7 @@ struct scheduler {
   }
 
   // Find a job, first trying local stack, then random steals.
-  template <typename F>
+  template<typename F>
   Job* get_job(F finished) {
     if (finished()) return nullptr;
     Job* job = try_pop();
@@ -273,7 +269,7 @@ struct scheduler {
   }
 };
 
-template <typename T>
+template<typename T>
 thread_local unsigned int scheduler<T>::thread_id = 0;
 
 class fork_join_scheduler {
@@ -282,7 +278,7 @@ class fork_join_scheduler {
   // Underlying scheduler object
   std::unique_ptr<scheduler<Job>> sched;
 
- public:
+   public:
   fork_join_scheduler() : sched(std::make_unique<scheduler<Job>>()) {}
 
   unsigned int num_workers() { return sched->num_workers(); }
@@ -290,7 +286,7 @@ class fork_join_scheduler {
   void set_num_workers(int n) { sched->set_num_workers(n); }
 
   // Fork two thunks and wait until they both finish.
-  template <typename L, typename R>
+  template<typename L, typename R>
   void pardo(L left, R right, bool conservative = false) {
     auto right_job = make_job(right);
     sched->spawn(&right_job);
@@ -305,10 +301,10 @@ class fork_join_scheduler {
 
 #ifdef _MSC_VER
 #pragma warning(push)
-#pragma warning(disable: 4267) // conversion from 'size_t' to *, possible loss of data
+#pragma warning(disable : 4267)  // conversion from 'size_t' to *, possible loss of data
 #endif
 
-  template <typename F>
+  template<typename F>
   size_t get_granularity(size_t start, size_t end, F f) {
     size_t done = 0;
     size_t sz = 1;
@@ -316,7 +312,8 @@ class fork_join_scheduler {
     do {
       sz = std::min(sz, end - (start + done));
       auto tstart = std::chrono::high_resolution_clock::now();
-      for (size_t i = 0; i < sz; i++) f(start + done + i);
+      for (size_t i = 0; i < sz; i++)
+        f(start + done + i);
       auto tstop = std::chrono::high_resolution_clock::now();
       ticks = static_cast<int>((tstop - tstart).count());
       done += sz;
@@ -325,9 +322,8 @@ class fork_join_scheduler {
     return done;
   }
 
-  template <typename F>
-  void parfor(size_t start, size_t end, F f, size_t granularity = 0,
-              bool conservative = false) {
+  template<typename F>
+  void parfor(size_t start, size_t end, F f, size_t granularity = 0, bool conservative = false) {
     if (end <= start) return;
     if (granularity == 0) {
       size_t done = get_granularity(start, end, f);
@@ -337,27 +333,25 @@ class fork_join_scheduler {
       parfor_(start, end, f, granularity, conservative);
   }
 
- private:
-  template <typename F>
-  void parfor_(size_t start, size_t end, F f, size_t granularity,
-               bool conservative) {
+   private:
+  template<typename F>
+  void parfor_(size_t start, size_t end, F f, size_t granularity, bool conservative) {
     if ((end - start) <= granularity)
-      for (size_t i = start; i < end; i++) f(i);
+      for (size_t i = start; i < end; i++)
+        f(i);
     else {
       size_t n = end - start;
       // Not in middle to avoid clashes on set-associative
       // caches on powers of 2.
       size_t mid = (start + (9 * (n + 1)) / 16);
       pardo([&]() { parfor_(start, mid, f, granularity, conservative); },
-            [&]() { parfor_(mid, end, f, granularity, conservative); },
-            conservative);
+            [&]() { parfor_(mid, end, f, granularity, conservative); }, conservative);
     }
   }
 
 #ifdef _MSC_VER
 #pragma warning(pop)
 #endif
-
 };
 
 }  // namespace parlay

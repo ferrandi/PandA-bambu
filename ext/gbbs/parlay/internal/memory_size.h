@@ -10,8 +10,7 @@
 #if defined(_WIN32)
 #include <Windows.h>
 
-#elif defined(__unix__) || defined(__unix) || defined(unix) || \
-    (defined(__APPLE__) && defined(__MACH__))
+#elif defined(__unix__) || defined(__unix) || defined(unix) || (defined(__APPLE__) && defined(__MACH__))
 #include <sys/param.h>
 #include <sys/types.h>
 #include <unistd.h>
@@ -43,10 +42,9 @@ static size_t getMemorySize() {
   GlobalMemoryStatusEx(&status);
   return (size_t)status.ullTotalPhys;
 
-#elif defined(__unix__) || defined(__unix) || defined(unix) || \
-    (defined(__APPLE__) && defined(__MACH__))
-/* UNIX variants. ------------------------------------------- */
-/* Prefer sysctl() over sysconf() except sysctl() HW_REALMEM and HW_PHYSMEM */
+#elif defined(__unix__) || defined(__unix) || defined(unix) || (defined(__APPLE__) && defined(__MACH__))
+  /* UNIX variants. ------------------------------------------- */
+  /* Prefer sysctl() over sysconf() except sysctl() HW_REALMEM and HW_PHYSMEM */
 
 #if defined(CTL_HW) && (defined(HW_MEMSIZE) || defined(HW_PHYSMEM64))
   int mib[2];
