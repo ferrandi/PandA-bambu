@@ -105,10 +105,10 @@ tree_nodeRef soft_float_cg_ext::float64_ptr_type;
 static const FloatFormatRef float32FF(new FloatFormat(8, 23, -127));
 static const FloatFormatRef float64FF(new FloatFormat(11, 52, -1023));
 
-static const std::set<std::string> supported_libm_calls = {"copysign", "finite",   "fpclassify", "huge_val",   "inf",
-                                                           "infinity", "isfinite", "isinf",      "isinf_sign", "isnan",
-                                                           "isnormal", "nan",      "nans",       "signbit"};
-static const std::set<std::string> supported_libm_calls_inlined = {"copysign"};
+static const std::set<std::string> supported_libm_calls = {
+    "copysign", "fabs",       "finite", "fpclassify", "huge_val", "inf",  "infinity", "isfinite",
+    "isinf",    "isinf_sign", "isnan",  "isnormal",   "nan",      "nans", "signbit"};
+static const std::set<std::string> supported_libm_calls_inlined = {"copysign", "fabs"};
 
 /**
  * @brief List of low level implementation libm functions. Composite functions are not present since fp format can be
