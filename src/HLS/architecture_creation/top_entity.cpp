@@ -240,8 +240,8 @@ DesignFlowStep_Status top_entity::InternalExec()
                                         HLSFlowStep_Type::PIPELINE_CONTROLLER_CREATOR))
    {
       const auto TM = HLS->HLS_T->get_technology_manager();
-      const auto synch_reset = parameters->getOption<std::string>(OPT_sync_reset);
-      const auto delay_unit = synch_reset == "sync" ? flipflop_SR : flipflop_AR;
+      const auto reset_type = parameters->getOption<std::string>(OPT_reset_type);
+      const auto delay_unit = reset_type == "sync" ? flipflop_SR : flipflop_AR;
       const auto delay_gate =
           SM->add_module_from_technology_library("done_delayed_REG", delay_unit, LIBRARY_STD, circuit, TM);
       const auto port_ck = delay_gate->find_member(CLOCK_PORT_NAME, port_o_K, delay_gate);

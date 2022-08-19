@@ -244,9 +244,9 @@
 #define OPT_REGISTER_ALLOCATION (1 + OPT_POST_RESCHEDULING)
 #define OPT_REGISTERED_INPUTS (1 + OPT_REGISTER_ALLOCATION)
 #define OPT_FSM_ENCODING (1 + OPT_REGISTERED_INPUTS)
-#define OPT_RESET (1 + OPT_FSM_ENCODING)
-#define OPT_LEVEL_RESET (1 + OPT_RESET)
-#define OPT_DISABLE_REG_INIT_VALUE (1 + OPT_LEVEL_RESET)
+#define OPT_RESET_TYPE (1 + OPT_FSM_ENCODING)
+#define OPT_RESET_LEVEL (1 + OPT_RESET_TYPE)
+#define OPT_DISABLE_REG_INIT_VALUE (1 + OPT_RESET_LEVEL)
 #define OPT_SCHEDULING_MUX_MARGINS (1 + OPT_DISABLE_REG_INIT_VALUE)
 #define OPT_USE_ALUS (1 + OPT_SCHEDULING_MUX_MARGINS)
 #define OPT_SERIALIZE_MEMORY_ACCESSES (1 + OPT_USE_ALUS)
@@ -1217,8 +1217,8 @@ int BambuParameter::Exec()
       {"done-name", required_argument, nullptr, OPT_DONE_NAME},
       {"power-optimization", no_argument, nullptr, OPT_POWER_OPTIMIZATION},
       {"no-iob", no_argument, nullptr, OPT_DISABLE_IOB},
-      {"reset-type", required_argument, nullptr, OPT_RESET},
-      {"reset-level", required_argument, nullptr, OPT_LEVEL_RESET},
+      {"reset-type", required_argument, nullptr, OPT_RESET_TYPE},
+      {"reset-level", required_argument, nullptr, OPT_RESET_LEVEL},
       {"disable-reg-init-value", no_argument, nullptr, OPT_DISABLE_REG_INIT_VALUE},
       {"soft-float", no_argument, nullptr, OPT_SOFT_FLOAT},
 #if HAVE_FLOPOCO
@@ -1950,19 +1950,19 @@ int BambuParameter::Exec()
             setOption(OPT_connect_iob, false);
             break;
          }
-         case OPT_RESET:
+         case OPT_RESET_TYPE:
          {
             if(std::string(optarg) == "no")
             {
-               setOption(OPT_sync_reset, std::string(optarg));
+               setOption(OPT_reset_type, std::string(optarg));
             }
             else if(std::string(optarg) == "async")
             {
-               setOption(OPT_sync_reset, std::string(optarg));
+               setOption(OPT_reset_type, std::string(optarg));
             }
             else if(std::string(optarg) == "sync")
             {
-               setOption(OPT_sync_reset, std::string(optarg));
+               setOption(OPT_reset_type, std::string(optarg));
             }
             else
             {
@@ -1970,15 +1970,15 @@ int BambuParameter::Exec()
             }
             break;
          }
-         case OPT_LEVEL_RESET:
+         case OPT_RESET_LEVEL:
          {
             if(std::string(optarg) == "high")
             {
-               setOption(OPT_level_reset, true);
+               setOption(OPT_reset_level, true);
             }
             else if(std::string(optarg) == "low")
             {
-               setOption(OPT_level_reset, false);
+               setOption(OPT_reset_level, false);
             }
             else
             {
@@ -2422,6 +2422,11 @@ int BambuParameter::Exec()
          {
             if(optarg)
             {
+               const auto num = boost::lexical_cast<unsigned int>(std::string(optarg));
+               if(!num)
+               {
+                  throw "Bad parameters: number of contexts must be a positive integer.";
+               }
                setOption(OPT_context_switch, std::string(optarg));
                break;
             }
@@ -4266,8 +4271,8 @@ void BambuParameter::SetDefaults()
    setOption(OPT_weighted_clique_register_algorithm, CliqueCovering_Algorithm::TS_WEIGHTED_CLIQUE_COVERING);
    /// storage value insertion algorithm
    setOption(OPT_storage_value_insertion_algorithm, HLSFlowStep_Type::VALUES_SCHEME_STORAGE_VALUE_INSERTION);
-   setOption(OPT_sync_reset, "no");
-   setOption(OPT_level_reset, false);
+   setOption(OPT_reset_type, "no");
+   setOption(OPT_reset_level, false);
    setOption(OPT_reg_init_value, true);
 
    setOption(OPT_shared_input_registers, false);

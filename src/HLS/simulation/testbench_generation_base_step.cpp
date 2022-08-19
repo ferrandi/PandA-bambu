@@ -2358,7 +2358,7 @@ void TestbenchGenerationBaseStep::testbench_controller_machine() const
    writer->write("always @(*)\n");
    writer->write("  begin\n");
    writer->write("     start_results_comparison = 0;\n");
-   if(!parameters->getOption<bool>(OPT_level_reset))
+   if(!parameters->getOption<bool>(OPT_reset_level))
    {
       writer->write("     " RESET_PORT_NAME " = 1;\n");
    }
@@ -2371,7 +2371,7 @@ void TestbenchGenerationBaseStep::testbench_controller_machine() const
    writer->write("     case (__state)\n");
    writer->write("       0:\n");
    writer->write("         begin\n");
-   if(!parameters->getOption<bool>(OPT_level_reset))
+   if(!parameters->getOption<bool>(OPT_reset_level))
    {
       writer->write("            " RESET_PORT_NAME " = 0;\n");
    }
@@ -2383,7 +2383,7 @@ void TestbenchGenerationBaseStep::testbench_controller_machine() const
    writer->write("         end\n");
    writer->write("       1:\n");
    writer->write("         begin\n");
-   if(!parameters->getOption<bool>(OPT_level_reset))
+   if(!parameters->getOption<bool>(OPT_reset_level))
    {
       writer->write("            " RESET_PORT_NAME " = 0;\n");
    }

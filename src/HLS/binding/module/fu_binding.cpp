@@ -616,8 +616,8 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
          if(HLS->registered_inputs && in_chain == start_port)
          {
             technology_nodeRef delay_unit;
-            auto synch_reset = parameters->getOption<std::string>(OPT_sync_reset);
-            if(synch_reset == "sync")
+            auto reset_type = parameters->getOption<std::string>(OPT_reset_type);
+            if(reset_type == "sync")
             {
                delay_unit = TechM->get_fu(flipflop_SR, LIBRARY_STD);
             }
@@ -738,8 +738,8 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
          if(HLS->registered_inputs && in_chain == start_port)
          {
             technology_nodeRef delay_unit;
-            auto synch_reset = parameters->getOption<std::string>(OPT_sync_reset);
-            if(synch_reset == "sync")
+            auto reset_type = parameters->getOption<std::string>(OPT_reset_type);
+            if(reset_type == "sync")
             {
                delay_unit = TechM->get_fu(flipflop_SR, LIBRARY_STD);
             }
