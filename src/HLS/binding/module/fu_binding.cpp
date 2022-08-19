@@ -172,17 +172,17 @@ fu_bindingRef fu_binding::create_fu_binding(const HLS_managerConstRef _HLSMgr, c
 
 void fu_binding::bind(const vertex& v, unsigned int unit, unsigned int index)
 {
-   if(unique_table.count(std::make_pair(unit, index)) == 0)
+   const auto key = std::make_pair(unit, index);
+   if(unique_table.count(key) == 0)
    {
-      unique_table[std::make_pair(unit, index)] =
+      unique_table[key] =
           generic_objRef(new funit_obj(allocation_information->get_string_name(unit) + "_i" + STR(index), unit, index));
    }
-   const unsigned int statement_index = op_graph->CGetOpNodeInfo(v)->GetNodeId();
-   op_binding[statement_index] = unique_table[std::make_pair(unit, index)];
-   auto key = std::make_pair(unit, index);
-   if(operations.find(key) == operations.end())
+   const auto statement_index = op_graph->CGetOpNodeInfo(v)->GetNodeId();
+   op_binding[statement_index] = unique_table[key];
+   if(!operations.count(key))
    {
-      operations.insert(std::pair<std::pair<unsigned int, unsigned int>, OpVertexSet>(key, OpVertexSet(op_graph)));
+      operations.insert(std::make_pair(key, OpVertexSet(op_graph)));
    }
    operations.at(key).insert(v);
    if(index != INFINITE_UINT)
@@ -995,7 +995,7 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
             unsigned int n_channels = allocation_information->get_number_channels(i);
             generic_objRef true_module_obj = get(i, (num / n_channels) * n_channels);
             curr_gate = true_module_obj->get_structural_obj();
-            const OpVertexSet& mapped_operations = get_operations(i, num);
+            const OpVertexSet mapped_operations = get_operations(i, num);
             has_resource_sharing_p = has_resource_sharing_p || (mapped_operations.size() > 1);
             const unsigned int ar_var =
                 allocation_information->is_proxy_memory_unit(i) ? allocation_information->get_proxy_memory_var(i) : 0;
@@ -1005,7 +1005,7 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
          else
          {
             const technology_nodeRef fu_lib_unit = allocation_information->get_fu(i);
-            const OpVertexSet& mapped_operations = get_operations(i, num);
+            const OpVertexSet mapped_operations = get_operations(i, num);
             THROW_ASSERT(fu_lib_unit, "functional unit not available: check the library given. Component: " +
                                           allocation_information->get_fu_name(i).first);
             curr_gate = add_gate(HLSMgr, HLS, fu_lib_unit, name,

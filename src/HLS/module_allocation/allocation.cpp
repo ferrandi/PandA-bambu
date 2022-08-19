@@ -1101,8 +1101,7 @@ void allocation::add_proxy_function_module(const HLS_constraintsRef HLS_C, techn
    /// automatically build proxy description
    BuildProxyFunction(proxy_fu);
 
-   std::string key_new = ENCODE_FU_LIB(proxied_fu_name, PROXY_LIBRARY);
-   HLS_C->tech_constraints[key_new] = 1;
+   HLS_C->set_number_fu(proxied_fu_name, PROXY_LIBRARY, 1);
 }
 
 void allocation::add_tech_constraint(technology_nodeRef cur_fu, unsigned int tech_constrain_value, unsigned int pos,
@@ -3174,8 +3173,7 @@ void allocation::IntegrateTechnologyLibraries()
                wrapper_tn = TechM->get_fu(wrapped_fu_name, PROXY_LIBRARY);
             }
             THROW_ASSERT(wrapper_tn, "Module not added");
-            std::string key_new = ENCODE_FU_LIB(shared_fu_name, PROXY_LIBRARY);
-            HLS_C->tech_constraints[key_new] = 1; // HLS_C->tech_constraints.find(key_old)->second;
+            HLS_C->set_number_fu(shared_fu_name, PROXY_LIBRARY, 1);
             /// allocate it
             unsigned int current_size = allocation_information->get_number_fu_types();
             PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
