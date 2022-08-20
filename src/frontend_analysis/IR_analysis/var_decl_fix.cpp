@@ -109,7 +109,7 @@ VarDeclFix::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType 
       {
 #if HAVE_BAMBU_BUILT
          relationships.insert(std::make_pair(PARM_DECL_TAKEN_ADDRESS, SAME_FUNCTION));
-         relationships.insert(std::make_pair(FUNCTION_INTERFACE_INFER, SAME_FUNCTION));
+         relationships.insert(std::make_pair(INTERFACE_INFER, WHOLE_APPLICATION));
 #endif
          break;
       }

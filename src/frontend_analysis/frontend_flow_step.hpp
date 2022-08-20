@@ -186,7 +186,6 @@ using FrontendFlowStepType = enum FrontendFlowStepType {
    FIX_STRUCTS_PASSED_BY_VALUE,
    FUNCTION_CALL_TYPE_CLEANUP,
    FUNCTION_CALL_OPT,
-   FUNCTION_INTERFACE_INFER,
    FANOUT_OPT,
    FIX_VDEF,
 #endif

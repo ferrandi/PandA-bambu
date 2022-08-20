@@ -166,7 +166,7 @@ short_circuit_taf::ComputeFrontendRelationships(const DesignFlowStep::Relationsh
       case(PRECEDENCE_RELATIONSHIP):
       {
          relationships.insert(std::make_pair(DETERMINE_MEMORY_ACCESSES, SAME_FUNCTION));
-         relationships.insert(std::make_pair(FUNCTION_INTERFACE_INFER, SAME_FUNCTION));
+         relationships.insert(std::make_pair(INTERFACE_INFER, WHOLE_APPLICATION));
          relationships.insert(std::make_pair(REMOVE_CLOBBER_GA, SAME_FUNCTION));
          relationships.insert(std::make_pair(EXTRACT_GIMPLE_COND_OP, SAME_FUNCTION));
          break;
