@@ -609,7 +609,7 @@ const BBGraphConstRef FunctionBehavior::CGetBBGraph(FunctionBehavior::bb_graph_t
 
 void FunctionBehavior::print(std::ostream& os) const
 {
-   os << "Function " << helper->get_function_name() << std::endl;
+   os << "Function " << helper->get_function_name();
    // os << "Bulk operation graph of " << og;
    // os << ", , ";
 }
