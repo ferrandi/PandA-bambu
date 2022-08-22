@@ -135,9 +135,13 @@ static std::string strip_fname(std::string fname, bool* single_prec = nullptr)
    {
       fname = fname.substr(sizeof("__internal_") - 1);
    }
-   if(fname.find("__builtin_") == 0)
+   else if(fname.find("__builtin_") == 0)
    {
       fname = fname.substr(sizeof("__builtin_") - 1);
+   }
+   else if(fname.find("__") == 0)
+   {
+      fname = fname.substr(sizeof("__") - 1);
    }
    if(fname.back() == 'f' && libm_func.count(fname.substr(0, fname.size() - 1)))
    {
@@ -352,7 +356,6 @@ soft_float_cg_ext::soft_float_cg_ext(const ParameterConstRef _parameters, const 
                   const auto fname = tree_helper::print_function_name(
                       TreeM, GetPointerS<const function_decl>(TreeM->CGetTreeNode(CGM->get_function(called))));
                   const auto called_fname = strip_fname(fname);
-
                   if(static_cast<bool>(libm_func.count(called_fname)))
                   {
                      // Do not propagate format to libm functions, specialization will be handled successively
