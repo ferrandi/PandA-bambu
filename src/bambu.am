@@ -15,7 +15,7 @@ lib_bambu_la_SOURCES =
 
 bambu_CPPFLAGS = -DPKGLIBDIR="\"$(pkglibdir)\"" -DPKGDATADIR="\"$(pkgdatadir)\""\
      -I$(top_srcdir)/src \
-     -I$(top_srcdir)/src/algorithms/bipartite_matching \
+     -isystem $(top_srcdir)/ext/or-tools \
      -I$(top_srcdir)/src/algorithms/clique_covering \
      -I$(top_srcdir)/src/design_flows/backend/ToHDL \
      -I$(top_srcdir)/src/design_flows/backend/ToC \

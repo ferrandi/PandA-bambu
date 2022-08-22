@@ -961,7 +961,7 @@ namespace operations_research
       {
          return true;
       }
-      bool IsOutgoing(const NodeIndexType node, const ArcIndexType unused_arc) const
+      bool IsOutgoing(const NodeIndexType, const ArcIndexType) const
       {
          return true;
       }
@@ -1060,7 +1060,7 @@ namespace operations_research
       using Base::num_nodes_;
 
     public:
-#if !SWIG
+#if !defined(SWIG)
       using Base::end_arc_index;
       using Base::IsNodeValid;
 
@@ -1124,7 +1124,7 @@ namespace operations_research
 
 // TODO(user): Configure SWIG to handle the GroupForwardArcsByFunctor
 // member template and the CycleHandlerForAnnotatedArcs class.
-#if !SWIG
+#if !defined(SWIG)
       template <typename ArcIndexTypeStrictWeakOrderingFunctor>
       void GroupForwardArcsByFunctor(const ArcIndexTypeStrictWeakOrderingFunctor& compare,
                                      PermutationCycleHandler<ArcIndexType>* annotation_handler)
@@ -1253,7 +1253,7 @@ namespace operations_research
       }
 
       // Returns the outgoing arc following the argument in the adjacency list.
-      ArcIndexType NextOutgoingArc(const NodeIndexType unused_node, const ArcIndexType arc) const
+      ArcIndexType NextOutgoingArc(const NodeIndexType, const ArcIndexType arc) const
       {
          assert(ThisAsDerived()->CheckArcValidity(arc));
          assert(ThisAsDerived()->IsDirect(arc));
@@ -1284,7 +1284,7 @@ namespace operations_research
          return static_cast<DerivedGraph*>(this);
       }
 
-      void InitializeInternal(NodeIndexType max_num_nodes, ArcIndexType max_num_arcs)
+      void InitializeInternal(NodeIndexType, ArcIndexType)
       {
          next_adjacent_arc_.SetAll(kNilArc);
       }
@@ -1329,7 +1329,7 @@ namespace operations_research
       using Base::representation_clean_;
 
     public:
-#if !SWIG
+#if !defined(SWIG)
       using Base::Head;
       using Base::IsNodeValid;
 
@@ -1355,7 +1355,7 @@ namespace operations_research
       {
       }
 
-#if !SWIG
+#if !defined(SWIG)
       // Iterator class for traversing the arcs incident to a given node in the
       // graph.
       class OutgoingOrOppositeIncomingArcIterator
@@ -1633,7 +1633,7 @@ namespace operations_research
       // depending on whether the derived class stores reverse arcs. Hence
       // the code to set those arrays up is in a method of the derived
       // class.
-      void ReserveInternal(NodeIndexType new_max_num_nodes, ArcIndexType new_max_num_arcs)
+      void ReserveInternal(NodeIndexType, ArcIndexType new_max_num_arcs)
       {
          head_.Reserve(-new_max_num_arcs, new_max_num_arcs - 1);
          next_adjacent_arc_.Reserve(-new_max_num_arcs, new_max_num_arcs - 1);
@@ -1747,7 +1747,7 @@ namespace operations_research
       using Base::representation_clean_;
 
     public:
-#if !SWIG
+#if !defined(SWIG)
       using Base::Head;
       using Base::IsNodeValid;
 
@@ -1944,7 +1944,7 @@ namespace operations_research
       // head_ and next_adjacent_arc_ arrays, while the general
       // representation allocates space for both positive- and
       // negative-indexed arcs (i.e., both forward and reverse arcs).
-      void ReserveInternal(NodeIndexType new_max_num_nodes, ArcIndexType new_max_num_arcs)
+      void ReserveInternal(NodeIndexType, ArcIndexType new_max_num_arcs)
       {
          head_.Reserve(kFirstArc, new_max_num_arcs - 1);
          next_adjacent_arc_.Reserve(kFirstArc, new_max_num_arcs - 1);
@@ -2004,7 +2004,7 @@ namespace operations_research
       // Always returns true because for any ForwardEbertGraph, only
       // direct arcs are represented, so all valid arc indices refer to
       // arcs that are outgoing from their tail nodes.
-      bool IsOutgoing(const ArcIndex unused_arc, const NodeIndex unused_node) const
+      bool IsOutgoing(const ArcIndex, const NodeIndex) const
       {
          return true;
       }
@@ -2012,7 +2012,7 @@ namespace operations_research
       // Always returns true because for any ForwardEbertGraph, only
       // outgoing arcs are represented, so all valid arc indices refer to
       // direct arcs.
-      bool IsDirect(const ArcIndex unused_arc) const
+      bool IsDirect(const ArcIndex) const
       {
          return true;
       }
@@ -2071,7 +2071,7 @@ namespace operations_research
       template <typename GraphType, bool has_reverse_arcs>
       struct TailArrayBuilder
       {
-         explicit TailArrayBuilder(GraphType* unused_graph)
+         explicit TailArrayBuilder(GraphType*)
          {
          }
 
@@ -2106,7 +2106,7 @@ namespace operations_research
       template <typename GraphType, bool has_reverse_arcs>
       struct TailArrayReleaser
       {
-         explicit TailArrayReleaser(GraphType* unused_graph)
+         explicit TailArrayReleaser(GraphType*)
          {
          }
 

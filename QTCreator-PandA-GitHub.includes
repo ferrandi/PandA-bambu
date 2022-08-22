@@ -53,7 +53,6 @@ ext/vflib/include
 ext/vflib/src
 src
 src/algorithms
-src/algorithms/bipartite_matching
 src/algorithms/boolean_functions
 src/algorithms/clique_covering
 src/algorithms/clustering
@@ -423,3 +422,7 @@ ext/gbbs/parlay/internal/posix
 ext/gbbs/parlay/internal/scheduler_plugins
 ext/gbbs/parlay/internal/windows
 src/algorithms/sssp_solver
+ext/or-tools/
+ext/or-tools/ortools/graph
+ext/or-tools/ortools/base
+ext/or-tools/ortools/util

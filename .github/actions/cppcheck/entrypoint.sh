@@ -11,7 +11,6 @@ cppcheck -j$J $@ src \
    --xml --xml-version=2 --output-file="$report_dir/cppcheck.xml" \
    -isrc/frontend_analysis/IR_analysis/lut_transformation.cpp \
    -Isrc \
-   -Isrc/algorithms/bipartite_matching \
    -Isrc/algorithms/clique_covering \
    -Isrc/algorithms/dominance \
    -Isrc/algorithms/graph_helpers \

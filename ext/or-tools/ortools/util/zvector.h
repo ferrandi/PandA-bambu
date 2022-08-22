@@ -19,6 +19,7 @@
 #elif !defined(_MSC_VER)
 #include <endian.h>
 #endif
+#include <cassert>
 #include <climits>
 #include <cstdio>
 #include <iostream>

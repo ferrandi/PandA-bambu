@@ -23,7 +23,7 @@ program_tests_CPPFLAGS = $(all_includes) -I$(BOOST_DIR) -I$(ABSEIL_DIR) \
      ${BOOST_CPPFLAGS} -DBOOST_TEST_DYN_LINK \
      -DPKGLIBDIR="\"$(pkglibdir)\"" -DPKGDATADIR="\"$(pkgdatadir)\""\
      -I$(top_srcdir)/src \
-     -I$(top_srcdir)/src/algorithms/bipartite_matching \
+     -isystem $(top_srcdir)/ext/or-tools \
      -I$(top_srcdir)/src/algorithms/clique_covering \
      -I$(top_srcdir)/src/design_flows/backend/ToHDL \
      -I$(top_srcdir)/src/design_flows/backend/ToC \

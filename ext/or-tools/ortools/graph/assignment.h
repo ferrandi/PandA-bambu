@@ -63,7 +63,9 @@ namespace operations_research
     public:
       // The constructor takes no size.
       // New node indices will be created lazily by AddArcWithCost().
-      SimpleLinearSumAssignment();
+      SimpleLinearSumAssignment() : num_nodes_(0), optimal_cost_(0)
+      {
+      }
 
       // Adds an arc from a left node to a right node with a given cost.
       // * Node indices must be non-negative (>= 0). For a perfect
@@ -71,21 +73,45 @@ namespace operations_research
       //   must cover [0, n), same for "right_node".
       // * The arc cost can be any integer, negative, positive or zero.
       // * After the method finishes, NumArcs() == the returned ArcIndex + 1.
-      ArcIndex AddArcWithCost(NodeIndex left_node, NodeIndex right_node, CostValue cost);
+      ArcIndex AddArcWithCost(NodeIndex left_node, NodeIndex right_node, CostValue cost)
+      {
+         const ArcIndex num_arcs = arc_cost_.size();
+         num_nodes_ = std::max(num_nodes_, left_node + 1);
+         num_nodes_ = std::max(num_nodes_, right_node + 1);
+         arc_tail_.push_back(left_node);
+         arc_head_.push_back(right_node);
+         arc_cost_.push_back(cost);
+         return num_arcs;
+      }
 
       // Returns the current number of left nodes which is the same as the
       // number of right nodes. This is one greater than the largest node
       // index seen so far in AddArcWithCost().
-      NodeIndex NumNodes() const;
+      NodeIndex NumNodes() const
+      {
+         return num_nodes_;
+      }
 
       // Returns the current number of arcs in the graph.
-      ArcIndex NumArcs() const;
+      ArcIndex NumArcs() const
+      {
+         return arc_cost_.size();
+      }
 
       // Returns user-provided data.
       // The implementation will crash if "arc" is not in [0, NumArcs()).
-      NodeIndex LeftNode(ArcIndex arc) const;
-      NodeIndex RightNode(ArcIndex arc) const;
-      CostValue Cost(ArcIndex arc) const;
+      NodeIndex LeftNode(ArcIndex arc) const
+      {
+         return arc_tail_[arc];
+      }
+      NodeIndex RightNode(ArcIndex arc) const
+      {
+         return arc_head_[arc];
+      }
+      CostValue Cost(ArcIndex arc) const
+      {
+         return arc_cost_[arc];
+      }
 
       // Solves the problem (finds the perfect matching that minimizes the
       // cost) and returns the solver status.
@@ -95,7 +121,43 @@ namespace operations_research
          INFEASIBLE,        // The given problem admits no perfect matching.
          POSSIBLE_OVERFLOW, // Some cost magnitude is too large.
       };
-      Status Solve();
+      Status Solve()
+      {
+         optimal_cost_ = 0;
+         assignment_arcs_.clear();
+         if(NumNodes() == 0)
+            return OPTIMAL;
+         // HACK(user): Detect overflows early. In ./linear_assignment.h, the cost of
+         // each arc is internally multiplied by cost_scaling_factor_ (which is equal
+         // to (num_nodes + 1)) without overflow checking.
+         const CostValue max_supported_arc_cost = std::numeric_limits<CostValue>::max() / (NumNodes() + 1);
+         for(const CostValue unscaled_arc_cost : arc_cost_)
+         {
+            if(unscaled_arc_cost > max_supported_arc_cost)
+               return POSSIBLE_OVERFLOW;
+         }
+
+         const ArcIndex num_arcs = arc_cost_.size();
+         ForwardStarGraph graph(2 * num_nodes_, num_arcs);
+         LinearSumAssignment<ForwardStarGraph> assignment(graph, num_nodes_);
+         for(ArcIndex arc = 0; arc < num_arcs; ++arc)
+         {
+            graph.AddArc(arc_tail_[arc], num_nodes_ + arc_head_[arc]);
+            assignment.SetArcCost(arc, arc_cost_[arc]);
+         }
+         // TODO(user): Improve the LinearSumAssignment api to clearly define
+         // the error cases.
+         if(!assignment.FinalizeSetup())
+            return POSSIBLE_OVERFLOW;
+         if(!assignment.ComputeAssignment())
+            return INFEASIBLE;
+         optimal_cost_ = assignment.GetCost();
+         for(NodeIndex node = 0; node < num_nodes_; ++node)
+         {
+            assignment_arcs_.push_back(assignment.GetAssignmentArc(node));
+         }
+         return OPTIMAL;
+      }
 
       // Returns the cost of an assignment with minimal cost.
       // This is 0 if the last Solve() didn't return OPTIMAL.
@@ -135,83 +197,6 @@ namespace operations_research
       DISALLOW_COPY_AND_ASSIGN(SimpleLinearSumAssignment);
    };
 
-   SimpleLinearSumAssignment::SimpleLinearSumAssignment() : num_nodes_(0)
-   {
-   }
-
-   ArcIndex SimpleLinearSumAssignment::AddArcWithCost(NodeIndex left_node, NodeIndex right_node, CostValue cost)
-   {
-      const ArcIndex num_arcs = arc_cost_.size();
-      num_nodes_ = std::max(num_nodes_, left_node + 1);
-      num_nodes_ = std::max(num_nodes_, right_node + 1);
-      arc_tail_.push_back(left_node);
-      arc_head_.push_back(right_node);
-      arc_cost_.push_back(cost);
-      return num_arcs;
-   }
-
-   NodeIndex SimpleLinearSumAssignment::NumNodes() const
-   {
-      return num_nodes_;
-   }
-
-   ArcIndex SimpleLinearSumAssignment::NumArcs() const
-   {
-      return arc_cost_.size();
-   }
-
-   NodeIndex SimpleLinearSumAssignment::LeftNode(ArcIndex arc) const
-   {
-      return arc_tail_[arc];
-   }
-
-   NodeIndex SimpleLinearSumAssignment::RightNode(ArcIndex arc) const
-   {
-      return arc_head_[arc];
-   }
-
-   CostValue SimpleLinearSumAssignment::Cost(ArcIndex arc) const
-   {
-      return arc_cost_[arc];
-   }
-
-   SimpleLinearSumAssignment::Status SimpleLinearSumAssignment::Solve()
-   {
-      optimal_cost_ = 0;
-      assignment_arcs_.clear();
-      if(NumNodes() == 0)
-         return OPTIMAL;
-      // HACK(user): Detect overflows early. In ./linear_assignment.h, the cost of
-      // each arc is internally multiplied by cost_scaling_factor_ (which is equal
-      // to (num_nodes + 1)) without overflow checking.
-      const CostValue max_supported_arc_cost = std::numeric_limits<CostValue>::max() / (NumNodes() + 1);
-      for(const CostValue unscaled_arc_cost : arc_cost_)
-      {
-         if(unscaled_arc_cost > max_supported_arc_cost)
-            return POSSIBLE_OVERFLOW;
-      }
-
-      const ArcIndex num_arcs = arc_cost_.size();
-      ForwardStarGraph graph(2 * num_nodes_, num_arcs);
-      LinearSumAssignment<ForwardStarGraph> assignment(graph, num_nodes_);
-      for(ArcIndex arc = 0; arc < num_arcs; ++arc)
-      {
-         graph.AddArc(arc_tail_[arc], num_nodes_ + arc_head_[arc]);
-         assignment.SetArcCost(arc, arc_cost_[arc]);
-      }
-      // TODO(user): Improve the LinearSumAssignment api to clearly define
-      // the error cases.
-      if(!assignment.FinalizeSetup())
-         return POSSIBLE_OVERFLOW;
-      if(!assignment.ComputeAssignment())
-         return INFEASIBLE;
-      optimal_cost_ = assignment.GetCost();
-      for(NodeIndex node = 0; node < num_nodes_; ++node)
-      {
-         assignment_arcs_.push_back(assignment.GetAssignmentArc(node));
-      }
-      return OPTIMAL;
-   }
 } // namespace operations_research
 
 #endif // OR_TOOLS_GRAPH_ASSIGNMENT_H_
