@@ -79,15 +79,9 @@
 #include <utility>  // for pair, swap
 #include <vector>   // for vector, allocator
 
-/// matrix includes
-#if BOOST_VERSION >= 106400
-#include <boost/serialization/array_wrapper.hpp>
-#endif
-#include <boost/numeric/ublas/matrix.hpp>
-
-#include "bipartite_matching.hpp"
 #include "dsatur2_coloring.hpp"
 #include "exceptions.hpp"
+#include "ortools/graph/assignment.h"
 #include "refcount.hpp"
 #if HAVE_EXPERIMENTAL
 #include "DawsonRun.hpp"
@@ -1508,52 +1502,6 @@ class RTS_based_clique_covering : public TS_based_clique_covering<vertex_type>
    }
 };
 
-/// functor cost where the cost just depend on x
-struct y_independent_cost : BM_cost_functor
-{
- public:
-   explicit y_independent_cost(const std::vector<int>& _cost) : cost(_cost)
-   {
-   }
-
-   int operator()(size_t x, size_t /*notused*/) const override
-   {
-      return cost[x];
-   }
-   int max_row(size_t x) const override
-   {
-      return cost[x];
-   }
-
- private:
-   const std::vector<int>& cost;
-};
-
-struct full_cost_matrix : BM_cost_functor
-{
- public:
-   explicit full_cost_matrix(const boost::numeric::ublas::matrix<int>& _cost) : cost(_cost)
-   {
-   }
-
-   int operator()(size_t x, size_t y) const override
-   {
-      return cost(x, y);
-   }
-   int max_row(size_t x) const override
-   {
-      int res = cost(x, 0);
-      for(unsigned j = 1; j < cost.size2(); ++j)
-      {
-         res = std::max(res, cost(x, j));
-      }
-      return res;
-   }
-
- private:
-   const boost::numeric::ublas::matrix<int>& cost;
-};
-
 /// clique covering based on bipartite matching procedure
 template <typename vertex_type>
 class bipartite_matching_clique_covering : public clique_covering<vertex_type>
@@ -1566,18 +1514,20 @@ class bipartite_matching_clique_covering : public clique_covering<vertex_type>
    /// map between vertex_type and C_vertex
    CustomUnorderedMap<vertex_type, C_vertex> v2uv;
    /// map between C_vertex and vertex_type
-   CustomUnorderedMap<C_vertex, vertex_type> uv2v;
+   CustomUnorderedMap<C_vertex, vertex_type> uv2v; // converter
    /// name map for the C_vertex vertices
    CustomUnorderedMap<C_vertex, std::string> names;
    /// maximum weight
    int max_weight;
    unsigned int vindex;
-   std::map<size_t, CustomOrderedSet<boost::graph_traits<boost_cc_compatibility_graph>::vertex_descriptor>> partitions;
+   /// number of columns
    size_t num_cols;
+   /// maximum number of columns
+   size_t max_num_cols;
+   std::map<size_t, CustomOrderedSet<boost::graph_traits<boost_cc_compatibility_graph>::vertex_descriptor>> partitions;
    /// edge selector
    static const int COMPATIBILITY_EDGE = 1;
    static const int COMPATIBILITY_ALL_EDGES = ~0;
-   static const int BIG_NUMBER = 10000000;
 
    /// partition the set of vertex in set where each element is in conflict with the others
    /// the maximum size of these sets is the number of the cliques used to cover the graph
@@ -1623,7 +1573,11 @@ class bipartite_matching_clique_covering : public clique_covering<vertex_type>
  public:
    /// constructor
    bipartite_matching_clique_covering(unsigned int nvert)
-       : clique_covering_graph_bulk(nvert), max_weight(std::numeric_limits<int>::min()), vindex(0), num_cols(0)
+       : clique_covering_graph_bulk(nvert),
+         max_weight(std::numeric_limits<int>::min()),
+         vindex(0),
+         num_cols(0),
+         max_num_cols(0)
    {
    }
 
@@ -1672,23 +1626,6 @@ class bipartite_matching_clique_covering : public clique_covering<vertex_type>
       return result;
    }
 
-   void extend_and_assign(boost::numeric::ublas::matrix<int>& cost_matrix, size_t& final_num_cols, size_t num_rows)
-   {
-      cost_matrix.resize(final_num_cols + 1, final_num_cols + 1, true);
-      for(unsigned int i = 0; i <= final_num_cols; ++i)
-      {
-         cost_matrix(i, final_num_cols) = 0;
-      }
-      for(unsigned int i = 0; i < final_num_cols; ++i)
-      {
-         cost_matrix(final_num_cols, i) = 0;
-      }
-      cost_matrix(num_rows, final_num_cols) = BIG_NUMBER;
-      CustomUnorderedSet<C_vertex> empty;
-      cliques.push_back(empty);
-      ++final_num_cols;
-   }
-
    void exec(const filter_clique<vertex_type>& fc, check_clique<vertex_type>&) override
    {
       /// now color the graph and then do the bipartite matching on the vertex having the same color
@@ -1703,169 +1640,155 @@ class bipartite_matching_clique_covering : public clique_covering<vertex_type>
                                          COMPATIBILITY_ALL_EDGES, &clique_covering_graph_bulk),
                                      cc_compatibility_graph_vertex_selector<boost_cc_compatibility_graph>()));
 
-      size_t final_num_cols = num_cols;
-
       /// initializes the cliques with empty sets
       for(unsigned int i = 0; i < num_cols; ++i)
       {
          CustomUnorderedSet<C_vertex> empty;
          cliques.push_back(empty);
       }
-      size_t offset = partitions.size();
-      // std::cerr << "offset " << offset <<std::endl;
-      boost::numeric::ublas::matrix<int> cost_matrix(num_cols, num_cols);
-      /// compute the assignment for each element of a partition
-      auto p_it_end = partitions.rend();
-      for(auto p_it = partitions.rbegin(); p_it != p_it_end; ++p_it)
+      size_t num_rows = num_cols;
+      bool restart_bipartite;
+      size_t skip_infeasibles;
+      do
       {
-         boost::numeric::ublas::noalias(cost_matrix) = boost::numeric::ublas::zero_matrix<int>(num_cols, num_cols);
-         unsigned int num_rows = 0;
-         bool added_an_element = false;
-         auto v_it_end = p_it->second.end();
-         for(auto v_it = p_it->second.begin(); v_it != v_it_end; ++v_it, ++num_rows)
+         restart_bipartite = false;
+         /// compute the assignment for each element of a partition
+         auto p_it_end = partitions.rend();
+         // int pindex = 0;
+         for(auto p_it = partitions.rbegin(); p_it != p_it_end; ++p_it)
          {
-            boost::graph_traits<boost_cc_compatibility_graph>::out_edge_iterator ei, eibegin, ei_end;
-            boost::tie(ei, ei_end) = boost::out_edges(*v_it, clique_covering_graph_bulk);
-            eibegin = ei;
-            bool compatible_exist = false;
-            // std::cerr << "->" << names[*v_it] << std::endl;
-            for(unsigned int y = 0; y < num_cols; ++y)
+            // std::cerr << "partition" << pindex++ << "\n";
+            // std::cerr << "partition size=" << p_it->second.size() << "\n";
+            operations_research::SimpleLinearSumAssignment assignment;
+            std::set<unsigned> column_already_assigned;
+            auto v_it_end = p_it->second.end();
+            auto v_it = p_it->second.begin();
+            for(unsigned i = 0; i < num_rows; ++i)
             {
-               if(cliques[y].find(*v_it) != cliques[y].end())
+               if(v_it == v_it_end)
                {
-                  /// already assigned to a clique
-                  compatible_exist = true;
-                  break;
-               }
-               size_t compatibles = 0;
-               int acc_cost_y = 0;
-               for(ei = eibegin; ei != ei_end; ++ei)
-               {
-                  if(cliques[y].find(boost::target(*ei, clique_covering_graph_bulk)) != cliques[y].end())
+                  // std::cerr << "over\n";
+                  for(unsigned int y = 0; y < num_cols; ++y)
                   {
-                     ++compatibles;
-                     acc_cost_y += (clique_covering_graph_bulk)[*ei].weight;
+                     assignment.AddArcWithCost(static_cast<operations_research::NodeIndex>(i),
+                                               static_cast<operations_research::NodeIndex>(y), 1);
+                     // std::cerr << "i" << i << "-> y" << y << " (1)\n";
                   }
-               }
-               if(compatibles == cliques[y].size())
-               {
-                  if(compatibles == 0)
-                  {
-                     cost_matrix(num_rows, y) = 1;
-                     if(!compatible_exist)
-                     {
-                        compatible_exist = true;
-                        added_an_element = true;
-                        // std::cerr << "0cost_matrix(num_-rows,y) " << cost_matrix(num_rows,y) << " nr " <<
-                        // names[*v_it] << " y " << y << " size " << cliques[y].size() << std::endl;
-                     }
-                  }
-                  else
-                  {
-                     /// check if *v_it fit in the clique given the filtering predicate
-                     CustomOrderedSet<C_vertex> candidate_clique;
-                     candidate_clique.insert(cliques[y].begin(), cliques[y].end());
-                     candidate_clique.insert(*v_it);
-                     C_vertex vertex_to_be_removed;
-                     compatible_exist =
-                         !fc.select_candidate_to_remove(candidate_clique, vertex_to_be_removed, uv2v, *completeCG);
-                     if(compatible_exist)
-                     {
-                        int curr_cost = (max_weight * acc_cost_y) / static_cast<int>(compatibles) +
-                                        max_weight * static_cast<int>(offset - compatibles);
-                        THROW_ASSERT(curr_cost > 0, "cost has to be positive");
-                        cost_matrix(num_rows, y) = curr_cost;
-                        added_an_element = true;
-                     }
-                     else
-                     {
-                        cost_matrix(num_rows, y) = 0;
-                     }
-                  }
-                  // std::cerr << "1cost_matrix(num_rows,y) " << cost_matrix(num_rows,y) << " nr " << names[*v_it] << "
-                  // y " << y << " size " << cliques[y].size() << std::endl;
                }
                else
                {
-                  cost_matrix(num_rows, y) = 0;
+                  /// check if already assigned
+                  bool compatible_exist = false;
+                  unsigned compatible_column = 0;
+                  for(unsigned int y = 0; y < num_cols; ++y)
+                  {
+                     if(cliques[y].find(*v_it) != cliques[y].end())
+                     {
+                        /// already assigned to a clique
+                        compatible_exist = true;
+                        compatible_column = y;
+                        THROW_ASSERT(column_already_assigned.count(y) == 0, "unexpected condition");
+                        column_already_assigned.insert(y);
+                        break;
+                     }
+                  }
+                  if(compatible_exist)
+                  {
+                     assignment.AddArcWithCost(static_cast<operations_research::NodeIndex>(i),
+                                               static_cast<operations_research::NodeIndex>(compatible_column), 1);
+                     // std::cerr << "i" << i << "-> y" << compatible_column << " (1)\n";
+                     // std::cerr << "compatible_exist\n";
+                  }
+                  else
+                  {
+                     // std::cerr << "compatible does not exist " << max_num_cols << "\n";
+                     bool added_an_element = false;
+                     unsigned to_removed_number = 0;
+                     for(unsigned int y = 0; y < num_cols; ++y)
+                     {
+                        if(column_already_assigned.find(y) == column_already_assigned.end())
+                        {
+                           CustomOrderedSet<C_vertex> curr_expandend_clique;
+                           auto& current_clique = cliques.at(y);
+                           curr_expandend_clique.insert(current_clique.begin(), current_clique.end());
+                           curr_expandend_clique.insert(*v_it);
+                           C_vertex vertex_to_be_removed;
+                           bool to_be_removed = fc.select_candidate_to_remove(curr_expandend_clique,
+                                                                              vertex_to_be_removed, uv2v, *completeCG);
+                           if(to_be_removed)
+                           {
+                              // std::cerr << "to be removed\n";
+                              ++to_removed_number;
+                           }
+                           if(max_num_cols != 0 || !to_be_removed)
+                           {
+                              auto clique_cost = 1 + fc.clique_cost(curr_expandend_clique, uv2v);
+                              assignment.AddArcWithCost(static_cast<operations_research::NodeIndex>(i),
+                                                        static_cast<operations_research::NodeIndex>(y), clique_cost);
+                              added_an_element = true;
+                              // std::cerr << "i" << i << "-> y" << y << " (" << clique_cost << ")\n";
+                           }
+                        }
+                     }
+                     // std::cerr << "to_removed_number=" << to_removed_number << " p_it->second.size() " <<
+                     // p_it->second.size() << " num_columns " << num_cols << "\n";
+                     if(!added_an_element || to_removed_number + p_it->second.size() > num_cols)
+                     {
+                        restart_bipartite = true;
+                        if(to_removed_number + p_it->second.size() > num_cols)
+                        {
+                           skip_infeasibles = (to_removed_number + p_it->second.size()) - num_cols;
+                        }
+                        else
+                        {
+                           skip_infeasibles = 1;
+                        }
+                        // std::cerr << "skip_infeasibles " << skip_infeasibles << "\n";
+                        break;
+                     }
+                  }
+                  ++v_it;
                }
             }
-            if(!compatible_exist)
+            if(!restart_bipartite && assignment.Solve() == operations_research::SimpleLinearSumAssignment::OPTIMAL)
             {
-               extend_and_assign(cost_matrix, final_num_cols, num_rows);
-               // std::cerr << "cost_matrix(num_rows,y) " << cost_matrix(num_rows,final_num_cols-1) << " nr " <<
-               // names[*v_it] << " y " << final_num_cols-1<< std::endl;
-            }
-         }
-         num_cols = final_num_cols;
-         if(!added_an_element)
-         {
-            continue;
-         }
-         // std::cerr << "1num_rows " << num_rows << std::endl;
-         // std::cerr << "1num_cols " << num_cols << std::endl;
-         THROW_ASSERT(num_rows <= num_cols, "something of unexpected happen");
-         bool restart_bipartite;
-         do
-         {
-            restart_bipartite = false;
-            full_cost_matrix fcm(cost_matrix);
-            bipartite_matching<full_cost_matrix> WBM(num_rows, num_cols, fcm);
-
-            WBM.solve_bipartite_matching();
-            std::vector<size_t>& sol = WBM.get_solution();
-            size_t analyzed_rows = 0;
-            auto v_it = p_it->second.begin();
-            for(unsigned int i = 0; i < num_rows; ++i, ++v_it)
-            {
-               size_t s = sol[i];
-               // std::cerr << names[*v_it] << " assigned to " << s << std::endl;
-               /// consistency check
-               boost::graph_traits<boost_cc_compatibility_graph>::out_edge_iterator ei, ei_end;
-               boost::tie(ei, ei_end) = boost::out_edges(*v_it, clique_covering_graph_bulk);
-               size_t compatibles = 0;
-               for(; ei != ei_end; ++ei)
+               v_it = p_it->second.begin();
+               for(unsigned int i = 0; i < num_rows; ++i)
                {
-                  if(cliques[s].find(boost::target(*ei, clique_covering_graph_bulk)) != cliques[s].end())
+                  if(v_it != v_it_end)
                   {
-                     ++compatibles;
+                     auto s = assignment.RightMate(i);
+                     // std::cerr << "assign " << names[*v_it] << " to clique" << s << "\n";
+                     cliques[s].insert(*v_it);
+                     ++v_it;
                   }
                }
-               /// check if *v_it fit in the clique given the filtering predicate
-               CustomOrderedSet<C_vertex> candidate_clique;
-               candidate_clique.insert(cliques[s].begin(), cliques[s].end());
-               candidate_clique.insert(*v_it);
-               C_vertex vertex_to_be_removed;
-               if(fc.select_candidate_to_remove(candidate_clique, vertex_to_be_removed, uv2v, *completeCG))
-               {
-                  compatibles = 0;
-               }
-               if(compatibles != cliques[s].size())
-               {
-                  // std::cerr << "Wrong result from bipartite matching for " + names[*v_it] + " assigned to " + STR(s)
-                  // << std::endl;
-                  restart_bipartite = true;
-                  extend_and_assign(cost_matrix, final_num_cols, i);
-                  num_cols = final_num_cols;
-                  analyzed_rows = i;
-                  // std::cerr << "cost_matrix(num_rows,y) " << cost_matrix(i,final_num_cols-1) << " nr " <<
-                  // names[*v_it] << " y " << final_num_cols-1<< std::endl;
-                  break;
-               }
-               cliques[s].insert(*v_it);
             }
-            if(restart_bipartite)
+            else
             {
-               /// undo the last step
-               v_it = p_it->second.begin();
-               for(unsigned int i = 0; i < analyzed_rows; ++i, ++v_it)
+               // std::cerr << "restart assignment problem " << num_cols << "\n";
+               if(!restart_bipartite)
                {
-                  size_t s = sol[i];
-                  cliques[s].erase(*v_it);
+                  skip_infeasibles = 1;
                }
+               for(unsigned sindex = 0; sindex < skip_infeasibles; ++sindex)
+               {
+                  ++num_cols;
+                  ++num_rows;
+                  CustomUnorderedSet<C_vertex> empty;
+                  cliques.push_back(empty);
+               }
+               for(auto& cl : cliques)
+               {
+                  cl.clear();
+               }
+               THROW_ASSERT(max_num_cols == 0 || max_num_cols >= num_cols,
+                            "unexpected condition" + STR(num_cols) + " " + STR(max_num_cols));
+               restart_bipartite = true;
+               break;
             }
-         } while(restart_bipartite);
-      }
+         }
+      } while(restart_bipartite);
    }
 
    void writeDot(const std::string& filename) const override
@@ -1885,7 +1808,7 @@ class bipartite_matching_clique_covering : public clique_covering<vertex_type>
 
    void suggest_min_resources(size_t n_resources) override
    {
-      num_cols = std::min(num_cols, n_resources);
+      num_cols = std::max(num_cols, n_resources);
    }
 
    void min_resources(size_t n_resources) override
@@ -1897,8 +1820,9 @@ class bipartite_matching_clique_covering : public clique_covering<vertex_type>
    {
    }
 
-   void max_resources(size_t) override
+   void max_resources(size_t n_resources) override
    {
+      max_num_cols = std::max(max_num_cols, n_resources);
    }
 };
 

@@ -705,7 +705,7 @@ struct slack_based_filtering : public filter_clique<vertex>
    }
 
    size_t clique_cost(const CustomOrderedSet<C_vertex>& candidate_clique,
-                      const CustomUnorderedMap<C_vertex, vertex>& converter) const
+                      const CustomUnorderedMap<C_vertex, vertex>& converter) const override
    {
       unsigned int total_muxes;
       unsigned int n_shared;

@@ -202,11 +202,11 @@
 #include <iostream>
 #include <limits>
 #include <memory>
+#include <sstream>
 #include <string>
 #include <utility>
 #include <vector>
 
-#include "absl/strings/str_format.h"
 #include "ortools/base/integral_types.h"
 #include "ortools/base/macros.h"
 #include "ortools/graph/ebert_graph.h"
@@ -383,7 +383,7 @@ namespace operations_research
       class BipartiteLeftNodeIterator
       {
        public:
-         BipartiteLeftNodeIterator(const GraphType& graph, NodeIndex num_left_nodes)
+         BipartiteLeftNodeIterator(const GraphType&, NodeIndex num_left_nodes)
              : num_left_nodes_(num_left_nodes), node_iterator_(0)
          {
          }
@@ -435,9 +435,10 @@ namespace operations_research
          }
          std::string StatsString() const
          {
-            return absl::StrFormat("%d refinements; %d relabelings; "
-                                   "%d double pushes; %d pushes",
-                                   refinements_, relabelings_, double_pushes_, pushes_);
+            std::stringstream sstr;
+            sstr << refinements_ << " refinements; " << relabelings_ << " relabelings; " << double_pushes_
+                 << "double pushes; " << pushes_ << " pushes";
+            return sstr.str();
          }
          int64_t pushes_;
          int64_t double_pushes_;
@@ -1031,6 +1032,7 @@ namespace operations_research
    LinearSumAssignment<GraphType>::LinearSumAssignment(const GraphType& graph, const NodeIndex num_left_nodes)
        : graph_(&graph),
          num_left_nodes_(num_left_nodes),
+         incidence_precondition_satisfied_(false),
          success_(false),
          cost_scaling_factor_(1 + num_left_nodes),
          alpha_(FLAGS_assignment_alpha),
@@ -1053,6 +1055,7 @@ namespace operations_research
    LinearSumAssignment<GraphType>::LinearSumAssignment(const NodeIndex num_left_nodes, const ArcIndex num_arcs)
        : graph_(nullptr),
          num_left_nodes_(num_left_nodes),
+         incidence_precondition_satisfied_(false),
          success_(false),
          cost_scaling_factor_(1 + num_left_nodes),
          alpha_(FLAGS_assignment_alpha),
@@ -1185,7 +1188,7 @@ namespace operations_research
       CostValue new_epsilon = NewEpsilon(epsilon_);
       slack_relabeling_price_ = PriceChangeBound(epsilon_, new_epsilon, nullptr);
       epsilon_ = new_epsilon;
-#ifndef NDEBUG
+#ifdef PRINT_DEBUG
       std::cerr << "Updated: epsilon_ == " << epsilon_ << std::endl;
       std::cerr << "slack_relabeling_price_ == " << slack_relabeling_price_ << std::endl;
 #endif
@@ -1334,12 +1337,13 @@ namespace operations_research
             // we know we're returning a wrong answer so we leave a
             // message in the logs to increase our hope of chasing down the
             // problem.
+#ifdef PRINT_DEBUG
             if(total_stats_.refinements_ <= 0)
             {
                std::cerr << "Infeasibility detection triggered after first iteration found "
                          << "a feasible assignment!\n";
-               assert(0);
             }
+#endif
             return false;
          }
       }
@@ -1514,7 +1518,7 @@ namespace operations_research
       // where the largest arc cost is zero, we still do a Refine()
       // iteration.
       epsilon_ = std::max(largest_scaled_cost_magnitude_, kMinEpsilon + 1);
-#ifndef NDEBUG
+#ifdef PRINT_DEBUG
       std::cerr << "Largest given cost magnitude: " << largest_scaled_cost_magnitude_ / cost_scaling_factor_
                 << std::endl;
 #endif
@@ -1557,7 +1561,7 @@ namespace operations_research
       {
          price_lower_bound_ = static_cast<CostValue>(double_price_lower_bound);
       }
-#ifndef NDEBUG
+#ifdef PRINT_DEBUG
       std::cerr << "price_lower_bound_ == " << price_lower_bound_ << std::endl;
 #endif
       assert(price_lower_bound_ <= 0);
@@ -1575,7 +1579,7 @@ namespace operations_research
    void LinearSumAssignment<GraphType>::ReportAndAccumulateStats()
    {
       total_stats_.Add(iteration_stats_);
-#ifndef NDEBUG
+#ifdef PRINT_DEBUG
       std::cerr << "Iteration stats: " << iteration_stats_.StatsString() << std::endl;
 #endif
       iteration_stats_.Clear();
@@ -1605,7 +1609,7 @@ namespace operations_research
          assert(!ok || AllMatched());
       }
       success_ = ok;
-#ifndef NDEBUG
+#ifdef PRINT_DEBUG
       std::cerr << "Overall stats: " << total_stats_.StatsString() << std::endl;
 #endif
       return ok;

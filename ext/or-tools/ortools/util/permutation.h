@@ -85,6 +85,7 @@
 
 #include "ortools/base/macros.h"
 
+#include <cassert>
 #include <iostream>
 
 namespace operations_research
@@ -114,7 +115,7 @@ namespace operations_research
       // This method must be overridden in implementations where it is
       // called. If an implementation doesn't call it, no need to
       // override.
-      virtual void SetSeen(IndexType* unused_permutation_element) const
+      virtual void SetSeen(IndexType*) const
       {
          std::cerr << "Base implementation of SetSeen() must not be called.\n";
          assert(0);
@@ -127,7 +128,7 @@ namespace operations_research
       // This method must be overridden in implementations where it is
       // called. If an implementation doesn't call it, no need to
       // override.
-      virtual bool Unseen(IndexType unused_permutation_element) const
+      virtual bool Unseen(IndexType) const
       {
          std::cerr << "Base implementation of Unseen() must not be called.\n";
          assert(0);

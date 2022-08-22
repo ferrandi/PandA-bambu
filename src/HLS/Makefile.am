@@ -170,7 +170,7 @@ noinst_LTLIBRARIES += lib_register_algorithms.la
 lib_register_algorithms_la_CPPFLAGS = \
    -I$(top_srcdir)/src/ \
    -I$(top_srcdir)/src/algorithms/clique_covering \
-   -I$(top_srcdir)/src/algorithms/bipartite_matching \
+   -isystem $(top_srcdir)/ext/or-tools \
    -I$(top_srcdir)/src/behavior \
    -I$(top_srcdir)/src/circuit \
    -I$(top_srcdir)/src/design_flows \
@@ -276,7 +276,7 @@ noinst_LTLIBRARIES += lib_modulebinding.la
 lib_modulebinding_la_CPPFLAGS = \
    -I$(top_srcdir)/src \
    -I$(top_srcdir)/src/algorithms/clique_covering \
-   -I$(top_srcdir)/src/algorithms/bipartite_matching \
+   -isystem $(top_srcdir)/ext/or-tools \
    -I$(top_srcdir)/src/behavior  \
    -I$(top_srcdir)/src/circuit \
    -I$(top_srcdir)/src/constants  \
@@ -523,7 +523,7 @@ noinst_LTLIBRARIES += lib_hls_flow.la
 lib_hls_flow_la_CPPFLAGS = \
    -I$(top_srcdir)/src \
    -I$(top_srcdir)/src/algorithms/clique_covering \
-   -I$(top_srcdir)/src/algorithms/bipartite_matching\
+   -isystem $(top_srcdir)/ext/or-tools \
    -I$(top_srcdir)/src/behavior \
    -I$(top_srcdir)/src/circuit \
    -I$(top_srcdir)/src/constants \

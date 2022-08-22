@@ -532,7 +532,7 @@ EXTRA_DIST += \
   or-tools/LICENSE\
   or-tools/README.md
 
-noinst_HEADERS = \
+noinst_HEADERS += \
 or-tools/ortools/util/permutation.h\
 or-tools/ortools/util/zvector.h\
 or-tools/ortools/base/integral_types.h\
