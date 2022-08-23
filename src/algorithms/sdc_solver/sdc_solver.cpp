@@ -42,6 +42,14 @@
 #include "sdc_solver.hpp"
 #undef NDEBUG
 #define NDEBUG
+
+//#if HAVE_OPENMP
+//#define PARLAY_OPENMP
+//#endif
+#define PARLAY_SEQUENTIAL
+#define AMORTIZEDPD
+#define PARLAY_USE_STD_ALLOC
+
 #include "gbbs/edge_map_data.h"
 #include "gbbs/graph.h"
 #include "gbbs/vertex_subset.h"
@@ -180,6 +188,11 @@ bool sdc_solver::solve_SDC_internal(std::map<unsigned int, int>& vals, bool nega
       edges.push_back(std::make_tuple(src + 1, tgt + 1, w));
    }
    auto G = gbbs::asym_graph_from_edges(edges, max_vertex_id + 1, /* is_sorted = */ false);
+   //   std::cout << "### Application: BellmanFord" << std::endl;
+   //   std::cout << "### Threads: " << gbbs::num_workers() << std::endl;
+   //   std::cout << "### n: " << G.n << std::endl;
+   //   std::cout << "### m: " << G.m << std::endl;
+   //   std::cerr << "Graph created\n";
    bool res = true;
    auto distances = gbbs::BellmanFord(G, 0, res);
    if(!res)
@@ -190,7 +203,7 @@ bool sdc_solver::solve_SDC_internal(std::map<unsigned int, int>& vals, bool nega
    vals.clear();
    for(auto dist : distances)
    {
-      std::cout << "V" << i << "=" << dist << "\n";
+      // std::cout << "V" << i << "=" << dist << "\n";
       if(i != 0)
       {
          if(visited.find(i - 1) == visited.end())

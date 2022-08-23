@@ -369,7 +369,6 @@ panda_USE_LIB_RTL=no;
 panda_USE_LIB_RTL_METRICS=no;
 panda_USE_LIB_RTL_CHARACTERIZATION=no;
 panda_USE_LIB_SDC_SOLVER=no;
-panda_USE_LIB_SSSP_SOLVER=no;
 panda_USE_LIB_SDF_GRAPHS=no;
 panda_USE_LIB_SETHELPER=no;
 panda_USE_LIB_SIMULATION_WRAPPER=no;
@@ -471,7 +470,6 @@ if test "x$panda_USE_BAMBU" = xyes; then
   panda_USE_LIB_GRAPHHELPER=yes;
   panda_USE_LIB_CMOS=yes;
   panda_USE_LIB_SDC_SOLVER=yes;
-  panda_USE_LIB_SSSP_SOLVER=yes;
   panda_USE_LIB_SIMULATION_WRAPPER=yes;
   panda_USE_LIB_SYNTHESIS_WRAPPER=yes;
   panda_USE_LIB_VCD_PARSER=yes;
@@ -1529,8 +1527,6 @@ AM_CONDITIONAL(BUILD_LIB_LOOPS,  test "x$panda_USE_LIB_LOOPS" = xyes)
 
 AM_CONDITIONAL(BUILD_LIB_SDC_SOLVER,  test "x$panda_USE_LIB_SDC_SOLVER" = xyes)
 
-AM_CONDITIONAL(BUILD_LIB_SSSP_SOLVER,  test "x$panda_USE_LIB_SSSP_SOLVER" = xyes)
-
 AM_CONDITIONAL(BUILD_LIB_SETHELPER,  test "x$panda_USE_LIB_SETHELPER" = xyes)
 
 if test "x$panda_USE_LIB_REGRESSORS" = xyes; then
@@ -1540,7 +1536,7 @@ AM_CONDITIONAL(BUILD_LIB_REGRESSORS,  test "x$panda_USE_LIB_REGRESSORS" = xyes)
 
 
 ############################### algorithm stuff ################################
-if test "x$panda_USE_LIB_CLIQUECOVER" = xyes || test "x$panda_USE_LIB_CLUSTERING" = xyes || test "x$panda_USE_LIB_DOMINANCE" = xyes || test "x$panda_USE_LIB_SETHELPER" = xyes || test "x$panda_USE_LIB_GRAPHHELPER" = xyes || test "x$panda_USE_LIB_BOOLEAN" = xyes || test "x$panda_USE_LIB_LOOPS" = xyes || test "x$panda_USE_LIB_SDC_SOLVER" = xyes || test "x$panda_USE_LIB_SSSP_SOLVER" = xyes || test "x$panda_USE_LIB_EVALUATION" = xyes || test "x$panda_USE_VFLIB" = xyes; then
+if test "x$panda_USE_LIB_CLIQUECOVER" = xyes || test "x$panda_USE_LIB_CLUSTERING" = xyes || test "x$panda_USE_LIB_DOMINANCE" = xyes || test "x$panda_USE_LIB_SETHELPER" = xyes || test "x$panda_USE_LIB_GRAPHHELPER" = xyes || test "x$panda_USE_LIB_BOOLEAN" = xyes || test "x$panda_USE_LIB_LOOPS" = xyes || test "x$panda_USE_LIB_SDC_SOLVER" = xyes || test "x$panda_USE_LIB_EVALUATION" = xyes || test "x$panda_USE_VFLIB" = xyes; then
   panda_USE_LIB_ALGORITHMS=yes;
 fi
 AM_CONDITIONAL(BUILD_LIB_ALGORITHMS,  test "x$panda_USE_LIB_ALGORITHMS" = xyes)
@@ -2788,11 +2784,11 @@ AC_CONFIG_FILES(ext/Makefile)
 ############### Final check for static linking #############################################
 if test "x$panda_ALLSTATIC" = xyes ;then
   AM_LDFLAGS="-all-static -pthread";
-  LDFLAGS+=" -static";
-  AC_SUBST(AM_LDFLAGS)
+  LDFLAGS+="-all-static -pthread -static";
 else
   AM_LDFLAGS="-pthread";
 fi
+AC_SUBST(AM_LDFLAGS)
 
 case "${host_os}" in
   darwin*)
@@ -2809,15 +2805,17 @@ AC_SUBST(PTHREAD_HACK)
 
 
 openmp_ok=no
+AC_LANG_PUSH([C++])
 m4_ifdef([AC_OPENMP], [AC_OPENMP], [AX_OPENMP([openmp_ok=yes],[openmp_ok=no])])
 if test "x$ac_cv_prog_cxx_openmp" != "xunsupported" && test "x$ac_cv_prog_cxx_openmp" != "x"; then
    openmp_ok=yes
-   AC_DEFINE(HAVE_OPENMP, 1, "Define if OpenMP is supported")
 fi
 if test "x$openmp_ok" = "xyes"; then
    dnl We have it, now set up the flags
    CXXFLAGS+=" $OPENMP_CXXFLAGS "
+   AC_DEFINE(HAVE_OPENMP, 1, "Define if OpenMP is supported")
 fi
+AC_LANG_POP([C++])
 
 ################ Debug checking ##############################
 if test "x$panda_DEBUG" = xyes; then

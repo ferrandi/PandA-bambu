@@ -1916,8 +1916,6 @@ src/algorithms/loops_detection/loops.cpp
 src/algorithms/loops_detection/loops.hpp
 src/algorithms/sdc_solver/sdc_solver.cpp
 src/algorithms/sdc_solver/sdc_solver.hpp
-src/algorithms/sssp_solver/sssp_solver.cpp
-src/algorithms/sssp_solver/sssp_solver.hpp
 src/bambu.cpp
 src/behavior/application_manager.cpp
 src/behavior/application_manager.hpp

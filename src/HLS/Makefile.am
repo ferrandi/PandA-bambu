@@ -767,7 +767,6 @@ lib_scheduling_la_CPPFLAGS = \
    -I$(top_srcdir)/src \
    -I$(top_srcdir)/src/algorithms/clique_covering \
    -I$(top_srcdir)/src/algorithms/sdc_solver \
-   -I$(top_srcdir)/src/algorithms/sssp_solver \
    -I$(top_srcdir)/src/behavior \
    -I$(top_srcdir)/src/circuit \
    -I$(top_srcdir)/src/constants \

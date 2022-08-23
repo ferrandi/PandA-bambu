@@ -64,7 +64,6 @@
 #include "schedule.hpp"
 #include "sdc_solver.hpp"
 #include "simple_code_motion.hpp"
-#include "sssp_solver.hpp"
 #include "string_manipulation.hpp"
 #include "tree_basic_block.hpp"
 
@@ -72,6 +71,85 @@
 #include <list>
 
 CONSTREF_FORWARD_DECL(Schedule);
+
+class DAG_SSSP
+{
+   /// graph adjacency list
+   std::vector<std::list<unsigned int>> gal;
+   /// visited vector
+   std::vector<bool> visited;
+   /// topological sorted vertices
+   std::vector<unsigned int> ordered;
+   /// weights
+   std::map<std::pair<unsigned int, unsigned int>, double> edge_weight;
+
+   void DFS_topological_sort(unsigned int src)
+   {
+      visited.at(src) = true;
+      for(auto v : gal.at(src))
+      {
+         if(!visited.at(v))
+         {
+            DFS_topological_sort(v);
+         }
+      }
+      ordered.push_back(src);
+   }
+
+ public:
+   DAG_SSSP() = delete;
+
+   DAG_SSSP(size_t nodes)
+   {
+      gal.resize(nodes);
+      visited.resize(nodes, false);
+   }
+
+   void add_edge(unsigned int src, unsigned int tgt, double weight)
+   {
+      edge_weight[std::make_pair(src, tgt)] = weight;
+      gal.at(src).push_back(tgt);
+   }
+
+   void init()
+   {
+      auto n_nodes = gal.size();
+      for(unsigned int i = 0; i < n_nodes; i++)
+      {
+         if(!visited.at(i))
+         {
+            DFS_topological_sort(i);
+         }
+      }
+   }
+
+   void exec(unsigned int source_node, std::vector<double>& dist)
+   {
+      auto n_nodes = gal.size();
+      auto max_value = std::numeric_limits<double>::max();
+
+      dist.clear();
+      dist.resize(n_nodes, max_value);
+      dist[source_node] = 0;
+
+      for(auto it = ordered.rbegin(); it != ordered.rend(); ++it)
+      {
+         auto u = *it;
+         auto dist_curr = dist.at(u);
+         if(dist_curr != max_value)
+         {
+            for(auto v : gal.at(u))
+            {
+               auto weight = edge_weight.find(std::make_pair(u, v))->second;
+               if(dist.at(v) > dist_curr + weight)
+               {
+                  dist.at(v) = dist_curr + weight;
+               }
+            }
+         }
+      }
+   }
+};
 
 SDCScheduling2::SDCScheduling2(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr,
                                unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager,
@@ -252,7 +330,7 @@ void SDCScheduling2::sdc_schedule(std::map<vertex, int>& vals_vertex, const hlsR
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Added dependencies constraints");
 
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Adding timing constraints");
-   sssp_solver ssspSolver;
+   DAG_SSSP ssspSolver(loop_operations.size());
    std::map<unsigned int, double> op_timing;
    std::set<unsigned int> op_multicycles;
    std::list<vertex> unbounded_operations;
@@ -301,14 +379,13 @@ void SDCScheduling2::sdc_schedule(std::map<vertex, int>& vals_vertex, const hlsR
       {
          op_multicycles.insert(op_varindex);
       }
-
       OutEdgeIterator oe, oe_end;
       for(boost::tie(oe, oe_end) = boost::out_edges(operation, *filtered_dfg_graph); oe != oe_end; oe++)
       {
-         if(filtered_dfg_graph->GetSelector(*oe) & ~FB_DFG_SELECTOR)
+         auto tgt = boost::target(*oe, *filtered_dfg_graph);
+         auto chainingP = allocation_information->CanBeChained(operation, tgt);
+         if(filtered_dfg_graph->GetSelector(*oe) & ~FB_DFG_SELECTOR && chainingP)
          {
-            auto tgt = boost::target(*oe, *filtered_dfg_graph);
-
             const double edge_delay = [&]() -> double {
                const auto operation_bb = filtered_dfg_graph->CGetOpNodeInfo(operation)->bb_index;
                const auto tgt_bb = filtered_dfg_graph->CGetOpNodeInfo(operation)->bb_index;
@@ -337,24 +414,33 @@ void SDCScheduling2::sdc_schedule(std::map<vertex, int>& vals_vertex, const hlsR
          }
       }
    }
+   ssspSolver.init();
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Built the delay graph");
+
+   int index = 0;
    for(const auto operation : loop_operations)
    {
-      std::map<unsigned int, double> vals;
+      std::vector<double> vals;
       auto op_varindex = operation_to_varindex.at(operation);
-      ssspSolver.solve_SSSPNeg(op_varindex, vals);
+      // std::cerr << "index" << index << "\n";
+      ++index;
+      ssspSolver.exec(op_varindex, vals);
       double max_delay = 0.0;
-      for(auto del : vals)
+      unsigned int val_index = 0;
+      for(auto v : vals)
       {
-         if(del.second > 0.0)
+         auto del = -v;
+         if(del > 0.0)
          {
-            auto localDelay = del.second + op_timing.at(del.first) + setupDelay;
+            auto localDelay = del + op_timing.at(val_index) + setupDelay;
             int w = static_cast<int>(std::ceil((localDelay) / clock_period)) - 1;
             max_delay = std::max(max_delay, localDelay);
-            solver.add_constraint(op_varindex, del.first, -w);
+            solver.add_constraint(op_varindex, val_index, -w);
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                           "---timing constraint " + GET_NAME(filtered_op_graph, operation) + "-" + STR(del.first) +
+                           "---timing constraint " + GET_NAME(filtered_op_graph, operation) + "-" + STR(val_index) +
                                " " + STR(w) + " " + STR(localDelay));
          }
+         ++val_index;
       }
       const auto operation_bb = basic_block_graph->CGetBBGraphInfo()->bb_index_map.at(
           filtered_dfg_graph->CGetOpNodeInfo(operation)->bb_index);
@@ -502,7 +588,9 @@ void SDCScheduling2::sdc_schedule(std::map<vertex, int>& vals_vertex, const hlsR
    do
    {
       restart_sdc_solver = false;
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Solving SDC ");
       auto ilp_result = solver.solve_SDCNeg(vals);
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Solved SDC ");
       if(!ilp_result)
       {
          THROW_ERROR("Error in finding ilp solution");
@@ -575,7 +663,7 @@ void SDCScheduling2::sdc_schedule(std::map<vertex, int>& vals_vertex, const hlsR
    for(const auto operation : loop_operations)
    {
       auto op_varindex = operation_to_varindex.at(operation);
-      vals_vertex[operation] = vals.at(op_varindex);
+      vals_vertex[operation] = vals.find(op_varindex) != vals.end() ? vals.at(op_varindex) : 0;
    }
 }
 
