@@ -87,7 +87,7 @@ struct module_binding_check : public check_clique<vertex_type>
 
    /**
     * the set of input to every port of every clique.
-    * inputvariables[vertex][port_index] gives the set of ssa variables
+    * input variables[vertex][port_index] gives the set of ssa variables
     * that are needed at port port_index by the clique represented by
     * the node vertex
     */
