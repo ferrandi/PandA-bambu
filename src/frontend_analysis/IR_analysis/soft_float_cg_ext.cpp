@@ -425,7 +425,7 @@ soft_float_cg_ext::ComputeFrontendRelationships(const DesignFlowStep::Relationsh
       }
       case(PRECEDENCE_RELATIONSHIP):
       {
-         relationships.insert(std::make_pair(FUNCTION_INTERFACE_INFER, SAME_FUNCTION));
+         relationships.insert(std::make_pair(INTERFACE_INFER, WHOLE_APPLICATION));
          break;
       }
       case(INVALIDATION_RELATIONSHIP):
@@ -561,9 +561,9 @@ DesignFlowStep_Status soft_float_cg_ext::InternalExec()
             TreeM->ReplaceTreeNode(call_stmt, ssa_ridx, vc_ssa);
             if(out_ssa)
             {
-               std::replace_if(
-                   out_ssa->begin(), out_ssa->end(),
-                   [&](const tree_nodeRef& t) { return GET_INDEX_CONST_NODE(t) == call_stmt_idx; }, vc_stmt);
+               std::replace_if(out_ssa->begin(), out_ssa->end(),
+                               [&](const tree_nodeRef& t) { return GET_INDEX_CONST_NODE(t) == call_stmt_idx; },
+                               vc_stmt);
             }
          }
       }

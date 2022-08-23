@@ -143,13 +143,6 @@ class tree_node_visitor : public object_visitor
  */
 class tree_node
 {
- private:
-   /// Map string to corresponding enum
-   static std::map<std::string, enum kind> string_to_kind;
-
-   /// Map kind to string
-   static std::map<enum kind, std::string> kind_to_string;
-
  public:
    /**
     * Represent the index read from the raw file and the index-1 of the vector

@@ -1047,10 +1047,6 @@ const std::string structural_object::get_path() const
    }
 }
 
-const char* port_o::port_directionNames[] = {"IN", "OUT", "IO", "GEN", "UNKNOWN"};
-
-const char* port_o::port_interfaceNames[] = {"PI_DEFAULT", "PI_RNONE", "PI_WNONE"};
-
 port_o::port_o(int _debug_level, const structural_objectRef o, port_direction _dir, so_kind _port_type)
     : structural_object(_debug_level, o),
       dir(_dir),
@@ -1774,7 +1770,7 @@ port_o::port_direction port_o::to_port_direction(const std::string& val)
    unsigned int i;
    for(i = 0; i < UNKNOWN; i++)
    {
-      if(val == port_directionNames[i])
+      if(val == GetString(static_cast<port_direction>(i)))
       {
          break;
       }
@@ -1787,7 +1783,7 @@ port_o::port_interface port_o::to_port_interface(const std::string& val)
    unsigned int i;
    for(i = 0; i < UNKNOWN; i++)
    {
-      if(val == port_interfaceNames[i])
+      if(val == GetString(static_cast<port_interface>(i)))
       {
          break;
       }
@@ -1814,10 +1810,10 @@ void port_o::xwrite(xml_element* rootnode)
       WRITE_XVM(tlm_directionality, Enode);
 #endif
    //   WRITE_XVM(structural_object::get_typeRef()->id_type,Enode);
-   WRITE_XNVM(dir, port_directionNames[dir], Enode);
+   WRITE_XNVM(dir, GetString(dir), Enode);
    if(pi != port_interface::PI_DEFAULT)
    {
-      WRITE_XNVM(pi, port_interfaceNames[pi], Enode);
+      WRITE_XNVM(pi, GetString(pi), Enode);
    }
    if(aligment != port_interface_alignment_DEFAULT)
    {
@@ -1933,10 +1929,10 @@ void port_o::print(std::ostream& os) const
 {
    PP(os, "PORT:\n");
    structural_object::print(os);
-   PP(os, "[Dir: " + std::string(port_directionNames[dir]));
+   PP(os, "[Dir: " + GetString(dir));
    if(pi != port_interface::PI_DEFAULT)
    {
-      PP(os, "[Interface: " + std::string(port_interfaceNames[pi]));
+      PP(os, "[Interface: " + GetString(pi));
    }
    if(aligment != port_interface_alignment_DEFAULT)
    {
@@ -5499,3 +5495,28 @@ std::string structural_object::get_equation(const structural_objectRef out_obj, 
 #endif
 }
 #endif
+
+#define __TO_STRING_HELPER(r, data, elem)                                           \
+   name = #elem;                                                                    \
+   name = name.substr(19);                                                          \
+   name = name.substr(name.front() == ' ', name.find(')') - (name.front() == ' ')); \
+   out[data::elem] = name;
+#define TO_STRING(enum_type, elem_list)                                      \
+   static std::unordered_map<enum enum_type, std::string> to_string = []() { \
+      std::unordered_map<enum enum_type, std::string> out;                   \
+      std::string name;                                                      \
+      BOOST_PP_SEQ_FOR_EACH(__TO_STRING_HELPER, enum_type, elem_list);       \
+      return out;                                                            \
+   }()
+
+std::string port_o::GetString(enum port_o::port_interface v)
+{
+   TO_STRING(port_interface, PORT_INTERFACE_ENUM);
+   return to_string[v];
+}
+
+std::string port_o::GetString(enum port_o::port_direction v)
+{
+   TO_STRING(port_direction, PORT_DIRECTION_ENUM);
+   return to_string[v];
+}

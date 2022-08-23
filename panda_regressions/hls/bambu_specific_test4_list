@@ -46,3 +46,5 @@ bambu_specific_test4/simple_axi_m.c --top-fname=maxNumbers --generate-tb=a="{1,2
 bambu_specific_test4/simple2_axi_m.c --top-fname=maxNumbers --generate-tb=a="{1,2,3,4,5}",n_ptr="{5}"
 bambu_specific_test4/simple3_axi_m.c --top-fname=maxNumbers --generate-tb=BENCHMARKS_ROOT/bambu_specific_test4/simple3_axi_tb.xml
 bambu_specific_test4/simple4_axi_m.c --top-fname=maxNumbers --generate-tb=BENCHMARKS_ROOT/bambu_specific_test4/simple4_axi_tb.xml
+bambu_specific_test4/nested_axi_m.c --top-fname=main_module --generate-tb=BENCHMARKS_ROOT/bambu_specific_test4/nested_axi_m.xml --panda-parameter=function-opt=0
+bambu_specific_test4/duplicate_axi_m.c --top-fname=main_module --generate-tb=BENCHMARKS_ROOT/bambu_specific_test4/nested_axi_m.xml --panda-parameter=function-opt=0

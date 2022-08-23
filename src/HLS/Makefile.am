@@ -984,6 +984,7 @@ lib_HLS_la_LIBADD = \
            lib_HLS_memory.la \
            lib_interface.la \
            lib_liveness.la \
+           lib_module_generator.la \
            lib_scheduling.la \
            lib_stg.la \
            lib_virtual_components.la

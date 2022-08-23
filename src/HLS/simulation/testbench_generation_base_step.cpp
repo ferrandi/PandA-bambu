@@ -2462,7 +2462,7 @@ void TestbenchGenerationBaseStep::testbench_controller_machine() const
                portPrefix = GetPointer<port_o>(port)->get_id();
                portPrefix.erase(index, portSpecializer.length());
             }
-            writer->write("always @(*) begin\n");
+            writer->write("always @(posedge " CLOCK_PORT_NAME ") begin\n");
             writer->write("  next_" + portPrefix + "ARREADY = 1'b1;\n");
             writer->write("  next_" + portPrefix + "RDATA = 'b0;\n");
             writer->write("  next_" + portPrefix + "AWREADY = 1'b1;\n");
