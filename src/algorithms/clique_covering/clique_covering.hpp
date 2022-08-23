@@ -182,10 +182,10 @@ class clique_covering
    }
 
    /**
-    * Creates a reference to desidered solver
+    * Creates a reference to desired solver
     * @param solver is the solver which you want to perform clique covering with
     * @param graph_type is the kind of graph you are going to create
-    * @return a reference to the desidered solver
+    * @return a reference to the desired solver
     */
    static typename refcount<clique_covering<VertexType>> create_solver(CliqueCovering_Algorithm solver,
                                                                        unsigned int nvert);
@@ -214,7 +214,7 @@ class clique_covering
 
    /**
     * Abstract method that will execute clique covering algorithm. If you want to specialize the implementation
-    * with your favourite algorithm, you have to implement this method.
+    * with your favorite algorithm, you have to implement this method.
     * @param fc is the filtering clique functor used to reduce the proposed clique
     */
    virtual void exec(const filter_clique<VertexType>& fc, check_clique<VertexType>& cq) = 0;
@@ -1646,6 +1646,7 @@ class bipartite_matching_clique_covering : public clique_covering<vertex_type>
          CustomUnorderedSet<C_vertex> empty;
          cliques.push_back(empty);
       }
+      // std::cerr << "num_cols " << num_cols << "\n";
       size_t num_rows = num_cols;
       bool restart_bipartite;
       size_t skip_infeasibles;
@@ -1710,11 +1711,24 @@ class bipartite_matching_clique_covering : public clique_covering<vertex_type>
                         {
                            CustomOrderedSet<C_vertex> curr_expandend_clique;
                            auto& current_clique = cliques.at(y);
-                           curr_expandend_clique.insert(current_clique.begin(), current_clique.end());
-                           curr_expandend_clique.insert(*v_it);
-                           C_vertex vertex_to_be_removed;
-                           bool to_be_removed = fc.select_candidate_to_remove(curr_expandend_clique,
-                                                                              vertex_to_be_removed, uv2v, *completeCG);
+                           bool to_be_removed = false;
+                           for(auto cv : current_clique)
+                           {
+                              auto edge_check = boost::edge(*v_it, cv, *completeCG);
+                              if(!edge_check.second)
+                              {
+                                 to_be_removed = true;
+                                 break;
+                              }
+                           }
+                           if(!to_be_removed)
+                           {
+                              curr_expandend_clique.insert(current_clique.begin(), current_clique.end());
+                              curr_expandend_clique.insert(*v_it);
+                              C_vertex vertex_to_be_removed;
+                              to_be_removed = fc.select_candidate_to_remove(curr_expandend_clique, vertex_to_be_removed,
+                                                                            uv2v, *completeCG);
+                           }
                            if(to_be_removed)
                            {
                               // std::cerr << "to be removed\n";
@@ -1789,6 +1803,19 @@ class bipartite_matching_clique_covering : public clique_covering<vertex_type>
             }
          }
       } while(restart_bipartite);
+
+      /// clean the results from empty cliques
+      for(auto itC = cliques.begin(); itC != cliques.end();)
+      {
+         if(itC->empty())
+         {
+            itC = cliques.erase(itC);
+         }
+         else
+         {
+            ++itC;
+         }
+      }
    }
 
    void writeDot(const std::string& filename) const override
