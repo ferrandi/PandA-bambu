@@ -93,7 +93,7 @@ struct module_binding_check : public check_clique<vertex_type>
 
    /**
     * the set of input to every port of every clique.
-    * inputvariables[vertex][port_index] gives the set of ssa variables
+    * input variables[vertex][port_index] gives the set of ssa variables
     * that are needed at port port_index by the clique represented by
     * the node vertex
     */
@@ -228,9 +228,9 @@ struct module_binding_check : public check_clique<vertex_type>
 
       CustomOrderedSet<unsigned int> tree_index_set;
       CustomUnorderedMap<std::pair<unsigned int, unsigned int>, unsigned int> tree_var_resource_relation;
-      for(auto input_var : input_variables)
+      for(const auto& input_var : input_variables)
       {
-         for(auto vars : input_var.second)
+         for(const auto& vars : input_var.second)
          {
             for(auto tree_var : vars)
             {
@@ -266,9 +266,9 @@ struct module_binding_check : public check_clique<vertex_type>
    double cost(size_t clique_count) override
    {
       double area_muxes = 0;
-      for(auto input_var : input_variables)
+      for(const auto& input_var : input_variables)
       {
-         for(auto vars : input_var.second)
+         for(const auto& vars : input_var.second)
          {
             if(vars.size() > 1)
             {
@@ -288,7 +288,7 @@ struct module_binding_check : public check_clique<vertex_type>
       size_t n_muxes = 0;
       for(auto input_var : input_variables)
       {
-         for(auto vars : input_var.second)
+         for(const auto& vars : input_var.second)
          {
             if(vars.size() > 1)
             {
