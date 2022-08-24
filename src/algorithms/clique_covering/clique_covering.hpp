@@ -1633,7 +1633,7 @@ class bipartite_matching_clique_covering : public clique_covering<vertex_type>
       {
          num_cols = color_the_cc_compatibility_graph(clique_covering_graph_bulk);
       }
-      // std::cerr << "initial num_cols " << num_cols << std::endl;
+      // std::cerr << "initial max_num_cols " << max_num_cols << std::endl;
       auto completeCG = cc_compatibility_graphRef(
           new cc_compatibility_graph(clique_covering_graph_bulk,
                                      cc_compatibility_graph_edge_selector<boost_cc_compatibility_graph>(
@@ -1664,6 +1664,7 @@ class bipartite_matching_clique_covering : public clique_covering<vertex_type>
             std::set<unsigned> column_already_assigned;
             auto v_it_end = p_it->second.end();
             auto v_it = p_it->second.begin();
+            auto min_to_be_removed = std::numeric_limits<unsigned>::max();
             for(unsigned i = 0; i < num_rows; ++i)
             {
                if(v_it == v_it_end)
@@ -1734,7 +1735,7 @@ class bipartite_matching_clique_covering : public clique_covering<vertex_type>
                               // std::cerr << "to be removed\n";
                               ++to_removed_number;
                            }
-                           if(max_num_cols != 0 || !to_be_removed)
+                           if(!to_be_removed)
                            {
                               auto clique_cost = 1 + fc.clique_cost(curr_expandend_clique, uv2v);
                               assignment.AddArcWithCost(static_cast<operations_research::NodeIndex>(i),
@@ -1744,24 +1745,36 @@ class bipartite_matching_clique_covering : public clique_covering<vertex_type>
                            }
                         }
                      }
-                     // std::cerr << "to_removed_number=" << to_removed_number << " p_it->second.size() " <<
-                     // p_it->second.size() << " num_columns " << num_cols << "\n";
-                     if(!added_an_element || to_removed_number + p_it->second.size() > num_cols)
+                     min_to_be_removed = std::min(min_to_be_removed, to_removed_number);
+                     // std::cerr << "to_removed_number=" << to_removed_number << " p_it->second.size() "
+                     //<< p_it->second.size() << " num_columns " << num_cols << "\n";
+                     if(!added_an_element)
                      {
                         restart_bipartite = true;
-                        if(to_removed_number + p_it->second.size() > num_cols)
-                        {
-                           skip_infeasibles = (to_removed_number + p_it->second.size()) - num_cols;
-                        }
-                        else
-                        {
-                           skip_infeasibles = 1;
-                        }
-                        // std::cerr << "skip_infeasibles " << skip_infeasibles << "\n";
+                        skip_infeasibles = 1;
+                        // std::cerr << "skip_infeasibles1 " << skip_infeasibles << "\n";
                         break;
                      }
                   }
                   ++v_it;
+               }
+            }
+            if(!restart_bipartite && min_to_be_removed > 0 && min_to_be_removed != std::numeric_limits<unsigned>::max())
+            {
+               /// Simplified condition to restart from a feasible condition.
+               /// In most of the cases is correct but in few cases we may skip some feasible conditions.
+               if(min_to_be_removed + p_it->second.size() > num_cols)
+               {
+                  restart_bipartite = true;
+                  if(min_to_be_removed + p_it->second.size() > num_cols)
+                  {
+                     skip_infeasibles = (min_to_be_removed + p_it->second.size()) - num_cols;
+                  }
+                  else
+                  {
+                     skip_infeasibles = 1;
+                  }
+                  // std::cerr << "skip_infeasibles2 " << skip_infeasibles << "\n";
                }
             }
             if(!restart_bipartite && assignment.Solve() == operations_research::SimpleLinearSumAssignment::OPTIMAL)
@@ -1781,6 +1794,9 @@ class bipartite_matching_clique_covering : public clique_covering<vertex_type>
             else
             {
                // std::cerr << "restart assignment problem " << num_cols << "\n";
+               THROW_ASSERT(max_num_cols == 0 || max_num_cols > num_cols,
+                            "Module binding does not have a solution\n  Current number of resources=" + STR(num_cols) +
+                                " Maximum number of resources" + STR(max_num_cols));
                if(!restart_bipartite)
                {
                   skip_infeasibles = 1;
@@ -1791,13 +1807,18 @@ class bipartite_matching_clique_covering : public clique_covering<vertex_type>
                   ++num_rows;
                   CustomUnorderedSet<C_vertex> empty;
                   cliques.push_back(empty);
+                  if(max_num_cols != 0 && num_cols == max_num_cols)
+                  {
+                     break;
+                  }
                }
                for(auto& cl : cliques)
                {
                   cl.clear();
                }
                THROW_ASSERT(max_num_cols == 0 || max_num_cols >= num_cols,
-                            "unexpected condition" + STR(num_cols) + " " + STR(max_num_cols));
+                            "Module binding does not have a solution\n  Current number of resources=" + STR(num_cols) +
+                                " Maximum number of resources" + STR(max_num_cols));
                restart_bipartite = true;
                break;
             }
