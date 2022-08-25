@@ -323,10 +323,6 @@ void OpEdgeWriter::operator()(std::ostream& out, const EdgeDescriptor& e) const
    {
       out << "[color=gold";
    }
-   else if((FB_DFG_SELECTOR)&selector & printing_graph->GetSelector(e))
-   {
-      out << "[color=lightblue";
-   }
    else if((FLG_SELECTOR)&selector & printing_graph->GetSelector(e))
    {
       out << "[color=red3";
