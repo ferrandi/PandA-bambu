@@ -1649,7 +1649,6 @@ class bipartite_matching_clique_covering : public clique_covering<vertex_type>
       // std::cerr << "num_cols " << num_cols << "\n";
       size_t num_rows = num_cols;
       bool restart_bipartite;
-      size_t skip_infeasibles;
       do
       {
          restart_bipartite = false;
@@ -1665,6 +1664,7 @@ class bipartite_matching_clique_covering : public clique_covering<vertex_type>
             auto v_it_end = p_it->second.end();
             auto v_it = p_it->second.begin();
             auto min_to_be_removed = std::numeric_limits<unsigned>::max();
+            size_t skip_infeasibles = 0;
             for(unsigned i = 0; i < num_rows; ++i)
             {
                if(v_it == v_it_end)
@@ -1747,34 +1747,15 @@ class bipartite_matching_clique_covering : public clique_covering<vertex_type>
                      }
                      min_to_be_removed = std::min(min_to_be_removed, to_removed_number);
                      // std::cerr << "to_removed_number=" << to_removed_number << " p_it->second.size() "
-                     //<< p_it->second.size() << " num_columns " << num_cols << "\n";
+                     // << p_it->second.size() << " num_columns " << num_cols << "\n";
                      if(!added_an_element)
                      {
                         restart_bipartite = true;
-                        skip_infeasibles = 1;
+                        ++skip_infeasibles;
                         // std::cerr << "skip_infeasibles1 " << skip_infeasibles << "\n";
-                        break;
                      }
                   }
                   ++v_it;
-               }
-            }
-            if(!restart_bipartite && min_to_be_removed > 0 && min_to_be_removed != std::numeric_limits<unsigned>::max())
-            {
-               /// Simplified condition to restart from a feasible condition.
-               /// In most of the cases is correct but in few cases we may skip some feasible conditions.
-               if(min_to_be_removed + p_it->second.size() > num_cols)
-               {
-                  restart_bipartite = true;
-                  if(min_to_be_removed + p_it->second.size() > num_cols)
-                  {
-                     skip_infeasibles = (min_to_be_removed + p_it->second.size()) - num_cols;
-                  }
-                  else
-                  {
-                     skip_infeasibles = 1;
-                  }
-                  // std::cerr << "skip_infeasibles2 " << skip_infeasibles << "\n";
                }
             }
             if(!restart_bipartite && assignment.Solve() == operations_research::SimpleLinearSumAssignment::OPTIMAL)
