@@ -306,7 +306,8 @@ void SDCScheduling2::sdc_schedule(std::map<vertex, int>& vals_vertex, const hlsR
       {
          auto tgt = boost::target(*oe, *filtered_dfg_graph);
          auto chainingP = allocation_information->CanBeChained(operation, tgt);
-         if((!(filtered_dfg_graph->GetSelector(*oe) & FB_DFG_SELECTOR)) && chainingP)
+         auto edge_type = filtered_dfg_graph->GetSelector(*oe);
+         if((!(edge_type & FB_DFG_SELECTOR)) && chainingP)
          {
             const double edge_delay = [&]() -> double {
                const auto operation_bb = filtered_dfg_graph->CGetOpNodeInfo(operation)->bb_index;
@@ -330,8 +331,8 @@ void SDCScheduling2::sdc_schedule(std::map<vertex, int>& vals_vertex, const hlsR
                       (isPipelined ? (cycles - 1) * clock_period + timeLatency.second : timeLatency.first);
             }();
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                           "---DFG dependence delay " + GET_NAME(filtered_op_graph, operation) + "-" +
-                               GET_NAME(filtered_op_graph, tgt) + " " + STR(edge_delay));
+                           "---DFG dependence delay " + GET_NAME(filtered_dfg_graph, operation) + "-" +
+                               GET_NAME(filtered_dfg_graph, tgt) + " " + STR(edge_delay));
             ssspSolver.add_edge(op_varindex, operation_to_varindex.at(tgt), -edge_delay);
          }
       }

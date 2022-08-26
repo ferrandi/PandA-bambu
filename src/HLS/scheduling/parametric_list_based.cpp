@@ -550,6 +550,72 @@ const double parametric_list_based::EPSILON = 0.000000001;
 
 #define CTRL_STEP_MULTIPLIER 1000
 
+/// definition of the data structure used to check if a resource is available given a vertex
+/// in case a vertex is not included in a map this mean that the used resources are zero.
+/// First index is the functional unit type, second index is the controller node, third index is the condition
+template <bool LPBB_predicate>
+struct resource_table
+{
+   void init(ControlStep current_cycle, unsigned II);
+   bool hasResource(unsigned fu);
+   void initResource(unsigned fu, unsigned n);
+   unsigned& getRefResource(unsigned fu);
+};
+
+template <>
+struct resource_table<true>
+{
+   void init(ControlStep _current_cycle, unsigned II)
+   {
+      if(used_resources.size() != II)
+      {
+         used_resources.resize(II);
+      }
+      current_cycle = from_strongtype_cast<unsigned>(_current_cycle) % II;
+      std::cerr << "current_cycle=" << current_cycle << "\n";
+   }
+   bool hasResource(unsigned fu)
+   {
+      return used_resources.at(current_cycle).find(fu) != used_resources.at(current_cycle).end();
+   }
+   void initResource(unsigned fu, unsigned n)
+   {
+      used_resources.at(current_cycle)[fu] = n;
+   }
+   unsigned& getRefResource(unsigned fu)
+   {
+      THROW_ASSERT(hasResource(fu), "unexpected condition");
+      return used_resources.at(current_cycle).at(fu);
+   }
+
+ private:
+   std::vector<CustomMap<unsigned int, unsigned int>> used_resources;
+   unsigned current_cycle = 0;
+};
+template <>
+struct resource_table<false>
+{
+   void init(ControlStep, unsigned)
+   {
+      used_resources.clear();
+   }
+   bool hasResource(unsigned fu)
+   {
+      return used_resources.find(fu) != used_resources.end();
+   }
+   void initResource(unsigned fu, unsigned n)
+   {
+      used_resources[fu] = n;
+   }
+   unsigned& getRefResource(unsigned fu)
+   {
+      THROW_ASSERT(hasResource(fu), "unexpected condition");
+      return used_resources.at(fu);
+   }
+
+ private:
+   CustomMap<unsigned int, unsigned int> used_resources;
+};
 template <bool LPBB_predicate>
 void parametric_list_based::exec(const OpVertexSet& Operations, ControlStep current_cycle)
 {
@@ -640,8 +706,8 @@ void parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
    //      INDENT_OUT_MEX(OUTPUT_LEVEL_VERY_PEDANTIC, output_level, "---Time to perform ASAP+ALAP scheduling: " +
    //      print_cpu_time(cpu_time) + " seconds");
 
-   unsigned int minII;
-   unsigned int maxII;
+   unsigned int minII = 0;
+   unsigned int maxII = 0;
    if(LPBB_predicate)
    {
       PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "   Computing resMII...");
@@ -735,7 +801,7 @@ void parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
                continue;
             }
             auto edge_type = flow_graph_with_feedbacks->GetSelector(*oe);
-            if(edge_type && !(edge_type & FB_DFG_SELECTOR))
+            if(edge_type & DFG_SELECTOR)
             {
                const double edge_delay = [&]() -> double {
                   const auto operation_bb = flow_graph->CGetOpNodeInfo(operation)->bb_index;
@@ -794,7 +860,7 @@ void parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
       PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "   recMII=" + STR(recMII));
       minII = static_cast<unsigned>(std::max(resMII, recMII));
       INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "minII=" + STR(minII));
-      maxII = from_strongtype_cast<unsigned>(aslap->CGetASAP()->tot_csteps);
+      maxII = from_strongtype_cast<unsigned>(aslap->CGetASAP()->get_csteps());
       if(minII >= maxII)
       {
          maxII = minII + 1;
@@ -887,7 +953,9 @@ void parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
    compute_RW_stmts(RW_stmts, flow_graph, HLSMgr, funId);
 
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "   Starting scheduling...");
+   resource_table<LPBB_predicate> used_resources;
    unsigned int already_sch = schedule->num_scheduled();
+   auto initialCycle = current_cycle;
    while((schedule->num_scheduled() - already_sch) != operations_number)
    {
       bool unbounded = false;
@@ -904,10 +972,7 @@ void parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                     "      Scheduling in control step " + STR(current_cycle) +
                         " (Time: " + STR(from_strongtype_cast<double>(current_cycle) * clock_cycle) + ")");
-      /// definition of the data structure used to check if a resource is available given a vertex
-      /// in case a vertex is not included in a map this mean that the used resources are zero.
-      /// First index is the functional unit type, second index is the controller node, third index is the condition
-      CustomMap<unsigned int, unsigned int> used_resources;
+      used_resources.init(current_cycle - initialCycle, minII);
 
       /// Operations which can be scheduled in this control step because precedences are satisfied, but they can't be
       /// scheduled in this control step for some reasons Index is the functional unit type
@@ -941,12 +1006,13 @@ void parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
                current_cycle < (II + static_cast<unsigned int>(floor(starting_time[*live_vertex_it] / clock_cycle))))
             {
                bool schedulable;
-               if(used_resources.find(res_binding->get_assign(*live_vertex_it)) == used_resources.end())
+               if(!used_resources.hasResource(res_binding->get_assign(*live_vertex_it)))
                {
-                  used_resources[res_binding->get_assign(*live_vertex_it)] = 0;
+                  used_resources.initResource(res_binding->get_assign(*live_vertex_it), 0);
                }
-               schedulable = BB_update_resources_use(used_resources[res_binding->get_assign(*live_vertex_it)],
-                                                     res_binding->get_assign(*live_vertex_it));
+               schedulable =
+                   BB_update_resources_use(used_resources.getRefResource(res_binding->get_assign(*live_vertex_it)),
+                                           res_binding->get_assign(*live_vertex_it));
                if(!schedulable)
                {
                   THROW_ERROR("Unfeasible scheduling");
@@ -1024,11 +1090,12 @@ void parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
                }
                /// true if operation is schedulable
                /// check if there exist enough resources available
-               if(used_resources.find(fu_type) == used_resources.end())
+               if(!used_resources.hasResource(fu_type))
                {
-                  used_resources[fu_type] = 0;
+                  used_resources.initResource(fu_type, 0);
                }
-               bool schedulable = used_resources.at(fu_type) != HLS->allocation_information->get_number_fu(fu_type);
+               bool schedulable =
+                   used_resources.getRefResource(fu_type) != HLS->allocation_information->get_number_fu(fu_type);
                if(!schedulable)
                {
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---No free resource");
@@ -1394,7 +1461,7 @@ void parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
                /// scheduling is now possible
                ++n_scheduled_ops;
                /// update resource usage
-               used_resources[fu_type]++;
+               used_resources.getRefResource(fu_type)++;
 
                /// check if we have functions accessing the memory
                if((curr_vertex_type & TYPE_EXTERNAL) && (curr_vertex_type & TYPE_RW) &&
@@ -2154,6 +2221,20 @@ DesignFlowStep_Status parametric_list_based::InternalExec()
             operations.insert(bb_operation);
          }
       }
+      /// some simple checks to avoid waste of time
+      if(isLPBB)
+      {
+         for(auto op : operations)
+         {
+            unsigned int fu_type = HLS->allocation_information->GetFuType(op);
+            if(!HLS->allocation_information->is_operation_bounded(op_graph, op, fu_type))
+            {
+               isLPBB = false;
+               break;
+            }
+         }
+      }
+
       PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level,
                     "performing scheduling of basic block " + STR(bbg->CGetBBNodeInfo(*vi)->block->number));
       PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level,
@@ -2198,7 +2279,7 @@ DesignFlowStep_Status parametric_list_based::InternalExec()
       {
          PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level,
                        std::string("Operation constraining the maximum frequency:") +
-                           GET_NAME(flow_graph, operation.first) + " slack=" + STR(slack));
+                           GET_NAME(op_graph, operation.first) + " slack=" + STR(slack));
       }
       min_slack = std::min(min_slack, slack);
    }
