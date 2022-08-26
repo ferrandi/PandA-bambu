@@ -31,7 +31,7 @@
  *
  */
 /**
- * @file tf_isnan.c
+ * @file tf_fabs.c
  * @brief
  *
  * @author Michele Fiorito <michele.fiorito@polimi.it>
@@ -41,22 +41,18 @@
  *
  */
 
-/*
- * isnan(x) returns 1 is x is nan, else 0;
- * no branching!
- */
-
 #include "math_privatetf.h"
 
-int __isnan(unsigned long long x, unsigned char __exp_bits, unsigned char __frac_bits, int __exp_bias, _Bool __rounding,
-            _Bool __nan, _Bool __one, _Bool __subnorm, signed char __sign)
+static unsigned long long
+    __attribute__((always_inline)) inline __local_fabs(unsigned long long x, unsigned char __exp_bits,
+                                                       unsigned char __frac_bits, int __exp_bias, _Bool __rounding,
+                                                       _Bool __nan, _Bool __one, _Bool __subnorm, signed char __sign)
 {
-   if(__nan)
-   {
-      return (x & (1ULL << (__exp_bits + __frac_bits)) - 1) > (((1ULL << __exp_bits) - 1) << __frac_bits);
-   }
-   else
-   {
-      return 0;
-   }
+   return ((1ULL << (__exp_bits + __frac_bits)) - 1ULL) & x;
+}
+
+unsigned long long __fabs(unsigned long long x, unsigned char __exp_bits, unsigned char __frac_bits, int __exp_bias,
+                          _Bool __rounding, _Bool __nan, _Bool __one, _Bool __subnorm, signed char __sign)
+{
+   return __local_fabs(x, __exp_bits, __frac_bits, __exp_bias, __rounding, __nan, __one, __subnorm, __sign);
 }

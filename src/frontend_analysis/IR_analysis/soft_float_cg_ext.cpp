@@ -105,10 +105,10 @@ tree_nodeRef soft_float_cg_ext::float64_ptr_type;
 static const FloatFormatRef float32FF(new FloatFormat(8, 23, -127));
 static const FloatFormatRef float64FF(new FloatFormat(11, 52, -1023));
 
-static const std::set<std::string> supported_libm_calls = {"copysign", "finite",   "fpclassify", "huge_val",   "inf",
-                                                           "infinity", "isfinite", "isinf",      "isinf_sign", "isnan",
-                                                           "isnormal", "nan",      "nans",       "signbit"};
-static const std::set<std::string> supported_libm_calls_inlined = {"copysign"};
+static const std::set<std::string> supported_libm_calls = {
+    "copysign", "fabs",       "finite", "fpclassify", "huge_val", "inf",  "infinity", "isfinite",
+    "isinf",    "isinf_sign", "isnan",  "isnormal",   "nan",      "nans", "signbit"};
+static const std::set<std::string> supported_libm_calls_inlined = {"copysign", "fabs"};
 
 /**
  * @brief List of low level implementation libm functions. Composite functions are not present since fp format can be
@@ -135,9 +135,13 @@ static std::string strip_fname(std::string fname, bool* single_prec = nullptr)
    {
       fname = fname.substr(sizeof("__internal_") - 1);
    }
-   if(fname.find("__builtin_") == 0)
+   else if(fname.find("__builtin_") == 0)
    {
       fname = fname.substr(sizeof("__builtin_") - 1);
+   }
+   else if(fname.find("__") == 0)
+   {
+      fname = fname.substr(sizeof("__") - 1);
    }
    if(fname.back() == 'f' && libm_func.count(fname.substr(0, fname.size() - 1)))
    {
@@ -352,7 +356,6 @@ soft_float_cg_ext::soft_float_cg_ext(const ParameterConstRef _parameters, const 
                   const auto fname = tree_helper::print_function_name(
                       TreeM, GetPointerS<const function_decl>(TreeM->CGetTreeNode(CGM->get_function(called))));
                   const auto called_fname = strip_fname(fname);
-
                   if(static_cast<bool>(libm_func.count(called_fname)))
                   {
                      // Do not propagate format to libm functions, specialization will be handled successively
