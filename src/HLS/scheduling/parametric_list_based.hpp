@@ -353,6 +353,7 @@ class parametric_list_based : public schedulingBaseStep
    /**
     * Function that computes the List-Based scheduling of the graph.
     */
+   template <bool LPBB_predicate>
    void exec(const OpVertexSet& operations, ControlStep current_cycle);
 
    /**

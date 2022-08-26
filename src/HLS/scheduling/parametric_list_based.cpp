@@ -47,6 +47,7 @@
 
 #include <utility>
 // #include "call_graph.hpp"
+#include "DAG_SSSP.hpp"
 #include "exceptions.hpp"
 #include "function_behavior.hpp"
 #include "utility.hpp"
@@ -60,6 +61,8 @@
 #include "technology_node.hpp"
 
 #include "basic_block.hpp"
+#include "loop.hpp"
+#include "loops.hpp"
 #include "tree_basic_block.hpp"
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
@@ -547,6 +550,7 @@ const double parametric_list_based::EPSILON = 0.000000001;
 
 #define CTRL_STEP_MULTIPLIER 1000
 
+template <bool LPBB_predicate>
 void parametric_list_based::exec(const OpVertexSet& Operations, ControlStep current_cycle)
 {
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Executing parametric_list_based::exec...");
@@ -636,6 +640,167 @@ void parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
    //      INDENT_OUT_MEX(OUTPUT_LEVEL_VERY_PEDANTIC, output_level, "---Time to perform ASAP+ALAP scheduling: " +
    //      print_cpu_time(cpu_time) + " seconds");
 
+   unsigned int minII;
+   unsigned int maxII;
+   if(LPBB_predicate)
+   {
+      PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "   Computing resMII...");
+      CustomUnorderedMap<unsigned, unsigned> ResourceContrainUse;
+      /// compute resource constrained FU
+      for(auto operation : Operations)
+      {
+         auto incResUse = [&](unsigned fu) {
+            if(HLS->allocation_information->get_number_fu(fu) != INFINITE_UINT)
+            {
+               if(ResourceContrainUse.find(fu) == ResourceContrainUse.end())
+               {
+                  ResourceContrainUse[fu] = 1;
+               }
+               else
+               {
+                  ++ResourceContrainUse.at(fu);
+               }
+            }
+         };
+         unsigned fu_id;
+         if(HLS->allocation_information->is_vertex_bounded_with(operation, fu_id))
+         {
+            incResUse(fu_id);
+         }
+         else
+         {
+            const CustomOrderedSet<unsigned int>& fu_set = HLS->allocation_information->can_implement_set(operation);
+            for(auto fu : fu_set)
+            {
+               incResUse(fu);
+            }
+         }
+      }
+      double resMII = 1.0;
+      for(auto fu : ResourceContrainUse)
+      {
+         //         std::cerr << fu.first << " n=" << fu.second << "->" <<
+         //         HLS->allocation_information->get_number_fu(fu.first)
+         //                   << "\n";
+         resMII = std::max(resMII,
+                           ceil(static_cast<double>(fu.second) / HLS->allocation_information->get_number_fu(fu.first)));
+      }
+      PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "   resMII=" + STR(resMII));
+      PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "   Computing resMII...");
+      /// compute recMII
+      DAG_SSSP ssspSolver(Operations.size());
+      CustomUnorderedMap<vertex, unsigned int> operation_to_varindex;
+      unsigned int next_var_index = 0;
+      for(const auto operation : Operations)
+      {
+         //         INDENT_DBG_MEX(
+         //             DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+         //             "---Creating variables for " + GET_NAME(flow_graph, operation) + " (executed by " + " " +
+         //                 HLS->allocation_information->get_fu_name(HLS->allocation_information->GetFuType(operation)).first
+         //                 +
+         //                 ")  " + ": " + STR(next_var_index));
+         operation_to_varindex[operation] = next_var_index;
+         next_var_index++;
+      }
+      std::map<unsigned int, double> op_timing;
+      std::map<unsigned, std::set<unsigned>> feedbacks;
+      for(const auto operation : Operations)
+      {
+         auto opFuType = HLS->allocation_information->GetFuType(operation);
+         auto timeLatency = HLS->allocation_information->GetTimeLatency(operation, opFuType);
+         auto isPipelined = HLS->allocation_information->get_initiation_time(opFuType, operation) > 0;
+         auto op_varindex = operation_to_varindex.at(operation);
+         auto is_cond_op = GET_TYPE(flow_graph, operation) & (TYPE_IF | TYPE_MULTIIF | TYPE_SWITCH);
+         auto cycles = HLS->allocation_information->GetCycleLatency(operation);
+         if(is_cond_op)
+         {
+            op_timing[op_varindex] = HLS->allocation_information->estimate_controller_delay_fb();
+         }
+         else
+         {
+            op_timing[op_varindex] = (isPipelined ? timeLatency.second : timeLatency.first);
+            auto addCtrlDelay = parameters->getOption<double>(OPT_scheduling_mux_margins) != 0.0;
+            if(addCtrlDelay)
+            {
+               op_timing[op_varindex] += HLS->allocation_information->EstimateControllerDelay();
+            }
+         }
+         OutEdgeIterator oe, oe_end;
+         for(boost::tie(oe, oe_end) = boost::out_edges(operation, *flow_graph_with_feedbacks); oe != oe_end; oe++)
+         {
+            auto tgt = boost::target(*oe, *flow_graph_with_feedbacks);
+            auto isPartOf = Operations.find(tgt) != Operations.end();
+            if(!isPartOf)
+            {
+               continue;
+            }
+            auto edge_type = flow_graph_with_feedbacks->GetSelector(*oe);
+            if(edge_type && !(edge_type & FB_DFG_SELECTOR))
+            {
+               const double edge_delay = [&]() -> double {
+                  const auto operation_bb = flow_graph->CGetOpNodeInfo(operation)->bb_index;
+                  const auto tgt_bb = flow_graph->CGetOpNodeInfo(operation)->bb_index;
+                  auto connection_contrib =
+                      operation_bb == tgt_bb ?
+                          HLS->allocation_information->GetConnectionTime(
+                              operation, tgt, AbsControlStep(operation_bb, AbsControlStep::UNKNOWN)) :
+                          0.0;
+                  auto fsm_correction =
+                      (HLS->allocation_information->is_one_cycle_direct_access_memory_unit(opFuType) &&
+                       (!HLS->allocation_information->is_readonly_memory_unit(opFuType) ||
+                        (!parameters->isOption(OPT_rom_duplication) ||
+                         !parameters->getOption<bool>(OPT_rom_duplication))) &&
+                       HLSMgr->Rmem->get_maximum_references(
+                           HLS->allocation_information->is_memory_unit(opFuType) ?
+                               HLS->allocation_information->get_memory_var(opFuType) :
+                               HLS->allocation_information->get_proxy_memory_var(opFuType)) >
+                           HLS->allocation_information->get_number_channels(opFuType)) ?
+                          HLS->allocation_information->EstimateControllerDelay() :
+                          0.0;
+                  return fsm_correction + connection_contrib +
+                         (isPipelined ? (cycles - 1) * clock_cycle + timeLatency.second : timeLatency.first);
+               }();
+               //               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+               //                              "---dependence delay " + GET_NAME(flow_graph_with_feedbacks, operation) +
+               //                              "-" +
+               //                                  GET_NAME(flow_graph_with_feedbacks, tgt) + " " + STR(edge_delay));
+               ssspSolver.add_edge(op_varindex, operation_to_varindex.at(tgt), -edge_delay);
+            }
+            if(edge_type & FB_DFG_SELECTOR)
+            {
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                              "---feedback edge " + GET_NAME(flow_graph_with_feedbacks, operation) + "-" +
+                                  GET_NAME(flow_graph_with_feedbacks, tgt));
+               feedbacks[operation_to_varindex.at(tgt)].insert(op_varindex);
+            }
+         }
+      }
+      ssspSolver.init();
+      double recMII = 1.0;
+      auto setupDelay = HLS->allocation_information->get_setup_hold_time();
+      for(const auto& back_edge : feedbacks)
+      {
+         std::vector<double> vals;
+         auto start = back_edge.first;
+         ssspSolver.exec(start, vals);
+         for(auto dest : back_edge.second)
+         {
+            auto del = -vals.at(dest);
+            THROW_ASSERT(del >= 0, "unexpected condition");
+            auto localDelay = del + op_timing.at(dest) + setupDelay;
+            recMII = std::max(recMII, ceil(localDelay / clock_cycle));
+         }
+      }
+      PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "   recMII=" + STR(recMII));
+      minII = static_cast<unsigned>(std::max(resMII, recMII));
+      INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "minII=" + STR(minII));
+      maxII = from_strongtype_cast<unsigned>(aslap->CGetASAP()->tot_csteps);
+      if(minII >= maxII)
+      {
+         maxII = minII + 1;
+      }
+      INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "maxII=" + STR(maxII));
+   }
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "   Computing free input vertices...");
    /// compute the set of vertices without input edges.
    /// At least one vertex is expected
@@ -1966,10 +2131,20 @@ DesignFlowStep_Status parametric_list_based::InternalExec()
    boost::topological_sort(*bbg, std::front_inserter(vertices));
    auto viend = vertices.end();
    ControlStep ctrl_steps = ControlStep(0u);
+   /// compute single basic loop pipelinable
+   CustomUnorderedSet<vertex> LPBB;
+   for(const auto& loop : FB->GetLoops()->GetModifiableList())
+   {
+      if(loop->loop_type & PIPELINABLE_LOOP)
+      {
+         LPBB.insert(loop->GetHeader());
+      }
+   }
    /// initialize topological_sorted_functions
    compute_function_topological_order();
    for(auto vi = vertices.begin(); vi != viend; ++vi)
    {
+      auto isLPBB = LPBB.find(*vi) != LPBB.end();
       OpVertexSet operations(op_graph);
       std::list<vertex> bb_operations = bbg->CGetBBNodeInfo(*vi)->statements_list;
       for(auto& bb_operation : bb_operations)
@@ -1981,11 +2156,26 @@ DesignFlowStep_Status parametric_list_based::InternalExec()
       }
       PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level,
                     "performing scheduling of basic block " + STR(bbg->CGetBBNodeInfo(*vi)->block->number));
-      PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "  .operations: " + STR(operations.size()));
+      PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level,
+                    "  .operations: " + STR(operations.size()) + " LPBB=" + (isLPBB ? "T" : "F"));
 #if 1
-      exec(operations, ctrl_steps);
+      if(isLPBB)
+      {
+         exec<true>(operations, ctrl_steps);
+      }
+      else
+      {
+         exec<false>(operations, ctrl_steps);
+      }
 #else
-      exec(operations, executions_number == 1 ? ControlStep(0) : ctrl_steps);
+      if(isLPBB)
+      {
+         exec<true>(operations, executions_number == 1 ? ControlStep(0) : ctrl_steps);
+      }
+      else
+      {
+         exec<true>(operations, executions_number == 1 ? ControlStep(0) : ctrl_steps);
+      }
 #endif
       ctrl_steps = HLS->Rsch->get_csteps();
    }
