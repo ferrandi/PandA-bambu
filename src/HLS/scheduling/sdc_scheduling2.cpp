@@ -42,6 +42,7 @@
 #include "sdc_scheduling2.hpp"
 
 #include "ASLAP.hpp"
+#include "DAG_SSSP.hpp"
 #include "Parameter.hpp"
 #include "allocation.hpp"
 #include "allocation_information.hpp"
@@ -71,85 +72,6 @@
 #include <list>
 
 CONSTREF_FORWARD_DECL(Schedule);
-
-class DAG_SSSP
-{
-   /// graph adjacency list
-   std::vector<std::list<unsigned int>> gal;
-   /// visited vector
-   std::vector<bool> visited;
-   /// topological sorted vertices
-   std::vector<unsigned int> ordered;
-   /// weights
-   std::map<std::pair<unsigned int, unsigned int>, double> edge_weight;
-
-   void DFS_topological_sort(unsigned int src)
-   {
-      visited.at(src) = true;
-      for(auto v : gal.at(src))
-      {
-         if(!visited.at(v))
-         {
-            DFS_topological_sort(v);
-         }
-      }
-      ordered.push_back(src);
-   }
-
- public:
-   DAG_SSSP() = delete;
-
-   DAG_SSSP(size_t nodes)
-   {
-      gal.resize(nodes);
-      visited.resize(nodes, false);
-   }
-
-   void add_edge(unsigned int src, unsigned int tgt, double weight)
-   {
-      edge_weight[std::make_pair(src, tgt)] = weight;
-      gal.at(src).push_back(tgt);
-   }
-
-   void init()
-   {
-      auto n_nodes = gal.size();
-      for(unsigned int i = 0; i < n_nodes; i++)
-      {
-         if(!visited.at(i))
-         {
-            DFS_topological_sort(i);
-         }
-      }
-   }
-
-   void exec(unsigned int source_node, std::vector<double>& dist)
-   {
-      auto n_nodes = gal.size();
-      auto max_value = std::numeric_limits<double>::max();
-
-      dist.clear();
-      dist.resize(n_nodes, max_value);
-      dist[source_node] = 0;
-
-      for(auto it = ordered.rbegin(); it != ordered.rend(); ++it)
-      {
-         auto u = *it;
-         auto dist_curr = dist.at(u);
-         if(dist_curr != max_value)
-         {
-            for(auto v : gal.at(u))
-            {
-               auto weight = edge_weight.find(std::make_pair(u, v))->second;
-               if(dist.at(v) > dist_curr + weight)
-               {
-                  dist.at(v) = dist_curr + weight;
-               }
-            }
-         }
-      }
-   }
-};
 
 SDCScheduling2::SDCScheduling2(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr,
                                unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager,
@@ -384,7 +306,7 @@ void SDCScheduling2::sdc_schedule(std::map<vertex, int>& vals_vertex, const hlsR
       {
          auto tgt = boost::target(*oe, *filtered_dfg_graph);
          auto chainingP = allocation_information->CanBeChained(operation, tgt);
-         if(filtered_dfg_graph->GetSelector(*oe) & ~FB_DFG_SELECTOR && chainingP)
+         if((!(filtered_dfg_graph->GetSelector(*oe) & FB_DFG_SELECTOR)) && chainingP)
          {
             const double edge_delay = [&]() -> double {
                const auto operation_bb = filtered_dfg_graph->CGetOpNodeInfo(operation)->bb_index;

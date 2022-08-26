@@ -1794,6 +1794,7 @@ src/HLS/module_generator/ModuleGeneratorManager.cpp
 src/HLS/module_generator/ModuleGeneratorManager.hpp
 src/HLS/scheduling/ASLAP.cpp
 src/HLS/scheduling/ASLAP.hpp
+src/HLS/scheduling/DAG_SSSP.hpp
 src/HLS/scheduling/parametric_list_based.cpp
 src/HLS/scheduling/parametric_list_based.hpp
 src/HLS/scheduling/priority.cpp
