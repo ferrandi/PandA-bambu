@@ -617,7 +617,7 @@ struct resource_table<false>
    CustomMap<unsigned int, unsigned int> used_resources;
 };
 template <bool LPBB_predicate>
-void parametric_list_based::exec(const OpVertexSet& Operations, ControlStep current_cycle)
+bool parametric_list_based::exec(const OpVertexSet& Operations, ControlStep current_cycle)
 {
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Executing parametric_list_based::exec...");
    THROW_ASSERT(Operations.size(), "At least one vertex is expected");
@@ -832,11 +832,11 @@ void parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
                //                                  GET_NAME(flow_graph_with_feedbacks, tgt) + " " + STR(edge_delay));
                ssspSolver.add_edge(op_varindex, operation_to_varindex.at(tgt), -edge_delay);
             }
-            if(edge_type & FB_DFG_SELECTOR)
+            if((edge_type & FB_DFG_SELECTOR) && !(GET_TYPE(flow_graph_with_feedbacks, tgt) & TYPE_VPHI))
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                               "---feedback edge " + GET_NAME(flow_graph_with_feedbacks, operation) + "-" +
-                                  GET_NAME(flow_graph_with_feedbacks, tgt));
+                                  GET_NAME(flow_graph_with_feedbacks, tgt) + "(" + STR(op_varindex) + ")");
                feedbacks[operation_to_varindex.at(tgt)].insert(op_varindex);
             }
          }
@@ -852,9 +852,11 @@ void parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
          for(auto dest : back_edge.second)
          {
             auto del = -vals.at(dest);
-            THROW_ASSERT(del >= 0, "unexpected condition");
-            auto localDelay = del + op_timing.at(dest) + setupDelay;
-            recMII = std::max(recMII, ceil(localDelay / clock_cycle));
+            if(del >= 0)
+            {
+               auto localDelay = del + op_timing.at(dest) + setupDelay;
+               recMII = std::max(recMII, ceil(localDelay / clock_cycle));
+            }
          }
       }
       PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "   recMII=" + STR(recMII));
@@ -863,7 +865,9 @@ void parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
       maxII = from_strongtype_cast<unsigned>(aslap->CGetASAP()->get_csteps());
       if(minII >= maxII)
       {
-         maxII = minII + 1;
+         INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
+                        "Loop pipelining not interesting for this candidate.\n    Estimated maxII=" + STR(maxII));
+         return false;
       }
       INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "maxII=" + STR(maxII));
    }
@@ -1792,6 +1796,7 @@ void parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
    const auto steps = current_cycle;
    schedule->set_csteps(steps);
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "   List Based finished");
+   return true;
 }
 
 void parametric_list_based::compute_starting_ending_time_asap(
@@ -2237,12 +2242,15 @@ DesignFlowStep_Status parametric_list_based::InternalExec()
 
       PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level,
                     "performing scheduling of basic block " + STR(bbg->CGetBBNodeInfo(*vi)->block->number));
-      PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level,
+      PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, 10,
                     "  .operations: " + STR(operations.size()) + " LPBB=" + (isLPBB ? "T" : "F"));
 #if 1
       if(isLPBB)
       {
-         exec<true>(operations, ctrl_steps);
+         if(!exec<true>(operations, ctrl_steps))
+         {
+            exec<false>(operations, ctrl_steps);
+         }
       }
       else
       {
@@ -2251,7 +2259,10 @@ DesignFlowStep_Status parametric_list_based::InternalExec()
 #else
       if(isLPBB)
       {
-         exec<true>(operations, executions_number == 1 ? ControlStep(0) : ctrl_steps);
+         if(!exec<true>(operations, executions_number == 1 ? ControlStep(0) : ctrl_steps))
+         {
+            exec<false>(operations, executions_number == 1 ? ControlStep(0) : ctrl_steps))
+         }
       }
       else
       {
