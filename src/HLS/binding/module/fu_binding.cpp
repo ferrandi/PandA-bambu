@@ -1631,6 +1631,7 @@ void fu_binding::manage_memory_ports_parallel_chained(const HLS_managerRef, cons
                       GetPointerS<port_o>(port_i)->get_ports_size() - GetPointerS<port_o>(cir_port)->get_ports_size();
                   GetPointerS<port_o>(cir_port)->add_n_ports(n_ports, cir_port);
                }
+               SM->add_connection(cir_port, port_i);
             }
          }
       }
@@ -1694,11 +1695,19 @@ void fu_binding::manage_extern_global_port(const HLS_managerRef, const hlsRef, c
       structural_objectRef ext_port;
       if(GetPointer<port_o>(port_in)->get_is_global())
       {
-         std::string port_name = GetPointer<port_o>(port_in)->get_id();
+         const auto port_name = GetPointerS<port_o>(port_in)->get_id();
          ext_port = circuit->find_member(port_name, port_in->get_kind(), circuit);
          THROW_ASSERT(!ext_port || GetPointer<port_o>(ext_port), "should be a port or null");
-         if(ext_port && GetPointer<port_o>(ext_port)->get_port_direction() != dir)
+         if(ext_port && GetPointerS<port_o>(ext_port)->get_port_direction() != dir)
          {
+            THROW_ASSERT(port_in->get_kind() == ext_port->get_kind(), "unexpected condition");
+            if(port_in->get_kind() == port_vector_o_K &&
+               GetPointerS<port_o>(port_in)->get_ports_size() > GetPointerS<port_o>(ext_port)->get_ports_size())
+            {
+               const auto n_ports =
+                   GetPointerS<port_o>(port_in)->get_ports_size() - GetPointerS<port_o>(ext_port)->get_ports_size();
+               GetPointerS<port_o>(ext_port)->add_n_ports(n_ports, ext_port);
+            }
             SM->change_port_direction(ext_port, dir, circuit);
             if(STD_GET_SIZE(ext_port->get_typeRef()) < STD_GET_SIZE(port_in->get_typeRef()))
             {
@@ -1715,6 +1724,17 @@ void fu_binding::manage_extern_global_port(const HLS_managerRef, const hlsRef, c
             else
             {
                ext_port = SM->add_port(port_name, dir, circuit, port_in->get_typeRef());
+            }
+         }
+         else
+         {
+            THROW_ASSERT(port_in->get_kind() == ext_port->get_kind(), "unexpected condition");
+            if(port_in->get_kind() == port_vector_o_K &&
+               GetPointerS<port_o>(port_in)->get_ports_size() > GetPointerS<port_o>(ext_port)->get_ports_size())
+            {
+               const auto n_ports =
+                   GetPointerS<port_o>(port_in)->get_ports_size() - GetPointerS<port_o>(ext_port)->get_ports_size();
+               GetPointer<port_o>(ext_port)->add_n_ports(n_ports, ext_port);
             }
          }
       }
