@@ -595,7 +595,7 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
                            structural_objectRef reset_port)
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Adding functional units to circuit");
-   const structural_managerRef SM = HLS->datapath;
+   const auto SM = HLS->datapath;
    const auto TechM = HLS->HLS_T->get_technology_manager();
 
    /// unique id identifier
@@ -605,19 +605,19 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
    has_resource_sharing_p = !HLS->Rreg->is_all_regs_without_enable(); // it assumes that HLS->Rreg->add_to_SM is called
                                                                       // first and then HLS->Rfu->add_to_SM
 
-   const structural_objectRef circuit = SM->get_circ();
+   const auto circuit = SM->get_circ();
 
    std::list<structural_objectRef> memory_modules;
 
    /// add the MEMCPY_STD component when parameters has to be copied into the local store
-   const FunctionBehaviorConstRef FB = HLSMgr->CGetFunctionBehavior(HLS->functionId);
-   const auto& function_parameters = FB->CGetBehavioralHelper()->get_parameters();
+   const auto FB = HLSMgr->CGetFunctionBehavior(HLS->functionId);
+   const auto function_parameters = FB->CGetBehavioralHelper()->get_parameters();
    unsigned int sign_id = 0;
    structural_objectRef start_port = GetPointer<module>(circuit)->find_member(START_PORT_NAME, port_o_K, circuit);
    structural_objectRef done_port = GetPointer<module>(circuit)->find_member(DONE_PORT_NAME, port_o_K, circuit);
    structural_objectRef in_chain = start_port;
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Adding parameter ports");
-   for(const auto function_parameter : function_parameters)
+   for(const auto& function_parameter : function_parameters)
    {
       if(HLSMgr->Rmem->is_parm_decl_copied(function_parameter) &&
          !HLSMgr->Rmem->is_parm_decl_stored(function_parameter))
@@ -2563,7 +2563,6 @@ void fu_binding::fill_array_ref_memory(std::ostream& init_file_a, std::ostream& 
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---nbyte_on_memory " + STR(nbyte_on_memory));
          for(unsigned int l = 0; l < init_string.size(); ++l)
          {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---init_string.size() " + STR(init_string.size()));
             if(init_string[l].size() < 8 && init_string.size() == 1)
             {
                std::string res = init_string[l];
