@@ -56,3 +56,17 @@ unsigned long long __fabs(unsigned long long x, unsigned char __exp_bits, unsign
 {
    return __local_fabs(x, __exp_bits, __frac_bits, __exp_bias, __rounding, __nan, __one, __subnorm, __sign);
 }
+
+#if defined(__llvm__) || defined(__CLANG__)
+float fabsf(float x)
+{
+   unsigned int r = __local_fabs(*((unsigned int*)&x), IEEE32_SPEC);
+   return *((float*)&r);
+}
+
+double fabs(double x)
+{
+   unsigned long long r = __local_fabs(*((unsigned long long*)&x), IEEE64_SPEC);
+   return *((double*)&r);
+}
+#endif
