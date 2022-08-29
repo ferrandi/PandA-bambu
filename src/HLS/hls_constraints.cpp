@@ -185,7 +185,7 @@ HLS_constraints::HLS_constraints(const ParameterConstRef& _Param, std::string _f
    // ---------- Save XML file ------------ //
    if(debug_level >= DEBUG_LEVEL_PEDANTIC)
    {
-      write_HLS_constraints_File("HLS_constraints.out.XML");
+      write_HLS_constraints_File("HLS_constraints.out.xml");
    }
 }
 
@@ -335,7 +335,7 @@ void HLS_constraints::xload(const xml_element* Enode)
             LOAD_XVM(fu_library, EnodeC);
          }
          LOAD_XVM(n, EnodeC);
-         tech_constraints[ENCODE_FU_LIB(fu_name, fu_library)] = n;
+         set_number_fu(fu_name, fu_library, n);
       }
       else if(EnodeC->get_name() == "binding_constraints")
       {

@@ -1513,7 +1513,7 @@ void VHDL_writer::write_present_state_update(const structural_objectRef, const s
       indented_output_stream->Indent();
       indented_output_stream->Append("if (" + clock_port + "'event and " + clock_port + "='1') then\n");
       indented_output_stream->Indent();
-      if(!parameters->getOption<bool>(OPT_level_reset))
+      if(!parameters->getOption<bool>(OPT_reset_level))
       {
          indented_output_stream->Append("if (" + reset_port + "='0') then\n");
       }
@@ -1535,7 +1535,7 @@ void VHDL_writer::write_present_state_update(const structural_objectRef, const s
       indented_output_stream->Append("state_reg: process(" + clock_port + ", " + reset_port + ")\n");
       indented_output_stream->Append("begin\n");
       indented_output_stream->Indent();
-      if(!parameters->getOption<bool>(OPT_level_reset))
+      if(!parameters->getOption<bool>(OPT_reset_level))
       {
          indented_output_stream->Append("if (" + reset_port + "='0') then\n");
       }
@@ -2036,7 +2036,7 @@ void VHDL_writer::write_NP_functionalities(const structural_objectRef& cir)
                                     HDL_manager::convert_to_identifier(this, GET_TYPE_NAME(cir)));
    remove_escaped(beh_desc);
    /// manage reset by preprocessing the behavioral description
-   if(!parameters->getOption<bool>(OPT_level_reset))
+   if(!parameters->getOption<bool>(OPT_reset_level))
    {
       boost::replace_all(beh_desc, "1RESET_VALUE", std::string(RESET_PORT_NAME) + " = '0'");
    }

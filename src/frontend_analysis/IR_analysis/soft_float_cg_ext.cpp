@@ -122,8 +122,8 @@ static const std::set<std::string> libm_func = {
     "ilogb",    "inf",    "infinity", "isfinite", "isinf",     "isinf_sign", "isnan",      "isnormal", "ldexp",
     "lgamma",   "llrint", "llround",  "log",      "log10",     "log1p",      "log2",       "logb",     "lrint",
     "lround",   "modf",   "nan",      "nans",     "nearbyint", "nextafter",  "nexttoward", "pow",      "remainder",
-    "remquo",   "rint",   "round",    "scalbln",  "scalbn",    "sin",        "signbit",    "sinh",     "sincos",
-    "sqrt",     "tan",    "tanh",     "tgamma",   "trunc"};
+    "remquo",   "rint",   "round",    "scalb",    "scalbln",   "scalbn",     "sin",        "signbit",  "sinh",
+    "sincos",   "sqrt",   "tan",      "tanh",     "tgamma",    "trunc"};
 
 static std::string strip_fname(std::string fname, bool* single_prec = nullptr)
 {
@@ -564,9 +564,9 @@ DesignFlowStep_Status soft_float_cg_ext::InternalExec()
             TreeM->ReplaceTreeNode(call_stmt, ssa_ridx, vc_ssa);
             if(out_ssa)
             {
-               std::replace_if(out_ssa->begin(), out_ssa->end(),
-                               [&](const tree_nodeRef& t) { return GET_INDEX_CONST_NODE(t) == call_stmt_idx; },
-                               vc_stmt);
+               std::replace_if(
+                   out_ssa->begin(), out_ssa->end(),
+                   [&](const tree_nodeRef& t) { return GET_INDEX_CONST_NODE(t) == call_stmt_idx; }, vc_stmt);
             }
          }
       }

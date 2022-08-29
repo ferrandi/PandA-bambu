@@ -196,13 +196,13 @@ unsigned int time_model::xload_timing_path(xml_element* node)
 
 std::vector<std::string> time_model::get_critical_path(unsigned int type) const
 {
-   THROW_ASSERT(critical_paths.find(type) != critical_paths.end(), "Missing critical path type");
-   return critical_paths.find(type)->second;
+   THROW_ASSERT(critical_paths.count(type), "Missing critical path type");
+   return critical_paths.at(type);
 }
 
 bool time_model::has_max_delay(unsigned int type) const
 {
-   return max_delay.find(type) != max_delay.end();
+   return max_delay.count(type);
 }
 
 void time_model::set_max_delay(unsigned int type, float value)
@@ -213,5 +213,5 @@ void time_model::set_max_delay(unsigned int type, float value)
 float time_model::get_max_delay(unsigned int type) const
 {
    THROW_ASSERT(has_max_delay(type), "Missing value");
-   return max_delay.find(type)->second;
+   return max_delay.at(type);
 }

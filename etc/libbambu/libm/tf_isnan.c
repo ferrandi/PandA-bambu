@@ -48,8 +48,10 @@
 
 #include "math_privatetf.h"
 
-int __isnan(unsigned long long x, unsigned char __exp_bits, unsigned char __frac_bits, int __exp_bias, _Bool __rounding,
-            _Bool __nan, _Bool __one, _Bool __subnorm, signed char __sign)
+static int
+    __attribute__((always_inline)) inline __local_isnan(unsigned long long x, unsigned char __exp_bits,
+                                                        unsigned char __frac_bits, int __exp_bias, _Bool __rounding,
+                                                        _Bool __nan, _Bool __one, _Bool __subnorm, signed char __sign)
 {
    if(__nan)
    {
@@ -60,3 +62,21 @@ int __isnan(unsigned long long x, unsigned char __exp_bits, unsigned char __frac
       return 0;
    }
 }
+
+int __isnan(unsigned long long x, unsigned char __exp_bits, unsigned char __frac_bits, int __exp_bias, _Bool __rounding,
+            _Bool __nan, _Bool __one, _Bool __subnorm, signed char __sign)
+{
+   return __local_isnan(x, __exp_bits, __frac_bits, __exp_bias, __rounding, __nan, __one, __subnorm, __sign);
+}
+
+#if defined(__llvm__) || defined(__CLANG__)
+int isnanf(float f)
+{
+   return __local_isnan(*((unsigned int*)&f), IEEE32_SPEC);
+}
+
+int isnan(double d)
+{
+   return __local_isnan(*((unsigned long long*)&d), IEEE64_SPEC);
+}
+#endif
