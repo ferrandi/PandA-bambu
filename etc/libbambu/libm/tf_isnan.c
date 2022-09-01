@@ -55,7 +55,7 @@ static int
 {
    if(__nan)
    {
-      return (x & (1ULL << (__exp_bits + __frac_bits)) - 1) > (((1ULL << __exp_bits) - 1) << __frac_bits);
+      return (x & ((1ULL << (__exp_bits + __frac_bits)) - 1)) > (((1ULL << __exp_bits) - 1) << __frac_bits);
    }
    else
    {

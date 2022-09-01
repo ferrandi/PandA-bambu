@@ -69,12 +69,12 @@ int __signbit(unsigned long long x, unsigned char __exp_bits, unsigned char __fr
 }
 
 #if defined(__llvm__) || defined(__CLANG__)
-int isnanf(float f)
+int signbitf(float f)
 {
    return __local_signbit(*((unsigned int*)&f), IEEE32_SPEC);
 }
 
-int isnan(double d)
+int signbit(double d)
 {
    return __local_signbit(*((unsigned long long*)&d), IEEE64_SPEC);
 }
