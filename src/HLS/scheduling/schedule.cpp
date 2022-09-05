@@ -169,7 +169,7 @@ class ScheduleWriter : public GraphWriter
    }
 
    /**
-    * Redifinition of operator()
+    * Redefinition of operator()
     */
    void operator()(std::ostream& os) const override
    {
@@ -316,6 +316,22 @@ void Schedule::clear()
    tot_csteps = ControlStep(0u);
    op_starting_cycle.clear();
    starting_cycles_to_ops.clear();
+}
+
+void Schedule::remove_sched(const vertex& op)
+{
+   const auto operation_index = op_graph->CGetOpNodeInfo(op)->GetNodeId();
+   remove_sched(operation_index);
+}
+void Schedule::remove_sched(const unsigned int operation_index)
+{
+   if(op_starting_cycle.find(operation_index) == op_starting_cycle.end())
+   {
+      return;
+   }
+   auto cstep = op_starting_cycle.at(operation_index);
+   starting_cycles_to_ops.at(cstep).erase(operation_index);
+   op_starting_cycle.erase(operation_index);
 }
 
 void Schedule::UpdateTime(const unsigned int operation_index, bool update_cs)

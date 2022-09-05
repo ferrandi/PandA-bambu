@@ -312,6 +312,9 @@ class Schedule
     */
    void clear();
 
+   void remove_sched(const vertex& op);
+   void remove_sched(const unsigned int operation_index);
+
    /**
     * set the slack associated with the vertex with respect to the clock period
     */
