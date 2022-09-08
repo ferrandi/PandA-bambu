@@ -69,12 +69,7 @@ class hls_div_cg_ext : public FunctionFrontendFlowStep
  protected:
    const tree_managerRef TreeM;
 
-   /// True if already executed
-   bool already_executed;
-
-   bool changed_call_graph;
-
-   bool fix_nop;
+   bool modified;
 
    bool use64bitMul;
 
@@ -116,11 +111,5 @@ class hls_div_cg_ext : public FunctionFrontendFlowStep
     * Initialize the step (i.e., like a constructor, but executed just before exec
     */
    void Initialize() override;
-
-   /**
-    * Check if this step has actually to be executed
-    * @return true if the step has to be executed
-    */
-   bool HasToBeExecuted() const override;
 };
 #endif
