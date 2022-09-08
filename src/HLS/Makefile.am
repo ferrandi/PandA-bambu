@@ -805,6 +805,7 @@ if BUILD_COIN_OR
       -I$(top_srcdir)/src/HLS/scheduling/newilp_scheduling
 endif
 noinst_HEADERS += \
+   scheduling/DAG_SSSP.hpp \
    scheduling/ASLAP.hpp \
    scheduling/parametric_list_based.hpp \
    scheduling/priority.hpp \
