@@ -1268,7 +1268,7 @@ void HDL_manager::write_fsm(const language_writerRef writer, const structural_ob
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "write the present_state update");
    /// write the present_state update
    writer->write_present_state_update(cir, reset_state, reset_port, clock_port,
-                                      parameters->getOption<std::string>(OPT_sync_reset),
+                                      parameters->getOption<std::string>(OPT_reset_type),
                                       cir->find_member(PRESENT_STATE_PORT_NAME, port_o_K, cir).get() != nullptr);
 
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "write transition and output functions");

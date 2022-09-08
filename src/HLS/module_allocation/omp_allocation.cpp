@@ -94,7 +94,7 @@ void OmpAllocation::IntegrateTechnologyLibraries()
       const auto current_op = tree_helper::normalized_ID(op_graph->CGetOpNodeInfo(*operation)->GetOperation());
       if(current_op == "panda_pthread_mutex")
       {
-         const auto tn = TM->get_fu("panda_pthread_mutex", OPENMP_LIBRARY);
+         const auto tn = TechM->get_fu("panda_pthread_mutex", OPENMP_LIBRARY);
          if(not tn)
          {
             AddPandaPthreadMutex();
@@ -119,9 +119,9 @@ void OmpAllocation::AddPandaPthreadMutex()
    GetPointer<module>(top)->set_license("PANDA_GPLv3");
    CM->add_NP_functionality(top, NP_functionality::LIBRARY, "panda_pthread_mutex");
    CM->add_NP_functionality(top, NP_functionality::VERILOG_PROVIDED, "---");
-   TM->add_resource(OPENMP_LIBRARY, fu_name, CM);
-   TM->add_operation(OPENMP_LIBRARY, fu_name, op_name);
-   const auto tn = TM->get_fu(fu_name, OPENMP_LIBRARY);
+   TechM->add_resource(OPENMP_LIBRARY, fu_name, CM);
+   TechM->add_operation(OPENMP_LIBRARY, fu_name, op_name);
+   const auto tn = TechM->get_fu(fu_name, OPENMP_LIBRARY);
    auto* fu = GetPointer<functional_unit>(tn);
    auto op = GetPointer<operation>(fu->get_operation(op_name));
    op->time_m = time_model::create_model(TargetDevice_Type::FPGA, parameters);

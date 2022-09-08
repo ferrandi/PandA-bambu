@@ -751,12 +751,12 @@ void EucalyptusParameter::SetDefaults()
    /// backend HDL
    setOption(OPT_writer_language, static_cast<int>(HDLWriter_Language::VERILOG));
    setOption(OPT_timing_simulation, false);
-   setOption(OPT_sync_reset, "no");
+   setOption(OPT_reset_type, "no");
    setOption(OPT_reg_init_value, false);
 
    setOption(OPT_output_directory, GetCurrentPath() + "/HLS_output/");
    setOption(OPT_rtl, true);
-   setOption(OPT_level_reset, false);
+   setOption(OPT_reset_level, false);
 #if HAVE_EXPERIMENTAL
    setOption(OPT_mixed_design, true);
 #endif

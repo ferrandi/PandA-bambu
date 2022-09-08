@@ -73,11 +73,9 @@
 #include "tree_reindex.hpp"
 
 application_manager::application_manager(const FunctionExpanderConstRef function_expander,
-                                         const bool _allow_recursive_functions,
-                                         const ParameterConstRef _Param)
+                                         const bool _allow_recursive_functions, const ParameterConstRef _Param)
     : TM(new tree_manager(_Param)),
-      call_graph_manager(
-          new CallGraphManager(function_expander, _allow_recursive_functions, TM, _Param)),
+      call_graph_manager(new CallGraphManager(function_expander, _allow_recursive_functions, TM, _Param)),
       Param(_Param),
       address_bitsize(
           _Param->isOption(OPT_addr_bus_bitsize) ?
@@ -421,20 +419,19 @@ void application_manager::RegisterTransformation(const std::string&
 #endif
 }
 
-bool application_manager::isParmUsed(unsigned int functionID, unsigned parm_index) const
-{
-   return Parm2SSA_map.find(functionID) != Parm2SSA_map.end() &&
-          Parm2SSA_map.find(functionID)->second.count(parm_index);
-}
-
 unsigned application_manager::getSSAFromParm(unsigned int functionID, unsigned parm_index) const
 {
    THROW_ASSERT(parm_index, "unexpected null parm_decl index");
-   THROW_ASSERT(Parm2SSA_map.find(functionID) != Parm2SSA_map.end(),
-                "relation not computed for function id: " + STR(functionID));
-   THROW_ASSERT(Parm2SSA_map.at(functionID).find(parm_index) != Parm2SSA_map.at(functionID).end(),
-                "unexpected condition " + STR(functionID) + " " + STR(parm_index));
-   return Parm2SSA_map.at(functionID).at(parm_index);
+   const auto fun_parms = Parm2SSA_map.find(functionID);
+   if(fun_parms != Parm2SSA_map.end())
+   {
+      const auto parm = fun_parms->second.find(parm_index);
+      if(parm != fun_parms->second.end())
+      {
+         return parm->second;
+      }
+   }
+   return 0U;
 }
 
 void application_manager::setSSAFromParm(unsigned int functionID, unsigned int parm_index, unsigned ssa_index)

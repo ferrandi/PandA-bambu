@@ -60,6 +60,7 @@
 #include "custom_map.hpp"
 #include "custom_set.hpp"
 
+#include <boost/preprocessor/seq/for_each.hpp>
 #include <ostream>
 #include <string>
 
@@ -657,6 +658,22 @@ class structural_object
  */
 using structural_objectRef = refcount<structural_object>;
 
+#define ENUM_ID(r, data, elem) elem,
+#define PORT_INTERFACE_ENUM                                                                                            \
+   (PI_DEFAULT)(PI_RNONE)(PI_WNONE)(PI_RACK)(PI_WACK)(PI_RVALID)(PI_WVALID)(PI_EMPTY_N)(PI_READ)(PI_FULL_N)(PI_WRITE)( \
+       PI_FDIN)(PI_FDOUT)(PI_ADDRESS)(PI_CHIPENABLE)(PI_WRITEENABLE)(PI_DIN)(PI_DOUT)(PI_M_AXI_OFF)(PI_M_AXI_DIRECT)(  \
+       M_AXI_AWVALID)(M_AXI_AWREADY)(M_AXI_AWADDR)(M_AXI_AWID)(M_AXI_AWLEN)(M_AXI_AWSIZE)(M_AXI_AWBURST)(              \
+       M_AXI_AWLOCK)(M_AXI_AWCACHE)(M_AXI_AWPROT)(M_AXI_AWQOS)(M_AXI_AWREGION)(M_AXI_AWUSER)(M_AXI_WVALID)(            \
+       M_AXI_WREADY)(M_AXI_WDATA)(M_AXI_WSTRB)(M_AXI_WLAST)(M_AXI_WID)(M_AXI_WUSER)(M_AXI_ARVALID)(M_AXI_ARREADY)(     \
+       M_AXI_ARADDR)(M_AXI_ARID)(M_AXI_ARLEN)(M_AXI_ARSIZE)(M_AXI_ARBURST)(M_AXI_ARLOCK)(M_AXI_ARCACHE)(M_AXI_ARPROT)( \
+       M_AXI_ARQOS)(M_AXI_ARREGION)(M_AXI_ARUSER)(M_AXI_RVALID)(M_AXI_RREADY)(M_AXI_RDATA)(M_AXI_RLAST)(M_AXI_RID)(    \
+       M_AXI_RUSER)(M_AXI_RRESP)(M_AXI_BVALID)(M_AXI_BREADY)(M_AXI_BRESP)(M_AXI_BID)(M_AXI_BUSER)(S_AXIL_AWVALID)(     \
+       S_AXIL_AWREADY)(S_AXIL_AWADDR)(S_AXIL_WVALID)(S_AXIL_WREADY)(S_AXIL_WDATA)(S_AXIL_WSTRB)(S_AXIL_ARVALID)(       \
+       S_AXIL_ARREADY)(S_AXIL_ARADDR)(S_AXIL_RVALID)(S_AXIL_RREADY)(S_AXIL_RDATA)(S_AXIL_RRESP)(S_AXIL_BVALID)(        \
+       S_AXIL_BREADY)(S_AXIL_BRESP)(PI_S_AXIS_TVALID)(PI_S_AXIS_TREADY)(PI_M_AXIS_TREADY)(PI_M_AXIS_TVALID)
+
+#define PORT_DIRECTION_ENUM (IN)(OUT)(IO)(GEN)(UNKNOWN)(TLM_IN)(TLM_OUT)(TLM_INOUT)
+
 /**
  * This class describes a port associated with a component or a channel.
  * A port can be in relation with:
@@ -670,15 +687,10 @@ struct port_o : public structural_object
    /// Enumerative type describing the direction of a port.
    enum port_direction
    {
-      IN = 0,
-      OUT,
-      IO,
-      GEN,
-      UNKNOWN,
-      TLM_IN,
-      TLM_OUT,
-      TLM_INOUT
+      BOOST_PP_SEQ_FOR_EACH(ENUM_ID, BOOST_PP_EMPTY, PORT_DIRECTION_ENUM)
    };
+
+   static std::string GetString(enum port_direction);
 
    /// Enumerative type describing the endianess of a port; NONE means that it has not been specified yet.
    enum port_endianess
@@ -689,95 +701,12 @@ struct port_o : public structural_object
    };
 
    /// Enum type describing if the port is associated with a specific interface type.
-   enum port_interface
+   enum port_interface : int
    {
-      PI_DEFAULT = 0,
-      PI_RNONE,
-      PI_WNONE,
-      PI_RACK,
-      PI_WACK,
-      PI_RVALID,
-      PI_WVALID,
-      PI_EMPTY_N,
-      PI_READ,
-      PI_FULL_N,
-      PI_WRITE,
-      PI_FDIN,
-      PI_FDOUT,
-      PI_ADDRESS,
-      PI_CHIPENABLE,
-      PI_WRITEENABLE,
-      PI_DIN,
-      PI_DOUT,
-      PI_M_AXI_OFF,
-      PI_M_AXI_DIRECT,
-      M_AXI_AWVALID,
-      M_AXI_AWREADY,
-      M_AXI_AWADDR,
-      M_AXI_AWID,
-      M_AXI_AWLEN,
-      M_AXI_AWSIZE,
-      M_AXI_AWBURST,
-      M_AXI_AWLOCK,
-      M_AXI_AWCACHE,
-      M_AXI_AWPROT,
-      M_AXI_AWQOS,
-      M_AXI_AWREGION,
-      M_AXI_AWUSER,
-      M_AXI_WVALID,
-      M_AXI_WREADY,
-      M_AXI_WDATA,
-      M_AXI_WSTRB,
-      M_AXI_WLAST,
-      M_AXI_WID,
-      M_AXI_WUSER,
-      M_AXI_ARVALID,
-      M_AXI_ARREADY,
-      M_AXI_ARADDR,
-      M_AXI_ARID,
-      M_AXI_ARLEN,
-      M_AXI_ARSIZE,
-      M_AXI_ARBURST,
-      M_AXI_ARLOCK,
-      M_AXI_ARCACHE,
-      M_AXI_ARPROT,
-      M_AXI_ARQOS,
-      M_AXI_ARREGION,
-      M_AXI_ARUSER,
-      M_AXI_RVALID,
-      M_AXI_RREADY,
-      M_AXI_RDATA,
-      M_AXI_RLAST,
-      M_AXI_RID,
-      M_AXI_RUSER,
-      M_AXI_RRESP,
-      M_AXI_BVALID,
-      M_AXI_BREADY,
-      M_AXI_BRESP,
-      M_AXI_BID,
-      M_AXI_BUSER,
-      S_AXIL_AWVALID,
-      S_AXIL_AWREADY,
-      S_AXIL_AWADDR,
-      S_AXIL_WVALID,
-      S_AXIL_WREADY,
-      S_AXIL_WDATA,
-      S_AXIL_WSTRB,
-      S_AXIL_ARVALID,
-      S_AXIL_ARREADY,
-      S_AXIL_ARADDR,
-      S_AXIL_RVALID,
-      S_AXIL_RREADY,
-      S_AXIL_RDATA,
-      S_AXIL_RRESP,
-      S_AXIL_BVALID,
-      S_AXIL_BREADY,
-      S_AXIL_BRESP,
-      PI_S_AXIS_TVALID,
-      PI_S_AXIS_TREADY,
-      PI_M_AXIS_TREADY,
-      PI_M_AXIS_TVALID
+      BOOST_PP_SEQ_FOR_EACH(ENUM_ID, BOOST_PP_EMPTY, PORT_INTERFACE_ENUM)
    };
+
+   static std::string GetString(enum port_interface);
 
    static const unsigned int PARAMETRIC_PORT = static_cast<unsigned int>(-1);
 
@@ -1258,12 +1187,6 @@ struct port_o : public structural_object
 
    /// The list of ports associated with the port.
    std::vector<structural_objectRef> ports;
-
-   /// store the names of the enumerative port_direction.
-   static const char* port_directionNames[];
-
-   /// store the names of the enumerative port_interface.
-   static const char* port_interfaceNames[];
 
    /// port type
    so_kind port_type;

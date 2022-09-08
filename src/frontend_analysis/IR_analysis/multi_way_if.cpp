@@ -162,7 +162,7 @@ multi_way_if::ComputeFrontendRelationships(const DesignFlowStep::RelationshipTyp
       case(PRECEDENCE_RELATIONSHIP):
       {
          relationships.insert(std::make_pair(DETERMINE_MEMORY_ACCESSES, SAME_FUNCTION));
-         relationships.insert(std::make_pair(FUNCTION_INTERFACE_INFER, SAME_FUNCTION));
+         relationships.insert(std::make_pair(INTERFACE_INFER, WHOLE_APPLICATION));
          relationships.insert(std::make_pair(REMOVE_CLOBBER_GA, SAME_FUNCTION));
          break;
       }

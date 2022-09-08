@@ -85,6 +85,13 @@ class TopEntityMemoryMapped : public top_entity
    DesignFlowStep_Status InternalExec() override;
 
  private:
+   std::list<std::string> ParametersName;
+   std::list<structural_objectRef> AddedComponents;
+   bool needMemoryMappedRegisters{false};
+
+   /// true when the module is a root function
+   bool is_root_function{false};
+
    /**
     * Allocates the in/out parameters of the module as internal registers
     */
@@ -97,13 +104,6 @@ class TopEntityMemoryMapped : public top_entity
    void insertStatusRegister(structural_managerRef SM, structural_objectRef wrappedObj);
 
    void forwardPorts(structural_managerRef SM, structural_objectRef wrappedObj);
-
-   std::list<std::string> ParametersName;
-   std::list<structural_objectRef> AddedComponents;
-   bool needMemoryMappedRegisters{false};
-
-   /// true when the module is a root function
-   bool is_root_function{false};
 
    void resizing_IO(module* fu_module, unsigned int max_n_ports) const;
 

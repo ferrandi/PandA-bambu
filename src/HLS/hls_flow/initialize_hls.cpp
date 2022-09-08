@@ -112,16 +112,6 @@ void InitializeHLS::Initialize()
 
 DesignFlowStep_Status InitializeHLS::InternalExec()
 {
-#if 0
-   const tree_managerConstRef TreeM = HLSMgr->get_tree_manager();
-   const technology_managerRef TM = HLSMgr->get_HLS_target()->get_technology_manager();
-   std::string function_name = tree_helper::normalized_ID(tree_helper::name_function(TreeM, funId));
-   structural_managerRef SM;
-   TM->add_resource(WORK_LIBRARY, function_name, SM);
-   TM->add_operation(WORK_LIBRARY, function_name, function_name);
-   functional_unit* fu = GetPointer<functional_unit>(TM->get_fu(function_name, WORK_LIBRARY));
-#endif
-
    HLS = HLS_manager::create_HLS(HLSMgr, funId);
 #if HAVE_EXPERIMENTAL && HAVE_FROM_PRAGMA_BUILT
    if(GetPointer<const function_decl>(HLSMgr->get_tree_manager()->CGetTreeNode(funId))->omp_for_wrapper)
@@ -145,9 +135,6 @@ DesignFlowStep_Status InitializeHLS::InternalExec()
       HLS->liveness_algorithm = static_cast<HLSFlowStep_Type>(parameters->getOption<int>(OPT_liveness_algorithm));
       HLS->chaining_algorithm = static_cast<HLSFlowStep_Type>(parameters->getOption<int>(OPT_chaining_algorithm));
    }
-#if 0
-   fu->set_clock_period(HLS->HLS_C->get_clock_period());
-   fu->set_clock_period_resource_fraction(HLS->HLS_C->get_clock_period_resource_fraction());
-#endif
+
    return DesignFlowStep_Status::SUCCESS;
 }

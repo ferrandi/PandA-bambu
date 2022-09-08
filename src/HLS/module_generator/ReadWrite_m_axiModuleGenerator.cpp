@@ -124,6 +124,9 @@ void ReadWrite_m_axiModuleGenerator::InternalExec(std::ostream& out, const modul
                                                   const std::vector<ModuleGenerator::parameter>& _ports_out,
                                                   const std::vector<ModuleGenerator::parameter>& /* _ports_inout */)
 {
+   const auto addr_bitsize = STR(_ports_out[AWADDR].type_size);
+   const auto data_bitsize = STR(_ports_out[WDATA].type_size);
+
    out << R"(
 `ifndef _SIM_HAVE_CLOG2
   `define CLOG2(x) \
@@ -165,11 +168,11 @@ localparam [2:0] S_IDLE = 3'b000,
    out << R"(
 reg [2:0] _present_state, _next_state;
 )";
-   out << "reg [BITSIZE_" + _ports_out[AWADDR].name + "+(-1):0] axi_awaddr, next_axi_awaddr;\n";
-   out << "reg [BITSIZE_" + _ports_out[ARADDR].name + "+(-1):0] axi_araddr, next_axi_araddr;\n";
-   out << "reg [BITSIZE_" + _ports_out[WDATA].name + "+(-1):0] axi_wdata, next_axi_wdata;\n";
+   out << "reg [" + addr_bitsize + "+(-1):0] axi_awaddr, next_axi_awaddr;\n";
+   out << "reg [" + addr_bitsize + "+(-1):0] axi_araddr, next_axi_araddr;\n";
+   out << "reg [" + data_bitsize + "+(-1):0] axi_wdata, next_axi_wdata;\n";
    out << "reg [2:0] AWSIZE, next_AWSIZE;\n";
-   out << "reg [(BITSIZE_" + _ports_out[WDATA].name + "/8)+(-1):0] WSTRB, next_WSTRB;\n";
+   out << "reg [(" + data_bitsize + "/8)+(-1):0] WSTRB, next_WSTRB;\n";
    out << "reg [1:0] AWBURST, next_AWBURST;\n";
    out << "reg [7:0] AWLEN, next_AWLEN;\n";
    out << "reg AWREADY, next_AWREADY;\n";
@@ -178,8 +181,8 @@ reg [2:0] _present_state, _next_state;
    out << "reg [7:0] ARLEN, next_ARLEN;\n";
    /* This register will most likely be oversized. The actual size would be the logarithm of the size of WDATA in bytes,
     * but I don't think that it's possible to use the log when declaring a reg */
-   out << "reg [(BITSIZE_" + _ports_out[WDATA].name + "/8)+(-1):0] misalignment;\n";
-   out << "reg [(BITSIZE_" + _ports_out[WDATA].name + ")+(-1):0] read_mask, next_read_mask;\n";
+   out << "reg [(" + data_bitsize + "/8)+(-1):0] misalignment;\n";
+   out << "reg [(" + data_bitsize + ")+(-1):0] read_mask, next_read_mask;\n";
 
    out << R"(
 reg axi_awvalid, next_axi_awvalid;
@@ -193,7 +196,7 @@ reg first_read, next_first_read;
 
 reg acc_done, next_acc_done;
 )";
-   out << "reg [BITSIZE_" + _ports_in[RDATA].name + "+(-1):0] acc_rdata, next_acc_rdata;\n";
+   out << "reg [" + data_bitsize + "+(-1):0] acc_rdata, next_acc_rdata;\n";
 
    out << "generate\n";
    out << "  assign " << _ports_out[AWLEN].name << " = AWLEN;\n";

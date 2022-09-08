@@ -404,7 +404,7 @@ void parametric_list_based::CheckSchedulabilityConditions(
     const fu_bindingRef res_binding, const ScheduleRef schedule, bool& predecessorsCond, bool& pipeliningCond,
     bool& cannotBeChained0, bool& chainingRetCond, bool& cannotBeChained1, bool& asyncCond, bool& cannotBeChained2,
     bool& cannotBeChained3, bool& MultiCond0, bool& MultiCond1, bool& nonDirectMemCond, bool& unboundedFunctionsCond,
-    bool& proxyFunCond)
+    bool& proxyFunCond, bool unbounded_RW)
 {
    predecessorsCond = current_ASAP.find(current_vertex) != current_ASAP.end() and
                       current_ASAP.find(current_vertex)->second > current_cycle;
@@ -466,17 +466,18 @@ void parametric_list_based::CheckSchedulabilityConditions(
    {
       return;
    }
-   MultiCond0 = (!is_pipelined && n_cycles > 0 && current_starting_time > (current_cycle_starting_time)) &&
-                current_ending_time - (n_cycles - 1) * clock_cycle + setup_hold_time + phi_extra_time +
-                        (complex_op ? scheduling_mux_margins : 0) >
-                    current_cycle_ending_time;
+   MultiCond0 = (n_cycles > 1 && (unbounded_RW || unbounded)) ||
+                ((!is_pipelined && n_cycles > 0 && current_starting_time > (current_cycle_starting_time)) &&
+                 current_ending_time - (n_cycles - 1) * clock_cycle + setup_hold_time + phi_extra_time +
+                         (complex_op ? scheduling_mux_margins : 0) >
+                     current_cycle_ending_time);
    if(MultiCond0)
    {
       return;
    }
    MultiCond1 = current_ending_time + setup_hold_time + phi_extra_time + (complex_op ? scheduling_mux_margins : 0) >
                     current_cycle_ending_time &&
-                unbounded;
+                unbounded && HLS->allocation_information->is_operation_bounded(flow_graph, current_vertex, fu_type);
    if(MultiCond1)
    {
       return;
@@ -1070,7 +1071,7 @@ void parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
                    proxy_functions_used, cstep_has_RET_conflict, fu_type, current_ASAP, res_binding, schedule,
                    predecessorsCond, pipeliningCond, cannotBeChained0, chainingRetCond, cannotBeChained1, asyncCond,
                    cannotBeChained2, cannotBeChained3, MultiCond0, MultiCond1, nonDirectMemCond, unboundedFunctionsCond,
-                   proxyFunCond);
+                   proxyFunCond, unbounded_RW);
 
                /// checking if predecessors have finished
                if(predecessorsCond)
@@ -2110,7 +2111,7 @@ DesignFlowStep_Status parametric_list_based::InternalExec()
       xml_document document;
       xml_element* nodeRoot = document.create_root_node("hls");
       HLS->xwrite(nodeRoot, FB->CGetOpGraph(FunctionBehavior::FDFG));
-      document.write_to_file_formatted(function_name + "_scheduling.XML");
+      document.write_to_file_formatted(function_name + "_scheduling.xml");
    }
    return DesignFlowStep_Status::SUCCESS;
 }
@@ -2924,7 +2925,7 @@ void parametric_list_based::do_balanced_scheduling1(const CustomUnorderedSet<ver
                if(!is_pipelined &&
                   (candidate_op_execution_time + setup_hold_time + phi_extra_time + scheduling_mux_margins) >
                       clock_cycle &&
-                  has_unbounded)
+                  has_unbounded && HLS->allocation_information->is_operation_bounded(opDFG, candidate_v, fu_type))
                {
                   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                 "   Multi-cycles operations cannot be scheduled together with unbounded operations");

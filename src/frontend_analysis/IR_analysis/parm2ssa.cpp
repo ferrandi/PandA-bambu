@@ -146,23 +146,18 @@ DesignFlowStep_Status parm2ssa::InternalExec()
          recursive_analysis(phi, srcp_default, already_visited_ae);
       }
    }
+
+   // TODO: should not be requested, but removing this causes issues with BitValue Inference steps
    for(const auto& arg : fd->list_of_args)
    {
-      if(!AppM->isParmUsed(function_id, GET_INDEX_CONST_NODE(arg)))
+      if(!AppM->getSSAFromParm(function_id, GET_INDEX_CONST_NODE(arg)))
       {
-         if(beforeParm2SSA.find(GET_INDEX_CONST_NODE(arg)) == beforeParm2SSA.end())
-         {
-            const auto pd = GetPointer<const parm_decl>(GET_NODE(arg));
-            const auto ssa_par = IRman->create_ssa_name(arg, pd->type, tree_nodeRef(), tree_nodeRef());
-            AppM->setSSAFromParm(function_id, GET_INDEX_CONST_NODE(arg), GET_INDEX_CONST_NODE(ssa_par));
-         }
-         else
-         {
-            AppM->setSSAFromParm(function_id, GET_INDEX_CONST_NODE(arg),
-                                 beforeParm2SSA.find(GET_INDEX_CONST_NODE(arg))->second);
-         }
+         const auto pd = GetPointer<const parm_decl>(GET_NODE(arg));
+         const auto ssa_par = IRman->create_ssa_name(arg, pd->type, tree_nodeRef(), tree_nodeRef());
+         AppM->setSSAFromParm(function_id, GET_INDEX_CONST_NODE(arg), GET_INDEX_CONST_NODE(ssa_par));
       }
    }
+
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                   "<--Analyzed function " + STR(function_id) + ": " + tree_helper::print_function_name(TM, fd));
    const auto afterParm2SSA = AppM->getACopyParm2SSA(function_id);

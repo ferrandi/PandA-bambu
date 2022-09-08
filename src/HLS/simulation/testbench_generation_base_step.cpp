@@ -2367,7 +2367,7 @@ void TestbenchGenerationBaseStep::testbench_controller_machine() const
    writer->write("always @(*)\n");
    writer->write("  begin\n");
    writer->write("     start_results_comparison = 0;\n");
-   if(!parameters->getOption<bool>(OPT_level_reset))
+   if(!parameters->getOption<bool>(OPT_reset_level))
    {
       writer->write("     " RESET_PORT_NAME " = 1;\n");
    }
@@ -2380,7 +2380,7 @@ void TestbenchGenerationBaseStep::testbench_controller_machine() const
    writer->write("     case (__state)\n");
    writer->write("       0:\n");
    writer->write("         begin\n");
-   if(!parameters->getOption<bool>(OPT_level_reset))
+   if(!parameters->getOption<bool>(OPT_reset_level))
    {
       writer->write("            " RESET_PORT_NAME " = 0;\n");
    }
@@ -2392,7 +2392,7 @@ void TestbenchGenerationBaseStep::testbench_controller_machine() const
    writer->write("         end\n");
    writer->write("       1:\n");
    writer->write("         begin\n");
-   if(!parameters->getOption<bool>(OPT_level_reset))
+   if(!parameters->getOption<bool>(OPT_reset_level))
    {
       writer->write("            " RESET_PORT_NAME " = 0;\n");
    }
@@ -2471,7 +2471,7 @@ void TestbenchGenerationBaseStep::testbench_controller_machine() const
                portPrefix = GetPointer<port_o>(port)->get_id();
                portPrefix.erase(index, portSpecializer.length());
             }
-            writer->write("always @(*) begin\n");
+            writer->write("always @(posedge " CLOCK_PORT_NAME ") begin\n");
             writer->write("  next_" + portPrefix + "ARREADY = 1'b1;\n");
             writer->write("  next_" + portPrefix + "RDATA = 'b0;\n");
             writer->write("  next_" + portPrefix + "AWREADY = 1'b1;\n");

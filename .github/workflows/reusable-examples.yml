@@ -41,25 +41,25 @@ jobs:
         include:
           - basename: softfloat
             script: ./examples/softfloat/generic_softfloat.sh
-            batch: "5CSEMA5F31C6_6.6,5CSEMA5F31C6_10.0,5SGXEA7N2F45C1_3.3,5SGXEA7N2F45C1_10.0,EP2C70F896C6-R_10.0,5CSEMA5F31C6_6.6 --flopoco,5CSEMA5F31C6_10.0 --flopoco,5SGXEA7N2F45C1_3.3 --flopoco,5SGXEA7N2F45C1_10.0 --flopoco,EP2C70F896C6-R_10.0 --flopoco"
+            batch: "5CSEMA5F31C6_6.6,5CSEMA5F31C6_10.0,5SGXEA7N2F45C1_3.3,5SGXEA7N2F45C1_10.0,5CSEMA5F31C6_6.6 --flopoco,5CSEMA5F31C6_10.0 --flopoco,5SGXEA7N2F45C1_3.3 --flopoco,5SGXEA7N2F45C1_10.0 --flopoco"
           - basename: truefloat
             script: ./examples/truefloat/generic_truefloat.sh
             args: -c=--evaluation=CYCLES
-            batch: "5CSEMA5F31C6_6.6,5CSEMA5F31C6_10.0,5SGXEA7N2F45C1_3.3,5SGXEA7N2F45C1_10.0,EP2C70F896C6-R_10.0"
+            batch: "5CSEMA5F31C6_6.6,5CSEMA5F31C6_10.0,5SGXEA7N2F45C1_3.3,5SGXEA7N2F45C1_10.0"
           - basename: libm
             script: ./examples/libm/generic_libm.sh
-            batch: "5SGXEA7N2F45C1_3.3,5SGXEA7N2F45C1_5.0,5SGXEA7N2F45C1_10.0,EP2C70F896C6-R_10.0"
+            batch: "5SGXEA7N2F45C1_3.3,5SGXEA7N2F45C1_5.0,5SGXEA7N2F45C1_10.0"
           - basename: libm-flopoco
             script: ./examples/libm/generic_libm.sh
-            batch: "5SGXEA7N2F45C1_3.3 --flopoco,5SGXEA7N2F45C1_5.0 --flopoco,5SGXEA7N2F45C1_10.0 --flopoco,EP2C70F896C6-R_10.0 --flopoco"
+            batch: "5SGXEA7N2F45C1_3.3 --flopoco,5SGXEA7N2F45C1_5.0 --flopoco,5SGXEA7N2F45C1_10.0 --flopoco"
           - basename: CHStone_O2
             script: ./examples/CHStone/generic_CHStone.sh
             args: -c=--experimental-setup=BAMBU-BALANCED-MP -lchstone_aa_list
-            batch: "5CSEMA5F31C6_10.0,5CSEMA5F31C6_15.0,5SGXEA7N2F45C1_5.0,5SGXEA7N2F45C1_10.0,EP2C70F896C6-R_10.0,EP2C70F896C6-R_15.0"
+            batch: "5CSEMA5F31C6_10.0,5CSEMA5F31C6_15.0,5SGXEA7N2F45C1_5.0,5SGXEA7N2F45C1_10.0"
           - basename: CHStone_O3
             script: ./examples/CHStone/generic_CHStone.sh
             args: -c=--experimental-setup=BAMBU-PERFORMANCE-MP -lchstone_altera_O3_list
-            batch: "5CSEMA5F31C6_10.0,5CSEMA5F31C6_15.0,5SGXEA7N2F45C1_5.0,5SGXEA7N2F45C1_10.0,EP2C70F896C6-R_10.0,EP2C70F896C6-R_15.0"
+            batch: "5CSEMA5F31C6_10.0,5CSEMA5F31C6_15.0,5SGXEA7N2F45C1_5.0,5SGXEA7N2F45C1_10.0"
           - basename: hls_study
             script: ./examples/hls_study/generic_hls_study.sh
             batch: "5SGXEA7N2F45C1_2.5 --aligned-access"

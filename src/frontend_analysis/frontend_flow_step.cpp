@@ -312,8 +312,6 @@ const std::string FrontendFlowStep::EnumToKindText(const FrontendFlowStepType fr
          return "FunctionCallTypeCleanup";
       case FUNCTION_CALL_OPT:
          return "FunctionCallOpt";
-      case FUNCTION_INTERFACE_INFER:
-         return "FunctionInterfaceInfer";
 #endif
 #if HAVE_ZEBU_BUILT
       case(FUNCTION_POINTER_CALLGRAPH_COMPUTATION):

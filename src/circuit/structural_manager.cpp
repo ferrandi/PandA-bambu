@@ -682,15 +682,15 @@ void structural_manager::add_sensitivity(structural_objectRef obj, structural_ob
 
 void structural_manager::add_connection(structural_objectRef src, structural_objectRef dest)
 {
-   THROW_ASSERT((src && dest), "Missing src or dest: " + (src ? src->get_path() : std::string("!src")) + " " +
-                                   (dest ? dest->get_path() : std::string("!dest")));
+   THROW_ASSERT(src && dest,
+                "Missing src or dest: " + (src ? src->get_path() : "!src") + " " + (dest ? dest->get_path() : "!dest"));
    // std::cerr <<"Adding connection from " + src->get_path() + ":" + src->get_kind_text() + " to "+ dest->get_path() +
    // ":" + dest->get_kind_text() << std::endl;
    switch(src->get_kind())
    {
       case port_o_K:
       {
-         auto* p_s = GetPointer<port_o>(src);
+         auto* p_s = GetPointerS<port_o>(src);
          switch(dest->get_kind())
          {
             case port_o_K:
@@ -698,14 +698,10 @@ void structural_manager::add_connection(structural_objectRef src, structural_obj
                THROW_ASSERT(
                    src->get_owner() != dest->get_owner(),
                    "A direct connection between ports of the same object is not allowed. Put a signal in between...: " +
-                       std::string(src->get_path()) + std::string(" ") + std::string(dest->get_path()));
+                       src->get_path() + " " + dest->get_path());
                THROW_ASSERT(check_type(src, dest),
                             "Ports have to be compatible: " + src->get_path() + " -> " + dest->get_path());
-               THROW_ASSERT(!src->find_member(dest->get_id(), port_o_K, dest->get_owner()),
-                            "Port " + src->get_id() + " already bound to " + dest->get_id());
-               THROW_ASSERT(!dest->find_member(src->get_id(), port_o_K, src->get_owner()),
-                            "Port " + dest->get_id() + " already bound to " + src->get_id());
-               auto* p_d = GetPointer<port_o>(dest);
+               auto* p_d = GetPointerS<port_o>(dest);
                p_s->add_connection(dest);
                p_d->add_connection(src);
                break;
@@ -714,12 +710,8 @@ void structural_manager::add_connection(structural_objectRef src, structural_obj
             {
                THROW_ASSERT(check_type(src, dest),
                             "Ports and signals have to be compatible: " + src->get_path() + " -> " + dest->get_path());
-               THROW_ASSERT(!src->find_member(dest->get_id(), signal_o_K, dest->get_owner()),
-                            "Port " + src->get_id() + " already bound to " + dest->get_id());
-               THROW_ASSERT(!dest->find_member(src->get_id(), port_o_K, src->get_owner()),
-                            "Signal " + dest->get_id() + " already bound to " + src->get_id());
                p_s->add_connection(dest);
-               auto* c_d = GetPointer<signal_o>(dest);
+               auto* c_d = GetPointerS<signal_o>(dest);
                c_d->add_port(src);
                break;
             }
@@ -731,7 +723,7 @@ void structural_manager::add_connection(structural_objectRef src, structural_obj
                             "Port " + src->get_id() + " already bound to " + dest->get_id());
                /// the other check is not currently implemented.
                p_s->add_connection(dest);
-               auto* c_d = GetPointer<channel_o>(dest);
+               auto* c_d = GetPointerS<channel_o>(dest);
                c_d->add_port(src);
                break;
             }
@@ -743,7 +735,7 @@ void structural_manager::add_connection(structural_objectRef src, structural_obj
                             "Port " + src->get_id() + " already bound to " + dest->get_id());
                /// the other check is not currently implemented.
                p_s->add_connection(dest);
-               auto* c_d = GetPointer<constant_o>(dest);
+               auto* c_d = GetPointerS<constant_o>(dest);
                c_d->add_connection(src);
                break;
             }
@@ -756,7 +748,7 @@ void structural_manager::add_connection(structural_objectRef src, structural_obj
             case signal_vector_o_K:
             default:
             {
-               THROW_ERROR(std::string("Cannot connect a port_o to a ") + dest->get_kind_text() + " " +
+               THROW_ERROR("Cannot connect a port_o to a " + dest->get_kind_text() + " " +
                            (src ? src->get_path() : "") + " " + (dest ? dest->get_path() : ""));
             }
          }
@@ -764,7 +756,7 @@ void structural_manager::add_connection(structural_objectRef src, structural_obj
       }
       case port_vector_o_K:
       {
-         auto* p_s = GetPointer<port_o>(src);
+         auto* p_s = GetPointerS<port_o>(src);
          switch(dest->get_kind())
          {
             case port_vector_o_K:
@@ -772,14 +764,10 @@ void structural_manager::add_connection(structural_objectRef src, structural_obj
                THROW_ASSERT(
                    src->get_owner() != dest->get_owner(),
                    "A direct connection between ports of the same object is not allowed. Put a signal in between...: " +
-                       std::string(src->get_path()) + std::string(" ") + std::string(dest->get_path()));
+                       src->get_path() + " " + dest->get_path());
                THROW_ASSERT(check_type(src, dest),
                             "Ports have to be compatible: " + src->get_path() + " -> " + dest->get_path());
-               THROW_ASSERT(!src->find_member(dest->get_id(), port_o_K, dest->get_owner()),
-                            "Port " + src->get_id() + " already bound to " + dest->get_id());
-               THROW_ASSERT(!dest->find_member(src->get_id(), port_o_K, src->get_owner()),
-                            "Port " + dest->get_id() + " already bound to " + src->get_id());
-               auto* p_d = GetPointer<port_o>(dest);
+               auto* p_d = GetPointerS<port_o>(dest);
                p_s->add_connection(dest);
                p_d->add_connection(src);
                break;
@@ -788,12 +776,8 @@ void structural_manager::add_connection(structural_objectRef src, structural_obj
             {
                THROW_ASSERT(check_type(src, dest),
                             "Ports and signals have to be compatible: " + src->get_path() + " -> " + dest->get_path());
-               THROW_ASSERT(!src->find_member(dest->get_id(), signal_o_K, dest->get_owner()),
-                            "Port " + src->get_id() + " already bound to " + dest->get_id());
-               THROW_ASSERT(!dest->find_member(src->get_id(), port_o_K, src->get_owner()),
-                            "Signal " + dest->get_id() + " already bound to " + src->get_id());
                p_s->add_connection(dest);
-               auto* c_d = GetPointer<signal_o>(dest);
+               auto* c_d = GetPointerS<signal_o>(dest);
                c_d->add_port(src);
                break;
             }
@@ -808,15 +792,15 @@ void structural_manager::add_connection(structural_objectRef src, structural_obj
             case event_o_K:
             default:
             {
-               THROW_ERROR(std::string("Cannot connect a port_vector_o (" + src->get_path() + ") to a ") +
-                           dest->get_kind_text() + " (" + dest->get_path() + ")");
+               THROW_ERROR("Cannot connect a port_vector_o (" + src->get_path() + ") to a " + dest->get_kind_text() +
+                           " (" + dest->get_path() + ")");
             }
          }
          break;
       }
       case signal_o_K:
       {
-         auto* s_s = GetPointer<signal_o>(src);
+         auto* s_s = GetPointerS<signal_o>(src);
          switch(dest->get_kind())
          {
             case port_o_K:
@@ -824,18 +808,8 @@ void structural_manager::add_connection(structural_objectRef src, structural_obj
                THROW_ASSERT(check_type(src, dest), "Ports and signals have to be compatible: " + src->get_path() +
                                                        " (" + src->get_typeRef()->get_name() + ") -> " +
                                                        dest->get_path() + " (" + dest->get_typeRef()->get_name() + ")");
-               if(src->find_member(dest->get_id(), port_o_K, dest->get_owner()))
-               {
-                  THROW_WARNING("Signal " + src->get_path() + " already bound to " + dest->get_path());
-                  return;
-               }
-               if(dest->find_member(src->get_id(), signal_o_K, src->get_owner()))
-               {
-                  THROW_WARNING("Port " + src->get_id() + " already bound to " + dest->get_id());
-                  return;
-               }
                s_s->add_port(dest);
-               auto* p_d = GetPointer<port_o>(dest);
+               auto* p_d = GetPointerS<port_o>(dest);
                p_d->add_connection(src);
                break;
             }
@@ -851,33 +825,23 @@ void structural_manager::add_connection(structural_objectRef src, structural_obj
             case signal_vector_o_K:
             default:
             {
-               THROW_ERROR(std::string("Cannot connect a signal_o - ") + src->get_path() + std::string(" to a ") +
-                           dest->get_kind_text() + std::string(" - ") + dest->get_path());
+               THROW_ERROR("Cannot connect a signal_o - " + src->get_path() + " to a " + dest->get_kind_text() + " - " +
+                           dest->get_path());
             }
          }
          break; // case src = signal_o_K
       }
       case signal_vector_o_K:
       {
-         auto* s_s = GetPointer<signal_o>(src);
+         auto* s_s = GetPointerS<signal_o>(src);
          switch(dest->get_kind())
          {
             case port_vector_o_K:
             {
                THROW_ASSERT(check_type(src, dest),
                             "Ports and signals have to be compatible: " + src->get_path() + " -> " + dest->get_path());
-               if(src->find_member(dest->get_id(), port_vector_o_K, dest->get_owner()))
-               {
-                  THROW_WARNING("Signal " + src->get_id() + " already bound to " + dest->get_id());
-                  return;
-               }
-               if(dest->find_member(src->get_id(), signal_vector_o_K, src->get_owner()))
-               {
-                  THROW_WARNING("Port " + src->get_id() + " already bound to " + dest->get_id());
-                  return;
-               }
                s_s->add_port(dest);
-               auto* p_d = GetPointer<port_o>(dest);
+               auto* p_d = GetPointerS<port_o>(dest);
                p_d->add_connection(src);
                break;
             }
@@ -893,15 +857,15 @@ void structural_manager::add_connection(structural_objectRef src, structural_obj
             case signal_vector_o_K:
             default:
             {
-               THROW_ERROR(std::string("Cannot connect a signal_vector_o - ") + src->get_path() +
-                           std::string(" to a ") + dest->get_kind_text() + std::string(" - ") + dest->get_path());
+               THROW_ERROR("Cannot connect a signal_vector_o - " + src->get_path() + " to a " + dest->get_kind_text() +
+                           " - " + dest->get_path());
             }
          }
          break;
       }
       case constant_o_K:
       {
-         auto* c_s = GetPointer<constant_o>(src);
+         auto* c_s = GetPointerS<constant_o>(src);
          switch(dest->get_kind())
          {
             case port_o_K:
@@ -910,10 +874,8 @@ void structural_manager::add_connection(structural_objectRef src, structural_obj
                             "Incompatible object types: " + src->get_id() + " -> " + dest->get_id());
                // THROW_ASSERT(src->get_owner() != dest->get_owner(), "A direct connection between a constant and a port
                // of the same object is not allowed.");
-               THROW_ASSERT(!dest->find_member(src->get_id(), constant_o_K, src->get_owner()),
-                            "Port " + dest->get_id() + " already bound to " + src->get_id());
                c_s->add_connection(dest);
-               auto* p_d = GetPointer<port_o>(dest);
+               auto* p_d = GetPointerS<port_o>(dest);
                p_d->add_connection(src);
                break;
             }
@@ -929,7 +891,7 @@ void structural_manager::add_connection(structural_objectRef src, structural_obj
             case signal_vector_o_K:
             default:
             {
-               THROW_ERROR(std::string("Cannot connect a constant_o to a ") + dest->get_kind_text());
+               THROW_ERROR("Cannot connect a constant_o to a " + dest->get_kind_text());
             }
          }
          break; // case src = constant_o_K
@@ -942,7 +904,7 @@ void structural_manager::add_connection(structural_objectRef src, structural_obj
       case event_o_K:
       default:
       {
-         THROW_ERROR(std::string("Cannot connect a ") + src->get_kind_text() + " to a " + dest->get_kind_text());
+         THROW_ERROR("Cannot connect a " + src->get_kind_text() + " to a " + dest->get_kind_text());
       }
    } // switch src kind
 }
@@ -1286,9 +1248,9 @@ static void add_directed_edge_single(
     boost::graph_traits<graphs_collection>::vertex_descriptor en,
     boost::graph_traits<graphs_collection>::vertex_descriptor ex, bool is_critical = false)
 {
-   THROW_ASSERT(p1->get_kind() == port_o_K or p1->get_kind() == port_vector_o_K,
+   THROW_ASSERT(p1->get_kind() == port_o_K || p1->get_kind() == port_vector_o_K,
                 "Expected a port got something of different");
-   THROW_ASSERT(p2->get_kind() == port_o_K or p2->get_kind() == port_vector_o_K,
+   THROW_ASSERT(p2->get_kind() == port_o_K || p2->get_kind() == port_vector_o_K,
                 "Expected a port got something of different");
 
    structural_objectRef p_obj1 = p1;
@@ -1312,15 +1274,15 @@ static void add_directed_edge_single(
    }
 
    int edge_type = DATA_SELECTOR;
-   if(GetPointer<port_o>(p_obj2)->get_is_clock() || GetPointer<port_o>(p_obj2)->get_is_clock())
+   if(GetPointerS<port_o>(p_obj2)->get_is_clock() || GetPointerS<port_o>(p_obj2)->get_is_clock())
    {
       edge_type = CLOCK_SELECTOR;
    }
 
    if(owner1 == owner2) // pass through signal
    {
-      if(GetPointer<port_o>(p_obj1)->get_port_direction() == port_o::OUT and
-         GetPointer<port_o>(p_obj2)->get_port_direction() == port_o::IN)
+      if(GetPointerS<port_o>(p_obj1)->get_port_direction() == port_o::OUT &&
+         GetPointerS<port_o>(p_obj2)->get_port_direction() == port_o::IN)
       {
          std::swap(p_obj1, p_obj2);
       }
@@ -1331,20 +1293,20 @@ static void add_directed_edge_single(
    else
    {
       /// p2 is a top port
-      if(owner1 and owner1->get_owner() == owner2)
+      if(owner1 && owner1->get_owner() == owner2)
       {
-         src = module_vertex_rel.find(owner1)->second;
-         if(GetPointer<port_o>(p_obj2)->get_port_direction() == port_o::OUT)
+         src = module_vertex_rel.at(owner1);
+         if(GetPointerS<port_o>(p_obj2)->get_port_direction() == port_o::OUT)
          {
             tgt = ex;
          }
-         else if(GetPointer<port_o>(p_obj2)->get_port_direction() == port_o::IN)
+         else if(GetPointerS<port_o>(p_obj2)->get_port_direction() == port_o::IN)
          {
             tgt = en;
          }
-         else if(GetPointer<port_o>(p_obj2)->get_port_direction() == port_o::IO)
+         else if(GetPointerS<port_o>(p_obj2)->get_port_direction() == port_o::IO)
          {
-            if(GetPointer<port_o>(p_obj1)->get_port_direction() == port_o::IN)
+            if(GetPointerS<port_o>(p_obj1)->get_port_direction() == port_o::IN)
             {
                tgt = en;
             }
@@ -1357,14 +1319,14 @@ static void add_directed_edge_single(
          {
             THROW_ERROR("Something wrong");
          }
-         if(GetPointer<port_o>(p_obj1)->get_port_direction() == port_o::IN)
+         if(GetPointerS<port_o>(p_obj1)->get_port_direction() == port_o::IN)
          {
             std::swap(src, tgt);
             std::swap(p_obj1, p_obj2);
          }
       }
       /// p1 is a top port
-      else if(owner2 and owner2->get_owner() == owner1)
+      else if(owner2 && owner2->get_owner() == owner1)
       {
          src = en;
          tgt = module_vertex_rel.find(owner2)->second;
@@ -1374,24 +1336,24 @@ static void add_directed_edge_single(
          src = module_vertex_rel.find(owner1)->second;
          tgt = module_vertex_rel.find(owner2)->second;
 
-         if(GetPointer<port_o>(p_obj1)->get_port_direction() == port_o::IN and
-            GetPointer<port_o>(p_obj2)->get_port_direction() == port_o::OUT)
+         if(GetPointerS<port_o>(p_obj1)->get_port_direction() == port_o::IN &&
+            GetPointerS<port_o>(p_obj2)->get_port_direction() == port_o::OUT)
          {
             std::swap(src, tgt);
             std::swap(p_obj1, p_obj2);
          }
 
          /// hyper-edge and not significant connectivity
-         if(GetPointer<port_o>(p_obj1)->get_port_direction() == port_o::IN and
-            GetPointer<port_o>(p_obj2)->get_port_direction() == port_o::IN)
+         if(GetPointerS<port_o>(p_obj1)->get_port_direction() == port_o::IN &&
+            GetPointerS<port_o>(p_obj2)->get_port_direction() == port_o::IN)
          {
             // std::cerr << "hyper-edge and not significant connectivity" << std::endl;
             return;
          }
 
-         THROW_ASSERT(GetPointer<port_o>(p_obj1)->get_port_direction() == port_o::OUT and
-                          GetPointer<port_o>(p_obj2)->get_port_direction() == port_o::IN,
-                      "Not supported situation");
+         THROW_ASSERT(GetPointerS<port_o>(p_obj1)->get_port_direction() == port_o::OUT &&
+                          GetPointerS<port_o>(p_obj2)->get_port_direction() == port_o::IN,
+                      "Not supported situation: " + p_obj1->get_path() + " <-> " + p_obj2->get_path());
       }
    }
 

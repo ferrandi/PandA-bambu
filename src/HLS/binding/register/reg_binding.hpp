@@ -57,6 +57,7 @@ REF_FORWARD_DECL(HLS_manager);
 REF_FORWARD_DECL(reg_binding);
 REF_FORWARD_DECL(generic_obj);
 REF_FORWARD_DECL(structural_object);
+CONSTREF_FORWARD_DECL(FunctionBehavior);
 class register_obj;
 
 /**
@@ -103,6 +104,10 @@ class reg_binding : public variable2obj<generic_objRef>
    /// when true all registers do not require write enable: pipelining comes for free
    bool all_regs_without_enable;
 
+   const FunctionBehaviorConstRef FB;
+
+   static std::string reset_type;
+
    /**
     * compute the is with out enable relation
     */
@@ -111,7 +116,7 @@ class reg_binding : public variable2obj<generic_objRef>
    /**
     * Specialise a register according to the type of the variables crossing it.
     * @param reg is the register
-    * @param reg is the id of the register
+    * @param r is the id of the register
     */
    virtual void specialise_reg(structural_objectRef& reg, unsigned int r);
 
