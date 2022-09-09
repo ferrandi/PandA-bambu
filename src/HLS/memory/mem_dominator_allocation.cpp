@@ -354,7 +354,7 @@ bool mem_dominator_allocation::is_internal_obj(unsigned int var_index, const std
 static vertex get_remapped_vertex(vertex current_vertex, const CallGraphManagerConstRef CG, const HLS_managerRef HLSMgr)
 {
    unsigned int current_function_ID = CG->get_function(current_vertex);
-   std::string current_function_name = functions::get_function_name_cleaned(current_function_ID, HLSMgr);
+   std::string current_function_name = functions::GetFUName(current_function_ID, HLSMgr);
    if(HLSMgr->Rfuns->is_a_proxied_function(current_function_name))
    {
       return CG->GetVertex(HLSMgr->Rfuns->get_proxy_mapping(current_function_name));
@@ -908,7 +908,7 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
       for(boost::tie(eo, eo_end) = boost::out_edges(cur, *cg); eo != eo_end; ++eo)
       {
          vertex tgt = boost::target(*eo, *cg);
-         std::string tgt_fu_name = functions::get_function_name_cleaned(CG->get_function(tgt), HLSMgr);
+         std::string tgt_fu_name = functions::GetFUName(CG->get_function(tgt), HLSMgr);
          if(HLSMgr->Rfuns->is_a_proxied_function(tgt_fu_name) ||
             (parameters->getOption<HLSFlowStep_Type>(OPT_interface_type) ==
                  HLSFlowStep_Type::WB4_INTERFACE_GENERATION &&

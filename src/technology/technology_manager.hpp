@@ -149,6 +149,9 @@ class technology_manager
    /// The builtin components
    CustomSet<std::string> builtins;
 
+   /// Map function names to hardware module used for implementation
+   CustomUnorderedMap<std::string, technology_nodeRef> function_fu;
+
    /**
     * Return the functional unit used to compute the setup hold time
     * @return the functional unit used to compute the setup hold time
@@ -398,6 +401,13 @@ class technology_manager
     * @return the characterization timestamp of the setup hold time
     */
    TimeStamp CGetSetupHoldTimeStamp() const;
+
+   /**
+    * Return FU used to implement given function if any
+    * @param fname function name
+    * @return technology_nodeRef Functional unit with fname in the supported operations' set or nullptr
+    */
+   technology_nodeRef GetFunctionFU(const std::string& fname) const;
 };
 
 using technology_managerRef = refcount<technology_manager>;

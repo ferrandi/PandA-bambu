@@ -42,15 +42,87 @@
 
 #include "application_frontend_flow_step.hpp"
 
+/// utility includes
+#include "refcount.hpp"
+
+REF_FORWARD_DECL(tree_node);
+REF_FORWARD_DECL(tree_manipulation);
+REF_FORWARD_DECL(tree_manager);
+struct statement_list;
+struct function_decl;
+struct gimple_assign;
+struct gimple_node;
+
+#include "custom_set.hpp"
+#include <list>
+#include <set>
+
 class InterfaceInfer : public ApplicationFrontendFlowStep
 {
  private:
+   enum class m_axi_type
+   {
+      none,
+      direct,
+      axi_slave
+   };
+
+   bool already_executed;
+
    /**
     * Return the set of analyses in relationship with this design step
     * @param relationship_type is the type of relationship to be considered
     */
    const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>>
    ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+
+   void ComputeRelationships(DesignFlowStepSet& relationship,
+                             const DesignFlowStep::RelationshipType relationship_type) override;
+
+   void classifyArgRecurse(CustomOrderedSet<unsigned>& Visited, tree_nodeRef ssa_var, const statement_list* sl,
+                           std::list<tree_nodeRef>& writeStmt, std::list<tree_nodeRef>& readStmt);
+
+   void classifyArg(statement_list* sl, tree_nodeRef ssa_var, std::list<tree_nodeRef>& writeStmt,
+                    std::list<tree_nodeRef>& readStmt);
+
+   void create_Read_function(tree_nodeRef origStmt, const std::string& arg_name, const std::string& fdName,
+                             tree_nodeRef aType, tree_nodeRef readType, const tree_manipulationRef tree_man,
+                             const tree_managerRef TM, bool commonRWSignature);
+
+   void create_Write_function(const std::string& arg_name, tree_nodeRef origStmt, const std::string& fdName,
+                              tree_nodeRef writeValue, tree_nodeRef aType, tree_nodeRef writeType,
+                              const tree_manipulationRef tree_man, const tree_managerRef TM, bool commonRWSignature);
+
+   void create_resource_Read_simple(const std::set<std::string>& operations, const std::string& arg_name,
+                                    const std::string& interfaceType, unsigned int input_bw, bool IO_port,
+                                    unsigned n_resources, unsigned rwBWsize, unsigned int top_id) const;
+
+   void create_resource_Write_simple(const std::set<std::string>& operations, const std::string& arg_name,
+                                     const std::string& interfaceType, unsigned int input_bw, bool IO_port,
+                                     bool isDiffSize, unsigned n_resources, bool is_real, unsigned rwBWsize,
+                                     unsigned int top_id) const;
+
+   void create_resource_array(const std::set<std::string>& operationsR, const std::set<std::string>& operationsW,
+                              const std::string& bundle_name, const std::string& interfaceType, unsigned int input_bw,
+                              unsigned int arraySize, unsigned n_resources, unsigned alignment, bool is_real,
+                              unsigned rwBWsize, unsigned int top_id) const;
+
+   void create_resource_m_axi(const std::set<std::string>& operationsR, const std::set<std::string>& operationsW,
+                              const std::string& arg_name, const std::string& bundle_name,
+                              const std::string& interfaceType, unsigned int input_bw, unsigned n_resources,
+                              m_axi_type mat, unsigned rwBWsize, unsigned int top_id) const;
+
+   void create_resource(const std::set<std::string>& operationsR, const std::set<std::string>& operationsW,
+                        const std::string& arg_name, const std::string& interfaceType, unsigned int input_bw,
+                        bool isDiffSize, const std::string& fname, unsigned n_resources, unsigned alignment,
+                        bool isReal, unsigned rwBWsize, unsigned int top_id) const;
+
+   void ComputeResourcesAlignment(unsigned& n_resources, unsigned& alignment, unsigned int input_bw, bool is_acType,
+                                  bool is_signed, bool is_fixed);
+
+   void FixReadWriteCall(const gimple_assign* ga, gimple_node* newGN, const tree_manipulationRef tree_man,
+                         tree_nodeRef new_call, statement_list* sl, const tree_managerRef TM, tree_nodeRef origStmt,
+                         unsigned int destBB, const std::string& fname, const std::string& arg_name);
 
  public:
    /**
@@ -66,6 +138,10 @@ class InterfaceInfer : public ApplicationFrontendFlowStep
     * Destructor
     */
    ~InterfaceInfer() override;
+
+   bool HasToBeExecuted() const override;
+
+   void Initialize() override;
 
    /**
     * Execute this step

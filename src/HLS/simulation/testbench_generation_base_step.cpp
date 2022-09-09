@@ -455,7 +455,7 @@ void TestbenchGenerationBaseStep::write_initial_block(const std::string& simulat
              */
             std::string sigscope = sig_scope.first;
             boost::replace_all(sigscope, STR(HIERARCHY_SEPARATOR), ".");
-            for(const std::string& signame : sig_scope.second)
+            for(const auto& signame : sig_scope.second)
             {
                writer->write("$dumpvars(1, " + sigscope + signame + ");\n");
             }
@@ -2581,8 +2581,6 @@ void TestbenchGenerationBaseStep::testbench_controller_machine() const
             }
             mem_aggregated += "}";
             writer->write("  if (" + portPrefix + "write && " + portPrefix + "writeReady >= `MEM_DELAY_WRITE) begin\n");
-            writer->write("    $display(\"Write at cycle %d\", $rtoi(($time + `HALF_CLOCK_PERIOD - "
-                          "startTime)/`CLOCK_PERIOD));\n");
             writer->write("    " + mem_aggregated + " = " + portPrefix + "wdelayed[0];\n");
             writer->write("    next_" + portPrefix + "currAddr = " + portPrefix + "currAddr + (1 << last_" +
                           portPrefix + "SIZE);\n");
@@ -2647,8 +2645,6 @@ void TestbenchGenerationBaseStep::testbench_controller_machine() const
             writer->write("  if (" + portPrefix + "dataReady >= `MEM_DELAY_READ - 1) begin\n");
             writer->write("    next_" + portPrefix + "RDATA = " + portPrefix + "rdelayed[0];\n");
             writer->write("    next_" + portPrefix + "RVALID = 1'b1;\n");
-            writer->write(
-                "    $display(\"Read at cycle %d\", $rtoi(($time + `HALF_CLOCK_PERIOD - startTime)/`CLOCK_PERIOD));\n");
             writer->write("    if (" + portPrefix + "dataReady >= `MEM_DELAY_READ - 2 + last_" + portPrefix +
                           "ARLEN) begin\n");
             writer->write("      next_" + portPrefix + "RLAST = 1'b1;\n");

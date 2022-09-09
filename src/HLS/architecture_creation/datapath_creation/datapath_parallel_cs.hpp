@@ -42,6 +42,7 @@
 #define DATAPATH_PARALLEL_CS_H
 
 #include "classic_datapath.hpp"
+#include <vector>
 
 REF_FORWARD_DECL(structural_object);
 REF_FORWARD_DECL(structural_manager);
@@ -64,7 +65,7 @@ class datapath_parallel_cs : public classic_datapath
     * @param circuit
     */
    void manage_extern_global_port_parallel(const structural_managerRef SM,
-                                           const CustomOrderedSet<structural_objectRef>& memory_modules,
+                                           const std::vector<structural_objectRef>& memory_modules,
                                            const structural_objectRef circuit);
 
    /**

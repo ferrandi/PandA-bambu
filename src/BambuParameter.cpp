@@ -193,8 +193,7 @@
 #define OPT_DSP_MARGIN_COMBINATIONAL (1 + OPT_DSP_ALLOCATION_COEFFICIENT)
 #define OPT_DSP_MARGIN_PIPELINED (1 + OPT_DSP_MARGIN_COMBINATIONAL)
 #define OPT_DUMP_CONSTRAINTS (1 + OPT_DSP_MARGIN_PIPELINED)
-#define OPT_DYNAMIC_GENERATORS_DIR (1 + OPT_DUMP_CONSTRAINTS)
-#define OPT_DISCREPANCY (1 + OPT_DYNAMIC_GENERATORS_DIR)
+#define OPT_DISCREPANCY (1 + OPT_DUMP_CONSTRAINTS)
 #define OPT_DISCREPANCY_FORCE (1 + OPT_DISCREPANCY)
 #define OPT_DISCREPANCY_HW (1 + OPT_DISCREPANCY_FORCE)
 #define OPT_DISCREPANCY_NO_LOAD_POINTERS (1 + OPT_DISCREPANCY_HW)
@@ -1266,7 +1265,6 @@ int BambuParameter::Exec()
 #if HAVE_EXPERIMENTAL
       {"no-mixed-design", no_argument, nullptr, OPT_NO_MIXED_DESIGN},
 #endif
-      {"dynamic-generators-dir", required_argument, nullptr, OPT_DYNAMIC_GENERATORS_DIR},
       {"pretty-print", required_argument, nullptr, OPT_PRETTY_PRINT},
       {"pragma-parse", no_argument, nullptr, OPT_PRAGMA_PARSE},
       {"generate-interface", required_argument, nullptr, 0},
@@ -2249,11 +2247,6 @@ int BambuParameter::Exec()
             {
                throw "BadParameters: backend language not correctly specified";
             }
-            break;
-         }
-         case OPT_DYNAMIC_GENERATORS_DIR:
-         {
-            setOption("dynamic_generators_dir", optarg);
             break;
          }
          case OPT_PRETTY_PRINT:
@@ -4319,8 +4312,6 @@ void BambuParameter::SetDefaults()
 
    /// backend HDL
    setOption(OPT_writer_language, static_cast<int>(HDLWriter_Language::VERILOG));
-
-   setOption("dynamic_generators_dir", relocate_compiler_path(PANDA_DATA_INSTALLDIR "/panda"));
 
    /// -- Module Interfaces -- //
    setOption(OPT_interface, true);

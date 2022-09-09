@@ -404,7 +404,7 @@ void parametric_list_based::CheckSchedulabilityConditions(
     const fu_bindingRef res_binding, const ScheduleRef schedule, bool& predecessorsCond, bool& pipeliningCond,
     bool& cannotBeChained0, bool& chainingRetCond, bool& cannotBeChained1, bool& asyncCond, bool& cannotBeChained2,
     bool& cannotBeChained3, bool& MultiCond0, bool& MultiCond1, bool& nonDirectMemCond, bool& unboundedFunctionsCond,
-    bool& proxyFunCond)
+    bool& proxyFunCond, bool unbounded_RW)
 {
    predecessorsCond = current_ASAP.find(current_vertex) != current_ASAP.end() and
                       current_ASAP.find(current_vertex)->second > current_cycle;
@@ -466,10 +466,11 @@ void parametric_list_based::CheckSchedulabilityConditions(
    {
       return;
    }
-   MultiCond0 = (!is_pipelined && n_cycles > 0 && current_starting_time > (current_cycle_starting_time)) &&
-                current_ending_time - (n_cycles - 1) * clock_cycle + setup_hold_time + phi_extra_time +
-                        (complex_op ? scheduling_mux_margins : 0) >
-                    current_cycle_ending_time;
+   MultiCond0 = (n_cycles > 1 && (unbounded_RW || unbounded)) ||
+                ((!is_pipelined && n_cycles > 0 && current_starting_time > (current_cycle_starting_time)) &&
+                 current_ending_time - (n_cycles - 1) * clock_cycle + setup_hold_time + phi_extra_time +
+                         (complex_op ? scheduling_mux_margins : 0) >
+                     current_cycle_ending_time);
    if(MultiCond0)
    {
       return;
@@ -1070,7 +1071,7 @@ void parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
                    proxy_functions_used, cstep_has_RET_conflict, fu_type, current_ASAP, res_binding, schedule,
                    predecessorsCond, pipeliningCond, cannotBeChained0, chainingRetCond, cannotBeChained1, asyncCond,
                    cannotBeChained2, cannotBeChained3, MultiCond0, MultiCond1, nonDirectMemCond, unboundedFunctionsCond,
-                   proxyFunCond);
+                   proxyFunCond, unbounded_RW);
 
                /// checking if predecessors have finished
                if(predecessorsCond)

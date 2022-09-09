@@ -185,13 +185,13 @@ void cs_interface::instantiate_component_parallel(const structural_managerRef SM
        ->SetParameter("NUM_CHANNEL", STR(parameters->getOption<unsigned int>(OPT_channels_number)));
    GetPointer<module>(mem_ctrl_mod)
        ->SetParameter("NUM_BANK", STR(parameters->getOption<unsigned int>(OPT_memory_banks_number)));
-   int addr_task = ceil_log2(parameters->getOption<unsigned long long int>(OPT_context_switch));
+   auto addr_task = ceil_log2(parameters->getOption<unsigned long long int>(OPT_context_switch));
    if(!addr_task)
    {
       addr_task = 1;
    }
    GetPointer<module>(mem_ctrl_mod)->SetParameter("ADDR_TASKS", STR(addr_task));
-   int addr_kern = ceil_log2(parameters->getOption<unsigned long long>(OPT_num_accelerators));
+   auto addr_kern = ceil_log2(parameters->getOption<unsigned long long>(OPT_num_accelerators));
    if(!addr_kern)
    {
       addr_kern = 1;

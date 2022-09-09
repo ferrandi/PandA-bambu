@@ -67,18 +67,17 @@ mem_dominator_allocation_cs::~mem_dominator_allocation_cs()
 DesignFlowStep_Status mem_dominator_allocation_cs::Exec()
 {
    mem_dominator_allocation::Exec(); // exec of hierarchical class
-   int tag_index = 0;
-   int context_switch = ceil_log2(parameters->getOption<unsigned long long int>(OPT_context_switch));
+   auto context_switch = ceil_log2(parameters->getOption<unsigned long long int>(OPT_context_switch));
    if(!context_switch)
    {
       context_switch = 1;
    }
-   int num_bits_acc = ceil_log2(parameters->getOption<unsigned long long>(OPT_num_accelerators));
+   auto num_bits_acc = ceil_log2(parameters->getOption<unsigned long long>(OPT_num_accelerators));
    if(!num_bits_acc)
    {
       num_bits_acc = 1;
    }
-   tag_index = context_switch + num_bits_acc + 2; // tag_index is log2(switch)+log2(thread)+2
+   const auto tag_index = context_switch + num_bits_acc + 2ULL; // tag_index is log2(switch)+log2(thread)+2
    GetPointer<memory_cs>(HLSMgr->Rmem)->set_bus_tag_bitsize(static_cast<unsigned>(tag_index));
    return DesignFlowStep_Status::SUCCESS;
 }

@@ -1725,8 +1725,8 @@ src/HLS/module_allocation/hls_function_bit_value.cpp
 src/HLS/module_allocation/hls_function_bit_value.hpp
 src/HLS/module_allocation/omp_allocation.cpp
 src/HLS/module_allocation/omp_allocation.hpp
-src/HLS/module_generator/moduleGenerator.cpp
-src/HLS/module_generator/moduleGenerator.hpp
+src/HLS/module_generator/ModuleGeneratorManager.cpp
+src/HLS/module_generator/ModuleGeneratorManager.hpp
 src/HLS/scheduling/ASLAP.cpp
 src/HLS/scheduling/ASLAP.hpp
 src/HLS/scheduling/parametric_list_based.cpp
@@ -2058,8 +2058,6 @@ src/frontend_analysis/IR_analysis/hls_div_cg_ext.cpp
 src/frontend_analysis/IR_analysis/hls_div_cg_ext.hpp
 src/frontend_analysis/IR_analysis/InterfaceInfer.cpp
 src/frontend_analysis/IR_analysis/InterfaceInfer.hpp
-src/frontend_analysis/IR_analysis/FunctionInterfaceInfer.cpp
-src/frontend_analysis/IR_analysis/FunctionInterfaceInfer.hpp
 src/frontend_analysis/IR_analysis/loops_analysis_bambu.cpp
 src/frontend_analysis/IR_analysis/loops_analysis_bambu.hpp
 src/frontend_analysis/IR_analysis/lut_transformation.cpp
@@ -2371,6 +2369,7 @@ src/utility/custom_set.hpp
 src/utility/dbgPrintHelper.hpp
 src/utility/exceptions.cpp
 src/utility/exceptions.hpp
+src/utility/Factory.hpp
 src/utility/fileIO.hpp
 src/utility/gzstream.hpp
 src/utility/hash_helper.hpp

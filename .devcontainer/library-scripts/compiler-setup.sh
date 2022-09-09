@@ -21,7 +21,6 @@ GCC_BINS=("`find /usr/bin -type f -regextype posix-extended -regex '.*g(cc|\+\+)
 CLANG_BINS=("`find /clang+llvm-*/bin -type f -regextype posix-extended -regex '.*clang-[0-9]+\.?[0-9]?'`")
 CLANG_EXES=("clang" "clang++" "clang-cl" "clang-cpp" "ld.lld" "lld" "lld-link" "llvm-ar" "llvm-config" "llvm-dis" "llvm-link" "llvm-lto" "llvm-lto2" "llvm-ranlib" "mlir-opt" "mlir-translate" "opt")
 
-mkdir -p "$workspace_dir/dist/usr/bin"
 for clang_exe in $CLANG_BINS
 do
    CLANG_VER=$(sed 's/clang-//g' <<< "$(basename $clang_exe)")

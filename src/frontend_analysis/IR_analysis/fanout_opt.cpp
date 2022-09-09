@@ -170,7 +170,7 @@ DesignFlowStep_Status fanout_opt::InternalExec()
    auto* sl = GetPointer<statement_list>(GET_NODE(fd->body));
    const tree_manipulationRef tree_man = tree_manipulationRef(new tree_manipulation(TM, parameters, AppM));
 
-   for(const auto &block : sl->list_of_bloc)
+   for(const auto& block : sl->list_of_bloc)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Examining BB" + STR(block.first));
       for(const auto& stmt : block.second->CGetStmtList())

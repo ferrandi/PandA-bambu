@@ -240,27 +240,26 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
    CustomOrderedSet<vertex> already_analyzed;
    VertexIterator vit, vend;
 
-   bool is_pipelined = HLSMgr->CGetFunctionBehavior(funId)->is_simple_pipeline();
+   const auto is_pipelined = HLSMgr->CGetFunctionBehavior(funId)->is_simple_pipeline();
 
    /// contains the list of operations which are executing, starting, ending and "on-fly" in every state of the STG
    std::map<vertex, std::list<vertex>> global_executing_ops, global_starting_ops, global_ending_ops, global_onfly_ops;
 
-   const CallGraphManagerConstRef CGM = HLSMgr->CGetCallGraphManager();
+   const auto CGM = HLSMgr->CGetCallGraphManager();
    const auto top_functions = CGM->GetRootFunctions();
-   bool needMemoryMappedRegisters =
+   const auto needMemoryMappedRegisters =
        (top_functions.find(funId) != top_functions.end() &&
         parameters->getOption<HLSFlowStep_Type>(OPT_interface_type) == HLSFlowStep_Type::WB4_INTERFACE_GENERATION) ||
        (HLSMgr->hasToBeInterfaced(funId) and top_functions.find(funId) == top_functions.end()) ||
        parameters->getOption<bool>(OPT_memory_mapped_top);
    bool has_registered_inputs = HLS->registered_inputs && !needMemoryMappedRegisters;
-   std::string function_name = functions::get_function_name_cleaned(funId, HLSMgr);
    const auto top_function_ids = HLSMgr->CGetCallGraphManager()->GetRootFunctions();
    if(top_function_ids.find(funId) != top_function_ids.end() and
       parameters->getOption<std::string>(OPT_registered_inputs) == "top")
    {
       has_registered_inputs = true;
    }
-   if(HLSMgr->Rfuns->is_a_proxied_function(function_name) && !needMemoryMappedRegisters)
+   if(HLSMgr->Rfuns->is_a_proxied_function(functions::GetFUName(funId, HLSMgr)) && !needMemoryMappedRegisters)
    {
       if(parameters->getOption<std::string>(OPT_registered_inputs) != "no")
       {

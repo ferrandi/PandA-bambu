@@ -73,7 +73,8 @@ class MinimalInterfaceTestbench : public TestbenchGenerationBaseStep
    void read_input_value_from_file_RNONE(const std::string& input_name, bool& first_valid_input,
                                          unsigned bitsize) const;
 
-   void write_read_fifo_manager(std::string par, const std::string& pi_dout_name, unsigned bitsize, std::string valid_suffix) const;
+   void write_read_fifo_manager(std::string par, const std::string& pi_dout_name, unsigned bitsize,
+                                std::string valid_suffix) const;
 
    void write_file_reading_operations() const override;
 

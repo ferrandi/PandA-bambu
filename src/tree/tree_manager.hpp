@@ -83,9 +83,6 @@ enum class TreeVocabularyTokenTypes_TokenEnum;
 class tree_manager
 {
  private:
-   /// map between string and corresponding enum kinds
-   CustomUnorderedMap<std::string, enum kind> string_to_kind;
-
    /// cache for tree_manager::find
    CustomUnorderedMapUnstable<std::string, unsigned int> find_cache;
 

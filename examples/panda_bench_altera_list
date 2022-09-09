@@ -16,6 +16,6 @@
 --configuration-name=keccak --benchmark-name=CycloneII_5ns       crypto_designs/Keccak.c --top-fname=kekka_coproc --generate-tb=BENCHMARKS_ROOT/crypto_designs/test.xml --device-name=EP2C70F896C6-R -O3 --clock-period=5  --pretty-print=a.c --addr-bus-bitsize=9 --base-address=256 --sparse-memory=off --memory-allocation-policy=ALL_BRAM --channels-type=MEM_ACC_11 -finline-limit=10000 --experimental-setup=BAMBU -fno-ivopts
 --configuration-name=keccak --benchmark-name=CycloneII_5ns-INFER crypto_designs/Keccak.c --top-fname=kekka_coproc --generate-tb=BENCHMARKS_ROOT/crypto_designs/test.xml --device-name=EP2C70F896C6-R -O3 --clock-period=6 --generate-interface=INFER --compiler=I386_CLANG11 
 
---configuration-name=mm mm/module.c --top-fname=mm --generate-tb=BENCHMARKS_ROOT/mm/test.xml --experimental-setup=BAMBU --simulator=ICARUS --device-name=EP2C70F896C6-R -O3 --pretty-print=a.c --channels-type=MEM_ACC_NN --memory-allocation-policy=EXT_PIPELINED_BRAM --flopoco
+--configuration-name=mm mm/module.c --top-fname=mm --generate-tb=BENCHMARKS_ROOT/mm/test.xml --experimental-setup=BAMBU --simulator=ICARUS --device-name=EP2C70F896C6-R -O3 --pretty-print=a.c --channels-type=MEM_ACC_NN --memory-allocation-policy=EXT_PIPELINED_BRAM
 
 --configuration-name=mm_float mm_float/module.c --top-fname=mm --generate-tb=BENCHMARKS_ROOT/mm_float/test.xml --experimental-setup=BAMBU --simulator=ICARUS --device-name=EP2C70F896C6-R -O3 --pretty-print=a.c --channels-type=MEM_ACC_NN --memory-allocation-policy=EXT_PIPELINED_BRAM
