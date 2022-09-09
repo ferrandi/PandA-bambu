@@ -575,12 +575,12 @@ static std::string create_control_flow_checker(size_t epp_trace_bitsize, const u
              "   epp_trace_reg <= epp_trace_memory[next_epp_trace_offset];\n"
              "end\n\n";
 
-   const auto reset_type = HLSMgr->get_parameter()->getOption<std::string>(OPT_sync_reset);
+   const auto reset_type = HLSMgr->get_parameter()->getOption<std::string>(OPT_reset_type);
    if(reset_type == "no" || reset_type == "sync")
    {
       result += "always @(posedge " CLOCK_PORT_NAME ")\n";
    }
-   else if(!HLSMgr->get_parameter()->getOption<bool>(OPT_level_reset))
+   else if(!HLSMgr->get_parameter()->getOption<bool>(OPT_reset_level))
    {
       result += "always @(posedge " CLOCK_PORT_NAME " or negedge " RESET_PORT_NAME ")\n";
    }
@@ -589,7 +589,7 @@ static std::string create_control_flow_checker(size_t epp_trace_bitsize, const u
       result += "always @(posedge " CLOCK_PORT_NAME " or posedge " RESET_PORT_NAME ")\n";
    }
 
-   if(!HLSMgr->get_parameter()->getOption<bool>(OPT_level_reset))
+   if(!HLSMgr->get_parameter()->getOption<bool>(OPT_reset_level))
    {
       result += "if (" RESET_PORT_NAME " == 1'b0)\n";
    }

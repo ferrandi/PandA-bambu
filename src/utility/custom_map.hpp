@@ -155,8 +155,9 @@ template <class T, class U, class Hash = typename absl::flat_hash_map<T, U>::has
           class Eq = typename absl::flat_hash_map<T, U>::key_equal, class Alloc = std::allocator<std::pair<const T, U>>>
 using CustomUnorderedMapUnstable = absl::flat_hash_map<T, U, Hash, Eq, Alloc>;
 
-template <typename T, typename U>
-using CustomOrderedMap = absl::btree_map<T, U>;
+template <typename T, typename U, typename Compare = std::less<T>,
+          typename Alloc = std::allocator<std::pair<const T, U>>>
+using CustomOrderedMap = absl::btree_map<T, U, Compare, Alloc>;
 
 #if HAVE_UNORDERED
 template <typename T, typename U>

@@ -181,7 +181,7 @@ void WishboneInterfaceTestbench::write_call(bool hasMultiIrq) const
    writer->write("always @(posedge " + std::string(CLOCK_PORT_NAME) + ")\n");
    writer->write(STR(STD_OPENING_CHAR));
    writer->write("begin\n");
-   if(!parameters->getOption<bool>(OPT_level_reset))
+   if(!parameters->getOption<bool>(OPT_reset_level))
    {
       writer->write("if (" + std::string(RESET_PORT_NAME) + " == 1'b0)\n");
    }
@@ -420,7 +420,7 @@ void WishboneInterfaceTestbench::write_memory_handler() const
    writer->write("always @(posedge " + std::string(CLOCK_PORT_NAME) + ")\n");
    writer->write(STR(STD_OPENING_CHAR));
    writer->write("begin\n");
-   if(!parameters->getOption<bool>(OPT_level_reset))
+   if(!parameters->getOption<bool>(OPT_reset_level))
    {
       writer->write("if (" + std::string(RESET_PORT_NAME) + " == 1'b0)" + STR(STD_OPENING_CHAR) + "\n");
    }

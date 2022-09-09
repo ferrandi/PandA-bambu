@@ -47,8 +47,10 @@
 
 #include "math_privatetf.h"
 
-int __signbit(unsigned long long x, unsigned char __exp_bits, unsigned char __frac_bits, int __exp_bias,
-              _Bool __rounding, _Bool __nan, _Bool __one, _Bool __subnorm, signed char __sign)
+static int
+    __attribute__((always_inline)) inline __local_signbit(unsigned long long x, unsigned char __exp_bits,
+                                                          unsigned char __frac_bits, int __exp_bias, _Bool __rounding,
+                                                          _Bool __nan, _Bool __one, _Bool __subnorm, signed char __sign)
 {
    if(__sign == -1)
    {
@@ -59,3 +61,21 @@ int __signbit(unsigned long long x, unsigned char __exp_bits, unsigned char __fr
       return __sign;
    }
 }
+
+int __signbit(unsigned long long x, unsigned char __exp_bits, unsigned char __frac_bits, int __exp_bias,
+              _Bool __rounding, _Bool __nan, _Bool __one, _Bool __subnorm, signed char __sign)
+{
+   return __local_signbit(x, __exp_bits, __frac_bits, __exp_bias, __rounding, __nan, __one, __subnorm, __sign);
+}
+
+#if defined(__llvm__) || defined(__CLANG__)
+int signbitf(float f)
+{
+   return __local_signbit(*((unsigned int*)&f), IEEE32_SPEC);
+}
+
+int signbit(double d)
+{
+   return __local_signbit(*((unsigned long long*)&d), IEEE64_SPEC);
+}
+#endif

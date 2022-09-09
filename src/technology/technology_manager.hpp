@@ -200,7 +200,8 @@ class technology_manager
    /**
     * Add an operation to the specified functional unit
     */
-   void add_operation(const std::string& Library, const std::string& fu_name, const std::string& operation_name);
+   technology_nodeRef add_operation(const std::string& Library, const std::string& fu_name,
+                                    const std::string& operation_name);
 
 #if HAVE_CIRCUIT_BUILT
    /**

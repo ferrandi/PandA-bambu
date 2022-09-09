@@ -477,7 +477,7 @@ void parametric_list_based::CheckSchedulabilityConditions(
    }
    MultiCond1 = current_ending_time + setup_hold_time + phi_extra_time + (complex_op ? scheduling_mux_margins : 0) >
                     current_cycle_ending_time &&
-                unbounded;
+                unbounded && HLS->allocation_information->is_operation_bounded(flow_graph, current_vertex, fu_type);
    if(MultiCond1)
    {
       return;
@@ -2111,7 +2111,7 @@ DesignFlowStep_Status parametric_list_based::InternalExec()
       xml_document document;
       xml_element* nodeRoot = document.create_root_node("hls");
       HLS->xwrite(nodeRoot, FB->CGetOpGraph(FunctionBehavior::FDFG));
-      document.write_to_file_formatted(function_name + "_scheduling.XML");
+      document.write_to_file_formatted(function_name + "_scheduling.xml");
    }
    return DesignFlowStep_Status::SUCCESS;
 }
@@ -2925,7 +2925,7 @@ void parametric_list_based::do_balanced_scheduling1(const CustomUnorderedSet<ver
                if(!is_pipelined &&
                   (candidate_op_execution_time + setup_hold_time + phi_extra_time + scheduling_mux_margins) >
                       clock_cycle &&
-                  has_unbounded)
+                  has_unbounded && HLS->allocation_information->is_operation_bounded(opDFG, candidate_v, fu_type))
                {
                   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                 "   Multi-cycles operations cannot be scheduled together with unbounded operations");
