@@ -69,14 +69,12 @@ class hls_div_cg_ext : public FunctionFrontendFlowStep
  protected:
    const tree_managerRef TreeM;
 
-   bool modified;
-
    bool use64bitMul;
 
    /**
     * Recursive examine tree node
     */
-   void recursive_examinate(const tree_nodeRef& current_tree_node, const tree_nodeRef& current_statement,
+   bool recursive_examinate(const tree_nodeRef& current_tree_node, const tree_nodeRef& current_statement,
                             const tree_manipulationRef tree_man);
 
    /**
@@ -106,10 +104,5 @@ class hls_div_cg_ext : public FunctionFrontendFlowStep
     * Fixes the var_decl duplication.
     */
    DesignFlowStep_Status InternalExec() override;
-
-   /**
-    * Initialize the step (i.e., like a constructor, but executed just before exec
-    */
-   void Initialize() override;
 };
 #endif

@@ -92,7 +92,6 @@ hls_div_cg_ext::hls_div_cg_ext(const ParameterConstRef _parameters, const applic
                                unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager)
     : FunctionFrontendFlowStep(_AppM, _function_id, HLS_DIV_CG_EXT, _design_flow_manager, _parameters),
       TreeM(_AppM->get_tree_manager()),
-      modified(false),
       use64bitMul(false)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
@@ -135,11 +134,6 @@ hls_div_cg_ext::ComputeFrontendRelationships(const DesignFlowStep::RelationshipT
    return relationships;
 }
 
-void hls_div_cg_ext::Initialize()
-{
-   modified = false;
-}
-
 DesignFlowStep_Status hls_div_cg_ext::InternalExec()
 {
    const tree_manipulationRef tree_man(new tree_manipulation(TreeM, parameters, AppM));
@@ -156,13 +150,17 @@ DesignFlowStep_Status hls_div_cg_ext::InternalExec()
       use64bitMul = true;
    }
 
+   bool modified = false;
    for(const auto& idx_bb : sl->list_of_bloc)
    {
       const auto& BB = idx_bb.second;
-      const auto stmt_list = BB->CGetStmtList();
-      for(const auto& stmt : stmt_list)
+      for(const auto& stmt : BB->CGetStmtList())
       {
-         recursive_examinate(stmt, stmt, tree_man);
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                        "-->Examine " + STR(GET_INDEX_NODE(stmt)) + " " + GET_NODE(stmt)->ToString());
+         modified |= recursive_examinate(stmt, stmt, tree_man);
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                        "<--Examined " + STR(GET_INDEX_NODE(stmt)) + " " + GET_NODE(stmt)->ToString());
       }
    }
 
@@ -174,22 +172,20 @@ DesignFlowStep_Status hls_div_cg_ext::InternalExec()
    return DesignFlowStep_Status::UNCHANGED;
 }
 
-void hls_div_cg_ext::recursive_examinate(const tree_nodeRef& current_tree_node, const tree_nodeRef& current_statement,
+bool hls_div_cg_ext::recursive_examinate(const tree_nodeRef& current_tree_node, const tree_nodeRef& current_statement,
                                          const tree_manipulationRef tree_man)
 {
    THROW_ASSERT(current_tree_node->get_kind() == tree_reindex_K, "Node is not a tree reindex");
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                  "-->Update recursively " + boost::lexical_cast<std::string>(GET_INDEX_NODE(current_tree_node)) + " " +
-                      GET_NODE(current_tree_node)->ToString());
+   bool modified = false;
    const tree_nodeRef curr_tn = GET_NODE(current_tree_node);
-   const std::string current_srcp = [curr_tn]() -> std::string {
+   const auto get_current_srcp = [curr_tn]() -> std::string {
       const auto srcp_tn = GetPointer<const srcp>(curr_tn);
       if(srcp_tn)
       {
          return srcp_tn->include_name + ":" + STR(srcp_tn->line_number) + ":" + STR(srcp_tn->column_number);
       }
       return "";
-   }();
+   };
    switch(curr_tn->get_kind())
    {
       case call_expr_K:
@@ -222,6 +218,8 @@ void hls_div_cg_ext::recursive_examinate(const tree_nodeRef& current_tree_node, 
                   TreeM->ReplaceTreeNode(current_statement, current_tree_node, me);
                   AppM->GetCallGraphManager()->RemoveCallPoint(function_id, GET_INDEX_CONST_NODE(fnode),
                                                                GET_INDEX_CONST_NODE(current_statement));
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                 "---Replaced " + STR(current_tree_node) + " -> " + STR(ce));
                   modified = true;
                }
             }
@@ -231,11 +229,11 @@ void hls_div_cg_ext::recursive_examinate(const tree_nodeRef& current_tree_node, 
       case gimple_assign_K:
       {
          const auto gm = GetPointerS<gimple_assign>(curr_tn);
-         recursive_examinate(gm->op0, current_statement, tree_man);
-         recursive_examinate(gm->op1, current_statement, tree_man);
+         modified |= recursive_examinate(gm->op0, current_statement, tree_man);
+         modified |= recursive_examinate(gm->op1, current_statement, tree_man);
          if(gm->predicate)
          {
-            recursive_examinate(gm->predicate, current_statement, tree_man);
+            modified |= recursive_examinate(gm->predicate, current_statement, tree_man);
          }
          break;
       }
@@ -244,7 +242,8 @@ void hls_div_cg_ext::recursive_examinate(const tree_nodeRef& current_tree_node, 
          tree_nodeRef current = current_tree_node;
          while(current)
          {
-            recursive_examinate(GetPointer<tree_list>(GET_NODE(current))->valu, current_statement, tree_man);
+            modified |=
+                recursive_examinate(GetPointer<tree_list>(GET_NODE(current))->valu, current_statement, tree_man);
             current = GetPointer<tree_list>(GET_NODE(current))->chan;
          }
          break;
@@ -252,15 +251,15 @@ void hls_div_cg_ext::recursive_examinate(const tree_nodeRef& current_tree_node, 
       case CASE_UNARY_EXPRESSION:
       {
          const auto ue = GetPointerS<unary_expr>(curr_tn);
-         recursive_examinate(ue->op, current_statement, tree_man);
+         modified |= recursive_examinate(ue->op, current_statement, tree_man);
          break;
       }
       case CASE_BINARY_EXPRESSION:
       {
          const auto be = GetPointerS<binary_expr>(curr_tn);
          const auto be_type = be->get_kind();
-         recursive_examinate(be->op0, current_statement, tree_man);
-         recursive_examinate(be->op1, current_statement, tree_man);
+         modified |= recursive_examinate(be->op0, current_statement, tree_man);
+         modified |= recursive_examinate(be->op1, current_statement, tree_man);
 
          if(be_type == exact_div_expr_K || be_type == trunc_div_expr_K || be_type == trunc_mod_expr_K)
          {
@@ -295,11 +294,13 @@ void hls_div_cg_ext::recursive_examinate(const tree_nodeRef& current_tree_node, 
                             "inconsistent behavioral helper");
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Adding call to " + fu_name);
                const std::vector<tree_nodeRef> args = {be->op0, be->op1};
-               const auto ce = tree_man->CreateCallExpr(called_function, args, current_srcp);
+               const auto ce = tree_man->CreateCallExpr(called_function, args, get_current_srcp());
                TreeM->ReplaceTreeNode(current_statement, current_tree_node, ce);
                CallGraphManager::addCallPointAndExpand(already_visited, AppM, function_id, called_function->index,
                                                        GET_INDEX_CONST_NODE(current_statement),
-                                                       FunctionEdgeInfo::CallType::direct_call, debug_level);
+                                                       FunctionEdgeInfo::CallType::direct_call, DEBUG_LEVEL_NONE);
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                              "---Replaced " + STR(current_tree_node) + " -> " + STR(ce));
                modified = true;
             }
          }
@@ -319,11 +320,13 @@ void hls_div_cg_ext::recursive_examinate(const tree_nodeRef& current_tree_node, 
                             "inconsistent behavioral helper");
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Adding call to " + fname);
                const std::vector<tree_nodeRef> args = {be->op0, be->op1};
-               const auto callExpr = tree_man->CreateCallExpr(called_function, args, current_srcp);
-               TreeM->ReplaceTreeNode(current_statement, current_tree_node, callExpr);
+               const auto ce = tree_man->CreateCallExpr(called_function, args, get_current_srcp());
+               TreeM->ReplaceTreeNode(current_statement, current_tree_node, ce);
                CallGraphManager::addCallPointAndExpand(already_visited, AppM, function_id, called_function->index,
                                                        GET_INDEX_CONST_NODE(current_statement),
-                                                       FunctionEdgeInfo::CallType::direct_call, debug_level);
+                                                       FunctionEdgeInfo::CallType::direct_call, DEBUG_LEVEL_NONE);
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                              "---Replaced " + STR(current_tree_node) + " -> " + STR(ce));
                modified = true;
             }
          }
@@ -332,32 +335,32 @@ void hls_div_cg_ext::recursive_examinate(const tree_nodeRef& current_tree_node, 
       case CASE_TERNARY_EXPRESSION:
       {
          const ternary_expr* te = GetPointer<ternary_expr>(curr_tn);
-         recursive_examinate(te->op0, current_statement, tree_man);
+         modified |= recursive_examinate(te->op0, current_statement, tree_man);
          if(te->op1)
          {
-            recursive_examinate(te->op1, current_statement, tree_man);
+            modified |= recursive_examinate(te->op1, current_statement, tree_man);
          }
          if(te->op2)
          {
-            recursive_examinate(te->op2, current_statement, tree_man);
+            modified |= recursive_examinate(te->op2, current_statement, tree_man);
          }
          break;
       }
       case CASE_QUATERNARY_EXPRESSION:
       {
          const quaternary_expr* qe = GetPointer<quaternary_expr>(curr_tn);
-         recursive_examinate(qe->op0, current_statement, tree_man);
+         modified |= recursive_examinate(qe->op0, current_statement, tree_man);
          if(qe->op1)
          {
-            recursive_examinate(qe->op1, current_statement, tree_man);
+            modified |= recursive_examinate(qe->op1, current_statement, tree_man);
          }
          if(qe->op2)
          {
-            recursive_examinate(qe->op2, current_statement, tree_man);
+            modified |= recursive_examinate(qe->op2, current_statement, tree_man);
          }
          if(qe->op3)
          {
-            recursive_examinate(qe->op3, current_statement, tree_man);
+            modified |= recursive_examinate(qe->op3, current_statement, tree_man);
          }
          break;
       }
@@ -366,7 +369,7 @@ void hls_div_cg_ext::recursive_examinate(const tree_nodeRef& current_tree_node, 
          const constructor* co = GetPointer<constructor>(curr_tn);
          for(const auto& iv : co->list_of_idx_valu)
          {
-            recursive_examinate(iv.second, current_statement, tree_man);
+            modified |= recursive_examinate(iv.second, current_statement, tree_man);
          }
          break;
       }
@@ -433,8 +436,5 @@ void hls_div_cg_ext::recursive_examinate(const tree_nodeRef& current_tree_node, 
          THROW_UNREACHABLE("");
       }
    }
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                  "<--Updated recursively " + STR(GET_INDEX_NODE(current_tree_node)) + " " +
-                      GET_NODE(current_tree_node)->ToString());
-   return;
+   return modified;
 }
