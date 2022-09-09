@@ -1,4 +1,0 @@
-<?xml version="1.0"?>
-<sum>
-   <testbench a="{{0, -5}, {21, 16}}" n_ptr="{{0,2}}" res="{{0, 15}}"/>
-</sum>
