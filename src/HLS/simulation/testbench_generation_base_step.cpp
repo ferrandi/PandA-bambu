@@ -2225,10 +2225,14 @@ void TestbenchGenerationBaseStep::write_auxiliary_signal_declaration() const
             writer->write("reg [" + STR(bitsize - 1) + ":0] last_" + GetPointer<port_o>(port)->get_id() + ";\n");
             unsigned wDataSize;
             unsigned rDataSize;
+            unsigned wAddrSize;
 
+            const structural_objectRef& portAWADDR = mod->find_member(portPrefix + "AWADDR", port_o_K, cir);
             const structural_objectRef& portWDATA = mod->find_member(portPrefix + "WDATA", port_o_K, cir);
             const structural_objectRef& portRDATA = mod->find_member(portPrefix + "RDATA", port_o_K, cir);
 
+            wAddrSize = GetPointer<port_o>(portAWADDR)->get_typeRef()->size *
+                        GetPointer<port_o>(portAWADDR)->get_typeRef()->vector_size;
             wDataSize = GetPointer<port_o>(portWDATA)->get_typeRef()->size *
                         GetPointer<port_o>(portWDATA)->get_typeRef()->vector_size;
             rDataSize = GetPointer<port_o>(portRDATA)->get_typeRef()->size *
@@ -2237,11 +2241,19 @@ void TestbenchGenerationBaseStep::write_auxiliary_signal_declaration() const
             writer->write("reg signed [31:0] " + portPrefix + "writeReady = 'hFFFFFFFF;\n");
             writer->write("reg signed [7:0] last_" + portPrefix + "ARLEN;\n");
             writer->write("reg signed [7:0] last_" + portPrefix + "AWLEN;\n");
+            writer->write("reg signed [2:0] last_" + portPrefix + "SIZE;\n");
+
             writer->write("reg [" + STR(wDataSize - 1) + ":0]" + portPrefix + "wdelayed [`MEM_DELAY_WRITE - 1 : 0];\n");
             writer->write("reg [" + STR(rDataSize - 1) + ":0]" + portPrefix + "rdelayed [`MEM_DELAY_READ - 2 : 0];\n");
             writer->write("reg [" + STR(rDataSize - 1) + ":0] last_" + portPrefix + "rdata;\n");
             writer->write("reg [" + STR(wDataSize - 1) + ":0] last_" + portPrefix + "wdata;\n");
             writer->write("reg [" + STR(wDataSize - 1) + ":0] " + portPrefix + "wBitmask;\n");
+            writer->write("reg [8:0] " + portPrefix + "beatsCount = 'b0, next_" + portPrefix + "beatsCount;\n");
+            writer->write("reg [" + STR(wAddrSize - 1) + ":0] " + portPrefix + "currAddr, next_" + portPrefix +
+                          "currAddr;\n");
+            writer->write("reg [" + STR(wAddrSize - 1) + ":0] " + portPrefix + "endAddr;\n");
+            writer->write("reg " + portPrefix + "read = 1'b0;\n");
+            writer->write("reg " + portPrefix + "write = 1'b0;\n");
          }
       }
    }
@@ -2494,21 +2506,46 @@ void TestbenchGenerationBaseStep::testbench_controller_machine() const
                portPrefix = GetPointer<port_o>(port)->get_id();
                portPrefix.erase(index, portSpecializer.length());
             }
+
+            writer->write("initial begin \n");
+            writer->write("  " + portPrefix + "ARREADY = 1'b1;\n");
+            writer->write("  " + portPrefix + "AWREADY = 1'b1;\n");
+            writer->write("  " + portPrefix + "WREADY = 1'b1;\n");
+            writer->write("end\n");
+
             writer->write("always @(posedge " CLOCK_PORT_NAME ") begin\n");
-            writer->write("  next_" + portPrefix + "ARREADY = 1'b1;\n");
+            writer->write("  next_" + portPrefix + "beatsCount = " + portPrefix + "beatsCount;\n");
+            writer->write("  if(" + portPrefix + "read || " + portPrefix + "write) begin\n");
+            writer->write("    next_" + portPrefix + "ARREADY = " + portPrefix + "ARREADY;\n");
+            writer->write("    next_" + portPrefix + "AWREADY = " + portPrefix + "AWREADY;\n");
+            writer->write("    next_" + portPrefix + "WREADY = " + portPrefix + "WREADY;\n");
+            writer->write("  end begin\n");
+            writer->write("    next_" + portPrefix + "ARREADY = 1'b1;\n");
+            writer->write("    next_" + portPrefix + "AWREADY = 1'b1;\n");
+            writer->write("    next_" + portPrefix + "WREADY = 1'b1;\n");
+            writer->write("  end\n");
             writer->write("  next_" + portPrefix + "RDATA = 'b0;\n");
-            writer->write("  next_" + portPrefix + "AWREADY = 1'b1;\n");
             writer->write("  next_" + portPrefix + "BVALID = 1'b0;\n");
             writer->write("  next_" + portPrefix + "RLAST = 1'b0;\n");
             writer->write("  next_" + portPrefix + "RVALID = 1'b0;\n");
-            writer->write("  next_" + portPrefix + "WREADY = 1'b1;\n");
             writer->write("  if (" + portPrefix + "AWVALID == 1'b1) begin\n");
             writer->write("    last_" + portPrefix + "AWADDR = " + portPrefix + "AWADDR;\n");
             writer->write("    last_" + portPrefix + "AWLEN = " + portPrefix + "AWLEN;\n");
+            writer->write("    last_" + portPrefix + "SIZE = " + portPrefix + "AWSIZE;\n");
+            writer->write("    " + portPrefix + "beatsCount = " + portPrefix + "AWLEN;\n");
+            writer->write("    " + portPrefix + "currAddr = " + portPrefix + "AWADDR;\n");
+            writer->write("    next_" + portPrefix + "currAddr = " + portPrefix + "currAddr;\n");
+            writer->write("    " + portPrefix + "endAddr = " + portPrefix + "AWBURST == 2'b10 ? " + portPrefix +
+                          "AWADDR + " + "(last_" + portPrefix + "AWLEN * (1 << last_" + portPrefix +
+                          "SIZE)) + (1 << last_" + portPrefix + "SIZE) : -1;\n");
+            writer->write("    " + portPrefix + "write = 1'b1;\n");
+
             writer->write("    next_" + portPrefix + "AWREADY = 1'b0;\n");
+            writer->write("    next_" + portPrefix + "ARREADY = 1'b0;\n");
             writer->write("  end\n");
             writer->write("  if (" + portPrefix + "WVALID == 1'b1) begin\n");
             {
+               writer->write("    next_" + portPrefix + "beatsCount = " + portPrefix + "beatsCount - 1;\n");
                writer->write("    if (" + portPrefix + "writeReady <= 0)\n");
                writer->write("      " + portPrefix + "writeReady <= 0;\n");
                writer->write("    last_" + portPrefix + "wdata <= " + portPrefix + "WDATA;\n");
@@ -2519,9 +2556,8 @@ void TestbenchGenerationBaseStep::testbench_controller_machine() const
                            GetPointer<port_o>(portWDATA)->get_typeRef()->vector_size;
                for(unsigned j = 0; j < wDataSize / 8; j++)
                {
-                  std::cout << "HERE: i=" << j << ", size=" << wDataSize << std::endl;
-                  writer->write("      if (" + portPrefix + "WSTRB[" + STR(j) + "] == 1'b1)\n");
-                  writer->write("        " + portPrefix + "wBitmask[(" + STR(j) + " + 1) * 8 - 1 : " + STR(j) +
+                  writer->write("    if (" + portPrefix + "WSTRB[" + STR(j) + "] == 1'b1)\n");
+                  writer->write("      " + portPrefix + "wBitmask[(" + STR(j) + " + 1) * 8 - 1 : " + STR(j) +
                                 " * 8] = -1;\n");
                }
             }
@@ -2540,29 +2576,49 @@ void TestbenchGenerationBaseStep::testbench_controller_machine() const
                {
                   mem_aggregated += ", ";
                }
-               mem_aggregated += "_bambu_testbench_mem_[last_" + portPrefix + "AWADDR + " +
+               mem_aggregated += "_bambu_testbench_mem_[" + portPrefix + "currAddr + " +
                                  STR((bitsizeWDATA - bitsize_index) / 8 - 1) + " - base_addr]";
             }
             mem_aggregated += "}";
-            writer->write("  if (" + portPrefix + "writeReady >= `MEM_DELAY_WRITE) begin\n");
+            writer->write("  if (" + portPrefix + "write && " + portPrefix + "writeReady >= `MEM_DELAY_WRITE) begin\n");
+            writer->write("    $display(\"Write at cycle %d\", $rtoi(($time + `HALF_CLOCK_PERIOD - "
+                          "startTime)/`CLOCK_PERIOD));\n");
             writer->write("    " + mem_aggregated + " = " + portPrefix + "wdelayed[0];\n");
-            writer->write("    last_" + portPrefix + "AWADDR <= last_" + portPrefix + "AWADDR + " +
-                          STR(bitsizeWDATA / 8) + ";\n");
+            writer->write("    next_" + portPrefix + "currAddr = " + portPrefix + "currAddr + (1 << last_" +
+                          portPrefix + "SIZE);\n");
+            writer->write("    if ( next_" + portPrefix + "currAddr >= " + portPrefix + "endAddr)\n");
+            writer->write("      next_" + portPrefix + "currAddr = next_" + portPrefix + "currAddr - (last_" +
+                          portPrefix + "AWLEN * (1 << last_" + portPrefix + "SIZE)) - (1 << last_" + portPrefix +
+                          "SIZE);\n");
             writer->write("    if (" + portPrefix + "writeReady == `MEM_DELAY_WRITE + last_" + portPrefix +
                           "AWLEN) begin\n");
             writer->write("      " + portPrefix + "writeReady <= -1;\n");
             writer->write("      next_" + portPrefix + "AWREADY = 1'b1;\n");
+            writer->write("      next_" + portPrefix + "ARREADY = 1'b1;\n");
+            writer->write("      next_" + portPrefix + "WREADY = 1'b1;\n");
             writer->write("      next_" + portPrefix + "BVALID = 1'b1;\n");
+            writer->write("      " + portPrefix + "write = 1'b0;\n");
+            writer->write("      next_" + portPrefix + "beatsCount = 'b0;\n");
             writer->write("    end\n");
-            writer->write("    else\n");
-            writer->write("      " + portPrefix + "writeReady <= " + portPrefix + "writeReady + 1;\n");
             writer->write("  end\n");
 
             writer->write("  if (" + portPrefix + "ARVALID == 1'b1) begin\n");
-            writer->write("    " + portPrefix + "dataReady <= 0;\n");
+            writer->write("    " + portPrefix + "dataReady = 0;\n");
             writer->write("    last_" + portPrefix + "ARLEN = " + portPrefix + "ARLEN;\n");
+            writer->write("    last_" + portPrefix + "SIZE = " + portPrefix + "ARSIZE;\n");
+            writer->write("    " + portPrefix + "beatsCount = " + portPrefix + "ARLEN;\n");
+            writer->write("    " + portPrefix + "currAddr = " + portPrefix + "ARADDR;\n");
+            writer->write("    next_" + portPrefix + "currAddr = " + portPrefix + "currAddr;\n");
+            writer->write("    " + portPrefix + "endAddr = " + portPrefix + "ARBURST == 2'b10 ? " + portPrefix +
+                          "ARADDR + " + "(last_" + portPrefix + "ARLEN * (1 << last_" + portPrefix +
+                          "SIZE)) + (1 << last_" + portPrefix + "SIZE) : -1;\n");
+            writer->write("    " + portPrefix + "read = 1'b1;\n");
             writer->write("    next_" + portPrefix + "ARREADY = 1'b0;\n");
+            writer->write("    next_" + portPrefix + "AWREADY = 1'b0;\n");
+            writer->write("    next_" + portPrefix + "WREADY = 1'b0;\n");
+            writer->write("  end\n");
 
+            writer->write("  if (" + portPrefix + "read && " + portPrefix + "beatsCount != 9'b111111111) begin\n");
             /* Compute aggregate memory for RDATA */
             const structural_objectRef& portRDATA = mod->find_member(portPrefix + "RDATA", port_o_K, cir);
             const unsigned int bitsizeRDATA = GetPointer<port_o>(portRDATA)->get_typeRef()->size *
@@ -2574,43 +2630,50 @@ void TestbenchGenerationBaseStep::testbench_controller_machine() const
                {
                   mem_aggregated += ", ";
                }
-               mem_aggregated += "_bambu_testbench_mem_[" + portPrefix + "ARADDR + " +
+               mem_aggregated += "_bambu_testbench_mem_[" + portPrefix + "currAddr + " +
                                  STR((bitsizeRDATA - bitsize_index) / 8 - 1) + " - base_addr]";
             }
             mem_aggregated += "}";
             writer->write("    last_" + portPrefix + "rdata = " + mem_aggregated + ";\n");
+            writer->write("    next_" + portPrefix + "currAddr = " + portPrefix + "currAddr + (1 << last_" +
+                          portPrefix + "SIZE);\n");
+            writer->write("    if ( next_" + portPrefix + "currAddr >= " + portPrefix + "endAddr) begin\n");
+            writer->write("      next_" + portPrefix + "currAddr = next_" + portPrefix + "currAddr - (last_" +
+                          portPrefix + "ARLEN * (1 << last_" + portPrefix + "SIZE)) - (1 << last_" + portPrefix +
+                          "SIZE);\n");
+            writer->write("    end\n");
+            writer->write("    next_" + portPrefix + "beatsCount = " + portPrefix + "beatsCount - 1;\n");
             writer->write("  end\n");
             writer->write("  if (" + portPrefix + "dataReady >= `MEM_DELAY_READ - 1) begin\n");
             writer->write("    next_" + portPrefix + "RDATA = " + portPrefix + "rdelayed[0];\n");
             writer->write("    next_" + portPrefix + "RVALID = 1'b1;\n");
-            writer->write("    if (" + portPrefix + "dataReady >= `MEM_DELAY_READ - 1 + last_" + portPrefix +
+            writer->write(
+                "    $display(\"Read at cycle %d\", $rtoi(($time + `HALF_CLOCK_PERIOD - startTime)/`CLOCK_PERIOD));\n");
+            writer->write("    if (" + portPrefix + "dataReady >= `MEM_DELAY_READ - 2 + last_" + portPrefix +
                           "ARLEN) begin\n");
             writer->write("      next_" + portPrefix + "RLAST = 1'b1;\n");
             writer->write("      next_" + portPrefix + "ARREADY = 1'b1;\n");
+            writer->write("      next_" + portPrefix + "AWREADY = 1'b1;\n");
+            writer->write("      next_" + portPrefix + "WREADY = 1'b1;\n");
+            writer->write("      " + portPrefix + "read = 1'b0;\n");
+            writer->write("      next_" + portPrefix + "beatsCount = 'b0;\n");
             writer->write("      " + portPrefix + "dataReady <= -1;\n");
             writer->write("    end\n");
-            writer->write("    else\n");
-            writer->write("      " + portPrefix + "dataReady <= " + portPrefix + "dataReady + 1;\n");
             writer->write("  end\n");
-            writer->write("end\n");
 
-            writer->write("always @(posedge " CLOCK_PORT_NAME ") begin\n");
+            writer->write("  for(_i_ = 0; _i_ < `MEM_DELAY_READ - 1; _i_ = _i_ + 1) begin\n");
             {
-               writer->write("  for(_i_ = 0; _i_ < `MEM_DELAY_READ - 1; _i_ = _i_ + 1) begin\n");
-               {
-                  writer->write("    if(_i_ == `MEM_DELAY_READ - 2)\n");
-                  writer->write("      " + portPrefix + "rdelayed[_i_] <= (" + portPrefix + "dataReady >= 'b0 && " +
-                                portPrefix + "dataReady <= last_" + portPrefix + "ARLEN) ? last_" + portPrefix +
-                                "rdata : 'b0;\n");
-                  writer->write("    else\n");
-                  writer->write("      " + portPrefix + "rdelayed[_i_] <= " + portPrefix + "rdelayed[_i_ + 1];\n");
-               }
-               writer->write("  end\n");
-               writer->write("  if(" + portPrefix + "dataReady >= 0 && " + portPrefix +
-                             "dataReady <= `MEM_DELAY_READ - 2) begin\n");
-               writer->write("    " + portPrefix + "dataReady <= " + portPrefix + "dataReady + 1;\n");
-               writer->write("  end\n");
+               writer->write("    if(_i_ == `MEM_DELAY_READ - 2)\n");
+               writer->write("      " + portPrefix + "rdelayed[_i_] <= (" + portPrefix + "dataReady >= 'b0 && " +
+                             portPrefix + "dataReady <= last_" + portPrefix + "ARLEN) ? last_" + portPrefix +
+                             "rdata : 'b0;\n");
+               writer->write("    else\n");
+               writer->write("      " + portPrefix + "rdelayed[_i_] <= " + portPrefix + "rdelayed[_i_ + 1];\n");
             }
+            writer->write("  end\n");
+            writer->write("  if(" + portPrefix + "dataReady >= 0 && " + portPrefix +
+                          "dataReady <= `MEM_DELAY_READ - 2) begin\n");
+            writer->write("    " + portPrefix + "dataReady <= " + portPrefix + "dataReady + 1;\n");
             writer->write("  end\n");
 
             mem_aggregated = "{";
@@ -2625,36 +2688,38 @@ void TestbenchGenerationBaseStep::testbench_controller_machine() const
             }
             mem_aggregated += "}";
 
+            writer->write("  for(_i_ = 0; _i_ < `MEM_DELAY_WRITE; _i_ = _i_ + 1) begin\n");
+            {
+               writer->write("    if(_i_ == `MEM_DELAY_WRITE - 1) begin\n");
+               writer->write("      " + portPrefix + "wdelayed[_i_] <= (" + portPrefix + "writeReady >= 'b0 && " +
+                             portPrefix + "writeReady <= last_" + portPrefix + "AWLEN) ? (" + mem_aggregated + " & ~" +
+                             portPrefix + "wBitmask) | ( last_" + portPrefix + "wdata & " + portPrefix +
+                             "wBitmask) : 'b0;\n");
+               writer->write("    end\n");
+               writer->write("    else\n");
+               writer->write("      " + portPrefix + "wdelayed[_i_] <= " + portPrefix + "wdelayed[_i_ + 1];\n");
+            }
+            writer->write("  end\n");
+            writer->write("  if(" + portPrefix + "write && " + portPrefix + "writeReady >= 0 && " + portPrefix +
+                          "writeReady <= `MEM_DELAY_WRITE - 1 + last_" + portPrefix + "AWLEN) begin\n");
+            writer->write("    " + portPrefix + "writeReady <= " + portPrefix + "writeReady + 1;\n");
+            writer->write("  end\n");
+
+            writer->write("end\n");
+
             writer->write("always @(posedge " CLOCK_PORT_NAME ") begin\n");
             {
-               writer->write("  for(_i_ = 0; _i_ < `MEM_DELAY_WRITE; _i_ = _i_ + 1) begin\n");
-               {
-                  writer->write("    if(_i_ == `MEM_DELAY_WRITE - 1) begin\n");
-                  writer->write("      " + portPrefix + "wdelayed[_i_] <= (" + portPrefix + "writeReady >= 'b0 && " +
-                                portPrefix + "writeReady <= last_" + portPrefix + "AWLEN) ? (" + mem_aggregated +
-                                " & ~" + portPrefix + "wBitmask) | ( last_" + portPrefix + "wdata & " + portPrefix +
-                                "wBitmask) : 'b0;\n");
-                  writer->write("    end\n");
-                  writer->write("    else\n");
-                  writer->write("      " + portPrefix + "wdelayed[_i_] <= " + portPrefix + "wdelayed[_i_ + 1];\n");
-               }
-               writer->write("  end\n");
-               writer->write("  if(" + portPrefix + "writeReady >= 0 && " + portPrefix +
-                             "writeReady <= `MEM_DELAY_WRITE - 1) begin\n");
-               writer->write("    " + portPrefix + "writeReady <= " + portPrefix + "writeReady + 1;\n");
-               writer->write("  end\n");
+               writer->write("  " + portPrefix + "ARREADY <= next_" + portPrefix + "ARREADY;\n");
+               writer->write("  " + portPrefix + "AWREADY <= next_" + portPrefix + "AWREADY;\n");
+               writer->write("  " + portPrefix + "BVALID <= next_" + portPrefix + "BVALID;\n");
+               writer->write("  " + portPrefix + "RLAST <= next_" + portPrefix + "RLAST;\n");
+               writer->write("  " + portPrefix + "RVALID <= next_" + portPrefix + "RVALID;\n");
+               writer->write("  " + portPrefix + "RDATA <= next_" + portPrefix + "RDATA;\n");
+               writer->write("  " + portPrefix + "WREADY <= next_" + portPrefix + "WREADY;\n");
+               writer->write("  " + portPrefix + "currAddr <= next_" + portPrefix + "currAddr;\n");
+               writer->write("  " + portPrefix + "beatsCount <= next_" + portPrefix + "beatsCount;\n");
             }
             writer->write("end\n\n");
-
-            writer->write("always@(posedge " CLOCK_PORT_NAME ") begin\n");
-            writer->write("  " + portPrefix + "ARREADY = next_" + portPrefix + "ARREADY;\n");
-            writer->write("  " + portPrefix + "RDATA = next_" + portPrefix + "RDATA;\n");
-            writer->write("  " + portPrefix + "AWREADY = next_" + portPrefix + "AWREADY;\n");
-            writer->write("  " + portPrefix + "BVALID = next_" + portPrefix + "BVALID;\n");
-            writer->write("  " + portPrefix + "RLAST = next_" + portPrefix + "RLAST;\n");
-            writer->write("  " + portPrefix + "RVALID = next_" + portPrefix + "RVALID;\n");
-            writer->write("  " + portPrefix + "WREADY = next_" + portPrefix + "WREADY;\n");
-            writer->write("end\n");
          }
       }
    }
