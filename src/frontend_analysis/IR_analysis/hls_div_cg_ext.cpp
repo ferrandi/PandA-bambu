@@ -116,14 +116,14 @@ hls_div_cg_ext::ComputeFrontendRelationships(const DesignFlowStep::RelationshipT
       }
       case(PRECEDENCE_RELATIONSHIP):
       {
-         if(GetStatus() == DesignFlowStep_Status::SUCCESS)
-         {
-            relationships.insert(std::make_pair(FUNCTION_CALL_TYPE_CLEANUP, SAME_FUNCTION));
-         }
          break;
       }
       case(INVALIDATION_RELATIONSHIP):
       {
+         if(GetStatus() == DesignFlowStep_Status::SUCCESS)
+         {
+            relationships.insert(std::make_pair(FUNCTION_CALL_TYPE_CLEANUP, SAME_FUNCTION));
+         }
          break;
       }
       default:
