@@ -1384,7 +1384,7 @@ void verilog_writer::write_present_state_update(const structural_objectRef cir, 
    {
       indented_output_stream->Append("always @(posedge " + clock_port + ")\n");
    }
-   else if(!parameters->getOption<bool>(OPT_level_reset))
+   else if(!parameters->getOption<bool>(OPT_reset_level))
    {
       indented_output_stream->Append("always @(posedge " + clock_port + " or negedge " + reset_port + ")\n");
    }
@@ -1398,7 +1398,7 @@ void verilog_writer::write_present_state_update(const structural_objectRef cir, 
    const NP_functionalityRef& np = mod->get_NP_functionality();
    if(np->exist_NP_functionality(NP_functionality::FSM_CS)) // fsm of context_switch
    {
-      if(!parameters->getOption<bool>(OPT_level_reset))
+      if(!parameters->getOption<bool>(OPT_reset_level))
       {
          indented_output_stream->Append("if (" + reset_port + " == 1'b0) _present_state[" +
                                         STR(SELECTOR_REGISTER_FILE) + "] <= " + reset_state + ";\n");
@@ -1412,7 +1412,7 @@ void verilog_writer::write_present_state_update(const structural_objectRef cir, 
    }
    else
    {
-      if(!parameters->getOption<bool>(OPT_level_reset))
+      if(!parameters->getOption<bool>(OPT_reset_level))
       {
          indented_output_stream->Append("if (" + reset_port + " == 1'b0) _present_state <= " + reset_state + ";\n");
       }
@@ -2094,9 +2094,9 @@ void verilog_writer::write_NP_functionalities(const structural_objectRef& cir)
                                     HDL_manager::convert_to_identifier(this, GET_TYPE_NAME(cir)));
    remove_escaped(beh_desc);
    /// manage reset by preprocessing the behavioral description
-   if(!parameters->getOption<bool>(OPT_level_reset))
+   if(!parameters->getOption<bool>(OPT_reset_level))
    {
-      if(parameters->getOption<std::string>(OPT_sync_reset) == "async")
+      if(parameters->getOption<std::string>(OPT_reset_type) == "async")
       {
          boost::replace_all(beh_desc, "1RESET_EDGE", "or negedge " + std::string(RESET_PORT_NAME));
       }
@@ -2108,7 +2108,7 @@ void verilog_writer::write_NP_functionalities(const structural_objectRef& cir)
    }
    else
    {
-      if(parameters->getOption<std::string>(OPT_sync_reset) == "async")
+      if(parameters->getOption<std::string>(OPT_reset_type) == "async")
       {
          boost::replace_all(beh_desc, "1RESET_EDGE", "or posedge " + std::string(RESET_PORT_NAME));
       }

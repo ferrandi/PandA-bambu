@@ -1994,15 +1994,24 @@ void TestbenchGenerationBaseStep::write_hdl_testbench_prolog() const
       parameters->getOption<std::string>(OPT_bram_high_latency) == "_3")
    {
       writer->write("`define MEM_DELAY_READ 3\n\n");
+      writer->write("`define MEM_MAX_DELAY " + (stoi(parameters->getOption<std::string>(OPT_mem_delay_write)) > 3 ?
+                                                parameters->getOption<std::string>(OPT_mem_delay_write) : 
+                                                "_3")  + "\n\n");
    }
    else if(parameters->getOption<std::string>(OPT_bram_high_latency) != "" &&
            parameters->getOption<std::string>(OPT_bram_high_latency) == "_4")
    {
       writer->write("`define MEM_DELAY_READ 4\n\n");
+      writer->write("`define MEM_MAX_DELAY " + (stoi(parameters->getOption<std::string>(OPT_mem_delay_write)) > 4 ?
+                                                parameters->getOption<std::string>(OPT_mem_delay_write) : 
+                                                "_4")  + "\n\n");
    }
    else if(parameters->getOption<std::string>(OPT_bram_high_latency) == "")
    {
-      writer->write("`define MEM_DELAY_READ " + parameters->getOption<std::string>(OPT_mem_delay_read) + "\n\n");
+      writer->write("`define MEM_DELAY_READ " + parameters->getOption<std::string>(OPT_mem_delay_read) + "\n\n");  
+      writer->write("`define MEM_MAX_DELAY " + (stoi(parameters->getOption<std::string>(OPT_mem_delay_write)) > stoi(parameters->getOption<std::string>(OPT_mem_delay_read)) ?
+                                                parameters->getOption<std::string>(OPT_mem_delay_write) : 
+                                                parameters->getOption<std::string>(OPT_mem_delay_read))  + "\n\n");
    }
    else
    {
@@ -2358,7 +2367,7 @@ void TestbenchGenerationBaseStep::testbench_controller_machine() const
    writer->write("always @(*)\n");
    writer->write("  begin\n");
    writer->write("     start_results_comparison = 0;\n");
-   if(!parameters->getOption<bool>(OPT_level_reset))
+   if(!parameters->getOption<bool>(OPT_reset_level))
    {
       writer->write("     " RESET_PORT_NAME " = 1;\n");
    }
@@ -2371,7 +2380,7 @@ void TestbenchGenerationBaseStep::testbench_controller_machine() const
    writer->write("     case (__state)\n");
    writer->write("       0:\n");
    writer->write("         begin\n");
-   if(!parameters->getOption<bool>(OPT_level_reset))
+   if(!parameters->getOption<bool>(OPT_reset_level))
    {
       writer->write("            " RESET_PORT_NAME " = 0;\n");
    }
@@ -2383,7 +2392,7 @@ void TestbenchGenerationBaseStep::testbench_controller_machine() const
    writer->write("         end\n");
    writer->write("       1:\n");
    writer->write("         begin\n");
-   if(!parameters->getOption<bool>(OPT_level_reset))
+   if(!parameters->getOption<bool>(OPT_reset_level))
    {
       writer->write("            " RESET_PORT_NAME " = 0;\n");
    }

@@ -2849,19 +2849,33 @@ namespace llvm
 
    bool DumpGimpleRaw::TREE_READONLY(const void* t) const
    {
-      if(TREE_CODE(t) == GT(FIELD_DECL))
-         return false;
-      else if(TREE_CODE(t) == GT(ALLOCAVAR_DECL))
-         return false;
-      else if(TREE_CODE(t) == GT(ORIGVAR_DECL))
+      tree_codes code = TREE_CODE(t);
+      if(code == GT(ORIGVAR_DECL))
       {
          const orig_var* ov = reinterpret_cast<const orig_var*>(t);
          return TREE_READONLY(ov->orig);
       }
-      else if(TREE_CODE(t) == GT(RESULT_DECL))
-         return false;
-      const llvm::GlobalVariable* llvm_obj = reinterpret_cast<const llvm::GlobalVariable*>(t);
-      return llvm_obj->isConstant();
+      else if(code == GT(VAR_DECL) || code == GT(PARM_DECL))
+      {
+         const auto llvm_val = reinterpret_cast<const llvm::Value*>(t);
+         if(code == GT(VAR_DECL))
+         {
+            const auto llvm_glb = llvm::dyn_cast<llvm::GlobalVariable>(llvm_val);
+            if(llvm_glb)
+            {
+               return llvm_glb->isConstant();
+            }
+         }
+         else if(code == GT(PARM_DECL))
+         {
+            const auto llvm_arg = llvm::dyn_cast<llvm::Argument>(llvm_val);
+            if(llvm_arg)
+            {
+               return llvm_arg->onlyReadsMemory();
+            }
+         }
+      }
+      return false;
    }
    bool DumpGimpleRaw::TREE_ADDRESSABLE(const void* t) const
    {
@@ -5119,7 +5133,8 @@ namespace llvm
       /* Print the node index.  */
       serialize_index(index);
 
-      const char* code_name = GET_TREE_CODE_NAME(TREE_CODE(t));
+      tree_codes code = TREE_CODE(t);
+      const char* code_name = GET_TREE_CODE_NAME(code);
 #if PRINT_DBG_MSG
       llvm::errs() << "|" << code_name << "\n";
 #endif
@@ -5127,7 +5142,6 @@ namespace llvm
       stream << buffer;
       column = 25;
 
-      tree_codes code = TREE_CODE(t);
       tree_codes_class code_class = TREE_CODE_CLASS(code);
 
       if(IS_EXPR_CODE_CLASS(code_class))
@@ -5315,7 +5329,7 @@ namespace llvm
          case GT(RECORD_TYPE):
          case GT(UNION_TYPE):
          {
-            if(TREE_CODE(t) == GT(RECORD_TYPE))
+            if(code == GT(RECORD_TYPE))
                serialize_string("struct");
             else
                serialize_string("union");
@@ -5362,42 +5376,42 @@ namespace llvm
          case GT(PARM_DECL):
          case GT(FIELD_DECL):
          case GT(RESULT_DECL):
-            if(TREE_CODE(t) == GT(FIELD_DECL) && DECL_C_BIT_FIELD(t))
+            if(code == GT(FIELD_DECL) && DECL_C_BIT_FIELD(t))
                serialize_string("bitfield");
-            if(TREE_CODE(t) == GT(VAR_DECL) || TREE_CODE(t) == GT(ORIGVAR_DECL))
+            if(code == GT(VAR_DECL) || code == GT(ORIGVAR_DECL))
             {
                if(DECL_EXTERNAL(t))
                   serialize_string("extern");
                else if(!TREE_PUBLIC(t) && TREE_STATIC(t))
                   serialize_string("static");
             }
-            if(TREE_CODE(t) == GT(PARM_DECL))
+            if(code == GT(PARM_DECL))
                serialize_child("argt", DECL_ARG_TYPE(t));
             else if(DECL_INITIAL(t))
                serialize_child("init", DECL_INITIAL(t));
             serialize_child("size", DECL_SIZE(t));
             serialize_int("algn", DECL_ALIGN(t));
-            if(TREE_CODE(t) == GT(FIELD_DECL) && DECL_PACKED(t))
+            if(code == GT(FIELD_DECL) && DECL_PACKED(t))
             {
                serialize_string("packed");
             }
 
-            if(TREE_CODE(t) == GT(FIELD_DECL))
+            if(code == GT(FIELD_DECL))
             {
                if(DECL_FIELD_OFFSET(t))
                   serialize_child("bpos", bit_position(t));
             }
-            else if(TREE_CODE(t) == GT(ALLOCAVAR_DECL) || TREE_CODE(t) == GT(ORIGVAR_DECL) ||
-                    TREE_CODE(t) == GT(VAR_DECL) || TREE_CODE(t) == GT(PARM_DECL))
+            else if(code == GT(ALLOCAVAR_DECL) || code == GT(ORIGVAR_DECL) || code == GT(VAR_DECL) ||
+                    code == GT(PARM_DECL))
             {
                serialize_int("used", TREE_USED(t));
                if(DECL_REGISTER(t))
                   serialize_string("register");
             }
-            if(TREE_READONLY(t) && TREE_CODE(t) != GT(RESULT_DECL) && TREE_CODE(t) != GT(FIELD_DECL))
+            if(TREE_READONLY(t))
                serialize_string("readonly");
 #if HAVE_LIBBDD
-            if(TREE_CODE(t) == GT(ALLOCAVAR_DECL) && PtoSets_AA)
+            if(code == GT(ALLOCAVAR_DECL) && PtoSets_AA)
             {
                if(TREE_ADDRESSABLE(t))
                   ; // serialize_string("addr_taken");

@@ -151,7 +151,7 @@ class fu_binding
     */
    structural_objectRef add_gate(const HLS_managerRef HLSMgr, const hlsRef HLS, const technology_nodeRef fu,
                                  const std::string& name, const OpVertexSet& ops, structural_objectRef clock_port,
-                                 structural_objectRef reset_port);
+                                 structural_objectRef reset_port) const;
 
    /**
     * check the module parametrization

@@ -76,9 +76,20 @@
 #include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
 #include "technology_node.hpp"
 
+std::string reg_binding::reset_type;
+
 reg_binding::reg_binding(const hlsRef& HLS_, const HLS_managerRef HLSMgr_)
-    : debug(HLS_->debug_level), used_regs(0), HLS(HLS_), HLSMgr(HLSMgr_), all_regs_without_enable(false)
+    : debug(HLS_->debug_level),
+      used_regs(0),
+      HLS(HLS_),
+      HLSMgr(HLSMgr_),
+      all_regs_without_enable(false),
+      FB(HLSMgr->CGetFunctionBehavior(HLS->functionId))
 {
+   if(reset_type.empty())
+{
+      reset_type = HLSMgr->get_parameter()->getOption<std::string>(OPT_reset_type);
+   }
 }
 
 reg_binding::~reg_binding() = default;
@@ -120,11 +131,10 @@ reg_bindingRef reg_binding::create_reg_binding(const hlsRef& HLS, const HLS_mana
 
 void reg_binding::print_el(const_iterator& it) const
 {
-   INDENT_OUT_MEX(OUTPUT_LEVEL_VERY_PEDANTIC, HLS->output_level,
+   INDENT_OUT_MEX(
+       OUTPUT_LEVEL_VERY_PEDANTIC, HLS->output_level,
                   "---Storage Value: " + STR(it->first) + " for variable " +
-                      HLSMgr->CGetFunctionBehavior(HLS->functionId)
-                          ->CGetBehavioralHelper()
-                          ->PrintVariable(HLS->storage_value_information->get_variable_index(it->first)) +
+           FB->CGetBehavioralHelper()->PrintVariable(HLS->storage_value_information->get_variable_index(it->first)) +
                       " stored into register " + it->second->get_string());
 }
 
@@ -148,8 +158,8 @@ unsigned int reg_binding::compute_bitsize(unsigned int r)
    unsigned int max_bits = 0;
    for(unsigned int reg_var : reg_vars)
    {
-      structural_type_descriptorRef node_type0 = structural_type_descriptorRef(new structural_type_descriptor(
-          reg_var, HLSMgr->CGetFunctionBehavior(HLS->functionId)->CGetBehavioralHelper()));
+      structural_type_descriptorRef node_type0 =
+          structural_type_descriptorRef(new structural_type_descriptor(reg_var, FB->CGetBehavioralHelper()));
       unsigned int node_size = STD_GET_SIZE(node_type0);
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, HLS->debug_level,
                     "- Analyzing node " + STR(reg_var) + ", whose type is " + node_type0->get_name() +
@@ -318,8 +328,7 @@ void reg_binding::add_to_SM(structural_objectRef clock_port, structural_objectRe
 
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug, "reg_binding::add_registers - Start");
 
-   bool stallable_pipeline = HLSMgr->CGetFunctionBehavior(HLS->functionId)->is_pipeline_enabled() &&
-                             !HLSMgr->CGetFunctionBehavior(HLS->functionId)->is_simple_pipeline();
+   bool stallable_pipeline = FB->is_pipeline_enabled() && !FB->is_simple_pipeline();
 
    if(stallable_pipeline)
    {
@@ -389,8 +398,7 @@ void reg_binding::add_to_SM(structural_objectRef clock_port, structural_objectRe
          number_ff += get_bitsize(r);
       }
       INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, HLS->output_level,
-                     "---Total number of flip-flops in function " +
-                         HLSMgr->CGetFunctionBehavior(HLS->functionId)->CGetBehavioralHelper()->get_function_name() +
+                     "---Total number of flip-flops in function " + FB->CGetBehavioralHelper()->get_function_name() +
                          ": " + STR(number_ff));
    }
    if(all_regs_without_enable)
@@ -402,24 +410,17 @@ void reg_binding::add_to_SM(structural_objectRef clock_port, structural_objectRe
 
 std::string reg_binding::CalculateRegisterName(unsigned int i)
 {
-   std::string register_type_name;
-   auto synch_reset = HLS->Param->getOption<std::string>(OPT_sync_reset);
-   if((is_without_enable.find(i) != is_without_enable.end()) ||
-      HLSMgr->CGetFunctionBehavior(HLS->functionId)->is_simple_pipeline())
+   if(is_without_enable.count(i) || FB->is_simple_pipeline())
    {
-      register_type_name = register_STD;
+      return register_STD;
    }
-   else if(synch_reset == "no")
+   else if(reset_type == "no")
    {
-      register_type_name = register_SE;
+      return register_SE;
    }
-   else if(synch_reset == "sync")
+   else if(reset_type == "sync")
    {
-      register_type_name = register_SRSE;
+      return register_SRSE;
    }
-   else
-   {
-      register_type_name = register_SARSE;
-   }
-   return register_type_name;
+   return register_SARSE;
 }

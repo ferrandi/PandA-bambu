@@ -43,11 +43,31 @@
 
 #include "math_privatetf.h"
 
-int __isnormal(unsigned long long x, unsigned char __exp_bits, unsigned char __frac_bits, int __exp_bias,
-               _Bool __rounding, _Bool __nan, _Bool __one, _Bool __subnorm, signed char __sign)
+static int __attribute__((always_inline)) inline __local_isnormal(unsigned long long x, unsigned char __exp_bits,
+                                                                  unsigned char __frac_bits, int __exp_bias,
+                                                                  _Bool __rounding, _Bool __nan, _Bool __one,
+                                                                  _Bool __subnorm, signed char __sign)
 {
    unsigned long long exp = (x >> __frac_bits) & ((1ULL << __exp_bits) - 1);
    _Bool expMax = __nan && (exp == ((1ULL << __exp_bits) - 1));
    _Bool expNull = exp == 0;
    return !__one || !expMax && !expNull;
 }
+
+int __isnormal(unsigned long long x, unsigned char __exp_bits, unsigned char __frac_bits, int __exp_bias,
+               _Bool __rounding, _Bool __nan, _Bool __one, _Bool __subnorm, signed char __sign)
+{
+   return __local_isnormal(x, __exp_bits, __frac_bits, __exp_bias, __rounding, __nan, __one, __subnorm, __sign);
+}
+
+#if defined(__llvm__) || defined(__CLANG__)
+int isnormalf(float f)
+{
+   return __local_isnormal(*((unsigned int*)&f), IEEE32_SPEC);
+}
+
+int isnormal(double d)
+{
+   return __local_isnormal(*((unsigned long long*)&d), IEEE64_SPEC);
+}
+#endif

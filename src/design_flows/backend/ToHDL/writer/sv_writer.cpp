@@ -71,9 +71,9 @@ void system_verilog_writer::write_NP_functionalities(const structural_objectRef&
                                     HDL_manager::convert_to_identifier(this, GET_TYPE_NAME(cir)));
    remove_escaped(beh_desc);
    /// manage reset by preprocessing the behavioral description
-   if(!parameters->getOption<bool>(OPT_level_reset))
+   if(!parameters->getOption<bool>(OPT_reset_level))
    {
-      if(parameters->getOption<std::string>(OPT_sync_reset) == "async")
+      if(parameters->getOption<std::string>(OPT_reset_type) == "async")
       {
          boost::replace_all(beh_desc, "1RESET_EDGE", "or negedge " + std::string(RESET_PORT_NAME));
       }
@@ -85,7 +85,7 @@ void system_verilog_writer::write_NP_functionalities(const structural_objectRef&
    }
    else
    {
-      if(parameters->getOption<std::string>(OPT_sync_reset) == "async")
+      if(parameters->getOption<std::string>(OPT_reset_type) == "async")
       {
          boost::replace_all(beh_desc, "1RESET_EDGE", "or posedge " + std::string(RESET_PORT_NAME));
       }
