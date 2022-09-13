@@ -184,7 +184,8 @@ void InterfaceInfer::Initialize()
 {
    const auto HLSMgr = GetPointer<HLS_manager>(AppM);
    THROW_ASSERT(HLSMgr, "");
-   const auto parseInterfaceXML = [&](const std::string& XMLfilename) {
+   const auto parseInterfaceXML = [&](const std::string& XMLfilename)
+   {
       if(boost::filesystem::exists(boost::filesystem::path(XMLfilename)))
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->parsing " + XMLfilename);
@@ -353,9 +354,8 @@ DesignFlowStep_Status InterfaceInfer::Exec()
    THROW_ASSERT(HLSMgr, "");
    const auto TM = AppM->get_tree_manager();
    std::set<unsigned int> modified;
-   const auto add_to_modified = [&](const tree_nodeRef& tn) {
-      modified.insert(GET_INDEX_CONST_NODE(GetPointer<gimple_node>(GET_CONST_NODE(tn))->scpe));
-   };
+   const auto add_to_modified = [&](const tree_nodeRef& tn)
+   { modified.insert(GET_INDEX_CONST_NODE(GetPointer<gimple_node>(GET_CONST_NODE(tn))->scpe)); };
    for(const auto& top_id : top_functions)
    {
       const auto fnode = TM->CGetTreeNode(top_id);
@@ -380,7 +380,8 @@ DesignFlowStep_Status InterfaceInfer::Exec()
             for(const auto& arg : fd->list_of_args)
             {
                THROW_ASSERT(typename_it != end, "");
-               const auto pname = [&]() {
+               const auto pname = [&]()
+               {
                   std::stringstream ss;
                   ss << arg;
                   return ss.str();
@@ -461,7 +462,8 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                      const auto acType_bw =
                          ac_type_bitwidth(DesignInterfaceTypenameArgs.at(arg_name), is_signed, is_fixed);
                      const auto is_acType = acType_bw != 0;
-                     const auto input_bw = [&]() {
+                     const auto input_bw = [&]()
+                     {
                         if(is_acType)
                         {
                            return acType_bw;
@@ -652,15 +654,18 @@ void InterfaceInfer::classifyArgRecurse(CustomOrderedSet<unsigned>& Visited, tre
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                   "---SSA VARIABLE: " + ssa_var->ToString() + " with " + STR(ssa_var->CGetUseStmts().size()) +
                       " use statements");
-   const auto propagate_arg_use = [&](tree_nodeRef fd_node, const std::vector<tree_nodeRef>& call_args,
-                                      size_t use_count) {
+   const auto propagate_arg_use =
+       [&](tree_nodeRef fd_node, const std::vector<tree_nodeRef>& call_args, size_t use_count)
+   {
       THROW_ASSERT(ssa_var->var, "unexpected condition");
       const auto orig_pd = GetPointerS<const parm_decl>(GET_CONST_NODE(ssa_var->var));
-      const auto& orig_arg_name = [&]() {
+      const auto& orig_arg_name = [&]()
+      {
          THROW_ASSERT(GetPointer<const identifier_node>(GET_CONST_NODE(orig_pd->name)), "unexpected condition");
          return GetPointerS<const identifier_node>(GET_CONST_NODE(orig_pd->name))->strg;
       }();
-      const auto orig_fname = [&]() {
+      const auto orig_fname = [&]()
+      {
          const auto fun_node = GET_CONST_NODE(orig_pd->scpe);
          THROW_ASSERT(fun_node && fun_node->get_kind() == function_decl_K, "unexpected condition");
          const auto fd = GetPointerS<const function_decl>(fun_node);
@@ -677,7 +682,8 @@ void InterfaceInfer::classifyArgRecurse(CustomOrderedSet<unsigned>& Visited, tre
       for(auto use_idx = 0U; use_idx < use_count; ++use_idx, ++par_index)
       {
          // look for the actual vs formal parameter binding
-         par_index = [&](size_t start_idx) {
+         par_index = [&](size_t start_idx)
+         {
             for(auto idx = start_idx; idx < call_args.size(); ++idx)
             {
                if(GET_INDEX_CONST_NODE(call_args[idx]) == ssa_var->index)
@@ -697,7 +703,8 @@ void InterfaceInfer::classifyArgRecurse(CustomOrderedSet<unsigned>& Visited, tre
          THROW_ASSERT(GET_CONST_NODE(call_arg_ssa)->get_kind() == ssa_name_K, "");
          if(GetPointerS<const ssa_name>(GET_CONST_NODE(call_arg_ssa))->CGetUseStmts().size())
          {
-            const auto call_arg_name = [&]() {
+            const auto call_arg_name = [&]()
+            {
                const auto pd = GetPointerS<const parm_decl>(GET_CONST_NODE(call_fd->list_of_args[par_index]));
                THROW_ASSERT(GetPointer<const identifier_node>(GET_CONST_NODE(pd->name)), "unexpected condition");
                return GetPointerS<const identifier_node>(GET_CONST_NODE(pd->name))->strg;
@@ -1658,7 +1665,8 @@ void InterfaceInfer::create_resource_m_axi(const std::set<std::string>& operatio
       const auto Port_wdata = CM->add_port("_m_axi_" + bundle_name + "_WDATA", port_o::OUT, interface_top, Intype);
       GetPointerS<port_o>(Port_wdata)->set_port_interface(port_o::port_interface::M_AXI_WDATA);
 
-      const auto Port_wstrb = CM->add_port("_m_axi_" + bundle_name + "_WSTRB", port_o::OUT, interface_top, strbType);
+      const auto Port_wstrb =
+          CM->add_port_vector("_m_axi_" + bundle_name + "_WSTRB", port_o::OUT, 1, interface_top, strbType);
       GetPointerS<port_o>(Port_wstrb)->set_port_interface(port_o::port_interface::M_AXI_WSTRB);
 
       const auto Port_wlast = CM->add_port("_m_axi_" + bundle_name + "_WLAST", port_o::OUT, interface_top, bool_type);
