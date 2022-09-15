@@ -408,14 +408,14 @@ void CTestbenchExecution::ComputeRelationships(DesignFlowStepSet& relationship,
              design_flow_manager.lock()->CGetDesignFlowStepFactory("Frontend"));
 
          const vertex call_graph_computation_step = design_flow_manager.lock()->GetDesignFlowStep(
-             ApplicationFrontendFlowStep::ComputeSignature(FUNCTION_ANALYSIS));
+             ApplicationFrontendFlowStep::ComputeSignature(COMPLETE_CALL_GRAPH));
 
          const DesignFlowGraphConstRef design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
 
          const DesignFlowStepRef cg_design_flow_step =
              call_graph_computation_step ?
                  design_flow_graph->CGetDesignFlowStepInfo(call_graph_computation_step)->design_flow_step :
-                 frontend_step_factory->CreateApplicationFrontendFlowStep(FUNCTION_ANALYSIS);
+                 frontend_step_factory->CreateApplicationFrontendFlowStep(COMPLETE_CALL_GRAPH);
 
          relationship.insert(cg_design_flow_step);
 
