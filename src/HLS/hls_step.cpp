@@ -420,14 +420,14 @@ void HLS_step::ComputeRelationships(DesignFlowStepSet& design_flow_step_set,
       {
          case HLSFlowStep_Relationship::ALL_FUNCTIONS:
          {
-            const auto* frontend_flow_step_factory = GetPointer<const FrontendFlowStepFactory>(
+            const auto frontend_flow_step_factory = GetPointer<const FrontendFlowStepFactory>(
                 design_flow_manager.lock()->CGetDesignFlowStepFactory("Frontend"));
-            const vertex call_graph_computation_step = design_flow_manager.lock()->GetDesignFlowStep(
-                ApplicationFrontendFlowStep::ComputeSignature(FUNCTION_ANALYSIS));
-            const DesignFlowStepRef cg_design_flow_step =
+            const auto call_graph_computation_step = design_flow_manager.lock()->GetDesignFlowStep(
+                ApplicationFrontendFlowStep::ComputeSignature(COMPLETE_CALL_GRAPH));
+            const auto cg_design_flow_step =
                 call_graph_computation_step ?
                     design_flow_graph->CGetDesignFlowStepInfo(call_graph_computation_step)->design_flow_step :
-                    frontend_flow_step_factory->CreateApplicationFrontendFlowStep(FUNCTION_ANALYSIS);
+                    frontend_flow_step_factory->CreateApplicationFrontendFlowStep(COMPLETE_CALL_GRAPH);
             design_flow_step_set.insert(cg_design_flow_step);
             for(auto const function : functions)
             {
@@ -458,11 +458,11 @@ void HLS_step::ComputeRelationships(DesignFlowStepSet& design_flow_step_set,
             const auto* frontend_flow_step_factory = GetPointer<const FrontendFlowStepFactory>(
                 design_flow_manager.lock()->CGetDesignFlowStepFactory("Frontend"));
             const vertex call_graph_computation_step = design_flow_manager.lock()->GetDesignFlowStep(
-                ApplicationFrontendFlowStep::ComputeSignature(FUNCTION_ANALYSIS));
+                ApplicationFrontendFlowStep::ComputeSignature(COMPLETE_CALL_GRAPH));
             const DesignFlowStepRef cg_design_flow_step =
                 call_graph_computation_step ?
                     design_flow_graph->CGetDesignFlowStepInfo(call_graph_computation_step)->design_flow_step :
-                    frontend_flow_step_factory->CreateApplicationFrontendFlowStep(FUNCTION_ANALYSIS);
+                    frontend_flow_step_factory->CreateApplicationFrontendFlowStep(COMPLETE_CALL_GRAPH);
             design_flow_step_set.insert(cg_design_flow_step);
             /// Root function cannot be computed at the beginning
             if(boost::num_vertices(*(call_graph_manager->CGetCallGraph())) == 0)
