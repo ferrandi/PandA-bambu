@@ -40,10 +40,10 @@
 #ifndef DAG_SSSP_HPP
 #define DAG_SSSP_HPP
 
-#include <vector>
+#include <limits>
 #include <list>
 #include <map>
-#include <limits>
+#include <vector>
 
 class DAG_SSSP
 {

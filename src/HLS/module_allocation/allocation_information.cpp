@@ -3885,24 +3885,24 @@ void AllocationInformation::Initialize()
    connection_offset =
        parameters->IsParameter("ConnectionOffset") ?
            parameters->GetParameter<double>("ConnectionOffset") :
-           parameters->IsParameter("RelativeConnectionOffset") ?
+       parameters->IsParameter("RelativeConnectionOffset") ?
            parameters->GetParameter<double>("RelativeConnectionOffset") * get_setup_hold_time() :
-           HLS_T->get_target_device()->has_parameter("RelativeConnectionOffset") ?
+       HLS_T->get_target_device()->has_parameter("RelativeConnectionOffset") ?
            HLS_T->get_target_device()->get_parameter<double>("RelativeConnectionOffset") * get_setup_hold_time() :
-           HLS_T->get_target_device()->has_parameter("ConnectionOffset") ?
+       HLS_T->get_target_device()->has_parameter("ConnectionOffset") ?
            HLS_T->get_target_device()->get_parameter<double>("ConnectionOffset") :
            NUM_CST_allocation_default_connection_offset;
 
    output_DSP_connection_time =
        parameters->IsParameter("OutputDSPConnectionRatio") ?
            parameters->GetParameter<double>("OutputDSPConnectionRatio") * get_setup_hold_time() :
-           HLS_T->get_target_device()->has_parameter("OutputDSPConnectionRatio") ?
+       HLS_T->get_target_device()->has_parameter("OutputDSPConnectionRatio") ?
            HLS_T->get_target_device()->get_parameter<double>("OutputDSPConnectionRatio") * get_setup_hold_time() :
            NUM_CST_allocation_default_output_DSP_connection_ratio * get_setup_hold_time();
    output_carry_connection_time =
        parameters->IsParameter("OutputCarryConnectionRatio") ?
            parameters->GetParameter<double>("OutputCarryConnectionRatio") * get_setup_hold_time() :
-           HLS_T->get_target_device()->has_parameter("OutputCarryConnectionRatio") ?
+       HLS_T->get_target_device()->has_parameter("OutputCarryConnectionRatio") ?
            HLS_T->get_target_device()->get_parameter<double>("OutputCarryConnectionRatio") * get_setup_hold_time() :
            NUM_CST_allocation_default_output_carry_connection_ratio * get_setup_hold_time();
    fanout_coefficient = parameters->IsParameter("FanOutCoefficient") ?

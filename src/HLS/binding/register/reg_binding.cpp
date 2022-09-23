@@ -87,7 +87,7 @@ reg_binding::reg_binding(const hlsRef& HLS_, const HLS_managerRef HLSMgr_)
       FB(HLSMgr->CGetFunctionBehavior(HLS->functionId))
 {
    if(reset_type.empty())
-{
+   {
       reset_type = HLSMgr->get_parameter()->getOption<std::string>(OPT_reset_type);
    }
 }
@@ -133,9 +133,9 @@ void reg_binding::print_el(const_iterator& it) const
 {
    INDENT_OUT_MEX(
        OUTPUT_LEVEL_VERY_PEDANTIC, HLS->output_level,
-                  "---Storage Value: " + STR(it->first) + " for variable " +
+       "---Storage Value: " + STR(it->first) + " for variable " +
            FB->CGetBehavioralHelper()->PrintVariable(HLS->storage_value_information->get_variable_index(it->first)) +
-                      " stored into register " + it->second->get_string());
+           " stored into register " + it->second->get_string());
 }
 
 CustomOrderedSet<unsigned int> reg_binding::get_vars(const unsigned int& r) const
