@@ -1878,10 +1878,13 @@ bool parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
                for(boost::tie(eo, eo_end) = boost::out_edges(phi_vertex, *opDFG); eo != eo_end; eo++)
                {
                   vertex target = boost::target(*eo, *opDFG);
-                  auto cs_tgt_vertex = from_strongtype_cast<unsigned>(schedule->get_cstep(target).second);
-                  if(cs_tgt_vertex < latest_cs)
+                  if(Operations.find(target) != Operations.end())
                   {
-                     latest_cs = cs_tgt_vertex;
+                     auto cs_tgt_vertex = from_strongtype_cast<unsigned>(schedule->get_cstep(target).second);
+                     if(cs_tgt_vertex < latest_cs)
+                     {
+                        latest_cs = cs_tgt_vertex;
+                     }
                   }
                }
                if(latest_cs > cs_phi_vertex && (latest_cs + LP_II >= cs_last_vertex + last_vertex_n_cycles))
