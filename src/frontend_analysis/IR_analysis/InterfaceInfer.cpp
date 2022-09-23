@@ -184,7 +184,7 @@ void InterfaceInfer::Initialize()
 {
    const auto HLSMgr = GetPointer<HLS_manager>(AppM);
    THROW_ASSERT(HLSMgr, "");
-   const auto parseInterfaceXML = [&](const std::string& XMLfilename) {
+   const auto parseInterfaceXML = [&](const std::string& XMLfilename, bool check) {
       if(boost::filesystem::exists(boost::filesystem::path(XMLfilename)))
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->parsing " + XMLfilename);
@@ -328,14 +328,14 @@ void InterfaceInfer::Initialize()
          }
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--parsed file " + XMLfilename);
       }
-      else
+      else if(check)
       {
          THROW_ERROR("The file " + XMLfilename + " passed to --interface-xml-filename option does not exist");
       }
    };
    if(parameters->isOption(OPT_interface_xml_filename))
    {
-      parseInterfaceXML(parameters->getOption<std::string>(OPT_interface_xml_filename));
+      parseInterfaceXML(parameters->getOption<std::string>(OPT_interface_xml_filename), true);
    }
    else
    {
@@ -345,7 +345,7 @@ void InterfaceInfer::Initialize()
          const auto output_temporary_directory = parameters->getOption<std::string>(OPT_output_temporary_directory);
          const std::string leaf_name = source_file.second == "-" ? "stdin-" : GetLeafFileName(source_file.second);
          const auto XMLfilename = output_temporary_directory + "/" + leaf_name + ".interface.xml";
-         parseInterfaceXML(XMLfilename);
+         parseInterfaceXML(XMLfilename, false);
       }
    }
 }
