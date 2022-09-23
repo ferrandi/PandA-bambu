@@ -638,7 +638,8 @@ struct resource_table<false>
    CustomMap<unsigned int, unsigned int> used_resources;
 };
 
-bool parametric_list_based::compute_minmaxII(const OpVertexSet& Operations, unsigned& minII, unsigned& maxII,
+bool parametric_list_based::compute_minmaxII(const OpVertexSet& Operations, const ControlStep& ctrl_steps,
+                                             unsigned& minII, unsigned& maxII,
                                              CustomUnorderedSet<std::pair<vertex, vertex>>& toBeScheduled)
 {
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "   Computing resMII...");
@@ -796,21 +797,22 @@ bool parametric_list_based::compute_minmaxII(const OpVertexSet& Operations, unsi
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "   recMII=" + STR(recMII));
    minII = static_cast<unsigned>(std::max(resMII, recMII));
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---minII=" + STR(minII));
-   ASLAPRef aslap;
-   CustomUnorderedSet<vertex> operations;
-   for(auto op : Operations)
-   {
-      operations.insert(op);
-   }
-   aslap = ASLAPRef(new ASLAP(HLSMgr, HLS, operations, parameters, CTRL_STEP_MULTIPLIER));
-   aslap->compute_ASAP();
 
-   maxII = from_strongtype_cast<unsigned>(aslap->CGetASAP()->get_csteps());
+   CustomUnorderedSet<std::pair<vertex, vertex>> emptySet;
+   bool stopSearch;
+   exec<false>(Operations, ctrl_steps, 0, emptySet, stopSearch);
+   auto last_cs = HLS->Rsch->get_csteps();
+   maxII = from_strongtype_cast<unsigned>(last_cs - ctrl_steps);
+
    if(minII >= maxII)
    {
       INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
                      "---Loop pipelining not interesting for this candidate.\n    Estimated maxII=" + STR(maxII));
       return false;
+   }
+   for(auto& op : Operations)
+   {
+      HLS->Rsch->remove_sched(op);
    }
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---maxII=" + STR(maxII));
    return true;
@@ -1863,11 +1865,6 @@ bool parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
             const auto cs_last_vertex = from_strongtype_cast<unsigned>(schedule->get_cstep(last_vertex).second);
             auto last_vertex_n_cycles =
                 1 + from_strongtype_cast<unsigned>(schedule->get_cstep_end(last_vertex).second) - cs_last_vertex;
-            std::cerr << "vertexU=" << GET_NAME(flow_graph, op.first) << "\n";
-            std::cerr << "vertexV=" << GET_NAME(flow_graph, op.second) << "\n";
-            std::cerr << "cs_phi_vertex " << cs_phi_vertex << "\n";
-            std::cerr << "cs_last_vertex " << cs_last_vertex << "\n";
-            std::cerr << "last_vertex_n_cycles " << last_vertex_n_cycles << "\n";
             if(cs_phi_vertex + LP_II < cs_last_vertex + last_vertex_n_cycles)
             {
                /// try to legalize PHIs
@@ -2370,7 +2367,8 @@ DesignFlowStep_Status parametric_list_based::InternalExec()
    {
       auto isLPBB = false; // LPBB.find(*vi) != LPBB.end();
       OpVertexSet operations(op_graph);
-      std::list<vertex> bb_operations = bbg->CGetBBNodeInfo(*vi)->statements_list;
+      auto BBI = bbg->CGetBBNodeInfo(*vi);
+      std::list<vertex> bb_operations = BBI->statements_list;
       for(auto& bb_operation : bb_operations)
       {
          if(HLS->operations.find(bb_operation) != HLS->operations.end())
@@ -2393,14 +2391,14 @@ DesignFlowStep_Status parametric_list_based::InternalExec()
       }
 
       PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level,
-                    "performing scheduling of basic block " + STR(bbg->CGetBBNodeInfo(*vi)->block->number));
+                    "performing scheduling of basic block " + STR(BBI->block->number));
       PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level,
                     "  .operations: " + STR(operations.size()) + " LPBB=" + (isLPBB ? "T" : "F"));
       if(isLPBB)
       {
          unsigned minII, maxII;
          CustomUnorderedSet<std::pair<vertex, vertex>> toBeScheduled;
-         auto doLP = compute_minmaxII(operations, minII, maxII, toBeScheduled);
+         auto doLP = compute_minmaxII(operations, ctrl_steps, minII, maxII, toBeScheduled);
          if(doLP)
          {
             doLP = false;
@@ -2412,7 +2410,8 @@ DesignFlowStep_Status parametric_list_based::InternalExec()
                if(stopSearch)
                {
                   doLP = false;
-                  INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Loop pipelining not possible for this loop");
+                  INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
+                                 "---Loop pipelining not possible for loop (BB" + STR(BBI->block->number) + ")");
                   /// unroll previous solution
                   for(auto& op : operations)
                   {
@@ -2423,7 +2422,8 @@ DesignFlowStep_Status parametric_list_based::InternalExec()
                if(res_sched)
                {
                   doLP = true;
-                  INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---II=" + STR(II) + " solution found");
+                  INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
+                                 "---II=" + STR(II) + " solution found for loop (BB" + STR(BBI->block->number) + ")");
                   break;
                }
                else
@@ -2435,12 +2435,14 @@ DesignFlowStep_Status parametric_list_based::InternalExec()
                   }
                }
             }
-         }
-         if(!doLP)
-         {
-            CustomUnorderedSet<std::pair<vertex, vertex>> emptySet;
-            bool stopSearch;
-            exec<false>(operations, ctrl_steps, 0, emptySet, stopSearch);
+            if(!doLP)
+            {
+               INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
+                              "---Loop pipelining not possible for loop (BB" + STR(BBI->block->number) + ")");
+               CustomUnorderedSet<std::pair<vertex, vertex>> emptySet;
+               bool stopSearch;
+               exec<false>(operations, ctrl_steps, 0, emptySet, stopSearch);
+            }
          }
       }
       else
