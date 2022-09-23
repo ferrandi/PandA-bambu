@@ -111,6 +111,12 @@ struct AbsControlStep : std::pair<unsigned int, ControlStep>
    bool operator<(const AbsControlStep& other) const;
 };
 
+struct loopPipelinedInfo
+{
+   unsigned int II = 0;
+   const CustomUnorderedSet<std::pair<vertex, vertex>> feedback_edges;
+};
+
 /**
  * Class managing the schedule of the operations.
  */
@@ -171,6 +177,9 @@ class Schedule
 
    /// The debug level
    const int debug_level;
+
+   /// store for each loop pipelined the resulting II and other infos
+   CustomMap<unsigned, loopPipelinedInfo> loopPipelinedMap;
 
    /**
     * Get when in a basic block an ssa is ready
@@ -386,6 +395,16 @@ class Schedule
     * @param value is the value of the correction
     */
    void AddConnectionTimes(unsigned int first_operation, unsigned int second_operation, const double value);
+
+   /**
+    * @brief AddLoopPipelinedInfor add info about the obtained II for a given BB
+    * @param BB_index
+    * @param II
+    */
+   void AddLoopPipelinedInfor(unsigned BB_index, unsigned II, const CustomUnorderedSet<std::pair<vertex, vertex>>& fe)
+   {
+      loopPipelinedMap.insert({BB_index, {II, fe}});
+   }
 };
 /// Refcount definition of the class
 using ScheduleRef = refcount<Schedule>;

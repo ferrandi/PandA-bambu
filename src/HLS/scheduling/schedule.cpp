@@ -316,6 +316,7 @@ void Schedule::clear()
    tot_csteps = ControlStep(0u);
    op_starting_cycle.clear();
    starting_cycles_to_ops.clear();
+   loopPipelinedMap.clear();
 }
 
 void Schedule::remove_sched(const vertex& op)
@@ -1404,6 +1405,7 @@ void Schedule::Initialize()
    starting_times.clear();
    ending_times.clear();
    op_slack.clear();
+   loopPipelinedMap.clear();
    const FunctionBehaviorConstRef FB = hls_manager.lock()->CGetFunctionBehavior(function_index);
    op_graph = FB->CGetOpGraph(FunctionBehavior::FLSAODG);
 }

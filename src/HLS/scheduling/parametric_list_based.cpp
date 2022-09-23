@@ -2424,6 +2424,7 @@ DesignFlowStep_Status parametric_list_based::InternalExec()
                   doLP = true;
                   INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
                                  "---II=" + STR(II) + " solution found for loop (BB" + STR(BBI->block->number) + ")");
+                  HLS->Rsch->AddLoopPipelinedInfor(BBI->block->number, II, toBeScheduled);
                   break;
                }
                else
