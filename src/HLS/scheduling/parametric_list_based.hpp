@@ -326,7 +326,8 @@ class parametric_list_based : public schedulingBaseStep
     */
    void compute_function_topological_order();
 
-   bool compute_minmaxII(const OpVertexSet& Operations, const ControlStep& ctrl_steps, unsigned& minII, unsigned& maxII,
+   bool compute_minmaxII(const OpVertexSet& Operations, const ControlStep& ctrl_steps, unsigned int bb_index,
+                         unsigned& minII, unsigned& maxII,
                          CustomUnorderedSet<std::pair<vertex, vertex>>& toBeScheduled);
 
  public:
