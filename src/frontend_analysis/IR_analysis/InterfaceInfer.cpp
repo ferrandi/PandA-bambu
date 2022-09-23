@@ -328,6 +328,10 @@ void InterfaceInfer::Initialize()
          }
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--parsed file " + XMLfilename);
       }
+      else
+      {
+         THROW_ERROR("The file " + XMLfilename + " passed to --interface-xml-filename option does not exist");
+      }
    };
    if(parameters->isOption(OPT_interface_xml_filename))
    {
