@@ -398,12 +398,17 @@ class Schedule
 
    /**
     * @brief AddLoopPipelinedInfor add info about the obtained II for a given BB
-    * @param BB_index
-    * @param II
+    * @param BB_index is the basic block index of the pipelined loop
+    * @param II are the initiation interval
+    * @param fe are the data feedback edges
     */
    void AddLoopPipelinedInfor(unsigned BB_index, unsigned II, const CustomUnorderedSet<std::pair<vertex, vertex>>& fe)
    {
       loopPipelinedMap.insert({BB_index, {II, fe}});
+   }
+   bool IsLoopPipelined(unsigned BB_index) const
+   {
+      return loopPipelinedMap.find(BB_index) != loopPipelinedMap.end();
    }
 };
 /// Refcount definition of the class

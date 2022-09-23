@@ -746,24 +746,28 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
       {
          if(FB_CFG_SELECTOR & fbb->GetSelector(fbbei))
          {
+            vertex bbEndingCycle = boost::source(fbbei, *fbb);
+            vertex bbStartingCycle = boost::target(fbbei, *fbb);
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                            "-->Analyzing cycle starting from " +
-                               STR(fbb->CGetBBNodeInfo(boost::source(fbbei, *fbb))->block->number) + "-->" +
-                               STR(fbb->CGetBBNodeInfo(boost::target(fbbei, *fbb))->block->number));
-            vertex bbEndingCycle = boost::source(fbbei, *fbb);
-            // std::cerr << "begin cycles optimization" << std::endl;
-            optimize_cycles(bbEndingCycle, first_state, last_state, global_starting_ops, global_ending_ops,
-                            global_executing_ops, global_onfly_ops);
-            // std::cerr << "end cycles optimization " << STR(instance) << std::endl;
-            if(parameters->getOption<bool>(OPT_print_dot) && DEBUG_LEVEL_VERY_PEDANTIC <= debug_level)
+                               STR(fbb->CGetBBNodeInfo(bbEndingCycle)->block->number) + "-->" +
+                               STR(fbb->CGetBBNodeInfo(bbStartingCycle)->block->number));
+            if(!HLS->Rsch->IsLoopPipelined(fbb->CGetBBNodeInfo(bbStartingCycle)->block->number) &&
+               !HLS->Rsch->IsLoopPipelined(fbb->CGetBBNodeInfo(bbEndingCycle)->block->number))
             {
-               HLS->STG->CGetStg()->WriteDot("HLS_STGraph-post" + STR(instance) + ".dot");
+               // std::cerr << "begin cycles optimization" << std::endl;
+               optimize_cycles(bbEndingCycle, first_state, last_state, global_starting_ops, global_ending_ops,
+                               global_executing_ops, global_onfly_ops);
+               // std::cerr << "end cycles optimization " << STR(instance) << std::endl;
+               if(parameters->getOption<bool>(OPT_print_dot) && DEBUG_LEVEL_VERY_PEDANTIC <= debug_level)
+               {
+                  HLS->STG->CGetStg()->WriteDot("HLS_STGraph-post" + STR(instance) + ".dot");
+               }
+               ++instance;
             }
-            ++instance;
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                           "<--Analyzed cycle starting from " +
-                               STR(fbb->CGetBBNodeInfo(boost::source(fbbei, *fbb))->block->number) + "-->" +
-                               STR(fbb->CGetBBNodeInfo(boost::target(fbbei, *fbb))->block->number));
+                           "<--Analyzed cycle starting from " + STR(fbb->CGetBBNodeInfo(bbEndingCycle)->block->number) +
+                               "-->" + STR(fbb->CGetBBNodeInfo(bbStartingCycle)->block->number));
          }
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed cycles");
