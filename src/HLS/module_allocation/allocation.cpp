@@ -146,6 +146,20 @@ static inline std::string encode_op_type_prec(const std::string& op_name, const 
    return op_type;
 }
 
+static bool has_to_be_generated(const structural_managerRef& sm)
+{
+   if(sm)
+   {
+      const auto npf = GetPointer<module>(sm->get_circ())->get_NP_functionality();
+      if(npf)
+      {
+         return npf->exist_NP_functionality(NP_functionality::VERILOG_GENERATOR) ||
+                npf->exist_NP_functionality(NP_functionality::VHDL_GENERATOR);
+      }
+   }
+   return false;
+}
+
 allocation::allocation(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, unsigned _funId,
                        const DesignFlowManagerConstRef _design_flow_manager, const HLSFlowStep_Type _hls_flow_step_type)
     : HLSFunctionStep(_parameters, _HLSMgr, _funId, _design_flow_manager, _hls_flow_step_type)
@@ -641,7 +655,8 @@ void allocation::add_proxy_function_wrapper(const std::string& library_name, tec
       }
    }
 
-   const NP_functionalityRef& np = fu_module->get_NP_functionality();
+   const auto& np = fu_module->get_NP_functionality();
+   THROW_ASSERT(np, "Missing NP functonality");
    std::string orig_np_library = np->get_NP_functionality(NP_functionality::LIBRARY);
    orig_np_library.replace(0, orig_fun_name.size(), wrapped_fu_name);
    CM->add_NP_functionality(wrapper_top, NP_functionality::LIBRARY, orig_np_library);
@@ -1057,7 +1072,8 @@ void allocation::add_proxy_function_module(const HLS_constraintsRef HLS_C, techn
       GetPointer<port_o>(proxy_generated_port)->set_id(proxied_port_name);
    }
 
-   const NP_functionalityRef& np = fu_module->get_NP_functionality();
+   const auto& np = fu_module->get_NP_functionality();
+   THROW_ASSERT(np, "Missing NP functonality");
    std::string orig_np_library = np->get_NP_functionality(NP_functionality::LIBRARY);
    orig_np_library.replace(0, orig_fun_name.size(), proxied_fu_name);
    CM->add_NP_functionality(top, NP_functionality::LIBRARY, orig_np_library);
@@ -2206,15 +2222,8 @@ DesignFlowStep_Status allocation::InternalExec()
 
                std::string current_op;
                std::string specialized_fuName = "";
-
-               bool has_to_be_generated =
-                   structManager_obj && (GetPointer<module>(structManager_obj->get_circ())
-                                             ->get_NP_functionality()
-                                             ->exist_NP_functionality(NP_functionality::VERILOG_GENERATOR) ||
-                                         GetPointer<module>(structManager_obj->get_circ())
-                                             ->get_NP_functionality()
-                                             ->exist_NP_functionality(NP_functionality::VHDL_GENERATOR));
-               if(has_to_be_generated)
+               const auto generate_module = has_to_be_generated(structManager_obj);
+               if(generate_module)
                {
                   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Unit has to be specialized.");
                   const ModuleGeneratorManagerRef modGen(new ModuleGeneratorManager(HLSMgr, parameters));
@@ -2319,7 +2328,7 @@ DesignFlowStep_Status allocation::InternalExec()
                std::string functionalUnitName = "";
                unsigned int specializedId = current_id;
                const library_managerRef libraryManager = TechM->get_library_manager(library_name);
-               if(has_to_be_generated)
+               if(generate_module)
                {
                   functionalUnitName = specialized_fuName;
                   techMap = fu_list.find(new_fu.find(functionalUnitName)->second);
@@ -2613,6 +2622,7 @@ std::string allocation::get_compliant_pipelined_unit(double clock, const std::st
       structural_objectRef tmodobj = tcm->get_circ();
       auto* tmod = GetPointer<module>(tmodobj);
       const NP_functionalityRef& np = tmod->get_NP_functionality();
+      THROW_ASSERT(np, "Missing NP functonality");
       if(np->get_NP_functionality(NP_functionality::FLOPOCO_PROVIDED).size())
       {
          is_flopoco_provided = true;
@@ -3141,12 +3151,7 @@ void allocation::IntegrateTechnologyLibraries()
             if(!wrapper_tn)
             {
                structural_managerRef structManager_obj = GetPointer<functional_unit>(techNode_obj)->CM;
-               if(structManager_obj && (GetPointer<module>(structManager_obj->get_circ())
-                                            ->get_NP_functionality()
-                                            ->exist_NP_functionality(NP_functionality::VERILOG_GENERATOR) or
-                                        GetPointer<module>(structManager_obj->get_circ())
-                                            ->get_NP_functionality()
-                                            ->exist_NP_functionality(NP_functionality::VHDL_GENERATOR)))
+               if(has_to_be_generated(structManager_obj))
                {
                   const ModuleGeneratorManagerRef modGen(new ModuleGeneratorManager(HLSMgr, parameters));
                   std::string new_shared_fu_name = shared_fu_name + "_modgen";
