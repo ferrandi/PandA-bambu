@@ -1026,7 +1026,7 @@ bool Parameter::ManageGccOptions(int next_option, char* optarg_param)
       }
       case INPUT_OPT_READ_GCC_XML:
       {
-         setOption(OPT_gcc_read_xml, optarg);
+         setOption(OPT_gcc_read_xml, GetPath(optarg));
          break;
       }
       case INPUT_OPT_STD:
@@ -1041,7 +1041,7 @@ bool Parameter::ManageGccOptions(int next_option, char* optarg_param)
       }
       case INPUT_OPT_WRITE_GCC_XML:
       {
-         setOption(OPT_gcc_write_xml, optarg);
+         setOption(OPT_gcc_write_xml, GetPath(optarg));
          break;
       }
       default:

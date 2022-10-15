@@ -411,16 +411,16 @@ DesignFlowStep_Status Evaluation::Exec()
       }
    }
 
-   std::string out_file_name = "bambu_results";
+   unsigned int progressive = 0U;
+   const auto out_file_name = [&]() {
+      std::string candidate_out_file_name;
+      do
+      {
+         candidate_out_file_name = GetPath("bambu_results_" + STR(progressive++) + ".xml");
+      } while(boost::filesystem::exists(candidate_out_file_name));
+      return candidate_out_file_name;
+   }();
 
-   unsigned int progressive = 0;
-   std::string candidate_out_file_name;
-   do
-   {
-      candidate_out_file_name = GetPath(out_file_name + "_" + STR(progressive++) + ".xml");
-   } while(boost::filesystem::exists(candidate_out_file_name));
-
-   out_file_name = candidate_out_file_name;
    xml_document document;
    xml_element* nodeRoot = document.create_root_node("bambu_results");
 

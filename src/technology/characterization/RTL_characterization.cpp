@@ -373,7 +373,7 @@ void RTLCharacterization::fix_proxies_execution_time_std()
 
 void RTLCharacterization::xwrite_device_file(const target_deviceRef device)
 {
-   std::string file_name = "characterization.xml";
+   const auto file_name = GetPath("characterization.xml");
    try
    {
       xml_document document;
@@ -863,7 +863,8 @@ void RTLCharacterization::AnalyzeCell(functional_unit* fu, const unsigned int pr
       structural_objectRef template_circuit = SM->add_module_from_technology_library(
           fu_base_name + "_inst0", fu_base_name, LM->get_library_name(), circuit, TM);
 
-      PRINT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, " - Generating HDL of functional unit " + fu_name);
+      PRINT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level,
+                    " - Generating HDL of functional unit " + top_wrapper_name + "(" + fu_name + ")");
       auto* spec_module = GetPointer<module>(template_circuit);
 
       std::string memory_type = fu->memory_type;
@@ -1040,7 +1041,7 @@ void RTLCharacterization::AnalyzeCell(functional_unit* fu, const unsigned int pr
 
       structural_type_descriptorRef bool_type =
           structural_type_descriptorRef(new structural_type_descriptor("bool", 0));
-      one_port = SM->add_constant(fu_name + "_constant_" + STR(1), circuit, bool_type, STR(1));
+      one_port = SM->add_constant(top_wrapper_name + "_constant_" + STR(1), circuit, bool_type, STR(1));
       std::string register_library = TM->get_library(register_AR_NORETIME);
       structural_objectRef clock_port, reset_port;
 
@@ -1202,7 +1203,7 @@ void RTLCharacterization::AnalyzeCell(functional_unit* fu, const unsigned int pr
       std::list<std::string> hdl_files, aux_files;
       std::list<structural_objectRef> circuits;
       circuits.push_back(circuit);
-      HDL->hdl_gen(fu_name, circuits, false, hdl_files, aux_files);
+      HDL->hdl_gen(top_wrapper_name, circuits, false, hdl_files, aux_files);
       int PipelineDepth = -1;
 #if HAVE_FLOPOCO
       if(n_pipe_parameters > 0 && NPF && NPF->exist_NP_functionality(NP_functionality::FLOPOCO_PROVIDED) &&
@@ -1227,8 +1228,9 @@ void RTLCharacterization::AnalyzeCell(functional_unit* fu, const unsigned int pr
 #endif
       /// generate the synthesis scripts
       BackendFlowRef flow = BackendFlow::CreateFlow(parameters, "Characterization", target);
-      flow->GenerateSynthesisScripts(fu->get_name(), SM, hdl_files, aux_files);
-      PRINT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "Performing characterization of functional unit " + fu_name);
+      flow->GenerateSynthesisScripts(top_wrapper_name, SM, hdl_files, aux_files);
+      PRINT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level,
+                    "Performing characterization of functional unit " + top_wrapper_name + "(" + fu_name + ")");
 #ifndef NDEBUG
       if(not dummy_synthesis)
 #endif
