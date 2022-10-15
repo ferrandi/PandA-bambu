@@ -10,6 +10,12 @@ import subprocess
 import sys
 import threading
 
+# The absolute path of current script
+abs_script = os.path.dirname(os.path.abspath(sys.argv[0]))
+
+# The absolute path of panda
+abs_panda = os.path.abspath(os.path.join(abs_script, "../../"))
+
 
 def GetChildren(parent_pid):
     # Return children of a process
@@ -43,7 +49,8 @@ def execute_characterization(device_fu_list, thread_index):
         local_index = line_index
         line_index += 1
     while local_index < len(lines) and not killing:
-        cwd = ComputeDirectory(lines[local_index])
+        local_args = lines[local_index].replace('PANDA_ROOT', abs_panda)
+        cwd = ComputeDirectory(local_args)
         failed_output_file_name = os.path.join(cwd, "eucalyptus_failed_output")
         if os.path.exists(failed_output_file_name):
             os.remove(failed_output_file_name)
@@ -58,13 +65,12 @@ def execute_characterization(device_fu_list, thread_index):
                     total_characterization += 1
                     passed_characterization += 1
                     logging.info("   SKIPPING --- OVERALL: " + str(passed_characterization) + " passed, " + str(total_characterization-passed_characterization) +
-                                 " failed, " + str(len(lines)-total_characterization) + " queued --- " + lines[local_index].replace("\\", ""))
+                                 " failed, " + str(len(lines)-total_characterization) + " queued --- " + local_args.replace("\\", ""))
                     local_index = line_index
                     line_index += 1
                 continue
         output_file_name = os.path.join(cwd, "eucalyptus_execution_output")
         output_file = open(output_file_name, "w")
-        local_args = lines[local_index]
         if local_args[0] == "\"":
             local_args = local_args[1:-1]
         local_command = "ulimit " + args.ulimit + \
@@ -101,7 +107,7 @@ def execute_characterization(device_fu_list, thread_index):
         tool_return_value_file.write(str(return_value))
         tool_return_value_file.close()
         args_file = open(os.path.join(cwd, "args"), "w")
-        args_file.write(lines[local_index])
+        args_file.write(local_args)
         args_file.close()
         if not killing or (return_value != -9 and return_value != 0):
             if return_value != 0:
@@ -112,7 +118,7 @@ def execute_characterization(device_fu_list, thread_index):
                 if return_value == 0:
                     passed_characterization += 1
                     logging.info("   SUCCESS --- OVERALL: " + str(passed_characterization) + " passed, " + str(total_characterization-passed_characterization) +
-                                 " failed, " + str(len(lines)-total_characterization) + " queued --- " + lines[local_index].replace("\\", ""))
+                                 " failed, " + str(len(lines)-total_characterization) + " queued --- " + local_args.replace("\\", ""))
                     if not args.no_clean:
                         for sub in os.listdir(cwd):
                             if os.path.isdir(os.path.join(cwd, sub)):
@@ -122,13 +128,13 @@ def execute_characterization(device_fu_list, thread_index):
                                     os.remove(os.path.join(cwd, sub))
                 elif return_value == 124:
                     logging.info("   FAILURE (Timeout) --- OVERALL: " + str(passed_characterization) + " passed, " + str(total_characterization -
-                                 passed_characterization) + " failed, " + str(len(lines)-total_characterization) + " queued --- " + lines[local_index].replace("\\", ""))
+                                 passed_characterization) + " failed, " + str(len(lines)-total_characterization) + " queued --- " + local_args.replace("\\", ""))
                 elif return_value == 153:
                     logging.info("   FAILURE (File size limit exceeded) --- OVERALL: " + str(passed_characterization) + " passed, " + str(total_characterization -
-                                 passed_characterization) + " failed, " + str(len(lines)-total_characterization) + " queued --- " + lines[local_index].replace("\\", ""))
+                                 passed_characterization) + " failed, " + str(len(lines)-total_characterization) + " queued --- " + local_args.replace("\\", ""))
                 else:
                     logging.info("   FAILURE --- OVERALL: " + str(passed_characterization) + " passed, " + str(total_characterization-passed_characterization) +
-                                 " failed, " + str(len(lines)-total_characterization) + " queued --- " + lines[local_index].replace("\\", ""))
+                                 " failed, " + str(len(lines)-total_characterization) + " queued --- " + local_args.replace("\\", ""))
             with lock:
                 local_index = line_index
                 line_index += 1
@@ -276,12 +282,6 @@ parser.add_argument("--ulimit", help="The ulimit options",
 args = parser.parse_args()
 logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
 
-# The absolute path of current script
-abs_script = os.path.dirname(os.path.abspath(sys.argv[0]))
-
-# The absolute path of panda
-abs_panda = os.path.abspath(os.path.join(abs_script, "../../"))
-
 # Check spider executable
 spider = ""
 if os.path.isfile(args.spider) and os.access(args.spider, os.X_OK):
@@ -379,10 +379,10 @@ if args.from_list == "":
     for device in args.devices.split(","):
         vendor_dirs_root = os.path.join(abs_panda, "etc/devices")
         device_file = ""
-        for vendor_dir in ["Altera_devices", "Lattice_devices", "Xilinx_devices", "NanoXplore_devices", "Generic_devices"]:
-            if os.path.exists(os.path.join(vendor_dirs_root, vendor_dir, device + "-seed.xml")):
-                device_file = os.path.join(
-                    vendor_dirs_root, vendor_dir, device + "-seed.xml")
+        for root, dirs, files in os.walk(vendor_dirs_root):
+            for name in files:
+                if name.endswith(device + "-seed.xml"):
+                    device_file = os.path.join(root, name)
         if device_file == "":
             logging.error("seed file for " + device + " not found")
             sys.exit(1)
@@ -411,15 +411,6 @@ if args.from_list == "":
             device_fu_list.write(arg_line.replace(
                 abs_panda, 'PANDA_ROOT') + '\n')
 
-    device_fu_list.close()
-else:
-    device_fu_list = open(device_fu_list_name, "r")
-    lines = device_fu_list.readlines()
-    device_fu_list.close()
-    device_fu_list_name = os.path.join(out_path, "device_fu_list")
-    device_fu_list = open(device_fu_list_name, "w")
-    for arg_line in lines:
-        device_fu_list.write(arg_line.replace('PANDA_ROOT', abs_panda))
     device_fu_list.close()
 
 if args.list_only != "":
