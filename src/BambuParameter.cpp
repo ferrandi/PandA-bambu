@@ -192,8 +192,7 @@
 #define OPT_DSP_ALLOCATION_COEFFICIENT (1 + OPT_DSE)
 #define OPT_DSP_MARGIN_COMBINATIONAL (1 + OPT_DSP_ALLOCATION_COEFFICIENT)
 #define OPT_DSP_MARGIN_PIPELINED (1 + OPT_DSP_MARGIN_COMBINATIONAL)
-#define OPT_DUMP_CONSTRAINTS (1 + OPT_DSP_MARGIN_PIPELINED)
-#define OPT_DISCREPANCY (1 + OPT_DUMP_CONSTRAINTS)
+#define OPT_DISCREPANCY (1 + OPT_DSP_MARGIN_PIPELINED)
 #define OPT_DISCREPANCY_FORCE (1 + OPT_DISCREPANCY)
 #define OPT_DISCREPANCY_HW (1 + OPT_DISCREPANCY_FORCE)
 #define OPT_DISCREPANCY_NO_LOAD_POINTERS (1 + OPT_DISCREPANCY_HW)
@@ -1130,8 +1129,6 @@ int BambuParameter::Exec()
       {"circuit-dbg", required_argument, nullptr, 0},
 #if HAVE_EXPERIMENTAL
       {"pdg-reduction", optional_argument, nullptr, 0},
-      ///--- Flow options ---
-      {"dump-constraints", optional_argument, nullptr, OPT_DUMP_CONSTRAINTS},
    /// --- Design Space Exploration options ---
 #if HAVE_BEAGLE
       {"dse", required_argument, nullptr, OPT_DSE},
@@ -1398,14 +1395,6 @@ int BambuParameter::Exec()
          {
             setOption(OPT_synthesis_flow, HLSFlowStep_Type::XML_HLS_SYNTHESIS_FLOW);
             setOption(OPT_xml_input_configuration, GetPath(optarg));
-            break;
-         }
-         case OPT_DUMP_CONSTRAINTS:
-         {
-            setOption(OPT_hls_flow, HLSFlowStep_Type::DUMP_DESIGN_FLOW);
-            setOption("dumpConstraints", true);
-            if(optarg)
-               setOption("dumpConstraints_file", optarg);
             break;
          }
          /// frontend options
@@ -4229,10 +4218,6 @@ void BambuParameter::SetDefaults()
    setOption(OPT_generate_testbench, false);
    setOption(OPT_max_sim_cycles, 200000000);
    setOption(OPT_chaining, true);
-
-   /// High-level synthesis contraints dump -- //
-   setOption("dumpConstraints", false);
-   setOption("dumpConstraints_file", "Constraints.xml");
 
    /// -- Scheduling -- //
    /// Scheduling algorithm (default is list based one)
