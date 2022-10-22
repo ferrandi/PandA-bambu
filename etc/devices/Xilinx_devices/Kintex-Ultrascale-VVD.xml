@@ -1,0 +1,282 @@
+<?xml version="1.0"?>
+<synthesis>
+   <flow name="Synthesis">
+      <step id="vivado_flow" config="vivado_flow"/>
+   </flow>
+   <flow name="Characterization">
+      <step id="vivado_flow" config="vivado_flowC"/>
+   </flow>
+   <vivado config="vivado_flowC">
+      <!--Create the design setup -->
+      <cmd name="proc dump_statistics {  } {"/>
+      <cmd name="  set util_rpt [report_utilization -return_string]"/>
+      <cmd name="  set LUTFFPairs 0"/>
+      <cmd name="  set SliceRegisters 0"/>
+      <cmd name="  set Slice 0"/>
+      <cmd name="  set SliceLUTs 0"/>
+      <cmd name="  set SliceLUTs1 0"/>
+      <cmd name="  set BRAMFIFO36 0"/>
+      <cmd name="  set BRAMFIFO18 0"/>
+      <cmd name="  set BRAMFIFO36_star 0"/>
+      <cmd name="  set BRAMFIFO18_star 0"/>
+      <cmd name="  set BRAM18 0"/>
+      <cmd name="  set BRAMFIFO 0"/>
+      <cmd name="  set BIOB 0"/>
+      <cmd name="  set DSPs 0"/>
+      <cmd name="  set TotPower 0"/>
+      <cmd name="  set design_datapath_delay 0"/>
+      <cmd name="  set mpc 0"/>
+      <cmd name="  set design_slack 0"/>
+      <cmd name="  set design_req 0"/>
+      <cmd name="  set design_delay 0"/>
+      <cmd name="  regexp --  {\s*LUT Flip Flop Pairs\s*\|\s*([^[:blank:]]+)} $util_rpt ignore LUTFFPairs"/>
+      <cmd name="  regexp --  {\s*Slice Registers\s*\|\s*([^[:blank:]]+)} $util_rpt ignore SliceRegisters"/>
+      <cmd name="  regexp --  {\s*Slice\s*\|\s*([^[:blank:]]+)} $util_rpt ignore Slice"/>
+      <cmd name="  regexp --  {\s*Slice LUTs\s*\|\s*([^[:blank:]]+)} $util_rpt ignore SliceLUTs"/>
+      <cmd name="  regexp --  {\s*Slice LUTs\*\s*\|\s*([^[:blank:]]+)} $util_rpt ignore SliceLUTs1"/>
+      <cmd name="  if { [expr {$SliceLUTs1 == 0}] } {"/>
+      <cmd name="    set SliceLUTs1 $SliceLUTs"/>
+      <cmd name="  }"/>
+      <cmd name="  if { [expr {$LUTFFPairs == 0}] } {"/>
+      <cmd name="    set LUTFFPairs $SliceLUTs1"/>
+      <cmd name="  }"/>
+      <cmd name="  if { [expr {$SliceLUTs == 0}] } {"/>
+      <cmd name="    set SliceLUTs $SliceLUTs1"/>
+      <cmd name="  }"/>
+      <cmd name="  regexp --  {\s*RAMB36/FIFO36\s*\|\s*([^[:blank:]]+)} $util_rpt ignore BRAMFIFO36"/>
+      <cmd name="  regexp --  {\s*RAMB18/FIFO18\s*\|\s*([^[:blank:]]+)} $util_rpt ignore BRAMFIFO18"/>
+      <cmd name="  regexp --  {\s*RAMB36/FIFO\*\s*\|\s*([^[:blank:]]+)} $util_rpt ignore BRAMFIFO36_star"/>
+      <cmd name="  regexp --  {\s*RAMB18/FIFO\*\s*\|\s*([^[:blank:]]+)} $util_rpt ignore BRAMFIFO18_star"/>
+      <cmd name="  regexp --  {\s*RAMB18\s*\|\s*([^[:blank:]]+)} $util_rpt ignore BRAM18"/>
+      <cmd name="  set BRAMFIFO [expr {(2 *$BRAMFIFO36) + $BRAMFIFO18 + (2*$BRAMFIFO36_star) + $BRAMFIFO18_star + $BRAM18}]"/>
+      <cmd name="  regexp --  {\s*Bonded IOB\s*\|\s*([^[:blank:]]+)} $util_rpt ignore BIOB"/>
+      <cmd name="  regexp --  {\s*DSPs\s*\|\s*([^[:blank:]]+)} $util_rpt ignore DSPs"/>
+      <cmd name="  set power_rpt [report_power -return_string]"/>
+      <cmd name="  regexp --  {\s*Total On-Chip Power \(W\)\s*\|\s*([^[:blank:]]+)} $power_rpt ignore TotPower"/>
+      <cmd name="  set Timing_Paths [get_timing_paths -max_paths 1 -nworst 1 -setup]"/>
+      <cmd name="  if { [expr {$Timing_Paths == &quot;&quot;}] } {"/>
+      <cmd name="    set design_datapath_delay 0"/>
+      <cmd name="    set design_slack 0"/>
+      <cmd name="    set design_req 0"/>
+      <cmd name="    set mpc 0"/>
+      <cmd name="  } else {"/>
+      <cmd name="    set design_datapath_delay [get_property DATAPATH_DELAY $Timing_Paths]"/>
+      <cmd name="    set design_slack [get_property SLACK $Timing_Paths]"/>
+      <cmd name="    set design_req [get_property REQUIREMENT  $Timing_Paths]"/>
+      <cmd name="    puts $design_datapath_delay"/>
+      <cmd name="    set min_period_check [report_pulse_width -min_period -return_string]"/>
+      <cmd name="    regexp --  {Min Period\s*([^[:blank:]]+)\s*([^[:blank:]]+)\s*([^[:blank:]]+)\s*([^[:blank:]]+)} $min_period_check ignore ignore ignore ignore mpc"/>
+      <cmd name="    puts $mpc"/>
+      <cmd name="  }"/>
+      <cmd name="  if { [expr {$design_datapath_delay == &quot;&quot;}] } {"/>
+      <cmd name="    set design_datapath_delay 0"/>
+      <cmd name="  }"/>
+      <cmd name="  if { [expr {$design_slack == &quot;&quot;}] } {"/>
+      <cmd name="    set design_slack 0"/>
+      <cmd name="  }"/>
+      <cmd name="  if { [expr {$design_req == &quot;&quot;}] } {"/>
+      <cmd name="    set design_req 0"/>
+      <cmd name="  }"/>
+      <cmd name="  if { [expr {$mpc == &quot;&quot;}] } {"/>
+      <cmd name="    set mpc 0"/>
+      <cmd name="  }"/>
+      <cmd name="  set design_delay [expr {$design_datapath_delay}]"/>
+      <cmd name="  puts $design_delay "/>
+      <cmd name="  if { [expr {$DSPs != 0}] } {"/>
+      <cmd name="    if { [expr {$mpc &gt; $design_delay}] } {"/>
+      <cmd name="      set design_delay [expr {$mpc}]"/>
+      <cmd name="    }"/>
+      <cmd name="    if {[expr {$design_req - $design_slack}] &gt; $design_delay } {"/>
+      <cmd name="      set design_delay [expr {$design_req - $design_slack}]"/>
+      <cmd name="    }"/>
+      <cmd name="  }"/>
+      <cmd name="  puts $design_delay "/>
+      <cmd name="  file delete -force ${__vivado_report__} "/>
+      <cmd name="  set ofile_report [open ${__vivado_report__} w]"/>
+      <cmd name="  puts $ofile_report &quot;&lt;?xml version=\\&quot;1.0\\&quot;?&gt;&quot;"/>
+      <cmd name="  puts $ofile_report &quot;&lt;document&gt;&quot;"/>
+      <cmd name="  puts $ofile_report &quot;  &lt;application&gt;&quot;"/>
+      <cmd name="  puts $ofile_report &quot;    &lt;section stringID=\\&quot;XILINX_SYNTHESIS_SUMMARY\\&quot;&gt;&quot;"/>
+      <cmd name="  puts $ofile_report &quot;      &lt;item stringID=\\&quot;XILINX_LUT_FLIP_FLOP_PAIRS_USED\\&quot; value=\\&quot;$LUTFFPairs\\&quot;/&gt;&quot;"/>
+      <cmd name="  puts $ofile_report &quot;      &lt;item stringID=\\&quot;XILINX_SLICE\\&quot; value=\\&quot;$Slice\\&quot;/&gt;&quot;"/>
+      <cmd name="  puts $ofile_report &quot;      &lt;item stringID=\\&quot;XILINX_SLICE_REGISTERS\\&quot; value=\\&quot;$SliceRegisters\\&quot;/&gt;&quot;"/>
+      <cmd name="  puts $ofile_report &quot;      &lt;item stringID=\\&quot;XILINX_SLICE_LUTS\\&quot; value=\\&quot;$SliceLUTs\\&quot;/&gt;&quot;"/>
+      <cmd name="  puts $ofile_report &quot;      &lt;item stringID=\\&quot;XILINX_BLOCK_RAMFIFO\\&quot; value=\\&quot;$BRAMFIFO\\&quot;/&gt;&quot;"/>
+      <cmd name="  puts $ofile_report &quot;      &lt;item stringID=\\&quot;XILINX_IOPIN\\&quot; value=\\&quot;$BIOB\\&quot;/&gt;&quot;"/>
+      <cmd name="  puts $ofile_report &quot;      &lt;item stringID=\\&quot;XILINX_DSPS\\&quot; value=\\&quot;$DSPs\\&quot;/&gt;&quot;"/>
+      <cmd name="  puts $ofile_report &quot;      &lt;item stringID=\\&quot;XILINX_POWER\\&quot; value=\\&quot;$TotPower\\&quot;/&gt;&quot;"/>
+      <cmd name="  puts $ofile_report &quot;      &lt;item stringID=\\&quot;XILINX_DESIGN_DELAY\\&quot; value=\\&quot;$design_delay\\&quot;/&gt;&quot;"/>
+      <cmd name="  puts $ofile_report &quot;    &lt;/section&gt;&quot;"/>
+      <cmd name="  puts $ofile_report &quot;  &lt;/application&gt;&quot;"/>
+      <cmd name="  puts $ofile_report &quot;&lt;/document&gt;&quot;"/>
+      <cmd name="  close $ofile_report"/>
+      <cmd name="}; #END PROC"/>
+      <!--Let's start with the real job -->
+      <cmd name="set_param general.maxThreads 1" condition="!${__parallel_backend__}"/>
+      <cmd name="set outputDir ${__vivado_outdir__}"/>
+      <cmd name="file mkdir $outputDir"/>
+      <cmd name="create_project ${__top_id__} -part ${__target_device__} -force"/>
+      <cmd name="${__vivado_sources_macro_list__}"/>
+      <cmd name="set rfile_sdc [open ${__sdc_file__} r]"/>
+      <cmd name="set clk_constraint [regexp -all --  CLK_SRC [read $rfile_sdc [file size ${__sdc_file__}]]]"/>
+      <cmd name="if { [expr {$clk_constraint == 0}] } {"/>
+      <cmd name="  set ofile_sdc [open ${__sdc_file__} a]"/>
+      <cmd name="  puts $ofile_sdc &quot;set_property HD.CLK_SRC BUFGCTRL_X0Y0 \[get_ports ${__clk_name__}\]&quot;"/>
+      <cmd name="  close $ofile_sdc"/>
+      <cmd name="}"/>
+      <cmd name="read_xdc ${__sdc_file__}"/>
+      <cmd name="synth_design -mode out_of_context -top ${__top_id__} -part ${__target_device__}"/>
+      <!--<cmd name="synth_design -top ${__top_id__} -part ${__target_device__}"/> -->
+      <cmd name="dump_statistics"/>
+      <cmd name="opt_design"/>
+      <cmd name="dump_statistics"/>
+      <cmd name="place_design"/>
+      <cmd name="dump_statistics"/>
+      <cmd name="route_design"/>
+      <cmd name="report_utilization -file $outputDir/post_route_util.rpt"/>
+      <cmd name="report_timing_summary -file $outputDir/post_route_timing_summary.rpt"/>
+      <cmd name="dump_statistics"/>
+      <cmd name="close_design"/>
+      <cmd name="close_project"/>
+   </vivado>
+   <vivado config="vivado_flow">
+      <!--Create the design setup -->
+      <cmd name="proc dump_statistics {  } {"/>
+      <cmd name="  set util_rpt [report_utilization -return_string]"/>
+      <cmd name="  set LUTFFPairs 0"/>
+      <cmd name="  set SliceRegisters 0"/>
+      <cmd name="  set Slice 0"/>
+      <cmd name="  set SliceLUTs 0"/>
+      <cmd name="  set SliceLUTs1 0"/>
+      <cmd name="  set BRAMFIFO36 0"/>
+      <cmd name="  set BRAMFIFO18 0"/>
+      <cmd name="  set BRAMFIFO36_star 0"/>
+      <cmd name="  set BRAMFIFO18_star 0"/>
+      <cmd name="  set BRAM18 0"/>
+      <cmd name="  set BRAMFIFO 0"/>
+      <cmd name="  set BIOB 0"/>
+      <cmd name="  set DSPs 0"/>
+      <cmd name="  set TotPower 0"/>
+      <cmd name="  set design_slack 0"/>
+      <cmd name="  set design_req 0"/>
+      <cmd name="  set design_delay 0"/>
+      <cmd name="  regexp --  {\s*LUT Flip Flop Pairs\s*\|\s*([^[:blank:]]+)} $util_rpt ignore LUTFFPairs"/>
+      <cmd name="  regexp --  {\s*Slice Registers\s*\|\s*([^[:blank:]]+)} $util_rpt ignore SliceRegisters"/>
+      <cmd name="  regexp --  {\s*Slice\s*\|\s*([^[:blank:]]+)} $util_rpt ignore Slice"/>
+      <cmd name="  regexp --  {\s*Slice LUTs\s*\|\s*([^[:blank:]]+)} $util_rpt ignore SliceLUTs"/>
+      <cmd name="  regexp --  {\s*Slice LUTs\*\s*\|\s*([^[:blank:]]+)} $util_rpt ignore SliceLUTs1"/>
+      <cmd name="  if { [expr {$SliceLUTs1 == 0}] } {"/>
+      <cmd name="    set SliceLUTs1 $SliceLUTs"/>
+      <cmd name="  }"/>
+      <cmd name="  if { [expr {$LUTFFPairs == 0}] } {"/>
+      <cmd name="    set LUTFFPairs $SliceLUTs1"/>
+      <cmd name="    puts $SliceLUTs1"/>
+      <cmd name="  }"/>
+      <cmd name="  if { [expr {$SliceLUTs == 0}] } {"/>
+      <cmd name="    set SliceLUTs $SliceLUTs1"/>
+      <cmd name="  }"/>
+      <cmd name="  regexp --  {\s*RAMB36/FIFO36\s*\|\s*([^[:blank:]]+)} $util_rpt ignore BRAMFIFO36"/>
+      <cmd name="  regexp --  {\s*RAMB18/FIFO18\s*\|\s*([^[:blank:]]+)} $util_rpt ignore BRAMFIFO18"/>
+      <cmd name="  regexp --  {\s*RAMB36/FIFO\*\s*\|\s*([^[:blank:]]+)} $util_rpt ignore BRAMFIFO36_star"/>
+      <cmd name="  regexp --  {\s*RAMB18/FIFO\*\s*\|\s*([^[:blank:]]+)} $util_rpt ignore BRAMFIFO18_star"/>
+      <cmd name="  regexp --  {\s*RAMB18\s*\|\s*([^[:blank:]]+)} $util_rpt ignore BRAM18"/>
+      <cmd name="  set BRAMFIFO [expr {(2 *$BRAMFIFO36) + $BRAMFIFO18 + (2*$BRAMFIFO36_star) + $BRAMFIFO18_star + $BRAM18}]"/>
+      <cmd name="  regexp --  {\s*Bonded IOB\s*\|\s*([^[:blank:]]+)} $util_rpt ignore BIOB"/>
+      <cmd name="  regexp --  {\s*DSPs\s*\|\s*([^[:blank:]]+)} $util_rpt ignore DSPs"/>
+      <cmd name="  set power_rpt [report_power -return_string]"/>
+      <cmd name="  regexp --  {\s*Total On-Chip Power \(W\)\s*\|\s*([^[:blank:]]+)} $power_rpt ignore TotPower"/>
+      <cmd name="  set Timing_Paths [get_timing_paths -max_paths 1 -nworst 1 -setup]"/>
+      <cmd name="  if { [expr {$Timing_Paths == &quot;&quot;}] } {"/>
+      <cmd name="    set design_slack 0"/>
+      <cmd name="    set design_req 0"/>
+      <cmd name="  } else {"/>
+      <cmd name="    set design_slack [get_property SLACK $Timing_Paths]"/>
+      <cmd name="    set design_req [get_property REQUIREMENT  $Timing_Paths]"/>
+      <cmd name="  }"/>
+      <cmd name="  if { [expr {$design_slack == &quot;&quot;}] } {"/>
+      <cmd name="    set design_slack 0"/>
+      <cmd name="  }"/>
+      <cmd name="  if { [expr {$design_req == &quot;&quot;}] } {"/>
+      <cmd name="    set design_req 0"/>
+      <cmd name="  }"/>
+      <cmd name="  set design_delay [expr {$design_req - $design_slack}]"/>
+      <cmd name="  file delete -force ${__vivado_report__} "/>
+      <cmd name="  set ofile_report [open ${__vivado_report__} w]"/>
+      <cmd name="  puts $ofile_report &quot;&lt;?xml version=\\&quot;1.0\\&quot;?&gt;&quot;"/>
+      <cmd name="  puts $ofile_report &quot;&lt;document&gt;&quot;"/>
+      <cmd name="  puts $ofile_report &quot;  &lt;application&gt;&quot;"/>
+      <cmd name="  puts $ofile_report &quot;    &lt;section stringID=\\&quot;XILINX_SYNTHESIS_SUMMARY\\&quot;&gt;&quot;"/>
+      <cmd name="  puts $ofile_report &quot;      &lt;item stringID=\\&quot;XILINX_LUT_FLIP_FLOP_PAIRS_USED\\&quot; value=\\&quot;$LUTFFPairs\\&quot;/&gt;&quot;"/>
+      <cmd name="  puts $ofile_report &quot;      &lt;item stringID=\\&quot;XILINX_SLICE\\&quot; value=\\&quot;$Slice\\&quot;/&gt;&quot;"/>
+      <cmd name="  puts $ofile_report &quot;      &lt;item stringID=\\&quot;XILINX_SLICE_REGISTERS\\&quot; value=\\&quot;$SliceRegisters\\&quot;/&gt;&quot;"/>
+      <cmd name="  puts $ofile_report &quot;      &lt;item stringID=\\&quot;XILINX_SLICE_LUTS\\&quot; value=\\&quot;$SliceLUTs\\&quot;/&gt;&quot;"/>
+      <cmd name="  puts $ofile_report &quot;      &lt;item stringID=\\&quot;XILINX_BLOCK_RAMFIFO\\&quot; value=\\&quot;$BRAMFIFO\\&quot;/&gt;&quot;"/>
+      <cmd name="  puts $ofile_report &quot;      &lt;item stringID=\\&quot;XILINX_IOPIN\\&quot; value=\\&quot;$BIOB\\&quot;/&gt;&quot;"/>
+      <cmd name="  puts $ofile_report &quot;      &lt;item stringID=\\&quot;XILINX_DSPS\\&quot; value=\\&quot;$DSPs\\&quot;/&gt;&quot;"/>
+      <cmd name="  puts $ofile_report &quot;      &lt;item stringID=\\&quot;XILINX_POWER\\&quot; value=\\&quot;$TotPower\\&quot;/&gt;&quot;"/>
+      <cmd name="  puts $ofile_report &quot;      &lt;item stringID=\\&quot;XILINX_DESIGN_DELAY\\&quot; value=\\&quot;$design_delay\\&quot;/&gt;&quot;"/>
+      <cmd name="  puts $ofile_report &quot;    &lt;/section&gt;&quot;"/>
+      <cmd name="  puts $ofile_report &quot;  &lt;/application&gt;&quot;"/>
+      <cmd name="  puts $ofile_report &quot;&lt;/document&gt;&quot;"/>
+      <cmd name="  close $ofile_report"/>
+      <cmd name="}; #END PROC"/>
+      <!--Let's start with the real job -->
+      <cmd name="set_param general.maxThreads 1" condition="!${__parallel_backend__}"/>
+      <cmd name="set outputDir ${__vivado_outdir__}"/>
+      <cmd name="file mkdir $outputDir"/>
+      <cmd name="create_project ${__top_id__} -part ${__target_device__} -force"/>
+      <cmd name="${__vivado_sources_macro_list__}"/>
+      <cmd name="source ${__backend_script_extensions__}" condition="${__has_script_extensions__}"/>
+      <cmd name="set rfile_sdc [open ${__sdc_file__} r]" condition="!${__connect_iob__}"/>
+      <cmd name="set clk_constraint [regexp -all --  CLK_SRC [read $rfile_sdc [file size ${__sdc_file__}]]]" condition="!${__connect_iob__}"/>
+      <cmd name="if { [expr {$clk_constraint == 0}] } {" condition="!${__connect_iob__}"/>
+      <cmd name="  set ofile_sdc [open ${__sdc_file__} a]" condition="!${__connect_iob__}"/>
+      <cmd name="  puts $ofile_sdc &quot;set_property HD.CLK_SRC BUFGCTRL_X0Y0 \[get_ports ${__clk_name__}\]&quot;" condition="!${__connect_iob__}"/>
+      <cmd name="  close $ofile_sdc" condition="!${__connect_iob__}"/>
+      <cmd name="}" condition="!${__connect_iob__}"/>
+      <cmd name="read_xdc ${__sdc_file__}"/>
+      <cmd name="synth_design -top ${__top_id__} -part ${__target_device__}" condition="${__connect_iob__}"/>
+      <cmd name="synth_design -mode out_of_context -no_iobuf -top ${__top_id__} -part ${__target_device__}" condition="!${__connect_iob__}"/>
+      <cmd name="write_checkpoint -force $outputDir/post_synth.dcp"/>
+      <cmd name="report_timing_summary -file $outputDir/post_synth_timing_summary.rpt"/>
+      <cmd name="report_utilization -file $outputDir/post_synth_util.rpt"/>
+      <cmd name="report_utilization -hierarchical -file $outputDir/post_synth_util_hier.rpt"/>
+      <cmd name="dump_statistics"/>
+      <cmd name="power_opt_design" condition="${__power_optimization__}"/>
+      <cmd name="opt_design  -directive ExploreWithRemap"/>
+      <cmd name="dump_statistics"/>
+      <cmd name="report_utilization -file $outputDir/post_opt_design_util.rpt"/>
+      <cmd name="report_utilization -hierarchical -file $outputDir/post_opt_design_util_hier.rpt"/>
+      <cmd name="place_design -directive Explore"/>
+      <cmd name="power_opt_design" condition="${__power_optimization__}"/>
+      <cmd name="report_clock_utilization -file $outputDir/clock_util.rpt"/>
+      <cmd name="# Optionally run optimization if there are timing violations after placement"/>
+      <cmd name="if {[get_property SLACK [get_timing_paths -max_paths 1 -nworst 1 -setup]] &lt; 0.5} {"/>
+      <cmd name="  puts &quot;Found setup timing violations => running physical optimization&quot;"/>
+      <cmd name="  phys_opt_design -directive AlternateFlowWithRetiming"/>
+      <cmd name="}"/>
+      <cmd name="write_checkpoint -force $outputDir/post_place.dcp"/>
+      <cmd name="report_utilization -file $outputDir/post_place_util.rpt"/>
+      <cmd name="report_utilization -hierarchical -file $outputDir/post_place_util_hier.rpt"/>
+      <cmd name="report_timing_summary -file $outputDir/post_place_timing_summary.rpt"/>
+      <cmd name="dump_statistics"/>
+      <cmd name="route_design -directive Explore"/>
+      <cmd name="# Optionally run optimization if there are timing violations after routing"/>
+      <cmd name="if {[get_property SLACK [get_timing_paths -max_paths 1 -nworst 1 -setup]] &lt; 0.0} {"/>
+      <cmd name="  puts &quot;Found setup timing violations => running physical optimization&quot;"/>
+      <cmd name="  place_design -post_place_opt"/>
+      <cmd name="  phys_opt_design"/>
+      <cmd name="  route_design -directive Explore"/>
+      <cmd name="}"/>
+      <cmd name="write_checkpoint -force $outputDir/post_route.dcp"/>
+      <cmd name="report_route_status -file $outputDir/post_route_status.rpt"/>
+      <cmd name="report_timing_summary -file $outputDir/post_route_timing_summary.rpt"/>
+      <cmd name="report_power -file $outputDir/post_route_power.rpt"/>
+      <cmd name="report_drc -file $outputDir/post_imp_drc.rpt"/>
+      <cmd name="report_utilization -file $outputDir/post_route_util.rpt"/>
+      <cmd name="report_utilization -hierarchical -file $outputDir/post_route_util_hier.rpt"/>
+      <cmd name="dump_statistics"/>
+      <cmd name="close_design"/>
+      <cmd name="close_project"/>
+   </vivado>
+</synthesis>
