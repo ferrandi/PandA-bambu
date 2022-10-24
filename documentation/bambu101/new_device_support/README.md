@@ -20,7 +20,7 @@ The following XML fields, instead, are used to describe characteristics of the F
 
 ## **Step 2 - Create a synthesis configuration XML file**
 
-If this is the first board in a new Xilinx family, it might need a specific TCL script for synthesis and implementation. The Kintex Ultrascale family does not have additional requirements, so it was sufficient to copy the Virtex7 configuration file (see [Kintex-Ultrascale-VVD.xml](Kintex-Ultrascale-VVD.xml)).
+If this is the first board in a new Xilinx family, it might need a specific TCL script for synthesis and implementation. The Kintex Ultrascale family does not have additional requirements, so it is sufficient to copy the Virtex7 configuration file (see [Kintex-Ultrascale-VVD.xml](Kintex-Ultrascale-VVD.xml)).
 
 ## **Step 3 - Copy sample characterization results**
 
@@ -36,3 +36,11 @@ There are a few places in the Bambu source code that need to be updated:
 * Add the new device in [src/technology/target_device/FPGA/FPGA_device.cpp](https://github.com/ferrandi/PandA-bambu/blob/main/src/technology/target_device/FPGA/FPGA_device.cpp)
 
 **The process might end here:** if the new board is very similar to one of the supported ones, old characterization results can be reused directly. Try it out by launching Bambu on a test file and selecting the new target device.
+
+## **Step 5 - Run Eucalyptus to characterize the new target**
+
+Eucalyptus is a tool that supports the characterization of new targets for Bambu, and it is available in the default Bambu installation. Run the [characterize_device]() script to launch Eucalyptus:
+
+`bash characterize_device.sh --devices xcku060-3ffva1156-VVD`
+
+Note: this is a long process, since it has to launch multiple logic synthesis and implementation runs.
