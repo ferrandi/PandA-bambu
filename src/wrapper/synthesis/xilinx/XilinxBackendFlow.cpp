@@ -106,7 +106,7 @@ XilinxBackendFlow::XilinxBackendFlow(const ParameterConstRef _Param, const std::
    default_data["Zynq-VVD"] = "Zynq-VVD.data";
    default_data["Zynq-YOSYS-VVD"] = "Zynq-YOSYS-VVD.data";
    default_data["Zynq"] = "Zynq.data";
-//   default_data["Kintex-Ultrascale-VVD"] = "Kintex-Ultrascale-VVD.data";
+   default_data["Kintex-Ultrascale-VVD"] = "Kintex-Ultrascale-VVD.data";
 
    XMLDomParserRef parser;
    if(Param->isOption(OPT_target_device_script))
