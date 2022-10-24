@@ -4,8 +4,8 @@
       <vendor value="Xilinx"/>
       <family value="Kintex-Ultrascale-VVD"/>
       <model value="xcku060"/>
-      <package value="ffva1156"/>
-      <speed_grade value="-3"/>
+      <package value="-ffva1156"/>
+      <speed_grade value="-3-e"/>
       <BRAM_bitsize_min value="8"/>
       <BRAM_bitsize_max value="128"/>
       <DSPs_x_sizes value="18"/>

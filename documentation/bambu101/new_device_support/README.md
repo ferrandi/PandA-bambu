@@ -39,8 +39,8 @@ There are a few places in the Bambu source code that need to be updated:
 
 ## **Step 5 - Run Eucalyptus to characterize the new target**
 
-Eucalyptus is a tool that supports the characterization of new targets for Bambu, and it is available in the default Bambu installation. Run the [characterize_device]() script to launch Eucalyptus:
+Eucalyptus is a tool that supports the characterization of new targets for Bambu, and it is available in the default Bambu installation. Run the [characterize_device](https://github.com/ferrandi/PandA-bambu/blob/main/etc/devices/characterize_device.sh) script to launch Eucalyptus:
 
 `bash characterize_device.sh --devices xcku060-3ffva1156-VVD`
 
-Note: this is a long process, since it has to launch multiple logic synthesis and implementation runs.
+Note: this is a long process, since it has to launch multiple logic synthesis and implementation runs. You can add the -j option to use multiple cores in parallel.

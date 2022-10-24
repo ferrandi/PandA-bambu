@@ -445,7 +445,7 @@ for thread_index in range(args.j):
 try:
     # Wait threads
     for thread_index in range(args.j):
-        while threads[thread_index].isAlive():
+        while threads[thread_index].is_alive():
             threads[thread_index].join(100)
 except KeyboardInterrupt:
     logging.error("SIGINT received")
