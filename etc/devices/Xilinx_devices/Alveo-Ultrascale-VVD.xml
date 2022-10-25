@@ -10,6 +10,7 @@
       <!--Create the design setup -->
       <cmd name="proc dump_statistics {  } {"/>
       <cmd name="  set util_rpt [report_utilization -return_string]"/>
+      <cmd name="  set ram_rpt [report_ram_utilization -return_string]"/>
       <cmd name="  set LUTFFPairs 0"/>
       <cmd name="  set SliceRegisters 0"/>
       <cmd name="  set Slice 0"/>
@@ -49,7 +50,7 @@
       <cmd name="  regexp --  {\s*RAMB18/FIFO\*\s*\|\s*([^[:blank:]]+)} $util_rpt ignore BRAMFIFO18_star"/>
       <cmd name="  regexp --  {\s*RAMB18\s*\|\s*([^[:blank:]]+)} $util_rpt ignore BRAM18"/>
       <cmd name="  set BRAMFIFO [expr {(2 *$BRAMFIFO36) + $BRAMFIFO18 + (2*$BRAMFIFO36_star) + $BRAMFIFO18_star + $BRAM18}]"/>
-      <cmd name="  regexp --  {\s*RAMB18\s*\|\s*([^[:blank:]]+)} $util_rpt ignore URAM"/>
+      <cmd name="  regexp --  {\s*URAM\s*\|\s*([^[:blank:]]+)} $ram_rpt ignore URAM"/>
       <cmd name="  regexp --  {\s*Bonded IOB\s*\|\s*([^[:blank:]]+)} $util_rpt ignore BIOB"/>
       <cmd name="  regexp --  {\s*DSPs\s*\|\s*([^[:blank:]]+)} $util_rpt ignore DSPs"/>
       <cmd name="  set power_rpt [report_power -return_string]"/>
@@ -103,6 +104,7 @@
       <cmd name="  puts $ofile_report &quot;      &lt;item stringID=\\&quot;XILINX_SLICE_REGISTERS\\&quot; value=\\&quot;$SliceRegisters\\&quot;/&gt;&quot;"/>
       <cmd name="  puts $ofile_report &quot;      &lt;item stringID=\\&quot;XILINX_SLICE_LUTS\\&quot; value=\\&quot;$SliceLUTs\\&quot;/&gt;&quot;"/>
       <cmd name="  puts $ofile_report &quot;      &lt;item stringID=\\&quot;XILINX_BLOCK_RAMFIFO\\&quot; value=\\&quot;$BRAMFIFO\\&quot;/&gt;&quot;"/>
+      <cmd name="  puts $ofile_report &quot;      &lt;item stringID=\\&quot;XILINX_URAM\\&quot; value=\\&quot;$URAM\\&quot;/&gt;&quot;"/>
       <cmd name="  puts $ofile_report &quot;      &lt;item stringID=\\&quot;XILINX_IOPIN\\&quot; value=\\&quot;$BIOB\\&quot;/&gt;&quot;"/>
       <cmd name="  puts $ofile_report &quot;      &lt;item stringID=\\&quot;XILINX_DSPS\\&quot; value=\\&quot;$DSPs\\&quot;/&gt;&quot;"/>
       <cmd name="  puts $ofile_report &quot;      &lt;item stringID=\\&quot;XILINX_POWER\\&quot; value=\\&quot;$TotPower\\&quot;/&gt;&quot;"/>
@@ -145,6 +147,7 @@
       <!--Create the design setup -->
       <cmd name="proc dump_statistics {  } {"/>
       <cmd name="  set util_rpt [report_utilization -return_string]"/>
+      <cmd name="  set ram_rpt [report_ram_utilization -return_string]"/>
       <cmd name="  set LUTFFPairs 0"/>
       <cmd name="  set SliceRegisters 0"/>
       <cmd name="  set Slice 0"/>
@@ -183,6 +186,7 @@
       <cmd name="  regexp --  {\s*RAMB18/FIFO\*\s*\|\s*([^[:blank:]]+)} $util_rpt ignore BRAMFIFO18_star"/>
       <cmd name="  regexp --  {\s*RAMB18\s*\|\s*([^[:blank:]]+)} $util_rpt ignore BRAM18"/>
       <cmd name="  set BRAMFIFO [expr {(2 *$BRAMFIFO36) + $BRAMFIFO18 + (2*$BRAMFIFO36_star) + $BRAMFIFO18_star + $BRAM18}]"/>
+      <cmd name="  regexp --  {\s*URAM\s*\|\s*([^[:blank:]]+)} $ram_rpt ignore URAM"/>
       <cmd name="  regexp --  {\s*Bonded IOB\s*\|\s*([^[:blank:]]+)} $util_rpt ignore BIOB"/>
       <cmd name="  regexp --  {\s*DSPs\s*\|\s*([^[:blank:]]+)} $util_rpt ignore DSPs"/>
       <cmd name="  set power_rpt [report_power -return_string]"/>
@@ -213,6 +217,7 @@
       <cmd name="  puts $ofile_report &quot;      &lt;item stringID=\\&quot;XILINX_SLICE_REGISTERS\\&quot; value=\\&quot;$SliceRegisters\\&quot;/&gt;&quot;"/>
       <cmd name="  puts $ofile_report &quot;      &lt;item stringID=\\&quot;XILINX_SLICE_LUTS\\&quot; value=\\&quot;$SliceLUTs\\&quot;/&gt;&quot;"/>
       <cmd name="  puts $ofile_report &quot;      &lt;item stringID=\\&quot;XILINX_BLOCK_RAMFIFO\\&quot; value=\\&quot;$BRAMFIFO\\&quot;/&gt;&quot;"/>
+      <cmd name="  puts $ofile_report &quot;      &lt;item stringID=\\&quot;XILINX_URAM\\&quot; value=\\&quot;$URAM\\&quot;/&gt;&quot;"/>
       <cmd name="  puts $ofile_report &quot;      &lt;item stringID=\\&quot;XILINX_IOPIN\\&quot; value=\\&quot;$BIOB\\&quot;/&gt;&quot;"/>
       <cmd name="  puts $ofile_report &quot;      &lt;item stringID=\\&quot;XILINX_DSPS\\&quot; value=\\&quot;$DSPs\\&quot;/&gt;&quot;"/>
       <cmd name="  puts $ofile_report &quot;      &lt;item stringID=\\&quot;XILINX_POWER\\&quot; value=\\&quot;$TotPower\\&quot;/&gt;&quot;"/>
