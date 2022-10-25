@@ -10,11 +10,9 @@
       <!--Create the design setup -->
       <cmd name="proc dump_statistics {  } {"/>
       <cmd name="  set util_rpt [report_utilization -return_string]"/>
-      <cmd name="  set LUTFFPairs 0"/>
-      <cmd name="  set SliceRegisters 0"/>
-      <cmd name="  set Slice 0"/>
-      <cmd name="  set SliceLUTs 0"/>
-      <cmd name="  set SliceLUTs1 0"/>
+      <cmd name="  set CLBLUTs 0"/>
+      <cmd name="  set CLBRegisters 0"/>
+      <cmd name="  set CLBs 0"/>
       <cmd name="  set BRAMFIFO36 0"/>
       <cmd name="  set BRAMFIFO18 0"/>
       <cmd name="  set BRAMFIFO36_star 0"/>
@@ -29,20 +27,9 @@
       <cmd name="  set design_slack 0"/>
       <cmd name="  set design_req 0"/>
       <cmd name="  set design_delay 0"/>
-      <cmd name="  regexp --  {\s*LUT Flip Flop Pairs\s*\|\s*([^[:blank:]]+)} $util_rpt ignore LUTFFPairs"/>
-      <cmd name="  regexp --  {\s*Slice Registers\s*\|\s*([^[:blank:]]+)} $util_rpt ignore SliceRegisters"/>
-      <cmd name="  regexp --  {\s*Slice\s*\|\s*([^[:blank:]]+)} $util_rpt ignore Slice"/>
-      <cmd name="  regexp --  {\s*Slice LUTs\s*\|\s*([^[:blank:]]+)} $util_rpt ignore SliceLUTs"/>
-      <cmd name="  regexp --  {\s*Slice LUTs\*\s*\|\s*([^[:blank:]]+)} $util_rpt ignore SliceLUTs1"/>
-      <cmd name="  if { [expr {$SliceLUTs1 == 0}] } {"/>
-      <cmd name="    set SliceLUTs1 $SliceLUTs"/>
-      <cmd name="  }"/>
-      <cmd name="  if { [expr {$LUTFFPairs == 0}] } {"/>
-      <cmd name="    set LUTFFPairs $SliceLUTs1"/>
-      <cmd name="  }"/>
-      <cmd name="  if { [expr {$SliceLUTs == 0}] } {"/>
-      <cmd name="    set SliceLUTs $SliceLUTs1"/>
-      <cmd name="  }"/>
+      <cmd name="  regexp --  {\s*CLB LUTs\s*\|\s*([^[:blank:]]+)} $util_rpt ignore CLBLUTs"/>
+      <cmd name="  regexp --  {\s*CLB Registers\s*\|\s*([^[:blank:]]+)} $util_rpt ignore CLBRegisters"/>
+      <cmd name="  regexp --  {\s*CLB\s*\|\s*([^[:blank:]]+)} $util_rpt ignore CLBs"/>
       <cmd name="  regexp --  {\s*RAMB36/FIFO36\s*\|\s*([^[:blank:]]+)} $util_rpt ignore BRAMFIFO36"/>
       <cmd name="  regexp --  {\s*RAMB18/FIFO18\s*\|\s*([^[:blank:]]+)} $util_rpt ignore BRAMFIFO18"/>
       <cmd name="  regexp --  {\s*RAMB36/FIFO\*\s*\|\s*([^[:blank:]]+)} $util_rpt ignore BRAMFIFO36_star"/>
@@ -97,10 +84,9 @@
       <cmd name="  puts $ofile_report &quot;&lt;document&gt;&quot;"/>
       <cmd name="  puts $ofile_report &quot;  &lt;application&gt;&quot;"/>
       <cmd name="  puts $ofile_report &quot;    &lt;section stringID=\\&quot;XILINX_SYNTHESIS_SUMMARY\\&quot;&gt;&quot;"/>
-      <cmd name="  puts $ofile_report &quot;      &lt;item stringID=\\&quot;XILINX_LUT_FLIP_FLOP_PAIRS_USED\\&quot; value=\\&quot;$LUTFFPairs\\&quot;/&gt;&quot;"/>
-      <cmd name="  puts $ofile_report &quot;      &lt;item stringID=\\&quot;XILINX_SLICE\\&quot; value=\\&quot;$Slice\\&quot;/&gt;&quot;"/>
-      <cmd name="  puts $ofile_report &quot;      &lt;item stringID=\\&quot;XILINX_SLICE_REGISTERS\\&quot; value=\\&quot;$SliceRegisters\\&quot;/&gt;&quot;"/>
-      <cmd name="  puts $ofile_report &quot;      &lt;item stringID=\\&quot;XILINX_SLICE_LUTS\\&quot; value=\\&quot;$SliceLUTs\\&quot;/&gt;&quot;"/>
+      <cmd name="  puts $ofile_report &quot;      &lt;item stringID=\\&quot;XILINX_SLICE\\&quot; value=\\&quot;$CLBs\\&quot;/&gt;&quot;"/>
+      <cmd name="  puts $ofile_report &quot;      &lt;item stringID=\\&quot;XILINX_SLICE_REGISTERS\\&quot; value=\\&quot;$CLBRegisters\\&quot;/&gt;&quot;"/>
+      <cmd name="  puts $ofile_report &quot;      &lt;item stringID=\\&quot;XILINX_SLICE_LUTS\\&quot; value=\\&quot;$CLBLUTs\\&quot;/&gt;&quot;"/>
       <cmd name="  puts $ofile_report &quot;      &lt;item stringID=\\&quot;XILINX_BLOCK_RAMFIFO\\&quot; value=\\&quot;$BRAMFIFO\\&quot;/&gt;&quot;"/>
       <cmd name="  puts $ofile_report &quot;      &lt;item stringID=\\&quot;XILINX_IOPIN\\&quot; value=\\&quot;$BIOB\\&quot;/&gt;&quot;"/>
       <cmd name="  puts $ofile_report &quot;      &lt;item stringID=\\&quot;XILINX_DSPS\\&quot; value=\\&quot;$DSPs\\&quot;/&gt;&quot;"/>
@@ -143,11 +129,9 @@
       <!--Create the design setup -->
       <cmd name="proc dump_statistics {  } {"/>
       <cmd name="  set util_rpt [report_utilization -return_string]"/>
-      <cmd name="  set LUTFFPairs 0"/>
-      <cmd name="  set SliceRegisters 0"/>
-      <cmd name="  set Slice 0"/>
-      <cmd name="  set SliceLUTs 0"/>
-      <cmd name="  set SliceLUTs1 0"/>
+      <cmd name="  set CLBLUTs 0"/>
+      <cmd name="  set CLBRegisters 0"/>
+      <cmd name="  set CLBs 0"/>
       <cmd name="  set BRAMFIFO36 0"/>
       <cmd name="  set BRAMFIFO18 0"/>
       <cmd name="  set BRAMFIFO36_star 0"/>
@@ -160,21 +144,9 @@
       <cmd name="  set design_slack 0"/>
       <cmd name="  set design_req 0"/>
       <cmd name="  set design_delay 0"/>
-      <cmd name="  regexp --  {\s*LUT Flip Flop Pairs\s*\|\s*([^[:blank:]]+)} $util_rpt ignore LUTFFPairs"/>
-      <cmd name="  regexp --  {\s*Slice Registers\s*\|\s*([^[:blank:]]+)} $util_rpt ignore SliceRegisters"/>
-      <cmd name="  regexp --  {\s*Slice\s*\|\s*([^[:blank:]]+)} $util_rpt ignore Slice"/>
-      <cmd name="  regexp --  {\s*Slice LUTs\s*\|\s*([^[:blank:]]+)} $util_rpt ignore SliceLUTs"/>
-      <cmd name="  regexp --  {\s*Slice LUTs\*\s*\|\s*([^[:blank:]]+)} $util_rpt ignore SliceLUTs1"/>
-      <cmd name="  if { [expr {$SliceLUTs1 == 0}] } {"/>
-      <cmd name="    set SliceLUTs1 $SliceLUTs"/>
-      <cmd name="  }"/>
-      <cmd name="  if { [expr {$LUTFFPairs == 0}] } {"/>
-      <cmd name="    set LUTFFPairs $SliceLUTs1"/>
-      <cmd name="    puts $SliceLUTs1"/>
-      <cmd name="  }"/>
-      <cmd name="  if { [expr {$SliceLUTs == 0}] } {"/>
-      <cmd name="    set SliceLUTs $SliceLUTs1"/>
-      <cmd name="  }"/>
+      <cmd name="  regexp --  {\s*CLB LUTs\s*\|\s*([^[:blank:]]+)} $util_rpt ignore CLBLUTs"/>
+      <cmd name="  regexp --  {\s*CLB Registers\s*\|\s*([^[:blank:]]+)} $util_rpt ignore CLBRegisters"/>
+      <cmd name="  regexp --  {\s*CLB\s*\|\s*([^[:blank:]]+)} $util_rpt ignore CLBs"/>
       <cmd name="  regexp --  {\s*RAMB36/FIFO36\s*\|\s*([^[:blank:]]+)} $util_rpt ignore BRAMFIFO36"/>
       <cmd name="  regexp --  {\s*RAMB18/FIFO18\s*\|\s*([^[:blank:]]+)} $util_rpt ignore BRAMFIFO18"/>
       <cmd name="  regexp --  {\s*RAMB36/FIFO\*\s*\|\s*([^[:blank:]]+)} $util_rpt ignore BRAMFIFO36_star"/>
@@ -205,11 +177,9 @@
       <cmd name="  puts $ofile_report &quot;&lt;?xml version=\\&quot;1.0\\&quot;?&gt;&quot;"/>
       <cmd name="  puts $ofile_report &quot;&lt;document&gt;&quot;"/>
       <cmd name="  puts $ofile_report &quot;  &lt;application&gt;&quot;"/>
-      <cmd name="  puts $ofile_report &quot;    &lt;section stringID=\\&quot;XILINX_SYNTHESIS_SUMMARY\\&quot;&gt;&quot;"/>
-      <cmd name="  puts $ofile_report &quot;      &lt;item stringID=\\&quot;XILINX_LUT_FLIP_FLOP_PAIRS_USED\\&quot; value=\\&quot;$LUTFFPairs\\&quot;/&gt;&quot;"/>
-      <cmd name="  puts $ofile_report &quot;      &lt;item stringID=\\&quot;XILINX_SLICE\\&quot; value=\\&quot;$Slice\\&quot;/&gt;&quot;"/>
-      <cmd name="  puts $ofile_report &quot;      &lt;item stringID=\\&quot;XILINX_SLICE_REGISTERS\\&quot; value=\\&quot;$SliceRegisters\\&quot;/&gt;&quot;"/>
-      <cmd name="  puts $ofile_report &quot;      &lt;item stringID=\\&quot;XILINX_SLICE_LUTS\\&quot; value=\\&quot;$SliceLUTs\\&quot;/&gt;&quot;"/>
+      <cmd name="  puts $ofile_report &quot;      &lt;item stringID=\\&quot;XILINX_SLICE\\&quot; value=\\&quot;$CLBs\\&quot;/&gt;&quot;"/>
+      <cmd name="  puts $ofile_report &quot;      &lt;item stringID=\\&quot;XILINX_SLICE_REGISTERS\\&quot; value=\\&quot;$CLBRegisters\\&quot;/&gt;&quot;"/>
+      <cmd name="  puts $ofile_report &quot;      &lt;item stringID=\\&quot;XILINX_SLICE_LUTS\\&quot; value=\\&quot;$CLBLUTs\\&quot;/&gt;&quot;"/>
       <cmd name="  puts $ofile_report &quot;      &lt;item stringID=\\&quot;XILINX_BLOCK_RAMFIFO\\&quot; value=\\&quot;$BRAMFIFO\\&quot;/&gt;&quot;"/>
       <cmd name="  puts $ofile_report &quot;      &lt;item stringID=\\&quot;XILINX_IOPIN\\&quot; value=\\&quot;$BIOB\\&quot;/&gt;&quot;"/>
       <cmd name="  puts $ofile_report &quot;      &lt;item stringID=\\&quot;XILINX_DSPS\\&quot; value=\\&quot;$DSPs\\&quot;/&gt;&quot;"/>

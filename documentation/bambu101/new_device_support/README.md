@@ -4,7 +4,7 @@ Here is an example of how users can add a new target device in Bambu, following 
 
 ## **Step 1 - Create a seed XML file**
 
-Create an XML file in [etc/devices/Xilinx_devices/](https://github.com/ferrandi/PandA-bambu/tree/main/etc/devices/Xilinx_devices) with the code of the target board in Bambu style, the -VVD suffix to indicate that logic synthesis is to be performed through Vivado, and the -seed suffix. In our case the file name will be [xcku060-3ffva1156-VVD-seed.xml](xcku060-3ffva1156-VVD-seed.xml).
+Create an XML file in [etc/devices/Xilinx_devices/](https://github.com/ferrandi/PandA-bambu/tree/main/etc/devices/Xilinx_devices) with the code of the target board in Bambu style, the -VVD suffix to indicate that logic synthesis is to be performed through Vivado, and the -seed suffix. In this case the file name will be [xcku060-3ffva1156-VVD-seed.xml](xcku060-3ffva1156-VVD-seed.xml).
 
 The seed XML file must contain the following fields, which identify the specific FPGA:
 * Vendor: Xilinx
@@ -20,11 +20,11 @@ The following XML fields, instead, are used to describe characteristics of the F
 
 ## **Step 2 - Create a synthesis configuration XML file**
 
-If this is the first board in a new Xilinx family, it might need a specific TCL script for synthesis and implementation. The Kintex Ultrascale family does not have additional requirements, so it is sufficient to copy the Virtex7 configuration file (see [Kintex-Ultrascale-VVD.xml](Kintex-Ultrascale-VVD.xml)).
+If this is the first board in a new Xilinx family, it might need a specific TCL script for synthesis and implementation. For the Kintex Ultrascale family, for example, it was necessary to adjust how LUTs and registers are extracted from Vivado utilization reports (see [Kintex-Ultrascale-VVD.xml](Kintex-Ultrascale-VVD.xml)).
 
 ## **Step 3 - Copy sample characterization results**
 
-It is useful to make sure that the new target was addedd correctly before running the characterization tool, as characterization is a long process. To do this, we create a [xcku060-3ffva1156-VVD.xml](xcku060-3ffva1156-VVD.xml) file copying characterization results from a Virtex7 board. 
+It is useful to make sure that the new target was addedd correctly before running the characterization tool, as characterization is a long process. To do this, create an XML file copying characterization results from a similar board in [etc/devices/Xilinx_devices/](https://github.com/ferrandi/PandA-bambu/tree/main/etc/devices/Xilinx_devices) (see [xcku060-3ffva1156-VVD.xml](xcku060-3ffva1156-VVD.xml), copied from a Virtex7 target).
 
 ## **Step 4 - Add the new target to the list of available devices**
 
@@ -43,4 +43,4 @@ Eucalyptus is a tool that supports the characterization of new targets for Bambu
 
 `bash characterize_device.sh --devices xcku060-3ffva1156-VVD`
 
-Note: this is a long process, since it has to launch multiple logic synthesis and implementation runs. You can add the -j option to use multiple cores in parallel.
+Note: this can take more than a day, since the script has to launch multiple logic synthesis and implementation runs. You can add the -j option to use multiple cores in parallel.
