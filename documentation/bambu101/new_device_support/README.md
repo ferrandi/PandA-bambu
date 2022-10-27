@@ -44,3 +44,5 @@ Eucalyptus is a tool that supports the characterization of new targets for Bambu
 `bash characterize_device.sh --devices xcku060-3ffva1156-VVD`
 
 Note: this can take more than a day, since the script has to launch multiple logic synthesis and implementation runs. You can add the -j option to use multiple cores in parallel.
+
+Once the characterization is complete, Eucalyptus will generate a new xcku060-3ffva1156-VVD.xml file that will replace the sample one created in Step 3.
