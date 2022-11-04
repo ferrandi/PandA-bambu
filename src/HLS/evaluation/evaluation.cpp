@@ -347,6 +347,11 @@ DesignFlowStep_Status Evaluation::Exec()
             INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
                            "---ALMs                     : " + STR(evaluations.at("ALMS")));
          }
+         if(evaluations.find("URAMS") != evaluations.end())
+         {
+            INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
+                           "---URAMs                    : " + STR(evaluations.at("URAMS")));
+         }
       }
       else if(objective == "BRAMS")
       {
@@ -526,6 +531,12 @@ DesignFlowStep_Status Evaluation::Exec()
       {
          child_element = nodeRoot->add_child_element("SLICE_LUTS");
          value = STR(HLSMgr->evaluations.find("SLICE_LUTS")->second);
+         WRITE_XNVM2("value", value, child_element);
+      }
+      if(objective == "AREA" && HLSMgr->evaluations.find("URAMS") != HLSMgr->evaluations.end())
+      {
+         child_element = nodeRoot->add_child_element("URAMS");
+         value = STR(HLSMgr->evaluations.find("URAMS")->second);
          WRITE_XNVM2("value", value, child_element);
       }
    }
