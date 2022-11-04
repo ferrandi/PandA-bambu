@@ -85,6 +85,7 @@
 #define VIVADO_XILINX_OUTPUT "XILINX_OUTPUT"
 #define VIVADO_XILINX_POWER "XILINX_POWER"
 #define VIVADO_XILINX_DESIGN_DELAY "XILINX_DESIGN_DELAY"
+#define VIVADO_XILINX_URAM "XILINX_URAM"
 
 XilinxBackendFlow::XilinxBackendFlow(const ParameterConstRef _Param, const std::string& _flow_name,
                                      const target_managerRef _target)
@@ -698,6 +699,7 @@ void XilinxBackendFlow::CheckSynthesisResults()
       area_clb_model->set_resource_value(clb_model::REGISTERS, design_values[VIVADO_XILINX_SLICE_REGISTERS]);
       area_clb_model->set_resource_value(clb_model::DSP, design_values[VIVADO_XILINX_DSPS]);
       area_clb_model->set_resource_value(clb_model::BRAM, design_values[VIVADO_XILINX_BLOCK_RAMFIFO]);
+      area_clb_model->set_resource_value(clb_model::URAM, design_values[VIVADO_XILINX_URAM]);
 
       time_m = time_model::create_model(TargetDevice_Type::FPGA, Param);
       auto* lut_m = GetPointer<LUT_model>(time_m);

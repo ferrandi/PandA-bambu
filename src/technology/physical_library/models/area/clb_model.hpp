@@ -69,7 +69,8 @@ class clb_model : public area_model
       LOGIC_AREA,
       DSP,
       BRAM,
-      POWER
+      POWER,
+      URAM
    };
 
  protected:

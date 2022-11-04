@@ -193,6 +193,12 @@ DesignFlowStep_Status SynthesisEvaluation::Exec()
             {
                HLSMgr->evaluations["ALMS"] = alms;
             }
+            double urams = 
+                GetPointer<clb_model>(area_m) ? GetPointer<clb_model>(area_m)->get_resource_value(clb_model::URAM) : 0;
+            if(urams != 0.0)
+            {
+               HLSMgr->evaluations["URAMS"] = urams;
+            }
          }
          HLSMgr->evaluations["AREA"] = area_m->get_area_value();
       }
