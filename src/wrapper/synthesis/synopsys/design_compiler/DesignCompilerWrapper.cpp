@@ -810,7 +810,7 @@ std::string DesignCompilerWrapper::write_timing_paths(const std::string& design_
    try
    {
       THROW_ASSERT(design_name.size(), "Module name not specified");
-      std::string timing_path_xml_file = "timing_path.xml";
+      const auto timing_path_xml_file = GetPath("timing_path.xml");
       xml_document document;
       xml_element* nodeRoot = document.create_root_node("synthesis");
 

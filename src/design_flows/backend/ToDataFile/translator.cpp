@@ -497,7 +497,7 @@ void Translator::Translate(const CustomUnorderedMap<std::string, long double> in
 }
 
 void Translator::write_to_xml(const std::map<enum rtl_kind, std::map<enum mode_kind, long double>>& data,
-                              std::string file_name) const
+                              const std::string& file_name) const
 {
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Staring writing to xml");
    xml_document document;

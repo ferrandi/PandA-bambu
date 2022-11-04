@@ -373,7 +373,7 @@ void RTLCharacterization::fix_proxies_execution_time_std()
 
 void RTLCharacterization::xwrite_device_file(const target_deviceRef device)
 {
-   std::string file_name = "characterization.xml";
+   const auto file_name = GetPath("characterization.xml");
    try
    {
       xml_document document;
