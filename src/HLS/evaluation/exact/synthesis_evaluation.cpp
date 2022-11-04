@@ -143,28 +143,28 @@ DesignFlowStep_Status SynthesisEvaluation::Exec()
                 GetPointer<clb_model>(area_m) ? GetPointer<clb_model>(area_m)->get_resource_value(clb_model::SLICE) : 0;
             if(slices != 0.0)
             {
-               HLSMgr->evaluations["SLICE"] = std::vector<double>(1, slices);
+               HLSMgr->evaluations["SLICE"] = slices;
             }
             double sliceLuts = GetPointer<clb_model>(area_m) ?
                                    GetPointer<clb_model>(area_m)->get_resource_value(clb_model::SLICE_LUTS) :
                                    0;
             if(sliceLuts != 0.0)
             {
-               HLSMgr->evaluations["SLICE_LUTS"] = std::vector<double>(1, sliceLuts);
+               HLSMgr->evaluations["SLICE_LUTS"] = sliceLuts;
             }
             double lut_ff_pairs = GetPointer<clb_model>(area_m) ?
                                       GetPointer<clb_model>(area_m)->get_resource_value(clb_model::LUT_FF_PAIRS) :
                                       0;
             if(lut_ff_pairs != 0.0)
             {
-               HLSMgr->evaluations["LUT_FF_PAIRS"] = std::vector<double>(1, lut_ff_pairs);
+               HLSMgr->evaluations["LUT_FF_PAIRS"] = lut_ff_pairs;
             }
             double logic_elements = GetPointer<clb_model>(area_m) ?
                                         GetPointer<clb_model>(area_m)->get_resource_value(clb_model::LOGIC_ELEMENTS) :
                                         0;
             if(logic_elements != 0.0)
             {
-               HLSMgr->evaluations["LOGIC_ELEMENTS"] = std::vector<double>(1, logic_elements);
+               HLSMgr->evaluations["LOGIC_ELEMENTS"] = logic_elements;
             }
             double functional_elements =
                 GetPointer<clb_model>(area_m) ?
@@ -172,39 +172,39 @@ DesignFlowStep_Status SynthesisEvaluation::Exec()
                     0;
             if(functional_elements != 0.0)
             {
-               HLSMgr->evaluations["FUNCTIONAL_ELEMENTS"] = std::vector<double>(1, functional_elements);
+               HLSMgr->evaluations["FUNCTIONAL_ELEMENTS"] = functional_elements;
             }
             double logic_area = GetPointer<clb_model>(area_m) ?
                                     GetPointer<clb_model>(area_m)->get_resource_value(clb_model::LOGIC_AREA) :
                                     0;
             if(logic_area != 0.0)
             {
-               HLSMgr->evaluations["LOGIC_AREA"] = std::vector<double>(1, logic_area);
+               HLSMgr->evaluations["LOGIC_AREA"] = logic_area;
             }
             double power =
                 GetPointer<clb_model>(area_m) ? GetPointer<clb_model>(area_m)->get_resource_value(clb_model::POWER) : 0;
             if(power != 0.0)
             {
-               HLSMgr->evaluations["POWER"] = std::vector<double>(1, power);
+               HLSMgr->evaluations["POWER"] = power;
             }
             double alms =
                 GetPointer<clb_model>(area_m) ? GetPointer<clb_model>(area_m)->get_resource_value(clb_model::ALMS) : 0;
             if(alms != 0.0)
             {
-               HLSMgr->evaluations["ALMS"] = std::vector<double>(1, alms);
+               HLSMgr->evaluations["ALMS"] = alms;
             }
          }
-         HLSMgr->evaluations["AREA"] = std::vector<double>(1, area_m->get_area_value());
+         HLSMgr->evaluations["AREA"] = area_m->get_area_value();
       }
       else if(objective == "BRAMS")
       {
          area_modelRef area_m = HLSMgr->get_backend_flow()->get_used_resources();
-         double brams = 0;
-         if(GetPointer<clb_model>(area_m))
+         double brams = 
+                GetPointer<clb_model>(area_m) ? GetPointer<clb_model>(area_m)->get_resource_value(clb_model::BRAM) : 0;
+         if(brams != 0.0)
          {
-            brams = GetPointer<clb_model>(area_m)->get_resource_value(clb_model::BRAM);
+            HLSMgr->evaluations["BRAMS"] = brams;
          }
-         HLSMgr->evaluations["BRAMS"] = std::vector<double>(1, brams);
       }
       else if(objective == "CLOCK_SLACK")
       {
@@ -219,14 +219,14 @@ DesignFlowStep_Status SynthesisEvaluation::Exec()
          {
             THROW_UNREACHABLE("Slack is " + STR(slack));
          }
-         HLSMgr->evaluations["CLOCK_SLACK"] = std::vector<double>(1, slack);
+         HLSMgr->evaluations["CLOCK_SLACK"] = slack;
       }
       else if(objective == "PERIOD")
       {
          /// get the timing information after the synthesis
          time_modelRef time_m = HLSMgr->get_backend_flow()->get_timing_results();
          double minimum_period = time_m->get_execution_time();
-         HLSMgr->evaluations["PERIOD"] = std::vector<double>(1, minimum_period);
+         HLSMgr->evaluations["PERIOD"] = minimum_period;
       }
       else if(objective == "DSPS")
       {
@@ -237,7 +237,7 @@ DesignFlowStep_Status SynthesisEvaluation::Exec()
          {
             dsps = GetPointer<clb_model>(area_m)->get_resource_value(clb_model::DSP);
          }
-         HLSMgr->evaluations["DSPS"] = std::vector<double>(1, dsps);
+         HLSMgr->evaluations["DSPS"] = dsps;
       }
       else if(objective == "FREQUENCY" or objective == "TIME" or objective == "TOTAL_TIME" or objective == "AREAxTIME")
       {
@@ -246,7 +246,7 @@ DesignFlowStep_Status SynthesisEvaluation::Exec()
          double minimum_period = time_m->get_execution_time();
 
          double maximum_frequency = 1000.0 / minimum_period;
-         HLSMgr->evaluations["FREQUENCY"] = std::vector<double>(1, maximum_frequency);
+         HLSMgr->evaluations["FREQUENCY"] = maximum_frequency;
       }
       else if(objective == "REGISTERS")
       {
@@ -257,7 +257,7 @@ DesignFlowStep_Status SynthesisEvaluation::Exec()
          {
             reg = GetPointer<clb_model>(area_m)->get_resource_value(clb_model::REGISTERS);
          }
-         HLSMgr->evaluations["REGISTERS"] = std::vector<double>(1, reg);
+         HLSMgr->evaluations["REGISTERS"] = reg;
       }
    }
    return DesignFlowStep_Status::SUCCESS;

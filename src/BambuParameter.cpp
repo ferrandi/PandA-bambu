@@ -1736,7 +1736,7 @@ int BambuParameter::Exec()
             setOption(OPT_evaluation, true);
             /*
              * check if OPT_evaluation_mode has already been decided (for
-             * example with OPT_EVALUATION_MODE). in cas it's already set, we
+             * example with OPT_EVALUATION_MODE). In case it's already set, we
              * don't overwrite it since OPT_EVALUATION is meant to set the
              * objectives, not the mode, hence the mode set from other options
              * has precedence
@@ -3500,7 +3500,7 @@ void BambuParameter::CheckParameters()
          };
          if(!all_of(objective_vector.begin(), objective_vector.end(), is_valid_evaluation_mode))
          {
-            THROW_ERROR("BadParameters: evaluation mode EXACT don't support the evaluation objectives");
+            THROW_ERROR("BadParameters: evaluation mode EXACT does not support the selected evaluation objectives.");
          }
       }
 #if HAVE_EXPERIMENTAL

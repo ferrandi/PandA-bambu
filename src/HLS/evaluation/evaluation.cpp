@@ -287,17 +287,14 @@ DesignFlowStep_Status Evaluation::Exec()
          }
          THROW_ASSERT(HLSMgr->evaluations.find(objective) != HLSMgr->evaluations.end(), objective);
          const auto local_evaluations = HLSMgr->evaluations.at(objective);
-         THROW_ASSERT(local_evaluations.size() == 1, objective);
-         return local_evaluations[0];
+         return local_evaluations;
       }();
       if(objective == "CYCLES")
       {
          THROW_ASSERT(evaluations.find("TOTAL_CYCLES") != evaluations.end(), "");
-         THROW_ASSERT(evaluations.at("TOTAL_CYCLES").size() == 1, "");
-         auto tot_cycles = static_cast<unsigned long long int>(evaluations.at("TOTAL_CYCLES")[0]);
+         auto tot_cycles = static_cast<unsigned long long int>(evaluations.at("TOTAL_CYCLES"));
          THROW_ASSERT(evaluations.find("NUM_EXECUTIONS") != evaluations.end(), "");
-         THROW_ASSERT(evaluations.at("NUM_EXECUTIONS").size() == 1, "");
-         auto num_executions = static_cast<unsigned long long int>(evaluations.at("NUM_EXECUTIONS")[0]);
+         auto num_executions = static_cast<unsigned long long int>(evaluations.at("NUM_EXECUTIONS"));
          auto avg_cycles = static_cast<unsigned long long int>(evaluation);
          INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
                         "---Total cycles             : " + STR(tot_cycles) + " cycles");
@@ -312,51 +309,43 @@ DesignFlowStep_Status Evaluation::Exec()
          //         STR(evaluations.at("AREA").at(0) ));
          if(evaluations.find("SLICE") != evaluations.end())
          {
-            THROW_ASSERT(evaluations.at("SLICE").size() == 1, "");
             INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
-                           "---Slices                   : " + STR(evaluations.at("SLICE").at(0)));
+                           "---Slices                   : " + STR(evaluations.at("SLICE")));
          }
          if(evaluations.find("SLICE_LUTS") != evaluations.end())
          {
-            THROW_ASSERT(evaluations.at("SLICE_LUTS").size() == 1, "");
             INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
-                           "---Luts                     : " + STR(evaluations.at("SLICE_LUTS").at(0)));
+                           "---Luts                     : " + STR(evaluations.at("SLICE_LUTS")));
          }
          if(evaluations.find("LUT_FF_PAIRS") != evaluations.end())
          {
-            THROW_ASSERT(evaluations.at("LUT_FF_PAIRS").size() == 1, "");
             INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
-                           "---Lut FF Pairs             : " + STR(evaluations.at("LUT_FF_PAIRS").at(0)));
+                           "---Lut FF Pairs             : " + STR(evaluations.at("LUT_FF_PAIRS")));
          }
          if(evaluations.find("LOGIC_ELEMENTS") != evaluations.end())
          {
-            THROW_ASSERT(evaluations.at("LOGIC_ELEMENTS").size() == 1, "");
             INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
-                           "---Logic Elements           : " + STR(evaluations.at("LOGIC_ELEMENTS").at(0)));
+                           "---Logic Elements           : " + STR(evaluations.at("LOGIC_ELEMENTS")));
          }
          if(evaluations.find("FUNCTIONAL_ELEMENTS") != evaluations.end())
          {
-            THROW_ASSERT(evaluations.at("FUNCTIONAL_ELEMENTS").size() == 1, "");
             INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
-                           "---Functional Elements      : " + STR(evaluations.at("FUNCTIONAL_ELEMENTS").at(0)));
+                           "---Functional Elements      : " + STR(evaluations.at("FUNCTIONAL_ELEMENTS")));
          }
          if(evaluations.find("LOGIC_AREA") != evaluations.end())
          {
-            THROW_ASSERT(evaluations.at("LOGIC_AREA").size() == 1, "");
             INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
-                           "---Logic Area               : " + STR(evaluations.at("LOGIC_AREA").at(0)));
+                           "---Logic Area               : " + STR(evaluations.at("LOGIC_AREA")));
          }
          if(evaluations.find("POWER") != evaluations.end())
          {
-            THROW_ASSERT(evaluations.at("POWER").size() == 1, "");
             INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
-                           "---Power                    : " + STR(evaluations.at("POWER").at(0)));
+                           "---Power                    : " + STR(evaluations.at("POWER")));
          }
          if(evaluations.find("ALMS") != evaluations.end())
          {
-            THROW_ASSERT(evaluations.at("ALMS").size() == 1, "");
             INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
-                           "---ALMs                     : " + STR(evaluations.at("ALMS").at(0)));
+                           "---ALMs                     : " + STR(evaluations.at("ALMS")));
          }
       }
       else if(objective == "BRAMS")
@@ -395,8 +384,7 @@ DesignFlowStep_Status Evaluation::Exec()
          printed_frequency = true;
          /// get the timing information after the synthesis
          THROW_ASSERT(evaluations.find("PERIOD") != evaluations.end(), "");
-         THROW_ASSERT(evaluations.at("PERIOD").size() == 1, "");
-         double minimum_period = evaluations.at("PERIOD").at(0);
+         double minimum_period = evaluations.at("PERIOD");
          double maximum_frequency = 1000.0 / minimum_period;
          INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Frequency                : " + STR(maximum_frequency));
       }
@@ -499,38 +487,31 @@ DesignFlowStep_Status Evaluation::Exec()
          THROW_ASSERT(HLSMgr->evaluations.find("AREA") != HLSMgr->evaluations.end(), "Area value not found");
          THROW_ASSERT(HLSMgr->evaluations.find("CYCLES") != HLSMgr->evaluations.end(), "Cycles value not found");
          THROW_ASSERT(HLSMgr->evaluations.find("FREQUENCY") != HLSMgr->evaluations.end(), "Frequency value not found");
-         value = STR(HLSMgr->evaluations.find("AREA")->second[0] * HLSMgr->evaluations.find("CYCLES")->second[0] /
-                     HLSMgr->evaluations.find("FREQUENCY")->second[0]);
+         value = STR(HLSMgr->evaluations.find("AREA")->second * HLSMgr->evaluations.find("CYCLES")->second /
+                     HLSMgr->evaluations.find("FREQUENCY")->second);
          INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---AreaxTime                : " + value);
       }
       else if(objective == "TIME")
       {
          THROW_ASSERT(HLSMgr->evaluations.find("CYCLES") != HLSMgr->evaluations.end(), "Cycles value not found");
          THROW_ASSERT(HLSMgr->evaluations.find("FREQUENCY") != HLSMgr->evaluations.end(), "Frequency value not found");
-         value = STR(HLSMgr->evaluations.find("CYCLES")->second[0] / HLSMgr->evaluations.find("FREQUENCY")->second[0]);
+         value = STR(HLSMgr->evaluations.find("CYCLES")->second / HLSMgr->evaluations.find("FREQUENCY")->second);
          INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Time                     : " + value);
       }
       else if(objective == "TOTAL_TIME")
       {
          THROW_ASSERT(HLSMgr->evaluations.find("TOTAL_CYCLES") != HLSMgr->evaluations.end(), "Cycles value not found");
          THROW_ASSERT(HLSMgr->evaluations.find("FREQUENCY") != HLSMgr->evaluations.end(), "Frequency value not found");
-         value = STR(HLSMgr->evaluations.find("TOTAL_CYCLES")->second[0] /
-                     HLSMgr->evaluations.find("FREQUENCY")->second[0]);
+         value = STR(HLSMgr->evaluations.find("TOTAL_CYCLES")->second /
+                     HLSMgr->evaluations.find("FREQUENCY")->second);
          INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Tot. Time                : " + value);
       }
       else
       {
          THROW_ASSERT(HLSMgr->evaluations.find(objective) != HLSMgr->evaluations.end(),
                       "Value of " + objective + " not found");
-         const std::vector<double>& local_evaluations = HLSMgr->evaluations.find(objective)->second;
-         for(auto const single_evaluation : local_evaluations)
-         {
-            if(value != "")
-            {
-               value += ",";
-            }
-            value += STR(single_evaluation);
-         }
+         double& local_evaluations = HLSMgr->evaluations.find(objective)->second;
+         value += STR(local_evaluations);
       }
       child_element = nodeRoot->add_child_element(objective);
       WRITE_XNVM2("value", value, child_element);
@@ -538,13 +519,13 @@ DesignFlowStep_Status Evaluation::Exec()
       if(objective == "AREA" && HLSMgr->evaluations.find("SLICE") != HLSMgr->evaluations.end())
       {
          child_element = nodeRoot->add_child_element("SLICE");
-         value = STR(HLSMgr->evaluations.find("SLICE")->second[0]);
+         value = STR(HLSMgr->evaluations.find("SLICE")->second);
          WRITE_XNVM2("value", value, child_element);
       }
       if(objective == "AREA" && HLSMgr->evaluations.find("SLICE_LUTS") != HLSMgr->evaluations.end())
       {
          child_element = nodeRoot->add_child_element("SLICE_LUTS");
-         value = STR(HLSMgr->evaluations.find("SLICE_LUTS")->second[0]);
+         value = STR(HLSMgr->evaluations.find("SLICE_LUTS")->second);
          WRITE_XNVM2("value", value, child_element);
       }
    }

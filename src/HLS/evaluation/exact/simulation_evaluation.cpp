@@ -132,9 +132,9 @@ DesignFlowStep_Status SimulationEvaluation::Exec()
          unsigned long long int tot_cycles = HLSMgr->RSim->tot_n_cycles;
          unsigned long long int avg_cycles = HLSMgr->RSim->avg_n_cycles;
          const auto num_executions = HLSMgr->RSim->n_testcases;
-         HLSMgr->evaluations["TOTAL_CYCLES"] = std::vector<double>(1, static_cast<double>(tot_cycles));
-         HLSMgr->evaluations["CYCLES"] = std::vector<double>(1, static_cast<double>(avg_cycles));
-         HLSMgr->evaluations["NUM_EXECUTIONS"] = std::vector<double>(1, static_cast<double>(num_executions));
+         HLSMgr->evaluations["TOTAL_CYCLES"] = static_cast<double>(tot_cycles);
+         HLSMgr->evaluations["CYCLES"] = static_cast<double>(avg_cycles);
+         HLSMgr->evaluations["NUM_EXECUTIONS"] = static_cast<double>(num_executions);
       }
    }
 
