@@ -268,23 +268,9 @@ void DesignFlowManager::RecursivelyAddSteps(const DesignFlowStepSet& steps, cons
                std::list<vertex> vertices;
                design_flow_graph->TopologicalSort(vertices);
             }
-            catch(const char* msg)
-            {
-               feedback_design_flow_graph->WriteDot("Design_Flow_Error");
-               THROW_UNREACHABLE("Design flow graph is not anymore acyclic");
-            }
-            catch(const std::string& msg)
-            {
-               feedback_design_flow_graph->WriteDot("Design_Flow_Error");
-               THROW_UNREACHABLE("Design flow graph is not anymore acyclic");
-            }
-            catch(const std::exception& ex)
-            {
-               feedback_design_flow_graph->WriteDot("Design_Flow_Error");
-               THROW_UNREACHABLE("Design flow graph is not anymore acyclic");
-            }
             catch(...)
             {
+               WriteLoopDot();
                feedback_design_flow_graph->WriteDot("Design_Flow_Error");
                THROW_UNREACHABLE("Design flow graph is not anymore acyclic");
             }
@@ -318,23 +304,9 @@ void DesignFlowManager::RecursivelyAddSteps(const DesignFlowStepSet& steps, cons
                std::list<vertex> vertices;
                design_flow_graph->TopologicalSort(vertices);
             }
-            catch(const char* msg)
-            {
-               feedback_design_flow_graph->WriteDot("Design_Flow_Error");
-               THROW_UNREACHABLE("Design flow graph is not anymore acyclic");
-            }
-            catch(const std::string& msg)
-            {
-               feedback_design_flow_graph->WriteDot("Design_Flow_Error");
-               THROW_UNREACHABLE("Design flow graph is not anymore acyclic");
-            }
-            catch(const std::exception& ex)
-            {
-               feedback_design_flow_graph->WriteDot("Design_Flow_Error");
-               THROW_UNREACHABLE("Design flow graph is not anymore acyclic");
-            }
             catch(...)
             {
+               WriteLoopDot();
                feedback_design_flow_graph->WriteDot("Design_Flow_Error");
                THROW_UNREACHABLE("Design flow graph is not anymore acyclic");
             }
@@ -959,6 +931,9 @@ void DesignFlowManager::Exec()
    if(design_flow_graph->CGetDesignFlowStepInfo(design_flow_graph->CGetDesignFlowGraphInfo()->exit)->status !=
       DesignFlowStep_Status::EMPTY)
    {
+#ifndef NDEBUG
+      WriteLoopDot();
+#endif
       feedback_design_flow_graph->WriteDot("Design_Flow_Error");
       THROW_UNREACHABLE("Design flow didn't end");
    }
@@ -1156,3 +1131,29 @@ const DesignFlowStepRef DesignFlowManager::CreateFlowStep(const std::string& sig
    const auto prefix = signature.substr(0, signature.find("::"));
    return CGetDesignFlowStepFactory(prefix)->CreateFlowStep(signature);
 }
+
+#ifndef NDEBUG
+void DesignFlowManager::WriteLoopDot() const
+{
+   std::map<size_t, UnorderedSetStdStable<vertex>> sccs;
+   feedback_design_flow_graph->GetStronglyConnectedComponents(sccs);
+   for(const auto& id_scc : sccs)
+   {
+      const auto& scc_id = id_scc.first;
+      const auto& scc = id_scc.second;
+      if(scc.size() > 1)
+      {
+         CustomUnorderedSet<vertex> vertices;
+         for(const auto v : scc)
+         {
+            vertices.insert(v);
+         }
+         DesignFlowGraph(design_flow_graphs_collection,
+                         DesignFlowGraph::DEPENDENCE_SELECTOR | DesignFlowGraph::PRECEDENCE_SELECTOR |
+                             DesignFlowGraph::AUX_SELECTOR | DesignFlowGraph::DEPENDENCE_FEEDBACK_SELECTOR,
+                         vertices)
+             .WriteDot("DesignFlowLoop_" + STR(scc_id) + ".dot");
+      }
+   }
+}
+#endif
