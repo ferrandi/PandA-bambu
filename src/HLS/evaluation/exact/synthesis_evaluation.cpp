@@ -207,10 +207,7 @@ DesignFlowStep_Status SynthesisEvaluation::Exec()
          area_modelRef area_m = HLSMgr->get_backend_flow()->get_used_resources();
          double brams = 
                 GetPointer<clb_model>(area_m) ? GetPointer<clb_model>(area_m)->get_resource_value(clb_model::BRAM) : 0;
-         if(brams != 0.0)
-         {
-            HLSMgr->evaluations["BRAMS"] = brams;
-         }
+         HLSMgr->evaluations["BRAMS"] = brams;
       }
       else if(objective == "CLOCK_SLACK")
       {
