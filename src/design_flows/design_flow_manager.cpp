@@ -357,8 +357,7 @@ void DesignFlowManager::RecursivelyAddSteps(const DesignFlowStepSet& steps, cons
       }
       if(debug_level >= DEBUG_LEVEL_PARANOIC)
       {
-         feedback_design_flow_graph->WriteDot("Design_Flow_" + boost::lexical_cast<std::string>(step_counter) + "_" +
-                                              boost::lexical_cast<std::string>(temp_counter));
+         feedback_design_flow_graph->WriteDot("Design_Flow_" + STR(step_counter) + "_" + STR(temp_counter));
          temp_counter++;
       }
       if(boost::in_degree(step_vertex, *design_flow_graph) == 0)
@@ -410,7 +409,7 @@ void DesignFlowManager::Exec()
    if(debug_level >= DEBUG_LEVEL_PARANOIC)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "---Writing initial design flow graph");
-      feedback_design_flow_graph->WriteDot("Design_Flow_" + boost::lexical_cast<std::string>(step_counter));
+      feedback_design_flow_graph->WriteDot("Design_Flow_" + STR(step_counter));
    }
    size_t executed_passes = 0;
    size_t skipped_passes = 0;
@@ -460,8 +459,7 @@ void DesignFlowManager::Exec()
       const DesignFlowStepInfoRef design_flow_step_info = design_flow_graph->GetDesignFlowStepInfo(next);
       const DesignFlowStepRef step = design_flow_step_info->design_flow_step;
       INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level,
-                     "-->Beginning iteration number " + boost::lexical_cast<std::string>(step_counter) +
-                         " - Considering step " + step->GetName());
+                     "-->Beginning iteration number " + STR(step_counter) + " - Considering step " + step->GetName());
       INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "-->Other ready steps are");
 #ifndef NDEBUG
       for(const auto ready_step : possibly_ready)
@@ -560,9 +558,8 @@ void DesignFlowManager::Exec()
       {
          if(debug_level >= DEBUG_LEVEL_PARANOIC)
          {
-            feedback_design_flow_graph->WriteDot("Design_Flow_" + boost::lexical_cast<std::string>(step_counter));
-            INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level,
-                           "---Writing Design_Flow_" + boost::lexical_cast<std::string>(step_counter));
+            feedback_design_flow_graph->WriteDot("Design_Flow_" + STR(step_counter));
+            INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "---Writing Design_Flow_" + STR(step_counter));
          }
 #ifndef NDEBUG
          if(debug_level >= DEBUG_LEVEL_PARANOIC)
@@ -583,8 +580,7 @@ void DesignFlowManager::Exec()
             }
          }
 #endif
-         INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level,
-                        "<--Ended iteration number " + boost::lexical_cast<std::string>(step_counter));
+         INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "<--Ended iteration number " + STR(step_counter));
          const size_t final_number_vertices = boost::num_vertices(*feedback_design_flow_graph);
          const size_t final_number_edges = boost::num_vertices(*feedback_design_flow_graph);
          if(final_number_vertices > initial_number_vertices or final_number_edges > initial_number_edges)
@@ -820,9 +816,8 @@ void DesignFlowManager::Exec()
       }
       if(debug_level >= DEBUG_LEVEL_PARANOIC)
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level,
-                        "---Writing Design_Flow_" + boost::lexical_cast<std::string>(step_counter));
-         feedback_design_flow_graph->WriteDot("Design_Flow_" + boost::lexical_cast<std::string>(step_counter));
+         INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "---Writing Design_Flow_" + STR(step_counter));
+         feedback_design_flow_graph->WriteDot("Design_Flow_" + STR(step_counter));
 
 #ifndef NDEBUG
          /// Save the current status of the graph in history
@@ -847,8 +842,7 @@ void DesignFlowManager::Exec()
          design_flow_manager_time += after_time;
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level,
-                     "<--Ended iteration number " + boost::lexical_cast<std::string>(step_counter) + " - Step " +
-                         step->GetName());
+                     "<--Ended iteration number " + STR(step_counter) + " - Step " + step->GetName());
       const size_t final_number_vertices = boost::num_vertices(*feedback_design_flow_graph);
       const size_t final_number_edges = boost::num_vertices(*feedback_design_flow_graph);
       if(parameters->IsParameter("dfm_statistics"))
@@ -918,12 +912,11 @@ void DesignFlowManager::Exec()
          if(edge_history.find(writing_step_counter) != edge_history.end())
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level,
-                           "-->Writing Design_Flow_History_" + boost::lexical_cast<std::string>(writing_step_counter));
-            feedback_design_flow_graph->WriteDot("Design_Flow_History_" +
-                                                     boost::lexical_cast<std::string>(writing_step_counter),
-                                                 vertex_history, edge_history, step_names, writing_step_counter);
+                           "-->Writing Design_Flow_History_" + STR(writing_step_counter));
+            feedback_design_flow_graph->WriteDot("Design_Flow_History_" + STR(writing_step_counter), vertex_history,
+                                                 edge_history, step_names, writing_step_counter);
             INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level,
-                           "<--Written Design_Flow_History_" + boost::lexical_cast<std::string>(writing_step_counter));
+                           "<--Written Design_Flow_History_" + STR(writing_step_counter));
          }
       }
    }

@@ -49,6 +49,7 @@
 #include "exceptions.hpp"        // for THROW_ASSERT
 #include "function_behavior.hpp" // for tree_nodeRef, Funct...
 #include "op_graph.hpp"
+#include "string_manipulation.hpp"
 #include "tree_manager.hpp"
 #include "tree_node.hpp"
 #include "typed_node_info.hpp"    // for GET_NAME, ENTRY, EXIT
@@ -132,18 +133,17 @@ void operations_graph_constructor::AddOperation(const tree_managerRef TM, const 
    THROW_ASSERT(operation_t != "", "Operation empty");
 #endif
    vertex current = getIndex(src);
-   THROW_ASSERT(not op_graph->CGetOpNodeInfo(current)->node or node_id == 0 or
+   THROW_ASSERT(!op_graph->CGetOpNodeInfo(current)->node || node_id == 0 ||
                     node_id == op_graph->CGetOpNodeInfo(current)->GetNodeId(),
-                "Trying to set node_id " + boost::lexical_cast<std::string>(node_id) + " to vertex " + src +
-                    " that has already node_id " +
-                    boost::lexical_cast<std::string>(op_graph->CGetOpNodeInfo(current)->GetNodeId()));
-   if(node_id > 0 and node_id != ENTRY_ID and node_id != EXIT_ID)
+                "Trying to set node_id " + STR(node_id) + " to vertex " + src + " that has already node_id " +
+                    STR(op_graph->CGetOpNodeInfo(current)->GetNodeId()));
+   if(node_id > 0 && node_id != ENTRY_ID && node_id != EXIT_ID)
    {
-      op_graph->GetOpNodeInfo(current)->node = TM->GetTreeReindex(node_id);
+      op_graph->GetOpNodeInfo(current)->node = TM->CGetTreeReindex(node_id);
    }
 #if HAVE_BAMBU_BUILT
    const unsigned int updated_node_id = op_graph->GetOpNodeInfo(current)->GetNodeId();
-   if(updated_node_id != 0 and updated_node_id != ENTRY_ID and updated_node_id != EXIT_ID)
+   if(updated_node_id != 0 && updated_node_id != ENTRY_ID && updated_node_id != EXIT_ID)
    {
       GetPointer<gimple_node>(TM->get_tree_node_const(updated_node_id))->operation = operation_t;
    }

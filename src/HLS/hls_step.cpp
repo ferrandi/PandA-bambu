@@ -114,7 +114,7 @@ const std::string HLS_step::GetSignature() const
 const std::string HLS_step::ComputeSignature(const HLSFlowStep_Type hls_flow_step_type,
                                              const HLSFlowStepSpecializationConstRef hls_flow_step_specialization)
 {
-   return "HLS::" + std::to_string(static_cast<unsigned int>(hls_flow_step_type)) +
+   return "HLS::" + EnumToName(hls_flow_step_type) +
           (hls_flow_step_specialization ? "::" + hls_flow_step_specialization->GetSignature() : "");
 }
 
@@ -187,10 +187,11 @@ const std::string HLS_step::EnumToName(const HLSFlowStep_Type hls_flow_step_type
          return "DryRunEvaluation";
 #if HAVE_BEAGLE
       case HLSFlowStep_Type::DSE_DESIGN_FLOW:
-         return "DseDesignFlow"
+         return "DseDesignFlow";
 #endif
 #if HAVE_EXPERIMENTAL
-             case HLSFlowStep_Type::DUMP_DESIGN_FLOW : return "DumpDesignFlow";
+      case HLSFlowStep_Type::DUMP_DESIGN_FLOW:
+         return "DumpDesignFlow";
 #endif
       case HLSFlowStep_Type::EASY_MODULE_BINDING:
          return "EasyModuleBinding";
