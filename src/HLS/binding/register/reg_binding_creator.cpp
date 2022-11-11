@@ -118,11 +118,6 @@ reg_binding_creator::ComputeHLSRelationships(const DesignFlowStep::RelationshipT
                                        HLSFlowStep_Relationship::SAME_FUNCTION));
             ret.insert(std::make_tuple(HLSMgr->get_HLS(funId)->liveness_algorithm, HLSFlowStepSpecializationConstRef(),
                                        HLSFlowStep_Relationship::SAME_FUNCTION));
-         }
-         ret.insert(std::make_tuple(parameters->getOption<HLSFlowStep_Type>(OPT_storage_value_insertion_algorithm),
-                                    HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
-         if(HLSMgr->get_HLS(funId))
-         {
             if(HLSMgr->GetFunctionBehavior(funId)->is_simple_pipeline())
             {
                ret.insert(std::make_tuple(HLSFlowStep_Type::UNIQUE_MODULE_BINDING, HLSFlowStepSpecializationConstRef(),
@@ -134,8 +129,10 @@ reg_binding_creator::ComputeHLSRelationships(const DesignFlowStep::RelationshipT
                                           HLSFlowStepSpecializationConstRef(),
                                           HLSFlowStep_Relationship::SAME_FUNCTION));
             }
-            break;
          }
+         ret.insert(std::make_tuple(parameters->getOption<HLSFlowStep_Type>(OPT_storage_value_insertion_algorithm),
+                                    HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
+         break;
       }
       case INVALIDATION_RELATIONSHIP:
       {
@@ -149,4 +146,15 @@ reg_binding_creator::ComputeHLSRelationships(const DesignFlowStep::RelationshipT
          THROW_UNREACHABLE("");
    }
    return ret;
+}
+
+void reg_binding_creator::ComputeRelationships(DesignFlowStepSet& design_flow_step_set,
+                                               const DesignFlowStep::RelationshipType relationship_type)
+{
+   HLSFunctionStep::ComputeRelationships(design_flow_step_set, relationship_type);
+}
+
+DesignFlowStep_Status reg_binding_creator::InternalExec()
+{
+   return RegisterBinding();
 }

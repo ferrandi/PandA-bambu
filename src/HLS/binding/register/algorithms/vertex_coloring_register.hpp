@@ -47,6 +47,9 @@
 
 class vertex_coloring_register : public conflict_based_register
 {
+ private:
+   DesignFlowStep_Status RegisterBinding() override final;
+
  public:
    /**
     * Constructor of the class.
@@ -55,16 +58,7 @@ class vertex_coloring_register : public conflict_based_register
    vertex_coloring_register(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId,
                             const DesignFlowManagerConstRef design_flow_manager);
 
-   /**
-    * Destructor of the class.
-    */
    ~vertex_coloring_register() override;
-
-   /**
-    * Execute the step
-    * @return the exit status of this step
-    */
-   DesignFlowStep_Status InternalExec() override;
 };
 
 #endif

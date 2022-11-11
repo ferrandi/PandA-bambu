@@ -304,7 +304,7 @@ class HLS_step : public DesignFlowStep
    /**
     * Destructor
     */
-   ~HLS_step() override;
+   virtual ~HLS_step() override;
 
    /**
     * Return a unified identifier of this design step

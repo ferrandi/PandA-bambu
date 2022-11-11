@@ -74,11 +74,15 @@
 /// HLS/function_allocation include
 #include "functions.hpp"
 
+#include "memory.hpp"
+
 /// HLS/module_allocation include
 #include "allocation_information.hpp"
 
 /// HLS/scheduling include
 #include "schedule.hpp"
+
+#include "structural_manager.hpp"
 
 /// HLS/stg includes
 #include "StateTransitionGraph_constructor.hpp"
@@ -777,11 +781,10 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
       HLS->registered_done_port = true;
       /// check for unbounded op executed in the last step
       /// this ops creates problems with done port registering
-      vertex exit_state = HLS->STG->get_exit_state();
-      InEdgeIterator ie_it, ie_it_end;
-      for(boost::tie(ie_it, ie_it_end) = boost::in_edges(exit_state, *HLS->STG->CGetStg()); ie_it != ie_it_end; ++ie_it)
+      const auto exit_state = HLS->STG->get_exit_state();
+      BOOST_FOREACH(EdgeDescriptor ie, boost::in_edges(exit_state, *HLS->STG->CGetStg()))
       {
-         vertex src_state = boost::source(*ie_it, *HLS->STG->CGetStg());
+         const auto src_state = boost::source(ie, *HLS->STG->CGetStg());
          if(HLS->STG->CGetStg()->CGetStateInfo(src_state)->is_dummy)
          {
             HLS->registered_done_port = false;
@@ -793,6 +796,47 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
    {
       HLS->registered_done_port = false;
    }
+   HLS->STG->GetStg()->GetStateTransitionGraphInfo()->bounded = [&]() {
+      /// First computing if operation is bounded, then computing call_delay; call_delay depends on the value of bounded
+      if(HLS->STG && HLS->STG->CGetStg()->CGetStateTransitionGraphInfo()->is_a_dag)
+      {
+         auto is_bounded = !HLSMgr->Rmem->has_proxied_internal_variables(funId) &&
+                           !parameters->getOption<bool>(OPT_disable_bounded_function);
+         const auto cir = HLS->top->get_circ();
+         const auto mod = GetPointerS<module>(cir);
+         for(auto i = 0U; i < mod->get_in_port_size() && is_bounded; i++)
+         {
+            const auto port_obj = mod->get_in_port(i);
+            if(GetPointerS<port_o>(port_obj)->get_is_memory())
+            {
+               is_bounded = false; /// functions accessing memory are classified as unbounded
+            }
+         }
+         if(is_bounded)
+         {
+            const auto min_cycles = HLS->STG->CGetStg()->CGetStateTransitionGraphInfo()->min_cycles;
+            const auto max_cycles = HLS->STG->CGetStg()->CGetStateTransitionGraphInfo()->max_cycles;
+            /// pipelined functions are always bounded
+            if(max_cycles == min_cycles && min_cycles > 0 && (min_cycles < 8 || is_pipelined))
+            {
+               return true;
+            }
+            else
+            {
+               return false;
+            }
+         }
+         else
+         {
+            return false;
+         }
+      }
+      else
+      {
+         THROW_ASSERT(!is_pipelined, "A pipelined function should always generate a DAG");
+         return false;
+      }
+   }();
    if(output_level <= OUTPUT_LEVEL_PEDANTIC)
    {
       INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "");

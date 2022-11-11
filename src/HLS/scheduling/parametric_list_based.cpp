@@ -353,21 +353,6 @@ parametric_list_based::parametric_list_based(const ParameterConstRef _parameters
 
 parametric_list_based::~parametric_list_based() = default;
 
-void parametric_list_based::ComputeRelationships(DesignFlowStepSet& relationship,
-                                                 const DesignFlowStep::RelationshipType relationship_type)
-{
-#if 0
-   if(relationship_type == INVALIDATION_RELATIONSHIP and (static_cast<HLSFlowStep_Type>(parameters->getOption<unsigned int>(OPT_scheduling_algorithm))) == HLSFlowStep_Type::SDC_SCHEDULING and executions_number == 1)
-   {
-      vertex frontend_step = design_flow_manager.lock()->GetDesignFlowStep(FunctionFrontendFlowStep::ComputeSignature(FrontendFlowStepType::MULTI_WAY_IF, funId));
-      const auto design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
-      const auto design_flow_step = frontend_step != NULL_VERTEX ? design_flow_graph->CGetDesignFlowStepInfo(frontend_step)->design_flow_step : GetPointer<const FrontendFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("Frontend"))->CreateFunctionFrontendFlowStep(FrontendFlowStepType::MULTI_WAY_IF, funId);
-      relationship.insert(design_flow_step);
-   }
-#endif
-   Scheduling::ComputeRelationships(relationship, relationship_type);
-}
-
 void parametric_list_based::Initialize()
 {
    Scheduling::Initialize();

@@ -69,7 +69,7 @@ unique_binding_register::unique_binding_register(const ParameterConstRef _Param,
 
 unique_binding_register::~unique_binding_register() = default;
 
-DesignFlowStep_Status unique_binding_register::InternalExec()
+DesignFlowStep_Status unique_binding_register::RegisterBinding()
 {
    long step_time = 0;
    if(output_level >= OUTPUT_LEVEL_MINIMUM and output_level <= OUTPUT_LEVEL_PEDANTIC)

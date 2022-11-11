@@ -239,68 +239,27 @@ DesignFlowStep_Status add_library::InternalExec()
       const auto function_name = BH->get_function_name();
       TechM->add_operation(WORK_LIBRARY, module_name, function_name);
       const auto op = GetPointerS<operation>(fu->get_operation(function_name));
-      op->time_m = time_model::create_model(device->get_type(), parameters);
       op->primary_inputs_registered = HLS->registered_inputs;
-      const auto simple_pipeline = FB->is_simple_pipeline();
-      /// First computing if operation is bounded, then computing call_delay; call_delay depends on the value of bounded
-      if(HLS->STG && HLS->STG->CGetStg()->CGetStateTransitionGraphInfo()->is_a_dag)
-      {
-         auto is_bounded = !HLSMgr->Rmem->has_proxied_internal_variables(funId) &&
-                           !parameters->getOption<bool>(OPT_disable_bounded_function);
-         const auto cir = HLS->top->get_circ();
-         const auto mod = GetPointerS<module>(cir);
-         for(auto i = 0U; i < mod->get_in_port_size() && is_bounded; i++)
-         {
-            const auto port_obj = mod->get_in_port(i);
-            if(GetPointerS<port_o>(port_obj)->get_is_memory())
-            {
-               is_bounded = false; /// functions accessing memory are classified as unbounded
-            }
-         }
-         if(is_bounded)
-         {
-            const auto min_cycles = HLS->STG->CGetStg()->CGetStateTransitionGraphInfo()->min_cycles;
-            const auto max_cycles = HLS->STG->CGetStg()->CGetStateTransitionGraphInfo()->max_cycles;
-            /// pipelined functions are always bounded
-            if(max_cycles == min_cycles && min_cycles > 0 && (min_cycles < 8 || simple_pipeline))
-            {
-               op->bounded = true;
-            }
-            else
-            {
-               op->bounded = false;
-            }
-         }
-         else
-         {
-            op->bounded = false;
-         }
-      }
-      else
-      {
-         THROW_ASSERT(!simple_pipeline, "A pipelined function should always generate a DAG");
-         op->bounded = false;
-      }
+      op->bounded = HLS->STG->CGetStg()->CGetStateTransitionGraphInfo()->bounded;
       const auto call_delay =
           HLS->allocation_information ? HLS->allocation_information->estimate_call_delay() : clock_period_value;
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Estimated call delay " + STR(call_delay));
+      op->time_m = time_model::create_model(device->get_type(), parameters);
       if(op->bounded)
       {
-         double exec_time;
          const auto min_cycles = HLS->STG->CGetStg()->CGetStateTransitionGraphInfo()->min_cycles;
          const auto max_cycles = HLS->STG->CGetStg()->CGetStateTransitionGraphInfo()->max_cycles;
-         if(min_cycles > 1)
-         {
-            exec_time = clk * (min_cycles - 1) + call_delay;
-         }
-         else
-         {
-            exec_time = call_delay;
-         }
+         const auto exec_time = [&]() {
+            if(min_cycles > 1)
+            {
+               return clk * (min_cycles - 1) + call_delay;
+            }
+            return call_delay;
+         }();
          op->time_m->set_execution_time(exec_time, min_cycles);
          if(max_cycles > 1)
          {
-            if(simple_pipeline)
+            if(FB->is_simple_pipeline())
             {
                op->time_m->set_stage_period(call_delay);
                const ControlStep jj(1);

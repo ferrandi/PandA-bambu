@@ -105,7 +105,7 @@ void weighted_clique_register::Initialize()
    HLS->Rreg = reg_binding::create_reg_binding(HLS, HLSMgr);
 }
 
-DesignFlowStep_Status weighted_clique_register::InternalExec()
+DesignFlowStep_Status weighted_clique_register::RegisterBinding()
 {
    const FunctionBehaviorConstRef FB = HLSMgr->CGetFunctionBehavior(funId);
    long step_time = 0;

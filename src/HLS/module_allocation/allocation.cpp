@@ -212,11 +212,11 @@ void allocation::ComputeRelationships(DesignFlowStepSet& relationship,
    {
       if(!parameters->getOption<int>(OPT_gcc_openmp_simd))
       {
-         const auto* frontend_flow_step_factory = GetPointer<const FrontendFlowStepFactory>(
+         const auto frontend_flow_step_factory = GetPointer<const FrontendFlowStepFactory>(
              design_flow_manager.lock()->CGetDesignFlowStepFactory("Frontend"));
          const auto frontend_step = design_flow_manager.lock()->GetDesignFlowStep(
              FunctionFrontendFlowStep::ComputeSignature(FrontendFlowStepType::BIT_VALUE, funId));
-         const DesignFlowGraphConstRef design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
+         const auto design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
          const auto design_flow_step =
              frontend_step != NULL_VERTEX ?
                  design_flow_graph->CGetDesignFlowStepInfo(frontend_step)->design_flow_step :
@@ -1876,28 +1876,14 @@ DesignFlowStep_Status allocation::InternalExec()
          // FU must exist
          THROW_ASSERT(current_fu,
                       std::string("Not found ") + current_op + " in library " + TechM->get_library(current_op));
-         unsigned int current_id;
-#if 0
-         if(artificial_allocation.find(current_fu) == artificial_allocation.end())
-         {
-            allocation_information->list_of_FU.push_back(current_fu);
-            allocation_information->tech_constraints.push_back(INFINITE_UINT);
-            current_id = current_size;
-            artificial_allocation[current_fu] = current_id;
-         }
-         else
-            current_id = artificial_allocation.find(current_fu)->second;
-#else
+
          allocation_information->list_of_FU.push_back(current_fu);
          allocation_information->tech_constraints.push_back(1);
-         current_id = current_size;
-#endif
+         const auto current_id = current_size;
          THROW_ASSERT(allocation_information->tech_constraints.size() == allocation_information->list_of_FU.size(),
                       "Something of wrong happen");
-#if 1
          allocation_information->is_vertex_bounded_rel.insert(current_id);
          allocation_information->binding[node_id] = std::pair<std::string, unsigned int>(current_op, current_id);
-#endif
          allocation_information->node_id_to_fus[std::pair<unsigned int, std::string>(node_id, node_operation)].insert(
              current_id);
          allocation_information->id_to_fu_names[current_id] =
@@ -2549,18 +2535,6 @@ DesignFlowStep_Status allocation::InternalExec()
       INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
                      "---Number of complex operations: " + STR(allocation_information->n_complex_operations));
    }
-#if 0
-   INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Number of functional unit types: " + STR(allocation_information->tech_constraints.size()));
-   if(output_level >= OUTPUT_LEVEL_VERY_PEDANTIC)
-   {
-      INDENT_OUT_MEX(OUTPUT_LEVEL_VERY_PEDANTIC, output_level, "-->");
-      for(decltype(allocation_information->get_number_fu_types()) index_fu = 0u; index_fu < allocation_information->get_number_fu_types(); index_fu++)
-      {
-         INDENT_OUT_MEX(OUTPUT_LEVEL_VERY_PEDANTIC, output_level, "---" + allocation_information->get_fu_name(index_fu).first);
-      }
-      INDENT_OUT_MEX(OUTPUT_LEVEL_VERY_PEDANTIC, output_level, "<--");
-   }
-#endif
    if(output_level >= OUTPUT_LEVEL_MINIMUM and output_level <= OUTPUT_LEVEL_PEDANTIC)
    {
       STOP_TIME(step_time);

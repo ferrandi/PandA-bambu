@@ -68,7 +68,7 @@ vertex_coloring_register::vertex_coloring_register(const ParameterConstRef _Para
 
 vertex_coloring_register::~vertex_coloring_register() = default;
 
-DesignFlowStep_Status vertex_coloring_register::InternalExec()
+DesignFlowStep_Status vertex_coloring_register::RegisterBinding()
 {
    long step_time = 0;
    if(output_level >= OUTPUT_LEVEL_MINIMUM and output_level <= OUTPUT_LEVEL_PEDANTIC)

@@ -50,6 +50,9 @@
 
 class unique_binding_register : public reg_binding_creator
 {
+ private:
+   DesignFlowStep_Status RegisterBinding() override final;
+
  public:
    /**
     * Constructor of the class.
@@ -58,16 +61,7 @@ class unique_binding_register : public reg_binding_creator
    unique_binding_register(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId,
                            const DesignFlowManagerConstRef design_flow_manager);
 
-   /**
-    * Destructor of the class.
-    */
    ~unique_binding_register() override;
-
-   /**
-    * Unique binding register allocation algorithm execution.
-    * @return the exit status of this step
-    */
-   DesignFlowStep_Status InternalExec() override;
 };
 
 #endif
