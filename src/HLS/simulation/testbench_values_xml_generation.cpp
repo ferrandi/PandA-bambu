@@ -289,7 +289,7 @@ DesignFlowStep_Status TestbenchValuesXMLGeneration::Exec()
          }
          else
          {
-            /// Call the parser to translate C initialization to verilog initialization
+            /// Call the parser to translate C initialization to Verilog initialization
             const CInitializationParserFunctorRef c_initialization_parser_functor =
                 CInitializationParserFunctorRef(new MemoryInitializationWriter(
                     output_stream, TM, behavioral_helper, reserved_mem_bytes, TM->CGetTreeReindex(l),
@@ -309,7 +309,7 @@ DesignFlowStep_Status TestbenchValuesXMLGeneration::Exec()
                output_stream << "m00000000" << std::endl;
             }
          }
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Cosidered parameter '" + param + "'");
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Considered parameter '" + param + "'");
       }
       ++v_idx;
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Considered vector");

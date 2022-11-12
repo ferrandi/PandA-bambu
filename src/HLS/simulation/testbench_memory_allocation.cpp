@@ -174,7 +174,12 @@ void TestbenchMemoryAllocation::AllocTestbenchMemory(void) const
          if(tree_helper::IsPointerType(lnode) && !is_memory)
          {
             const auto pt_node = tree_helper::CGetType(lnode);
-            if(flag_cpp)
+            if(test_v.size() > 4 && test_v.substr(test_v.size() - 4) == ".dat")
+            {
+               std::ifstream in(test_v, std::ifstream::ate | std::ifstream::binary);
+               reserved_bytes = static_cast<unsigned>(in.tellg());
+            }
+            else if(flag_cpp)
             {
                tree_nodeConstRef ptd_base_type;
                if(GET_CONST_NODE(pt_node)->get_kind() == pointer_type_K)

@@ -539,8 +539,7 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
                auto InterfaceType = GetPointer<port_o>(portInst)->get_port_interface();
                if(InterfaceType == port_o::port_interface::PI_DOUT)
                {
-                  const auto manage_pidout = [&](const std::string& portID)
-                  {
+                  const auto manage_pidout = [&](const std::string& portID) {
                      auto port_name = portInst->get_id();
                      auto terminate = port_name.size() > 3 ? port_name.size() - std::string("_d" + portID).size() : 0;
                      THROW_ASSERT(port_name.substr(terminate) == "_d" + portID, "inconsistent interface");
@@ -640,8 +639,7 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
                auto InterfaceType = GetPointer<port_o>(portInst)->get_port_interface();
                if(InterfaceType == port_o::port_interface::PI_DIN)
                {
-                  const auto manage_pidin = [&](const std::string& portID)
-                  {
+                  const auto manage_pidin = [&](const std::string& portID) {
                      auto port_name = portInst->get_id();
                      auto terminate = port_name.size() > 3 ? port_name.size() - std::string("_q" + portID).size() : 0;
                      THROW_ASSERT(port_name.substr(terminate) == "_q" + portID, "inconsistent interface");
@@ -896,7 +894,7 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
                   {
                      if(output_level >= OUTPUT_LEVEL_VERY_PEDANTIC)
                      {
-                        writer->write("$display(\" comparision = %b " + nonescaped_name +
+                        writer->write("$display(\" comparison = %b " + nonescaped_name +
                                       " = %d "
                                       " _bambu_testbench_mem_[" +
                                       nonescaped_name + " + %d - base_addr] = %20.20f  expected = %20.20f \", ");
@@ -1619,7 +1617,7 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
                   {
                      if(output_level > OUTPUT_LEVEL_MINIMUM)
                      {
-                        writer->write("$display(\" comparision = %b " + nonescaped_name +
+                        writer->write("$display(\" comparison%b " + nonescaped_name +
                                       " = %d "
                                       " _bambu_testbench_mem_[" +
                                       nonescaped_name + " + %d - base_addr] = %20.20f  expected = %20.20f \", ");
