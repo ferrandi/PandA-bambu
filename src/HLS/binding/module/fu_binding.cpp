@@ -332,25 +332,18 @@ void fu_binding::kill_proxy_memory_units(std::map<unsigned int, unsigned int>& m
       killing_vars.insert(it_mu->second);
       reverse_memory_units[it_mu->second] = it_mu->first;
    }
-   for(auto kv : killing_vars)
+   for(const auto kv : killing_vars)
    {
       structural_objectRef port_proxy_in1 = curr_gate->find_member("proxy_in1_" + STR(kv), port_o_K, curr_gate);
       if(port_proxy_in1)
       {
          var_call_sites_rel[kv].push_back(curr_gate);
-         structural_objectRef port_proxy_in2 = curr_gate->find_member("proxy_in2_" + STR(kv), port_o_K, curr_gate);
-         structural_objectRef port_proxy_in3 = curr_gate->find_member("proxy_in3_" + STR(kv), port_o_K, curr_gate);
-         structural_objectRef port_proxy_out1 = curr_gate->find_member("proxy_out1_" + STR(kv), port_o_K, curr_gate);
-         structural_objectRef port_proxy_sel_LOAD =
-             curr_gate->find_member("proxy_sel_LOAD_" + STR(kv), port_o_K, curr_gate);
-         structural_objectRef port_proxy_sel_STORE =
-             curr_gate->find_member("proxy_sel_STORE_" + STR(kv), port_o_K, curr_gate);
          GetPointer<port_o>(port_proxy_in1)->set_is_memory(false);
-         GetPointer<port_o>(port_proxy_in2)->set_is_memory(false);
-         GetPointer<port_o>(port_proxy_in3)->set_is_memory(false);
-         GetPointer<port_o>(port_proxy_out1)->set_is_memory(false);
-         GetPointer<port_o>(port_proxy_sel_LOAD)->set_is_memory(false);
-         GetPointer<port_o>(port_proxy_sel_STORE)->set_is_memory(false);
+         for(const auto p_name : {"proxy_in2_", "proxy_in3_", "proxy_out1_", "proxy_sel_LOAD_", "proxy_sel_STORE_"})
+         {
+            const auto port = curr_gate->find_member(p_name + STR(kv), port_o_K, curr_gate);
+            GetPointerS<port_o>(port)->set_is_memory(false);
+         }
       }
    }
 }
