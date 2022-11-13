@@ -91,7 +91,8 @@ class StateTransitionGraph_constructor
     * @return the created vertex
     */
    vertex create_state(const std::list<vertex>& exec_op, const std::list<vertex>& start_op,
-                       const std::list<vertex>& end_op, const CustomOrderedSet<unsigned int>& BB_ids);
+                       const std::list<vertex>& end_op, const CustomOrderedSet<unsigned int>& BB_ids,
+                       const std::map<vertex, unsigned>& vertex_stages);
 
    /**
     *  create the STG entry vertex
@@ -150,6 +151,13 @@ class StateTransitionGraph_constructor
    /** Removes the specified state from the graph.
     * If the graph does not contain a vertex representing that state, this method throws an exception. */
    void delete_state(const vertex& src);
+
+   /**
+    * @brief set_pipelined_state change the pipeling state value of a state
+    * @param curr is the state
+    * @param first_iteration in case the pipelined state is run on the first loop iteration
+    */
+   void set_pipelined_state(const vertex& curr, bool first_iteration);
 };
 
 /// refcount definition to StateTransitionGraph_constructor class

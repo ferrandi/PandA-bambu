@@ -410,6 +410,10 @@ class Schedule
    {
       return loopPipelinedMap.find(BB_index) != loopPipelinedMap.end();
    }
+   unsigned GetLoopPipeliningII(unsigned BB_index) const
+   {
+      return loopPipelinedMap.find(BB_index)->second.II;
+   }
 };
 /// Refcount definition of the class
 using ScheduleRef = refcount<Schedule>;

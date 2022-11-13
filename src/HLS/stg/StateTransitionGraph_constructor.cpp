@@ -80,8 +80,8 @@ void StateTransitionGraph_constructor::create_entry_state()
                                  ->CGetOpGraph(FunctionBehavior::CFG)
                                  ->CGetOpNodeInfo(cfg->entry_vertex)
                                  ->bb_index);
-   //   state_info->BB_ids.insert(GET_BB_INDEX(HLSMgr.lock()->CGetFunctionBehavior(funId)->CGetOpGraph(FunctionBehavior::CFG).get(),
-   //   cfg->entry_vertex));
+   state_info->stages[cfg->entry_vertex] = 0;
+
    state_transition_graph->GetStateTransitionGraphInfo()->entry_node = newVertex;
 }
 
@@ -97,8 +97,12 @@ void StateTransitionGraph_constructor::create_exit_state()
    state_info->executing_operations.push_back(cfg->exit_vertex);
    state_info->starting_operations.push_back(cfg->exit_vertex);
    state_info->ending_operations.push_back(cfg->exit_vertex);
-   state_info->BB_ids.insert(GET_BB_INDEX(
-       HLSMgr.lock()->CGetFunctionBehavior(funId)->CGetOpGraph(FunctionBehavior::CFG).get(), cfg->exit_vertex));
+   state_info->BB_ids.insert(HLSMgr.lock()
+                                 ->CGetFunctionBehavior(funId)
+                                 ->CGetOpGraph(FunctionBehavior::CFG)
+                                 ->CGetOpNodeInfo(cfg->exit_vertex)
+                                 ->bb_index);
+   state_info->stages[cfg->exit_vertex] = 0;
 
    state_transition_graph->GetStateTransitionGraphInfo()->exit_node = newVertex;
 }
@@ -106,7 +110,8 @@ void StateTransitionGraph_constructor::create_exit_state()
 vertex StateTransitionGraph_constructor::create_state(const std::list<vertex>& exec_op,
                                                       const std::list<vertex>& start_op,
                                                       const std::list<vertex>& end_op,
-                                                      const CustomOrderedSet<unsigned int>& BB_ids)
+                                                      const CustomOrderedSet<unsigned int>& BB_ids,
+                                                      const std::map<vertex, unsigned>& vertex_stages)
 {
    vertex newVertex = state_transition_graphs_collection->AddVertex(NodeInfoRef(new StateInfo()));
    const StateInfoRef state_info = state_transition_graph->GetStateInfo(newVertex);
@@ -119,6 +124,7 @@ vertex StateTransitionGraph_constructor::create_state(const std::list<vertex>& e
    state_info->starting_operations = start_op;
    state_info->ending_operations = end_op;
    state_info->BB_ids = BB_ids;
+   state_info->stages = vertex_stages;
 
    state_index++;
 
@@ -208,4 +214,11 @@ void StateTransitionGraph_constructor::delete_state(const vertex& src)
    v_to_id.erase(src);
    id_to_v.erase(id);
    state_transition_graphs_collection->RemoveVertex(src);
+}
+
+void StateTransitionGraph_constructor::set_pipelined_state(const vertex& curr, bool first_iteration)
+{
+   const StateInfoRef state_info = state_transition_graph->GetStateInfo(curr);
+   state_info->is_pipelined_state = true;
+   state_info->is_first_iteration = first_iteration;
 }

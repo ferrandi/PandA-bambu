@@ -98,14 +98,20 @@ struct StateInfo : public NodeInfo
    /// set of operation vertices completing their execution in this state
    std::list<vertex> ending_operations;
 
-   /// set of operation vertices already in execution at the beginning of this state
-   std::list<vertex> onfly_operations;
-
    /// set of BB ids associated with the state
    CustomOrderedSet<unsigned int> BB_ids;
 
+   /// define the vertex stage
+   std::map<vertex, unsigned> stages;
+
    /// flag to check if the state is dummy or not
    bool is_dummy;
+
+   /// true when the state comes from loop pipelining
+   bool is_pipelined_state;
+
+   /// meaningful when is a pipelined state
+   bool is_first_iteration;
 
    /// flag to check if the state is duplicated or not
    bool is_duplicated;
@@ -150,6 +156,8 @@ struct StateInfo : public NodeInfo
    StateInfo()
        : funId(0),
          is_dummy(false),
+         is_pipelined_state(false),
+         is_first_iteration(false),
          is_duplicated(false),
          sourceBb(0),
          isOriginalState(false),
