@@ -116,8 +116,10 @@ static inline unsigned int get_bb_index_from_state_info(const OpGraphConstRef da
 }
 
 static void update_liveout_with_prev(const HLS_managerRef HLSMgr, hlsRef HLS, const StateTransitionGraphConstRef stg,
-                                     const OpGraphConstRef data, vertex current_state, vertex prev_state)
+                                     const OpGraphConstRef data, vertex current_state, vertex prev_state,
+                                     unsigned int funId)
 {
+   CustomSet<unsigned int> phi_vars_in;
    const auto state_info = stg->CGetStateInfo(prev_state);
    for(const auto& exec_op : state_info->executing_operations)
    {
@@ -131,6 +133,18 @@ static void update_liveout_with_prev(const HLS_managerRef HLSMgr, hlsRef HLS, co
             HLS->Rliv->set_live_out(current_state, scalar_use);
          }
       }
+      if((GET_TYPE(data, exec_op) & TYPE_PHI) != 0 && state_info->is_pipelined_state && !state_info->is_first_iteration)
+      {
+         const auto phi_node =
+             HLSMgr->get_tree_manager()->get_tree_node_const(data->CGetOpNodeInfo(exec_op)->GetNodeId());
+         for(const auto& def_edge : GetPointer<const gimple_phi>(phi_node)->CGetDefEdgesList())
+         {
+            if(data->CGetOpNodeInfo(exec_op)->bb_index == def_edge.second)
+            {
+               phi_vars_in.insert(def_edge.first->index);
+            }
+         }
+      }
    }
 
    for(const auto& end_op : state_info->ending_operations)
@@ -142,11 +156,54 @@ static void update_liveout_with_prev(const HLS_managerRef HLSMgr, hlsRef HLS, co
       {
          if(HLSMgr->is_register_compatible(scalar_def))
          {
+            const FunctionBehaviorConstRef FB = HLSMgr->CGetFunctionBehavior(funId);
+            const BehavioralHelperConstRef BH = FB->CGetBehavioralHelper();
+            std::cerr << BH->PrintVariable(scalar_def) << "\n";
             HLS->Rliv->erase_el_live_out(current_state, scalar_def);
          }
       }
    }
 
+   const auto cur_state_info = stg->CGetStateInfo(current_state);
+   if(cur_state_info->is_pipelined_state && !cur_state_info->stages.empty())
+   {
+      for(const auto& exec_op : cur_state_info->executing_operations)
+      {
+         const CustomSet<unsigned int>& scalar_uses = data->CGetOpNodeInfo(exec_op)->GetVariables(
+             FunctionBehavior_VariableType::SCALAR, FunctionBehavior_VariableAccessType::USE);
+
+         for(const auto scalar_use : scalar_uses)
+         {
+            if(HLSMgr->is_register_compatible(scalar_use))
+            {
+               bool add_live_out = false;
+               BOOST_FOREACH(EdgeDescriptor e, boost::in_edges(exec_op, *data))
+               {
+                  vertex src_op = boost::source(e, *data);
+                  const CustomSet<unsigned int>& scalar_defs = data->CGetOpNodeInfo(src_op)->GetVariables(
+                      FunctionBehavior_VariableType::SCALAR, FunctionBehavior_VariableAccessType::DEFINITION);
+                  if(scalar_defs.find(scalar_use) != scalar_defs.end())
+                  {
+                     if(cur_state_info->stages.find(src_op) != cur_state_info->stages.end() &&
+                        cur_state_info->stages.at(src_op) != cur_state_info->stages.at(exec_op))
+                     {
+                        add_live_out = true;
+                        break;
+                     }
+                  }
+               }
+               if(add_live_out)
+               {
+                  HLS->Rliv->set_live_out(current_state, scalar_use);
+               }
+            }
+         }
+      }
+   }
+   for(const auto phi_in_use : phi_vars_in)
+   {
+      HLS->Rliv->set_live_out(current_state, phi_in_use);
+   }
    if(not state_info->moved_op_use_set.empty())
    {
       HLS->Rliv->set_live_out(current_state, stg->CGetStateInfo(prev_state)->moved_op_use_set);
@@ -178,6 +235,8 @@ DesignFlowStep_Status FSM_NI_SSA_liveness::InternalExec()
    astg->ReverseTopologicalSort(reverse_order_state_list);
    vertex exit_state = HLS->STG->get_exit_state();
    std::deque<vertex> dummy_states;
+   CustomOrderedSet<vertex> pipelined_states_first;
+   std::queue<vertex> pipelined_states_second;
 
    /// compute which operation defines a variable (add_op_definition)
    /// compute in which states an operation complete the computation (add_state_for_ending_op)
@@ -193,7 +252,7 @@ DesignFlowStep_Status FSM_NI_SSA_liveness::InternalExec()
       // skip exit state
       if(rosl == exit_state)
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Is exit state");
+         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Is an exit state");
          continue;
       }
 
@@ -221,7 +280,23 @@ DesignFlowStep_Status FSM_NI_SSA_liveness::InternalExec()
       {
          dummy_states.push_back(rosl);
          HLS->Rliv->add_dummy_state(rosl);
-         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Is dummy state");
+         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Is a dummy state");
+         continue;
+      }
+
+      // add pipelined state
+      if(state_info->is_pipelined_state)
+      {
+         if(state_info->is_first_iteration)
+         {
+            pipelined_states_first.insert(rosl);
+            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Is a pipelined state (1st)");
+         }
+         else
+         {
+            pipelined_states_second.push(rosl);
+            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Is a pipelined state (2nd)");
+         }
          continue;
       }
 
@@ -281,7 +356,7 @@ DesignFlowStep_Status FSM_NI_SSA_liveness::InternalExec()
       // skip exit state
       if(rosl == exit_state)
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Is exit state");
+         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Is an exit state");
          continue;
       }
 
@@ -289,12 +364,52 @@ DesignFlowStep_Status FSM_NI_SSA_liveness::InternalExec()
       // skip dummy states
       if(state_info->is_dummy)
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Is dummy state");
+         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Is a dummy state");
          continue;
       }
 
+      unsigned int bb_index = get_bb_index_from_state_info(data, state_info);
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---bb_index: " + STR(bb_index));
+      if(state_info->is_pipelined_state)
+      {
+         OutEdgeIterator o_e_it, o_e_end;
+         for(boost::tie(o_e_it, o_e_end) = boost::out_edges(rosl, *astg); o_e_it != o_e_end; ++o_e_it)
+         {
+            vertex target_state = boost::target(*o_e_it, *astg);
+            if(target_state == rosl)
+            {
+               continue;
+            }
+            prev_state = target_state;
+            StateInfoConstRef tgt_state_info = astg->CGetStateInfo(target_state);
+            prev_bb_index = get_bb_index_from_state_info(data, tgt_state_info);
+            if(prev_bb_index != bb_index)
+            {
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                              "---prev_bb_index " + STR(prev_bb_index) + " != bb_index " + STR(bb_index));
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                              "---adding live out of BB " + STR(bb_index) + " to live out of state " +
+                                  state_info->name);
+               for(const auto lo : fbb->CGetBBNodeInfo(bb_index_map[bb_index])->get_live_out())
+               {
+                  if(HLSMgr->is_register_compatible(lo))
+                  {
+                     HLS->Rliv->set_live_out(rosl, lo);
+                  }
+               }
+            }
+            else
+            {
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                              "---adding live out of " + stg->CGetStateInfo(prev_state)->name +
+                                  " to live out of state " + state_info->name);
+               HLS->Rliv->set_live_out(rosl, HLS->Rliv->get_live_out(prev_state));
+               update_liveout_with_prev(HLSMgr, HLS, stg, data, rosl, prev_state, funId);
+            }
+         }
+      }
       // handle duplicated states
-      if(state_info->is_duplicated)
+      else if(state_info->is_duplicated)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Is duplicated state");
          if(state_info->isOriginalState)
@@ -333,8 +448,8 @@ DesignFlowStep_Status FSM_NI_SSA_liveness::InternalExec()
                                  "---adding live out of : " + target_state_info->name);
                   HLS->Rliv->set_live_out(rosl, HLS->Rliv->get_live_out(target_state));
                   HLS->Rliv->set_live_out(state_info->clonedState, HLS->Rliv->get_live_out(target_state));
-                  update_liveout_with_prev(HLSMgr, HLS, stg, data, state_info->clonedState, target_state);
-                  update_liveout_with_prev(HLSMgr, HLS, stg, data, rosl, target_state);
+                  update_liveout_with_prev(HLSMgr, HLS, stg, data, state_info->clonedState, target_state, funId);
+                  update_liveout_with_prev(HLSMgr, HLS, stg, data, rosl, target_state, funId);
                   found = true;
                }
             }
@@ -370,11 +485,7 @@ DesignFlowStep_Status FSM_NI_SSA_liveness::InternalExec()
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--");
          continue;
       }
-
-      unsigned int bb_index = get_bb_index_from_state_info(data, state_info);
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---bb_index: " + STR(bb_index));
-
-      if(prev_bb_index != bb_index)
+      else if(prev_bb_index != bb_index)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                         "---prev_bb_index " + STR(prev_bb_index) + " != bb_index " + STR(bb_index));
@@ -394,7 +505,7 @@ DesignFlowStep_Status FSM_NI_SSA_liveness::InternalExec()
                         "---adding live out of " + stg->CGetStateInfo(prev_state)->name + " to live out of state " +
                             state_info->name);
          HLS->Rliv->set_live_out(rosl, HLS->Rliv->get_live_out(prev_state));
-         update_liveout_with_prev(HLSMgr, HLS, stg, data, rosl, prev_state);
+         update_liveout_with_prev(HLSMgr, HLS, stg, data, rosl, prev_state, funId);
       }
       prev_state = rosl;
       prev_bb_index = bb_index;
@@ -426,10 +537,35 @@ DesignFlowStep_Status FSM_NI_SSA_liveness::InternalExec()
          continue;
       }
 
-      if(state_info->is_duplicated)
+      unsigned int bb_index = get_bb_index_from_state_info(data, state_info);
+      if(state_info->is_pipelined_state)
       {
-         unsigned int bb_index = *state_info->BB_ids.begin();
-         for(const auto li : fbb->CGetBBNodeInfo(bb_index_map[bb_index])->get_live_in())
+         InEdgeIterator i_e_it, i_e_end;
+         for(boost::tie(i_e_it, i_e_end) = boost::in_edges(osl, *astg); i_e_it != i_e_end; ++i_e_it)
+         {
+            auto src_state = boost::source(*i_e_it, *astg);
+            auto src_state_info = astg->CGetStateInfo(src_state);
+            prev_bb_index = get_bb_index_from_state_info(data, src_state_info);
+            if(prev_bb_index != bb_index)
+            {
+               for(const auto li : fbb->CGetBBNodeInfo(bb_index_map[bb_index])->get_live_in())
+               {
+                  if(HLSMgr->is_register_compatible(li))
+                  {
+                     HLS->Rliv->set_live_in(osl, li);
+                  }
+               }
+            }
+            else
+            {
+               HLS->Rliv->set_live_in(osl, HLS->Rliv->get_live_out(prev_state));
+            }
+         }
+      }
+      else if(state_info->is_duplicated)
+      {
+         auto l_bb_index = *state_info->BB_ids.begin();
+         for(const auto li : fbb->CGetBBNodeInfo(bb_index_map[l_bb_index])->get_live_in())
          {
             if(HLSMgr->is_register_compatible(li))
             {
@@ -442,19 +578,17 @@ DesignFlowStep_Status FSM_NI_SSA_liveness::InternalExec()
             vertex target_state = boost::target(oe, *astg);
             StateInfoConstRef target_state_info = astg->CGetStateInfo(target_state);
             unsigned int target_bb_index = *target_state_info->BB_ids.begin();
-            if(bb_index == target_bb_index && !target_state_info->is_duplicated)
+            if(l_bb_index == target_bb_index && !target_state_info->is_duplicated)
             {
                HLS->Rliv->set_live_in(target_state, HLS->Rliv->get_live_out(osl));
                state_to_skip.insert(target_state);
             }
          }
          prev_state = osl;
-         prev_bb_index = bb_index;
+         prev_bb_index = l_bb_index;
          continue;
       }
-
-      unsigned int bb_index = get_bb_index_from_state_info(data, state_info);
-      if(prev_bb_index != bb_index)
+      else if(prev_bb_index != bb_index)
       {
          for(const auto li : fbb->CGetBBNodeInfo(bb_index_map[bb_index])->get_live_in())
          {
@@ -574,7 +708,7 @@ DesignFlowStep_Status FSM_NI_SSA_liveness::InternalExec()
                   vertex src_state = boost::source(ie, *stg);
                   const StateInfoConstRef source_state_info = stg->CGetStateInfo(src_state);
                   const CustomOrderedSet<unsigned int>& BB_ids = source_state_info->BB_ids;
-                  if(BB_ids.find(bb_index) != BB_ids.end())
+                  if(BB_ids.find(bb_index) != BB_ids.end() || (state_info->is_pipelined_state))
                   {
                      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                                     "---Adding state in " + source_state_info->name + " " +
