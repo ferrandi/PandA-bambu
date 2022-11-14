@@ -386,12 +386,12 @@ void parametric_list_based::CheckSchedulabilityConditions(
     double& current_starting_time, double& current_ending_time, double& current_stage_period,
     CustomMap<std::pair<unsigned int, unsigned int>, double>& local_connection_map, double current_cycle_starting_time,
     double current_cycle_ending_time, double setup_hold_time, double& phi_extra_time, double scheduling_mux_margins,
-    bool unbounded, bool RWFunctions, bool nonDirectLoadStore, const std::set<std::string>& proxy_functions_used,
+    bool unbounded, bool RWFunctions, bool LoadStoreOp, const std::set<std::string>& proxy_functions_used,
     bool cstep_has_RET_conflict, unsigned int fu_type, const vertex2obj<ControlStep>& current_ASAP,
     const fu_bindingRef res_binding, const ScheduleRef schedule, bool& predecessorsCond, bool& pipeliningCond,
     bool& cannotBeChained0, bool& chainingRetCond, bool& cannotBeChained1, bool& asyncCond, bool& cannotBeChained2,
-    bool& cannotBeChained3, bool& MultiCond0, bool& MultiCond1, bool& nonDirectMemCond, bool& unboundedFunctionsCond,
-    bool& proxyFunCond, bool unbounded_RW)
+    bool& cannotBeChained3, bool& MultiCond0, bool& MultiCond1, bool& LoadStoreFunctionConflict,
+    bool& FunctionLoadStoreConflict, bool& proxyFunCond, bool unbounded_RW)
 {
    predecessorsCond = current_ASAP.find(current_vertex) != current_ASAP.end() and
                       current_ASAP.find(current_vertex)->second > current_cycle;
@@ -468,22 +468,22 @@ void parametric_list_based::CheckSchedulabilityConditions(
    {
       return;
    }
-   nonDirectMemCond = (curr_vertex_type & (TYPE_LOAD | TYPE_STORE)) &&
-                      !HLS->allocation_information->is_direct_access_memory_unit(fu_type) && RWFunctions;
-   if(nonDirectMemCond)
+   const auto curr_node = flow_graph->CGetOpNodeInfo(current_vertex);
+   const auto curr_node_name = curr_node->GetOperation();
+   LoadStoreFunctionConflict = (curr_vertex_type & (TYPE_LOAD | TYPE_STORE)) && RWFunctions;
+   if(LoadStoreFunctionConflict)
    {
       return;
    }
-   unboundedFunctionsCond =
-       (curr_vertex_type & TYPE_EXTERNAL) && (curr_vertex_type & TYPE_RW) && (nonDirectLoadStore || RWFunctions);
-   if(unboundedFunctionsCond)
+   FunctionLoadStoreConflict =
+       (curr_vertex_type & TYPE_EXTERNAL) && (curr_vertex_type & TYPE_RW) && (LoadStoreOp || RWFunctions);
+   if(FunctionLoadStoreConflict)
    {
       return;
    }
-   auto curr_node_name = flow_graph->CGetOpNodeInfo(current_vertex)->GetOperation();
    proxyFunCond = (curr_vertex_type & TYPE_EXTERNAL) &&
-                  (proxy_functions_used.find(curr_node_name) != proxy_functions_used.end() ||
-                   (reachable_proxy_functions.find(curr_node_name) != reachable_proxy_functions.end() &&
+                  (proxy_functions_used.count(curr_node_name) ||
+                   (reachable_proxy_functions.count(curr_node_name) &&
                     has_element_in_common(proxy_functions_used, reachable_proxy_functions.at(curr_node_name))));
    if(proxyFunCond)
    {
@@ -745,7 +745,7 @@ void parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
       bool unbounded = false;
       bool RWFunctions = false;
       bool unbounded_RW = false;
-      bool nonDirectLoadStore = false;
+      bool LoadStoreOp = false;
       unsigned int n_scheduled_ops = 0;
       seen_cstep_has_RET_conflict = cstep_has_RET_conflict =
           ((schedule->num_scheduled() - already_sch) != operations_number - 1) ? registering_output_p : false;
@@ -1030,17 +1030,17 @@ void parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
 
                bool predecessorsCond = false, pipeliningCond = false, cannotBeChained0 = false, chainingRetCond = false,
                     cannotBeChained1 = false, asyncCond = false, cannotBeChained2 = false, cannotBeChained3 = false,
-                    MultiCond0 = false, MultiCond1 = false, nonDirectMemCond = false, unboundedFunctionsCond = false,
-                    proxyFunCond = false;
+                    MultiCond0 = false, MultiCond1 = false, LoadStoreFunctionConflict = false,
+                    FunctionLoadStoreConflict = false, proxyFunCond = false;
 
                CheckSchedulabilityConditions(
                    operations, current_vertex, current_cycle, current_starting_time, current_ending_time,
                    current_stage_period, local_connection_map, current_cycle_starting_time, current_cycle_ending_time,
-                   setup_hold_time, phi_extra_time, scheduling_mux_margins, unbounded, RWFunctions, nonDirectLoadStore,
+                   setup_hold_time, phi_extra_time, scheduling_mux_margins, unbounded, RWFunctions, LoadStoreOp,
                    proxy_functions_used, cstep_has_RET_conflict, fu_type, current_ASAP, res_binding, schedule,
                    predecessorsCond, pipeliningCond, cannotBeChained0, chainingRetCond, cannotBeChained1, asyncCond,
-                   cannotBeChained2, cannotBeChained3, MultiCond0, MultiCond1, nonDirectMemCond, unboundedFunctionsCond,
-                   proxyFunCond, unbounded_RW);
+                   cannotBeChained2, cannotBeChained3, MultiCond0, MultiCond1, LoadStoreFunctionConflict,
+                   FunctionLoadStoreConflict, proxyFunCond, unbounded_RW);
 
                /// checking if predecessors have finished
                if(predecessorsCond)
@@ -1190,11 +1190,10 @@ void parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
                   black_list.at(fu_type).insert(current_vertex);
                   continue;
                }
-               else if(nonDirectMemCond)
+               else if(LoadStoreFunctionConflict)
                {
                   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                "                  Non-direct memory access operations may conflict with unbounded "
-                                "function calls");
+                                "                  Memory access operations may conflict with function calls");
                   if(black_list.find(fu_type) == black_list.end())
                   {
                      black_list.emplace(fu_type, OpVertexSet(flow_graph));
@@ -1202,11 +1201,10 @@ void parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
                   black_list.at(fu_type).insert(current_vertex);
                   continue;
                }
-               else if(unboundedFunctionsCond)
+               else if(FunctionLoadStoreConflict)
                {
                   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                "                  Unbounded function calls may conflict with non-direct memory access "
-                                "operations ");
+                                "                  function calls may conflict with memory access operations ");
                   if(black_list.find(fu_type) == black_list.end())
                   {
                      black_list.emplace(fu_type, OpVertexSet(flow_graph));
@@ -1302,11 +1300,10 @@ void parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                  "---" + GET_NAME(flow_graph, current_vertex) + " is bounded");
                }
-               /// check if we have non-direct memory accesses
-               if((curr_vertex_type & (TYPE_LOAD | TYPE_STORE)) &&
-                  !HLS->allocation_information->is_direct_access_memory_unit(fu_type))
+               /// check if we have memory accesses
+               if((curr_vertex_type & (TYPE_LOAD | TYPE_STORE)))
                {
-                  nonDirectLoadStore = true;
+                  LoadStoreOp = true;
                }
 
                /// update cstep_vuses

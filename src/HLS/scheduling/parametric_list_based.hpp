@@ -307,12 +307,12 @@ class parametric_list_based : public Scheduling
        CustomMap<std::pair<unsigned int, unsigned int>, double>& local_connection_map,
        double current_cycle_starting_time, double current_cycle_ending_time, double setup_hold_time,
        double& phi_extra_time, double scheduling_mux_margins, bool unbounded, bool unbounded_Functions,
-       bool nonDirectLoadStore, const std::set<std::string>& proxy_functions_used, bool cstep_has_RET_conflict,
+       bool LoadStoreOp, const std::set<std::string>& proxy_functions_used, bool cstep_has_RET_conflict,
        unsigned int fu_type, const vertex2obj<ControlStep>& current_ASAP, const fu_bindingRef res_binding,
        const ScheduleRef schedule, bool& predecessorsCond, bool& pipeliningCond, bool& cannotBeChained0,
        bool& chainingRetCond, bool& cannotBeChained1, bool& asyncCond, bool& cannotBeChained2, bool& cannotBeChained3,
-       bool& MultiCond0, bool& MultiCond1, bool& nonDirectMemCond, bool& unboundedFunctionsCond, bool& proxyFunCond,
-       bool unbounded_RW);
+       bool& MultiCond0, bool& MultiCond1, bool& LoadStoreFunctionConflict, bool& FunctionStoreconflict,
+       bool& proxyFunCond, bool unbounded_RW);
 
    const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
    ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
