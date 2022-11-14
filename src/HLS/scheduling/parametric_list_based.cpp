@@ -425,8 +425,7 @@ void parametric_list_based::CheckSchedulabilityConditions(
    {
       return;
    }
-   chainingRetCond = (unbounded || (cstep_has_RET_conflict && current_starting_time > (current_cycle_starting_time))) &&
-                     (curr_vertex_type & TYPE_RET);
+   chainingRetCond = (unbounded || cstep_has_RET_conflict) && (curr_vertex_type & TYPE_RET);
    if(chainingRetCond)
    {
       return;
@@ -703,8 +702,8 @@ void parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
 #endif
    unsigned int cstep_vuses_ARRAYs = 0;
    unsigned int cstep_vuses_others = 0;
-   bool cstep_has_RET_conflict = registering_output_p;
-   bool seen_cstep_has_RET_conflict = registering_output_p;
+   bool cstep_has_RET_conflict = false;
+   bool seen_cstep_has_RET_conflict = false;
 
    OpVertexSet::const_iterator rv, rv_end = ready_vertices.end();
 
@@ -748,6 +747,8 @@ void parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
       bool unbounded_RW = false;
       bool nonDirectLoadStore = false;
       unsigned int n_scheduled_ops = 0;
+      seen_cstep_has_RET_conflict = cstep_has_RET_conflict =
+          ((schedule->num_scheduled() - already_sch) != operations_number - 1) ? registering_output_p : false;
       std::set<std::string> proxy_functions_used;
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                     "      schedule->num_scheduled() " + std::to_string(schedule->num_scheduled()));
@@ -1311,6 +1312,8 @@ void parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
                /// update cstep_vuses
                if(curr_vertex_type & (TYPE_LOAD | TYPE_STORE))
                {
+                  seen_cstep_has_RET_conflict = cstep_has_RET_conflict = (curr_vertex_type & (TYPE_STORE)) != 0;
+
                   bool is_array = HLS->allocation_information->is_direct_access_memory_unit(fu_type);
                   unsigned var = is_array ? (HLS->allocation_information->is_memory_unit(fu_type) ?
                                                  HLS->allocation_information->get_memory_var(fu_type) :
@@ -1318,7 +1321,6 @@ void parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
                                             0;
                   if(!var || !HLSMgr->Rmem->is_private_memory(var))
                   {
-                     seen_cstep_has_RET_conflict = cstep_has_RET_conflict = true;
                      if(HLS->allocation_information->is_direct_access_memory_unit(fu_type) && !cstep_vuses_others)
                      {
                         cstep_vuses_ARRAYs = 1;
@@ -1333,9 +1335,10 @@ void parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
                      }
                   }
                }
-               // if((curr_vertex_type&TYPE_EXTERNAL) && (curr_vertex_type&TYPE_RW) &&
-               // !HLS->allocation_information->is_operation_bounded(flow_graph, current_vertex, fu_type))
-               //   seen_cstep_has_RET_conflict=cstep_has_RET_conflict = true;
+               if((curr_vertex_type & TYPE_EXTERNAL) && (curr_vertex_type & TYPE_RW))
+               {
+                  seen_cstep_has_RET_conflict = cstep_has_RET_conflict = true;
+               }
                /// set the schedule information
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                               "---" + GET_NAME(flow_graph, current_vertex) + " scheduled at " +
@@ -1530,7 +1533,6 @@ void parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
       /// clear the vises
       cstep_vuses_ARRAYs = cstep_vuses_ARRAYs > 0 ? cstep_vuses_ARRAYs - 1 : 0;
       cstep_vuses_others = cstep_vuses_others > 0 ? cstep_vuses_others - 1 : 0;
-      cstep_has_RET_conflict = registering_output_p;
       /// move to the next cycle
       ++current_cycle;
    }
