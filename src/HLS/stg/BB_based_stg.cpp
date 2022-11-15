@@ -716,26 +716,24 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
    ///*****************************************************
 
    HLS->STG->ComputeCyclesCount(is_pipelined);
-   if(HLS->STG->CGetStg()->CGetStateTransitionGraphInfo()->min_cycles != 1 && !is_pipelined)
-   {
-      HLS->registered_done_port = true;
-      /// check for unbounded op executed in the last step
-      /// this ops creates problems with done port registering
-      const auto exit_state = HLS->STG->get_exit_state();
-      BOOST_FOREACH(EdgeDescriptor ie, boost::in_edges(exit_state, *HLS->STG->CGetStg()))
+   HLS->registered_done_port = [&]() {
+      if(!HLS->STG->CGetStg()->CGetStateTransitionGraphInfo()->bounded)
       {
-         const auto src_state = boost::source(ie, *HLS->STG->CGetStg());
-         if(HLS->STG->CGetStg()->CGetStateInfo(src_state)->is_dummy)
+         /// check for unbounded op executed in the last step
+         /// this ops creates problems with done port registering
+         const auto exit_state = HLS->STG->get_exit_state();
+         BOOST_FOREACH(EdgeDescriptor ie, boost::in_edges(exit_state, *HLS->STG->CGetStg()))
          {
-            HLS->registered_done_port = false;
-            break;
+            const auto src_state = boost::source(ie, *HLS->STG->CGetStg());
+            if(HLS->STG->CGetStg()->CGetStateInfo(src_state)->is_dummy)
+            {
+               return false;
+            }
          }
+         return true;
       }
-   }
-   else
-   {
-      HLS->registered_done_port = false;
-   }
+      return false;
+   }();
    if(output_level <= OUTPUT_LEVEL_PEDANTIC)
    {
       INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "");

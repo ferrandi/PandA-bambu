@@ -126,7 +126,7 @@ const StateTransitionGraphConstRef StateTransitionGraphManager::CGetEPPStg() con
 void StateTransitionGraphManager::ComputeCyclesCount(bool is_pipelined)
 {
    auto info = STG_graph->GetStateTransitionGraphInfo();
-   if(info->is_a_dag)
+   if(info->is_a_dag && !Param->getOption<bool>(OPT_disable_bounded_function))
    {
       std::list<vertex> sorted_vertices;
       ACYCLIC_STG_graph->TopologicalSort(sorted_vertices);
@@ -159,12 +159,12 @@ void StateTransitionGraphManager::ComputeCyclesCount(bool is_pipelined)
       info->min_cycles = CSteps_min.find(info->exit_node)->second - 1;
       info->max_cycles = CSteps_max.find(info->exit_node)->second - 1;
       info->bounded =
-          !Param->getOption<bool>(OPT_disable_bounded_function) &&
-          (is_pipelined || (info->min_cycles == info->max_cycles && info->min_cycles > 0 && !has_dummy_state));
+          is_pipelined || (info->min_cycles == info->max_cycles && info->min_cycles > 0 && !has_dummy_state);
    }
    else
    {
-      THROW_ASSERT(!is_pipelined, "A pipelined function should always generate a DAG");
+      THROW_ASSERT(Param->getOption<bool>(OPT_disable_bounded_function) || !is_pipelined,
+                   "A pipelined function should always generate a DAG");
    }
 }
 
