@@ -781,6 +781,20 @@ void parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
          }
          else
          {
+            auto live_vertex_type = GET_TYPE(flow_graph, *live_vertex_it);
+            if(live_vertex_type & TYPE_STORE)
+            {
+               seen_cstep_has_RET_conflict = cstep_has_RET_conflict = true;
+            }
+            if(live_vertex_type & (TYPE_LOAD | TYPE_STORE))
+            {
+               LoadStoreOp = true;
+            }
+            if((live_vertex_type & TYPE_EXTERNAL) && (live_vertex_type & TYPE_RW) &&
+               RW_stmts.find(*live_vertex_it) == RW_stmts.end())
+            {
+               RWFunctions = true;
+            }
             const auto II = HLS->allocation_information->get_initiation_time(res_binding->get_assign(*live_vertex_it),
                                                                              *live_vertex_it);
             if(FB->is_simple_pipeline() && (II > 1 || II == 0))
