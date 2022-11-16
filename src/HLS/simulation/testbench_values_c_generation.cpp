@@ -194,7 +194,7 @@ DesignFlowStep_Status TestbenchValuesCGeneration::Exec()
    INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "-->Executing C testbench");
    const CompilerWrapperConstRef compiler_wrapper(
        new CompilerWrapper(parameters, parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler),
-                           CompilerWrapper_OptimizationSet::O0));
+                           CompilerWrapper_OptimizationSet::O2));
    std::string compiler_flags = "-fwrapv -ffloat-store -flax-vector-conversions -msse2 -mfpmath=sse "
                                 "-D'__builtin_bambu_time_start()=' -D'__builtin_bambu_time_stop()=' -D__BAMBU_SIM__ ";
    if(!parameters->isOption(OPT_input_format) ||

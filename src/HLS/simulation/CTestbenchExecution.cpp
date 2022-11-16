@@ -148,7 +148,7 @@ DesignFlowStep_Status CTestbenchExecution::Exec()
        HLSMgr->CGetFunctionBehavior(top_function_id)->CGetBehavioralHelper()->get_function_name();
    const CompilerWrapperConstRef compiler_wrapper(
        new CompilerWrapper(parameters, parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler),
-                           CompilerWrapper_OptimizationSet::O0));
+                           CompilerWrapper_OptimizationSet::O2));
 
    std::string compiler_flags = "-fwrapv -flax-vector-conversions -msse2 -mfpmath=sse "
                                 "-D'__builtin_bambu_time_start()=' -D'__builtin_bambu_time_stop()=' -D__BAMBU_SIM__ ";
