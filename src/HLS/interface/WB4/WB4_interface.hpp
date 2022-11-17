@@ -64,9 +64,9 @@ REF_FORWARD_DECL(structural_type_descriptor);
 class WB4_interface : public minimal_interface
 {
  protected:
-   unsigned int get_data_bus_bitsize();
+   unsigned long long get_data_bus_bitsize();
 
-   unsigned int get_addr_bus_bitsize();
+   unsigned long long get_addr_bus_bitsize();
 
    void build_WB4_bus_interface(structural_managerRef SM);
 

@@ -100,7 +100,7 @@ struct module_binding_check : public check_clique<vertex_type>
    CustomUnorderedMap<C_vertex, std::vector<CustomOrderedSet<unsigned int>>> input_variables;
 
    /// resource precision
-   unsigned int fu_prec;
+   unsigned long long fu_prec;
 
    /// area resource
    double area_resource;
@@ -177,8 +177,8 @@ struct module_binding_check : public check_clique<vertex_type>
    //-----------------------------------------------------------------------------------------------
    // methods
 
-   module_binding_check(unsigned int _fu_prec, double _area_resource, const hlsRef _HLS, const HLS_managerRef _HLSMgr,
-                        const CustomUnorderedMap<vertex, double>& _slack_time,
+   module_binding_check(unsigned long long _fu_prec, double _area_resource, const hlsRef _HLS,
+                        const HLS_managerRef _HLSMgr, const CustomUnorderedMap<vertex, double>& _slack_time,
                         const CustomUnorderedMap<vertex, double>& _starting_time, double _controller_delay,
                         module_register_binding_spec& _tree_index_dsets)
        : fu_prec(_fu_prec),

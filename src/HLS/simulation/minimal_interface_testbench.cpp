@@ -907,7 +907,7 @@ void MinimalInterfaceTestbench::write_input_signal_declaration(const tree_manage
 
             if(tree_helper::IsRealType(pt_node))
             {
-               long long int bitsize = tree_helper::Size(pt_node);
+               auto bitsize = tree_helper::Size(pt_node);
                writer->write("reg [" + STR(bitsize - 1) + ":0] ex_" + port_obj->get_id() + ";\n");
             }
             else

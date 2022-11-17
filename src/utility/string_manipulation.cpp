@@ -117,7 +117,7 @@ static const boost::regex fixed_def("a[cp]_(u)?fixed<\\s*(\\d+)\\s*,\\s*(\\d+),?
 #define FD_GROUP_D 3
 #define FD_GROUP_SIGN 4
 
-std::string ConvertInBinary(const std::string& C_value, const unsigned int precision, const bool real_type,
+std::string ConvertInBinary(const std::string& C_value, const unsigned long long precision, const bool real_type,
                             const bool unsigned_type)
 {
    std::string trimmed_value;
@@ -318,7 +318,7 @@ const std::vector<std::string> SplitString(const std::string&
    return ret_value;
 }
 
-std::string convert_fp_to_string(std::string num, unsigned int precision)
+std::string convert_fp_to_string(std::string num, unsigned long long precision)
 {
    union
    {
@@ -449,7 +449,7 @@ static const boost::regex ac_type_def("a[cp]_(u)?(\\w+)<\\s*(\\d+)\\s*,?\\s*(\\d
 #define AC_GROUP_W 3
 #define AC_GROUP_SIGN 4
 
-unsigned int ac_type_bitwidth(const std::string& intType, bool& is_signed, bool& is_fixed)
+unsigned long long ac_type_bitwidth(const std::string& intType, bool& is_signed, bool& is_fixed)
 {
    boost::cmatch what;
    if(boost::regex_search(intType.c_str(), what, ac_type_def))

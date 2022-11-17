@@ -81,7 +81,7 @@ class ComputeReservedMemory : public CInitializationParserFunctor
    /**
     * Return the computed value
     */
-   unsigned int GetReservedBytes() const;
+   unsigned long long GetReservedBytes() const;
 
    /**
     * Check that all the necessary information was present in the initialization string

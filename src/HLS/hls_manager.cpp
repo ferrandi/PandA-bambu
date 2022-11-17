@@ -132,7 +132,7 @@ hlsRef HLS_manager::create_HLS(const HLS_managerRef HLSMgr, unsigned int functio
       /// creates the new HLS data structure associated with the function
       const std::string function_name = tree_helper::name_function(HLSMgr->get_tree_manager(), functionId);
       HLS_constraintsRef HLS_C = HLS_constraintsRef(new HLS_constraints(HLSMgr->get_parameter(), function_name));
-      for(auto globalRC : HLSMgr->global_resource_constraints)
+      for(const auto& globalRC : HLSMgr->global_resource_constraints)
       {
          if(HLS_C->get_number_fu(globalRC.first.first, globalRC.first.second) == INFINITE_UINT)
          {
@@ -161,7 +161,7 @@ hlsRef HLS_manager::create_HLS(const HLS_managerRef HLSMgr, unsigned int functio
    return HLSMgr->hlsMap[functionId];
 }
 
-std::string HLS_manager::get_constant_string(unsigned int node_id, unsigned int precision)
+std::string HLS_manager::get_constant_string(unsigned int node_id, unsigned long long precision)
 {
    std::string trimmed_value;
    const auto node = TM->CGetTreeReindex(node_id);
@@ -185,7 +185,7 @@ std::string HLS_manager::get_constant_string(unsigned int node_id, unsigned int 
    {
       const auto vc = GetPointerS<const vector_cst>(GET_CONST_NODE(node));
       auto n_elm = static_cast<unsigned int>(vc->list_of_valu.size());
-      unsigned int elm_prec = precision / n_elm;
+      auto elm_prec = precision / n_elm;
       trimmed_value = "";
       for(unsigned int i = 0; i < n_elm; ++i)
       {

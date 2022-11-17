@@ -378,7 +378,7 @@ class tree_manipulation
     * @param unsigned_p say if the integer_type required is unsigned or not
     * @return a new integer with a precision equal to prec
     */
-   tree_nodeRef GetCustomIntegerType(unsigned int prec, bool unsigned_p) const;
+   tree_nodeRef GetCustomIntegerType(unsigned long long prec, bool unsigned_p) const;
 
    /**
     * @brief Create a function type

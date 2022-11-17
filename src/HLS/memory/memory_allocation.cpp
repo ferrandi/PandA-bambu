@@ -268,7 +268,7 @@ void memory_allocation::finalize_memory_allocation()
       func_list.insert(memcpy_function->index);
    }
 
-   unsigned int maximum_bus_size = 0;
+   unsigned long long maximum_bus_size = 0;
    bool use_databus_width = false;
    bool has_intern_shared_data = false;
    bool has_misaligned_indirect_ref = HLSMgr->Rmem->has_packed_vars();
@@ -297,7 +297,7 @@ void memory_allocation::finalize_memory_allocation()
                !HLSMgr->Rmem->is_parm_decl_stored(function_parameter))
             {
                use_databus_width = true;
-               maximum_bus_size = std::max(maximum_bus_size, 8u);
+               maximum_bus_size = std::max(maximum_bus_size, 8ull);
             }
             if(!use_unknown_address && is_interfaced && tree_helper::is_a_pointer(TreeM, function_parameter))
             {
@@ -419,7 +419,7 @@ void memory_allocation::finalize_memory_allocation()
                       true; /// an external component can access the var possibly (global and volatile vars)
                }
             }
-            unsigned int value_bitsize;
+            unsigned long long value_bitsize;
             if(GET_TYPE(g, *v) & TYPE_STORE)
             {
                const auto size_var = std::get<0>(var_read[0]);
@@ -446,7 +446,7 @@ void memory_allocation::finalize_memory_allocation()
             if(current_op == MEMCPY || current_op == MEMCMP || current_op == MEMSET)
             {
                use_databus_width = true;
-               maximum_bus_size = std::max(maximum_bus_size, 8u);
+               maximum_bus_size = std::max(maximum_bus_size, 8ull);
                if(assume_aligned_access_p)
                {
                   THROW_ERROR("Option --aligned-access cannot be used in presence of memcpy, memcmp or memset");
@@ -493,7 +493,7 @@ void memory_allocation::finalize_memory_allocation()
       needMemoryMappedRegisters = needMemoryMappedRegisters || local_needMemoryMappedRegisters;
       if(local_needMemoryMappedRegisters)
       {
-         unsigned int addr_bus_bitsize;
+         unsigned long long addr_bus_bitsize;
          if(parameters->isOption(OPT_addr_bus_bitsize))
          {
             addr_bus_bitsize = parameters->getOption<unsigned int>(OPT_addr_bus_bitsize);
@@ -526,10 +526,10 @@ void memory_allocation::finalize_memory_allocation()
                     "Analyzed function for bus size: " + behavioral_helper->get_function_name());
    }
 
-   const HLS_targetRef HLS_T = HLSMgr->get_HLS_target();
-   unsigned int bram_bitsize = 0, data_bus_bitsize = 0, addr_bus_bitsize = 0, size_bus_bitsize = 0;
-   auto bram_bitsize_min = HLS_T->get_target_device()->get_parameter<unsigned int>("BRAM_bitsize_min");
-   auto bram_bitsize_max = HLS_T->get_target_device()->get_parameter<unsigned int>("BRAM_bitsize_max");
+   const auto HLS_T = HLSMgr->get_HLS_target();
+   unsigned long long bram_bitsize = 0, data_bus_bitsize = 0, addr_bus_bitsize = 0, size_bus_bitsize = 0;
+   const auto bram_bitsize_min = HLS_T->get_target_device()->get_parameter<unsigned int>("BRAM_bitsize_min");
+   const auto bram_bitsize_max = HLS_T->get_target_device()->get_parameter<unsigned int>("BRAM_bitsize_max");
    HLSMgr->Rmem->set_maxbram_bitsize(bram_bitsize_max);
 
    maximum_bus_size = resize_to_1_8_16_32_64_128_256_512(maximum_bus_size);

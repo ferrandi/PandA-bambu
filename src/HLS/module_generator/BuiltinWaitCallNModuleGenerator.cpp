@@ -91,7 +91,7 @@ void BuiltinWaitCallNModuleGenerator::InternalExec(std::ostream& out, const modu
             return tree_helper::Size(return_type);
          }
       }
-      return 0U;
+      return 0ULL;
    }();
 
    // Signals declarations

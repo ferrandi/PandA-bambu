@@ -3978,8 +3978,8 @@ static RangeRef constructor_range(const tree_managerConstRef TM, const tree_node
 {
    THROW_ASSERT(tn->get_kind() == constructor_K, "tn is not constructor node");
    const auto* c = GetPointer<const constructor>(tn);
-   std::vector<unsigned int> array_dims;
-   unsigned int elements_bitsize;
+   std::vector<unsigned long long> array_dims;
+   unsigned long long elements_bitsize;
    tree_helper::get_array_dim_and_bitsize(TM, GET_INDEX_CONST_NODE(c->type), array_dims, elements_bitsize);
    unsigned int initialized_elements = 0;
    auto ctor_range = RangeRef(init->clone());
@@ -4046,7 +4046,7 @@ LoadOpNode::opCtorGenerator(const tree_nodeConstRef& stmt, unsigned int function
          GET_NODE(ga->op1)->get_kind() == target_mem_ref_K || GET_NODE(ga->op1)->get_kind() == target_mem_ref461_K ||
          GET_NODE(ga->op1)->get_kind() == var_decl_K)
       {
-         unsigned int base_index = tree_helper::get_base_index(TM, GET_INDEX_NODE(ga->op1));
+         auto base_index = tree_helper::get_base_index(TM, GET_INDEX_NODE(ga->op1));
          const auto* hm = GetPointer<HLS_manager>(AppM);
          if(base_index && AppM->get_written_objects().find(base_index) == AppM->get_written_objects().end() && hm &&
             hm->Rmem && FB->is_variable_mem(base_index) && hm->Rmem->is_sds_var(base_index))

@@ -244,7 +244,8 @@ soft_float_cg_ext::soft_float_cg_ext(const ParameterConstRef _parameters, const 
       {
          auto format = SplitString(opt, "*");
 
-         const auto f_index = [&]() -> unsigned int {
+         const auto f_index = [&]() -> auto
+         {
             if(format[0] == "@")
             {
                if(AppM->CGetCallGraphManager()->GetRootFunctions().size() > 1)
@@ -255,7 +256,8 @@ soft_float_cg_ext::soft_float_cg_ext(const ParameterConstRef _parameters, const 
             }
             const auto f_node = TreeM->GetFunction(format[0]);
             return f_node ? f_node->index : 0;
-         }();
+         }
+         ();
 
          if(!f_index)
          {
@@ -1177,7 +1179,8 @@ tree_nodeRef soft_float_cg_ext::cstCast(uint64_t bits, const FloatFormatRef& inF
    uint64_t FExp, SFrac;
    bool ExpOverflow = false;
 
-   const auto needed_bits = [](int i) -> unsigned int {
+   const auto needed_bits = [](int i) -> auto
+   {
       int lz;
       if(i > 0)
       {
@@ -1192,9 +1195,9 @@ tree_nodeRef soft_float_cg_ext::cstCast(uint64_t bits, const FloatFormatRef& inF
    };
    const auto exp_bits_diff =
        inFF->exp_bits > outFF->exp_bits ? (inFF->exp_bits - outFF->exp_bits) : (outFF->exp_bits - inFF->exp_bits);
-   const unsigned int exp_type_size = std::max({static_cast<unsigned int>(inFF->exp_bits) + (exp_bits_diff == 1),
-                                                static_cast<unsigned int>(outFF->exp_bits) + (exp_bits_diff == 1),
-                                                needed_bits(inFF->exp_bias), needed_bits(outFF->exp_bias)});
+   const auto exp_type_size = std::max({static_cast<unsigned int>(inFF->exp_bits) + (exp_bits_diff == 1),
+                                        static_cast<unsigned int>(outFF->exp_bits) + (exp_bits_diff == 1),
+                                        needed_bits(inFF->exp_bias), needed_bits(outFF->exp_bias)});
 
    const auto biasDiff = inFF->exp_bias - outFF->exp_bias;
    const auto rangeDiff = ((1 << outFF->exp_bits) - !outFF->has_subnorm) - ((1 << inFF->exp_bits) - !inFF->has_subnorm);
@@ -1940,8 +1943,8 @@ bool soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef& current_statement
                {
                   if(_version->ieee_format())
                   {
-                     unsigned int bitsize_in = tree_helper::Size(op_expr_type);
-                     unsigned int bitsize_out = tree_helper::Size(expr_type);
+                     auto bitsize_in = tree_helper::Size(op_expr_type);
+                     auto bitsize_out = tree_helper::Size(expr_type);
                      THROW_ASSERT(bitsize_in == 32 || bitsize_in == 64,
                                   "Unhandled input floating point format (size = " + STR(bitsize_in) + ")");
                      THROW_ASSERT(bitsize_out == 32 || bitsize_out == 64,

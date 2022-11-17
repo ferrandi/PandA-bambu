@@ -822,7 +822,7 @@ unsigned int Bit_Value::pointer_resizing(unsigned int output_id) const
                   "-->Pointer resizing starting from " + TM->CGetTreeNode(output_id)->ToString());
    unsigned int var = tree_helper::get_base_index(TM, output_id);
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Base variable is " + TM->CGetTreeNode(var)->ToString());
-   unsigned int address_bitsize;
+   unsigned long long address_bitsize;
    if(not_frontend)
    {
       auto* hm = GetPointer<HLS_manager>(AppM);

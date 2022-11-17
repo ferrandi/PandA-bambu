@@ -152,11 +152,11 @@ CustomOrderedSet<unsigned int> reg_binding::get_vars(const unsigned int& r) cons
    return vars;
 }
 
-unsigned int reg_binding::compute_bitsize(unsigned int r)
+unsigned long long reg_binding::compute_bitsize(unsigned int r)
 {
-   CustomOrderedSet<unsigned int> reg_vars = get_vars(r);
-   unsigned int max_bits = 0;
-   for(unsigned int reg_var : reg_vars)
+   const auto reg_vars = get_vars(r);
+   unsigned long long max_bits = 0;
+   for(const auto reg_var : reg_vars)
    {
       structural_type_descriptorRef node_type0 =
           structural_type_descriptorRef(new structural_type_descriptor(reg_var, FB->CGetBehavioralHelper()));
@@ -170,7 +170,7 @@ unsigned int reg_binding::compute_bitsize(unsigned int r)
    return max_bits;
 }
 
-unsigned int reg_binding::get_bitsize(unsigned int r) const
+unsigned long long reg_binding::get_bitsize(unsigned int r) const
 {
    THROW_ASSERT(bitsize_map.find(r) != bitsize_map.end(), "register bitsize not computed");
    return bitsize_map.find(r)->second;

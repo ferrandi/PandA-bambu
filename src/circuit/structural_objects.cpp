@@ -312,7 +312,7 @@ void structural_type_descriptor::print(std::ostream& os) const
    }
 }
 
-structural_type_descriptor::structural_type_descriptor(const std::string& type_name, unsigned int _vector_size)
+structural_type_descriptor::structural_type_descriptor(const std::string& type_name, unsigned long long _vector_size)
     : vector_size(_vector_size), id_type(type_name), treenode(structural_type_descriptor::treenode_DEFAULT)
 {
    /// first set defaults
@@ -504,8 +504,8 @@ structural_type_descriptor::structural_type_descriptor(unsigned int index, const
    }
    else if(helper->is_an_array(index) && !helper->is_a_struct(index) && !helper->is_an_union(index))
    {
-      const unsigned int element_type = helper->GetElements(type_index);
-      const auto element_size = static_cast<unsigned int>(helper->get_size(element_type));
+      const auto element_type = helper->GetElements(type_index);
+      const auto element_size = helper->get_size(element_type);
       vector_size = size / element_size;
       size = element_size;
       if(helper->is_bool(element_type) || helper->is_a_complex(index))
@@ -532,8 +532,8 @@ structural_type_descriptor::structural_type_descriptor(unsigned int index, const
    }
    else if(helper->is_a_vector(index))
    {
-      const unsigned int element_type = helper->GetElements(type_index);
-      const auto element_size = static_cast<unsigned int>(helper->get_size(element_type));
+      const auto element_type = helper->GetElements(type_index);
+      const auto element_size = helper->get_size(element_type);
       vector_size = size / element_size;
       size = element_size;
       if(helper->is_bool(element_type) || helper->is_a_complex(index))
@@ -706,7 +706,7 @@ const structural_type_descriptorRef& structural_object::get_typeRef() const
    return type;
 }
 
-void structural_object::type_resize(unsigned int new_bit_size)
+void structural_object::type_resize(unsigned long long new_bit_size)
 {
    switch(type->type)
    {
@@ -748,7 +748,7 @@ void structural_object::type_resize(unsigned int new_bit_size)
    }
 }
 
-void structural_object::type_resize(unsigned int new_bit_size, unsigned int new_vec_size)
+void structural_object::type_resize(unsigned long long new_bit_size, unsigned long long new_vec_size)
 {
    switch(type->type)
    {
@@ -1246,12 +1246,12 @@ void port_o::set_port_interface(port_interface _pi)
    pi = _pi;
 }
 
-unsigned port_o::get_port_alignment() const
+unsigned long long port_o::get_port_alignment() const
 {
    return aligment;
 }
 
-void port_o::set_port_alignment(unsigned algn)
+void port_o::set_port_alignment(unsigned long long algn)
 {
    aligment = algn;
 }
@@ -5163,8 +5163,9 @@ unsigned int port_o::get_port_size() const
    return get_typeRef()->size;
 }
 
-void port_o::resize_busport(unsigned int bus_size_bitsize, unsigned int bus_addr_bitsize, unsigned int bus_data_bitsize,
-                            unsigned int bus_tag_bitsize, structural_objectRef port)
+void port_o::resize_busport(unsigned long long bus_size_bitsize, unsigned long long bus_addr_bitsize,
+                            unsigned long long bus_data_bitsize, unsigned long long bus_tag_bitsize,
+                            structural_objectRef port)
 {
    if(GetPointer<port_o>(port)->get_is_data_bus())
    {
@@ -5207,8 +5208,8 @@ void port_o::resize_busport(unsigned int bus_size_bitsize, unsigned int bus_addr
    }
 }
 
-void port_o::resize_std_port(unsigned int bitsize_variable, unsigned int n_elements, int DEBUG_PARAMETER(debug_level),
-                             structural_objectRef port)
+void port_o::resize_std_port(unsigned long long bitsize_variable, unsigned long long n_elements,
+                             int DEBUG_PARAMETER(debug_level), structural_objectRef port)
 {
    if(n_elements == 0)
    {

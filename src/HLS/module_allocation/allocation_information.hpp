@@ -151,7 +151,7 @@ class AllocationInformation : public HLSFunctionIR
    /// The memory
    memoryConstRef Rmem;
 
-   const unsigned& address_bitsize;
+   const unsigned long long& address_bitsize;
 
    /// The tree manager
    tree_managerConstRef TreeM;
@@ -178,7 +178,7 @@ class AllocationInformation : public HLSFunctionIR
    std::map<unsigned int, unsigned int> nports_map;
 
    /// map functional units with their precision
-   std::map<unsigned int, unsigned int> precision_map;
+   std::map<unsigned int, unsigned long long> precision_map;
 
    /// put into relation proxy function units with shared functions
    std::map<unsigned int, std::string> proxy_function_units;
@@ -205,7 +205,7 @@ class AllocationInformation : public HLSFunctionIR
    CustomUnorderedMap<unsigned int, std::pair<std::string, unsigned int>> binding;
 
    /// size of each memory unit in bytes
-   std::map<unsigned int, unsigned int> memory_units_sizes;
+   std::map<unsigned int, unsigned long long> memory_units_sizes;
 
    /// map between variables and associated memory_units
    std::map<unsigned int, unsigned int> vars_to_memory_units;
@@ -238,10 +238,10 @@ class AllocationInformation : public HLSFunctionIR
    mutable CustomMap<unsigned int, unsigned int> zero_distance_ops_bb_version;
 
    /// store mux timing for the current technology
-   CustomMap<unsigned int, CustomUnorderedMapStable<unsigned int, double>> mux_timing_db;
+   CustomMap<unsigned long long, CustomUnorderedMapStable<unsigned int, double>> mux_timing_db;
 
    /// store mux timing for the current technology
-   CustomMap<unsigned int, CustomUnorderedMapStable<unsigned int, double>> mux_area_db;
+   CustomMap<unsigned long long, CustomUnorderedMapStable<unsigned int, double>> mux_area_db;
 
    /// store DSP x sizes
    std::vector<unsigned int> DSP_x_db;
@@ -329,8 +329,8 @@ class AllocationInformation : public HLSFunctionIR
     * @param allocation_information is a reference to an instance of this class
     * @return the pair mux_timing_db, mux_area_db
     */
-   static const std::pair<const CustomMap<unsigned int, CustomUnorderedMapStable<unsigned int, double>>&,
-                          const CustomMap<unsigned int, CustomUnorderedMapStable<unsigned int, double>>&>
+   static const std::pair<const CustomMap<unsigned long long, CustomUnorderedMapStable<unsigned int, double>>&,
+                          const CustomMap<unsigned long long, CustomUnorderedMapStable<unsigned int, double>>&>
    InitializeMuxDB(const AllocationInformationConstRef allocation_information);
 
    /**
@@ -544,7 +544,7 @@ class AllocationInformation : public HLSFunctionIR
     * @param fu_name is the id of the functional unit.
     * @return the precision associated with the functional unit
     */
-   unsigned int get_prec(const unsigned int fu_name) const;
+   unsigned long long get_prec(const unsigned int fu_name) const;
 
    /**
     * return an estimation of the number of DSPs used by the unit
@@ -741,17 +741,17 @@ class AllocationInformation : public HLSFunctionIR
     * @param fu_prec is the bitsize of the data
     * @param mux_ins is the number of mux inputs
     */
-   double estimate_muxNto1_delay(unsigned int fu_prec, unsigned int mux_ins) const;
+   double estimate_muxNto1_delay(unsigned long long fu_prec, unsigned int mux_ins) const;
 
    /**
     * Return the area due to mux with n-inputs
     * @param fu_prec is the bitsize of the data
     * @param mux_ins is the number of mux inputs
     */
-   double estimate_muxNto1_area(unsigned int fu_prec, unsigned int mux_ins) const;
+   double estimate_muxNto1_area(unsigned long long fu_prec, unsigned int mux_ins) const;
 
-   double mux_time_unit(unsigned int fu_prec) const;
-   double mux_time_unit_raw(unsigned int fu_prec) const;
+   double mux_time_unit(unsigned long long fu_prec) const;
+   double mux_time_unit_raw(unsigned long long fu_prec) const;
 
    /**
     * @brief Return the number of cycles for given vertex and a given functional unit
@@ -864,7 +864,7 @@ class AllocationInformation : public HLSFunctionIR
    //@}
 #endif
 
-   static std::string extract_bambu_provided_name(unsigned int prec_in, unsigned int prec_out,
+   static std::string extract_bambu_provided_name(unsigned long long prec_in, unsigned long long prec_out,
                                                   const HLS_managerConstRef hls_manager,
                                                   technology_nodeRef& current_fu);
 
@@ -965,7 +965,7 @@ class AllocationInformation : public HLSFunctionIR
    double get_connection_time(unsigned fu_type, bool add_delay1, bool add_delay2, size_t n_complex_ops,
                               size_t n_mem_ops) const;
 
-   double mux_area_unit_raw(unsigned int fu_prec) const;
+   double mux_area_unit_raw(unsigned long long fu_prec) const;
 
    /**
     * Estimate the area of a mux attached to a given functional unit
@@ -1086,28 +1086,28 @@ struct node_kind_prec_info
    ///  Node kind.
    std::string node_kind;
    ///  Vector of input precision.
-   std::vector<unsigned int> input_prec;
+   std::vector<unsigned long long> input_prec;
    /// vector storing the number of elements in case the input is a vector, 0 otherwise (used for mapping with library
    /// fus - it can be different from the real one)
-   std::vector<unsigned int> base128_input_nelem;
+   std::vector<unsigned long long> base128_input_nelem;
 
    /// vector storing the number of elements in case the input is a vector, 0 otherwise (real value)
-   std::vector<unsigned int> real_input_nelem;
+   std::vector<unsigned long long> real_input_nelem;
 
    ///  Precision of the output.
-   unsigned int output_prec;
+   unsigned long long output_prec;
 
-   /// number of output elemnts in case the output is a a vector, 0 otherwise (used for mapping with library fus - it
+   /// number of output elements in case the output is a a vector, 0 otherwise (used for mapping with library fus - it
    /// can be different from the real one)
-   unsigned int base128_output_nelem;
+   unsigned long long base128_output_nelem;
 
-   /// number of output elemnts in case the output is a a vector, 0 otherwise (real_value)
-   unsigned int real_output_nelem;
+   /// number of output elements in case the output is a a vector, 0 otherwise (real_value)
+   unsigned long long real_output_nelem;
 
    /// true when the functional unit is a cond_expr and has the first operand of type bool
    bool is_single_bool_test_cond_expr;
 
-   /// true when the functional unit is a plointer plus expr with two constant operands
+   /// true when the functional unit is a pointer plus expr with two constant operands
    bool is_simple_pointer_plus_expr;
 
    node_kind_prec_info()

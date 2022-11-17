@@ -195,7 +195,7 @@ void TestbenchMemoryAllocation::AllocTestbenchMemory(void) const
                   THROW_ERROR("A pointer type is expected");
                }
 
-               unsigned int base_type_byte_size;
+               unsigned long long base_type_byte_size;
                if(tree_helper::IsStructType(ptd_base_type) || tree_helper::IsUnionType(ptd_base_type))
                {
                   base_type_byte_size = tree_helper::Size(ptd_base_type) / 8;

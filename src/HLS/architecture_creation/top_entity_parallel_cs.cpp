@@ -276,7 +276,7 @@ DesignFlowStep_Status top_entity_parallel_cs::InternalExec()
    return DesignFlowStep_Status::SUCCESS;
 }
 
-unsigned top_entity_parallel_cs::BW_loop_iter(const structural_objectRef circuit)
+unsigned long long top_entity_parallel_cs::BW_loop_iter(const structural_objectRef circuit)
 {
    const FunctionBehaviorConstRef FB = HLSMgr->CGetFunctionBehavior(funId);
    circuit->find_member("__controller_parallel", component_o_K, circuit);
@@ -310,7 +310,7 @@ unsigned top_entity_parallel_cs::BW_loop_iter(const structural_objectRef circuit
    return 0;
 }
 
-void top_entity_parallel_cs::connect_loop_iter(const structural_objectRef circuit, unsigned loopBW)
+void top_entity_parallel_cs::connect_loop_iter(const structural_objectRef circuit, unsigned long long loopBW)
 {
    const FunctionBehaviorConstRef FB = HLSMgr->CGetFunctionBehavior(funId);
    const BehavioralHelperConstRef BH = FB->CGetBehavioralHelper();
@@ -357,7 +357,8 @@ void top_entity_parallel_cs::connect_loop_iter(const structural_objectRef circui
    THROW_ERROR("unexpected condition");
 }
 
-void top_entity_parallel_cs::resize_controller_parallel(structural_objectRef controller_circuit, unsigned loopBW)
+void top_entity_parallel_cs::resize_controller_parallel(structural_objectRef controller_circuit,
+                                                        unsigned long long loopBW)
 {
    auto num_kernel = parameters->getOption<unsigned int>(OPT_num_accelerators);
    structural_objectRef controller_done_request =
@@ -377,7 +378,7 @@ void top_entity_parallel_cs::resize_controller_parallel(structural_objectRef con
    GetPointer<port_o>(controller_LoopIteration)->type_resize(loopBW);
 }
 
-void top_entity_parallel_cs::connect_port_parallel(const structural_objectRef circuit, unsigned loopBW)
+void top_entity_parallel_cs::connect_port_parallel(const structural_objectRef circuit, unsigned long long loopBW)
 {
    structural_managerRef Datapath = HLS->datapath;
    structural_objectRef datapath_circuit = Datapath->get_circ();

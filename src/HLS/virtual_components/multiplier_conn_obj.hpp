@@ -54,13 +54,13 @@
 class multiplier_conn_obj : public generic_obj
 {
    /// number of bit of in/out ports
-   unsigned int bitsize;
+   unsigned long long bitsize;
 
    /// when true the multiplication is a multiplication to a constant
    bool multiply_by_constant_p;
 
    /// constant value operand
-   unsigned int constant_value;
+   unsigned long long constant_value;
 
  public:
    /**
@@ -79,7 +79,7 @@ class multiplier_conn_obj : public generic_obj
    /**
     * add a size to the component
     */
-   void add_bitsize(unsigned int _bitsize)
+   void add_bitsize(unsigned long long _bitsize)
    {
       bitsize = _bitsize > bitsize ? _bitsize : bitsize;
    }
@@ -87,20 +87,20 @@ class multiplier_conn_obj : public generic_obj
    /**
     * return the maximum bitsize associated with the component
     */
-   unsigned int get_bitsize() const
+   unsigned long long get_bitsize() const
    {
       return bitsize;
    }
 
    /// set the multiplication as a multiplication to a constant
-   void set_multiplication_to_constant(unsigned int _constant_value)
+   void set_multiplication_to_constant(unsigned long long _constant_value)
    {
       multiply_by_constant_p = true;
       constant_value = _constant_value;
    }
 
    /// return the constant value
-   unsigned int get_constant_value() const
+   unsigned long long get_constant_value() const
    {
       return constant_value;
    }

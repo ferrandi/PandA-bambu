@@ -1502,7 +1502,7 @@ tree_nodeRef tree_manipulation::GetPointerType(const tree_nodeConstRef& ptd, uns
    return pointer_type_node;
 }
 
-tree_nodeRef tree_manipulation::GetCustomIntegerType(unsigned int prec, bool unsigned_p) const
+tree_nodeRef tree_manipulation::GetCustomIntegerType(unsigned long long prec, bool unsigned_p) const
 {
    std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> IR_schema;
 

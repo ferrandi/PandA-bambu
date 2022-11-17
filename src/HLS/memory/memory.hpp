@@ -136,13 +136,13 @@ class memory
    unsigned long long int next_off_base_address;
 
    /// bus data bitsize
-   unsigned int bus_data_bitsize;
+   unsigned long long bus_data_bitsize;
 
    /// bus size bitsize
-   unsigned int bus_size_bitsize;
+   unsigned long long bus_size_bitsize;
 
    /// bram bitsize
-   unsigned int bram_bitsize;
+   unsigned long long bram_bitsize;
 
    /// maximum bram bitsize
    unsigned int maxbram_bitsize;
@@ -189,7 +189,7 @@ class memory
    /// true when packed vars are used
    bool packed_vars;
 
-   const unsigned& bus_addr_bitsize;
+   const unsigned long long& bus_addr_bitsize;
 
    bool enable_hls_bit_value;
 
@@ -210,7 +210,7 @@ class memory
     */
    memory(const tree_managerRef TreeM, unsigned long long int off_base_address, unsigned int max_bram,
           bool null_pointer_check, bool initial_internal_address_p, unsigned long long initial_internal_address,
-          const unsigned& _bus_addr_bitsize);
+          const unsigned long long& _bus_addr_bitsize);
 
    /**
     * Destructor
@@ -220,7 +220,7 @@ class memory
    static memoryRef create_memory(const ParameterConstRef _parameters, const tree_managerRef _TreeM,
                                   unsigned long long int _off_base_address, unsigned int max_bram,
                                   bool _null_pointer_check, bool initial_internal_address_p,
-                                  unsigned int initial_internal_address, const unsigned int& _address_bitsize);
+                                  unsigned int initial_internal_address, const unsigned long long& _address_bitsize);
 
    /**
     * Return variables allocated out of the top module
@@ -521,7 +521,7 @@ class memory
    /**
     * Explicitly allocate a certain space in the external memory
     */
-   void reserve_space(unsigned int space);
+   void reserve_space(unsigned long long space);
 
    /**
     * Returns the amount of memory allocated internally to the module
@@ -549,7 +549,7 @@ class memory
    /**
     * set the bus data bitsize
     */
-   void set_bus_data_bitsize(unsigned int bitsize)
+   void set_bus_data_bitsize(unsigned long long bitsize)
    {
       bus_data_bitsize = bitsize;
    }
@@ -557,7 +557,7 @@ class memory
    /**
     * return the bitsize of the data bus
     */
-   unsigned int get_bus_data_bitsize() const
+   unsigned long long get_bus_data_bitsize() const
    {
       return bus_data_bitsize;
    }
@@ -565,7 +565,7 @@ class memory
    /**
     * set the bus size bitsize
     */
-   void set_bus_size_bitsize(unsigned int bitsize)
+   void set_bus_size_bitsize(unsigned long long bitsize)
    {
       bus_size_bitsize = bitsize;
    }
@@ -573,7 +573,7 @@ class memory
    /**
     * return the bitsize of the size bus
     */
-   unsigned int get_bus_size_bitsize() const
+   unsigned long long get_bus_size_bitsize() const
    {
       return bus_size_bitsize;
    }
@@ -581,7 +581,7 @@ class memory
    /**
     * set the BRAM bitsize
     */
-   void set_bram_bitsize(unsigned int bitsize)
+   void set_bram_bitsize(unsigned long long bitsize)
    {
       bram_bitsize = bitsize;
    }
@@ -589,7 +589,7 @@ class memory
    /**
     * return the BRAM bitsize
     */
-   unsigned int get_bram_bitsize() const
+   unsigned long long get_bram_bitsize() const
    {
       return bram_bitsize;
    }

@@ -358,7 +358,7 @@ bool operation::is_type_supported(const std::string& type_name) const
    return supported_types.empty() || supported_types.count(type_name);
 }
 
-bool operation::is_type_supported(const std::string& type_name, unsigned int type_prec) const
+bool operation::is_type_supported(const std::string& type_name, unsigned long long type_prec) const
 {
    if(!supported_types.empty())
    {
@@ -377,8 +377,8 @@ bool operation::is_type_supported(const std::string& type_name, unsigned int typ
    return true;
 }
 
-bool operation::is_type_supported(const std::string& type_name, const std::vector<unsigned int>& type_prec,
-                                  const std::vector<unsigned int>& /*type_n_element*/) const
+bool operation::is_type_supported(const std::string& type_name, const std::vector<unsigned long long>& type_prec,
+                                  const std::vector<unsigned long long>& /*type_n_element*/) const
 {
    const auto max_prec = type_prec.empty() ? 0 : *max_element(type_prec.begin(), type_prec.end());
    return is_type_supported(type_name, max_prec);

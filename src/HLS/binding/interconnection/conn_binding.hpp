@@ -203,7 +203,7 @@ class conn_binding
     * @param mux is the multiplexer
     * @param bits_tgt is the bitwidth of the target port
     */
-   void specialise_mux(const generic_objRef mux, unsigned int bits_tgt) const;
+   void specialise_mux(const generic_objRef mux, unsigned long long bits_tgt) const;
 
    /**
     * Add the mux-based interconnection
@@ -334,7 +334,7 @@ class conn_binding
     */
    virtual void add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, const structural_managerRef SM);
 
-   generic_objRef get_constant_obj(const std::string& value, const std::string& param, unsigned int precision);
+   generic_objRef get_constant_obj(const std::string& value, const std::string& param, unsigned long long precision);
 
    const std::map<const_param, generic_objRef>& get_constant_objs() const;
 

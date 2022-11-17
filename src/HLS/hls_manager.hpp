@@ -176,7 +176,7 @@ class HLS_manager : public application_manager
    /**
     * Return the specified constant in string format
     */
-   std::string get_constant_string(unsigned int node, unsigned int precision);
+   std::string get_constant_string(unsigned int node, unsigned long long precision);
 
    /**
     * Writes the current HLS project into an XML file

@@ -94,31 +94,31 @@ class InterfaceInfer : public ApplicationFrontendFlowStep
                               const tree_manipulationRef tree_man, const tree_managerRef TM, bool commonRWSignature);
 
    void create_resource_Read_simple(const std::set<std::string>& operations, const std::string& arg_name,
-                                    const std::string& interfaceType, unsigned int input_bw, bool IO_port,
-                                    unsigned n_resources, unsigned rwBWsize, unsigned int top_id) const;
+                                    const std::string& interfaceType, unsigned long long input_bw, bool IO_port,
+                                    unsigned n_resources, unsigned long long rwBWsize, unsigned int top_id) const;
 
    void create_resource_Write_simple(const std::set<std::string>& operations, const std::string& arg_name,
-                                     const std::string& interfaceType, unsigned int input_bw, bool IO_port,
-                                     bool isDiffSize, unsigned n_resources, bool is_real, unsigned rwBWsize,
+                                     const std::string& interfaceType, unsigned long long input_bw, bool IO_port,
+                                     bool isDiffSize, unsigned n_resources, bool is_real, unsigned long long rwBWsize,
                                      unsigned int top_id) const;
 
    void create_resource_array(const std::set<std::string>& operationsR, const std::set<std::string>& operationsW,
-                              const std::string& bundle_name, const std::string& interfaceType, unsigned int input_bw,
-                              unsigned int arraySize, unsigned n_resources, unsigned alignment, bool is_real,
-                              unsigned rwBWsize, unsigned int top_id) const;
+                              const std::string& bundle_name, const std::string& interfaceType,
+                              unsigned long long input_bw, unsigned int arraySize, unsigned n_resources,
+                              unsigned long long alignment, bool is_real, unsigned long long rwBWsize, unsigned int top_id) const;
 
    void create_resource_m_axi(const std::set<std::string>& operationsR, const std::set<std::string>& operationsW,
                               const std::string& arg_name, const std::string& bundle_name,
-                              const std::string& interfaceType, unsigned int input_bw, unsigned n_resources,
-                              m_axi_type mat, unsigned rwBWsize, unsigned int top_id) const;
+                              const std::string& interfaceType, unsigned long long input_bw, unsigned n_resources,
+                              m_axi_type mat, unsigned long long rwBWsize, unsigned int top_id) const;
 
    void create_resource(const std::set<std::string>& operationsR, const std::set<std::string>& operationsW,
-                        const std::string& arg_name, const std::string& interfaceType, unsigned int input_bw,
-                        bool isDiffSize, const std::string& fname, unsigned n_resources, unsigned alignment,
-                        bool isReal, unsigned rwBWsize, unsigned int top_id) const;
+                        const std::string& arg_name, const std::string& interfaceType, unsigned long long input_bw,
+                        bool isDiffSize, const std::string& fname, unsigned long long n_resources, unsigned long long alignment,
+                        bool isReal, unsigned long long rwBWsize, unsigned int top_id) const;
 
-   void ComputeResourcesAlignment(unsigned& n_resources, unsigned& alignment, unsigned int input_bw, bool is_acType,
-                                  bool is_signed, bool is_fixed);
+   void ComputeResourcesAlignment(unsigned long long& n_resources, unsigned long long& alignment,
+                                  unsigned long long input_bw, bool is_acType, bool is_signed, bool is_fixed);
 
    void FixReadWriteCall(const gimple_assign* ga, gimple_node* newGN, const tree_manipulationRef tree_man,
                          tree_nodeRef new_call, statement_list* sl, const tree_managerRef TM, tree_nodeRef origStmt,

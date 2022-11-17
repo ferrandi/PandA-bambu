@@ -192,7 +192,7 @@ DesignFlowStep_Status rebuild_initialization::InternalExec()
       constructor_tree_node_schema[TOK(TOK_TYPE)] = STR(array_type->index);
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Type is " + STR(array_type));
       const auto element_type = tree_helper::CGetElements(array_type);
-      unsigned int constructor_index = TM->new_tree_node_id();
+      auto constructor_index = TM->new_tree_node_id();
       TM->create_tree_node(constructor_index, constructor_K, constructor_tree_node_schema);
       auto* constr = GetPointerS<constructor>(TM->GetTreeNode(constructor_index));
       const long long int last_index = init.second.rbegin()->first;
@@ -706,8 +706,8 @@ bool rebuild_initialization2::look_for_ROMs()
    THROW_ASSERT(sl, "Body is not a statement_list");
    bool not_supported = false;
    std::map<unsigned, unsigned> var_writing_BB_relation;
-   std::map<unsigned, unsigned> var_writing_size_relation;
-   std::map<unsigned, unsigned> var_writing_elts_size_relation;
+   std::map<unsigned, unsigned long long> var_writing_size_relation;
+   std::map<unsigned, unsigned long long> var_writing_elts_size_relation;
    CustomOrderedSet<unsigned> nonConstantVars;
    TreeNodeMap<std::map<long long int, tree_nodeRef>> inits;
 
@@ -788,9 +788,9 @@ bool rebuild_initialization2::look_for_ROMs()
                            /// then we check if the variable is an array
                            if(Type->get_kind() == array_type_K)
                            {
-                              std::vector<unsigned int> dims;
-                              unsigned int elts_size;
-                              unsigned int type_index = tree_helper::CGetType(vd_node)->index;
+                              std::vector<unsigned long long> dims;
+                              unsigned long long elts_size;
+                              auto type_index = tree_helper::CGetType(vd_node)->index;
                               tree_helper::get_array_dim_and_bitsize(TM, type_index, dims, elts_size);
                               if(dims.size() == 1)
                               {
@@ -851,11 +851,11 @@ bool rebuild_initialization2::look_for_ROMs()
                                        auto nbit =
                                            tree_helper::get_integer_cst_value(GetPointerS<const integer_cst>(ls_op1));
                                        THROW_ASSERT(nbit < 32, "unexpected condition");
-                                       std::vector<unsigned int> dims;
+                                       std::vector<unsigned long long> dims;
                                        THROW_ASSERT(var_writing_elts_size_relation.find(vd_index) !=
                                                         var_writing_elts_size_relation.end(),
                                                     "unexpected condition");
-                                       unsigned int elts_size = var_writing_elts_size_relation[vd_index];
+                                       auto elts_size = var_writing_elts_size_relation[vd_index];
                                        if(elts_size != 8u << nbit)
                                        {
                                           INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
@@ -1152,7 +1152,7 @@ bool rebuild_initialization2::look_for_ROMs()
    /// add edges
    for(auto curr_bb_pair : sl->list_of_bloc)
    {
-      unsigned int curr_bb = curr_bb_pair.first;
+      auto curr_bb = curr_bb_pair.first;
       auto lop_it_end = sl->list_of_bloc[curr_bb]->list_of_pred.end();
       for(auto lop_it = sl->list_of_bloc[curr_bb]->list_of_pred.begin(); lop_it != lop_it_end; ++lop_it)
       {
@@ -1356,7 +1356,7 @@ bool rebuild_initialization2::look_for_ROMs()
       constructor_tree_node_schema[TOK(TOK_TYPE)] = STR(array_type->index);
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Type is " + STR(array_type));
       const auto element_type = tree_helper::CGetElements(array_type);
-      unsigned int constructor_index = TM->new_tree_node_id();
+      auto constructor_index = TM->new_tree_node_id();
       TM->create_tree_node(constructor_index, constructor_K, constructor_tree_node_schema);
       auto* constr = GetPointerS<constructor>(TM->GetTreeNode(constructor_index));
       const long long int last_index = init.second.rbegin()->first;

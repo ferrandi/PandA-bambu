@@ -80,12 +80,12 @@
 #include "custom_map.hpp"
 #include "custom_set.hpp"
 
-const std::pair<const CustomMap<unsigned int, CustomUnorderedMapStable<unsigned int, double>>&,
-                const CustomMap<unsigned int, CustomUnorderedMapStable<unsigned int, double>>&>
+const std::pair<const CustomMap<unsigned long long, CustomUnorderedMapStable<unsigned int, double>>&,
+                const CustomMap<unsigned long long, CustomUnorderedMapStable<unsigned int, double>>&>
 AllocationInformation::InitializeMuxDB(const AllocationInformationConstRef allocation_information)
 {
-   static CustomMap<unsigned int, CustomUnorderedMapStable<unsigned int, double>> mux_timing_db;
-   static CustomMap<unsigned int, CustomUnorderedMapStable<unsigned int, double>> mux_area_db;
+   static CustomMap<unsigned long long, CustomUnorderedMapStable<unsigned int, double>> mux_timing_db;
+   static CustomMap<unsigned long long, CustomUnorderedMapStable<unsigned int, double>> mux_area_db;
    if(mux_timing_db.empty() || mux_area_db.empty())
    {
       // const unsigned int debug_level = 0;
@@ -213,9 +213,9 @@ AllocationInformation::InitializeMuxDB(const AllocationInformationConstRef alloc
       // THROW_WARNING(STR(mux_timing_db.size()));
       // INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Initialized mux databases");
    }
-   return std::pair<const CustomMap<unsigned int, CustomUnorderedMapStable<unsigned int, double>>&,
-                    const CustomMap<unsigned int, CustomUnorderedMapStable<unsigned int, double>>&>(mux_timing_db,
-                                                                                                    mux_area_db);
+   return std::pair<const CustomMap<unsigned long long, CustomUnorderedMapStable<unsigned int, double>>&,
+                    const CustomMap<unsigned long long, CustomUnorderedMapStable<unsigned int, double>>&>(mux_timing_db,
+                                                                                                          mux_area_db);
 }
 
 const std::tuple<const std::vector<unsigned int>&, const std::vector<unsigned int>&>
@@ -1063,12 +1063,12 @@ double AllocationInformation::get_stage_period(const unsigned int fu_name, const
 
 double AllocationInformation::estimate_mux_time(unsigned int fu_name) const
 {
-   unsigned int fu_prec = get_prec(fu_name);
+   auto fu_prec = get_prec(fu_name);
    fu_prec = resize_to_1_8_16_32_64_128_256_512(fu_prec);
    return mux_time_unit(fu_prec);
 }
 
-double AllocationInformation::estimate_muxNto1_delay(unsigned int fu_prec, unsigned int mux_ins) const
+double AllocationInformation::estimate_muxNto1_delay(unsigned long long fu_prec, unsigned int mux_ins) const
 {
    if(mux_ins < 2)
    {
@@ -1098,7 +1098,7 @@ double AllocationInformation::estimate_muxNto1_delay(unsigned int fu_prec, unsig
    return ret;
 }
 
-double AllocationInformation::estimate_muxNto1_area(unsigned int fu_prec, unsigned int mux_ins) const
+double AllocationInformation::estimate_muxNto1_area(unsigned long long fu_prec, unsigned int mux_ins) const
 {
    if(mux_ins < 2)
    {
@@ -1258,7 +1258,7 @@ unsigned int AllocationInformation::max_number_of_resources(const vertex v) cons
 
    for(auto f_i = fu_set.begin(); f_i != f_end; ++f_i)
    {
-      unsigned int num_res = tech_constraints[*f_i];
+      auto num_res = tech_constraints[*f_i];
       THROW_ASSERT(num_res != 0, "something of wrong happen");
       if(num_res == INFINITE_UINT)
       {
@@ -1305,8 +1305,8 @@ void AllocationInformation::GetNodeTypePrec(const vertex node, const OpGraphCons
    tree_nodeConstRef type;
    bool is_second_constant = false;
    tree_nodeConstRef formal_parameter_type;
-   unsigned int max_size_in = 0;
-   unsigned int min_n_elements = 0;
+   unsigned long long max_size_in = 0;
+   unsigned long long min_n_elements = 0;
    bool is_cond_expr_bool_test = false;
    for(auto itr = vars_read.begin(), end = vars_read.end(); itr != end; ++itr, ++index)
    {
@@ -1562,7 +1562,7 @@ void AllocationInformation::GetNodeTypePrec(const vertex node, const OpGraphCons
       {
          max_size_in = 32;
       }
-      unsigned int nodeOutput_id = hls_manager->get_produced_value(function_index, node);
+      auto nodeOutput_id = hls_manager->get_produced_value(function_index, node);
       if(nodeOutput_id)
       {
          const auto out_node = TreeM->CGetTreeReindex(nodeOutput_id);
@@ -1616,7 +1616,7 @@ void AllocationInformation::GetNodeTypePrec(const vertex node, const OpGraphCons
            current_op == "vec_cond_expr" /// these ops never have info->output_prec > max_size_in
    )
    {
-      unsigned int nodeOutput_id = hls_manager->get_produced_value(function_index, node);
+      auto nodeOutput_id = hls_manager->get_produced_value(function_index, node);
       THROW_ASSERT(nodeOutput_id, "unexpected condition");
       const auto out_node = TreeM->CGetTreeReindex(nodeOutput_id);
       type = tree_helper::CGetType(out_node);
@@ -1666,7 +1666,7 @@ void AllocationInformation::GetNodeTypePrec(const vertex node, const OpGraphCons
    }
    else if(current_op == "lshift_expr")
    {
-      unsigned int nodeOutput_id = hls_manager->get_produced_value(function_index, node);
+      auto nodeOutput_id = hls_manager->get_produced_value(function_index, node);
       THROW_ASSERT(nodeOutput_id, "unexpected condition");
       const auto out_node = TreeM->CGetTreeReindex(nodeOutput_id);
       type = tree_helper::CGetType(out_node);
@@ -1761,19 +1761,19 @@ updatecopy_HLS_constraints_functor::updatecopy_HLS_constraints_functor(
 {
 }
 
-unsigned int AllocationInformation::get_prec(const unsigned int fu_name) const
+unsigned long long AllocationInformation::get_prec(const unsigned int fu_name) const
 {
    THROW_ASSERT(fu_name < get_number_fu_types(), "functional unit id not meaningful");
    THROW_ASSERT(precision_map.find(fu_name) != precision_map.end(), "missing the precision of " + STR(fu_name));
    return precision_map.find(fu_name)->second != 0 ? precision_map.find(fu_name)->second : 32;
 }
 
-double AllocationInformation::mux_time_unit(unsigned int fu_prec) const
+double AllocationInformation::mux_time_unit(unsigned long long fu_prec) const
 {
    return estimate_muxNto1_delay(fu_prec, 2);
 }
 
-double AllocationInformation::mux_time_unit_raw(unsigned int fu_prec) const
+double AllocationInformation::mux_time_unit_raw(unsigned long long fu_prec) const
 {
    const technology_managerRef TM = HLS_T->get_technology_manager();
    technology_nodeRef f_unit_mux =
@@ -1881,7 +1881,7 @@ unsigned int AllocationInformation::GetCycleLatency(const unsigned int operation
                                                     "Entry/Exit"));
    if(CanImplementSetNotEmpty(operationID))
    {
-      const unsigned int actual_latency = get_cycles(GetFuType(operationID), operationID);
+      const auto actual_latency = get_cycles(GetFuType(operationID), operationID);
       const auto ret_value = actual_latency != 0 ? actual_latency : 1;
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Latency of allocation fu is " + STR(ret_value));
       return ret_value;
@@ -1958,7 +1958,7 @@ std::pair<double, double> AllocationInformation::GetTimeLatency(const unsigned i
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Computing time latency of " + STR(operation_index));
 
-   const unsigned int time_operation_index = [&]() -> unsigned int {
+   const auto time_operation_index = [&]() -> unsigned int {
       if(operation_index == ENTRY_ID || operation_index == EXIT_ID)
       {
          return operation_index;
@@ -1970,7 +1970,7 @@ std::pair<double, double> AllocationInformation::GetTimeLatency(const unsigned i
       return operation_index;
    }();
    /// For the intermediate stage of multi-cycle the latency is the clock cycle
-   const unsigned int num_cycles = GetCycleLatency(time_operation_index);
+   const auto num_cycles = GetCycleLatency(time_operation_index);
    if(stage > 0 && stage < num_cycles - 1)
    {
       const double ret_value = HLS_C->get_clock_period_resource_fraction() * HLS_C->get_clock_period();
@@ -2312,7 +2312,7 @@ unsigned int AllocationInformation::GetFuType(const unsigned int operation) cons
    return fu_type;
 }
 
-double AllocationInformation::mux_area_unit_raw(unsigned int fu_prec) const
+double AllocationInformation::mux_area_unit_raw(unsigned long long fu_prec) const
 {
    const technology_managerRef TM = HLS_T->get_technology_manager();
    technology_nodeRef f_unit_mux =
@@ -2330,7 +2330,7 @@ double AllocationInformation::mux_area_unit_raw(unsigned int fu_prec) const
 
 double AllocationInformation::estimate_mux_area(unsigned int fu_name) const
 {
-   unsigned int fu_prec = get_prec(fu_name);
+   auto fu_prec = get_prec(fu_name);
    fu_prec = resize_to_1_8_16_32_64_128_256_512(fu_prec);
    return estimate_muxNto1_area(fu_prec, 2);
 }
@@ -2419,14 +2419,14 @@ double AllocationInformation::get_correction_time(unsigned int fu, const std::st
                       (memory_type != "" ? "(" + memory_type + ")" : "") +
                       (memory_ctrl_type != "" ? "(" + memory_ctrl_type + ")" : ""));
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Setup-Hold-time: " + STR(res_value));
-   unsigned int elmt_bitsize = 0;
+   unsigned long long elmt_bitsize = 0;
    bool is_read_only_correction = false;
    bool is_proxied_correction = false;
    bool is_a_proxy = false;
    bool is_private_correction = false;
    bool is_single_variable = false;
    auto single_var_lambda = [&](unsigned var) -> bool {
-      unsigned int type_index = tree_helper::get_type_index(TreeM, var);
+      auto type_index = tree_helper::get_type_index(TreeM, var);
       if(tree_helper::is_an_array(TreeM, type_index) || tree_helper::is_a_struct(TreeM, type_index) ||
          tree_helper::is_an_union(TreeM, type_index))
       {
@@ -2479,7 +2479,7 @@ double AllocationInformation::get_correction_time(unsigned int fu, const std::st
       elmt_bitsize = Rmem->get_bram_bitsize();
 
 #if ARRAY_CORRECTION
-      unsigned int type_index = tree_helper::get_type_index(TreeM, var);
+      auto type_index = tree_helper::get_type_index(TreeM, var);
       if(tree_helper::is_an_array(TreeM, type_index))
       {
          std::vector<unsigned int> dims;
@@ -2491,7 +2491,7 @@ double AllocationInformation::get_correction_time(unsigned int fu, const std::st
          if(dims.size() > 1 && n_not_power_of_two > 0)
          {
             const technology_managerRef TM = HLS_T->get_technology_manager();
-            unsigned int bus_addr_bitsize = resize_to_1_8_16_32_64_128_256_512(address_bitsize);
+            auto bus_addr_bitsize = resize_to_1_8_16_32_64_128_256_512(address_bitsize);
             technology_nodeRef f_unit =
                 TM->get_fu(ADDER_STD + std::string("_" + STR(bus_addr_bitsize) + "_" + STR(bus_addr_bitsize) + "_" +
                                                    STR(bus_addr_bitsize)),
@@ -2539,7 +2539,7 @@ double AllocationInformation::get_correction_time(unsigned int fu, const std::st
          if((dims.size() > 1 && n_not_power_of_two > 0))
          {
             const technology_managerRef TM = HLS_T->get_technology_manager();
-            unsigned int bus_addr_bitsize = resize_to_1_8_16_32_64_128_256_512(address_bitsize);
+            auto bus_addr_bitsize = resize_to_1_8_16_32_64_128_256_512(address_bitsize);
             technology_nodeRef f_unit =
                 TM->get_fu(ADDER_STD + std::string("_" + STR(bus_addr_bitsize) + "_" + STR(bus_addr_bitsize) + "_" +
                                                    STR(bus_addr_bitsize)),
@@ -2580,7 +2580,7 @@ double AllocationInformation::get_correction_time(unsigned int fu, const std::st
          if((dims.size() > 1 && n_not_power_of_two > 0))
          {
             const technology_managerRef TM = HLS_T->get_technology_manager();
-            unsigned int bus_addr_bitsize = resize_to_1_8_16_32_64_128_256_512(address_bitsize);
+            auto bus_addr_bitsize = resize_to_1_8_16_32_64_128_256_512(address_bitsize);
             technology_nodeRef f_unit =
                 TM->get_fu(ADDER_STD + std::string("_" + STR(bus_addr_bitsize) + "_" + STR(bus_addr_bitsize) + "_" +
                                                    STR(bus_addr_bitsize)),
@@ -2701,7 +2701,7 @@ double AllocationInformation::get_correction_time(unsigned int fu, const std::st
          if(dims.size() > 1 && n_not_power_of_two > 0)
          {
             const technology_managerRef TM = HLS_T->get_technology_manager();
-            unsigned int bus_addr_bitsize = resize_to_1_8_16_32_64_128_256_512(address_bitsize);
+            auto bus_addr_bitsize = resize_to_1_8_16_32_64_128_256_512(address_bitsize);
             technology_nodeRef f_unit =
                 TM->get_fu(ADDER_STD + std::string("_" + STR(bus_addr_bitsize) + "_" + STR(bus_addr_bitsize) + "_" +
                                                    STR(bus_addr_bitsize)),
@@ -2724,8 +2724,8 @@ double AllocationInformation::get_correction_time(unsigned int fu, const std::st
    }
    else if(is_single_bool_test_cond_expr_units(fu))
    {
-      unsigned int prec = get_prec(fu);
-      unsigned int fu_prec = resize_to_1_8_16_32_64_128_256_512(prec);
+      auto prec = get_prec(fu);
+      auto fu_prec = resize_to_1_8_16_32_64_128_256_512(prec);
       if(fu_prec > 1)
       {
          const technology_managerRef TM = HLS_T->get_technology_manager();
@@ -2917,7 +2917,7 @@ unsigned int AllocationInformation::get_n_complex_operations() const
    return n_complex_operations;
 }
 
-std::string AllocationInformation::extract_bambu_provided_name(unsigned int prec_in, unsigned int prec_out,
+std::string AllocationInformation::extract_bambu_provided_name(unsigned long long prec_in, unsigned long long prec_out,
                                                                const HLS_managerConstRef hls_manager,
                                                                technology_nodeRef& current_fu)
 {
@@ -3619,7 +3619,7 @@ bool AllocationInformation::can_be_asynchronous_ram(tree_managerConstRef TM, uns
 {
    tree_nodeRef var_node = TM->get_tree_node_const(var);
    auto* vd = GetPointer<const var_decl>(var_node);
-   unsigned int var_bitsize = tree_helper::Size(var_node);
+   auto var_bitsize = tree_helper::Size(var_node);
    if(is_read_only_variable)
    {
       threshold = 32 * threshold;
@@ -3629,10 +3629,10 @@ bool AllocationInformation::can_be_asynchronous_ram(tree_managerConstRef TM, uns
       const auto array_type_node = tree_helper::CGetType(var_node);
       if(GetPointer<const array_type>(GET_CONST_NODE(array_type_node)))
       {
-         std::vector<unsigned int> dims;
-         unsigned int elts_size;
+         std::vector<unsigned long long> dims;
+         unsigned long long elts_size;
          tree_helper::get_array_dim_and_bitsize(TM, array_type_node->index, dims, elts_size);
-         unsigned int meaningful_bits = 0;
+         unsigned long long meaningful_bits = 0;
          if(vd->bit_values.size() != 0)
          {
             for(auto bit_el : vd->bit_values)

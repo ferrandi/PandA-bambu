@@ -163,10 +163,10 @@ struct structural_type_descriptor
    s_type type;
 
    /// The size of the object (in bit). The objects having a size are: ports, signals, channels, data, and actions.
-   unsigned int size;
+   unsigned long long size;
 
    /// The number of the elements of a vector.
-   unsigned int vector_size;
+   unsigned long long vector_size;
 
    /// Original type id of the structural object.
    std::string id_type;
@@ -189,7 +189,7 @@ struct structural_type_descriptor
     *        In case vector_size is zero the descriptor type represents a scalar object,
     *        otherwise an array.
     */
-   structural_type_descriptor(const std::string& type_name, unsigned int vector_size);
+   structural_type_descriptor(const std::string& type_name, unsigned long long vector_size);
 
    /**
     * Object factory for module objects.
@@ -494,12 +494,12 @@ class structural_object
    /**
     * Just resize the size of the bits of the object
     */
-   void type_resize(unsigned int new_bit_size);
+   void type_resize(unsigned long long new_bit_size);
 
    /**
     * resizing of vector objects
     */
-   void type_resize(unsigned int new_bit_size, unsigned int new_vec_size);
+   void type_resize(unsigned long long new_bit_size, unsigned long long new_vec_size);
    /**
     * Set the black box property associated with the structural_object.
     * @param bb is true when the object is a black box, false otherwise.
@@ -795,12 +795,12 @@ struct port_o : public structural_object
    /**
     * Return the port interface alignment.
     */
-   unsigned get_port_alignment() const;
+   unsigned long long get_port_alignment() const;
 
    /**
     * Set the port interface alignment.
     */
-   void set_port_alignment(unsigned algn);
+   void set_port_alignment(unsigned long long algn);
 
    /**
     * Return the connected signal, if any. Null pointer otherwise.
@@ -1071,8 +1071,9 @@ struct port_o : public structural_object
     * @param bus_tag_bitsize bitsize of tag
     * @param port is the port to be resized
     */
-   static void resize_busport(unsigned int bus_size_bitsize, unsigned int bus_addr_bitsize,
-                              unsigned int bus_data_bitsize, unsigned int bus_tag_bitsize, structural_objectRef port);
+   static void resize_busport(unsigned long long bus_size_bitsize, unsigned long long bus_addr_bitsize,
+                              unsigned long long bus_data_bitsize, unsigned long long bus_tag_bitsize,
+                              structural_objectRef port);
 
    /**
     * auxiliary function used to resize the standard ports
@@ -1081,7 +1082,7 @@ struct port_o : public structural_object
     * @param debug_level is the debug level
     * @param port is the port to be resized
     */
-   static void resize_std_port(unsigned int bitsize_variable, unsigned int n_elements, int debug_level,
+   static void resize_std_port(unsigned long long bitsize_variable, unsigned long long n_elements, int debug_level,
                                structural_objectRef port);
 
    /**
@@ -1132,7 +1133,7 @@ struct port_o : public structural_object
    /// port interface type of a port
    port_interface pi;
 
-   unsigned aligment;
+   unsigned long long aligment;
 
    /// when true the port must be specialized at runtime depending on the number of input
    bool is_var_args;

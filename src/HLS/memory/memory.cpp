@@ -79,7 +79,7 @@
 
 memory::memory(const tree_managerRef _TreeM, unsigned long long int _off_base_address, unsigned int max_bram,
                bool _null_pointer_check, bool initial_internal_address_p,
-               unsigned long long int initial_internal_address, const unsigned& _bus_addr_bitsize)
+               unsigned long long int initial_internal_address, const unsigned long long& _bus_addr_bitsize)
     : TreeM(_TreeM),
       maximum_private_memory_size(0),
       total_amount_of_private_memory(0),
@@ -123,9 +123,9 @@ memory::~memory() = default;
 memoryRef memory::create_memory(const ParameterConstRef _parameters, const tree_managerRef _TreeM,
                                 unsigned long long _off_base_address, unsigned int max_bram, bool _null_pointer_check,
                                 bool initial_internal_address_p, unsigned int initial_internal_address,
-                                const unsigned int& _address_bitsize)
+                                const unsigned long long& _address_bitsize)
 {
-   if(_parameters->isOption(OPT_context_switch))
+   if(_parameters->getOption<bool>(OPT_parse_pragma) && _parameters->isOption(OPT_context_switch))
    {
       return memoryRef(new memory_cs(_TreeM, _off_base_address, max_bram, _null_pointer_check,
                                      initial_internal_address_p, initial_internal_address, _address_bitsize));
@@ -563,7 +563,7 @@ unsigned long long int memory::get_rangesize(unsigned int var) const
    return rangesize.find(var)->second;
 }
 
-void memory::reserve_space(unsigned int space)
+void memory::reserve_space(unsigned long long space)
 {
    next_off_base_address += space;
    align(next_off_base_address, internal_base_address_alignment);

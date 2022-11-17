@@ -577,12 +577,12 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
                   continue;
                }
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Variable is " + STR(var));
-               unsigned int value_bitsize;
-               THROW_ASSERT(g->CGetOpNodeInfo(*v), "unexpected condition");
-               unsigned int node_id = g->CGetOpNodeInfo(*v)->GetNodeId();
-               const tree_nodeRef node = TreeM->get_tree_node_const(node_id);
-               auto* gm = GetPointer<gimple_assign>(node);
+               THROW_ASSERT(g->CGetOpNodeInfo(v), "unexpected condition");
+               const auto node_id = g->CGetOpNodeInfo(v)->GetNodeId();
+               const auto node = TM->CGetTreeNode(node_id);
+               const auto gm = GetPointer<const gimple_assign>(node);
                THROW_ASSERT(gm, "only gimple_assign's are allowed as memory operations");
+               unsigned long long value_bitsize;
                auto alignment = 8ull;
                if(GET_TYPE(g, *v) & TYPE_STORE)
                {
@@ -635,7 +635,7 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
                   const auto fd = GetPointer<const field_decl>(GET_CONST_NODE(size_type));
                   if(!fd || !fd->is_bitfield())
                   {
-                     value_bitsize = std::max(8u, value_bitsize);
+                     value_bitsize = std::max(8ull, value_bitsize);
                   }
                   HLSMgr->Rmem->add_source_value(var, size_var);
                }
@@ -689,7 +689,7 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
                   const auto fd = GetPointer<const field_decl>(GET_CONST_NODE(size_type));
                   if(!fd || !fd->is_bitfield())
                   {
-                     value_bitsize = std::max(8u, value_bitsize);
+                     value_bitsize = std::max(8ull, value_bitsize);
                   }
                }
 
