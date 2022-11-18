@@ -816,7 +816,7 @@ const std::map<bit_lattice, std::map<bit_lattice, bit_lattice>> Bit_Value::bit_a
     },
 };
 
-unsigned int Bit_Value::pointer_resizing(unsigned int output_id) const
+unsigned long long Bit_Value::pointer_resizing(unsigned int output_id) const
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                   "-->Pointer resizing starting from " + TM->CGetTreeNode(output_id)->ToString());

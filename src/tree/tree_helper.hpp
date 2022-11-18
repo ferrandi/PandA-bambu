@@ -1014,7 +1014,7 @@ class tree_helper
     */
    static
        /// FIXME: to be remove after substitution with GetArrayElementSize
-       unsigned int
+       unsigned long long
        get_array_data_bitsize(const tree_managerConstRef& TM, const unsigned int index);
 
    /**
@@ -1033,7 +1033,8 @@ class tree_helper
    static
        /// FIXME: to be remove after substitution with GetArrayDimensions
        void
-       get_array_dimensions(const tree_managerConstRef& TM, const unsigned int index, std::vector<unsigned long long> &dims);
+       get_array_dimensions(const tree_managerConstRef& TM, const unsigned int index,
+                            std::vector<unsigned long long>& dims);
 
    /**
     * Return the dimension of the array
@@ -1053,7 +1054,7 @@ class tree_helper
        /// FIXME: to be remove after substitution with GetArrayDimensions and GetArrayElementSize
        void
        get_array_dim_and_bitsize(const tree_managerConstRef& TM, const unsigned int index,
-                                 std::vector<unsigned long long> &dims, unsigned long long& elts_bitsize);
+                                 std::vector<unsigned long long>& dims, unsigned long long& elts_bitsize);
 
    /**
     * Return the total number of elements of the the base type in the array
@@ -1278,7 +1279,7 @@ class tree_helper
    /**
     * return the minimum bitsize associated with the elements accessible through type_node
     */
-   static unsigned int AccessedMinimunBitsize(const tree_nodeConstRef& type_node, unsigned long long bitsize);
+   static unsigned long long AccessedMinimunBitsize(const tree_nodeConstRef& type_node, unsigned long long bitsize);
 
    /**
     * Compute the memory (in bytes) to be allocated to store a parameter or a variable
@@ -1445,9 +1446,7 @@ class FunctionExpander
    FunctionExpander();
 
    /// Destructor
-   virtual ~FunctionExpander()
-   {
-   }
+   virtual ~FunctionExpander() = default;
 };
 using FunctionExpanderRef = refcount<FunctionExpander>;
 #endif

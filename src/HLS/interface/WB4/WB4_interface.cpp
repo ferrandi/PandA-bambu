@@ -136,7 +136,7 @@ unsigned long long WB4_interface::get_data_bus_bitsize()
        HLSMgr->Rmem->get_function_parameters(HLS->functionId);
 
    auto data_bus_bitsize = HLSMgr->Rmem->get_bus_data_bitsize();
-   for(auto function_parameter : function_parameters)
+   for(const auto& function_parameter : function_parameters)
    {
       if(function_parameter.first != HLS->functionId)
       {

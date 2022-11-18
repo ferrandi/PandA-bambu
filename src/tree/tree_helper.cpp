@@ -1045,7 +1045,7 @@ void tree_helper::get_used_variables(bool first_level_only, const tree_nodeConst
       case gimple_multi_way_if_K:
       {
          const auto gmwi = GetPointer<const gimple_multi_way_if>(t);
-         for(auto cond : gmwi->list_of_cond)
+         for(const auto& cond : gmwi->list_of_cond)
          {
             if(cond.first)
             {
@@ -2985,7 +2985,7 @@ bool tree_helper::is_module(const tree_managerConstRef& TM, const unsigned int i
    const std::string mod_st = "sc_module";
    const std::string mod_name_st = "sc_module_name";
    const std::string ifc_st = "sc_interface";
-   const record_type* rt = GetPointer<const record_type>(TM->CGetTreeNode(index));
+   const auto* rt = GetPointer<const record_type>(TM->CGetTreeNode(index));
    if(rt && rt->binf)
    {
       const auto bi = GetPointer<const binfo>(GET_CONST_NODE(rt->binf));
@@ -3010,7 +3010,7 @@ bool tree_helper::is_channel(const tree_managerConstRef& TM, const unsigned int 
    THROW_ASSERT(index > 0, "expected positive non zero numbers");
    const std::string mod_st = "sc_module";
    const std::string ifc_st = "sc_interface";
-   const record_type* rt = GetPointer<const record_type>(TM->CGetTreeNode(index));
+   const auto* rt = GetPointer<const record_type>(TM->CGetTreeNode(index));
    if(rt && rt->binf)
    {
       const auto bi = GetPointer<const binfo>(GET_CONST_NODE(rt->binf));
@@ -3043,7 +3043,7 @@ bool tree_helper::is_signal(const tree_managerConstRef& TM, const unsigned int i
    const std::string pch_st = "sc_prim_channel";
    const std::string sig_st = "sc_signal";
    const std::string clock_st = "sc_clock";
-   const record_type* rt = GetPointer<const record_type>(TM->CGetTreeNode(index));
+   const auto* rt = GetPointer<const record_type>(TM->CGetTreeNode(index));
    if(rt && rt->binf)
    {
       const auto bi = GetPointer<const binfo>(GET_CONST_NODE(rt->binf));
@@ -3063,7 +3063,7 @@ bool tree_helper::is_clock(const tree_managerConstRef& TM, const unsigned int in
    const std::string ifc_st = "sc_interface";
    const std::string pch_st = "sc_prim_channel";
    const std::string clock_st = "sc_clock";
-   const record_type* rt = GetPointer<const record_type>(TM->CGetTreeNode(index));
+   const auto* rt = GetPointer<const record_type>(TM->CGetTreeNode(index));
    if(rt && rt->binf)
    {
       const auto bi = GetPointer<const binfo>(GET_CONST_NODE(rt->binf));
@@ -3118,7 +3118,7 @@ bool tree_helper::is_port(const tree_managerConstRef& TM, const unsigned int ind
    THROW_ASSERT(index > 0, "expected positive non zero numbers");
    const std::string port_st = "sc_port";
    const std::string sc_export_st = "sc_export";
-   const record_type* rt = GetPointer<const record_type>(TM->CGetTreeNode(index));
+   const auto* rt = GetPointer<const record_type>(TM->CGetTreeNode(index));
    if(rt && rt->binf)
    {
       const auto bi = GetPointer<const binfo>(GET_CONST_NODE(rt->binf));
@@ -3134,7 +3134,7 @@ bool tree_helper::is_in_port(const tree_managerConstRef& TM, const unsigned int 
 {
    THROW_ASSERT(index > 0, "expected positive non zero numbers");
    const std::string sc_in_st = "sc_in";
-   const record_type* rt = GetPointer<const record_type>(TM->CGetTreeNode(index));
+   const auto* rt = GetPointer<const record_type>(TM->CGetTreeNode(index));
    if(rt && rt->binf)
    {
       const auto bi = GetPointer<const binfo>(GET_CONST_NODE(rt->binf));
@@ -3151,7 +3151,7 @@ bool tree_helper::is_out_port(const tree_managerConstRef& TM, const unsigned int
    THROW_ASSERT(index > 0, "expected positive non zero numbers");
    const std::string sc_out_st =
        "sc_out"; // several out port are actually inout port (e.g., sc_out_resolved and sc_out_rv)
-   const record_type* rt = GetPointer<const record_type>(TM->CGetTreeNode(index));
+   const auto* rt = GetPointer<const record_type>(TM->CGetTreeNode(index));
    if(rt && rt->binf)
    {
       const auto bi = GetPointer<const binfo>(GET_CONST_NODE(rt->binf));
@@ -3167,7 +3167,7 @@ bool tree_helper::is_inout_port(const tree_managerConstRef& TM, const unsigned i
 {
    THROW_ASSERT(index > 0, "expected positive non zero numbers");
    const std::string sc_inout_st = "sc_inout";
-   const record_type* rt = GetPointer<const record_type>(TM->CGetTreeNode(index));
+   const auto* rt = GetPointer<const record_type>(TM->CGetTreeNode(index));
    if(rt && rt->binf)
    {
       const auto bi = GetPointer<const binfo>(GET_CONST_NODE(rt->binf));
@@ -3183,7 +3183,7 @@ bool tree_helper::is_event(const tree_managerConstRef& TM, const unsigned int in
 {
    THROW_ASSERT(index > 0, "expected positive non zero numbers");
    const std::string event_st = "sc_event";
-   const record_type* rt = GetPointer<const record_type>(TM->CGetTreeNode(index));
+   const auto* rt = GetPointer<const record_type>(TM->CGetTreeNode(index));
    if(rt && rt->binf)
    {
       const auto bi = GetPointer<const binfo>(GET_CONST_NODE(rt->binf));
@@ -5089,7 +5089,7 @@ std::string tree_helper::op_symbol(const tree_node* op)
    }
 }
 
-unsigned int tree_helper::get_array_data_bitsize(const tree_managerConstRef& TM, const unsigned int index)
+unsigned long long tree_helper::get_array_data_bitsize(const tree_managerConstRef& TM, const unsigned int index)
 {
    const auto node = TM->CGetTreeReindex(index);
    return GetArrayElementSize(node);
@@ -7021,7 +7021,7 @@ unsigned long long tree_helper::AccessedMaximumBitsize(const tree_nodeConstRef& 
    return 0;
 }
 
-unsigned int tree_helper::AccessedMinimunBitsize(const tree_nodeConstRef& _type_node, unsigned long long bitsize)
+unsigned long long tree_helper::AccessedMinimunBitsize(const tree_nodeConstRef& _type_node, unsigned long long bitsize)
 {
    const auto type_node = _type_node->get_kind() == tree_reindex_K ? GET_CONST_NODE(_type_node) : _type_node;
    switch(type_node->get_kind())
@@ -8658,7 +8658,7 @@ void tree_helper::get_required_values(std::vector<std::tuple<unsigned int, unsig
       case gimple_multi_way_if_K:
       {
          const auto gmwi = GetPointerS<const gimple_multi_way_if>(tn);
-         for(auto cond : gmwi->list_of_cond)
+         for(const auto& cond : gmwi->list_of_cond)
          {
             if(cond.first)
             {

@@ -422,7 +422,7 @@ std::string operations_cfg_computation::get_first_node(const tree_nodeRef& tn, c
    {
       curr_tn = tn;
    }
-   unsigned int ind = GET_INDEX_NODE(tn);
+   auto ind = GET_INDEX_NODE(tn);
    std::string src;
    src = f_name + "_" + STR(ind);
 
@@ -571,8 +571,8 @@ void operations_cfg_computation::build_operation_recursive(const tree_managerRef
          {
             PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, " - set as float_expr_xx_to_xxx operation");
             const auto fe = GetPointerS<const float_expr>(GET_CONST_NODE(me->op1));
-            unsigned int size_dest = tree_helper::Size(fe->type);
-            unsigned int size_from = tree_helper::Size(fe->op);
+            auto size_dest = tree_helper::Size(fe->type);
+            auto size_from = tree_helper::Size(fe->op);
             if(size_from < 32)
             {
                size_from = 32;
@@ -770,7 +770,7 @@ void operations_cfg_computation::build_operation_recursive(const tree_managerRef
 
                // Creating node of call
                ogc->AddOperation(TM, actual_name, fun_name, bb_index, ce->index);
-               unsigned int type_external = TYPE_EXTERNAL;
+               auto type_external = TYPE_EXTERNAL;
                if(fd->writing_memory || fd->reading_memory)
                {
                   type_external = type_external | TYPE_RW;

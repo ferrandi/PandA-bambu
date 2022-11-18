@@ -45,6 +45,4 @@ CInitializationParserFunctor::CInitializationParserFunctor() : debug_level(0), w
 {
 }
 
-CInitializationParserFunctor::~CInitializationParserFunctor()
-{
-}
+CInitializationParserFunctor::~CInitializationParserFunctor() = default;

@@ -1220,7 +1220,7 @@ port_o::port_direction port_o::get_port_direction() const
 void port_o::set_port_direction(port_direction _dir)
 {
    dir = _dir;
-   for(auto p : ports)
+   for(const auto& p : ports)
    {
       GetPointer<port_o>(p)->set_port_direction(_dir);
    }
@@ -1799,15 +1799,25 @@ void port_o::xwrite(xml_element* rootnode)
    std::string tlm_directionality;
    std::string id_type = structural_object::get_typeRef()->id_type;
    if(id_type.find("put_if", 0) != std::string::npos)
+   {
       tlm_directionality = "->";
+   }
    else if(id_type.find("get_if", 0) != std::string::npos)
+   {
       tlm_directionality = "<-";
+   }
    else if(id_type.find("transport_if", 0) != std::string::npos)
+   {
       tlm_directionality = "<->";
+   }
    else
+   {
       tlm_directionality = "--";
+   }
    if(tlm_directionality != "--")
+   {
       WRITE_XVM(tlm_directionality, Enode);
+   }
 #endif
    //   WRITE_XVM(structural_object::get_typeRef()->id_type,Enode);
    WRITE_XNVM(dir, GetString(dir), Enode);
@@ -2327,7 +2337,7 @@ void constant_o::copy(structural_objectRef dest) const
    /// the field connected_objects has to be updated outside!!!
 }
 
-unsigned int constant_o::get_size() const
+unsigned long long constant_o::get_size() const
 {
    return GET_TYPE_SIZE(this);
 }
@@ -3539,7 +3549,9 @@ void module::copy(structural_objectRef dest) const
    /// copying of the ports of the module: be aware of respecting the initial order of the ports
 #ifndef NDEBUG
    if(last_position_port)
+   {
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, " - copying ports: " << last_position_port);
+   }
 #endif
    for(unsigned int i = 0; i < last_position_port; i++)
    {
@@ -3595,9 +3607,11 @@ void module::copy(structural_objectRef dest) const
    /// copy all the internal objects
 #ifndef NDEBUG
    if(internal_objects.size())
+   {
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, " - copying internal objects: " << internal_objects.size());
+   }
 #endif
-   for(auto int_obj : internal_objects)
+   for(const auto& int_obj : internal_objects)
    {
       switch(int_obj->get_kind())
       {
@@ -3654,7 +3668,7 @@ void module::copy(structural_objectRef dest) const
       {
          ports.push_back(int_obj);
       }
-      for(auto port_obj : ports)
+      for(const auto& port_obj : ports)
       {
          const structural_objectRef dest_port = dest->find_isomorphic(port_obj);
          PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
@@ -3765,7 +3779,7 @@ void module::copy(structural_objectRef dest) const
          }
       }
       signal_objs.push_back(int_obj);
-      for(auto signal_obj : signal_objs)
+      for(const auto& signal_obj : signal_objs)
       {
          const structural_objectRef signal_el = dest->find_isomorphic(signal_obj);
          PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
@@ -4445,8 +4459,10 @@ void module::xload(const xml_element* Enode, structural_objectRef _owner, struct
 
 #ifndef NDEBUG
    if(get_black_box())
+   {
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                     "   Component " + get_id() + " (" + get_typeRef()->id_type + ") is a black box");
+   }
 #endif
 }
 
@@ -5158,7 +5174,7 @@ void port_o::set_port_size(unsigned int dim)
    get_typeRef()->size = dim;
 }
 
-unsigned int port_o::get_port_size() const
+unsigned long long port_o::get_port_size() const
 {
    return get_typeRef()->size;
 }

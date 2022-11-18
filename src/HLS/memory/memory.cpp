@@ -266,7 +266,7 @@ void memory::add_internal_symbol(unsigned int funID_scope, unsigned int var, con
 unsigned int memory::count_non_private_internal_symbols() const
 {
    unsigned int n_non_private = 0;
-   for(auto iv_pair : in_vars)
+   for(const auto& iv_pair : in_vars)
    {
       if(!is_private_memory(iv_pair.first))
       {

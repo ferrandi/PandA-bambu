@@ -181,7 +181,7 @@ class ScheduleWriter : public GraphWriter
       {
          inverse_relation[sch->get_cstep(*v).second].insert(*v);
       }
-      for(ControlStep level = ControlStep(0u); level < sch->get_csteps(); ++level)
+      for(auto level = ControlStep(0u); level < sch->get_csteps(); ++level)
       {
          os << "//Control Step: " << level << std::endl;
          os << "CS" << level << " [style=plaintext]\n{rank=same; CS" << level << " ";
@@ -191,7 +191,7 @@ class ScheduleWriter : public GraphWriter
          }
          os << ";}\n";
       }
-      for(ControlStep level = ControlStep(1u); level < sch->get_csteps(); ++level)
+      for(auto level = ControlStep(1u); level < sch->get_csteps(); ++level)
       {
          os << "CS" << level - 1u << "-> CS" << level << ";\n";
       }
@@ -342,7 +342,7 @@ void Schedule::UpdateTime(const unsigned int operation_index, bool update_cs)
    auto starting_time = 0.0;
 
    /// The starting control step
-   ControlStep starting_cs = ControlStep(0);
+   auto starting_cs = ControlStep(0);
    if(!update_cs)
    {
       starting_time = clock_period * from_strongtype_cast<double>(op_starting_cycle.at(operation_index));

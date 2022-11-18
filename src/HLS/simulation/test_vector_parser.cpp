@@ -115,7 +115,7 @@ void TestVectorParser::ParseUserString(std::vector<std::map<std::string, std::st
    test_vectors.push_back(std::map<std::string, std::string>());
    std::vector<std::string> testbench_parameters = SplitString(local_string, "$");
    unsigned int index = 0;
-   for(auto parameter : testbench_parameters)
+   for(const auto& parameter : testbench_parameters)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Examining " + parameter);
       std::vector<std::string> temp = SplitString(parameter, "=");

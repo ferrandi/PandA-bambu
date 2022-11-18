@@ -901,7 +901,7 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
             /// compute the SSA variables used by stmt
             CustomOrderedSet<const ssa_name*> stmt_ssa_uses;
             tree_helper::compute_ssa_uses_rec_ptr(*statement, stmt_ssa_uses);
-            for(auto vo : gn->vovers)
+            for(const auto& vo : gn->vovers)
             {
                tree_helper::compute_ssa_uses_rec_ptr(vo, stmt_ssa_uses);
             }
@@ -1249,7 +1249,7 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
                   {
                      auto gmwi = GetPointer<gimple_multi_way_if>(lastStmtNode);
                      bool found_condition = false;
-                     for(auto gmwicond : gmwi->list_of_cond)
+                     for(const auto& gmwicond : gmwi->list_of_cond)
                      {
                         if(gmwicond.second == curr_bb)
                         {
@@ -1259,7 +1259,7 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
                               /// compute default condition
                               auto firstCond = true;
                               tree_nodeRef Cur;
-                              for(auto gmwicond0 : gmwi->list_of_cond)
+                              for(const auto& gmwicond0 : gmwi->list_of_cond)
                               {
                                  if(gmwicond0.first)
                                  {

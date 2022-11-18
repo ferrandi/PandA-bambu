@@ -722,14 +722,14 @@ std::string BehavioralHelper::PrintConstant(const tree_nodeConstRef& _node, cons
             else if (it->algn == 32)
                predicted_type += "int";
             else if (it->algn == 64)
-               predicted_type += "long long int";
+               predicted_type += "auto  int";
             std::string actual_type = tree_helper::PrintType(TM, ic->type);
             if (predicted_type != actual_type && actual_type != "bit_size_type")
                res = "(" + actual_type + ")";
          }
 #endif
          THROW_ASSERT(ic, "");
-         long long value = tree_helper::get_integer_cst_value(ic);
+         auto value = tree_helper::get_integer_cst_value(ic);
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Value is " + STR(value));
          if((it && it->prec == 64) && (value == (static_cast<long long int>(-0x08000000000000000LL))))
          {
@@ -1859,7 +1859,7 @@ std::string BehavioralHelper::PrintNode(const tree_nodeConstRef& _node, vertex v
          }
          else
          {
-            deltabit = tree_helper::Size(pointed_type);
+            deltabit = static_cast<long long>(tree_helper::Size(pointed_type));
          }
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "deltabit is " + STR(deltabit));
          long long int pointer_offset = 0;
@@ -1938,7 +1938,7 @@ std::string BehavioralHelper::PrintNode(const tree_nodeConstRef& _node, vertex v
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                        "-->Right part of multiply is an integer constant " +
                                            STR(GET_INDEX_NODE(mult->op1)));
-                        long long size_of_pointer = tree_helper::get_integer_cst_value(
+                        auto size_of_pointer = tree_helper::get_integer_cst_value(
                             GetPointerS<const integer_cst>(GET_CONST_NODE(mult->op1)));
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                        "---Size of pointer is " + STR(size_of_pointer));
@@ -1961,7 +1961,7 @@ std::string BehavioralHelper::PrintNode(const tree_nodeConstRef& _node, vertex v
                            const auto it = GetPointerS<const integer_type>(GET_CONST_NODE(temp1));
                            auto max_int = static_cast<unsigned long long>(tree_helper::get_integer_cst_value(
                                GetPointerS<const integer_cst>(GET_CONST_NODE(it->max))));
-                           long long new_size_of_pointer = static_cast<long long>(max_int) + 1 - size_of_pointer;
+                           auto new_size_of_pointer = static_cast<long long>(max_int) + 1 - size_of_pointer;
                            if(new_size_of_pointer == (deltabit / 8))
                            {
                               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
@@ -1985,7 +1985,7 @@ std::string BehavioralHelper::PrintNode(const tree_nodeConstRef& _node, vertex v
                      }
                      else if(GET_NODE(mult->op0)->get_kind() == integer_cst_K)
                      {
-                        long long size_of_pointer =
+                        auto size_of_pointer =
                             tree_helper::get_integer_cst_value(GetPointer<integer_cst>(GET_NODE(mult->op0)));
                         if(size_of_pointer == (deltabit / 8))
                         {
@@ -2001,7 +2001,7 @@ std::string BehavioralHelper::PrintNode(const tree_nodeConstRef& _node, vertex v
                            const auto it = GetPointerS<const integer_type>(GET_CONST_NODE(temp1));
                            auto max_int = static_cast<unsigned long long>(tree_helper::get_integer_cst_value(
                                GetPointerS<const integer_cst>(GET_CONST_NODE(it->max))));
-                           long long new_size_of_pointer = static_cast<long long>(max_int) + 1 - size_of_pointer;
+                           auto new_size_of_pointer = static_cast<long long>(max_int) + 1 - size_of_pointer;
                            if(new_size_of_pointer == (deltabit / 8))
                            {
                               right_offset_var += "-" + PrintNode(mult->op1, v, vppf);

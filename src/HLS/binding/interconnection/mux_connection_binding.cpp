@@ -3509,12 +3509,16 @@ unsigned int mux_connection_binding::input_logic(const conn_binding::ConnectionS
 #ifndef NDEBUG
          if(check_sources.find(std::make_pair(std::get<2>(var), std::get<3>(var))) != check_sources.end() &&
             check_sources.find(std::make_pair(std::get<2>(var), std::get<3>(var)))->second != src.first)
+         {
             THROW_ERROR("two different sources for the same transition: from. " +
                         HLS->Rliv->get_name(std::get<2>(var)) + " to " + HLS->Rliv->get_name(std::get<3>(var)) +
                         " source 1 " + src.first->get_string() + " source 2 " +
                         check_sources.find(std::make_pair(std::get<2>(var), std::get<3>(var)))->second->get_string());
+         }
          else if(check_sources.find(std::make_pair(std::get<2>(var), std::get<3>(var))) == check_sources.end())
+         {
             check_sources[std::make_pair(std::get<2>(var), std::get<3>(var))] = src.first;
+         }
 #endif
       }
       if(src.first->get_type() != generic_obj::REGISTER)

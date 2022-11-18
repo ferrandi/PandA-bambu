@@ -81,9 +81,7 @@ ControlFlowChecker::ControlFlowChecker(const ParameterConstRef _Param, const HLS
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
 }
 
-ControlFlowChecker::~ControlFlowChecker()
-{
-}
+ControlFlowChecker::~ControlFlowChecker() = default;
 
 const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
 ControlFlowChecker::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const

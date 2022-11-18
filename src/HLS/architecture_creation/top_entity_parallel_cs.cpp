@@ -79,9 +79,7 @@ top_entity_parallel_cs::top_entity_parallel_cs(const ParameterConstRef _paramete
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
 }
 
-top_entity_parallel_cs::~top_entity_parallel_cs()
-{
-}
+top_entity_parallel_cs::~top_entity_parallel_cs() = default;
 
 const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
 top_entity_parallel_cs::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
@@ -283,7 +281,7 @@ unsigned long long top_entity_parallel_cs::BW_loop_iter(const structural_objectR
 
    long long int n = 0;
    const auto listLoops = FB->CGetLoops()->GetList();
-   for(auto loop : listLoops)
+   for(const auto& loop : listLoops)
    {
       if(loop->GetId() != 0)
       {
@@ -297,7 +295,7 @@ unsigned long long top_entity_parallel_cs::BW_loop_iter(const structural_objectR
    }
    else
    {
-      for(auto loop : listLoops)
+      for(const auto& loop : listLoops)
       {
          if(loop->GetId() != 0)
          {
@@ -318,7 +316,7 @@ void top_entity_parallel_cs::connect_loop_iter(const structural_objectRef circui
 
    long long int n = 0;
    const auto listLoops = FB->CGetLoops()->GetList();
-   for(auto loop : listLoops)
+   for(const auto& loop : listLoops)
    {
       if(loop->GetId() != 0)
       {
@@ -340,7 +338,7 @@ void top_entity_parallel_cs::connect_loop_iter(const structural_objectRef circui
    }
    else
    {
-      for(auto loop : listLoops)
+      for(const auto& loop : listLoops)
       {
          if(loop->GetId() != 0)
          {

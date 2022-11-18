@@ -448,8 +448,8 @@ struct operation : public technology_node
     * @param type_name is the name of the type
     * @param type_prec is the vector of type precisions
     */
-   bool is_type_supported(const std::string& type_name, const std::vector<unsigned long long> &type_prec,
-                          const std::vector<unsigned long long> &type_n_element) const;
+   bool is_type_supported(const std::string& type_name, const std::vector<unsigned long long>& type_prec,
+                          const std::vector<unsigned long long>& type_n_element) const;
 
    /**
     * Returns the supported type as a string

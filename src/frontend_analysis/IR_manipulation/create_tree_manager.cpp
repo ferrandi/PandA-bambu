@@ -381,14 +381,18 @@ DesignFlowStep_Status create_tree_manager::Exec()
 #if !RELEASE
       // if a XML configuration file has been specified for the GCC/CLANG parameters
       if(parameters->isOption(OPT_gcc_read_xml))
+      {
          compiler_wrapper->ReadXml(parameters->getOption<std::string>(OPT_gcc_read_xml));
+      }
 #endif
       createCostTable();
       compiler_wrapper->FillTreeManager(TreeM, AppM->input_files, getCostTable());
 
 #if !RELEASE
       if(parameters->isOption(OPT_gcc_write_xml))
+      {
          compiler_wrapper->WriteXml(parameters->getOption<std::string>(OPT_gcc_write_xml));
+      }
 #endif
 
       if(debug_level >= DEBUG_LEVEL_PEDANTIC)

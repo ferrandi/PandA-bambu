@@ -140,7 +140,7 @@ std::string ConvertInBinary(const std::string& C_value, const unsigned long long
       THROW_ASSERT(d < w, "Decimal part should be smaller then total length");
       const long double val = strtold(what[0].second, nullptr) * powl(2, w - d);
       // TODO: update regex to handle overflow correctly
-      long long fixp = static_cast<long long>(val);
+      auto fixp = static_cast<long long>(val);
       is_signed &= val < 0;
       while(trimmed_value.size() < w)
       {
@@ -289,7 +289,7 @@ std::string FixedPointReinterpret(const std::string& FP_vector, const std::strin
       {
          const long double val = strtold(fix_val_it->str().c_str(), nullptr) * powl(2, w - d);
          // TODO: update regex to handle overflow correctly
-         const long long fixp = static_cast<long long>(val);
+         const auto fixp = static_cast<long long>(val);
          new_vector += "{{{" + STR(fixp) + "}}}, ";
          ++fix_val_it;
       }
@@ -412,29 +412,49 @@ unsigned long long convert_fp_to_bits(std::string num, unsigned int precision)
       case 32:
       {
          if(num == "__Inf")
+         {
             u.f = 1.0f / 0.0f;
+         }
          else if(num == "-__Inf")
+         {
             u.f = -1.0f / 0.0f;
+         }
          else if(num == "__Nan")
+         {
             u.f = 0.0f / 0.0f;
+         }
          else if(num == "-__Nan")
+         {
             u.f = -(0.0f / 0.0f);
+         }
          else
+         {
             u.f = strtof(num.c_str(), &endptr);
+         }
          return u.i;
       }
       case 64:
       {
          if(num == "__Inf")
+         {
             u.d = 1.0 / 0.0;
+         }
          else if(num == "-__Inf")
+         {
             u.d = -1.0 / 0.0;
+         }
          else if(num == "__Nan")
+         {
             u.d = 0.0 / 0.0;
+         }
          else if(num == "-__Nan")
+         {
             u.d = -(0.0 / 0.0);
+         }
          else
+         {
             u.d = strtod(num.c_str(), &endptr);
+         }
          return u.ll;
       }
       default:
@@ -454,8 +474,8 @@ unsigned long long ac_type_bitwidth(const std::string& intType, bool& is_signed,
    boost::cmatch what;
    if(boost::regex_search(intType.c_str(), what, ac_type_def))
    {
-      unsigned int w = boost::lexical_cast<unsigned int>(
-          what[AC_GROUP_W].first, static_cast<size_t>(what[AC_GROUP_W].second - what[AC_GROUP_W].first));
+      auto w = boost::lexical_cast<unsigned int>(what[AC_GROUP_W].first,
+                                                 static_cast<size_t>(what[AC_GROUP_W].second - what[AC_GROUP_W].first));
       is_signed = (what[AC_GROUP_U].second - what[AC_GROUP_U].first) == 0 &&
                   ((what[AC_GROUP_SIGN].second - what[AC_GROUP_SIGN].first) == 0 ||
                    strncmp(what[AC_GROUP_SIGN].first, "true", 4) == 0);

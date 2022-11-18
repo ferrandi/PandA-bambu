@@ -62,9 +62,7 @@ conn_binding_cs::conn_binding_cs(const BehavioralHelperConstRef _BH, const Param
    debug_level = _parameters->get_class_debug_level(GET_CLASS(*this));
 }
 
-conn_binding_cs::~conn_binding_cs()
-{
-}
+conn_binding_cs::~conn_binding_cs() = default;
 
 void conn_binding_cs::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, const structural_managerRef SM)
 {

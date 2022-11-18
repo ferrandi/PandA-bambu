@@ -433,9 +433,7 @@ class structural_object
    structural_object(int debug_level, const structural_objectRef o);
 
    /// virtual destructor
-   virtual ~structural_object()
-   {
-   }
+   virtual ~structural_object() = default;
 
    /**
     * Return the owner.
@@ -817,7 +815,7 @@ struct port_o : public structural_object
     * Get port size
     * @return the dimension of the port
     */
-   unsigned int get_port_size() const;
+   unsigned long long get_port_size() const;
 
    /**
     * set the is var_args attribute.
@@ -1571,7 +1569,7 @@ class constant_o : public structural_object
    /**
     * Return the size associated with this element (in bits)
     */
-   unsigned int get_size() const;
+   unsigned long long get_size() const;
 
    /**
     * Return the (integer) value associated with this element

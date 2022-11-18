@@ -1466,7 +1466,7 @@ void tree_node_index_factory::operator()(const attr* obj, unsigned int& mask)
 #define SEQ_SET_NODE_ID(list_field, type)                                                            \
    if(!GetPointer<type>(source_tn)->list_field.empty())                                              \
    {                                                                                                 \
-      for(auto i : GetPointer<type>(source_tn)->list_field)                                          \
+      for(const auto& i : GetPointer<type>(source_tn)->list_field)                                   \
       {                                                                                              \
          unsigned int node_id = GET_INDEX_NODE(i);                                                   \
          THROW_ASSERT(remap.find(node_id) != remap.end(),                                            \
@@ -1479,7 +1479,7 @@ void tree_node_index_factory::operator()(const attr* obj, unsigned int& mask)
 #define SET_SET_NODE_ID(list_field, type)                                                         \
    if(!GetPointer<type>(source_tn)->list_field.empty())                                           \
    {                                                                                              \
-      for(auto i : GetPointer<type>(source_tn)->list_field)                                       \
+      for(const auto& i : GetPointer<type>(source_tn)->list_field)                                \
       {                                                                                           \
          unsigned int node_id = GET_INDEX_NODE(i);                                                \
          THROW_ASSERT(remap.find(node_id) != remap.end(),                                         \

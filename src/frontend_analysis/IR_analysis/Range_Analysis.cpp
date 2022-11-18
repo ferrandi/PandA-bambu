@@ -1610,7 +1610,7 @@ class SymbRange : public ValueRange
 
  public:
    SymbRange(const RangeConstRef& range, const tree_nodeConstRef& bound, kind pred);
-   ~SymbRange() = default;
+   ~SymbRange() override = default;
    SymbRange(const SymbRange&) = delete;
    SymbRange(SymbRange&&) = delete;
    SymbRange& operator=(const SymbRange&) = delete;
@@ -2566,7 +2566,7 @@ class UnaryOpNode : public OpNode
    {
       return source;
    }
-   virtual std::vector<tree_nodeConstRef> getSources() const override
+   std::vector<tree_nodeConstRef> getSources() const override
    {
       return {source->getValue()};
    }
@@ -5961,7 +5961,7 @@ class ConstraintGraph : public NodeContainer
 #endif
    }
 
-   virtual ~ConstraintGraph() = default;
+   ~ConstraintGraph() override = default;
 
    CallMap* getCallMap()
    {
@@ -6138,7 +6138,7 @@ class ConstraintGraph : public NodeContainer
             if(DEBUG_LEVEL_VERY_PEDANTIC <= graph_debug)
             {
                std::stringstream ss;
-               for(auto cnst : constantvector)
+               for(const auto& cnst : constantvector)
                {
                   ss << cnst << ", ";
                }

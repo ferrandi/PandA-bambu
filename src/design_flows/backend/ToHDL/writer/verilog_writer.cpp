@@ -1548,7 +1548,7 @@ void verilog_writer::write_transition_output_functions(
       bool skip_state_transition = !single_proc && output_index != mod->get_out_port_size();
       if(!single_proc && output_index != mod->get_out_port_size())
       {
-         for(auto current_transition : state_transitions)
+         for(const auto& current_transition : state_transitions)
          {
             tokenizer transition_tokens(current_transition, sep);
             tokenizer::const_iterator itt = transition_tokens.begin();

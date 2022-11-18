@@ -2878,9 +2878,7 @@ FunctionVersion::FunctionVersion(const FunctionVersion& other)
 {
 }
 
-FunctionVersion::~FunctionVersion()
-{
-}
+FunctionVersion::~FunctionVersion() = default;
 
 int FunctionVersion::compare(const FunctionVersion& other, bool format_only) const
 {

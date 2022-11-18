@@ -118,7 +118,7 @@ DesignFlowStep_Status FixCharacterization::Exec()
                fu_name == "view_convert_expr_FU" || fu_name == "assert_expr_FU")
             {
                single_fu->area_m->set_area_value(1);
-               for(auto op : single_fu->get_operations())
+               for(const auto& op : single_fu->get_operations())
                {
                   if(assignment_execution_time != (GetPointer<operation>(op))->time_m->get_execution_time())
                   {
@@ -140,7 +140,7 @@ DesignFlowStep_Status FixCharacterization::Exec()
                if(template_parameters[1] == "0")
                {
                   single_fu->area_m->set_area_value(1);
-                  for(auto op : single_fu->get_operations())
+                  for(const auto& op : single_fu->get_operations())
                   {
                      if(assignment_execution_time != (GetPointer<operation>(op))->time_m->get_execution_time())
                      {
@@ -164,7 +164,7 @@ DesignFlowStep_Status FixCharacterization::Exec()
                if(template_parameters[2] == "0")
                {
                   single_fu->area_m->set_area_value(1);
-                  for(auto op : single_fu->get_operations())
+                  for(const auto& op : single_fu->get_operations())
                   {
                      if(assignment_execution_time != (GetPointer<operation>(op))->time_m->get_execution_time())
                      {
@@ -183,7 +183,7 @@ DesignFlowStep_Status FixCharacterization::Exec()
                fu_name == "IUconvert_expr_FU" || fu_name == "UIconvert_expr_FU" || fu_name == "UUconvert_expr_FU")
             {
                single_fu->area_m->set_area_value(1);
-               for(auto op : single_fu->get_operations())
+               for(const auto& op : single_fu->get_operations())
                {
                   if(assignment_execution_time != (GetPointer<operation>(op))->time_m->get_execution_time())
                   {
@@ -204,7 +204,7 @@ DesignFlowStep_Status FixCharacterization::Exec()
                if(template_parameters[0] == "0" || template_parameters[1] == "0")
                {
                   single_fu->area_m->set_area_value(1);
-                  for(auto op : single_fu->get_operations())
+                  for(const auto& op : single_fu->get_operations())
                   {
                      if(assignment_execution_time != (GetPointer<operation>(op))->time_m->get_execution_time())
                      {
@@ -226,7 +226,7 @@ DesignFlowStep_Status FixCharacterization::Exec()
                if(template_parameters[0] == "0" || template_parameters[2] == "0")
                {
                   single_fu->area_m->set_area_value(1);
-                  for(auto op : single_fu->get_operations())
+                  for(const auto& op : single_fu->get_operations())
                   {
                      if(assignment_execution_time != (GetPointer<operation>(op))->time_m->get_execution_time())
                      {
@@ -248,7 +248,7 @@ DesignFlowStep_Status FixCharacterization::Exec()
                if(template_parameters[0] == "0")
                {
                   single_fu->area_m->set_area_value(1);
-                  for(auto op : single_fu->get_operations())
+                  for(const auto& op : single_fu->get_operations())
                   {
                      if(assignment_execution_time != (GetPointer<operation>(op))->time_m->get_execution_time())
                      {
@@ -269,7 +269,7 @@ DesignFlowStep_Status FixCharacterization::Exec()
                if(template_parameters[0] == "0")
                {
                   single_fu->area_m->set_area_value(1);
-                  for(auto op : single_fu->get_operations())
+                  for(const auto& op : single_fu->get_operations())
                   {
                      if(assignment_execution_time != (GetPointer<operation>(op))->time_m->get_execution_time())
                      {

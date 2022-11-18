@@ -1826,7 +1826,9 @@ void AllocationInformation::print_allocated_resources() const
       for(const auto& bind : binding)
       {
          if(bind.first == ENTRY_ID || bind.first == EXIT_ID)
+         {
             continue;
+         }
          PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "  Vertex " + STR(bind.first));
          PRINT_DBG_MEX(
              DEBUG_LEVEL_PEDANTIC, debug_level,
@@ -1841,7 +1843,9 @@ void AllocationInformation::print_allocated_resources() const
       for(const auto& bind : node_id_to_fus)
       {
          if(bind.first.first == ENTRY_ID || bind.first.first == EXIT_ID || bind.first.first)
+         {
             continue;
+         }
          PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level,
                        "  Vertex " + STR(bind.first.first) + "(" +
                            GetPointer<const gimple_node>(TreeM->CGetTreeNode(bind.first.first))->operation + ")");
@@ -3418,7 +3422,9 @@ double AllocationInformation::GetConnectionTime(const unsigned int first_operati
          if(var && hls_manager->Rmem->get_maximum_references(var) > (2 * nchannels))
          {
             if(nchannels == 0)
+            {
                THROW_ERROR("nchannels should be different than zero");
+            }
             const auto ret = estimate_muxNto1_delay(
                 get_prec(fu_type),
                 static_cast<unsigned int>(hls_manager->Rmem->get_maximum_references(var)) / (2 * nchannels));
@@ -3445,7 +3451,9 @@ double AllocationInformation::GetConnectionTime(const unsigned int first_operati
             if(var && hls_manager->Rmem->get_maximum_loads(var) > (nchannels))
             {
                if(nchannels == 0)
+               {
                   THROW_ERROR("nchannels should be different than zero");
+               }
                auto ret = estimate_muxNto1_delay(get_prec(fu_type),
                                                  static_cast<unsigned int>(hls_manager->Rmem->get_maximum_loads(var)) /
                                                      (nchannels));

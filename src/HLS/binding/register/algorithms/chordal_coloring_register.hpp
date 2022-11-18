@@ -51,6 +51,20 @@
  */
 class chordal_coloring_register : public conflict_based_register
 {
+ private:
+   /// compare lexically two vectors
+   bool lex_compare_gt(const std::vector<unsigned int>& v1, const std::vector<unsigned int>& v2) const;
+
+   /**
+    * Chordal coloring algorithm algorithm.
+    * Stores the output registers in result_regs and the input storage values in regs.
+    * Stores in result_map the relations between them.
+    * Then it updates high-level synthesis results
+    * All previous result are erased.
+    * @return the exit status of this step
+    */
+   DesignFlowStep_Status RegisterBinding() final;
+
  public:
    /**
     * Constructor of the class.

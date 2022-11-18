@@ -57,13 +57,13 @@ class mem_dominator_allocation_cs : public mem_dominator_allocation
    /**
     * Destructor
     */
-   virtual ~mem_dominator_allocation_cs();
+   ~mem_dominator_allocation_cs() override;
 
    /**
     * Execute the step
     * @return the exit status of this step
     */
-   virtual DesignFlowStep_Status Exec();
+   DesignFlowStep_Status Exec() override;
 };
 
 #endif // MEM_DOMINATOR_ALLOCATION_CS_H

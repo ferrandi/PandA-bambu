@@ -142,8 +142,8 @@ class mux_connection_binding : public conn_binding_creator
    generic_objRef dynamic_multidimensional_array_handler(array_ref* ar, const vertex& op, const OpGraphConstRef data,
                                                          unsigned int& base_address_index_pointer,
                                                          std::vector<unsigned int>& recursive_indexes_values,
-                                                         std::vector<unsigned long long> &dims, generic_objRef& global_adder,
-                                                         const bool is_not_a_phi);
+                                                         std::vector<unsigned long long>& dims,
+                                                         generic_objRef& global_adder, const bool is_not_a_phi);
 
    /**
     * @brief connect_array_index: connect the index port of an array_ref and convert it in case the source is of int
@@ -170,9 +170,9 @@ class mux_connection_binding : public conn_binding_creator
 
    unsigned int extract_parm_decl(unsigned int tree_var, const tree_managerRef TreeM);
 
-   void add_conversion(unsigned int num, unsigned long long size_tree_var, VertexIterator op, unsigned int form_par_type,
-                       unsigned int port_index, const generic_objRef fu_obj, const OpGraphConstRef data,
-                       const tree_managerRef TreeM, unsigned int tree_var,
+   void add_conversion(unsigned int num, unsigned long long size_tree_var, VertexIterator op,
+                       unsigned int form_par_type, unsigned int port_index, const generic_objRef fu_obj,
+                       const OpGraphConstRef data, const tree_managerRef TreeM, unsigned int tree_var,
                        const std::vector<HLS_manager::io_binding_type>& var_read, unsigned long long size_form_par);
 
    unsigned long long address_precision(unsigned long long precision, const vertex& op, const OpGraphConstRef data,

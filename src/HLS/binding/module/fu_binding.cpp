@@ -1148,7 +1148,7 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
          if(HLSMgr->Rfuns->has_proxied_shared_functions(f_id))
          {
             auto proxied_shared_functions = HLSMgr->Rfuns->get_proxied_shared_functions(f_id);
-            for(auto name : proxied_shared_functions)
+            for(const auto& name : proxied_shared_functions)
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---  proxy shared function: " + name);
             }
@@ -2504,7 +2504,9 @@ void fu_binding::fill_array_ref_memory(std::ostream& init_file_a, std::ostream& 
    {
       bram_bitsize = boost::lexical_cast<unsigned int>(fu_module->GetParameter("BRAM_BITSIZE"));
       if(elts_size % 8)
+      {
          elts_size = 8 * (elts_size / 8) + 8;
+      }
    }
 
    auto nbyte_on_memory = bram_bitsize / 8;
@@ -2534,7 +2536,9 @@ void fu_binding::fill_array_ref_memory(std::ostream& init_file_a, std::ostream& 
                }
             }
             else
+            {
                init_file_a << init_value << std::endl;
+            }
          }
       }
       else

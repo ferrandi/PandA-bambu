@@ -227,7 +227,8 @@ std::deque<bit_lattice> create_x_bitstring(unsigned int lenght);
  * @param signed_value specified if this bitstring can have negative values
  * @return bitstring generated from the integer constant
  */
-std::deque<bit_lattice> create_bitstring_from_constant(long long int value_int, unsigned long long length, bool signed_value);
+std::deque<bit_lattice> create_bitstring_from_constant(long long int value_int, unsigned long long length,
+                                                       bool signed_value);
 
 /**
  * Translates a bitstring ( expressed as an std::deque of bit_lattice ) into a string of characters.

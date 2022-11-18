@@ -712,7 +712,7 @@ bool rebuild_initialization2::look_for_ROMs()
    TreeNodeMap<std::map<long long int, tree_nodeRef>> inits;
 
    /// for each basic block B in CFG compute constantVars candidates
-   for(auto Bit : sl->list_of_bloc)
+   for(const auto& Bit : sl->list_of_bloc)
    {
       // used to collect the reads of a given variable done in the same basic block.
       // This is done to avoid to classify a variable constant in case is first
@@ -721,7 +721,7 @@ bool rebuild_initialization2::look_for_ROMs()
       auto B = Bit.second;
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Examining for write BB" + STR(B->number));
       const auto& list_of_stmt = B->CGetStmtList();
-      for(auto inst : list_of_stmt)
+      for(const auto& inst : list_of_stmt)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Examining statement " + GET_NODE(inst)->ToString());
          auto gn = GetPointerS<gimple_node>(GET_NODE(inst));
@@ -1144,13 +1144,13 @@ bool rebuild_initialization2::look_for_ROMs()
    BBGraphRef GCC_bb_graph(new BBGraph(GCC_bb_graphs_collection, CFG_SELECTOR));
    CustomUnorderedMap<unsigned int, vertex> inverse_vertex_map;
    /// add vertices
-   for(auto block : sl->list_of_bloc)
+   for(const auto& block : sl->list_of_bloc)
    {
       inverse_vertex_map[block.first] =
           GCC_bb_graphs_collection->AddVertex(BBNodeInfoRef(new BBNodeInfo(block.second)));
    }
    /// add edges
-   for(auto curr_bb_pair : sl->list_of_bloc)
+   for(const auto& curr_bb_pair : sl->list_of_bloc)
    {
       auto curr_bb = curr_bb_pair.first;
       auto lop_it_end = sl->list_of_bloc[curr_bb]->list_of_pred.end();
@@ -1179,12 +1179,12 @@ bool rebuild_initialization2::look_for_ROMs()
                                      CFG_SELECTOR);
 
    /// check if reads are consistent with writes: writes are always dominating the following reads
-   for(auto Bit : sl->list_of_bloc)
+   for(const auto& Bit : sl->list_of_bloc)
    {
       auto B = Bit.second;
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Examining for write BB" + STR(B->number));
       const auto& list_of_stmt = B->CGetStmtList();
-      for(auto inst : list_of_stmt)
+      for(const auto& inst : list_of_stmt)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Examining statement " + GET_NODE(inst)->ToString());
          auto gn = GetPointerS<gimple_node>(GET_NODE(inst));
@@ -1288,7 +1288,7 @@ bool rebuild_initialization2::look_for_ROMs()
       return false;
    }
 
-   for(auto Bit : sl->list_of_bloc)
+   for(const auto& Bit : sl->list_of_bloc)
    {
       auto B = Bit.second;
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Examining for write BB" + STR(B->number));

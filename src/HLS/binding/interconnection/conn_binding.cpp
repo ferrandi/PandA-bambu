@@ -1190,7 +1190,7 @@ void conn_binding::add_command_ports(const HLS_managerRef HLSMgr, const hlsRef H
                THROW_ASSERT(ports_it != call.second.end(), "unexpected condition");
                ++ports_it;
             }
-            for(auto pp_pair : toOred)
+            for(const auto& pp_pair : toOred)
             {
                if(pp_pair.second.size() == 1)
                {
@@ -1385,30 +1385,50 @@ bool conn_binding::ConnectionTarget::operator<(const ConnectionTarget& other) co
       return std::get<0>(*this)->get_string() < std::get<0>(other)->get_string();
    }
    if(std::get<1>(*this) != std::get<1>(other))
+   {
       return std::get<1>(*this) < std::get<1>(other);
+   }
    if(std::get<2>(*this) != std::get<2>(other))
+   {
       return std::get<2>(*this) < std::get<2>(other);
+   }
    return false;
 }
 
 bool conn_binding::ConnectionSorter::operator()(const connection& x, const connection& y) const
 {
    if(*(std::get<0>(x)) < *(std::get<0>(y)))
+   {
       return true;
+   }
    if(*(std::get<0>(y)) < *(std::get<0>(x)))
+   {
       return false;
+   }
    if(*(std::get<1>(x)) < *(std::get<1>(y)))
+   {
       return true;
+   }
    if(*(std::get<1>(y)) < *(std::get<1>(x)))
+   {
       return false;
+   }
    if(std::get<2>(x) < std::get<2>(y))
+   {
       return true;
+   }
    if(std::get<2>(y) < std::get<2>(x))
+   {
       return false;
+   }
    if(std::get<3>(x) < std::get<3>(y))
+   {
       return true;
+   }
    if(std::get<3>(y) < std::get<3>(x))
+   {
       return false;
+   }
    return false;
 }
 #endif

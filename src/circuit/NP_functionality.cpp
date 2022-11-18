@@ -186,7 +186,7 @@ void NP_functionality::get_port_list(std::map<unsigned int, std::map<std::string
       return;
    }
    std::vector<std::string> splitted = SplitString(port_list, ",");
-   for(auto port_description : splitted)
+   for(const auto& port_description : splitted)
    {
       if(port_description.empty())
       {

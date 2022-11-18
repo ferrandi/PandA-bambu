@@ -996,8 +996,8 @@ void InterfaceInfer::create_Write_function(const std::string& arg_name, tree_nod
 
 void InterfaceInfer::create_resource_Read_simple(const std::set<std::string>& operations, const std::string& arg_name,
                                                  const std::string& interfaceType, unsigned long long input_bw,
-                                                 bool IO_port, unsigned n_resources, unsigned long long rwBWsize,
-                                                 unsigned int top_id) const
+                                                 bool IO_port, unsigned long long n_resources,
+                                                 unsigned long long rwBWsize, unsigned int top_id) const
 {
    const std::string ResourceName = ENCODE_FDNAME(arg_name, "_Read_", interfaceType);
    auto HLSMgr = GetPointer<HLS_manager>(AppM);
@@ -1155,8 +1155,8 @@ void InterfaceInfer::create_resource_Read_simple(const std::set<std::string>& op
 
 void InterfaceInfer::create_resource_Write_simple(const std::set<std::string>& operations, const std::string& arg_name,
                                                   const std::string& interfaceType, unsigned long long input_bw,
-                                                  bool IO_port, bool isDiffSize, unsigned n_resources, bool is_real,
-                                                  unsigned long long rwBWsize, unsigned int top_id) const
+                                                  bool IO_port, bool isDiffSize, unsigned long long n_resources,
+                                                  bool is_real, unsigned long long rwBWsize, unsigned int top_id) const
 {
    const std::string ResourceName = ENCODE_FDNAME(arg_name, "_Write_", interfaceType);
    auto HLSMgr = GetPointer<HLS_manager>(AppM);
@@ -1300,7 +1300,7 @@ void InterfaceInfer::create_resource_Write_simple(const std::set<std::string>& o
          fu->logical_type = functional_unit::COMBINATIONAL;
       }
 
-      for(auto fdName : operations)
+      for(const auto& fdName : operations)
       {
          auto* op = GetPointer<operation>(fu->get_operation(fdName));
          op->time_m = time_model::create_model(device->get_type(), parameters);
@@ -1508,7 +1508,7 @@ void InterfaceInfer::create_resource_array(const std::set<std::string>& operatio
 void InterfaceInfer::create_resource_m_axi(const std::set<std::string>& operationsR,
                                            const std::set<std::string>& operationsW, const std::string& arg_name,
                                            const std::string& bundle_name, const std::string& interfaceType,
-                                           unsigned long long input_bw, unsigned n_resources, m_axi_type mat,
+                                           unsigned long long input_bw, unsigned long long n_resources, m_axi_type mat,
                                            unsigned long long rwBWsize, unsigned int top_id) const
 {
    const auto ResourceName = ENCODE_FDNAME(bundle_name, "", "");

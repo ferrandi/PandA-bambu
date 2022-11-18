@@ -53,7 +53,7 @@ class controller_cs : public fsm_controller
    /**
     * Destructor.
     */
-   virtual ~controller_cs();
+   ~controller_cs() override;
 
  protected:
    void add_common_ports(structural_objectRef circuit, structural_managerRef SM) override;

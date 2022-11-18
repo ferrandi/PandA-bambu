@@ -50,6 +50,9 @@
 
 class unique_binding_register : public reg_binding_creator
 {
+ private:
+   DesignFlowStep_Status RegisterBinding() final;
+
  public:
    /**
     * Constructor of the class.

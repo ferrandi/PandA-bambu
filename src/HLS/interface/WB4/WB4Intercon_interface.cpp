@@ -112,7 +112,7 @@ static unsigned long long get_data_bus_bitsize(const hlsRef HLS, const HLS_manag
    std::map<unsigned int, memory_symbolRef> parameters = HLSMgr->Rmem->get_function_parameters(HLS->functionId);
 
    auto data_bus_bitsize = HLSMgr->Rmem->get_bus_data_bitsize();
-   for(auto function_parameter : parameters)
+   for(const auto& function_parameter : parameters)
    {
       if(function_parameter.first != HLS->functionId)
       {

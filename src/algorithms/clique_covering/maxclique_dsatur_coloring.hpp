@@ -114,9 +114,9 @@ namespace boost
    template <class VertexListGraph, class ColorMap>
    typename property_traits<ColorMap>::value_type unsorted_coloring(const VertexListGraph& G, ColorMap color)
    {
-      typedef graph_traits<VertexListGraph> GraphTraits;
-      typedef typename GraphTraits::vertex_descriptor Vertex;
-      typedef typename property_traits<ColorMap>::value_type size_type;
+      using GraphTraits = graph_traits<VertexListGraph>;
+      using Vertex = typename GraphTraits::vertex_descriptor;
+      using size_type = typename property_traits<ColorMap>::value_type;
 
       size_type max_color = 0;
       const size_type V = num_vertices(G);
@@ -132,7 +132,9 @@ namespace boost
       // Initialize colors
       typename GraphTraits::vertex_iterator v, vend;
       for(boost::tie(v, vend) = vertices(G); v != vend; ++v)
+      {
          put(color, *v, V - 1);
+      }
 
       // Determine the color for every vertex one by one
       size_type i = 0;
@@ -144,7 +146,9 @@ namespace boost
          // Mark the colors of vertices adjacent to current.
          // i can be the value for marking since i increases successively
          for(boost::tie(v1, vend1) = adjacent_vertices(current, G); v1 != vend1; ++v1)
+         {
             mark[get(color, *v1)] = i;
+         }
 
          // Next step is to assign the smallest un-marked color
          // to the current vertex.
@@ -155,10 +159,14 @@ namespace boost
          // is equal to i, color j is used by one of the current vertex's
          // neighbors.
          while(j < max_color && mark[j] == i)
+         {
             ++j;
+         }
 
-         if(j == max_color) // All colors are used up. Add one more color
+         if(j == max_color)
+         { // All colors are used up. Add one more color
             ++max_color;
+         }
 
          // At this point, j is the smallest possible color
          put(color, current, j); // Save the color of vertex current
@@ -201,8 +209,8 @@ namespace boost
    class maxclique_dsatur_coloring_helper
    {
     private:
-      typedef graph_traits<VertexListGraph> GraphTraits;
-      typedef typename GraphTraits::vertex_descriptor Vertex;
+      using GraphTraits = graph_traits<VertexListGraph>;
+      using Vertex = typename GraphTraits::vertex_descriptor;
       const size_type num_node;
       size_type BestColoring;
       std::vector<size_type> ColorClass;
@@ -221,10 +229,10 @@ namespace boost
       SET_container support;
       SET_container C;
       SET_container BestClique;
-      typedef filtered_graph<VertexListGraph, keep_all, select_vertex<SET_container>> Induced_Graph;
+      using Induced_Graph = filtered_graph<VertexListGraph, keep_all, select_vertex<SET_container>>;
       Induced_Graph FG;
-      typedef graph_traits<Induced_Graph> IG_GraphTraits;
-      typedef typename IG_GraphTraits::vertex_descriptor IG_Vertex;
+      using IG_GraphTraits = graph_traits<Induced_Graph>;
+      using IG_Vertex = typename IG_GraphTraits::vertex_descriptor;
 
     public:
       maxclique_dsatur_coloring_helper(const VertexListGraph& _G, ColorMap& _CM, const size_type _num_node,
@@ -325,12 +333,16 @@ namespace boost
          {
             BestColoring = k;
             for(size_type i = 0; i < num_node; ++i)
+            {
                put(CM, vertex(i, G), get(color, vertex(i, G)));
+            }
             // printf("Best coloring is %ld\n", BestColoring);
          }
          ub = ub <= k + C.size() ? ub : k + C.size();
          if(ub <= BestClique.size())
+         {
             return BestClique.size();
+         }
 
          /// look for the vertex with maximum degree
          v = vstart;
@@ -348,13 +360,17 @@ namespace boost
                selected = *v;
             }
             if(tmpdegree < mindegree)
+            {
                mindegree = tmpdegree;
+            }
             ++v;
             ++FG_cardinality;
          }
          /// check a) condition
          if(FG_cardinality + C.size() <= BestClique.size())
+         {
             return BestClique.size();
+         }
          /// check for the minimum degree condition
          if(mindegree + 1 == FG_cardinality)
          {
@@ -377,7 +393,9 @@ namespace boost
          C.erase(selected);
          std::swap(G1_support, support);
          if(ub == sizeG1)
+         {
             return sizeG1;
+         }
          support.erase(selected);
          size_type sizeG0 = MaxCliqueRec(ub);
          support.insert(selected);
@@ -388,7 +406,9 @@ namespace boost
          size_type i;
          // printf("Best coloring is %ld\n", BestColoring);
          for(i = 0; i < num_node; i++)
+         {
             put(CM, vertex(i, G), ColorClass[i]);
+         }
       }
 
       void AssignColor(size_type node, size_type color)
@@ -401,7 +421,9 @@ namespace boost
          {
             node1 = get(vertex_index, G, *v);
             if(ColorAdj(node1, color) == 0)
+            {
                ColorCount[node1]++;
+            }
             ColorAdj(node1, color) += 1;
             DegreeCount[node1]--;
             assert(DegreeCount[node1] >= 0);
@@ -419,7 +441,9 @@ namespace boost
             assert(ColorAdj(node1, color) != 0);
             ColorAdj(node1, color) -= 1;
             if(ColorAdj(node1, color) == 0)
+            {
                ColorCount[node1]--;
+            }
             DegreeCount[node1]++;
          }
       }
@@ -431,12 +455,18 @@ namespace boost
 
          // prob_count++;
          if(current_color + 1 >= BestColoring)
+         {
             return (current_color + 1);
+         }
          if(BestColoring <= lb)
+         {
             return (BestColoring);
+         }
 
          if(i >= num_node)
+         {
             return (current_color + 1);
+         }
          /*  printf("Node %ld, num_color %ld\n",i,current_color);*/
 
          /* Find node with maximum color_adj */
@@ -481,15 +511,17 @@ namespace boost
    template <typename VertexListGraph, typename ColorMap>
    typename property_traits<ColorMap>::value_type maxclique_dsatur_coloring(const VertexListGraph& G, ColorMap color)
    {
-      typedef graph_traits<VertexListGraph> GraphTraits;
-      typedef typename GraphTraits::vertex_descriptor Vertex;
-      typedef typename property_traits<ColorMap>::value_type size_type;
+      using GraphTraits = graph_traits<VertexListGraph>;
+      using Vertex = typename GraphTraits::vertex_descriptor;
+      using size_type = typename property_traits<ColorMap>::value_type;
 
       const size_type num_node = num_vertices(G);
       if(num_node == 0)
+      {
          return 0;
+      }
       size_type lb = 0, val;
-      typedef CustomUnorderedSet<Vertex> SET_container;
+      using SET_container = CustomUnorderedSet<Vertex>;
       maxclique_dsatur_coloring_helper<VertexListGraph, ColorMap, size_type, SET_container> MDCH(G, color, num_node,
                                                                                                  lb);
 

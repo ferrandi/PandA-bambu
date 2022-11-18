@@ -66,9 +66,7 @@ cs_interface::cs_interface(const ParameterConstRef _Param, const HLS_managerRef 
    THROW_ASSERT(funId, "Function not set in minimal interface");
 }
 
-cs_interface::~cs_interface()
-{
-}
+cs_interface::~cs_interface() = default;
 
 DesignFlowStep_Status cs_interface::InternalExec()
 {

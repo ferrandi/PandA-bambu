@@ -78,9 +78,7 @@ datapath_parallel_cs::datapath_parallel_cs(const ParameterConstRef _parameters, 
 
 // HLSFunctionStep(_parameters, _HLSMgr, _funId, _design_flow_manager, _hls_flow_step_type)
 
-datapath_parallel_cs::~datapath_parallel_cs()
-{
-}
+datapath_parallel_cs::~datapath_parallel_cs() = default;
 
 const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
 datapath_parallel_cs::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const

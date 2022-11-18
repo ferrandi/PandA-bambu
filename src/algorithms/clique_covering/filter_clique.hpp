@@ -47,9 +47,7 @@
 template <typename vertex_type>
 struct filter_clique
 {
-   virtual ~filter_clique()
-   {
-   }
+   virtual ~filter_clique() = default;
 
    virtual bool select_candidate_to_remove(const CustomOrderedSet<C_vertex>& candidate_clique, C_vertex& v,
                                            const CustomUnorderedMap<C_vertex, vertex_type>& converter,
