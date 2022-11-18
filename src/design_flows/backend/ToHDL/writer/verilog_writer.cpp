@@ -259,7 +259,7 @@ std::string verilog_writer::type_converter_size(const structural_objectRef& cir)
          {
             if(cir->get_kind() == port_vector_o_K)
             {
-               unsigned int lsb = GetPointer<port_o>(cir)->get_lsb();
+               auto lsb = GetPointer<port_o>(cir)->get_lsb();
                return "[(" + (PORTSIZE_PREFIX + port_name) + "*" + (BITSIZE_PREFIX + port_name) + ")+(" +
                       boost::lexical_cast<std::string>(static_cast<int>(lsb) - 1) +
                       "):" + boost::lexical_cast<std::string>(lsb) + "] ";
@@ -279,35 +279,35 @@ std::string verilog_writer::type_converter_size(const structural_objectRef& cir)
             {
                const structural_objectRef first_sig = GetPointer<signal_o>(cir)->get_signal(0);
                structural_type_descriptorRef Type_fs = first_sig->get_typeRef();
-               unsigned int n_sign = GetPointer<signal_o>(cir)->get_signals_size();
-               unsigned int size_fs = Type_fs->vector_size > 0 ? Type_fs->size * Type_fs->vector_size : Type_fs->size;
-               unsigned int lsb = GetPointer<signal_o>(cir)->get_lsb();
-               unsigned int msb = size_fs * n_sign + lsb;
+               auto n_sign = GetPointer<signal_o>(cir)->get_signals_size();
+               auto size_fs = Type_fs->vector_size > 0 ? Type_fs->size * Type_fs->vector_size : Type_fs->size;
+               auto lsb = GetPointer<signal_o>(cir)->get_lsb();
+               auto msb = size_fs * n_sign + lsb;
 
                return "[" + boost::lexical_cast<std::string>(static_cast<int>(msb) - 1) + ":" +
                       boost::lexical_cast<std::string>(lsb) + "] ";
             }
             else if(cir->get_kind() == port_vector_o_K)
             {
-               unsigned int lsb = GetPointer<port_o>(cir)->get_lsb();
-               unsigned int n_ports = GetPointer<port_o>(cir)->get_ports_size();
+               auto lsb = GetPointer<port_o>(cir)->get_lsb();
+               auto n_ports = GetPointer<port_o>(cir)->get_ports_size();
                const structural_objectRef first_port = GetPointer<port_o>(cir)->get_port(0);
                const auto Type_fp = first_port->get_typeRef();
-               unsigned int size_fp = Type_fp->vector_size > 0 ? Type_fp->size * Type_fp->vector_size : Type_fp->size;
-               unsigned int msb = size_fp * n_ports + lsb;
+               auto size_fp = Type_fp->vector_size > 0 ? Type_fp->size * Type_fp->vector_size : Type_fp->size;
+               auto msb = size_fp * n_ports + lsb;
                return "[" + boost::lexical_cast<std::string>(static_cast<int>(msb) - 1) + ":" +
                       boost::lexical_cast<std::string>(lsb) + "] ";
             }
             else if(cir->get_owner() and cir->get_owner()->get_kind() == port_vector_o_K)
             {
                const auto owner_vector = GetPointer<const port_o>(cir->get_owner());
-               unsigned int lsb = owner_vector->get_lsb();
+               auto lsb = owner_vector->get_lsb();
                for(unsigned int vector_index = 0; vector_index < owner_vector->get_ports_size(); vector_index++)
                {
                   if(owner_vector->get_port(vector_index) == cir)
                   {
                      const structural_objectRef first_port = owner_vector->get_port(0);
-                     unsigned int single_size_port = GET_TYPE_SIZE(first_port);
+                     auto single_size_port = GET_TYPE_SIZE(first_port);
                      return "[" + STR(((vector_index + 1) * single_size_port) - 1 + lsb) + ":" +
                             STR(vector_index * single_size_port + lsb) + "]";
                   }
@@ -417,7 +417,7 @@ std::string verilog_writer::may_slice_string(const structural_objectRef& cir)
          {
             if(Owner->get_kind() == port_vector_o_K)
             {
-               unsigned int lsb = GetPointer<port_o>(Owner)->get_lsb();
+               auto lsb = GetPointer<port_o>(Owner)->get_lsb();
                return "[((" + boost::lexical_cast<std::string>(GetPointer<port_o>(cir)->get_id()) + "+1)*" +
                       (BITSIZE_PREFIX + port_name) + ")+(" +
                       boost::lexical_cast<std::string>(static_cast<int>(lsb) - 1) + "):(" +
@@ -434,8 +434,8 @@ std::string verilog_writer::may_slice_string(const structural_objectRef& cir)
             if(Owner->get_kind() == port_vector_o_K)
             {
                structural_type_descriptorRef Type_fp = cir->get_typeRef();
-               unsigned int size_fp = Type_fp->vector_size > 0 ? Type_fp->size * Type_fp->vector_size : Type_fp->size;
-               unsigned int lsb = GetPointer<port_o>(Owner)->get_lsb();
+               auto size_fp = Type_fp->vector_size > 0 ? Type_fp->size * Type_fp->vector_size : Type_fp->size;
+               auto lsb = GetPointer<port_o>(Owner)->get_lsb();
                return "[" +
                       boost::lexical_cast<std::string>(
                           (1 + boost::lexical_cast<int>(GetPointer<port_o>(cir)->get_id())) *
@@ -462,7 +462,7 @@ std::string verilog_writer::may_slice_string(const structural_objectRef& cir)
          {
             if(Owner->get_kind() == port_vector_o_K)
             {
-               unsigned int lsb = GetPointer<port_o>(Owner)->get_lsb();
+               auto lsb = GetPointer<port_o>(Owner)->get_lsb();
                return "[((" + boost::lexical_cast<std::string>(GetPointer<port_o>(cir)->get_id()) + "+1)*" +
                       (BITSIZE_PREFIX + port_name) + "*" + (NUM_ELEM_PREFIX + port_name) + ")+(" +
                       boost::lexical_cast<std::string>(static_cast<int>(lsb) - 1) + "):(" +
@@ -480,8 +480,8 @@ std::string verilog_writer::may_slice_string(const structural_objectRef& cir)
             if(Owner->get_kind() == port_vector_o_K)
             {
                structural_type_descriptorRef Type_fp = cir->get_typeRef();
-               unsigned int size_fp = Type_fp->vector_size > 0 ? Type_fp->size * Type_fp->vector_size : Type_fp->size;
-               unsigned int lsb = GetPointer<port_o>(Owner)->get_lsb();
+               auto size_fp = Type_fp->vector_size > 0 ? Type_fp->size * Type_fp->vector_size : Type_fp->size;
+               auto lsb = GetPointer<port_o>(Owner)->get_lsb();
                return "[" +
                       boost::lexical_cast<std::string>(
                           (1 + boost::lexical_cast<int>(GetPointer<port_o>(cir)->get_id())) *
@@ -623,10 +623,10 @@ void verilog_writer::write_signal_declaration(const structural_objectRef& cir)
    {
       const structural_objectRef first_sig = GetPointer<signal_o>(cir)->get_signal(0);
       structural_type_descriptorRef Type_fs = first_sig->get_typeRef();
-      unsigned int n_sign = GetPointer<signal_o>(cir)->get_signals_size();
-      unsigned int size_fs = Type_fs->vector_size > 0 ? Type_fs->size * Type_fs->vector_size : Type_fs->size;
-      unsigned int lsb = GetPointer<signal_o>(cir)->get_lsb();
-      unsigned int msb = size_fs * n_sign + lsb;
+      auto n_sign = GetPointer<signal_o>(cir)->get_signals_size();
+      auto size_fs = Type_fs->vector_size > 0 ? Type_fs->size * Type_fs->vector_size : Type_fs->size;
+      auto lsb = GetPointer<signal_o>(cir)->get_lsb();
+      auto msb = size_fs * n_sign + lsb;
       indented_output_stream->Append("[" + boost::lexical_cast<std::string>(msb - 1) + ":" +
                                      boost::lexical_cast<std::string>(lsb) + "] ");
    }
@@ -773,10 +773,10 @@ void verilog_writer::write_vector_port_binding(const structural_objectRef& port,
       lsb = std::numeric_limits<unsigned int>::max();
       structural_objectRef slice;
       structural_objectRef null_object;
-      unsigned int n_ports = pv->get_ports_size();
+      auto n_ports = pv->get_ports_size();
       for(unsigned int j = 0; j < n_ports; ++j)
       {
-         unsigned int index = n_ports - j - 1;
+         auto index = n_ports - j - 1;
          structural_objectRef object_bounded = GetPointer<port_o>(pv->get_port(index))->find_bounded_object();
          if(!object_bounded)
          {
@@ -1188,7 +1188,7 @@ void verilog_writer::write_module_parametrization(const structural_objectRef& ci
                if(obj->get_kind() == port_vector_o_K)
                {
                   indented_output_stream->Append(",\n");
-                  unsigned int ports_size = GetPointer<port_o>(obj)->get_ports_size();
+                  auto ports_size = GetPointer<port_o>(obj)->get_ports_size();
                   indented_output_stream->Append("." + std::string(PORTSIZE_PREFIX) + name + "(" +
                                                  boost::lexical_cast<std::string>(ports_size) + ")");
                }
@@ -1250,7 +1250,7 @@ void verilog_writer::write_state_declaration(const structural_objectRef& cir,
    auto it_end = list_of_states.end();
    auto n_states = static_cast<unsigned int>(list_of_states.size());
    unsigned int count = 0;
-   unsigned int bitsnumber = language_writer::bitnumber(n_states - 1);
+   auto bitsnumber = language_writer::bitnumber(n_states - 1);
    /// adjust in case states are not consecutive
    unsigned max_value = 0;
    for(auto it = list_of_states.begin(); it != it_end; ++it)
@@ -1691,8 +1691,8 @@ void verilog_writer::write_transition_output_functions(
                   for(unsigned int ind = 0; ind < mod->get_in_port_size() && unique_case_condition; ind++)
                   {
                      port_name = HDL_manager::convert_to_identifier(this, mod->get_in_port(ind)->get_id());
-                     unsigned int port_size = mod->get_in_port(ind)->get_typeRef()->size;
-                     unsigned int vec_size = mod->get_in_port(ind)->get_typeRef()->vector_size;
+                     auto port_size = mod->get_in_port(ind)->get_typeRef()->size;
+                     auto vec_size = mod->get_in_port(ind)->get_typeRef()->vector_size;
                      if(port_name != reset_port && port_name != clock_port && port_name != start_port &&
                         port_name != STR(SELECTOR_REGISTER_FILE))
                      {
@@ -1823,8 +1823,8 @@ void verilog_writer::write_transition_output_functions(
                   for(unsigned int ind = 0; ind < mod->get_in_port_size(); ind++)
                   {
                      port_name = HDL_manager::convert_to_identifier(this, mod->get_in_port(ind)->get_id());
-                     unsigned int port_size = mod->get_in_port(ind)->get_typeRef()->size;
-                     unsigned int vec_size = mod->get_in_port(ind)->get_typeRef()->vector_size;
+                     auto port_size = mod->get_in_port(ind)->get_typeRef()->size;
+                     auto vec_size = mod->get_in_port(ind)->get_typeRef()->vector_size;
                      if(port_name != reset_port && port_name != clock_port && port_name != start_port &&
                         port_name != STR(SELECTOR_REGISTER_FILE))
                      {
@@ -2221,7 +2221,7 @@ void verilog_writer::write_module_parametrization_decl(const structural_objectRe
                if(obj->get_kind() == port_vector_o_K)
                {
                   indented_output_stream->Append(", ");
-                  unsigned int ports_size = GetPointer<port_o>(obj)->get_ports_size();
+                  auto ports_size = GetPointer<port_o>(obj)->get_ports_size();
                   if(ports_size == 0)
                   {
                      ports_size = 2;
