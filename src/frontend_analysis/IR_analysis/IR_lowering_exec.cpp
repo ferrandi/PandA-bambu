@@ -1395,7 +1395,7 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                      type = pt;
                   }
                   auto offset_value = tree_helper::Size(tree_helper::CGetType(ipe->op)) / 16;
-                  tree_nodeRef offset = TM->CreateUniqueIntegerCst(offset_value, type);
+                  tree_nodeRef offset = TM->CreateUniqueIntegerCst(static_cast<long long>(offset_value), type);
                   return tree_man->create_binary_operation(ipe->type, ssa_vd, offset, srcp_default, mem_ref_K);
                };
                if(code1 == array_ref_K)
@@ -1725,7 +1725,7 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                         /// check if there is a misaligned access
                         auto obj_size = tree_helper::Size(tree_helper::CGetType(ga->op1));
                         auto bram_size = std::max(8ull, obj_size / 2);
-                        if((((op1_val * 8)) % bram_size) != 0)
+                        if((((op1_val * 8)) % static_cast<long long>(bram_size)) != 0)
                         {
                            function_behavior->set_unaligned_accesses(true);
                         }
@@ -2669,8 +2669,8 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                               {
                                  auto type_index = tree_helper::get_type_index(TM, GET_INDEX_NODE(op0));
                                  tree_nodeRef op0_type = TM->GetTreeReindex(type_index);
-                                 tree_nodeRef right_shift_value =
-                                     TM->CreateUniqueIntegerCst(tree_helper::Size(op0) - 1, op0_type);
+                                 tree_nodeRef right_shift_value = TM->CreateUniqueIntegerCst(
+                                     static_cast<long long>(tree_helper::Size(op0) - 1), op0_type);
                                  tree_nodeRef rshift1 = tree_man->create_binary_operation(
                                      op0_type, op0, right_shift_value, srcp_default, rshift_expr_K);
                                  tree_nodeRef rshift1_ga =
@@ -2738,8 +2738,8 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                               {
                                  auto type_index = tree_helper::get_type_index(TM, GET_INDEX_NODE(op0));
                                  tree_nodeRef op0_type = TM->GetTreeReindex(type_index);
-                                 tree_nodeRef right_shift_value =
-                                     TM->CreateUniqueIntegerCst(tree_helper::Size(op0) - 1, op0_type);
+                                 tree_nodeRef right_shift_value = TM->CreateUniqueIntegerCst(
+                                     static_cast<long long>(tree_helper::Size(op0) - 1), op0_type);
                                  tree_nodeRef rshift1 = tree_man->create_binary_operation(
                                      op0_type, op0, right_shift_value, srcp_default, rshift_expr_K);
                                  tree_nodeRef rshift1_ga =
@@ -2920,7 +2920,7 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                               implicit_memset = type_node->get_kind() == array_type_K;
                            }
                         }
-                        if(!implicit_memset && ((((op1_val * 8)) % bram_size) != 0))
+                        if(!implicit_memset && ((((op1_val * 8)) % static_cast<long long>(bram_size)) != 0))
                         {
                            function_behavior->set_unaligned_accesses(true);
                         }

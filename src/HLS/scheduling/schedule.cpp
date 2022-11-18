@@ -342,7 +342,7 @@ void Schedule::UpdateTime(const unsigned int operation_index, bool update_cs)
    auto starting_time = 0.0;
 
    /// The starting control step
-   auto starting_cs = ControlStep(0);
+   ControlStep starting_cs = ControlStep(0);
    if(!update_cs)
    {
       starting_time = clock_period * from_strongtype_cast<double>(op_starting_cycle.at(operation_index));

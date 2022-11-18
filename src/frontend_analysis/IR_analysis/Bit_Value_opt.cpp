@@ -361,7 +361,8 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                      const auto srcp = ga->include_name + ":" + STR(ga->line_number) + ":" + STR(ga->column_number);
                      const auto& val_type = ssa->type;
                      const auto val_type_bw = tree_helper::Size(ssa->type);
-                     const auto shift_offset = TM->CreateUniqueIntegerCst(val_type_bw - bw_op0, val_type);
+                     const auto shift_offset =
+                         TM->CreateUniqueIntegerCst(static_cast<long long>(val_type_bw - bw_op0), val_type);
                      const auto shl_expr =
                          IRman->create_binary_operation(val_type, val, shift_offset, srcp, lshift_expr_K);
                      const auto shl =

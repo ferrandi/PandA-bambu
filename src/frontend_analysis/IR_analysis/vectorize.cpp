@@ -1815,9 +1815,9 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
             unsigned int bit_field_ref_index = TM->new_tree_node_id();
             const auto element_type = tree_helper::CGetType(gp->res);
             /// vector of Boolean types are mapped on vector of unsigned integer
-            const unsigned int bit_size =
+            const auto bit_size =
                 GET_CONST_NODE(element_type)->get_kind() != boolean_type_K ? tree_helper::Size(element_type) : 32;
-            const auto offset = TM->CreateUniqueIntegerCst(((static_cast<long long int>(scalar) - 1) * bit_size),
+            const auto offset = TM->CreateUniqueIntegerCst(static_cast<long long int>((scalar - 1) * bit_size),
                                                            tree_man->GetUnsignedIntegerType());
             const auto size =
                 TM->CreateUniqueIntegerCst(static_cast<long long int>(bit_size), tree_man->GetUnsignedIntegerType());
@@ -1933,9 +1933,9 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
             unsigned int bit_field_ref_index = TM->new_tree_node_id();
             const auto element_type = tree_helper::CGetType(ga->op0);
             /// vector of Boolean types are mapped on vector of integer
-            const unsigned int bit_size =
+            const auto bit_size =
                 GET_CONST_NODE(element_type)->get_kind() != boolean_type_K ? tree_helper::Size(element_type) : 32;
-            const auto offset = TM->CreateUniqueIntegerCst(((static_cast<long long int>(scalar) - 1) * bit_size),
+            const auto offset = TM->CreateUniqueIntegerCst(static_cast<long long int>((scalar - 1) * bit_size),
                                                            tree_man->GetUnsignedIntegerType());
             const auto size =
                 TM->CreateUniqueIntegerCst(static_cast<long long int>(bit_size), tree_man->GetUnsignedIntegerType());
@@ -2469,7 +2469,7 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
                   unsigned int bit_field_ref_index = TM->new_tree_node_id();
                   const auto element_type = tree_helper::CGetType(ga->op0);
                   /// vector of Boolean types are mapped on vector of integer
-                  const unsigned int bit_size =
+                  const auto bit_size =
                       GET_CONST_NODE(element_type)->get_kind() != boolean_type_K ? tree_helper::Size(element_type) : 32;
                   const auto offset = TM->CreateUniqueIntegerCst(static_cast<long long int>((scalar - 1) * bit_size),
                                                                  tree_man->GetUnsignedIntegerType());
@@ -2587,9 +2587,9 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
                                                            STR(tree_man->GetUnsignedIntegerType()->index);
                      if(type->size)
                      {
-                        const unsigned int element_size = type->get_kind() != boolean_type_K ?
-                                                              tree_helper::Size(tn) :
-                                                              tree_helper::Size(tree_man->GetUnsignedIntegerType());
+                        const auto element_size = type->get_kind() != boolean_type_K ?
+                                                      tree_helper::Size(tn) :
+                                                      tree_helper::Size(tree_man->GetUnsignedIntegerType());
                         const auto bit_size = element_size * static_cast<unsigned int>(parallel_degree);
                         const auto size = TM->CreateUniqueIntegerCst(static_cast<long long int>(bit_size),
                                                                      tree_man->GetUnsignedIntegerType());
@@ -3089,7 +3089,7 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
                      const auto bit_size = GET_CONST_NODE(element_type)->get_kind() != boolean_type_K ?
                                                tree_helper::Size(element_type) :
                                                32U;
-                     const auto offset = TM->CreateUniqueIntegerCst((static_cast<long long int>(scalar) - 1) * bit_size,
+                     const auto offset = TM->CreateUniqueIntegerCst(static_cast<long long int>((scalar - 1) * bit_size),
                                                                     tree_man->GetUnsignedIntegerType());
                      const auto size = TM->CreateUniqueIntegerCst(static_cast<long long int>(bit_size),
                                                                   tree_man->GetUnsignedIntegerType());

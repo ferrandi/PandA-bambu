@@ -336,8 +336,7 @@ void CreateAddressTranslation::ComputeAddress(const AsnTypeRef asn_type, const u
                }
             }();
             const auto field_size = tree_helper::Size(tree_fields[tree_field_index]) / 8;
-            bambu_address = bambu_address +
-                            static_cast<unsigned int>(field_size - (next_field_beginning - current_field_beginning));
+            bambu_address = bambu_address + (field_size - (next_field_beginning - current_field_beginning));
             tree_field_index++;
          }
          break;
@@ -383,8 +382,7 @@ void CreateAddressTranslation::ComputeAddress(const AsnTypeRef asn_type, const u
                }
             }();
             const auto field_size = tree_helper::Size(tree_fields[tree_field_index]) / 8;
-            bambu_address = bambu_address +
-                            static_cast<unsigned int>(field_size - (next_field_beginning - current_field_beginning));
+            bambu_address = bambu_address + (field_size - (next_field_beginning - current_field_beginning));
             tree_field_index++;
          }
          break;

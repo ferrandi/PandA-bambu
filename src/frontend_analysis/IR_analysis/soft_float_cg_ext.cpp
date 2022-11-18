@@ -1957,7 +1957,7 @@ bool soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef& current_statement
                         THROW_ASSERT(called_function, "The library miss this function " + fu_name);
                         std::vector<tree_nodeRef> args = {
                             ue->op,
-                            TreeM->CreateUniqueIntegerCst(static_cast<unsigned long long>(inFF->exception_mode),
+                            TreeM->CreateUniqueIntegerCst(static_cast<long long>(inFF->exception_mode),
                                                           tree_man->GetSignedIntegerType()),
                             TreeM->CreateUniqueIntegerCst(inFF->has_subnorm, tree_man->GetBooleanType())};
                         TreeM->ReplaceTreeNode(current_statement, current_tree_node,

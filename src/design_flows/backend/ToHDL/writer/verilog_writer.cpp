@@ -768,7 +768,7 @@ void verilog_writer::write_vector_port_binding(const structural_objectRef& port,
       std::string port_binding;
       auto* pv = GetPointer<port_o>(port);
       bool local_first_port_analyzed = false;
-      unsigned int msb, lsb;
+      unsigned long long msb, lsb;
       msb = std::numeric_limits<unsigned int>::max();
       lsb = std::numeric_limits<unsigned int>::max();
       structural_objectRef slice;
@@ -1663,7 +1663,7 @@ void verilog_writer::write_transition_output_functions(
          /// check unique-case condition
          bool unique_case_condition = true;
          std::string guard_casez_port;
-         unsigned n_bits_guard_casez_port = 0;
+         auto n_bits_guard_casez_port = 0ULL;
          if(!unique_transition)
          {
             for(unsigned int i = 0; i < state_transitions.size(); i++)
@@ -1863,7 +1863,7 @@ void verilog_writer::write_transition_output_functions(
                               res_or_conditions += port_name;
                               if((*in_or_conditions_tokens_it)[0] == '&')
                               {
-                                 unsigned n_bits = vec_size == 0 ? port_size : vec_size;
+                                 auto n_bits = vec_size == 0 ? port_size : vec_size;
                                  auto pos = boost::lexical_cast<unsigned int>((*in_or_conditions_tokens_it).substr(1));
                                  if(unique_case_condition)
                                  {

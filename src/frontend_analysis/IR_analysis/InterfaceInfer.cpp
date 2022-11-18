@@ -475,7 +475,7 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                         return tree_helper::Size(ptd_type);
                      }();
                      THROW_ASSERT(input_bw, "unexpected condition");
-                     unsigned long long n_resources;
+                     unsigned int n_resources;
                      unsigned long long alignment;
                      ComputeResourcesAlignment(n_resources, alignment, input_bw, is_acType, is_signed, is_fixed);
 
@@ -879,7 +879,8 @@ void InterfaceInfer::create_Read_function(tree_nodeRef origStmt, const std::stri
    {
       const auto sel_value = TM->CreateUniqueIntegerCst(0, boolean_type);
       args.push_back(sel_value);
-      const auto size_value = TM->CreateUniqueIntegerCst(tree_helper::Size(readType), bit_size_type);
+      const auto size_value =
+          TM->CreateUniqueIntegerCst(static_cast<long long>(tree_helper::Size(readType)), bit_size_type);
       args.push_back(size_value);
       tree_nodeRef data_value;
       if(GET_NODE(readType)->get_kind() == integer_type_K || GET_NODE(readType)->get_kind() == enumeral_type_K ||
@@ -940,7 +941,8 @@ void InterfaceInfer::create_Write_function(const std::string& arg_name, tree_nod
    tree_helper::get_mangled_fname(fd, fname);
    tree_nodeRef boolean_type;
    const auto bit_size_type = tree_man->GetUnsignedIntegerType();
-   const auto size_value = TM->CreateUniqueIntegerCst(tree_helper::Size(writeType), bit_size_type);
+   const auto size_value =
+       TM->CreateUniqueIntegerCst(static_cast<long long>(tree_helper::Size(writeType)), bit_size_type);
 
    /// create the function_decl
    std::vector<tree_nodeRef> argsT;
@@ -996,8 +998,8 @@ void InterfaceInfer::create_Write_function(const std::string& arg_name, tree_nod
 
 void InterfaceInfer::create_resource_Read_simple(const std::set<std::string>& operations, const std::string& arg_name,
                                                  const std::string& interfaceType, unsigned long long input_bw,
-                                                 bool IO_port, unsigned long long n_resources,
-                                                 unsigned long long rwBWsize, unsigned int top_id) const
+                                                 bool IO_port, unsigned int n_resources, unsigned long long rwBWsize,
+                                                 unsigned int top_id) const
 {
    const std::string ResourceName = ENCODE_FDNAME(arg_name, "_Read_", interfaceType);
    auto HLSMgr = GetPointer<HLS_manager>(AppM);
@@ -1155,8 +1157,8 @@ void InterfaceInfer::create_resource_Read_simple(const std::set<std::string>& op
 
 void InterfaceInfer::create_resource_Write_simple(const std::set<std::string>& operations, const std::string& arg_name,
                                                   const std::string& interfaceType, unsigned long long input_bw,
-                                                  bool IO_port, bool isDiffSize, unsigned long long n_resources,
-                                                  bool is_real, unsigned long long rwBWsize, unsigned int top_id) const
+                                                  bool IO_port, bool isDiffSize, unsigned int n_resources, bool is_real,
+                                                  unsigned long long rwBWsize, unsigned int top_id) const
 {
    const std::string ResourceName = ENCODE_FDNAME(arg_name, "_Write_", interfaceType);
    auto HLSMgr = GetPointer<HLS_manager>(AppM);
@@ -1508,7 +1510,7 @@ void InterfaceInfer::create_resource_array(const std::set<std::string>& operatio
 void InterfaceInfer::create_resource_m_axi(const std::set<std::string>& operationsR,
                                            const std::set<std::string>& operationsW, const std::string& arg_name,
                                            const std::string& bundle_name, const std::string& interfaceType,
-                                           unsigned long long input_bw, unsigned long long n_resources, m_axi_type mat,
+                                           unsigned long long input_bw, unsigned int n_resources, m_axi_type mat,
                                            unsigned long long rwBWsize, unsigned int top_id) const
 {
    const auto ResourceName = ENCODE_FDNAME(bundle_name, "", "");
@@ -1813,7 +1815,7 @@ void InterfaceInfer::create_resource_m_axi(const std::set<std::string>& operatio
 void InterfaceInfer::create_resource(const std::set<std::string>& operationsR, const std::set<std::string>& operationsW,
                                      const std::string& arg_name, const std::string& interfaceType,
                                      unsigned long long input_bw, bool isDiffSize, const std::string& fname,
-                                     unsigned long long n_resources, unsigned long long alignment, bool isReal,
+                                     unsigned int n_resources, unsigned long long alignment, bool isReal,
                                      unsigned long long rwBWsize, unsigned int top_id) const
 {
    if(interfaceType == "none" || interfaceType == "none_registered" || interfaceType == "acknowledge" ||
@@ -1903,7 +1905,7 @@ void InterfaceInfer::create_resource(const std::set<std::string>& operationsR, c
    }
 }
 
-void InterfaceInfer::ComputeResourcesAlignment(unsigned long long& n_resources, unsigned long long& alignment,
+void InterfaceInfer::ComputeResourcesAlignment(unsigned int& n_resources, unsigned long long& alignment,
                                                unsigned long long input_bw, bool is_acType, bool is_signed,
                                                bool is_fixed)
 {
@@ -1914,7 +1916,7 @@ void InterfaceInfer::ComputeResourcesAlignment(unsigned long long& n_resources, 
    }
    else if(input_bw > 128)
    {
-      n_resources = input_bw / 32 + (input_bw % 32 ? 1 : 0);
+      n_resources = static_cast<unsigned>(input_bw / 32 + (input_bw % 32 ? 1 : 0));
       if(!is_signed && input_bw % 32 == 0 && !is_fixed)
       {
          ++n_resources;

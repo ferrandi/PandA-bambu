@@ -1463,7 +1463,7 @@ tree_nodeRef tree_manipulation::GetSignedIntegerType() const
 }
 
 /// Create a pointer type
-tree_nodeRef tree_manipulation::GetPointerType(const tree_nodeConstRef& ptd, unsigned int algn) const
+tree_nodeRef tree_manipulation::GetPointerType(const tree_nodeConstRef& ptd, unsigned long long algn) const
 {
    ///@15     pointer_type     size: @12      algn: 32       ptd : @9     @9 type
    /// of the pointer
@@ -1516,7 +1516,7 @@ tree_nodeRef tree_manipulation::GetCustomIntegerType(unsigned long long prec, bo
    if(!integer_type_nid)
    {
       integer_type_nid = TreeM->new_tree_node_id();
-      const auto size_node = TreeM->CreateUniqueIntegerCst(prec, GetBitsizeType());
+      const auto size_node = TreeM->CreateUniqueIntegerCst(static_cast<long long>(prec), GetBitsizeType());
       const auto min_node_nid = TreeM->new_tree_node_id();
       const auto max_node_nid = TreeM->new_tree_node_id();
 
@@ -2781,10 +2781,10 @@ tree_nodeRef tree_manipulation::CreateGimpleAssignAddrExpr(const tree_nodeConstR
    return assign_node;
 }
 
-tree_nodeRef tree_manipulation::CreateVectorBooleanType(const unsigned int number_of_elements) const
+tree_nodeRef tree_manipulation::CreateVectorBooleanType(const unsigned long long number_of_elements) const
 {
    const auto boolean_type = GetBooleanType();
-   const auto size = TreeM->CreateUniqueIntegerCst(number_of_elements, GetSizeType());
+   const auto size = TreeM->CreateUniqueIntegerCst(static_cast<long long>(number_of_elements), GetSizeType());
 
    std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> IR_schema;
    IR_schema[TOK(TOK_ELTS)] = STR(boolean_type->index);

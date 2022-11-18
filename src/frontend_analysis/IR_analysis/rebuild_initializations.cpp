@@ -1017,7 +1017,7 @@ bool rebuild_initialization2::look_for_ROMs()
                                            "unexpected condition");
                               inits[vd_node]
                                    [tree_helper::get_integer_cst_value(GetPointerS<const integer_cst>(ppe_op1)) /
-                                    (var_writing_elts_size_relation[vd_index] / 8)] = ga->op1;
+                                    static_cast<long long>(var_writing_elts_size_relation[vd_index] / 8)] = ga->op1;
                            }
                            else
                            {

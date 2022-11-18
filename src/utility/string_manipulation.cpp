@@ -396,7 +396,7 @@ std::string convert_fp_to_string(std::string num, unsigned long long precision)
    return res;
 }
 
-unsigned long long convert_fp_to_bits(std::string num, unsigned int precision)
+unsigned long long convert_fp_to_bits(std::string num, unsigned long long precision)
 {
    union
    {

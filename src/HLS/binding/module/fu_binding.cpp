@@ -1148,10 +1148,12 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
          if(HLSMgr->Rfuns->has_proxied_shared_functions(f_id))
          {
             auto proxied_shared_functions = HLSMgr->Rfuns->get_proxied_shared_functions(f_id);
+#ifndef NDEBUG
             for(const auto& name : proxied_shared_functions)
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---  proxy shared function: " + name);
             }
+#endif
             kill_proxy_function_units(wrapped_units, FU, fun_call_sites_rel, reverse_function_units);
          }
 

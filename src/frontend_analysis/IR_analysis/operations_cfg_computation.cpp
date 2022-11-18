@@ -770,7 +770,7 @@ void operations_cfg_computation::build_operation_recursive(const tree_managerRef
 
                // Creating node of call
                ogc->AddOperation(TM, actual_name, fun_name, bb_index, ce->index);
-               auto type_external = TYPE_EXTERNAL;
+               unsigned int type_external = TYPE_EXTERNAL;
                if(fd->writing_memory || fd->reading_memory)
                {
                   type_external = type_external | TYPE_RW;
