@@ -96,7 +96,7 @@ class Factory
    class Key
    {
       Key() = default;
-      ;
+
       template <class T>
       friend struct Registrar;
    };

@@ -1246,12 +1246,12 @@ void port_o::set_port_interface(port_interface _pi)
    pi = _pi;
 }
 
-unsigned long long port_o::get_port_alignment() const
+unsigned int port_o::get_port_alignment() const
 {
    return aligment;
 }
 
-void port_o::set_port_alignment(unsigned long long algn)
+void port_o::set_port_alignment(unsigned int algn)
 {
    aligment = algn;
 }

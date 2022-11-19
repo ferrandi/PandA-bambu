@@ -1145,7 +1145,7 @@ void mux_connection_binding::determine_connection(const vertex& op, const HLS_ma
             auto base_index = GET_INDEX_NODE(ipe->op);
             auto offset = tree_helper::Size(tree_helper::CGetType(ipe->op)) / 16;
 #if USE_ALIGNMENT_INFO
-            alignment = (8 * offset) & (alignment - 1);
+            alignment = static_cast<unsigned int>(8 * offset) & (alignment - 1);
 #endif
             generic_objRef address_port = generic_objRef(new adder_conn_obj("adder_conn_obj_" + STR(id++)));
             auto local_precision = address_precision(precision, op, data, TreeM);

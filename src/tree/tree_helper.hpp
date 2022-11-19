@@ -1063,15 +1063,14 @@ class tree_helper
     */
    static
        /// FIXME: to be remove after substitution with GetArrayTotalSize
-       unsigned int
-       get_array_num_elements(const tree_managerConstRef& TM, const unsigned int index);
+       unsigned long long get_array_num_elements(const tree_managerConstRef& TM, const unsigned int index);
 
    /**
     * Return the total number of elements of the the base type in the array
     * @param node is the array object
     * @return the total number of elements of the the base type in the array
     */
-   static unsigned int GetArrayTotalSize(const tree_nodeConstRef& node);
+   static unsigned long long GetArrayTotalSize(const tree_nodeConstRef& node);
 
    /**
     * Return the indexes of the array_ref

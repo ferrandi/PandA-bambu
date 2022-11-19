@@ -1348,7 +1348,7 @@ void HLSCWriter::WriteSimulatorInitMemory(const unsigned int function_id)
 
                            data_bitsize = tree_helper::GetArrayElementSize(ptd_base_type_node);
 
-                           unsigned int num_elements = 1;
+                           auto num_elements = 1ull;
                            if(splitted.size() == 1)
                            {
                               num_elements = tree_helper::GetArrayTotalSize(ptd_base_type_node);

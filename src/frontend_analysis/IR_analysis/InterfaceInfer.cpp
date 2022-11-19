@@ -476,7 +476,7 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                      }();
                      THROW_ASSERT(input_bw, "unexpected condition");
                      unsigned int n_resources;
-                     unsigned long long alignment;
+                     unsigned int alignment;
                      ComputeResourcesAlignment(n_resources, alignment, input_bw, is_acType, is_signed, is_fixed);
 
                      std::list<tree_nodeRef> writeStmt;
@@ -1337,7 +1337,7 @@ void InterfaceInfer::create_resource_Write_simple(const std::set<std::string>& o
 void InterfaceInfer::create_resource_array(const std::set<std::string>& operationsR,
                                            const std::set<std::string>& operationsW, const std::string& bundle_name,
                                            const std::string& interfaceType, unsigned long long input_bw,
-                                           unsigned int arraySize, unsigned n_resources, unsigned long long alignment,
+                                           unsigned int arraySize, unsigned n_resources, unsigned int alignment,
                                            bool is_real, unsigned long long rwBWsize, unsigned int top_id) const
 {
    const auto n_channels = parameters->getOption<unsigned int>(OPT_channels_number);
@@ -1366,7 +1366,7 @@ void InterfaceInfer::create_resource_array(const std::set<std::string>& operatio
       GetPointerS<module>(interface_top)->set_license(GENERATED_LICENSE);
       GetPointerS<module>(interface_top)->set_multi_unit_multiplicity(NResources);
 
-      const auto nbitAddres = 32ull - static_cast<unsigned>(__builtin_clzll(arraySize * alignment - 1));
+      const auto nbitAddres = 32u - static_cast<unsigned>(__builtin_clz(arraySize * alignment - 1));
       const auto address_bitsize = HLSMgr->get_address_bitsize();
       const auto nbit = 32ull - static_cast<unsigned>(__builtin_clzll(arraySize - 1));
       const auto nbitDataSize = 32ull - static_cast<unsigned>(__builtin_clzll(rwBWsize));
@@ -1815,7 +1815,7 @@ void InterfaceInfer::create_resource_m_axi(const std::set<std::string>& operatio
 void InterfaceInfer::create_resource(const std::set<std::string>& operationsR, const std::set<std::string>& operationsW,
                                      const std::string& arg_name, const std::string& interfaceType,
                                      unsigned long long input_bw, bool isDiffSize, const std::string& fname,
-                                     unsigned int n_resources, unsigned long long alignment, bool isReal,
+                                     unsigned int n_resources, unsigned int alignment, bool isReal,
                                      unsigned long long rwBWsize, unsigned int top_id) const
 {
    if(interfaceType == "none" || interfaceType == "none_registered" || interfaceType == "acknowledge" ||
@@ -1905,7 +1905,7 @@ void InterfaceInfer::create_resource(const std::set<std::string>& operationsR, c
    }
 }
 
-void InterfaceInfer::ComputeResourcesAlignment(unsigned int& n_resources, unsigned long long& alignment,
+void InterfaceInfer::ComputeResourcesAlignment(unsigned int& n_resources, unsigned int& alignment,
                                                unsigned long long input_bw, bool is_acType, bool is_signed,
                                                bool is_fixed)
 {
@@ -1946,7 +1946,7 @@ void InterfaceInfer::ComputeResourcesAlignment(unsigned int& n_resources, unsign
    }
    else
    {
-      alignment = (input_bw / 32) + 4 * (input_bw % 32 ? 1 : 0);
+      alignment = static_cast<unsigned int>((input_bw / 32) + 4 * (input_bw % 32 ? 1 : 0));
       if(!is_signed && input_bw % 32 == 0 && !is_fixed)
       {
          alignment += 4;

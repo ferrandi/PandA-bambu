@@ -392,8 +392,8 @@ void reg_binding::add_to_SM(structural_objectRef clock_port, structural_objectRe
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug, "reg_binding::add_registers - End");
    if(HLS->output_level >= OUTPUT_LEVEL_MINIMUM)
    {
-      unsigned int number_ff = 0;
-      for(unsigned int r = 0; r < get_used_regs(); r++)
+      auto number_ff = 0ull;
+      for(auto r = 0U; r < get_used_regs(); r++)
       {
          number_ff += get_bitsize(r);
       }

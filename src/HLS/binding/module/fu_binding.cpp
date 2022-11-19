@@ -2713,7 +2713,7 @@ void fu_binding::fill_array_ref_memory(std::ostream& init_file_a, std::ostream& 
          }
          if(counter % (nbyte_on_memory * 8) != 0)
          {
-            for(unsigned int l = counter % (nbyte_on_memory * 8); l < (nbyte_on_memory * 8); ++l)
+            for(auto l = counter % (nbyte_on_memory * 8); l < (nbyte_on_memory * 8); ++l)
             {
                if(is_even || !is_memory_splitted)
                {

@@ -105,7 +105,7 @@ class InterfaceInfer : public ApplicationFrontendFlowStep
    void create_resource_array(const std::set<std::string>& operationsR, const std::set<std::string>& operationsW,
                               const std::string& bundle_name, const std::string& interfaceType,
                               unsigned long long input_bw, unsigned int arraySize, unsigned n_resources,
-                              unsigned long long alignment, bool is_real, unsigned long long rwBWsize,
+                              unsigned int alignment, bool is_real, unsigned long long rwBWsize,
                               unsigned int top_id) const;
 
    void create_resource_m_axi(const std::set<std::string>& operationsR, const std::set<std::string>& operationsW,
@@ -115,11 +115,10 @@ class InterfaceInfer : public ApplicationFrontendFlowStep
 
    void create_resource(const std::set<std::string>& operationsR, const std::set<std::string>& operationsW,
                         const std::string& arg_name, const std::string& interfaceType, unsigned long long input_bw,
-                        bool isDiffSize, const std::string& fname, unsigned int n_resources,
-                        unsigned long long alignment, bool isReal, unsigned long long rwBWsize,
-                        unsigned int top_id) const;
+                        bool isDiffSize, const std::string& fname, unsigned int n_resources, unsigned int alignment,
+                        bool isReal, unsigned long long rwBWsize, unsigned int top_id) const;
 
-   void ComputeResourcesAlignment(unsigned int& n_resources, unsigned long long& alignment, unsigned long long input_bw,
+   void ComputeResourcesAlignment(unsigned int& n_resources, unsigned int& alignment, unsigned long long input_bw,
                                   bool is_acType, bool is_signed, bool is_fixed);
 
    void FixReadWriteCall(const gimple_assign* ga, gimple_node* newGN, const tree_manipulationRef tree_man,

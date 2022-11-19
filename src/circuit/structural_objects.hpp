@@ -793,12 +793,12 @@ struct port_o : public structural_object
    /**
     * Return the port interface alignment.
     */
-   unsigned long long get_port_alignment() const;
+   unsigned int get_port_alignment() const;
 
    /**
     * Set the port interface alignment.
     */
-   void set_port_alignment(unsigned long long algn);
+   void set_port_alignment(unsigned int algn);
 
    /**
     * Return the connected signal, if any. Null pointer otherwise.
@@ -1131,7 +1131,7 @@ struct port_o : public structural_object
    /// port interface type of a port
    port_interface pi;
 
-   unsigned long long aligment;
+   unsigned int aligment;
 
    /// when true the port must be specialized at runtime depending on the number of input
    bool is_var_args;

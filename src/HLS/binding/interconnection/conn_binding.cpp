@@ -990,7 +990,7 @@ void conn_binding::print() const
    }
 }
 
-unsigned int conn_binding::determine_bit_level_mux() const
+unsigned long long conn_binding::determine_bit_level_mux() const
 {
    CustomOrderedSet<generic_objRef> mux;
    for(const auto& it : conn_implementation)
@@ -1006,7 +1006,7 @@ unsigned int conn_binding::determine_bit_level_mux() const
          mux.insert(v.first);
       }
    }
-   unsigned int bit_mux = 0;
+   auto bit_mux = 0ull;
    for(const auto& m : mux)
    {
       bit_mux += GetPointer<mux_obj>(m)->get_bitsize();

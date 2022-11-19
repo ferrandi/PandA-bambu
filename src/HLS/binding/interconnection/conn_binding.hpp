@@ -317,7 +317,7 @@ class conn_binding
    /**
     * Returns the number of bit-level multiplexers
     */
-   unsigned int determine_bit_level_mux() const;
+   unsigned long long determine_bit_level_mux() const;
 
    const std::map<unsigned int, Selectors>& GetSelectors() const
    {

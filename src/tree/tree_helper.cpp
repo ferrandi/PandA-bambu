@@ -5245,15 +5245,15 @@ std::vector<unsigned long long> tree_helper::GetArrayDimensions(const tree_nodeC
    return dims;
 }
 
-unsigned int tree_helper::get_array_num_elements(const tree_managerConstRef& TM, const unsigned int index)
+unsigned long long tree_helper::get_array_num_elements(const tree_managerConstRef& TM, const unsigned int index)
 {
    const auto node = TM->CGetTreeReindex(index);
    return GetArrayTotalSize(node);
 }
 
-unsigned int tree_helper::GetArrayTotalSize(const tree_nodeConstRef& node)
+unsigned long long tree_helper::GetArrayTotalSize(const tree_nodeConstRef& node)
 {
-   unsigned int num_elements = 1u;
+   auto num_elements = 1ull;
    for(const auto& i : GetArrayDimensions(node))
    {
       num_elements *= i;

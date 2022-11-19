@@ -322,17 +322,18 @@ void CreateAddressTranslation::ComputeAddress(const AsnTypeRef asn_type, const u
             const auto field_bpos = tree_helper::get_integer_cst_value(GetPointer<integer_cst>(
                 GET_NODE(GetPointer<const field_decl>(GET_NODE(tree_fields[tree_field_index]))->bpos)));
             THROW_ASSERT(field_bpos % 8 == 0, "Bitfield not supported");
-            const auto current_field_beginning = field_bpos / 8;
-            const auto next_field_beginning = [&]() -> long long int {
+            const auto current_field_beginning = static_cast<unsigned long long>(field_bpos / 8);
+            const auto next_field_beginning = [&]() -> unsigned long long int {
                if(tree_field_index + 1 > tree_fields.size())
                {
                   return tree_helper::Size(TreeM->get_tree_node_const(tree_parameter_type)) / 8;
                }
                else
                {
-                  return tree_helper::get_integer_cst_value(GetPointer<const integer_cst>(GET_NODE(
-                             GetPointer<const field_decl>(GET_NODE(tree_fields[tree_field_index + 1]))->bpos))) /
-                         8;
+                  return static_cast<unsigned long long>(
+                      tree_helper::get_integer_cst_value(GetPointer<const integer_cst>(
+                          GET_NODE(GetPointer<const field_decl>(GET_NODE(tree_fields[tree_field_index + 1]))->bpos))) /
+                      8);
                }
             }();
             const auto field_size = tree_helper::Size(tree_fields[tree_field_index]) / 8;
@@ -368,17 +369,18 @@ void CreateAddressTranslation::ComputeAddress(const AsnTypeRef asn_type, const u
             const auto field_bpos = tree_helper::get_integer_cst_value(GetPointer<integer_cst>(
                 GET_NODE(GetPointer<const field_decl>(GET_NODE(tree_fields[tree_field_index]))->bpos)));
             THROW_ASSERT(field_bpos % 8 == 0, "Bitfield not supported");
-            const auto current_field_beginning = field_bpos / 8;
-            const auto next_field_beginning = [&]() -> long long int {
+            const auto current_field_beginning = static_cast<unsigned long long>(field_bpos / 8);
+            const auto next_field_beginning = [&]() -> unsigned long int {
                if(tree_field_index + 1 > tree_fields.size())
                {
                   return tree_helper::Size(TreeM->get_tree_node_const(tree_parameter_type)) / 8;
                }
                else
                {
-                  return tree_helper::get_integer_cst_value(GetPointer<const integer_cst>(GET_NODE(
-                             GetPointer<const field_decl>(GET_NODE(tree_fields[tree_field_index + 1]))->bpos))) /
-                         8;
+                  return static_cast<unsigned long long>(
+                      tree_helper::get_integer_cst_value(GetPointer<const integer_cst>(
+                          GET_NODE(GetPointer<const field_decl>(GET_NODE(tree_fields[tree_field_index + 1]))->bpos))) /
+                      8);
                }
             }();
             const auto field_size = tree_helper::Size(tree_fields[tree_field_index]) / 8;
