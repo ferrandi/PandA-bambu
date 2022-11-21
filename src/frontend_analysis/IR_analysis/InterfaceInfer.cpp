@@ -1198,7 +1198,7 @@ void InterfaceInfer::create_resource_Write_simple(const std::set<std::string>& o
       {
          dataType->type = structural_type_descriptor::REAL;
       }
-      auto nbitDataSize = 32ull - static_cast<unsigned>(__builtin_clzll(rwBWsize));
+      auto nbitDataSize = 64u - static_cast<unsigned>(__builtin_clzll(rwBWsize));
       structural_type_descriptorRef rwsize =
           structural_type_descriptorRef(new structural_type_descriptor("bool", nbitDataSize));
       structural_type_descriptorRef rwtype =
@@ -1366,10 +1366,10 @@ void InterfaceInfer::create_resource_array(const std::set<std::string>& operatio
       GetPointerS<module>(interface_top)->set_license(GENERATED_LICENSE);
       GetPointerS<module>(interface_top)->set_multi_unit_multiplicity(NResources);
 
-      const auto nbitAddres = 32u - static_cast<unsigned>(__builtin_clz(arraySize * alignment - 1));
+      const auto nbitAddres = 64u - static_cast<unsigned>(__builtin_clzll(arraySize * alignment - 1));
       const auto address_bitsize = HLSMgr->get_address_bitsize();
-      const auto nbit = 32ull - static_cast<unsigned>(__builtin_clzll(arraySize - 1));
-      const auto nbitDataSize = 32ull - static_cast<unsigned>(__builtin_clzll(rwBWsize));
+      const auto nbit = 64u - static_cast<unsigned>(__builtin_clzll(arraySize - 1));
+      const auto nbitDataSize = 64u - static_cast<unsigned>(__builtin_clzll(rwBWsize));
       const structural_type_descriptorRef addrType(new structural_type_descriptor("bool", address_bitsize));
       const structural_type_descriptorRef address_interface_type(new structural_type_descriptor("bool", nbit));
       const structural_type_descriptorRef dataType(new structural_type_descriptor("bool", input_bw));
@@ -1535,7 +1535,7 @@ void InterfaceInfer::create_resource_m_axi(const std::set<std::string>& operatio
       GetPointerS<module>(interface_top)->set_multi_unit_multiplicity(n_resources);
 
       const auto address_bitsize = HLSMgr->get_address_bitsize();
-      const auto nbitDataSize = 32ull - static_cast<unsigned>(__builtin_clzll(rwBWsize));
+      const auto nbitDataSize = 64u - static_cast<unsigned>(__builtin_clzll(rwBWsize));
       const structural_type_descriptorRef address_interface_type(
           new structural_type_descriptor("bool", address_bitsize));
       const structural_type_descriptorRef Intype(new structural_type_descriptor("bool", input_bw));
