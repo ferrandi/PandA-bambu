@@ -37,6 +37,7 @@
  *
  *
  * @author Michele Fiorito <michele.fiorito@polimi.it>
+ * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  * $Revision$
  * $Date$
  * Last modified by $Author$
