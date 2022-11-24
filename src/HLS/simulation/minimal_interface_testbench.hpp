@@ -55,7 +55,7 @@ class MinimalInterfaceTestbench : public TestbenchGenerationBaseStep
    std::string memory_aggregate_slices(unsigned int i, unsigned long long bitsize,
                                        unsigned long long Mout_addr_ram_bitsize) const;
 
-   void cond_load(long long int Mout_addr_ram_bitsize, std::string post_slice1, const std::string& post_slice2,
+   void cond_load(unsigned long long Mout_addr_ram_bitsize, std::string post_slice1, const std::string& post_slice2,
                   const std::string& res_string, unsigned int i, const std::string& in_else,
                   const std::string& mem_aggregate) const;
 

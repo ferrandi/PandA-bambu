@@ -163,13 +163,13 @@ class memory
    bool implicit_memcpy;
 
    /// internal address alignment
-   unsigned int internal_base_address_alignment;
+   unsigned long long internal_base_address_alignment;
 
    /// external address alignment
-   unsigned int external_base_address_alignment;
+   unsigned long long external_base_address_alignment;
 
    /// parameter alignment
-   const unsigned int parameter_alignment;
+   const unsigned long long parameter_alignment;
 
    /// number of LOAD/STORE per var
    std::map<unsigned int, unsigned int> n_mem_operations_per_var;
@@ -189,14 +189,14 @@ class memory
    /// true when packed vars are used
    bool packed_vars;
 
-   const unsigned long long& bus_addr_bitsize;
+   const unsigned int& bus_addr_bitsize;
 
    bool enable_hls_bit_value;
 
    /**
     * Alignment utility function
     */
-   void align(unsigned long long int& address, unsigned int alignment)
+   void align(unsigned long long int& address, unsigned long long alignment)
    {
       if(address % alignment != 0)
       {
@@ -210,7 +210,7 @@ class memory
     */
    memory(const tree_managerRef TreeM, unsigned long long int off_base_address, unsigned int max_bram,
           bool null_pointer_check, bool initial_internal_address_p, unsigned long long initial_internal_address,
-          const unsigned long long& _bus_addr_bitsize);
+          const unsigned int& _bus_addr_bitsize);
 
    /**
     * Destructor
@@ -220,7 +220,7 @@ class memory
    static memoryRef create_memory(const ParameterConstRef _parameters, const tree_managerRef _TreeM,
                                   unsigned long long int _off_base_address, unsigned int max_bram,
                                   bool _null_pointer_check, bool initial_internal_address_p,
-                                  unsigned int initial_internal_address, const unsigned long long& _address_bitsize);
+                                  unsigned int initial_internal_address, const unsigned int& _address_bitsize);
 
    /**
     * Return variables allocated out of the top module
@@ -256,7 +256,7 @@ class memory
     * @param var is the variable that has to be reserved
     * @param alignment is the address alignment
     */
-   void compute_next_base_address(unsigned long long& address, unsigned int var, unsigned int alignment);
+   void compute_next_base_address(unsigned long long& address, unsigned int var, unsigned long long alignment);
 
    /**
     * return the proxied internal variables associated with the function
@@ -767,7 +767,7 @@ class memory
    /**
     * return the internal base address alignment.
     */
-   unsigned int get_internal_base_address_alignment() const
+   unsigned long long get_internal_base_address_alignment() const
    {
       return internal_base_address_alignment;
    }
@@ -775,7 +775,7 @@ class memory
    /**
     * return the parameter alignment
     */
-   unsigned int get_parameter_alignment() const
+   unsigned long long get_parameter_alignment() const
    {
       return parameter_alignment;
    }
@@ -784,7 +784,7 @@ class memory
     * set the internal base address alignment
     * @param _internal_base_address_alignment is the new alignment
     */
-   void set_internal_base_address_alignment(unsigned int _internal_base_address_alignment);
+   void set_internal_base_address_alignment(unsigned long long _internal_base_address_alignment);
 
    /**
     * Propagates the memory parameters from the source (innermost) module to the target (outermost) one

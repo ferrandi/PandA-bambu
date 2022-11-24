@@ -160,7 +160,7 @@ unsigned long long reg_binding::compute_bitsize(unsigned int r)
    {
       structural_type_descriptorRef node_type0 =
           structural_type_descriptorRef(new structural_type_descriptor(reg_var, FB->CGetBehavioralHelper()));
-      unsigned int node_size = STD_GET_SIZE(node_type0);
+      auto node_size = STD_GET_SIZE(node_type0);
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, HLS->debug_level,
                     "- Analyzing node " + STR(reg_var) + ", whose type is " + node_type0->get_name() +
                         " (size: " + STR(node_type0->size) + ", vector_size: " + STR(node_type0->vector_size) + ")");
@@ -181,9 +181,9 @@ void reg_binding::specialise_reg(structural_objectRef& reg, unsigned int r)
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, HLS->debug_level, "Specializing " + reg->get_path() + ":");
    const structural_type_descriptorRef& in_type = GetPointer<module>(reg)->get_in_port(0)->get_typeRef();
    const structural_type_descriptorRef& out_type = GetPointer<module>(reg)->get_out_port(0)->get_typeRef();
-   unsigned int max_bits = STD_GET_SIZE(in_type);
+   auto max_bits = STD_GET_SIZE(in_type);
    max_bits = max_bits < STD_GET_SIZE(out_type) ? STD_GET_SIZE(out_type) : max_bits;
-   unsigned int bits = compute_bitsize(r);
+   auto bits = compute_bitsize(r);
    max_bits = max_bits < bits ? bits : max_bits;
    unsigned int offset = 0;
    if(GetPointer<module>(reg)->get_in_port(0)->get_id() == CLOCK_PORT_NAME)

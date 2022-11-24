@@ -59,7 +59,7 @@ class dataport_obj : public generic_obj
    std::string parameter;
 
    /// number of bit
-   unsigned long long bitsize;
+   unsigned int bitsize;
 
  public:
    /**
@@ -72,7 +72,7 @@ class dataport_obj : public generic_obj
    /**
     * Constructor
     */
-   dataport_obj(const std::string& _name, const std::string& _parameter, unsigned long long _bitsize)
+   dataport_obj(const std::string& _name, const std::string& _parameter, unsigned int _bitsize)
        : generic_obj(DATA_PORT, _name), parameter(_parameter), bitsize(_bitsize)
    {
    }
@@ -85,7 +85,7 @@ class dataport_obj : public generic_obj
    /**
     * return the maximum bitsize associated with the component
     */
-   unsigned long long get_bitsize() const
+   unsigned int get_bitsize() const
    {
       return bitsize;
    }

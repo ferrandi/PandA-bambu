@@ -115,7 +115,7 @@ MinimalInterfaceTestbench::MinimalInterfaceTestbench(const ParameterConstRef _pa
 
 MinimalInterfaceTestbench::~MinimalInterfaceTestbench() = default;
 
-void MinimalInterfaceTestbench::cond_load(long long int Mout_addr_ram_bitsize, std::string,
+void MinimalInterfaceTestbench::cond_load(unsigned long long int Mout_addr_ram_bitsize, std::string,
                                           const std::string& post_slice2, const std::string& res_string, unsigned int i,
                                           const std::string& in_else, const std::string& mem_aggregate) const
 {
@@ -162,7 +162,7 @@ void MinimalInterfaceTestbench::write_memory_handler() const
       unsigned int Mout_data_ram_size_n_ports = Mout_data_ram_size_port->get_kind() == port_vector_o_K ?
                                                     GetPointer<port_o>(Mout_data_ram_size_port)->get_ports_size() :
                                                     1;
-      long long int Mout_data_ram_size_bitsize =
+      auto Mout_data_ram_size_bitsize =
           Mout_data_ram_size_port->get_typeRef()->size * Mout_data_ram_size_port->get_typeRef()->vector_size;
       for(unsigned int i = 0; i < Mout_data_ram_size_n_ports; ++i)
       {
@@ -185,15 +185,15 @@ void MinimalInterfaceTestbench::write_memory_handler() const
 
    structural_objectRef Mout_addr_ram_port = mod->find_member("Mout_addr_ram", port_o_K, cir);
    THROW_ASSERT(Mout_addr_ram_port, "Mout_addr_ram port is missing");
-   long long int Mout_addr_ram_bitsize =
+   auto Mout_addr_ram_bitsize =
        Mout_addr_ram_port->get_typeRef()->size * Mout_addr_ram_port->get_typeRef()->vector_size;
    unsigned int Mout_Wdata_ram_n_ports = Mout_Wdata_ram_port->get_kind() == port_vector_o_K ?
                                              GetPointer<port_o>(Mout_Wdata_ram_port)->get_ports_size() :
                                              1;
-   long long int bitsize = Mout_Wdata_ram_port->get_typeRef()->size * Mout_Wdata_ram_port->get_typeRef()->vector_size;
+   auto bitsize = Mout_Wdata_ram_port->get_typeRef()->size * Mout_Wdata_ram_port->get_typeRef()->vector_size;
    for(unsigned int i = 0; i < Mout_Wdata_ram_n_ports; ++i)
    {
-      std::string mem_aggregate = memory_aggregate_slices(i, bitsize, Mout_addr_ram_bitsize);
+      auto mem_aggregate = memory_aggregate_slices(i, bitsize, Mout_addr_ram_bitsize);
       std::string post_slice;
       if(Mout_addr_ram_port->get_kind() == port_vector_o_K)
       {

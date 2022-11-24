@@ -44,7 +44,7 @@
 class memory_cs : public memory
 {
    /// bus data bitsize
-   unsigned long long bus_tag_bitsize;
+   unsigned int bus_tag_bitsize;
 
  public:
    /**
@@ -52,7 +52,7 @@ class memory_cs : public memory
     */
    memory_cs(const tree_managerRef _TreeM, unsigned long long int _off_base_address, unsigned int max_bram,
              bool _null_pointer_check, bool initial_internal_address_p, unsigned int initial_internal_address,
-             const unsigned long long _address_bitsize)
+             const unsigned int _address_bitsize)
        : memory(_TreeM, _off_base_address, max_bram, _null_pointer_check, initial_internal_address_p,
                 initial_internal_address, _address_bitsize),
          bus_tag_bitsize(0)
@@ -67,7 +67,7 @@ class memory_cs : public memory
    /**
     * set the bus tag bitsize
     */
-   void set_bus_tag_bitsize(unsigned long long bitsize)
+   void set_bus_tag_bitsize(unsigned int bitsize)
    {
       bus_tag_bitsize = bitsize;
    }
@@ -75,7 +75,7 @@ class memory_cs : public memory
    /**
     * return the bitsize of the tag bus
     */
-   unsigned long long get_bus_tag_bitsize() const
+   unsigned int get_bus_tag_bitsize() const
    {
       return bus_tag_bitsize;
    }

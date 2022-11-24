@@ -71,9 +71,6 @@ class WeightedCliqueRegisterBindingSpecialization : public HLSFlowStepSpecializa
 
 class weighted_clique_register : public compatibility_based_register
 {
- private:
-   DesignFlowStep_Status RegisterBinding() final;
-
  public:
    /**
     * Constructor of the class.

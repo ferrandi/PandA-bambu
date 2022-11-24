@@ -223,6 +223,9 @@ class HLS_manager : public application_manager
     * @return the new version
     */
    unsigned int UpdateMemVersion();
+
+   /// check if the maximum bitwidth used for registers, busses, muxes, etc. is compatible with prec
+   static void check_bitwidth(unsigned long long prec);
 };
 /// refcount definition of the class
 using HLS_managerRef = refcount<HLS_manager>;

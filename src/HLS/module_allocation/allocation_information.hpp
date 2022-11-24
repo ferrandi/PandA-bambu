@@ -151,7 +151,7 @@ class AllocationInformation : public HLSFunctionIR
    /// The memory
    memoryConstRef Rmem;
 
-   const unsigned long long& address_bitsize;
+   const unsigned int& address_bitsize;
 
    /// The tree manager
    tree_managerConstRef TreeM;

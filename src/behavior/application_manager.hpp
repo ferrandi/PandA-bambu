@@ -92,7 +92,7 @@ class application_manager
    /// set of global variables
    TreeNodeConstSet global_variables;
 
-   unsigned long long address_bitsize;
+   unsigned int address_bitsize;
 
    /// store memory objects which can be written
    CustomOrderedSet<unsigned int> written_objects;
@@ -255,7 +255,7 @@ class application_manager
     * set the value of the address bitsize
     * @param value is the new value
     */
-   void set_address_bitsize(unsigned long long value)
+   void set_address_bitsize(unsigned int value)
    {
       address_bitsize = value;
    }
@@ -263,11 +263,11 @@ class application_manager
    /**
     * return the address bitsize
     */
-   unsigned long long& Rget_address_bitsize()
+   unsigned int& Rget_address_bitsize()
    {
       return address_bitsize;
    }
-   unsigned long long get_address_bitsize() const
+   unsigned int get_address_bitsize() const
    {
       return address_bitsize;
    }

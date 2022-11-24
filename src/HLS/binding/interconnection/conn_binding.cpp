@@ -556,7 +556,7 @@ void conn_binding::mux_connection(const hlsRef HLS, const structural_managerRef 
    }
 }
 
-void conn_binding::specialise_mux(const generic_objRef mux, unsigned long long bits_tgt) const
+void conn_binding::specialise_mux(const generic_objRef mux, unsigned int bits_tgt) const
 {
    auto data_size = GetPointer<mux_obj>(mux)->get_bitsize();
    data_size = std::max(data_size, bits_tgt);
@@ -644,7 +644,8 @@ void conn_binding::mux_allocation(const hlsRef HLS, const structural_managerRef 
          SM->add_connection(sel_obj, mux_sel);
 
          /// specializing allocated mux
-         specialise_mux(i.first, bits_tgt);
+         HLS_manager::check_bitwidth(bits_tgt);
+         specialise_mux(i.first, static_cast<unsigned>(bits_tgt));
 
          auto* mux_object = GetPointer<module>(mux);
 
@@ -777,7 +778,7 @@ void conn_binding::add_datapath_connection(const technology_managerRef TM, const
 }
 
 generic_objRef conn_binding::get_constant_obj(const std::string& value, const std::string& param,
-                                              unsigned long long precision)
+                                              unsigned int precision)
 {
    THROW_ASSERT(value != "", "value expected");
    if(constant_values.find(const_param(value, param)) == constant_values.end())

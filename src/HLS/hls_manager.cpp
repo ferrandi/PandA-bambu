@@ -77,6 +77,7 @@
 /// HLS/function_allocation include
 #include "functions.hpp"
 #endif
+#define MAX_BITWIDTH_SIZE 4096
 
 HLS_manager::HLS_manager(const ParameterConstRef _Param, const HLS_targetRef _HLS_T)
     : application_manager(FunctionExpanderConstRef(new FunctionExpander()), false, _Param),
@@ -331,4 +332,13 @@ unsigned int HLS_manager::UpdateMemVersion()
 {
    memory_version++;
    return memory_version;
+}
+
+void HLS_manager::check_bitwidth(unsigned long long prec)
+{
+   if(prec > MAX_BITWIDTH_SIZE)
+   {
+      THROW_ERROR("The maximum bit-width size for connection is " + STR(MAX_BITWIDTH_SIZE) +
+                  " Requested size: " + STR(prec));
+   }
 }

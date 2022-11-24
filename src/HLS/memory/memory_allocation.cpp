@@ -527,7 +527,8 @@ void memory_allocation::finalize_memory_allocation()
    }
 
    const auto HLS_T = HLSMgr->get_HLS_target();
-   unsigned long long bram_bitsize = 0, data_bus_bitsize = 0, addr_bus_bitsize = 0, size_bus_bitsize = 0;
+   unsigned long long bram_bitsize = 0, data_bus_bitsize = 0, size_bus_bitsize = 0;
+   unsigned addr_bus_bitsize = 0;
    const auto bram_bitsize_min = HLS_T->get_target_device()->get_parameter<unsigned int>("BRAM_bitsize_min");
    const auto bram_bitsize_max = HLS_T->get_target_device()->get_parameter<unsigned int>("BRAM_bitsize_max");
    HLSMgr->Rmem->set_maxbram_bitsize(bram_bitsize_max);
@@ -608,7 +609,8 @@ void memory_allocation::finalize_memory_allocation()
    HLSMgr->set_address_bitsize(addr_bus_bitsize);
    if(needMemoryMappedRegisters)
    {
-      maximum_bus_size = std::max(maximum_bus_size, addr_bus_bitsize);
+      HLS_manager::check_bitwidth(maximum_bus_size);
+      maximum_bus_size = std::max(maximum_bus_size, static_cast<unsigned long long>(addr_bus_bitsize));
    }
    data_bus_bitsize = maximum_bus_size;
    HLSMgr->Rmem->set_bus_data_bitsize(data_bus_bitsize);

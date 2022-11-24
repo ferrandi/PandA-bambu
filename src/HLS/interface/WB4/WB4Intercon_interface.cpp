@@ -124,11 +124,11 @@ static unsigned long long get_data_bus_bitsize(const hlsRef HLS, const HLS_manag
    return data_bus_bitsize;
 }
 
-static unsigned long long get_addr_bus_bitsize(const HLS_managerRef HLSMgr)
+static unsigned int get_addr_bus_bitsize(const HLS_managerRef HLSMgr)
 {
    auto addr_bus_bitsize = HLSMgr->get_address_bitsize();
    auto allocated_space = HLSMgr->Rmem->get_max_address();
-   unsigned long long parameter_addr_bit = 1;
+   unsigned int parameter_addr_bit = 1;
    while(allocated_space >>= 1)
    {
       ++parameter_addr_bit;

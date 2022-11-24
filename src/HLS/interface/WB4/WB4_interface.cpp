@@ -148,11 +148,11 @@ unsigned long long WB4_interface::get_data_bus_bitsize()
    return data_bus_bitsize;
 }
 
-unsigned long long WB4_interface::get_addr_bus_bitsize()
+unsigned int WB4_interface::get_addr_bus_bitsize()
 {
    auto addr_bus_bitsize = HLSMgr->get_address_bitsize();
    auto allocated_space = HLSMgr->Rmem->get_max_address();
-   unsigned long long parameter_addr_bit = 1;
+   unsigned int parameter_addr_bit = 1;
    while(allocated_space >>= 1)
    {
       ++parameter_addr_bit;

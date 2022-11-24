@@ -129,7 +129,7 @@ class mux_connection_binding : public conn_binding_creator
     */
    void determine_connection(const vertex& op, const HLS_manager::io_binding_type& var, generic_objRef fu_obj,
                              unsigned int port_num, unsigned int port_index, const OpGraphConstRef data,
-                             unsigned long long precision, unsigned int alignment = 0);
+                             unsigned int precision, unsigned int alignment = 0);
 
    /**
     * Compute the bitsize given a io_binding type
@@ -150,7 +150,7 @@ class mux_connection_binding : public conn_binding_creator
     * type
     */
    void connect_array_index(unsigned int tree_index, generic_objRef fu_obj, unsigned int port_num,
-                            unsigned int port_index, unsigned long long bus_addr_bitsize, const OpGraphConstRef data,
+                            unsigned int port_index, unsigned int bus_addr_bitsize, const OpGraphConstRef data,
                             const vertex& op);
 
  private:
@@ -159,7 +159,7 @@ class mux_connection_binding : public conn_binding_creator
     */
    void create_single_conn(const OpGraphConstRef data, const vertex& op, generic_objRef fu_obj_src,
                            generic_objRef fu_obj, unsigned int port_num, unsigned int port_index, unsigned int tree_var,
-                           unsigned long long precision, const bool is_not_a_phi);
+                           unsigned int precision, const bool is_not_a_phi);
 
    /**
     * connect the fu_obj with the associated registers.
@@ -175,7 +175,7 @@ class mux_connection_binding : public conn_binding_creator
                        const OpGraphConstRef data, const tree_managerRef TreeM, unsigned int tree_var,
                        const std::vector<HLS_manager::io_binding_type>& var_read, unsigned long long size_form_par);
 
-   unsigned long long address_precision(unsigned long long precision, const vertex& op, const OpGraphConstRef data,
+   unsigned int address_precision(unsigned int precision, const vertex& op, const OpGraphConstRef data,
                                         const tree_managerRef TreeM);
 
    bool isZeroObj(unsigned int tree_index, const tree_managerRef TreeM);

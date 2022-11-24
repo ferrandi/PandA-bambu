@@ -58,7 +58,7 @@
 class mux_obj : public generic_obj
 {
    /// number of bit of in/out ports
-   unsigned long long bitsize;
+   unsigned int bitsize;
 
    /// reference to generic_obj associated with first input (when selector is TRUE, it's connected to out)
    const generic_objRef first;
@@ -127,7 +127,7 @@ class mux_obj : public generic_obj
    /**
     * add a size to the component
     */
-   void add_bitsize(unsigned long long _bitsize)
+   void add_bitsize(unsigned int _bitsize)
    {
       bitsize = _bitsize > bitsize ? _bitsize : bitsize;
    }
@@ -135,7 +135,7 @@ class mux_obj : public generic_obj
    /**
     * return the maximum bitsize associated with the component
     */
-   unsigned long long get_bitsize() const;
+   unsigned int get_bitsize() const;
 };
 
 /// RefCount definition for the class

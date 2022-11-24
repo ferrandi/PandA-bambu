@@ -117,7 +117,6 @@
 #include "string_manipulation.hpp" // for GET_CLASS
 
 #define USE_ALIGNMENT_INFO 1
-
 static unsigned int align_to_trimmed_bits(unsigned int algn)
 {
    if(algn == 8)
@@ -344,7 +343,7 @@ generic_objRef mux_connection_binding::dynamic_multidimensional_array_handler(
 
 void mux_connection_binding::create_single_conn(const OpGraphConstRef data, const vertex& op, generic_objRef fu_obj_src,
                                                 generic_objRef fu_obj, unsigned int port_num, unsigned int port_index,
-                                                unsigned int tree_var, unsigned long long precision, bool is_not_a_phi)
+                                                unsigned int tree_var, unsigned int precision, bool is_not_a_phi)
 {
    const CustomOrderedSet<vertex>& running_states = HLS->Rliv->get_state_where_run(op);
    for(const auto state : running_states)
@@ -431,8 +430,8 @@ void mux_connection_binding::create_single_conn(const OpGraphConstRef data, cons
    }
 }
 
-unsigned long long mux_connection_binding::address_precision(unsigned long long precision, const vertex& op,
-                                                             const OpGraphConstRef data, const tree_managerRef TreeM)
+unsigned int mux_connection_binding::address_precision(unsigned int precision, const vertex& op,
+                                                       const OpGraphConstRef data, const tree_managerRef TreeM)
 {
    auto fu_type = HLS->Rfu->get_assign(op);
    auto node_id = data->CGetOpNodeInfo(op)->GetNodeId();
@@ -453,7 +452,7 @@ unsigned long long mux_connection_binding::address_precision(unsigned long long 
       {
          unsigned long long int max_addr =
              HLSMgr->Rmem->get_base_address(var, HLS->functionId) + tree_helper::Size(TreeM->CGetTreeReindex(var)) / 8;
-         unsigned long long address_bitsize;
+         unsigned int address_bitsize;
          for(address_bitsize = 1; max_addr > (1ull << address_bitsize); ++address_bitsize)
          {
             ;
@@ -498,13 +497,13 @@ bool mux_connection_binding::isConstantObj(unsigned int tree_index, const tree_m
 
 void mux_connection_binding::determine_connection(const vertex& op, const HLS_manager::io_binding_type& _var,
                                                   generic_objRef fu_obj, unsigned int port_num, unsigned int port_index,
-                                                  const OpGraphConstRef data, unsigned long long precision,
+                                                  const OpGraphConstRef data, unsigned int precision,
                                                   unsigned int alignment)
 {
    bool is_not_a_phi = (GET_TYPE(data, op) & TYPE_PHI) == 0;
    auto tree_var = std::get<0>(_var);
    unsigned long long int constant_value = std::get<1>(_var);
-   unsigned long long bus_addr_bitsize = HLSMgr->get_address_bitsize();
+   auto bus_addr_bitsize = HLSMgr->get_address_bitsize();
    bus_addr_bitsize = std::min(precision, bus_addr_bitsize);
    memory_symbolRef m_sym;
    const FunctionBehaviorConstRef FB = HLSMgr->CGetFunctionBehavior(funId);
@@ -2028,7 +2027,8 @@ void mux_connection_binding::add_conversion(unsigned int num, unsigned long long
          varObj = HLS_manager::io_binding_type(0, 0);
       }
       generic_objRef conv_port;
-      auto in_bitsize = size_form_par;
+      HLS_manager::check_bitwidth(size_form_par);
+      auto in_bitsize = static_cast<unsigned>(size_form_par);
       auto key = std::make_tuple(in_bitsize, iu_conv, varObj);
       if(connCache.find(key) == connCache.end())
       {
@@ -2039,7 +2039,8 @@ void mux_connection_binding::add_conversion(unsigned int num, unsigned long long
          }
          HLS->Rconn->add_sparse_logic(conv_port);
          GetPointer<iu_conv_conn_obj>(conv_port)->add_bitsize(in_bitsize);
-         determine_connection(*op, varObj, conv_port, 0, 0, data, size_tree_var);
+         HLS_manager::check_bitwidth(size_tree_var);
+         determine_connection(*op, varObj, conv_port, 0, 0, data, static_cast<unsigned>(size_tree_var));
       }
       else
       {
@@ -2056,7 +2057,8 @@ void mux_connection_binding::add_conversion(unsigned int num, unsigned long long
          varObj = HLS_manager::io_binding_type(0, 0);
       }
       generic_objRef conv_port;
-      auto in_bitsize = size_form_par;
+      HLS_manager::check_bitwidth(size_form_par);
+      auto in_bitsize = static_cast<unsigned>(size_form_par);
       auto key = std::make_tuple(in_bitsize, ui_conv, varObj);
       if(connCache.find(key) == connCache.end())
       {
@@ -2067,7 +2069,8 @@ void mux_connection_binding::add_conversion(unsigned int num, unsigned long long
          }
          HLS->Rconn->add_sparse_logic(conv_port);
          GetPointer<ui_conv_conn_obj>(conv_port)->add_bitsize(in_bitsize);
-         determine_connection(*op, varObj, conv_port, 0, 0, data, size_tree_var);
+         HLS_manager::check_bitwidth(size_tree_var);
+         determine_connection(*op, varObj, conv_port, 0, 0, data, static_cast<unsigned>(size_tree_var));
       }
       else
       {
@@ -2084,15 +2087,19 @@ void mux_connection_binding::add_conversion(unsigned int num, unsigned long long
          AllocationInformation::extract_bambu_provided_name(size_tree_var, size_form_par, HLSMgr, current_fu);
       }
       HLS->Rconn->add_sparse_logic(conv_port);
-      auto in_bitsize = size_form_par;
-      GetPointer<ff_conv_conn_obj>(conv_port)->add_bitsize_in(size_tree_var);
+      HLS_manager::check_bitwidth(size_form_par);
+      auto in_bitsize = static_cast<unsigned>(size_form_par);
+      HLS_manager::check_bitwidth(size_tree_var);
+      GetPointer<ff_conv_conn_obj>(conv_port)->add_bitsize_in(static_cast<unsigned>(size_tree_var));
       GetPointer<ff_conv_conn_obj>(conv_port)->add_bitsize_out(in_bitsize);
-      determine_connection(*op, var_read[num], conv_port, 0, 0, data, size_tree_var);
+      determine_connection(*op, var_read[num], conv_port, 0, 0, data, static_cast<unsigned>(size_tree_var));
       create_single_conn(data, *op, conv_port, fu_obj, num, port_index, tree_var, in_bitsize, true);
    }
    else
    {
-      determine_connection(*op, var_read[num], fu_obj, num, port_index, data, object_bitsize(TreeM, var_read[num]));
+      auto prec = object_bitsize(TreeM, var_read[num]);
+      HLS_manager::check_bitwidth(prec);
+      determine_connection(*op, var_read[num], fu_obj, num, port_index, data, static_cast<unsigned>(prec));
    }
 }
 
@@ -2240,11 +2247,11 @@ void mux_connection_binding::create_connections()
                unsigned int size_var;
                tree_nodeConstRef tn;
                unsigned int var_node_idx;
-               unsigned long long prec = 0;
+               unsigned long long Prec = 0;
                const auto type = tree_helper::CGetType(gm->op0);
                if(type && (GET_CONST_NODE(type)->get_kind() == integer_type_K))
                {
-                  prec = GetPointerS<const integer_type>(GET_CONST_NODE(type))->prec;
+                  Prec = GetPointerS<const integer_type>(GET_CONST_NODE(type))->prec;
                }
                unsigned int algn = 0;
                if(type && (GET_CONST_NODE(type)->get_kind() == integer_type_K))
@@ -2270,13 +2277,15 @@ void mux_connection_binding::create_connections()
                          GetPointer<integer_cst>(GET_NODE(GetPointerS<const type_node>(GET_CONST_NODE(tn))->size));
                      THROW_ASSERT(obj_size, "size is not an integer_cst");
                      long long int IR_var_bitsize = tree_helper::get_integer_cst_value(obj_size);
-                     unsigned long long var_bitsize;
-                     if(prec != algn && prec % algn)
+                     unsigned int var_bitsize;
+                     if(Prec != algn && Prec % algn)
                      {
-                        var_bitsize = prec;
+                        HLS_manager::check_bitwidth(Prec);
+                        var_bitsize = static_cast<unsigned int>(Prec);
                      }
                      else
                      {
+                        HLS_manager::check_bitwidth(static_cast<unsigned long long>(IR_var_bitsize));
                         var_bitsize = static_cast<unsigned int>(IR_var_bitsize);
                      }
                      generic_objRef conv_port;
@@ -2327,8 +2336,9 @@ void mux_connection_binding::create_connections()
                   }
                   else
                   {
-                     determine_connection(*op, var_read[0], fu_obj, 0, port_index, data,
-                                          object_bitsize(TreeM, var_read[0]));
+                     auto prec = object_bitsize(TreeM, var_read[0]);
+                     HLS_manager::check_bitwidth(prec);
+                     determine_connection(*op, var_read[0], fu_obj, 0, port_index, data, static_cast<unsigned>(prec));
                   }
                }
                else
@@ -2374,10 +2384,11 @@ void mux_connection_binding::create_connections()
                   {
                      determine_connection(*op, HLS_manager::io_binding_type(var_node_idx, 0), fu_obj, 1, port_index,
                                           data, bus_addr_bitsize, alignment);
-                     if(prec != algn && prec % algn)
+                     if(Prec != algn && Prec % algn)
                      { /// bitfield management
-                        determine_connection(*op, HLS_manager::io_binding_type(0, prec), fu_obj, 2, port_index, data,
-                                             object_bitsize(TreeM, HLS_manager::io_binding_type(0, prec)));
+                        determine_connection(
+                            *op, HLS_manager::io_binding_type(0, Prec), fu_obj, 2, port_index, data,
+                            static_cast<unsigned>(object_bitsize(TreeM, HLS_manager::io_binding_type(0, Prec))));
                      }
                      else
                      {
@@ -2385,10 +2396,11 @@ void mux_connection_binding::create_connections()
                             GetPointer<integer_cst>(GET_NODE(GetPointerS<const type_node>(GET_CONST_NODE(tn))->size));
                         THROW_ASSERT(obj_size, "size is not an integer_cst");
                         long long int IR_var_bitsize = tree_helper::get_integer_cst_value(obj_size);
-                        unsigned long long var_bitsize;
-                        if(prec != algn && prec % algn)
+                        unsigned int var_bitsize;
+                        if(Prec != algn && Prec % algn)
                         {
-                           var_bitsize = prec;
+                           HLS_manager::check_bitwidth(Prec);
+                           var_bitsize = static_cast<unsigned int>(Prec);
                         }
                         else
                         {
@@ -2399,7 +2411,7 @@ void mux_connection_binding::create_connections()
                             HLS_manager::io_binding_type(
                                 GET_INDEX_NODE(GetPointerS<const type_node>(GET_CONST_NODE(tn))->size), 0),
                             fu_obj, 2, port_index, data,
-                            object_bitsize(TreeM, HLS_manager::io_binding_type(0, var_bitsize)));
+                            static_cast<unsigned>(object_bitsize(TreeM, HLS_manager::io_binding_type(0, var_bitsize))));
                      }
 
                      break;
@@ -2587,8 +2599,9 @@ void mux_connection_binding::create_connections()
                {
                   for(unsigned int num = 0; num < var_read.size(); num++)
                   {
-                     determine_connection(*op, var_read[num], fu_obj, num, 0, data,
-                                          object_bitsize(TreeM, var_read[num]));
+                     auto prec = object_bitsize(TreeM, var_read[num]);
+                     HLS_manager::check_bitwidth(prec);
+                     determine_connection(*op, var_read[num], fu_obj, num, 0, data, static_cast<unsigned>(prec));
                   }
                   break;
                }
@@ -2688,8 +2701,9 @@ void mux_connection_binding::create_connections()
                {
                   for(unsigned int num = 0; num < var_read.size(); num++)
                   {
-                     determine_connection(*op, var_read[num], fu_obj, num, 0, data,
-                                          object_bitsize(TreeM, var_read[num]));
+                     auto prec = object_bitsize(TreeM, var_read[num]);
+                     HLS_manager::check_bitwidth(prec);
+                     determine_connection(*op, var_read[num], fu_obj, num, 0, data, static_cast<unsigned>(prec));
                   }
                   break;
                }
@@ -2712,9 +2726,10 @@ void mux_connection_binding::create_connections()
                      auto arg_end = args.end();
                      for(auto arg = args.begin(); arg != arg_end; ++arg, ++num)
                      {
-                        determine_connection(
-                            *op, HLS_manager::io_binding_type(GET_INDEX_NODE(*arg), 0), fu_obj, num, 0, data,
-                            object_bitsize(TreeM, HLS_manager::io_binding_type(GET_INDEX_NODE(*arg), 0)));
+                        auto prec = object_bitsize(TreeM, HLS_manager::io_binding_type(GET_INDEX_NODE(*arg), 0));
+                        HLS_manager::check_bitwidth(prec);
+                        determine_connection(*op, HLS_manager::io_binding_type(GET_INDEX_NODE(*arg), 0), fu_obj, num, 0,
+                                             data, static_cast<unsigned>(prec));
                      }
                   }
                   else
@@ -2788,7 +2803,9 @@ void mux_connection_binding::create_connections()
             PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "     - " << var_read.size() << " reads");
             for(unsigned int num = 0; num < var_read.size(); num++)
             {
-               determine_connection(*op, var_read[num], fu_obj, 0, num, data, object_bitsize(TreeM, var_read[num]));
+               auto prec = object_bitsize(TreeM, var_read[num]);
+               HLS_manager::check_bitwidth(prec);
+               determine_connection(*op, var_read[num], fu_obj, 0, num, data, static_cast<unsigned>(prec));
             }
          }
          else
@@ -2865,8 +2882,10 @@ void mux_connection_binding::create_connections()
                }
                else
                {
+                  auto prec = object_bitsize(TreeM, var_read[num]);
+                  HLS_manager::check_bitwidth(prec);
                   determine_connection(*op, var_read[port_num], fu_obj, port_num, port_index, data,
-                                       object_bitsize(TreeM, var_read[port_num]));
+                                       static_cast<unsigned>(prec));
                }
             }
          }
@@ -2955,7 +2974,9 @@ void mux_connection_binding::create_connections()
                   auto storage_value = HLS->storage_value_information->get_storage_value_index(estate, var_written);
                   auto r_index = HLS->Rreg->get_register(storage_value);
                   auto in_bitsize = object_bitsize(TreeM, HLS_manager::io_binding_type(tree_temp, 0));
+                  HLS_manager::check_bitwidth(in_bitsize);
                   auto out_bitsize = object_bitsize(TreeM, HLS_manager::io_binding_type(var_written, 0));
+                  HLS_manager::check_bitwidth(out_bitsize);
                   generic_objRef tgt_reg_obj = HLS->Rreg->get(r_index);
                   if(in_bitsize != out_bitsize)
                   {
@@ -2965,7 +2986,7 @@ void mux_connection_binding::create_connections()
                         generic_objRef conv_port =
                             generic_objRef(new u_assign_conn_obj("u_assign_conn_obj_" + STR(id++)));
                         HLS->Rconn->add_sparse_logic(conv_port);
-                        GetPointer<u_assign_conn_obj>(conv_port)->add_bitsize(in_bitsize);
+                        GetPointer<u_assign_conn_obj>(conv_port)->add_bitsize(static_cast<unsigned>(in_bitsize));
                         if(phi_postponed)
                         {
                            if(HLS->Rliv->has_state_out(estate, *op, var_written))
@@ -2990,12 +3011,14 @@ void mux_connection_binding::create_connections()
                                   HLS->Rliv->get_state_out(estate, *op, var_written);
                               for(const auto state_out : states_out)
                               {
-                                 HLS->Rconn->add_data_transfer(
-                                     fu_src_obj, conv_port, 0, 0,
-                                     data_transfer(cur_phi_tree_var, in_bitsize, estate, state_out, *op));
-                                 HLS->Rconn->add_data_transfer(
-                                     conv_port, tgt_reg_obj, 0, 0,
-                                     data_transfer(cur_phi_tree_var, in_bitsize, estate, state_out, *op));
+                                 HLS->Rconn->add_data_transfer(fu_src_obj, conv_port, 0, 0,
+                                                               data_transfer(cur_phi_tree_var,
+                                                                             static_cast<unsigned>(in_bitsize), estate,
+                                                                             state_out, *op));
+                                 HLS->Rconn->add_data_transfer(conv_port, tgt_reg_obj, 0, 0,
+                                                               data_transfer(cur_phi_tree_var,
+                                                                             static_cast<unsigned>(in_bitsize), estate,
+                                                                             state_out, *op));
                                  PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                                                "       - add data transfer from "
                                                    << fu_src_obj->get_string() << " to " << conv_port->get_string()
@@ -3020,9 +3043,9 @@ void mux_connection_binding::create_connections()
                         else
                         {
                            determine_connection(*op, HLS_manager::io_binding_type(tree_temp, 0), conv_port, 0, 0, data,
-                                                in_bitsize);
-                           create_single_conn(data, *op, conv_port, tgt_reg_obj, 0, 0, cur_phi_tree_var, in_bitsize,
-                                              false);
+                                                static_cast<unsigned>(in_bitsize));
+                           create_single_conn(data, *op, conv_port, tgt_reg_obj, 0, 0, cur_phi_tree_var,
+                                              static_cast<unsigned>(in_bitsize), false);
                         }
                      }
                      else if(tree_helper::is_int(TreeM, var_written))
@@ -3034,7 +3057,7 @@ void mux_connection_binding::create_connections()
                               generic_objRef conv_port =
                                   generic_objRef(new i_assign_conn_obj("i_assign_conn_obj_phi" + STR(id++)));
                               HLS->Rconn->add_sparse_logic(conv_port);
-                              GetPointer<i_assign_conn_obj>(conv_port)->add_bitsize(in_bitsize);
+                              GetPointer<i_assign_conn_obj>(conv_port)->add_bitsize(static_cast<unsigned>(in_bitsize));
                               generic_objRef fu_src_obj;
                               if(state_info &&
                                  state_info->moved_op_use_set.find(var_written) != state_info->moved_op_use_set.end() &&
@@ -3057,12 +3080,14 @@ void mux_connection_binding::create_connections()
                               const CustomOrderedSet<vertex>::const_iterator s_out_it_end = states_out.end();
                               for(auto s_out_it = states_out.begin(); s_out_it != s_out_it_end; ++s_out_it)
                               {
-                                 HLS->Rconn->add_data_transfer(
-                                     fu_src_obj, conv_port, 0, 0,
-                                     data_transfer(cur_phi_tree_var, in_bitsize, estate, *s_out_it, *op));
-                                 HLS->Rconn->add_data_transfer(
-                                     conv_port, tgt_reg_obj, 0, 0,
-                                     data_transfer(cur_phi_tree_var, in_bitsize, estate, *s_out_it, *op));
+                                 HLS->Rconn->add_data_transfer(fu_src_obj, conv_port, 0, 0,
+                                                               data_transfer(cur_phi_tree_var,
+                                                                             static_cast<unsigned>(in_bitsize), estate,
+                                                                             *s_out_it, *op));
+                                 HLS->Rconn->add_data_transfer(conv_port, tgt_reg_obj, 0, 0,
+                                                               data_transfer(cur_phi_tree_var,
+                                                                             static_cast<unsigned>(in_bitsize), estate,
+                                                                             *s_out_it, *op));
                                  PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                                                "       - add data transfer from "
                                                    << fu_src_obj->get_string() << " to " << conv_port->get_string()
@@ -3092,7 +3117,7 @@ void mux_connection_binding::create_connections()
                               varObj = HLS_manager::io_binding_type(0, 0);
                            }
                            generic_objRef conv_port;
-                           auto key = std::make_tuple(in_bitsize, i_assign, varObj);
+                           auto key = std::make_tuple(static_cast<unsigned>(in_bitsize), i_assign, varObj);
                            if(connCache.find(key) == connCache.end())
                            {
                               conv_port = generic_objRef(new i_assign_conn_obj("i_assign_conn_obj_" + STR(id++)));
@@ -3101,15 +3126,16 @@ void mux_connection_binding::create_connections()
                                  connCache[key] = conv_port;
                               }
                               HLS->Rconn->add_sparse_logic(conv_port);
-                              GetPointer<i_assign_conn_obj>(conv_port)->add_bitsize(in_bitsize);
-                              determine_connection(*op, varObj, conv_port, 0, 0, data, in_bitsize);
+                              GetPointer<i_assign_conn_obj>(conv_port)->add_bitsize(static_cast<unsigned>(in_bitsize));
+                              determine_connection(*op, varObj, conv_port, 0, 0, data,
+                                                   static_cast<unsigned>(in_bitsize));
                            }
                            else
                            {
                               conv_port = connCache.find(key)->second;
                            }
-                           create_single_conn(data, *op, conv_port, tgt_reg_obj, 0, 0, cur_phi_tree_var, in_bitsize,
-                                              false);
+                           create_single_conn(data, *op, conv_port, tgt_reg_obj, 0, 0, cur_phi_tree_var,
+                                              static_cast<unsigned>(in_bitsize), false);
                         }
                      }
                      else if(tree_helper::is_real(TreeM, var_written))
@@ -3117,7 +3143,7 @@ void mux_connection_binding::create_connections()
                         generic_objRef conv_port =
                             generic_objRef(new f_assign_conn_obj("f_assign_conn_obj_" + STR(id++)));
                         HLS->Rconn->add_sparse_logic(conv_port);
-                        GetPointer<f_assign_conn_obj>(conv_port)->add_bitsize(in_bitsize);
+                        GetPointer<f_assign_conn_obj>(conv_port)->add_bitsize(static_cast<unsigned>(in_bitsize));
                         if(phi_postponed)
                         {
                            if(HLS->Rliv->has_state_out(estate, *op, var_written))
@@ -3144,12 +3170,14 @@ void mux_connection_binding::create_connections()
                               const CustomOrderedSet<vertex>::const_iterator s_out_it_end = states_out.end();
                               for(auto s_out_it = states_out.begin(); s_out_it != s_out_it_end; ++s_out_it)
                               {
-                                 HLS->Rconn->add_data_transfer(
-                                     fu_src_obj, conv_port, 0, 0,
-                                     data_transfer(cur_phi_tree_var, in_bitsize, estate, *s_out_it, *op));
-                                 HLS->Rconn->add_data_transfer(
-                                     conv_port, tgt_reg_obj, 0, 0,
-                                     data_transfer(cur_phi_tree_var, in_bitsize, estate, *s_out_it, *op));
+                                 HLS->Rconn->add_data_transfer(fu_src_obj, conv_port, 0, 0,
+                                                               data_transfer(cur_phi_tree_var,
+                                                                             static_cast<unsigned>(in_bitsize), estate,
+                                                                             *s_out_it, *op));
+                                 HLS->Rconn->add_data_transfer(conv_port, tgt_reg_obj, 0, 0,
+                                                               data_transfer(cur_phi_tree_var,
+                                                                             static_cast<unsigned>(in_bitsize), estate,
+                                                                             *s_out_it, *op));
                                  PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                                                "       - add data transfer from "
                                                    << fu_src_obj->get_string() << " to " << conv_port->get_string()
@@ -3174,9 +3202,9 @@ void mux_connection_binding::create_connections()
                         else
                         {
                            determine_connection(*op, HLS_manager::io_binding_type(tree_temp, 0), conv_port, 0, 0, data,
-                                                in_bitsize);
-                           create_single_conn(data, *op, conv_port, tgt_reg_obj, 0, 0, cur_phi_tree_var, in_bitsize,
-                                              false);
+                                                static_cast<unsigned>(in_bitsize));
+                           create_single_conn(data, *op, conv_port, tgt_reg_obj, 0, 0, cur_phi_tree_var,
+                                              static_cast<unsigned>(in_bitsize), false);
                         }
                      }
                      else
@@ -3213,9 +3241,10 @@ void mux_connection_binding::create_connections()
                            const CustomOrderedSet<vertex>::const_iterator s_out_it_end = states_out.end();
                            for(auto s_out_it = states_out.begin(); s_out_it != s_out_it_end; ++s_out_it)
                            {
-                              HLS->Rconn->add_data_transfer(
-                                  fu_src_obj, tgt_reg_obj, 0, 0,
-                                  data_transfer(cur_phi_tree_var, in_bitsize, estate, *s_out_it, *op));
+                              HLS->Rconn->add_data_transfer(fu_src_obj, tgt_reg_obj, 0, 0,
+                                                            data_transfer(cur_phi_tree_var,
+                                                                          static_cast<unsigned>(in_bitsize), estate,
+                                                                          *s_out_it, *op));
                               PRINT_DBG_MEX(
                                   DEBUG_LEVEL_PEDANTIC, debug_level,
                                   "       - add data transfer from "
@@ -3239,7 +3268,7 @@ void mux_connection_binding::create_connections()
                      else
                      {
                         determine_connection(*op, HLS_manager::io_binding_type(tree_temp, 0), tgt_reg_obj, 0, 0, data,
-                                             in_bitsize);
+                                             static_cast<unsigned>(in_bitsize));
                      }
                   }
                }
@@ -4129,7 +4158,7 @@ unsigned int mux_connection_binding::swap_p(const OpGraphConstRef data, vertex o
 }
 
 void mux_connection_binding::connect_array_index(unsigned int tree_index, generic_objRef fu_obj, unsigned int port_num,
-                                                 unsigned int port_index, unsigned long long bus_addr_bitsize,
+                                                 unsigned int port_index, unsigned int bus_addr_bitsize,
                                                  const OpGraphConstRef data, const vertex& op)
 {
    const tree_managerRef TreeM = HLSMgr->get_tree_manager();
