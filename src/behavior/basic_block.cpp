@@ -240,8 +240,12 @@ bool BBEdgeSorter::operator()(const EdgeDescriptor x, const EdgeDescriptor y) co
    const vertex source_x = boost::source(x, *bb_graph);
    const vertex source_y = boost::source(y, *bb_graph);
    if(source_x == source_y)
+   {
       return bb_sorter(boost::target(x, *bb_graph), boost::target(y, *bb_graph));
+   }
    else
+   {
       return bb_sorter(source_x, source_y);
+   }
 }
 #endif

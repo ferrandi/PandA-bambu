@@ -228,7 +228,7 @@ DesignFlowStep_Status RemoveEndingIf::InternalExec()
    const auto net_clock_period = clock_period - clock_period_margin;
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Remove ending if is starting");
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Looking for feasible blocs");
-   for(auto block : sl->list_of_bloc)
+   for(const auto& block : sl->list_of_bloc)
    {
       if(not AppM->ApplyNewTransformation())
       {

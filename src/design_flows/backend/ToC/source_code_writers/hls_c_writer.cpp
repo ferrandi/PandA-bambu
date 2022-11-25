@@ -1238,7 +1238,7 @@ void HLSCWriter::WriteSimulatorInitMemory(const unsigned int function_id)
                   } while(boost::filesystem::exists(candidate_out_file_name));
                   output_parameter_initialization_filename = candidate_out_file_name;
                   std::ofstream parameter_init_file(output_parameter_initialization_filename.c_str());
-                  for(auto initial_string : splitted)
+                  for(const auto& initial_string : splitted)
                   {
                      THROW_ASSERT(initial_string != "", "Not well formed test vector: " + test_v);
                      printed_bytes +=
@@ -1348,7 +1348,7 @@ void HLSCWriter::WriteSimulatorInitMemory(const unsigned int function_id)
 
                            data_bitsize = tree_helper::GetArrayElementSize(ptd_base_type_node);
 
-                           unsigned int num_elements = 1;
+                           auto num_elements = 1ull;
                            if(splitted.size() == 1)
                            {
                               num_elements = tree_helper::GetArrayTotalSize(ptd_base_type_node);

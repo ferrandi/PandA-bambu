@@ -475,8 +475,8 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                         return tree_helper::Size(ptd_type);
                      }();
                      THROW_ASSERT(input_bw, "unexpected condition");
-                     unsigned n_resources;
-                     unsigned alignment;
+                     unsigned int n_resources;
+                     unsigned int alignment;
                      ComputeResourcesAlignment(n_resources, alignment, input_bw, is_acType, is_signed, is_fixed);
 
                      std::list<tree_nodeRef> writeStmt;
@@ -561,7 +561,7 @@ DesignFlowStep_Status InterfaceInfer::Exec()
 
                      bool is_real = false;
                      bool isDiffSize = false;
-                     unsigned int rwsize = 1U;
+                     unsigned long long rwsize = 1U;
                      std::set<std::string> operationsR, operationsW;
                      const auto commonRWSignature = interfaceType == "array" || interfaceType == "m_axi";
                      if(isRead)
@@ -585,7 +585,7 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                      if(isWrite)
                      {
                         unsigned int IdIndex = 0;
-                        unsigned int WrittenSize = 0;
+                        unsigned long long WrittenSize = 0;
                         for(const auto& ws : writeStmt)
                         {
                            const auto instanceFname =
@@ -879,7 +879,8 @@ void InterfaceInfer::create_Read_function(tree_nodeRef origStmt, const std::stri
    {
       const auto sel_value = TM->CreateUniqueIntegerCst(0, boolean_type);
       args.push_back(sel_value);
-      const auto size_value = TM->CreateUniqueIntegerCst(tree_helper::Size(readType), bit_size_type);
+      const auto size_value =
+          TM->CreateUniqueIntegerCst(static_cast<long long>(tree_helper::Size(readType)), bit_size_type);
       args.push_back(size_value);
       tree_nodeRef data_value;
       if(GET_NODE(readType)->get_kind() == integer_type_K || GET_NODE(readType)->get_kind() == enumeral_type_K ||
@@ -940,7 +941,8 @@ void InterfaceInfer::create_Write_function(const std::string& arg_name, tree_nod
    tree_helper::get_mangled_fname(fd, fname);
    tree_nodeRef boolean_type;
    const auto bit_size_type = tree_man->GetUnsignedIntegerType();
-   const auto size_value = TM->CreateUniqueIntegerCst(tree_helper::Size(writeType), bit_size_type);
+   const auto size_value =
+       TM->CreateUniqueIntegerCst(static_cast<long long>(tree_helper::Size(writeType)), bit_size_type);
 
    /// create the function_decl
    std::vector<tree_nodeRef> argsT;
@@ -995,8 +997,9 @@ void InterfaceInfer::create_Write_function(const std::string& arg_name, tree_nod
 }
 
 void InterfaceInfer::create_resource_Read_simple(const std::set<std::string>& operations, const std::string& arg_name,
-                                                 const std::string& interfaceType, unsigned int input_bw, bool IO_port,
-                                                 unsigned n_resources, unsigned rwBWsize, unsigned int top_id) const
+                                                 const std::string& interfaceType, unsigned long long input_bw,
+                                                 bool IO_port, unsigned int n_resources, unsigned long long rwBWsize,
+                                                 unsigned int top_id) const
 {
    const std::string ResourceName = ENCODE_FDNAME(arg_name, "_Read_", interfaceType);
    auto HLSMgr = GetPointer<HLS_manager>(AppM);
@@ -1026,7 +1029,7 @@ void InterfaceInfer::create_resource_Read_simple(const std::set<std::string>& op
          GetPointer<module>(interface_top)->set_multi_unit_multiplicity(n_resources);
       }
 
-      unsigned int address_bitsize = HLSMgr->get_address_bitsize();
+      auto address_bitsize = HLSMgr->get_address_bitsize();
       structural_type_descriptorRef addrType =
           structural_type_descriptorRef(new structural_type_descriptor("bool", address_bitsize));
       structural_type_descriptorRef dataType =
@@ -1153,9 +1156,9 @@ void InterfaceInfer::create_resource_Read_simple(const std::set<std::string>& op
 }
 
 void InterfaceInfer::create_resource_Write_simple(const std::set<std::string>& operations, const std::string& arg_name,
-                                                  const std::string& interfaceType, unsigned int input_bw, bool IO_port,
-                                                  bool isDiffSize, unsigned n_resources, bool is_real,
-                                                  unsigned rwBWsize, unsigned int top_id) const
+                                                  const std::string& interfaceType, unsigned long long input_bw,
+                                                  bool IO_port, bool isDiffSize, unsigned int n_resources, bool is_real,
+                                                  unsigned long long rwBWsize, unsigned int top_id) const
 {
    const std::string ResourceName = ENCODE_FDNAME(arg_name, "_Write_", interfaceType);
    auto HLSMgr = GetPointer<HLS_manager>(AppM);
@@ -1195,7 +1198,7 @@ void InterfaceInfer::create_resource_Write_simple(const std::set<std::string>& o
       {
          dataType->type = structural_type_descriptor::REAL;
       }
-      auto nbitDataSize = 32u - static_cast<unsigned>(__builtin_clz(rwBWsize));
+      auto nbitDataSize = 64u - static_cast<unsigned>(__builtin_clzll(rwBWsize));
       structural_type_descriptorRef rwsize =
           structural_type_descriptorRef(new structural_type_descriptor("bool", nbitDataSize));
       structural_type_descriptorRef rwtype =
@@ -1299,7 +1302,7 @@ void InterfaceInfer::create_resource_Write_simple(const std::set<std::string>& o
          fu->logical_type = functional_unit::COMBINATIONAL;
       }
 
-      for(auto fdName : operations)
+      for(const auto& fdName : operations)
       {
          auto* op = GetPointer<operation>(fu->get_operation(fdName));
          op->time_m = time_model::create_model(device->get_type(), parameters);
@@ -1333,9 +1336,9 @@ void InterfaceInfer::create_resource_Write_simple(const std::set<std::string>& o
 
 void InterfaceInfer::create_resource_array(const std::set<std::string>& operationsR,
                                            const std::set<std::string>& operationsW, const std::string& bundle_name,
-                                           const std::string& interfaceType, unsigned int input_bw,
-                                           unsigned int arraySize, unsigned n_resources, unsigned alignment,
-                                           bool is_real, unsigned rwBWsize, unsigned int top_id) const
+                                           const std::string& interfaceType, unsigned long long input_bw,
+                                           unsigned int arraySize, unsigned n_resources, unsigned int alignment,
+                                           bool is_real, unsigned long long rwBWsize, unsigned int top_id) const
 {
    const auto n_channels = parameters->getOption<unsigned int>(OPT_channels_number);
    const auto isDP = input_bw <= 64 && n_resources == 1 && n_channels == 2;
@@ -1363,10 +1366,10 @@ void InterfaceInfer::create_resource_array(const std::set<std::string>& operatio
       GetPointerS<module>(interface_top)->set_license(GENERATED_LICENSE);
       GetPointerS<module>(interface_top)->set_multi_unit_multiplicity(NResources);
 
-      const auto nbitAddres = 32u - static_cast<unsigned>(__builtin_clz(arraySize * alignment - 1));
+      const auto nbitAddres = 64u - static_cast<unsigned>(__builtin_clzll(arraySize * alignment - 1));
       const auto address_bitsize = HLSMgr->get_address_bitsize();
-      const auto nbit = 32u - static_cast<unsigned>(__builtin_clz(arraySize - 1));
-      const auto nbitDataSize = 32u - static_cast<unsigned>(__builtin_clz(rwBWsize));
+      const auto nbit = 64u - static_cast<unsigned>(__builtin_clzll(arraySize - 1));
+      const auto nbitDataSize = 64u - static_cast<unsigned>(__builtin_clzll(rwBWsize));
       const structural_type_descriptorRef addrType(new structural_type_descriptor("bool", address_bitsize));
       const structural_type_descriptorRef address_interface_type(new structural_type_descriptor("bool", nbit));
       const structural_type_descriptorRef dataType(new structural_type_descriptor("bool", input_bw));
@@ -1507,8 +1510,8 @@ void InterfaceInfer::create_resource_array(const std::set<std::string>& operatio
 void InterfaceInfer::create_resource_m_axi(const std::set<std::string>& operationsR,
                                            const std::set<std::string>& operationsW, const std::string& arg_name,
                                            const std::string& bundle_name, const std::string& interfaceType,
-                                           unsigned int input_bw, unsigned n_resources, m_axi_type mat,
-                                           unsigned rwBWsize, unsigned int top_id) const
+                                           unsigned long long input_bw, unsigned int n_resources, m_axi_type mat,
+                                           unsigned long long rwBWsize, unsigned int top_id) const
 {
    const auto ResourceName = ENCODE_FDNAME(bundle_name, "", "");
    THROW_ASSERT(GetPointer<HLS_manager>(AppM), "");
@@ -1532,7 +1535,7 @@ void InterfaceInfer::create_resource_m_axi(const std::set<std::string>& operatio
       GetPointerS<module>(interface_top)->set_multi_unit_multiplicity(n_resources);
 
       const auto address_bitsize = HLSMgr->get_address_bitsize();
-      const auto nbitDataSize = 32u - static_cast<unsigned>(__builtin_clz(rwBWsize));
+      const auto nbitDataSize = 64u - static_cast<unsigned>(__builtin_clzll(rwBWsize));
       const structural_type_descriptorRef address_interface_type(
           new structural_type_descriptor("bool", address_bitsize));
       const structural_type_descriptorRef Intype(new structural_type_descriptor("bool", input_bw));
@@ -1811,9 +1814,9 @@ void InterfaceInfer::create_resource_m_axi(const std::set<std::string>& operatio
 
 void InterfaceInfer::create_resource(const std::set<std::string>& operationsR, const std::set<std::string>& operationsW,
                                      const std::string& arg_name, const std::string& interfaceType,
-                                     unsigned int input_bw, bool isDiffSize, const std::string& fname,
-                                     unsigned n_resources, unsigned alignment, bool isReal, unsigned rwBWsize,
-                                     unsigned int top_id) const
+                                     unsigned long long input_bw, bool isDiffSize, const std::string& fname,
+                                     unsigned int n_resources, unsigned int alignment, bool isReal,
+                                     unsigned long long rwBWsize, unsigned int top_id) const
 {
    if(interfaceType == "none" || interfaceType == "none_registered" || interfaceType == "acknowledge" ||
       interfaceType == "valid" || interfaceType == "ovalid" || interfaceType == "handshake" ||
@@ -1902,8 +1905,9 @@ void InterfaceInfer::create_resource(const std::set<std::string>& operationsR, c
    }
 }
 
-void InterfaceInfer::ComputeResourcesAlignment(unsigned& n_resources, unsigned& alignment, unsigned int input_bw,
-                                               bool is_acType, bool is_signed, bool is_fixed)
+void InterfaceInfer::ComputeResourcesAlignment(unsigned int& n_resources, unsigned int& alignment,
+                                               unsigned long long input_bw, bool is_acType, bool is_signed,
+                                               bool is_fixed)
 {
    n_resources = 1;
    if(input_bw > 64 && input_bw <= 128)
@@ -1912,7 +1916,7 @@ void InterfaceInfer::ComputeResourcesAlignment(unsigned& n_resources, unsigned& 
    }
    else if(input_bw > 128)
    {
-      n_resources = input_bw / 32 + (input_bw % 32 ? 1 : 0);
+      n_resources = static_cast<unsigned>(input_bw / 32 + (input_bw % 32 ? 1 : 0));
       if(!is_signed && input_bw % 32 == 0 && !is_fixed)
       {
          ++n_resources;
@@ -1942,7 +1946,7 @@ void InterfaceInfer::ComputeResourcesAlignment(unsigned& n_resources, unsigned& 
    }
    else
    {
-      alignment = (input_bw / 32) + 4 * (input_bw % 32 ? 1 : 0);
+      alignment = static_cast<unsigned int>((input_bw / 32) + 4 * (input_bw % 32 ? 1 : 0));
       if(!is_signed && input_bw % 32 == 0 && !is_fixed)
       {
          alignment += 4;

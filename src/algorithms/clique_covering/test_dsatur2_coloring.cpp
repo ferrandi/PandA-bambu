@@ -52,10 +52,10 @@
 using namespace boost;
 int main(int argc, char* argv[])
 {
-   typedef adjacency_list<vecS, vecS, undirectedS> Graph1;
-   typedef graph_traits<Graph1>::vertex_descriptor vertex_descriptor;
-   typedef graph_traits<Graph1>::vertices_size_type vertices_size_type;
-   typedef property_map<Graph1, vertex_index_t>::const_type vertex_index_map;
+   using Graph1 = adjacency_list<vecS, vecS, undirectedS>;
+   using vertex_descriptor = graph_traits<Graph1>::vertex_descriptor;
+   using vertices_size_type = graph_traits<Graph1>::vertices_size_type;
+   using vertex_index_map = property_map<Graph1, vertex_index_t>::const_type;
    std::vector<vertex_descriptor> verts;
    if(argc < 2)
    {

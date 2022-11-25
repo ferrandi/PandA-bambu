@@ -60,9 +60,7 @@ mem_dominator_allocation_cs::mem_dominator_allocation_cs(
    debug_level = _parameters->get_class_debug_level(GET_CLASS(*this));
 }
 
-mem_dominator_allocation_cs::~mem_dominator_allocation_cs()
-{
-}
+mem_dominator_allocation_cs::~mem_dominator_allocation_cs() = default;
 
 DesignFlowStep_Status mem_dominator_allocation_cs::Exec()
 {

@@ -102,7 +102,9 @@ bool PrioritySorter::operator()(const vertex x, const vertex y) const
    const auto x_priority = (*priority)(x);
    const auto y_priority = (*priority)(y);
    if(x_priority != y_priority)
+   {
       return x_priority > y_priority;
+   }
    return GET_NAME(op_graph, x) < GET_NAME(op_graph, y);
 }
 #endif
@@ -374,8 +376,7 @@ void parametric_list_based::Initialize()
 
 static bool has_element_in_common(const std::set<std::string>& set1, const std::set<std::string>& set2)
 {
-   std::set<std::string>::const_iterator first1 = set1.begin(), last1 = set1.end(), first2 = set2.begin(),
-                                         last2 = set2.end();
+   auto first1 = set1.begin(), last1 = set1.end(), first2 = set2.begin(), last2 = set2.end();
    while(first1 != last1 and first2 != last2)
    {
       if(*first1 < *first2)
@@ -2015,7 +2016,7 @@ DesignFlowStep_Status parametric_list_based::InternalExec()
    std::deque<vertex> vertices;
    boost::topological_sort(*bbg, std::front_inserter(vertices));
    auto viend = vertices.end();
-   ControlStep ctrl_steps = ControlStep(0u);
+   auto ctrl_steps = ControlStep(0u);
    /// initialize topological_sorted_functions
    compute_function_topological_order();
    for(auto vi = vertices.begin(); vi != viend; ++vi)
@@ -2449,8 +2450,8 @@ void parametric_list_based::do_balanced_scheduling(const CustomUnorderedSet<vert
    /// step 2: compute operation distribution
    std::map<ControlStep, std::deque<vertex>> T;
    std::map<ControlStep, double> T_area;
-   ControlStep min_cycle = ControlStep(std::numeric_limits<unsigned int>::max());
-   ControlStep max_cycle = ControlStep(0u);
+   auto min_cycle = ControlStep(std::numeric_limits<unsigned int>::max());
+   auto max_cycle = ControlStep(0u);
    double total_resource_area = 0;
    for(auto current_op : sub_levels)
    {
@@ -2735,8 +2736,8 @@ void parametric_list_based::do_balanced_scheduling1(const CustomUnorderedSet<ver
 
    std::map<unsigned int, double> total_obj;
    std::map<unsigned int, std::map<ControlStep, double>> T_obj;
-   ControlStep min_cycle = ControlStep(std::numeric_limits<unsigned int>::max());
-   ControlStep max_cycle = ControlStep(0u);
+   auto min_cycle = ControlStep(std::numeric_limits<unsigned int>::max());
+   auto max_cycle = ControlStep(0u);
    for(auto current_op : sub_levels)
    {
       const auto curr_cs = schedule->get_cstep(current_op).second;

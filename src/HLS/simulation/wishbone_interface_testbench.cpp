@@ -123,7 +123,7 @@ void WishboneInterfaceTestbench::write_wishbone_input_signal_declaration(const t
          if(port_obj->get_kind() != port_o_K &&
             port_obj->get_typeRef()->type != structural_type_descriptor::VECTOR_BOOL)
          {
-            unsigned int lsb = GetPointer<port_o>(mod->get_in_port(i))->get_lsb();
+            auto lsb = GetPointer<port_o>(mod->get_in_port(i))->get_lsb();
             writer->write("[" + STR(GetPointer<port_o>(mod->get_in_port(i))->get_ports_size() - 1 + lsb) + ":" +
                           STR(lsb) + "] ");
          }
@@ -162,7 +162,7 @@ void WishboneInterfaceTestbench::write_call(bool hasMultiIrq) const
 {
    const auto top_functions = HLSMgr->CGetCallGraphManager()->GetRootFunctions();
    THROW_ASSERT(top_functions.size() == 1, "");
-   const unsigned int topFunctionId = *(top_functions.begin());
+   const auto topFunctionId = *(top_functions.begin());
    const BehavioralHelperConstRef behavioral_helper =
        HLSMgr->CGetFunctionBehavior(topFunctionId)->CGetBehavioralHelper();
    const memoryRef mem = HLSMgr->Rmem;
@@ -170,7 +170,7 @@ void WishboneInterfaceTestbench::write_call(bool hasMultiIrq) const
    std::vector<std::string> parameterNames;
    for(auto const& function_parameter : function_parameters)
    {
-      unsigned int var = function_parameter.first;
+      auto var = function_parameter.first;
       std::string variableName = (var == behavioral_helper->GetFunctionReturnType(topFunctionId)) ?
                                      RETURN_PORT_NAME :
                                      behavioral_helper->PrintVariable(var);
@@ -414,8 +414,8 @@ void WishboneInterfaceTestbench::write_call(bool hasMultiIrq) const
 void WishboneInterfaceTestbench::write_memory_handler() const
 {
    structural_objectRef dat_om = mod->find_member(WB_DATOM_PORT_NAME, port_o_K, cir);
-   unsigned int data_bus_bitsize = GET_TYPE_SIZE(dat_om);
-   unsigned int dataBusByteSize = data_bus_bitsize >> 3;
+   auto data_bus_bitsize = GET_TYPE_SIZE(dat_om);
+   auto dataBusByteSize = data_bus_bitsize >> 3;
 
    writer->write("always @(posedge " + std::string(CLOCK_PORT_NAME) + ")\n");
    writer->write(STR(STD_OPENING_CHAR));
@@ -536,7 +536,7 @@ void WishboneInterfaceTestbench::write_wishbone_output_signal_declaration(bool& 
          if(mod->get_out_port(i)->get_kind() != port_o_K &&
             mod->get_out_port(i)->get_typeRef()->type != structural_type_descriptor::VECTOR_BOOL)
          {
-            unsigned int lsb = GetPointer<port_o>(mod->get_out_port(i))->get_lsb();
+            auto lsb = GetPointer<port_o>(mod->get_out_port(i))->get_lsb();
             writer->write("[" + STR(GetPointer<port_o>(mod->get_out_port(i))->get_ports_size() - 1 + lsb) + ":" +
                           STR(lsb) + "] ");
          }
@@ -561,7 +561,7 @@ void WishboneInterfaceTestbench::write_signals(const tree_managerConstRef TreeM,
 
    const auto top_functions = HLSMgr->CGetCallGraphManager()->GetRootFunctions();
    THROW_ASSERT(top_functions.size() == 1, "");
-   const unsigned int topFunctionId = *(top_functions.begin());
+   const auto topFunctionId = *(top_functions.begin());
    const BehavioralHelperConstRef behavioral_helper =
        HLSMgr->CGetFunctionBehavior(topFunctionId)->CGetBehavioralHelper();
    const memoryRef mem = HLSMgr->Rmem;
@@ -626,7 +626,7 @@ void WishboneInterfaceTestbench::write_file_reading_operations() const
 {
    const auto top_functions = HLSMgr->CGetCallGraphManager()->GetRootFunctions();
    THROW_ASSERT(top_functions.size() == 1, "");
-   const unsigned int topFunctionId = *(top_functions.begin());
+   const auto topFunctionId = *(top_functions.begin());
    const BehavioralHelperConstRef behavioral_helper =
        HLSMgr->CGetFunctionBehavior(topFunctionId)->CGetBehavioralHelper();
    const memoryRef mem = HLSMgr->Rmem;
@@ -634,7 +634,7 @@ void WishboneInterfaceTestbench::write_file_reading_operations() const
    std::vector<std::string> parameterNames;
    for(auto const& function_parameter : function_parameters)
    {
-      unsigned int var = function_parameter.first;
+      auto var = function_parameter.first;
       std::string variableName = (var == behavioral_helper->GetFunctionReturnType(topFunctionId)) ?
                                      RETURN_PORT_NAME :
                                      behavioral_helper->PrintVariable(var);

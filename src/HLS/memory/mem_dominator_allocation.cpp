@@ -441,7 +441,7 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
    {
       THROW_ERROR("Both --unaligned-access and --aligned-access have been specified");
    }
-   std::map<unsigned int, unsigned int> var_size;
+   std::map<unsigned int, unsigned long long> var_size;
 
    for(const auto fun_id : func_list)
    {
@@ -577,12 +577,12 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
                   continue;
                }
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Variable is " + STR(var));
-               unsigned int value_bitsize;
                THROW_ASSERT(g->CGetOpNodeInfo(*v), "unexpected condition");
-               unsigned int node_id = g->CGetOpNodeInfo(*v)->GetNodeId();
-               const tree_nodeRef node = TreeM->get_tree_node_const(node_id);
-               auto* gm = GetPointer<gimple_assign>(node);
+               const auto node_id = g->CGetOpNodeInfo(*v)->GetNodeId();
+               const auto node = TreeM->CGetTreeNode(node_id);
+               const auto gm = GetPointer<const gimple_assign>(node);
                THROW_ASSERT(gm, "only gimple_assign's are allowed as memory operations");
+               unsigned long long value_bitsize;
                auto alignment = 8ull;
                if(GET_TYPE(g, *v) & TYPE_STORE)
                {
@@ -625,36 +625,38 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
                   }
                   else
                   {
-                     THROW_ERROR("unexpected condition" + GET_NODE(gm->op0)->get_kind_text() + " " + gm->ToString());
+                     THROW_ERROR("unexpected condition" + GET_CONST_NODE(gm->op0)->get_kind_text() + " " +
+                                 gm->ToString());
                   }
                   alignment = (1ull << n_last_zerobits) * 8;
-                  std::vector<HLS_manager::io_binding_type> var_read = HLSMgr->get_required_values(fun_id, *v);
-                  unsigned int size_var = std::get<0>(var_read[0]);
+                  const auto var_read = HLSMgr->get_required_values(fun_id, *v);
+                  const auto size_var = std::get<0>(var_read[0]);
                   const auto size_type = tree_helper::CGetType(TreeM->CGetTreeReindex(size_var));
                   value_bitsize = tree_helper::Size(size_type);
                   const auto fd = GetPointer<const field_decl>(GET_CONST_NODE(size_type));
                   if(!fd || !fd->is_bitfield())
                   {
-                     value_bitsize = std::max(8u, value_bitsize);
+                     value_bitsize = std::max(8ull, value_bitsize);
                   }
                   HLSMgr->Rmem->add_source_value(var, size_var);
                }
                else
                {
                   auto n_last_zerobits = 0u;
-                  if(GET_NODE(gm->op1)->get_kind() == mem_ref_K)
+                  if(GET_CONST_NODE(gm->op1)->get_kind() == mem_ref_K)
                   {
-                     auto* mr = GetPointer<mem_ref>(GET_NODE(gm->op1));
-                     THROW_ASSERT(GetPointer<integer_cst>(GET_NODE(mr->op1)), "unexpected condition");
-                     THROW_ASSERT(tree_helper::get_integer_cst_value(GetPointer<integer_cst>(GET_NODE(mr->op1))) == 0,
+                     const auto mr = GetPointer<const mem_ref>(GET_CONST_NODE(gm->op1));
+                     THROW_ASSERT(GetPointer<const integer_cst>(GET_CONST_NODE(mr->op1)), "unexpected condition");
+                     THROW_ASSERT(tree_helper::get_integer_cst_value(
+                                      GetPointer<const integer_cst>(GET_CONST_NODE(mr->op1))) == 0,
                                   "unexpected condition");
-                     if(GET_NODE(mr->op0)->get_kind() == ssa_name_K)
+                     if(GET_CONST_NODE(mr->op0)->get_kind() == ssa_name_K)
                      {
-                        auto ssa_addr = GetPointer<ssa_name>(GET_NODE(mr->op0));
+                        const auto ssa_addr = GetPointer<const ssa_name>(GET_CONST_NODE(mr->op0));
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                       "Load SSA pointer " + mr->op0->ToString() +
+                                       "---LOAD SSA pointer " + mr->op0->ToString() +
                                            " bit_values=" + ssa_addr->bit_values);
-                        if(ssa_addr->bit_values == "0")
+                        if(ssa_addr->bit_values.find_first_not_of('0') == std::string::npos)
                         {
                            n_last_zerobits = 60; // infinite alignment
                         }
@@ -680,16 +682,17 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
                   }
                   else
                   {
-                     THROW_ERROR("unexpected condition " + GET_NODE(gm->op1)->get_kind_text() + " " + gm->ToString());
+                     THROW_ERROR("unexpected condition " + GET_CONST_NODE(gm->op1)->get_kind_text() + " " +
+                                 gm->ToString());
                   }
                   alignment = (1ull << n_last_zerobits) * 8;
-                  unsigned int size_var = HLSMgr->get_produced_value(fun_id, *v);
+                  const auto size_var = HLSMgr->get_produced_value(fun_id, *v);
                   const auto size_type = tree_helper::CGetType(TreeM->CGetTreeReindex(size_var));
                   value_bitsize = tree_helper::Size(size_type);
                   const auto fd = GetPointer<const field_decl>(GET_CONST_NODE(size_type));
                   if(!fd || !fd->is_bitfield())
                   {
-                     value_bitsize = std::max(8u, value_bitsize);
+                     value_bitsize = std::max(8ull, value_bitsize);
                   }
                }
 
@@ -702,7 +705,7 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
                       tree_helper::IsComplexType(type_node);
                   const auto elmt_bitsize = tree_helper::AccessedMaximumBitsize(type_node, 1);
                   const auto mim_elmt_bitsize = tree_helper::AccessedMinimunBitsize(type_node, elmt_bitsize);
-                  unsigned int elts_size = elmt_bitsize;
+                  auto elts_size = elmt_bitsize;
                   if(tree_helper::IsArrayType(type_node))
                   {
                      elts_size = tree_helper::GetArrayElementSize(type_node);
@@ -1200,7 +1203,7 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
    if(parameters->isOption(OPT_sparse_memory) && parameters->getOption<bool>(OPT_sparse_memory))
    {
       /// change the internal alignment to improve the decoding logic
-      unsigned int max_byte_size = HLSMgr->Rmem->get_internal_base_address_alignment();
+      auto max_byte_size = HLSMgr->Rmem->get_internal_base_address_alignment();
       for(const auto& mem_map : memory_allocation_map)
       {
          for(const auto& pair : mem_map.second)
@@ -1209,7 +1212,7 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
             THROW_ASSERT(var_index, "null var index unexpected");
             if(pair.second && (!HLSMgr->Rmem->is_private_memory(var_index) || null_pointer_check))
             {
-               unsigned int curr_size = compute_n_bytes(tree_helper::Size(TreeM->CGetTreeReindex(var_index)));
+               auto curr_size = compute_n_bytes(tree_helper::Size(TreeM->CGetTreeReindex(var_index)));
                max_byte_size = std::max(curr_size, max_byte_size);
             }
          }
@@ -1221,6 +1224,7 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
       max_byte_size |= max_byte_size >> 4;
       max_byte_size |= max_byte_size >> 8;
       max_byte_size |= max_byte_size >> 16;
+      max_byte_size |= max_byte_size >> 32;
       max_byte_size++;
       HLSMgr->Rmem->set_internal_base_address_alignment(max_byte_size);
    }

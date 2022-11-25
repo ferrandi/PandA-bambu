@@ -368,7 +368,7 @@ void fu_binding::kill_proxy_function_units(std::map<unsigned int, std::string>& 
       killing_funs.insert(it_mu->second);
       reverse_wrapped_units[it_mu->second] = it_mu->first;
    }
-   for(auto fun_name : killing_funs)
+   for(const auto& fun_name : killing_funs)
    {
       auto inPortSize = static_cast<unsigned int>(GetPointer<module>(curr_gate)->get_in_port_size());
       for(unsigned int currentPort = 0; currentPort < inPortSize; ++currentPort)
@@ -568,8 +568,8 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
    const auto FB = HLSMgr->CGetFunctionBehavior(HLS->functionId);
    const auto function_parameters = FB->CGetBehavioralHelper()->get_parameters();
    unsigned int sign_id = 0;
-   structural_objectRef start_port = GetPointer<module>(circuit)->find_member(START_PORT_NAME, port_o_K, circuit);
-   structural_objectRef done_port = GetPointer<module>(circuit)->find_member(DONE_PORT_NAME, port_o_K, circuit);
+   const auto start_port = GetPointer<module>(circuit)->find_member(START_PORT_NAME, port_o_K, circuit);
+   const auto done_port = GetPointer<module>(circuit)->find_member(DONE_PORT_NAME, port_o_K, circuit);
    structural_objectRef in_chain = start_port;
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Adding parameter ports");
    for(const auto& function_parameter : function_parameters)
@@ -578,58 +578,50 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
          !HLSMgr->Rmem->is_parm_decl_stored(function_parameter))
       {
          PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Managing parameter copy: " + STR(function_parameter));
-         const technology_nodeRef fu_lib_unit = TechM->get_fu(MEMCPY_STD, WORK_LIBRARY);
+         const auto fu_lib_unit = TechM->get_fu(MEMCPY_STD, WORK_LIBRARY);
          THROW_ASSERT(fu_lib_unit,
                       "functional unit not available: check the library given. Component: " + std::string(MEMCPY_STD));
-         structural_objectRef curr_gate =
-             add_gate(HLSMgr, HLS, fu_lib_unit, "parameter_manager_" + STR(function_parameter), OpVertexSet(op_graph),
-                      clock_port, reset_port);
-         conn_binding::direction_type direction = conn_binding::IN;
-         generic_objRef port_obj = HLS->Rconn->get_port(function_parameter, direction);
-         structural_objectRef in_par = port_obj->get_out_sign();
-         structural_objectRef src = GetPointer<module>(curr_gate)->find_member("src", port_o_K, curr_gate);
+         auto curr_gate = add_gate(HLSMgr, HLS, fu_lib_unit, "parameter_manager_" + STR(function_parameter),
+                                   OpVertexSet(op_graph), clock_port, reset_port);
+         const auto curr_gate_m = GetPointerS<module>(curr_gate);
+         auto direction = conn_binding::IN;
+         const auto port_obj = HLS->Rconn->get_port(function_parameter, direction);
+         const auto in_par = port_obj->get_out_sign();
+         const auto src = curr_gate_m->find_member("src", port_o_K, curr_gate);
          SM->add_connection(in_par, src);
-         structural_objectRef dest = GetPointer<module>(curr_gate)->find_member("dest", port_o_K, curr_gate);
+         const auto dest = curr_gate_m->find_member("dest", port_o_K, curr_gate);
 
-         structural_objectRef const_obj = SM->add_module_from_technology_library(
+         const auto const_obj = SM->add_module_from_technology_library(
              "memcpy_dest_" + HLSMgr->Rmem->get_symbol(function_parameter, HLS->functionId)->get_symbol_name(),
              CONSTANT_STD, LIBRARY_STD, circuit, TechM);
          const_obj->SetParameter("value",
                                  HLSMgr->Rmem->get_symbol(function_parameter, HLS->functionId)->get_symbol_name());
-         std::string name = "out_const_memcpy_dest_" +
-                            HLSMgr->Rmem->get_symbol(function_parameter, HLS->functionId)->get_symbol_name();
-         structural_objectRef dest_sign = SM->add_sign(name, circuit, dest->get_typeRef());
-         structural_objectRef out_port = const_obj->find_member("out1", port_o_K, const_obj);
+         const auto name = "out_const_memcpy_dest_" +
+                           HLSMgr->Rmem->get_symbol(function_parameter, HLS->functionId)->get_symbol_name();
+         const auto dest_sign = SM->add_sign(name, circuit, dest->get_typeRef());
+         const auto out_port = const_obj->find_member("out1", port_o_K, const_obj);
          // customize output port size
          out_port->type_resize(STD_GET_SIZE(dest->get_typeRef()));
          SM->add_connection(dest_sign, out_port);
          SM->add_connection(dest, dest_sign);
-         structural_objectRef n = GetPointer<module>(curr_gate)->find_member("len", port_o_K, curr_gate);
-         structural_objectRef n_obj = SM->add_constant(
+         const auto n = curr_gate_m->find_member("len", port_o_K, curr_gate);
+         const auto n_obj = SM->add_constant(
              "constant_len_" + STR(function_parameter), circuit, n->get_typeRef(),
              STR(tree_helper::Size(tree_helper::CGetType(TreeM->CGetTreeReindex(function_parameter))) / 8));
          SM->add_connection(n, n_obj);
          THROW_ASSERT(in_chain, "missing in chain element");
-         structural_objectRef start_obj =
-             GetPointer<module>(curr_gate)->find_member(START_PORT_NAME, port_o_K, curr_gate);
+         const auto start_obj = curr_gate_m->find_member(START_PORT_NAME, port_o_K, curr_gate);
 
          if(HLS->registered_inputs && in_chain == start_port)
          {
-            technology_nodeRef delay_unit;
-            auto reset_type = parameters->getOption<std::string>(OPT_reset_type);
-            if(reset_type == "sync")
-            {
-               delay_unit = TechM->get_fu(flipflop_SR, LIBRARY_STD);
-            }
-            else
-            {
-               delay_unit = TechM->get_fu(flipflop_AR, LIBRARY_STD);
-            }
+            const auto delay_unit = [&]() {
+               const auto reset_type = parameters->getOption<std::string>(OPT_reset_type);
+               return TechM->get_fu(reset_type == "sync" ? flipflop_SR : flipflop_AR, LIBRARY_STD);
+            }();
             THROW_ASSERT(delay_unit, "");
-            structural_objectRef delay_gate =
-                add_gate(HLSMgr, HLS, delay_unit, "start_delayed_" + STR(function_parameter), OpVertexSet(op_graph),
-                         clock_port, reset_port);
-            structural_objectRef sign =
+            const auto delay_gate = add_gate(HLSMgr, HLS, delay_unit, "start_delayed_" + STR(function_parameter),
+                                             OpVertexSet(op_graph), clock_port, reset_port);
+            const auto sign =
                 SM->add_sign(START_PORT_NAME + STR("_") + STR(sign_id), circuit, start_obj->get_typeRef());
             ++sign_id;
             SM->add_connection(sign, in_chain);
@@ -642,13 +634,12 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
          }
          else
          {
-            structural_objectRef sign =
-                SM->add_sign(START_PORT_NAME + STR("_") + STR(sign_id), circuit, in_chain->get_typeRef());
+            const auto sign = SM->add_sign(START_PORT_NAME + STR("_") + STR(sign_id), circuit, in_chain->get_typeRef());
             ++sign_id;
             SM->add_connection(sign, in_chain);
             SM->add_connection(sign, start_obj);
          }
-         in_chain = GetPointer<module>(curr_gate)->find_member(DONE_PORT_NAME, port_o_K, curr_gate);
+         in_chain = curr_gate_m->find_member(DONE_PORT_NAME, port_o_K, curr_gate);
          manage_module_ports(HLSMgr, HLS, SM, curr_gate, 0);
          memory_modules.push_back(curr_gate);
       }
@@ -656,47 +647,32 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                         "---Managing parameter initialization: " + STR(function_parameter));
-         unsigned int bus_data_bitsize = HLSMgr->Rmem->get_bus_data_bitsize();
-         unsigned int bus_addr_bitsize = HLSMgr->get_address_bitsize();
-         unsigned int bus_size_bitsize = HLSMgr->Rmem->get_bus_size_bitsize();
-         unsigned int bus_tag_bitsize = 0;
-         if(HLS->Param->isOption(OPT_context_switch))
+         auto bus_data_bitsize = HLSMgr->Rmem->get_bus_data_bitsize();
+         auto bus_addr_bitsize = HLSMgr->get_address_bitsize();
+         auto bus_size_bitsize = HLSMgr->Rmem->get_bus_size_bitsize();
+         unsigned long long bus_tag_bitsize = 0;
+         if(HLS->Param->getOption<bool>(OPT_parse_pragma) && HLS->Param->isOption(OPT_context_switch))
          {
             bus_tag_bitsize = GetPointer<memory_cs>(HLSMgr->Rmem)->get_bus_tag_bitsize();
          }
-         structural_objectRef curr_gate;
-         bool is_multiport;
-         size_t max_n_ports =
-             HLS->Param->isOption(OPT_channels_number) ? parameters->getOption<unsigned int>(OPT_channels_number) : 0;
-         if(parameters->getOption<MemoryAllocation_ChannelsType>(OPT_channels_type) ==
-            MemoryAllocation_ChannelsType::MEM_ACC_NN)
-         {
-            const technology_nodeRef fu_lib_unit = TechM->get_fu(MEMSTORE_STDN, LIBRARY_STD_FU);
-            THROW_ASSERT(fu_lib_unit, "functional unit not available: check the library given. Component: " +
-                                          std::string(MEMSTORE_STDN));
-            curr_gate = add_gate(HLSMgr, HLS, fu_lib_unit, "parameter_manager_" + STR(function_parameter),
-                                 OpVertexSet(op_graph), clock_port, reset_port);
-            is_multiport = true;
-         }
-         else
-         {
-            const technology_nodeRef fu_lib_unit = TechM->get_fu(MEMSTORE_STD, LIBRARY_STD_FU);
-            THROW_ASSERT(fu_lib_unit, "functional unit not available: check the library given. Component: " +
-                                          std::string(MEMSTORE_STD));
-            curr_gate = add_gate(HLSMgr, HLS, fu_lib_unit, "parameter_manager_" + STR(function_parameter),
-                                 OpVertexSet(op_graph), clock_port, reset_port);
-            is_multiport = false;
-         }
-         conn_binding::direction_type direction = conn_binding::IN;
-         generic_objRef port_obj = HLS->Rconn->get_port(function_parameter, direction);
-         structural_objectRef in_par = port_obj->get_out_sign();
-         structural_objectRef data = GetPointer<module>(curr_gate)->find_member("data", port_o_K, curr_gate);
+         const auto is_multiport = parameters->getOption<MemoryAllocation_ChannelsType>(OPT_channels_type) ==
+                                   MemoryAllocation_ChannelsType::MEM_ACC_NN;
+         const auto fu_lib_unit = TechM->get_fu(is_multiport ? MEMSTORE_STDN : MEMSTORE_STD, LIBRARY_STD_FU);
+         THROW_ASSERT(fu_lib_unit, "functional unit not available: check the library given. Component: " +
+                                       STR(is_multiport ? MEMSTORE_STDN : MEMSTORE_STD));
+         auto max_n_ports =
+             -HLS->Param->isOption(OPT_channels_number) ? parameters->getOption<unsigned int>(OPT_channels_number) : 0;
+         const auto curr_gate = add_gate(HLSMgr, HLS, fu_lib_unit, "parameter_manager_" + STR(function_parameter),
+                                         OpVertexSet(op_graph), clock_port, reset_port);
+         const auto port_obj = HLS->Rconn->get_port(function_parameter, conn_binding::IN);
+         const auto in_par = port_obj->get_out_sign();
+         const auto data = GetPointer<module>(curr_gate)->find_member("data", port_o_K, curr_gate);
          data->type_resize(STD_GET_SIZE(in_par->get_typeRef()));
          SM->add_connection(in_par, data);
 
-         structural_objectRef size = GetPointer<module>(curr_gate)->find_member("size", port_o_K, curr_gate);
+         const auto size = GetPointer<module>(curr_gate)->find_member("size", port_o_K, curr_gate);
          size->type_resize(STD_GET_SIZE(in_par->get_typeRef()));
-         structural_objectRef size_const_obj = SM->add_module_from_technology_library(
+         const auto size_const_obj = SM->add_module_from_technology_library(
              "size_par_" + HLSMgr->Rmem->get_symbol(function_parameter, HLS->functionId)->get_symbol_name(),
              CONSTANT_STD, LIBRARY_STD, circuit, TechM);
          const std::string parameter_value =
@@ -707,26 +683,26 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
                      std::string("\"") :
                  STR(STD_GET_SIZE(in_par->get_typeRef()));
          size_const_obj->SetParameter("value", parameter_value);
-         std::string size_name =
+         const auto size_name =
              "out_const_size_par_" + HLSMgr->Rmem->get_symbol(function_parameter, HLS->functionId)->get_symbol_name();
-         structural_objectRef size_sign = SM->add_sign(size_name, circuit, size->get_typeRef());
-         structural_objectRef size_out_port = size_const_obj->find_member("out1", port_o_K, size_const_obj);
+         const auto size_sign = SM->add_sign(size_name, circuit, size->get_typeRef());
+         const auto size_out_port = size_const_obj->find_member("out1", port_o_K, size_const_obj);
          // customize output port size
          size_out_port->type_resize(STD_GET_SIZE(in_par->get_typeRef()));
          SM->add_connection(size_sign, size_out_port);
          SM->add_connection(size, size_sign);
 
-         structural_objectRef addr = GetPointer<module>(curr_gate)->find_member("addr", port_o_K, curr_gate);
+         const auto addr = GetPointer<module>(curr_gate)->find_member("addr", port_o_K, curr_gate);
          addr->type_resize(bus_addr_bitsize);
-         structural_objectRef const_obj = SM->add_module_from_technology_library(
+         const auto const_obj = SM->add_module_from_technology_library(
              "addr_par_" + HLSMgr->Rmem->get_symbol(function_parameter, HLS->functionId)->get_symbol_name(),
              CONSTANT_STD, LIBRARY_STD, circuit, TechM);
          const_obj->SetParameter("value",
                                  HLSMgr->Rmem->get_symbol(function_parameter, HLS->functionId)->get_symbol_name());
-         std::string name =
+         const auto name =
              "out_const_addr_par_" + HLSMgr->Rmem->get_symbol(function_parameter, HLS->functionId)->get_symbol_name();
-         structural_objectRef addr_sign = SM->add_sign(name, circuit, addr->get_typeRef());
-         structural_objectRef out_port = const_obj->find_member("out1", port_o_K, const_obj);
+         const auto addr_sign = SM->add_sign(name, circuit, addr->get_typeRef());
+         const auto out_port = const_obj->find_member("out1", port_o_K, const_obj);
          // customize output port size
          out_port->type_resize(bus_addr_bitsize);
          SM->add_connection(addr_sign, out_port);
@@ -850,8 +826,8 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
    std::map<unsigned int, structural_objectRef> mem_obj;
    for(const auto& m : memory_units)
    {
-      const unsigned int fu_type_id = m.first;
-      unsigned int var = m.second;
+      const auto fu_type_id = m.first;
+      auto var = m.second;
       std::string name;
       std::string fun_unit_name = allocation_information->get_fu_name(fu_type_id).first;
       if(allocation_information->is_direct_access_memory_unit(fu_type_id))
@@ -868,14 +844,14 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
       PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                     "Memory Unit: " + allocation_information->get_string_name(fu_type_id) + " for variable: " +
                         HLSMgr->CGetFunctionBehavior(HLS->functionId)->CGetBehavioralHelper()->PrintVariable(var));
-      std::string base_address = HLSMgr->Rmem->get_symbol(var, HLS->functionId)->get_symbol_name();
-      unsigned long long int rangesize = HLSMgr->Rmem->get_rangesize(var);
+      const auto base_address = HLSMgr->Rmem->get_symbol(var, HLS->functionId)->get_symbol_name();
+      const auto rangesize = HLSMgr->Rmem->get_rangesize(var);
       PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "  - base address: " + STR(base_address));
       PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "  - range size: " + STR(rangesize));
-      unsigned int n_channels = allocation_information->get_number_channels(fu_type_id);
-      unsigned int total_allocated = get_number(fu_type_id);
-      unsigned int n_iterations = std::max(1u, total_allocated);
-      for(unsigned int num = 0; num < n_iterations; num = num + n_channels)
+      const auto n_channels = allocation_information->get_number_channels(fu_type_id);
+      const auto total_allocated = get_number(fu_type_id);
+      const auto n_iterations = std::max(1u, total_allocated);
+      for(unsigned int num = 0; num < n_iterations; num += n_channels)
       {
          OpVertexSet operations_set(op_graph);
          for(unsigned int channel_index = 0; channel_index < n_channels && (num + channel_index < total_allocated);
@@ -992,12 +968,12 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
          }
          else if(is_multichannel && (num % allocation_information->get_number_channels(i)) != 0)
          {
-            unsigned int n_channels = allocation_information->get_number_channels(i);
+            auto n_channels = allocation_information->get_number_channels(i);
             generic_objRef true_module_obj = get(i, (num / n_channels) * n_channels);
             curr_gate = true_module_obj->get_structural_obj();
             const OpVertexSet mapped_operations = get_operations(i, num);
             has_resource_sharing_p = has_resource_sharing_p || (mapped_operations.size() > 1);
-            const unsigned int ar_var =
+            const auto ar_var =
                 allocation_information->is_proxy_memory_unit(i) ? allocation_information->get_proxy_memory_var(i) : 0;
             specialise_fu(HLSMgr, HLS, curr_gate, i, mapped_operations, ar_var);
             module_obj->set_structural_obj(curr_gate);
@@ -1009,7 +985,7 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
             THROW_ASSERT(fu_lib_unit, "functional unit not available: check the library given. Component: " +
                                           allocation_information->get_fu_name(i).first);
             curr_gate = add_gate(HLSMgr, HLS, fu_lib_unit, name,
-                                 allocation_information->is_direct_proxy_memory_unit(i) or
+                                 allocation_information->is_direct_proxy_memory_unit(i) ||
                                          allocation_information->is_indirect_access_memory_unit(i) ?
                                      OpVertexSet(op_graph) :
                                      mapped_operations,
@@ -1025,13 +1001,13 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
             {
                has_resource_sharing_p = true;
                const vertex site = *mapped_operations.begin();
-               unsigned int vertex_node_id = op_graph->CGetOpNodeInfo(site)->GetNodeId();
+               auto vertex_node_id = op_graph->CGetOpNodeInfo(site)->GetNodeId();
 
-               memory_symbolRef callSiteMemorySym = HLSMgr->Rmem->get_symbol(vertex_node_id, HLS->functionId);
+               auto callSiteMemorySym = HLSMgr->Rmem->get_symbol(vertex_node_id, HLS->functionId);
                memory::add_memory_parameter(HLS->datapath, callSiteMemorySym->get_symbol_name(),
                                             STR(callSiteMemorySym->get_address()));
             }
-            const unsigned int ar_var =
+            const auto ar_var =
                 allocation_information->is_proxy_memory_unit(i) ? allocation_information->get_proxy_memory_var(i) : 0;
             specialise_fu(HLSMgr, HLS, curr_gate, i, mapped_operations, ar_var);
             check_parametrization(curr_gate);
@@ -1148,10 +1124,12 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
          if(HLSMgr->Rfuns->has_proxied_shared_functions(f_id))
          {
             auto proxied_shared_functions = HLSMgr->Rfuns->get_proxied_shared_functions(f_id);
-            for(auto name : proxied_shared_functions)
+#ifndef NDEBUG
+            for(const auto& name : proxied_shared_functions)
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---  proxy shared function: " + name);
             }
+#endif
             kill_proxy_function_units(wrapped_units, FU, fun_call_sites_rel, reverse_function_units);
          }
 
@@ -1655,14 +1633,14 @@ void fu_binding::manage_memory_ports_parallel_chained(const HLS_managerRef, cons
          if(GetPointer<port_o>(port_i)->get_is_memory() && (!GetPointer<port_o>(port_i)->get_is_global()) &&
             (!GetPointer<port_o>(port_i)->get_is_extern()))
          {
-            std::string port_name = GetPointer<port_o>(port_i)->get_id();
+            const auto port_name = GetPointerS<port_o>(port_i)->get_id();
             cir_port = circuit->find_member(port_name, port_i->get_kind(), circuit);
             THROW_ASSERT(!cir_port || GetPointer<port_o>(cir_port), "should be a port or null");
             if(!cir_port)
             {
                if(port_i->get_kind() == port_vector_o_K)
                {
-                  cir_port = SM->add_port_vector(port_name, port_o::OUT, GetPointer<port_o>(port_i)->get_ports_size(),
+                  cir_port = SM->add_port_vector(port_name, port_o::OUT, GetPointerS<port_o>(port_i)->get_ports_size(),
                                                  circuit, port_i->get_typeRef());
                }
                else
@@ -1824,23 +1802,22 @@ tree_nodeRef getFunctionType(tree_nodeRef exp);
 void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, structural_objectRef fu_obj,
                                unsigned int fu, const OpVertexSet& mapped_operations, unsigned int ar)
 {
-   const FunctionBehaviorConstRef FB = HLSMgr->CGetFunctionBehavior(HLS->functionId);
-   unsigned int bus_data_bitsize = HLSMgr->Rmem->get_bus_data_bitsize();
-   unsigned int bus_size_bitsize = HLSMgr->Rmem->get_bus_size_bitsize();
-   unsigned int bus_addr_bitsize = HLSMgr->get_address_bitsize();
-   unsigned int bus_tag_bitsize = 0;
-   if(HLS->Param->isOption(OPT_context_switch))
-   {
-      bus_tag_bitsize = GetPointer<memory_cs>(HLSMgr->Rmem)->get_bus_tag_bitsize();
-   }
+   const auto FB = HLSMgr->CGetFunctionBehavior(HLS->functionId);
+   auto bus_data_bitsize = HLSMgr->Rmem->get_bus_data_bitsize();
+   auto bus_size_bitsize = HLSMgr->Rmem->get_bus_size_bitsize();
+   const auto bus_addr_bitsize = HLSMgr->get_address_bitsize();
+   const auto bus_tag_bitsize =
+       HLS->Param->getOption<bool>(OPT_parse_pragma) && HLS->Param->isOption(OPT_context_switch) ?
+           GetPointer<memory_cs>(HLSMgr->Rmem)->get_bus_tag_bitsize() :
+           0;
    auto* fu_module = GetPointer<module>(fu_obj);
-   const technology_nodeRef fu_tech_obj = allocation_information->get_fu(fu);
+   const auto fu_tech_obj = allocation_information->get_fu(fu);
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                   "-->Specializing " + fu_obj->get_path() + " of type " + GET_TYPE_NAME(fu_obj));
-   std::map<unsigned int, unsigned int> required_variables;
-   std::map<unsigned int, unsigned int> num_elements;
-   unsigned int n_out_elements = 0;
-   unsigned int produced_variables = 1;
+   std::map<unsigned int, unsigned long long> required_variables;
+   std::map<unsigned int, unsigned long long> num_elements;
+   unsigned long long n_out_elements = 0;
+   unsigned long long produced_variables = 1;
    bool is_multiport = allocation_information->get_number_channels(fu) > 1;
    size_t max_n_ports = is_multiport ? allocation_information->get_number_channels(fu) : 0;
 
@@ -1909,7 +1886,7 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
          auto bram_bitsize = HLSMgr->Rmem->get_bram_bitsize();
          if(HLSMgr->Rmem->is_private_memory(ar))
          {
-            unsigned int accessed_bitsize = std::max(required_variables[0], produced_variables);
+            auto accessed_bitsize = std::max(required_variables[0], produced_variables);
             accessed_bitsize = resize_to_1_8_16_32_64_128_256_512(accessed_bitsize);
             bram_bitsize = has_misaligned_indirect_ref ? std::max(bram_bitsize, accessed_bitsize) :
                                                          std::max(bram_bitsize, accessed_bitsize / 2);
@@ -1959,8 +1936,8 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
 
          if(memory_ctrl_type != "")
          {
-            unsigned int mem_var_size_in = 1;
-            unsigned int mem_var_size_out = 1;
+            unsigned long long mem_var_size_in = 1;
+            unsigned long long mem_var_size_out = 1;
 
             if(GET_TYPE(data, mapped_operation) & TYPE_STORE)
             {
@@ -2053,7 +2030,7 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
                   if(*it == "LSB_PARAMETER" && op_name == "pointer_plus_expr")
                   {
                      unsigned int curr_LSB = 0;
-                     unsigned int op0_tree_var = std::get<0>(vars[0]);
+                     auto op0_tree_var = std::get<0>(vars[0]);
                      if(op0_tree_var)
                      {
                         const auto var = tree_helper::GetBaseVariable(TreeM->CGetTreeReindex(op0_tree_var));
@@ -2183,7 +2160,7 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
                   }
                   if(*it == "OFFSET_PARAMETER" && op_name == "bit_ior_concat_expr")
                   {
-                     unsigned int index = data->CGetOpNodeInfo(mapped_operation)->GetNodeId();
+                     auto index = data->CGetOpNodeInfo(mapped_operation)->GetNodeId();
                      const tree_nodeRef ga_node = TreeM->GetTreeNode(index);
                      const gimple_assign* ga = GetPointer<gimple_assign>(ga_node);
                      const bit_ior_concat_expr* ce = GetPointer<bit_ior_concat_expr>(GET_NODE(ga->op1));
@@ -2194,17 +2171,17 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
                   }
                   if(*it == "unlock_address" && op_name == BUILTIN_WAIT_CALL)
                   {
-                     unsigned int index = data->CGetOpNodeInfo(mapped_operation)->GetNodeId();
+                     auto index = data->CGetOpNodeInfo(mapped_operation)->GetNodeId();
                      std::string parameterName = HLSMgr->Rmem->get_symbol(index, HLS->functionId)->get_symbol_name();
                      fu_module->SetParameter("unlock_address", parameterName);
                   }
                   if(*it == "MEMORY_INIT_file" && op_name == BUILTIN_WAIT_CALL)
                   {
-                     unsigned int index = data->CGetOpNodeInfo(mapped_operation)->GetNodeId();
+                     auto index = data->CGetOpNodeInfo(mapped_operation)->GetNodeId();
                      const auto parameterAddressFileName = "function_addresses_" + STR(index) + ".mem";
                      std::ofstream parameterAddressFile(GetPath(parameterAddressFileName));
 
-                     const tree_nodeRef call = TreeM->GetTreeNode(index);
+                     const auto call = TreeM->GetTreeNode(index);
                      tree_nodeRef calledFunction = GetPointer<gimple_call>(call)->args[0];
                      tree_nodeRef hasreturn_node = GetPointer<gimple_call>(call)->args[1];
                      long long int hasreturn_value =
@@ -2214,7 +2191,7 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
                      tree_nodeRef paramList = GetPointer<function_type>(functionType)->prms;
                      unsigned int count_param = 0;
                      unsigned long long int address = 0;
-                     unsigned int alignment = HLSMgr->Rmem->get_parameter_alignment();
+                     auto alignment = HLSMgr->Rmem->get_parameter_alignment();
                      HLSMgr->Rmem->compute_next_base_address(address, index, alignment);
                      while(paramList)
                      {
@@ -2230,11 +2207,11 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
                            count_param++;
                         }
                      }
-                     tree_nodeRef return_type = GetPointer<function_type>(functionType)->retn;
+                     auto return_type = GetPointer<function_type>(functionType)->retn;
                      if(return_type && GET_NODE(return_type)->get_kind() != void_type_K && hasreturn_value)
                      {
-                        std::string str_address = convert_to_binary(static_cast<unsigned long long int>(address),
-                                                                    HLSMgr->get_address_bitsize());
+                        const auto str_address = convert_to_binary(static_cast<unsigned long long int>(address),
+                                                                   HLSMgr->get_address_bitsize());
                         parameterAddressFile << str_address << "\n";
                      }
                      parameterAddressFile.close();
@@ -2268,7 +2245,7 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
                   {
                      if(*it == "PRECISION")
                      {
-                        unsigned int sizetype = tree_helper::Size(tree_helper::CGetType(out_node));
+                        auto sizetype = tree_helper::Size(tree_helper::CGetType(out_node));
                         if(sizetype == 1)
                         {
                            sizetype = 8;
@@ -2311,9 +2288,9 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Resizing variables");
    for(auto l = required_variables.begin(); l != required_variables.end() && !is_multi_read_cond; ++l)
    {
-      unsigned int bitsize_variable = l->second;
+      auto bitsize_variable = l->second;
       structural_objectRef port = fu_module->get_in_port(l->first + offset);
-      unsigned int n_elmts = 0;
+      unsigned long long n_elmts = 0;
       if(num_elements.find(l->first) != num_elements.end())
       {
          n_elmts = num_elements.find(l->first)->second;
@@ -2376,34 +2353,28 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
 }
 
 void fu_binding::specialize_memory_unit(const HLS_managerRef HLSMgr, const hlsRef HLS, structural_objectRef fu_obj,
-                                        unsigned int ar, std::string& base_address, unsigned long long int rangesize,
-                                        bool is_memory_splitted, bool is_sparse_memory, bool is_sds)
+                                        unsigned int ar, const std::string& base_address,
+                                        unsigned long long int rangesize, bool is_memory_splitted,
+                                        bool is_sparse_memory, bool is_sds)
 {
-   auto* fu_module = GetPointer<module>(fu_obj);
+   const auto fu_module = GetPointer<module>(fu_obj);
    /// base address specialization
    fu_module->SetParameter("address_space_begin", STR(base_address));
    fu_module->SetParameter("address_space_rangesize", STR(rangesize));
-   if(is_sparse_memory)
-   {
-      fu_module->SetParameter("USE_SPARSE_MEMORY", "1");
-   }
-   else
-   {
-      fu_module->SetParameter("USE_SPARSE_MEMORY", "0");
-   }
+   fu_module->SetParameter("USE_SPARSE_MEMORY", is_sparse_memory ? "1" : "0");
    memory::add_memory_parameter(HLS->datapath, base_address, STR(HLSMgr->Rmem->get_base_address(ar, HLS->functionId)));
 
    long long int vec_size = 0;
    /// array ref initialization
    THROW_ASSERT(ar, "expected a real tree node index");
-   std::string init_filename = "array_ref_" + std::to_string(ar) + ".mem";
+   const auto init_filename = "array_ref_" + STR(ar) + ".mem";
    std::ofstream init_file_a(GetPath(init_filename));
    std::ofstream init_file_b;
    if(is_memory_splitted)
    {
       init_file_b.open(GetPath("0_" + init_filename));
    }
-   unsigned int elts_size;
+   unsigned long long elts_size;
    fill_array_ref_memory(init_file_a, init_file_b, ar, vec_size, elts_size, HLSMgr->Rmem, is_memory_splitted, is_sds,
                          fu_module);
    THROW_ASSERT(vec_size, "at least one element is expected");
@@ -2420,30 +2391,16 @@ void fu_binding::specialize_memory_unit(const HLS_managerRef HLSMgr, const hlsRe
    /// specialize the number of elements in the array
    fu_module->SetParameter("n_elements", STR(vec_size));
    fu_module->SetParameter("data_size", STR(elts_size));
-   if(HLSMgr->Rmem->is_private_memory(ar))
-   {
-      fu_module->SetParameter("PRIVATE_MEMORY", "1");
-   }
-   else
-   {
-      fu_module->SetParameter("PRIVATE_MEMORY", "0");
-   }
-   if(HLSMgr->Rmem->is_read_only_variable(ar))
-   {
-      fu_module->SetParameter("READ_ONLY_MEMORY", "1");
-   }
-   else
-   {
-      fu_module->SetParameter("READ_ONLY_MEMORY", "0");
-   }
+   fu_module->SetParameter("PRIVATE_MEMORY", HLSMgr->Rmem->is_private_memory(ar) ? "1" : "0");
+   fu_module->SetParameter("READ_ONLY_MEMORY", HLSMgr->Rmem->is_read_only_variable(ar) ? "1" : "0");
 }
 #define CHANGE_SDS_MEMORY_LAYOUT 0
 
 void fu_binding::fill_array_ref_memory(std::ostream& init_file_a, std::ostream& init_file_b, unsigned int ar,
-                                       long long int& vec_size, unsigned int& elts_size, const memoryRef mem,
+                                       long long int& vec_size, unsigned long long& elts_size, const memoryRef mem,
                                        bool is_memory_splitted, bool is_sds, module* fu_module)
 {
-   unsigned int bram_bitsize;
+   unsigned long long bram_bitsize;
    const auto ar_node = TreeM->CGetTreeReindex(ar);
    tree_nodeRef init_node;
    const auto vd = GetPointer<const var_decl>(GET_CONST_NODE(ar_node));
@@ -2456,10 +2413,10 @@ void fu_binding::fill_array_ref_memory(std::ostream& init_file_a, std::ostream& 
       init_node = ar_node;
    }
    const auto array_type_node = tree_helper::CGetType(ar_node);
-   unsigned int element_precision = 0;
+   unsigned long long element_precision = 0;
    if(tree_helper::IsArrayType(array_type_node))
    {
-      std::vector<unsigned int> dims;
+      std::vector<unsigned long long> dims;
       tree_helper::get_array_dim_and_bitsize(TreeM, array_type_node->index, dims, elts_size);
       THROW_ASSERT(dims.size(), "something of wrong happen");
       vec_size = std::accumulate(dims.begin(), dims.end(), 1, [](unsigned int a, unsigned int b) { return a * b; });
@@ -2504,10 +2461,12 @@ void fu_binding::fill_array_ref_memory(std::ostream& init_file_a, std::ostream& 
    {
       bram_bitsize = boost::lexical_cast<unsigned int>(fu_module->GetParameter("BRAM_BITSIZE"));
       if(elts_size % 8)
+      {
          elts_size = 8 * (elts_size / 8) + 8;
+      }
    }
 
-   unsigned int nbyte_on_memory = bram_bitsize / 8;
+   auto nbyte_on_memory = bram_bitsize / 8;
 
    if(init_node &&
       ((GetPointer<constructor>(GET_NODE(init_node)) &&
@@ -2534,7 +2493,9 @@ void fu_binding::fill_array_ref_memory(std::ostream& init_file_a, std::ostream& 
                }
             }
             else
+            {
                init_file_a << init_value << std::endl;
+            }
          }
       }
       else
@@ -2707,7 +2668,7 @@ void fu_binding::fill_array_ref_memory(std::ostream& init_file_a, std::ostream& 
          }
          if(counter % (nbyte_on_memory * 8) != 0)
          {
-            for(unsigned int l = counter % (nbyte_on_memory * 8); l < (nbyte_on_memory * 8); ++l)
+            for(auto l = counter % (nbyte_on_memory * 8); l < (nbyte_on_memory * 8); ++l)
             {
                if(is_even || !is_memory_splitted)
                {
@@ -2743,7 +2704,8 @@ void fu_binding::fill_array_ref_memory(std::ostream& init_file_a, std::ostream& 
 }
 
 void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_node, tree_nodeRef _init_node,
-                            std::vector<std::string>& init_file, const memoryRef mem, unsigned int element_precision)
+                            std::vector<std::string>& init_file, const memoryRef mem,
+                            unsigned long long element_precision)
 {
    std::string trimmed_value;
    THROW_ASSERT(!var_node || var_node->get_kind() == tree_reindex_K, "");
@@ -2752,7 +2714,7 @@ void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_n
    {
       case real_cst_K:
       {
-         unsigned int precision = tree_helper::Size(tree_helper::CGetType(_init_node));
+         auto precision = tree_helper::Size(tree_helper::CGetType(_init_node));
          const auto rc = GetPointerS<const real_cst>(init_node);
          std::string C_value = rc->valr;
          trimmed_value = convert_fp_to_string(C_value, precision);
@@ -2764,7 +2726,7 @@ void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_n
          auto* ic = GetPointerS<const integer_cst>(init_node);
          auto ull_value = static_cast<unsigned long long int>(tree_helper::get_integer_cst_value(ic));
          trimmed_value = "";
-         unsigned int precision = std::max(8u, tree_helper::Size(tree_helper::CGetType(_init_node)));
+         auto precision = std::max(8ull, tree_helper::Size(tree_helper::CGetType(_init_node)));
          THROW_ASSERT(precision, "expected a size greater than 0");
          if(element_precision)
          {
@@ -2779,7 +2741,7 @@ void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_n
       }
       case complex_cst_K:
       {
-         unsigned int precision = tree_helper::Size(tree_helper::CGetType(_init_node));
+         auto precision = tree_helper::Size(tree_helper::CGetType(_init_node));
          auto* rp = GetPointer<const real_cst>(GET_CONST_NODE(GetPointerS<const complex_cst>(init_node)->real));
          std::string trimmed_value_r;
          if(rp)
@@ -2826,7 +2788,7 @@ void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_n
          bool designated_initializers_used = false;
          bool is_struct = false;
          bool is_union = false;
-         unsigned int union_size = 0;
+         unsigned long long union_size = 0;
          // unsigned int struct_or_union_align = 0;
          std::vector<tree_nodeRef>* field_list = nullptr;
          /// check if designated initializers are really used
@@ -2928,7 +2890,7 @@ void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_n
                      nbits = tree_helper::Size(co->type);
                   }
                   auto* idx_curr_fd = GetPointer<field_decl>(GET_NODE(*fli));
-                  unsigned int field_decl_size = tree_helper::Size(tree_helper::CGetType(*fli));
+                  auto field_decl_size = tree_helper::Size(tree_helper::CGetType(*fli));
                   ic = GetPointerS<integer_cst>(GET_NODE(idx_curr_fd->bpos));
                   nbits = nbits - static_cast<unsigned long long int>(tree_helper::get_integer_cst_value(ic));
                   nbits = nbits - field_decl_size;
@@ -2990,7 +2952,7 @@ void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_n
                      nbits = tree_helper::Size(co->type);
                   }
                   auto* idx_curr_fd = GetPointerS<field_decl>(GET_NODE(i->first));
-                  unsigned int field_decl_size = tree_helper::Size(tree_helper::CGetType(i->first));
+                  auto field_decl_size = tree_helper::Size(tree_helper::CGetType(i->first));
                   ic = GetPointerS<integer_cst>(GET_NODE(idx_curr_fd->bpos));
                   nbits = nbits - static_cast<unsigned long long int>(tree_helper::get_integer_cst_value(ic));
                   nbits = nbits - field_decl_size;
@@ -3009,11 +2971,11 @@ void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_n
                {
                   /// check if padding is needed
                   THROW_ASSERT(co->list_of_idx_valu.size() == 1, "just one initializer is possible");
-                  unsigned int field_decl_size = tree_helper::Size(i->first);
+                  auto field_decl_size = tree_helper::Size(i->first);
                   if(field_decl_size != union_size)
                   {
                      /// add padding
-                     unsigned int nbits = union_size - field_decl_size;
+                     auto nbits = union_size - field_decl_size;
                      std::string init_string;
                      for(unsigned int j = 0; j < nbits; ++j)
                      {
@@ -3027,14 +2989,14 @@ void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_n
          const auto type_n = tree_helper::CGetType(var_node);
          if(GetPointer<const array_type>(GET_CONST_NODE(type_n)))
          {
-            unsigned int size_of_data;
-            std::vector<unsigned int> dims;
+            unsigned long long size_of_data;
+            std::vector<unsigned long long> dims;
             tree_helper::get_array_dim_and_bitsize(TreeM, type_n->index, dims, size_of_data);
             if(element_precision)
             {
                size_of_data = std::min(size_of_data, element_precision);
             }
-            unsigned int num_elements = dims[0];
+            auto num_elements = dims[0];
             std::string value;
             if(num_elements < co->list_of_idx_valu.size())
             {
@@ -3082,8 +3044,8 @@ void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_n
          boost::replace_all(string_value, "\\'", "'");
          boost::replace_all(string_value, "\\\"", "\"");
          boost::replace_all(string_value, "\\\\", "\\");
-         unsigned int elmt_bitsize;
-         std::vector<unsigned int> dims;
+         unsigned long long elmt_bitsize;
+         std::vector<unsigned long long> dims;
 
          tree_helper::get_array_dim_and_bitsize(TreeM, GET_INDEX_NODE(sc->type), dims, elmt_bitsize);
          if(elmt_bitsize == 32) // wide char used
@@ -3111,11 +3073,11 @@ void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_n
          init_file.push_back(trimmed_value);
          const auto type_n = tree_helper::CGetType(var_node);
          THROW_ASSERT(GetPointer<const array_type>(GET_CONST_NODE(type_n)), "expected an array_type");
-         unsigned int size_of_data;
+         unsigned long long size_of_data;
          dims.clear();
          tree_helper::get_array_dim_and_bitsize(TreeM, type_n->index, dims, size_of_data);
          THROW_ASSERT(size_of_data == elmt_bitsize, "something of wrong happen");
-         unsigned int num_elements =
+         auto num_elements =
              std::accumulate(dims.begin(), dims.end(), 1U, [](unsigned int a, unsigned int b) { return a * b; });
          std::string value;
          if(num_elements < (string_value.size() + 1))
@@ -3145,8 +3107,8 @@ void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_n
          }
          else if(GetPointer<integer_cst>(GET_NODE(ue->op)))
          {
-            unsigned int precision =
-                std::max(std::max(8u, element_precision), tree_helper::Size(tree_helper::CGetType(init_node)));
+            auto precision =
+                std::max(std::max(8ull, element_precision), tree_helper::Size(tree_helper::CGetType(init_node)));
             write_init(TreeM, ue->op, ue->op, init_file, mem, precision);
          }
          else
@@ -3160,9 +3122,9 @@ void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_n
       {
          auto* ae = GetPointerS<addr_expr>(init_node);
          tree_nodeRef addr_expr_op = GET_NODE(ae->op);
-         unsigned int addr_expr_op_idx = GET_INDEX_NODE(ae->op);
+         auto addr_expr_op_idx = GET_INDEX_NODE(ae->op);
          unsigned long long int ull_value = 0;
-         unsigned int precision = tree_helper::Size(tree_helper::CGetType(_init_node));
+         auto precision = tree_helper::Size(tree_helper::CGetType(_init_node));
          switch(addr_expr_op->get_kind())
          {
             case ssa_name_K:
@@ -3377,7 +3339,7 @@ void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_n
       }
       case field_decl_K:
       {
-         unsigned int field_decl_size = tree_helper::Size(tree_helper::CGetType(_init_node));
+         auto field_decl_size = tree_helper::Size(tree_helper::CGetType(_init_node));
          std::string init_string;
          for(unsigned int j = 0; j < field_decl_size; ++j)
          {
@@ -3522,6 +3484,6 @@ void fu_binding::set_ports_are_swapped(vertex v, bool condition)
 
 generic_objRef fu_binding::get(const vertex v) const
 {
-   const unsigned int statement_index = op_graph->CGetOpNodeInfo(v)->GetNodeId();
+   const auto statement_index = op_graph->CGetOpNodeInfo(v)->GetNodeId();
    return op_binding.find(statement_index)->second;
 }

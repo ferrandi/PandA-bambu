@@ -672,7 +672,7 @@ namespace ac_math
          typedef ac_fixed<AC_MAX((AC_MAX(T_in::width - T_in::i_width - 3, 1) + T_in::width - T_in::i_width - 12), 1),
                           AC_MAX(T_in::width - T_in::i_width - 3, 1), false>
              datatype;
-         datatype x = (datatype)lut_index1;
+         auto x = (datatype)lut_index1;
          x = x >> AC_MAX(T_in::width - T_in::i_width - 12, 0);
          if(x > 511.5)
          {

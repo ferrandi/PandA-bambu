@@ -124,7 +124,7 @@ ModuleGeneratorManager::getDataType(unsigned int variable, const FunctionBehavio
        new structural_type_descriptor(variable, function_behavior->CGetBehavioralHelper()));
 }
 
-static unsigned int resize_to_8_or_greater(unsigned int value)
+static unsigned long long resize_to_8_or_greater(unsigned long long value)
 {
    if(value < 8)
    {

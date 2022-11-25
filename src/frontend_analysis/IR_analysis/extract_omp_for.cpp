@@ -80,9 +80,7 @@ ExtractOmpFor::ExtractOmpFor(const application_managerRef _AppM, unsigned int _f
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
 }
 
-ExtractOmpFor::~ExtractOmpFor()
-{
-}
+ExtractOmpFor::~ExtractOmpFor() = default;
 
 const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
 ExtractOmpFor::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const

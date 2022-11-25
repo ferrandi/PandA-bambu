@@ -66,8 +66,8 @@ class ModuleGenerator : public Factory<ModuleGenerator, const HLS_managerRef&>
    {
       std::string name;
       std::string type;
-      unsigned int type_size;
-      unsigned int alignment;
+      unsigned long long type_size;
+      unsigned long long alignment;
 
       parameter() = default;
       parameter(const structural_objectRef& port);

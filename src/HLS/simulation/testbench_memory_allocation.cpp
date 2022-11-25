@@ -195,7 +195,7 @@ void TestbenchMemoryAllocation::AllocTestbenchMemory(void) const
                   THROW_ERROR("A pointer type is expected");
                }
 
-               unsigned int base_type_byte_size;
+               unsigned long long base_type_byte_size;
                if(tree_helper::IsStructType(ptd_base_type) || tree_helper::IsUnionType(ptd_base_type))
                {
                   base_type_byte_size = tree_helper::Size(ptd_base_type) / 8;
@@ -286,8 +286,10 @@ void TestbenchMemoryAllocation::AllocTestbenchMemory(void) const
          }
 
          if(next_object_offset < reserved_bytes)
+         {
             THROW_ERROR("more allocated memory than expected  next_object_offset=" + STR(next_object_offset) +
                         " reserved_bytes=" + STR(reserved_bytes));
+         }
          HLSMgr->RSim->param_next_off[v_idx][*l] = next_object_offset;
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Considered " + param);
       }

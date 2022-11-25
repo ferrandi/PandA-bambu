@@ -492,7 +492,7 @@ void TestbenchGenerationBaseStep::init_extra_signals(bool withMemory) const
    {
       structural_objectRef M_Rdata_ram_port = mod->find_member("M_Rdata_ram", port_o_K, cir);
       THROW_ASSERT(M_Rdata_ram_port, "M_Rdata_ram port is missing");
-      unsigned int M_Rdata_ram_port_n_ports =
+      auto M_Rdata_ram_port_n_ports =
           M_Rdata_ram_port->get_kind() == port_vector_o_K ? GetPointer<port_o>(M_Rdata_ram_port)->get_ports_size() : 1;
       for(unsigned int i = 0; i < M_Rdata_ram_port_n_ports; ++i)
       {
@@ -561,7 +561,7 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
                      {
                         auto port_bitwidth = GetPointer<port_o>(portInst)->get_typeRef()->size *
                                              GetPointer<port_o>(portInst)->get_typeRef()->vector_size;
-                        unsigned bitsize = 0;
+                        unsigned long long bitsize = 0;
                         if(port_bitwidth <= 512)
                         {
                            bitsize = resize_to_1_8_16_32_64_128_256_512(port_bitwidth);
@@ -656,7 +656,7 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
                      {
                         auto port_bitwidth = GetPointer<port_o>(portInst)->get_typeRef()->size *
                                              GetPointer<port_o>(portInst)->get_typeRef()->vector_size;
-                        unsigned bitsize = 0;
+                        unsigned long long bitsize = 0;
                         if(port_bitwidth <= 512)
                         {
                            bitsize = resize_to_1_8_16_32_64_128_256_512(port_bitwidth);
@@ -832,7 +832,7 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
             std::string unmangled_name = portInst->get_id();
             std::string port_name = HDL_manager::convert_to_identifier(writer.get(), unmangled_name);
             std::string output_name = "ex_" + unmangled_name;
-            long long int bitsize;
+            unsigned long long int bitsize;
             bool is_real;
             const auto pi_node = TreeM->CGetTreeReindex(portInst->get_typeRef()->treenode);
             if(tree_helper::IsArrayType(pi_node))
@@ -1361,7 +1361,7 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
             {
                auto port_bitwidth = GetPointer<port_o>(portInst)->get_typeRef()->size *
                                     GetPointer<port_o>(portInst)->get_typeRef()->vector_size;
-               unsigned bitsize = 0;
+               unsigned long long bitsize = 0;
                if(port_bitwidth <= 512)
                {
                   bitsize = resize_to_1_8_16_32_64_128_256_512(port_bitwidth);
@@ -1534,7 +1534,7 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
    {
       const auto top_functions = HLSMgr->CGetCallGraphManager()->GetRootFunctions();
       THROW_ASSERT(top_functions.size() == 1, "");
-      const unsigned int topFunctionId = *(top_functions.begin());
+      const auto topFunctionId = *(top_functions.begin());
       const BehavioralHelperConstRef behavioral_helper =
           HLSMgr->CGetFunctionBehavior(topFunctionId)->CGetBehavioralHelper();
       const memoryRef mem = HLSMgr->Rmem;
@@ -1548,7 +1548,7 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
             const auto variableName = behavioral_helper->PrintVariable(var);
             const auto port_name = HDL_manager::convert_to_identifier(writer.get(), variableName);
             const auto output_name = "ex_" + variableName;
-            long long int bitsize;
+            unsigned long long int bitsize;
             bool is_real;
             if(tree_helper::IsArrayType(var_node))
             {
@@ -2208,7 +2208,7 @@ void TestbenchGenerationBaseStep::write_auxiliary_signal_declaration() const
          const structural_objectRef& port = mod->get_out_port(i);
          if(GetPointer<port_o>(port)->get_port_interface() == port_o::port_interface::M_AXI_AWADDR)
          {
-            unsigned int bitsize =
+            auto bitsize =
                 GetPointer<port_o>(port)->get_typeRef()->size * GetPointer<port_o>(port)->get_typeRef()->vector_size;
 
             std::string portQual = "AWADDR";
@@ -2221,20 +2221,17 @@ void TestbenchGenerationBaseStep::write_auxiliary_signal_declaration() const
             }
 
             writer->write("reg [" + STR(bitsize - 1) + ":0] last_" + GetPointer<port_o>(port)->get_id() + ";\n");
-            unsigned wDataSize;
-            unsigned rDataSize;
-            unsigned wAddrSize;
 
             const structural_objectRef& portAWADDR = mod->find_member(portPrefix + "AWADDR", port_o_K, cir);
             const structural_objectRef& portWDATA = mod->find_member(portPrefix + "WDATA", port_o_K, cir);
             const structural_objectRef& portRDATA = mod->find_member(portPrefix + "RDATA", port_o_K, cir);
 
-            wAddrSize = GetPointer<port_o>(portAWADDR)->get_typeRef()->size *
-                        GetPointer<port_o>(portAWADDR)->get_typeRef()->vector_size;
-            wDataSize = GetPointer<port_o>(portWDATA)->get_typeRef()->size *
-                        GetPointer<port_o>(portWDATA)->get_typeRef()->vector_size;
-            rDataSize = GetPointer<port_o>(portRDATA)->get_typeRef()->size *
-                        GetPointer<port_o>(portRDATA)->get_typeRef()->vector_size;
+            auto wAddrSize = GetPointer<port_o>(portAWADDR)->get_typeRef()->size *
+                             GetPointer<port_o>(portAWADDR)->get_typeRef()->vector_size;
+            auto wDataSize = GetPointer<port_o>(portWDATA)->get_typeRef()->size *
+                             GetPointer<port_o>(portWDATA)->get_typeRef()->vector_size;
+            auto rDataSize = GetPointer<port_o>(portRDATA)->get_typeRef()->size *
+                             GetPointer<port_o>(portRDATA)->get_typeRef()->vector_size;
             writer->write("reg signed [31:0] " + portPrefix + "dataReady = 'hFFFFFFFF;\n");
             writer->write("reg signed [31:0] " + portPrefix + "writeReady = 'hFFFFFFFF;\n");
             writer->write("reg signed [7:0] last_" + portPrefix + "ARLEN;\n");
@@ -2548,7 +2545,7 @@ void TestbenchGenerationBaseStep::testbench_controller_machine() const
                writer->write("      " + portPrefix + "writeReady <= 0;\n");
                writer->write("    last_" + portPrefix + "wdata <= " + portPrefix + "WDATA;\n");
 
-               unsigned wDataSize;
+               unsigned long long wDataSize;
                const structural_objectRef& portWDATA = mod->find_member(portPrefix + "WDATA", port_o_K, cir);
                wDataSize = GetPointer<port_o>(portWDATA)->get_typeRef()->size *
                            GetPointer<port_o>(portWDATA)->get_typeRef()->vector_size;
@@ -2563,8 +2560,8 @@ void TestbenchGenerationBaseStep::testbench_controller_machine() const
 
             /* Compute aggregate memory for WDATA */
             const structural_objectRef& portWDATA = mod->find_member(portPrefix + "WDATA", port_o_K, cir);
-            const unsigned int bitsizeWDATA = GetPointer<port_o>(portWDATA)->get_typeRef()->size *
-                                              GetPointer<port_o>(portWDATA)->get_typeRef()->vector_size;
+            const auto bitsizeWDATA = GetPointer<port_o>(portWDATA)->get_typeRef()->size *
+                                      GetPointer<port_o>(portWDATA)->get_typeRef()->vector_size;
             std::string mem_aggregated;
 
             mem_aggregated = "{";
@@ -2617,8 +2614,8 @@ void TestbenchGenerationBaseStep::testbench_controller_machine() const
             writer->write("  if (" + portPrefix + "read && " + portPrefix + "beatsCount != 9'b111111111) begin\n");
             /* Compute aggregate memory for RDATA */
             const structural_objectRef& portRDATA = mod->find_member(portPrefix + "RDATA", port_o_K, cir);
-            const unsigned int bitsizeRDATA = GetPointer<port_o>(portRDATA)->get_typeRef()->size *
-                                              GetPointer<port_o>(portRDATA)->get_typeRef()->vector_size;
+            const auto bitsizeRDATA = GetPointer<port_o>(portRDATA)->get_typeRef()->size *
+                                      GetPointer<port_o>(portRDATA)->get_typeRef()->vector_size;
             mem_aggregated = "{";
             for(unsigned int bitsize_index = 0; bitsize_index < bitsizeRDATA; bitsize_index = bitsize_index + 8)
             {

@@ -336,7 +336,7 @@ void technology_manager::xload(const xml_element* node, const target_deviceRef d
          }
       }
    }
-   for(auto temp_library : temp_libraries)
+   for(const auto& temp_library : temp_libraries)
    {
       for(const auto& temp_info : info)
       {

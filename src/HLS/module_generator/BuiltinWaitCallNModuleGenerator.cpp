@@ -37,6 +37,8 @@
  *
  *
  * @author Michele Fiorito <michele.fiorito@polimi.it>
+ * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
+ * @author Marco Lattuada <marco.lattuada@polimi.it>
  * $Revision$
  * $Date$
  * Last modified by $Author$
@@ -91,7 +93,7 @@ void BuiltinWaitCallNModuleGenerator::InternalExec(std::ostream& out, const modu
             return tree_helper::Size(return_type);
          }
       }
-      return 0U;
+      return 0ULL;
    }();
 
    // Signals declarations

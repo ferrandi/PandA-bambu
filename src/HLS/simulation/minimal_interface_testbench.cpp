@@ -82,11 +82,11 @@
 
 #include "math_function.hpp"
 
-static unsigned int local_port_size(const structural_objectRef portInst)
+static unsigned long long local_port_size(const structural_objectRef portInst)
 {
    auto port_bitwidth =
        GetPointer<port_o>(portInst)->get_typeRef()->size * GetPointer<port_o>(portInst)->get_typeRef()->vector_size;
-   unsigned bitsize = 0;
+   auto bitsize = 0ull;
    if(port_bitwidth <= 512)
    {
       bitsize = resize_to_1_8_16_32_64_128_256_512(port_bitwidth);
@@ -115,7 +115,7 @@ MinimalInterfaceTestbench::MinimalInterfaceTestbench(const ParameterConstRef _pa
 
 MinimalInterfaceTestbench::~MinimalInterfaceTestbench() = default;
 
-void MinimalInterfaceTestbench::cond_load(long long int Mout_addr_ram_bitsize, std::string,
+void MinimalInterfaceTestbench::cond_load(unsigned long long int Mout_addr_ram_bitsize, std::string,
                                           const std::string& post_slice2, const std::string& res_string, unsigned int i,
                                           const std::string& in_else, const std::string& mem_aggregate) const
 {
@@ -155,14 +155,14 @@ void MinimalInterfaceTestbench::write_memory_handler() const
    THROW_ASSERT(Mout_data_ram_size_port, "Mout_data_ram_size port is missing");
    structural_objectRef Mout_Wdata_ram_port = mod->find_member("Mout_Wdata_ram", port_o_K, cir);
    THROW_ASSERT(Mout_Wdata_ram_port, "Mout_Wdata_ram port is missing");
-   long long int Mout_Wdata_ram_bitsize =
+   auto Mout_Wdata_ram_bitsize =
        Mout_Wdata_ram_port->get_typeRef()->size * Mout_Wdata_ram_port->get_typeRef()->vector_size;
    if(Mout_data_ram_size_port->get_kind() == port_vector_o_K)
    {
       unsigned int Mout_data_ram_size_n_ports = Mout_data_ram_size_port->get_kind() == port_vector_o_K ?
                                                     GetPointer<port_o>(Mout_data_ram_size_port)->get_ports_size() :
                                                     1;
-      long long int Mout_data_ram_size_bitsize =
+      auto Mout_data_ram_size_bitsize =
           Mout_data_ram_size_port->get_typeRef()->size * Mout_data_ram_size_port->get_typeRef()->vector_size;
       for(unsigned int i = 0; i < Mout_data_ram_size_n_ports; ++i)
       {
@@ -185,15 +185,15 @@ void MinimalInterfaceTestbench::write_memory_handler() const
 
    structural_objectRef Mout_addr_ram_port = mod->find_member("Mout_addr_ram", port_o_K, cir);
    THROW_ASSERT(Mout_addr_ram_port, "Mout_addr_ram port is missing");
-   long long int Mout_addr_ram_bitsize =
+   auto Mout_addr_ram_bitsize =
        Mout_addr_ram_port->get_typeRef()->size * Mout_addr_ram_port->get_typeRef()->vector_size;
    unsigned int Mout_Wdata_ram_n_ports = Mout_Wdata_ram_port->get_kind() == port_vector_o_K ?
                                              GetPointer<port_o>(Mout_Wdata_ram_port)->get_ports_size() :
                                              1;
-   long long int bitsize = Mout_Wdata_ram_port->get_typeRef()->size * Mout_Wdata_ram_port->get_typeRef()->vector_size;
+   auto bitsize = Mout_Wdata_ram_port->get_typeRef()->size * Mout_Wdata_ram_port->get_typeRef()->vector_size;
    for(unsigned int i = 0; i < Mout_Wdata_ram_n_ports; ++i)
    {
-      std::string mem_aggregate = memory_aggregate_slices(i, bitsize, Mout_addr_ram_bitsize);
+      auto mem_aggregate = memory_aggregate_slices(i, bitsize, Mout_addr_ram_bitsize);
       std::string post_slice;
       if(Mout_addr_ram_port->get_kind() == port_vector_o_K)
       {
@@ -321,7 +321,7 @@ void MinimalInterfaceTestbench::write_memory_handler() const
    {
       for(unsigned int i = 0; i < M_Rdata_ram_port_n_ports; ++i)
       {
-         std::string mem_aggregate = memory_aggregate_slices(i, bitsize, Mout_addr_ram_bitsize);
+         auto mem_aggregate = memory_aggregate_slices(i, bitsize, Mout_addr_ram_bitsize);
          std::string post_slice1;
          if(Mout_addr_ram_port->get_kind() == port_vector_o_K)
          {
@@ -907,7 +907,7 @@ void MinimalInterfaceTestbench::write_input_signal_declaration(const tree_manage
 
             if(tree_helper::IsRealType(pt_node))
             {
-               long long int bitsize = tree_helper::Size(pt_node);
+               auto bitsize = tree_helper::Size(pt_node);
                writer->write("reg [" + STR(bitsize - 1) + ":0] ex_" + port_obj->get_id() + ";\n");
             }
             else
@@ -988,9 +988,9 @@ void MinimalInterfaceTestbench::write_signals(const tree_managerConstRef TreeM, 
    // write parameters
    if(withMemory)
    {
-      structural_objectRef M_Rdata_ram_port = mod->find_member("M_Rdata_ram", port_o_K, cir);
-      long long int bitsize = M_Rdata_ram_port->get_typeRef()->size * M_Rdata_ram_port->get_typeRef()->vector_size;
-      unsigned int n_ports =
+      auto M_Rdata_ram_port = mod->find_member("M_Rdata_ram", port_o_K, cir);
+      auto bitsize = M_Rdata_ram_port->get_typeRef()->size * M_Rdata_ram_port->get_typeRef()->vector_size;
+      auto n_ports =
           M_Rdata_ram_port->get_kind() == port_vector_o_K ? GetPointer<port_o>(M_Rdata_ram_port)->get_ports_size() : 1;
       writer->write("reg signed [31:0] reg_DataReady[" + STR(n_ports - 1) + ":0];\n");
       writer->write("wire [" + STR(bitsize * n_ports - 1) + ":0] mask;\n\n");
@@ -1004,7 +1004,7 @@ void MinimalInterfaceTestbench::write_signals(const tree_managerConstRef TreeM, 
 }
 
 void MinimalInterfaceTestbench::read_input_value_from_file_RNONE(const std::string& input_name, bool& first_valid_input,
-                                                                 unsigned bitsize) const
+                                                                 unsigned long long bitsize) const
 {
    if(input_name != CLOCK_PORT_NAME && input_name != RESET_PORT_NAME && input_name != START_PORT_NAME)
    {
@@ -1135,7 +1135,7 @@ void MinimalInterfaceTestbench::read_input_value_from_file_RNONE(const std::stri
 }
 
 void MinimalInterfaceTestbench::write_read_fifo_manager(std::string par, const std::string& pi_dout_name,
-                                                        unsigned bitsize, std::string valid_suffix) const
+                                                        unsigned long long bitsize, std::string valid_suffix) const
 {
    writer->write("\n");
    writer->write_comment("Manage fifo signals for " + pi_dout_name +
@@ -1213,7 +1213,7 @@ void MinimalInterfaceTestbench::write_file_reading_operations() const
       }
       else if(InterfaceType == port_o::port_interface::PI_RNONE)
       {
-         unsigned bitsize = local_port_size(portInst);
+         auto bitsize = local_port_size(portInst);
          read_input_value_from_file_RNONE(input_name, first_valid_input, bitsize);
       }
       else if(InterfaceType == port_o::port_interface::PI_WNONE || InterfaceType == port_o::port_interface::PI_DIN ||
@@ -1234,8 +1234,8 @@ void MinimalInterfaceTestbench::write_file_reading_operations() const
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Written file reading operations");
 }
 
-std::string MinimalInterfaceTestbench::memory_aggregate_slices(unsigned int i, long long int bitsize,
-                                                               long long int Mout_addr_ram_bitsize) const
+std::string MinimalInterfaceTestbench::memory_aggregate_slices(unsigned int i, unsigned long long int bitsize,
+                                                               unsigned long long int Mout_addr_ram_bitsize) const
 {
    std::string mem_aggregate = "{";
    for(unsigned int bitsize_index = 0; bitsize_index < bitsize; bitsize_index = bitsize_index + 8)

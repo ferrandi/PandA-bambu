@@ -49,9 +49,7 @@ OmpForWrapperCSSynthesisFlow::OmpForWrapperCSSynthesisFlow(const ParameterConstR
    composed = true;
 }
 
-OmpForWrapperCSSynthesisFlow::~OmpForWrapperCSSynthesisFlow()
-{
-}
+OmpForWrapperCSSynthesisFlow::~OmpForWrapperCSSynthesisFlow() = default;
 
 const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
 OmpForWrapperCSSynthesisFlow::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const

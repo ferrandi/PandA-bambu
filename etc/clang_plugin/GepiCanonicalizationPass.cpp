@@ -59,7 +59,7 @@ llvm::PHINode* get_last_phi(llvm::BasicBlock* bb)
 
    for(llvm::Instruction& instruction : *bb)
    {
-      if(llvm::PHINode* phi_node = llvm::dyn_cast<llvm::PHINode>(&instruction))
+      if(auto* phi_node = llvm::dyn_cast<llvm::PHINode>(&instruction))
       {
          last_phi = phi_node;
       }
@@ -173,9 +173,9 @@ void recursive_copy_lowering(llvm::Type* type, std::vector<unsigned long long> g
       llvm::GetElementPtrInst* store_gep_inst =
           llvm::GetElementPtrInst::CreateInBounds(nullptr, store_ptr, gepi_value_idxs, "", store_inst);
 
-      llvm::LoadInst* lowered_load = new llvm::LoadInst(
+      auto* lowered_load = new llvm::LoadInst(
           llvm::cast<llvm::PointerType>(load_gep_inst->getType())->getElementType(), load_gep_inst, "", load_inst);
-      llvm::StoreInst* lowered_store = new llvm::StoreInst(lowered_load, store_gep_inst, store_inst);
+      auto* lowered_store = new llvm::StoreInst(lowered_load, store_gep_inst, store_inst);
 
       llvm::errs() << "Lowered load gepi: ";
       load_gep_inst->print(llvm::errs(), false);
@@ -215,7 +215,7 @@ void recursive_init_lowering(llvm::Type* type, llvm::ConstantInt* init_value, st
 
             llvm::APInt ap_mask = llvm::APInt::getBitsSet(ap_val.getBitWidth(), el_lo_bit, el_hi_bit);
             llvm::APInt ap_el_val = ap_val & ap_mask;
-            llvm::ConstantInt* el_init_value =
+            auto* el_init_value =
                 llvm::dyn_cast<llvm::ConstantInt>(llvm::ConstantInt::get(init_value->getType(), ap_el_val));
 
             recursive_init_lowering(type->getStructElementType(idx), el_init_value, gepi_idxs, store_ptr, store_inst,
@@ -239,7 +239,7 @@ void recursive_init_lowering(llvm::Type* type, llvm::ConstantInt* init_value, st
 
             llvm::APInt ap_mask = llvm::APInt::getBitsSet(ap_val.getBitWidth(), el_lo_bit, el_hi_bit);
             llvm::APInt ap_el_val = ap_val & ap_mask;
-            llvm::ConstantInt* el_init_value =
+            auto* el_init_value =
                 llvm::dyn_cast<llvm::ConstantInt>(llvm::ConstantInt::get(init_value->getType(), ap_el_val));
 
             recursive_init_lowering(type->getArrayElementType(), el_init_value, gepi_idxs, store_ptr, store_inst,
@@ -295,7 +295,7 @@ void lower_chunk_copy(const ChunkCopy& chunk_copy, const llvm::DataLayout& DL)
                            chunk_copy.stored_ptr, chunk_copy.load_inst, chunk_copy.store_inst, fitting);
 
    chunk_copy.store_inst->eraseFromParent();
-   if(llvm::BitCastInst* store_bitcast = llvm::dyn_cast<llvm::BitCastInst>(chunk_copy.store_bitcast_op))
+   if(auto* store_bitcast = llvm::dyn_cast<llvm::BitCastInst>(chunk_copy.store_bitcast_op))
    {
       if(store_bitcast->getNumUses() == 0)
       {
@@ -306,7 +306,7 @@ void lower_chunk_copy(const ChunkCopy& chunk_copy, const llvm::DataLayout& DL)
    {
       chunk_copy.load_inst->eraseFromParent();
    }
-   if(llvm::BitCastInst* load_bitcast = llvm::dyn_cast<llvm::BitCastInst>(chunk_copy.load_bitcast_op))
+   if(auto* load_bitcast = llvm::dyn_cast<llvm::BitCastInst>(chunk_copy.load_bitcast_op))
    {
       if(load_bitcast->getNumUses() == 0)
       {
@@ -335,7 +335,7 @@ void lower_chunk_init(const ChunkInit& chunk_init)
                            hi_bit);
 
    chunk_init.store_inst->eraseFromParent();
-   if(llvm::BitCastInst* store_bitcast = llvm::dyn_cast<llvm::BitCastInst>(chunk_init.store_bitcast_op))
+   if(auto* store_bitcast = llvm::dyn_cast<llvm::BitCastInst>(chunk_init.store_bitcast_op))
    {
       if(store_bitcast->getNumUses() == 0)
       {
@@ -355,7 +355,7 @@ void iterator_canonicalization(llvm::Use& iter_use,        /// the gepi or cmp i
    llvm::User* user = iter_use.getUser();
    unsigned long op_num = iter_use.getOperandNo();
 
-   if(llvm::GetElementPtrInst* gepi_inst = llvm::dyn_cast<llvm::GetElementPtrInst>(user))
+   if(auto* gepi_inst = llvm::dyn_cast<llvm::GetElementPtrInst>(user))
    {
       std::vector<llvm::Value*> gepi_idx_vec(std::next(gepi_inst->op_begin(), 1), gepi_inst->op_end());
       llvm::Value* first_idx = gepi_idx_vec.at(0);
@@ -364,7 +364,7 @@ void iterator_canonicalization(llvm::Use& iter_use,        /// the gepi or cmp i
       if(!llvm::isa<llvm::ConstantInt>(first_idx) or llvm::dyn_cast<llvm::ConstantInt>(first_idx)->getSExtValue() != 0)
       {
          llvm::Value* trunc_first_idx = first_idx;
-         if(llvm::ConstantInt* const_first_idx = llvm::dyn_cast<llvm::ConstantInt>(trunc_first_idx))
+         if(auto* const_first_idx = llvm::dyn_cast<llvm::ConstantInt>(trunc_first_idx))
          {
             trunc_first_idx = llvm::ConstantInt::getSigned(int_ind_var->getType(), const_first_idx->getSExtValue());
          }
@@ -417,7 +417,7 @@ void iterator_canonicalization(llvm::Use& iter_use,        /// the gepi or cmp i
       inst_to_remove.insert(gepi_inst);
       return;
    }
-   else if(llvm::PHINode* phi_node = llvm::dyn_cast<llvm::PHINode>(user))
+   else if(auto* phi_node = llvm::dyn_cast<llvm::PHINode>(user))
    {
       if(phi_node == first_phi_node)
       {
@@ -472,7 +472,7 @@ void iterator_canonicalization(llvm::Use& iter_use,        /// the gepi or cmp i
          return;
       }
    }
-   else if(llvm::CmpInst* cmp_inst = llvm::dyn_cast<llvm::CmpInst>(user))
+   else if(auto* cmp_inst = llvm::dyn_cast<llvm::CmpInst>(user))
    {
       encountered_cmps[cmp_inst].push_back(&iter_use);
       return;
@@ -506,7 +506,7 @@ bool ptr_iterator_simplification(llvm::Function& function, llvm::LoopInfo& LI)
       {
          for(llvm::Instruction& instruction : *bb)
          {
-            if(llvm::PHINode* phi_node = llvm::dyn_cast<llvm::PHINode>(&instruction))
+            if(auto* phi_node = llvm::dyn_cast<llvm::PHINode>(&instruction))
             {
                if(phi_node->getType()->isPointerTy())
                {
@@ -539,19 +539,19 @@ bool ptr_iterator_simplification(llvm::Function& function, llvm::LoopInfo& LI)
          bool income_0_in_loop = false;
          {
             llvm::Value* income_val = phi_node->getIncomingValue(0);
-            if(llvm::Instruction* income_inst = llvm::dyn_cast<llvm::Instruction>(income_val))
+            if(auto* income_inst = llvm::dyn_cast<llvm::Instruction>(income_val))
             {
                llvm::Loop* income_loop = LI.getLoopFor(income_inst->getParent());
                income_0_in_loop = income_loop == loop;
             }
             else
             {
-               while(llvm::GEPOperator* gep_op = llvm::dyn_cast<llvm::GEPOperator>(income_val))
+               while(auto* gep_op = llvm::dyn_cast<llvm::GEPOperator>(income_val))
                {
                   income_val = gep_op->getPointerOperand();
                }
 
-               if(llvm::Instruction* income_inst = llvm::dyn_cast<llvm::Instruction>(income_val))
+               if(auto* income_inst = llvm::dyn_cast<llvm::Instruction>(income_val))
                {
                   llvm::Loop* income_loop = LI.getLoopFor(income_inst->getParent());
                   income_0_in_loop = income_loop == loop;
@@ -561,19 +561,19 @@ bool ptr_iterator_simplification(llvm::Function& function, llvm::LoopInfo& LI)
          bool income_1_in_loop = false;
          {
             llvm::Value* income_val = phi_node->getIncomingValue(1);
-            if(llvm::Instruction* income_inst = llvm::dyn_cast<llvm::Instruction>(income_val))
+            if(auto* income_inst = llvm::dyn_cast<llvm::Instruction>(income_val))
             {
                llvm::Loop* income_loop = LI.getLoopFor(income_inst->getParent());
                income_1_in_loop = income_loop == loop;
             }
             else
             {
-               while(llvm::GEPOperator* gep_op = llvm::dyn_cast<llvm::GEPOperator>(income_val))
+               while(auto* gep_op = llvm::dyn_cast<llvm::GEPOperator>(income_val))
                {
                   income_val = gep_op->getPointerOperand();
                }
 
-               if(llvm::Instruction* income_inst = llvm::dyn_cast<llvm::Instruction>(income_val))
+               if(auto* income_inst = llvm::dyn_cast<llvm::Instruction>(income_val))
                {
                   llvm::Loop* income_loop = LI.getLoopFor(income_inst->getParent());
                   income_1_in_loop = income_loop == loop;
@@ -613,11 +613,11 @@ bool ptr_iterator_simplification(llvm::Function& function, llvm::LoopInfo& LI)
 
                do
                {
-                  if(llvm::GetElementPtrInst* gep_step = llvm::dyn_cast<llvm::GetElementPtrInst>(iter_rec))
+                  if(auto* gep_step = llvm::dyn_cast<llvm::GetElementPtrInst>(iter_rec))
                   {
                      iter_rec = gep_step->getPointerOperand();
                   }
-                  else if(llvm::PHINode* phi_step = llvm::dyn_cast<llvm::PHINode>(iter_rec))
+                  else if(auto* phi_step = llvm::dyn_cast<llvm::PHINode>(iter_rec))
                   {
                      if(phi_step != phi_node and phi_step->getIncomingValue(0) == init_ptr)
                      {
@@ -710,8 +710,8 @@ bool ptr_iterator_simplification(llvm::Function& function, llvm::LoopInfo& LI)
          llvm::Value* op_0 = cmp_inst->getOperand(0);
          llvm::Value* op_1 = cmp_inst->getOperand(1);
 
-         llvm::GetElementPtrInst* gepi_0 = llvm::dyn_cast<llvm::GetElementPtrInst>(op_0);
-         llvm::GetElementPtrInst* gepi_1 = llvm::dyn_cast<llvm::GetElementPtrInst>(op_1);
+         auto* gepi_0 = llvm::dyn_cast<llvm::GetElementPtrInst>(op_0);
+         auto* gepi_1 = llvm::dyn_cast<llvm::GetElementPtrInst>(op_1);
 
          if(gepi_0 and gepi_1)
          {
@@ -1031,15 +1031,15 @@ bool chunk_operations_lowering(llvm::Function& function)
    {
       for(llvm::Instruction& i : bb)
       {
-         if(llvm::BitCastOperator* store_bitcast_op = llvm::dyn_cast<llvm::BitCastOperator>(&i))
+         if(auto* store_bitcast_op = llvm::dyn_cast<llvm::BitCastOperator>(&i))
          {
             if(store_bitcast_op->hasOneUse())
             {
                llvm::User* bitcast_single_user = store_bitcast_op->use_begin()->getUser();
 
-               if(llvm::StoreInst* store_inst = llvm::dyn_cast<llvm::StoreInst>(bitcast_single_user))
+               if(auto* store_inst = llvm::dyn_cast<llvm::StoreInst>(bitcast_single_user))
                {
-                  if(llvm::ConstantInt* constant_store_val =
+                  if(auto* constant_store_val =
                          llvm::dyn_cast<llvm::ConstantInt>(store_inst->getValueOperand()))
                   {
                      llvm::Type* src_ty = store_bitcast_op->getSrcTy();
@@ -1047,11 +1047,11 @@ bool chunk_operations_lowering(llvm::Function& function)
                      chunk_init_vec.push_back(ChunkInit(store_inst, store_bitcast_op, store_bitcast_op->getOperand(0),
                                                         constant_store_val, src_ty, dest_ty));
                   }
-                  else if(llvm::LoadInst* load_inst = llvm::dyn_cast<llvm::LoadInst>(store_inst->getValueOperand()))
+                  else if(auto* load_inst = llvm::dyn_cast<llvm::LoadInst>(store_inst->getValueOperand()))
                   {
                      if(load_inst->hasOneUse())
                      {
-                        if(llvm::BitCastOperator* load_bitcast_op =
+                        if(auto* load_bitcast_op =
                                llvm::dyn_cast<llvm::BitCastOperator>(load_inst->getPointerOperand()))
                         {
                            if(load_bitcast_op->hasOneUse())
@@ -1121,7 +1121,7 @@ bool compute_gepi_idxs_rec(llvm::Type* type_rec, llvm::Type* dst_ty, unsigned lo
    else if(type_rec->isArrayTy())
    {
       unsigned long long array_elements = type_rec->getArrayNumElements();
-      unsigned long long this_idx = (unsigned long long)std::floor((double)idx / array_elements);
+      auto this_idx = (unsigned long long)std::floor((double)idx / array_elements);
       unsigned long long next_idx = idx % array_elements;
       gepi_idxs.push_back(this_idx);
       return compute_gepi_idxs_rec(type_rec->getArrayElementType(), dst_ty, next_idx, gepi_idxs);
@@ -1142,15 +1142,15 @@ bool bitcast_vector_removal(llvm::Function& function)
    {
       for(llvm::Instruction& i : bb)
       {
-         if(llvm::GEPOperator* gep_op = llvm::dyn_cast<llvm::GEPOperator>(&i))
+         if(auto* gep_op = llvm::dyn_cast<llvm::GEPOperator>(&i))
          {
             if(gep_op->hasNUsesOrMore(1))
             {
                if(llvm::isa<llvm::Instruction>(gep_op->use_begin()->getUser()))
                {
-                  if(llvm::ConstantInt* first_idx = llvm::dyn_cast<llvm::ConstantInt>(gep_op->getOperand(1)))
+                  if(auto* first_idx = llvm::dyn_cast<llvm::ConstantInt>(gep_op->getOperand(1)))
                   {
-                     if(llvm::BitCastOperator* bitcast_op =
+                     if(auto* bitcast_op =
                             llvm::dyn_cast<llvm::BitCastOperator>(gep_op->getPointerOperand()))
                      {
                         unsigned long long src_ty_size =
@@ -1177,9 +1177,9 @@ bool bitcast_vector_removal(llvm::Function& function)
                }
             }
          }
-         else if(llvm::LoadInst* load_inst = llvm::dyn_cast<llvm::LoadInst>(&i))
+         else if(auto* load_inst = llvm::dyn_cast<llvm::LoadInst>(&i))
          {
-            if(llvm::BitCastOperator* bitcast_op =
+            if(auto* bitcast_op =
                    llvm::dyn_cast<llvm::BitCastOperator>(load_inst->getPointerOperand()))
             {
                unsigned long long src_ty_size = DL.getTypeSizeInBits(bitcast_op->getSrcTy()->getPointerElementType());
@@ -1195,16 +1195,16 @@ bool bitcast_vector_removal(llvm::Function& function)
 
                   if(can_simplify)
                   {
-                     llvm::ConstantInt* first_idx = llvm::dyn_cast<llvm::ConstantInt>(llvm::Constant::getIntegerValue(
+                     auto* first_idx = llvm::dyn_cast<llvm::ConstantInt>(llvm::Constant::getIntegerValue(
                          llvm::Type::getInt32Ty(function.getContext()), llvm::APInt(32, 0)));
                      sequential_access_vec.push_back(std::make_tuple(load_inst, first_idx, bitcast_op, gepi_idxs));
                   }
                }
             }
          }
-         else if(llvm::StoreInst* store_inst = llvm::dyn_cast<llvm::StoreInst>(&i))
+         else if(auto* store_inst = llvm::dyn_cast<llvm::StoreInst>(&i))
          {
-            if(llvm::BitCastOperator* bitcast_op =
+            if(auto* bitcast_op =
                    llvm::dyn_cast<llvm::BitCastOperator>(store_inst->getPointerOperand()))
             {
                unsigned long long src_ty_size = DL.getTypeSizeInBits(bitcast_op->getSrcTy()->getPointerElementType());
@@ -1220,7 +1220,7 @@ bool bitcast_vector_removal(llvm::Function& function)
 
                   if(can_simplify)
                   {
-                     llvm::ConstantInt* first_idx = llvm::dyn_cast<llvm::ConstantInt>(llvm::Constant::getIntegerValue(
+                     auto* first_idx = llvm::dyn_cast<llvm::ConstantInt>(llvm::Constant::getIntegerValue(
                          llvm::Type::getInt32Ty(function.getContext()), llvm::APInt(32, 0)));
                      sequential_access_vec.push_back(std::make_tuple(store_inst, first_idx, bitcast_op, gepi_idxs));
                   }
@@ -1247,7 +1247,7 @@ bool bitcast_vector_removal(llvm::Function& function)
          gepi_idxs_val_vec.push_back(c_idx);
       }
 
-      if(llvm::GEPOperator* gepop = llvm::dyn_cast<llvm::GEPOperator>(last_inst))
+      if(auto* gepop = llvm::dyn_cast<llvm::GEPOperator>(last_inst))
       {
          for(unsigned long long idx = 2; idx < gepop->getNumOperands(); ++idx)
          {
@@ -1256,12 +1256,12 @@ bool bitcast_vector_removal(llvm::Function& function)
       }
 
       llvm::Instruction* next_inst = nullptr;
-      if(llvm::GEPOperator* gepi = llvm::dyn_cast<llvm::GEPOperator>(last_inst))
+      if(auto* gepi = llvm::dyn_cast<llvm::GEPOperator>(last_inst))
       {
          next_inst = llvm::dyn_cast<llvm::Instruction>(gepi->use_begin()->getUser());
          ;
       }
-      else if(llvm::Instruction* inst = llvm::dyn_cast<llvm::Instruction>(last_inst))
+      else if(auto* inst = llvm::dyn_cast<llvm::Instruction>(last_inst))
       {
          next_inst = inst;
       }
@@ -1273,23 +1273,23 @@ bool bitcast_vector_removal(llvm::Function& function)
       {
          last_inst->replaceAllUsesWith(new_gepi);
       }
-      else if(llvm::LoadInst* load_inst = llvm::dyn_cast<llvm::LoadInst>(last_inst))
+      else if(auto* load_inst = llvm::dyn_cast<llvm::LoadInst>(last_inst))
       {
          load_inst->setOperand(load_inst->getPointerOperandIndex(), new_gepi);
       }
-      else if(llvm::StoreInst* store_inst = llvm::dyn_cast<llvm::StoreInst>(last_inst))
+      else if(auto* store_inst = llvm::dyn_cast<llvm::StoreInst>(last_inst))
       {
          store_inst->setOperand(store_inst->getPointerOperandIndex(), new_gepi);
       }
 
-      if(llvm::GetElementPtrInst* gepi = llvm::dyn_cast<llvm::GetElementPtrInst>(last_inst))
+      if(auto* gepi = llvm::dyn_cast<llvm::GetElementPtrInst>(last_inst))
       {
          if(gepi->getNumUses() == 0)
          {
             gepi->eraseFromParent();
          }
       }
-      if(llvm::BitCastInst* bitcast = llvm::dyn_cast<llvm::BitCastInst>(bitcast_op))
+      if(auto* bitcast = llvm::dyn_cast<llvm::BitCastInst>(bitcast_op))
       {
          if(bitcast->getNumUses() == 0)
          {
@@ -1323,7 +1323,7 @@ bool remove_intrinsic(llvm::Function& function)
    {
       for(llvm::Instruction& i : bb)
       {
-         if(llvm::CallInst* call_inst = llvm::dyn_cast<llvm::CallInst>(&i))
+         if(auto* call_inst = llvm::dyn_cast<llvm::CallInst>(&i))
          {
             llvm::Function* called_function = call_inst->getCalledFunction();
 
@@ -1339,9 +1339,9 @@ bool remove_intrinsic(llvm::Function& function)
                }
                if(called_function->getIntrinsicID() == llvm::Intrinsic::memcpy)
                {
-                  if(llvm::BitCastOperator* src_op = llvm::dyn_cast<llvm::BitCastOperator>(call_inst->getOperand(0)))
+                  if(auto* src_op = llvm::dyn_cast<llvm::BitCastOperator>(call_inst->getOperand(0)))
                   {
-                     if(llvm::BitCastOperator* dst_op = llvm::dyn_cast<llvm::BitCastOperator>(call_inst->getOperand(1)))
+                     if(auto* dst_op = llvm::dyn_cast<llvm::BitCastOperator>(call_inst->getOperand(1)))
                      {
                         if(src_op->getSrcTy() == dst_op->getSrcTy())
                         {
@@ -1378,14 +1378,14 @@ bool select_lowering(llvm::Function& function)
    {
       for(llvm::Instruction& i : bb)
       {
-         if(llvm::SelectInst* select_inst = llvm::dyn_cast<llvm::SelectInst>(&i))
+         if(auto* select_inst = llvm::dyn_cast<llvm::SelectInst>(&i))
          {
             llvm::Type* selected_type = select_inst->getTrueValue()->getType();
             if(selected_type->isPointerTy())
             {
                if(select_inst->hasOneUse())
                {
-                  if(llvm::GetElementPtrInst* gepi =
+                  if(auto* gepi =
                          llvm::dyn_cast<llvm::GetElementPtrInst>(select_inst->use_begin()->getUser()))
                   {
                      if(gepi->hasOneUse() and (llvm::isa<llvm::LoadInst>(gepi->use_begin()->getUser())))
@@ -1396,7 +1396,7 @@ bool select_lowering(llvm::Function& function)
                            gepi_idxs.push_back(idx->get());
                         }
 
-                        if(llvm::LoadInst* load_inst = llvm::dyn_cast<llvm::LoadInst>(gepi->use_begin()->getUser()))
+                        if(auto* load_inst = llvm::dyn_cast<llvm::LoadInst>(gepi->use_begin()->getUser()))
                         {
                            llvm::errs() << "select_lowering step\n";
 #if __clang_major__ < 8
@@ -1408,14 +1408,14 @@ bool select_lowering(llvm::Function& function)
                            assert(!gepi_idxs.empty());
                            llvm::GetElementPtrInst* true_gepi = llvm::GetElementPtrInst::CreateInBounds(
                                nullptr, select_inst->getTrueValue(), gepi_idxs, "", ThenTerm);
-                           llvm::LoadInst* true_load =
+                           auto* true_load =
                                new llvm::LoadInst(llvm::cast<llvm::PointerType>(true_gepi->getType())->getElementType(),
                                                   true_gepi, "", ThenTerm);
 
                            assert(!gepi_idxs.empty());
                            llvm::GetElementPtrInst* false_gepi = llvm::GetElementPtrInst::CreateInBounds(
                                nullptr, select_inst->getFalseValue(), gepi_idxs, "", ElseTerm);
-                           llvm::LoadInst* false_load = new llvm::LoadInst(
+                           auto* false_load = new llvm::LoadInst(
                                llvm::cast<llvm::PointerType>(false_gepi->getType())->getElementType(), false_gepi, "",
                                ElseTerm);
 
@@ -1460,12 +1460,12 @@ bool canonical_idxs(llvm::Function& function)
    {
       for(llvm::Instruction& i : bb)
       {
-         if(llvm::GetElementPtrInst* gepi = llvm::dyn_cast<llvm::GetElementPtrInst>(&i))
+         if(auto* gepi = llvm::dyn_cast<llvm::GetElementPtrInst>(&i))
          {
             for(unsigned long idx = 0; idx < gepi->getNumIndices(); ++idx)
             {
                llvm::Value* operand = gepi->getOperand(idx + 1);
-               if(llvm::ConstantInt* c_idx = llvm::dyn_cast<llvm::ConstantInt>(operand))
+               if(auto* c_idx = llvm::dyn_cast<llvm::ConstantInt>(operand))
                {
                   gepi->setOperand(idx + 1, llvm::ConstantInt::get(idx_ty, c_idx->getSExtValue(), true));
                }
@@ -1494,12 +1494,12 @@ bool code_simplification(llvm::Function& function, llvm::LoopInfo& LI, llvm::Sca
    {
       for(llvm::Instruction& i : bb)
       {
-         if(llvm::LoadInst* load_inst = llvm::dyn_cast<llvm::LoadInst>(&i))
+         if(auto* load_inst = llvm::dyn_cast<llvm::LoadInst>(&i))
          {
             point_to_set_map.insert(
                 std::make_pair(&load_inst->getOperandUse(load_inst->getPointerOperandIndex()), nullptr));
          }
-         else if(llvm::StoreInst* store_inst = llvm::dyn_cast<llvm::StoreInst>(&i))
+         else if(auto* store_inst = llvm::dyn_cast<llvm::StoreInst>(&i))
          {
             point_to_set_map.insert(
                 std::make_pair(&store_inst->getOperandUse(store_inst->getPointerOperandIndex()), nullptr));
@@ -1514,7 +1514,7 @@ bool code_simplification(llvm::Function& function, llvm::LoopInfo& LI, llvm::Sca
    {
       llvm::Use* use = pts_it.first;
 
-      if(llvm::Instruction* user_inst = llvm::dyn_cast<llvm::Instruction>(use->getUser()))
+      if(auto* user_inst = llvm::dyn_cast<llvm::Instruction>(use->getUser()))
       {
          if((llvm::isa<llvm::CallInst>(user_inst) and
              !llvm::dyn_cast<llvm::CallInst>(user_inst)->getCalledFunction()->isIntrinsic()) or
@@ -1525,7 +1525,7 @@ bool code_simplification(llvm::Function& function, llvm::LoopInfo& LI, llvm::Sca
                const llvm::SCEV* use_scev = SE.getSCEV(use->get());
 
                const llvm::SCEV* scev_rec = use_scev;
-               while(const llvm::SCEVAddRecExpr* use_add_rec_scev_rec = llvm::dyn_cast<llvm::SCEVAddRecExpr>(scev_rec))
+               while(const auto* use_add_rec_scev_rec = llvm::dyn_cast<llvm::SCEVAddRecExpr>(scev_rec))
                {
                   const llvm::Loop* loop = use_add_rec_scev_rec->getLoop();
 
@@ -1535,7 +1535,7 @@ bool code_simplification(llvm::Function& function, llvm::LoopInfo& LI, llvm::Sca
                         non_const_idxs_per_loop.insert(std::make_pair(loop, 0));
                      non_const_idxs_per_loop.at(loop) += 1;
 
-                     if(llvm::CallInst* call_inst = llvm::dyn_cast<llvm::CallInst>(user_inst))
+                     if(auto* call_inst = llvm::dyn_cast<llvm::CallInst>(user_inst))
                      {
                         if(non_const_idxs_per_call.find(call_inst) == non_const_idxs_per_call.end())
                            non_const_idxs_per_call.insert(std::make_pair(call_inst, 0));
@@ -1552,7 +1552,7 @@ bool code_simplification(llvm::Function& function, llvm::LoopInfo& LI, llvm::Sca
 
    for(auto loop_it : non_const_idxs_per_loop)
    {
-      llvm::Loop* loop = const_cast<llvm::Loop*>(loop_it.first);
+      auto* loop = const_cast<llvm::Loop*>(loop_it.first);
 
       unsigned long long inst_count = 0;
       for(const llvm::BasicBlock* bb : loop->blocks())
@@ -1641,7 +1641,7 @@ bool code_simplification(llvm::Function& function, llvm::LoopInfo& LI, llvm::Sca
                   exit(-1);
                }
 #if __clang_major__ >= 11
-               llvm::CallBase* CB = llvm::dyn_cast<llvm::CallBase>(call_inst);
+               auto* CB = llvm::dyn_cast<llvm::CallBase>(call_inst);
                if(!llvm::InlineFunction(*CB, IFI).isSuccess())
 #else
                llvm::CallSite CS(call_inst);
@@ -1705,12 +1705,12 @@ bool gepi_explicitation(llvm::Function& function)
    {
       auto use = ops_to_explicit.front();
       ops_to_explicit.pop_front();
-      if(llvm::GEPOperator* gep_op = llvm::dyn_cast<llvm::GEPOperator>(use->get()))
+      if(auto* gep_op = llvm::dyn_cast<llvm::GEPOperator>(use->get()))
       {
-         if(llvm::Instruction* user_inst = llvm::dyn_cast<llvm::Instruction>(use->getUser()))
+         if(auto* user_inst = llvm::dyn_cast<llvm::Instruction>(use->getUser()))
          {
             llvm::Instruction* insert_point_inst = user_inst;
-            if(llvm::PHINode* phi_node = llvm::dyn_cast<llvm::PHINode>(use->getUser()))
+            if(auto* phi_node = llvm::dyn_cast<llvm::PHINode>(use->getUser()))
             {
                insert_point_inst = phi_node->getIncomingBlock(*use)->getTerminator();
             }
@@ -1769,7 +1769,7 @@ bool clean_lcssa(llvm::Function& function)
    {
       for(llvm::Instruction& i : bb)
       {
-         if(llvm::PHINode* phi_node = llvm::dyn_cast<llvm::PHINode>(&i))
+         if(auto* phi_node = llvm::dyn_cast<llvm::PHINode>(&i))
          {
             if(phi_node->getNumOperands() == 1)
             {
