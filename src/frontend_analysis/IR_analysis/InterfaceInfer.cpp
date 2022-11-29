@@ -124,7 +124,7 @@ void InterfaceInfer::interface_info::update(const tree_nodeRef& tn, const std::s
          {
             return ac_bitwidth;
          }
-         else if(tree_helper::IsArrayType(ptd_type))
+         else if(tree_helper::IsArrayEquivType(ptd_type))
          {
             return tree_helper::GetArrayElementSize(ptd_type);
          }

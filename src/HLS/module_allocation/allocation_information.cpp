@@ -2533,7 +2533,7 @@ double AllocationInformation::get_correction_time(unsigned int fu, const std::st
       const auto type_node = tree_helper::CGetType(TreeM->CGetTreeReindex(var));
       elmt_bitsize = tree_helper::AccessedMaximumBitsize(type_node, 1);
 #if ARRAY_CORRECTION
-      if(tree_helper::IsArrayType(type_node))
+      if(tree_helper::IsArrayEquivType(type_node))
       {
          const auto dims = tree_helper::GetArrayDimensions(type_node);
          unsigned int n_not_power_of_two = 0;
@@ -2574,7 +2574,7 @@ double AllocationInformation::get_correction_time(unsigned int fu, const std::st
       const auto type_node = tree_helper::CGetType(TreeM->CGetTreeReindex(var));
       elmt_bitsize = tree_helper::AccessedMaximumBitsize(type_node, 1);
 #if ARRAY_CORRECTION
-      if(tree_helper::IsArrayType(type_node))
+      if(tree_helper::IsArrayEquivType(type_node))
       {
          const auto dims = tree_helper::GetArrayDimensions(type_node);
          unsigned int n_not_power_of_two = 0;
@@ -2695,7 +2695,7 @@ double AllocationInformation::get_correction_time(unsigned int fu, const std::st
 
 #if ARRAY_CORRECTION
       const auto type_node = tree_helper::CGetType(TreeM->CGetTreeReindex(var));
-      if(tree_helper::IsArrayType(type_node))
+      if(tree_helper::IsArrayEquivType(type_node))
       {
          const auto dims = tree_helper::GetArrayDimensions(type_node);
          unsigned int n_not_power_of_two = 0;

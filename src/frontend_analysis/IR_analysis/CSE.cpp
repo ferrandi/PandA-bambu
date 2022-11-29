@@ -420,7 +420,8 @@ bool CSE::has_memory_access(const gimple_assign* ga) const
          skip_check = true;
       }
    }
-   if(!tree_helper::IsVectorType(ga->op0) && tree_helper::IsArrayType(ga->op0) && !tree_helper::IsPointerType(ga->op0))
+   if(!tree_helper::IsVectorType(ga->op0) && tree_helper::IsArrayEquivType(ga->op0) &&
+      !tree_helper::IsPointerType(ga->op0))
    {
       skip_check = true;
    }

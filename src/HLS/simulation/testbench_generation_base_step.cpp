@@ -217,7 +217,7 @@ std::string TestbenchGenerationBaseStep::print_var_init(const tree_managerConstR
    }
    else if(!GetPointer<gimple_call>(GET_CONST_NODE(tn)))
    {
-      if(tree_helper::IsArrayType(tn) && !tree_helper::IsStructType(tn) && !tree_helper::IsUnionType(tn))
+      if(tree_helper::IsArrayType(tn))
       {
          const auto type = tree_helper::CGetType(tn);
          const auto data_bitsize = tree_helper::GetArrayElementSize(type);
@@ -835,7 +835,7 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
             unsigned long long int bitsize;
             bool is_real;
             const auto pi_node = TreeM->CGetTreeReindex(portInst->get_typeRef()->treenode);
-            if(tree_helper::IsArrayType(pi_node))
+            if(tree_helper::IsArrayEquivType(pi_node))
             {
                const auto pt_type = tree_helper::CGetArrayBaseType(pi_node);
                bitsize = tree_helper::Size(pt_type);
@@ -845,7 +845,7 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
             {
                const auto port_type = tree_helper::CGetType(pi_node);
                auto pt_type = tree_helper::CGetPointedType(port_type);
-               if(tree_helper::IsArrayType(pt_type))
+               if(tree_helper::IsArrayEquivType(pt_type))
                {
                   pt_type = tree_helper::CGetArrayBaseType(pt_type);
                }
@@ -1550,7 +1550,7 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
             const auto output_name = "ex_" + variableName;
             unsigned long long int bitsize;
             bool is_real;
-            if(tree_helper::IsArrayType(var_node))
+            if(tree_helper::IsArrayEquivType(var_node))
             {
                const auto pt_type = tree_helper::CGetArrayBaseType(var_node);
                bitsize = tree_helper::Size(pt_type);

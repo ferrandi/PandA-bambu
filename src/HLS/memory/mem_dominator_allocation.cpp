@@ -700,13 +700,13 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
                {
                   const auto type_node = tree_helper::CGetType(TreeM->CGetTreeReindex(var));
                   bool is_a_struct_union =
-                      (tree_helper::IsStructType(type_node) && !tree_helper::IsArrayType(type_node)) ||
-                      (tree_helper::IsUnionType(type_node) && !tree_helper::IsArrayType(type_node)) ||
+                      (tree_helper::IsStructType(type_node) && !tree_helper::IsArrayEquivType(type_node)) ||
+                      (tree_helper::IsUnionType(type_node) && !tree_helper::IsArrayEquivType(type_node)) ||
                       tree_helper::IsComplexType(type_node);
                   const auto elmt_bitsize = tree_helper::AccessedMaximumBitsize(type_node, 1);
                   const auto mim_elmt_bitsize = tree_helper::AccessedMinimunBitsize(type_node, elmt_bitsize);
                   auto elts_size = elmt_bitsize;
-                  if(tree_helper::IsArrayType(type_node))
+                  if(tree_helper::IsArrayEquivType(type_node))
                   {
                      elts_size = tree_helper::GetArrayElementSize(type_node);
                   }

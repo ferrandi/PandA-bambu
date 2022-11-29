@@ -2414,7 +2414,7 @@ void fu_binding::fill_array_ref_memory(std::ostream& init_file_a, std::ostream& 
    }
    const auto array_type_node = tree_helper::CGetType(ar_node);
    unsigned long long element_precision = 0;
-   if(tree_helper::IsArrayType(array_type_node))
+   if(tree_helper::IsArrayEquivType(array_type_node))
    {
       std::vector<unsigned long long> dims;
       tree_helper::get_array_dim_and_bitsize(TreeM, array_type_node->index, dims, elts_size);

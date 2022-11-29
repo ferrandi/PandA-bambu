@@ -754,8 +754,7 @@ void HLSCWriter::WriteExpectedResults(const BehavioralHelperConstRef BH,
                indented_output_stream->Append("fprintf(__bambu_testbench_fp, \"\\n\");\n");
                indented_output_stream->Append("}\n");
             }
-            else if(tree_helper::IsArrayType(ptd_type) && !tree_helper::IsStructType(ptd_type) &&
-                    !tree_helper::IsUnionType(ptd_type))
+            else if(tree_helper::IsArrayType(ptd_type))
             {
                indented_output_stream->Append("for (__testbench_index2 = 0; __testbench_index2 < " +
                                               STR(splitted.size()) + "; ++__testbench_index2)\n{\n");

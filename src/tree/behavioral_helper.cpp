@@ -3292,8 +3292,7 @@ std::string BehavioralHelper::PrintNode(const tree_nodeConstRef& _node, vertex v
                res += PrintNode(pragma, v, vppf) + "\n";
             }
             res = "";
-            if(tree_helper::IsArrayType(ms->op0) && !tree_helper::IsStructType(ms->op0) &&
-               !tree_helper::IsUnionType(ms->op0))
+            if(tree_helper::IsArrayType(ms->op0))
             {
                const auto size = tree_helper::Size(ms->op0);
                res += "__builtin_memcpy(";

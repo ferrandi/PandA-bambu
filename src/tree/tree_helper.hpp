@@ -528,7 +528,7 @@ class tree_helper
     * @param index is the treenode index
     */
    static
-       /// FIXME: to be remove after substitution with IsArrayType
+       /// FIXME: to be remove after substitution with IsArrayEquivType
        bool
        is_an_array(const tree_managerConstRef& TM, const unsigned int index);
 
@@ -537,6 +537,14 @@ class tree_helper
     * ending into a single arrays)
     * @param type is the treenode
     * @return true if treenode is an array or it is equivalent to an array
+    */
+   static bool IsArrayEquivType(const tree_nodeConstRef& type);
+
+   /**
+    * Return true if treenode is an array
+    * @param type is the treenode
+    * @return true if treenode is an array
+    * @return false if treenode is not an array
     */
    static bool IsArrayType(const tree_nodeConstRef& type);
 

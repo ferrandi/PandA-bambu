@@ -239,7 +239,7 @@ void MemoryInitializationWriterBase::GoNext()
    }
    else
    {
-      THROW_ASSERT(tree_helper::IsArrayType(upper_type) || tree_helper::IsPointerType(upper_type),
+      THROW_ASSERT(tree_helper::IsArrayEquivType(upper_type) || tree_helper::IsPointerType(upper_type),
                    GET_CONST_NODE(upper_type)->get_kind_text());
       status[status.size() - 2].second++;
       status[status.size() - 1].second = 0;

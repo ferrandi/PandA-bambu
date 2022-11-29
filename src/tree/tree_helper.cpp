@@ -2683,10 +2683,10 @@ static bool same_size_fields(const tree_nodeConstRef& t)
 bool tree_helper::is_an_array(const tree_managerConstRef& TM, const unsigned int index)
 {
    const auto T = TM->CGetTreeReindex(index);
-   return IsArrayType(T);
+   return IsArrayEquivType(T);
 }
 
-bool tree_helper::IsArrayType(const tree_nodeConstRef& _type)
+bool tree_helper::IsArrayEquivType(const tree_nodeConstRef& _type)
 {
    const auto type = CGetType(_type);
    THROW_ASSERT(type, "expected a type index");
@@ -2698,10 +2698,14 @@ bool tree_helper::IsArrayType(const tree_nodeConstRef& _type)
    {
       return same_size_fields(type);
    }
-   else
-   {
-      return false;
-   }
+   return false;
+}
+
+bool tree_helper::IsArrayType(const tree_nodeConstRef& _type)
+{
+   const auto type = CGetType(_type);
+   THROW_ASSERT(type, "expected a type index");
+   return GET_CONST_NODE(type)->get_kind() == array_type_K;
 }
 
 tree_nodeConstRef tree_helper::CGetArrayBaseType(const tree_nodeConstRef& type)

@@ -200,7 +200,7 @@ void TestbenchMemoryAllocation::AllocTestbenchMemory(void) const
                {
                   base_type_byte_size = tree_helper::Size(ptd_base_type) / 8;
                }
-               else if(tree_helper::IsArrayType(ptd_base_type))
+               else if(tree_helper::IsArrayEquivType(ptd_base_type))
                {
                   base_type_byte_size = tree_helper::GetArrayElementSize(ptd_base_type) / 8;
                }
