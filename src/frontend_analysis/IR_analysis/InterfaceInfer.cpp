@@ -941,7 +941,7 @@ void InterfaceInfer::setReadInterface(tree_nodeRef stmt, const std::string& arg_
       CallGraphManager::addCallPointAndExpand(AV, AppM, GET_INDEX_CONST_NODE(ga->scpe),
                                               GET_INDEX_CONST_NODE(function_decl_node), GET_INDEX_CONST_NODE(stmt),
                                               FunctionEdgeInfo::CallType::direct_call, DEBUG_LEVEL_NONE);
-      GetPointer<HLS_manager>(AppM)->design_interface_loads[fname][ga->bb_index][arg_name].push_back(
+      GetPointer<HLS_manager>(AppM)->design_interface_io[fname][ga->bb_index][arg_name].push_back(
           GET_INDEX_CONST_NODE(stmt));
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "--- AFTER: " + stmt->ToString());
    }
@@ -960,7 +960,7 @@ void InterfaceInfer::setReadInterface(tree_nodeRef stmt, const std::string& arg_
                                                        is_real ? view_convert_expr_K : nop_expr_K);
       TM->ReplaceTreeNode(stmt, ga->op1, vc);
       FixReadWriteCall(stmt, gc, tree_man, TM);
-      GetPointer<HLS_manager>(AppM)->design_interface_loads[fname][ga->bb_index][arg_name].push_back(
+      GetPointer<HLS_manager>(AppM)->design_interface_io[fname][ga->bb_index][arg_name].push_back(
           GET_INDEX_CONST_NODE(gc));
 
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "--- AFTER: " + gc->ToString());
@@ -1039,8 +1039,8 @@ void InterfaceInfer::setWriteInterface(tree_nodeRef stmt, const std::string& arg
    sl->list_of_bloc.at(ga->bb_index)->PushBefore(gc, stmt, AppM);
 
    FixReadWriteCall(stmt, gc, tree_man, TM);
-   GetPointer<HLS_manager>(AppM)->design_interface_loads[fname][ga->bb_index][arg_name].push_back(GET_INDEX_NODE(gc));
    sl->list_of_bloc[ga->bb_index]->RemoveStmt(stmt, AppM);
+   GetPointer<HLS_manager>(AppM)->design_interface_io[fname][ga->bb_index][arg_name].push_back(GET_INDEX_NODE(gc));
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "--- AFTER: " + gc->ToString());
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--");
 }

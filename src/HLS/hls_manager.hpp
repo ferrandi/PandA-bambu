@@ -130,11 +130,9 @@ class HLS_manager : public application_manager
    /// store the design interface typename includes coming from an xml file:
    /// function_name->parameter_name->interface_typenameinclude
    std::map<std::string, std::map<std::string, std::string>> design_interface_typenameinclude;
-   /// store the design interface read references of parameters: function_name->bb_index->parameter_name->list_of_loads
-   std::map<std::string, std::map<unsigned, std::map<std::string, std::list<unsigned>>>> design_interface_loads;
-   /// store the design interface write references of parameters:
-   /// function_name->bb_index->parameter_name->list_of_stores
-   std::map<std::string, std::map<unsigned, std::map<std::string, std::list<unsigned>>>> design_interface_stores;
+   /// store the design interface read/write references of parameters:
+   /// function_name->bb_index->parameter_name->list_of_loads
+   std::map<std::string, std::map<unsigned, std::map<std::string, std::list<unsigned>>>> design_interface_io;
 
    /// store the constraints on resources added to manage the I/O interfaces:
    /// function_id->library_name->resource_function_name->number of resources

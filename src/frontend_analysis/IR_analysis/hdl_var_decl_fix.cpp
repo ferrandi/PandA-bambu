@@ -168,22 +168,9 @@ DesignFlowStep_Status HDLVarDeclFix::InternalExec()
             HLSMgr->design_interface_typenameinclude.find(fname)->second.erase(diti_it);
             HLSMgr->design_interface_typenameinclude.find(fname)->second[argName_string_new] = diti_value;
 
-            if(HLSMgr->design_interface_loads.find(fname) != HLSMgr->design_interface_loads.end())
+            if(HLSMgr->design_interface_io.find(fname) != HLSMgr->design_interface_io.end())
             {
-               for(auto& bb2parLoads : HLSMgr->design_interface_loads.find(fname)->second)
-               {
-                  if(bb2parLoads.second.find(argName_string) != bb2parLoads.second.end())
-                  {
-                     auto l_it = bb2parLoads.second.find(argName_string);
-                     auto l_value = l_it->second;
-                     bb2parLoads.second.erase(l_it);
-                     bb2parLoads.second[argName_string_new] = l_value;
-                  }
-               }
-            }
-            if(HLSMgr->design_interface_stores.find(fname) != HLSMgr->design_interface_stores.end())
-            {
-               for(auto& bb2parLoads : HLSMgr->design_interface_stores.find(fname)->second)
+               for(auto& bb2parLoads : HLSMgr->design_interface_io.find(fname)->second)
                {
                   if(bb2parLoads.second.find(argName_string) != bb2parLoads.second.end())
                   {

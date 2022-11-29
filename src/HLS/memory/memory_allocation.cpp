@@ -329,9 +329,9 @@ void memory_allocation::finalize_memory_allocation()
       const auto fd = GetPointerS<const function_decl>(GET_CONST_NODE(fnode));
       const auto fname = tree_helper::GetMangledFunctionName(fd);
       CustomUnorderedSet<vertex> RW_stmts;
-      if(HLSMgr->design_interface_loads.find(fname) != HLSMgr->design_interface_loads.end())
+      if(HLSMgr->design_interface_io.find(fname) != HLSMgr->design_interface_io.end())
       {
-         for(auto bb2arg2stmtsR : HLSMgr->design_interface_loads.find(fname)->second)
+         for(auto bb2arg2stmtsR : HLSMgr->design_interface_io.find(fname)->second)
          {
             for(auto arg2stms : bb2arg2stmtsR.second)
             {
@@ -342,25 +342,6 @@ void memory_allocation::finalize_memory_allocation()
                      THROW_ASSERT(g->CGetOpGraphInfo()->tree_node_to_operation.find(stmt) !=
                                       g->CGetOpGraphInfo()->tree_node_to_operation.end(),
                                   "unexpected condition: STMT=" + STR(stmt));
-                     RW_stmts.insert(g->CGetOpGraphInfo()->tree_node_to_operation.find(stmt)->second);
-                  }
-               }
-            }
-         }
-      }
-      if(HLSMgr->design_interface_stores.find(fname) != HLSMgr->design_interface_stores.end())
-      {
-         for(auto bb2arg2stmtsW : HLSMgr->design_interface_stores.find(fname)->second)
-         {
-            for(auto arg2stms : bb2arg2stmtsW.second)
-            {
-               if(arg2stms.second.size() > 0)
-               {
-                  for(auto stmt : arg2stms.second)
-                  {
-                     THROW_ASSERT(g->CGetOpGraphInfo()->tree_node_to_operation.find(stmt) !=
-                                      g->CGetOpGraphInfo()->tree_node_to_operation.end(),
-                                  "unexpected condition");
                      RW_stmts.insert(g->CGetOpGraphInfo()->tree_node_to_operation.find(stmt)->second);
                   }
                }
