@@ -16,7 +16,7 @@ inflate() {
    echo "Installing $1 into $2"
    case $1 in
       clang-12 )
-         wget https://github.com/llvm/llvm-project/releases/dowoad/llvmorg-12.0.1/clang+llvm-12.0.1-x86_64-linux-gnu-ubuntu-16.04.tar.xz $wget_opt | tar -C $2 -xJf - || touch ${failure_file} &
+         wget https://github.com/llvm/llvm-project/releases/download/llvmorg-12.0.1/clang+llvm-12.0.1-x86_64-linux-gnu-ubuntu-16.04.tar.xz $wget_opt | tar -C $2 -xJf - || touch ${failure_file} &
          ;;
       clang-11 )
          wget https://github.com/llvm/llvm-project/releases/download/llvmorg-11.1.0/clang+llvm-11.1.0-x86_64-linux-gnu-ubuntu-16.04.tar.xz $wget_opt | tar -C $2 -xJf - || touch ${failure_file} &
