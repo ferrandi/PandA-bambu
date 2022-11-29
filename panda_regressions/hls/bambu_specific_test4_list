@@ -39,9 +39,9 @@ bambu_specific_test4/simple_c4_axis.c --generate-tb=a=1,b=2,c=3,d=6 --top-fname=
 bambu_specific_test4/simple_c4_fifo_multiple.c --generate-tb=a="{1,2,3,4,5,6,7,8}",b="{2,3,4,5,6,7,8,9}",c="{3,4,5,6,7,8,9,10}",d="{0,0,0,0,0,0,0,0}" --top-fname=sum3numbers 
 bambu_specific_test4/simple_c4_fifo.c --generate-tb=a=1,b=2,c=3,d=6 --top-fname=sum3numbers 
 bambu_specific_test4/simple_c4_handshake.c --generate-tb=a=1,b=2,c=3,d=6 --top-fname=sum3numbers 
-bambu_specific_test4/simple_test.c --generate-tb=a="-7" --top-fname=test
+bambu_specific_test4/simple_test.c --generate-tb=a="-7",b="{0}" --top-fname=test
 bambu_specific_test4/simpleif_c1_none.c --generate-tb=BENCHMARKS_ROOT/bambu_specific_test4/simpleif_c1_none_test.xml --top-fname=kim --benchmark-name=simpleif_c1_none_xml
-bambu_specific_test4/simpleif_c1_none.c --generate-tb=i1=9,i2=1,i3=5,i4=6,i5=17,i6=19,c1=2,c2=6,c3=13,c4=17,c6=9,COND1=1,COND2=1 --top-fname=kim --benchmark-name=simpleif_c1_none_no_xml
+bambu_specific_test4/simpleif_c1_none.c --generate-tb=i1=9,i2=1,i3=5,i4=6,i5=17,i6=19,c1=2,c2=6,c3=13,c4=17,c6=9,COND1=1,COND2=1,o1=0,o2=0 --top-fname=kim --benchmark-name=simpleif_c1_none_no_xml
 bambu_specific_test4/simple_axi_m.c --top-fname=maxNumbers --generate-tb=a="{1,2,3,4,5}",n_ptr="{5}"
 bambu_specific_test4/simple2_axi_m.c --top-fname=maxNumbers --generate-tb=a="{1,2,3,4,5}",n_ptr="{5}"
 bambu_specific_test4/simple3_axi_m.c --top-fname=maxNumbers --generate-tb=BENCHMARKS_ROOT/bambu_specific_test4/simple3_axi_tb.xml
