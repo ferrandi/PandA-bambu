@@ -109,9 +109,7 @@ TestbenchValuesXMLGeneration::TestbenchValuesXMLGeneration(const ParameterConstR
    }
 }
 
-TestbenchValuesXMLGeneration::~TestbenchValuesXMLGeneration()
-{
-}
+TestbenchValuesXMLGeneration::~TestbenchValuesXMLGeneration() = default;
 
 const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
 TestbenchValuesXMLGeneration::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const

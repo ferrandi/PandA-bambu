@@ -573,7 +573,7 @@ void compute_implicit_calls::replace_with_memcpy(tree_nodeRef stmt, const statem
       const auto src_type = tree_helper::CGetType(mr_rhs->op0);
       const auto dst_ptr_t = GetPointer<const pointer_type>(GET_CONST_NODE(dst_type));
       const auto src_ptr_t = GetPointer<const pointer_type>(GET_CONST_NODE(src_type));
-      unsigned int dst_size;
+      unsigned long long dst_size;
       if(dst_ptr_t)
       {
          dst_size = tree_helper::Size(dst_ptr_t->ptd);
@@ -583,7 +583,7 @@ void compute_implicit_calls::replace_with_memcpy(tree_nodeRef stmt, const statem
          const auto dst_rptr_t = GetPointer<const reference_type>(GET_CONST_NODE(dst_type));
          dst_size = tree_helper::Size(dst_rptr_t->refd);
       }
-      unsigned int src_size;
+      unsigned long long src_size;
       if(src_ptr_t)
       {
          src_size = tree_helper::Size(src_ptr_t->ptd);

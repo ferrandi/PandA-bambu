@@ -477,7 +477,7 @@ void top_entity::add_ports(structural_objectRef circuit, structural_objectRef cl
    ////////////////////////////////////////////////////////////////////////////////////////
    ////////////////////////////////////////////////////////////////////////////////////////
    ////////////////////////////////////////////////////////////////////////////////////////
-   std::map<unsigned int, structural_objectRef> null_values;
+   std::map<unsigned long long, structural_objectRef> null_values;
    /// creating extern IN port on top starting from extern ports on datapath and add connection
    for(unsigned int j = 0; j < GetPointerS<module>(Datapath)->get_in_port_size(); j++)
    {

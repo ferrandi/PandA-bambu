@@ -51,6 +51,10 @@
  */
 class chordal_coloring_register : public conflict_based_register
 {
+ private:
+   /// compare lexically two vectors
+   bool lex_compare_gt(const std::vector<unsigned int>& v1, const std::vector<unsigned int>& v2) const;
+
  public:
    /**
     * Constructor of the class.
@@ -73,10 +77,6 @@ class chordal_coloring_register : public conflict_based_register
     * @return the exit status of this step
     */
    DesignFlowStep_Status InternalExec() override;
-
- private:
-   /// compare lexically two vectors
-   bool lex_compare_gt(const std::vector<unsigned int>& v1, const std::vector<unsigned int>& v2) const;
 };
 
 #endif

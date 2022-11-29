@@ -1105,7 +1105,7 @@ namespace RangeAnalysis
 
       llvm::Timer* registerNewTimer(llvm::StringRef key, llvm::StringRef descr)
       {
-         llvm::Timer* timer = new llvm::Timer(key, descr, *tg);
+         auto* timer = new llvm::Timer(key, descr, *tg);
          timers.push_back(timer);
 
          return timer;

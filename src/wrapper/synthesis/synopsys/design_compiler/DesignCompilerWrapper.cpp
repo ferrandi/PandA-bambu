@@ -215,9 +215,7 @@ void DesignCompilerWrapper::set_constraint_file(const std::string& path)
 }
 
 // destructor
-DesignCompilerWrapper::~DesignCompilerWrapper()
-{
-}
+DesignCompilerWrapper::~DesignCompilerWrapper() = default;
 
 void DesignCompilerWrapper::add_link_library(const std::vector<std::string>& link_library)
 {

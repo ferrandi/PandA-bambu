@@ -461,7 +461,7 @@ std::vector<std::pair<port_swapping::PSVertex, unsigned int>> port_swapping::p_s
    }
    long unsigned int max = boost::num_vertices(g);
    PSMultiStart best_candidate;
-   for(auto vset : vector_sets)
+   for(const auto& vset : vector_sets)
    {
       if(vset.cardinality < max)
       {

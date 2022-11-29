@@ -77,6 +77,7 @@
 /// HLS/function_allocation include
 #include "functions.hpp"
 #endif
+#define MAX_BITWIDTH_SIZE 4096
 
 HLS_manager::HLS_manager(const ParameterConstRef _Param, const HLS_targetRef _HLS_T)
     : application_manager(FunctionExpanderConstRef(new FunctionExpander()), false, _Param),
@@ -132,7 +133,7 @@ hlsRef HLS_manager::create_HLS(const HLS_managerRef HLSMgr, unsigned int functio
       /// creates the new HLS data structure associated with the function
       const std::string function_name = tree_helper::name_function(HLSMgr->get_tree_manager(), functionId);
       HLS_constraintsRef HLS_C = HLS_constraintsRef(new HLS_constraints(HLSMgr->get_parameter(), function_name));
-      for(auto globalRC : HLSMgr->global_resource_constraints)
+      for(const auto& globalRC : HLSMgr->global_resource_constraints)
       {
          if(HLS_C->get_number_fu(globalRC.first.first, globalRC.first.second) == INFINITE_UINT)
          {
@@ -161,7 +162,7 @@ hlsRef HLS_manager::create_HLS(const HLS_managerRef HLSMgr, unsigned int functio
    return HLSMgr->hlsMap[functionId];
 }
 
-std::string HLS_manager::get_constant_string(unsigned int node_id, unsigned int precision)
+std::string HLS_manager::get_constant_string(unsigned int node_id, unsigned long long precision)
 {
    std::string trimmed_value;
    const auto node = TM->CGetTreeReindex(node_id);
@@ -185,7 +186,7 @@ std::string HLS_manager::get_constant_string(unsigned int node_id, unsigned int 
    {
       const auto vc = GetPointerS<const vector_cst>(GET_CONST_NODE(node));
       auto n_elm = static_cast<unsigned int>(vc->list_of_valu.size());
-      unsigned int elm_prec = precision / n_elm;
+      auto elm_prec = precision / n_elm;
       trimmed_value = "";
       for(unsigned int i = 0; i < n_elm; ++i)
       {
@@ -331,4 +332,13 @@ unsigned int HLS_manager::UpdateMemVersion()
 {
    memory_version++;
    return memory_version;
+}
+
+void HLS_manager::check_bitwidth(unsigned long long prec)
+{
+   if(prec > MAX_BITWIDTH_SIZE)
+   {
+      THROW_ERROR("The maximum bit-width size for connection is " + STR(MAX_BITWIDTH_SIZE) +
+                  " Requested size: " + STR(prec));
+   }
 }

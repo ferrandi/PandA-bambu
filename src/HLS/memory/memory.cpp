@@ -79,7 +79,7 @@
 
 memory::memory(const tree_managerRef _TreeM, unsigned long long int _off_base_address, unsigned int max_bram,
                bool _null_pointer_check, bool initial_internal_address_p,
-               unsigned long long int initial_internal_address, const unsigned& _bus_addr_bitsize)
+               unsigned long long int initial_internal_address, const unsigned int& _bus_addr_bitsize)
     : TreeM(_TreeM),
       maximum_private_memory_size(0),
       total_amount_of_private_memory(0),
@@ -125,7 +125,7 @@ memoryRef memory::create_memory(const ParameterConstRef _parameters, const tree_
                                 bool initial_internal_address_p, unsigned int initial_internal_address,
                                 const unsigned int& _address_bitsize)
 {
-   if(_parameters->isOption(OPT_context_switch))
+   if(_parameters->getOption<bool>(OPT_parse_pragma) && _parameters->isOption(OPT_context_switch))
    {
       return memoryRef(new memory_cs(_TreeM, _off_base_address, max_bram, _null_pointer_check,
                                      initial_internal_address_p, initial_internal_address, _address_bitsize));
@@ -142,10 +142,10 @@ std::map<unsigned int, memory_symbolRef> memory::get_ext_memory_variables() cons
    return external;
 }
 
-void memory::compute_next_base_address(unsigned long long int& address, unsigned int var, unsigned int alignment)
+void memory::compute_next_base_address(unsigned long long int& address, unsigned int var, unsigned long long alignment)
 {
    const auto node = TreeM->CGetTreeReindex(var);
-   unsigned int size = 0;
+   unsigned long long size = 0;
 
    // The __builtin_wait_call associate an address to the call site to
    // identify it.  For this case we are allocating a word.
@@ -266,7 +266,7 @@ void memory::add_internal_symbol(unsigned int funID_scope, unsigned int var, con
 unsigned int memory::count_non_private_internal_symbols() const
 {
    unsigned int n_non_private = 0;
-   for(auto iv_pair : in_vars)
+   for(const auto& iv_pair : in_vars)
    {
       if(!is_private_memory(iv_pair.first))
       {
@@ -563,7 +563,7 @@ unsigned long long int memory::get_rangesize(unsigned int var) const
    return rangesize.find(var)->second;
 }
 
-void memory::reserve_space(unsigned int space)
+void memory::reserve_space(unsigned long long space)
 {
    next_off_base_address += space;
    align(next_off_base_address, internal_base_address_alignment);
@@ -614,7 +614,7 @@ void memory::add_actual_parm_loaded(unsigned int var)
    actual_parm_loaded.insert(var);
 }
 
-void memory::set_internal_base_address_alignment(unsigned int _internal_base_address_alignment)
+void memory::set_internal_base_address_alignment(unsigned long long _internal_base_address_alignment)
 {
    THROW_ASSERT(_internal_base_address_alignment &&
                     !(_internal_base_address_alignment & (_internal_base_address_alignment - 1)),

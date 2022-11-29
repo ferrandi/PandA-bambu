@@ -155,7 +155,7 @@ DesignFlowStep_Status pipeline_controller::InternalExec()
                 "unexpected case");
    working_list.erase(std::find(working_list.begin(), working_list.end(), first_state));
    working_list.push_front(first_state); /// ensure that first_state is the really first one...
-   std::map<unsigned int, structural_objectRef> null_values;
+   std::map<unsigned long long, structural_objectRef> null_values;
    for(const auto& v : working_list)
    {
       const auto& operations = astg->CGetStateInfo(v)->executing_operations;

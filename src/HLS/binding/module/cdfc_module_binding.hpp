@@ -401,7 +401,7 @@ class cdfc_module_binding : public fu_binding_creator
 #ifdef HC_APPROACH
                           spec_hierarchical_clustering& hc,
 #endif
-                          connection_relation& con_rel, double controller_delay, unsigned int prec);
+                          connection_relation& con_rel, double controller_delay, unsigned long long prec);
 
    void update_slack_starting_time(const OpGraphConstRef fdfg, OpVertexSet& sorted_vertices,
                                    CustomUnorderedMap<vertex, double>& slack_time,

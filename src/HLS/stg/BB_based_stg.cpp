@@ -376,8 +376,8 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
       first_state_p = true;
       have_previous = false;
       std::map<ControlStep, std::list<vertex>> executing_ops, starting_ops, ending_ops, onfly_ops;
-      ControlStep max_cstep = ControlStep(0u);
-      ControlStep min_cstep = ControlStep(std::numeric_limits<unsigned int>::max());
+      auto max_cstep = ControlStep(0u);
+      auto min_cstep = ControlStep(std::numeric_limits<unsigned int>::max());
 
       for(auto op : ordered_operations)
       {
@@ -864,8 +864,8 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
       for(boost::tie(bb, bb_end) = boost::vertices(*bb_cfg); bb != bb_end; bb++)
       {
          const auto bb_node_info = bb_cfg->CGetBBNodeInfo(*bb);
-         ControlStep bb_begin = ControlStep(std::numeric_limits<unsigned int>::max());
-         ControlStep bb_ending = ControlStep(0u);
+         auto bb_begin = ControlStep(std::numeric_limits<unsigned int>::max());
+         auto bb_ending = ControlStep(0u);
          for(const auto op : bb_node_info->statements_list)
          {
             if(HLS->Rsch->get_cstep(op).second < bb_begin)

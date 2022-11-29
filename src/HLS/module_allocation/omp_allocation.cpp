@@ -79,9 +79,7 @@ OmpAllocation::OmpAllocation(const ParameterConstRef _Param, const HLS_managerRe
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
 }
 
-OmpAllocation::~OmpAllocation()
-{
-}
+OmpAllocation::~OmpAllocation() = default;
 
 void OmpAllocation::IntegrateTechnologyLibraries()
 {

@@ -390,7 +390,7 @@ void Loops::DetectLoops()
    }
    PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Ended Loops Detection of " + function_name);
    PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Adding spanning tree back edges at " + function_name);
-   for(auto curr_loop : modifiable_loops_list)
+   for(const auto& curr_loop : modifiable_loops_list)
    {
       CustomUnorderedSet<vertex> blocks;
       curr_loop->get_recursively_bb(blocks);

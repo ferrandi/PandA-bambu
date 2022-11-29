@@ -2309,7 +2309,7 @@ DesignFlowStep_Status allocation::InternalExec()
                }
 
                auto max_prec = node_info->input_prec.empty() ?
-                                   0U :
+                                   0ULL :
                                    *std::max_element(node_info->input_prec.begin(), node_info->input_prec.end());
                if(isMemory || lib_is_proxy_or_work || tech_constrain_value != INFINITE_UINT ||
                   bambu_provided_resource.size())
@@ -2319,7 +2319,8 @@ DesignFlowStep_Status allocation::InternalExec()
                }
 
                std::map<technology_nodeRef,
-                        std::map<unsigned int, std::map<HLS_manager::io_binding_type, unsigned int>>>::iterator techMap;
+                        std::map<unsigned long long, std::map<HLS_manager::io_binding_type, unsigned int>>>::iterator
+                   techMap;
                std::string functionalUnitName = "";
                unsigned int specializedId = current_id;
                const library_managerRef libraryManager = TechM->get_library_manager(library_name);
@@ -2585,7 +2586,7 @@ DesignFlowStep_Status allocation::InternalExec()
 std::string allocation::get_compliant_pipelined_unit(double clock, const std::string& pipe_parameter,
                                                      const technology_nodeRef current_fu, const std::string& curr_op,
                                                      const std::string& library_name,
-                                                     const std::string& template_suffix, unsigned int module_prec)
+                                                     const std::string& template_suffix, unsigned long long module_prec)
 {
    if(pipe_parameter.empty())
    {
@@ -2643,7 +2644,7 @@ std::string allocation::get_compliant_pipelined_unit(double clock, const std::st
          temp_pipe_parameters = parameters_pairs[1];
          break;
       }
-      else if(boost::lexical_cast<unsigned int>(parameters_pairs[0]) == module_prec)
+      else if(boost::lexical_cast<unsigned long long>(parameters_pairs[0]) == module_prec)
       {
          temp_pipe_parameters = parameters_pairs[1];
          break;

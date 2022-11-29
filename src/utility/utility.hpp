@@ -101,7 +101,7 @@
 #define GET_FUNCTION_DEBUG_LEVEL() parameters->GetFunctionDebugLevel(GET_CLASS(*this), __func__)
 
 template <class G>
-std::string convert_to_binary(G _value, unsigned int precision)
+std::string convert_to_binary(G _value, unsigned long long precision)
 {
    auto value = static_cast<unsigned long long int>(_value);
    std::string bin_value;

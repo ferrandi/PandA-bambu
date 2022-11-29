@@ -80,7 +80,7 @@ class InterfaceInfer : public ApplicationFrontendFlowStep
       std::string name;
       unsigned n_resources;
       unsigned alignment;
-      unsigned bitwidth;
+      unsigned long long bitwidth;
       datatype type;
 
       interface_info();
@@ -116,24 +116,23 @@ class InterfaceInfer : public ApplicationFrontendFlowStep
                           const tree_managerRef TM, bool commonRWSignature);
 
    void create_resource_Read_simple(const std::set<std::string>& operations, const std::string& arg_name,
-                                    const interface_info& info, bool IO_port, unsigned rwBWsize,
-                                    unsigned int top_id) const;
+                                    const interface_info& info, bool IO_port, unsigned int top_id) const;
 
    void create_resource_Write_simple(const std::set<std::string>& operations, const std::string& arg_name,
-                                     const interface_info& info, bool IO_port, bool isDiffSize, unsigned rwBWsize,
+                                     const interface_info& info, bool IO_port, bool isDiffSize,
                                      unsigned int top_id) const;
 
    void create_resource_array(const std::set<std::string>& operationsR, const std::set<std::string>& operationsW,
                               const std::string& bundle_name, const interface_info& info, unsigned int arraySize,
-                              unsigned rwBWsize, unsigned int top_id) const;
+                              unsigned int top_id) const;
 
    void create_resource_m_axi(const std::set<std::string>& operationsR, const std::set<std::string>& operationsW,
                               const std::string& arg_name, const std::string& bundle_name, const interface_info& info,
-                              m_axi_type mat, unsigned rwBWsize, unsigned int top_id) const;
+                              m_axi_type mat, unsigned int top_id) const;
 
    void create_resource(const std::set<std::string>& operationsR, const std::set<std::string>& operationsW,
                         const std::string& arg_name, const interface_info& info, bool isDiffSize,
-                        const std::string& fname, unsigned rwBWsize, unsigned int top_id) const;
+                        const std::string& fname, unsigned int top_id) const;
 
    void FixReadWriteCall(tree_nodeRef stmt, tree_nodeRef new_stmt, const tree_manipulationRef tree_man,
                          const tree_managerRef TM) const;

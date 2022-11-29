@@ -73,9 +73,7 @@ OmpFunctionAllocation::OmpFunctionAllocation(const ParameterConstRef _parameters
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
 }
 
-OmpFunctionAllocation::~OmpFunctionAllocation()
-{
-}
+OmpFunctionAllocation::~OmpFunctionAllocation() = default;
 
 DesignFlowStep_Status OmpFunctionAllocation::Exec()
 {
@@ -157,10 +155,12 @@ DesignFlowStep_Status OmpFunctionAllocation::Exec()
 #ifndef NDEBUG
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Other locks allocation candidates are:");
          for(const auto current_locks_allocation_candidate : current_locks_allocation_candidates)
+         {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                            "---" + HLSMgr->CGetFunctionBehavior(current_locks_allocation_candidate)
                                        ->CGetBehavioralHelper()
                                        ->get_function_name());
+         }
 #endif
          if(current_locks_allocation_candidates.size() == 0)
          {

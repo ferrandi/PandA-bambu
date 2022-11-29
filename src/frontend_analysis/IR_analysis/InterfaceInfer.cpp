@@ -104,7 +104,7 @@
    ((arg_name) + STR_CST_interface_parameter_keyword + (MODE) + (interface_type))
 
 InterfaceInfer::interface_info::interface_info()
-    : name(""), n_resources(1U), alignment(1U), bitwidth(1U), type(datatype::generic)
+    : name(""), n_resources(1U), alignment(1U), bitwidth(1ULL), type(datatype::generic)
 {
 }
 
@@ -115,8 +115,8 @@ void InterfaceInfer::interface_info::update(const tree_nodeRef& tn, const std::s
    bool is_signed = tree_helper::IsSignedIntegerType(ptd_type);
    bool is_fixed = false;
    const auto ac_bitwidth = ac_type_bitwidth(type_name, is_signed, is_fixed);
-   const auto _type =
-       ac_bitwidth != 0 ? datatype::ac_type : (tree_helper::IsRealType(ptd_type) ? datatype::real : datatype::generic);
+   const auto _type = ac_bitwidth != 0ULL ? datatype::ac_type :
+                                            (tree_helper::IsRealType(ptd_type) ? datatype::real : datatype::generic);
    if(type != datatype::ac_type)
    {
       const auto _bitwidth = [&]()
@@ -131,20 +131,20 @@ void InterfaceInfer::interface_info::update(const tree_nodeRef& tn, const std::s
          }
          else if(tree_helper::IsPointerType(ptd_type) || tree_helper::IsStructType(ptd_type))
          {
-            return static_cast<unsigned>(CompilerWrapper::CGetPointerSize(parameters));
+            return static_cast<unsigned long long>(CompilerWrapper::CGetPointerSize(parameters));
          }
          return tree_helper::Size(ptd_type);
       }();
       const auto _n_resources = [&]()
       {
-         if(_bitwidth > 64U && _bitwidth <= 128U)
+         if(_bitwidth > 64ULL && _bitwidth <= 128ULL)
          {
             return 2U;
          }
-         else if(_bitwidth > 128U)
+         else if(_bitwidth > 128ULL)
          {
-            const auto n = _bitwidth / 32U + (_bitwidth % 32U ? 1U : 0U);
-            if(!is_signed && _bitwidth % 32U == 0U && !is_fixed)
+            const auto n = static_cast<unsigned>(_bitwidth / 32ULL) + (_bitwidth % 32ULL ? 1U : 0U);
+            if(!is_signed && _bitwidth % 32ULL == 0ULL && !is_fixed)
             {
                return n + 1U;
             }
@@ -154,30 +154,30 @@ void InterfaceInfer::interface_info::update(const tree_nodeRef& tn, const std::s
       }();
       const auto _alignment = [&]()
       {
-         if(_bitwidth <= 8U)
+         if(_bitwidth <= 8ULL)
          {
             return _type != datatype::ac_type ? 1U : 4U;
          }
-         else if(_bitwidth <= 16U)
+         else if(_bitwidth <= 16ULL)
          {
             return _type != datatype::ac_type ? 2U : 4U;
          }
-         else if(_bitwidth <= 32U)
+         else if(_bitwidth <= 32ULL)
          {
             return 4U;
          }
-         else if(_bitwidth <= 64U)
+         else if(_bitwidth <= 64ULL)
          {
             return 8U;
          }
-         else if(_bitwidth <= 128U)
+         else if(_bitwidth <= 128ULL)
          {
             return 16U;
          }
          else
          {
-            const auto a = (_bitwidth / 32U) + 4U * (_bitwidth % 32U ? 1U : 0U);
-            if(!is_signed && _bitwidth % 32U == 0U && !is_fixed)
+            const auto a = static_cast<unsigned>(_bitwidth / 32ULL) + (_bitwidth % 32ULL ? 4U : 0U);
+            if(!is_signed && _bitwidth % 32ULL == 0ULL && !is_fixed)
             {
                return a + 4U;
             }
@@ -627,7 +627,6 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                      interface_type = info.name;
 
                      bool isDiffSize = false;
-                     unsigned int rwsize = 1U;
                      std::set<std::string> operationsR, operationsW;
                      const auto commonRWSignature = interface_type == "array" || interface_type == "m_axi";
                      if(isRead)
@@ -641,7 +640,6 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                            operationsR.insert(instanceFname);
                            const auto ga = GetPointer<const gimple_assign>(GET_CONST_NODE(stmt));
                            const auto op1_type = tree_helper::CGetType(ga->op1);
-                           rwsize = std::max(rwsize, tree_helper::Size(op1_type));
                            setReadInterface(stmt, arg_name, instanceFname, interface_datatype, tree_man, TM,
                                             commonRWSignature);
                            add_to_modified(stmt);
@@ -649,8 +647,8 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                      }
                      if(isWrite)
                      {
-                        unsigned int IdIndex = 0;
-                        unsigned int WrittenSize = 0;
+                        size_t IdIndex = 0;
+                        unsigned long long WrittenSize = 0;
                         for(const auto& stmt : writeStmt)
                         {
                            const auto instanceFname = ENCODE_FDNAME(
@@ -670,14 +668,13 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                            {
                               isDiffSize = true;
                            }
-                           rwsize = std::max(rwsize, tree_helper::Size(ga->op1));
                            setWriteInterface(stmt, arg_name, instanceFname, interface_datatype, tree_man, TM,
                                              commonRWSignature);
                            add_to_modified(stmt);
                         }
                      }
 
-                     create_resource(operationsR, operationsW, arg_name, info, isDiffSize, fname, rwsize, top_id);
+                     create_resource(operationsR, operationsW, arg_name, info, isDiffSize, fname, top_id);
                   }
                   else if(interface_type == "none")
                   {
@@ -921,7 +918,8 @@ void InterfaceInfer::setReadInterface(tree_nodeRef stmt, const std::string& arg_
    if(commonRWSignature)
    {
       const auto sel_value = TM->CreateUniqueIntegerCst(0, boolean_type);
-      const auto size_value = TM->CreateUniqueIntegerCst(tree_helper::Size(actual_type), bit_size_type);
+      const auto size_value =
+          TM->CreateUniqueIntegerCst(static_cast<long long>(tree_helper::Size(actual_type)), bit_size_type);
       const auto data_value = [&]() -> tree_nodeRef
       {
          if(tree_helper::IsEnumType(interface_datatype) || tree_helper::IsPointerType(interface_datatype) ||
@@ -1042,7 +1040,7 @@ void InterfaceInfer::setWriteInterface(tree_nodeRef stmt, const std::string& arg
    {
       args.push_back(TM->CreateUniqueIntegerCst(1, boolean_type));
    }
-   args.push_back(TM->CreateUniqueIntegerCst(tree_helper::Size(actual_type), bit_size_type));
+   args.push_back(TM->CreateUniqueIntegerCst(static_cast<long long>(tree_helper::Size(actual_type)), bit_size_type));
    args.push_back(value_node);
    const auto mr = GetPointerS<const mem_ref>(GET_CONST_NODE(ga->op0));
    args.push_back(mr->op0);
@@ -1059,8 +1057,7 @@ void InterfaceInfer::setWriteInterface(tree_nodeRef stmt, const std::string& arg
 }
 
 void InterfaceInfer::create_resource_Read_simple(const std::set<std::string>& operations, const std::string& arg_name,
-                                                 const interface_info& info, bool IO_port, unsigned rwBWsize,
-                                                 unsigned int top_id) const
+                                                 const interface_info& info, bool IO_port, unsigned int top_id) const
 {
    const std::string ResourceName = ENCODE_FDNAME(arg_name, "_Read_", info.name);
    auto HLSMgr = GetPointer<HLS_manager>(AppM);
@@ -1090,15 +1087,10 @@ void InterfaceInfer::create_resource_Read_simple(const std::set<std::string>& op
          GetPointer<module>(interface_top)->set_multi_unit_multiplicity(info.n_resources);
       }
 
-      unsigned int address_bitsize = HLSMgr->get_address_bitsize();
-      structural_type_descriptorRef addrType =
-          structural_type_descriptorRef(new structural_type_descriptor("bool", address_bitsize));
-      structural_type_descriptorRef dataType =
-          structural_type_descriptorRef(new structural_type_descriptor("bool", info.bitwidth));
-      structural_type_descriptorRef bool_type =
-          structural_type_descriptorRef(new structural_type_descriptor("bool", 0));
-      structural_type_descriptorRef rwtype =
-          structural_type_descriptorRef(new structural_type_descriptor("bool", rwBWsize));
+      auto address_bitsize = HLSMgr->get_address_bitsize();
+      structural_type_descriptorRef addrType(new structural_type_descriptor("bool", address_bitsize));
+      structural_type_descriptorRef dataType(new structural_type_descriptor("bool", info.bitwidth));
+      structural_type_descriptorRef bool_type(new structural_type_descriptor("bool", 0));
       if(info.name == "valid" || info.name == "handshake" || info.name == "fifo" || info.name == "axis")
       {
          CM->add_port(CLOCK_PORT_NAME, port_o::IN, interface_top, bool_type);
@@ -1125,11 +1117,11 @@ void InterfaceInfer::create_resource_Read_simple(const std::set<std::string>& op
       }
       if(isMultipleResource)
       {
-         CM->add_port_vector("out1", port_o::OUT, info.n_resources, interface_top, rwtype);
+         CM->add_port_vector("out1", port_o::OUT, info.n_resources, interface_top, dataType);
       }
       else
       {
-         CM->add_port("out1", port_o::OUT, interface_top, rwtype);
+         CM->add_port("out1", port_o::OUT, interface_top, dataType);
       }
 
       std::string port_data_name;
@@ -1217,7 +1209,7 @@ void InterfaceInfer::create_resource_Read_simple(const std::set<std::string>& op
 
 void InterfaceInfer::create_resource_Write_simple(const std::set<std::string>& operations, const std::string& arg_name,
                                                   const interface_info& info, bool IO_port, bool isDiffSize,
-                                                  unsigned rwBWsize, unsigned int top_id) const
+                                                  unsigned int top_id) const
 {
    const std::string ResourceName = ENCODE_FDNAME(arg_name, "_Write_", info.name);
    auto HLSMgr = GetPointer<HLS_manager>(AppM);
@@ -1230,9 +1222,8 @@ void InterfaceInfer::create_resource_Write_simple(const std::set<std::string>& o
                      "-->Creating interface resource: " + INTERFACE_LIBRARY + ":" + ResourceName +
                          " (multi: " + STR(info.n_resources) + ")");
       structural_objectRef interface_top;
-      structural_managerRef CM = structural_managerRef(new structural_manager(parameters));
-      structural_type_descriptorRef module_type =
-          structural_type_descriptorRef(new structural_type_descriptor(ResourceName));
+      structural_managerRef CM(new structural_manager(parameters));
+      structural_type_descriptorRef module_type(new structural_type_descriptor(ResourceName));
       CM->set_top_info(ResourceName, module_type);
       interface_top = CM->get_circ();
       /// add description and license
@@ -1250,21 +1241,16 @@ void InterfaceInfer::create_resource_Write_simple(const std::set<std::string>& o
       }
 
       const auto address_bitsize = HLSMgr->get_address_bitsize();
-      structural_type_descriptorRef addrType =
-          structural_type_descriptorRef(new structural_type_descriptor("bool", address_bitsize));
-      structural_type_descriptorRef dataType =
-          structural_type_descriptorRef(new structural_type_descriptor("bool", info.bitwidth));
+      structural_type_descriptorRef addrType(new structural_type_descriptor("bool", address_bitsize));
+      structural_type_descriptorRef dataType(new structural_type_descriptor("bool", info.bitwidth));
       if(info.type == datatype::real)
       {
          dataType->type = structural_type_descriptor::REAL;
       }
-      auto nbitDataSize = 32u - static_cast<unsigned>(__builtin_clz(rwBWsize));
-      structural_type_descriptorRef rwsize =
-          structural_type_descriptorRef(new structural_type_descriptor("bool", nbitDataSize));
-      structural_type_descriptorRef rwtype =
-          structural_type_descriptorRef(new structural_type_descriptor("bool", rwBWsize));
-      structural_type_descriptorRef bool_type =
-          structural_type_descriptorRef(new structural_type_descriptor("bool", 0));
+      auto nbitDataSize = 64u - static_cast<unsigned>(__builtin_clzll(info.bitwidth));
+      structural_type_descriptorRef rwsize(new structural_type_descriptor("bool", nbitDataSize));
+      structural_type_descriptorRef rwtype(new structural_type_descriptor("bool", info.bitwidth));
+      structural_type_descriptorRef bool_type(new structural_type_descriptor("bool", 0));
       if(info.name == "none_registered" || info.name == "acknowledge" || info.name == "handshake" ||
          info.name == "fifo" || info.name == "axis")
       {
@@ -1362,7 +1348,7 @@ void InterfaceInfer::create_resource_Write_simple(const std::set<std::string>& o
          fu->logical_type = functional_unit::COMBINATIONAL;
       }
 
-      for(auto fdName : operations)
+      for(const auto& fdName : operations)
       {
          auto* op = GetPointer<operation>(fu->get_operation(fdName));
          op->time_m = time_model::create_model(device->get_type(), parameters);
@@ -1395,11 +1381,11 @@ void InterfaceInfer::create_resource_Write_simple(const std::set<std::string>& o
 
 void InterfaceInfer::create_resource_array(const std::set<std::string>& operationsR,
                                            const std::set<std::string>& operationsW, const std::string& bundle_name,
-                                           const interface_info& info, unsigned int arraySize, unsigned rwBWsize,
+                                           const interface_info& info, unsigned int arraySize,
                                            unsigned int top_id) const
 {
    const auto n_channels = parameters->getOption<unsigned int>(OPT_channels_number);
-   const auto isDP = info.bitwidth <= 64 && info.n_resources == 1 && n_channels == 2;
+   const auto isDP = info.bitwidth <= 64ULL && info.n_resources == 1 && n_channels == 2;
    const auto n_resources = isDP ? 2 : info.n_resources;
    const auto read_write_string = (isDP ? std::string("ReadWriteDP_") : std::string("ReadWrite_"));
    const auto ResourceName = ENCODE_FDNAME(bundle_name, "", "");
@@ -1425,10 +1411,10 @@ void InterfaceInfer::create_resource_array(const std::set<std::string>& operatio
       GetPointerS<module>(interface_top)->set_license(GENERATED_LICENSE);
       GetPointerS<module>(interface_top)->set_multi_unit_multiplicity(n_resources);
 
-      const auto nbitAddres = 32u - static_cast<unsigned>(__builtin_clz(arraySize * info.alignment - 1));
+      const auto nbitAddres = 64u - static_cast<unsigned>(__builtin_clzll(arraySize * info.alignment - 1U));
       const auto address_bitsize = HLSMgr->get_address_bitsize();
-      const auto nbit = 32u - static_cast<unsigned>(__builtin_clz(arraySize - 1));
-      const auto nbitDataSize = 32u - static_cast<unsigned>(__builtin_clz(rwBWsize));
+      const auto nbit = 64u - static_cast<unsigned>(__builtin_clzll(arraySize - 1U));
+      const auto nbitDataSize = 64u - static_cast<unsigned>(__builtin_clzll(info.bitwidth));
       const structural_type_descriptorRef addrType(new structural_type_descriptor("bool", address_bitsize));
       const structural_type_descriptorRef address_interface_datatype(new structural_type_descriptor("bool", nbit));
       const structural_type_descriptorRef dataType(new structural_type_descriptor("bool", info.bitwidth));
@@ -1438,7 +1424,7 @@ void InterfaceInfer::create_resource_array(const std::set<std::string>& operatio
       }
       const structural_type_descriptorRef size1(new structural_type_descriptor("bool", 1));
       const structural_type_descriptorRef rwsize(new structural_type_descriptor("bool", nbitDataSize));
-      const structural_type_descriptorRef rwtype(new structural_type_descriptor("bool", rwBWsize));
+      const structural_type_descriptorRef rwtype(new structural_type_descriptor("bool", info.bitwidth));
       const structural_type_descriptorRef bool_type(new structural_type_descriptor("bool", 0));
 
       CM->add_port(CLOCK_PORT_NAME, port_o::IN, interface_top, bool_type);
@@ -1570,7 +1556,7 @@ void InterfaceInfer::create_resource_array(const std::set<std::string>& operatio
 void InterfaceInfer::create_resource_m_axi(const std::set<std::string>& operationsR,
                                            const std::set<std::string>& operationsW, const std::string& arg_name,
                                            const std::string& bundle_name, const interface_info& info, m_axi_type mat,
-                                           unsigned rwBWsize, unsigned int top_id) const
+                                           unsigned int top_id) const
 {
    const auto ResourceName = ENCODE_FDNAME(bundle_name, "", "");
    THROW_ASSERT(GetPointer<HLS_manager>(AppM), "");
@@ -1595,13 +1581,12 @@ void InterfaceInfer::create_resource_m_axi(const std::set<std::string>& operatio
       GetPointerS<module>(interface_top)->set_multi_unit_multiplicity(info.n_resources);
 
       const auto address_bitsize = HLSMgr->get_address_bitsize();
-      const auto nbitDataSize = 32u - static_cast<unsigned>(__builtin_clz(rwBWsize));
+      const auto nbitDataSize = 64u - static_cast<unsigned>(__builtin_clzll(info.bitwidth));
       const structural_type_descriptorRef address_interface_datatype(
           new structural_type_descriptor("bool", address_bitsize));
-      const structural_type_descriptorRef Intype(new structural_type_descriptor("bool", info.bitwidth));
       const structural_type_descriptorRef size1(new structural_type_descriptor("bool", 1));
       const structural_type_descriptorRef rwsize(new structural_type_descriptor("bool", nbitDataSize));
-      const structural_type_descriptorRef rwtype(new structural_type_descriptor("bool", rwBWsize));
+      const structural_type_descriptorRef rwtype(new structural_type_descriptor("bool", info.bitwidth));
       const structural_type_descriptorRef idType(new structural_type_descriptor("bool", 1));
       const structural_type_descriptorRef lenType(new structural_type_descriptor("bool", 8));
       const structural_type_descriptorRef sizeType(new structural_type_descriptor("bool", 3));
@@ -1612,7 +1597,7 @@ void InterfaceInfer::create_resource_m_axi(const std::set<std::string>& operatio
       const structural_type_descriptorRef qosType(new structural_type_descriptor("bool", 4));
       const structural_type_descriptorRef regionType(new structural_type_descriptor("bool", 4));
       const structural_type_descriptorRef userType(new structural_type_descriptor("bool", 1));
-      const structural_type_descriptorRef strbType(new structural_type_descriptor("bool", info.bitwidth / 8));
+      const structural_type_descriptorRef strbType(new structural_type_descriptor("bool", info.bitwidth / 8ULL));
       const structural_type_descriptorRef respType(new structural_type_descriptor("bool", 2));
       const structural_type_descriptorRef bool_type(new structural_type_descriptor("bool", 0));
       std::string param_ports;
@@ -1659,7 +1644,7 @@ void InterfaceInfer::create_resource_m_axi(const std::set<std::string>& operatio
       const auto Port_rid = CM->add_port_vector("_m_axi_" + bundle_name + "_RID", port_o::IN, 1, interface_top, idType);
       GetPointerS<port_o>(Port_rid)->set_port_interface(port_o::port_interface::M_AXI_RID);
 
-      const auto Port_rdata = CM->add_port("_m_axi_" + bundle_name + "_RDATA", port_o::IN, interface_top, Intype);
+      const auto Port_rdata = CM->add_port("_m_axi_" + bundle_name + "_RDATA", port_o::IN, interface_top, rwtype);
       GetPointerS<port_o>(Port_rdata)->set_port_interface(port_o::port_interface::M_AXI_RDATA);
 
       const auto Port_rresp = CM->add_port("_m_axi_" + bundle_name + "_RRESP", port_o::IN, interface_top, respType);
@@ -1726,7 +1711,7 @@ void InterfaceInfer::create_resource_m_axi(const std::set<std::string>& operatio
           CM->add_port_vector("_m_axi_" + bundle_name + "_WID", port_o::OUT, 1, interface_top, idType);
       GetPointerS<port_o>(Port_wid)->set_port_interface(port_o::port_interface::M_AXI_WID);
 
-      const auto Port_wdata = CM->add_port("_m_axi_" + bundle_name + "_WDATA", port_o::OUT, interface_top, Intype);
+      const auto Port_wdata = CM->add_port("_m_axi_" + bundle_name + "_WDATA", port_o::OUT, interface_top, rwtype);
       GetPointerS<port_o>(Port_wdata)->set_port_interface(port_o::port_interface::M_AXI_WDATA);
 
       const auto Port_wstrb =
@@ -1803,14 +1788,14 @@ void InterfaceInfer::create_resource_m_axi(const std::set<std::string>& operatio
          GetPointerS<port_o>(Port_LSawvalid)->set_port_interface(port_o::port_interface::S_AXIL_AWADDR);
          CM->add_port("_s_axi_AXILiteS_WVALID", port_o::IN, interface_top, bool_type);
          CM->add_port("_s_axi_AXILiteS_WREADY", port_o::OUT, interface_top, bool_type);
-         CM->add_port("_s_axi_AXILiteS_WDATA", port_o::IN, interface_top, Intype);
+         CM->add_port("_s_axi_AXILiteS_WDATA", port_o::IN, interface_top, rwtype);
          CM->add_port("_s_axi_AXILiteS_WSTRB", port_o::IN, interface_top, strbType);
          CM->add_port("_s_axi_AXILiteS_ARVALID", port_o::IN, interface_top, bool_type);
          CM->add_port("_s_axi_AXILiteS_ARREADY", port_o::OUT, interface_top, bool_type);
          CM->add_port("_s_axi_AXILiteS_ARADDR", port_o::IN, interface_top, address_interface_datatype);
          CM->add_port("_s_axi_AXILiteS_RVALID", port_o::OUT, interface_top, bool_type);
          CM->add_port("_s_axi_AXILiteS_RREADY", port_o::IN, interface_top, bool_type);
-         CM->add_port("_s_axi_AXILiteS_RDATA", port_o::OUT, interface_top, Intype);
+         CM->add_port("_s_axi_AXILiteS_RDATA", port_o::OUT, interface_top, rwtype);
          CM->add_port("_s_axi_AXILiteS_RRESP", port_o::OUT, interface_top, respType);
          CM->add_port("_s_axi_AXILiteS_BVALID", port_o::OUT, interface_top, bool_type);
          CM->add_port("_s_axi_AXILiteS_BREADY", port_o::IN, interface_top, bool_type);
@@ -1876,7 +1861,7 @@ void InterfaceInfer::create_resource_m_axi(const std::set<std::string>& operatio
 
 void InterfaceInfer::create_resource(const std::set<std::string>& operationsR, const std::set<std::string>& operationsW,
                                      const std::string& arg_name, const interface_info& info, bool isDiffSize,
-                                     const std::string& fname, unsigned rwBWsize, unsigned int top_id) const
+                                     const std::string& fname, unsigned int top_id) const
 {
    if(info.name == "none" || info.name == "none_registered" || info.name == "acknowledge" || info.name == "valid" ||
       info.name == "ovalid" || info.name == "handshake" || info.name == "fifo" || info.name == "axis")
@@ -1895,7 +1880,7 @@ void InterfaceInfer::create_resource(const std::set<std::string>& operationsR, c
             }
             return info;
          }();
-         create_resource_Read_simple(operationsR, arg_name, read_info, IO_P, rwBWsize, top_id);
+         create_resource_Read_simple(operationsR, arg_name, read_info, IO_P, top_id);
       }
       if(!operationsW.empty())
       {
@@ -1909,7 +1894,7 @@ void InterfaceInfer::create_resource(const std::set<std::string>& operationsR, c
             }
             return info;
          }();
-         create_resource_Write_simple(operationsW, arg_name, write_info, IO_P, isDiffSize, rwBWsize, top_id);
+         create_resource_Write_simple(operationsW, arg_name, write_info, IO_P, isDiffSize, top_id);
       }
    }
    else if(info.name == "array")
@@ -1934,7 +1919,7 @@ void InterfaceInfer::create_resource(const std::set<std::string>& operationsR, c
          bundle_name = HLSMgr->design_interface_attribute3.at(fname).at(arg_name);
       }
 
-      create_resource_array(operationsR, operationsW, bundle_name, info, arraySize, rwBWsize, top_id);
+      create_resource_array(operationsR, operationsW, bundle_name, info, arraySize, top_id);
    }
    else if(info.name == "m_axi")
    {
@@ -1972,7 +1957,7 @@ void InterfaceInfer::create_resource(const std::set<std::string>& operationsR, c
       {
          bundle_name = HLSMgr->design_interface_attribute3.at(fname).at(arg_name);
       }
-      create_resource_m_axi(operationsR, operationsW, arg_name, bundle_name, info, mat, rwBWsize, top_id);
+      create_resource_m_axi(operationsR, operationsW, arg_name, bundle_name, info, mat, top_id);
    }
    else
    {

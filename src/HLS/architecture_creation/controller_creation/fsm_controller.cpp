@@ -316,12 +316,18 @@ void fsm_controller::create_state_machine(std::string& parse)
                         activations_check.at(std::get<0>(a)).end())
                      {
                         if(std::get<1>(a) == NULL_VERTEX)
+                        {
                            THROW_ERROR("non compatible transitions added");
+                        }
                         else if(activations_check.at(std::get<0>(a)).find(NULL_VERTEX) !=
                                 activations_check.at(std::get<0>(a)).end())
+                        {
                            THROW_ERROR("non compatible transitions added");
+                        }
                         else
+                        {
                            activations_check[std::get<0>(a)].insert(std::get<1>(a));
+                        }
                      }
                      else
                      {
@@ -329,7 +335,9 @@ void fsm_controller::create_state_machine(std::string& parse)
                      }
                   }
                   else
+                  {
                      activations_check[std::get<0>(a)].insert(std::get<1>(a));
+                  }
 #endif
                   if(std::get<0>(a) == v && (stg->CGetStateInfo(v)->loopId == 0 || !FB->is_pipeline_enabled()))
                   {
@@ -496,7 +504,9 @@ void fsm_controller::create_state_machine(std::string& parse)
 #ifndef NDEBUG
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->default output after considering unbounded:");
       for(const auto a : present_state[v])
+      {
          PRINT_DBG_STRING(DEBUG_LEVEL_PEDANTIC, debug_level, STR(a));
+      }
       PRINT_DBG_STRING(DEBUG_LEVEL_PEDANTIC, debug_level, "\n");
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--");
 #endif

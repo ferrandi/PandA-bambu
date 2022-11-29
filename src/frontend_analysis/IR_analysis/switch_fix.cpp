@@ -112,7 +112,7 @@ DesignFlowStep_Status SwitchFix::InternalExec()
    auto& list_of_block = sl->list_of_bloc;
 
    /// Fix switch statements
-   for(auto basic_block : list_of_block)
+   for(const auto& basic_block : list_of_block)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Examining BB" + STR(basic_block.first));
       const auto list_of_stmt = basic_block.second->CGetStmtList();

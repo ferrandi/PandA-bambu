@@ -115,9 +115,7 @@ class generic_obj
    /**
     * Destructor.
     */
-   virtual ~generic_obj()
-   {
-   }
+   virtual ~generic_obj() = default;
 
    /**
     * Prints elements into given stream

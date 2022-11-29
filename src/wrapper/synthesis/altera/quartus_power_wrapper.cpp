@@ -53,9 +53,7 @@ QuartusPowerWrapper::QuartusPowerWrapper(const ParameterConstRef _Param, const s
 }
 
 // destructor
-QuartusPowerWrapper::~QuartusPowerWrapper()
-{
-}
+QuartusPowerWrapper::~QuartusPowerWrapper() = default;
 
 void QuartusPowerWrapper::EvaluateVariables(const DesignParametersRef dp)
 {

@@ -132,7 +132,7 @@ class Bit_Value : public FunctionFrontendFlowStep, public BitLatticeManipulator
     */
    void print_bitstring_map(const CustomMap<unsigned int, std::deque<bit_lattice>>& map) const;
 
-   unsigned int pointer_resizing(unsigned int output_id) const;
+   unsigned long long pointer_resizing(unsigned int output_id) const;
 
    unsigned int lsb_to_zero(const addr_expr* ae, bool safe) const;
 

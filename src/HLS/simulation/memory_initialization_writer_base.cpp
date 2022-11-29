@@ -126,7 +126,9 @@ void MemoryInitializationWriterBase::GoUp()
       case union_type_K:
          expected_size = tree_helper::CGetFieldTypes(status.back().first).size();
          if(expected_size > 1)
+         {
             expected_size = 1;
+         }
          break;
       case boolean_type_K:
       case CharType_K:

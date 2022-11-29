@@ -369,7 +369,7 @@ class tree_manipulation
     * @param  ptd type pointed by the pointer type (tree_reindex).
     * @return the tree_reindex node of the pointer type.
     */
-   tree_nodeRef GetPointerType(const tree_nodeConstRef& ptd, unsigned int algn = 0) const;
+   tree_nodeRef GetPointerType(const tree_nodeConstRef& ptd, unsigned long long algn = 0) const;
 
    /**
     * @brief create an integer type starting from a given prec
@@ -377,7 +377,7 @@ class tree_manipulation
     * @param unsigned_p say if the integer_type required is unsigned or not
     * @return a new integer with a precision equal to prec
     */
-   tree_nodeRef GetCustomIntegerType(unsigned int prec, bool unsigned_p) const;
+   tree_nodeRef GetCustomIntegerType(unsigned long long prec, bool unsigned_p) const;
 
    /**
     * @brief Create a function type
@@ -730,7 +730,7 @@ class tree_manipulation
     * @param number_of_elements is the number of elements of a vector
     * @return the tree reindex of the created node
     */
-   tree_nodeRef CreateVectorBooleanType(const unsigned int number_of_elements) const;
+   tree_nodeRef CreateVectorBooleanType(const unsigned long long number_of_elements) const;
 
    /**
     * @brief CloneFunction duplicates a function
