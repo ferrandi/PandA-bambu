@@ -702,7 +702,7 @@ void operations_cfg_computation::build_operation_recursive(const tree_managerRef
          if(fd)
          {
             std::string fun_name = tree_helper::print_function_name(TM, fd);
-            fun_name = tree_helper::normalized_ID(fun_name);
+            fun_name = tree_helper::NormalizeTypename(fun_name);
             // const std::string builtin_prefix("__builtin_");
             // if(fun_name.find(builtin_prefix) == 0)
             //   fun_name = fun_name.substr(builtin_prefix.size());
@@ -763,7 +763,7 @@ void operations_cfg_computation::build_operation_recursive(const tree_managerRef
             else
             {
                std::string fun_name = tree_helper::print_function_name(TM, fd);
-               fun_name = tree_helper::normalized_ID(fun_name);
+               fun_name = tree_helper::NormalizeTypename(fun_name);
                // const std::string builtin_prefix("__builtin_");
                // if(fun_name.find(builtin_prefix) == 0)
                //   fun_name = fun_name.substr(builtin_prefix.size());

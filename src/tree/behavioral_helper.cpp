@@ -635,7 +635,7 @@ std::string BehavioralHelper::PrintVariable(unsigned int var) const
       if(fd->name)
       {
          const auto id = GetPointerS<const identifier_node>(GET_NODE(fd->name));
-         return tree_helper::normalized_ID(id->strg);
+         return tree_helper::NormalizeTypename(id->strg);
       }
       else
       {
@@ -673,7 +673,7 @@ std::string BehavioralHelper::PrintVariable(unsigned int var) const
       if(dn->name)
       {
          const auto id = GetPointerS<const identifier_node>(GET_CONST_NODE(dn->name));
-         vars_symbol_table[var] = tree_helper::normalized_ID(id->strg);
+         vars_symbol_table[var] = tree_helper::NormalizeTypename(id->strg);
          return vars_symbol_table[var];
       }
    }

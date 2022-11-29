@@ -1184,17 +1184,17 @@ class tree_helper
    static unsigned int get_var_alignment(const tree_managerConstRef& TM, unsigned int var);
 
    /**
-    * Return the normalized the name of types and variables
-    * @param id is the initial ID
+    * Return normalized name of types and variables
+    * @param id is the initial typename
     */
-   static std::string normalized_ID(const std::string& id);
+   static std::string NormalizeTypename(const std::string& id);
 
    /**
     * Return the mangled function name
     * @param fd is the function decl
-    * @param fname is the returned function name
+    * @return std::string Mangled function name
     */
-   static void get_mangled_fname(const function_decl* fd, std::string& fname);
+   static std::string GetMangledFunctionName(const function_decl* fd);
 
    /**
     * Return the name of the function in a string

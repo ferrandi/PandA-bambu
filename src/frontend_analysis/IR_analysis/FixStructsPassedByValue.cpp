@@ -248,10 +248,8 @@ DesignFlowStep_Status FixStructsPassedByValue::InternalExec()
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Substituting parm_decl of " + STR(p_decl));
                const auto ptr_p_name = "bambu_artificial_ptr_param_" + original_param_name;
                const auto ptr_p_identifier = tree_man->create_identifier_node(ptr_p_name);
-               const auto ptr_p_decl = tree_man->create_parm_decl(
-                   ptr_p_identifier, ptr_type, pd->scpe, GetPointer<type_node>(GET_NODE(ptr_type))->size, ptr_type,
-                   tree_nodeRef(), tree_nodeRef(), srcp, GetPointer<const type_node>(GET_NODE(ptr_type))->algn, 1,
-                   false, true);
+               const auto ptr_p_decl = tree_man->create_parm_decl(ptr_p_identifier, ptr_type, pd->scpe, ptr_type,
+                                                                  tree_nodeRef(), tree_nodeRef(), srcp, 1, false, true);
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                               "---Changing parm_decl from " + STR(p_decl) + " to " + STR(GET_NODE(ptr_p_decl)));
                *p_decl_it = ptr_p_decl;

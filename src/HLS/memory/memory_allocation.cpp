@@ -327,8 +327,7 @@ void memory_allocation::finalize_memory_allocation()
       const auto TM = HLSMgr->get_tree_manager();
       const auto fnode = TM->CGetTreeReindex(fun_id);
       const auto fd = GetPointerS<const function_decl>(GET_CONST_NODE(fnode));
-      std::string fname;
-      tree_helper::get_mangled_fname(fd, fname);
+      const auto fname = tree_helper::GetMangledFunctionName(fd);
       CustomUnorderedSet<vertex> RW_stmts;
       if(HLSMgr->design_interface_loads.find(fname) != HLSMgr->design_interface_loads.end())
       {

@@ -355,7 +355,7 @@ void fsm_controller::create_state_machine(std::string& parse)
             active_fu.insert(HLS->Rfu->get(op));
             technology_nodeRef tn = HLS->allocation_information->get_fu(HLS->Rfu->get_assign(op));
             technology_nodeRef op_tn = GetPointer<functional_unit>(tn)->get_operation(
-                tree_helper::normalized_ID(data->CGetOpNodeInfo(op)->GetOperation()));
+                tree_helper::NormalizeTypename(data->CGetOpNodeInfo(op)->GetOperation()));
             THROW_ASSERT(GetPointer<operation>(op_tn)->time_m,
                          "Time model not available for operation: " + GET_NAME(data, op));
             structural_managerRef CM = GetPointer<functional_unit>(tn)->CM;

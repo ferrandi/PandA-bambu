@@ -201,7 +201,8 @@ bool dead_code_eliminationIPA::signature_opt(const tree_managerRef& TM, function
    std::vector<tree_nodeConstRef> real_parm(args.size(), nullptr);
    bool binding_completed = false;
 
-   const auto parm_bind = [&](const tree_nodeRef& stmt) -> void {
+   const auto parm_bind = [&](const tree_nodeRef& stmt) -> void
+   {
       const auto ssa_uses = tree_helper::ComputeSsaUses(stmt);
       for(const auto& use : ssa_uses)
       {
@@ -211,9 +212,9 @@ bool dead_code_eliminationIPA::signature_opt(const tree_managerRef& TM, function
          if(SSA->var != nullptr && GET_CONST_NODE(SSA->var)->get_kind() == parm_decl_K &&
             GET_CONST_NODE(SSA->CGetDefStmt())->get_kind() == gimple_nop_K)
          {
-            auto argIt = std::find_if(args.begin(), args.end(), [&](const tree_nodeRef& arg) {
-               return GET_INDEX_CONST_NODE(arg) == GET_INDEX_CONST_NODE(SSA->var);
-            });
+            auto argIt = std::find_if(args.begin(), args.end(),
+                                      [&](const tree_nodeRef& arg)
+                                      { return GET_INDEX_CONST_NODE(arg) == GET_INDEX_CONST_NODE(SSA->var); });
             THROW_ASSERT(argIt != args.end(), "parm_decl associated with ssa_name not found in function parameters");
             size_t arg_pos = static_cast<size_t>(argIt - args.begin());
             if(real_parm[arg_pos] != nullptr)
@@ -264,7 +265,8 @@ bool dead_code_eliminationIPA::signature_opt(const tree_managerRef& TM, function
       return false;
    }
 
-   const auto unused_arg_index = [&]() {
+   const auto unused_arg_index = [&]()
+   {
       std::vector<unsigned int> uai;
       for(auto i = static_cast<unsigned int>(real_parm.size()); i > 0;)
       {
@@ -278,7 +280,8 @@ bool dead_code_eliminationIPA::signature_opt(const tree_managerRef& TM, function
    }();
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                   "Unused parameter indexes: " + convert_vector_to_string(unused_arg_index, ", ", false));
-   const auto arg_eraser = [&](std::vector<tree_nodeRef>& arg_list, const tree_nodeRef& call_stmt) {
+   const auto arg_eraser = [&](std::vector<tree_nodeRef>& arg_list, const tree_nodeRef& call_stmt)
+   {
       for(const auto& uai : unused_arg_index)
       {
          const auto arg_it = arg_list.begin() + uai;
@@ -314,13 +317,12 @@ bool dead_code_eliminationIPA::signature_opt(const tree_managerRef& TM, function
 
    InEdgeIterator ie, ie_end;
    tree_manipulationRef tree_man(new tree_manipulation(TM, parameters, AppM));
-   std::vector<tree_nodeRef> loa = fd->list_of_args, argsT;
+   std::vector<tree_nodeRef> loa = fd->list_of_args;
+   std::vector<tree_nodeConstRef> argsT;
    arg_eraser(loa, nullptr);
-   std::transform(loa.cbegin(), loa.cend(), std::back_inserter(argsT), [&](const tree_nodeRef& arg) {
-      return TM->GetTreeReindex(tree_helper::get_type_index(TM, GET_INDEX_CONST_NODE(arg)));
-   });
-   const auto ftype =
-       tree_man->GetFunctionType(GetPointerS<const function_type>(GET_CONST_NODE(fd->type))->retn, argsT);
+   std::transform(loa.cbegin(), loa.cend(), std::back_inserter(argsT),
+                  [&](const tree_nodeRef& arg) { return tree_helper::CGetType(arg); });
+   const auto ftype = tree_man->GetFunctionType(tree_helper::GetFunctionReturnType(fd->type), argsT);
    const auto ftype_ptr = tree_man->GetPointerType(ftype);
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Erasing unused arguments from call points");
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");

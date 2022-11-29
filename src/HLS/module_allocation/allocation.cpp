@@ -418,7 +418,8 @@ void allocation::BuildProxyWrapper(functional_unit* current_fu, const std::strin
          }
          const std::string proxy_port_name = PROXY_PREFIX + port_name;
          // insert wDataMux
-         const auto addwDataMux = [&](const std::string offset) {
+         const auto addwDataMux = [&](const std::string offset)
+         {
             structural_objectRef wrapped_fu_port = orig_top_obj->find_member(port_name, port_o_K, orig_top_obj);
             if(offset.size())
             {
@@ -488,7 +489,8 @@ void allocation::BuildProxyWrapper(functional_unit* current_fu, const std::strin
          continue;
       }
       const std::string proxy_port_name = PROXY_PREFIX + port_name;
-      const auto addwData = [&](const std::string offset) {
+      const auto addwData = [&](const std::string offset)
+      {
          structural_objectRef local_port = wrapper_obj->find_member(port_name, port_o_K, wrapper_obj);
          if(offset.size())
          {
@@ -1486,9 +1488,10 @@ DesignFlowStep_Status allocation::InternalExec()
    unsigned int gimple_return_current_id = 0;
    for(boost::tie(v, v_end) = boost::vertices(*g); v != v_end; ++v)
    {
-      std::string current_op = tree_helper::normalized_ID(g->CGetOpNodeInfo(*v)->GetOperation());
+      std::string current_op = tree_helper::NormalizeTypename(g->CGetOpNodeInfo(*v)->GetOperation());
       const auto node_id = g->CGetOpNodeInfo(*v)->GetNodeId();
-      const auto node_operation = [&]() -> std::string {
+      const auto node_operation = [&]() -> std::string
+      {
          if(node_id == ENTRY_ID)
          {
             return "Entry";
@@ -2127,7 +2130,8 @@ DesignFlowStep_Status allocation::InternalExec()
             for(const auto vert : vertex_to_analyse_partition.at(curr_op_name))
             {
                const auto vert_node_id = g->CGetOpNodeInfo(vert)->GetNodeId();
-               const auto vert_node_operation = [&]() -> std::string {
+               const auto vert_node_operation = [&]() -> std::string
+               {
                   if(vert_node_id == ENTRY_ID)
                   {
                      return "Entry";
@@ -2138,12 +2142,12 @@ DesignFlowStep_Status allocation::InternalExec()
                   }
                   return GetPointer<const gimple_node>(TM->CGetTreeNode(vert_node_id))->operation;
                }();
-               if(tree_helper::normalized_ID(g->CGetOpNodeInfo(vert)->GetOperation()) != curr_op_name)
+               if(tree_helper::NormalizeTypename(g->CGetOpNodeInfo(vert)->GetOperation()) != curr_op_name)
                {
                   continue;
                }
                else if((!lib_is_proxy_or_work) &&
-                       TechM->get_fu(tree_helper::normalized_ID(g->CGetOpNodeInfo(vert)->GetOperation()),
+                       TechM->get_fu(tree_helper::NormalizeTypename(g->CGetOpNodeInfo(vert)->GetOperation()),
                                      WORK_LIBRARY) &&
                        GET_TYPE(g, vert) != TYPE_MEMCPY)
                {
@@ -2493,7 +2497,7 @@ DesignFlowStep_Status allocation::InternalExec()
          }
          INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
                         "---Operation for which does not exist a functional unit in the resource library: " +
-                            tree_helper::normalized_ID(g->CGetOpNodeInfo(ve)->GetOperation()) +
+                            tree_helper::NormalizeTypename(g->CGetOpNodeInfo(ve)->GetOperation()) +
                             " in vertex: " + GET_NAME(g, ve) + " with vertex type: " + node_info->node_kind +
                             " and vertex prec:" + precisions);
          completely_analyzed = false;
@@ -3150,7 +3154,8 @@ void allocation::IntegrateTechnologyLibraries()
                {
                   const ModuleGeneratorManagerRef modGen(new ModuleGeneratorManager(HLSMgr, parameters));
                   std::string new_shared_fu_name = shared_fu_name + "_modgen";
-                  const auto fnode = [&]() -> tree_nodeRef {
+                  const auto fnode = [&]() -> tree_nodeRef
+                  {
                      const auto fu = GetPointer<const functional_unit>(techNode_obj);
                      for(const auto& op : fu->get_operations())
                      {

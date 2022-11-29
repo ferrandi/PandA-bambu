@@ -91,7 +91,7 @@ void OmpAllocation::IntegrateTechnologyLibraries()
    VertexIterator operation, operation_end;
    for(boost::tie(operation, operation_end) = boost::vertices(*op_graph); operation != operation_end; operation++)
    {
-      const auto current_op = tree_helper::normalized_ID(op_graph->CGetOpNodeInfo(*operation)->GetOperation());
+      const auto current_op = tree_helper::NormalizeTypename(op_graph->CGetOpNodeInfo(*operation)->GetOperation());
       if(current_op == "panda_pthread_mutex")
       {
          const auto tn = TechM->get_fu("panda_pthread_mutex", OPENMP_LIBRARY);

@@ -183,7 +183,7 @@ void HLSFunctionStep::ComputeRelationships(DesignFlowStepSet& design_flow_step_s
                {
                   continue;
                }
-               std::string function_name = tree_helper::normalized_ID(tree_helper::name_function(TreeM, function));
+               std::string function_name = tree_helper::NormalizeTypename(tree_helper::name_function(TreeM, function));
                /// FIXME: temporary deactivated
                if(false) // function already implemented
                {

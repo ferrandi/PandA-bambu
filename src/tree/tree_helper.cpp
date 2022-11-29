@@ -65,8 +65,10 @@
 #include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
 #include "exceptions.hpp"
 #include "string_manipulation.hpp" // for STR
+#include <boost/algorithm/string/replace.hpp>
 #include <boost/filesystem/operations.hpp>
 #include <boost/lexical_cast.hpp>
+#include <boost/regex.hpp>
 #include <iostream>
 #include <set>
 
@@ -661,28 +663,26 @@ std::string tree_helper::GetFunctionName(const tree_managerConstRef& TM, const t
    return "";
 }
 
-void tree_helper::get_mangled_fname(const function_decl* fd, std::string& fname)
+std::string tree_helper::GetMangledFunctionName(const function_decl* fd)
 {
    if(fd->builtin_flag)
    {
       THROW_ASSERT(fd->name, "unexpected condition");
       THROW_ASSERT(GET_CONST_NODE(fd->name)->get_kind() == identifier_node_K, "unexpected condition");
-      fname = tree_helper::normalized_ID(GetPointer<const identifier_node>(GET_CONST_NODE(fd->name))->strg);
+      return tree_helper::NormalizeTypename(GetPointer<const identifier_node>(GET_CONST_NODE(fd->name))->strg);
    }
    else if(fd->mngl)
    {
       THROW_ASSERT(GET_CONST_NODE(fd->mngl)->get_kind() == identifier_node_K, "unexpected condition");
-      fname = tree_helper::normalized_ID(GetPointer<const identifier_node>(GET_CONST_NODE(fd->mngl))->strg);
+      return tree_helper::NormalizeTypename(GetPointer<const identifier_node>(GET_CONST_NODE(fd->mngl))->strg);
    }
    else if(fd->name)
    {
       THROW_ASSERT(GET_CONST_NODE(fd->name)->get_kind() == identifier_node_K, "unexpected condition");
-      fname = tree_helper::normalized_ID(GetPointer<const identifier_node>(GET_CONST_NODE(fd->name))->strg);
+      return tree_helper::NormalizeTypename(GetPointer<const identifier_node>(GET_CONST_NODE(fd->name))->strg);
    }
-   else
-   {
-      THROW_ERROR("unexpected condition");
-   }
+   THROW_ERROR("unexpected condition");
+   return "";
 }
 
 std::string tree_helper::print_function_name(const tree_managerConstRef& TM, const function_decl* fd)
@@ -751,11 +751,11 @@ std::string tree_helper::print_function_name(const tree_managerConstRef& TM, con
                res = res + TI_getTokenName(attr);
             }
          }
-         res = normalized_ID(res);
+         res = NormalizeTypename(res);
       }
       else
       {
-         res = normalized_ID(in->strg);
+         res = NormalizeTypename(in->strg);
       }
    }
    else
@@ -1406,7 +1406,8 @@ void tree_helper::RecursiveGetTypesToBeDeclared(std::set<tree_nodeConstRef, Tree
                {
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                  "-->Considering field type (" + STR(field_type->index) + ") " + STR(field_type));
-                  bool pointer_to_unnamed_structure = [&]() {
+                  bool pointer_to_unnamed_structure = [&]()
+                  {
                      if(!tree_helper::IsPointerType(field_type))
                      {
                         return false;
@@ -1481,7 +1482,8 @@ void tree_helper::RecursiveGetTypesToBeDeclared(std::set<tree_nodeConstRef, Tree
                {
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                  "-->Considering field type (" + STR(field_type->index) + ") " + STR(field_type));
-                  const auto pointer_to_unnamed_structure = [&]() {
+                  const auto pointer_to_unnamed_structure = [&]()
+                  {
                      if(!tree_helper::IsPointerType(field_type))
                      {
                         return false;
@@ -1942,7 +1944,7 @@ tree_nodeConstRef tree_helper::CGetPointedType(const tree_nodeConstRef& _pointer
       case CASE_UNARY_EXPRESSION:
       default:
       {
-         THROW_UNREACHABLE(STR(pointer) + " does not correspond to a pointer type");
+         THROW_UNREACHABLE(STR(pointer) + ":" + pointer->get_kind_text() + " does not correspond to a pointer type");
       }
    }
    return tree_nodeConstRef();
@@ -2013,11 +2015,11 @@ std::string tree_helper::GetTypeName(const tree_nodeConstRef& _type)
    {
       case pointer_type_K:
       {
-         return "*" + GetTypeName(GET_CONST_NODE((GetPointerS<const pointer_type>(type))->ptd));
+         return GetTypeName(GET_CONST_NODE((GetPointerS<const pointer_type>(type))->ptd)) + "*";
       }
       case reference_type_K:
       {
-         return "&" + GetTypeName(GET_CONST_NODE((GetPointerS<const reference_type>(type))->refd));
+         return GetTypeName(GET_CONST_NODE((GetPointerS<const reference_type>(type))->refd)) + "&";
       }
       case record_type_K:
       {
@@ -2041,7 +2043,7 @@ std::string tree_helper::GetTypeName(const tree_nodeConstRef& _type)
             else if(GET_CONST_NODE(rect->name)->get_kind() == identifier_node_K)
             {
                const auto idn = GetPointerS<const identifier_node>(GET_CONST_NODE(rect->name));
-               nt = "struct " + normalized_ID(idn->strg);
+               nt = "struct " + NormalizeTypename(idn->strg);
             }
             else
             {
@@ -5198,7 +5200,8 @@ std::vector<unsigned int> tree_helper::GetArrayDimensions(const tree_nodeConstRe
 {
    std::vector<unsigned int> dims;
    std::function<void(const tree_nodeConstRef&)> get_array_dim_recurse;
-   get_array_dim_recurse = [&](const tree_nodeConstRef& tn) -> void {
+   get_array_dim_recurse = [&](const tree_nodeConstRef& tn) -> void
+   {
       if(tn->get_kind() == record_type_K || tn->get_kind() == union_type_K)
       {
          auto elmt_bitsize = tree_helper::GetArrayElementSize(tn);
@@ -5331,29 +5334,24 @@ unsigned int tree_helper::get_var_alignment(const tree_managerConstRef& TM, unsi
    return 1;
 }
 
-std::string tree_helper::normalized_ID(const std::string& id)
+std::string tree_helper::NormalizeTypename(const std::string& id)
 {
-   std::string strg = id;
-   for(char& i : strg)
+   static const boost::regex rbase("[.:]+");
+   static const boost::regex rtmpl("[*&<>\\-]|[, ]+");
+   std::string norm_typename;
+   boost::regex_replace(std::back_inserter(norm_typename), id.cbegin(), id.cend(), rbase, "_");
+   const auto tmpl_start = norm_typename.find_first_of('<');
+   if(tmpl_start != std::string::npos)
    {
-      if(i == '*')
-      {
-         i = '_';
-      }
-      else if(i == '$')
-      {
-         i = '_';
-      }
-      else if(i == '.')
-      {
-         i = '_';
-      }
-      else if(i == ':')
-      {
-         i = '_';
-      }
+      const auto tmpl_end = norm_typename.find_last_of('>');
+      THROW_ASSERT(tmpl_end != std::string::npos, "");
+      auto norm_template = norm_typename.substr(0, tmpl_start);
+      boost::regex_replace(std::back_inserter(norm_template),
+                           norm_typename.cbegin() + static_cast<long int>(tmpl_start),
+                           norm_typename.cbegin() + static_cast<long int>(tmpl_end + 1U), rtmpl, "_");
+      return norm_template;
    }
-   return strg;
+   return norm_typename;
 }
 
 std::string tree_helper::print_type(const tree_managerConstRef& TM, unsigned int original_type, bool global,
@@ -5486,7 +5484,7 @@ std::string tree_helper::PrintType(const tree_managerConstRef& TM, const tree_no
             {
                const auto in = GetPointerS<const identifier_node>(name);
                /// patch for unsigned char
-               std::string typename_value = tree_helper::normalized_ID(in->strg);
+               std::string typename_value = tree_helper::NormalizeTypename(in->strg);
                if(typename_value == "char" && GetPointer<const integer_type>(GET_CONST_NODE(td->type)) &&
                   GetPointer<const integer_type>(GET_CONST_NODE(td->type))->unsigned_flag)
                {
@@ -5533,7 +5531,7 @@ std::string tree_helper::PrintType(const tree_managerConstRef& TM, const tree_no
       case identifier_node_K:
       {
          const auto in = GetPointerS<const identifier_node>(node_type);
-         res += tree_helper::normalized_ID(in->strg);
+         res += tree_helper::NormalizeTypename(in->strg);
          skip_var_printing = true;
          break;
       }
@@ -5578,7 +5576,7 @@ std::string tree_helper::PrintType(const tree_managerConstRef& TM, const tree_no
             if(name->get_kind() == identifier_node_K)
             {
                const auto in = GetPointerS<const identifier_node>(name);
-               res += tree_helper::normalized_ID(in->strg);
+               res += tree_helper::NormalizeTypename(in->strg);
             }
             else if(name->get_kind() == type_decl_K)
             {
@@ -5672,7 +5670,8 @@ std::string tree_helper::PrintType(const tree_managerConstRef& TM, const tree_no
                   // node_type->get_kind_text()+STR(type));
                   THROW_ASSERT(vt->elts, "expected the type of the elements of the vector");
                   res += PrintType(TM, vt->elts, global);
-                  const auto vector_size = [&]() -> unsigned int {
+                  const auto vector_size = [&]() -> unsigned int
+                  {
                      unsigned int v = vt->algn / 8;
                      v--;
                      v |= v >> 1;
@@ -6127,7 +6126,7 @@ std::string tree_helper::PrintType(const tree_managerConstRef& TM, const tree_no
             }
             else
             {
-               res += "struct " + normalized_ID(struct_name);
+               res += "struct " + NormalizeTypename(struct_name);
             }
          }
          else if(rt->unql)

@@ -729,8 +729,7 @@ void parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
    const auto TM = HLSMgr->get_tree_manager();
    auto fnode = TM->get_tree_node_const(funId);
    auto fd = GetPointer<function_decl>(fnode);
-   std::string fname;
-   tree_helper::get_mangled_fname(fd, fname);
+   const auto fname = tree_helper::GetMangledFunctionName(fd);
    CustomUnorderedSet<vertex> RW_stmts;
    if(HLSMgr->design_interface_loads.find(fname) != HLSMgr->design_interface_loads.end())
    {
