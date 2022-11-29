@@ -1408,8 +1408,7 @@ void tree_helper::RecursiveGetTypesToBeDeclared(std::set<tree_nodeConstRef, Tree
                {
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                  "-->Considering field type (" + STR(field_type->index) + ") " + STR(field_type));
-                  bool pointer_to_unnamed_structure = [&]()
-                  {
+                  bool pointer_to_unnamed_structure = [&]() {
                      if(!tree_helper::IsPointerType(field_type))
                      {
                         return false;
@@ -1484,8 +1483,7 @@ void tree_helper::RecursiveGetTypesToBeDeclared(std::set<tree_nodeConstRef, Tree
                {
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                  "-->Considering field type (" + STR(field_type->index) + ") " + STR(field_type));
-                  const auto pointer_to_unnamed_structure = [&]()
-                  {
+                  const auto pointer_to_unnamed_structure = [&]() {
                      if(!tree_helper::IsPointerType(field_type))
                      {
                         return false;
@@ -5202,8 +5200,7 @@ std::vector<unsigned long long> tree_helper::GetArrayDimensions(const tree_nodeC
 {
    std::vector<unsigned long long> dims;
    std::function<void(const tree_nodeConstRef&)> get_array_dim_recurse;
-   get_array_dim_recurse = [&](const tree_nodeConstRef& tn) -> void
-   {
+   get_array_dim_recurse = [&](const tree_nodeConstRef& tn) -> void {
       if(tn->get_kind() == record_type_K || tn->get_kind() == union_type_K)
       {
          auto elmt_bitsize = tree_helper::GetArrayElementSize(tn);
@@ -5672,8 +5669,7 @@ std::string tree_helper::PrintType(const tree_managerConstRef& TM, const tree_no
                   // node_type->get_kind_text()+STR(type));
                   THROW_ASSERT(vt->elts, "expected the type of the elements of the vector");
                   res += PrintType(TM, vt->elts, global);
-                  const auto vector_size = [&]() -> unsigned int
-                  {
+                  const auto vector_size = [&]() -> unsigned int {
                      unsigned int v = vt->algn / 8;
                      v--;
                      v |= v >> 1;

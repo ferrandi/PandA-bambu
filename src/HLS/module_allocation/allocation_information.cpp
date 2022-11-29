@@ -295,8 +295,7 @@ const CustomOrderedSet<unsigned int>& AllocationInformation::can_implement_set(c
 {
    const auto entry_string_cst = std::string("Entry");
    const auto exit_string_cst = std::string("Exit");
-   const auto node_operation = [&]() -> std::string
-   {
+   const auto node_operation = [&]() -> std::string {
       if(v == ENTRY_ID)
       {
          return entry_string_cst;
@@ -353,8 +352,7 @@ double AllocationInformation::get_execution_time(const unsigned int fu_name, uns
    auto n_cycles = GetPointer<operation>(node_op)->time_m->get_cycles();
    if(n_cycles)
    {
-      const double stage_time = [&]() -> double
-      {
+      const double stage_time = [&]() -> double {
          /// first check for component_timing_alias
          if(GetPointer<functional_unit>(list_of_FU[fu_name])->component_timing_alias != "")
          {
@@ -428,8 +426,7 @@ double AllocationInformation::get_attribute_of_fu_per_op(const vertex v, const O
                                                          bool& flag, const updatecopy_HLS_constraints_functor* CF) const
 {
    const unsigned int node_id = g->CGetOpNodeInfo(v)->GetNodeId();
-   const auto node_operation = [&]() -> std::string
-   {
+   const auto node_operation = [&]() -> std::string {
       if(node_id == ENTRY_ID)
       {
          return "Entry";
@@ -1965,8 +1962,7 @@ std::pair<double, double> AllocationInformation::GetTimeLatency(const unsigned i
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Computing time latency of " + STR(operation_index));
 
-   const unsigned int time_operation_index = [&]() -> unsigned int
-   {
+   const unsigned int time_operation_index = [&]() -> unsigned int {
       if(operation_index == ENTRY_ID || operation_index == EXIT_ID)
       {
          return operation_index;
@@ -2003,8 +1999,7 @@ std::pair<double, double> AllocationInformation::GetTimeLatency(const unsigned i
       /// The operation execution  time
       double actual_execution_time = get_execution_time(fu_type, time_operation_index);
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Initial execution time " + STR(actual_execution_time));
-      auto n_ins = [&]() -> unsigned
-      {
+      auto n_ins = [&]() -> unsigned {
          unsigned res = 0;
          auto tn = TreeM->CGetTreeNode(time_operation_index);
          const auto ga = GetPointer<const gimple_assign>(tn);
@@ -2222,8 +2217,7 @@ double AllocationInformation::GetPhiConnectionLatency(const unsigned int stateme
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                   "-->Computing phi connection delay of " + STR(statement_index));
    /// Checking for output phi
-   const auto phi_in_degree = [&]() -> size_t
-   {
+   const auto phi_in_degree = [&]() -> size_t {
       size_t ret_value = 0;
       if(statement_index == ENTRY_ID || statement_index == EXIT_ID)
       {
@@ -2435,8 +2429,7 @@ double AllocationInformation::get_correction_time(unsigned int fu, const std::st
    bool is_a_proxy = false;
    bool is_private_correction = false;
    bool is_single_variable = false;
-   auto single_var_lambda = [&](unsigned var) -> bool
-   {
+   auto single_var_lambda = [&](unsigned var) -> bool {
       unsigned int type_index = tree_helper::get_type_index(TreeM, var);
       if(tree_helper::is_an_array(TreeM, type_index) || tree_helper::is_a_struct(TreeM, type_index) ||
          tree_helper::is_an_union(TreeM, type_index))
@@ -2740,8 +2733,7 @@ double AllocationInformation::get_correction_time(unsigned int fu, const std::st
       if(fu_prec > 1)
       {
          const technology_managerRef TM = HLS_T->get_technology_manager();
-         auto true_delay = [&]() -> double
-         {
+         auto true_delay = [&]() -> double {
             technology_nodeRef f_unit_ce = TM->get_fu(COND_EXPR_STD "_1_1_1_1", LIBRARY_STD_FU);
             auto* fu_ce = GetPointer<functional_unit>(f_unit_ce);
             technology_nodeRef op_ce_node = fu_ce->get_operation("cond_expr");
@@ -3552,8 +3544,7 @@ double AllocationInformation::GetConnectionTime(const unsigned int first_operati
             op1_kind == eq_expr_K || op1_kind == ne_expr_K || op1_kind == gt_expr_K || op1_kind == ge_expr_K ||
             op1_kind == lt_expr_K || op1_kind == le_expr_K || op1_kind == pointer_plus_expr_K)
          {
-            const bool adding_connection = [&]() -> bool
-            {
+            const bool adding_connection = [&]() -> bool {
                const auto second_delay = GetTimeLatency(second_operation, fu_binding::UNKNOWN);
                if(second_delay.first > epsilon)
                {
@@ -4022,8 +4013,7 @@ double AllocationInformation::GetToDspRegisterDelay(const unsigned int statement
    const auto statement_bb = blocks.find(statement_bb_index)->second;
 #endif
    const auto tn = TreeM->CGetTreeNode(statement_index);
-   const bool is_carry = [&]() -> bool
-   {
+   const bool is_carry = [&]() -> bool {
       const auto ga = GetPointer<const gimple_assign>(tn);
       if(!ga)
       {

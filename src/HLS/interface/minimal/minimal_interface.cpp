@@ -255,10 +255,8 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
       }
    }
 
-   auto do_not_expose_globals_case = [&]
-   {
-      auto manage_feedback1 = [&](const std::string& portS, const std::string& portM)
-      {
+   auto do_not_expose_globals_case = [&] {
+      auto manage_feedback1 = [&](const std::string& portS, const std::string& portM) {
          structural_objectRef sign;
          /// slave INs connections
          const auto port1 = wrappedObj->find_member(portS, port_o_K, wrappedObj);
@@ -278,8 +276,7 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
          portsToSigConnect[port2] = sign;
          portsToSkip.insert(wrappedObj->find_member(portS, port_o_K, wrappedObj));
       };
-      auto manage_feedback2 = [&](const std::string& portSin, const std::string& portSout, const std::string& portM)
-      {
+      auto manage_feedback2 = [&](const std::string& portSin, const std::string& portSout, const std::string& portM) {
          structural_objectRef sign;
          /// slave INs connections
          const auto port2 = wrappedObj->find_member(portM, port_o_K, wrappedObj);
@@ -1313,8 +1310,9 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
       auto port_name = GetPointer<port_o>(port_out)->get_id();
       if(GetPointer<port_o>(port_out)->get_port_interface() != port_o::port_interface::PI_DEFAULT)
       {
-         auto check_interfaces = [&](std::set<port_o::port_interface> interfList) -> bool
-         { return interfList.find(GetPointer<port_o>(port_out)->get_port_interface()) != interfList.end(); };
+         auto check_interfaces = [&](std::set<port_o::port_interface> interfList) -> bool {
+            return interfList.find(GetPointer<port_o>(port_out)->get_port_interface()) != interfList.end();
+         };
          if(check_interfaces({port_o::port_interface::PI_WNONE,        port_o::port_interface::PI_WVALID,
                               port_o::port_interface::PI_RACK,         port_o::port_interface::PI_READ,
                               port_o::port_interface::PI_FDOUT,        port_o::port_interface::PI_WRITE,

@@ -176,7 +176,7 @@ class mux_connection_binding : public conn_binding_creator
                        const std::vector<HLS_manager::io_binding_type>& var_read, unsigned long long size_form_par);
 
    unsigned int address_precision(unsigned int precision, const vertex& op, const OpGraphConstRef data,
-                                        const tree_managerRef TreeM);
+                                  const tree_managerRef TreeM);
 
    bool isZeroObj(unsigned int tree_index, const tree_managerRef TreeM);
    bool isConstantObj(unsigned int tree_index, const tree_managerRef TreeM);

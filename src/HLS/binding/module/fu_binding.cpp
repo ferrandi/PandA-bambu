@@ -433,8 +433,7 @@ void fu_binding::manage_killing_memory_proxies(
       const auto storage_fu = mem_obj.at(storage_fu_id);
       const auto storage_port_out = storage_fu->find_member("proxy_out1", port_o_K, storage_fu);
       THROW_ASSERT(storage_port_out, "missing proxy_out1 port");
-      const auto storage_port_out_sign = [&]()
-      {
+      const auto storage_port_out_sign = [&]() {
          if(storage_port_out->get_kind() == port_vector_o_K)
          {
             return SM->add_sign_vector(storage_port_out->get_id() + "_" + STR(var),
@@ -445,8 +444,7 @@ void fu_binding::manage_killing_memory_proxies(
       }();
       SM->add_connection(storage_port_out_sign, storage_port_out);
 
-      const auto proxy_ports = [&]()
-      {
+      const auto proxy_ports = [&]() {
          std::vector<structural_objectRef> ports;
          for(const auto& pname : {"proxy_in1", "proxy_in2", "proxy_in3", "proxy_sel_LOAD", "proxy_sel_STORE"})
          {
@@ -1563,8 +1561,7 @@ void fu_binding::manage_memory_ports_parallel_chained(const HLS_managerRef, cons
 {
    std::map<structural_objectRef, std::list<structural_objectRef>, jms_sorter> primary_outs;
    structural_objectRef cir_port;
-   const auto vector_to_port = [](structural_objectRef& a, structural_objectRef& b)
-   {
+   const auto vector_to_port = [](structural_objectRef& a, structural_objectRef& b) {
       if(a->get_kind() != b->get_kind())
       {
          if(a->get_kind() == port_vector_o_K)

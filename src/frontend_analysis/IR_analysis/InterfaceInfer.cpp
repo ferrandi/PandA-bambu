@@ -119,8 +119,7 @@ void InterfaceInfer::interface_info::update(const tree_nodeRef& tn, const std::s
                                             (tree_helper::IsRealType(ptd_type) ? datatype::real : datatype::generic);
    if(type != datatype::ac_type)
    {
-      const auto _bitwidth = [&]()
-      {
+      const auto _bitwidth = [&]() {
          if(_type == datatype::ac_type)
          {
             return ac_bitwidth;
@@ -135,8 +134,7 @@ void InterfaceInfer::interface_info::update(const tree_nodeRef& tn, const std::s
          }
          return tree_helper::Size(ptd_type);
       }();
-      const auto _n_resources = [&]()
-      {
+      const auto _n_resources = [&]() {
          if(_bitwidth > 64ULL && _bitwidth <= 128ULL)
          {
             return 2U;
@@ -152,8 +150,7 @@ void InterfaceInfer::interface_info::update(const tree_nodeRef& tn, const std::s
          }
          return 1U;
       }();
-      const auto _alignment = [&]()
-      {
+      const auto _alignment = [&]() {
          if(_bitwidth <= 8ULL)
          {
             return _type != datatype::ac_type ? 1U : 4U;
@@ -275,8 +272,7 @@ void InterfaceInfer::Initialize()
 {
    const auto HLSMgr = GetPointer<HLS_manager>(AppM);
    THROW_ASSERT(HLSMgr, "");
-   const auto parseInterfaceXML = [&](const std::string& XMLfilename)
-   {
+   const auto parseInterfaceXML = [&](const std::string& XMLfilename) {
       if(boost::filesystem::exists(boost::filesystem::path(XMLfilename)))
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->parsing " + XMLfilename);
@@ -445,8 +441,9 @@ DesignFlowStep_Status InterfaceInfer::Exec()
    THROW_ASSERT(HLSMgr, "");
    const auto TM = AppM->get_tree_manager();
    std::set<unsigned int> modified;
-   const auto add_to_modified = [&](const tree_nodeRef& tn)
-   { modified.insert(GET_INDEX_CONST_NODE(GetPointer<gimple_node>(GET_CONST_NODE(tn))->scpe)); };
+   const auto add_to_modified = [&](const tree_nodeRef& tn) {
+      modified.insert(GET_INDEX_CONST_NODE(GetPointer<gimple_node>(GET_CONST_NODE(tn))->scpe));
+   };
    for(const auto& top_id : top_functions)
    {
       const auto fnode = TM->CGetTreeNode(top_id);
@@ -470,8 +467,7 @@ DesignFlowStep_Status InterfaceInfer::Exec()
             for(const auto& arg : fd->list_of_args)
             {
                THROW_ASSERT(typename_it != end, "");
-               const auto pname = [&]()
-               {
+               const auto pname = [&]() {
                   std::stringstream ss;
                   ss << arg;
                   return ss.str();
@@ -566,8 +562,7 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                                     "' since no load/store is associated with it");
                      }
 
-                     info.name = [&]() -> std::string
-                     {
+                     info.name = [&]() -> std::string {
                         if(isRead && isWrite)
                         {
                            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---I/O interface");
@@ -709,12 +704,10 @@ void InterfaceInfer::ChasePointerInterfaceRecurse(CustomOrderedSet<unsigned>& Vi
                                                   interface_info& info)
 {
    const auto TM = AppM->get_tree_manager();
-   const auto propagate_arg_use =
-       [&](tree_nodeRef arg_var, size_t use_count, tree_nodeRef fd_node, const std::vector<tree_nodeRef>& call_args)
-   {
+   const auto propagate_arg_use = [&](tree_nodeRef arg_var, size_t use_count, tree_nodeRef fd_node,
+                                      const std::vector<tree_nodeRef>& call_args) {
       THROW_ASSERT(arg_var && fd_node, "unexpected condition");
-      const auto call_fd = [&]()
-      {
+      const auto call_fd = [&]() {
          const auto fd_kind = GET_CONST_NODE(fd_node)->get_kind();
          auto& fn = fd_node;
          if(fd_kind == addr_expr_K)
@@ -730,8 +723,7 @@ void InterfaceInfer::ChasePointerInterfaceRecurse(CustomOrderedSet<unsigned>& Vi
       for(auto use_idx = 0U; use_idx < use_count; ++use_idx, ++par_index)
       {
          // look for the actual vs formal parameter binding
-         par_index = [&](size_t start_idx)
-         {
+         par_index = [&](size_t start_idx) {
             for(auto idx = start_idx; idx < call_args.size(); ++idx)
             {
                if(GET_INDEX_CONST_NODE(call_args[idx]) == GET_INDEX_CONST_NODE(arg_var))
@@ -902,8 +894,7 @@ void InterfaceInfer::setReadInterface(tree_nodeRef stmt, const std::string& arg_
    const auto actual_type = tree_helper::CGetType(ga->op0);
    const auto bit_size_type = tree_man->GetUnsignedIntegerType();
    const auto boolean_type = tree_man->GetBooleanType();
-   const auto function_decl_node = [&]()
-   {
+   const auto function_decl_node = [&]() {
       std::vector<tree_nodeConstRef> argsT;
       if(commonRWSignature)
       {
@@ -920,8 +911,7 @@ void InterfaceInfer::setReadInterface(tree_nodeRef stmt, const std::string& arg_
       const auto sel_value = TM->CreateUniqueIntegerCst(0, boolean_type);
       const auto size_value =
           TM->CreateUniqueIntegerCst(static_cast<long long>(tree_helper::Size(actual_type)), bit_size_type);
-      const auto data_value = [&]() -> tree_nodeRef
-      {
+      const auto data_value = [&]() -> tree_nodeRef {
          if(tree_helper::IsEnumType(interface_datatype) || tree_helper::IsPointerType(interface_datatype) ||
             GET_CONST_NODE(interface_datatype)->get_kind() == integer_type_K)
          {
@@ -1020,8 +1010,7 @@ void InterfaceInfer::setWriteInterface(tree_nodeRef stmt, const std::string& arg
    const auto bit_size_type = tree_man->GetUnsignedIntegerType();
 
    /// create the function_decl
-   const auto function_decl_node = [&]()
-   {
+   const auto function_decl_node = [&]() {
       std::vector<tree_nodeConstRef> argsT;
       if(commonRWSignature)
       {
@@ -1870,8 +1859,7 @@ void InterfaceInfer::create_resource(const std::set<std::string>& operationsR, c
       bool IO_P = !operationsR.empty() && !operationsW.empty();
       if(!operationsR.empty())
       {
-         const auto read_info = [&]()
-         {
+         const auto read_info = [&]() {
             if(info.name == "ovalid")
             {
                auto info_patch = info;
@@ -1884,8 +1872,7 @@ void InterfaceInfer::create_resource(const std::set<std::string>& operationsR, c
       }
       if(!operationsW.empty())
       {
-         const auto write_info = [&]()
-         {
+         const auto write_info = [&]() {
             if(info.name == "ovalid")
             {
                auto info_patch = info;

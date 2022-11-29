@@ -2634,8 +2634,7 @@ tree_nodeRef tree_manipulation::CreateUnsigned(const tree_nodeConstRef& signed_t
    ut_schema[TOK(TOK_ALGN)] = STR(int_signed_type->algn);
    ut_schema[TOK(TOK_UNSIGNED)] = STR(false);
 
-   const auto min = [&]() -> tree_nodeRef
-   {
+   const auto min = [&]() -> tree_nodeRef {
       std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> min_schema;
       min_schema[TOK(TOK_VALUE)] = STR(0);
       const auto find = TreeM->find(integer_cst_K, min_schema);
@@ -2649,8 +2648,7 @@ tree_nodeRef tree_manipulation::CreateUnsigned(const tree_nodeConstRef& signed_t
    }();
    ut_schema[TOK(TOK_MIN)] = STR(min->index);
 
-   const auto max = [&]() -> tree_nodeRef
-   {
+   const auto max = [&]() -> tree_nodeRef {
       std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> max_schema;
       max_schema[TOK(TOK_VALUE)] = STR(
           (2 * -(tree_helper::get_integer_cst_value(GetPointer<const integer_cst>(GET_NODE(int_signed_type->min))))) -
@@ -2907,9 +2905,9 @@ unsigned int tree_manipulation::InlineFunctionCall(const tree_nodeRef& call_stmt
       }
    }
    {
-      auto it = std::find_if(block->CGetStmtList().begin(), block->CGetStmtList().end(),
-                             [&](const tree_nodeRef& tn)
-                             { return GET_INDEX_CONST_NODE(tn) == GET_INDEX_CONST_NODE(call_stmt); });
+      auto it = std::find_if(block->CGetStmtList().begin(), block->CGetStmtList().end(), [&](const tree_nodeRef& tn) {
+         return GET_INDEX_CONST_NODE(tn) == GET_INDEX_CONST_NODE(call_stmt);
+      });
       THROW_ASSERT(it != block->CGetStmtList().end(), "");
       ++it;
       while(it != block->CGetStmtList().end())
@@ -2922,8 +2920,7 @@ unsigned int tree_manipulation::InlineFunctionCall(const tree_nodeRef& call_stmt
       block->RemoveStmt(call_stmt, AppM);
    }
 
-   const auto max_loop_id = [&]()
-   {
+   const auto max_loop_id = [&]() {
       unsigned int mlid = 0;
       for(const auto& ibb : sl->list_of_bloc)
       {
@@ -2939,16 +2936,15 @@ unsigned int tree_manipulation::InlineFunctionCall(const tree_nodeRef& call_stmt
                       tree_helper::print_function_name(TreeM, fd));
    CustomUnorderedMapStable<unsigned int, unsigned int> remapping;
    remapping.insert(std::make_pair(inline_fd->index, fd->index));
-   std::for_each(inline_fd->list_of_args.cbegin(), inline_fd->list_of_args.cend(),
-                 [&](const tree_nodeRef& tn)
-                 { remapping.insert(std::make_pair(GET_INDEX_CONST_NODE(tn), GET_INDEX_CONST_NODE(tn))); });
+   std::for_each(inline_fd->list_of_args.cbegin(), inline_fd->list_of_args.cend(), [&](const tree_nodeRef& tn) {
+      remapping.insert(std::make_pair(GET_INDEX_CONST_NODE(tn), GET_INDEX_CONST_NODE(tn)));
+   });
    tree_node_dup tnd(remapping, AppM, splitBBI + 1, max_loop_id + 1, true);
    const auto dup_sl_id = tnd.create_tree_node(GET_NODE(inline_fd->body), tree_node_dup_mode::RENAME);
    const auto dup_sl = GetPointer<const statement_list>(TreeM->CGetTreeNode(dup_sl_id));
    THROW_ASSERT(dup_sl, "");
 
-   const auto replace_arg_with_param = [&](const tree_nodeRef& stmt)
-   {
+   const auto replace_arg_with_param = [&](const tree_nodeRef& stmt) {
       const auto uses = tree_helper::ComputeSsaUses(stmt);
       for(const auto& use : uses)
       {
@@ -2958,9 +2954,9 @@ unsigned int tree_manipulation::InlineFunctionCall(const tree_nodeRef& call_stmt
          if(SSA->var != nullptr && GET_CONST_NODE(SSA->var)->get_kind() == parm_decl_K &&
             GET_CONST_NODE(SSA->CGetDefStmt())->get_kind() == gimple_nop_K)
          {
-            auto argIt = std::find_if(inline_fd->list_of_args.cbegin(), inline_fd->list_of_args.cend(),
-                                      [&](const tree_nodeRef& arg)
-                                      { return GET_INDEX_CONST_NODE(arg) == GET_INDEX_CONST_NODE(SSA->var); });
+            auto argIt = std::find_if(
+                inline_fd->list_of_args.cbegin(), inline_fd->list_of_args.cend(),
+                [&](const tree_nodeRef& arg) { return GET_INDEX_CONST_NODE(arg) == GET_INDEX_CONST_NODE(SSA->var); });
             THROW_ASSERT(argIt != inline_fd->list_of_args.cend(),
                          "parm_decl associated with ssa_name not found in function parameters");
             size_t arg_pos = static_cast<size_t>(argIt - inline_fd->list_of_args.cbegin());
@@ -2990,8 +2986,7 @@ unsigned int tree_manipulation::InlineFunctionCall(const tree_nodeRef& call_stmt
       }
       for(auto it = bb->list_of_succ.begin(); it != bb->list_of_succ.end(); ++it)
       {
-         const auto has_abort_call = [&]() -> bool
-         {
+         const auto has_abort_call = [&]() -> bool {
             if(!bb->CGetStmtList().empty())
             {
                const auto& last_stmt = bb->CGetStmtList().back();

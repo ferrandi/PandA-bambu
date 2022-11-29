@@ -457,8 +457,7 @@ void HLSCWriter::WriteParamInitialization(const BehavioralHelperConstRef BH,
          const auto ptd_type = tree_helper::GetRealType(tree_helper::CGetPointedType(parm_type));
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                         "---Pointed type: " + GET_CONST_NODE(ptd_type)->get_kind_text() + " - " + STR(ptd_type));
-         const auto c_type_cast = [&]()
-         {
+         const auto c_type_cast = [&]() {
             auto bare_ptd_type = ptd_type;
             while(tree_helper::IsArrayType(bare_ptd_type))
             {
@@ -701,8 +700,7 @@ void HLSCWriter::WriteExpectedResults(const BehavioralHelperConstRef BH,
          const auto base_type = tree_helper::CGetType(par);
          const auto ptd_type = tree_helper::CGetPointedType(base_type);
          auto is_ac_type = false;
-         const auto ptd_type_bitsize = [&]()
-         {
+         const auto ptd_type_bitsize = [&]() {
             if(hasInterface)
             {
                const auto arg_typename = DesignInterfaceTypename.at(fname).at(par_idx);
@@ -716,8 +714,7 @@ void HLSCWriter::WriteExpectedResults(const BehavioralHelperConstRef BH,
             }
             return tree_helper::Size(ptd_type);
          }();
-         const auto arg_typename = [&]()
-         {
+         const auto arg_typename = [&]() {
             if(hasInterface)
             {
                auto type_name = DesignInterfaceTypename.at(fname).at(par_idx);
@@ -764,8 +761,7 @@ void HLSCWriter::WriteExpectedResults(const BehavioralHelperConstRef BH,
                                               STR(splitted.size()) + "; ++__testbench_index2)\n{\n");
                const auto data_bitsize = tree_helper::GetArrayElementSize(ptd_type);
                const auto num_elements = tree_helper::GetArrayTotalSize(ptd_type);
-               const auto elmts_type = [&]()
-               {
+               const auto elmts_type = [&]() {
                   auto t = ptd_type;
                   while(tree_helper::IsArrayType(t))
                   {
@@ -1062,8 +1058,7 @@ void HLSCWriter::WriteSimulatorInitMemory(const unsigned int function_id)
          }
 
          /// Retrieve the space to be reserved in memory
-         const auto reserved_mem_bytes = [&]() -> size_t
-         {
+         const auto reserved_mem_bytes = [&]() -> size_t {
             if(is_memory)
             {
                const auto ret_value = tree_helper::Size(TM->CGetTreeReindex(l)) / 8;
@@ -1114,8 +1109,7 @@ void HLSCWriter::WriteSimulatorInitMemory(const unsigned int function_id)
             std::string bits_offset = "";
             std::vector<std::string> splitted = SplitString(test_v, ",");
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Processing c++ init " + test_v);
-            const auto isAllZero = [&]() -> bool
-            {
+            const auto isAllZero = [&]() -> bool {
                if(splitted.size() == 0)
                {
                   return false;

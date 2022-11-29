@@ -418,8 +418,7 @@ void allocation::BuildProxyWrapper(functional_unit* current_fu, const std::strin
          }
          const std::string proxy_port_name = PROXY_PREFIX + port_name;
          // insert wDataMux
-         const auto addwDataMux = [&](const std::string offset)
-         {
+         const auto addwDataMux = [&](const std::string offset) {
             structural_objectRef wrapped_fu_port = orig_top_obj->find_member(port_name, port_o_K, orig_top_obj);
             if(offset.size())
             {
@@ -489,8 +488,7 @@ void allocation::BuildProxyWrapper(functional_unit* current_fu, const std::strin
          continue;
       }
       const std::string proxy_port_name = PROXY_PREFIX + port_name;
-      const auto addwData = [&](const std::string offset)
-      {
+      const auto addwData = [&](const std::string offset) {
          structural_objectRef local_port = wrapper_obj->find_member(port_name, port_o_K, wrapper_obj);
          if(offset.size())
          {
@@ -1490,8 +1488,7 @@ DesignFlowStep_Status allocation::InternalExec()
    {
       std::string current_op = tree_helper::NormalizeTypename(g->CGetOpNodeInfo(*v)->GetOperation());
       const auto node_id = g->CGetOpNodeInfo(*v)->GetNodeId();
-      const auto node_operation = [&]() -> std::string
-      {
+      const auto node_operation = [&]() -> std::string {
          if(node_id == ENTRY_ID)
          {
             return "Entry";
@@ -2130,8 +2127,7 @@ DesignFlowStep_Status allocation::InternalExec()
             for(const auto vert : vertex_to_analyse_partition.at(curr_op_name))
             {
                const auto vert_node_id = g->CGetOpNodeInfo(vert)->GetNodeId();
-               const auto vert_node_operation = [&]() -> std::string
-               {
+               const auto vert_node_operation = [&]() -> std::string {
                   if(vert_node_id == ENTRY_ID)
                   {
                      return "Entry";
@@ -3155,8 +3151,7 @@ void allocation::IntegrateTechnologyLibraries()
                {
                   const ModuleGeneratorManagerRef modGen(new ModuleGeneratorManager(HLSMgr, parameters));
                   std::string new_shared_fu_name = shared_fu_name + "_modgen";
-                  const auto fnode = [&]() -> tree_nodeRef
-                  {
+                  const auto fnode = [&]() -> tree_nodeRef {
                      const auto fu = GetPointer<const functional_unit>(techNode_obj);
                      for(const auto& op : fu->get_operations())
                      {

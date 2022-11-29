@@ -213,8 +213,7 @@ tree_nodeRef tree_manager::GetFunction(const std::string& function_name) const
             simple_name = in->strg;
          }
       }
-      const auto name = [&]()
-      {
+      const auto name = [&]() {
          const auto fname = tree_helper::print_function_name(TM, fd);
          if(TM->is_CPP())
          {
