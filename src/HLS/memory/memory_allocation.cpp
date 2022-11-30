@@ -331,18 +331,19 @@ void memory_allocation::finalize_memory_allocation()
       CustomUnorderedSet<vertex> RW_stmts;
       if(HLSMgr->design_interface_io.find(fname) != HLSMgr->design_interface_io.end())
       {
-         for(auto bb2arg2stmtsR : HLSMgr->design_interface_io.find(fname)->second)
+         for(const auto& bb2arg2stmtsR : HLSMgr->design_interface_io.find(fname)->second)
          {
-            for(auto arg2stms : bb2arg2stmtsR.second)
+            for(const auto& arg2stms : bb2arg2stmtsR.second)
             {
                if(arg2stms.second.size() > 0)
                {
-                  for(auto stmt : arg2stms.second)
+                  for(const auto& stmt : arg2stms.second)
                   {
-                     THROW_ASSERT(g->CGetOpGraphInfo()->tree_node_to_operation.find(stmt) !=
-                                      g->CGetOpGraphInfo()->tree_node_to_operation.end(),
-                                  "unexpected condition: STMT=" + STR(stmt));
-                     RW_stmts.insert(g->CGetOpGraphInfo()->tree_node_to_operation.find(stmt)->second);
+                     const auto op_it = g->CGetOpGraphInfo()->tree_node_to_operation.find(stmt);
+                     if(op_it != g->CGetOpGraphInfo()->tree_node_to_operation.end())
+                     {
+                        RW_stmts.insert(op_it->second);
+                     }
                   }
                }
             }

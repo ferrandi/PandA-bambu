@@ -742,10 +742,11 @@ void parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
             {
                for(const auto& stmt : arg2stms.second)
                {
-                  THROW_ASSERT(flow_graph->CGetOpGraphInfo()->tree_node_to_operation.find(stmt) !=
-                                   flow_graph->CGetOpGraphInfo()->tree_node_to_operation.end(),
-                               "unexpected condition: STMT=" + STR(stmt));
-                  RW_stmts.insert(flow_graph->CGetOpGraphInfo()->tree_node_to_operation.at(stmt));
+                  const auto op_it = flow_graph->CGetOpGraphInfo()->tree_node_to_operation.find(stmt);
+                  if(op_it != flow_graph->CGetOpGraphInfo()->tree_node_to_operation.end())
+                  {
+                     RW_stmts.insert(op_it->second);
+                  }
                }
             }
          }
