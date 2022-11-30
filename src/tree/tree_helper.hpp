@@ -301,9 +301,10 @@ class tree_helper
    /**
     * Return the return type of a function
     * @param function is the function to be considered
+    * @param void_as_null if true returns nullptr when return type is void, else return tree node for void type
     * @return the tree node of the return type
     */
-   static tree_nodeConstRef GetFunctionReturnType(const tree_nodeConstRef& function);
+   static tree_nodeConstRef GetFunctionReturnType(const tree_nodeConstRef& function, bool void_as_null = true);
 
    /**
     * Return the tree_node index of the pointed type of a pointer object;

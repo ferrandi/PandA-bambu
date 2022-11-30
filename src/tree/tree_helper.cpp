@@ -1684,7 +1684,7 @@ unsigned int tree_helper::get_type_index(const tree_managerConstRef& TM, const u
    return type_index;
 }
 
-tree_nodeConstRef tree_helper::GetFunctionReturnType(const tree_nodeConstRef& _tn)
+tree_nodeConstRef tree_helper::GetFunctionReturnType(const tree_nodeConstRef& _tn, bool void_as_null)
 {
    const auto tn = _tn->get_kind() == tree_reindex_K ? GET_CONST_NODE(_tn) : _tn;
    tree_nodeConstRef fun_type;
@@ -1762,14 +1762,14 @@ tree_nodeConstRef tree_helper::GetFunctionReturnType(const tree_nodeConstRef& _t
       case CASE_UNARY_EXPRESSION:
       default:
       {
-         THROW_UNREACHABLE("Not supported tree node type " + tn->get_kind_text());
+         break;
       }
    }
    if(fun_type->get_kind() == function_type_K || fun_type->get_kind() == method_type_K)
    {
       const auto ft = GetPointerS<const function_type>(fun_type);
       THROW_ASSERT(ft, "NodeId is not related to a valid function type");
-      if(GET_CONST_NODE(ft->retn)->get_kind() != void_type_K)
+      if(!void_as_null || GET_CONST_NODE(ft->retn)->get_kind() != void_type_K)
       {
          return ft->retn;
       }
@@ -1778,6 +1778,7 @@ tree_nodeConstRef tree_helper::GetFunctionReturnType(const tree_nodeConstRef& _t
          return tree_nodeConstRef();
       }
    }
+   THROW_UNREACHABLE("Not supported tree node type " + tn->get_kind_text());
    return tree_nodeConstRef();
 }
 

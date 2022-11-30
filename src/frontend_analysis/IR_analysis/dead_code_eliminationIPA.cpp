@@ -319,7 +319,7 @@ bool dead_code_eliminationIPA::signature_opt(const tree_managerRef& TM, function
    arg_eraser(loa, nullptr);
    std::transform(loa.cbegin(), loa.cend(), std::back_inserter(argsT),
                   [&](const tree_nodeRef& arg) { return tree_helper::CGetType(arg); });
-   const auto ftype = tree_man->GetFunctionType(tree_helper::GetFunctionReturnType(fd->type), argsT);
+   const auto ftype = tree_man->GetFunctionType(tree_helper::GetFunctionReturnType(fd->type, false), argsT);
    const auto ftype_ptr = tree_man->GetPointerType(ftype);
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Erasing unused arguments from call points");
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
