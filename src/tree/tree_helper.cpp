@@ -5340,7 +5340,7 @@ unsigned int tree_helper::get_var_alignment(const tree_managerConstRef& TM, unsi
 
 std::string tree_helper::NormalizeTypename(const std::string& id)
 {
-   static const boost::regex rbase("[.:]+");
+   static const boost::regex rbase("[.:$]+");
    static const boost::regex rtmpl("[*&<>\\-]|[, ]+");
    std::string norm_typename;
    boost::regex_replace(std::back_inserter(norm_typename), id.cbegin(), id.cend(), rbase, "_");
