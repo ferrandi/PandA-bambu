@@ -949,19 +949,19 @@ void InterfaceInfer::setReadInterface(tree_nodeRef stmt, const std::string& arg_
    {
       THROW_ASSERT(fd->body, "expected a body");
       const auto sl = GetPointerS<statement_list>(GET_NODE(fd->body));
+      const auto curr_bb = ga->bb_index;
 
       const auto is_real = tree_helper::IsRealType(actual_type);
       const auto tmp_type =
           is_real ? tree_man->GetCustomIntegerType(tree_helper::Size(actual_type), true) : interface_datatype;
       const auto tmp_ssa = tree_man->create_ssa_name(nullptr, tmp_type, nullptr, nullptr);
-      const auto gc = tree_man->create_gimple_modify_stmt(tmp_ssa, ce, fd->index, BUILTIN_SRCP, ga->bb_index);
-      sl->list_of_bloc.at(ga->bb_index)->PushBefore(gc, stmt, AppM);
+      const auto gc = tree_man->create_gimple_modify_stmt(tmp_ssa, ce, fd->index, BUILTIN_SRCP, curr_bb);
+      sl->list_of_bloc.at(curr_bb)->Replace(stmt, gc, true, AppM);
       const auto vc = tree_man->create_unary_operation(actual_type, tmp_ssa, BUILTIN_SRCP,
                                                        is_real ? view_convert_expr_K : nop_expr_K);
-      TM->ReplaceTreeNode(stmt, ga->op1, vc);
-      FixReadWriteCall(stmt, gc, tree_man, TM);
-      GetPointer<HLS_manager>(AppM)->design_interface_io[fname][ga->bb_index][arg_name].push_back(
-          GET_INDEX_CONST_NODE(gc));
+      const auto cast = tree_man->create_gimple_modify_stmt(ga->op0, vc, fd->index, BUILTIN_SRCP, curr_bb);
+      sl->list_of_bloc.at(curr_bb)->PushAfter(cast, gc, AppM);
+      GetPointer<HLS_manager>(AppM)->design_interface_io[fname][curr_bb][arg_name].push_back(GET_INDEX_CONST_NODE(gc));
 
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "--- AFTER: " + gc->ToString());
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---   NOP: " + stmt->ToString());
@@ -1034,13 +1034,12 @@ void InterfaceInfer::setWriteInterface(tree_nodeRef stmt, const std::string& arg
    const auto mr = GetPointerS<const mem_ref>(GET_CONST_NODE(ga->op0));
    args.push_back(mr->op0);
 
+   const auto curr_bb = ga->bb_index;
    const auto gc =
-       tree_man->create_gimple_call(function_decl_node, args, GET_INDEX_NODE(ga->scpe), BUILTIN_SRCP, ga->bb_index);
-   sl->list_of_bloc.at(ga->bb_index)->PushBefore(gc, stmt, AppM);
+       tree_man->create_gimple_call(function_decl_node, args, GET_INDEX_NODE(ga->scpe), BUILTIN_SRCP, curr_bb);
+   sl->list_of_bloc.at(curr_bb)->Replace(stmt, gc, true, AppM);
 
-   FixReadWriteCall(stmt, gc, tree_man, TM);
-   sl->list_of_bloc[ga->bb_index]->RemoveStmt(stmt, AppM);
-   GetPointer<HLS_manager>(AppM)->design_interface_io[fname][ga->bb_index][arg_name].push_back(GET_INDEX_NODE(gc));
+   GetPointer<HLS_manager>(AppM)->design_interface_io[fname][curr_bb][arg_name].push_back(GET_INDEX_NODE(gc));
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "--- AFTER: " + gc->ToString());
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--");
 }
@@ -1950,48 +1949,4 @@ void InterfaceInfer::create_resource(const std::set<std::string>& operationsR, c
    {
       THROW_ERROR("interface not supported: " + info.name);
    }
-}
-
-void InterfaceInfer::FixReadWriteCall(tree_nodeRef stmt, tree_nodeRef new_stmt, const tree_manipulationRef tree_man,
-                                      const tree_managerRef TM) const
-{
-   auto gn = GetPointerS<gimple_node>(GET_NODE(stmt));
-   auto new_gn = GetPointerS<gimple_node>(GET_NODE(new_stmt));
-   new_gn->memdef = gn->memdef;
-   gn->memdef = nullptr;
-   new_gn->memuse = gn->memuse;
-   gn->memuse = nullptr;
-   if(gn->vdef)
-   {
-      auto ssaVDefVar = GetPointer<ssa_name>(GET_NODE(gn->vdef));
-      THROW_ASSERT(ssaVDefVar, "unexpected condition");
-      auto newSSAVdef =
-          tree_man->create_ssa_name(ssaVDefVar->var, ssaVDefVar->type, tree_nodeRef(), tree_nodeRef(), false, true);
-      new_gn->vdef = newSSAVdef;
-      GetPointerS<ssa_name>(GET_NODE(new_gn->vdef))->SetDefStmt(new_stmt);
-      const auto StmtVdefUses = ssaVDefVar->CGetUseStmts();
-      for(const auto& used : StmtVdefUses)
-      {
-         TM->ReplaceTreeNode(used.first, gn->vdef, newSSAVdef);
-      }
-      gn->vdef = nullptr;
-   }
-   for(const auto& vUse : gn->vuses)
-   {
-      auto sn = GetPointer<ssa_name>(GET_NODE(vUse));
-      if(new_gn->AddVuse(vUse))
-      {
-         sn->AddUseStmt(new_stmt);
-      }
-   }
-   gn->vuses.clear();
-   for(const auto& vOver : gn->vovers)
-   {
-      auto sn = GetPointer<ssa_name>(GET_NODE(vOver));
-      if(new_gn->AddVover(vOver))
-      {
-         sn->AddUseStmt(new_stmt);
-      }
-   }
-   gn->vovers.clear();
 }

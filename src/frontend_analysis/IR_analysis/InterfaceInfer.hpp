@@ -134,9 +134,6 @@ class InterfaceInfer : public ApplicationFrontendFlowStep
                         const std::string& arg_name, const interface_info& info, bool isDiffSize,
                         const std::string& fname, unsigned int top_id) const;
 
-   void FixReadWriteCall(tree_nodeRef stmt, tree_nodeRef new_stmt, const tree_manipulationRef tree_man,
-                         const tree_managerRef TM) const;
-
  public:
    /**
     * Constructor
