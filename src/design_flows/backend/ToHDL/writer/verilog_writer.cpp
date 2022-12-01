@@ -223,7 +223,7 @@ std::string verilog_writer::type_converter_size(const structural_objectRef& cir)
             }
             else
             {
-               return "[" + boost::lexical_cast<std::string>(GetPointer<port_o>(cir)->get_ports_size() - 1) + ":0] ";
+               return "[" + STR(GetPointer<port_o>(cir)->get_ports_size() - 1) + ":0] ";
             }
          }
          else if(cir->get_owner() and cir->get_owner()->get_kind() == port_vector_o_K)
@@ -261,8 +261,7 @@ std::string verilog_writer::type_converter_size(const structural_objectRef& cir)
             {
                auto lsb = GetPointer<port_o>(cir)->get_lsb();
                return "[(" + (PORTSIZE_PREFIX + port_name) + "*" + (BITSIZE_PREFIX + port_name) + ")+(" +
-                      boost::lexical_cast<std::string>(static_cast<int>(lsb) - 1) +
-                      "):" + boost::lexical_cast<std::string>(lsb) + "] ";
+                      STR(static_cast<int>(lsb) - 1) + "):" + STR(lsb) + "] ";
             }
             else if(cir->get_owner() and cir->get_owner()->get_kind() == port_vector_o_K)
             {
@@ -284,8 +283,7 @@ std::string verilog_writer::type_converter_size(const structural_objectRef& cir)
                auto lsb = GetPointer<signal_o>(cir)->get_lsb();
                auto msb = size_fs * n_sign + lsb;
 
-               return "[" + boost::lexical_cast<std::string>(static_cast<int>(msb) - 1) + ":" +
-                      boost::lexical_cast<std::string>(lsb) + "] ";
+               return "[" + STR(static_cast<int>(msb) - 1) + ":" + STR(lsb) + "] ";
             }
             else if(cir->get_kind() == port_vector_o_K)
             {
@@ -295,8 +293,7 @@ std::string verilog_writer::type_converter_size(const structural_objectRef& cir)
                const auto Type_fp = first_port->get_typeRef();
                auto size_fp = Type_fp->vector_size > 0 ? Type_fp->size * Type_fp->vector_size : Type_fp->size;
                auto msb = size_fp * n_ports + lsb;
-               return "[" + boost::lexical_cast<std::string>(static_cast<int>(msb) - 1) + ":" +
-                      boost::lexical_cast<std::string>(lsb) + "] ";
+               return "[" + STR(static_cast<int>(msb) - 1) + ":" + STR(lsb) + "] ";
             }
             else if(cir->get_owner() and cir->get_owner()->get_kind() == port_vector_o_K)
             {
@@ -316,7 +313,7 @@ std::string verilog_writer::type_converter_size(const structural_objectRef& cir)
             }
             if(Type->vector_size > 1 && Type->size == 1)
             {
-               return "[" + boost::lexical_cast<std::string>(static_cast<int>(Type->vector_size) - 1) + ":0] ";
+               return "[" + STR(static_cast<int>(Type->vector_size) - 1) + ":0] ";
             }
             else if(Type->vector_size == 1 && Type->size == 1)
             {
@@ -324,7 +321,7 @@ std::string verilog_writer::type_converter_size(const structural_objectRef& cir)
             }
             else if(Type->vector_size == 0 && Type->size != 0)
             {
-               return "[" + boost::lexical_cast<std::string>(static_cast<int>(Type->size) - 1) + ":0] ";
+               return "[" + STR(static_cast<int>(Type->size) - 1) + ":0] ";
             }
             else
             {
@@ -343,7 +340,7 @@ std::string verilog_writer::type_converter_size(const structural_objectRef& cir)
          }
          else if(Type->vector_size * Type->size > 1)
          {
-            return "[" + boost::lexical_cast<std::string>(Type->vector_size * Type->size - 1) + ":0] ";
+            return "[" + STR(Type->vector_size * Type->size - 1) + ":0] ";
          }
          else
          {
@@ -418,11 +415,9 @@ std::string verilog_writer::may_slice_string(const structural_objectRef& cir)
             if(Owner->get_kind() == port_vector_o_K)
             {
                auto lsb = GetPointer<port_o>(Owner)->get_lsb();
-               return "[((" + boost::lexical_cast<std::string>(GetPointer<port_o>(cir)->get_id()) + "+1)*" +
-                      (BITSIZE_PREFIX + port_name) + ")+(" +
-                      boost::lexical_cast<std::string>(static_cast<int>(lsb) - 1) + "):(" +
-                      boost::lexical_cast<std::string>(GetPointer<port_o>(cir)->get_id()) + "*" +
-                      (BITSIZE_PREFIX + port_name) + ")+" + boost::lexical_cast<std::string>(lsb) + "]";
+               return "[((" + STR(GetPointer<port_o>(cir)->get_id()) + "+1)*" + (BITSIZE_PREFIX + port_name) + ")+(" +
+                      STR(static_cast<int>(lsb) - 1) + "):(" + STR(GetPointer<port_o>(cir)->get_id()) + "*" +
+                      (BITSIZE_PREFIX + port_name) + ")+" + STR(lsb) + "]";
             }
             else
             {
@@ -437,14 +432,12 @@ std::string verilog_writer::may_slice_string(const structural_objectRef& cir)
                auto size_fp = Type_fp->vector_size > 0 ? Type_fp->size * Type_fp->vector_size : Type_fp->size;
                auto lsb = GetPointer<port_o>(Owner)->get_lsb();
                return "[" +
-                      boost::lexical_cast<std::string>(
-                          (1 + boost::lexical_cast<int>(GetPointer<port_o>(cir)->get_id())) *
+                      STR((1 + boost::lexical_cast<int>(GetPointer<port_o>(cir)->get_id())) *
                               static_cast<int>(size_fp) +
                           static_cast<int>(lsb) - 1) +
                       ":" +
-                      boost::lexical_cast<std::string>((boost::lexical_cast<int>(GetPointer<port_o>(cir)->get_id())) *
-                                                           static_cast<int>(size_fp) +
-                                                       static_cast<int>(lsb)) +
+                      STR((boost::lexical_cast<int>(GetPointer<port_o>(cir)->get_id())) * static_cast<int>(size_fp) +
+                          static_cast<int>(lsb)) +
                       "]";
             }
             else
@@ -463,12 +456,10 @@ std::string verilog_writer::may_slice_string(const structural_objectRef& cir)
             if(Owner->get_kind() == port_vector_o_K)
             {
                auto lsb = GetPointer<port_o>(Owner)->get_lsb();
-               return "[((" + boost::lexical_cast<std::string>(GetPointer<port_o>(cir)->get_id()) + "+1)*" +
-                      (BITSIZE_PREFIX + port_name) + "*" + (NUM_ELEM_PREFIX + port_name) + ")+(" +
-                      boost::lexical_cast<std::string>(static_cast<int>(lsb) - 1) + "):(" +
-                      boost::lexical_cast<std::string>(GetPointer<port_o>(cir)->get_id()) + "*" +
-                      (BITSIZE_PREFIX + port_name) + "*" + (NUM_ELEM_PREFIX + port_name) + ")+" +
-                      boost::lexical_cast<std::string>(lsb) + "]";
+               return "[((" + STR(GetPointer<port_o>(cir)->get_id()) + "+1)*" + (BITSIZE_PREFIX + port_name) + "*" +
+                      (NUM_ELEM_PREFIX + port_name) + ")+(" + STR(static_cast<int>(lsb) - 1) + "):(" +
+                      STR(GetPointer<port_o>(cir)->get_id()) + "*" + (BITSIZE_PREFIX + port_name) + "*" +
+                      (NUM_ELEM_PREFIX + port_name) + ")+" + STR(lsb) + "]";
             }
             else
             {
@@ -483,14 +474,12 @@ std::string verilog_writer::may_slice_string(const structural_objectRef& cir)
                auto size_fp = Type_fp->vector_size > 0 ? Type_fp->size * Type_fp->vector_size : Type_fp->size;
                auto lsb = GetPointer<port_o>(Owner)->get_lsb();
                return "[" +
-                      boost::lexical_cast<std::string>(
-                          (1 + boost::lexical_cast<int>(GetPointer<port_o>(cir)->get_id())) *
+                      STR((1 + boost::lexical_cast<int>(GetPointer<port_o>(cir)->get_id())) *
                               static_cast<int>(size_fp) +
                           static_cast<int>(lsb) - 1) +
                       ":" +
-                      boost::lexical_cast<std::string>((boost::lexical_cast<int>(GetPointer<port_o>(cir)->get_id())) *
-                                                           static_cast<int>(size_fp) +
-                                                       static_cast<int>(lsb)) +
+                      STR((boost::lexical_cast<int>(GetPointer<port_o>(cir)->get_id())) * static_cast<int>(size_fp) +
+                          static_cast<int>(lsb)) +
                       "]";
             }
             else
@@ -627,8 +616,7 @@ void verilog_writer::write_signal_declaration(const structural_objectRef& cir)
       auto size_fs = Type_fs->vector_size > 0 ? Type_fs->size * Type_fs->vector_size : Type_fs->size;
       auto lsb = GetPointer<signal_o>(cir)->get_lsb();
       auto msb = size_fs * n_sign + lsb;
-      indented_output_stream->Append("[" + boost::lexical_cast<std::string>(msb - 1) + ":" +
-                                     boost::lexical_cast<std::string>(lsb) + "] ");
+      indented_output_stream->Append("[" + STR(msb - 1) + ":" + STR(lsb) + "] ");
    }
    indented_output_stream->Append(HDL_manager::convert_to_identifier(this, cir->get_id()) + ";\n");
 }
@@ -811,10 +799,10 @@ void verilog_writer::write_vector_port_binding(const structural_objectRef& port,
                }
                if(lsb != 0 || msb != (max - 1))
                {
-                  port_binding += "[" + boost::lexical_cast<std::string>(msb);
+                  port_binding += "[" + STR(msb);
                   if(msb != lsb)
                   {
-                     port_binding += ":" + boost::lexical_cast<std::string>(lsb);
+                     port_binding += ":" + STR(lsb);
                   }
                   port_binding += "]";
                }
@@ -859,10 +847,10 @@ void verilog_writer::write_vector_port_binding(const structural_objectRef& port,
                }
                if(lsb != 0 || msb != (max - 1))
                {
-                  port_binding += "[" + boost::lexical_cast<std::string>(msb);
+                  port_binding += "[" + STR(msb);
                   if(msb != lsb)
                   {
-                     port_binding += ":" + boost::lexical_cast<std::string>(lsb);
+                     port_binding += ":" + STR(lsb);
                   }
                   port_binding += "], ";
                }
@@ -907,10 +895,10 @@ void verilog_writer::write_vector_port_binding(const structural_objectRef& port,
                }
                if(lsb != 0 || msb != (max - 1))
                {
-                  port_binding += "[" + boost::lexical_cast<std::string>(msb);
+                  port_binding += "[" + STR(msb);
                   if(msb != lsb)
                   {
-                     port_binding += ":" + boost::lexical_cast<std::string>(lsb);
+                     port_binding += ":" + STR(lsb);
                   }
                   port_binding += "], ";
                }
@@ -948,10 +936,10 @@ void verilog_writer::write_vector_port_binding(const structural_objectRef& port,
          }
          if(lsb != 0 || msb != (max - 1))
          {
-            port_binding += "[" + boost::lexical_cast<std::string>(msb);
+            port_binding += "[" + STR(msb);
             if(msb != lsb)
             {
-               port_binding += ":" + boost::lexical_cast<std::string>(lsb);
+               port_binding += ":" + STR(lsb);
             }
             port_binding += "]";
          }
@@ -1176,21 +1164,21 @@ void verilog_writer::write_module_parametrization(const structural_objectRef& ci
                 type == structural_type_descriptor::VECTOR_REAL))
             {
                indented_output_stream->Append("." + std::string(BITSIZE_PREFIX + name) + "(" +
-                                              boost::lexical_cast<std::string>(obj->get_typeRef()->size) + ")");
+                                              STR(obj->get_typeRef()->size) + ")");
                indented_output_stream->Append(",\n");
                indented_output_stream->Append("." + std::string(NUM_ELEM_PREFIX + name) + "(" +
-                                              boost::lexical_cast<std::string>(obj->get_typeRef()->vector_size) + ")");
+                                              STR(obj->get_typeRef()->vector_size) + ")");
             }
             else
             {
-               indented_output_stream->Append("." + std::string(BITSIZE_PREFIX) + name + "(" +
-                                              boost::lexical_cast<std::string>(GET_TYPE_SIZE(obj)) + ")");
+               indented_output_stream->Append("." + std::string(BITSIZE_PREFIX) + name + "(" + STR(GET_TYPE_SIZE(obj)) +
+                                              ")");
                if(obj->get_kind() == port_vector_o_K)
                {
                   indented_output_stream->Append(",\n");
                   auto ports_size = GetPointer<port_o>(obj)->get_ports_size();
-                  indented_output_stream->Append("." + std::string(PORTSIZE_PREFIX) + name + "(" +
-                                                 boost::lexical_cast<std::string>(ports_size) + ")");
+                  indented_output_stream->Append("." + std::string(PORTSIZE_PREFIX) + name + "(" + STR(ports_size) +
+                                                 ")");
                }
             }
          }
@@ -1219,7 +1207,7 @@ void verilog_writer::write_module_parametrization(const structural_objectRef& ci
             else if(param_value.find('\"') != std::string::npos)
             {
                boost::replace_all(param_value, "\"", "");
-               param_value = boost::lexical_cast<std::string>(param_value.size()) + "'b" + param_value;
+               param_value = STR(param_value.size()) + "'b" + param_value;
             }
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                            "---Written ." + param_name + "(" + param_value + ")");
@@ -1263,24 +1251,24 @@ void verilog_writer::write_state_declaration(const structural_objectRef& cir,
    }
    if(one_hot)
    {
-      indented_output_stream->Append("parameter [" + boost::lexical_cast<std::string>(max_value) + ":0] ");
+      indented_output_stream->Append("parameter [" + STR(max_value) + ":0] ");
    }
    else
    {
-      indented_output_stream->Append("parameter [" + boost::lexical_cast<std::string>(bitsnumber - 1) + ":0] ");
+      indented_output_stream->Append("parameter [" + STR(bitsnumber - 1) + ":0] ");
    }
    for(auto it = list_of_states.begin(); it != it_end; ++it)
    {
       if(one_hot)
       {
          indented_output_stream->Append(
-             *it + " = " + boost::lexical_cast<std::string>(max_value + 1) + "'b" +
+             *it + " = " + STR(max_value + 1) + "'b" +
              encode_one_hot(1 + max_value, boost::lexical_cast<unsigned int>(it->substr(strlen(STATE_NAME_PREFIX)))));
       }
       else
       {
-         indented_output_stream->Append(*it + " = " + boost::lexical_cast<std::string>(bitsnumber) + "'d" +
-                                        boost::lexical_cast<std::string>(it->substr(strlen(STATE_NAME_PREFIX))));
+         indented_output_stream->Append(*it + " = " + STR(bitsnumber) + "'d" +
+                                        STR(it->substr(strlen(STATE_NAME_PREFIX))));
       }
       count++;
       if(count == n_states)
@@ -1309,33 +1297,29 @@ void verilog_writer::write_state_declaration(const structural_objectRef& cir,
    {
       if(one_hot)
       {
-         indented_output_stream->Append("reg [" + boost::lexical_cast<std::string>(max_value) + ":0] _present_state[" +
+         indented_output_stream->Append("reg [" + STR(max_value) + ":0] _present_state[" +
                                         STR(parameters->getOption<unsigned int>(OPT_context_switch) - 1) + ":0];\n");
-         indented_output_stream->Append("reg [" + boost::lexical_cast<std::string>(max_value) + ":0] _next_state;\n");
+         indented_output_stream->Append("reg [" + STR(max_value) + ":0] _next_state;\n");
          // start initializing memory_FSM
          indented_output_stream->Append("integer i;\n");
          indented_output_stream->Append("initial begin\n");
          indented_output_stream->Append(
              "  for (i=0; i<" + STR(parameters->getOption<unsigned int>(OPT_context_switch)) + "; i=i+1) begin\n");
-         indented_output_stream->Append("    _present_state[i] = " + boost::lexical_cast<std::string>(max_value + 1) +
-                                        "'d1;\n");
+         indented_output_stream->Append("    _present_state[i] = " + STR(max_value + 1) + "'d1;\n");
          indented_output_stream->Append("  end\n");
          indented_output_stream->Append("end\n");
       }
       else
       {
-         indented_output_stream->Append("reg [" + boost::lexical_cast<std::string>(bitsnumber - 1) +
-                                        ":0] _present_state[" +
+         indented_output_stream->Append("reg [" + STR(bitsnumber - 1) + ":0] _present_state[" +
                                         STR(parameters->getOption<unsigned int>(OPT_context_switch) - 1) + ":0];\n");
-         indented_output_stream->Append("reg [" + boost::lexical_cast<std::string>(bitsnumber - 1) +
-                                        ":0] _next_state;\n");
+         indented_output_stream->Append("reg [" + STR(bitsnumber - 1) + ":0] _next_state;\n");
          // start initializing memory_FSM
          indented_output_stream->Append("integer i;\n");
          indented_output_stream->Append("initial begin\n");
          indented_output_stream->Append(
              "  for (i=0; i<" + STR(parameters->getOption<unsigned int>(OPT_context_switch)) + "; i=i+1) begin\n");
-         indented_output_stream->Append("    _present_state[i] = " + boost::lexical_cast<std::string>(bitsnumber) +
-                                        "'d0;\n");
+         indented_output_stream->Append("    _present_state[i] = " + STR(bitsnumber) + "'d0;\n");
          indented_output_stream->Append("  end\n");
          indented_output_stream->Append("end\n");
       }
@@ -1344,13 +1328,13 @@ void verilog_writer::write_state_declaration(const structural_objectRef& cir,
    {
       if(one_hot)
       {
-         indented_output_stream->Append("reg [" + boost::lexical_cast<std::string>(max_value) +
-                                        ":0] _present_state=" + reset_state + ", _next_state;\n");
+         indented_output_stream->Append("reg [" + STR(max_value) + ":0] _present_state=" + reset_state +
+                                        ", _next_state;\n");
       }
       else
       {
-         indented_output_stream->Append("reg [" + boost::lexical_cast<std::string>(bitsnumber - 1) +
-                                        ":0] _present_state=" + reset_state + ", _next_state;\n");
+         indented_output_stream->Append("reg [" + STR(bitsnumber - 1) + ":0] _present_state=" + reset_state +
+                                        ", _next_state;\n");
       }
    }
    THROW_ASSERT(mod, "Expected a component object");
@@ -1885,8 +1869,7 @@ void verilog_writer::write_transition_output_functions(
                               {
                                  res_or_conditions += std::string(" == ") +
                                                       ((*in_or_conditions_tokens_it)[0] == '-' ? "-" : "") +
-                                                      (vec_size == 0 ? boost::lexical_cast<std::string>(port_size) :
-                                                                       boost::lexical_cast<std::string>(vec_size));
+                                                      (vec_size == 0 ? STR(port_size) : STR(vec_size));
                                  if(port_size > 1 || (port_size == 1 && vec_size > 0))
                                  {
                                     res_or_conditions += "'d" + (((*in_or_conditions_tokens_it)[0] == '-') ?
@@ -2177,7 +2160,7 @@ void verilog_writer::write_module_parametrization_decl(const structural_objectRe
          else if(value.find('\"') != std::string::npos)
          {
             boost::replace_all(value, "\"", "");
-            value = boost::lexical_cast<std::string>(value.size()) + "'b" + value;
+            value = STR(value.size()) + "'b" + value;
          }
          indented_output_stream->Append(name + "=" + value);
       }
@@ -2200,24 +2183,21 @@ void verilog_writer::write_module_parametrization_decl(const structural_objectRe
          {
             indented_output_stream->Append(",\n");
          }
-         const std::string& name = library_parameter.first;
-         structural_objectRef obj = library_parameter.second;
+         const auto& name = library_parameter.first;
+         const auto obj = library_parameter.second;
          if(obj)
          {
             structural_type_descriptor::s_type type = obj->get_typeRef()->type;
             if((type == structural_type_descriptor::VECTOR_INT || type == structural_type_descriptor::VECTOR_UINT ||
                 type == structural_type_descriptor::VECTOR_REAL))
             {
-               indented_output_stream->Append(BITSIZE_PREFIX + name + "=" +
-                                              boost::lexical_cast<std::string>(obj->get_typeRef()->size));
+               indented_output_stream->Append(BITSIZE_PREFIX + name + "=" + STR(obj->get_typeRef()->size));
                indented_output_stream->Append(", ");
-               indented_output_stream->Append(NUM_ELEM_PREFIX + name + "=" +
-                                              boost::lexical_cast<std::string>(obj->get_typeRef()->vector_size));
+               indented_output_stream->Append(NUM_ELEM_PREFIX + name + "=" + STR(obj->get_typeRef()->vector_size));
             }
             else
             {
-               indented_output_stream->Append(BITSIZE_PREFIX + name + "=" +
-                                              boost::lexical_cast<std::string>(GET_TYPE_SIZE(obj)));
+               indented_output_stream->Append(BITSIZE_PREFIX + name + "=" + STR(GET_TYPE_SIZE(obj)));
                if(obj->get_kind() == port_vector_o_K)
                {
                   indented_output_stream->Append(", ");
@@ -2226,8 +2206,7 @@ void verilog_writer::write_module_parametrization_decl(const structural_objectRe
                   {
                      ports_size = 2;
                   }
-                  indented_output_stream->Append(PORTSIZE_PREFIX + name + "=" +
-                                                 boost::lexical_cast<std::string>(ports_size));
+                  indented_output_stream->Append(PORTSIZE_PREFIX + name + "=" + STR(ports_size));
                }
             }
          }
@@ -2243,7 +2222,7 @@ void verilog_writer::write_module_parametrization_decl(const structural_objectRe
             else if(param.find('\"') != std::string::npos)
             {
                boost::replace_all(param, "\"", "");
-               param = boost::lexical_cast<std::string>(param.size()) + "'b" + param;
+               param = STR(param.size()) + "'b" + param;
             }
             indented_output_stream->Append(name + "=" + param);
          }

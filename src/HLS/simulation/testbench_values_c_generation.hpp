@@ -65,6 +65,10 @@ class TestbenchValuesCGeneration : public HLS_step
    /// output directory
    const std::string output_directory;
 
+   const std::string impl_filename;
+
+   const std::string values_filename;
+
    /**
     * Compute the relationship of this step
     * @param relationship_type is the type of relationship to be considered
