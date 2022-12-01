@@ -6118,11 +6118,11 @@ std::string tree_helper::PrintType(const tree_managerConstRef& TM, const tree_no
          }
          if(rt->name && (GET_CONST_NODE(rt->name)->get_kind() == type_decl_K || (rt->unql && !rt->system_flag)))
          {
-            res += PrintType(TM, rt->name, global);
+            res += (rt->unql ? "" : "struct ") + PrintType(TM, rt->name, global);
          }
          else if(rt->name)
          {
-            std::string struct_name = PrintType(TM, rt->name, global);
+            const auto struct_name = PrintType(TM, rt->name, global);
             if(struct_name == "_IO_FILE")
             {
                res += "FILE";
