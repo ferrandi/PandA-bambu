@@ -1,4 +1,4 @@
 <?xml version="1.0"?>
 <function>
-  <testbench i1="{9}" i2="1" i3="5" i4="6" i5="17" i6="19" c1="2" c2="6" c3="13" c4="17" c6="9" COND1="1" COND2="1"/>
+  <testbench i1="{9}" i2="1" i3="5" i4="6" i5="17" i6="19" c1="2" c2="6" c3="13" c4="17" c6="9" COND1="1" COND2="1" o1="{0}" o2="{0}" />
 </function>

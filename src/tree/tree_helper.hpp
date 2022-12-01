@@ -301,9 +301,10 @@ class tree_helper
    /**
     * Return the return type of a function
     * @param function is the function to be considered
+    * @param void_as_null if true returns nullptr when return type is void, else return tree node for void type
     * @return the tree node of the return type
     */
-   static tree_nodeConstRef GetFunctionReturnType(const tree_nodeConstRef& function);
+   static tree_nodeConstRef GetFunctionReturnType(const tree_nodeConstRef& function, bool void_as_null = true);
 
    /**
     * Return the tree_node index of the pointed type of a pointer object;
@@ -528,7 +529,7 @@ class tree_helper
     * @param index is the treenode index
     */
    static
-       /// FIXME: to be remove after substitution with IsArrayType
+       /// FIXME: to be remove after substitution with IsArrayEquivType
        bool
        is_an_array(const tree_managerConstRef& TM, const unsigned int index);
 
@@ -537,6 +538,14 @@ class tree_helper
     * ending into a single arrays)
     * @param type is the treenode
     * @return true if treenode is an array or it is equivalent to an array
+    */
+   static bool IsArrayEquivType(const tree_nodeConstRef& type);
+
+   /**
+    * Return true if treenode is an array
+    * @param type is the treenode
+    * @return true if treenode is an array
+    * @return false if treenode is not an array
     */
    static bool IsArrayType(const tree_nodeConstRef& type);
 
@@ -1063,7 +1072,8 @@ class tree_helper
     */
    static
        /// FIXME: to be remove after substitution with GetArrayTotalSize
-       unsigned long long get_array_num_elements(const tree_managerConstRef& TM, const unsigned int index);
+       unsigned long long
+       get_array_num_elements(const tree_managerConstRef& TM, const unsigned int index);
 
    /**
     * Return the total number of elements of the the base type in the array
@@ -1184,17 +1194,17 @@ class tree_helper
    static unsigned int get_var_alignment(const tree_managerConstRef& TM, unsigned int var);
 
    /**
-    * Return the normalized the name of types and variables
-    * @param id is the initial ID
+    * Return normalized name of types and variables
+    * @param id is the initial typename
     */
-   static std::string normalized_ID(const std::string& id);
+   static std::string NormalizeTypename(const std::string& id);
 
    /**
     * Return the mangled function name
     * @param fd is the function decl
-    * @param fname is the returned function name
+    * @return std::string Mangled function name
     */
-   static void get_mangled_fname(const function_decl* fd, std::string& fname);
+   static std::string GetMangledFunctionName(const function_decl* fd);
 
    /**
     * Return the name of the function in a string

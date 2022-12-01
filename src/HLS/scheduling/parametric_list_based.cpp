@@ -730,12 +730,11 @@ void parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
    const auto TM = HLSMgr->get_tree_manager();
    auto fnode = TM->get_tree_node_const(funId);
    auto fd = GetPointer<function_decl>(fnode);
-   std::string fname;
-   tree_helper::get_mangled_fname(fd, fname);
+   const auto fname = tree_helper::GetMangledFunctionName(fd);
    CustomUnorderedSet<vertex> RW_stmts;
-   if(HLSMgr->design_interface_loads.find(fname) != HLSMgr->design_interface_loads.end())
+   if(HLSMgr->design_interface_io.find(fname) != HLSMgr->design_interface_io.end())
    {
-      for(const auto& bb2arg2stmtsR : HLSMgr->design_interface_loads.at(fname))
+      for(const auto& bb2arg2stmtsR : HLSMgr->design_interface_io.at(fname))
       {
          for(const auto& arg2stms : bb2arg2stmtsR.second)
          {
@@ -743,29 +742,11 @@ void parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
             {
                for(const auto& stmt : arg2stms.second)
                {
-                  THROW_ASSERT(flow_graph->CGetOpGraphInfo()->tree_node_to_operation.find(stmt) !=
-                                   flow_graph->CGetOpGraphInfo()->tree_node_to_operation.end(),
-                               "unexpected condition: STMT=" + STR(stmt));
-                  RW_stmts.insert(flow_graph->CGetOpGraphInfo()->tree_node_to_operation.at(stmt));
-               }
-            }
-         }
-      }
-   }
-   if(HLSMgr->design_interface_stores.find(fname) != HLSMgr->design_interface_stores.end())
-   {
-      for(const auto& bb2arg2stmtsW : HLSMgr->design_interface_stores.at(fname))
-      {
-         for(const auto& arg2stms : bb2arg2stmtsW.second)
-         {
-            if(arg2stms.second.size() > 0)
-            {
-               for(const auto& stmt : arg2stms.second)
-               {
-                  THROW_ASSERT(flow_graph->CGetOpGraphInfo()->tree_node_to_operation.find(stmt) !=
-                                   flow_graph->CGetOpGraphInfo()->tree_node_to_operation.end(),
-                               "unexpected condition");
-                  RW_stmts.insert(flow_graph->CGetOpGraphInfo()->tree_node_to_operation.at(stmt));
+                  const auto op_it = flow_graph->CGetOpGraphInfo()->tree_node_to_operation.find(stmt);
+                  if(op_it != flow_graph->CGetOpGraphInfo()->tree_node_to_operation.end())
+                  {
+                     RW_stmts.insert(op_it->second);
+                  }
                }
             }
          }

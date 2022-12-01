@@ -635,7 +635,7 @@ std::string BehavioralHelper::PrintVariable(unsigned int var) const
       if(fd->name)
       {
          const auto id = GetPointerS<const identifier_node>(GET_NODE(fd->name));
-         return tree_helper::normalized_ID(id->strg);
+         return tree_helper::NormalizeTypename(id->strg);
       }
       else
       {
@@ -673,7 +673,7 @@ std::string BehavioralHelper::PrintVariable(unsigned int var) const
       if(dn->name)
       {
          const auto id = GetPointerS<const identifier_node>(GET_CONST_NODE(dn->name));
-         vars_symbol_table[var] = tree_helper::normalized_ID(id->strg);
+         vars_symbol_table[var] = tree_helper::NormalizeTypename(id->strg);
          return vars_symbol_table[var];
       }
    }
@@ -1835,24 +1835,22 @@ std::string BehavioralHelper::PrintNode(const tree_nodeConstRef& _node, vertex v
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Left part is a pointer");
          }
 #endif
-#if HAVE_ASSERTS
-         const auto right_op_cast = tree_helper::IsPointerType(ppe->op1);
-#endif
          bool do_reverse_pointer_arithmetic = false;
          auto right_op_node = GET_CONST_NODE(ppe->op1);
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                         "Starting right op node is " + STR(GET_INDEX_NODE(ppe->op1)) + " - " +
                             right_op_node->get_kind_text());
          const auto right_cost = right_op_node->get_kind() == integer_cst_K;
-         THROW_ASSERT(!right_op_cast, "expected a right operand different from a pointer");
-         THROW_ASSERT(GET_NODE(ppe->type)->get_kind() == pointer_type_K, "expected a pointer type");
+         THROW_ASSERT(!tree_helper::IsPointerType(ppe->op1), "expected a right operand different from a pointer");
+         THROW_ASSERT(tree_helper::IsPointerType(ppe->type),
+                      "expected a pointer type: " + GET_NODE(ppe->type)->get_kind_text() + " - " + STR(ppe->type));
 
          /// check possible pointer arithmetic reverse
          long long int deltabit;
          const auto pointed_type = tree_helper::CGetPointedType(tree_helper::CGetType(ppe->op0));
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                         "Pointed type (" + STR(pointed_type) + ") is " + GET_CONST_NODE(pointed_type)->get_kind_text());
-         if(GET_CONST_NODE(pointed_type)->get_kind() == void_type_K)
+         if(tree_helper::IsVoidType(pointed_type))
          {
             const auto vt = GetPointerS<const void_type>(GET_CONST_NODE(pointed_type));
             deltabit = vt->algn;
@@ -2207,15 +2205,13 @@ std::string BehavioralHelper::PrintNode(const tree_nodeConstRef& _node, vertex v
          {
             res += "(" + tree_helper::PrintType(TM, ppe->type) + ")(";
          }
-         if((left_op_cast && (GET_CONST_NODE(pointed_type)->get_kind() == void_type_K)) ||
-            !do_reverse_pointer_arithmetic)
+         if((left_op_cast && tree_helper::IsVoidType(pointed_type)) || !do_reverse_pointer_arithmetic)
          {
             res += "((unsigned char*)";
          }
          res += PrintNode(ppe->op0, v, vppf);
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "After printing of left part " + res);
-         if((left_op_cast && (GET_CONST_NODE(pointed_type)->get_kind() == void_type_K)) ||
-            !do_reverse_pointer_arithmetic)
+         if((left_op_cast && tree_helper::IsVoidType(pointed_type)) || !do_reverse_pointer_arithmetic)
          {
             res += ")";
          }
@@ -3292,8 +3288,7 @@ std::string BehavioralHelper::PrintNode(const tree_nodeConstRef& _node, vertex v
                res += PrintNode(pragma, v, vppf) + "\n";
             }
             res = "";
-            if(tree_helper::IsArrayType(ms->op0) && !tree_helper::IsStructType(ms->op0) &&
-               !tree_helper::IsUnionType(ms->op0))
+            if(tree_helper::IsArrayType(ms->op0))
             {
                const auto size = tree_helper::Size(ms->op0);
                res += "__builtin_memcpy(";

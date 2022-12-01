@@ -1033,7 +1033,7 @@ void conn_binding::add_command_ports(const HLS_managerRef HLSMgr, const hlsRef H
    {
       technology_nodeRef tn = HLS->allocation_information->get_fu(HLS->Rfu->get_assign(j));
       technology_nodeRef op_tn = GetPointer<functional_unit>(tn)->get_operation(
-          tree_helper::normalized_ID(data->CGetOpNodeInfo(j)->GetOperation()));
+          tree_helper::NormalizeTypename(data->CGetOpNodeInfo(j)->GetOperation()));
       THROW_ASSERT(GetPointer<operation>(op_tn)->time_m,
                    "Time model not available for operation: " + GET_NAME(data, j));
       /// check for start port

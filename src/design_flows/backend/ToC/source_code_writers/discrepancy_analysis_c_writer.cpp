@@ -237,7 +237,7 @@ void DiscrepancyAnalysisCWriter::writePostInstructionInfo(const FunctionBehavior
 
    technology_nodeRef fu_tech_n = hls->allocation_information->get_fu(hls->Rfu->get_assign(statement));
    technology_nodeRef op_tech_n = GetPointer<functional_unit>(fu_tech_n)->get_operation(
-       tree_helper::normalized_ID(instrGraph->CGetOpNodeInfo(statement)->GetOperation()));
+       tree_helper::NormalizeTypename(instrGraph->CGetOpNodeInfo(statement)->GetOperation()));
 
    const operation* oper = GetPointer<operation>(op_tech_n);
    if(!oper)

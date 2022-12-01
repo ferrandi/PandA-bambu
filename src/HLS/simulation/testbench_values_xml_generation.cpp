@@ -177,9 +177,8 @@ DesignFlowStep_Status TestbenchValuesXMLGeneration::Exec()
       mem.push_back(ma.second);
    }
 
-   std::string fname;
    const auto fnode = TM->CGetTreeNode(function_id);
-   tree_helper::get_mangled_fname(GetPointer<const function_decl>(fnode), fname);
+   const auto fname = tree_helper::GetMangledFunctionName(GetPointer<const function_decl>(fnode));
    const auto& DesignInterfaceTypename = HLSMgr->design_interface_typename;
    const auto DesignInterfaceArgsTypename_it = DesignInterfaceTypename.find(fname);
 

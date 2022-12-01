@@ -549,10 +549,10 @@ void operations_cfg_computation::build_operation_recursive(const tree_managerRef
          const auto store_candidate = tree_helper::IsStore(tn, fun_mem_data);
 
          if(!me->clobber && !tree_helper::IsVectorType(me->op0) &&
-            ((((tree_helper::IsArrayType(me->op0) && !tree_helper::IsPointerType(me->op0))) ||
+            ((((tree_helper::IsArrayEquivType(me->op0) && !tree_helper::IsPointerType(me->op0))) ||
               op1_kind == constructor_K)))
          {
-            if(!tree_helper::IsArrayType(me->op0) ||
+            if(!tree_helper::IsArrayEquivType(me->op0) ||
                (((op1_kind == constructor_K || (op1_kind == var_decl_K && GetPointerS<const var_decl>(me->op1)->init) ||
                   op1_kind == string_cst_K)) &&
                 (GetPointer<const decl_node>(me->op0) || op0_kind == ssa_name_K)))
@@ -702,7 +702,7 @@ void operations_cfg_computation::build_operation_recursive(const tree_managerRef
          if(fd)
          {
             std::string fun_name = tree_helper::print_function_name(TM, fd);
-            fun_name = tree_helper::normalized_ID(fun_name);
+            fun_name = tree_helper::NormalizeTypename(fun_name);
             // const std::string builtin_prefix("__builtin_");
             // if(fun_name.find(builtin_prefix) == 0)
             //   fun_name = fun_name.substr(builtin_prefix.size());
@@ -763,7 +763,7 @@ void operations_cfg_computation::build_operation_recursive(const tree_managerRef
             else
             {
                std::string fun_name = tree_helper::print_function_name(TM, fd);
-               fun_name = tree_helper::normalized_ID(fun_name);
+               fun_name = tree_helper::NormalizeTypename(fun_name);
                // const std::string builtin_prefix("__builtin_");
                // if(fun_name.find(builtin_prefix) == 0)
                //   fun_name = fun_name.substr(builtin_prefix.size());

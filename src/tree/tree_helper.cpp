@@ -65,8 +65,10 @@
 #include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
 #include "exceptions.hpp"
 #include "string_manipulation.hpp" // for STR
+#include <boost/algorithm/string/replace.hpp>
 #include <boost/filesystem/operations.hpp>
 #include <boost/lexical_cast.hpp>
+#include <boost/regex.hpp>
 #include <iostream>
 #include <set>
 
@@ -663,28 +665,26 @@ std::string tree_helper::GetFunctionName(const tree_managerConstRef& TM, const t
    return "";
 }
 
-void tree_helper::get_mangled_fname(const function_decl* fd, std::string& fname)
+std::string tree_helper::GetMangledFunctionName(const function_decl* fd)
 {
    if(fd->builtin_flag)
    {
       THROW_ASSERT(fd->name, "unexpected condition");
       THROW_ASSERT(GET_CONST_NODE(fd->name)->get_kind() == identifier_node_K, "unexpected condition");
-      fname = tree_helper::normalized_ID(GetPointer<const identifier_node>(GET_CONST_NODE(fd->name))->strg);
+      return tree_helper::NormalizeTypename(GetPointer<const identifier_node>(GET_CONST_NODE(fd->name))->strg);
    }
    else if(fd->mngl)
    {
       THROW_ASSERT(GET_CONST_NODE(fd->mngl)->get_kind() == identifier_node_K, "unexpected condition");
-      fname = tree_helper::normalized_ID(GetPointer<const identifier_node>(GET_CONST_NODE(fd->mngl))->strg);
+      return tree_helper::NormalizeTypename(GetPointer<const identifier_node>(GET_CONST_NODE(fd->mngl))->strg);
    }
    else if(fd->name)
    {
       THROW_ASSERT(GET_CONST_NODE(fd->name)->get_kind() == identifier_node_K, "unexpected condition");
-      fname = tree_helper::normalized_ID(GetPointer<const identifier_node>(GET_CONST_NODE(fd->name))->strg);
+      return tree_helper::NormalizeTypename(GetPointer<const identifier_node>(GET_CONST_NODE(fd->name))->strg);
    }
-   else
-   {
-      THROW_ERROR("unexpected condition");
-   }
+   THROW_ERROR("unexpected condition");
+   return "";
 }
 
 std::string tree_helper::print_function_name(const tree_managerConstRef& TM, const function_decl* fd)
@@ -753,11 +753,11 @@ std::string tree_helper::print_function_name(const tree_managerConstRef& TM, con
                res = res + TI_getTokenName(attr);
             }
          }
-         res = normalized_ID(res);
+         res = NormalizeTypename(res);
       }
       else
       {
-         res = normalized_ID(in->strg);
+         res = NormalizeTypename(in->strg);
       }
    }
    else
@@ -1684,7 +1684,7 @@ unsigned int tree_helper::get_type_index(const tree_managerConstRef& TM, const u
    return type_index;
 }
 
-tree_nodeConstRef tree_helper::GetFunctionReturnType(const tree_nodeConstRef& _tn)
+tree_nodeConstRef tree_helper::GetFunctionReturnType(const tree_nodeConstRef& _tn, bool void_as_null)
 {
    const auto tn = _tn->get_kind() == tree_reindex_K ? GET_CONST_NODE(_tn) : _tn;
    tree_nodeConstRef fun_type;
@@ -1762,14 +1762,14 @@ tree_nodeConstRef tree_helper::GetFunctionReturnType(const tree_nodeConstRef& _t
       case CASE_UNARY_EXPRESSION:
       default:
       {
-         THROW_UNREACHABLE("Not supported tree node type " + tn->get_kind_text());
+         break;
       }
    }
    if(fun_type->get_kind() == function_type_K || fun_type->get_kind() == method_type_K)
    {
       const auto ft = GetPointerS<const function_type>(fun_type);
       THROW_ASSERT(ft, "NodeId is not related to a valid function type");
-      if(GET_CONST_NODE(ft->retn)->get_kind() != void_type_K)
+      if(!void_as_null || GET_CONST_NODE(ft->retn)->get_kind() != void_type_K)
       {
          return ft->retn;
       }
@@ -1778,6 +1778,7 @@ tree_nodeConstRef tree_helper::GetFunctionReturnType(const tree_nodeConstRef& _t
          return tree_nodeConstRef();
       }
    }
+   THROW_UNREACHABLE("Not supported tree node type " + tn->get_kind_text());
    return tree_nodeConstRef();
 }
 
@@ -1944,7 +1945,7 @@ tree_nodeConstRef tree_helper::CGetPointedType(const tree_nodeConstRef& _pointer
       case CASE_UNARY_EXPRESSION:
       default:
       {
-         THROW_UNREACHABLE(STR(pointer) + " does not correspond to a pointer type");
+         THROW_UNREACHABLE(STR(pointer) + ":" + pointer->get_kind_text() + " does not correspond to a pointer type");
       }
    }
    return tree_nodeConstRef();
@@ -2015,11 +2016,11 @@ std::string tree_helper::GetTypeName(const tree_nodeConstRef& _type)
    {
       case pointer_type_K:
       {
-         return "*" + GetTypeName(GET_CONST_NODE((GetPointerS<const pointer_type>(type))->ptd));
+         return GetTypeName(GET_CONST_NODE((GetPointerS<const pointer_type>(type))->ptd)) + "*";
       }
       case reference_type_K:
       {
-         return "&" + GetTypeName(GET_CONST_NODE((GetPointerS<const reference_type>(type))->refd));
+         return GetTypeName(GET_CONST_NODE((GetPointerS<const reference_type>(type))->refd)) + "&";
       }
       case record_type_K:
       {
@@ -2043,7 +2044,7 @@ std::string tree_helper::GetTypeName(const tree_nodeConstRef& _type)
             else if(GET_CONST_NODE(rect->name)->get_kind() == identifier_node_K)
             {
                const auto idn = GetPointerS<const identifier_node>(GET_CONST_NODE(rect->name));
-               nt = "struct " + normalized_ID(idn->strg);
+               nt = "struct " + NormalizeTypename(idn->strg);
             }
             else
             {
@@ -2683,10 +2684,10 @@ static bool same_size_fields(const tree_nodeConstRef& t)
 bool tree_helper::is_an_array(const tree_managerConstRef& TM, const unsigned int index)
 {
    const auto T = TM->CGetTreeReindex(index);
-   return IsArrayType(T);
+   return IsArrayEquivType(T);
 }
 
-bool tree_helper::IsArrayType(const tree_nodeConstRef& _type)
+bool tree_helper::IsArrayEquivType(const tree_nodeConstRef& _type)
 {
    const auto type = CGetType(_type);
    THROW_ASSERT(type, "expected a type index");
@@ -2698,10 +2699,14 @@ bool tree_helper::IsArrayType(const tree_nodeConstRef& _type)
    {
       return same_size_fields(type);
    }
-   else
-   {
-      return false;
-   }
+   return false;
+}
+
+bool tree_helper::IsArrayType(const tree_nodeConstRef& _type)
+{
+   const auto type = CGetType(_type);
+   THROW_ASSERT(type, "expected a type index");
+   return GET_CONST_NODE(type)->get_kind() == array_type_K;
 }
 
 tree_nodeConstRef tree_helper::CGetArrayBaseType(const tree_nodeConstRef& type)
@@ -5333,29 +5338,24 @@ unsigned int tree_helper::get_var_alignment(const tree_managerConstRef& TM, unsi
    return 1;
 }
 
-std::string tree_helper::normalized_ID(const std::string& id)
+std::string tree_helper::NormalizeTypename(const std::string& id)
 {
-   std::string strg = id;
-   for(char& i : strg)
+   static const boost::regex rbase("[.:$]+");
+   static const boost::regex rtmpl("[*&<>\\-]|[, ]+");
+   std::string norm_typename;
+   boost::regex_replace(std::back_inserter(norm_typename), id.cbegin(), id.cend(), rbase, "_");
+   const auto tmpl_start = norm_typename.find_first_of('<');
+   if(tmpl_start != std::string::npos)
    {
-      if(i == '*')
-      {
-         i = '_';
-      }
-      else if(i == '$')
-      {
-         i = '_';
-      }
-      else if(i == '.')
-      {
-         i = '_';
-      }
-      else if(i == ':')
-      {
-         i = '_';
-      }
+      const auto tmpl_end = norm_typename.find_last_of('>');
+      THROW_ASSERT(tmpl_end != std::string::npos, "");
+      auto norm_template = norm_typename.substr(0, tmpl_start);
+      boost::regex_replace(std::back_inserter(norm_template),
+                           norm_typename.cbegin() + static_cast<long int>(tmpl_start),
+                           norm_typename.cbegin() + static_cast<long int>(tmpl_end + 1U), rtmpl, "_");
+      return norm_template;
    }
-   return strg;
+   return norm_typename;
 }
 
 std::string tree_helper::print_type(const tree_managerConstRef& TM, unsigned int original_type, bool global,
@@ -5488,7 +5488,7 @@ std::string tree_helper::PrintType(const tree_managerConstRef& TM, const tree_no
             {
                const auto in = GetPointerS<const identifier_node>(name);
                /// patch for unsigned char
-               std::string typename_value = tree_helper::normalized_ID(in->strg);
+               std::string typename_value = tree_helper::NormalizeTypename(in->strg);
                if(typename_value == "char" && GetPointer<const integer_type>(GET_CONST_NODE(td->type)) &&
                   GetPointer<const integer_type>(GET_CONST_NODE(td->type))->unsigned_flag)
                {
@@ -5535,7 +5535,7 @@ std::string tree_helper::PrintType(const tree_managerConstRef& TM, const tree_no
       case identifier_node_K:
       {
          const auto in = GetPointerS<const identifier_node>(node_type);
-         res += tree_helper::normalized_ID(in->strg);
+         res += tree_helper::NormalizeTypename(in->strg);
          skip_var_printing = true;
          break;
       }
@@ -5580,7 +5580,7 @@ std::string tree_helper::PrintType(const tree_managerConstRef& TM, const tree_no
             if(name->get_kind() == identifier_node_K)
             {
                const auto in = GetPointerS<const identifier_node>(name);
-               res += tree_helper::normalized_ID(in->strg);
+               res += tree_helper::NormalizeTypename(in->strg);
             }
             else if(name->get_kind() == type_decl_K)
             {
@@ -6118,18 +6118,18 @@ std::string tree_helper::PrintType(const tree_managerConstRef& TM, const tree_no
          }
          if(rt->name && (GET_CONST_NODE(rt->name)->get_kind() == type_decl_K || (rt->unql && !rt->system_flag)))
          {
-            res += PrintType(TM, rt->name, global);
+            res += (rt->unql ? "" : "struct ") + PrintType(TM, rt->name, global);
          }
          else if(rt->name)
          {
-            std::string struct_name = PrintType(TM, rt->name, global);
+            const auto struct_name = PrintType(TM, rt->name, global);
             if(struct_name == "_IO_FILE")
             {
                res += "FILE";
             }
             else
             {
-               res += "struct " + normalized_ID(struct_name);
+               res += "struct " + NormalizeTypename(struct_name);
             }
          }
          else if(rt->unql)
