@@ -267,27 +267,23 @@ namespace llvm
 #undef DEFTREECODE
 #undef DEFGSCODE
 
-#define DEFTREECODE(SYM, STRING, TYPE, NARGS)                                                                       \
-   ((TYPE) == tcc_unary ?                                                                                           \
-        GIMPLE_UNARY_RHS :                                                                                          \
-        ((TYPE) == tcc_binary || (TYPE) == tcc_comparison) ?                                                        \
-        GIMPLE_BINARY_RHS :                                                                                         \
-        ((TYPE) == tcc_constant || (TYPE) == tcc_declaration || (TYPE) == tcc_reference) ?                          \
-        GIMPLE_SINGLE_RHS :                                                                                         \
-        (GT(SYM) == GT(TRUTH_AND_EXPR) || GT(SYM) == GT(TRUTH_OR_EXPR) || GT(SYM) == GT(TRUTH_XOR_EXPR)) ?          \
-        GIMPLE_BINARY_RHS :                                                                                         \
-        GT(SYM) == GT(TRUTH_NOT_EXPR) ?                                                                             \
-        GIMPLE_UNARY_RHS :                                                                                          \
-        (GT(SYM) == GT(COND_EXPR) || GT(SYM) == GT(WIDEN_MULT_PLUS_EXPR) || GT(SYM) == GT(WIDEN_MULT_MINUS_EXPR) || \
-         GT(SYM) == GT(DOT_PROD_EXPR) || GT(SYM) == GT(SAD_EXPR) || GT(SYM) == GT(REALIGN_LOAD_EXPR) ||             \
-         GT(SYM) == GT(VEC_COND_EXPR) || GT(SYM) == GT(VEC_PERM_EXPR) || GT(SYM) == GT(BIT_INSERT_EXPR) ||          \
-         GT(SYM) == GT(FMA_EXPR) || GT(SYM) == GT(FSHL_EXPR) || GT(SYM) == GT(FSHR_EXPR) ||                         \
-         GT(SYM) == GT(INSERTELEMENT)) ?                                                                            \
-        GIMPLE_TERNARY_RHS :                                                                                        \
-        (GT(SYM) == GT(CONSTRUCTOR) || GT(SYM) == GT(OBJ_TYPE_REF) || GT(SYM) == GT(ASSERT_EXPR) ||                 \
-         GT(SYM) == GT(ADDR_EXPR) || GT(SYM) == GT(WITH_SIZE_EXPR) || GT(SYM) == GT(SSA_NAME)) ?                    \
-        GIMPLE_SINGLE_RHS :                                                                                         \
-        GIMPLE_INVALID_RHS),
+#define DEFTREECODE(SYM, STRING, TYPE, NARGS)                                                                   \
+   ((TYPE) == tcc_unary                                                              ? GIMPLE_UNARY_RHS :       \
+    ((TYPE) == tcc_binary || (TYPE) == tcc_comparison)                               ? GIMPLE_BINARY_RHS :      \
+    ((TYPE) == tcc_constant || (TYPE) == tcc_declaration || (TYPE) == tcc_reference) ? GIMPLE_SINGLE_RHS :      \
+    (GT(SYM) == GT(TRUTH_AND_EXPR) || GT(SYM) == GT(TRUTH_OR_EXPR) || GT(SYM) == GT(TRUTH_XOR_EXPR)) ?          \
+                                                                                       GIMPLE_BINARY_RHS :      \
+    GT(SYM) == GT(TRUTH_NOT_EXPR)                                                    ? GIMPLE_UNARY_RHS :       \
+    (GT(SYM) == GT(COND_EXPR) || GT(SYM) == GT(WIDEN_MULT_PLUS_EXPR) || GT(SYM) == GT(WIDEN_MULT_MINUS_EXPR) || \
+     GT(SYM) == GT(DOT_PROD_EXPR) || GT(SYM) == GT(SAD_EXPR) || GT(SYM) == GT(REALIGN_LOAD_EXPR) ||             \
+     GT(SYM) == GT(VEC_COND_EXPR) || GT(SYM) == GT(VEC_PERM_EXPR) || GT(SYM) == GT(BIT_INSERT_EXPR) ||          \
+     GT(SYM) == GT(FMA_EXPR) || GT(SYM) == GT(FSHL_EXPR) || GT(SYM) == GT(FSHR_EXPR) ||                         \
+     GT(SYM) == GT(INSERTELEMENT)) ?                                                                            \
+                                    GIMPLE_TERNARY_RHS :                                                        \
+    (GT(SYM) == GT(CONSTRUCTOR) || GT(SYM) == GT(OBJ_TYPE_REF) || GT(SYM) == GT(ASSERT_EXPR) ||                 \
+     GT(SYM) == GT(ADDR_EXPR) || GT(SYM) == GT(WITH_SIZE_EXPR) || GT(SYM) == GT(SSA_NAME)) ?                    \
+                                    GIMPLE_SINGLE_RHS :                                                         \
+                                    GIMPLE_INVALID_RHS),
 #define END_OF_BASE_TREE_CODES GIMPLE_INVALID_RHS,
 #define DEFGSCODE(SYM, NAME, GSSCODE) GIMPLE_INVALID_RHS,
    const DumpGimpleRaw::gimple_rhs_class DumpGimpleRaw::gimple_rhs_class_table[] = {
@@ -2877,19 +2873,33 @@ namespace llvm
 
    bool DumpGimpleRaw::TREE_READONLY(const void* t) const
    {
-      if(TREE_CODE(t) == GT(FIELD_DECL))
-         return false;
-      else if(TREE_CODE(t) == GT(ALLOCAVAR_DECL))
-         return false;
-      else if(TREE_CODE(t) == GT(ORIGVAR_DECL))
+      tree_codes code = TREE_CODE(t);
+      if(code == GT(ORIGVAR_DECL))
       {
          const orig_var* ov = reinterpret_cast<const orig_var*>(t);
          return TREE_READONLY(ov->orig);
       }
-      else if(TREE_CODE(t) == GT(RESULT_DECL))
-         return false;
-      const llvm::GlobalVariable* llvm_obj = reinterpret_cast<const llvm::GlobalVariable*>(t);
-      return llvm_obj->isConstant();
+      else if(code == GT(VAR_DECL) || code == GT(PARM_DECL))
+      {
+         const auto llvm_val = reinterpret_cast<const llvm::Value*>(t);
+         if(code == GT(VAR_DECL))
+         {
+            const auto llvm_glb = llvm::dyn_cast<llvm::GlobalVariable>(llvm_val);
+            if(llvm_glb)
+            {
+               return llvm_glb->isConstant();
+            }
+         }
+         else if(code == GT(PARM_DECL))
+         {
+            const auto llvm_arg = llvm::dyn_cast<llvm::Argument>(llvm_val);
+            if(llvm_arg)
+            {
+               return llvm_arg->onlyReadsMemory();
+            }
+         }
+      }
+      return false;
    }
    bool DumpGimpleRaw::TREE_ADDRESSABLE(const void* t) const
    {
@@ -3245,7 +3255,7 @@ namespace llvm
          auto obj_size = 32u;
          if(uicTable.find(obj_size) == uicTable.end())
             uicTable[obj_size] =
-                assignCodeAuto(llvm::ConstantInt::get(llvm::Type::getInt32Ty(ty->getContext()), obj_size, false));
+                assignCodeAuto(llvm::ConstantInt::get(llvm::Type::getInt64Ty(ty->getContext()), obj_size, false));
          return uicTable.find(obj_size)->second;
       }
       else if(ty->isFunctionTy())
@@ -3253,7 +3263,7 @@ namespace llvm
          auto obj_size = 8u;
          if(uicTable.find(obj_size) == uicTable.end())
             uicTable[obj_size] =
-                assignCodeAuto(llvm::ConstantInt::get(llvm::Type::getInt32Ty(ty->getContext()), obj_size, false));
+                assignCodeAuto(llvm::ConstantInt::get(llvm::Type::getInt64Ty(ty->getContext()), obj_size, false));
          return uicTable.find(obj_size)->second;
       }
       else if(ty->isVoidTy())
@@ -3263,7 +3273,7 @@ namespace llvm
          auto obj_size = ty->isSized() ? DL->getTypeAllocSizeInBits(ty) : 8ULL;
          if(uicTable.find(obj_size) == uicTable.end())
             uicTable[obj_size] =
-                assignCodeAuto(llvm::ConstantInt::get(llvm::Type::getInt32Ty(ty->getContext()), obj_size, false));
+                assignCodeAuto(llvm::ConstantInt::get(llvm::Type::getInt64Ty(ty->getContext()), obj_size, false));
          return uicTable.find(obj_size)->second;
       }
    }
@@ -3336,7 +3346,7 @@ namespace llvm
       /// create the context
       if(ArraysContexts.find(at) == ArraysContexts.end())
          ArraysContexts[at] = new llvm::LLVMContext;
-      llvm::Type* IT = llvm::Type::getInt32Ty(*ArraysContexts.find(at)->second);
+      llvm::Type* IT = llvm::Type::getInt64Ty(*ArraysContexts.find(at)->second);
       assignCodeType(IT);
       maxValueITtable[IT] = nelements - 1;
       return IT;
@@ -3376,7 +3386,7 @@ namespace llvm
          uint64_t offset = DL->getStructLayout(const_cast<llvm::StructType*>(scty))->getElementOffsetInBits(pos);
          if(uicTable.find(offset) == uicTable.end())
             uicTable[offset] =
-                assignCodeAuto(llvm::ConstantInt::get(llvm::Type::getInt32Ty(scty->getContext()), offset, false));
+                assignCodeAuto(llvm::ConstantInt::get(llvm::Type::getInt64Ty(scty->getContext()), offset, false));
          index2field_decl[std::make_pair(scpe, pos)].bpos = uicTable.find(offset)->second;
       }
       return assignCode(&index2field_decl.find(std::make_pair(scpe, pos))->second, GT(FIELD_DECL));
@@ -4049,7 +4059,7 @@ namespace llvm
             {
                if(uicTable.find(index) == uicTable.end())
                   uicTable[index] = assignCodeAuto(
-                      llvm::ConstantInt::get(llvm::Type::getInt32Ty(llvm_obj->getContext()), index, false));
+                      llvm::ConstantInt::get(llvm::Type::getInt64Ty(llvm_obj->getContext()), index, false));
                const void* idx = uicTable.find(index)->second;
                const void* valu = getOperand(val->getElementAsConstant(index), nullptr);
                res.push_back(std::make_pair(idx, valu));
@@ -4063,7 +4073,7 @@ namespace llvm
             {
                if(uicTable.find(index) == uicTable.end())
                   uicTable[index] = assignCodeAuto(
-                      llvm::ConstantInt::get(llvm::Type::getInt32Ty(llvm_obj->getContext()), index, false));
+                      llvm::ConstantInt::get(llvm::Type::getInt64Ty(llvm_obj->getContext()), index, false));
                const void* idx = uicTable.find(index)->second;
                auto elmnt = val->getOperand(index);
                const void* valu = getOperand(elmnt, nullptr);
@@ -5093,7 +5103,8 @@ namespace llvm
       /* Print the node index.  */
       serialize_index(index);
 
-      const char* code_name = GET_TREE_CODE_NAME(TREE_CODE(t));
+      tree_codes code = TREE_CODE(t);
+      const char* code_name = GET_TREE_CODE_NAME(code);
 #if PRINT_DBG_MSG
       llvm::errs() << "|" << code_name << "\n";
 #endif
@@ -5101,7 +5112,6 @@ namespace llvm
       stream << buffer;
       column = 25;
 
-      tree_codes code = TREE_CODE(t);
       tree_codes_class code_class = TREE_CODE_CLASS(code);
 
       if(IS_EXPR_CODE_CLASS(code_class))
@@ -5289,7 +5299,7 @@ namespace llvm
          case GT(RECORD_TYPE):
          case GT(UNION_TYPE):
          {
-            if(TREE_CODE(t) == GT(RECORD_TYPE))
+            if(code == GT(RECORD_TYPE))
                serialize_string("struct");
             else
                serialize_string("union");
@@ -5336,42 +5346,42 @@ namespace llvm
          case GT(PARM_DECL):
          case GT(FIELD_DECL):
          case GT(RESULT_DECL):
-            if(TREE_CODE(t) == GT(FIELD_DECL) && DECL_C_BIT_FIELD(t))
+            if(code == GT(FIELD_DECL) && DECL_C_BIT_FIELD(t))
                serialize_string("bitfield");
-            if(TREE_CODE(t) == GT(VAR_DECL) || TREE_CODE(t) == GT(ORIGVAR_DECL))
+            if(code == GT(VAR_DECL) || code == GT(ORIGVAR_DECL))
             {
                if(DECL_EXTERNAL(t))
                   serialize_string("extern");
                else if(!TREE_PUBLIC(t) && TREE_STATIC(t))
                   serialize_string("static");
             }
-            if(TREE_CODE(t) == GT(PARM_DECL))
+            if(code == GT(PARM_DECL))
                serialize_child("argt", DECL_ARG_TYPE(t));
             else if(DECL_INITIAL(t))
                serialize_child("init", DECL_INITIAL(t));
             serialize_child("size", DECL_SIZE(t));
             serialize_int("algn", DECL_ALIGN(t));
-            if(TREE_CODE(t) == GT(FIELD_DECL) && DECL_PACKED(t))
+            if(code == GT(FIELD_DECL) && DECL_PACKED(t))
             {
                serialize_string("packed");
             }
 
-            if(TREE_CODE(t) == GT(FIELD_DECL))
+            if(code == GT(FIELD_DECL))
             {
                if(DECL_FIELD_OFFSET(t))
                   serialize_child("bpos", bit_position(t));
             }
-            else if(TREE_CODE(t) == GT(ALLOCAVAR_DECL) || TREE_CODE(t) == GT(ORIGVAR_DECL) ||
-                    TREE_CODE(t) == GT(VAR_DECL) || TREE_CODE(t) == GT(PARM_DECL))
+            else if(code == GT(ALLOCAVAR_DECL) || code == GT(ORIGVAR_DECL) || code == GT(VAR_DECL) ||
+                    code == GT(PARM_DECL))
             {
                serialize_int("used", TREE_USED(t));
                if(DECL_REGISTER(t))
                   serialize_string("register");
             }
-            if(TREE_READONLY(t) && TREE_CODE(t) != GT(RESULT_DECL) && TREE_CODE(t) != GT(FIELD_DECL))
+            if(TREE_READONLY(t))
                serialize_string("readonly");
 #if HAVE_LIBBDD
-            if(TREE_CODE(t) == GT(ALLOCAVAR_DECL) && PtoSets_AA)
+            if(code == GT(ALLOCAVAR_DECL) && PtoSets_AA)
             {
                if(TREE_ADDRESSABLE(t))
                   ; // serialize_string("addr_taken");

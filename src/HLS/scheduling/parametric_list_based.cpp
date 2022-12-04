@@ -102,7 +102,9 @@ bool PrioritySorter::operator()(const vertex x, const vertex y) const
    const auto x_priority = (*priority)(x);
    const auto y_priority = (*priority)(y);
    if(x_priority != y_priority)
+   {
       return x_priority > y_priority;
+   }
    return GET_NAME(op_graph, x) < GET_NAME(op_graph, y);
 }
 #endif
@@ -374,8 +376,7 @@ void parametric_list_based::Initialize()
 
 static bool has_element_in_common(const std::set<std::string>& set1, const std::set<std::string>& set2)
 {
-   std::set<std::string>::const_iterator first1 = set1.begin(), last1 = set1.end(), first2 = set2.begin(),
-                                         last2 = set2.end();
+   auto first1 = set1.begin(), last1 = set1.end(), first2 = set2.begin(), last2 = set2.end();
    while(first1 != last1 and first2 != last2)
    {
       if(*first1 < *first2)
@@ -404,7 +405,7 @@ void parametric_list_based::CheckSchedulabilityConditions(
     const fu_bindingRef res_binding, const ScheduleRef schedule, bool& predecessorsCond, bool& pipeliningCond,
     bool& cannotBeChained0, bool& chainingRetCond, bool& cannotBeChained1, bool& asyncCond, bool& cannotBeChained2,
     bool& cannotBeChained3, bool& MultiCond0, bool& MultiCond1, bool& nonDirectMemCond, bool& unboundedFunctionsCond,
-    bool& proxyFunCond)
+    bool& proxyFunCond, bool unbounded_RW)
 {
    predecessorsCond = current_ASAP.find(current_vertex) != current_ASAP.end() and
                       current_ASAP.find(current_vertex)->second > current_cycle;
@@ -466,17 +467,18 @@ void parametric_list_based::CheckSchedulabilityConditions(
    {
       return;
    }
-   MultiCond0 = (!is_pipelined && n_cycles > 0 && current_starting_time > (current_cycle_starting_time)) &&
-                current_ending_time - (n_cycles - 1) * clock_cycle + setup_hold_time + phi_extra_time +
-                        (complex_op ? scheduling_mux_margins : 0) >
-                    current_cycle_ending_time;
+   MultiCond0 = (n_cycles > 1 && (unbounded_RW || unbounded)) ||
+                ((!is_pipelined && n_cycles > 0 && current_starting_time > (current_cycle_starting_time)) &&
+                 current_ending_time - (n_cycles - 1) * clock_cycle + setup_hold_time + phi_extra_time +
+                         (complex_op ? scheduling_mux_margins : 0) >
+                     current_cycle_ending_time);
    if(MultiCond0)
    {
       return;
    }
    MultiCond1 = current_ending_time + setup_hold_time + phi_extra_time + (complex_op ? scheduling_mux_margins : 0) >
                     current_cycle_ending_time &&
-                unbounded;
+                unbounded && HLS->allocation_information->is_operation_bounded(flow_graph, current_vertex, fu_type);
    if(MultiCond1)
    {
       return;
@@ -728,12 +730,11 @@ void parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
    const auto TM = HLSMgr->get_tree_manager();
    auto fnode = TM->get_tree_node_const(funId);
    auto fd = GetPointer<function_decl>(fnode);
-   std::string fname;
-   tree_helper::get_mangled_fname(fd, fname);
+   const auto fname = tree_helper::GetMangledFunctionName(fd);
    CustomUnorderedSet<vertex> RW_stmts;
-   if(HLSMgr->design_interface_loads.find(fname) != HLSMgr->design_interface_loads.end())
+   if(HLSMgr->design_interface_io.find(fname) != HLSMgr->design_interface_io.end())
    {
-      for(const auto& bb2arg2stmtsR : HLSMgr->design_interface_loads.at(fname))
+      for(const auto& bb2arg2stmtsR : HLSMgr->design_interface_io.at(fname))
       {
          for(const auto& arg2stms : bb2arg2stmtsR.second)
          {
@@ -741,29 +742,11 @@ void parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
             {
                for(const auto& stmt : arg2stms.second)
                {
-                  THROW_ASSERT(flow_graph->CGetOpGraphInfo()->tree_node_to_operation.find(stmt) !=
-                                   flow_graph->CGetOpGraphInfo()->tree_node_to_operation.end(),
-                               "unexpected condition: STMT=" + STR(stmt));
-                  RW_stmts.insert(flow_graph->CGetOpGraphInfo()->tree_node_to_operation.at(stmt));
-               }
-            }
-         }
-      }
-   }
-   if(HLSMgr->design_interface_stores.find(fname) != HLSMgr->design_interface_stores.end())
-   {
-      for(const auto& bb2arg2stmtsW : HLSMgr->design_interface_stores.at(fname))
-      {
-         for(const auto& arg2stms : bb2arg2stmtsW.second)
-         {
-            if(arg2stms.second.size() > 0)
-            {
-               for(const auto& stmt : arg2stms.second)
-               {
-                  THROW_ASSERT(flow_graph->CGetOpGraphInfo()->tree_node_to_operation.find(stmt) !=
-                                   flow_graph->CGetOpGraphInfo()->tree_node_to_operation.end(),
-                               "unexpected condition");
-                  RW_stmts.insert(flow_graph->CGetOpGraphInfo()->tree_node_to_operation.at(stmt));
+                  const auto op_it = flow_graph->CGetOpGraphInfo()->tree_node_to_operation.find(stmt);
+                  if(op_it != flow_graph->CGetOpGraphInfo()->tree_node_to_operation.end())
+                  {
+                     RW_stmts.insert(op_it->second);
+                  }
                }
             }
          }
@@ -1070,7 +1053,7 @@ void parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
                    proxy_functions_used, cstep_has_RET_conflict, fu_type, current_ASAP, res_binding, schedule,
                    predecessorsCond, pipeliningCond, cannotBeChained0, chainingRetCond, cannotBeChained1, asyncCond,
                    cannotBeChained2, cannotBeChained3, MultiCond0, MultiCond1, nonDirectMemCond, unboundedFunctionsCond,
-                   proxyFunCond);
+                   proxyFunCond, unbounded_RW);
 
                /// checking if predecessors have finished
                if(predecessorsCond)
@@ -2014,7 +1997,7 @@ DesignFlowStep_Status parametric_list_based::InternalExec()
    std::deque<vertex> vertices;
    boost::topological_sort(*bbg, std::front_inserter(vertices));
    auto viend = vertices.end();
-   ControlStep ctrl_steps = ControlStep(0u);
+   auto ctrl_steps = ControlStep(0u);
    /// initialize topological_sorted_functions
    compute_function_topological_order();
    for(auto vi = vertices.begin(); vi != viend; ++vi)
@@ -2110,7 +2093,7 @@ DesignFlowStep_Status parametric_list_based::InternalExec()
       xml_document document;
       xml_element* nodeRoot = document.create_root_node("hls");
       HLS->xwrite(nodeRoot, FB->CGetOpGraph(FunctionBehavior::FDFG));
-      document.write_to_file_formatted(function_name + "_scheduling.XML");
+      document.write_to_file_formatted(function_name + "_scheduling.xml");
    }
    return DesignFlowStep_Status::SUCCESS;
 }
@@ -2448,8 +2431,8 @@ void parametric_list_based::do_balanced_scheduling(const CustomUnorderedSet<vert
    /// step 2: compute operation distribution
    std::map<ControlStep, std::deque<vertex>> T;
    std::map<ControlStep, double> T_area;
-   ControlStep min_cycle = ControlStep(std::numeric_limits<unsigned int>::max());
-   ControlStep max_cycle = ControlStep(0u);
+   auto min_cycle = ControlStep(std::numeric_limits<unsigned int>::max());
+   auto max_cycle = ControlStep(0u);
    double total_resource_area = 0;
    for(auto current_op : sub_levels)
    {
@@ -2734,8 +2717,8 @@ void parametric_list_based::do_balanced_scheduling1(const CustomUnorderedSet<ver
 
    std::map<unsigned int, double> total_obj;
    std::map<unsigned int, std::map<ControlStep, double>> T_obj;
-   ControlStep min_cycle = ControlStep(std::numeric_limits<unsigned int>::max());
-   ControlStep max_cycle = ControlStep(0u);
+   auto min_cycle = ControlStep(std::numeric_limits<unsigned int>::max());
+   auto max_cycle = ControlStep(0u);
    for(auto current_op : sub_levels)
    {
       const auto curr_cs = schedule->get_cstep(current_op).second;
@@ -2924,7 +2907,7 @@ void parametric_list_based::do_balanced_scheduling1(const CustomUnorderedSet<ver
                if(!is_pipelined &&
                   (candidate_op_execution_time + setup_hold_time + phi_extra_time + scheduling_mux_margins) >
                       clock_cycle &&
-                  has_unbounded)
+                  has_unbounded && HLS->allocation_information->is_operation_bounded(opDFG, candidate_v, fu_type))
                {
                   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                 "   Multi-cycles operations cannot be scheduled together with unbounded operations");

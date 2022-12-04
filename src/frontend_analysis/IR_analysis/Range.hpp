@@ -180,7 +180,7 @@ class RealRange : public Range
    RealRange(const Range& s, const Range& e, const Range& f);
    RealRange(const RangeConstRef& s, const RangeConstRef& e, const RangeConstRef& f);
    explicit RealRange(const RangeConstRef& vc);
-   ~RealRange() = default;
+   ~RealRange() override = default;
    RealRange(const RealRange& other) = default;
    RealRange(RealRange&&) = default;
    RealRange& operator=(const RealRange& other) = default;

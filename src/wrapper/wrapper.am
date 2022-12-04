@@ -318,9 +318,9 @@ lib_Xilinxwrapper_la_CPPFLAGS = \
 lib_Xilinxwrapper_la_LIBADD = lib_xilinx_ise.la 
 
 if BUILD_TASTE
-wrapper/synthesis/xilinx/XilinxBackendFlow.cpp : wrapper/synthesis/xilinx/Virtex-4.data wrapper/synthesis/xilinx/Virtex-4-Taste.data wrapper/synthesis/xilinx/Virtex-5.data wrapper/synthesis/xilinx/Virtex-6.data wrapper/synthesis/xilinx/Virtex-7.data wrapper/synthesis/xilinx/Virtex-7-VVD.data wrapper/synthesis/xilinx/Artix-7-VVD.data wrapper/synthesis/xilinx/Zynq.data wrapper/synthesis/xilinx/Zynq-VVD.data wrapper/synthesis/xilinx/Zynq-YOSYS-VVD.data
+wrapper/synthesis/xilinx/XilinxBackendFlow.cpp : wrapper/synthesis/xilinx/Virtex-4.data wrapper/synthesis/xilinx/Virtex-4-Taste.data wrapper/synthesis/xilinx/Virtex-5.data wrapper/synthesis/xilinx/Virtex-6.data wrapper/synthesis/xilinx/Virtex-7.data wrapper/synthesis/xilinx/Virtex-7-VVD.data wrapper/synthesis/xilinx/Artix-7-VVD.data wrapper/synthesis/xilinx/Zynq.data wrapper/synthesis/xilinx/Zynq-VVD.data wrapper/synthesis/xilinx/Zynq-YOSYS-VVD.data wrapper/synthesis/xilinx/Kintex-Ultrascale-VVD.data wrapper/synthesis/xilinx/Alveo-Ultrascale-VVD.data
 else
-wrapper/synthesis/xilinx/XilinxBackendFlow.cpp : wrapper/synthesis/xilinx/Virtex-4.data wrapper/synthesis/xilinx/Virtex-5.data wrapper/synthesis/xilinx/Virtex-6.data wrapper/synthesis/xilinx/Virtex-7.data wrapper/synthesis/xilinx/Virtex-7-VVD.data wrapper/synthesis/xilinx/Artix-7-VVD.data wrapper/synthesis/xilinx/Zynq.data wrapper/synthesis/xilinx/Zynq-VVD.data wrapper/synthesis/xilinx/Zynq-YOSYS-VVD.data
+wrapper/synthesis/xilinx/XilinxBackendFlow.cpp : wrapper/synthesis/xilinx/Virtex-4.data wrapper/synthesis/xilinx/Virtex-5.data wrapper/synthesis/xilinx/Virtex-6.data wrapper/synthesis/xilinx/Virtex-7.data wrapper/synthesis/xilinx/Virtex-7-VVD.data wrapper/synthesis/xilinx/Artix-7-VVD.data wrapper/synthesis/xilinx/Zynq.data wrapper/synthesis/xilinx/Zynq-VVD.data wrapper/synthesis/xilinx/Zynq-YOSYS-VVD.data wrapper/synthesis/xilinx/Kintex-Ultrascale-VVD.data wrapper/synthesis/xilinx/Alveo-Ultrascale-VVD.data
 endif
 
 #The tab in this rule can't be replaced by blanks
@@ -356,9 +356,14 @@ wrapper/synthesis/xilinx/Zynq-VVD.data: $(top_srcdir)/etc/devices/Xilinx_devices
 wrapper/synthesis/xilinx/Zynq-YOSYS-VVD.data: $(top_srcdir)/etc/devices/Xilinx_devices/Zynq-YOSYS-VVD.xml
 	gzip -c  $(top_srcdir)/etc/devices/Xilinx_devices/Zynq-YOSYS-VVD.xml > wrapper/synthesis/xilinx/Zynq-YOSYS-VVD.data
 
+wrapper/synthesis/xilinx/Kintex-Ultrascale-VVD.data: $(top_srcdir)/etc/devices/Xilinx_devices/Kintex-Ultrascale-VVD.xml
+	gzip -c  $(top_srcdir)/etc/devices/Xilinx_devices/Kintex-Ultrascale-VVD.xml > wrapper/synthesis/xilinx/Kintex-Ultrascale-VVD.data
+
+wrapper/synthesis/xilinx/Alveo-Ultrascale-VVD.data: $(top_srcdir)/etc/devices/Xilinx_devices/Alveo-Ultrascale-VVD.xml
+	gzip -c  $(top_srcdir)/etc/devices/Xilinx_devices/Alveo-Ultrascale-VVD.xml > wrapper/synthesis/xilinx/Alveo-Ultrascale-VVD.data
 
 wrapper_synthesis_xilinx_dir = $(wrapper_synthesis_dir)/xilinx
-wrapper_synthesis_xilinx__DATA = wrapper/synthesis/xilinx/Virtex-4.data wrapper/synthesis/xilinx/Virtex-4-Taste.data wrapper/synthesis/xilinx/Virtex-5.data wrapper/synthesis/xilinx/Virtex-6.data wrapper/synthesis/xilinx/Virtex-7.data wrapper/synthesis/xilinx/Virtex-7-VVD.data wrapper/synthesis/xilinx/Artix-7-VVD.data wrapper/synthesis/xilinx/Zynq.data wrapper/synthesis/xilinx/Zynq-VVD.data wrapper/synthesis/xilinx/Zynq-YOSYS-VVD.data
+wrapper_synthesis_xilinx__DATA = wrapper/synthesis/xilinx/Virtex-4.data wrapper/synthesis/xilinx/Virtex-4-Taste.data wrapper/synthesis/xilinx/Virtex-5.data wrapper/synthesis/xilinx/Virtex-6.data wrapper/synthesis/xilinx/Virtex-7.data wrapper/synthesis/xilinx/Virtex-7-VVD.data wrapper/synthesis/xilinx/Artix-7-VVD.data wrapper/synthesis/xilinx/Zynq.data wrapper/synthesis/xilinx/Zynq-VVD.data wrapper/synthesis/xilinx/Zynq-YOSYS-VVD.data wrapper/synthesis/xilinx/Kintex-Ultrascale-VVD.data wrapper/synthesis/xilinx/Alveo-Ultrascale-VVD.data
 
 
   noinst_HEADERS += wrapper/synthesis/xilinx/XilinxBackendFlow.hpp wrapper/synthesis/xilinx/XilinxWrapper.hpp wrapper/synthesis/xilinx/vivado_flow_wrapper.hpp

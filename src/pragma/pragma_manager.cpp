@@ -191,7 +191,7 @@ CustomUnorderedSet<std::string> pragma_manager::getFunctionCallPragmas(const std
 void pragma_manager::AddFunctionDefinitionPragmas(const std::string& function_name,
                                                   const CustomUnorderedSet<std::string>& pragmas)
 {
-   for(auto pragma : pragmas)
+   for(const auto& pragma : pragmas)
    {
       boost::match_results<std::string::const_iterator> what;
       boost::regex expr;
@@ -356,7 +356,7 @@ pragma_manager::ExtractClauses(const std::string& clauses_list) const
 
    std::vector<std::string> splitted = SplitString(trimmed_clauses, " \t\n");
 
-   for(auto clause : splitted)
+   for(const auto& clause : splitted)
    {
       if(clause.find('(') != std::string::npos)
       {

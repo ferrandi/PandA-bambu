@@ -53,8 +53,8 @@ class ParallelMemoryFuBinding : public fu_binding
    /// Internal objects for which access_allowed was killed
    CustomSet<structural_objectRef> access_allowed_killeds;
 
-   virtual bool manage_module_ports(const HLS_managerRef HLSMgr, const hlsRef HLS, const structural_managerRef SM,
-                                    const structural_objectRef curr_gate, unsigned int num) override;
+   bool manage_module_ports(const HLS_managerRef HLSMgr, const hlsRef HLS, const structural_managerRef SM,
+                            const structural_objectRef curr_gate, unsigned int num) override;
 
  public:
    /**
@@ -74,7 +74,7 @@ class ParallelMemoryFuBinding : public fu_binding
    /**
     * Instance the functional unit inside the structural representation of the datapath
     */
-   virtual void add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, structural_objectRef clock_port,
-                          structural_objectRef reset_port) override;
+   void add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, structural_objectRef clock_port,
+                  structural_objectRef reset_port) override;
 };
 #endif

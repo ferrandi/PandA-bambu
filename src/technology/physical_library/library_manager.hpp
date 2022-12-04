@@ -241,7 +241,7 @@ class library_manager
 
    /**
     * Return the list of the resources contained into the given library
-    * @return a datastructure that maps the name of the cells contained into the library with the related
+    * @return a data structure that maps the name of the cells contained into the library with the related
     * technology_node's
     */
    const fu_map_type& get_library_fu() const

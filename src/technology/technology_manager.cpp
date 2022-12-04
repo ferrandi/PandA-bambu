@@ -204,16 +204,19 @@ void technology_manager::add_resource(const std::string& Library, const std::str
 }
 #endif
 
-void technology_manager::add_operation(const std::string& Library, const std::string& fu_name,
-                                       const std::string& operation_name)
+technology_nodeRef technology_manager::add_operation(const std::string& Library, const std::string& fu_name,
+                                                     const std::string& operation_name)
 {
-   THROW_ASSERT(library_map.find(Library) != library_map.end(), "Library \"" + Library + "\" not found");
-   THROW_ASSERT(library_map[Library]->is_fu(fu_name), "Unit \"" + fu_name + "\" not found in library \"" + Library);
-   THROW_ASSERT(library_map.find(Library) != library_map.end(), "Library \"" + Library + "\" not found");
-   technology_nodeRef curr = get_fu(fu_name, Library);
-   technology_nodeRef curr_op = technology_nodeRef(new operation);
-   GetPointer<operation>(curr_op)->operation_name = operation_name;
-   GetPointer<functional_unit>(curr)->add(curr_op);
+   THROW_ASSERT(library_map.count(Library), "Library \"" + Library + "\" not found");
+   THROW_ASSERT(library_map.at(Library)->is_fu(fu_name), "Unit \"" + fu_name + "\" not found in library \"" + Library);
+   const auto curr = get_fu(fu_name, Library);
+   const technology_nodeRef curr_op(new operation);
+   GetPointerS<operation>(curr_op)->operation_name = operation_name;
+   auto fu = GetPointer<functional_unit>(curr);
+   THROW_ASSERT(fu, "");
+   fu->add(curr_op);
+   function_fu[operation_name] = curr;
+   return curr_op;
 }
 
 void technology_manager::add(const technology_nodeRef curr, const std::string& Library)
@@ -333,7 +336,7 @@ void technology_manager::xload(const xml_element* node, const target_deviceRef d
          }
       }
    }
-   for(auto temp_library : temp_libraries)
+   for(const auto& temp_library : temp_libraries)
    {
       for(const auto& temp_info : info)
       {
@@ -599,4 +602,10 @@ TimeStamp technology_manager::CGetSetupHoldTimeStamp() const
    {
       return TimeStamp();
    }
+}
+
+technology_nodeRef technology_manager::GetFunctionFU(const std::string& fname) const
+{
+   const auto fu_it = function_fu.find(fname);
+   return fu_it != function_fu.end() ? fu_it->second : nullptr;
 }

@@ -105,10 +105,10 @@ tree_nodeRef soft_float_cg_ext::float64_ptr_type;
 static const FloatFormatRef float32FF(new FloatFormat(8, 23, -127));
 static const FloatFormatRef float64FF(new FloatFormat(11, 52, -1023));
 
-static const std::set<std::string> supported_libm_calls = {"copysign", "finite",   "fpclassify", "huge_val",   "inf",
-                                                           "infinity", "isfinite", "isinf",      "isinf_sign", "isnan",
-                                                           "isnormal", "nan",      "nans",       "signbit"};
-static const std::set<std::string> supported_libm_calls_inlined = {"copysign"};
+static const std::set<std::string> supported_libm_calls = {
+    "copysign", "fabs",       "finite", "fpclassify", "huge_val", "inf",  "infinity", "isfinite",
+    "isinf",    "isinf_sign", "isnan",  "isnormal",   "nan",      "nans", "signbit"};
+static const std::set<std::string> supported_libm_calls_inlined = {"copysign", "fabs"};
 
 /**
  * @brief List of low level implementation libm functions. Composite functions are not present since fp format can be
@@ -122,8 +122,8 @@ static const std::set<std::string> libm_func = {
     "ilogb",    "inf",    "infinity", "isfinite", "isinf",     "isinf_sign", "isnan",      "isnormal", "ldexp",
     "lgamma",   "llrint", "llround",  "log",      "log10",     "log1p",      "log2",       "logb",     "lrint",
     "lround",   "modf",   "nan",      "nans",     "nearbyint", "nextafter",  "nexttoward", "pow",      "remainder",
-    "remquo",   "rint",   "round",    "scalbln",  "scalbn",    "sin",        "signbit",    "sinh",     "sincos",
-    "sqrt",     "tan",    "tanh",     "tgamma",   "trunc"};
+    "remquo",   "rint",   "round",    "scalb",    "scalbln",   "scalbn",     "sin",        "signbit",  "sinh",
+    "sincos",   "sqrt",   "tan",      "tanh",     "tgamma",    "trunc"};
 
 static std::string strip_fname(std::string fname, bool* single_prec = nullptr)
 {
@@ -135,9 +135,13 @@ static std::string strip_fname(std::string fname, bool* single_prec = nullptr)
    {
       fname = fname.substr(sizeof("__internal_") - 1);
    }
-   if(fname.find("__builtin_") == 0)
+   else if(fname.find("__builtin_") == 0)
    {
       fname = fname.substr(sizeof("__builtin_") - 1);
+   }
+   else if(fname.find("__") == 0)
+   {
+      fname = fname.substr(sizeof("__") - 1);
    }
    if(fname.back() == 'f' && libm_func.count(fname.substr(0, fname.size() - 1)))
    {
@@ -240,7 +244,8 @@ soft_float_cg_ext::soft_float_cg_ext(const ParameterConstRef _parameters, const 
       {
          auto format = SplitString(opt, "*");
 
-         const auto f_index = [&]() -> unsigned int {
+         const auto f_index = [&]() -> auto
+         {
             if(format[0] == "@")
             {
                if(AppM->CGetCallGraphManager()->GetRootFunctions().size() > 1)
@@ -251,7 +256,8 @@ soft_float_cg_ext::soft_float_cg_ext(const ParameterConstRef _parameters, const 
             }
             const auto f_node = TreeM->GetFunction(format[0]);
             return f_node ? f_node->index : 0;
-         }();
+         }
+         ();
 
          if(!f_index)
          {
@@ -352,7 +358,6 @@ soft_float_cg_ext::soft_float_cg_ext(const ParameterConstRef _parameters, const 
                   const auto fname = tree_helper::print_function_name(
                       TreeM, GetPointerS<const function_decl>(TreeM->CGetTreeNode(CGM->get_function(called))));
                   const auto called_fname = strip_fname(fname);
-
                   if(static_cast<bool>(libm_func.count(called_fname)))
                   {
                      // Do not propagate format to libm functions, specialization will be handled successively
@@ -425,7 +430,7 @@ soft_float_cg_ext::ComputeFrontendRelationships(const DesignFlowStep::Relationsh
       }
       case(PRECEDENCE_RELATIONSHIP):
       {
-         relationships.insert(std::make_pair(FUNCTION_INTERFACE_INFER, SAME_FUNCTION));
+         relationships.insert(std::make_pair(INTERFACE_INFER, WHOLE_APPLICATION));
          break;
       }
       case(INVALIDATION_RELATIONSHIP):
@@ -1174,7 +1179,8 @@ tree_nodeRef soft_float_cg_ext::cstCast(uint64_t bits, const FloatFormatRef& inF
    uint64_t FExp, SFrac;
    bool ExpOverflow = false;
 
-   const auto needed_bits = [](int i) -> unsigned int {
+   const auto needed_bits = [](int i) -> auto
+   {
       int lz;
       if(i > 0)
       {
@@ -1189,9 +1195,9 @@ tree_nodeRef soft_float_cg_ext::cstCast(uint64_t bits, const FloatFormatRef& inF
    };
    const auto exp_bits_diff =
        inFF->exp_bits > outFF->exp_bits ? (inFF->exp_bits - outFF->exp_bits) : (outFF->exp_bits - inFF->exp_bits);
-   const unsigned int exp_type_size = std::max({static_cast<unsigned int>(inFF->exp_bits) + (exp_bits_diff == 1),
-                                                static_cast<unsigned int>(outFF->exp_bits) + (exp_bits_diff == 1),
-                                                needed_bits(inFF->exp_bias), needed_bits(outFF->exp_bias)});
+   const auto exp_type_size = std::max({static_cast<unsigned int>(inFF->exp_bits) + (exp_bits_diff == 1),
+                                        static_cast<unsigned int>(outFF->exp_bits) + (exp_bits_diff == 1),
+                                        needed_bits(inFF->exp_bias), needed_bits(outFF->exp_bias)});
 
    const auto biasDiff = inFF->exp_bias - outFF->exp_bias;
    const auto rangeDiff = ((1 << outFF->exp_bits) - !outFF->has_subnorm) - ((1 << inFF->exp_bits) - !inFF->has_subnorm);
@@ -1937,8 +1943,8 @@ bool soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef& current_statement
                {
                   if(_version->ieee_format())
                   {
-                     unsigned int bitsize_in = tree_helper::Size(op_expr_type);
-                     unsigned int bitsize_out = tree_helper::Size(expr_type);
+                     auto bitsize_in = tree_helper::Size(op_expr_type);
+                     auto bitsize_out = tree_helper::Size(expr_type);
                      THROW_ASSERT(bitsize_in == 32 || bitsize_in == 64,
                                   "Unhandled input floating point format (size = " + STR(bitsize_in) + ")");
                      THROW_ASSERT(bitsize_out == 32 || bitsize_out == 64,
@@ -1951,7 +1957,7 @@ bool soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef& current_statement
                         THROW_ASSERT(called_function, "The library miss this function " + fu_name);
                         std::vector<tree_nodeRef> args = {
                             ue->op,
-                            TreeM->CreateUniqueIntegerCst(static_cast<unsigned long long>(inFF->exception_mode),
+                            TreeM->CreateUniqueIntegerCst(static_cast<long long>(inFF->exception_mode),
                                                           tree_man->GetSignedIntegerType()),
                             TreeM->CreateUniqueIntegerCst(inFF->has_subnorm, tree_man->GetBooleanType())};
                         TreeM->ReplaceTreeNode(current_statement, current_tree_node,
@@ -2872,9 +2878,7 @@ FunctionVersion::FunctionVersion(const FunctionVersion& other)
 {
 }
 
-FunctionVersion::~FunctionVersion()
-{
-}
+FunctionVersion::~FunctionVersion() = default;
 
 int FunctionVersion::compare(const FunctionVersion& other, bool format_only) const
 {

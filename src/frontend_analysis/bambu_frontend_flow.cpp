@@ -121,7 +121,7 @@ BambuFrontendFlow::ComputeFrontendRelationships(const DesignFlowStep::Relationsh
          {
             relationships.insert(std::make_pair(HLS_DIV_CG_EXT, WHOLE_APPLICATION));
          }
-         relationships.insert(std::make_pair(FUNCTION_INTERFACE_INFER, WHOLE_APPLICATION));
+         relationships.insert(std::make_pair(INTERFACE_INFER, WHOLE_APPLICATION));
          relationships.insert(std::make_pair(IR_LOWERING, ALL_FUNCTIONS));
          relationships.insert(std::make_pair(LUT_TRANSFORMATION, WHOLE_APPLICATION));
          relationships.insert(std::make_pair(MULTIPLE_ENTRY_IF_REDUCTION, WHOLE_APPLICATION));

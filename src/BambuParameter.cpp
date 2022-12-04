@@ -149,15 +149,17 @@
 #include "technology_node.hpp"
 
 /// Utility include
+#include <getopt.h>
+
+#include <boost/filesystem.hpp>
+#include <boost/lexical_cast.hpp>
+
 #include "compiler_constants.hpp"
 #include "cpu_time.hpp"
 #include "dbgPrintHelper.hpp"
 #include "fileIO.hpp"
 #include "string_manipulation.hpp"
 #include "utility.hpp"
-#include <boost/filesystem.hpp>
-#include <boost/lexical_cast.hpp>
-#include <getopt.h>
 
 /// Wrapper include
 #include "compiler_wrapper.hpp"
@@ -193,8 +195,7 @@
 #define OPT_DSP_MARGIN_COMBINATIONAL (1 + OPT_DSP_ALLOCATION_COEFFICIENT)
 #define OPT_DSP_MARGIN_PIPELINED (1 + OPT_DSP_MARGIN_COMBINATIONAL)
 #define OPT_DUMP_CONSTRAINTS (1 + OPT_DSP_MARGIN_PIPELINED)
-#define OPT_DYNAMIC_GENERATORS_DIR (1 + OPT_DUMP_CONSTRAINTS)
-#define OPT_DISCREPANCY (1 + OPT_DYNAMIC_GENERATORS_DIR)
+#define OPT_DISCREPANCY (1 + OPT_DUMP_CONSTRAINTS)
 #define OPT_DISCREPANCY_FORCE (1 + OPT_DISCREPANCY)
 #define OPT_DISCREPANCY_HW (1 + OPT_DISCREPANCY_FORCE)
 #define OPT_DISCREPANCY_NO_LOAD_POINTERS (1 + OPT_DISCREPANCY_HW)
@@ -245,9 +246,9 @@
 #define OPT_REGISTER_ALLOCATION (1 + OPT_POST_RESCHEDULING)
 #define OPT_REGISTERED_INPUTS (1 + OPT_REGISTER_ALLOCATION)
 #define OPT_FSM_ENCODING (1 + OPT_REGISTERED_INPUTS)
-#define OPT_RESET (1 + OPT_FSM_ENCODING)
-#define OPT_LEVEL_RESET (1 + OPT_RESET)
-#define OPT_DISABLE_REG_INIT_VALUE (1 + OPT_LEVEL_RESET)
+#define OPT_RESET_TYPE (1 + OPT_FSM_ENCODING)
+#define OPT_RESET_LEVEL (1 + OPT_RESET_TYPE)
+#define OPT_DISABLE_REG_INIT_VALUE (1 + OPT_RESET_LEVEL)
 #define OPT_SCHEDULING_MUX_MARGINS (1 + OPT_DISABLE_REG_INIT_VALUE)
 #define OPT_USE_ALUS (1 + OPT_SCHEDULING_MUX_MARGINS)
 #define OPT_SERIALIZE_MEMORY_ACCESSES (1 + OPT_USE_ALUS)
@@ -1218,8 +1219,8 @@ int BambuParameter::Exec()
       {"done-name", required_argument, nullptr, OPT_DONE_NAME},
       {"power-optimization", no_argument, nullptr, OPT_POWER_OPTIMIZATION},
       {"no-iob", no_argument, nullptr, OPT_DISABLE_IOB},
-      {"reset-type", required_argument, nullptr, OPT_RESET},
-      {"reset-level", required_argument, nullptr, OPT_LEVEL_RESET},
+      {"reset-type", required_argument, nullptr, OPT_RESET_TYPE},
+      {"reset-level", required_argument, nullptr, OPT_RESET_LEVEL},
       {"disable-reg-init-value", no_argument, nullptr, OPT_DISABLE_REG_INIT_VALUE},
       {"soft-float", no_argument, nullptr, OPT_SOFT_FLOAT},
 #if HAVE_FLOPOCO
@@ -1266,7 +1267,6 @@ int BambuParameter::Exec()
 #if HAVE_EXPERIMENTAL
       {"no-mixed-design", no_argument, nullptr, OPT_NO_MIXED_DESIGN},
 #endif
-      {"dynamic-generators-dir", required_argument, nullptr, OPT_DYNAMIC_GENERATORS_DIR},
       {"pretty-print", required_argument, nullptr, OPT_PRETTY_PRINT},
       {"pragma-parse", no_argument, nullptr, OPT_PRAGMA_PARSE},
       {"generate-interface", required_argument, nullptr, 0},
@@ -1952,19 +1952,19 @@ int BambuParameter::Exec()
             setOption(OPT_connect_iob, false);
             break;
          }
-         case OPT_RESET:
+         case OPT_RESET_TYPE:
          {
             if(std::string(optarg) == "no")
             {
-               setOption(OPT_sync_reset, std::string(optarg));
+               setOption(OPT_reset_type, std::string(optarg));
             }
             else if(std::string(optarg) == "async")
             {
-               setOption(OPT_sync_reset, std::string(optarg));
+               setOption(OPT_reset_type, std::string(optarg));
             }
             else if(std::string(optarg) == "sync")
             {
-               setOption(OPT_sync_reset, std::string(optarg));
+               setOption(OPT_reset_type, std::string(optarg));
             }
             else
             {
@@ -1972,15 +1972,15 @@ int BambuParameter::Exec()
             }
             break;
          }
-         case OPT_LEVEL_RESET:
+         case OPT_RESET_LEVEL:
          {
             if(std::string(optarg) == "high")
             {
-               setOption(OPT_level_reset, true);
+               setOption(OPT_reset_level, true);
             }
             else if(std::string(optarg) == "low")
             {
-               setOption(OPT_level_reset, false);
+               setOption(OPT_reset_level, false);
             }
             else
             {
@@ -2251,11 +2251,6 @@ int BambuParameter::Exec()
             }
             break;
          }
-         case OPT_DYNAMIC_GENERATORS_DIR:
-         {
-            setOption("dynamic_generators_dir", optarg);
-            break;
-         }
          case OPT_PRETTY_PRINT:
          {
             setOption(OPT_pretty_print, GetPath(optarg));
@@ -2429,6 +2424,11 @@ int BambuParameter::Exec()
          {
             if(optarg)
             {
+               const auto num = boost::lexical_cast<unsigned int>(std::string(optarg));
+               if(!num)
+               {
+                  throw "Bad parameters: number of contexts must be a positive integer.";
+               }
                setOption(OPT_context_switch, std::string(optarg));
                break;
             }
@@ -4234,7 +4234,7 @@ void BambuParameter::SetDefaults()
 
    /// High-level synthesis contraints dump -- //
    setOption("dumpConstraints", false);
-   setOption("dumpConstraints_file", "Constraints.XML");
+   setOption("dumpConstraints_file", "Constraints.xml");
 
    /// -- Scheduling -- //
    /// Scheduling algorithm (default is list based one)
@@ -4273,8 +4273,8 @@ void BambuParameter::SetDefaults()
    setOption(OPT_weighted_clique_register_algorithm, CliqueCovering_Algorithm::TS_WEIGHTED_CLIQUE_COVERING);
    /// storage value insertion algorithm
    setOption(OPT_storage_value_insertion_algorithm, HLSFlowStep_Type::VALUES_SCHEME_STORAGE_VALUE_INSERTION);
-   setOption(OPT_sync_reset, "no");
-   setOption(OPT_level_reset, false);
+   setOption(OPT_reset_type, "no");
+   setOption(OPT_reset_level, false);
    setOption(OPT_reg_init_value, true);
 
    setOption(OPT_shared_input_registers, false);
@@ -4319,8 +4319,6 @@ void BambuParameter::SetDefaults()
 
    /// backend HDL
    setOption(OPT_writer_language, static_cast<int>(HDLWriter_Language::VERILOG));
-
-   setOption("dynamic_generators_dir", relocate_compiler_path(PANDA_DATA_INSTALLDIR "/panda"));
 
    /// -- Module Interfaces -- //
    setOption(OPT_interface, true);

@@ -272,7 +272,7 @@ void classic_datapath::add_ports()
          std::string value = std::get<0>(c.first);
          std::string param = std::get<1>(c.first);
          std::string trimmed_value;
-         unsigned int precision;
+         unsigned long long precision;
          if(param.size() == 0)
          {
             trimmed_value = "\"" + std::get<0>(c.first) + "\"";

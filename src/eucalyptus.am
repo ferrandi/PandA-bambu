@@ -101,4 +101,11 @@ lib_eucalyptus_la_LIBADD += $(top_builddir)/ext/abseil-cpp/libabseil.la
 
 eucalyptus_LDADD = lib_eucalyptus.la @PTHREAD_HACK@
 
+eucalyptus_LDFLAGS = $(AM_LDFLAGS)
+
+if BUILD_LIB_HLS
+   # The following is necessary to allow static self-registration of Factory derived classes
+   eucalyptus_LDFLAGS += -Wl,--whole-archive,$(top_builddir)/src/HLS/.libs/lib_module_generator.a,--no-whole-archive
+endif
+
 PRJ_DOC += eucalyptus.doc

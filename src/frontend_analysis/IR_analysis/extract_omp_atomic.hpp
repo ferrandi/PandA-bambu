@@ -70,7 +70,7 @@ class ExtractOmpAtomic : public FunctionFrontendFlowStep
    /**
     *  Destructor
     */
-   ~ExtractOmpAtomic();
+   ~ExtractOmpAtomic() override;
 
    /**
     * Restructures the unstructured code

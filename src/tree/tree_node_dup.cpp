@@ -800,7 +800,7 @@ void tree_node_dup::operator()(const attr* obj, unsigned int& mask)
 #define SET_SET_NODE_ID(list_field, type)                                                         \
    if(!GetPointer<type>(source_tn)->list_field.empty())                                           \
    {                                                                                              \
-      for(auto i : GetPointer<type>(source_tn)->list_field)                                       \
+      for(const auto& i : GetPointer<type>(source_tn)->list_field)                                \
       {                                                                                           \
          unsigned int node_id = GET_INDEX_NODE(i);                                                \
          if(remap.find(node_id) != remap.end())                                                   \

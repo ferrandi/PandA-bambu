@@ -1,7 +1,5 @@
 DOX_TAGFILES =
 
-SUBDIRS = dynamic_generators
-
 EXTRA_DIST = \
   C_COMPLEX_IPs.xml \
   C_FP_IPs.xml \

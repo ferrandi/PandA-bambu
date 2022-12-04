@@ -328,7 +328,7 @@ namespace ac_math
 
       bool rem = (R != 0) || ((N >> ZW) != 0);
 
-      ac_fixed<ZW + 1, ZW, false> Q_fx = (ac_fixed<ZW + 1, ZW, false>)Q;
+      auto Q_fx = (ac_fixed<ZW + 1, ZW, false>)Q;
       if(QQ == AC_RND_ZERO || QQ == AC_RND_MIN_INF || QQ == AC_RND_CONV || QQ == AC_RND_CONV_ODD)
       {
          Q_fx[0] = rem;

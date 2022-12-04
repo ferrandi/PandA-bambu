@@ -280,10 +280,10 @@ int main(int argc, char* argv[])
       /// pretty printing
       if(parameters->isOption(OPT_pretty_print))
       {
-         auto outFileName = parameters->getOption<std::string>(OPT_pretty_print);
-         const DesignFlowStepRef c_backend =
+         const auto filename = parameters->getOption<std::string>(OPT_pretty_print);
+         const auto c_backend =
              GetPointer<const CBackendStepFactory>(c_backend_step_factory)
-                 ->CreateCBackendStep(CBackend::CB_SEQUENTIAL, outFileName, CBackendInformationConstRef());
+                 ->CreateCBackendStep(CBackend::CB_SEQUENTIAL, filename, CBackendInformationConstRef());
          design_flow_manager->AddStep(c_backend);
       }
 
@@ -317,9 +317,9 @@ int main(int argc, char* argv[])
       if(parameters->isOption(OPT_serialize_output) && parameters->isOption(OPT_output_file))
       {
          std::ofstream ofile(parameters->getOption<std::string>(OPT_output_file), std::ios::out);
-         for(const auto &files : {HLSMgr->aux_files, HLSMgr->hdl_files})
+         for(const auto& files : {HLSMgr->aux_files, HLSMgr->hdl_files})
          {
-            for(const auto &file : files)
+            for(const auto& file : files)
             {
                std::cerr << "File name: " << file << "\n";
                std::ifstream ifile(file, std::ios::in);

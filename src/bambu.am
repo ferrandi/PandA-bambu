@@ -201,4 +201,8 @@ lib_bambu_la_LIBADD += $(top_builddir)/ext/abseil-cpp/libabseil.la
 
 bambu_LDADD = lib_bambu.la @PTHREAD_HACK@
 
+bambu_LDFLAGS = $(AM_LDFLAGS)
+# The following is necessary to allow static self-registration of Factory derived classes
+bambu_LDFLAGS += -Wl,--whole-archive,$(top_builddir)/src/HLS/.libs/lib_module_generator.a,--no-whole-archive
+
 

@@ -56,6 +56,13 @@
 #define INPUT_OPT_CHARACTERIZE (1 + TOOL_OPT_BASE)
 #define INPUT_OPT_TARGET_DATAFILE (1 + INPUT_OPT_CHARACTERIZE)
 #define INPUT_OPT_TARGET_SCRIPTFILE (1 + INPUT_OPT_TARGET_DATAFILE)
+#define OPT_LATTICE_ROOT (1 + INPUT_OPT_TARGET_SCRIPTFILE)
+#define OPT_XILINX_ROOT (1 + OPT_LATTICE_ROOT)
+#define OPT_MENTOR_ROOT (1 + OPT_XILINX_ROOT)
+#define OPT_MENTOR_OPTIMIZER (1 + OPT_MENTOR_ROOT)
+#define OPT_ALTERA_ROOT (1 + OPT_MENTOR_OPTIMIZER)
+#define OPT_NANOXPLORE_ROOT (1 + OPT_ALTERA_ROOT)
+#define OPT_NANOXPLORE_BYPASS (1 + OPT_NANOXPLORE_ROOT)
 
 #include "utility.hpp"
 #include "utility/fileIO.hpp"
@@ -101,6 +108,32 @@ void EucalyptusParameter::PrintHelp(std::ostream& os) const
 #endif
       << "\n"
       << std::endl;
+   // options defining where backend tools could be found
+   os << "  Backend configuration:\n\n"
+      << "    --mentor-visualizer\n"
+      << "        Simulate the RTL implementation and then open Mentor Visualizer.\n"
+      << "        (Mentor root has to be correctly set, see --mentor-root)\n\n"
+      << "    --mentor-optimizer=<0|1>\n"
+      << "        Enable or disable mentor optimizer. (default=enabled)\n\n"
+      << "    --nanoxplore-bypass=<name>\n"
+      << "        Define NanoXplore bypass when using NanoXplore. User may set NANOXPLORE_BYPASS\n"
+      << "        variable otherwise.\n\n"
+      << "    --altera-root=<path>\n"
+      << "        Define Altera tools path. Given path is searched for Quartus.\n"
+      << "        (default=/opt/altera:/opt/intelFPGA)\n\n"
+      << "    --lattice-root=<path>\n"
+      << "        Define Lattice tools path. Given path is searched for Diamond.\n"
+      << "        (default=/opt/diamond:/usr/local/diamond)\n\n"
+      << "    --mentor-root=<path>\n"
+      << "        Define Mentor tools path. Given directory is searched for Modelsim and Visualizer\n"
+      << "        (default=/opt/mentor)\n\n"
+      << "    --nanoxplore-root=<path>\n"
+      << "        Define NanoXplore tools path. Given directory is searched for NXMap.\n"
+      << "        (default=/opt/NanoXplore/NXMap3)\n\n"
+      << "    --xilinx-root=<path>\n"
+      << "        Define Xilinx tools path. Given directory is searched for both ISE and Vivado\n"
+      << "        (default=/opt/Xilinx)\n\n"
+      << std::endl;
 }
 
 EucalyptusParameter::EucalyptusParameter(const std::string& _program_name, int _argc, char** const _argv)
@@ -134,6 +167,13 @@ int EucalyptusParameter::Exec()
       {"target-device", required_argument, nullptr, 0},
       {"target-scriptfile", required_argument, nullptr, INPUT_OPT_TARGET_SCRIPTFILE},
       {"writer", required_argument, nullptr, 'w'},
+      {"altera-root", optional_argument, nullptr, OPT_ALTERA_ROOT},
+      {"lattice-root", optional_argument, nullptr, OPT_LATTICE_ROOT},
+      {"mentor-root", optional_argument, nullptr, OPT_MENTOR_ROOT},
+      {"mentor-optimizer", optional_argument, nullptr, OPT_MENTOR_OPTIMIZER},
+      {"nanoxplore-root", optional_argument, nullptr, OPT_NANOXPLORE_ROOT},
+      {"nanoxplore-bypass", optional_argument, nullptr, OPT_NANOXPLORE_BYPASS},
+      {"xilinx-root", optional_argument, nullptr, OPT_XILINX_ROOT},
       {nullptr, 0, nullptr, 0}
    };
 
@@ -168,6 +208,41 @@ int EucalyptusParameter::Exec()
          case INPUT_OPT_TARGET_SCRIPTFILE:
          {
             setOption(OPT_target_device_script, optarg);
+            break;
+         }
+         case OPT_ALTERA_ROOT:
+         {
+            setOption(OPT_altera_root, GetPath(optarg));
+            break;
+         }
+         case OPT_LATTICE_ROOT:
+         {
+            setOption(OPT_lattice_root, GetPath(optarg));
+            break;
+         }
+         case OPT_MENTOR_ROOT:
+         {
+            setOption(OPT_mentor_root, GetPath(optarg));
+            break;
+         }
+         case OPT_MENTOR_OPTIMIZER:
+         {
+            setOption(OPT_mentor_optimizer, boost::lexical_cast<bool>(optarg));
+            break;
+         }
+         case OPT_NANOXPLORE_ROOT:
+         {
+            setOption(OPT_nanoxplore_root, GetPath(optarg));
+            break;
+         }
+         case OPT_NANOXPLORE_BYPASS:
+         {
+            setOption(OPT_nanoxplore_bypass, std::string(optarg));
+            break;
+         }
+         case OPT_XILINX_ROOT:
+         {
+            setOption(OPT_xilinx_root, GetPath(optarg));
             break;
          }
          /// output options
@@ -676,12 +751,12 @@ void EucalyptusParameter::SetDefaults()
    /// backend HDL
    setOption(OPT_writer_language, static_cast<int>(HDLWriter_Language::VERILOG));
    setOption(OPT_timing_simulation, false);
-   setOption(OPT_sync_reset, "no");
+   setOption(OPT_reset_type, "no");
    setOption(OPT_reg_init_value, false);
 
    setOption(OPT_output_directory, GetCurrentPath() + "/HLS_output/");
    setOption(OPT_rtl, true);
-   setOption(OPT_level_reset, false);
+   setOption(OPT_reset_level, false);
 #if HAVE_EXPERIMENTAL
    setOption(OPT_mixed_design, true);
 #endif

@@ -66,9 +66,7 @@ cs_interface::cs_interface(const ParameterConstRef _Param, const HLS_managerRef 
    THROW_ASSERT(funId, "Function not set in minimal interface");
 }
 
-cs_interface::~cs_interface()
-{
-}
+cs_interface::~cs_interface() = default;
 
 DesignFlowStep_Status cs_interface::InternalExec()
 {
@@ -185,13 +183,13 @@ void cs_interface::instantiate_component_parallel(const structural_managerRef SM
        ->SetParameter("NUM_CHANNEL", STR(parameters->getOption<unsigned int>(OPT_channels_number)));
    GetPointer<module>(mem_ctrl_mod)
        ->SetParameter("NUM_BANK", STR(parameters->getOption<unsigned int>(OPT_memory_banks_number)));
-   int addr_task = ceil_log2(parameters->getOption<unsigned long long int>(OPT_context_switch));
+   auto addr_task = ceil_log2(parameters->getOption<unsigned long long int>(OPT_context_switch));
    if(!addr_task)
    {
       addr_task = 1;
    }
    GetPointer<module>(mem_ctrl_mod)->SetParameter("ADDR_TASKS", STR(addr_task));
-   int addr_kern = ceil_log2(parameters->getOption<unsigned long long>(OPT_num_accelerators));
+   auto addr_kern = ceil_log2(parameters->getOption<unsigned long long>(OPT_num_accelerators));
    if(!addr_kern)
    {
       addr_kern = 1;
@@ -242,10 +240,10 @@ void cs_interface::resize_memory_ctrl_ports(structural_objectRef mem_ctrl_mod)
 
 void cs_interface::resize_dimension_bus_port(unsigned int vector_size, structural_objectRef port)
 {
-   unsigned int bus_data_bitsize = HLSMgr->Rmem->get_bus_data_bitsize();
-   unsigned int bus_addr_bitsize = HLSMgr->get_address_bitsize();
-   unsigned int bus_size_bitsize = HLSMgr->Rmem->get_bus_size_bitsize();
-   unsigned int bus_tag_bitsize = GetPointer<memory_cs>(HLSMgr->Rmem)->get_bus_tag_bitsize();
+   auto bus_data_bitsize = HLSMgr->Rmem->get_bus_data_bitsize();
+   auto bus_addr_bitsize = HLSMgr->get_address_bitsize();
+   auto bus_size_bitsize = HLSMgr->Rmem->get_bus_size_bitsize();
+   auto bus_tag_bitsize = GetPointer<memory_cs>(HLSMgr->Rmem)->get_bus_tag_bitsize();
 
    if(GetPointer<port_o>(port)->get_is_data_bus())
    {

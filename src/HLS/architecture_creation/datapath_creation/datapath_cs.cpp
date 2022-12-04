@@ -62,9 +62,7 @@ datapath_cs::datapath_cs(const ParameterConstRef _parameters, const HLS_managerR
    debug_level = _parameters->get_class_debug_level(GET_CLASS(*this));
 }
 
-datapath_cs::~datapath_cs()
-{
-}
+datapath_cs::~datapath_cs() = default;
 
 void datapath_cs::add_ports()
 {
@@ -85,7 +83,7 @@ void datapath_cs::add_ports()
    if(found) // function with selector
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "---Adding ports selector and suspension");
-      int num_slots = ceil_log2(parameters->getOption<unsigned long long int>(OPT_context_switch));
+      auto num_slots = ceil_log2(parameters->getOption<unsigned long long int>(OPT_context_switch));
       if(!num_slots)
       {
          num_slots = 1;
@@ -101,7 +99,7 @@ void datapath_cs::add_ports()
    {
       THROW_ASSERT(!found, "unexpected condition");
       INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "---Adding ports for kernel module");
-      int num_slots = ceil_log2(parameters->getOption<unsigned long long int>(OPT_context_switch));
+      auto num_slots = ceil_log2(parameters->getOption<unsigned long long int>(OPT_context_switch));
       if(!num_slots)
       {
          num_slots = 1;

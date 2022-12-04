@@ -109,7 +109,7 @@ VarDeclFix::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType 
       {
 #if HAVE_BAMBU_BUILT
          relationships.insert(std::make_pair(PARM_DECL_TAKEN_ADDRESS, SAME_FUNCTION));
-         relationships.insert(std::make_pair(FUNCTION_INTERFACE_INFER, SAME_FUNCTION));
+         relationships.insert(std::make_pair(INTERFACE_INFER, WHOLE_APPLICATION));
 #endif
          break;
       }
@@ -242,7 +242,7 @@ void VarDeclFix::recursive_examinate(const tree_nodeRef& tn, CustomUnorderedSet<
                }
 
                std::string original_name = Normalize(GetPointer<identifier_node>(GET_NODE(dn->name))->strg);
-               std::string name_id = tree_helper::normalized_ID(original_name);
+               std::string name_id = tree_helper::NormalizeTypename(original_name);
                if(already_examinated_names.find(original_name) == already_examinated_names.end())
                {
                   already_examinated_names.insert(original_name);

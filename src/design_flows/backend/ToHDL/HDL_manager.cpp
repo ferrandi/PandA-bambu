@@ -1103,7 +1103,7 @@ void HDL_manager::write_flopoco_module(const structural_objectRef& cir, std::lis
 ) const
 {
    auto* mod_inst = GetPointer<module>(cir);
-   long long int mod_size_in = 0, mod_size_out = 0;
+   unsigned long long int mod_size_in = 0, mod_size_out = 0;
    for(unsigned int i = 0; i < mod_inst->get_in_port_size(); i++)
    {
       // Size of module is size of the largest output
@@ -1268,7 +1268,7 @@ void HDL_manager::write_fsm(const language_writerRef writer, const structural_ob
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "write the present_state update");
    /// write the present_state update
    writer->write_present_state_update(cir, reset_state, reset_port, clock_port,
-                                      parameters->getOption<std::string>(OPT_sync_reset),
+                                      parameters->getOption<std::string>(OPT_reset_type),
                                       cir->find_member(PRESENT_STATE_PORT_NAME, port_o_K, cir).get() != nullptr);
 
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "write transition and output functions");
@@ -1354,7 +1354,7 @@ std::string HDL_manager::get_mod_typename(const language_writer* lan, const stru
    const NP_functionalityRef& np = mod->get_NP_functionality();
    if(np && np->get_NP_functionality(NP_functionality::FLOPOCO_PROVIDED) != "")
    {
-      long long int mod_size_in = 0;
+      unsigned long long int mod_size_in = 0;
       for(unsigned int i = 0; i < mod->get_in_port_size(); i++)
       {
          // Size of module is size of the largest output
@@ -1364,7 +1364,7 @@ std::string HDL_manager::get_mod_typename(const language_writer* lan, const stru
          }
       }
       res = res + "_" + STR(mod_size_in);
-      long long int mod_size_out = 0;
+      unsigned long long int mod_size_out = 0;
       for(unsigned int i = 0; i < mod->get_out_port_size(); i++)
       {
          // Size of module is size of the largest output

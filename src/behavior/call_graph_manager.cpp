@@ -123,8 +123,8 @@ void CallGraphManager::AddFunction(unsigned int new_function_id, const FunctionB
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---vertex already present");
       THROW_ASSERT(call_graph->GetCallGraphInfo()->behaviors.at(new_function_id) == fun_behavior,
                    "adding a different behavior for " + STR(new_function_id) +
-                       "prev: " + STR(call_graph->GetCallGraphInfo()->behaviors.at(new_function_id)) +
-                       "new: " + STR(fun_behavior));
+                       " prev: " + STR(call_graph->GetCallGraphInfo()->behaviors.at(new_function_id)) +
+                       " new: " + STR(fun_behavior));
    }
 }
 

@@ -102,7 +102,7 @@ struct PrioritySorter : public std::binary_function<vertex, vertex, bool>
    bool operator()(const vertex x, const vertex y) const;
 };
 
-typedef std::vector<std::set<vertex, PrioritySorter>> PriorityQueues;
+using PriorityQueues = std::vector<std::set<vertex, PrioritySorter>>;
 #endif
 
 enum class ParametricListBased_Metric
@@ -311,7 +311,8 @@ class parametric_list_based : public Scheduling
        unsigned int fu_type, const vertex2obj<ControlStep>& current_ASAP, const fu_bindingRef res_binding,
        const ScheduleRef schedule, bool& predecessorsCond, bool& pipeliningCond, bool& cannotBeChained0,
        bool& chainingRetCond, bool& cannotBeChained1, bool& asyncCond, bool& cannotBeChained2, bool& cannotBeChained3,
-       bool& MultiCond0, bool& MultiCond1, bool& nonDirectMemCond, bool& unboundedFunctionsCond, bool& proxyFunCond);
+       bool& MultiCond0, bool& MultiCond1, bool& nonDirectMemCond, bool& unboundedFunctionsCond, bool& proxyFunCond,
+       bool unbounded_RW);
    /**
     * Compute the relationship of this step
     * @param relationship_type is the type of relationship to be considered

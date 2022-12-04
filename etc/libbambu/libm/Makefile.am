@@ -19,8 +19,8 @@ common_libm_src = \
    sf_fmin.c sf_frexp.c sf_ilogb.c sf_lceil.c sf_ldexp.c sf_lfloor.c sf_llrint.c sf_llround.c sf_log1p.c sf_log2.c \
    sf_logb.c sf_lrint.c sf_lround.c sf_modf.c sf_nearbyint.c sf_nextafter.c sf_pow10.c sf_remquo.c sf_rint.c \
    sf_round.c sf_scalbln.c sf_scalbn.c sf_signif.c sf_tanh.c sf_trunc.c \
-   tf_copysign.c tf_fpclassify.c tf_inf.c tf_isfinite.c tf_isinf.c tf_isinf_sign.c tf_isnan.c tf_isnormal.c tf_nan.c \
-   tf_nans.c tf_signbit.c \
+   tf_copysign.c tf_fabs.c tf_fpclassify.c tf_inf.c tf_isfinite.c tf_isinf.c tf_isinf_sign.c tf_isnan.c tf_isnormal.c \ 
+   tf_nan.c tf_nans.c tf_signbit.c \
    w_exp.c w_log.c w_scalb.c \
    wf_acos.c wf_acosh.c wf_asin.c wf_atan2.c wf_atanh.c wf_cosh.c wf_drem.c wf_exp2.c wf_fmod.c wf_gamma.c wf_hypot.c \
    wf_j0.c wf_j1.c wf_jn.c wf_lgamma.c wf_log10.c wf_remainder.c wf_scalb.c wf_sinh.c wf_tgamma.c \

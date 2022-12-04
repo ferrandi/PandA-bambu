@@ -60,7 +60,7 @@ class multiplier_conn_obj : public generic_obj
    bool multiply_by_constant_p;
 
    /// constant value operand
-   unsigned int constant_value;
+   unsigned long long constant_value;
 
  public:
    /**
@@ -93,14 +93,14 @@ class multiplier_conn_obj : public generic_obj
    }
 
    /// set the multiplication as a multiplication to a constant
-   void set_multiplication_to_constant(unsigned int _constant_value)
+   void set_multiplication_to_constant(unsigned long long _constant_value)
    {
       multiply_by_constant_p = true;
       constant_value = _constant_value;
    }
 
    /// return the constant value
-   unsigned int get_constant_value() const
+   unsigned long long get_constant_value() const
    {
       return constant_value;
    }

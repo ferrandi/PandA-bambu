@@ -155,7 +155,7 @@ DesignFlowStep_Status pipeline_controller::InternalExec()
                 "unexpected case");
    working_list.erase(std::find(working_list.begin(), working_list.end(), first_state));
    working_list.push_front(first_state); /// ensure that first_state is the really first one...
-   std::map<unsigned int, structural_objectRef> null_values;
+   std::map<unsigned long long, structural_objectRef> null_values;
    for(const auto& v : working_list)
    {
       const auto& operations = astg->CGetStateInfo(v)->executing_operations;
@@ -163,7 +163,7 @@ DesignFlowStep_Status pipeline_controller::InternalExec()
       {
          technology_nodeRef tn = HLS->allocation_information->get_fu(HLS->Rfu->get_assign(op));
          technology_nodeRef op_tn = GetPointer<functional_unit>(tn)->get_operation(
-             tree_helper::normalized_ID(data->CGetOpNodeInfo(op)->GetOperation()));
+             tree_helper::NormalizeTypename(data->CGetOpNodeInfo(op)->GetOperation()));
          THROW_ASSERT(GetPointer<operation>(op_tn)->time_m,
                       "Time model not available for operation: " + GET_NAME(data, op));
          structural_managerRef CM = GetPointer<functional_unit>(tn)->CM;

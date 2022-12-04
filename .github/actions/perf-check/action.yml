@@ -68,13 +68,13 @@ runs:
           if [[ ! -z "${{ inputs.score }}" ]]; then
             score="-s ${{ inputs.score }}"
           fi
-          python3 ./etc/scripts/perf_diff.py -d ${{inputs.datapoints}} $score -o $COMPARE_CSV "main-reports/${{inputs.test-id}}.csv" "${{inputs.new-results}}"
-          if [[ -f "${COMPARE_CSV}" && "$(grep -i 'degraded' ${COMPARE_CSV})" != 0 ]]; then
-            worse_count="$(sed '/Improved/q' ${COMPARE_CSV} | tail -n+2 | head -n1 | wc -l)"
-            if [[ "$worse_count" != "0" ]]; then
-              outcsv="$COMPARE_CSV"
-              echo "::warning:: Performance are worse than main for ${{inputs.test-id}}: $worse_count benchmarks have degraded performance"
-            fi
+          
+          worse_count=$(python ./etc/scripts/perf_diff.py -d ${{inputs.datapoints}} $score -o $COMPARE_CSV "main-reports/${{inputs.test-id}}.csv" "${{inputs.new-results}}" 3>&2 2>&1 1>&3)
+          if [[ "$worse_count" == "-1" ]]; then
+            echo "::warning:: Benchmark suite is different from main"
+          elif [[ "$worse_count" != "0" ]]; then
+            outcsv="$COMPARE_CSV"
+            echo "::warning:: Performance are worse than main for ${{inputs.test-id}}: $worse_count benchmarks have degraded performance"
           fi
         else
           echo "::warning:: No previous benchmark result found to compare"

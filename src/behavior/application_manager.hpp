@@ -320,22 +320,20 @@ class application_manager
    void RegisterTransformation(const std::string& step, const tree_nodeConstRef new_tn);
 
    /**
-    * @brief isParmUsed return true in case the parameter is used
-    * @param parm_index is the parm_decl index
-    * @return true in case the parameter is used
-    */
-   bool isParmUsed(unsigned int functionID, unsigned parm_index) const;
-   /**
-    * \brief getSSAFromParm returns the ssa_name index associated with the parm_decl index, 0 in case there is not an
-    * associated index \param parm_index is the parm_decl index for which we look for the associated ssa_name index
+    * getSSAFromParm returns the ssa_name index associated with the parm_decl index, 0 in case there is not an
+    * associated index
+    * @param functionID Id of the function to search the param in
+    * @param parm_index is the parm_decl index for which we look for the associated ssa_name index
     */
    unsigned getSSAFromParm(unsigned int functionID, unsigned parm_index) const;
+
    /**
     * @brief setSSAFromParm defines the parm_decl versus ssa_name relation
     * @param parm_index is the index of the parm_decl
     * @param ssa_index is the index of the ssa_name
     */
    void setSSAFromParm(unsigned int functionID, unsigned int parm_index, unsigned ssa_index);
+
    /**
     * @brief clearParm2SSA cleans the map putting into relation parm_decl and ssa_name
     */

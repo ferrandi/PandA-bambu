@@ -2742,7 +2742,6 @@ if test "x$panda_USE_LIBBAMBU" = xyes; then
    AC_CONFIG_FILES(
       etc/lib/Makefile
       etc/lib/technology/Makefile
-      etc/lib/technology/dynamic_generators/Makefile
       etc/libbambu/Makefile
       etc/libbambu/libm/Makefile
       etc/libbambu/pthread/Makefile

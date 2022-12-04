@@ -312,7 +312,8 @@ class CompilerWrapper
     * @param cm is the mode in which we compile
     */
    void CompileFile(const std::string& original_file_name, std::string& real_file_name,
-                    const std::string& parameters_line, bool multiple_files, CompilerWrapper_CompilerMode cm, const std::string &costTable);
+                    const std::string& parameters_line, bool multiple_files, CompilerWrapper_CompilerMode cm,
+                    const std::string& costTable);
 
    /**
     * Return the compiler for a given target

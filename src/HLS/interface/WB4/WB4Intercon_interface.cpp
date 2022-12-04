@@ -105,14 +105,14 @@ void WB4Intercon_interface::exec()
    HLS->top = SM_wb4_interconnected;
 }
 
-static unsigned int get_data_bus_bitsize(const hlsRef HLS, const HLS_managerRef HLSMgr)
+static unsigned long long get_data_bus_bitsize(const hlsRef HLS, const HLS_managerRef HLSMgr)
 {
    const auto function_behavior = HLSMgr->CGetFunctionBehavior(HLS->functionId);
    const auto behavioral_helper = function_behavior->CGetBehavioralHelper();
    std::map<unsigned int, memory_symbolRef> parameters = HLSMgr->Rmem->get_function_parameters(HLS->functionId);
 
-   unsigned int data_bus_bitsize = HLSMgr->Rmem->get_bus_data_bitsize();
-   for(auto function_parameter : parameters)
+   auto data_bus_bitsize = HLSMgr->Rmem->get_bus_data_bitsize();
+   for(const auto& function_parameter : parameters)
    {
       if(function_parameter.first != HLS->functionId)
       {
@@ -126,8 +126,8 @@ static unsigned int get_data_bus_bitsize(const hlsRef HLS, const HLS_managerRef 
 
 static unsigned int get_addr_bus_bitsize(const HLS_managerRef HLSMgr)
 {
-   unsigned int addr_bus_bitsize = HLSMgr->get_address_bitsize();
-   unsigned long long int allocated_space = HLSMgr->Rmem->get_max_address();
+   auto addr_bus_bitsize = HLSMgr->get_address_bitsize();
+   auto allocated_space = HLSMgr->Rmem->get_max_address();
    unsigned int parameter_addr_bit = 1;
    while(allocated_space >>= 1)
    {
@@ -143,8 +143,8 @@ static void build_bus_interface(structural_managerRef SM, const hlsRef HLS, cons
 
    structural_type_descriptorRef b_type = structural_type_descriptorRef(new structural_type_descriptor("bool", 1));
 
-   unsigned int data_bus_bitsize = get_data_bus_bitsize(HLS, HLSMgr);
-   unsigned int addr_bus_bitsize = get_addr_bus_bitsize(HLSMgr);
+   auto data_bus_bitsize = get_data_bus_bitsize(HLS, HLSMgr);
+   auto addr_bus_bitsize = get_addr_bus_bitsize(HLSMgr);
 
    structural_type_descriptorRef sel_type =
        structural_type_descriptorRef(new structural_type_descriptor("bool", data_bus_bitsize / 8));
@@ -349,5 +349,5 @@ static void buildCircuit(structural_managerRef SM, structural_objectRef wrappedO
 
    interconModule->SetParameter("MASTERS", STR(masters.size() + 1));
    interconModule->SetParameter("SLAVES", STR(slaves.size() + 1));
-   interconModule->SetParameter("MEMORY_INIT_file", "\"\"" + baseAddressFileName + "\"\"");
+   interconModule->SetParameter("MEMORY_INIT_file", "\"\"" + GetPath(baseAddressFileName) + "\"\"");
 }

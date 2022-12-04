@@ -248,7 +248,7 @@ void RTLCharacterization::fix_proxies_execution_time_std()
    std::vector<std::string> high_latency_postfix_list;
    high_latency_postfix_list.push_back(std::string("_3"));
    high_latency_postfix_list.push_back(std::string("_4"));
-   for(auto high_latency_postfix : high_latency_postfix_list)
+   for(const auto& high_latency_postfix : high_latency_postfix_list)
    {
       technology_nodeRef f_unit_br = TM->get_fu(ARRAY_1D_STD_BRAM, LIBRARY_STD_FU);
       auto* fu_br = GetPointer<functional_unit>(f_unit_br);
@@ -897,7 +897,7 @@ void RTLCharacterization::AnalyzeCell(functional_unit* fu, const unsigned int pr
       else if(memory_type != "")
       {
          unsigned int base_address = 0;
-         std::string init_filename = "array_ref_" + boost::lexical_cast<std::string>(base_address) + ".mem";
+         std::string init_filename = "array_ref_" + STR(base_address) + ".mem";
          unsigned int counter = 0;
          unsigned int nbyte_on_memory = BRAM_BITSIZE / 8;
          unsigned int elts_size = BUS_DATA_BITSIZE;
@@ -918,8 +918,8 @@ void RTLCharacterization::AnalyzeCell(functional_unit* fu, const unsigned int pr
              (channels_type.find(CHANNELS_TYPE_MEM_ACC_N1) != std::string::npos &&
               channels_type.find(CHANNELS_TYPE_MEM_ACC_11) == std::string::npos)))
          {
-            std::ofstream init_file_a(GetPath(("a_" + init_filename).c_str()));
-            std::ofstream init_file_b(GetPath(("b_" + init_filename).c_str()));
+            std::ofstream init_file_a(GetPath("a_" + init_filename));
+            std::ofstream init_file_b(GetPath("b_" + init_filename));
             bool is_even = true;
             for(unsigned int i = 0; i < vec_size; ++i)
             {
@@ -955,7 +955,7 @@ void RTLCharacterization::AnalyzeCell(functional_unit* fu, const unsigned int pr
          }
          else
          {
-            std::ofstream init_file(GetPath(init_filename.c_str()));
+            std::ofstream init_file(GetPath(init_filename));
             for(unsigned int i = 0; i < vec_size; ++i)
             {
                for(unsigned int j = 0; j < elts_size; ++j)
@@ -980,18 +980,20 @@ void RTLCharacterization::AnalyzeCell(functional_unit* fu, const unsigned int pr
              (channels_type.find(CHANNELS_TYPE_MEM_ACC_N1) != std::string::npos &&
               channels_type.find(CHANNELS_TYPE_MEM_ACC_11) == std::string::npos)))
          {
-            spec_module->SetParameter("MEMORY_INIT_file_a", "\"\"a_" + init_filename + "\"\"");
-            spec_module->SetParameter("MEMORY_INIT_file_b", "\"\"b_" + init_filename + "\"\"");
+            spec_module->SetParameter("MEMORY_INIT_file_a", "\"\"" + GetPath("a_" + init_filename) + "\"\"");
+            spec_module->SetParameter("MEMORY_INIT_file_b", "\"\"" + GetPath("b_" + init_filename) + "\"\"");
          }
          else
          {
-            spec_module->SetParameter("MEMORY_INIT_file", "\"\"" + init_filename + "\"\"");
+            spec_module->SetParameter("MEMORY_INIT_file", "\"\"" + GetPath(init_filename) + "\"\"");
          }
          spec_module->SetParameter("n_elements", STR(vec_size));
          spec_module->SetParameter("data_size", STR(elts_size));
          if(memory_type != MEMORY_TYPE_SYNCHRONOUS_SDS && memory_type != MEMORY_TYPE_SYNCHRONOUS_SDS_BUS &&
             memory_type != MEMORY_TYPE_ASYNCHRONOUS)
+         {
             spec_module->SetParameter("BRAM_BITSIZE", STR(BRAM_BITSIZE));
+         }
          spec_module->SetParameter("BUS_PIPELINED", "1");
          spec_module->SetParameter("PRIVATE_MEMORY", "0");
       }
@@ -1020,15 +1022,15 @@ void RTLCharacterization::AnalyzeCell(functional_unit* fu, const unsigned int pr
             {
                unsigned int precision_bitsize = prec;
                precision_bitsize = std::max(8u, precision_bitsize);
-               spec_module->SetParameter("PRECISION", boost::lexical_cast<std::string>(precision_bitsize));
+               spec_module->SetParameter("PRECISION", STR(precision_bitsize));
             }
             else if(param == "ALIGNED_BITSIZE")
             {
-               spec_module->SetParameter("ALIGNED_BITSIZE", boost::lexical_cast<std::string>(ALIGNED_BITSIZE));
+               spec_module->SetParameter("ALIGNED_BITSIZE", STR(ALIGNED_BITSIZE));
             }
             else if(param == "LSB_PARAMETER")
             {
-               spec_module->SetParameter("LSB_PARAMETER", boost::lexical_cast<std::string>(0));
+               spec_module->SetParameter("LSB_PARAMETER", STR(0));
             }
             THROW_ASSERT(template_circuit->find_member(param, port_o_K, template_circuit) ||
                              template_circuit->find_member(param, port_vector_o_K, template_circuit) ||
