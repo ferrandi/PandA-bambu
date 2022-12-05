@@ -569,10 +569,16 @@ namespace llvm
 
 } // namespace llvm
 
-#ifndef _WIN32
+#if !defined(_WIN32)
+#if CPP_LANGUAGE
+static llvm::RegisterPass<llvm::CLANG_VERSION_SYMBOL(_plugin_expandMemOps)>
+    XPass(CLANG_VERSION_STRING(_plugin_expandMemOpsCpp), "Make all private/static but the top function",
+          false /* Only looks at CFG */, false /* Analysis Pass */);
+#else
 static llvm::RegisterPass<llvm::CLANG_VERSION_SYMBOL(_plugin_expandMemOps)>
     XPass(CLANG_VERSION_STRING(_plugin_expandMemOps), "Make all private/static but the top function",
           false /* Only looks at CFG */, false /* Analysis Pass */);
+#endif
 #endif
 
 #if __clang_major__ >= 13
@@ -596,7 +602,7 @@ llvm::PassPluginLibraryInfo CLANG_PLUGIN_INFO(_plugin_expandMemOps)()
                  }
                  return false;
               });
-              PB.registerPipelineEarlySimplificationEPCallback(
+              PB.registerOptimizerLastEPCallback(
                   [&](llvm::ModulePassManager& MPM, llvm::PassBuilder::OptimizationLevel) { return load(MPM); });
            }};
 }

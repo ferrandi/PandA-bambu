@@ -125,13 +125,13 @@ namespace llvm
       CLANG_VERSION_SYMBOL(_plugin_dumpGimpleSSA)
       (bool _earlyAnalysis = false) : ModulePass(ID), earlyAnalysis(_earlyAnalysis)
       {
-         initializeLoopInfoWrapperPassPass(*PassRegistry::getPassRegistry());            //
-         initializeLazyValueInfoWrapperPassPass(*PassRegistry::getPassRegistry());       //
-         initializeMemorySSAWrapperPassPass(*PassRegistry::getPassRegistry());           //
-         initializeTargetTransformInfoWrapperPassPass(*PassRegistry::getPassRegistry()); //
-         initializeTargetLibraryInfoWrapperPassPass(*PassRegistry::getPassRegistry());   //
-         initializeAssumptionCacheTrackerPass(*PassRegistry::getPassRegistry());         //
-         initializeDominatorTreeWrapperPassPass(*PassRegistry::getPassRegistry());       //
+         initializeLoopInfoWrapperPassPass(*PassRegistry::getPassRegistry());
+         initializeLazyValueInfoWrapperPassPass(*PassRegistry::getPassRegistry());
+         initializeMemorySSAWrapperPassPass(*PassRegistry::getPassRegistry());
+         initializeTargetTransformInfoWrapperPassPass(*PassRegistry::getPassRegistry());
+         initializeTargetLibraryInfoWrapperPassPass(*PassRegistry::getPassRegistry());
+         initializeAssumptionCacheTrackerPass(*PassRegistry::getPassRegistry());
+         initializeDominatorTreeWrapperPassPass(*PassRegistry::getPassRegistry());
 #if __clang_major__ > 5
          initializeOptimizationRemarkEmitterWrapperPassPass(*PassRegistry::getPassRegistry());
 #endif
