@@ -113,7 +113,10 @@
 
 #include <float.h>
 
-#define PRINT_DBG_MSG 0
+#define ANDERSEN_AA 1
+
+// #define PRINT_DBG_MSG
+#include "debug_print.hpp"
 
 static std::string create_file_name_string(const std::string& outdir_name, const std::string& original_filename)
 {
@@ -4466,9 +4469,7 @@ namespace llvm
 
    void DumpGimpleRaw::queue_and_serialize_index(const char* field, const void* t)
    {
-#if PRINT_DBG_MSG
-      llvm::errs() << "field:" << field << "\n";
-#endif
+      PRINT_DBG("field:" << field << "\n");
       unsigned int index;
       if(t == nullptr)
       {
@@ -4542,21 +4543,21 @@ namespace llvm
 
       auto code = TREE_CODE(g);
       const char* code_name = GET_TREE_CODE_NAME(code);
-#if PRINT_DBG_MSG
+#ifdef PRINT_DBG_MSG
       if(code != GT(GIMPLE_NOP) && code != GT(GIMPLE_PHI_VIRTUAL) && code != GT(GIMPLE_LABEL))
       {
          llvm::Instruction* inst = const_cast<llvm::Instruction*>(reinterpret_cast<const llvm::Instruction*>(g));
          llvm::Function* currentFunction = inst->getFunction();
-         llvm::errs() << "@" << code_name << " @" << index << "\n";
+         PRINT_DBG("@" << code_name << " @" << index << "\n");
          inst->print(llvm::errs());
-         llvm::errs() << "\n";
+         PRINT_DBG("\n");
          auto& MSSA = GetMSSA(*currentFunction).getMSSA();
          if(MSSA.getMemoryAccess(inst))
-            llvm::errs() << "| " << *MSSA.getMemoryAccess(inst) << "\n";
+            PRINT_DBG("| " << *MSSA.getMemoryAccess(inst) << "\n");
       }
       else
       {
-         llvm::errs() << "@" << code_name << "\n";
+         PRINT_DBG("@" << code_name << "\n");
       }
 #endif
       /* Print the node index.  */
@@ -4915,18 +4916,24 @@ namespace llvm
          const char* field;
          serialize_new_line();
          serialize_int("bloc", getBB_index(&BB));
-#if PRINT_DBG_MSG
-         llvm::errs() << "BB" << getBB_index(&BB) << "\n";
+         PRINT_DBG("BB" << getBB_index(&BB) << "\n");
          if(MSSA.getMemoryAccess(&BB))
-            llvm::errs() << "|!!!!!!!!!!!!!!!!!! " << *MSSA.getMemoryAccess(&BB) << "\n";
-#endif
+         {
+            PRINT_DBG("|!!!!!!!!!!!!!!!!!! " << *MSSA.getMemoryAccess(&BB) << "\n");
+         }
          if(!LI.empty() && LI.getLoopFor(&BB) && LI.getLoopFor(&BB)->getHeader() == &BB &&
             LI.getLoopFor(&BB)->isAnnotatedParallel())
+         {
             serialize_string("hpl");
+         }
          if(LI.empty() || !LI.getLoopFor(&BB))
+         {
             serialize_int("loop_id", 0);
+         }
          else
+         {
             serialize_int("loop_id", loopLabes.find(LI.getLoopFor(&BB))->second);
+         }
          if(llvm::pred_begin(&BB) == llvm::pred_end(&BB))
          {
             serialize_maybe_newline();
@@ -5105,9 +5112,7 @@ namespace llvm
 
       tree_codes code = TREE_CODE(t);
       const char* code_name = GET_TREE_CODE_NAME(code);
-#if PRINT_DBG_MSG
-      llvm::errs() << "|" << code_name << "\n";
-#endif
+      PRINT_DBG("|" << code_name << "\n");
       snprintf(buffer, LOCAL_BUFFER_LEN, "%-16s ", code_name);
       stream << buffer;
       column = 25;
@@ -5693,10 +5698,8 @@ namespace llvm
       {
          if(SrcAlign == DestAlign && DestAlign == Length->getZExtValue() && DestAlign <= 8)
          {
-#if PRINT_DBG_MSG
-            llvm::errs() << "memcpy can be optimized\n";
-            llvm::errs() << "Align=" << SrcAlign << "\n";
-#endif
+            PRINT_DBG("memcpy can be optimized\n");
+            PRINT_DBG("Align=" << SrcAlign << "\n");
             return llvm::Type::getIntNTy(Context, SrcAlign * 8);
          }
          unsigned localSrcAlign = SrcAlign;
@@ -5708,10 +5711,8 @@ namespace llvm
             if(dstCheck && localSrcAlign == localDstAlign)
             {
                Optimize = true;
-#if PRINT_DBG_MSG
-               llvm::errs() << "memcpy can be optimized\n";
-               llvm::errs() << "Align=" << SrcAlign << "\n";
-#endif
+               PRINT_DBG("memcpy can be optimized\n");
+               PRINT_DBG("Align=" << SrcAlign << "\n");
                return llvm::Type::getIntNTy(Context, SrcAlign * 8);
             }
          }
@@ -5906,18 +5907,14 @@ namespace llvm
          AlignCanBeUsed = true;
       if(AlignCanBeUsed)
       {
-#if PRINT_DBG_MSG
-         llvm::errs() << "memset can be optimized\n";
-         llvm::errs() << "Align=" << Align << "\n";
-#endif
+         PRINT_DBG("memset can be optimized\n");
+         PRINT_DBG("Align=" << Align << "\n");
          SetValue = llvm::ConstantInt::get(llvm::Type::getIntNTy(F->getContext(), Align * 8), 0);
       }
-#if PRINT_DBG_MSG
       else
       {
-         llvm::errs() << "memset cannot be optimized\n";
+         PRINT_DBG("memset cannot be optimized\n");
       }
-#endif
       llvm::IRBuilder<> Builder(OrigBB->getTerminator());
 
       auto ActualCopyLen =
@@ -5949,8 +5946,10 @@ namespace llvm
 #endif
       }
       else
+      {
          LoopBuilder.CreateStore(SetValue, LoopBuilder.CreateInBoundsGEP(SetValue->getType(), DstAddr, LoopIndex),
                                  IsVolatile);
+      }
 
       llvm::Value* NewIndex = LoopBuilder.CreateAdd(LoopIndex, llvm::ConstantInt::get(TypeOfCopyLen, 1));
       LoopIndex->addIncoming(NewIndex, LoopBB);
@@ -5993,89 +5992,6 @@ namespace llvm
             }
          }
       }
-   }
-
-   /// Intrinsic lowering
-   bool DumpGimpleRaw::lowerMemIntrinsics(llvm::Module& M)
-   {
-      auto res = false;
-      auto currFuncIterator = M.getFunctionList().begin();
-      while(currFuncIterator != M.getFunctionList().end())
-      {
-         auto& F = *currFuncIterator;
-#if __clang_major__ != 4
-         const llvm::TargetTransformInfo& TTI = GetTTI(F);
-#endif
-         auto fname = std::string(getName(&F));
-         llvm::SmallVector<llvm::MemIntrinsic*, 4> MemCalls;
-         for(llvm::Function::iterator BI = F.begin(), BE = F.end(); BI != BE; ++BI)
-         {
-            for(llvm::BasicBlock::iterator II = BI->begin(), IE = BI->end(); II != IE; ++II)
-            {
-               if(llvm::MemIntrinsic* InstrCall = dyn_cast<llvm::MemIntrinsic>(II))
-               {
-                  MemCalls.push_back(InstrCall);
-#if PRINT_DBG_MSG
-                  llvm::errs() << "Found a memIntrinsic Call\n";
-                  if(llvm::MemCpyInst* Memcpy = dyn_cast<llvm::MemCpyInst>(InstrCall))
-                  {
-                     if(llvm::ConstantInt* CI = dyn_cast<llvm::ConstantInt>(Memcpy->getLength()))
-                        llvm::errs() << "Found a memcpy with a constant number of iterations\n";
-                     else
-                        llvm::errs() << "Found a memcpy with an unknown number of iterations\n";
-                  }
-                  else if(llvm::MemSetInst* Memset = dyn_cast<llvm::MemSetInst>(InstrCall))
-                  {
-                     llvm::errs() << "Found a memset intrinsic\n";
-                  }
-#endif
-               }
-            }
-         }
-         // Transform mem* intrinsic calls.
-         for(llvm::MemIntrinsic* MemCall : MemCalls)
-         {
-            bool do_erase;
-            do_erase = false;
-            if(llvm::MemCpyInst* Memcpy = dyn_cast<llvm::MemCpyInst>(MemCall))
-            {
-               if(llvm::ConstantInt* CI = dyn_cast<llvm::ConstantInt>(Memcpy->getLength()))
-               {
-                  createMemCpyLoopKnownSizeLocal(Memcpy, Memcpy->getRawSource(), Memcpy->getRawDest(), CI,
-#if __clang_major__ > 6
-                                                 Memcpy->getSourceAlignment(), Memcpy->getDestAlignment(),
-#else
-                                                 Memcpy->getAlignment(), Memcpy->getAlignment(),
-#endif
-                                                 Memcpy->isVolatile(), Memcpy->isVolatile(), DL);
-                  do_erase = true;
-               }
-#if __clang_major__ != 4
-               else
-               {
-                  llvm::expandMemCpyAsLoop(Memcpy, TTI);
-                  do_erase = true;
-               }
-#endif
-            }
-            else if(llvm::MemMoveInst* Memmove = dyn_cast<llvm::MemMoveInst>(MemCall))
-            {
-#if __clang_major__ != 4
-               llvm::expandMemMoveAsLoop(Memmove);
-               do_erase = true;
-#endif
-            }
-            else if(llvm::MemSetInst* Memset = dyn_cast<llvm::MemSetInst>(MemCall))
-            {
-               expandMemSetAsLoopLocal(Memset, DL);
-               do_erase = true;
-            }
-            if(do_erase)
-               MemCall->eraseFromParent();
-         }
-         ++currFuncIterator;
-      }
-      return res;
    }
 
    static bool isSimpleEnoughPointerToCommitLocal(llvm::Constant* C, const llvm::DataLayout& DL)
@@ -6968,21 +6884,14 @@ namespace llvm
       }
 #endif
 
-#if PRINT_DBG_MSG
-      llvm::errs() << "Computing e-SSA\n";
-#endif
+      PRINT_DBG("Computing e-SSA\n");
       compute_eSSA(M, &res);
-#if PRINT_DBG_MSG
-      llvm::errs() << "Computed e-SSA\n";
-#endif
+      PRINT_DBG("Computed e-SSA\n");
 
       if(!earlyAnalysis)
       {
-#if PRINT_DBG_MSG
-         llvm::errs() << "Building metadata\n";
-#endif
+         PRINT_DBG("Building metadata\n");
          buildMetaDataMap(M);
-         res |= lowerMemIntrinsics(M);
 
          res |= RebuildConstants(M);
 
@@ -6992,30 +6901,24 @@ namespace llvm
          {
             if(TopFunctionName != "")
             {
-#define ANDERSEN 1
-#if PRINT_DBG_MSG
-               llvm::errs() << "Performing alias analysis\n";
-#endif
-#if ANDERSEN
+               PRINT_DBG("Performing alias analysis\n");
+#if ANDERSEN_AA
                PtoSets_AA = new Andersen_AA(TopFunctionName);
 #else
                PtoSets_AA = new Staged_Flow_Sensitive_AA(TopFunctionName);
 #endif
                PtoSets_AA->computePointToSet(M);
+               PRINT_DBG("Performed alias analysis\n");
             }
          }
 #endif
       }
 
 #if __clang_major__ < 10
-#if PRINT_DBG_MSG
-      llvm::errs() << "Performing value-range analysis\n";
-#endif
+      PRINT_DBG("Performing value-range analysis\n");
       RA = new RangeAnalysis::InterProceduralRACropDFSHelper();
       RA->exec(M, PtoSets_AA, GetDomTree, GetLVI, GetAC, GetMSSA);
-#if PRINT_DBG_MSG
-      llvm::errs() << "Performed value-range analysis\n";
-#endif
+      PRINT_DBG("Performed value-range analysis\n");
 #endif
 
 #ifdef DEBUG_RA
@@ -7041,10 +6944,8 @@ namespace llvm
 
          for(const auto& globalVar : M.getGlobalList())
          {
-#if PRINT_DBG_MSG
-            llvm::errs() << "Found global name: " << globalVar.getName() << "|" << ValueTyNames[globalVar.getValueID()]
-                         << "\n";
-#endif
+            PRINT_DBG("Found global name: " << globalVar.getName() << "|" << ValueTyNames[globalVar.getValueID()]
+                                            << "\n");
             SerializeGimpleGlobalTreeNode(assignCodeAuto(&globalVar));
          }
          if(!onlyGlobals)
@@ -7053,16 +6954,12 @@ namespace llvm
             {
                if(fun.isIntrinsic())
                {
-#if PRINT_DBG_MSG
-                  llvm::errs() << "Function intrinsic skipped: " << getName(&fun) << "|"
-                               << ValueTyNames[fun.getValueID()] << "\n";
-#endif
+                  PRINT_DBG("Function intrinsic skipped: " << getName(&fun) << "|" << ValueTyNames[fun.getValueID()]
+                                                           << "\n");
                }
                else
                {
-#if PRINT_DBG_MSG
-                  llvm::errs() << "Found function: " << getName(&fun) << "|" << ValueTyNames[fun.getValueID()] << "\n";
-#endif
+                  PRINT_DBG("Found function: " << getName(&fun) << "|" << ValueTyNames[fun.getValueID()] << "\n");
                   SerializeGimpleGlobalTreeNode(assignCodeAuto(&fun));
                }
             }
@@ -7080,7 +6977,7 @@ namespace llvm
 
       if(RA)
       {
-#if PRINT_DBG_MSG
+#ifdef PRINT_DBG_MSG
          RA->printRanges(M, llvm::errs());
 #endif
          delete RA;

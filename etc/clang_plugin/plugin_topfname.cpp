@@ -64,7 +64,8 @@
 #include <sstream>
 #include <string>
 
-#define PRINT_DBG_MSG 0
+// #define PRINT_DBG_MSG
+#include "debug_print.hpp"
 
 // Helper to load an API list to preserve and expose it as a functor for internalization.
 class PreserveSymbolList
@@ -220,9 +221,7 @@ namespace llvm
          {
             return changed;
          }
-#if PRINT_DBG_MSG
-         llvm::errs() << "Top function name: " << TopFunctionName_TFP << "\n";
-#endif
+         PRINT_DBG("Top function name: " << TopFunctionName_TFP << "\n");
          symbolList.push_back("signgam");
 
          if(!Internalize_TFP)

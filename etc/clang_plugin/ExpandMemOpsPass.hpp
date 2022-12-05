@@ -50,6 +50,8 @@
 #include "llvm/Transforms/Utils/LowerMemIntrinsics.h"
 #endif
 
+#include "debug_print.hpp"
+
 #ifndef __clang_major__
 #define __clang_major__ 4
 #endif
@@ -129,10 +131,8 @@ namespace llvm
          {
             if(SrcAlign == DestAlign && DestAlign == Length->getZExtValue() && DestAlign <= 8)
             {
-#if PRINT_DBG_MSG
-               llvm::errs() << "memcpy can be optimized\n";
-               llvm::errs() << "Align=" << SrcAlign << "\n";
-#endif
+               PRINT_DBG("memcpy can be optimized\n");
+               PRINT_DBG("Align=" << SrcAlign << "\n");
                return llvm::Type::getIntNTy(Context, SrcAlign * 8);
             }
             unsigned localSrcAlign = SrcAlign;
@@ -144,10 +144,8 @@ namespace llvm
                if(dstCheck && localSrcAlign == localDstAlign)
                {
                   Optimize = true;
-#if PRINT_DBG_MSG
-                  llvm::errs() << "memcpy can be optimized\n";
-                  llvm::errs() << "Align=" << SrcAlign << "\n";
-#endif
+                  PRINT_DBG("memcpy can be optimized\n");
+                  PRINT_DBG("Align=" << SrcAlign << "\n");
                   return llvm::Type::getIntNTy(Context, SrcAlign * 8);
                }
             }
@@ -343,16 +341,14 @@ namespace llvm
             AlignCanBeUsed = true;
          if(AlignCanBeUsed)
          {
-#if PRINT_DBG_MSG
-            llvm::errs() << "memset can be optimized\n";
-            llvm::errs() << "Align=" << Align << "\n";
-#endif
+            PRINT_DBG("memset can be optimized\n");
+            PRINT_DBG("Align=" << Align << "\n");
             SetValue = llvm::ConstantInt::get(llvm::Type::getIntNTy(F->getContext(), Align * 8), 0);
          }
-#if PRINT_DBG_MSG
          else
-            llvm::errs() << "memset cannot be optimized\n";
-#endif
+         {
+            PRINT_DBG("memset cannot be optimized\n");
+         }
          llvm::IRBuilder<> Builder(OrigBB->getTerminator());
 
          auto ActualCopyLen =
@@ -421,23 +417,19 @@ namespace llvm
                {
                   if(llvm::MemIntrinsic* InstrCall = dyn_cast<llvm::MemIntrinsic>(II))
                   {
-#if PRINT_DBG_MSG
-                     llvm::errs() << "Found a memIntrinsic Call\n";
-#endif
+                     PRINT_DBG("Found a memIntrinsic Call\n");
                      MemCalls.push_back(InstrCall);
-#if PRINT_DBG_MSG
                      if(llvm::MemCpyInst* Memcpy = dyn_cast<llvm::MemCpyInst>(InstrCall))
                      {
                         if(llvm::ConstantInt* CI = dyn_cast<llvm::ConstantInt>(Memcpy->getLength()))
-                           llvm::errs() << "Found a memcpy with a constant number of iterations\n";
+                           PRINT_DBG("Found a memcpy with a constant number of iterations\n");
                         else
-                           llvm::errs() << "Found a memcpy with an unknown number of iterations\n";
+                           PRINT_DBG("Found a memcpy with an unknown number of iterations\n");
                      }
                      else if(llvm::MemSetInst* Memset = dyn_cast<llvm::MemSetInst>(InstrCall))
                      {
-                        llvm::errs() << "Found a memset intrinsic\n";
+                        PRINT_DBG("Found a memset intrinsic\n");
                      }
-#endif
                   }
                }
             }

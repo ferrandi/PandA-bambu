@@ -97,7 +97,8 @@
 
 #include <boost/tokenizer.hpp>
 
-#define PRINT_DBG_MSG 0
+// #define PRINT_DBG_MSG
+#include "debug_print.hpp"
 
 namespace llvm
 {
@@ -217,10 +218,10 @@ namespace llvm
          }
          DumpGimpleRaw gimpleRawWriter(outdir_name, *(FileTokenizer.begin()), false, &Fun2Params, earlyAnalysis);
 
-#if PRINT_DBG_MSG
          if(!TopFunctionName.empty())
-            llvm::errs() << "Top function name: " << TopFunctionName << "\n";
-#endif
+         {
+            PRINT_DBG("Top function name: " << TopFunctionName << "\n");
+         }
 
          auto res = gimpleRawWriter.exec(M, TopFunctionName, GetTLI, GetTTI, GetDomTree, GetLI, GetMSSA, GetLVI, GetAC,
 #if __clang_major__ > 5

@@ -754,6 +754,8 @@ void CompilerWrapper::CompileFile(const std::string& original_file_name, std::st
       }
       if(compiler.is_clang)
       {
+         command += " -c" + load_plugin(compiler.expandMemOps_plugin_obj,
+                                        Param->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler));
          command += " -c" +
                     load_plugin(compiler.ssa_plugin_obj,
                                 Param->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler)) +
@@ -1304,6 +1306,8 @@ void CompilerWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::st
          command = compiler.llvm_opt;
 #ifndef _WIN32
          command += load_plugin_opt(compiler.ssa_plugin_obj,
+                                    Param->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler));
+         command += load_plugin_opt(compiler.expandMemOps_plugin_obj,
                                     Param->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler));
 #endif
          command += " -panda-outputdir=" + Param->getOption<std::string>(OPT_output_temporary_directory) +

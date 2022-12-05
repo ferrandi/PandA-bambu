@@ -54,7 +54,8 @@
 #include "clang/Sema/Sema.h"
 #include "llvm/Support/raw_ostream.h"
 
-#define PRINT_DBG_MSG 0
+// #define PRINT_DBG_MSG
+#include "debug_print.hpp"
 
 static std::map<std::string, std::map<clang::SourceLocation, std::map<std::string, std::string>>> file_loc_attr;
 static std::map<std::string, std::map<clang::SourceLocation, std::map<std::string, std::map<std::string, std::string>>>>
@@ -289,8 +290,7 @@ namespace clang
 
       void AnalyzeFunctionDecl(const FunctionDecl* FD)
       {
-         const auto print_error = [&](const std::string& msg)
-         {
+         const auto print_error = [&](const std::string& msg) {
             auto& D = CI.getDiagnostics();
             D.Report(D.getCustomDiagID(DiagnosticsEngine::Error, "%0")).AddString(msg);
          };
@@ -306,8 +306,7 @@ namespace clang
          const auto loc_arg = file_loc_arg_attr.find(filename);
          if(loc_arg != file_loc_arg_attr.end())
          {
-            const auto prev = [&]() -> SourceLocation
-            {
+            const auto prev = [&]() -> SourceLocation {
                const auto prev_it = prevLoc.find(filename);
                if(prev_it != prevLoc.end())
                {
@@ -329,8 +328,7 @@ namespace clang
          const auto loc_attr = file_loc_attr.find(filename);
          if(loc_attr != file_loc_attr.end())
          {
-            const auto prev = [&]() -> SourceLocation
-            {
+            const auto prev = [&]() -> SourceLocation {
                const auto prev_it = prevLoc.find(filename);
                if(prev_it != prevLoc.end())
                {
@@ -353,17 +351,14 @@ namespace clang
          if(!FD->isVariadic() && FD->hasBody())
          {
             Fun2Demangled[fname] = FD->getNameInfo().getName().getAsString();
-#if PRINT_DBG_MSG
-            llvm::errs() << "function: " << fname << "\n";
-#endif
+            PRINT_DBG("function: " << fname << "\n");
 
             auto par_index = 0u;
             for(const auto par : FD->parameters())
             {
                if(const auto PVD = dyn_cast<ParmVarDecl>(par))
                {
-                  const auto pname = [&]()
-                  {
+                  const auto pname = [&]() {
                      const auto name = PVD->getNameAsString();
                      if(name.empty())
                      {
@@ -371,9 +366,7 @@ namespace clang
                      }
                      return name;
                   }();
-#if PRINT_DBG_MSG
-                  llvm::errs() << "  arg: " << pname << "\n";
-#endif
+                  PRINT_DBG("  arg: " << pname << "\n");
 
                   auto& attr_val = fun_arg_attr[fname][pname];
                   const auto argType = PVD->getType();
@@ -381,8 +374,7 @@ namespace clang
                   std::string ParamTypeName;
                   std::string ParamTypeNameOrig;
                   std::string ParamTypeInclude;
-                  const auto getIncludes = [&](const clang::QualType& type)
-                  {
+                  const auto getIncludes = [&](const clang::QualType& type) {
                      std::string includes;
                      if(const auto BTD = getBaseTypeDecl(type))
                      {
@@ -408,8 +400,7 @@ namespace clang
                      }
                      return includes;
                   };
-                  const auto manageArray = [&](const ConstantArrayType* CA, bool setInterfaceType)
-                  {
+                  const auto manageArray = [&](const ConstantArrayType* CA, bool setInterfaceType) {
                      auto OrigTotArraySize = CA->getSize();
                      std::string Dimensions;
                      if(!setInterfaceType)
@@ -556,12 +547,10 @@ namespace clang
                   attr_val["interface_typename"] = ParamTypeName;
                   attr_val["interface_typename_orig"] = ParamTypeNameOrig;
                   attr_val["interface_typename_include"] = ParamTypeInclude;
-#if PRINT_DBG_MSG
-                  llvm::errs() << "    interface_type            : " << interface << "\n";
-                  llvm::errs() << "    interface_typename        : " << ParamTypeName << "\n";
-                  llvm::errs() << "    interface_typename_orig   : " << ParamTypeNameOrig << "\n";
-                  llvm::errs() << "    interface_typename_include: " << ParamTypeInclude << "\n";
-#endif
+                  PRINT_DBG("    interface_type            : " << interface << "\n");
+                  PRINT_DBG("    interface_typename        : " << ParamTypeName << "\n");
+                  PRINT_DBG("    interface_typename_orig   : " << ParamTypeNameOrig << "\n");
+                  PRINT_DBG("    interface_typename_include: " << ParamTypeInclude << "\n");
                }
                ++par_index;
             }
@@ -634,8 +623,7 @@ namespace clang
                         Token& PragmaTok) override
       {
          Token Tok{};
-         const auto print_error = [&](const std::string& msg)
-         {
+         const auto print_error = [&](const std::string& msg) {
             auto& D = PP.getDiagnostics();
             D.Report(Tok.getLocation(), D.getCustomDiagID(DiagnosticsEngine::Error, "#pragma HLS_interface %0"))
                 .AddString(msg);
@@ -644,16 +632,14 @@ namespace clang
          std::string interface;
          const auto loc = PragmaTok.getLocation();
          const auto filename = PP.getSourceManager().getPresumedLoc(loc, false).getFilename();
-         const auto end_parse = [&]()
-         {
+         const auto end_parse = [&]() {
             PP.Lex(Tok);
             if(Tok.isNot(tok::eod))
             {
                print_error("malformed");
             }
          };
-         const auto bundle_parse = [&]()
-         {
+         const auto bundle_parse = [&]() {
             PP.Lex(Tok);
             if(Tok.is(tok::equal))
             {
@@ -667,8 +653,7 @@ namespace clang
             file_loc_arg_attr[filename][loc][pname]["attribute3"] = bundle;
             // llvm::errs() << " bundle=" << bundle;
          };
-         const auto array_parse = [&]()
-         {
+         const auto array_parse = [&]() {
             PP.Lex(Tok);
             if(Tok.isNot(tok::numeric_constant))
             {
@@ -689,8 +674,7 @@ namespace clang
                print_error("array malformed");
             }
          };
-         const auto axi_parse = [&]()
-         {
+         const auto axi_parse = [&]() {
             PP.Lex(Tok);
             if(Tok.isNot(tok::identifier))
             {

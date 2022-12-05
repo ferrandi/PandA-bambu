@@ -59,13 +59,22 @@
 #endif
 #include "llvm/Analysis/TargetTransformInfo.h"
 #if __clang_major__ >= 13
+#include "llvm/Analysis/CGSCCPassManager.h"
 #include "llvm/Passes/PassBuilder.h"
 #include "llvm/Passes/PassPlugin.h"
+#include "llvm/Transforms/IPO/ArgumentPromotion.h"
+#include "llvm/Transforms/IPO/GlobalOpt.h"
+#include "llvm/Transforms/InstCombine/InstCombine.h"
+#include "llvm/Transforms/Scalar/LowerAtomic.h"
+#include "llvm/Transforms/Utils/BreakCriticalEdges.h"
+#include "llvm/Transforms/Utils/Mem2Reg.h"
+#include "llvm/Transforms/Utils/UnifyFunctionExitNodes.h"
 #endif
 
 #include <cxxabi.h>
 
-#define PRINT_DBG_MSG 0
+// #define PRINT_DBG_MSG
+#include "debug_print.hpp"
 
 namespace llvm
 {
@@ -153,10 +162,8 @@ namespace llvm
          {
             if(SrcAlign == DestAlign && DestAlign == Length->getZExtValue() && DestAlign <= 8)
             {
-#if PRINT_DBG_MSG
-               llvm::errs() << "memcpy can be optimized\n";
-               llvm::errs() << "Align=" << SrcAlign << "\n";
-#endif
+               PRINT_DBG("memcpy can be optimized\n");
+               PRINT_DBG("Align=" << SrcAlign << "\n");
                return llvm::Type::getIntNTy(Context, SrcAlign * 8);
             }
             unsigned localSrcAlign = SrcAlign;
@@ -168,10 +175,8 @@ namespace llvm
                if(dstCheck && localSrcAlign == localDstAlign)
                {
                   Optimize = true;
-#if PRINT_DBG_MSG
-                  llvm::errs() << "memcpy can be optimized\n";
-                  llvm::errs() << "Align=" << SrcAlign << "\n";
-#endif
+                  PRINT_DBG("memcpy can be optimized\n");
+                  PRINT_DBG("Align=" << SrcAlign << "\n");
                   return llvm::Type::getIntNTy(Context, SrcAlign * 8);
                }
             }
@@ -367,16 +372,14 @@ namespace llvm
             AlignCanBeUsed = true;
          if(AlignCanBeUsed)
          {
-#if PRINT_DBG_MSG
-            llvm::errs() << "memset can be optimized\n";
-            llvm::errs() << "Align=" << Align << "\n";
-#endif
+            PRINT_DBG("memset can be optimized\n");
+            PRINT_DBG("Align=" << Align << "\n");
             SetValue = llvm::ConstantInt::get(llvm::Type::getIntNTy(F->getContext(), Align * 8), 0);
          }
-#if PRINT_DBG_MSG
          else
-            llvm::errs() << "memset cannot be optimized\n";
-#endif
+         {
+            PRINT_DBG("memset cannot be optimized\n");
+         }
          llvm::IRBuilder<> Builder(OrigBB->getTerminator());
 
          auto ActualCopyLen =
@@ -408,8 +411,10 @@ namespace llvm
 #endif
          }
          else
+         {
             LoopBuilder.CreateStore(SetValue, LoopBuilder.CreateInBoundsGEP(SetValue->getType(), DstAddr, LoopIndex),
                                     IsVolatile);
+         }
 
          llvm::Value* NewIndex = LoopBuilder.CreateAdd(LoopIndex, llvm::ConstantInt::get(TypeOfCopyLen, 1));
          LoopIndex->addIncoming(NewIndex, LoopBB);
@@ -441,13 +446,15 @@ namespace llvm
             return false;
          }
 #endif
+         PRINT_DBG("Running mem ops expansion on " << M.getFunctionList().size() << " functions\n");
+
          auto DL = &M.getDataLayout();
          auto res = false;
          auto currFuncIterator = M.getFunctionList().begin();
          while(currFuncIterator != M.getFunctionList().end())
          {
             auto& F = *currFuncIterator;
-            auto fname = std::string(currFuncIterator->getName());
+            PRINT_DBG("  Function " << F.getName() << "\n");
             llvm::SmallVector<llvm::MemIntrinsic*, 4> MemCalls;
             for(llvm::Function::iterator BI = F.begin(), BE = F.end(); BI != BE; ++BI)
             {
@@ -455,23 +462,23 @@ namespace llvm
                {
                   if(llvm::MemIntrinsic* InstrCall = dyn_cast<llvm::MemIntrinsic>(II))
                   {
-#if PRINT_DBG_MSG
-                     llvm::errs() << "Found a memIntrinsic Call\n";
-#endif
+                     PRINT_DBG("Found a memIntrinsic Call\n");
                      MemCalls.push_back(InstrCall);
-#if PRINT_DBG_MSG
                      if(llvm::MemCpyInst* Memcpy = dyn_cast<llvm::MemCpyInst>(InstrCall))
                      {
                         if(llvm::ConstantInt* CI = dyn_cast<llvm::ConstantInt>(Memcpy->getLength()))
-                           llvm::errs() << "Found a memcpy with a constant number of iterations\n";
+                        {
+                           PRINT_DBG("Found a memcpy with a constant number of iterations\n");
+                        }
                         else
-                           llvm::errs() << "Found a memcpy with an unknown number of iterations\n";
+                        {
+                           PRINT_DBG("Found a memcpy with an unknown number of iterations\n");
+                        }
                      }
                      else if(llvm::MemSetInst* Memset = dyn_cast<llvm::MemSetInst>(InstrCall))
                      {
-                        llvm::errs() << "Found a memset intrinsic\n";
+                        PRINT_DBG("Found a memset intrinsic\n");
                      }
-#endif
                   }
                }
             }
@@ -515,7 +522,9 @@ namespace llvm
                   do_erase = true;
                }
                if(do_erase)
+               {
                   MemCall->eraseFromParent();
+               }
             }
             ++currFuncIterator;
          }
@@ -544,6 +553,7 @@ namespace llvm
 #if __clang_major__ >= 13
       llvm::PreservedAnalyses run(llvm::Module& M, llvm::ModuleAnalysisManager& MAM)
       {
+         PRINT_DBG("Running mem ops expansion\n");
          auto& FAM = MAM.getResult<FunctionAnalysisManagerModuleProxy>(M).getManager();
          auto GetTTI = [&](llvm::Function& F) -> llvm::TargetTransformInfo& {
             return FAM.getResult<llvm::TargetIRAnalysis>(F);
@@ -570,6 +580,11 @@ llvm::PassPluginLibraryInfo CLANG_PLUGIN_INFO(_plugin_expandMemOps)()
 {
    return {LLVM_PLUGIN_API_VERSION, CLANG_VERSION_STRING(_plugin_expandMemOps), "v0.12", [](llvm::PassBuilder& PB) {
               const auto load = [](llvm::ModulePassManager& MPM) {
+                 llvm::FunctionPassManager FPM;
+                 FPM.addPass(llvm::InstCombinePass());
+                 FPM.addPass(llvm::BreakCriticalEdgesPass());
+                 FPM.addPass(llvm::UnifyFunctionExitNodesPass());
+                 MPM.addPass(llvm::createModuleToFunctionPassAdaptor(std::move(FPM)));
                  MPM.addPass(llvm::CLANG_VERSION_SYMBOL(_plugin_expandMemOps)());
                  return true;
               };
