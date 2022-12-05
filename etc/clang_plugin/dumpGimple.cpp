@@ -44,74 +44,71 @@
 
 #include "plugin_includes.hpp"
 
-#include "llvm/Analysis/AssumptionCache.h"
-#include "llvm/Analysis/CFG.h"
-#include "llvm/Analysis/ConstantFolding.h"
-#include "llvm/Analysis/InstructionSimplify.h"
-#include "llvm/Analysis/LoopPass.h"
-#include "llvm/Analysis/ValueTracking.h"
-#include "llvm/IR/Attributes.h"
-#if __clang_major__ < 11
-#include "llvm/IR/CallSite.h"
-#endif
-#include "llvm/IR/CFG.h"
-#include "llvm/IR/ConstantRange.h"
-#include "llvm/IR/Constants.h"
-#include "llvm/IR/DebugInfo.h"
-#include "llvm/IR/DebugInfoMetadata.h"
-#include "llvm/IR/DerivedTypes.h"
-#include "llvm/IR/Dominators.h"
-#include "llvm/IR/Function.h"
-#include "llvm/IR/GetElementPtrTypeIterator.h"
-#include "llvm/IR/GlobalVariable.h"
-#include "llvm/IR/IntrinsicInst.h"
-#include "llvm/IR/Intrinsics.h"
-#include "llvm/IR/Metadata.h"
-#include "llvm/IR/Module.h"
-#include "llvm/IR/Operator.h"
-#include "llvm/IR/Type.h"
-#include "llvm/IR/Verifier.h"
-#include "llvm/Pass.h"
-#include "llvm/Support/ErrorHandling.h"
-
-#if __clang_major__ == 4
-#include "llvm/Transforms/Utils/MemorySSA.h"
-#else
-#include "llvm/Analysis/MemorySSA.h"
-#include "llvm/Support/KnownBits.h"
-#include "llvm/Transforms/Utils/LowerMemIntrinsics.h"
-#endif
-#include "llvm/Analysis/AliasAnalysis.h"
-#include "llvm/Analysis/LazyValueInfo.h"
-#include "llvm/Analysis/TargetLibraryInfo.h"
-#include "llvm/Analysis/TargetTransformInfo.h"
-#include "llvm/CodeGen/IntrinsicLowering.h"
-#include "llvm/IR/DerivedTypes.h"
-#include "llvm/IR/IRBuilder.h"
-#include "llvm/IR/InlineAsm.h"
-#include "llvm/IR/InstrTypes.h"
-#include "llvm/IR/Instructions.h"
-#include "llvm/IR/ModuleSlotTracker.h"
-#include "llvm/Support/ErrorHandling.h"
-#include "llvm/Support/FileSystem.h"
-#include "llvm/Transforms/Utils/Local.h"
+#include "CustomScalarReplacementOfAggregatesPass.hpp"
+#include "llvm/RangeAnalysis.hpp"
+#include "llvm/eSSA.hpp"
 
 #if HAVE_LIBBDD
 #include "HardekopfLin_AA.hpp"
 #endif
 
-#include "llvm/RangeAnalysis.hpp"
-#include "llvm/eSSA.hpp"
-
-#include "CustomScalarReplacementOfAggregatesPass.hpp"
 #if __clang_major__ > 5
 #include "TreeHeightReduction.hpp"
 #endif
 
-#include <cxxabi.h>
-#include <iomanip>
+#include <llvm/Analysis/AliasAnalysis.h>
+#include <llvm/Analysis/AssumptionCache.h>
+#include <llvm/Analysis/CFG.h>
+#include <llvm/Analysis/ConstantFolding.h>
+#include <llvm/Analysis/InstructionSimplify.h>
+#include <llvm/Analysis/LazyValueInfo.h>
+#include <llvm/Analysis/LoopPass.h>
+#include <llvm/Analysis/TargetLibraryInfo.h>
+#include <llvm/Analysis/TargetTransformInfo.h>
+#include <llvm/Analysis/ValueTracking.h>
+#include <llvm/CodeGen/IntrinsicLowering.h>
+#include <llvm/IR/Attributes.h>
+#include <llvm/IR/CFG.h>
+#include <llvm/IR/ConstantRange.h>
+#include <llvm/IR/Constants.h>
+#include <llvm/IR/DebugInfo.h>
+#include <llvm/IR/DebugInfoMetadata.h>
+#include <llvm/IR/DerivedTypes.h>
+#include <llvm/IR/Dominators.h>
+#include <llvm/IR/Function.h>
+#include <llvm/IR/GetElementPtrTypeIterator.h>
+#include <llvm/IR/GlobalVariable.h>
+#include <llvm/IR/IRBuilder.h>
+#include <llvm/IR/InlineAsm.h>
+#include <llvm/IR/InstrTypes.h>
+#include <llvm/IR/Instructions.h>
+#include <llvm/IR/IntrinsicInst.h>
+#include <llvm/IR/Intrinsics.h>
+#include <llvm/IR/Metadata.h>
+#include <llvm/IR/Module.h>
+#include <llvm/IR/ModuleSlotTracker.h>
+#include <llvm/IR/Operator.h>
+#include <llvm/IR/Type.h>
+#include <llvm/IR/Verifier.h>
+#include <llvm/Pass.h>
+#include <llvm/Support/ErrorHandling.h>
+#include <llvm/Support/FileSystem.h>
+#include <llvm/Transforms/Utils/Local.h>
 
+#if __clang_major__ == 4
+#include <llvm/Transforms/Utils/MemorySSA.h>
+#else
+#include <llvm/Analysis/MemorySSA.h>
+#include <llvm/Support/KnownBits.h>
+#include <llvm/Transforms/Utils/LowerMemIntrinsics.h>
+#endif
+#if __clang_major__ < 11
+#include <llvm/IR/CallSite.h>
+#endif
+
+#include <cxxabi.h>
 #include <float.h>
+#include <iomanip>
 
 #define ANDERSEN_AA 1
 
@@ -377,13 +374,17 @@ namespace llvm
 
    DumpGimpleRaw::DumpGimpleRaw(const std::string& _outdir_name, const std::string& _InFile, bool _onlyGlobals,
                                 std::map<std::string, std::vector<std::string>>* _fun2params, bool early)
-       : GetTLI([](llvm::Function&) -> llvm::TargetLibraryInfo& { return *((llvm::TargetLibraryInfo*)nullptr); }),
+       :
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wnull-dereference"
+         GetTLI([](llvm::Function&) -> llvm::TargetLibraryInfo& { return *((llvm::TargetLibraryInfo*)nullptr); }),
          GetTTI([](llvm::Function&) -> llvm::TargetTransformInfo& { return *((llvm::TargetTransformInfo*)nullptr); }),
          GetDomTree([](llvm::Function&) -> llvm::DominatorTree& { return *((llvm::DominatorTree*)nullptr); }),
          GetLI([](llvm::Function&) -> llvm::LoopInfo& { return *((llvm::LoopInfo*)nullptr); }),
          GetMSSA([](llvm::Function&) -> MemorySSAAnalysisResult& { return *((MemorySSAAnalysisResult*)nullptr); }),
          GetLVI([](llvm::Function&) -> llvm::LazyValueInfo& { return *((llvm::LazyValueInfo*)nullptr); }),
          GetAC([](llvm::Function&) -> llvm::AssumptionCache& { return *((llvm::AssumptionCache*)nullptr); }),
+#pragma clang diagnostic pop
          earlyAnalysis(early),
          outdir_name(_outdir_name),
          InFile(_InFile),
@@ -5726,235 +5727,6 @@ namespace llvm
    {
       for(unsigned i = 0; i != RemainingBytes; ++i)
          OpsOut.push_back(llvm::Type::getInt8Ty(Context));
-   }
-
-   static void createMemCpyLoopKnownSizeLocal(llvm::Instruction* InsertBefore, llvm::Value* SrcAddr,
-                                              llvm::Value* DstAddr, llvm::ConstantInt* CopyLen, unsigned SrcAlign,
-                                              unsigned DestAlign, bool SrcIsVolatile, bool DstIsVolatile,
-                                              const llvm::DataLayout* DL)
-   {
-      // No need to expand zero length copies.
-      if(CopyLen->isZero())
-         return;
-
-      llvm::BasicBlock* PreLoopBB = InsertBefore->getParent();
-      llvm::BasicBlock* PostLoopBB = nullptr;
-      llvm::Function* ParentFunc = PreLoopBB->getParent();
-      llvm::LLVMContext& Ctx = PreLoopBB->getContext();
-
-      bool PeelCandidate = false;
-      llvm::Type* TypeOfCopyLen = CopyLen->getType();
-      llvm::Type* LoopOpType = getMemcpyLoopLoweringTypeLocal(Ctx, CopyLen, SrcAlign, DestAlign, SrcAddr, DstAddr, DL,
-                                                              SrcIsVolatile || DstIsVolatile, PeelCandidate);
-
-      unsigned LoopOpSize = getLoopOperandSizeInBytesLocal(LoopOpType);
-      uint64_t LoopEndCount = CopyLen->getZExtValue() / LoopOpSize;
-
-      unsigned SrcAS = cast<llvm::PointerType>(SrcAddr->getType())->getAddressSpace();
-      unsigned DstAS = cast<llvm::PointerType>(DstAddr->getType())->getAddressSpace();
-
-      uint64_t BytesCopied = LoopEndCount * LoopOpSize;
-      uint64_t RemainingBytes = CopyLen->getZExtValue() - BytesCopied;
-
-      bool do_unrolling;
-#if __clang_major__ == 7
-      do_unrolling = false;
-#else
-      do_unrolling = true;
-#endif
-      bool srcIsAlloca = false;
-      bool srcIsGlobal = false;
-      if(llvm::dyn_cast<llvm::BitCastInst>(SrcAddr) &&
-         dyn_cast<llvm::AllocaInst>(llvm::dyn_cast<llvm::BitCastInst>(SrcAddr)->getOperand(0)))
-      {
-         srcIsAlloca = true;
-         do_unrolling = do_unrolling && (LoopEndCount <= PEEL_THRESHOLD);
-      }
-      else if(llvm::dyn_cast<llvm::ConstantExpr>(SrcAddr) &&
-              cast<llvm::ConstantExpr>(SrcAddr)->getOpcode() == llvm::Instruction::BitCast &&
-              dyn_cast<llvm::GlobalVariable>(cast<llvm::ConstantExpr>(SrcAddr)->getOperand(0)))
-      {
-         srcIsGlobal = true;
-         do_unrolling =
-             do_unrolling &&
-             (dyn_cast<llvm::GlobalVariable>(cast<llvm::ConstantExpr>(SrcAddr)->getOperand(0))->isConstant() ||
-              (LoopEndCount <= PEEL_THRESHOLD));
-      }
-      else if(LoopEndCount == 1)
-         do_unrolling = true;
-      if(do_unrolling && !SrcIsVolatile && !DstIsVolatile && (srcIsAlloca || srcIsGlobal) &&
-         llvm::dyn_cast<llvm::BitCastInst>(DstAddr) && PeelCandidate)
-      {
-         llvm::PointerType* SrcOpType = llvm::PointerType::get(LoopOpType, SrcAS);
-         llvm::PointerType* DstOpType = llvm::PointerType::get(LoopOpType, DstAS);
-         llvm::IRBuilder<> Builder(InsertBefore);
-         auto srcAddress =
-             Builder.CreateBitCast(srcIsAlloca ? llvm::dyn_cast<llvm::BitCastInst>(SrcAddr)->getOperand(0) :
-                                                 cast<llvm::ConstantExpr>(SrcAddr)->getOperand(0),
-                                   SrcOpType);
-         auto dstAddress = Builder.CreateBitCast(llvm::dyn_cast<llvm::BitCastInst>(DstAddr)->getOperand(0), DstOpType);
-         for(auto LI = 0u; LI < LoopEndCount; ++LI)
-         {
-            llvm::Value* SrcGEP =
-                Builder.CreateInBoundsGEP(LoopOpType, srcAddress, llvm::ConstantInt::get(TypeOfCopyLen, LI));
-            llvm::Value* Load = Builder.CreateLoad(SrcGEP, SrcIsVolatile);
-            llvm::Value* DstGEP =
-                Builder.CreateInBoundsGEP(LoopOpType, dstAddress, llvm::ConstantInt::get(TypeOfCopyLen, LI));
-            Builder.CreateStore(Load, DstGEP, DstIsVolatile);
-         }
-      }
-      else if(LoopEndCount != 0)
-      {
-         // Split
-         PostLoopBB = PreLoopBB->splitBasicBlock(InsertBefore, "memcpy-split");
-         llvm::BasicBlock* LoopBB = llvm::BasicBlock::Create(Ctx, "load-store-loop", ParentFunc, PostLoopBB);
-         PreLoopBB->getTerminator()->setSuccessor(0, LoopBB);
-
-         llvm::IRBuilder<> PLBuilder(PreLoopBB->getTerminator());
-
-         // Cast the Src and Dst pointers to pointers to the loop operand type (if
-         // needed).
-         llvm::PointerType* SrcOpType = llvm::PointerType::get(LoopOpType, SrcAS);
-         llvm::PointerType* DstOpType = llvm::PointerType::get(LoopOpType, DstAS);
-         if(SrcAddr->getType() != SrcOpType)
-         {
-            SrcAddr = PLBuilder.CreateBitCast(SrcAddr, SrcOpType);
-         }
-         if(DstAddr->getType() != DstOpType)
-         {
-            DstAddr = PLBuilder.CreateBitCast(DstAddr, DstOpType);
-         }
-
-         llvm::IRBuilder<> LoopBuilder(LoopBB);
-         llvm::PHINode* LoopIndex = LoopBuilder.CreatePHI(TypeOfCopyLen, 2, "loop-index");
-         LoopIndex->addIncoming(llvm::ConstantInt::get(TypeOfCopyLen, 0U), PreLoopBB);
-         // Loop Body
-         llvm::Value* SrcGEP = LoopBuilder.CreateInBoundsGEP(LoopOpType, SrcAddr, LoopIndex);
-         llvm::Value* Load = LoopBuilder.CreateLoad(SrcGEP, SrcIsVolatile);
-         llvm::Value* DstGEP = LoopBuilder.CreateInBoundsGEP(LoopOpType, DstAddr, LoopIndex);
-         LoopBuilder.CreateStore(Load, DstGEP, DstIsVolatile);
-
-         llvm::Value* NewIndex = LoopBuilder.CreateAdd(LoopIndex, llvm::ConstantInt::get(TypeOfCopyLen, 1U));
-         LoopIndex->addIncoming(NewIndex, LoopBB);
-
-         // Create the loop branch condition.
-         llvm::Constant* LoopEndCI = llvm::ConstantInt::get(TypeOfCopyLen, LoopEndCount);
-         LoopBuilder.CreateCondBr(LoopBuilder.CreateICmpULT(NewIndex, LoopEndCI), LoopBB, PostLoopBB);
-      }
-
-      if(RemainingBytes)
-      {
-         llvm::IRBuilder<> RBuilder(PostLoopBB ? PostLoopBB->getFirstNonPHI() : InsertBefore);
-
-         // Update the alignment based on the copy size used in the loop body.
-         SrcAlign = std::min(SrcAlign, LoopOpSize);
-         DestAlign = std::min(DestAlign, LoopOpSize);
-
-         llvm::SmallVector<llvm::Type*, 5> RemainingOps;
-         getMemcpyLoopResidualLoweringTypeLocal(RemainingOps, Ctx, RemainingBytes, SrcAlign, DestAlign);
-
-         for(auto OpTy : RemainingOps)
-         {
-            // Calculate the new index
-            unsigned OperandSize = getLoopOperandSizeInBytesLocal(OpTy);
-            uint64_t GepIndex = BytesCopied / OperandSize;
-            assert(GepIndex * OperandSize == BytesCopied && "Division should have no Remainder!");
-            // Cast source to operand type and load
-            llvm::PointerType* SrcPtrType = llvm::PointerType::get(OpTy, SrcAS);
-            llvm::Value* CastedSrc =
-                SrcAddr->getType() == SrcPtrType ? SrcAddr : RBuilder.CreateBitCast(SrcAddr, SrcPtrType);
-            llvm::Value* SrcGEP =
-                RBuilder.CreateInBoundsGEP(OpTy, CastedSrc, llvm::ConstantInt::get(TypeOfCopyLen, GepIndex));
-            llvm::Value* Load = RBuilder.CreateLoad(SrcGEP, SrcIsVolatile);
-
-            // Cast destination to operand type and store.
-            llvm::PointerType* DstPtrType = llvm::PointerType::get(OpTy, DstAS);
-            llvm::Value* CastedDst =
-                DstAddr->getType() == DstPtrType ? DstAddr : RBuilder.CreateBitCast(DstAddr, DstPtrType);
-            llvm::Value* DstGEP =
-                RBuilder.CreateInBoundsGEP(OpTy, CastedDst, llvm::ConstantInt::get(TypeOfCopyLen, GepIndex));
-            RBuilder.CreateStore(Load, DstGEP, DstIsVolatile);
-
-            BytesCopied += OperandSize;
-         }
-      }
-      assert(BytesCopied == CopyLen->getZExtValue() && "Bytes copied should match size in the call!");
-   }
-
-   static void expandMemSetAsLoopLocal(llvm::MemSetInst* Memset, const llvm::DataLayout* DL)
-   {
-      llvm::Instruction* InsertBefore = Memset;
-      llvm::Value* DstAddr = Memset->getRawDest();
-      llvm::Value* CopyLen = Memset->getLength();
-      llvm::Value* SetValue = Memset->getValue();
-#if __clang_major__ >= 7
-      unsigned Align = Memset->getDestAlignment();
-#else
-      unsigned Align = Memset->getAlignment();
-#endif
-      bool IsVolatile = Memset->isVolatile();
-      llvm::Type* TypeOfCopyLen = CopyLen->getType();
-      llvm::BasicBlock* OrigBB = InsertBefore->getParent();
-      llvm::Function* F = OrigBB->getParent();
-      llvm::BasicBlock* NewBB = OrigBB->splitBasicBlock(InsertBefore, "split");
-      llvm::BasicBlock* LoopBB = llvm::BasicBlock::Create(F->getContext(), "loadstoreloop", F, NewBB);
-
-      addrIsOfIntArrayType(DstAddr, Align, DL);
-
-      bool AlignCanBeUsed = false;
-      if(isa<llvm::ConstantInt>(CopyLen) && isa<llvm::Constant>(SetValue) &&
-         cast<llvm::Constant>(SetValue)->isNullValue() && Align > 1 && Align <= 8 && SetValue->getType()->isIntegerTy())
-         AlignCanBeUsed = true;
-      if(AlignCanBeUsed)
-      {
-         PRINT_DBG("memset can be optimized\n");
-         PRINT_DBG("Align=" << Align << "\n");
-         SetValue = llvm::ConstantInt::get(llvm::Type::getIntNTy(F->getContext(), Align * 8), 0);
-      }
-      else
-      {
-         PRINT_DBG("memset cannot be optimized\n");
-      }
-      llvm::IRBuilder<> Builder(OrigBB->getTerminator());
-
-      auto ActualCopyLen =
-          AlignCanBeUsed ?
-              llvm::ConstantInt::get(TypeOfCopyLen, cast<llvm::ConstantInt>(CopyLen)->getValue().udiv(
-                                                        llvm::APInt(TypeOfCopyLen->getIntegerBitWidth(), Align))) :
-              CopyLen;
-
-      // Cast pointer to the type of value getting stored
-      unsigned dstAS = cast<llvm::PointerType>(DstAddr->getType())->getAddressSpace();
-      DstAddr = Builder.CreateBitCast(DstAddr, llvm::PointerType::get(SetValue->getType(), dstAS));
-
-      Builder.CreateCondBr(Builder.CreateICmpEQ(llvm::ConstantInt::get(TypeOfCopyLen, 0), CopyLen), NewBB, LoopBB);
-      OrigBB->getTerminator()->eraseFromParent();
-
-      llvm::IRBuilder<> LoopBuilder(LoopBB);
-      llvm::PHINode* LoopIndex = LoopBuilder.CreatePHI(TypeOfCopyLen, 0);
-      LoopIndex->addIncoming(llvm::ConstantInt::get(TypeOfCopyLen, 0), OrigBB);
-
-      if(AlignCanBeUsed)
-      {
-#if __clang_major__ >= 11
-         LoopBuilder.CreateAlignedStore(SetValue,
-                                        LoopBuilder.CreateInBoundsGEP(SetValue->getType(), DstAddr, LoopIndex),
-                                        llvm::MaybeAlign(Align), IsVolatile);
-#else
-         LoopBuilder.CreateAlignedStore(
-             SetValue, LoopBuilder.CreateInBoundsGEP(SetValue->getType(), DstAddr, LoopIndex), Align, IsVolatile);
-#endif
-      }
-      else
-      {
-         LoopBuilder.CreateStore(SetValue, LoopBuilder.CreateInBoundsGEP(SetValue->getType(), DstAddr, LoopIndex),
-                                 IsVolatile);
-      }
-
-      llvm::Value* NewIndex = LoopBuilder.CreateAdd(LoopIndex, llvm::ConstantInt::get(TypeOfCopyLen, 1));
-      LoopIndex->addIncoming(NewIndex, LoopBB);
-
-      LoopBuilder.CreateCondBr(LoopBuilder.CreateICmpULT(NewIndex, ActualCopyLen), LoopBB, NewBB);
    }
 
    void DumpGimpleRaw::buildMetaDataMap(const llvm::Module& M)

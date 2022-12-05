@@ -39,23 +39,24 @@
 #include "GepiCanonicalizationPass.hpp"
 #include "plugin_includes.hpp"
 
-#include "llvm/IR/LegacyPassManager.h"
-#include "llvm/IR/PassManager.h"
-#include "llvm/Transforms/IPO.h"
-#include "llvm/Transforms/IPO/PassManagerBuilder.h"
+#include <llvm/IR/LegacyPassManager.h>
+#include <llvm/IR/PassManager.h>
 #include <llvm/IR/Verifier.h>
+#include <llvm/Transforms/IPO.h>
+#include <llvm/Transforms/IPO/PassManagerBuilder.h>
 #include <llvm/Transforms/Scalar.h>
+
 #if __clang_major__ >= 7 && !defined(VVD)
-#include "llvm/Transforms/Utils.h"
+#include <llvm/Transforms/Utils.h>
 #endif
 #if __clang_major__ >= 10
-#include "llvm/InitializePasses.h"
+#include <llvm/InitializePasses.h>
 #endif
 #if __clang_major__ >= 13
-#include "llvm/IR/Verifier.h"
-#include "llvm/Passes/PassBuilder.h"
-#include "llvm/Passes/PassPlugin.h"
-#include "llvm/Transforms/Utils/Mem2Reg.h"
+#include <llvm/IR/Verifier.h>
+#include <llvm/Passes/PassBuilder.h>
+#include <llvm/Passes/PassPlugin.h>
+#include <llvm/Transforms/Utils/Mem2Reg.h>
 #endif
 
 namespace llvm

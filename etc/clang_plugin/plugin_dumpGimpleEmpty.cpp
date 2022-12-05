@@ -39,35 +39,36 @@
  */
 #include "plugin_includes.hpp"
 
-#include "llvm/Analysis/AssumptionCache.h"
-#include "llvm/Analysis/LazyValueInfo.h"
-#include "llvm/Analysis/LoopInfo.h"
-#include "llvm/Analysis/MemoryDependenceAnalysis.h"
-#include "llvm/Analysis/TargetLibraryInfo.h"
-#include "llvm/Analysis/TargetTransformInfo.h"
-#include "llvm/IR/LegacyPassManager.h"
-#if __clang_major__ > 5
-#include "llvm/Analysis/OptimizationRemarkEmitter.h"
-#endif
-#include "llvm/IR/Module.h"
-#include "llvm/IR/PassManager.h"
-#include "llvm/InitializePasses.h"
-#include "llvm/Pass.h"
-#include "llvm/PassRegistry.h"
-#include "llvm/Support/raw_ostream.h"
-#include "llvm/Transforms/IPO/PassManagerBuilder.h"
-#include "llvm/Transforms/Utils/LoopUtils.h"
+#include <llvm/Analysis/AssumptionCache.h>
+#include <llvm/Analysis/LazyValueInfo.h>
+#include <llvm/Analysis/LoopInfo.h>
+#include <llvm/Analysis/MemoryDependenceAnalysis.h>
+#include <llvm/Analysis/TargetLibraryInfo.h>
+#include <llvm/Analysis/TargetTransformInfo.h>
+#include <llvm/IR/LegacyPassManager.h>
+#include <llvm/IR/Module.h>
+#include <llvm/IR/PassManager.h>
+#include <llvm/InitializePasses.h>
+#include <llvm/Pass.h>
+#include <llvm/PassRegistry.h>
+#include <llvm/Support/raw_ostream.h>
+#include <llvm/Transforms/IPO/PassManagerBuilder.h>
+#include <llvm/Transforms/Utils/LoopUtils.h>
+
 #if __clang_major__ != 4
-#include "llvm/Analysis/MemorySSA.h"
+#include <llvm/Analysis/MemorySSA.h>
 #else
-#include "llvm/Transforms/Utils/MemorySSA.h"
+#include <llvm/Transforms/Utils/MemorySSA.h>
+#endif
+#if __clang_major__ > 5
+#include <llvm/Analysis/OptimizationRemarkEmitter.h>
 #endif
 #if __clang_major__ >= 10
-#include "llvm/Support/CommandLine.h"
+#include <llvm/Support/CommandLine.h>
 #endif
 #if __clang_major__ >= 13
-#include "llvm/Passes/PassBuilder.h"
-#include "llvm/Passes/PassPlugin.h"
+#include <llvm/Passes/PassBuilder.h>
+#include <llvm/Passes/PassPlugin.h>
 #endif
 
 namespace llvm

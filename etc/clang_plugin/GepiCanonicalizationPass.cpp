@@ -35,21 +35,23 @@
 //
 
 #include "GepiCanonicalizationPass.hpp"
+
 #include <llvm/Analysis/LoopInfo.h>
 #include <llvm/Analysis/ScalarEvolution.h>
 #include <llvm/Analysis/ScalarEvolutionExpressions.h>
-#if __clang_major__ < 11
-#include <llvm/IR/CallSite.h>
-#endif
-#include "llvm/Transforms/Utils/BasicBlockUtils.h"
 #include <llvm/IR/Constants.h>
 #include <llvm/IR/Dominators.h>
 #include <llvm/IR/GetElementPtrTypeIterator.h>
 #include <llvm/IR/InstrTypes.h>
 #include <llvm/IR/Instructions.h>
 #include <llvm/IR/Operator.h>
+#include <llvm/Transforms/Utils/BasicBlockUtils.h>
 #include <llvm/Transforms/Utils/Cloning.h>
 #include <llvm/Transforms/Utils/UnrollLoop.h>
+
+#if __clang_major__ < 11
+#include <llvm/IR/CallSite.h>
+#endif
 
 #include <deque>
 
@@ -173,8 +175,8 @@ void recursive_copy_lowering(llvm::Type* type, std::vector<unsigned long long> g
       llvm::GetElementPtrInst* store_gep_inst =
           llvm::GetElementPtrInst::CreateInBounds(nullptr, store_ptr, gepi_value_idxs, "", store_inst);
 
-      auto* lowered_load = new llvm::LoadInst(
-          llvm::cast<llvm::PointerType>(load_gep_inst->getType())->getElementType(), load_gep_inst, "", load_inst);
+      auto* lowered_load = new llvm::LoadInst(llvm::cast<llvm::PointerType>(load_gep_inst->getType())->getElementType(),
+                                              load_gep_inst, "", load_inst);
       auto* lowered_store = new llvm::StoreInst(lowered_load, store_gep_inst, store_inst);
 
       llvm::errs() << "Lowered load gepi: ";
@@ -1039,8 +1041,7 @@ bool chunk_operations_lowering(llvm::Function& function)
 
                if(auto* store_inst = llvm::dyn_cast<llvm::StoreInst>(bitcast_single_user))
                {
-                  if(auto* constant_store_val =
-                         llvm::dyn_cast<llvm::ConstantInt>(store_inst->getValueOperand()))
+                  if(auto* constant_store_val = llvm::dyn_cast<llvm::ConstantInt>(store_inst->getValueOperand()))
                   {
                      llvm::Type* src_ty = store_bitcast_op->getSrcTy();
                      llvm::Type* dest_ty = store_bitcast_op->getDestTy();
@@ -1150,8 +1151,7 @@ bool bitcast_vector_removal(llvm::Function& function)
                {
                   if(auto* first_idx = llvm::dyn_cast<llvm::ConstantInt>(gep_op->getOperand(1)))
                   {
-                     if(auto* bitcast_op =
-                            llvm::dyn_cast<llvm::BitCastOperator>(gep_op->getPointerOperand()))
+                     if(auto* bitcast_op = llvm::dyn_cast<llvm::BitCastOperator>(gep_op->getPointerOperand()))
                      {
                         unsigned long long src_ty_size =
                             DL.getTypeSizeInBits(bitcast_op->getSrcTy()->getPointerElementType());
@@ -1179,8 +1179,7 @@ bool bitcast_vector_removal(llvm::Function& function)
          }
          else if(auto* load_inst = llvm::dyn_cast<llvm::LoadInst>(&i))
          {
-            if(auto* bitcast_op =
-                   llvm::dyn_cast<llvm::BitCastOperator>(load_inst->getPointerOperand()))
+            if(auto* bitcast_op = llvm::dyn_cast<llvm::BitCastOperator>(load_inst->getPointerOperand()))
             {
                unsigned long long src_ty_size = DL.getTypeSizeInBits(bitcast_op->getSrcTy()->getPointerElementType());
                unsigned long long dest_ty_size = DL.getTypeSizeInBits(bitcast_op->getDestTy()->getPointerElementType());
@@ -1204,8 +1203,7 @@ bool bitcast_vector_removal(llvm::Function& function)
          }
          else if(auto* store_inst = llvm::dyn_cast<llvm::StoreInst>(&i))
          {
-            if(auto* bitcast_op =
-                   llvm::dyn_cast<llvm::BitCastOperator>(store_inst->getPointerOperand()))
+            if(auto* bitcast_op = llvm::dyn_cast<llvm::BitCastOperator>(store_inst->getPointerOperand()))
             {
                unsigned long long src_ty_size = DL.getTypeSizeInBits(bitcast_op->getSrcTy()->getPointerElementType());
                unsigned long long dest_ty_size = DL.getTypeSizeInBits(bitcast_op->getDestTy()->getPointerElementType());
@@ -1383,8 +1381,7 @@ bool select_lowering(llvm::Function& function)
             {
                if(select_inst->hasOneUse())
                {
-                  if(auto* gepi =
-                         llvm::dyn_cast<llvm::GetElementPtrInst>(select_inst->use_begin()->getUser()))
+                  if(auto* gepi = llvm::dyn_cast<llvm::GetElementPtrInst>(select_inst->use_begin()->getUser()))
                   {
                      if(gepi->hasOneUse() and (llvm::isa<llvm::LoadInst>(gepi->use_begin()->getUser())))
                      {

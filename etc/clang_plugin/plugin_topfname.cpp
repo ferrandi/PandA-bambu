@@ -40,22 +40,23 @@
  */
 #include "plugin_includes.hpp"
 
-#include "llvm/ADT/StringSet.h"
-#include "llvm/IR/LegacyPassManager.h"
-#include "llvm/IR/Module.h"
-#include "llvm/IR/PassManager.h"
-#include "llvm/InitializePasses.h"
-#include "llvm/Pass.h"
-#include "llvm/PassRegistry.h"
-#include "llvm/Support/CommandLine.h"
-#include "llvm/Support/FileSystem.h"
-#include "llvm/Support/raw_ostream.h"
-#include "llvm/Transforms/IPO.h"
-#include "llvm/Transforms/IPO/Internalize.h"
-#include "llvm/Transforms/IPO/PassManagerBuilder.h"
+#include <llvm/ADT/StringSet.h>
+#include <llvm/IR/LegacyPassManager.h>
+#include <llvm/IR/Module.h>
+#include <llvm/IR/PassManager.h>
+#include <llvm/InitializePasses.h>
+#include <llvm/Pass.h>
+#include <llvm/PassRegistry.h>
+#include <llvm/Support/CommandLine.h>
+#include <llvm/Support/FileSystem.h>
+#include <llvm/Support/raw_ostream.h>
+#include <llvm/Transforms/IPO.h>
+#include <llvm/Transforms/IPO/Internalize.h>
+#include <llvm/Transforms/IPO/PassManagerBuilder.h>
+
 #if __clang_major__ >= 13
-#include "llvm/Passes/PassBuilder.h"
-#include "llvm/Passes/PassPlugin.h"
+#include <llvm/Passes/PassBuilder.h>
+#include <llvm/Passes/PassPlugin.h>
 #endif
 
 #include <cxxabi.h>

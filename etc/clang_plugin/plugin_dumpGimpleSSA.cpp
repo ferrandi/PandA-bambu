@@ -40,62 +40,63 @@
 
 #include "plugin_includes.hpp"
 
-#include "llvm/Analysis/AliasAnalysis.h"
-#include "llvm/Analysis/AssumptionCache.h"
-#include "llvm/Analysis/CFLSteensAliasAnalysis.h"
-#include "llvm/Analysis/DominanceFrontier.h"
-#include "llvm/Analysis/LazyValueInfo.h"
-#include "llvm/Analysis/LoopInfo.h"
-#include "llvm/Analysis/MemoryDependenceAnalysis.h"
-#if __clang_major__ > 5
-#include "llvm/Analysis/OptimizationRemarkEmitter.h"
-#endif
-#include "llvm/Analysis/TargetLibraryInfo.h"
-#include "llvm/Analysis/TargetTransformInfo.h"
-#include "llvm/Analysis/TypeBasedAliasAnalysis.h"
-#include "llvm/IR/Dominators.h"
-#include "llvm/IR/LegacyPassManager.h"
-#include "llvm/IR/PassManager.h"
-#include "llvm/Pass.h"
-#include "llvm/PassRegistry.h"
-#include "llvm/Transforms/IPO/PassManagerBuilder.h"
-#include "llvm/Transforms/Scalar/GVN.h"
-#include "llvm/Transforms/Utils/LoopUtils.h"
+#include <llvm-c/Transforms/Scalar.h>
+#include <llvm/Analysis/AliasAnalysis.h>
+#include <llvm/Analysis/AssumptionCache.h>
+#include <llvm/Analysis/CFLSteensAliasAnalysis.h>
+#include <llvm/Analysis/DominanceFrontier.h>
+#include <llvm/Analysis/LazyValueInfo.h>
+#include <llvm/Analysis/LoopInfo.h>
+#include <llvm/Analysis/MemoryDependenceAnalysis.h>
+#include <llvm/Analysis/TargetLibraryInfo.h>
+#include <llvm/Analysis/TargetTransformInfo.h>
+#include <llvm/Analysis/TypeBasedAliasAnalysis.h>
+#include <llvm/CodeGen/Passes.h>
+#include <llvm/IR/Dominators.h>
+#include <llvm/IR/LegacyPassManager.h>
+#include <llvm/IR/PassManager.h>
+#include <llvm/InitializePasses.h>
+#include <llvm/Pass.h>
+#include <llvm/PassRegistry.h>
+#include <llvm/Support/CommandLine.h>
+#include <llvm/Support/MemoryBuffer.h>
+#include <llvm/Transforms/IPO.h>
+#include <llvm/Transforms/IPO/PassManagerBuilder.h>
+#include <llvm/Transforms/Scalar.h>
+#include <llvm/Transforms/Scalar/GVN.h>
+#include <llvm/Transforms/Utils/LoopUtils.h>
+#include <llvm/Transforms/Utils/UnifyFunctionExitNodes.h>
+
 #if __clang_major__ != 4
-#include "llvm/Analysis/MemorySSA.h"
+#include <llvm/Analysis/MemorySSA.h>
 #else
-#include "llvm/Transforms/Utils/MemorySSA.h"
+#include <llvm/Transforms/Utils/MemorySSA.h>
 #endif
-#include "llvm-c/Transforms/Scalar.h"
+#if __clang_major__ > 5
+#include <llvm/Analysis/OptimizationRemarkEmitter.h>
+#endif
 #if __clang_major__ >= 7
-#include "llvm/Transforms/InstCombine/InstCombine.h"
+#include <llvm/Transforms/InstCombine/InstCombine.h>
 #endif
-#include "llvm/CodeGen/Passes.h"
-#include "llvm/InitializePasses.h"
-#include "llvm/Support/CommandLine.h"
-#include "llvm/Support/MemoryBuffer.h"
-#include "llvm/Transforms/IPO.h"
-#include "llvm/Transforms/Scalar.h"
-#include "llvm/Transforms/Utils/UnifyFunctionExitNodes.h"
 #if __clang_major__ >= 7 && !defined(VVD)
-#include "llvm/Transforms/Utils.h"
+#include <llvm/Transforms/Utils.h>
 #endif
 #if __clang_major__ >= 13
-#include "llvm/Analysis/CGSCCPassManager.h"
-#include "llvm/Passes/PassBuilder.h"
-#include "llvm/Passes/PassPlugin.h"
-#include "llvm/Transforms/IPO/ArgumentPromotion.h"
-#include "llvm/Transforms/IPO/GlobalOpt.h"
-#include "llvm/Transforms/InstCombine/InstCombine.h"
-#include "llvm/Transforms/Scalar/LowerAtomic.h"
-#include "llvm/Transforms/Utils/BreakCriticalEdges.h"
-#include "llvm/Transforms/Utils/Mem2Reg.h"
-#include "llvm/Transforms/Utils/UnifyFunctionExitNodes.h"
+#include <llvm/Analysis/CGSCCPassManager.h>
+#include <llvm/Passes/PassBuilder.h>
+#include <llvm/Passes/PassPlugin.h>
+#include <llvm/Transforms/IPO/ArgumentPromotion.h>
+#include <llvm/Transforms/IPO/GlobalOpt.h>
+#include <llvm/Transforms/InstCombine/InstCombine.h>
+#include <llvm/Transforms/Scalar/LowerAtomic.h>
+#include <llvm/Transforms/Utils/BreakCriticalEdges.h>
+#include <llvm/Transforms/Utils/Mem2Reg.h>
+#include <llvm/Transforms/Utils/UnifyFunctionExitNodes.h>
 #endif
-#include <sstream>
-#include <string>
 
 #include <boost/tokenizer.hpp>
+#include <sstream>
+#include <string>
 
 // #define PRINT_DBG_MSG
 #include "debug_print.hpp"

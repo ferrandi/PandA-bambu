@@ -37,33 +37,33 @@
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  *
  */
+#include "CustomScalarReplacementOfAggregatesPass.hpp"
 
-#include <llvm/Pass.h>
-
-#include "llvm/Analysis/TargetTransformInfo.h"
-#if __clang_major__ < 11
-#include "llvm/IR/CallSite.h"
-#endif
-#include "llvm/IR/Verifier.h"
-#include "llvm/Transforms/Utils/Local.h"
-#include "llvm/Transforms/Utils/PromoteMemToReg.h"
+#include <llvm/ADT/Statistic.h>
 #include <llvm/Analysis/InlineCost.h>
 #include <llvm/Analysis/ScalarEvolution.h>
 #include <llvm/Analysis/ScalarEvolutionExpressions.h>
+#include <llvm/Analysis/TargetTransformInfo.h>
 #include <llvm/IR/GetElementPtrTypeIterator.h>
 #include <llvm/IR/IntrinsicInst.h>
+#include <llvm/IR/Verifier.h>
+#include <llvm/Pass.h>
 #include <llvm/Transforms/Utils/BasicBlockUtils.h>
 #include <llvm/Transforms/Utils/Cloning.h>
-#include <stack>
-#if __clang_major__ >= 10
-#include "llvm/Support/CommandLine.h"
+#include <llvm/Transforms/Utils/Local.h>
+#include <llvm/Transforms/Utils/PromoteMemToReg.h>
+
+#if __clang_major__ < 11
+#include <llvm/IR/CallSite.h>
 #endif
+#if __clang_major__ >= 10
+#include <llvm/Support/CommandLine.h>
+#endif
+
 #include <cxxabi.h>
-#include <llvm/ADT/Statistic.h>
+#include <stack>
 
 #define DEBUG_TYPE "csroa"
-
-#include "CustomScalarReplacementOfAggregatesPass.hpp"
 
 // #define DEBUG_CSROA
 

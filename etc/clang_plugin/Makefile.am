@@ -32,6 +32,7 @@ EXTRA_DIST = \
 	$(top_srcdir)/etc/clang_plugin/plugin_includes.hpp \
 	$(top_srcdir)/etc/clang_plugin/plugin_topfname.cpp \
 	$(top_srcdir)/etc/clang_plugin/bambuS2S.cpp \
+	$(top_srcdir)/etc/clang_plugin/clang_version_symbol.hpp \
 	$(top_srcdir)/etc/clang_plugin/CustomScalarReplacementOfAggregatesPass.cpp \
 	$(top_srcdir)/etc/clang_plugin/CustomScalarReplacementOfAggregatesPass.hpp \
 	$(top_srcdir)/etc/clang_plugin/debug_print.hpp \
