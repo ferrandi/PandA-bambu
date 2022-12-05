@@ -25,7 +25,7 @@ void* __internal_bambu_memset(void* dest, int val, size_t len)
 #ifdef __llvm__
 
 void _llvm_memset_p0i8_i32(void* dest, unsigned char val, size_t len,
-#if __clang_major__ < 13
+#if __clang_major__ < 7
                            unsigned int align,
 #endif
                            _Bool isvolatile)
@@ -36,7 +36,7 @@ void _llvm_memset_p0i8_i32(void* dest, unsigned char val, size_t len,
 }
 
 void _llvm_memset_p0i8_i64(void* dest, unsigned char val, unsigned long long int len,
-#if __clang_major__ < 13
+#if __clang_major__ < 7
                            unsigned int align,
 #endif
                            _Bool isvolatile)
