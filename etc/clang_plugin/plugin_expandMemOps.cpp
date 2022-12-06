@@ -610,7 +610,7 @@ static void loadPass(const llvm::PassManagerBuilder&, llvm::legacy::PassManagerB
 
 // These constructors add our pass to a list of global extensions.
 static llvm::RegisterStandardPasses
-    CLANG_VERSION_SYMBOL(_plugin_expandMemOps_Ox)(llvm::PassManagerBuilder::EP_ModuleOptimizerEarly, loadPass);
+    CLANG_VERSION_SYMBOL(_plugin_expandMemOps_Ox)(llvm::PassManagerBuilder::EP_OptimizerLast, loadPass);
 #endif
 #endif
 
