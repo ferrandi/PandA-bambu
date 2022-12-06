@@ -580,15 +580,15 @@ jobs:
           rm ./*.AppImage
           ln -s \$PWD/squashfs-root/usr/bin/bambu bin/bambu
           ln -s \$PWD/squashfs-root/usr/bin/spider bin/spider
-          echo "local-bin=\$PWD/bin" >> $GITHUB_OUTPUT
-          echo "appdir=\$PWD/squashfs-root" >> $GITHUB_OUTPUT
+          echo "local-bin=\$PWD/bin" >> \$GITHUB_OUTPUT
+          echo "appdir=\$PWD/squashfs-root" >> \$GITHUB_OUTPUT
           export PATH=\$PWD/bin:\$PATH
           export APPDIR=\$PWD/squashfs-root
           export LD_LIBRARY_PATH=\$APPDIR/usr/lib/:\$APPDIR/lib/x86_64-linux-gnu/
           export NPROC=${{env.nproc}}
           export J=${{env.parallel}}
           mkdir ${{env.report-dir}}
-          echo "test-reports-dir=$PWD/${{env.report-dir}}" >> $GITHUB_OUTPUT
+          echo "test-reports-dir=$PWD/${{env.report-dir}}" >> \$GITHUB_OUTPUT
           ${{env.script}} --returnfail --junitdir="${{env.report-dir}}" --csv="${{env.report-dir}}/perf.csv" ${{env.args}}
           EOF
           chmod +x docker_exec.sh
