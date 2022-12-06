@@ -827,3 +827,51 @@ jobs:
           ./examples/cpp_examples/fir_filter/bambu.sh
           ./examples/cpp_examples/gcd_example/bambu.sh
           ./examples/crypto_designs/multi.sh
+
+  success:
+    if: ${{always()}}
+    needs:
+      [
+        gcc_regression_simple,
+        gcc_regression_simple-vhdl,
+        gcc_regression_simple-pretty_print,
+        libm-tests,
+        discrepancy-test,
+        omp-simd,
+        Make-checks,
+        CHStone-memarch,
+        Panda-bench,
+        Panda-bench-yosys,
+      ]
+    runs-on: [self-hosted]
+    steps:
+      - name: Check GCC Regression Simple Multi status
+        if: ${{ needs.gcc_regression_simple.result != 'success' }}
+        run: exit 1
+      - name: Check GCC Regression Simple VHDL status
+        if: ${{ needs.gcc_regression_simple-vhdl.result != 'success' }}
+        run: exit 1
+      - name: Check GCC Regression Simple pretty print status
+        if: ${{ needs.gcc_regression_simple-pretty_print.result != 'success' }}
+        run: exit 1
+      - name: Check LibM Multi status
+        if: ${{ needs.libm-tests.result != 'success' }}
+        run: exit 1
+      - name: Check GCC Regression Discrepancy status
+        if: ${{ needs.discrepancy-test.result != 'success' }}
+        run: exit 1
+      - name: Check OMP simd status
+        if: ${{ needs.omp-simd.result != 'success' }}
+        run: exit 1
+      - name: Check Make Checks status
+        if: ${{ needs.Make-checks.result != 'success' }}
+        run: exit 1
+      - name: Check CHStone memory architecture status
+        if: ${{ needs.CHStone-memarch.result != 'success' }}
+        run: exit 1
+      - name: Check PandA benchmarks status
+        if: ${{ needs.Panda-bench.result != 'success' }}
+        run: exit 1
+      - name: Check PandA benchmarks for Yosys status
+        if: ${{ needs.Panda-bench-yosys.result != 'success' }}
+        run: exit 1
