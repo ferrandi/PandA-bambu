@@ -167,5 +167,5 @@ curl -L https://github.com/AppImage/AppImageKit/releases/download/continuous/App
 chmod +x $dist_dir/AppRun
 ARCH=x86_64 appimagetool $dist_dir 2> /dev/null
 
-echo "::set-output name=appimage::$(ls *.AppImage)"
-echo "::set-output name=dist-dir::dist"
+echo "appimage=$(ls *.AppImage)" >> $GITHUB_OUTPUT
+echo "dist-dir=dist" >> $GITHUB_OUTPUT

@@ -61,7 +61,7 @@ jobs:
           mkdir bin
           ln -s $PWD/*.AppImage bin/bambu
           ln -s $PWD/*.AppImage bin/spider
-          echo "::set-output name=local-bin::$PWD/bin"
+          echo "local-bin=$PWD/bin" >> $GITHUB_OUTPUT
       - name: Launch test suite
         id: suite
         shell: bash
@@ -69,7 +69,7 @@ jobs:
           export PATH=${{steps.setup.outputs.local-bin}}:$PATH
           mkdir ${{env.report-dir}}
           out_dir="$PWD/${{env.report-dir}}"
-          echo "::set-output name=test-reports-dir::$out_dir"
+          echo "test-reports-dir=$out_dir" >> $GITHUB_OUTPUT
           ./panda_regressions/hls/${{matrix.script}} --returnfail --junitdir="$out_dir" --csv="$out_dir/perf.csv" --table="$out_dir/perf.tex" ${{env.args}} ${{matrix.args}}
       - name: Upload test reports
         if: ${{ always() }}

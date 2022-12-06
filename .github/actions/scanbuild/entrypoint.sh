@@ -111,4 +111,4 @@ scan-build-$CLANG_VERSION -v -v --use-cc=/usr/bin/clang-$CLANG_VERSION --use-c++
 echo "::endgroup"
 
 mkdir -p "$report_dir"
-echo "::set-output name=report-dir::$report_dir"
+echo "report-dir=$report_dir" >> $GITHUB_OUTPUT
