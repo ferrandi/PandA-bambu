@@ -44,75 +44,76 @@
 
 #include "plugin_includes.hpp"
 
-#include "llvm/Analysis/AssumptionCache.h"
-#include "llvm/Analysis/CFG.h"
-#include "llvm/Analysis/ConstantFolding.h"
-#include "llvm/Analysis/InstructionSimplify.h"
-#include "llvm/Analysis/LoopPass.h"
-#include "llvm/Analysis/ValueTracking.h"
-#include "llvm/IR/Attributes.h"
-#if __clang_major__ < 11
-#include "llvm/IR/CallSite.h"
-#endif
-#include "llvm/IR/CFG.h"
-#include "llvm/IR/ConstantRange.h"
-#include "llvm/IR/Constants.h"
-#include "llvm/IR/DebugInfo.h"
-#include "llvm/IR/DebugInfoMetadata.h"
-#include "llvm/IR/Dominators.h"
-#include "llvm/IR/Function.h"
-#include "llvm/IR/GetElementPtrTypeIterator.h"
-#include "llvm/IR/GlobalVariable.h"
-#include "llvm/IR/IntrinsicInst.h"
-#include "llvm/IR/Intrinsics.h"
-#include "llvm/IR/Metadata.h"
-#include "llvm/IR/Module.h"
-#include "llvm/IR/Operator.h"
-#include "llvm/IR/Type.h"
-#include "llvm/IR/Verifier.h"
-#include "llvm/Pass.h"
-#include "llvm/Support/ErrorHandling.h"
-
-#if __clang_major__ == 4
-#include "llvm/Transforms/Utils/MemorySSA.h"
-#else
-#include "llvm/Analysis/MemorySSA.h"
-#include "llvm/Support/KnownBits.h"
-#include "llvm/Transforms/Utils/LowerMemIntrinsics.h"
-#endif
-#include "llvm/Analysis/AliasAnalysis.h"
-#include "llvm/Analysis/LazyValueInfo.h"
-#include "llvm/Analysis/TargetLibraryInfo.h"
-#include "llvm/Analysis/TargetTransformInfo.h"
-#include "llvm/CodeGen/IntrinsicLowering.h"
-#include "llvm/IR/DerivedTypes.h"
-#include "llvm/IR/IRBuilder.h"
-#include "llvm/IR/InlineAsm.h"
-#include "llvm/IR/InstrTypes.h"
-#include "llvm/IR/Instructions.h"
-#include "llvm/IR/ModuleSlotTracker.h"
-#include "llvm/Support/ErrorHandling.h"
-#include "llvm/Support/FileSystem.h"
-#include "llvm/Transforms/Utils/Local.h"
+#include "CustomScalarReplacementOfAggregatesPass.hpp"
+#include "llvm/RangeAnalysis.hpp"
+#include "llvm/eSSA.hpp"
 
 #if HAVE_LIBBDD
 #include "HardekopfLin_AA.hpp"
 #endif
 
-#include "llvm/RangeAnalysis.hpp"
-#include "llvm/eSSA.hpp"
-
-#include "CustomScalarReplacementOfAggregatesPass.hpp"
 #if __clang_major__ > 5
 #include "TreeHeightReduction.hpp"
 #endif
 
+#include <llvm/Analysis/AliasAnalysis.h>
+#include <llvm/Analysis/AssumptionCache.h>
+#include <llvm/Analysis/CFG.h>
+#include <llvm/Analysis/ConstantFolding.h>
+#include <llvm/Analysis/InstructionSimplify.h>
+#include <llvm/Analysis/LazyValueInfo.h>
+#include <llvm/Analysis/LoopPass.h>
+#include <llvm/Analysis/TargetLibraryInfo.h>
+#include <llvm/Analysis/TargetTransformInfo.h>
+#include <llvm/Analysis/ValueTracking.h>
+#include <llvm/CodeGen/IntrinsicLowering.h>
+#include <llvm/IR/Attributes.h>
+#include <llvm/IR/CFG.h>
+#include <llvm/IR/ConstantRange.h>
+#include <llvm/IR/Constants.h>
+#include <llvm/IR/DebugInfo.h>
+#include <llvm/IR/DebugInfoMetadata.h>
+#include <llvm/IR/DerivedTypes.h>
+#include <llvm/IR/Dominators.h>
+#include <llvm/IR/Function.h>
+#include <llvm/IR/GetElementPtrTypeIterator.h>
+#include <llvm/IR/GlobalVariable.h>
+#include <llvm/IR/IRBuilder.h>
+#include <llvm/IR/InlineAsm.h>
+#include <llvm/IR/InstrTypes.h>
+#include <llvm/IR/Instructions.h>
+#include <llvm/IR/IntrinsicInst.h>
+#include <llvm/IR/Intrinsics.h>
+#include <llvm/IR/Metadata.h>
+#include <llvm/IR/Module.h>
+#include <llvm/IR/ModuleSlotTracker.h>
+#include <llvm/IR/Operator.h>
+#include <llvm/IR/Type.h>
+#include <llvm/IR/Verifier.h>
+#include <llvm/Pass.h>
+#include <llvm/Support/ErrorHandling.h>
+#include <llvm/Support/FileSystem.h>
+#include <llvm/Transforms/Utils/Local.h>
+
+#if __clang_major__ == 4
+#include <llvm/Transforms/Utils/MemorySSA.h>
+#else
+#include <llvm/Analysis/MemorySSA.h>
+#include <llvm/Support/KnownBits.h>
+#include <llvm/Transforms/Utils/LowerMemIntrinsics.h>
+#endif
+#if __clang_major__ < 11
+#include <llvm/IR/CallSite.h>
+#endif
+
 #include <cxxabi.h>
+#include <float.h>
 #include <iomanip>
 
-#include <float.h>
+#define ANDERSEN_AA 1
 
-#define PRINT_DBG_MSG 0
+// #define PRINT_DBG_MSG
+#include "debug_print.hpp"
 
 static std::string create_file_name_string(const std::string& outdir_name, const std::string& original_filename)
 {
@@ -373,7 +374,18 @@ namespace llvm
 
    DumpGimpleRaw::DumpGimpleRaw(const std::string& _outdir_name, const std::string& _InFile, bool _onlyGlobals,
                                 std::map<std::string, std::vector<std::string>>* _fun2params, bool early)
-       : earlyAnalysis(early),
+       :
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wnull-dereference"
+         GetTLI([](llvm::Function&) -> llvm::TargetLibraryInfo& { return *((llvm::TargetLibraryInfo*)nullptr); }),
+         GetTTI([](llvm::Function&) -> llvm::TargetTransformInfo& { return *((llvm::TargetTransformInfo*)nullptr); }),
+         GetDomTree([](llvm::Function&) -> llvm::DominatorTree& { return *((llvm::DominatorTree*)nullptr); }),
+         GetLI([](llvm::Function&) -> llvm::LoopInfo& { return *((llvm::LoopInfo*)nullptr); }),
+         GetMSSA([](llvm::Function&) -> MemorySSAAnalysisResult& { return *((MemorySSAAnalysisResult*)nullptr); }),
+         GetLVI([](llvm::Function&) -> llvm::LazyValueInfo& { return *((llvm::LazyValueInfo*)nullptr); }),
+         GetAC([](llvm::Function&) -> llvm::AssumptionCache& { return *((llvm::AssumptionCache*)nullptr); }),
+#pragma clang diagnostic pop
+         earlyAnalysis(early),
          outdir_name(_outdir_name),
          InFile(_InFile),
          filename(create_file_name_string(_outdir_name, _InFile)),
@@ -385,7 +397,6 @@ namespace llvm
          onlyGlobals(_onlyGlobals),
          fun2params(_fun2params),
          DL(nullptr),
-         modulePass(nullptr),
          moduleContext(nullptr),
          last_used_index(0),
          column(0),
@@ -595,6 +606,9 @@ namespace llvm
                   case llvm::Intrinsic::smin:
                   case llvm::Intrinsic::umax:
                   case llvm::Intrinsic::umin:
+#if __clang_major__ > 12
+                  case llvm::Intrinsic::bitreverse:
+#endif
                      return assignCode(t, GT(GIMPLE_ASSIGN));
 #endif
                   default:
@@ -795,6 +809,35 @@ namespace llvm
             return "__llvm_umin";
          }
 #endif
+#if __clang_major__ > 12
+         case llvm::Intrinsic::bitreverse:
+         {
+            auto funType = cast<llvm::FunctionType>(fd->getValueType());
+            if(funType->getParamType(0)->isIntegerTy())
+            {
+               auto bitsize = funType->getParamType(0)->getScalarSizeInBits();
+               if(bitsize == 8)
+               {
+                  return "__llvm_bitreverse_i8";
+               }
+               else if(bitsize == 16)
+               {
+                  return "__llvm_bitreverse_i16";
+               }
+               else if(bitsize == 32)
+               {
+                  return "__llvm_bitreverse_i32";
+               }
+               else if(bitsize == 64)
+               {
+                  return "__llvm_bitreverse_i64";
+               }
+            }
+            fd->print(llvm::errs());
+            llvm_unreachable("Plugin Error");
+         }
+#endif
+
          case llvm::Intrinsic::rint:
          {
             if(fd->getReturnType()->isFloatTy())
@@ -1494,12 +1537,7 @@ namespace llvm
          av.alloc_inst = inst;
          std::set<const llvm::User*> visited;
          visited.insert(inst);
-#if __clang_major__ >= 10
-         const llvm::TargetLibraryInfo& TLI =
-             modulePass->getAnalysis<llvm::TargetLibraryInfoWrapperPass>().getTLI(*inst->getFunction());
-#else
-         const llvm::TargetLibraryInfo& TLI = modulePass->getAnalysis<llvm::TargetLibraryInfoWrapperPass>().getTLI();
-#endif
+         const auto& TLI = GetTLI(*const_cast<llvm::Function*>(inst->getFunction()));
          av.addr = temporary_addr_check(inst, visited, TLI);
          allocaVar = assignCode(&av, GT(ALLOCAVAR_DECL));
       }
@@ -1932,13 +1970,7 @@ namespace llvm
             if(operand->getType()->isPointerTy() && PtoSets_AA)
             {
                auto varId = PtoSets_AA->PE(operand);
-#if __clang_major__ >= 10
-               const llvm::TargetLibraryInfo& TLI =
-                   modulePass->getAnalysis<llvm::TargetLibraryInfoWrapperPass>().getTLI(*currentFunction);
-#else
-               const llvm::TargetLibraryInfo& TLI =
-                   modulePass->getAnalysis<llvm::TargetLibraryInfoWrapperPass>().getTLI();
-#endif
+               const auto& TLI = GetTLI(*const_cast<llvm::Function*>(currentFunction));
                if(is_PTS(varId, TLI, true))
                {
                   const std::vector<u32>* pts = PtoSets_AA->pointsToSet(varId);
@@ -3455,11 +3487,7 @@ namespace llvm
          return false;
       llvm::Instruction* inst = const_cast<llvm::Instruction*>(reinterpret_cast<const llvm::Instruction*>(g));
       llvm::Function* currentFunction = inst->getFunction();
-#if __clang_major__ >= 11
-      auto& MSSA = modulePass->getAnalysis<llvm::MemorySSAWrapperPass>(*currentFunction, &changed).getMSSA();
-#else
-      auto& MSSA = modulePass->getAnalysis<llvm::MemorySSAWrapperPass>(*currentFunction).getMSSA();
-#endif
+      llvm::MemorySSA& MSSA = GetMSSA(*currentFunction).getMSSA();
       return MSSA.getMemoryAccess(inst);
    }
 
@@ -3521,11 +3549,7 @@ namespace llvm
       assert(TREE_CODE(g) != GT(GIMPLE_PHI_VIRTUAL));
       llvm::Instruction* inst = const_cast<llvm::Instruction*>(reinterpret_cast<const llvm::Instruction*>(g));
       llvm::Function* currentFunction = inst->getFunction();
-#if __clang_major__ >= 11
-      auto& MSSA = modulePass->getAnalysis<llvm::MemorySSAWrapperPass>(*currentFunction, &changed).getMSSA();
-#else
-      auto& MSSA = modulePass->getAnalysis<llvm::MemorySSAWrapperPass>(*currentFunction).getMSSA();
-#endif
+      auto& MSSA = GetMSSA(*currentFunction).getMSSA();
       const llvm::MemoryUseOrDef* ma = MSSA.getMemoryAccess(inst);
       if(ma->getValueID() == llvm::Value::MemoryUseVal || ma->getValueID() == llvm::Value::MemoryDefVal)
       {
@@ -3731,34 +3755,14 @@ namespace llvm
          {
             llvm::BasicBlock* BB = inst->getParent();
             llvm::Function* currentFunction = inst->getFunction();
-            assert(modulePass);
-#if __clang_major__ >= 11
-            llvm::LazyValueInfo& LVI =
-                modulePass->getAnalysis<llvm::LazyValueInfoWrapperPass>(*currentFunction, &changed).getLVI();
-#else
-            llvm::LazyValueInfo& LVI =
-                modulePass->getAnalysis<llvm::LazyValueInfoWrapperPass>(*currentFunction).getLVI();
-#endif
+            llvm::LazyValueInfo& LVI = GetLVI(*currentFunction);
             unsigned long long int zeroMask = 0;
 #if __clang_major__ != 4
             llvm::KnownBits KnownOneZero;
-            auto AC = modulePass->getAnalysis<llvm::AssumptionCacheTracker>().getAssumptionCache(*currentFunction);
-#if __clang_major__ >= 11
-            auto& DT = modulePass->getAnalysis<llvm::DominatorTreeWrapperPass>(*currentFunction, &changed).getDomTree();
-#else
-            auto& DT = modulePass->getAnalysis<llvm::DominatorTreeWrapperPass>(*currentFunction).getDomTree();
-#endif
+            auto AC = GetAC(*currentFunction);
+            auto& DT = GetDomTree(*currentFunction);
             KnownOneZero = llvm::computeKnownBits(inst, *DL, 0, &AC, inst, &DT);
             zeroMask = KnownOneZero.Zero.getZExtValue();
-#else
-            //         llvm::APInt KnownZero;
-            //         llvm::APInt KnownOne;
-            //         auto AC =
-            //         modulePass->getAnalysis<llvm::AssumptionCacheTracker>().getAssumptionCache(*currentFunction);
-            //         const auto& DT =
-            //         modulePass->getAnalysis<llvm::DominatorTreeWrapperPass>(*currentFunction).getDomTree();
-            //         llvm::computeKnownBits(inst,KnownZero, KnownOne, *DL, 0, &AC, inst, &DT);
-            //         zeroMask = KnownZero.getZExtValue();
 #endif
             auto ty = inst->getType();
             auto obj_size = ty->isSized() ? DL->getTypeAllocSizeInBits(ty) : 8ULL;
@@ -3865,6 +3869,7 @@ namespace llvm
       else
          return nullptr;
    }
+
    const void* DumpGimpleRaw::getMaxValue(const void* t)
    {
       const ssa_name* ssa = reinterpret_cast<const ssa_name*>(t);
@@ -3891,35 +3896,14 @@ namespace llvm
          {
             llvm::BasicBlock* BB = inst->getParent();
             llvm::Function* currentFunction = inst->getFunction();
-            assert(modulePass);
-#if __clang_major__ >= 11
-            llvm::LazyValueInfo& LVI =
-                modulePass->getAnalysis<llvm::LazyValueInfoWrapperPass>(*currentFunction, &changed).getLVI();
-#else
-            llvm::LazyValueInfo& LVI =
-                modulePass->getAnalysis<llvm::LazyValueInfoWrapperPass>(*currentFunction).getLVI();
-#endif
+            auto& LVI = GetLVI(*currentFunction);
             unsigned long long int zeroMask = 0;
 #if __clang_major__ != 4
             llvm::KnownBits KnownOneZero;
-            auto AC = modulePass->getAnalysis<llvm::AssumptionCacheTracker>().getAssumptionCache(*currentFunction);
-#if __clang_major__ >= 11
-            const auto& DT =
-                modulePass->getAnalysis<llvm::DominatorTreeWrapperPass>(*currentFunction, &changed).getDomTree();
-#else
-            const auto& DT = modulePass->getAnalysis<llvm::DominatorTreeWrapperPass>(*currentFunction).getDomTree();
-#endif
+            auto AC = GetAC(*currentFunction);
+            const auto& DT = GetDomTree(*currentFunction);
             KnownOneZero = llvm::computeKnownBits(inst, *DL, 0, &AC, inst, &DT);
             zeroMask = KnownOneZero.Zero.getZExtValue();
-#else
-            //         llvm::APInt KnownZero;
-            //         llvm::APInt KnownOne;
-            //         auto AC =
-            //         modulePass->getAnalysis<llvm::AssumptionCacheTracker>().getAssumptionCache(*currentFunction);
-            //         const auto& DT =
-            //         modulePass->getAnalysis<llvm::DominatorTreeWrapperPass>(*currentFunction).getDomTree();
-            //         llvm::computeKnownBits(inst,KnownZero, KnownOne, *DL, 0, &AC, inst, &DT);
-            //         zeroMask = KnownZero.getZExtValue();
 #endif
             auto ty = inst->getType();
             auto obj_size = ty->isSized() ? DL->getTypeAllocSizeInBits(ty) : 8ULL;
@@ -4027,7 +4011,11 @@ namespace llvm
             auto type = val->getType();
             if(dyn_cast<llvm::ArrayType>(type) || dyn_cast<llvm::VectorType>(type))
             {
+#if __clang_major__ >= 13
+               for(unsigned index = 0; index < val->getElementCount().getValue(); ++index)
+#else
                for(unsigned index = 0; index < val->getNumElements(); ++index)
+#endif
                {
                   if(uicTable.find(index) == uicTable.end())
                      uicTable[index] = assignCodeAuto(
@@ -4040,7 +4028,11 @@ namespace llvm
             else
             {
                const void* ty = TREE_TYPE(t);
+#if __clang_major__ >= 13
+               for(unsigned index = 0; index < val->getElementCount().getValue(); ++index)
+#else
                for(unsigned index = 0; index < val->getNumElements(); ++index)
+#endif
                {
                   auto op = val->getStructElement(index);
                   const void* valu = getOperand(op, nullptr);
@@ -4478,12 +4470,12 @@ namespace llvm
 
    void DumpGimpleRaw::queue_and_serialize_index(const char* field, const void* t)
    {
-#if PRINT_DBG_MSG
-      llvm::errs() << "field:" << field << "\n";
-#endif
+      PRINT_DBG("field:" << field << "\n");
       unsigned int index;
       if(t == nullptr)
+      {
          return;
+      }
       if(llvm2index.find(t) != llvm2index.end())
       {
          index = llvm2index.find(t)->second;
@@ -4552,24 +4544,22 @@ namespace llvm
 
       auto code = TREE_CODE(g);
       const char* code_name = GET_TREE_CODE_NAME(code);
-#if PRINT_DBG_MSG
+#ifdef PRINT_DBG_MSG
       if(code != GT(GIMPLE_NOP) && code != GT(GIMPLE_PHI_VIRTUAL) && code != GT(GIMPLE_LABEL))
       {
          llvm::Instruction* inst = const_cast<llvm::Instruction*>(reinterpret_cast<const llvm::Instruction*>(g));
          llvm::Function* currentFunction = inst->getFunction();
-         llvm::errs() << "@" << code_name << " @" << index << "\n";
+         PRINT_DBG("@" << code_name << " @" << index << "\n");
          inst->print(llvm::errs());
-         llvm::errs() << "\n";
-#if __clang_major__ >= 11
-         auto& MSSA = modulePass->getAnalysis<llvm::MemorySSAWrapperPass>(*currentFunction, &changed).getMSSA();
-#else
-         auto& MSSA = modulePass->getAnalysis<llvm::MemorySSAWrapperPass>(*currentFunction).getMSSA();
-#endif
+         PRINT_DBG("\n");
+         auto& MSSA = GetMSSA(*currentFunction).getMSSA();
          if(MSSA.getMemoryAccess(inst))
-            llvm::errs() << "| " << *MSSA.getMemoryAccess(inst) << "\n";
+            PRINT_DBG("| " << *MSSA.getMemoryAccess(inst) << "\n");
       }
       else
-         llvm::errs() << "@" << code_name << "\n";
+      {
+         PRINT_DBG("@" << code_name << "\n");
+      }
 #endif
       /* Print the node index.  */
       serialize_index(index);
@@ -4624,13 +4614,8 @@ namespace llvm
             std::set<const llvm::User*> visited;
             auto currInst = reinterpret_cast<const llvm::User*>(g);
             visited.insert(currInst);
-#if __clang_major__ >= 10
             auto castInst = reinterpret_cast<const llvm::Instruction*>(g);
-            const llvm::TargetLibraryInfo& TLI =
-                modulePass->getAnalysis<llvm::TargetLibraryInfoWrapperPass>().getTLI(*castInst->getFunction());
-#else
-            const llvm::TargetLibraryInfo& TLI = modulePass->getAnalysis<llvm::TargetLibraryInfoWrapperPass>().getTLI();
-#endif
+            const llvm::TargetLibraryInfo& TLI = GetTLI(*const_cast<llvm::Function*>(castInst->getFunction()));
             if(temporary_addr_check(currInst, visited, TLI))
                serialize_string("addr");
             break;
@@ -4900,12 +4885,7 @@ namespace llvm
       const llvm::Function::BasicBlockListType& bblist =
           *reinterpret_cast<const llvm::Function::BasicBlockListType*>(t);
       llvm::Function* currentFunction = const_cast<llvm::Function*>(bblist.front().getParent());
-      assert(modulePass);
-#if __clang_major__ >= 11
-      auto& LI = modulePass->getAnalysis<llvm::LoopInfoWrapperPass>(*currentFunction, &changed).getLoopInfo();
-#else
-      auto& LI = modulePass->getAnalysis<llvm::LoopInfoWrapperPass>(*currentFunction).getLoopInfo();
-#endif
+      auto& LI = GetLI(*currentFunction);
       std::map<const llvm::Loop*, unsigned> loopLabes;
       if(!LI.empty())
       {
@@ -4930,29 +4910,31 @@ namespace llvm
             }
          }
       }
-#if __clang_major__ >= 11
-      auto& MSSA = modulePass->getAnalysis<llvm::MemorySSAWrapperPass>(*currentFunction, &changed).getMSSA();
-#else
-      auto& MSSA = modulePass->getAnalysis<llvm::MemorySSAWrapperPass>(*currentFunction).getMSSA();
-#endif
+      auto& MSSA = GetMSSA(*currentFunction).getMSSA();
 
       for(const auto& BB : bblist)
       {
          const char* field;
          serialize_new_line();
          serialize_int("bloc", getBB_index(&BB));
-#if PRINT_DBG_MSG
-         llvm::errs() << "BB" << getBB_index(&BB) << "\n";
+         PRINT_DBG("BB" << getBB_index(&BB) << "\n");
          if(MSSA.getMemoryAccess(&BB))
-            llvm::errs() << "|!!!!!!!!!!!!!!!!!! " << *MSSA.getMemoryAccess(&BB) << "\n";
-#endif
+         {
+            PRINT_DBG("|!!!!!!!!!!!!!!!!!! " << *MSSA.getMemoryAccess(&BB) << "\n");
+         }
          if(!LI.empty() && LI.getLoopFor(&BB) && LI.getLoopFor(&BB)->getHeader() == &BB &&
             LI.getLoopFor(&BB)->isAnnotatedParallel())
+         {
             serialize_string("hpl");
+         }
          if(LI.empty() || !LI.getLoopFor(&BB))
+         {
             serialize_int("loop_id", 0);
+         }
          else
+         {
             serialize_int("loop_id", loopLabes.find(LI.getLoopFor(&BB))->second);
+         }
          if(llvm::pred_begin(&BB) == llvm::pred_end(&BB))
          {
             serialize_maybe_newline();
@@ -5131,9 +5113,7 @@ namespace llvm
 
       tree_codes code = TREE_CODE(t);
       const char* code_name = GET_TREE_CODE_NAME(code);
-#if PRINT_DBG_MSG
-      llvm::errs() << "|" << code_name << "\n";
-#endif
+      PRINT_DBG("|" << code_name << "\n");
       snprintf(buffer, LOCAL_BUFFER_LEN, "%-16s ", code_name);
       stream << buffer;
       column = 25;
@@ -5643,6 +5623,9 @@ namespace llvm
          case llvm::Intrinsic::smin:
          case llvm::Intrinsic::umax:
          case llvm::Intrinsic::umin:
+#if __clang_major__ > 12
+         case llvm::Intrinsic::bitreverse:
+#endif
 #endif
             return true;
          default:
@@ -5698,7 +5681,11 @@ namespace llvm
    {
       if(llvm::VectorType* VTy = dyn_cast<llvm::VectorType>(Type))
       {
+#if __clang_major__ >= 12
+         return (VTy->getElementCount().getValue() * VTy->getElementType()->getPrimitiveSizeInBits()) / 8;
+#else
          return (VTy->getNumElements() * VTy->getElementType()->getPrimitiveSizeInBits()) / 8;
+#endif
       }
       return Type->getPrimitiveSizeInBits() / 8;
    }
@@ -5712,10 +5699,8 @@ namespace llvm
       {
          if(SrcAlign == DestAlign && DestAlign == Length->getZExtValue() && DestAlign <= 8)
          {
-#if PRINT_DBG_MSG
-            llvm::errs() << "memcpy can be optimized\n";
-            llvm::errs() << "Align=" << SrcAlign << "\n";
-#endif
+            PRINT_DBG("memcpy can be optimized\n");
+            PRINT_DBG("Align=" << SrcAlign << "\n");
             return llvm::Type::getIntNTy(Context, SrcAlign * 8);
          }
          unsigned localSrcAlign = SrcAlign;
@@ -5727,10 +5712,8 @@ namespace llvm
             if(dstCheck && localSrcAlign == localDstAlign)
             {
                Optimize = true;
-#if PRINT_DBG_MSG
-               llvm::errs() << "memcpy can be optimized\n";
-               llvm::errs() << "Align=" << SrcAlign << "\n";
-#endif
+               PRINT_DBG("memcpy can be optimized\n");
+               PRINT_DBG("Align=" << SrcAlign << "\n");
                return llvm::Type::getIntNTy(Context, SrcAlign * 8);
             }
          }
@@ -5744,235 +5727,6 @@ namespace llvm
    {
       for(unsigned i = 0; i != RemainingBytes; ++i)
          OpsOut.push_back(llvm::Type::getInt8Ty(Context));
-   }
-
-   static void createMemCpyLoopKnownSizeLocal(llvm::Instruction* InsertBefore, llvm::Value* SrcAddr,
-                                              llvm::Value* DstAddr, llvm::ConstantInt* CopyLen, unsigned SrcAlign,
-                                              unsigned DestAlign, bool SrcIsVolatile, bool DstIsVolatile,
-                                              const llvm::DataLayout* DL)
-   {
-      // No need to expand zero length copies.
-      if(CopyLen->isZero())
-         return;
-
-      llvm::BasicBlock* PreLoopBB = InsertBefore->getParent();
-      llvm::BasicBlock* PostLoopBB = nullptr;
-      llvm::Function* ParentFunc = PreLoopBB->getParent();
-      llvm::LLVMContext& Ctx = PreLoopBB->getContext();
-
-      bool PeelCandidate = false;
-      llvm::Type* TypeOfCopyLen = CopyLen->getType();
-      llvm::Type* LoopOpType = getMemcpyLoopLoweringTypeLocal(Ctx, CopyLen, SrcAlign, DestAlign, SrcAddr, DstAddr, DL,
-                                                              SrcIsVolatile || DstIsVolatile, PeelCandidate);
-
-      unsigned LoopOpSize = getLoopOperandSizeInBytesLocal(LoopOpType);
-      uint64_t LoopEndCount = CopyLen->getZExtValue() / LoopOpSize;
-
-      unsigned SrcAS = cast<llvm::PointerType>(SrcAddr->getType())->getAddressSpace();
-      unsigned DstAS = cast<llvm::PointerType>(DstAddr->getType())->getAddressSpace();
-
-      uint64_t BytesCopied = LoopEndCount * LoopOpSize;
-      uint64_t RemainingBytes = CopyLen->getZExtValue() - BytesCopied;
-
-      bool do_unrolling;
-#if __clang_major__ == 7
-      do_unrolling = false;
-#else
-      do_unrolling = true;
-#endif
-      bool srcIsAlloca = false;
-      bool srcIsGlobal = false;
-      if(llvm::dyn_cast<llvm::BitCastInst>(SrcAddr) &&
-         dyn_cast<llvm::AllocaInst>(llvm::dyn_cast<llvm::BitCastInst>(SrcAddr)->getOperand(0)))
-      {
-         srcIsAlloca = true;
-         do_unrolling = do_unrolling && (LoopEndCount <= PEEL_THRESHOLD);
-      }
-      else if(llvm::dyn_cast<llvm::ConstantExpr>(SrcAddr) &&
-              cast<llvm::ConstantExpr>(SrcAddr)->getOpcode() == llvm::Instruction::BitCast &&
-              dyn_cast<llvm::GlobalVariable>(cast<llvm::ConstantExpr>(SrcAddr)->getOperand(0)))
-      {
-         srcIsGlobal = true;
-         do_unrolling =
-             do_unrolling &&
-             (dyn_cast<llvm::GlobalVariable>(cast<llvm::ConstantExpr>(SrcAddr)->getOperand(0))->isConstant() ||
-              (LoopEndCount <= PEEL_THRESHOLD));
-      }
-      else if(LoopEndCount == 1)
-         do_unrolling = true;
-      if(do_unrolling && !SrcIsVolatile && !DstIsVolatile && (srcIsAlloca || srcIsGlobal) &&
-         llvm::dyn_cast<llvm::BitCastInst>(DstAddr) && PeelCandidate)
-      {
-         llvm::PointerType* SrcOpType = llvm::PointerType::get(LoopOpType, SrcAS);
-         llvm::PointerType* DstOpType = llvm::PointerType::get(LoopOpType, DstAS);
-         llvm::IRBuilder<> Builder(InsertBefore);
-         auto srcAddress =
-             Builder.CreateBitCast(srcIsAlloca ? llvm::dyn_cast<llvm::BitCastInst>(SrcAddr)->getOperand(0) :
-                                                 cast<llvm::ConstantExpr>(SrcAddr)->getOperand(0),
-                                   SrcOpType);
-         auto dstAddress = Builder.CreateBitCast(llvm::dyn_cast<llvm::BitCastInst>(DstAddr)->getOperand(0), DstOpType);
-         for(auto LI = 0u; LI < LoopEndCount; ++LI)
-         {
-            llvm::Value* SrcGEP =
-                Builder.CreateInBoundsGEP(LoopOpType, srcAddress, llvm::ConstantInt::get(TypeOfCopyLen, LI));
-            llvm::Value* Load = Builder.CreateLoad(SrcGEP, SrcIsVolatile);
-            llvm::Value* DstGEP =
-                Builder.CreateInBoundsGEP(LoopOpType, dstAddress, llvm::ConstantInt::get(TypeOfCopyLen, LI));
-            Builder.CreateStore(Load, DstGEP, DstIsVolatile);
-         }
-      }
-      else if(LoopEndCount != 0)
-      {
-         // Split
-         PostLoopBB = PreLoopBB->splitBasicBlock(InsertBefore, "memcpy-split");
-         llvm::BasicBlock* LoopBB = llvm::BasicBlock::Create(Ctx, "load-store-loop", ParentFunc, PostLoopBB);
-         PreLoopBB->getTerminator()->setSuccessor(0, LoopBB);
-
-         llvm::IRBuilder<> PLBuilder(PreLoopBB->getTerminator());
-
-         // Cast the Src and Dst pointers to pointers to the loop operand type (if
-         // needed).
-         llvm::PointerType* SrcOpType = llvm::PointerType::get(LoopOpType, SrcAS);
-         llvm::PointerType* DstOpType = llvm::PointerType::get(LoopOpType, DstAS);
-         if(SrcAddr->getType() != SrcOpType)
-         {
-            SrcAddr = PLBuilder.CreateBitCast(SrcAddr, SrcOpType);
-         }
-         if(DstAddr->getType() != DstOpType)
-         {
-            DstAddr = PLBuilder.CreateBitCast(DstAddr, DstOpType);
-         }
-
-         llvm::IRBuilder<> LoopBuilder(LoopBB);
-         llvm::PHINode* LoopIndex = LoopBuilder.CreatePHI(TypeOfCopyLen, 2, "loop-index");
-         LoopIndex->addIncoming(llvm::ConstantInt::get(TypeOfCopyLen, 0U), PreLoopBB);
-         // Loop Body
-         llvm::Value* SrcGEP = LoopBuilder.CreateInBoundsGEP(LoopOpType, SrcAddr, LoopIndex);
-         llvm::Value* Load = LoopBuilder.CreateLoad(SrcGEP, SrcIsVolatile);
-         llvm::Value* DstGEP = LoopBuilder.CreateInBoundsGEP(LoopOpType, DstAddr, LoopIndex);
-         LoopBuilder.CreateStore(Load, DstGEP, DstIsVolatile);
-
-         llvm::Value* NewIndex = LoopBuilder.CreateAdd(LoopIndex, llvm::ConstantInt::get(TypeOfCopyLen, 1U));
-         LoopIndex->addIncoming(NewIndex, LoopBB);
-
-         // Create the loop branch condition.
-         llvm::Constant* LoopEndCI = llvm::ConstantInt::get(TypeOfCopyLen, LoopEndCount);
-         LoopBuilder.CreateCondBr(LoopBuilder.CreateICmpULT(NewIndex, LoopEndCI), LoopBB, PostLoopBB);
-      }
-
-      if(RemainingBytes)
-      {
-         llvm::IRBuilder<> RBuilder(PostLoopBB ? PostLoopBB->getFirstNonPHI() : InsertBefore);
-
-         // Update the alignment based on the copy size used in the loop body.
-         SrcAlign = std::min(SrcAlign, LoopOpSize);
-         DestAlign = std::min(DestAlign, LoopOpSize);
-
-         llvm::SmallVector<llvm::Type*, 5> RemainingOps;
-         getMemcpyLoopResidualLoweringTypeLocal(RemainingOps, Ctx, RemainingBytes, SrcAlign, DestAlign);
-
-         for(auto OpTy : RemainingOps)
-         {
-            // Calculate the new index
-            unsigned OperandSize = getLoopOperandSizeInBytesLocal(OpTy);
-            uint64_t GepIndex = BytesCopied / OperandSize;
-            assert(GepIndex * OperandSize == BytesCopied && "Division should have no Remainder!");
-            // Cast source to operand type and load
-            llvm::PointerType* SrcPtrType = llvm::PointerType::get(OpTy, SrcAS);
-            llvm::Value* CastedSrc =
-                SrcAddr->getType() == SrcPtrType ? SrcAddr : RBuilder.CreateBitCast(SrcAddr, SrcPtrType);
-            llvm::Value* SrcGEP =
-                RBuilder.CreateInBoundsGEP(OpTy, CastedSrc, llvm::ConstantInt::get(TypeOfCopyLen, GepIndex));
-            llvm::Value* Load = RBuilder.CreateLoad(SrcGEP, SrcIsVolatile);
-
-            // Cast destination to operand type and store.
-            llvm::PointerType* DstPtrType = llvm::PointerType::get(OpTy, DstAS);
-            llvm::Value* CastedDst =
-                DstAddr->getType() == DstPtrType ? DstAddr : RBuilder.CreateBitCast(DstAddr, DstPtrType);
-            llvm::Value* DstGEP =
-                RBuilder.CreateInBoundsGEP(OpTy, CastedDst, llvm::ConstantInt::get(TypeOfCopyLen, GepIndex));
-            RBuilder.CreateStore(Load, DstGEP, DstIsVolatile);
-
-            BytesCopied += OperandSize;
-         }
-      }
-      assert(BytesCopied == CopyLen->getZExtValue() && "Bytes copied should match size in the call!");
-   }
-
-   static void expandMemSetAsLoopLocal(llvm::MemSetInst* Memset, const llvm::DataLayout* DL)
-   {
-      llvm::Instruction* InsertBefore = Memset;
-      llvm::Value* DstAddr = Memset->getRawDest();
-      llvm::Value* CopyLen = Memset->getLength();
-      llvm::Value* SetValue = Memset->getValue();
-#if __clang_major__ >= 7
-      unsigned Align = Memset->getDestAlignment();
-#else
-      unsigned Align = Memset->getAlignment();
-#endif
-      bool IsVolatile = Memset->isVolatile();
-      llvm::Type* TypeOfCopyLen = CopyLen->getType();
-      llvm::BasicBlock* OrigBB = InsertBefore->getParent();
-      llvm::Function* F = OrigBB->getParent();
-      llvm::BasicBlock* NewBB = OrigBB->splitBasicBlock(InsertBefore, "split");
-      llvm::BasicBlock* LoopBB = llvm::BasicBlock::Create(F->getContext(), "loadstoreloop", F, NewBB);
-
-      addrIsOfIntArrayType(DstAddr, Align, DL);
-
-      bool AlignCanBeUsed = false;
-      if(isa<llvm::ConstantInt>(CopyLen) && isa<llvm::Constant>(SetValue) &&
-         cast<llvm::Constant>(SetValue)->isNullValue() && Align > 1 && Align <= 8 && SetValue->getType()->isIntegerTy())
-         AlignCanBeUsed = true;
-      if(AlignCanBeUsed)
-      {
-#if PRINT_DBG_MSG
-         llvm::errs() << "memset can be optimized\n";
-         llvm::errs() << "Align=" << Align << "\n";
-#endif
-         SetValue = llvm::ConstantInt::get(llvm::Type::getIntNTy(F->getContext(), Align * 8), 0);
-      }
-#if PRINT_DBG_MSG
-      else
-         llvm::errs() << "memset cannot be optimized\n";
-#endif
-      llvm::IRBuilder<> Builder(OrigBB->getTerminator());
-
-      auto ActualCopyLen =
-          AlignCanBeUsed ?
-              llvm::ConstantInt::get(TypeOfCopyLen, cast<llvm::ConstantInt>(CopyLen)->getValue().udiv(
-                                                        llvm::APInt(TypeOfCopyLen->getIntegerBitWidth(), Align))) :
-              CopyLen;
-
-      // Cast pointer to the type of value getting stored
-      unsigned dstAS = cast<llvm::PointerType>(DstAddr->getType())->getAddressSpace();
-      DstAddr = Builder.CreateBitCast(DstAddr, llvm::PointerType::get(SetValue->getType(), dstAS));
-
-      Builder.CreateCondBr(Builder.CreateICmpEQ(llvm::ConstantInt::get(TypeOfCopyLen, 0), CopyLen), NewBB, LoopBB);
-      OrigBB->getTerminator()->eraseFromParent();
-
-      llvm::IRBuilder<> LoopBuilder(LoopBB);
-      llvm::PHINode* LoopIndex = LoopBuilder.CreatePHI(TypeOfCopyLen, 0);
-      LoopIndex->addIncoming(llvm::ConstantInt::get(TypeOfCopyLen, 0), OrigBB);
-
-      if(AlignCanBeUsed)
-      {
-#if __clang_major__ >= 11
-         LoopBuilder.CreateAlignedStore(SetValue,
-                                        LoopBuilder.CreateInBoundsGEP(SetValue->getType(), DstAddr, LoopIndex),
-                                        llvm::MaybeAlign(Align), IsVolatile);
-#else
-         LoopBuilder.CreateAlignedStore(
-             SetValue, LoopBuilder.CreateInBoundsGEP(SetValue->getType(), DstAddr, LoopIndex), Align, IsVolatile);
-#endif
-      }
-      else
-         LoopBuilder.CreateStore(SetValue, LoopBuilder.CreateInBoundsGEP(SetValue->getType(), DstAddr, LoopIndex),
-                                 IsVolatile);
-
-      llvm::Value* NewIndex = LoopBuilder.CreateAdd(LoopIndex, llvm::ConstantInt::get(TypeOfCopyLen, 1));
-      LoopIndex->addIncoming(NewIndex, LoopBB);
-
-      LoopBuilder.CreateCondBr(LoopBuilder.CreateICmpULT(NewIndex, ActualCopyLen), LoopBB, NewBB);
    }
 
    void DumpGimpleRaw::buildMetaDataMap(const llvm::Module& M)
@@ -5993,17 +5747,17 @@ namespace llvm
                         MetaDataMap[val] = dbgInstrCall->getRawVariable();
                         //                        auto DIExpr = dbgInstrCall->getExpression();
                         //                        if(DIExpr)
-                        {
-                           //                           llvm::errs() << "Inst: ";
-                           //                           inst.print(llvm::errs());
-                           //                           llvm::errs() << "\n";
-                           //                           llvm::errs() << "Value: ";
-                           //                           val->print(llvm::errs());
-                           //                           llvm::errs() << "\n";
-                           //                           llvm::errs() << "Metadata: ";
-                           //                           dbgInstrCall->getRawVariable()->print(llvm::errs());
-                           //                           llvm::errs() <<"\n";
-                        }
+                        // {
+                        //                           llvm::errs() << "Inst: ";
+                        //                           inst.print(llvm::errs());
+                        //                           llvm::errs() << "\n";
+                        //                           llvm::errs() << "Value: ";
+                        //                           val->print(llvm::errs());
+                        //                           llvm::errs() << "\n";
+                        //                           llvm::errs() << "Metadata: ";
+                        //                           dbgInstrCall->getRawVariable()->print(llvm::errs());
+                        //                           llvm::errs() <<"\n";
+                        // }
                      }
                   }
                }
@@ -6012,93 +5766,7 @@ namespace llvm
       }
    }
 
-   /// Intrinsic lowering
-   bool DumpGimpleRaw::lowerMemIntrinsics(llvm::Module& M)
-   {
-      auto res = false;
-      auto currFuncIterator = M.getFunctionList().begin();
-      while(currFuncIterator != M.getFunctionList().end())
-      {
-         auto& F = *currFuncIterator;
-#if __clang_major__ != 4
-         const llvm::TargetTransformInfo& TTI =
-             modulePass->getAnalysis<llvm::TargetTransformInfoWrapperPass>().getTTI(F);
-#endif
-         auto fname = std::string(getName(&F));
-         llvm::SmallVector<llvm::MemIntrinsic*, 4> MemCalls;
-         for(llvm::Function::iterator BI = F.begin(), BE = F.end(); BI != BE; ++BI)
-         {
-            for(llvm::BasicBlock::iterator II = BI->begin(), IE = BI->end(); II != IE; ++II)
-            {
-               if(llvm::MemIntrinsic* InstrCall = dyn_cast<llvm::MemIntrinsic>(II))
-               {
-#if PRINT_DBG_MSG
-                  llvm::errs() << "Found a memIntrinsic Call\n";
-#endif
-                  MemCalls.push_back(InstrCall);
-#if PRINT_DBG_MSG
-                  if(llvm::MemCpyInst* Memcpy = dyn_cast<llvm::MemCpyInst>(InstrCall))
-                  {
-                     if(llvm::ConstantInt* CI = dyn_cast<llvm::ConstantInt>(Memcpy->getLength()))
-                        llvm::errs() << "Found a memcpy with a constant number of iterations\n";
-                     else
-                        llvm::errs() << "Found a memcpy with an unknown number of iterations\n";
-                  }
-                  else if(llvm::MemSetInst* Memset = dyn_cast<llvm::MemSetInst>(InstrCall))
-                  {
-                     llvm::errs() << "Found a memset intrinsic\n";
-                  }
-#endif
-               }
-            }
-         }
-         // Transform mem* intrinsic calls.
-         for(llvm::MemIntrinsic* MemCall : MemCalls)
-         {
-            bool do_erase;
-            do_erase = false;
-            if(llvm::MemCpyInst* Memcpy = dyn_cast<llvm::MemCpyInst>(MemCall))
-            {
-               if(llvm::ConstantInt* CI = dyn_cast<llvm::ConstantInt>(Memcpy->getLength()))
-               {
-                  createMemCpyLoopKnownSizeLocal(Memcpy, Memcpy->getRawSource(), Memcpy->getRawDest(), CI,
-#if __clang_major__ > 6
-                                                 Memcpy->getSourceAlignment(), Memcpy->getDestAlignment(),
-#else
-                                                 Memcpy->getAlignment(), Memcpy->getAlignment(),
-#endif
-                                                 Memcpy->isVolatile(), Memcpy->isVolatile(), DL);
-                  do_erase = true;
-               }
-#if __clang_major__ != 4
-               else
-               {
-                  llvm::expandMemCpyAsLoop(Memcpy, TTI);
-                  do_erase = true;
-               }
-#endif
-            }
-            else if(llvm::MemMoveInst* Memmove = dyn_cast<llvm::MemMoveInst>(MemCall))
-            {
-#if __clang_major__ != 4
-               llvm::expandMemMoveAsLoop(Memmove);
-               do_erase = true;
-#endif
-            }
-            else if(llvm::MemSetInst* Memset = dyn_cast<llvm::MemSetInst>(MemCall))
-            {
-               expandMemSetAsLoopLocal(Memset, DL);
-               do_erase = true;
-            }
-            if(do_erase)
-               MemCall->eraseFromParent();
-         }
-         ++currFuncIterator;
-      }
-      return res;
-   }
-
-   static bool isSimpleEnoughPointerToCommitLocal(llvm::Constant* C)
+   static bool isSimpleEnoughPointerToCommitLocal(llvm::Constant* C, const llvm::DataLayout& DL)
    {
       // Conservatively, avoid aggregate types. This is because we don't
       // want to worry about them partially overlapping other stores.
@@ -6130,8 +5798,12 @@ namespace llvm
             // notional bounds of the corresponding static array types.
             if(!CE->isGEPWithNoNotionalOverIndexing())
                return false;
-
+#if __clang_major__ >= 13
+            return ConstantFoldLoadThroughGEPConstantExpr(GV->getInitializer(), CE,
+                                                          C->getType()->getPointerElementType(), DL);
+#else
             return ConstantFoldLoadThroughGEPConstantExpr(GV->getInitializer(), CE);
+#endif
 
             // A constantexpr bitcast from a pointer to another pointer is a no-op,
             // and we know how to evaluate it by moving the bitcast from the pointer
@@ -6219,11 +5891,21 @@ namespace llvm
       auto initType = Init->getType();
       uint64_t NumElts = 0;
       if(dyn_cast<llvm::ArrayType>(initType))
+      {
          NumElts = dyn_cast<llvm::ArrayType>(initType)->getNumElements();
+      }
       else if(dyn_cast<llvm::VectorType>(initType))
+      {
+#if __clang_major__ >= 12
+         NumElts = dyn_cast<llvm::VectorType>(initType)->getElementCount().getValue();
+#else
          NumElts = dyn_cast<llvm::VectorType>(initType)->getNumElements();
+#endif
+      }
       else
+      {
          llvm_unreachable("unexpected case");
+      }
 
       // Break up the array into elements.
       for(uint64_t i = 0, e = NumElts; i != e; ++i)
@@ -6323,15 +6005,29 @@ namespace llvm
             Elts.clear();
             unsigned NumElts = 0;
             if(auto* STy = dyn_cast<llvm::StructType>(Ty))
+            {
                NumElts = STy->getNumElements();
+            }
             else if(auto* ATy = dyn_cast<llvm::ArrayType>(Ty))
+            {
                NumElts = ATy->getNumElements();
+            }
             else if(auto* VTy = dyn_cast<llvm::VectorType>(Ty))
+            {
+#if __clang_major__ >= 12
+               NumElts = VTy->getElementCount().getValue();
+#else
                NumElts = VTy->getNumElements();
+#endif
+            }
             else
+            {
                llvm_unreachable("unexpected case");
+            }
             for(unsigned i = 0, e = NumElts; i != e; ++i)
+            {
                Elts.push_back(Init->getAggregateElement(i));
+            }
          }
       };
 
@@ -6371,7 +6067,7 @@ namespace llvm
          Ptr = FoldedPtr;
          // llvm::errs() << "; To: " << *Ptr << "\n";
       }
-      if(!isSimpleEnoughPointerToCommitLocal(Ptr))
+      if(!isSimpleEnoughPointerToCommitLocal(Ptr, DL))
       {
          // If this is too complex for us to commit, reject it.
          // llvm::errs() << "Pointer is too complex for us to evaluate store.";
@@ -6477,7 +6173,13 @@ namespace llvm
             // Handle a constantexpr getelementptr.
             case llvm::Instruction::GetElementPtr:
                if(auto* I = getInitializerLocal(CE->getOperand(0)))
+               {
+#if __clang_major__ >= 13
+                  return llvm::ConstantFoldLoadThroughGEPConstantExpr(I, CE, P->getType()->getPointerElementType(), DL);
+#else
                   return llvm::ConstantFoldLoadThroughGEPConstantExpr(I, CE);
+#endif
+               }
                break;
                // Handle a constantexpr bitcast.
             case llvm::Instruction::BitCast:
@@ -6526,9 +6228,6 @@ namespace llvm
    }
    bool DumpGimpleRaw::RebuildConstants(llvm::Module& M)
    {
-#if __clang_major__ < 10
-      llvm::TargetLibraryInfo& TLI = modulePass->getAnalysis<llvm::TargetLibraryInfoWrapperPass>().getTLI();
-#endif
       llvm::SmallPtrSet<llvm::GlobalVariable*, 8> Invariants;
       llvm::SmallPtrSet<llvm::Instruction*, 8> Stores;
       auto res = false;
@@ -6537,9 +6236,7 @@ namespace llvm
       {
          auto& F = *currFuncIterator;
          auto fname = std::string(getName(&F));
-#if __clang_major__ >= 10
-         llvm::TargetLibraryInfo& TLI = modulePass->getAnalysis<llvm::TargetLibraryInfoWrapperPass>().getTLI(F);
-#endif
+         llvm::TargetLibraryInfo& TLI = GetTLI(F);
          std::list<llvm::Instruction*> deadList;
          for(llvm::Function::iterator BI = F.begin(), BE = F.end(); BI != BE; ++BI)
          {
@@ -6684,8 +6381,7 @@ namespace llvm
                I->eraseFromParent();
          if(!deadList.empty())
          {
-            const llvm::TargetTransformInfo& TTI =
-                modulePass->getAnalysis<llvm::TargetTransformInfoWrapperPass>().getTTI(F);
+            const llvm::TargetTransformInfo& TTI = GetTTI(F);
             for(llvm::Function::iterator BBIt = F.begin(); BBIt != F.end();)
                llvm::SimplifyInstructionsInBlock(&*BBIt++, &TLI);
             for(llvm::Function::iterator BBIt = F.begin(); BBIt != F.end();)
@@ -6773,33 +6469,19 @@ namespace llvm
       {
          if(!fun.isIntrinsic() && !fun.isDeclaration())
          {
-            bool res = eSSAHelper.runOnFunction(fun, modulePass, changed);
+            bool res = eSSAHelper.exec(fun, changed, GetDomTree);
             *changed = *changed || res;
          }
       }
-   }
-
-   void DumpGimpleRaw::computeValueRange(const llvm::Module& M)
-   {
-#if __clang_major__ < 10
-      RA = new RangeAnalysis::InterProceduralRACropDFSHelper();
-      RA->runOnModule(M, modulePass, PtoSets_AA);
-#endif
    }
 
    void DumpGimpleRaw::ValueRangeOptimizer(llvm::Module& M)
    {
       if(RA)
       {
-#if __clang_major__ < 10
-         llvm::TargetLibraryInfo& TLI = modulePass->getAnalysis<llvm::TargetLibraryInfoWrapperPass>().getTLI();
-#endif
-
          for(llvm::Function& F : M)
          {
-#if __clang_major__ >= 10
-            llvm::TargetLibraryInfo& TLI = modulePass->getAnalysis<llvm::TargetLibraryInfoWrapperPass>().getTLI(F);
-#endif
+            llvm::TargetLibraryInfo& TLI = GetTLI(F);
 #ifdef DEBUG_RA
             llvm::errs() << "ValueRangeOptimizer: Analysis for function: " << getName(&F) << "\n";
 #endif
@@ -6893,8 +6575,7 @@ namespace llvm
                   I->eraseFromParent();
             if(!deadList.empty())
             {
-               //               const llvm::TargetTransformInfo& TTI =
-               //               modulePass->getAnalysis<llvm::TargetTransformInfoWrapperPass>().getTTI(F);
+               //               const llvm::TargetTransformInfo& TTI = GetTTI(F);
                for(llvm::Function::iterator BBIt = F.begin(); BBIt != F.end();)
                   llvm::SimplifyInstructionsInBlock(&*BBIt++, &TLI);
                //               for(llvm::Function::iterator BBIt = F.begin(); BBIt != F.end();)
@@ -6909,271 +6590,12 @@ namespace llvm
       }
    }
 
-   bool DumpGimpleRaw::LoadStoreOptimizer(llvm::Module& M)
-   {
-      bool changed = false;
-      for(llvm::Function& F : M)
-      {
-         std::list<llvm::Instruction*> StoreLoadList;
-         std::list<llvm::BasicBlock*> BBlist;
-         for(auto& BB : F.getBasicBlockList())
-            BBlist.push_back(&BB);
-         for(auto BB : BBlist)
-         {
-            auto curInstIterator = BB->getInstList().begin();
-            while(curInstIterator != BB->getInstList().end())
-            {
-#if HAVE_LIBBDD
-               llvm::Instruction* I = &*curInstIterator;
-               if(dyn_cast<llvm::StoreInst>(I) || dyn_cast<llvm::LoadInst>(I))
-               {
-                  auto PO = dyn_cast<llvm::StoreInst>(I) ? dyn_cast<llvm::StoreInst>(I)->getPointerOperand() :
-                                                           dyn_cast<llvm::LoadInst>(I)->getPointerOperand();
-                  auto PTS = PtoSets_AA->pointsToSet(PO);
-                  if(PTS->size() > 1)
-                  {
-                     bool res = true;
-                     for(auto var : *PTS)
-                     {
-                        auto varValue = PtoSets_AA->getValue(var);
-                        if(!varValue)
-                        {
-                           res = false;
-                           break;
-                        }
-                        auto vid = varValue->getValueID();
-                        if(vid != llvm::Value::InstructionVal + llvm::Instruction::Alloca &&
-                           vid != llvm::Value::GlobalVariableVal)
-                        {
-                           res = false;
-                           break;
-                        }
-                        auto AI = llvm::dyn_cast<const llvm::AllocaInst>(varValue);
-                        auto GV = llvm::dyn_cast<const llvm::GlobalVariable>(varValue);
-                        if(AI && AI->getAllocatedType()->isAggregateType() && !AI->getAllocatedType()->isArrayTy())
-                        {
-                           res = false;
-                           break;
-                        }
-                        else if(GV && GV->getValueType()->isAggregateType() && !GV->getValueType()->isArrayTy())
-                        {
-                           res = false;
-                           break;
-                        }
-                     }
-                     if(res)
-                     {
-                        StoreLoadList.push_back(I);
-                     }
-                  }
-               }
-#endif
-               ++curInstIterator;
-            }
-         }
-#if HAVE_LIBBDD
-         for(auto& I : StoreLoadList)
-         {
-            if(llvm::StoreInst* SI = dyn_cast<llvm::StoreInst>(I))
-            {
-               auto PO = SI->getPointerOperand();
-               auto PTS = PtoSets_AA->pointsToSet(PO);
-               llvm::IRBuilder<> Builder(SI);
-               llvm::errs() << "Store to be optimized: ";
-               SI->print(llvm::errs());
-               llvm::errs() << "\n";
-               llvm::errs() << "PO to be used: ";
-               PO->print(llvm::errs());
-               llvm::errs() << "\n";
-               llvm::errs() << "Var to be written: ";
-               SI->getValueOperand()->print(llvm::errs());
-               llvm::errs() << "\n";
-               llvm::BasicBlock* BB0 = SI->getParent();
-               auto LastBB = BB0->splitBasicBlock(SI);
-               llvm::BasicBlock* PrevBB = BB0;
-               llvm::IRBuilder<> Builder0(BB0->getTerminator());
-               auto ptrToInt1 = Builder0.CreatePtrToInt(PO, llvm::Type::getInt64Ty(F.getContext()));
-
-               for(auto var : *PTS)
-               {
-                  auto varValue = PtoSets_AA->getValue(var);
-                  auto AI = llvm::dyn_cast<const llvm::AllocaInst>(varValue);
-                  auto GV = llvm::dyn_cast<const llvm::GlobalVariable>(varValue);
-                  assert(AI || GV);
-                  llvm::Type* objType;
-                  if(AI)
-                     objType = AI->getAllocatedType();
-                  else if(GV)
-                     objType = GV->getValueType();
-                  else
-                     llvm_unreachable("unexpected condition");
-
-                  if(objType->isArrayTy())
-                  {
-                     auto gep1 = Builder0.CreateBitCast(const_cast<llvm::Value*>(varValue), PO->getType());
-
-                     auto ptrToInt2 = Builder0.CreatePtrToInt(gep1, llvm::Type::getInt64Ty(F.getContext()));
-                     auto sub1 = Builder0.CreateSub(ptrToInt1, ptrToInt2);
-
-                     auto sge1 = Builder0.CreateICmpSGE(sub1, Builder0.getInt64(0));
-                     auto varValueSize = objType->isSized() ? DL->getTypeAllocSize(objType) : 1ULL;
-
-                     auto ult1 = Builder0.CreateICmpULT(sub1, Builder0.getInt64(varValueSize));
-                     auto and1 = Builder0.CreateAnd(sge1, ult1);
-
-                     llvm::BasicBlock* TrueBB = llvm::BasicBlock::Create(F.getContext(), "StoreBB", &F, LastBB);
-                     llvm::BasicBlock* FalseBB = llvm::BasicBlock::Create(F.getContext(), "StoreBB", &F, LastBB);
-                     PrevBB->getTerminator()->eraseFromParent();
-                     Builder.SetInsertPoint(PrevBB);
-                     Builder.CreateCondBr(and1, TrueBB, FalseBB);
-                     if(PrevBB == BB0)
-                        Builder0.SetInsertPoint(BB0->getTerminator());
-                     PrevBB = FalseBB;
-                     llvm::IRBuilder<> FalseBuilder(FalseBB);
-                     FalseBuilder.CreateBr(LastBB);
-
-                     llvm::IRBuilder<> StoreBuilder(TrueBB);
-                     auto bitcast1 = StoreBuilder.CreateBitCast(gep1, llvm::Type::getInt8PtrTy(F.getContext()));
-                     auto gep3 = StoreBuilder.CreateGEP(bitcast1, sub1);
-                     auto bitcast2 = StoreBuilder.CreateBitCast(gep3, PO->getType());
-                     StoreBuilder.CreateStore(SI->getValueOperand(), bitcast2);
-                     StoreBuilder.CreateBr(LastBB);
-                     changed = true;
-                  }
-                  else
-                  {
-                     auto gep1 = Builder0.CreateBitCast(const_cast<llvm::Value*>(varValue), PO->getType());
-                     auto eq1 = Builder0.CreateICmpEQ(PO, gep1);
-                     llvm::BasicBlock* TrueBB = llvm::BasicBlock::Create(F.getContext(), "StoreBB", &F, LastBB);
-                     llvm::BasicBlock* FalseBB = llvm::BasicBlock::Create(F.getContext(), "StoreBB", &F, LastBB);
-                     PrevBB->getTerminator()->eraseFromParent();
-                     Builder.SetInsertPoint(PrevBB);
-                     Builder.CreateCondBr(eq1, TrueBB, FalseBB);
-                     if(PrevBB == BB0)
-                        Builder0.SetInsertPoint(BB0->getTerminator());
-                     PrevBB = FalseBB;
-                     llvm::IRBuilder<> FalseBuilder(FalseBB);
-                     FalseBuilder.CreateBr(LastBB);
-                     llvm::IRBuilder<> StoreBuilder(TrueBB);
-                     StoreBuilder.CreateStore(SI->getValueOperand(), gep1);
-                     StoreBuilder.CreateBr(LastBB);
-                     changed = true;
-                  }
-               }
-            }
-            else if(llvm::LoadInst* LI = dyn_cast<llvm::LoadInst>(I))
-            {
-               auto PO = LI->getPointerOperand();
-               auto PTS = PtoSets_AA->pointsToSet(PO);
-
-               llvm::BasicBlock* BB0 = LI->getParent();
-               auto LastBB = BB0->splitBasicBlock(LI);
-               llvm::BasicBlock* PrevBB = BB0;
-               llvm::IRBuilder<> Builder0(BB0->getTerminator());
-               auto ptrToInt1 = Builder0.CreatePtrToInt(PO, llvm::Type::getInt64Ty(F.getContext()));
-               llvm::IRBuilder<> Builder(LI);
-               auto phi1 = Builder.CreatePHI(LI->getType(), 1 + PTS->size());
-               LI->replaceAllUsesWith(phi1);
-               unsigned index = 0;
-
-               for(auto var : *PTS)
-               {
-                  ++index;
-                  auto varValue = PtoSets_AA->getValue(var);
-                  auto AI = llvm::dyn_cast<const llvm::AllocaInst>(varValue);
-                  auto GV = llvm::dyn_cast<const llvm::GlobalVariable>(varValue);
-                  assert(AI || GV);
-                  llvm::Type* objType;
-                  if(AI)
-                     objType = AI->getAllocatedType();
-                  else if(GV)
-                     objType = GV->getValueType();
-                  else
-                     llvm_unreachable("unexpected condition");
-
-                  if(objType->isArrayTy())
-                  {
-                     auto gep1 = Builder0.CreateBitCast(const_cast<llvm::Value*>(varValue), PO->getType());
-
-                     auto ptrToInt2 = Builder0.CreatePtrToInt(gep1, llvm::Type::getInt64Ty(F.getContext()));
-                     auto sub1 = Builder0.CreateSub(ptrToInt1, ptrToInt2);
-
-                     auto sge1 = Builder0.CreateICmpSGE(sub1, Builder0.getInt64(0));
-                     auto varValueSize = objType->isSized() ? DL->getTypeAllocSize(objType) : 1ULL;
-
-                     auto ult1 = Builder0.CreateICmpULT(sub1, Builder0.getInt64(varValueSize));
-                     auto and1 = Builder0.CreateAnd(sge1, ult1);
-
-                     llvm::BasicBlock* TrueBB = llvm::BasicBlock::Create(F.getContext(), "StoreBB", &F, LastBB);
-                     llvm::BasicBlock* FalseBB = llvm::BasicBlock::Create(F.getContext(), "StoreBB", &F, LastBB);
-                     PrevBB->getTerminator()->eraseFromParent();
-                     Builder.SetInsertPoint(PrevBB);
-                     Builder.CreateCondBr(and1, TrueBB, FalseBB);
-                     if(PrevBB == BB0)
-                        Builder0.SetInsertPoint(BB0->getTerminator());
-                     PrevBB = FalseBB;
-                     llvm::IRBuilder<> FalseBuilder(FalseBB);
-                     FalseBuilder.CreateBr(LastBB);
-
-                     llvm::IRBuilder<> LoadBuilder(TrueBB);
-                     auto bitcast1 = LoadBuilder.CreateBitCast(gep1, llvm::Type::getInt8PtrTy(F.getContext()));
-                     auto gep3 = LoadBuilder.CreateGEP(bitcast1, sub1);
-                     auto bitcast2 = LoadBuilder.CreateBitCast(gep3, PO->getType());
-                     auto load1 = LoadBuilder.CreateLoad(bitcast2);
-                     phi1->addIncoming(load1, TrueBB);
-                     LoadBuilder.CreateBr(LastBB);
-                     if(index == PTS->size())
-                        phi1->addIncoming(llvm::UndefValue::get(I->getType()), FalseBB);
-                     changed = true;
-                  }
-                  else
-                  {
-                     auto gep1 = Builder0.CreateBitCast(const_cast<llvm::Value*>(varValue), PO->getType());
-                     auto eq1 = Builder0.CreateICmpEQ(PO, gep1);
-                     llvm::BasicBlock* TrueBB = llvm::BasicBlock::Create(F.getContext(), "LoadBB", &F, LastBB);
-                     llvm::BasicBlock* FalseBB = llvm::BasicBlock::Create(F.getContext(), "LoadBB", &F, LastBB);
-                     PrevBB->getTerminator()->eraseFromParent();
-                     Builder.SetInsertPoint(PrevBB);
-                     Builder.CreateCondBr(eq1, TrueBB, FalseBB);
-                     if(PrevBB == BB0)
-                        Builder0.SetInsertPoint(BB0->getTerminator());
-                     PrevBB = FalseBB;
-                     llvm::IRBuilder<> FalseBuilder(FalseBB);
-                     FalseBuilder.CreateBr(LastBB);
-
-                     llvm::IRBuilder<> LoadBuilder(TrueBB);
-                     auto load1 = LoadBuilder.CreateLoad(gep1);
-                     phi1->addIncoming(load1, TrueBB);
-                     LoadBuilder.CreateBr(LastBB);
-                     if(index == PTS->size())
-                        phi1->addIncoming(llvm::UndefValue::get(I->getType()), FalseBB);
-                     changed = true;
-                  }
-               }
-            }
-            else
-               llvm_unreachable("unexpected condition");
-         }
-#endif
-         for(auto& I : StoreLoadList)
-            I->eraseFromParent();
-      }
-      // M.print(llvm::errs(),nullptr);
-      return changed;
-   }
-
    void DumpGimpleRaw::computeMAEntryDefs(
        const llvm::Function* F,
        std::map<const llvm::Function*, std::map<const void*, std::set<const llvm::Instruction*>>>&
-           CurrentListofMAEntryDef,
-       llvm::ModulePass* modulePass)
+           CurrentListofMAEntryDef)
    {
-#if __clang_major__ >= 11
-      auto& MSSA =
-          modulePass->getAnalysis<llvm::MemorySSAWrapperPass>(*const_cast<llvm::Function*>(F), &changed).getMSSA();
-#else
-      auto& MSSA = modulePass->getAnalysis<llvm::MemorySSAWrapperPass>(*const_cast<llvm::Function*>(F)).getMSSA();
-#endif
+      auto& MSSA = GetMSSA(*const_cast<llvm::Function*>(F)).getMSSA();
       for(const auto& BB : F->getBasicBlockList())
       {
          for(const auto& inst : BB)
@@ -7181,13 +6603,17 @@ namespace llvm
             const llvm::MemoryUseOrDef* ma = MSSA.getMemoryAccess(&inst);
             if(ma && ma->getValueID() == llvm::Value::MemoryDefVal)
             {
-               auto defMA = MSSA.getWalker()->getClobberingMemoryAccess(&inst);
+               auto defMA = MSSA.getWalker()->getClobberingMemoryAccess(MSSA.getMemoryAccess(&inst));
                if(MSSA.isLiveOnEntryDef(defMA))
+               {
                   CurrentListofMAEntryDef[F][nullptr].insert(&inst);
+               }
                else if(defMA->getValueID() == llvm::Value::MemoryPhiVal)
+               {
                   CurrentListofMAEntryDef[F][gimple_phi_virtual_result(
                                                  getVirtualGimplePhi(dyn_cast<llvm::MemoryPhi>(defMA), MSSA))]
                       .insert(&inst);
+               }
                else
                {
                   assert(defMA->getValueID() == llvm::Value::MemoryDefVal);
@@ -7197,11 +6623,28 @@ namespace llvm
          }
       }
    }
-   bool DumpGimpleRaw::runOnModule(llvm::Module& M, llvm::ModulePass* _modulePass, const std::string& _TopFunctionName,
-                                   const std::string& costTable)
+
+   bool DumpGimpleRaw::exec(llvm::Module& M, const std::string& _TopFunctionName,
+                            llvm::function_ref<llvm::TargetLibraryInfo&(llvm::Function&)> _GetTLI,
+                            llvm::function_ref<llvm::TargetTransformInfo&(llvm::Function&)> _GetTTI,
+                            llvm::function_ref<llvm::DominatorTree&(llvm::Function&)> _GetDomTree,
+                            llvm::function_ref<llvm::LoopInfo&(llvm::Function&)> _GetLI,
+                            llvm::function_ref<MemorySSAAnalysisResult&(llvm::Function&)> _GetMSSA,
+                            llvm::function_ref<llvm::LazyValueInfo&(llvm::Function&)> _GetLVI,
+                            llvm::function_ref<llvm::AssumptionCache&(llvm::Function&)> _GetAC,
+#if __clang_major__ > 5
+                            llvm::function_ref<llvm::OptimizationRemarkEmitter&(llvm::Function&)> GetORE,
+#endif
+                            const std::string& costTable)
    {
       DL = &M.getDataLayout();
-      modulePass = _modulePass;
+      GetTLI = _GetTLI;
+      GetTTI = _GetTTI;
+      GetDomTree = _GetDomTree;
+      GetLI = _GetLI;
+      GetMSSA = _GetMSSA;
+      GetLVI = _GetLVI;
+      GetAC = _GetAC;
       moduleContext = &M.getContext();
       TopFunctionName = _TopFunctionName;
       bool res = false;
@@ -7209,65 +6652,45 @@ namespace llvm
       if(!costTable.empty())
       {
          TreeHeightReduction THR;
-         res |= THR.runOnModule(M, modulePass, costTable);
+         res |= THR.runOnModule(M, GetLI, GetORE, costTable);
       }
 #endif
 
-#if PRINT_DBG_MSG
-      llvm::errs() << "Computing e-SSA\n";
-#endif
+      PRINT_DBG("Computing e-SSA\n");
       compute_eSSA(M, &res);
-#if PRINT_DBG_MSG
-      llvm::errs() << "Computed e-SSA\n";
-#endif
+      PRINT_DBG("Computed e-SSA\n");
+
       if(!earlyAnalysis)
       {
-#if PRINT_DBG_MSG
-         llvm::errs() << "Building metadata\n";
-#endif
+         PRINT_DBG("Building metadata\n");
          buildMetaDataMap(M);
-      }
-      res = !earlyAnalysis && lowerMemIntrinsics(M);
 
-      auto res_RC = (!earlyAnalysis && RebuildConstants(M));
+         res |= RebuildConstants(M);
 
-      res = res || res_RC;
-      auto res_LI = (!earlyAnalysis && lowerIntrinsics(M));
-      res = res || res_LI;
+         res |= lowerIntrinsics(M);
 #if HAVE_LIBBDD
-      if(!earlyAnalysis && !onlyGlobals)
-      {
-         std::string starting_function = TopFunctionName;
-         if(starting_function == "")
+         if(!onlyGlobals)
          {
-            const llvm::Function* main = M.getFunction("main");
-            if(main)
-               starting_function = "main";
-         }
-         if(starting_function != "")
-         {
-#define ANDERSEN 1
-#if PRINT_DBG_MSG
-            llvm::errs() << "Performing alias analysis\n";
-#endif
-#if ANDERSEN
-            PtoSets_AA = new Andersen_AA(starting_function);
+            if(TopFunctionName != "")
+            {
+               PRINT_DBG("Performing alias analysis\n");
+#if ANDERSEN_AA
+               PtoSets_AA = new Andersen_AA(TopFunctionName);
 #else
-            PtoSets_AA = new Staged_Flow_Sensitive_AA(starting_function);
+               PtoSets_AA = new Staged_Flow_Sensitive_AA(TopFunctionName);
 #endif
-            PtoSets_AA->computePointToSet(M);
-            //            auto changed = LoadStoreOptimizer(M);
-            //            res = res | changed;
+               PtoSets_AA->computePointToSet(M);
+               PRINT_DBG("Performed alias analysis\n");
+            }
          }
+#endif
       }
-#endif
 
-#if PRINT_DBG_MSG
-      llvm::errs() << "Performing value-range analysis\n";
-#endif
-      computeValueRange(M);
-#if PRINT_DBG_MSG
-      llvm::errs() << "Performed value-range analysis\n";
+#if __clang_major__ < 10
+      PRINT_DBG("Performing value-range analysis\n");
+      RA = new RangeAnalysis::InterProceduralRACropDFSHelper();
+      RA->exec(M, PtoSets_AA, GetDomTree, GetLVI, GetAC, GetMSSA);
+      PRINT_DBG("Performed value-range analysis\n");
 #endif
 
 #ifdef DEBUG_RA
@@ -7278,48 +6701,44 @@ namespace llvm
       assert(!llvm::verifyModule(M, &llvm::errs()));
 #endif
 
-      if(!earlyAnalysis && !onlyGlobals)
-      {
-         for(const auto& fun : M.getFunctionList())
-         {
-            if(!fun.isDeclaration() && !fun.isIntrinsic())
-            {
-               computeMAEntryDefs(&fun, CurrentListofMAEntryDef, modulePass);
-            }
-         }
-      }
       if(!earlyAnalysis)
       {
+         if(!onlyGlobals)
+         {
+            for(const auto& fun : M.getFunctionList())
+            {
+               if(!fun.isDeclaration() && !fun.isIntrinsic())
+               {
+                  computeMAEntryDefs(&fun, CurrentListofMAEntryDef);
+               }
+            }
+         }
+
          for(const auto& globalVar : M.getGlobalList())
          {
-#if PRINT_DBG_MSG
-            llvm::errs() << "Found global name: " << globalVar.getName() << "|" << ValueTyNames[globalVar.getValueID()]
-                         << "\n";
-#endif
+            PRINT_DBG("Found global name: " << globalVar.getName() << "|" << ValueTyNames[globalVar.getValueID()]
+                                            << "\n");
             SerializeGimpleGlobalTreeNode(assignCodeAuto(&globalVar));
          }
-      }
-      if(!earlyAnalysis && !onlyGlobals)
-      {
-         for(const auto& fun : M.getFunctionList())
+         if(!onlyGlobals)
          {
-            if(fun.isIntrinsic())
+            for(const auto& fun : M.getFunctionList())
             {
-#if PRINT_DBG_MSG
-               llvm::errs() << "Function intrinsic skipped: " << getName(&fun) << "|" << ValueTyNames[fun.getValueID()]
-                            << "\n";
-#endif
+               if(fun.isIntrinsic())
+               {
+                  PRINT_DBG("Function intrinsic skipped: " << getName(&fun) << "|" << ValueTyNames[fun.getValueID()]
+                                                           << "\n");
+               }
+               else
+               {
+                  PRINT_DBG("Found function: " << getName(&fun) << "|" << ValueTyNames[fun.getValueID()] << "\n");
+                  SerializeGimpleGlobalTreeNode(assignCodeAuto(&fun));
+               }
             }
-            else
-            {
-#if PRINT_DBG_MSG
-               llvm::errs() << "Found function: " << getName(&fun) << "|" << ValueTyNames[fun.getValueID()] << "\n";
-#endif
-               SerializeGimpleGlobalTreeNode(assignCodeAuto(&fun));
-            }
+            CurrentListofMAEntryDef.clear();
          }
-         CurrentListofMAEntryDef.clear();
       }
+
 #if HAVE_LIBBDD
       if(PtoSets_AA)
       {
@@ -7327,9 +6746,12 @@ namespace llvm
          PtoSets_AA = nullptr;
       }
 #endif
+
       if(RA)
       {
+#ifdef PRINT_DBG_MSG
          RA->printRanges(M, llvm::errs());
+#endif
          delete RA;
       }
       // M.print(llvm::errs(), nullptr);

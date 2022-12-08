@@ -40,7 +40,7 @@ jobs:
         shell: bash
         run: |
           echo "Current host supports ${{env.host_jobs}} parallel jobs"
-          echo "::set-output name=jobs::${{env.host_jobs}}"
+          echo "jobs=${{env.host_jobs}}" >> $GITHUB_OUTPUT
       - name: Set patch
         if: ${{ github.event.inputs.patch != '' }}
         shell: bash

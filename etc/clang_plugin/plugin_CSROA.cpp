@@ -30,31 +30,32 @@
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
-/*
+/**
  * Clang plugin for custom scalar replacement of aggregates.
  *
  * @author Fabrizio Ferrandi <Fabrizio.ferrandi@polimi.it>
  *
  */
-#include "plugin_includes.hpp"
-
-#include "llvm/IR/LegacyPassManager.h"
-#include "llvm/IR/PassManager.h"
-#include "llvm/Transforms/IPO.h"
-#include "llvm/Transforms/IPO/PassManagerBuilder.h"
-#include <llvm/IR/Verifier.h>
-#include <llvm/Transforms/Scalar.h>
-#if __clang_major__ >= 7 && !defined(VVD)
-#include "llvm/Transforms/Utils.h"
-#endif
-#if __clang_major__ >= 10
-#include "llvm/InitializePasses.h"
-#include "llvm/Support/CommandLine.h"
-#endif
 #include "CustomScalarReplacementOfAggregatesPass.hpp"
 #include "ExpandMemOpsPass.hpp"
 #include "GepiCanonicalizationPass.hpp"
 #include "PtrIteratorSimplifyPass.hpp"
+#include "plugin_includes.hpp"
+
+#include <llvm/IR/LegacyPassManager.h>
+#include <llvm/IR/PassManager.h>
+#include <llvm/IR/Verifier.h>
+#include <llvm/Transforms/IPO.h>
+#include <llvm/Transforms/IPO/PassManagerBuilder.h>
+#include <llvm/Transforms/Scalar.h>
+
+#if __clang_major__ >= 7 && !defined(VVD)
+#include <llvm/Transforms/Utils.h>
+#endif
+#if __clang_major__ >= 10
+#include <llvm/InitializePasses.h>
+#include <llvm/Support/CommandLine.h>
+#endif
 
 namespace llvm
 {
@@ -234,7 +235,7 @@ static void loadPassFull(const llvm::PassManagerBuilder&, llvm::legacy::PassMana
    PM.add(createRemoveIntrinsicPass());
    PM.add(createGepiExplicitation());
    PM.add(createGepiCanonicalIdxsPass());
-   PM.add(llvm::createExpandMemOpsPass());
+   PM.add(new llvm::CLANG_VERSION_SYMBOL(_plugin_expandMemOps)());
    PM.add(createPtrIteratorSimplifyPass());
    PM.add(createChunkOperationsLoweringPass());
    PM.add(createBitcastVectorRemovalPass());

@@ -85,16 +85,16 @@ jobs:
         shell: bash
         run: |
           echo "Current host supports ${{env.host_jobs}} parallel jobs"
-          echo "::set-output name=jobs::${{env.host_jobs}}"
+          echo "jobs=${{env.host_jobs}}" >> $GITHUB_OUTPUT
           env_id="$(echo $(sed 's/,/\n/g' <<< "${{env.compilers}}" | sort -V) | sed 's/ //g')"
           if [[ ! -z "${{env.build-compiler}}" ]]; then
             if [[ "$env_id" != *"${{env.build-compiler}}"* ]]; then
               env_id+="${{env.build-compiler}}"
             fi
           fi
-          echo "::set-output name=version::$(cat configure.ac | grep AC_INIT | sed -E 's/.*,(.*),.*/\1/g;s/ //g')"
-          echo "::set-output name=env_id::$env_id"
-          echo "::set-output name=timestamp::$(date -u +'%Y-%m-%d-%H;%M;%S')"
+          echo "version=$(cat configure.ac | grep AC_INIT | sed -E 's/.*,(.*),.*/\1/g;s/ //g')" >> $GITHUB_OUTPUT
+          echo "env_id=$env_id" >> $GITHUB_OUTPUT
+          echo "timestamp=$(date -u +'%Y-%m-%d-%H;%M;%S')" >> $GITHUB_OUTPUT
       - name: CCache cache files
         uses: actions/cache@v3
         with:

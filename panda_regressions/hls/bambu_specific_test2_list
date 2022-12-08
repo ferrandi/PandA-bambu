@@ -9,4 +9,8 @@ bambu_specific_test2/port_swapping_test2.c --top-fname=function bambu_specific_t
 bambu_specific_test2/complex_test.c --top-fname=sum --generate-tb=BENCHMARKS_ROOT/bambu_specific_test2/complex_test.xml --experimental-setup=BAMBU
 bambu_specific_test2/multiarray.c --top-fname=fun2 --generate-tb=arr1="{{{3,0},{0,0}},{{8,3},{8,0}}}",arr2="{{{5,2},{0,1}},{{7,3},{5,0}}}",arr3="{{{3,0},{7,0}},{{3,5},{0,0}}}" --std=c99 --experimental-setup=BAMBU
 bambu_specific_test2/test_without_c.c --top-fname=function --generate-tb=BENCHMARKS_ROOT/bambu_specific_test2/test_without_c.xml --experimental-setup=BAMBU-BALANCED-MP
-bambu_specific_test2/mod_test.c --top-fname=test --generate-tb=BENCHMARKS_ROOT/bambu_specific_test2/mod_test_c.xml
+bambu_specific_test2/mod_test.c --top-fname=test --generate-tb=BENCHMARKS_ROOT/bambu_specific_test2/mod_test_c.xml 
+bambu_specific_test2/reverse.c --top-fname=test_bit_reverse8  --generate-tb=x=0x96 --benchmark-name=reverse8     
+bambu_specific_test2/reverse.c --top-fname=test_bit_reverse16 --generate-tb=x=0x6996 --benchmark-name=reverse16
+bambu_specific_test2/reverse.c --top-fname=test_bit_reverse32 --generate-tb=x=0x96696996 --benchmark-name=reverse32
+bambu_specific_test2/reverse.c --top-fname=test_bit_reverse64 --generate-tb=x=0x9996666996696996 --benchmark-name=reverse64

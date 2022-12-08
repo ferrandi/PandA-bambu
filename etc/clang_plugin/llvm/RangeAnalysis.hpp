@@ -92,10 +92,19 @@
 #include "llvm/ADT/APInt.h"
 #include "llvm/ADT/DenseMap.h"
 #include "llvm/ADT/DenseSet.h"
+#include "llvm/ADT/STLExtras.h"
 #include "llvm/ADT/SmallPtrSet.h"
 #include "llvm/ADT/SmallVector.h"
 #include "llvm/ADT/StringRef.h"
+#include "llvm/Analysis/AssumptionCache.h"
+#include "llvm/Analysis/LazyValueInfo.h"
+#if __clang_major__ > 4
+#include "llvm/Analysis/MemorySSA.h"
+#else
+#include "llvm/Transforms/Utils/MemorySSA.h"
+#endif
 #include "llvm/IR/BasicBlock.h"
+#include "llvm/IR/Dominators.h"
 #include "llvm/IR/InstrTypes.h"
 #include "llvm/IR/ValueMap.h"
 #include "llvm/Pass.h"
@@ -120,6 +129,11 @@ namespace llvm
 
 class Andersen_AA;
 
+#if __clang_major__ >= 13
+using MemorySSAAnalysisResult = llvm::MemorySSAAnalysis::Result;
+#else
+using MemorySSAAnalysisResult = llvm::MemorySSAWrapperPass;
+#endif
 namespace RangeAnalysis
 {
    // Comment the line below to enable the debug of SCCs and optimize the code
@@ -1207,33 +1221,48 @@ namespace RangeAnalysis
       llvm::SmallVector<llvm::APInt, 2> constantvector;
 
       /// Adds a BinaryOp in the graph.
-      void addBinaryOp(const llvm::Instruction* I, llvm::ModulePass* modulePass, const llvm::DataLayout* DL);
+      void addBinaryOp(const llvm::Instruction* I, const llvm::DataLayout* DL,
+                       llvm::function_ref<llvm::DominatorTree&(llvm::Function&)> GetDomTree,
+                       llvm::function_ref<llvm::LazyValueInfo&(llvm::Function&)> GetLVI,
+                       llvm::function_ref<llvm::AssumptionCache&(llvm::Function&)> GetAC);
       /// Adds a TernaryOp in the graph.
-      void addTernaryOp(const llvm::Instruction* I, llvm::ModulePass* modulePass, const llvm::DataLayout* DL);
+      void addTernaryOp(const llvm::Instruction* I, const llvm::DataLayout* DL,
+                        llvm::function_ref<llvm::DominatorTree&(llvm::Function&)> GetDomTree,
+                        llvm::function_ref<llvm::LazyValueInfo&(llvm::Function&)> GetLVI,
+                        llvm::function_ref<llvm::AssumptionCache&(llvm::Function&)> GetAC);
       /// Adds a PhiOp in the graph.
-      void addPhiOp(const llvm::PHINode* Phi, llvm::ModulePass* modulePass, const llvm::DataLayout* DL);
+      void addPhiOp(const llvm::PHINode* Phi, const llvm::DataLayout* DL,
+                    llvm::function_ref<llvm::DominatorTree&(llvm::Function&)> GetDomTree,
+                    llvm::function_ref<llvm::LazyValueInfo&(llvm::Function&)> GetLVI,
+                    llvm::function_ref<llvm::AssumptionCache&(llvm::Function&)> GetAC);
       // Adds a SigmaOp to the graph.
-      void addSigmaOp(const llvm::PHINode* Sigma, llvm::ModulePass* modulePass, const llvm::DataLayout* DL,
-                      bool* changed);
+      void addSigmaOp(const llvm::PHINode* Sigma, const llvm::DataLayout* DL, bool* changed,
+                      llvm::function_ref<llvm::DominatorTree&(llvm::Function&)> GetDomTree,
+                      llvm::function_ref<llvm::LazyValueInfo&(llvm::Function&)> GetLVI,
+                      llvm::function_ref<llvm::AssumptionCache&(llvm::Function&)> GetAC);
       /// Add LoadOp in the graph
       void
-      addLoadOp(const llvm::LoadInst* LI, Andersen_AA* PtoSets_AA, bool arePointersResolved,
-                llvm::ModulePass* modulePass, const llvm::DataLayout* DL,
+      addLoadOp(const llvm::LoadInst* LI, Andersen_AA* PtoSets_AA, bool arePointersResolved, const llvm::DataLayout* DL,
                 llvm::DenseMap<const llvm::Function*, llvm::SmallPtrSet<const llvm::Instruction*, 6>>& Function2Store,
-                bool* changed);
+                bool* changed, llvm::function_ref<llvm::DominatorTree&(llvm::Function&)> GetDomTree,
+                llvm::function_ref<llvm::LazyValueInfo&(llvm::Function&)> GetLVI,
+                llvm::function_ref<llvm::AssumptionCache&(llvm::Function&)> GetAC,
+                llvm::function_ref<MemorySSAAnalysisResult&(llvm::Function&)> GetMSSA);
       /// Add StoreOp in the graph
       void
       addStoreOp(const llvm::StoreInst* SI, Andersen_AA* PtoSets_AA, bool arePointersResolved,
-                 llvm::ModulePass* modulePass,
                  llvm::DenseMap<const llvm::Function*, llvm::SmallPtrSet<const llvm::Instruction*, 6>>& Function2Store,
-                 const llvm::DataLayout* DL, bool* changed);
+                 const llvm::DataLayout* DL, bool* changed,
+                 llvm::function_ref<MemorySSAAnalysisResult&(llvm::Function&)> GetMSSA);
 
       /// Takes an instruction and creates an operation.
       void buildOperations(
-          const llvm::Instruction* I, llvm::ModulePass* modulePass, const llvm::DataLayout* DL, Andersen_AA* PtoSets_AA,
-          bool arePointersResolved,
+          const llvm::Instruction* I, const llvm::DataLayout* DL, Andersen_AA* PtoSets_AA, bool arePointersResolved,
           llvm::DenseMap<const llvm::Function*, llvm::SmallPtrSet<const llvm::Instruction*, 6>>& Function2Store,
-          bool* changed);
+          bool* changed, llvm::function_ref<llvm::DominatorTree&(llvm::Function&)> GetDomTree,
+          llvm::function_ref<llvm::LazyValueInfo&(llvm::Function&)> GetLVI,
+          llvm::function_ref<llvm::AssumptionCache&(llvm::Function&)> GetAC,
+          llvm::function_ref<MemorySSAAnalysisResult&(llvm::Function&)> GetMSSA);
       void buildValueBranchMap(const llvm::BranchInst* br, const llvm::DataLayout* DL);
       void buildValueSwitchMap(const llvm::SwitchInst* sw, const llvm::DataLayout* DL);
       void buildValueMaps(const llvm::Function& F, const llvm::DataLayout* DL);
@@ -1249,7 +1278,7 @@ namespace RangeAnalysis
       llvm::SmallPtrSet<const llvm::Value*, 6> ComputeConflictingStores(
           const llvm::StoreInst* SI, const llvm::Value* GV, const llvm::Instruction* instr, Andersen_AA* PtoSets_AA,
           llvm::DenseMap<const llvm::Function*, llvm::SmallPtrSet<const llvm::Instruction*, 6>>& Function2Store,
-          llvm::ModulePass* modulePass, bool* changed);
+          bool* changed, llvm::function_ref<MemorySSAAnalysisResult&(llvm::Function&)> GetMSSA);
 
     protected:
       // Perform the widening and narrowing operations
@@ -1284,13 +1313,18 @@ namespace RangeAnalysis
          return &useMap;
       }
       /// Adds an UnaryOp to the graph.
-      void addUnaryOp(const llvm::Instruction* I, llvm::ModulePass* modulePass, const llvm::DataLayout* DL);
+      void addUnaryOp(const llvm::Instruction* I, const llvm::DataLayout* DL,
+                      llvm::function_ref<llvm::DominatorTree&(llvm::Function&)> GetDomTree,
+                      llvm::function_ref<llvm::LazyValueInfo&(llvm::Function&)> GetLVI,
+                      llvm::function_ref<llvm::AssumptionCache&(llvm::Function&)> GetAC);
       /// Iterates through all instructions in the function and builds the graph.
       void
-      buildGraph(const llvm::Function& F, llvm::ModulePass* modulePass, const llvm::DataLayout* DL,
-                 Andersen_AA* PtoSets_AA, bool arePointersResolved,
+      buildGraph(const llvm::Function& F, const llvm::DataLayout* DL, Andersen_AA* PtoSets_AA, bool arePointersResolved,
                  llvm::DenseMap<const llvm::Function*, llvm::SmallPtrSet<const llvm::Instruction*, 6>>& Function2Store,
-                 bool* changed);
+                 bool* changed, llvm::function_ref<llvm::DominatorTree&(llvm::Function&)> GetDomTree,
+                 llvm::function_ref<llvm::LazyValueInfo&(llvm::Function&)> GetLVI,
+                 llvm::function_ref<llvm::AssumptionCache&(llvm::Function&)> GetAC,
+                 llvm::function_ref<MemorySSAAnalysisResult&(llvm::Function&)> GetMSSA);
       void buildVarNodes(const llvm::DataLayout* DL);
       void buildSymbolicIntersectMap();
       UseMap buildUseMap(const llvm::SmallPtrSet<VarNode*, 32>& component);
@@ -1431,7 +1465,11 @@ namespace RangeAnalysis
       InterProceduralRACropDFSHelper& operator=(const InterProceduralRACropDFSHelper&) = delete;
       InterProceduralRACropDFSHelper(InterProceduralRACropDFSHelper&&) = delete;
       InterProceduralRACropDFSHelper& operator=(InterProceduralRACropDFSHelper&&) = delete;
-      bool runOnModule(const llvm::Module& M, llvm::ModulePass* modulePass, Andersen_AA* PtoSets_AA);
+      bool exec(const llvm::Module& M, Andersen_AA* PtoSets_AA,
+                llvm::function_ref<llvm::DominatorTree&(llvm::Function&)> GetDomTree,
+                llvm::function_ref<llvm::LazyValueInfo&(llvm::Function&)> GetLVI,
+                llvm::function_ref<llvm::AssumptionCache&(llvm::Function&)> GetAC,
+                llvm::function_ref<MemorySSAAnalysisResult&(llvm::Function&)> GetMSSA);
       static unsigned getMaxBitWidth(const llvm::Module& M);
 
     private:

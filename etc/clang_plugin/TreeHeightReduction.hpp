@@ -587,8 +587,9 @@ namespace llvm
       {
       }
 
-      bool runOnModule(const llvm::Module& M, llvm::ModulePass* modulePass, const std::string& costTable,
-                       bool DisableIntTHR = false, bool EnableFpTHR = false)
+      bool runOnModule(const llvm::Module& M, llvm::function_ref<llvm::LoopInfo&(llvm::Function&)> _GetLI,
+                       llvm::function_ref<llvm::OptimizationRemarkEmitter&(llvm::Function&)> _GetORE,
+                       const std::string& costTable, bool DisableIntTHR = false, bool EnableFpTHR = false)
       {
          __buildMap(costTable, Node::InstructionLatencyTable);
          bool changed = false;
@@ -596,20 +597,9 @@ namespace llvm
          {
             if(!fun.isIntrinsic() && !fun.isDeclaration())
             {
-               auto* currentFunction = const_cast<llvm::Function*>(&fun);
-#if __clang_major__ >= 11
-               auto& LI = modulePass->getAnalysis<llvm::LoopInfoWrapperPass>(*currentFunction, &changed).getLoopInfo();
-#else
-               auto& LI = modulePass->getAnalysis<llvm::LoopInfoWrapperPass>(*currentFunction).getLoopInfo();
-#endif
-#if __clang_major__ >= 11
-               auto ORE =
-                   &modulePass->getAnalysis<llvm::OptimizationRemarkEmitterWrapperPass>(*currentFunction, &changed)
-                        .getORE();
-#else
-               auto ORE =
-                   &modulePass->getAnalysis<llvm::OptimizationRemarkEmitterWrapperPass>(*currentFunction).getORE();
-#endif
+               llvm::Function* currentFunction = const_cast<llvm::Function*>(&fun);
+               auto& LI = _GetLI(*currentFunction);
+               auto ORE = &_GetORE(*currentFunction);
 
                if(!LI.empty())
                {

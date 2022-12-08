@@ -36,8 +36,8 @@ jobs:
             retain_days="${{github.event.inputs.retain_days}}"
             minimum_runs="${{github.event.inputs.minimum_runs}}"
           fi
-          echo "::set-output name=retain_days::${retain_days}"
-          echo "::set-output name=minimum_runs::${minimum_runs}"
+          echo "retain_days=${retain_days}" >> $GITHUB_OUTPUT
+          echo "minimum_runs=${minimum_runs}" >> $GITHUB_OUTPUT
       - name: Delete workflow runs
         uses: Mattraks/delete-workflow-runs@v2
         with:

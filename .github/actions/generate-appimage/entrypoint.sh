@@ -44,12 +44,12 @@ cache_dir = $ccache_dir
 EOF
 if [[ -d "$dist_dir" ]]; then
    echo "Pre-initialized dist dir found. Installing system wide..."
-   cp -r $dist_dir/. /
+   rsync -rtpl $dist_dir/. /
 fi
 
 if [[ -d "compiler" ]]; then
    echo "Bambu compiler dir found. Installing system wide..."
-   cp -r compiler/. /
+   rsync -rtpl compiler/. /
 fi
 
 GCC_BINS=("`find /usr/bin -type f -regextype posix-extended -regex '.*g(cc|\+\+)-[0-9]+\.?[0-9]?'`")
@@ -167,5 +167,5 @@ curl -L https://github.com/AppImage/AppImageKit/releases/download/continuous/App
 chmod +x $dist_dir/AppRun
 ARCH=x86_64 appimagetool $dist_dir 2> /dev/null
 
-echo "::set-output name=appimage::$(ls *.AppImage)"
-echo "::set-output name=dist-dir::dist"
+echo "appimage=$(ls *.AppImage)" >> $GITHUB_OUTPUT
+echo "dist-dir=dist" >> $GITHUB_OUTPUT
