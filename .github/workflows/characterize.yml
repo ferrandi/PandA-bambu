@@ -39,8 +39,8 @@ on:
         required: true
 
 env:
-  device: ${{inputs.device}}${{github.event.inputs.device}}
-  technology: ${{inputs.technology}}${{github.event.inputs.technology}}
+  device: ${{inputs.device}}
+  technology: ${{inputs.technology}}
   tech_root: ./etc/devices/
   device_fu_list: device_fu_list
   batch_size: 300
@@ -54,11 +54,8 @@ jobs:
     uses: ./.github/workflows/build-appimage.yml
     with:
       package-name: bambu-characterize
-      compilers: ${{inputs.compilers}}${{github.event.inputs.compilers}}
-    secrets:
-      CI_STORAGE_URL: ${{secrets.CI_STORAGE_URL}}
-      CI_STORAGE_USER: ${{secrets.CI_STORAGE_USER}}
-      CI_STORAGE_TOKEN: ${{secrets.CI_STORAGE_TOKEN}}
+      compilers: ${{inputs.compilers}}
+    secrets: inherit
 
   setup:
     needs: [build]
