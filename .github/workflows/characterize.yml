@@ -9,11 +9,7 @@ on:
       technology:
         description: "Technology files"
         required: false
-        default: "C_COMPLEX,C_HLS,C_MEM,C_PC,C_PROFILING,C_VEC,C_FP,C_IO,C_STD"
-      compilers:
-        description: "Comma separated list of compilers to include"
-        required: false
-        default: "gcc-7,clang-12"
+        default: "C_COMPLEX,C_FP,C_HLS,C_IO,C_MEM,C_PC,C_PROFILING,C_STD,C_VEC"
   workflow_call:
     inputs:
       device:
@@ -24,12 +20,7 @@ on:
         description: "Technology files"
         required: false
         type: string
-        default: "C_COMPLEX,C_HLS,C_MEM,C_PC,C_PROFILING,C_VEC,C_FP,C_IO,C_STD"
-      compilers:
-        description: "Comma separated list of compilers to include"
-        required: false
-        type: string
-        default: "gcc-7,clang-12"
+        default: "C_COMPLEX,C_FP,C_HLS,C_IO,C_MEM,C_PC,C_PROFILING,C_STD,C_VEC"
     secrets:
       CI_STORAGE_URL:
         required: true
@@ -41,7 +32,7 @@ on:
 env:
   device: ${{inputs.device}}
   technology: ${{inputs.technology}}
-  tech_root: ./etc/devices/
+  tech_root: ./etc/lib/technology/
   device_fu_list: device_fu_list
   batch_size: 300
   storage-url: ${{secrets.CI_STORAGE_URL}}
@@ -54,7 +45,9 @@ jobs:
     uses: ./.github/workflows/build-appimage.yml
     with:
       package-name: bambu-characterize
-      compilers: ${{inputs.compilers}}
+      compilers: ""
+      build-compiler: gcc-8
+      configure: --disable-bambu --enable-spider --enable-eucalyptus --enable-flopoco --enable-opt --with-opt-level=2 --enable-release CC=gcc-8 CXX=g++-8 --with-gcc8=/bin/false
     secrets: inherit
 
   setup:
@@ -90,7 +83,7 @@ jobs:
           tech="${{env.tech_root}}${tech_files[0]}_IPs.xml"
           cnt=${#tech_files[@]}
           for ((i=1;i<cnt;i++)) do
-            tech+="${{env.tech_root}}${tech_files[i]}_IPs.xml"
+            tech+=",${{env.tech_root}}${tech_files[i]}_IPs.xml"
           done
           python3 etc/scripts/characterize.py --device=${{env.device}} --technology-files=${tech} --list-only=${{env.device_fu_list}}
           size="$(cat ${{env.device_fu_list}} | wc -l)"
