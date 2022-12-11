@@ -136,8 +136,9 @@ jobs:
         shell: bash
         run: |
           export PATH=${{steps.setup.outputs.local-bin}}:$PATH
-          start=$((${{matrix.index}}*${{env.batch_size}}))
-          tail -n+${start} ${{env.device_fu_list}} | head -n${{env.batch_size}} > current_list
+          first_row="$((${{matrix.index}}*${{env.batch_size}}+1))"
+          last_row="$(((${{matrix.index}}+1)*${{env.batch_size}}))"
+          sed -n -e "${first_row},${last_row}p" ${{env.device_fu_list}} > current_list
           python3 etc/scripts/characterize.py --from-list current_list
           mkdir -p ${{env.upload-dir}}
           mv ${{env.device}}.xml ${{env.upload-dir}}/${{env.device}}.${{matrix.index}}.xml
