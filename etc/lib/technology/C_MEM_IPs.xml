@@ -5572,7 +5572,7 @@ generate
   if(USE_SPARSE_MEMORY==1)
     assign relative_addr = tmp_addr[nbit_addr-1:0];
   else
-    assign relative_addr = tmp_addr-address_space_begin[nbit_addr-1:0];
+    assign relative_addr = tmp_addr-address_space_begin[((nbit_addr-1) &lt; 32 ? (nbit_addr-1) : 31):0];
 endgenerate
 
 generate

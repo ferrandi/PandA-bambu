@@ -81,9 +81,7 @@ ControlFlowChecker::ControlFlowChecker(const ParameterConstRef _Param, const HLS
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
 }
 
-ControlFlowChecker::~ControlFlowChecker()
-{
-}
+ControlFlowChecker::~ControlFlowChecker() = default;
 
 const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
 ControlFlowChecker::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
@@ -296,8 +294,7 @@ static std::string create_control_flow_checker(size_t epp_trace_bitsize, const u
              "end\n\n";
 
    // helper functions
-   const auto encode_one_hot = [](unsigned int nstates, unsigned int val) -> std::string
-   {
+   const auto encode_one_hot = [](unsigned int nstates, unsigned int val) -> std::string {
       std::string res;
       for(unsigned int i = 0; i < nstates; ++i)
       {
@@ -306,8 +303,7 @@ static std::string create_control_flow_checker(size_t epp_trace_bitsize, const u
       return res;
    };
    const auto compute_state_string = [one_hot_encoding, max_value, state_bitsize,
-                                      encode_one_hot](unsigned int state_id) -> std::string
-   {
+                                      encode_one_hot](unsigned int state_id) -> std::string {
       return one_hot_encoding ? (STR(state_bitsize) + "'b" + encode_one_hot(max_value + 1, state_id)) :
                                 (STR(state_bitsize) + "'d" + STR(state_id));
    };
@@ -405,8 +401,9 @@ static std::string create_control_flow_checker(size_t epp_trace_bitsize, const u
                 "end\n\n";
    }
 
-   const auto epp_val_string = [epp_trace_bitsize](size_t val) -> std::string
-   { return STR(epp_trace_bitsize) + "'d" + STR(val); };
+   const auto epp_val_string = [epp_trace_bitsize](size_t val) -> std::string {
+      return STR(epp_trace_bitsize) + "'d" + STR(val);
+   };
    result += "// compute EPP increments and resets\n"
              "always @(*)\n"
              "begin\n\n"

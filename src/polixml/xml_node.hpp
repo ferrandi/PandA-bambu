@@ -84,9 +84,7 @@ class xml_node
    {
    }
    /// destructor
-   virtual ~xml_node()
-   {
-   }
+   virtual ~xml_node() = default;
 
    /// type for list of xml nodes
    using node_list = std::list<xml_nodeRef>;

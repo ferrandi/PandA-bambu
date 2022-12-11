@@ -53,7 +53,7 @@ class conn_binding_cs : public conn_binding
    /**
     * Destructor
     */
-   virtual ~conn_binding_cs();
+   ~conn_binding_cs() override;
 
    /**
     * @brief add_to_SM

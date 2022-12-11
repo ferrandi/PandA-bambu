@@ -87,7 +87,7 @@ class reg_binding : public variable2obj<generic_objRef>
    std::map<unsigned int, unsigned int> reverse_map;
 
    /// relation between registers and their bitsize
-   std::map<unsigned int, unsigned int> bitsize_map;
+   std::map<unsigned int, unsigned long long> bitsize_map;
 
    /// HLS datastructure
    hlsRef HLS;
@@ -129,7 +129,7 @@ class reg_binding : public variable2obj<generic_objRef>
    /**
     * Destructor.
     */
-   virtual ~reg_binding();
+   ~reg_binding() override;
 
    static reg_bindingRef create_reg_binding(const hlsRef& HLS, const HLS_managerRef HLSMgr_);
 
@@ -180,7 +180,7 @@ class reg_binding : public variable2obj<generic_objRef>
    /**
     * Function that print the register binding associated with a storage value.
     */
-   void print_el(const_iterator& it) const;
+   void print_el(const_iterator& it) const override;
 
    /**
     * Returns reference to register object associated to a given index
@@ -205,7 +205,7 @@ class reg_binding : public variable2obj<generic_objRef>
    /**
     * return bitsize
     */
-   unsigned int get_bitsize(unsigned int r) const;
+   unsigned long long get_bitsize(unsigned int r) const;
 
  private:
    /**
@@ -220,7 +220,7 @@ class reg_binding : public variable2obj<generic_objRef>
     * @param r is the register
     * @return the bitsize of register r
     */
-   unsigned int compute_bitsize(unsigned int r);
+   unsigned long long compute_bitsize(unsigned int r);
 };
 
 /**

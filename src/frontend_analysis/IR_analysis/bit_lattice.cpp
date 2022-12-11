@@ -430,8 +430,8 @@ std::deque<bit_lattice> BitLatticeManipulator::constructor_bitstring(const tree_
    const bool ssa_is_signed = tree_helper::is_int(TM, ssa_node_id);
    THROW_ASSERT(ctor_tn->get_kind() == constructor_K, "ctor_tn is not constructor node");
    auto* c = GetPointerS<const constructor>(ctor_tn);
-   std::vector<unsigned int> array_dims;
-   unsigned int elements_bitsize;
+   std::vector<unsigned long long> array_dims;
+   unsigned long long elements_bitsize;
    tree_helper::get_array_dim_and_bitsize(TM, GET_INDEX_CONST_NODE(c->type), array_dims, elements_bitsize);
    unsigned int initialized_elements = 0;
    std::deque<bit_lattice> current_inf;
@@ -579,7 +579,8 @@ std::deque<bit_lattice> create_x_bitstring(unsigned int lenght)
    return std::deque<bit_lattice>(lenght, bit_lattice::X);
 }
 
-std::deque<bit_lattice> create_bitstring_from_constant(long long int value_int, unsigned int len, bool signed_value)
+std::deque<bit_lattice> create_bitstring_from_constant(long long int value_int, unsigned long long len,
+                                                       bool signed_value)
 {
    auto value = static_cast<long long unsigned int>(value_int);
    std::deque<bit_lattice> res;

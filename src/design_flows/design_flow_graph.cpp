@@ -134,7 +134,9 @@ void DesignFlowGraph::WriteDot(const std::string& file_name,
    const std::string output_directory =
        collection->parameters->getOption<std::string>(OPT_dot_directory) + "/design_flow/";
    if(!boost::filesystem::exists(output_directory))
+   {
       boost::filesystem::create_directories(output_directory);
+   }
    const std::string full_name = output_directory + file_name + ".dot";
    VertexWriterConstRef design_flow_step_writer(
        new DesignFlowStepWriter(this, vertex_history.find(writing_step_counter)->second, vertex_names));

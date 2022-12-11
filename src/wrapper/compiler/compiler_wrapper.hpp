@@ -53,6 +53,7 @@
 #include "config_HAVE_I386_CLANG10_COMPILER.hpp"
 #include "config_HAVE_I386_CLANG11_COMPILER.hpp"
 #include "config_HAVE_I386_CLANG12_COMPILER.hpp"
+#include "config_HAVE_I386_CLANG13_COMPILER.hpp"
 #include "config_HAVE_I386_CLANG4_COMPILER.hpp"
 #include "config_HAVE_I386_CLANG5_COMPILER.hpp"
 #include "config_HAVE_I386_CLANG6_COMPILER.hpp"
@@ -177,15 +178,18 @@ enum class CompilerWrapper_CompilerTarget
 #if HAVE_I386_CLANG12_COMPILER
    CT_I386_CLANG12 = 131072,
 #endif
+#if HAVE_I386_CLANG13_COMPILER
+   CT_I386_CLANG13 = 262144,
+#endif
 #if HAVE_I386_CLANGVVD_COMPILER
-   CT_I386_CLANGVVD = 262144,
+   CT_I386_CLANGVVD = 524288,
 #endif
 #if HAVE_ARM_COMPILER
-   CT_ARM_GCC = 524288,
+   CT_ARM_GCC = 1048576,
 #endif
 #if HAVE_SPARC_COMPILER
-   CT_SPARC_GCC = 1048576,
-   CT_SPARC_ELF_GCC = 2097152
+   CT_SPARC_GCC = 2097152,
+   CT_SPARC_ELF_GCC = 4194304
 #endif
 };
 
@@ -258,6 +262,7 @@ class CompilerWrapper
 #endif
       /// true when compiler is based on clang/llvm
       bool is_clang;
+
       Compiler() : is_clang(false)
       {
       }
@@ -376,6 +381,10 @@ class CompilerWrapper
                              const std::string& GepiCanon_plugin_obj, const std::string& GepiCanon_plugin_name,
                              const std::string& CSROA_plugin_obj, const std::string& CSROA_plugin_name,
                              const std::string& fname);
+
+   std::string load_plugin(const std::string& plugin_obj, CompilerWrapper_CompilerTarget target);
+
+   std::string load_plugin_opt(std::string plugin_obj, CompilerWrapper_CompilerTarget target);
 
  public:
    /// The version of the frontend compiler

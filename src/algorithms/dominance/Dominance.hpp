@@ -455,7 +455,9 @@ class dom_info
 #if HAVE_ASSERTS
       unsigned int counter = 0;
       for(boost::tie(i, i_end) = boost::vertices(g); i != i_end; i++)
+      {
          ++counter;
+      }
 #endif
       /* This aborts e.g. when there is _no_ path from ENTRY to EXIT at all.  */
       THROW_ASSERT(nodes == counter, "there is _no_ path from ENTRY to EXIT at all. Number of vertices in the graph: " +
@@ -465,9 +467,11 @@ class dom_info
 #ifndef NDEBUG
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Vertices in dfs order");
       for(size_t index = 0; index < dfs_to_bb.size(); index++)
+      {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                         "---" + boost::lexical_cast<std::string>(index) + " v_" +
                             boost::lexical_cast<std::string>(dfs_to_bb[index]));
+      }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
 #endif
    }

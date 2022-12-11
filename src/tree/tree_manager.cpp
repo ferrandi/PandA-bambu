@@ -1477,7 +1477,7 @@ void tree_manager::erase_usage_info(const tree_nodeRef& tn, const tree_nodeRef& 
       case gimple_multi_way_if_K:
       {
          auto* gmwi = GetPointer<gimple_multi_way_if>(curr_tn);
-         for(auto cond : gmwi->list_of_cond)
+         for(const auto& cond : gmwi->list_of_cond)
          {
             if(cond.first)
             {
@@ -1698,7 +1698,7 @@ void tree_manager::insert_usage_info(const tree_nodeRef& tn, const tree_nodeRef&
       case gimple_multi_way_if_K:
       {
          auto* gmwi = GetPointer<gimple_multi_way_if>(curr_tn);
-         for(auto cond : gmwi->list_of_cond)
+         for(const auto& cond : gmwi->list_of_cond)
          {
             if(cond.first)
             {
@@ -2284,7 +2284,7 @@ void tree_manager::merge_tree_managers(const tree_managerRef& source_tree_manage
 
    /// remap tree_node from source_tree_manager to this tree_manager
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Remapping declaration nodes");
-   for(auto ti_source : source_tree_nodes)
+   for(const auto& ti_source : source_tree_nodes)
    {
       const tree_nodeRef tn = ti_source.second;
       /// check for decl_node

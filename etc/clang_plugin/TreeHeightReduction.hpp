@@ -115,7 +115,7 @@ namespace llvm
    {
       for(User* U : I->users())
       {
-         Instruction* UserInst = dyn_cast<Instruction>(U);
+         auto* UserInst = dyn_cast<Instruction>(U);
          if(UserInst && isa<T>(*UserInst))
             return true;
       }
@@ -165,7 +165,7 @@ namespace llvm
       explicit Node(Value* V)
           : Inst(nullptr), Opcode(0), DefOp(V), Parent(nullptr), Left(nullptr), Right(nullptr), Latency(0), TotalCost(0)
       {
-         if(Instruction* I = dyn_cast<Instruction>(V))
+         if(auto* I = dyn_cast<Instruction>(V))
          {
             Inst = I;
             Opcode = I->getOpcode();
@@ -431,7 +431,7 @@ namespace llvm
          updateLeftOrRightNodeLatency(UpdateLatecy::UL_Left);
          updateLeftOrRightNodeLatency(UpdateLatecy::UL_Right);
 
-         Instruction* _Inst = dyn_cast<Instruction>(getDefinedValue());
+         auto* _Inst = dyn_cast<Instruction>(getDefinedValue());
          auto InstLatency = _Inst ? getInstructionLatency(_Inst) : 0;
          setLatency(getLatency() + InstLatency);
          setTotalCost(getTotalCost() + InstLatency);
@@ -587,8 +587,9 @@ namespace llvm
       {
       }
 
-      bool runOnModule(const llvm::Module& M, llvm::ModulePass* modulePass, const std::string& costTable,
-                       bool DisableIntTHR = false, bool EnableFpTHR = false)
+      bool runOnModule(const llvm::Module& M, llvm::function_ref<llvm::LoopInfo&(llvm::Function&)> _GetLI,
+                       llvm::function_ref<llvm::OptimizationRemarkEmitter&(llvm::Function&)> _GetORE,
+                       const std::string& costTable, bool DisableIntTHR = false, bool EnableFpTHR = false)
       {
          __buildMap(costTable, Node::InstructionLatencyTable);
          bool changed = false;
@@ -597,19 +598,8 @@ namespace llvm
             if(!fun.isIntrinsic() && !fun.isDeclaration())
             {
                llvm::Function* currentFunction = const_cast<llvm::Function*>(&fun);
-#if __clang_major__ >= 11
-               auto& LI = modulePass->getAnalysis<llvm::LoopInfoWrapperPass>(*currentFunction, &changed).getLoopInfo();
-#else
-               auto& LI = modulePass->getAnalysis<llvm::LoopInfoWrapperPass>(*currentFunction).getLoopInfo();
-#endif
-#if __clang_major__ >= 11
-               auto ORE =
-                   &modulePass->getAnalysis<llvm::OptimizationRemarkEmitterWrapperPass>(*currentFunction, &changed)
-                        .getORE();
-#else
-               auto ORE =
-                   &modulePass->getAnalysis<llvm::OptimizationRemarkEmitterWrapperPass>(*currentFunction).getORE();
-#endif
+               auto& LI = _GetLI(*currentFunction);
+               auto ORE = &_GetORE(*currentFunction);
 
                if(!LI.empty())
                {
@@ -707,7 +697,7 @@ namespace llvm
                continue;
 
             // Construct operation tree from root instruction.
-            Value* V = dyn_cast<Value>(&I);
+            auto* V = dyn_cast<Value>(&I);
             assert(V && "Defined value should not be nullptr.");
             Node* OrgTree = constructTree(V, TIT);
             if(!OrgTree)
@@ -777,7 +767,7 @@ namespace llvm
          if(!isNodeCandidate(V, CurTargetInstTy))
             return new Node(V);
 
-         Instruction* I = dyn_cast<Instruction>(V);
+         auto* I = dyn_cast<Instruction>(V);
          assert(I && "Instruction should not be nullptr.");
          assert(I->getNumOperands() == 2 && "The number of operands should be 2.");
 
@@ -1015,7 +1005,7 @@ namespace llvm
          }
 
          // Take over the original instruction IR flags.
-         Instruction* NewInst = dyn_cast<Instruction>(V);
+         auto* NewInst = dyn_cast<Instruction>(V);
          if(Value* OrgDef = N->getDefinedValue())
             NewInst->copyIRFlags(OrgDef, true);
 
@@ -1039,7 +1029,7 @@ namespace llvm
          assert(Op && "Operand should not be nullptr");
          if(!Op->hasOneUse())
             return false;
-         if(Instruction* I = dyn_cast<Instruction>(Op))
+         if(auto* I = dyn_cast<Instruction>(Op))
             return isTHRTargetInst(I, CurTargetInstTy);
          return false;
       }

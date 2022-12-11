@@ -92,9 +92,7 @@ struct priority_data
    /**
     * Destructor.
     */
-   virtual ~priority_data()
-   {
-   }
+   virtual ~priority_data() = default;
 
  private:
    /// data structure storing the priority values.

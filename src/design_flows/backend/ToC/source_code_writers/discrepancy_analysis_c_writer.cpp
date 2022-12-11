@@ -142,7 +142,7 @@ void DiscrepancyAnalysisCWriter::writePreInstructionInfo(const FunctionBehaviorC
 {
    const OpGraphConstRef instrGraph = FB->CGetOpGraph(FunctionBehavior::FCFG);
    const OpNodeInfoConstRef node_info = instrGraph->CGetOpNodeInfo(statement);
-   const unsigned int st_tn_id = node_info->GetNodeId();
+   const auto st_tn_id = node_info->GetNodeId();
    if(st_tn_id == 0 || st_tn_id == ENTRY_ID || st_tn_id == EXIT_ID)
    {
       return;
@@ -158,7 +158,7 @@ void DiscrepancyAnalysisCWriter::writePreInstructionInfo(const FunctionBehaviorC
       THROW_ASSERT(not node_info->called.empty(),
                    "tree node " + STR(st_tn_id) + " is a gimple_call but does not actually call a function");
       THROW_ASSERT(node_info->called.size() == 1, "tree node " + STR(st_tn_id) + " calls more than a function");
-      const unsigned int called_id = *node_info->called.begin();
+      const auto called_id = *node_info->called.begin();
       const tree_nodeConstRef called_fun_decl_node = TM->CGetTreeNode(called_id);
       const auto* fu_dec = GetPointer<const function_decl>(called_fun_decl_node);
       if(GetPointer<const identifier_node>(GET_NODE(fu_dec->name))->strg == BUILTIN_WAIT_CALL)
@@ -188,7 +188,7 @@ void DiscrepancyAnalysisCWriter::writePreInstructionInfo(const FunctionBehaviorC
                                                          " is a call_expr but does not actually call a function");
          THROW_ASSERT(node_info->called.size() == 1,
                       "rhs of gimple_assign node " + STR(st_tn_id) + " is a call_expr but calls more than a function");
-         const unsigned int called_id = *node_info->called.begin();
+         const auto called_id = *node_info->called.begin();
          const BehavioralHelperConstRef BH = AppM->CGetFunctionBehavior(called_id)->CGetBehavioralHelper();
          if(BH->has_implementation() and BH->function_has_to_be_printed(called_id))
          {
@@ -211,7 +211,7 @@ void DiscrepancyAnalysisCWriter::writePostInstructionInfo(const FunctionBehavior
       return;
    }
    const OpGraphConstRef instrGraph = fun_behavior->CGetOpGraph(FunctionBehavior::FCFG);
-   const unsigned int st_tn_id = instrGraph->CGetOpNodeInfo(statement)->GetNodeId();
+   const auto st_tn_id = instrGraph->CGetOpNodeInfo(statement)->GetNodeId();
    if(st_tn_id == 0 || st_tn_id == ENTRY_ID || st_tn_id == EXIT_ID)
    {
       return;
@@ -232,12 +232,12 @@ void DiscrepancyAnalysisCWriter::writePostInstructionInfo(const FunctionBehavior
          return;
       }
    }
-   const unsigned int funId = BH->get_function_index();
+   const auto funId = BH->get_function_index();
    const hlsConstRef hls = hls_c_backend_information->HLSMgr->get_HLS(funId);
 
    technology_nodeRef fu_tech_n = hls->allocation_information->get_fu(hls->Rfu->get_assign(statement));
    technology_nodeRef op_tech_n = GetPointer<functional_unit>(fu_tech_n)->get_operation(
-       tree_helper::normalized_ID(instrGraph->CGetOpNodeInfo(statement)->GetOperation()));
+       tree_helper::NormalizeTypename(instrGraph->CGetOpNodeInfo(statement)->GetOperation()));
 
    const operation* oper = GetPointer<operation>(op_tech_n);
    if(!oper)
@@ -433,7 +433,7 @@ void DiscrepancyAnalysisCWriter::writePostInstructionInfo(const FunctionBehavior
                    "variable " + STR(var_name) + " with node id " + STR(ssa->index) + " has type id = " +
                        STR(ssa_type->index) + " is complex = " + STR(is_complex) + " is real = " + STR(is_real));
 
-      unsigned int vec_base_bitsize = type_bitsize;
+      auto vec_base_bitsize = type_bitsize;
       if(is_vector)
       {
          THROW_ASSERT(ssa_bitsize == type_bitsize,
@@ -498,7 +498,7 @@ void DiscrepancyAnalysisCWriter::writePostInstructionInfo(const FunctionBehavior
                                                             " is a call_expr but does not actually call a function");
             THROW_ASSERT(node_info->called.size() == 1, "rhs of gimple_assign node " + STR(st_tn_id) +
                                                             " is a call_expr but calls more than a function");
-            const unsigned int called_id = *node_info->called.begin();
+            const auto called_id = *node_info->called.begin();
             const auto BHC = AppM->CGetFunctionBehavior(called_id)->CGetBehavioralHelper();
             if(BHC->has_implementation() and BHC->function_has_to_be_printed(called_id))
             {
@@ -807,7 +807,7 @@ void DiscrepancyAnalysisCWriter::DeclareLocalVariables(const CustomSet<unsigned 
    {
       if(FB->is_variable_mem(GET_INDEX_CONST_NODE(par)))
       {
-         const unsigned int bitsize = tree_helper::Size(par);
+         const auto bitsize = tree_helper::Size(par);
          THROW_ASSERT(bitsize % 8 == 0 || bitsize == 1,
                       "bitsize of a variable in memory must be multiple of 8 --> is " + STR(bitsize));
          indented_output_stream->Append("fprintf(__bambu_discrepancy_fp, \"VARDECL_ID " +
@@ -820,7 +820,7 @@ void DiscrepancyAnalysisCWriter::DeclareLocalVariables(const CustomSet<unsigned 
    {
       if(FB->is_variable_mem(var))
       {
-         const unsigned int bitsize = tree_helper::Size(TM->CGetTreeReindex(var));
+         const auto bitsize = tree_helper::Size(TM->CGetTreeReindex(var));
          THROW_ASSERT(bitsize % 8 == 0 || bitsize == 1,
                       "bitsize of a variable in memory must be multiple of 8 --> is " + STR(bitsize));
          indented_output_stream->Append("fprintf(__bambu_discrepancy_fp, \"VARDECL_ID " + STR(var) +

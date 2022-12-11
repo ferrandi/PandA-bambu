@@ -361,7 +361,8 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                      const auto srcp = ga->include_name + ":" + STR(ga->line_number) + ":" + STR(ga->column_number);
                      const auto& val_type = ssa->type;
                      const auto val_type_bw = tree_helper::Size(ssa->type);
-                     const auto shift_offset = TM->CreateUniqueIntegerCst(val_type_bw - bw_op0, val_type);
+                     const auto shift_offset =
+                         TM->CreateUniqueIntegerCst(static_cast<long long>(val_type_bw - bw_op0), val_type);
                      const auto shl_expr =
                          IRman->create_binary_operation(val_type, val, shift_offset, srcp, lshift_expr_K);
                      const auto shl =
@@ -1912,7 +1913,7 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                            std::string s0, s1;
                            bool is_op0_ssa = GetPointer<const ssa_name>(GET_CONST_NODE(op0));
                            bool is_op1_ssa = GetPointer<const ssa_name>(GET_CONST_NODE(op1));
-                           unsigned int s0_precision = 0;
+                           unsigned long long s0_precision = 0;
                            bool is_s0_null = false;
                            bool is_s0_one = false;
                            if(is_op0_ssa)
@@ -1940,7 +1941,7 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                               is_s0_null = ull_value == 0;
                               is_s0_one = ull_value == 1;
                            }
-                           unsigned int s1_precision = 0;
+                           unsigned long long s1_precision = 0;
                            bool is_s1_null = false;
                            bool is_s1_one = false;
                            if(is_op1_ssa)
@@ -1969,7 +1970,7 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                               is_s1_one = ull_value == 1;
                            }
 
-                           unsigned int minimum_precision = std::min(s0_precision, s1_precision);
+                           unsigned long long minimum_precision = std::min(s0_precision, s1_precision);
                            unsigned int trailing_eq = 0;
                            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                           "---Bit_value strings are " + s0 + " and " + s1);

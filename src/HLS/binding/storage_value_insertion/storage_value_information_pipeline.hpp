@@ -57,7 +57,7 @@ class StorageValueInformationPipeline : public StorageValueInformation
    /**
     * Destructor
     */
-   ~StorageValueInformationPipeline();
+   ~StorageValueInformationPipeline() override;
 
    /**
     * return true in case a storage value exist for the pair vertex variable

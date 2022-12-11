@@ -143,7 +143,7 @@ class fu_binding
     * @param is_memory_splitted is true when the allocated memory is splitted into two sets of BRAMs
     */
    void fill_array_ref_memory(std::ostream& init_file_a, std::ostream& init_file_b, unsigned int ar,
-                              long long int& vec_size, unsigned int& elts_size, const memoryRef mem,
+                              long long int& vec_size, unsigned long long& elts_size, const memoryRef mem,
                               bool is_memory_splitted, bool is_sds, module* fu_module);
 
    /**
@@ -354,11 +354,12 @@ class fu_binding
     * Specialize a memory unit
     */
    void specialize_memory_unit(const HLS_managerRef HLSMgr, const hlsRef HLS, structural_objectRef fu_obj,
-                               unsigned int ar, std::string& base_address, unsigned long long rangesize,
+                               unsigned int ar, const std::string& base_address, unsigned long long rangesize,
                                bool is_memory_splitted, bool is_sparse_memory, bool is_sds);
 
    static void write_init(const tree_managerConstRef TreeM, tree_nodeRef var_node, tree_nodeRef init_node,
-                          std::vector<std::string>& init_file, const memoryRef mem, unsigned int element_precision);
+                          std::vector<std::string>& init_file, const memoryRef mem,
+                          unsigned long long element_precision);
 
    virtual bool manage_module_ports(const HLS_managerRef HLSMgr, const hlsRef HLS, const structural_managerRef SM,
                                     const structural_objectRef curr_gate, unsigned int num);

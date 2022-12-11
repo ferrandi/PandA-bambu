@@ -102,7 +102,7 @@ struct PrioritySorter : public std::binary_function<vertex, vertex, bool>
    bool operator()(const vertex x, const vertex y) const;
 };
 
-typedef std::vector<std::set<vertex, PrioritySorter>> PriorityQueues;
+using PriorityQueues = std::vector<std::set<vertex, PrioritySorter>>;
 #endif
 
 enum class ParametricListBased_Metric

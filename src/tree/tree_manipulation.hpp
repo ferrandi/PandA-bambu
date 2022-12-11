@@ -255,16 +255,15 @@ class tree_manipulation
     * @param  smt_ann is the symbol_memory_tag annotation.
     * @param  init is the init field holding the value to initialize a variable to.
     * @param  srcp is the definition of the source position.
-    * @param  algn is the field holding the alignment required for the datum, in bits.
     * @param  used is nonzero if the name is used in its scope
     * @param  register_flag means declared 'register'
     * @param  readonly_flag means declared 'readonly'
     * @return the tree_reindex node of the parm_decl created.
     */
-   tree_nodeRef create_parm_decl(const tree_nodeRef& name, const tree_nodeRef& type, const tree_nodeRef& scpe,
-                                 const tree_nodeRef& size, const tree_nodeRef& argt, const tree_nodeRef& smt_ann,
-                                 const tree_nodeRef& init, const std::string& srcp, unsigned int algn, int used,
-                                 bool register_flag = false, bool readonly_flag = false) const;
+   tree_nodeRef create_parm_decl(const tree_nodeRef& name, const tree_nodeConstRef& type, const tree_nodeRef& scpe,
+                                 const tree_nodeConstRef& argt, const tree_nodeRef& smt_ann, const tree_nodeRef& init,
+                                 const std::string& srcp, int used, bool register_flag = false,
+                                 bool readonly_flag = false) const;
 
    /// create or find a global scope
    tree_nodeRef create_translation_unit_decl() const;
@@ -370,7 +369,7 @@ class tree_manipulation
     * @param  ptd type pointed by the pointer type (tree_reindex).
     * @return the tree_reindex node of the pointer type.
     */
-   tree_nodeRef GetPointerType(const tree_nodeConstRef& ptd, unsigned int algn = 0) const;
+   tree_nodeRef GetPointerType(const tree_nodeConstRef& ptd, unsigned long long algn = 0) const;
 
    /**
     * @brief create an integer type starting from a given prec
@@ -378,7 +377,7 @@ class tree_manipulation
     * @param unsigned_p say if the integer_type required is unsigned or not
     * @return a new integer with a precision equal to prec
     */
-   tree_nodeRef GetCustomIntegerType(unsigned int prec, bool unsigned_p) const;
+   tree_nodeRef GetCustomIntegerType(unsigned long long prec, bool unsigned_p) const;
 
    /**
     * @brief Create a function type
@@ -387,7 +386,7 @@ class tree_manipulation
     * @param argsT is the vector of argument types
     * @return tree_nodeRef is the tree reindex associated with the function type created
     */
-   tree_nodeRef GetFunctionType(const tree_nodeRef& returnType, const std::vector<tree_nodeRef>& argsT) const;
+   tree_nodeRef GetFunctionType(const tree_nodeConstRef& returnType, const std::vector<tree_nodeConstRef>& argsT) const;
 
    /// MISCELLANEOUS_OBJ_TREE_NODES
 
@@ -509,7 +508,7 @@ class tree_manipulation
     * @return is the the tree_reindex associated with the function_decl created.
     */
    tree_nodeRef create_function_decl(const std::string& function_name, const tree_nodeRef& scpe,
-                                     const std::vector<tree_nodeRef>& argsT, const tree_nodeRef& returnType,
+                                     const std::vector<tree_nodeConstRef>& argsT, const tree_nodeConstRef& returnType,
                                      const std::string& srcp, bool with_body) const;
 
    /// BASIC BLOCK
@@ -731,7 +730,7 @@ class tree_manipulation
     * @param number_of_elements is the number of elements of a vector
     * @return the tree reindex of the created node
     */
-   tree_nodeRef CreateVectorBooleanType(const unsigned int number_of_elements) const;
+   tree_nodeRef CreateVectorBooleanType(const unsigned long long number_of_elements) const;
 
    /**
     * @brief CloneFunction duplicates a function

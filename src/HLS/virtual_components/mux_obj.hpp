@@ -135,10 +135,7 @@ class mux_obj : public generic_obj
    /**
     * return the maximum bitsize associated with the component
     */
-   unsigned int get_bitsize() const
-   {
-      return bitsize;
-   }
+   unsigned int get_bitsize() const;
 };
 
 /// RefCount definition for the class

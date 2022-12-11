@@ -1,7 +1,7 @@
 #!/bin/bash
 
 REGISTRY="bambuhls"
-VARIANTS=("xenial" "focal")
+VARIANTS=("bionic" "focal")
 IMAGES=("appimage" "iverilog" "verilator")
 
 DOCKER_BUILD="docker build --pull --quiet"

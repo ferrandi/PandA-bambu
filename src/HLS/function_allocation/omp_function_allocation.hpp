@@ -56,7 +56,7 @@ class OmpFunctionAllocation : public fun_dominator_allocation
    /**
     * Destructor
     */
-   ~OmpFunctionAllocation();
+   ~OmpFunctionAllocation() override;
 
    /**
     * Execute the step

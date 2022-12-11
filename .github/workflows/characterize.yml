@@ -87,7 +87,7 @@ jobs:
             array+=",{\"index\":\"$i\"}"
           done
           array+="]}"
-          echo "::set-output name=value::{\"include\":[${array}]}"
+          echo "value={\"include\":[${array}]}" >> $GITHUB_OUTPUT
       - name: Upload device FUs list
         uses: actions/upload-artifact@v3
         with:
@@ -120,7 +120,7 @@ jobs:
           ln -s $PWD/*.AppImage bin/bambu
           ln -s $PWD/*.AppImage bin/eucalyptus
           ln -s $PWD/*.AppImage bin/spider
-          echo "::set-output name=local-bin::$PWD/bin"
+          echo "local-bin=$PWD/bin" >> $GITHUB_OUTPUT
       - name: Download device FUs list
         uses: actions/download-artifact@v3
         with:
@@ -163,7 +163,7 @@ jobs:
           ln -s $PWD/*.AppImage bin/bambu
           ln -s $PWD/*.AppImage bin/eucalyptus
           ln -s $PWD/*.AppImage bin/spider
-          echo "::set-output name=local-bin::$PWD/bin"
+          echo "local-bin=$PWD/bin" >> $GITHUB_OUTPUT
       - name: Download device FUs characterizations
         uses: actions/download-artifact@v3
         with:

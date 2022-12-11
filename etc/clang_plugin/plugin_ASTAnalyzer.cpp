@@ -41,18 +41,21 @@
 
 #include "plugin_includes.hpp"
 
-#include "clang/AST/AST.h"
-#include "clang/AST/ASTConsumer.h"
-#include "clang/AST/DeclCXX.h"
-#include "clang/AST/Mangle.h"
-#include "clang/AST/RecursiveASTVisitor.h"
-#include "clang/AST/Type.h"
-#include "clang/Frontend/CompilerInstance.h"
-#include "clang/Frontend/FrontendPluginRegistry.h"
-#include "clang/Lex/LexDiagnostic.h"
-#include "clang/Lex/Preprocessor.h"
-#include "clang/Sema/Sema.h"
-#include "llvm/Support/raw_ostream.h"
+#include <clang/AST/AST.h>
+#include <clang/AST/ASTConsumer.h>
+#include <clang/AST/DeclCXX.h>
+#include <clang/AST/Mangle.h>
+#include <clang/AST/RecursiveASTVisitor.h>
+#include <clang/AST/Type.h>
+#include <clang/Frontend/CompilerInstance.h>
+#include <clang/Frontend/FrontendPluginRegistry.h>
+#include <clang/Lex/LexDiagnostic.h>
+#include <clang/Lex/Preprocessor.h>
+#include <clang/Sema/Sema.h>
+#include <llvm/Support/raw_ostream.h>
+
+// #define PRINT_DBG_MSG
+#include "debug_print.hpp"
 
 static std::map<std::string, std::map<clang::SourceLocation, std::map<std::string, std::string>>> file_loc_attr;
 static std::map<std::string, std::map<clang::SourceLocation, std::map<std::string, std::map<std::string, std::string>>>>
@@ -348,7 +351,7 @@ namespace clang
          if(!FD->isVariadic() && FD->hasBody())
          {
             Fun2Demangled[fname] = FD->getNameInfo().getName().getAsString();
-            // llvm::errs() << "function: " << fname << "\n";
+            PRINT_DBG("function: " << fname << "\n");
 
             auto par_index = 0u;
             for(const auto par : FD->parameters())
@@ -363,7 +366,7 @@ namespace clang
                      }
                      return name;
                   }();
-                  // llvm::errs() << "  arg: " << pname << "\n";
+                  PRINT_DBG("  arg: " << pname << "\n");
 
                   auto& attr_val = fun_arg_attr[fname][pname];
                   const auto argType = PVD->getType();
@@ -371,32 +374,67 @@ namespace clang
                   std::string ParamTypeName;
                   std::string ParamTypeNameOrig;
                   std::string ParamTypeInclude;
+                  const auto getIncludes = [&](const clang::QualType& type) {
+                     std::string includes;
+                     if(const auto BTD = getBaseTypeDecl(type))
+                     {
+                        includes = SM.getPresumedLoc(BTD->getSourceRange().getBegin(), false).getFilename();
+                     }
+                     const auto tmpl_decl =
+                         llvm::dyn_cast_or_null<ClassTemplateSpecializationDecl>(type->getAsTagDecl());
+                     if(tmpl_decl)
+                     {
+                        const auto& args = tmpl_decl->getTemplateArgs();
+                        for(auto i = 0U; i < args.size(); ++i)
+                        {
+                           const auto& argT = args[i];
+                           if(argT.getKind() == TemplateArgument::ArgKind::Type)
+                           {
+                              if(const auto BTD = getBaseTypeDecl(argT.getAsType()))
+                              {
+                                 includes += std::string(";") +
+                                             SM.getPresumedLoc(BTD->getSourceRange().getBegin(), false).getFilename();
+                              }
+                           }
+                        }
+                     }
+                     return includes;
+                  };
                   const auto manageArray = [&](const ConstantArrayType* CA, bool setInterfaceType) {
                      auto OrigTotArraySize = CA->getSize();
                      std::string Dimensions;
                      if(!setInterfaceType)
                      {
+#if __clang_major__ >= 13
+                        Dimensions = "[" + llvm::toString(OrigTotArraySize, 10, false) + "]";
+#else
                         Dimensions = "[" + OrigTotArraySize.toString(10, false) + "]";
+#endif
                      }
                      while(CA->getElementType()->isConstantArrayType())
                      {
                         CA = cast<ConstantArrayType>(CA->getElementType());
                         const auto n_el = CA->getSize();
+#if __clang_major__ >= 13
+                        Dimensions = Dimensions + "[" + llvm::toString(n_el, 10, false) + "]";
+#else
                         Dimensions = Dimensions + "[" + n_el.toString(10, false) + "]";
+#endif
                         OrigTotArraySize *= n_el;
                      }
                      const auto paramTypeRemTD = RemoveTypedef(CA->getElementType());
                      ParamTypeName = GetTypeNameCanonical(paramTypeRemTD, pp) + " *";
                      ParamTypeNameOrig =
                          paramTypeRemTD.getAsString(pp) + (Dimensions == "" ? " *" : " (*)" + Dimensions);
-                     if(const auto BTD = getBaseTypeDecl(paramTypeRemTD))
-                     {
-                        ParamTypeInclude = SM.getPresumedLoc(BTD->getSourceRange().getBegin(), false).getFilename();
-                     }
+                     ParamTypeInclude = getIncludes(paramTypeRemTD);
                      if(setInterfaceType)
                      {
                         interface = "array";
+#if __clang_major__ >= 13
+                        const auto array_size = llvm::toString(OrigTotArraySize, 10, false);
+#else
                         const auto array_size = OrigTotArraySize.toString(10, false);
+#endif
                         assert(array_size != "0");
                         attr_val["size"] = array_size;
                      }
@@ -413,10 +451,7 @@ namespace clang
                         const auto paramTypeRemTD = RemoveTypedef(argType);
                         ParamTypeName = GetTypeNameCanonical(paramTypeRemTD, pp);
                         ParamTypeNameOrig = paramTypeRemTD.getAsString(pp);
-                        if(const auto BTD = getBaseTypeDecl(paramTypeRemTD))
-                        {
-                           ParamTypeInclude = SM.getPresumedLoc(BTD->getSourceRange().getBegin(), false).getFilename();
-                        }
+                        ParamTypeInclude = getIncludes(paramTypeRemTD);
                      }
                      if(attr_val.find("interface_type") != attr_val.end())
                      {
@@ -448,11 +483,7 @@ namespace clang
                            const auto paramTypeRemTD = RemoveTypedef(PT->getPointeeType());
                            ParamTypeName = GetTypeNameCanonical(paramTypeRemTD, pp) + " *";
                            ParamTypeNameOrig = paramTypeRemTD.getAsString(pp) + " *";
-                           if(const auto BTD = getBaseTypeDecl(paramTypeRemTD))
-                           {
-                              ParamTypeInclude =
-                                  SM.getPresumedLoc(BTD->getSourceRange().getBegin(), false).getFilename();
-                           }
+                           ParamTypeInclude = getIncludes(paramTypeRemTD);
                         }
                      }
                      else if(const auto RT = dyn_cast<ReferenceType>(argType))
@@ -460,20 +491,14 @@ namespace clang
                         const auto paramTypeRemTD = RemoveTypedef(RT->getPointeeType());
                         ParamTypeName = GetTypeNameCanonical(paramTypeRemTD, pp) + " &";
                         ParamTypeNameOrig = paramTypeRemTD.getAsString(pp) + " &";
-                        if(const auto BTD = getBaseTypeDecl(paramTypeRemTD))
-                        {
-                           ParamTypeInclude = SM.getPresumedLoc(BTD->getSourceRange().getBegin(), false).getFilename();
-                        }
+                        ParamTypeInclude = getIncludes(paramTypeRemTD);
                      }
                      else
                      {
                         const auto paramTypeRemTD = RemoveTypedef(argType);
                         ParamTypeName = GetTypeNameCanonical(paramTypeRemTD, pp);
                         ParamTypeNameOrig = paramTypeRemTD.getAsString(pp);
-                        if(const auto BTD = getBaseTypeDecl(paramTypeRemTD))
-                        {
-                           ParamTypeInclude = SM.getPresumedLoc(BTD->getSourceRange().getBegin(), false).getFilename();
-                        }
+                        ParamTypeInclude = getIncludes(paramTypeRemTD);
                      }
                      interface = "ptrdefault";
                      if(attr_val.find("interface_type") != attr_val.end())
@@ -495,10 +520,7 @@ namespace clang
                      const auto paramTypeRemTD = RemoveTypedef(argType);
                      ParamTypeName = GetTypeNameCanonical(paramTypeRemTD, pp);
                      ParamTypeNameOrig = paramTypeRemTD.getAsString(pp);
-                     if(const auto BTD = getBaseTypeDecl(paramTypeRemTD))
-                     {
-                        ParamTypeInclude = SM.getPresumedLoc(BTD->getSourceRange().getBegin(), false).getFilename();
-                     }
+                     ParamTypeInclude = getIncludes(paramTypeRemTD);
                      if(!argType->isBuiltinType() && !argType->isEnumeralType())
                      {
                         interface = "none";
@@ -525,10 +547,10 @@ namespace clang
                   attr_val["interface_typename"] = ParamTypeName;
                   attr_val["interface_typename_orig"] = ParamTypeNameOrig;
                   attr_val["interface_typename_include"] = ParamTypeInclude;
-                  // llvm::errs() << "      interface_type = " << interface << "\n";
-                  // llvm::errs() << "      interface_typename = " << ParamTypeName << "\n";
-                  // llvm::errs() << "      interface_typename_orig = " << ParamTypeNameOrig << "\n";
-                  // llvm::errs() << "      interface_typename_include = " << ParamTypeInclude << "\n";
+                  PRINT_DBG("    interface_type            : " << interface << "\n");
+                  PRINT_DBG("    interface_typename        : " << ParamTypeName << "\n");
+                  PRINT_DBG("    interface_typename_orig   : " << ParamTypeNameOrig << "\n");
+                  PRINT_DBG("    interface_typename_include: " << ParamTypeInclude << "\n");
                }
                ++par_index;
             }

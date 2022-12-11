@@ -314,13 +314,12 @@ bool dead_code_eliminationIPA::signature_opt(const tree_managerRef& TM, function
 
    InEdgeIterator ie, ie_end;
    tree_manipulationRef tree_man(new tree_manipulation(TM, parameters, AppM));
-   std::vector<tree_nodeRef> loa = fd->list_of_args, argsT;
+   std::vector<tree_nodeRef> loa = fd->list_of_args;
+   std::vector<tree_nodeConstRef> argsT;
    arg_eraser(loa, nullptr);
-   std::transform(loa.cbegin(), loa.cend(), std::back_inserter(argsT), [&](const tree_nodeRef& arg) {
-      return TM->GetTreeReindex(tree_helper::get_type_index(TM, GET_INDEX_CONST_NODE(arg)));
-   });
-   const auto ftype =
-       tree_man->GetFunctionType(GetPointerS<const function_type>(GET_CONST_NODE(fd->type))->retn, argsT);
+   std::transform(loa.cbegin(), loa.cend(), std::back_inserter(argsT),
+                  [&](const tree_nodeRef& arg) { return tree_helper::CGetType(arg); });
+   const auto ftype = tree_man->GetFunctionType(tree_helper::GetFunctionReturnType(fd->type, false), argsT);
    const auto ftype_ptr = tree_man->GetPointerType(ftype);
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Erasing unused arguments from call points");
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");

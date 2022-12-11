@@ -55,7 +55,7 @@ class ExtractOmpFor : public FunctionFrontendFlowStep
     * Return the set of analyses in relationship with this design step
     * @param relationship_type is the type of relationship to be considered
     */
-   virtual const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>>
+   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>>
    ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
  public:
@@ -72,7 +72,7 @@ class ExtractOmpFor : public FunctionFrontendFlowStep
    /**
     *  Destructor
     */
-   ~ExtractOmpFor();
+   ~ExtractOmpFor() override;
 
    /**
     * Restructures the unstructured code
@@ -82,12 +82,12 @@ class ExtractOmpFor : public FunctionFrontendFlowStep
    /**
     * Initialize the step (i.e., like a constructor, but executed just before exec
     */
-   virtual void Initialize() override;
+   void Initialize() override;
 
    /**
     * Check if this step has actually to be executed
     * @return true if the step has to be executed
     */
-   virtual bool HasToBeExecuted() const override;
+   bool HasToBeExecuted() const override;
 };
 #endif

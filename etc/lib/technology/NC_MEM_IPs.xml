@@ -1521,8 +1521,8 @@ endgenerate
 generate
   if(PRIVATE_MEMORY==0 &amp;&amp; USE_SPARSE_MEMORY==0)
     assign cs = (S_addr_ram &gt;= (address_space_begin)) &amp;&amp; (S_addr_ram &lt; (address_space_begin+address_space_rangesize));
-  else if(PRIVATE_MEMORY==0)
-    assign cs = S_addr_ram[nbit_addr-1:nbits_address_space_rangesize] == address_space_begin[nbit_addr-1:nbits_address_space_rangesize];
+  else if(PRIVATE_MEMORY==0 &amp;&amp; nbits_address_space_rangesize &lt; 32)
+    assign cs = S_addr_ram[nbit_addr-1:nbits_address_space_rangesize] == address_space_begin[((nbit_addr-1) &lt; 32 ? (nbit_addr-1) : 31):nbits_address_space_rangesize];
   else
     assign cs = 1&apos;b0;
 endgenerate
@@ -1530,13 +1530,13 @@ assign oe_ram_cs = S_oe_ram &amp;&amp; cs;
 assign we_ram_cs = S_we_ram &amp;&amp; cs;
 generate
   if(PRIVATE_MEMORY==0 &amp;&amp; USE_SPARSE_MEMORY==0)
-    assign relative_addr = (sel_STORE===1&apos;b1 || sel_LOAD===1&apos;b1 || proxy_sel_STORE===1&apos;b1 || proxy_sel_LOAD===1&apos;b1) ? tmp_addr-address_space_begin[nbit_addr-1:0] : S_addr_ram-address_space_begin[nbit_addr-1:0];
+    assign relative_addr = (sel_STORE===1&apos;b1 || sel_LOAD===1&apos;b1 || proxy_sel_STORE===1&apos;b1 || proxy_sel_LOAD===1&apos;b1) ? tmp_addr-address_space_begin[((nbit_addr-1) &lt; 32 ? (nbit_addr-1) : 31):0] : S_addr_ram-address_space_begin[((nbit_addr-1) &lt; 32 ? (nbit_addr-1) : 31):0];
   else if(PRIVATE_MEMORY==0)
     assign relative_addr = (sel_STORE===1&apos;b1 || sel_LOAD===1&apos;b1 || proxy_sel_STORE===1&apos;b1 || proxy_sel_LOAD===1&apos;b1) ? tmp_addr[nbits_address_space_rangesize-1:0] : S_addr_ram[nbits_address_space_rangesize-1:0];
   else if(USE_SPARSE_MEMORY==1)
     assign relative_addr = tmp_addr[nbits_address_space_rangesize-1:0];
   else
-    assign relative_addr = tmp_addr-address_space_begin[nbit_addr-1:0];
+    assign relative_addr = tmp_addr-address_space_begin[((nbit_addr-1) &lt; 32 ? (nbit_addr-1) : 31):0];
 endgenerate
 
 generate
@@ -2232,8 +2232,8 @@ genvar i3;
   begin : L3
     if(PRIVATE_MEMORY==0 &amp;&amp; USE_SPARSE_MEMORY==0)
       assign cs[i3] = (S_addr_ram[(i3+1)*BITSIZE_S_addr_ram-1:i3*BITSIZE_S_addr_ram] &gt;= (address_space_begin)) &amp;&amp; (S_addr_ram[(i3+1)*BITSIZE_S_addr_ram-1:i3*BITSIZE_S_addr_ram] &lt; (address_space_begin+address_space_rangesize));
-    else if(PRIVATE_MEMORY==0)
-      assign cs[i3] = S_addr_ram[(i3+1)*BITSIZE_S_addr_ram-1:i3*BITSIZE_S_addr_ram+nbits_address_space_rangesize] == address_space_begin[nbit_addr-1:nbits_address_space_rangesize];
+    else if(PRIVATE_MEMORY==0 &amp;&amp; nbits_address_space_rangesize &lt; 32)
+      assign cs[i3] = S_addr_ram[(i3+1)*BITSIZE_S_addr_ram-1:i3*BITSIZE_S_addr_ram+nbits_address_space_rangesize] == address_space_begin[((nbit_addr-1) &lt; 32 ? (nbit_addr-1) : 31):nbits_address_space_rangesize];
     else
       assign cs[i3] = 1&apos;b0;
   end
@@ -11126,8 +11126,8 @@ assign tmp_addr = (proxy_sel_LOAD||proxy_sel_STORE) ? proxy_in2 : in2;
 generate
   if(PRIVATE_MEMORY==0 &amp;&amp; USE_SPARSE_MEMORY==0)
     assign cs = (S_addr_ram &gt;= (address_space_begin)) &amp;&amp; (S_addr_ram &lt; (address_space_begin+address_space_rangesize));
-  else if(PRIVATE_MEMORY==0)
-    assign cs = S_addr_ram[nbit_addr-1:nbits_address_space_rangesize] == address_space_begin[nbit_addr-1:nbits_address_space_rangesize];
+  else if(PRIVATE_MEMORY==0 &amp;&amp; nbits_address_space_rangesize &lt; 32)
+    assign cs = S_addr_ram[nbit_addr-1:nbits_address_space_rangesize] == address_space_begin[((nbit_addr-1) &lt; 32 ? (nbit_addr-1) : 31):nbits_address_space_rangesize];
   else
     assign cs = 1&apos;b0;
 endgenerate
@@ -11137,13 +11137,13 @@ assign we_ram_cs = S_we_ram &amp;&amp; cs;
 
 generate
   if(PRIVATE_MEMORY==0 &amp;&amp; USE_SPARSE_MEMORY==0)
-    assign relative_addr = (sel_STORE===1&apos;b1 || sel_LOAD===1&apos;b1 || proxy_sel_STORE===1&apos;b1 || proxy_sel_LOAD===1&apos;b1) ? tmp_addr-address_space_begin[nbit_addr-1:0] : S_addr_ram-address_space_begin[nbit_addr-1:0];
+    assign relative_addr = (sel_STORE===1&apos;b1 || sel_LOAD===1&apos;b1 || proxy_sel_STORE===1&apos;b1 || proxy_sel_LOAD===1&apos;b1) ? tmp_addr-address_space_begin[((nbit_addr-1) &lt; 32 ? (nbit_addr-1) : 31):0] : S_addr_ram-address_space_begin[((nbit_addr-1) &lt; 32 ? (nbit_addr-1) : 31):0];
   else if(PRIVATE_MEMORY==0)
     assign relative_addr = (sel_STORE===1&apos;b1 || sel_LOAD===1&apos;b1 || proxy_sel_STORE===1&apos;b1 || proxy_sel_LOAD===1&apos;b1) ? tmp_addr[nbits_address_space_rangesize-1:0] : S_addr_ram[nbits_address_space_rangesize-1:0];
   else if(USE_SPARSE_MEMORY==1)
     assign relative_addr = tmp_addr[nbits_address_space_rangesize-1:0];
   else
-    assign relative_addr = tmp_addr-address_space_begin[nbit_addr-1:0];
+    assign relative_addr = tmp_addr-address_space_begin[((nbit_addr-1) &lt; 32 ? (nbit_addr-1) : 31):0];
 endgenerate
 
 generate
@@ -11944,8 +11944,8 @@ genvar i3;
   begin : L3
     if(PRIVATE_MEMORY==0 &amp;&amp; USE_SPARSE_MEMORY==0)
       assign cs[i3] = (S_addr_ram[(i3+1)*BITSIZE_S_addr_ram-1:i3*BITSIZE_S_addr_ram] &gt;= (address_space_begin)) &amp;&amp; (S_addr_ram[(i3+1)*BITSIZE_S_addr_ram-1:i3*BITSIZE_S_addr_ram] &lt; (address_space_begin+address_space_rangesize));
-    else if(PRIVATE_MEMORY==0)
-      assign cs[i3] = S_addr_ram[(i3+1)*BITSIZE_S_addr_ram-1:i3*BITSIZE_S_addr_ram+nbits_address_space_rangesize] == address_space_begin[nbit_addr-1:nbits_address_space_rangesize];
+    else if(PRIVATE_MEMORY==0 &amp;&amp; nbits_address_space_rangesize &lt; 32)
+      assign cs[i3] = S_addr_ram[(i3+1)*BITSIZE_S_addr_ram-1:i3*BITSIZE_S_addr_ram+nbits_address_space_rangesize] == address_space_begin[((nbit_addr-1) &lt; 32 ? (nbit_addr-1) : 31):nbits_address_space_rangesize];
     else
       assign cs[i3] = 1&apos;b0;
   end

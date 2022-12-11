@@ -1486,7 +1486,7 @@ DesignFlowStep_Status allocation::InternalExec()
    unsigned int gimple_return_current_id = 0;
    for(boost::tie(v, v_end) = boost::vertices(*g); v != v_end; ++v)
    {
-      std::string current_op = tree_helper::normalized_ID(g->CGetOpNodeInfo(*v)->GetOperation());
+      std::string current_op = tree_helper::NormalizeTypename(g->CGetOpNodeInfo(*v)->GetOperation());
       const auto node_id = g->CGetOpNodeInfo(*v)->GetNodeId();
       const auto node_operation = [&]() -> std::string {
          if(node_id == ENTRY_ID)
@@ -2138,12 +2138,12 @@ DesignFlowStep_Status allocation::InternalExec()
                   }
                   return GetPointer<const gimple_node>(TM->CGetTreeNode(vert_node_id))->operation;
                }();
-               if(tree_helper::normalized_ID(g->CGetOpNodeInfo(vert)->GetOperation()) != curr_op_name)
+               if(tree_helper::NormalizeTypename(g->CGetOpNodeInfo(vert)->GetOperation()) != curr_op_name)
                {
                   continue;
                }
                else if((!lib_is_proxy_or_work) &&
-                       TechM->get_fu(tree_helper::normalized_ID(g->CGetOpNodeInfo(vert)->GetOperation()),
+                       TechM->get_fu(tree_helper::NormalizeTypename(g->CGetOpNodeInfo(vert)->GetOperation()),
                                      WORK_LIBRARY) &&
                        GET_TYPE(g, vert) != TYPE_MEMCPY)
                {
@@ -2305,7 +2305,7 @@ DesignFlowStep_Status allocation::InternalExec()
                }
 
                auto max_prec = node_info->input_prec.empty() ?
-                                   0U :
+                                   0ULL :
                                    *std::max_element(node_info->input_prec.begin(), node_info->input_prec.end());
                if(isMemory || lib_is_proxy_or_work || tech_constrain_value != INFINITE_UINT ||
                   bambu_provided_resource.size())
@@ -2315,7 +2315,8 @@ DesignFlowStep_Status allocation::InternalExec()
                }
 
                std::map<technology_nodeRef,
-                        std::map<unsigned int, std::map<HLS_manager::io_binding_type, unsigned int>>>::iterator techMap;
+                        std::map<unsigned long long, std::map<HLS_manager::io_binding_type, unsigned int>>>::iterator
+                   techMap;
                std::string functionalUnitName = "";
                unsigned int specializedId = current_id;
                const library_managerRef libraryManager = TechM->get_library_manager(library_name);
@@ -2493,7 +2494,7 @@ DesignFlowStep_Status allocation::InternalExec()
          }
          INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
                         "---Operation for which does not exist a functional unit in the resource library: " +
-                            tree_helper::normalized_ID(g->CGetOpNodeInfo(ve)->GetOperation()) +
+                            tree_helper::NormalizeTypename(g->CGetOpNodeInfo(ve)->GetOperation()) +
                             " in vertex: " + GET_NAME(g, ve) + " with vertex type: " + node_info->node_kind +
                             " and vertex prec:" + precisions);
          completely_analyzed = false;
@@ -2581,7 +2582,7 @@ DesignFlowStep_Status allocation::InternalExec()
 std::string allocation::get_compliant_pipelined_unit(double clock, const std::string& pipe_parameter,
                                                      const technology_nodeRef current_fu, const std::string& curr_op,
                                                      const std::string& library_name,
-                                                     const std::string& template_suffix, unsigned int module_prec)
+                                                     const std::string& template_suffix, unsigned long long module_prec)
 {
    if(pipe_parameter.empty())
    {
@@ -2639,7 +2640,7 @@ std::string allocation::get_compliant_pipelined_unit(double clock, const std::st
          temp_pipe_parameters = parameters_pairs[1];
          break;
       }
-      else if(boost::lexical_cast<unsigned int>(parameters_pairs[0]) == module_prec)
+      else if(boost::lexical_cast<unsigned long long>(parameters_pairs[0]) == module_prec)
       {
          temp_pipe_parameters = parameters_pairs[1];
          break;

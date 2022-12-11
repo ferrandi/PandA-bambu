@@ -61,7 +61,7 @@ class DiscrepancyAnalysisCWriter : public HLSCWriter
 
    void WriteExtraCodeBeforeEveryMainCall() override;
 
-   virtual void WriteBBHeader(const unsigned int bb_number, const unsigned int function_index) override;
+   void WriteBBHeader(const unsigned int bb_number, const unsigned int function_index) override;
 
    /**
     * Write extra information on the given statement vertex, before the
