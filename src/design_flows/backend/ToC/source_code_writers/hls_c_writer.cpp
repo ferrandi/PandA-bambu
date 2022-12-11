@@ -437,7 +437,7 @@ void HLSCWriter::WriteParamInitialization(const BehavioralHelperConstRef BH,
             const auto var_functor = var_pp_functorRef(new std_var_pp_functor(BH));
             const auto ptd = tree_helper::CGetPointedType(parm_type);
             temp_var_decl = tree_helper::PrintType(TM, ptd, false, false, false, par, var_functor);
-            var_ptdtype = temp_var_decl.substr(0, temp_var_decl.find((*var_functor)(par->index)));
+            var_ptdtype = temp_var_decl.substr(0, temp_var_decl.find_last_of((*var_functor)(par->index)));
             if(tree_helper::IsVoidType(ptd))
             {
                boost::replace_all(temp_var_decl, "void ", "char ");
@@ -453,7 +453,8 @@ void HLSCWriter::WriteParamInitialization(const BehavioralHelperConstRef BH,
                temp_var_decl.insert(first_square, "_temp[]");
             }
          }
-         THROW_ASSERT(temp_var_decl.size() && var_ptdtype.size(), "");
+         THROW_ASSERT(temp_var_decl.size() && var_ptdtype.size(),
+                      "var_decl: " + temp_var_decl + ", ptd_type: " + var_ptdtype);
          const auto ptd_type = tree_helper::GetRealType(tree_helper::CGetPointedType(parm_type));
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                         "---Pointed type: " + GET_CONST_NODE(ptd_type)->get_kind_text() + " - " + STR(ptd_type));
