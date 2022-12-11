@@ -749,15 +749,12 @@ void functional_unit::xload(const xml_element* Enode, const technology_nodeRef f
 #endif
 #if HAVE_TECHNOLOGY_BUILT && HAVE_CMOS_BUILT
    int output_pin_counter = 0;
-#endif
-#if HAVE_CIRCUIT_BUILT
-   structural_type_descriptorRef bool_type = structural_type_descriptorRef(new structural_type_descriptor("bool", 0));
-#endif
-
-#if HAVE_TECHNOLOGY_BUILT && HAVE_CMOS_BUILT
    std::map<std::string, std::vector<std::string>> attribute_list;
    std::map<std::string, std::map<std::string, attributeRef>> attribute_map;
    std::map<unsigned int, std::string> NP_functionalities;
+#endif
+#if HAVE_CIRCUIT_BUILT
+   structural_type_descriptorRef bool_type = structural_type_descriptorRef(new structural_type_descriptor("bool", 0));
 #endif
 
    logical_type = UNKNOWN;
@@ -1092,7 +1089,7 @@ void functional_unit::xload(const xml_element* Enode, const technology_nodeRef f
       }
    }
 
-#if HAVE_CIRCUIT_BUILT
+#if HAVE_CIRCUIT_BUILT && HAVE_TECHNOLOGY_BUILT && HAVE_CMOS_BUILT
    for(auto& NP_functionalitie : NP_functionalities)
    {
       CM->add_NP_functionality(CM->get_circ(),

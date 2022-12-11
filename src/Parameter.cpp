@@ -234,6 +234,7 @@ void Parameter::CheckParameters()
       }
    }
 
+#if HAVE_FROM_C_BUILT
    if(isOption(OPT_gcc_m32_mx32))
    {
       const auto mopt = getOption<std::string>(OPT_gcc_m32_mx32);
@@ -253,6 +254,7 @@ void Parameter::CheckParameters()
                      CompilerWrapper::getCompilerSuffix(OPT_default_compiler) + " compiler.");
       }
    }
+#endif
 }
 
 Parameter::~Parameter() = default;
