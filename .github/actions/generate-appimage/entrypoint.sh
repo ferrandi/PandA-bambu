@@ -53,51 +53,45 @@ if [[ -d "compiler" ]]; then
 fi
 
 GCC_BINS=("`find /usr/bin -type f -regextype posix-extended -regex '.*g(cc|\+\+)-[0-9]+\.?[0-9]?'`")
-CLANG_BINS=("`find /clang+llvm-*/bin -type f -regextype posix-extended -regex '.*clang-[0-9]+\.?[0-9]?'`")
-CLANG_EXES=("clang" "clang++" "clang-cl" "clang-cpp" "ld.lld" "lld" "lld-link" "llvm-ar" "llvm-config" "llvm-dis" "llvm-link" "llvm-lto" "llvm-lto2" "llvm-ranlib" "mlir-opt" "mlir-translate" "opt")
-NO_DELETE="-name clang"
-for bin in $CLANG_BINS
-do
-   NO_DELETE+=" -o -name $(basename $bin)"
-done
-NO_DELETE+=" ${CLANG_EXES[@]/#/-o -name }"
-find $dist_dir/clang+llvm-*/bin '(' -type f -o -type l ')' ! '(' $NO_DELETE ')' -delete
-rm -f $dist_dir/clang+llvm*/lib/*.a
-rm -rf $dist_dir/clang+llvm*/share
-rm -rf $dist_dir/usr/share
-
-mkdir -p "$dist_dir/usr/bin"
-for clang_exe in $CLANG_BINS
-do
-   CLANG_VER=$(sed 's/clang-//g' <<< "$(basename $clang_exe)")
-   CLANG_DIR=$(dirname $clang_exe)
-   echo "Generating system links for clang/llvm $CLANG_VER"
-   for app in "${CLANG_EXES[@]}"
+if [[ "$(ls / | grep '/clang+llvm-*' | wc -l)" -gt 0 ]]; then
+   CLANG_BINS=("`find /clang+llvm-*/bin -type f -regextype posix-extended -regex '.*clang-[0-9]+\.?[0-9]?'`")
+   CLANG_EXES=("clang" "clang++" "clang-cl" "clang-cpp" "ld.lld" "lld" "lld-link" "llvm-ar" "llvm-config" "llvm-dis" "llvm-link" "llvm-lto" "llvm-lto2" "llvm-ranlib" "mlir-opt" "mlir-translate" "opt")
+   NO_DELETE="-name clang"
+   for bin in $CLANG_BINS
    do
-      if [[ -f "$CLANG_DIR/$app" ]]; then
-         ln -sf "$CLANG_DIR/$app" "/usr/bin/$app-$CLANG_VER"
-         ln -sf "../..$CLANG_DIR/$app" "$dist_dir/usr/bin/$app-$CLANG_VER"
-      fi
+      NO_DELETE+=" -o -name $(basename $bin)"
    done
-   echo "Generating ccache alias for clang-$CLANG_VER"
-   ln -sf ../../bin/ccache "/usr/lib/ccache/clang-$CLANG_VER"
-   echo "Generating ccache alias for clang++-$CLANG_VER"
-   ln -sf ../../bin/ccache "/usr/lib/ccache/clang++-$CLANG_VER"
-done
+   NO_DELETE+=" ${CLANG_EXES[@]/#/-o -name }"
+   find $dist_dir/clang+llvm-*/bin '(' -type f -o -type l ')' ! '(' $NO_DELETE ')' -delete
+   rm -f $dist_dir/clang+llvm*/lib/*.a
+   rm -rf $dist_dir/clang+llvm*/share
+   rm -rf $dist_dir/usr/share
+
+   mkdir -p "$dist_dir/usr/bin"
+   for clang_exe in $CLANG_BINS
+   do
+      CLANG_VER=$(sed 's/clang-//g' <<< "$(basename $clang_exe)")
+      CLANG_DIR=$(dirname $clang_exe)
+      echo "Generating system links for clang/llvm $CLANG_VER"
+      for app in "${CLANG_EXES[@]}"
+      do
+         if [[ -f "$CLANG_DIR/$app" ]]; then
+            ln -sf "$CLANG_DIR/$app" "/usr/bin/$app-$CLANG_VER"
+            ln -sf "../..$CLANG_DIR/$app" "$dist_dir/usr/bin/$app-$CLANG_VER"
+         fi
+      done
+      echo "Generating ccache alias for clang-$CLANG_VER"
+      ln -sf ../../bin/ccache "/usr/lib/ccache/clang-$CLANG_VER"
+      echo "Generating ccache alias for clang++-$CLANG_VER"
+      ln -sf ../../bin/ccache "/usr/lib/ccache/clang++-$CLANG_VER"
+   done
+fi
 
 for compiler in $GCC_BINS
 do
    echo "Generating ccache alias for $(basename $compiler)"
    ln -sf ../../bin/ccache "/usr/lib/ccache/$(basename $compiler)"
 done
-
-max_gcc_ver="$(ls -x -v -1a $dist_dir/usr/include/c++ 2> /dev/null | tail -1)"
-if [[ -z "${max_gcc_ver}" ]]
-then
-  echo "At least one gcc version must be bundled in the AppImage"
-  exit -1
-fi
-echo "Latest bundled GCC version: ${max_gcc_ver}"
 
 echo "Initializing build environment..."
 make -f Makefile.init
