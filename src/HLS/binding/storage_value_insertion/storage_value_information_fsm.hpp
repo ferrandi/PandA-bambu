@@ -58,7 +58,7 @@ class StorageValueInformationFsm : public StorageValueInformation
    /**
     * Destructor
     */
-   ~StorageValueInformationFsm();
+   ~StorageValueInformationFsm() override;
 
    /**
     * return true in case a storage value exist for the pair vertex variable

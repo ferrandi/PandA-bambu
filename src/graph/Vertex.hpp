@@ -66,9 +66,7 @@ struct vertex2obj : public CustomUnorderedMapUnstable<vertex, data_obj>
    /**
     * Destructor.
     */
-   virtual ~vertex2obj()
-   {
-   }
+   virtual ~vertex2obj() = default;
 
    /**
     * Function that print the information associated with a vertex.

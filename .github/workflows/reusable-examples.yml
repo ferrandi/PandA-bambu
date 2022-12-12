@@ -84,14 +84,14 @@ jobs:
           mkdir bin
           ln -s $PWD/*.AppImage bin/bambu
           ln -s $PWD/*.AppImage bin/spider
-          echo "::set-output name=local-bin::$PWD/bin"
+          echo "local-bin=$PWD/bin" >> $GITHUB_OUTPUT
       - name: Generate out name
         id: get
         shell: bash
         run: |
           COMPILER="$(echo '${{env.test-compiler}}' | cut -d' ' -f1 | sed -r 's/I386_//g' | tr '[:upper:]' '[:lower:]')"
           OUTNAME="${COMPILER}_${{matrix.basename}}_${{env.basename}}"
-          echo "::set-output name=outname::$OUTNAME"
+          echo "outname=$OUTNAME" >> $GITHUB_OUTPUT
       - name: Launch test batch
         id: batch
         shell: bash
@@ -100,7 +100,7 @@ jobs:
           mkdir ${{env.report-dir}}
           out_dir="$PWD/${{env.report-dir}}"
           test_dir="test_out"
-          echo "::set-output name=test-reports-dir::$out_dir"
+          echo "test-reports-dir=$out_dir" >> $GITHUB_OUTPUT
           IFS=',' read -r -a configurations <<< "${{matrix.batch}}"
           for configuration in "${configurations[@]}"
           do
@@ -185,14 +185,14 @@ jobs:
           mkdir bin
           ln -s $PWD/*.AppImage bin/bambu
           ln -s $PWD/*.AppImage bin/spider
-          echo "::set-output name=local-bin::$PWD/bin"
+          echo "local-bin=$PWD/bin" >> $GITHUB_OUTPUT
       - name: Generate out name
         id: get
         shell: bash
         run: |
           COMPILER="$(echo '${{env.test-compiler}}' | cut -d' ' -f1 | sed -r 's/I386_//g' | tr '[:upper:]' '[:lower:]')"
           OUTNAME="${COMPILER}_${{matrix.basename}}_${{env.basename}}"
-          echo "::set-output name=outname::$OUTNAME"
+          echo "outname=$OUTNAME" >> $GITHUB_OUTPUT
       - name: Launch test batch
         id: batch
         shell: bash
@@ -201,7 +201,7 @@ jobs:
           mkdir ${{env.report-dir}}
           out_dir="$PWD/${{env.report-dir}}"
           test_dir="test_out"
-          echo "::set-output name=test-reports-dir::$out_dir"
+          echo "test-reports-dir=$out_dir" >> $GITHUB_OUTPUT
           IFS=',' read -r -a configurations <<< "${{matrix.batch}}"
           for configuration in "${configurations[@]}"
           do
@@ -274,14 +274,14 @@ jobs:
           mkdir bin
           ln -s $PWD/*.AppImage bin/bambu
           ln -s $PWD/*.AppImage bin/spider
-          echo "::set-output name=local-bin::$PWD/bin"
+          echo "local-bin=$PWD/bin" >> $GITHUB_OUTPUT
       - name: Generate out name
         id: get
         shell: bash
         run: |
           COMPILER="$(echo '${{env.test-compiler}}' | cut -d' ' -f1 | sed -r 's/I386_//g' | tr '[:upper:]' '[:lower:]')"
           OUTNAME="${COMPILER}_${{matrix.basename}}_${{env.basename}}"
-          echo "::set-output name=outname::$OUTNAME"
+          echo "outname=$OUTNAME" >> $GITHUB_OUTPUT
       - name: Launch test batch
         id: batch
         shell: bash
@@ -290,7 +290,7 @@ jobs:
           mkdir ${{env.report-dir}}
           out_dir="$PWD/${{env.report-dir}}"
           test_dir="test_out"
-          echo "::set-output name=test-reports-dir::$out_dir"
+          echo "test-reports-dir=$out_dir" >> $GITHUB_OUTPUT
           IFS=',' read -r -a configurations <<< "${{matrix.batch}}"
           for configuration in "${configurations[@]}"
           do

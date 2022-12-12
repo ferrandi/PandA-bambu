@@ -60,9 +60,8 @@ class CTestbenchExecution : public HLS_step
 
    const std::string testbench_basename;
 
-   virtual const CustomUnorderedSet<
-       std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
-   ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const;
+   const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
+   ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
  public:
    /**
@@ -72,10 +71,11 @@ class CTestbenchExecution : public HLS_step
                        const DesignFlowManagerConstRef design_flow_manager,
                        const std::string& testbench_basename = "values");
 
-   void ComputeRelationships(DesignFlowStepSet& relationship, const DesignFlowStep::RelationshipType relationship_type);
+   void ComputeRelationships(DesignFlowStepSet& relationship,
+                             const DesignFlowStep::RelationshipType relationship_type) override;
 
-   virtual DesignFlowStep_Status Exec();
+   DesignFlowStep_Status Exec() override;
 
-   virtual bool HasToBeExecuted() const;
+   bool HasToBeExecuted() const override;
 };
 #endif

@@ -271,9 +271,7 @@ HWPathComputation::HWPathComputation(const ParameterConstRef _Param, const HLS_m
 {
 }
 
-HWPathComputation::~HWPathComputation()
-{
-}
+HWPathComputation::~HWPathComputation() = default;
 
 const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
 HWPathComputation::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const

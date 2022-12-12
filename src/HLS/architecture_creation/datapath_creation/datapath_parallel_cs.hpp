@@ -84,7 +84,7 @@ class datapath_parallel_cs : public classic_datapath
    /**
     * Adds the input/output ports of the module
     */
-   virtual void add_ports() override;
+   void add_ports() override;
 
    /**
     * @brief ComputeHLSRelationships datapath need kernel in order to be created
@@ -118,7 +118,7 @@ class datapath_parallel_cs : public classic_datapath
    /**
     * Destructor.
     */
-   virtual ~datapath_parallel_cs() override;
+   ~datapath_parallel_cs() override;
 
    /**
     * @brief InternalExec

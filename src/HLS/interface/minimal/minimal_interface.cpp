@@ -152,7 +152,7 @@ static bool compareMemVarsPair(std::pair<unsigned int, memory_symbolRef>& first,
 void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structural_objectRef interfaceObj,
                                       structural_managerRef SM_minimal_interface)
 {
-   std::map<unsigned int, structural_objectRef> null_values;
+   std::map<unsigned long long, structural_objectRef> null_values;
 
    const auto& base_address = HLSMgr->base_address;
    const auto Has_extern_allocated_data = HLSMgr->Rmem->get_memory_address() - base_address > 0;
@@ -216,8 +216,7 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
       const auto TM = HLSMgr->get_tree_manager();
       const auto fnode = TM->CGetTreeNode(funId);
       const auto fd = GetPointerS<const function_decl>(fnode);
-      std::string fname;
-      tree_helper::get_mangled_fname(fd, fname);
+      const auto fname = tree_helper::GetMangledFunctionName(fd);
       if(DesignInterface.find(fname) != DesignInterface.end())
       {
          const auto& DesignInterfaceArgs = DesignInterface.at(fname);
@@ -427,10 +426,10 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
                    "shared_memory", STD_BRAMN + latency_postfix, LIBRARY_STD, interfaceObj,
                    HLSMgr->get_HLS_target()->get_technology_manager());
             }
-            unsigned int bus_data_bitsize = HLSMgr->Rmem->get_bus_data_bitsize();
-            unsigned int bus_addr_bitsize = HLSMgr->get_address_bitsize();
-            unsigned int bus_size_bitsize = HLSMgr->Rmem->get_bus_size_bitsize();
-            unsigned int bram_bitsize = HLSMgr->Rmem->get_bram_bitsize();
+            auto bus_data_bitsize = HLSMgr->Rmem->get_bus_data_bitsize();
+            auto bus_addr_bitsize = HLSMgr->get_address_bitsize();
+            auto bus_size_bitsize = HLSMgr->Rmem->get_bus_size_bitsize();
+            auto bram_bitsize = HLSMgr->Rmem->get_bram_bitsize();
             unsigned long long int n_bytes = HLSMgr->Rmem->get_memory_address() - base_address;
             unsigned long long int vec_size = n_bytes / (bus_data_bitsize / 8);
             std::string init_filename = "shared_memory.mem";
@@ -514,8 +513,8 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
                   port->type_resize(bus_size_bitsize);
                }
             }
-            const std::map<unsigned int, memory_symbolRef>& mem_vars = HLSMgr->Rmem->get_ext_memory_variables();
-            unsigned int nbyte_on_memory = (bram_bitsize / 8);
+            const auto& mem_vars = HLSMgr->Rmem->get_ext_memory_variables();
+            auto nbyte_on_memory = (bram_bitsize / 8);
 
             std::string init_v;
             std::string current_bits;

@@ -1,0 +1,4 @@
+<?xml version="1.0"?>
+<function>
+  <testbench a_ptr:init_file="bin_test.dat"/>
+</function>

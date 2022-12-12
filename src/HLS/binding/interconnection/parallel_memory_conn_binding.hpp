@@ -55,7 +55,7 @@ class ParallelMemoryConnBinding : public conn_binding
    /**
     * Destructor.
     */
-   virtual ~ParallelMemoryConnBinding();
+   ~ParallelMemoryConnBinding() override;
 
    /**
     * Add the interconnection to the structural representation of the datapath

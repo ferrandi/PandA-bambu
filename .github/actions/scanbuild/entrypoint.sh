@@ -34,13 +34,13 @@ cache_dir = $ccache_dir
 EOF
 if [[ -d "dist" ]]; then
    echo "Pre-initialized dist dir found. Installing system wide..."
-   cp -r dist/. /
+   rsync -rtpl dist/. /
    rm -rf dist
 fi
 
 if [[ -d "compiler" ]]; then
    echo "Bambu compiler dir found. Installing system wide..."
-   cp -r compiler/. /
+   rsync -rtpl compiler/. /
    rm -rf compiler
 fi
 
@@ -111,4 +111,4 @@ scan-build-$CLANG_VERSION -v -v --use-cc=/usr/bin/clang-$CLANG_VERSION --use-c++
 echo "::endgroup"
 
 mkdir -p "$report_dir"
-echo "::set-output name=report-dir::$report_dir"
+echo "report-dir=$report_dir" >> $GITHUB_OUTPUT

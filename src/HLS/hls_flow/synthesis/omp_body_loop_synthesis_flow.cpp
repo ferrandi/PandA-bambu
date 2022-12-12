@@ -50,9 +50,7 @@ OmpBodyLoopSynthesisFlow::OmpBodyLoopSynthesisFlow(const ParameterConstRef _para
    composed = true;
 }
 
-OmpBodyLoopSynthesisFlow::~OmpBodyLoopSynthesisFlow()
-{
-}
+OmpBodyLoopSynthesisFlow::~OmpBodyLoopSynthesisFlow() = default;
 
 const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
 OmpBodyLoopSynthesisFlow::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const

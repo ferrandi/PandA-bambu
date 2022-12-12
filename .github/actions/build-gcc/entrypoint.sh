@@ -36,4 +36,4 @@ make DESTDIR="$DIST_DIR" install
 
 lsb_release -a >> "$DIST_DIR/VERSION"
 
-echo "::set-output name=dist-dir::$DIST_NAME"
+echo "dist-dir=$DIST_NAME" >> $GITHUB_OUTPUT

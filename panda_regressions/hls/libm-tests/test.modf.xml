@@ -1,13 +1,13 @@
 <?xml version="1.0"?>
 <function>
-  <testbench a="__Inf" b="{0}" />
-  <testbench a="-__Inf" b="{0}" />
-  <testbench a="__Nan" b="{0}" />
-  <testbench a="0.0" b="{0}" />
-  <testbench a="1.5" b="{0}" />
-  <testbench a="2.5" b="{0}" />
-  <testbench a="-2.5" b="{0}" />
-  <testbench a="20.0" b="{0}" />
-  <testbench a="21.0" b="{0}" />
-  <testbench a="89.5" b="{0}" />
+  <testbench a="__Inf" pb="{0}" />
+  <testbench a="-__Inf" pb="{0}" />
+  <testbench a="__Nan" pb="{0}" />
+  <testbench a="0.0" pb="{0}" />
+  <testbench a="1.5" pb="{0}" />
+  <testbench a="2.5" pb="{0}" />
+  <testbench a="-2.5" pb="{0}" />
+  <testbench a="20.0" pb="{0}" />
+  <testbench a="21.0" pb="{0}" />
+  <testbench a="89.5" pb="{0}" />
 </function>

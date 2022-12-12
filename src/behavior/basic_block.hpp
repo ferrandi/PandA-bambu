@@ -342,7 +342,7 @@ struct BBGraph : public graph
    /**
     * Destructor
     */
-   virtual ~BBGraph() override = default;
+   ~BBGraph() override = default;
 
    /**
     * Writes this graph in dot format

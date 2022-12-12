@@ -65,9 +65,7 @@ ParallelMemoryConnBinding::ParallelMemoryConnBinding(const BehavioralHelperConst
 {
 }
 
-ParallelMemoryConnBinding::~ParallelMemoryConnBinding()
-{
-}
+ParallelMemoryConnBinding::~ParallelMemoryConnBinding() = default;
 
 void ParallelMemoryConnBinding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, const structural_managerRef SM)
 {

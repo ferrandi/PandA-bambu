@@ -1,4 +1,4 @@
-ARG BASE=ubuntu:xenial
+ARG BASE=ubuntu:bionic
 FROM ${BASE}
 ARG DEBIAN_FRONTEND=noninteractive
 

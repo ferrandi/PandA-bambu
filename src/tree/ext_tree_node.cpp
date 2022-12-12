@@ -233,7 +233,7 @@ void gimple_multi_way_if::visit(tree_node_visitor* const v) const
    unsigned int mask = ALL_VISIT;
    (*v)(this, mask);
    VISIT_SC(mask, gimple_node, visit(v));
-   for(auto cond : list_of_cond)
+   for(const auto& cond : list_of_cond)
    {
       VISIT_MEMBER_NAMED(list_of_cond, mask, cond.first, visit(v));
    }

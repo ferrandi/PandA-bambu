@@ -605,7 +605,7 @@ DesignFlowStep_Status SDCScheduling::InternalExec()
    const BBGraphConstRef dominators = FB->CGetBBGraph(FunctionBehavior::DOM_TREE);
    const LoopsConstRef loops = FB->CGetLoops();
    const std::map<vertex, unsigned int>& bb_map_levels = FB->get_bb_map_levels();
-   ControlStep initial_ctrl_step = ControlStep(0u);
+   auto initial_ctrl_step = ControlStep(0u);
    for(const auto& loop : loops->GetList())
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Scheduling loop " + STR(loop->GetId()));
@@ -1403,7 +1403,7 @@ DesignFlowStep_Status SDCScheduling::InternalExec()
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Solution:");
       std::map<int, double> vals;
       solver->get_vars_solution(vals);
-      ControlStep last_relative_step = ControlStep(0u);
+      auto last_relative_step = ControlStep(0u);
       for(const auto operation : loop_operations)
       {
          const unsigned int begin_variable = operation_to_varindex[std::pair<vertex, unsigned int>(operation, 0)];

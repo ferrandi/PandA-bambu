@@ -241,7 +241,7 @@ ControlStep Scheduling::anticipate_operations(const OpGraphConstRef dependence_g
    const double clock_cycle = HLS->HLS_C->get_clock_period();
 
    /// Last control step
-   ControlStep last_cs = ControlStep(0u);
+   auto last_cs = ControlStep(0u);
 
    std::list<vertex> operations;
    boost::topological_sort(*dependence_graph, std::front_inserter(operations));

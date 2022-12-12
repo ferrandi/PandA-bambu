@@ -98,6 +98,6 @@ class SpiderParameter : public Parameter
    int Exec() override;
 };
 
-typedef refcount<SpiderParameter> SpiederParameterRef;
+using SpiederParameterRef = std::shared_ptr<SpiderParameter>;
 
 #endif

@@ -659,7 +659,7 @@ void determine_memory_accesses::analyze_node(const tree_nodeConstRef& _tn, bool 
       case gimple_multi_way_if_K:
       {
          const auto gmwi = GetPointerS<const gimple_multi_way_if>(tn);
-         for(auto cond : gmwi->list_of_cond)
+         for(const auto& cond : gmwi->list_of_cond)
          {
             if(cond.first)
             {

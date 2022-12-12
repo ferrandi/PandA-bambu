@@ -376,8 +376,8 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
       first_state_p = true;
       have_previous = false;
       std::map<ControlStep, std::list<vertex>> executing_ops, starting_ops, ending_ops, onfly_ops;
-      ControlStep max_cstep = ControlStep(0u);
-      ControlStep min_cstep = ControlStep(std::numeric_limits<unsigned int>::max());
+      auto max_cstep = ControlStep(0u);
+      auto min_cstep = ControlStep(std::numeric_limits<unsigned int>::max());
 
       for(auto op : ordered_operations)
       {
@@ -493,7 +493,7 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
          {
             technology_nodeRef tn = HLS->allocation_information->get_fu(HLS->Rfu->get_assign(exec_op));
             technology_nodeRef op_tn = GetPointer<functional_unit>(tn)->get_operation(
-                tree_helper::normalized_ID(dfgRef->CGetOpNodeInfo(exec_op)->GetOperation()));
+                tree_helper::NormalizeTypename(dfgRef->CGetOpNodeInfo(exec_op)->GetOperation()));
             THROW_ASSERT(GetPointer<operation>(op_tn)->time_m,
                          "Time model not available for operation: " + GET_NAME(dfgRef, exec_op));
             if(!GetPointer<operation>(op_tn)->is_bounded())
@@ -864,8 +864,8 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
       for(boost::tie(bb, bb_end) = boost::vertices(*bb_cfg); bb != bb_end; bb++)
       {
          const auto bb_node_info = bb_cfg->CGetBBNodeInfo(*bb);
-         ControlStep bb_begin = ControlStep(std::numeric_limits<unsigned int>::max());
-         ControlStep bb_ending = ControlStep(0u);
+         auto bb_begin = ControlStep(std::numeric_limits<unsigned int>::max());
+         auto bb_ending = ControlStep(0u);
          for(const auto op : bb_node_info->statements_list)
          {
             if(HLS->Rsch->get_cstep(op).second < bb_begin)
@@ -1042,7 +1042,7 @@ void BB_based_stg::compute_EPP_edge_increments(const std::map<vertex, std::list<
       for(const auto& op : state_to_op.second)
       {
          const technology_nodeConstRef tn = HLS->allocation_information->get_fu(HLS->Rfu->get_assign(op));
-         const auto op_id = tree_helper::normalized_ID(dfgRef->CGetOpNodeInfo(op)->GetOperation());
+         const auto op_id = tree_helper::NormalizeTypename(dfgRef->CGetOpNodeInfo(op)->GetOperation());
          const technology_nodeConstRef op_tn = GetPointer<const functional_unit>(tn)->get_operation(op_id);
          if(not GetPointer<const operation>(op_tn)->is_bounded()) // TODO actual call, not unbounded
          {
@@ -1262,7 +1262,7 @@ void BB_based_stg::optimize_cycles(vertex bbEndingCycle, CustomUnorderedMap<vert
       }
       technology_nodeRef tn = HLS->allocation_information->get_fu(fu_id);
       technology_nodeRef op_tn = GetPointer<functional_unit>(tn)->get_operation(
-          tree_helper::normalized_ID(dfgRef->CGetOpNodeInfo(*it)->GetOperation()));
+          tree_helper::NormalizeTypename(dfgRef->CGetOpNodeInfo(*it)->GetOperation()));
       if(!GetPointer<operation>(op_tn)->is_bounded())
       {
          return;

@@ -1136,7 +1136,7 @@ tree_nodeRef materializeStack(ValueDFSStack& RenameStack, unsigned int function_
                }
 
                // Fix destination BB phis
-               for(auto phi : ToBB->CGetPhiList())
+               for(const auto& phi : ToBB->CGetPhiList())
                {
                   auto* gp = GetPointer<gimple_phi>(GET_NODE(phi));
                   const auto defFrom =

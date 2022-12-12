@@ -736,6 +736,10 @@ void GimpleWriter::operator()(const type_node* obj, unsigned int& mask)
                os << "char";
             }
          }
+         else if(obj->algn == 1)
+         {
+            os << "_Bool";
+         }
          else if(obj->algn == 8)
          {
             os << "char";

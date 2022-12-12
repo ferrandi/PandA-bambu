@@ -80,3 +80,7 @@ unsigned int mux_obj::get_level() const
 {
    return level;
 }
+unsigned int mux_obj::get_bitsize() const
+{
+   return bitsize;
+}

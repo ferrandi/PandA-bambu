@@ -52,16 +52,18 @@
 class MinimalInterfaceTestbench : public TestbenchGenerationBaseStep
 {
  protected:
-   std::string memory_aggregate_slices(unsigned int i, long long int bitsize,
-                                       long long int Mout_addr_ram_bitsize) const;
+   std::string memory_aggregate_slices(unsigned int i, unsigned long long bitsize,
+                                       unsigned long long Mout_addr_ram_bitsize) const;
 
-   std::string memory_aggregate_slices_queue(unsigned int i, long long int bitsize, long long int Mout_addr_ram_bitsize,
-                                             std::string queue_type) const;
+   std::string memory_aggregate_slices_queue(unsigned int i, unsigned long long bitsize,
+                                             unsigned long long Mout_addr_ram_bitsize,
+                                             const std::string& queue_type) const;
 
-   void cond_load(long long int Mout_addr_ram_bitsize, const std::string& post_slice2, const std::string& res_string,
-                  unsigned int i, const std::string& in_else, const std::string& mem_aggregate) const;
+   void cond_load(unsigned long long Mout_addr_ram_bitsize, const std::string& post_slice2,
+                  const std::string& res_string, unsigned int i, const std::string& in_else,
+                  const std::string& mem_aggregate) const;
 
-   void cond_load_from_queue(long long int Mout_addr_ram_bitsize, std::string queue_type,
+   void cond_load_from_queue(unsigned long long Mout_addr_ram_bitsize, const std::string& queue_type,
                              const std::string& post_slice2, const std::string& res_string, unsigned int i,
                              const std::string& in_else, const std::string& mem_aggregate) const;
 
@@ -81,9 +83,9 @@ class MinimalInterfaceTestbench : public TestbenchGenerationBaseStep
 
    /// specialize read_input_value_from_file for interface PI_RNONE
    void read_input_value_from_file_RNONE(const std::string& input_name, bool& first_valid_input,
-                                         unsigned bitsize) const;
+                                         unsigned long long bitsize) const;
 
-   void write_read_fifo_manager(std::string par, const std::string& pi_dout_name, unsigned bitsize,
+   void write_read_fifo_manager(std::string par, const std::string& pi_dout_name, unsigned long long bitsize,
                                 std::string valid_suffix) const;
 
    void write_file_reading_operations() const override;

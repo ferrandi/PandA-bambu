@@ -245,7 +245,7 @@ static CustomUnorderedMap<std::pair<unsigned int, unsigned long long>, std::pair
    other field of the returned struct are undefined.
    MODE is the machine mode of the multiplication.  */
 static void synth_mult(struct algorithm& alg_out, unsigned long long t, const struct mult_cost& cost_limit,
-                       unsigned data_bitsize, tree_managerRef& TM)
+                       unsigned long long data_bitsize, tree_managerRef& TM)
 {
    int m;
    struct algorithm alg_in, best_alg;
@@ -254,7 +254,7 @@ static void synth_mult(struct algorithm& alg_out, unsigned long long t, const st
    short op_cost, op_latency;
    unsigned long long int orig_t = t;
    unsigned long long int q;
-   int maxm = static_cast<int>(std::min(32u, data_bitsize));
+   auto maxm = static_cast<int>(std::min(32ull, data_bitsize));
    bool cache_hit = false;
    enum alg_code cache_alg = alg_zero;
    best_alg.cost.cost = std::numeric_limits<short>::max();
@@ -704,7 +704,7 @@ done:
 
    Return true if the cheapest of these cost less than MULT_COST,
    describing the algorithm in *ALG and final fixup in *VARIANT.  */
-static bool choose_mult_variant(unsigned int data_bitsize, long long int val, struct algorithm& alg,
+static bool choose_mult_variant(unsigned long long data_bitsize, long long int val, struct algorithm& alg,
                                 enum mult_variant& variant, short int Mult_cost, tree_managerRef& TM)
 {
    struct algorithm alg2;
@@ -789,8 +789,8 @@ tree_nodeRef IR_lowering::expand_mult_const(const tree_nodeRef& op0, unsigned lo
    tree_nodeRef accum, tem;
    int opno;
 #if HAVE_ASSERTS
-   unsigned data_bitsize = tree_helper::Size(tree_helper::CGetType(type));
-   unsigned long long int data_mask = data_bitsize >= 64 ? ~0ULL : (1ULL << data_bitsize) - 1;
+   auto data_bitsize = tree_helper::Size(tree_helper::CGetType(type));
+   auto data_mask = data_bitsize >= 64 ? ~0ULL : (1ULL << data_bitsize) - 1;
 #endif
    tree_nodeRef tem_ga;
    tree_nodeRef COST0 = TM->CreateUniqueIntegerCst(0, type);
@@ -1047,7 +1047,7 @@ tree_nodeRef IR_lowering::expand_smod_pow2(const tree_nodeRef& op0, unsigned lon
                                            const std::string& srcp_default)
 {
    unsigned long long int masklow;
-   const unsigned long long int logd = floor_log2(d);
+   const auto logd = floor_log2(d);
    const auto bt = tree_man->GetBooleanType();
 
    const auto const0 = TM->CreateUniqueIntegerCst(0, type);
@@ -1156,8 +1156,8 @@ tree_nodeRef IR_lowering::expand_MC(const tree_nodeRef& op0, const integer_cst* 
    }
    long long int ext_op1 = tree_helper::get_integer_cst_value(ic_node);
    short int mult_plus_ratio = 3;
-   unsigned int data_bitsize = tree_helper::Size(op0);
-   unsigned int typeSize = tree_helper::Size(type_expr);
+   auto data_bitsize = tree_helper::Size(op0);
+   auto typeSize = tree_helper::Size(type_expr);
    if(typeSize < 64)
    {
       ext_op1 <<= 64 - typeSize;
@@ -1174,7 +1174,7 @@ tree_nodeRef IR_lowering::expand_MC(const tree_nodeRef& op0, const integer_cst* 
          use64bitMul = true;
       }
       const technology_managerRef TechManager = HLS_T->get_technology_manager();
-      unsigned int fu_prec = resize_to_1_8_16_32_64_128_256_512(data_bitsize);
+      auto fu_prec = resize_to_1_8_16_32_64_128_256_512(data_bitsize);
       if(fu_prec == 1)
       {
          fu_prec = 8;
@@ -1384,7 +1384,7 @@ bool IR_lowering::expand_target_mem_ref(target_mem_ref461* tmr, const tree_nodeR
       {
          type_sum = tree_man->GetSizeType();
       }
-      unsigned int type_index = tree_helper::get_type_index(TM, GET_INDEX_NODE(tmr->idx2));
+      auto type_index = tree_helper::get_type_index(TM, GET_INDEX_NODE(tmr->idx2));
       if(type_index != GET_INDEX_NODE(type_sum))
       {
          tree_nodeRef ne = tree_man->create_unary_operation(type_sum, tmr->idx2, srcp_default, nop_expr_K);
@@ -1742,7 +1742,7 @@ tree_nodeRef IR_lowering::array_ref_lowering(array_ref* AR, const std::string& s
    block.second->PushBefore(ae_ga, *it_los, AppM);
 
    tree_nodeRef offset_type = tree_man->GetSizeType();
-   unsigned int ar_op1_type_index = tree_helper::CGetType(AR->op1)->index;
+   auto ar_op1_type_index = tree_helper::CGetType(AR->op1)->index;
    tree_nodeRef offset_node;
    if(ar_op1_type_index != GET_INDEX_NODE(offset_type))
    {
@@ -1760,14 +1760,14 @@ tree_nodeRef IR_lowering::array_ref_lowering(array_ref* AR, const std::string& s
    const auto ar_op0_type_node = tree_helper::CGetType(AR->op0);
    THROW_ASSERT(GET_CONST_NODE(ar_op0_type_node)->get_kind() == array_type_K,
                 "array_type expected: @" + STR(ar_op0_type_node->index));
-   unsigned int data_bitsize = tree_helper::GetArrayElementSize(ar_op0_type_node);
-   unsigned int n_byte = compute_n_bytes(data_bitsize);
+   auto data_bitsize = tree_helper::GetArrayElementSize(ar_op0_type_node);
+   auto n_byte = compute_n_bytes(data_bitsize);
    const auto dims = tree_helper::GetArrayDimensions(ar_op0_type_node);
    for(size_t ind = 1; ind < dims.size(); ++ind)
    {
       n_byte *= dims.at(ind);
    }
-   tree_nodeRef coef_node = TM->CreateUniqueIntegerCst(n_byte, offset_type);
+   tree_nodeRef coef_node = TM->CreateUniqueIntegerCst(static_cast<long long>(n_byte), offset_type);
    tree_nodeRef m = tree_man->create_binary_operation(offset_type, offset_node, coef_node, srcp_default, mult_expr_K);
    tree_nodeRef m_ga = tree_man->CreateGimpleAssign(offset_type, tree_nodeRef(), tree_nodeRef(), m, function_id,
                                                     block.first, srcp_default);

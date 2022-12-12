@@ -69,13 +69,13 @@ class top_entity_cs : public top_entity
    /**
     * Destructor
     */
-   virtual ~top_entity_cs();
+   ~top_entity_cs() override;
 
    /**
     * Add selector and suspension
     * @return the exit status of this step
     */
-   virtual DesignFlowStep_Status InternalExec() override;
+   DesignFlowStep_Status InternalExec() override;
 };
 
 #endif // TOP_ENTITY_CS_H

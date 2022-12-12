@@ -79,13 +79,11 @@ vcd_parser::vcd_trace_t vcd_parser::parse_vcd(const std::string& vcd_file_to_par
    // reset parsed signals
    sig_n = 0;
    // reserve space in hash maps
-   size_t tot_filtered_signals_size = 0;
    parse_result.reserve(filtered_signals.size());
    for(const auto& scope : filtered_signals)
    {
       size_t n_signals_in_scope = scope.second.size();
       parse_result[scope.first].reserve(n_signals_in_scope);
-      tot_filtered_signals_size += n_signals_in_scope;
    }
 
    INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "<--Initialized parser");

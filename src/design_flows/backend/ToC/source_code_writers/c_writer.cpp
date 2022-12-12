@@ -625,7 +625,9 @@ void CWriter::writeRoutineInstructions_rec(vertex current_vertex, bool bracket, 
 
       std::string frontier_string;
       for(const auto bb : bb_frontier)
+      {
          frontier_string += "BB" + STR(local_rec_bb_fcfgGraph->CGetBBNodeInfo(bb)->block->number) + " ";
+      }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Frontier at the moment is: " + frontier_string);
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Its post-dominator is BB" + STR(bb_number_PD));
    }
