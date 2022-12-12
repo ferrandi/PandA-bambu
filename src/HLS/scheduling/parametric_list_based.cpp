@@ -88,7 +88,8 @@
 #include "xml_document.hpp"
 
 #include "behavioral_helper.hpp"
-#include "call_graph_manager.hpp"  // for CallGraphManager, CallGrap...
+#include "call_graph_manager.hpp" // for CallGraphManager, CallGrap...
+#include "fileIO.hpp"
 #include "string_manipulation.hpp" // for GET_CLASS
 
 #if !HAVE_UNORDERED
@@ -102,7 +103,9 @@ bool PrioritySorter::operator()(const vertex x, const vertex y) const
    const auto x_priority = (*priority)(x);
    const auto y_priority = (*priority)(y);
    if(x_priority != y_priority)
+   {
       return x_priority > y_priority;
+   }
    return GET_NAME(op_graph, x) < GET_NAME(op_graph, y);
 }
 #endif
@@ -374,8 +377,7 @@ void parametric_list_based::Initialize()
 
 static bool has_element_in_common(const std::set<std::string>& set1, const std::set<std::string>& set2)
 {
-   std::set<std::string>::const_iterator first1 = set1.begin(), last1 = set1.end(), first2 = set2.begin(),
-                                         last2 = set2.end();
+   auto first1 = set1.begin(), last1 = set1.end(), first2 = set2.begin(), last2 = set2.end();
    while(first1 != last1 and first2 != last2)
    {
       if(*first1 < *first2)
@@ -729,12 +731,11 @@ void parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
    const auto TM = HLSMgr->get_tree_manager();
    auto fnode = TM->get_tree_node_const(funId);
    auto fd = GetPointer<function_decl>(fnode);
-   std::string fname;
-   tree_helper::get_mangled_fname(fd, fname);
+   const auto fname = tree_helper::GetMangledFunctionName(fd);
    CustomUnorderedSet<vertex> RW_stmts;
-   if(HLSMgr->design_interface_loads.find(fname) != HLSMgr->design_interface_loads.end())
+   if(HLSMgr->design_interface_io.find(fname) != HLSMgr->design_interface_io.end())
    {
-      for(const auto& bb2arg2stmtsR : HLSMgr->design_interface_loads.at(fname))
+      for(const auto& bb2arg2stmtsR : HLSMgr->design_interface_io.at(fname))
       {
          for(const auto& arg2stms : bb2arg2stmtsR.second)
          {
@@ -742,29 +743,11 @@ void parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
             {
                for(const auto& stmt : arg2stms.second)
                {
-                  THROW_ASSERT(flow_graph->CGetOpGraphInfo()->tree_node_to_operation.find(stmt) !=
-                                   flow_graph->CGetOpGraphInfo()->tree_node_to_operation.end(),
-                               "unexpected condition: STMT=" + STR(stmt));
-                  RW_stmts.insert(flow_graph->CGetOpGraphInfo()->tree_node_to_operation.at(stmt));
-               }
-            }
-         }
-      }
-   }
-   if(HLSMgr->design_interface_stores.find(fname) != HLSMgr->design_interface_stores.end())
-   {
-      for(const auto& bb2arg2stmtsW : HLSMgr->design_interface_stores.at(fname))
-      {
-         for(const auto& arg2stms : bb2arg2stmtsW.second)
-         {
-            if(arg2stms.second.size() > 0)
-            {
-               for(const auto& stmt : arg2stms.second)
-               {
-                  THROW_ASSERT(flow_graph->CGetOpGraphInfo()->tree_node_to_operation.find(stmt) !=
-                                   flow_graph->CGetOpGraphInfo()->tree_node_to_operation.end(),
-                               "unexpected condition");
-                  RW_stmts.insert(flow_graph->CGetOpGraphInfo()->tree_node_to_operation.at(stmt));
+                  const auto op_it = flow_graph->CGetOpGraphInfo()->tree_node_to_operation.find(stmt);
+                  if(op_it != flow_graph->CGetOpGraphInfo()->tree_node_to_operation.end())
+                  {
+                     RW_stmts.insert(op_it->second);
+                  }
                }
             }
          }
@@ -2015,7 +1998,7 @@ DesignFlowStep_Status parametric_list_based::InternalExec()
    std::deque<vertex> vertices;
    boost::topological_sort(*bbg, std::front_inserter(vertices));
    auto viend = vertices.end();
-   ControlStep ctrl_steps = ControlStep(0u);
+   auto ctrl_steps = ControlStep(0u);
    /// initialize topological_sorted_functions
    compute_function_topological_order();
    for(auto vi = vertices.begin(); vi != viend; ++vi)
@@ -2111,7 +2094,7 @@ DesignFlowStep_Status parametric_list_based::InternalExec()
       xml_document document;
       xml_element* nodeRoot = document.create_root_node("hls");
       HLS->xwrite(nodeRoot, FB->CGetOpGraph(FunctionBehavior::FDFG));
-      document.write_to_file_formatted(function_name + "_scheduling.xml");
+      document.write_to_file_formatted(GetPath(function_name + "_scheduling.xml"));
    }
    return DesignFlowStep_Status::SUCCESS;
 }
@@ -2449,8 +2432,8 @@ void parametric_list_based::do_balanced_scheduling(const CustomUnorderedSet<vert
    /// step 2: compute operation distribution
    std::map<ControlStep, std::deque<vertex>> T;
    std::map<ControlStep, double> T_area;
-   ControlStep min_cycle = ControlStep(std::numeric_limits<unsigned int>::max());
-   ControlStep max_cycle = ControlStep(0u);
+   auto min_cycle = ControlStep(std::numeric_limits<unsigned int>::max());
+   auto max_cycle = ControlStep(0u);
    double total_resource_area = 0;
    for(auto current_op : sub_levels)
    {
@@ -2735,8 +2718,8 @@ void parametric_list_based::do_balanced_scheduling1(const CustomUnorderedSet<ver
 
    std::map<unsigned int, double> total_obj;
    std::map<unsigned int, std::map<ControlStep, double>> T_obj;
-   ControlStep min_cycle = ControlStep(std::numeric_limits<unsigned int>::max());
-   ControlStep max_cycle = ControlStep(0u);
+   auto min_cycle = ControlStep(std::numeric_limits<unsigned int>::max());
+   auto max_cycle = ControlStep(0u);
    for(auto current_op : sub_levels)
    {
       const auto curr_cs = schedule->get_cstep(current_op).second;

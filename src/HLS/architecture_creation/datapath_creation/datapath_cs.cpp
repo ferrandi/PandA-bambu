@@ -62,9 +62,7 @@ datapath_cs::datapath_cs(const ParameterConstRef _parameters, const HLS_managerR
    debug_level = _parameters->get_class_debug_level(GET_CLASS(*this));
 }
 
-datapath_cs::~datapath_cs()
-{
-}
+datapath_cs::~datapath_cs() = default;
 
 void datapath_cs::add_ports()
 {

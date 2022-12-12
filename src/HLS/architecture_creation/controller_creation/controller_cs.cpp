@@ -61,9 +61,7 @@ controller_cs::controller_cs(const ParameterConstRef _Param, const HLS_managerRe
 {
 }
 
-controller_cs::~controller_cs()
-{
-}
+controller_cs::~controller_cs() = default;
 
 void controller_cs::add_common_ports(structural_objectRef circuit, structural_managerRef SM)
 {

@@ -225,7 +225,7 @@ class BehavioralHelper
     * @param index is the index of a C object
     * @return the size in bit
     */
-   virtual unsigned int get_size(unsigned int var) const;
+   virtual unsigned long long get_size(unsigned int var) const;
 
    /**
     * Return the name of the function

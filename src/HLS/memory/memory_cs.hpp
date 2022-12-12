@@ -62,7 +62,7 @@ class memory_cs : public memory
    /**
     * Destructor
     */
-   virtual ~memory_cs() = default;
+   ~memory_cs() override = default;
 
    /**
     * set the bus tag bitsize

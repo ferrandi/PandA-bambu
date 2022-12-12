@@ -175,7 +175,9 @@ DesignFlowStep_Status OpOrderComputation::InternalExec()
    for(boost::tie(v, v_end) = boost::vertices(*cfg); v != v_end; v++)
    {
       if(*v == exit)
+      {
          continue;
+      }
       THROW_ASSERT(MARK[*v], "Operation " + GET_NAME(cfg, *v) + " not analyzed");
    }
 #endif

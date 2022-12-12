@@ -72,6 +72,7 @@
 
 /// tree include
 #include "behavioral_helper.hpp"
+#include "tree_manager.hpp"
 
 /// utility includes
 #include "fileIO.hpp"
@@ -84,7 +85,9 @@ TestbenchValuesCGeneration::TestbenchValuesCGeneration(const ParameterConstRef _
                                                        const HLS_managerRef _hls_manager,
                                                        const DesignFlowManagerConstRef _design_flow_manager)
     : HLS_step(_parameters, _hls_manager, _design_flow_manager, HLSFlowStep_Type::TESTBENCH_VALUES_C_GENERATION),
-      output_directory(parameters->getOption<std::string>(OPT_output_directory) + "/simulation/")
+      output_directory(parameters->getOption<std::string>(OPT_output_directory) + "/simulation/"),
+      impl_filename(output_directory + STR(STR_CST_testbench_generation_basename) + ".c"),
+      values_filename(output_directory + STR(STR_CST_testbench_generation_basename) + ".txt")
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
    if(!boost::filesystem::exists(output_directory))
@@ -93,9 +96,7 @@ TestbenchValuesCGeneration::TestbenchValuesCGeneration(const ParameterConstRef _
    }
 }
 
-TestbenchValuesCGeneration::~TestbenchValuesCGeneration()
-{
-}
+TestbenchValuesCGeneration::~TestbenchValuesCGeneration() = default;
 
 const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
 TestbenchValuesCGeneration::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
@@ -151,9 +152,9 @@ void TestbenchValuesCGeneration::ComputeRelationships(DesignFlowStepSet& design_
                const auto* c_backend_step_factory = GetPointer<const CBackendStepFactory>(
                    design_flow_manager.lock()->CGetDesignFlowStepFactory("CBackend"));
                const auto output_file_name = parameters->getOption<std::string>(OPT_pretty_print);
-               const vertex c_backend_vertex =
+               const auto c_backend_vertex =
                    design_flow_manager.lock()->GetDesignFlowStep(CBackend::ComputeSignature(CBackend::CB_SEQUENTIAL));
-               const DesignFlowStepRef c_backend_step =
+               const auto c_backend_step =
                    c_backend_vertex ? design_flow_graph->CGetDesignFlowStepInfo(c_backend_vertex)->design_flow_step :
                                       c_backend_step_factory->CreateCBackendStep(
                                           CBackend::CB_SEQUENTIAL, output_file_name, CBackendInformationConstRef());
@@ -161,10 +162,9 @@ void TestbenchValuesCGeneration::ComputeRelationships(DesignFlowStepSet& design_
             }
          }
 
-         const DesignFlowStepRef hls_c_backend_step = c_backend_factory->CreateCBackendStep(
-             hls_c_backend_type, output_directory + STR(STR_CST_testbench_generation_basename) + ".c",
-             CBackendInformationConstRef(new HLSCBackendInformation(
-                 output_directory + STR(STR_CST_testbench_generation_basename) + ".txt", HLSMgr)));
+         const auto hls_c_backend_step = c_backend_factory->CreateCBackendStep(
+             hls_c_backend_type, impl_filename,
+             CBackendInformationConstRef(new HLSCBackendInformation(values_filename, HLSMgr)));
          design_flow_step_set.insert(hls_c_backend_step);
          break;
       }
@@ -314,7 +314,7 @@ DesignFlowStep_Status TestbenchValuesCGeneration::Exec()
    }
    // setup source files
    std::list<std::string> file_sources;
-   file_sources.push_front(output_directory + STR(STR_CST_testbench_generation_basename) + ".c");
+   file_sources.push_front(impl_filename);
    // add source files to interface with python golden reference, if any
    std::string exec_name = output_directory + "test";
    if(parameters->isOption(OPT_no_parse_c_python))

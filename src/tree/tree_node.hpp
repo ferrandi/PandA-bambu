@@ -158,9 +158,7 @@ class tree_node
    }
 
    /// Destructor
-   virtual ~tree_node()
-   {
-   }
+   virtual ~tree_node() = default;
 
    /**
     * Virtual function returning the type of the actual class

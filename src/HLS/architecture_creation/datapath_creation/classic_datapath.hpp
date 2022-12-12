@@ -77,7 +77,7 @@ class classic_datapath : public datapath_creator
    /**
     * Destructor.
     */
-   virtual ~classic_datapath() override;
+   ~classic_datapath() override;
 
    /**
     * Execute the step

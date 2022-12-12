@@ -442,13 +442,13 @@ DesignFlowStep_Status TasteInterfaceGeneration::InternalExec()
       memory->SetParameter("BRAM_BITSIZE", STR(HLSMgr->Rmem->get_bram_bitsize()));
 
       /// component specialization
-      unsigned int bus_data_bitsize = HLSMgr->Rmem->get_bus_data_bitsize();
-      unsigned int bus_addr_bitsize = HLSMgr->get_address_bitsize();
-      unsigned int bus_size_bitsize = HLSMgr->Rmem->get_bus_size_bitsize();
-      unsigned int bus_data_bytesize = HLSMgr->Rmem->get_bus_data_bitsize() / 8;
+      auto bus_data_bitsize = HLSMgr->Rmem->get_bus_data_bitsize();
+      auto bus_addr_bitsize = HLSMgr->get_address_bitsize();
+      auto bus_size_bitsize = HLSMgr->Rmem->get_bus_size_bitsize();
+      auto bus_data_bytesize = HLSMgr->Rmem->get_bus_data_bitsize() / 8;
 
-      unsigned int bus_tag_bitsize = 0;
-      if(HLS->Param->isOption(OPT_context_switch))
+      auto bus_tag_bitsize = 0ull;
+      if(HLS->Param->getOption<bool>(OPT_parse_pragma) && HLS->Param->isOption(OPT_context_switch))
       {
          bus_tag_bitsize = GetPointer<memory_cs>(HLSMgr->Rmem)->get_bus_tag_bitsize();
       }

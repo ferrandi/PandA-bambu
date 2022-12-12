@@ -180,7 +180,7 @@ void module_interface::AddSignal(const structural_managerRef SM, const structura
                                  const std::string& port2_name, const std::string& signal_name)
 {
    structural_objectRef port1;
-   unsigned int size1;
+   unsigned long long size1;
    if(port1_name.find('[') != std::string::npos)
    {
       const auto port1_base_name = port1_name.substr(0, port1_name.find('['));
@@ -198,7 +198,7 @@ void module_interface::AddSignal(const structural_managerRef SM, const structura
       size1 = GET_TYPE_SIZE(port1);
    }
    structural_objectRef port2;
-   unsigned int size2;
+   unsigned long long size2;
    if(port2_name.find('[') != std::string::npos)
    {
       const auto port2_base_name = port2_name.substr(0, port2_name.find('['));
@@ -244,7 +244,7 @@ void module_interface::AddConnection(const structural_managerRef SM, const struc
                                      const std::string& port2_name)
 {
    structural_objectRef port1;
-   unsigned int size1;
+   unsigned long long size1;
    if(port1_name.find('[') != std::string::npos)
    {
       const auto port1_base_name = port1_name.substr(0, port1_name.find('['));
@@ -262,7 +262,7 @@ void module_interface::AddConnection(const structural_managerRef SM, const struc
       size1 = GET_TYPE_SIZE(port1);
    }
    structural_objectRef port2;
-   unsigned int size2;
+   unsigned long long size2;
    if(port2_name.find('[') != std::string::npos)
    {
       const auto port2_base_name = port2_name.substr(0, port2_name.find('['));
@@ -295,10 +295,10 @@ void module_interface::AddConnection(const structural_managerRef SM, const struc
 
 void module_interface::AddConstant(const structural_managerRef SM, const structural_objectRef component,
                                    const std::string& port_name, const std::string& constant_value,
-                                   const unsigned int constant_size)
+                                   const unsigned long long constant_size)
 {
    structural_objectRef port;
-   unsigned int size;
+   unsigned long long size;
    if(port_name.find('[') != std::string::npos)
    {
       const auto port_base_name = port_name.substr(0, port_name.find('['));

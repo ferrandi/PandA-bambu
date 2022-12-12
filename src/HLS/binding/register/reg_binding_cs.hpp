@@ -54,7 +54,7 @@ class reg_binding_cs : public reg_binding
    /**
     * Destructor.
     */
-   virtual ~reg_binding_cs();
+   ~reg_binding_cs() override;
 
  protected:
    /**

@@ -78,9 +78,7 @@ datapath_parallel_cs::datapath_parallel_cs(const ParameterConstRef _parameters, 
 
 // HLSFunctionStep(_parameters, _HLSMgr, _funId, _design_flow_manager, _hls_flow_step_type)
 
-datapath_parallel_cs::~datapath_parallel_cs()
-{
-}
+datapath_parallel_cs::~datapath_parallel_cs() = default;
 
 const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
 datapath_parallel_cs::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
@@ -383,10 +381,10 @@ void datapath_parallel_cs::resize_ctrl_parallel_ports(structural_objectRef mem_p
 
 void datapath_parallel_cs::resize_dimension_bus_port(unsigned int vector_size, structural_objectRef port)
 {
-   unsigned int bus_data_bitsize = HLSMgr->Rmem->get_bus_data_bitsize();
-   unsigned int bus_addr_bitsize = HLSMgr->get_address_bitsize();
-   unsigned int bus_size_bitsize = HLSMgr->Rmem->get_bus_size_bitsize();
-   unsigned int bus_tag_bitsize = GetPointer<memory_cs>(HLSMgr->Rmem)->get_bus_tag_bitsize();
+   auto bus_data_bitsize = HLSMgr->Rmem->get_bus_data_bitsize();
+   auto bus_addr_bitsize = HLSMgr->get_address_bitsize();
+   auto bus_size_bitsize = HLSMgr->Rmem->get_bus_size_bitsize();
+   auto bus_tag_bitsize = GetPointer<memory_cs>(HLSMgr->Rmem)->get_bus_tag_bitsize();
 
    if(GetPointer<port_o>(port)->get_is_data_bus())
    {

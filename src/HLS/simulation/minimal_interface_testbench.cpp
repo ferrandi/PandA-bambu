@@ -82,11 +82,11 @@
 
 #include "math_function.hpp"
 
-static unsigned int local_port_size(const structural_objectRef portInst)
+static unsigned long long local_port_size(const structural_objectRef portInst)
 {
    auto port_bitwidth =
        GetPointer<port_o>(portInst)->get_typeRef()->size * GetPointer<port_o>(portInst)->get_typeRef()->vector_size;
-   unsigned bitsize = 0;
+   auto bitsize = 0ull;
    if(port_bitwidth <= 512)
    {
       bitsize = resize_to_1_8_16_32_64_128_256_512(port_bitwidth);
@@ -115,7 +115,7 @@ MinimalInterfaceTestbench::MinimalInterfaceTestbench(const ParameterConstRef _pa
 
 MinimalInterfaceTestbench::~MinimalInterfaceTestbench() = default;
 
-void MinimalInterfaceTestbench::cond_load(long long int Mout_addr_ram_bitsize, const std::string& post_slice,
+void MinimalInterfaceTestbench::cond_load(unsigned long long Mout_addr_ram_bitsize, const std::string& post_slice,
                                           const std::string& res_string, unsigned int i, const std::string& in_else,
                                           const std::string& mem_aggregate) const
 {
@@ -126,10 +126,10 @@ void MinimalInterfaceTestbench::cond_load(long long int Mout_addr_ram_bitsize, c
                  in_else + ";\n");
 }
 
-void MinimalInterfaceTestbench::cond_load_from_queue(long long int Mout_addr_ram_bitsize, std::string queue_type,
-                                                     const std::string& post_slice, const std::string& res_string,
-                                                     unsigned int i, const std::string& in_else,
-                                                     const std::string& mem_aggregate) const
+void MinimalInterfaceTestbench::cond_load_from_queue(unsigned long long Mout_addr_ram_bitsize,
+                                                     const std::string& queue_type, const std::string& post_slice,
+                                                     const std::string& res_string, unsigned int i,
+                                                     const std::string& in_else, const std::string& mem_aggregate) const
 {
    writer->write(res_string + post_slice + " = ((base_addr <= Mout_addr_ram_queue_curr[" + queue_type + "-1][" +
                  STR((i + 1) * Mout_addr_ram_bitsize - 1) + ":" + STR(i * Mout_addr_ram_bitsize) +
@@ -212,37 +212,37 @@ void MinimalInterfaceTestbench::write_memory_handler() const
 
    structural_objectRef Mout_oe_ram_port = mod->find_member("Mout_oe_ram", port_o_K, cir);
    THROW_ASSERT(Mout_oe_ram_port, "Mout_Wdata_ram port is missing");
-   long long int Mout_oe_ram_bitsize =
+   const auto Mout_oe_ram_bitsize =
        Mout_oe_ram_port->get_typeRef()->size *
        (Mout_oe_ram_port->get_typeRef()->vector_size == 0 ? 1 : Mout_oe_ram_port->get_typeRef()->vector_size);
-   unsigned int Mout_oe_ram_n_ports =
+   const auto Mout_oe_ram_n_ports =
        Mout_oe_ram_port->get_kind() == port_vector_o_K ? GetPointer<port_o>(Mout_oe_ram_port)->get_ports_size() : 1;
 
    structural_objectRef Mout_we_ram_port = mod->find_member("Mout_we_ram", port_o_K, cir);
    THROW_ASSERT(Mout_we_ram_port, "Mout_Wdata_ram port is missing");
-   long long int Mout_we_ram_bitsize =
+   const auto Mout_we_ram_bitsize =
        Mout_we_ram_port->get_typeRef()->size *
        (Mout_we_ram_port->get_typeRef()->vector_size == 0 ? 1 : Mout_we_ram_port->get_typeRef()->vector_size);
-   unsigned int Mout_we_ram_n_ports =
+   const auto Mout_we_ram_n_ports =
        Mout_we_ram_port->get_kind() == port_vector_o_K ? GetPointer<port_o>(Mout_we_ram_port)->get_ports_size() : 1;
 
    structural_objectRef Mout_addr_ram_port = mod->find_member("Mout_addr_ram", port_o_K, cir);
    THROW_ASSERT(Mout_addr_ram_port, "Mout_addr_ram port is missing");
-   long long int Mout_addr_ram_bitsize =
+   const auto Mout_addr_ram_bitsize =
        Mout_addr_ram_port->get_typeRef()->size * Mout_addr_ram_port->get_typeRef()->vector_size;
 
    structural_objectRef Mout_Wdata_ram_port = mod->find_member("Mout_Wdata_ram", port_o_K, cir);
    THROW_ASSERT(Mout_Wdata_ram_port, "Mout_Wdata_ram port is missing");
-   long long int Mout_Wdata_ram_bitsize =
+   const auto Mout_Wdata_ram_bitsize =
        Mout_Wdata_ram_port->get_typeRef()->size * Mout_Wdata_ram_port->get_typeRef()->vector_size;
-   unsigned int Mout_Wdata_ram_n_ports = Mout_Wdata_ram_port->get_kind() == port_vector_o_K ?
-                                             GetPointer<port_o>(Mout_Wdata_ram_port)->get_ports_size() :
-                                             1;
+   const auto Mout_Wdata_ram_n_ports = Mout_Wdata_ram_port->get_kind() == port_vector_o_K ?
+                                           GetPointer<port_o>(Mout_Wdata_ram_port)->get_ports_size() :
+                                           1;
 
    structural_objectRef Mout_data_ram_size_port = mod->find_member("Mout_data_ram_size", port_o_K, cir);
    THROW_ASSERT(Mout_data_ram_size_port, "Mout_data_ram_size port is missing");
 
-   long long int Mout_data_ram_size_bitsize =
+   const auto Mout_data_ram_size_bitsize =
        Mout_data_ram_size_port->get_typeRef()->size * Mout_data_ram_size_port->get_typeRef()->vector_size;
 
    update_memory_queue("Mout_oe_ram", "`MEM_DELAY_READ");
@@ -287,7 +287,7 @@ void MinimalInterfaceTestbench::write_memory_handler() const
 
    for(unsigned int i = 0; i < Mout_we_ram_n_ports; ++i)
    {
-      std::string mem_aggregate =
+      const auto mem_aggregate =
           memory_aggregate_slices_queue(i, Mout_Wdata_ram_bitsize, Mout_addr_ram_bitsize, "`MEM_DELAY_WRITE");
       std::string post_slice = "[`MEM_DELAY_WRITE-1][" + STR(i) + "]";
       writer->write("if (Mout_we_ram_queue_curr" + post_slice + "=== 1'b1 && base_addr <= Mout_addr_ram_queue_curr" +
@@ -299,7 +299,7 @@ void MinimalInterfaceTestbench::write_memory_handler() const
       writer->write(STR(STD_OPENING_CHAR) + "\n");
       post_slice = "[`MEM_DELAY_WRITE-1][" + STR((i + 1) * Mout_Wdata_ram_bitsize - 1) + ":" +
                    STR(i * Mout_Wdata_ram_bitsize) + "]";
-      std::string post_slice_mask =
+      const auto post_slice_mask =
           "[" + STR((i + 1) * Mout_Wdata_ram_bitsize - 1) + ":" + STR(i * Mout_Wdata_ram_bitsize) + "]";
       writer->write(mem_aggregate + " = (Mout_Wdata_ram_queue_curr" + post_slice + " & mask" + post_slice_mask +
                     ") | (" + mem_aggregate + " & ~(mask" + post_slice_mask + "));\n");
@@ -317,9 +317,9 @@ void MinimalInterfaceTestbench::write_memory_handler() const
 
    structural_objectRef M_Rdata_ram_port = mod->find_member("M_Rdata_ram", port_o_K, cir);
    THROW_ASSERT(M_Rdata_ram_port, "M_Rdata_ram port is missing");
-   long long int M_Rdata_ram_bitsize =
+   const auto M_Rdata_ram_bitsize =
        M_Rdata_ram_port->get_typeRef()->size * M_Rdata_ram_port->get_typeRef()->vector_size;
-   unsigned int M_Rdata_ram_port_n_ports =
+   const auto M_Rdata_ram_port_n_ports =
        M_Rdata_ram_port->get_kind() == port_vector_o_K ? GetPointer<port_o>(M_Rdata_ram_port)->get_ports_size() : 1;
 
    // write Rdata_ram (TODO remove specialization for BRAM and update Sout and Sin)
@@ -863,7 +863,7 @@ void MinimalInterfaceTestbench::write_input_signal_declaration(const tree_manage
 
             if(tree_helper::IsRealType(pt_node))
             {
-               long long int bitsize = tree_helper::Size(pt_node);
+               auto bitsize = tree_helper::Size(pt_node);
                writer->write("reg [" + STR(bitsize - 1) + ":0] ex_" + port_obj->get_id() + ";\n");
             }
             else
@@ -938,9 +938,9 @@ void MinimalInterfaceTestbench::write_output_signal_declaration() const
 void MinimalInterfaceTestbench::write_signal_queue(std::string port_name, std::string delay_type) const
 {
    structural_objectRef port = mod->find_member(port_name, port_o_K, cir);
-   long long int bitsize =
+   const auto bitsize =
        port->get_typeRef()->size * (port->get_typeRef()->vector_size == 0 ? 1 : port->get_typeRef()->vector_size);
-   unsigned int n_ports = port->get_kind() == port_vector_o_K ? GetPointer<port_o>(port)->get_ports_size() : 1;
+   const auto n_ports = port->get_kind() == port_vector_o_K ? GetPointer<port_o>(port)->get_ports_size() : 1;
    writer->write("reg [" + STR(bitsize * n_ports) + "-1:0] " + port_name + "_queue_next [" + delay_type +
                  " -1 : 0];\n");
    writer->write("reg [" + STR(bitsize * n_ports) + "-1:0] " + port_name + "_queue_curr [" + delay_type +
@@ -949,25 +949,24 @@ void MinimalInterfaceTestbench::write_signal_queue(std::string port_name, std::s
 
 void MinimalInterfaceTestbench::write_signals(const tree_managerConstRef TreeM, bool& withMemory, bool&) const
 {
-   const MemoryAllocation_Policy memory_allocation_policy =
-       parameters->getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy);
+   const auto memory_allocation_policy = parameters->getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy);
    write_input_signal_declaration(TreeM, withMemory);
    write_output_signal_declaration();
    // write parameters
    if(withMemory)
    {
-      structural_objectRef M_Rdata_ram_port = mod->find_member("M_Rdata_ram", port_o_K, cir);
-      long long int M_Rdata_ram_bitsize =
+      const auto M_Rdata_ram_port = mod->find_member("M_Rdata_ram", port_o_K, cir);
+      const auto M_Rdata_ram_bitsize =
           M_Rdata_ram_port->get_typeRef()->size *
           (M_Rdata_ram_port->get_typeRef()->vector_size == 0 ? 1 : M_Rdata_ram_port->get_typeRef()->vector_size);
-      unsigned int M_Rdata_ram_n_ports =
+      const auto M_Rdata_ram_n_ports =
           M_Rdata_ram_port->get_kind() == port_vector_o_K ? GetPointer<port_o>(M_Rdata_ram_port)->get_ports_size() : 1;
 
-      structural_objectRef M_DataRdy_port = mod->find_member("M_DataRdy", port_o_K, cir);
-      long long int M_DataRdy_bitsize =
+      const auto M_DataRdy_port = mod->find_member("M_DataRdy", port_o_K, cir);
+      const auto M_DataRdy_bitsize =
           M_DataRdy_port->get_typeRef()->size *
           (M_DataRdy_port->get_typeRef()->vector_size == 0 ? 1 : M_DataRdy_port->get_typeRef()->vector_size);
-      unsigned int M_DataRdy_n_ports =
+      const auto M_DataRdy_n_ports =
           M_DataRdy_port->get_kind() == port_vector_o_K ? GetPointer<port_o>(M_DataRdy_port)->get_ports_size() : 1;
 
       writer->write("reg signed [31:0] reg_DataReady[" + STR(M_Rdata_ram_n_ports - 1) + ":0];\n");
@@ -993,7 +992,7 @@ void MinimalInterfaceTestbench::write_signals(const tree_managerConstRef TreeM, 
 }
 
 void MinimalInterfaceTestbench::read_input_value_from_file_RNONE(const std::string& input_name, bool& first_valid_input,
-                                                                 unsigned bitsize) const
+                                                                 unsigned long long bitsize) const
 {
    if(input_name != CLOCK_PORT_NAME && input_name != RESET_PORT_NAME && input_name != START_PORT_NAME)
    {
@@ -1124,7 +1123,7 @@ void MinimalInterfaceTestbench::read_input_value_from_file_RNONE(const std::stri
 }
 
 void MinimalInterfaceTestbench::write_read_fifo_manager(std::string par, const std::string& pi_dout_name,
-                                                        unsigned bitsize, std::string valid_suffix) const
+                                                        unsigned long long bitsize, std::string valid_suffix) const
 {
    writer->write("\n");
    writer->write_comment("Manage fifo signals for " + pi_dout_name +
@@ -1202,7 +1201,7 @@ void MinimalInterfaceTestbench::write_file_reading_operations() const
       }
       else if(InterfaceType == port_o::port_interface::PI_RNONE)
       {
-         unsigned bitsize = local_port_size(portInst);
+         auto bitsize = local_port_size(portInst);
          read_input_value_from_file_RNONE(input_name, first_valid_input, bitsize);
       }
       else if(InterfaceType == port_o::port_interface::PI_WNONE || InterfaceType == port_o::port_interface::PI_DIN ||
@@ -1223,8 +1222,8 @@ void MinimalInterfaceTestbench::write_file_reading_operations() const
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Written file reading operations");
 }
 
-std::string MinimalInterfaceTestbench::memory_aggregate_slices(unsigned int i, long long int bitsize,
-                                                               long long int Mout_addr_ram_bitsize) const
+std::string MinimalInterfaceTestbench::memory_aggregate_slices(unsigned int i, unsigned long long int bitsize,
+                                                               unsigned long long int Mout_addr_ram_bitsize) const
 {
    std::string mem_aggregate = "{";
    for(unsigned int bitsize_index = 0; bitsize_index < bitsize; bitsize_index = bitsize_index + 8)
@@ -1242,9 +1241,9 @@ std::string MinimalInterfaceTestbench::memory_aggregate_slices(unsigned int i, l
    return mem_aggregate;
 }
 
-std::string MinimalInterfaceTestbench::memory_aggregate_slices_queue(unsigned int i, long long int bitsize,
-                                                                     long long int Mout_addr_ram_bitsize,
-                                                                     std::string queue_type) const
+std::string MinimalInterfaceTestbench::memory_aggregate_slices_queue(unsigned int i, unsigned long long bitsize,
+                                                                     unsigned long long Mout_addr_ram_bitsize,
+                                                                     const std::string& queue_type) const
 {
    std::string mem_aggregate = "{";
    for(unsigned int bitsize_index = 0; bitsize_index < bitsize; bitsize_index = bitsize_index + 8)

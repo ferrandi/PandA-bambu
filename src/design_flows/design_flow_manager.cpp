@@ -552,7 +552,7 @@ void DesignFlowManager::Exec()
          }
       }
       /// Now iterate on ingoing precedence edge
-      for(auto pre_precedence_step : pre_precedence_steps)
+      for(const auto& pre_precedence_step : pre_precedence_steps)
       {
          const vertex pre_precedence_vertex =
              design_flow_graph->GetDesignFlowStep((pre_precedence_step)->GetSignature());

@@ -47,11 +47,11 @@ class StoreOrUpdateMin(argparse.Action):
 def GetChildren(parent_pid):
     ret = set()
     ps_command = subprocess.Popen(
-        "ps -o pid --ppid %d --noheaders" % parent_pid, shell=True, stdout=subprocess.PIPE)
-    ps_output = ps_command.stdout.read()
+        "ps --ppid %d -o pid=" % parent_pid, shell=True, stdout=subprocess.PIPE)
     ps_command.wait()
-    for pid_str in ps_output.split("\n")[:-1]:
-        ret.add(int(pid_str))
+    ps_output = ps_command.stdout.read().decode()
+    for pid_str in ps_output.split('\n')[:-1]:
+        ret.add(int(pid_str, base=10))
     return ret
 
 # Kill a process than kill its children
@@ -1097,7 +1097,9 @@ try:
             threads[thread_index].join(100)
 except KeyboardInterrupt:
     logging.error("SIGINT received")
-    failure = True
+    with lock_creation_destruction:
+        failure = True
+        args.stop = True
     for local_thread_index in range(n_jobs):
         if children[local_thread_index] != None:
             if children[local_thread_index].poll() == None:
@@ -1105,7 +1107,7 @@ except KeyboardInterrupt:
                     kill_proc_tree(children[local_thread_index].pid)
                 except OSError:
                     pass
-    sys.exit(1)
+    # sys.exit(1)
 
 # Collect results
 CollectResults(abs_path)

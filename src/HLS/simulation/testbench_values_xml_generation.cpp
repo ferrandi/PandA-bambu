@@ -109,9 +109,7 @@ TestbenchValuesXMLGeneration::TestbenchValuesXMLGeneration(const ParameterConstR
    }
 }
 
-TestbenchValuesXMLGeneration::~TestbenchValuesXMLGeneration()
-{
-}
+TestbenchValuesXMLGeneration::~TestbenchValuesXMLGeneration() = default;
 
 const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
 TestbenchValuesXMLGeneration::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
@@ -179,9 +177,8 @@ DesignFlowStep_Status TestbenchValuesXMLGeneration::Exec()
       mem.push_back(ma.second);
    }
 
-   std::string fname;
    const auto fnode = TM->CGetTreeNode(function_id);
-   tree_helper::get_mangled_fname(GetPointer<const function_decl>(fnode), fname);
+   const auto fname = tree_helper::GetMangledFunctionName(GetPointer<const function_decl>(fnode));
    const auto& DesignInterfaceTypename = HLSMgr->design_interface_typename;
    const auto DesignInterfaceArgsTypename_it = DesignInterfaceTypename.find(fname);
 
@@ -289,7 +286,7 @@ DesignFlowStep_Status TestbenchValuesXMLGeneration::Exec()
          }
          else
          {
-            /// Call the parser to translate C initialization to verilog initialization
+            /// Call the parser to translate C initialization to Verilog initialization
             const CInitializationParserFunctorRef c_initialization_parser_functor =
                 CInitializationParserFunctorRef(new MemoryInitializationWriter(
                     output_stream, TM, behavioral_helper, reserved_mem_bytes, TM->CGetTreeReindex(l),
@@ -309,7 +306,7 @@ DesignFlowStep_Status TestbenchValuesXMLGeneration::Exec()
                output_stream << "m00000000" << std::endl;
             }
          }
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Cosidered parameter '" + param + "'");
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Considered parameter '" + param + "'");
       }
       ++v_idx;
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Considered vector");

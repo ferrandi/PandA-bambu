@@ -49,8 +49,7 @@ class OmpForWrapperCSSynthesisFlow : public HLSFunctionStep
     * Return the set of analyses in relationship with this design step
     * @param relationship_type is the type of relationship to be considered
     */
-   virtual const CustomUnorderedSet<
-       std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
+   const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
    ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
  public:
@@ -64,12 +63,12 @@ class OmpForWrapperCSSynthesisFlow : public HLSFunctionStep
    /**
     * Destructor
     */
-   virtual ~OmpForWrapperCSSynthesisFlow();
+   ~OmpForWrapperCSSynthesisFlow() override;
 
    /**
     * Execute the step
     * @return the exit status of this step
     */
-   virtual DesignFlowStep_Status InternalExec() override;
+   DesignFlowStep_Status InternalExec() override;
 };
 #endif // OMPFORWRAPPERCSSYNTHESISFLOW_H

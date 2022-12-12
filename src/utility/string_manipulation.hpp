@@ -145,12 +145,12 @@ inline std::string NumberToBinaryString(const numeric_type number, const size_t 
 /**
  * convert a real number stored in a string into a string of bits with a given precision
  */
-std::string convert_fp_to_string(std::string num, unsigned int precision);
+std::string convert_fp_to_string(std::string num, unsigned long long precision);
 
 /**
  * convert a real number stored in a string into bits with a given precision
  */
-unsigned long long convert_fp_to_bits(std::string num, unsigned int precision);
+unsigned long long convert_fp_to_bits(std::string num, unsigned long long precision);
 
 /**
  * Macro returning the actual type of an object
@@ -164,10 +164,10 @@ unsigned long long convert_fp_to_bits(std::string num, unsigned int precision);
  * @param real_type is true if the type of the number is real
  * @param unsigned_type is true if the type of the number is unsigned
  */
-std::string ConvertInBinary(const std::string& C_value, const unsigned int precision, const bool real_type,
+std::string ConvertInBinary(const std::string& C_value, const unsigned long long precision, const bool real_type,
                             const bool unsigned_type);
 
 std::string FixedPointReinterpret(const std::string& FP_vector, const std::string& fp_typename);
 
-unsigned int ac_type_bitwidth(const std::string& intType, bool& is_signed, bool& is_fixed);
+unsigned long long ac_type_bitwidth(const std::string& intType, bool& is_signed, bool& is_fixed);
 #endif

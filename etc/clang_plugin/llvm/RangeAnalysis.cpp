@@ -118,7 +118,11 @@
 #ifdef LOG_TRANSACTIONS
 std::error_code _log_ErrorInfo;
 llvm::Twine _log_fileName = "/tmp/ratransactions";
+#if __clang_major__ >= 13
+llvm::raw_fd_ostream _log_file(_log_fileName.str().c_str(), _log_ErrorInfo, llvm::sys::fs::OF_Text);
+#else
 llvm::raw_fd_ostream _log_file(_log_fileName.str().c_str(), _log_ErrorInfo, llvm::sys::fs::F_Text);
+#endif
 #define LOG_TRANSACTION(str) _log_file << str << "\n"
 #define FINISH_LOG _log_file.close();
 #else
@@ -269,24 +273,26 @@ namespace RangeAnalysis
          llvm_unreachable("unexpected case");
       }
 
-      Range getLLVM_range(const Instruction* I, ModulePass* modulePass, const llvm::DataLayout* DL)
+      Range getLLVM_range(const Instruction* I, const llvm::DataLayout* DL,
+                          llvm::function_ref<llvm::DominatorTree&(llvm::Function&)> GetDomTree,
+                          llvm::function_ref<llvm::LazyValueInfo&(llvm::Function&)> GetLVI,
+                          llvm::function_ref<llvm::AssumptionCache&(llvm::Function&)> GetAC)
       {
          auto bw = I->getType()->getPrimitiveSizeInBits();
          if(bw == 1)
          {
             return Range(Regular, bw, Zero, One);
          }
-         if(modulePass == nullptr || DL == nullptr)
+         if(DL == nullptr)
          {
             return Range(Regular, bw);
          }
          auto Fun = const_cast<llvm::Function*>(I->getFunction());
-         assert(modulePass);
          unsigned long long int zeroMask = 0;
 #if __clang_major__ != 4
          llvm::KnownBits KnownOneZero;
-         auto AC = modulePass->getAnalysis<llvm::AssumptionCacheTracker>().getAssumptionCache(*Fun);
-         auto& DT = modulePass->getAnalysis<llvm::DominatorTreeWrapperPass>(*Fun).getDomTree();
+         auto AC = GetAC(*Fun);
+         auto& DT = GetDomTree(*Fun);
          KnownOneZero = llvm::computeKnownBits(I, *DL, 0, &AC, I, &DT);
          zeroMask = KnownOneZero.Zero.getZExtValue();
 
@@ -298,7 +304,7 @@ namespace RangeAnalysis
 //         llvm::computeKnownBits(I,KnownZero, KnownOne, *DL, 0, &AC, I, &DT);
 //         zeroMask = KnownZero.getZExtValue();
 #endif
-         auto& LVI = modulePass->getAnalysis<llvm::LazyValueInfoWrapperPass>(*Fun).getLVI();
+         auto& LVI = GetLVI(*Fun);
          const Value* VI = I;
          llvm::ConstantRange range = LVI.getConstantRange(const_cast<llvm::Value*>(VI),
 #if __clang_major__ < 12
@@ -4072,7 +4078,10 @@ namespace RangeAnalysis
    }
 
    /// Adds an UnaryOp in the graph.
-   void ConstraintGraph::addUnaryOp(const Instruction* I, ModulePass* modulePass, const llvm::DataLayout* DL)
+   void ConstraintGraph::addUnaryOp(const Instruction* I, const llvm::DataLayout* DL,
+                                    llvm::function_ref<llvm::DominatorTree&(llvm::Function&)> GetDomTree,
+                                    llvm::function_ref<llvm::LazyValueInfo&(llvm::Function&)> GetLVI,
+                                    llvm::function_ref<llvm::AssumptionCache&(llvm::Function&)> GetAC)
    {
       assert(I->getNumOperands() == 1U);
       // Create the sink.
@@ -4091,8 +4100,8 @@ namespace RangeAnalysis
             return;
       }
       UnaryOp* UOp = nullptr;
-      UOp = new UnaryOp(std::make_shared<BasicInterval>(getLLVM_range(I, modulePass, DL)), sink, I, source,
-                        I->getOpcode());
+      UOp = new UnaryOp(std::make_shared<BasicInterval>(getLLVM_range(I, DL, GetDomTree, GetLVI, GetAC)), sink, I,
+                        source, I->getOpcode());
       this->oprs.insert(UOp);
       // Insert this definition in defmap
       this->defMap[sink->getValue()] = UOp;
@@ -4104,7 +4113,10 @@ namespace RangeAnalysis
    /// So, we don't have intersections associated with binary oprs.
    /// To have an intersect, we must have a Sigma instruction.
    /// Adds a BinaryOp in the graph.
-   void ConstraintGraph::addBinaryOp(const Instruction* I, ModulePass* modulePass, const llvm::DataLayout* DL)
+   void ConstraintGraph::addBinaryOp(const Instruction* I, const llvm::DataLayout* DL,
+                                     llvm::function_ref<llvm::DominatorTree&(llvm::Function&)> GetDomTree,
+                                     llvm::function_ref<llvm::LazyValueInfo&(llvm::Function&)> GetLVI,
+                                     llvm::function_ref<llvm::AssumptionCache&(llvm::Function&)> GetAC)
    {
       assert(I->getNumOperands() == 2U);
       // Create the sink.
@@ -4115,7 +4127,8 @@ namespace RangeAnalysis
       VarNode* source2 = addVarNode(I->getOperand(1), nullptr, DL);
 
       // Create the operation using the intersect to constrain sink's interval.
-      std::shared_ptr<BasicInterval> BI = std::make_shared<BasicInterval>(getLLVM_range(I, modulePass, DL));
+      std::shared_ptr<BasicInterval> BI =
+          std::make_shared<BasicInterval>(getLLVM_range(I, DL, GetDomTree, GetLVI, GetAC));
       BinaryOp* BOp = new BinaryOp(BI, sink, I, source1, source2, I->getOpcode());
 
       // Insert the operation in the graph.
@@ -4129,7 +4142,10 @@ namespace RangeAnalysis
       this->useMap.find(source2->getValue())->second.insert(BOp);
    }
 
-   void ConstraintGraph::addTernaryOp(const Instruction* I, ModulePass* modulePass, const llvm::DataLayout* DL)
+   void ConstraintGraph::addTernaryOp(const Instruction* I, const llvm::DataLayout* DL,
+                                      llvm::function_ref<llvm::DominatorTree&(llvm::Function&)> GetDomTree,
+                                      llvm::function_ref<llvm::LazyValueInfo&(llvm::Function&)> GetLVI,
+                                      llvm::function_ref<llvm::AssumptionCache&(llvm::Function&)> GetAC)
    {
       assert(I->getNumOperands() == 3U);
       // Create the sink.
@@ -4141,7 +4157,8 @@ namespace RangeAnalysis
       VarNode* source3 = addVarNode(I->getOperand(2), nullptr, DL);
 
       // Create the operation using the intersect to constrain sink's interval.
-      std::shared_ptr<BasicInterval> BI = std::make_shared<BasicInterval>(getLLVM_range(I, modulePass, DL));
+      std::shared_ptr<BasicInterval> BI =
+          std::make_shared<BasicInterval>(getLLVM_range(I, DL, GetDomTree, GetLVI, GetAC));
       TernaryOp* TOp = new TernaryOp(BI, sink, I, source1, source2, source3, I->getOpcode());
 
       // Insert the operation in the graph.
@@ -4157,11 +4174,15 @@ namespace RangeAnalysis
    }
 
    /// Add a phi node (actual phi, does not include sigmas)
-   void ConstraintGraph::addPhiOp(const PHINode* Phi, ModulePass* modulePass, const llvm::DataLayout* DL)
+   void ConstraintGraph::addPhiOp(const PHINode* Phi, const llvm::DataLayout* DL,
+                                  llvm::function_ref<llvm::DominatorTree&(llvm::Function&)> GetDomTree,
+                                  llvm::function_ref<llvm::LazyValueInfo&(llvm::Function&)> GetLVI,
+                                  llvm::function_ref<llvm::AssumptionCache&(llvm::Function&)> GetAC)
    {
       // Create the sink.
       VarNode* sink = addVarNode(Phi, nullptr, DL);
-      std::shared_ptr<BasicInterval> BI = std::make_shared<BasicInterval>(getLLVM_range(Phi, modulePass, DL));
+      std::shared_ptr<BasicInterval> BI =
+          std::make_shared<BasicInterval>(getLLVM_range(Phi, DL, GetDomTree, GetLVI, GetAC));
       PhiOp* phiOp = new PhiOp(BI, sink, Phi);
 
       // Insert the operation in the graph.
@@ -4180,8 +4201,10 @@ namespace RangeAnalysis
       }
    }
 
-   void ConstraintGraph::addSigmaOp(const PHINode* Sigma, ModulePass* modulePass, const llvm::DataLayout* DL,
-                                    bool* changed)
+   void ConstraintGraph::addSigmaOp(const PHINode* Sigma, const llvm::DataLayout* DL, bool* changed,
+                                    llvm::function_ref<llvm::DominatorTree&(llvm::Function&)> GetDomTree,
+                                    llvm::function_ref<llvm::LazyValueInfo&(llvm::Function&)> GetLVI,
+                                    llvm::function_ref<llvm::AssumptionCache&(llvm::Function&)> GetAC)
    {
       assert(Sigma->getNumOperands() == 1U);
       // Create the sink.
@@ -4238,8 +4261,8 @@ namespace RangeAnalysis
 
          if(BItv == nullptr)
          {
-            sigmaOp = new SigmaOp(std::make_shared<BasicInterval>(getLLVM_range(Sigma, modulePass, DL)), sink, Sigma,
-                                  source, nullptr, Sigma->getOpcode());
+            sigmaOp = new SigmaOp(std::make_shared<BasicInterval>(getLLVM_range(Sigma, DL, GetDomTree, GetLVI, GetAC)),
+                                  sink, Sigma, source, nullptr, Sigma->getOpcode());
          }
          else
          {
@@ -4273,10 +4296,12 @@ namespace RangeAnalysis
    }
 
    void ConstraintGraph::addLoadOp(
-       const llvm::LoadInst* LI, Andersen_AA* PtoSets_AA, bool arePointersResolved, llvm::ModulePass* modulePass,
-       const llvm::DataLayout* DL,
+       const llvm::LoadInst* LI, Andersen_AA* PtoSets_AA, bool arePointersResolved, const llvm::DataLayout* DL,
        llvm::DenseMap<const llvm::Function*, llvm::SmallPtrSet<const llvm::Instruction*, 6>>& Function2Store,
-       bool* changed)
+       bool* changed, llvm::function_ref<llvm::DominatorTree&(llvm::Function&)> GetDomTree,
+       llvm::function_ref<llvm::LazyValueInfo&(llvm::Function&)> GetLVI,
+       llvm::function_ref<llvm::AssumptionCache&(llvm::Function&)> GetAC,
+       llvm::function_ref<MemorySSAAnalysisResult&(llvm::Function&)> GetMSSA)
    {
       auto bw = LI->getType()->getPrimitiveSizeInBits();
       Range intersection(Regular, bw, Min, Max);
@@ -4348,12 +4373,12 @@ namespace RangeAnalysis
          }
          else
          {
-            intersection = getLLVM_range(LI, modulePass, DL);
+            intersection = getLLVM_range(LI, DL, GetDomTree, GetLVI, GetAC);
          }
       }
       else
       {
-         intersection = getLLVM_range(LI, modulePass, DL);
+         intersection = getLLVM_range(LI, DL, GetDomTree, GetLVI, GetAC);
       }
       VarNode* sink = addVarNode(LI, nullptr, DL);
       LoadOp* loadOp = new LoadOp(std::make_shared<BasicInterval>(intersection), sink, LI);
@@ -4377,7 +4402,7 @@ namespace RangeAnalysis
                //               llvm::errs() << "\n";
 
                for(const Value* operand :
-                   ComputeConflictingStores(nullptr, varValue, LI, PtoSets_AA, Function2Store, modulePass, changed))
+                   ComputeConflictingStores(nullptr, varValue, LI, PtoSets_AA, Function2Store, changed, GetMSSA))
                {
                   //                  llvm::errs() << "  source: ";
                   //                  operand->print(llvm::errs());
@@ -4560,7 +4585,7 @@ namespace RangeAnalysis
    static void
    recurseUpMemoryAccess(const llvm::Function* fun,
                          llvm::DenseSet<std::pair<const llvm::Instruction*, const llvm::Function*>>& toBeAnalyzedInstr,
-                         llvm::ModulePass* modulePass, bool* changed)
+                         bool* changed, llvm::function_ref<MemorySSAAnalysisResult&(llvm::Function&)> GetMSSA)
    {
       for(auto fuse : fun->users())
       {
@@ -4569,16 +4594,7 @@ namespace RangeAnalysis
             //            llvm::errs() << "    recurseUpMemoryAccess-instr-" << instr->getFunction()->getName() << ": ";
             //            instr->print(llvm::errs());
             //            llvm::errs() << "\n";
-#if __clang_major__ >= 11
-            const auto& MSSA = modulePass
-                                   ->getAnalysis<llvm::MemorySSAWrapperPass>(
-                                       *const_cast<llvm::Function*>(instr->getFunction()), changed)
-                                   .getMSSA();
-#else
-            const auto& MSSA =
-                modulePass->getAnalysis<llvm::MemorySSAWrapperPass>(*const_cast<llvm::Function*>(instr->getFunction()))
-                    .getMSSA();
-#endif
+            const auto& MSSA = GetMSSA(*const_cast<llvm::Function*>(instr->getFunction())).getMSSA();
             auto funMA = MSSA.getMemoryAccess(instr);
             if(!funMA)
             {
@@ -4602,7 +4618,7 @@ namespace RangeAnalysis
             else
             {
                //               llvm::errs() << "    add upfunction " << instr->getFunction() << "\n";
-               recurseUpMemoryAccess(instr->getFunction(), toBeAnalyzedInstr, modulePass, changed);
+               recurseUpMemoryAccess(instr->getFunction(), toBeAnalyzedInstr, changed, GetMSSA);
             }
          }
       }
@@ -4610,22 +4626,13 @@ namespace RangeAnalysis
 
    llvm::SmallPtrSet<const llvm::Value*, 6> ConstraintGraph::ComputeConflictingStores(
        const llvm::StoreInst* SI, const llvm::Value* GV, const llvm::Instruction* instr0, Andersen_AA* PtoSets_AA,
-       llvm::DenseMap<const Function*, SmallPtrSet<const Instruction*, 6>>& Function2Store,
-       llvm::ModulePass* modulePass, bool* changed)
+       llvm::DenseMap<const Function*, SmallPtrSet<const Instruction*, 6>>& Function2Store, bool* changed,
+       llvm::function_ref<MemorySSAAnalysisResult&(llvm::Function&)> GetMSSA)
    {
       llvm::SmallPtrSet<const llvm::Value*, 6> res;
       llvm::DenseSet<std::pair<const llvm::Instruction*, const llvm::Function*>> toBeAnalyzed;
       llvm::DenseSet<std::pair<const llvm::Instruction*, const llvm::Function*>> Analyzed;
-#if __clang_major__ >= 11
-      const auto& MSSA0 =
-          modulePass
-              ->getAnalysis<llvm::MemorySSAWrapperPass>(*const_cast<llvm::Function*>(instr0->getFunction()), changed)
-              .getMSSA();
-#else
-      const auto& MSSA0 =
-          modulePass->getAnalysis<llvm::MemorySSAWrapperPass>(*const_cast<llvm::Function*>(instr0->getFunction()))
-              .getMSSA();
-#endif
+      const auto& MSSA0 = GetMSSA(*const_cast<llvm::Function*>(instr0->getFunction())).getMSSA();
       const llvm::MemoryUseOrDef* ma0 = MSSA0.getMemoryAccess(instr0);
       auto immDefAcc0 = ma0->getDefiningAccess();
       if(!MSSA0.isLiveOnEntryDef(immDefAcc0))
@@ -4644,7 +4651,7 @@ namespace RangeAnalysis
       {
          auto mInstr = ma0->getMemoryInst();
          auto fun = mInstr->getFunction();
-         recurseUpMemoryAccess(fun, toBeAnalyzed, modulePass, changed);
+         recurseUpMemoryAccess(fun, toBeAnalyzed, changed, GetMSSA);
       }
 
       while(!toBeAnalyzed.empty())
@@ -4664,10 +4671,7 @@ namespace RangeAnalysis
                       recurseComputeConflictingStores(visited, mInstr, GV, res, PtoSets_AA, Function2Store, changed);
                   if(!GVfound)
                   {
-                     const auto& MSSAm = modulePass
-                                             ->getAnalysis<llvm::MemorySSAWrapperPass>(
-                                                 *const_cast<llvm::Function*>(mInstr->getFunction()))
-                                             .getMSSA();
+                     const auto& MSSAm = GetMSSA(*const_cast<llvm::Function*>(mInstr->getFunction())).getMSSA();
                      const llvm::MemoryUseOrDef* mam = MSSAm.getMemoryAccess(mInstr);
                      auto immDefAccm = mam->getDefiningAccess();
                      if(!MSSAm.isLiveOnEntryDef(immDefAccm))
@@ -4687,7 +4691,7 @@ namespace RangeAnalysis
                      {
                         auto mInstrm = mam->getMemoryInst();
                         auto fun = mInstrm->getFunction();
-                        recurseUpMemoryAccess(fun, toBeAnalyzed, modulePass, changed);
+                        recurseUpMemoryAccess(fun, toBeAnalyzed, changed, GetMSSA);
                      }
                   }
                }
@@ -4695,7 +4699,7 @@ namespace RangeAnalysis
             else if(currInstrFun.second)
             {
                //               llvm::errs() << "Upfunction: " << currInstrFun.second->getName() << "\n";
-               recurseUpMemoryAccess(currInstrFun.second, toBeAnalyzed, modulePass, changed);
+               recurseUpMemoryAccess(currInstrFun.second, toBeAnalyzed, changed, GetMSSA);
             }
             else
             {
@@ -4727,9 +4731,9 @@ namespace RangeAnalysis
       llvm_unreachable("unexpected condition");
    }
    void ConstraintGraph::addStoreOp(const llvm::StoreInst* SI, Andersen_AA* PtoSets_AA, bool arePointersResolved,
-                                    llvm::ModulePass* modulePass,
                                     llvm::DenseMap<const Function*, SmallPtrSet<const Instruction*, 6>>& Function2Store,
-                                    const llvm::DataLayout* DL, bool* changed)
+                                    const llvm::DataLayout* DL, bool* changed,
+                                    llvm::function_ref<MemorySSAAnalysisResult&(llvm::Function&)> GetMSSA)
    {
 #if HAVE_LIBBDD
       if(arePointersResolved)
@@ -4770,7 +4774,7 @@ namespace RangeAnalysis
                //               varValue->print(llvm::errs());
                //               llvm::errs() << "\n";
                for(const Value* operand :
-                   ComputeConflictingStores(SI, varValue, SI, PtoSets_AA, Function2Store, modulePass, changed))
+                   ComputeConflictingStores(SI, varValue, SI, PtoSets_AA, Function2Store, changed, GetMSSA))
                {
                   //                  llvm::errs() << "  source: ";
                   //                  operand->print(llvm::errs());
@@ -4795,49 +4799,53 @@ namespace RangeAnalysis
    } // namespace
 
    void
-   ConstraintGraph::buildOperations(const Instruction* I, ModulePass* modulePass, const llvm::DataLayout* DL,
-                                    Andersen_AA* PtoSets_AA, bool arePointersResolved,
+   ConstraintGraph::buildOperations(const Instruction* I, const llvm::DataLayout* DL, Andersen_AA* PtoSets_AA,
+                                    bool arePointersResolved,
                                     llvm::DenseMap<const Function*, SmallPtrSet<const Instruction*, 6>>& Function2Store,
-                                    bool* changed)
+                                    bool* changed, llvm::function_ref<llvm::DominatorTree&(llvm::Function&)> GetDomTree,
+                                    llvm::function_ref<llvm::LazyValueInfo&(llvm::Function&)> GetLVI,
+                                    llvm::function_ref<llvm::AssumptionCache&(llvm::Function&)> GetAC,
+                                    llvm::function_ref<MemorySSAAnalysisResult&(llvm::Function&)> GetMSSA)
    {
       if(auto LI = dyn_cast<LoadInst>(I))
       {
-         addLoadOp(LI, PtoSets_AA, arePointersResolved, modulePass, DL, Function2Store, changed);
+         addLoadOp(LI, PtoSets_AA, arePointersResolved, DL, Function2Store, changed, GetDomTree, GetLVI, GetAC,
+                   GetMSSA);
       }
       else if(auto SI = dyn_cast<StoreInst>(I))
       {
-         addStoreOp(SI, PtoSets_AA, arePointersResolved, modulePass, Function2Store, DL, changed);
+         addStoreOp(SI, PtoSets_AA, arePointersResolved, Function2Store, DL, changed, GetMSSA);
       }
       else if(I->isBinaryOp())
       {
-         addBinaryOp(I, modulePass, DL);
+         addBinaryOp(I, DL, GetDomTree, GetLVI, GetAC);
       }
       else if(isTernaryOp(I))
       {
-         addTernaryOp(I, modulePass, DL);
+         addTernaryOp(I, DL, GetDomTree, GetLVI, GetAC);
       }
       else
       {
          if(isa<ICmpInst>(I))
          {
-            addBinaryOp(I, modulePass, DL);
+            addBinaryOp(I, DL, GetDomTree, GetLVI, GetAC);
             // Handle Phi functions.
          }
          else if(auto Phi = dyn_cast<PHINode>(I))
          {
             if(Phi->getNumOperands() == 1)
             {
-               addSigmaOp(Phi, modulePass, DL, changed);
+               addSigmaOp(Phi, DL, changed, GetDomTree, GetLVI, GetAC);
             }
             else
             {
-               addPhiOp(Phi, modulePass, DL);
+               addPhiOp(Phi, DL, GetDomTree, GetLVI, GetAC);
             }
          }
          else
          {
             // We have an unary instruction to handle.
-            addUnaryOp(I, modulePass, DL);
+            addUnaryOp(I, DL, GetDomTree, GetLVI, GetAC);
          }
       }
    }
@@ -5346,10 +5354,13 @@ namespace RangeAnalysis
    }
 
    /// Iterates through all instructions in the function and builds the graph.
-   void ConstraintGraph::buildGraph(const Function& F, ModulePass* modulePass, const llvm::DataLayout* DL,
-                                    Andersen_AA* PtoSets_AA, bool arePointersResolved,
+   void ConstraintGraph::buildGraph(const Function& F, const llvm::DataLayout* DL, Andersen_AA* PtoSets_AA,
+                                    bool arePointersResolved,
                                     llvm::DenseMap<const Function*, SmallPtrSet<const Instruction*, 6>>& Function2Store,
-                                    bool* changed)
+                                    bool* changed, llvm::function_ref<llvm::DominatorTree&(llvm::Function&)> GetDomTree,
+                                    llvm::function_ref<llvm::LazyValueInfo&(llvm::Function&)> GetLVI,
+                                    llvm::function_ref<llvm::AssumptionCache&(llvm::Function&)> GetAC,
+                                    llvm::function_ref<MemorySSAAnalysisResult&(llvm::Function&)> GetMSSA)
    {
       this->func = &F;
       buildValueMaps(F, DL);
@@ -5366,7 +5377,8 @@ namespace RangeAnalysis
          {
             continue;
          }
-         buildOperations(&I, modulePass, DL, PtoSets_AA, arePointersResolved, Function2Store, changed);
+         buildOperations(&I, DL, PtoSets_AA, arePointersResolved, Function2Store, changed, GetDomTree, GetLVI, GetAC,
+                         GetMSSA);
       }
    }
 
@@ -6116,7 +6128,11 @@ namespace RangeAnalysis
    void ConstraintGraph::printToFile(const Function& F, const std::string& FileName)
    {
       std::error_code ErrorInfo;
+#if __clang_major__ >= 13
+      raw_fd_ostream file(FileName, ErrorInfo, sys::fs::OF_Text);
+#else
       raw_fd_ostream file(FileName, ErrorInfo, sys::fs::F_Text);
+#endif
 
       if(!file.has_error())
       {
@@ -6851,7 +6867,11 @@ namespace RangeAnalysis
 #endif
    }
 
-   bool InterProceduralRACropDFSHelper::runOnModule(const Module& M, ModulePass* modulePass, Andersen_AA* PtoSets_AA)
+   bool InterProceduralRACropDFSHelper::exec(const Module& M, Andersen_AA* PtoSets_AA,
+                                             llvm::function_ref<llvm::DominatorTree&(llvm::Function&)> GetDomTree,
+                                             llvm::function_ref<llvm::LazyValueInfo&(llvm::Function&)> GetLVI,
+                                             llvm::function_ref<llvm::AssumptionCache&(llvm::Function&)> GetAC,
+                                             llvm::function_ref<MemorySSAAnalysisResult&(llvm::Function&)> GetMSSA)
    {
       changed = false;
       // Constraint Graph
@@ -6892,7 +6912,8 @@ namespace RangeAnalysis
             continue;
          }
 
-         CG->buildGraph(F, modulePass, &M.getDataLayout(), PtoSets_AA, arePointersResolved, Function2Store, &changed);
+         CG->buildGraph(F, &M.getDataLayout(), PtoSets_AA, arePointersResolved, Function2Store, &changed, GetDomTree,
+                        GetLVI, GetAC, GetMSSA);
          MatchParametersAndReturnValues(F, *CG, &M.getDataLayout());
       }
       CG->buildVarNodes(&M.getDataLayout());

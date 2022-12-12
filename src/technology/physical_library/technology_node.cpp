@@ -358,7 +358,7 @@ bool operation::is_type_supported(const std::string& type_name) const
    return supported_types.empty() || supported_types.count(type_name);
 }
 
-bool operation::is_type_supported(const std::string& type_name, unsigned int type_prec) const
+bool operation::is_type_supported(const std::string& type_name, unsigned long long type_prec) const
 {
    if(!supported_types.empty())
    {
@@ -377,8 +377,8 @@ bool operation::is_type_supported(const std::string& type_name, unsigned int typ
    return true;
 }
 
-bool operation::is_type_supported(const std::string& type_name, const std::vector<unsigned int>& type_prec,
-                                  const std::vector<unsigned int>& /*type_n_element*/) const
+bool operation::is_type_supported(const std::string& type_name, const std::vector<unsigned long long>& type_prec,
+                                  const std::vector<unsigned long long>& /*type_n_element*/) const
 {
    const auto max_prec = type_prec.empty() ? 0 : *max_element(type_prec.begin(), type_prec.end());
    return is_type_supported(type_name, max_prec);
@@ -749,15 +749,12 @@ void functional_unit::xload(const xml_element* Enode, const technology_nodeRef f
 #endif
 #if HAVE_TECHNOLOGY_BUILT && HAVE_CMOS_BUILT
    int output_pin_counter = 0;
-#endif
-#if HAVE_CIRCUIT_BUILT
-   structural_type_descriptorRef bool_type = structural_type_descriptorRef(new structural_type_descriptor("bool", 0));
-#endif
-
-#if HAVE_TECHNOLOGY_BUILT && HAVE_CMOS_BUILT
    std::map<std::string, std::vector<std::string>> attribute_list;
    std::map<std::string, std::map<std::string, attributeRef>> attribute_map;
    std::map<unsigned int, std::string> NP_functionalities;
+#endif
+#if HAVE_CIRCUIT_BUILT
+   structural_type_descriptorRef bool_type = structural_type_descriptorRef(new structural_type_descriptor("bool", 0));
 #endif
 
    logical_type = UNKNOWN;
@@ -1092,7 +1089,7 @@ void functional_unit::xload(const xml_element* Enode, const technology_nodeRef f
       }
    }
 
-#if HAVE_CIRCUIT_BUILT
+#if HAVE_CIRCUIT_BUILT && HAVE_TECHNOLOGY_BUILT && HAVE_CMOS_BUILT
    for(auto& NP_functionalitie : NP_functionalities)
    {
       CM->add_NP_functionality(CM->get_circ(),

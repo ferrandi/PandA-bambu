@@ -152,7 +152,7 @@ void MemoryInitializationCWriter::Process(const std::string& content)
    }
    THROW_ASSERT(base_type, "");
    std::string binary_value = "";
-   unsigned int size = 0;
+   unsigned long long size = 0;
    switch(GET_CONST_NODE(base_type)->get_kind())
    {
       case void_type_K:

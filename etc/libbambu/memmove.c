@@ -25,7 +25,11 @@ void* memmove(void* dest, const void* src, size_t len)
 
 #ifdef __llvm__
 
-void _llvm_memmove_p0i8_p0i8_i32(void* dest, const void* src, size_t len, unsigned int align, _Bool isvolatile)
+void _llvm_memmove_p0i8_p0i8_i32(void* dest, const void* src, size_t len,
+#if __clang_major__ < 7
+                                 unsigned int align,
+#endif
+                                 _Bool isvolatile)
 {
    char* d = dest;
    const char* s = src;
@@ -41,7 +45,10 @@ void _llvm_memmove_p0i8_p0i8_i32(void* dest, const void* src, size_t len, unsign
    }
 }
 
-void _llvm_memmove_p0i8_p0i8_i64(void* dest, const void* src, unsigned long long int len, unsigned int align,
+void _llvm_memmove_p0i8_p0i8_i64(void* dest, const void* src, unsigned long long int len,
+#if __clang_major__ < 7
+                                 unsigned int align,
+#endif
                                  _Bool isvolatile)
 {
    char* d = dest;

@@ -114,6 +114,6 @@ class BambuParameter : public Parameter
    void SetDefaults() override;
 };
 
-typedef refcount<BambuParameter> BambuParameterRef;
+using BambuParameterRef = std::shared_ptr<BambuParameter>;
 
 #endif
