@@ -58,14 +58,14 @@ on:
         value: ${{jobs.build.outputs.package-name}}
 
 env:
-  compilers: ${{inputs.compilers}}${{github.event.inputs.compilers}}
-  build-compiler: ${{inputs.build-compiler}}${{github.event.inputs.build-compiler}}
-  configure: ${{inputs.configure}}${{github.event.inputs.configure}}
+  compilers: ${{inputs.compilers}}
+  build-compiler: ${{inputs.build-compiler}}
+  configure: ${{inputs.configure}}
   storage-url: ${{secrets.CI_STORAGE_URL}}
   storage-user: ${{secrets.CI_STORAGE_USER}}
   storage-token: ${{secrets.CI_STORAGE_TOKEN}}
   storage-path: release
-  package-name: ${{inputs.package-name}}${{github.event.inputs.package-name}}
+  package-name: ${{inputs.package-name}}
   dist-dir: dist
   bcompiler-dir: compiler
   host_jobs: $J
@@ -79,7 +79,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
         with:
-          ref: ${{github.event.inputs.branch}}
+          ref: ${{inputs.branch}}
       - name: Env setup
         id: setup
         shell: bash
@@ -125,7 +125,7 @@ jobs:
           config-args: ${{env.configure}} --enable-Werror
           jobs: ${{steps.setup.outputs.jobs}}
       - name: Upload PandA Bambu HLS AppImage for CI
-        if: ${{ inputs.package-name != '' }}
+        if: ${{ env.package-name != '' }}
         uses: ./.github/actions/storage-upload
         with:
           name: ${{env.package-name}}
@@ -135,7 +135,7 @@ jobs:
           password: "${{env.storage-token}}"
           storage-compression: false
       - name: Upload Panda Bambu HLS Release
-        if: ${{ github.event.inputs.package-name != '' }}
+        if: ${{ env.package-name != '' }}
         shell: bash
         run: |
           APP_FILE="${{env.package-name}}.AppImage"

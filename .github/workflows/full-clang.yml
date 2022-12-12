@@ -21,10 +21,7 @@ jobs:
       compilers: gcc-7,clang-4,clang-5,clang-6,clang-7,clang-8,clang-9,clang-10,clang-11,clang-12,clang-13
       build-compiler: gcc-8
       configure: --enable-glpk --enable-flopoco --enable-opt --with-opt-level=2 --enable-release CC=gcc-8 CXX=g++-8
-    secrets:
-      CI_STORAGE_URL: ${{secrets.CI_STORAGE_URL}}
-      CI_STORAGE_USER: ${{secrets.CI_STORAGE_USER}}
-      CI_STORAGE_TOKEN: ${{secrets.CI_STORAGE_TOKEN}}
+    secrets: inherit
 
   simulate-all:
     needs: [build]
@@ -85,10 +82,7 @@ jobs:
       package-name: ${{needs.build.outputs.package-name}}
       test-compilers: I386_CLANG4,I386_CLANG5,I386_CLANG6,I386_CLANG7,I386_CLANG8,I386_CLANG9,I386_CLANG10,I386_CLANG11,I386_CLANG12,I386_CLANG13
       additional-args: \"\",\"-c=--speculative-sdc-scheduling --skip_list 20040705-1,20040705-2,20040629-1\"
-    secrets:
-      CI_STORAGE_URL: ${{secrets.CI_STORAGE_URL}}
-      CI_STORAGE_USER: ${{secrets.CI_STORAGE_USER}}
-      CI_STORAGE_TOKEN: ${{secrets.CI_STORAGE_TOKEN}}
+    secrets: inherit
 
   grs-vhdl:
     needs: [build, simulate-all]
@@ -96,10 +90,7 @@ jobs:
     with:
       package-name: ${{needs.build.outputs.package-name}}
       test-compilers: I386_CLANG4,I386_CLANG5,I386_CLANG6,I386_CLANG7,I386_CLANG8,I386_CLANG9,I386_CLANG10,I386_CLANG11,I386_CLANG12,I386_CLANG13
-    secrets:
-      CI_STORAGE_URL: ${{secrets.CI_STORAGE_URL}}
-      CI_STORAGE_USER: ${{secrets.CI_STORAGE_USER}}
-      CI_STORAGE_TOKEN: ${{secrets.CI_STORAGE_TOKEN}}
+    secrets: inherit
 
   examples:
     needs: [build, simulate-all]
@@ -107,10 +98,7 @@ jobs:
     with:
       package-name: ${{needs.build.outputs.package-name}}
       test-compiler: I386_CLANG13
-    secrets:
-      CI_STORAGE_URL: ${{secrets.CI_STORAGE_URL}}
-      CI_STORAGE_USER: ${{secrets.CI_STORAGE_USER}}
-      CI_STORAGE_TOKEN: ${{secrets.CI_STORAGE_TOKEN}}
+    secrets: inherit
 
   success:
     if: ${{always()}}

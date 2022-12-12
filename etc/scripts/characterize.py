@@ -21,11 +21,11 @@ def GetChildren(parent_pid):
     # Return children of a process
     ret = set()
     ps_command = subprocess.Popen(
-        "ps -o pid --ppid %d --noheaders" % parent_pid, shell=True, stdout=subprocess.PIPE)
-    ps_output = ps_command.stdout.read()
+        "ps --ppid %d -o pid=" % parent_pid, shell=True, stdout=subprocess.PIPE)
     ps_command.wait()
-    for pid_str in ps_output.split("\n")[:-1]:
-        ret.add(int(pid_str))
+    ps_output = ps_command.stdout.read().decode()
+    for pid_str in ps_output.split('\n')[:-1]:
+        ret.add(int(pid_str, base=10))
     return ret
 
 
@@ -93,6 +93,7 @@ def execute_characterization(device_fu_list, thread_index):
         with lock_creation_destruction:
             if return_value != 0 and args.stop:
                 killing = True
+            if killing and args.stop:
                 for local_thread_index in range(args.j):
                     if children[local_thread_index] != None:
                         if children[local_thread_index].poll() == None:
@@ -418,13 +419,11 @@ if args.list_only != "":
 
 # Create directories
 if not args.restart:
-    for device in args.devices.split(","):
-        os.makedirs(os.path.join(out_path, device))
     lines = open(device_fu_list_name).readlines()
     for line in lines:
         new_dir = ComputeDirectory(line)
         logging.info("      Creating directory " + new_dir)
-        os.makedirs(new_dir)
+        os.makedirs(new_dir, exist_ok=True)
 
 # Create threads
 logging.info("   Launching tool")
@@ -449,39 +448,48 @@ try:
             threads[thread_index].join(100)
 except KeyboardInterrupt:
     logging.error("SIGINT received")
-    sys.exit(1)
+    with lock_creation_destruction:
+        killing = True
+        args.stop = True
+    for local_thread_index in range(args.j):
+        if children[local_thread_index] != None:
+            if children[local_thread_index].poll() == None:
+                try:
+                    kill_proc_tree(children[local_thread_index].pid)
+                except OSError:
+                    pass
 
 # Collect results
 CollectResults(out_path)
 
 # Generate technology files
-if not killing:
-    for device in args.devices.split(","):
-        if os.path.isdir(os.path.join(out_path, device)):
-            # In this point device is the folder containing all the characterations of a device
-            local_args = ""
-            for characterization in os.listdir(os.path.join(out_path, device)):
-                if os.path.exists(os.path.join(out_path, device, characterization, "characterization.xml")):
-                    local_args = local_args + " " + \
-                        os.path.join(out_path, device,
-                                     characterization, "characterization.xml")
-            local_command = [spider]
-            # If this is not the first characterization, add the previous
-            old_characterization = find_file(
-                device + ".xml", os.path.join(abs_panda, "etc/devices"))
-            if old_characterization != None:
-                local_args = local_args + " " + old_characterization
-            seed_file = find_file(device + "-seed.xml",
-                                  os.path.join(abs_panda, "etc/devices"))
-            if seed_file != None:
-                local_args = local_args + " " + seed_file
-            local_args = local_args + " " + device + ".xml"
-            if args.spiderargs != None and len(args.spiderargs) > 0:
-                for spiderarg in args.spiderargs:
-                    local_args += " " + spiderarg[0]
-            local_command.extend(shlex.split(local_args))
-            logging.info("Executing " + ' '.join(local_command))
-            return_value = subprocess.call(local_command)
+for device in os.listdir(out_path):
+    if os.path.isdir(os.path.join(out_path, device)):
+        # In this point device is the folder containing all the characterations of a device
+        local_args = ""
+        for characterization in os.listdir(os.path.join(out_path, device)):
+            if os.path.exists(os.path.join(out_path, device, characterization, "characterization.xml")):
+                local_args = local_args + " " + \
+                    os.path.join(out_path, device,
+                                characterization, "characterization.xml")
+        local_command = [spider]
+        # If this is not the first characterization, add the previous
+        old_characterization = find_file(
+            device + ".xml", os.path.join(abs_panda, "etc/devices"))
+        if old_characterization != None:
+            local_args = local_args + " " + old_characterization
+        seed_file = find_file(device + "-seed.xml",
+                            os.path.join(abs_panda, "etc/devices"))
+        if seed_file != None:
+            local_args = local_args + " " + seed_file
+        local_args = local_args + " " + device + ".xml"
+        if args.spiderargs != None and len(args.spiderargs) > 0:
+            for spiderarg in args.spiderargs:
+                local_args += " " + spiderarg[0]
+        local_command.extend(shlex.split(local_args))
+        logging.info("Executing " + ' '.join(local_command))
+        return_value = subprocess.call(local_command)
+
 if args.mail != None:
     outcome = ""
     if args.stop:

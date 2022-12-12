@@ -88,7 +88,8 @@
 #include "xml_document.hpp"
 
 #include "behavioral_helper.hpp"
-#include "call_graph_manager.hpp"  // for CallGraphManager, CallGrap...
+#include "call_graph_manager.hpp" // for CallGraphManager, CallGrap...
+#include "fileIO.hpp"
 #include "string_manipulation.hpp" // for GET_CLASS
 
 #if !HAVE_UNORDERED
@@ -2093,7 +2094,7 @@ DesignFlowStep_Status parametric_list_based::InternalExec()
       xml_document document;
       xml_element* nodeRoot = document.create_root_node("hls");
       HLS->xwrite(nodeRoot, FB->CGetOpGraph(FunctionBehavior::FDFG));
-      document.write_to_file_formatted(function_name + "_scheduling.xml");
+      document.write_to_file_formatted(GetPath(function_name + "_scheduling.xml"));
    }
    return DesignFlowStep_Status::SUCCESS;
 }

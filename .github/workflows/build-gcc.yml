@@ -19,7 +19,7 @@ on:
         default: ""
 
 concurrency:
-  group: build-gcc-${{ github.event.inputs.version }}
+  group: build-gcc-${{ inputs.version }}
   cancel-in-progress: true
 
 env:
@@ -42,19 +42,19 @@ jobs:
           echo "Current host supports ${{env.host_jobs}} parallel jobs"
           echo "jobs=${{env.host_jobs}}" >> $GITHUB_OUTPUT
       - name: Set patch
-        if: ${{ github.event.inputs.patch != '' }}
+        if: ${{ inputs.patch != '' }}
         shell: bash
         run: |
-          cp '.github/actions/build-gcc/${{github.event.inputs.patch}}' '${{github.workspace}}'
-      - name: Build GCC-${{github.event.inputs.version}}
+          cp '.github/actions/build-gcc/${{inputs.patch}}' '${{github.workspace}}'
+      - name: Build GCC-${{inputs.version}}
         id: build
         uses: ./.github/actions/build-gcc
         with:
           jobs: ${{steps.host.outputs.jobs}}
-          branch: ${{github.event.inputs.gcc_ref}}
-          dist-name: gcc-${{github.event.inputs.version}}-bambu
-          config-args: -v --with-pkgversion="Ubuntu gcc-${{github.event.inputs.version}}-bambu" --with-bugurl="file:///usr/share/doc/gcc-${{github.event.inputs.version}}/README.Bugs" --program-suffix=-${{github.event.inputs.version}} ${{ github.event.inputs.configure }}
-      - name: Upload GCC-${{github.event.inputs.version}} dist directory
+          branch: ${{inputs.gcc_ref}}
+          dist-name: gcc-${{inputs.version}}-bambu
+          config-args: -v --with-pkgversion="Ubuntu gcc-${{inputs.version}}-bambu" --with-bugurl="file:///usr/share/doc/gcc-${{inputs.version}}/README.Bugs" --program-suffix=-${{inputs.version}} ${{ inputs.configure }}
+      - name: Upload GCC-${{inputs.version}} dist directory
         uses: ./.github/actions/storage-upload
         with:
           path: ${{steps.build.outputs.dist-dir}}/.

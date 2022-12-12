@@ -231,7 +231,7 @@ class Translator
     * @param file_name is the name of the file where data will be written
     */
    void write_to_xml(const std::map<enum rtl_kind, std::map<enum mode_kind, long double>>& data,
-                     std::string file_name) const;
+                     const std::string& file_name) const;
 #endif
 
    /**
