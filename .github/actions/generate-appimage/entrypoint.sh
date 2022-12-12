@@ -53,7 +53,7 @@ if [[ -d "compiler" ]]; then
 fi
 
 GCC_BINS=("`find /usr/bin -type f -regextype posix-extended -regex '.*g(cc|\+\+)-[0-9]+\.?[0-9]?'`")
-if [[ "$(ls / | grep '/clang+llvm-*' | wc -l)" -gt 0 ]]; then
+if [[ "$(ls / | grep 'clang+llvm*' | wc -l)" -gt 0 ]]; then
    CLANG_BINS=("`find /clang+llvm-*/bin -type f -regextype posix-extended -regex '.*clang-[0-9]+\.?[0-9]?'`")
    CLANG_EXES=("clang" "clang++" "clang-cl" "clang-cpp" "ld.lld" "lld" "lld-link" "llvm-ar" "llvm-config" "llvm-dis" "llvm-link" "llvm-lto" "llvm-lto2" "llvm-ranlib" "mlir-opt" "mlir-translate" "opt")
    NO_DELETE="-name clang"
