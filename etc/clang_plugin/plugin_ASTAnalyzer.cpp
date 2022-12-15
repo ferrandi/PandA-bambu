@@ -38,6 +38,8 @@
  * @author Michele Fiorito <michele.fiorito@polimi.it>
  *
  */
+#undef NDEBUG
+#include "debug_print.hpp"
 
 #include "plugin_includes.hpp"
 
@@ -53,9 +55,6 @@
 #include <clang/Lex/Preprocessor.h>
 #include <clang/Sema/Sema.h>
 #include <llvm/Support/raw_ostream.h>
-
-// #define PRINT_DBG_MSG
-#include "debug_print.hpp"
 
 static std::map<std::string, std::map<clang::SourceLocation, std::map<std::string, std::string>>> file_loc_attr;
 static std::map<std::string, std::map<clang::SourceLocation, std::map<std::string, std::map<std::string, std::string>>>>
@@ -147,7 +146,7 @@ namespace clang
             for(const auto& aname : Fun2Params.at(fname))
             {
                stream << "    <arg id=\"" << aname << "\"";
-               assert(Fun2Params.count(aname));
+               assert(arg_attr.count(aname));
                for(const auto& attr_val : arg_attr.at(aname))
                {
                   stream << " " << attr_val.first << "=\"" << convert_unescaped(attr_val.second) << "\"";

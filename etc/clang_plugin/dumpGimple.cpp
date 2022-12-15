@@ -38,9 +38,8 @@
  *
  */
 
-#ifdef NDEBUG
 #undef NDEBUG
-#endif
+#include "debug_print.hpp"
 
 #include "plugin_includes.hpp"
 
@@ -111,9 +110,6 @@
 #include <iomanip>
 
 #define ANDERSEN_AA 1
-
-// #define PRINT_DBG_MSG
-#include "debug_print.hpp"
 
 static std::string create_file_name_string(const std::string& outdir_name, const std::string& original_filename)
 {

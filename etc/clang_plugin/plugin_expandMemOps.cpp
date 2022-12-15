@@ -37,6 +37,9 @@
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  *
  */
+#undef NDEBUG
+#include "debug_print.hpp"
+
 #include "ExpandMemOpsPass.hpp"
 
 #include <llvm/IR/DerivedTypes.h>
@@ -70,9 +73,6 @@
 #endif
 
 #include <cxxabi.h>
-
-// #define PRINT_DBG_MSG
-#include "debug_print.hpp"
 
 #define PEEL_THRESHOLD 16
 

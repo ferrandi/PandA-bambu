@@ -38,6 +38,9 @@
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  *
  */
+#undef NDEBUG
+#include "debug_print.hpp"
+
 #include "plugin_includes.hpp"
 
 #include <llvm/ADT/StringSet.h>
@@ -64,9 +67,6 @@
 #include <set>
 #include <sstream>
 #include <string>
-
-// #define PRINT_DBG_MSG
-#include "debug_print.hpp"
 
 // Helper to load an API list to preserve and expose it as a functor for internalization.
 class PreserveSymbolList
