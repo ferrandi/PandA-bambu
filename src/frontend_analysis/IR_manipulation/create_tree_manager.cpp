@@ -226,8 +226,8 @@ void create_tree_manager::createCostTable()
       CostTable = "store_expr|32=" + STR(clock_period);
       CostTable += ",load_expr|32=" + STR(clock_period);
       CostTable += ",nop_expr|32=" + STR(clock_period);
-      for(std::string op_name : {"mult_expr", "plus_expr", "trunc_div_expr", "trunc_mod_expr", "lshift_expr",
-                                 "rshift_expr", "bit_and_expr", "bit_ior_expr", "bit_xor_expr", "cond_expr"})
+      for(const std::string& op_name : {"mult_expr", "plus_expr", "trunc_div_expr", "trunc_mod_expr", "lshift_expr",
+                                        "rshift_expr", "bit_and_expr", "bit_ior_expr", "bit_xor_expr", "cond_expr"})
       {
          for(auto fu_prec : {1, 8, 16, 32, 64})
          {
@@ -255,7 +255,7 @@ void create_tree_manager::createCostTable()
             }
          }
       }
-      for(std::string op_name : {"mult_expr", "plus_expr", "rdiv_expr"})
+      for(const std::string& op_name : {"mult_expr", "plus_expr", "rdiv_expr"})
       {
          for(auto fu_prec : {32, 64})
          {
@@ -366,6 +366,12 @@ DesignFlowStep_Status create_tree_manager::Exec()
       const auto raw_files = parameters->getOption<const CustomSet<std::string>>(OPT_input_file);
       for(const auto& raw_file : raw_files)
       {
+         INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "Parsing " + raw_file);
+         if(!boost::ends_with(raw_file, ".gimplePSSA"))
+         {
+            INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Skipping non-raw file...");
+            continue;
+         }
          if(!boost::filesystem::exists(boost::filesystem::path(raw_file)))
          {
             THROW_ERROR("File " + raw_file + " does not exist");
