@@ -37,7 +37,7 @@
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  *
  */
-#undef NDEBUG
+// #undef NDEBUG
 #include "debug_print.hpp"
 
 #include "ExpandMemOpsPass.hpp"
@@ -447,7 +447,7 @@ bool llvm::CLANG_VERSION_SYMBOL(_plugin_expandMemOps)::exec(
             if(llvm::MemIntrinsic* InstrCall = dyn_cast<llvm::MemIntrinsic>(II))
             {
                PRINT_DBG("    Found mem intrinsic: ");
-#ifdef PRINT_DBG_MSG
+#ifndef NDEBUG
                InstrCall->print(llvm::errs(), true);
 #endif
                PRINT_DBG("\n");

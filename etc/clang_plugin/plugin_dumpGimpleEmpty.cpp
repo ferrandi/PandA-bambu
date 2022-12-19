@@ -183,7 +183,7 @@ namespace llvm
 #endif
          );
 #else
-         assert(false && "Call to runOnModule not expected");
+         report_fatal_error("Call to runOnModule not expected");
          return false;
 #endif
       }

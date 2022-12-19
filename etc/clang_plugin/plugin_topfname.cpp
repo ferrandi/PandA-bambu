@@ -38,7 +38,7 @@
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  *
  */
-#undef NDEBUG
+// #undef NDEBUG
 #include "debug_print.hpp"
 
 #include "plugin_includes.hpp"
