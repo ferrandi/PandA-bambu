@@ -83,7 +83,11 @@ all_gcc_softfloat-tests.sh \
 bambu_specific_test.sh \
 bambu_specific_test/20020108-1.c.gimplePSSA \
 bambu_specific_test/990829-1.c.gimplePSSA \
-bambu_specific_test/unsafe-fp-assoc-1.c.gimplePSSA \
+bambu_specific_test/pr35472.c.gimplePSSA \
+bambu_specific_test/unsafe-fp-assoc-1.c.gimplePSSA\
+bambu_specific_test/930608-1.c.gimplePSSA \
+bambu_specific_test/divconst-2.c.gimplePSSA \
+bambu_specific_test/pta-field-1.c.gimplePSSA \
 bambu_specific_test/bambu1.c \
 bambu_specific_test/chk.h \
 bambu_specific_test/memset-chk.c \
