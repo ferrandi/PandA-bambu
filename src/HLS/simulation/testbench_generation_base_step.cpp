@@ -41,69 +41,42 @@
  * @author Pietro Fezzardi <pietrofezzardi@gmail.com>
  *
  */
-/// Autoheader include
+#include "testbench_generation_base_step.hpp"
+
 #include "config_PACKAGE_BUGREPORT.hpp"
 #include "config_PACKAGE_NAME.hpp"
 #include "config_PACKAGE_VERSION.hpp"
 
-/// Header include
-#include "testbench_generation_base_step.hpp"
-
-#include <utility>
-
-///. include
-#include "Parameter.hpp"
-
-/// behavior include
-#include "call_graph_manager.hpp"
-
-/// circuit include
-#include "structural_manager.hpp"
-#include "structural_objects.hpp"
-
-/// constants include
-#include "testbench_generation_constants.hpp"
-
-/// design_flows include
-#include "design_flow_manager.hpp"
-
-/// design_flows/backend/ToHDL includes
 #include "HDL_manager.hpp"
-#include "language_writer.hpp"
-
-/// HLS include
+#include "Parameter.hpp"
+#include "SimulationInformation.hpp"
+#include "behavioral_helper.hpp"
+#include "call_graph_manager.hpp"
+#include "design_flow_manager.hpp"
+#include "fu_binding.hpp"
 #include "hls.hpp"
 #include "hls_constraints.hpp"
 #include "hls_manager.hpp"
 #include "hls_target.hpp"
-
-/// HLS/binding/module include
-#include "fu_binding.hpp"
-
-/// HLS/memory include
+#include "language_writer.hpp"
+#include "math_function.hpp"
 #include "memory.hpp"
-
-// include from HLS/simulation
-#include "SimulationInformation.hpp"
-
-#if HAVE_FROM_DISCREPANCY_BUILT
-// include from HLS/vcd
-#include "Discrepancy.hpp"
-#endif
-
-/// technology/physical_library
+#include "structural_manager.hpp"
+#include "structural_objects.hpp"
 #include "technology_wishbone.hpp"
-
-/// tree include
-#include "behavioral_helper.hpp"
+#include "testbench_generation_constants.hpp"
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
 
-/// utility include
-#include "fileIO.hpp"
-#include "math_function.hpp"
+#if HAVE_FROM_DISCREPANCY_BUILT
+#include "Discrepancy.hpp"
+#endif
+
+#include <boost/filesystem/operations.hpp>
+#include <boost/filesystem/path.hpp>
+#include <utility>
 
 TestbenchGenerationBaseStep::TestbenchGenerationBaseStep(const ParameterConstRef _parameters,
                                                          const HLS_managerRef _HLSMgr,
@@ -1974,7 +1947,8 @@ void TestbenchGenerationBaseStep::write_hdl_testbench_prolog() const
    writer->write_comment("CONSTANTS DECLARATION\n");
    writer->write(
        "`define EOF 32'hFFFF_FFFF\n`define NULL 0\n`define MAX_COMMENT_LENGTH 1000\n`define SIMULATION_LENGTH " +
-       STR(parameters->getOption<long long int>(OPT_max_sim_cycles)) + "\n\n");
+       STR(parameters->getOption<long long int>(OPT_max_sim_cycles)) + "\n`define INIT_TIME  " +
+       std::string(STR_CST_INIT_TIME) + "\n\n");
    auto half_target_period_string = STR(target_period / 2);
    // If the value it is integer, we add .0 to describe a float otherwise modelsim returns conversion error
    if(half_target_period_string.find('.') == std::string::npos)
@@ -2433,7 +2407,7 @@ void TestbenchGenerationBaseStep::testbench_controller_machine() const
    writer->write("            __next_state = 2;\n");
    writer->write("         end\n");
    writer->write("       2:\n");
-   writer->write("         if(currTime > 100)\n");
+   writer->write("         if(currTime > `INIT_TIME)\n");
    writer->write("           begin\n");
    writer->write("              next_start_port = 1;\n");
    writer->write("              if (done_port == 1'b1)\n");
@@ -2732,7 +2706,8 @@ void TestbenchGenerationBaseStep::write_max_simulation_time_control() const
    writer->write(STR(STD_OPENING_CHAR));
    writer->write("begin\n");
    writer->write("currTime = $time;\n");
-   writer->write("if (($time - startTime)/`CLOCK_PERIOD > `SIMULATION_LENGTH)\n");
+   writer->write("if ($time >= startTime && (($time - startTime)/`CLOCK_PERIOD > "
+                 "`SIMULATION_LENGTH))\n");
    writer->write(STR(STD_OPENING_CHAR));
    writer->write("begin\n");
    writer->write("$display(\"Simulation not completed into %d cycles\", `SIMULATION_LENGTH);\n");
