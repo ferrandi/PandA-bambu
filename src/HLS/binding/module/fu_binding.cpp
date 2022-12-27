@@ -1818,8 +1818,8 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
    std::map<unsigned int, unsigned long long> num_elements;
    unsigned long long n_out_elements = 0;
    unsigned long long produced_variables = 1;
-   bool is_multiport = allocation_information->get_number_channels(fu) > 1;
-   size_t max_n_ports = is_multiport ? allocation_information->get_number_channels(fu) : 0;
+   const auto is_multiport = allocation_information->get_number_channels(fu) > 1U;
+   const auto max_n_ports = is_multiport ? allocation_information->get_number_channels(fu) : 0U;
 
    if(ar)
    {
