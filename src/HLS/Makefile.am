@@ -1124,7 +1124,6 @@ noinst_HEADERS += \
    module_generator/Write_axisModuleGenerator.hpp \
    module_generator/Write_fifoModuleGenerator.hpp \
    module_generator/Write_handshakeModuleGenerator.hpp \
-   module_generator/Write_noneDSModuleGenerator.hpp \
    module_generator/Write_noneModuleGenerator.hpp \
    module_generator/Write_none_registeredModuleGenerator.hpp \
    module_generator/Write_validModuleGenerator.hpp
@@ -1155,7 +1154,6 @@ lib_module_generator_la_SOURCES = \
    module_generator/Write_axisModuleGenerator.cpp \
    module_generator/Write_fifoModuleGenerator.cpp \
    module_generator/Write_handshakeModuleGenerator.cpp \
-   module_generator/Write_noneDSModuleGenerator.cpp \
    module_generator/Write_noneModuleGenerator.cpp \
    module_generator/Write_none_registeredModuleGenerator.cpp \
    module_generator/Write_validModuleGenerator.cpp

@@ -48,6 +48,21 @@
 
 #include "language_writer.hpp"
 
+enum in_port
+{
+   i_start = 0,
+   i_in1,
+   i_in3,
+   i_last
+};
+
+enum out_port
+{
+   o_out1 = 0,
+   o_ack,
+   o_last
+};
+
 Read_acknowledgeModuleGenerator::Read_acknowledgeModuleGenerator(const HLS_managerRef& _HLSMgr) : Registrar(_HLSMgr)
 {
 }
@@ -60,17 +75,15 @@ void Read_acknowledgeModuleGenerator::InternalExec(std::ostream& out, const modu
                                                    const std::vector<ModuleGenerator::parameter>& _ports_out,
                                                    const std::vector<ModuleGenerator::parameter>& /* _ports_inout */)
 {
-   out << "integer ii=0;\n";
-   out << "reg [(PORTSIZE_" << _ports_out[0].name << "*BITSIZE_" << _ports_out[0].name << ")-1:0] "
-       << _ports_out[0].name << ";\n";
+   THROW_ASSERT(_ports_in.size() >= i_last, "");
+   THROW_ASSERT(_ports_out.size() >= o_last, "");
+   out << "reg [BITSIZE_" << _ports_out[o_out1].name << "-1:0] " << _ports_out[o_out1].name << ";\n\n";
 
    out << "always @(*)\n";
    out << "begin\n";
-   out << "  for(ii=0; ii<PORTSIZE_" << _ports_out[0].name << "; ii=ii+1)\n";
-   out << "    " << _ports_out[0].name << "[(BITSIZE_" << _ports_out[0].name << ")*ii+:BITSIZE_" << _ports_out[0].name
-       << "] = " << _ports_in[2].name << " >> (8*" << _ports_in[1].name << "[(BITSIZE_" << _ports_in[1].name
-       << ")*ii+:BITSIZE_" << _ports_in[1].name << "]);\n";
-   out << "end\n";
+   out << "  " << _ports_out[o_out1].name << " = " << _ports_in[i_in3].name << " >> (8*" << _ports_in[i_in1].name
+       << ");\n";
+   out << "end\n\n";
 
-   out << "assign " << _ports_out[1].name << " = |" << _ports_in[0].name << ";\n";
+   out << "assign " << _ports_out[o_ack].name << " = " << _ports_in[i_start].name << ";\n";
 }
