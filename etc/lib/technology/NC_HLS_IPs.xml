@@ -1387,9 +1387,9 @@ always @(negedge clock)
   begin
     res_file = $fopen(&quot;results.txt&quot;,&quot;w&quot;);
     $display(&quot;Exit called&quot;);
-    $fwrite(res_file, &quot;%d\\t&quot;, (status!=0 ? 0 : 1));
+    $fwrite(res_file, &quot;%d\\t&quot;, (status!=0 ? 0 : 3));
     $fwrite(res_file, &quot;%d\\t&quot;, $time);
-    $fwrite(res_file, &quot;NS\\n&quot;);
+    $fwrite(res_file, &quot;ns\\n&quot;);
     $fclose(res_file);
     $finish;
   end
@@ -1406,7 +1406,7 @@ begin
         if (status /= 0) then
         write(res_file, &quot;0&quot; &amp; HT &amp; time&apos;image(now) &amp; LF);
       else
-         write(res_file, &quot;1&quot; &amp; HT &amp; time&apos;image(now) &amp; LF);
+         write(res_file, &quot;3&quot; &amp; HT &amp; time&apos;image(now) &amp; LF);
       end if;
         file_close(res_file);
         finish(1);
