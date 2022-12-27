@@ -658,9 +658,13 @@ std::string tree_helper::GetFunctionName(const tree_managerConstRef& TM, const t
       const auto fd = GetPointerS<const function_decl>(decl);
       return print_function_name(TM, fd);
    }
+   else if(decl->get_kind() == addr_expr_K)
+   {
+      return GetFunctionName(TM, GetPointerS<const unary_expr>(decl)->op);
+   }
    else
    {
-      THROW_ERROR(std::string("Node not yet supported ") + decl->get_kind_text());
+      THROW_ERROR("Node not yet supported " + decl->get_kind_text());
    }
    return "";
 }
