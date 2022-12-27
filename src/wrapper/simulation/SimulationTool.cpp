@@ -50,10 +50,11 @@
 
 #include "Parameter.hpp"
 #include "fileIO.hpp"
-#include "string_manipulation.hpp" // for Trimspaces
-#include <cmath>
+#include "string_manipulation.hpp"
+#include "testbench_generation_constants.hpp"
 
-/// STL include
+#include <cmath>
+#include <string>
 #include <vector>
 
 SimulationTool::SimulationTool(const ParameterConstRef& _Param)
@@ -198,15 +199,25 @@ unsigned long long int SimulationTool::DetermineCycles(unsigned long long int& a
             auto sim_cycles = boost::lexical_cast<unsigned long long int>(filevalues[1]);
             if(filevalues.size() == 3)
             {
-               if(filevalues[2] == "ns")
+               if(filevalues[2] == "ns" || filevalues[2] == "NS")
                {
+                  auto offset = 0ull;
+                  if(filevalues[2] == "NS")
+                  {
+                     /// __builtin_exit has been called
+                     offset = 1ull;
+                     auto init_time = std::stoull(STR_CST_INIT_TIME);
+                     sim_cycles -= init_time;
+                  }
                   if(Param->getOption<std::string>(OPT_simulator) == "VERILATOR")
                   {
-                     sim_cycles = (static_cast<unsigned long long int>(static_cast<long double>(sim_cycles) / 2)) - 2;
+                     sim_cycles =
+                         offset + (static_cast<unsigned long long int>(static_cast<long double>(sim_cycles) / 2)) - 2;
                   }
                   else
                   {
                      sim_cycles =
+                         offset +
                          (static_cast<unsigned long long int>(static_cast<long double>(sim_cycles) /
                                                               Param->getOption<long double>(OPT_clock_period))) -
                          2;

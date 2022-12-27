@@ -2310,7 +2310,6 @@ void verilog_writer::write_timing_specification(const technology_managerConstRef
 
 void verilog_writer::write_header()
 {
-   indented_output_stream->Append("`define INIT_TIME " + std::string(STR_CST_INIT_TIME) + "\n");
    indented_output_stream->Append("`ifdef __ICARUS__\n");
    indented_output_stream->Append("  `define _SIM_HAVE_CLOG2\n");
    indented_output_stream->Append("`endif\n");
