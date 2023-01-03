@@ -160,6 +160,7 @@ if BUILD_LIB_TO_HDL
    -I$(top_srcdir)/src \
    -I$(top_srcdir)/src/behavior \
    -I$(top_srcdir)/src/circuit \
+   -I$(top_srcdir)/src/constants/ \
    -I$(top_srcdir)/src/design_flows \
    -I$(top_srcdir)/src/design_flows/backend/ToHDL \
    -I$(top_srcdir)/src/graph \
