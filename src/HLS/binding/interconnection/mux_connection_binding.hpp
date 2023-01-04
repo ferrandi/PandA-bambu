@@ -136,23 +136,6 @@ class mux_connection_binding : public conn_binding_creator
     */
    unsigned long long object_bitsize(const tree_managerRef TreeM, const HLS_manager::io_binding_type& obj) const;
 
-   /**
-    * Recursive function which returns the offset of a dynamic multidimensional array call
-    */
-   generic_objRef dynamic_multidimensional_array_handler(array_ref* ar, const vertex& op, const OpGraphConstRef data,
-                                                         unsigned int& base_address_index_pointer,
-                                                         std::vector<unsigned int>& recursive_indexes_values,
-                                                         std::vector<unsigned long long>& dims,
-                                                         generic_objRef& global_adder, const bool is_not_a_phi);
-
-   /**
-    * @brief connect_array_index: connect the index port of an array_ref and convert it in case the source is of int
-    * type
-    */
-   void connect_array_index(unsigned int tree_index, generic_objRef fu_obj, unsigned int port_num,
-                            unsigned int port_index, unsigned int bus_addr_bitsize, const OpGraphConstRef data,
-                            const vertex& op);
-
  private:
    /**
     *  create the connection object and update the unique table
@@ -170,9 +153,9 @@ class mux_connection_binding : public conn_binding_creator
 
    unsigned int extract_parm_decl(unsigned int tree_var, const tree_managerRef TreeM);
 
-   void add_conversion(unsigned int num, unsigned long long size_tree_var, VertexIterator op,
-                       unsigned int form_par_type, unsigned int port_index, const generic_objRef fu_obj,
-                       const OpGraphConstRef data, const tree_managerRef TreeM, unsigned int tree_var,
+   void add_conversion(unsigned int num, unsigned long long size_tree_var, vertex op, unsigned int form_par_type,
+                       unsigned int port_index, const generic_objRef fu_obj, const OpGraphConstRef data,
+                       const tree_managerRef TreeM, unsigned int tree_var,
                        const std::vector<HLS_manager::io_binding_type>& var_read, unsigned long long size_form_par);
 
    unsigned int address_precision(unsigned int precision, const vertex& op, const OpGraphConstRef data,
