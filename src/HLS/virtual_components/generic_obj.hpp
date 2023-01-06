@@ -75,7 +75,6 @@ class generic_obj
       COMMAND_PORT,        /// a command port (mainly connections from/to controller)
       DATA_PORT,           /// a data port (in/out data)
       CONNECTION_ELEMENT,  /// an element used for connecting the resources (e.g., muxes)
-      MULTIPLIER_CONN_OBJ, /// a multiplier object used to compute some addresses
       ADDER_CONN_OBJ,      /// an adder object representation used to compute some addresses
       UU_CONV_CONN_OBJ,    /// a converter from unsigned to unsigned int
       UI_CONV_CONN_OBJ,    /// a converter from unsigned to signed int
@@ -86,8 +85,6 @@ class generic_obj
       U_ASSIGN_CONN_OBJ,   /// specify the type of a connection object: UINT
       VB_ASSIGN_CONN_OBJ,  /// specify the type of a connection object: VECTOR_BOOL
       F_ASSIGN_CONN_OBJ,   /// specify the type of a connection object: REAL
-      BITFIELD_OBJ,        /// a connection unit that filters some bits
-      CONSTRUCTOR_CONN_OBJ /// a connection unit when the concatenation of a vector is considered
    };
 
  protected:

@@ -160,7 +160,6 @@ class mux_connection_binding : public conn_binding_creator
    unsigned int address_precision(unsigned int precision, const vertex& op, const OpGraphConstRef data,
                                   const tree_managerRef TreeM);
 
-   bool isZeroObj(unsigned int tree_index, const tree_managerRef TreeM);
    bool isConstantObj(unsigned int tree_index, const tree_managerRef TreeM);
 
  public:
@@ -191,12 +190,5 @@ class mux_connection_binding : public conn_binding_creator
     * Creates the connections inside the architecture
     */
    void create_connections();
-
-   /**
-    * check if the port has to be swapped
-    */
-   unsigned int swap_p(const OpGraphConstRef data, vertex op, unsigned int num,
-                       std::vector<HLS_manager::io_binding_type>& vars_read,
-                       const BehavioralHelperConstRef behavioral_helper, const tree_managerRef TreeM);
 };
 #endif

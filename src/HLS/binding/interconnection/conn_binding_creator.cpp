@@ -41,35 +41,18 @@
  * Last modified by $Author$
  *
  */
-
-/// Autoheader include
-#include "config_HAVE_EXPERIMENTAL.hpp"
-
-#include "conn_binding_creator.hpp"
-
 #include "behavioral_helper.hpp"
-#include "function_behavior.hpp"
-
-#include "polixml.hpp"
-#include "xml_helper.hpp"
 
 #include "Parameter.hpp"
-
-/// HLS includes
+#include "call_graph_manager.hpp"
+#include "cdfc_module_binding.hpp"
+#include "config_HAVE_EXPERIMENTAL.hpp"
+#include "conn_binding.hpp"
+#include "conn_binding_creator.hpp"
+#include "dbgPrintHelper.hpp"
+#include "function_behavior.hpp"
 #include "hls.hpp"
 #include "hls_manager.hpp"
-
-/// HLS/binding/interconnection
-#include "conn_binding.hpp"
-
-/// HLS/binding/module includes
-#include "cdfc_module_binding.hpp"
-
-/// HLS/binding/register/algorithms includes
-#include "weighted_clique_register.hpp"
-/// behavior include
-#include "call_graph_manager.hpp"
-#include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
 
 conn_binding_creator::conn_binding_creator(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr,
                                            unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager,
