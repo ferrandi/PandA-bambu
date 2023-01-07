@@ -1051,45 +1051,67 @@ tree_nodeRef IR_lowering::expand_smod_pow2(const tree_nodeRef& op0, unsigned lon
    const auto bt = tree_man->GetBooleanType();
 
    const auto const0 = TM->CreateUniqueIntegerCst(0, type);
+   const auto constm1 = TM->CreateUniqueIntegerCst(-1, type);
    const auto cond_op0 = tree_man->create_binary_operation(bt, op0, const0, srcp_default, lt_expr_K);
    const auto signmask_ga =
        tree_man->CreateGimpleAssign(bt, TM->CreateUniqueIntegerCst(0, bt), TM->CreateUniqueIntegerCst(1, bt), cond_op0,
                                     function_id, block->number, srcp_default);
    AppM->RegisterTransformation(GetName(), signmask_ga);
    block->PushBefore(signmask_ga, stmt, AppM);
-   const auto signmask_nop =
-       tree_man->CreateNopExpr(GetPointer<gimple_assign>(GET_NODE(signmask_ga))->op0, type,
-                               TM->CreateUniqueIntegerCst(0, type), TM->CreateUniqueIntegerCst(1, type), function_id);
-   AppM->RegisterTransformation(GetName(), signmask_nop);
-   block->PushBefore(signmask_nop, stmt, AppM);
-   const auto signmask_var = GetPointer<gimple_assign>(GET_NODE(signmask_nop))->op0;
+   const auto cond_expr0 = tree_man->create_ternary_operation(
+       type, GetPointer<gimple_assign>(GET_NODE(signmask_ga))->op0, constm1, const0, srcp_default, cond_expr_K);
 
-   if(logd == UINT64_MAX)
+   const auto signmask_condexpr =
+       tree_man->CreateGimpleAssign(type, nullptr, nullptr, cond_expr0, function_id, block->number, srcp_default);
+
+   AppM->RegisterTransformation(GetName(), signmask_condexpr);
+   block->PushBefore(signmask_condexpr, stmt, AppM);
+
+   auto signmask_var = GetPointer<gimple_assign>(GET_NODE(signmask_condexpr))->op0;
+   const auto size = tree_helper::Size(type);
+
+   if(logd > 63 || size < logd)
    {
       THROW_ERROR("unexpected condition");
    }
    masklow = (1ULL << logd) - 1;
    const auto Constmasklow = TM->CreateUniqueIntegerCst(static_cast<long long int>(masklow), type);
 
-   auto temp = tree_man->create_binary_operation(type, op0, signmask_var, srcp_default, bit_xor_expr_K);
+   if(!tree_helper::IsUnsignedIntegerType(type))
+   {
+      auto unsignedType = tree_man->CreateUnsigned(GET_NODE(type));
+      const auto constshift = TM->CreateUniqueIntegerCst(static_cast<long long>(size - logd), unsignedType);
+      auto ga_nop = tree_man->CreateNopExpr(signmask_var, unsignedType, tree_nodeRef(), tree_nodeRef(), function_id);
+      auto nop_vd = GetPointer<gimple_assign>(GET_NODE(ga_nop))->op0;
+      block->PushBefore(ga_nop, stmt, AppM);
+      auto temp = tree_man->create_binary_operation(unsignedType, nop_vd, constshift, srcp_default, rshift_expr_K);
+      auto temp_ga =
+          tree_man->CreateGimpleAssign(unsignedType, nullptr, nullptr, temp, function_id, block->number, srcp_default);
+      AppM->RegisterTransformation(GetName(), temp_ga);
+      block->PushBefore(temp_ga, stmt, AppM);
+      nop_vd = GetPointer<gimple_assign>(GET_NODE(temp_ga))->op0;
+      ga_nop = tree_man->CreateNopExpr(nop_vd, type, tree_nodeRef(), tree_nodeRef(), function_id);
+      block->PushBefore(ga_nop, stmt, AppM);
+      signmask_var = GetPointer<gimple_assign>(GET_NODE(ga_nop))->op0;
+   }
+   else
+   {
+      const auto constshift = TM->CreateUniqueIntegerCst(static_cast<long long>(size - logd), type);
+      auto temp = tree_man->create_binary_operation(type, signmask_var, constshift, srcp_default, rshift_expr_K);
+      auto temp_ga =
+          tree_man->CreateGimpleAssign(type, nullptr, nullptr, temp, function_id, block->number, srcp_default);
+      AppM->RegisterTransformation(GetName(), temp_ga);
+      block->PushBefore(temp_ga, stmt, AppM);
+      signmask_var = GetPointer<gimple_assign>(GET_NODE(temp_ga))->op0;
+   }
+
+   auto temp = tree_man->create_binary_operation(type, op0, signmask_var, srcp_default, plus_expr_K);
    auto temp_ga = tree_man->CreateGimpleAssign(type, nullptr, nullptr, temp, function_id, block->number, srcp_default);
    AppM->RegisterTransformation(GetName(), temp_ga);
    block->PushBefore(temp_ga, stmt, AppM);
    auto temp_var = GetPointer<gimple_assign>(GET_NODE(temp_ga))->op0;
 
-   temp = tree_man->create_binary_operation(type, temp_var, signmask_var, srcp_default, minus_expr_K);
-   temp_ga = tree_man->CreateGimpleAssign(type, nullptr, nullptr, temp, function_id, block->number, srcp_default);
-   AppM->RegisterTransformation(GetName(), temp_ga);
-   block->PushBefore(temp_ga, stmt, AppM);
-   temp_var = GetPointer<gimple_assign>(GET_NODE(temp_ga))->op0;
-
    temp = tree_man->create_binary_operation(type, temp_var, Constmasklow, srcp_default, bit_and_expr_K);
-   temp_ga = tree_man->CreateGimpleAssign(type, nullptr, nullptr, temp, function_id, block->number, srcp_default);
-   AppM->RegisterTransformation(GetName(), temp_ga);
-   block->PushBefore(temp_ga, stmt, AppM);
-   temp_var = GetPointer<gimple_assign>(GET_NODE(temp_ga))->op0;
-
-   temp = tree_man->create_binary_operation(type, temp_var, signmask_var, srcp_default, bit_xor_expr_K);
    temp_ga = tree_man->CreateGimpleAssign(type, nullptr, nullptr, temp, function_id, block->number, srcp_default);
    AppM->RegisterTransformation(GetName(), temp_ga);
    block->PushBefore(temp_ga, stmt, AppM);

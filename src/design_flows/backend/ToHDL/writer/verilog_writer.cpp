@@ -41,22 +41,23 @@
  * Last modified by $Author$
  *
  */
-
-/// Autoheader include
-#include "config_HAVE_FROM_C_BUILT.hpp"
-
 #include "verilog_writer.hpp"
 
+#include "config_HAVE_FROM_C_BUILT.hpp"
+
 #include "HDL_manager.hpp"
-
-#include "technology_manager.hpp"
-#include "time_model.hpp"
-
 #include "NP_functionality.hpp"
+#include "Parameter.hpp"
 #include "dbgPrintHelper.hpp"
 #include "exceptions.hpp"
+#include "indented_output_stream.hpp"
+#include "state_transition_graph_manager.hpp"
+#include "string_manipulation.hpp"
 #include "structural_objects.hpp"
-#include "tree_helper.hpp"
+#include "technology_manager.hpp"
+#include "technology_node.hpp"
+#include "testbench_generation_constants.hpp"
+#include "time_model.hpp"
 
 #include <algorithm>
 #include <boost/algorithm/string.hpp>
@@ -65,24 +66,8 @@
 #include <fstream>
 #include <functional>
 #include <iosfwd>
-
-#include "state_transition_graph_manager.hpp"
-
-///. include
-#include "Parameter.hpp"
-
-/// STD include
 #include <limits>
-
-/// STL include
 #include <utility>
-
-/// technology include
-#include "technology_node.hpp"
-
-/// utility include
-#include "indented_output_stream.hpp"
-#include "string_manipulation.hpp" // for GET_CLASS
 
 #define VERILOG_2001_SUPPORTED
 

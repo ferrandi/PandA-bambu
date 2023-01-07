@@ -100,9 +100,10 @@ class mux_connection_binding : public conn_binding_creator
    enum cacheType
    {
       i_assign = 0,
-      iu_conv,
+      uu_conv,
       ui_conv,
-      vb_assign
+      iu_conv,
+      ii_conv
    };
    /// connection cache
    std::map<std::tuple<unsigned int, cacheType, const HLS_manager::io_binding_type>, generic_objRef> connCache;
@@ -136,23 +137,6 @@ class mux_connection_binding : public conn_binding_creator
     */
    unsigned long long object_bitsize(const tree_managerRef TreeM, const HLS_manager::io_binding_type& obj) const;
 
-   /**
-    * Recursive function which returns the offset of a dynamic multidimensional array call
-    */
-   generic_objRef dynamic_multidimensional_array_handler(array_ref* ar, const vertex& op, const OpGraphConstRef data,
-                                                         unsigned int& base_address_index_pointer,
-                                                         std::vector<unsigned int>& recursive_indexes_values,
-                                                         std::vector<unsigned long long>& dims,
-                                                         generic_objRef& global_adder, const bool is_not_a_phi);
-
-   /**
-    * @brief connect_array_index: connect the index port of an array_ref and convert it in case the source is of int
-    * type
-    */
-   void connect_array_index(unsigned int tree_index, generic_objRef fu_obj, unsigned int port_num,
-                            unsigned int port_index, unsigned int bus_addr_bitsize, const OpGraphConstRef data,
-                            const vertex& op);
-
  private:
    /**
     *  create the connection object and update the unique table
@@ -170,15 +154,13 @@ class mux_connection_binding : public conn_binding_creator
 
    unsigned int extract_parm_decl(unsigned int tree_var, const tree_managerRef TreeM);
 
-   void add_conversion(unsigned int num, unsigned long long size_tree_var, VertexIterator op,
-                       unsigned int form_par_type, unsigned int port_index, const generic_objRef fu_obj,
-                       const OpGraphConstRef data, const tree_managerRef TreeM, unsigned int tree_var,
-                       const std::vector<HLS_manager::io_binding_type>& var_read, unsigned long long size_form_par);
+   void add_conversion(unsigned int num, vertex op, unsigned int form_par_type, unsigned long long form_par_bitsize,
+                       unsigned int port_index, const generic_objRef fu_obj, const OpGraphConstRef data,
+                       const tree_managerRef TreeM, unsigned int tree_var);
 
    unsigned int address_precision(unsigned int precision, const vertex& op, const OpGraphConstRef data,
                                   const tree_managerRef TreeM);
 
-   bool isZeroObj(unsigned int tree_index, const tree_managerRef TreeM);
    bool isConstantObj(unsigned int tree_index, const tree_managerRef TreeM);
 
  public:
@@ -209,12 +191,5 @@ class mux_connection_binding : public conn_binding_creator
     * Creates the connections inside the architecture
     */
    void create_connections();
-
-   /**
-    * check if the port has to be swapped
-    */
-   unsigned int swap_p(const OpGraphConstRef data, vertex op, unsigned int num,
-                       std::vector<HLS_manager::io_binding_type>& vars_read,
-                       const BehavioralHelperConstRef behavioral_helper, const tree_managerRef TreeM);
 };
 #endif

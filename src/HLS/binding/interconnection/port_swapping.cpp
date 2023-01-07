@@ -41,16 +41,13 @@
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  *
  */
-/// Header include
 #include "port_swapping.hpp"
 
-///. include
 #include "Parameter.hpp"
-
-/// boost include
-#include <boost/graph/random_spanning_tree.hpp>
-
 #include "allocation_information.hpp"
+#include "behavioral_helper.hpp"
+#include "dbgPrintHelper.hpp"
+#include "fileIO.hpp"
 #include "fu_binding.hpp"
 #include "function_behavior.hpp"
 #include "hls.hpp"
@@ -58,18 +55,12 @@
 #include "liveness.hpp"
 #include "reg_binding.hpp"
 #include "storage_value_information.hpp"
-
-/// parser/compiler include
+#include "string_manipulation.hpp"
 #include "token_interface.hpp"
-
-/// STD include
-#include <random>
-
-#include "behavioral_helper.hpp"
-#include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
-#include "fileIO.hpp"
-#include "string_manipulation.hpp" // for GET_CLASS
 #include "tree_helper.hpp"
+
+#include <boost/graph/random_spanning_tree.hpp>
+#include <random>
 
 #define SET_A 0
 #define SET_B 1
