@@ -85,28 +85,29 @@ bool liveness::is_defined(unsigned int var) const
    return false;
 }
 
-void liveness::set_live_in(const vertex& v, unsigned int var)
+void liveness::set_live_in(const vertex& v, unsigned int var, unsigned int step)
 {
-   live_in[v].insert(var);
+   live_in[v].insert(std::make_pair(var, step));
 }
 
-void liveness::set_live_in(const vertex& v, const CustomOrderedSet<unsigned int>& live_set)
+void liveness::set_live_in(const vertex& v, const CustomOrderedSet<std::pair<unsigned int, unsigned int>>& live_set)
 {
    live_in[v].insert(live_set.begin(), live_set.end());
 }
 
-void liveness::set_live_in(const vertex& v, const CustomOrderedSet<unsigned int>::const_iterator first,
-                           const CustomOrderedSet<unsigned int>::const_iterator last)
+void liveness::set_live_in(const vertex& v,
+                           const CustomOrderedSet<std::pair<unsigned int, unsigned int>>::const_iterator first,
+                           const CustomOrderedSet<std::pair<unsigned int, unsigned int>>::const_iterator last)
 {
    live_in[v].insert(first, last);
 }
 
-void liveness::erase_el_live_in(const vertex& v, unsigned int var)
+void liveness::erase_el_live_in(const vertex& v, unsigned int var, unsigned int step)
 {
-   live_in[v].erase(var);
+   live_in[v].erase(std::make_pair(var, step));
 }
 
-const CustomOrderedSet<unsigned int>& liveness::get_live_in(const vertex& v) const
+const CustomOrderedSet<std::pair<unsigned int, unsigned int>>& liveness::get_live_in(const vertex& v) const
 {
    if(live_in.find(v) != live_in.end())
    {
@@ -118,28 +119,29 @@ const CustomOrderedSet<unsigned int>& liveness::get_live_in(const vertex& v) con
    }
 }
 
-void liveness::set_live_out(const vertex& v, unsigned int var)
+void liveness::set_live_out(const vertex& v, unsigned int var, unsigned int step)
 {
-   live_out[v].insert(var);
+   live_out[v].insert(std::make_pair(var, step));
 }
 
-void liveness::set_live_out(const vertex& v, const CustomOrderedSet<unsigned int>& vars)
+void liveness::set_live_out(const vertex& v, const CustomOrderedSet<std::pair<unsigned int, unsigned int>>& vars)
 {
    live_out[v].insert(vars.begin(), vars.end());
 }
 
-void liveness::set_live_out(const vertex& v, const CustomOrderedSet<unsigned int>::const_iterator first,
-                            const CustomOrderedSet<unsigned int>::const_iterator last)
+void liveness::set_live_out(const vertex& v,
+                            const CustomOrderedSet<std::pair<unsigned int, unsigned int>>::const_iterator first,
+                            const CustomOrderedSet<std::pair<unsigned int, unsigned int>>::const_iterator last)
 {
    live_out[v].insert(first, last);
 }
 
-void liveness::erase_el_live_out(const vertex& v, unsigned int var)
+void liveness::erase_el_live_out(const vertex& v, unsigned int var, unsigned int step)
 {
-   live_out[v].erase(var);
+   live_out[v].erase(std::make_pair(var, step));
 }
 
-const CustomOrderedSet<unsigned int>& liveness::get_live_out(const vertex& v) const
+const CustomOrderedSet<std::pair<unsigned int, unsigned int>>& liveness::get_live_out(const vertex& v) const
 {
    if(live_out.find(v) != live_out.end())
    {
@@ -256,138 +258,22 @@ const std::string& liveness::get_name(vertex v) const
 
 bool liveness::are_in_conflict(vertex op1, vertex op2) const
 {
-   // if(!HLS)
    const CustomOrderedSet<vertex>& op1_run = get_state_where_run(op1);
    const CustomOrderedSet<vertex>& op2_run = get_state_where_run(op2);
 
-   auto FB = HLSMgr->GetFunctionBehavior(HLS->functionId);
-   if(FB->is_pipeline_enabled() && !FB->is_simple_pipeline())
+   for(const auto s1 : op1_run)
    {
-      const OpGraphConstRef dfg = FB->CGetOpGraph(FunctionBehavior::DFG);
-      unsigned int bb_index1 = GET_BB_INDEX(dfg, op1);
-      unsigned int bb_index2 = GET_BB_INDEX(dfg, op2);
-      const CustomUnorderedMap<unsigned int, vertex>& bb_index_map =
-          FB->CGetBBGraph(FunctionBehavior::FBB)->CGetBBGraphInfo()->bb_index_map;
-      vertex bb_1 = bb_index_map.find(bb_index1)->second;
-      vertex bb_2 = bb_index_map.find(bb_index2)->second;
-
-      auto loops = HLSMgr->GetFunctionBehavior(HLS->functionId)->GetLoops()->GetList();
-      for(const auto& loop : loops)
+      if(op2_run.find(s1) != op2_run.end())
       {
-         int initiation_time = FB->get_initiation_time();
-         THROW_ASSERT(loop->num_blocks() != 1, "The loop has more than one basic block");
-         auto bbs = loop->get_blocks();
-         for(auto bb : bbs)
-         {
-            for(auto s_pair : HLS->STG->GetAstg()->GetStateTransitionGraphInfo()->vertex_to_state_id)
-            {
-               auto ids = HLS->STG->CGetAstg()->CGetStateInfo(std::get<0>(s_pair))->BB_ids;
-               for(auto id : ids)
-               {
-                  if(id ==
-                     HLSMgr->CGetFunctionBehavior(HLS->functionId)->CGetBBGraph()->CGetBBNodeInfo(bb)->get_bb_index())
-                  {
-                     if(HLS->STG->GetAstg()->GetStateInfo(std::get<0>(s_pair))->loopId != 0 &&
-                        HLS->STG->GetAstg()->GetStateInfo(std::get<0>(s_pair))->loopId !=
-                            HLSMgr->CGetFunctionBehavior(HLS->functionId)->CGetBBGraph()->CGetBBNodeInfo(bb)->loop_id)
-                     {
-                        THROW_ERROR("Attempting to change the loopId of state " +
-                                    HLS->STG->GetAstg()->GetStateInfo(std::get<0>(s_pair))->name);
-                     }
-                     HLS->STG->GetAstg()->GetStateInfo(std::get<0>(s_pair))->loopId =
-                         HLSMgr->CGetFunctionBehavior(HLS->functionId)->CGetBBGraph()->CGetBBNodeInfo(bb)->loop_id;
-                  }
-               }
-            }
-         }
-
-         bool cond1 = false;
-         bool cond2 = false;
-         if(bbs.find(bb_1) != bbs.end())
-         {
-            cond1 = true;
-            for(const auto s1 : op1_run)
-            {
-               auto info = HLS->STG->GetAstg()->GetStateInfo(s1);
-               THROW_ASSERT(info->loopId == 0 || info->loopId == loop->GetId(),
-                            "The same operation is performed in multiple loops");
-            }
-         }
-         if(bbs.find(bb_2) != bbs.end())
-         {
-            cond2 = true;
-            for(const auto s2 : op2_run)
-            {
-               auto info = HLS->STG->GetAstg()->GetStateInfo(s2);
-               THROW_ASSERT(info->loopId == 0 || info->loopId == loop->GetId(),
-                            "The same operation is performed in multiple loops");
-            }
-         }
-
-         if(cond1 && cond2)
-         {
-            auto stg = HLS->STG->GetAstg();
-            for(const auto s1 : op1_run)
-            {
-               std::queue<vertex> to_analyze;
-               std::set<vertex> analyzed;
-               std::queue<vertex> next_frontier;
-               to_analyze.push(s1);
-               vertex src;
-               int distance = 1;
-               graph::out_edge_iterator out_edge, out_edge_end;
-               while(to_analyze.size() > 0)
-               {
-                  src = to_analyze.front();
-                  to_analyze.pop();
-                  analyzed.insert(src);
-                  for(boost::tie(out_edge, out_edge_end) = boost::out_edges(src, *stg); out_edge != out_edge_end;
-                      ++out_edge)
-                  {
-                     vertex tgt = boost::target(*out_edge, *stg);
-                     if(op1_run.find(tgt) != op1_run.end())
-                     {
-                        continue;
-                     }
-
-                     if(op2_run.find(tgt) != op2_run.end())
-                     {
-                        if(distance % initiation_time == 0)
-                        {
-                           return false;
-                        }
-                        continue;
-                     }
-
-                     if(analyzed.find(tgt) != analyzed.end())
-                     {
-                        next_frontier.push(tgt);
-                     }
-                  }
-                  if(to_analyze.size() == 0)
-                  {
-                     to_analyze = next_frontier;
-                     distance++;
-                  }
-               }
-            }
-         }
+         return true;
       }
    }
+   return false;
 
-   {
-      for(const auto s1 : op1_run)
-      {
-         if(op2_run.find(s1) != op2_run.end())
-         {
-            return true;
-         }
-      }
-      return false;
-   }
 #if 0 && HAVE_EXPERIMENTAL
    else
    {
+      auto FB = HLSMgr->GetFunctionBehavior(HLS->functionId);
       const FunctionBehaviorConstRef FB = HLSMgr->CGetFunctionBehavior(HLS->functionId);
       if(std::find(in_conflict_ops[op1].begin(), in_conflict_ops[op1].end(), op2)!= in_conflict_ops[op1].end())
          return true;
@@ -500,5 +386,81 @@ bool liveness::non_in_parallel(vertex v1, vertex v2, const BBGraphConstRef cdg) 
          }
       }
       return true;
+   }
+}
+
+unsigned liveness::get_step(vertex v, vertex op, unsigned int var, bool in) const
+{
+   unsigned int step = 0;
+   if(in)
+   {
+      auto running_op = op;
+      if(vertex_to_op_step_in_map.count(v))
+      {
+         if(var_op_definition.count(var))
+         {
+            auto def_op = var_op_definition.at(var);
+            THROW_ASSERT(ending_operations.count(def_op), "unexpected condition");
+            auto& def_state = *ending_operations.at(def_op).begin();
+            if(vertex_to_op_step_out_map.count(def_state))
+            {
+               THROW_ASSERT(vertex_to_op_step_in_map.at(v).count(running_op), "unexpected condition");
+               step = vertex_to_op_step_in_map.at(v).at(running_op);
+            }
+         }
+      }
+      else
+      {
+         auto def_op = var_op_definition.at(var);
+         THROW_ASSERT(ending_operations.count(def_op), "unexpected condition");
+         auto& def_state = *ending_operations.at(def_op).begin();
+         if(vertex_to_op_step_out_map.count(def_state))
+         {
+            THROW_ASSERT(vertex_to_op_step_out_map.at(def_state).count(def_op), "unexpected condition");
+            step = vertex_to_op_step_out_map.at(def_state).at(def_op);
+         }
+      }
+   }
+   else
+   {
+      auto def_op = op;
+      if(vertex_to_op_step_out_map.count(v))
+      {
+         THROW_ASSERT(vertex_to_op_step_out_map.at(v).count(def_op), "unexpected condition");
+         step = vertex_to_op_step_out_map.at(v).at(def_op);
+      }
+   }
+   return step;
+}
+
+unsigned liveness::get_prev_step(unsigned int var, unsigned cur_step) const
+{
+   auto step = cur_step;
+   if(var_op_definition.count(var))
+   {
+      auto def_op = var_op_definition.at(var);
+      THROW_ASSERT(ending_operations.count(def_op), "unexpected condition");
+      auto& def_state = *ending_operations.at(def_op).begin();
+      if(vertex_to_op_step_out_map.count(def_state))
+      {
+         auto def_step = vertex_to_op_step_out_map.at(def_state).at(def_op);
+         if(def_step < cur_step)
+         {
+            return cur_step - 1;
+         }
+      }
+   }
+   return step;
+}
+
+void liveness::set_step(vertex v, vertex running_op, unsigned int step, bool in)
+{
+   if(in)
+   {
+      vertex_to_op_step_in_map[v][running_op] = step;
+   }
+   else
+   {
+      vertex_to_op_step_out_map[v][running_op] = step;
    }
 }

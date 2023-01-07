@@ -50,19 +50,27 @@ StorageValueInformationPipeline::StorageValueInformationPipeline(const HLS_manag
 
 StorageValueInformationPipeline::~StorageValueInformationPipeline() = default;
 
-bool StorageValueInformationPipeline::is_a_storage_value(vertex state, unsigned int var_index)
+bool StorageValueInformationPipeline::is_a_storage_value(vertex state, unsigned int var_index, unsigned int)
 {
    return storage_index_double_map.find(std::make_pair(state, var_index)) != storage_index_double_map.end();
 }
 
-unsigned int StorageValueInformationPipeline::get_storage_value_index(vertex state, unsigned int var_index)
+unsigned int StorageValueInformationPipeline::get_storage_value_index(vertex state, unsigned int var_index,
+                                                                      unsigned int)
 {
    THROW_ASSERT(storage_index_double_map.find(std::make_pair(state, var_index)) != storage_index_double_map.end(),
                 "the storage value is missing");
    return storage_index_double_map.find(std::make_pair(state, var_index))->second;
 }
 
-void StorageValueInformationPipeline::set_storage_value_index(vertex state, unsigned int variable, unsigned int sv)
+void StorageValueInformationPipeline::set_storage_value_index(vertex state, unsigned int variable, unsigned int,
+                                                              unsigned int sv)
 {
    storage_index_double_map[std::make_pair(state, variable)] = sv;
+}
+
+bool StorageValueInformationPipeline::are_storage_value_compatible(unsigned int storage_value_index1,
+                                                                   unsigned int storage_value_index2) const
+{
+   return StorageValueInformation::are_value_bitsize_compatible(storage_value_index1, storage_value_index2);
 }

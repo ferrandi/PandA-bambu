@@ -875,23 +875,14 @@ class FunctionBehavior
       return packed_vars;
    }
 
-   bool is_pipeline_enabled() const
-   {
-      return pipeline_enabled;
-   }
-
    bool is_simple_pipeline() const
    {
-      if(simple_pipeline)
-      {
-         THROW_ASSERT(pipeline_enabled, "Simple pipeline is true but pipeline is not enabled");
-      }
       return simple_pipeline;
    }
 
    int get_initiation_time() const
    {
-      THROW_ASSERT(pipeline_enabled && !simple_pipeline,
+      THROW_ASSERT(!simple_pipeline,
                    "Should not request initiation time when pipeline is not enabled or simple pipeline is requested");
       return initiation_time;
    }

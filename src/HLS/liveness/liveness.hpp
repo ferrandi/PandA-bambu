@@ -82,16 +82,16 @@ class liveness
    const ParameterConstRef Param;
 
    /// This is the map from each vertex to the set of variables live at the input of vertex.
-   std::map<vertex, CustomOrderedSet<unsigned int>> live_in;
+   std::map<vertex, CustomOrderedSet<std::pair<unsigned int, unsigned int>>> live_in;
 
    /// This is the map from each vertex to the set of variables live at the output of vertex.
-   std::map<vertex, CustomOrderedSet<unsigned int>> live_out;
+   std::map<vertex, CustomOrderedSet<std::pair<unsigned int, unsigned int>>> live_out;
 
    /// null vertex string
    const std::string null_vertex_string;
 
    /// used to return a reference to an empty set
-   const CustomOrderedSet<unsigned int> empty_set;
+   const CustomOrderedSet<std::pair<unsigned int, unsigned int>> empty_set;
 
    /// vertex over which the live in/out is computed
    std::list<vertex> support_set;
@@ -104,6 +104,9 @@ class liveness
 
    /// store where an operation run and need its input
    std::map<vertex, CustomOrderedSet<vertex>> running_operations;
+
+   std::map<vertex, std::map<vertex, unsigned>> vertex_to_op_step_in_map;
+   std::map<vertex, std::map<vertex, unsigned>> vertex_to_op_step_out_map;
 
    /// store where a variable comes from given a support state and an operation
    std::map<vertex, std::map<vertex, std::map<unsigned int, CustomOrderedSet<vertex>>>> state_in_definitions;
@@ -141,14 +144,14 @@ class liveness
     * @param v is the vertex
     * @param the identifier of the variable
     */
-   void set_live_in(const vertex& v, unsigned int var);
+   void set_live_in(const vertex& v, unsigned int var, unsigned int step);
 
    /**
     * Store a set of variables alive at the input of the given vertex
     * @param v is the vertex
     * @param live_set the set of ids of live variables
     */
-   void set_live_in(const vertex& v, const CustomOrderedSet<unsigned int>& live_set);
+   void set_live_in(const vertex& v, const CustomOrderedSet<std::pair<unsigned int, unsigned int>>& live_set);
 
    /**
     * Store the variables alive at the input of the given vertex
@@ -156,29 +159,30 @@ class liveness
     * @param first is the first iterator of a set to be merged in the live in
     * @param last is the last iterator of a set to be merged in the live in
     */
-   void set_live_in(const vertex& v, const CustomOrderedSet<unsigned int>::const_iterator first,
-                    const CustomOrderedSet<unsigned int>::const_iterator last);
+   void set_live_in(const vertex& v,
+                    const CustomOrderedSet<std::pair<unsigned int, unsigned int>>::const_iterator first,
+                    const CustomOrderedSet<std::pair<unsigned int, unsigned int>>::const_iterator last);
 
    /**
     * erase a variable from the live in
     * @param v is the vertex
     * @param var is the variable
     */
-   void erase_el_live_in(const vertex& v, unsigned int var);
+   void erase_el_live_in(const vertex& v, unsigned int var, unsigned int step);
 
    /**
     * Store the variables alive at the output of the given vertex
     * @param v is the vertex
     * @param vars is a set containing the identifiers of the variables
     */
-   void set_live_out(const vertex& v, const CustomOrderedSet<unsigned int>& vars);
+   void set_live_out(const vertex& v, const CustomOrderedSet<std::pair<unsigned int, unsigned int>>& vars);
 
    /**
     * Store a variable alive at the output of the given vertex
     * @param v is the vertex
     * @param the identifier of the variable
     */
-   void set_live_out(const vertex& v, unsigned int var);
+   void set_live_out(const vertex& v, unsigned int var, unsigned int step);
 
    /**
     * Store the variables alive at the output of the given vertex
@@ -186,29 +190,30 @@ class liveness
     * @param first is the first iterator of a set to be merged in the live out
     * @param last is the last iterator of a set to be merged in the live out
     */
-   void set_live_out(const vertex& v, const CustomOrderedSet<unsigned int>::const_iterator first,
-                     const CustomOrderedSet<unsigned int>::const_iterator last);
+   void set_live_out(const vertex& v,
+                     const CustomOrderedSet<std::pair<unsigned int, unsigned int>>::const_iterator first,
+                     const CustomOrderedSet<std::pair<unsigned int, unsigned int>>::const_iterator last);
 
    /**
     * erase a variable from the live out
     * @param v is the vertex
     * @param var is the variable
     */
-   void erase_el_live_out(const vertex& v, unsigned int var);
+   void erase_el_live_out(const vertex& v, unsigned int var, unsigned int step);
 
    /**
     * Get the set of variables live at the input of a vertex
     * @param v is the vertex
     * @return a set containing the identifiers of the variables
     */
-   const CustomOrderedSet<unsigned int>& get_live_in(const vertex& v) const;
+   const CustomOrderedSet<std::pair<unsigned int, unsigned int>>& get_live_in(const vertex& v) const;
 
    /**
     * Get the set of variables live at the output of a vertex
     * @param v is the vertex
     * @return a set containing the identifiers of the variables
     */
-   const CustomOrderedSet<unsigned int>& get_live_out(const vertex& v) const;
+   const CustomOrderedSet<std::pair<unsigned int, unsigned int>>& get_live_out(const vertex& v) const;
 
    /// map a chained vertex with one of the starting operation
    std::map<vertex, vertex> start_op;
@@ -406,6 +411,25 @@ class liveness
    }
 
    bool non_in_parallel(vertex v1, vertex v2, const BBGraphConstRef cdg) const;
+
+   /**
+    * @brief get_step return the step in which the variable is given the running operation and the current state
+    * @param v is the current state
+    * @param running_op is the operation using var
+    * @param var is the variable under consideration
+    * @return the step
+    */
+   unsigned get_step(vertex v, vertex running_op, unsigned int var, bool in) const;
+
+   /**
+    * @brief get_prev_step return the prev step of a given variable
+    * @param var is the variable under consideration
+    * @param cur_step is the current step
+    * @return
+    */
+   unsigned get_prev_step(unsigned int var, unsigned cur_step) const;
+
+   void set_step(vertex v, vertex running_op, unsigned int step, bool in);
 };
 
 // refcount definition for class

@@ -63,22 +63,28 @@ class StorageValueInformationPipeline : public StorageValueInformation
     * return true in case a storage value exist for the pair vertex variable
     * @param curr_vertex is the vertex
     * @param var_index is the variable
+    * @param stage is the stage in case of pipelined state
     */
-   bool is_a_storage_value(vertex state, unsigned int var_index) override;
+   bool is_a_storage_value(vertex state, unsigned int var_index, unsigned int stage) override;
 
    /**
     * Returns the index of the storage value associated with the variable in a given vertex
     * @param curr_vertex is the vertex
     * @param var_index is the variable
+    * @param stage is the stage in case of pipelined state
     */
-   unsigned int get_storage_value_index(vertex state, unsigned int var_index) override;
+   unsigned int get_storage_value_index(vertex state, unsigned int var_index, unsigned int stage) override;
 
    /**
     * assign a storage value to a couple state-variable
     * @param curr_state is the current state
     * @param variable is the assigned variable
+    * @param stage is the stage in case of pipelined state
     * @param sv is the assigned storage value*/
-   void set_storage_value_index(vertex curr_state, unsigned int variable, unsigned int sv) override;
+   void set_storage_value_index(vertex curr_state, unsigned int variable, unsigned int stage, unsigned int sv) override;
+
+   bool are_storage_value_compatible(unsigned int storage_value_index1,
+                                     unsigned int storage_value_index2) const override;
 };
 using StorageValueInformationPipelineRef = refcount<StorageValueInformationPipeline>;
 #endif

@@ -132,14 +132,14 @@ DesignFlowStep_Status weighted_clique_register::InternalExec()
    {
       if(clique_covering_algorithm == CliqueCovering_Algorithm::BIPARTITE_MATCHING)
       {
-         const std::list<vertex>& support = HLS->Rliv->get_support();
+         const auto& support = HLS->Rliv->get_support();
          unsigned current_partition = 0;
          for(auto vState : support)
          {
-            const CustomOrderedSet<unsigned int>& live = HLS->Rliv->get_live_in(vState);
+            const auto& live = HLS->Rliv->get_live_in(vState);
             for(auto l : live)
             {
-               unsigned int sv = HLS->storage_value_information->get_storage_value_index(vState, l);
+               unsigned int sv = HLS->storage_value_information->get_storage_value_index(vState, l.first, l.second);
                register_clique->add_subpartitions(current_partition, verts[sv]);
             }
             ++current_partition;
@@ -187,11 +187,12 @@ DesignFlowStep_Status weighted_clique_register::InternalExec()
       const auto vEnd = support.end();
       for(auto vIt = support.begin(); vIt != vEnd; ++vIt)
       {
-         const CustomOrderedSet<unsigned int>& live = HLS->Rliv->get_live_in(*vIt);
+         const auto& live = HLS->Rliv->get_live_in(*vIt);
          auto k_end = live.end();
          for(auto k = live.begin(); k != k_end; ++k)
          {
-            unsigned int storage_value_index = HLS->storage_value_information->get_storage_value_index(*vIt, *k);
+            unsigned int storage_value_index =
+                HLS->storage_value_information->get_storage_value_index(*vIt, k->first, k->second);
             HLS->Rreg->bind(storage_value_index, v2c[verts[storage_value_index]]);
          }
       }

@@ -1508,18 +1508,21 @@ void mux_connection_binding::connect_to_registers(vertex op, const OpGraphConstR
 {
    THROW_ASSERT(tree_var, "a non-null tree var is expected");
    const tree_managerRef TreeM = HLSMgr->get_tree_manager();
+   const StateTransitionGraphConstRef astg = HLS->STG->CGetAstg();
    const CustomOrderedSet<vertex>& running_states = HLS->Rliv->get_state_where_run(op);
    last_intermediate_state fetch_previous(HLS->STG->GetStg(),
                                           HLSMgr->CGetFunctionBehavior(funId)->is_simple_pipeline());
    next_unique_state get_next(HLS->STG->GetStg());
+   const FunctionBehaviorConstRef FB = HLSMgr->CGetFunctionBehavior(funId);
+   const BehavioralHelperConstRef BH = FB->CGetBehavioralHelper();
    for(const auto state : running_states)
    {
       unsigned int tree_var_state_in;
+      const StateInfoConstRef state_info = is_PC ? StateInfoConstRef() : astg->CGetStateInfo(state);
       if(!is_not_a_phi)
       {
          THROW_ASSERT(not HLSMgr->GetFunctionBehavior(HLS->functionId)->is_simple_pipeline(),
                       "A pipelined function should not contain any phi operations");
-         const StateInfoConstRef state_info = is_PC ? StateInfoConstRef() : HLS->STG->GetStg()->CGetStateInfo(state);
          if(state_info && state_info->is_duplicated && !state_info->all_paths)
          {
             bool found_branch = false;
@@ -1565,11 +1568,14 @@ void mux_connection_binding::connect_to_registers(vertex op, const OpGraphConstR
       THROW_ASSERT(HLS->Rliv->has_state_in(state, op, tree_var_state_in),
                    " no state in for @" + STR(tree_var_state_in) + " - " + (is_not_a_phi ? " not a phi" : "phi") +
                        " - " + HLS->Rliv->get_name(state) + " for op " + GET_NAME(data, op));
-      const CustomOrderedSet<vertex>& states_in = HLS->Rliv->get_state_in(state, op, tree_var_state_in);
+      const auto& states_in = HLS->Rliv->get_state_in(state, op, tree_var_state_in);
+      std::cerr << "\ncurrent state: " << state_info->name << " for op " << GET_NAME(data, op) << " "
+                << BH->PrintVariable(tree_var_state_in) << "\n";
+
       for(const auto stateIn : states_in)
       {
          generic_objRef reg_obj;
-
+         std::cerr << "state in " << HLS->Rliv->get_name(stateIn) << "\n";
          if(!is_not_a_phi)
          {
             THROW_ASSERT(not HLSMgr->GetFunctionBehavior(HLS->functionId)->is_simple_pipeline(),
@@ -1600,23 +1606,20 @@ void mux_connection_binding::connect_to_registers(vertex op, const OpGraphConstR
                vertex def_op = HLS->Rliv->get_op_where_defined(tree_var);
                if((GET_TYPE(data, def_op) & TYPE_PHI) == 0)
                {
-                  const CustomOrderedSet<vertex>& def_op_ending_states = HLS->Rliv->get_state_where_end(def_op);
-                  const StateInfoConstRef src_state_info =
-                      is_PC ? StateInfoConstRef() : HLS->STG->GetStg()->CGetStateInfo(srcState);
-                  const StateInfoConstRef e_state_info =
-                      is_PC ? StateInfoConstRef() : HLS->STG->GetStg()->CGetStateInfo(lstate);
-                  bool different_stages = true;
-                  if(srcState == lstate && src_state_info && e_state_info && !src_state_info->stages.empty() &&
-                     !e_state_info->stages.empty() &&
-                     src_state_info->stages.find(def_op) != src_state_info->stages.end() &&
-                     e_state_info->stages.find(op) != e_state_info->stages.end() &&
-                     src_state_info->stages.at(def_op) != e_state_info->stages.at(op))
+                  bool same_stage = true;
+                  if(srcState == lstate && HLS->STG->not_same_step(srcState, def_op, op))
                   {
-                     std::cerr << "different stages\n";
-                     different_stages = false;
+                     std::cerr << "different stage\n";
+                     same_stage = false;
+                  }
+                  else
+                  {
+                     std::cerr << "same stage\n";
                   }
 
-                  if(def_op_ending_states.find(srcState) != def_op_ending_states.end() && different_stages)
+                  const auto& def_op_ending_states = HLS->Rliv->get_state_where_end(def_op);
+                  if(def_op_ending_states.find(srcState) != def_op_ending_states.end() && srcState == lstate &&
+                     same_stage)
                   {
                      const generic_objRef fu_src_obj = HLS->Rfu->get(def_op);
                      HLS->Rconn->add_data_transfer(fu_src_obj, fu_obj, port_num, port_index,
@@ -1630,49 +1633,56 @@ void mux_connection_binding::connect_to_registers(vertex op, const OpGraphConstR
                                     HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->PrintVariable(
                                         tree_var));
                   }
-                  else if(HLS->storage_value_information->is_a_storage_value(fetch_previous(srcState, lstate),
-                                                                             tree_var))
+                  else
                   {
-                     unsigned int storage_value = HLS->storage_value_information->get_storage_value_index(
-                         fetch_previous(srcState, lstate), tree_var);
-                     unsigned int r_index = HLS->Rreg->get_register(storage_value);
-                     PRINT_DBG_MEX(
-                         DEBUG_LEVEL_PEDANTIC, debug_level,
-                         "       - register: "
-                             << r_index << " from "
-                             << HLS->Rliv->get_name(srcState) + " to state " + HLS->Rliv->get_name(lstate) + " for " +
-                                    HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->PrintVariable(
-                                        tree_var));
-                     reg_obj = HLS->Rreg->get(r_index);
-                     if(reg_obj != fu_obj)
+                     auto step_in = HLS->Rliv->get_step(srcState, op, tree_var, true);
+                     if(HLS->storage_value_information->is_a_storage_value(fetch_previous(srcState, lstate), tree_var,
+                                                                           step_in))
                      {
-                        HLS->Rconn->add_data_transfer(reg_obj, fu_obj, port_num, port_index,
-                                                      data_transfer(tree_var, precision, srcState, lstate, op));
+                        unsigned int storage_value = HLS->storage_value_information->get_storage_value_index(
+                            fetch_previous(srcState, lstate), tree_var, step_in);
+                        unsigned int r_index = HLS->Rreg->get_register(storage_value);
                         PRINT_DBG_MEX(
                             DEBUG_LEVEL_PEDANTIC, debug_level,
-                            "       - add data transfer from "
-                                << reg_obj->get_string() << " to " << fu_obj->get_string() << " port "
-                                << std::to_string(port_num) << ":" << std::to_string(port_index) << " from state "
+                            "       - register: "
+                                << r_index << " from "
                                 << HLS->Rliv->get_name(srcState) + " to state " + HLS->Rliv->get_name(lstate) +
                                        " for " +
                                        HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->PrintVariable(
                                            tree_var));
+                        reg_obj = HLS->Rreg->get(r_index);
+                        if(reg_obj != fu_obj)
+                        {
+                           HLS->Rconn->add_data_transfer(reg_obj, fu_obj, port_num, port_index,
+                                                         data_transfer(tree_var, precision, srcState, lstate, op));
+                           PRINT_DBG_MEX(
+                               DEBUG_LEVEL_PEDANTIC, debug_level,
+                               "       - add data transfer from "
+                                   << reg_obj->get_string() << " to " << fu_obj->get_string() << " port "
+                                   << std::to_string(port_num) << ":" << std::to_string(port_index) << " from state "
+                                   << HLS->Rliv->get_name(srcState) + " to state " + HLS->Rliv->get_name(lstate) +
+                                          " for " +
+                                          HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->PrintVariable(
+                                              tree_var));
+                        }
                      }
-                  }
-                  else
-                  {
-                     THROW_ERROR("not expected from " + HLS->Rliv->get_name(srcState) + " to " +
-                                 HLS->Rliv->get_name(lstate) + " " +
-                                 HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->PrintVariable(tree_var));
+                     else
+                     {
+                        THROW_ERROR(
+                            "not expected from " + HLS->Rliv->get_name(srcState) + " to " +
+                            HLS->Rliv->get_name(lstate) + " " +
+                            HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->PrintVariable(tree_var));
+                     }
                   }
                }
                else
                {
-                  THROW_ASSERT(
-                      HLS->storage_value_information->is_a_storage_value(fetch_previous(srcState, lstate), tree_var),
-                      "it has to be a register");
+                  auto step_in = HLS->Rliv->get_step(srcState, op, tree_var, true);
+                  THROW_ASSERT(HLS->storage_value_information->is_a_storage_value(fetch_previous(srcState, lstate),
+                                                                                  tree_var, step_in),
+                               "it has to be a register");
                   unsigned int storage_value = HLS->storage_value_information->get_storage_value_index(
-                      fetch_previous(srcState, lstate), tree_var);
+                      fetch_previous(srcState, lstate), tree_var, step_in);
                   unsigned int r_index = HLS->Rreg->get_register(storage_value);
                   PRINT_DBG_MEX(
                       DEBUG_LEVEL_PEDANTIC, debug_level,
@@ -1712,6 +1722,7 @@ void mux_connection_binding::connect_to_registers(vertex op, const OpGraphConstR
          else
          {
             vertex tgt_state = stateIn;
+
             if(tree_helper::is_parameter(TreeM, tree_var) &&
                not HLSMgr->GetFunctionBehavior(HLS->functionId)->is_simple_pipeline())
             {
@@ -1742,9 +1753,11 @@ void mux_connection_binding::connect_to_registers(vertex op, const OpGraphConstR
                {
                   while(previous != get_next(HLS->STG->get_entry_state()))
                   {
-                     THROW_ASSERT(HLS->storage_value_information->is_a_storage_value(previous, tree_var),
+                     auto step_in = HLS->Rliv->get_step(previous, op, tree_var, true);
+                     THROW_ASSERT(HLS->storage_value_information->is_a_storage_value(previous, tree_var, step_in),
                                   "The chain of registers propagating a primary input is broken");
-                     storage_value = HLS->storage_value_information->get_storage_value_index(previous, tree_var);
+                     storage_value =
+                         HLS->storage_value_information->get_storage_value_index(previous, tree_var, step_in);
                      r_index = HLS->Rreg->get_register(storage_value);
                      reg_obj = HLS->Rreg->get(r_index);
                      HLS->Rconn->add_data_transfer(reg_obj, tgt_obj, tgt_port, tgt_index,
@@ -1782,24 +1795,20 @@ void mux_connection_binding::connect_to_registers(vertex op, const OpGraphConstR
             else
             {
                vertex def_op = HLS->Rliv->get_op_where_defined(tree_var);
-               const CustomOrderedSet<vertex>& def_op_ending_states = HLS->Rliv->get_state_where_end(def_op);
-               const StateInfoConstRef src_state_info =
-                   is_PC ? StateInfoConstRef() : HLS->STG->GetStg()->CGetStateInfo(stateIn);
-               const StateInfoConstRef e_state_info =
-                   is_PC ? StateInfoConstRef() : HLS->STG->GetStg()->CGetStateInfo(state);
-               bool different_stages = true;
-               if(stateIn == state && src_state_info && e_state_info && !src_state_info->stages.empty() &&
-                  !e_state_info->stages.empty() &&
-                  src_state_info->stages.find(def_op) != src_state_info->stages.end() &&
-                  e_state_info->stages.find(op) != e_state_info->stages.end() &&
-                  src_state_info->stages.at(def_op) != e_state_info->stages.at(op))
-               {
-                  std::cerr << "different stages2\n";
-                  different_stages = false;
-               }
+               const auto& def_op_ending_states = HLS->Rliv->get_state_where_end(def_op);
                if((GET_TYPE(data, def_op) & TYPE_PHI) == 0)
                {
-                  if(def_op_ending_states.find(state) != def_op_ending_states.end() && different_stages)
+                  bool same_stage = true;
+                  if(HLS->STG->not_same_step(state, def_op, op))
+                  {
+                     std::cerr << "different stages2\n";
+                     same_stage = false;
+                  }
+                  else
+                  {
+                     std::cerr << "same stages2\n";
+                  }
+                  if(def_op_ending_states.find(state) != def_op_ending_states.end() && same_stage)
                   {
                      const generic_objRef fu_src_obj = HLS->Rfu->get(def_op);
                      HLS->Rconn->add_data_transfer(fu_src_obj, fu_obj, port_num, port_index,
@@ -1813,227 +1822,340 @@ void mux_connection_binding::connect_to_registers(vertex op, const OpGraphConstR
                                     HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->PrintVariable(
                                         tree_var));
                   }
-                  else if(HLS->storage_value_information->is_a_storage_value(fetch_previous(state, tgt_state),
-                                                                             tree_var))
+                  else
                   {
-                     unsigned int storage_value = HLS->storage_value_information->get_storage_value_index(
-                         fetch_previous(state, tgt_state), tree_var);
-                     unsigned int r_index = HLS->Rreg->get_register(storage_value);
-                     PRINT_DBG_MEX(
-                         DEBUG_LEVEL_PEDANTIC, debug_level,
-                         "       - register: "
-                             << r_index << " from "
-                             << HLS->Rliv->get_name(state) + " to state " + HLS->Rliv->get_name(tgt_state) + " for " +
-                                    HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->PrintVariable(
-                                        tree_var));
-                     reg_obj = HLS->Rreg->get(r_index);
-                     THROW_ASSERT(
-                         not(reg_obj == fu_obj && HLSMgr->GetFunctionBehavior(HLS->functionId)->is_simple_pipeline()),
-                         "There can be no direct forwarding in pipelining");
-                     if(reg_obj != fu_obj)
+                     auto one_of_def = *def_op_ending_states.begin();
+                     const StateInfoConstRef state_def_info =
+                         is_PC ? StateInfoConstRef() : astg->CGetStateInfo(one_of_def);
+                     bool is_state_def_pipelined = !is_PC && state_def_info->is_pipelined_state;
+                     std::cerr << "is_state_def_pipelined" << (is_state_def_pipelined ? "T" : "F") << "\n";
+                     auto step_in =
+                         is_state_def_pipelined ?
+                             (state_def_info->BB_ids.find(data->CGetOpNodeInfo(op)->bb_index) !=
+                                      state_def_info->BB_ids.end() ?
+                                  HLS->Rliv->get_prev_step(tree_var, HLS->Rliv->get_step(state, op, tree_var, true)) :
+                                  astg->CGetStateTransitionGraphInfo()->vertex_to_max_step.at(stateIn) - 1) :
+                             0;
+                     std::cerr << "step_in " << step_in << "\n";
+
+                     if(HLS->storage_value_information->is_a_storage_value(state, tree_var, step_in))
                      {
-                        HLS->Rconn->add_data_transfer(reg_obj, fu_obj, port_num, port_index,
-                                                      data_transfer(tree_var, precision, state, tgt_state, op));
+                        unsigned int storage_value =
+                            HLS->storage_value_information->get_storage_value_index(state, tree_var, step_in);
+                        unsigned int r_index = HLS->Rreg->get_register(storage_value);
                         PRINT_DBG_MEX(
                             DEBUG_LEVEL_PEDANTIC, debug_level,
-                            "       - add data transfer from "
-                                << reg_obj->get_string() << " to " << fu_obj->get_string() << " port "
-                                << std::to_string(port_num) << ":" << std::to_string(port_index) << " from state "
+                            "       - register: "
+                                << r_index << " from "
                                 << HLS->Rliv->get_name(state) + " to state " + HLS->Rliv->get_name(tgt_state) +
                                        " for " +
                                        HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->PrintVariable(
                                            tree_var));
-                     }
-                  }
-                  else
-                  {
-                     THROW_UNREACHABLE("not expected from " + HLS->Rliv->get_name(state) + " to " +
-                                       HLS->Rliv->get_name(tgt_state) + " " +
-                                       HLSMgr->get_tree_manager()->get_tree_node_const(tree_var)->ToString());
-                  }
-               }
-               else if(e_state_info && e_state_info->is_duplicated && e_state_info->clonedState != NULL_VERTEX &&
-                       !e_state_info->all_paths && def_op_ending_states.find(state) != def_op_ending_states.end() &&
-                       std::find(e_state_info->moved_exec_op.begin(), e_state_info->moved_exec_op.end(), op) ==
-                           e_state_info->moved_exec_op.end())
-               {
-                  const auto gp = GetPointer<const gimple_phi>(
-                      TreeM->get_tree_node_const(data->CGetOpNodeInfo(def_op)->GetNodeId()));
-                  bool phi_postponed = false;
-                  unsigned int tree_temp = 0;
-                  for(const auto& def_edge : gp->CGetDefEdgesList())
-                  {
-                     unsigned int bbID = def_edge.second;
-                     tree_temp = def_edge.first->index;
-                     if(bbID != e_state_info->sourceBb)
-                     {
-                        continue;
-                     }
-                     else if(e_state_info->moved_op_def_set.find(tree_temp) != e_state_info->moved_op_def_set.end())
-                     {
-                        phi_postponed = true;
-                        break;
-                     }
-                     else if(e_state_info->moved_op_use_set.find(tree_var) != e_state_info->moved_op_use_set.end())
-                     {
-                        phi_postponed = true;
-                        break;
+                        reg_obj = HLS->Rreg->get(r_index);
+                        THROW_ASSERT(not(reg_obj == fu_obj &&
+                                         HLSMgr->GetFunctionBehavior(HLS->functionId)->is_simple_pipeline()),
+                                     "There can be no direct forwarding in pipelining");
+                        if(reg_obj != fu_obj)
+                        {
+                           HLS->Rconn->add_data_transfer(reg_obj, fu_obj, port_num, port_index,
+                                                         data_transfer(tree_var, precision, state, tgt_state, op));
+                           PRINT_DBG_MEX(
+                               DEBUG_LEVEL_PEDANTIC, debug_level,
+                               "       - add data transfer from "
+                                   << reg_obj->get_string() << " to " << fu_obj->get_string() << " port "
+                                   << std::to_string(port_num) << ":" << std::to_string(port_index) << " from state "
+                                   << HLS->Rliv->get_name(state) + " to state " + HLS->Rliv->get_name(tgt_state) +
+                                          " for " +
+                                          HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->PrintVariable(
+                                              tree_var));
+                        }
                      }
                      else
                      {
-                        break;
-                     }
-                  }
-                  PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
-                                "Is phi postponed? " + (phi_postponed ? std::string("YES") : std::string("NO")));
-                  if(phi_postponed)
-                  {
-                     // std::cerr << "phi postponed 0" << std::endl;
-                     generic_objRef fu_src_obj;
-                     if(e_state_info->moved_op_use_set.find(tree_var) != e_state_info->moved_op_use_set.end() &&
-                        e_state_info->moved_op_def_set.find(tree_temp) == e_state_info->moved_op_def_set.end())
-                     {
-                        unsigned int src_storage_value = HLS->storage_value_information->get_storage_value_index(
-                            fetch_previous(state, tgt_state), tree_temp);
-                        unsigned int src_r_index = HLS->Rreg->get_register(src_storage_value);
-                        fu_src_obj = HLS->Rreg->get(src_r_index);
-                     }
-                     else
-                     {
-                        vertex src_def_op = HLS->Rliv->get_op_where_defined(tree_temp);
-                        fu_src_obj = HLS->Rfu->get(src_def_op);
-                     }
-                     HLS->Rconn->add_data_transfer(fu_src_obj, fu_obj, port_num, port_index,
-                                                   data_transfer(tree_temp, precision, state, tgt_state, op));
-                     PRINT_DBG_MEX(
-                         DEBUG_LEVEL_PEDANTIC, debug_level,
-                         "       - add data transfer from "
-                             << fu_src_obj->get_string() << " to " << fu_obj->get_string() << " port "
-                             << std::to_string(port_num) << ":" << std::to_string(port_index) << " from state "
-                             << HLS->Rliv->get_name(state) + " to state " + HLS->Rliv->get_name(tgt_state) + " for " +
-                                    HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->PrintVariable(
-                                        tree_temp));
-                  }
-                  else
-                  {
-                     THROW_ASSERT(
-                         HLS->storage_value_information->is_a_storage_value(fetch_previous(state, tgt_state), tree_var),
-                         "it has to be a register");
-                     unsigned int storage_value = HLS->storage_value_information->get_storage_value_index(
-                         fetch_previous(state, tgt_state), tree_var);
-                     unsigned int r_index = HLS->Rreg->get_register(storage_value);
-                     PRINT_DBG_MEX(
-                         DEBUG_LEVEL_PEDANTIC, debug_level,
-                         "       - register: "
-                             << r_index << " from "
-                             << HLS->Rliv->get_name(state) + " to state " + HLS->Rliv->get_name(tgt_state) + " for " +
-                                    HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->PrintVariable(
-                                        tree_var));
-                     reg_obj = HLS->Rreg->get(r_index);
-                     if(reg_obj != fu_obj)
-                     {
-                        HLS->Rconn->add_data_transfer(reg_obj, fu_obj, port_num, port_index,
-                                                      data_transfer(tree_var, precision, state, tgt_state, op));
-                        PRINT_DBG_MEX(
-                            DEBUG_LEVEL_PEDANTIC, debug_level,
-                            "       - add data transfer from "
-                                << reg_obj->get_string() << " to " << fu_obj->get_string() << " port "
-                                << std::to_string(port_num) << ":" << std::to_string(port_index) << " from state "
-                                << HLS->Rliv->get_name(state) + " to state " + HLS->Rliv->get_name(tgt_state) +
-                                       " for " +
-                                       HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->PrintVariable(
-                                           tree_var));
+                        THROW_UNREACHABLE("not expected from " + HLS->Rliv->get_name(state) + " to " +
+                                          HLS->Rliv->get_name(tgt_state) + " " +
+                                          HLSMgr->get_tree_manager()->get_tree_node_const(tree_var)->ToString());
                      }
                   }
                }
                else
                {
-                  THROW_ASSERT(
-                      HLS->storage_value_information->is_a_storage_value(fetch_previous(state, tgt_state), tree_var),
-                      "it has to be a register");
-                  unsigned int storage_value = HLS->storage_value_information->get_storage_value_index(
-                      fetch_previous(state, tgt_state), tree_var);
-                  unsigned int r_index = HLS->Rreg->get_register(storage_value);
-                  PRINT_DBG_MEX(
-                      DEBUG_LEVEL_PEDANTIC, debug_level,
-                      "       - register: "
-                          << r_index << " from "
-                          << HLS->Rliv->get_name(state) + " to state " + HLS->Rliv->get_name(tgt_state) + " for " +
-                                 HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->PrintVariable(tree_var));
-                  reg_obj = HLS->Rreg->get(r_index);
-                  if(reg_obj != fu_obj)
+                  const StateInfoConstRef e_state_info =
+                      is_PC ? StateInfoConstRef() : HLS->STG->GetStg()->CGetStateInfo(state);
+
+                  if(e_state_info && e_state_info->is_duplicated && e_state_info->clonedState != NULL_VERTEX &&
+                     !e_state_info->all_paths && def_op_ending_states.find(state) != def_op_ending_states.end() &&
+                     std::find(e_state_info->moved_exec_op.begin(), e_state_info->moved_exec_op.end(), op) ==
+                         e_state_info->moved_exec_op.end())
                   {
-                     HLS->Rconn->add_data_transfer(reg_obj, fu_obj, port_num, port_index,
-                                                   data_transfer(tree_var, precision, state, tgt_state, op));
+                     const auto gp = GetPointer<const gimple_phi>(
+                         TreeM->get_tree_node_const(data->CGetOpNodeInfo(def_op)->GetNodeId()));
+                     bool phi_postponed = false;
+                     unsigned int tree_temp = 0;
+                     for(const auto& def_edge : gp->CGetDefEdgesList())
+                     {
+                        unsigned int bbID = def_edge.second;
+                        tree_temp = def_edge.first->index;
+                        if(bbID != e_state_info->sourceBb)
+                        {
+                           continue;
+                        }
+                        else if(e_state_info->moved_op_def_set.find(tree_temp) != e_state_info->moved_op_def_set.end())
+                        {
+                           phi_postponed = true;
+                           break;
+                        }
+                        else if(e_state_info->moved_op_use_set.find(tree_var) != e_state_info->moved_op_use_set.end())
+                        {
+                           phi_postponed = true;
+                           break;
+                        }
+                        else
+                        {
+                           break;
+                        }
+                     }
+                     PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                                   "Is phi postponed? " + (phi_postponed ? std::string("YES") : std::string("NO")));
+                     if(phi_postponed)
+                     {
+                        // std::cerr << "phi postponed 0" << std::endl;
+                        generic_objRef fu_src_obj;
+                        if(e_state_info->moved_op_use_set.find(tree_var) != e_state_info->moved_op_use_set.end() &&
+                           e_state_info->moved_op_def_set.find(tree_temp) == e_state_info->moved_op_def_set.end())
+                        {
+                           unsigned int src_storage_value = HLS->storage_value_information->get_storage_value_index(
+                               fetch_previous(state, tgt_state), tree_temp,
+                               HLS->Rliv->get_step(state, op, tree_temp, true));
+                           unsigned int src_r_index = HLS->Rreg->get_register(src_storage_value);
+                           fu_src_obj = HLS->Rreg->get(src_r_index);
+                        }
+                        else
+                        {
+                           vertex src_def_op = HLS->Rliv->get_op_where_defined(tree_temp);
+                           fu_src_obj = HLS->Rfu->get(src_def_op);
+                        }
+                        HLS->Rconn->add_data_transfer(fu_src_obj, fu_obj, port_num, port_index,
+                                                      data_transfer(tree_temp, precision, state, tgt_state, op));
+                        PRINT_DBG_MEX(
+                            DEBUG_LEVEL_PEDANTIC, debug_level,
+                            "       - add data transfer from "
+                                << fu_src_obj->get_string() << " to " << fu_obj->get_string() << " port "
+                                << std::to_string(port_num) << ":" << std::to_string(port_index) << " from state "
+                                << HLS->Rliv->get_name(state) + " to state " + HLS->Rliv->get_name(tgt_state) +
+                                       " for " +
+                                       HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->PrintVariable(
+                                           tree_temp));
+                     }
+                     else
+                     {
+                        auto step_in = HLS->Rliv->get_step(state, op, tree_var, true);
+                        THROW_ASSERT(HLS->storage_value_information->is_a_storage_value(
+                                         fetch_previous(state, tgt_state), tree_var, step_in),
+                                     "it has to be a register");
+                        unsigned int storage_value = HLS->storage_value_information->get_storage_value_index(
+                            fetch_previous(state, tgt_state), tree_var, step_in);
+                        unsigned int r_index = HLS->Rreg->get_register(storage_value);
+                        PRINT_DBG_MEX(
+                            DEBUG_LEVEL_PEDANTIC, debug_level,
+                            "       - register: "
+                                << r_index << " from "
+                                << HLS->Rliv->get_name(state) + " to state " + HLS->Rliv->get_name(tgt_state) +
+                                       " for " +
+                                       HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->PrintVariable(
+                                           tree_var));
+                        reg_obj = HLS->Rreg->get(r_index);
+                        if(reg_obj != fu_obj)
+                        {
+                           HLS->Rconn->add_data_transfer(reg_obj, fu_obj, port_num, port_index,
+                                                         data_transfer(tree_var, precision, state, tgt_state, op));
+                           PRINT_DBG_MEX(
+                               DEBUG_LEVEL_PEDANTIC, debug_level,
+                               "       - add data transfer from "
+                                   << reg_obj->get_string() << " to " << fu_obj->get_string() << " port "
+                                   << std::to_string(port_num) << ":" << std::to_string(port_index) << " from state "
+                                   << HLS->Rliv->get_name(state) + " to state " + HLS->Rliv->get_name(tgt_state) +
+                                          " for " +
+                                          HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->PrintVariable(
+                                              tree_var));
+                        }
+                     }
+                  }
+                  else
+                  {
+                     auto one_of_def = *def_op_ending_states.begin();
+                     const StateInfoConstRef state_def_info =
+                         is_PC ? StateInfoConstRef() : astg->CGetStateInfo(one_of_def);
+                     bool is_state_def_pipelined = !is_PC && state_def_info->is_pipelined_state;
+                     std::cerr << "is_state_def_pipelined" << (is_state_def_pipelined ? "T" : "F") << "\n";
+                     auto step_in =
+                         is_state_def_pipelined ?
+                             (state_def_info->BB_ids.find(data->CGetOpNodeInfo(op)->bb_index) !=
+                                      state_def_info->BB_ids.end() ?
+                                  HLS->Rliv->get_prev_step(tree_var, HLS->Rliv->get_step(state, op, tree_var, true)) :
+                                  astg->CGetStateTransitionGraphInfo()->vertex_to_max_step.at(stateIn) - 1) :
+                             0;
+                     std::cerr << "step_in " << step_in << "\n";
+                     THROW_ASSERT(HLS->storage_value_information->is_a_storage_value(state, tree_var, step_in),
+                                  "it has to be a register");
+                     unsigned int storage_value =
+                         HLS->storage_value_information->get_storage_value_index(state, tree_var, step_in);
+                     unsigned int r_index = HLS->Rreg->get_register(storage_value);
                      PRINT_DBG_MEX(
                          DEBUG_LEVEL_PEDANTIC, debug_level,
-                         "       - add data transfer from "
-                             << reg_obj->get_string() << " to " << fu_obj->get_string() << " port "
-                             << std::to_string(port_num) << ":" << std::to_string(port_index) << " from state "
+                         "       - register: "
+                             << r_index << " from "
                              << HLS->Rliv->get_name(state) + " to state " + HLS->Rliv->get_name(tgt_state) + " for " +
                                     HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->PrintVariable(
                                         tree_var));
+                     reg_obj = HLS->Rreg->get(r_index);
+                     if(reg_obj != fu_obj)
+                     {
+                        HLS->Rconn->add_data_transfer(reg_obj, fu_obj, port_num, port_index,
+                                                      data_transfer(tree_var, precision, state, tgt_state, op));
+                        PRINT_DBG_MEX(
+                            DEBUG_LEVEL_PEDANTIC, debug_level,
+                            "       - add data transfer from "
+                                << reg_obj->get_string() << " to " << fu_obj->get_string() << " port "
+                                << std::to_string(port_num) << ":" << std::to_string(port_index) << " from state "
+                                << HLS->Rliv->get_name(state) + " to state " + HLS->Rliv->get_name(tgt_state) +
+                                       " for " +
+                                       HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->PrintVariable(
+                                           tree_var));
+                     }
                   }
                }
-            }
-         }
-      }
-      if(HLSMgr->CGetFunctionBehavior(funId)->is_simple_pipeline())
-      {
-         vertex target;
-         vertex previous;
-         vertex def_op;
-         vertex top;
-         unsigned int origin_idx;
-         unsigned int target_idx;
-         unsigned int origin_reg_idx;
-         unsigned int target_reg_idx;
-         generic_objRef origin_reg;
-         generic_objRef target_reg;
-         CustomOrderedSet<unsigned int> in_vars = HLS->Rliv->get_live_in(state);
-         for(auto& var : in_vars)
-         {
-            target = state;
-            previous = fetch_previous(HLS->STG->get_entry_state(), target);
-            def_op = HLS->Rliv->get_op_where_defined(var);
-            THROW_ASSERT(HLS->Rliv->get_state_where_end(def_op).size() == 1,
-                         "A pipelined operation has more than one ending state");
-            top = *HLS->Rliv->get_state_where_end(def_op).begin();
-            THROW_ASSERT(target != top, "State defining a variable cannot have it as a live in variable");
-            THROW_ASSERT(HLS->storage_value_information->is_a_storage_value(target, var),
-                         "There is a live in variable without any register");
-            while(previous != top)
-            {
-               THROW_ASSERT(HLS->storage_value_information->is_a_storage_value(previous, var),
-                            "There is a live in variable without any register");
-               THROW_ASSERT(HLS->Rliv->get_live_in(previous).find(var) != HLS->Rliv->get_live_in(previous).end(),
-                            "The variable is not in live-in");
-               THROW_ASSERT(HLS->Rliv->get_live_out(previous).find(var) != HLS->Rliv->get_live_out(previous).end(),
-                            "The variable is not in live-out");
-               origin_idx = HLS->storage_value_information->get_storage_value_index(previous, var);
-               target_idx = HLS->storage_value_information->get_storage_value_index(target, var);
-               origin_reg_idx = HLS->Rreg->get_register(origin_idx);
-               target_reg_idx = HLS->Rreg->get_register(target_idx);
-               origin_reg = HLS->Rreg->get(origin_reg_idx);
-               target_reg = HLS->Rreg->get(target_reg_idx);
-               // Always add a data transfer on port 0 since it's always an input to reg_STD
-               HLS->Rconn->add_data_transfer(origin_reg, target_reg, 0, 0,
-                                             data_transfer(var, precision, previous, target, op));
-               PRINT_DBG_MEX(
-                   DEBUG_LEVEL_PEDANTIC, debug_level,
-                   "       - add data transfer from "
-                       << origin_reg->get_string() << " to " << target_reg->get_string() << " port "
-                       << std::to_string(0) << ":" << std::to_string(0) << " from state "
-                       << HLS->Rliv->get_name(previous) + " to state " + HLS->Rliv->get_name(target) + " for " +
-                              HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->PrintVariable(tree_var));
-               target = previous;
-               previous = fetch_previous(HLS->STG->get_entry_state(), target);
             }
          }
       }
    }
 }
 
+// void mux_connection_binding::connect_pipelined_registers(vertex state)
+//{
+//   const StateInfoConstRef state_info = is_PC ? StateInfoConstRef() : HLS->STG->GetStg()->CGetStateInfo(state);
+//   if(HLSMgr->CGetFunctionBehavior(funId)->is_simple_pipeline() || state_info->is_pipelined_state)
+//   {
+//      const tree_managerRef TreeM = HLSMgr->get_tree_manager();
+//      vertex previous;
+//      vertex def_op;
+//      unsigned int origin_idx;
+//      unsigned int state_idx;
+//      unsigned int origin_reg_idx;
+//      unsigned int state_reg_idx;
+//      generic_objRef origin_reg;
+//      generic_objRef state_reg;
+//      const auto& in_vars = HLS->Rliv->get_live_in(state);
+//      last_intermediate_state fetch_previous(HLS->STG->GetStg(),
+//                                             HLSMgr->CGetFunctionBehavior(funId)->is_simple_pipeline());
+//      next_unique_state get_next(HLS->STG->GetStg());
+
+//      for(const auto& var : in_vars)
+//      {
+//         previous = fetch_previous(HLS->STG->get_entry_state(), state);
+//         def_op = HLS->Rliv->get_op_where_defined(var.first);
+//         const auto end_states = HLS->Rliv->get_state_where_end(def_op);
+//         THROW_ASSERT(HLS->storage_value_information->is_a_storage_value(state, var.first, var.second),
+//                      "There is a live in variable without any register");
+//         if(end_states.find(previous) == end_states.end() &&
+//            HLS->storage_value_information->is_a_storage_value(previous, var.first, var.second) &&
+//            HLS->storage_value_information->is_a_storage_value(state, var.first, var.second))
+//         {
+//            THROW_ASSERT(HLS->Rliv->get_live_in(previous).find(var) != HLS->Rliv->get_live_in(previous).end(),
+//                         "The variable is not in live-in");
+//            THROW_ASSERT(HLS->Rliv->get_live_out(previous).find(var) != HLS->Rliv->get_live_out(previous).end(),
+//                         "The variable is not in live-out");
+//            origin_idx = HLS->storage_value_information->get_storage_value_index(previous, var.first, var.second);
+//            state_idx = HLS->storage_value_information->get_storage_value_index(state, var.first, var.second);
+//            origin_reg_idx = HLS->Rreg->get_register(origin_idx);
+//            state_reg_idx = HLS->Rreg->get_register(state_idx);
+//            origin_reg = HLS->Rreg->get(origin_reg_idx);
+//            state_reg = HLS->Rreg->get(state_reg_idx);
+//            // Always add a data transfer on port 0 since it's always an input to reg_STD
+//            HLS->Rconn->add_data_transfer(
+//                origin_reg, state_reg, 0, 0,
+//                data_transfer(var.first, object_bitsize(TreeM, HLS_manager::io_binding_type(var.first, 0)), previous,
+//                              state, def_op));
+//            PRINT_DBG_MEX(
+//                DEBUG_LEVEL_PEDANTIC, debug_level,
+//                "    * Add pipelined register data transfer from "
+//                    << origin_reg->get_string() << " to " << state_reg->get_string() << " port " << std::to_string(0)
+//                    << ":" << std::to_string(0) << " from state "
+//                    << HLS->Rliv->get_name(previous) + " to state " + HLS->Rliv->get_name(state) + " for " +
+//                           HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->PrintVariable(var.first));
+//         }
+//      }
+//   }
+//}
+
+void mux_connection_binding::connect_pipelined_registers(vertex state)
+{
+   const StateInfoConstRef state_info = is_PC ? StateInfoConstRef() : HLS->STG->GetStg()->CGetStateInfo(state);
+   if(HLSMgr->CGetFunctionBehavior(funId)->is_simple_pipeline() || state_info->is_pipelined_state)
+   {
+      const tree_managerRef TreeM = HLSMgr->get_tree_manager();
+      const auto& in_vars = HLS->Rliv->get_live_in(state);
+      const auto& out_vars = HLS->Rliv->get_live_out(state);
+      auto stg = HLS->STG->CGetStg();
+
+      for(const auto& var : in_vars)
+      {
+         std::cerr << HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->PrintVariable(var.first) << "\n";
+         if(out_vars.contains(std::make_pair(var.first, var.second + 1)))
+         {
+            auto origin_idx = HLS->storage_value_information->get_storage_value_index(state, var.first, var.second);
+            auto def_op = HLS->Rliv->get_op_where_defined(var.first);
+
+            BOOST_FOREACH(const auto& edge_i, boost::out_edges(state, *stg))
+            {
+               auto out_state = boost::target(edge_i, *stg);
+               const auto& out_state_in_vars = HLS->Rliv->get_live_in(out_state);
+               if(out_state_in_vars.contains(std::make_pair(var.first, var.second + 1)))
+
+               {
+                  std::cerr << "src state "
+                            << " " << HLS->Rliv->get_name(state) << " tgt state" << HLS->Rliv->get_name(out_state)
+                            << " step: " << var.second << "\n";
+                  if(HLS->storage_value_information->is_a_storage_value(out_state, var.first, var.second + 1))
+                  {
+                     auto next_idx =
+                         HLS->storage_value_information->get_storage_value_index(state, var.first, var.second + 1);
+                     auto origin_reg_idx = HLS->Rreg->get_register(origin_idx);
+                     auto next_reg_idx = HLS->Rreg->get_register(next_idx);
+                     if(origin_reg_idx != next_reg_idx)
+                     {
+                        auto origin_reg = HLS->Rreg->get(origin_reg_idx);
+                        auto next_reg = HLS->Rreg->get(next_reg_idx);
+
+                        HLS->Rconn->add_data_transfer(
+                            origin_reg, next_reg, 0, 0,
+                            data_transfer(var.first, object_bitsize(TreeM, HLS_manager::io_binding_type(var.first, 0)),
+                                          state, out_state, def_op));
+                        PRINT_DBG_MEX(
+                            DEBUG_LEVEL_PEDANTIC, debug_level,
+                            "    * Add pipelined register data transfer from "
+                                << origin_reg->get_string() << " to " << next_reg->get_string() << " port "
+                                << std::to_string(0) << ":" << std::to_string(0) << " from state "
+                                << HLS->Rliv->get_name(state) + " to state " + HLS->Rliv->get_name(out_state) +
+                                       " for " +
+                                       HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->PrintVariable(
+                                           var.first));
+                        generic_objRef enable_obj = GetPointer<register_obj>(next_reg)->get_wr_enable();
+                        GetPointer<commandport_obj>(enable_obj)
+                            ->add_activation(commandport_obj::transition(
+                                state, out_state, commandport_obj::data_operation_pair(var.first, def_op)));
+                        PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                                      "       - write enable for " + next_reg->get_string() + " from "
+                                          << HLS->Rliv->get_name(state) + " to state " +
+                                                 HLS->Rliv->get_name(out_state));
+                     }
+                  }
+               }
+            }
+         }
+      }
+   }
+}
 void mux_connection_binding::add_conversion(unsigned int num, unsigned int size_tree_var, VertexIterator op,
                                             unsigned int form_par_type, unsigned int port_index,
                                             const generic_objRef fu_obj, const OpGraphConstRef data,
@@ -2125,6 +2247,8 @@ void mux_connection_binding::create_connections()
    const BehavioralHelperConstRef behavioral_helper = FB->CGetBehavioralHelper();
    const OpGraphConstRef data = FB->CGetOpGraph(FunctionBehavior::FDFG);
    unsigned int bus_addr_bitsize = HLSMgr->get_address_bitsize();
+   const StateTransitionGraphConstRef astg = HLS->STG->CGetAstg();
+
    if(parameters->getOption<int>(OPT_memory_banks_number) > 1 && !parameters->isOption(OPT_context_switch))
    {
       HLS->Rconn = conn_bindingRef(new ParallelMemoryConnBinding(behavioral_helper, parameters));
@@ -2195,7 +2319,7 @@ void mux_connection_binding::create_connections()
       {
          unsigned int port_index = n_channels < 2 ? 0 : idx % n_channels;
          PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
-                       "  * Operation: " + GET_NAME(data, *op) << " " + data->CGetOpNodeInfo(*op)->GetOperation());
+                       "    * Operation: " + GET_NAME(data, *op) << " " + data->CGetOpNodeInfo(*op)->GetOperation());
          HLS->Rconn->bind_command_port(*op, conn_binding::IN, commandport_obj::OPERATION, data);
 
          PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
@@ -2896,19 +3020,18 @@ void mux_connection_binding::create_connections()
 
       if(GET_TYPE(data, *op) & TYPE_PHI)
       {
-         PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "  * Ending Operation: " + GET_NAME(data, *op));
+         PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "    * Ending Operation: " + GET_NAME(data, *op));
          /// phi must be differently managed
          unsigned int var_written = HLSMgr->get_produced_value(HLS->functionId, *op);
          CustomOrderedSet<unsigned int> source_already_analyzed;
          const CustomOrderedSet<vertex>& ending_states = HLS->Rliv->get_state_where_end(*op);
          THROW_ASSERT(ending_states.size() == 1 || is_PC ||
-                          HLS->STG->GetStg()->CGetStateInfo(*ending_states.begin())->is_duplicated ||
-                          HLS->STG->GetStg()->CGetStateInfo(*ending_states.begin())->is_pipelined_state,
+                          astg->CGetStateInfo(*ending_states.begin())->is_duplicated ||
+                          astg->CGetStateInfo(*ending_states.begin())->is_pipelined_state,
                       "phis cannot run in more than one state");
          for(const auto estate : ending_states)
          {
-            const StateInfoConstRef state_info =
-                is_PC ? StateInfoConstRef() : HLS->STG->GetStg()->CGetStateInfo(estate);
+            const StateInfoConstRef state_info = is_PC ? StateInfoConstRef() : astg->CGetStateInfo(estate);
             const auto gp =
                 GetPointer<const gimple_phi>(TreeM->get_tree_node_const(data->CGetOpNodeInfo(*op)->GetNodeId()));
             for(const auto& def_edge : gp->CGetDefEdgesList())
@@ -2948,17 +3071,9 @@ void mux_connection_binding::create_connections()
                if(state_info->is_pipelined_state)
                {
                   phi_pipelined_state = true;
-                  PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
-                                "      pipelined state " + STR(state_info->is_first_iteration ? "T" : "F"));
+                  PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "      pipelined state");
                }
-               if(phi_pipelined_state && state_info->is_first_iteration &&
-                  def_edge.second == data->CGetOpNodeInfo(*op)->bb_index)
-               {
-                  PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "      pipelined state: edge not active");
-                  continue;
-               }
-               if(phi_pipelined_state && !state_info->is_first_iteration &&
-                  def_edge.second != data->CGetOpNodeInfo(*op)->bb_index)
+               if(phi_pipelined_state && !HLS->Rliv->has_state_in(estate, *op, tree_temp))
                {
                   PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "      pipelined state: edge not active");
                   continue;
@@ -2995,10 +3110,14 @@ void mux_connection_binding::create_connections()
                    "      Managing phi operation " + GET_NAME(data, *op) + " ending in state " +
                        HLS->Rliv->get_name(estate) +
                        (cur_phi_tree_var ? " for variable " + behavioral_helper->PrintVariable(cur_phi_tree_var) : ""));
-               if(HLS->storage_value_information->is_a_storage_value(estate, var_written))
+               auto max_step = astg->CGetStateTransitionGraphInfo()->vertex_to_max_step.at(estate);
+               auto step = true || def_edge.second != data->CGetOpNodeInfo(*op)->bb_index ?
+                               HLS->Rliv->get_step(estate, *op, var_written, false) :
+                               max_step;
+               if(HLS->storage_value_information->is_a_storage_value(estate, var_written, step))
                {
                   unsigned int storage_value =
-                      HLS->storage_value_information->get_storage_value_index(estate, var_written);
+                      HLS->storage_value_information->get_storage_value_index(estate, var_written, step);
                   unsigned int r_index = HLS->Rreg->get_register(storage_value);
                   unsigned int in_bitsize = object_bitsize(TreeM, HLS_manager::io_binding_type(tree_temp, 0));
                   unsigned int out_bitsize = object_bitsize(TreeM, HLS_manager::io_binding_type(var_written, 0));
@@ -3028,7 +3147,9 @@ void mux_connection_binding::create_connections()
                                      state_info->moved_op_def_set.end())
                               {
                                  unsigned int src_storage_value =
-                                     HLS->storage_value_information->get_storage_value_index(estate, cur_phi_tree_var);
+                                     HLS->storage_value_information->get_storage_value_index(
+                                         estate, cur_phi_tree_var,
+                                         HLS->Rliv->get_step(estate, *op, cur_phi_tree_var, false));
                                  unsigned int src_r_index = HLS->Rreg->get_register(src_storage_value);
                                  fu_src_obj = HLS->Rreg->get(src_r_index);
                               }
@@ -3093,7 +3214,8 @@ void mux_connection_binding::create_connections()
                                      state_info->moved_op_def_set.end())
                               {
                                  unsigned int src_storage_value =
-                                     HLS->storage_value_information->get_storage_value_index(estate, cur_phi_tree_var);
+                                     HLS->storage_value_information->get_storage_value_index(estate, cur_phi_tree_var,
+                                                                                             0);
                                  unsigned int src_r_index = HLS->Rreg->get_register(src_storage_value);
                                  fu_src_obj = HLS->Rreg->get(src_r_index);
                               }
@@ -3180,7 +3302,8 @@ void mux_connection_binding::create_connections()
                                      state_info->moved_op_def_set.end())
                               {
                                  unsigned int src_storage_value =
-                                     HLS->storage_value_information->get_storage_value_index(estate, cur_phi_tree_var);
+                                     HLS->storage_value_information->get_storage_value_index(estate, cur_phi_tree_var,
+                                                                                             0);
                                  unsigned int src_r_index = HLS->Rreg->get_register(src_storage_value);
                                  fu_src_obj = HLS->Rreg->get(src_r_index);
                               }
@@ -3252,7 +3375,7 @@ void mux_connection_binding::create_connections()
                               state_info->moved_op_def_set.find(cur_phi_tree_var) == state_info->moved_op_def_set.end())
                            {
                               unsigned int src_storage_value =
-                                  HLS->storage_value_information->get_storage_value_index(estate, cur_phi_tree_var);
+                                  HLS->storage_value_information->get_storage_value_index(estate, cur_phi_tree_var, 0);
                               unsigned int src_r_index = HLS->Rreg->get_register(src_storage_value);
                               fu_src_obj = HLS->Rreg->get(src_r_index);
                            }
@@ -3297,6 +3420,7 @@ void mux_connection_binding::create_connections()
                             HLS->Rliv->get_state_in(estate, *op, cur_phi_tree_var);
                         for(const auto stateIn : states_in)
                         {
+                           std::cerr << "state_in " << HLS->Rliv->get_name(stateIn) << "\n";
                            generic_objRef fu_obj_src;
                            if(tree_helper::is_parameter(TreeM, cur_phi_tree_var))
                            {
@@ -3317,51 +3441,87 @@ void mux_connection_binding::create_connections()
                            else
                            {
                               std::cerr << "here\n";
-                              vertex def_op = HLS->Rliv->get_op_where_defined(cur_phi_tree_var);
+                              const StateInfoConstRef state_in_info =
+                                  is_PC ? StateInfoConstRef() : astg->CGetStateInfo(stateIn);
 
-                              last_intermediate_state fetch_previous(
-                                  HLS->STG->GetStg(), HLSMgr->CGetFunctionBehavior(funId)->is_simple_pipeline());
+                              vertex def_op = HLS->Rliv->get_op_where_defined(cur_phi_tree_var);
+                              const CustomOrderedSet<vertex>& def_op_ending_states =
+                                  HLS->Rliv->get_state_where_end(def_op);
+
                               if((GET_TYPE(data, def_op) & TYPE_PHI) == 0)
                               {
-                                 const CustomOrderedSet<vertex>& def_op_ending_states =
-                                     HLS->Rliv->get_state_where_end(def_op);
                                  if(def_op_ending_states.find(stateIn) != def_op_ending_states.end())
                                  {
                                     fu_obj_src = HLS->Rfu->get(def_op);
                                  }
-                                 else if(HLS->storage_value_information->is_a_storage_value(
-                                             fetch_previous(stateIn, estate), cur_phi_tree_var))
-                                 {
-                                    unsigned int src_storage_value =
-                                        HLS->storage_value_information->get_storage_value_index(
-                                            fetch_previous(stateIn, estate), cur_phi_tree_var);
-                                    unsigned int src_r_index = HLS->Rreg->get_register(src_storage_value);
-                                    PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
-                                                  "       - register: " << src_r_index << " from "
-                                                                        << HLS->Rliv->get_name(stateIn) + " to state " +
-                                                                               HLS->Rliv->get_name(estate) + " for " +
-                                                                               HLSMgr->CGetFunctionBehavior(funId)
-                                                                                   ->CGetBehavioralHelper()
-                                                                                   ->PrintVariable(cur_phi_tree_var));
-                                    fu_obj_src = HLS->Rreg->get(src_r_index);
-                                 }
                                  else
                                  {
-                                    THROW_ERROR(
-                                        "not expected from " + HLS->Rliv->get_name(stateIn) + " to " +
-                                        HLS->Rliv->get_name(estate) + " " +
-                                        HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->PrintVariable(
-                                            cur_phi_tree_var));
+                                    auto one_of_def = *def_op_ending_states.begin();
+                                    const StateInfoConstRef state_def_info =
+                                        is_PC ? StateInfoConstRef() : astg->CGetStateInfo(one_of_def);
+                                    bool is_state_def_pipelined = !is_PC && state_def_info->is_pipelined_state;
+                                    std::cerr << "is_state_def_pipelined" << (is_state_def_pipelined ? "T" : "F")
+                                              << "\n";
+                                    auto step_in =
+                                        is_state_def_pipelined ?
+                                            (state_def_info->BB_ids.find(data->CGetOpNodeInfo(*op)->bb_index) !=
+                                                     state_def_info->BB_ids.end() ?
+                                                 HLS->Rliv->get_prev_step(
+                                                     cur_phi_tree_var,
+                                                     HLS->Rliv->get_step(one_of_def, def_op, cur_phi_tree_var, false)) :
+                                                 astg->CGetStateTransitionGraphInfo()->vertex_to_max_step.at(stateIn) -
+                                                     2) :
+                                            0;
+                                    std::cerr << "step_in " << step_in << "\n";
+                                    if(HLS->storage_value_information->is_a_storage_value(estate, cur_phi_tree_var,
+                                                                                          step_in))
+                                    {
+                                       unsigned int src_storage_value =
+                                           HLS->storage_value_information->get_storage_value_index(
+                                               estate, cur_phi_tree_var, step_in);
+                                       unsigned int src_r_index = HLS->Rreg->get_register(src_storage_value);
+                                       PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                                                     "       - register: "
+                                                         << src_r_index << " from "
+                                                         << HLS->Rliv->get_name(stateIn) + " to state " +
+                                                                HLS->Rliv->get_name(estate) + " for " +
+                                                                HLSMgr->CGetFunctionBehavior(funId)
+                                                                    ->CGetBehavioralHelper()
+                                                                    ->PrintVariable(cur_phi_tree_var));
+                                       fu_obj_src = HLS->Rreg->get(src_r_index);
+                                    }
+                                    else
+                                    {
+                                       THROW_ERROR(
+                                           "not expected from " + HLS->Rliv->get_name(stateIn) + " to " +
+                                           HLS->Rliv->get_name(estate) + " " +
+                                           HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->PrintVariable(
+                                               cur_phi_tree_var));
+                                    }
                                  }
                               }
                               else
                               {
+                                 auto one_of_def = *def_op_ending_states.begin();
+                                 const StateInfoConstRef state_def_info =
+                                     is_PC ? StateInfoConstRef() : astg->CGetStateInfo(one_of_def);
+                                 bool is_state_def_pipelined = !is_PC && state_def_info->is_pipelined_state;
+                                 std::cerr << "is_state_def_pipelined" << (is_state_def_pipelined ? "T" : "F") << "\n";
+                                 auto step_in =
+                                     is_state_def_pipelined ?
+                                         (state_def_info->BB_ids.find(data->CGetOpNodeInfo(*op)->bb_index) !=
+                                                  state_def_info->BB_ids.end() ?
+                                              state_def_info->LP_II - 1 :
+                                              astg->CGetStateTransitionGraphInfo()->vertex_to_max_step.at(stateIn) -
+                                                  1) :
+                                         0;
+                                 std::cerr << "step_in " << step_in << "\n";
                                  THROW_ASSERT(HLS->storage_value_information->is_a_storage_value(
-                                                  fetch_previous(stateIn, estate), cur_phi_tree_var),
+                                                  estate, cur_phi_tree_var, step_in),
                                               "it has to be a register");
                                  unsigned int src_storage_value =
-                                     HLS->storage_value_information->get_storage_value_index(
-                                         fetch_previous(stateIn, estate), cur_phi_tree_var);
+                                     HLS->storage_value_information->get_storage_value_index(estate, cur_phi_tree_var,
+                                                                                             step_in);
                                  unsigned int src_r_index = HLS->Rreg->get_register(src_storage_value);
                                  PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                                                "       - register: " << src_r_index << " from "
@@ -3412,7 +3572,7 @@ void mux_connection_binding::create_connections()
       }
       else
       {
-         PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "  * Ending Operation: " + GET_NAME(data, *op));
+         PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "    * Ending Operation: " + GET_NAME(data, *op));
          HLS->Rconn->bind_command_port(*op, conn_binding::IN, commandport_obj::OPERATION, data);
 
          PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
@@ -3511,8 +3671,10 @@ void mux_connection_binding::create_connections()
                   const CustomOrderedSet<vertex>::const_iterator s_out_it_end = states_out.end();
                   for(auto s_out_it = states_out.begin(); s_out_it != s_out_it_end; ++s_out_it)
                   {
+                     auto step_out = HLS->Rliv->get_step(estate, *op, var_written, false);
+                     std::cerr << "step_out: " << step_out << "\n";
                      unsigned int storage_value =
-                         HLS->storage_value_information->get_storage_value_index(*s_out_it, var_written);
+                         HLS->storage_value_information->get_storage_value_index(*s_out_it, var_written, step_out);
                      unsigned int r_index = HLS->Rreg->get_register(storage_value);
                      generic_objRef tgt_reg_obj = HLS->Rreg->get(r_index);
                      HLS->Rconn->add_data_transfer(fu_obj, tgt_reg_obj, 0, 0,
@@ -3546,38 +3708,12 @@ void mux_connection_binding::create_connections()
       }
    }
 
-   INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Ended execution of interconnection binding");
-
-#if 0
-   const std::list<vertex> & support = HLS->Rliv->get_support();
-   const std::list<vertex>::const_iterator vEnd = support.end();
-   for(std::list<vertex>::const_iterator vIt = support.begin(); vIt != vEnd; vIt++)
+   const auto& support = HLS->Rliv->get_support();
+   for(const auto vIt : support)
    {
-      const CustomOrderedSet<unsigned int>& live_in = HLS->Rliv->get_live_in(*vIt);
-      for(CustomOrderedSet<unsigned int>::const_iterator k = live_in.begin(); k != live_in.end(); ++k)
-      {
-         if(!HLS->Rliv->has_state_in(*vIt, *k)) continue;
-         const CustomOrderedSet<vertex>& states_in = HLS->Rliv->get_state_in(*vIt,*k);
-         const CustomOrderedSet<vertex>::const_iterator si_it_end = states_in.end();
-         for(CustomOrderedSet<vertex>::const_iterator si_it=states_in.begin(); si_it != si_it_end; si_it++)
-         {
-            const CustomOrderedSet<unsigned int>& live_in_src = HLS->Rliv->get_live_in(*si_it);
-            if (live_in_src.find(*k) == live_in_src.end()) continue;
-            unsigned int storage_value_src = HLS->storage_value_information->get_storage_value_index(*si_it, *k);
-            unsigned int r_index_src = HLS->Rreg->get_register(storage_value_src);
-            unsigned int storage_value_dest = HLS->storage_value_information->get_storage_value_index(*vIt, *k);
-            unsigned int r_index_dest = HLS->Rreg->get_register(storage_value_dest);
-            generic_objRef src_reg_obj = HLS->Rreg->get(r_index_src);
-            generic_objRef tgt_reg_obj = HLS->Rreg->get(r_index_dest);
-            if (src_reg_obj == tgt_reg_obj) continue;
-            PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "     - copying from register " + STR(r_index_src) + " to register " + STR(r_index_dest) + " in transition " + HLS->Rliv->get_name(*si_it) + " -> " + HLS->Rliv->get_name(*vIt));
-            HLS->Rconn->add_data_transfer(src_reg_obj, tgt_reg_obj, 0, data_transfer(*k, tree_helper::Size(TreeM->CGetTreeReindex(*k)), *si_it, *vIt, NULL_VERTEX));
-            generic_objRef enable_obj = GetPointer<register_obj>(tgt_reg_obj)->get_wr_enable();
-            GetPointer<commandport_obj>(enable_obj)->add_activation(commandport_obj::transition(*si_it, *vIt, commandport_obj::data_operation_pair(0, NULL_VERTEX));
-         }
-      }
+      connect_pipelined_registers(vIt);
    }
-#endif
+   INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Ended execution of interconnection binding");
 }
 
 unsigned int mux_connection_binding::mux_interconnection()
@@ -3900,19 +4036,24 @@ unsigned int mux_connection_binding::swap_p(const OpGraphConstRef data, vertex o
                               }
                               // std::cerr << "port " << port_index << " chained " << tree_var << std::endl;
                            }
-                           else if(HLS->storage_value_information->is_a_storage_value(state, tree_var))
+                           else
                            {
-                              unsigned int storage_value =
-                                  HLS->storage_value_information->get_storage_value_index(state, tree_var);
-                              regs_in_op[port_index].insert(HLS->Rreg->get_register(storage_value));
-                              // std::cerr << "port " << port_index << " reg " << HLS->Rreg->get_register(storage_value)
-                              // << std::endl;
+                              auto step_in = HLS->Rliv->get_step(state, op, tree_var, true);
+                              if(HLS->storage_value_information->is_a_storage_value(state, tree_var, step_in))
+                              {
+                                 unsigned int storage_value =
+                                     HLS->storage_value_information->get_storage_value_index(state, tree_var, step_in);
+                                 regs_in_op[port_index].insert(HLS->Rreg->get_register(storage_value));
+                                 // std::cerr << "port " << port_index << " reg " <<
+                                 // HLS->Rreg->get_register(storage_value)
+                                 // << std::endl;
+                              }
                            }
                         }
                         else
                         {
-                           unsigned int storage_value =
-                               HLS->storage_value_information->get_storage_value_index(state, tree_var);
+                           unsigned int storage_value = HLS->storage_value_information->get_storage_value_index(
+                               state, tree_var, HLS->Rliv->get_step(state, op, tree_var, true));
                            regs_in_op[port_index].insert(HLS->Rreg->get_register(storage_value));
                            // std::cerr << "port " << port_index << " reg " << HLS->Rreg->get_register(storage_value) <<
                            // std::endl;

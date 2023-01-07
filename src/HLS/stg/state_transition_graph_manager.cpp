@@ -311,3 +311,18 @@ void StateTransitionGraphManager::add_to_SM(structural_objectRef clock_port, str
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "<--Adding :multi-unbounded controllers");
 }
+
+bool StateTransitionGraphManager::not_same_step(vertex state, vertex def, vertex op) const
+{
+   const StateInfoConstRef state_info = CGetAstg()->CGetStateInfo(state);
+   if(!state_info->step_in.empty() && !state_info->step_out.empty())
+   {
+      return state_info->step_out.find(def) != state_info->step_out.end() &&
+             state_info->step_in.find(op) != state_info->step_in.end() &&
+             state_info->step_out.at(def) != state_info->step_in.at(op);
+   }
+   else
+   {
+      return true;
+   }
+}

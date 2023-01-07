@@ -170,6 +170,8 @@ class mux_connection_binding : public conn_binding_creator
 
    unsigned int extract_parm_decl(unsigned int tree_var, const tree_managerRef TreeM);
 
+   void connect_pipelined_registers(vertex state);
+
    void add_conversion(unsigned int num, unsigned int size_tree_var, VertexIterator op, unsigned int form_par_type,
                        unsigned int port_index, const generic_objRef fu_obj, const OpGraphConstRef data,
                        const tree_managerRef TreeM, unsigned int tree_var,

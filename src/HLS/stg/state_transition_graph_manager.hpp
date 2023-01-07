@@ -207,6 +207,8 @@ class StateTransitionGraphManager
     * Add components to the datapath required by the FSM
     */
    void add_to_SM(structural_objectRef clock_port, structural_objectRef reset_port);
+
+   bool not_same_step(vertex state, vertex def, vertex op) const;
 };
 /// refcount definition to allocate the class
 using StateTransitionGraphManagerRef = refcount<StateTransitionGraphManager>;

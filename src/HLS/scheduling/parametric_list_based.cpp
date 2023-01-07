@@ -1893,11 +1893,20 @@ bool parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
                      }
                   }
                }
+               //               std::cerr << "latest_cs=" << latest_cs << " cs_first_vertex=" << cs_first_vertex << "
+               //               LP_II=" << LP_II
+               //                         << " cs_last_vertex=" << cs_last_vertex << " last_vertex_n_cycles=" <<
+               //                         last_vertex_n_cycles
+               //                         << "\n";
                if(latest_cs > cs_first_vertex && (latest_cs + LP_II >= cs_last_vertex + last_vertex_n_cycles))
                {
+                  //                  std::cerr << "move back steps=" << ((latest_cs - cs_first_vertex) % LP_II) <<
+                  //                  "\n";
                   schedule->remove_sched(first_vertex);
-                  schedule->set_execution(first_vertex, ControlStep(latest_cs));
-                  schedule->set_execution_end(first_vertex, ControlStep(latest_cs));
+                  schedule->set_execution(first_vertex,
+                                          ControlStep(latest_cs - ((latest_cs - cs_first_vertex) % LP_II)));
+                  schedule->set_execution_end(first_vertex,
+                                              ControlStep(latest_cs - ((latest_cs - cs_first_vertex) % LP_II)));
                }
                else
                {
@@ -2380,7 +2389,7 @@ DesignFlowStep_Status parametric_list_based::InternalExec()
    compute_function_topological_order();
    for(auto vi = vertices.begin(); vi != viend; ++vi)
    {
-      auto isLPBB = false; // LPBB.find(*vi) != LPBB.end();
+      auto isLPBB = LPBB.find(*vi) != LPBB.end();
       OpVertexSet operations(op_graph);
       auto BBI = bbg->CGetBBNodeInfo(*vi);
       std::list<vertex> bb_operations = BBI->statements_list;

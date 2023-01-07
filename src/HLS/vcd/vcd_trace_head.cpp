@@ -172,7 +172,7 @@ vcd_trace_head::vcd_trace_head(const DiscrepancyOpInfo& op, std::string signame,
       op_info(op),
       is_phi(_TM->get_tree_node_const(op.op_id)->get_kind() == gimple_phi_K),
       is_in_reg(_HLSMgr->get_HLS(op_info.stg_fun_id)
-                    ->storage_value_information->is_a_storage_value(nullptr, op.ssa_name_node_id)),
+                    ->storage_value_information->is_a_storage_value(nullptr, op.ssa_name_node_id, 0)),
       HLSMgr(_HLSMgr),
       TM(_TM),
       initial_state_id(init_state_id),

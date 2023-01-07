@@ -90,18 +90,19 @@ void compatibility_based_register::create_compatibility_graph()
    const auto vEnd = support.end();
    for(auto vIt = support.begin(); vIt != vEnd; ++vIt)
    {
-      const CustomOrderedSet<unsigned int>& live = HLS->Rliv->get_live_in(*vIt);
+      const auto& live = HLS->Rliv->get_live_in(*vIt);
       register_lower_bound = std::max(static_cast<unsigned int>(live.size()), register_lower_bound);
-      const CustomOrderedSet<unsigned int>::const_iterator k_end = live.end();
+      const auto k_end = live.end();
       for(auto k = live.begin(); k != k_end; ++k)
       {
          auto k_inner = k;
          ++k_inner;
          while(k_inner != k_end)
          {
-            unsigned int tail = HLS->storage_value_information->get_storage_value_index(*vIt, *k);
+            unsigned int tail = HLS->storage_value_information->get_storage_value_index(*vIt, k->first, k->second);
             THROW_ASSERT(tail < CG_num_vertices, "wrong compatibility graph index");
-            unsigned int head = HLS->storage_value_information->get_storage_value_index(*vIt, *k_inner);
+            unsigned int head =
+                HLS->storage_value_information->get_storage_value_index(*vIt, k_inner->first, k_inner->second);
             THROW_ASSERT(head < CG_num_vertices, "wrong compatibility graph index");
             if(tail < head)
             {
@@ -119,7 +120,7 @@ void compatibility_based_register::create_compatibility_graph()
    {
       for(unsigned int vi = 0; vi < vj; ++vi)
       {
-         if(!conflict_map(vi, vj) && HLS->storage_value_information->are_value_bitsize_compatible(vi, vj))
+         if(!conflict_map(vi, vj) && HLS->storage_value_information->are_storage_value_compatible(vi, vj))
          {
             boost::graph_traits<compatibility_graph>::edge_descriptor e1;
             int edge_weight = HLS->storage_value_information->get_compatibility_weight(vi, vj);

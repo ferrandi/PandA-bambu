@@ -352,7 +352,7 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
                {
                   /// add an empty state before the current basic block
                   std::list<vertex> exec_ops, start_ops, end_ops;
-                  std::map<vertex, unsigned> vertex_stages;
+                  std::map<vertex, unsigned> vertex_step_in, vertex_step_out;
                   const BBNodeInfoConstRef entry_operations = fbb->CGetBBNodeInfo(bb_src);
                   auto entry_ops_it_end = entry_operations->statements_list.end();
                   for(auto entry_ops_it = entry_operations->statements_list.begin(); entry_ops_it_end != entry_ops_it;
@@ -361,12 +361,12 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
                      exec_ops.push_back(*entry_ops_it);
                      start_ops.push_back(*entry_ops_it);
                      end_ops.push_back(*entry_ops_it);
-                     vertex_stages[*entry_ops_it] = 0;
                   }
                   CustomOrderedSet<unsigned int> BB_ids;
                   BB_ids.insert(entry_operations->get_bb_index());
 
-                  vertex s_cur = STG_builder->create_state(exec_ops, start_ops, end_ops, BB_ids, vertex_stages);
+                  vertex s_cur = STG_builder->create_state(exec_ops, start_ops, end_ops, BB_ids, vertex_step_in,
+                                                           vertex_step_out, 0, 0, false);
                   STG_builder->connect_state(last_state[bb_src], s_cur,
                                              TransitionInfo::StateTransitionType::ST_EDGE_NORMAL);
                   last_state[bb_src] = s_cur;
@@ -378,8 +378,9 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
 
       first_state_p = true;
       std::map<ControlStep, std::list<vertex>> executing_ops, starting_ops, ending_ops, onfly_ops;
-      ControlStep max_cstep = ControlStep(0u);
-      ControlStep min_cstep = ControlStep(std::numeric_limits<unsigned int>::max());
+      auto max_cstep = ControlStep(0u);
+      auto min_cstep = ControlStep(std::numeric_limits<unsigned int>::max());
+      std::map<vertex, ControlStep> phi_cstep;
 
       for(auto op : ordered_operations)
       {
@@ -431,6 +432,10 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
             }
          }
          const auto cstep = sch->get_cstep(op).second;
+         if(GET_TYPE(dfgRef, op) & (TYPE_PHI))
+         {
+            phi_cstep.insert(std::make_pair(op, cstep));
+         }
          unsigned int fu_name = HLS->Rfu->get_assign(op);
          THROW_ASSERT(sch->get_cstep_end(op) >= sch->get_cstep(op), "unexpected condition");
          const auto delay = sch->get_cstep_end(op).second - sch->get_cstep(op).second;
@@ -483,8 +488,8 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
          }
       }
       THROW_ASSERT(!isLP || n_iter_LP_STG_building > 1, "unexpected condition");
-      // std::cerr << "BBIndex " << BBIndex << " isLP " << (isLP ? "T" : "F") << " LPII " << LPII
-      //           << " n_iter_LP_STG_building " << n_iter_LP_STG_building << "\n";
+      std::cerr << "BBIndex " << BBIndex << " isLP " << (isLP ? "T" : "F") << " LPII " << LPII
+                << " n_iter_LP_STG_building " << n_iter_LP_STG_building << "\n";
       bool has_previous_LP_first_state = false;
       vertex previous_LP_first_state;
       vertex current_LP_first_state;
@@ -497,8 +502,22 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Considering control step " + STR(l));
             std::list<vertex> exec_ops, start_ops, end_ops, onf_ops;
 
-            std::map<vertex, unsigned> vertex_stages;
+            std::map<vertex, unsigned> vertex_step_in, vertex_step_out;
+            std::set<vertex> is_prologue;
+            bool has_last_step_op = (l + LP_Index * LPII) >= max_cstep;
             unsigned LP_Index_inner = 0;
+            /// build is_prologue
+            std::cerr << "l + LP_Index * LPII=" << l + LP_Index * LPII << "\n";
+
+            for(auto phi_step_pair : phi_cstep)
+            {
+               if(phi_step_pair.second > (l + LP_Index * LPII))
+               {
+                  std::cerr << "is prologue for " << GET_NAME(dfgRef, phi_step_pair.first) << "\n";
+                  is_prologue.insert(phi_step_pair.first);
+               }
+            }
+
             do
             {
                auto c_offset = l + LP_Index_inner * LPII;
@@ -507,7 +526,7 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
                   exec_ops.insert(exec_ops.end(), executing_ops.at(c_offset).begin(), executing_ops.at(c_offset).end());
                   for(auto vop : executing_ops.at(c_offset))
                   {
-                     vertex_stages[vop] = LP_Index_inner;
+                     vertex_step_in[vop] = from_strongtype_cast<unsigned int>(c_offset - min_cstep);
                   }
                }
 
@@ -520,7 +539,7 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
                   end_ops.insert(end_ops.end(), ending_ops.at(c_offset).begin(), ending_ops.at(c_offset).end());
                   for(auto vop : ending_ops.at(c_offset))
                   {
-                     vertex_stages[vop] = LP_Index_inner;
+                     vertex_step_out[vop] = from_strongtype_cast<unsigned int>(c_offset - min_cstep);
                   }
                }
                if(onfly_ops.find(c_offset) != onfly_ops.end())
@@ -532,10 +551,12 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
 
             CustomOrderedSet<unsigned int> BB_ids;
             BB_ids.insert(operations->get_bb_index());
-            s_cur = STG_builder->create_state(exec_ops, start_ops, end_ops, BB_ids, vertex_stages);
+            s_cur = STG_builder->create_state(
+                exec_ops, start_ops, end_ops, BB_ids, vertex_step_in, vertex_step_out, LPII,
+                isLP ? from_strongtype_cast<unsigned int>(max_cstep - min_cstep) : 0, isLP && has_last_step_op);
             if(isLP)
             {
-               STG_builder->set_pipelined_state(s_cur, LP_Index == 0);
+               STG_builder->set_pipelined_state(s_cur, is_prologue);
             }
 
             global_executing_ops[s_cur] = exec_ops;
@@ -572,7 +593,9 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
 
                CustomOrderedSet<unsigned int> call_BB_ids;
                call_BB_ids.insert(operations->get_bb_index());
-               vertex s_call = STG_builder->create_state(call_ops, empty_ops, call_ops, call_BB_ids, vertex_stages);
+               vertex s_call = STG_builder->create_state(
+                   call_ops, empty_ops, call_ops, call_BB_ids, vertex_step_in, vertex_step_out, LPII,
+                   isLP ? from_strongtype_cast<unsigned int>(max_cstep - min_cstep) : 0, isLP && has_last_step_op);
                HLS->STG->GetStg()->GetStateInfo(s_call)->is_dummy = true;
                call_states[s_cur].push_back(s_call);
                CustomOrderedSet<vertex> ops;
@@ -587,7 +610,7 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
             {
                if(call_states.find(previous) == call_states.end())
                {
-                  if(isLP && l == min_cstep + LPII)
+                  if(isLP && (l == min_cstep + LPII))
                   {
                      auto s_e = STG_builder->connect_state(previous, s_cur,
                                                            TransitionInfo::StateTransitionType::ST_EDGE_NORMAL);
@@ -2091,7 +2114,9 @@ void BB_based_stg::move_with_duplication(const vertex stateToMove, const vertex 
     */
    vertex clonedState = HLS->STG->STG_builder->create_state(
        toCloneStateInfo->executing_operations, toCloneStateInfo->starting_operations,
-       toCloneStateInfo->ending_operations, toCloneStateInfo->BB_ids, toCloneStateInfo->stages);
+       toCloneStateInfo->ending_operations, toCloneStateInfo->BB_ids, toCloneStateInfo->step_in,
+       toCloneStateInfo->step_out, toCloneStateInfo->LP_II,
+       stg->GetStateTransitionGraphInfo()->vertex_to_max_step.at(stateToClone), toCloneStateInfo->is_last_state);
    // set is_duplicated to true, and saves info about the source Bb of the data
    const auto clonedStateInfo = stg->GetStateInfo(clonedState);
    clonedStateInfo->is_duplicated = true;

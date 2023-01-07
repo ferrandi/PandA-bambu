@@ -50,7 +50,7 @@
 #ifndef STATE_TRANSTION_GRAPH_HPP
 #define STATE_TRANSTION_GRAPH_HPP
 
-/// Superclasses includ
+/// Superclasses include
 #include <edge_info.hpp>
 #include <graph_info.hpp>
 #include <node_info.hpp>
@@ -101,8 +101,17 @@ struct StateInfo : public NodeInfo
    /// set of BB ids associated with the state
    CustomOrderedSet<unsigned int> BB_ids;
 
-   /// define the vertex stage
-   std::map<vertex, unsigned> stages;
+   /// define the running vertex step in a pipelined code
+   std::map<vertex, unsigned> step_in;
+
+   /// define the ending vertex step in a pipelined code
+   std::map<vertex, unsigned> step_out;
+
+   /// true in case this state is the last before restarting a loop
+   bool is_last_state;
+
+   /// define the Initiation Interval used for this state
+   unsigned LP_II;
 
    /// flag to check if the state is dummy or not
    bool is_dummy;
@@ -110,8 +119,8 @@ struct StateInfo : public NodeInfo
    /// true when the state comes from loop pipelining
    bool is_pipelined_state;
 
-   /// meaningful when is a pipelined state
-   bool is_first_iteration;
+   /// phi operation belongs to the set in case the phi vertex has not been executed since so far
+   std::set<vertex> is_prologue;
 
    /// flag to check if the state is duplicated or not
    bool is_duplicated;
@@ -141,7 +150,7 @@ struct StateInfo : public NodeInfo
    std::list<vertex> moved_ending_op;
 
    /// ID of the loop this state belongs to
-   unsigned int loopId;
+   const unsigned int loopId;
 
    /**
     * Implementation of print method for this kind of node. It simply prints the list of operations contained into this
@@ -153,11 +162,12 @@ struct StateInfo : public NodeInfo
    /**
     * Constructor
     */
-   StateInfo()
-       : funId(0),
+   explicit StateInfo(unsigned int _funId)
+       : funId(_funId),
+         is_last_state(false),
+         LP_II(0),
          is_dummy(false),
          is_pipelined_state(false),
-         is_first_iteration(false),
          is_duplicated(false),
          sourceBb(0),
          isOriginalState(false),
@@ -282,6 +292,8 @@ struct StateTransitionGraphInfo : public GraphInfo
    std::map<unsigned int, vertex> state_id_to_vertex;
 
    std::map<vertex, unsigned int> vertex_to_state_id;
+
+   std::map<vertex, unsigned int> vertex_to_max_step;
 
    /**
     * Constructor
@@ -504,31 +516,30 @@ class TransitionWriter : public EdgeWriter
 class last_intermediate_state
 {
  public:
-   last_intermediate_state(StateTransitionGraphConstRef input_state_graph, bool enable)
+   explicit last_intermediate_state(StateTransitionGraphConstRef input_state_graph, bool enable)
        : state_graph(input_state_graph), pipeline(enable)
    {
    }
 
    vertex operator()(vertex top, vertex bottom)
    {
-      if(not pipeline)
+      auto si = state_graph->CGetStateInfo(bottom);
+      if(not pipeline && !si->is_pipelined_state)
       {
          return top;
       }
       graph::in_edge_iterator in_edge, in_edge_end;
-#if HAVE_ASSERTS
       bool multiple_in_edges = false;
-#endif
       vertex ret_v = NULL_VERTEX;
       for(boost::tie(in_edge, in_edge_end) = boost::in_edges(bottom, *state_graph); in_edge != in_edge_end; ++in_edge)
       {
+         if(multiple_in_edges)
+         {
+            return top;
+         }
          ret_v = boost::source(*in_edge, *state_graph);
-         THROW_ASSERT(not multiple_in_edges, "A pipeline should not contain phi operations");
-#if HAVE_ASSERTS
          multiple_in_edges = true;
-#endif
       }
-      THROW_ASSERT(multiple_in_edges, "No input edge found");
       return ret_v;
    }
 

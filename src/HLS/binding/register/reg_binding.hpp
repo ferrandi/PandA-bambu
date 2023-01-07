@@ -45,7 +45,6 @@
 #ifndef REG_BINDING_HPP
 #define REG_BINDING_HPP
 
-#include "custom_map.hpp"
 #include <iosfwd>
 #include <string>
 
@@ -129,7 +128,7 @@ class reg_binding : public variable2obj<generic_objRef>
    /**
     * Destructor.
     */
-   virtual ~reg_binding();
+   ~reg_binding() override;
 
    static reg_bindingRef create_reg_binding(const hlsRef& HLS, const HLS_managerRef HLSMgr_);
 
@@ -180,7 +179,7 @@ class reg_binding : public variable2obj<generic_objRef>
    /**
     * Function that print the register binding associated with a storage value.
     */
-   void print_el(const_iterator& it) const;
+   void print_el(const_iterator& it) const override;
 
    /**
     * Returns reference to register object associated to a given index
@@ -213,7 +212,7 @@ class reg_binding : public variable2obj<generic_objRef>
     * @param r is the register
     * @return the set of associated variables
     */
-   CustomOrderedSet<unsigned int> get_vars(const unsigned int& r) const;
+   CustomOrderedSet<std::pair<unsigned int, unsigned int> > get_vars(const unsigned int& r) const;
 
    /**
     * return and set the bitsize associated with given register

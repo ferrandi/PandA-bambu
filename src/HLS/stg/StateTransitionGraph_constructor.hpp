@@ -92,7 +92,9 @@ class StateTransitionGraph_constructor
     */
    vertex create_state(const std::list<vertex>& exec_op, const std::list<vertex>& start_op,
                        const std::list<vertex>& end_op, const CustomOrderedSet<unsigned int>& BB_ids,
-                       const std::map<vertex, unsigned>& vertex_stages);
+                       const std::map<vertex, unsigned int>& vertex_step_in,
+                       const std::map<vertex, unsigned int>& vertex_step_out, unsigned int vertex_LP_II,
+                       unsigned int max_steps, bool is_last_state);
 
    /**
     *  create the STG entry vertex
@@ -157,7 +159,7 @@ class StateTransitionGraph_constructor
     * @param curr is the state
     * @param first_iteration in case the pipelined state is run on the first loop iteration
     */
-   void set_pipelined_state(const vertex& curr, bool first_iteration);
+   void set_pipelined_state(const vertex& curr, std::set<vertex> &is_prologue);
 };
 
 /// refcount definition to StateTransitionGraph_constructor class

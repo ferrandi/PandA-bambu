@@ -123,12 +123,16 @@ void StateInfo::print(std::ostream& os, const int detail_level) const
       const auto first_ending_time = schedule->GetEndingTime(first_index);
       if(detail_level == 0)
       {
-         const auto stage = stages.at(op);
+         const auto step = step_in.at(op);
          os << GET_NAME(op_function_graph, op) << " [" << NumberToString(first_starting_time, 2, 7) << "---"
             << NumberToString(first_ending_time, 2, 7) << "("
             << NumberToString(first_ending_time - first_starting_time, 2, 7) << ")"
-            << "](" << stage << ")"
-            << " --&gt; ";
+            << "]";
+         if(LP_II)
+         {
+            os << "(" << LP_II << ")(" << step << ")";
+         }
+         os << " --&gt; ";
       }
       std::string vertex_print = BH->print_vertex(op_function_graph, op, vpp, true);
       boost::replace_all(vertex_print, "&", "&amp;");
@@ -173,12 +177,16 @@ void StateInfo::print(std::ostream& os, const int detail_level) const
          }
          const auto first_starting_time = schedule->GetStartingTime(first_index);
          const auto first_ending_time = schedule->GetEndingTime(first_index);
-         const auto stage = stages.at(op);
+         const auto step = step_out.at(op);
          os << GET_NAME(op_function_graph, op) << " [" << NumberToString(first_starting_time, 2, 7) << "---"
             << NumberToString(first_ending_time, 2, 7) << "("
             << NumberToString(first_ending_time - first_starting_time, 2, 7) << ")"
-            << "](" << stage << ")"
-            << " --&gt; ";
+            << "]";
+         if(LP_II)
+         {
+            os << "(" << LP_II << ")(" << step << ")";
+         }
+         os << " --&gt; ";
          std::string vertex_print = BH->print_vertex(op_function_graph, op, vpp, true);
          boost::replace_all(vertex_print, "&", "&amp;");
          boost::replace_all(vertex_print, "|", "\\|");

@@ -294,6 +294,7 @@ void cdfc_module_binding::initialize_connection_relation(connection_relation& co
             const CustomOrderedSet<vertex>& running_states = HLS->Rliv->get_state_where_run(current_v);
             for(const auto state : running_states)
             {
+               std::cerr << "state" << HLS->Rliv->get_name(state) << "\n";
                if(tree_helper::is_parameter(TreeM, tree_var) || !HLS->Rliv->has_op_where_defined(tree_var))
                {
                   con_rel_per_vertex_per_port_index.insert(
@@ -304,7 +305,7 @@ void cdfc_module_binding::initialize_connection_relation(connection_relation& co
                   vertex def_op = HLS->Rliv->get_op_where_defined(tree_var);
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                  "Variable is defined in " + GET_NAME(data, def_op));
-                  const CustomOrderedSet<vertex>& def_op_ending_states = HLS->Rliv->get_state_where_end(def_op);
+                  const auto& def_op_ending_states = HLS->Rliv->get_state_where_end(def_op);
                   if((GET_TYPE(data, def_op) & TYPE_PHI) == 0)
                   {
                      if(def_op_ending_states.find(state) != def_op_ending_states.end())
@@ -312,24 +313,35 @@ void cdfc_module_binding::initialize_connection_relation(connection_relation& co
                         con_rel_per_vertex_per_port_index.insert(
                             std::make_pair(no_phi_chained, std::make_pair(tree_var, def_op)));
                      }
-                     else if(HLS->storage_value_information->is_a_storage_value(state, tree_var))
-                     {
-                        unsigned int storage_value =
-                            HLS->storage_value_information->get_storage_value_index(state, tree_var);
-                        con_rel_per_vertex_per_port_index.insert(
-                            std::make_pair(no_phi_no_chained, std::make_pair(storage_value, def_op)));
-                     }
                      else
                      {
-                        THROW_UNREACHABLE("unexpected");
+                        auto step = HLS->Rliv->get_step(state, current_v, tree_var, true);
+                        step = HLS->Rliv->get_prev_step(tree_var, step);
+                        if(HLS->storage_value_information->is_a_storage_value(state, tree_var, step))
+                        {
+                           std::cerr << "1\n";
+                           unsigned int storage_value =
+                               HLS->storage_value_information->get_storage_value_index(state, tree_var, step);
+                           con_rel_per_vertex_per_port_index.insert(
+                               std::make_pair(no_phi_no_chained, std::make_pair(storage_value, def_op)));
+                        }
+                        else
+                        {
+                           THROW_UNREACHABLE("unexpected");
+                        }
                      }
                   }
                   else
                   {
+                     std::cerr << FB->CGetBehavioralHelper()->PrintVariable(tree_var) << " "
+                               << HLS->Rliv->get_name(state) << " 2\n";
+                     auto step = HLS->Rliv->get_step(state, current_v, tree_var, true);
+                     step = HLS->Rliv->get_prev_step(tree_var, step);
+                     std::cerr << "step=" << step << "\n";
+                     THROW_ASSERT(HLS->storage_value_information->is_a_storage_value(state, tree_var, step),
+                                  "unexpected case");
                      unsigned int storage_value =
-                         HLS->storage_value_information->get_storage_value_index(state, tree_var);
-                     THROW_ASSERT(HLS->storage_value_information->is_a_storage_value(state, tree_var),
-                                  "unxpected case");
+                         HLS->storage_value_information->get_storage_value_index(state, tree_var, step);
                      con_rel_per_vertex_per_port_index.insert(
                          std::make_pair(phi, std::make_pair(storage_value, def_op)));
                   }
@@ -490,10 +502,12 @@ void estimate_muxes(const connection_relation& con_rel, unsigned int mux_prec, d
             const CustomOrderedSet<vertex>& end = HLS->Rliv->get_state_where_end(current_v);
             for(const auto estate : end)
             {
-               if(HLS->storage_value_information->is_a_storage_value(estate, var_written))
+               auto step = HLS->Rliv->get_step(estate, current_v, var_written, false);
+               if(HLS->storage_value_information->is_a_storage_value(estate, var_written, step))
                {
+                  std::cerr << "3\n";
                   regs_out.insert(HLS->Rreg->get_register(
-                      HLS->storage_value_information->get_storage_value_index(estate, var_written)));
+                      HLS->storage_value_information->get_storage_value_index(estate, var_written, step)));
                }
                else
                {

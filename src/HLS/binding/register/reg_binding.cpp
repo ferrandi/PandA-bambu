@@ -131,16 +131,17 @@ reg_bindingRef reg_binding::create_reg_binding(const hlsRef& HLS, const HLS_mana
 
 void reg_binding::print_el(const_iterator& it) const
 {
-   INDENT_OUT_MEX(
-       OUTPUT_LEVEL_VERY_PEDANTIC, HLS->output_level,
-       "---Storage Value: " + STR(it->first) + " for variable " +
-           FB->CGetBehavioralHelper()->PrintVariable(HLS->storage_value_information->get_variable_index(it->first)) +
-           " stored into register " + it->second->get_string());
+   INDENT_OUT_MEX(OUTPUT_LEVEL_VERY_PEDANTIC, HLS->output_level,
+                  "---Storage Value: " + STR(it->first) + " for variable " +
+                      FB->CGetBehavioralHelper()->PrintVariable(
+                          HLS->storage_value_information->get_variable_index(it->first).first) +
+                      " step " + STR(HLS->storage_value_information->get_variable_index(it->first).second) +
+                      " stored into register " + it->second->get_string());
 }
 
-CustomOrderedSet<unsigned int> reg_binding::get_vars(const unsigned int& r) const
+CustomOrderedSet<std::pair<unsigned int, unsigned int>> reg_binding::get_vars(const unsigned int& r) const
 {
-   CustomOrderedSet<unsigned int> vars;
+   CustomOrderedSet<std::pair<unsigned int, unsigned int>> vars;
    THROW_ASSERT(reg2storage_values.find(r) != reg2storage_values.end() && !reg2storage_values.find(r)->second.empty(),
                 "at least a storage value has to be mapped on register r");
 
@@ -154,16 +155,17 @@ CustomOrderedSet<unsigned int> reg_binding::get_vars(const unsigned int& r) cons
 
 unsigned int reg_binding::compute_bitsize(unsigned int r)
 {
-   CustomOrderedSet<unsigned int> reg_vars = get_vars(r);
+   auto reg_vars = get_vars(r);
    unsigned int max_bits = 0;
-   for(unsigned int reg_var : reg_vars)
+   for(auto reg_var : reg_vars)
    {
       structural_type_descriptorRef node_type0 =
-          structural_type_descriptorRef(new structural_type_descriptor(reg_var, FB->CGetBehavioralHelper()));
+          structural_type_descriptorRef(new structural_type_descriptor(reg_var.first, FB->CGetBehavioralHelper()));
       unsigned int node_size = STD_GET_SIZE(node_type0);
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, HLS->debug_level,
-                    "- Analyzing node " + STR(reg_var) + ", whose type is " + node_type0->get_name() +
-                        " (size: " + STR(node_type0->size) + ", vector_size: " + STR(node_type0->vector_size) + ")");
+                    "- Analyzing node " + STR(reg_var.first) + "(" + STR(reg_var.second) + "), whose type is " +
+                        node_type0->get_name() + " (size: " + STR(node_type0->size) +
+                        ", vector_size: " + STR(node_type0->vector_size) + ")");
       max_bits = max_bits < node_size ? node_size : max_bits;
    }
    bitsize_map[r] = max_bits;
@@ -215,50 +217,48 @@ void reg_binding::specialise_reg(structural_objectRef& reg, unsigned int r)
 
 void reg_binding::compute_is_without_enable()
 {
-   std::map<unsigned int, unsigned int> n_in;
-   std::map<unsigned int, unsigned int> n_out;
+   std::map<std::pair<unsigned int, unsigned int>, unsigned int> n_in;
+   std::map<std::pair<unsigned int, unsigned int>, unsigned int> n_out;
    const std::list<vertex>& support_set = HLS->Rliv->get_support();
    const auto ss_it_end = support_set.end();
    for(auto ss_it = support_set.begin(); ss_it != ss_it_end; ++ss_it)
    {
       vertex v = *ss_it;
       unsigned int dummy_offset = HLS->Rliv->is_a_dummy_state(v) ? 1 : 0;
-      const CustomOrderedSet<unsigned int>& LI = HLS->Rliv->get_live_in(v);
-      const CustomOrderedSet<unsigned int>::const_iterator li_it_end = LI.end();
-      for(auto li_it = LI.begin(); li_it != li_it_end; ++li_it)
+      const auto& LI = HLS->Rliv->get_live_in(v);
+      for(const auto& li_it : LI)
       {
-         if(n_in.find(*li_it) == n_in.end())
+         if(n_in.find(li_it) == n_in.end())
          {
-            n_in[*li_it] = 1 + dummy_offset;
+            n_in[li_it] = 1 + dummy_offset;
          }
          else
          {
-            n_in[*li_it] = n_in[*li_it] + 1 + dummy_offset;
+            n_in[li_it] = n_in[li_it] + 1 + dummy_offset;
          }
       }
-      const CustomOrderedSet<unsigned int>& LO = HLS->Rliv->get_live_out(v);
-      const CustomOrderedSet<unsigned int>::const_iterator lo_it_end = LO.end();
-      for(auto lo_it = LO.begin(); lo_it != lo_it_end; ++lo_it)
+      const auto& LO = HLS->Rliv->get_live_out(v);
+      for(const auto& lo_it : LO)
       {
-         if(n_out.find(*lo_it) == n_out.end())
+         if(n_out.find(lo_it) == n_out.end())
          {
-            n_out[*lo_it] = 1 + dummy_offset;
-            if(LI.find(*lo_it) != LI.end())
+            n_out[lo_it] = 1 + dummy_offset;
+            if(LI.find(lo_it) != LI.end())
             {
-               n_out[*lo_it] = 2 + dummy_offset;
+               n_out[lo_it] = 2 + dummy_offset;
             }
          }
          else
          {
-            n_out[*lo_it] = n_out[*lo_it] + 1 + dummy_offset;
+            n_out[lo_it] = n_out[lo_it] + 1 + dummy_offset;
          }
       }
    }
 
    for(unsigned int i = 0; i < get_used_regs(); i++)
    {
-      const CustomOrderedSet<unsigned int>& store_vars_set = get_vars(i);
-      const CustomOrderedSet<unsigned int>::const_iterator svs_it_end = store_vars_set.end();
+      const auto& store_vars_set = get_vars(i);
+      const auto svs_it_end = store_vars_set.end();
       bool all_woe = true;
       for(auto svs_it = store_vars_set.begin(); svs_it != svs_it_end && all_woe; ++svs_it)
       {
@@ -292,9 +292,9 @@ void reg_binding::bind(unsigned int sv, unsigned int index)
             if(HLS->STG->GetStg()->GetStateInfo(v)->loopId != 0)
             {
                auto live_in = HLS->Rliv->get_live_in(v);
-               for(unsigned int var : live_in)
+               for(const auto& var : live_in)
                {
-                  if(sv == HLS->storage_value_information->get_storage_value_index(v, var))
+                  if(sv == HLS->storage_value_information->get_storage_value_index(v, var.first, var.second))
                   {
                      stall_reg_table[index] = generic_objRef(new register_obj(index + used_regs));
                   }
@@ -328,24 +328,8 @@ void reg_binding::add_to_SM(structural_objectRef clock_port, structural_objectRe
 
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug, "reg_binding::add_registers - Start");
 
-   bool stallable_pipeline = FB->is_pipeline_enabled() && !FB->is_simple_pipeline();
-
-   if(stallable_pipeline)
-   {
-      PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug,
-                    "Number of registers: " + std::to_string(get_used_regs() + stall_reg_table.size()) + ", " +
-                        std::to_string(stall_reg_table.size()) + " introduced for supporting pipelined loops");
-   }
-   else
-   {
-      PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug, "Number of registers: " + std::to_string(get_used_regs()));
-   }
-
-   if(!stallable_pipeline)
-   {
-      // all registers need an enable in stallable pipelines
-      compute_is_without_enable();
-   }
+   // all registers need an enable in stallable pipelines
+   compute_is_without_enable();
    /// define boolean type for command signals
    all_regs_without_enable = get_used_regs() != 0;
    for(unsigned int i = 0; i < get_used_regs(); i++)
@@ -370,24 +354,6 @@ void reg_binding::add_to_SM(structural_objectRef clock_port, structural_objectRe
       regis->set_structural_obj(reg_mod);
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug,
                     "Register " + boost::lexical_cast<std::string>(i) + " successfully allocated");
-      if(stallable_pipeline && stall_reg_table.find(i) != stall_reg_table.end())
-      {
-         PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug,
-                       "Register " + boost::lexical_cast<std::string>(i) +
-                           " also needs a stall register, allocating it...");
-         name = "stall_" + name;
-         reg_mod = SM->add_module_from_technology_library(name, register_type_name, library, circuit,
-                                                          HLS->HLS_T->get_technology_manager());
-         this->specialise_reg(reg_mod, i);
-         port_ck = reg_mod->find_member(CLOCK_PORT_NAME, port_o_K, reg_mod);
-         SM->add_connection(clock_port, port_ck);
-         port_rst = reg_mod->find_member(RESET_PORT_NAME, port_o_K, reg_mod);
-         THROW_ASSERT(port_rst != nullptr, "The stall register was not allocated a reset port");
-         SM->add_connection(reset_port, port_rst);
-         regis->set_structural_obj(reg_mod);
-         PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug,
-                       "Successfully allocated stall register for std reg " + boost::lexical_cast<std::string>(i));
-      }
    }
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug, "reg_binding::add_registers - End");
    if(HLS->output_level >= OUTPUT_LEVEL_MINIMUM)
