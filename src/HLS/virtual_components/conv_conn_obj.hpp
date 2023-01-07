@@ -336,45 +336,6 @@ class u_assign_conn_obj : public generic_obj
 };
 
 /**
- * @class vb_assign_conn_obj
- * This class is used to specify the type of a connection object: VECTOR_BOOL
- */
-class vb_assign_conn_obj : public generic_obj
-{
-   /// number of bit of in/out ports
-   unsigned int bitsize;
-
- public:
-   /**
-    * Constructor
-    */
-   vb_assign_conn_obj(const std::string& _name) : generic_obj(VB_ASSIGN_CONN_OBJ, _name), bitsize(0)
-   {
-   }
-
-   /**
-    * Destructor.
-    */
-   ~vb_assign_conn_obj() override = default;
-
-   /**
-    * add a size to the component
-    */
-   void add_bitsize(unsigned int _bitsize)
-   {
-      bitsize = _bitsize > bitsize ? _bitsize : bitsize;
-   }
-
-   /**
-    * return the maximum bitsize associated with the component
-    */
-   unsigned int get_bitsize() const
-   {
-      return bitsize;
-   }
-};
-
-/**
  * @class f_assign_conn_obj
  * This class is used to specify the type of a connection object: REAL
  */

@@ -83,7 +83,6 @@ class generic_obj
       FF_CONV_CONN_OBJ,    /// a converter from real to real int
       I_ASSIGN_CONN_OBJ,   /// specify the type of a connection object: INT
       U_ASSIGN_CONN_OBJ,   /// specify the type of a connection object: UINT
-      VB_ASSIGN_CONN_OBJ,  /// specify the type of a connection object: VECTOR_BOOL
       F_ASSIGN_CONN_OBJ,   /// specify the type of a connection object: REAL
    };
 

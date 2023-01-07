@@ -849,13 +849,6 @@ void conn_binding::add_sparse_logic_dp(const hlsRef HLS, const structural_manage
             bitsize = GetPointer<u_assign_conn_obj>(component)->get_bitsize();
             break;
          }
-         case generic_obj::VB_ASSIGN_CONN_OBJ:
-         {
-            resource_name = ASSIGN_VECTOR_BOOL_STD;
-            resource_instance_name = resource_name + "_vb_assign_" + STR(resource_index);
-            bitsize = GetPointer<vb_assign_conn_obj>(component)->get_bitsize();
-            break;
-         }
          case generic_obj::F_ASSIGN_CONN_OBJ:
          {
             resource_name = ASSIGN_REAL_STD;
@@ -910,7 +903,6 @@ void conn_binding::add_sparse_logic_dp(const hlsRef HLS, const structural_manage
          component->get_type() != generic_obj::FF_CONV_CONN_OBJ &&
          component->get_type() != generic_obj::I_ASSIGN_CONN_OBJ &&
          component->get_type() != generic_obj::U_ASSIGN_CONN_OBJ &&
-         component->get_type() != generic_obj::VB_ASSIGN_CONN_OBJ &&
          component->get_type() != generic_obj::F_ASSIGN_CONN_OBJ)
       {
          sparse_module->get_in_port(shift_index + 1)->type_resize(bitsize);

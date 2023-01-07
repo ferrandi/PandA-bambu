@@ -100,9 +100,10 @@ class mux_connection_binding : public conn_binding_creator
    enum cacheType
    {
       i_assign = 0,
-      iu_conv,
+      uu_conv,
       ui_conv,
-      vb_assign
+      iu_conv,
+      ii_conv
    };
    /// connection cache
    std::map<std::tuple<unsigned int, cacheType, const HLS_manager::io_binding_type>, generic_objRef> connCache;

@@ -1210,29 +1210,42 @@ void mux_connection_binding::add_conversion(unsigned int num, vertex op, unsigne
    {
       generic_objRef conv_port;
       HLS_manager::check_bitwidth(form_par_bitsize);
-      auto in_bitsize = static_cast<unsigned>(form_par_bitsize);
-      auto key = std::make_tuple(in_bitsize, iu_conv, varObj);
+      auto out_bitsize = static_cast<unsigned>(form_par_bitsize);
+      auto ctype = uu_conv;
+      if(inIP && outUP)
+      {
+         ctype = iu_conv;
+      }
+      else if(inIP && outIP)
+      {
+         ctype = ii_conv;
+      }
+      else if(inUP && outIP)
+      {
+         ctype = ui_conv;
+      }
+      auto key = std::make_tuple(out_bitsize, ctype, varObj);
       if(connCache.find(key) == connCache.end())
       {
          if(inIP && outUP)
          {
             conv_port = generic_objRef(new iu_conv_conn_obj("iu_conv_conn_obj_" + STR(id++)));
-            GetPointer<iu_conv_conn_obj>(conv_port)->add_bitsize(in_bitsize);
+            GetPointer<iu_conv_conn_obj>(conv_port)->add_bitsize(out_bitsize);
          }
          else if(inIP && outIP)
          {
             conv_port = generic_objRef(new ii_conv_conn_obj("ii_conv_conn_obj_" + STR(id++)));
-            GetPointer<ii_conv_conn_obj>(conv_port)->add_bitsize(in_bitsize);
+            GetPointer<ii_conv_conn_obj>(conv_port)->add_bitsize(out_bitsize);
          }
          else if(inUP && outUP)
          {
             conv_port = generic_objRef(new uu_conv_conn_obj("uu_conv_conn_obj_" + STR(id++)));
-            GetPointer<uu_conv_conn_obj>(conv_port)->add_bitsize(in_bitsize);
+            GetPointer<uu_conv_conn_obj>(conv_port)->add_bitsize(out_bitsize);
          }
          else if(inUP && outIP)
          {
             conv_port = generic_objRef(new ui_conv_conn_obj("ui_conv_conn_obj_" + STR(id++)));
-            GetPointer<ui_conv_conn_obj>(conv_port)->add_bitsize(in_bitsize);
+            GetPointer<ui_conv_conn_obj>(conv_port)->add_bitsize(out_bitsize);
          }
          else
          {
@@ -1251,7 +1264,7 @@ void mux_connection_binding::add_conversion(unsigned int num, vertex op, unsigne
          conv_port = connCache.find(key)->second;
       }
       auto is_not_a_phi = (GET_TYPE(data, op) & TYPE_PHI) == 0;
-      create_single_conn(data, op, conv_port, fu_obj, num, port_index, tree_var, in_bitsize, is_not_a_phi);
+      create_single_conn(data, op, conv_port, fu_obj, num, port_index, tree_var, out_bitsize, is_not_a_phi);
    }
    else if(form_par_bitsize != size_tree_var)
    {
@@ -1263,13 +1276,13 @@ void mux_connection_binding::add_conversion(unsigned int num, vertex op, unsigne
       }
       HLS->Rconn->add_sparse_logic(conv_port);
       HLS_manager::check_bitwidth(form_par_bitsize);
-      auto in_bitsize = static_cast<unsigned>(form_par_bitsize);
+      auto out_bitsize = static_cast<unsigned>(form_par_bitsize);
       HLS_manager::check_bitwidth(size_tree_var);
       GetPointer<ff_conv_conn_obj>(conv_port)->add_bitsize_in(static_cast<unsigned>(size_tree_var));
-      GetPointer<ff_conv_conn_obj>(conv_port)->add_bitsize_out(in_bitsize);
+      GetPointer<ff_conv_conn_obj>(conv_port)->add_bitsize_out(out_bitsize);
       determine_connection(op, varObj, conv_port, 0, 0, data, static_cast<unsigned>(size_tree_var));
       auto is_not_a_phi = (GET_TYPE(data, op) & TYPE_PHI) == 0;
-      create_single_conn(data, op, conv_port, fu_obj, num, port_index, tree_var, in_bitsize, is_not_a_phi);
+      create_single_conn(data, op, conv_port, fu_obj, num, port_index, tree_var, out_bitsize, is_not_a_phi);
    }
    else
    {
@@ -1486,16 +1499,16 @@ void mux_connection_binding::create_connections()
                      }
                      else
                      {
-                        auto key = std::make_tuple(var_bitsize, vb_assign, varObj);
+                        auto key = std::make_tuple(var_bitsize, uu_conv, varObj);
                         if(connCache.find(key) == connCache.end())
                         {
-                           conv_port = generic_objRef(new vb_assign_conn_obj("vb_assign_conn_obj_" + STR(id++)));
+                           conv_port = generic_objRef(new uu_conv_conn_obj("uu_conv_conn_obj_" + STR(id++)));
                            if(isConstantObj(std::get<0>(varObj), TreeM))
                            {
                               connCache[key] = conv_port;
                            }
                            HLS->Rconn->add_sparse_logic(conv_port);
-                           GetPointer<vb_assign_conn_obj>(conv_port)->add_bitsize(var_bitsize);
+                           GetPointer<uu_conv_conn_obj>(conv_port)->add_bitsize(var_bitsize);
                            determine_connection(*op, varObj, conv_port, 0, 0, data, var_bitsize);
                         }
                         else
