@@ -44,67 +44,45 @@
  */
 
 #include "conn_binding.hpp"
-#include "conn_binding_cs.hpp"
 
-#include "hls_manager.hpp"
-#include "hls_target.hpp"
-
-#include "connection_obj.hpp"
-#include "mux_conn.hpp"
-
+#include "Parameter.hpp"
 #include "adder_conn_obj.hpp"
-#include "bitfield_obj.hpp"
+#include "allocation.hpp"
+#include "allocation_information.hpp"
+#include "behavioral_helper.hpp"
 #include "commandport_obj.hpp"
 #include "conn_binding_creator.hpp"
+#include "conn_binding_cs.hpp"
+#include "connection_obj.hpp"
 #include "conv_conn_obj.hpp"
 #include "dataport_obj.hpp"
 #include "dbgPrintHelper.hpp"
 #include "fu_binding.hpp"
 #include "funit_obj.hpp"
+#include "generic_obj.hpp"
+#include "hls.hpp"
+#include "hls_manager.hpp"
+#include "hls_target.hpp"
 #include "multi_unbounded_obj.hpp"
-#include "multiplier_conn_obj.hpp"
+#include "mux_conn.hpp"
 #include "mux_obj.hpp"
 #include "omp_functions.hpp"
-#include "register_obj.hpp"
-
-#include "hls.hpp"
-
+#include "state_transition_graph_manager.hpp"
+#include "string_manipulation.hpp"
 #include "structural_manager.hpp"
 #include "technology_manager.hpp"
+#include "technology_node.hpp"
 #include "time_model.hpp"
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
-#include "tree_node.hpp"
-#include "tree_reindex.hpp"
 
-#include "behavioral_helper.hpp"
-
-#include <boost/lexical_cast.hpp>
-
-///. include
-#include "Parameter.hpp"
-
-/// HLS/module_allocation include
-#include "allocation.hpp"
-#include "allocation_information.hpp"
-
-/// HLS/stg include
-#include "state_transition_graph_manager.hpp"
-
-/// HLS/virtual_components include
-#include "generic_obj.hpp"
-
-/// STL include
 #include "custom_set.hpp"
 #include <algorithm>
+#include <boost/lexical_cast.hpp>
 #include <list>
 #include <tuple>
 #include <utility>
 #include <vector>
-
-/// technology/physical_library include
-#include "string_manipulation.hpp" // for GET_CLASS
-#include "technology_node.hpp"
 
 #define CONN_COLUMN_SIZE 40
 
@@ -812,22 +790,6 @@ void conn_binding::add_sparse_logic_dp(const hlsRef HLS, const structural_manage
             bitsize = GetPointer<adder_conn_obj>(component)->get_bitsize();
             break;
          }
-         case generic_obj::MULTIPLIER_CONN_OBJ:
-         {
-            resource_name = GetPointer<multiplier_conn_obj>(component)->is_multiplication_to_constant() ?
-                                UI_CONST_MULTIPLIER_STD :
-                                UI_MULTIPLIER_STD;
-            resource_instance_name = resource_name + "_multiplier_" + STR(resource_index);
-            bitsize = GetPointer<multiplier_conn_obj>(component)->get_bitsize();
-            break;
-         }
-         case generic_obj::BITFIELD_OBJ:
-         {
-            resource_name = SIGNED_BITFIELD_FU_STD;
-            resource_instance_name = resource_name + "_" + SIGNED_BITFIELD_FU_STD + "_" + STR(resource_index);
-            bitsize = GetPointer<bitfield_obj>(component)->get_bitsize();
-            break;
-         }
          case generic_obj::UU_CONV_CONN_OBJ:
          {
             resource_name = UUDATA_CONVERTER_STD;
@@ -887,13 +849,6 @@ void conn_binding::add_sparse_logic_dp(const hlsRef HLS, const structural_manage
             bitsize = GetPointer<u_assign_conn_obj>(component)->get_bitsize();
             break;
          }
-         case generic_obj::VB_ASSIGN_CONN_OBJ:
-         {
-            resource_name = ASSIGN_VECTOR_BOOL_STD;
-            resource_instance_name = resource_name + "_vb_assign_" + STR(resource_index);
-            bitsize = GetPointer<vb_assign_conn_obj>(component)->get_bitsize();
-            break;
-         }
          case generic_obj::F_ASSIGN_CONN_OBJ:
          {
             resource_name = ASSIGN_REAL_STD;
@@ -917,12 +872,6 @@ void conn_binding::add_sparse_logic_dp(const hlsRef HLS, const structural_manage
                      "---Specializing " + sparse_component->get_path() + ": " + STR(bitsize));
       /// specializing sparse module ports
       unsigned int shift_index = 0;
-      if(component->get_type() == generic_obj::MULTIPLIER_CONN_OBJ &&
-         GetPointer<multiplier_conn_obj>(component)->is_multiplication_to_constant())
-      {
-         sparse_module->SetParameter(VALUE_PARAMETER,
-                                     STR(GetPointer<multiplier_conn_obj>(component)->get_constant_value()));
-      }
       if(component->get_type() == generic_obj::ADDER_CONN_OBJ &&
          GetPointer<adder_conn_obj>(component)->is_align_adder())
       {
@@ -931,12 +880,6 @@ void conn_binding::add_sparse_logic_dp(const hlsRef HLS, const structural_manage
       else if(GetPointer<port_o>(sparse_module->get_in_port(shift_index)) &&
               GetPointer<port_o>(sparse_module->get_in_port(shift_index))->get_is_clock())
       {
-         /// the multiplier in the resource library is pipelined,
-         /// so we use the non-pipelined version by setting PIPE_PARAMETER to 0
-         if(component->get_type() == generic_obj::MULTIPLIER_CONN_OBJ)
-         {
-            sparse_module->SetParameter(PIPE_PARAMETER, "0");
-         }
          ++shift_index;
       }
       if(!HLS->Param->isOption(OPT_soft_float) || !HLS->Param->getOption<bool>(OPT_soft_float) ||
@@ -960,7 +903,6 @@ void conn_binding::add_sparse_logic_dp(const hlsRef HLS, const structural_manage
          component->get_type() != generic_obj::FF_CONV_CONN_OBJ &&
          component->get_type() != generic_obj::I_ASSIGN_CONN_OBJ &&
          component->get_type() != generic_obj::U_ASSIGN_CONN_OBJ &&
-         component->get_type() != generic_obj::VB_ASSIGN_CONN_OBJ &&
          component->get_type() != generic_obj::F_ASSIGN_CONN_OBJ)
       {
          sparse_module->get_in_port(shift_index + 1)->type_resize(bitsize);
