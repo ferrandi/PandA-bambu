@@ -132,11 +132,11 @@ reg_bindingRef reg_binding::create_reg_binding(const hlsRef& HLS, const HLS_mana
 void reg_binding::print_el(const_iterator& it) const
 {
    INDENT_OUT_MEX(OUTPUT_LEVEL_VERY_PEDANTIC, HLS->output_level,
-                  "---Storage Value: " + STR(it->first) + " for variable " +
+       "---Storage Value: " + STR(it->first) + " for variable " +
                       FB->CGetBehavioralHelper()->PrintVariable(
                           HLS->storage_value_information->get_variable_index(it->first).first) +
                       " step " + STR(HLS->storage_value_information->get_variable_index(it->first).second) +
-                      " stored into register " + it->second->get_string());
+           " stored into register " + it->second->get_string());
 }
 
 CustomOrderedSet<std::pair<unsigned int, unsigned int>> reg_binding::get_vars(const unsigned int& r) const
@@ -153,7 +153,7 @@ CustomOrderedSet<std::pair<unsigned int, unsigned int>> reg_binding::get_vars(co
    return vars;
 }
 
-unsigned int reg_binding::compute_bitsize(unsigned int r)
+unsigned long long reg_binding::compute_bitsize(unsigned int r)
 {
    auto reg_vars = get_vars(r);
    unsigned int max_bits = 0;
@@ -161,7 +161,7 @@ unsigned int reg_binding::compute_bitsize(unsigned int r)
    {
       structural_type_descriptorRef node_type0 =
           structural_type_descriptorRef(new structural_type_descriptor(reg_var.first, FB->CGetBehavioralHelper()));
-      unsigned int node_size = STD_GET_SIZE(node_type0);
+      auto node_size = STD_GET_SIZE(node_type0);
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, HLS->debug_level,
                     "- Analyzing node " + STR(reg_var.first) + "(" + STR(reg_var.second) + "), whose type is " +
                         node_type0->get_name() + " (size: " + STR(node_type0->size) +
@@ -172,7 +172,7 @@ unsigned int reg_binding::compute_bitsize(unsigned int r)
    return max_bits;
 }
 
-unsigned int reg_binding::get_bitsize(unsigned int r) const
+unsigned long long reg_binding::get_bitsize(unsigned int r) const
 {
    THROW_ASSERT(bitsize_map.find(r) != bitsize_map.end(), "register bitsize not computed");
    return bitsize_map.find(r)->second;
@@ -183,9 +183,9 @@ void reg_binding::specialise_reg(structural_objectRef& reg, unsigned int r)
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, HLS->debug_level, "Specializing " + reg->get_path() + ":");
    const structural_type_descriptorRef& in_type = GetPointer<module>(reg)->get_in_port(0)->get_typeRef();
    const structural_type_descriptorRef& out_type = GetPointer<module>(reg)->get_out_port(0)->get_typeRef();
-   unsigned int max_bits = STD_GET_SIZE(in_type);
+   auto max_bits = STD_GET_SIZE(in_type);
    max_bits = max_bits < STD_GET_SIZE(out_type) ? STD_GET_SIZE(out_type) : max_bits;
-   unsigned int bits = compute_bitsize(r);
+   auto bits = compute_bitsize(r);
    max_bits = max_bits < bits ? bits : max_bits;
    unsigned int offset = 0;
    if(GetPointer<module>(reg)->get_in_port(0)->get_id() == CLOCK_PORT_NAME)
@@ -328,8 +328,8 @@ void reg_binding::add_to_SM(structural_objectRef clock_port, structural_objectRe
 
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug, "reg_binding::add_registers - Start");
 
-   // all registers need an enable in stallable pipelines
-   compute_is_without_enable();
+      // all registers need an enable in stallable pipelines
+      compute_is_without_enable();
    /// define boolean type for command signals
    all_regs_without_enable = get_used_regs() != 0;
    for(unsigned int i = 0; i < get_used_regs(); i++)
@@ -358,8 +358,8 @@ void reg_binding::add_to_SM(structural_objectRef clock_port, structural_objectRe
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug, "reg_binding::add_registers - End");
    if(HLS->output_level >= OUTPUT_LEVEL_MINIMUM)
    {
-      unsigned int number_ff = 0;
-      for(unsigned int r = 0; r < get_used_regs(); r++)
+      auto number_ff = 0ull;
+      for(auto r = 0U; r < get_used_regs(); r++)
       {
          number_ff += get_bitsize(r);
       }

@@ -56,7 +56,7 @@ CONSTREF_FORWARD_DECL(BehavioralHelper);
 class minimal_interface : public module_interface
 {
    void build_wrapper(structural_objectRef wrappedObj, structural_objectRef interfaceObj,
-                      structural_managerRef SM_minimal_interface, const BehavioralHelperConstRef BH);
+                      structural_managerRef SM_minimal_interface);
 
  public:
    /**

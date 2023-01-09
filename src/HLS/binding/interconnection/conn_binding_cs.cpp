@@ -39,7 +39,9 @@
  */
 
 #include "conn_binding_cs.hpp"
+
 #include "Parameter.hpp"
+#include "dbgPrintHelper.hpp"
 #include "hls.hpp"
 #include "hls_manager.hpp"
 #include "hls_target.hpp"
@@ -48,13 +50,9 @@
 #include "structural_objects.hpp"
 #include "technology_manager.hpp"
 #include "technology_node.hpp"
-
-/// STD include
-#include <string>
-
-/// utility include
-#include "dbgPrintHelper.hpp"
 #include "utility.hpp"
+
+#include <string>
 
 conn_binding_cs::conn_binding_cs(const BehavioralHelperConstRef _BH, const ParameterConstRef _parameters)
     : conn_binding(_BH, _parameters)
@@ -62,9 +60,7 @@ conn_binding_cs::conn_binding_cs(const BehavioralHelperConstRef _BH, const Param
    debug_level = _parameters->get_class_debug_level(GET_CLASS(*this));
 }
 
-conn_binding_cs::~conn_binding_cs()
-{
-}
+conn_binding_cs::~conn_binding_cs() = default;
 
 void conn_binding_cs::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, const structural_managerRef SM)
 {

@@ -101,6 +101,6 @@ class EucalyptusParameter : public Parameter
    int Exec() override;
 };
 
-typedef refcount<EucalyptusParameter> EucalyptusParameterRef;
+using EucalyptusParameterRef = std::shared_ptr<EucalyptusParameter>;
 
 #endif

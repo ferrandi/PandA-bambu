@@ -177,9 +177,7 @@ class clique_covering
    /**
     * Destructor
     */
-   virtual ~clique_covering()
-   {
-   }
+   virtual ~clique_covering() = default;
 
    /**
     * Creates a reference to desired solver
@@ -787,7 +785,7 @@ class coloring_based_clique_covering : public clique_covering<vertex_type>
       {
          ++num_vert;
       }
-      conflict_graph* cg = new conflict_graph(num_vert);
+      auto* cg = new conflict_graph(num_vert);
 
       unsigned int vertex_index = 0;
       BGL_FORALL_VERTICES(v, *filteredCG, cc_compatibility_graph)

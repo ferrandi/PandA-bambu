@@ -79,43 +79,45 @@ HLSInstructionWriter::~HLSInstructionWriter() = default;
 
 void HLSInstructionWriter::declareFunction(const unsigned int function_id)
 {
-   bool flag_pp = parameters->isOption(OPT_pretty_print) ||
-                  (parameters->isOption(OPT_discrepancy) && parameters->getOption<bool>(OPT_discrepancy));
+   const auto flag_pp = parameters->isOption(OPT_pretty_print) ||
+                        (parameters->isOption(OPT_discrepancy) && parameters->getOption<bool>(OPT_discrepancy));
    // All I have to do is to change main in _main
-   const BehavioralHelperConstRef behavioral_helper = AppM->CGetFunctionBehavior(function_id)->CGetBehavioralHelper();
-   std::string stringTemp = AppM->CGetFunctionBehavior(function_id)
-                                ->CGetBehavioralHelper()
-                                ->print_type(function_id, false, true, false, 0,
-                                             var_pp_functorConstRef(new std_var_pp_functor(behavioral_helper)));
-   std::string name = AppM->CGetFunctionBehavior(function_id)->CGetBehavioralHelper()->get_function_name();
+   const auto FB = AppM->CGetFunctionBehavior(function_id);
+   const auto BH = FB->CGetBehavioralHelper();
+   auto stringTemp =
+       BH->print_type(function_id, false, true, false, 0, var_pp_functorConstRef(new std_var_pp_functor(BH)));
+   const auto name = BH->get_function_name();
 
    if(!flag_pp)
    {
-      std::string fname = behavioral_helper->get_mangled_function_name();
-      auto HLSMgr = GetPointer<const HLS_manager>(AppM);
+      const auto fd_node = AppM->get_tree_manager()->CGetTreeNode(function_id);
+      const auto fd = GetPointer<const function_decl>(fd_node);
+      const auto fname = tree_helper::GetMangledFunctionName(fd);
+      const auto HLSMgr = GetPointerS<const HLS_manager>(AppM);
       if(HLSMgr && HLSMgr->design_interface_typename_orig_signature.find(fname) !=
                        HLSMgr->design_interface_typename_orig_signature.end())
       {
-         auto searchString = " " + name + "(";
+         const auto searchString = " " + name + "(";
          stringTemp = stringTemp.substr(0, stringTemp.find(searchString) + searchString.size());
-         const auto& typenameArgs = HLSMgr->design_interface_typename_orig_signature.find(fname)->second;
+         THROW_ASSERT(HLSMgr->design_interface_typename_orig_signature.count(fname), "");
+         const auto& typenameArgs = HLSMgr->design_interface_typename_orig_signature.at(fname);
          bool firstPar = true;
-         for(const auto& argType : typenameArgs)
+         for(auto i = 0U; i < typenameArgs.size(); ++i)
          {
+            const auto& arg_typename = typenameArgs.at(i);
             if(firstPar)
             {
-               stringTemp += argType;
+               stringTemp += arg_typename;
                firstPar = false;
             }
             else
             {
-               stringTemp += ", " + argType;
+               stringTemp += ", " + arg_typename;
             }
          }
          stringTemp += ")";
       }
    }
-   // boost::replace_all(stringTemp, "/*&*/*", "&");
    if(name == "main")
    {
       boost::replace_all(stringTemp, " main(", " _main("); /// the assumption is strong but the code that prints the

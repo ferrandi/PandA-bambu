@@ -336,7 +336,7 @@ void technology_manager::xload(const xml_element* node, const target_deviceRef d
          }
       }
    }
-   for(auto temp_library : temp_libraries)
+   for(const auto& temp_library : temp_libraries)
    {
       for(const auto& temp_info : info)
       {
@@ -414,17 +414,18 @@ void technology_manager::xwrite(xml_element* rootnode, TargetDevice_Type dv_type
 void technology_manager::lib_write(const std::string& filename, TargetDevice_Type dv_type,
                                    const CustomOrderedSet<std::string>& local_libraries)
 {
-   unsigned int output_level = Param->getOption<unsigned int>(OPT_output_level);
+   const auto output_level = Param->getOption<unsigned int>(OPT_output_level);
+   const auto library_fname = GetPath("__library__.xml");
    try
    {
       xml_document document;
       xml_element* nodeRoot = document.create_root_node("technology");
       xwrite(nodeRoot, dv_type, local_libraries);
-      document.write_to_file_formatted("__library__.xml");
+      document.write_to_file_formatted(library_fname);
 
-      xml2lib("__library__.xml", filename, output_level, debug_level);
+      xml2lib(library_fname, filename, output_level, debug_level);
       if(debug_level < DEBUG_LEVEL_PEDANTIC)
-         boost::filesystem::remove("__library__.xml");
+         boost::filesystem::remove(library_fname);
       for(CustomOrderedSet<std::string>::const_iterator l = local_libraries.begin(); l != local_libraries.end(); ++l)
       {
          if(!is_library_manager(*l))
@@ -456,16 +457,17 @@ void technology_manager::lib_write(const std::string& filename, TargetDevice_Typ
 void technology_manager::lef_write(const std::string& filename, TargetDevice_Type dv_type,
                                    const CustomOrderedSet<std::string>& _libraries)
 {
-   unsigned int output_level = Param->getOption<unsigned int>(OPT_output_level);
+   const auto output_level = Param->getOption<unsigned int>(OPT_output_level);
+   const auto library_fname = GetPath("__library__.xml");
    try
    {
       xml_document document;
       xml_element* nodeRoot = document.create_root_node("technology");
       xwrite(nodeRoot, dv_type, _libraries);
-      document.write_to_file_formatted("__library__.xml");
+      document.write_to_file_formatted(library_fname);
 
-      xml2lef("__library__.xml", filename, output_level, debug_level);
-      boost::filesystem::remove("__library__.xml");
+      xml2lef(library_fname, filename, output_level, debug_level);
+      boost::filesystem::remove(library_fname);
       for(CustomOrderedSet<std::string>::const_iterator l = _libraries.begin(); l != _libraries.end(); ++l)
       {
          if(!is_library_manager(*l))

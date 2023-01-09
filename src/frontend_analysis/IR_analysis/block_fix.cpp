@@ -171,7 +171,7 @@ DesignFlowStep_Status BlockFix::InternalExec()
    std::list<std::pair<tree_nodeRef, unsigned int>> to_be_removed;
    for(const auto& block : sl->list_of_bloc)
    {
-      for(auto statement : block.second->CGetStmtList())
+      for(const auto& statement : block.second->CGetStmtList())
       {
          const auto* gl = GetPointer<const gimple_label>(GET_NODE(statement));
          if(gl)

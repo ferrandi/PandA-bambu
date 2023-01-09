@@ -149,15 +149,17 @@
 #include "technology_node.hpp"
 
 /// Utility include
+#include <getopt.h>
+
+#include <boost/filesystem.hpp>
+#include <boost/lexical_cast.hpp>
+
 #include "compiler_constants.hpp"
 #include "cpu_time.hpp"
 #include "dbgPrintHelper.hpp"
 #include "fileIO.hpp"
 #include "string_manipulation.hpp"
 #include "utility.hpp"
-#include <boost/filesystem.hpp>
-#include <boost/lexical_cast.hpp>
-#include <getopt.h>
 
 /// Wrapper include
 #include "compiler_wrapper.hpp"

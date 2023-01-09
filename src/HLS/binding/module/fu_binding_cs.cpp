@@ -67,9 +67,7 @@ fu_binding_cs::fu_binding_cs(const HLS_managerConstRef _HLSMgr, const unsigned i
    debug_level = _parameters->get_class_debug_level(GET_CLASS(*this));
 }
 
-fu_binding_cs::~fu_binding_cs()
-{
-}
+fu_binding_cs::~fu_binding_cs() = default;
 
 void fu_binding_cs::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, structural_objectRef clock_port,
                               structural_objectRef reset_port)
@@ -172,10 +170,10 @@ void fu_binding_cs::resize_scheduler_ports(const HLS_managerRef HLSMgr, structur
 
 void fu_binding_cs::resize_dimension_bus_port(const HLS_managerRef HLSMgr, structural_objectRef port)
 {
-   unsigned int bus_data_bitsize = HLSMgr->Rmem->get_bus_data_bitsize();
-   unsigned int bus_addr_bitsize = HLSMgr->get_address_bitsize();
-   unsigned int bus_size_bitsize = HLSMgr->Rmem->get_bus_size_bitsize();
-   unsigned int bus_tag_bitsize = GetPointer<memory_cs>(HLSMgr->Rmem)->get_bus_tag_bitsize();
+   auto bus_data_bitsize = HLSMgr->Rmem->get_bus_data_bitsize();
+   auto bus_addr_bitsize = HLSMgr->get_address_bitsize();
+   auto bus_size_bitsize = HLSMgr->Rmem->get_bus_size_bitsize();
+   auto bus_tag_bitsize = GetPointer<memory_cs>(HLSMgr->Rmem)->get_bus_tag_bitsize();
 
    if(GetPointer<port_o>(port)->get_is_data_bus())
    {

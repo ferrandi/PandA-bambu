@@ -1929,7 +1929,7 @@ typedef signed long long Slong;
          d2 = d2 - dfloor;
          LOOP(int, i, N - 1, include, 0, {
             d2 *= (Ulong)1 << 32;
-            unsigned k = (unsigned int)d2;
+            auto k = (unsigned int)d2;
             r.set(i, b ? ~k : k);
             d2 -= k;
          });
@@ -1954,7 +1954,7 @@ typedef signed long long Slong;
          d2 = d2 - dfloor;
          LOOP(int, i, N - 1, include, 0, {
             d2 *= (Ulong)1 << 32;
-            unsigned int k = static_cast<unsigned int>(d2);
+            auto k = static_cast<unsigned int>(d2);
             r.set(i, b ? ~k : k);
             d2 -= k;
          });
@@ -2051,7 +2051,7 @@ typedef signed long long Slong;
                   if(!v[msw])
                      msw--;
                   bool last = msw == -1;
-                  unsigned rem = (unsigned)nl;
+                  auto rem = (unsigned)nl;
                   for(int i = 0; (i < 9 && !last) || rem; i++)
                   {
                      r[k++] = (char)('0' + (int)(rem % 10));
@@ -4158,7 +4158,7 @@ typedef signed long long Slong;
             {
                // it works even in case value is undefined
                unsigned pos = d_index >> 5;
-               unsigned value = static_cast<unsigned>(d_bv.v[pos]);
+               auto value = static_cast<unsigned>(d_bv.v[pos]);
                unsigned d_index_masked = d_index & 31;
                unsigned bool_val = val & 1;
                unsigned mask_0 = 1U << d_index_masked;

@@ -79,5 +79,5 @@ runs:
         else
           echo "::warning:: No previous benchmark result found to compare"
         fi
-        echo "::set-output name=outcsv::$outcsv"
+        echo "outcsv=$outcsv" >> $GITHUB_OUTPUT
         exit 0

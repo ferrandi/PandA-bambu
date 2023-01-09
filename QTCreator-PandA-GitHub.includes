@@ -6,6 +6,7 @@ build/ext
 build/ext/flopoco
 build/ext/libfplll-4.0.3
 build/ext/sollya
+build/src/
 build/src/HLS
 build/src/technology/target_device/FPGA
 build/src/technology/target_device/IC

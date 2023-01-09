@@ -50,23 +50,22 @@ class top_entity_parallel_cs : public top_entity
     * @brief connect_port_parallel connect datapath and controller
     * @param circuit
     */
-   void connect_port_parallel(const structural_objectRef circuit, unsigned loopBW);
+   void connect_port_parallel(const structural_objectRef circuit, unsigned long long loopBW);
 
    /**
     * Return the set of analyses in relationship with this design step
     * @param relationship_type is the type of relationship to be considered
     */
-   virtual const CustomUnorderedSet<
-       std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
+   const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
    ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
-   unsigned BW_loop_iter(const structural_objectRef circuit);
-   void connect_loop_iter(const structural_objectRef circuit, unsigned loopBW);
+   unsigned long long BW_loop_iter(const structural_objectRef circuit);
+   void connect_loop_iter(const structural_objectRef circuit, unsigned long long loopBW);
    /**
     * @brief resize_controller_parallel
     * @param controller_circuit
     */
-   void resize_controller_parallel(structural_objectRef controller_circuit, unsigned loopBW);
+   void resize_controller_parallel(structural_objectRef controller_circuit, unsigned long long loopBW);
 
  public:
    top_entity_parallel_cs(const ParameterConstRef _parameters, const HLS_managerRef HLSMgr, unsigned int funId,
@@ -76,13 +75,13 @@ class top_entity_parallel_cs : public top_entity
    /**
     * Destructor
     */
-   virtual ~top_entity_parallel_cs();
+   ~top_entity_parallel_cs() override;
 
    /**
     * Add selector and suspension
     * @return the exit status of this step
     */
-   virtual DesignFlowStep_Status InternalExec() override;
+   DesignFlowStep_Status InternalExec() override;
 };
 
 #endif // TOP_ENTITY_PARALLEL_CS_H

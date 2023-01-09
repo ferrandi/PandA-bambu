@@ -74,9 +74,7 @@ top_entity_cs::top_entity_cs(const ParameterConstRef _parameters, const HLS_mana
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
 }
 
-top_entity_cs::~top_entity_cs()
-{
-}
+top_entity_cs::~top_entity_cs() = default;
 
 DesignFlowStep_Status top_entity_cs::InternalExec()
 {

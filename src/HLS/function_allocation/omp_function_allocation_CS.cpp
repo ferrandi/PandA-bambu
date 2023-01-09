@@ -77,9 +77,7 @@ OmpFunctionAllocationCS::OmpFunctionAllocationCS(const ParameterConstRef _parame
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
 }
 
-OmpFunctionAllocationCS::~OmpFunctionAllocationCS()
-{
-}
+OmpFunctionAllocationCS::~OmpFunctionAllocationCS() = default;
 
 DesignFlowStep_Status OmpFunctionAllocationCS::Exec()
 {

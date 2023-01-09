@@ -206,8 +206,7 @@ FunctionBehavior::FunctionBehavior(const application_managerConstRef _AppM, cons
    THROW_ASSERT(_AppM->get_tree_manager()->GetTreeNode(_helper->get_function_index())->get_kind() == function_decl_K,
                 "Called function_behavior on a node which is not a function_decl");
    auto* decl_node = GetPointer<function_decl>(_AppM->get_tree_manager()->GetTreeNode(_helper->get_function_index()));
-   std::string fname = _helper->get_mangled_function_name();
-
+   const auto fname = tree_helper::GetMangledFunctionName(decl_node);
    if(!_parameters->isOption(OPT_pipelining))
    {
       pipeline_enabled = decl_node->is_pipelined();

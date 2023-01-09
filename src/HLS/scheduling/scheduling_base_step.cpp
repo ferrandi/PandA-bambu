@@ -47,6 +47,8 @@
 #include "op_graph.hpp"
 #include "parallel_memory_fu_binding.hpp"
 #include "schedule.hpp"
+#include "tree_helper.hpp"
+#include "tree_manager.hpp"
 #include "utility.hpp"
 
 schedulingBaseStep::schedulingBaseStep(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr,
@@ -122,10 +124,13 @@ schedulingBaseStep::ComputeHLSRelationships(const DesignFlowStep::RelationshipTy
 void schedulingBaseStep::compute_RW_stmts(CustomUnorderedSet<vertex>& RW_stmts, OpGraphConstRef flow_graph,
                                           const HLS_managerRef HLSMgr, unsigned function_id)
 {
-   std::string fname = HLSMgr->CGetFunctionBehavior(function_id)->CGetBehavioralHelper()->get_mangled_function_name();
-   if(HLSMgr->design_interface_loads.find(fname) != HLSMgr->design_interface_loads.end())
+   const auto TM = HLSMgr->get_tree_manager();
+   auto fnode = TM->get_tree_node_const(function_id);
+   auto fd = GetPointer<function_decl>(fnode);
+   const auto fname = tree_helper::GetMangledFunctionName(fd);
+   if(HLSMgr->design_interface_io.find(fname) != HLSMgr->design_interface_io.end())
    {
-      for(const auto& bb2arg2stmtsR : HLSMgr->design_interface_loads.at(fname))
+      for(const auto& bb2arg2stmtsR : HLSMgr->design_interface_io.at(fname))
       {
          for(const auto& arg2stms : bb2arg2stmtsR.second)
          {
@@ -133,29 +138,11 @@ void schedulingBaseStep::compute_RW_stmts(CustomUnorderedSet<vertex>& RW_stmts, 
             {
                for(const auto& stmt : arg2stms.second)
                {
-                  THROW_ASSERT(flow_graph->CGetOpGraphInfo()->tree_node_to_operation.find(stmt) !=
-                                   flow_graph->CGetOpGraphInfo()->tree_node_to_operation.end(),
-                               "unexpected condition: STMT=" + STR(stmt));
-                  RW_stmts.insert(flow_graph->CGetOpGraphInfo()->tree_node_to_operation.at(stmt));
-               }
-            }
-         }
-      }
-   }
-   if(HLSMgr->design_interface_stores.find(fname) != HLSMgr->design_interface_stores.end())
-   {
-      for(const auto& bb2arg2stmtsW : HLSMgr->design_interface_stores.at(fname))
-      {
-         for(const auto& arg2stms : bb2arg2stmtsW.second)
-         {
-            if(arg2stms.second.size() > 0)
-            {
-               for(const auto& stmt : arg2stms.second)
-               {
-                  THROW_ASSERT(flow_graph->CGetOpGraphInfo()->tree_node_to_operation.find(stmt) !=
-                                   flow_graph->CGetOpGraphInfo()->tree_node_to_operation.end(),
-                               "unexpected condition");
-                  RW_stmts.insert(flow_graph->CGetOpGraphInfo()->tree_node_to_operation.at(stmt));
+                  const auto op_it = flow_graph->CGetOpGraphInfo()->tree_node_to_operation.find(stmt);
+                  if(op_it != flow_graph->CGetOpGraphInfo()->tree_node_to_operation.end())
+                  {
+                     RW_stmts.insert(op_it->second);
+                  }
                }
             }
          }

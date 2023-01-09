@@ -44,9 +44,7 @@
 template <typename vertex_type>
 struct check_clique
 {
-   virtual ~check_clique()
-   {
-   }
+   virtual ~check_clique() = default;
 
    virtual bool check_edge_compatibility(C_vertex& rep, C_vertex& other) = 0;
 

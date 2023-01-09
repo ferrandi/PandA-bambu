@@ -92,6 +92,7 @@
 
 #include "behavioral_helper.hpp"
 #include "call_graph_manager.hpp"  // for CallGraphManager, CallGrap...
+#include "fileIO.hpp"
 #include "string_manipulation.hpp" // for GET_CLASS
 
 #if !HAVE_UNORDERED
@@ -105,7 +106,9 @@ bool PrioritySorter::operator()(const vertex x, const vertex y) const
    const auto x_priority = (*priority)(x);
    const auto y_priority = (*priority)(y);
    if(x_priority != y_priority)
+   {
       return x_priority > y_priority;
+   }
    return GET_NAME(op_graph, x) < GET_NAME(op_graph, y);
 }
 #endif
@@ -359,11 +362,11 @@ parametric_list_based::parametric_list_based(const ParameterConstRef _parameters
                                              unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager,
                                              const HLSFlowStepSpecializationConstRef _hls_flow_step_specialization)
     : schedulingBaseStep(_parameters, _HLSMgr, _funId, _design_flow_manager, HLSFlowStep_Type::LIST_BASED_SCHEDULING,
-                         _hls_flow_step_specialization ?
-                             _hls_flow_step_specialization :
-                             HLSFlowStepSpecializationConstRef(
-                                 new ParametricListBasedSpecialization(static_cast<ParametricListBased_Metric>(
-                                     _parameters->getOption<unsigned int>(OPT_scheduling_priority))))),
+                 _hls_flow_step_specialization ?
+                     _hls_flow_step_specialization :
+                     HLSFlowStepSpecializationConstRef(
+                         new ParametricListBasedSpecialization(static_cast<ParametricListBased_Metric>(
+                             _parameters->getOption<unsigned int>(OPT_scheduling_priority))))),
       parametric_list_based_metric(GetPointer<const ParametricListBasedSpecialization>(hls_flow_step_specialization)
                                        ->parametric_list_based_metric),
       ending_time(OpGraphConstRef()),
@@ -399,8 +402,7 @@ void parametric_list_based::Initialize()
 
 static bool has_element_in_common(const std::set<std::string>& set1, const std::set<std::string>& set2)
 {
-   std::set<std::string>::const_iterator first1 = set1.begin(), last1 = set1.end(), first2 = set2.begin(),
-                                         last2 = set2.end();
+   auto first1 = set1.begin(), last1 = set1.end(), first2 = set2.begin(), last2 = set2.end();
    while(first1 != last1 and first2 != last2)
    {
       if(*first1 < *first2)
@@ -878,8 +880,8 @@ bool parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
    /// select the type of graph
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "   Selecting the type of the graph...");
 
-   flow_graph = FB->CGetOpGraph(FunctionBehavior::FLSAODG);
-   flow_graph_with_feedbacks = FB->CGetOpGraph(FunctionBehavior::FFLSAODG);
+      flow_graph = FB->CGetOpGraph(FunctionBehavior::FLSAODG);
+      flow_graph_with_feedbacks = FB->CGetOpGraph(FunctionBehavior::FFLSAODG);
 
    /// Number of operation to be scheduled
    size_t operations_number = Operations.size();
@@ -1057,7 +1059,7 @@ bool parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
                }
                schedulable =
                    BB_update_resources_use(used_resources.getRefResource(res_binding->get_assign(*live_vertex_it)),
-                                           res_binding->get_assign(*live_vertex_it));
+                                                     res_binding->get_assign(*live_vertex_it));
                if(!schedulable)
                {
                   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "schedule not feasible");
@@ -1158,7 +1160,7 @@ bool parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
                         infeasable_value = infeasable_counter.at(current_vertex);
                      }
                      if(infeasable_value >= LP_II)
-                     {
+               {
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                        "<--Schedule of operation " + GET_NAME(flow_graph, current_vertex) +
                                            " not feasible given this II=" + STR(LP_II));
@@ -2547,7 +2549,7 @@ DesignFlowStep_Status parametric_list_based::InternalExec()
       xml_document document;
       xml_element* nodeRoot = document.create_root_node("hls");
       HLS->xwrite(nodeRoot, FB->CGetOpGraph(FunctionBehavior::FDFG));
-      document.write_to_file_formatted(function_name + "_scheduling.xml");
+      document.write_to_file_formatted(GetPath(function_name + "_scheduling.xml"));
    }
    return DesignFlowStep_Status::SUCCESS;
 }
@@ -2885,8 +2887,8 @@ void parametric_list_based::do_balanced_scheduling(const CustomUnorderedSet<vert
    /// step 2: compute operation distribution
    std::map<ControlStep, std::deque<vertex>> T;
    std::map<ControlStep, double> T_area;
-   ControlStep min_cycle = ControlStep(std::numeric_limits<unsigned int>::max());
-   ControlStep max_cycle = ControlStep(0u);
+   auto min_cycle = ControlStep(std::numeric_limits<unsigned int>::max());
+   auto max_cycle = ControlStep(0u);
    double total_resource_area = 0;
    for(auto current_op : sub_levels)
    {
@@ -3171,8 +3173,8 @@ void parametric_list_based::do_balanced_scheduling1(const CustomUnorderedSet<ver
 
    std::map<unsigned int, double> total_obj;
    std::map<unsigned int, std::map<ControlStep, double>> T_obj;
-   ControlStep min_cycle = ControlStep(std::numeric_limits<unsigned int>::max());
-   ControlStep max_cycle = ControlStep(0u);
+   auto min_cycle = ControlStep(std::numeric_limits<unsigned int>::max());
+   auto max_cycle = ControlStep(0u);
    for(auto current_op : sub_levels)
    {
       const auto curr_cs = schedule->get_cstep(current_op).second;

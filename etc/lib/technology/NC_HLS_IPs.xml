@@ -1388,7 +1388,7 @@ always @(negedge clock)
   begin
     res_file = $fopen(&quot;results.txt&quot;,&quot;w&quot;);
     $display(&quot;Exit called&quot;);
-    $fwrite(res_file, &quot;%d\\t&quot;, (status!=0 ? 0 : 1));
+    $fwrite(res_file, &quot;%d\\t&quot;, (status!=0 ? 0 : 3));
     $fwrite(res_file, &quot;%d\\t&quot;, $time);
     $fwrite(res_file, &quot;ns\\n&quot;);
     $fclose(res_file);
@@ -1407,7 +1407,7 @@ begin
         if (status /= 0) then
         write(res_file, &quot;0&quot; &amp; HT &amp; time&apos;image(now) &amp; LF);
       else
-         write(res_file, &quot;1&quot; &amp; HT &amp; time&apos;image(now) &amp; LF);
+         write(res_file, &quot;3&quot; &amp; HT &amp; time&apos;image(now) &amp; LF);
       end if;
         file_close(res_file);
         finish(1);
@@ -1541,6 +1541,134 @@ always @(negedge clock)
   end
 // synthesis translate_on
 always @(posedge clock) done_port &lt;= start_port; assign out1 = 0;" />
+        </component_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>__llvm_bitreverse_i8</name>
+      <operation operation_name="__llvm_bitreverse_i8"  execution_time="0.0000001"/>
+      <circuit>
+        <component_o id="__llvm_bitreverse_i8">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2022 Politecnico di Milano</copyright>  
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="__llvm_bitreverse_i8"/>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
+            <connected_objects/>
+          </port_o>
+          <NP_functionality LIBRARY="__llvm_bitreverse_i8 out1" VERILOG_PROVIDED="
+reg [7:0] x;
+integer i;
+always @(*)
+begin
+  for (i=0; i &lt; 8; i=i+1)
+  begin
+     x[i] = in1[7-i];
+  end
+end
+assign out1 = x;
+"/>
+        </component_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>__llvm_bitreverse_i16</name>
+      <operation operation_name="__llvm_bitreverse_i16"  execution_time="0.0000001"/>
+      <circuit>
+        <component_o id="__llvm_bitreverse_i16">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2022 Politecnico di Milano</copyright>  
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="__llvm_bitreverse_i16"/>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="16"/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="16"/>
+            <connected_objects/>
+          </port_o>
+          <NP_functionality LIBRARY="__llvm_bitreverse_i16 out1" VERILOG_PROVIDED="
+reg [15:0] x;
+integer i;
+always @(*)
+begin
+  for (i=0; i &lt; 16; i=i+1)
+  begin
+     x[i] = in1[15-i];
+  end
+end
+assign out1 = x;
+"/>
+        </component_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>__llvm_bitreverse_i32</name>
+      <operation operation_name="__llvm_bitreverse_i32"  execution_time="0.0000001"/>
+      <circuit>
+        <component_o id="__llvm_bitreverse_i32">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2022 Politecnico di Milano</copyright>  
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="__llvm_bitreverse_i32"/>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="32"/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="32"/>
+            <connected_objects/>
+          </port_o>
+          <NP_functionality LIBRARY="__llvm_bitreverse_i32 out1" VERILOG_PROVIDED="
+reg [31:0] x;
+integer i;
+always @(*)
+begin
+  for (i=0; i &lt; 32; i=i+1)
+  begin
+     x[i] = in1[31-i];
+  end
+end
+assign out1 = x;
+"/>
+        </component_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>__llvm_bitreverse_i64</name>
+      <operation operation_name="__llvm_bitreverse_i64"  execution_time="0.0000001"/>
+      <circuit>
+        <component_o id="__llvm_bitreverse_i64">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2022 Politecnico di Milano</copyright>  
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="__llvm_bitreverse_i64"/>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="64"/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="64"/>
+            <connected_objects/>
+          </port_o>
+          <NP_functionality LIBRARY="__llvm_bitreverse_i64 out1" VERILOG_PROVIDED="
+reg [63:0] x;
+integer i;
+always @(*)
+begin
+  for (i=0; i &lt; 64; i=i+1)
+  begin
+     x[i] = in1[63-i];
+  end
+end
+assign out1 = x;
+"/>
         </component_o>
       </circuit>
     </cell>

@@ -300,9 +300,7 @@ struct graphs_collection : public boost_graphs_collection
    }
 
    /// Destructor
-   virtual ~graphs_collection()
-   {
-   }
+   virtual ~graphs_collection() = default;
 
    /**
     * Add a selector to an existing edge
@@ -907,9 +905,7 @@ struct graph : public boost::filtered_graph<boost_graphs_collection, SelectEdge<
                                                                const graph&);
 
    /// Destructor
-   virtual ~graph()
-   {
-   }
+   virtual ~graph() = default;
 
    /**
     * return true in case the vertex is a vertex of the subgraph.
@@ -1429,9 +1425,7 @@ class VertexWriter
    /**
     * Destructor
     */
-   virtual ~VertexWriter()
-   {
-   }
+   virtual ~VertexWriter() = default;
 
    /**
     * Functor actually called by the boost library to perform the writing
@@ -1470,9 +1464,7 @@ class EdgeWriter
    /**
     * Destructor
     */
-   virtual ~EdgeWriter()
-   {
-   }
+   virtual ~EdgeWriter() = default;
 
    /**
     * Functor actually called by the boost library to perform the writing
@@ -1508,9 +1500,7 @@ class GraphWriter
    /**
     * Destructor
     */
-   virtual ~GraphWriter()
-   {
-   }
+   virtual ~GraphWriter() = default;
 
    /**
     * Functor acturally called by the boost library to perform the writing
@@ -1545,9 +1535,7 @@ class UVertexWriter
    /**
     * Destructor
     */
-   virtual ~UVertexWriter()
-   {
-   }
+   virtual ~UVertexWriter() = default;
 
    /**
     * Functor actually called by the boost library to perform the writing
@@ -1586,9 +1574,7 @@ class UEdgeWriter
    /**
     * Destructor
     */
-   virtual ~UEdgeWriter()
-   {
-   }
+   virtual ~UEdgeWriter() = default;
 
    /**
     * Functor actually called by the boost library to perform the writing

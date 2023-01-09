@@ -174,7 +174,12 @@ void TestbenchMemoryAllocation::AllocTestbenchMemory(void) const
          if(tree_helper::IsPointerType(lnode) && !is_memory)
          {
             const auto pt_node = tree_helper::CGetType(lnode);
-            if(flag_cpp)
+            if(test_v.size() > 4 && test_v.substr(test_v.size() - 4) == ".dat")
+            {
+               std::ifstream in(test_v, std::ifstream::ate | std::ifstream::binary);
+               reserved_bytes = static_cast<unsigned>(in.tellg());
+            }
+            else if(flag_cpp)
             {
                tree_nodeConstRef ptd_base_type;
                if(GET_CONST_NODE(pt_node)->get_kind() == pointer_type_K)
@@ -190,12 +195,12 @@ void TestbenchMemoryAllocation::AllocTestbenchMemory(void) const
                   THROW_ERROR("A pointer type is expected");
                }
 
-               unsigned int base_type_byte_size;
+               unsigned long long base_type_byte_size;
                if(tree_helper::IsStructType(ptd_base_type) || tree_helper::IsUnionType(ptd_base_type))
                {
                   base_type_byte_size = tree_helper::Size(ptd_base_type) / 8;
                }
-               else if(tree_helper::IsArrayType(ptd_base_type))
+               else if(tree_helper::IsArrayEquivType(ptd_base_type))
                {
                   base_type_byte_size = tree_helper::GetArrayElementSize(ptd_base_type) / 8;
                }
@@ -281,8 +286,10 @@ void TestbenchMemoryAllocation::AllocTestbenchMemory(void) const
          }
 
          if(next_object_offset < reserved_bytes)
+         {
             THROW_ERROR("more allocated memory than expected  next_object_offset=" + STR(next_object_offset) +
                         " reserved_bytes=" + STR(reserved_bytes));
+         }
          HLSMgr->RSim->param_next_off[v_idx][*l] = next_object_offset;
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Considered " + param);
       }

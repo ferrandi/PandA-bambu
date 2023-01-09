@@ -62,6 +62,6 @@ class datapath_cs : public classic_datapath
    /**
     * Destructor.
     */
-   virtual ~datapath_cs() override;
+   ~datapath_cs() override;
 };
 #endif

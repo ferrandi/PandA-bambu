@@ -101,14 +101,16 @@ namespace boost
    template <class VertexListGraph, class ColorMap>
    typename property_traits<ColorMap>::value_type degree_coloring(const VertexListGraph& G, ColorMap color)
    {
-      typedef graph_traits<VertexListGraph> GraphTraits;
-      typedef typename GraphTraits::vertex_descriptor Vertex;
-      typedef typename property_traits<ColorMap>::value_type size_type;
+      using GraphTraits = graph_traits<VertexListGraph>;
+      using Vertex = typename GraphTraits::vertex_descriptor;
+      using size_type = typename property_traits<ColorMap>::value_type;
 
       size_type max_color = 0;
       const size_type V = num_vertices(G);
       if(V == 0)
+      {
          return 0;
+      }
 
       // We need to keep track of which colors are used by
       // adjacent vertices. We do this by marking the colors
@@ -146,7 +148,9 @@ namespace boost
          // Mark the colors of vertices adjacent to current.
          // i can be the value for marking since i increases successively
          for(boost::tie(v1, v1end) = adjacent_vertices(current, G); v1 != v1end; ++v1)
+         {
             mark[get(color, *v1)] = i;
+         }
 
          // Next step is to assign the smallest un-marked color
          // to the current vertex.
@@ -157,10 +161,14 @@ namespace boost
          // is equal to i, color j is used by one of the current vertex's
          // neighbors.
          while(j < max_color && mark[j] == i)
+         {
             ++j;
+         }
 
-         if(j == max_color) // All colors are used up. Add one more color
+         if(j == max_color)
+         { // All colors are used up. Add one more color
             ++max_color;
+         }
 
          // At this point, j is the smallest possible color
          put(color, current, j); // Save the color of vertex current

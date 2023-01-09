@@ -126,7 +126,7 @@ class tree_helper
     */
    static
        /// FIXME: to be remove after substitution with IsBooleanType
-       unsigned int
+       unsigned long long
        size(const tree_managerConstRef& tm, const unsigned int index);
 
    /**
@@ -134,7 +134,7 @@ class tree_helper
     * @param tn is the tree object
     * @return the size of the object
     */
-   static unsigned int Size(const tree_nodeConstRef& tn);
+   static unsigned long long Size(const tree_nodeConstRef& tn);
 
    /**
     * Return the type name of a signal or a port
@@ -301,9 +301,10 @@ class tree_helper
    /**
     * Return the return type of a function
     * @param function is the function to be considered
+    * @param void_as_null if true returns nullptr when return type is void, else return tree node for void type
     * @return the tree node of the return type
     */
-   static tree_nodeConstRef GetFunctionReturnType(const tree_nodeConstRef& function);
+   static tree_nodeConstRef GetFunctionReturnType(const tree_nodeConstRef& function, bool void_as_null = true);
 
    /**
     * Return the tree_node index of the pointed type of a pointer object;
@@ -528,7 +529,7 @@ class tree_helper
     * @param index is the treenode index
     */
    static
-       /// FIXME: to be remove after substitution with IsArrayType
+       /// FIXME: to be remove after substitution with IsArrayEquivType
        bool
        is_an_array(const tree_managerConstRef& TM, const unsigned int index);
 
@@ -537,6 +538,14 @@ class tree_helper
     * ending into a single arrays)
     * @param type is the treenode
     * @return true if treenode is an array or it is equivalent to an array
+    */
+   static bool IsArrayEquivType(const tree_nodeConstRef& type);
+
+   /**
+    * Return true if treenode is an array
+    * @param type is the treenode
+    * @return true if treenode is an array
+    * @return false if treenode is not an array
     */
    static bool IsArrayType(const tree_nodeConstRef& type);
 
@@ -1014,7 +1023,7 @@ class tree_helper
     */
    static
        /// FIXME: to be remove after substitution with GetArrayElementSize
-       unsigned int
+       unsigned long long
        get_array_data_bitsize(const tree_managerConstRef& TM, const unsigned int index);
 
    /**
@@ -1022,7 +1031,7 @@ class tree_helper
     * @param node is the array object
     * @return the size (in bits) of the base element of the array
     */
-   static unsigned int GetArrayElementSize(const tree_nodeConstRef& node);
+   static unsigned long long GetArrayElementSize(const tree_nodeConstRef& node);
 
    /**
     * Return the dimension of the array
@@ -1033,14 +1042,15 @@ class tree_helper
    static
        /// FIXME: to be remove after substitution with GetArrayDimensions
        void
-       get_array_dimensions(const tree_managerConstRef& TM, const unsigned int index, std::vector<unsigned int>& dims);
+       get_array_dimensions(const tree_managerConstRef& TM, const unsigned int index,
+                            std::vector<unsigned long long>& dims);
 
    /**
     * Return the dimension of the array
     * @param node is the array object
     * @return for each dimension the number of elements
     */
-   static std::vector<unsigned int> GetArrayDimensions(const tree_nodeConstRef& node);
+   static std::vector<unsigned long long> GetArrayDimensions(const tree_nodeConstRef& node);
 
    /**
     * Return the dimension of the array
@@ -1053,7 +1063,7 @@ class tree_helper
        /// FIXME: to be remove after substitution with GetArrayDimensions and GetArrayElementSize
        void
        get_array_dim_and_bitsize(const tree_managerConstRef& TM, const unsigned int index,
-                                 std::vector<unsigned int>& dims, unsigned int& elts_bitsize);
+                                 std::vector<unsigned long long>& dims, unsigned long long& elts_bitsize);
 
    /**
     * Return the total number of elements of the the base type in the array
@@ -1062,7 +1072,7 @@ class tree_helper
     */
    static
        /// FIXME: to be remove after substitution with GetArrayTotalSize
-       unsigned int
+       unsigned long long
        get_array_num_elements(const tree_managerConstRef& TM, const unsigned int index);
 
    /**
@@ -1070,7 +1080,7 @@ class tree_helper
     * @param node is the array object
     * @return the total number of elements of the the base type in the array
     */
-   static unsigned int GetArrayTotalSize(const tree_nodeConstRef& node);
+   static unsigned long long GetArrayTotalSize(const tree_nodeConstRef& node);
 
    /**
     * Return the indexes of the array_ref
@@ -1184,17 +1194,17 @@ class tree_helper
    static unsigned int get_var_alignment(const tree_managerConstRef& TM, unsigned int var);
 
    /**
-    * Return the normalized the name of types and variables
-    * @param id is the initial ID
+    * Return normalized name of types and variables
+    * @param id is the initial typename
     */
-   static std::string normalized_ID(const std::string& id);
+   static std::string NormalizeTypename(const std::string& id);
 
    /**
     * Return the mangled function name
     * @param fd is the function decl
-    * @param fname is the returned function name
+    * @return std::string Mangled function name
     */
-   static void get_mangled_fname(const function_decl* fd, std::string& fname);
+   static std::string GetMangledFunctionName(const function_decl* fd);
 
    /**
     * Return the name of the function in a string
@@ -1273,12 +1283,12 @@ class tree_helper
    /**
     * return the maximum bitsize associated with the elements accessible through type_node
     */
-   static unsigned int AccessedMaximumBitsize(const tree_nodeConstRef& type_node, unsigned int bitsize);
+   static unsigned long long AccessedMaximumBitsize(const tree_nodeConstRef& type_node, unsigned long long bitsize);
 
    /**
     * return the minimum bitsize associated with the elements accessible through type_node
     */
-   static unsigned int AccessedMinimunBitsize(const tree_nodeConstRef& type_node, unsigned int bitsize);
+   static unsigned long long AccessedMinimunBitsize(const tree_nodeConstRef& type_node, unsigned long long bitsize);
 
    /**
     * Compute the memory (in bytes) to be allocated to store a parameter or a variable
@@ -1445,9 +1455,7 @@ class FunctionExpander
    FunctionExpander();
 
    /// Destructor
-   virtual ~FunctionExpander()
-   {
-   }
+   virtual ~FunctionExpander() = default;
 };
 using FunctionExpanderRef = refcount<FunctionExpander>;
 #endif

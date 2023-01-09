@@ -57,13 +57,13 @@ class cs_interface : public module_interface
    /**
     * Destructor
     */
-   virtual ~cs_interface();
+   ~cs_interface() override;
 
    /**
     * Execute the step
     * @return the exit status of this step
     */
-   virtual DesignFlowStep_Status InternalExec() override;
+   DesignFlowStep_Status InternalExec() override;
 
  protected:
    /**

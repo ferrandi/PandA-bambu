@@ -342,7 +342,7 @@ void FunctionFrontendFlowStep::WriteBBGraphDot(const std::string& filename) cons
          {
             const auto gmwi = GetPointer<const gimple_multi_way_if>(GET_NODE(block.second->CGetStmtList().back()));
             CustomSet<unsigned int> conds;
-            for(auto gmwi_cond : gmwi->list_of_cond)
+            for(const auto& gmwi_cond : gmwi->list_of_cond)
             {
                if(gmwi_cond.second == succ)
                {
