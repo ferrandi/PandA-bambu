@@ -201,28 +201,27 @@ unsigned long long tree_helper::Size(const tree_nodeConstRef& _t)
             {
                return Size(type);
             }
-            const auto max = get_integer_cst_value(GetPointerS<const integer_cst>(GET_CONST_NODE(sa->max)));
-            const auto min = get_integer_cst_value(GetPointerS<const integer_cst>(GET_CONST_NODE(sa->min)));
+            const auto max = GetConstValue(sa->max);
+            const auto min = GetConstValue(sa->min);
             if(min == max) /// It may happen with GCC8 -O0
             {
                return Size(type);
             }
 
-            long long min_it;
-            long long max_it;
+            integer_cst_t min_it, max_it;
             bool unsigned_p;
             if(GET_CONST_NODE(type)->get_kind() == integer_type_K)
             {
                const auto it = GetPointerS<const integer_type>(GET_CONST_NODE(type));
-               min_it = get_integer_cst_value(GetPointerS<const integer_cst>(GET_CONST_NODE(it->min)));
-               max_it = get_integer_cst_value(GetPointerS<const integer_cst>(GET_CONST_NODE(it->max)));
+               min_it = GetConstValue(it->min);
+               max_it = GetConstValue(it->max);
                unsigned_p = it->unsigned_flag;
             }
             else
             {
                const auto it = GetPointerS<const enumeral_type>(GET_CONST_NODE(type));
-               min_it = get_integer_cst_value(GetPointerS<const integer_cst>(GET_CONST_NODE(it->min)));
-               max_it = get_integer_cst_value(GetPointerS<const integer_cst>(GET_CONST_NODE(it->max)));
+               min_it = GetConstValue(it->min);
+               max_it = GetConstValue(it->max);
                unsigned_p = it->unsigned_flag;
             }
             if((min_it == min && min != 0) || max_it == max)
@@ -231,7 +230,8 @@ unsigned long long tree_helper::Size(const tree_nodeConstRef& _t)
             }
             if(unsigned_p)
             {
-               return (64 - static_cast<unsigned>(__builtin_clzll(static_cast<unsigned long long>(max))));
+               return (64 - static_cast<unsigned>(
+                                __builtin_clzll(static_cast<unsigned long long>(static_cast<long long>(max)))));
             }
             else
             {
@@ -242,11 +242,13 @@ unsigned long long tree_helper::Size(const tree_nodeConstRef& _t)
                }
                else if(max < -1)
                {
-                  return_value = 65u - static_cast<unsigned>(__builtin_clzll(~static_cast<unsigned long long>(max)));
+                  return_value = 65u - static_cast<unsigned>(__builtin_clzll(
+                                           ~static_cast<unsigned long long>(static_cast<long long>(max))));
                }
                else
                {
-                  return_value = 65u - static_cast<unsigned>(__builtin_clzll(static_cast<unsigned long long>(max)));
+                  return_value = 65u - static_cast<unsigned>(__builtin_clzll(
+                                           static_cast<unsigned long long>(static_cast<long long>(max))));
                }
                if(min < -1)
                {
@@ -319,11 +321,12 @@ unsigned long long tree_helper::Size(const tree_nodeConstRef& _t)
          if(et->min && et->max && GET_CONST_NODE(et->min)->get_kind() == integer_cst_K &&
             GET_CONST_NODE(et->max)->get_kind() == integer_cst_K)
          {
-            long long max = get_integer_cst_value(GetPointerS<const integer_cst>(GET_CONST_NODE(et->max)));
-            long long min = get_integer_cst_value(GetPointerS<const integer_cst>(GET_CONST_NODE(et->min)));
+            const auto max = GetConstValue(et->max);
+            const auto min = GetConstValue(et->min);
             if(et->unsigned_flag)
             {
-               return 64ull - static_cast<unsigned long long>(__builtin_clzll(static_cast<unsigned long long>(max)));
+               return 64ull - static_cast<unsigned long long>(
+                                  __builtin_clzll(static_cast<unsigned long long>(static_cast<long long>(max))));
             }
             else
             {
@@ -334,18 +337,19 @@ unsigned long long tree_helper::Size(const tree_nodeConstRef& _t)
                }
                else if(max < -1)
                {
-                  return_value =
-                      65ull - static_cast<unsigned long long>(__builtin_clzll(~static_cast<unsigned long long>(max)));
+                  return_value = 65ull - static_cast<unsigned long long>(__builtin_clzll(
+                                             ~static_cast<unsigned long long>(static_cast<long long>(max))));
                }
                else
                {
-                  return_value =
-                      65ull - static_cast<unsigned long long>(__builtin_clzll(static_cast<unsigned long long>(max)));
+                  return_value = 65ull - static_cast<unsigned long long>(__builtin_clzll(
+                                             static_cast<unsigned long long>(static_cast<long long>(max))));
                }
                if(min < -1)
                {
                   unsigned long long minbits =
-                      65ull - static_cast<unsigned long long>(__builtin_clzll(~static_cast<unsigned long long>(min)));
+                      65ull - static_cast<unsigned long long>(
+                                  __builtin_clzll(~static_cast<unsigned long long>(static_cast<long long>(min))));
                   return std::max(return_value, minbits);
                }
                else if(min == -1)
@@ -360,8 +364,7 @@ unsigned long long tree_helper::Size(const tree_nodeConstRef& _t)
             {
                return 0ll;
             }
-            const auto ic = GetPointerS<const integer_cst>(GET_CONST_NODE(GetPointerS<const type_node>(t)->size));
-            return static_cast<unsigned long long>(get_integer_cst_value(ic));
+            return static_cast<unsigned long long>(GetConstValue(GetPointerS<const type_node>(t)->size));
          }
          break;
       }
@@ -381,22 +384,20 @@ unsigned long long tree_helper::Size(const tree_nodeConstRef& _t)
          {
             return 0;
          }
-         const auto ic = GetPointerS<const integer_cst>(GET_CONST_NODE(GetPointerS<const type_node>(t)->size));
-         return static_cast<unsigned long long>(get_integer_cst_value(ic));
+         return static_cast<unsigned long long>(GetConstValue(GetPointerS<const type_node>(t)->size));
       }
       case integer_type_K:
       {
          const auto it = GetPointerS<const integer_type>(t);
-         unsigned long long prec = it->prec;
-         unsigned int algn = it->algn;
+         const auto prec = it->prec;
+         const auto algn = it->algn;
          if(prec != algn && prec % algn)
          {
             return prec;
          }
          else
          {
-            const auto ic = GetPointerS<const integer_cst>(GET_CONST_NODE(it->size));
-            return static_cast<unsigned long long>(get_integer_cst_value(ic));
+            return static_cast<unsigned long long>(GetConstValue(it->size));
          }
          break;
       }
@@ -444,7 +445,8 @@ unsigned long long tree_helper::Size(const tree_nodeConstRef& _t)
       case integer_cst_K:
       {
          const auto ic = GetPointerS<const integer_cst>(t);
-         auto ic_value = static_cast<long long unsigned int>(ic->value);
+         const auto ic_valll = static_cast<long long>(ic->value);
+         auto ic_value = static_cast<long long unsigned int>(ic_valll);
          if(ic_value == 0)
          {
             return 1;
@@ -467,16 +469,16 @@ unsigned long long tree_helper::Size(const tree_nodeConstRef& _t)
             {
                return counter + 1;
             }
-            else if(counter == return_value && is_integer_type && ic->value < 0)
+            else if(counter == return_value && is_integer_type && ic_valll < 0)
             {
                /// count leading ONEs
                unsigned long long index = return_value - 1;
-               while(((1ULL << index) & static_cast<long long unsigned int>(ic->value)) && index > 0)
+               while(((1ULL << index) & static_cast<long long unsigned int>(ic_valll)) && index > 0)
                {
                   --counter;
                   --index;
                }
-               if(((1ULL << index) & static_cast<long long unsigned int>(ic->value)) == 0)
+               if(((1ULL << index) & static_cast<long long unsigned int>(ic_valll)) == 0)
                {
                   ++counter;
                }

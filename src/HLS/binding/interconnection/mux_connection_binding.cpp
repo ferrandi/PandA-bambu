@@ -1556,10 +1556,7 @@ void mux_connection_binding::create_connections()
                }
                else
                {
-                  const integer_cst* obj_size =
-                      GetPointer<integer_cst>(GET_NODE(GetPointerS<const type_node>(GET_CONST_NODE(tn))->size));
-                  THROW_ASSERT(obj_size, "size is not an integer_cst");
-                  long long int IR_var_bitsize = tree_helper::get_integer_cst_value(obj_size);
+                  const auto IR_var_bitsize = tree_helper::Size(tn);
                   unsigned int var_bitsize;
                   if(Prec != algn && Prec % algn)
                   {
