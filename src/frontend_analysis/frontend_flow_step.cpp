@@ -580,7 +580,7 @@ void FrontendFlowStep::PrintTreeManager(const bool before) const
 
 void FrontendFlowStep::PrintInitialIR() const
 {
-   if(!parameters->IsParameter("disable-print-tree-manager"))
+   if(!parameters->IsParameter("print-tree-manager") || parameters->GetParameter<unsigned int>("print-tree-manager"))
    {
       PrintTreeManager(true);
    }
@@ -588,7 +588,7 @@ void FrontendFlowStep::PrintInitialIR() const
 
 void FrontendFlowStep::PrintFinalIR() const
 {
-   if(!parameters->IsParameter("disable-print-tree-manager"))
+   if(!parameters->IsParameter("print-tree-manager") || parameters->GetParameter<unsigned int>("print-tree-manager"))
    {
       PrintTreeManager(false);
    }

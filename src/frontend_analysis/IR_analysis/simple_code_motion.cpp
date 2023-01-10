@@ -735,7 +735,8 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
    std::list<vertex> bb_sorted_vertices;
    cyclic_topological_sort(*GCC_bb_graph, std::front_inserter(bb_sorted_vertices));
    static size_t counter = 0;
-   if(debug_level >= DEBUG_LEVEL_VERY_PEDANTIC && !parameters->IsParameter("disable-print-dot-FF"))
+   if(debug_level >= DEBUG_LEVEL_VERY_PEDANTIC &&
+      (!parameters->IsParameter("print-dot-FF") || parameters->GetParameter<unsigned int>("print-dot-FF")))
    {
       GCC_bb_graph->WriteDot("BB_simple_code_motion_" + STR(counter) + ".dot");
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
@@ -864,7 +865,8 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
       bool restart_bb_code_motion = false;
       do
       {
-         if(debug_level >= DEBUG_LEVEL_VERY_PEDANTIC && !parameters->IsParameter("disable-print-dot-FF"))
+         if(debug_level >= DEBUG_LEVEL_VERY_PEDANTIC &&
+            (!parameters->IsParameter("print-dot-FF") || parameters->GetParameter<unsigned int>("print-dot-FF")))
          {
             GCC_bb_graph->WriteDot("BB_simple_code_motion_" + STR(counter) + ".dot");
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
@@ -1369,7 +1371,8 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
             list_of_bloc.at(curr_bb)->PushFront(adding_front, AppM);
          }
          restart_bb_code_motion = (!to_be_added_back.empty()) or (!to_be_added_front.empty());
-         if(debug_level >= DEBUG_LEVEL_VERY_PEDANTIC && !parameters->IsParameter("disable-print-dot-FF"))
+         if(debug_level >= DEBUG_LEVEL_VERY_PEDANTIC &&
+            (!parameters->IsParameter("print-dot-FF") || parameters->GetParameter<unsigned int>("print-dot-FF")))
          {
             GCC_bb_graph->WriteDot("BB_simple_code_motion_" + STR(counter) + ".dot");
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,

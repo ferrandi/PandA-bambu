@@ -151,7 +151,7 @@ bool Bit_Value_opt::HasToBeExecuted() const
 
 DesignFlowStep_Status Bit_Value_opt::InternalExec()
 {
-   if(parameters->IsParameter("disable-BV-opt") && parameters->GetParameter<unsigned int>("disable-BV-opt") == 1)
+   if(parameters->IsParameter("bitvalue-opt") && !parameters->GetParameter<unsigned int>("bitvalue-opt"))
    {
       return DesignFlowStep_Status::UNCHANGED;
    }

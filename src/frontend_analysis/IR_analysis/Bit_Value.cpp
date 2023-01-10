@@ -1046,7 +1046,7 @@ void Bit_Value::Initialize()
 
 DesignFlowStep_Status Bit_Value::InternalExec()
 {
-   if(parameters->IsParameter("disable-BV") && parameters->GetParameter<unsigned int>("disable-BV") == 1)
+   if(parameters->IsParameter("bitvalue") && !parameters->GetParameter<unsigned int>("bitvalue"))
    {
       return DesignFlowStep_Status::UNCHANGED;
    }

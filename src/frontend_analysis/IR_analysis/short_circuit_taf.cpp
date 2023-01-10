@@ -271,7 +271,8 @@ DesignFlowStep_Status short_circuit_taf::InternalExec()
             {
                merging_candidates.erase(merging_candidate);
             }
-            if(debug_level >= DEBUG_LEVEL_VERY_PEDANTIC && !parameters->IsParameter("disable-print-dot-FF"))
+            if(debug_level >= DEBUG_LEVEL_VERY_PEDANTIC &&
+               (!parameters->IsParameter("print-dot-FF") || parameters->GetParameter<unsigned int>("print-dot-FF")))
             {
                WriteBBGraphDot("BB_After_" + GetName() + "_merge_" + STR(merge_n) + ".dot");
             }

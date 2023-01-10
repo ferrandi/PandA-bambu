@@ -249,7 +249,8 @@ DesignFlowStep_Status PhiOpt::InternalExec()
          {
             AppM->RegisterTransformation(GetName(), tree_nodeConstRef());
             MergePhi(block_to_be_removed);
-            if(debug_level >= DEBUG_LEVEL_PEDANTIC && !parameters->IsParameter("disable-print-dot-FF"))
+            if(debug_level >= DEBUG_LEVEL_PEDANTIC &&
+               (!parameters->IsParameter("print-dot-FF") || parameters->GetParameter<unsigned int>("print-dot-FF")))
             {
                WriteBBGraphDot("BB_During_" + GetName() + "_AfterMerge_BB" + STR(block_to_be_removed) + ".dot");
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
@@ -397,7 +398,8 @@ DesignFlowStep_Status PhiOpt::InternalExec()
          }
          AppM->RegisterTransformation(GetName(), tree_nodeConstRef());
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Basic block is not Exit");
-         if(debug_level >= DEBUG_LEVEL_PEDANTIC && !parameters->IsParameter("disable-print-dot-FF"))
+         if(debug_level >= DEBUG_LEVEL_PEDANTIC &&
+            (!parameters->IsParameter("print-dot-FF") || parameters->GetParameter<unsigned int>("print-dot-FF")))
          {
             WriteBBGraphDot("BB_Before_" + GetName() + "_Before_BB" + STR(block->number) + ".dot");
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,

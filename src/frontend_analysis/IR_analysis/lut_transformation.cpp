@@ -2021,8 +2021,8 @@ void lut_transformation::Initialize()
 
 DesignFlowStep_Status lut_transformation::InternalExec()
 {
-   if(max_lut_size == 0 || (parameters->IsParameter("disable-lut-transformation") &&
-                            parameters->GetParameter<unsigned int>("disable-lut-transformation") == 1))
+   if(max_lut_size == 0 ||
+      (parameters->IsParameter("lut-transformation") && !parameters->GetParameter<unsigned int>("lut-transformation")))
    {
       return DesignFlowStep_Status::UNCHANGED;
    }

@@ -410,7 +410,7 @@ unsigned int FunctionFrontendFlowStep::GetBitValueVersion() const
 
 void FunctionFrontendFlowStep::PrintInitialIR() const
 {
-   if(!parameters->IsParameter("disable-print-dot-FF"))
+   if(!parameters->IsParameter("print-dot-FF") || parameters->GetParameter<unsigned int>("print-dot-FF"))
    {
       WriteBBGraphDot("BB_Before_" + GetName() + ".dot");
    }
@@ -419,7 +419,7 @@ void FunctionFrontendFlowStep::PrintInitialIR() const
 
 void FunctionFrontendFlowStep::PrintFinalIR() const
 {
-   if(!parameters->IsParameter("disable-print-dot-FF"))
+   if(!parameters->IsParameter("print-dot-FF") || parameters->GetParameter<unsigned int>("print-dot-FF"))
    {
       WriteBBGraphDot("BB_After_" + GetName() + ".dot");
    }

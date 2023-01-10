@@ -551,7 +551,8 @@ DesignFlowStep_Status CondExprRestructuring::InternalExec()
             schedule->UpdateTime(temp_stmt->index);
          }
 
-         if(debug_level >= DEBUG_LEVEL_VERY_PEDANTIC && !parameters->IsParameter("disable-print-dot-FF"))
+         if(debug_level >= DEBUG_LEVEL_VERY_PEDANTIC &&
+            (!parameters->IsParameter("print-dot-FF") || parameters->GetParameter<unsigned int>("print-dot-FF")))
          {
             WriteBBGraphDot("BB_Inside_" + GetName() + "_" + STR(counter) + ".dot");
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
