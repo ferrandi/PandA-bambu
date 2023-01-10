@@ -2636,13 +2636,13 @@ bool soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef& current_statement
       }
       case integer_cst_K:
       //    {
-      //       const auto ic = GetPointerS<integer_cst>(curr_tn);
-      //       if(tree_helper::IsPointerType(ic->type))
+      //       const auto cst_val = tree_helper::GetConstValue(curr_tn);
+      //       if(tree_helper::IsPointerType(curr_tn))
       //       {
-      //          const auto ptd_type = tree_helper::CGetPointedType(ic->type);
+      //          const auto ptd_type = tree_helper::CGetPointedType(curr_tn);
       //          if(tree_helper::IsRealType(ptd_type))
       //          {
-      //             const auto int_ptr_cst = TreeM->CreateUniqueIntegerCst(ic->value, tree_helper::Size(ptd_type) == 32
+      //             const auto int_ptr_cst = TreeM->CreateUniqueIntegerCst(cst_val, tree_helper::Size(ptd_type) == 32
       //             ? float32_ptr_type : float64_ptr_type); TreeM->ReplaceTreeNode(current_statement,
       //             current_tree_node, int_ptr_cst); INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Real
       //             pointer type constant " + curr_tn->ToString() + " converted to " +

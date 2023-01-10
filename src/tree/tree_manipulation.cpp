@@ -723,7 +723,7 @@ tree_nodeRef tree_manipulation::create_extract_bit_expr(const tree_nodeRef& op0,
 /// CONST_OBJ_TREE_NODES
 
 /// Create an integer_cst node
-tree_nodeRef tree_manipulation::CreateIntegerCst(const tree_nodeConstRef& type, const long long int value,
+tree_nodeRef tree_manipulation::CreateIntegerCst(const tree_nodeConstRef& type, integer_cst_t value,
                                                  const unsigned int integer_cst_nid) const
 {
    THROW_ASSERT(type->get_kind() == tree_reindex_K, "Type node is not a tree reindex");
@@ -1092,10 +1092,10 @@ tree_nodeRef tree_manipulation::GetBitsizeType() const
       CreateIntegerCst(bit_size_node, SIZE_VALUE_BIT_SIZE, size_node_nid);
 
       ///@34    integer_cst      type: @18      low : 0
-      CreateIntegerCst(bit_size_node, MIN_VALUE_BIT_SIZE, min_node_nid);
+      CreateIntegerCst(bit_size_node, integer_cst_t(MIN_VALUE_BIT_SIZE), min_node_nid);
 
       ///@35    integer_cst      type: @18      low : -1
-      CreateIntegerCst(bit_size_node, MAX_VALUE_BIT_SIZE, max_node_nid);
+      CreateIntegerCst(bit_size_node, integer_cst_t(MAX_VALUE_BIT_SIZE), max_node_nid);
    }
    else
    {
@@ -1156,10 +1156,10 @@ tree_nodeRef tree_manipulation::GetSizeType() const
                         GET_NODE(size_node)->get_kind_text() + " bit_size)");
 
       ///@34    integer_cst      type: @18      low : 0
-      CreateIntegerCst(size_node, MIN_VALUE_BIT_SIZE, min_node_nid);
+      CreateIntegerCst(size_node, integer_cst_t(MIN_VALUE_BIT_SIZE), min_node_nid);
 
       ///@35    integer_cst      type: @18      low : -1
-      CreateIntegerCst(size_node, MAX_VALUE_BIT_SIZE, max_node_nid);
+      CreateIntegerCst(size_node, integer_cst_t(MAX_VALUE_BIT_SIZE), max_node_nid);
    }
    else
    {
@@ -1363,9 +1363,9 @@ tree_nodeRef tree_manipulation::GetUnsignedLongLongType() const
                         GET_NODE(integer_type_node)->get_kind_text() + " unsigned long long int int)");
 
       ///@21     integer_cst      type: @8       low : 0
-      CreateIntegerCst(integer_type_node, MIN_VALUE_UNSIGNED_LONG_LONG_INT, min_node_nid);
+      CreateIntegerCst(integer_type_node, integer_cst_t(MIN_VALUE_UNSIGNED_LONG_LONG_INT), min_node_nid);
       ///@21     integer_cst      type: @8       low : -1
-      CreateIntegerCst(integer_type_node, MAX_VALUE_UNSIGNED_LONG_LONG_INT, max_node_nid);
+      CreateIntegerCst(integer_type_node, integer_cst_t(MAX_VALUE_UNSIGNED_LONG_LONG_INT), max_node_nid);
    }
    else
    {
@@ -1526,7 +1526,7 @@ tree_nodeRef tree_manipulation::GetCustomIntegerType(unsigned long long prec, bo
    if(!integer_type_nid)
    {
       integer_type_nid = TreeM->new_tree_node_id();
-      const auto size_node = TreeM->CreateUniqueIntegerCst(static_cast<long long>(prec), GetBitsizeType());
+      const auto size_node = TreeM->CreateUniqueIntegerCst(integer_cst_t(prec), GetBitsizeType());
       const auto min_node_nid = TreeM->new_tree_node_id();
       const auto max_node_nid = TreeM->new_tree_node_id();
 
@@ -1536,9 +1536,15 @@ tree_nodeRef tree_manipulation::GetCustomIntegerType(unsigned long long prec, bo
       TreeM->create_tree_node(integer_type_nid, integer_type_K, IR_schema);
       integer_type_node = TreeM->GetTreeReindex(integer_type_nid);
 
+#ifdef UNLIMITED_PRECISION
+      CreateIntegerCst(integer_type_node, unsigned_p ? 0 : (integer_cst_t(-1) << (prec - 1)), min_node_nid);
+      CreateIntegerCst(integer_type_node, (integer_cst_t(1) << (prec - !unsigned_p)) - 1, max_node_nid);
+#else
+      // TODO: fix unsigned max value
       CreateIntegerCst(integer_type_node, (unsigned_p ? 0 : (1LL << (prec - 1))), min_node_nid);
       CreateIntegerCst(integer_type_node, (unsigned_p ? (~0LL) : static_cast<long long int>((~0ULL) >> 1)),
                        max_node_nid);
+#endif
    }
    else
    {
@@ -1621,6 +1627,10 @@ tree_nodeRef tree_manipulation::create_ssa_name(const tree_nodeConstRef& var, co
 
    std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> IR_schema;
    unsigned int vers = this->TreeM->get_next_vers();
+   if(vers == 26256)
+   {
+      std::cout << "PORCODIO\n";
+   }
    unsigned int node_nid = this->TreeM->new_tree_node_id();
 
    if(type)
@@ -2507,14 +2517,14 @@ tree_nodeRef tree_manipulation::ExtractCondition(const tree_nodeRef& condition, 
       }
       else if((GET_CONST_NODE(gc->op0))->get_kind() == integer_cst_K)
       {
-         const auto int_cst_operand = GetPointerS<const integer_cst>(GET_CONST_NODE(gc->op0));
-         if(int_cst_operand->value)
+         const auto cst_val = tree_helper::GetConstValue(gc->op0);
+         if(cst_val)
          {
-            ret = TreeM->CreateUniqueIntegerCst(static_cast<long long int>(1), bt);
+            ret = TreeM->CreateUniqueIntegerCst(1, bt);
          }
          else
          {
-            ret = TreeM->CreateUniqueIntegerCst(static_cast<long long int>(0), bt);
+            ret = TreeM->CreateUniqueIntegerCst(0, bt);
          }
       }
       else
@@ -2650,9 +2660,7 @@ tree_nodeRef tree_manipulation::CreateUnsigned(const tree_nodeConstRef& signed_t
 
    const auto max = [&]() -> tree_nodeRef {
       std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> max_schema;
-      max_schema[TOK(TOK_VALUE)] = STR(
-          (2 * -(tree_helper::get_integer_cst_value(GetPointer<const integer_cst>(GET_NODE(int_signed_type->min))))) -
-          1);
+      max_schema[TOK(TOK_VALUE)] = STR((2 * -(tree_helper::GetConstValue(int_signed_type->min))) - 1);
       const auto find = TreeM->find(integer_cst_K, max_schema);
       if(find)
       {

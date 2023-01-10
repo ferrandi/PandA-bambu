@@ -1154,7 +1154,7 @@ tree_nodeRef IR_lowering::expand_MC(const tree_nodeRef& op0, const integer_cst* 
    {
       return old_target;
    }
-   long long int ext_op1 = tree_helper::get_integer_cst_value(ic_node);
+   long long int ext_op1 = static_cast<long long>(tree_helper::get_integer_cst_value(ic_node));
    short int mult_plus_ratio = 3;
    auto data_bitsize = tree_helper::Size(op0);
    auto typeSize = tree_helper::Size(type_expr);
@@ -1341,33 +1341,30 @@ bool IR_lowering::expand_target_mem_ref(target_mem_ref461* tmr, const tree_nodeR
    }
    if(tmr->offset)
    {
-      auto* ic_node = GetPointer<integer_cst>(GET_NODE(tmr->offset));
-      long long int ic_value = tree_helper::get_integer_cst_value(ic_node);
-      if(ic_value != 0)
+      if(tree_helper::GetConstValue(tmr->offset) != 0)
       {
          if(!type_sum)
          {
             type_sum = tree_man->GetSizeType();
          }
 
-         tree_nodeRef ne = tree_man->create_unary_operation(type_sum, tmr->offset, srcp_default, nop_expr_K);
-         tree_nodeRef casted_offset_ga = tree_man->CreateGimpleAssign(type_sum, tree_nodeRef(), tree_nodeRef(), ne,
-                                                                      function_id, block->number, srcp_default);
+         const auto ne = tree_man->create_unary_operation(type_sum, tmr->offset, srcp_default, nop_expr_K);
+         const auto casted_offset_ga = tree_man->CreateGimpleAssign(type_sum, tree_nodeRef(), tree_nodeRef(), ne,
+                                                                    function_id, block->number, srcp_default);
          block->PushBefore(casted_offset_ga, stmt, AppM);
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                         "---adding statement " + GET_NODE(casted_offset_ga)->ToString());
-         tree_nodeRef casted_offset_var = GetPointer<gimple_assign>(GET_NODE(casted_offset_ga))->op0;
+         const auto casted_offset_var = GetPointerS<gimple_assign>(GET_NODE(casted_offset_ga))->op0;
 
          if(accum)
          {
-            tree_nodeRef t_expr =
+            const auto t_expr =
                 tree_man->create_binary_operation(type_sum, casted_offset_var, accum, srcp_default, plus_expr_K);
-            tree_nodeRef t_ga;
-            t_ga = tree_man->CreateGimpleAssign(type_sum, tree_nodeRef(), tree_nodeRef(), t_expr, function_id,
-                                                block->number, srcp_default);
+            const auto t_ga = tree_man->CreateGimpleAssign(type_sum, tree_nodeRef(), tree_nodeRef(), t_expr,
+                                                           function_id, block->number, srcp_default);
             block->PushBefore(t_ga, stmt, AppM);
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---adding statement " + GET_NODE(t_ga)->ToString());
-            accum = GetPointer<gimple_assign>(GET_NODE(t_ga))->op0;
+            accum = GetPointerS<gimple_assign>(GET_NODE(t_ga))->op0;
          }
          else
          {

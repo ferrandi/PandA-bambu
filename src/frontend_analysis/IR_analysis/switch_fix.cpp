@@ -435,21 +435,20 @@ DesignFlowStep_Status SwitchFix::InternalExec()
                   {
                      if(cle->op1)
                      {
-                        const auto low_ic = GetPointer<const integer_cst>(GET_NODE(cle->op0));
-                        const auto high_ic = GetPointer<const integer_cst>(GET_NODE(cle->op1));
-                        const auto low_value = tree_helper::get_integer_cst_value(low_ic);
-                        const auto high_value = tree_helper::get_integer_cst_value(high_ic);
+                        const auto low_value = tree_helper::GetConstValue(cle->op0);
+                        const auto high_value = tree_helper::GetConstValue(cle->op1);
                         const auto eq = tree_man->CreateEqExpr(gs->op0, cle->op0, basic_block.second, function_id);
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                        "---Equality is " +
                                            GetPointer<const ssa_name>(GET_NODE(eq))->CGetDefStmt()->ToString());
                         cond = cond ? tree_man->CreateOrExpr(cond, eq, basic_block.second, function_id) : eq;
-                        for(auto index = low_value + 1; index <= high_value; index++)
+                        for(integer_cst_t index = low_value + 1; index <= high_value; index++)
                         {
                            cond = tree_man->CreateOrExpr(
                                cond,
-                               tree_man->CreateEqExpr(gs->op0, TM->CreateUniqueIntegerCst(index, low_ic->type),
-                                                      basic_block.second, function_id),
+                               tree_man->CreateEqExpr(
+                                   gs->op0, TM->CreateUniqueIntegerCst(index, tree_helper::CGetType(cle->op0)),
+                                   basic_block.second, function_id),
                                basic_block.second, function_id);
                         }
                      }

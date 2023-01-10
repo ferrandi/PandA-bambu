@@ -465,12 +465,10 @@ unsigned int mux_connection_binding::address_precision(unsigned int precision, c
 
 bool mux_connection_binding::isZeroObj(unsigned int tree_index, const tree_managerRef TreeM)
 {
-   tree_nodeRef tn = TreeM->get_tree_node_const(tree_index);
-   if(GetPointer<integer_cst>(tn))
+   const auto tn = TreeM->CGetTreeNode(tree_index);
+   if(GetPointer<const integer_cst>(tn))
    {
-      auto* curr_int = GetPointer<integer_cst>(tn);
-      auto val = tree_helper::get_integer_cst_value(curr_int);
-      return val == 0;
+      return tree_helper::GetConstValue(tn) == 0;
    }
    else
    {
@@ -643,9 +641,10 @@ void mux_connection_binding::determine_connection(const vertex& op, const HLS_ma
             auto* fd = GetPointer<field_decl>(GET_NODE(cr->op1));
             THROW_ASSERT(fd, "expected an field_decl but got something of different");
             THROW_ASSERT(!fd->is_bitfield(), "bitfield not yet supported: " + fd->ToString());
-            auto* curr_int = GetPointer<integer_cst>(GET_NODE(fd->bpos));
-            THROW_ASSERT(curr_int, "expected an integer_cst but got something of different");
-            auto offset = static_cast<unsigned int>(tree_helper::get_integer_cst_value(curr_int));
+            THROW_ASSERT(GET_NODE(fd->bpos)->get_kind() == integer_cst_K,
+                         "expected an integer_cst but got something of different");
+            THROW_ASSERT(tree_helper::GetConstValue(fd->bpos) >= 0, "");
+            const auto offset = static_cast<unsigned int>(tree_helper::GetConstValue(fd->bpos));
             if(offset % 8 != 0)
             {
                THROW_ERROR("bitfields are not yet supported");
@@ -692,8 +691,8 @@ void mux_connection_binding::determine_connection(const vertex& op, const HLS_ma
             }
             else if(GetPointer<integer_cst>(GET_NODE(ir->op)))
             {
-               constant_value = static_cast<unsigned int>(
-                   tree_helper::get_integer_cst_value(GetPointer<integer_cst>(GET_NODE(ir->op))));
+               THROW_ASSERT(tree_helper::GetConstValue(ir->op) >= 0, "");
+               constant_value = static_cast<unsigned long long>(tree_helper::GetConstValue(ir->op));
                tree_var = 0;
                precision = address_precision(bus_addr_bitsize, op, data, TreeM);
             }
@@ -715,14 +714,14 @@ void mux_connection_binding::determine_connection(const vertex& op, const HLS_ma
          {
             auto* mr = GetPointer<mem_ref>(tn);
             auto base_index = GET_INDEX_NODE(mr->op0);
-            auto offset = tree_helper::get_integer_cst_value(GetPointer<integer_cst>(GET_NODE(mr->op1)));
+            auto offset = static_cast<long long>(tree_helper::GetConstValue(mr->op1));
             auto offset_index = offset ? GET_INDEX_NODE(mr->op1) : 0;
             generic_objRef current_operand;
             auto local_precision = address_precision(precision, op, data, TreeM);
             if(offset_index)
             {
 #if USE_ALIGNMENT_INFO
-               long long int cost_val = offset;
+               const auto cost_val = offset;
                alignment = std::min(static_cast<unsigned int>(8 * (cost_val & -cost_val)), alignment);
 #endif
                current_operand = generic_objRef(new adder_conn_obj("adder_conn_obj_" + STR(id++)));
@@ -765,9 +764,9 @@ void mux_connection_binding::determine_connection(const vertex& op, const HLS_ma
 #if USE_ALIGNMENT_INFO
             if(offset_index)
             {
-               auto* curr_int = GetPointer<integer_cst>(GET_NODE(tmr->offset));
-               long long int cost_val = tree_helper::get_integer_cst_value(curr_int);
-               auto offset = 8 * static_cast<unsigned int>(cost_val & -cost_val);
+               THROW_ASSERT(tree_helper::GetConstValue(tmr->offset) >= 0, "");
+               const auto cost_val = static_cast<unsigned int>(tree_helper::GetConstValue(tmr->offset));
+               const auto offset = 8u * (cost_val & -cost_val);
                if(offset < alignment)
                {
                   alignment = offset & (alignment - 1);
@@ -775,10 +774,9 @@ void mux_connection_binding::determine_connection(const vertex& op, const HLS_ma
             }
             if(step_index)
             {
-               auto* curr_int = GetPointer<integer_cst>(GET_NODE(tmr->step));
-               alignment = std::min(static_cast<unsigned int>((8 * (tree_helper::get_integer_cst_value(curr_int) &
-                                                                    -tree_helper::get_integer_cst_value(curr_int)))),
-                                    alignment);
+               THROW_ASSERT(tree_helper::GetConstValue(tmr->step) >= 0, "");
+               const auto step_val = static_cast<unsigned int>(tree_helper::GetConstValue(tmr->step));
+               alignment = std::min(8u * (step_val & -step_val), alignment);
             }
             else if(idx_index)
             {
@@ -956,9 +954,9 @@ void mux_connection_binding::determine_connection(const vertex& op, const HLS_ma
             }
             if(offset_index)
             {
-               auto* curr_int = GetPointer<integer_cst>(GET_NODE(tmr->offset));
-               long long int cost_val = tree_helper::get_integer_cst_value(curr_int);
-               auto offset = 8 * static_cast<unsigned int>(cost_val & -cost_val);
+               THROW_ASSERT(tree_helper::GetConstValue(tmr->offset) >= 0, "");
+               const auto cost_val = static_cast<unsigned int>(tree_helper::GetConstValue(tmr->offset));
+               const auto offset = 8u * (cost_val & -cost_val);
                if(offset < alignment)
                {
                   alignment = offset & (alignment - 1);
@@ -966,10 +964,9 @@ void mux_connection_binding::determine_connection(const vertex& op, const HLS_ma
             }
             if(step_index)
             {
-               auto* curr_int = GetPointer<integer_cst>(GET_NODE(tmr->step));
-               alignment = std::min(static_cast<unsigned int>((8 * (tree_helper::get_integer_cst_value(curr_int) &
-                                                                    -tree_helper::get_integer_cst_value(curr_int)))),
-                                    alignment);
+               THROW_ASSERT(tree_helper::GetConstValue(tmr->step) >= 0, "");
+               const auto step_val = static_cast<unsigned int>(tree_helper::GetConstValue(tmr->step));
+               alignment = std::min(8u * (step_val & -step_val), alignment);
             }
             else if(idx_index)
             {
@@ -1250,14 +1247,15 @@ void mux_connection_binding::determine_connection(const vertex& op, const HLS_ma
          case bit_field_ref_K:
          {
             auto* bf = GetPointer<bit_field_ref>(tn);
-            long long int bpos = tree_helper::get_integer_cst_value(GetPointer<integer_cst>(GET_NODE(bf->op2)));
+            const auto bpos = tree_helper::GetConstValue(bf->op2);
+            THROW_ASSERT(bpos >= 0, "");
             if(bpos % 8)
             {
                THROW_ERROR_CODE(BITFIELD_EC, "Bitfield LOAD/STORE not yet supported @" + std::to_string(tree_var));
             }
             /// check bitsize
-            auto bsize = static_cast<unsigned long long>(
-                tree_helper::get_integer_cst_value(GetPointer<integer_cst>(GET_NODE(bf->op1))));
+            THROW_ASSERT(tree_helper::GetConstValue(bf->op1) >= 0, "");
+            auto bsize = static_cast<unsigned long long>(tree_helper::GetConstValue(bf->op1));
             if(bsize == 1 || resize_to_1_8_16_32_64_128_256_512(bsize) != bsize)
             {
                THROW_ERROR_CODE(BITFIELD_EC, "Bitfield LOAD/STORE not yet supported @" + std::to_string(tree_var));
@@ -1447,8 +1445,7 @@ void mux_connection_binding::determine_connection(const vertex& op, const HLS_ma
          case insertelement_expr_K:
          case CASE_TYPE_NODES:
          default:
-            THROW_ERROR("determine_connection pattern not supported: " + std::string(tn->get_kind_text()) + " @" +
-                        STR(tree_var));
+            THROW_ERROR("determine_connection pattern not supported: " + tn->get_kind_text() + " @" + STR(tree_var));
       }
    }
 
@@ -1475,7 +1472,7 @@ void mux_connection_binding::determine_connection(const vertex& op, const HLS_ma
    const BehavioralHelperConstRef behavioral_helper = FB->CGetBehavioralHelper();
    if(behavioral_helper->is_a_constant(tree_var))
    {
-      THROW_ASSERT(precision, "a precision greater than 0 is expected");
+      THROW_ASSERT(precision, "a precision greater than 0 is expected: " + STR(precision));
       std::string C_value = HLSMgr->get_constant_string(tree_var, precision);
       /*if(behavioral_helper->is_unsigned(tree_var))
          C_value = "0"+C_value;*/
@@ -2273,10 +2270,10 @@ void mux_connection_binding::create_connections()
 
                   if(size_var)
                   {
-                     const integer_cst* obj_size =
-                         GetPointer<integer_cst>(GET_NODE(GetPointerS<const type_node>(GET_CONST_NODE(tn))->size));
-                     THROW_ASSERT(obj_size, "size is not an integer_cst");
-                     long long int IR_var_bitsize = tree_helper::get_integer_cst_value(obj_size);
+                     THROW_ASSERT(
+                         tree_helper::GetConstValue(GetPointerS<const type_node>(GET_CONST_NODE(tn))->size) >= 0, "");
+                     const auto IR_var_bitsize = static_cast<unsigned int>(
+                         tree_helper::GetConstValue(GetPointerS<const type_node>(GET_CONST_NODE(tn))->size));
                      unsigned int var_bitsize;
                      if(Prec != algn && Prec % algn)
                      {
@@ -2285,8 +2282,8 @@ void mux_connection_binding::create_connections()
                      }
                      else
                      {
-                        HLS_manager::check_bitwidth(static_cast<unsigned long long>(IR_var_bitsize));
-                        var_bitsize = static_cast<unsigned int>(IR_var_bitsize);
+                        HLS_manager::check_bitwidth(IR_var_bitsize);
+                        var_bitsize = IR_var_bitsize;
                      }
                      generic_objRef conv_port;
                      auto varObj = var_read[0];
@@ -2392,10 +2389,11 @@ void mux_connection_binding::create_connections()
                      }
                      else
                      {
-                        const integer_cst* obj_size =
-                            GetPointer<integer_cst>(GET_NODE(GetPointerS<const type_node>(GET_CONST_NODE(tn))->size));
-                        THROW_ASSERT(obj_size, "size is not an integer_cst");
-                        long long int IR_var_bitsize = tree_helper::get_integer_cst_value(obj_size);
+                        THROW_ASSERT(
+                            tree_helper::GetConstValue(GetPointerS<const type_node>(GET_CONST_NODE(tn))->size) >= 0,
+                            "");
+                        const auto IR_var_bitsize = static_cast<unsigned int>(
+                            tree_helper::GetConstValue(GetPointerS<const type_node>(GET_CONST_NODE(tn))->size));
                         unsigned int var_bitsize;
                         if(Prec != algn && Prec % algn)
                         {
@@ -2404,7 +2402,8 @@ void mux_connection_binding::create_connections()
                         }
                         else
                         {
-                           var_bitsize = static_cast<unsigned int>(IR_var_bitsize);
+                           HLS_manager::check_bitwidth(IR_var_bitsize);
+                           var_bitsize = IR_var_bitsize;
                         }
                         determine_connection(
                             *op,

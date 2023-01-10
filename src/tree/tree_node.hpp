@@ -65,7 +65,8 @@
 
 #include "custom_map.hpp" // for CustomMap
 #include "custom_set.hpp"
-#include "exceptions.hpp"  // for throw_error
+#include "exceptions.hpp" // for throw_error
+#include "panda_types.hpp"
 #include "refcount.hpp"    // for GetPointer, refc...
 #include "tree_common.hpp" // for GET_KIND, BINARY...
 
@@ -2724,7 +2725,7 @@ struct field_decl : public decl_node, public attr
     + Compute the offset of this field in the struct or structure
     * @return the offset for this field
    */
-   long long int offset();
+   integer_cst_t offset();
 
    /// Redefinition of get_kind_text.
    GET_KIND_TEXT(field_decl)
@@ -3284,12 +3285,15 @@ CREATE_TREE_NODE_CLASS(init_expr, binary_expr);
 struct integer_cst : public cst_node
 {
    /// constructor
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wzero-as-null-pointer-constant"
    explicit integer_cst(unsigned int i) : cst_node(i), value(0)
    {
    }
+#pragma GCC diagnostic pop
 
    /// The value of the integer cast
-   long long int value;
+   integer_cst_t value;
 
    /// Redefinition of get_kind_text.
    GET_KIND_TEXT(integer_cst)
@@ -4200,7 +4204,7 @@ struct record_type : public type_node
     * @param offset is the offset of the field from the base address of the record_type
     * @return the tree_nodeRef if the offset is valid else null pointer
     */
-   tree_nodeRef get_field(long long int offset);
+   tree_nodeRef get_field(integer_cst_t offset);
 
    /**
     * returns the name of the struct represented by this node if there is one else

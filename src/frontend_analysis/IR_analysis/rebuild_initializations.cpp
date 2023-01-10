@@ -105,7 +105,7 @@ DesignFlowStep_Status rebuild_initialization::InternalExec()
    THROW_ASSERT(sl, "Body is not a statement_list");
    auto B_it_end = sl->list_of_bloc.end();
 
-   TreeNodeMap<std::map<long long int, tree_nodeRef>> inits;
+   TreeNodeMap<std::map<integer_cst_t, tree_nodeRef>> inits;
 
    /// for each basic block B in CFG do > Consider all blocks successively
    for(auto B_it = sl->list_of_bloc.begin(); B_it != B_it_end; ++B_it)
@@ -142,11 +142,8 @@ DesignFlowStep_Status rebuild_initialization::InternalExec()
                   auto* vd = GetPointerS<var_decl>(GET_NODE(ar->op0));
                   if(vd->readonly_flag)
                   {
-                     THROW_ASSERT(not vd->init,
-                                  "Writing element of read only array already initialized: " + STR(ga->op0));
-                     inits[ar->op0]
-                          [tree_helper::get_integer_cst_value(GetPointerS<const integer_cst>(GET_NODE(ar->op1)))] =
-                              ga->op1;
+                     THROW_ASSERT(!vd->init, "Writing element of read only array already initialized: " + STR(ga->op0));
+                     inits[ar->op0][tree_helper::GetConstValue(ar->op1)] = ga->op1;
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                     "<--Statement removed " + GET_NODE(*it_los)->ToString());
                      if(ga->memdef)
@@ -195,14 +192,14 @@ DesignFlowStep_Status rebuild_initialization::InternalExec()
       auto constructor_index = TM->new_tree_node_id();
       TM->create_tree_node(constructor_index, constructor_K, constructor_tree_node_schema);
       auto* constr = GetPointerS<constructor>(TM->GetTreeNode(constructor_index));
-      const long long int last_index = init.second.rbegin()->first;
-      long long int index = 0;
+      const auto last_index = init.second.rbegin()->first;
+      integer_cst_t index = 0;
       for(index = 0; index <= last_index; index++)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---" + STR(index));
          if(init.second.count(index))
          {
-            constr->add_idx_valu(TM->CreateUniqueIntegerCst(index, integer_type), init.second.find(index)->second);
+            constr->add_idx_valu(TM->CreateUniqueIntegerCst(index, integer_type), init.second.at(index));
          }
          else
          {
@@ -318,8 +315,7 @@ bool rebuild_initialization2::extract_var_decl_ppe(tree_nodeRef addr_assign_op1,
       {
          return varFound(addr3_assign_op1, vd_index, vd_node);
       }
-      else if(GET_NODE(ppe->op1)->get_kind() == integer_cst_K &&
-              tree_helper::get_integer_cst_value(GetPointerS<const integer_cst>(GET_NODE(ppe->op1))) == 0)
+      else if(GET_NODE(ppe->op1)->get_kind() == integer_cst_K && tree_helper::GetConstValue(ppe->op1) == 0)
       {
          if(addr3_assign_op1->get_kind() == ssa_name_K)
          {
@@ -472,8 +468,7 @@ bool rebuild_initialization2::extract_var_decl_ppe(tree_nodeRef addr_assign_op1,
       }
       if(addr3_assign_op1->get_kind() == pointer_plus_expr_K)
       {
-         if(GET_NODE(ppe->op1)->get_kind() == integer_cst_K &&
-            tree_helper::get_integer_cst_value(GetPointerS<const integer_cst>(GET_NODE(ppe->op1))) == 0)
+         if(GET_NODE(ppe->op1)->get_kind() == integer_cst_K && tree_helper::GetConstValue(ppe->op1) == 0)
          {
             addr_assign_op1 = addr3_assign_op1;
             return extract_var_decl_ppe(addr_assign_op1, vd_index, vd_node);
@@ -519,8 +514,7 @@ bool rebuild_initialization2::extract_var_decl(const mem_ref* me, unsigned& vd_i
 {
    auto me_op1 = GET_NODE(me->op1);
    THROW_ASSERT(me_op1->get_kind() == integer_cst_K, "unexpected condition");
-   THROW_ASSERT(tree_helper::get_integer_cst_value(GetPointerS<const integer_cst>(me_op1)) == 0,
-                "unexpected condition");
+   THROW_ASSERT(tree_helper::GetConstValue(me->op1) == 0, "unexpected condition");
    auto me_op0 = GET_NODE(me->op0);
    addr_assign_op1 = extractOp1(me_op0);
    if(!addr_assign_op1)
@@ -674,7 +668,7 @@ bool rebuild_initialization2::extract_var_decl(const mem_ref* me, unsigned& vd_i
 #endif
 
 tree_nodeRef getAssign(tree_nodeRef SSAop, unsigned vd_index, CustomOrderedSet<unsigned>& nonConstantVars,
-                       TreeNodeMap<std::map<long long int, tree_nodeRef>>& inits, tree_managerRef TM)
+                       TreeNodeMap<std::map<integer_cst_t, tree_nodeRef>>& inits, tree_managerRef TM)
 {
    THROW_ASSERT(SSAop->get_kind() == ssa_name_K, "unexpected condition");
    auto* ssa_var = GetPointerS<ssa_name>(SSAop);
@@ -709,7 +703,7 @@ bool rebuild_initialization2::look_for_ROMs()
    std::map<unsigned, unsigned long long> var_writing_size_relation;
    std::map<unsigned, unsigned long long> var_writing_elts_size_relation;
    CustomOrderedSet<unsigned> nonConstantVars;
-   TreeNodeMap<std::map<long long int, tree_nodeRef>> inits;
+   TreeNodeMap<std::map<integer_cst_t, tree_nodeRef>> inits;
 
    /// for each basic block B in CFG compute constantVars candidates
    for(const auto& Bit : sl->list_of_bloc)
@@ -848,15 +842,15 @@ bool rebuild_initialization2::look_for_ROMs()
                                     auto ls_op1 = GET_NODE(ls->op1);
                                     if(ls_op1->get_kind() == integer_cst_K)
                                     {
-                                       auto nbit =
-                                           tree_helper::get_integer_cst_value(GetPointerS<const integer_cst>(ls_op1));
+                                       THROW_ASSERT(tree_helper::GetConstValue(ls->op1) >= 0, "");
+                                       auto nbit = static_cast<unsigned long long>(tree_helper::GetConstValue(ls->op1));
                                        THROW_ASSERT(nbit < 32, "unexpected condition");
                                        std::vector<unsigned long long> dims;
                                        THROW_ASSERT(var_writing_elts_size_relation.find(vd_index) !=
                                                         var_writing_elts_size_relation.end(),
                                                     "unexpected condition");
                                        auto elts_size = var_writing_elts_size_relation[vd_index];
-                                       if(elts_size != 8u << nbit)
+                                       if(elts_size != (8ULL << nbit))
                                        {
                                           INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                                          "---variable is not constant(9c): " +
@@ -885,8 +879,7 @@ bool rebuild_initialization2::look_for_ROMs()
                                                    if(ne_op->get_kind() == integer_cst_K)
                                                    {
                                                       /// index is constant
-                                                      inits[vd_node][tree_helper::get_integer_cst_value(
-                                                          GetPointerS<const integer_cst>(ne_op))] = ga->op1;
+                                                      inits[vd_node][tree_helper::GetConstValue(ne->op)] = ga->op1;
                                                    }
                                                    else
                                                    {
@@ -899,8 +892,7 @@ bool rebuild_initialization2::look_for_ROMs()
                                                 else if(nop_assign_op1->get_kind() == integer_cst_K)
                                                 {
                                                    /// index is constant
-                                                   inits[vd_node][tree_helper::get_integer_cst_value(
-                                                       GetPointerS<const integer_cst>(nop_assign_op1))] = ga->op1;
+                                                   inits[vd_node][tree_helper::GetConstValue(nop_assign_op1)] = ga->op1;
                                                 }
                                                 else if(nop_assign_op1->get_kind() != view_convert_expr_K)
                                                 {
@@ -944,8 +936,7 @@ bool rebuild_initialization2::look_for_ROMs()
                                           auto ne_op = GET_NODE(ne->op);
                                           if(ne_op->get_kind() == integer_cst_K)
                                           {
-                                             inits[vd_node][tree_helper::get_integer_cst_value(
-                                                 GetPointerS<const integer_cst>(ne_op))] = ga->op1;
+                                             inits[vd_node][tree_helper::GetConstValue(ne->op)] = ga->op1;
                                           }
                                           else if(ne_op->get_kind() == ssa_name_K)
                                           {
@@ -959,8 +950,8 @@ bool rebuild_initialization2::look_for_ROMs()
                                              }
                                              else if(offset_assign2_op1->get_kind() == integer_cst_K)
                                              {
-                                                inits[vd_node][tree_helper::get_integer_cst_value(
-                                                    GetPointerS<const integer_cst>(offset_assign2_op1))] = ga->op1;
+                                                inits[vd_node][tree_helper::GetConstValue(offset_assign2_op1)] =
+                                                    ga->op1;
                                              }
                                              else
                                              {
@@ -1016,8 +1007,9 @@ bool rebuild_initialization2::look_for_ROMs()
                                                var_writing_elts_size_relation.end(),
                                            "unexpected condition");
                               inits[vd_node]
-                                   [tree_helper::get_integer_cst_value(GetPointerS<const integer_cst>(ppe_op1)) /
-                                    static_cast<long long>(var_writing_elts_size_relation[vd_index] / 8)] = ga->op1;
+                                   [tree_helper::GetConstValue(ppe_op1) /
+                                    (static_cast<integer_cst_t>(var_writing_elts_size_relation[vd_index]) / 8)] =
+                                       ga->op1;
                            }
                            else
                            {
@@ -1359,14 +1351,14 @@ bool rebuild_initialization2::look_for_ROMs()
       auto constructor_index = TM->new_tree_node_id();
       TM->create_tree_node(constructor_index, constructor_K, constructor_tree_node_schema);
       auto* constr = GetPointerS<constructor>(TM->GetTreeNode(constructor_index));
-      const long long int last_index = init.second.rbegin()->first;
-      long long int index = 0;
+      const auto last_index = init.second.rbegin()->first;
+      integer_cst_t index = 0;
       for(index = 0; index <= last_index; index++)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---" + STR(index));
          if(init.second.count(index))
          {
-            constr->add_idx_valu(TM->CreateUniqueIntegerCst(index, integer_type), init.second.find(index)->second);
+            constr->add_idx_valu(TM->CreateUniqueIntegerCst(index, integer_type), init.second.at(index));
          }
          else
          {

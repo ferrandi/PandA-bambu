@@ -343,13 +343,12 @@ void Vectorize::ClassifyLoop(const LoopConstRef loop, const size_t parallel_degr
 
    if(loop->loop_type & DOALL_LOOP)
    {
-      const long long int iteration_number =
+      const auto iteration_number =
           (loop->loop_type & COUNTABLE_LOOP) ?
               ((loop->upper_bound + (loop->close_interval ? 1 : 0) - loop->lower_bound) / loop->increment) :
-              0;
+              integer_cst_t(0);
       /// The number of iterations can be not multiple of the parallel degree of outer loop
-      if(loop->loop_type & COUNTABLE_LOOP and
-         iteration_number % static_cast<long long int>(potential_parallel_degree) == 0)
+      if(loop->loop_type & COUNTABLE_LOOP && iteration_number % static_cast<long long>(potential_parallel_degree) == 0)
       {
          INDENT_DBG_MEX(
              DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
@@ -416,7 +415,7 @@ void Vectorize::ClassifyLoop(const LoopConstRef loop, const size_t parallel_degr
       const auto header_controller =
           std::pair<vertex, unsigned int>(source, edge_labels.size() ? *(edge_labels.begin()) : 0);
       if(!basic_block_divergence[cdg_bb_graph->CGetBBNodeInfo(header_controller.first)->block->number] and
-         (loop->loop_type & COUNTABLE_LOOP) and not basic_block_divergence.find(loop->Parent()->GetId())->second)
+         (loop->loop_type & COUNTABLE_LOOP) and !basic_block_divergence.find(loop->Parent()->GetId())->second)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Header does not diverge");
          basic_block_divergence[loop_id] = false;
@@ -668,14 +667,14 @@ void Vectorize::ClassifyTreeNode(const unsigned int loop_id, const tree_nodeCons
                         THROW_ERROR("Unsupported pattern");
                      }
                      const auto* ga = GetPointer<const gimple_assign>(GET_NODE(sn->CGetDefStmt()));
-                     if(not ga)
+                     if(!ga)
                      {
                         THROW_ASSERT(false, sn->ToString() + " is not defined in a gimple assignment but in " +
                                                 sn->CGetDefStmt()->ToString());
                         THROW_ERROR("Unsupported pattern");
                      }
                      const auto* pe = GetPointer<const plus_expr>(GET_NODE(ga->op1));
-                     if(not pe)
+                     if(!pe)
                      {
                         THROW_ASSERT(false, "Unexpected pattern: " + ga->op1->ToString());
                         THROW_ERROR("Unsupported pattern");
@@ -686,12 +685,12 @@ void Vectorize::ClassifyTreeNode(const unsigned int loop_id, const tree_nodeCons
                         THROW_ERROR("Unsupported pattern");
                      }
                      const auto* ic = GetPointer<const integer_cst>(GET_NODE(pe->op1));
-                     if(not ic)
+                     if(!ic)
                      {
                         THROW_ASSERT(false, "Unexpected pattern: " + pe->op1->ToString());
                         THROW_ERROR("Unsupported pattern");
                      }
-                     iv_increment[gp->res->index] = tree_helper::get_integer_cst_value(ic);
+                     iv_increment[gp->res->index] = tree_helper::GetConstValue(pe->op1);
                      transformations[gp->index] = INIT;
                      transformations[ga->index] = INC;
                      break;
@@ -761,7 +760,7 @@ void Vectorize::ClassifyTreeNode(const unsigned int loop_id, const tree_nodeCons
                const auto target_basic_block = boost::target(*oe, *fbb);
                const auto target_basic_block_index = fbb->CGetBBNodeInfo(target_basic_block)->block->number;
                if(basic_block_divergence.find(target_basic_block_index) == basic_block_divergence.end() or
-                  not basic_block_divergence.find(target_basic_block_index)->second)
+                  !basic_block_divergence.find(target_basic_block_index)->second)
                {
                }
                else
@@ -1374,7 +1373,7 @@ void Vectorize::FixPhis()
             break;
          }
       }
-      if(not diverge)
+      if(!diverge)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                         "---Skipped BB" + STR(basic_block_id) + " because is not a convergence point");
@@ -1651,16 +1650,16 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
                   tree_node_schema[TOK(TOK_TYPE)] =
                       STR(Transform(ic->type->index, parallel_degree, 0, new_stmt_list, new_phi_list));
                   /// The current init
-                  const long long int original_init = tree_helper::get_integer_cst_value(ic);
+                  const auto original_init = tree_helper::GetConstValue(def_edge.first);
                   unsigned int new_init_tree_node_id = TM->new_tree_node_id();
                   TM->create_tree_node(new_init_tree_node_id, vector_cst_K, tree_node_schema);
                   auto* new_tn = GetPointer<vector_cst>(TM->GetTreeNode(new_init_tree_node_id));
                   THROW_ASSERT(iv_increment.count(gp->res->index),
                                "Increment variable of " + gp->res->ToString() + " is unknown");
-                  const long long int increment = iv_increment.find(gp->res->index)->second;
+                  const auto increment = iv_increment.at(gp->res->index);
                   for(size_t i = 0; i < parallel_degree; i++)
                   {
-                     const long long int local_init = original_init + increment * static_cast<long long int>(i);
+                     const auto local_init = original_init + increment * static_cast<long long>(i);
                      const auto new_ic = TM->CreateUniqueIntegerCst(local_init, ic->type);
                      new_tn->list_of_valu.push_back(TM->GetTreeReindex(new_ic->index));
                   }
@@ -1678,10 +1677,9 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
                          include_name + ":" + STR(line_number) + ":" + STR(column_number);
                      plus_tree_node_schema[TOK(TOK_OP0)] = STR(def_edge.first->index);
                      plus_tree_node_schema[TOK(TOK_TYPE)] = STR(tree_helper::CGetType(def_edge.first)->index);
-                     THROW_ASSERT(iv_increment.find(gp->res->index) != iv_increment.end(),
+                     THROW_ASSERT(iv_increment.count(gp->res->index),
                                   "Increment variable of " + gp->res->ToString() + " is unknown");
-                     const long long int increment =
-                         iv_increment.find(gp->res->index)->second * static_cast<long long int>(i - 1);
+                     const auto increment = iv_increment.at(gp->res->index) * static_cast<integer_cst_t>(i - 1);
                      const auto new_ic = TM->CreateUniqueIntegerCst(increment, tree_man->GetUnsignedIntegerType());
                      plus_tree_node_schema[TOK(TOK_OP1)] = STR(new_ic->index);
                      unsigned int plus_tree_node_index = TM->new_tree_node_id();
@@ -1880,8 +1878,7 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Inc");
          THROW_ASSERT(tn->get_kind() == gimple_assign_K, "Increment is " + tn->get_kind_text());
          const auto* ga = GetPointer<const gimple_assign>(tn);
-         const long long int increment = tree_helper::get_integer_cst_value(
-             GetPointer<integer_cst>(GET_NODE(GetPointer<binary_expr>(GET_NODE(ga->op1))->op1)));
+         const auto increment = tree_helper::GetConstValue(GetPointer<binary_expr>(GET_NODE(ga->op1))->op1);
          std::string include_name = GetPointer<const srcp>(tn)->include_name;
          unsigned int line_number = GetPointer<const srcp>(tn)->line_number;
          unsigned int column_number = GetPointer<const srcp>(tn)->column_number;
@@ -1902,7 +1899,7 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
          auto* be = GetPointer<binary_expr>(GET_NODE(new_ga->op1));
          THROW_ASSERT(GET_NODE(be->op1)->get_kind() == vector_cst_K, "Increment is not constant");
          const auto type = GetPointer<const vector_type>(GET_CONST_NODE(tree_helper::CGetType(be->op1)))->elts;
-         const long long int new_increment = increment * static_cast<long long int>(parallel_degree);
+         const auto new_increment = increment * static_cast<integer_cst_t>(parallel_degree);
          const auto new_ic = TM->CreateUniqueIntegerCst(new_increment, type);
          be->op1 = TM->GetTreeReindex(Transform(new_ic->index, parallel_degree, 0, new_stmt_list, new_phi_list));
          new_ga->memuse = ga->memuse;
@@ -3076,7 +3073,7 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
                }
                return_value = new_tree_node_id;
                new_phi_list.push_back(TM->GetTreeReindex(return_value));
-               if(not gp->virtual_flag)
+               if(!gp->virtual_flag)
                {
                   /// Creating scalar from simd
 

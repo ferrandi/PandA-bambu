@@ -533,11 +533,8 @@ void compute_implicit_calls::replace_with_memcpy(tree_nodeRef stmt, const statem
            " is not a mem_ref: it's a " + lhs_node->get_kind_text());
    const auto mr_lhs = GetPointer<const mem_ref>(lhs_node);
    THROW_ASSERT(GetPointer<const ssa_name>(GET_CONST_NODE(mr_lhs->op0)), "");
-#if HAVE_ASSERTS
-   const auto dst_offset = GetPointer<const integer_cst>(GET_CONST_NODE(mr_lhs->op1));
-#endif
-   THROW_ASSERT(dst_offset, "");
-   THROW_ASSERT(dst_offset->value == 0, "");
+   THROW_ASSERT(
+       GET_CONST_NODE(mr_lhs->op1)->get_kind() == integer_cst_K && tree_helper::GetConstValue(mr_lhs->op1) == 0, "");
    const auto rhs_node = GET_CONST_NODE(ga->op1);
    const auto rhs_kind = rhs_node->get_kind();
 
@@ -559,11 +556,8 @@ void compute_implicit_calls::replace_with_memcpy(tree_nodeRef stmt, const statem
    {
       const auto mr_rhs = GetPointer<const mem_ref>(rhs_node);
       THROW_ASSERT(GetPointer<const ssa_name>(GET_CONST_NODE(mr_rhs->op0)), "");
-#if HAVE_ASSERTS
-      const auto src_offset = GetPointer<const integer_cst>(GET_CONST_NODE(mr_rhs->op1));
-#endif
-      THROW_ASSERT(src_offset, "");
-      THROW_ASSERT(src_offset->value == 0, "");
+      THROW_ASSERT(
+          GET_CONST_NODE(mr_rhs->op1)->get_kind() == integer_cst_K && tree_helper::GetConstValue(mr_rhs->op1) == 0, "");
 
       // src
       args.push_back(mr_rhs->op0);
@@ -694,11 +688,8 @@ void compute_implicit_calls::replace_with_memset(tree_nodeRef stmt, const statem
            " is not a mem_ref: it's a " + lhs_node->get_kind_text());
    const auto mr_lhs = GetPointer<const mem_ref>(lhs_node);
    THROW_ASSERT(GetPointer<const ssa_name>(GET_CONST_NODE(mr_lhs->op0)), "");
-#if HAVE_ASSERTS
-   const auto dst_offset = GetPointer<const integer_cst>(GET_CONST_NODE(mr_lhs->op1));
-#endif
-   THROW_ASSERT(dst_offset, "");
-   THROW_ASSERT(dst_offset->value == 0, "");
+   THROW_ASSERT(
+       GET_CONST_NODE(mr_lhs->op1)->get_kind() == integer_cst_K && tree_helper::GetConstValue(mr_lhs->op1) == 0, "");
 
    const auto s = GetPointer<const srcp>(GET_CONST_NODE(stmt));
    const auto current_srcp = s ? (s->include_name + ":" + STR(s->line_number) + ":" + STR(s->column_number)) : "";

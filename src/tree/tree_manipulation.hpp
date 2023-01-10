@@ -45,9 +45,11 @@
 #define TREE_MANIPULATION_HPP
 
 /// Utility include
+#include "custom_map.hpp"
+#include "panda_types.hpp"
 #include "refcount.hpp"
 
-#include "custom_map.hpp"
+#include <limits>
 #include <string>  // for string
 #include <utility> // for pair
 #include <vector>
@@ -95,17 +97,17 @@ REF_FORWARD_DECL(bloc);
 #define SIZE_VALUE_POINTER_M32 32
 #define SIZE_VALUE_POINTER_M64 64
 
-#define MIN_VALUE_BIT_SIZE 0
-#define MIN_VALUE_UNSIGNED_INT 0
-#define MIN_VALUE_INT (-2147483648LL)
-#define MIN_VALUE_LONG_LONG_INT 0
-#define MIN_VALUE_UNSIGNED_LONG_LONG_INT 0
+#define MIN_VALUE_BIT_SIZE (std::numeric_limits<unsigned long long>::min())
+#define MIN_VALUE_INT (std::numeric_limits<int>::min())
+#define MIN_VALUE_UNSIGNED_INT (std::numeric_limits<unsigned int>::min())
+#define MIN_VALUE_LONG_LONG_INT (std::numeric_limits<long long>::min())
+#define MIN_VALUE_UNSIGNED_LONG_LONG_INT (std::numeric_limits<unsigned long long>::min())
 
-#define MAX_VALUE_BIT_SIZE (-1)
-#define MAX_VALUE_UNSIGNED_INT (-1)
-#define MAX_VALUE_INT 2147483647
-#define MAX_VALUE_LONG_LONG_INT (-1)
-#define MAX_VALUE_UNSIGNED_LONG_LONG_INT (-1)
+#define MAX_VALUE_BIT_SIZE (std::numeric_limits<unsigned long long>::max())
+#define MAX_VALUE_INT (std::numeric_limits<int>::max())
+#define MAX_VALUE_UNSIGNED_INT (std::numeric_limits<unsigned int>::max())
+#define MAX_VALUE_LONG_LONG_INT (std::numeric_limits<long long>::max())
+#define MAX_VALUE_UNSIGNED_LONG_LONG_INT (std::numeric_limits<unsigned long long>::max())
 
 /**
  * This class creates a layer to add nodes and to manipulate the tree_nodes manager.
@@ -138,7 +140,7 @@ class tree_manipulation
     * @param  integer_cst_nid is the index node of the object to be created
     * @return the tree_reindex node of the integer_cst created.
     */
-   tree_nodeRef CreateIntegerCst(const tree_nodeConstRef& type, const long long int value,
+   tree_nodeRef CreateIntegerCst(const tree_nodeConstRef& type, integer_cst_t value,
                                  const unsigned int integer_cst_nid) const;
 
  public:

@@ -338,12 +338,12 @@ FunctionFrontendFlowStep_Movable simple_code_motion::CheckMovable(const unsigned
             return FunctionFrontendFlowStep_Movable::UNMOVABLE;
          }
          auto* be = GetPointer<binary_expr>(right);
-         if(tree_helper::is_constant(TM, GET_INDEX_NODE(be->op1)))
+         if(tree_helper::IsConstant(be->op1))
          {
-            auto* ic = GetPointer<integer_cst>(GET_NODE(be->op1));
+            const auto ic = GetPointer<integer_cst>(GET_NODE(be->op1));
             if(ic)
             {
-               long long v = tree_helper::get_integer_cst_value(ic);
+               const auto v = tree_helper::GetConstValue(be->op1);
                if(!(v && !(v & (v - 1))))
                {
                   zero_delay = false;
@@ -527,12 +527,12 @@ FunctionFrontendFlowStep_Movable simple_code_motion::CheckMovable(const unsigned
       case trunc_mod_expr_K:
       {
          auto* be = GetPointer<binary_expr>(right);
-         if(tree_helper::is_constant(TM, GET_INDEX_NODE(be->op1)))
+         if(tree_helper::IsConstant(be->op1))
          {
-            auto* ic = GetPointer<integer_cst>(GET_NODE(be->op1));
+            auto ic = GetPointer<integer_cst>(GET_NODE(be->op1));
             if(ic)
             {
-               long long v = tree_helper::get_integer_cst_value(ic);
+               const auto v = tree_helper::GetConstValue(be->op1);
                if(v)
                {
                   if(!(v && !(v & (v - 1))))
@@ -1208,8 +1208,7 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
                   {
                      if(ga->predicate && GET_NODE(ga->predicate)->get_kind() == integer_cst_K)
                      {
-                        auto ic = GetPointer<integer_cst>(GET_NODE(ga->predicate));
-                        auto cond = tree_helper::get_integer_cst_value(ic);
+                        auto cond = tree_helper::GetConstValue(ga->predicate);
                         if(cond != 0)
                         {
                            if(list_of_bloc.at(dest_bb_index)->true_edge == curr_bb)
@@ -1278,8 +1277,7 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
                               Cur = tree_man->CreateNotExpr(Cur, list_of_bloc.at(dest_bb_index), function_id);
                               if(ga->predicate && GET_NODE(ga->predicate)->get_kind() == integer_cst_K)
                               {
-                                 auto ic = GetPointer<integer_cst>(GET_NODE(ga->predicate));
-                                 auto cond = tree_helper::get_integer_cst_value(ic);
+                                 const auto cond = tree_helper::GetConstValue(ga->predicate);
                                  if(cond != 0)
                                  {
                                     TM->ReplaceTreeNode(*statement, ga->predicate, Cur);
@@ -1296,8 +1294,7 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
                            {
                               if(ga->predicate && GET_NODE(ga->predicate)->get_kind() == integer_cst_K)
                               {
-                                 auto ic = GetPointer<integer_cst>(GET_NODE(ga->predicate));
-                                 auto cond = tree_helper::get_integer_cst_value(ic);
+                                 const auto cond = tree_helper::GetConstValue(ga->predicate);
                                  if(cond != 0)
                                  {
                                     TM->ReplaceTreeNode(*statement, ga->predicate, gmwicond.first);

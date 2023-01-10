@@ -209,9 +209,7 @@ std::string HLS_manager::get_constant_string(unsigned int node_id, unsigned long
       }
       else
       {
-         auto* ic = GetPointerS<integer_cst>(GET_NODE(cc->real));
-         THROW_ASSERT(ic, "expected an integer_cst");
-         auto ull_value = static_cast<unsigned long long int>(tree_helper::get_integer_cst_value(ic));
+         auto ull_value = tree_helper::GetConstValue(cc->real);
          trimmed_value_r = convert_to_binary(ull_value, precision / 2);
       }
       auto* icc = GetPointer<real_cst>(GET_NODE(cc->imag));
@@ -227,17 +225,14 @@ std::string HLS_manager::get_constant_string(unsigned int node_id, unsigned long
       }
       else
       {
-         auto* ic = GetPointerS<integer_cst>(GET_NODE(cc->imag));
-         THROW_ASSERT(ic, "expected an integer_cst");
-         auto ull_value = static_cast<unsigned long long int>(tree_helper::get_integer_cst_value(ic));
+         auto ull_value = tree_helper::GetConstValue(cc->imag);
          trimmed_value_i = convert_to_binary(ull_value, precision / 2);
       }
       trimmed_value = trimmed_value_i + trimmed_value_r;
    }
    else
    {
-      const auto ic = GetPointerS<const integer_cst>(GET_CONST_NODE(node));
-      auto ull_value = static_cast<unsigned long long int>(tree_helper::get_integer_cst_value(ic));
+      auto ull_value = tree_helper::GetConstValue(node);
       trimmed_value = convert_to_binary(ull_value, precision);
    }
    return trimmed_value;

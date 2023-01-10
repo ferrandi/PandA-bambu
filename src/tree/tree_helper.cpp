@@ -190,7 +190,7 @@ unsigned long long tree_helper::Size(const tree_nodeConstRef& _t)
             }
             const auto signed_p = tree_helper::IsSignedIntegerType(sa->type);
             const auto bv_test = sign_reduce_bitstring(sa->bit_values, signed_p);
-            return static_cast<unsigned int>(bv_test.size());
+            return bv_test.size();
          }
          else if(sa->min && sa->max && GET_CONST_NODE(sa->min)->get_kind() == integer_cst_K &&
                  GET_CONST_NODE(sa->max)->get_kind() == integer_cst_K)
@@ -278,13 +278,11 @@ unsigned long long tree_helper::Size(const tree_nodeConstRef& _t)
       }
       case pointer_type_K:
       {
-         const auto ic = GetPointerS<const integer_cst>(GET_CONST_NODE(GetPointerS<const pointer_type>(t)->size));
-         return static_cast<unsigned long long>(get_integer_cst_value(ic));
+         return static_cast<unsigned long long>(GetConstValue(GetPointerS<const pointer_type>(t)->size));
       }
       case reference_type_K:
       {
-         const auto ic = GetPointerS<const integer_cst>(GET_CONST_NODE(GetPointerS<const reference_type>(t)->size));
-         return static_cast<unsigned long long>(get_integer_cst_value(ic));
+         return static_cast<unsigned long long>(GetConstValue(GetPointerS<const reference_type>(t)->size));
       }
       case array_type_K:
       {
@@ -294,7 +292,7 @@ unsigned long long tree_helper::Size(const tree_nodeConstRef& _t)
             const auto ic = GetPointer<const integer_cst>(GET_CONST_NODE(at->size));
             if(ic)
             {
-               return static_cast<unsigned long long>(get_integer_cst_value(ic));
+               return static_cast<unsigned long long>(GetConstValue(at->size));
             }
             else
             {
@@ -2132,7 +2130,7 @@ std::string tree_helper::GetTypeName(const tree_nodeConstRef& _type)
                const auto ic = GetPointer<const integer_cst>(GET_CONST_NODE(it->max));
                if(ic)
                {
-                  long long int vec_size = static_cast<unsigned int>(get_integer_cst_value(ic)) + 1;
+                  const auto vec_size = GetConstValue(it->max) + 1;
                   vec_size_string = "[" + STR(vec_size) + "]";
                }
                else
@@ -2912,9 +2910,9 @@ bool tree_helper::IsPositiveIntegerValue(const tree_nodeConstRef& _type)
    const auto type = _type->get_kind() == tree_reindex_K ? GET_CONST_NODE(_type) : _type;
    if(GetPointer<const ssa_name>(type) && GetPointer<const ssa_name>(type)->min)
    {
-      const auto minimum = GET_CONST_NODE(GetPointer<const ssa_name>(type)->min);
-      THROW_ASSERT(minimum->get_kind() == integer_cst_K, "expected an integer const: " + STR(type));
-      long long int min_value = tree_helper::get_integer_cst_value(GetPointerS<const integer_cst>(minimum));
+      const auto& minimum = GetPointer<const ssa_name>(type)->min;
+      THROW_ASSERT(GET_CONST_NODE(minimum)->get_kind() == integer_cst_K, "expected an integer const: " + STR(type));
+      const auto min_value = tree_helper::GetConstValue(minimum);
       return min_value >= 0;
    }
    return false;
@@ -3737,8 +3735,7 @@ tree_nodeConstRef tree_helper::GetBaseVariable(const tree_nodeConstRef& _node)
             case array_ref_K:
             {
                const auto ar = GetPointerS<const array_ref>(addr_expr_op);
-               const auto idx = GET_CONST_NODE(ar->op1);
-               if(idx->get_kind() == integer_cst_K && get_integer_cst_value(GetPointerS<const integer_cst>(idx)) == 0)
+               if(GET_CONST_NODE(ar->op1)->get_kind() == integer_cst_K && GetConstValue(ar->op1) == 0)
                {
                   switch(GET_CONST_NODE(ar->op0)->get_kind())
                   {
@@ -4580,23 +4577,41 @@ std::string tree_helper::return_C_qualifiers(const TreeVocabularyTokenTypes_Toke
    return "";
 }
 
-long long tree_helper::get_integer_cst_value(const integer_cst* ic)
+integer_cst_t tree_helper::get_integer_cst_value(const integer_cst* ic)
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "-->Getting integer const value");
    THROW_ASSERT(ic != nullptr, "unexpected condition");
    THROW_ASSERT(ic->type, "Something wrong");
-   tree_nodeRef type = GET_NODE(ic->type);
-   THROW_ASSERT(GetPointer<integer_type>(type) or type->get_kind() == pointer_type_K or
-                    type->get_kind() == reference_type_K or type->get_kind() == boolean_type_K or
+   const auto type = GET_CONST_NODE(ic->type);
+   THROW_ASSERT(GetPointer<integer_type>(type) || type->get_kind() == pointer_type_K ||
+                    type->get_kind() == reference_type_K || type->get_kind() == boolean_type_K ||
                     type->get_kind() == enumeral_type_K,
                 "Expected a integer_type, pointer_type, reference_type, boolean_type, enumeral_type. Found: " +
                     STR(GET_INDEX_CONST_NODE(ic->type)) + " " + type->get_kind_text());
-   long long result = 0;
-   /// If high is null or if high is a sign extension or low is enough to express an int (64 bit system)
+   INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "<--Constant is " + STR(ic->value));
+   return ic->value;
+}
 
-   result = ic->value;
-   INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "<--Constant is " + STR(result));
-   return result;
+integer_cst_t tree_helper::GetConstValue(const tree_nodeConstRef& tn, bool is_signed)
+{
+   THROW_ASSERT(tn != nullptr, "unexpected condition");
+   if(tn->get_kind() == tree_reindex_K)
+   {
+      return GetConstValue(GET_CONST_NODE(tn));
+   }
+   INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "-->Getting integer const value");
+   const auto ic = GetPointer<const integer_cst>(tn);
+   THROW_ASSERT(ic, "unexpected condition");
+   INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "<--Constant is " + STR(ic->value));
+   if(!is_signed)
+   {
+      const auto bitwidth = tree_helper::Size(ic->type);
+#ifndef UNLIMITED_PRECISION
+      if(bitwidth < 64)
+#endif
+         return ic->value & ((integer_cst_t(1) << bitwidth) - 1);
+   }
+   return ic->value;
 }
 
 unsigned int tree_helper::get_array_var(const tree_managerConstRef& TM, const unsigned int index, bool is_written,
@@ -4897,10 +4912,8 @@ std::string tree_helper::op_symbol(const tree_node* op)
             if(GetPointer<const array_ref>(tn))
             {
                const auto ar = GetPointerS<const array_ref>(tn);
-               const auto base = GET_CONST_NODE(ar->op0);
-               const auto offset = GET_CONST_NODE(ar->op1);
-               if(base->get_kind() == string_cst_K && offset->get_kind() == integer_cst_K &&
-                  !tree_helper::get_integer_cst_value(GetPointerS<const integer_cst>(offset)))
+               if(GET_CONST_NODE(ar->op0)->get_kind() == string_cst_K &&
+                  GET_CONST_NODE(ar->op1)->get_kind() == integer_cst_K && !tree_helper::GetConstValue(ar->op1))
                {
                   return "";
                }
@@ -5167,17 +5180,18 @@ void tree_helper::get_array_dim_and_bitsize(const tree_managerConstRef& TM, cons
       tree_nodeRef domn = GET_NODE(at->domn);
       THROW_ASSERT(domn->get_kind() == integer_type_K, "expected an integer type as domain");
       const auto it = GetPointer<integer_type>(domn);
-      unsigned int min_value = 0;
-      unsigned int max_value = 0;
+      integer_cst_t min_value = 0;
+      integer_cst_t max_value = 0;
       if(it->min)
       {
-         min_value = static_cast<unsigned int>(get_integer_cst_value(GetPointer<integer_cst>(GET_NODE(it->min))));
+         min_value = GetConstValue(it->min);
       }
       if(it->max)
       {
-         max_value = static_cast<unsigned int>(get_integer_cst_value(GetPointer<integer_cst>(GET_NODE(it->max))));
+         max_value = GetConstValue(it->max);
       }
-      unsigned int range_domain = max_value - min_value + 1;
+      THROW_ASSERT(max_value >= min_value, "");
+      const auto range_domain = static_cast<unsigned long long>(max_value - min_value) + 1;
       dims.push_back(range_domain);
    }
    THROW_ASSERT(at->elts, "elements type expected");
@@ -5221,22 +5235,21 @@ std::vector<unsigned long long> tree_helper::GetArrayDimensions(const tree_nodeC
       const auto domn = GET_CONST_NODE(at->domn);
       THROW_ASSERT(domn->get_kind() == integer_type_K, "expected an integer type as domain");
       const auto it = GetPointerS<const integer_type>(domn);
-      auto min_value = 0ull;
-      auto max_value = 0ull;
+      integer_cst_t min_value = 0;
+      integer_cst_t max_value = 0;
       if(it->min && GET_CONST_NODE(it->min)->get_kind() == integer_cst_K && it->max &&
          GET_CONST_NODE(it->max)->get_kind() == integer_cst_K)
       {
          if(it->min)
          {
-            min_value = static_cast<unsigned long long>(
-                get_integer_cst_value(GetPointerS<const integer_cst>(GET_CONST_NODE(it->min))));
+            min_value = GetConstValue(it->min);
          }
          if(it->max)
          {
-            max_value = static_cast<unsigned long long>(
-                get_integer_cst_value(GetPointerS<const integer_cst>(GET_CONST_NODE(it->max))));
+            max_value = GetConstValue(it->max);
          }
-         const auto range_domain = max_value - min_value + 1;
+         THROW_ASSERT(max_value >= min_value, "");
+         const auto range_domain = static_cast<unsigned long long>(max_value - min_value) + 1;
          dims.push_back(range_domain);
       }
       else
@@ -5271,31 +5284,32 @@ unsigned long long tree_helper::GetArrayTotalSize(const tree_nodeConstRef& node)
 }
 
 void tree_helper::extract_array_indexes(const tree_managerConstRef& TM, const unsigned int index,
-                                        std::vector<unsigned int>& indexes, std::vector<unsigned int>& size_indexes,
-                                        unsigned int& base_object)
+                                        std::vector<unsigned long long>& indexes,
+                                        std::vector<unsigned long long>& size_indexes, unsigned int& base_object)
 {
-   tree_nodeRef node = TM->get_tree_node_const(index);
+   const auto node = TM->CGetTreeNode(index);
    THROW_ASSERT(node->get_kind() == array_ref_K, "array_ref expected: @" + STR(index));
-   const auto ar = GetPointer<array_ref>(node);
+   const auto ar = GetPointerS<const array_ref>(node);
    base_object = GET_INDEX_CONST_NODE(ar->op0);
-   if(GET_NODE(ar->op0)->get_kind() == array_ref_K)
+   if(GET_CONST_NODE(ar->op0)->get_kind() == array_ref_K)
    {
-      const auto nested_ar = GetPointer<array_ref>(GET_NODE(ar->op0));
-      const auto at = GetPointer<array_type>(GET_NODE(nested_ar->type));
-      tree_nodeRef domn = GET_NODE(at->domn);
+      const auto nested_ar = GetPointerS<const array_ref>(GET_CONST_NODE(ar->op0));
+      const auto at = GetPointerS<const array_type>(GET_CONST_NODE(nested_ar->type));
+      const auto domn = GET_CONST_NODE(at->domn);
       THROW_ASSERT(domn->get_kind() == integer_type_K, "expected an integer type as domain");
-      const auto it = GetPointer<integer_type>(domn);
-      unsigned int min_value = 0;
-      unsigned int max_value = 0;
+      const auto it = GetPointerS<const integer_type>(domn);
+      integer_cst_t min_value = 0;
+      integer_cst_t max_value = 0;
       if(it->min)
       {
-         min_value = static_cast<unsigned int>(get_integer_cst_value(GetPointer<integer_cst>(GET_NODE(it->min))));
+         min_value = GetConstValue(it->min);
       }
       if(it->max)
       {
-         max_value = static_cast<unsigned int>(get_integer_cst_value(GetPointer<integer_cst>(GET_NODE(it->max))));
+         max_value = GetConstValue(it->max);
       }
-      unsigned int range_domain = max_value - min_value + 1;
+      THROW_ASSERT(max_value >= min_value, "");
+      const auto range_domain = static_cast<unsigned long long>(max_value - min_value) + 1;
       size_indexes.push_back(range_domain);
       extract_array_indexes(TM, base_object, indexes, size_indexes, base_object);
       indexes.push_back(GET_INDEX_CONST_NODE(nested_ar->op1));
@@ -5963,15 +5977,11 @@ std::string tree_helper::PrintType(const tree_managerConstRef& TM, const tree_no
             if(at->size)
             {
                const auto array_length = GET_CONST_NODE(at->size);
-               const auto array_t = GET_CONST_NODE(at->elts);
                if(array_length->get_kind() == integer_cst_K)
                {
-                  const auto arr_ic = GetPointerS<const integer_cst>(array_length);
-                  const auto tn = GetPointerS<const type_node>(array_t);
-                  const auto eln_ic = GetPointerS<const integer_cst>(GET_NODE(tn->size));
+                  const auto tn = GetPointerS<const type_node>(GET_CONST_NODE(at->elts));
                   local_tail += "[";
-                  local_tail +=
-                      STR(tree_helper::get_integer_cst_value(arr_ic) / tree_helper::get_integer_cst_value(eln_ic));
+                  local_tail += STR(tree_helper::GetConstValue(at->size) / tree_helper::GetConstValue(tn->size));
                   local_tail += "]";
                }
                else if(array_length->get_kind() == var_decl_K)
@@ -8888,10 +8898,11 @@ void tree_helper::get_required_values(std::vector<std::tuple<unsigned int, unsig
       case field_decl_K:
       {
          const auto fd = GetPointerS<const field_decl>(tn);
-         const auto ic = GetPointerS<const integer_cst>(GET_CONST_NODE(fd->bpos));
-         THROW_ASSERT(ic, "non-constant field offset (variable lenght object) currently not supported: " +
-                              STR(GET_INDEX_CONST_NODE(fd->bpos)));
-         auto ull_value = static_cast<unsigned long long int>(tree_helper::get_integer_cst_value(ic));
+         THROW_ASSERT(GetPointerS<const integer_cst>(GET_CONST_NODE(fd->bpos)),
+                      "non-constant field offset (variable lenght object) currently not supported: " +
+                          STR(GET_INDEX_CONST_NODE(fd->bpos)));
+         const auto ull_value = tree_helper::GetConstValue(fd->bpos);
+         THROW_ASSERT(ull_value >= 0, "");
          required.emplace_back(0, static_cast<unsigned int>(ull_value / 8)); /// bpos has an offset in bits
          if(ull_value % 8 != 0)
          {

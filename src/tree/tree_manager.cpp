@@ -2847,8 +2847,33 @@ tree_nodeRef tree_manager::create_unique_const(const std::string& val, const tre
    return cost_node;
 }
 
-tree_nodeRef tree_manager::CreateUniqueIntegerCst(long long int value, const tree_nodeConstRef& type)
+tree_nodeRef tree_manager::CreateUniqueIntegerCst(integer_cst_t value, const tree_nodeConstRef& type)
 {
+   const auto bitsize = tree_helper::Size(type);
+#ifdef UNLIMITED_PRECISION
+   if(tree_helper::IsSignedIntegerType(type) && ((value >> (bitsize - 1)) & 1))
+   {
+      value |= integer_cst_t(-1) << bitsize;
+      THROW_ASSERT(value < 0, "");
+   }
+   else
+   {
+      value &= (integer_cst_t(1) << bitsize) - 1;
+   }
+#else
+   if(bitsize < 64)
+   {
+      if(tree_helper::IsSignedIntegerType(type) && ((value >> (bitsize - 1)) & 1))
+      {
+         value |= static_cast<long long>(INT64_MAX << bitsize);
+         THROW_ASSERT(value < 0, "");
+      }
+      else
+      {
+         value &= (1LL << bitsize) - 1;
+      }
+   }
+#endif
    return create_unique_const(STR(value), type);
 }
 

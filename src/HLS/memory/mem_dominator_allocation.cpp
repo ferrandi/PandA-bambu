@@ -591,8 +591,7 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
                   {
                      auto* mr = GetPointer<mem_ref>(GET_NODE(gm->op0));
                      THROW_ASSERT(GetPointer<integer_cst>(GET_NODE(mr->op1)), "unexpected condition");
-                     THROW_ASSERT(tree_helper::get_integer_cst_value(GetPointer<integer_cst>(GET_NODE(mr->op1))) == 0,
-                                  "unexpected condition");
+                     THROW_ASSERT(tree_helper::GetConstValue(mr->op1) == 0, "unexpected condition");
                      if(GET_NODE(mr->op0)->get_kind() == ssa_name_K)
                      {
                         auto ssa_addr = GetPointer<ssa_name>(GET_NODE(mr->op0));
@@ -647,9 +646,7 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
                   {
                      const auto mr = GetPointer<const mem_ref>(GET_CONST_NODE(gm->op1));
                      THROW_ASSERT(GetPointer<const integer_cst>(GET_CONST_NODE(mr->op1)), "unexpected condition");
-                     THROW_ASSERT(tree_helper::get_integer_cst_value(
-                                      GetPointer<const integer_cst>(GET_CONST_NODE(mr->op1))) == 0,
-                                  "unexpected condition");
+                     THROW_ASSERT(tree_helper::GetConstValue(mr->op1) == 0, "unexpected condition");
                      if(GET_CONST_NODE(mr->op0)->get_kind() == ssa_name_K)
                      {
                         const auto ssa_addr = GetPointer<const ssa_name>(GET_CONST_NODE(mr->op0));

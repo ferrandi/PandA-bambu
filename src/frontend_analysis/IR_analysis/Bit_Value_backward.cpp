@@ -647,11 +647,11 @@ std::deque<bit_lattice> Bit_Value::backward_transfer(const gimple_assign* ga, un
             auto res_size = BitLatticeManipulator::size(TM, res_nid);
             if(lhs_bitstring.front() == bit_lattice::U)
             {
-               res_size = std::min(res_size, static_cast<unsigned int>(lhs_bitstring.size()));
+               res_size = std::min(res_size, static_cast<unsigned long long>(lhs_bitstring.size()));
             }
             if(lhs_bitstring.front() == bit_lattice::X)
             {
-               res_size = std::min(res_size, static_cast<unsigned int>(lhs_bitstring.size() - 1));
+               res_size = std::min(res_size, static_cast<unsigned long long>(lhs_bitstring.size() - 1));
             }
             while(res.size() > res_size)
             {
@@ -824,15 +824,15 @@ std::deque<bit_lattice> Bit_Value::backward_transfer(const gimple_assign* ga, un
                break;
             }
 
-            const auto const1 = GetPointerS<const integer_cst>(GET_CONST_NODE(operation->op1));
-            if(const1->value < 0)
+            const auto cst_val = tree_helper::GetConstValue(operation->op1);
+            if(cst_val < 0)
             {
                res.push_back(bit_lattice::X);
                break;
             }
 
             res = lhs_bitstring;
-            while(res.size() > (lhs_bitstring.size() - (static_cast<long long unsigned int>(const1->value))))
+            while(res.size() > (lhs_bitstring.size() - static_cast<size_t>(cst_val)))
             {
                res.pop_back();
             }
@@ -862,11 +862,11 @@ std::deque<bit_lattice> Bit_Value::backward_transfer(const gimple_assign* ga, un
             auto res_size = BitLatticeManipulator::size(TM, res_nid);
             if(lhs_bitstring.front() == bit_lattice::U)
             {
-               res_size = std::min(res_size, static_cast<unsigned int>(lhs_bitstring.size()));
+               res_size = std::min(res_size, static_cast<unsigned long long>(lhs_bitstring.size()));
             }
             if(lhs_bitstring.front() == bit_lattice::X)
             {
-               res_size = std::min(res_size, static_cast<unsigned int>(lhs_bitstring.size() - 1));
+               res_size = std::min(res_size, static_cast<unsigned long long>(lhs_bitstring.size() - 1));
             }
             while(res.size() > res_size)
             {
@@ -905,15 +905,16 @@ std::deque<bit_lattice> Bit_Value::backward_transfer(const gimple_assign* ga, un
                break;
             }
 
-            const auto const1 = GetPointerS<const integer_cst>(GET_CONST_NODE(operation->op1));
-            if(const1->value < 0)
+            const auto cst_val = tree_helper::GetConstValue(operation->op1);
+            THROW_ASSERT(cst_val <= std::numeric_limits<long long>::max(), "");
+            if(cst_val < 0)
             {
                res.push_back(bit_lattice::X);
                break;
             }
 
             res = lhs_bitstring;
-            const auto shift_value = static_cast<unsigned long long>(const1->value);
+            const auto shift_value = static_cast<unsigned long long>(cst_val);
             for(auto shift_value_it = 0u; shift_value_it < shift_value; shift_value_it++)
             {
                res.push_back(bit_lattice::X);
@@ -957,12 +958,12 @@ std::deque<bit_lattice> Bit_Value::backward_transfer(const gimple_assign* ga, un
                break;
             }
 
-            const auto const1 = GetPointerS<const integer_cst>(GET_CONST_NODE(operation->op1));
-            THROW_ASSERT(const1->value >= 0, "unexpected condition");
+            const auto cst_val = tree_helper::GetConstValue(operation->op1);
+            THROW_ASSERT(cst_val >= 0, "unexpected condition");
             THROW_ASSERT(lhs_bitstring.size() == 1, "unexpected condition - " + bitstring_to_string(lhs_bitstring));
 
             res = lhs_bitstring;
-            const auto shift_value = static_cast<unsigned long long>(const1->value);
+            const auto shift_value = static_cast<unsigned long long>(cst_val);
             for(auto shift_value_it = 0u; shift_value_it < shift_value; shift_value_it++)
             {
                res.push_back(bit_lattice::X);
@@ -1035,7 +1036,7 @@ std::deque<bit_lattice> Bit_Value::backward_transfer(const gimple_assign* ga, un
                op0_bitstring = op1_bitstring;
             }
 
-            const auto offset = GetPointerS<const integer_cst>(GET_CONST_NODE(operation->op2))->value;
+            const auto offset = tree_helper::GetConstValue(operation->op2);
             const auto initial_size = op0_bitstring.size();
             auto se_lhs_bitstring = lhs_bitstring;
             if(initial_size < lhs_bitsize)
@@ -1049,7 +1050,7 @@ std::deque<bit_lattice> Bit_Value::backward_transfer(const gimple_assign* ga, un
 
             auto it_lhs_bitstring = se_lhs_bitstring.rbegin();
             auto it_op0_bitstring = op0_bitstring.rbegin();
-            long long int index = 0;
+            integer_cst_t index = 0;
             if(op1_nid)
             {
                for(; it_lhs_bitstring != se_lhs_bitstring.rend() && it_op0_bitstring != op0_bitstring.rend() &&
@@ -1129,9 +1130,8 @@ std::deque<bit_lattice> Bit_Value::backward_transfer(const gimple_assign* ga, un
                break;
             }
 
-            const auto offset = static_cast<size_t>(
-                tree_helper::get_integer_cst_value(GetPointerS<const integer_cst>(GET_CONST_NODE(operation->op2))) %
-                lhs_size);
+            THROW_ASSERT(tree_helper::GetConstValue(operation->op2) >= 0, "");
+            const auto offset = static_cast<size_t>(tree_helper::GetConstValue(operation->op2)) % lhs_size;
             if(op0_nid == res_nid)
             {
                res = create_u_bitstring(static_cast<size_t>(lhs_size - offset));
@@ -1162,11 +1162,11 @@ std::deque<bit_lattice> Bit_Value::backward_transfer(const gimple_assign* ga, un
             auto res_size = BitLatticeManipulator::size(TM, res_nid);
             if(lhs_bitstring.front() == bit_lattice::U)
             {
-               res_size = std::min(res_size, static_cast<unsigned int>(lhs_bitstring.size()));
+               res_size = std::min(res_size, static_cast<unsigned long long>(lhs_bitstring.size()));
             }
             if(lhs_bitstring.front() == bit_lattice::X)
             {
-               res_size = std::min(res_size, static_cast<unsigned int>(lhs_bitstring.size() - 1));
+               res_size = std::min(res_size, static_cast<unsigned long long>(lhs_bitstring.size() - 1));
             }
             while(res.size() > res_size)
             {

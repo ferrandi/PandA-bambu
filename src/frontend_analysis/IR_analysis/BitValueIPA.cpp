@@ -519,12 +519,13 @@ DesignFlowStep_Status BitValueIPA::Exec()
                            }
                            else if(ap_kind == integer_cst_K)
                            {
-                              const auto ic = GetPointerS<const integer_cst>(GET_CONST_NODE(ap_node));
-                              res_tmp = create_bitstring_from_constant(ic->value, BitLatticeManipulator::Size(ap_node),
+                              const auto cst_val = tree_helper::GetConstValue(ap_node);
+                              res_tmp = create_bitstring_from_constant(cst_val, BitLatticeManipulator::Size(ap_node),
                                                                        parm_signed);
                               INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
-                                             "actual parameter " + STR(ic) + " is a constant value id: " +
-                                                 STR(ic->index) + " bitstring: " + bitstring_to_string(res_tmp));
+                                             "actual parameter " + STR(ap_node) +
+                                                 " is a constant value id: " + STR(GET_INDEX_CONST_NODE(ap_node)) +
+                                                 " bitstring: " + bitstring_to_string(res_tmp));
                            }
                            else
                            {
@@ -561,12 +562,13 @@ DesignFlowStep_Status BitValueIPA::Exec()
                            }
                            else if(ap_kind == integer_cst_K)
                            {
-                              const auto ic = GetPointerS<const integer_cst>(GET_CONST_NODE(ap_node));
-                              res_tmp = create_bitstring_from_constant(ic->value, BitLatticeManipulator::Size(ap_node),
+                              const auto cst_val = tree_helper::GetConstValue(ap_node);
+                              res_tmp = create_bitstring_from_constant(cst_val, BitLatticeManipulator::Size(ap_node),
                                                                        parm_signed);
                               INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
-                                             "actual parameter " + STR(ic) + " is a constant value id: " +
-                                                 STR(ic->index) + " bitstring: " + bitstring_to_string(res_tmp));
+                                             "actual parameter " + STR(ap_node) +
+                                                 " is a constant value id: " + STR(GET_INDEX_CONST_NODE(ap_node)) +
+                                                 " bitstring: " + bitstring_to_string(res_tmp));
                            }
                            else
                            {
@@ -634,7 +636,7 @@ DesignFlowStep_Status BitValueIPA::Exec()
 
       std::string null_string = "";
       std::string* old_bitvalue = &null_string;
-      auto size = 0u;
+      unsigned long long size = 0u;
       auto restart_fun_id = 0u;
       if(kind == function_decl_K)
       {

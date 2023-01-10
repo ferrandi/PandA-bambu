@@ -81,7 +81,7 @@ class Vectorize : public FunctionFrontendFlowStep
    const tree_manipulationRef tree_man;
 
    /// The increment of induction variables; id is the index of the ssa name defined in the init gimple
-   CustomMap<unsigned int, long long int> iv_increment;
+   CustomMap<unsigned int, integer_cst_t> iv_increment;
 
    /// Enum used to classify the loop according to the required transformation
    using SimdLoop = enum {

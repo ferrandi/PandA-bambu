@@ -196,9 +196,9 @@ bool lut_transformation::CHECK_BIN_EXPR_INT_SIZE(binary_expr* be, unsigned int m
       {
          return false;
       }
-      auto* int_const = GetPointer<integer_cst>(GET_CONST_NODE(be->op1));
+      const auto cst_val = tree_helper::GetConstValue(be->op1);
       auto k = be->get_kind();
-      return (k == lt_expr_K || k == gt_expr_K) && int_const->value == 0;
+      return (k == lt_expr_K || k == gt_expr_K) && cst_val == 0;
    }();
    return (tree_helper::Size(be->op0) <= max && tree_helper::Size(be->op1) <= max) ||
           (is_simple_case && !parameters->isOption(OPT_context_switch));
@@ -766,13 +766,23 @@ static klut_network_fn GetBooleanNodeCreationFunction(enum kind code)
    }
 }
 
-static std::vector<bool> IntegerToBitArray(long long int n, size_t size)
+static std::vector<bool> IntegerToBitArray(integer_cst_t n, size_t size)
 {
+   const auto oldbits = [&]() {
+      std::vector<bool> bits;
+      for(size_t i = 0; i < size; ++i)
+      {
+         bits.push_back((static_cast<unsigned long long int>(n) & (1ULL << i)) ? true : false);
+      }
+      return bits;
+   }();
    std::vector<bool> bits;
    for(size_t i = 0; i < size; ++i)
    {
-      bits.push_back((static_cast<unsigned long long int>(n) & (1ULL << i)) ? true : false);
+      bits.push_back((n & (integer_cst_t(1) << i)) ? true : false);
    }
+   THROW_ASSERT(bits == oldbits, "Bits for " + STR(n) + " was " + convert_vector_to_string(oldbits, "") + " now is " +
+                                     convert_vector_to_string(bits, ""));
    return bits;
 }
 
@@ -1244,11 +1254,9 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
 
                if(GET_NODE(op)->get_kind() == integer_cst_K)
                {
-                  auto* int_const = GetPointer<integer_cst>(GET_NODE(op));
-                  kop = int_const->value == 0 ? klut_e.get_constant(false) :
-                                                klut_e.create_not(klut_e.get_constant(false));
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                 int_const->value == 0 ? "---used gnd" : "---used vdd");
+                  const auto cst_val = tree_helper::GetConstValue(op);
+                  kop = cst_val == 0 ? klut_e.get_constant(false) : klut_e.create_not(klut_e.get_constant(false));
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, cst_val == 0 ? "---used gnd" : "---used vdd");
                   modified = true;
                }
                else if(CheckIfPI(op, BB_index))
@@ -1269,8 +1277,12 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
          }
 
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                        "---translating in klut " + STR(GetPointer<integer_cst>(GET_NODE(le->op0))->value));
-         auto res = klut_e.create_lut(ops, GetPointer<integer_cst>(GET_NODE(le->op0))->value);
+                        "---translating in klut " + STR(tree_helper::GetConstValue(le->op0)));
+         const auto cst_val = tree_helper::GetConstValue(le->op0);
+         THROW_WARNING_ASSERT(integer_cst_t(std::numeric_limits<long long>::min()) <= cst_val &&
+                                  cst_val <= integer_cst_t(std::numeric_limits<long long>::max()),
+                              "Cast will change signedness of current value: " + STR(cst_val));
+         auto res = klut_e.create_lut(ops, static_cast<long long>(cst_val));
          nodeRefToSignal[GET_INDEX_NODE(gimpleAssign->op0)] = res;
 
          if(this->CheckIfPO(gimpleAssign))
@@ -1312,11 +1324,9 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
 
                if(GET_NODE(op)->get_kind() == integer_cst_K)
                {
-                  auto* int_const = GetPointer<integer_cst>(GET_NODE(op));
-                  kop = int_const->value == 0 ? klut_e.get_constant(false) :
-                                                klut_e.create_not(klut_e.get_constant(false));
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                 int_const->value == 0 ? "---used gnd" : "---used vdd");
+                  const auto cst_val = tree_helper::GetConstValue(op);
+                  kop = cst_val == 0 ? klut_e.get_constant(false) : klut_e.create_not(klut_e.get_constant(false));
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, cst_val == 0 ? "---used gnd" : "---used vdd");
                }
                else if(CheckIfPI(op, BB_index))
                {
@@ -1380,11 +1390,9 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
 
                if(GET_NODE(op)->get_kind() == integer_cst_K)
                {
-                  auto* int_const = GetPointer<integer_cst>(GET_NODE(op));
-                  kop = int_const->value == 0 ? klut_e.get_constant(false) :
-                                                klut_e.create_not(klut_e.get_constant(false));
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                 int_const->value == 0 ? "---used gnd" : "---used vdd");
+                  const auto cst_val = tree_helper::GetConstValue(op);
+                  kop = cst_val == 0 ? klut_e.get_constant(false) : klut_e.create_not(klut_e.get_constant(false));
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, cst_val == 0 ? "---used gnd" : "---used vdd");
                }
                else if(CheckIfPI(op, BB_index))
                {
@@ -1460,10 +1468,9 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
          { // otherwise the operand is a primary input
             if(GET_NODE(binaryExpression->op0)->get_kind() == integer_cst_K)
             {
-               auto* int_const = GetPointer<integer_cst>(GET_NODE(binaryExpression->op0));
-               op1 = int_const->value == 0 ? klut_e.get_constant(false) : klut_e.create_not(klut_e.get_constant(false));
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                              int_const->value == 0 ? "---used gnd" : "---used vdd");
+               const auto cst_val = tree_helper::GetConstValue(binaryExpression->op0);
+               op1 = cst_val == 0 ? klut_e.get_constant(false) : klut_e.create_not(klut_e.get_constant(false));
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, (cst_val == 0) ? "---used gnd" : "---used vdd");
             }
             else if(CheckIfPI(binaryExpression->op0, BB_index))
             {
@@ -1491,10 +1498,9 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
          { // otherwise the operand is a primary input
             if(GET_NODE(binaryExpression->op1)->get_kind() == integer_cst_K)
             {
-               auto* int_const = GetPointer<integer_cst>(GET_NODE(binaryExpression->op1));
-               op2 = int_const->value == 0 ? klut_e.get_constant(false) : klut_e.create_not(klut_e.get_constant(false));
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                              int_const->value == 0 ? "---used gnd" : "---used vdd");
+               const auto cst_val = tree_helper::GetConstValue(binaryExpression->op1);
+               op2 = cst_val == 0 ? klut_e.get_constant(false) : klut_e.create_not(klut_e.get_constant(false));
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, (cst_val == 0) ? "---used gnd" : "---used vdd");
             }
             else if(CheckIfPI(binaryExpression->op1, BB_index))
             {
@@ -1559,8 +1565,8 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
          { // otherwise the operand is a primary input
             if(GET_NODE(binaryExpression->op0)->get_kind() == integer_cst_K)
             {
-               auto* int_const = GetPointer<integer_cst>(GET_NODE(binaryExpression->op0));
-               auto bits = IntegerToBitArray(int_const->value, tree_helper::Size(binaryExpression->op0));
+               const auto cst_val = tree_helper::GetConstValue(binaryExpression->op0);
+               auto bits = IntegerToBitArray(cst_val, tree_helper::Size(binaryExpression->op0));
 
                op1 = klut_e.get_constant_v(bits);
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---used {" + ConvertBitsToString(bits) + "}");
@@ -1597,8 +1603,8 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
          { // otherwise the operand is a primary input
             if(GET_NODE(binaryExpression->op1)->get_kind() == integer_cst_K)
             {
-               auto* int_const = GetPointer<integer_cst>(GET_NODE(binaryExpression->op1));
-               auto bits = IntegerToBitArray(int_const->value, tree_helper::Size(binaryExpression->op1));
+               const auto cst_val = tree_helper::GetConstValue(binaryExpression->op1);
+               auto bits = IntegerToBitArray(cst_val, tree_helper::Size(binaryExpression->op1));
 
                op2 = klut_e.get_constant_v(bits);
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---used {" + ConvertBitsToString(bits) + "}");
@@ -1891,12 +1897,11 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
             check_lut_compatibility(op6);
             check_lut_compatibility(op7);
             check_lut_compatibility(op8);
-            const std::string srcp_default("built-in:0:0");
             tree_nodeRef new_op1 = tree_man->create_lut_expr(boolType, lut_constant_node, op1, op2, op3, op4, op5, op6,
-                                                             op7, op8, srcp_default);
+                                                             op7, op8, BUILTIN_SRCP);
             auto lut_ga = tree_man->CreateGimpleAssign(boolType, TM->CreateUniqueIntegerCst(0, boolType),
                                                        TM->CreateUniqueIntegerCst(1, boolType), new_op1, function_id,
-                                                       BB_index, srcp_default);
+                                                       BB_index, BUILTIN_SRCP);
             auto ssa_vd = GetPointer<gimple_assign>(GET_NODE(lut_ga))->op0;
             prev_stmts_to_add.push_back(lut_ga);
             internal_nets[lut.index] = ssa_vd;

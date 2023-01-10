@@ -1668,16 +1668,11 @@ void HLSCWriter::WriteParamInMemory(const BehavioralHelperConstRef BH, const std
       case array_type_K:
       {
          const auto at = GetPointer<const array_type>(type);
-         const auto array_size = GET_CONST_NODE(at->size);
          const auto array_t = GET_NODE(at->elts);
-         THROW_ASSERT(array_size->get_kind() == integer_cst_K, "Size of array is " + array_size->get_kind_text());
-         const auto arr_ic = GetPointer<integer_cst>(array_size);
          const auto tn = GetPointer<type_node>(array_t);
-         const auto eln_ic = GetPointer<integer_cst>(GET_NODE(tn->size));
-         const auto num_elements =
-             tree_helper::get_integer_cst_value(arr_ic) / tree_helper::get_integer_cst_value(eln_ic);
+         const auto num_elements = tree_helper::GetConstValue(at->size) / tree_helper::GetConstValue(tn->size);
          indented_output_stream->Append("{\n");
-         const std::string variable_name = "i" + STR(nesting_level);
+         const auto variable_name = "i" + STR(nesting_level);
          indented_output_stream->Append("int " + variable_name + ";\n");
          indented_output_stream->Append("for(" + variable_name + " = 0; " + variable_name + " < " + STR(num_elements) +
                                         "; " + variable_name + "++)\n");
