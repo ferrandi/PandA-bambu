@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2020-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -49,9 +49,12 @@ using namespace boost::multiprecision;
 
 using bw_t = APInt::bw_t;
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wzero-as-null-pointer-constant"
 APInt::APInt() : _data(57)
 {
 }
+#pragma GCC diagnostic pop
 
 bool operator<(const APInt& lhs, const APInt& rhs)
 {
