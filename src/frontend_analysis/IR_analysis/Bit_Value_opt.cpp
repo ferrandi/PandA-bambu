@@ -269,7 +269,7 @@ static integer_cst_t convert_bitvalue_to_integer_cst(const std::string& bit_valu
    }
    THROW_WARNING_ASSERT(const_value == oldval,
                         "Constant bitstring " + bit_values + " was " + STR(oldval) + " now is " + STR(const_value));
-   return oldval;
+   return const_value;
 }
 
 static bool is_bit_values_constant(const std::string& bit_values)
@@ -638,7 +638,19 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                         else
                         {
                            const auto cst_val = tree_helper::GetConstValue(me->op0);
+#ifdef UNLIMITED_PRECISION
                            const auto cst_value = cst_val >> trailing_zero;
+#else
+                           const auto cst_value = [&]() {
+                              const auto val = static_cast<long long int>(cst_val);
+                              if(tree_helper::IsSignedIntegerType(op0))
+                              {
+                                 return integer_cst_t(val >> trailing_zero);
+                              }
+                              return integer_cst_t((val >> trailing_zero) &
+                                                   static_cast<long long int>(UINT64_MAX >> trailing_zero));
+                           }();
+#endif
                            const auto oldval = [&]() {
                               const auto val = static_cast<long long int>(cst_val);
                               if(tree_helper::IsSignedIntegerType(op0))
@@ -648,8 +660,8 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                               return static_cast<long long int>(static_cast<unsigned long long int>(val) >>
                                                                 trailing_zero);
                            }();
-                           THROW_WARNING_ASSERT(cst_value == oldval,
-                                                "Constant was " + STR(oldval) + " is now " + STR(cst_value));
+                           THROW_WARNING_ASSERT(cst_value == oldval, "Constant " + STR(me->op0) + " was " +
+                                                                         STR(oldval) + " is now " + STR(cst_value));
                            TM->ReplaceTreeNode(stmt, me->op0, TM->CreateUniqueIntegerCst(cst_value, op0_op_type));
                         }
                         if(is_op1_ssa)
@@ -673,7 +685,19 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                         else
                         {
                            const auto cst_val = tree_helper::GetConstValue(me->op1);
+#ifdef UNLIMITED_PRECISION
                            const auto cst_value = cst_val >> trailing_zero;
+#else
+                           const auto cst_value = [&]() {
+                              const auto val = static_cast<long long int>(cst_val);
+                              if(tree_helper::IsSignedIntegerType(op0))
+                              {
+                                 return integer_cst_t(val >> trailing_zero);
+                              }
+                              return integer_cst_t((val >> trailing_zero) &
+                                                   static_cast<long long int>(UINT64_MAX >> trailing_zero));
+                           }();
+#endif
                            const auto oldval = [&]() {
                               const auto val = static_cast<long long int>(cst_val);
                               if(tree_helper::IsSignedIntegerType(op1))
@@ -683,8 +707,8 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                               return static_cast<long long int>(static_cast<unsigned long long int>(val) >>
                                                                 trailing_zero);
                            }();
-                           THROW_WARNING_ASSERT(cst_value == oldval,
-                                                "Constant was " + STR(oldval) + " is now " + STR(cst_value));
+                           THROW_WARNING_ASSERT(cst_value == oldval, "Constant " + STR(me->op1) + " was " +
+                                                                         STR(oldval) + " is now " + STR(cst_value));
                            TM->ReplaceTreeNode(stmt, me->op1, TM->CreateUniqueIntegerCst(cst_value, op1_op_type));
                         }
                      }
@@ -2580,8 +2604,26 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                                     }
                                     else if(GET_CONST_NODE(rse->op0)->get_kind() == integer_cst_K)
                                     {
+#ifdef UNLIMITED_PRECISION
                                        const auto res_value =
                                            tree_helper::GetConstValue(rse->op0) >> static_cast<unsigned int>(pos_value);
+#else
+                                       const auto res_value = [&]() {
+                                          if(tree_helper::IsSignedIntegerType(rse->op0))
+                                          {
+                                             auto val = static_cast<long long>(tree_helper::GetConstValue(rse->op0));
+                                             val = (val >> static_cast<unsigned int>(pos_value));
+                                             return integer_cst_t(val);
+                                          }
+                                          else
+                                          {
+                                             auto val =
+                                                 static_cast<unsigned long long>(tree_helper::GetConstValue(rse->op0));
+                                             val = (val >> static_cast<unsigned int>(pos_value));
+                                             return integer_cst_t(val);
+                                          }
+                                       }();
+#endif
                                        const auto oldval = [&]() {
                                           if(tree_helper::IsSignedIntegerType(rse->op0))
                                           {
@@ -2597,8 +2639,9 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                                              return static_cast<long long>(val);
                                           }
                                        }();
-                                       THROW_WARNING_ASSERT(res_value == oldval, "Constant was " + STR(oldval) +
-                                                                                     " is now " + STR(res_value));
+                                       THROW_WARNING_ASSERT(res_value == oldval, "Constant " + STR(rse->op0) + " was " +
+                                                                                     STR(oldval) + " is now " +
+                                                                                     STR(res_value));
                                        if(res_value)
                                        {
                                           if(max_lut_size > 0)
@@ -2985,9 +3028,27 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                         }
                         else if(GET_CONST_NODE(ebe->op0)->get_kind() == integer_cst_K)
                         {
+#ifdef UNLIMITED_PRECISION
                            const auto res_value =
                                ((tree_helper::GetConstValue(ebe->op0) >> static_cast<unsigned int>(pos_value)) & 1) !=
                                0;
+#else
+                           const auto res_value = [&]() -> bool {
+                              if(tree_helper::IsSignedIntegerType(ebe->op0))
+                              {
+                                 auto val = static_cast<long long>(tree_helper::GetConstValue(ebe->op0));
+                                 val = (val >> static_cast<unsigned int>(pos_value)) & 1;
+                                 return val;
+                              }
+                              else
+                              {
+                                 auto val = static_cast<unsigned long long>(
+                                     static_cast<long long>(tree_helper::GetConstValue(ebe->op0)));
+                                 val = (val >> static_cast<unsigned int>(pos_value)) & 1;
+                                 return val;
+                              }
+                           }();
+#endif
                            const auto oldval = [&]() -> bool {
                               if(tree_helper::IsSignedIntegerType(ebe->op0))
                               {
@@ -3003,8 +3064,8 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                                  return val;
                               }
                            }();
-                           THROW_WARNING_ASSERT(res_value == oldval,
-                                                "Constant was " + STR(oldval) + " is now " + STR(res_value));
+                           THROW_WARNING_ASSERT(res_value == oldval, "Constant " + STR(ebe->op0) + " was " +
+                                                                         STR(oldval) + " is now " + STR(res_value));
                            const auto res_node = TM->CreateUniqueIntegerCst(res_value, ebe->type);
                            propagateValue(ssa, TM, ga->op0, res_node, DEBUG_CALLSITE);
                         }
