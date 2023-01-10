@@ -160,7 +160,7 @@ unsigned long long tree_helper::size(const tree_managerConstRef& tm, unsigned in
 unsigned long long tree_helper::Size(const tree_nodeConstRef& _t)
 {
    const auto t = _t->get_kind() == tree_reindex_K ? GET_CONST_NODE(_t) : _t;
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+   INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level,
                   "---Getting size of " + t->get_kind_text() + " " + STR(t->index) + ": " + t->ToString());
    switch(t->get_kind())
    {
@@ -1338,7 +1338,7 @@ void tree_helper::RecursiveGetTypesToBeDeclared(std::set<tree_nodeConstRef, Tree
                                                 const bool without_transformation, const bool before)
 {
    const auto type = _type->get_kind() == tree_reindex_K ? GET_CONST_NODE(_type) : _type;
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+   INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level,
                   "-->Getting types to be declared " + STR(before ? "before " : "after ") + STR(type));
    switch(type->get_kind())
    {
@@ -1368,7 +1368,7 @@ void tree_helper::RecursiveGetTypesToBeDeclared(std::set<tree_nodeConstRef, Tree
             const auto* tn = GetPointerS<const type_node>(type);
             if(recursion && tn->name && GET_CONST_NODE(tn->name)->get_kind() == type_decl_K)
             {
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+               INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level,
                               "---Inserting " + STR(_type) + " in the types to be declared");
                returned_types.insert(_type);
             }
@@ -1386,7 +1386,7 @@ void tree_helper::RecursiveGetTypesToBeDeclared(std::set<tree_nodeConstRef, Tree
          {
             if(before)
             {
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+               INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level,
                               "---Inserting " + STR(_type) + " in the types to be declared");
                returned_types.insert(_type);
             }
@@ -1396,21 +1396,21 @@ void tree_helper::RecursiveGetTypesToBeDeclared(std::set<tree_nodeConstRef, Tree
             const auto* rt = GetPointerS<const record_type>(type);
             if(rt->unql && (GetPointerS<const record_type>(GET_CONST_NODE(rt->unql))->name || without_transformation))
             {
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Record type with named unqualified");
+               INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "---Record type with named unqualified");
                if((!before && !tree_helper::IsAligned(_type)) || (before && tree_helper::IsAligned(_type)))
                {
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                  INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level,
                                  "---Inserting " + STR(rt->unql) + " in the types to be declared");
                   returned_types.insert(rt->unql);
                }
             }
             else
             {
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Record type without named unqualified");
+               INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "-->Record type without named unqualified");
                const auto field_types = tree_helper::CGetFieldTypes(_type);
                for(const auto& field_type : field_types)
                {
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                  INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level,
                                  "-->Considering field type (" + STR(field_type->index) + ") " + STR(field_type));
                   bool pointer_to_unnamed_structure = [&]() {
                      if(!tree_helper::IsPointerType(field_type))
@@ -1447,10 +1447,10 @@ void tree_helper::RecursiveGetTypesToBeDeclared(std::set<tree_nodeConstRef, Tree
                         RecursiveGetTypesToBeDeclared(returned_types, field_type, true, without_transformation, true);
                      }
                   }
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                  INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level,
                                  "<--Considered field type (" + STR(field_type->index) + ") " + STR(field_type));
                }
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
+               INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "<--");
             }
          }
          break;
@@ -1461,7 +1461,7 @@ void tree_helper::RecursiveGetTypesToBeDeclared(std::set<tree_nodeConstRef, Tree
          {
             if(before)
             {
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+               INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level,
                               "---Inserting " + STR(_type) + " in the types to be declared");
                returned_types.insert(_type);
             }
@@ -1471,21 +1471,21 @@ void tree_helper::RecursiveGetTypesToBeDeclared(std::set<tree_nodeConstRef, Tree
             const auto ut = GetPointerS<const union_type>(type);
             if(ut->unql && (GetPointerS<const union_type>(GET_CONST_NODE(ut->unql))->name || without_transformation))
             {
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Union type with named unqualified");
+               INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "---Union type with named unqualified");
                if((!before && !tree_helper::IsAligned(_type)) || (before && tree_helper::IsAligned(_type)))
                {
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                  INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level,
                                  "---Inserting " + STR(ut->unql) + " in the types to be declared");
                   returned_types.insert(ut->unql);
                }
             }
             else
             {
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Union type without named unqualified");
+               INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "-->Union type without named unqualified");
                const auto field_types = tree_helper::CGetFieldTypes(_type);
                for(const auto& field_type : field_types)
                {
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                  INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level,
                                  "-->Considering field type (" + STR(field_type->index) + ") " + STR(field_type));
                   const auto pointer_to_unnamed_structure = [&]() {
                      if(!tree_helper::IsPointerType(field_type))
@@ -1522,10 +1522,10 @@ void tree_helper::RecursiveGetTypesToBeDeclared(std::set<tree_nodeConstRef, Tree
                         RecursiveGetTypesToBeDeclared(returned_types, field_type, true, without_transformation, true);
                      }
                   }
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                  INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level,
                                  "<--Considered field type (" + STR(field_type->index) + ") " + STR(field_type));
                }
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
+               INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "<--");
             }
          }
          break;
@@ -1536,7 +1536,7 @@ void tree_helper::RecursiveGetTypesToBeDeclared(std::set<tree_nodeConstRef, Tree
          {
             if(before)
             {
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+               INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level,
                               "---Inserting " + STR(_type) + " in the types to be declared");
                returned_types.insert(_type);
             }
@@ -1548,7 +1548,7 @@ void tree_helper::RecursiveGetTypesToBeDeclared(std::set<tree_nodeConstRef, Tree
             {
                if(before)
                {
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                  INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level,
                                  "---Inserting " + STR(et->unql) + " in the types to be declared");
                   returned_types.insert(et->unql);
                }
@@ -1569,7 +1569,7 @@ void tree_helper::RecursiveGetTypesToBeDeclared(std::set<tree_nodeConstRef, Tree
             const auto* tn = GetPointerS<const type_node>(type);
             if(tn->name && GET_CONST_NODE(tn->name)->get_kind() == type_decl_K)
             {
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+               INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level,
                               "---Inserting " + STR(_type) + " in the types to be declared");
                returned_types.insert(_type);
             }
@@ -1637,7 +1637,7 @@ void tree_helper::RecursiveGetTypesToBeDeclared(std::set<tree_nodeConstRef, Tree
          break;
       }
    }
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+   INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level,
                   STR("<--Got types to be declared ") + (before ? "before" : "after") + " " + STR(type));
 }
 
@@ -5380,7 +5380,7 @@ std::string tree_helper::PrintType(const tree_managerConstRef& TM, const tree_no
    bool skip_var_printing = false;
    const auto node_type = GET_CONST_NODE(tree_helper::GetRealType(
        original_type->get_kind() != tree_reindex_K ? TM->CGetTreeReindex(original_type->index) : original_type));
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+   INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level,
                   "-->Printing type " + STR(original_type) + "(" + STR(node_type) + ") - Var " + STR(var));
    std::string res;
    tree_nodeConstRef node_var = nullptr;
@@ -6280,7 +6280,7 @@ std::string tree_helper::PrintType(const tree_managerConstRef& TM, const tree_no
       }
       res += tail;
    }
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Printed type " + STR(original_type) + ": " + res);
+   INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "<--Printed type " + STR(original_type) + ": " + res);
    return res;
 }
 
@@ -7155,7 +7155,7 @@ unsigned long long tree_helper::AccessedMinimunBitsize(const tree_nodeConstRef& 
 
 size_t tree_helper::AllocatedMemorySize(const tree_nodeConstRef& parameter)
 {
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing " + parameter->ToString());
+   INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "-->Analyzing " + parameter->ToString());
    switch(parameter->get_kind())
    {
       case(addr_expr_K):
@@ -7170,7 +7170,7 @@ size_t tree_helper::AllocatedMemorySize(const tree_nodeConstRef& parameter)
             {
                const array_ref* ar = GetPointer<array_ref>(addr_expr_argument);
                const size_t byte_parameter_size = AllocatedMemorySize(GET_NODE(ar->op0));
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+               INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level,
                               "<--Analyzed " + parameter->ToString() + " - Size is " + STR(byte_parameter_size));
                return byte_parameter_size;
             }
@@ -7181,7 +7181,7 @@ size_t tree_helper::AllocatedMemorySize(const tree_nodeConstRef& parameter)
             case(var_decl_K):
             {
                const size_t byte_parameter_size = AllocatedMemorySize(addr_expr_argument);
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+               INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level,
                               "<--Analyzed " + parameter->ToString() + " - Size is " + STR(byte_parameter_size));
                return byte_parameter_size;
             }
@@ -7336,7 +7336,7 @@ size_t tree_helper::AllocatedMemorySize(const tree_nodeConstRef& parameter)
          const size_t bit_parameter_size = tree_helper::Size(parameter);
          /// Round to upper multiple word size
          const size_t byte_parameter_size = bit_parameter_size / 8;
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+         INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level,
                         "<--Analyzed " + parameter->ToString() + " - Size is " + STR(byte_parameter_size));
          return byte_parameter_size;
       }
@@ -7357,14 +7357,14 @@ size_t tree_helper::AllocatedMemorySize(const tree_nodeConstRef& parameter)
             {
                continue;
             }
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing field " + (*field)->ToString());
+            INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "-->Analyzing field " + (*field)->ToString());
             AllocatedMemorySize(tree_helper::CGetType(*field));
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed field " + (*field)->ToString());
+            INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "<--Analyzed field " + (*field)->ToString());
          }
          const size_t bit_parameter_size = tree_helper::Size(parameter) + fields_pointed_size;
          /// Round to upper multiple word size
          const size_t byte_parameter_size = bit_parameter_size / 8;
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+         INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level,
                         "<--Analyzed " + parameter->ToString() + " - Size is " + STR(byte_parameter_size));
          return byte_parameter_size;
       }
@@ -7376,14 +7376,14 @@ size_t tree_helper::AllocatedMemorySize(const tree_nodeConstRef& parameter)
             THROW_ERROR("Offloading fields of union is not supported");
          }
          const size_t byte_parameter_size = AllocatedMemorySize(GET_NODE(cr->op1));
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+         INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level,
                         "<--Analyzed " + parameter->ToString() + " - Size is " + STR(byte_parameter_size));
          return byte_parameter_size;
       }
       case(field_decl_K):
       {
          const size_t byte_parameter_size = AllocatedMemorySize(tree_helper::CGetType(parameter));
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+         INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level,
                         "<--Analyzed " + parameter->ToString() + " - Size is " + STR(byte_parameter_size));
          return byte_parameter_size;
       }
@@ -7395,7 +7395,7 @@ size_t tree_helper::AllocatedMemorySize(const tree_nodeConstRef& parameter)
          const size_t bit_parameter_size = tree_helper::Size(parameter);
          /// Round to upper multiple word size
          const size_t byte_parameter_size = bit_parameter_size / 8;
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+         INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level,
                         "<--Analyzed " + parameter->ToString() + " - Size is " + STR(byte_parameter_size));
          return byte_parameter_size;
       }
@@ -7403,7 +7403,7 @@ size_t tree_helper::AllocatedMemorySize(const tree_nodeConstRef& parameter)
       {
          const auto mr = GetPointer<const mem_ref>(parameter);
          const size_t byte_parameter_size = AllocatedMemorySize(GET_NODE(mr->op0));
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+         INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level,
                         "<--Analyzed " + parameter->ToString() + " - Size is " + STR(byte_parameter_size));
          return byte_parameter_size;
       }
@@ -7432,14 +7432,14 @@ size_t tree_helper::AllocatedMemorySize(const tree_nodeConstRef& parameter)
                          GetPointer<const var_decl>(parameter)
                                  ->point_to_information->point_to_size[PointToInformation::default_key] /
                              8);
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+            INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level,
                            "<--Analyzed " + parameter->ToString() + " - Size is " + STR(point_to_size / 8));
             return point_to_size;
          }
          else
          {
             const size_t byte_parameter_size = AllocatedMemorySize(tree_helper::CGetType(parameter));
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+            INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level,
                            "<--Analyzed " + parameter->ToString() + " - Size is " + STR(byte_parameter_size));
             return byte_parameter_size;
          }

@@ -319,12 +319,9 @@ void tree_manager::PrintGimple(std::ostream& os, const bool use_uid) const
 void tree_manager::create_tree_node(const unsigned int node_id, enum kind tree_node_type,
                                     std::map<TreeVocabularyTokenTypes_TokenEnum, std::string>& tree_node_schema)
 {
-#ifndef NDEBUG
-   int function_debug_level = Param->GetFunctionDebugLevel(GET_CLASS(*this), __func__);
-#endif
    tree_node_factory TNF(tree_node_schema, *this);
    TNF.create_tree_node(node_id, tree_node_type);
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, function_debug_level,
+   INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, GET_FUNCTION_DEBUG_LEVEL(Param),
                   "---Created tree node " + STR(node_id) + ": " + STR(CGetTreeNode(node_id)));
 }
 
@@ -413,11 +410,11 @@ void tree_manager::collapse_into(const unsigned int& funID,
 {
    THROW_ASSERT(tn->get_kind() == tree_reindex_K, "Node is not a tree reindex");
    const unsigned int tree_node_index = GET_INDEX_NODE(tn);
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+   INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level,
                   "-->Collapsing into " + STR(tree_node_index) + " (" + std::string(GET_NODE(tn)->get_kind_text()) +
                       "): " + tn->ToString());
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
-   if(debug_level >= DEBUG_LEVEL_VERY_PEDANTIC)
+   INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "-->");
+   if(debug_level >= DEBUG_LEVEL_PARANOIC)
    {
       const std::string gimple_file_name = Param->getOption<std::string>(OPT_output_temporary_directory) +
                                            "collapse_into_" + STR(collapse_into_counter) + "_before_" +
@@ -426,7 +423,7 @@ void tree_manager::collapse_into(const unsigned int& funID,
       std::ofstream gimple_file(gimple_file_name.c_str());
       PrintGimple(gimple_file, false);
       gimple_file.close();
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Writing file " + gimple_file_name);
+      INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "Writing file " + gimple_file_name);
    }
    tree_nodeRef curr_tn = GET_NODE(tn);
    switch(curr_tn->get_kind())
@@ -579,7 +576,7 @@ void tree_manager::collapse_into(const unsigned int& funID,
             }
             if(gm->memdef)
             {
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+               INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level,
                               "---The gimple assignment where ssa name is defined has virtual def");
                break;
             }
@@ -590,7 +587,7 @@ void tree_manager::collapse_into(const unsigned int& funID,
                tree_helper::HasToBeDeclared(tree_managerRef(this, null_del),
                                             GetPointer<nop_expr>(GET_NODE(gm->op1))->type))
             {
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+               INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level,
                               "---The gimple assignment where ssa name is defined has a non-builtin nop_expr");
                break;
             }
@@ -599,29 +596,29 @@ void tree_manager::collapse_into(const unsigned int& funID,
                 Param->getOption<bool>(OPT_compare_measure_regions) or Param->isOption(OPT_hand_mapping)) and
                (GET_NODE(gm->op1)->get_kind() == call_expr_K || GET_NODE(gm->op1)->get_kind() == aggr_init_expr_K))
             {
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+               INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level,
                               "---The gimple assignment has call_expr on the right and we are target profiling");
                break;
             }
             if(gm->predicate)
             {
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---The gimple assignment is predicated");
+               INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "---The gimple assignment is predicated");
                break;
             }
             collapse_into(funID, stmt_to_bloc, sn->CGetDefStmt(), removed_nodes, AppM);
             THROW_ASSERT(gm, "ssa name " + STR(GET_INDEX_NODE(tn)) +
                                  " not defined in a gimple modify stmt, nor in gimple_asm, nor in a nop_expr");
 
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Definition of " + STR(GET_INDEX_NODE(tn)) + ":");
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+            INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "---Definition of " + STR(GET_INDEX_NODE(tn)) + ":");
+            INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level,
                            "---" + STR(GET_INDEX_NODE(sn->CGetDefStmt())) + " (" +
                                std::string(GET_NODE(sn->CGetDefStmt())->get_kind_text()) + ")");
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+            INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level,
                            "---Uses of " + STR(GET_INDEX_NODE(tn)) + " - " + STR(sn->CGetNumberUses()) + ":");
 #ifndef NDEBUG
             for(const auto& use : sn->CGetUseStmts())
             {
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---" + use.first->ToString());
+               INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "---" + use.first->ToString());
             }
 #endif
             // Retrieve curr_block, the block which contains the conditional expression that originated the collapsing
@@ -647,7 +644,7 @@ void tree_manager::collapse_into(const unsigned int& funID,
                {
                   curr_block_index = (stmt_to_bloc.find(GET_INDEX_NODE(*stack_it)))->second;
                   curr_block = list_of_bloc.find(curr_block_index)->second;
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                  INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level,
                                  "---Found gimple_cond in block: " +
                                      STR((stmt_to_bloc.find(GET_INDEX_NODE(*stack_it)))->second));
                   break;
@@ -690,7 +687,7 @@ void tree_manager::collapse_into(const unsigned int& funID,
                      auto* gms = GetPointer<gimple_assign>(GET_NODE(stmt));
                      if(gms->memdef)
                      {
-                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                        INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level,
                                        "---Statement " + STR(GET_INDEX_NODE(stmt)) + " contains vdef");
                         memdef_found = true;
                      }
@@ -705,7 +702,7 @@ void tree_manager::collapse_into(const unsigned int& funID,
                   break;
                }
 
-               INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+               INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level,
                               "---None of uses of current ssa contains virtual defs so continuing in collapsing");
 
                // If the definition of ssa_name is elsewhere, there is no need of copying it
@@ -719,7 +716,7 @@ void tree_manager::collapse_into(const unsigned int& funID,
                                   STR(use.first->index) + " is not in stmt_to_bloc");
                      unsigned int copy_block_index = (stmt_to_bloc.find(use.first->index))->second;
                      copy_bloc_to_stmt[copy_block_index].push_back(use.first);
-                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                     INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level,
                                     "ssa_name is used in operation " + STR(use.first->index) + " of BB" +
                                         STR(copy_block_index));
                   }
@@ -732,7 +729,7 @@ void tree_manager::collapse_into(const unsigned int& funID,
 
                      if(copy_block != curr_block)
                      {
-                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                        INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level,
                                        "Copying statement " + STR(GET_INDEX_NODE(sn->CGetDefStmt())) + " in block " +
                                            STR(copy_block_it.first) + " (!= " +
                                            STR((stmt_to_bloc.find(GET_INDEX_NODE(sn->CGetDefStmt())))->second) + ")");
@@ -815,7 +812,7 @@ void tree_manager::collapse_into(const unsigned int& funID,
                      }
                      else
                      {
-                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "copy_block = curr_block");
+                        INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "copy_block = curr_block");
                      }
                   }
                }
@@ -848,7 +845,7 @@ void tree_manager::collapse_into(const unsigned int& funID,
                   THROW_ERROR("Unsupported type of tree node during collapsing");
                }
             }
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+            INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level,
                            "Substituting operand " + STR(GET_INDEX_NODE(tn)) + " with " + STR(GET_INDEX_NODE(gm->op1)));
             const tree_nodeRef tn_old = tn;
             // Change the operand into every statement in the curr_block which uses the considered ssa_name
@@ -856,13 +853,11 @@ void tree_manager::collapse_into(const unsigned int& funID,
             {
                for(const auto& use : sn->CGetUseStmts())
                {
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                 "Checking for operation " + STR(use.first->index));
+                  INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "Checking for operation " + STR(use.first->index));
                   THROW_ASSERT(stmt_to_bloc.find(use.first->index) != stmt_to_bloc.end(),
                                "Statement not found in stmt_to_bloc map: " + STR(use.first->index));
                   unsigned int use_block_index = (stmt_to_bloc.find(use.first->index))->second;
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                 "Operation belongs to BB" + STR(use_block_index));
+                  INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "Operation belongs to BB" + STR(use_block_index));
                   const blocRef use_block = list_of_bloc.find(use_block_index)->second;
                   if(use_block == curr_block)
                   {
@@ -904,7 +899,7 @@ void tree_manager::collapse_into(const unsigned int& funID,
                // Remove the definition statements contained in curr_block
                if(GET_INDEX_NODE(stmt) == GET_INDEX_NODE(sn->CGetDefStmt()))
                {
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Removed statement " + STR(stmt->index));
+                  INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "Removed statement " + STR(stmt->index));
                   removed_nodes.insert(GET_INDEX_NODE(stmt));
                   curr_block->RemoveStmt(stmt, AppM);
                   break;
@@ -913,7 +908,7 @@ void tree_manager::collapse_into(const unsigned int& funID,
          }
          else
          {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+            INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level,
                            "Multiple definitions for ssa_name " + STR(GET_INDEX_NODE(tn)));
          }
          break;
@@ -976,7 +971,7 @@ void tree_manager::collapse_into(const unsigned int& funID,
          THROW_ERROR(std::string("Node not supported (") + STR(GET_INDEX_NODE(tn)) + std::string("): ") +
                      curr_tn->get_kind_text());
    }
-   if(debug_level >= DEBUG_LEVEL_VERY_PEDANTIC)
+   if(debug_level >= DEBUG_LEVEL_PARANOIC)
    {
       const std::string raw_file_name = Param->getOption<std::string>(OPT_output_temporary_directory) +
                                         "collapse_into_" + STR(collapse_into_counter) + "_after_" +
@@ -991,10 +986,10 @@ void tree_manager::collapse_into(const unsigned int& funID,
       std::ofstream gimple_file(gimple_file_name.c_str());
       PrintGimple(gimple_file, false);
       gimple_file.close();
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Writing file " + gimple_file_name);
+      INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "Writing file " + gimple_file_name);
    }
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Ended collapsing into " + STR(tree_node_index));
+   INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "<--");
+   INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "<--Ended collapsing into " + STR(tree_node_index));
 }
 
 void tree_manager::ReplaceTreeNode(const tree_nodeRef& stmt, const tree_nodeRef& old_node, const tree_nodeRef& new_node)
@@ -1012,12 +1007,9 @@ void tree_manager::ReplaceTreeNode(const tree_nodeRef& stmt, const tree_nodeRef&
 void tree_manager::RecursiveReplaceTreeNode(tree_nodeRef& tn, const tree_nodeRef old_node, const tree_nodeRef& new_node,
                                             const tree_nodeRef& stmt, const bool definition) // NOLINT
 {
-#ifndef NDEBUG
-   const auto function_debug_level = Param->GetFunctionDebugLevel(GET_CLASS(*this), "ReplaceTreeNode");
-#endif
    THROW_ASSERT(tn->get_kind() == tree_reindex_K, "Node is not a tree reindex");
    tree_nodeRef curr_tn = GET_NODE(tn);
-   INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, function_debug_level,
+   INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, GET_FUNCTION_DEBUG_LEVEL(Param),
                   "-->Replacing " + old_node->ToString() + " (" + GET_NODE(old_node)->get_kind_text() + ") with " +
                       new_node->ToString() + "(" + GET_NODE(new_node)->get_kind_text() +
                       ") starting from node: " + tn->ToString() + "(" + GET_NODE(tn)->get_kind_text() + ")");
@@ -1073,14 +1065,14 @@ void tree_manager::RecursiveReplaceTreeNode(tree_nodeRef& tn, const tree_nodeRef
             {
                THROW_ASSERT(GET_CONST_NODE(new_node)->get_kind() == ssa_name_K,
                             GET_CONST_NODE(new_node)->get_kind_text());
-               INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, function_debug_level,
+               INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, GET_FUNCTION_DEBUG_LEVEL(Param),
                               "---Setting " + STR(stmt) + " as new define statement of " + STR(new_node));
                GetPointerS<ssa_name>(GET_NODE(new_node))->SetDefStmt(stmt);
             }
          }
       }
       tn = new_node;
-      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, function_debug_level,
+      INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, GET_FUNCTION_DEBUG_LEVEL(Param),
                      "<--Replaced " + old_node->ToString() + " (" + GET_NODE(old_node)->get_kind_text() + ") with " +
                          new_node->ToString() + "(" + GET_NODE(new_node)->get_kind_text() +
                          ") New statement: " + tn->ToString());
@@ -1089,7 +1081,7 @@ void tree_manager::RecursiveReplaceTreeNode(tree_nodeRef& tn, const tree_nodeRef
    const auto gn = GetPointer<gimple_node>(curr_tn);
    if(gn)
    {
-      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, function_debug_level, "-->Checking virtuals");
+      INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, GET_FUNCTION_DEBUG_LEVEL(Param), "-->Checking virtuals");
       if(gn->memdef)
       {
          RecursiveReplaceTreeNode(gn->memdef, old_node, new_node, stmt, true);
@@ -1126,7 +1118,7 @@ void tree_manager::RecursiveReplaceTreeNode(tree_nodeRef& tn, const tree_nodeRef
       {
          RecursiveReplaceTreeNode(gn->vdef, old_node, new_node, stmt, true);
       }
-      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, function_debug_level, "<--Checked virtuals");
+      INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, GET_FUNCTION_DEBUG_LEVEL(Param), "<--Checked virtuals");
    }
    switch(curr_tn->get_kind())
    {
@@ -1416,7 +1408,7 @@ void tree_manager::RecursiveReplaceTreeNode(tree_nodeRef& tn, const tree_nodeRef
          THROW_ERROR(std::string("Node not supported (") + STR(GET_INDEX_NODE(tn)) + std::string("): ") +
                      curr_tn->get_kind_text());
    }
-   INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, function_debug_level,
+   INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, GET_FUNCTION_DEBUG_LEVEL(Param),
                   "<--Replaced " + old_node->ToString() + " (" + GET_NODE(old_node)->get_kind_text() + ") with " +
                       new_node->ToString() + "(" + GET_NODE(new_node)->get_kind_text() +
                       ") New statement: " + tn->ToString());
@@ -1424,7 +1416,7 @@ void tree_manager::RecursiveReplaceTreeNode(tree_nodeRef& tn, const tree_nodeRef
 
 void tree_manager::erase_usage_info(const tree_nodeRef& tn, const tree_nodeRef& stmt)
 {
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+   INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level,
                   "-->Erase usage into node " + STR(GET_INDEX_NODE(tn)) + " (" + GET_NODE(tn)->get_kind_text() +
                       "). Statement: " + STR(GET_INDEX_NODE(stmt)) + " (" + GET_NODE(stmt)->get_kind_text() + ")");
    THROW_ASSERT(tn->get_kind() == tree_reindex_K, "Node is not a tree reindex");
@@ -1638,14 +1630,14 @@ void tree_manager::erase_usage_info(const tree_nodeRef& tn, const tree_nodeRef& 
          THROW_ERROR(std::string("Node not supported (") + STR(GET_INDEX_NODE(tn)) + std::string("): ") +
                      curr_tn->get_kind_text());
    }
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+   INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level,
                   "<--Erased usage into node " + STR(GET_INDEX_NODE(tn)) + " (" + GET_NODE(tn)->get_kind_text() +
                       "). Statement: " + STR(GET_INDEX_NODE(stmt)) + " (" + GET_NODE(stmt)->get_kind_text() + ")");
 }
 
 void tree_manager::insert_usage_info(const tree_nodeRef& tn, const tree_nodeRef& stmt)
 {
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+   INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level,
                   "-->Insert usage info into node " + STR(GET_INDEX_NODE(tn)) + " (" + GET_NODE(tn)->get_kind_text() +
                       "). Statement: " + STR(GET_INDEX_NODE(stmt)) + " (" + GET_NODE(stmt)->get_kind_text() + ")");
    THROW_ASSERT(tn->get_kind() == tree_reindex_K, "Node is not a tree reindex");
@@ -1850,7 +1842,7 @@ void tree_manager::insert_usage_info(const tree_nodeRef& tn, const tree_nodeRef&
          THROW_ERROR(std::string("Node not supported (") + STR(GET_INDEX_NODE(tn)) + std::string("): ") +
                      curr_tn->get_kind_text());
    }
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+   INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level,
                   "<--Inserted usage info into node " + STR(GET_INDEX_NODE(tn)) + " (" + GET_NODE(tn)->get_kind_text() +
                       "). Statement: " + STR(GET_INDEX_NODE(stmt)) + " (" + GET_NODE(stmt)->get_kind_text() + ")");
 }
@@ -1867,7 +1859,7 @@ unsigned int tree_manager::get_n_pl() const
 
 void tree_manager::merge_tree_managers(const tree_managerRef& source_tree_manager)
 {
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Starting merging of new tree_manager");
+   INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "-->Starting merging of new tree_manager");
    /// a declaration is uniquely identified by the name and by the scope
    /// in case the decl_node has a mangle the associated identifier_node is unique
    /// a decl_node without name is not added to the symbol table
@@ -1893,7 +1885,7 @@ void tree_manager::merge_tree_managers(const tree_managerRef& source_tree_manage
    CustomUnorderedSet<std::string> static_function_header_symbol_table;
    null_deleter nullDel;
    tree_managerRef TM_this(this, nullDel);
-   if(debug_level >= DEBUG_LEVEL_PEDANTIC)
+   if(debug_level >= DEBUG_LEVEL_PARANOIC)
    {
       std::string raw_file_name = Param->getOption<std::string>(OPT_output_temporary_directory) + "before_tree_merge_" +
                                   STR(get_next_available_tree_node_id()) + ".raw";
@@ -1904,20 +1896,20 @@ void tree_manager::merge_tree_managers(const tree_managerRef& source_tree_manage
 
    /// build the symbol tables of tree_node inheriting from type_node and then from decl_node; decl_nodes have to be
    /// examinated later since they have to be examinated after the record/union types???
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Building the global symbol table of this tree manager");
+   INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "-->Building the global symbol table of this tree manager");
    std::string symbol_name;
    std::string symbol_scope;
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Checking types");
+   INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "-->Checking types");
    for(const auto& ti : tree_nodes)
    {
       const tree_nodeRef tn = ti.second;
       auto* dn = GetPointer<decl_node>(tn);
       if(not dn)
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Checking " + STR(ti.first));
+         INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "---Checking " + STR(ti.first));
          if(check_for_type(tn, TM_this, symbol_name, symbol_scope, global_type_symbol_table, ti.first))
          {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Is NOT inserted in the symbol table");
+            INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "---Is NOT inserted in the symbol table");
             continue;
          }
          else
@@ -1926,7 +1918,7 @@ void tree_manager::merge_tree_managers(const tree_managerRef& source_tree_manage
                 global_type_symbol_table.find(symbol_name) == global_type_symbol_table.end(),
                 "duplicated symbol in global_type_symbol_table: " + global_type_symbol_table.find(symbol_name)->first +
                     " " + STR(global_type_symbol_table.find(symbol_name)->second) + " " + STR(ti.first));
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+            INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level,
                            "---Is INSERTED in the symbol table " + symbol_name + " --> " + STR(ti.first));
             global_type_symbol_table[symbol_name] = ti.first;
             /// give a name to unql where possible
@@ -1947,8 +1939,8 @@ void tree_manager::merge_tree_managers(const tree_managerRef& source_tree_manage
          }
       }
    }
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Checked types");
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Checking declarations");
+   INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "<--Checked types");
+   INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "-->Checking declarations");
    for(const auto& ti : tree_nodes)
    {
       /// check for decl_node
@@ -1956,21 +1948,21 @@ void tree_manager::merge_tree_managers(const tree_managerRef& source_tree_manage
       auto* dn = GetPointer<decl_node>(tn);
       if(dn)
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Checking " + STR(ti.first));
+         INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "---Checking " + STR(ti.first));
          if(check_for_decl(tn, TM_this, symbol_name, symbol_scope, ti.first, global_type_unql_symbol_table))
          {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Is NOT inserted in the symbol table");
+            INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "---Is NOT inserted in the symbol table");
             continue;
          }
          else
          {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Not skipped");
+            INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "---Not skipped");
             /// check for static
             if((GetPointer<function_decl>(tn) and GetPointer<function_decl>(tn)->static_flag) or
                (GetPointer<var_decl>(tn) and
                 (GetPointer<var_decl>(tn)->static_flag or GetPointer<var_decl>(tn)->static_static_flag)))
             {
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Static declaration");
+               INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "---Static declaration");
                THROW_ASSERT(
                    (GetPointer<function_decl>(tn) and GetPointer<function_decl>(tn)->body) or
                        (GetPointer<var_decl>(tn) and
@@ -2030,7 +2022,7 @@ void tree_manager::merge_tree_managers(const tree_managerRef& source_tree_manage
                continue;
             }
 
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+            INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level,
                            "---Adding to global declaration table " + symbol_name + "-" + symbol_scope + " (" +
                                STR(ti.first) + ")");
 
@@ -2038,28 +2030,27 @@ void tree_manager::merge_tree_managers(const tree_managerRef& source_tree_manage
          }
       }
    }
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Checked declarations");
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
+   INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "<--Checked declarations");
+   INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "<--");
 
    auto gtust_i_end = global_type_unql_symbol_table.end();
    for(auto gtust_i = global_type_unql_symbol_table.begin(); gtust_i != gtust_i_end; ++gtust_i)
    {
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                     STR(gtust_i->first) + "-unqualified_type>" + gtust_i->second);
+      INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, STR(gtust_i->first) + "-unqualified_type>" + gtust_i->second);
    }
    auto gst_i_end = global_decl_symbol_table.end();
    for(auto gst_i = global_decl_symbol_table.begin(); gst_i != gst_i_end; ++gst_i)
    {
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, STR(gst_i->second) + "-decl>" + gst_i->first);
+      INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, STR(gst_i->second) + "-decl>" + gst_i->first);
    }
 
    gst_i_end = global_type_symbol_table.end();
    for(auto gst_i = global_type_symbol_table.begin(); gst_i != gst_i_end; ++gst_i)
    {
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, STR(gst_i->second) + "-type>" + gst_i->first);
+      INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, STR(gst_i->second) + "-type>" + gst_i->first);
    }
 
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Built table for this tree_manager");
+   INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "Built table for this tree_manager");
    /// source static function declaration
    /// used to correctly rename declaration and definition of a function
    CustomUnorderedMapUnstable<std::string, std::string> source_static_symbol_table;
@@ -2096,7 +2087,7 @@ void tree_manager::merge_tree_managers(const tree_managerRef& source_tree_manage
 
    /// remap tree_node from source_tree_manager to this tree_manager
    /// first remap the types and then decl
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+   INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level,
                   "-->Analyzing " + STR(source_tree_nodes.size()) + " tree nodes of second tree manager");
    for(const auto& ti_source : source_tree_nodes)
    {
@@ -2105,31 +2096,31 @@ void tree_manager::merge_tree_managers(const tree_managerRef& source_tree_manage
       auto* dn = GetPointer<decl_node>(tn);
       if(not dn)
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Checking " + STR(ti_source.first));
+         INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "---Checking " + STR(ti_source.first));
          if(GetPointer<identifier_node>(tn))
          {
             auto* id = GetPointer<identifier_node>(tn);
             unsigned int node_id = find_identifier_nodeID(id->strg);
             if(node_id)
             {
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Identifier FOUND: remapped!");
+               INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "---Identifier FOUND: remapped!");
                remap[ti_source.first] = node_id;
             }
             else
             {
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Identifier NOT found: skipped!");
+               INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "---Identifier NOT found: skipped!");
                continue;
             }
          }
          else if(check_for_type(tn, source_tree_manager, symbol_name, symbol_scope, global_type_symbol_table,
                                 ti_source.first))
          {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Is NOT inserted in the symbol table");
+            INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "---Is NOT inserted in the symbol table");
             continue;
          }
          else
          {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+            INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level,
                            STR(ti_source.first) + "-ntype>" + symbol_name + "-" + symbol_scope);
             if(tn->get_kind() == record_type_K and GetPointer<record_type>(tn)->unql and
                GetPointer<record_type>(tn)->qual == TreeVocabularyTokenTypes_TokenEnum::FIRST_TOKEN)
@@ -2140,7 +2131,7 @@ void tree_manager::merge_tree_managers(const tree_managerRef& source_tree_manage
                   remap[GET_INDEX_NODE(GetPointer<record_type>(tn)->unql)] = gst_it->second;
                   global_type_unql_symbol_table[GET_INDEX_NODE(GetPointer<record_type>(tn)->unql)] =
                       "u struct " + symbol_name;
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                  INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level,
                                  STR(GET_INDEX_NODE(GetPointer<record_type>(tn)->unql)) + "-nutype>" + symbol_name);
                   // std::cout << "remap unql: " + gst_it->first << " " << gst_it->second << std::endl;
                }
@@ -2161,7 +2152,7 @@ void tree_manager::merge_tree_managers(const tree_managerRef& source_tree_manage
                   global_type_symbol_table["u struct " + symbol_name] = new_tree_index;
                   global_type_unql_symbol_table[GET_INDEX_NODE(GetPointer<record_type>(tn)->unql)] =
                       "u struct " + symbol_name;
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                  INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level,
                                  "other " + STR(GET_INDEX_NODE(GetPointer<record_type>(tn)->unql)) + "-nutype>" +
                                      symbol_name);
                }
@@ -2175,7 +2166,7 @@ void tree_manager::merge_tree_managers(const tree_managerRef& source_tree_manage
                   remap[GET_INDEX_NODE(GetPointer<union_type>(tn)->unql)] = gst_it->second;
                   global_type_unql_symbol_table[GET_INDEX_NODE(GetPointer<union_type>(tn)->unql)] =
                       "u union " + symbol_name;
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                  INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level,
                                  STR(GET_INDEX_NODE(GetPointer<union_type>(tn)->unql)) + "-nutype>" + symbol_name);
                   // std::cout << "remap unql: " + gst_it->first << std::endl;
                }
@@ -2196,7 +2187,7 @@ void tree_manager::merge_tree_managers(const tree_managerRef& source_tree_manage
                   global_type_symbol_table["u union " + symbol_name] = new_tree_index;
                   global_type_unql_symbol_table[GET_INDEX_NODE(GetPointer<union_type>(tn)->unql)] =
                       "u union " + symbol_name;
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                  INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level,
                                  "other " + STR(GET_INDEX_NODE(GetPointer<union_type>(tn)->unql)) + "-nutype>" +
                                      symbol_name);
                }
@@ -2227,7 +2218,7 @@ void tree_manager::merge_tree_managers(const tree_managerRef& source_tree_manage
                      {
                         not_yet_remapped.insert(ti_source.first); /// overwrite gst_it->second
                         to_be_visited.insert(ti_source.first);
-                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                        INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level,
                                        "RECORD TYPE: " + gst_it->first + " " + STR(ti_source.first));
                      }
                   }
@@ -2241,7 +2232,7 @@ void tree_manager::merge_tree_managers(const tree_managerRef& source_tree_manage
                      {
                         not_yet_remapped.insert(ti_source.first); /// overwrite gst_it->second
                         to_be_visited.insert(ti_source.first);
-                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                        INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level,
                                        "RECORD TYPE: " + gst_it->first + " " + STR(ti_source.first));
                      }
                   }
@@ -2257,7 +2248,7 @@ void tree_manager::merge_tree_managers(const tree_managerRef& source_tree_manage
                      {
                         not_yet_remapped.insert(ti_source.first); /// overwrite gst_it->second
                         to_be_visited.insert(ti_source.first);
-                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                        INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level,
                                        "UNION TYPE: " + gst_it->first + " " + STR(ti_source.first));
                      }
                   }
@@ -2270,7 +2261,7 @@ void tree_manager::merge_tree_managers(const tree_managerRef& source_tree_manage
                      {
                         not_yet_remapped.insert(ti_source.first); /// overwrite gst_it->second
                         to_be_visited.insert(ti_source.first);
-                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                        INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level,
                                        "UNION TYPE: " + gst_it->first + " " + STR(ti_source.first));
                      }
                   }
@@ -2280,10 +2271,10 @@ void tree_manager::merge_tree_managers(const tree_managerRef& source_tree_manage
          }
       }
    }
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed tree nodes of second tree manager");
+   INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "<--Analyzed tree nodes of second tree manager");
 
    /// remap tree_node from source_tree_manager to this tree_manager
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Remapping declaration nodes");
+   INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "-->Remapping declaration nodes");
    for(const auto& ti_source : source_tree_nodes)
    {
       const tree_nodeRef tn = ti_source.second;
@@ -2291,15 +2282,15 @@ void tree_manager::merge_tree_managers(const tree_managerRef& source_tree_manage
       auto* dn = GetPointer<decl_node>(tn);
       if(dn)
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+         INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level,
                         "-->Examining declaration node " + STR(ti_source.first) + " of second tree:" + STR(tn));
          if(check_for_decl(tn, source_tree_manager, symbol_name, symbol_scope, ti_source.first,
                            global_type_unql_symbol_table))
          {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Not suitable for symbol table");
+            INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "<--Not suitable for symbol table");
             continue;
          }
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+         INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level,
                         STR(ti_source.first) + "-ndecl>" + symbol_name + "-" + symbol_scope);
          /// check for static
          if((GetPointer<function_decl>(tn) and GetPointer<function_decl>(tn)->static_flag) or
@@ -2340,11 +2331,10 @@ void tree_manager::merge_tree_managers(const tree_managerRef& source_tree_manage
                }
             }
 
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Static");
+            INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "---Static");
             if(source_static_symbol_table.find(symbol_name) != source_static_symbol_table.end())
             {
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                              "---Already present in source static symbol table");
+               INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "---Already present in source static symbol table");
                unsigned int node_id_source =
                    source_tree_manager->find_identifier_nodeID(source_static_symbol_table.find(symbol_name)->second);
 
@@ -2355,7 +2345,7 @@ void tree_manager::merge_tree_managers(const tree_managerRef& source_tree_manage
                     static_function_header_symbol_table.find(symbol_name + "-" + symbol_scope) !=
                         static_function_header_symbol_table.end())
             {
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+               INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level,
                               "---Already present in destination static symbol table");
                /// static function or var_decl with a conflicting name
                /// so we fix the name...
@@ -2383,17 +2373,17 @@ void tree_manager::merge_tree_managers(const tree_managerRef& source_tree_manage
                {
                   static_symbol_table.insert(symbol_name + "-" + symbol_scope);
                }
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
+               INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "<--");
                continue;
             }
          }
          else
          {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Not Static");
+            INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "-->Not Static");
             auto gst_it = global_decl_symbol_table.find(symbol_name + "-" + symbol_scope);
             if(gst_it == global_decl_symbol_table.end())
             {
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Not yet in global decl symbol table");
+               INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "---Not yet in global decl symbol table");
                unsigned int new_index;
                new_index = new_tree_node_id(ti_source.first);
                global_decl_symbol_table[symbol_name + "-" + symbol_scope] = remap[ti_source.first] = new_index;
@@ -2407,13 +2397,13 @@ void tree_manager::merge_tree_managers(const tree_managerRef& source_tree_manage
                }
                not_yet_remapped.insert(ti_source.first);
                to_be_visited.insert(ti_source.first);
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
+               INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "<--");
+               INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "<--");
                continue;
             }
             else
             {
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Already in global decl symbol table");
+               INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "---Already in global decl symbol table");
                if((tn->get_kind() == function_decl_K
                    //                     and
                    //                     (
@@ -2436,7 +2426,7 @@ void tree_manager::merge_tree_managers(const tree_managerRef& source_tree_manage
                    !(GetPointer<function_decl>(tn))->include_name.empty() and
                    (GetPointer<function_decl>(tn))->include_name != "<built-in>"))
                {
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---but... forced overwriting");
+                  INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "---but... forced overwriting");
                   /// The following statements force ti_source.first to overwrite gst_it->second
                   not_yet_remapped.insert(ti_source.first);
                   to_be_visited.insert(ti_source.first);
@@ -2456,16 +2446,16 @@ void tree_manager::merge_tree_managers(const tree_managerRef& source_tree_manage
                   remap[ti_source.first] = gst_it->second;
                }
             }
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
+            INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "<--");
          }
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
+         INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "<--");
       }
       else
       {
          /// already performed
       }
    }
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Remapped declaration nodes");
+   INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "<--Remapped declaration nodes");
    /// tree node visitor
    tree_node_reached TNR(remap, not_yet_remapped, tree_managerRef(this, null_deleter()));
    auto it_to_be_visited_end = to_be_visited.end();
@@ -2482,37 +2472,37 @@ void tree_manager::merge_tree_managers(const tree_managerRef& source_tree_manage
       if(remap.find(function_decl_node.first) == remap.end())
       {
          remap[function_decl_node.first] = new_tree_node_id(function_decl_node.first);
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+         INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level,
                         "Function decl: old " + STR(function_decl_node.first) + " - new " +
                             STR(remap[function_decl_node.first]));
          fd->visit(&TNR);
          not_yet_remapped.insert(function_decl_node.first);
       }
    }
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Already remapped tree_node");
+   INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "Already remapped tree_node");
    auto it_remap_end = remap.end();
    for(auto it_remap = remap.begin(); it_remap_end != it_remap; ++it_remap)
    {
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+      INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level,
                      "Original " + STR(it_remap->first) + " New " + STR(it_remap->second));
    }
 
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Starting remapping remaining nodes");
+   INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "Starting remapping remaining nodes");
    auto it_not_yet_remapped_end = not_yet_remapped.end();
    for(auto it_not_yet_remapped = not_yet_remapped.begin(); it_not_yet_remapped_end != it_not_yet_remapped;
        ++it_not_yet_remapped)
    {
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+      INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level,
                      "Original " + STR(*it_not_yet_remapped) + " New " + STR(remap[*it_not_yet_remapped]));
       TNIF.create_tree_node(remap[*it_not_yet_remapped],
                             source_tree_manager->get_tree_node_const(*it_not_yet_remapped));
 
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+      INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level,
                      "Type is " +
                          std::string(source_tree_manager->get_tree_node_const(*it_not_yet_remapped)->get_kind_text()));
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "DONE");
+      INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "DONE");
    }
-   if(debug_level >= DEBUG_LEVEL_PEDANTIC)
+   if(debug_level >= DEBUG_LEVEL_PARANOIC)
    {
       std::string raw_file_name = Param->getOption<std::string>(OPT_output_temporary_directory) + "after_" +
                                   STR(get_next_available_tree_node_id()) + ".raw";
@@ -2521,7 +2511,7 @@ void tree_manager::merge_tree_managers(const tree_managerRef& source_tree_manage
       raw_file << TM_this;
       raw_file.close();
    }
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Ended merging of new tree_manager");
+   INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "<--Ended merging of new tree_manager");
 }
 
 bool tree_manager::check_for_decl(const tree_nodeRef& tn, const tree_managerRef& TM_this, std::string& symbol_name,
@@ -2538,7 +2528,7 @@ bool tree_manager::check_for_decl(const tree_nodeRef& tn, const tree_managerRef&
    }
    if(GET_NODE(dn->name)->get_kind() == identifier_node_K)
    {
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+      INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level,
                      "---check_for_decl is considering: " + GetPointer<identifier_node>(GET_NODE(dn->name))->strg +
                          ":" + dn->include_name);
    }
@@ -2785,10 +2775,7 @@ unsigned int tree_manager::get_next_vers()
          }
       }
    }
-#ifndef NDEBUG
-   int function_debug_level = Param->GetFunctionDebugLevel(GET_CLASS(*this), __func__);
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, function_debug_level, "---Created ssa " + STR(next_vers));
-#endif
+   INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, GET_FUNCTION_DEBUG_LEVEL(Param), "---Created ssa " + STR(next_vers));
    return ++next_vers;
 }
 

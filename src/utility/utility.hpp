@@ -98,7 +98,7 @@
 /**
  * Macro returning the debug_level of a function
  */
-#define GET_FUNCTION_DEBUG_LEVEL() parameters->GetFunctionDebugLevel(GET_CLASS(*this), __func__)
+#define GET_FUNCTION_DEBUG_LEVEL(parameters) parameters->GetFunctionDebugLevel(GET_CLASS(*this), __func__)
 
 template <class G>
 std::string convert_to_binary(G _value, unsigned long long precision)
