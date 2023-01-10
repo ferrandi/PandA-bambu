@@ -125,7 +125,7 @@ jobs:
           config-args: ${{env.configure}} --enable-Werror
           jobs: ${{steps.setup.outputs.jobs}}
       - name: Upload PandA Bambu HLS AppImage for CI
-        if: ${{ env.package-name != '' }}
+        if: ${{ github.event_name == 'workflow_call' }}
         uses: ./.github/actions/storage-upload
         with:
           name: ${{env.package-name}}
@@ -135,7 +135,7 @@ jobs:
           password: "${{env.storage-token}}"
           storage-compression: false
       - name: Upload Panda Bambu HLS Release
-        if: ${{ env.package-name != '' }}
+        if: ${{ github.event_name == 'workflow_dispatch' }}
         shell: bash
         run: |
           APP_FILE="${{env.package-name}}.AppImage"
