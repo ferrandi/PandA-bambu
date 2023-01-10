@@ -38,26 +38,15 @@
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
  */
-
-/// Header include
 #include "parallel_memory_conn_binding.hpp"
 
-///. include
 #include "Parameter.hpp"
-
-/// circuit includes
-#include "structural_manager.hpp"
-#include "structural_objects.hpp"
-
-/// HLS includes
 #include "hls.hpp"
 #include "hls_manager.hpp"
-
-/// HLS/binding/module
-#include "parallel_memory_fu_binding.hpp"
-
-/// HLS/functions
 #include "omp_functions.hpp"
+#include "parallel_memory_fu_binding.hpp"
+#include "structural_manager.hpp"
+#include "structural_objects.hpp"
 
 ParallelMemoryConnBinding::ParallelMemoryConnBinding(const BehavioralHelperConstRef _behavioral_helper,
                                                      const ParameterConstRef _parameters)

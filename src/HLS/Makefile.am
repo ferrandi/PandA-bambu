@@ -878,8 +878,6 @@ noinst_HEADERS += virtual_components/generic_obj.hpp \
                  virtual_components/register_obj.hpp \
                  virtual_components/mux_obj.hpp \
                  virtual_components/adder_conn_obj.hpp \
-                 virtual_components/multiplier_conn_obj.hpp \
-                 virtual_components/bitfield_obj.hpp \
                  virtual_components/commandport_obj.hpp \
                  virtual_components/dataport_obj.hpp \
                  virtual_components/conv_conn_obj.hpp \

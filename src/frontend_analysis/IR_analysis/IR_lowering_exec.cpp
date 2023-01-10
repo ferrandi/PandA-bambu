@@ -1073,6 +1073,7 @@ DesignFlowStep_Status IR_lowering::InternalExec()
             gimple_phi::DefEdgeList to_be_replaced;
             for(const auto& def_edge : pn->CGetDefEdgesList())
             {
+               THROW_ASSERT(tree_helper::IsSameType(pn->res, def_edge.first), "required a conversion");
                const auto def_kind = GET_NODE(def_edge.first)->get_kind();
                if(def_kind == addr_expr_K || def_kind == view_convert_expr_K || def_kind == nop_expr_K ||
                   def_kind == pointer_plus_expr_K || def_kind == minus_expr_K || def_kind == constructor_K)

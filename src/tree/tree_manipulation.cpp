@@ -2581,46 +2581,9 @@ tree_nodeRef tree_manipulation::CreateUnsigned(const tree_nodeConstRef& signed_t
    const auto int_signed_type = GetPointer<const integer_type>(signed_type);
    if(not int_signed_type)
    {
-      /// THROW_ASSERT cannot be used since this function has to return an empty
-      /// tree node in release
-      THROW_UNREACHABLE(signed_type->ToString() + " is not an integer type");
-      return tree_nodeRef();
+      THROW_ERROR(signed_type->ToString() + " is not an integer type");
    }
    THROW_ASSERT(not int_signed_type->unsigned_flag, signed_type->ToString() + " is not signed");
-   if(not int_signed_type->name)
-   {
-      /// THROW_ASSERT cannot be used since this function has to return an empty
-      /// tree node in release
-      THROW_UNREACHABLE(signed_type->ToString() + " has not a name");
-      return tree_nodeRef();
-   }
-
-   const auto type_name = GetPointer<const decl_node>(GET_CONST_NODE(int_signed_type->name));
-
-   if(not type_name)
-   {
-      /// THROW_ASSERT cannot be used since this function has to return an empty
-      /// tree node in release
-      THROW_UNREACHABLE(signed_type->ToString() + " has not a type decl associated");
-      return tree_nodeRef();
-   }
-
-   if(type_name->include_name != "<built-in>")
-   {
-      /// THROW_ASSERT cannot be used since this function has to return an empty
-      /// tree node in release
-      THROW_UNREACHABLE(signed_type->ToString() + " is not builtin");
-      return tree_nodeRef();
-   }
-
-   const auto in = GetPointer<identifier_node>(GET_CONST_NODE(type_name->name));
-   if(not in)
-   {
-      /// THROW_ASSERT cannot be used since this function has to return an empty
-      /// tree node in release
-      THROW_UNREACHABLE(signed_type->ToString() + " has not a name");
-      return tree_nodeRef();
-   }
 
    std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> ut_schema;
 
@@ -2628,18 +2591,9 @@ tree_nodeRef tree_manipulation::CreateUnsigned(const tree_nodeConstRef& signed_t
    const auto quals = int_signed_type->qual;
    if(quals != TreeVocabularyTokenTypes_TokenEnum::FIRST_TOKEN)
    {
-      /// THROW_ASSERT cannot be used since this function has to return an empty
-      /// tree node in release
-      THROW_UNREACHABLE(signed_type->ToString() + " has qualifiers");
-      return tree_nodeRef();
+      THROW_ERROR(signed_type->ToString() + " has qualifiers");
    }
-   if(int_signed_type->unql)
-   {
-      /// THROW_ASSERT cannot be used since this function has to return an empty
-      /// tree node in release
-      THROW_UNREACHABLE(signed_type->ToString() + " has unqualified");
-      return tree_nodeRef();
-   }
+
    ut_schema[TOK(TOK_SIZE)] = STR(int_signed_type->size->index);
    ut_schema[TOK(TOK_ALGN)] = STR(int_signed_type->algn);
    ut_schema[TOK(TOK_UNSIGNED)] = STR(false);
@@ -2681,16 +2635,35 @@ tree_nodeRef tree_manipulation::CreateUnsigned(const tree_nodeConstRef& signed_t
    else
    {
       std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> in_schema;
-      std::string unsigned_str = "unsigned " + in->strg;
-      in_schema[TOK(TOK_STRG)] = unsigned_str;
-      auto find_in = TreeM->find(identifier_node_K, in_schema);
-      if(not find_in)
+      if(int_signed_type->name)
       {
-         find_in = TreeM->new_tree_node_id();
-         TreeM->create_tree_node(find_in, identifier_node_K, in_schema);
-      }
-      ut_schema[TOK(TOK_NAME)] = STR(find_in);
+         const auto type_name = GetPointer<const decl_node>(GET_CONST_NODE(int_signed_type->name));
+         if(not type_name)
+         {
+            THROW_ERROR(signed_type->ToString() + " has not a type decl associated");
+         }
 
+         if(type_name->include_name != "<built-in>")
+         {
+            THROW_ERROR(signed_type->ToString() + " is not builtin");
+         }
+
+         const auto in = GetPointer<identifier_node>(GET_CONST_NODE(type_name->name));
+         if(not in)
+         {
+            THROW_ERROR(signed_type->ToString() + " has not a name");
+         }
+
+         std::string unsigned_str = "unsigned " + in->strg;
+         in_schema[TOK(TOK_STRG)] = unsigned_str;
+         auto find_in = TreeM->find(identifier_node_K, in_schema);
+         if(not find_in)
+         {
+            find_in = TreeM->new_tree_node_id();
+            TreeM->create_tree_node(find_in, identifier_node_K, in_schema);
+         }
+         ut_schema[TOK(TOK_NAME)] = STR(find_in);
+      }
       const auto new_tree_node_id = TreeM->new_tree_node_id();
       TreeM->create_tree_node(new_tree_node_id, integer_type_K, ut_schema);
       return TreeM->GetTreeReindex(new_tree_node_id);
