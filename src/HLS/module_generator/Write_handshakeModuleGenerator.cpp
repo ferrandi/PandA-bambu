@@ -97,6 +97,7 @@ void Write_handshakeModuleGenerator::InternalExec(std::ostream& out, const modul
    out << "assign " << _ports_out[o_out1].name << " = " << _ports_out[o_out1].name << "_0;\n";
    out << "always @(*)\n";
    out << "begin\n";
+   out << "  " << _ports_out[o_out1].name << "_0 = 0;\n";
    out << "  " << _ports_out[o_out1].name << "_0 = (" << _ports_in[i_in1].name << ">=" << _ports_out[o_out1].type_size
        << ")?" << _ports_in[i_in2].name << ":(" << _ports_out[o_out1].name << "_0^((((BITSIZE_" << _ports_in[i_in2].name
        << ">=" << _ports_out[o_out1].type_size << "?" << _ports_in[i_in2].name << ":{{(" << _ports_out[o_out1].type_size

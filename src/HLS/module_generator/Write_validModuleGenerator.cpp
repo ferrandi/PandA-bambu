@@ -78,10 +78,11 @@ void Write_validModuleGenerator::InternalExec(std::ostream& out, const module* /
 {
    THROW_ASSERT(_ports_in.size() >= i_last, "");
    THROW_ASSERT(_ports_out.size() >= o_last, "");
-   out << "reg [" << _ports_out[o_out1].type_size << "-1:0] reg_" << _ports_out[o_out1].name << ";\n";
+   out << "reg [" << (_ports_out[o_out1].type_size - 1) << ":0] reg_" << _ports_out[o_out1].name << ";\n";
    out << "assign " << _ports_out[o_out1].name << " = reg_" << _ports_out[o_out1].name << ";\n";
    out << "always @(*)\n";
    out << "begin\n";
+   out << "  reg_" << _ports_out[o_out1].name << " = 0;\n";
    out << "  reg_" << _ports_out[o_out1].name << " = (" << _ports_in[i_in1].name << ">=" << _ports_out[o_out1].type_size
        << ")?" << _ports_in[i_in2].name << ":(reg_" << _ports_out[o_out1].name << "^((((BITSIZE_"
        << _ports_in[i_in2].name << ">=" << _ports_out[o_out1].type_size << "?" << _ports_in[i_in2].name << ":{{("
