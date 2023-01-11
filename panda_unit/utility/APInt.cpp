@@ -136,11 +136,3 @@ BOOST_AUTO_TEST_CASE(apint_shr)
    BOOST_REQUIRE_EQUAL(cd >> 11, d >> 11);
    BOOST_REQUIRE_EQUAL(cd >> 63, d >> 63);
 }
-
-BOOST_AUTO_TEST_CASE(apint_str)
-{
-   const APInt a = 5;
-
-   const auto a_str = a.str(2);
-   BOOST_REQUIRE_EQUAL("101", a_str);
-}

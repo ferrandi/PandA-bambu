@@ -341,12 +341,6 @@ APInt::bw_t APInt::minBitwidth(bool sign) const
                  (_data.sign() < 0 ? static_cast<bw_t>(std::numeric_limits<bw_t>::max()) : bw);
 }
 
-std::string APInt::str(int base) const
-{
-   std::unique_ptr<char, void (*)(void*)> res(mpz_get_str(NULL, base, _data.backend().data()), std::free);
-   return std::string(res.get());
-}
-
 APInt APInt::getMaxValue(bw_t bw)
 {
    return (APInt(1) << bw) - 1;
@@ -369,14 +363,12 @@ APInt APInt::getSignedMinValue(bw_t bw)
 
 std::ostream& operator<<(std::ostream& str, const APInt& v)
 {
-   str << v.str();
+   str << v._data;
    return str;
 }
 
 std::istream& operator>>(std::istream& str, APInt& v)
 {
-   APInt::APInt_internal t;
-   str >> t;
-   v = APInt(t);
+   str >> v._data;
    return str;
 }

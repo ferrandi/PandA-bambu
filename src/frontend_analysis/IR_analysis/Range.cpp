@@ -2467,7 +2467,7 @@ void Range::print(std::ostream& OS) const
       }
       else
       {
-         OS << ")" << l.str() << ",";
+         OS << ")" << l << ",";
       }
       OS << +bw << ",";
       if(u == Max)
@@ -2476,7 +2476,7 @@ void Range::print(std::ostream& OS) const
       }
       else
       {
-         OS << u.str() << "(";
+         OS << u << "(";
       }
    }
    else
@@ -2487,7 +2487,7 @@ void Range::print(std::ostream& OS) const
       }
       else
       {
-         OS << "[" << l.str() << ",";
+         OS << "[" << l << ",";
       }
       OS << +bw << ",";
       if(u == Max)
@@ -2496,7 +2496,7 @@ void Range::print(std::ostream& OS) const
       }
       else
       {
-         OS << u.str() << "]";
+         OS << u << "]";
       }
    }
 }

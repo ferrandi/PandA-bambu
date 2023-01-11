@@ -146,16 +146,16 @@ class APInt
       return static_cast<T>(static_cast<U>(_data & std::numeric_limits<U>::max()));
    }
 
-   std::string str(int base = 10) const;
-
    static APInt getMaxValue(bw_t bw);
    static APInt getMinValue(bw_t bw);
    static APInt getSignedMaxValue(bw_t bw);
    static APInt getSignedMinValue(bw_t bw);
+
+   friend std::ostream& operator<<(std::ostream& str, const APInt& v);
+   friend std::istream& operator>>(std::istream& str, APInt& v);
 };
 
 std::ostream& operator<<(std::ostream& str, const APInt& v);
-
 std::istream& operator>>(std::istream& str, APInt& v);
 
 #endif
