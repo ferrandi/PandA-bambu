@@ -184,7 +184,7 @@ std::string HLS_manager::get_constant_string(unsigned int node_id, unsigned long
    else if(tree_helper::IsComplexType(node_type))
    {
       const auto cc = GetPointerS<const complex_cst>(GET_CONST_NODE(node));
-      auto* rcc = GetPointer<real_cst>(GET_NODE(cc->real));
+      const auto rcc = GetPointer<const real_cst>(GET_CONST_NODE(cc->real));
       std::string trimmed_value_r;
       if(rcc)
       {
@@ -197,10 +197,9 @@ std::string HLS_manager::get_constant_string(unsigned int node_id, unsigned long
       }
       else
       {
-         auto ull_value = tree_helper::GetConstValue(cc->real);
-         trimmed_value_r = convert_to_binary(ull_value, precision / 2);
+         trimmed_value_r = convert_to_binary(tree_helper::GetConstValue(cc->real), precision / 2);
       }
-      auto* icc = GetPointer<real_cst>(GET_NODE(cc->imag));
+      const auto icc = GetPointer<const real_cst>(GET_CONST_NODE(cc->imag));
       std::string trimmed_value_i;
       if(icc)
       {
@@ -213,15 +212,13 @@ std::string HLS_manager::get_constant_string(unsigned int node_id, unsigned long
       }
       else
       {
-         auto ull_value = tree_helper::GetConstValue(cc->imag);
-         trimmed_value_i = convert_to_binary(ull_value, precision / 2);
+         trimmed_value_i = convert_to_binary(tree_helper::GetConstValue(cc->imag), precision / 2);
       }
       trimmed_value = trimmed_value_i + trimmed_value_r;
    }
    else
    {
-      auto ull_value = tree_helper::GetConstValue(node);
-      trimmed_value = convert_to_binary(ull_value, precision);
+      trimmed_value = convert_to_binary(tree_helper::GetConstValue(node), precision);
    }
    return trimmed_value;
 }

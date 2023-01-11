@@ -640,8 +640,7 @@ void mux_connection_binding::determine_connection(const vertex& op, const HLS_ma
    {
       /// create connection with the constant
       THROW_ASSERT(precision, "a precision greater than 0 is expected");
-
-      std::string string_value = convert_to_binary(static_cast<unsigned long long int>(constant_value), precision);
+      auto string_value = convert_to_binary(constant_value, precision);
       PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "       - Constant value: " + STR(constant_value));
       PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "         - " + string_value);
       std::string param_name;
@@ -651,16 +650,16 @@ void mux_connection_binding::determine_connection(const vertex& op, const HLS_ma
          PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "         - param: " + param_name);
          string_value = STR(m_sym->get_address());
       }
-      generic_objRef C_obj = HLS->Rconn->get_constant_obj(string_value, param_name, precision);
+      const auto C_obj = HLS->Rconn->get_constant_obj(string_value, param_name, precision);
       create_single_conn(data, op, C_obj, fu_obj, port_num, port_index, 0, precision, is_not_a_phi);
       return;
    }
-   const BehavioralHelperConstRef behavioral_helper = FB->CGetBehavioralHelper();
+   const auto behavioral_helper = FB->CGetBehavioralHelper();
    if(behavioral_helper->is_a_constant(tree_var))
    {
       THROW_ASSERT(precision, "a precision greater than 0 is expected: " + STR(precision));
-      std::string C_value = HLSMgr->get_constant_string(tree_var, precision);
-      generic_objRef C_obj = HLS->Rconn->get_constant_obj(C_value, "", precision);
+      const auto C_value = HLSMgr->get_constant_string(tree_var, precision);
+      const auto C_obj = HLS->Rconn->get_constant_obj(C_value, "", precision);
       PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                     "       - Tree constant value: " + behavioral_helper->PrintVariable(tree_var));
       PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "         - " + C_value);

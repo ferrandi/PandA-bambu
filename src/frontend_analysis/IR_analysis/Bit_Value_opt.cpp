@@ -1569,8 +1569,7 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                         bool is_op1_zero = false;
                         if(GetPointer<const integer_cst>(GET_CONST_NODE(op1)))
                         {
-                           const auto ull_value = tree_helper::GetConstValue(op1);
-                           if(ull_value == 0)
+                           if(tree_helper::GetConstValue(op1) == 0)
                            {
                               is_op1_zero = true;
                            }
