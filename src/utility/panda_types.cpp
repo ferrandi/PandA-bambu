@@ -45,12 +45,7 @@
 unsigned long long panda::integer_cst_bitsize(const integer_cst_t& ic)
 {
 #ifdef UNLIMITED_PRECISION
-   if(ic < -1)
-   {
-      const integer_cst_t neg = ~ic;
-      return mpz_sizeinbase(neg.backend().data(), 2) + 1ull;
-   }
-   return mpz_sizeinbase(ic.backend().data(), 2);
+   return ic.minBitwidth(ic < 0);
 #else
    if(ic == 0 || ic == -1)
    {

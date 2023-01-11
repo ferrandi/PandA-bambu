@@ -842,7 +842,7 @@ static std::string ConvertBitsToString(const std::vector<bool>& bits, const std:
 }
 #endif
 
-template <typename T, typename = typename std::enable_if<std::is_arithmetic<T>::value, T>::type>
+template <typename T>
 static T ConvertHexToNumber(const std::string& hex0)
 {
    uint64_t x;
@@ -850,7 +850,7 @@ static T ConvertHexToNumber(const std::string& hex0)
    ss << std::hex << hex0;
    ss >> x;
 
-   return static_cast<T>(x);
+   return T(x);
 }
 
 static void ParseKLutNetwork(const mockturtle::klut_network& klut, std::vector<klut_network_node>& luts)

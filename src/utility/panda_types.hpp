@@ -43,10 +43,10 @@
 #ifndef PANDA_TYPES_HPP
 #define PANDA_TYPES_HPP
 
-// #define UNLIMITED_PRECISION
+#define UNLIMITED_PRECISION
 #ifdef UNLIMITED_PRECISION
-#include <boost/multiprecision/gmp.hpp>
-using integer_cst_t = boost::multiprecision::mpz_int;
+#include "APInt.hpp"
+using integer_cst_t = APInt;
 #else
 using integer_cst_t = long long;
 #endif
