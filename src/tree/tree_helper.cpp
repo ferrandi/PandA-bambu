@@ -4599,7 +4599,7 @@ integer_cst_t tree_helper::GetConstValue(const tree_nodeConstRef& tn, bool is_si
    THROW_ASSERT(tn != nullptr, "unexpected condition");
    if(tn->get_kind() == tree_reindex_K)
    {
-      return GetConstValue(GET_CONST_NODE(tn));
+      return GetConstValue(GET_CONST_NODE(tn), is_signed);
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "-->Getting integer const value");
    const auto ic = GetPointer<const integer_cst>(tn);
@@ -5192,9 +5192,9 @@ void tree_helper::get_array_dim_and_bitsize(const tree_managerConstRef& TM, cons
       {
          max_value = GetConstValue(it->max);
       }
-      THROW_ASSERT(max_value >= min_value, "");
-      const auto range_domain = static_cast<unsigned long long>(max_value - min_value) + 1;
-      dims.push_back(range_domain);
+      const auto range_domain = max_value - min_value + 1;
+      THROW_ASSERT(range_domain >= 0, "Negative range not expected");
+      dims.push_back(static_cast<unsigned long long>(range_domain));
    }
    THROW_ASSERT(at->elts, "elements type expected");
    tree_nodeRef elts = GET_NODE(at->elts);

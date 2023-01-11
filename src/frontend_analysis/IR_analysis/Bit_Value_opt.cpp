@@ -266,6 +266,7 @@ static integer_cst_t convert_bitvalue_to_integer_cst(const std::string& bit_valu
 
       const_value |= integer_cst_t(UINT64_MAX << index_val);
 #endif
+      THROW_ASSERT(const_value < 0, "");
    }
    THROW_WARNING_ASSERT(const_value == oldval,
                         "Constant bitstring " + bit_values + " was " + STR(oldval) + " now is " + STR(const_value));
@@ -425,8 +426,7 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                         {
                            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                           "---Cond expr with constant condition");
-                           const auto ull_value = tree_helper::GetConstValue(me->op0);
-                           const auto new_val = ull_value ? me->op1 : me->op2;
+                           const auto new_val = tree_helper::GetConstValue(me->op0) ? me->op1 : me->op2;
                            propagateValue(ssa, TM, ga->op0, new_val, DEBUG_CALLSITE);
                         }
                         else
@@ -582,13 +582,13 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                      unsigned int trailing_zero = 0;
                      if(!is_op0_ssa)
                      {
-                        const auto ull_value = tree_helper::GetConstValue(me->op0, false);
-                        s0 = convert_to_binary(ull_value, BitLatticeManipulator::Size(me->op0));
+                        const auto uvalue = tree_helper::GetConstValue(me->op0, false);
+                        s0 = convert_to_binary(uvalue, BitLatticeManipulator::Size(me->op0));
                      }
                      if(!is_op1_ssa)
                      {
-                        const auto ull_value = tree_helper::GetConstValue(me->op1, false);
-                        s1 = convert_to_binary(ull_value, BitLatticeManipulator::Size(me->op1));
+                        const auto uvalue = tree_helper::GetConstValue(me->op1, false);
+                        s1 = convert_to_binary(uvalue, BitLatticeManipulator::Size(me->op1));
                      }
 
                      for(auto s0it = s0.rbegin(), s1it = s1.rbegin(), s0end = s0.rend(), s1end = s1.rend();
@@ -637,7 +637,8 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                         }
                         else
                         {
-                           const auto cst_val = tree_helper::GetConstValue(me->op0);
+                           const auto cst_val =
+                               tree_helper::GetConstValue(me->op0, tree_helper::IsSignedIntegerType(op0));
 #ifdef UNLIMITED_PRECISION
                            const auto cst_value = cst_val >> trailing_zero;
 #else
@@ -684,13 +685,14 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                         }
                         else
                         {
-                           const auto cst_val = tree_helper::GetConstValue(me->op1);
+                           const auto cst_val =
+                               tree_helper::GetConstValue(me->op1, tree_helper::IsSignedIntegerType(op1));
 #ifdef UNLIMITED_PRECISION
                            const auto cst_value = cst_val >> trailing_zero;
 #else
                            const auto cst_value = [&]() {
                               const auto val = static_cast<long long int>(cst_val);
-                              if(tree_helper::IsSignedIntegerType(op0))
+                              if(tree_helper::IsSignedIntegerType(op1))
                               {
                                  return integer_cst_t(val >> trailing_zero);
                               }
@@ -863,7 +865,7 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                            else
                            {
                               THROW_ASSERT(op0->get_kind() == integer_cst_K, "unexpected case");
-                              const auto cst_val = tree_helper::GetConstValue(op0);
+                              const auto cst_val = tree_helper::GetConstValue(op0, false);
                               bit_values_op0 = convert_to_binary(cst_val, tree_helper::Size(op0));
                               for(unsigned int index = 0; index < bit_values_op0.size() && cst_val != 0; ++index)
                               {
@@ -901,7 +903,7 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                            else
                            {
                               THROW_ASSERT(op1->get_kind() == integer_cst_K, "unexpected case");
-                              const auto cst_val = tree_helper::GetConstValue(op1);
+                              const auto cst_val = tree_helper::GetConstValue(op1, false);
                               bit_values_op1 = convert_to_binary(cst_val, tree_helper::Size(op1));
                               for(unsigned int index = 0; index < bit_values_op1.size() && cst_val != 0; ++index)
                               {
@@ -1085,7 +1087,7 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                            else
                            {
                               THROW_ASSERT(op0->get_kind() == integer_cst_K, "unexpected case");
-                              const auto cst_val = tree_helper::GetConstValue(op0);
+                              const auto cst_val = tree_helper::GetConstValue(op0, false);
                               bit_values_op0 = convert_to_binary(cst_val, tree_helper::Size(op0));
                               if(cst_val == 0)
                               {
@@ -1160,7 +1162,7 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                         else
                         {
                            THROW_ASSERT(op1->get_kind() == integer_cst_K, "unexpected case");
-                           const auto cst_val = tree_helper::GetConstValue(op1);
+                           const auto cst_val = tree_helper::GetConstValue(op1, false);
                            bit_values_op1 = convert_to_binary(cst_val, tree_helper::Size(op1));
                            if(cst_val == 0)
                            {
@@ -1222,7 +1224,8 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
 
                            if(!is_op0_ssa)
                            {
-                              const auto cst_val = tree_helper::GetConstValue(op0);
+                              const auto cst_val =
+                                  tree_helper::GetConstValue(op0, tree_helper::IsSignedIntegerType(op0_type));
                               if(ssa->bit_values.size() <= shift_const)
                               {
                                  is_op0_null = true;
@@ -1300,7 +1303,8 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
 
                            if(!is_op1_ssa)
                            {
-                              const auto cst_val = tree_helper::GetConstValue(op1);
+                              const auto cst_val =
+                                  tree_helper::GetConstValue(op1, tree_helper::IsSignedIntegerType(op1_type));
                               if(ssa->bit_values.size() <= shift_const)
                               {
                                  is_op1_null = true;
@@ -1473,7 +1477,7 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
 #endif
                               if(GetPointer<const integer_cst>(GET_CONST_NODE(b_node)))
                               {
-                                 const auto cst_val = tree_helper::GetConstValue(b_node);
+                                 const auto cst_val = tree_helper::GetConstValue(b_node, false);
                                  const auto b_node_val = TM->CreateUniqueIntegerCst(
                                      cst_val & ((integer_cst_t(1) << shift_const) - 1), b_type);
                                  TM->ReplaceTreeNode(stmt, ga->op1,
@@ -1687,16 +1691,16 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                         bool is_zero0 = s0.find_first_not_of("0X") == std::string::npos;
                         if(!is_op0_ssa)
                         {
-                           const auto ull_value = tree_helper::GetConstValue(op0);
-                           is_zero0 = ull_value == 0;
-                           s0 = convert_to_binary(ull_value, BitLatticeManipulator::Size(op0));
+                           const auto uvalue = tree_helper::GetConstValue(op0, false);
+                           is_zero0 = uvalue == 0;
+                           s0 = convert_to_binary(uvalue, BitLatticeManipulator::Size(op0));
                         }
                         bool is_zero1 = s1.find_first_not_of("0X") == std::string::npos;
                         if(!is_op1_ssa)
                         {
-                           const auto ull_value = tree_helper::GetConstValue(op1);
-                           is_zero1 = ull_value == 0;
-                           s1 = convert_to_binary(ull_value, BitLatticeManipulator::Size(op1));
+                           const auto uvalue = tree_helper::GetConstValue(op1, false);
+                           is_zero1 = uvalue == 0;
+                           s1 = convert_to_binary(uvalue, BitLatticeManipulator::Size(op1));
                         }
                         if(is_zero0 || is_zero1)
                         {
@@ -1763,7 +1767,8 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                               }
                               else
                               {
-                                 const auto cst_val = tree_helper::GetConstValue(op0);
+                                 const auto cst_val =
+                                     tree_helper::GetConstValue(op0, tree_helper::IsSignedIntegerType(op0));
                                  TM->ReplaceTreeNode(stmt, op0,
                                                      TM->CreateUniqueIntegerCst(cst_val >> trailing_zero, op0_op_type));
                               }
@@ -1787,7 +1792,8 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                               }
                               else
                               {
-                                 const auto cst_val = tree_helper::GetConstValue(op1);
+                                 const auto cst_val =
+                                     tree_helper::GetConstValue(op1, tree_helper::IsSignedIntegerType(op1));
                                  TM->ReplaceTreeNode(stmt, op1,
                                                      TM->CreateUniqueIntegerCst(cst_val >> trailing_zero, op1_op_type));
                               }
@@ -1865,8 +1871,7 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                         {
                            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                           "---Cond expr with constant condition");
-                           const auto ull_value = tree_helper::GetConstValue(me->op0);
-                           const auto val = ull_value ? me->op1 : me->op2;
+                           const auto val = tree_helper::GetConstValue(me->op0, false) ? me->op1 : me->op2;
 
                            condPropageValue(val, DEBUG_CALLSITE);
                         }
@@ -1895,12 +1900,12 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                            else
                            {
                               THROW_ASSERT(GET_CONST_NODE(op0)->get_kind() == integer_cst_K, "unexpected condition");
-                              const auto ull_value = tree_helper::GetConstValue(op0);
+                              const auto uvalue = tree_helper::GetConstValue(op0, false);
                               s0_precision =
-                                  ull_value ? tree_helper::Size(GET_CONST_NODE(op0)) : BitLatticeManipulator::Size(op0);
-                              s0 = convert_to_binary(ull_value, s0_precision);
-                              is_s0_null = ull_value == 0;
-                              is_s0_one = ull_value == 1;
+                                  uvalue ? tree_helper::Size(GET_CONST_NODE(op0)) : BitLatticeManipulator::Size(op0);
+                              s0 = convert_to_binary(uvalue, s0_precision);
+                              is_s0_null = uvalue == 0;
+                              is_s0_one = uvalue == 1;
                            }
                            unsigned long long s1_precision = 0;
                            bool is_s1_null = false;
@@ -1921,12 +1926,12 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                            else
                            {
                               THROW_ASSERT(GET_CONST_NODE(op1)->get_kind() == integer_cst_K, "unexpected condition");
-                              const auto ull_value = tree_helper::GetConstValue(op1);
+                              const auto uvalue = tree_helper::GetConstValue(op1, false);
                               s1_precision =
-                                  ull_value ? tree_helper::Size(GET_CONST_NODE(op1)) : BitLatticeManipulator::Size(op1);
-                              s1 = convert_to_binary(ull_value, s1_precision);
-                              is_s1_null = ull_value == 0;
-                              is_s1_one = ull_value == 1;
+                                  uvalue ? tree_helper::Size(GET_CONST_NODE(op1)) : BitLatticeManipulator::Size(op1);
+                              s1 = convert_to_binary(uvalue, s1_precision);
+                              is_s1_null = uvalue == 0;
+                              is_s1_one = uvalue == 1;
                            }
 
                            unsigned long long minimum_precision = std::min(s0_precision, s1_precision);
@@ -1975,7 +1980,8 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                               }
                               else
                               {
-                                 const auto cst_val = tree_helper::GetConstValue(op0);
+                                 const auto cst_val =
+                                     tree_helper::GetConstValue(op0, tree_helper::IsSignedIntegerType(op0));
                                  TM->ReplaceTreeNode(stmt, me->op1,
                                                      TM->CreateUniqueIntegerCst(cst_val >> trailing_eq, op0_op_type));
                               }
@@ -2000,7 +2006,8 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                               }
                               else
                               {
-                                 const auto cst_val = tree_helper::GetConstValue(op1);
+                                 const auto cst_val =
+                                     tree_helper::GetConstValue(op1, tree_helper::IsSignedIntegerType(op1));
                                  TM->ReplaceTreeNode(stmt, me->op2,
                                                      TM->CreateUniqueIntegerCst(cst_val >> trailing_eq, op1_op_type));
                               }
@@ -2454,9 +2461,7 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                                           std::swap(bae_op0, bae_op1);
                                        }
                                        const auto bae_mask_value = tree_helper::GetConstValue(bae_op1);
-                                       const auto masked_value =
-                                           (bae_mask_value &
-                                            (integer_cst_t(1) << static_cast<unsigned int>(pos_value)));
+                                       const auto masked_value = (bae_mask_value & (integer_cst_t(1) << pos_value));
                                        if(masked_value && GET_CONST_NODE(bae_op0)->get_kind() != integer_cst_K)
                                        {
                                           INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
@@ -2605,20 +2610,22 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                                     {
 #ifdef UNLIMITED_PRECISION
                                        const auto res_value =
-                                           tree_helper::GetConstValue(rse->op0) >> static_cast<unsigned int>(pos_value);
+                                           tree_helper::GetConstValue(rse->op0,
+                                                                      tree_helper::IsSignedIntegerType(rse->op0)) >>
+                                           pos_value;
 #else
                                        const auto res_value = [&]() {
                                           if(tree_helper::IsSignedIntegerType(rse->op0))
                                           {
                                              auto val = static_cast<long long>(tree_helper::GetConstValue(rse->op0));
-                                             val = (val >> static_cast<unsigned int>(pos_value));
+                                             val = (val >> pos_value);
                                              return integer_cst_t(val);
                                           }
                                           else
                                           {
                                              auto val =
                                                  static_cast<unsigned long long>(tree_helper::GetConstValue(rse->op0));
-                                             val = (val >> static_cast<unsigned int>(pos_value));
+                                             val = (val >> pos_value);
                                              return integer_cst_t(val);
                                           }
                                        }();
@@ -3029,21 +3036,22 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                         {
 #ifdef UNLIMITED_PRECISION
                            const auto res_value =
-                               ((tree_helper::GetConstValue(ebe->op0) >> static_cast<unsigned int>(pos_value)) & 1) !=
-                               0;
+                               ((tree_helper::GetConstValue(ebe->op0, tree_helper::IsSignedIntegerType(ebe->op0)) >>
+                                 pos_value) &
+                                1) != 0;
 #else
                            const auto res_value = [&]() -> bool {
                               if(tree_helper::IsSignedIntegerType(ebe->op0))
                               {
                                  auto val = static_cast<long long>(tree_helper::GetConstValue(ebe->op0));
-                                 val = (val >> static_cast<unsigned int>(pos_value)) & 1;
+                                 val = (val >> pos_value) & 1;
                                  return val;
                               }
                               else
                               {
                                  auto val = static_cast<unsigned long long>(
                                      static_cast<long long>(tree_helper::GetConstValue(ebe->op0)));
-                                 val = (val >> static_cast<unsigned int>(pos_value)) & 1;
+                                 val = (val >> pos_value) & 1;
                                  return val;
                               }
                            }();
