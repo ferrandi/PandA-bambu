@@ -58,6 +58,7 @@
 #include "string_manipulation.hpp"
 #include "token_interface.hpp"
 #include "tree_helper.hpp"
+#include "utility.hpp"
 
 #include <boost/graph/random_spanning_tree.hpp>
 #include <random>

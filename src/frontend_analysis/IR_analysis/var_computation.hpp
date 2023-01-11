@@ -44,13 +44,9 @@
 #ifndef VAR_COMPUTATION_HPP
 #define VAR_COMPUTATION_HPP
 
-/// Superclass include
 #include "function_frontend_flow_step.hpp"
 
 #include "refcount.hpp"
-#include "utility.hpp"
-
-#include "graph.hpp"
 
 /**
  * @name forward declarations

@@ -54,6 +54,7 @@
 #include "call_graph_manager.hpp"
 #include "design_flow_manager.hpp"
 #include "fu_binding.hpp"
+#include "function_behavior.hpp"
 #include "hls.hpp"
 #include "hls_constraints.hpp"
 #include "hls_manager.hpp"
@@ -69,6 +70,7 @@
 #include "tree_manager.hpp"
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
+#include "utility.hpp"
 
 #if HAVE_FROM_DISCREPANCY_BUILT
 #include "Discrepancy.hpp"

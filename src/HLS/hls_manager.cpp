@@ -40,41 +40,29 @@
  * Last modified by $Author$
  *
  */
-/// Header include
 #include "hls_manager.hpp"
 
-///. include
+#include "BackendFlow.hpp"
 #include "Parameter.hpp"
-
+#include "behavioral_helper.hpp"
+#include "call_graph_manager.hpp"
+#include "ext_tree_node.hpp"
+#include "function_behavior.hpp"
 #include "hls.hpp"
 #include "hls_constraints.hpp"
 #include "hls_target.hpp"
 #include "memory.hpp"
-
-#include "BackendFlow.hpp"
-
-#include "ext_tree_node.hpp"
-
-#include "call_graph_manager.hpp"
-
-#include "behavioral_helper.hpp"
-#include "function_behavior.hpp"
+#include "op_graph.hpp"
+#include "polixml.hpp"
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
 #include "tree_reindex.hpp"
-
-#include "polixml.hpp"
+#include "utility.hpp"
 #include "xml_dom_parser.hpp"
 #include "xml_helper.hpp"
 
-/// behavior include
-#include "op_graph.hpp"
-
 #if HAVE_TASTE
-/// intermediate_representation/aadl include
 #include "aadl_information.hpp"
-
-/// HLS/function_allocation include
 #include "functions.hpp"
 #endif
 #define MAX_BITWIDTH_SIZE 4096

@@ -38,12 +38,10 @@
  *
  */
 
-/// Superclass include
 #include "function_frontend_flow_step.hpp"
 
-/// utility include
 #include "custom_map.hpp"
-#include "utility.hpp"
+#include "panda_types.hpp"
 
 REF_FORWARD_DECL(bloc);
 CONSTREF_FORWARD_DECL(Loop);

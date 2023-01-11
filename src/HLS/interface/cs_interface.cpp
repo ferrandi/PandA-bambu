@@ -37,25 +37,23 @@
  * @author Nicola Saporetti <nicola.saporetti@gmail.com>
  *
  */
-
 #include "cs_interface.hpp"
+
 #include "BambuParameter.hpp"
 #include "copyrights_strings.hpp"
+#include "dbgPrintHelper.hpp"
 #include "hls.hpp"
 #include "hls_manager.hpp"
 #include "hls_target.hpp"
+#include "math_function.hpp"
 #include "memory.hpp"
 #include "memory_cs.hpp"
 #include "structural_manager.hpp"
 #include "structural_objects.hpp"
 #include "technology_manager.hpp"
+#include "utility.hpp"
 
-/// STD include
 #include <string>
-
-/// utility include
-#include "dbgPrintHelper.hpp"
-#include "math_function.hpp"
 
 cs_interface::cs_interface(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr, unsigned int _funId,
                            const DesignFlowManagerConstRef _design_flow_manager,

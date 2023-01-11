@@ -52,24 +52,21 @@
 #include "config_HAVE_TECHNOLOGY_BUILT.hpp"
 #include "config_HAVE_TUCANO_BUILT.hpp"
 
-/// STL include
-#include <algorithm>
-#include <utility>
-#include <vector>
-
+#include "NP_functionality.hpp"
 #include "custom_map.hpp"
+#include "exceptions.hpp"
+#include "refcount.hpp"
+#include "simple_indent.hpp"
+
+#if HAVE_KOALA_BUILT
 #include "custom_set.hpp"
+#endif
 
 #include <boost/preprocessor/seq/for_each.hpp>
 #include <ostream>
 #include <string>
-
-#include "simple_indent.hpp"
-#include "utility.hpp"
-
-#include "NP_functionality.hpp"
-#include "exceptions.hpp"
-#include "refcount.hpp"
+#include <utility>
+#include <vector>
 
 /**
  * @name Forward declarations.

@@ -48,10 +48,10 @@
 #include "config_HAVE_CIRCUIT_BUILT.hpp"
 #include "config_HAVE_EXPERIMENTAL.hpp"
 
-#include "custom_map.hpp"
 #include "refcount.hpp"
 #include "simple_indent.hpp"
 #include "utility.hpp"
+
 #include <ostream>
 #include <string>
 #include <vector>

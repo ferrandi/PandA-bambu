@@ -74,9 +74,10 @@
 #include "tree_node_dup.hpp"
 #include "tree_reindex.hpp"
 
-/// utility include
-#include "dbgPrintHelper.hpp"      // for DEBUG_LEVEL_
-#include "string_manipulation.hpp" // for GET_CLASS
+#include "dbgPrintHelper.hpp"
+#include "string_manipulation.hpp"
+#include "utility.hpp"
+
 #include <boost/algorithm/string/replace.hpp>
 
 #ifndef NDEBUG

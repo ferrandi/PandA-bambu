@@ -43,6 +43,10 @@
 #ifndef _TIME_MODEL_HPP_
 #define _TIME_MODEL_HPP_
 
+#include "refcount.hpp"
+#include "schedule.hpp"
+#include "target_device.hpp"
+
 #include <boost/version.hpp>
 
 #if BOOST_VERSION >= 104600
@@ -52,18 +56,8 @@
 #endif
 #include <boost/math/distributions.hpp>
 
-#include "custom_map.hpp"
 #include <string>
 #include <vector>
-
-#include "target_device.hpp"
-
-/// HLS/scheduling include
-#include "schedule.hpp"
-
-/// utility includes
-#include "refcount.hpp"
-#include "utility.hpp"
 
 /// refcount definition for the class
 CONSTREF_FORWARD_DECL(Parameter);

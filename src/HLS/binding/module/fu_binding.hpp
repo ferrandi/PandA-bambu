@@ -45,36 +45,36 @@
 #ifndef FU_BINDING_HPP
 #define FU_BINDING_HPP
 
-#include "custom_map.hpp"
-#include <iosfwd>
-#include <list>
-
-#include "graph.hpp"
+#include "custom_set.hpp"
 #include "op_graph.hpp"
-
 #include "refcount.hpp"
-#include "utility.hpp"
+
+#include <iosfwd>
+#include <limits>
+#include <list>
+#include <map>
+#include <utility>
 
 /**
  * @name forward declarations
  */
 //@{
-CONSTREF_FORWARD_DECL(AllocationInformation);
-REF_FORWARD_DECL(AllocationInformation);
 class funit_obj;
-REF_FORWARD_DECL(generic_obj);
+class module;
+REF_FORWARD_DECL(AllocationInformation);
 REF_FORWARD_DECL(fu_binding);
+REF_FORWARD_DECL(generic_obj);
 REF_FORWARD_DECL(hls);
-CONSTREF_FORWARD_DECL(HLS_manager);
 REF_FORWARD_DECL(HLS_manager);
 REF_FORWARD_DECL(memory);
-class module;
-CONSTREF_FORWARD_DECL(OpGraph);
-REF_FORWARD_DECL(technology_node);
 REF_FORWARD_DECL(structural_manager);
 REF_FORWARD_DECL(structural_object);
-CONSTREF_FORWARD_DECL(tree_manager);
+REF_FORWARD_DECL(technology_node);
 REF_FORWARD_DECL(tree_node);
+CONSTREF_FORWARD_DECL(AllocationInformation);
+CONSTREF_FORWARD_DECL(HLS_manager);
+CONSTREF_FORWARD_DECL(OpGraph);
+CONSTREF_FORWARD_DECL(tree_manager);
 //@}
 
 struct jms_sorter
@@ -227,7 +227,7 @@ class fu_binding
     * @param id is the identifier of the functional unit
     * @param index is the functional unit index
     */
-   void bind(const vertex& v, unsigned int unit, unsigned int index = INFINITE_UINT);
+   void bind(const vertex& v, unsigned int unit, unsigned int index = std::numeric_limits<unsigned int>::max());
 
    /**
     * Returns the functional unit assigned to the vertex.

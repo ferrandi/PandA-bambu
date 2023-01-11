@@ -37,29 +37,18 @@
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
  */
-
-/// Header include
 #include "generate_synthesis_scripts.hpp"
 
-/// . include
+#include "BackendFlow.hpp"
 #include "Parameter.hpp"
-
-/// behavior include
+#include "behavioral_helper.hpp"
 #include "call_graph_manager.hpp"
-
-/// HLS include
+#include "custom_set.hpp"
 #include "hls.hpp"
 #include "hls_manager.hpp"
+#include "utility.hpp"
 
-/// STL includes
-#include "custom_set.hpp"
 #include <tuple>
-
-/// tree include
-#include "behavioral_helper.hpp"
-
-/// wrapper/synthesis include
-#include "BackendFlow.hpp"
 
 GenerateSynthesisScripts::GenerateSynthesisScripts(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr,
                                                    const DesignFlowManagerConstRef _design_flow_manager)

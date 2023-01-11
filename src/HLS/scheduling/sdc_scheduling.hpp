@@ -48,8 +48,10 @@
 #include "custom_map.hpp"
 #include "custom_set.hpp"
 #include "hash_helper.hpp"
-#include "utility.hpp"
+
+#include <list>
 #include <set>
+#include <vector>
 
 CONSTREF_FORWARD_DECL(AllocationInformation);
 class bb_vertex_order_by_map;
