@@ -372,3 +372,11 @@ std::ostream& operator<<(std::ostream& str, const APInt& v)
    str << v.str();
    return str;
 }
+
+std::istream& operator>>(std::istream& str, APInt& v)
+{
+   APInt::APInt_internal t;
+   str >> t;
+   v = APInt(t);
+   return str;
+}

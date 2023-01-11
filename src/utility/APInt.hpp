@@ -67,8 +67,16 @@ class APInt
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wzero-as-null-pointer-constant"
-   template <typename T>
-   APInt(T val, typename std::enable_if<std::is_arithmetic<T>::value>* = nullptr) : _data(val)
+   template <typename T, typename = typename std::enable_if<std::is_arithmetic<T>::value>::type>
+   APInt(T val) : _data(val)
+   {
+   }
+
+   APInt(const APInt_internal& v) : _data(v)
+   {
+   }
+
+   APInt(const std::string& str) : _data(boost::lexical_cast<APInt_internal>(str))
    {
    }
 #pragma GCC diagnostic pop
@@ -131,17 +139,13 @@ class APInt
    bw_t leadingOnes(bw_t bw) const;
    bw_t minBitwidth(bool sign) const;
 
-   template <typename T>
-   typename std::enable_if<std::is_arithmetic<T>::value, T>::type cast_to() const
+   template <typename T, typename = typename std::enable_if<std::is_arithmetic<T>::value, T>::type>
+   explicit operator T() const
    {
       using U = typename std::make_unsigned<T>::type;
-      if(_data < 0)
-      {
-         return static_cast<T>(
-             static_cast<U>(static_cast<U>(_data.convert_to<long long>()) & std::numeric_limits<U>::max()));
-      }
-      return static_cast<T>(static_cast<U>(_data.convert_to<unsigned long long>() & std::numeric_limits<U>::max()));
+      return static_cast<T>(static_cast<U>(_data & std::numeric_limits<U>::max()));
    }
+
    std::string str(int base = 10) const;
 
    static APInt getMaxValue(bw_t bw);
@@ -151,5 +155,7 @@ class APInt
 };
 
 std::ostream& operator<<(std::ostream& str, const APInt& v);
+
+std::istream& operator>>(std::istream& str, APInt& v);
 
 #endif

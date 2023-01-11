@@ -425,14 +425,11 @@ std::deque<bit_lattice> Range::getBitValues(bool isSigned) const
    }
    if(isConstant())
    {
-      return create_bitstring_from_constant((isSigned ? getSignedMin() : getUnsignedMin()).cast_to<long long>(), bw,
-                                            isSigned);
+      return create_bitstring_from_constant(isSigned ? getSignedMin() : getUnsignedMin(), bw, isSigned);
    }
 
-   auto min = create_bitstring_from_constant((isSigned ? getSignedMin() : getUnsignedMin()).cast_to<long long>(), bw,
-                                             isSigned);
-   auto max = create_bitstring_from_constant((isSigned ? getSignedMax() : getUnsignedMax()).cast_to<long long>(), bw,
-                                             isSigned);
+   auto min = create_bitstring_from_constant(isSigned ? getSignedMin() : getUnsignedMin(), bw, isSigned);
+   auto max = create_bitstring_from_constant(isSigned ? getSignedMax() : getUnsignedMax(), bw, isSigned);
    auto& longer = min.size() >= max.size() ? min : max;
    auto& shorter = min.size() >= max.size() ? max : min;
    if(shorter.size() < longer.size())
