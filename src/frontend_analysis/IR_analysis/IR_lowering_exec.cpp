@@ -413,8 +413,8 @@ void IR_lowering::division_by_a_constant(const std::pair<unsigned int, blocRef>&
    const auto type_expr = GetPointerS<const binary_expr>(GET_CONST_NODE(ga->op1))->type;
 
    const auto unsignedp = tree_helper::IsUnsignedIntegerType(type_expr);
-   THROW_ASSERT(std::numeric_limits<long long>::min() <= tree_helper::GetConstValue(op1, false) &&
-                    tree_helper::GetConstValue(op1, false) <= std::numeric_limits<long long>::max(),
+   THROW_ASSERT(std::numeric_limits<long long>::min() <= tree_helper::GetConstValue(op1) &&
+                    tree_helper::GetConstValue(op1) <= std::numeric_limits<long long>::max(),
                 "");
    const auto ext_op1 = static_cast<long long>(tree_helper::GetConstValue(op1));
    const auto rem_flag = code1 == trunc_mod_expr_K;
