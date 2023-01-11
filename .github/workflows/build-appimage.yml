@@ -125,7 +125,7 @@ jobs:
           config-args: ${{env.configure}} --enable-Werror
           jobs: ${{steps.setup.outputs.jobs}}
       - name: Upload PandA Bambu HLS AppImage for CI
-        if: ${{ github.event_name == 'workflow_call' }}
+        if: ${{ github.event_name != 'workflow_dispatch' }}
         uses: ./.github/actions/storage-upload
         with:
           name: ${{env.package-name}}
