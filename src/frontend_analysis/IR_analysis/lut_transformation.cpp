@@ -787,7 +787,6 @@ static std::vector<bool> IntegerToBitArray(integer_cst_t n, size_t size)
 }
 
 tree_nodeRef lut_transformation::CreateBitSelectionNodeOrCast(const tree_nodeRef source, int index,
-                                                              unsigned int BB_index,
                                                               std::vector<tree_nodeRef>& prev_stmts_to_add)
 {
    const auto indexType = tree_man->GetUnsignedLongLongType();
@@ -795,9 +794,9 @@ tree_nodeRef lut_transformation::CreateBitSelectionNodeOrCast(const tree_nodeRef
    const std::string srcp_default("built-in:0:0");
    tree_nodeRef eb_op = tree_man->create_extract_bit_expr(source, bit_pos_constant, srcp_default);
    auto boolType = tree_man->GetBooleanType();
-   tree_nodeRef eb_ga = tree_man->CreateGimpleAssign(boolType, TM->CreateUniqueIntegerCst(0, boolType),
-                                                     TM->CreateUniqueIntegerCst(1, boolType), eb_op, function_id,
-                                                     BB_index, srcp_default);
+   tree_nodeRef eb_ga =
+       tree_man->CreateGimpleAssign(boolType, TM->CreateUniqueIntegerCst(0, boolType),
+                                    TM->CreateUniqueIntegerCst(1, boolType), eb_op, function_id, srcp_default);
    prev_stmts_to_add.push_back(eb_ga);
    return GetPointer<const gimple_assign>(GET_CONST_NODE(eb_ga))->op0;
 }
@@ -1720,11 +1719,11 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
                if(tree_helper::Size(operand) == 1 && !tree_helper::IsBooleanType(operand))
                {
                   THROW_ASSERT(operand_offset == 0, "unexpected condition");
-                  operand = CreateBitSelectionNodeOrCast(operand, 0, BB_index, prev_stmts_to_add);
+                  operand = CreateBitSelectionNodeOrCast(operand, 0, prev_stmts_to_add);
                }
                else if(tree_helper::Size(operand) > 1)
                {
-                  operand = CreateBitSelectionNodeOrCast(operand, operand_offset, BB_index, prev_stmts_to_add);
+                  operand = CreateBitSelectionNodeOrCast(operand, operand_offset, prev_stmts_to_add);
                }
             }
             else if(internal_nets.find(in) != internal_nets.end())
@@ -1859,7 +1858,7 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
                                                                     op5, op6, op7, op8, srcp_default);
                   auto lut_ga = tree_man->CreateGimpleAssign(boolType, TM->CreateUniqueIntegerCst(0, boolType),
                                                              TM->CreateUniqueIntegerCst(1, boolType), lut_node,
-                                                             function_id, BB_index, srcp_default);
+                                                             function_id, srcp_default);
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                  "---Adding statement " + GET_NODE(lut_ga)->ToString());
                   block.second->PushBefore(lut_ga, po_stmpt, AppM);
@@ -1900,7 +1899,7 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
                                                              op7, op8, BUILTIN_SRCP);
             auto lut_ga = tree_man->CreateGimpleAssign(boolType, TM->CreateUniqueIntegerCst(0, boolType),
                                                        TM->CreateUniqueIntegerCst(1, boolType), new_op1, function_id,
-                                                       BB_index, BUILTIN_SRCP);
+                                                       BUILTIN_SRCP);
             auto ssa_vd = GetPointer<gimple_assign>(GET_NODE(lut_ga))->op0;
             prev_stmts_to_add.push_back(lut_ga);
             internal_nets[lut.index] = ssa_vd;

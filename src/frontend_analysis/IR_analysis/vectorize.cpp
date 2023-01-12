@@ -1466,7 +1466,7 @@ void Vectorize::FixPhis()
 
             /// Create the assign
             const auto gimple_assign_node =
-                tree_man->create_gimple_modify_stmt(ssa_node, cond_expr_node, function_id, BUILTIN_SRCP, source_id);
+                tree_man->create_gimple_modify_stmt(ssa_node, cond_expr_node, function_id, BUILTIN_SRCP);
             fcfg_bb_graph->CGetBBNodeInfo(source)->block->PushBack(gimple_assign_node, AppM);
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                            "---Created gimple_assign " + GET_CONST_NODE(gimple_assign_node)->ToString());
@@ -3100,7 +3100,7 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
                      const auto gimple_new_tree_node = tree_man->create_gimple_modify_stmt(
                          TM->GetTreeReindex(
                              Transform(gp->res->index, parallel_degree, scalar, new_stmt_list, new_phi_list)),
-                         bit_field_ref_node, function_id, new_srcp, 0);
+                         bit_field_ref_node, function_id, new_srcp);
                      /// Split of phi node goes to the beginning of the list of statement
                      new_stmt_list.push_front(gimple_new_tree_node);
                   }

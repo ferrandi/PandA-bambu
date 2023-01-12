@@ -1150,7 +1150,7 @@ tree_nodeRef materializeStack(ValueDFSStack& RenameStack, unsigned int function_
             }
 
             // Insert required sigma operation into the intermediate basic block
-            PIC = tree_man->create_phi_node(new_ssa_var, list_of_def_edge, function_id, interBB->number);
+            PIC = tree_man->create_phi_node(new_ssa_var, list_of_def_edge, function_id);
             const auto gp = GetPointer<gimple_phi>(GET_NODE(PIC));
             gp->SetSSAUsesComputed();
             gp->artificial = true;
@@ -1161,7 +1161,7 @@ tree_nodeRef materializeStack(ValueDFSStack& RenameStack, unsigned int function_
          else
          {
             // Insert required sigma operation into the destination basic block
-            PIC = tree_man->create_phi_node(new_ssa_var, list_of_def_edge, function_id, pwe->To);
+            PIC = tree_man->create_phi_node(new_ssa_var, list_of_def_edge, function_id);
             const auto gp = GetPointer<gimple_phi>(GET_NODE(PIC));
             gp->SetSSAUsesComputed();
             gp->artificial = true;

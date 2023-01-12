@@ -829,8 +829,7 @@ void PhiOpt::ApplyIfMerge(const unsigned int bb_index)
                         "---Created cond_expr " + GET_CONST_NODE(cond_expr_node)->ToString());
 
          /// Create the assign
-         gimple_node = tree_man->create_gimple_modify_stmt(ssa_node, cond_expr_node, function_id, BUILTIN_SRCP,
-                                                           pred_block->number);
+         gimple_node = tree_man->create_gimple_modify_stmt(ssa_node, cond_expr_node, function_id, BUILTIN_SRCP);
       }
       pred_block->PushBack(gimple_node, AppM);
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created " + GET_CONST_NODE(gimple_node)->ToString());
@@ -1060,8 +1059,8 @@ void PhiOpt::ApplyIfRemove(const unsigned int bb_index)
                         "---Created cond_expr " + GET_CONST_NODE(cond_expr_node)->ToString());
 
          /// Create the assign
-         const auto gimple_node = tree_man->create_gimple_modify_stmt(gp->res, cond_expr_node, function_id,
-                                                                      BUILTIN_SRCP, succ_block->number);
+         const auto gimple_node =
+             tree_man->create_gimple_modify_stmt(gp->res, cond_expr_node, function_id, BUILTIN_SRCP);
          succ_block->PushFront(gimple_node, AppM);
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                         "<--Created " + GET_CONST_NODE(gimple_node)->ToString());
@@ -1253,8 +1252,7 @@ void PhiOpt::ApplyMultiMerge(const unsigned int bb_index)
                                                 BUILTIN_SRCP, (isAVectorType ? vec_cond_expr_K : cond_expr_K));
 
          /// Create the assign
-         gimple_node = tree_man->create_gimple_modify_stmt(ssa_node, cond_expr_node, function_id, BUILTIN_SRCP,
-                                                           pred_block->number);
+         gimple_node = tree_man->create_gimple_modify_stmt(ssa_node, cond_expr_node, function_id, BUILTIN_SRCP);
       }
       pred_block->PushBack(gimple_node, AppM);
 
@@ -1512,8 +1510,7 @@ void PhiOpt::ApplyMultiRemove(const unsigned int bb_index)
                                                 BUILTIN_SRCP, (isAVectorType ? vec_cond_expr_K : cond_expr_K));
 
          /// Create the assign
-         new_gimple_node = tree_man->create_gimple_modify_stmt(gp->res, cond_expr_node, function_id, BUILTIN_SRCP,
-                                                               succ_block->number);
+         new_gimple_node = tree_man->create_gimple_modify_stmt(gp->res, cond_expr_node, function_id, BUILTIN_SRCP);
       }
       if(!gp->virtual_flag || create_gimple_nop)
       {
@@ -1795,7 +1792,7 @@ PhiOpt_PatternType PhiOpt::IdentifyPattern(const unsigned int bb_index) const
             /// Workaround: we need to consider the overhead due to multiplexers associated with the phi; for this
             /// reason definition is one of the operands; this is not fully consistent, but it is a temporary assignment
             const auto gimple_assign_node =
-                tree_man->create_gimple_modify_stmt(first_value, cond_expr_node, function_id, BUILTIN_SRCP, 0);
+                tree_man->create_gimple_modify_stmt(first_value, cond_expr_node, function_id, BUILTIN_SRCP);
 
             /// Created statement is not added to the predecessor
 #if HAVE_BAMBU_BUILT

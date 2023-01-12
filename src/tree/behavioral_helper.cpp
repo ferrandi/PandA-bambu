@@ -6178,11 +6178,6 @@ unsigned int BehavioralHelper::end_with_a_cond_or_goto(const blocRef& block) con
    return 0;
 }
 
-void BehavioralHelper::create_gimple_modify_stmt(unsigned int, blocRef&, tree_nodeRef, tree_nodeRef)
-{
-   THROW_ERROR("Not implemented");
-}
-
 std::string BehavioralHelper::print_forward_declaration(unsigned int type) const
 {
    std::string res;

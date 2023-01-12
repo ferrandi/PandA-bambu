@@ -456,7 +456,7 @@ bool short_circuit_taf::create_gimple_cond(unsigned int bb1, unsigned int bb2, b
 
    /// create the assignment between condition for bb1 and the new ssa var
    const auto cond1_created_stmt =
-       tree_man->CreateGimpleAssign(type_node, nullptr, nullptr, cond1, function_id, bb1, BUILTIN_SRCP);
+       tree_man->CreateGimpleAssign(type_node, nullptr, nullptr, cond1, function_id, BUILTIN_SRCP);
    const auto ssa1_cond_node = GetPointer<const gimple_assign>(GET_CONST_NODE(cond1_created_stmt))->op0;
    /// and then add to the bb1 statement list
    list_of_bloc.at(bb1)->PushBack(cond1_created_stmt, AppM);
@@ -499,7 +499,7 @@ bool short_circuit_taf::create_gimple_cond(unsigned int bb1, unsigned int bb2, b
          const auto cond_expr_node = tree_man->create_ternary_operation(
              res_type, cond1, op1, op2, BUILTIN_SRCP, (isAVectorType ? vec_cond_expr_K : cond_expr_K));
          const auto created_stmt =
-             tree_man->CreateGimpleAssign(res_type, nullptr, nullptr, cond_expr_node, function_id, bb1, BUILTIN_SRCP);
+             tree_man->CreateGimpleAssign(res_type, nullptr, nullptr, cond_expr_node, function_id, BUILTIN_SRCP);
          const auto ssa_cond_node = GetPointer<const gimple_assign>(GET_CONST_NODE(created_stmt))->op0;
 
          /// and then add to the statement list
@@ -520,7 +520,7 @@ bool short_circuit_taf::create_gimple_cond(unsigned int bb1, unsigned int bb2, b
       /// create !cond1
       const auto not_cond1 = tree_man->create_unary_operation(type_node, cond1, BUILTIN_SRCP, truth_not_expr_K);
       const auto created_stmt =
-          tree_man->CreateGimpleAssign(type_node, nullptr, nullptr, not_cond1, function_id, bb1, BUILTIN_SRCP);
+          tree_man->CreateGimpleAssign(type_node, nullptr, nullptr, not_cond1, function_id, BUILTIN_SRCP);
       cond1 = GetPointer<const gimple_assign>(GET_CONST_NODE(created_stmt))->op0;
       /// and then add to the bb1 statement list
       list_of_bloc.at(bb1)->PushBack(created_stmt, AppM);
@@ -537,7 +537,7 @@ bool short_circuit_taf::create_gimple_cond(unsigned int bb1, unsigned int bb2, b
 
    /// create the assignment between condition for bb2 and the new ssa var
    const auto cond2_created_stmt =
-       tree_man->CreateGimpleAssign(type_node, nullptr, nullptr, cond2, function_id, bb1, BUILTIN_SRCP);
+       tree_man->CreateGimpleAssign(type_node, nullptr, nullptr, cond2, function_id, BUILTIN_SRCP);
    cond2 = GetPointer<const gimple_assign>(GET_CONST_NODE(cond2_created_stmt))->op0;
    /// and then add to the bb1 statement list
    list_of_bloc.at(bb1)->PushBack(cond2_created_stmt, AppM);

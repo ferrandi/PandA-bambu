@@ -595,17 +595,6 @@ class BehavioralHelper
    virtual const std::string get_label_name(unsigned int label_expr_nid) const;
 
    /**
-    * create a gimple_assign
-    * @param function_decl_nid is the node id of the function where the gimple_assign has to be inserted
-    * @param block is the basic block where the gimple_assign has to be inserted
-    * @param position is the statement after which gimple_assign has to be inserted
-    * @param left_part is the tree_node of the left part
-    * @param right_part is tree_node of the right part
-    */
-   virtual void create_gimple_modify_stmt(unsigned int function_decl_nid, blocRef& block, tree_nodeRef left_part,
-                                          tree_nodeRef right_part);
-
-   /**
     * Print the declaration of a non built-in type.
     * @param type is an object type.
     */

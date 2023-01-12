@@ -908,11 +908,11 @@ void InterfaceInfer::setReadInterface(tree_nodeRef stmt, const std::string& arg_
       const auto tmp_type =
           is_real ? tree_man->GetCustomIntegerType(tree_helper::Size(actual_type), true) : interface_datatype;
       const auto tmp_ssa = tree_man->create_ssa_name(nullptr, tmp_type, nullptr, nullptr);
-      const auto gc = tree_man->create_gimple_modify_stmt(tmp_ssa, ce, fd->index, BUILTIN_SRCP, curr_bb);
+      const auto gc = tree_man->create_gimple_modify_stmt(tmp_ssa, ce, fd->index, BUILTIN_SRCP);
       sl->list_of_bloc.at(curr_bb)->Replace(stmt, gc, true, AppM);
       const auto vc = tree_man->create_unary_operation(actual_type, tmp_ssa, BUILTIN_SRCP,
                                                        is_real ? view_convert_expr_K : nop_expr_K);
-      const auto cast = tree_man->create_gimple_modify_stmt(ga->op0, vc, fd->index, BUILTIN_SRCP, curr_bb);
+      const auto cast = tree_man->create_gimple_modify_stmt(ga->op0, vc, fd->index, BUILTIN_SRCP);
       sl->list_of_bloc.at(curr_bb)->PushAfter(cast, gc, AppM);
       GetPointer<HLS_manager>(AppM)->design_interface_io[fname][curr_bb][arg_name].push_back(GET_INDEX_CONST_NODE(gc));
 
@@ -948,7 +948,7 @@ void InterfaceInfer::setWriteInterface(tree_nodeRef stmt, const std::string& arg
          const auto int_type = tree_man->GetCustomIntegerType(tree_helper::Size(actual_type), true);
          const auto vc = tree_man->create_unary_operation(int_type, value_node, BUILTIN_SRCP, view_convert_expr_K);
          value_node = tree_man->create_ssa_name(nullptr, int_type, nullptr, nullptr);
-         nop = tree_man->create_gimple_modify_stmt(value_node, vc, fd->index, BUILTIN_SRCP, ga->bb_index);
+         nop = tree_man->create_gimple_modify_stmt(value_node, vc, fd->index, BUILTIN_SRCP);
       }
       else
       {
@@ -990,8 +990,7 @@ void InterfaceInfer::setWriteInterface(tree_nodeRef stmt, const std::string& arg
    args.push_back(mr->op0);
 
    const auto curr_bb = ga->bb_index;
-   const auto gc =
-       tree_man->create_gimple_call(function_decl_node, args, GET_INDEX_NODE(ga->scpe), BUILTIN_SRCP, curr_bb);
+   const auto gc = tree_man->create_gimple_call(function_decl_node, args, GET_INDEX_NODE(ga->scpe), BUILTIN_SRCP);
    sl->list_of_bloc.at(curr_bb)->Replace(stmt, gc, true, AppM);
 
    GetPointer<HLS_manager>(AppM)->design_interface_io[fname][curr_bb][arg_name].push_back(GET_INDEX_NODE(gc));
