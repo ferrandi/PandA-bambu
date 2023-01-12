@@ -32,7 +32,6 @@ lib_utility_la_SOURCES = \
    utility/exceptions.cpp \
    utility/indented_output_stream.cpp \
    utility/math_function.cpp \
-   utility/panda_types.cpp \
    utility/simple_indent.cpp \
    utility/Statistics.cpp \
    utility/string_manipulation.cpp \

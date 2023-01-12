@@ -30,6 +30,8 @@ BOOST_AUTO_TEST_CASE(apint_cast)
    BOOST_REQUIRE_EQUAL(0b01100110, static_cast<uint8_t>(APInt(0b1111111001100110)));
    BOOST_REQUIRE_EQUAL(53, static_cast<uint8_t>(APInt(53)));
    BOOST_REQUIRE_EQUAL(-34, static_cast<int8_t>(APInt(-34)));
+   BOOST_REQUIRE_EQUAL(1u, static_cast<unsigned int>(APInt(std::numeric_limits<unsigned int>::max()) + 2));
+   BOOST_REQUIRE_EQUAL(1u, static_cast<int>(APInt(std::numeric_limits<unsigned int>::max()) + 2));
 }
 
 BOOST_AUTO_TEST_CASE(apint_not)
@@ -145,4 +147,8 @@ BOOST_AUTO_TEST_CASE(apint_minBitwidth)
    BOOST_REQUIRE_EQUAL(1, APInt(0).minBitwidth(false));
    BOOST_REQUIRE_EQUAL(2, APInt(1).minBitwidth(true));
    BOOST_REQUIRE_EQUAL(2, APInt(-2).minBitwidth(true));
+   BOOST_REQUIRE_EQUAL(64, APInt(INT64_MAX).minBitwidth(true));
+   BOOST_REQUIRE_EQUAL(63, APInt(INT64_MAX).minBitwidth(false));
+   BOOST_REQUIRE_EQUAL(65, APInt(UINT64_MAX).minBitwidth(true));
+   BOOST_REQUIRE_EQUAL(512, ((APInt(1) << 512) - 1).minBitwidth(false));
 }

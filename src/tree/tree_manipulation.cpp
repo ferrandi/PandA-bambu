@@ -1536,15 +1536,8 @@ tree_nodeRef tree_manipulation::GetCustomIntegerType(unsigned long long prec, bo
       TreeM->create_tree_node(integer_type_nid, integer_type_K, IR_schema);
       integer_type_node = TreeM->GetTreeReindex(integer_type_nid);
 
-#ifdef UNLIMITED_PRECISION
       CreateIntegerCst(integer_type_node, unsigned_p ? 0 : (integer_cst_t(-1) << (prec - 1)), min_node_nid);
       CreateIntegerCst(integer_type_node, (integer_cst_t(1) << (prec - !unsigned_p)) - 1, max_node_nid);
-#else
-      // TODO: fix unsigned max value
-      CreateIntegerCst(integer_type_node, (unsigned_p ? 0 : (1LL << (prec - 1))), min_node_nid);
-      CreateIntegerCst(integer_type_node, (unsigned_p ? (~0LL) : static_cast<long long int>((~0ULL) >> 1)),
-                       max_node_nid);
-#endif
    }
    else
    {

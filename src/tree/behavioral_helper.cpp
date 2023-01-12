@@ -706,8 +706,8 @@ std::string BehavioralHelper::PrintConstant(const tree_nodeConstRef& _node, cons
          const auto ic = GetPointerS<const integer_cst>(node);
          const auto type = GET_CONST_NODE(ic->type);
          const auto it = GetPointer<const integer_type>(type);
-         bool unsigned_flag = (it && it->unsigned_flag) || type->get_kind() == pointer_type_K ||
-                              type->get_kind() == reference_type_K || type->get_kind() == boolean_type_K;
+         const auto unsigned_flag = (it && it->unsigned_flag) || type->get_kind() == pointer_type_K ||
+                                    type->get_kind() == reference_type_K || type->get_kind() == boolean_type_K;
 #if 0
          ///check if the IR type is consistent with the type name
          if (it)
@@ -729,7 +729,7 @@ std::string BehavioralHelper::PrintConstant(const tree_nodeConstRef& _node, cons
          }
 #endif
          THROW_ASSERT(ic, "");
-         auto value = tree_helper::GetConstValue(node);
+         auto value = tree_helper::GetConstValue(node, !unsigned_flag);
          INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "---Value is " + STR(value));
          // TODO: fix for bitwidth greater than 64 bits
          if((it && it->prec == 64) && (value == (static_cast<long long int>(-0x08000000000000000LL))))
@@ -742,7 +742,6 @@ std::string BehavioralHelper::PrintConstant(const tree_nodeConstRef& _node, cons
          }
          else
          {
-#ifdef UNLIMITED_PRECISION
             if(it && it->unsigned_flag)
             {
                THROW_ASSERT(value <= std::numeric_limits<unsigned long long>::max(), "");
@@ -752,26 +751,9 @@ std::string BehavioralHelper::PrintConstant(const tree_nodeConstRef& _node, cons
             {
                THROW_ASSERT(std::numeric_limits<long long>::min() <= value &&
                                 value <= std::numeric_limits<long long>::max(),
-                            "");
+                            "Printing " + STR(node) + " as " + STR(value));
                res += STR(value);
             }
-#else
-            if(it && it->unsigned_flag)
-            {
-               if(it && it->prec < 64)
-               {
-                  res += STR(static_cast<unsigned long long>(value) & ((1ull << it->prec) - 1));
-               }
-               else
-               {
-                  res += STR(static_cast<unsigned long long>(value));
-               }
-            }
-            else
-            {
-               res += STR(value);
-            }
-#endif
          }
          if(it && it->prec > 32)
          {

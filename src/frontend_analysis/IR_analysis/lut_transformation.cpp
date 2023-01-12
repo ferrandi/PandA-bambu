@@ -1279,9 +1279,8 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                         "---translating in klut " + STR(tree_helper::GetConstValue(le->op0)));
          const auto cst_val = tree_helper::GetConstValue(le->op0);
-         THROW_WARNING_ASSERT(integer_cst_t(std::numeric_limits<long long>::min()) <= cst_val &&
-                                  cst_val <= integer_cst_t(std::numeric_limits<long long>::max()),
-                              "Cast will change signedness of current value: " + STR(cst_val));
+         THROW_ASSERT(tree_helper::GetConstValue(le->op0, false) <= std::numeric_limits<unsigned long long>::max(),
+                      "Cast will change signedness of current value: " + STR(cst_val));
          auto res = klut_e.create_lut(ops, static_cast<long long>(cst_val));
          nodeRefToSignal[GET_INDEX_NODE(gimpleAssign->op0)] = res;
 

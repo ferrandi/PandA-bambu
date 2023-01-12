@@ -104,7 +104,7 @@
 template <class G>
 std::string convert_to_binary(G _value, unsigned long long precision)
 {
-   auto value = static_cast<integer_cst_t>(_value);
+   auto value = integer_cst_t(_value);
    std::string bin_value;
    for(unsigned int ind = 0; ind < precision; ind++)
    {

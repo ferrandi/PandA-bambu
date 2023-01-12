@@ -402,6 +402,9 @@ void mux_connection_binding::determine_connection(const vertex& op, const HLS_ma
          {
             auto* mr = GetPointer<mem_ref>(tn);
             auto base_index = GET_INDEX_NODE(mr->op0);
+            THROW_ASSERT(std::numeric_limits<long long>::min() <= tree_helper::GetConstValue(mr->op1) &&
+                             tree_helper::GetConstValue(mr->op1) <= std::numeric_limits<long long>::max(),
+                         "");
             auto offset = static_cast<long long>(tree_helper::GetConstValue(mr->op1));
             auto offset_index = offset ? GET_INDEX_NODE(mr->op1) : 0;
             generic_objRef current_operand;
