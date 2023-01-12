@@ -164,21 +164,6 @@ unsigned long long tree_helper::Size(const tree_nodeConstRef& _t)
                   "---Getting size of " + t->get_kind_text() + " " + STR(t->index) + ": " + t->ToString());
    switch(t->get_kind())
    {
-      case var_decl_K:
-      {
-         THROW_ASSERT(GetPointerS<const var_decl>(t)->type, "expected a var decl type");
-         return Size(GetPointerS<const var_decl>(t)->type);
-      }
-      case parm_decl_K:
-      {
-         THROW_ASSERT(GetPointerS<const parm_decl>(t)->type, "expected a var decl type");
-         return Size(GetPointerS<const parm_decl>(t)->type);
-      }
-      case result_decl_K:
-      {
-         THROW_ASSERT(GetPointerS<const result_decl>(t)->type, "expected a var decl type");
-         return Size(GetPointerS<const result_decl>(t)->type);
-      }
       case ssa_name_K:
       {
          const auto sa = GetPointerS<const ssa_name>(t);
@@ -192,91 +177,109 @@ unsigned long long tree_helper::Size(const tree_nodeConstRef& _t)
             const auto bv_test = sign_reduce_bitstring(sa->bit_values, signed_p);
             return bv_test.size();
          }
-         else if(sa->min && sa->max && GET_CONST_NODE(sa->min)->get_kind() == integer_cst_K &&
-                 GET_CONST_NODE(sa->max)->get_kind() == integer_cst_K)
+         else
          {
-            const auto& type = sa->var ? GetPointerS<const decl_node>(GET_CONST_NODE(sa->var))->type : sa->type;
-            if(GET_CONST_NODE(type)->get_kind() != integer_type_K &&
-               GET_CONST_NODE(type)->get_kind() != enumeral_type_K)
-            {
-               return Size(type);
-            }
-            const auto max = GetConstValue(sa->max);
-            const auto min = GetConstValue(sa->min);
-            if(min == max) /// It may happen with GCC8 -O0
-            {
-               return Size(type);
-            }
+            std::string dbg = "";
+            dbg += "old<";
+            const auto oldval = [&]() {
+               if(sa->min && sa->max && GET_CONST_NODE(sa->min)->get_kind() == integer_cst_K &&
+                  GET_CONST_NODE(sa->max)->get_kind() == integer_cst_K)
+               {
+                  dbg += "cst";
+                  const auto& type = sa->var ? GetPointerS<const decl_node>(GET_CONST_NODE(sa->var))->type : sa->type;
+                  if(GET_CONST_NODE(type)->get_kind() != integer_type_K &&
+                     GET_CONST_NODE(type)->get_kind() != enumeral_type_K)
+                  {
+                     dbg += "->type";
+                     return Size(type);
+                  }
+                  const auto max = GetConstValue(sa->max);
+                  const auto min = GetConstValue(sa->min);
+                  if(min == max) /// It may happen with GCC8 -O0
+                  {
+                     dbg += "->eq";
+                     return Size(type);
+                  }
 
-            integer_cst_t min_it, max_it;
-            bool unsigned_p;
-            if(GET_CONST_NODE(type)->get_kind() == integer_type_K)
-            {
-               const auto it = GetPointerS<const integer_type>(GET_CONST_NODE(type));
-               min_it = GetConstValue(it->min);
-               max_it = GetConstValue(it->max);
-               unsigned_p = it->unsigned_flag;
-            }
-            else
-            {
-               const auto it = GetPointerS<const enumeral_type>(GET_CONST_NODE(type));
-               min_it = GetConstValue(it->min);
-               max_it = GetConstValue(it->max);
-               unsigned_p = it->unsigned_flag;
-            }
-            if((min_it == min && min != 0) || max_it == max)
-            {
-               return sa->var ? Size(sa->var) : Size(sa->type);
-            }
-            if(unsigned_p)
-            {
-               return (64 - static_cast<unsigned>(
-                                __builtin_clzll(static_cast<unsigned long long>(static_cast<long long>(max)))));
-            }
-            else
-            {
-               unsigned int return_value;
-               if(max == -1 || max == 0)
-               {
-                  return_value = 1;
+                  integer_cst_t min_it, max_it;
+                  bool unsigned_p;
+                  if(GET_CONST_NODE(type)->get_kind() == integer_type_K)
+                  {
+                     dbg += "int";
+                     const auto it = GetPointerS<const integer_type>(GET_CONST_NODE(type));
+                     min_it = GetConstValue(it->min);
+                     max_it = GetConstValue(it->max);
+                     unsigned_p = it->unsigned_flag;
+                  }
+                  else
+                  {
+                     dbg += "enum";
+                     const auto it = GetPointerS<const enumeral_type>(GET_CONST_NODE(type));
+                     min_it = GetConstValue(it->min);
+                     max_it = GetConstValue(it->max);
+                     unsigned_p = it->unsigned_flag;
+                  }
+                  dbg += "[" + STR(min_it) + "," + STR(max_it) + "]";
+                  if((min_it == min && min != 0) || max_it == max)
+                  {
+                     dbg += "vt";
+                     return sa->var ? Size(sa->var) : Size(sa->type);
+                  }
+                  if(unsigned_p)
+                  {
+                     dbg += "u";
+                     return (64ull - static_cast<unsigned>(__builtin_clzll(
+                                         static_cast<unsigned long long>(static_cast<long long>(max)))));
+                  }
+                  else
+                  {
+                     dbg += "s";
+                     unsigned long long return_value;
+                     if(max == -1 || max == 0)
+                     {
+                        return_value = 1;
+                     }
+                     else if(max < -1)
+                     {
+                        return_value = 65u - static_cast<unsigned>(__builtin_clzll(
+                                                 ~static_cast<unsigned long long>(static_cast<long long>(max))));
+                     }
+                     else
+                     {
+                        return_value = 65u - static_cast<unsigned>(__builtin_clzll(
+                                                 static_cast<unsigned long long>(static_cast<long long>(max))));
+                     }
+                     if(min < -1)
+                     {
+                        const auto minbits =
+                            65ull - static_cast<unsigned>(__builtin_clzll(~static_cast<unsigned long long>(min)));
+                        return_value = std::max(return_value, minbits);
+                     }
+                     else if(min == -1)
+                     {
+                        return_value = std::max(return_value, 1ull);
+                     }
+                     return return_value;
+                  }
                }
-               else if(max < -1)
+               else if(sa->var)
                {
-                  return_value = 65u - static_cast<unsigned>(__builtin_clzll(
-                                           ~static_cast<unsigned long long>(static_cast<long long>(max))));
+                  dbg += "var";
+                  return Size(sa->var);
                }
                else
                {
-                  return_value = 65u - static_cast<unsigned>(__builtin_clzll(
-                                           static_cast<unsigned long long>(static_cast<long long>(max))));
+                  dbg += "type";
+                  return Size(sa->type);
                }
-               if(min < -1)
-               {
-                  unsigned minbits =
-                      65u - static_cast<unsigned>(__builtin_clzll(~static_cast<unsigned long long>(min)));
-                  return_value = std::max(return_value, minbits);
-               }
-               else if(min == -1)
-               {
-                  return_value = std::max(return_value, 1u);
-               }
-               return return_value;
-            }
-         }
-         else if(sa->var)
-         {
-            return Size(sa->var);
-         }
-         else
-         {
-            return Size(sa->type);
+            }();
+            dbg += ">";
+            const auto retval = sa->var ? Size(sa->var) : Size(sa->type);
+            THROW_WARNING_ASSERT(retval == oldval, "ssaSize of " + STR(t) + " was " + STR(oldval) + " now is " +
+                                                       STR(retval) + ": " + dbg);
+            return retval;
          }
          break;
-      }
-      case field_decl_K:
-      {
-         THROW_ASSERT(GetPointerS<const field_decl>(t)->type, "expected a field decl type");
-         return Size(GetPointerS<const field_decl>(t)->type);
       }
       case pointer_type_K:
       {
@@ -318,54 +321,85 @@ unsigned long long tree_helper::Size(const tree_nodeConstRef& _t)
       case enumeral_type_K:
       {
          const auto et = GetPointerS<const enumeral_type>(t);
-         if(et->min && et->max && GET_CONST_NODE(et->min)->get_kind() == integer_cst_K &&
-            GET_CONST_NODE(et->max)->get_kind() == integer_cst_K)
-         {
-            const auto max = GetConstValue(et->max);
-            const auto min = GetConstValue(et->min);
-            if(et->unsigned_flag)
+         const auto oldval = [&]() {
+            if(et->min && et->max && GET_CONST_NODE(et->min)->get_kind() == integer_cst_K &&
+               GET_CONST_NODE(et->max)->get_kind() == integer_cst_K)
             {
-               return 64ull - static_cast<unsigned long long>(
-                                  __builtin_clzll(static_cast<unsigned long long>(static_cast<long long>(max))));
-            }
-            else
-            {
-               unsigned long long return_value;
-               if(max == -1 || max == 0)
+               const auto max = GetConstValue(et->max);
+               const auto min = GetConstValue(et->min);
+               if(et->unsigned_flag)
                {
-                  return_value = 1;
-               }
-               else if(max < -1)
-               {
-                  return_value = 65ull - static_cast<unsigned long long>(__builtin_clzll(
-                                             ~static_cast<unsigned long long>(static_cast<long long>(max))));
+                  return 64ull - static_cast<unsigned long long>(
+                                     __builtin_clzll(static_cast<unsigned long long>(static_cast<long long>(max))));
                }
                else
                {
-                  return_value = 65ull - static_cast<unsigned long long>(__builtin_clzll(
-                                             static_cast<unsigned long long>(static_cast<long long>(max))));
-               }
-               if(min < -1)
-               {
-                  unsigned long long minbits =
-                      65ull - static_cast<unsigned long long>(
-                                  __builtin_clzll(~static_cast<unsigned long long>(static_cast<long long>(min))));
-                  return std::max(return_value, minbits);
-               }
-               else if(min == -1)
-               {
-                  return std::max(return_value, 1ull);
+                  unsigned long long return_value;
+                  if(max == -1 || max == 0)
+                  {
+                     return_value = 1;
+                  }
+                  else if(max < -1)
+                  {
+                     return_value = 65ull - static_cast<unsigned long long>(__builtin_clzll(
+                                                ~static_cast<unsigned long long>(static_cast<long long>(max))));
+                  }
+                  else
+                  {
+                     return_value = 65ull - static_cast<unsigned long long>(__builtin_clzll(
+                                                static_cast<unsigned long long>(static_cast<long long>(max))));
+                  }
+                  if(min < -1)
+                  {
+                     unsigned long long minbits =
+                         65ull - static_cast<unsigned long long>(
+                                     __builtin_clzll(~static_cast<unsigned long long>(static_cast<long long>(min))));
+                     return std::max(return_value, minbits);
+                  }
+                  else if(min == -1)
+                  {
+                     return std::max(return_value, 1ull);
+                  }
                }
             }
-         }
-         else
-         {
-            if(!GetPointerS<const type_node>(t)->size)
+            else
             {
-               return 0ll;
+               if(!GetPointerS<const type_node>(t)->size)
+               {
+                  return 0ull;
+               }
+               return static_cast<unsigned long long>(GetConstValue(GetPointerS<const type_node>(t)->size));
             }
-            return static_cast<unsigned long long>(GetConstValue(GetPointerS<const type_node>(t)->size));
-         }
+            THROW_UNREACHABLE("This has been here since first commit");
+            return 0ull;
+         }();
+         const auto retval = [&]() -> integer_cst_t {
+            if(et->min && et->max && GET_CONST_NODE(et->min)->get_kind() == integer_cst_K &&
+               GET_CONST_NODE(et->max)->get_kind() == integer_cst_K)
+            {
+               const auto max = GetConstValue(et->max, !et->unsigned_flag);
+               const auto min = GetConstValue(et->min, !et->unsigned_flag);
+               if(et->unsigned_flag)
+               {
+                  return max.minBitwidth(true);
+               }
+               else
+               {
+                  return std::max(min.minBitwidth(true), max.minBitwidth(true));
+               }
+            }
+            else
+            {
+               if(!GetPointerS<const type_node>(t)->size)
+               {
+                  return 0;
+               }
+               return GetConstValue(GetPointerS<const type_node>(t)->size);
+            }
+         }();
+         THROW_WARNING_ASSERT(retval == oldval,
+                              "enumSize of " + STR(t) + " was " + STR(oldval) + " now is " + STR(retval));
+         return static_cast<unsigned long long>(retval);
          break;
       }
       case vector_type_K:
@@ -401,115 +435,84 @@ unsigned long long tree_helper::Size(const tree_nodeConstRef& _t)
          }
          break;
       }
-      case call_expr_K:
-      case aggr_init_expr_K:
-      {
-         const auto ce = GetPointerS<const call_expr>(t);
-         return Size(ce->type);
-      }
-      case CASE_UNARY_EXPRESSION:
-      {
-         const auto ue = GetPointerS<const unary_expr>(t);
-         THROW_ASSERT(ue->type, "Expected an unary expr with type");
-         return Size(ue->type);
-      }
-      case CASE_BINARY_EXPRESSION:
-      {
-         const auto be = GetPointerS<const binary_expr>(t);
-         return Size(be->type);
-      }
-      case CASE_TERNARY_EXPRESSION:
-      {
-         const auto te = GetPointerS<const ternary_expr>(t);
-         return Size(te->type);
-      }
       case lut_expr_K:
       {
          return 1;
       }
-      case array_ref_K:
-      {
-         const auto ar = GetPointerS<const array_ref>(t);
-         return Size(ar->type);
-      }
-      case string_cst_K:
-      {
-         const auto sc = GetPointerS<const string_cst>(t);
-         return Size(sc->type);
-      }
-      case vector_cst_K:
-      {
-         const auto vc = GetPointer<const vector_cst>(t);
-         return Size(vc->type);
-      }
       case integer_cst_K:
       {
-         const auto ic = GetPointerS<const integer_cst>(t);
-         const auto ic_valll = static_cast<long long>(ic->value);
-         auto ic_value = static_cast<long long unsigned int>(ic_valll);
-         if(ic_value == 0)
-         {
-            return 1;
-         }
-         else
-         {
-            auto return_value = Size(ic->type);
-            const auto is_integer_type = tree_helper::IsSignedIntegerType(ic->type);
-            unsigned int counter = 0;
-            while(ic_value > 0)
+         const auto oldval = [&]() {
+            const auto ic = GetPointerS<const integer_cst>(t);
+            const auto ic_valll = static_cast<long long>(ic->value);
+            auto ic_value = static_cast<long long unsigned int>(ic_valll);
+            if(ic_value == 0)
             {
-               ic_value /= 2;
-               ++counter;
-               if(counter >= return_value)
-               {
-                  break;
-               }
-            }
-            if(counter < return_value && is_integer_type)
-            {
-               return counter + 1;
-            }
-            else if(counter == return_value && is_integer_type && ic_valll < 0)
-            {
-               /// count leading ONEs
-               unsigned long long index = return_value - 1;
-               while(((1ULL << index) & static_cast<long long unsigned int>(ic_valll)) && index > 0)
-               {
-                  --counter;
-                  --index;
-               }
-               if(((1ULL << index) & static_cast<long long unsigned int>(ic_valll)) == 0)
-               {
-                  ++counter;
-               }
-               return counter;
+               return 1u;
             }
             else
             {
-               return counter;
+               auto return_value = Size(ic->type);
+               const auto is_integer_type = IsSignedIntegerType(ic->type);
+               unsigned int counter = 0;
+               while(ic_value > 0)
+               {
+                  ic_value /= 2;
+                  ++counter;
+                  if(counter >= return_value)
+                  {
+                     break;
+                  }
+               }
+               if(counter < return_value && is_integer_type)
+               {
+                  return counter + 1u;
+               }
+               else if(counter == return_value && is_integer_type && ic_valll < 0)
+               {
+                  /// count leading ONEs
+                  unsigned long long index = return_value - 1;
+                  while(((1ULL << index) & static_cast<long long unsigned int>(ic_valll)) && index > 0)
+                  {
+                     --counter;
+                     --index;
+                  }
+                  if(((1ULL << index) & static_cast<long long unsigned int>(ic_valll)) == 0)
+                  {
+                     ++counter;
+                  }
+                  return counter;
+               }
+               else
+               {
+                  return counter;
+               }
             }
-         }
+         }();
+         const auto is_signed = IsSignedIntegerType(t);
+         const auto retval = GetConstValue(t, is_signed).minBitwidth(is_signed);
+         THROW_WARNING_ASSERT(retval == oldval,
+                              "intSize of " + STR(t) + " was " + STR(oldval) + " now is " + STR(retval));
+         return static_cast<unsigned long long>(retval);
          break;
       }
+      case field_decl_K:
+      case parm_decl_K:
+      case result_decl_K:
+      case var_decl_K:
+      case call_expr_K:
+      case aggr_init_expr_K:
+      case CASE_UNARY_EXPRESSION:
+      case CASE_BINARY_EXPRESSION:
+      case CASE_TERNARY_EXPRESSION:
+      case array_ref_K:
+      case string_cst_K:
+      case vector_cst_K:
       case real_cst_K:
-      {
-         const auto rc = GetPointerS<const real_cst>(t);
-         return Size(rc->type);
-      }
       case complex_cst_K:
-      {
-         const auto cc = GetPointerS<const complex_cst>(t);
-         return Size(cc->type);
-      }
       case constructor_K:
-      {
-         const auto c = GetPointerS<const constructor>(t);
-         return Size(c->type);
-      }
       case target_mem_ref461_K:
       {
-         const auto tmr = GetPointerS<const target_mem_ref461>(t);
-         return Size(tmr->type);
+         return Size(CGetType(t));
       }
       case gimple_call_K:
       case function_decl_K:
