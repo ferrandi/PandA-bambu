@@ -53,11 +53,7 @@ class APInt
 {
  public:
    using APInt_internal = boost::multiprecision::mpz_int;
-#ifndef NDEBUG
    using bw_t = uint16_t;
-#else
-   using bw_t = uint8_t;
-#endif
 
  private:
    APInt_internal _data;

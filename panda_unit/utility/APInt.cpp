@@ -136,3 +136,13 @@ BOOST_AUTO_TEST_CASE(apint_shr)
    BOOST_REQUIRE_EQUAL(cd >> 11, d >> 11);
    BOOST_REQUIRE_EQUAL(cd >> 63, d >> 63);
 }
+
+BOOST_AUTO_TEST_CASE(apint_minBitwidth)
+{
+   BOOST_REQUIRE_EQUAL(1, APInt(-1).minBitwidth(true));
+   BOOST_REQUIRE_EQUAL(1, APInt(1).minBitwidth(false));
+   BOOST_REQUIRE_EQUAL(1, APInt(0).minBitwidth(true));
+   BOOST_REQUIRE_EQUAL(1, APInt(0).minBitwidth(false));
+   BOOST_REQUIRE_EQUAL(2, APInt(1).minBitwidth(true));
+   BOOST_REQUIRE_EQUAL(2, APInt(-2).minBitwidth(true));
+}

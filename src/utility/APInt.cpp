@@ -336,9 +336,16 @@ bw_t APInt::leadingOnes(bw_t bw) const
 
 APInt::bw_t APInt::minBitwidth(bool sign) const
 {
-   const auto bw = static_cast<bw_t>(mpz_sizeinbase(_data.backend().data(), 2));
-   return sign ? (leadingOnes(bw) == 1 ? bw : static_cast<bw_t>(bw + 1)) :
-                 (_data.sign() < 0 ? static_cast<bw_t>(std::numeric_limits<bw_t>::max()) : bw);
+   if((_data < 0) && !sign)
+   {
+      return static_cast<bw_t>(std::numeric_limits<bw_t>::max());
+   }
+   else if(_data < -1)
+   {
+      const APInt_internal neg = ~_data;
+      return static_cast<bw_t>(mpz_sizeinbase(neg.backend().data(), 2) + 1);
+   }
+   return static_cast<bw_t>(mpz_sizeinbase(_data.backend().data(), 2) + (sign && (_data > 0)));
 }
 
 APInt APInt::getMaxValue(bw_t bw)
