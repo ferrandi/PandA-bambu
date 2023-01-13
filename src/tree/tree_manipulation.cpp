@@ -2542,7 +2542,7 @@ tree_nodeRef tree_manipulation::CreateNopExpr(const tree_nodeConstRef& operand, 
 
    const auto ssa_operand = GetPointer<const ssa_name>(GET_CONST_NODE(operand));
    const auto int_cst_operand = GetPointer<const integer_cst>(GET_CONST_NODE(operand));
-   if(not ssa_operand and not int_cst_operand)
+   if(!ssa_operand && !int_cst_operand)
    {
       /// THROW_ASSERT cannot be used since this function has to return an empty
       /// tree node in release
@@ -2550,13 +2550,12 @@ tree_nodeRef tree_manipulation::CreateNopExpr(const tree_nodeConstRef& operand, 
       return tree_nodeRef();
    }
 
-   auto ga = CreateGimpleAssign(TreeM->GetTreeReindex(type->index), min, max, TreeM->GetTreeReindex(ne_id),
-                                function_decl_nid, BUILTIN_SRCP);
+   const auto ga = CreateGimpleAssign(TreeM->GetTreeReindex(type->index), min, max, TreeM->GetTreeReindex(ne_id),
+                                      function_decl_nid, BUILTIN_SRCP);
    if(ssa_operand)
    {
-      GetPointer<ssa_name>(GET_NODE(GetPointer<gimple_assign>(GET_NODE(ga))->op0))->use_set = ssa_operand->use_set;
+      GetPointerS<ssa_name>(GET_NODE(GetPointerS<gimple_assign>(GET_NODE(ga))->op0))->use_set = ssa_operand->use_set;
    }
-
    return ga;
 }
 

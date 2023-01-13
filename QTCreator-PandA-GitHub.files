@@ -1927,6 +1927,8 @@ src/behavior/op_graph.cpp
 src/behavior/op_graph.hpp
 src/behavior/operations_graph_constructor.cpp
 src/behavior/operations_graph_constructor.hpp
+src/behavior/OrderedInstructions.cpp
+src/behavior/OrderedInstructions.hpp
 src/behavior/profiling_information.cpp
 src/behavior/profiling_information.hpp
 src/circuit/NP_functionality.cpp

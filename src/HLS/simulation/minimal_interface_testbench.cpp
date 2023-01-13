@@ -84,7 +84,7 @@
 
 static unsigned long long local_port_size(const structural_objectRef portInst)
 {
-   auto port_bitwidth =
+   const auto port_bitwidth =
        GetPointer<port_o>(portInst)->get_typeRef()->size * GetPointer<port_o>(portInst)->get_typeRef()->vector_size;
    auto bitsize = 0ull;
    if(port_bitwidth <= 512)
@@ -120,11 +120,10 @@ void MinimalInterfaceTestbench::cond_load(unsigned long long int Mout_addr_ram_b
                                           const std::string& in_else, const std::string& mem_aggregate) const
 {
    writer->write("assign " + res_string + post_slice2 + " = ((base_addr <= Mout_addr_ram[" +
-                 boost::lexical_cast<std::string>((i + 1) * Mout_addr_ram_bitsize - 1) + ":" +
-                 boost::lexical_cast<std::string>(i * Mout_addr_ram_bitsize) + "] && Mout_addr_ram[" +
-                 boost::lexical_cast<std::string>((i + 1) * Mout_addr_ram_bitsize - 1) + ":" +
-                 boost::lexical_cast<std::string>(i * Mout_addr_ram_bitsize) + "] < (base_addr + MEMSIZE)))" + " ? " +
-                 mem_aggregate + " : " + in_else + ";\n");
+                 STR((i + 1) * Mout_addr_ram_bitsize - 1) + ":" + STR(i * Mout_addr_ram_bitsize) +
+                 "] && Mout_addr_ram[" + STR((i + 1) * Mout_addr_ram_bitsize - 1) + ":" +
+                 STR(i * Mout_addr_ram_bitsize) + "] < (base_addr + MEMSIZE)))" + " ? " + mem_aggregate + " : " +
+                 in_else + ";\n");
 }
 
 void MinimalInterfaceTestbench::write_call(bool) const
@@ -149,28 +148,26 @@ void MinimalInterfaceTestbench::write_call(bool) const
 
 void MinimalInterfaceTestbench::write_memory_handler() const
 {
-   const MemoryAllocation_Policy memory_allocation_policy =
-       parameters->getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy);
-   structural_objectRef Mout_data_ram_size_port = mod->find_member("Mout_data_ram_size", port_o_K, cir);
+   const auto memory_allocation_policy = parameters->getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy);
+   const auto Mout_data_ram_size_port = mod->find_member("Mout_data_ram_size", port_o_K, cir);
    THROW_ASSERT(Mout_data_ram_size_port, "Mout_data_ram_size port is missing");
-   structural_objectRef Mout_Wdata_ram_port = mod->find_member("Mout_Wdata_ram", port_o_K, cir);
+   const auto Mout_Wdata_ram_port = mod->find_member("Mout_Wdata_ram", port_o_K, cir);
    THROW_ASSERT(Mout_Wdata_ram_port, "Mout_Wdata_ram port is missing");
-   auto Mout_Wdata_ram_bitsize =
+   const auto Mout_Wdata_ram_bitsize =
        Mout_Wdata_ram_port->get_typeRef()->size * Mout_Wdata_ram_port->get_typeRef()->vector_size;
    if(Mout_data_ram_size_port->get_kind() == port_vector_o_K)
    {
-      unsigned int Mout_data_ram_size_n_ports = Mout_data_ram_size_port->get_kind() == port_vector_o_K ?
-                                                    GetPointer<port_o>(Mout_data_ram_size_port)->get_ports_size() :
-                                                    1;
-      auto Mout_data_ram_size_bitsize =
+      const auto Mout_data_ram_size_n_ports = Mout_data_ram_size_port->get_kind() == port_vector_o_K ?
+                                                  GetPointer<port_o>(Mout_data_ram_size_port)->get_ports_size() :
+                                                  1;
+      const auto Mout_data_ram_size_bitsize =
           Mout_data_ram_size_port->get_typeRef()->size * Mout_data_ram_size_port->get_typeRef()->vector_size;
       for(unsigned int i = 0; i < Mout_data_ram_size_n_ports; ++i)
       {
-         std::string mask_string = "(1 << Mout_data_ram_size[" +
-                                   boost::lexical_cast<std::string>((i + 1) * Mout_data_ram_size_bitsize - 1) + ":" +
-                                   boost::lexical_cast<std::string>((i)*Mout_data_ram_size_bitsize) + "]) -1";
-         writer->write("assign mask[" + boost::lexical_cast<std::string>((i + 1) * Mout_Wdata_ram_bitsize - 1) + ":" +
-                       boost::lexical_cast<std::string>((i)*Mout_Wdata_ram_bitsize) + "] = " + mask_string + ";\n");
+         const auto mask_string = "(1 << Mout_data_ram_size[" + STR((i + 1) * Mout_data_ram_size_bitsize - 1) + ":" +
+                                  STR((i)*Mout_data_ram_size_bitsize) + "]) -1";
+         writer->write("assign mask[" + STR((i + 1) * Mout_Wdata_ram_bitsize - 1) + ":" +
+                       STR((i)*Mout_Wdata_ram_bitsize) + "] = " + mask_string + ";\n");
       }
    }
    else
@@ -183,33 +180,31 @@ void MinimalInterfaceTestbench::write_memory_handler() const
    writer->write("begin");
    writer->write(STR(STD_OPENING_CHAR) + "\n");
 
-   structural_objectRef Mout_addr_ram_port = mod->find_member("Mout_addr_ram", port_o_K, cir);
+   const auto Mout_addr_ram_port = mod->find_member("Mout_addr_ram", port_o_K, cir);
    THROW_ASSERT(Mout_addr_ram_port, "Mout_addr_ram port is missing");
-   auto Mout_addr_ram_bitsize =
+   const auto Mout_addr_ram_bitsize =
        Mout_addr_ram_port->get_typeRef()->size * Mout_addr_ram_port->get_typeRef()->vector_size;
-   unsigned int Mout_Wdata_ram_n_ports = Mout_Wdata_ram_port->get_kind() == port_vector_o_K ?
-                                             GetPointer<port_o>(Mout_Wdata_ram_port)->get_ports_size() :
-                                             1;
+   const auto Mout_Wdata_ram_n_ports = Mout_Wdata_ram_port->get_kind() == port_vector_o_K ?
+                                           GetPointer<port_o>(Mout_Wdata_ram_port)->get_ports_size() :
+                                           1;
    auto bitsize = Mout_Wdata_ram_port->get_typeRef()->size * Mout_Wdata_ram_port->get_typeRef()->vector_size;
    for(unsigned int i = 0; i < Mout_Wdata_ram_n_ports; ++i)
    {
-      auto mem_aggregate = memory_aggregate_slices(i, bitsize, Mout_addr_ram_bitsize);
+      const auto mem_aggregate = memory_aggregate_slices(i, bitsize, Mout_addr_ram_bitsize);
       std::string post_slice;
       if(Mout_addr_ram_port->get_kind() == port_vector_o_K)
       {
-         post_slice = "[" + boost::lexical_cast<std::string>(i) + "]";
+         post_slice = "[" + STR(i) + "]";
       }
       writer->write("if (Mout_we_ram" + post_slice + " === 1'b1 && base_addr <= Mout_addr_ram[" +
-                    boost::lexical_cast<std::string>((i + 1) * Mout_addr_ram_bitsize - 1) + ":" +
-                    boost::lexical_cast<std::string>(i * Mout_addr_ram_bitsize) + "] && Mout_addr_ram[" +
-                    boost::lexical_cast<std::string>((i + 1) * Mout_addr_ram_bitsize - 1) + ":" +
-                    boost::lexical_cast<std::string>(i * Mout_addr_ram_bitsize) + "] < (base_addr + MEMSIZE))\n");
+                    STR((i + 1) * Mout_addr_ram_bitsize - 1) + ":" + STR(i * Mout_addr_ram_bitsize) +
+                    "] && Mout_addr_ram[" + STR((i + 1) * Mout_addr_ram_bitsize - 1) + ":" +
+                    STR(i * Mout_addr_ram_bitsize) + "] < (base_addr + MEMSIZE))\n");
       writer->write("begin");
       writer->write(STR(STD_OPENING_CHAR) + "\n");
       if(Mout_Wdata_ram_port->get_kind() == port_vector_o_K)
       {
-         post_slice = "[" + boost::lexical_cast<std::string>((i + 1) * bitsize - 1) + ":" +
-                      boost::lexical_cast<std::string>(i * bitsize) + "]";
+         post_slice = "[" + STR((i + 1) * bitsize - 1) + ":" + STR(i * bitsize) + "]";
       }
       else
       {
@@ -223,35 +218,34 @@ void MinimalInterfaceTestbench::write_memory_handler() const
    writer->write(STR(STD_CLOSING_CHAR));
    writer->write("end\n\n");
 
-   structural_objectRef Min_Wdata_ram_port = mod->find_member("Min_Wdata_ram", port_o_K, cir);
+   const auto Min_Wdata_ram_port = mod->find_member("Min_Wdata_ram", port_o_K, cir);
    if(Min_Wdata_ram_port)
    {
       writer->write("assign Min_Wdata_ram = 0;\n");
    }
 
-   structural_objectRef M_Rdata_ram_port = mod->find_member("M_Rdata_ram", port_o_K, cir);
+   const auto M_Rdata_ram_port = mod->find_member("M_Rdata_ram", port_o_K, cir);
    THROW_ASSERT(M_Rdata_ram_port, "M_Rdata_ram port is missing");
    bitsize = M_Rdata_ram_port->get_typeRef()->size * M_Rdata_ram_port->get_typeRef()->vector_size;
    unsigned int M_Rdata_ram_port_n_ports =
        M_Rdata_ram_port->get_kind() == port_vector_o_K ? GetPointer<port_o>(M_Rdata_ram_port)->get_ports_size() : 1;
 
-   structural_objectRef Sout_Rdata_ram_port = mod->find_member("Sout_Rdata_ram", port_o_K, cir);
-   structural_objectRef Sin_Rdata_ram_port = mod->find_member("Sin_Rdata_ram", port_o_K, cir);
+   const auto Sout_Rdata_ram_port = mod->find_member("Sout_Rdata_ram", port_o_K, cir);
+   const auto Sin_Rdata_ram_port = mod->find_member("Sin_Rdata_ram", port_o_K, cir);
    if(Sin_Rdata_ram_port)
    {
       for(unsigned int i = 0; i < M_Rdata_ram_port_n_ports; ++i)
       {
-         std::string mem_aggregate = memory_aggregate_slices(i, bitsize, Mout_addr_ram_bitsize);
+         const auto mem_aggregate = memory_aggregate_slices(i, bitsize, Mout_addr_ram_bitsize);
          std::string post_slice1;
          if(Mout_addr_ram_port->get_kind() == port_vector_o_K)
          {
-            post_slice1 = "[" + boost::lexical_cast<std::string>(i) + "]";
+            post_slice1 = "[" + STR(i) + "]";
          }
          std::string post_slice2;
          if(M_Rdata_ram_port->get_kind() == port_vector_o_K)
          {
-            post_slice2 = "[" + boost::lexical_cast<std::string>((i + 1) * bitsize - 1) + ":" +
-                          boost::lexical_cast<std::string>(i * bitsize) + "]";
+            post_slice2 = "[" + STR((i + 1) * bitsize - 1) + ":" + STR(i * bitsize) + "]";
          }
          else
          {
@@ -268,23 +262,22 @@ void MinimalInterfaceTestbench::write_memory_handler() const
    {
       for(unsigned int i = 0; i < M_Rdata_ram_port_n_ports; ++i)
       {
-         std::string mem_aggregate = memory_aggregate_slices(i, bitsize, Mout_addr_ram_bitsize);
+         const auto mem_aggregate = memory_aggregate_slices(i, bitsize, Mout_addr_ram_bitsize);
          std::string post_slice1;
          if(Mout_addr_ram_port->get_kind() == port_vector_o_K)
          {
-            post_slice1 = "[" + boost::lexical_cast<std::string>(i) + "]";
+            post_slice1 = "[" + STR(i) + "]";
          }
          std::string post_slice2;
          if(M_Rdata_ram_port->get_kind() == port_vector_o_K)
          {
-            post_slice2 = "[" + boost::lexical_cast<std::string>((i + 1) * bitsize - 1) + ":" +
-                          boost::lexical_cast<std::string>(i * bitsize) + "]";
+            post_slice2 = "[" + STR((i + 1) * bitsize - 1) + ":" + STR(i * bitsize) + "]";
          }
          else
          {
             post_slice2 = "";
          }
-         if(memory_allocation_policy == MemoryAllocation_Policy::ALL_BRAM or
+         if(memory_allocation_policy == MemoryAllocation_Policy::ALL_BRAM ||
             memory_allocation_policy == MemoryAllocation_Policy::EXT_PIPELINED_BRAM)
          {
             cond_load(Mout_addr_ram_bitsize, post_slice1, post_slice2, "M_Rdata_ram_delayed_temporary", i,
@@ -321,23 +314,22 @@ void MinimalInterfaceTestbench::write_memory_handler() const
    {
       for(unsigned int i = 0; i < M_Rdata_ram_port_n_ports; ++i)
       {
-         auto mem_aggregate = memory_aggregate_slices(i, bitsize, Mout_addr_ram_bitsize);
+         const auto mem_aggregate = memory_aggregate_slices(i, bitsize, Mout_addr_ram_bitsize);
          std::string post_slice1;
          if(Mout_addr_ram_port->get_kind() == port_vector_o_K)
          {
-            post_slice1 = "[" + boost::lexical_cast<std::string>(i) + "]";
+            post_slice1 = "[" + STR(i) + "]";
          }
          std::string post_slice2;
          if(M_Rdata_ram_port->get_kind() == port_vector_o_K)
          {
-            post_slice2 = "[" + boost::lexical_cast<std::string>((i + 1) * bitsize - 1) + ":" +
-                          boost::lexical_cast<std::string>(i * bitsize) + "]";
+            post_slice2 = "[" + STR((i + 1) * bitsize - 1) + ":" + STR(i * bitsize) + "]";
          }
          else
          {
             post_slice2 = "";
          }
-         if(memory_allocation_policy == MemoryAllocation_Policy::ALL_BRAM or
+         if(memory_allocation_policy == MemoryAllocation_Policy::ALL_BRAM ||
             memory_allocation_policy == MemoryAllocation_Policy::EXT_PIPELINED_BRAM)
          {
             cond_load(Mout_addr_ram_bitsize, post_slice1, post_slice2, "M_Rdata_ram_delayed_temporary", i,
@@ -369,7 +361,7 @@ void MinimalInterfaceTestbench::write_memory_handler() const
          }
       }
    }
-   structural_objectRef Sin_Wdata_ram_port = mod->find_member("S_Wdata_ram", port_o_K, cir);
+   const auto Sin_Wdata_ram_port = mod->find_member("S_Wdata_ram", port_o_K, cir);
    if(Sin_Wdata_ram_port)
    {
       writer->write("assign S_Wdata_ram = Mout_Wdata_ram;\n");
@@ -383,59 +375,53 @@ void MinimalInterfaceTestbench::write_memory_handler() const
       std::string post_slice1;
       if(Mout_addr_ram_port->get_kind() == port_vector_o_K)
       {
-         post_slice1 = "[" + boost::lexical_cast<std::string>(i) + "]";
+         post_slice1 = "[" + STR(i) + "]";
       }
 
       writer->write("if ((Mout_oe_ram" + post_slice1 + "===1'b1 && base_addr <= Mout_addr_ram[" +
-                    boost::lexical_cast<std::string>((i + 1) * Mout_addr_ram_bitsize - 1) + ":" +
-                    boost::lexical_cast<std::string>(i * Mout_addr_ram_bitsize) + "] && Mout_addr_ram[" +
-                    boost::lexical_cast<std::string>((i + 1) * Mout_addr_ram_bitsize - 1) + ":" +
-                    boost::lexical_cast<std::string>(i * Mout_addr_ram_bitsize) + "] < (base_addr + MEMSIZE)))\n");
+                    STR((i + 1) * Mout_addr_ram_bitsize - 1) + ":" + STR(i * Mout_addr_ram_bitsize) +
+                    "] && Mout_addr_ram[" + STR((i + 1) * Mout_addr_ram_bitsize - 1) + ":" +
+                    STR(i * Mout_addr_ram_bitsize) + "] < (base_addr + MEMSIZE)))\n");
       writer->write("begin");
       writer->write(STR(STD_OPENING_CHAR) + "\n");
-      writer->write("if (reg_DataReady[" + boost::lexical_cast<std::string>(i) + "] >= 0 && reg_DataReady[" +
-                    boost::lexical_cast<std::string>(i) + "] < `MEM_DELAY_READ-1)");
+      writer->write("if (reg_DataReady[" + STR(i) + "] >= 0 && reg_DataReady[" + STR(i) + "] < `MEM_DELAY_READ-1)");
       writer->write(STR(STD_OPENING_CHAR) + "\n");
-      writer->write("reg_DataReady[" + boost::lexical_cast<std::string>(i) + "] <= 1 + reg_DataReady[" +
-                    boost::lexical_cast<std::string>(i) + "];");
+      writer->write("reg_DataReady[" + STR(i) + "] <= 1 + reg_DataReady[" + STR(i) + "];");
       writer->write(STR(STD_CLOSING_CHAR) + "\n");
       writer->write("else");
       writer->write(STR(STD_OPENING_CHAR) + "\n");
-      writer->write("reg_DataReady[" + boost::lexical_cast<std::string>(i) + "] <= 0;\n");
+      writer->write("reg_DataReady[" + STR(i) + "] <= 0;\n");
       writer->write(STR(STD_CLOSING_CHAR));
       writer->write(STR(STD_CLOSING_CHAR));
       writer->write("end\n\n");
 
       writer->write("else if ((Mout_we_ram" + post_slice1 + "===1'b1 && base_addr <= Mout_addr_ram[" +
-                    boost::lexical_cast<std::string>((i + 1) * Mout_addr_ram_bitsize - 1) + ":" +
-                    boost::lexical_cast<std::string>(i * Mout_addr_ram_bitsize) + "] && Mout_addr_ram[" +
-                    boost::lexical_cast<std::string>((i + 1) * Mout_addr_ram_bitsize - 1) + ":" +
-                    boost::lexical_cast<std::string>(i * Mout_addr_ram_bitsize) + "] < (base_addr + MEMSIZE)))\n");
+                    STR((i + 1) * Mout_addr_ram_bitsize - 1) + ":" + STR(i * Mout_addr_ram_bitsize) +
+                    "] && Mout_addr_ram[" + STR((i + 1) * Mout_addr_ram_bitsize - 1) + ":" +
+                    STR(i * Mout_addr_ram_bitsize) + "] < (base_addr + MEMSIZE)))\n");
       writer->write("begin");
       writer->write(STR(STD_OPENING_CHAR) + "\n");
-      writer->write("if (reg_DataReady[" + boost::lexical_cast<std::string>(i) + "] >= 0 && reg_DataReady[" +
-                    boost::lexical_cast<std::string>(i) + "] < `MEM_DELAY_WRITE-1)");
+      writer->write("if (reg_DataReady[" + STR(i) + "] >= 0 && reg_DataReady[" + STR(i) + "] < `MEM_DELAY_WRITE-1)");
       writer->write(STR(STD_OPENING_CHAR) + "\n");
-      writer->write("reg_DataReady[" + boost::lexical_cast<std::string>(i) + "] <= 1 + reg_DataReady[" +
-                    boost::lexical_cast<std::string>(i) + "];\n");
+      writer->write("reg_DataReady[" + STR(i) + "] <= 1 + reg_DataReady[" + STR(i) + "];\n");
       writer->write(STR(STD_CLOSING_CHAR));
       writer->write("else");
       writer->write(STR(STD_OPENING_CHAR) + "\n");
-      writer->write("reg_DataReady[" + boost::lexical_cast<std::string>(i) + "] <= 0;\n");
+      writer->write("reg_DataReady[" + STR(i) + "] <= 0;\n");
       writer->write(STR(STD_CLOSING_CHAR));
       writer->write(STR(STD_CLOSING_CHAR));
       writer->write("end\n\n");
 
       writer->write("else");
       writer->write(STR(STD_OPENING_CHAR) + "\n");
-      writer->write("reg_DataReady[" + boost::lexical_cast<std::string>(i) + "] <= 0;");
+      writer->write("reg_DataReady[" + STR(i) + "] <= 0;");
       writer->write(STR(STD_CLOSING_CHAR) + "\n");
    }
    writer->write(STR(STD_CLOSING_CHAR) + "\n");
    writer->write("end\n\n");
 
-   structural_objectRef Sin_DataRdy_port = mod->find_member("Sin_DataRdy", port_o_K, cir);
-   structural_objectRef Sout_DataRdy_port = mod->find_member("Sout_DataRdy", port_o_K, cir);
+   const auto Sin_DataRdy_port = mod->find_member("Sin_DataRdy", port_o_K, cir);
+   const auto Sout_DataRdy_port = mod->find_member("Sout_DataRdy", port_o_K, cir);
    if(Sin_DataRdy_port)
    {
       for(unsigned int i = 0; i < M_Rdata_ram_port_n_ports; ++i)
@@ -443,16 +429,14 @@ void MinimalInterfaceTestbench::write_memory_handler() const
          std::string post_slice1;
          if(Mout_addr_ram_port->get_kind() == port_vector_o_K)
          {
-            post_slice1 = "[" + boost::lexical_cast<std::string>(i) + "]";
+            post_slice1 = "[" + STR(i) + "]";
          }
          writer->write("assign Sin_DataRdy" + post_slice1 + " = (base_addr <= Mout_addr_ram[" +
-                       boost::lexical_cast<std::string>((i + 1) * Mout_addr_ram_bitsize - 1) + ":" +
-                       boost::lexical_cast<std::string>(i * Mout_addr_ram_bitsize) + "] && Mout_addr_ram[" +
-                       boost::lexical_cast<std::string>((i + 1) * Mout_addr_ram_bitsize - 1) + ":" +
-                       boost::lexical_cast<std::string>(i * Mout_addr_ram_bitsize) +
-                       "] < (base_addr + MEMSIZE)) && (((reg_DataReady[" + boost::lexical_cast<std::string>(i) +
+                       STR((i + 1) * Mout_addr_ram_bitsize - 1) + ":" + STR(i * Mout_addr_ram_bitsize) +
+                       "] && Mout_addr_ram[" + STR((i + 1) * Mout_addr_ram_bitsize - 1) + ":" +
+                       STR(i * Mout_addr_ram_bitsize) + "] < (base_addr + MEMSIZE)) && (((reg_DataReady[" + STR(i) +
                        "] == `MEM_DELAY_READ-1)) || (Mout_we_ram" + post_slice1 + "===1'b1 && (reg_DataReady[" +
-                       boost::lexical_cast<std::string>(i) + "] == `MEM_DELAY_WRITE-1)));\n");
+                       STR(i) + "] == `MEM_DELAY_WRITE-1)));\n");
       }
       THROW_ASSERT(Sout_DataRdy_port, "Sout_DataRdy port is missing");
       writer->write("assign M_DataRdy = Sout_DataRdy;\n");
@@ -464,17 +448,14 @@ void MinimalInterfaceTestbench::write_memory_handler() const
          std::string post_slice1;
          if(Mout_addr_ram_port->get_kind() == port_vector_o_K)
          {
-            post_slice1 = "[" + boost::lexical_cast<std::string>(i) + "]";
+            post_slice1 = "[" + STR(i) + "]";
          }
-         writer->write("assign M_DataRdy" + post_slice1 + " = Sout_DataRdy" + post_slice1 +
-                       " | ((base_addr <= Mout_addr_ram[" +
-                       boost::lexical_cast<std::string>((i + 1) * Mout_addr_ram_bitsize - 1) + ":" +
-                       boost::lexical_cast<std::string>(i * Mout_addr_ram_bitsize) + "] && Mout_addr_ram[" +
-                       boost::lexical_cast<std::string>((i + 1) * Mout_addr_ram_bitsize - 1) + ":" +
-                       boost::lexical_cast<std::string>(i * Mout_addr_ram_bitsize) +
-                       "] < (base_addr + MEMSIZE)) && (((reg_DataReady[" + boost::lexical_cast<std::string>(i) +
-                       "] == `MEM_DELAY_READ-1)) || (Mout_we_ram" + post_slice1 + "===1'b1 && (reg_DataReady[" +
-                       boost::lexical_cast<std::string>(i) + "] == `MEM_DELAY_WRITE-1))));\n");
+         writer->write(
+             "assign M_DataRdy" + post_slice1 + " = Sout_DataRdy" + post_slice1 + " | ((base_addr <= Mout_addr_ram[" +
+             STR((i + 1) * Mout_addr_ram_bitsize - 1) + ":" + STR(i * Mout_addr_ram_bitsize) + "] && Mout_addr_ram[" +
+             STR((i + 1) * Mout_addr_ram_bitsize - 1) + ":" + STR(i * Mout_addr_ram_bitsize) +
+             "] < (base_addr + MEMSIZE)) && (((reg_DataReady[" + STR(i) + "] == `MEM_DELAY_READ-1)) || (Mout_we_ram" +
+             post_slice1 + "===1'b1 && (reg_DataReady[" + STR(i) + "] == `MEM_DELAY_WRITE-1))));\n");
       }
    }
    else
@@ -484,16 +465,14 @@ void MinimalInterfaceTestbench::write_memory_handler() const
          std::string post_slice1;
          if(Mout_addr_ram_port->get_kind() == port_vector_o_K)
          {
-            post_slice1 = "[" + boost::lexical_cast<std::string>(i) + "]";
+            post_slice1 = "[" + STR(i) + "]";
          }
          writer->write("assign M_DataRdy" + post_slice1 + " = (base_addr <= Mout_addr_ram[" +
-                       boost::lexical_cast<std::string>((i + 1) * Mout_addr_ram_bitsize - 1) + ":" +
-                       boost::lexical_cast<std::string>(i * Mout_addr_ram_bitsize) + "] && Mout_addr_ram[" +
-                       boost::lexical_cast<std::string>((i + 1) * Mout_addr_ram_bitsize - 1) + ":" +
-                       boost::lexical_cast<std::string>(i * Mout_addr_ram_bitsize) +
-                       "] < (base_addr + MEMSIZE)) && (((reg_DataReady[" + boost::lexical_cast<std::string>(i) +
+                       STR((i + 1) * Mout_addr_ram_bitsize - 1) + ":" + STR(i * Mout_addr_ram_bitsize) +
+                       "] && Mout_addr_ram[" + STR((i + 1) * Mout_addr_ram_bitsize - 1) + ":" +
+                       STR(i * Mout_addr_ram_bitsize) + "] < (base_addr + MEMSIZE)) && (((reg_DataReady[" + STR(i) +
                        "] == `MEM_DELAY_READ-1)) || (Mout_we_ram" + post_slice1 + "===1'b1 && (reg_DataReady[" +
-                       boost::lexical_cast<std::string>(i) + "] == `MEM_DELAY_WRITE-1)));\n");
+                       STR(i) + "] == `MEM_DELAY_WRITE-1)));\n");
       }
    }
 
@@ -553,7 +532,7 @@ void MinimalInterfaceTestbench::write_memory_handler() const
       std::string post_slice1;
       if(Mout_addr_ram_port->get_kind() == port_vector_o_K)
       {
-         post_slice1 = "[" + boost::lexical_cast<std::string>(i) + "]";
+         post_slice1 = "[" + STR(i) + "]";
       }
       writer->write("if (Mout_we_ram" + post_slice1 + "===1'b1 && Mout_oe_ram" + post_slice1 + "===1'b1)\n");
       writer->write("begin\n");
@@ -790,9 +769,9 @@ void MinimalInterfaceTestbench::write_interface_handler() const
                   THROW_ASSERT(orig_port_name.substr(terminate) == "_TDATA",
                                "unexpected case" + orig_port_name.substr(terminate));
                }
-               auto size_string = orig_port_name.size() - size_dout;
-               auto par_name = orig_port_name.substr(0, size_string);
-               auto bitsize = local_port_size(portInst);
+               const auto size_string = orig_port_name.size() - size_dout;
+               const auto par_name = orig_port_name.substr(0, size_string);
+               const auto bitsize = local_port_size(portInst);
                write_read_fifo_manager(par_name, orig_port_name, bitsize, valid_suffix);
             }
          }
@@ -1244,10 +1223,9 @@ std::string MinimalInterfaceTestbench::memory_aggregate_slices(unsigned int i, u
       {
          mem_aggregate += ", ";
       }
-      mem_aggregate += "_bambu_testbench_mem_[Mout_addr_ram[" +
-                       boost::lexical_cast<std::string>((i + 1) * Mout_addr_ram_bitsize - 1) + ":" +
-                       boost::lexical_cast<std::string>(i * Mout_addr_ram_bitsize) + "] + " +
-                       STR((bitsize - bitsize_index) / 8 - 1) + " - base_addr]";
+      mem_aggregate += "_bambu_testbench_mem_[Mout_addr_ram[" + STR((i + 1) * Mout_addr_ram_bitsize - 1) + ":" +
+                       STR(i * Mout_addr_ram_bitsize) + "] + " + STR((bitsize - bitsize_index) / 8 - 1) +
+                       " - base_addr]";
    }
    mem_aggregate += "}";
 
