@@ -1132,6 +1132,41 @@ DesignFlowStep_Status IR_lowering::InternalExec()
             }
          }
       }
+      for(const auto& phi : block.second->CGetPhiList())
+      {
+         const auto pn = GetPointerS<gimple_phi>(GET_NODE(phi));
+         bool is_virtual = pn->virtual_flag;
+         if(!is_virtual)
+         {
+            std::list<std::pair<gimple_phi::DefEdge, gimple_phi::DefEdge>> to_be_replaced;
+            for(const auto& def_edge : pn->CGetDefEdgesList())
+            {
+               const auto def_kind = GET_NODE(def_edge.first)->get_kind();
+               if(def_kind == ssa_name_K)
+               {
+                  for(const auto& phi_el : block.second->CGetPhiList())
+                  {
+                     const auto pnc = GetPointerS<gimple_phi>(GET_NODE(phi_el));
+                     if(GET_INDEX_CONST_NODE(pnc->res) == GET_INDEX_CONST_NODE(def_edge.first))
+                     {
+                        for(const auto& def_edgec : pnc->CGetDefEdgesList())
+                        {
+                           if(def_edge.second == def_edgec.second)
+                           {
+                              to_be_replaced.emplace_back(def_edge, def_edgec);
+                           }
+                        }
+                     }
+                  }
+               }
+            }
+            for(const auto& def_edge_pair : to_be_replaced)
+            {
+               pn->ReplaceDefEdge(TM, def_edge_pair.first,
+                                  gimple_phi::DefEdge(def_edge_pair.second.first, def_edge_pair.second.second));
+            }
+         }
+      }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Examined PHI of BB" + STR(block.first));
    }
 
