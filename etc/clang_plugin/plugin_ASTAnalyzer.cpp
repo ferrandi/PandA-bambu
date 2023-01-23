@@ -56,6 +56,9 @@
 #include <clang/Sema/Sema.h>
 #include <llvm/Support/raw_ostream.h>
 
+#include <regex>
+#include <string>
+
 static std::map<std::string, std::map<clang::SourceLocation, std::map<std::string, std::string>>> file_loc_attr;
 static std::map<std::string, std::map<clang::SourceLocation, std::map<std::string, std::map<std::string, std::string>>>>
     file_loc_arg_attr;
@@ -542,6 +545,15 @@ namespace clang
                      }
                   }
                   Fun2Params[fname].push_back(pname);
+
+                  const auto remove_spaces = [](std::string& str) {
+                     str = std::regex_replace(str, std::regex(" ([<>&*])|([<>&*]) | $|^ "), "$1$2");
+                  };
+
+                  remove_spaces(ParamTypeName);
+                  remove_spaces(ParamTypeNameOrig);
+                  remove_spaces(ParamTypeInclude);
+
                   attr_val["interface_type"] = interface;
                   attr_val["interface_typename"] = ParamTypeName;
                   attr_val["interface_typename_orig"] = ParamTypeNameOrig;
