@@ -212,7 +212,7 @@ class reg_binding : public variable2obj<generic_objRef>
     * @param r is the register
     * @return the set of associated variables
     */
-   CustomOrderedSet<std::pair<unsigned int, unsigned int> > get_vars(const unsigned int& r) const;
+   CustomOrderedSet<std::pair<unsigned int, unsigned int>> get_vars(const unsigned int& r) const;
 
    /**
     * return and set the bitsize associated with given register

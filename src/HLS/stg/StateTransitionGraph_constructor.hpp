@@ -159,7 +159,7 @@ class StateTransitionGraph_constructor
     * @param curr is the state
     * @param first_iteration in case the pipelined state is run on the first loop iteration
     */
-   void set_pipelined_state(const vertex& curr, std::set<vertex> &is_prologue);
+   void set_pipelined_state(const vertex& curr, std::set<vertex>& is_prologue);
 };
 
 /// refcount definition to StateTransitionGraph_constructor class

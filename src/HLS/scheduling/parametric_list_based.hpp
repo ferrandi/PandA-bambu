@@ -192,23 +192,12 @@ class parametric_list_based : public schedulingBaseStep
        double& current_starting_time, double& current_ending_time, double& stage_period, bool& cannot_be_chained,
        fu_bindingRef res_binding, const ScheduleConstRef schedule, double& phi_extra_time, double setup_hold_time,
        CustomMap<std::pair<unsigned int, unsigned int>, double>& local_connection_map);
-   void
-   compute_starting_ending_time_alap(const CustomUnorderedSet<vertex>& operations, const vertex v,
-                                     const unsigned int fu_type, const ControlStep cs, double& starting_time,
-                                     double& ending_time, double& op_execution_time, double& stage_period,
-                                     unsigned int& n_cycles, bool& cannot_be_chained, fu_bindingRef res_binding,
-                                     const ScheduleConstRef schedule, double& phi_extra_time, double setup_hold_time,
-                                     CustomMap<std::pair<unsigned int, unsigned int>, double>& local_connection_map);
 
    /**
     * update starting and ending time by moving candidate_v as late as possible without increasing the whole latency
     */
    void update_starting_ending_time(const CustomUnorderedSet<vertex>& operations, vertex candidate_v,
                                     fu_bindingRef res_binding, OpGraphConstRef opDFG, const ScheduleConstRef schedule);
-
-   void update_starting_ending_time_asap(const CustomUnorderedSet<vertex>& operations, vertex candidate_v,
-                                         fu_bindingRef res_binding, OpGraphConstRef opDFG,
-                                         const ScheduleConstRef schedule);
 
    /**
     * @brief update the starting and ending time of the vertices scheduled in the same cs of current_v
@@ -241,21 +230,6 @@ class parametric_list_based : public schedulingBaseStep
                                const vertex v) const;
 
    /**
-    * compute the slack of a given operation and in case specify if is pipelined
-    */
-   double compute_slack(vertex current_op, const ControlStep current_vertex_cstep, double setup_hold_time);
-
-   /**
-    * @brief update the slack of vertices of current_v and of all the vertices in chaining with it
-    * @param current_v is the considered vertex
-    * @param schedule is the scheduling data structure
-    * @param vertices_analyzed is the set of vertices having the slack updated
-    */
-   void update_vertices_slack(const CustomUnorderedSet<vertex>& operations, vertex current_v,
-                              const ScheduleRef schedule, OpVertexSet& vertices_analyzed, double setup_hold_time,
-                              const OpGraphConstRef opDFG);
-
-   /**
     * @brief store_in_chaining_with_load checks if a store is chained with a load operation or vice versa
     * @param current_vertex_cstep control step of vertex v
     * @param v vertex considered
@@ -265,30 +239,6 @@ class parametric_list_based : public schedulingBaseStep
                                        vertex v);
    bool store_in_chaining_with_load_out(const CustomUnorderedSet<vertex>& operations, unsigned int current_vertex_cstep,
                                         vertex v);
-
-   /**
-    * perform balanced scheduling on an existing solution
-    * @param sub_levels is the list of sorted vertices
-    * @param schedule is the current scheduling
-    * @param res_binding is the current resource binding
-    * @param setup_hold_time is the delay for the setup and hold of registers
-    */
-   void do_balanced_scheduling(const CustomUnorderedSet<vertex>& operations, std::deque<vertex>& sub_levels,
-                               const ScheduleRef schedule, const fu_bindingRef res_binding,
-                               const double setup_hold_time, const double scheduling_mux_margins,
-                               const OpGraphConstRef opDFG);
-
-   /**
-    * different version of balanced scheduling. It re-schedules the operation trying to improve their slack.
-    * @param sub_levels is the list of sorted vertices
-    * @param schedule is the current scheduling
-    * @param res_binding is the current resource binding
-    * @param setup_hold_time is the delay for the setup and hold of registers
-    */
-   void do_balanced_scheduling1(const CustomUnorderedSet<vertex>& operations, std::deque<vertex>& sub_levels,
-                                const ScheduleRef schedule, const fu_bindingRef res_binding,
-                                const double setup_hold_time, const double scheduling_mux_margins,
-                                const OpGraphConstRef opDFG, bool seen_cstep_has_RET_conflict);
 
    bool check_non_direct_operation_chaining(const CustomUnorderedSet<vertex>& operations, vertex current_v,
                                             unsigned int v_fu_type, const ControlStep cs,

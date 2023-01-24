@@ -294,7 +294,6 @@ void cdfc_module_binding::initialize_connection_relation(connection_relation& co
             const CustomOrderedSet<vertex>& running_states = HLS->Rliv->get_state_where_run(current_v);
             for(const auto state : running_states)
             {
-               std::cerr << "state" << HLS->Rliv->get_name(state) << "\n";
                if(tree_helper::is_parameter(TreeM, tree_var) || !HLS->Rliv->has_op_where_defined(tree_var))
                {
                   con_rel_per_vertex_per_port_index.insert(
@@ -315,29 +314,24 @@ void cdfc_module_binding::initialize_connection_relation(connection_relation& co
                      }
                      else
                      {
-                        auto step = HLS->Rliv->get_step(state, current_v, tree_var, true);
-                        step = HLS->Rliv->get_prev_step(tree_var, step);
+                        auto step = HLS->Rliv->GetStep(state, current_v, tree_var, true);
+
                         if(HLS->storage_value_information->is_a_storage_value(state, tree_var, step))
-                     {
-                           std::cerr << "1\n";
+                        {
                            auto storage_value =
                                HLS->storage_value_information->get_storage_value_index(state, tree_var, step);
-                        con_rel_per_vertex_per_port_index.insert(
-                            std::make_pair(no_phi_no_chained, std::make_pair(storage_value, def_op)));
+                           con_rel_per_vertex_per_port_index.insert(
+                               std::make_pair(no_phi_no_chained, std::make_pair(storage_value, def_op)));
+                        }
+                        else
+                        {
+                           THROW_UNREACHABLE("unexpected");
+                        }
                      }
-                     else
-                     {
-                        THROW_UNREACHABLE("unexpected");
-                     }
-                  }
                   }
                   else
                   {
-                     std::cerr << FB->CGetBehavioralHelper()->PrintVariable(tree_var) << " "
-                               << HLS->Rliv->get_name(state) << " 2\n";
-                     auto step = HLS->Rliv->get_step(state, current_v, tree_var, true);
-                     step = HLS->Rliv->get_prev_step(tree_var, step);
-                     std::cerr << "step=" << step << "\n";
+                     auto step = HLS->Rliv->GetStep(state, current_v, tree_var, true);
                      THROW_ASSERT(HLS->storage_value_information->is_a_storage_value(state, tree_var, step),
                                   "unexpected case");
                      auto storage_value =
@@ -502,10 +496,9 @@ void estimate_muxes(const connection_relation& con_rel, unsigned long long mux_p
             const CustomOrderedSet<vertex>& end = HLS->Rliv->get_state_where_end(current_v);
             for(const auto estate : end)
             {
-               auto step = HLS->Rliv->get_step(estate, current_v, var_written, false);
+               auto step = HLS->Rliv->GetStep(estate, current_v, var_written, false);
                if(HLS->storage_value_information->is_a_storage_value(estate, var_written, step))
                {
-                  std::cerr << "3\n";
                   regs_out.insert(HLS->Rreg->get_register(
                       HLS->storage_value_information->get_storage_value_index(estate, var_written, step)));
                }
@@ -999,7 +992,6 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
       START_TIME(step_time);
    }
    const tree_managerRef TreeM = HLSMgr->get_tree_manager();
-   HLS->Rliv->set_HLS(HLS);
 
    // resource binding and allocation  info
    fu_bindingRef fu = HLS->Rfu;
@@ -2671,7 +2663,6 @@ bool cdfc_module_binding::can_be_clustered(vertex v, OpGraphConstRef fsdg, fu_bi
    }
    auto fu_s1 = fu->get_assign(v);
    /*
-   HLS->Rliv->set_HLS(HLS);
    std::string res_name = HLS->allocation_information->get_fu_name(fu_s1).first;
    std::string lib_name = HLS->HLS_T->get_technology_manager()->get_library(res_name);
    bool disabling_slack_based_binding = (HLS->allocation_information->get_number_channels(fu_s1) >= 1) ||

@@ -117,7 +117,7 @@ static inline unsigned int get_bb_index_from_state_info(const OpGraphConstRef da
 
 static void update_liveout_with_prev(const HLS_managerRef HLSMgr, hlsRef HLS, const StateTransitionGraphConstRef stg,
                                      const OpGraphConstRef data, vertex current_state, vertex prev_state,
-                                     unsigned int funId)
+                                     unsigned int /*funId*/)
 {
    CustomSet<std::pair<unsigned int, unsigned int>> keep_pair;
    const auto state_info = stg->CGetStateInfo(prev_state);
@@ -136,11 +136,12 @@ static void update_liveout_with_prev(const HLS_managerRef HLSMgr, hlsRef HLS, co
                                           def_op) == state_info->ending_operations.end();
             if(not_have_def || HLS->STG->not_same_step(prev_state, def_op, exec_op))
             {
-               unsigned int step = HLS->Rliv->get_step(prev_state, exec_op, scalar_use, true);
-               step = HLS->Rliv->get_prev_step(scalar_use, step);
-               const FunctionBehaviorConstRef FB = HLSMgr->CGetFunctionBehavior(funId);
-               const BehavioralHelperConstRef BH = FB->CGetBehavioralHelper();
-               std::cerr << BH->PrintVariable(scalar_use) << "-" << step << "\n";
+               unsigned int step = GET_TYPE(data, exec_op) & TYPE_PHI ?
+                                       HLS->Rliv->GetStepPhiIn(exec_op, scalar_use) :
+                                       HLS->Rliv->GetStep(prev_state, exec_op, scalar_use, true); /// To be checked
+               // const FunctionBehaviorConstRef FB = HLSMgr->CGetFunctionBehavior(funId);
+               // const BehavioralHelperConstRef BH = FB->CGetBehavioralHelper();
+               // std::cerr << BH->PrintVariable(scalar_use) << "-" << step << "\n";
                HLS->Rliv->set_live_out(current_state, scalar_use, step);
                if(!not_have_def)
                {
@@ -159,12 +160,12 @@ static void update_liveout_with_prev(const HLS_managerRef HLSMgr, hlsRef HLS, co
       {
          if(HLSMgr->is_register_compatible(scalar_def))
          {
-            const FunctionBehaviorConstRef FB = HLSMgr->CGetFunctionBehavior(funId);
-            const BehavioralHelperConstRef BH = FB->CGetBehavioralHelper();
-            unsigned int step = HLS->Rliv->get_step(prev_state, end_op, scalar_def, false);
+            unsigned int step = HLS->Rliv->GetStep(prev_state, end_op, scalar_def, false);
             if(!keep_pair.count(std::make_pair(scalar_def, step)))
             {
-               std::cerr << "erase " << BH->PrintVariable(scalar_def) << "-" << step << "\n";
+               // const FunctionBehaviorConstRef FB = HLSMgr->CGetFunctionBehavior(funId);
+               // const BehavioralHelperConstRef BH = FB->CGetBehavioralHelper();
+               // std::cerr << "erase " << BH->PrintVariable(scalar_def) << "-" << step << "\n";
                HLS->Rliv->erase_el_live_out(current_state, scalar_def, step);
             }
          }
@@ -216,7 +217,26 @@ DesignFlowStep_Status FSM_NI_SSA_liveness::InternalExec()
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Setting up state " + HLS->STG->get_state_name(rosl));
       HLS->Rliv->add_name(rosl, HLS->STG->get_state_name(rosl));
       HLS->Rliv->add_support_state(rosl);
-
+      const StateInfoConstRef state_info = stg->CGetStateInfo(rosl);
+      unsigned int bb_index = get_bb_index_from_state_info(data, state_info);
+      HLS->Rliv->set_max_step(bb_index, state_info->is_pipelined_state ?
+                                            stg->CGetStateTransitionGraphInfo()->vertex_to_max_step.at(rosl) :
+                                            0);
+      for(auto op : state_info->ending_operations)
+      {
+         HLS->Rliv->set_BB(op, GET_BB_INDEX(data, op));
+         if(GET_TYPE(data, op) & TYPE_PHI)
+         {
+            HLS->Rliv->add_phi_vertices(op);
+         }
+         THROW_ASSERT((GET_TYPE(data, op) & TYPE_VPHI) == 0, "unexpected condition");
+      }
+      for(auto op : state_info->executing_operations)
+      {
+         HLS->Rliv->set_BB(op, GET_BB_INDEX(data, op));
+         HLS->Rliv->set_II(GET_BB_INDEX(data, op), state_info->LP_II);
+         THROW_ASSERT((GET_TYPE(data, op) & TYPE_VPHI) == 0, "unexpected condition");
+      }
       // skip exit state
       if(rosl == exit_state)
       {
@@ -226,7 +246,6 @@ DesignFlowStep_Status FSM_NI_SSA_liveness::InternalExec()
 
       // compute which operation defines a variable (add_op_definition)
       // compute in which states an operation complete the computation (add_state_for_ending_op)
-      const StateInfoConstRef state_info = astg->CGetStateInfo(rosl);
       for(const auto& eoc : state_info->ending_operations) // these also include the moved ending operations
       {
          const CustomSet<unsigned int>& scalar_defs = data->CGetOpNodeInfo(eoc)->GetVariables(
@@ -262,6 +281,7 @@ DesignFlowStep_Status FSM_NI_SSA_liveness::InternalExec()
          for(auto op : state_info->step_out)
          {
             HLS->Rliv->set_step(rosl, op.first, op.second, false);
+            HLS->Rliv->add_op_step(op.first, op.second);
          }
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Pipelined state");
          continue;
@@ -333,7 +353,7 @@ DesignFlowStep_Status FSM_NI_SSA_liveness::InternalExec()
          continue;
       }
 
-      StateInfoConstRef state_info = astg->CGetStateInfo(rosl);
+      StateInfoConstRef state_info = stg->CGetStateInfo(rosl);
       // skip dummy states
       if(state_info->is_dummy)
       {
@@ -345,13 +365,13 @@ DesignFlowStep_Status FSM_NI_SSA_liveness::InternalExec()
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---bb_index: " + STR(bb_index));
       if(state_info->is_pipelined_state)
       {
+         bool first_last_state_iteration = true;
          OutEdgeIterator o_e_it, o_e_end;
          for(boost::tie(o_e_it, o_e_end) = boost::out_edges(rosl, *stg); o_e_it != o_e_end; ++o_e_it)
          {
-            vertex target_state = boost::target(*o_e_it, *astg);
-
+            vertex target_state = boost::target(*o_e_it, *stg);
             prev_state = target_state;
-            StateInfoConstRef tgt_state_info = astg->CGetStateInfo(target_state);
+            StateInfoConstRef tgt_state_info = stg->CGetStateInfo(target_state);
             prev_bb_index = get_bb_index_from_state_info(data, tgt_state_info);
             if(prev_bb_index != bb_index)
             {
@@ -364,15 +384,33 @@ DesignFlowStep_Status FSM_NI_SSA_liveness::InternalExec()
                {
                   if(HLSMgr->is_register_compatible(lo))
                   {
-                     const BehavioralHelperConstRef BH = FB->CGetBehavioralHelper();
-                     auto max_step = astg->CGetStateTransitionGraphInfo()->vertex_to_max_step.at(rosl);
-                     std::cerr << BH->PrintVariable(lo) << "-" << max_step << "\n";
-                     HLS->Rliv->set_live_out(rosl, lo, max_step);
+                     auto step = HLS->Rliv->GetStepOut(lo);
+                     // const BehavioralHelperConstRef BH = FB->CGetBehavioralHelper();
+                     // std::cerr << BH->PrintVariable(lo) << "-" << step << "\n";
+                     HLS->Rliv->set_live_out(rosl, lo, step);
                   }
                }
             }
             else
             {
+               if(state_info->is_last_state && first_last_state_iteration)
+               {
+                  // std::cerr << "is_last_state\n";
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                 "---adding live out of BB " + STR(bb_index) + " to live out of state " +
+                                     state_info->name);
+                  first_last_state_iteration = false;
+                  for(const auto& lo : fbb->CGetBBNodeInfo(bb_index_map[bb_index])->get_live_out())
+                  {
+                     if(HLSMgr->is_register_compatible(lo))
+                     {
+                        auto step = HLS->Rliv->GetStepOut(lo);
+                        // const BehavioralHelperConstRef BH = FB->CGetBehavioralHelper();
+                        // std::cerr << BH->PrintVariable(lo) << "-" << step << "\n";
+                        HLS->Rliv->set_live_out(rosl, lo, step);
+                     }
+                  }
+               }
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                               "---adding live out of " + stg->CGetStateInfo(prev_state)->name +
                                   " to live out of state " + state_info->name);
@@ -382,31 +420,21 @@ DesignFlowStep_Status FSM_NI_SSA_liveness::InternalExec()
                   for(const auto& lo : HLS->Rliv->get_live_out(prev_state))
                   {
                      const BehavioralHelperConstRef BH = FB->CGetBehavioralHelper();
-                     auto prev_step = HLS->Rliv->get_prev_step(lo.first, lo.second);
-                     std::cerr << BH->PrintVariable(lo.first) << "-" << prev_step << "\n";
-                     HLS->Rliv->set_live_out(rosl, lo.first, prev_step);
-                  }
-               }
-               std::cerr << "update_liveout_with_prev\n";
-               update_liveout_with_prev(HLSMgr, HLS, stg, data, rosl, prev_state, funId);
-               if(state_info->is_last_state)
-               {
-                  std::cerr << "is_last_state\n";
-                  for(const auto& lo : fbb->CGetBBNodeInfo(bb_index_map[bb_index])->get_live_out())
-                  {
-                     if(HLSMgr->is_register_compatible(lo))
+                     auto pre_pair = HLS->Rliv->GetPrevStep(bb_index, lo.first, lo.second);
+                     if(pre_pair.first)
                      {
-                        const BehavioralHelperConstRef BH = FB->CGetBehavioralHelper();
-                        auto max_step = astg->CGetStateTransitionGraphInfo()->vertex_to_max_step.at(rosl);
-                        std::cerr << BH->PrintVariable(lo) << "-" << max_step << "\n";
-                        HLS->Rliv->set_live_out(rosl, lo, max_step);
+                        // std::cerr << BH->PrintVariable(lo.first) << "-" << pre_pair.second << "\n";
+                        HLS->Rliv->set_live_out(rosl, lo.first, pre_pair.second);
                      }
                   }
                }
+               // std::cerr << "update_liveout_with_prev\n";
+               update_liveout_with_prev(HLSMgr, HLS, stg, data, rosl, prev_state, funId);
+               // std::cerr << "add back initial liveout\n";
                for(const auto& lo : prev_live_out)
                {
-                  const BehavioralHelperConstRef BH = FB->CGetBehavioralHelper();
-                  std::cerr << BH->PrintVariable(lo.first) << "-" << lo.second << "\n";
+                  // const BehavioralHelperConstRef BH = FB->CGetBehavioralHelper();
+                  // std::cerr << BH->PrintVariable(lo.first) << "-" << lo.second << "\n";
                   HLS->Rliv->set_live_out(rosl, lo.first, lo.second);
                }
             }
@@ -419,7 +447,7 @@ DesignFlowStep_Status FSM_NI_SSA_liveness::InternalExec()
          if(state_info->isOriginalState)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Is the original copy");
-            StateInfoConstRef cloned_state_info = astg->CGetStateInfo(rosl);
+            StateInfoConstRef cloned_state_info = stg->CGetStateInfo(rosl);
             unsigned int cloned_bb_index = *cloned_state_info->BB_ids.begin();
             prev_state = rosl;
             prev_bb_index = cloned_bb_index;
@@ -431,7 +459,7 @@ DesignFlowStep_Status FSM_NI_SSA_liveness::InternalExec()
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Is the cloned copy");
             THROW_ASSERT(state_info->clonedState != NULL_VERTEX, "");
-            StateInfoConstRef cloned_state_info = astg->CGetStateInfo(state_info->clonedState);
+            StateInfoConstRef cloned_state_info = stg->CGetStateInfo(state_info->clonedState);
             unsigned int cloned_bb_index = *cloned_state_info->BB_ids.begin();
             bool found = false;
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---cloned_bb_index: " + STR(cloned_bb_index));
@@ -499,7 +527,10 @@ DesignFlowStep_Status FSM_NI_SSA_liveness::InternalExec()
          {
             if(HLSMgr->is_register_compatible(lo))
             {
-               HLS->Rliv->set_live_out(rosl, lo, 0);
+               auto step = HLS->Rliv->GetStepOut(lo);
+               // const BehavioralHelperConstRef BH = FB->CGetBehavioralHelper();
+               // std::cerr << BH->PrintVariable(lo) << "-" << step << "\n";
+               HLS->Rliv->set_live_out(rosl, lo, step);
             }
          }
       }
@@ -508,7 +539,16 @@ DesignFlowStep_Status FSM_NI_SSA_liveness::InternalExec()
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                         "---adding live out of " + stg->CGetStateInfo(prev_state)->name + " to live out of state " +
                             state_info->name);
-         HLS->Rliv->set_live_out(rosl, HLS->Rliv->get_live_out(prev_state));
+         for(const auto& lo : HLS->Rliv->get_live_out(prev_state))
+         {
+            auto pre_pair = HLS->Rliv->GetPrevStep(bb_index, lo.first, lo.second);
+            if(pre_pair.first)
+            {
+               // const BehavioralHelperConstRef BH = FB->CGetBehavioralHelper();
+               // std::cerr << BH->PrintVariable(lo.first) << "-" << pre_pair.second << "\n";
+               HLS->Rliv->set_live_out(rosl, lo.first, pre_pair.second);
+            }
+         }
          update_liveout_with_prev(HLSMgr, HLS, stg, data, rosl, prev_state, funId);
       }
       prev_state = rosl;
@@ -530,7 +570,7 @@ DesignFlowStep_Status FSM_NI_SSA_liveness::InternalExec()
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                      "---Computing live in for state " + HLS->STG->get_state_name(osl));
-      const StateInfoConstRef state_info = astg->CGetStateInfo(osl);
+      const StateInfoConstRef state_info = stg->CGetStateInfo(osl);
       if(state_to_skip.find(osl) != state_to_skip.end())
       {
          prev_state = osl;
@@ -558,9 +598,13 @@ DesignFlowStep_Status FSM_NI_SSA_liveness::InternalExec()
                {
                   if(HLSMgr->is_register_compatible(li))
                   {
-                     const BehavioralHelperConstRef BH = FB->CGetBehavioralHelper();
-                     std::cerr << BH->PrintVariable(li) << "-" << 0 << "\n";
-                     HLS->Rliv->set_live_in(osl, li, 0);
+                     auto step_pair = HLS->Rliv->GetStepIn(bb_index, li, osl);
+                     if(step_pair.first)
+                     {
+                        // const BehavioralHelperConstRef BH = FB->CGetBehavioralHelper();
+                        // std::cerr << BH->PrintVariable(li) << "--" << step_pair.second << "\n";
+                        HLS->Rliv->set_live_in(osl, li, step_pair.second);
+                     }
                   }
                }
             }
@@ -568,8 +612,8 @@ DesignFlowStep_Status FSM_NI_SSA_liveness::InternalExec()
             {
                for(const auto& li : HLS->Rliv->get_live_out(src_state))
                {
-                  const BehavioralHelperConstRef BH = FB->CGetBehavioralHelper();
-                  std::cerr << BH->PrintVariable(li.first) << "-" << li.second << "\n";
+                  // const BehavioralHelperConstRef BH = FB->CGetBehavioralHelper();
+                  // std::cerr << BH->PrintVariable(li.first) << "-" << li.second << "\n";
                   HLS->Rliv->set_live_in(osl, li.first, li.second);
                }
                for(const auto& exec_op : state_info->executing_operations)
@@ -578,34 +622,31 @@ DesignFlowStep_Status FSM_NI_SSA_liveness::InternalExec()
                   {
                      const auto phi_node =
                          HLSMgr->get_tree_manager()->get_tree_node_const(data->CGetOpNodeInfo(exec_op)->GetNodeId());
-                     const BehavioralHelperConstRef BH = FB->CGetBehavioralHelper();
+                     // const BehavioralHelperConstRef BH = FB->CGetBehavioralHelper();
                      for(const auto& def_edge : GetPointer<const gimple_phi>(phi_node)->CGetDefEdgesList())
                      {
                         auto phi_in = def_edge.first->index;
                         if(HLSMgr->is_register_compatible(phi_in))
                         {
-                           unsigned int step = HLS->Rliv->get_step(osl, exec_op, phi_in, true);
-                           std::cerr << "erase " << BH->PrintVariable(phi_in) << "-" << step << "\n";
+                           unsigned int step = HLS->Rliv->GetStepPhiIn(exec_op, phi_in);
+                           // std::cerr << "erase " << BH->PrintVariable(phi_in) << "-" << step << "\n";
                            HLS->Rliv->erase_el_live_in(osl, phi_in, step);
                         }
                      }
                      auto phi_res = GetPointer<const gimple_phi>(phi_node)->res->index;
-                     unsigned int step = HLS->Rliv->get_step(osl, exec_op, phi_res, false);
-                     std::cerr << BH->PrintVariable(phi_res) << "-" << step << "\n";
+                     unsigned int step = HLS->Rliv->GetStep(osl, exec_op, phi_res, false);
+                     // std::cerr << BH->PrintVariable(phi_res) << "-" << step << "\n";
                      HLS->Rliv->set_live_in(osl, phi_res, step);
                   }
                }
                for(const auto& li : HLS->Rliv->get_live_out(osl))
                {
-                  if(li.second > 0)
+                  auto pre_pair = HLS->Rliv->GetPrevStep(bb_index, li.first, li.second);
+                  if(pre_pair.first)
                   {
-                     const BehavioralHelperConstRef BH = FB->CGetBehavioralHelper();
-                     auto prev_step = HLS->Rliv->get_prev_step(li.first, li.second);
-                     if(prev_step < li.second)
-                     {
-                        std::cerr << BH->PrintVariable(li.first) << "-" << prev_step << "\n";
-                        HLS->Rliv->set_live_in(osl, li.first, prev_step);
-                     }
+                     // const BehavioralHelperConstRef BH = FB->CGetBehavioralHelper();
+                     // std::cerr << BH->PrintVariable(li.first) << "-" << pre_pair.second << "\n";
+                     HLS->Rliv->set_live_in(osl, li.first, pre_pair.second);
                   }
                }
             }
@@ -643,8 +684,13 @@ DesignFlowStep_Status FSM_NI_SSA_liveness::InternalExec()
          {
             if(HLSMgr->is_register_compatible(li))
             {
-               const auto prev_state_info = astg->CGetStateInfo(prev_state);
-               HLS->Rliv->set_live_in(osl, li, 0);
+               auto step_pair = HLS->Rliv->GetStepIn(bb_index, li, osl);
+               if(step_pair.first)
+               {
+                  // const BehavioralHelperConstRef BH = FB->CGetBehavioralHelper();
+                  // std::cerr << BH->PrintVariable(li) << "--" << step_pair.second << "\n";
+                  HLS->Rliv->set_live_in(osl, li, step_pair.second);
+               }
             }
          }
       }
@@ -654,6 +700,57 @@ DesignFlowStep_Status FSM_NI_SSA_liveness::InternalExec()
       }
       prev_state = osl;
       prev_bb_index = bb_index;
+   }
+
+   /// Fixing live in by adding ssa coming into a phi and defined outside the pipelined BB. The phi has to be scheduled
+   /// on a step different than the first one.
+   for(const auto& rosl : reverse_order_state_list)
+   {
+      const StateInfoConstRef state_info = astg->CGetStateInfo(rosl);
+      unsigned int bb_index = get_bb_index_from_state_info(data, state_info);
+
+      if(rosl == exit_state || state_info->is_dummy || !state_info->is_pipelined_state)
+      {
+         continue;
+      }
+      OutEdgeIterator o_e_it, o_e_end;
+      for(boost::tie(o_e_it, o_e_end) = boost::out_edges(rosl, *astg); o_e_it != o_e_end; ++o_e_it)
+      {
+         vertex target_state = boost::target(*o_e_it, *astg);
+         const StateInfoConstRef tgt_state_info = astg->CGetStateInfo(target_state);
+         unsigned int tgt_bb_index = get_bb_index_from_state_info(data, tgt_state_info);
+         if(target_state == exit_state || tgt_state_info->is_dummy || !tgt_state_info->is_pipelined_state ||
+            bb_index != tgt_bb_index)
+         {
+            continue;
+         }
+         for(const auto& eoc : tgt_state_info->ending_operations)
+         {
+            if((GET_TYPE(data, eoc) & TYPE_PHI) != 0 && tgt_state_info->step_out.at(eoc) != 0)
+            {
+               const auto phi_node =
+                   HLSMgr->get_tree_manager()->get_tree_node_const(data->CGetOpNodeInfo(eoc)->GetNodeId());
+               const BehavioralHelperConstRef BH = FB->CGetBehavioralHelper();
+               for(const auto& def_edge : GetPointer<const gimple_phi>(phi_node)->CGetDefEdgesList())
+               {
+                  auto phi_in = def_edge.first->index;
+                  if(HLSMgr->is_register_compatible(phi_in) && HLS->Rliv->has_op_where_defined(phi_in) &&
+                     GET_BB_INDEX(data, HLS->Rliv->get_op_where_defined(phi_in)) != GET_BB_INDEX(data, eoc))
+                  {
+                     auto step = HLS->Rliv->GetStepPhiIn(eoc, phi_in);
+                     // auto def_op = HLS->Rliv->get_op_where_defined(phi_in);
+                     //                     auto def_state = *HLS->Rliv->get_state_where_end(def_op).begin();
+                     //                     const StateInfoConstRef def_state_info = astg->CGetStateInfo(def_state);
+                     //                     auto step = def_state_info->is_pipelined_state ?
+                     //                                     stg->CGetStateTransitionGraphInfo()->vertex_to_max_step.at(def_state)
+                     //                                     + 1 : 0;
+                     HLS->Rliv->set_live_in(target_state, phi_in, step);
+                     HLS->Rliv->set_live_in(rosl, phi_in, step);
+                  }
+               }
+            }
+         }
+      }
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Computed live in");
 
@@ -676,7 +773,7 @@ DesignFlowStep_Status FSM_NI_SSA_liveness::InternalExec()
             {
                if(HLSMgr->is_register_compatible(scalar_use))
                {
-                  unsigned int step = HLS->Rliv->get_step(ds, eo, scalar_use, true);
+                  unsigned int step = HLS->Rliv->GetStep(ds, eo, scalar_use, true);
                   HLS->Rliv->set_live_out(src_state, scalar_use, step);
                   HLS->Rliv->set_live_in(ds, scalar_use, step);
                   /// extend the lifetime of used variable to reduce the critical path
@@ -699,7 +796,7 @@ DesignFlowStep_Status FSM_NI_SSA_liveness::InternalExec()
    /// compute state out relation: on which transition a variable is live out
    for(const auto& rosl : reverse_order_state_list)
    {
-      const StateInfoConstRef state_info = astg->CGetStateInfo(rosl);
+      const StateInfoConstRef state_info = stg->CGetStateInfo(rosl);
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Analyzing state " + state_info->name);
       for(const auto& roc : state_info->executing_operations) // these also include the moved execution operations
       {
@@ -761,10 +858,10 @@ DesignFlowStep_Status FSM_NI_SSA_liveness::InternalExec()
                {
                   vertex src_state = boost::source(ie, *stg);
                   const StateInfoConstRef source_state_info = stg->CGetStateInfo(src_state);
-                  std::cerr << "rosl " << state_info->name << " "
-                            << " src " << source_state_info->name << " "
-                            << (source_state_info->is_prologue.count(roc) ? "T" : "F") << " "
-                            << FB->CGetBehavioralHelper()->PrintVariable(tree_var) << "\n";
+                  //  std::cerr << "rosl " << state_info->name << " "
+                  //            << " src " << source_state_info->name << " "
+                  //            << (source_state_info->is_prologue.count(roc) ? "T" : "F") << " "
+                  //            << FB->CGetBehavioralHelper()->PrintVariable(tree_var) << "\n";
                   const CustomOrderedSet<unsigned int>& BB_ids = source_state_info->BB_ids;
                   auto same_bb = BB_ids.find(bb_index) != BB_ids.end();
                   if(((!source_state_info->is_pipelined_state || !state_info->is_pipelined_state) && same_bb) ||
@@ -873,7 +970,7 @@ DesignFlowStep_Status FSM_NI_SSA_liveness::InternalExec()
             {
                BOOST_FOREACH(EdgeDescriptor e, boost::out_edges(rosl, *stg))
                {
-                  unsigned int step = HLS->Rliv->get_step(rosl, eoc, scalar_def, false);
+                  unsigned int step = HLS->Rliv->GetStepWrite(rosl, eoc);
 
                   vertex tgt_state = boost::target(e, *stg);
                   if(HLS->Rliv->get_live_in(tgt_state).find(std::make_pair(scalar_def, step)) !=
@@ -894,7 +991,7 @@ DesignFlowStep_Status FSM_NI_SSA_liveness::InternalExec()
       /// print the analysis result
       const BehavioralHelperConstRef BH = FB->CGetBehavioralHelper();
       PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "STG Liveness for function " + BH->get_function_name());
-      BOOST_FOREACH(vertex v, boost::vertices(*astg))
+      BOOST_FOREACH(vertex v, boost::vertices(*stg))
       {
          PRINT_DBG_STRING(DEBUG_LEVEL_PEDANTIC, debug_level, "Live In for state " + HLS->STG->get_state_name(v) + ": ");
          for(const auto& li : HLS->Rliv->get_live_in(v))

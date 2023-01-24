@@ -586,8 +586,7 @@ DesignFlowStep_Status port_swapping::InternalExec()
                         }
                         else
                         {
-                           auto step = HLS->Rliv->get_step(state, fu_operation, tree_var, true);
-                           step = HLS->Rliv->get_prev_step(tree_var, step);
+                           auto step = HLS->Rliv->GetStep(state, fu_operation, tree_var, true);
                            if(HLS->storage_value_information->is_a_storage_value(state, tree_var, step))
                            {
                               unsigned int storage_value =
@@ -604,8 +603,7 @@ DesignFlowStep_Status port_swapping::InternalExec()
                      }
                      else
                      {
-                        auto step = HLS->Rliv->get_step(state, fu_operation, tree_var, true);
-                        step = HLS->Rliv->get_prev_step(tree_var, step);
+                        auto step = HLS->Rliv->GetStep(state, fu_operation, tree_var, true);
                         unsigned int storage_value =
                             HLS->storage_value_information->get_storage_value_index(state, tree_var, step);
                         unsigned int r_index = HLS->Rreg->get_register(storage_value);

@@ -48,7 +48,6 @@
 #include "behavioral_helper.hpp"
 #include "function_behavior.hpp"
 
-#include "FPGA_device.hpp"
 #include "Parameter.hpp"
 #include "hls.hpp"
 #include "hls_manager.hpp"
@@ -132,11 +131,11 @@ reg_bindingRef reg_binding::create_reg_binding(const hlsRef& HLS, const HLS_mana
 void reg_binding::print_el(const_iterator& it) const
 {
    INDENT_OUT_MEX(OUTPUT_LEVEL_VERY_PEDANTIC, HLS->output_level,
-       "---Storage Value: " + STR(it->first) + " for variable " +
+                  "---Storage Value: " + STR(it->first) + " for variable " +
                       FB->CGetBehavioralHelper()->PrintVariable(
                           HLS->storage_value_information->get_variable_index(it->first).first) +
                       " step " + STR(HLS->storage_value_information->get_variable_index(it->first).second) +
-           " stored into register " + it->second->get_string());
+                      " stored into register " + it->second->get_string());
 }
 
 CustomOrderedSet<std::pair<unsigned int, unsigned int>> reg_binding::get_vars(const unsigned int& r) const
@@ -156,7 +155,7 @@ CustomOrderedSet<std::pair<unsigned int, unsigned int>> reg_binding::get_vars(co
 unsigned long long reg_binding::compute_bitsize(unsigned int r)
 {
    auto reg_vars = get_vars(r);
-   unsigned int max_bits = 0;
+   auto max_bits = 0ull;
    for(auto reg_var : reg_vars)
    {
       structural_type_descriptorRef node_type0 =
@@ -166,7 +165,7 @@ unsigned long long reg_binding::compute_bitsize(unsigned int r)
                     "- Analyzing node " + STR(reg_var.first) + "(" + STR(reg_var.second) + "), whose type is " +
                         node_type0->get_name() + " (size: " + STR(node_type0->size) +
                         ", vector_size: " + STR(node_type0->vector_size) + ")");
-      max_bits = max_bits < node_size ? node_size : max_bits;
+      max_bits = std::max(max_bits, node_size);
    }
    bitsize_map[r] = max_bits;
    return max_bits;
@@ -328,8 +327,8 @@ void reg_binding::add_to_SM(structural_objectRef clock_port, structural_objectRe
 
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug, "reg_binding::add_registers - Start");
 
-      // all registers need an enable in stallable pipelines
-      compute_is_without_enable();
+   // all registers need an enable in stallable pipelines
+   compute_is_without_enable();
    /// define boolean type for command signals
    all_regs_without_enable = get_used_regs() != 0;
    for(unsigned int i = 0; i < get_used_regs(); i++)
