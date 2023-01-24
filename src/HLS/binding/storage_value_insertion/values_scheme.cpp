@@ -107,14 +107,14 @@ DesignFlowStep_Status values_scheme::InternalExec()
 
    for(auto vIt : support)
    {
-      std::cerr << "current state for sv " << HLS->Rliv->get_name(vIt) << std::endl;
+      // std::cerr << "current state for sv " << HLS->Rliv->get_name(vIt) << std::endl;
       const auto& live = HLS->Rliv->get_live_in(vIt);
       auto si = HLS->STG->GetStg()->GetStateInfo(vIt);
       for(auto k : live)
       {
          if(!HLS->storage_value_information->is_a_storage_value(vIt, k.first, k.second))
          {
-            std::cerr << BH->PrintVariable(k.first) << "=" << k.second << " ->" << i << "\n";
+            // std::cerr << BH->PrintVariable(k.first) << "=" << k.second << " ->" << i << "\n";
             HLS->storage_value_information->set_storage_value_index(vIt, k.first, k.second, i);
             HLS->storage_value_information->variable_index_map[i] = k;
             i++;
