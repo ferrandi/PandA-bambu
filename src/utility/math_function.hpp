@@ -220,4 +220,15 @@ constexpr inline T round_to_power2(T _x)
    return static_cast<T>(x);
 }
 
+template <typename T, std::enable_if_t<std::is_unsigned<T>::value, bool> = true>
+constexpr inline T get_aligned_bitsize(T bitsize)
+{
+   const auto rbw = std::max(T(8), round_to_power2(bitsize));
+   if(rbw <= 128ULL)
+   {
+      return rbw;
+   }
+   return bitsize + ((32ULL - (bitsize % 32ULL)) & 31ULL);
+}
+
 #endif

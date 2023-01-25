@@ -82,25 +82,14 @@
 
 static unsigned long long local_port_size(const structural_objectRef portInst)
 {
-   const auto port_bitwidth =
-       GetPointer<port_o>(portInst)->get_typeRef()->size * GetPointer<port_o>(portInst)->get_typeRef()->vector_size;
-   auto bitsize = 0ull;
-   if(port_bitwidth <= 512)
+   const auto po = GetPointer<port_o>(portInst);
+   const auto port_bitwidth = po->get_typeRef()->size * po->get_typeRef()->vector_size;
+   const auto port_alignment = po->get_port_alignment() * 8U;
+   if(port_alignment)
    {
-      bitsize = resize_to_1_8_16_32_64_128_256_512(port_bitwidth);
+      return port_bitwidth + ((port_alignment - (port_bitwidth % port_alignment)) & (port_alignment - 1U));
    }
-   else
-   {
-      if(port_bitwidth % 8)
-      {
-         bitsize = 8 * (port_bitwidth / 8) + 8;
-      }
-      else
-      {
-         bitsize = port_bitwidth;
-      }
-   }
-   return bitsize;
+   return get_aligned_bitsize(port_bitwidth);
 }
 
 TestbenchGenerationBaseStep::TestbenchGenerationBaseStep(const ParameterConstRef _parameters,
@@ -196,11 +185,11 @@ DesignFlowStep_Status TestbenchGenerationBaseStep::Exec()
    return DesignFlowStep_Status::SUCCESS;
 }
 
-std::string TestbenchGenerationBaseStep::print_var_init(const tree_managerConstRef TreeM, unsigned int var,
+std::string TestbenchGenerationBaseStep::print_var_init(const tree_managerConstRef TM, unsigned int var,
                                                         const memoryRef mem)
 {
    std::vector<std::string> init_els;
-   const auto tn = TreeM->CGetTreeReindex(var);
+   const auto tn = TM->CGetTreeReindex(var);
    tree_nodeRef init_node;
    auto* vd = GetPointer<var_decl>(GET_CONST_NODE(tn));
    if(vd && vd->init)
@@ -211,12 +200,12 @@ std::string TestbenchGenerationBaseStep::print_var_init(const tree_managerConstR
    if(init_node && (!GetPointer<constructor>(GET_NODE(init_node)) ||
                     GetPointer<constructor>(GET_NODE(init_node))->list_of_idx_valu.size()))
    {
-      fu_binding::write_init(TreeM, tn, init_node, init_els, mem, 0);
+      fu_binding::write_init(TM, tn, init_node, init_els, mem, 0);
    }
    else if(GET_CONST_NODE(tn)->get_kind() == string_cst_K || GET_CONST_NODE(tn)->get_kind() == integer_cst_K ||
            GET_CONST_NODE(tn)->get_kind() == real_cst_K)
    {
-      fu_binding::write_init(TreeM, tn, tn, init_els, mem, 0);
+      fu_binding::write_init(TM, tn, tn, init_els, mem, 0);
    }
    else if(!GetPointer<gimple_call>(GET_CONST_NODE(tn)))
    {
@@ -285,9 +274,9 @@ std::string TestbenchGenerationBaseStep::write_verilator_testbench(const std::st
 {
    // Generate the testbench
 
-   const tree_managerRef TreeM = HLSMgr->get_tree_manager();
+   const tree_managerRef TM = HLSMgr->get_tree_manager();
 
-   this->write_underlying_testbench(input_file, false, false, TreeM);
+   this->write_underlying_testbench(input_file, false, false, TM);
    std::string file_name = output_directory + hdl_testbench_basename + "_tb.v";
    writer->WriteFile(file_name);
    std::ostringstream os;
@@ -377,7 +366,7 @@ std::string TestbenchGenerationBaseStep::create_HDL_testbench(bool xilinx_isim) 
       return "";
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Creating HDL testbench");
-   const tree_managerRef TreeM = HLSMgr->get_tree_manager();
+   const tree_managerRef TM = HLSMgr->get_tree_manager();
 
    std::string simulation_values_path = output_directory + STR(STR_CST_testbench_generation_basename) + ".txt";
    bool generate_vcd_output =
@@ -391,16 +380,16 @@ std::string TestbenchGenerationBaseStep::create_HDL_testbench(bool xilinx_isim) 
    writer->write_comment("Send any bug to: " PACKAGE_BUGREPORT "\n");
    writer->WriteLicense();
    // write testbench for simulation
-   this->write_hdl_testbench(simulation_values_path, generate_vcd_output, xilinx_isim, TreeM);
+   this->write_hdl_testbench(simulation_values_path, generate_vcd_output, xilinx_isim, TM);
    writer->WriteFile(file_name);
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Created HDL testbench");
    return file_name;
 }
 
 void TestbenchGenerationBaseStep::write_hdl_testbench(std::string simulation_values_path, bool generate_vcd_output,
-                                                      bool xilinx_isim, const tree_managerConstRef TreeM) const
+                                                      bool xilinx_isim, const tree_managerConstRef TM) const
 {
-   this->write_underlying_testbench(simulation_values_path, generate_vcd_output, xilinx_isim, TreeM);
+   this->write_underlying_testbench(simulation_values_path, generate_vcd_output, xilinx_isim, TM);
 
    writer->write("module " + mod->get_id() + "_tb_top;\n");
    writer->write("reg " + STR(CLOCK_PORT_NAME) + ";\n");
@@ -415,7 +404,7 @@ void TestbenchGenerationBaseStep::write_hdl_testbench(std::string simulation_val
 }
 
 void TestbenchGenerationBaseStep::write_initial_block(const std::string& simulation_values_path, bool withMemory,
-                                                      const tree_managerConstRef TreeM, bool generate_vcd_output) const
+                                                      const tree_managerConstRef TM, bool generate_vcd_output) const
 {
    begin_initial_block();
 
@@ -477,7 +466,7 @@ void TestbenchGenerationBaseStep::write_initial_block(const std::string& simulat
 
    /// auxiliary variables initialization
    initialize_auxiliary_variables();
-   initialize_input_signals(TreeM);
+   initialize_input_signals(TM);
    init_extra_signals(withMemory);
    memory_initialization();
    end_initial_block();
@@ -504,7 +493,7 @@ void TestbenchGenerationBaseStep::init_extra_signals(bool withMemory) const
    }
 }
 
-void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef TreeM) const
+void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef TM) const
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Writing output checks");
    const HLSFlowStep_Type interface_type = parameters->getOption<HLSFlowStep_Type>(OPT_interface_type);
@@ -705,36 +694,47 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
             writer->write(STR(STD_CLOSING_CHAR));
             writer->write("end\n");
          }
-         else if(InterfaceType == port_o::port_interface::PI_FDIN)
+         else if(InterfaceType == port_o::port_interface::PI_FDIN || InterfaceType == port_o::port_interface::PI_FDOUT)
          {
-            auto terminate = port_name.size() > 4 ? port_name.size() - sizeof("_din") + 1 : 0;
-            structural_objectRef port_vld;
-            if(port_name.substr(terminate) == "_din")
+            structural_objectRef port_write;
+            if(boost::ends_with(port_name, "_din"))
             {
-               port_vld = mod->find_member(port_name.substr(0, terminate) + "_write", port_o_K, cir);
-               THROW_ASSERT(port_vld &&
-                                GetPointer<port_o>(port_vld)->get_port_interface() == port_o::port_interface::PI_WRITE,
+               port_write = mod->find_member(port_name.substr(0, port_name.size() - sizeof("_din") + 1U) + "_write",
+                                             port_o_K, cir);
+               THROW_ASSERT(port_write && GetPointer<port_o>(port_write)->get_port_interface() ==
+                                              port_o::port_interface::PI_WRITE,
                             "unexpected condition");
             }
-            else
+            else if(boost::ends_with(port_name, "_dout"))
             {
-               terminate = port_name.size() > 6 ? port_name.size() - sizeof("_TDATA") + 1 : 0;
-               if(port_name.substr(terminate) == "_TDATA")
-               {
-                  port_vld = mod->find_member(port_name.substr(0, terminate) + "_TVALID", port_o_K, cir);
-                  THROW_ASSERT(port_vld && GetPointer<port_o>(port_vld)->get_port_interface() ==
-                                               port_o::port_interface::PI_M_AXIS_TVALID,
-                               "unexpected condition");
-               }
+               port_write = mod->find_member(port_name.substr(0, port_name.size() - sizeof("_dout") + 1U) + "_read",
+                                             port_o_K, cir);
+               THROW_ASSERT(port_write &&
+                                GetPointer<port_o>(port_write)->get_port_interface() == port_o::port_interface::PI_READ,
+                            "unexpected condition");
             }
+            else if(boost::ends_with(port_name, "_TDATA"))
+            {
+               port_write = mod->find_member(port_name.substr(0, port_name.size() - sizeof("_TDATA") + 1U) + "_TVALID",
+                                             port_o_K, cir);
+               THROW_ASSERT(port_write && (GetPointer<port_o>(port_write)->get_port_interface() ==
+                                               port_o::port_interface::PI_M_AXIS_TVALID ||
+                                           GetPointer<port_o>(port_write)->get_port_interface() ==
+                                               port_o::port_interface::PI_S_AXIS_TVALID),
+                            "unexpected condition");
+            }
+            THROW_ASSERT(port_write, "");
 
             writer->write("always @(negedge " CLOCK_PORT_NAME ")\n");
             writer->write(STR(STD_OPENING_CHAR));
             writer->write("begin\n");
-            writer->write("if (" + port_vld->get_id() + " == 1)\n");
+            writer->write("if (" + port_write->get_id() + " == 1)\n");
             writer->write(STR(STD_OPENING_CHAR));
             writer->write("begin\n");
-            writer->write("registered_" + port_name + "[fifo_counter_" + port_name + "] <= " + port_name + ";\n");
+            if(InterfaceType == port_o::port_interface::PI_FDIN)
+            {
+               writer->write("registered_" + port_name + "[fifo_counter_" + port_name + "] <= " + port_name + ";\n");
+            }
             writer->write("fifo_counter_" + port_name + " <= fifo_counter_" + port_name + " + 1;\n");
             writer->write(STR(STD_CLOSING_CHAR));
             writer->write("end\n");
@@ -792,8 +792,7 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
          {
             if(GetPointer<port_o>(portInst)->get_is_memory() ||
                (GetPointer<port_o>(portInst)->get_is_extern() && GetPointer<port_o>(portInst)->get_is_global()) ||
-               !portInst->get_typeRef()->treenode ||
-               !tree_helper::is_a_pointer(TreeM, portInst->get_typeRef()->treenode))
+               !portInst->get_typeRef()->treenode || !tree_helper::is_a_pointer(TM, portInst->get_typeRef()->treenode))
             {
                continue;
             }
@@ -803,7 +802,7 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
             std::string output_name = "ex_" + unmangled_name;
             unsigned long long int bitsize;
             bool is_real;
-            const auto pi_node = TreeM->CGetTreeReindex(portInst->get_typeRef()->treenode);
+            const auto pi_node = TM->CGetTreeReindex(portInst->get_typeRef()->treenode);
             if(tree_helper::IsArrayEquivType(pi_node))
             {
                const auto pt_type = tree_helper::CGetArrayBaseType(pi_node);
@@ -1494,7 +1493,7 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
       for(auto const& function_parameter : function_parameters)
       {
          const auto var = function_parameter.first;
-         const auto var_node = TreeM->CGetTreeReindex(var);
+         const auto var_node = TM->CGetTreeReindex(var);
          if(tree_helper::IsPointerType(var_node) && var != behavioral_helper->GetFunctionReturnType(topFunctionId))
          {
             const auto variableName = behavioral_helper->PrintVariable(var);
@@ -1873,7 +1872,7 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
 
 void TestbenchGenerationBaseStep::write_underlying_testbench(const std::string simulation_values_path,
                                                              bool generate_vcd_output, bool xilinx_isim,
-                                                             const tree_managerConstRef TreeM) const
+                                                             const tree_managerConstRef TM) const
 {
    if(mod->get_in_out_port_size())
    {
@@ -1885,10 +1884,10 @@ void TestbenchGenerationBaseStep::write_underlying_testbench(const std::string s
    write_auxiliary_signal_declaration();
    bool withMemory = false;
    bool hasMultiIrq = false;
-   write_signals(TreeM, withMemory, hasMultiIrq);
+   write_signals(TM, withMemory, hasMultiIrq);
    write_slave_initializations(withMemory);
    write_module_instantiation(xilinx_isim);
-   write_initial_block(simulation_values_path, withMemory, TreeM, generate_vcd_output);
+   write_initial_block(simulation_values_path, withMemory, TM, generate_vcd_output);
    begin_file_reading_operation();
    reading_base_memory_address_from_file();
    memory_initialization_from_file();
@@ -1900,7 +1899,7 @@ void TestbenchGenerationBaseStep::write_underlying_testbench(const std::string s
    }
    write_interface_handler();
    write_call(hasMultiIrq);
-   write_output_checks(TreeM);
+   write_output_checks(TM);
    testbench_controller_machine();
    write_sim_time_calc();
    write_max_simulation_time_control();
@@ -2281,70 +2280,65 @@ void TestbenchGenerationBaseStep::initialize_auxiliary_variables() const
    writer->write("success = 1;\n");
 }
 
-void TestbenchGenerationBaseStep::initialize_input_signals(const tree_managerConstRef TreeM) const
+void TestbenchGenerationBaseStep::initialize_input_signals(const tree_managerConstRef TM) const
 {
-   if(mod->get_in_port_size())
+   for(unsigned int i = 0; i < mod->get_in_port_size(); i++)
    {
-      for(unsigned int i = 0; i < mod->get_in_port_size(); i++)
-      {
-         const auto port_obj = mod->get_in_port(i);
-         const auto port_name = [&]() -> std::string {
-            const auto port_id = port_obj->get_id();
-            if(parameters->isOption(OPT_clock_name) && port_id == parameters->getOption<std::string>(OPT_clock_name))
-            {
-               return CLOCK_PORT_NAME;
-            }
-            else if(parameters->isOption(OPT_reset_name) &&
-                    port_id == parameters->getOption<std::string>(OPT_reset_name))
-            {
-               return RESET_PORT_NAME;
-            }
-            else if(parameters->isOption(OPT_start_name) &&
-                    port_id == parameters->getOption<std::string>(OPT_start_name))
-            {
-               return START_PORT_NAME;
-            }
-            return port_id;
-         }();
+      const auto port_obj = mod->get_in_port(i);
+      const auto port_name = [&]() -> std::string {
+         const auto port_id = port_obj->get_id();
+         if(parameters->isOption(OPT_clock_name) && port_id == parameters->getOption<std::string>(OPT_clock_name))
+         {
+            return CLOCK_PORT_NAME;
+         }
+         else if(parameters->isOption(OPT_reset_name) && port_id == parameters->getOption<std::string>(OPT_reset_name))
+         {
+            return RESET_PORT_NAME;
+         }
+         else if(parameters->isOption(OPT_start_name) && port_id == parameters->getOption<std::string>(OPT_start_name))
+         {
+            return START_PORT_NAME;
+         }
+         return port_id;
+      }();
 
-         if(GetPointer<port_o>(port_obj)->get_is_memory() || WB_ACKIM_PORT_NAME == port_name)
-         {
-            continue;
-         }
-         if(CLOCK_PORT_NAME != port_name && START_PORT_NAME != port_name && RESET_PORT_NAME != port_name)
-         {
-            writer->write(HDL_manager::convert_to_identifier(writer.get(), port_name) + " = 0;\n");
-         }
-         if(port_obj->get_typeRef()->treenode > 0 &&
-            tree_helper::is_a_pointer(TreeM, port_obj->get_typeRef()->treenode))
-         {
-            writer->write("ex_" + port_name + " = 0;\n");
-         }
-      }
-      writer->write("\n");
-   }
-   if(mod->get_out_port_size())
-   {
-      for(unsigned int i = 0; i < mod->get_out_port_size(); i++)
+      if(GetPointer<port_o>(port_obj)->get_is_memory() || WB_ACKIM_PORT_NAME == port_name)
       {
-         const auto port_obj = mod->get_out_port(i);
-         const auto interfaceType = GetPointer<port_o>(port_obj)->get_port_interface();
-         if(interfaceType == port_o::port_interface::PI_WNONE)
-         {
-            writer->write("ex_" + port_obj->get_id() + " = 0;\n");
-            writer->write("registered_" + port_obj->get_id() + " = 0;\n");
-         }
-         else if(interfaceType == port_o::port_interface::PI_FDIN)
-         {
-            writer->write("fifo_counter_" + port_obj->get_id() + " = 0;\n");
-         }
-         else if(interfaceType == port_o::port_interface::PI_DOUT)
-         {
-            writer->write("ex_" + port_obj->get_id() + " = 0;\n");
-         }
+         continue;
       }
-      writer->write("\n");
+      if(CLOCK_PORT_NAME != port_name && START_PORT_NAME != port_name && RESET_PORT_NAME != port_name)
+      {
+         writer->write(HDL_manager::convert_to_identifier(writer.get(), port_name) + " = 0;\n");
+      }
+      if(port_obj->get_typeRef()->treenode > 0 && tree_helper::is_a_pointer(TM, port_obj->get_typeRef()->treenode))
+      {
+         writer->write("ex_" + port_name + " = 0;\n");
+      }
+      if(GetPointer<port_o>(port_obj)->get_port_interface() == port_o::port_interface::PI_FDOUT)
+      {
+         writer->write("fifo_counter_" + port_obj->get_id() + " = 0;\n");
+      }
    }
+   writer->write("\n");
+   for(unsigned int i = 0; i < mod->get_out_port_size(); i++)
+   {
+      const auto port_obj = mod->get_out_port(i);
+      const auto interfaceType = GetPointer<port_o>(port_obj)->get_port_interface();
+      if(interfaceType == port_o::port_interface::PI_WNONE)
+      {
+         writer->write("ex_" + port_obj->get_id() + " = 0;\n");
+         writer->write("registered_" + port_obj->get_id() + " = 0;\n");
+      }
+      else if(interfaceType == port_o::port_interface::PI_FDIN)
+      {
+         writer->write("fifo_counter_" + port_obj->get_id() + " = 0;\n");
+      }
+      else if(interfaceType == port_o::port_interface::PI_DOUT)
+      {
+         writer->write("ex_" + port_obj->get_id() + " = 0;\n");
+      }
+   }
+   writer->write("\n");
 }
 
 void TestbenchGenerationBaseStep::testbench_controller_machine() const
