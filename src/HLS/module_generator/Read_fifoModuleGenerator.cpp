@@ -54,7 +54,7 @@ enum in_port
    i_reset,
    i_start,
    i_in1,
-   i_in3,
+   i_dout,
    i_empty_n,
    i_last
 };
@@ -81,29 +81,26 @@ void Read_fifoModuleGenerator::InternalExec(std::ostream& out, const module* /* 
    THROW_ASSERT(_ports_in.size() >= i_last, "");
    THROW_ASSERT(_ports_out.size() >= o_last, "");
    out << "reg started 1INIT_ZERO_VALUE;\n";
-   out << "reg started0 1INIT_ZERO_VALUE;\n";
+   out << "reg started_0 1INIT_ZERO_VALUE;\n";
    out << "reg [BITSIZE_" << _ports_out[o_out1].name << "-1:0] " << _ports_out[o_out1].name << " ;\n";
-   out << "reg " << _ports_out[o_done].name << "0 1INIT_ZERO_VALUE;\n";
+   out << "reg " << _ports_out[o_done].name << "_0 1INIT_ZERO_VALUE;\n";
 
-   out << "always @(*)\n";
-   out << "  started0 = (started | " << _ports_in[i_start].name << ") & !" << _ports_in[i_empty_n].name << ";\n";
-   out << "always @(posedge clock 1RESET_EDGE)\n";
-   out << "  if (1RESET_VALUE)\n";
-   out << "    started <= 0;\n";
-   out << "  else\n";
-   out << "    started <= started0;\n\n";
+   out << "always @(*)\n"
+       << "  started_0 = (started | " << _ports_in[i_start].name << ") & !" << _ports_in[i_empty_n].name << ";\n"
+       << "always @(posedge clock 1RESET_EDGE)\n"
+       << "  if (1RESET_VALUE)\n"
+       << "    started <= 0;\n"
+       << "  else\n"
+       << "    started <= started_0;\n\n";
 
-   out << "always @(*)\n";
-   out << "begin\n";
-   out << "  " << _ports_out[o_out1].name << " = " << _ports_in[i_in3].name << ";\n";
-   out << "end\n\n";
+   out << "always @(*)\n"
+       << "  " << _ports_out[o_out1].name << " = {" << _ports_in[i_empty_n].name << ", " << _ports_in[i_dout].name
+       << "};\n\n";
 
-   out << "always @(*)\n";
-   out << "begin\n";
-   out << "  " << _ports_out[o_done].name << "0 = (" << _ports_in[i_start].name << " & " << _ports_in[i_empty_n].name
-       << ") | (started & " << _ports_in[i_empty_n].name << ");\n";
-   out << "end\n\n";
+   out << "always @(*)\n"
+       << "  " << _ports_out[o_done].name << "_0 = (" << _ports_in[i_start].name << " & " << _ports_in[i_empty_n].name
+       << ") | (started & " << _ports_in[i_empty_n].name << ");\n\n";
 
-   out << "assign " << _ports_out[o_done].name << " = " << _ports_out[o_done].name << "0;\n";
-   out << "assign " << _ports_out[o_read].name << " = " << _ports_out[o_done].name << "0;\n";
+   out << "assign " << _ports_out[o_done].name << " = " << _ports_out[o_done].name << "_0;\n";
+   out << "assign " << _ports_out[o_read].name << " = " << _ports_out[o_done].name << "_0;\n";
 }

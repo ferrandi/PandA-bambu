@@ -48,6 +48,7 @@
 #include "math_function.hpp"
 #include "memory.hpp"
 #include "string_manipulation.hpp" // for STR
+#include "testbench_generation_base_step.hpp"
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
 #include "tree_node.hpp"
@@ -113,6 +114,11 @@ void TestbenchMemoryAllocation::AllocTestbenchMemory(void) const
       }
    }
 
+   const auto fname =
+       tree_helper::GetMangledFunctionName(GetPointerS<const function_decl>(TM->CGetTreeNode(function_id)));
+   const auto& DesignInterfaceTypename = HLSMgr->design_interface_typename;
+   const auto DesignInterfaceArgsTypename_it = DesignInterfaceTypename.find(fname);
+
    // loop on the test vectors
    unsigned int v_idx = 0;
    for(const auto& curr_test_vector : HLSMgr->RSim->test_vectors)
@@ -165,44 +171,29 @@ void TestbenchMemoryAllocation::AllocTestbenchMemory(void) const
             }
             else if(flag_cpp)
             {
-               tree_nodeConstRef ptd_base_type;
-               if(GET_CONST_NODE(pt_node)->get_kind() == pointer_type_K)
-               {
-                  ptd_base_type = GetPointer<const pointer_type>(GET_CONST_NODE(pt_node))->ptd;
-               }
-               else if(GET_CONST_NODE(pt_node)->get_kind() == reference_type_K)
-               {
-                  ptd_base_type = GetPointer<const reference_type>(GET_CONST_NODE(pt_node))->refd;
-               }
-               else
-               {
-                  THROW_ERROR("A pointer type is expected");
-               }
-
-               unsigned long long base_type_byte_size;
-               if(tree_helper::IsStructType(ptd_base_type) || tree_helper::IsUnionType(ptd_base_type))
-               {
-                  base_type_byte_size = tree_helper::Size(ptd_base_type) / 8;
-               }
-               else if(tree_helper::IsArrayEquivType(ptd_base_type))
-               {
-                  base_type_byte_size = tree_helper::GetArrayElementSize(ptd_base_type) / 8;
-               }
-               else if(tree_helper::Size(ptd_base_type) == 1)
-               {
-                  base_type_byte_size = 1;
-               }
-               else
-               {
-                  base_type_byte_size = tree_helper::Size(ptd_base_type) / 8;
-               }
-
-               if(base_type_byte_size == 0)
-               {
-                  base_type_byte_size = 1;
-               }
-               std::vector<std::string> splitted = SplitString(test_v, ",");
-               reserved_bytes = (static_cast<unsigned int>(splitted.size())) * base_type_byte_size;
+               const auto base_type_byte_size = [&]() {
+                  const auto ptd_base_type = tree_helper::CGetPointedType(l_type);
+                  THROW_ASSERT(DesignInterfaceArgsTypename_it == DesignInterfaceTypename.end() ||
+                                   DesignInterfaceArgsTypename_it->second.count(param),
+                               "");
+                  const auto param_if_typename = DesignInterfaceArgsTypename_it != DesignInterfaceTypename.end() ?
+                                                     DesignInterfaceArgsTypename_it->second.at(param) :
+                                                     "";
+                  bool is_signed, is_fixed;
+                  const auto if_bw = ac_type_bitwidth(param_if_typename, is_signed, is_fixed);
+                  if(if_bw)
+                  {
+                     return get_aligned_ac_bitsize(if_bw) >> 3;
+                  }
+                  else if(tree_helper::IsArrayType(ptd_base_type))
+                  {
+                     return get_aligned_bitsize(tree_helper::GetArrayElementSize(ptd_base_type)) >> 3;
+                  }
+                  return get_aligned_bitsize(tree_helper::Size(ptd_base_type)) >> 3;
+               }();
+               THROW_ASSERT(base_type_byte_size, "");
+               const auto splitted = SplitString(test_v, ",");
+               reserved_bytes = static_cast<unsigned long long>(splitted.size()) * base_type_byte_size;
             }
             else
             {

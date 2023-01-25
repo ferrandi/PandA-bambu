@@ -502,14 +502,16 @@ namespace clang
                         ParamTypeNameOrig = paramTypeRemTD.getAsString(pp);
                         ParamTypeInclude = getIncludes(paramTypeRemTD);
                      }
-                     interface = "ptrdefault";
+                     const auto is_channel_if = ParamTypeName.find("ac_channel<") == 0;
+                     interface = is_channel_if ? "fifo" : "ptrdefault";
                      if(attr_val.find("interface_type") != attr_val.end())
                      {
                         interface = attr_val.at("interface_type");
-                        if(interface != "ptrdefault" && interface != "none" && interface != "none_registered" &&
-                           interface != "handshake" && interface != "valid" && interface != "ovalid" &&
-                           interface != "acknowledge" && interface != "fifo" && interface != "bus" &&
-                           interface != "m_axi" && interface != "axis")
+                        if((interface != "ptrdefault" && interface != "none" && interface != "none_registered" &&
+                            interface != "handshake" && interface != "valid" && interface != "ovalid" &&
+                            interface != "acknowledge" && interface != "fifo" && interface != "bus" &&
+                            interface != "m_axi" && interface != "axis") ||
+                           (is_channel_if && interface != "fifo"))
                         {
                            print_error("#pragma HLS_interface non-consistent with parameter of pointer "
                                        "type, where user defined interface is: " +

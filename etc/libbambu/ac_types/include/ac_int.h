@@ -40,6 +40,7 @@
 //                     - signed integer of length W:  ac_int<W,true>
 //  Original Author: Andres Takach, Ph.D.
 //  Modified by:     Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
+//                   Michele Fiorito <michele.fiorito@polimi.it>
 //  Notes:
 //   - C++ Runtime: PandA/bambu requires optimization enabled (-O2 at least).
 //
@@ -122,7 +123,9 @@
 #error DO NOT use defines before including third party header files.
 #endif
 
+#ifndef __FORCE_INLINE
 #define __FORCE_INLINE __attribute__((always_inline)) inline
+#endif
 
 #ifdef AC_TYPES_INIT
 #define __INIT_VALUE = {0}
@@ -137,7 +140,7 @@
 #include <assert.h>
 #endif
 #include <limits>
-#ifndef __BAMBU__
+#if !defined(__BAMBU__) || defined(__BAMBU_SIM__)
 #ifndef AC_USER_DEFINED_ASSERT
 #include <iostream>
 #else
@@ -147,7 +150,7 @@
 #include <math.h>
 #include <string>
 
-#ifndef __BAMBU__
+#if !defined(__BAMBU__) || defined(__BAMBU_SIM__)
 #ifndef __AC_INT_UTILITY_BASE
 #define __AC_INT_UTILITY_BASE
 #endif
@@ -312,7 +315,7 @@ typedef signed long long Slong;
          return float_floor(d);
       }
 
-#ifdef __BAMBU__
+#if defined(__BAMBU__) && !defined(__BAMBU_SIM__)
 #define AC_ASSERT(cond, msg)
 #else
 #define AC_ASSERT(cond, msg) ac_private::ac_assert(cond, __FILE__, __LINE__, msg)
@@ -459,12 +462,12 @@ typedef signed long long Slong;
       template <int N, bool C>
       class iv_base
       {
-         //#if defined(__clang__)
-         //  typedef int type __attribute__((ext_vector_type(N)));
-         //#else
-         //  typedef int type __attribute__((vector_size(sizeof(int)*N)));
-         //#endif
-         //      type v = {};
+         // #if defined(__clang__)
+         //   typedef int type __attribute__((ext_vector_type(N)));
+         // #else
+         //   typedef int type __attribute__((vector_size(sizeof(int)*N)));
+         // #endif
+         //       type v = {};
          int v[N] __INIT_VALUE;
 
        public:
@@ -519,17 +522,17 @@ typedef signed long long Slong;
             auto last = v[M - 1] < 0 ? ~0 : 0;
             LOOP(int, idx, M, exclude, N, { set(idx, last); });
          }
-      };
+      } __attribute__((aligned(8)));
 
       template <int N>
       class iv_base<N, true>
       {
-         //#if defined(__clang__)
-         //  typedef int type __attribute__((ext_vector_type(N)));
-         //#else
-         //  typedef int type __attribute__((vector_size(sizeof(int)*N)));
-         //#endif
-         //      type v = {};
+         // #if defined(__clang__)
+         //   typedef int type __attribute__((ext_vector_type(N)));
+         // #else
+         //   typedef int type __attribute__((vector_size(sizeof(int)*N)));
+         // #endif
+         //       type v = {};
          int v[N - 1] __INIT_VALUE;
 
        public:
@@ -591,7 +594,7 @@ typedef signed long long Slong;
             auto last = v[M - 1] < 0 ? ~0 : 0;
             LOOP(int, idx, M, exclude, N - 1, { set(idx, last); });
          }
-      };
+      } __attribute__((aligned(8)));
 
       template <>
       class iv_base<1, false>
@@ -630,7 +633,7 @@ typedef signed long long Slong;
          constexpr iv_base(const iv_base<N2, C2>& b) : v(b[0])
          {
          }
-      };
+      } __attribute__((aligned(8)));
 
       template <>
       class iv_base<1, true>
@@ -689,7 +692,7 @@ typedef signed long long Slong;
                v = b[0];
             }
          }
-      };
+      } __attribute__((aligned(8)));
 
       template <>
       class iv_base<2, true>
@@ -737,7 +740,7 @@ typedef signed long long Slong;
                v = b[0];
             }
          }
-      };
+      } __attribute__((aligned(8)));
 
       template <>
       class iv_base<3, false>
@@ -804,7 +807,7 @@ typedef signed long long Slong;
                v2 = va < 0 ? ~0LL : 0;
             }
          }
-      };
+      } __attribute__((aligned(8)));
 
       template <>
       class iv_base<3, true>
@@ -860,7 +863,7 @@ typedef signed long long Slong;
                va = b.to_int64();
             }
          }
-      };
+      } __attribute__((aligned(8)));
 
       template <>
       class iv_base<4, false>
@@ -935,7 +938,7 @@ typedef signed long long Slong;
                vb = va < 0 ? ~0LL : 0;
             }
          }
-      };
+      } __attribute__((aligned(8)));
 
       template <>
       class iv_base<4, true> : public iv_base<4, false>
@@ -1011,7 +1014,7 @@ typedef signed long long Slong;
                vb = va < 0 ? ~0LL : 0;
             }
          }
-      };
+      } __attribute__((aligned(8)));
 
       template <int N, int START, int N1, bool C1, int Nr, bool Cr>
       __FORCE_INLINE void iv_copy(const iv_base<N1, C1>& op, iv_base<Nr, Cr>& r)
@@ -3114,7 +3117,7 @@ typedef signed long long Slong;
 
    template <int W, bool S = true>
    class ac_int : public ac_private::iv_conv<(W + 31 + !S) / 32, S, W <= 64, !S && ((W % 32) == 0), W>
-#ifndef __BAMBU__
+#if !defined(__BAMBU__) || defined(__BAMBU_SIM__)
                       __AC_INT_UTILITY_BASE
 #endif
    {
@@ -3265,7 +3268,7 @@ typedef signed long long Slong;
       __FORCE_INLINE
       constexpr ac_int()
       {
-#if !defined(__BAMBU__) && defined(AC_DEFAULT_IN_RANGE)
+#if(!defined(__BAMBU__) || defined(__BAMBU_SIM__)) && defined(AC_DEFAULT_IN_RANGE)
          bit_adjust();
 #endif
       }
@@ -3477,6 +3480,14 @@ typedef signed long long Slong;
       __FORCE_INLINE explicit operator unsigned long() const
       {
          return to_ulong();
+      }
+      __FORCE_INLINE explicit operator long long() const
+      {
+         return to_int64();
+      }
+      __FORCE_INLINE explicit operator unsigned long long() const
+      {
+         return to_uint64();
       }
       __FORCE_INLINE explicit operator double() const
       {
@@ -4894,7 +4905,7 @@ typedef signed long long Slong;
    template <int W, bool S>
    __FORCE_INLINE std::ostream& operator<<(std::ostream& os, const ac_int<W, S>& x)
    {
-#ifndef __BAMBU__
+#if !defined(__BAMBU__) || defined(__BAMBU_SIM__)
       if((os.flags() & std::ios::hex) != 0)
       {
          os << x.to_string(AC_HEX);
@@ -4914,7 +4925,7 @@ typedef signed long long Slong;
    template <int W, bool S>
    __FORCE_INLINE std::istream& operator>>(std::istream& in, ac_int<W, S>& x)
    {
-#ifndef __BAMBU__
+#if !defined(__BAMBU__) || defined(__BAMBU_SIM__)
 
       std::string str;
       in >> str;
