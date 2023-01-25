@@ -345,8 +345,7 @@ parametric_list_based::parametric_list_based(const ParameterConstRef _parameters
       parametric_list_based_metric(GetPointer<const ParametricListBasedSpecialization>(hls_flow_step_specialization)
                                        ->parametric_list_based_metric),
       ending_time(OpGraphConstRef()),
-      clock_cycle(0.0),
-      executions_number(0)
+      clock_cycle(0.0)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
 }
@@ -1998,7 +1997,6 @@ void parametric_list_based::compute_function_topological_order()
 
 DesignFlowStep_Status parametric_list_based::InternalExec()
 {
-   executions_number++;
    long int step_time = 0;
    if(output_level >= OUTPUT_LEVEL_MINIMUM and output_level <= OUTPUT_LEVEL_PEDANTIC)
    {
@@ -2027,11 +2025,9 @@ DesignFlowStep_Status parametric_list_based::InternalExec()
       PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level,
                     "performing scheduling of basic block " + STR(bbg->CGetBBNodeInfo(*vi)->block->number));
       PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "  .operations: " + STR(operations.size()));
-#if 1
+
       exec(operations, ctrl_steps);
-#else
-      exec(operations, executions_number == 1 ? ControlStep(0) : ctrl_steps);
-#endif
+
       ctrl_steps = HLS->Rsch->get_csteps();
       if(parameters->getOption<bool>(OPT_print_dot))
       {
@@ -2072,9 +2068,6 @@ DesignFlowStep_Status parametric_list_based::InternalExec()
    }
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
                   "-->Scheduling Information of function " + FB->CGetBehavioralHelper()->get_function_name() + ":");
-#if 0
-   if(executions_number > 0)
-#endif
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Number of control steps: " + STR(ctrl_steps));
 
    if(output_level >= OUTPUT_LEVEL_VERY_PEDANTIC)
