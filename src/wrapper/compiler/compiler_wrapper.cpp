@@ -39,6 +39,7 @@
  * @author Christian Pilato <pilato@elet.polimi.it>
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  * @author Marco Lattuada <lattuada@elet.polimi.it>
+ * @author Michele Fiorito <michele.fiorito@polimi.it>
  * $Date$
  * Last modified by $Author$
  *
@@ -1966,14 +1967,7 @@ void CompilerWrapper::SetBambuDefault()
 void CompilerWrapper::SetCompilerDefault()
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "-->Setting front-end compiler defaults");
-   const CompilerWrapper_OptimizationSet optimization_level =
-       Param->getOption<CompilerWrapper_OptimizationSet>(OPT_compiler_opt_level);
-#if HAVE_I386_CLANG4_COMPILER || HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER ||    \
-    HAVE_I386_CLANG7_COMPILER || HAVE_I386_CLANG8_COMPILER || HAVE_I386_CLANG9_COMPILER ||    \
-    HAVE_I386_CLANG10_COMPILER || HAVE_I386_CLANG11_COMPILER || HAVE_I386_CLANG12_COMPILER || \
-    HAVE_I386_CLANG13_COMPILER || HAVE_I386_CLANGVVD_COMPILER
-   CompilerWrapper_CompilerTarget compiler = Param->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler);
-#endif
+   const auto optimization_level = Param->getOption<CompilerWrapper_OptimizationSet>(OPT_compiler_opt_level);
    optimization_flags["stack-protector"] =
        false; // In Ubuntu 6.10 and later versions this option is enabled by default for C, C++, ObjC, ObjC++
 
@@ -2001,41 +1995,7 @@ void CompilerWrapper::SetCompilerDefault()
       {
          frontend_compiler_parameters += " -O1 ";
 
-         if(true
-#if HAVE_I386_CLANG4_COMPILER
-            && compiler != CompilerWrapper_CompilerTarget::CT_I386_CLANG4
-#endif
-#if HAVE_I386_CLANG5_COMPILER
-            && compiler != CompilerWrapper_CompilerTarget::CT_I386_CLANG5
-#endif
-#if HAVE_I386_CLANG6_COMPILER
-            && compiler != CompilerWrapper_CompilerTarget::CT_I386_CLANG6
-#endif
-#if HAVE_I386_CLANG7_COMPILER
-            && compiler != CompilerWrapper_CompilerTarget::CT_I386_CLANG7
-#endif
-#if HAVE_I386_CLANG8_COMPILER
-            && compiler != CompilerWrapper_CompilerTarget::CT_I386_CLANG8
-#endif
-#if HAVE_I386_CLANG9_COMPILER
-            && compiler != CompilerWrapper_CompilerTarget::CT_I386_CLANG9
-#endif
-#if HAVE_I386_CLANG10_COMPILER
-            && compiler != CompilerWrapper_CompilerTarget::CT_I386_CLANG10
-#endif
-#if HAVE_I386_CLANG11_COMPILER
-            && compiler != CompilerWrapper_CompilerTarget::CT_I386_CLANG11
-#endif
-#if HAVE_I386_CLANG12_COMPILER
-            && compiler != CompilerWrapper_CompilerTarget::CT_I386_CLANG12
-#endif
-#if HAVE_I386_CLANG13_COMPILER
-            && compiler != CompilerWrapper_CompilerTarget::CT_I386_CLANG13
-#endif
-#if HAVE_I386_CLANGVVD_COMPILER
-            && compiler != CompilerWrapper_CompilerTarget::CT_I386_CLANGVVD
-#endif
-         )
+         if(!isClangCheck(compiler_target))
          {
             optimization_flags["auto-inc-dec"] = false;
             optimization_flags["cprop-registers"] = false;
@@ -2281,21 +2241,17 @@ void CompilerWrapper::SetCompilerDefault()
       }
    }
    /// required by PandA
-   if(!isClangCheck(compiler))
+   if(!isClangCheck(compiler_target))
    {
       optimization_flags["ipa-pure-const"] = true; /// needed to correctly manage global variables
       optimization_flags["tree-dce"] = true;       /// needed to remove unnecessary computations
    }
-#if HAVE_I386_CLANG4_COMPILER || HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER ||    \
-    HAVE_I386_CLANG7_COMPILER || HAVE_I386_CLANG8_COMPILER || HAVE_I386_CLANG9_COMPILER ||    \
-    HAVE_I386_CLANG10_COMPILER || HAVE_I386_CLANG11_COMPILER || HAVE_I386_CLANG12_COMPILER || \
-    HAVE_I386_CLANG13_COMPILER || HAVE_I386_CLANGVVD_COMPILER
    else
    {
       optimization_flags["vectorize"] = false;     /// disable vectorization
       optimization_flags["slp-vectorize"] = false; /// disable superword-level parallelism vectorization
    }
-#endif
+
    bool flag_cpp;
    if(Param->isOption(OPT_input_format) &&
       (Param->getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_CPP ||
@@ -3881,15 +3837,9 @@ std::string CompilerWrapper::clang_recipes(
          optimization_level == CompilerWrapper_OptimizationSet::O3)
       {
          std::string complex_recipe;
-         complex_recipe +=
-             " -tti "
-             "-targetlibinfo "
-             "-tbaa -scoped-noalias -assumption-cache-tracker -profile-summary-info -forceattrs -inferattrs "
-             "-" +
-             expandMemOps_plugin_name +
-             " "
-             "-domtree "
-             "-mem2reg ";
+         complex_recipe += " -tti -targetlibinfo -tbaa -scoped-noalias -assumption-cache-tracker -profile-summary-info "
+                           "-forceattrs -inferattrs " +
+                           ("-" + expandMemOps_plugin_name) + " -domtree -mem2reg ";
          if(Param->IsParameter("enable-CSROA") && Param->GetParameter<int>("enable-CSROA") == 1
 #ifndef _WIN32
             && !GepiCanon_plugin_obj.empty() && !CSROA_plugin_obj.empty()
@@ -3897,18 +3847,10 @@ std::string CompilerWrapper::clang_recipes(
          )
          {
             complex_recipe +=
-                "-" + GepiCanon_plugin_name +
-                "PS "
-                "-" +
-                GepiCanon_plugin_name +
-                "COL "
-                "-" +
-                GepiCanon_plugin_name +
-                "BVR "
-                "-loops -loop-simplify -lcssa-verification -lcssa -basicaa -aa -scalar-evolution -loop-unroll "
-                "-" +
-                CSROA_plugin_name +
-                "FV "
+                ("-" + GepiCanon_plugin_name + "PS ") + ("-" + GepiCanon_plugin_name + "COL ") +
+                ("-" + GepiCanon_plugin_name + "BVR ") +
+                "-loops -loop-simplify -lcssa-verification -lcssa -basicaa -aa -scalar-evolution -loop-unroll " +
+                ("-" + CSROA_plugin_name + "FV ") +
                 "-ipsccp -globaldce -domtree -mem2reg -deadargelim -basiccg -argpromotion -domtree -loops "
                 "-loop-simplify -lcssa-verification -lcssa -basicaa -aa -scalar-evolution -loop-unroll -simplifycfg ";
          }
@@ -3918,149 +3860,28 @@ std::string CompilerWrapper::clang_recipes(
 #endif
          )
          {
-            complex_recipe += "-" + expandMemOps_plugin_name +
-                              " "
-                              "-" +
-                              GepiCanon_plugin_name +
-                              "PS "
-                              "-" +
-                              GepiCanon_plugin_name +
-                              "COL "
-                              "-" +
-                              GepiCanon_plugin_name +
-                              "BVR "
-                              "-" +
-                              CSROA_plugin_name + "D ";
+            complex_recipe += "-" + expandMemOps_plugin_name + (" -" + GepiCanon_plugin_name + "PS ") +
+                              ("-" + GepiCanon_plugin_name + "COL ") + ("-" + GepiCanon_plugin_name + "BVR ") +
+                              ("-" + CSROA_plugin_name + "D ");
          }
-         complex_recipe += "-ipsccp -globalopt -dse -loop-unroll "
-                           "-instcombine "
-                           "-libcalls-shrinkwrap "
-                           "-tailcallelim "
-                           "-simplifycfg "
-                           "-reassociate "
-                           "-domtree "
-                           "-loops "
-                           "-loop-simplify "
-                           "-lcssa-verification "
-                           "-lcssa "
-                           "-basicaa "
-                           "-aa "
-                           "-scalar-evolution "
-                           "-loop-rotate "
-                           "-licm "
-                           "-loop-unswitch "
-                           "-simplifycfg "
-                           "-domtree "
-                           "-basicaa "
-                           "-aa "
-                           " -dse -loop-unroll "
-                           "-instcombine "
-                           "-loops "
-                           "-loop-simplify "
-                           "-lcssa-verification "
-                           "-lcssa "
-                           "-scalar-evolution "
-                           "-indvars "
-                           "-loop-idiom "
-                           "-loop-deletion "
-                           "-loop-unroll "
-                           "-mldst-motion "
-                           "-aa "
-                           "-memdep "
-                           "-lazy-branch-prob "
-                           "-lazy-block-freq "
-                           "-opt-remark-emitter "
-                           "-gvn "
-                           "-basicaa "
-                           "-aa "
-                           "-memdep "
-                           "-memcpyopt "
-                           "-sccp "
-                           "-domtree "
-                           "-demanded-bits "
-                           "-bdce "
-                           "-basicaa "
-                           "-aa "
-                           " -dse -loop-unroll "
-                           "-instcombine "
-                           "-lazy-value-info "
-                           "-jump-threading "
-                           "-correlated-propagation "
-                           "-domtree "
-                           "-basicaa "
-                           "-aa "
-                           "-memdep "
-                           "-dse "
-                           "-loops "
-                           "-loop-simplify "
-                           "-lcssa-verification "
-                           "-lcssa "
-                           "-aa "
-                           "-scalar-evolution "
-                           "-licm "
-                           "-postdomtree "
-                           "-adce "
-                           "-simplifycfg "
-                           "-domtree "
-                           "-basicaa "
-                           "-aa "
-                           " -loop-unroll "
-                           "-instcombine "
-                           "-barrier "
-                           "-elim-avail-extern "
-                           "-basiccg "
-                           "-rpo-functionattrs "
-                           "-globals-aa "
-                           "-float2int "
-                           "-domtree "
-                           "-loops "
-                           "-loop-simplify "
-                           "-lcssa-verification "
-                           "-lcssa "
-                           "-basicaa "
-                           "-aa "
-                           "-scalar-evolution "
-                           "-loop-rotate "
-                           "-loop-accesses "
-                           "-lazy-branch-prob "
-                           "-lazy-block-freq "
-                           "-opt-remark-emitter "
-                           "-loop-distribute "
-                           "-loop-simplify "
-                           "-lcssa-verification "
-                           "-lcssa "
-                           "-branch-prob "
-                           "-block-freq "
-                           "-scalar-evolution "
-                           "-basicaa "
-                           "-aa "
-                           "-loop-accesses "
-                           "-demanded-bits "
-                           "-lazy-branch-prob "
-                           "-lazy-block-freq "
-                           "-opt-remark-emitter "
-                           "-loop-vectorize "
-                           "-loop-simplify "
-                           "-scalar-evolution "
-                           "-aa "
-                           "-loop-accesses "
-                           "-loop-load-elim "
-                           "-basicaa "
-                           "-aa "
-                           " -dse -loop-unroll "
-                           "-instcombine "
-                           "-simplifycfg "
-                           "-domtree "
-                           "-basicaa "
-                           "-aa "
-                           " -dse -loop-unroll "
-                           "-instcombine "
-                           "-loops "
-                           "-loop-simplify "
-                           "-lcssa-verification "
-                           "-lcssa "
-                           "-scalar-evolution "
-                           "-loop-unroll ";
+         complex_recipe +=
+             "-ipsccp -globalopt -dse -loop-unroll -instcombine -libcalls-shrinkwrap -tailcallelim -simplifycfg "
+             "-reassociate -domtree -loops -loop-simplify -lcssa-verification -lcssa -basicaa -aa -scalar-evolution "
+             "-loop-rotate -licm -loop-unswitch -simplifycfg -domtree -basicaa -aa  -dse -loop-unroll -instcombine "
+             "-loops -loop-simplify -lcssa-verification -lcssa -scalar-evolution -indvars -loop-idiom -loop-deletion "
+             "-loop-unroll -mldst-motion -aa -memdep -lazy-branch-prob -lazy-block-freq -opt-remark-emitter -gvn "
+             "-basicaa -aa -memdep -memcpyopt -sccp -domtree -demanded-bits -bdce -basicaa -aa  -dse -loop-unroll "
+             "-instcombine -lazy-value-info -jump-threading -correlated-propagation -domtree -basicaa -aa -memdep -dse "
+             "-loops -loop-simplify -lcssa-verification -lcssa -aa -scalar-evolution -licm -postdomtree -adce "
+             "-simplifycfg -domtree -basicaa -aa  -loop-unroll -instcombine -barrier -elim-avail-extern -basiccg "
+             "-rpo-functionattrs -globals-aa -float2int -domtree -loops -loop-simplify -lcssa-verification -lcssa "
+             "-basicaa -aa -scalar-evolution -loop-rotate -loop-accesses -lazy-branch-prob -lazy-block-freq "
+             "-opt-remark-emitter -loop-distribute -loop-simplify -lcssa-verification -lcssa -branch-prob -block-freq "
+             "-scalar-evolution -basicaa -aa -loop-accesses -demanded-bits -lazy-branch-prob -lazy-block-freq "
+             "-opt-remark-emitter -disable-slp-vectorization -disable-loop-vectorization -scalarizer -loop-simplify "
+             "-scalar-evolution -aa -loop-accesses -loop-load-elim -basicaa -aa  -dse -loop-unroll -instcombine "
+             "-simplifycfg -domtree -basicaa -aa  -dse -loop-unroll -instcombine -loops -loop-simplify "
+             "-lcssa-verification -lcssa -scalar-evolution -loop-unroll ";
          if(Param->IsParameter("enable-CSROA") && Param->GetParameter<int>("enable-CSROA") == 1
 #ifndef _WIN32
             && !GepiCanon_plugin_obj.empty() && !CSROA_plugin_obj.empty()
@@ -4069,36 +3890,13 @@ std::string CompilerWrapper::clang_recipes(
          {
             complex_recipe += " -" + expandMemOps_plugin_name + " -" + CSROA_plugin_name + "WI ";
          }
-         complex_recipe += "-domtree -basicaa -aa -memdep -dse -aa -memoryssa -early-cse-memssa -constprop -ipsccp "
-                           "-globaldce -domtree -mem2reg -deadargelim -basiccg -argpromotion -domtree -loops "
-                           "-loop-simplify -lcssa-verification -lcssa -basicaa -aa "
-                           "-scalar-evolution -loop-unroll "
-                           " -dse -loop-unroll "
-                           "-instcombine "
-                           "-loop-simplify "
-                           "-lcssa-verification "
-                           "-lcssa "
-                           "-scalar-evolution "
-                           "-licm "
-                           "-alignment-from-assumptions "
-                           "-strip-dead-prototypes "
-                           "-globaldce "
-                           "-constmerge "
-                           "-domtree "
-                           "-loops "
-                           "-branch-prob "
-                           "-block-freq "
-                           "-loop-simplify "
-                           "-lcssa-verification "
-                           "-lcssa "
-                           "-basicaa "
-                           "-aa "
-                           "-scalar-evolution "
-                           "-branch-prob "
-                           "-block-freq "
-                           "-loop-sink "
-                           "-instsimplify ";
-         // complex_recipe += complex_recipe;
+         complex_recipe +=
+             "-domtree -basicaa -aa -memdep -dse -aa -memoryssa -early-cse-memssa -constprop -ipsccp -globaldce "
+             "-domtree -mem2reg -deadargelim -basiccg -argpromotion -domtree -loops -loop-simplify -lcssa-verification "
+             "-lcssa -basicaa -aa -scalar-evolution -loop-unroll  -dse -loop-unroll -instcombine -loop-simplify "
+             "-lcssa-verification -lcssa -scalar-evolution -licm -alignment-from-assumptions -strip-dead-prototypes "
+             "-globaldce -constmerge -domtree -loops -branch-prob -block-freq -loop-simplify -lcssa-verification "
+             "-lcssa -basicaa -aa -scalar-evolution -branch-prob -block-freq -loop-sink -instsimplify ";
          recipe += complex_recipe;
       }
       else
@@ -4360,88 +4158,74 @@ size_t CompilerWrapper::CGetPointerSize(const ParameterConstRef parameters)
 
 bool CompilerWrapper::isClangCheck(CompilerWrapper_CompilerTarget ct)
 {
-   if(false
+   return false
 #if HAVE_I386_CLANG4_COMPILER
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG4
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG4
 #endif
 #if HAVE_I386_CLANG5_COMPILER
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG5
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG5
 #endif
 #if HAVE_I386_CLANG6_COMPILER
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG6
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG6
 #endif
 #if HAVE_I386_CLANG7_COMPILER
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG7
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG7
 #endif
 #if HAVE_I386_CLANG8_COMPILER
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG8
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG8
 #endif
 #if HAVE_I386_CLANG9_COMPILER
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG9
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG9
 #endif
 #if HAVE_I386_CLANG10_COMPILER
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG10
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG10
 #endif
 #if HAVE_I386_CLANG11_COMPILER
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG11
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG11
 #endif
 #if HAVE_I386_CLANG12_COMPILER
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG12
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG12
 #endif
 #if HAVE_I386_CLANG13_COMPILER
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG13
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG13
 #endif
 #if HAVE_I386_CLANGVVD_COMPILER
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANGVVD
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANGVVD
 #endif
-   )
-   {
-      return true;
-   }
-   else
-   {
-      return false;
-   }
+       ;
 }
 
 bool CompilerWrapper::isGccCheck(CompilerWrapper_CompilerTarget ct)
 {
-   if(false
+   return false
 #if HAVE_I386_GCC45_COMPILER
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_GCC45
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_GCC45
 #endif
 #if HAVE_I386_GCC46_COMPILER
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_GCC46
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_GCC46
 #endif
 #if HAVE_I386_GCC47_COMPILER
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_GCC47
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_GCC47
 #endif
 #if HAVE_I386_GCC48_COMPILER
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_GCC48
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_GCC48
 #endif
 #if HAVE_I386_GCC49_COMPILER
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_GCC49
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_GCC49
 #endif
 #if HAVE_I386_GCC5_COMPILER
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_GCC5
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_GCC5
 #endif
 #if HAVE_I386_GCC6_COMPILER
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_GCC6
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_GCC6
 #endif
 #if HAVE_I386_GCC7_COMPILER
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_GCC7
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_GCC7
 #endif
 #if HAVE_I386_GCC8_COMPILER
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_GCC8
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_GCC8
 #endif
-   )
-   {
-      return true;
-   }
-   else
-   {
-      return false;
-   }
+       ;
 }
 
 int CompilerWrapper::getCompatibleCompilers()
@@ -4695,222 +4479,194 @@ std::string CompilerWrapper::getCompilerSuffix(int pc)
 
 bool CompilerWrapper::hasCompilerM64(CompilerWrapper_CompilerTarget ct)
 {
-   if(false
+   return false
 #if(HAVE_I386_GCC47_COMPILER && HAVE_I386_GCC47_M64)
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_GCC47
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_GCC47
 #endif
 #if(HAVE_I386_GCC48_COMPILER && HAVE_I386_GCC48_M64)
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_GCC48
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_GCC48
 #endif
 #if(HAVE_I386_GCC49_COMPILER && HAVE_I386_GCC49_M64)
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_GCC49
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_GCC49
 #endif
 #if(HAVE_I386_GCC5_COMPILER && HAVE_I386_GCC5_M64)
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_GCC5
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_GCC5
 #endif
 #if(HAVE_I386_GCC6_COMPILER && HAVE_I386_GCC6_M64)
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_GCC6
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_GCC6
 #endif
 #if(HAVE_I386_GCC7_COMPILER && HAVE_I386_GCC7_M64)
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_GCC7
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_GCC7
 #endif
 #if(HAVE_I386_GCC8_COMPILER && HAVE_I386_GCC8_M64)
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_GCC8
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_GCC8
 #endif
 #if(HAVE_I386_CLANG4_COMPILER && HAVE_I386_CLANG4_M64)
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG4
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG4
 #endif
 #if(HAVE_I386_CLANG5_COMPILER && HAVE_I386_CLANG5_M64)
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG5
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG5
 #endif
 #if(HAVE_I386_CLANG6_COMPILER && HAVE_I386_CLANG6_M64)
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG6
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG6
 #endif
 #if(HAVE_I386_CLANG7_COMPILER && HAVE_I386_CLANG7_M64)
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG7
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG7
 #endif
 #if(HAVE_I386_CLANG8_COMPILER && HAVE_I386_CLANG8_M64)
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG8
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG8
 #endif
 #if(HAVE_I386_CLANG9_COMPILER && HAVE_I386_CLANG9_M64)
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG9
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG9
 #endif
 #if(HAVE_I386_CLANG10_COMPILER && HAVE_I386_CLANG10_M64)
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG10
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG10
 #endif
 #if(HAVE_I386_CLANG11_COMPILER && HAVE_I386_CLANG11_M64)
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG11
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG11
 #endif
 #if(HAVE_I386_CLANG12_COMPILER && HAVE_I386_CLANG12_M64)
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG12
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG12
 #endif
 #if(HAVE_I386_CLANG13_COMPILER && HAVE_I386_CLANG13_M64)
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG13
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG13
 #endif
 #if(HAVE_I386_CLANGVVD_COMPILER && HAVE_I386_CLANGVVD_M64)
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANGVVD
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANGVVD
 #endif
-   )
-   {
-      return true;
-   }
-   else
-   {
-      return false;
-   }
+       ;
 }
 
 bool CompilerWrapper::hasCompilerMX32(CompilerWrapper_CompilerTarget ct)
 {
-   if(false
+   return false
 #if(HAVE_I386_GCC47_COMPILER && HAVE_I386_GCC47_MX32)
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_GCC47
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_GCC47
 #endif
 #if(HAVE_I386_GCC48_COMPILER && HAVE_I386_GCC48_MX32)
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_GCC48
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_GCC48
 #endif
 #if(HAVE_I386_GCC49_COMPILER && HAVE_I386_GCC49_MX32)
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_GCC49
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_GCC49
 #endif
 #if(HAVE_I386_GCC5_COMPILER && HAVE_I386_GCC5_MX32)
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_GCC5
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_GCC5
 #endif
 #if(HAVE_I386_GCC6_COMPILER && HAVE_I386_GCC6_MX32)
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_GCC6
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_GCC6
 #endif
 #if(HAVE_I386_GCC7_COMPILER && HAVE_I386_GCC7_MX32)
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_GCC7
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_GCC7
 #endif
 #if(HAVE_I386_GCC8_COMPILER && HAVE_I386_GCC8_MX32)
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_GCC8
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_GCC8
 #endif
 #if(HAVE_I386_CLANG4_COMPILER && HAVE_I386_CLANG4_MX32)
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG4
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG4
 #endif
 #if(HAVE_I386_CLANG5_COMPILER && HAVE_I386_CLANG5_MX32)
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG5
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG5
 #endif
 #if(HAVE_I386_CLANG6_COMPILER && HAVE_I386_CLANG6_MX32)
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG6
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG6
 #endif
 #if(HAVE_I386_CLANG7_COMPILER && HAVE_I386_CLANG7_MX32)
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG7
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG7
 #endif
 #if(HAVE_I386_CLANG8_COMPILER && HAVE_I386_CLANG8_MX32)
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG8
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG8
 #endif
 #if(HAVE_I386_CLANG9_COMPILER && HAVE_I386_CLANG9_MX32)
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG9
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG9
 #endif
 #if(HAVE_I386_CLANG10_COMPILER && HAVE_I386_CLANG10_MX32)
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG10
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG10
 #endif
 #if(HAVE_I386_CLANG11_COMPILER && HAVE_I386_CLANG11_MX32)
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG11
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG11
 #endif
 #if(HAVE_I386_CLANG12_COMPILER && HAVE_I386_CLANG12_MX32)
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG12
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG12
 #endif
 #if(HAVE_I386_CLANG13_COMPILER && HAVE_I386_CLANG13_MX32)
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG13
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG13
 #endif
 #if(HAVE_I386_CLANGVVD_COMPILER && HAVE_I386_CLANGVVD_MX32)
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANGVVD
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANGVVD
 #endif
-   )
-   {
-      return true;
-   }
-   else
-   {
-      return false;
-   }
+       ;
 }
 
 bool CompilerWrapper::hasCompilerGCCM32(CompilerWrapper_CompilerTarget ct)
 {
-   if(false
+   return false
 #if(HAVE_I386_GCC45_COMPILER)
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_GCC45
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_GCC45
 #endif
 #if(HAVE_I386_GCC46_COMPILER)
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_GCC46
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_GCC46
 #endif
 #if(HAVE_I386_GCC47_COMPILER && HAVE_I386_GCC47_M32)
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_GCC47
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_GCC47
 #endif
 #if(HAVE_I386_GCC48_COMPILER && HAVE_I386_GCC48_M32)
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_GCC48
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_GCC48
 #endif
 #if(HAVE_I386_GCC49_COMPILER && HAVE_I386_GCC49_M32)
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_GCC49
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_GCC49
 #endif
 #if(HAVE_I386_GCC5_COMPILER && HAVE_I386_GCC5_M32)
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_GCC5
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_GCC5
 #endif
 #if(HAVE_I386_GCC6_COMPILER && HAVE_I386_GCC6_M32)
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_GCC6
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_GCC6
 #endif
 #if(HAVE_I386_GCC7_COMPILER && HAVE_I386_GCC7_M32)
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_GCC7
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_GCC7
 #endif
 #if(HAVE_I386_GCC8_COMPILER && HAVE_I386_GCC8_M32)
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_GCC8
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_GCC8
 #endif
-   )
-   {
-      return true;
-   }
-   else
-   {
-      return false;
-   }
+       ;
 }
 
 bool CompilerWrapper::hasCompilerCLANGM32(CompilerWrapper_CompilerTarget ct)
 {
-   if(false
+   return false
 #if(HAVE_I386_CLANG4_COMPILER && HAVE_I386_CLANG4_M32)
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG4
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG4
 #endif
 #if(HAVE_I386_CLANG5_COMPILER && HAVE_I386_CLANG5_M32)
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG5
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG5
 #endif
 #if(HAVE_I386_CLANG6_COMPILER && HAVE_I386_CLANG6_M32)
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG6
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG6
 #endif
 #if(HAVE_I386_CLANG7_COMPILER && HAVE_I386_CLANG7_M32)
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG7
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG7
 #endif
 #if(HAVE_I386_CLANG8_COMPILER && HAVE_I386_CLANG8_M32)
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG8
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG8
 #endif
 #if(HAVE_I386_CLANG9_COMPILER && HAVE_I386_CLANG9_M32)
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG9
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG9
 #endif
 #if(HAVE_I386_CLANG10_COMPILER && HAVE_I386_CLANG10_M32)
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG10
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG10
 #endif
 #if(HAVE_I386_CLANG11_COMPILER && HAVE_I386_CLANG11_M32)
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG11
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG11
 #endif
 #if(HAVE_I386_CLANG12_COMPILER && HAVE_I386_CLANG12_M32)
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG12
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG12
 #endif
 #if(HAVE_I386_CLANG13_COMPILER && HAVE_I386_CLANG13_M32)
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG13
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG13
 #endif
 #if(HAVE_I386_CLANGVVD_COMPILER && HAVE_I386_CLANGVVD_M32)
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANGVVD
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANGVVD
 #endif
-   )
-   {
-      return true;
-   }
-   else
-   {
-      return false;
-   }
+       ;
 }
 
 std::string CompilerWrapper::getCompilerVersion(int pc)

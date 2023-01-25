@@ -54,9 +54,7 @@
 
 /// utility includes
 #include "custom_map.hpp"
-#include "custom_set.hpp"
 #include "refcount.hpp"
-#include "utility.hpp"
 
 REF_FORWARD_DECL(HLS_constraints);
 CONSTREF_FORWARD_DECL(Parameter);

@@ -43,20 +43,15 @@
 #ifndef CHECK_SYSTEM_TYPE_HPP
 #define CHECK_SYSTEM_TYPE_HPP
 
-/// Autoheader include
 #include "config_HAVE_LEON3.hpp"
 
-/// Superclass include
-#include "function_frontend_flow_step.hpp"
-
-/// STD include
 #include "custom_map.hpp"
 #include "custom_set.hpp"
-#include <vector>
-
-/// Utility include
+#include "function_frontend_flow_step.hpp"
 #include "refcount.hpp"
-#include "utility.hpp"
+
+#include <string>
+#include <vector>
 
 CONSTREF_FORWARD_DECL(BehavioralHelper);
 CONSTREF_FORWARD_DECL(Parameter);

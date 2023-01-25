@@ -40,30 +40,18 @@
  * Last modified by $Author$
  *
  */
-
-/// Header include
 #include "synthesis_evaluation.hpp"
 
-///. include
+#include "BackendFlow.hpp"
 #include "Parameter.hpp"
-
-/// behavior include
+#include "area_model.hpp"
 #include "call_graph_manager.hpp"
-
-/// HLS include
+#include "clb_model.hpp"
 #include "hls.hpp"
 #include "hls_constraints.hpp"
 #include "hls_manager.hpp"
-
-/// technology/physical_library/models
-#include "area_model.hpp"
 #include "time_model.hpp"
-
-/// technology/physical_library/models/area
-#include "clb_model.hpp"
-
-/// wrapper/synthesis include
-#include "BackendFlow.hpp"
+#include "utility.hpp"
 
 SynthesisEvaluation::SynthesisEvaluation(const ParameterConstRef _Param, const HLS_managerRef _hls_mgr,
                                          const DesignFlowManagerConstRef _design_flow_manager)

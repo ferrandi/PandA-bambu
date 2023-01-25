@@ -44,22 +44,21 @@
 /// Header include
 #include "LatticeBackendFlow.hpp"
 
+#include "config_PANDA_DATA_INSTALLDIR.hpp"
+
 #include "LUT_model.hpp"
 #include "LatticeWrapper.hpp"
+#include "Parameter.hpp"
 #include "area_model.hpp"
 #include "clb_model.hpp"
-#include "config_PANDA_DATA_INSTALLDIR.hpp"
+#include "fileIO.hpp"
+#include "structural_objects.hpp"
 #include "target_device.hpp"
 #include "target_manager.hpp"
 #include "time_model.hpp"
-
-#include "Parameter.hpp"
-#include "fileIO.hpp"
+#include "utility.hpp"
 #include "xml_dom_parser.hpp"
 #include "xml_script_command.hpp"
-
-/// circuit include
-#include "structural_objects.hpp"
 
 #define LATTICE_SLICE "LATTICE_SLICE"
 #define LATTICE_DELAY "LATTICE_DELAY"

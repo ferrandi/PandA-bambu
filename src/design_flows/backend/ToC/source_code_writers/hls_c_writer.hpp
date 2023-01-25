@@ -174,8 +174,8 @@ class HLSCWriter : public CWriter
     * @param input specifies if the input syntax must be used
     */
    void WriteParamInMemory(const BehavioralHelperConstRef behavioral_helper, const std::string& param,
-                           const unsigned int type, const unsigned int nesting_level, bool input,
-                           bool is_struct_or_union);
+                           tree_nodeConstRef type, const unsigned int nesting_level = 0, bool input = false,
+                           bool is_struct_or_union = false);
 
  public:
    /**

@@ -1104,8 +1104,8 @@ void conn_binding::add_command_ports(const HLS_managerRef HLSMgr, const hlsRef H
    for(auto& call : calls)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Adding connections of " + call.first->get_path());
-      auto isMultipleModule = GetPointer<module>(call.first->get_owner()) &&
-                              GetPointer<module>(call.first->get_owner())->get_multi_unit_multiplicity();
+      const auto isMultipleModule = GetPointer<module>(call.first->get_owner()) &&
+                                    GetPointer<module>(call.first->get_owner())->get_multi_unit_multiplicity();
       if(call.second.size() == 1 && !isMultipleModule)
       {
          SM->add_connection(call.first, call.second.front());
@@ -1118,12 +1118,12 @@ void conn_binding::add_command_ports(const HLS_managerRef HLSMgr, const hlsRef H
             THROW_ASSERT(call.first->get_kind() == port_vector_o_K, "unexpected condition");
             std::map<structural_objectRef, std::list<structural_objectRef>> toOred;
             auto ports_it = call.second.begin();
-            for(auto v : start_to_vertex.find(call.first)->second)
+            for(auto v : start_to_vertex.at(call.first))
             {
-               technology_nodeRef tn = HLS->allocation_information->get_fu(HLS->Rfu->get_assign(v));
-               auto index = HLS->Rfu->get_index(v);
+               const auto tn = HLS->allocation_information->get_fu(HLS->Rfu->get_assign(v));
+               const auto index = HLS->Rfu->get_index(v);
 #if HAVE_ASSERTS
-               auto multiplicity = GetPointer<module>(call.first->get_owner())->get_multi_unit_multiplicity();
+               const auto multiplicity = GetPointer<module>(call.first->get_owner())->get_multi_unit_multiplicity();
 #endif
                THROW_ASSERT(multiplicity == GetPointer<port_o>(call.first)->get_ports_size(), "unexpected condition");
                THROW_ASSERT(index < multiplicity, "unexpected condition");
@@ -1141,18 +1141,18 @@ void conn_binding::add_command_ports(const HLS_managerRef HLSMgr, const hlsRef H
                }
                else
                {
-                  const technology_managerRef TM = HLS->HLS_T->get_technology_manager();
-                  std::string library = TM->get_library(OR_GATE_STD);
-                  structural_objectRef or_gate = SM->add_module_from_technology_library(
+                  const auto TM = HLS->HLS_T->get_technology_manager();
+                  const auto library = TM->get_library(OR_GATE_STD);
+                  const auto or_gate = SM->add_module_from_technology_library(
                       "or_" + pp_pair.first->get_owner()->get_id() + STR(unique_id), OR_GATE_STD, library,
                       SM->get_circ(), TM);
-                  structural_objectRef sig = SM->add_sign("s_" + pp_pair.first->get_owner()->get_id() + STR(unique_id),
-                                                          SM->get_circ(), boolean_port_type);
+                  const auto sig = SM->add_sign("s_" + pp_pair.first->get_owner()->get_id() + STR(unique_id),
+                                                SM->get_circ(), boolean_port_type);
                   ++unique_id;
                   SM->add_connection(sig, or_gate->find_member("out1", port_o_K, or_gate));
                   SM->add_connection(sig, pp_pair.first);
-                  structural_objectRef in = or_gate->find_member("in", port_vector_o_K, or_gate);
-                  auto* port = GetPointer<port_o>(in);
+                  const auto in = or_gate->find_member("in", port_vector_o_K, or_gate);
+                  auto port = GetPointer<port_o>(in);
                   port->add_n_ports(static_cast<unsigned int>(pp_pair.second.size()), in);
                   unsigned int num = 0;
                   for(auto a = pp_pair.second.begin(); a != pp_pair.second.end(); ++a, ++num)
@@ -1164,17 +1164,17 @@ void conn_binding::add_command_ports(const HLS_managerRef HLSMgr, const hlsRef H
          }
          else
          {
-            const technology_managerRef TM = HLS->HLS_T->get_technology_manager();
-            std::string library = TM->get_library(OR_GATE_STD);
-            structural_objectRef or_gate = SM->add_module_from_technology_library(
+            const auto TM = HLS->HLS_T->get_technology_manager();
+            const auto library = TM->get_library(OR_GATE_STD);
+            const auto or_gate = SM->add_module_from_technology_library(
                 "or_" + call.first->get_owner()->get_id() + STR(unique_id), OR_GATE_STD, library, SM->get_circ(), TM);
-            structural_objectRef sig = SM->add_sign("s_" + call.first->get_owner()->get_id() + STR(unique_id),
-                                                    SM->get_circ(), boolean_port_type);
+            const auto sig = SM->add_sign("s_" + call.first->get_owner()->get_id() + STR(unique_id), SM->get_circ(),
+                                          boolean_port_type);
             ++unique_id;
             SM->add_connection(sig, or_gate->find_member("out1", port_o_K, or_gate));
             SM->add_connection(sig, call.first);
-            structural_objectRef in = or_gate->find_member("in", port_vector_o_K, or_gate);
-            auto* port = GetPointer<port_o>(in);
+            const auto in = or_gate->find_member("in", port_vector_o_K, or_gate);
+            auto port = GetPointer<port_o>(in);
             port->add_n_ports(static_cast<unsigned int>(call.second.size()), in);
             unsigned int num = 0;
             for(auto a = call.second.begin(); a != call.second.end(); ++a, ++num)

@@ -43,27 +43,9 @@
 #ifndef CALL_GRAPH_COMPUTATION_HPP
 #define CALL_GRAPH_COMPUTATION_HPP
 
-/// Superclass include
 #include "application_frontend_flow_step.hpp"
 
-#include "call_graph.hpp"
-
-#include "refcount.hpp"
-#include "utility.hpp"
-
-#include "custom_map.hpp"
-
-/**
- * @name forward declarations
- */
-//@{
-REF_FORWARD_DECL(BehavioralHelper);
-REF_FORWARD_DECL(call_graph_computation);
-REF_FORWARD_DECL(CallGraphManager);
-CONSTREF_FORWARD_DECL(FunctionExpander);
-REF_FORWARD_DECL(tree_manager);
-REF_FORWARD_DECL(tree_node);
-//@}
+#include "custom_set.hpp"
 
 /**
  * Build call graph structures starting from the tree_manager.

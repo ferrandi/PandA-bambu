@@ -40,11 +40,7 @@
 #ifndef CREATE_ADDRESS_TRANSLATION_HPP
 #define CREATE_ADDRESS_TRANSLATION_HPP
 
-/// Superclass include
 #include "application_frontend_flow_step.hpp"
-
-/// utility include
-#include "utility.hpp"
 
 REF_FORWARD_DECL(AadlInformation);
 REF_FORWARD_DECL(AsnType);

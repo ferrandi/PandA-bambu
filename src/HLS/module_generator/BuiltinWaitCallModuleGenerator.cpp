@@ -79,9 +79,7 @@ void BuiltinWaitCallModuleGenerator::InternalExec(std::ostream& out, const modul
       const auto called_addr = gc->args.at(0);
       const auto called_hasreturn = gc->args.at(1);
       THROW_ASSERT(GET_CONST_NODE(called_hasreturn)->get_kind() == integer_cst_K, "");
-      const auto hasreturn =
-          tree_helper::get_integer_cst_value(GetPointerS<const integer_cst>(GET_CONST_NODE(called_hasreturn)));
-      if(hasreturn)
+      if(tree_helper::GetConstValue(called_hasreturn))
       {
          const auto fpointer_type = tree_helper::CGetType(called_addr);
          const auto called_ftype = tree_helper::CGetPointedType(fpointer_type);

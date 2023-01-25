@@ -37,10 +37,15 @@
  * @author Nicola Saporetti <nicola.saporetti@gmail.com>
  */
 #include "fu_binding_cs.hpp"
+
 #include "Parameter.hpp"
+#include "custom_map.hpp"
+#include "custom_set.hpp"
+#include "dbgPrintHelper.hpp"
 #include "hls.hpp"
 #include "hls_manager.hpp"
 #include "hls_target.hpp"
+#include "math_function.hpp"
 #include "memory.hpp"
 #include "memory_cs.hpp"
 #include "omp_functions.hpp"
@@ -48,17 +53,10 @@
 #include "structural_manager.hpp"
 #include "structural_objects.hpp"
 #include "technology_manager.hpp"
-/// STD include
+#include "utility.hpp"
+
 #include <cmath>
 #include <string>
-
-/// STL include
-#include "custom_map.hpp"
-#include "custom_set.hpp"
-
-/// utility include
-#include "dbgPrintHelper.hpp"
-#include "math_function.hpp"
 
 fu_binding_cs::fu_binding_cs(const HLS_managerConstRef _HLSMgr, const unsigned int _function_id,
                              const ParameterConstRef _parameters)

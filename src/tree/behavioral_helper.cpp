@@ -608,7 +608,7 @@ std::string BehavioralHelper::PrintVariable(unsigned int var) const
    if(var_node->get_kind() == mem_ref_K)
    {
       const auto mr = GetPointerS<const mem_ref>(var_node);
-      const auto offset = tree_helper::get_integer_cst_value(GetPointerS<const integer_cst>(GET_CONST_NODE(mr->op1)));
+      const auto offset = tree_helper::GetConstValue(mr->op1);
       const tree_manipulationRef tm(new tree_manipulation(AppM->get_tree_manager(), Param, AppM));
       const auto pointer_type = tm->GetPointerType(mr->type, 8);
       const auto type_string = tree_helper::PrintType(TM, pointer_type);
@@ -691,7 +691,7 @@ std::string BehavioralHelper::PrintVariable(unsigned int var) const
 std::string BehavioralHelper::PrintConstant(const tree_nodeConstRef& _node, const var_pp_functorConstRef vppf) const
 {
    const auto node = _node->get_kind() == tree_reindex_K ? GET_CONST_NODE(_node) : _node;
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Printing constant " + STR(_node));
+   INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "-->Printing constant " + STR(_node));
    THROW_ASSERT(is_a_constant(node->index), std::string("Object is not a constant ") + STR(node));
    if(node->index == default_COND)
    {
@@ -702,12 +702,12 @@ std::string BehavioralHelper::PrintConstant(const tree_nodeConstRef& _node, cons
    {
       case integer_cst_K:
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->integer_cst");
+         INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "-->integer_cst");
          const auto ic = GetPointerS<const integer_cst>(node);
          const auto type = GET_CONST_NODE(ic->type);
          const auto it = GetPointer<const integer_type>(type);
-         bool unsigned_flag = (it && it->unsigned_flag) || type->get_kind() == pointer_type_K ||
-                              type->get_kind() == reference_type_K || type->get_kind() == boolean_type_K;
+         const auto unsigned_flag = (it && it->unsigned_flag) || type->get_kind() == pointer_type_K ||
+                                    type->get_kind() == reference_type_K || type->get_kind() == boolean_type_K;
 #if 0
          ///check if the IR type is consistent with the type name
          if (it)
@@ -729,8 +729,9 @@ std::string BehavioralHelper::PrintConstant(const tree_nodeConstRef& _node, cons
          }
 #endif
          THROW_ASSERT(ic, "");
-         auto value = tree_helper::get_integer_cst_value(ic);
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Value is " + STR(value));
+         auto value = tree_helper::GetConstValue(node, !unsigned_flag);
+         INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "---Value is " + STR(value));
+         // TODO: fix for bitwidth greater than 64 bits
          if((it && it->prec == 64) && (value == (static_cast<long long int>(-0x08000000000000000LL))))
          {
             res = "(long long int)-0x08000000000000000";
@@ -743,17 +744,14 @@ std::string BehavioralHelper::PrintConstant(const tree_nodeConstRef& _node, cons
          {
             if(it && it->unsigned_flag)
             {
-               if(it && it->prec < 64)
-               {
-                  res += STR(static_cast<unsigned long long>(value) & ((1ull << it->prec) - 1));
-               }
-               else
-               {
-                  res += STR(static_cast<unsigned long long>(value));
-               }
+               THROW_ASSERT(value <= std::numeric_limits<unsigned long long>::max(), "");
+               res += STR(static_cast<unsigned long long>(value & ((integer_cst_t(1) << it->prec) - 1)));
             }
             else
             {
+               THROW_ASSERT(std::numeric_limits<long long>::min() <= value &&
+                                value <= std::numeric_limits<long long>::max(),
+                            "Printing " + STR(node) + " as " + STR(value));
                res += STR(value);
             }
          }
@@ -779,7 +777,7 @@ std::string BehavioralHelper::PrintConstant(const tree_nodeConstRef& _node, cons
                res += "/*B*/";
             }
          }
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
+         INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "<--");
          break;
       }
       case real_cst_K:
@@ -932,8 +930,8 @@ std::string BehavioralHelper::PrintConstant(const tree_nodeConstRef& _node, cons
                             "Case label expression " + STR(node) + " does not use integer_cst");
                THROW_ASSERT(GetPointer<integer_cst>(GET_CONST_NODE(cl->op1)),
                             "Case label expression " + STR(node) + " does not use integer_cst");
-               auto low = tree_helper::get_integer_cst_value(GetPointerS<const integer_cst>(GET_CONST_NODE(cl->op0)));
-               auto high = tree_helper::get_integer_cst_value(GetPointerS<const integer_cst>(GET_CONST_NODE(cl->op1)));
+               auto low = tree_helper::GetConstValue(cl->op0);
+               auto high = tree_helper::GetConstValue(cl->op1);
                while(low < high)
                {
                   res += STR(low) + "u : case ";
@@ -1069,7 +1067,7 @@ std::string BehavioralHelper::PrintConstant(const tree_nodeConstRef& _node, cons
       default:
          THROW_ERROR("Var object is not a constant " + STR(node) + " " + node->get_kind_text());
    }
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Printed constant " + res);
+   INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "<--Printed constant " + res);
    return res;
 }
 
@@ -1109,11 +1107,10 @@ const std::list<unsigned int> BehavioralHelper::get_parameters() const
    const auto& list_of_args = fd->list_of_args;
    if(fd->list_of_args.size())
    {
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Parameter list size: " + STR(list_of_args.size()));
+      INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "---Parameter list size: " + STR(list_of_args.size()));
       for(const auto& list_of_arg : list_of_args)
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                        "---Adding parameter " + STR(GET_INDEX_NODE(list_of_arg)));
+         INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "---Adding parameter " + STR(GET_INDEX_NODE(list_of_arg)));
          parameters.push_back(GET_INDEX_NODE(list_of_arg));
       }
    }
@@ -1126,7 +1123,7 @@ const std::list<unsigned int> BehavioralHelper::get_parameters() const
          while(currentp)
          {
             const auto tl = GetPointerS<const tree_list>(GET_CONST_NODE(currentp));
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+            INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level,
                            "---Adding parameter " + STR(GET_INDEX_CONST_NODE(tl->valu)));
             if(GET_NODE(tl->valu)->get_kind() != void_type_K)
             {
@@ -1145,7 +1142,7 @@ std::vector<tree_nodeRef> BehavioralHelper::GetParameters() const
    const auto fd = GetPointerS<const function_decl>(fun);
    if(fd->list_of_args.size())
    {
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Parameter list size: " + STR(fd->list_of_args.size()));
+      INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "---Parameter list size: " + STR(fd->list_of_args.size()));
       return fd->list_of_args;
    }
 
@@ -1157,7 +1154,7 @@ std::vector<tree_nodeRef> BehavioralHelper::GetParameters() const
       while(currentp)
       {
          const auto tl = GetPointerS<const tree_list>(GET_CONST_NODE(currentp));
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+         INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level,
                         "---Adding parameter " + STR(GET_INDEX_CONST_NODE(tl->valu)));
          if(GET_CONST_NODE(tl->valu)->get_kind() != void_type_K)
          {
@@ -1300,10 +1297,10 @@ std::string BehavioralHelper::PrintNode(unsigned int _node, vertex v, const var_
 std::string BehavioralHelper::PrintNode(const tree_nodeConstRef& _node, vertex v,
                                         const var_pp_functorConstRef vppf) const
 {
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Printing node " + STR(_node));
+   INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "-->Printing node " + STR(_node));
    std::string res = "";
    const auto node = _node->get_kind() == tree_reindex_K ? GET_CONST_NODE(_node) : _node;
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Type is " + std::string(node->get_kind_text()));
+   INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "-->Type is " + std::string(node->get_kind_text()));
    switch(node->get_kind())
    {
          /* Binary arithmetic and logic expressions.  */
@@ -1828,16 +1825,16 @@ std::string BehavioralHelper::PrintNode(const tree_nodeConstRef& _node, vertex v
          const auto binary_op_cast = tree_helper::IsPointerType(_node);
          const auto type_node = tree_helper::CGetType(ppe->op0);
          const auto left_op_cast = tree_helper::IsPointerType(ppe->op0);
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
+         INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "-->");
 #ifndef NDEBUG
          if(left_op_cast)
          {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Left part is a pointer");
+            INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "Left part is a pointer");
          }
 #endif
          bool do_reverse_pointer_arithmetic = false;
          auto right_op_node = GET_CONST_NODE(ppe->op1);
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+         INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level,
                         "Starting right op node is " + STR(GET_INDEX_NODE(ppe->op1)) + " - " +
                             right_op_node->get_kind_text());
          const auto right_cost = right_op_node->get_kind() == integer_cst_K;
@@ -1848,7 +1845,7 @@ std::string BehavioralHelper::PrintNode(const tree_nodeConstRef& _node, vertex v
          /// check possible pointer arithmetic reverse
          long long int deltabit;
          const auto pointed_type = tree_helper::CGetPointedType(tree_helper::CGetType(ppe->op0));
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+         INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level,
                         "Pointed type (" + STR(pointed_type) + ") is " + GET_CONST_NODE(pointed_type)->get_kind_text());
          if(tree_helper::IsVoidType(pointed_type))
          {
@@ -1859,13 +1856,14 @@ std::string BehavioralHelper::PrintNode(const tree_nodeConstRef& _node, vertex v
          {
             deltabit = static_cast<long long>(tree_helper::Size(pointed_type));
          }
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "deltabit is " + STR(deltabit));
-         long long int pointer_offset = 0;
+         INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "deltabit is " + STR(deltabit));
+         integer_cst_t pointer_offset = 0;
          std::string right_offset_var;
          if(right_cost)
          {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Offset is constant");
-            pointer_offset = tree_helper::get_integer_cst_value(GetPointerS<const integer_cst>(right_op_node));
+            INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "Offset is constant");
+            pointer_offset = tree_helper::GetConstValue(right_op_node);
+            THROW_ASSERT(pointer_offset >= 0, "");
             if(deltabit / 8 == 0)
             {
                do_reverse_pointer_arithmetic = false;
@@ -1873,7 +1871,7 @@ std::string BehavioralHelper::PrintNode(const tree_nodeConstRef& _node, vertex v
             else if(GET_CONST_NODE(pointed_type)->get_kind() != array_type_K && deltabit && pointer_offset > deltabit &&
                     ((pointer_offset % (deltabit / 8)) == 0))
             {
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Arithmetic pointer pattern matched");
+               INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "Arithmetic pointer pattern matched");
                const auto ic = GetPointerS<const integer_cst>(right_op_node);
                const auto ic_type = GET_CONST_NODE(ic->type);
                const auto it = GetPointer<const integer_type>(ic_type);
@@ -1890,14 +1888,14 @@ std::string BehavioralHelper::PrintNode(const tree_nodeConstRef& _node, vertex v
             }
             else
             {
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+               INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level,
                               "Arithmetic pointer pattern not matched " + STR(pointer_offset) + " vs " +
                                   STR(deltabit / 8));
             }
          }
          else
          {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Offset is not constant");
+            INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "Offset is not constant");
             bool exit = GET_CONST_NODE(pointed_type)->get_kind() == array_type_K;
             while(!do_reverse_pointer_arithmetic && !exit)
             {
@@ -1918,7 +1916,7 @@ std::string BehavioralHelper::PrintNode(const tree_nodeConstRef& _node, vertex v
                         break;
                      }
                      right_op_node = GET_NODE(GetPointerS<const gimple_assign>(defstmt)->op1);
-                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                     INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level,
                                     "New op node is " + STR(right_op_node->index) + " - " +
                                         right_op_node->get_kind_text());
                      break;
@@ -1933,23 +1931,21 @@ std::string BehavioralHelper::PrintNode(const tree_nodeConstRef& _node, vertex v
                      const auto mult = GetPointerS<const mult_expr>(right_op_node);
                      if(GET_NODE(mult->op1)->get_kind() == integer_cst_K)
                      {
-                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                        INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level,
                                        "-->Right part of multiply is an integer constant " +
                                            STR(GET_INDEX_NODE(mult->op1)));
-                        auto size_of_pointer = tree_helper::get_integer_cst_value(
-                            GetPointerS<const integer_cst>(GET_CONST_NODE(mult->op1)));
-                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                        auto size_of_pointer = tree_helper::GetConstValue(mult->op1);
+                        INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level,
                                        "---Size of pointer is " + STR(size_of_pointer));
                         if(size_of_pointer == (deltabit / 8))
                         {
-                           INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                          "-->Constant is the size of the pointed");
+                           INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "-->Constant is the size of the pointed");
                            right_offset_var += PrintNode(mult->op0, v, vppf);
                            do_reverse_pointer_arithmetic = true;
                         }
                         else
                         {
-                           INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                           INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level,
                                           "-->Constant is not the size of the pointed: " + STR(size_of_pointer) +
                                               " vs " + STR(deltabit / 8));
                            const auto temp1 = tree_helper::CGetType(mult->op1);
@@ -1957,19 +1953,18 @@ std::string BehavioralHelper::PrintNode(const tree_nodeConstRef& _node, vertex v
                                         "Type of integer cast " + STR(GET_INDEX_NODE(mult->op1)) +
                                             " is not an integer type");
                            const auto it = GetPointerS<const integer_type>(GET_CONST_NODE(temp1));
-                           auto max_int = static_cast<unsigned long long>(tree_helper::get_integer_cst_value(
-                               GetPointerS<const integer_cst>(GET_CONST_NODE(it->max))));
-                           auto new_size_of_pointer = static_cast<long long>(max_int) + 1 - size_of_pointer;
+                           auto max_int = tree_helper::GetConstValue(it->max);
+                           auto new_size_of_pointer = max_int + 1 - size_of_pointer;
                            if(new_size_of_pointer == (deltabit / 8))
                            {
-                              INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                              INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level,
                                              "---Constant is minus the size of the pointed");
                               right_offset_var += "-(" + PrintNode(mult->op0, v, vppf) + ")";
                               do_reverse_pointer_arithmetic = true;
                            }
                            else if(deltabit && (deltabit / 8) && (size_of_pointer % ((deltabit / 8)) == 0))
                            {
-                              INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                              INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level,
                                              "---Constant is a multiple of the  size of the pointed");
                               right_offset_var += PrintNode(mult->op0, v, vppf);
                               right_offset_var += " * ";
@@ -1977,14 +1972,13 @@ std::string BehavioralHelper::PrintNode(const tree_nodeConstRef& _node, vertex v
                               do_reverse_pointer_arithmetic = true;
                            }
                         }
-                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
-                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                        INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "<--");
+                        INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level,
                                        "<--Right offset variable is " + right_offset_var);
                      }
                      else if(GET_NODE(mult->op0)->get_kind() == integer_cst_K)
                      {
-                        auto size_of_pointer =
-                            tree_helper::get_integer_cst_value(GetPointer<integer_cst>(GET_NODE(mult->op0)));
+                        auto size_of_pointer = tree_helper::GetConstValue(mult->op0);
                         if(size_of_pointer == (deltabit / 8))
                         {
                            right_offset_var += PrintNode(mult->op1, v, vppf);
@@ -1997,9 +1991,8 @@ std::string BehavioralHelper::PrintNode(const tree_nodeConstRef& _node, vertex v
                                         "Type of integer cast " + STR(GET_INDEX_NODE(mult->op0)) +
                                             " is not an integer type");
                            const auto it = GetPointerS<const integer_type>(GET_CONST_NODE(temp1));
-                           auto max_int = static_cast<unsigned long long>(tree_helper::get_integer_cst_value(
-                               GetPointerS<const integer_cst>(GET_CONST_NODE(it->max))));
-                           auto new_size_of_pointer = static_cast<long long>(max_int) + 1 - size_of_pointer;
+                           auto max_int = tree_helper::GetConstValue(it->max);
+                           auto new_size_of_pointer = max_int + 1 - size_of_pointer;
                            if(new_size_of_pointer == (deltabit / 8))
                            {
                               right_offset_var += "-" + PrintNode(mult->op1, v, vppf);
@@ -2022,7 +2015,7 @@ std::string BehavioralHelper::PrintNode(const tree_nodeConstRef& _node, vertex v
                      const auto ne = GetPointerS<const negate_expr>(right_op_node);
                      right_offset_var += "-";
                      right_op_node = GET_NODE(ne->op);
-                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                     INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level,
                                     "New op node is " + STR(GET_INDEX_NODE(ne->op)) + " - " +
                                         right_op_node->get_kind_text());
                      break;
@@ -2032,7 +2025,7 @@ std::string BehavioralHelper::PrintNode(const tree_nodeConstRef& _node, vertex v
                   {
                      const auto ne = GetPointerS<const nop_expr>(right_op_node);
                      right_op_node = GET_CONST_NODE(ne->op);
-                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                     INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level,
                                     "New op node is " + STR(GET_INDEX_NODE(ne->op)) + " - " +
                                         right_op_node->get_kind_text());
                      break;
@@ -2187,7 +2180,7 @@ std::string BehavioralHelper::PrintNode(const tree_nodeConstRef& _node, vertex v
             }
             if(deltabit == 8)
             {
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Reversing pointer arithmetic sucessful");
+               INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "Reversing pointer arithmetic sucessful");
                do_reverse_pointer_arithmetic = true;
                right_offset_var = PrintNode(ppe->op1, v, vppf);
             }
@@ -2196,7 +2189,7 @@ std::string BehavioralHelper::PrintNode(const tree_nodeConstRef& _node, vertex v
          if(!do_reverse_pointer_arithmetic &&
             tree_helper::Size(GetPointerS<const pointer_type>(GET_CONST_NODE(type_node))->ptd) == 8)
          {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+            INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level,
                            "Reversing pointer arithmetic sucessful because of char pointer");
             do_reverse_pointer_arithmetic = true;
             char_pointer = true;
@@ -2210,7 +2203,7 @@ std::string BehavioralHelper::PrintNode(const tree_nodeConstRef& _node, vertex v
             res += "((unsigned char*)";
          }
          res += PrintNode(ppe->op0, v, vppf);
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "After printing of left part " + res);
+         INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "After printing of left part " + res);
          if((left_op_cast && tree_helper::IsVoidType(pointed_type)) || !do_reverse_pointer_arithmetic)
          {
             res += ")";
@@ -2249,7 +2242,7 @@ std::string BehavioralHelper::PrintNode(const tree_nodeConstRef& _node, vertex v
          {
             if(right_op_node->get_kind() == integer_cst_K)
             {
-               res += STR(tree_helper::get_integer_cst_value(GetPointerS<const integer_cst>(right_op_node)));
+               res += STR(tree_helper::GetConstValue(right_op_node));
             }
             else
             {
@@ -2260,7 +2253,7 @@ std::string BehavioralHelper::PrintNode(const tree_nodeConstRef& _node, vertex v
          {
             res += ")";
          }
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
+         INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "<--");
          break;
       }
       /* Binary relational expressions.  */
@@ -2552,7 +2545,7 @@ std::string BehavioralHelper::PrintNode(const tree_nodeConstRef& _node, vertex v
             const auto ar = GetPointerS<const array_ref>(GET_CONST_NODE(ue->op));
             ///&string[0]
             if(GET_NODE(ar->op0)->get_kind() == string_cst_K && GET_CONST_NODE(ar->op1)->get_kind() == integer_cst_K &&
-               tree_helper::get_integer_cst_value(GetPointerS<const integer_cst>(GET_CONST_NODE(ar->op1))) == 0)
+               tree_helper::GetConstValue(ar->op1) == 0)
             {
                res += PrintNode(ar->op0, v, vppf);
                break;
@@ -2623,7 +2616,7 @@ std::string BehavioralHelper::PrintNode(const tree_nodeConstRef& _node, vertex v
          // bitfield type
          else if(prec != algn && prec % algn)
          {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Bitfield");
+            INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "---Bitfield");
             bool ui = tree_helper::IsUnsignedIntegerType(operand_type) && tree_helper::IsSignedIntegerType(type);
             if(ui)
             {
@@ -2702,7 +2695,7 @@ std::string BehavioralHelper::PrintNode(const tree_nodeConstRef& _node, vertex v
       case mem_ref_K:
       {
          const auto mr = GetPointerS<const mem_ref>(node);
-         const auto offset = tree_helper::get_integer_cst_value(GetPointerS<const integer_cst>(GET_NODE(mr->op1)));
+         const auto offset = tree_helper::GetConstValue(mr->op1);
          const tree_manipulationRef tm(new tree_manipulation(AppM->get_tree_manager(), Param, AppM));
          const auto pointer_type = tm->GetPointerType(mr->type, 8);
          const std::string type_string = tree_helper::PrintType(TM, pointer_type);
@@ -2851,8 +2844,7 @@ std::string BehavioralHelper::PrintNode(const tree_nodeConstRef& _node, vertex v
          if(base->get_kind() == mem_ref_K)
          {
             const auto mr = GetPointerS<const mem_ref>(base);
-            const auto offset =
-                tree_helper::get_integer_cst_value(GetPointerS<const integer_cst>(GET_CONST_NODE(mr->op1)));
+            const auto offset = tree_helper::GetConstValue(mr->op1);
             std::string type_string = tree_helper::PrintType(TM, mr->type);
             if(GET_CONST_NODE(mr->type)->get_kind() == array_type_K)
             {
@@ -2897,7 +2889,7 @@ std::string BehavioralHelper::PrintNode(const tree_nodeConstRef& _node, vertex v
          }
 #endif
          const auto bf = GetPointerS<const bit_field_ref>(node);
-         const auto bpos = tree_helper::get_integer_cst_value(GetPointerS<const integer_cst>(GET_CONST_NODE(bf->op2)));
+         const auto bpos = tree_helper::GetConstValue(bf->op2);
          res += "*((" + tree_helper::PrintType(TM, bf->type) + "* ) (((unsigned long int) &(" +
                 PrintNode(bf->op0, v, vppf) + ")) + (unsigned long int)" + STR(bpos / 8) + "))";
          if(bpos % 8)
@@ -4868,15 +4860,15 @@ std::string BehavioralHelper::PrintNode(const tree_nodeConstRef& _node, vertex v
       default:
          THROW_UNREACHABLE("");
    }
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Printed node " + STR(node->index) + " res = " + res);
+   INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "<--");
+   INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "<--Printed node " + STR(node->index) + " res = " + res);
 
    return res;
 }
 
 std::string BehavioralHelper::print_type_declaration(unsigned int type) const
 {
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Printing type declaration " + STR(type));
+   INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "-->Printing type declaration " + STR(type));
    std::string res;
    const auto node_type = TM->CGetTreeNode(type);
    switch(node_type->get_kind())
@@ -4917,7 +4909,7 @@ std::string BehavioralHelper::print_type_declaration(unsigned int type) const
             res += "\n{\n";
             null_deleter null_del;
             const var_pp_functorConstRef std_vpf(new std_var_pp_functor(BehavioralHelperConstRef(this, null_del)));
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Printing content of the structure");
+            INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "-->Printing content of the structure");
             for(auto& list_of_fld : rt->list_of_flds)
             {
                auto field = GET_INDEX_NODE(list_of_fld);
@@ -4926,12 +4918,12 @@ std::string BehavioralHelper::print_type_declaration(unsigned int type) const
                {
                   continue;
                }
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Printing field " + STR(field));
+               INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "-->Printing field " + STR(field));
                const auto fd = GetPointerS<const field_decl>(GET_CONST_NODE(fld_node));
                const auto field_type = tree_helper::CGetType(fld_node);
                if(has_bit_field(field))
                {
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Bit field");
+                  INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "---Bit field");
                   res += tree_helper::PrintType(TM, field_type) + " ";
                   res += (*std_vpf)(field);
                   res += " : ";
@@ -4946,9 +4938,9 @@ std::string BehavioralHelper::print_type_declaration(unsigned int type) const
                   res += " __attribute__((packed))";
                }
                res += ";\n";
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
+               INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "<--");
             }
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
+            INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "<--");
             res += '}';
             res += " ";
          }
@@ -5116,9 +5108,7 @@ std::string BehavioralHelper::print_type_declaration(unsigned int type) const
          {
             THROW_ERROR_CODE(C_EC, "Declaration of array type without fixed size");
          }
-         const auto arr_ic = GetPointerS<const integer_cst>(array_length);
          const auto tn = GetPointerS<const type_node>(array_t);
-         const auto eln_ic = GetPointerS<const integer_cst>(GET_NODE(tn->size));
 
          res += "typedef ";
          res += tree_helper::PrintType(TM, at->elts);
@@ -5126,7 +5116,7 @@ std::string BehavioralHelper::print_type_declaration(unsigned int type) const
          THROW_ASSERT(at->name, "Trying to declare array without name " + STR(type));
          res += tree_helper::PrintType(TM, at->name);
          res += "[";
-         res += STR(tree_helper::get_integer_cst_value(arr_ic) / tree_helper::get_integer_cst_value(eln_ic));
+         res += STR(tree_helper::GetConstValue(at->size) / tree_helper::GetConstValue(tn->size));
          res += "]";
          break;
       }
@@ -5254,7 +5244,7 @@ std::string BehavioralHelper::print_type_declaration(unsigned int type) const
          THROW_UNREACHABLE("Unexpected type " + node_type->get_kind_text());
       }
    }
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Printed type declaration " + STR(type));
+   INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "<--Printed type declaration " + STR(type));
    return res;
 }
 
@@ -6003,7 +5993,7 @@ unsigned int BehavioralHelper::get_attributes(unsigned int var) const
 
 unsigned int BehavioralHelper::GetInit(unsigned int var, CustomUnorderedSet<unsigned int>& list_of_variables) const
 {
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Get init of " + PrintVariable(var));
+   INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "-->Get init of " + PrintVariable(var));
    if(initializations.find(var) != initializations.end())
    {
       unsigned int init = var;
@@ -6015,12 +6005,12 @@ unsigned int BehavioralHelper::GetInit(unsigned int var, CustomUnorderedSet<unsi
       {
          list_of_variables.insert(init);
          const auto init_of_init = GetInit(init, list_of_variables);
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Init is " + STR(init_of_init));
+         INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "<--Init is " + STR(init_of_init));
          return init_of_init;
       }
       else
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Init is " + STR(init));
+         INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "<--Init is " + STR(init));
          return init;
       }
    }
@@ -6032,11 +6022,11 @@ unsigned int BehavioralHelper::GetInit(unsigned int var, CustomUnorderedSet<unsi
          auto sn = GetPointer<ssa_name>(node);
          if(!sn->var)
          {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Without init");
+            INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "<--Without init");
             return 0;
          }
          const unsigned ssa_init = GetInit(GET_INDEX_NODE(sn->var), list_of_variables);
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Init is " + STR(ssa_init));
+         INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "<--Init is " + STR(ssa_init));
          return ssa_init;
       }
       case var_decl_K:
@@ -6046,12 +6036,12 @@ unsigned int BehavioralHelper::GetInit(unsigned int var, CustomUnorderedSet<unsi
          {
             tree_helper::get_used_variables(true, vd->init, list_of_variables);
             const unsigned var_init = GET_INDEX_NODE(vd->init);
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Init is " + STR(var_init));
+            INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "<--Init is " + STR(var_init));
             return var_init;
          }
          else
          {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Without init");
+            INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "<--Without init");
             return 0;
          }
       }
@@ -6063,7 +6053,7 @@ unsigned int BehavioralHelper::GetInit(unsigned int var, CustomUnorderedSet<unsi
          {
             tree_helper::get_used_variables(true, i->second, list_of_variables);
          }
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Init is " + STR(var));
+         INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "<--Init is " + STR(var));
          return var;
       }
       case binfo_K:
@@ -6102,13 +6092,13 @@ unsigned int BehavioralHelper::GetInit(unsigned int var, CustomUnorderedSet<unsi
       case CASE_TYPE_NODES:
       case CASE_UNARY_EXPRESSION:
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Without init");
+         INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "<--Without init");
          return 0;
       }
       default:
          THROW_UNREACHABLE("get_init: Tree node not yet supported " + STR(var) + " " + node->get_kind_text());
    }
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Without init");
+   INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "<--Without init");
    return 0;
 }
 
@@ -6186,11 +6176,6 @@ unsigned int BehavioralHelper::end_with_a_cond_or_goto(const blocRef& block) con
       return GET_INDEX_NODE(last);
    }
    return 0;
-}
-
-void BehavioralHelper::create_gimple_modify_stmt(unsigned int, blocRef&, tree_nodeRef, tree_nodeRef)
-{
-   THROW_ERROR("Not implemented");
 }
 
 std::string BehavioralHelper::print_forward_declaration(unsigned int type) const
@@ -6407,13 +6392,13 @@ bool BehavioralHelper::CanBeSpeculated(const unsigned int node_index) const
    {
       return false;
    }
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Checking if " + STR(tn) + " can be speculated");
+   INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "-->Checking if " + STR(tn) + " can be speculated");
    switch(tn->get_kind())
    {
       case gimple_nop_K:
       case gimple_phi_K:
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Yes because is a " + tn->get_kind_text());
+         INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "<--Yes because is a " + tn->get_kind_text());
          return true;
       }
       case(gimple_assign_K):
@@ -6424,7 +6409,7 @@ bool BehavioralHelper::CanBeSpeculated(const unsigned int node_index) const
             case call_expr_K:
             case aggr_init_expr_K:
             {
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+               INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level,
                               "<--No because of " + GET_NODE(ga->op1)->get_kind_text() +
                                   " in right part of gimple_assign");
                return false;
@@ -6520,7 +6505,7 @@ bool BehavioralHelper::CanBeSpeculated(const unsigned int node_index) const
             case extractvalue_expr_K:
             case extractelement_expr_K:
             {
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+               INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level,
                               "<--Yes because it is a gimple_assign with " + GET_NODE(ga->op1)->get_kind_text() +
                                   " in right part of assignment");
                return true;
@@ -6561,7 +6546,7 @@ bool BehavioralHelper::CanBeSpeculated(const unsigned int node_index) const
       case gimple_return_K:
       case gimple_switch_K:
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--No because is a " + tn->get_kind_text());
+         INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "<--No because is a " + tn->get_kind_text());
          return false;
       }
       case binfo_K:

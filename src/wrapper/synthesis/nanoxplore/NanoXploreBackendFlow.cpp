@@ -51,6 +51,7 @@
 #include "target_device.hpp"
 #include "target_manager.hpp"
 #include "time_model.hpp"
+#include "utility.hpp"
 
 #include "NanoXploreWrapper.hpp"
 

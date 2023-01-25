@@ -33,38 +33,25 @@
 /**
  * @author Pietro Fezzardi <pietrofezzardi@gmail.com>
  */
-
-// class header
 #include "HWPathComputation.hpp"
 
-#include <utility>
-
-// headers from behavior/
-#include "behavioral_helper.hpp"
-#include "call_graph_manager.hpp"
-#include "function_behavior.hpp"
-#include "op_graph.hpp"
-
-// headers from circuit/
-#include "structural_objects.hpp"
-
-// headers from HLS/
-#include "hls.hpp"
-#include "hls_manager.hpp"
-#include "hls_step.hpp"
-
-// headers from HLS/binding/module/
-#include "fu_binding.hpp"
-
-// headers from HLS/function_allocation/
-#include "functions.hpp"
-
-// headers from HLS/vcd
 #include "Discrepancy.hpp"
 #include "UnfoldedCallInfo.hpp"
 #include "UnfoldedFunctionInfo.hpp"
-
+#include "behavioral_helper.hpp"
+#include "call_graph_manager.hpp"
 #include "dbgPrintHelper.hpp"
+#include "fu_binding.hpp"
+#include "function_behavior.hpp"
+#include "functions.hpp"
+#include "hls.hpp"
+#include "hls_manager.hpp"
+#include "hls_step.hpp"
+#include "op_graph.hpp"
+#include "structural_objects.hpp"
+#include "utility.hpp"
+
+#include <utility>
 
 class HWCallPathCalculator : public boost::default_dfs_visitor
 {

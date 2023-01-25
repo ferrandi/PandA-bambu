@@ -129,7 +129,8 @@ DesignFlowStep_Status ExtractOmpFor::InternalExec()
    {
       return DesignFlowStep_Status::UNCHANGED;
    }
-   if(debug_level >= DEBUG_LEVEL_PEDANTIC && !parameters->IsParameter("disable-print-dot-FF"))
+   if(debug_level >= DEBUG_LEVEL_PEDANTIC &&
+      (!parameters->IsParameter("print-dot-FF") || parameters->GetParameter<unsigned int>("print-dot-FF")))
    {
       WriteBBGraphDot("BB_Before_" + GetName() + ".dot");
       PrintTreeManager(true);

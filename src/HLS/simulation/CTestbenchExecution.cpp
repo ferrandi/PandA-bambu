@@ -150,13 +150,11 @@ DesignFlowStep_Status CTestbenchExecution::Exec()
        new CompilerWrapper(parameters, parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler),
                            CompilerWrapper_OptimizationSet::O0));
 
-   std::string compiler_flags = "-fwrapv -ffloat-store -flax-vector-conversions -msse2 -mfpmath=sse "
-                                "-D'__builtin_bambu_time_start()=' -D'__builtin_bambu_time_stop()=' ";
-
-   if(CompilerWrapper::isClangCheck(parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler)))
+   std::string compiler_flags = "-fwrapv -flax-vector-conversions -msse2 -mfpmath=sse "
+                                "-D'__builtin_bambu_time_start()=' -D'__builtin_bambu_time_stop()=' -D__BAMBU_SIM__ ";
+   if(!CompilerWrapper::isClangCheck(parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler)))
    {
-      compiler_flags = "-fwrapv -flax-vector-conversions -msse2 -mfpmath=sse -D'__builtin_bambu_time_start()=' "
-                       "-D'__builtin_bambu_time_stop()=' ";
+      compiler_flags += "-ffloat-store ";
    }
 
    if(!parameters->isOption(OPT_input_format) ||
@@ -165,12 +163,12 @@ DesignFlowStep_Status CTestbenchExecution::Exec()
    {
       if(!CompilerWrapper::isClangCheck(parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler)))
       {
-         compiler_flags += " -fexcess-precision=standard ";
+         compiler_flags += "-fexcess-precision=standard ";
       }
    }
    if(parameters->isOption(OPT_testbench_extra_gcc_flags))
    {
-      compiler_flags += " " + parameters->getOption<std::string>(OPT_testbench_extra_gcc_flags) + " ";
+      compiler_flags += parameters->getOption<std::string>(OPT_testbench_extra_gcc_flags) + " ";
    }
 
    if(parameters->isOption(OPT_gcc_optimizations))
@@ -215,7 +213,7 @@ DesignFlowStep_Status CTestbenchExecution::Exec()
 #endif
       )
       {
-         compiler_flags += " -g -fsanitize=address -fno-omit-frame-pointer -fno-common ";
+         compiler_flags += "-g -fsanitize=address -fno-omit-frame-pointer -fno-common ";
       }
       if(false
 #if HAVE_I386_GCC48_COMPILER
@@ -244,7 +242,7 @@ DesignFlowStep_Status CTestbenchExecution::Exec()
 #endif
       )
       {
-         compiler_flags += " -static-libasan ";
+         compiler_flags += "-static-libasan ";
       }
       if(CompilerWrapper::isClangCheck(parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler))
 #if HAVE_I386_GCC5_COMPILER
@@ -265,7 +263,7 @@ DesignFlowStep_Status CTestbenchExecution::Exec()
 #endif
       )
       {
-         compiler_flags += " -fsanitize=undefined -fsanitize-recover=undefined ";
+         compiler_flags += "-fsanitize=undefined -fsanitize-recover=undefined ";
       }
       if(false
 #if HAVE_I386_GCC5_COMPILER
@@ -286,7 +284,7 @@ DesignFlowStep_Status CTestbenchExecution::Exec()
 #endif
       )
       {
-         compiler_flags += " -static-libubsan ";
+         compiler_flags += "-static-libubsan ";
       }
    }
    // setup source files
@@ -316,7 +314,7 @@ DesignFlowStep_Status CTestbenchExecution::Exec()
       }
       else
       {
-         compiler_flags += " -Dmain=_undefined_main ";
+         compiler_flags += "-Dmain=_undefined_main ";
          for(const auto& input_file : parameters->getOption<const CustomSet<std::string>>(OPT_input_file))
          {
             file_sources.push_back(input_file);

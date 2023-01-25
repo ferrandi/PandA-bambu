@@ -38,6 +38,8 @@
  * @author Michele Fiorito <michele.fiorito@polimi.it>
  *
  */
+// #undef NDEBUG
+#include "debug_print.hpp"
 
 #include "plugin_includes.hpp"
 
@@ -54,8 +56,8 @@
 #include <clang/Sema/Sema.h>
 #include <llvm/Support/raw_ostream.h>
 
-// #define PRINT_DBG_MSG
-#include "debug_print.hpp"
+#include <regex>
+#include <string>
 
 static std::map<std::string, std::map<clang::SourceLocation, std::map<std::string, std::string>>> file_loc_attr;
 static std::map<std::string, std::map<clang::SourceLocation, std::map<std::string, std::map<std::string, std::string>>>>
@@ -147,7 +149,7 @@ namespace clang
             for(const auto& aname : Fun2Params.at(fname))
             {
                stream << "    <arg id=\"" << aname << "\"";
-               assert(Fun2Params.count(aname));
+               assert(arg_attr.count(aname));
                for(const auto& attr_val : arg_attr.at(aname))
                {
                   stream << " " << attr_val.first << "=\"" << convert_unescaped(attr_val.second) << "\"";
@@ -500,14 +502,16 @@ namespace clang
                         ParamTypeNameOrig = paramTypeRemTD.getAsString(pp);
                         ParamTypeInclude = getIncludes(paramTypeRemTD);
                      }
-                     interface = "ptrdefault";
+                     const auto is_channel_if = ParamTypeName.find("ac_channel<") == 0;
+                     interface = is_channel_if ? "fifo" : "ptrdefault";
                      if(attr_val.find("interface_type") != attr_val.end())
                      {
                         interface = attr_val.at("interface_type");
-                        if(interface != "ptrdefault" && interface != "none" && interface != "none_registered" &&
-                           interface != "handshake" && interface != "valid" && interface != "ovalid" &&
-                           interface != "acknowledge" && interface != "fifo" && interface != "bus" &&
-                           interface != "m_axi" && interface != "axis")
+                        if((interface != "ptrdefault" && interface != "none" && interface != "none_registered" &&
+                            interface != "handshake" && interface != "valid" && interface != "ovalid" &&
+                            interface != "acknowledge" && interface != "fifo" && interface != "bus" &&
+                            interface != "m_axi" && interface != "axis") ||
+                           (is_channel_if && interface != "fifo"))
                         {
                            print_error("#pragma HLS_interface non-consistent with parameter of pointer "
                                        "type, where user defined interface is: " +
@@ -543,6 +547,15 @@ namespace clang
                      }
                   }
                   Fun2Params[fname].push_back(pname);
+
+                  const auto remove_spaces = [](std::string& str) {
+                     str = std::regex_replace(str, std::regex(" ([<>&*])|([<>&*]) | $|^ "), "$1$2");
+                  };
+
+                  remove_spaces(ParamTypeName);
+                  remove_spaces(ParamTypeNameOrig);
+                  remove_spaces(ParamTypeInclude);
+
                   attr_val["interface_type"] = interface;
                   attr_val["interface_typename"] = ParamTypeName;
                   attr_val["interface_typename_orig"] = ParamTypeNameOrig;

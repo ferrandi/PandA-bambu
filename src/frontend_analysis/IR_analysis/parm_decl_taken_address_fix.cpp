@@ -174,7 +174,7 @@ DesignFlowStep_Status parm_decl_taken_address_fix::InternalExec()
          const auto* pd = GetPointer<const parm_decl>(GET_NODE(par));
          THROW_ASSERT(pd, "unexpected condition");
          const std::string srcp_default = pd->include_name + ":" + STR(pd->line_number) + ":" + STR(pd->column_number);
-         auto new_ga_expr = IRman->CreateGimpleAssignAddrExpr(GET_NODE(vd), function_id, bb_index, srcp_default);
+         auto new_ga_expr = IRman->CreateGimpleAssignAddrExpr(GET_NODE(vd), function_id, srcp_default);
          first_block->PushFront(new_ga_expr, AppM);
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                         "---New statement statement " + GET_NODE(new_ga_expr)->ToString());
@@ -187,7 +187,7 @@ DesignFlowStep_Status parm_decl_taken_address_fix::InternalExec()
          const tree_nodeRef p_type = pd->type;
          auto mr = IRman->create_binary_operation(p_type, ssa_addr, offset, srcp_default, mem_ref_K);
          tree_nodeRef ssa_par = IRman->create_ssa_name(par, p_type, tree_nodeRef(), tree_nodeRef());
-         tree_nodeRef ga = IRman->create_gimple_modify_stmt(mr, ssa_par, function_id, srcp_default, bb_index);
+         tree_nodeRef ga = IRman->create_gimple_modify_stmt(mr, ssa_par, function_id, srcp_default);
          first_block->PushAfter(ga, new_ga_expr, AppM);
          GetPointer<gimple_node>(GET_NODE(ga))->artificial = true;
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,

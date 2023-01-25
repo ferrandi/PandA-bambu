@@ -53,14 +53,14 @@
 
 #include "custom_map.hpp"
 #include "custom_set.hpp"
-#include <string>
-#include <vector>
-
 #include "dbgPrintHelper.hpp"
 #include "exceptions.hpp"
 #include "refcount.hpp"
 #include "simple_indent.hpp"
 #include "utility.hpp"
+
+#include <string>
+#include <vector>
 
 /// Default extension for generated files
 #define FILE_EXT ".vhdl"

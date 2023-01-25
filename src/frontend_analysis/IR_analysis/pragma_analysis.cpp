@@ -145,10 +145,9 @@ std::string PragmaAnalysis::get_call_parameter(unsigned int tree_node, unsigned 
          const auto* co = GetPointer<const constructor>(vd_init);
          for(const auto& idx_valu : co->list_of_idx_valu)
          {
-            auto valu = GET_NODE(idx_valu.second);
-            THROW_ASSERT(valu->get_kind() == integer_cst_K, "unexpected condition");
-            auto ic = GetPointer<const integer_cst>(valu);
-            char val = static_cast<char>(ic->value);
+            THROW_ASSERT(GET_NODE(idx_valu.second)->get_kind() == integer_cst_K, "unexpected condition");
+            const auto cst_val = tree_helper::GetConstValue(idx_valu.second);
+            char val = static_cast<char>(cst_val);
             if(!val)
             {
                break;

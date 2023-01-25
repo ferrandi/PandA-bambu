@@ -278,7 +278,7 @@ DesignFlowStep_Status FunctionCallOpt::InternalExec()
                      else
                      {
                         const auto version_call =
-                            tree_man->create_gimple_call(version_fn, *args, function_id, BUILTIN_SRCP, bb->number);
+                            tree_man->create_gimple_call(version_fn, *args, function_id, BUILTIN_SRCP);
                         bb->Replace(stmt, version_call, true, AppM);
                         AppM->RegisterTransformation(GetName(), version_call);
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,

@@ -40,19 +40,18 @@
  * @author Nicola Saporetti <nicola.saporetti@gmail.com>
  *
  */
-
 #include "controller_cs.hpp"
+
 #include "BambuParameter.hpp"
+#include "dbgPrintHelper.hpp"
 #include "hls.hpp"
 #include "hls_manager.hpp"
 #include "math.h"
+#include "math_function.hpp"
 #include "omp_functions.hpp"
 #include "structural_manager.hpp"
 #include "structural_objects.hpp"
-
-/// utility include
-#include "dbgPrintHelper.hpp"
-#include "math_function.hpp"
+#include "utility.hpp"
 
 controller_cs::controller_cs(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr, unsigned int _funId,
                              const DesignFlowManagerConstRef _design_flow_manager,

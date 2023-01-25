@@ -37,6 +37,8 @@
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  *
  */
+// #undef NDEBUG
+#include "debug_print.hpp"
 
 #include "plugin_includes.hpp"
 
@@ -97,9 +99,6 @@
 #include <boost/tokenizer.hpp>
 #include <sstream>
 #include <string>
-
-// #define PRINT_DBG_MSG
-#include "debug_print.hpp"
 
 namespace llvm
 {
@@ -278,7 +277,7 @@ namespace llvm
 #endif
                      CostTable);
 #else
-         assert(false && "Call to runOnModule not expected");
+         report_fatal_error("Call to runOnModule not expected with current LLVM version");
          return false;
 #endif
       }

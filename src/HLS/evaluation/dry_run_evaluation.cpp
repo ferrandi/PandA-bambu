@@ -41,21 +41,13 @@
 /// Header include
 #include "dry_run_evaluation.hpp"
 
-///. include
 #include "Parameter.hpp"
-
-/// constants include
 #include "bambu_results_xml.hpp"
-
-/// HLS includes
 #include "hls.hpp"
 #include "hls_manager.hpp"
-
-/// polixml include
+#include "string_manipulation.hpp"
+#include "utility.hpp"
 #include "xml_document.hpp"
-
-/// utility include
-#include "string_manipulation.hpp" // for GET_CLASS
 #include "xml_helper.hpp"
 
 DryRunEvaluation::DryRunEvaluation(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr,

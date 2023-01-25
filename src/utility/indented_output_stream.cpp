@@ -40,15 +40,13 @@
  * Last modified by $Author: ferrandi $
  *
  */
+#include "indented_output_stream.hpp"
+
+#include "exceptions.hpp"
 
 #include <cstddef>
 #include <fstream>
 #include <iostream>
-
-/// Utility include
-#include "exceptions.hpp"
-/// Header include
-#include "indented_output_stream.hpp"
 
 /// In global_variables.hpp
 extern size_t indentation;

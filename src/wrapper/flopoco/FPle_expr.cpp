@@ -79,6 +79,7 @@
 #include <mpfr.h>
 
 #include "flopoco_wrapper.hpp"
+#include "utility.hpp"
 
 using namespace std;
 

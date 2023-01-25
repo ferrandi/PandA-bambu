@@ -1818,8 +1818,8 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
    std::map<unsigned int, unsigned long long> num_elements;
    unsigned long long n_out_elements = 0;
    unsigned long long produced_variables = 1;
-   bool is_multiport = allocation_information->get_number_channels(fu) > 1;
-   size_t max_n_ports = is_multiport ? allocation_information->get_number_channels(fu) : 0;
+   const auto is_multiport = allocation_information->get_number_channels(fu) > 1U;
+   const auto max_n_ports = is_multiport ? allocation_information->get_number_channels(fu) : 0U;
 
    if(ar)
    {
@@ -2121,12 +2121,11 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
                      }
                      else if(op1->get_kind() == integer_cst_K)
                      {
-                        const integer_cst* int_const = GetPointer<integer_cst>(op1);
-                        auto offset_value = static_cast<unsigned long long int>(int_const->value);
+                        const auto offset_value = tree_helper::GetConstValue(op1);
                         if(offset_value)
                         {
                            auto tailZeros = 0u;
-                           while((offset_value & (1ULL << tailZeros)) == 0)
+                           while((offset_value & (integer_cst_t(1) << tailZeros)) == 0)
                            {
                               ++tailZeros;
                            }
@@ -2161,12 +2160,10 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
                   if(*it == "OFFSET_PARAMETER" && op_name == "bit_ior_concat_expr")
                   {
                      auto index = data->CGetOpNodeInfo(mapped_operation)->GetNodeId();
-                     const tree_nodeRef ga_node = TreeM->GetTreeNode(index);
-                     const gimple_assign* ga = GetPointer<gimple_assign>(ga_node);
-                     const bit_ior_concat_expr* ce = GetPointer<bit_ior_concat_expr>(GET_NODE(ga->op1));
-                     const tree_nodeRef offset_node = GET_NODE(ce->op2);
-                     const integer_cst* int_const = GetPointer<integer_cst>(offset_node);
-                     auto offset_value = static_cast<unsigned long long int>(int_const->value);
+                     const auto ga_node = TreeM->GetTreeNode(index);
+                     const auto ga = GetPointer<gimple_assign>(ga_node);
+                     const auto ce = GetPointer<bit_ior_concat_expr>(GET_NODE(ga->op1));
+                     const auto offset_value = tree_helper::GetConstValue(ce->op2);
                      fu_module->SetParameter("OFFSET_PARAMETER", STR(offset_value));
                   }
                   if(*it == "unlock_address" && op_name == BUILTIN_WAIT_CALL)
@@ -2184,8 +2181,7 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
                      const auto call = TreeM->GetTreeNode(index);
                      tree_nodeRef calledFunction = GetPointer<gimple_call>(call)->args[0];
                      tree_nodeRef hasreturn_node = GetPointer<gimple_call>(call)->args[1];
-                     long long int hasreturn_value =
-                         tree_helper::get_integer_cst_value(GetPointer<integer_cst>(GET_NODE(hasreturn_node)));
+                     const auto hasreturn_value = tree_helper::GetConstValue(hasreturn_node);
                      tree_nodeRef addrExpr = GET_NODE(calledFunction);
                      tree_nodeRef functionType = getFunctionType(addrExpr);
                      tree_nodeRef paramList = GetPointer<function_type>(functionType)->prms;
@@ -2200,8 +2196,7 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
                         paramList = node->chan;
                         if(GET_NODE(node->valu)->get_kind() != void_type_K)
                         {
-                           std::string str_address = convert_to_binary(static_cast<unsigned long long int>(address),
-                                                                       HLSMgr->get_address_bitsize());
+                           std::string str_address = convert_to_binary(address, HLSMgr->get_address_bitsize());
                            parameterAddressFile << str_address << "\n";
                            HLSMgr->Rmem->compute_next_base_address(address, GET_INDEX_NODE(node->valu), alignment);
                            count_param++;
@@ -2210,8 +2205,7 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
                      auto return_type = GetPointer<function_type>(functionType)->retn;
                      if(return_type && GET_NODE(return_type)->get_kind() != void_type_K && hasreturn_value)
                      {
-                        const auto str_address = convert_to_binary(static_cast<unsigned long long int>(address),
-                                                                   HLSMgr->get_address_bitsize());
+                        const auto str_address = convert_to_binary(address, HLSMgr->get_address_bitsize());
                         parameterAddressFile << str_address << "\n";
                      }
                      parameterAddressFile.close();
@@ -2723,8 +2717,7 @@ void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_n
       }
       case integer_cst_K:
       {
-         auto* ic = GetPointerS<const integer_cst>(init_node);
-         auto ull_value = static_cast<unsigned long long int>(tree_helper::get_integer_cst_value(ic));
+         const auto ull_value = tree_helper::GetConstValue(init_node);
          trimmed_value = "";
          auto precision = std::max(8ull, tree_helper::Size(tree_helper::CGetType(_init_node)));
          THROW_ASSERT(precision, "expected a size greater than 0");
@@ -2734,7 +2727,7 @@ void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_n
          }
          for(unsigned int ind = 0; ind < precision; ind++)
          {
-            trimmed_value = trimmed_value + (((1LLU << (precision - ind - 1)) & ull_value) ? '1' : '0');
+            trimmed_value = trimmed_value + (((integer_cst_t(1) << (precision - ind - 1)) & ull_value) ? '1' : '0');
          }
          init_file.push_back(trimmed_value);
          break;
@@ -2751,12 +2744,11 @@ void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_n
          }
          else
          {
-            auto* ic = GetPointerS<const integer_cst>(GET_CONST_NODE(GetPointerS<const complex_cst>(init_node)->real));
-            THROW_ASSERT(ic, "expected an integer_cst");
-            auto ull_value = static_cast<unsigned long long int>(tree_helper::get_integer_cst_value(ic));
+            const auto ull_value = tree_helper::GetConstValue(GetPointerS<const complex_cst>(init_node)->real);
             for(unsigned int ind = 0; ind < precision / 2; ind++)
             {
-               trimmed_value_r = trimmed_value_r + (((1LLU << (precision / 2 - ind - 1)) & ull_value) ? '1' : '0');
+               trimmed_value_r =
+                   trimmed_value_r + (((integer_cst_t(1) << (precision / 2 - ind - 1)) & ull_value) ? '1' : '0');
             }
          }
          auto* ip = GetPointer<const real_cst>(GET_CONST_NODE(GetPointerS<const complex_cst>(init_node)->imag));
@@ -2768,12 +2760,11 @@ void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_n
          }
          else
          {
-            auto* ic = GetPointerS<const integer_cst>(GET_CONST_NODE(GetPointerS<const complex_cst>(init_node)->imag));
-            THROW_ASSERT(ic, "expected an integer_cst");
-            auto ull_value = static_cast<unsigned long long int>(tree_helper::get_integer_cst_value(ic));
+            const auto ull_value = tree_helper::GetConstValue(GetPointerS<const complex_cst>(init_node)->imag);
             for(unsigned int ind = 0; ind < precision / 2; ind++)
             {
-               trimmed_value_i = trimmed_value_i + (((1LLU << (precision / 2 - ind - 1)) & ull_value) ? '1' : '0');
+               trimmed_value_i =
+                   trimmed_value_i + (((integer_cst_t(1) << (precision / 2 - ind - 1)) & ull_value) ? '1' : '0');
             }
          }
          trimmed_value = trimmed_value_i + trimmed_value_r;
@@ -2877,13 +2868,12 @@ void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_n
                {
                   /// check if padding is needed
                   unsigned long long int nbits;
-                  integer_cst* ic;
                   if(inext != flend)
                   {
                      tree_nodeRef idx_next = GET_NODE(*inext);
                      auto* idx_next_fd = GetPointerS<field_decl>(idx_next);
-                     ic = GetPointerS<integer_cst>(GET_NODE(idx_next_fd->bpos));
-                     nbits = static_cast<unsigned long long int>(tree_helper::get_integer_cst_value(ic));
+                     THROW_ASSERT(tree_helper::GetConstValue(idx_next_fd->bpos) >= 0, "");
+                     nbits = static_cast<unsigned long long int>(tree_helper::GetConstValue(idx_next_fd->bpos));
                   }
                   else
                   {
@@ -2891,8 +2881,8 @@ void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_n
                   }
                   auto* idx_curr_fd = GetPointer<field_decl>(GET_NODE(*fli));
                   auto field_decl_size = tree_helper::Size(tree_helper::CGetType(*fli));
-                  ic = GetPointerS<integer_cst>(GET_NODE(idx_curr_fd->bpos));
-                  nbits = nbits - static_cast<unsigned long long int>(tree_helper::get_integer_cst_value(ic));
+                  THROW_ASSERT(tree_helper::GetConstValue(idx_curr_fd->bpos) >= 0, "");
+                  nbits = nbits - static_cast<unsigned long long int>(tree_helper::GetConstValue(idx_curr_fd->bpos));
                   nbits = nbits - field_decl_size;
                   if(nbits > 0)
                   {
@@ -2939,13 +2929,12 @@ void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_n
                {
                   /// check if padding is needed
                   unsigned long long int nbits;
-                  integer_cst* ic;
                   if(inext != vend)
                   {
                      tree_nodeRef idx_next = GET_NODE(inext->first);
-                     auto* idx_next_fd = GetPointerS<field_decl>(idx_next);
-                     ic = GetPointerS<integer_cst>(GET_NODE(idx_next_fd->bpos));
-                     nbits = static_cast<unsigned long long int>(tree_helper::get_integer_cst_value(ic));
+                     auto idx_next_fd = GetPointerS<field_decl>(idx_next);
+                     THROW_ASSERT(tree_helper::GetConstValue(idx_next_fd->bpos) >= 0, "");
+                     nbits = static_cast<unsigned long long int>(tree_helper::GetConstValue(idx_next_fd->bpos));
                   }
                   else
                   {
@@ -2953,8 +2942,8 @@ void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_n
                   }
                   auto* idx_curr_fd = GetPointerS<field_decl>(GET_NODE(i->first));
                   auto field_decl_size = tree_helper::Size(tree_helper::CGetType(i->first));
-                  ic = GetPointerS<integer_cst>(GET_NODE(idx_curr_fd->bpos));
-                  nbits = nbits - static_cast<unsigned long long int>(tree_helper::get_integer_cst_value(ic));
+                  THROW_ASSERT(tree_helper::GetConstValue(idx_curr_fd->bpos) >= 0, "");
+                  nbits = nbits - static_cast<unsigned long long int>(tree_helper::GetConstValue(idx_curr_fd->bpos));
                   nbits = nbits - field_decl_size;
                   if(nbits > 0)
                   {
@@ -3150,9 +3139,9 @@ void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_n
                      case string_cst_K:
                      {
                         const auto step = tree_helper::Size(tree_helper::CGetType(ae->op)) / 8;
+                        THROW_ASSERT(tree_helper::GetConstValue(ar->op1) >= 0, "");
                         ull_value = mem->get_base_address(GET_INDEX_NODE(ar->op0), 0) +
-                                    step * static_cast<unsigned int>(
-                                               tree_helper::get_integer_cst_value(GetPointerS<integer_cst>(aridx)));
+                                    step * static_cast<unsigned long long>(tree_helper::GetConstValue(ar->op1));
                         break;
                      }
                      case binfo_K:
@@ -3227,9 +3216,9 @@ void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_n
                      if(base_code == var_decl_K)
                      {
                         THROW_ASSERT(mem->has_base_address(base_index), "missing base address for: " + mr->ToString());
+                        THROW_ASSERT(tree_helper::GetConstValue(mr->op1) >= 0, "");
                         ull_value = mem->get_base_address(base_index, 0) +
-                                    static_cast<unsigned int>(
-                                        tree_helper::get_integer_cst_value(GetPointerS<integer_cst>(offset)));
+                                    static_cast<unsigned long long>(tree_helper::GetConstValue(mr->op1));
                      }
                      else if(base_code == addr_expr_K)
                      {
@@ -3241,9 +3230,9 @@ void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_n
                         {
                            THROW_ASSERT(mem->has_base_address(base1_index),
                                         "missing base address for: " + base1->ToString());
+                           THROW_ASSERT(tree_helper::GetConstValue(mr->op1) >= 0, "");
                            ull_value = mem->get_base_address(base1_index, 0) +
-                                       static_cast<unsigned int>(
-                                           tree_helper::get_integer_cst_value(GetPointerS<integer_cst>(offset)));
+                                       static_cast<unsigned long long>(tree_helper::GetConstValue(mr->op1));
                         }
                         else
                         {

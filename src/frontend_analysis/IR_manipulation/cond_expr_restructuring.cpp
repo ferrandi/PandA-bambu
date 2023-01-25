@@ -367,7 +367,7 @@ DesignFlowStep_Status CondExprRestructuring::InternalExec()
 
          /// Create the assign
          const auto curr_stmt =
-             tree_man->create_gimple_modify_stmt(ssa_node, cond_expr_node, function_id, BUILTIN_SRCP, block.first);
+             tree_man->create_gimple_modify_stmt(ssa_node, cond_expr_node, function_id, BUILTIN_SRCP);
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created " + GET_CONST_NODE(curr_stmt)->ToString());
          /// Set the bit value for the intermediate ssa to correctly update execution time
          block.second->PushBefore(curr_stmt, *stmt, AppM);
@@ -390,7 +390,7 @@ DesignFlowStep_Status CondExprRestructuring::InternalExec()
                                                 nullptr, nullptr, nullptr, nullptr, BUILTIN_SRCP);
                   ga = tree_man->CreateGimpleAssign(boolType, TM->CreateUniqueIntegerCst(0, boolType),
                                                     TM->CreateUniqueIntegerCst(1, boolType), new_op1, function_id,
-                                                    block.first, BUILTIN_SRCP);
+                                                    BUILTIN_SRCP);
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created LUT NOT " + STR(ga));
                }
                else
@@ -399,7 +399,7 @@ DesignFlowStep_Status CondExprRestructuring::InternalExec()
                       tree_man->create_unary_operation(boolType, first_ce->op0, BUILTIN_SRCP, truth_not_expr_K);
                   ga = tree_man->CreateGimpleAssign(boolType, TM->CreateUniqueIntegerCst(0, boolType),
                                                     TM->CreateUniqueIntegerCst(1, boolType), not_expr, function_id,
-                                                    block.first, BUILTIN_SRCP);
+                                                    BUILTIN_SRCP);
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created NOT " + STR(ga));
                }
                block.second->PushBefore(ga, *stmt, AppM);
@@ -449,7 +449,7 @@ DesignFlowStep_Status CondExprRestructuring::InternalExec()
                                              nullptr, nullptr, nullptr, nullptr, nullptr, BUILTIN_SRCP);
                ga = tree_man->CreateGimpleAssign(boolType, TM->CreateUniqueIntegerCst(0, boolType),
                                                  TM->CreateUniqueIntegerCst(1, boolType), new_op1, function_id,
-                                                 block.first, BUILTIN_SRCP);
+                                                 BUILTIN_SRCP);
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created LUT STD " + STR(ga));
             }
             else
@@ -460,14 +460,14 @@ DesignFlowStep_Status CondExprRestructuring::InternalExec()
                       tree_man->create_unary_operation(boolType, second_ce->op0, BUILTIN_SRCP, truth_not_expr_K);
                   const auto op0_not_expr = tree_man->CreateGimpleAssign(
                       boolType, TM->CreateUniqueIntegerCst(0, boolType), TM->CreateUniqueIntegerCst(1, boolType),
-                      not_expr0, function_id, block.first, BUILTIN_SRCP);
+                      not_expr0, function_id, BUILTIN_SRCP);
                   block.second->PushBefore(op0_not_expr, *stmt, AppM);
                   new_tree_nodes.push_back(op0_not_expr);
                   const auto not_expr1 =
                       tree_man->create_unary_operation(boolType, first_ce->op0, BUILTIN_SRCP, truth_not_expr_K);
                   const auto op1_not_expr = tree_man->CreateGimpleAssign(
                       boolType, TM->CreateUniqueIntegerCst(0, boolType), TM->CreateUniqueIntegerCst(1, boolType),
-                      not_expr1, function_id, block.first, BUILTIN_SRCP);
+                      not_expr1, function_id, BUILTIN_SRCP);
                   block.second->PushBefore(op1_not_expr, *stmt, AppM);
                   new_tree_nodes.push_back(op1_not_expr);
                   const auto and_expr = tree_man->create_binary_operation(
@@ -475,7 +475,7 @@ DesignFlowStep_Status CondExprRestructuring::InternalExec()
                       GetPointerS<gimple_assign>(GET_NODE(op1_not_expr))->op0, BUILTIN_SRCP, truth_and_expr_K);
                   ga = tree_man->CreateGimpleAssign(boolType, TM->CreateUniqueIntegerCst(0, boolType),
                                                     TM->CreateUniqueIntegerCst(1, boolType), and_expr, function_id,
-                                                    block.first, BUILTIN_SRCP);
+                                                    BUILTIN_SRCP);
                }
                else if(!first_operand_of_first && first_operand_of_second)
                {
@@ -483,7 +483,7 @@ DesignFlowStep_Status CondExprRestructuring::InternalExec()
                       tree_man->create_unary_operation(boolType, first_ce->op0, BUILTIN_SRCP, truth_not_expr_K);
                   const auto op1_not_expr = tree_man->CreateGimpleAssign(
                       boolType, TM->CreateUniqueIntegerCst(0, boolType), TM->CreateUniqueIntegerCst(1, boolType),
-                      not_expr1, function_id, block.first, BUILTIN_SRCP);
+                      not_expr1, function_id, BUILTIN_SRCP);
                   block.second->PushBefore(op1_not_expr, *stmt, AppM);
                   new_tree_nodes.push_back(op1_not_expr);
                   const auto and_expr = tree_man->create_binary_operation(
@@ -491,7 +491,7 @@ DesignFlowStep_Status CondExprRestructuring::InternalExec()
                       truth_and_expr_K);
                   ga = tree_man->CreateGimpleAssign(boolType, TM->CreateUniqueIntegerCst(0, boolType),
                                                     TM->CreateUniqueIntegerCst(1, boolType), and_expr, function_id,
-                                                    block.first, BUILTIN_SRCP);
+                                                    BUILTIN_SRCP);
                }
                else if(first_operand_of_first && !first_operand_of_second)
                {
@@ -499,7 +499,7 @@ DesignFlowStep_Status CondExprRestructuring::InternalExec()
                       tree_man->create_unary_operation(boolType, second_ce->op0, BUILTIN_SRCP, truth_not_expr_K);
                   const auto op0_not_expr = tree_man->CreateGimpleAssign(
                       boolType, TM->CreateUniqueIntegerCst(0, boolType), TM->CreateUniqueIntegerCst(1, boolType),
-                      not_expr0, function_id, block.first, BUILTIN_SRCP);
+                      not_expr0, function_id, BUILTIN_SRCP);
                   block.second->PushBefore(op0_not_expr, *stmt, AppM);
                   new_tree_nodes.push_back(op0_not_expr);
                   const auto and_expr = tree_man->create_binary_operation(
@@ -507,7 +507,7 @@ DesignFlowStep_Status CondExprRestructuring::InternalExec()
                       truth_and_expr_K);
                   ga = tree_man->CreateGimpleAssign(boolType, TM->CreateUniqueIntegerCst(0, boolType),
                                                     TM->CreateUniqueIntegerCst(1, boolType), and_expr, function_id,
-                                                    block.first, BUILTIN_SRCP);
+                                                    BUILTIN_SRCP);
                }
                else
                {
@@ -515,7 +515,7 @@ DesignFlowStep_Status CondExprRestructuring::InternalExec()
                                                                           BUILTIN_SRCP, truth_and_expr_K);
                   ga = tree_man->CreateGimpleAssign(boolType, TM->CreateUniqueIntegerCst(0, boolType),
                                                     TM->CreateUniqueIntegerCst(1, boolType), and_expr, function_id,
-                                                    block.first, BUILTIN_SRCP);
+                                                    BUILTIN_SRCP);
                }
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created AND " + STR(ga));
             }
@@ -531,7 +531,7 @@ DesignFlowStep_Status CondExprRestructuring::InternalExec()
 
          /// Create the assign
          const auto root_gimple_node =
-             tree_man->create_gimple_modify_stmt(first_ga->op0, root_cond_expr, function_id, BUILTIN_SRCP, block.first);
+             tree_man->create_gimple_modify_stmt(first_ga->op0, root_cond_expr, function_id, BUILTIN_SRCP);
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                         "---Created " + GET_CONST_NODE(root_gimple_node)->ToString());
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Before " + (*stmt)->ToString());
@@ -551,7 +551,8 @@ DesignFlowStep_Status CondExprRestructuring::InternalExec()
             schedule->UpdateTime(temp_stmt->index);
          }
 
-         if(debug_level >= DEBUG_LEVEL_VERY_PEDANTIC && !parameters->IsParameter("disable-print-dot-FF"))
+         if(debug_level >= DEBUG_LEVEL_VERY_PEDANTIC &&
+            (!parameters->IsParameter("print-dot-FF") || parameters->GetParameter<unsigned int>("print-dot-FF")))
          {
             WriteBBGraphDot("BB_Inside_" + GetName() + "_" + STR(counter) + ".dot");
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,

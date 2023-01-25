@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2020-2022 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -49,9 +49,12 @@ using namespace boost::multiprecision;
 
 using bw_t = APInt::bw_t;
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wzero-as-null-pointer-constant"
 APInt::APInt() : _data(57)
 {
 }
+#pragma GCC diagnostic pop
 
 bool operator<(const APInt& lhs, const APInt& rhs)
 {
@@ -333,15 +336,16 @@ bw_t APInt::leadingOnes(bw_t bw) const
 
 APInt::bw_t APInt::minBitwidth(bool sign) const
 {
-   const auto bw = static_cast<bw_t>(mpz_sizeinbase(_data.backend().data(), 2));
-   return sign ? (leadingOnes(bw) == 1 ? bw : static_cast<bw_t>(bw + 1)) :
-                 (_data.sign() < 0 ? static_cast<bw_t>(std::numeric_limits<bw_t>::max()) : bw);
-}
-
-std::string APInt::str(int base) const
-{
-   std::unique_ptr<char, void (*)(void*)> res(mpz_get_str(NULL, base, _data.backend().data()), std::free);
-   return std::string(res.get());
+   if((_data < 0) && !sign)
+   {
+      return static_cast<bw_t>(std::numeric_limits<bw_t>::max());
+   }
+   else if(_data < -1)
+   {
+      const APInt_internal neg = ~_data;
+      return static_cast<bw_t>(mpz_sizeinbase(neg.backend().data(), 2) + 1);
+   }
+   return static_cast<bw_t>(mpz_sizeinbase(_data.backend().data(), 2) + (sign && (_data > 0)));
 }
 
 APInt APInt::getMaxValue(bw_t bw)
@@ -366,6 +370,12 @@ APInt APInt::getSignedMinValue(bw_t bw)
 
 std::ostream& operator<<(std::ostream& str, const APInt& v)
 {
-   str << v.str();
+   str << v._data;
+   return str;
+}
+
+std::istream& operator>>(std::istream& str, APInt& v)
+{
+   str >> v._data;
    return str;
 }

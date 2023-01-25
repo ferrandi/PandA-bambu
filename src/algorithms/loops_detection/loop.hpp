@@ -104,11 +104,13 @@
 
 #include "custom_map.hpp"
 #include "custom_set.hpp"
-#include "graph.hpp"    // for vertex
+#include "graph.hpp" // for vertex
+#include "panda_types.hpp"
 #include "refcount.hpp" // for REF_FORWARD_DECL
-#include <cstddef>      // for size_t
-#include <list>         // for list, list<>::co...
-#include <utility>      // for pair
+
+#include <cstddef> // for size_t
+#include <list>    // for list, list<>::co...
+#include <utility> // for pair
 
 /**
  * @name Constants identifying the type of the loops
@@ -229,16 +231,16 @@ class Loop
    unsigned int inc_id;
 
    /// Increment of induction variable
-   long long int increment;
+   integer_cst_t increment;
 
    /// Increment of induction variable
    tree_nodeRef increment_tn;
 
    /// Initial value of induction variable
-   long long int lower_bound;
+   integer_cst_t lower_bound;
 
    /// Final value of induction variable
-   long long int upper_bound;
+   integer_cst_t upper_bound;
 
    /// Final value of induction variable
    tree_nodeRef upper_bound_tn;

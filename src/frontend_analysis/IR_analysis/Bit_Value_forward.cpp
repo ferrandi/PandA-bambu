@@ -948,15 +948,14 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
             }
             else if(GET_CONST_NODE(operation->op1)->get_kind() == integer_cst_K)
             {
-               const auto const2 = GetPointerS<const integer_cst>(GET_CONST_NODE(operation->op1));
-               const auto arg2_value = static_cast<unsigned int>(const2->value);
+               const auto arg2_value = tree_helper::GetConstValue(operation->op1);
 
                if(lhs_size > op0_bitstring.size())
                {
                   op0_bitstring = sign_extend_bitstring(op0_bitstring, op0_signed, lhs_size);
                }
                res = op0_bitstring;
-               for(unsigned int index = 0; index < arg2_value; ++index)
+               for(integer_cst_t index = 0; index < arg2_value; ++index)
                {
                   bit_lattice cur_bit = res.front();
                   res.pop_front();
@@ -984,15 +983,15 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
             }
             else if(GET_CONST_NODE(operation->op1)->get_kind() == integer_cst_K)
             {
-               auto* const2 = GetPointerS<const integer_cst>(GET_CONST_NODE(operation->op1));
-               if(const2->value < 0)
+               const auto cst_val = tree_helper::GetConstValue(operation->op1);
+               if(cst_val < 0)
                {
                   res.push_back(bit_lattice::X);
                   break;
                }
 
                const auto op0_bitsize = BitLatticeManipulator::Size(operation->op0);
-               if(lhs_size <= static_cast<long long unsigned int>(const2->value))
+               if(lhs_size <= static_cast<size_t>(cst_val))
                {
                   res.push_front(bit_lattice::ZERO);
                }
@@ -1003,7 +1002,7 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
                   {
                      res.pop_front();
                   }
-                  for(int i = 0; i < const2->value; i++)
+                  for(integer_cst_t i = 0; i < cst_val; i++)
                   {
                      res.push_back(bit_lattice::ZERO);
                      if(res.size() > lhs_size)
@@ -1323,15 +1322,14 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
             }
             else if(GET_CONST_NODE(operation->op1)->get_kind() == integer_cst_K)
             {
-               const auto const1 = GetPointerS<const integer_cst>(GET_CONST_NODE(operation->op1));
-               const auto op1_value = static_cast<unsigned int>(const1->value);
+               const auto op1_value = tree_helper::GetConstValue(operation->op1);
 
                if(lhs_size > op0_bitstring.size())
                {
                   op0_bitstring = sign_extend_bitstring(op0_bitstring, op0_signed, lhs_size);
                }
                res = op0_bitstring;
-               for(unsigned int index = 0; index < op1_value; ++index)
+               for(integer_cst_t index = 0; index < op1_value; ++index)
                {
                   const auto cur_bit = res.back();
                   res.pop_back();
@@ -1351,8 +1349,8 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
             }
             else if(GET_CONST_NODE(operation->op1)->get_kind() == integer_cst_K)
             {
-               const auto const1 = GetPointerS<const integer_cst>(GET_CONST_NODE(operation->op1));
-               if(const1->value < 0)
+               const auto cst_val = tree_helper::GetConstValue(operation->op1);
+               if(cst_val < 0)
                {
                   INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                                  "---forward_transfer, negative right shift is undefined behavior");
@@ -1360,7 +1358,7 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
                   break;
                }
 
-               if(op0_bitstring.size() <= static_cast<size_t>(const1->value))
+               if(op0_bitstring.size() <= static_cast<size_t>(cst_val))
                {
                   if(op0_signed)
                   {
@@ -1373,7 +1371,7 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
                }
                else
                {
-                  const auto new_lenght = op0_bitstring.size() - static_cast<size_t>(const1->value);
+                  const auto new_lenght = op0_bitstring.size() - static_cast<size_t>(cst_val);
                   auto op0_it = op0_bitstring.begin();
                   while(res.size() < new_lenght)
                   {
@@ -1462,10 +1460,10 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
          else if(rhs_kind == extract_bit_expr_K)
          {
             THROW_ASSERT(GET_CONST_NODE(operation->op1)->get_kind() == integer_cst_K, "unexpected condition");
-            const auto const1 = GetPointerS<const integer_cst>(GET_CONST_NODE(operation->op1));
-            THROW_ASSERT(const1->value >= 0, "unexpected condition");
+            const auto cst_val = tree_helper::GetConstValue(operation->op1);
+            THROW_ASSERT(cst_val >= 0, "unexpected condition");
 
-            if(op0_bitstring.size() <= static_cast<size_t>(const1->value))
+            if(op0_bitstring.size() <= static_cast<size_t>(cst_val))
             {
                if(op0_signed)
                {
@@ -1478,7 +1476,7 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
             }
             else
             {
-               const auto new_lenght = op0_bitstring.size() - static_cast<size_t>(const1->value);
+               const auto new_lenght = op0_bitstring.size() - static_cast<size_t>(cst_val);
                auto op0_it = op0_bitstring.begin();
                while(res.size() < new_lenght)
                {
@@ -1558,7 +1556,7 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
 
          if(rhs_kind == bit_ior_concat_expr_K)
          {
-            long long int offset = GetPointerS<integer_cst>(GET_NODE(operation->op2))->value;
+            const auto offset = tree_helper::GetConstValue(operation->op2);
 
             if(op0_bitstring.size() > op1_bitstring.size())
             {
@@ -1571,7 +1569,7 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
 
             auto op0_it = op0_bitstring.rbegin();
             auto op1_it = op1_bitstring.rbegin();
-            for(auto index = 0u; op0_it != op0_bitstring.rend() && op1_it != op1_bitstring.rend();
+            for(integer_cst_t index = 0; op0_it != op0_bitstring.rend() && op1_it != op1_bitstring.rend();
                 ++op0_it, ++op1_it, ++index)
             {
                if(index < offset)
@@ -1764,8 +1762,9 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
             }
             else if(GET_CONST_NODE(operation->op2)->get_kind() == integer_cst_K)
             {
-               const auto const2 = GetPointerS<const integer_cst>(GET_CONST_NODE(operation->op2));
-               const auto offset = static_cast<unsigned int>(const2->value) % lhs_size;
+               THROW_ASSERT(tree_helper::GetConstValue(operation->op2) >= 0, "");
+               const auto offset = static_cast<unsigned int>(tree_helper::GetConstValue(operation->op2) %
+                                                             static_cast<unsigned int>(lhs_size));
 
                if(lhs_size > op0_bitstring.size())
                {
@@ -1792,8 +1791,9 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
             }
             else if(GET_CONST_NODE(operation->op2)->get_kind() == integer_cst_K)
             {
-               const auto const2 = GetPointerS<const integer_cst>(GET_CONST_NODE(operation->op2));
-               const auto offset = static_cast<unsigned int>(const2->value) % lhs_size;
+               THROW_ASSERT(tree_helper::GetConstValue(operation->op2) >= 0, "");
+               const auto offset = static_cast<unsigned int>(tree_helper::GetConstValue(operation->op2) %
+                                                             static_cast<unsigned int>(lhs_size));
 
                if(lhs_size > op0_bitstring.size())
                {

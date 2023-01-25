@@ -42,6 +42,7 @@
 #include "BambuParameter.hpp"
 #include "behavioral_helper.hpp"
 #include "copyrights_strings.hpp"
+#include "function_behavior.hpp"
 #include "hls.hpp"
 #include "hls_manager.hpp"
 #include "hls_target.hpp"

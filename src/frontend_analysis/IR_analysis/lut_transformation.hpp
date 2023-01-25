@@ -123,7 +123,7 @@ class lut_transformation : public FunctionFrontendFlowStep
 
    bool CheckIfProcessable(std::pair<unsigned int, blocRef> block);
 
-   tree_nodeRef CreateBitSelectionNodeOrCast(const tree_nodeRef source, int index, unsigned int BB_index,
+   tree_nodeRef CreateBitSelectionNodeOrCast(const tree_nodeRef source, int index,
                                              std::vector<tree_nodeRef>& prev_stmts_to_add);
 
 #endif

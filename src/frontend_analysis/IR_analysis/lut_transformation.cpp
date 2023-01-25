@@ -196,9 +196,9 @@ bool lut_transformation::CHECK_BIN_EXPR_INT_SIZE(binary_expr* be, unsigned int m
       {
          return false;
       }
-      auto* int_const = GetPointer<integer_cst>(GET_CONST_NODE(be->op1));
+      const auto cst_val = tree_helper::GetConstValue(be->op1);
       auto k = be->get_kind();
-      return (k == lt_expr_K || k == gt_expr_K) && int_const->value == 0;
+      return (k == lt_expr_K || k == gt_expr_K) && cst_val == 0;
    }();
    return (tree_helper::Size(be->op0) <= max && tree_helper::Size(be->op1) <= max) ||
           (is_simple_case && !parameters->isOption(OPT_context_switch));
@@ -766,18 +766,27 @@ static klut_network_fn GetBooleanNodeCreationFunction(enum kind code)
    }
 }
 
-static std::vector<bool> IntegerToBitArray(long long int n, size_t size)
+static std::vector<bool> IntegerToBitArray(integer_cst_t n, size_t size)
 {
+   const auto oldbits = [&]() {
+      std::vector<bool> bits;
+      for(size_t i = 0; i < size; ++i)
+      {
+         bits.push_back((static_cast<unsigned long long int>(n) & (1ULL << i)) ? true : false);
+      }
+      return bits;
+   }();
    std::vector<bool> bits;
    for(size_t i = 0; i < size; ++i)
    {
-      bits.push_back((static_cast<unsigned long long int>(n) & (1ULL << i)) ? true : false);
+      bits.push_back((n & (integer_cst_t(1) << i)) ? true : false);
    }
+   THROW_ASSERT(bits == oldbits, "Bits for " + STR(n) + " was " + convert_vector_to_string(oldbits, "") + " now is " +
+                                     convert_vector_to_string(bits, ""));
    return bits;
 }
 
 tree_nodeRef lut_transformation::CreateBitSelectionNodeOrCast(const tree_nodeRef source, int index,
-                                                              unsigned int BB_index,
                                                               std::vector<tree_nodeRef>& prev_stmts_to_add)
 {
    const auto indexType = tree_man->GetUnsignedLongLongType();
@@ -785,9 +794,9 @@ tree_nodeRef lut_transformation::CreateBitSelectionNodeOrCast(const tree_nodeRef
    const std::string srcp_default("built-in:0:0");
    tree_nodeRef eb_op = tree_man->create_extract_bit_expr(source, bit_pos_constant, srcp_default);
    auto boolType = tree_man->GetBooleanType();
-   tree_nodeRef eb_ga = tree_man->CreateGimpleAssign(boolType, TM->CreateUniqueIntegerCst(0, boolType),
-                                                     TM->CreateUniqueIntegerCst(1, boolType), eb_op, function_id,
-                                                     BB_index, srcp_default);
+   tree_nodeRef eb_ga =
+       tree_man->CreateGimpleAssign(boolType, TM->CreateUniqueIntegerCst(0, boolType),
+                                    TM->CreateUniqueIntegerCst(1, boolType), eb_op, function_id, srcp_default);
    prev_stmts_to_add.push_back(eb_ga);
    return GetPointer<const gimple_assign>(GET_CONST_NODE(eb_ga))->op0;
 }
@@ -832,7 +841,7 @@ static std::string ConvertBitsToString(const std::vector<bool>& bits, const std:
 }
 #endif
 
-template <typename T, typename = typename std::enable_if<std::is_arithmetic<T>::value, T>::type>
+template <typename T>
 static T ConvertHexToNumber(const std::string& hex0)
 {
    uint64_t x;
@@ -840,7 +849,7 @@ static T ConvertHexToNumber(const std::string& hex0)
    ss << std::hex << hex0;
    ss >> x;
 
-   return static_cast<T>(x);
+   return T(x);
 }
 
 static void ParseKLutNetwork(const mockturtle::klut_network& klut, std::vector<klut_network_node>& luts)
@@ -1244,11 +1253,9 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
 
                if(GET_NODE(op)->get_kind() == integer_cst_K)
                {
-                  auto* int_const = GetPointer<integer_cst>(GET_NODE(op));
-                  kop = int_const->value == 0 ? klut_e.get_constant(false) :
-                                                klut_e.create_not(klut_e.get_constant(false));
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                 int_const->value == 0 ? "---used gnd" : "---used vdd");
+                  const auto cst_val = tree_helper::GetConstValue(op);
+                  kop = cst_val == 0 ? klut_e.get_constant(false) : klut_e.create_not(klut_e.get_constant(false));
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, cst_val == 0 ? "---used gnd" : "---used vdd");
                   modified = true;
                }
                else if(CheckIfPI(op, BB_index))
@@ -1269,8 +1276,11 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
          }
 
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                        "---translating in klut " + STR(GetPointer<integer_cst>(GET_NODE(le->op0))->value));
-         auto res = klut_e.create_lut(ops, GetPointer<integer_cst>(GET_NODE(le->op0))->value);
+                        "---translating in klut " + STR(tree_helper::GetConstValue(le->op0)));
+         const auto cst_val = tree_helper::GetConstValue(le->op0);
+         THROW_ASSERT(tree_helper::GetConstValue(le->op0, false) <= std::numeric_limits<unsigned long long>::max(),
+                      "Cast will change signedness of current value: " + STR(cst_val));
+         auto res = klut_e.create_lut(ops, static_cast<long long>(cst_val));
          nodeRefToSignal[GET_INDEX_NODE(gimpleAssign->op0)] = res;
 
          if(this->CheckIfPO(gimpleAssign))
@@ -1312,11 +1322,9 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
 
                if(GET_NODE(op)->get_kind() == integer_cst_K)
                {
-                  auto* int_const = GetPointer<integer_cst>(GET_NODE(op));
-                  kop = int_const->value == 0 ? klut_e.get_constant(false) :
-                                                klut_e.create_not(klut_e.get_constant(false));
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                 int_const->value == 0 ? "---used gnd" : "---used vdd");
+                  const auto cst_val = tree_helper::GetConstValue(op);
+                  kop = cst_val == 0 ? klut_e.get_constant(false) : klut_e.create_not(klut_e.get_constant(false));
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, cst_val == 0 ? "---used gnd" : "---used vdd");
                }
                else if(CheckIfPI(op, BB_index))
                {
@@ -1380,11 +1388,9 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
 
                if(GET_NODE(op)->get_kind() == integer_cst_K)
                {
-                  auto* int_const = GetPointer<integer_cst>(GET_NODE(op));
-                  kop = int_const->value == 0 ? klut_e.get_constant(false) :
-                                                klut_e.create_not(klut_e.get_constant(false));
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                 int_const->value == 0 ? "---used gnd" : "---used vdd");
+                  const auto cst_val = tree_helper::GetConstValue(op);
+                  kop = cst_val == 0 ? klut_e.get_constant(false) : klut_e.create_not(klut_e.get_constant(false));
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, cst_val == 0 ? "---used gnd" : "---used vdd");
                }
                else if(CheckIfPI(op, BB_index))
                {
@@ -1460,10 +1466,9 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
          { // otherwise the operand is a primary input
             if(GET_NODE(binaryExpression->op0)->get_kind() == integer_cst_K)
             {
-               auto* int_const = GetPointer<integer_cst>(GET_NODE(binaryExpression->op0));
-               op1 = int_const->value == 0 ? klut_e.get_constant(false) : klut_e.create_not(klut_e.get_constant(false));
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                              int_const->value == 0 ? "---used gnd" : "---used vdd");
+               const auto cst_val = tree_helper::GetConstValue(binaryExpression->op0);
+               op1 = cst_val == 0 ? klut_e.get_constant(false) : klut_e.create_not(klut_e.get_constant(false));
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, (cst_val == 0) ? "---used gnd" : "---used vdd");
             }
             else if(CheckIfPI(binaryExpression->op0, BB_index))
             {
@@ -1491,10 +1496,9 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
          { // otherwise the operand is a primary input
             if(GET_NODE(binaryExpression->op1)->get_kind() == integer_cst_K)
             {
-               auto* int_const = GetPointer<integer_cst>(GET_NODE(binaryExpression->op1));
-               op2 = int_const->value == 0 ? klut_e.get_constant(false) : klut_e.create_not(klut_e.get_constant(false));
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                              int_const->value == 0 ? "---used gnd" : "---used vdd");
+               const auto cst_val = tree_helper::GetConstValue(binaryExpression->op1);
+               op2 = cst_val == 0 ? klut_e.get_constant(false) : klut_e.create_not(klut_e.get_constant(false));
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, (cst_val == 0) ? "---used gnd" : "---used vdd");
             }
             else if(CheckIfPI(binaryExpression->op1, BB_index))
             {
@@ -1559,8 +1563,8 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
          { // otherwise the operand is a primary input
             if(GET_NODE(binaryExpression->op0)->get_kind() == integer_cst_K)
             {
-               auto* int_const = GetPointer<integer_cst>(GET_NODE(binaryExpression->op0));
-               auto bits = IntegerToBitArray(int_const->value, tree_helper::Size(binaryExpression->op0));
+               const auto cst_val = tree_helper::GetConstValue(binaryExpression->op0);
+               auto bits = IntegerToBitArray(cst_val, tree_helper::Size(binaryExpression->op0));
 
                op1 = klut_e.get_constant_v(bits);
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---used {" + ConvertBitsToString(bits) + "}");
@@ -1597,8 +1601,8 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
          { // otherwise the operand is a primary input
             if(GET_NODE(binaryExpression->op1)->get_kind() == integer_cst_K)
             {
-               auto* int_const = GetPointer<integer_cst>(GET_NODE(binaryExpression->op1));
-               auto bits = IntegerToBitArray(int_const->value, tree_helper::Size(binaryExpression->op1));
+               const auto cst_val = tree_helper::GetConstValue(binaryExpression->op1);
+               auto bits = IntegerToBitArray(cst_val, tree_helper::Size(binaryExpression->op1));
 
                op2 = klut_e.get_constant_v(bits);
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---used {" + ConvertBitsToString(bits) + "}");
@@ -1715,11 +1719,11 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
                if(tree_helper::Size(operand) == 1 && !tree_helper::IsBooleanType(operand))
                {
                   THROW_ASSERT(operand_offset == 0, "unexpected condition");
-                  operand = CreateBitSelectionNodeOrCast(operand, 0, BB_index, prev_stmts_to_add);
+                  operand = CreateBitSelectionNodeOrCast(operand, 0, prev_stmts_to_add);
                }
                else if(tree_helper::Size(operand) > 1)
                {
-                  operand = CreateBitSelectionNodeOrCast(operand, operand_offset, BB_index, prev_stmts_to_add);
+                  operand = CreateBitSelectionNodeOrCast(operand, operand_offset, prev_stmts_to_add);
                }
             }
             else if(internal_nets.find(in) != internal_nets.end())
@@ -1854,7 +1858,7 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
                                                                     op5, op6, op7, op8, srcp_default);
                   auto lut_ga = tree_man->CreateGimpleAssign(boolType, TM->CreateUniqueIntegerCst(0, boolType),
                                                              TM->CreateUniqueIntegerCst(1, boolType), lut_node,
-                                                             function_id, BB_index, srcp_default);
+                                                             function_id, srcp_default);
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                  "---Adding statement " + GET_NODE(lut_ga)->ToString());
                   block.second->PushBefore(lut_ga, po_stmpt, AppM);
@@ -1891,12 +1895,11 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
             check_lut_compatibility(op6);
             check_lut_compatibility(op7);
             check_lut_compatibility(op8);
-            const std::string srcp_default("built-in:0:0");
             tree_nodeRef new_op1 = tree_man->create_lut_expr(boolType, lut_constant_node, op1, op2, op3, op4, op5, op6,
-                                                             op7, op8, srcp_default);
+                                                             op7, op8, BUILTIN_SRCP);
             auto lut_ga = tree_man->CreateGimpleAssign(boolType, TM->CreateUniqueIntegerCst(0, boolType),
                                                        TM->CreateUniqueIntegerCst(1, boolType), new_op1, function_id,
-                                                       BB_index, srcp_default);
+                                                       BUILTIN_SRCP);
             auto ssa_vd = GetPointer<gimple_assign>(GET_NODE(lut_ga))->op0;
             prev_stmts_to_add.push_back(lut_ga);
             internal_nets[lut.index] = ssa_vd;
@@ -2016,8 +2019,8 @@ void lut_transformation::Initialize()
 
 DesignFlowStep_Status lut_transformation::InternalExec()
 {
-   if(max_lut_size == 0 || (parameters->IsParameter("disable-lut-transformation") &&
-                            parameters->GetParameter<unsigned int>("disable-lut-transformation") == 1))
+   if(max_lut_size == 0 ||
+      (parameters->IsParameter("lut-transformation") && !parameters->GetParameter<unsigned int>("lut-transformation")))
    {
       return DesignFlowStep_Status::UNCHANGED;
    }

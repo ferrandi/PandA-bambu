@@ -144,6 +144,7 @@
 #include "cpu_time.hpp"
 #include "dbgPrintHelper.hpp"
 #include "hash_helper.hpp"
+#include "utility.hpp"
 
 #ifdef HC_APPROACH
 #include "hierarchical_clustering.hpp"

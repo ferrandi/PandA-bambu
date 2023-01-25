@@ -415,7 +415,7 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                const auto ga = GetPointerS<gimple_assign>(GET_NODE(*stmt));
                /// in case of virtual uses it is better not perform the elimination
                if(ga->predicate && GET_NODE(ga->predicate)->get_kind() == integer_cst_K &&
-                  GetPointerS<integer_cst>(GET_NODE(ga->predicate))->value == 0)
+                  tree_helper::GetConstValue(ga->predicate) == 0)
                {
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Dead predicate found");
                   if(ga->vdef)
@@ -515,7 +515,7 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                      {
                         written_bw = 8;
                      }
-                     if(GetPointerS<integer_cst>(GET_NODE(mr->op1))->value == 0)
+                     if(tree_helper::GetConstValue(mr->op1) == 0)
                      {
                         if(GET_NODE(mr->op0)->get_kind() == integer_cst_K)
                         {
@@ -587,13 +587,12 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                                                          GET_NODE(ga_used->op1)->get_kind() == mem_ref_K &&
                                                          !(ga_used->predicate &&
                                                            GET_NODE(ga_used->predicate)->get_kind() == integer_cst_K &&
-                                                           GetPointerS<integer_cst>(GET_NODE(ga_used->predicate))
-                                                                   ->value == 0))
+                                                           tree_helper::GetConstValue(ga_used->predicate) == 0))
                                                       {
                                                          const auto mr_used =
                                                              GetPointerS<mem_ref>(GET_NODE(ga_used->op1));
-                                                         if(GetPointerS<integer_cst>(GET_NODE(mr->op1))->value ==
-                                                            GetPointerS<integer_cst>(GET_NODE(mr_used->op1))->value)
+                                                         if(tree_helper::GetConstValue(mr->op1) ==
+                                                            tree_helper::GetConstValue(mr_used->op1))
                                                          {
                                                             const auto type_r = tree_helper::CGetType(ga_used->op0);
                                                             auto read_bw = resize_to_1_8_16_32_64_128_256_512(
@@ -736,10 +735,9 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                if(GET_NODE(gc->op0)->get_kind() == integer_cst_K)
                {
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---gimple_cond with a constant condition");
-                  auto val = GetPointer<integer_cst>(GET_NODE(gc->op0))->value;
                   do_reachability = true;
                   restart_if_opt = true;
-                  if(val)
+                  if(tree_helper::GetConstValue(gc->op0))
                   {
                      const auto new_bb = move2emptyBB(TM, get_new_bbi(), sl, bb, bb->false_edge, bb->true_edge);
                      new_bbs.push_back(new_bb);
@@ -772,7 +770,7 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                   }
                   else if(GET_NODE(cond.first)->get_kind() == integer_cst_K)
                   {
-                     if(GetPointerS<integer_cst>(GET_NODE(cond.first))->value)
+                     if(tree_helper::GetConstValue(cond.first))
                      {
                         all_false = false;
                         THROW_ASSERT(!one_is_const, "only one can be true");
@@ -845,8 +843,7 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                         {
                            if(GET_NODE(cond.first)->get_kind() == integer_cst_K)
                            {
-                              THROW_ASSERT(GetPointerS<integer_cst>(GET_NODE(cond.first))->value == 0,
-                                           "unexpected condition");
+                              THROW_ASSERT(tree_helper::GetConstValue(cond.first) == 0, "unexpected condition");
                               do_reachability = true;
                               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                              "---gimple_multi_way_if duplicated condition from BB" + STR(bb->number) +

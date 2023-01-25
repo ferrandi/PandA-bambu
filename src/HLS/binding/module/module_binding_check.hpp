@@ -40,6 +40,8 @@
 #include "allocation_information.hpp"
 #include "check_clique.hpp"
 #include "clique_covering_graph.hpp"
+#include "custom_map.hpp"
+#include "custom_set.hpp"
 #include "filter_clique.hpp"
 #include "fu_binding.hpp"
 #include "hls.hpp"
@@ -47,14 +49,10 @@
 
 #include <boost/property_map/property_map.hpp>
 
-/// STD include
 #include <algorithm>
 #include <limits>
 #include <utility>
 #include <vector>
-
-#include "custom_map.hpp"
-#include "custom_set.hpp"
 
 class fu_binding;
 class module_register_binding_spec
@@ -243,7 +241,7 @@ struct module_binding_check : public check_clique<vertex_type>
                   {
                      unsigned int fu_name = HLS->Rfu->get_assign(def_op);
                      unsigned int fu_index = HLS->Rfu->get_index(def_op);
-                     if(fu_index != INFINITE_UINT)
+                     if(fu_index != std::numeric_limits<unsigned int>::max())
                      {
                         if(tree_var_resource_relation.find(std::make_pair(fu_name, fu_index)) !=
                            tree_var_resource_relation.end())

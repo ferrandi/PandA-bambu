@@ -48,6 +48,19 @@
 
 #include "language_writer.hpp"
 
+enum in_port
+{
+   i_in1 = 0,
+   i_in3,
+   i_last
+};
+
+enum out_port
+{
+   o_out1 = 0,
+   o_last
+};
+
 Read_noneModuleGenerator::Read_noneModuleGenerator(const HLS_managerRef& _HLSMgr) : Registrar(_HLSMgr)
 {
 }
@@ -59,5 +72,8 @@ void Read_noneModuleGenerator::InternalExec(std::ostream& out, const module* /* 
                                             const std::vector<ModuleGenerator::parameter>& _ports_out,
                                             const std::vector<ModuleGenerator::parameter>& /* _ports_inout */)
 {
-   out << "assign " << _ports_out[0].name << " = " << _ports_in[1].name << " >> (8*" << _ports_in[0].name << ");\n";
+   THROW_ASSERT(_ports_in.size() >= i_last, "");
+   THROW_ASSERT(_ports_out.size() >= o_last, "");
+   out << "assign " << _ports_out[o_out1].name << " = " << _ports_in[i_in3].name << " >> (8*" << _ports_in[i_in1].name
+       << ");\n";
 }

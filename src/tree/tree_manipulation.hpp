@@ -45,9 +45,11 @@
 #define TREE_MANIPULATION_HPP
 
 /// Utility include
+#include "custom_map.hpp"
+#include "panda_types.hpp"
 #include "refcount.hpp"
 
-#include "custom_map.hpp"
+#include <limits>
 #include <string>  // for string
 #include <utility> // for pair
 #include <vector>
@@ -95,17 +97,17 @@ REF_FORWARD_DECL(bloc);
 #define SIZE_VALUE_POINTER_M32 32
 #define SIZE_VALUE_POINTER_M64 64
 
-#define MIN_VALUE_BIT_SIZE 0
-#define MIN_VALUE_UNSIGNED_INT 0
-#define MIN_VALUE_INT (-2147483648LL)
-#define MIN_VALUE_LONG_LONG_INT 0
-#define MIN_VALUE_UNSIGNED_LONG_LONG_INT 0
+#define MIN_VALUE_BIT_SIZE (std::numeric_limits<unsigned long long>::min())
+#define MIN_VALUE_INT (std::numeric_limits<int>::min())
+#define MIN_VALUE_UNSIGNED_INT (std::numeric_limits<unsigned int>::min())
+#define MIN_VALUE_LONG_LONG_INT (std::numeric_limits<long long>::min())
+#define MIN_VALUE_UNSIGNED_LONG_LONG_INT (std::numeric_limits<unsigned long long>::min())
 
-#define MAX_VALUE_BIT_SIZE (-1)
-#define MAX_VALUE_UNSIGNED_INT (-1)
-#define MAX_VALUE_INT 2147483647
-#define MAX_VALUE_LONG_LONG_INT (-1)
-#define MAX_VALUE_UNSIGNED_LONG_LONG_INT (-1)
+#define MAX_VALUE_BIT_SIZE (std::numeric_limits<unsigned long long>::max())
+#define MAX_VALUE_INT (std::numeric_limits<int>::max())
+#define MAX_VALUE_UNSIGNED_INT (std::numeric_limits<unsigned int>::max())
+#define MAX_VALUE_LONG_LONG_INT (std::numeric_limits<long long>::max())
+#define MAX_VALUE_UNSIGNED_LONG_LONG_INT (std::numeric_limits<unsigned long long>::max())
 
 /**
  * This class creates a layer to add nodes and to manipulate the tree_nodes manager.
@@ -138,7 +140,7 @@ class tree_manipulation
     * @param  integer_cst_nid is the index node of the object to be created
     * @return the tree_reindex node of the integer_cst created.
     */
-   tree_nodeRef CreateIntegerCst(const tree_nodeConstRef& type, const long long int value,
+   tree_nodeRef CreateIntegerCst(const tree_nodeConstRef& type, integer_cst_t value,
                                  const unsigned int integer_cst_nid) const;
 
  public:
@@ -414,13 +416,12 @@ class tree_manipulation
     * @param  ssa_res is the new ssa_name node created by the phi node.
     * @param  list_of_def_edge vector where each tuple contains the incoming reaching definition (ssa_name node) and the
     * edge via which that definition is coming through.
-    * @param  bb_index is the basic block index associated with the gimple phi
     * @param  virtual_flag flag to set if it is a virtual gimple_phi (default false).
     * @return the tree_reindex node of the gimple_phi.
     */
    tree_nodeRef create_phi_node(tree_nodeRef& ssa_res,
                                 const std::vector<std::pair<tree_nodeRef, unsigned int>>& list_of_def_edge,
-                                unsigned int function_decl_nid, unsigned int bb_index, bool virtual_flag = false) const;
+                                unsigned int function_decl_nid, bool virtual_flag = false) const;
 
    /// GIMPLE_ASSIGN
 
@@ -430,12 +431,10 @@ class tree_manipulation
     * @param  op1 is the second operand.
     * @param  scpe is the scope of the gimple assign.
     * @param  srcp is the definition of the source position.
-    * @param  bb_index is the basic block index associated with the gimple statement
     * @return the tree_reindex node of the gimple_assign.
     */
    tree_nodeRef create_gimple_modify_stmt(const tree_nodeRef& op0, const tree_nodeRef& op1,
-                                          unsigned int function_decl_nid, const std::string& srcp,
-                                          const unsigned int bb_index) const;
+                                          unsigned int function_decl_nid, const std::string& srcp) const;
 
    /**
     * Create gimple assignment
@@ -443,17 +442,15 @@ class tree_manipulation
     * @param min is the minimum value of the assigned ssa_var
     * @param max is the maximum value of the assigned ssa_var
     * @param op is the right part
-    * @param bb_index is the index of the basic block index
     * @param srcp is the srcp to be assigned
     */
    tree_nodeRef CreateGimpleAssign(const tree_nodeConstRef& type, const tree_nodeConstRef& min,
                                    const tree_nodeConstRef& max, const tree_nodeRef& op, unsigned int function_decl_nid,
-                                   unsigned int bb_index, const std::string& srcp) const;
+                                   const std::string& srcp) const;
 
    /// GIMPLE_CALL
    tree_nodeRef create_gimple_call(const tree_nodeConstRef& called_function, const std::vector<tree_nodeRef>& args,
-                                   unsigned int function_decl_nid, const std::string& srcp,
-                                   const unsigned int bb_index) const;
+                                   unsigned int function_decl_nid, const std::string& srcp) const;
 
    /// GIMPLE_COND
 
@@ -462,11 +459,10 @@ class tree_manipulation
     * @param  expr is the condition and can be of any type.
     * @param  srcp is the definition of the source position.
     * @return the tree_reindex node of the gimple_cond created.
-    * @param  bb_index is the basic block index associated with the gimple statement
     * @return the tree_reindex node of the gimple_cond created.
     */
-   tree_nodeRef create_gimple_cond(const tree_nodeRef& expr, unsigned int function_decl_nid, const std::string& srcp,
-                                   unsigned int bb_index) const;
+   tree_nodeRef create_gimple_cond(const tree_nodeRef& expr, unsigned int function_decl_nid,
+                                   const std::string& srcp) const;
 
    /// GIMPLE_RETURN
 
@@ -475,12 +471,10 @@ class tree_manipulation
     * @param  type is the type of the expression returned.
     * @param  expr is the value to return.
     * @param  srcp is the definition of the source position.
-    * @param  bb_index is the basic block index associated with the gimple statement
     * @return the tree_reindex node of the gimple_return created.
     */
    tree_nodeRef create_gimple_return(const tree_nodeConstRef& type, const tree_nodeConstRef& expr,
-                                     unsigned int function_decl_nid, const std::string& srcp,
-                                     unsigned int bb_index) const;
+                                     unsigned int function_decl_nid, const std::string& srcp) const;
 
    /**
     * create a label expression in a header of a loop.
@@ -718,12 +712,11 @@ class tree_manipulation
     * Create a gimple_assign with op0 a new ssa_name, and op1 an addr_expr
     * which takes the address of the tree node tn
     * @param tn is the tree reindex of the object of which you want to take the address
-    * @param bb_index is the basic block index associated with the gimple_assign
     * @param srcp is the srcp to be associated with the call
     * @return the tree reindex of the created node
     */
    tree_nodeRef CreateGimpleAssignAddrExpr(const tree_nodeConstRef& tn, unsigned int function_decl_nid,
-                                           const unsigned int bb_index, const std::string& srcp) const;
+                                           const std::string& srcp) const;
 
    /**
     * Create a vector bool type

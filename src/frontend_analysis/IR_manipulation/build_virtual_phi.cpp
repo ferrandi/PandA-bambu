@@ -556,8 +556,7 @@ DesignFlowStep_Status BuildVirtualPhi::InternalExec()
                   }
                }
                tree_nodeRef phi_res;
-               const auto phi_stmt = tree_man->create_phi_node(
-                   phi_res, def_edges, function_id, basic_block_graph->GetBBNodeInfo(current)->block->number, true);
+               const auto phi_stmt = tree_man->create_phi_node(phi_res, def_edges, function_id, true);
                THROW_ASSERT(tree_helper::CGetType(phi_res)->index ==
                                 tree_helper::CGetType(virtual_ssa_definition.first)->index,
                             "");

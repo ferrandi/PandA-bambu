@@ -53,6 +53,7 @@
 #include "function_behavior.hpp"
 #include "hls.hpp"
 #include "hls_manager.hpp"
+#include "utility.hpp"
 
 conn_binding_creator::conn_binding_creator(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr,
                                            unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager,

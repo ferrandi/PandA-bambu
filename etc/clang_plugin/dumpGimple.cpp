@@ -38,9 +38,8 @@
  *
  */
 
-#ifdef NDEBUG
-#undef NDEBUG
-#endif
+// #undef NDEBUG
+#include "debug_print.hpp"
 
 #include "plugin_includes.hpp"
 
@@ -111,9 +110,6 @@
 #include <iomanip>
 
 #define ANDERSEN_AA 1
-
-// #define PRINT_DBG_MSG
-#include "debug_print.hpp"
 
 static std::string create_file_name_string(const std::string& outdir_name, const std::string& original_filename)
 {
@@ -446,10 +442,10 @@ namespace llvm
             else if(ty->getScalarSizeInBits() > 32 && ty->getScalarSizeInBits() <= 64)
                return is_signed ? "long long int" : "unsigned long long int";
             else
-               llvm_unreachable("not expected integer bitwidth size");
+               report_fatal_error("not expected integer bitwidth size");
          }
       }
-      llvm_unreachable("not managed");
+      report_fatal_error("not managed");
    }
 
    const void* DumpGimpleRaw::assignCodeAuto(const void* t)
@@ -500,8 +496,8 @@ namespace llvm
                llvm_obj->print(llvm::errs(), true);
                llvm::errs() << "\n";
                stream.close();
-               llvm_unreachable(
-                   (std::string("unexpected condition: ") + std::string(ValueTyNames[llvm_obj->getValueID()])).c_str());
+               report_fatal_error(
+                   std::string("unexpected condition: " + std::string(ValueTyNames[llvm_obj->getValueID()])).c_str());
             }
          }
          case llvm::Value::ConstantExprVal:
@@ -526,8 +522,8 @@ namespace llvm
                llvm::errs() << "\n";
                llvm::errs() << cast<llvm::ConstantExpr>(llvm_obj)->getOpcodeName() << "\n";
                stream.close();
-               llvm_unreachable(
-                   (std::string("unexpected condition: ") + std::string(ValueTyNames[llvm_obj->getValueID()])).c_str());
+               report_fatal_error(
+                   std::string("unexpected condition: " + std::string(ValueTyNames[llvm_obj->getValueID()])).c_str());
             }
          }
          case llvm::Value::ConstantVectorVal:
@@ -615,7 +611,7 @@ namespace llvm
                      llvm::errs() << "assignCodeAuto kind not supported: " << ValueTyNames[vid] << "\n";
                      ci->print(llvm::errs(), true);
                      stream.close();
-                     llvm_unreachable("Plugin Error");
+                     report_fatal_error("Plugin Error");
                }
             }
 #if __clang_major__ >= 11
@@ -665,7 +661,7 @@ namespace llvm
          default:
             llvm::errs() << "assignCodeAuto kind not supported: " << ValueTyNames[vid] << "\n";
             stream.close();
-            llvm_unreachable("Plugin Error");
+            report_fatal_error("Plugin Error");
       }
    }
    bool DumpGimpleRaw::DECL_ASSEMBLER_NAME_SET_P(const void* t) const
@@ -716,7 +712,7 @@ namespace llvm
          return assignCode(dn, GT(IDENTIFIER_NODE));
       }
       else
-         llvm_unreachable("DECL_ASSEMBLER_NAME: DECL_ASSEMBLER_NAME_SET_P is not true");
+         report_fatal_error("DECL_ASSEMBLER_NAME: DECL_ASSEMBLER_NAME_SET_P is not true");
    }
 
    static std::string getIntrinsicName(const llvm::Function* fd)
@@ -733,7 +729,7 @@ namespace llvm
             else if(fd->getReturnType()->isFP128Ty())
                return "fabsl";
             fd->print(llvm::errs());
-            llvm_unreachable("Plugin Error");
+            report_fatal_error("Plugin Error");
          case llvm::Intrinsic::memcpy:
          {
             auto funType = cast<llvm::FunctionType>(fd->getValueType());
@@ -742,7 +738,7 @@ namespace llvm
             else if(funType->getParamType(2)->isIntegerTy() && funType->getParamType(2)->getScalarSizeInBits() == 64)
                return "_llvm_memcpy_p0i8_p0i8_i64";
             fd->print(llvm::errs());
-            llvm_unreachable("Plugin Error");
+            report_fatal_error("Plugin Error");
          }
 
          case llvm::Intrinsic::memset:
@@ -753,7 +749,7 @@ namespace llvm
             else if(funType->getParamType(2)->isIntegerTy() && funType->getParamType(2)->getScalarSizeInBits() == 64)
                return "_llvm_memset_p0i8_i64";
             fd->print(llvm::errs());
-            llvm_unreachable("Plugin Error");
+            report_fatal_error("Plugin Error");
          }
          case llvm::Intrinsic::memmove:
          {
@@ -763,7 +759,7 @@ namespace llvm
             else if(funType->getParamType(2)->isIntegerTy() && funType->getParamType(2)->getScalarSizeInBits() == 64)
                return "_llvm_memmove_p0i8_p0i8_i64";
             fd->print(llvm::errs());
-            llvm_unreachable("Plugin Error");
+            report_fatal_error("Plugin Error");
          }
          case llvm::Intrinsic::trap:
             return "__builtin_trap";
@@ -834,7 +830,7 @@ namespace llvm
                }
             }
             fd->print(llvm::errs());
-            llvm_unreachable("Plugin Error");
+            report_fatal_error("Plugin Error");
          }
 #endif
 
@@ -847,7 +843,7 @@ namespace llvm
             else if(fd->getReturnType()->isFP128Ty())
                return "rintl";
             fd->print(llvm::errs());
-            llvm_unreachable("Plugin Error");
+            report_fatal_error("Plugin Error");
          }
          case llvm::Intrinsic::fmuladd:
          {
@@ -856,7 +852,7 @@ namespace llvm
             else if(fd->getReturnType()->isDoubleTy())
                return "__float64_muladd";
             fd->print(llvm::errs());
-            llvm_unreachable("Plugin Error");
+            report_fatal_error("Plugin Error");
          }
          case llvm::Intrinsic::minnum:
          {
@@ -867,7 +863,7 @@ namespace llvm
             else if(fd->getReturnType()->isFP128Ty())
                return "fminl";
             fd->print(llvm::errs());
-            llvm_unreachable("Plugin Error");
+            report_fatal_error("Plugin Error");
          }
          case llvm::Intrinsic::maxnum:
          {
@@ -878,11 +874,11 @@ namespace llvm
             else if(fd->getReturnType()->isFP128Ty())
                return "fmaxl";
             fd->print(llvm::errs());
-            llvm_unreachable("Plugin Error");
+            report_fatal_error("Plugin Error");
          }
          default:
             fd->print(llvm::errs());
-            llvm_unreachable("Plugin Error");
+            report_fatal_error("Plugin Error");
       }
    }
    const void* DumpGimpleRaw::DECL_NAME(const void* t)
@@ -1181,7 +1177,7 @@ namespace llvm
       else
       {
          snprintf(buffer, LOCAL_BUFFER_LEN, "expand_location: unexpected location %d", llvm_obj->getMetadataID());
-         llvm_unreachable(buffer);
+         report_fatal_error(buffer);
       }
       return res;
    }
@@ -1321,7 +1317,7 @@ namespace llvm
          case llvm::Instruction::SRem:
             return GT(TRUNC_MOD_EXPR);
          case llvm::Instruction::FRem:
-            llvm_unreachable("floating point remainder not foreseen yet");
+            report_fatal_error("floating point remainder not foreseen yet");
          // Logical operators (integer operands)
          case llvm::Instruction::Shl: // Shift left  (logical)
             return GT(LSHIFT_EXPR);
@@ -1437,7 +1433,7 @@ namespace llvm
                default:
                   llvm::errs() << "gimple_expr_code::ICmpInst kind not supported: " << predicate << "\n";
                   stream.close();
-                  llvm_unreachable("Plugin Error");
+                  report_fatal_error("Plugin Error");
             }
          }
 
@@ -1477,7 +1473,7 @@ namespace llvm
             llvm::errs() << "gimple_expr_code kind not supported: "
                          << ValueTyNames[llvm::Value::InstructionVal + opcode] << "\n";
             stream.close();
-            llvm_unreachable("Plugin Error");
+            report_fatal_error("Plugin Error");
       }
    }
    DumpGimpleRaw::tree_codes DumpGimpleRaw::gimple_expr_code(const void* g)
@@ -1517,7 +1513,7 @@ namespace llvm
                                    (funName == TopFunctionName || demangled == TopFunctionName);
          if(store.getAlignment() && written_obj_size > (8 * store.getAlignment()) && !is_a_top_parameter && !isVecType)
          {
-            llvm::errs() << "MISALIGNED_INDIRECT_REF " << written_obj_size << " " << store.getAlignment() << "\n";
+            PRINT_DBG("MISALIGNED_INDIRECT_REF " << written_obj_size << " " << store.getAlignment() << "\n");
             return build1(GT(MISALIGNED_INDIRECT_REF), type, addr);
          }
          else
@@ -1597,7 +1593,7 @@ namespace llvm
          }
          else
          {
-            llvm_unreachable("type not supported");
+            report_fatal_error("type not supported");
          }
          AccumulateOffset(idx, DL->getTypeSizeInBits(currTy));
          continue;
@@ -2009,7 +2005,7 @@ namespace llvm
                         {
                            val->print(llvm::errs());
                            stream.close();
-                           llvm_unreachable(
+                           report_fatal_error(
                                ("unexpected pointer to variable " + std::string(ValueTyNames[val->getValueID()]))
                                    .c_str());
                         }
@@ -2086,7 +2082,7 @@ namespace llvm
             {
                if(GTI.getStructTypeOrNull())
                {
-                  llvm_unreachable("unexpected condition: struct LowerGetElementPtrOffset");
+                  report_fatal_error("unexpected condition: struct LowerGetElementPtrOffset");
                   // continue;
                }
                // For array or vector indices, scale the index by the size of the type.
@@ -2227,7 +2223,7 @@ namespace llvm
                   return build1(GT(VIEW_CONVERT_EXPR), ltype, rhs);
             }
             else
-               llvm_unreachable("unexpected condition");
+               report_fatal_error("unexpected condition");
          }
       }
       else if(isa<llvm::UndefValue>(operand))
@@ -2246,7 +2242,7 @@ namespace llvm
             operand->print(llvm::errs(), true);
             llvm::errs() << "\n";
             stream.close();
-            llvm_unreachable(
+            report_fatal_error(
                 (std::string("unexpected condition: ") + std::string(ValueTyNames[operand->getValueID()])).c_str());
          }
       }
@@ -2259,7 +2255,7 @@ namespace llvm
          operand->print(llvm::errs(), true);
          llvm::errs() << "\n";
          stream.close();
-         llvm_unreachable(
+         report_fatal_error(
              (std::string("unexpected condition: ") + std::string(ValueTyNames[operand->getValueID()])).c_str());
       }
    }
@@ -2703,7 +2699,7 @@ namespace llvm
       else if(isa<llvm::Function>(llvm_obj))
          return cast<llvm::Function>(llvm_obj)->getBasicBlockList().empty();
       else
-         llvm_unreachable("unexpected case");
+         report_fatal_error("unexpected case");
    }
 
    bool DumpGimpleRaw::TREE_PUBLIC(const void* t) const
@@ -2789,7 +2785,7 @@ namespace llvm
          {
             llvm::errs() << "Size type " << ValueTyNames[arraySize->getValueID()] << "\n";
             stream.close();
-            llvm_unreachable("Plugin error");
+            report_fatal_error("Plugin error");
          }
       }
       else if(TREE_CODE(t) == GT(ORIGVAR_DECL))
@@ -2921,7 +2917,7 @@ namespace llvm
       else if(index == 2)
          return te->op3;
       else
-         llvm_unreachable("unexpected condition");
+         report_fatal_error("unexpected condition");
    }
 
    int64_t DumpGimpleRaw::TREE_INT_CST_LOW(const void* t)
@@ -2962,17 +2958,17 @@ namespace llvm
          case llvm::Type::LabelTyID:
             llvm::errs() << "assignCodeType kind not supported: LabelTyID\n";
             stream.close();
-            llvm_unreachable("Plugin Error");
+            report_fatal_error("Plugin Error");
          case llvm::Type::MetadataTyID:
             return assignCode(ty, GT(ANNOTATE_EXPR));
          case llvm::Type::X86_MMXTyID:
             llvm::errs() << "assignCodeType kind not supported: X86_MMXTyID\n";
             stream.close();
-            llvm_unreachable("Plugin Error");
+            report_fatal_error("Plugin Error");
          case llvm::Type::TokenTyID:
             llvm::errs() << "assignCodeType kind not supported: TokenTyID\n";
             stream.close();
-            llvm_unreachable("Plugin Error");
+            report_fatal_error("Plugin Error");
          case llvm::Type::IntegerTyID:
             return assignCode(ty, GT(INTEGER_TYPE));
          case llvm::Type::FunctionTyID:
@@ -2994,7 +2990,7 @@ namespace llvm
          {
             llvm::errs() << "type id not managed\n";
             stream.close();
-            llvm_unreachable("Plugin error");
+            report_fatal_error("Plugin error");
          }
       }
    }
@@ -3029,7 +3025,7 @@ namespace llvm
       }
       else if(code == GT(GIMPLE_NOP))
       {
-         llvm_unreachable("unexpected");
+         report_fatal_error("unexpected");
          // const gimple_nop* gn = reinterpret_cast<const gimple_nop*>(t);
          // return TREE_TYPE(gn->parm_decl);
       }
@@ -3076,7 +3072,7 @@ namespace llvm
                llvm::errs() << "TREE_TYPE kind not supported: type of type: " << GET_TREE_CODE_NAME(TREE_CODE(t)) << ":"
                             << typeId << " ptr " << (unsigned long long)t << "\n";
                stream.close();
-               llvm_unreachable("Plugin Error");
+               report_fatal_error("Plugin Error");
 
             case llvm::Type::FunctionTyID:
                return assignCodeType(cast<llvm::FunctionType>(ty)->getReturnType());
@@ -3098,7 +3094,7 @@ namespace llvm
             {
                llvm::errs() << "type id not managed\n";
                stream.close();
-               llvm_unreachable("Plugin error");
+               report_fatal_error("Plugin error");
             }
          }
       }
@@ -3131,7 +3127,7 @@ namespace llvm
       if(code == GT(SIGNEDPOINTERTYPE))
          return false;
       if(code == GT(COMPLEX_TYPE))
-         llvm_unreachable("unexpected call to TYPE_UNSIGNED");
+         report_fatal_error("unexpected call to TYPE_UNSIGNED");
       const llvm::Type* ty = reinterpret_cast<const llvm::Type*>(t);
       assert(NormalizeSignedTag(ty)->isIntegerTy());
       return !CheckSignedTag(ty);
@@ -3139,12 +3135,12 @@ namespace llvm
 
    bool DumpGimpleRaw::COMPLEX_FLOAT_TYPE_P(const void*) const
    {
-      llvm_unreachable("unexpected call to COMPLEX_FLOAT_TYPE_P");
+      report_fatal_error("unexpected call to COMPLEX_FLOAT_TYPE_P");
    }
 
    bool DumpGimpleRaw::TYPE_SATURATING(const void*) const
    {
-      llvm_unreachable("unexpected call to COMPLEX_FLOAT_TYPE_P");
+      report_fatal_error("unexpected call to COMPLEX_FLOAT_TYPE_P");
    }
 
    int DumpGimpleRaw::TYPE_PRECISION(const void* t) const
@@ -3186,7 +3182,7 @@ namespace llvm
 #endif
          default:
             llvm::errs() << "TYPE_PRECISION kind not supported\n";
-            llvm_unreachable("Plugin Error");
+            report_fatal_error("Plugin Error");
       }
    }
 
@@ -3226,7 +3222,7 @@ namespace llvm
 
    const void* DumpGimpleRaw::TYPE_VALUES(const void*)
    {
-      llvm_unreachable("unexpected call to TYPE_VALUES");
+      report_fatal_error("unexpected call to TYPE_VALUES");
    }
 
    const void* DumpGimpleRaw::TYPE_NAME(const void* t)
@@ -3398,12 +3394,12 @@ namespace llvm
 
    const void* DumpGimpleRaw::GET_METHOD_TYPE(const llvm::Type*, unsigned int, const void*)
    {
-      llvm_unreachable("unexpected condition");
+      report_fatal_error("unexpected condition");
    }
 
    const void* DumpGimpleRaw::TYPE_METHOD_BASETYPE(const void*)
    {
-      llvm_unreachable("unexpected condition");
+      report_fatal_error("unexpected condition");
    }
 
    const std::list<const void*> DumpGimpleRaw::DECL_ARGUMENTS(const void* t)
@@ -4089,7 +4085,7 @@ namespace llvm
          default:
             llvm::errs() << "CONSTRUCTOR_ELTS kind not supported: " << ValueTyNames[vid] << "\n";
             stream.close();
-            llvm_unreachable("Plugin Error");
+            report_fatal_error("Plugin Error");
       }
    }
 
@@ -4201,7 +4197,7 @@ namespace llvm
       }
       else if(sem == &llvm::APFloat::PPCDoubleDouble())
       {
-         llvm_unreachable("PPCDoubleDouble format not supported in real_to_hexadecimal");
+         report_fatal_error("PPCDoubleDouble format not supported in real_to_hexadecimal");
       }
       else if(sem == &llvm::APFloat::IEEEquad())
       {
@@ -4209,7 +4205,7 @@ namespace llvm
          nbitsMan = 112;
       }
       else
-         llvm_unreachable("unexpected floating point format in real_to_hexadecimal");
+         report_fatal_error("unexpected floating point format in real_to_hexadecimal");
 
       unsigned ExpBiased = API.lshr(nbitsMan).getZExtValue() & ((1U << nbitsExp) - 1);
       int ExpUnbiased =
@@ -4544,17 +4540,21 @@ namespace llvm
 
       auto code = TREE_CODE(g);
       const char* code_name = GET_TREE_CODE_NAME(code);
-#ifdef PRINT_DBG_MSG
+#ifndef NDEBUG
       if(code != GT(GIMPLE_NOP) && code != GT(GIMPLE_PHI_VIRTUAL) && code != GT(GIMPLE_LABEL))
       {
          llvm::Instruction* inst = const_cast<llvm::Instruction*>(reinterpret_cast<const llvm::Instruction*>(g));
          llvm::Function* currentFunction = inst->getFunction();
          PRINT_DBG("@" << code_name << " @" << index << "\n");
-         inst->print(llvm::errs());
-         PRINT_DBG("\n");
          auto& MSSA = GetMSSA(*currentFunction).getMSSA();
          if(MSSA.getMemoryAccess(inst))
-            PRINT_DBG("| " << *MSSA.getMemoryAccess(inst) << "\n");
+         {
+            PRINT_DBG(*inst << " | " << *MSSA.getMemoryAccess(inst) << "\n");
+         }
+         else
+         {
+            PRINT_DBG_VAR("", inst);
+         }
       }
       else
       {
@@ -4591,7 +4591,7 @@ namespace llvm
          case GT(GIMPLE_ASM):
          {
             serialize_string_field("str", gimple_asm_string(g));
-            llvm_unreachable("gimple asm unsupported");
+            report_fatal_error("gimple asm unsupported");
             break;
          }
          case GT(GIMPLE_ASSIGN_ALLOCA):
@@ -4713,7 +4713,7 @@ namespace llvm
                else
                {
                   llvm::errs() << prec1 << "\n";
-                  llvm_unreachable("unsupported floating point precision");
+                  report_fatal_error("unsupported floating point precision");
                }
                auto isNAN_op1 = build2(GT(GT_EXPR), btype, abs_op1, constNAN);
                auto isNAN_op2 = build2(GT(GT_EXPR), btype, abs_op2, constNAN);
@@ -4740,7 +4740,7 @@ namespace llvm
                      rhs = noNAN ? neq : build2(GT(TRUTH_ANDIF_EXPR), btype, ordered, neq);
                   }
                   else
-                     llvm_unreachable("unexpected case");
+                     report_fatal_error("unexpected case");
                }
                else
                {
@@ -4761,7 +4761,7 @@ namespace llvm
                      rhs = noNAN ? neq : build2(GT(TRUTH_ORIF_EXPR), btype, unordered, neq);
                   }
                   else
-                     llvm_unreachable("unexpected case");
+                     report_fatal_error("unexpected case");
                }
                serialize_child("op", rhs);
             }
@@ -4778,7 +4778,7 @@ namespace llvm
                serialize_child("op", rhs);
             }
             else
-               llvm_unreachable("unexpected condition");
+               report_fatal_error("unexpected condition");
             break;
          }
          case GT(GIMPLE_COND):
@@ -4790,7 +4790,7 @@ namespace llvm
             break;
 
          case GT(GIMPLE_GOTO):
-            llvm_unreachable("unexpected GIMPLE_GOTO"); /// serialize_child ("op", gimple_goto_dest (g));
+            report_fatal_error("unexpected GIMPLE_GOTO"); /// serialize_child ("op", gimple_goto_dest (g));
             break;
 
          case GT(GIMPLE_NOPMEM):
@@ -4806,7 +4806,7 @@ namespace llvm
          case GT(GIMPLE_SWITCH):
             serialize_child("op", gimple_switch_index(g));
             serialize_child("op", gimple_switch_vec(g));
-            // llvm_unreachable("not yet supported");
+            // report_fatal_error("not yet supported");
             break;
 
          case GT(GIMPLE_PHI):
@@ -4853,7 +4853,7 @@ namespace llvm
             break;
          }
          default:
-            llvm_unreachable("unexpected gimple statement");
+            report_fatal_error("unexpected gimple statement");
       }
 
       /* Terminate the line.  */
@@ -5150,7 +5150,7 @@ namespace llvm
                break;
 
             default:
-               llvm_unreachable("Unexpected case");
+               report_fatal_error("Unexpected case");
          }
       }
       else if(DECL_P(t))
@@ -5419,7 +5419,7 @@ namespace llvm
             break;
 
          case GT(STRING_CST):
-            llvm_unreachable("Unexpected. Strings should be converted in standard arrays");
+            report_fatal_error("Unexpected. Strings should be converted in standard arrays");
             //           if (TREE_TYPE (t))
             //             serialize_string_cst("strg" , TREE_STRING_POINTER (t), TREE_STRING_LENGTH (t),
             //             TYPE_ALIGN(TREE_TYPE (t)));
@@ -5904,7 +5904,7 @@ namespace llvm
       }
       else
       {
-         llvm_unreachable("unexpected case");
+         report_fatal_error("unexpected case");
       }
 
       // Break up the array into elements.
@@ -6022,7 +6022,7 @@ namespace llvm
             }
             else
             {
-               llvm_unreachable("unexpected case");
+               report_fatal_error("unexpected case");
             }
             for(unsigned i = 0, e = NumElts; i != e; ++i)
             {
@@ -6051,31 +6051,31 @@ namespace llvm
    {
       if(!SI->isSimple())
       {
-         // llvm::errs() << "Store is not simple! Can not evaluate.\n";
+         PRINT_DBG("Store is not simple! Can not evaluate.\n");
          return false; // no volatile/atomic accesses.
       }
 
       if(!dyn_cast<llvm::Constant>(SI->getOperand(1)))
       {
-         // llvm::errs() << "Ptr is not constant.\n";
+         PRINT_DBG("Ptr is not constant.\n");
          return false;
       }
       Ptr = dyn_cast<llvm::Constant>(SI->getOperand(1));
       if(auto* FoldedPtr = llvm::ConstantFoldConstant(Ptr, DL, &TLI))
       {
-         // llvm::errs() << "Folding constant ptr expression: " << *Ptr;
+         PRINT_DBG("Folding constant ptr expression: " << *Ptr);
          Ptr = FoldedPtr;
-         // llvm::errs() << "; To: " << *Ptr << "\n";
+         PRINT_DBG("; To: " << *Ptr << "\n");
       }
       if(!isSimpleEnoughPointerToCommitLocal(Ptr, DL))
       {
          // If this is too complex for us to commit, reject it.
-         // llvm::errs() << "Pointer is too complex for us to evaluate store.";
+         PRINT_DBG("Pointer is too complex for us to evaluate store.");
          return false;
       }
       if(!dyn_cast<llvm::Constant>(SI->getOperand(0)))
       {
-         // llvm::errs() << "Value stored is not constant.\n";
+         PRINT_DBG("Value stored is not constant.\n");
          return false;
       }
       Val = dyn_cast<llvm::Constant>(SI->getOperand(0));
@@ -6083,7 +6083,7 @@ namespace llvm
       {
          if(CE->getOpcode() == llvm::Instruction::BitCast)
          {
-            // llvm::errs() << "Attempting to resolve bitcast on constant ptr.\n";
+            PRINT_DBG("Attempting to resolve bitcast on constant ptr.\n");
             // If we're evaluating a store through a bitcast, then we need
             // to pull the bitcast off the pointer type and push it onto the
             // stored value.
@@ -6117,12 +6117,12 @@ namespace llvm
                }
                else
                {
-                  // llvm::errs() << "Failed to bitcast constant ptr, can not evaluate.\n";
+                  PRINT_DBG("Failed to bitcast constant ptr, can not evaluate.\n");
                   return false;
                }
             }
             Val = NewVal;
-            // llvm::errs() << "Evaluated bitcast: " << *Val << "\n";
+            PRINT_DBG("Evaluated bitcast: " << *Val << "\n");
          }
       }
       if(firstPart)
@@ -6269,7 +6269,7 @@ namespace llvm
                            {
                               llvm::GlobalVariable* GVi = nullptr;
                               llvm::DenseMap<llvm::Constant*, llvm::Constant*> MutatedMemory;
-                              llvm::errs() << "Found a global var that is an invariant: " << *GV << "\n";
+                              PRINT_DBG("Found a global var that is an invariant: " << *GV << "\n");
                               for(llvm::BasicBlock::iterator CurInst = BI->begin(); CurInst != II;)
                               {
                                  llvm::Constant* Val = nullptr;
@@ -6369,7 +6369,7 @@ namespace llvm
                         }
                         else
                         {
-                           llvm::errs() << "Found a global var, but can not treat it as an invariant.\n";
+                           PRINT_DBG("Found a global var, but can not treat it as an invariant.\n");
                         }
                      }
                   }
@@ -6500,9 +6500,7 @@ namespace llvm
                   }
                   if(I->user_empty() && llvm::isInstructionTriviallyDead(I, &TLI))
                   {
-                     llvm::errs() << "this instruction is not used by anyone: ";
-                     I->print(llvm::errs());
-                     llvm::errs() << "\n";
+                     PRINT_DBG_VAR("this instruction is not used by anyone: ", I);
                      deadList.push_back(I);
                      ++curInstIterator;
                      continue;
@@ -6510,9 +6508,7 @@ namespace llvm
                   RangeAnalysis::Range R = RA->getRange(I);
                   if(R.isEmpty())
                   {
-                     llvm::errs() << "this instruction is dead: ";
-                     I->print(llvm::errs());
-                     llvm::errs() << "\n";
+                     PRINT_DBG_VAR("this instruction is dead: ", I);
                      assert(!I->getType()->isVoidTy());
                      I->replaceAllUsesWith(llvm::UndefValue::get(I->getType()));
                      if(llvm::isInstructionTriviallyDead(I, &TLI))
@@ -6529,12 +6525,14 @@ namespace llvm
                      {
                         if(R.isConstant())
                         {
-                           llvm::errs()
-                               << "the value associated with this instruction is constant and could be propagated: ";
+#ifndef NDEBUG
+                           PRINT_DBG(
+                               "the value associated with this instruction is constant and could be propagated: ");
                            I->print(llvm::errs());
-                           llvm::errs() << " -> ";
+                           PRINT_DBG(" -> ");
                            R.print(llvm::errs());
-                           llvm::errs() << "\n";
+                           PRINT_DBG("\n");
+#endif
                            auto cInt = R.getLower().sextOrTrunc(I->getType()->getPrimitiveSizeInBits());
                            auto C = llvm::ConstantInt::get(I->getContext(), cInt);
                            I->replaceAllUsesWith(C);
@@ -6550,12 +6548,14 @@ namespace llvm
                            if(nbitS < nbitU && nbitS < bw && !isSignedResult(I))
                            {
                               assert(bw > nbitS);
-                              llvm::errs() << "the range associated with this unsigned instruction could be reduced "
-                                              "with the signed range: ";
+#ifndef NDEBUG
+                              PRINT_DBG("the range associated with this unsigned instruction could be reduced with the "
+                                        "signed range: ");
                               I->print(llvm::errs());
-                              llvm::errs() << " -> " << R.getBitWidth() << " -> " << nbitS << " -> " << nbitU << " -> ";
+                              PRINT_DBG(" -> " << R.getBitWidth() << " -> " << nbitS << " -> " << nbitU << " -> ");
                               R.print(llvm::errs());
-                              llvm::errs() << "\n";
+                              PRINT_DBG("\n");
+#endif
                               llvm::IRBuilder<> B(curInstIterator->getNextNode());
 
                               auto leftShiftConstant = B.getIntN(bw, bw - nbitS);
@@ -6749,7 +6749,7 @@ namespace llvm
 
       if(RA)
       {
-#ifdef PRINT_DBG_MSG
+#ifndef NDEBUG
          RA->printRanges(M, llvm::errs());
 #endif
          delete RA;

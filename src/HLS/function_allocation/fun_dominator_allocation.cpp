@@ -40,70 +40,47 @@
  * Last modified by $Author$
  *
  */
+#include "fun_dominator_allocation.hpp"
 
 /// Autoheader include
 #include "config_HAVE_EXPERIMENTAL.hpp"
 #include "config_HAVE_FROM_PRAGMA_BUILT.hpp"
 #include "config_HAVE_PRAGMA_BUILT.hpp"
 
-///. include
-#include "Parameter.hpp"
-#include "constant_strings.hpp"
-
-/// Header include
-#include "fun_dominator_allocation.hpp"
-
-/// algorithms/dominance include
 #include "Dominance.hpp"
-
-/// behavior include
+#include "Parameter.hpp"
+#include "application_frontend_flow_step.hpp"
+#include "behavioral_helper.hpp"
 #include "call_graph.hpp"
 #include "call_graph_manager.hpp"
-#include "function_behavior.hpp"
-#include "op_graph.hpp"
-
-/// design_flows include
+#include "constant_strings.hpp"
+#include "cpu_time.hpp"
 #include "design_flow_graph.hpp"
 #include "design_flow_manager.hpp"
+#include "frontend_flow_step_factory.hpp"
+#include "function_behavior.hpp"
+#include "functions.hpp"
+#include "hls.hpp"
+#include "hls_constraints.hpp"
+#include "hls_manager.hpp"
+#include "hls_target.hpp"
+#include "library_manager.hpp"
+#include "op_graph.hpp"
+#include "string_manipulation.hpp"
+#include "technology_flow_step.hpp"
+#include "technology_flow_step_factory.hpp"
+#include "technology_manager.hpp"
+#include "technology_node.hpp"
+#include "tree_helper.hpp"
+#include "tree_manager.hpp"
+#include "tree_node.hpp"
+#include "utility.hpp"
 
-/// design_flows/codesign include
 #if HAVE_PRAGMA_BUILT && HAVE_EXPERIMENTAL
 #include "actor_graph_flow_step.hpp"
 #include "actor_graph_flow_step_factory.hpp"
 #endif
 
-/// frontend_analysis includes
-#include "application_frontend_flow_step.hpp"
-#include "frontend_flow_step_factory.hpp"
-
-/// HLS include
-#include "hls.hpp"
-#include "hls_constraints.hpp"
-#include "hls_manager.hpp"
-#include "hls_target.hpp"
-
-/// HLS/function_allocation includes
-#include "functions.hpp"
-
-/// technology include
-#include "technology_flow_step.hpp"
-#include "technology_flow_step_factory.hpp"
-#include "technology_manager.hpp"
-
-/// technology/physical_library includes
-#include "library_manager.hpp"
-#include "technology_node.hpp"
-
-/// tree include
-#include "behavioral_helper.hpp"
-#include "tree_helper.hpp"
-#include "tree_manager.hpp"
-#include "tree_node.hpp"
-
-/// utility include
-#include "cpu_time.hpp"
-
-#include "string_manipulation.hpp" // for GET_CLASS
 #include <boost/range/adaptor/reversed.hpp>
 
 fun_dominator_allocation::fun_dominator_allocation(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr,
