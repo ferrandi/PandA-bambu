@@ -171,9 +171,6 @@ class parametric_list_based : public Scheduling
    /// memoization table used for connection estimation
    CustomUnorderedMapUnstable<std::pair<vertex, unsigned int>, bool> is_complex;
 
-   /// Number of executions
-   size_t executions_number;
-
    /// reachable proxy from a given function
    std::map<std::string, std::set<std::string>> reachable_proxy_functions;
 
