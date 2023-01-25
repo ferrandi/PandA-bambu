@@ -3481,14 +3481,6 @@ typedef signed long long Slong;
       {
          return to_ulong();
       }
-      __FORCE_INLINE explicit operator long long() const
-      {
-         return to_int64();
-      }
-      __FORCE_INLINE explicit operator unsigned long long() const
-      {
-         return to_uint64();
-      }
       __FORCE_INLINE explicit operator double() const
       {
          return to_double();
