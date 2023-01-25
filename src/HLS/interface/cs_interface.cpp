@@ -158,7 +158,7 @@ void cs_interface::instantiate_component_parallel(const structural_managerRef SM
    }
    else
    {
-      memory_ctrl_model = "memory_ctrl_sigle_input";
+      memory_ctrl_model = "memory_ctrl_single_input";
    }
    std::string memory_ctrl_name = "memory_ctrl_top";
    std::string memory_ctrl_library = HLS->HLS_T->get_technology_manager()->get_library(memory_ctrl_model);
