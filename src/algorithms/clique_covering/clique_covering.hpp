@@ -1640,6 +1640,7 @@ class bipartite_matching_clique_covering : public clique_covering<vertex_type>
                                          COMPATIBILITY_ALL_EDGES, &clique_covering_graph_bulk),
                                      cc_compatibility_graph_vertex_selector<boost_cc_compatibility_graph>()));
 
+      // std::cerr << "cliques.size " << cliques.size() << "\n";
       /// initializes the cliques with empty sets
       for(unsigned int i = 0; i < num_cols; ++i)
       {
@@ -1647,6 +1648,7 @@ class bipartite_matching_clique_covering : public clique_covering<vertex_type>
          cliques.push_back(empty);
       }
       // std::cerr << "num_cols " << num_cols << "\n";
+      // std::cerr << "partitions.size " << partitions.size() << "\n";
       size_t num_rows = num_cols;
       bool restart_bipartite;
       do
@@ -1687,6 +1689,7 @@ class bipartite_matching_clique_covering : public clique_covering<vertex_type>
                      if(cliques[y].find(*v_it) != cliques[y].end())
                      {
                         /// already assigned to a clique
+                        // std::cerr << "already assigned to a clique\n";
                         compatible_exist = true;
                         compatible_column = y;
                         THROW_ASSERT(column_already_assigned.count(y) == 0, "unexpected condition");
@@ -1703,7 +1706,7 @@ class bipartite_matching_clique_covering : public clique_covering<vertex_type>
                   }
                   else
                   {
-                     // std::cerr << "compatible does not exist " << max_num_cols << "\n";
+                     // std::cerr << "compatible does not exist " << max_num_cols << " " << num_cols << "\n";
                      bool added_an_element = false;
                      unsigned to_removed_number = 0;
                      for(unsigned int y = 0; y < num_cols; ++y)
@@ -1712,9 +1715,12 @@ class bipartite_matching_clique_covering : public clique_covering<vertex_type>
                         {
                            CustomOrderedSet<C_vertex> curr_expandend_clique;
                            auto& current_clique = cliques.at(y);
+                           // std::cerr << "current_clique.size=" << current_clique.size() << "y=" << y << "\n";
+                           // std::cerr << "y=" << y << "\n";
                            bool to_be_removed = false;
                            for(auto cv : current_clique)
                            {
+                              // std::cerr << "*v_it=" << *v_it << " cv=" << cv << "\n";
                               auto edge_check = boost::edge(*v_it, cv, *completeCG);
                               if(!edge_check.second)
                               {
@@ -1722,10 +1728,11 @@ class bipartite_matching_clique_covering : public clique_covering<vertex_type>
                                  break;
                               }
                            }
-                           if(!to_be_removed)
+                           if(!to_be_removed && current_clique.size())
                            {
                               curr_expandend_clique.insert(current_clique.begin(), current_clique.end());
                               curr_expandend_clique.insert(*v_it);
+                              // std::cerr << "curr_expandend_clique.size=" << curr_expandend_clique.size() << "\n";
                               C_vertex vertex_to_be_removed;
                               to_be_removed = fc.select_candidate_to_remove(curr_expandend_clique, vertex_to_be_removed,
                                                                             uv2v, *completeCG);
@@ -1746,8 +1753,8 @@ class bipartite_matching_clique_covering : public clique_covering<vertex_type>
                         }
                      }
                      min_to_be_removed = std::min(min_to_be_removed, to_removed_number);
-                     // std::cerr << "to_removed_number=" << to_removed_number << " p_it->second.size() "
-                     // << p_it->second.size() << " num_columns " << num_cols << "\n";
+                     // std::cerr << "to_removed_number=" << to_removed_number << " p_it->second.size() " <<
+                     // p_it->second.size() << " num_columns " << num_cols << "\n";
                      if(!added_an_element)
                      {
                         restart_bipartite = true;
