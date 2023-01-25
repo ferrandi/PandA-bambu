@@ -428,11 +428,11 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
          {
             continue;
          }
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing operation " + GET_NAME(dfgRef, op));
          if(GET_TYPE(dfgRef, op) & (TYPE_VPHI))
          {
             continue;
          }
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing operation " + GET_NAME(dfgRef, op));
          const auto cstep = sch->get_cstep(op).second;
          if(GET_TYPE(dfgRef, op) & (TYPE_PHI))
          {
