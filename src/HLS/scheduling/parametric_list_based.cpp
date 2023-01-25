@@ -2541,7 +2541,7 @@ DesignFlowStep_Status parametric_list_based::InternalExec()
       }
 
       PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level,
-                    "performing scheduling of basic block " + STR(bbg->CGetBBNodeInfo(*vi)->block->number));
+                    "performing scheduling of basic block " + STR(BBI->block->number));
       PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level,
                     "  .operations: " + STR(operations.size()) + " LPBB=" + (isLPBB ? "T" : "F"));
       if(isLPBB)
