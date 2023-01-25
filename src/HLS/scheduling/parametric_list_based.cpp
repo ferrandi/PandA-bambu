@@ -2541,7 +2541,7 @@ DesignFlowStep_Status parametric_list_based::InternalExec()
       }
 
       PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level,
-                    "performing scheduling of basic block " + STR(BBI->block->number));
+                    "performing scheduling of basic block " + STR(bbg->CGetBBNodeInfo(*vi)->block->number));
       PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level,
                     "  .operations: " + STR(operations.size()) + " LPBB=" + (isLPBB ? "T" : "F"));
       if(isLPBB)
@@ -2650,6 +2650,13 @@ DesignFlowStep_Status parametric_list_based::InternalExec()
       min_slack = std::min(min_slack, slack);
    }
    HLS->allocation_information->setMinimumSlack(min_slack);
+
+   if(output_level <= OUTPUT_LEVEL_PEDANTIC)
+   {
+      INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "");
+   }
+   INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
+                  "-->Scheduling Information of function " + FB->CGetBehavioralHelper()->get_function_name() + ":");
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Number of control steps: " + STR(ctrl_steps));
 
    if(output_level >= OUTPUT_LEVEL_VERY_PEDANTIC)
