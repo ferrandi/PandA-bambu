@@ -417,6 +417,7 @@ class liveness
    unsigned GetStepWrite(vertex v, vertex def_op) const;
    std::pair<bool, unsigned> GetStepIn(unsigned int BB_index, unsigned int var, vertex v) const;
    unsigned GetStepPhiIn(vertex op, unsigned int var) const;
+   unsigned GetStepPhiOut(vertex op, unsigned int var) const;
    unsigned GetStepOut(unsigned int var) const;
    unsigned GetStepDef(unsigned int BB_index, unsigned int var) const;
    std::pair<bool, unsigned> GetPrevStep(unsigned int BB_index, unsigned int var, unsigned curr_step) const;

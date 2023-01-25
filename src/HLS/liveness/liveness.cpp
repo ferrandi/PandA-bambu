@@ -375,6 +375,34 @@ unsigned liveness::GetStepPhiIn(vertex op, unsigned int var) const
    }
 }
 
+unsigned liveness::GetStepPhiOut(vertex op, unsigned int var) const
+{
+   auto def_op = get_op_where_defined(var);
+   auto def_op_BB_index = vertex_BB.at(def_op);
+   auto op_BB_index = vertex_BB.at(op);
+   if(BB2MaxStep.at(def_op_BB_index))
+   {
+      /// the def state is pipelined
+      if(def_op_BB_index == op_BB_index)
+      {
+         THROW_ASSERT(BB2II.count(op_BB_index) && BB2II.at(op_BB_index), "unxpected condition");
+         THROW_ASSERT(op_step.count(def_op), "unexpected condition");
+         auto II = BB2II.at(op_BB_index);
+         auto step = op_step.at(def_op);
+         auto offset = II - step % II;
+         return step + offset;
+      }
+      else
+      {
+         return BB2MaxStep.at(def_op_BB_index) + 1;
+      }
+   }
+   else
+   {
+      return 0;
+   }
+}
+
 unsigned liveness::GetStepWrite(vertex v, vertex def_op) const
 {
    auto def_op_BB_index = vertex_BB.at(def_op);

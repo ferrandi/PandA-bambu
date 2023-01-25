@@ -130,15 +130,15 @@ static void update_liveout_with_prev(const HLS_managerRef HLSMgr, hlsRef HLS, co
       {
          if(HLSMgr->is_register_compatible(scalar_use))
          {
+            auto isAPhi = GET_TYPE(data, exec_op) & TYPE_PHI;
             THROW_ASSERT(HLS->Rliv->has_op_where_defined(scalar_use), "unexpected");
             auto def_op = HLS->Rliv->get_op_where_defined(scalar_use);
             auto not_have_def = std::find(state_info->ending_operations.begin(), state_info->ending_operations.end(),
                                           def_op) == state_info->ending_operations.end();
-            if(not_have_def || HLS->STG->not_same_step(prev_state, def_op, exec_op))
+            if(isAPhi || not_have_def || HLS->STG->not_same_step(prev_state, def_op, exec_op))
             {
-               unsigned int step = GET_TYPE(data, exec_op) & TYPE_PHI ?
-                                       HLS->Rliv->GetStepPhiIn(exec_op, scalar_use) :
-                                       HLS->Rliv->GetStep(prev_state, exec_op, scalar_use, true); /// To be checked
+               unsigned int step = isAPhi ? HLS->Rliv->GetStepPhiOut(exec_op, scalar_use) :
+                                            HLS->Rliv->GetStep(prev_state, exec_op, scalar_use, true); /// To be checked
                // const FunctionBehaviorConstRef FB = HLSMgr->CGetFunctionBehavior(funId);
                // const BehavioralHelperConstRef BH = FB->CGetBehavioralHelper();
                // std::cerr << BH->PrintVariable(scalar_use) << "-" << step << "\n";
@@ -419,10 +419,10 @@ DesignFlowStep_Status FSM_NI_SSA_liveness::InternalExec()
                {
                   for(const auto& lo : HLS->Rliv->get_live_out(prev_state))
                   {
-                     const BehavioralHelperConstRef BH = FB->CGetBehavioralHelper();
                      auto pre_pair = HLS->Rliv->GetPrevStep(bb_index, lo.first, lo.second);
                      if(pre_pair.first)
                      {
+                        // const BehavioralHelperConstRef BH = FB->CGetBehavioralHelper();
                         // std::cerr << BH->PrintVariable(lo.first) << "-" << pre_pair.second << "\n";
                         HLS->Rliv->set_live_out(rosl, lo.first, pre_pair.second);
                      }
