@@ -711,7 +711,8 @@ void mux_connection_binding::connect_to_registers(vertex op, const OpGraphConstR
                {
                   THROW_ERROR("not expected from " + HLS->Rliv->get_name(state_src) + " to " +
                               HLS->Rliv->get_name(state_tgt) + " " +
-                              HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->PrintVariable(tree_var));
+                              HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->PrintVariable(tree_var) +
+                              " step=" + STR(step_in));
                }
             }
          }
