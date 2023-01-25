@@ -610,7 +610,8 @@ struct slack_based_filtering : public filter_clique<vertex>
                                    const CustomUnorderedMap<C_vertex, vertex>& converter,
                                    const cc_compatibility_graph& cg) const override
    {
-      THROW_ASSERT(!candidate_clique.empty(), "candidate clique cannot be empty");
+      THROW_ASSERT(candidate_clique.size() > 1, "candidate clique size must have more than one element");
+      // std::cerr << "candidate_clique.size=" << candidate_clique.size() << "\n";
       double min_slack = std::numeric_limits<double>::max();
       C_vertex min_slack_vertex = *candidate_clique.begin();
       vertex current_v;
@@ -674,38 +675,39 @@ struct slack_based_filtering : public filter_clique<vertex>
             }
          }
       }
-      // std::cerr << "Min_slack " << min_slack << " mux_delay " << mux_delay << std::endl;
+      // std::cerr << "Min_slack " << min_slack << " total_muxes=" << total_muxes
+      //          << " mux_area_estimation=" << mux_area_estimation << " area_resource=" << area_resource
+      //          << " mux_time_estimation=" << mux_time_estimation << std::endl;
       /// special case
       if(total_muxes > 0 && min_slack < 0)
       {
          v = min_slack_vertex;
-         // std::cerr << "Removed0 " << GET_NAME(data, converter.find(v)->second) << " Slack "<< min_slack << "
-         // mux_delay " << mux_delay << std::endl;
+         // std::cerr << "Removed0 " << GET_NAME(data, converter.find(v)->second) << " Slack " << min_slack <<
+         // std::endl;
          return true;
       }
-      /// we accept solutions sharing resources without introducing muxes
 
       if(total_muxes > 0 &&
          ((mux_area_estimation + area_resource) >=
           (static_cast<double>(candidate_clique.size() + (total_muxes <= n_shared ? n_shared : 0)) * area_resource)))
       {
          v = min_slack_vertex;
-         // std::cerr << "Removed1 " << GET_NAME(data, converter.find(v)->second) << " Slack "<< min_slack << "
-         // mux_delay " << mux_delay << std::endl;
+         // std::cerr << "Removed1 " << GET_NAME(data, converter.find(v)->second) << " Slack " << min_slack
+         //          << "total_muxes " << total_muxes << "n_shared=" << n_shared << " area_resource=" << area_resource
+         //          << std::endl;
          return true;
       }
 
       if(total_muxes > 0 && mux_time_estimation > min_slack)
       {
          v = min_slack_vertex;
-         // std::cerr << "Removed " << GET_NAME(data, converter.find(v)->second) << " Slack "<< min_slack << " levels "
-         // << levels_in << " mux_delay " << mux_delay << std::endl;
+         // std::cerr << "Removed " << GET_NAME(data, converter.find(v)->second) << " Slack " << min_slack << std::endl;
          return true;
       }
       else
       {
-         // std::cerr << "No vertex removed " << " Slack "<< min_slack << " levels " << levels_in << " mux_delay " <<
-         // mux_delay  << std::endl;
+         // std::cerr << "No vertex removed "
+         //          << " Slack " << min_slack << std::endl;
          return false;
       }
    }
