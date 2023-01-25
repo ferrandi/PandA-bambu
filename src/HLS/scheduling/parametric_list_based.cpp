@@ -92,6 +92,7 @@
 #include "call_graph_manager.hpp" // for CallGraphManager, CallGrap...
 #include "fileIO.hpp"
 #include "string_manipulation.hpp" // for GET_CLASS
+#include "utility.hpp"
 
 #if !HAVE_UNORDERED
 PrioritySorter::PrioritySorter(refcount<priority_data<int>> _priority, const OpGraphConstRef _op_graph)
@@ -2230,7 +2231,22 @@ DesignFlowStep_Status parametric_list_based::InternalExec()
    {
       if(loop->loop_type & PIPELINABLE_LOOP)
       {
-         LPBB.insert(loop->GetHeader());
+         if(parameters->IsParameter("LP-BB-list"))
+         {
+            auto LP_BB_list = parameters->GetParameter<std::string>("LP-BB-list");
+            auto lbs = convert_string_to_vector<int>(LP_BB_list, ",");
+            auto bb = loop->GetHeader();
+            auto BBI = bbg->CGetBBNodeInfo(bb);
+            // std::set<unsigned> lbs = {55 /*, 67, 72, 78, 88, 91*/};
+            if(std::find(lbs.begin(), lbs.end(), BBI->block->number) != lbs.end())
+            {
+               LPBB.insert(loop->GetHeader());
+            }
+         }
+         else
+         {
+            LPBB.insert(loop->GetHeader());
+         }
       }
    }
    /// initialize topological_sorted_functions
