@@ -368,8 +368,7 @@ parametric_list_based::parametric_list_based(const ParameterConstRef _parameters
       parametric_list_based_metric(GetPointer<const ParametricListBasedSpecialization>(hls_flow_step_specialization)
                                        ->parametric_list_based_metric),
       ending_time(OpGraphConstRef()),
-      clock_cycle(0.0),
-      executions_number(0)
+      clock_cycle(0.0)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
 }
@@ -379,15 +378,6 @@ parametric_list_based::~parametric_list_based() = default;
 void parametric_list_based::ComputeRelationships(DesignFlowStepSet& relationship,
                                                  const DesignFlowStep::RelationshipType relationship_type)
 {
-#if 0
-   if(relationship_type == INVALIDATION_RELATIONSHIP and (static_cast<HLSFlowStep_Type>(parameters->getOption<unsigned int>(OPT_scheduling_algorithm))) == HLSFlowStep_Type::SDC_SCHEDULING and executions_number == 1)
-   {
-      vertex frontend_step = design_flow_manager.lock()->GetDesignFlowStep(FunctionFrontendFlowStep::ComputeSignature(FrontendFlowStepType::MULTI_WAY_IF, funId));
-      const auto design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
-      const auto design_flow_step = frontend_step != NULL_VERTEX ? design_flow_graph->CGetDesignFlowStepInfo(frontend_step)->design_flow_step : GetPointer<const FrontendFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("Frontend"))->CreateFunctionFrontendFlowStep(FrontendFlowStepType::MULTI_WAY_IF, funId);
-      relationship.insert(design_flow_step);
-   }
-#endif
    schedulingBaseStep::ComputeRelationships(relationship, relationship_type);
 }
 
@@ -2216,7 +2206,6 @@ void parametric_list_based::compute_function_topological_order()
 
 DesignFlowStep_Status parametric_list_based::InternalExec()
 {
-   executions_number++;
    long int step_time = 0;
    if(output_level >= OUTPUT_LEVEL_MINIMUM and output_level <= OUTPUT_LEVEL_PEDANTIC)
    {
@@ -2366,9 +2355,6 @@ DesignFlowStep_Status parametric_list_based::InternalExec()
    }
    HLS->allocation_information->setMinimumSlack(min_slack);
 
-#if 0
-   if(executions_number > 0)
-#endif
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Number of control steps: " + STR(ctrl_steps));
 
    if(output_level >= OUTPUT_LEVEL_VERY_PEDANTIC)
@@ -2409,105 +2395,6 @@ DesignFlowStep_Status parametric_list_based::InternalExec()
       document.write_to_file_formatted(GetPath(function_name + "_scheduling.xml"));
    }
    return DesignFlowStep_Status::SUCCESS;
-}
-
-void parametric_list_based::update_vertices_timing(const CustomUnorderedSet<vertex>& operations,
-                                                   const ControlStep vertex_cstep, vertex current_v,
-                                                   const ScheduleConstRef schedule,
-                                                   std::list<vertex>& vertices_analyzed, fu_bindingRef res_binding,
-                                                   const OpGraphConstRef opDFG)
-{
-   /// compute the set of operations on the clock frontier
-   std::queue<vertex> fifo;
-   update_starting_ending_time(operations, current_v, res_binding, opDFG, schedule);
-   vertices_analyzed.push_back(current_v);
-   InEdgeIterator eo, eo_end;
-   for(boost::tie(eo, eo_end) = boost::in_edges(current_v, *opDFG); eo != eo_end; eo++)
-   {
-      auto v = boost::source(*eo, *opDFG);
-      if(operations.find(v) == operations.end())
-      {
-         fifo.push(v);
-      }
-   }
-   while(!fifo.empty())
-   {
-      vertex current_op = fifo.front();
-      fifo.pop();
-      if(vertex_cstep - 1u <= schedule->get_cstep(current_op).second)
-      {
-         vertices_analyzed.push_back(current_op);
-         update_starting_ending_time(operations, current_op, res_binding, opDFG, schedule);
-         for(boost::tie(eo, eo_end) = boost::in_edges(current_op, *opDFG); eo != eo_end; eo++)
-         {
-            auto v = boost::source(*eo, *opDFG);
-            if(operations.find(v) == operations.end())
-            {
-               fifo.push(v);
-            }
-         }
-      }
-   }
-}
-
-void parametric_list_based::update_starting_ending_time(const CustomUnorderedSet<vertex>& operations,
-                                                        vertex candidate_v, fu_bindingRef res_binding,
-                                                        OpGraphConstRef opDFG, const ScheduleConstRef schedule)
-{
-   unsigned int fu_type = res_binding->get_assign(candidate_v);
-   if(!HLS->allocation_information->is_operation_bounded(opDFG, candidate_v, fu_type))
-   {
-      return;
-   }
-   PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "      update starting ending time " + GET_NAME(opDFG, candidate_v));
-   PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "      initial starting time " + STR(starting_time(candidate_v)));
-   PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level,
-                 "      initial ending time " + STR(ending_time.find(candidate_v)->second));
-   OutEdgeIterator eo, eo_end;
-   const double DOUBLE_BIG_NUM = std::numeric_limits<double>::max();
-   double current_ending_time;
-   current_ending_time = DOUBLE_BIG_NUM;
-   for(boost::tie(eo, eo_end) = boost::out_edges(candidate_v, *opDFG); eo != eo_end; eo++)
-   {
-      vertex target = boost::target(*eo, *opDFG);
-      if(operations.find(target) != operations.end())
-      {
-         PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level,
-                       "      starting time target " + GET_NAME(opDFG, target) + " = " + STR(starting_time(target)));
-         current_ending_time = std::min(current_ending_time, starting_time(target));
-      }
-   }
-   PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "      current_ending_time = " + STR(current_ending_time));
-
-   double ctrl_step_border =
-       (from_strongtype_cast<double>(schedule->get_cstep_end(candidate_v).second) + 1) * clock_cycle - EPSILON;
-   PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "      control step border = " + STR(ctrl_step_border));
-
-   bool is_pipelined = HLS->allocation_information->get_initiation_time(fu_type, candidate_v) != 0;
-   /// non-pipelined operations move towards the control step border
-   if(!is_pipelined)
-   {
-      THROW_ASSERT(ending_time[candidate_v] >= starting_time[candidate_v], "unexpected starting/ending time");
-      current_ending_time = std::min(current_ending_time, ctrl_step_border);
-      THROW_ASSERT((current_ending_time - (ending_time[candidate_v] - starting_time[candidate_v])) / clock_cycle >=
-                       floor(starting_time[candidate_v] / clock_cycle),
-                   "unexpected starting time");
-      starting_time[candidate_v] = current_ending_time - (ending_time[candidate_v] - starting_time[candidate_v]);
-      ending_time[candidate_v] = current_ending_time;
-      PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level,
-                    "      non-pipelined op new starting time = " + STR(starting_time[candidate_v]));
-      PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level,
-                    "      non-pipelined op new ending time   = " + STR(ending_time[candidate_v]));
-   }
-   else
-   {
-      double stage_period = ending_time[candidate_v] - clock_cycle * floor(ending_time[candidate_v] / clock_cycle);
-      starting_time[candidate_v] = (floor(starting_time[candidate_v] / clock_cycle) + 1) * clock_cycle - stage_period;
-      PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level,
-                    "      pipelined op new starting time = " + STR(starting_time[candidate_v]));
-      PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level,
-                    "      pipelined op same ending time   = " + STR(ending_time[candidate_v]));
-   }
 }
 
 bool parametric_list_based::store_in_chaining_with_load_in(const CustomUnorderedSet<vertex>& operations,

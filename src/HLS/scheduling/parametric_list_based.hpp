@@ -171,9 +171,6 @@ class parametric_list_based : public schedulingBaseStep
    /// memoization table used for connection estimation
    CustomUnorderedMapUnstable<std::pair<vertex, unsigned int>, bool> is_complex;
 
-   /// Number of executions
-   size_t executions_number;
-
    /// reachable proxy from a given function
    std::map<std::string, std::set<std::string>> reachable_proxy_functions;
 
@@ -192,24 +189,6 @@ class parametric_list_based : public schedulingBaseStep
        double& current_starting_time, double& current_ending_time, double& stage_period, bool& cannot_be_chained,
        fu_bindingRef res_binding, const ScheduleConstRef schedule, double& phi_extra_time, double setup_hold_time,
        CustomMap<std::pair<unsigned int, unsigned int>, double>& local_connection_map);
-
-   /**
-    * update starting and ending time by moving candidate_v as late as possible without increasing the whole latency
-    */
-   void update_starting_ending_time(const CustomUnorderedSet<vertex>& operations, vertex candidate_v,
-                                    fu_bindingRef res_binding, OpGraphConstRef opDFG, const ScheduleConstRef schedule);
-
-   /**
-    * @brief update the starting and ending time of the vertices scheduled in the same cs of current_v
-    * @param vertex_cstep is the control step of vertex current_v before its rescheduling
-    * @param current_v is the current vertex
-    * @param schedule is the current scheduling
-    * @param vertices_analyzed is the set of vertices updated
-    * @param res_binding is the current resource binding
-    */
-   void update_vertices_timing(const CustomUnorderedSet<vertex>& operations, const ControlStep vertex_cstep,
-                               vertex current_v, const ScheduleConstRef schedule, std::list<vertex>& vertices_analyzed,
-                               fu_bindingRef res_binding, const OpGraphConstRef opDFG);
 
    /**
     * Update the resource map

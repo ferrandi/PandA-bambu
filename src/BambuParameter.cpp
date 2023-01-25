@@ -242,8 +242,7 @@
 #define OPT_POWER_OPTIMIZATION (1 + OPT_DONE_NAME)
 #define OPT_PRAGMA_PARSE (1 + OPT_POWER_OPTIMIZATION)
 #define OPT_PRETTY_PRINT (1 + OPT_PRAGMA_PARSE)
-#define OPT_POST_RESCHEDULING (1 + OPT_PRETTY_PRINT)
-#define OPT_REGISTER_ALLOCATION (1 + OPT_POST_RESCHEDULING)
+#define OPT_REGISTER_ALLOCATION (1 + OPT_PRETTY_PRINT)
 #define OPT_REGISTERED_INPUTS (1 + OPT_REGISTER_ALLOCATION)
 #define OPT_FSM_ENCODING (1 + OPT_REGISTERED_INPUTS)
 #define OPT_RESET_TYPE (1 + OPT_FSM_ENCODING)
@@ -406,8 +405,6 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "            0 - Dynamic mobility (default)\n"
       << "            1 - Static mobility\n"
       << "            2 - Priority-fixed mobility\n\n"
-      << "    --post-rescheduling\n"
-      << "        Perform post rescheduling to better distribute resources.\n\n"
 #if HAVE_ILP_BUILT
 #if HAVE_EXPERIMENTAL
       << "    --ilp-solver=<solver>\n"
@@ -1168,7 +1165,6 @@ int BambuParameter::Exec()
       {"pipelining", optional_argument, nullptr, 'p'},
       {"serialize-memory-accesses", no_argument, nullptr, OPT_SERIALIZE_MEMORY_ACCESSES},
       {PAR_LIST_BASED_OPT, optional_argument, nullptr, OPT_LIST_BASED}, // no short option
-      {"post-rescheduling", no_argument, nullptr, OPT_POST_RESCHEDULING},
 #if HAVE_ILP_BUILT
       {"ilp-solver", required_argument, nullptr, OPT_ILP_SOLVER},
       {"ilp", no_argument, nullptr, OPT_ILP},
@@ -1566,11 +1562,6 @@ int BambuParameter::Exec()
             {
                setOption(OPT_scheduling_priority, optarg);
             }
-            break;
-         }
-         case OPT_POST_RESCHEDULING:
-         {
-            setOption(OPT_post_rescheduling, true);
             break;
          }
 #if HAVE_EXPERIMENTAL
