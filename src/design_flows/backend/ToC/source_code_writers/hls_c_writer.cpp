@@ -721,11 +721,11 @@ void HLSCWriter::WriteExpectedResults(const BehavioralHelperConstRef BH,
          const auto param_interface = has_specifier ? DesignInterfaceSpecifier.at(fname).at(param) : "";
          const auto param_cast = "((" + arg_typename + ")" + param + ")";
 
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                        "---Pointer parameter: " + arg_typename + " -> " + STR(ptd_type_bitsize) + " bits");
          if(interface_type == HLSFlowStep_Type::INFERRED_INTERFACE_GENERATION && param_interface != "m_axi")
          {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                           "---Interface: " + (param_interface.size() ? ("|" + param_interface + "| ") : "") +
-                               arg_typename);
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Interface: " + param_interface);
             const auto splitted = SplitString(test_v, ",");
 
             indented_output_stream->Append("for (__testbench_index = 0; __testbench_index < " + STR(splitted.size()) +
@@ -1021,7 +1021,7 @@ void HLSCWriter::WriteSimulatorInitMemory(const unsigned int function_id)
          }
 
          /// Retrieve the space to be reserved in memory
-         const auto reserved_mem_bytes = [&]() -> size_t {
+         const auto param_mem_size = [&]() -> size_t {
             if(is_memory)
             {
                const auto ret_value = tree_helper::Size(TM->CGetTreeReindex(l)) / 8;
@@ -1035,7 +1035,7 @@ void HLSCWriter::WriteSimulatorInitMemory(const unsigned int function_id)
             }
          }();
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                        "---Symbol '" + param + "' reserved memory " + STR(reserved_mem_bytes) + " - Test vector is " +
+                        "---Symbol '" + param + "' reserved memory " + STR(param_mem_size) + " - Test vector is " +
                             test_v);
 
          if(binary_test_v)
@@ -1270,13 +1270,13 @@ void HLSCWriter::WriteSimulatorInitMemory(const unsigned int function_id)
                ++printed_bytes;
                indented_output_stream->Append("fprintf(__bambu_testbench_fp, \"m" + tail_padding + "\\n\");\n");
             }
-            THROW_ASSERT(reserved_mem_bytes >= printed_bytes,
-                         "Memory initialization overflow: " + STR(reserved_mem_bytes) + " were reserved while " +
-                             STR(printed_bytes) + " were allocated.");
-            if(reserved_mem_bytes > printed_bytes)
+            THROW_ASSERT(param_mem_size >= printed_bytes, "Memory initialization overflow: " + STR(param_mem_size) +
+                                                              " were reserved while " + STR(printed_bytes) +
+                                                              " were allocated.");
+            if(param_mem_size > printed_bytes)
             {
-               indented_output_stream->Append("// reserved_mem_bytes > printed_bytes\n");
-               WriteZeroedBytes(reserved_mem_bytes - printed_bytes);
+               indented_output_stream->Append("// param_mem_size > printed_bytes\n");
+               WriteZeroedBytes(param_mem_size - printed_bytes);
             }
          }
          else
@@ -1284,7 +1284,7 @@ void HLSCWriter::WriteSimulatorInitMemory(const unsigned int function_id)
             /// Call the parser to translate C initialization to values.txt initialization
             const auto type = tree_helper::CGetType(TM->CGetTreeReindex(l));
             const CInitializationParserFunctorRef c_initialization_parser_functor(
-                new MemoryInitializationCWriter(indented_output_stream, TM, BH, reserved_mem_bytes, type,
+                new MemoryInitializationCWriter(indented_output_stream, TM, BH, param_mem_size, type,
                                                 TestbenchGeneration_MemoryType::MEMORY_INITIALIZATION, Param));
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                            "---Parsing initialization of " + param + "(" + GET_CONST_NODE(type)->get_kind_text() +
@@ -1295,10 +1295,10 @@ void HLSCWriter::WriteSimulatorInitMemory(const unsigned int function_id)
          THROW_ASSERT(hls_c_backend_information->HLSMgr->RSim->param_next_off.count(v_idx), "");
          THROW_ASSERT(hls_c_backend_information->HLSMgr->RSim->param_next_off.at(v_idx).count(l), "");
          const auto next_object_offset = hls_c_backend_information->HLSMgr->RSim->param_next_off.at(v_idx).at(l);
-         if(next_object_offset > reserved_mem_bytes)
+         if(next_object_offset > param_mem_size)
          {
-            indented_output_stream->Append("// next_object_offset > reserved_mem_bytes\n");
-            WriteZeroedBytes(next_object_offset - reserved_mem_bytes);
+            indented_output_stream->Append("// next_object_offset > param_mem_size\n");
+            WriteZeroedBytes(next_object_offset - param_mem_size);
          }
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Considered memory variable '" + param + "'");
       }

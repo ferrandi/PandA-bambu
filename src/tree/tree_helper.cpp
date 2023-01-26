@@ -4313,27 +4313,27 @@ std::string tree_helper::return_qualifier_prefix(const TreeVocabularyTokenTypes_
    {
       return "r_";
    }
-   if(quals == TreeVocabularyTokenTypes_TokenEnum::TOK_QUAL_V)
+   else if(quals == TreeVocabularyTokenTypes_TokenEnum::TOK_QUAL_V)
    {
       return "v_";
    }
-   if(quals == TreeVocabularyTokenTypes_TokenEnum::TOK_QUAL_VR)
+   else if(quals == TreeVocabularyTokenTypes_TokenEnum::TOK_QUAL_VR)
    {
       return "vr_";
    }
-   if(quals == TreeVocabularyTokenTypes_TokenEnum::TOK_QUAL_C)
+   else if(quals == TreeVocabularyTokenTypes_TokenEnum::TOK_QUAL_C)
    {
       return "c_";
    }
-   if(quals == TreeVocabularyTokenTypes_TokenEnum::TOK_QUAL_CR)
+   else if(quals == TreeVocabularyTokenTypes_TokenEnum::TOK_QUAL_CR)
    {
       return "cr_";
    }
-   if(quals == TreeVocabularyTokenTypes_TokenEnum::TOK_QUAL_CV)
+   else if(quals == TreeVocabularyTokenTypes_TokenEnum::TOK_QUAL_CV)
    {
       return "cv_";
    }
-   if(quals == TreeVocabularyTokenTypes_TokenEnum::TOK_QUAL_CVR)
+   else if(quals == TreeVocabularyTokenTypes_TokenEnum::TOK_QUAL_CVR)
    {
       return "cvr_";
    }
@@ -4343,31 +4343,35 @@ std::string tree_helper::return_qualifier_prefix(const TreeVocabularyTokenTypes_
 
 std::string tree_helper::return_C_qualifiers(const TreeVocabularyTokenTypes_TokenEnum quals, bool real_const)
 {
-   if(quals == TreeVocabularyTokenTypes_TokenEnum::TOK_QUAL_R)
+   if(quals == TreeVocabularyTokenTypes_TokenEnum::FIRST_TOKEN)
+   {
+      return "";
+   }
+   else if(quals == TreeVocabularyTokenTypes_TokenEnum::TOK_QUAL_R)
    {
       return "__restrict__ ";
    }
-   if(quals == TreeVocabularyTokenTypes_TokenEnum::TOK_QUAL_V)
+   else if(quals == TreeVocabularyTokenTypes_TokenEnum::TOK_QUAL_V)
    {
       return "volatile ";
    }
-   if(quals == TreeVocabularyTokenTypes_TokenEnum::TOK_QUAL_VR)
+   else if(quals == TreeVocabularyTokenTypes_TokenEnum::TOK_QUAL_VR)
    {
       return "volatile __restrict__ ";
    }
-   if(quals == TreeVocabularyTokenTypes_TokenEnum::TOK_QUAL_C)
+   else if(quals == TreeVocabularyTokenTypes_TokenEnum::TOK_QUAL_C)
    {
       return real_const ? "const " : "/*const*/ ";
    }
-   if(quals == TreeVocabularyTokenTypes_TokenEnum::TOK_QUAL_CR)
+   else if(quals == TreeVocabularyTokenTypes_TokenEnum::TOK_QUAL_CR)
    {
       return (real_const ? "const" : "/*const*/") + std::string(" __restrict__ ");
    }
-   if(quals == TreeVocabularyTokenTypes_TokenEnum::TOK_QUAL_CV)
+   else if(quals == TreeVocabularyTokenTypes_TokenEnum::TOK_QUAL_CV)
    {
       return (real_const ? "const" : "/*const*/") + std::string(" volatile ");
    }
-   if(quals == TreeVocabularyTokenTypes_TokenEnum::TOK_QUAL_CVR)
+   else if(quals == TreeVocabularyTokenTypes_TokenEnum::TOK_QUAL_CVR)
    {
       return (real_const ? "const" : "/*const*/") + std::string(" volatile __restrict__ ");
    }
@@ -5199,13 +5203,16 @@ std::string tree_helper::PrintType(const tree_managerConstRef& TM, const tree_no
       if(node_var->get_kind() == var_decl_K)
       {
          const auto vd = GetPointerS<const var_decl>(node_var);
-         if(vd->extern_flag && print_storage)
+         if(print_storage)
          {
-            res += "extern ";
-         }
-         if((vd->static_flag || vd->static_static_flag) && print_storage)
-         {
-            res += "static ";
+            if(vd->extern_flag)
+            {
+               res += "extern ";
+            }
+            if(vd->static_flag || vd->static_static_flag)
+            {
+               res += "static ";
+            }
          }
       }
    }
@@ -5254,8 +5261,8 @@ std::string tree_helper::PrintType(const tree_managerConstRef& TM, const tree_no
                {
                   res += ", ";
                }
-               res = res + PrintType(TM, CGetType(fd->list_of_args[i]), global, print_qualifiers, print_storage,
-                                     fd->list_of_args[i], vppf);
+               res += PrintType(TM, CGetType(fd->list_of_args[i]), global, print_qualifiers, print_storage,
+                                fd->list_of_args[i], vppf);
             }
          }
          else if(TM->get_implementation_node(node_type->index) &&
@@ -5363,29 +5370,18 @@ std::string tree_helper::PrintType(const tree_managerConstRef& TM, const tree_no
       case type_pack_expansion_K:
       {
          const auto tn = GetPointerS<const type_node>(node_type);
-         const auto quals = tn->qual;
          /* const internally are not considered as constant...*/
-         if(quals != TreeVocabularyTokenTypes_TokenEnum::FIRST_TOKEN)
+         if(node_var && !tn->name)
          {
-            if(node_var && !tn->name)
-            {
-               /// Global variables or parameters
-               if((GetPointer<const var_decl>(node_var) &&
-                   (!(GetPointer<const var_decl>(node_var)->scpe) ||
-                    (GET_CONST_NODE(GetPointer<const var_decl>(node_var)->scpe)->get_kind() ==
-                     translation_unit_decl_K))))
-               {
-                  res += return_C_qualifiers(quals, true);
-               }
-               else
-               {
-                  res += return_C_qualifiers(quals, false);
-               }
-            }
-            else if(global || print_qualifiers)
-            {
-               res += return_C_qualifiers(quals, true);
-            }
+            const auto is_global_var =
+                GetPointer<const var_decl>(node_var) &&
+                (!(GetPointer<const var_decl>(node_var)->scpe) ||
+                 (GET_CONST_NODE(GetPointer<const var_decl>(node_var)->scpe)->get_kind() == translation_unit_decl_K));
+            res += return_C_qualifiers(tn->qual, is_global_var);
+         }
+         else if(global || print_qualifiers)
+         {
+            res += return_C_qualifiers(tn->qual, true);
          }
          if(tn->name && (GET_CONST_NODE(tn->name)->get_kind() != type_decl_K || !tn->system_flag))
          {
@@ -5687,12 +5683,8 @@ std::string tree_helper::PrintType(const tree_managerConstRef& TM, const tree_no
                }
             }
             res = "*";
-            const auto quals = tree_type->qual;
             /* const internally are not considered as constant...*/
-            if(quals != TreeVocabularyTokenTypes_TokenEnum::FIRST_TOKEN)
-            {
-               res += return_C_qualifiers(quals, var && print_qualifiers);
-            }
+            res += return_C_qualifiers(tree_type->qual, var && print_qualifiers);
             res = PrintType(TM, tree_type->ptd, global, print_qualifiers, print_storage, var, vppf, prefix + res, tail);
             skip_var_printing = true;
             break;
@@ -5919,12 +5911,8 @@ std::string tree_helper::PrintType(const tree_managerConstRef& TM, const tree_no
       }
       case record_type_K:
       {
-         const auto rt = GetPointer<const record_type>(node_type);
-         const auto quals = rt->qual;
-         if(quals != TreeVocabularyTokenTypes_TokenEnum::FIRST_TOKEN && print_qualifiers)
-         {
-            res += return_C_qualifiers(quals, true);
-         }
+         const auto rt = GetPointerS<const record_type>(node_type);
+         res += return_C_qualifiers(rt->qual, true);
          if(rt->name && (GET_CONST_NODE(rt->name)->get_kind() == type_decl_K || (rt->unql && !rt->system_flag)))
          {
             res += (rt->unql ? "" : "struct ") + PrintType(TM, rt->name, global);
@@ -5953,12 +5941,8 @@ std::string tree_helper::PrintType(const tree_managerConstRef& TM, const tree_no
       }
       case union_type_K:
       {
-         const auto ut = GetPointer<const union_type>(node_type);
-         auto const quals = ut->qual;
-         if(quals != TreeVocabularyTokenTypes_TokenEnum::FIRST_TOKEN && print_qualifiers)
-         {
-            res += return_C_qualifiers(quals, true);
-         }
+         const auto ut = GetPointerS<const union_type>(node_type);
+         res += return_C_qualifiers(ut->qual, true);
          if(ut->name && (GET_NODE(ut->name)->get_kind() == type_decl_K || (ut->unql && !ut->system_flag)))
          {
             res += PrintType(TM, ut->name, global);

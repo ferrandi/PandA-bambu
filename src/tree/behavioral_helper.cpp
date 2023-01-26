@@ -4881,11 +4881,7 @@ std::string BehavioralHelper::print_type_declaration(unsigned int type) const
          {
             res += "typedef ";
          }
-         const auto qualifiers = rt->qual;
-         if(qualifiers != TreeVocabularyTokenTypes_TokenEnum::FIRST_TOKEN)
-         {
-            res += tree_helper::return_C_qualifiers(qualifiers, false);
-         }
+         res += tree_helper::return_C_qualifiers(rt->qual, false);
          res += "struct ";
          if(!rt->unql)
          {
@@ -4972,11 +4968,7 @@ std::string BehavioralHelper::print_type_declaration(unsigned int type) const
          {
             res += "typedef ";
          }
-         const auto qualifiers = ut->qual;
-         if(qualifiers != TreeVocabularyTokenTypes_TokenEnum::FIRST_TOKEN)
-         {
-            res += tree_helper::return_C_qualifiers(qualifiers, false);
-         }
+         res += tree_helper::return_C_qualifiers(ut->qual, false);
          res += "union ";
          if(!ut->unql)
          {
@@ -5039,11 +5031,7 @@ std::string BehavioralHelper::print_type_declaration(unsigned int type) const
          {
             res += "typedef ";
          }
-         const auto quals = et->qual;
-         if(quals != TreeVocabularyTokenTypes_TokenEnum::FIRST_TOKEN)
-         {
-            res += tree_helper::return_C_qualifiers(quals, false);
-         }
+         res += tree_helper::return_C_qualifiers(et->qual, false);
          res += "enum ";
          if(!et->unql)
          {
@@ -5127,14 +5115,10 @@ std::string BehavioralHelper::print_type_declaration(unsigned int type) const
          if(pt->unql && GET_NODE(pt->ptd)->get_kind() == function_type_K)
          {
             const auto ft = GetPointerS<const function_type>(GET_NODE(pt->ptd));
-            const auto quals = GetPointerS<const type_node>(node_type)->qual;
             res += "typedef ";
             res += tree_helper::PrintType(TM, ft->retn);
             res += " (* ";
-            if(quals != TreeVocabularyTokenTypes_TokenEnum::FIRST_TOKEN)
-            {
-               res += tree_helper::return_C_qualifiers(quals, false);
-            }
+            res += tree_helper::return_C_qualifiers(GetPointerS<const type_node>(node_type)->qual, false);
             if(GetPointerS<const type_node>(node_type)->name)
             {
                res += tree_helper::PrintType(TM, GetPointerS<const type_node>(node_type)->name);
@@ -5179,14 +5163,8 @@ std::string BehavioralHelper::print_type_declaration(unsigned int type) const
          const auto nt = GetPointerS<const type_node>(node_type);
          if(nt->unql)
          {
-            const auto quals = nt->qual;
             res += "typedef ";
-
-            if(quals != TreeVocabularyTokenTypes_TokenEnum::FIRST_TOKEN)
-            {
-               res += tree_helper::return_C_qualifiers(quals, false);
-            }
-
+            res += tree_helper::return_C_qualifiers(nt->qual, false);
             res += tree_helper::PrintType(TM, nt->unql);
             res += " ";
             /*            if(nt->algn != 8)

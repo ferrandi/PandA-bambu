@@ -235,7 +235,9 @@ namespace clang
       QualType RemoveTypedef(QualType t) const
       {
          if(t->getTypeClass() == Type::Typedef)
+         {
             return RemoveTypedef(t->getAs<TypedefType>()->getDecl()->getUnderlyingType());
+         }
          else if(t->getTypeClass() == Type::TemplateSpecialization)
          {
             return t;
@@ -483,16 +485,16 @@ namespace clang
                         else
                         {
                            const auto paramTypeRemTD = RemoveTypedef(PT->getPointeeType());
-                           ParamTypeName = GetTypeNameCanonical(paramTypeRemTD, pp) + " *";
-                           ParamTypeNameOrig = paramTypeRemTD.getAsString(pp) + " *";
+                           ParamTypeName = GetTypeNameCanonical(paramTypeRemTD, pp) + "*";
+                           ParamTypeNameOrig = paramTypeRemTD.getAsString(pp) + "*";
                            ParamTypeInclude = getIncludes(paramTypeRemTD);
                         }
                      }
                      else if(const auto RT = dyn_cast<ReferenceType>(argType))
                      {
                         const auto paramTypeRemTD = RemoveTypedef(RT->getPointeeType());
-                        ParamTypeName = GetTypeNameCanonical(paramTypeRemTD, pp) + " &";
-                        ParamTypeNameOrig = paramTypeRemTD.getAsString(pp) + " &";
+                        ParamTypeName = GetTypeNameCanonical(paramTypeRemTD, pp) + "&";
+                        ParamTypeNameOrig = paramTypeRemTD.getAsString(pp) + "&";
                         ParamTypeInclude = getIncludes(paramTypeRemTD);
                      }
                      else
