@@ -676,7 +676,6 @@ void HLSCWriter::WriteExpectedResults(const BehavioralHelperConstRef BH,
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Generating code for expected results of " + param);
       if(tree_helper::IsPointerType(par))
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Pointer parameter");
          const auto& test_v = curr_test_vector.at(param);
          const auto base_type = tree_helper::CGetType(par);
          const auto ptd_type = tree_helper::CGetPointedType(base_type);
@@ -808,16 +807,8 @@ void HLSCWriter::WriteExpectedResults(const BehavioralHelperConstRef BH,
                       (tree_helper::IsRealType(ptd_type) ? "" : "(long long)") + value + ");\n");
                }
                indented_output_stream->Append("fprintf(__bambu_testbench_fp, \"o\");\n");
-               if(tree_helper::IsRealType(ptd_type) || is_ac_type)
-               {
-                  indented_output_stream->Append("_Ptd2Bin_(__bambu_testbench_fp, (unsigned char*)&(" + value + "), " +
-                                                 STR(ptd_type_bitsize) + ");\n");
-               }
-               else
-               {
-                  indented_output_stream->Append("_Dec2Bin_(__bambu_testbench_fp, " + value + ", " +
-                                                 STR(ptd_type_bitsize) + ");\n");
-               }
+               indented_output_stream->Append("_Ptd2Bin_(__bambu_testbench_fp, (unsigned char*)&(" + value + "), " +
+                                              STR(ptd_type_bitsize) + ");\n");
             }
             indented_output_stream->Append("fprintf(__bambu_testbench_fp, \"\\n\");\n");
             indented_output_stream->Append("}\n");
@@ -826,23 +817,23 @@ void HLSCWriter::WriteExpectedResults(const BehavioralHelperConstRef BH,
          else
          {
             /// Retrieve the space to be reserved in memory
-            const auto reserved_mem_bytes =
+            const auto param_mem_size =
                 hls_c_backend_information->HLSMgr->RSim->param_mem_size.at(v_idx).at(GET_INDEX_CONST_NODE(par));
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                           "---Reserved memory " + STR(reserved_mem_bytes) + " bytes");
-            const auto element_size = ptd_type_bitsize / 8;
-            THROW_ASSERT(reserved_mem_bytes % element_size == 0, STR(reserved_mem_bytes) + "/" + STR(element_size));
-            const auto num_elements = reserved_mem_bytes / element_size;
-            THROW_ASSERT(num_elements, STR(reserved_mem_bytes) + "/" + STR(element_size));
+                           "---Reserved memory " + STR(param_mem_size) + " bytes");
+            const auto elem_bytes = ptd_type_bitsize / 8;
+            THROW_ASSERT(param_mem_size % elem_bytes == 0, STR(param_mem_size) + "/" + STR(elem_bytes));
+            const auto elem_count = param_mem_size / elem_bytes;
+            THROW_ASSERT(elem_count, STR(param_mem_size) + "/" + STR(elem_bytes));
             indented_output_stream->Append("{\n");
             indented_output_stream->Append("int i0=0;\n");
-            if(num_elements > 1)
+            if(elem_count > 1)
             {
-               indented_output_stream->Append("for(i0 = 0; i0 < " + STR(num_elements) + "; ++i0)\n");
+               indented_output_stream->Append("for(i0 = 0; i0 < " + STR(elem_count) + "; ++i0)\n");
                indented_output_stream->Append("{\n");
             }
             WriteParamInMemory(BH, param + "[i0]", ptd_type, 1);
-            if(num_elements > 1)
+            if(elem_count > 1)
             {
                indented_output_stream->Append("}\n");
             }
@@ -1541,7 +1532,7 @@ void HLSCWriter::WriteBuiltinWaitCall()
 }
 
 void HLSCWriter::WriteParamInMemory(const BehavioralHelperConstRef BH, const std::string& param, tree_nodeConstRef type,
-                                    const unsigned int nesting_level, bool input, bool is_struct_or_union)
+                                    const unsigned int nesting_level, bool input)
 {
    switch(type->get_kind())
    {
@@ -1551,7 +1542,7 @@ void HLSCWriter::WriteParamInMemory(const BehavioralHelperConstRef BH, const std
          indented_output_stream->Append("fprintf(__bambu_testbench_fp, \"//expected value for output: " + param +
                                         "\\n\");\n");
          const auto size = tree_helper::Size(type);
-         if(input || is_struct_or_union) // Checking ULP on expected floating point fields is not possible
+         if(input) // Checking ULP on expected floating point fields is not possible
          {
             const auto byte_size = tree_helper::Size(type) / 8;
             for(size_t byte = 0; byte < byte_size; byte++)
@@ -1574,39 +1565,21 @@ void HLSCWriter::WriteParamInMemory(const BehavioralHelperConstRef BH, const std
       case void_type_K:
       case integer_type_K:
       case pointer_type_K:
+      case record_type_K:
+      case union_type_K:
       {
          indented_output_stream->Append("fprintf(__bambu_testbench_fp, \"//expected value for output: " + param +
                                         "\\n\");\n");
          const auto byte_size = tree_helper::Size(type) / 8;
-         for(size_t byte = 0; byte < byte_size; byte++)
-         {
-            indented_output_stream->Append("fprintf(__bambu_testbench_fp, \"" + std::string(input ? "m" : "o") +
-                                           "\");\n");
-            indented_output_stream->Append("_Ptd2Bin_(__bambu_testbench_fp, ((unsigned char *)&(" + param + ")) + " +
-                                           STR(byte) + ", 8);\n");
-            indented_output_stream->Append("fprintf(__bambu_testbench_fp, \"\\n\");\n");
-         }
-         break;
-      }
-      case record_type_K:
-      {
-         const auto rt = GetPointer<const record_type>(type);
-         for(const auto& field : rt->list_of_flds)
-         {
-            const auto field_param = param + "." + BH->PrintVariable(field->index);
-            WriteParamInMemory(BH, field_param, tree_helper::CGetType(field), nesting_level + 1, input, true);
-         }
-         break;
-      }
-      case union_type_K:
-      {
-         const auto ut = GetPointer<const union_type>(type);
-         for(const auto& field : ut->list_of_flds)
-         {
-            const auto field_param = param + "." + BH->PrintVariable(field->index);
-            WriteParamInMemory(BH, field_param, tree_helper::CGetType(field), nesting_level + 1, input, true);
-            break; // only the first field will be considered
-         }
+         const auto idx = "i" + STR(nesting_level);
+         indented_output_stream->Append("int " + idx + ";\n");
+         indented_output_stream->Append("for(" + idx + " = 0; " + idx + " < " + STR(byte_size) + "; " + idx + "++)\n");
+         indented_output_stream->Append("{\n");
+         indented_output_stream->Append("fprintf(__bambu_testbench_fp, \"" + std::string(input ? "m" : "o") + "\");\n");
+         indented_output_stream->Append("_Ptd2Bin_(__bambu_testbench_fp, ((unsigned char *)&(" + param + ")) + " + idx +
+                                        ", 8);\n");
+         indented_output_stream->Append("fprintf(__bambu_testbench_fp, \"\\n\");\n");
+         indented_output_stream->Append("}\n");
          break;
       }
       case array_type_K:
@@ -1621,7 +1594,7 @@ void HLSCWriter::WriteParamInMemory(const BehavioralHelperConstRef BH, const std
          indented_output_stream->Append("for(" + idx + " = 0; " + idx + " < " + STR(num_elements) + "; " + idx +
                                         "++)\n");
          indented_output_stream->Append("{\n");
-         WriteParamInMemory(BH, param + "[" + idx + "]", elm_type, nesting_level + 1, input, is_struct_or_union);
+         WriteParamInMemory(BH, param + "[" + idx + "]", elm_type, nesting_level + 1, input);
          indented_output_stream->Append("}\n");
          indented_output_stream->Append("}\n");
          break;
@@ -1647,7 +1620,7 @@ void HLSCWriter::WriteParamInMemory(const BehavioralHelperConstRef BH, const std
                      type->get_kind_text() + ")");
          break;
       case tree_reindex_K:
-         WriteParamInMemory(BH, param, GET_CONST_NODE(type), nesting_level, input, is_struct_or_union);
+         WriteParamInMemory(BH, param, GET_CONST_NODE(type), nesting_level, input);
          break;
       case aggr_init_expr_K:
       case binfo_K:
