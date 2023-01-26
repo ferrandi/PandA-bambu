@@ -990,6 +990,7 @@ bool parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
    bool LPBB_satisfied = !LPBB_predicate;
    unsigned int already_sch = schedule->num_scheduled();
    auto initialCycle = current_cycle;
+   CustomUnorderedMap<vertex, unsigned> infeasable_counter;
    while((schedule->num_scheduled() - already_sch) != operations_number)
    {
       bool unbounded = false;
@@ -1007,7 +1008,6 @@ bool parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
                     "      Scheduling in control step " + STR(current_cycle) +
                         " (Time: " + STR(from_strongtype_cast<double>(current_cycle) * clock_cycle) + ")");
       used_resources.init(current_cycle - initialCycle, LP_II);
-      CustomUnorderedMap<vertex, unsigned> infeasable_counter;
 
       /// Operations which can be scheduled in this control step because precedences are satisfied, but they can't be
       /// scheduled in this control step for some reasons Index is the functional unit type
@@ -1816,7 +1816,7 @@ bool parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
          }
       }
 #endif
-      /// clear the vises
+      /// clear the vuses
       cstep_vuses_ARRAYs = cstep_vuses_ARRAYs > 0 ? cstep_vuses_ARRAYs - 1 : 0;
       cstep_vuses_others = cstep_vuses_others > 0 ? cstep_vuses_others - 1 : 0;
       cstep_has_RET_conflict = registering_output_p;
