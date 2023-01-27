@@ -275,7 +275,7 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
    const vertex bb_exit = fbb->CGetBBGraphInfo()->exit_vertex;
 
    bool first_state_p;
-   bool have_previous;
+   bool have_previous = false;
    vertex previous;
    std::map<vertex, std::list<vertex>> call_states;
    std::map<vertex, std::list<vertex>> call_operations;
