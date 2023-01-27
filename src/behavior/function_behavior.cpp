@@ -186,7 +186,6 @@ FunctionBehavior::FunctionBehavior(const application_managerConstRef _AppM, cons
       has_undefined_function_receiveing_pointers(false),
       state_variables(),
       pipeline_enabled(false),
-      simple_pipeline(false),
       initiation_time(1),
       bb_reachability(),
       feedback_bb_reachability(),
@@ -210,14 +209,8 @@ FunctionBehavior::FunctionBehavior(const application_managerConstRef _AppM, cons
    if(!_parameters->isOption(OPT_pipelining))
    {
       pipeline_enabled = decl_node->is_pipelined();
-      simple_pipeline = decl_node->is_simple_pipeline();
       initiation_time = decl_node->get_initiation_time();
-      if(pipeline_enabled && simple_pipeline)
-      {
-         INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, _parameters->getOption<int>(OPT_output_level),
-                        "Required pipelining with II=1 for function: " + fname);
-      }
-      else if(pipeline_enabled)
+      if(pipeline_enabled)
       {
          INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, _parameters->getOption<int>(OPT_output_level),
                         "Required pipelining with II=" + STR(initiation_time) + " for function: " + fname);
@@ -233,7 +226,7 @@ FunctionBehavior::FunctionBehavior(const application_managerConstRef _AppM, cons
       else if(tmp_string == "@ll")
       {
          pipeline_enabled = true;
-         simple_pipeline = true;
+         initiation_time = 1;
          INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, _parameters->getOption<int>(OPT_output_level),
                         "Required pipelining with II=1 for function: " + fname);
       }
@@ -253,18 +246,14 @@ FunctionBehavior::FunctionBehavior(const application_managerConstRef _AppM, cons
                if(splitted.size() == 1)
                {
                   pipeline_enabled = true;
-                  simple_pipeline = true;
+                  initiation_time = 1;
                   INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, _parameters->getOption<int>(OPT_output_level),
                                  "Required pipelining with II=1 for function: " + fname);
                }
                else if(splitted.size() == 2)
                {
                   pipeline_enabled = true;
-                  initiation_time = boost::lexical_cast<int>(splitted.at(1));
-                  if(initiation_time == 1)
-                  {
-                     simple_pipeline = true;
-                  }
+                  initiation_time = boost::lexical_cast<unsigned int>(splitted.at(1));
                   INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, _parameters->getOption<int>(OPT_output_level),
                                  "Required pipelining with II=" + STR(initiation_time) + " for function: " + fname);
                }

@@ -119,7 +119,8 @@ class StateTransitionGraphManager
     * Constructor of the class. It creates a new empty graph and it sets reference to hls class
     * @param HLS is the HLS data structure
     */
-   StateTransitionGraphManager(const HLS_managerConstRef HLSMgr, hlsRef HLS, const ParameterConstRef _Param);
+   StateTransitionGraphManager(const HLS_managerConstRef HLSMgr, hlsRef HLS, const ParameterConstRef _Param,
+                               bool is_function_pipelined);
 
    /**
     * Destructor
@@ -132,7 +133,7 @@ class StateTransitionGraphManager
    CustomOrderedSet<vertex> get_starting_states(const vertex& op) const;
 
    /// compute the minimum and maximum number of cycles when possible
-   void compute_min_max();
+   void compute_min_max(bool is_function_pipelined);
 
    /**
     * Returns pointer to state transition graph created.

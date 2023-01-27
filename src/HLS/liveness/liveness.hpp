@@ -421,6 +421,7 @@ class liveness
    unsigned GetStepOut(unsigned int var) const;
    unsigned GetStepDef(unsigned int BB_index, unsigned int var) const;
    std::pair<bool, unsigned> GetPrevStep(unsigned int BB_index, unsigned int var, unsigned curr_step) const;
+   unsigned GetStepOp(vertex v, vertex exec_op) const;
 
    /**
     * @brief set_max_step set the maximum step associated with a BB

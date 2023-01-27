@@ -555,7 +555,8 @@ std::pair<bool, unsigned> liveness::GetPrevStep(unsigned int BB_index, unsigned 
    }
    else
    {
-      return std::make_pair(true, curr_step);
+      /// relevant only for parameters
+      return std::make_pair(curr_step > 1, curr_step > 1 ? curr_step - 1 : 0);
    }
 }
 unsigned liveness::get_prev_step(unsigned BB_index, unsigned int var, unsigned cur_step) const
@@ -599,5 +600,21 @@ void liveness::set_step(vertex v, vertex running_op, unsigned int step, bool in)
    else
    {
       vertex_to_op_step_out_map[v][running_op] = step;
+   }
+}
+
+unsigned liveness::GetStepOp(vertex v, vertex exec_op) const
+{
+   auto op_BB_index = vertex_BB.at(exec_op);
+   if(BB2MaxStep.at(op_BB_index))
+   {
+      THROW_ASSERT(vertex_to_op_step_in_map.count(v), "unexpected condition");
+      THROW_ASSERT(vertex_to_op_step_in_map.at(v).count(exec_op), "unexpected condition");
+      auto step = vertex_to_op_step_in_map.at(v).at(exec_op);
+      return step;
+   }
+   else
+   {
+      return 0;
    }
 }

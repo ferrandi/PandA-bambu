@@ -87,28 +87,11 @@ port_swapping::ComputeHLSRelationships(const DesignFlowStep::RelationshipType re
       {
          if(HLSMgr->get_HLS(funId))
          {
-            if(HLSMgr->GetFunctionBehavior(funId)->is_simple_pipeline())
-            {
-               ret.insert(std::make_tuple(HLSFlowStep_Type::UNIQUE_MODULE_BINDING, HLSFlowStepSpecializationConstRef(),
-                                          HLSFlowStep_Relationship::SAME_FUNCTION));
-            }
-            else
-            {
-               ret.insert(std::make_tuple(HLSMgr->get_HLS(funId)->module_binding_algorithm,
-                                          HLSFlowStepSpecializationConstRef(),
-                                          HLSFlowStep_Relationship::SAME_FUNCTION));
-            }
-         }
-         if(HLSMgr->GetFunctionBehavior(funId)->is_simple_pipeline())
-         {
-            ret.insert(std::make_tuple(HLSFlowStep_Type::UNIQUE_REGISTER_BINDING, HLSFlowStepSpecializationConstRef(),
-                                       HLSFlowStep_Relationship::SAME_FUNCTION));
-         }
-         else
-         {
-            ret.insert(std::make_tuple(parameters->getOption<HLSFlowStep_Type>(OPT_register_allocation_algorithm),
+            ret.insert(std::make_tuple(HLSMgr->get_HLS(funId)->module_binding_algorithm,
                                        HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
          }
+         ret.insert(std::make_tuple(parameters->getOption<HLSFlowStep_Type>(OPT_register_allocation_algorithm),
+                                    HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
          break;
       }
       case INVALIDATION_RELATIONSHIP:

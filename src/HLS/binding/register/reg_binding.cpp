@@ -284,32 +284,15 @@ void reg_binding::bind(unsigned int sv, unsigned int index)
    if(unique_table.find(index) == unique_table.end())
    {
       unique_table[index] = generic_objRef(new register_obj(index));
-      if(HLSMgr->GetFunctionBehavior(HLS->functionId)->is_simple_pipeline())
-      {
-         for(vertex v : HLS->Rliv->get_support())
-         {
-            if(HLS->STG->GetStg()->GetStateInfo(v)->loopId != 0)
-            {
-               auto live_in = HLS->Rliv->get_live_in(v);
-               for(const auto& var : live_in)
-               {
-                  if(sv == HLS->storage_value_information->get_storage_value_index(v, var.first, var.second))
-                  {
-                     stall_reg_table[index] = generic_objRef(new register_obj(index + used_regs));
-                  }
-               }
-            }
-         }
-      }
    }
    auto i = this->find(sv);
    if(i == this->end())
    {
-      this->insert(std::make_pair(sv, unique_table[index]));
+      this->insert(std::make_pair(sv, unique_table.at(index)));
    }
    else
    {
-      i->second = unique_table[index];
+      i->second = unique_table.at(index);
    }
    reg2storage_values[index].insert(sv);
 }
@@ -327,7 +310,6 @@ void reg_binding::add_to_SM(structural_objectRef clock_port, structural_objectRe
 
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug, "reg_binding::add_registers - Start");
 
-   // all registers need an enable in stallable pipelines
    compute_is_without_enable();
    /// define boolean type for command signals
    all_regs_without_enable = get_used_regs() != 0;
@@ -375,7 +357,7 @@ void reg_binding::add_to_SM(structural_objectRef clock_port, structural_objectRe
 
 std::string reg_binding::CalculateRegisterName(unsigned int i)
 {
-   if(is_without_enable.count(i) || FB->is_simple_pipeline())
+   if(is_without_enable.count(i))
    {
       return register_STD;
    }

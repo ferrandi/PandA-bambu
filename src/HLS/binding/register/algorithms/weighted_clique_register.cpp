@@ -121,12 +121,12 @@ DesignFlowStep_Status weighted_clique_register::InternalExec()
            clique_covering_algorithm, HLS->storage_value_information->get_number_of_storage_values());
    create_compatibility_graph();
 
-   auto v_it_end = verts.end();
    unsigned int vertex_index = 0;
    unsigned int num_registers = 0;
-   for(auto v_it = verts.begin(); v_it != v_it_end; ++v_it, ++vertex_index)
+   for(auto v : verts)
    {
-      register_clique->add_vertex(*v_it, STR(vertex_index));
+      register_clique->add_vertex(v, STR(vertex_index));
+      ++vertex_index;
    }
    if(vertex_index > 0)
    {
@@ -145,7 +145,6 @@ DesignFlowStep_Status weighted_clique_register::InternalExec()
             ++current_partition;
          }
       }
-      HLS->Rreg->set_used_regs(num_registers);
       boost::graph_traits<compatibility_graph>::edge_iterator cg_ei, cg_ei_end;
       for(boost::tie(cg_ei, cg_ei_end) = boost::edges(*CG); cg_ei != cg_ei_end; ++cg_ei)
       {
@@ -193,7 +192,7 @@ DesignFlowStep_Status weighted_clique_register::InternalExec()
          {
             unsigned int storage_value_index =
                 HLS->storage_value_information->get_storage_value_index(*vIt, k->first, k->second);
-            HLS->Rreg->bind(storage_value_index, v2c[verts[storage_value_index]]);
+            HLS->Rreg->bind(storage_value_index, v2c.at(verts.at(storage_value_index)));
          }
       }
    }
@@ -222,6 +221,7 @@ DesignFlowStep_Status weighted_clique_register::InternalExec()
                       (num_registers == register_lower_bound ? "" : ("(LB:" + STR(register_lower_bound) + ")")));
    if(output_level >= OUTPUT_LEVEL_VERY_PEDANTIC)
    {
+      THROW_ASSERT(HLS->Rreg, "unexpected condition");
       HLS->Rreg->print();
    }
    if(output_level >= OUTPUT_LEVEL_MINIMUM and output_level <= OUTPUT_LEVEL_PEDANTIC)

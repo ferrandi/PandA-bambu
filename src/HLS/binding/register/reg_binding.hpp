@@ -79,9 +79,6 @@ class reg_binding : public variable2obj<generic_objRef>
    /// map between register index and object
    std::map<unsigned int, generic_objRef> unique_table;
 
-   /// map between std register index and stall register object for pipelines
-   std::map<unsigned int, generic_objRef> stall_reg_table;
-
    /// bind the storage value with the register instance
    std::map<unsigned int, unsigned int> reverse_map;
 

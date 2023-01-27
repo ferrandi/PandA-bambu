@@ -102,6 +102,10 @@ void StateTransitionGraph_constructor::create_exit_state()
 
    state_transition_graph->GetStateTransitionGraphInfo()->exit_node = newVertex;
 }
+void StateTransitionGraph_constructor::set_exit_state(vertex ex)
+{
+   state_transition_graph->GetStateTransitionGraphInfo()->exit_node = ex;
+}
 
 vertex StateTransitionGraph_constructor::create_state(
     const std::list<vertex>& exec_op, const std::list<vertex>& start_op, const std::list<vertex>& end_op,

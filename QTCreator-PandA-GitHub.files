@@ -1688,8 +1688,6 @@ src/HLS/binding/storage_value_insertion/storage_value_information.cpp
 src/HLS/binding/storage_value_insertion/storage_value_information.hpp
 src/HLS/binding/storage_value_insertion/storage_value_information_fsm.cpp
 src/HLS/binding/storage_value_insertion/storage_value_information_fsm.hpp
-src/HLS/binding/storage_value_insertion/storage_value_information_pipeline.cpp
-src/HLS/binding/storage_value_insertion/storage_value_information_pipeline.hpp
 src/HLS/binding/storage_value_insertion/storage_value_insertion.cpp
 src/HLS/binding/storage_value_insertion/storage_value_insertion.hpp
 src/HLS/binding/storage_value_insertion/values_scheme.cpp

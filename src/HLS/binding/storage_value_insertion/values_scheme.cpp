@@ -48,7 +48,6 @@
 
 /// HLS/binding/storage_value_information includes
 #include "storage_value_information_fsm.hpp"
-#include "storage_value_information_pipeline.hpp"
 
 /// HLS/liveness include
 #include "liveness.hpp"
@@ -76,15 +75,9 @@ values_scheme::~values_scheme() = default;
 void values_scheme::Initialize()
 {
    HLSFunctionStep::Initialize();
-   if(HLSMgr->CGetFunctionBehavior(HLS->functionId)->is_simple_pipeline())
-   {
-      HLS->storage_value_information =
-          StorageValueInformationPipelineRef(new StorageValueInformationPipeline(HLSMgr, funId));
-   }
-   else
-   {
-      HLS->storage_value_information = StorageValueInformationFsmRef(new StorageValueInformationFsm(HLSMgr, funId));
-   }
+
+   HLS->storage_value_information = StorageValueInformationFsmRef(new StorageValueInformationFsm(HLSMgr, funId));
+
    HLS->storage_value_information->Initialize();
 }
 
@@ -101,8 +94,6 @@ DesignFlowStep_Status values_scheme::InternalExec()
    const std::list<vertex>& support = HLS->Rliv->get_support();
    auto stg = HLS->STG->GetAstg();
    const FunctionBehaviorConstRef FB = HLSMgr->CGetFunctionBehavior(funId);
-   last_intermediate_state fetch_previous(stg, FB->is_simple_pipeline());
-   next_unique_state get_next(stg);
    const BehavioralHelperConstRef BH = FB->CGetBehavioralHelper();
 
    for(auto vIt : support)
@@ -114,7 +105,8 @@ DesignFlowStep_Status values_scheme::InternalExec()
       {
          if(!HLS->storage_value_information->is_a_storage_value(vIt, k.first, k.second))
          {
-            // std::cerr << BH->PrintVariable(k.first) << "=" << k.second << " ->" << i << "\n";
+            // std::cerr << BH->PrintVariable(k.first) << "(" << k.first << ")"
+            //           << "=" << k.second << " ->" << i << "\n";
             HLS->storage_value_information->set_storage_value_index(vIt, k.first, k.second, i);
             HLS->storage_value_information->variable_index_map[i] = k;
             i++;

@@ -81,7 +81,7 @@
 #include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
 
 StateTransitionGraphManager::StateTransitionGraphManager(const HLS_managerConstRef _HLSMgr, hlsRef _HLS,
-                                                         const ParameterConstRef _Param)
+                                                         const ParameterConstRef _Param, bool is_function_pipelined)
     : state_transition_graphs_collection(StateTransitionGraphsCollectionRef(new StateTransitionGraphsCollection(
           StateTransitionGraphInfoRef(new StateTransitionGraphInfo(
               _HLSMgr->CGetFunctionBehavior(_HLS->functionId)->CGetOpGraph(FunctionBehavior::CFG))),
@@ -103,7 +103,10 @@ StateTransitionGraphManager::StateTransitionGraphManager(const HLS_managerConstR
           new StateTransitionGraph_constructor(state_transition_graphs_collection, _HLSMgr, _HLS->functionId)))
 {
    STG_builder->create_entry_state();
-   STG_builder->create_exit_state();
+   if(!is_function_pipelined)
+   {
+      STG_builder->create_exit_state();
+   }
 }
 
 StateTransitionGraphManager::~StateTransitionGraphManager() = default;
@@ -123,10 +126,10 @@ const StateTransitionGraphConstRef StateTransitionGraphManager::CGetEPPStg() con
    return EPP_STG_graph;
 }
 
-void StateTransitionGraphManager::compute_min_max()
+void StateTransitionGraphManager::compute_min_max(bool is_function_pipelined)
 {
    StateTransitionGraphInfoRef info = STG_graph->GetStateTransitionGraphInfo();
-   if(!info->is_a_dag)
+   if(!info->is_a_dag && !is_function_pipelined)
    {
       return;
    }
@@ -158,8 +161,8 @@ void StateTransitionGraphManager::compute_min_max()
    }
    THROW_ASSERT(CSteps_min.find(info->exit_node) != CSteps_min.end(), "Exit node not reachable");
    THROW_ASSERT(CSteps_max.find(info->exit_node) != CSteps_max.end(), "Exit node not reachable");
-   info->min_cycles = CSteps_min.find(info->exit_node)->second - 1;
-   info->max_cycles = CSteps_max.find(info->exit_node)->second - 1;
+   info->min_cycles = CSteps_min.find(info->exit_node)->second - (is_function_pipelined ? 0 : 1);
+   info->max_cycles = CSteps_max.find(info->exit_node)->second - (is_function_pipelined ? 0 : 1);
 }
 
 vertex StateTransitionGraphManager::get_entry_state() const

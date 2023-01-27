@@ -241,9 +241,14 @@ DesignFlowStep_Status add_library::InternalExec()
       const auto op = GetPointerS<operation>(fu->get_operation(function_name));
       op->time_m = time_model::create_model(device->get_type(), parameters);
       op->primary_inputs_registered = HLS->registered_inputs;
-      const auto simple_pipeline = FB->is_simple_pipeline();
+      const auto is_function_pipelined = FB->is_function_pipelined();
       /// First computing if operation is bounded, then computing call_delay; call_delay depends on the value of bounded
-      if(HLS->STG && HLS->STG->CGetStg()->CGetStateTransitionGraphInfo()->is_a_dag)
+      THROW_ASSERT(HLS->STG, "unexpected condition");
+      if(is_function_pipelined)
+      {
+         op->bounded = true;
+      }
+      else if(HLS->STG->CGetStg()->CGetStateTransitionGraphInfo()->is_a_dag)
       {
          auto is_bounded = !HLSMgr->Rmem->has_proxied_internal_variables(funId) &&
                            !parameters->getOption<bool>(OPT_disable_bounded_function);
@@ -262,7 +267,7 @@ DesignFlowStep_Status add_library::InternalExec()
             const auto min_cycles = HLS->STG->CGetStg()->CGetStateTransitionGraphInfo()->min_cycles;
             const auto max_cycles = HLS->STG->CGetStg()->CGetStateTransitionGraphInfo()->max_cycles;
             /// pipelined functions are always bounded
-            if(max_cycles == min_cycles && min_cycles > 0 && (min_cycles < 8 || simple_pipeline))
+            if((max_cycles == min_cycles && min_cycles > 0 && (min_cycles < 8)))
             {
                op->bounded = true;
             }
@@ -278,7 +283,6 @@ DesignFlowStep_Status add_library::InternalExec()
       }
       else
       {
-         THROW_ASSERT(!simple_pipeline, "A pipelined function should always generate a DAG");
          op->bounded = false;
       }
       const auto call_delay =
@@ -300,7 +304,7 @@ DesignFlowStep_Status add_library::InternalExec()
          op->time_m->set_execution_time(exec_time, min_cycles);
          if(max_cycles > 1)
          {
-            if(simple_pipeline)
+            if(is_function_pipelined)
             {
                op->time_m->set_stage_period(call_delay);
                const ControlStep jj(1);

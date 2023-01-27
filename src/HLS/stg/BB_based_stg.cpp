@@ -206,7 +206,8 @@ BB_based_stg::~BB_based_stg() = default;
 void BB_based_stg::Initialize()
 {
    HLSFunctionStep::Initialize();
-   HLS->STG = StateTransitionGraphManagerRef(new StateTransitionGraphManager(HLSMgr, HLS, parameters));
+   HLS->STG = StateTransitionGraphManagerRef(new StateTransitionGraphManager(
+       HLSMgr, HLS, parameters, HLSMgr->CGetFunctionBehavior(funId)->is_function_pipelined()));
 }
 
 const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
@@ -253,6 +254,7 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
       START_TIME(step_time);
    }
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Starting creation of STG...");
+   auto FB = HLSMgr->CGetFunctionBehavior(funId);
 
    StateTransitionGraph_constructorRef STG_builder = HLS->STG->STG_builder;
    THROW_ASSERT(STG_builder, "STG constructor not properly initialized");
@@ -262,11 +264,11 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
    /// last state of a basic-block
    CustomUnorderedMap<vertex, vertex> last_state;
 
-   const OpGraphConstRef dfgRef = HLSMgr->CGetFunctionBehavior(funId)->CGetOpGraph(FunctionBehavior::DFG);
+   const OpGraphConstRef dfgRef = FB->CGetOpGraph(FunctionBehavior::DFG);
 
    const ScheduleConstRef sch = HLS->Rsch;
 
-   const BBGraphConstRef fbb = HLSMgr->CGetFunctionBehavior(funId)->CGetBBGraph(FunctionBehavior::FBB);
+   const BBGraphConstRef fbb = FB->CGetBBGraph(FunctionBehavior::FBB);
 
    /// get entry and exit basic block
    const vertex bb_entry = fbb->CGetBBGraphInfo()->entry_vertex;
@@ -280,7 +282,7 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
    std::map<unsigned, std::list<vertex>> last_LP_states;
    VertexIterator vit, vend;
 
-   const auto is_pipelined = HLSMgr->CGetFunctionBehavior(funId)->is_simple_pipeline();
+   const auto is_function_pipelined = FB->is_function_pipelined();
 
    /// contains the list of operations which are executing, starting, ending and "on-fly" in every state of the STG
    std::map<vertex, std::list<vertex>> global_executing_ops, global_starting_ops, global_ending_ops, global_onfly_ops;
@@ -341,7 +343,7 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
       }
       double mux_time_estimation =
           (n_levels * HLS->allocation_information->mux_time_unit(32)) + (n_levels > 0 ? controller_delay : 0);
-      if(mux_time_estimation > HLS->allocation_information->getMinimumSlack())
+      if(mux_time_estimation > HLS->allocation_information->getMinimumSlack() && !is_function_pipelined)
       {
          has_registered_inputs = true;
       }
@@ -485,7 +487,11 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
             vertex bb_src = boost::source(*oe, *fbb);
             vertex bb_tgt = boost::target(*oe, *fbb);
             const CustomOrderedSet<unsigned int>& cfg_edge_ids = fbb->CGetBBEdgeInfo(*oe)->get_labels(CFG_SELECTOR);
-            if(bb_src == bb_tgt)
+            if(is_function_pipelined && bb_tgt == fbb->CGetBBGraphInfo()->exit_vertex)
+            {
+               backedge_cfg_edge_ids = cfg_edge_ids;
+            }
+            else if(bb_src == bb_tgt)
             {
                backedge_cfg_edge_ids = cfg_edge_ids;
 #if HAVE_ASSERTS
@@ -505,7 +511,7 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
 #endif
             }
          }
-         THROW_ASSERT(is_nofeedback_assigned && is_feedback_assigned, "unexpected case");
+         THROW_ASSERT((is_nofeedback_assigned && is_feedback_assigned) || is_function_pipelined, "unexpected case");
       }
       THROW_ASSERT(!isLP || n_iter_LP_STG_building > 1, "unexpected condition");
       // std::cerr << "BBIndex " << BBIndex << " isLP " << (isLP ? "T" : "F") << " LPII " << LPII
@@ -516,9 +522,16 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
       vertex next_LP_first_state;
       for(unsigned LP_Index = 0; LP_Index < n_iter_LP_STG_building; ++LP_Index)
       {
-         have_previous = false;
+         if(!is_function_pipelined)
+         {
+            have_previous = false;
+         }
          for(auto l = min_cstep; l <= max_cstep; l++)
          {
+            if(is_function_pipelined && l >= min_cstep + LPII)
+            {
+               continue;
+            }
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Considering control step " + STR(l));
             std::list<vertex> exec_ops, start_ops, end_ops, onf_ops;
 
@@ -687,6 +700,10 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
                set_edge_condition(backedge_cfg_edge_ids, STG_builder, last_operation, s_e);
                current_LP_first_state = s_cur;
             }
+            else if(is_function_pipelined && isLP && l == min_cstep && LP_Index)
+            {
+               current_LP_first_state = s_cur;
+            }
 
             previous = s_cur;
             if(first_state_p)
@@ -727,7 +744,13 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
                }
             }
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Considered control step " + STR(l));
-            if(isLP && LP_Index == n_iter_LP_STG_building - 1 && l == min_cstep + (LPII - 1))
+            if(is_function_pipelined && isLP && LP_Index == n_iter_LP_STG_building - 1 && l == min_cstep + (LPII - 1))
+            {
+               STG_builder->set_exit_state(s_cur);
+               STG_builder->connect_state(s_cur, current_LP_first_state,
+                                          TransitionInfo::StateTransitionType::ST_EDGE_FEEDBACK);
+            }
+            else if(isLP && LP_Index == n_iter_LP_STG_building - 1 && l == min_cstep + (LPII - 1))
             {
                auto s_e_f = STG_builder->connect_state(s_cur, current_LP_first_state,
                                                        TransitionInfo::StateTransitionType::ST_EDGE_FEEDBACK);
@@ -789,7 +812,7 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
       }
       if(isLP)
       {
-         if(bb_tgt != bb_src)
+         if(bb_tgt != bb_src && !is_function_pipelined)
          {
             THROW_ASSERT(last_LP_states.find(srcBBIndex) != last_LP_states.end(), "expected end states for a LPBB");
             for(const auto& ls : last_LP_states.at(srcBBIndex))
@@ -918,8 +941,8 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
 
    ///*****************************************************
 
-   HLS->STG->compute_min_max();
-   if(HLS->STG->CGetStg()->CGetStateTransitionGraphInfo()->min_cycles != 1 && !is_pipelined)
+   HLS->STG->compute_min_max(is_function_pipelined);
+   if(HLS->STG->CGetStg()->CGetStateTransitionGraphInfo()->min_cycles != 1 && !is_function_pipelined)
    {
       HLS->registered_done_port = true;
       /// check for unbounded op executed in the last step
@@ -946,21 +969,17 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
    }
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
                   "-->State Transition Graph Information of function " +
-                      HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->get_function_name() + ":");
-   INDENT_OUT_MEX(
-       OUTPUT_LEVEL_VERBOSE, output_level,
-       "---Number of operations: " +
-           STR(boost::num_vertices(*(HLSMgr->CGetFunctionBehavior(funId)->CGetOpGraph(FunctionBehavior::CFG)))));
-   INDENT_OUT_MEX(
-       OUTPUT_LEVEL_VERBOSE, output_level,
-       "---Number of basic blocks: " +
-           STR(boost::num_vertices(*(HLSMgr->CGetFunctionBehavior(funId)->CGetBBGraph(FunctionBehavior::BB)))));
+                      FB->CGetBehavioralHelper()->get_function_name() + ":");
+   INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level,
+                  "---Number of operations: " + STR(boost::num_vertices(*(FB->CGetOpGraph(FunctionBehavior::CFG)))));
+   INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level,
+                  "---Number of basic blocks: " + STR(boost::num_vertices(*(FB->CGetBBGraph(FunctionBehavior::BB)))));
    HLS->STG->print_statistics();
    if(has_registered_inputs)
    {
       INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Parameters are registered");
    }
-   if(HLS->registered_done_port || is_pipelined)
+   if(HLS->registered_done_port || is_function_pipelined)
    {
       INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Done port is registered");
    }
@@ -1006,7 +1025,7 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
             }
          }
       }
-      const auto bb_cfg = HLSMgr->CGetFunctionBehavior(funId)->CGetBBGraph();
+      const auto bb_cfg = FB->CGetBBGraph();
       VertexIterator bb, bb_end;
       for(boost::tie(bb, bb_end) = boost::vertices(*bb_cfg); bb != bb_end; bb++)
       {

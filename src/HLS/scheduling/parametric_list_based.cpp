@@ -1027,14 +1027,20 @@ bool parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
          }
          else
          {
-            const auto II = HLS->allocation_information->get_initiation_time(res_binding->get_assign(*live_vertex_it),
-                                                                             *live_vertex_it);
-            if(FB->is_simple_pipeline() && (II > 1 || II == 0))
+            auto fu_name = res_binding->get_assign(*live_vertex_it);
+            const auto II = HLS->allocation_information->get_initiation_time(fu_name, *live_vertex_it);
+            auto is_bounded = HLS->allocation_information->is_operation_bounded(flow_graph, *live_vertex_it, fu_name);
+            auto latency = HLS->allocation_information->GetCycleLatency(*live_vertex_it);
+            if(LPBB_predicate && (II > LP_II || (is_bounded && II == 0 && latency > LP_II)))
             {
-               auto lat = ending_time[*live_vertex_it] - starting_time[*live_vertex_it];
-               THROW_ERROR("Timing of Vertex " + GET_NAME(flow_graph, *live_vertex_it) +
-                           " is not compatible with II=1.\nActual vertex latency is " + STR(lat) +
-                           " greater than the clock period");
+               INDENT_OUT_MEX(OUTPUT_LEVEL_VERY_VERY_PEDANTIC, output_level,
+                              "pipelined schedule not feasible for vertex: " + GET_NAME(flow_graph, *live_vertex_it) +
+                                  "\n      mapped on resource " +
+                                  HLS->allocation_information->get_fu_name(fu_name).first + "-" +
+                                  HLS->allocation_information->get_fu_name(fu_name).second +
+                                  "\n      II conflicts with the current resource (II=" + STR(II) + "-LP_II" +
+                                  STR(LP_II) + "-L=" + STR(latency) + ")");
+               return false;
             }
 
             if(II == 0u ||
@@ -2227,6 +2233,7 @@ DesignFlowStep_Status parametric_list_based::InternalExec()
    }
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
                   "-->Scheduling Information of function " + FB->CGetBehavioralHelper()->get_function_name() + ":");
+
    for(const auto& loop : FB->GetLoops()->GetModifiableList())
    {
       if(loop->loop_type & PIPELINABLE_LOOP)
@@ -2249,6 +2256,19 @@ DesignFlowStep_Status parametric_list_based::InternalExec()
          }
       }
    }
+   if(FB->is_function_pipelined())
+   {
+      const vertex bb_entry = bbg->CGetBBGraphInfo()->entry_vertex;
+      const vertex bb_exit = bbg->CGetBBGraphInfo()->exit_vertex;
+      for(auto v : vertices)
+      {
+         if(v != bb_entry && v != bb_exit)
+         {
+            LPBB.insert(v);
+         }
+      }
+   }
+
    /// initialize topological_sorted_functions
    compute_function_topological_order();
    for(auto vi = vertices.begin(); vi != viend; ++vi)
@@ -2273,9 +2293,16 @@ DesignFlowStep_Status parametric_list_based::InternalExec()
             if(!HLS->allocation_information->is_operation_bounded(op_graph, op, fu_type))
             {
                isLPBB = false;
-               INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
-                              "---  Loop pipelining not possible for loop (BB" + STR(BBI->block->number) +
-                                  ") because of variable latency operations");
+               if(FB->is_function_pipelined())
+               {
+                  THROW_ERROR("Function pipelining not possible with II=" + STR(FB->get_initiation_time()));
+               }
+               else
+               {
+                  INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
+                                 "---  Loop pipelining not possible for loop (BB" + STR(BBI->block->number) +
+                                     ") because of variable latency operations");
+               }
                break;
             }
          }
@@ -2289,7 +2316,23 @@ DesignFlowStep_Status parametric_list_based::InternalExec()
       {
          unsigned minII, maxII;
          CustomUnorderedSet<std::pair<vertex, vertex>> toBeScheduled;
-         auto doLP = compute_minmaxII(operations, ctrl_steps, BBI->block->number, minII, maxII, toBeScheduled);
+         auto doLP = false;
+         doLP = compute_minmaxII(operations, ctrl_steps, BBI->block->number, minII, maxII, toBeScheduled);
+         if(FB->is_function_pipelined())
+         {
+            if(!doLP)
+            {
+               THROW_ERROR("Function pipelining not possible with II=" + STR(FB->get_initiation_time()));
+            }
+            if(FB->get_initiation_time() > minII)
+            {
+               minII = FB->get_initiation_time();
+            }
+            if(!doLP || FB->get_initiation_time() != minII)
+            {
+               THROW_ERROR("Function pipelining not possible with II=" + STR(minII));
+            }
+         }
          if(doLP)
          {
             doLP = false;
@@ -2313,8 +2356,10 @@ DesignFlowStep_Status parametric_list_based::InternalExec()
                if(res_sched)
                {
                   doLP = true;
-                  INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
-                                 "---  II=" + STR(II) + " solution found for loop (BB" + STR(BBI->block->number) + ")");
+                  INDENT_OUT_MEX(
+                      OUTPUT_LEVEL_MINIMUM, output_level,
+                      "---  II=" + STR(II) + " solution found" +
+                          (FB->is_function_pipelined() ? "" : (" for loop (BB" + STR(BBI->block->number) + ")")));
                   HLS->Rsch->AddLoopPipelinedInfor(BBI->block->number, II, toBeScheduled);
                   break;
                }
@@ -2329,6 +2374,10 @@ DesignFlowStep_Status parametric_list_based::InternalExec()
             }
             if(!doLP)
             {
+               if(FB->is_function_pipelined())
+               {
+                  THROW_ERROR("Function pipelining not possible with II=" + STR(minII));
+               }
                INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
                               "---  Loop pipelining not possible for loop (BB" + STR(BBI->block->number) + ")");
                CustomUnorderedSet<std::pair<vertex, vertex>> emptySet;

@@ -143,6 +143,15 @@ int StorageValueInformation::get_compatibility_weight(unsigned int storage_value
       return 1;
    }
 #endif
+   const tree_managerRef TreeM = HLS_mgr->get_tree_manager();
+   if(tree_helper::is_parameter(TreeM, var1))
+   {
+      return 1;
+   }
+   if(tree_helper::is_parameter(TreeM, var2))
+   {
+      return 1;
+   }
    THROW_ASSERT(vw2vertex.find(var1) != vw2vertex.end(), "variable not in the map " + STR(var1));
    THROW_ASSERT(vw2vertex.find(var2) != vw2vertex.end(),
                 "variable " + STR(HLS_mgr->get_tree_manager()->CGetTreeNode(var2)) + " not in the map");

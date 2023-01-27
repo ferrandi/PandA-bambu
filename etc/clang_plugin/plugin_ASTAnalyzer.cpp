@@ -766,15 +766,14 @@ namespace clang
             }
          }
          file_loc_attr[filename][loc]["is_pipelined"] = "yes";
-         file_loc_attr[filename][loc]["is_simple"] = "yes";
          file_loc_attr[filename][loc]["initiation_time"] = "1";
       }
    };
 
-   class HLS_stallable_pipeline_PragmaHandler : public PragmaHandler
+   class HLS_pipeline_PragmaHandler : public PragmaHandler
    {
     public:
-      HLS_stallable_pipeline_PragmaHandler() : PragmaHandler("HLS_stallable_pipeline")
+      HLS_pipeline_PragmaHandler() : PragmaHandler("HLS_pipeline")
       {
       }
 
@@ -805,22 +804,20 @@ namespace clang
                   if(Tok.isNot(tok::numeric_constant))
                   {
                      DiagnosticsEngine& D = PP.getDiagnostics();
-                     unsigned ID =
-                         D.getCustomDiagID(DiagnosticsEngine::Error, "#pragma HLS_stallable_pipeline malformed");
+                     unsigned ID = D.getCustomDiagID(DiagnosticsEngine::Error, "#pragma HLS_pipeline malformed");
                      D.Report(PragmaTok.getLocation(), ID);
                   }
                }
                else
                {
                   DiagnosticsEngine& D = PP.getDiagnostics();
-                  unsigned ID = D.getCustomDiagID(DiagnosticsEngine::Error, "#pragma HLS_stallable_pipeline malformed");
+                  unsigned ID = D.getCustomDiagID(DiagnosticsEngine::Error, "#pragma HLS_pipeline malformed");
                   D.Report(PragmaTok.getLocation(), ID);
                }
                ++index;
             }
          }
          file_loc_attr[filename][loc]["is_pipelined"] = "yes";
-         file_loc_attr[filename][loc]["is_simple"] = "no";
          file_loc_attr[filename][loc]["initiation_time"] = time;
       }
    };
@@ -842,7 +839,7 @@ namespace clang
          clang::Preprocessor& PP = CI.getPreprocessor();
          PP.AddPragmaHandler(new HLS_interface_PragmaHandler());
          PP.AddPragmaHandler(new HLS_simple_pipeline_PragmaHandler());
-         PP.AddPragmaHandler(new HLS_stallable_pipeline_PragmaHandler());
+         PP.AddPragmaHandler(new HLS_pipeline_PragmaHandler());
          auto pp = clang::PrintingPolicy(clang::LangOptions());
          if(cppflag)
          {

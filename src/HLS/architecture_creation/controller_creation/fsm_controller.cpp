@@ -176,6 +176,7 @@ void fsm_controller::create_state_machine(std::string& parse)
    const StateTransitionGraphConstRef astg = HLS->STG->CGetAstg();
    const FunctionBehaviorConstRef FB = HLSMgr->CGetFunctionBehavior(funId);
    const OpGraphConstRef data = FB->CGetOpGraph(FunctionBehavior::CFG);
+   const auto is_function_pipelined = FB->is_function_pipelined();
 
    vertex entry = HLS->STG->get_entry_state();
    THROW_ASSERT(boost::out_degree(entry, *stg) == 1, "Non deterministic initial state");
@@ -454,15 +455,15 @@ void fsm_controller::create_state_machine(std::string& parse)
    parse += ";\n";
 
    const tree_managerRef TreeM = HLSMgr->get_tree_manager();
+   auto exit_state = HLS->STG->get_exit_state();
+   auto entry_state = HLS->STG->get_entry_state();
    for(const auto& v : working_list)
    {
       // for every loop controller set the proper transition depending on the done port
-      if(HLS->STG->get_entry_state() == v or HLS->STG->get_exit_state() == v)
+      if(entry_state == v or (exit_state == v && !is_function_pipelined))
       {
          continue;
       }
-
-      // skip all but one state per loop
 
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Analyzing state " + stg->CGetStateInfo(v)->name);
 
@@ -617,8 +618,9 @@ void fsm_controller::create_state_machine(std::string& parse)
          }
 
          vertex tgt = boost::target(e, *stg);
-         bool last_transition = tgt == HLS->STG->get_exit_state();
-         vertex next_state = last_transition ? first_state : tgt;
+         bool last_transition = (tgt == exit_state && !is_function_pipelined) ||
+                                (is_function_pipelined && exit_state == boost::source(e, *stg));
+         vertex next_state = last_transition && !is_function_pipelined ? first_state : tgt;
          bool assert_done_port = false;
          if(done_port_is_registered)
          {
@@ -626,7 +628,8 @@ void fsm_controller::create_state_machine(std::string& parse)
             for(boost::tie(os_it, os_it_end) = boost::out_edges(tgt, *stg); os_it != os_it_end && !assert_done_port;
                 os_it++)
             {
-               if(boost::target(*os_it, *stg) == HLS->STG->get_exit_state())
+               if((boost::target(*os_it, *stg) == exit_state && !is_function_pipelined) ||
+                  (exit_state == boost::source(*os_it, *stg)))
                {
                   assert_done_port = true;
                }

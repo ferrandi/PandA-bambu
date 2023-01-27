@@ -104,6 +104,7 @@ class StateTransitionGraph_constructor
     *  create the STG exit vertex
     */
    void create_exit_state();
+   void set_exit_state(vertex ex);
 
    /**
     * Creates a connection between two vertices into the graph. You can also specify the edge kind. The method checks

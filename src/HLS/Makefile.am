@@ -329,8 +329,8 @@ lib_storage_value_insertion_la_CPPFLAGS = \
    -I$(top_srcdir)/src/tree \
    -I$(top_srcdir)/src/utility \
    $(AM_CPPFLAGS)
-noinst_HEADERS += binding/storage_value_insertion/storage_value_information.hpp binding/storage_value_insertion/storage_value_information_fsm.hpp binding/storage_value_insertion/storage_value_information_pipeline.hpp binding/storage_value_insertion/storage_value_insertion.hpp binding/storage_value_insertion/values_scheme.hpp
-lib_storage_value_insertion_la_SOURCES = binding/storage_value_insertion/storage_value_information.cpp binding/storage_value_insertion/storage_value_information_fsm.cpp binding/storage_value_insertion/storage_value_information_pipeline.cpp binding/storage_value_insertion/storage_value_insertion.cpp binding/storage_value_insertion/values_scheme.cpp
+noinst_HEADERS += binding/storage_value_insertion/storage_value_information.hpp binding/storage_value_insertion/storage_value_information_fsm.hpp binding/storage_value_insertion/storage_value_insertion.hpp binding/storage_value_insertion/values_scheme.hpp
+lib_storage_value_insertion_la_SOURCES = binding/storage_value_insertion/storage_value_information.cpp binding/storage_value_insertion/storage_value_information_fsm.cpp binding/storage_value_insertion/storage_value_insertion.cpp binding/storage_value_insertion/values_scheme.cpp
 
 lib_binding_la_SOURCES =
 lib_binding_la_LIBADD = lib_registerbinding.la lib_interconnectionbinding.la lib_storage_value_insertion.la lib_modulebinding.la
