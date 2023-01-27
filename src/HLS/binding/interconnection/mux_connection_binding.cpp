@@ -646,7 +646,7 @@ void mux_connection_binding::connect_to_registers(vertex op, const OpGraphConstR
 
    if(is_param)
    {
-      auto stepOp = HLS->Rliv->GetStepOp(state_src, op);
+      auto stepOp = FB->is_function_pipelined() ? HLS->Rliv->GetStepOp(state_src, op) : 0;
       if(stepOp)
       {
          auto storage_value = HLS->storage_value_information->get_storage_value_index(state_src, tree_var, stepOp);
