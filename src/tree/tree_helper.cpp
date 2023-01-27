@@ -5937,6 +5937,16 @@ std::string tree_helper::PrintType(const tree_managerConstRef& TM, const tree_no
          {
             res += "struct Internal_" + STR(node_type->index);
          }
+         if(rt->tmpl_args)
+         {
+            std::stringstream ss;
+            const auto& tmpl_args = GetPointerS<const tree_vec>(GET_CONST_NODE(rt->tmpl_args))->list_of_op;
+            for(const auto& targ : tmpl_args)
+            {
+               ss << "_" << targ;
+            }
+            res += NormalizeTypename(ss.str());
+         }
          break;
       }
       case union_type_K:
