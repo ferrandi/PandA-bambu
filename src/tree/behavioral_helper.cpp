@@ -4968,14 +4968,13 @@ std::string BehavioralHelper::print_type_declaration(unsigned int type) const
             res += "typedef ";
          }
          res += tree_helper::return_C_qualifiers(ut->qual, false);
-         res += "union ";
          if(!ut->unql)
          {
-            if(ut->packed_flag)
-            {
-               res += " __attribute__((packed)) ";
-            }
             res += tree_helper::PrintType(TM, node_type) + " ";
+         }
+         else
+         {
+            res += "union ";
          }
          if(!ut->unql || (!GetPointerS<const union_type>(GET_NODE(ut->unql))->name &&
                           !Param->getOption<bool>(OPT_without_transformation)))
@@ -4991,6 +4990,10 @@ std::string BehavioralHelper::print_type_declaration(unsigned int type) const
                res += ";\n";
             }
             res += '}';
+            if(ut->packed_flag)
+            {
+               res += " __attribute__((packed))";
+            }
             res += " ";
          }
          if(ut->unql)
