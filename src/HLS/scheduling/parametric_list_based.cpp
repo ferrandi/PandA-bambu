@@ -1863,7 +1863,7 @@ bool parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
                 1 + from_strongtype_cast<unsigned>(schedule->get_cstep_end(last_vertex).second) - cs_last_vertex;
             if(cs_first_vertex + LP_II < cs_last_vertex + last_vertex_n_cycles)
             {
-               if((GET_TYPE(flow_graph, first_vertex) & (TYPE_PHI)) == 0)
+               if((GET_TYPE(flow_graph, first_vertex) & (TYPE_PHI | TYPE_VPHI)) == 0)
                {
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                  "operation pair " + GET_NAME(flow_graph, first_vertex) + " <- " +
@@ -2234,25 +2234,29 @@ DesignFlowStep_Status parametric_list_based::InternalExec()
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
                   "-->Scheduling Information of function " + FB->CGetBehavioralHelper()->get_function_name() + ":");
 
-   for(const auto& loop : FB->GetLoops()->GetModifiableList())
+   /// discrepancy not supported when loop pipelining is active
+   if(!HLS->Param->isOption(OPT_discrepancy) or !HLS->Param->getOption<bool>(OPT_discrepancy))
    {
-      if(loop->loop_type & PIPELINABLE_LOOP)
+      for(const auto& loop : FB->GetLoops()->GetModifiableList())
       {
-         if(parameters->IsParameter("LP-BB-list"))
+         if(loop->loop_type & PIPELINABLE_LOOP)
          {
-            auto LP_BB_list = parameters->GetParameter<std::string>("LP-BB-list");
-            auto lbs = convert_string_to_vector<int>(LP_BB_list, ",");
-            auto bb = loop->GetHeader();
-            auto BBI = bbg->CGetBBNodeInfo(bb);
-            // std::set<unsigned> lbs = {55 /*, 67, 72, 78, 88, 91*/};
-            if(std::find(lbs.begin(), lbs.end(), BBI->block->number) != lbs.end())
+            if(parameters->IsParameter("LP-BB-list"))
+            {
+               auto LP_BB_list = parameters->GetParameter<std::string>("LP-BB-list");
+               auto lbs = convert_string_to_vector<int>(LP_BB_list, ",");
+               auto bb = loop->GetHeader();
+               auto BBI = bbg->CGetBBNodeInfo(bb);
+               // std::set<unsigned> lbs = {55 /*, 67, 72, 78, 88, 91*/};
+               if(std::find(lbs.begin(), lbs.end(), BBI->block->number) != lbs.end())
+               {
+                  LPBB.insert(loop->GetHeader());
+               }
+            }
+            else
             {
                LPBB.insert(loop->GetHeader());
             }
-         }
-         else
-         {
-            LPBB.insert(loop->GetHeader());
          }
       }
    }
