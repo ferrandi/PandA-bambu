@@ -5912,7 +5912,7 @@ std::string tree_helper::PrintType(const tree_managerConstRef& TM, const tree_no
       case record_type_K:
       {
          const auto rt = GetPointerS<const record_type>(node_type);
-         res += return_C_qualifiers(rt->qual, true);
+         res += return_C_qualifiers(rt->qual, print_qualifiers);
          if(rt->name && (GET_CONST_NODE(rt->name)->get_kind() == type_decl_K || (rt->unql && !rt->system_flag)))
          {
             res += (rt->unql ? "" : "struct ") + PrintType(TM, rt->name, global);
@@ -5942,7 +5942,7 @@ std::string tree_helper::PrintType(const tree_managerConstRef& TM, const tree_no
       case union_type_K:
       {
          const auto ut = GetPointerS<const union_type>(node_type);
-         res += return_C_qualifiers(ut->qual, true);
+         res += return_C_qualifiers(ut->qual, print_qualifiers);
          if(ut->name && (GET_NODE(ut->name)->get_kind() == type_decl_K || (ut->unql && !ut->system_flag)))
          {
             res += PrintType(TM, ut->name, global);
