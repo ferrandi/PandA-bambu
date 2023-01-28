@@ -740,10 +740,10 @@ DesignFlowStep_Status FSM_NI_SSA_liveness::InternalExec()
          continue;
       }
       OutEdgeIterator o_e_it, o_e_end;
-      for(boost::tie(o_e_it, o_e_end) = boost::out_edges(rosl, *astg); o_e_it != o_e_end; ++o_e_it)
+      for(boost::tie(o_e_it, o_e_end) = boost::out_edges(rosl, *stg); o_e_it != o_e_end; ++o_e_it)
       {
-         vertex target_state = boost::target(*o_e_it, *astg);
-         const StateInfoConstRef tgt_state_info = astg->CGetStateInfo(target_state);
+         vertex target_state = boost::target(*o_e_it, *stg);
+         const StateInfoConstRef tgt_state_info = stg->CGetStateInfo(target_state);
          unsigned int tgt_bb_index = get_bb_index_from_state_info(data, tgt_state_info);
          if(target_state == exit_state || tgt_state_info->is_dummy || !tgt_state_info->is_pipelined_state ||
             bb_index != tgt_bb_index)
@@ -752,6 +752,7 @@ DesignFlowStep_Status FSM_NI_SSA_liveness::InternalExec()
          }
          for(const auto& eoc : tgt_state_info->ending_operations)
          {
+            THROW_ASSERT(GET_BB_INDEX(data, eoc) == bb_index, "unexpected condition");
             if((GET_TYPE(data, eoc) & TYPE_PHI) != 0 && tgt_state_info->step_out.at(eoc) != 0)
             {
                const auto phi_node =
@@ -761,17 +762,37 @@ DesignFlowStep_Status FSM_NI_SSA_liveness::InternalExec()
                {
                   auto phi_in = def_edge.first->index;
                   if(HLSMgr->is_register_compatible(phi_in) && HLS->Rliv->has_op_where_defined(phi_in) &&
-                     GET_BB_INDEX(data, HLS->Rliv->get_op_where_defined(phi_in)) != GET_BB_INDEX(data, eoc))
+                     GET_BB_INDEX(data, HLS->Rliv->get_op_where_defined(phi_in)) != bb_index)
                   {
                      auto step = HLS->Rliv->GetStepPhiIn(eoc, phi_in);
-                     // auto def_op = HLS->Rliv->get_op_where_defined(phi_in);
-                     //                     auto def_state = *HLS->Rliv->get_state_where_end(def_op).begin();
-                     //                     const StateInfoConstRef def_state_info = astg->CGetStateInfo(def_state);
-                     //                     auto step = def_state_info->is_pipelined_state ?
-                     //                                     stg->CGetStateTransitionGraphInfo()->vertex_to_max_step.at(def_state)
-                     //                                     + 1 : 0;
                      HLS->Rliv->set_live_in(target_state, phi_in, step);
-                     HLS->Rliv->set_live_in(rosl, phi_in, step);
+                     /// propagate up
+                     std::queue<vertex> to_process;
+                     std::set<vertex> visited;
+                     to_process.push(rosl);
+                     while(!to_process.empty())
+                     {
+                        auto cur = to_process.front();
+                        to_process.pop();
+                        if(!visited.count(cur))
+                        {
+                           INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                                          "---" + FB->CGetBehavioralHelper()->PrintVariable(phi_in) + "--" + STR(step));
+                           HLS->Rliv->set_live_in(cur, phi_in, step);
+                           HLS->Rliv->set_live_out(cur, phi_in, step);
+                           InEdgeIterator i_e_it, i_e_end;
+                           for(boost::tie(i_e_it, i_e_end) = boost::in_edges(cur, *astg); i_e_it != i_e_end; ++i_e_it)
+                           {
+                              auto src_state = boost::source(*i_e_it, *astg);
+                              const StateInfoConstRef src_state_info = astg->CGetStateInfo(src_state);
+                              unsigned int src_bb_index = get_bb_index_from_state_info(data, src_state_info);
+                              if(bb_index == src_bb_index)
+                              {
+                                 to_process.push(src_state);
+                              }
+                           }
+                        }
+                     }
                   }
                }
             }
