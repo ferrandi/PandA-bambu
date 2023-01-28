@@ -1629,10 +1629,9 @@ class bipartite_matching_clique_covering : public clique_covering<vertex_type>
    void exec(const filter_clique<vertex_type>& fc, check_clique<vertex_type>&) override
    {
       /// now color the graph and then do the bipartite matching on the vertex having the same color
-      if(partitions.empty())
-      {
-         num_cols = color_the_cc_compatibility_graph(clique_covering_graph_bulk);
-      }
+      /// usually this reduces the number of the partitions and simplifies the problem
+      partitions.clear();
+      num_cols = color_the_cc_compatibility_graph(clique_covering_graph_bulk);
       // std::cerr << "initial max_num_cols " << max_num_cols << std::endl;
       auto completeCG = cc_compatibility_graphRef(
           new cc_compatibility_graph(clique_covering_graph_bulk,
@@ -1649,25 +1648,35 @@ class bipartite_matching_clique_covering : public clique_covering<vertex_type>
       }
       // std::cerr << "num_cols " << num_cols << "\n";
       // std::cerr << "partitions.size " << partitions.size() << "\n";
+      std::vector<CustomOrderedSet<boost::graph_traits<boost_cc_compatibility_graph>::vertex_descriptor>>
+          partitionsSorted;
+      for(const auto& p : partitions)
+      {
+         partitionsSorted.push_back(p.second);
+      }
+      std::sort(
+          partitionsSorted.begin(), partitionsSorted.end(),
+          [](const CustomOrderedSet<boost::graph_traits<boost_cc_compatibility_graph>::vertex_descriptor>& a,
+             const CustomOrderedSet<boost::graph_traits<boost_cc_compatibility_graph>::vertex_descriptor>& b) -> bool {
+             return a.size() > b.size();
+          });
       size_t num_rows = num_cols;
       bool restart_bipartite;
       do
       {
          restart_bipartite = false;
          /// compute the assignment for each element of a partition
-         auto p_it_end = partitions.rend();
          // int pindex = 0;
-         for(auto p_it = partitions.rbegin(); p_it != p_it_end; ++p_it)
+         for(const auto& p : partitionsSorted)
          {
             // std::cerr << "partition" << pindex++ << "\n";
-            // std::cerr << "partition size=" << p_it->second.size() << "\n";
+            // std::cerr << "partition size=" << p.size() << "\n";
             operations_research::SimpleLinearSumAssignment assignment;
             std::set<unsigned> column_already_assigned;
-            auto v_it_end = p_it->second.end();
-            auto v_it = p_it->second.begin();
-            auto min_to_be_removed = std::numeric_limits<unsigned>::max();
-            size_t skip_infeasibles = 0;
-            for(unsigned i = 0; i < num_rows; ++i)
+            auto v_it_end = p.end();
+            auto v_it = p.begin();
+            // auto min_to_be_removed = std::numeric_limits<unsigned>::max();
+            for(unsigned i = 0; i < num_rows && !restart_bipartite; ++i)
             {
                if(v_it == v_it_end)
                {
@@ -1708,17 +1717,17 @@ class bipartite_matching_clique_covering : public clique_covering<vertex_type>
                   {
                      // std::cerr << "compatible does not exist " << max_num_cols << " " << num_cols << "\n";
                      bool added_an_element = false;
-                     unsigned to_removed_number = 0;
+                     // unsigned to_removed_number = 0;
                      for(unsigned int y = 0; y < num_cols; ++y)
                      {
                         if(column_already_assigned.find(y) == column_already_assigned.end())
                         {
                            CustomOrderedSet<C_vertex> curr_expandend_clique;
-                           auto& current_clique = cliques.at(y);
+                           const auto& current_clique = cliques.at(y);
                            // std::cerr << "current_clique.size=" << current_clique.size() << "y=" << y << "\n";
                            // std::cerr << "y=" << y << "\n";
                            bool to_be_removed = false;
-                           for(auto cv : current_clique)
+                           for(const auto cv : current_clique)
                            {
                               // std::cerr << "*v_it=" << *v_it << " cv=" << cv << "\n";
                               auto edge_check = boost::edge(*v_it, cv, *completeCG);
@@ -1740,7 +1749,7 @@ class bipartite_matching_clique_covering : public clique_covering<vertex_type>
                            if(to_be_removed)
                            {
                               // std::cerr << "to be removed\n";
-                              ++to_removed_number;
+                              //++to_removed_number;
                            }
                            if(!to_be_removed)
                            {
@@ -1752,14 +1761,14 @@ class bipartite_matching_clique_covering : public clique_covering<vertex_type>
                            }
                         }
                      }
-                     min_to_be_removed = std::min(min_to_be_removed, to_removed_number);
-                     // std::cerr << "to_removed_number=" << to_removed_number << " p_it->second.size() " <<
-                     // p_it->second.size() << " num_columns " << num_cols << "\n";
+                     // min_to_be_removed = std::min(min_to_be_removed, to_removed_number);
+                     // std::cerr << "to_removed_number=" << to_removed_number << " p.size() " << p.size()
+                     //           << " num_columns " << num_cols << "\n";
                      if(!added_an_element)
                      {
                         restart_bipartite = true;
-                        ++skip_infeasibles;
-                        // std::cerr << "skip_infeasibles1 " << skip_infeasibles << "\n";
+                        //++skip_infeasibles;
+                        // std::cerr << "restart the problem (" + STR(num_cols) + ")\n";
                      }
                   }
                   ++v_it;
@@ -1767,7 +1776,7 @@ class bipartite_matching_clique_covering : public clique_covering<vertex_type>
             }
             if(!restart_bipartite && assignment.Solve() == operations_research::SimpleLinearSumAssignment::OPTIMAL)
             {
-               v_it = p_it->second.begin();
+               v_it = p.begin();
                for(unsigned int i = 0; i < num_rows; ++i)
                {
                   if(v_it != v_it_end)
@@ -1785,11 +1794,7 @@ class bipartite_matching_clique_covering : public clique_covering<vertex_type>
                THROW_ASSERT(max_num_cols == 0 || max_num_cols > num_cols,
                             "Module binding does not have a solution\n  Current number of resources=" + STR(num_cols) +
                                 " Maximum number of resources" + STR(max_num_cols));
-               if(!restart_bipartite)
-               {
-                  skip_infeasibles = 1;
-               }
-               for(unsigned sindex = 0; sindex < skip_infeasibles; ++sindex)
+               for(unsigned sindex = 0; sindex < 1; ++sindex)
                {
                   ++num_cols;
                   ++num_rows;
