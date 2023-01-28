@@ -323,10 +323,10 @@ unsigned liveness::GetStep(vertex v, vertex op, unsigned int var, bool in) const
    {
       auto def_op = get_op_where_defined(var);
       auto def_op_BB_index = vertex_BB.at(def_op);
-      auto op_BB_index = vertex_BB.at(op);
       if(BB2MaxStep.at(def_op_BB_index))
       {
          /// the def state is pipelined
+         auto op_BB_index = vertex_BB.at(op);
          if(def_op_BB_index == op_BB_index)
          {
             return get_step(v, op, var, in);
@@ -351,10 +351,10 @@ unsigned liveness::GetStepPhiIn(vertex op, unsigned int var) const
 {
    auto def_op = get_op_where_defined(var);
    auto def_op_BB_index = vertex_BB.at(def_op);
-   auto op_BB_index = vertex_BB.at(op);
    if(BB2MaxStep.at(def_op_BB_index))
    {
       /// the def state is pipelined
+      auto op_BB_index = vertex_BB.at(op);
       if(def_op_BB_index == op_BB_index)
       {
          THROW_ASSERT(BB2II.count(op_BB_index) && BB2II.at(op_BB_index), "unxpected condition");
@@ -379,10 +379,10 @@ unsigned liveness::GetStepPhiOut(vertex op, unsigned int var) const
 {
    auto def_op = get_op_where_defined(var);
    auto def_op_BB_index = vertex_BB.at(def_op);
-   auto op_BB_index = vertex_BB.at(op);
    if(BB2MaxStep.at(def_op_BB_index))
    {
       /// the def state is pipelined
+      auto op_BB_index = vertex_BB.at(op);
       if(def_op_BB_index == op_BB_index)
       {
          THROW_ASSERT(BB2II.count(op_BB_index) && BB2II.at(op_BB_index), "unxpected condition");
