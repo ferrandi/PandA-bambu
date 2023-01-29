@@ -316,8 +316,14 @@ PLUGIN_TEST
                I386_GCC46_ROOT_DIR=`dirname $I386_GCC46_EXE`/..
                I386_GCC46_GENGTYPE=`find $I386_GCC46_ROOT_DIR -name gengtype | head -n1`
                if test "x$I386_GCC46_GENGTYPE" = "x"; then
-                  I386_GCC46_PLUGIN_COMPILER=
-                  continue
+                  # Try to find gengtype in the gcc install dir based on libgcc
+                  I386_GCC46_LIBGCC=`$I386_GCC46_EXE -print-libgcc-file-name`
+                  I386_GCC46_ROOT_DIR=`dirname $I386_GCC46_LIBGCC`/../../../..
+                  I386_GCC46_GENGTYPE=`find $I386_GCC46_ROOT_DIR -name gengtype | head -n1`
+                  if test "x$I386_GCC46_GENGTYPE" = "x"; then
+                     I386_GCC46_PLUGIN_COMPILER=
+                     continue
+                  fi
                fi
             fi
          fi
@@ -563,8 +569,14 @@ PLUGIN_TEST
                I386_GCC47_ROOT_DIR=`dirname $I386_GCC47_EXE`/..
                I386_GCC47_GENGTYPE=`find $I386_GCC47_ROOT_DIR -name gengtype | head -n1`
                if test "x$I386_GCC47_GENGTYPE" = "x"; then
-                  I386_GCC47_PLUGIN_COMPILER=
-                  continue
+                  # Try to find gengtype in the gcc install dir based on libgcc
+                  I386_GCC47_LIBGCC=`$I386_GCC47_EXE -print-libgcc-file-name`
+                  I386_GCC47_ROOT_DIR=`dirname $I386_GCC47_LIBGCC`/../../../..
+                  I386_GCC47_GENGTYPE=`find $I386_GCC47_ROOT_DIR -name gengtype | head -n1`
+                  if test "x$I386_GCC47_GENGTYPE" = "x"; then
+                     I386_GCC47_PLUGIN_COMPILER=
+                     continue
+                  fi
                fi
             fi
          fi
@@ -811,8 +823,14 @@ PLUGIN_TEST
                I386_GCC48_ROOT_DIR=`dirname $I386_GCC48_EXE`/..
                I386_GCC48_GENGTYPE=`find $I386_GCC48_ROOT_DIR -name gengtype | head -n1`
                if test "x$I386_GCC48_GENGTYPE" = "x"; then
-                  I386_GCC48_PLUGIN_COMPILER=
-                  continue
+                  # Try to find gengtype in the gcc install dir based on libgcc
+                  I386_GCC48_LIBGCC=`$I386_GCC48_EXE -print-libgcc-file-name`
+                  I386_GCC48_ROOT_DIR=`dirname $I386_GCC48_LIBGCC`/../../../..
+                  I386_GCC48_GENGTYPE=`find $I386_GCC48_ROOT_DIR -name gengtype | head -n1`
+                  if test "x$I386_GCC48_GENGTYPE" = "x"; then
+                     I386_GCC48_PLUGIN_COMPILER=
+                     continue
+                  fi
                fi
             fi
          fi
@@ -1080,8 +1098,14 @@ PLUGIN_TEST
                I386_GCC49_ROOT_DIR=`dirname $I386_GCC49_EXE`/..
                I386_GCC49_GENGTYPE=`find $I386_GCC49_ROOT_DIR -name gengtype$ac_exeext | head -n1`
                if test "x$I386_GCC49_GENGTYPE" = "x"; then
-                  I386_GCC49_PLUGIN_COMPILER=
-                  continue
+                  # Try to find gengtype in the gcc install dir based on libgcc
+                  I386_GCC49_LIBGCC=`$I386_GCC49_EXE -print-libgcc-file-name`
+                  I386_GCC49_ROOT_DIR=`dirname $I386_GCC49_LIBGCC`/../../../..
+                  I386_GCC49_GENGTYPE=`find $I386_GCC49_ROOT_DIR -name gengtype$ac_exeext | head -n1`
+                  if test "x$I386_GCC49_GENGTYPE" = "x"; then
+                     I386_GCC49_PLUGIN_COMPILER=
+                     continue
+                  fi
                fi
             fi
          fi
@@ -1323,8 +1347,14 @@ PLUGIN_TEST
                I386_GCC5_ROOT_DIR=`dirname $I386_GCC5_EXE`/..
                I386_GCC5_GENGTYPE=`find $I386_GCC5_ROOT_DIR -name gengtype | head -n1`
                if test "x$I386_GCC5_GENGTYPE" = "x"; then
-                  I386_GCC5_PLUGIN_COMPILER=
-                  continue
+                  # Try to find gengtype in the gcc install dir based on libgcc
+                  I386_GCC5_LIBGCC=`$I386_GCC5_EXE -print-libgcc-file-name`
+                  I386_GCC5_ROOT_DIR=`dirname $I386_GCC5_LIBGCC`/../../../..
+                  I386_GCC5_GENGTYPE=`find $I386_GCC5_ROOT_DIR -name gengtype | head -n1`
+                  if test "x$I386_GCC5_GENGTYPE" = "x"; then
+                     I386_GCC5_PLUGIN_COMPILER=
+                     continue
+                  fi
                fi
             fi
          fi
@@ -1566,8 +1596,14 @@ PLUGIN_TEST
                I386_GCC6_ROOT_DIR=`dirname $I386_GCC6_EXE`/..
                I386_GCC6_GENGTYPE=`find $I386_GCC6_ROOT_DIR -name gengtype | head -n1`
                if test "x$I386_GCC6_GENGTYPE" = "x"; then
-                  I386_GCC6_PLUGIN_COMPILER=
-                  continue
+                  # Try to find gengtype in the gcc install dir based on libgcc
+                  I386_GCC6_LIBGCC=`$I386_GCC6_EXE -print-libgcc-file-name`
+                  I386_GCC6_ROOT_DIR=`dirname $I386_GCC6_LIBGCC`/../../../..
+                  I386_GCC6_GENGTYPE=`find $I386_GCC6_ROOT_DIR -name gengtype | head -n1`
+                  if test "x$I386_GCC6_GENGTYPE" = "x"; then
+                     I386_GCC6_PLUGIN_COMPILER=
+                     continue
+                  fi
                fi
             fi
          fi
@@ -1809,8 +1845,14 @@ PLUGIN_TEST
                I386_GCC7_ROOT_DIR=`dirname $I386_GCC7_EXE`/..
                I386_GCC7_GENGTYPE=`find $I386_GCC7_ROOT_DIR -name gengtype | head -n1`
                if test "x$I386_GCC7_GENGTYPE" = "x"; then
-                  I386_GCC7_PLUGIN_COMPILER=
-                  continue
+                  # Try to find gengtype in the gcc install dir based on libgcc
+                  I386_GCC7_LIBGCC=`$I386_GCC7_EXE -print-libgcc-file-name`
+                  I386_GCC7_ROOT_DIR=`dirname $I386_GCC7_LIBGCC`/../../../..
+                  I386_GCC7_GENGTYPE=`find $I386_GCC7_ROOT_DIR -name gengtype | head -n1`
+                  if test "x$I386_GCC7_GENGTYPE" = "x"; then
+                     I386_GCC7_PLUGIN_COMPILER=
+                     continue
+                  fi
                fi
             fi
          fi
@@ -2064,8 +2106,14 @@ PLUGIN_TEST
                I386_GCC8_ROOT_DIR=`dirname $I386_GCC8_EXE`/..
                I386_GCC8_GENGTYPE=`find $I386_GCC8_ROOT_DIR -name gengtype$ac_exeext | head -n1`
                if test "x$I386_GCC8_GENGTYPE" = "x"; then
-                  I386_GCC8_PLUGIN_COMPILER=
-                  continue
+                  # Try to find gengtype in the gcc install dir based on libgcc
+                  I386_GCC8_LIBGCC=`$I386_GCC8_EXE -print-libgcc-file-name`
+                  I386_GCC8_ROOT_DIR=`dirname $I386_GCC8_LIBGCC`/../../../..
+                  I386_GCC8_GENGTYPE=`find $I386_GCC8_ROOT_DIR -name gengtype$ac_exeext | head -n1`
+                  if test "x$I386_GCC8_GENGTYPE" = "x"; then
+                     I386_GCC8_PLUGIN_COMPILER=
+                     continue
+                  fi
                fi
             fi
          fi
