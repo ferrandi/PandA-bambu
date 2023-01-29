@@ -926,15 +926,14 @@ void HLSCWriter::WriteSimulatorInitMemory(const unsigned int function_id)
          std::string param = BH->PrintVariable(l);
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Considering memory variable '" + param + "'");
          const auto is_top_param = std::find(parameters.begin(), parameters.end(), l) != parameters.end();
-         THROW_ASSERT(DesignInterfaceArgsTypename_it == DesignInterfaceTypename.end() ||
-                          DesignInterfaceArgsTypename_it->second.count(param),
-                      "Parameter should be present in design interface.");
-
          const auto param_if_typename = [&]() -> std::string {
             if(DesignInterfaceArgsTypename_it != DesignInterfaceTypename.end())
             {
-               return boost::regex_replace(DesignInterfaceArgsTypename_it->second.at(param), wrapper_def,
-                                           "$" + STR(WRAPPER_GROUP_WTYPE));
+               const auto if_arg_typename = DesignInterfaceArgsTypename_it->second.find(param);
+               if(if_arg_typename != DesignInterfaceArgsTypename_it->second.end())
+               {
+                  return boost::regex_replace(if_arg_typename->second, wrapper_def, "$" + STR(WRAPPER_GROUP_WTYPE));
+               }
             }
             return "";
          }();
