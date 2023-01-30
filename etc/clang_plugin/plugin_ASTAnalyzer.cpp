@@ -504,7 +504,9 @@ namespace clang
                         ParamTypeNameOrig = paramTypeRemTD.getAsString(pp);
                         ParamTypeInclude = getIncludes(paramTypeRemTD);
                      }
-                     const auto is_channel_if = ParamTypeName.find("ac_channel<") == 0;
+                     const auto is_channel_if = ParamTypeName.find("ac_channel<") == 0 ||
+                                                ParamTypeName.find("stream<") == 0 ||
+                                                ParamTypeName.find("hls::stream<") == 0;
                      interface = is_channel_if ? "fifo" : "ptrdefault";
                      if(attr_val.find("interface_type") != attr_val.end())
                      {

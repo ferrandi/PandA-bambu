@@ -79,8 +79,8 @@
 
 REF_FORWARD_DECL(memory_symbol);
 
-static const boost::regex wrapper_def("ac_channel<(.*)>");
-#define WRAPPER_GROUP_WTYPE 1
+static const boost::regex wrapper_def("(ac_channel|stream|hls::stream)<(.*)>");
+#define WRAPPER_GROUP_WTYPE 2
 
 HLSCWriter::HLSCWriter(const HLSCBackendInformationConstRef _hls_c_backend_information,
                        const application_managerConstRef _AppM, const InstructionWriterRef _instruction_writer,
