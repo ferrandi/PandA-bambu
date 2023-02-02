@@ -235,7 +235,9 @@ namespace clang
       QualType RemoveTypedef(QualType t) const
       {
          if(t->getTypeClass() == Type::Typedef)
+         {
             return RemoveTypedef(t->getAs<TypedefType>()->getDecl()->getUnderlyingType());
+         }
          else if(t->getTypeClass() == Type::TemplateSpecialization)
          {
             return t;
@@ -483,16 +485,16 @@ namespace clang
                         else
                         {
                            const auto paramTypeRemTD = RemoveTypedef(PT->getPointeeType());
-                           ParamTypeName = GetTypeNameCanonical(paramTypeRemTD, pp) + " *";
-                           ParamTypeNameOrig = paramTypeRemTD.getAsString(pp) + " *";
+                           ParamTypeName = GetTypeNameCanonical(paramTypeRemTD, pp) + "*";
+                           ParamTypeNameOrig = paramTypeRemTD.getAsString(pp) + "*";
                            ParamTypeInclude = getIncludes(paramTypeRemTD);
                         }
                      }
                      else if(const auto RT = dyn_cast<ReferenceType>(argType))
                      {
                         const auto paramTypeRemTD = RemoveTypedef(RT->getPointeeType());
-                        ParamTypeName = GetTypeNameCanonical(paramTypeRemTD, pp) + " &";
-                        ParamTypeNameOrig = paramTypeRemTD.getAsString(pp) + " &";
+                        ParamTypeName = GetTypeNameCanonical(paramTypeRemTD, pp) + "&";
+                        ParamTypeNameOrig = paramTypeRemTD.getAsString(pp) + "&";
                         ParamTypeInclude = getIncludes(paramTypeRemTD);
                      }
                      else
@@ -502,7 +504,9 @@ namespace clang
                         ParamTypeNameOrig = paramTypeRemTD.getAsString(pp);
                         ParamTypeInclude = getIncludes(paramTypeRemTD);
                      }
-                     const auto is_channel_if = ParamTypeName.find("ac_channel<") == 0;
+                     const auto is_channel_if = ParamTypeName.find("ac_channel<") == 0 ||
+                                                ParamTypeName.find("stream<") == 0 ||
+                                                ParamTypeName.find("hls::stream<") == 0;
                      interface = is_channel_if ? "fifo" : "ptrdefault";
                      if(attr_val.find("interface_type") != attr_val.end())
                      {

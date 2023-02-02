@@ -334,7 +334,8 @@ void processBranch(tree_nodeConstRef bi, CustomSet<OperandRef>& OpsToRename, eSS
       return;
    }
 
-   auto InsertHelper = [&](tree_nodeRef Op) {
+   auto InsertHelper = [&](tree_nodeRef Op)
+   {
       for(const auto& Succ : SuccsToProcess)
       {
          if(Succ->number == BranchBB->number)
@@ -405,7 +406,8 @@ void processMultiWayIf(tree_nodeConstRef mwii, CustomSet<OperandRef>& OpsToRenam
    THROW_ASSERT(MWII, "Multi way if instruction should be gimple_multi_way_if");
    const auto BranchBBI = MWII->bb_index;
    const auto BranchBB = BBs.at(BranchBBI);
-   auto InsertHelper = [&](tree_nodeRef ssa_var, tree_nodeRef use_stmt, unsigned int TargetBBI) {
+   auto InsertHelper = [&](tree_nodeRef ssa_var, tree_nodeRef use_stmt, unsigned int TargetBBI)
+   {
       THROW_ASSERT(static_cast<bool>(BBs.count(TargetBBI)), "Target BB should be in BB list");
       const auto& TargetBB = BBs.at(TargetBBI);
 
@@ -561,10 +563,10 @@ struct ValueDFS_Compare
       if(!VD.Def && VD.U)
       {
          const auto* PHI = GetPointer<const gimple_phi>(GET_CONST_NODE(VD.U->getUser()));
-         auto phiDefEdge = std::find_if(
-             PHI->CGetDefEdgesList().begin(), PHI->CGetDefEdgesList().end(), [&](const gimple_phi::DefEdge& de) {
-                return GET_INDEX_CONST_NODE(de.first) == GET_INDEX_CONST_NODE(VD.U->getOperand());
-             });
+         auto phiDefEdge =
+             std::find_if(PHI->CGetDefEdgesList().begin(), PHI->CGetDefEdgesList().end(),
+                          [&](const gimple_phi::DefEdge& de)
+                          { return GET_INDEX_CONST_NODE(de.first) == GET_INDEX_CONST_NODE(VD.U->getOperand()); });
          THROW_ASSERT(phiDefEdge != PHI->CGetDefEdgesList().end(), "Unable to find variable in phi definitions");
          return std::make_pair(phiDefEdge->second, PHI->bb_index);
       }
@@ -668,10 +670,10 @@ bool stackIsInScope(const ValueDFSStack& Stack, const ValueDFS& VDUse, const Ord
          return false;
       }
       // Check edge
-      auto EdgePredIt = std::find_if(
-          PHI->CGetDefEdgesList().begin(), PHI->CGetDefEdgesList().end(), [&](const gimple_phi::DefEdge& de) {
-             return GET_INDEX_CONST_NODE(de.first) == GET_INDEX_CONST_NODE(VDUse.U->getOperand());
-          });
+      auto EdgePredIt =
+          std::find_if(PHI->CGetDefEdgesList().begin(), PHI->CGetDefEdgesList().end(),
+                       [&](const gimple_phi::DefEdge& de)
+                       { return GET_INDEX_CONST_NODE(de.first) == GET_INDEX_CONST_NODE(VDUse.U->getOperand()); });
       if(EdgePredIt->second != getBranchBlock(Stack.back().PInfo))
       {
          return false;
@@ -733,7 +735,8 @@ void convertUsesToDFSOrdered(tree_nodeRef Op, std::vector<ValueDFS>& DFSOrderedS
          continue;
       }
 
-      const auto dfs_gen = [&](unsigned int IBlock) {
+      const auto dfs_gen = [&](unsigned int IBlock)
+      {
          ValueDFS VD;
          if(gp)
          {
@@ -843,7 +846,7 @@ tree_nodeRef materializeStack(ValueDFSStack& RenameStack, unsigned int function_
          const auto& ToBB = DT->CGetBBNodeInfo(ToBB_vertex)->block;
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Inserting into BB" + STR(ToBB->number));
 
-         tree_nodeRef PIC, new_ssa_var;
+         tree_nodeRef pic, new_ssa_var;
          std::vector<std::pair<tree_nodeRef, unsigned int>> list_of_def_edge = {{Op, pwe->From}};
          if(ToBB->list_of_pred.size() > 1) // New intermediate BB has to be created
          {
@@ -923,22 +926,22 @@ tree_nodeRef materializeStack(ValueDFSStack& RenameStack, unsigned int function_
             }
 
             // Insert required sigma operation into the intermediate basic block
-            PIC = tree_man->create_phi_node(new_ssa_var, list_of_def_edge, function_id);
-            const auto gp = GetPointer<gimple_phi>(GET_NODE(PIC));
+            pic = tree_man->create_phi_node(new_ssa_var, list_of_def_edge, function_id);
+            const auto gp = GetPointer<gimple_phi>(GET_NODE(pic));
             gp->SetSSAUsesComputed();
             gp->artificial = true;
-            interBB->AddPhi(PIC);
+            interBB->AddPhi(pic);
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                            "---Insertion moved to intermediate BB" + STR(interBB->number));
          }
          else
          {
             // Insert required sigma operation into the destination basic block
-            PIC = tree_man->create_phi_node(new_ssa_var, list_of_def_edge, function_id);
-            const auto gp = GetPointer<gimple_phi>(GET_NODE(PIC));
+            pic = tree_man->create_phi_node(new_ssa_var, list_of_def_edge, function_id);
+            const auto gp = GetPointer<gimple_phi>(GET_NODE(pic));
             gp->SetSSAUsesComputed();
             gp->artificial = true;
-            ToBB->AddPhi(PIC);
+            ToBB->AddPhi(pic);
          }
 
          // Clone renamed ssa properties
@@ -950,9 +953,9 @@ tree_nodeRef materializeStack(ValueDFSStack& RenameStack, unsigned int function_
          newSSA->max = op->max;
          newSSA->var = op->var;
 
-         PredicateMap.insert({PIC, ValInfo});
-         Result.Def = PIC;
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Materialized " + GET_CONST_NODE(PIC)->ToString());
+         PredicateMap.insert({pic, ValInfo});
+         Result.Def = pic;
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Materialized " + GET_CONST_NODE(pic)->ToString());
       }
       else
       {
@@ -995,9 +998,8 @@ bool eSSA::renameUses(CustomSet<OperandRef>& OpSet, eSSA::ValueInfoLookup& Value
    // Sort OpsToRename since we are going to iterate it.
    std::vector<OperandRef> OpsToRename(OpSet.begin(), OpSet.end());
    OrderedInstructions OI(DT);
-   auto Comparator = [&](const OperandRef A, const OperandRef B) {
-      return valueComesBefore(OI, A->getUser(), B->getUser());
-   };
+   auto Comparator = [&](const OperandRef A, const OperandRef B)
+   { return valueComesBefore(OI, A->getUser(), B->getUser()); };
    std::sort(OpsToRename.begin(), OpsToRename.end(), Comparator);
    ValueDFS_Compare Compare(OI);
 
@@ -1306,7 +1308,8 @@ DesignFlowStep_Status eSSA::InternalExec()
    // as multi-way if.
    CustomSet<OperandRef> OpsToRename;
 
-   const auto BBvisit = [&](blocRef BB) {
+   const auto BBvisit = [&](blocRef BB)
+   {
       const auto& stmt_list = BB->CGetStmtList();
 
       // Skip empty BB

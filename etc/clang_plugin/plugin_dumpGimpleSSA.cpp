@@ -100,6 +100,14 @@
 #include <sstream>
 #include <string>
 
+#ifdef CPP_LANGUAGE
+#define CLANG_VERSION_SYMBOL_DUMP_SSA CLANG_VERSION_SYMBOL(_plugin_dumpGimpleSSACpp)
+#define CLANG_VERSION_STRING_DUMP_SSA CLANG_VERSION_STRING(_plugin_dumpGimpleSSACpp)
+#else
+#define CLANG_VERSION_SYMBOL_DUMP_SSA CLANG_VERSION_SYMBOL(_plugin_dumpGimpleSSA)
+#define CLANG_VERSION_STRING_DUMP_SSA CLANG_VERSION_STRING(_plugin_dumpGimpleSSA)
+#endif
+
 namespace llvm
 {
    cl::opt<std::string> TopFunctionName("panda-topfname", cl::desc("Specify the name of the top function"),
@@ -112,18 +120,16 @@ namespace llvm
    cl::opt<std::string> CostTable("panda-cost-table", cl::desc("Specify the cost per operation"),
                                   cl::value_desc("cost table"));
 
-   struct CLANG_VERSION_SYMBOL(_plugin_dumpGimpleSSA)
-       : public ModulePass
+   struct CLANG_VERSION_SYMBOL_DUMP_SSA : public ModulePass
 #if __clang_major__ >= 13
-         ,
-         public PassInfoMixin<CLANG_VERSION_SYMBOL(_plugin_dumpGimpleSSA)>
+       ,
+                                          public PassInfoMixin<CLANG_VERSION_SYMBOL_DUMP_SSA>
 #endif
    {
       static char ID;
       bool earlyAnalysis;
 
-      CLANG_VERSION_SYMBOL(_plugin_dumpGimpleSSA)
-      (bool _earlyAnalysis = false) : ModulePass(ID), earlyAnalysis(_earlyAnalysis)
+      CLANG_VERSION_SYMBOL_DUMP_SSA(bool _earlyAnalysis = false) : ModulePass(ID), earlyAnalysis(_earlyAnalysis)
       {
          initializeLoopInfoWrapperPassPass(*PassRegistry::getPassRegistry());
          initializeLazyValueInfoWrapperPassPass(*PassRegistry::getPassRegistry());
@@ -138,9 +144,8 @@ namespace llvm
       }
 
 #if __clang_major__ >= 13
-      CLANG_VERSION_SYMBOL(_plugin_dumpGimpleSSA)
-      (const CLANG_VERSION_SYMBOL(_plugin_dumpGimpleSSA) & other)
-          : CLANG_VERSION_SYMBOL(_plugin_dumpGimpleSSA)(other.earlyAnalysis)
+      CLANG_VERSION_SYMBOL_DUMP_SSA(const CLANG_VERSION_SYMBOL_DUMP_SSA& other)
+          : CLANG_VERSION_SYMBOL_DUMP_SSA(other.earlyAnalysis)
       {
       }
 #endif
@@ -284,7 +289,7 @@ namespace llvm
 
       StringRef getPassName() const override
       {
-         return CLANG_VERSION_STRING(_plugin_dumpGimpleSSA);
+         return CLANG_VERSION_STRING_DUMP_SSA;
       }
 
       void getAnalysisUsage(AnalysisUsage& AU) const override
@@ -336,33 +341,24 @@ namespace llvm
 #endif
    };
 
-   char CLANG_VERSION_SYMBOL(_plugin_dumpGimpleSSA)::ID = 0;
+   char CLANG_VERSION_SYMBOL_DUMP_SSA::ID = 0;
 
 } // namespace llvm
 
 // Currently there is no difference between c++ or c serialization
 #if !defined(_WIN32)
-#if CPP_LANGUAGE
-// static llvm::RegisterPass<llvm::CLANG_VERSION_SYMBOL(_plugin_dumpGimpleSSA)<true>>
-// XPassEarly(CLANG_VERSION_STRING(_plugin_dumpGimpleSSACppEarly), "Custom Value Range Based optimization step: LLVM
-// pass", false /* Only looks at CFG */, false /* Analysis Pass */);
-static llvm::RegisterPass<llvm::CLANG_VERSION_SYMBOL(_plugin_dumpGimpleSSA)>
-    XPass(CLANG_VERSION_STRING(_plugin_dumpGimpleSSACpp), "Dump gimple ssa raw format starting from LLVM IR: LLVM pass",
-          false /* Only looks at CFG */, false /* Analysis Pass */);
-#else
-// static llvm::RegisterPass<llvm::CLANG_VERSION_SYMBOL(_plugin_dumpGimpleSSA)<true>>
+// static llvm::RegisterPass<llvm::CLANG_VERSION_SYMBOL_DUMP_SSA<true>>
 // XPassEarly(CLANG_VERSION_STRING(_plugin_dumpGimpleSSAEarly), "Custom Value Range Based optimization step: LLVM pass",
 // false /* Only looks at CFG */, false /* Analysis Pass */);
-static llvm::RegisterPass<llvm::CLANG_VERSION_SYMBOL(_plugin_dumpGimpleSSA)>
-    XPass(CLANG_VERSION_STRING(_plugin_dumpGimpleSSA), "Dump gimple ssa raw format starting from LLVM IR: LLVM pass",
+static llvm::RegisterPass<llvm::CLANG_VERSION_SYMBOL_DUMP_SSA>
+    XPass(CLANG_VERSION_STRING_DUMP_SSA, "Dump gimple ssa raw format starting from LLVM IR: LLVM pass",
           false /* Only looks at CFG */, false /* Analysis Pass */);
-#endif
 #endif
 
 #if __clang_major__ >= 13
 llvm::PassPluginLibraryInfo CLANG_PLUGIN_INFO(_plugin_dumpGimpleSSA)()
 {
-   return {LLVM_PLUGIN_API_VERSION, CLANG_VERSION_STRING(_plugin_dumpGimpleSSA), "v0.12", [](llvm::PassBuilder& PB) {
+   return {LLVM_PLUGIN_API_VERSION, CLANG_VERSION_STRING_DUMP_SSA, "v0.12", [](llvm::PassBuilder& PB) {
               const auto load = [](llvm::ModulePassManager& MPM) {
                  llvm::FunctionPassManager FPM1;
                  FPM1.addPass(llvm::LowerAtomicPass());
@@ -375,12 +371,12 @@ llvm::PassPluginLibraryInfo CLANG_PLUGIN_INFO(_plugin_dumpGimpleSSA)()
                  FPM2.addPass(llvm::BreakCriticalEdgesPass());
                  FPM2.addPass(llvm::UnifyFunctionExitNodesPass());
                  MPM.addPass(llvm::createModuleToFunctionPassAdaptor(std::move(FPM2)));
-                 MPM.addPass(llvm::CLANG_VERSION_SYMBOL(_plugin_dumpGimpleSSA)());
+                 MPM.addPass(llvm::CLANG_VERSION_SYMBOL_DUMP_SSA());
                  return true;
               };
               PB.registerPipelineParsingCallback([&](llvm::StringRef Name, llvm::ModulePassManager& MPM,
                                                      llvm::ArrayRef<llvm::PassBuilder::PipelineElement>) {
-                 if(Name == CLANG_VERSION_STRING(_plugin_dumpGimpleSSA))
+                 if(Name == CLANG_VERSION_STRING_DUMP_SSA)
                  {
                     return load(MPM);
                  }
@@ -412,7 +408,7 @@ static void loadPass(const llvm::PassManagerBuilder&, llvm::legacy::PassManagerB
    PM.add(llvm::createBreakCriticalEdgesPass());
    PM.add(llvm::createUnifyFunctionExitNodesPass());
 
-   PM.add(new llvm::CLANG_VERSION_SYMBOL(_plugin_dumpGimpleSSA)());
+   PM.add(new llvm::CLANG_VERSION_SYMBOL_DUMP_SSA());
 }
 
 static llvm::RegisterStandardPasses llvmtoolLoader_Ox(llvm::PassManagerBuilder::EP_OptimizerLast, loadPass);
@@ -422,7 +418,7 @@ static llvm::RegisterStandardPasses llvmtoolLoader_Ox(llvm::PassManagerBuilder::
 //       PM.add(llvm::createPromoteMemoryToRegisterPass());
 //       PM.add(llvm::createGlobalOptimizerPass());
 //       PM.add(llvm::createBreakCriticalEdgesPass());
-//       PM.add(new llvm::CLANG_VERSION_SYMBOL(_plugin_dumpGimpleSSA) < true > ());
+//       PM.add(new llvm::CLANG_VERSION_SYMBOL_DUMP_SSA < true > ());
 //    }
 // These constructors add our pass to a list of global extensions.
 
@@ -438,7 +434,7 @@ static llvm::RegisterStandardPasses llvmtoolLoader_Ox(llvm::PassManagerBuilder::
 //
 // using namespace llvm;
 //
-// INITIALIZE_PASS_BEGIN(CLANG_VERSION_SYMBOL(_plugin_dumpGimpleSSA), CLANG_VERSION_STRING(_plugin_dumpGimpleSSA),
+// INITIALIZE_PASS_BEGIN(CLANG_VERSION_SYMBOL_DUMP_SSA, CLANG_VERSION_STRING_DUMP_SSA,
 //                       "Dump gimple ssa raw format starting from LLVM IR: LLVM pass", false, false)
 // INITIALIZE_PASS_DEPENDENCY(MemoryDependenceWrapperPass)
 // INITIALIZE_PASS_DEPENDENCY(MemorySSAWrapperPass)
@@ -450,5 +446,5 @@ static llvm::RegisterStandardPasses llvmtoolLoader_Ox(llvm::PassManagerBuilder::
 // INITIALIZE_PASS_DEPENDENCY(DominatorTreeWrapperPass)
 // INITIALIZE_PASS_DEPENDENCY(DominanceFrontierWrapperPass)
 // INITIALIZE_PASS_DEPENDENCY(OptimizationRemarkEmitterWrapperPass)
-// INITIALIZE_PASS_END(CLANG_VERSION_SYMBOL(_plugin_dumpGimpleSSA), CLANG_VERSION_STRING(_plugin_dumpGimpleSSA),
+// INITIALIZE_PASS_END(CLANG_VERSION_SYMBOL_DUMP_SSA, CLANG_VERSION_STRING_DUMP_SSA,
 //                     "Dump gimple ssa raw format starting from LLVM IR: LLVM pass", false, false)

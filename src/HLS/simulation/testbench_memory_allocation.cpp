@@ -56,6 +56,8 @@
 #include "utility.hpp"
 #include "var_pp_functor.hpp"
 
+#include <boost/filesystem.hpp>
+
 #include <list>
 #include <string>
 #include <tuple>
@@ -166,6 +168,11 @@ void TestbenchMemoryAllocation::AllocTestbenchMemory(void) const
          {
             if(test_v.size() > 4 && test_v.substr(test_v.size() - 4) == ".dat")
             {
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Binary file initialization");
+               if(!boost::filesystem::exists(test_v))
+               {
+                  THROW_ERROR("File does not exist: " + test_v);
+               }
                std::ifstream in(test_v, std::ifstream::ate | std::ifstream::binary);
                reserved_bytes = static_cast<unsigned long long>(in.tellg());
             }
@@ -193,7 +200,9 @@ void TestbenchMemoryAllocation::AllocTestbenchMemory(void) const
                }();
                THROW_ASSERT(base_type_byte_size, "");
                const auto splitted = SplitString(test_v, ",");
-               reserved_bytes = static_cast<unsigned long long>(splitted.size()) * base_type_byte_size;
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Object size: " + STR(base_type_byte_size));
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Array  size: " + STR(splitted.size()));
+               reserved_bytes = splitted.size() * base_type_byte_size;
             }
             else
             {
@@ -201,6 +210,7 @@ void TestbenchMemoryAllocation::AllocTestbenchMemory(void) const
                    new ComputeReservedMemory(TM, lnode));
                c_initialization_parser->Parse(c_initialization_parser_functor, test_v);
                reserved_bytes = GetPointer<ComputeReservedMemory>(c_initialization_parser_functor)->GetReservedBytes();
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---C object size: " + STR(reserved_bytes));
             }
 
             if(HLSMgr->RSim->param_address[v_idx].find(*l) == HLSMgr->RSim->param_address[v_idx].end())

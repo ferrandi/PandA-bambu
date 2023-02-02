@@ -812,25 +812,25 @@ namespace __AC_NAMESPACE
 #endif
       // Arithmetic assign  ------------------------------------------------------
       template <int W2, int I2, bool S2, ac_q_mode Q2, ac_o_mode O2>
-      ac_fixed& operator*=(const ac_fixed<W2, I2, S2, Q2, O2>& op2)
+      __FORCE_INLINE ac_fixed& operator*=(const ac_fixed<W2, I2, S2, Q2, O2>& op2)
       {
          *this = this->operator*(op2);
          return *this;
       }
       template <int W2, int I2, bool S2, ac_q_mode Q2, ac_o_mode O2>
-      ac_fixed& operator+=(const ac_fixed<W2, I2, S2, Q2, O2>& op2)
+      __FORCE_INLINE ac_fixed& operator+=(const ac_fixed<W2, I2, S2, Q2, O2>& op2)
       {
          *this = this->operator+(op2);
          return *this;
       }
       template <int W2, int I2, bool S2, ac_q_mode Q2, ac_o_mode O2>
-      ac_fixed& operator-=(const ac_fixed<W2, I2, S2, Q2, O2>& op2)
+      __FORCE_INLINE ac_fixed& operator-=(const ac_fixed<W2, I2, S2, Q2, O2>& op2)
       {
          *this = this->operator-(op2);
          return *this;
       }
       template <int W2, int I2, bool S2, ac_q_mode Q2, ac_o_mode O2>
-      ac_fixed& operator/=(const ac_fixed<W2, I2, S2, Q2, O2>& op2)
+      __FORCE_INLINE ac_fixed& operator/=(const ac_fixed<W2, I2, S2, Q2, O2>& op2)
       {
          *this = this->operator/(op2);
          return *this;
@@ -838,14 +838,14 @@ namespace __AC_NAMESPACE
       // increment/decrement by quantum (smallest difference that can be
       // represented) Arithmetic prefix increment, decrement
       // ---------------------------------
-      ac_fixed& operator++()
+      __FORCE_INLINE ac_fixed& operator++()
       {
          ac_fixed<1, I - W + 1, false> q;
          q.template set_val<AC_VAL_QUANTUM>();
          operator+=(q);
          return *this;
       }
-      ac_fixed& operator--()
+      __FORCE_INLINE ac_fixed& operator--()
       {
          ac_fixed<1, I - W + 1, false> q;
          q.template set_val<AC_VAL_QUANTUM>();
@@ -853,7 +853,7 @@ namespace __AC_NAMESPACE
          return *this;
       }
       // Arithmetic postfix increment, decrement ---------------------------------
-      const ac_fixed operator++(int)
+      __FORCE_INLINE const ac_fixed operator++(int)
       {
          ac_fixed t = *this;
          ac_fixed<1, I - W + 1, false> q;
@@ -861,7 +861,7 @@ namespace __AC_NAMESPACE
          operator+=(q);
          return t;
       }
-      const ac_fixed operator--(int)
+      __FORCE_INLINE const ac_fixed operator--(int)
       {
          ac_fixed t = *this;
          ac_fixed<1, I - W + 1, false> q;
@@ -870,13 +870,13 @@ namespace __AC_NAMESPACE
          return t;
       }
       // Arithmetic Unary --------------------------------------------------------
-      ac_fixed operator+() const
+      __FORCE_INLINE ac_fixed operator+() const
       {
          ac_fixed t = *this;
          t.bit_adjust();
          return t;
       }
-      typename rt_unary::neg operator-() const
+      __FORCE_INLINE typename rt_unary::neg operator-() const
       {
          typename rt_unary::neg r;
          Base::neg(r);
@@ -884,13 +884,13 @@ namespace __AC_NAMESPACE
          return r;
       }
       // ! ------------------------------------------------------------------------
-      bool operator!() const
+      __FORCE_INLINE bool operator!() const
       {
          return Base::equal_zero();
       }
 
       // Bitwise (arithmetic) unary: complement  -----------------------------
-      ac_fixed<W + !S, I + !S, true> operator~() const
+      __FORCE_INLINE ac_fixed<W + !S, I + !S, true> operator~() const
       {
          ac_fixed<W + !S, I + !S, true> r;
          Base::bitwise_complement(r);
@@ -898,7 +898,7 @@ namespace __AC_NAMESPACE
          return r;
       }
       // Bitwise (not arithmetic) bit complement  -----------------------------
-      ac_fixed<W, I, false> bit_complement() const
+      __FORCE_INLINE ac_fixed<W, I, false> bit_complement() const
       {
          ac_fixed<W, I, false> r;
          Base::bitwise_complement(r);
@@ -907,7 +907,7 @@ namespace __AC_NAMESPACE
       }
       // Bitwise (not arithmetic): and, or, xor ----------------------------------
       template <int W2, int I2, bool S2, ac_q_mode Q2, ac_o_mode O2>
-      typename rt<W2, I2, S2>::logic operator&(const ac_fixed<W2, I2, S2, Q2, O2>& op2) const
+      __FORCE_INLINE typename rt<W2, I2, S2>::logic operator&(const ac_fixed<W2, I2, S2, Q2, O2>& op2) const
       {
          enum
          {
@@ -925,7 +925,7 @@ namespace __AC_NAMESPACE
          return r;
       }
       template <int W2, int I2, bool S2, ac_q_mode Q2, ac_o_mode O2>
-      typename rt<W2, I2, S2>::logic operator|(const ac_fixed<W2, I2, S2, Q2, O2>& op2) const
+      __FORCE_INLINE typename rt<W2, I2, S2>::logic operator|(const ac_fixed<W2, I2, S2, Q2, O2>& op2) const
       {
          enum
          {
@@ -943,7 +943,7 @@ namespace __AC_NAMESPACE
          return r;
       }
       template <int W2, int I2, bool S2, ac_q_mode Q2, ac_o_mode O2>
-      typename rt<W2, I2, S2>::logic operator^(const ac_fixed<W2, I2, S2, Q2, O2>& op2) const
+      __FORCE_INLINE typename rt<W2, I2, S2>::logic operator^(const ac_fixed<W2, I2, S2, Q2, O2>& op2) const
       {
          enum
          {
@@ -962,26 +962,26 @@ namespace __AC_NAMESPACE
       }
       // Bitwise assign (not arithmetic): and, or, xor ----------------------------
       template <int W2, int I2, bool S2, ac_q_mode Q2, ac_o_mode O2>
-      ac_fixed& operator&=(const ac_fixed<W2, I2, S2, Q2, O2>& op2)
+      __FORCE_INLINE ac_fixed& operator&=(const ac_fixed<W2, I2, S2, Q2, O2>& op2)
       {
          *this = this->operator&(op2);
          return *this;
       }
       template <int W2, int I2, bool S2, ac_q_mode Q2, ac_o_mode O2>
-      ac_fixed& operator|=(const ac_fixed<W2, I2, S2, Q2, O2>& op2)
+      __FORCE_INLINE ac_fixed& operator|=(const ac_fixed<W2, I2, S2, Q2, O2>& op2)
       {
          *this = this->operator|(op2);
          return *this;
       }
       template <int W2, int I2, bool S2, ac_q_mode Q2, ac_o_mode O2>
-      ac_fixed& operator^=(const ac_fixed<W2, I2, S2, Q2, O2>& op2)
+      __FORCE_INLINE ac_fixed& operator^=(const ac_fixed<W2, I2, S2, Q2, O2>& op2)
       {
          *this = this->operator^(op2);
          return *this;
       }
       // Shift (result constrained by left operand) -------------------------------
       template <int W2>
-      ac_fixed operator<<(const ac_int<W2, true>& op2) const
+      __FORCE_INLINE ac_fixed operator<<(const ac_int<W2, true>& op2) const
       {
          // currently not written to overflow or quantize (neg shift)
          ac_fixed r;
@@ -990,7 +990,7 @@ namespace __AC_NAMESPACE
          return r;
       }
       template <int W2>
-      ac_fixed operator<<(const ac_int<W2, false>& op2) const
+      __FORCE_INLINE ac_fixed operator<<(const ac_int<W2, false>& op2) const
       {
          // currently not written to overflow
          ac_fixed r;
@@ -999,7 +999,7 @@ namespace __AC_NAMESPACE
          return r;
       }
       template <int W2>
-      ac_fixed operator>>(const ac_int<W2, true>& op2) const
+      __FORCE_INLINE ac_fixed operator>>(const ac_int<W2, true>& op2) const
       {
          // currently not written to quantize or overflow (neg shift)
          ac_fixed r;
@@ -1008,7 +1008,7 @@ namespace __AC_NAMESPACE
          return r;
       }
       template <int W2>
-      ac_fixed operator>>(const ac_int<W2, false>& op2) const
+      __FORCE_INLINE ac_fixed operator>>(const ac_int<W2, false>& op2) const
       {
          // currently not written to quantize
          ac_fixed r;
@@ -1018,7 +1018,7 @@ namespace __AC_NAMESPACE
       }
       // Shift assign ------------------------------------------------------------
       template <int W2>
-      ac_fixed operator<<=(const ac_int<W2, true>& op2)
+      __FORCE_INLINE ac_fixed operator<<=(const ac_int<W2, true>& op2)
       {
          // currently not written to overflow or quantize (neg shift)
          Base r;
@@ -1028,7 +1028,7 @@ namespace __AC_NAMESPACE
          return *this;
       }
       template <int W2>
-      ac_fixed operator<<=(const ac_int<W2, false>& op2)
+      __FORCE_INLINE ac_fixed operator<<=(const ac_int<W2, false>& op2)
       {
          // currently not written to overflow
          Base r;
@@ -1038,7 +1038,7 @@ namespace __AC_NAMESPACE
          return *this;
       }
       template <int W2>
-      ac_fixed operator>>=(const ac_int<W2, true>& op2)
+      __FORCE_INLINE ac_fixed operator>>=(const ac_int<W2, true>& op2)
       {
          // currently not written to quantize or overflow (neg shift)
          Base r;
@@ -1048,7 +1048,7 @@ namespace __AC_NAMESPACE
          return *this;
       }
       template <int W2>
-      ac_fixed operator>>=(const ac_int<W2, false>& op2)
+      __FORCE_INLINE ac_fixed operator>>=(const ac_int<W2, false>& op2)
       {
          // currently not written to quantize
          Base r;
@@ -1059,7 +1059,7 @@ namespace __AC_NAMESPACE
       }
       // Relational ---------------------------------------------------------------
       template <int W2, int I2, bool S2, ac_q_mode Q2, ac_o_mode O2>
-      bool operator==(const ac_fixed<W2, I2, S2, Q2, O2>& op2) const
+      __FORCE_INLINE bool operator==(const ac_fixed<W2, I2, S2, Q2, O2>& op2) const
       {
          enum
          {
@@ -1074,7 +1074,7 @@ namespace __AC_NAMESPACE
             return shiftl<F2 - F>().equal(op2);
       }
       template <int W2, int I2, bool S2, ac_q_mode Q2, ac_o_mode O2>
-      bool operator!=(const ac_fixed<W2, I2, S2, Q2, O2>& op2) const
+      __FORCE_INLINE bool operator!=(const ac_fixed<W2, I2, S2, Q2, O2>& op2) const
       {
          enum
          {
@@ -1089,7 +1089,7 @@ namespace __AC_NAMESPACE
             return !shiftl<F2 - F>().equal(op2);
       }
       template <int W2, int I2, bool S2, ac_q_mode Q2, ac_o_mode O2>
-      bool operator<(const ac_fixed<W2, I2, S2, Q2, O2>& op2) const
+      __FORCE_INLINE bool operator<(const ac_fixed<W2, I2, S2, Q2, O2>& op2) const
       {
          enum
          {
@@ -1104,7 +1104,7 @@ namespace __AC_NAMESPACE
             return shiftl<F2 - F>().less_than(op2);
       }
       template <int W2, int I2, bool S2, ac_q_mode Q2, ac_o_mode O2>
-      bool operator>=(const ac_fixed<W2, I2, S2, Q2, O2>& op2) const
+      __FORCE_INLINE bool operator>=(const ac_fixed<W2, I2, S2, Q2, O2>& op2) const
       {
          enum
          {
@@ -1119,7 +1119,7 @@ namespace __AC_NAMESPACE
             return !shiftl<F2 - F>().less_than(op2);
       }
       template <int W2, int I2, bool S2, ac_q_mode Q2, ac_o_mode O2>
-      bool operator>(const ac_fixed<W2, I2, S2, Q2, O2>& op2) const
+      __FORCE_INLINE bool operator>(const ac_fixed<W2, I2, S2, Q2, O2>& op2) const
       {
          enum
          {
@@ -1134,7 +1134,7 @@ namespace __AC_NAMESPACE
             return shiftl<F2 - F>().greater_than(op2);
       }
       template <int W2, int I2, bool S2, ac_q_mode Q2, ac_o_mode O2>
-      bool operator<=(const ac_fixed<W2, I2, S2, Q2, O2>& op2) const
+      __FORCE_INLINE bool operator<=(const ac_fixed<W2, I2, S2, Q2, O2>& op2) const
       {
          enum
          {
@@ -1148,7 +1148,7 @@ namespace __AC_NAMESPACE
          else
             return !shiftl<F2 - F>().greater_than(op2);
       }
-      bool operator==(double d) const
+      __FORCE_INLINE bool operator==(double d) const
       {
          if(is_neg() != (d < 0.0))
             return false;
@@ -1160,11 +1160,11 @@ namespace __AC_NAMESPACE
             return false;
          return operator==(t);
       }
-      bool operator!=(double d) const
+      __FORCE_INLINE bool operator!=(double d) const
       {
          return !operator==(d);
       }
-      bool operator<(double d) const
+      __FORCE_INLINE bool operator<(double d) const
       {
          if(is_neg() != (d < 0.0))
             return is_neg();
@@ -1176,11 +1176,11 @@ namespace __AC_NAMESPACE
             return false;
          return (!is_neg() && overflow) || ((qb || r) && operator<=(t)) || operator<(t);
       }
-      bool operator>=(double d) const
+      __FORCE_INLINE bool operator>=(double d) const
       {
          return !operator<(d);
       }
-      bool operator>(double d) const
+      __FORCE_INLINE bool operator>(double d) const
       {
          if(is_neg() != (d < 0.0))
             return !is_neg();
@@ -1192,7 +1192,7 @@ namespace __AC_NAMESPACE
             return false;
          return (is_neg() && overflow) || operator>(t);
       }
-      bool operator<=(double d) const
+      __FORCE_INLINE bool operator<=(double d) const
       {
          return !operator>(d);
       }
@@ -1383,7 +1383,7 @@ namespace __AC_NAMESPACE
          ac_bitref(ac_fixed* bv, unsigned index = 0) : d_bv(*bv), d_index(index)
          {
          }
-         operator bool() const
+         __FORCE_INLINE operator bool() const
          {
             return (d_index < W) ? (d_bv.v[d_index >> 5] >> (d_index & 31) & 1) : 0;
          }
@@ -1410,13 +1410,13 @@ namespace __AC_NAMESPACE
          }
       };
 
-      ac_bitref operator[](unsigned int uindex)
+      __FORCE_INLINE ac_bitref operator[](unsigned int uindex)
       {
          AC_ASSERT(uindex < W, "Attempting to read bit beyond MSB");
          ac_bitref bvh(this, uindex);
          return bvh;
       }
-      ac_bitref operator[](int index)
+      __FORCE_INLINE ac_bitref operator[](int index)
       {
          AC_ASSERT(index >= 0, "Attempting to read bit with negative index");
          AC_ASSERT(index < W, "Attempting to read bit beyond MSB");
@@ -1425,7 +1425,7 @@ namespace __AC_NAMESPACE
          return bvh;
       }
       template <int W2, bool S2>
-      ac_bitref operator[](const ac_int<W2, S2>& index)
+      __FORCE_INLINE ac_bitref operator[](const ac_int<W2, S2>& index)
       {
          AC_ASSERT(index >= 0, "Attempting to read bit with negative index");
          AC_ASSERT(index < W, "Attempting to read bit beyond MSB");
@@ -1434,12 +1434,12 @@ namespace __AC_NAMESPACE
          return bvh;
       }
 
-      bool operator[](unsigned int uindex) const
+      __FORCE_INLINE bool operator[](unsigned int uindex) const
       {
          AC_ASSERT(uindex < W, "Attempting to read bit beyond MSB");
          return (uindex < W) ? (Base::v[uindex >> 5] >> (uindex & 31) & 1) : 0;
       }
-      bool operator[](int index) const
+      __FORCE_INLINE bool operator[](int index) const
       {
          AC_ASSERT(index >= 0, "Attempting to read bit with negative index");
          AC_ASSERT(index < W, "Attempting to read bit beyond MSB");
@@ -1447,19 +1447,19 @@ namespace __AC_NAMESPACE
          return (uindex < W) ? (Base::v[uindex >> 5] >> (uindex & 31) & 1) : 0;
       }
       template <int W2, bool S2>
-      bool operator[](const ac_int<W2, S2>& index) const
+      __FORCE_INLINE bool operator[](const ac_int<W2, S2>& index) const
       {
          AC_ASSERT(index >= 0, "Attempting to read bit with negative index");
          AC_ASSERT(index < W, "Attempting to read bit beyond MSB");
          ac_int<W2 - S2, false> uindex = index;
          return (uindex < W) ? (Base::v[uindex >> 5] >> (uindex.to_uint() & 31) & 1) : 0;
       }
-      typename rt_unary::leading_sign leading_sign() const
+      __FORCE_INLINE typename rt_unary::leading_sign leading_sign() const
       {
          unsigned ls = Base::leading_bits(S & (Base::v[N - 1] < 0)) - (32 * N - W) - S;
          return ls;
       }
-      typename rt_unary::leading_sign leading_sign(bool& all_sign) const
+      __FORCE_INLINE typename rt_unary::leading_sign leading_sign(bool& all_sign) const
       {
          unsigned ls = Base::leading_bits(S & (Base::v[N - 1] < 0)) - (32 * N - W) - S;
          all_sign = (ls == W - S);

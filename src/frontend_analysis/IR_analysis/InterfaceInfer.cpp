@@ -96,7 +96,7 @@ void InterfaceInfer::interface_info::update(const tree_nodeRef& tn, std::string 
    const auto ptd_type = tree_helper::CGetPointedType(tree_helper::CGetType(tn));
    bool is_signed = tree_helper::IsSignedIntegerType(ptd_type);
    bool is_fixed = false;
-   type_name = boost::regex_replace(type_name, boost::regex("ac_channel<(.*)>"), "$1");
+   type_name = boost::regex_replace(type_name, boost::regex("(ac_channel|stream|hls::stream)<(.*)>"), "$2");
    const auto ac_bitwidth = ac_type_bitwidth(type_name, is_signed, is_fixed);
    const auto _type = ac_bitwidth != 0ULL ? datatype::ac_type :
                                             (tree_helper::IsRealType(ptd_type) ? datatype::real : datatype::generic);
@@ -343,6 +343,12 @@ void InterfaceInfer::Initialize()
                            interface_typenameInclude.find("ac_fixed.h") != std::string::npos)
                         {
                            boost::replace_all(interface_typenameInclude, "ac_fixed.h", "ap_fixed.h");
+                        }
+                        if((interface_typenameOrig.find("hls::stream<") != std::string::npos ||
+                            interface_typenameOrig.find("stream<") != std::string::npos) &&
+                           interface_typenameInclude.find("ac_channel.h") != std::string::npos)
+                        {
+                           boost::replace_all(interface_typenameInclude, "ac_channel.h", "hls_stream.h");
                         }
                         HLSMgr->design_interface_typenameinclude[fname][argName] = interface_typenameInclude;
                      }

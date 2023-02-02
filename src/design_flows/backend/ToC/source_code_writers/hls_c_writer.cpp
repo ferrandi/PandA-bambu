@@ -79,8 +79,8 @@
 
 REF_FORWARD_DECL(memory_symbol);
 
-static const boost::regex wrapper_def("ac_channel<(.*)>");
-#define WRAPPER_GROUP_WTYPE 1
+static const boost::regex wrapper_def("(ac_channel|stream|hls::stream)<(.*)>");
+#define WRAPPER_GROUP_WTYPE 2
 
 HLSCWriter::HLSCWriter(const HLSCBackendInformationConstRef _hls_c_backend_information,
                        const application_managerConstRef _AppM, const InstructionWriterRef _instruction_writer,
@@ -676,7 +676,6 @@ void HLSCWriter::WriteExpectedResults(const BehavioralHelperConstRef BH,
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Generating code for expected results of " + param);
       if(tree_helper::IsPointerType(par))
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Pointer parameter");
          const auto& test_v = curr_test_vector.at(param);
          const auto base_type = tree_helper::CGetType(par);
          const auto ptd_type = tree_helper::CGetPointedType(base_type);
@@ -721,11 +720,11 @@ void HLSCWriter::WriteExpectedResults(const BehavioralHelperConstRef BH,
          const auto param_interface = has_specifier ? DesignInterfaceSpecifier.at(fname).at(param) : "";
          const auto param_cast = "((" + arg_typename + ")" + param + ")";
 
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                        "---Pointer parameter: " + arg_typename + " -> " + STR(ptd_type_bitsize) + " bits");
          if(interface_type == HLSFlowStep_Type::INFERRED_INTERFACE_GENERATION && param_interface != "m_axi")
          {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                           "---Interface: " + (param_interface.size() ? ("|" + param_interface + "| ") : "") +
-                               arg_typename);
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Interface: " + param_interface);
             const auto splitted = SplitString(test_v, ",");
 
             indented_output_stream->Append("for (__testbench_index = 0; __testbench_index < " + STR(splitted.size()) +
@@ -808,16 +807,8 @@ void HLSCWriter::WriteExpectedResults(const BehavioralHelperConstRef BH,
                       (tree_helper::IsRealType(ptd_type) ? "" : "(long long)") + value + ");\n");
                }
                indented_output_stream->Append("fprintf(__bambu_testbench_fp, \"o\");\n");
-               if(tree_helper::IsRealType(ptd_type) || is_ac_type)
-               {
-                  indented_output_stream->Append("_Ptd2Bin_(__bambu_testbench_fp, (unsigned char*)&(" + value + "), " +
-                                                 STR(ptd_type_bitsize) + ");\n");
-               }
-               else
-               {
-                  indented_output_stream->Append("_Dec2Bin_(__bambu_testbench_fp, " + value + ", " +
-                                                 STR(ptd_type_bitsize) + ");\n");
-               }
+               indented_output_stream->Append("_Ptd2Bin_(__bambu_testbench_fp, (unsigned char*)&(" + value + "), " +
+                                              STR(ptd_type_bitsize) + ");\n");
             }
             indented_output_stream->Append("fprintf(__bambu_testbench_fp, \"\\n\");\n");
             indented_output_stream->Append("}\n");
@@ -826,23 +817,23 @@ void HLSCWriter::WriteExpectedResults(const BehavioralHelperConstRef BH,
          else
          {
             /// Retrieve the space to be reserved in memory
-            const auto reserved_mem_bytes =
+            const auto param_mem_size =
                 hls_c_backend_information->HLSMgr->RSim->param_mem_size.at(v_idx).at(GET_INDEX_CONST_NODE(par));
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                           "---Reserved memory " + STR(reserved_mem_bytes) + " bytes");
-            const auto element_size = ptd_type_bitsize / 8;
-            THROW_ASSERT(reserved_mem_bytes % element_size == 0, STR(reserved_mem_bytes) + "/" + STR(element_size));
-            const auto num_elements = reserved_mem_bytes / element_size;
-            THROW_ASSERT(num_elements, STR(reserved_mem_bytes) + "/" + STR(element_size));
+                           "---Reserved memory " + STR(param_mem_size) + " bytes");
+            const auto elem_bytes = ptd_type_bitsize / 8;
+            THROW_ASSERT(param_mem_size % elem_bytes == 0, STR(param_mem_size) + "/" + STR(elem_bytes));
+            const auto elem_count = param_mem_size / elem_bytes;
+            THROW_ASSERT(elem_count, STR(param_mem_size) + "/" + STR(elem_bytes));
             indented_output_stream->Append("{\n");
             indented_output_stream->Append("int i0=0;\n");
-            if(num_elements > 1)
+            if(elem_count > 1)
             {
-               indented_output_stream->Append("for(i0 = 0; i0 < " + STR(num_elements) + "; ++i0)\n");
+               indented_output_stream->Append("for(i0 = 0; i0 < " + STR(elem_count) + "; ++i0)\n");
                indented_output_stream->Append("{\n");
             }
             WriteParamInMemory(BH, param + "[i0]", ptd_type, 1);
-            if(num_elements > 1)
+            if(elem_count > 1)
             {
                indented_output_stream->Append("}\n");
             }
@@ -935,15 +926,14 @@ void HLSCWriter::WriteSimulatorInitMemory(const unsigned int function_id)
          std::string param = BH->PrintVariable(l);
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Considering memory variable '" + param + "'");
          const auto is_top_param = std::find(parameters.begin(), parameters.end(), l) != parameters.end();
-         THROW_ASSERT(DesignInterfaceArgsTypename_it == DesignInterfaceTypename.end() ||
-                          DesignInterfaceArgsTypename_it->second.count(param),
-                      "Parameter should be present in design interface.");
-
          const auto param_if_typename = [&]() -> std::string {
             if(DesignInterfaceArgsTypename_it != DesignInterfaceTypename.end())
             {
-               return boost::regex_replace(DesignInterfaceArgsTypename_it->second.at(param), wrapper_def,
-                                           "$" + STR(WRAPPER_GROUP_WTYPE));
+               const auto if_arg_typename = DesignInterfaceArgsTypename_it->second.find(param);
+               if(if_arg_typename != DesignInterfaceArgsTypename_it->second.end())
+               {
+                  return boost::regex_replace(if_arg_typename->second, wrapper_def, "$" + STR(WRAPPER_GROUP_WTYPE));
+               }
             }
             return "";
          }();
@@ -1021,7 +1011,7 @@ void HLSCWriter::WriteSimulatorInitMemory(const unsigned int function_id)
          }
 
          /// Retrieve the space to be reserved in memory
-         const auto reserved_mem_bytes = [&]() -> size_t {
+         const auto param_mem_size = [&]() -> size_t {
             if(is_memory)
             {
                const auto ret_value = tree_helper::Size(TM->CGetTreeReindex(l)) / 8;
@@ -1035,7 +1025,7 @@ void HLSCWriter::WriteSimulatorInitMemory(const unsigned int function_id)
             }
          }();
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                        "---Symbol '" + param + "' reserved memory " + STR(reserved_mem_bytes) + " - Test vector is " +
+                        "---Symbol '" + param + "' reserved memory " + STR(param_mem_size) + " - Test vector is " +
                             test_v);
 
          if(binary_test_v)
@@ -1270,13 +1260,13 @@ void HLSCWriter::WriteSimulatorInitMemory(const unsigned int function_id)
                ++printed_bytes;
                indented_output_stream->Append("fprintf(__bambu_testbench_fp, \"m" + tail_padding + "\\n\");\n");
             }
-            THROW_ASSERT(reserved_mem_bytes >= printed_bytes,
-                         "Memory initialization overflow: " + STR(reserved_mem_bytes) + " were reserved while " +
-                             STR(printed_bytes) + " were allocated.");
-            if(reserved_mem_bytes > printed_bytes)
+            THROW_ASSERT(param_mem_size >= printed_bytes, "Memory initialization overflow: " + STR(param_mem_size) +
+                                                              " were reserved while " + STR(printed_bytes) +
+                                                              " were allocated.");
+            if(param_mem_size > printed_bytes)
             {
-               indented_output_stream->Append("// reserved_mem_bytes > printed_bytes\n");
-               WriteZeroedBytes(reserved_mem_bytes - printed_bytes);
+               indented_output_stream->Append("// param_mem_size > printed_bytes\n");
+               WriteZeroedBytes(param_mem_size - printed_bytes);
             }
          }
          else
@@ -1284,7 +1274,7 @@ void HLSCWriter::WriteSimulatorInitMemory(const unsigned int function_id)
             /// Call the parser to translate C initialization to values.txt initialization
             const auto type = tree_helper::CGetType(TM->CGetTreeReindex(l));
             const CInitializationParserFunctorRef c_initialization_parser_functor(
-                new MemoryInitializationCWriter(indented_output_stream, TM, BH, reserved_mem_bytes, type,
+                new MemoryInitializationCWriter(indented_output_stream, TM, BH, param_mem_size, type,
                                                 TestbenchGeneration_MemoryType::MEMORY_INITIALIZATION, Param));
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                            "---Parsing initialization of " + param + "(" + GET_CONST_NODE(type)->get_kind_text() +
@@ -1295,10 +1285,10 @@ void HLSCWriter::WriteSimulatorInitMemory(const unsigned int function_id)
          THROW_ASSERT(hls_c_backend_information->HLSMgr->RSim->param_next_off.count(v_idx), "");
          THROW_ASSERT(hls_c_backend_information->HLSMgr->RSim->param_next_off.at(v_idx).count(l), "");
          const auto next_object_offset = hls_c_backend_information->HLSMgr->RSim->param_next_off.at(v_idx).at(l);
-         if(next_object_offset > reserved_mem_bytes)
+         if(next_object_offset > param_mem_size)
          {
-            indented_output_stream->Append("// next_object_offset > reserved_mem_bytes\n");
-            WriteZeroedBytes(next_object_offset - reserved_mem_bytes);
+            indented_output_stream->Append("// next_object_offset > param_mem_size\n");
+            WriteZeroedBytes(next_object_offset - param_mem_size);
          }
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Considered memory variable '" + param + "'");
       }
@@ -1541,7 +1531,7 @@ void HLSCWriter::WriteBuiltinWaitCall()
 }
 
 void HLSCWriter::WriteParamInMemory(const BehavioralHelperConstRef BH, const std::string& param, tree_nodeConstRef type,
-                                    const unsigned int nesting_level, bool input, bool is_struct_or_union)
+                                    const unsigned int nesting_level, bool input)
 {
    switch(type->get_kind())
    {
@@ -1551,7 +1541,7 @@ void HLSCWriter::WriteParamInMemory(const BehavioralHelperConstRef BH, const std
          indented_output_stream->Append("fprintf(__bambu_testbench_fp, \"//expected value for output: " + param +
                                         "\\n\");\n");
          const auto size = tree_helper::Size(type);
-         if(input || is_struct_or_union) // Checking ULP on expected floating point fields is not possible
+         if(input) // Checking ULP on expected floating point fields is not possible
          {
             const auto byte_size = tree_helper::Size(type) / 8;
             for(size_t byte = 0; byte < byte_size; byte++)
@@ -1574,39 +1564,21 @@ void HLSCWriter::WriteParamInMemory(const BehavioralHelperConstRef BH, const std
       case void_type_K:
       case integer_type_K:
       case pointer_type_K:
+      case record_type_K:
+      case union_type_K:
       {
          indented_output_stream->Append("fprintf(__bambu_testbench_fp, \"//expected value for output: " + param +
                                         "\\n\");\n");
          const auto byte_size = tree_helper::Size(type) / 8;
-         for(size_t byte = 0; byte < byte_size; byte++)
-         {
-            indented_output_stream->Append("fprintf(__bambu_testbench_fp, \"" + std::string(input ? "m" : "o") +
-                                           "\");\n");
-            indented_output_stream->Append("_Ptd2Bin_(__bambu_testbench_fp, ((unsigned char *)&(" + param + ")) + " +
-                                           STR(byte) + ", 8);\n");
-            indented_output_stream->Append("fprintf(__bambu_testbench_fp, \"\\n\");\n");
-         }
-         break;
-      }
-      case record_type_K:
-      {
-         const auto rt = GetPointer<const record_type>(type);
-         for(const auto& field : rt->list_of_flds)
-         {
-            const auto field_param = param + "." + BH->PrintVariable(field->index);
-            WriteParamInMemory(BH, field_param, tree_helper::CGetType(field), nesting_level + 1, input, true);
-         }
-         break;
-      }
-      case union_type_K:
-      {
-         const auto ut = GetPointer<const union_type>(type);
-         for(const auto& field : ut->list_of_flds)
-         {
-            const auto field_param = param + "." + BH->PrintVariable(field->index);
-            WriteParamInMemory(BH, field_param, tree_helper::CGetType(field), nesting_level + 1, input, true);
-            break; // only the first field will be considered
-         }
+         const auto idx = "i" + STR(nesting_level);
+         indented_output_stream->Append("int " + idx + ";\n");
+         indented_output_stream->Append("for(" + idx + " = 0; " + idx + " < " + STR(byte_size) + "; " + idx + "++)\n");
+         indented_output_stream->Append("{\n");
+         indented_output_stream->Append("fprintf(__bambu_testbench_fp, \"" + std::string(input ? "m" : "o") + "\");\n");
+         indented_output_stream->Append("_Ptd2Bin_(__bambu_testbench_fp, ((unsigned char *)&(" + param + ")) + " + idx +
+                                        ", 8);\n");
+         indented_output_stream->Append("fprintf(__bambu_testbench_fp, \"\\n\");\n");
+         indented_output_stream->Append("}\n");
          break;
       }
       case array_type_K:
@@ -1621,7 +1593,7 @@ void HLSCWriter::WriteParamInMemory(const BehavioralHelperConstRef BH, const std
          indented_output_stream->Append("for(" + idx + " = 0; " + idx + " < " + STR(num_elements) + "; " + idx +
                                         "++)\n");
          indented_output_stream->Append("{\n");
-         WriteParamInMemory(BH, param + "[" + idx + "]", elm_type, nesting_level + 1, input, is_struct_or_union);
+         WriteParamInMemory(BH, param + "[" + idx + "]", elm_type, nesting_level + 1, input);
          indented_output_stream->Append("}\n");
          indented_output_stream->Append("}\n");
          break;
@@ -1647,7 +1619,7 @@ void HLSCWriter::WriteParamInMemory(const BehavioralHelperConstRef BH, const std
                      type->get_kind_text() + ")");
          break;
       case tree_reindex_K:
-         WriteParamInMemory(BH, param, GET_CONST_NODE(type), nesting_level, input, is_struct_or_union);
+         WriteParamInMemory(BH, param, GET_CONST_NODE(type), nesting_level, input);
          break;
       case aggr_init_expr_K:
       case binfo_K:

@@ -4881,26 +4881,14 @@ std::string BehavioralHelper::print_type_declaration(unsigned int type) const
          {
             res += "typedef ";
          }
-         const auto qualifiers = rt->qual;
-         if(qualifiers != TreeVocabularyTokenTypes_TokenEnum::FIRST_TOKEN)
-         {
-            res += tree_helper::return_C_qualifiers(qualifiers, false);
-         }
-         res += "struct ";
+         res += tree_helper::return_C_qualifiers(rt->qual, false);
          if(!rt->unql)
          {
-            if(rt->packed_flag)
-            {
-               res += " __attribute__((packed)) ";
-            }
-            if(rt->name)
-            {
-               res += tree_helper::PrintType(TM, rt->name) + " ";
-            }
-            else
-            {
-               res += "Internal_" + STR(type) + " ";
-            }
+            res += tree_helper::PrintType(TM, node_type) + " ";
+         }
+         else
+         {
+            res += "struct ";
          }
          if(!rt->unql || (!GetPointerS<const record_type>(GET_NODE(rt->unql))->name &&
                           !Param->getOption<bool>(OPT_without_transformation)))
@@ -4942,24 +4930,31 @@ std::string BehavioralHelper::print_type_declaration(unsigned int type) const
             }
             INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "<--");
             res += '}';
+            if(rt->packed_flag)
+            {
+               res += " __attribute__((packed))";
+            }
             res += " ";
          }
-         if(rt->unql && (rt->name || Param->getOption<bool>(OPT_without_transformation)))
+         if(rt->unql)
          {
-            const auto rt_unqal = GetPointerS<const record_type>(GET_NODE(rt->unql));
-            if(rt_unqal->name)
+            if(rt->name || Param->getOption<bool>(OPT_without_transformation))
             {
-               res += tree_helper::PrintType(TM, rt_unqal->name) + " ";
+               const auto rt_unqal = GetPointerS<const record_type>(GET_NODE(rt->unql));
+               if(rt_unqal->name)
+               {
+                  res += tree_helper::PrintType(TM, rt_unqal->name) + " ";
+               }
+               else if(Param->getOption<bool>(OPT_without_transformation))
+               {
+                  res += "Internal_" + STR(GET_INDEX_NODE(rt->unql)) + " ";
+               }
+               res += tree_helper::PrintType(TM, rt->name);
             }
-            else if(Param->getOption<bool>(OPT_without_transformation))
+            if(rt->algn != GetPointerS<const record_type>(GET_NODE(rt->unql))->algn)
             {
-               res += "Internal_" + STR(GET_INDEX_NODE(rt->unql)) + " ";
+               res += " __attribute__ ((aligned (" + STR(rt->algn / 8) + ")))";
             }
-            res += tree_helper::PrintType(TM, rt->name);
-         }
-         if(rt->unql && rt->algn != GetPointerS<const record_type>(GET_NODE(rt->unql))->algn)
-         {
-            res += " __attribute__ ((aligned (" + STR(rt->algn / 8) + ")))";
          }
          break;
       }
@@ -4972,26 +4967,14 @@ std::string BehavioralHelper::print_type_declaration(unsigned int type) const
          {
             res += "typedef ";
          }
-         const auto qualifiers = ut->qual;
-         if(qualifiers != TreeVocabularyTokenTypes_TokenEnum::FIRST_TOKEN)
-         {
-            res += tree_helper::return_C_qualifiers(qualifiers, false);
-         }
-         res += "union ";
+         res += tree_helper::return_C_qualifiers(ut->qual, false);
          if(!ut->unql)
          {
-            if(ut->packed_flag)
-            {
-               res += " __attribute__((packed)) ";
-            }
-            if(ut->name)
-            {
-               res += tree_helper::PrintType(TM, ut->name) + " ";
-            }
-            else
-            {
-               res += "Internal_" + STR(type) + " ";
-            }
+            res += tree_helper::PrintType(TM, node_type) + " ";
+         }
+         else
+         {
+            res += "union ";
          }
          if(!ut->unql || (!GetPointerS<const union_type>(GET_NODE(ut->unql))->name &&
                           !Param->getOption<bool>(OPT_without_transformation)))
@@ -5007,28 +4990,35 @@ std::string BehavioralHelper::print_type_declaration(unsigned int type) const
                res += ";\n";
             }
             res += '}';
+            if(ut->packed_flag)
+            {
+               res += " __attribute__((packed))";
+            }
             res += " ";
          }
-         if(ut->unql && (ut->name || Param->getOption<bool>(OPT_without_transformation)))
+         if(ut->unql)
          {
-            const auto ut_unqal = GetPointerS<const union_type>(GET_NODE(ut->unql));
-            if(ut_unqal->name)
+            if(ut->name || Param->getOption<bool>(OPT_without_transformation))
             {
-               res += tree_helper::PrintType(TM, ut_unqal->name) + " ";
+               const auto uut = GetPointerS<const union_type>(GET_NODE(ut->unql));
+               if(uut->name)
+               {
+                  res += tree_helper::PrintType(TM, uut->name) + " ";
+               }
+               else if(Param->getOption<bool>(OPT_without_transformation))
+               {
+                  res += "Internal_" + STR(GET_INDEX_NODE(ut->unql)) + " ";
+               }
+               else
+               {
+                  THROW_UNREACHABLE("");
+               }
+               res += tree_helper::PrintType(TM, ut->name);
             }
-            else if(Param->getOption<bool>(OPT_without_transformation))
+            if(ut->algn != GetPointerS<const union_type>(GET_NODE(ut->unql))->algn)
             {
-               res += "Internal_" + STR(GET_INDEX_NODE(ut->unql)) + " ";
+               res += " __attribute__ ((aligned (" + STR(ut->algn / 8) + "))) ";
             }
-            else
-            {
-               THROW_UNREACHABLE("");
-            }
-            res += tree_helper::PrintType(TM, ut->name);
-         }
-         if(ut->unql && ut->algn != GetPointerS<const union_type>(GET_NODE(ut->unql))->algn)
-         {
-            res += " __attribute__ ((aligned (" + STR(ut->algn / 8) + "))) ";
          }
          break;
       }
@@ -5039,11 +5029,7 @@ std::string BehavioralHelper::print_type_declaration(unsigned int type) const
          {
             res += "typedef ";
          }
-         const auto quals = et->qual;
-         if(quals != TreeVocabularyTokenTypes_TokenEnum::FIRST_TOKEN)
-         {
-            res += tree_helper::return_C_qualifiers(quals, false);
-         }
+         res += tree_helper::return_C_qualifiers(et->qual, false);
          res += "enum ";
          if(!et->unql)
          {
@@ -5127,14 +5113,10 @@ std::string BehavioralHelper::print_type_declaration(unsigned int type) const
          if(pt->unql && GET_NODE(pt->ptd)->get_kind() == function_type_K)
          {
             const auto ft = GetPointerS<const function_type>(GET_NODE(pt->ptd));
-            const auto quals = GetPointerS<const type_node>(node_type)->qual;
             res += "typedef ";
             res += tree_helper::PrintType(TM, ft->retn);
             res += " (* ";
-            if(quals != TreeVocabularyTokenTypes_TokenEnum::FIRST_TOKEN)
-            {
-               res += tree_helper::return_C_qualifiers(quals, false);
-            }
+            res += tree_helper::return_C_qualifiers(GetPointerS<const type_node>(node_type)->qual, false);
             if(GetPointerS<const type_node>(node_type)->name)
             {
                res += tree_helper::PrintType(TM, GetPointerS<const type_node>(node_type)->name);
@@ -5179,14 +5161,8 @@ std::string BehavioralHelper::print_type_declaration(unsigned int type) const
          const auto nt = GetPointerS<const type_node>(node_type);
          if(nt->unql)
          {
-            const auto quals = nt->qual;
             res += "typedef ";
-
-            if(quals != TreeVocabularyTokenTypes_TokenEnum::FIRST_TOKEN)
-            {
-               res += tree_helper::return_C_qualifiers(quals, false);
-            }
-
+            res += tree_helper::return_C_qualifiers(nt->qual, false);
             res += tree_helper::PrintType(TM, nt->unql);
             res += " ";
             /*            if(nt->algn != 8)
