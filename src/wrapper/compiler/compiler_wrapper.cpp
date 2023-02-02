@@ -3806,7 +3806,8 @@ std::string CompilerWrapper::clang_recipes(
        load_plugin_opt(expandMemOps_plugin_obj, Param->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler));
 #endif
 #ifndef _WIN32
-   if(!GepiCanon_plugin_obj.empty())
+   if(Param->IsParameter("enable-CSROA") && Param->GetParameter<int>("enable-CSROA") == 1 &&
+      !GepiCanon_plugin_obj.empty())
    {
       recipe +=
           load_plugin_opt(GepiCanon_plugin_obj, Param->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler));
