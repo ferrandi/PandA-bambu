@@ -175,6 +175,7 @@ namespace llvm
          bool hasTopFun = false;
          if(TopFunctionName_TFP.empty())
          {
+            PRINT_DBG("No top function specified\n");
             return false;
          }
          std::list<std::string> symbolList;
@@ -196,12 +197,15 @@ namespace llvm
             {
                std::string funName = fun.getName().data();
                auto demangled = getDemangled(funName);
+               PRINT_DBG("Checking function: " + funName + " | " + demangled + "\n");
                if(is_builtin_fn(funName) || is_builtin_fn(demangled))
                {
+                  PRINT_DBG("  builtin\n");
                   symbolList.push_back(funName);
                }
                if(!fun.hasInternalLinkage() && (funName == TopFunctionName_TFP || demangled == TopFunctionName_TFP))
                {
+                  PRINT_DBG("  top function\n");
                   symbolList.push_back(funName);
                   hasTopFun = true;
                   /// in case add noalias
@@ -229,7 +233,7 @@ namespace llvm
          {
             for(auto& globalVar : M.getGlobalList())
             {
-               std::string varName = std::string(globalVar.getName());
+               const auto varName = globalVar.getName().str();
                symbolList.push_back(varName);
             }
          }
