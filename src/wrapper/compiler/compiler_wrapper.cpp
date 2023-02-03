@@ -798,7 +798,6 @@ void CompilerWrapper::CompileFile(const std::string& original_file_name, std::st
       }
       else
       {
-         ;
          temporary_file_run_o =
              boost::filesystem::path(Param->getOption<std::string>(OPT_output_temporary_directory) + "/" +
                                      boost::filesystem::unique_path(std::string(STR_CST_gcc_obj_file)).string())
@@ -807,22 +806,11 @@ void CompilerWrapper::CompileFile(const std::string& original_file_name, std::st
       }
    }
 
-   /// manage optimization level
-   auto local_parameters_line = parameters_line;
-   if(cm == CompilerWrapper_CompilerMode::CM_LTO)
-   {
-      boost::replace_all(local_parameters_line, "-O4", "");
-      boost::replace_all(local_parameters_line, "-O3", "");
-      boost::replace_all(local_parameters_line, "-O2", "");
-      boost::replace_all(local_parameters_line, "-O1", "");
-      local_parameters_line += " -O1 ";
-   }
-
    if(!(Param->getOption<bool>(OPT_compute_size_of)))
    {
       command += " -D\"" + std::string(STR_CST_panda_sizeof) + "(arg)=" + STR_CST_string_sizeof + "(#arg)\"";
    }
-   command += " " + local_parameters_line;
+   command += " " + parameters_line;
    if(original_file_name == "-" || original_file_name == "/dev/null")
    {
       command += real_file_name;
@@ -899,24 +887,24 @@ void CompilerWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::st
    }
 
    /// check for aligned option
-   const CompilerWrapper_OptimizationSet optimization_level =
-       Param->getOption<CompilerWrapper_OptimizationSet>(OPT_compiler_opt_level);
+   const auto optimization_level = Param->getOption<CompilerWrapper_OptimizationSet>(OPT_compiler_opt_level);
    if(optimization_level == CompilerWrapper_OptimizationSet::O3 ||
       optimization_level == CompilerWrapper_OptimizationSet::O4 ||
       optimization_level == CompilerWrapper_OptimizationSet::O5)
    {
-      if(optimization_flags.find("tree-vectorize") == optimization_flags.end() ||
-         optimization_flags.find("tree-vectorize")->second)
+      if((optimization_flags.find("tree-vectorize") == optimization_flags.end() ||
+          optimization_flags.find("tree-vectorize")->second) ||
+         (optimization_flags.find("vectorize") == optimization_flags.end() ||
+          optimization_flags.find("vectorize")->second) ||
+         (optimization_flags.find("slp-vectorize") == optimization_flags.end() ||
+          optimization_flags.find("slp-vectorize")->second))
       {
-         bool assume_aligned_access_p =
-             Param->isOption(OPT_aligned_access) && Param->getOption<bool>(OPT_aligned_access);
-         if(assume_aligned_access_p)
+         if(Param->isOption(OPT_aligned_access) && Param->getOption<bool>(OPT_aligned_access))
          {
-            THROW_ERROR("Option --aligned-access cannot be used with -O3 or -ftree-vectorize");
+            THROW_ERROR("Option --aligned-access cannot be used with -O3 or vectorization");
          }
       }
    }
-   const Compiler compiler = GetCompiler();
 
 #if HAVE_I386_CLANG4_COMPILER || HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER ||    \
     HAVE_I386_CLANG7_COMPILER || HAVE_I386_CLANG8_COMPILER || HAVE_I386_CLANG9_COMPILER ||    \
@@ -973,7 +961,8 @@ void CompilerWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::st
    THROW_WARNING("pragma analysis requires CLANG");
 #endif
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Starting compilation of single files");
-   bool enable_LTO = (compiler.is_clang && source_files.size() > 1);
+   const auto compiler = GetCompiler();
+   const auto enable_LTO = (compiler.is_clang && source_files.size() > 1);
    for(auto& source_file : source_files)
    {
       if(already_processed_files.find(source_file.first) != already_processed_files.end())
@@ -1056,10 +1045,10 @@ void CompilerWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::st
           boost::filesystem::path(Param->getOption<std::string>(OPT_output_temporary_directory) + "/" +
                                   boost::filesystem::unique_path(std::string(STR_CST_llvm_obj_file)).string())
               .string();
-      std::string command = compiler.llvm_link + " " + object_files + " -o " + temporary_file_o_bc;
-      const std::string llvm_link_output_file_name =
+      auto command = compiler.llvm_link + " " + object_files + " -o " + temporary_file_o_bc;
+      const auto llvm_link_output_file_name =
           Param->getOption<std::string>(OPT_output_temporary_directory) + STR_CST_gcc_output;
-      int ret = PandaSystem(Param, command, llvm_link_output_file_name);
+      auto ret = PandaSystem(Param, command, llvm_link_output_file_name);
       if(IsError(ret))
       {
          PRINT_OUT_MEX(OUTPUT_LEVEL_NONE, 0, "Error in llvm-link");
@@ -1075,7 +1064,7 @@ void CompilerWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::st
             THROW_ERROR("Error in llvm-link invocation");
          }
       }
-      bool isWholeProgram =
+      const auto isWholeProgram =
           Param->isOption(OPT_gcc_optimizations) &&
           Param->getOption<std::string>(OPT_gcc_optimizations).find("whole-program") != std::string::npos &&
           Param->getOption<std::string>(OPT_gcc_optimizations).find("no-whole-program") == std::string::npos;
@@ -1116,28 +1105,28 @@ void CompilerWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::st
             }
             else
             {
-               for(auto& entry :
+               for(const auto& entry :
                    boost::make_iterator_range(boost::filesystem::directory_iterator(output_temporary_directory), {}))
                {
-                  auto source_file = GetLeafFileName(entry.path().string());
+                  const auto source_file = GetLeafFileName(entry.path().string());
                   if(source_file.find(".memory_allocation.xml") != std::string::npos)
                   {
                      xml_files.push_back(source_file);
                   }
                }
             }
-            for(auto XMLfilename : xml_files)
+            for(const auto& XMLfilename : xml_files)
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->parsing " + XMLfilename);
                XMLDomParser parser(XMLfilename);
                parser.Exec();
                if(parser)
                {
-                  const xml_element* node = parser.get_document()->get_root_node(); // deleted by DomParser.
-                  const xml_node::node_list list = node->get_children();
+                  const auto node = parser.get_document()->get_root_node(); // deleted by DomParser.
+                  const auto list = node->get_children();
                   for(const auto& l : list)
                   {
-                     const xml_element* child = GetPointer<xml_element>(l);
+                     const auto child = GetPointer<xml_element>(l);
                      if(!child)
                      {
                         continue;
@@ -1146,7 +1135,7 @@ void CompilerWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::st
                      {
                         for(const auto& it : child->get_children())
                         {
-                           const xml_element* mem_node = GetPointer<xml_element>(it);
+                           const auto mem_node = GetPointer<xml_element>(it);
                            if(!mem_node)
                            {
                               continue;
@@ -1199,7 +1188,7 @@ void CompilerWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::st
                                         boost::filesystem::unique_path(std::string(STR_CST_llvm_obj_file)).string())
                     .string();
             command += " -o " + temporary_file_o_bc;
-            const std::string tfn_output_file_name =
+            const auto tfn_output_file_name =
                 Param->getOption<std::string>(OPT_output_temporary_directory) + STR_CST_gcc_output;
             ret = PandaSystem(Param, command, tfn_output_file_name);
             if(IsError(ret))
@@ -1228,7 +1217,7 @@ void CompilerWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::st
                                         boost::filesystem::unique_path(std::string(STR_CST_llvm_obj_file)).string())
                     .string();
             command += " -o " + temporary_file_o_bc;
-            const std::string int_output_file_name =
+            const auto int_output_file_name =
                 Param->getOption<std::string>(OPT_output_temporary_directory) + STR_CST_gcc_output;
             ret = PandaSystem(Param, command, int_output_file_name);
             if(IsError(ret))
@@ -1264,7 +1253,7 @@ void CompilerWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::st
                                      boost::filesystem::unique_path(std::string(STR_CST_llvm_obj_file)).string())
                  .string();
          command += " -o " + temporary_file_o_bc;
-         const std::string o2_output_file_name =
+         const auto o2_output_file_name =
              Param->getOption<std::string>(OPT_output_temporary_directory) + STR_CST_gcc_output;
          ret = PandaSystem(Param, command, o2_output_file_name);
          if(IsError(ret))
@@ -1360,14 +1349,12 @@ void CompilerWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::st
          THROW_ERROR("LTO compilation not yet implemented for the chosen front-end compiler");
       }
       std::string leaf_name = GetLeafFileName(source_files.begin()->second);
-      if(not(boost::filesystem::exists(
-             boost::filesystem::path(output_temporary_directory + "/" + leaf_name + STR_CST_gcc_tree_suffix))))
+      if(!boost::filesystem::exists(output_temporary_directory + "/" + leaf_name + STR_CST_gcc_tree_suffix))
       {
          THROW_ERROR(output_temporary_directory + "/" + leaf_name + STR_CST_gcc_tree_suffix +
                      " not found: impossible to create raw file for " + real_file_names);
       }
-      boost::filesystem::path obj =
-          boost::filesystem::path(output_temporary_directory + "/" + leaf_name + STR_CST_gcc_tree_suffix);
+      const auto obj = boost::filesystem::path(output_temporary_directory + "/" + leaf_name + STR_CST_gcc_tree_suffix);
       tree_managerRef TreeM = ParseTreeFile(Param, obj.string());
 #if !NPROFILE
       long int merge_time = 0;
@@ -3879,7 +3866,7 @@ std::string CompilerWrapper::clang_recipes(
              "-basicaa -aa -scalar-evolution -loop-rotate -loop-accesses -lazy-branch-prob -lazy-block-freq "
              "-opt-remark-emitter -loop-distribute -loop-simplify -lcssa-verification -lcssa -branch-prob -block-freq "
              "-scalar-evolution -basicaa -aa -loop-accesses -demanded-bits -lazy-branch-prob -lazy-block-freq "
-             "-opt-remark-emitter -disable-slp-vectorization -disable-loop-vectorization -scalarizer -loop-simplify "
+             "-opt-remark-emitter -disable-slp-vectorization -disable-loop-vectorization -scalarizer-loop-simplify "
              "-scalar-evolution -aa -loop-accesses -loop-load-elim -basicaa -aa  -dse -loop-unroll -instcombine "
              "-simplifycfg -domtree -basicaa -aa  -dse -loop-unroll -instcombine -loops -loop-simplify "
              "-lcssa-verification -lcssa -scalar-evolution -loop-unroll ";
@@ -3905,8 +3892,8 @@ std::string CompilerWrapper::clang_recipes(
          const auto opt_level = optimization_level == CompilerWrapper_OptimizationSet::O0 ?
                                     "1" :
                                     WriteOptimizationLevel(optimization_level);
-         recipe += " -O" + opt_level + " -disable-slp-vectorization -disable-loop-vectorization -scalarizer ";
-         recipe += " -" + expandMemOps_plugin_name + " -loop-unroll -simplifycfg ";
+         recipe += " -O" + opt_level + " -disable-slp-vectorization -disable-loop-vectorization -scalarizer";
+         recipe += " -" + expandMemOps_plugin_name + " -simplifycfg ";
       }
    }
    else
@@ -3916,8 +3903,8 @@ std::string CompilerWrapper::clang_recipes(
    {
       const auto opt_level =
           optimization_level == CompilerWrapper_OptimizationSet::O0 ? "1" : WriteOptimizationLevel(optimization_level);
-      recipe += " -O" + opt_level + " -disable-slp-vectorization -disable-loop-vectorization -scalarizer ";
-      recipe += " -" + expandMemOps_plugin_name + " -loop-unroll -simplifycfg ";
+      recipe += " -O" + opt_level + " -disable-slp-vectorization -disable-loop-vectorization -scalarizer";
+      recipe += " -" + expandMemOps_plugin_name + " -simplifycfg ";
    }
    else
 #endif
@@ -3926,8 +3913,8 @@ std::string CompilerWrapper::clang_recipes(
    {
       const auto opt_level =
           optimization_level == CompilerWrapper_OptimizationSet::O0 ? "1" : WriteOptimizationLevel(optimization_level);
-      recipe += " -O" + opt_level + " -disable-slp-vectorization -disable-loop-vectorization -scalarizer ";
-      recipe += " -" + expandMemOps_plugin_name + " -loop-unroll -simplifycfg ";
+      recipe += " -O" + opt_level + " -disable-slp-vectorization -disable-loop-vectorization -scalarizer";
+      recipe += " -" + expandMemOps_plugin_name + " -simplifycfg ";
    }
    else
 #endif
@@ -3936,19 +3923,8 @@ std::string CompilerWrapper::clang_recipes(
    {
       const auto opt_level =
           optimization_level == CompilerWrapper_OptimizationSet::O0 ? "1" : WriteOptimizationLevel(optimization_level);
-      recipe += " -O" + opt_level + " -disable-slp-vectorization -disable-loop-vectorization -scalarizer ";
-      recipe += " -" + expandMemOps_plugin_name;
-      /*
-            recipe += " -" + GepiCanon_plugin_name +
-                      "PS "
-                      "-" +
-                      GepiCanon_plugin_name +
-                      "COL "
-                      "-" +
-                      GepiCanon_plugin_name +
-                      "BVR ";
-      */
-      recipe += " -loop-unroll -simplifycfg ";
+      recipe += " -O" + opt_level + " -disable-slp-vectorization -disable-loop-vectorization -scalarizer";
+      recipe += " -" + expandMemOps_plugin_name + " -simplifycfg ";
    }
    else
 #endif
@@ -3957,19 +3933,8 @@ std::string CompilerWrapper::clang_recipes(
    {
       const auto opt_level =
           optimization_level == CompilerWrapper_OptimizationSet::O0 ? "1" : WriteOptimizationLevel(optimization_level);
-      recipe += " -O" + opt_level + " -disable-slp-vectorization -disable-loop-vectorization -scalarizer ";
-      recipe += " -" + expandMemOps_plugin_name;
-      /*
-            recipe += " -" + GepiCanon_plugin_name +
-                      "PS "
-                      "-" +
-                      GepiCanon_plugin_name +
-                      "COL "
-                      "-" +
-                      GepiCanon_plugin_name +
-                      "BVR ";
-      */
-      recipe += " -loop-unroll -simplifycfg ";
+      recipe += " -O" + opt_level + " -disable-slp-vectorization -disable-loop-vectorization -scalarizer";
+      recipe += " -" + expandMemOps_plugin_name + " -simplifycfg ";
    }
    else
 #endif
@@ -3978,19 +3943,8 @@ std::string CompilerWrapper::clang_recipes(
    {
       const auto opt_level =
           optimization_level == CompilerWrapper_OptimizationSet::O0 ? "1" : WriteOptimizationLevel(optimization_level);
-      recipe += " -O" + opt_level + " -disable-slp-vectorization -scalarizer ";
-      recipe += " -" + expandMemOps_plugin_name;
-      /*
-            recipe += " -" + GepiCanon_plugin_name +
-                      "PS "
-                      "-" +
-                      GepiCanon_plugin_name +
-                      "COL "
-                      "-" +
-                      GepiCanon_plugin_name +
-                      "BVR ";
-      */
-      recipe += " -loop-unroll -simplifycfg ";
+      recipe += " -O" + opt_level + " -disable-slp-vectorization -scalarizer";
+      recipe += " -" + expandMemOps_plugin_name + " -simplifycfg ";
    }
    else
 #endif
@@ -3999,19 +3953,8 @@ std::string CompilerWrapper::clang_recipes(
    {
       const auto opt_level =
           optimization_level == CompilerWrapper_OptimizationSet::O0 ? "1" : WriteOptimizationLevel(optimization_level);
-      recipe += " -O" + opt_level + " -disable-slp-vectorization -scalarizer ";
-      recipe += " -" + expandMemOps_plugin_name;
-      /*
-            recipe += " -" + GepiCanon_plugin_name +
-                      "PS "
-                      "-" +
-                      GepiCanon_plugin_name +
-                      "COL "
-                      "-" +
-                      GepiCanon_plugin_name +
-                      "BVR ";
-      */
-      recipe += " -loop-unroll -simplifycfg ";
+      recipe += " -O" + opt_level + " -disable-slp-vectorization -scalarizer";
+      recipe += " -" + expandMemOps_plugin_name + " -simplifycfg ";
    }
    else
 #endif
@@ -4020,20 +3963,8 @@ std::string CompilerWrapper::clang_recipes(
    {
       const auto opt_level =
           optimization_level == CompilerWrapper_OptimizationSet::O0 ? "1" : WriteOptimizationLevel(optimization_level);
-      recipe +=
-          " -O" + opt_level + " --disable-vector-combine -vectorize-loops=false -vectorize-slp=false -scalarizer ";
-      recipe += " -" + expandMemOps_plugin_name;
-      /*
-            recipe += " -" + GepiCanon_plugin_name +
-                      "PS "
-                      "-" +
-                      GepiCanon_plugin_name +
-                      "COL "
-                      "-" +
-                      GepiCanon_plugin_name +
-                      "BVR ";
-      */
-      recipe += " -loop-unroll -simplifycfg ";
+      recipe += " -O" + opt_level + " --disable-vector-combine -vectorize-loops=false -vectorize-slp=false -scalarizer";
+      recipe += " -" + expandMemOps_plugin_name + " -simplifycfg ";
    }
    else
 #endif
@@ -4042,20 +3973,8 @@ std::string CompilerWrapper::clang_recipes(
    {
       const auto opt_level =
           optimization_level == CompilerWrapper_OptimizationSet::O0 ? "1" : WriteOptimizationLevel(optimization_level);
-      recipe +=
-          " -O" + opt_level + " --disable-vector-combine -vectorize-loops=false -vectorize-slp=false -scalarizer ";
-      recipe += " -" + expandMemOps_plugin_name;
-      /*
-            recipe += " -" + GepiCanon_plugin_name +
-                      "PS "
-                      "-" +
-                      GepiCanon_plugin_name +
-                      "COL "
-                      "-" +
-                      GepiCanon_plugin_name +
-                      "BVR ";
-      */
-      recipe += " -loop-unroll -simplifycfg ";
+      recipe += " -O" + opt_level + " --disable-vector-combine -vectorize-loops=false -vectorize-slp=false -scalarizer";
+      recipe += " -" + expandMemOps_plugin_name + " -simplifycfg ";
    }
    else
 #endif
@@ -4064,20 +3983,8 @@ std::string CompilerWrapper::clang_recipes(
    {
       const auto opt_level =
           optimization_level == CompilerWrapper_OptimizationSet::O0 ? "1" : WriteOptimizationLevel(optimization_level);
-      recipe +=
-          " -O" + opt_level + " --disable-vector-combine -vectorize-loops=false -vectorize-slp=false -scalarizer ";
-      recipe += " -" + expandMemOps_plugin_name;
-      /*
-            recipe += " -" + GepiCanon_plugin_name +
-                      "PS "
-                      "-" +
-                      GepiCanon_plugin_name +
-                      "COL "
-                      "-" +
-                      GepiCanon_plugin_name +
-                      "BVR ";
-      */
-      recipe += " -loop-unroll -simplifycfg ";
+      recipe += " -O" + opt_level + " --disable-vector-combine -vectorize-loops=false -vectorize-slp=false -scalarizer";
+      recipe += " -" + expandMemOps_plugin_name + " -simplifycfg ";
    }
    else
 #endif
@@ -4086,19 +3993,8 @@ std::string CompilerWrapper::clang_recipes(
    {
       const auto opt_level =
           optimization_level == CompilerWrapper_OptimizationSet::O0 ? "1" : WriteOptimizationLevel(optimization_level);
-      recipe += " -O" + opt_level + " --disable-vector-combine -scalarizer ";
-      recipe += " -" + expandMemOps_plugin_name;
-      /*
-            recipe += " -" + GepiCanon_plugin_name +
-                      "PS "
-                      "-" +
-                      GepiCanon_plugin_name +
-                      "COL "
-                      "-" +
-                      GepiCanon_plugin_name +
-                      "BVR ";
-      */
-      recipe += " -loop-unroll -simplifycfg ";
+      recipe += " -O" + opt_level + " --disable-vector-combine -scalarizer";
+      recipe += " -" + expandMemOps_plugin_name + " -simplifycfg ";
    }
    else
 #endif
