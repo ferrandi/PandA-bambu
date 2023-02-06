@@ -1843,7 +1843,7 @@ std::string BehavioralHelper::PrintNode(const tree_nodeConstRef& _node, vertex v
                       "expected a pointer type: " + GET_NODE(ppe->type)->get_kind_text() + " - " + STR(ppe->type));
 
          /// check possible pointer arithmetic reverse
-         long long int deltabit;
+         unsigned long long deltabit;
          const auto pointed_type = tree_helper::CGetPointedType(tree_helper::CGetType(ppe->op0));
          INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level,
                         "Pointed type (" + STR(pointed_type) + ") is " + GET_CONST_NODE(pointed_type)->get_kind_text());
@@ -1854,7 +1854,7 @@ std::string BehavioralHelper::PrintNode(const tree_nodeConstRef& _node, vertex v
          }
          else
          {
-            deltabit = static_cast<long long>(tree_helper::Size(pointed_type));
+            deltabit = tree_helper::Size(pointed_type);
          }
          INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "deltabit is " + STR(deltabit));
          integer_cst_t pointer_offset = 0;
@@ -1862,8 +1862,7 @@ std::string BehavioralHelper::PrintNode(const tree_nodeConstRef& _node, vertex v
          if(right_cost)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "Offset is constant");
-            pointer_offset = tree_helper::GetConstValue(right_op_node);
-            THROW_ASSERT(pointer_offset >= 0, "");
+            pointer_offset = tree_helper::GetConstValue(right_op_node, tree_helper::IsSignedIntegerType(right_op_node));
             if(deltabit / 8 == 0)
             {
                do_reverse_pointer_arithmetic = false;
@@ -1873,12 +1872,10 @@ std::string BehavioralHelper::PrintNode(const tree_nodeConstRef& _node, vertex v
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "Arithmetic pointer pattern matched");
                const auto ic = GetPointerS<const integer_cst>(right_op_node);
-               const auto ic_type = GET_CONST_NODE(ic->type);
-               const auto it = GetPointer<const integer_type>(ic_type);
+               const auto it = GetPointer<const integer_type>(GET_CONST_NODE(ic->type));
                if(it && (it->prec == 32))
                {
-                  pointer_offset = static_cast<int>(pointer_offset / (deltabit / 8));
-                  pointer_offset = static_cast<unsigned int>(pointer_offset);
+                  pointer_offset = static_cast<unsigned int>(pointer_offset / (deltabit / 8));
                }
                else
                {
@@ -1934,7 +1931,7 @@ std::string BehavioralHelper::PrintNode(const tree_nodeConstRef& _node, vertex v
                         INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level,
                                        "-->Right part of multiply is an integer constant " +
                                            STR(GET_INDEX_NODE(mult->op1)));
-                        auto size_of_pointer = tree_helper::GetConstValue(mult->op1);
+                        const auto size_of_pointer = tree_helper::GetConstValue(mult->op1);
                         INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level,
                                        "---Size of pointer is " + STR(size_of_pointer));
                         if(size_of_pointer == (deltabit / 8))
@@ -1953,8 +1950,8 @@ std::string BehavioralHelper::PrintNode(const tree_nodeConstRef& _node, vertex v
                                         "Type of integer cast " + STR(GET_INDEX_NODE(mult->op1)) +
                                             " is not an integer type");
                            const auto it = GetPointerS<const integer_type>(GET_CONST_NODE(temp1));
-                           auto max_int = tree_helper::GetConstValue(it->max);
-                           auto new_size_of_pointer = max_int + 1 - size_of_pointer;
+                           const auto max_int = tree_helper::GetConstValue(it->max);
+                           const auto new_size_of_pointer = max_int + 1 - size_of_pointer;
                            if(new_size_of_pointer == (deltabit / 8))
                            {
                               INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level,
@@ -1978,7 +1975,7 @@ std::string BehavioralHelper::PrintNode(const tree_nodeConstRef& _node, vertex v
                      }
                      else if(GET_NODE(mult->op0)->get_kind() == integer_cst_K)
                      {
-                        auto size_of_pointer = tree_helper::GetConstValue(mult->op0);
+                        const auto size_of_pointer = tree_helper::GetConstValue(mult->op0);
                         if(size_of_pointer == (deltabit / 8))
                         {
                            right_offset_var += PrintNode(mult->op1, v, vppf);
@@ -1991,8 +1988,8 @@ std::string BehavioralHelper::PrintNode(const tree_nodeConstRef& _node, vertex v
                                         "Type of integer cast " + STR(GET_INDEX_NODE(mult->op0)) +
                                             " is not an integer type");
                            const auto it = GetPointerS<const integer_type>(GET_CONST_NODE(temp1));
-                           auto max_int = tree_helper::GetConstValue(it->max);
-                           auto new_size_of_pointer = max_int + 1 - size_of_pointer;
+                           const auto max_int = tree_helper::GetConstValue(it->max);
+                           const auto new_size_of_pointer = max_int + 1 - size_of_pointer;
                            if(new_size_of_pointer == (deltabit / 8))
                            {
                               right_offset_var += "-" + PrintNode(mult->op1, v, vppf);
