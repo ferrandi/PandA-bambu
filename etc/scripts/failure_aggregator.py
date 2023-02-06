@@ -7,6 +7,7 @@ import re
 
 from array import *
 from collections import OrderedDict
+import xml.etree.ElementTree as ET
 
 parser = argparse.ArgumentParser(
     description="Aggregate failed test from test_panda.py log", fromfile_prefix_chars="@")
@@ -33,22 +34,17 @@ if len(old_path) != 0:
     print('Old path to be replaced is {}'.format(old_path))
     print('New root directory for tests is {}'.format(root_path))
 
-t = open(in_file, "r")
-lines = t.readlines()
-t.close()
 tests = {"": 0}
 tests.clear()
-t = open(out_file, "w")
-for line in lines:
-    match = re.search(r"FAILURE[^\/]*(.*)", line)
-    if match:
-        t.write(line)
-        test_line = ' '.join(OrderedDict.fromkeys(match.group(1).split()))
-        if len(old_path) != 0:
-            test_line = test_line.replace(old_path, root_path)
-        tests[test_line] = tests.get(test_line, 0) + 1
-
-t.close()
+testsuites = ET.parse(in_file).getroot()
+print('Testsuites containing {} failed tests'.format(testsuites.attrib['failures']))
+for testsuite in testsuites:
+    for testcase in testsuite:
+        if any(child.tag == 'failure' for child in testcase):
+            test_line = testcase.attrib['name']
+            if len(old_path):
+                test_line = test_line.replace(old_path, root_path)
+            tests[test_line] = tests.get(test_line, 0) + 1
 
 if test_required:
     unnamed_counter = 0
@@ -101,12 +97,10 @@ if test_required:
     t.close()
     test_runner = '''#!/bin/bash
 script_dir="$(dirname $(readlink -e $0))"
-$script_dir/../etc/scripts/test_panda.py --tool=bambu -lTEST_NAME_list -o output_TEST_NAME -b$script_dir --name="TEST_NAME" --timeout=120m --junitdir=test-report_TEST_NAME $@
-return_value=$?
-if test $return_value != 0; then
-   exit $return_value
-fi
-exit 0
+out_name="TEST_NAME"
+python ${script_dir}/../etc/scripts/test_panda.py --tool=bambu \\
+    -l${out_name}_list -o output_${out_name} -b$script_dir --name="${out_name}" \\
+    --timeout=120m --junitdir=test-report_${out_name} "$@"
 '''
     test_runner = test_runner.replace("TEST_NAME", out_file)
     runner_script = out_file + "_test-runner.sh"
