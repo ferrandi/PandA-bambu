@@ -75,12 +75,14 @@ DesignFlowStep_Status cs_interface::InternalExec()
    }
 
    structural_objectRef wrappedObj = SM->get_circ();
-   std::string module_name = wrappedObj->get_id() + "_cs_interface";
+   std::string module_name = wrappedObj->get_id();
 
    structural_managerRef SM_cs_interface = structural_managerRef(new structural_manager(parameters));
+   const structural_type_descriptorRef internal_type(new structural_type_descriptor(module_name + "_int"));
    structural_type_descriptorRef module_type =
        structural_type_descriptorRef(new structural_type_descriptor(module_name));
    SM_cs_interface->set_top_info(module_name, module_type);
+   wrappedObj->set_type(internal_type);
    structural_objectRef interfaceObj = SM_cs_interface->get_circ();
 
    // add the core to the wrapper
