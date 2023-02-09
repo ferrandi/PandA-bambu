@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -46,29 +46,23 @@
 
 #include "config_PANDA_DATA_INSTALLDIR.hpp"
 
-/// constants include
-#include "synthesis_constants.hpp"
-
 #include "LUT_model.hpp"
+#include "Parameter.hpp"
+#include "XilinxWrapper.hpp"
 #include "area_model.hpp"
 #include "clb_model.hpp"
+#include "fileIO.hpp"
 #include "map_wrapper.hpp"
+#include "string_manipulation.hpp"
+#include "structural_objects.hpp"
+#include "synthesis_constants.hpp"
 #include "target_device.hpp"
 #include "target_manager.hpp"
 #include "time_model.hpp"
 #include "trce_wrapper.hpp"
-
-#include "XilinxWrapper.hpp"
-
-#include "Parameter.hpp"
-#include "fileIO.hpp"
+#include "utility.hpp"
 #include "xml_dom_parser.hpp"
 #include "xml_script_command.hpp"
-
-/// circuit include
-#include "structural_objects.hpp"
-
-#include "string_manipulation.hpp" // for GET_CLASS
 
 #define XST_NUMBER_OF_SLICE_REGISTERS "XST_NUMBER_OF_SLICE_REGISTERS"
 #define XST_NUMBER_OF_SLICE_LUTS "XST_NUMBER_OF_SLICE_LUTS"

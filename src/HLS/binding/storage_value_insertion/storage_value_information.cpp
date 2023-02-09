@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -60,6 +60,7 @@
 #include "math_function.hpp"
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
+#include "utility.hpp"
 
 StorageValueInformation::StorageValueInformation(const HLS_managerConstRef _HLS_mgr, const unsigned int _function_id)
     : number_of_storage_values(0), HLS_mgr(_HLS_mgr), function_id(_function_id)

@@ -1,3 +1,9 @@
+=========== PANDA 2023.01 ===========
+- Support for LLVM 13
+- Support for Xilinx Alveo and Xilinx Kintex FPGA boards
+- Support for ac_channels and hls::stream interfaces
+- Various bugfixes and stability enhancement
+
 =========== PANDA 0.9.8 ===========
 Ninth public release of PandA framework.
 

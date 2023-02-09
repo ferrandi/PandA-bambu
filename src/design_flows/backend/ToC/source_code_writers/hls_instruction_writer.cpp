@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -36,37 +36,27 @@
  *
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  * @author Marco Lattuada <lattuada@elet.polimi.it>
+ * @author Michele Fiorito <michele.fiorito@polimi.it>
  * $Revision$
  * $Date$
  * Last modified by $Author$
  *
  */
-
-/// Header include
 #include "hls_instruction_writer.hpp"
 
-/// behavior include
+#include "Parameter.hpp"
 #include "application_manager.hpp"
+#include "behavioral_helper.hpp"
+#include "c_writer.hpp"
 #include "function_behavior.hpp"
 #include "hls_manager.hpp"
-
-/// tree include
-#include "behavioral_helper.hpp"
-#include "var_pp_functor.hpp"
-
-/// utility include
 #include "indented_output_stream.hpp"
-#include "utility.hpp"
-
-/// Backend include
-#include "c_writer.hpp"
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
-
-/// Parameter include
-#include "Parameter.hpp"
+#include "utility.hpp"
+#include "var_pp_functor.hpp"
 
 HLSInstructionWriter::HLSInstructionWriter(const application_managerConstRef _app_man,
                                            const IndentedOutputStreamRef _indented_output_stream,
@@ -82,10 +72,11 @@ void HLSInstructionWriter::declareFunction(const unsigned int function_id)
    const auto flag_pp = parameters->isOption(OPT_pretty_print) ||
                         (parameters->isOption(OPT_discrepancy) && parameters->getOption<bool>(OPT_discrepancy));
    // All I have to do is to change main in _main
+   const auto TM = AppM->get_tree_manager();
    const auto FB = AppM->CGetFunctionBehavior(function_id);
    const auto BH = FB->CGetBehavioralHelper();
-   auto stringTemp =
-       BH->print_type(function_id, false, true, false, 0, var_pp_functorConstRef(new std_var_pp_functor(BH)));
+   auto fdecl = tree_helper::PrintType(TM, TM->CGetTreeReindex(function_id), false, true, false, nullptr,
+                                       var_pp_functorConstRef(new std_var_pp_functor(BH)));
    const auto name = BH->get_function_name();
 
    if(!flag_pp)
@@ -98,7 +89,7 @@ void HLSInstructionWriter::declareFunction(const unsigned int function_id)
                        HLSMgr->design_interface_typename_orig_signature.end())
       {
          const auto searchString = " " + name + "(";
-         stringTemp = stringTemp.substr(0, stringTemp.find(searchString) + searchString.size());
+         fdecl = fdecl.substr(0, fdecl.find(searchString) + searchString.size());
          THROW_ASSERT(HLSMgr->design_interface_typename_orig_signature.count(fname), "");
          const auto& typenameArgs = HLSMgr->design_interface_typename_orig_signature.at(fname);
          bool firstPar = true;
@@ -107,22 +98,22 @@ void HLSInstructionWriter::declareFunction(const unsigned int function_id)
             const auto& arg_typename = typenameArgs.at(i);
             if(firstPar)
             {
-               stringTemp += arg_typename;
+               fdecl += arg_typename;
                firstPar = false;
             }
             else
             {
-               stringTemp += ", " + arg_typename;
+               fdecl += ", " + arg_typename;
             }
          }
-         stringTemp += ")";
+         fdecl += ")";
       }
    }
    if(name == "main")
    {
-      boost::replace_all(stringTemp, " main(", " _main("); /// the assumption is strong but the code that prints the
-                                                           /// name of the function is under our control ;-)
+      boost::replace_all(fdecl, " main(", " _main("); /// the assumption is strong but the code that prints the
+                                                      /// name of the function is under our control ;-)
    }
 
-   indented_output_stream->Append(stringTemp);
+   indented_output_stream->Append(fdecl);
 }

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -174,8 +174,7 @@ class HLSCWriter : public CWriter
     * @param input specifies if the input syntax must be used
     */
    void WriteParamInMemory(const BehavioralHelperConstRef behavioral_helper, const std::string& param,
-                           const unsigned int type, const unsigned int nesting_level, bool input,
-                           bool is_struct_or_union);
+                           tree_nodeConstRef type, const unsigned int nesting_level = 0, bool input = false);
 
  public:
    /**

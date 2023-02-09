@@ -32,7 +32,7 @@ Use the following to install the required Python version through PyEnv and set i
 ```
 CONFIGURE_OPTS="--enable-shared" pyenv install 3.6.15
 pyenv global 3.6.15
-pip install -r /path/to/repo/et/scripts/requirements.txt
+pip install -r /path/to/repo/etc/scripts/requirements.txt
 ```
 
 Note that Github Runners are launched as systemd services, thus `~/.bashrc` or `~/.profile` are not loaded.

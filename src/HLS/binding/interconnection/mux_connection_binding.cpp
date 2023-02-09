@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -402,14 +402,17 @@ void mux_connection_binding::determine_connection(const vertex& op, const HLS_ma
          {
             auto* mr = GetPointer<mem_ref>(tn);
             auto base_index = GET_INDEX_NODE(mr->op0);
-            auto offset = tree_helper::get_integer_cst_value(GetPointer<integer_cst>(GET_NODE(mr->op1)));
+            THROW_ASSERT(std::numeric_limits<long long>::min() <= tree_helper::GetConstValue(mr->op1) &&
+                             tree_helper::GetConstValue(mr->op1) <= std::numeric_limits<long long>::max(),
+                         "");
+            auto offset = static_cast<long long>(tree_helper::GetConstValue(mr->op1));
             auto offset_index = offset ? GET_INDEX_NODE(mr->op1) : 0;
             generic_objRef current_operand;
             auto local_precision = address_precision(precision, op, data, TreeM);
             if(offset_index)
             {
 #if USE_ALIGNMENT_INFO
-               long long int cost_val = offset;
+               const auto cost_val = offset;
                alignment = std::min(static_cast<unsigned int>(8 * (cost_val & -cost_val)), alignment);
 #endif
                current_operand = generic_objRef(new adder_conn_obj("adder_conn_obj_" + STR(id++)));
@@ -633,16 +636,14 @@ void mux_connection_binding::determine_connection(const vertex& op, const HLS_ma
          case insertelement_expr_K:
          case CASE_TYPE_NODES:
          default:
-            THROW_ERROR("determine_connection pattern not supported: " + std::string(tn->get_kind_text()) + " @" +
-                        STR(tree_var));
+            THROW_ERROR("determine_connection pattern not supported: " + tn->get_kind_text() + " @" + STR(tree_var));
       }
    }
    if(tree_var == 0)
    {
       /// create connection with the constant
       THROW_ASSERT(precision, "a precision greater than 0 is expected");
-
-      std::string string_value = convert_to_binary(static_cast<unsigned long long int>(constant_value), precision);
+      auto string_value = convert_to_binary(constant_value, precision);
       PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "       - Constant value: " + STR(constant_value));
       PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "         - " + string_value);
       std::string param_name;
@@ -652,16 +653,16 @@ void mux_connection_binding::determine_connection(const vertex& op, const HLS_ma
          PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "         - param: " + param_name);
          string_value = STR(m_sym->get_address());
       }
-      generic_objRef C_obj = HLS->Rconn->get_constant_obj(string_value, param_name, precision);
+      const auto C_obj = HLS->Rconn->get_constant_obj(string_value, param_name, precision);
       create_single_conn(data, op, C_obj, fu_obj, port_num, port_index, 0, precision, is_not_a_phi);
       return;
    }
-   const BehavioralHelperConstRef behavioral_helper = FB->CGetBehavioralHelper();
+   const auto behavioral_helper = FB->CGetBehavioralHelper();
    if(behavioral_helper->is_a_constant(tree_var))
    {
-      THROW_ASSERT(precision, "a precision greater than 0 is expected");
-      std::string C_value = HLSMgr->get_constant_string(tree_var, precision);
-      generic_objRef C_obj = HLS->Rconn->get_constant_obj(C_value, "", precision);
+      THROW_ASSERT(precision, "a precision greater than 0 is expected: " + STR(precision));
+      const auto C_value = HLSMgr->get_constant_string(tree_var, precision);
+      const auto C_obj = HLS->Rconn->get_constant_obj(C_value, "", precision);
       PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                     "       - Tree constant value: " + behavioral_helper->PrintVariable(tree_var));
       PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "         - " + C_value);
@@ -1461,10 +1462,10 @@ void mux_connection_binding::create_connections()
 
                   if(size_var)
                   {
-                     const integer_cst* obj_size =
-                         GetPointer<integer_cst>(GET_NODE(GetPointerS<const type_node>(GET_CONST_NODE(tn))->size));
-                     THROW_ASSERT(obj_size, "size is not an integer_cst");
-                     long long int IR_var_bitsize = tree_helper::get_integer_cst_value(obj_size);
+                     THROW_ASSERT(
+                         tree_helper::GetConstValue(GetPointerS<const type_node>(GET_CONST_NODE(tn))->size) >= 0, "");
+                     const auto IR_var_bitsize = static_cast<unsigned int>(
+                         tree_helper::GetConstValue(GetPointerS<const type_node>(GET_CONST_NODE(tn))->size));
                      unsigned int var_bitsize;
                      if(Prec != algn && Prec % algn)
                      {
@@ -1473,8 +1474,8 @@ void mux_connection_binding::create_connections()
                      }
                      else
                      {
-                        HLS_manager::check_bitwidth(static_cast<unsigned long long>(IR_var_bitsize));
-                        var_bitsize = static_cast<unsigned int>(IR_var_bitsize);
+                        HLS_manager::check_bitwidth(IR_var_bitsize);
+                        var_bitsize = IR_var_bitsize;
                      }
                      generic_objRef conv_port;
                      auto varObj = var_read[0];
@@ -1557,10 +1558,7 @@ void mux_connection_binding::create_connections()
                }
                else
                {
-                  const integer_cst* obj_size =
-                      GetPointer<integer_cst>(GET_NODE(GetPointerS<const type_node>(GET_CONST_NODE(tn))->size));
-                  THROW_ASSERT(obj_size, "size is not an integer_cst");
-                  long long int IR_var_bitsize = tree_helper::get_integer_cst_value(obj_size);
+                  const auto IR_var_bitsize = tree_helper::Size(tn);
                   unsigned int var_bitsize;
                   if(Prec != algn && Prec % algn)
                   {

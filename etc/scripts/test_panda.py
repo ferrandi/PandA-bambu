@@ -421,21 +421,22 @@ def CreateJunitBody(directory, ju_file):
             args_file = open(os.path.join(directory, subdir, "args"))
             command_args = args_file.readlines()[0]
             command_args = command_args.replace(abs_benchmarks_root + "/", "")
+            command_args = command_args.replace("\\", "").replace("\"", "&quot;").replace("\n","")
             args_file.close()
             if return_value == "0":
                 ju_file.write("    <testcase classname=\"PandA-bambu-tests\" name=\"" +
-                              command_args.replace("\\", "").replace("\"", "&quot;") + "\">\n")
+                              command_args + "\">\n")
             else:
                 if return_value == "124":
                     ju_file.write("    <testcase classname=\"PandA-bambu-tests\" name=\"" +
-                                  command_args.replace("\\", "").replace("\"", "&quot;") + "\">\n")
+                                  command_args + "\">\n")
                     ju_file.write(
                         "      <failure type=\"FAILURE(Timeout)\"></failure>\n")
                     ju_file.write("      <system-out>\n")
                     ju_file.write("<![CDATA[\n")
                 else:
                     ju_file.write("    <testcase classname=\"PandA-bambu-tests\" name=\"" +
-                                  command_args.replace("\\", "").replace("\"", "&quot;") + "\">\n")
+                                  command_args + "\">\n")
                     ju_file.write(
                         "      <failure type=\"FAILURE\"></failure>\n")
                     ju_file.write("      <system-out>\n")

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2019-2022 Politecnico di Milano
+ *              Copyright (c) 2019-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -40,15 +40,10 @@
 #ifndef MEMORY_INITIALIZATION_C_WRITER_HPP
 #define MEMORY_INITIALIZATION_C_WRITER_HPP
 
-/// Superclass include
 #include "memory_initialization_writer_base.hpp"
 
-/// STD include
 #include <fstream>
 #include <string>
-
-/// utility include
-#include "utility.hpp"
 
 REF_FORWARD_DECL(IndentedOutputStream);
 

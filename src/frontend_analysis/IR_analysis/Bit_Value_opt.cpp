@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -151,7 +151,7 @@ bool Bit_Value_opt::HasToBeExecuted() const
 
 DesignFlowStep_Status Bit_Value_opt::InternalExec()
 {
-   if(parameters->IsParameter("disable-BV-opt") && parameters->GetParameter<unsigned int>("disable-BV-opt") == 1)
+   if(parameters->IsParameter("bitvalue-opt") && !parameters->GetParameter<unsigned int>("bitvalue-opt"))
    {
       return DesignFlowStep_Status::UNCHANGED;
    }
@@ -222,26 +222,25 @@ void Bit_Value_opt::constrainSSA(ssa_name* op_ssa, tree_managerRef TM)
    }
 }
 
-static unsigned long long int convert_bitvalue2longlong(const std::string& bit_values, tree_managerRef TM,
-                                                        unsigned int var_id)
+static integer_cst_t convert_bitvalue_to_integer_cst(const std::string& bit_values, tree_managerRef TM,
+                                                     unsigned int var_id)
 {
-   unsigned long long int const_value = 0;
-   unsigned int index_val = 0;
+   integer_cst_t const_value = 0;
+   size_t index_val = 0;
    for(auto current_el : boost::adaptors::reverse(bit_values))
    {
       if(current_el == '1')
       {
-         const_value |= 1ULL << index_val;
+         const_value |= integer_cst_t(1) << index_val;
       }
       ++index_val;
    }
    /// in case do sign extension
-   if(tree_helper::is_int(TM, var_id) && bit_values[0] == '1')
+   const auto is_signed = tree_helper::is_int(TM, var_id);
+   if(is_signed && bit_values[0] == '1')
    {
-      for(; index_val < 64; ++index_val)
-      {
-         const_value |= 1ULL << index_val;
-      }
+      const_value |= integer_cst_t(-1) << index_val;
+      THROW_ASSERT(const_value < 0, "");
    }
    return const_value;
 }
@@ -267,11 +266,9 @@ void Bit_Value_opt::propagateValue(const ssa_name* ssa, tree_managerRef TM, tree
 #endif
 )
 {
-   THROW_ASSERT(
-       tree_helper::Size(old_val) >= tree_helper::Size(new_val) ||
-           (GetPointer<cst_node>(GET_CONST_NODE(new_val)) && tree_helper::Size(old_val) >= tree_helper::Size(new_val)),
-       "unexpected case " + STR(old_val) + " " + STR(new_val) + " old-bw=" + STR(tree_helper::Size(old_val)) +
-           " new-bw=" + STR(tree_helper::Size(new_val)) + " where=" + callSiteString);
+   THROW_ASSERT(tree_helper::Size(old_val) >= tree_helper::Size(new_val),
+                "unexpected case " + STR(old_val) + " " + STR(new_val) + " old-bw=" + STR(tree_helper::Size(old_val)) +
+                    " new-bw=" + STR(tree_helper::Size(new_val)) + " from " + callSiteString);
    const auto StmtUses = ssa->CGetUseStmts();
    for(const auto& use : StmtUses)
    {
@@ -313,8 +310,8 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
          const auto is_constant = is_bit_values_constant(p->bit_values);
          if(is_constant)
          {
-            const auto ull_value = convert_bitvalue2longlong(p->bit_values, TM, p_decl_id);
-            const auto val = TM->CreateUniqueIntegerCst(static_cast<long long int>(ull_value), parm_type);
+            const auto ull_value = convert_bitvalue_to_integer_cst(p->bit_values, TM, p_decl_id);
+            const auto val = TM->CreateUniqueIntegerCst(ull_value, parm_type);
             propagateValue(p, TM, TM->CGetTreeReindex(p_decl_id), val, DEBUG_CALLSITE);
          }
       }
@@ -324,8 +321,7 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
    for(const auto& bb_pair : sl->list_of_bloc)
    {
       const auto B = bb_pair.second;
-      const auto B_id = B->number;
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Examining BB" + STR(B_id));
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Examining BB" + STR(B->number));
       const auto list_of_stmt = B->CGetStmtList();
       for(const auto& stmt : list_of_stmt)
       {
@@ -366,14 +362,14 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                      const auto shl_expr =
                          IRman->create_binary_operation(val_type, val, shift_offset, srcp, lshift_expr_K);
                      const auto shl =
-                         IRman->CreateGimpleAssign(val_type, nullptr, nullptr, shl_expr, function_id, B_id, srcp);
+                         IRman->CreateGimpleAssign(val_type, nullptr, nullptr, shl_expr, function_id, srcp);
                      const auto svar = GetPointerS<const gimple_assign>(GET_CONST_NODE(shl))->op0;
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Created " + STR(shl));
                      B->PushBefore(shl, stmt, AppM);
                      const auto shr_expr =
                          IRman->create_binary_operation(val_type, svar, shift_offset, srcp, rshift_expr_K);
                      const auto op0_ga =
-                         IRman->CreateGimpleAssign(ssa->type, ssa->min, ssa->max, shr_expr, function_id, B_id, srcp);
+                         IRman->CreateGimpleAssign(ssa->type, ssa->min, ssa->max, shr_expr, function_id, srcp);
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Created " + STR(op0_ga));
                      B->PushBefore(op0_ga, stmt, AppM);
                      auto op0_ga_var = GetPointerS<gimple_assign>(GET_CONST_NODE(op0_ga))->op0;
@@ -397,13 +393,11 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Cond expr with equal operands");
                            propagateValue(ssa, TM, ga->op0, me->op1, DEBUG_CALLSITE);
                         }
-                        else if(condition->get_kind() == integer_cst_K)
+                        else if(GET_CONST_NODE(me->op0)->get_kind() == integer_cst_K)
                         {
                            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                           "---Cond expr with constant condition");
-                           const auto ic = GetPointerS<integer_cst>(condition);
-                           auto ull_value = static_cast<unsigned long long int>(tree_helper::get_integer_cst_value(ic));
-                           tree_nodeRef new_val = ull_value ? me->op1 : me->op2;
+                           const auto new_val = tree_helper::GetConstValue(me->op0) ? me->op1 : me->op2;
                            propagateValue(ssa, TM, ga->op0, new_val, DEBUG_CALLSITE);
                         }
                         else
@@ -426,7 +420,7 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                         {
                            if(GET_NODE(vce->op)->get_kind() == integer_cst_K)
                            {
-                              auto* int_const = GetPointerS<integer_cst>(GET_NODE(vce->op));
+                              const auto cst_val = tree_helper::GetConstValue(vce->op);
                               auto bitwidth_op = BitLatticeManipulator::Size(vce->type);
                               tree_nodeRef val;
                               if(bitwidth_op == 32)
@@ -436,7 +430,7 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                                     float dest;
                                     int source;
                                  } __conv_union = {};
-                                 __conv_union.source = static_cast<int>(int_const->value);
+                                 __conv_union.source = static_cast<int>(cst_val);
                                  val = TM->CreateUniqueRealCst(static_cast<long double>(__conv_union.dest), vce->type);
                               }
                               else if(bitwidth_op == 64)
@@ -446,7 +440,7 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                                     double dest;
                                     long long int source;
                                  } __conv_union = {};
-                                 __conv_union.source = int_const->value;
+                                 __conv_union.source = static_cast<long long int>(cst_val);
                                  val = TM->CreateUniqueRealCst(static_cast<long double>(__conv_union.dest), vce->type);
                               }
                               else
@@ -521,8 +515,8 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                      const auto op1 = GET_CONST_NODE(me->op1);
 
                      std::string s0, s1;
-                     bool is_op0_ssa = GetPointer<const ssa_name>(op0);
-                     bool is_op1_ssa = GetPointer<const ssa_name>(op1);
+                     const auto is_op0_ssa = GetPointer<const ssa_name>(op0);
+                     const auto is_op1_ssa = GetPointer<const ssa_name>(op1);
                      if(is_op0_ssa)
                      {
                         s0 = GetPointerS<const ssa_name>(op0)->bit_values;
@@ -559,15 +553,13 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                      unsigned int trailing_zero = 0;
                      if(!is_op0_ssa)
                      {
-                        auto* ic = GetPointerS<const integer_cst>(op0);
-                        auto ull_value = static_cast<unsigned long long int>(tree_helper::get_integer_cst_value(ic));
-                        s0 = convert_to_binary(ull_value, BitLatticeManipulator::Size(op0));
+                        const auto uvalue = tree_helper::GetConstValue(me->op0, false);
+                        s0 = convert_to_binary(uvalue, BitLatticeManipulator::Size(me->op0));
                      }
                      if(!is_op1_ssa)
                      {
-                        auto* ic = GetPointerS<const integer_cst>(op1);
-                        auto ull_value = static_cast<unsigned long long int>(tree_helper::get_integer_cst_value(ic));
-                        s1 = convert_to_binary(ull_value, BitLatticeManipulator::Size(op1));
+                        const auto uvalue = tree_helper::GetConstValue(me->op1, false);
+                        s1 = convert_to_binary(uvalue, BitLatticeManipulator::Size(me->op1));
                      }
 
                      for(auto s0it = s0.rbegin(), s1it = s1.rbegin(), s0end = s0.rend(), s1end = s1.rend();
@@ -603,36 +595,23 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                            const auto op0_expr = IRman->create_binary_operation(op0_op_type, me->op0, op0_const_node,
                                                                                 srcp_default, rshift_expr_K);
                            const auto op0_ga = IRman->CreateGimpleAssign(op0_op_type, nullptr, nullptr, op0_expr,
-                                                                         function_id, B_id, srcp_default);
+                                                                         function_id, srcp_default);
                            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Created " + STR(op0_ga));
                            B->PushBefore(op0_ga, stmt, AppM);
                            const auto op0_ga_var = GetPointer<const gimple_assign>(GET_CONST_NODE(op0_ga))->op0;
                            TM->ReplaceTreeNode(stmt, me->op0, op0_ga_var);
                            /// set the bit_values to the ssa var
-                           auto* op0_ssa = GetPointer<ssa_name>(GET_NODE(op0_ga_var));
+                           auto op0_ssa = GetPointer<ssa_name>(GET_NODE(op0_ga_var));
                            THROW_ASSERT(s0.size() - trailing_zero > 0, "unexpected condition");
                            op0_ssa->bit_values = s0.substr(0, s0.size() - trailing_zero);
                            constrainSSA(op0_ssa, TM);
                         }
                         else
                         {
-                           const auto int_const = GetPointerS<const integer_cst>(op0);
-                           if(tree_helper::IsSignedIntegerType(op0))
-                           {
-                              TM->ReplaceTreeNode(
-                                  stmt, me->op0,
-                                  TM->CreateUniqueIntegerCst(
-                                      static_cast<long long int>(int_const->value >> trailing_zero), op0_op_type));
-                           }
-                           else
-                           {
-                              TM->ReplaceTreeNode(
-                                  stmt, me->op0,
-                                  TM->CreateUniqueIntegerCst(
-                                      static_cast<long long int>(
-                                          static_cast<unsigned long long int>(int_const->value) >> trailing_zero),
-                                      op0_op_type));
-                           }
+                           const auto cst_val =
+                               tree_helper::GetConstValue(me->op0, tree_helper::IsSignedIntegerType(op0));
+                           TM->ReplaceTreeNode(stmt, me->op0,
+                                               TM->CreateUniqueIntegerCst(cst_val >> trailing_zero, op0_op_type));
                         }
                         if(is_op1_ssa)
                         {
@@ -641,7 +620,7 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                            const auto op1_expr = IRman->create_binary_operation(op1_op_type, me->op1, op1_const_node,
                                                                                 srcp_default, rshift_expr_K);
                            const auto op1_ga = IRman->CreateGimpleAssign(op1_op_type, nullptr, nullptr, op1_expr,
-                                                                         function_id, B_id, srcp_default);
+                                                                         function_id, srcp_default);
                            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Created " + STR(op1_ga));
                            B->PushBefore(op1_ga, stmt, AppM);
                            const auto op1_ga_var = GetPointer<const gimple_assign>(GET_CONST_NODE(op1_ga))->op0;
@@ -654,23 +633,10 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                         }
                         else
                         {
-                           const auto int_const = GetPointerS<const integer_cst>(op1);
-                           if(tree_helper::is_int(TM, op1->index))
-                           {
-                              TM->ReplaceTreeNode(
-                                  stmt, me->op1,
-                                  TM->CreateUniqueIntegerCst(
-                                      static_cast<long long int>(int_const->value >> trailing_zero), op1_op_type));
-                           }
-                           else
-                           {
-                              TM->ReplaceTreeNode(
-                                  stmt, me->op1,
-                                  TM->CreateUniqueIntegerCst(
-                                      static_cast<long long int>(
-                                          static_cast<unsigned long long int>(int_const->value) >> trailing_zero),
-                                      op1_op_type));
-                           }
+                           const auto cst_val =
+                               tree_helper::GetConstValue(me->op1, tree_helper::IsSignedIntegerType(op1));
+                           TM->ReplaceTreeNode(stmt, me->op1,
+                                               TM->CreateUniqueIntegerCst(cst_val >> trailing_zero, op1_op_type));
                         }
                      }
                   };
@@ -688,15 +654,15 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                         }
                         else
                         {
-                           const auto const_value = convert_bitvalue2longlong(bit_values, TM, output_uid);
-                           val = TM->CreateUniqueIntegerCst(static_cast<long long int>(const_value), ga_op_type);
+                           const auto const_value = convert_bitvalue_to_integer_cst(bit_values, TM, output_uid);
+                           val = TM->CreateUniqueIntegerCst(const_value, ga_op_type);
                         }
                         if(AppM->ApplyNewTransformation())
                         {
                            if(GET_CONST_NODE(ga->op0)->get_kind() == ssa_name_K && ga->predicate)
                            {
                               if(GET_CONST_NODE(ga->predicate)->get_kind() != integer_cst_K ||
-                                 GetPointer<const integer_cst>(GET_CONST_NODE(ga->predicate))->value != 0)
+                                 tree_helper::GetConstValue(ga->predicate) != 0)
                               {
                                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                                 "---zero predicated statement: " + stmt->ToString());
@@ -774,7 +740,7 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                                bt, data_bitsize_in0 == 1 ? me->op0 : me->op1, constNE0, srcp_default, ne_expr_K);
                            const auto op0_ga = IRman->CreateGimpleAssign(bt, TM->CreateUniqueIntegerCst(0LL, bt),
                                                                          TM->CreateUniqueIntegerCst(1LL, bt), cond_op0,
-                                                                         function_id, B_id, srcp_default);
+                                                                         function_id, srcp_default);
                            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Created " + STR(op0_ga));
                            B->PushBefore(op0_ga, stmt, AppM);
                            const auto op0_ga_var = GetPointer<const gimple_assign>(GET_CONST_NODE(op0_ga))->op0;
@@ -824,12 +790,11 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                            else
                            {
                               THROW_ASSERT(op0->get_kind() == integer_cst_K, "unexpected case");
-                              const auto int_const = GetPointerS<const integer_cst>(op0);
-                              const auto value_int = static_cast<unsigned long long int>(int_const->value);
-                              bit_values_op0 = convert_to_binary(value_int, tree_helper::Size(op0));
-                              for(unsigned int index = 0; index < bit_values_op0.size() && value_int != 0; ++index)
+                              const auto cst_val = tree_helper::GetConstValue(op0, false);
+                              bit_values_op0 = convert_to_binary(cst_val, tree_helper::Size(op0));
+                              for(unsigned int index = 0; index < bit_values_op0.size() && cst_val != 0; ++index)
                               {
-                                 if(value_int & (1ULL << index))
+                                 if(cst_val & (integer_cst_t(1) << index))
                                  {
                                     break;
                                  }
@@ -863,12 +828,11 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                            else
                            {
                               THROW_ASSERT(op1->get_kind() == integer_cst_K, "unexpected case");
-                              const auto int_const = GetPointerS<const integer_cst>(op1);
-                              const auto value_int = static_cast<unsigned long long int>(int_const->value);
-                              bit_values_op1 = convert_to_binary(value_int, tree_helper::Size(op1));
-                              for(unsigned int index = 0; index < bit_values_op1.size() && value_int != 0; ++index)
+                              const auto cst_val = tree_helper::GetConstValue(op1, false);
+                              bit_values_op1 = convert_to_binary(cst_val, tree_helper::Size(op1));
+                              for(unsigned int index = 0; index < bit_values_op1.size() && cst_val != 0; ++index)
                               {
-                                 if(value_int & (1ULL << index))
+                                 if(cst_val & (integer_cst_t(1) << index))
                                  {
                                     break;
                                  }
@@ -896,7 +860,7 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                                  const auto op0_expr = IRman->create_binary_operation(op0_type, me->op0, op0_const_node,
                                                                                       srcp_default, rshift_expr_K);
                                  const auto op0_ga = IRman->CreateGimpleAssign(op0_type, nullptr, nullptr, op0_expr,
-                                                                               function_id, B_id, srcp_default);
+                                                                               function_id, srcp_default);
                                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Created " + STR(op0_ga));
                                  B->PushBefore(op0_ga, stmt, AppM);
                                  const auto op0_ga_var = GetPointer<const gimple_assign>(GET_CONST_NODE(op0_ga))->op0;
@@ -918,9 +882,8 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                                      static_cast<long long int>(trailing_zero_op1), op1_type);
                                  const auto op1_expr = IRman->create_binary_operation(op1_type, me->op1, op1_const_node,
                                                                                       srcp_default, rshift_expr_K);
-                                 const auto op1_ga =
-                                     IRman->CreateGimpleAssign(op1_type, tree_nodeRef(), tree_nodeRef(), op1_expr,
-                                                               function_id, B_id, srcp_default);
+                                 const auto op1_ga = IRman->CreateGimpleAssign(op1_type, tree_nodeRef(), tree_nodeRef(),
+                                                                               op1_expr, function_id, srcp_default);
                                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Created " + STR(op1_ga));
                                  B->PushBefore(op1_ga, stmt, AppM);
                                  const auto op1_ga_var = GetPointer<const gimple_assign>(GET_CONST_NODE(op1_ga))->op0;
@@ -949,7 +912,7 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                               const auto op_expr = IRman->create_binary_operation(ga_op_type, ssa_vd, op_const_node,
                                                                                   srcp_default, lshift_expr_K);
                               const auto curr_ga = IRman->CreateGimpleAssign(ga_op_type, ssa->min, ssa->max, op_expr,
-                                                                             function_id, B_id, srcp_default);
+                                                                             function_id, srcp_default);
                               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Created " + STR(curr_ga));
                               TM->ReplaceTreeNode(
                                   curr_ga, GetPointer<const gimple_assign>(GET_CONST_NODE(curr_ga))->op0, ga->op0);
@@ -1048,10 +1011,9 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                            else
                            {
                               THROW_ASSERT(op0->get_kind() == integer_cst_K, "unexpected case");
-                              const auto int_const = GetPointer<const integer_cst>(op0);
-                              const auto value_int = static_cast<unsigned long long int>(int_const->value);
-                              bit_values_op0 = convert_to_binary(value_int, tree_helper::Size(op0));
-                              if(value_int == 0)
+                              const auto cst_val = tree_helper::GetConstValue(op0, false);
+                              bit_values_op0 = convert_to_binary(cst_val, tree_helper::Size(op0));
+                              if(cst_val == 0)
                               {
                                  is_op0_null = true;
                               }
@@ -1059,7 +1021,7 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                               {
                                  for(unsigned int index = 0; index < bit_values_op0.size(); ++index)
                                  {
-                                    if(value_int & (1ULL << index))
+                                    if(cst_val & (integer_cst_t(1) << index))
                                     {
                                        break;
                                     }
@@ -1124,10 +1086,9 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                         else
                         {
                            THROW_ASSERT(op1->get_kind() == integer_cst_K, "unexpected case");
-                           const auto int_const = GetPointerS<const integer_cst>(op1);
-                           const auto value_int = static_cast<unsigned long long int>(int_const->value);
-                           bit_values_op1 = convert_to_binary(value_int, tree_helper::Size(op1));
-                           if(int_const->value == 0)
+                           const auto cst_val = tree_helper::GetConstValue(op1, false);
+                           bit_values_op1 = convert_to_binary(cst_val, tree_helper::Size(op1));
+                           if(cst_val == 0)
                            {
                               is_op1_null = true;
                            }
@@ -1135,7 +1096,7 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                            {
                               for(unsigned int index = 0; index < bit_values_op1.size(); ++index)
                               {
-                                 if(value_int & (1ULL << index))
+                                 if(cst_val & (integer_cst_t(1) << index))
                                  {
                                     break;
                                  }
@@ -1187,34 +1148,20 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
 
                            if(!is_op0_ssa)
                            {
-                              const auto int_const = GetPointer<const integer_cst>(op0);
+                              const auto cst_val =
+                                  tree_helper::GetConstValue(op0, tree_helper::IsSignedIntegerType(op0_type));
                               if(ssa->bit_values.size() <= shift_const)
                               {
                                  is_op0_null = true;
                               }
-                              else if(tree_helper::IsSignedIntegerType(op0_type))
-                              {
-                                 if(static_cast<long long int>(int_const->value >> shift_const) == 0)
-                                 {
-                                    is_op0_null = GET_CONST_NODE(ga->op1)->get_kind() == plus_expr_K; // TODO: true?
-                                 }
-                                 TM->ReplaceTreeNode(
-                                     stmt, me->op0,
-                                     TM->CreateUniqueIntegerCst(
-                                         static_cast<long long int>(int_const->value >> shift_const), op0_type));
-                              }
                               else
                               {
-                                 if(static_cast<unsigned long long int>(int_const->value >> shift_const) == 0)
+                                 if((cst_val >> shift_const) == 0)
                                  {
                                     is_op0_null = GET_CONST_NODE(ga->op1)->get_kind() == plus_expr_K; // TODO: true?
                                  }
-                                 TM->ReplaceTreeNode(
-                                     stmt, me->op0,
-                                     TM->CreateUniqueIntegerCst(
-                                         static_cast<long long int>(
-                                             static_cast<unsigned long long int>(int_const->value) >> shift_const),
-                                         op0_type));
+                                 TM->ReplaceTreeNode(stmt, me->op0,
+                                                     TM->CreateUniqueIntegerCst(cst_val >> shift_const, op0_type));
                               }
                            }
                            else
@@ -1244,7 +1191,7 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                                  const auto op0_expr = IRman->create_binary_operation(
                                      op0_type, me->op0, shift_constant_node, srcp_default, rshift_expr_K);
                                  const auto op0_ga = IRman->CreateGimpleAssign(op0_type, nullptr, nullptr, op0_expr,
-                                                                               function_id, B_id, srcp_default);
+                                                                               function_id, srcp_default);
                                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Created " + STR(op0_ga));
                                  B->PushBefore(op0_ga, stmt, AppM);
                                  const auto op0_ga_var = GetPointer<const gimple_assign>(GET_CONST_NODE(op0_ga))->op0;
@@ -1280,34 +1227,20 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
 
                            if(!is_op1_ssa)
                            {
-                              const auto int_const = GetPointer<const integer_cst>(op1);
+                              const auto cst_val =
+                                  tree_helper::GetConstValue(op1, tree_helper::IsSignedIntegerType(op1_type));
                               if(ssa->bit_values.size() <= shift_const)
                               {
                                  is_op1_null = true;
                               }
-                              else if(tree_helper::IsSignedIntegerType(op1_type))
-                              {
-                                 if(static_cast<long long int>(int_const->value >> shift_const) == 0)
-                                 {
-                                    is_op1_null = true;
-                                 }
-                                 TM->ReplaceTreeNode(
-                                     stmt, me->op1,
-                                     TM->CreateUniqueIntegerCst(
-                                         static_cast<long long int>(int_const->value >> shift_const), op1_type));
-                              }
                               else
                               {
-                                 if(static_cast<unsigned long long int>(int_const->value >> shift_const) == 0)
+                                 if(cst_val >> shift_const == 0)
                                  {
                                     is_op1_null = true;
                                  }
-                                 TM->ReplaceTreeNode(
-                                     stmt, me->op1,
-                                     TM->CreateUniqueIntegerCst(
-                                         static_cast<long long int>(
-                                             static_cast<unsigned long long int>(int_const->value) >> shift_const),
-                                         op1_type));
+                                 TM->ReplaceTreeNode(stmt, me->op1,
+                                                     TM->CreateUniqueIntegerCst(cst_val >> shift_const, op1_type));
                               }
                            }
                            else
@@ -1336,7 +1269,7 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                                  const auto op1_expr = IRman->create_binary_operation(
                                      op1_type, me->op1, shift_constant_node, srcp_default, rshift_expr_K);
                                  const auto op1_ga = IRman->CreateGimpleAssign(op1_type, nullptr, nullptr, op1_expr,
-                                                                               function_id, B_id, srcp_default);
+                                                                               function_id, srcp_default);
                                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Created " + STR(op1_ga));
                                  B->PushBefore(op1_ga, stmt, AppM);
                                  const auto op1_ga_var = GetPointer<const gimple_assign>(GET_CONST_NODE(op1_ga))->op0;
@@ -1374,19 +1307,19 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                            if(is_op0_null)
                            {
                               curr_ga = IRman->CreateGimpleAssign(op1_type, nullptr, nullptr, me->op1, function_id,
-                                                                  B_id, srcp_default);
+                                                                  srcp_default);
                               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Created " + STR(curr_ga));
                            }
                            else if(is_op1_null)
                            {
                               curr_ga = IRman->CreateGimpleAssign(op1_type, nullptr, nullptr, me->op0, function_id,
-                                                                  B_id, srcp_default);
+                                                                  srcp_default);
                               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Created " + STR(curr_ga));
                            }
                            else
                            {
                               curr_ga = IRman->CreateGimpleAssign(op1_type, nullptr, nullptr, ga->op1, function_id,
-                                                                  B_id, srcp_default);
+                                                                  srcp_default);
                               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Created " + STR(curr_ga));
                            }
                            B->PushBefore(curr_ga, stmt, AppM);
@@ -1417,7 +1350,7 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                            const auto op_expr = IRman->create_binary_operation(
                                ga_op_type, curr_ga_var, shift_constant_node, srcp_default, lshift_expr_K);
                            const auto lshift_ga = IRman->CreateGimpleAssign(ga_op_type, nullptr, nullptr, op_expr,
-                                                                            function_id, B_id, srcp_default);
+                                                                            function_id, srcp_default);
                            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Created " + STR(lshift_ga));
                            B->PushBefore(lshift_ga, stmt, AppM);
                            const auto lshift_ga_var = GetPointer<const gimple_assign>(GET_CONST_NODE(lshift_ga))->op0;
@@ -1468,11 +1401,9 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
 #endif
                               if(GetPointer<const integer_cst>(GET_CONST_NODE(b_node)))
                               {
-                                 const auto int_const = GetPointer<const integer_cst>(GET_CONST_NODE(b_node));
+                                 const auto cst_val = tree_helper::GetConstValue(b_node, false);
                                  const auto b_node_val = TM->CreateUniqueIntegerCst(
-                                     static_cast<long long int>(static_cast<unsigned long long int>(int_const->value) &
-                                                                ((1ULL << shift_const) - 1)),
-                                     b_type);
+                                     cst_val & ((integer_cst_t(1) << shift_const) - 1), b_type);
                                  TM->ReplaceTreeNode(stmt, ga->op1,
                                                      IRman->create_ternary_operation(
                                                          ga_op_type, lshift_ga_var, b_node_val, shift_constant_node,
@@ -1485,7 +1416,7 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                                  const auto band_expr = IRman->create_binary_operation(
                                      b_type, b_node, bit_mask_constant_node, srcp_default, bit_and_expr_K);
                                  const auto band_ga = IRman->CreateGimpleAssign(b_type, nullptr, nullptr, band_expr,
-                                                                                function_id, B_id, srcp_default);
+                                                                                function_id, srcp_default);
                                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Created " + STR(band_ga));
                                  B->PushBefore(band_ga, stmt, AppM);
                                  const auto band_ga_var = GetPointer<const gimple_assign>(GET_CONST_NODE(band_ga))->op0;
@@ -1534,7 +1465,7 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                            /// set uses of stmt
                         }
                         else if(GET_CONST_NODE(ga->op1)->get_kind() == minus_expr_K &&
-                                GetPointer<const integer_cst>(op0) && GetPointer<const integer_cst>(op0)->value == 0)
+                                op0->get_kind() == integer_cst_K && tree_helper::GetConstValue(op0) == 0)
                         {
                            if(!parameters->isOption(OPT_use_ALUs) || !parameters->getOption<bool>(OPT_use_ALUs))
                            {
@@ -1566,10 +1497,7 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                         bool is_op1_zero = false;
                         if(GetPointer<const integer_cst>(GET_CONST_NODE(op1)))
                         {
-                           const auto ic = GetPointer<const integer_cst>(GET_CONST_NODE(op1));
-                           const auto ull_value =
-                               static_cast<unsigned long long int>(tree_helper::get_integer_cst_value(ic));
-                           if(ull_value == 0)
+                           if(tree_helper::GetConstValue(op1) == 0)
                            {
                               is_op1_zero = true;
                            }
@@ -1612,7 +1540,7 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                               const auto op0_ga =
                                   IRman->CreateGimpleAssign(op0_op_type, TM->CreateUniqueIntegerCst(0, op0_op_type),
                                                             TM->CreateUniqueIntegerCst(1LL, op0_op_type),
-                                                            bitwise_masked, function_id, B_id, srcp_default);
+                                                            bitwise_masked, function_id, srcp_default);
                               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Created " + STR(op0_ga));
                               B->PushBefore(op0_ga, stmt, AppM);
                               const auto op0_ga_var = GetPointer<const gimple_assign>(GET_CONST_NODE(op0_ga))->op0;
@@ -1687,20 +1615,16 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                         bool is_zero0 = s0.find_first_not_of("0X") == std::string::npos;
                         if(!is_op0_ssa)
                         {
-                           const auto ic = GetPointerS<const integer_cst>(GET_CONST_NODE(op0));
-                           const auto ull_value =
-                               static_cast<unsigned long long int>(tree_helper::get_integer_cst_value(ic));
-                           is_zero0 = ull_value == 0;
-                           s0 = convert_to_binary(ull_value, BitLatticeManipulator::Size(op0));
+                           const auto uvalue = tree_helper::GetConstValue(op0, false);
+                           is_zero0 = uvalue == 0;
+                           s0 = convert_to_binary(uvalue, BitLatticeManipulator::Size(op0));
                         }
                         bool is_zero1 = s1.find_first_not_of("0X") == std::string::npos;
                         if(!is_op1_ssa)
                         {
-                           const auto ic = GetPointerS<const integer_cst>(GET_CONST_NODE(op1));
-                           const auto ull_value =
-                               static_cast<unsigned long long int>(tree_helper::get_integer_cst_value(ic));
-                           is_zero1 = ull_value == 0;
-                           s1 = convert_to_binary(ull_value, BitLatticeManipulator::Size(op1));
+                           const auto uvalue = tree_helper::GetConstValue(op1, false);
+                           is_zero1 = uvalue == 0;
+                           s1 = convert_to_binary(uvalue, BitLatticeManipulator::Size(op1));
                         }
                         if(is_zero0 || is_zero1)
                         {
@@ -1750,12 +1674,11 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
 
                               if(is_op0_ssa)
                               {
-                                 const auto op0_const_node =
-                                     TM->CreateUniqueIntegerCst(static_cast<long long int>(trailing_zero), op0_op_type);
+                                 const auto op0_const_node = TM->CreateUniqueIntegerCst(trailing_zero, op0_op_type);
                                  const auto op0_expr = IRman->create_binary_operation(op0_op_type, op0, op0_const_node,
                                                                                       srcp_default, rshift_expr_K);
                                  const auto op0_ga = IRman->CreateGimpleAssign(op0_op_type, nullptr, nullptr, op0_expr,
-                                                                               function_id, B_id, srcp_default);
+                                                                               function_id, srcp_default);
                                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Created " + STR(op0_ga));
                                  B->PushBefore(op0_ga, stmt, AppM);
                                  const auto op0_ga_var = GetPointerS<const gimple_assign>(GET_CONST_NODE(op0_ga))->op0;
@@ -1768,24 +1691,10 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                               }
                               else
                               {
-                                 const auto int_const = GetPointerS<const integer_cst>(GET_CONST_NODE(op0));
-                                 if(tree_helper::IsSignedIntegerType(op0))
-                                 {
-                                    TM->ReplaceTreeNode(
-                                        stmt, op0,
-                                        TM->CreateUniqueIntegerCst(
-                                            static_cast<long long int>(int_const->value >> trailing_zero),
-                                            op0_op_type));
-                                 }
-                                 else
-                                 {
-                                    TM->ReplaceTreeNode(
-                                        stmt, op0,
-                                        TM->CreateUniqueIntegerCst(
-                                            static_cast<long long int>(
-                                                static_cast<unsigned long long int>(int_const->value) >> trailing_zero),
-                                            op0_op_type));
-                                 }
+                                 const auto cst_val =
+                                     tree_helper::GetConstValue(op0, tree_helper::IsSignedIntegerType(op0));
+                                 TM->ReplaceTreeNode(stmt, op0,
+                                                     TM->CreateUniqueIntegerCst(cst_val >> trailing_zero, op0_op_type));
                               }
                               if(is_op1_ssa)
                               {
@@ -1794,7 +1703,7 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                                  const auto op1_expr = IRman->create_binary_operation(op1_op_type, op1, op1_const_node,
                                                                                       srcp_default, rshift_expr_K);
                                  const auto op1_ga = IRman->CreateGimpleAssign(op1_op_type, nullptr, nullptr, op1_expr,
-                                                                               function_id, B_id, srcp_default);
+                                                                               function_id, srcp_default);
                                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Created " + STR(op1_ga));
                                  B->PushBefore(op1_ga, stmt, AppM);
                                  const auto op1_ga_var = GetPointerS<const gimple_assign>(GET_CONST_NODE(op1_ga))->op0;
@@ -1807,24 +1716,10 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                               }
                               else
                               {
-                                 const auto int_const = GetPointerS<const integer_cst>(GET_CONST_NODE(op1));
-                                 if(tree_helper::IsSignedIntegerType(op1))
-                                 {
-                                    TM->ReplaceTreeNode(
-                                        stmt, op1,
-                                        TM->CreateUniqueIntegerCst(
-                                            static_cast<long long int>(int_const->value >> trailing_zero),
-                                            op1_op_type));
-                                 }
-                                 else
-                                 {
-                                    TM->ReplaceTreeNode(
-                                        stmt, op1,
-                                        TM->CreateUniqueIntegerCst(
-                                            static_cast<long long int>(
-                                                static_cast<unsigned long long int>(int_const->value) >> trailing_zero),
-                                            op1_op_type));
-                                 }
+                                 const auto cst_val =
+                                     tree_helper::GetConstValue(op1, tree_helper::IsSignedIntegerType(op1));
+                                 TM->ReplaceTreeNode(stmt, op1,
+                                                     TM->CreateUniqueIntegerCst(cst_val >> trailing_zero, op1_op_type));
                               }
 
                               const auto ssa_vd = IRman->create_ssa_name(nullptr, ga_op_type, nullptr, nullptr);
@@ -1838,7 +1733,7 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                               const auto op_expr = IRman->create_binary_operation(ga_op_type, ssa_vd, op_const_node,
                                                                                   srcp_default, lshift_expr_K);
                               const auto curr_ga = IRman->CreateGimpleAssign(ga_op_type, ssa->min, ssa->max, op_expr,
-                                                                             function_id, B_id, srcp_default);
+                                                                             function_id, srcp_default);
                               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Created " + STR(curr_ga));
                               TM->ReplaceTreeNode(
                                   curr_ga, GetPointer<const gimple_assign>(GET_CONST_NODE(curr_ga))->op0, ga->op0);
@@ -1900,10 +1795,7 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                         {
                            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                           "---Cond expr with constant condition");
-                           const auto ic = GetPointer<const integer_cst>(condition);
-                           const auto ull_value =
-                               static_cast<unsigned long long int>(tree_helper::get_integer_cst_value(ic));
-                           const auto val = ull_value ? me->op1 : me->op2;
+                           const auto val = tree_helper::GetConstValue(me->op0, false) ? me->op1 : me->op2;
 
                            condPropageValue(val, DEBUG_CALLSITE);
                         }
@@ -1932,14 +1824,12 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                            else
                            {
                               THROW_ASSERT(GET_CONST_NODE(op0)->get_kind() == integer_cst_K, "unexpected condition");
-                              const auto ic = GetPointerS<const integer_cst>(GET_CONST_NODE(op0));
-                              const auto ull_value =
-                                  static_cast<unsigned long long int>(tree_helper::get_integer_cst_value(ic));
+                              const auto uvalue = tree_helper::GetConstValue(op0, false);
                               s0_precision =
-                                  ull_value ? tree_helper::Size(GET_CONST_NODE(op0)) : BitLatticeManipulator::Size(op0);
-                              s0 = convert_to_binary(ull_value, s0_precision);
-                              is_s0_null = ull_value == 0;
-                              is_s0_one = ull_value == 1;
+                                  uvalue ? tree_helper::Size(GET_CONST_NODE(op0)) : BitLatticeManipulator::Size(op0);
+                              s0 = convert_to_binary(uvalue, s0_precision);
+                              is_s0_null = uvalue == 0;
+                              is_s0_one = uvalue == 1;
                            }
                            unsigned long long s1_precision = 0;
                            bool is_s1_null = false;
@@ -1960,14 +1850,12 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                            else
                            {
                               THROW_ASSERT(GET_CONST_NODE(op1)->get_kind() == integer_cst_K, "unexpected condition");
-                              const auto ic = GetPointerS<const integer_cst>(GET_CONST_NODE(op1));
-                              const auto ull_value =
-                                  static_cast<unsigned long long int>(tree_helper::get_integer_cst_value(ic));
+                              const auto uvalue = tree_helper::GetConstValue(op1, false);
                               s1_precision =
-                                  ull_value ? tree_helper::Size(GET_CONST_NODE(op1)) : BitLatticeManipulator::Size(op1);
-                              s1 = convert_to_binary(ull_value, s1_precision);
-                              is_s1_null = ull_value == 0;
-                              is_s1_one = ull_value == 1;
+                                  uvalue ? tree_helper::Size(GET_CONST_NODE(op1)) : BitLatticeManipulator::Size(op1);
+                              s1 = convert_to_binary(uvalue, s1_precision);
+                              is_s1_null = uvalue == 0;
+                              is_s1_one = uvalue == 1;
                            }
 
                            unsigned long long minimum_precision = std::min(s0_precision, s1_precision);
@@ -2003,7 +1891,7 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                                  const auto op0_expr = IRman->create_binary_operation(
                                      op0_op_type, me->op1, op0_const_node, srcp_default, rshift_expr_K);
                                  const auto op0_ga = IRman->CreateGimpleAssign(op0_op_type, nullptr, nullptr, op0_expr,
-                                                                               function_id, B_id, srcp_default);
+                                                                               function_id, srcp_default);
                                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Created " + STR(op0_ga));
                                  B->PushBefore(op0_ga, stmt, AppM);
                                  const auto op0_ga_var = GetPointerS<const gimple_assign>(GET_CONST_NODE(op0_ga))->op0;
@@ -2016,23 +1904,10 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                               }
                               else
                               {
-                                 const auto int_const = GetPointer<const integer_cst>(GET_CONST_NODE(op0));
-                                 if(tree_helper::IsSignedIntegerType(GET_CONST_NODE(op0)))
-                                 {
-                                    TM->ReplaceTreeNode(
-                                        stmt, me->op1,
-                                        TM->CreateUniqueIntegerCst(
-                                            static_cast<long long int>(int_const->value >> trailing_eq), op0_op_type));
-                                 }
-                                 else
-                                 {
-                                    TM->ReplaceTreeNode(
-                                        stmt, me->op1,
-                                        TM->CreateUniqueIntegerCst(
-                                            static_cast<long long int>(
-                                                static_cast<unsigned long long int>(int_const->value) >> trailing_eq),
-                                            op0_op_type));
-                                 }
+                                 const auto cst_val =
+                                     tree_helper::GetConstValue(op0, tree_helper::IsSignedIntegerType(op0));
+                                 TM->ReplaceTreeNode(stmt, me->op1,
+                                                     TM->CreateUniqueIntegerCst(cst_val >> trailing_eq, op0_op_type));
                               }
                               if(is_op1_ssa)
                               {
@@ -2040,9 +1915,8 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                                      TM->CreateUniqueIntegerCst(static_cast<long long int>(trailing_eq), op1_op_type);
                                  const auto op1_expr = IRman->create_binary_operation(
                                      op1_op_type, me->op2, op1_const_node, srcp_default, rshift_expr_K);
-                                 const auto op1_ga =
-                                     IRman->CreateGimpleAssign(op1_op_type, tree_nodeRef(), tree_nodeRef(), op1_expr,
-                                                               function_id, B_id, srcp_default);
+                                 const auto op1_ga = IRman->CreateGimpleAssign(
+                                     op1_op_type, tree_nodeRef(), tree_nodeRef(), op1_expr, function_id, srcp_default);
                                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Created " + STR(op1_ga));
                                  B->PushBefore(op1_ga, stmt, AppM);
                                  const auto op1_ga_var = GetPointerS<const gimple_assign>(GET_CONST_NODE(op1_ga))->op0;
@@ -2055,23 +1929,10 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                               }
                               else
                               {
-                                 const auto int_const = GetPointerS<const integer_cst>(GET_CONST_NODE(op1));
-                                 if(tree_helper::IsSignedIntegerType(op1))
-                                 {
-                                    TM->ReplaceTreeNode(
-                                        stmt, me->op2,
-                                        TM->CreateUniqueIntegerCst(
-                                            static_cast<long long int>(int_const->value >> trailing_eq), op1_op_type));
-                                 }
-                                 else
-                                 {
-                                    TM->ReplaceTreeNode(
-                                        stmt, me->op2,
-                                        TM->CreateUniqueIntegerCst(
-                                            static_cast<long long int>(
-                                                static_cast<unsigned long long int>(int_const->value) >> trailing_eq),
-                                            op1_op_type));
-                                 }
+                                 const auto cst_val =
+                                     tree_helper::GetConstValue(op1, tree_helper::IsSignedIntegerType(op1));
+                                 TM->ReplaceTreeNode(stmt, me->op2,
+                                                     TM->CreateUniqueIntegerCst(cst_val >> trailing_eq, op1_op_type));
                               }
                               const auto ssa_vd = IRman->create_ssa_name(nullptr, ga_op_type, nullptr, nullptr);
                               auto* sn = GetPointer<ssa_name>(GET_NODE(ssa_vd));
@@ -2087,7 +1948,7 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                               const auto op_expr = IRman->create_binary_operation(ga_op_type, ssa_vd, op_const_node,
                                                                                   srcp_default, lshift_expr_K);
                               const auto curr_ga = IRman->CreateGimpleAssign(ga_op_type, ssa->min, ssa->max, op_expr,
-                                                                             function_id, B_id, srcp_default);
+                                                                             function_id, srcp_default);
                               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Created " + STR(curr_ga));
                               TM->ReplaceTreeNode(
                                   curr_ga, GetPointer<const gimple_assign>(GET_CONST_NODE(curr_ga))->op0, ga->op0);
@@ -2151,8 +2012,7 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                         const auto tne = GetPointer<const truth_not_expr>(GET_CONST_NODE(ga->op1));
                         if(GET_CONST_NODE(tne->op)->get_kind() == integer_cst_K)
                         {
-                           const auto int_const = GetPointer<const integer_cst>(GET_CONST_NODE(tne->op));
-                           const auto const_value = int_const->value == 0 ? 1LL : 0LL;
+                           const auto const_value = tree_helper::GetConstValue(tne->op) == 0 ? 1LL : 0LL;
                            const auto val = TM->CreateUniqueIntegerCst(const_value, ga_op_type);
                            propagateValue(ssa, TM, ga->op0, val, DEBUG_CALLSITE);
                         }
@@ -2170,16 +2030,16 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                            tree_nodeRef val;
                            if(GET_CONST_NODE(tae->op0)->get_kind() == integer_cst_K)
                            {
-                              const auto int_const = GetPointer<const integer_cst>(GET_CONST_NODE(tae->op0));
-                              if(int_const->value == 0)
+                              const auto cst_val = tree_helper::GetConstValue(tae->op0);
+                              if(cst_val == 0)
                                  val = tae->op0;
                               else
                                  val = tae->op1;
                            }
                            else if(GET_CONST_NODE(tae->op1)->get_kind() == integer_cst_K)
                            {
-                              const auto int_const = GetPointer<const integer_cst>(GET_CONST_NODE(tae->op1));
-                              if(int_const->value == 0)
+                              const auto cst_val = tree_helper::GetConstValue(tae->op1);
+                              if(cst_val == 0)
                                  val = tae->op1;
                               else
                                  val = tae->op0;
@@ -2204,16 +2064,16 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                            tree_nodeRef val;
                            if(GET_CONST_NODE(toe->op0)->get_kind() == integer_cst_K)
                            {
-                              const auto int_const = GetPointer<const integer_cst>(GET_CONST_NODE(toe->op0));
-                              if(int_const->value == 0)
+                              const auto cst_val = tree_helper::GetConstValue(toe->op0);
+                              if(cst_val == 0)
                                  val = toe->op1;
                               else
                                  val = toe->op0;
                            }
                            else if(GET_CONST_NODE(toe->op1)->get_kind() == integer_cst_K)
                            {
-                              const auto int_const = GetPointer<const integer_cst>(GET_CONST_NODE(toe->op1));
-                              if(int_const->value == 0)
+                              const auto cst_val = tree_helper::GetConstValue(toe->op1);
+                              if(cst_val == 0)
                                  val = toe->op0;
                               else
                                  val = toe->op1;
@@ -2238,16 +2098,16 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                            tree_nodeRef val;
                            if(GET_CONST_NODE(bie->op0)->get_kind() == integer_cst_K)
                            {
-                              const auto int_const = GetPointer<const integer_cst>(GET_CONST_NODE(bie->op0));
-                              if(int_const->value == 0)
+                              const auto cst_val = tree_helper::GetConstValue(bie->op0);
+                              if(cst_val == 0)
                               {
                                  val = bie->op1;
                               }
                            }
                            else
                            {
-                              const auto int_const = GetPointer<const integer_cst>(GET_CONST_NODE(bie->op1));
-                              if(int_const->value == 0)
+                              const auto cst_val = tree_helper::GetConstValue(bie->op1);
+                              if(cst_val == 0)
                               {
                                  val = bie->op0;
                               }
@@ -2266,8 +2126,8 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                         const auto ppe = GetPointer<const pointer_plus_expr>(GET_CONST_NODE(ga->op1));
                         if(GET_CONST_NODE(ppe->op1)->get_kind() == integer_cst_K)
                         {
-                           const auto int_const = GetPointer<const integer_cst>(GET_CONST_NODE(ppe->op1));
-                           if(int_const->value == 0)
+                           const auto cst_val = tree_helper::GetConstValue(ppe->op1);
+                           if(cst_val == 0)
                            {
                               condPropageValue(ppe->op0, DEBUG_CALLSITE);
                            }
@@ -2285,10 +2145,9 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                                     if(GetPointer<const ssa_name>(GET_CONST_NODE(prev_ppe->op0)) &&
                                        GetPointer<const integer_cst>(GET_CONST_NODE(prev_ppe->op1)))
                                     {
-                                       const auto prev_val = tree_helper::get_integer_cst_value(
-                                           GetPointer<const integer_cst>(GET_CONST_NODE(prev_ppe->op1)));
+                                       const auto prev_val = tree_helper::GetConstValue(prev_ppe->op1);
                                        const auto new_offset = TM->CreateUniqueIntegerCst(
-                                           (prev_val + int_const->value), tree_helper::CGetType(ppe->op1));
+                                           (prev_val + cst_val), tree_helper::CGetType(ppe->op1));
                                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                                       "---replace constant usage before: " + stmt->ToString());
                                        TM->ReplaceTreeNode(stmt, ppe->op1, new_offset);
@@ -2313,8 +2172,7 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                         if(ae_code == mem_ref_K)
                         {
                            const auto MR = GetPointer<const mem_ref>(GET_CONST_NODE(ae->op));
-                           const auto op1_val = tree_helper::get_integer_cst_value(
-                               GetPointer<const integer_cst>(GET_CONST_NODE(MR->op1)));
+                           const auto op1_val = tree_helper::GetConstValue(MR->op1);
                            if(op1_val == 0 && GET_CONST_NODE(MR->op0)->get_kind() == ssa_name_K)
                            {
                               const auto temp_def =
@@ -2348,11 +2206,12 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                             ga->include_name + ":" + STR(ga->line_number) + ":" + STR(ga->column_number);
                         const auto ebe = GetPointer<const extract_bit_expr>(GET_CONST_NODE(ga->op1));
                         THROW_ASSERT(GET_CONST_NODE(ebe->op1)->get_kind() == integer_cst_K, "unexpected condition");
-                        const auto pos_value = GetPointer<const integer_cst>(GET_CONST_NODE(ebe->op1))->value;
+                        const auto pos_value = tree_helper::GetConstValue(ebe->op1);
+                        THROW_ASSERT(pos_value >= 0, "");
                         const auto ebe_op0_ssa = GetPointer<const ssa_name>(GET_CONST_NODE(ebe->op0));
                         if(ebe_op0_ssa)
                         {
-                           if(BitLatticeManipulator::Size(ebe->op0) <= pos_value)
+                           if(static_cast<integer_cst_t>(BitLatticeManipulator::Size(ebe->op0)) <= pos_value)
                            {
                               const auto right_id = GET_INDEX_CONST_NODE(ebe->op0);
                               const bool right_signed = tree_helper::is_int(TM, right_id);
@@ -2361,12 +2220,12 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                                 "---replace extract_bit_expr usage before: " + stmt->ToString());
                                  const auto new_pos = TM->CreateUniqueIntegerCst(
-                                     BitLatticeManipulator::Size(ebe->op0) - 1LL, tree_helper::CGetType(ebe->op1));
+                                     static_cast<integer_cst_t>(BitLatticeManipulator::Size(ebe->op0) - 1),
+                                     tree_helper::CGetType(ebe->op1));
                                  const auto eb_op = IRman->create_extract_bit_expr(ebe->op0, new_pos, srcp_default);
-                                 const auto eb_ga =
-                                     IRman->CreateGimpleAssign(ebe->type, TM->CreateUniqueIntegerCst(0, ebe->type),
-                                                               TM->CreateUniqueIntegerCst(1LL, ebe->type), eb_op,
-                                                               function_id, B_id, srcp_default);
+                                 const auto eb_ga = IRman->CreateGimpleAssign(
+                                     ebe->type, TM->CreateUniqueIntegerCst(0, ebe->type),
+                                     TM->CreateUniqueIntegerCst(1LL, ebe->type), eb_op, function_id, srcp_default);
                                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created " + STR(eb_ga));
                                  B->PushBefore(eb_ga, stmt, AppM);
                                  const auto bit_mask_constant_node = TM->CreateUniqueIntegerCst(1, ebe->type);
@@ -2435,7 +2294,8 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                                        const auto neType_node = tree_helper::CGetType(ne->op);
                                        if(GET_CONST_NODE(neType_node)->get_kind() == integer_type_K)
                                        {
-                                          if(BitLatticeManipulator::Size(ne->op) > pos_value)
+                                          if(static_cast<integer_cst_t>(BitLatticeManipulator::Size(ne->op)) >
+                                             pos_value)
                                           {
                                              INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                                             "---replace extract_bit_expr usage before: " +
@@ -2444,7 +2304,7 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                                                  IRman->create_extract_bit_expr(ne->op, ebe->op1, srcp_default);
                                              const auto eb_ga = IRman->CreateGimpleAssign(
                                                  ebe->type, TM->CreateUniqueIntegerCst(0LL, ebe->type),
-                                                 TM->CreateUniqueIntegerCst(1LL, ebe->type), eb_op, function_id, B_id,
+                                                 TM->CreateUniqueIntegerCst(1LL, ebe->type), eb_op, function_id,
                                                  srcp_default);
                                              INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                                             "---Created " + STR(eb_ga));
@@ -2471,15 +2331,15 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                                                 INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                                                "---replace extract_bit_expr usage before: " +
                                                                    stmt->ToString());
-                                                const auto new_pos =
-                                                    TM->CreateUniqueIntegerCst(BitLatticeManipulator::Size(ne->op) - 1,
-                                                                               tree_helper::CGetType(ebe->op1));
+                                                const auto new_pos = TM->CreateUniqueIntegerCst(
+                                                    static_cast<integer_cst_t>(BitLatticeManipulator::Size(ne->op) - 1),
+                                                    tree_helper::CGetType(ebe->op1));
                                                 const auto eb_op =
                                                     IRman->create_extract_bit_expr(ne->op, new_pos, srcp_default);
                                                 const auto eb_ga = IRman->CreateGimpleAssign(
                                                     ebe->type, TM->CreateUniqueIntegerCst(0LL, ebe->type),
                                                     TM->CreateUniqueIntegerCst(1LL, ebe->type), eb_op, function_id,
-                                                    B_id, srcp_default);
+                                                    srcp_default);
                                                 INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                                                "---Created " + STR(eb_ga));
                                                 B->PushBefore(eb_ga, stmt, AppM);
@@ -2522,9 +2382,8 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                                        {
                                           std::swap(bae_op0, bae_op1);
                                        }
-                                       const auto bae_mask_value =
-                                           GetPointerS<const integer_cst>(GET_CONST_NODE(bae_op1))->value;
-                                       const auto masked_value = (bae_mask_value & (1ll << pos_value));
+                                       const auto bae_mask_value = tree_helper::GetConstValue(bae_op1);
+                                       const auto masked_value = (bae_mask_value & (integer_cst_t(1) << pos_value));
                                        if(masked_value && GET_CONST_NODE(bae_op0)->get_kind() != integer_cst_K)
                                        {
                                           INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
@@ -2534,7 +2393,7 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                                               IRman->create_extract_bit_expr(bae_op0, ebe->op1, srcp_default);
                                           const auto eb_ga = IRman->CreateGimpleAssign(
                                               ebe->type, TM->CreateUniqueIntegerCst(0LL, ebe->type),
-                                              TM->CreateUniqueIntegerCst(1LL, ebe->type), eb_op, function_id, B_id,
+                                              TM->CreateUniqueIntegerCst(1LL, ebe->type), eb_op, function_id,
                                               srcp_default);
                                           INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                                          "---Created " + STR(eb_ga));
@@ -2569,16 +2428,14 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                                         GetPointerS<const bit_ior_concat_expr>(GET_CONST_NODE(prev_ga->op1));
                                     THROW_ASSERT(GET_NODE(bice->op2)->get_kind() == integer_cst_K,
                                                  "unexpected condition");
-                                    const auto nbit_value =
-                                        GetPointerS<const integer_cst>(GET_CONST_NODE(bice->op2))->value;
+                                    const auto nbit_value = tree_helper::GetConstValue(bice->op2);
                                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                                    "---replace extract_bit_expr usage before: " + stmt->ToString());
                                     const auto eb_op = IRman->create_extract_bit_expr(
                                         nbit_value > pos_value ? bice->op1 : bice->op0, ebe->op1, srcp_default);
-                                    const auto eb_ga =
-                                        IRman->CreateGimpleAssign(ebe->type, TM->CreateUniqueIntegerCst(0, ebe->type),
-                                                                  TM->CreateUniqueIntegerCst(1, ebe->type), eb_op,
-                                                                  function_id, B_id, srcp_default);
+                                    const auto eb_ga = IRman->CreateGimpleAssign(
+                                        ebe->type, TM->CreateUniqueIntegerCst(0, ebe->type),
+                                        TM->CreateUniqueIntegerCst(1, ebe->type), eb_op, function_id, srcp_default);
                                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created " + STR(eb_ga));
                                     B->PushBefore(eb_ga, stmt, AppM);
                                     const auto bit_mask_constant_node = TM->CreateUniqueIntegerCst(1, ebe->type);
@@ -2598,8 +2455,7 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                                     const auto lse = GetPointerS<const lshift_expr>(GET_CONST_NODE(prev_ga->op1));
                                     if(GET_CONST_NODE(lse->op1)->get_kind() == integer_cst_K)
                                     {
-                                       const auto lsbit_value =
-                                           GetPointer<const integer_cst>(GET_CONST_NODE(lse->op1))->value;
+                                       const auto lsbit_value = tree_helper::GetConstValue(lse->op1);
                                        if((pos_value - lsbit_value) >= 0)
                                        {
                                           const auto new_pos = TM->CreateUniqueIntegerCst(
@@ -2611,7 +2467,7 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                                               IRman->create_extract_bit_expr(lse->op0, new_pos, srcp_default);
                                           const auto eb_ga = IRman->CreateGimpleAssign(
                                               ebe->type, TM->CreateUniqueIntegerCst(0, ebe->type),
-                                              TM->CreateUniqueIntegerCst(1, ebe->type), eb_op, function_id, B_id,
+                                              TM->CreateUniqueIntegerCst(1, ebe->type), eb_op, function_id,
                                               srcp_default);
                                           INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                                          "---Created " + STR(eb_ga));
@@ -2644,8 +2500,7 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                                     const auto rse = GetPointerS<const rshift_expr>(GET_CONST_NODE(prev_ga->op1));
                                     if(GET_CONST_NODE(rse->op1)->get_kind() == integer_cst_K)
                                     {
-                                       const auto rsbit_value =
-                                           GetPointerS<const integer_cst>(GET_CONST_NODE(rse->op1))->value;
+                                       const auto rsbit_value = tree_helper::GetConstValue(rse->op1);
                                        THROW_ASSERT((pos_value + rsbit_value) >= 0, "unexpected condition");
                                        const auto new_pos = TM->CreateUniqueIntegerCst(pos_value + rsbit_value,
                                                                                        tree_helper::CGetType(ebe->op1));
@@ -2655,8 +2510,7 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                                            IRman->create_extract_bit_expr(rse->op0, new_pos, srcp_default);
                                        const auto eb_ga = IRman->CreateGimpleAssign(
                                            ebe->type, TM->CreateUniqueIntegerCst(0, ebe->type),
-                                           TM->CreateUniqueIntegerCst(1, ebe->type), eb_op, function_id, B_id,
-                                           srcp_default);
+                                           TM->CreateUniqueIntegerCst(1, ebe->type), eb_op, function_id, srcp_default);
                                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                                       "---Created " + STR(eb_ga));
                                        B->PushBefore(eb_ga, stmt, AppM);
@@ -2674,20 +2528,10 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                                     }
                                     else if(GET_CONST_NODE(rse->op0)->get_kind() == integer_cst_K)
                                     {
-                                       long long res_value;
-                                       if(tree_helper::IsSignedIntegerType(rse->op0))
-                                       {
-                                          auto val = GetPointerS<const integer_cst>(GET_CONST_NODE(rse->op0))->value;
-                                          val = (val >> pos_value);
-                                          res_value = val;
-                                       }
-                                       else
-                                       {
-                                          auto val = static_cast<unsigned long long>(
-                                              GetPointerS<const integer_cst>(GET_CONST_NODE(rse->op0))->value);
-                                          val = (val >> pos_value);
-                                          res_value = static_cast<long long>(val);
-                                       }
+                                       const auto res_value =
+                                           tree_helper::GetConstValue(rse->op0,
+                                                                      tree_helper::IsSignedIntegerType(rse->op0)) >>
+                                           pos_value;
                                        if(res_value)
                                        {
                                           if(max_lut_size > 0)
@@ -2710,7 +2554,7 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                                                     IRman->create_extract_bit_expr(rse->op1, new_pos, srcp_default);
                                                 const auto eb_ga = IRman->CreateGimpleAssign(
                                                     ebe->type, TM->CreateUniqueIntegerCst(0, ebe->type),
-                                                    TM->CreateUniqueIntegerCst(1, ebe->type), eb_op, function_id, B_id,
+                                                    TM->CreateUniqueIntegerCst(1, ebe->type), eb_op, function_id,
                                                     srcp_default);
                                                 INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                                                "---Created " + STR(eb_ga));
@@ -2755,7 +2599,7 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                                                                         op4, op5, op6, op7, op8, srcp_default);
                                              const auto eb_ga = IRman->CreateGimpleAssign(
                                                  ebe->type, TM->CreateUniqueIntegerCst(0, ebe->type),
-                                                 TM->CreateUniqueIntegerCst(1, ebe->type), eb_op, function_id, B_id,
+                                                 TM->CreateUniqueIntegerCst(1, ebe->type), eb_op, function_id,
                                                  srcp_default);
                                              INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                                             "---Created " + STR(eb_ga));
@@ -2802,10 +2646,9 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                                    "---replace extract_bit_expr usage before: " + stmt->ToString());
                                     const auto eb_op = IRman->create_extract_bit_expr(bne->op, ebe->op1, srcp_default);
-                                    const auto eb_ga =
-                                        IRman->CreateGimpleAssign(ebe->type, TM->CreateUniqueIntegerCst(0, ebe->type),
-                                                                  TM->CreateUniqueIntegerCst(1, ebe->type), eb_op, B_id,
-                                                                  function_id, srcp_default);
+                                    const auto eb_ga = IRman->CreateGimpleAssign(
+                                        ebe->type, TM->CreateUniqueIntegerCst(0, ebe->type),
+                                        TM->CreateUniqueIntegerCst(1, ebe->type), eb_op, function_id, srcp_default);
                                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created " + STR(eb_ga));
                                     B->PushBefore(eb_ga, stmt, AppM);
                                     const auto negating = IRman->create_unary_operation(
@@ -2824,18 +2667,16 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                                                    "---replace extract_bit_expr usage before: " + stmt->ToString());
                                     const auto eb_op0 =
                                         IRman->create_extract_bit_expr(bae->op0, ebe->op1, srcp_default);
-                                    const auto eb_ga0 =
-                                        IRman->CreateGimpleAssign(ebe->type, TM->CreateUniqueIntegerCst(0, ebe->type),
-                                                                  TM->CreateUniqueIntegerCst(1, ebe->type), eb_op0,
-                                                                  function_id, B_id, srcp_default);
+                                    const auto eb_ga0 = IRman->CreateGimpleAssign(
+                                        ebe->type, TM->CreateUniqueIntegerCst(0, ebe->type),
+                                        TM->CreateUniqueIntegerCst(1, ebe->type), eb_op0, function_id, srcp_default);
                                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created " + STR(eb_ga0));
                                     B->PushBefore(eb_ga0, stmt, AppM);
                                     const auto eb_op1 =
                                         IRman->create_extract_bit_expr(bae->op1, ebe->op1, srcp_default);
-                                    const auto eb_ga1 =
-                                        IRman->CreateGimpleAssign(ebe->type, TM->CreateUniqueIntegerCst(0, ebe->type),
-                                                                  TM->CreateUniqueIntegerCst(1, ebe->type), eb_op1,
-                                                                  function_id, B_id, srcp_default);
+                                    const auto eb_ga1 = IRman->CreateGimpleAssign(
+                                        ebe->type, TM->CreateUniqueIntegerCst(0, ebe->type),
+                                        TM->CreateUniqueIntegerCst(1, ebe->type), eb_op1, function_id, srcp_default);
                                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created " + STR(eb_ga1));
                                     B->PushBefore(eb_ga1, stmt, AppM);
                                     const auto anding = IRman->create_binary_operation(
@@ -2855,18 +2696,16 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                                                    "---replace extract_bit_expr usage before: " + stmt->ToString());
                                     const auto eb_op0 =
                                         IRman->create_extract_bit_expr(bie->op0, ebe->op1, srcp_default);
-                                    const auto eb_ga0 =
-                                        IRman->CreateGimpleAssign(ebe->type, TM->CreateUniqueIntegerCst(0, ebe->type),
-                                                                  TM->CreateUniqueIntegerCst(1, ebe->type), eb_op0,
-                                                                  function_id, B_id, srcp_default);
+                                    const auto eb_ga0 = IRman->CreateGimpleAssign(
+                                        ebe->type, TM->CreateUniqueIntegerCst(0, ebe->type),
+                                        TM->CreateUniqueIntegerCst(1, ebe->type), eb_op0, function_id, srcp_default);
                                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created " + STR(eb_ga0));
                                     B->PushBefore(eb_ga0, stmt, AppM);
                                     const auto eb_op1 =
                                         IRman->create_extract_bit_expr(bie->op1, ebe->op1, srcp_default);
-                                    const auto eb_ga1 =
-                                        IRman->CreateGimpleAssign(ebe->type, TM->CreateUniqueIntegerCst(0, ebe->type),
-                                                                  TM->CreateUniqueIntegerCst(1, ebe->type), eb_op1,
-                                                                  function_id, B_id, srcp_default);
+                                    const auto eb_ga1 = IRman->CreateGimpleAssign(
+                                        ebe->type, TM->CreateUniqueIntegerCst(0, ebe->type),
+                                        TM->CreateUniqueIntegerCst(1, ebe->type), eb_op1, function_id, srcp_default);
                                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created " + STR(eb_ga1));
                                     B->PushBefore(eb_ga1, stmt, AppM);
                                     const auto anding = IRman->create_binary_operation(
@@ -2886,18 +2725,16 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                                                    "---replace extract_bit_expr usage before: " + stmt->ToString());
                                     const auto eb_op0 =
                                         IRman->create_extract_bit_expr(bxe->op0, ebe->op1, srcp_default);
-                                    const auto eb_ga0 =
-                                        IRman->CreateGimpleAssign(ebe->type, TM->CreateUniqueIntegerCst(0, ebe->type),
-                                                                  TM->CreateUniqueIntegerCst(1, ebe->type), eb_op0,
-                                                                  function_id, B_id, srcp_default);
+                                    const auto eb_ga0 = IRman->CreateGimpleAssign(
+                                        ebe->type, TM->CreateUniqueIntegerCst(0, ebe->type),
+                                        TM->CreateUniqueIntegerCst(1, ebe->type), eb_op0, function_id, srcp_default);
                                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created " + STR(eb_ga0));
                                     B->PushBefore(eb_ga0, stmt, AppM);
                                     const auto eb_op1 =
                                         IRman->create_extract_bit_expr(bxe->op1, ebe->op1, srcp_default);
-                                    const auto eb_ga1 =
-                                        IRman->CreateGimpleAssign(ebe->type, TM->CreateUniqueIntegerCst(0, ebe->type),
-                                                                  TM->CreateUniqueIntegerCst(1, ebe->type), eb_op1,
-                                                                  function_id, B_id, srcp_default);
+                                    const auto eb_ga1 = IRman->CreateGimpleAssign(
+                                        ebe->type, TM->CreateUniqueIntegerCst(0, ebe->type),
+                                        TM->CreateUniqueIntegerCst(1, ebe->type), eb_op1, function_id, srcp_default);
                                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created " + STR(eb_ga1));
                                     B->PushBefore(eb_ga1, stmt, AppM);
                                     const auto anding = IRman->create_binary_operation(
@@ -2916,17 +2753,15 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                                    "---replace extract_bit_expr usage before: " + stmt->ToString());
                                     const auto eb_op1 = IRman->create_extract_bit_expr(ce->op1, ebe->op1, srcp_default);
-                                    const auto eb_ga1 =
-                                        IRman->CreateGimpleAssign(ebe->type, TM->CreateUniqueIntegerCst(0, ebe->type),
-                                                                  TM->CreateUniqueIntegerCst(1, ebe->type), eb_op1,
-                                                                  function_id, B_id, srcp_default);
+                                    const auto eb_ga1 = IRman->CreateGimpleAssign(
+                                        ebe->type, TM->CreateUniqueIntegerCst(0, ebe->type),
+                                        TM->CreateUniqueIntegerCst(1, ebe->type), eb_op1, function_id, srcp_default);
                                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created " + STR(eb_ga1));
                                     B->PushBefore(eb_ga1, stmt, AppM);
                                     const auto eb_op2 = IRman->create_extract_bit_expr(ce->op2, ebe->op1, srcp_default);
-                                    const auto eb_ga2 =
-                                        IRman->CreateGimpleAssign(ebe->type, TM->CreateUniqueIntegerCst(0, ebe->type),
-                                                                  TM->CreateUniqueIntegerCst(1, ebe->type), eb_op2,
-                                                                  function_id, B_id, srcp_default);
+                                    const auto eb_ga2 = IRman->CreateGimpleAssign(
+                                        ebe->type, TM->CreateUniqueIntegerCst(0, ebe->type),
+                                        TM->CreateUniqueIntegerCst(1, ebe->type), eb_op2, function_id, srcp_default);
                                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created " + STR(eb_ga2));
                                     B->PushBefore(eb_ga2, stmt, AppM);
                                     const auto ceRes = IRman->create_ternary_operation(
@@ -2950,7 +2785,7 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                                                       "---replace extract_bit_expr usage before: " + stmt->ToString());
                                        auto carry = TM->CreateUniqueIntegerCst(0, ebe->type);
                                        tree_nodeRef sum;
-                                       for(long long int bitIndex = 0; bitIndex <= pos_value; ++bitIndex)
+                                       for(integer_cst_t bitIndex = 0; bitIndex <= pos_value; ++bitIndex)
                                        {
                                           const auto bitIndex_node =
                                               TM->CreateUniqueIntegerCst(bitIndex, tree_helper::CGetType(ebe->op1));
@@ -2958,7 +2793,7 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                                               IRman->create_extract_bit_expr(pe->op0, bitIndex_node, srcp_default);
                                           const auto eb_ga1 = IRman->CreateGimpleAssign(
                                               ebe->type, TM->CreateUniqueIntegerCst(0, ebe->type),
-                                              TM->CreateUniqueIntegerCst(1, ebe->type), eb_op1, function_id, B_id,
+                                              TM->CreateUniqueIntegerCst(1, ebe->type), eb_op1, function_id,
                                               srcp_default);
                                           INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                                          "---Created " + STR(eb_ga1));
@@ -2967,7 +2802,7 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                                               IRman->create_extract_bit_expr(pe->op1, bitIndex_node, srcp_default);
                                           const auto eb_ga2 = IRman->CreateGimpleAssign(
                                               ebe->type, TM->CreateUniqueIntegerCst(0, ebe->type),
-                                              TM->CreateUniqueIntegerCst(1, ebe->type), eb_op2, function_id, B_id,
+                                              TM->CreateUniqueIntegerCst(1, ebe->type), eb_op2, function_id,
                                               srcp_default);
                                           INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                                          "---Created " + STR(eb_ga2));
@@ -2978,7 +2813,7 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                                               srcp_default, truth_xor_expr_K);
                                           const auto sum0_ga1 = IRman->CreateGimpleAssign(
                                               ebe->type, TM->CreateUniqueIntegerCst(0, ebe->type),
-                                              TM->CreateUniqueIntegerCst(1, ebe->type), sum0, function_id, B_id,
+                                              TM->CreateUniqueIntegerCst(1, ebe->type), sum0, function_id,
                                               srcp_default);
                                           INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                                          "---Created " + STR(sum0_ga1));
@@ -2991,7 +2826,7 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                                           {
                                              const auto sum_ga1 = IRman->CreateGimpleAssign(
                                                  ebe->type, TM->CreateUniqueIntegerCst(0, ebe->type),
-                                                 TM->CreateUniqueIntegerCst(1, ebe->type), sum, function_id, B_id,
+                                                 TM->CreateUniqueIntegerCst(1, ebe->type), sum, function_id,
                                                  srcp_default);
                                              INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                                             "---Created " + STR(sum_ga1));
@@ -3003,7 +2838,7 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                                                  srcp_default, truth_and_expr_K);
                                              const auto and1_ga = IRman->CreateGimpleAssign(
                                                  ebe->type, TM->CreateUniqueIntegerCst(0, ebe->type),
-                                                 TM->CreateUniqueIntegerCst(1, ebe->type), and1, function_id, B_id,
+                                                 TM->CreateUniqueIntegerCst(1, ebe->type), and1, function_id,
                                                  srcp_default);
                                              INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                                             "---Created " + STR(and1_ga));
@@ -3015,7 +2850,7 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                                                  srcp_default, truth_and_expr_K);
                                              const auto and2_ga = IRman->CreateGimpleAssign(
                                                  ebe->type, TM->CreateUniqueIntegerCst(0, ebe->type),
-                                                 TM->CreateUniqueIntegerCst(1, ebe->type), and2, function_id, B_id,
+                                                 TM->CreateUniqueIntegerCst(1, ebe->type), and2, function_id,
                                                  srcp_default);
                                              INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                                             "---Created " + STR(and2_ga));
@@ -3028,7 +2863,7 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                                                  srcp_default, truth_and_expr_K);
                                              const auto and3_ga = IRman->CreateGimpleAssign(
                                                  ebe->type, TM->CreateUniqueIntegerCst(0, ebe->type),
-                                                 TM->CreateUniqueIntegerCst(1, ebe->type), and3, function_id, B_id,
+                                                 TM->CreateUniqueIntegerCst(1, ebe->type), and3, function_id,
                                                  srcp_default);
                                              INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                                             "---Created " + STR(and3_ga));
@@ -3041,7 +2876,7 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                                                  srcp_default, truth_or_expr_K);
                                              const auto or1_ga = IRman->CreateGimpleAssign(
                                                  ebe->type, TM->CreateUniqueIntegerCst(0, ebe->type),
-                                                 TM->CreateUniqueIntegerCst(1, ebe->type), or1, function_id, B_id,
+                                                 TM->CreateUniqueIntegerCst(1, ebe->type), or1, function_id,
                                                  srcp_default);
                                              INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                                             "---Created " + STR(or1_ga));
@@ -3054,7 +2889,7 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                                                  srcp_default, truth_or_expr_K);
                                              const auto carry1_ga = IRman->CreateGimpleAssign(
                                                  ebe->type, TM->CreateUniqueIntegerCst(0, ebe->type),
-                                                 TM->CreateUniqueIntegerCst(1, ebe->type), carry1, function_id, B_id,
+                                                 TM->CreateUniqueIntegerCst(1, ebe->type), carry1, function_id,
                                                  srcp_default);
                                              INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                                             "---Created " + STR(carry1_ga));
@@ -3074,21 +2909,10 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                         }
                         else if(GET_CONST_NODE(ebe->op0)->get_kind() == integer_cst_K)
                         {
-                           bool res_value;
-                           // TOBEIMPROVED
-                           if(tree_helper::IsSignedIntegerType(ebe->op0))
-                           {
-                              auto val = GetPointerS<const integer_cst>(GET_CONST_NODE(ebe->op0))->value;
-                              val = (val >> pos_value) & 1;
-                              res_value = val;
-                           }
-                           else
-                           {
-                              auto val = static_cast<unsigned long long>(
-                                  GetPointerS<const integer_cst>(GET_CONST_NODE(ebe->op0))->value);
-                              val = (val >> pos_value) & 1;
-                              res_value = val;
-                           }
+                           const auto res_value =
+                               ((tree_helper::GetConstValue(ebe->op0, tree_helper::IsSignedIntegerType(ebe->op0)) >>
+                                 pos_value) &
+                                1) != 0;
                            const auto res_node = TM->CreateUniqueIntegerCst(res_value, ebe->type);
                            propagateValue(ssa, TM, ga->op0, res_node, DEBUG_CALLSITE);
                         }
@@ -3119,10 +2943,9 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                                     const auto srcp_default =
                                         ga->include_name + ":" + STR(ga->line_number) + ":" + STR(ga->column_number);
                                     const auto eb_op = IRman->create_extract_bit_expr(ne->op, zero_node, srcp_default);
-                                    const auto eb_ga =
-                                        IRman->CreateGimpleAssign(ne->type, TM->CreateUniqueIntegerCst(0, ne->type),
-                                                                  TM->CreateUniqueIntegerCst(1, ne->type), eb_op,
-                                                                  function_id, B_id, srcp_default);
+                                    const auto eb_ga = IRman->CreateGimpleAssign(
+                                        ne->type, TM->CreateUniqueIntegerCst(0, ne->type),
+                                        TM->CreateUniqueIntegerCst(1, ne->type), eb_op, function_id, srcp_default);
                                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created " + STR(eb_ga));
                                     B->PushBefore(eb_ga, stmt, AppM);
                                     const auto bit_mask_constant_node = TM->CreateUniqueIntegerCst(1, ne->type);
@@ -3149,7 +2972,7 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
          }
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Statement analyzed " + GET_NODE(stmt)->ToString());
       }
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--BB analyzed " + STR(B_id));
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--BB analyzed " + STR(B->number));
       for(const auto& phi : B->CGetPhiList())
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Phi operation " + GET_NODE(phi)->ToString());
@@ -3167,9 +2990,9 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                if(is_constant)
                {
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Left part is constant " + bit_values);
-                  const auto const_value = convert_bitvalue2longlong(bit_values, TM, GET_INDEX_CONST_NODE(pn->res));
-                  const auto val = TM->CreateUniqueIntegerCst(static_cast<long long int>(const_value),
-                                                              tree_helper::CGetType(pn->res));
+                  const auto const_value =
+                      convert_bitvalue_to_integer_cst(bit_values, TM, GET_INDEX_CONST_NODE(pn->res));
+                  const auto val = TM->CreateUniqueIntegerCst(const_value, tree_helper::CGetType(pn->res));
 
                   propagateValue(ssa, TM, pn->res, val, DEBUG_CALLSITE);
                   if(AppM->ApplyNewTransformation())

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2018-2022 Politecnico di Milano
+ *              Copyright (C) 2018-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -37,6 +37,9 @@
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  *
  */
+// #undef NDEBUG
+#include "debug_print.hpp"
+
 #include "ExpandMemOpsPass.hpp"
 
 #include <llvm/IR/DerivedTypes.h>
@@ -70,9 +73,6 @@
 #endif
 
 #include <cxxabi.h>
-
-// #define PRINT_DBG_MSG
-#include "debug_print.hpp"
 
 #define PEEL_THRESHOLD 16
 
@@ -447,7 +447,7 @@ bool llvm::CLANG_VERSION_SYMBOL(_plugin_expandMemOps)::exec(
             if(llvm::MemIntrinsic* InstrCall = dyn_cast<llvm::MemIntrinsic>(II))
             {
                PRINT_DBG("    Found mem intrinsic: ");
-#ifdef PRINT_DBG_MSG
+#ifndef NDEBUG
                InstrCall->print(llvm::errs(), true);
 #endif
                PRINT_DBG("\n");

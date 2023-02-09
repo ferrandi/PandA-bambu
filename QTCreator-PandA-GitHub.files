@@ -1781,8 +1781,6 @@ src/HLS/module_generator/Write_fifoModuleGenerator.cpp
 src/HLS/module_generator/Write_fifoModuleGenerator.hpp
 src/HLS/module_generator/Write_handshakeModuleGenerator.cpp
 src/HLS/module_generator/Write_handshakeModuleGenerator.hpp
-src/HLS/module_generator/Write_noneDSModuleGenerator.cpp
-src/HLS/module_generator/Write_noneDSModuleGenerator.hpp
 src/HLS/module_generator/Write_noneModuleGenerator.cpp
 src/HLS/module_generator/Write_noneModuleGenerator.hpp
 src/HLS/module_generator/Write_none_registeredModuleGenerator.cpp
@@ -1929,6 +1927,8 @@ src/behavior/op_graph.cpp
 src/behavior/op_graph.hpp
 src/behavior/operations_graph_constructor.cpp
 src/behavior/operations_graph_constructor.hpp
+src/behavior/OrderedInstructions.cpp
+src/behavior/OrderedInstructions.hpp
 src/behavior/profiling_information.cpp
 src/behavior/profiling_information.hpp
 src/circuit/NP_functionality.cpp

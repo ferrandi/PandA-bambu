@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -271,8 +271,8 @@ bool hls_div_cg_ext::recursive_examinate(const tree_nodeRef& current_tree_node, 
             const auto div_by_constant = [&]() {
                if(GetPointer<const integer_cst>(GET_CONST_NODE(be->op1)))
                {
-                  const auto ic = GetPointerS<const integer_cst>(GET_CONST_NODE(be->op1));
-                  if((ic->value & (ic->value - 1)) == 0)
+                  const auto cst_val = tree_helper::GetConstValue(be->op1);
+                  if((cst_val & (cst_val - 1)) == 0)
                   {
                      return true;
                   }

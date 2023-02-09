@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -33,48 +33,35 @@
 
 #include "testbench_memory_allocation.hpp"
 
-///. include
 #include "Parameter.hpp"
-
-/// behavior include
-#include "behavioral_helper.hpp"
-#include "call_graph_manager.hpp"
-#include "function_behavior.hpp"
-#include "var_pp_functor.hpp"
-
-/// HLS include
-#include "hls_manager.hpp"
-
-/// HLS/memory include
-#include "memory.hpp"
-
-/// HLS/simulation include
 #include "SimulationInformation.hpp"
+#include "behavioral_helper.hpp"
 #include "c_initialization_parser.hpp"
 #include "c_initialization_parser_functor.hpp"
+#include "call_graph_manager.hpp"
 #include "compute_reserved_memory.hpp"
-#include "testbench_generation_base_step.hpp"
-
-/// STD include
-#include <string>
-
-/// STL includes
 #include "custom_map.hpp"
 #include "custom_set.hpp"
-#include <list>
-#include <tuple>
-#include <vector>
-
-/// tree include
-#include "dbgPrintHelper.hpp"      // for DEBUG_LEVEL_
+#include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
+#include "function_behavior.hpp"
+#include "hls_manager.hpp"
+#include "math_function.hpp"
+#include "memory.hpp"
 #include "string_manipulation.hpp" // for STR
+#include "testbench_generation_base_step.hpp"
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
-
-/// utility include
 #include "utility.hpp"
+#include "var_pp_functor.hpp"
+
+#include <boost/filesystem.hpp>
+
+#include <list>
+#include <string>
+#include <tuple>
+#include <vector>
 
 TestbenchMemoryAllocation::TestbenchMemoryAllocation(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr,
                                                      const DesignFlowManagerConstRef _design_flow_manager)
@@ -96,14 +83,14 @@ DesignFlowStep_Status TestbenchMemoryAllocation::Exec()
 
 void TestbenchMemoryAllocation::AllocTestbenchMemory(void) const
 {
-   const tree_managerConstRef TM = HLSMgr->get_tree_manager();
+   const auto TM = HLSMgr->get_tree_manager();
    const auto top_function_ids = HLSMgr->CGetCallGraphManager()->GetRootFunctions();
    THROW_ASSERT(top_function_ids.size() == 1, "Multiple top functions");
    const auto function_id = *(top_function_ids.begin());
-   const BehavioralHelperConstRef behavioral_helper = HLSMgr->CGetFunctionBehavior(function_id)->CGetBehavioralHelper();
+   const auto BH = HLSMgr->CGetFunctionBehavior(function_id)->CGetBehavioralHelper();
 
-   const std::map<unsigned int, memory_symbolRef>& mem_vars = HLSMgr->Rmem->get_ext_memory_variables();
-   CInitializationParserRef c_initialization_parser = CInitializationParserRef(new CInitializationParser(parameters));
+   const auto mem_vars = HLSMgr->Rmem->get_ext_memory_variables();
+   CInitializationParserRef c_initialization_parser(new CInitializationParser(parameters));
    // get the mapping between variables in external memory and their external
    // base address
    std::map<unsigned long long int, unsigned int> address;
@@ -118,16 +105,21 @@ void TestbenchMemoryAllocation::AllocTestbenchMemory(void) const
       mem.push_back(ma.second);
    }
 
-   const std::list<unsigned int>& func_parameters = behavioral_helper->get_parameters();
+   const auto func_parameters = BH->get_parameters();
    for(const auto& p : func_parameters)
    {
       // if the function has some pointer func_parameters some memory needs to be
       // reserved for the place where they point to
-      if(behavioral_helper->is_a_pointer(p) && mem_vars.find(p) == mem_vars.end())
+      if(tree_helper::is_a_pointer(TM, p) && mem_vars.find(p) == mem_vars.end())
       {
          mem.push_back(p);
       }
    }
+
+   const auto fname =
+       tree_helper::GetMangledFunctionName(GetPointerS<const function_decl>(TM->CGetTreeNode(function_id)));
+   const auto& DesignAttributes = HLSMgr->design_attributes;
+   const auto DesignAttributes_it = DesignAttributes.find(fname);
 
    // loop on the test vectors
    unsigned int v_idx = 0;
@@ -138,7 +130,7 @@ void TestbenchMemoryAllocation::AllocTestbenchMemory(void) const
       // loop on the variables in memory
       for(auto l = mem.begin(); l != mem.end(); ++l)
       {
-         std::string param = behavioral_helper->PrintVariable(*l);
+         std::string param = BH->PrintVariable(*l);
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Considering " + param);
          if(param[0] == '"')
          {
@@ -171,54 +163,47 @@ void TestbenchMemoryAllocation::AllocTestbenchMemory(void) const
             reserved_bytes = 1;
          }
 
-         if(tree_helper::IsPointerType(lnode) && !is_memory)
+         const auto l_type = tree_helper::CGetType(lnode);
+         if(tree_helper::IsPointerType(l_type) && !is_memory)
          {
-            const auto pt_node = tree_helper::CGetType(lnode);
             if(test_v.size() > 4 && test_v.substr(test_v.size() - 4) == ".dat")
             {
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Binary file initialization");
+               if(!boost::filesystem::exists(test_v))
+               {
+                  THROW_ERROR("File does not exist: " + test_v);
+               }
                std::ifstream in(test_v, std::ifstream::ate | std::ifstream::binary);
-               reserved_bytes = static_cast<unsigned>(in.tellg());
+               reserved_bytes = static_cast<unsigned long long>(in.tellg());
             }
             else if(flag_cpp)
             {
-               tree_nodeConstRef ptd_base_type;
-               if(GET_CONST_NODE(pt_node)->get_kind() == pointer_type_K)
-               {
-                  ptd_base_type = GetPointer<const pointer_type>(GET_CONST_NODE(pt_node))->ptd;
-               }
-               else if(GET_CONST_NODE(pt_node)->get_kind() == reference_type_K)
-               {
-                  ptd_base_type = GetPointer<const reference_type>(GET_CONST_NODE(pt_node))->refd;
-               }
-               else
-               {
-                  THROW_ERROR("A pointer type is expected");
-               }
-
-               unsigned long long base_type_byte_size;
-               if(tree_helper::IsStructType(ptd_base_type) || tree_helper::IsUnionType(ptd_base_type))
-               {
-                  base_type_byte_size = tree_helper::Size(ptd_base_type) / 8;
-               }
-               else if(tree_helper::IsArrayEquivType(ptd_base_type))
-               {
-                  base_type_byte_size = tree_helper::GetArrayElementSize(ptd_base_type) / 8;
-               }
-               else if(tree_helper::Size(ptd_base_type) == 1)
-               {
-                  base_type_byte_size = 1;
-               }
-               else
-               {
-                  base_type_byte_size = tree_helper::Size(ptd_base_type) / 8;
-               }
-
-               if(base_type_byte_size == 0)
-               {
-                  base_type_byte_size = 1;
-               }
-               std::vector<std::string> splitted = SplitString(test_v, ",");
-               reserved_bytes = (static_cast<unsigned int>(splitted.size())) * base_type_byte_size;
+               const auto base_type_byte_size = [&]() {
+                  const auto ptd_base_type = tree_helper::CGetPointedType(l_type);
+                  THROW_ASSERT(DesignAttributes_it == DesignAttributes.end() ||
+                                   (DesignAttributes_it->second.count(param) &&
+                                    DesignAttributes_it->second.at(param).count(attr_typename)),
+                               "");
+                  const auto param_if_typename = DesignAttributes_it != DesignAttributes.end() ?
+                                                     DesignAttributes_it->second.at(param).at(attr_typename) :
+                                                     "";
+                  bool is_signed, is_fixed;
+                  const auto if_bw = ac_type_bitwidth(param_if_typename, is_signed, is_fixed);
+                  if(if_bw)
+                  {
+                     return get_aligned_ac_bitsize(if_bw) >> 3;
+                  }
+                  else if(tree_helper::IsArrayType(ptd_base_type))
+                  {
+                     return get_aligned_bitsize(tree_helper::GetArrayElementSize(ptd_base_type)) >> 3;
+                  }
+                  return get_aligned_bitsize(tree_helper::Size(ptd_base_type)) >> 3;
+               }();
+               THROW_ASSERT(base_type_byte_size, "");
+               const auto splitted = SplitString(test_v, ",");
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Object size: " + STR(base_type_byte_size));
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Array  size: " + STR(splitted.size()));
+               reserved_bytes = splitted.size() * base_type_byte_size;
             }
             else
             {
@@ -226,6 +211,7 @@ void TestbenchMemoryAllocation::AllocTestbenchMemory(void) const
                    new ComputeReservedMemory(TM, lnode));
                c_initialization_parser->Parse(c_initialization_parser_functor, test_v);
                reserved_bytes = GetPointer<ComputeReservedMemory>(c_initialization_parser_functor)->GetReservedBytes();
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---C object size: " + STR(reserved_bytes));
             }
 
             if(HLSMgr->RSim->param_address[v_idx].find(*l) == HLSMgr->RSim->param_address[v_idx].end())
@@ -234,11 +220,10 @@ void TestbenchMemoryAllocation::AllocTestbenchMemory(void) const
                HLSMgr->RSim->param_mem_size[v_idx][*l] = reserved_bytes;
                HLSMgr->Rmem->reserve_space(reserved_bytes);
 
-               INDENT_OUT_MEX(
-                   OUTPUT_LEVEL_VERBOSE, output_level,
-                   "---Parameter " + param + " (" + STR((*l)) + ") (testvector " + STR(v_idx) + ") allocated at " +
-                       STR(HLSMgr->RSim->param_address.at(v_idx).find(*l)->second) +
-                       " : reserved_mem_size = " + STR(HLSMgr->RSim->param_mem_size.at(v_idx).find(*l)->second));
+               INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level,
+                              "---Parameter " + param + " (" + STR((*l)) + ") (testvector " + STR(v_idx) +
+                                  ") allocated at " + STR(HLSMgr->RSim->param_address.at(v_idx).at(*l)) +
+                                  " : reserved_mem_size = " + STR(HLSMgr->RSim->param_mem_size.at(v_idx).at(*l)));
             }
          }
          else if(!is_memory)

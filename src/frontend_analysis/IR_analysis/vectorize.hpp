@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -38,12 +38,10 @@
  *
  */
 
-/// Superclass include
 #include "function_frontend_flow_step.hpp"
 
-/// utility include
 #include "custom_map.hpp"
-#include "utility.hpp"
+#include "panda_types.hpp"
 
 REF_FORWARD_DECL(bloc);
 CONSTREF_FORWARD_DECL(Loop);
@@ -81,7 +79,7 @@ class Vectorize : public FunctionFrontendFlowStep
    const tree_manipulationRef tree_man;
 
    /// The increment of induction variables; id is the index of the ssa name defined in the init gimple
-   CustomMap<unsigned int, long long int> iv_increment;
+   CustomMap<unsigned int, integer_cst_t> iv_increment;
 
    /// Enum used to classify the loop according to the required transformation
    using SimdLoop = enum {

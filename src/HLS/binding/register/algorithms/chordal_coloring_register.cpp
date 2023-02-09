@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -42,27 +42,21 @@
  */
 #include "chordal_coloring_register.hpp"
 
+#include "Parameter.hpp"
+#include "behavioral_helper.hpp"
+#include "cpu_time.hpp"
+#include "dbgPrintHelper.hpp"
 #include "hls.hpp"
 #include "hls_manager.hpp"
-
 #include "liveness.hpp"
 #include "reg_binding.hpp"
-
-#include "Parameter.hpp"
-#include "dbgPrintHelper.hpp"
+#include "storage_value_information.hpp"
+#include "utility.hpp"
 
 #include <boost/graph/sequential_vertex_coloring.hpp>
 #include <boost/lexical_cast.hpp>
+
 #include <vector>
-
-/// HLS/binding/storage_value_insertion includes
-#include "storage_value_information.hpp"
-
-/// tree include
-#include "behavioral_helper.hpp"
-
-/// utility include
-#include "cpu_time.hpp"
 
 chordal_coloring_register::chordal_coloring_register(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr,
                                                      unsigned int _funId,

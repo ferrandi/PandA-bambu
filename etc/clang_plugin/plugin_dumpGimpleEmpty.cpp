@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2018-2022 Politecnico di Milano
+ *              Copyright (C) 2018-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -183,7 +183,7 @@ namespace llvm
 #endif
          );
 #else
-         assert(false && "Call to runOnModule not expected");
+         report_fatal_error("Call to runOnModule not expected");
          return false;
 #endif
       }

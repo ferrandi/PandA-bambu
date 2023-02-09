@@ -1,5 +1,5 @@
 /* non-restoring division and modulus core function.
-   Copyright (C) 2014-2022 Politecnico di Milano (Italy).
+   Copyright (C) 2014-2023 Politecnico di Milano (Italy).
 
    author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
 

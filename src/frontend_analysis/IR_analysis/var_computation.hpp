@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -44,13 +44,9 @@
 #ifndef VAR_COMPUTATION_HPP
 #define VAR_COMPUTATION_HPP
 
-/// Superclass include
 #include "function_frontend_flow_step.hpp"
 
 #include "refcount.hpp"
-#include "utility.hpp"
-
-#include "graph.hpp"
 
 /**
  * @name forward declarations
