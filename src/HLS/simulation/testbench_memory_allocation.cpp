@@ -118,8 +118,8 @@ void TestbenchMemoryAllocation::AllocTestbenchMemory(void) const
 
    const auto fname =
        tree_helper::GetMangledFunctionName(GetPointerS<const function_decl>(TM->CGetTreeNode(function_id)));
-   const auto& DesignInterfaceTypename = HLSMgr->design_interface_typename;
-   const auto DesignInterfaceArgsTypename_it = DesignInterfaceTypename.find(fname);
+   const auto& DesignAttributes = HLSMgr->design_attributes;
+   const auto DesignAttributes_it = DesignAttributes.find(fname);
 
    // loop on the test vectors
    unsigned int v_idx = 0;
@@ -180,11 +180,12 @@ void TestbenchMemoryAllocation::AllocTestbenchMemory(void) const
             {
                const auto base_type_byte_size = [&]() {
                   const auto ptd_base_type = tree_helper::CGetPointedType(l_type);
-                  THROW_ASSERT(DesignInterfaceArgsTypename_it == DesignInterfaceTypename.end() ||
-                                   DesignInterfaceArgsTypename_it->second.count(param),
+                  THROW_ASSERT(DesignAttributes_it == DesignAttributes.end() ||
+                                   (DesignAttributes_it->second.count(param) &&
+                                    DesignAttributes_it->second.at(param).count(attr_typename)),
                                "");
-                  const auto param_if_typename = DesignInterfaceArgsTypename_it != DesignInterfaceTypename.end() ?
-                                                     DesignInterfaceArgsTypename_it->second.at(param) :
+                  const auto param_if_typename = DesignAttributes_it != DesignAttributes.end() ?
+                                                     DesignAttributes_it->second.at(param).at(attr_typename) :
                                                      "";
                   bool is_signed, is_fixed;
                   const auto if_bw = ac_type_bitwidth(param_if_typename, is_signed, is_fixed);

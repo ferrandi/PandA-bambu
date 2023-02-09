@@ -179,9 +179,20 @@ DesignFlowStep_Status TestbenchValuesXMLGeneration::Exec()
 
    const auto fnode = TM->CGetTreeNode(function_id);
    const auto fname = tree_helper::GetMangledFunctionName(GetPointer<const function_decl>(fnode));
-   const auto& DesignInterfaceTypename = HLSMgr->design_interface_typename;
-   const auto DesignInterfaceArgsTypename_it = DesignInterfaceTypename.find(fname);
 
+   /* Check if there is at least one typename */
+   bool typename_found = false;
+
+   if(HLSMgr->design_attributes.find(fname) != HLSMgr->design_attributes.end())
+   {
+      for(auto& par : HLSMgr->design_attributes.at(fname))
+      {
+         if(par.second.find(attr_typename) != par.second.end())
+         {
+            typename_found = true;
+         }
+      }
+   }
    HLSMgr->RSim->simulationArgSignature.clear();
    const auto& function_parameters = behavioral_helper->GetParameters();
    for(const auto& function_parameter : function_parameters)
@@ -216,11 +227,12 @@ DesignFlowStep_Status TestbenchValuesXMLGeneration::Exec()
                 return GET_INDEX_CONST_NODE(tn) == l;
              }) != function_parameters.end();
          std::string argTypename = "";
-         if(DesignInterfaceArgsTypename_it != DesignInterfaceTypename.end() && is_interface)
+         if(typename_found && is_interface)
          {
-            THROW_ASSERT(DesignInterfaceArgsTypename_it->second.count(param),
+            THROW_ASSERT(HLSMgr->design_attributes.at(fname).find(param) != HLSMgr->design_attributes.at(fname).end() &&
+                             HLSMgr->design_attributes.at(fname).at(param).count(attr_typename),
                          "Parameter should be present in design interface.");
-            argTypename = DesignInterfaceArgsTypename_it->second.at(param) + " ";
+            argTypename = HLSMgr->design_attributes.at(fname).at(param).at(attr_typename) + " ";
             if(argTypename.find("fixed") == std::string::npos)
             {
                argTypename = "";
@@ -361,11 +373,13 @@ DesignFlowStep_Status TestbenchValuesXMLGeneration::Exec()
                {
                   ctv = curr_test_vector.at(param);
                }
-               if(DesignInterfaceArgsTypename_it != DesignInterfaceTypename.end())
+               if(typename_found)
                {
-                  THROW_ASSERT(DesignInterfaceArgsTypename_it->second.count(param),
+                  THROW_ASSERT(HLSMgr->design_attributes.at(fname).find(param) !=
+                                       HLSMgr->design_attributes.at(fname).end() &&
+                                   HLSMgr->design_attributes.at(fname).at(param).count(attr_typename),
                                "Parameter should be present in design interface.");
-                  const auto argTypename = DesignInterfaceArgsTypename_it->second.at(param) + " ";
+                  const auto argTypename = HLSMgr->design_attributes.at(fname).at(param).at(attr_typename) + " ";
                   if(argTypename.find("fixed") != std::string::npos)
                   {
                      return FixedPointReinterpret(ctv, argTypename);

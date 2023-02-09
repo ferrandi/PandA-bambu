@@ -45,6 +45,9 @@
 /// utility includes
 #include "refcount.hpp"
 
+/// Included for interface_attributes enum
+#include "hls_manager.hpp"
+
 REF_FORWARD_DECL(tree_node);
 CONSTREF_FORWARD_DECL(tree_node);
 REF_FORWARD_DECL(tree_manipulation);
@@ -126,7 +129,8 @@ class InterfaceInfer : public ApplicationFrontendFlowStep
 
    void create_resource_m_axi(const std::set<std::string>& operationsR, const std::set<std::string>& operationsW,
                               const std::string& arg_name, const std::string& bundle_name, const interface_info& info,
-                              m_axi_type mat, unsigned int top_id) const;
+                              m_axi_type mat, unsigned int top_id,
+                              const std::map<interface_attributes, std::string>& bundle_attr_map) const;
 
    void create_resource(const std::set<std::string>& operationsR, const std::set<std::string>& operationsW,
                         const std::string& arg_name, const interface_info& info, const std::string& fname,
