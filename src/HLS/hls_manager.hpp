@@ -61,6 +61,21 @@ REF_FORWARD_DECL(memory);
 REF_FORWARD_DECL(SimulationInformation);
 REF_FORWARD_DECL(BackendFlow);
 
+enum interface_attributes
+{
+   attr_type,
+   attr_size,
+   attr_offset,
+   attr_bundle_name,
+   attr_way_lines,
+   attr_line_size,
+   attr_bus_size,
+   attr_n_ways,
+   attr_buf_size,
+   attr_rep_pol,
+   attr_wr_pol,
+   attr_typename
+};
 class HLS_manager : public application_manager
 {
  public:
@@ -110,19 +125,10 @@ class HLS_manager : public application_manager
    /// The information collected from aadl files
    const AadlInformationRef aadl_information;
 #endif
-
-   /// store the design interface directives coming from an xml file: function_name->parameter_name->interface_type
-   std::map<std::string, std::map<std::string, std::string>> design_interface;
-   /// store the design interface array size coming from an xml file: function_name->parameter_name->interface_arraysize
-   std::map<std::string, std::map<std::string, std::string>> design_interface_arraysize;
-   /// store the design interface array size coming from an xml file:
-   /// function_name->parameter_name->interface_attribute2
-   std::map<std::string, std::map<std::string, std::string>> design_interface_attribute2;
-   /// store the design interface array size coming from an xml file:
-   /// function_name->parameter_name->interface_attribute3
-   std::map<std::string, std::map<std::string, std::string>> design_interface_attribute3;
-   /// store the design interface typenames coming from an xml file: function_name->parameter_name->interface_typename
-   std::map<std::string, std::map<std::string, std::string>> design_interface_typename;
+   /** store the design interface attributes coming from an xml file:
+    * function_name->parameter_name->attribute_name->value
+    */
+   std::map<std::string, std::map<std::string, std::map<interface_attributes, std::string>>> design_attributes;
    /// store the design interface signature coming from an xml file: function_name->typename_signature
    std::map<std::string, std::vector<std::string>> design_interface_typename_signature;
    /// store the design interface original signature coming from an xml file: function_name->typename_signature

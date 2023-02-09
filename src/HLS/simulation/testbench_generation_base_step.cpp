@@ -78,6 +78,17 @@
 #include <boost/filesystem/path.hpp>
 #include <utility>
 
+#define COUNT_LOW_INDEX 0
+#define COUNT_HIGH_INDEX 31
+#define BURST_LOW_INDEX 32
+#define BURST_HIGH_INDEX 33
+#define LEN_LOW_INDEX 34
+#define LEN_HIGH_INDEX 41
+#define SIZE_LOW_INDEX 42
+#define SIZE_HIGH_INDEX 44
+#define ADDR_LOW_INDEX 45
+#define ADDR_HIGH_INDEX 76
+
 TestbenchGenerationBaseStep::TestbenchGenerationBaseStep(const ParameterConstRef _parameters,
                                                          const HLS_managerRef _HLSMgr,
                                                          const DesignFlowManagerConstRef _design_flow_manager,
@@ -512,7 +523,8 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
                auto InterfaceType = GetPointer<port_o>(portInst)->get_port_interface();
                if(InterfaceType == port_o::port_interface::PI_DOUT)
                {
-                  const auto manage_pidout = [&](const std::string& portID) {
+                  const auto manage_pidout = [&](const std::string& portID)
+                  {
                      auto port_name = portInst->get_id();
                      auto terminate = port_name.size() > 3 ? port_name.size() - std::string("_d" + portID).size() : 0;
                      THROW_ASSERT(port_name.substr(terminate) == "_d" + portID, "inconsistent interface");
@@ -612,7 +624,8 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
                auto InterfaceType = GetPointer<port_o>(portInst)->get_port_interface();
                if(InterfaceType == port_o::port_interface::PI_DIN)
                {
-                  const auto manage_pidin = [&](const std::string& portID) {
+                  const auto manage_pidin = [&](const std::string& portID)
+                  {
                      auto port_name = portInst->get_id();
                      auto terminate = port_name.size() > 3 ? port_name.size() - std::string("_q" + portID).size() : 0;
                      THROW_ASSERT(port_name.substr(terminate) == "_q" + portID, "inconsistent interface");
@@ -1968,24 +1981,31 @@ void TestbenchGenerationBaseStep::write_hdl_testbench_prolog() const
       parameters->getOption<std::string>(OPT_bram_high_latency) == "_3")
    {
       writer->write("`define MEM_DELAY_READ 3\n\n");
-      writer->write("`define MEM_MAX_DELAY " + (stoi(parameters->getOption<std::string>(OPT_mem_delay_write)) > 3 ?
-                                                parameters->getOption<std::string>(OPT_mem_delay_write) : 
-                                                "_3")  + "\n\n");
+      writer->write("`define MEM_MAX_DELAY " +
+                    (parameters->getOption<unsigned>(OPT_mem_delay_write) > 3 ?
+                         parameters->getOption<std::string>(OPT_mem_delay_write) :
+                         "3") +
+                    "\n\n");
    }
    else if(parameters->getOption<std::string>(OPT_bram_high_latency) != "" &&
            parameters->getOption<std::string>(OPT_bram_high_latency) == "_4")
    {
       writer->write("`define MEM_DELAY_READ 4\n\n");
-      writer->write("`define MEM_MAX_DELAY " + (stoi(parameters->getOption<std::string>(OPT_mem_delay_write)) > 4 ?
-                                                parameters->getOption<std::string>(OPT_mem_delay_write) : 
-                                                "_4")  + "\n\n");
+      writer->write("`define MEM_MAX_DELAY " +
+                    (parameters->getOption<unsigned>(OPT_mem_delay_write) > 4 ?
+                         parameters->getOption<std::string>(OPT_mem_delay_write) :
+                         "4") +
+                    "\n\n");
    }
    else if(parameters->getOption<std::string>(OPT_bram_high_latency) == "")
    {
-      writer->write("`define MEM_DELAY_READ " + parameters->getOption<std::string>(OPT_mem_delay_read) + "\n\n");  
-      writer->write("`define MEM_MAX_DELAY " + (stoi(parameters->getOption<std::string>(OPT_mem_delay_write)) > stoi(parameters->getOption<std::string>(OPT_mem_delay_read)) ?
-                                                parameters->getOption<std::string>(OPT_mem_delay_write) : 
-                                                parameters->getOption<std::string>(OPT_mem_delay_read))  + "\n\n");
+      writer->write("`define MEM_DELAY_READ " + parameters->getOption<std::string>(OPT_mem_delay_read) + "\n\n");
+      writer->write(
+          "`define MEM_MAX_DELAY " +
+          (parameters->getOption<unsigned>(OPT_mem_delay_write) > parameters->getOption<unsigned>(OPT_mem_delay_read) ?
+               parameters->getOption<std::string>(OPT_mem_delay_write) :
+               parameters->getOption<std::string>(OPT_mem_delay_read)) +
+          "\n\n");
    }
    else
    {
@@ -2129,7 +2149,21 @@ void TestbenchGenerationBaseStep::write_auxiliary_signal_declaration() const
    writer->write("reg [8*`MAX_COMMENT_LENGTH:0] line; // Comment line read from file\n\n");
 
    writer->write("reg [31:0] addr, base_addr;\n");
-   if(!HLSMgr->design_interface.empty())
+   /* Check if there is at least one interface type */
+   bool type_found = false;
+
+   for(auto& fun : HLSMgr->design_attributes)
+   {
+      for(auto& par : fun.second)
+      {
+         if(par.second.count(attr_type))
+         {
+            type_found = true;
+         }
+      }
+   }
+
+   if(type_found)
    {
       const auto& DesignSignature = HLSMgr->RSim->simulationArgSignature;
       bool writeP = false;
@@ -2207,31 +2241,47 @@ void TestbenchGenerationBaseStep::write_auxiliary_signal_declaration() const
 
             const structural_objectRef& portAWADDR = mod->find_member(portPrefix + "AWADDR", port_o_K, cir);
             const structural_objectRef& portWDATA = mod->find_member(portPrefix + "WDATA", port_o_K, cir);
-            const structural_objectRef& portRDATA = mod->find_member(portPrefix + "RDATA", port_o_K, cir);
 
             auto wAddrSize = GetPointer<port_o>(portAWADDR)->get_typeRef()->size *
                              GetPointer<port_o>(portAWADDR)->get_typeRef()->vector_size;
             auto wDataSize = GetPointer<port_o>(portWDATA)->get_typeRef()->size *
                              GetPointer<port_o>(portWDATA)->get_typeRef()->vector_size;
-            auto rDataSize = GetPointer<port_o>(portRDATA)->get_typeRef()->size *
-                             GetPointer<port_o>(portRDATA)->get_typeRef()->vector_size;
-            writer->write("reg signed [31:0] " + portPrefix + "dataReady = 'hFFFFFFFF;\n");
-            writer->write("reg signed [31:0] " + portPrefix + "writeReady = 'hFFFFFFFF;\n");
-            writer->write("reg signed [7:0] last_" + portPrefix + "ARLEN;\n");
-            writer->write("reg signed [7:0] last_" + portPrefix + "AWLEN;\n");
-            writer->write("reg signed [2:0] last_" + portPrefix + "SIZE;\n");
 
-            writer->write("reg [" + STR(wDataSize - 1) + ":0]" + portPrefix + "wdelayed [`MEM_DELAY_WRITE - 1 : 0];\n");
-            writer->write("reg [" + STR(rDataSize - 1) + ":0]" + portPrefix + "rdelayed [`MEM_DELAY_READ - 2 : 0];\n");
-            writer->write("reg [" + STR(rDataSize - 1) + ":0] last_" + portPrefix + "rdata;\n");
-            writer->write("reg [" + STR(wDataSize - 1) + ":0] last_" + portPrefix + "wdata;\n");
             writer->write("reg [" + STR(wDataSize - 1) + ":0] " + portPrefix + "wBitmask;\n");
-            writer->write("reg [8:0] " + portPrefix + "beatsCount = 'b0, next_" + portPrefix + "beatsCount;\n");
-            writer->write("reg [" + STR(wAddrSize - 1) + ":0] " + portPrefix + "currAddr, next_" + portPrefix +
-                          "currAddr;\n");
+            writer->write("reg [" + STR(wAddrSize - 1) + ":0] " + portPrefix + "currAddr;\n");
             writer->write("reg [" + STR(wAddrSize - 1) + ":0] " + portPrefix + "endAddr;\n");
-            writer->write("reg " + portPrefix + "read = 1'b0;\n");
-            writer->write("reg " + portPrefix + "write = 1'b0;\n");
+
+            /* Get queue size from pragma parameters, if present */
+            std::string queueSize = "10";
+            const std::string interfaceType = "m_axi_";
+            THROW_ASSERT(portPrefix.find(interfaceType) == 0 && portPrefix.back() == '_',
+                         "Unexpected port prefix format");
+            std::string bundleName = portPrefix;
+            idx = 0;
+            bundleName.erase(idx, interfaceType.length());
+            idx = bundleName.size() - 1;
+            bundleName.erase(idx, 1);
+
+            /* Look for a matching bundle name with defined buffer size */
+            for(const auto& fun : HLSMgr->design_attributes)
+            {
+               for(const auto& par : fun.second)
+               {
+                  if(par.second.find(attr_bundle_name) != par.second.end() &&
+                     par.second.at(attr_bundle_name) == bundleName &&
+                     par.second.find(attr_buf_size) != par.second.end() && par.second.at(attr_buf_size) != "")
+                  {
+                     queueSize = par.second.at(attr_buf_size);
+                  }
+               }
+            }
+            writer->write("`define " + portPrefix + "MAX_QUEUE_SIZE " + queueSize + "\n");
+            writer->write("reg [" + STR(ADDR_HIGH_INDEX) + " : 0] " + portPrefix + "awqueue [`" + portPrefix +
+                          "MAX_QUEUE_SIZE" + " - 1 : 0];\n");
+            writer->write("reg [" + STR(ADDR_HIGH_INDEX) + " : 0] " + portPrefix + "arqueue [`" + portPrefix +
+                          "MAX_QUEUE_SIZE" + " - 1 : 0];\n");
+            writer->write("integer " + portPrefix + "awqueue_size = 0;\n");
+            writer->write("integer " + portPrefix + "arqueue_size = 0;\n");
          }
       }
    }
@@ -2485,61 +2535,126 @@ void TestbenchGenerationBaseStep::testbench_controller_machine() const
                portPrefix.erase(index, portSpecializer.length());
             }
 
-            writer->write("initial begin \n");
-            writer->write("  " + portPrefix + "ARREADY = 1'b1;\n");
-            writer->write("  " + portPrefix + "AWREADY = 1'b1;\n");
-            writer->write("  " + portPrefix + "WREADY = 1'b1;\n");
-            writer->write("end\n");
-
-            writer->write("always @(posedge " CLOCK_PORT_NAME ") begin\n");
-            writer->write("  next_" + portPrefix + "beatsCount = " + portPrefix + "beatsCount;\n");
-            writer->write("  if(" + portPrefix + "read || " + portPrefix + "write) begin\n");
-            writer->write("    next_" + portPrefix + "ARREADY = " + portPrefix + "ARREADY;\n");
-            writer->write("    next_" + portPrefix + "AWREADY = " + portPrefix + "AWREADY;\n");
-            writer->write("    next_" + portPrefix + "WREADY = " + portPrefix + "WREADY;\n");
-            writer->write("  end begin\n");
-            writer->write("    next_" + portPrefix + "ARREADY = 1'b1;\n");
-            writer->write("    next_" + portPrefix + "AWREADY = 1'b1;\n");
-            writer->write("    next_" + portPrefix + "WREADY = 1'b1;\n");
+            writer->write("always@(posedge " CLOCK_PORT_NAME ") begin\n");
+            writer->write("  " + portPrefix + "ARREADY <= (" + portPrefix + "arqueue_size < `" + portPrefix +
+                          "MAX_QUEUE_SIZE);\n");
+            writer->write("  " + portPrefix + "AWREADY <= (" + portPrefix + "awqueue_size < `" + portPrefix +
+                          "MAX_QUEUE_SIZE);\n");
+            writer->write("  " + portPrefix + "WREADY <= 1'b1;\n");
+            writer->write("  " + portPrefix + "BVALID <= 1'b0;\n");
+            writer->write("  " + portPrefix + "RVALID <= 1'b0;\n");
+            writer->write("  " + portPrefix + "RRESP <= 2'b00;\n");
+            writer->write("  " + portPrefix + "RLAST <= 1'b0;\n");
+            writer->write("  if(" + portPrefix + "AWVALID) begin\n");
+            writer->write("    if(" + portPrefix + "awqueue_size < `" + portPrefix + "MAX_QUEUE_SIZE) begin\n");
+            writer->write("      " + portPrefix + "awqueue[" + portPrefix + "awqueue_size] = {" + portPrefix +
+                          "AWADDR, " + portPrefix + "AWSIZE, " + portPrefix + "AWLEN, " + portPrefix +
+                          "AWBURST, 32'd1};\n");
+            writer->write("      " + portPrefix + "awqueue_size <= " + portPrefix + "awqueue_size + 1;\n");
+            writer->write("    end\n");
             writer->write("  end\n");
-            writer->write("  next_" + portPrefix + "RDATA = 'b0;\n");
-            writer->write("  next_" + portPrefix + "BVALID = 1'b0;\n");
-            writer->write("  next_" + portPrefix + "RLAST = 1'b0;\n");
-            writer->write("  next_" + portPrefix + "RVALID = 1'b0;\n");
-            writer->write("  if (" + portPrefix + "AWVALID == 1'b1) begin\n");
-            writer->write("    last_" + portPrefix + "AWADDR = " + portPrefix + "AWADDR;\n");
-            writer->write("    last_" + portPrefix + "AWLEN = " + portPrefix + "AWLEN;\n");
-            writer->write("    last_" + portPrefix + "SIZE = " + portPrefix + "AWSIZE;\n");
-            writer->write("    " + portPrefix + "beatsCount = " + portPrefix + "AWLEN;\n");
-            writer->write("    " + portPrefix + "currAddr = " + portPrefix + "AWADDR;\n");
-            writer->write("    next_" + portPrefix + "currAddr = " + portPrefix + "currAddr;\n");
-            writer->write("    " + portPrefix + "endAddr = " + portPrefix + "AWBURST == 2'b10 ? " + portPrefix +
-                          "AWADDR + " + "(last_" + portPrefix + "AWLEN * (1 << last_" + portPrefix +
-                          "SIZE)) + (1 << last_" + portPrefix + "SIZE) : -1;\n");
-            writer->write("    " + portPrefix + "write = 1'b1;\n");
-
-            writer->write("    next_" + portPrefix + "AWREADY = 1'b0;\n");
-            writer->write("    next_" + portPrefix + "ARREADY = 1'b0;\n");
+            writer->write("  if(" + portPrefix + "ARVALID) begin\n");
+            writer->write("    if(" + portPrefix + "arqueue_size < `" + portPrefix + "MAX_QUEUE_SIZE) begin\n");
+            writer->write("      " + portPrefix + "arqueue[" + portPrefix + "arqueue_size] <= {" + portPrefix +
+                          "ARADDR, " + portPrefix + "ARSIZE, " + portPrefix + "ARLEN, " + portPrefix +
+                          "ARBURST, -(32'd`MEM_DELAY_READ)};\n");
+            writer->write("      " + portPrefix + "arqueue_size <= " + portPrefix + "arqueue_size + 1;\n");
+            writer->write("    end\n");
             writer->write("  end\n");
-            writer->write("  if (" + portPrefix + "WVALID == 1'b1) begin\n");
-            {
-               writer->write("    next_" + portPrefix + "beatsCount = " + portPrefix + "beatsCount - 1;\n");
-               writer->write("    if (" + portPrefix + "writeReady <= 0)\n");
-               writer->write("      " + portPrefix + "writeReady <= 0;\n");
-               writer->write("    last_" + portPrefix + "wdata <= " + portPrefix + "WDATA;\n");
 
-               unsigned long long wDataSize;
-               const structural_objectRef& portWDATA = mod->find_member(portPrefix + "WDATA", port_o_K, cir);
-               wDataSize = GetPointer<port_o>(portWDATA)->get_typeRef()->size *
-                           GetPointer<port_o>(portWDATA)->get_typeRef()->vector_size;
-               for(unsigned j = 0; j < wDataSize / 8; j++)
-               {
-                  writer->write("    if (" + portPrefix + "WSTRB[" + STR(j) + "] == 1'b1)\n");
-                  writer->write("      " + portPrefix + "wBitmask[(" + STR(j) + " + 1) * 8 - 1 : " + STR(j) +
-                                " * 8] = -1;\n");
-               }
-            }
+            /* Increment delay counters at each clock cycle, if they are in the delay phase */
+            writer->write("  for(_i_ = 0; _i_ < " + portPrefix + "awqueue_size; _i_ = _i_ + 1) begin\n");
+            writer->write("    if(" + portPrefix + "awqueue[_i_][" + STR(COUNT_HIGH_INDEX) + "] == 1'b1) begin\n");
+            writer->write("      " + portPrefix + "awqueue[_i_][" + STR(COUNT_HIGH_INDEX) + " : " +
+                          STR(COUNT_LOW_INDEX) + "] = " + portPrefix + "awqueue[_i_][" + STR(COUNT_HIGH_INDEX) + " : " +
+                          STR(COUNT_LOW_INDEX) + "] + 1;\n");
+            writer->write("    end\n");
             writer->write("  end\n");
+            writer->write("  for(_i_ = 0; _i_ < " + portPrefix + "arqueue_size; _i_ = _i_ + 1) begin\n");
+            writer->write("    if(" + portPrefix + "arqueue[_i_][" + STR(COUNT_HIGH_INDEX) + "] == 1'b1) begin\n");
+            writer->write("      " + portPrefix + "arqueue[_i_][" + STR(COUNT_HIGH_INDEX) + " : " +
+                          STR(COUNT_LOW_INDEX) + "] = " + portPrefix + "arqueue[_i_][" + STR(COUNT_HIGH_INDEX) + " : " +
+                          STR(COUNT_LOW_INDEX) + "] + 1;\n");
+            writer->write("    end\n");
+            writer->write("  end\n");
+
+            /* Check if the first element of the write queue is supposed to be handled (delay = 0) */
+            writer->write("  if(" + portPrefix + "awqueue_size > 0 && " + portPrefix + "awqueue[0][" +
+                          STR(COUNT_HIGH_INDEX) + " : " + STR(COUNT_LOW_INDEX) + "] == 0) begin \n");
+            writer->write("    " + portPrefix + "BRESP <= 2'b00;\n");
+            writer->write("    " + portPrefix + "BVALID <= 1'b1;\n");
+            writer->write("    if(" + portPrefix + "BREADY) begin\n");
+            writer->write("      for(_i_ = 1; _i_ < " + portPrefix + "awqueue_size; _i_ = _i_ + 1) begin\n");
+            writer->write("        " + portPrefix + "awqueue[_i_ - 1] = " + portPrefix + "awqueue[_i_];\n");
+            writer->write("      end\n");
+            /* It is possible that we are both removing and adding an element from the queue. In this case, the size is
+             * not yet updated, so we must move the new element outside the loop and keep the same queue length in this
+             * clock cycle */
+            writer->write("      if(" + portPrefix + "AWVALID && " + portPrefix + "AWREADY) begin\n");
+            writer->write("        " + portPrefix + "awqueue[" + portPrefix + "awqueue_size - 1] = " + portPrefix +
+                          "awqueue[" + portPrefix + "awqueue_size];\n");
+            writer->write("        " + portPrefix + "awqueue_size <= " + portPrefix + "awqueue_size;\n");
+            writer->write("      end else begin\n");
+            writer->write("        " + portPrefix + "awqueue_size <= " + portPrefix + "awqueue_size - 1;\n");
+            writer->write("      end\n");
+            writer->write("    end\n");
+            writer->write("  end\n");
+
+            writer->write("  if(" + portPrefix + "WVALID) begin\n");
+            /* Find the correct transaction. It is the first transaction whose counter is not negative */
+            /* Assert is not available in verilog, using empty if */
+            writer->write(
+                "    if(" + portPrefix + "awqueue_size > 0 || " + portPrefix +
+                "AWVALID == 1'b1); else $error(\"Received data on write channel, but no transaction in queue\");\n");
+            writer->write("    if(" + portPrefix + "awqueue_size > 0) begin\n");
+            writer->write("      _i_ = 0;\n");
+            writer->write("      while(" + portPrefix + "awqueue[_i_][" + STR(COUNT_HIGH_INDEX) + "] == 1 && _i_ < " +
+                          portPrefix + "awqueue_size) begin\n");
+            writer->write("        _i_ = _i_ + 1;\n");
+            writer->write("      end\n");
+            writer->write("      if(_i_ < " + portPrefix + "awqueue_size || " + portPrefix +
+                          "AWVALID == 1'b1); else $error(\"Received write data, but all transactions in queue are in "
+                          "delay phase\");\n");
+            writer->write("      if(_i_ < " + portPrefix + "awqueue_size) begin \n");
+            writer->write("        if(" + portPrefix + "awqueue[_i_][" + STR(BURST_HIGH_INDEX) + " : " +
+                          STR(BURST_LOW_INDEX) + "] == 2'b00) begin\n");
+            /* Fixed burst */
+            writer->write("          " + portPrefix + "currAddr = " + portPrefix + "awqueue[_i_][" +
+                          STR(ADDR_HIGH_INDEX) + " : " + STR(ADDR_LOW_INDEX) + "];\n");
+            writer->write("        end else if(" + portPrefix + "awqueue[_i_][" + STR(BURST_HIGH_INDEX) + " : " +
+                          STR(BURST_LOW_INDEX) + "] == 2'b01) begin\n");
+            /* Incremental burst */
+            writer->write("          " + portPrefix + "currAddr = " + portPrefix + "awqueue[_i_][" +
+                          STR(ADDR_HIGH_INDEX) + " : " + STR(ADDR_LOW_INDEX) + "] + (" + portPrefix + "awqueue[_i_][" +
+                          STR(COUNT_HIGH_INDEX) + " : " + STR(COUNT_LOW_INDEX) + "] - 1) * (1 << " + portPrefix +
+                          "awqueue[_i_][" + STR(SIZE_HIGH_INDEX) + " : " + STR(SIZE_LOW_INDEX) + "]);\n");
+            writer->write("        end else if(" + portPrefix + "awqueue[_i_][" + STR(BURST_HIGH_INDEX) + " : " +
+                          STR(BURST_LOW_INDEX) + "] == 2'b10) begin\n");
+            /* Wrap burst */
+            writer->write("          " + portPrefix + "endAddr = " + portPrefix + "awqueue[_i_][" +
+                          STR(ADDR_HIGH_INDEX) + " : " + STR(ADDR_LOW_INDEX) + "] - (" + portPrefix + "awqueue[_i_][" +
+                          STR(ADDR_HIGH_INDEX) + " : " + STR(ADDR_LOW_INDEX) + "] % ((" + portPrefix + "awqueue[_i_][" +
+                          STR(LEN_HIGH_INDEX) + " : " + STR(LEN_LOW_INDEX) + "] + 1) * (1 << " + portPrefix +
+                          "awqueue[_i_][" + STR(SIZE_HIGH_INDEX) + " : " + STR(SIZE_LOW_INDEX) + "]))) + ((" +
+                          portPrefix + "awqueue[_i_][" + STR(LEN_HIGH_INDEX) + " : " + STR(LEN_LOW_INDEX) +
+                          "] + 1) * (1 << " + portPrefix + "awqueue[_i_][" + STR(SIZE_HIGH_INDEX) + " : " +
+                          STR(SIZE_LOW_INDEX) + "]));\n");
+            writer->write("          " + portPrefix + "currAddr = " + portPrefix + "awqueue[_i_][" +
+                          STR(ADDR_HIGH_INDEX) + " : " + STR(ADDR_LOW_INDEX) + "] + (" + portPrefix + "awqueue[_i_][" +
+                          STR(COUNT_HIGH_INDEX) + " : " + STR(COUNT_LOW_INDEX) + "] - 1) * (1 << " + portPrefix +
+                          "awqueue[_i_][" + STR(SIZE_HIGH_INDEX) + " : " + STR(SIZE_LOW_INDEX) + "]);\n");
+            writer->write("          if(" + portPrefix + "currAddr > " + portPrefix + "endAddr) begin\n");
+            writer->write("            " + portPrefix + "currAddr = " + portPrefix + "currAddr - ((" + portPrefix +
+                          "awqueue[_i_][" + STR(LEN_HIGH_INDEX) + " : " + STR(LEN_LOW_INDEX) + "] + 1) * (1 << " +
+                          portPrefix + "awqueue[_i_][" + STR(SIZE_HIGH_INDEX) + " : " + STR(SIZE_LOW_INDEX) + "]));\n");
+            writer->write("          end\n");
+            writer->write("        end\n");
+            writer->write("      end else begin\n");
+            writer->write("        " + portPrefix + "currAddr = " + portPrefix + "AWADDR;\n");
+            writer->write("      end\n");
+            writer->write("    end else begin\n");
+            writer->write("      " + portPrefix + "currAddr = " + portPrefix + "AWADDR;\n");
+            writer->write("    end\n");
 
             /* Compute aggregate memory for WDATA */
             const structural_objectRef& portWDATA = mod->find_member(portPrefix + "WDATA", port_o_K, cir);
@@ -2558,43 +2673,60 @@ void TestbenchGenerationBaseStep::testbench_controller_machine() const
                                  STR((bitsizeWDATA - bitsize_index) / 8 - 1) + " - base_addr]";
             }
             mem_aggregated += "}";
-            writer->write("  if (" + portPrefix + "write && " + portPrefix + "writeReady >= `MEM_DELAY_WRITE) begin\n");
-            writer->write("    " + mem_aggregated + " = " + portPrefix + "wdelayed[0];\n");
-            writer->write("    next_" + portPrefix + "currAddr = " + portPrefix + "currAddr + (1 << last_" +
-                          portPrefix + "SIZE);\n");
-            writer->write("    if ( next_" + portPrefix + "currAddr >= " + portPrefix + "endAddr)\n");
-            writer->write("      next_" + portPrefix + "currAddr = next_" + portPrefix + "currAddr - (last_" +
-                          portPrefix + "AWLEN * (1 << last_" + portPrefix + "SIZE)) - (1 << last_" + portPrefix +
-                          "SIZE);\n");
-            writer->write("    if (" + portPrefix + "writeReady == `MEM_DELAY_WRITE + last_" + portPrefix +
-                          "AWLEN) begin\n");
-            writer->write("      " + portPrefix + "writeReady <= -1;\n");
-            writer->write("      next_" + portPrefix + "AWREADY = 1'b1;\n");
-            writer->write("      next_" + portPrefix + "ARREADY = 1'b1;\n");
-            writer->write("      next_" + portPrefix + "WREADY = 1'b1;\n");
-            writer->write("      next_" + portPrefix + "BVALID = 1'b1;\n");
-            writer->write("      " + portPrefix + "write = 1'b0;\n");
-            writer->write("      next_" + portPrefix + "beatsCount = 'b0;\n");
+            for(unsigned bitsize_index = 0; bitsize_index < bitsizeWDATA; bitsize_index = bitsize_index + 8)
+            {
+               writer->write("    " + portPrefix + "wBitmask[" + STR(bitsize_index + 7) + " : " + STR(bitsize_index) +
+                             "] = {8{" + portPrefix + "WSTRB[" + STR(bitsize_index / 8) + "]}};\n");
+            }
+            writer->write("    " + mem_aggregated + " <= (" + mem_aggregated + " & ~" + portPrefix + "wBitmask) | (" +
+                          portPrefix + "WDATA & " + portPrefix + "wBitmask);\n");
+            writer->write("    if(" + portPrefix + "WLAST) begin\n");
+            writer->write("      " + portPrefix + "awqueue[_i_][" + STR(COUNT_HIGH_INDEX) + " : " +
+                          STR(COUNT_LOW_INDEX) + "] <= -(32'd`MEM_DELAY_WRITE - 1);\n");
+            writer->write("    end else begin\n");
+            writer->write("      " + portPrefix + "awqueue[_i_][" + STR(COUNT_HIGH_INDEX) + " : " +
+                          STR(COUNT_LOW_INDEX) + "] <= " + portPrefix + "awqueue[_i_][" + STR(COUNT_HIGH_INDEX) +
+                          " : " + STR(COUNT_LOW_INDEX) + "] + 1;\n");
             writer->write("    end\n");
             writer->write("  end\n");
 
-            writer->write("  if (" + portPrefix + "ARVALID == 1'b1) begin\n");
-            writer->write("    " + portPrefix + "dataReady = 0;\n");
-            writer->write("    last_" + portPrefix + "ARLEN = " + portPrefix + "ARLEN;\n");
-            writer->write("    last_" + portPrefix + "SIZE = " + portPrefix + "ARSIZE;\n");
-            writer->write("    " + portPrefix + "beatsCount = " + portPrefix + "ARLEN;\n");
-            writer->write("    " + portPrefix + "currAddr = " + portPrefix + "ARADDR;\n");
-            writer->write("    next_" + portPrefix + "currAddr = " + portPrefix + "currAddr;\n");
-            writer->write("    " + portPrefix + "endAddr = " + portPrefix + "ARBURST == 2'b10 ? " + portPrefix +
-                          "ARADDR + " + "(last_" + portPrefix + "ARLEN * (1 << last_" + portPrefix +
-                          "SIZE)) + (1 << last_" + portPrefix + "SIZE) : -1;\n");
-            writer->write("    " + portPrefix + "read = 1'b1;\n");
-            writer->write("    next_" + portPrefix + "ARREADY = 1'b0;\n");
-            writer->write("    next_" + portPrefix + "AWREADY = 1'b0;\n");
-            writer->write("    next_" + portPrefix + "WREADY = 1'b0;\n");
-            writer->write("  end\n");
+            /* Check if the first element in the read queue is ready to be handled (delay is positive) */
+            writer->write("  if(" + portPrefix + "arqueue_size > 0 && " + portPrefix + "arqueue[0][" +
+                          STR(COUNT_HIGH_INDEX) + "] == 1'b0) begin\n");
+            writer->write("    " + portPrefix + "RVALID <= 1'b1;\n");
+            writer->write("    if(" + portPrefix + "arqueue[0][" + STR(BURST_HIGH_INDEX) + " : " +
+                          STR(BURST_LOW_INDEX) + "] == 2'b00) begin\n");
+            /* Fixed burst */
+            writer->write("      " + portPrefix + "currAddr = " + portPrefix + "arqueue[0][" + STR(ADDR_HIGH_INDEX) +
+                          " : " + STR(ADDR_LOW_INDEX) + "];\n");
+            writer->write("    end else if(" + portPrefix + "arqueue[0][" + STR(BURST_HIGH_INDEX) + " : " +
+                          STR(BURST_LOW_INDEX) + "] == 2'b01) begin\n");
+            /* Incremental burst */
+            writer->write("      " + portPrefix + "currAddr = " + portPrefix + "arqueue[0][" + STR(ADDR_HIGH_INDEX) +
+                          " : " + STR(ADDR_LOW_INDEX) + "] + " + portPrefix + "arqueue[0][" + STR(COUNT_HIGH_INDEX) +
+                          " : " + STR(COUNT_LOW_INDEX) + "] * (1 << " + portPrefix + "arqueue[0][" +
+                          STR(SIZE_HIGH_INDEX) + " : " + STR(SIZE_LOW_INDEX) + "]);\n");
+            writer->write("    end else if(" + portPrefix + "arqueue[0][" + STR(BURST_HIGH_INDEX) + " : " +
+                          STR(BURST_LOW_INDEX) + "] == 2'b10) begin\n");
+            /* Wrap burst */
+            writer->write("      " + portPrefix + "endAddr = " + portPrefix + "arqueue[0][" + STR(ADDR_HIGH_INDEX) +
+                          " : " + STR(ADDR_LOW_INDEX) + "] - (" + portPrefix + "arqueue[0][" + STR(ADDR_HIGH_INDEX) +
+                          " : " + STR(ADDR_LOW_INDEX) + "] % ((" + portPrefix + "arqueue[0][" + STR(LEN_HIGH_INDEX) +
+                          " : " + STR(LEN_LOW_INDEX) + "] + 1) * (1 << " + portPrefix + "arqueue[0][" +
+                          STR(SIZE_HIGH_INDEX) + " : " + STR(SIZE_LOW_INDEX) + "]))) + ((" + portPrefix +
+                          "arqueue[0][" + STR(LEN_HIGH_INDEX) + " : " + STR(LEN_LOW_INDEX) + "] + 1) * (1 << " +
+                          portPrefix + "arqueue[0][" + STR(SIZE_HIGH_INDEX) + " : " + STR(SIZE_LOW_INDEX) + "]));\n");
+            writer->write("      " + portPrefix + "currAddr = " + portPrefix + "arqueue[0][" + STR(ADDR_HIGH_INDEX) +
+                          " : " + STR(ADDR_LOW_INDEX) + "] + " + portPrefix + "arqueue[0][" + STR(COUNT_HIGH_INDEX) +
+                          " : " + STR(COUNT_LOW_INDEX) + "] * (1 << " + portPrefix + "arqueue[0][" +
+                          STR(SIZE_HIGH_INDEX) + " : " + STR(SIZE_LOW_INDEX) + "]);\n");
+            writer->write("      if(" + portPrefix + "currAddr > " + portPrefix + "endAddr) begin\n");
+            writer->write("        " + portPrefix + "currAddr = " + portPrefix + "currAddr - ((" + portPrefix +
+                          "arqueue[0][" + STR(LEN_HIGH_INDEX) + " : " + STR(LEN_LOW_INDEX) + "] + 1) * (1 << " +
+                          portPrefix + "arqueue[0][" + STR(SIZE_HIGH_INDEX) + " : " + STR(SIZE_LOW_INDEX) + "]));\n");
+            writer->write("      end\n");
+            writer->write("    end\n");
 
-            writer->write("  if (" + portPrefix + "read && " + portPrefix + "beatsCount != 9'b111111111) begin\n");
             /* Compute aggregate memory for RDATA */
             const structural_objectRef& portRDATA = mod->find_member(portPrefix + "RDATA", port_o_K, cir);
             const auto bitsizeRDATA = GetPointer<port_o>(portRDATA)->get_typeRef()->size *
@@ -2610,90 +2742,34 @@ void TestbenchGenerationBaseStep::testbench_controller_machine() const
                                  STR((bitsizeRDATA - bitsize_index) / 8 - 1) + " - base_addr]";
             }
             mem_aggregated += "}";
-            writer->write("    last_" + portPrefix + "rdata = " + mem_aggregated + ";\n");
-            writer->write("    next_" + portPrefix + "currAddr = " + portPrefix + "currAddr + (1 << last_" +
-                          portPrefix + "SIZE);\n");
-            writer->write("    if ( next_" + portPrefix + "currAddr >= " + portPrefix + "endAddr) begin\n");
-            writer->write("      next_" + portPrefix + "currAddr = next_" + portPrefix + "currAddr - (last_" +
-                          portPrefix + "ARLEN * (1 << last_" + portPrefix + "SIZE)) - (1 << last_" + portPrefix +
-                          "SIZE);\n");
+
+            writer->write("    " + portPrefix + "RDATA <= " + mem_aggregated + ";\n");
+            writer->write("    " + portPrefix + "RRESP <= 2'b00;\n");
+            writer->write("    if(" + portPrefix + "arqueue[0][" + STR(COUNT_HIGH_INDEX) + " : " +
+                          STR(COUNT_LOW_INDEX) + "] == " + portPrefix + "arqueue[0][" + STR(LEN_HIGH_INDEX) + " : " +
+                          STR(LEN_LOW_INDEX) + "]) begin\n");
+            writer->write("      " + portPrefix + "RLAST <= 1'b1;\n");
+            writer->write("      if(" + portPrefix + "RREADY) begin\n");
+            writer->write("        for(_i_ = 1; _i_ < " + portPrefix + "arqueue_size; _i_ = _i_ + 1) begin\n");
+            writer->write("          " + portPrefix + "arqueue[_i_ - 1] = " + portPrefix + "arqueue[_i_];\n");
+            writer->write("        end\n");
+            /* As for the write queue, it's also possible that we are adding and removing a transaction at the same time
+             */
+            writer->write("        if(" + portPrefix + "ARVALID && " + portPrefix + "ARREADY) begin\n");
+            writer->write("          " + portPrefix + "arqueue[" + portPrefix + "arqueue_size - 1] = " + portPrefix +
+                          "arqueue[" + portPrefix + "arqueue_size];\n");
+            writer->write("          " + portPrefix + "arqueue_size <= " + portPrefix + "arqueue_size;\n");
+            writer->write("        end else begin\n");
+            writer->write("          " + portPrefix + "arqueue_size <= " + portPrefix + "arqueue_size - 1;\n");
+            writer->write("        end\n");
+            writer->write("      end\n");
+            writer->write("    end else if(" + portPrefix + "RREADY) begin\n");
+            writer->write("      " + portPrefix + "arqueue[0][" + STR(COUNT_HIGH_INDEX) + " : " + STR(COUNT_LOW_INDEX) +
+                          "] <= " + portPrefix + "arqueue[0][" + STR(COUNT_HIGH_INDEX) + " : " + STR(COUNT_LOW_INDEX) +
+                          "] + 1;\n");
             writer->write("    end\n");
-            writer->write("    next_" + portPrefix + "beatsCount = " + portPrefix + "beatsCount - 1;\n");
             writer->write("  end\n");
-            writer->write("  if (" + portPrefix + "dataReady >= `MEM_DELAY_READ - 1) begin\n");
-            writer->write("    next_" + portPrefix + "RDATA = " + portPrefix + "rdelayed[0];\n");
-            writer->write("    next_" + portPrefix + "RVALID = 1'b1;\n");
-            writer->write("    if (" + portPrefix + "dataReady >= `MEM_DELAY_READ - 2 + last_" + portPrefix +
-                          "ARLEN) begin\n");
-            writer->write("      next_" + portPrefix + "RLAST = 1'b1;\n");
-            writer->write("      next_" + portPrefix + "ARREADY = 1'b1;\n");
-            writer->write("      next_" + portPrefix + "AWREADY = 1'b1;\n");
-            writer->write("      next_" + portPrefix + "WREADY = 1'b1;\n");
-            writer->write("      " + portPrefix + "read = 1'b0;\n");
-            writer->write("      next_" + portPrefix + "beatsCount = 'b0;\n");
-            writer->write("      " + portPrefix + "dataReady <= -1;\n");
-            writer->write("    end\n");
-            writer->write("  end\n");
-
-            writer->write("  for(_i_ = 0; _i_ < `MEM_DELAY_READ - 1; _i_ = _i_ + 1) begin\n");
-            {
-               writer->write("    if(_i_ == `MEM_DELAY_READ - 2)\n");
-               writer->write("      " + portPrefix + "rdelayed[_i_] <= (" + portPrefix + "dataReady >= 'b0 && " +
-                             portPrefix + "dataReady <= last_" + portPrefix + "ARLEN) ? last_" + portPrefix +
-                             "rdata : 'b0;\n");
-               writer->write("    else\n");
-               writer->write("      " + portPrefix + "rdelayed[_i_] <= " + portPrefix + "rdelayed[_i_ + 1];\n");
-            }
-            writer->write("  end\n");
-            writer->write("  if(" + portPrefix + "dataReady >= 0 && " + portPrefix +
-                          "dataReady <= `MEM_DELAY_READ - 2) begin\n");
-            writer->write("    " + portPrefix + "dataReady <= " + portPrefix + "dataReady + 1;\n");
-            writer->write("  end\n");
-
-            mem_aggregated = "{";
-            for(unsigned int bitsize_index = 0; bitsize_index < bitsizeWDATA; bitsize_index = bitsize_index + 8)
-            {
-               if(bitsize_index)
-               {
-                  mem_aggregated += ", ";
-               }
-               mem_aggregated += "_bambu_testbench_mem_[last_" + portPrefix + "AWADDR + " +
-                                 STR((bitsizeWDATA - bitsize_index) / 8 - 1) + " - base_addr]";
-            }
-            mem_aggregated += "}";
-
-            writer->write("  for(_i_ = 0; _i_ < `MEM_DELAY_WRITE; _i_ = _i_ + 1) begin\n");
-            {
-               writer->write("    if(_i_ == `MEM_DELAY_WRITE - 1) begin\n");
-               writer->write("      " + portPrefix + "wdelayed[_i_] <= (" + portPrefix + "writeReady >= 'b0 && " +
-                             portPrefix + "writeReady <= last_" + portPrefix + "AWLEN) ? (" + mem_aggregated + " & ~" +
-                             portPrefix + "wBitmask) | ( last_" + portPrefix + "wdata & " + portPrefix +
-                             "wBitmask) : 'b0;\n");
-               writer->write("    end\n");
-               writer->write("    else\n");
-               writer->write("      " + portPrefix + "wdelayed[_i_] <= " + portPrefix + "wdelayed[_i_ + 1];\n");
-            }
-            writer->write("  end\n");
-            writer->write("  if(" + portPrefix + "write && " + portPrefix + "writeReady >= 0 && " + portPrefix +
-                          "writeReady <= `MEM_DELAY_WRITE - 1 + last_" + portPrefix + "AWLEN) begin\n");
-            writer->write("    " + portPrefix + "writeReady <= " + portPrefix + "writeReady + 1;\n");
-            writer->write("  end\n");
-
             writer->write("end\n");
-
-            writer->write("always @(posedge " CLOCK_PORT_NAME ") begin\n");
-            {
-               writer->write("  " + portPrefix + "ARREADY <= next_" + portPrefix + "ARREADY;\n");
-               writer->write("  " + portPrefix + "AWREADY <= next_" + portPrefix + "AWREADY;\n");
-               writer->write("  " + portPrefix + "BVALID <= next_" + portPrefix + "BVALID;\n");
-               writer->write("  " + portPrefix + "RLAST <= next_" + portPrefix + "RLAST;\n");
-               writer->write("  " + portPrefix + "RVALID <= next_" + portPrefix + "RVALID;\n");
-               writer->write("  " + portPrefix + "RDATA <= next_" + portPrefix + "RDATA;\n");
-               writer->write("  " + portPrefix + "WREADY <= next_" + portPrefix + "WREADY;\n");
-               writer->write("  " + portPrefix + "currAddr <= next_" + portPrefix + "currAddr;\n");
-               writer->write("  " + portPrefix + "beatsCount <= next_" + portPrefix + "beatsCount;\n");
-            }
-            writer->write("end\n\n");
          }
       }
    }

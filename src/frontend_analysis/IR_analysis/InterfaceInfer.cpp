@@ -36,7 +36,7 @@
  *
  * @author Michele Fiorito <michele.fiorito@polimi.it>
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
- *
+ * @author Claudio Barone <claudio.barone@polimi.it>
  */
 #include "InterfaceInfer.hpp"
 
@@ -119,7 +119,8 @@ void InterfaceInfer::interface_info::update(const tree_nodeRef& tn, const std::s
                                             (tree_helper::IsRealType(ptd_type) ? datatype::real : datatype::generic);
    if(type != datatype::ac_type)
    {
-      const auto _bitwidth = [&]() {
+      const auto _bitwidth = [&]()
+      {
          if(_type == datatype::ac_type)
          {
             return ac_bitwidth;
@@ -134,7 +135,8 @@ void InterfaceInfer::interface_info::update(const tree_nodeRef& tn, const std::s
          }
          return tree_helper::Size(ptd_type);
       }();
-      const auto _n_resources = [&]() {
+      const auto _n_resources = [&]()
+      {
          if(_bitwidth > 64ULL && _bitwidth <= 128ULL)
          {
             return 2U;
@@ -150,7 +152,8 @@ void InterfaceInfer::interface_info::update(const tree_nodeRef& tn, const std::s
          }
          return 1U;
       }();
-      const auto _alignment = [&]() {
+      const auto _alignment = [&]()
+      {
          if(_bitwidth <= 8ULL)
          {
             return _type != datatype::ac_type ? 1U : 4U;
@@ -272,7 +275,8 @@ void InterfaceInfer::Initialize()
 {
    const auto HLSMgr = GetPointer<HLS_manager>(AppM);
    THROW_ASSERT(HLSMgr, "");
-   const auto parseInterfaceXML = [&](const std::string& XMLfilename) {
+   const auto parseInterfaceXML = [&](const std::string& XMLfilename)
+   {
       if(boost::filesystem::exists(boost::filesystem::path(XMLfilename)))
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->parsing " + XMLfilename);
@@ -317,13 +321,26 @@ void InterfaceInfer::Initialize()
                         std::string argName;
                         std::string interface_type;
                         std::string interfaceSize;
-                        std::string interfaceAttribute2;
-                        bool interfaceAttribute2_p = false;
-                        std::string interfaceAttribute3;
-                        bool interfaceAttribute3_p = false;
+                        std::string offset;
+                        std::string bundleName;
+                        bool bundle_p = false;
                         std::string interface_typename;
                         std::string interface_typenameOrig;
                         std::string interface_typenameInclude;
+                        std::string way_lines;
+                        bool way_lines_p = false;
+                        std::string line_size;
+                        bool line_size_p = false;
+                        std::string bus_size;
+                        bool bus_size_p = false;
+                        std::string ways;
+                        bool ways_p = false;
+                        std::string buf_size;
+                        bool buf_size_p = false;
+                        std::string rep_pol;
+                        bool rep_pol_p = false;
+                        std::string wr_pol;
+                        bool wr_pol_p = false;
                         for(const auto& attrArg : EnodeArg->get_attributes())
                         {
                            const auto key = attrArg->get_name();
@@ -340,15 +357,49 @@ void InterfaceInfer::Initialize()
                            {
                               interfaceSize = value;
                            }
-                           if(key == "attribute2")
+                           if(key == "offset")
                            {
-                              interfaceAttribute2 = value;
-                              interfaceAttribute2_p = true;
+                              offset = value;
                            }
-                           if(key == "attribute3")
+                           if(key == "bundle_name")
                            {
-                              interfaceAttribute3 = value;
-                              interfaceAttribute3_p = true;
+                              bundleName = value;
+                              bundle_p = true;
+                           }
+                           if(key == "way_size")
+                           {
+                              way_lines = value;
+                              way_lines_p = true;
+                           }
+                           if(key == "line_size")
+                           {
+                              line_size = value;
+                              line_size_p = true;
+                           }
+                           if(key == "bus_size")
+                           {
+                              bus_size = value;
+                              bus_size_p = true;
+                           }
+                           if(key == "n_ways")
+                           {
+                              ways = value;
+                              ways_p = true;
+                           }
+                           if(key == "buffer_size")
+                           {
+                              buf_size = value;
+                              buf_size_p = true;
+                           }
+                           if(key == "rep_pol")
+                           {
+                              rep_pol = value;
+                              rep_pol_p = true;
+                           }
+                           if(key == "write_pol")
+                           {
+                              wr_pol = value;
+                              wr_pol_p = true;
                            }
                            if(key == "interface_typename")
                            {
@@ -378,22 +429,53 @@ void InterfaceInfer::Initialize()
                            }
                            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                                           "---|" + argName + "|" + interface_type + "|\n");
-                           HLSMgr->design_interface[fname][argName] = interface_type;
+                           HLSMgr->design_attributes[fname][argName][attr_type] = interface_type;
                            if(interface_type == "array")
                            {
-                              HLSMgr->design_interface_arraysize[fname][argName] = interfaceSize;
+                              HLSMgr->design_attributes[fname][argName][attr_size] = interfaceSize;
                            }
-                           if(interface_type == "m_axi" && interfaceAttribute2_p)
+                           if(interface_type == "m_axi")
                            {
-                              HLSMgr->design_interface_attribute2[fname][argName] = interfaceAttribute2;
+                              HLSMgr->design_attributes[fname][argName][attr_offset] = offset;
                            }
-                           if((interface_type == "m_axi" || interface_type == "array") && interfaceAttribute3_p)
+                           if((interface_type == "m_axi" || interface_type == "array") && bundle_p)
                            {
-                              HLSMgr->design_interface_attribute3[fname][argName] = interfaceAttribute3;
+                              HLSMgr->design_attributes[fname][argName][attr_bundle_name] = bundleName;
+                           }
+                           if(interface_type == "m_axi")
+                           {
+                              if(way_lines_p)
+                              {
+                                 HLSMgr->design_attributes[fname][argName][attr_way_lines] = way_lines;
+                              }
+                              if(line_size_p)
+                              {
+                                 HLSMgr->design_attributes[fname][argName][attr_line_size] = line_size;
+                              }
+                              if(bus_size_p)
+                              {
+                                 HLSMgr->design_attributes[fname][argName][attr_bus_size] = bus_size;
+                              }
+                              if(ways_p)
+                              {
+                                 HLSMgr->design_attributes[fname][argName][attr_n_ways] = ways;
+                              }
+                              if(buf_size_p)
+                              {
+                                 HLSMgr->design_attributes[fname][argName][attr_buf_size] = buf_size;
+                              }
+                              if(rep_pol_p)
+                              {
+                                 HLSMgr->design_attributes[fname][argName][attr_rep_pol] = rep_pol;
+                              }
+                              if(wr_pol_p)
+                              {
+                                 HLSMgr->design_attributes[fname][argName][attr_wr_pol] = wr_pol;
+                              }
                            }
                         }
 
-                        HLSMgr->design_interface_typename[fname][argName] = interface_typename;
+                        HLSMgr->design_attributes[fname][argName][attr_typename] = interface_typename;
                         HLSMgr->design_interface_typename_signature[fname].push_back(interface_typename);
                         HLSMgr->design_interface_typename_orig_signature[fname].push_back(interface_typenameOrig);
                         if((interface_typenameOrig.find("ap_int<") != std::string::npos ||
@@ -441,15 +523,26 @@ DesignFlowStep_Status InterfaceInfer::Exec()
    THROW_ASSERT(HLSMgr, "");
    const auto TM = AppM->get_tree_manager();
    std::set<unsigned int> modified;
-   const auto add_to_modified = [&](const tree_nodeRef& tn) {
-      modified.insert(GET_INDEX_CONST_NODE(GetPointer<gimple_node>(GET_CONST_NODE(tn))->scpe));
-   };
+   const auto add_to_modified = [&](const tree_nodeRef& tn)
+   { modified.insert(GET_INDEX_CONST_NODE(GetPointer<gimple_node>(GET_CONST_NODE(tn))->scpe)); };
    for(const auto& top_id : top_functions)
    {
       const auto fnode = TM->CGetTreeNode(top_id);
       const auto fd = GetPointer<const function_decl>(fnode);
       const auto fname = tree_helper::GetMangledFunctionName(fd);
-      if(HLSMgr->design_interface_typename.find(fname) == HLSMgr->design_interface_typename.end())
+      /* Check if there is a typename corresponding to fname */
+      bool typename_found = false;
+      if(HLSMgr->design_attributes.find(fname) != HLSMgr->design_attributes.end())
+      {
+         for(auto& par : HLSMgr->design_attributes.at(fname))
+         {
+            if(par.second.find(attr_typename) != par.second.end())
+            {
+               typename_found = true;
+            }
+         }
+      }
+      if(!typename_found)
       {
          const auto dfname = string_demangle(fname);
          if(!dfname.empty())
@@ -458,7 +551,6 @@ DesignFlowStep_Status InterfaceInfer::Exec()
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Demangled as " + dfname);
             boost::sregex_token_iterator typename_it(dfname.begin(), dfname.end(), signature_param_typename, 0), end;
             ++typename_it; // First match is the function name
-            auto& top_design_interface_typename = HLSMgr->design_interface_typename[fname];
             auto& top_design_interface_typename_signature = HLSMgr->design_interface_typename_signature[fname];
             auto& top_design_interface_typename_orig_signature =
                 HLSMgr->design_interface_typename_orig_signature[fname];
@@ -467,7 +559,8 @@ DesignFlowStep_Status InterfaceInfer::Exec()
             for(const auto& arg : fd->list_of_args)
             {
                THROW_ASSERT(typename_it != end, "");
-               const auto pname = [&]() {
+               const auto pname = [&]()
+               {
                   std::stringstream ss;
                   ss << arg;
                   return ss.str();
@@ -475,7 +568,7 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Argument " + pname);
                const std::string tname(*typename_it);
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Typename " + tname);
-               top_design_interface_typename[pname] = tname;
+               HLSMgr->design_attributes[fname][pname][attr_typename] = tname;
                top_design_interface_typename_signature.push_back(tname);
                top_design_interface_typename_orig_signature.push_back(tname);
                if(tname.find("fixed<") != std::string::npos)
@@ -496,13 +589,20 @@ DesignFlowStep_Status InterfaceInfer::Exec()
 
       if(parameters->getOption<HLSFlowStep_Type>(OPT_interface_type) == HLSFlowStep_Type::INFERRED_INTERFACE_GENERATION)
       {
-         if(HLSMgr->design_interface.count(fname))
+         /* Check if there is at least one interface type associated to fname */
+         bool type_found = false;
+         for(auto& par : HLSMgr->design_attributes[fname])
+         {
+            if(par.second.find(attr_type) != par.second.end())
+            {
+               type_found = true;
+            }
+         }
+         if(type_found)
          {
             const tree_manipulationRef tree_man(new tree_manipulation(TM, parameters, AppM));
 
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing function " + fname);
-            auto& DesignInterfaceArgs = HLSMgr->design_interface.at(fname);
-            auto& DesignInterfaceTypenameArgs = HLSMgr->design_interface_typename.at(fname);
             for(const auto& arg : fd->list_of_args)
             {
                const auto arg_pd = GetPointerS<const parm_decl>(GET_CONST_NODE(arg));
@@ -511,8 +611,9 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                THROW_ASSERT(GetPointer<const identifier_node>(GET_CONST_NODE(arg_pd->name)), "unexpected condition");
                const auto& arg_name = GetPointerS<const identifier_node>(GET_CONST_NODE(arg_pd->name))->strg;
                INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Parameter @" + STR(arg_id) + " " + arg_name);
-               THROW_ASSERT(DesignInterfaceArgs.count(arg_name), "Not matched parameter name: " + arg_name);
-               auto& interface_type = DesignInterfaceArgs.at(arg_name);
+               THROW_ASSERT(HLSMgr->design_attributes[fname][arg_name].count(attr_type),
+                            "Not matched parameter name: " + arg_name);
+               auto& interface_type = HLSMgr->design_attributes[fname][arg_name].at(attr_type);
                if(interface_type != "default")
                {
                   const auto arg_ssa_id = AppM->getSSAFromParm(top_id, arg_id);
@@ -540,7 +641,8 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                   {
                      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Is a pointer type");
                      interface_info info;
-                     info.update(arg_ssa, DesignInterfaceTypenameArgs.at(arg_name), parameters);
+                     info.update(arg_ssa, HLSMgr->design_attributes.at(fname).at(arg_name).at(attr_typename),
+                                 parameters);
 
                      std::list<tree_nodeRef> writeStmt;
                      std::list<tree_nodeRef> readStmt;
@@ -562,7 +664,8 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                                     "' since no load/store is associated with it");
                      }
 
-                     info.name = [&]() -> std::string {
+                     info.name = [&]() -> std::string
+                     {
                         if(isRead && isWrite)
                         {
                            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---I/O interface");
@@ -668,7 +771,6 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                            add_to_modified(stmt);
                         }
                      }
-
                      create_resource(operationsR, operationsW, arg_name, info, isDiffSize, fname, top_id);
                   }
                   else if(interface_type == "none")
@@ -679,6 +781,62 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                   {
                      THROW_ERROR("Interface type '" + interface_type + "' for parameter '" + arg_name +
                                  "' is not supported");
+                  }
+               }
+            }
+            /* Add cache flush operation */
+            std::set<std::string> bundle_names;
+            for(const auto& par : HLSMgr->design_attributes.at(fname))
+            {
+               if(par.second.find(attr_bundle_name) != par.second.end())
+               {
+                  const auto name = par.second.at(attr_bundle_name);
+                  /* Only check once per bundle */
+                  if(bundle_names.insert(name).second)
+                  {
+                     const auto interface_type = par.second.at(attr_type);
+                     if(interface_type == "m_axi" && par.second.find(attr_way_lines) != par.second.end() &&
+                        boost::lexical_cast<unsigned>(par.second.at(attr_way_lines)) > 0)
+                     {
+                        const auto instanceFname = ENCODE_FDNAME(name, "_Flush_", interface_type);
+
+                        const auto stmt_sl = GetPointerS<statement_list>(GET_NODE(fd->body));
+
+                        const auto boolean_type = tree_man->GetBooleanType();
+                        const auto bitsize_type = tree_man->GetUnsignedIntegerType();
+
+                        const auto function_decl_node = [&]()
+                        {
+                           std::vector<tree_nodeConstRef> argsT;
+                           argsT.push_back(boolean_type);
+                           argsT.push_back(bitsize_type);
+                           return tree_man->create_function_decl(instanceFname, fd->scpe, argsT,
+                                                                 tree_man->GetVoidType(), BUILTIN_SRCP, false);
+                        }();
+
+                        // Cache flush is indicated by a write of size 0.
+                        std::vector<tree_nodeRef> args;
+                        args.push_back(TM->CreateUniqueIntegerCst(1, boolean_type));
+                        args.push_back(TM->CreateUniqueIntegerCst(0, bitsize_type));
+                        for(const auto& bb : stmt_sl->list_of_bloc)
+                        {
+                           if(bb.first != BB_ENTRY)
+                           {
+                              if(std::find(bb.second->list_of_succ.begin(), bb.second->list_of_succ.end(), BB_EXIT) !=
+                                 bb.second->list_of_succ.end())
+                              {
+                                 const auto gc = tree_man->create_gimple_call(
+                                     function_decl_node, args, GET_INDEX_NODE(fd->scpe), BUILTIN_SRCP, bb.first);
+                                 THROW_ASSERT(stmt_sl->list_of_bloc.find(bb.first) != stmt_sl->list_of_bloc.end(),
+                                              "BB not found in statement list");
+                                 THROW_ASSERT(stmt_sl->list_of_bloc.at(bb.first)->CGetStmtList().size() > 0,
+                                              "No statements in BB");
+                                 const auto return_stmt = stmt_sl->list_of_bloc.at(bb.first)->CGetStmtList().back();
+                                 stmt_sl->list_of_bloc.at(bb.first)->PushBefore(gc, return_stmt, AppM);
+                              }
+                           }
+                        }
+                     }
                   }
                }
             }
@@ -704,10 +862,12 @@ void InterfaceInfer::ChasePointerInterfaceRecurse(CustomOrderedSet<unsigned>& Vi
                                                   interface_info& info)
 {
    const auto TM = AppM->get_tree_manager();
-   const auto propagate_arg_use = [&](tree_nodeRef arg_var, size_t use_count, tree_nodeRef fd_node,
-                                      const std::vector<tree_nodeRef>& call_args) {
+   const auto propagate_arg_use =
+       [&](tree_nodeRef arg_var, size_t use_count, tree_nodeRef fd_node, const std::vector<tree_nodeRef>& call_args)
+   {
       THROW_ASSERT(arg_var && fd_node, "unexpected condition");
-      const auto call_fd = [&]() {
+      const auto call_fd = [&]()
+      {
          const auto fd_kind = GET_CONST_NODE(fd_node)->get_kind();
          auto& fn = fd_node;
          if(fd_kind == addr_expr_K)
@@ -723,7 +883,8 @@ void InterfaceInfer::ChasePointerInterfaceRecurse(CustomOrderedSet<unsigned>& Vi
       for(auto use_idx = 0U; use_idx < use_count; ++use_idx, ++par_index)
       {
          // look for the actual vs formal parameter binding
-         par_index = [&](size_t start_idx) {
+         par_index = [&](size_t start_idx)
+         {
             for(auto idx = start_idx; idx < call_args.size(); ++idx)
             {
                if(GET_INDEX_CONST_NODE(call_args[idx]) == GET_INDEX_CONST_NODE(arg_var))
@@ -894,7 +1055,8 @@ void InterfaceInfer::setReadInterface(tree_nodeRef stmt, const std::string& arg_
    const auto actual_type = tree_helper::CGetType(ga->op0);
    const auto bit_size_type = tree_man->GetUnsignedIntegerType();
    const auto boolean_type = tree_man->GetBooleanType();
-   const auto function_decl_node = [&]() {
+   const auto function_decl_node = [&]()
+   {
       std::vector<tree_nodeConstRef> argsT;
       if(commonRWSignature)
       {
@@ -911,7 +1073,8 @@ void InterfaceInfer::setReadInterface(tree_nodeRef stmt, const std::string& arg_
       const auto sel_value = TM->CreateUniqueIntegerCst(0, boolean_type);
       const auto size_value =
           TM->CreateUniqueIntegerCst(static_cast<long long>(tree_helper::Size(actual_type)), bit_size_type);
-      const auto data_value = [&]() -> tree_nodeRef {
+      const auto data_value = [&]() -> tree_nodeRef
+      {
          if(tree_helper::IsEnumType(interface_datatype) || tree_helper::IsPointerType(interface_datatype) ||
             GET_CONST_NODE(interface_datatype)->get_kind() == integer_type_K)
          {
@@ -928,7 +1091,6 @@ void InterfaceInfer::setReadInterface(tree_nodeRef stmt, const std::string& arg_
       args.push_back(size_value);
       args.push_back(data_value);
    }
-
    THROW_ASSERT(GET_CONST_NODE(ga->op1)->get_kind() == mem_ref_K, "unexpected condition");
    const auto mr = GetPointerS<const mem_ref>(GET_CONST_NODE(ga->op1));
    args.push_back(mr->op0);
@@ -1010,7 +1172,8 @@ void InterfaceInfer::setWriteInterface(tree_nodeRef stmt, const std::string& arg
    const auto bit_size_type = tree_man->GetUnsignedIntegerType();
 
    /// create the function_decl
-   const auto function_decl_node = [&]() {
+   const auto function_decl_node = [&]()
+   {
       std::vector<tree_nodeConstRef> argsT;
       if(commonRWSignature)
       {
@@ -1544,13 +1707,16 @@ void InterfaceInfer::create_resource_array(const std::set<std::string>& operatio
 void InterfaceInfer::create_resource_m_axi(const std::set<std::string>& operationsR,
                                            const std::set<std::string>& operationsW, const std::string& arg_name,
                                            const std::string& bundle_name, const interface_info& info, m_axi_type mat,
-                                           unsigned int top_id) const
+                                           unsigned int top_id,
+                                           const std::map<interface_attributes, std::string>& bundle_attr_map) const
 {
    const auto ResourceName = ENCODE_FDNAME(bundle_name, "", "");
    THROW_ASSERT(GetPointer<HLS_manager>(AppM), "");
    const auto HLSMgr = GetPointerS<HLS_manager>(AppM);
    const auto HLS_T = HLSMgr->get_HLS_target();
    const auto TechMan = HLS_T->get_technology_manager();
+   unsigned way_lines = 0;
+
    if(!TechMan->is_library_manager(INTERFACE_LIBRARY) ||
       !TechMan->get_library_manager(INTERFACE_LIBRARY)->is_fu(ResourceName))
    {
@@ -1570,11 +1736,19 @@ void InterfaceInfer::create_resource_m_axi(const std::set<std::string>& operatio
 
       const auto address_bitsize = HLSMgr->get_address_bitsize();
       const auto nbitDataSize = 64u - static_cast<unsigned>(__builtin_clzll(info.bitwidth));
+
+      long long unsigned backEndBitsize = info.bitwidth;
+      if(bundle_attr_map.find(attr_bus_size) != bundle_attr_map.end() && bundle_attr_map.at(attr_bus_size) != "")
+      {
+         backEndBitsize = boost::lexical_cast<long long unsigned>(bundle_attr_map.at(attr_bus_size));
+      }
+
       const structural_type_descriptorRef address_interface_datatype(
           new structural_type_descriptor("bool", address_bitsize));
       const structural_type_descriptorRef size1(new structural_type_descriptor("bool", 1));
       const structural_type_descriptorRef rwsize(new structural_type_descriptor("bool", nbitDataSize));
-      const structural_type_descriptorRef rwtype(new structural_type_descriptor("bool", info.bitwidth));
+      const structural_type_descriptorRef rwtypeIn(new structural_type_descriptor("bool", info.bitwidth));
+      const structural_type_descriptorRef rwtypeOut(new structural_type_descriptor("bool", backEndBitsize));
       const structural_type_descriptorRef idType(new structural_type_descriptor("bool", 1));
       const structural_type_descriptorRef lenType(new structural_type_descriptor("bool", 8));
       const structural_type_descriptorRef sizeType(new structural_type_descriptor("bool", 3));
@@ -1585,7 +1759,7 @@ void InterfaceInfer::create_resource_m_axi(const std::set<std::string>& operatio
       const structural_type_descriptorRef qosType(new structural_type_descriptor("bool", 4));
       const structural_type_descriptorRef regionType(new structural_type_descriptor("bool", 4));
       const structural_type_descriptorRef userType(new structural_type_descriptor("bool", 1));
-      const structural_type_descriptorRef strbType(new structural_type_descriptor("bool", info.bitwidth / 8ULL));
+      const structural_type_descriptorRef strbType(new structural_type_descriptor("bool", backEndBitsize / 8ULL));
       const structural_type_descriptorRef respType(new structural_type_descriptor("bool", 2));
       const structural_type_descriptorRef bool_type(new structural_type_descriptor("bool", 0));
       std::string param_ports;
@@ -1599,7 +1773,7 @@ void InterfaceInfer::create_resource_m_axi(const std::set<std::string>& operatio
       // bit-width size of the written or read data
       CM->add_port_vector("in2", port_o::IN, info.n_resources, interface_top, rwsize);
       // value written when the first operand is 1, 0 otherwise
-      CM->add_port_vector("in3", port_o::IN, info.n_resources, interface_top, rwtype);
+      CM->add_port_vector("in3", port_o::IN, info.n_resources, interface_top, rwtypeIn);
 
       const auto addrPort =
           CM->add_port_vector("in4", port_o::IN, info.n_resources, interface_top, address_interface_datatype);
@@ -1632,7 +1806,7 @@ void InterfaceInfer::create_resource_m_axi(const std::set<std::string>& operatio
       const auto Port_rid = CM->add_port_vector("_m_axi_" + bundle_name + "_RID", port_o::IN, 1, interface_top, idType);
       GetPointerS<port_o>(Port_rid)->set_port_interface(port_o::port_interface::M_AXI_RID);
 
-      const auto Port_rdata = CM->add_port("_m_axi_" + bundle_name + "_RDATA", port_o::IN, interface_top, rwtype);
+      const auto Port_rdata = CM->add_port("_m_axi_" + bundle_name + "_RDATA", port_o::IN, interface_top, rwtypeOut);
       GetPointerS<port_o>(Port_rdata)->set_port_interface(port_o::port_interface::M_AXI_RDATA);
 
       const auto Port_rresp = CM->add_port("_m_axi_" + bundle_name + "_RRESP", port_o::IN, interface_top, respType);
@@ -1649,7 +1823,7 @@ void InterfaceInfer::create_resource_m_axi(const std::set<std::string>& operatio
       GetPointerS<port_o>(Port_rvalid)->set_port_interface(port_o::port_interface::M_AXI_RVALID);
 
       CM->add_port_vector(DONE_PORT_NAME, port_o::OUT, info.n_resources, interface_top, bool_type);
-      CM->add_port_vector("out1", port_o::OUT, info.n_resources, interface_top, rwtype);
+      CM->add_port_vector("out1", port_o::OUT, info.n_resources, interface_top, rwtypeIn);
 
       const auto Port_awid =
           CM->add_port_vector("_m_axi_" + bundle_name + "_AWID", port_o::OUT, 1, interface_top, idType);
@@ -1699,7 +1873,7 @@ void InterfaceInfer::create_resource_m_axi(const std::set<std::string>& operatio
           CM->add_port_vector("_m_axi_" + bundle_name + "_WID", port_o::OUT, 1, interface_top, idType);
       GetPointerS<port_o>(Port_wid)->set_port_interface(port_o::port_interface::M_AXI_WID);
 
-      const auto Port_wdata = CM->add_port("_m_axi_" + bundle_name + "_WDATA", port_o::OUT, interface_top, rwtype);
+      const auto Port_wdata = CM->add_port("_m_axi_" + bundle_name + "_WDATA", port_o::OUT, interface_top, rwtypeOut);
       GetPointerS<port_o>(Port_wdata)->set_port_interface(port_o::port_interface::M_AXI_WDATA);
 
       const auto Port_wstrb =
@@ -1776,14 +1950,14 @@ void InterfaceInfer::create_resource_m_axi(const std::set<std::string>& operatio
          GetPointerS<port_o>(Port_LSawvalid)->set_port_interface(port_o::port_interface::S_AXIL_AWADDR);
          CM->add_port("_s_axi_AXILiteS_WVALID", port_o::IN, interface_top, bool_type);
          CM->add_port("_s_axi_AXILiteS_WREADY", port_o::OUT, interface_top, bool_type);
-         CM->add_port("_s_axi_AXILiteS_WDATA", port_o::IN, interface_top, rwtype);
+         CM->add_port("_s_axi_AXILiteS_WDATA", port_o::IN, interface_top, rwtypeOut);
          CM->add_port("_s_axi_AXILiteS_WSTRB", port_o::IN, interface_top, strbType);
          CM->add_port("_s_axi_AXILiteS_ARVALID", port_o::IN, interface_top, bool_type);
          CM->add_port("_s_axi_AXILiteS_ARREADY", port_o::OUT, interface_top, bool_type);
          CM->add_port("_s_axi_AXILiteS_ARADDR", port_o::IN, interface_top, address_interface_datatype);
          CM->add_port("_s_axi_AXILiteS_RVALID", port_o::OUT, interface_top, bool_type);
          CM->add_port("_s_axi_AXILiteS_RREADY", port_o::IN, interface_top, bool_type);
-         CM->add_port("_s_axi_AXILiteS_RDATA", port_o::OUT, interface_top, rwtype);
+         CM->add_port("_s_axi_AXILiteS_RDATA", port_o::OUT, interface_top, rwtypeOut);
          CM->add_port("_s_axi_AXILiteS_RRESP", port_o::OUT, interface_top, respType);
          CM->add_port("_s_axi_AXILiteS_BVALID", port_o::OUT, interface_top, bool_type);
          CM->add_port("_s_axi_AXILiteS_BREADY", port_o::IN, interface_top, bool_type);
@@ -1793,6 +1967,48 @@ void InterfaceInfer::create_resource_m_axi(const std::set<std::string>& operatio
       CM->add_NP_functionality(interface_top, NP_functionality::LIBRARY, "in1 in2 in3 in4 out1" + param_ports);
       CM->add_NP_functionality(interface_top, NP_functionality::VERILOG_GENERATOR,
                                "ReadWrite_" + info.name + "ModuleGenerator");
+      if(bundle_attr_map.find(attr_way_lines) != bundle_attr_map.end())
+      {
+         way_lines = boost::lexical_cast<unsigned>(bundle_attr_map.at(attr_way_lines));
+      }
+      /* Add the dependency to the IOB_cache module if there is a cache */
+      if(way_lines > 0)
+      {
+         CM->add_NP_functionality(interface_top, NP_functionality::IP_COMPONENT, "IOB_cache_axi");
+         auto mod = GetPointerS<module>(CM->get_circ());
+
+         mod->AddParameter("WAY_LINES", STR(way_lines));
+         if(bundle_attr_map.find(attr_line_size) != bundle_attr_map.end() && bundle_attr_map.at(attr_line_size) != "")
+         {
+            mod->AddParameter("LINE_SIZE", bundle_attr_map.at(attr_line_size));
+         }
+         if(bundle_attr_map.find(attr_bus_size) != bundle_attr_map.end() && bundle_attr_map.at(attr_bus_size) != "")
+         {
+            mod->AddParameter("BUS_SIZE", bundle_attr_map.at(attr_bus_size));
+         }
+         if(bundle_attr_map.find(attr_n_ways) != bundle_attr_map.end() && bundle_attr_map.at(attr_n_ways) != "")
+         {
+            mod->AddParameter("N_WAYS", bundle_attr_map.at(attr_n_ways));
+         }
+         if(bundle_attr_map.find(attr_buf_size) != bundle_attr_map.end() && bundle_attr_map.at(attr_buf_size) != "")
+         {
+            mod->AddParameter("BUF_SIZE", bundle_attr_map.at(attr_buf_size));
+         }
+         if(bundle_attr_map.find(attr_rep_pol) != bundle_attr_map.end() && bundle_attr_map.at(attr_rep_pol) != "")
+         {
+            mod->AddParameter("REP_POL", bundle_attr_map.at(attr_rep_pol) == "lru"  ? "0" :
+                                         bundle_attr_map.at(attr_rep_pol) == "mru"  ? "1" :
+                                         bundle_attr_map.at(attr_rep_pol) == "tree" ? "2" :
+                                                                                      bundle_attr_map.at(attr_rep_pol));
+         }
+
+         if(bundle_attr_map.find(attr_wr_pol) != bundle_attr_map.end() && bundle_attr_map.at(attr_wr_pol) != "")
+         {
+            mod->AddParameter("WR_POL", bundle_attr_map.at(attr_wr_pol) == "wt" ? "0" :
+                                        bundle_attr_map.at(attr_wr_pol) == "wb" ? "1" :
+                                                                                  bundle_attr_map.at(attr_wr_pol));
+         }
+      }
       TechMan->add_resource(INTERFACE_LIBRARY, ResourceName, CM);
 
       const auto fu = GetPointerS<functional_unit>(TechMan->get_fu(ResourceName, INTERFACE_LIBRARY));
@@ -1813,6 +2029,13 @@ void InterfaceInfer::create_resource_m_axi(const std::set<std::string>& operatio
    {
       TechMan->add_operation(INTERFACE_LIBRARY, ResourceName, fdName);
    }
+
+   /* Flush Op */
+   const auto flushName = ENCODE_FDNAME(bundle_name, "_Flush_", "m_axi");
+   if(way_lines > 0)
+   {
+      TechMan->add_operation(INTERFACE_LIBRARY, ResourceName, flushName);
+   }
    const auto fu = GetPointerS<functional_unit>(TechMan->get_fu(ResourceName, INTERFACE_LIBRARY));
    const auto device = HLS_T->get_target_device();
 
@@ -1827,6 +2050,15 @@ void InterfaceInfer::create_resource_m_axi(const std::set<std::string>& operatio
    for(const auto& fdName : operationsW)
    {
       const auto op = GetPointer<operation>(fu->get_operation(fdName));
+      op->time_m = time_model::create_model(device->get_type(), parameters);
+      op->bounded = false;
+      op->time_m->set_execution_time(HLS_T->get_technology_manager()->CGetSetupHoldTime() + EPSILON, 0);
+      op->time_m->set_synthesis_dependent(true);
+   }
+
+   if(way_lines > 0)
+   {
+      const auto op = GetPointer<operation>(fu->get_operation(flushName));
       op->time_m = time_model::create_model(device->get_type(), parameters);
       op->bounded = false;
       op->time_m->set_execution_time(HLS_T->get_technology_manager()->CGetSetupHoldTime() + EPSILON, 0);
@@ -1858,7 +2090,8 @@ void InterfaceInfer::create_resource(const std::set<std::string>& operationsR, c
       bool IO_P = !operationsR.empty() && !operationsW.empty();
       if(!operationsR.empty())
       {
-         const auto read_info = [&]() {
+         const auto read_info = [&]()
+         {
             if(info.name == "ovalid")
             {
                auto info_patch = info;
@@ -1871,7 +2104,8 @@ void InterfaceInfer::create_resource(const std::set<std::string>& operationsR, c
       }
       if(!operationsW.empty())
       {
-         const auto write_info = [&]() {
+         const auto write_info = [&]()
+         {
             if(info.name == "ovalid")
             {
                auto info_patch = info;
@@ -1886,11 +2120,13 @@ void InterfaceInfer::create_resource(const std::set<std::string>& operationsR, c
    else if(info.name == "array")
    {
       const auto HLSMgr = GetPointer<HLS_manager>(AppM);
-      THROW_ASSERT(HLSMgr->design_interface_arraysize.find(fname) != HLSMgr->design_interface_arraysize.end() &&
-                       HLSMgr->design_interface_arraysize.find(fname)->second.find(arg_name) !=
-                           HLSMgr->design_interface_arraysize.find(fname)->second.end(),
+      THROW_ASSERT(HLSMgr->design_attributes.find(fname) != HLSMgr->design_attributes.end() &&
+                       HLSMgr->design_attributes.find(fname)->second.find(arg_name) !=
+                           HLSMgr->design_attributes.find(fname)->second.end() &&
+                       HLSMgr->design_attributes.find(fname)->second.find(arg_name)->second.find(attr_size) !=
+                           HLSMgr->design_attributes.find(fname)->second.find(arg_name)->second.end(),
                    "unexpected condition");
-      const auto arraySizeSTR = HLSMgr->design_interface_arraysize.at(fname).at(arg_name);
+      const auto arraySizeSTR = HLSMgr->design_attributes.at(fname).at(arg_name).at(attr_size);
       const auto arraySize = boost::lexical_cast<unsigned>(arraySizeSTR);
       if(arraySize == 0)
       {
@@ -1898,11 +2134,12 @@ void InterfaceInfer::create_resource(const std::set<std::string>& operationsR, c
       }
 
       auto bundle_name = arg_name;
-      if(HLSMgr->design_interface_attribute3.find(fname) != HLSMgr->design_interface_attribute3.end() &&
-         HLSMgr->design_interface_attribute3.at(fname).find(arg_name) !=
-             HLSMgr->design_interface_attribute3.at(fname).end())
+      if(HLSMgr->design_attributes.find(fname) != HLSMgr->design_attributes.end() &&
+         HLSMgr->design_attributes.at(fname).find(arg_name) != HLSMgr->design_attributes.at(fname).end() &&
+         HLSMgr->design_attributes.find(fname)->second.find(arg_name)->second.find(attr_bundle_name) !=
+             HLSMgr->design_attributes.find(fname)->second.find(arg_name)->second.end())
       {
-         bundle_name = HLSMgr->design_interface_attribute3.at(fname).at(arg_name);
+         bundle_name = HLSMgr->design_attributes.at(fname).at(arg_name).at(attr_bundle_name);
       }
 
       create_resource_array(operationsR, operationsW, bundle_name, info, arraySize, top_id);
@@ -1913,11 +2150,14 @@ void InterfaceInfer::create_resource(const std::set<std::string>& operationsR, c
       const auto HLSMgr = GetPointerS<HLS_manager>(AppM);
       auto bundle_name = arg_name;
 
-      if(HLSMgr->design_interface_attribute2.find(fname) != HLSMgr->design_interface_attribute2.end() &&
-         HLSMgr->design_interface_attribute2.at(fname).find(arg_name) !=
-             HLSMgr->design_interface_attribute2.at(fname).end())
+      std::map<interface_attributes, std::string> bundle_attr_map;
+
+      if(HLSMgr->design_attributes.find(fname) != HLSMgr->design_attributes.end() &&
+         HLSMgr->design_attributes.at(fname).find(arg_name) != HLSMgr->design_attributes.at(fname).end() &&
+         HLSMgr->design_attributes.at(fname).at(arg_name).find(attr_offset) !=
+             HLSMgr->design_attributes.at(fname).at(arg_name).end())
       {
-         const auto& matString = HLSMgr->design_interface_attribute2.at(fname).at(arg_name);
+         const auto& matString = HLSMgr->design_attributes.at(fname).at(arg_name).at(attr_offset);
          if(matString == "none")
          {
             mat = m_axi_type::none;
@@ -1937,13 +2177,95 @@ void InterfaceInfer::create_resource(const std::set<std::string>& operationsR, c
             THROW_ERROR("non-supported m_axi attribute or malformed pragma");
          }
       }
-      if(HLSMgr->design_interface_attribute3.find(fname) != HLSMgr->design_interface_attribute3.end() &&
-         HLSMgr->design_interface_attribute3.at(fname).find(arg_name) !=
-             HLSMgr->design_interface_attribute3.at(fname).end())
+      if(HLSMgr->design_attributes.find(fname) != HLSMgr->design_attributes.end() &&
+         HLSMgr->design_attributes.at(fname).find(arg_name) != HLSMgr->design_attributes.at(fname).end() &&
+         HLSMgr->design_attributes.at(fname).at(arg_name).find(attr_bundle_name) !=
+             HLSMgr->design_attributes.at(fname).at(arg_name).end())
       {
-         bundle_name = HLSMgr->design_interface_attribute3.at(fname).at(arg_name);
+         bundle_name = HLSMgr->design_attributes.at(fname).at(arg_name).at(attr_bundle_name);
       }
-      create_resource_m_axi(operationsR, operationsW, arg_name, bundle_name, info, mat, top_id);
+      if(HLSMgr->design_attributes.find(fname) != HLSMgr->design_attributes.end())
+      {
+         for(auto& par : HLSMgr->design_attributes.at(fname))
+         {
+            if(par.second.find(attr_bundle_name) != par.second.end() && par.second.at(attr_bundle_name) == bundle_name)
+            {
+               /* Fill bundle attributes map. Always check that parameters of the same bundle are the same */
+
+               if(bundle_attr_map.find(attr_way_lines) != bundle_attr_map.end())
+               {
+                  THROW_ASSERT(par.second.find(attr_way_lines) != par.second.end() &&
+                                   par.second.at(attr_way_lines) == bundle_attr_map.at(attr_way_lines),
+                               "Different cache lines for the same bundle");
+               }
+               else if(par.second.find(attr_way_lines) != par.second.end())
+               {
+                  bundle_attr_map[attr_way_lines] = par.second.at(attr_way_lines);
+               }
+               if(bundle_attr_map.find(attr_line_size) != bundle_attr_map.end())
+               {
+                  THROW_ASSERT(par.second.find(attr_line_size) != par.second.end() &&
+                                   par.second.at(attr_line_size) == bundle_attr_map.at(attr_line_size),
+                               "Different line sizes for the same bundle");
+               }
+               else if(par.second.find(attr_line_size) != par.second.end())
+               {
+                  bundle_attr_map[attr_line_size] = par.second.at(attr_line_size);
+               }
+               if(bundle_attr_map.find(attr_bus_size) != bundle_attr_map.end())
+               {
+                  THROW_ASSERT(par.second.find(attr_bus_size) != par.second.end() &&
+                                   par.second.at(attr_bus_size) == bundle_attr_map.at(attr_bus_size),
+                               "Different bus size for the same bundle");
+               }
+               else if(par.second.find(attr_bus_size) != par.second.end())
+               {
+                  bundle_attr_map[attr_bus_size] = par.second.at(attr_bus_size);
+               }
+               if(bundle_attr_map.find(attr_n_ways) != bundle_attr_map.end())
+               {
+                  THROW_ASSERT(par.second.find(attr_n_ways) != par.second.end() &&
+                                   par.second.at(attr_n_ways) == bundle_attr_map.at(attr_n_ways),
+                               "Different number of ways for the same bundle");
+               }
+               else if(par.second.find(attr_n_ways) != par.second.end())
+               {
+                  bundle_attr_map[attr_n_ways] = par.second.at(attr_n_ways);
+               }
+               if(bundle_attr_map.find(attr_buf_size) != bundle_attr_map.end())
+               {
+                  THROW_ASSERT(par.second.find(attr_buf_size) != par.second.end() &&
+                                   par.second.at(attr_buf_size) == bundle_attr_map.at(attr_buf_size),
+                               "Different buffer size for the same bundle");
+               }
+               else if(par.second.find(attr_buf_size) != par.second.end())
+               {
+                  bundle_attr_map[attr_buf_size] = par.second.at(attr_buf_size);
+               }
+               if(bundle_attr_map.find(attr_rep_pol) != bundle_attr_map.end())
+               {
+                  THROW_ASSERT(par.second.find(attr_rep_pol) != par.second.end() &&
+                                   par.second.at(attr_rep_pol) == bundle_attr_map.at(attr_rep_pol),
+                               "Different replacement policies for the same bundle");
+               }
+               else if(par.second.find(attr_rep_pol) != par.second.end())
+               {
+                  bundle_attr_map[attr_rep_pol] = par.second.at(attr_rep_pol);
+               }
+               if(bundle_attr_map.find(attr_wr_pol) != bundle_attr_map.end())
+               {
+                  THROW_ASSERT(par.second.find(attr_wr_pol) != par.second.end() &&
+                                   par.second.at(attr_wr_pol) == bundle_attr_map.at(attr_wr_pol),
+                               "Different write policies for the same bundle");
+               }
+               else if(par.second.find(attr_wr_pol) != par.second.end())
+               {
+                  bundle_attr_map[attr_wr_pol] = par.second.at(attr_wr_pol);
+               }
+            }
+         }
+      }
+      create_resource_m_axi(operationsR, operationsW, arg_name, bundle_name, info, mat, top_id, bundle_attr_map);
    }
    else
    {

@@ -683,9 +683,23 @@ void HLSCWriter::WriteExpectedResults(const BehavioralHelperConstRef BH,
    const auto fd = GetPointerS<const function_decl>(GET_CONST_NODE(fnode));
    const auto fname = tree_helper::GetMangledFunctionName(fd);
    const auto& DesignInterfaceTypename = hls_c_backend_information->HLSMgr->design_interface_typename_orig_signature;
-   const auto& DesignInterfaceSpecifier = hls_c_backend_information->HLSMgr->design_interface;
-   const auto hasInterface = DesignInterfaceTypename.find(fname) != DesignInterfaceTypename.end();
-   const auto hasSpecifier = DesignInterfaceSpecifier.find(fname) != DesignInterfaceSpecifier.end();
+   const auto& DesignAttributes = hls_c_backend_information->HLSMgr->design_attributes;
+   auto hasInterface = false;
+   auto hasSpecifier = false;
+   if(DesignAttributes.find(fname) != DesignAttributes.end())
+   {
+      for(auto& par : DesignAttributes.at(fname))
+      {
+         if(par.second.find(attr_typename) != par.second.end())
+         {
+            hasInterface = true;
+         }
+         if(par.second.find(attr_type) != par.second.end())
+         {
+            hasSpecifier = true;
+         }
+      }
+   }
 
    const auto params = BH->GetParameters();
    for(auto par_idx = 0U; par_idx < params.size(); ++par_idx)
@@ -718,7 +732,7 @@ void HLSCWriter::WriteExpectedResults(const BehavioralHelperConstRef BH,
          const auto arg_typename = [&]() {
             if(hasInterface)
             {
-               auto type_name = DesignInterfaceTypename.at(fname).at(par_idx);
+               auto type_name = DesignAttributes.at(fname).at(param).at(attr_typename);
                if(type_name.back() == '&')
                {
                   return type_name.substr(0, type_name.size() - 1U) + "*";
@@ -813,7 +827,11 @@ void HLSCWriter::WriteExpectedResults(const BehavioralHelperConstRef BH,
             }
             else
             {
-               const auto interfaceSpecifier = hasSpecifier ? DesignInterfaceSpecifier.at(fname).at(param) : "";
+               std::string interfaceSpecifier = "";
+               if(hasSpecifier)
+               {
+                  interfaceSpecifier = DesignAttributes.at(fname).at(param).at(attr_type);
+               }
                /* m_axi interfaces require writing the full results in a row, not a single byte */
                if(interfaceSpecifier == "m_axi")
                {
@@ -945,8 +963,7 @@ void HLSCWriter::WriteSimulatorInitMemory(const unsigned int function_id)
 
    const auto fname =
        tree_helper::GetMangledFunctionName(GetPointerS<const function_decl>(TM->CGetTreeNode(function_id)));
-   const auto& DesignInterfaceTypename = hls_c_backend_information->HLSMgr->design_interface_typename;
-   const auto DesignInterfaceArgsTypename_it = DesignInterfaceTypename.find(fname);
+   const auto& DesignAttributes = hls_c_backend_information->HLSMgr->design_attributes;
 
    std::vector<unsigned int> mem_interface;
    const auto& parameters = BH->get_parameters();
@@ -974,11 +991,17 @@ void HLSCWriter::WriteSimulatorInitMemory(const unsigned int function_id)
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Considering memory variable '" + param + "'");
          const auto is_interface = std::find(parameters.begin(), parameters.end(), l) != parameters.end();
          std::string argTypename = "";
-         if(DesignInterfaceArgsTypename_it != DesignInterfaceTypename.end() && is_interface)
+         bool typename_found =
+             DesignAttributes.find(fname) != DesignAttributes.end() &&
+             DesignAttributes.at(fname).find(param) != DesignAttributes.at(fname).end() &&
+             DesignAttributes.at(fname).at(param).find(attr_typename) != DesignAttributes.at(fname).at(param).end();
+         if(typename_found && is_interface)
          {
-            THROW_ASSERT(DesignInterfaceArgsTypename_it->second.count(param),
+            THROW_ASSERT(DesignAttributes.at(fname).find(param) != DesignAttributes.at(fname).end() &&
+                             DesignAttributes.at(fname).at(param).find(attr_typename) !=
+                                 DesignAttributes.at(fname).at(param).end(),
                          "Parameter should be present in design interface.");
-            argTypename = DesignInterfaceArgsTypename_it->second.at(param) + " ";
+            argTypename = DesignAttributes.at(fname).at(param).at(attr_typename) + " ";
             if(argTypename.find("fixed") == std::string::npos)
             {
                argTypename = "";
