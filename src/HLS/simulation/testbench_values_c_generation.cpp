@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2018-2022 Politecnico di Milano
+ *              Copyright (c) 2018-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -196,16 +196,16 @@ DesignFlowStep_Status TestbenchValuesCGeneration::Exec()
        new CompilerWrapper(parameters, parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler),
                            CompilerWrapper_OptimizationSet::O0));
    std::string compiler_flags = "-fwrapv -ffloat-store -flax-vector-conversions -msse2 -mfpmath=sse "
-                                "-D'__builtin_bambu_time_start()=' -D'__builtin_bambu_time_stop()=' ";
+                                "-D'__builtin_bambu_time_start()=' -D'__builtin_bambu_time_stop()=' -D__BAMBU_SIM__ ";
    if(!parameters->isOption(OPT_input_format) ||
       parameters->getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_C ||
       parameters->isOption(OPT_pretty_print))
    {
-      compiler_flags += " -fexcess-precision=standard ";
+      compiler_flags += "-fexcess-precision=standard ";
    }
    if(parameters->isOption(OPT_testbench_extra_gcc_flags))
    {
-      compiler_flags += " " + parameters->getOption<std::string>(OPT_testbench_extra_gcc_flags) + " ";
+      compiler_flags += parameters->getOption<std::string>(OPT_testbench_extra_gcc_flags) + " ";
    }
    if((parameters->isOption(OPT_discrepancy) && parameters->getOption<bool>(OPT_discrepancy)) ||
       (parameters->isOption(OPT_discrepancy_hw) && parameters->getOption<bool>(OPT_discrepancy_hw)))
@@ -233,7 +233,7 @@ DesignFlowStep_Status TestbenchValuesCGeneration::Exec()
 #endif
       )
       {
-         compiler_flags += " -g -fsanitize=address -fno-omit-frame-pointer -fno-common ";
+         compiler_flags += "-g -fsanitize=address -fno-omit-frame-pointer -fno-common ";
       }
       if(false
 #if HAVE_I386_GCC48_COMPILER
@@ -262,7 +262,7 @@ DesignFlowStep_Status TestbenchValuesCGeneration::Exec()
 #endif
       )
       {
-         compiler_flags += " -static-libasan ";
+         compiler_flags += "-static-libasan ";
       }
       if(CompilerWrapper::isClangCheck(parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler))
 #if HAVE_I386_GCC5_COMPILER
@@ -279,7 +279,7 @@ DesignFlowStep_Status TestbenchValuesCGeneration::Exec()
 #endif
       )
       {
-         compiler_flags += " -fsanitize=undefined -fsanitize-recover=undefined ";
+         compiler_flags += "-fsanitize=undefined -fsanitize-recover=undefined ";
       }
       if(false
 #if HAVE_I386_GCC5_COMPILER
@@ -300,7 +300,7 @@ DesignFlowStep_Status TestbenchValuesCGeneration::Exec()
 #endif
       )
       {
-         compiler_flags += " -static-libubsan ";
+         compiler_flags += "-static-libubsan ";
       }
    }
    if(parameters->isOption(OPT_gcc_optimizations))
@@ -347,7 +347,7 @@ DesignFlowStep_Status TestbenchValuesCGeneration::Exec()
       else
       {
 #if !defined(__APPLE__)
-         compiler_flags += " -Wl,--allow-multiple-definition ";
+         compiler_flags += "-Wl,--allow-multiple-definition ";
 #endif
          for(const auto& input_file : parameters->getOption<const CustomSet<std::string>>(OPT_input_file))
          {
@@ -365,7 +365,7 @@ DesignFlowStep_Status TestbenchValuesCGeneration::Exec()
 
          if(CompilerWrapper::isClangCheck(parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler)))
          {
-            compiler_flags += " -fbracket-depth=1024 ";
+            compiler_flags += "-fbracket-depth=1024 ";
          }
       }
       else

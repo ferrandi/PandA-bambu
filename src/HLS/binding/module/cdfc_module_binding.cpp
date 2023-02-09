@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -144,6 +144,7 @@
 #include "cpu_time.hpp"
 #include "dbgPrintHelper.hpp"
 #include "hash_helper.hpp"
+#include "utility.hpp"
 
 #ifdef HC_APPROACH
 #include "hierarchical_clustering.hpp"

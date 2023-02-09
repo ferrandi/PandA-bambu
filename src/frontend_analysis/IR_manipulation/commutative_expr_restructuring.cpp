@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2018-2022 Politecnico di Milano
+ *              Copyright (C) 2018-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -372,7 +372,7 @@ DesignFlowStep_Status commutative_expr_restructuring::InternalExec()
 
          /// Create the assign
          const auto gimple_assign_node =
-             tree_man->create_gimple_modify_stmt(ssa_node, comm_expr_node, function_id, BUILTIN_SRCP, block.first);
+             tree_man->create_gimple_modify_stmt(ssa_node, comm_expr_node, function_id, BUILTIN_SRCP);
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                         "---Created " + GET_CONST_NODE(gimple_assign_node)->ToString());
          /// Set the bit value for the intermediate ssa to correctly update execution time
@@ -386,7 +386,7 @@ DesignFlowStep_Status commutative_expr_restructuring::InternalExec()
 
          /// Create the assign
          const auto root_gimple_node =
-             tree_man->create_gimple_modify_stmt(first_ga->op0, root_comm_expr, function_id, BUILTIN_SRCP, block.first);
+             tree_man->create_gimple_modify_stmt(first_ga->op0, root_comm_expr, function_id, BUILTIN_SRCP);
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                         "---Created " + GET_CONST_NODE(root_gimple_node)->ToString());
          block.second->Replace(*stmt, root_gimple_node, true, AppM);
@@ -404,7 +404,8 @@ DesignFlowStep_Status commutative_expr_restructuring::InternalExec()
             schedule->UpdateTime(temp_stmt->index);
          }
 
-         if(debug_level >= DEBUG_LEVEL_VERY_PEDANTIC && !parameters->IsParameter("disable-print-dot-FF"))
+         if(debug_level >= DEBUG_LEVEL_VERY_PEDANTIC &&
+            (!parameters->IsParameter("print-dot-FF") || parameters->GetParameter<unsigned int>("print-dot-FF")))
          {
             WriteBBGraphDot("BB_Inside_" + GetName() + "_" + STR(counter) + ".dot");
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,

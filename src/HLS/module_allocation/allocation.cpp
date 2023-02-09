@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -2207,7 +2207,7 @@ DesignFlowStep_Status allocation::InternalExec()
                std::string current_op;
                std::string specialized_fuName = "";
 
-               bool has_to_be_generated =
+               const auto has_to_be_generated =
                    structManager_obj && (GetPointer<module>(structManager_obj->get_circ())
                                              ->get_NP_functionality()
                                              ->exist_NP_functionality(NP_functionality::VERILOG_GENERATOR) ||
@@ -2318,8 +2318,8 @@ DesignFlowStep_Status allocation::InternalExec()
                         std::map<unsigned long long, std::map<HLS_manager::io_binding_type, unsigned int>>>::iterator
                    techMap;
                std::string functionalUnitName = "";
-               unsigned int specializedId = current_id;
-               const library_managerRef libraryManager = TechM->get_library_manager(library_name);
+               auto specializedId = current_id;
+               const auto libraryManager = TechM->get_library_manager(library_name);
                if(has_to_be_generated)
                {
                   functionalUnitName = specialized_fuName;
@@ -2341,7 +2341,7 @@ DesignFlowStep_Status allocation::InternalExec()
                      allocation_information->precision_map[current_id] = max_prec;
                      if(fu_channels_type == CHANNELS_TYPE_MEM_ACC_NN && fu_memory_ctrl_type.size())
                      {
-                        auto n_ports = parameters->getOption<unsigned int>(OPT_channels_number);
+                        const auto n_ports = parameters->getOption<unsigned int>(OPT_channels_number);
                         set_number_channels(specializedId, n_ports);
                      }
                      else if(fu_memory_ctrl_type.size())

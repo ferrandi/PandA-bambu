@@ -59,3 +59,7 @@ bambu_specific_test4/axi_mm_simple_cache.c --top-fname=mmult --generate-tb=BENCH
 bambu_specific_test4/axi_mm_small_line_cache.c --top-fname=mmult --generate-tb=BENCHMARKS_ROOT/bambu_specific_test4/axi_mm_cache_tb.xml
 bambu_specific_test4/axi_mm_wb_big_buffer_cache.c --top-fname=mmult --generate-tb=BENCHMARKS_ROOT/bambu_specific_test4/axi_mm_cache_tb.xml
 bambu_specific_test4/axi_mm_wb_cache.c --top-fname=mmult --generate-tb=BENCHMARKS_ROOT/bambu_specific_test4/axi_mm_cache_tb.xml
+bambu_specific_test4/ac_channels.cpp --top-fname=sum3numbers --generate-tb=a="{1,2,3,4,5,6,7,8}",b="{1,2,3,4,5,6,7,8}",c="{1,2,3,4,5,6,7,8}",d="{0,0,0,0,0,0,0,0}"
+bambu_specific_test4/ac_channels_64.cpp --top-fname=sum3numbers --generate-tb=a="{1,2,3,4,5,6,7,8}",b="{1,2,3,4,5,6,7,8}",c="{1,2,3,4,5,6,7,8}",d="{0,0,0,0,0,0,0,0}"
+bambu_specific_test4/ac_channels_64async.cpp --top-fname=count_async --generate-tb=a="{1,2,3,4,5,6,7,8}",b="{2,4,6,8,10,12,14,16}",d="{0,0,0,0,0,0,0}",e="{0,0,0,0,0,0,0,0}"
+bambu_specific_test4/hls_stream.cpp --top-fname=sum3numbers --generate-tb=a="{1,2,3,4,5,6,7,8}",b="{1,2,3,4,5,6,7,8}",c="{1,2,3,4,5,6,7,8}",d="{0,0,0,0,0,0,0,0}"

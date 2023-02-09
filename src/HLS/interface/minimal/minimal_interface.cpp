@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -195,7 +195,7 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
    {
       for(auto par : fun.second)
       {
-         if(par.second.count(attr_type))
+         if(par.second.count(attr_interface_type))
          {
             type_found = true;
          }
@@ -233,7 +233,7 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
       {
          for(auto& par : HLSMgr->design_attributes.at(fname))
          {
-            if(par.second.find(attr_type) != par.second.end())
+            if(par.second.find(attr_interface_type) != par.second.end())
             {
                fun_type_found = true;
             }
@@ -249,10 +249,11 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
                const auto& argName_string = GetPointerS<const identifier_node>(argName)->strg;
                THROW_ASSERT(HLSMgr->design_attributes.at(fname).find(argName_string) !=
                                     HLSMgr->design_attributes.at(fname).end() &&
-                                HLSMgr->design_attributes.at(fname).at(argName_string).find(attr_type) !=
+                                HLSMgr->design_attributes.at(fname).at(argName_string).find(attr_interface_type) !=
                                     HLSMgr->design_attributes.at(fname).at(argName_string).end(),
                             "unexpected condition:" + argName_string);
-               const auto interfaceType = HLSMgr->design_attributes.at(fname).at(argName_string).at(attr_type);
+               const auto interfaceType =
+                   HLSMgr->design_attributes.at(fname).at(argName_string).at(attr_interface_type);
                if(interfaceType != "default")
                {
                   if(tree_helper::IsPointerType(a->type))

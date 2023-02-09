@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -63,7 +63,7 @@ REF_FORWARD_DECL(BackendFlow);
 
 enum interface_attributes
 {
-   attr_type,
+   attr_interface_type,
    attr_size,
    attr_offset,
    attr_bundle_name,

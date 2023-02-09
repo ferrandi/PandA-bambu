@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2017-2022 Politecnico di Milano
+ *              Copyright (C) 2017-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -211,7 +211,7 @@ DesignFlowStep_Status fanout_opt::InternalExec()
                   {
                      tree_nodeRef temp_assign =
                          tree_man->CreateGimpleAssign(assigned_ssa_type_node, ssa_defined->min, ssa_defined->max,
-                                                      ga->op0, function_id, block.first, srcp_default);
+                                                      ga->op0, function_id, srcp_default);
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                     "---create a temporary assignment " + temp_assign->ToString());
                      block.second->PushAfter(temp_assign, stmt, AppM);
@@ -265,8 +265,8 @@ DesignFlowStep_Status fanout_opt::InternalExec()
                   }
                   tree_nodeRef new_res_var;
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---starting from phi " + phi->ToString());
-                  auto new_phi = tree_man->create_phi_node(new_res_var, list_of_def_edge,
-                                                           GET_INDEX_CONST_NODE(gp->scpe), block.first);
+                  auto new_phi =
+                      tree_man->create_phi_node(new_res_var, list_of_def_edge, GET_INDEX_CONST_NODE(gp->scpe));
                   auto new_res_var_ssa = GetPointer<ssa_name>(GET_NODE(new_res_var));
                   new_res_var_ssa->min = ssa_defined->min;
                   new_res_var_ssa->max = ssa_defined->max;

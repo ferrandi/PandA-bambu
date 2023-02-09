@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2015-2022 Politecnico di Milano
+ *              Copyright (C) 2015-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -119,7 +119,7 @@ DesignFlowStep_Status HDLVarDeclFix::InternalExec()
       {
          for(auto& par : fun.second)
          {
-            if(par.second.find(attr_type) != par.second.end())
+            if(par.second.find(attr_interface_type) != par.second.end())
             {
                type_found = true;
             }
@@ -142,13 +142,14 @@ DesignFlowStep_Status HDLVarDeclFix::InternalExec()
          const std::string argName_string_new = GetPointer<identifier_node>(argName)->strg;
          if(argName_string != argName_string_new)
          {
-            auto di_it = HLSMgr->design_attributes.find(fname)->second.find(argName_string)->second.find(attr_type);
+            auto di_it =
+                HLSMgr->design_attributes.find(fname)->second.find(argName_string)->second.find(attr_interface_type);
             auto di_value = di_it->second;
             HLSMgr->design_attributes.find(fname)->second.find(argName_string)->second.erase(di_it);
-            HLSMgr->design_attributes.find(fname)->second[argName_string_new][attr_type] = di_value;
+            HLSMgr->design_attributes.find(fname)->second[argName_string_new][attr_interface_type] = di_value;
             if(HLSMgr->design_attributes.find(fname) != HLSMgr->design_attributes.end() &&
                HLSMgr->design_attributes.at(fname).find(argName_string) != HLSMgr->design_attributes.at(fname).end() &&
-               HLSMgr->design_attributes.at(fname).at(argName_string).find(attr_type) !=
+               HLSMgr->design_attributes.at(fname).at(argName_string).find(attr_interface_type) !=
                    HLSMgr->design_attributes.at(fname).at(argName_string).end())
             {
                auto dia_it = HLSMgr->design_attributes.find(fname)->second.find(argName_string)->second.find(attr_size);

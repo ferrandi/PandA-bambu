@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -54,9 +54,7 @@
 
 /// utility includes
 #include "custom_map.hpp"
-#include "custom_set.hpp"
 #include "refcount.hpp"
-#include "utility.hpp"
 
 REF_FORWARD_DECL(HLS_constraints);
 CONSTREF_FORWARD_DECL(Parameter);

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -249,7 +249,8 @@ DesignFlowStep_Status PhiOpt::InternalExec()
          {
             AppM->RegisterTransformation(GetName(), tree_nodeConstRef());
             MergePhi(block_to_be_removed);
-            if(debug_level >= DEBUG_LEVEL_PEDANTIC && !parameters->IsParameter("disable-print-dot-FF"))
+            if(debug_level >= DEBUG_LEVEL_PEDANTIC &&
+               (!parameters->IsParameter("print-dot-FF") || parameters->GetParameter<unsigned int>("print-dot-FF")))
             {
                WriteBBGraphDot("BB_During_" + GetName() + "_AfterMerge_BB" + STR(block_to_be_removed) + ".dot");
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
@@ -397,7 +398,8 @@ DesignFlowStep_Status PhiOpt::InternalExec()
          }
          AppM->RegisterTransformation(GetName(), tree_nodeConstRef());
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Basic block is not Exit");
-         if(debug_level >= DEBUG_LEVEL_PEDANTIC && !parameters->IsParameter("disable-print-dot-FF"))
+         if(debug_level >= DEBUG_LEVEL_PEDANTIC &&
+            (!parameters->IsParameter("print-dot-FF") || parameters->GetParameter<unsigned int>("print-dot-FF")))
          {
             WriteBBGraphDot("BB_Before_" + GetName() + "_Before_BB" + STR(block->number) + ".dot");
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
@@ -827,8 +829,7 @@ void PhiOpt::ApplyIfMerge(const unsigned int bb_index)
                         "---Created cond_expr " + GET_CONST_NODE(cond_expr_node)->ToString());
 
          /// Create the assign
-         gimple_node = tree_man->create_gimple_modify_stmt(ssa_node, cond_expr_node, function_id, BUILTIN_SRCP,
-                                                           pred_block->number);
+         gimple_node = tree_man->create_gimple_modify_stmt(ssa_node, cond_expr_node, function_id, BUILTIN_SRCP);
       }
       pred_block->PushBack(gimple_node, AppM);
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created " + GET_CONST_NODE(gimple_node)->ToString());
@@ -1058,8 +1059,8 @@ void PhiOpt::ApplyIfRemove(const unsigned int bb_index)
                         "---Created cond_expr " + GET_CONST_NODE(cond_expr_node)->ToString());
 
          /// Create the assign
-         const auto gimple_node = tree_man->create_gimple_modify_stmt(gp->res, cond_expr_node, function_id,
-                                                                      BUILTIN_SRCP, succ_block->number);
+         const auto gimple_node =
+             tree_man->create_gimple_modify_stmt(gp->res, cond_expr_node, function_id, BUILTIN_SRCP);
          succ_block->PushFront(gimple_node, AppM);
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                         "<--Created " + GET_CONST_NODE(gimple_node)->ToString());
@@ -1251,8 +1252,7 @@ void PhiOpt::ApplyMultiMerge(const unsigned int bb_index)
                                                 BUILTIN_SRCP, (isAVectorType ? vec_cond_expr_K : cond_expr_K));
 
          /// Create the assign
-         gimple_node = tree_man->create_gimple_modify_stmt(ssa_node, cond_expr_node, function_id, BUILTIN_SRCP,
-                                                           pred_block->number);
+         gimple_node = tree_man->create_gimple_modify_stmt(ssa_node, cond_expr_node, function_id, BUILTIN_SRCP);
       }
       pred_block->PushBack(gimple_node, AppM);
 
@@ -1510,8 +1510,7 @@ void PhiOpt::ApplyMultiRemove(const unsigned int bb_index)
                                                 BUILTIN_SRCP, (isAVectorType ? vec_cond_expr_K : cond_expr_K));
 
          /// Create the assign
-         new_gimple_node = tree_man->create_gimple_modify_stmt(gp->res, cond_expr_node, function_id, BUILTIN_SRCP,
-                                                               succ_block->number);
+         new_gimple_node = tree_man->create_gimple_modify_stmt(gp->res, cond_expr_node, function_id, BUILTIN_SRCP);
       }
       if(!gp->virtual_flag || create_gimple_nop)
       {
@@ -1793,7 +1792,7 @@ PhiOpt_PatternType PhiOpt::IdentifyPattern(const unsigned int bb_index) const
             /// Workaround: we need to consider the overhead due to multiplexers associated with the phi; for this
             /// reason definition is one of the operands; this is not fully consistent, but it is a temporary assignment
             const auto gimple_assign_node =
-                tree_man->create_gimple_modify_stmt(first_value, cond_expr_node, function_id, BUILTIN_SRCP, 0);
+                tree_man->create_gimple_modify_stmt(first_value, cond_expr_node, function_id, BUILTIN_SRCP);
 
             /// Created statement is not added to the predecessor
 #if HAVE_BAMBU_BUILT

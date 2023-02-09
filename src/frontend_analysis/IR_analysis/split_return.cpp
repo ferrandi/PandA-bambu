@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -235,7 +235,7 @@ DesignFlowStep_Status SplitReturn::InternalExec()
                for(const auto& def_edge : gp->CGetDefEdgesList())
                {
                   const auto new_gr =
-                      tree_man->create_gimple_return(ret_type, def_edge.first, function_id, BUILTIN_SRCP, 0);
+                      tree_man->create_gimple_return(ret_type, def_edge.first, function_id, BUILTIN_SRCP);
                   auto& pred_block = sl->list_of_bloc.at(def_edge.second);
                   create_return_and_fix_cfg(new_gr, pred_block, bb);
                }
@@ -252,7 +252,7 @@ DesignFlowStep_Status SplitReturn::InternalExec()
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "--- Create return statement based of def edges");
                for(const auto& def_edge : gp->CGetDefEdgesList())
                {
-                  const auto new_gr = tree_man->create_gimple_return(ret_type, gr->op, function_id, BUILTIN_SRCP, 0);
+                  const auto new_gr = tree_man->create_gimple_return(ret_type, gr->op, function_id, BUILTIN_SRCP);
                   GetPointerS<gimple_return>(GET_NODE(new_gr))->AddVuse(def_edge.first);
                   const auto& pred_block = sl->list_of_bloc.at(def_edge.second);
                   create_return_and_fix_cfg(new_gr, pred_block, bb);
@@ -275,7 +275,7 @@ DesignFlowStep_Status SplitReturn::InternalExec()
             for(const auto& pred_block_index : bb->list_of_pred)
             {
                const auto& pred_block = sl->list_of_bloc.at(pred_block_index);
-               const auto new_gr = tree_man->create_gimple_return(ret_type, gr->op, function_id, BUILTIN_SRCP, 0);
+               const auto new_gr = tree_man->create_gimple_return(ret_type, gr->op, function_id, BUILTIN_SRCP);
                create_return_and_fix_cfg(new_gr, pred_block, bb);
             }
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Removing BB" + STR(bb_index));

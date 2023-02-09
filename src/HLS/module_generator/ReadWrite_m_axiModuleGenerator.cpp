@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2022-2022 Politecnico di Milano
+ *              Copyright (C) 2022-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -57,65 +57,67 @@
 
 enum in_port
 {
-   clock_s = 0,
-   reset,
-   start_port,
-   in1,
-   in2,
-   in3,
-   in4,
-   AWREADY,
-   WREADY,
-   BID,
-   BRESP,
-   BUSER,
-   BVALID,
-   ARREADY,
-   RID,
-   RDATA,
-   RRESP,
-   RLAST,
-   RUSER,
-   RVALID,
-   _n_ptr,
+   i_clock = 0,
+   i_reset,
+   i_start,
+   i_in1,
+   i_in2,
+   i_in3,
+   i_in4,
+   i_AWREADY,
+   i_WREADY,
+   i_BID,
+   i_BRESP,
+   i_BUSER,
+   i_BVALID,
+   i_ARREADY,
+   i_RID,
+   i_RDATA,
+   i_RRESP,
+   i_RLAST,
+   i_RUSER,
+   i_RVALID,
+   i__n_ptr,
+   i_last
 };
 
 enum out_port
 {
-   done_port = 0,
-   out1,
-   AWID,
-   AWADDR,
-   AWLEN,
-   AWSIZE,
-   AWBURST,
-   AWLOCK,
-   AWCACHE,
-   AWPROT,
-   AWQOS,
-   AWREGION,
-   AWUSER,
-   AWVALID,
-   WID,
-   WDATA,
-   WSTRB,
-   WLAST,
-   WUSER,
-   WVALID,
-   BREADY,
-   ARID,
-   ARADDR,
-   ARLEN,
-   ARSIZE,
-   ARBURST,
-   ARLOCK,
-   ARCACHE,
-   ARPROT,
-   ARQOS,
-   ARREGION,
-   ARUSER,
-   ARVALID,
-   RREADY
+   o_done = 0,
+   o_out1,
+   o_AWID,
+   o_AWADDR,
+   o_AWLEN,
+   o_AWSIZE,
+   o_AWBURST,
+   o_AWLOCK,
+   o_AWCACHE,
+   o_AWPROT,
+   o_AWQOS,
+   o_AWREGION,
+   o_AWUSER,
+   o_AWVALID,
+   o_WID,
+   o_WDATA,
+   o_WSTRB,
+   o_WLAST,
+   o_WUSER,
+   o_WVALID,
+   o_BREADY,
+   o_ARID,
+   o_ARADDR,
+   o_ARLEN,
+   o_ARSIZE,
+   o_ARBURST,
+   o_ARLOCK,
+   o_ARCACHE,
+   o_ARPROT,
+   o_ARQOS,
+   o_ARREGION,
+   o_ARUSER,
+   o_ARVALID,
+   o_RREADY,
+   o_last
 };
 
 ReadWrite_m_axiModuleGenerator::ReadWrite_m_axiModuleGenerator(const HLS_managerRef& _HLSMgr) : Registrar(_HLSMgr)
@@ -129,8 +131,10 @@ void ReadWrite_m_axiModuleGenerator::InternalExec(std::ostream& out, const modul
                                                   const std::vector<ModuleGenerator::parameter>& _ports_out,
                                                   const std::vector<ModuleGenerator::parameter>& /* _ports_inout */)
 {
-   const auto addr_bitsize = STR(_ports_out[AWADDR].type_size);
-   const auto data_bitsize = STR(_ports_out[WDATA].type_size);
+   THROW_ASSERT(_ports_in.size() >= i_last, "");
+   THROW_ASSERT(_ports_out.size() >= o_last, "");
+   const auto addr_bitsize = STR(_ports_out[o_AWADDR].type_size);
+   const auto data_bitsize = STR(_ports_out[o_WDATA].type_size);
 
    unsigned way_size = 0;
 
@@ -160,22 +164,22 @@ void ReadWrite_m_axiModuleGenerator::InternalExec(std::ostream& out, const modul
 
 )";
 
-      out << "assign " << _ports_out[AWID].name << " = 'b0;\n";
-      out << "assign " << _ports_out[AWLOCK].name << " = 'b0;\n";
-      out << "assign " << _ports_out[AWCACHE].name << " = 'b0;\n";
-      out << "assign " << _ports_out[AWPROT].name << " = 'b0;\n";
-      out << "assign " << _ports_out[AWQOS].name << " = 'b0;\n";
-      out << "assign " << _ports_out[AWREGION].name << " = 'b0;\n";
-      out << "assign " << _ports_out[AWUSER].name << " = 'b0;\n";
-      out << "assign " << _ports_out[WID].name << " = 'b0;\n";
-      out << "assign " << _ports_out[WUSER].name << " = 'b0;\n";
-      out << "assign " << _ports_out[ARID].name << " = 'b0;\n";
-      out << "assign " << _ports_out[ARLOCK].name << " = 'b0;\n";
-      out << "assign " << _ports_out[ARCACHE].name << " = 'b0;\n";
-      out << "assign " << _ports_out[ARPROT].name << " = 'b0;\n";
-      out << "assign " << _ports_out[ARQOS].name << " = 'b0;\n";
-      out << "assign " << _ports_out[ARREGION].name << " = 'b0;\n";
-      out << "assign " << _ports_out[ARUSER].name << " = 'b0;\n";
+      out << "assign " << _ports_out[o_AWID].name << " = 'b0;\n";
+      out << "assign " << _ports_out[o_AWLOCK].name << " = 'b0;\n";
+      out << "assign " << _ports_out[o_AWCACHE].name << " = 'b0;\n";
+      out << "assign " << _ports_out[o_AWPROT].name << " = 'b0;\n";
+      out << "assign " << _ports_out[o_AWQOS].name << " = 'b0;\n";
+      out << "assign " << _ports_out[o_AWREGION].name << " = 'b0;\n";
+      out << "assign " << _ports_out[o_AWUSER].name << " = 'b0;\n";
+      out << "assign " << _ports_out[o_WID].name << " = 'b0;\n";
+      out << "assign " << _ports_out[o_WUSER].name << " = 'b0;\n";
+      out << "assign " << _ports_out[o_ARID].name << " = 'b0;\n";
+      out << "assign " << _ports_out[o_ARLOCK].name << " = 'b0;\n";
+      out << "assign " << _ports_out[o_ARCACHE].name << " = 'b0;\n";
+      out << "assign " << _ports_out[o_ARPROT].name << " = 'b0;\n";
+      out << "assign " << _ports_out[o_ARQOS].name << " = 'b0;\n";
+      out << "assign " << _ports_out[o_ARREGION].name << " = 'b0;\n";
+      out << "assign " << _ports_out[o_ARUSER].name << " = 'b0;\n";
 
       out << R"(
 localparam [2:0] S_IDLE = 3'b000,
@@ -214,25 +218,25 @@ reg acc_done, next_acc_done;
 )";
       out << "reg [" + data_bitsize + "+(-1):0] acc_rdata, next_acc_rdata;\n";
       out << "generate\n";
-      out << "  assign " << _ports_out[AWLEN].name << " = AWLEN;\n";
-      out << "  assign " << _ports_out[AWSIZE].name << " = AWSIZE;\n";
-      out << "  assign " << _ports_out[AWBURST].name << " = AWBURST;\n";
-      out << "  assign " << _ports_out[WSTRB].name << " = WSTRB;\n";
-      out << "  assign " << _ports_out[ARLEN].name << " = ARLEN;\n";
-      out << "  assign " << _ports_out[ARSIZE].name << " = ARSIZE;\n";
-      out << "  assign " << _ports_out[ARBURST].name << " = ARBURST;\n";
+      out << "  assign " << _ports_out[o_AWLEN].name << " = AWLEN;\n";
+      out << "  assign " << _ports_out[o_AWSIZE].name << " = AWSIZE;\n";
+      out << "  assign " << _ports_out[o_AWBURST].name << " = AWBURST;\n";
+      out << "  assign " << _ports_out[o_WSTRB].name << " = WSTRB;\n";
+      out << "  assign " << _ports_out[o_ARLEN].name << " = ARLEN;\n";
+      out << "  assign " << _ports_out[o_ARSIZE].name << " = ARSIZE;\n";
+      out << "  assign " << _ports_out[o_ARBURST].name << " = ARBURST;\n";
       out << "endgenerate\n";
 
       // Assign reg values
-      out << "assign " << _ports_out[AWADDR].name << " = axi_awaddr;\n";
-      out << "assign " << _ports_out[AWVALID].name << " = axi_awvalid;\n";
-      out << "assign " << _ports_out[WDATA].name << " = axi_wdata;\n";
-      out << "assign " << _ports_out[WLAST].name << " = axi_wlast;\n";
-      out << "assign " << _ports_out[WVALID].name << " = axi_wvalid;\n";
-      out << "assign " << _ports_out[BREADY].name << " = axi_bready;\n";
-      out << "assign " << _ports_out[ARADDR].name << " = axi_araddr;\n";
-      out << "assign " << _ports_out[ARVALID].name << " = axi_arvalid;\n";
-      out << "assign " << _ports_out[RREADY].name << " = axi_rready;\n";
+      out << "assign " << _ports_out[o_AWADDR].name << " = axi_awaddr;\n";
+      out << "assign " << _ports_out[o_AWVALID].name << " = axi_awvalid;\n";
+      out << "assign " << _ports_out[o_WDATA].name << " = axi_wdata;\n";
+      out << "assign " << _ports_out[o_WLAST].name << " = axi_wlast;\n";
+      out << "assign " << _ports_out[o_WVALID].name << " = axi_wvalid;\n";
+      out << "assign " << _ports_out[o_BREADY].name << " = axi_bready;\n";
+      out << "assign " << _ports_out[o_ARADDR].name << " = axi_araddr;\n";
+      out << "assign " << _ports_out[o_ARVALID].name << " = axi_arvalid;\n";
+      out << "assign " << _ports_out[o_RREADY].name << " = axi_rready;\n";
       out << R"(
 assign done_port = acc_done;
 assign out1 = acc_done ? acc_rdata : 'b0;
@@ -306,7 +310,7 @@ always @(*) begin
       next_acc_rdata = 'b0;
       next_AWREADY = 'b0;
 )";
-      out << "      if (" << _ports_in[start_port].name << " && !" << _ports_in[in1].name << ") begin\n";
+      out << "      if (" << _ports_in[i_start].name << " && !" << _ports_in[i_in1].name << ") begin\n";
 
       out << R"(
           `ifdef _SIM_HAVE_CLOG2
@@ -319,8 +323,8 @@ always @(*) begin
 )";
 
       out << "          next_first_read = 1'b1;\n";
-      out << "          next_axi_araddr = " << _ports_in[in4].name << ";\n";
-      out << "          misalignment = " << _ports_in[in4].name << " % (1 << next_ARSIZE);\n";
+      out << "          next_axi_araddr = " << _ports_in[i_in4].name << ";\n";
+      out << "          misalignment = " << _ports_in[i_in4].name << " % (1 << next_ARSIZE);\n";
       out << "          if(misalignment > 'b0) begin\n";
       out << "            next_ARLEN = 'b1;\n";
       out << "            next_ARBURST = 'b1;\n";
@@ -332,11 +336,11 @@ always @(*) begin
       out << "          end\n";
       out << "          next_axi_arvalid = 1'b1;\n";
       out << "          _next_state = S_RD_BURST;\n";
-      out << "      end else if (" << _ports_in[start_port].name << " && " << _ports_in[in1].name << ") begin\n";
-      out << "        if(" << _ports_in[in2].name << " == 'b0) begin\n";
+      out << "      end else if (" << _ports_in[i_start].name << " && " << _ports_in[i_in1].name << ") begin\n";
+      out << "        if(" << _ports_in[i_in2].name << " == 'b0) begin\n";
       out << "          next_acc_done = 1'b1;\n";
       out << "        end else begin\n";
-      out << "          next_axi_awaddr = " << _ports_in[in4].name << ";\n";
+      out << "          next_axi_awaddr = " << _ports_in[i_in4].name << ";\n";
       out << "          next_axi_awvalid = 1'b1;\n";
       out << "          `ifdef _SIM_HAVE_CLOG2\n";
       out << "            next_AWSIZE = $clog2(in2 / 8);\n";
@@ -344,9 +348,9 @@ always @(*) begin
       out << "            next_AWSIZE = `CLOG2(in2 / 8);\n";
       out << "          `endif\n";
       /* Compute the misalignment, assert all the bits to the left of the misaligned one */
-      out << "          misalignment = " << _ports_in[in4].name << " % (1 << next_AWSIZE);\n";
+      out << "          misalignment = " << _ports_in[i_in4].name << " % (1 << next_AWSIZE);\n";
       out << "          next_WSTRB = -(1 << misalignment);\n";
-      out << "          next_axi_wdata = " << _ports_in[in3].name << ";\n";
+      out << "          next_axi_wdata = " << _ports_in[i_in3].name << ";\n";
       out << R"(          next_axi_wvalid = 1'b1;
           next_axi_wlast = !(misalignment > 'b0);
           if(next_axi_wlast) begin
@@ -366,7 +370,7 @@ always @(*) begin
     end
 )";
       out << " S_RD_BURST: begin\n";
-      out << "      if(" << _ports_in[ARREADY].name << ") begin\n";
+      out << "      if(" << _ports_in[i_ARREADY].name << ") begin\n";
       out << R"(        next_axi_arvalid = 1'b0;
         next_ARSIZE = 'b0;
         next_ARBURST = 'b0;
@@ -382,14 +386,14 @@ always @(*) begin
       next_axi_rready = 1'b1;
       
 )";
-      out << "      if(" << _ports_in[RVALID].name << " && axi_rready) begin\n";
+      out << "      if(" << _ports_in[i_RVALID].name << " && axi_rready) begin\n";
       out << R"(          if(!first_read) begin
             if(~read_mask != 'b0)
               next_acc_rdata = acc_rdata | ()" +
-                 _ports_in[RDATA].name + R"( & (~read_mask));
+                 _ports_in[i_RDATA].name + R"( & (~read_mask));
             next_axi_rready = 1'b0;
 )";
-      out << "             if(!" << _ports_in[RLAST].name << ") begin\n";
+      out << "             if(!" << _ports_in[i_RLAST].name << ") begin\n";
 
       out << "                 _next_state = S_RD_BURST;\n";
 
@@ -397,16 +401,16 @@ always @(*) begin
       out << "               _next_state = S_IDLE;\n";
       out << "               next_acc_done = 1'b1;\n";
       out << "             end\n";
-      out << R"(           end else if()" + _ports_in[RLAST].name +
+      out << R"(           end else if()" + _ports_in[i_RLAST].name +
                  R"() begin
             next_acc_rdata = )" +
-                 _ports_in[RDATA].name + R"( & read_mask;
+                 _ports_in[i_RDATA].name + R"( & read_mask;
 )";
       out << "            next_axi_rready = 1'b0;\n";
       out << "            next_acc_done = 1'b1;\n";
       out << "            _next_state = S_IDLE;\n";
       out << "          end else if (first_read) begin\n";
-      out << "            next_acc_rdata = " << _ports_in[RDATA].name << " & read_mask;\n";
+      out << "            next_acc_rdata = " << _ports_in[i_RDATA].name << " & read_mask;\n";
       out << "               _next_state = S_RD_BURST;\n";
       out << R"(
             next_acc_done = 1'b0;
@@ -421,12 +425,12 @@ always @(*) begin
     _next_state = S_WR_BURST;
     next_axi_bready = 1'b1;
 )";
-      out << "      if(!" << _ports_in[WREADY].name << ") begin\n";
+      out << "      if(!" << _ports_in[i_WREADY].name << ") begin\n";
       out << "        next_axi_wvalid = axi_wvalid;\n";
       out << "        next_axi_wlast = axi_wlast;\n";
       out << "        next_axi_wdata = axi_wdata;\n";
       out << "      end\n";
-      out << "      if(" << _ports_in[AWREADY].name << ") begin";
+      out << "      if(" << _ports_in[i_AWREADY].name << ") begin";
       out << R"(
         next_AWSIZE = 'b0;
         next_AWBURST = 'b0;
@@ -437,7 +441,7 @@ always @(*) begin
       end
 )";
 
-      out << "      if (next_AWREADY &&" << _ports_in[WREADY].name << " && !WSTRB[0]) begin";
+      out << "      if (next_AWREADY &&" << _ports_in[i_WREADY].name << " && !WSTRB[0]) begin";
       out << R"(
         /* If the last transfer was not aligned and the slave is ready, transfer the rest */
         next_WSTRB = ~WSTRB;
@@ -462,7 +466,7 @@ always @(*) begin
       /* If the last transfer was complete, deassert the validity bits and check if you can go back to
       IDLE */
 )";
-      out << "      if (" << _ports_in[BVALID].name << ") begin\n";
+      out << "      if (" << _ports_in[i_BVALID].name << ") begin\n";
       out << R"(        next_acc_done = 1'b1;
         next_axi_wvalid = 1'b0;
         next_axi_wdata = 'b0;
@@ -554,14 +558,12 @@ end)";
   reg                                               state, state_next;
 )";
       out << "localparam S_IDLE = 1'b0, S_FLUSH = 1'b1;\n";
-      out << "assign " << _ports_out[ARUSER].name << " = 0;\n";
-      out << "assign " << _ports_out[ARREGION].name << " = 0;\n";
-      out << "assign " << _ports_out[WUSER].name << " = 0;\n";
-      out << "assign " << _ports_out[WID].name << " = 0;\n";
-      out << "assign " << _ports_out[AWUSER].name << " = 0;\n";
-      out << "assign " << _ports_out[AWREGION].name << " = 0;\n";
-      out << "assign " << _ports_out[RUSER].name << " = 0;\n";
-      out << "assign " << _ports_out[BUSER].name << " = 0;\n";
+      out << "assign " << _ports_out[o_ARUSER].name << " = 0;\n";
+      out << "assign " << _ports_out[o_ARREGION].name << " = 0;\n";
+      out << "assign " << _ports_out[o_WUSER].name << " = 0;\n";
+      out << "assign " << _ports_out[o_WID].name << " = 0;\n";
+      out << "assign " << _ports_out[o_AWUSER].name << " = 0;\n";
+      out << "assign " << _ports_out[o_AWREGION].name << " = 0;\n";
 
       out << R"(
       assign done_port = state == S_IDLE? ready : !dirty;
@@ -573,8 +575,8 @@ end)";
         state_next = state;
         if(state == S_IDLE) begin
 )";
-      out << "          if(" << _ports_in[start_port].name << " && " << _ports_in[in1].name << " && "
-          << _ports_in[in2].name << " == 'b0) begin\n";
+      out << "          if(" << _ports_in[i_start].name << " && " << _ports_in[i_in1].name << " && "
+          << _ports_in[i_in2].name << " == 'b0) begin\n";
       out << "            state_next = S_FLUSH;\n";
       out << "          end\n";
       out << "        end else if(state == S_FLUSH) begin\n";
@@ -637,48 +639,48 @@ end)";
           .rdata(rdata),
           .ready(ready),
           )";
-      out << ".valid(" << _ports_in[start_port].name << " && !(" << _ports_in[in1].name << " && " << _ports_in[in2].name
-          << R"( == 'b0)),
+      out << ".valid(" << _ports_in[i_start].name << " && !(" << _ports_in[i_in1].name << " && "
+          << _ports_in[i_in2].name << R"( == 'b0)),
           .dirty(dirty),
           .flush(state == S_FLUSH),
 )";
-      out << "          .m_axi_awready(" << _ports_in[AWREADY].name << "),\n";
-      out << "          .m_axi_wready(" << _ports_in[WREADY].name << "),\n";
-      out << "          .m_axi_bid(" << _ports_in[BID].name << "),\n";
-      out << "          .m_axi_bresp(" << _ports_in[BRESP].name << "),\n";
-      out << "          .m_axi_bvalid(" << _ports_in[BVALID].name << "),\n";
-      out << "          .m_axi_arready(" << _ports_in[ARREADY].name << "),\n";
-      out << "          .m_axi_rid(" << _ports_in[RID].name << "),\n";
-      out << "          .m_axi_rdata(" << _ports_in[RDATA].name << "),\n";
-      out << "          .m_axi_rresp(" << _ports_in[RRESP].name << "),\n";
-      out << "          .m_axi_rlast(" << _ports_in[RLAST].name << "),\n";
-      out << "          .m_axi_rvalid(" << _ports_in[RVALID].name << "),\n";
-      out << "          .m_axi_awid(" << _ports_out[AWID].name << "),\n";
-      out << "          .m_axi_awaddr(" << _ports_out[AWADDR].name << "),\n";
-      out << "          .m_axi_awlen(" << _ports_out[AWLEN].name << "),\n";
-      out << "          .m_axi_awsize(" << _ports_out[AWSIZE].name << "),\n";
-      out << "          .m_axi_awburst(" << _ports_out[AWBURST].name << "),\n";
-      out << "          .m_axi_awlock(" << _ports_out[AWLOCK].name << "),\n";
-      out << "          .m_axi_awcache(" << _ports_out[AWCACHE].name << "),\n";
-      out << "          .m_axi_awprot(" << _ports_out[AWPROT].name << "),\n";
-      out << "          .m_axi_awqos(" << _ports_out[AWQOS].name << "),\n";
-      out << "          .m_axi_awvalid(" << _ports_out[AWVALID].name << "),\n";
-      out << "          .m_axi_wdata(" << _ports_out[WDATA].name << "),\n";
-      out << "          .m_axi_wstrb(" << _ports_out[WSTRB].name << "),\n";
-      out << "          .m_axi_wlast(" << _ports_out[WLAST].name << "),\n";
-      out << "          .m_axi_wvalid(" << _ports_out[WVALID].name << "),\n";
-      out << "          .m_axi_bready(" << _ports_out[BREADY].name << "),\n";
-      out << "          .m_axi_arid(" << _ports_out[ARID].name << "),\n";
-      out << "          .m_axi_araddr(" << _ports_out[ARADDR].name << "),\n";
-      out << "          .m_axi_arlen(" << _ports_out[ARLEN].name << "),\n";
-      out << "          .m_axi_arsize(" << _ports_out[ARSIZE].name << "),\n";
-      out << "          .m_axi_arburst(" << _ports_out[ARBURST].name << "),\n";
-      out << "          .m_axi_arlock(" << _ports_out[ARLOCK].name << "),\n";
-      out << "          .m_axi_arcache(" << _ports_out[ARCACHE].name << "),\n";
-      out << "          .m_axi_arprot(" << _ports_out[ARPROT].name << "),\n";
-      out << "          .m_axi_arqos(" << _ports_out[ARQOS].name << "),\n";
-      out << "          .m_axi_arvalid(" << _ports_out[ARVALID].name << "),\n";
-      out << "          .m_axi_rready(" << _ports_out[RREADY].name << "),\n";
+      out << "          .m_axi_awready(" << _ports_in[i_AWREADY].name << "),\n";
+      out << "          .m_axi_wready(" << _ports_in[i_WREADY].name << "),\n";
+      out << "          .m_axi_bid(" << _ports_in[i_BID].name << "),\n";
+      out << "          .m_axi_bresp(" << _ports_in[i_BRESP].name << "),\n";
+      out << "          .m_axi_bvalid(" << _ports_in[i_BVALID].name << "),\n";
+      out << "          .m_axi_arready(" << _ports_in[i_ARREADY].name << "),\n";
+      out << "          .m_axi_rid(" << _ports_in[i_RID].name << "),\n";
+      out << "          .m_axi_rdata(" << _ports_in[i_RDATA].name << "),\n";
+      out << "          .m_axi_rresp(" << _ports_in[i_RRESP].name << "),\n";
+      out << "          .m_axi_rlast(" << _ports_in[i_RLAST].name << "),\n";
+      out << "          .m_axi_rvalid(" << _ports_in[i_RVALID].name << "),\n";
+      out << "          .m_axi_awid(" << _ports_out[o_AWID].name << "),\n";
+      out << "          .m_axi_awaddr(" << _ports_out[o_AWADDR].name << "),\n";
+      out << "          .m_axi_awlen(" << _ports_out[o_AWLEN].name << "),\n";
+      out << "          .m_axi_awsize(" << _ports_out[o_AWSIZE].name << "),\n";
+      out << "          .m_axi_awburst(" << _ports_out[o_AWBURST].name << "),\n";
+      out << "          .m_axi_awlock(" << _ports_out[o_AWLOCK].name << "),\n";
+      out << "          .m_axi_awcache(" << _ports_out[o_AWCACHE].name << "),\n";
+      out << "          .m_axi_awprot(" << _ports_out[o_AWPROT].name << "),\n";
+      out << "          .m_axi_awqos(" << _ports_out[o_AWQOS].name << "),\n";
+      out << "          .m_axi_awvalid(" << _ports_out[o_AWVALID].name << "),\n";
+      out << "          .m_axi_wdata(" << _ports_out[o_WDATA].name << "),\n";
+      out << "          .m_axi_wstrb(" << _ports_out[o_WSTRB].name << "),\n";
+      out << "          .m_axi_wlast(" << _ports_out[o_WLAST].name << "),\n";
+      out << "          .m_axi_wvalid(" << _ports_out[o_WVALID].name << "),\n";
+      out << "          .m_axi_bready(" << _ports_out[o_BREADY].name << "),\n";
+      out << "          .m_axi_arid(" << _ports_out[o_ARID].name << "),\n";
+      out << "          .m_axi_araddr(" << _ports_out[o_ARADDR].name << "),\n";
+      out << "          .m_axi_arlen(" << _ports_out[o_ARLEN].name << "),\n";
+      out << "          .m_axi_arsize(" << _ports_out[o_ARSIZE].name << "),\n";
+      out << "          .m_axi_arburst(" << _ports_out[o_ARBURST].name << "),\n";
+      out << "          .m_axi_arlock(" << _ports_out[o_ARLOCK].name << "),\n";
+      out << "          .m_axi_arcache(" << _ports_out[o_ARCACHE].name << "),\n";
+      out << "          .m_axi_arprot(" << _ports_out[o_ARPROT].name << "),\n";
+      out << "          .m_axi_arqos(" << _ports_out[o_ARQOS].name << "),\n";
+      out << "          .m_axi_arvalid(" << _ports_out[o_ARVALID].name << "),\n";
+      out << "          .m_axi_rready(" << _ports_out[o_RREADY].name << "),\n";
       out << "          .clk(clock),\n";
       out << "          .reset(!reset) /* IOB reset is active high */\n";
       out << "       );\n";

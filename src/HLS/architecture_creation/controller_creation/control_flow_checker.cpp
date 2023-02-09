@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2017-2022 Politecnico di Milano
+ *              Copyright (C) 2017-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -33,46 +33,31 @@
 /**
  * @author Pietro Fezzardi <pietrofezzardi@gmail.com>
  */
-
-// include class header
 #include "control_flow_checker.hpp"
 
-// include from behavior/
+#include "Discrepancy.hpp"
+#include "Parameter.hpp"
+#include "behavioral_helper.hpp"
+#include "copyrights_strings.hpp"
+#include "custom_map.hpp"
+#include "custom_set.hpp"
 #include "function_behavior.hpp"
-
-// include from circuit/
-#include "structural_manager.hpp"
-
-// include from HLS/
 #include "hls.hpp"
-
 #include "hls_manager.hpp"
 #include "hls_target.hpp"
-
-// include from HLS/
-#include "Discrepancy.hpp"
 #include "language_writer.hpp"
 #include "state_transition_graph.hpp"
 #include "state_transition_graph_manager.hpp"
+#include "string_manipulation.hpp"
+#include "structural_manager.hpp"
+#include "utility.hpp"
 
-/// STD include
+#include <boost/algorithm/string/case_conv.hpp>
+#include <utility/fileIO.hpp>
+
 #include <algorithm>
 #include <string>
 #include <tuple>
-
-#include "custom_map.hpp"
-#include "custom_set.hpp"
-
-// include from  tree/
-#include "behavioral_helper.hpp"
-
-// includes from ./
-#include "Parameter.hpp"
-#include "copyrights_strings.hpp"
-#include "string_manipulation.hpp" // for GET_CLASS
-#include <boost/algorithm/string/case_conv.hpp>
-
-#include <utility/fileIO.hpp>
 
 ControlFlowChecker::ControlFlowChecker(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr,
                                        unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager)

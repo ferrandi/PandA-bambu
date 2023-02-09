@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2015-2022 Politecnico di Milano
+ *              Copyright (c) 2015-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -108,7 +108,8 @@ ExtractOmpAtomic::ComputeFrontendRelationships(const DesignFlowStep::Relationshi
 DesignFlowStep_Status ExtractOmpAtomic::InternalExec()
 {
    const auto TM = AppM->get_tree_manager();
-   if(debug_level >= DEBUG_LEVEL_PEDANTIC && !parameters->IsParameter("disable-print-dot-FF"))
+   if(debug_level >= DEBUG_LEVEL_PEDANTIC &&
+      (!parameters->IsParameter("print-dot-FF") || parameters->GetParameter<unsigned int>("print-dot-FF")))
    {
       WriteBBGraphDot("BB_Before_" + GetName() + ".dot");
       PrintTreeManager(true);
@@ -150,7 +151,8 @@ DesignFlowStep_Status ExtractOmpAtomic::InternalExec()
          block->RemoveStmt(gimple_to_be_removed, AppM);
       }
    }
-   if(debug_level >= DEBUG_LEVEL_PEDANTIC && !parameters->IsParameter("disable-print-dot-FF"))
+   if(debug_level >= DEBUG_LEVEL_PEDANTIC &&
+      (!parameters->IsParameter("print-dot-FF") || parameters->GetParameter<unsigned int>("print-dot-FF")))
    {
       WriteBBGraphDot("BB_After_" + GetName() + ".dot");
       PrintTreeManager(false);

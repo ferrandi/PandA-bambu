@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -52,24 +52,21 @@
 #include "config_HAVE_TECHNOLOGY_BUILT.hpp"
 #include "config_HAVE_TUCANO_BUILT.hpp"
 
-/// STL include
-#include <algorithm>
-#include <utility>
-#include <vector>
-
+#include "NP_functionality.hpp"
 #include "custom_map.hpp"
+#include "exceptions.hpp"
+#include "refcount.hpp"
+#include "simple_indent.hpp"
+
+#if HAVE_KOALA_BUILT
 #include "custom_set.hpp"
+#endif
 
 #include <boost/preprocessor/seq/for_each.hpp>
 #include <ostream>
 #include <string>
-
-#include "simple_indent.hpp"
-#include "utility.hpp"
-
-#include "NP_functionality.hpp"
-#include "exceptions.hpp"
-#include "refcount.hpp"
+#include <utility>
+#include <vector>
 
 /**
  * @name Forward declarations.
@@ -1895,6 +1892,9 @@ class module : public structural_object
    /// multi-unit multiplicity is the number of units implemented by this module all doing the same thing
    unsigned int multi_unit_multiplicity;
 
+   /// when true the module has the keep_hierarchy attribute active
+   bool keep_hierarchy;
+
  public:
    /**
     * Constructor.
@@ -2181,6 +2181,18 @@ class module : public structural_object
     * @return the number of units implemented by this module
     */
    unsigned int get_multi_unit_multiplicity() const;
+
+   /**
+    * @brief set_keep_hierarchy
+    * @param ky is true when the module has the keep_hierarchy attribute true
+    */
+   void set_keep_hierarchy(bool ky);
+
+   /**
+    * @brief get_keep_hierarchy
+    * @return if the module has the keep_hierarchy active or not
+    */
+   bool get_keep_hierarchy() const;
 
    /**
     * change the direction of a port
