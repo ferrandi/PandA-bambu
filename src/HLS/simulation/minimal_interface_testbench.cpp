@@ -1266,12 +1266,16 @@ void MinimalInterfaceTestbench::write_signals(const tree_managerConstRef TreeM, 
       const auto M_DataRdy_n_ports =
           M_DataRdy_port->get_kind() == port_vector_o_K ? GetPointer<port_o>(M_DataRdy_port)->get_ports_size() : 1;
 
-      writer->write("reg signed [31:0] reg_DataReady[" + STR(M_Rdata_ram_n_ports - 1) + ":0];\n");
-      writer->write("reg [" + STR(M_Rdata_ram_bitsize * M_Rdata_ram_n_ports - 1) + ":0] mask;\n");
-
       // TO DO remove when upgrading svelto
-      if(!parameters->isOption(OPT_parse_pragma))
+      if(parameters->isOption(OPT_parse_pragma) && parameters->getOption<bool>(OPT_parse_pragma))
       {
+         writer->write("reg signed [31:0] reg_DataReady[" + STR(M_Rdata_ram_n_ports - 1) + ":0];\n");
+         writer->write("reg [" + STR(M_Rdata_ram_bitsize * M_Rdata_ram_n_ports - 1) + ":0] mask;\n");
+      }
+      else
+      {
+         writer->write("reg signed [31:0] reg_DataReady[" + STR(M_Rdata_ram_n_ports - 1) + ":0];\n");
+         writer->write("reg [" + STR(M_Rdata_ram_bitsize * M_Rdata_ram_n_ports - 1) + ":0] mask;\n");
          writer->write("reg [" + STR(M_Rdata_ram_bitsize * M_Rdata_ram_n_ports - 1) + ":0] M_Rdata_ram_temp;\n");
          writer->write("reg [" + STR(M_DataRdy_bitsize * M_DataRdy_n_ports - 1) + ":0] M_DataRdy_temp;\n\n");
 
