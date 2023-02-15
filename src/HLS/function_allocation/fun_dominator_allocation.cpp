@@ -257,13 +257,6 @@ DesignFlowStep_Status fun_dominator_allocation::Exec()
    {
       vertex vert_dominator, current_vertex;
       current_vertex = CG->GetVertex(funID);
-      THROW_ASSERT(HLSMgr->get_HLS(funID), "Missing HLS initialization");
-      const auto HLS_C = HLSMgr->get_HLS(funID)->HLS_C;
-      THROW_ASSERT(cg_dominator_map.find(current_vertex) != cg_dominator_map.end(),
-                   "Dominator vertex not in the dominator tree: " +
-                       HLSMgr->CGetFunctionBehavior(CG->get_function(current_vertex))
-                           ->CGetBehavioralHelper()
-                           ->get_function_name());
       if(boost::in_degree(current_vertex, *cg) != 1)
       {
          vert_dominator = cg_dominator_map.find(current_vertex)->second;
@@ -272,40 +265,53 @@ DesignFlowStep_Status fun_dominator_allocation::Exec()
       {
          vert_dominator = current_vertex;
       }
-      BOOST_FOREACH(EdgeDescriptor eo, boost::out_edges(current_vertex, *cg))
+      if(boost::out_degree(current_vertex, *cg))
       {
-         std::string called_fu_name = functions::GetFUName(CG->get_function(boost::target(eo, *cg)), HLSMgr);
-         if(simple_functions.find(called_fu_name) == simple_functions.end() &&
-            (HLS_C->get_number_fu(called_fu_name, WORK_LIBRARY) == INFINITE_UINT || // without constraints
-             HLS_C->get_number_fu(called_fu_name, WORK_LIBRARY) == 1))              // or single instance functions
+         THROW_ASSERT(HLSMgr->get_HLS(funID),
+                      "Missing HLS initialization for " + HLSMgr->CGetFunctionBehavior(CG->get_function(current_vertex))
+                                                              ->CGetBehavioralHelper()
+                                                              ->get_function_name());
+         const auto HLS_C = HLSMgr->get_HLS(funID)->HLS_C;
+         THROW_ASSERT(cg_dominator_map.find(current_vertex) != cg_dominator_map.end(),
+                      "Dominator vertex not in the dominator tree: " +
+                          HLSMgr->CGetFunctionBehavior(CG->get_function(current_vertex))
+                              ->CGetBehavioralHelper()
+                              ->get_function_name());
+         BOOST_FOREACH(EdgeDescriptor eo, boost::out_edges(current_vertex, *cg))
          {
-            fun_dom_map[called_fu_name].insert(vert_dominator);
-            const auto* info = Cget_edge_info<FunctionEdgeInfo, const CallGraph>(eo, *cg);
+            std::string called_fu_name = functions::GetFUName(CG->get_function(boost::target(eo, *cg)), HLSMgr);
+            if(simple_functions.find(called_fu_name) == simple_functions.end() &&
+               (HLS_C->get_number_fu(called_fu_name, WORK_LIBRARY) == INFINITE_UINT || // without constraints
+                HLS_C->get_number_fu(called_fu_name, WORK_LIBRARY) == 1))              // or single instance functions
+            {
+               fun_dom_map[called_fu_name].insert(vert_dominator);
+               const auto* info = Cget_edge_info<FunctionEdgeInfo, const CallGraph>(eo, *cg);
 
-            if(info->direct_call_points.size())
-            {
-               where_used[called_fu_name].insert(funID);
-            }
-            else
-            {
-               where_used[called_fu_name];
-            }
+               if(info->direct_call_points.size())
+               {
+                  where_used[called_fu_name].insert(funID);
+               }
+               else
+               {
+                  where_used[called_fu_name];
+               }
 
-            if(info->indirect_call_points.size() or info->function_addresses.size())
-            {
-               indirectlyCalled[called_fu_name] = true;
+               if(info->indirect_call_points.size() or info->function_addresses.size())
+               {
+                  indirectlyCalled[called_fu_name] = true;
+               }
+               else
+               {
+                  indirectlyCalled[called_fu_name] = false;
+               }
             }
-            else
-            {
-               indirectlyCalled[called_fu_name] = false;
-            }
+            PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                          "Dominator Vertex: " +
+                              HLSMgr->CGetFunctionBehavior(CG->get_function(vert_dominator))
+                                  ->CGetBehavioralHelper()
+                                  ->get_function_name() +
+                              " - function " + called_fu_name);
          }
-         PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                       "Dominator Vertex: " +
-                           HLSMgr->CGetFunctionBehavior(CG->get_function(vert_dominator))
-                               ->CGetBehavioralHelper()
-                               ->get_function_name() +
-                           " - function " + called_fu_name);
       }
    }
    /// compute the number of instances for each function

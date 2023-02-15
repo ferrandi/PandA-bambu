@@ -894,12 +894,14 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
    for(const auto cur : topology_sorted_vertex)
    {
       const unsigned int funID = CG->get_function(cur);
-      THROW_ASSERT(HLSMgr->get_HLS(funID), "Missing HLS initialization");
-      const auto HLS_C = HLSMgr->get_HLS(funID)->HLS_C;
-      if(reached_fu_ids.find(funID) == reached_fu_ids.end())
+      if(reached_fu_ids.find(funID) == reached_fu_ids.end() && boost::out_degree(cur, *cg))
       {
          continue;
       }
+      THROW_ASSERT(HLSMgr->get_HLS(funID),
+                   "Missing HLS initialization for " +
+                       HLSMgr->CGetFunctionBehavior(funID)->CGetBehavioralHelper()->get_function_name());
+      const auto HLS_C = HLSMgr->get_HLS(funID)->HLS_C;
       memory_allocation_map[funID];
       THROW_ASSERT(num_instances.find(cur) != num_instances.end(),
                    "missing number of instances of function " +
