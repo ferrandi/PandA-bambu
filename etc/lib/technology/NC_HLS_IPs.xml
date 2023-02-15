@@ -10,52 +10,52 @@
           <copyright>Copyright (C) 2012-2023 Politecnico di Milano</copyright>  
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;, Marco Minutoli &lt;mminutoli@gmail.com&gt;</authors> 
           <license>PANDA_LGPLv3</license>
-          <structural_type_descriptor id_type="memory_mapped_register_FU"/>
+          <structural_type_descriptor id_type="memory_mapped_register_FU" />
           <parameter name="ALLOCATED_ADDRESS">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
-            <structural_type_descriptor type="BOOL" size="1"/>
+            <structural_type_descriptor type="BOOL" size="1" />
           </port_o>
           <port_o id="reset" dir="IN">
-            <structural_type_descriptor type="BOOL" size="1"/>
+            <structural_type_descriptor type="BOOL" size="1" />
           </port_o>
           <port_o id="S_oe_ram" dir="IN" is_memory="1" is_global="1" is_extern="1">
-            <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
+            <structural_type_descriptor type="BOOL" size="1" />
+            <connected_objects />
           </port_o>
           <port_o id="S_we_ram" dir="IN" is_memory="1" is_global="1" is_extern="1">
-            <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
+            <structural_type_descriptor type="BOOL" size="1" />
+            <connected_objects />
           </port_o>
           <port_o id="S_addr_ram" dir="IN" is_memory="1" is_global="1" is_extern="1" is_addr_bus="1">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1" />
+            <connected_objects />
           </port_o>
           <port_o id="S_Wdata_ram" dir="IN" is_memory="1" is_global="1" is_extern="1" is_data_bus="1">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
-            <connected_objects/>
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8" />
+            <connected_objects />
           </port_o>
           <port_o id="Sin_Rdata_ram" dir="IN" is_memory="1" is_slave="1" is_data_bus="1">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
-            <connected_objects/>
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8" />
+            <connected_objects />
           </port_o>
           <port_o id="S_data_ram_size" dir="IN" is_memory="1" is_global="1" is_extern="1" is_size_bus="1">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1" />
+            <connected_objects />
           </port_o>
           <port_o id="Sin_DataRdy" dir="IN" is_memory="1" is_slave="1">
-            <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
+            <structural_type_descriptor type="BOOL" size="1" />
+            <connected_objects />
           </port_o>
           <port_o id="Sout_Rdata_ram" dir="OUT" is_memory="1" is_slave="1" is_data_bus="1">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
-            <connected_objects/>
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8" />
+            <connected_objects />
           </port_o>
           <port_o id="Sout_DataRdy" dir="OUT" is_memory="1" is_slave="1">
-            <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
+            <structural_type_descriptor type="BOOL" size="1" />
+            <connected_objects />
           </port_o>
           <port_o id="out1" dir="OUT">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1" />
           </port_o>
           <NP_functionality LIBRARY="memory_mapped_register_FU out1 S_addr_ram S_Wdata_ram Sin_Rdata_ram Sout_Rdata_ram S_data_ram_size ALLOCATED_ADDRESS" VERILOG_PROVIDED="wire internal;
 reg [BITSIZE_out1-1:0] reg_out1 1INIT_ZERO_VALUE;
@@ -71,7 +71,7 @@ always @(posedge clock 1RESET_EDGE) begin
      reg_out1 &lt;= S_Wdata_ram;
 end
 
-"/>
+" />
         </component_o>
       </circuit>
     </cell>
@@ -83,52 +83,52 @@ end
           <copyright>Copyright (C) 2016-2023 Politecnico di Milano</copyright>  
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
           <license>PANDA_LGPLv3</license>
-          <structural_type_descriptor id_type="memory_mapped_registerN_FU"/>
+          <structural_type_descriptor id_type="memory_mapped_registerN_FU" />
           <parameter name="ALLOCATED_ADDRESS">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
-            <structural_type_descriptor type="BOOL" size="1"/>
+            <structural_type_descriptor type="BOOL" size="1" />
           </port_o>
           <port_o id="reset" dir="IN">
-            <structural_type_descriptor type="BOOL" size="1"/>
+            <structural_type_descriptor type="BOOL" size="1" />
           </port_o>
           <port_vector_o id="S_oe_ram" dir="IN" is_memory="1" is_global="1" is_extern="1">
-            <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
+            <structural_type_descriptor type="BOOL" size="1" />
+            <connected_objects />
           </port_vector_o>
           <port_vector_o id="S_we_ram" dir="IN" is_memory="1" is_global="1" is_extern="1">
-            <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
+            <structural_type_descriptor type="BOOL" size="1" />
+            <connected_objects />
           </port_vector_o>
           <port_vector_o id="S_addr_ram" dir="IN" is_memory="1" is_global="1" is_extern="1" is_addr_bus="1">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1" />
+            <connected_objects />
           </port_vector_o>
           <port_vector_o id="S_Wdata_ram" dir="IN" is_memory="1" is_global="1" is_extern="1" is_data_bus="1">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
-            <connected_objects/>
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8" />
+            <connected_objects />
           </port_vector_o>
           <port_vector_o id="Sin_Rdata_ram" dir="IN" is_memory="1" is_slave="1" is_data_bus="1">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
-            <connected_objects/>
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8" />
+            <connected_objects />
           </port_vector_o>
           <port_vector_o id="Sout_Rdata_ram" dir="OUT" is_memory="1" is_slave="1" is_data_bus="1">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
-            <connected_objects/>
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8" />
+            <connected_objects />
           </port_vector_o>
           <port_vector_o id="S_data_ram_size" dir="IN" is_memory="1" is_global="1" is_extern="1" is_size_bus="1">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1" />
+            <connected_objects />
           </port_vector_o>
           <port_vector_o id="Sin_DataRdy" dir="IN" is_memory="1" is_slave="1">
-            <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
+            <structural_type_descriptor type="BOOL" size="1" />
+            <connected_objects />
           </port_vector_o>
           <port_vector_o id="Sout_DataRdy" dir="OUT" is_memory="1" is_slave="1">
-            <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
+            <structural_type_descriptor type="BOOL" size="1" />
+            <connected_objects />
           </port_vector_o>
           <port_o id="out1" dir="OUT">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1" />
           </port_o>
           <NP_functionality LIBRARY="memory_mapped_registerN_FU out1 S_oe_ram S_we_ram S_addr_ram S_Wdata_ram  Sin_Rdata_ram Sout_Rdata_ram S_data_ram_size Sin_DataRdy Sout_DataRdy ALLOCATED_ADDRESS" VERILOG_PROVIDED="
 function [PORTSIZE_S_addr_ram-1:0] check_condition;
@@ -167,7 +167,7 @@ always @(posedge clock 1RESET_EDGE) begin
      reg_out1 &lt;= {BITSIZE_out1{1&apos;b0}};
    else if (|(S_we_ram &amp; internal))
      reg_out1 &lt;= extract_value(S_we_ram &amp; internal,S_Wdata_ram);
-end"/>
+end" />
         </component_o>
       </circuit>
     </cell>
@@ -179,69 +179,69 @@ end"/>
           <copyright>Copyright (C) 2012-2023 Politecnico di Milano</copyright>
           <authors>Marco Minutoli &lt;mminutoli@gmail.com&gt;</authors>
           <license>PANDA_LGPLv3</license>
-          <structural_type_descriptor id_type="notify_caller_minimal_FU"/>
+          <structural_type_descriptor id_type="notify_caller_minimal_FU" />
           <port_o id="clock" dir="IN" is_clock="1">
-            <structural_type_descriptor type="BOOL" size="1"/>
+            <structural_type_descriptor type="BOOL" size="1" />
           </port_o>
           <port_o id="reset" dir="IN">
-            <structural_type_descriptor type="BOOL" size="1"/>
+            <structural_type_descriptor type="BOOL" size="1" />
           </port_o>
           <port_o id="Min_oe_ram" dir="IN" is_memory="1" is_master="1">
-            <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
+            <structural_type_descriptor type="BOOL" size="1" />
+            <connected_objects />
           </port_o>
           <port_o id="Mout_oe_ram" dir="OUT" is_memory="1" is_master="1">
-            <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
+            <structural_type_descriptor type="BOOL" size="1" />
+            <connected_objects />
           </port_o>
           <port_o id="Min_we_ram" dir="IN" is_memory="1" is_master="1">
-            <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
+            <structural_type_descriptor type="BOOL" size="1" />
+            <connected_objects />
           </port_o>
           <port_o id="Mout_we_ram" dir="OUT" is_memory="1" is_master="1">
-            <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
+            <structural_type_descriptor type="BOOL" size="1" />
+            <connected_objects />
           </port_o>
           <port_o id="Min_addr_ram" dir="IN" is_memory="1" is_master="1" is_addr_bus="1">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1" />
+            <connected_objects />
           </port_o>
           <port_o id="Mout_addr_ram" dir="OUT" is_memory="1" is_master="1" is_addr_bus="1">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1" />
+            <connected_objects />
           </port_o>
           <port_o id="M_Rdata_ram" dir="IN" is_memory="1" is_global="1" is_extern="1" is_data_bus="1">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
-            <connected_objects/>
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8" />
+            <connected_objects />
           </port_o>
           <port_o id="Min_Wdata_ram" dir="IN" is_memory="1" is_master="1" is_data_bus="1">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
-            <connected_objects/>
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8" />
+            <connected_objects />
           </port_o>
           <port_o id="Mout_Wdata_ram" dir="OUT" is_memory="1" is_master="1" is_data_bus="1">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
-            <connected_objects/>
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8" />
+            <connected_objects />
           </port_o>
           <port_o id="Min_data_ram_size" dir="IN" is_memory="1" is_master="1" is_size_bus="1">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1" />
+            <connected_objects />
           </port_o>
           <port_o id="Mout_data_ram_size" dir="OUT" is_memory="1" is_master="1" is_size_bus="1">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1" />
+            <connected_objects />
           </port_o>
           <port_o id="M_DataRdy" dir="IN" is_memory="1" is_global="1" is_extern="1">
-            <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
+            <structural_type_descriptor type="BOOL" size="1" />
+            <connected_objects />
           </port_o>
           <port_o id="done_port" dir="IN">
-            <structural_type_descriptor type="BOOL" size="1"/>
+            <structural_type_descriptor type="BOOL" size="1" />
           </port_o>
           <port_o id="notifyAddress" dir="IN" is_addr_bus="1">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1" />
           </port_o>
           <port_o id="notified" dir="OUT">
-            <structural_type_descriptor type="BOOL" size="1"/>
+            <structural_type_descriptor type="BOOL" size="1" />
           </port_o>
           <NP_functionality LIBRARY="notify_caller_minimal_FU notifyAddress Min_oe_ram Min_we_ram Mout_oe_ram Mout_we_ram M_DataRdy Min_addr_ram Mout_addr_ram M_Rdata_ram Min_Wdata_ram Mout_Wdata_ram Min_data_ram_size Mout_data_ram_size" VERILOG_PROVIDED="
 reg state 1INIT_ZERO_VALUE;
@@ -277,7 +277,7 @@ always @ (*) begin
      end
   end
 end
-"/>
+" />
         </component_o>
       </circuit>
     </cell>
@@ -289,69 +289,69 @@ end
           <copyright>Copyright (C) 2016-2023 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
-          <structural_type_descriptor id_type="notify_caller_minimalN_FU"/>
+          <structural_type_descriptor id_type="notify_caller_minimalN_FU" />
           <port_o id="clock" dir="IN" is_clock="1">
-            <structural_type_descriptor type="BOOL" size="1"/>
+            <structural_type_descriptor type="BOOL" size="1" />
           </port_o>
           <port_o id="reset" dir="IN">
-            <structural_type_descriptor type="BOOL" size="1"/>
+            <structural_type_descriptor type="BOOL" size="1" />
           </port_o>
           <port_vector_o id="Min_oe_ram" dir="IN" is_memory="1" is_master="1">
-            <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
+            <structural_type_descriptor type="BOOL" size="1" />
+            <connected_objects />
           </port_vector_o>
           <port_vector_o id="Mout_oe_ram" dir="OUT" is_memory="1" is_master="1">
-            <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
+            <structural_type_descriptor type="BOOL" size="1" />
+            <connected_objects />
           </port_vector_o>
           <port_vector_o id="Min_we_ram" dir="IN" is_memory="1" is_master="1">
-            <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
+            <structural_type_descriptor type="BOOL" size="1" />
+            <connected_objects />
           </port_vector_o>
           <port_vector_o id="Mout_we_ram" dir="OUT" is_memory="1" is_master="1">
-            <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
+            <structural_type_descriptor type="BOOL" size="1" />
+            <connected_objects />
           </port_vector_o>
           <port_vector_o id="Min_addr_ram" dir="IN" is_memory="1" is_master="1" is_addr_bus="1">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1" />
+            <connected_objects />
           </port_vector_o>
           <port_vector_o id="Mout_addr_ram" dir="OUT" is_memory="1" is_master="1" is_addr_bus="1">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1" />
+            <connected_objects />
           </port_vector_o>
           <port_vector_o id="M_Rdata_ram" dir="IN" is_memory="1" is_global="1" is_extern="1" is_data_bus="1">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
-            <connected_objects/>
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8" />
+            <connected_objects />
           </port_vector_o>
           <port_vector_o id="Min_Wdata_ram" dir="IN" is_memory="1" is_master="1" is_data_bus="1">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
-            <connected_objects/>
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8" />
+            <connected_objects />
           </port_vector_o>
           <port_vector_o id="Mout_Wdata_ram" dir="OUT" is_memory="1" is_master="1" is_data_bus="1">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
-            <connected_objects/>
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8" />
+            <connected_objects />
           </port_vector_o>
           <port_vector_o id="Min_data_ram_size" dir="IN" is_memory="1" is_master="1" is_size_bus="1">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1" />
+            <connected_objects />
           </port_vector_o>
           <port_vector_o id="Mout_data_ram_size" dir="OUT" is_memory="1" is_master="1" is_size_bus="1">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1" />
+            <connected_objects />
           </port_vector_o>
           <port_vector_o id="M_DataRdy" dir="IN" is_memory="1" is_global="1" is_extern="1">
-            <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
+            <structural_type_descriptor type="BOOL" size="1" />
+            <connected_objects />
           </port_vector_o>
           <port_o id="done_port" dir="IN">
-            <structural_type_descriptor type="BOOL" size="1"/>
+            <structural_type_descriptor type="BOOL" size="1" />
           </port_o>
           <port_o id="notifyAddress" dir="IN" is_addr_bus="1">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1" />
           </port_o>
           <port_o id="notified" dir="OUT">
-            <structural_type_descriptor type="BOOL" size="1"/>
+            <structural_type_descriptor type="BOOL" size="1" />
           </port_o>
           <NP_functionality LIBRARY="notify_caller_minimalN_FU notifyAddress Min_oe_ram Mout_oe_ram Min_we_ram Mout_we_ram Min_addr_ram Mout_addr_ram M_Rdata_ram Min_Wdata_ram Mout_Wdata_ram Min_data_ram_size Mout_data_ram_size M_DataRdy" VERILOG_PROVIDED="
 reg state 1INIT_ZERO_VALUE;
@@ -387,7 +387,7 @@ always @ (*) begin
      end
   end
 end
-"/>
+" />
         </component_o>
       </circuit>
     </cell>
@@ -399,83 +399,87 @@ end
           <copyright>Copyright (C) 2012-2023 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;, Marco Minutoli &lt;mminutoli@gmail.com&gt;</authors>
           <license>PANDA_LGPLv3</license>
-          <structural_type_descriptor id_type="return_value_mm_register_FU"/>
+          <structural_type_descriptor id_type="return_value_mm_register_FU" />
           <parameter name="ALLOCATED_ADDRESS">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
-            <structural_type_descriptor type="BOOL" size="1"/>
+            <structural_type_descriptor type="BOOL" size="1" />
           </port_o>
           <port_o id="reset" dir="IN">
-            <structural_type_descriptor type="BOOL" size="1"/>
+            <structural_type_descriptor type="BOOL" size="1" />
           </port_o>
           <port_o id="S_oe_ram" dir="IN" is_memory="1" is_global="1" is_extern="1">
-            <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
+            <structural_type_descriptor type="BOOL" size="1" />
+            <connected_objects />
           </port_o>
           <port_o id="S_we_ram" dir="IN" is_memory="1" is_global="1" is_extern="1">
-            <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
+            <structural_type_descriptor type="BOOL" size="1" />
+            <connected_objects />
           </port_o>
           <port_o id="S_addr_ram" dir="IN" is_memory="1" is_global="1" is_extern="1" is_addr_bus="1">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1" />
+            <connected_objects />
           </port_o>
           <port_o id="S_Wdata_ram" dir="IN" is_memory="1" is_global="1" is_extern="1" is_data_bus="1">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
-            <connected_objects/>
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8" />
+            <connected_objects />
           </port_o>
           <port_o id="Sin_Rdata_ram" dir="IN" is_memory="1" is_slave="1" is_data_bus="1">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
-            <connected_objects/>
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8" />
+            <connected_objects />
           </port_o>
           <port_o id="S_data_ram_size" dir="IN" is_memory="1" is_global="1" is_extern="1" is_size_bus="1">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1" />
+            <connected_objects />
           </port_o>
           <port_o id="Sin_DataRdy" dir="IN" is_memory="1" is_slave="1">
-            <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
+            <structural_type_descriptor type="BOOL" size="1" />
+            <connected_objects />
           </port_o>
           <port_o id="Sout_Rdata_ram" dir="OUT" is_memory="1" is_slave="1" is_data_bus="1">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
-            <connected_objects/>
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8" />
+            <connected_objects />
           </port_o>
           <port_o id="Sout_DataRdy" dir="OUT" is_memory="1" is_slave="1">
-            <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
+            <structural_type_descriptor type="BOOL" size="1" />
+            <connected_objects />
           </port_o>
           <port_o id="in1" dir="IN">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1" />
           </port_o>
           <port_o id="out1" dir="OUT">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1" />
           </port_o>
           <port_o id="done_port" dir="IN">
-            <structural_type_descriptor type="BOOL" size="1"/>
+            <structural_type_descriptor type="BOOL" size="1" />
           </port_o>
           <NP_functionality LIBRARY="return_value_mm_register_FU in1 out1 S_addr_ram S_Wdata_ram Sin_Rdata_ram Sout_Rdata_ram S_data_ram_size ALLOCATED_ADDRESS" VERILOG_PROVIDED="
 wire internal;
 reg [BITSIZE_in1-1:0] register 1INIT_ZERO_VALUE;
 reg oe_ack 1INIT_ZERO_VALUE;
+reg internal_previous;
 wire oe_ack_next;
 
 assign out1 = in1;
 assign internal = ALLOCATED_ADDRESS == S_addr_ram;
 assign Sout_DataRdy = oe_ack || Sin_DataRdy;
-assign Sout_Rdata_ram = internal ? register : Sin_Rdata_ram; 
+assign Sout_Rdata_ram = internal_previous ? register : Sin_Rdata_ram; 
+
 
 assign oe_ack_next = internal &amp; ~oe_ack;
 always @(posedge clock 1RESET_EDGE) begin
    if (1RESET_VALUE) begin
      register &lt;= {BITSIZE_in1{1&apos;b0}};
      oe_ack &lt;= 1&apos;b0;
+     internal_previous &lt;= 1&apos;b0;
    end
    else begin
       if (done_port)
         register &lt;= in1;
       oe_ack &lt;= oe_ack_next;
+      internal_previous &lt;= internal;
    end
 end
-"/>
+" />
         </component_o>
       </circuit>
     </cell>
@@ -487,58 +491,58 @@ end
           <copyright>Copyright (C) 2016-2023 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
-          <structural_type_descriptor id_type="return_value_mm_registerN_FU"/>
+          <structural_type_descriptor id_type="return_value_mm_registerN_FU" />
           <parameter name="ALLOCATED_ADDRESS">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
-            <structural_type_descriptor type="BOOL" size="1"/>
+            <structural_type_descriptor type="BOOL" size="1" />
           </port_o>
           <port_o id="reset" dir="IN">
-            <structural_type_descriptor type="BOOL" size="1"/>
+            <structural_type_descriptor type="BOOL" size="1" />
           </port_o>
           <port_vector_o id="S_oe_ram" dir="IN" is_memory="1" is_global="1" is_extern="1">
-            <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
+            <structural_type_descriptor type="BOOL" size="1" />
+            <connected_objects />
           </port_vector_o>
           <port_vector_o id="S_we_ram" dir="IN" is_memory="1" is_global="1" is_extern="1">
-            <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
+            <structural_type_descriptor type="BOOL" size="1" />
+            <connected_objects />
           </port_vector_o>
           <port_vector_o id="S_addr_ram" dir="IN" is_memory="1" is_global="1" is_extern="1" is_addr_bus="1">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1" />
+            <connected_objects />
           </port_vector_o>
           <port_vector_o id="S_Wdata_ram" dir="IN" is_memory="1" is_global="1" is_extern="1" is_data_bus="1">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
-            <connected_objects/>
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8" />
+            <connected_objects />
           </port_vector_o>
           <port_vector_o id="Sin_Rdata_ram" dir="IN" is_memory="1" is_slave="1" is_data_bus="1">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
-            <connected_objects/>
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8" />
+            <connected_objects />
           </port_vector_o>
           <port_vector_o id="Sout_Rdata_ram" dir="OUT" is_memory="1" is_slave="1" is_data_bus="1">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
-            <connected_objects/>
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8" />
+            <connected_objects />
           </port_vector_o>
           <port_vector_o id="S_data_ram_size" dir="IN" is_memory="1" is_global="1" is_extern="1" is_size_bus="1">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1" />
+            <connected_objects />
           </port_vector_o>
           <port_vector_o id="Sin_DataRdy" dir="IN" is_memory="1" is_slave="1">
-            <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
+            <structural_type_descriptor type="BOOL" size="1" />
+            <connected_objects />
           </port_vector_o>
           <port_vector_o id="Sout_DataRdy" dir="OUT" is_memory="1" is_slave="1">
-            <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
+            <structural_type_descriptor type="BOOL" size="1" />
+            <connected_objects />
           </port_vector_o>
           <port_o id="in1" dir="IN">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1" />
           </port_o>
           <port_o id="out1" dir="OUT">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1" />
           </port_o>
           <port_o id="done_port" dir="IN">
-            <structural_type_descriptor type="BOOL" size="1"/>
+            <structural_type_descriptor type="BOOL" size="1" />
           </port_o>
           <NP_functionality LIBRARY="return_value_mm_registerN_FU in1 out1 S_oe_ram S_we_ram S_addr_ram S_Wdata_ram  Sin_Rdata_ram Sout_Rdata_ram S_data_ram_size Sin_DataRdy Sout_DataRdy ALLOCATED_ADDRESS" VERILOG_PROVIDED="function [PORTSIZE_S_addr_ram-1:0] check_condition;
   input [PORTSIZE_S_addr_ram*BITSIZE_S_addr_ram-1:0] m;
@@ -566,11 +570,12 @@ wire [PORTSIZE_S_addr_ram-1:0] internal;
 reg [BITSIZE_in1-1:0] register 1INIT_ZERO_VALUE;
 reg [PORTSIZE_S_addr_ram-1:0] oe_ack 1INIT_ZERO_VALUE;
 wire [PORTSIZE_S_addr_ram-1:0] oe_ack_next;
+reg [PORTSIZE_S_addr_ram-1:0] internal_previous;
 
 assign out1 = in1;
 assign internal = check_condition(S_addr_ram);
 assign Sout_DataRdy = oe_ack | Sin_DataRdy;
-assign Sout_Rdata_ram = inject_value(internal, register, Sin_Rdata_ram);
+assign Sout_Rdata_ram = inject_value(internal_previous, register, Sin_Rdata_ram);
 
 assign oe_ack_next = internal &amp; ~oe_ack;
 always @(posedge clock 1RESET_EDGE)
@@ -579,14 +584,16 @@ begin
   begin
     register &lt;= {BITSIZE_in1{1&apos;b0}};
     oe_ack &lt;= {PORTSIZE_S_addr_ram{1&apos;b0}};
+    internal_previous &lt;= {PORTSIZE_S_addr_ram{1&apos;b0}};
   end
   else
   begin
     if (done_port)
       register &lt;= in1;
     oe_ack &lt;= oe_ack_next;
+    internal_previous &lt;= internal;
   end
-end"/>
+end" />
         </component_o>
       </circuit>
     </cell>
@@ -598,64 +605,64 @@ end"/>
           <copyright>Copyright (C) 2012-2023 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;, Marco Minutoli &lt;mminutoli@gmail.com&gt;</authors>
           <license>PANDA_LGPLv3</license>
-          <structural_type_descriptor id_type="status_register_FU"/>
+          <structural_type_descriptor id_type="status_register_FU" />
           <parameter name="ALLOCATED_ADDRESS">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
-            <structural_type_descriptor type="BOOL" size="1"/>
+            <structural_type_descriptor type="BOOL" size="1" />
           </port_o>
           <port_o id="reset" dir="IN">
-            <structural_type_descriptor type="BOOL" size="1"/>
+            <structural_type_descriptor type="BOOL" size="1" />
           </port_o>
           <port_o id="S_oe_ram" dir="IN" is_memory="1" is_global="1" is_extern="1">
-            <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
+            <structural_type_descriptor type="BOOL" size="1" />
+            <connected_objects />
           </port_o>
           <port_o id="S_we_ram" dir="IN" is_memory="1" is_global="1" is_extern="1">
-            <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
+            <structural_type_descriptor type="BOOL" size="1" />
+            <connected_objects />
           </port_o>
           <port_o id="S_addr_ram" dir="IN" is_memory="1" is_global="1" is_extern="1" is_addr_bus="1">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1" />
+            <connected_objects />
           </port_o>
           <port_o id="S_Wdata_ram" dir="IN" is_memory="1" is_global="1" is_extern="1" is_data_bus="1">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
-            <connected_objects/>
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8" />
+            <connected_objects />
           </port_o>
           <port_o id="Sin_Rdata_ram" dir="IN" is_memory="1" is_slave="1" is_data_bus="1">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
-            <connected_objects/>
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8" />
+            <connected_objects />
           </port_o>
           <port_o id="S_data_ram_size" dir="IN" is_memory="1" is_global="1" is_extern="1" is_size_bus="1">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1" />
+            <connected_objects />
           </port_o>
           <port_o id="Sin_DataRdy" dir="IN" is_memory="1" is_slave="1">
-            <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
+            <structural_type_descriptor type="BOOL" size="1" />
+            <connected_objects />
           </port_o>
           <port_o id="Sout_Rdata_ram" dir="OUT" is_memory="1" is_slave="1" is_data_bus="1">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
-            <connected_objects/>
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8" />
+            <connected_objects />
           </port_o>
           <port_o id="Sout_DataRdy" dir="OUT" is_memory="1" is_slave="1">
-            <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
+            <structural_type_descriptor type="BOOL" size="1" />
+            <connected_objects />
           </port_o>
           <port_o id="notifyAddress" dir="OUT" is_addr_bus="1">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1" />
           </port_o>
           <port_o id="start_port" dir="OUT">
-            <structural_type_descriptor type="BOOL" size="1"/>
+            <structural_type_descriptor type="BOOL" size="1" />
           </port_o>
           <port_o id="control" dir="OUT">
-            <structural_type_descriptor type="BOOL" size="1"/>
+            <structural_type_descriptor type="BOOL" size="1" />
           </port_o>
           <port_o id="notified" dir="IN">
-            <structural_type_descriptor type="BOOL" size="1"/>
+            <structural_type_descriptor type="BOOL" size="1" />
           </port_o>
           <port_o id="done_port" dir="IN">
-            <structural_type_descriptor type="BOOL" size="1"/>
+            <structural_type_descriptor type="BOOL" size="1" />
           </port_o>
           <NP_functionality LIBRARY="status_register_FU notifyAddress S_addr_ram S_Wdata_ram Sin_Rdata_ram Sout_Rdata_ram S_data_ram_size ALLOCATED_ADDRESS" VERILOG_PROVIDED="wire [BITSIZE_S_addr_ram - 1:0] statusRegister;
 reg [BITSIZE_S_addr_ram - 1:0]  ackAddress 1INIT_ZERO_VALUE;
@@ -720,7 +727,7 @@ always @ (*) begin
    end else begin
    end
 end
-"/>
+" />
         </component_o>
       </circuit>
     </cell>
@@ -732,64 +739,64 @@ end
           <copyright>Copyright (C) 2016-2023 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
-          <structural_type_descriptor id_type="status_registerN_FU"/>
+          <structural_type_descriptor id_type="status_registerN_FU" />
           <parameter name="ALLOCATED_ADDRESS">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
-            <structural_type_descriptor type="BOOL" size="1"/>
+            <structural_type_descriptor type="BOOL" size="1" />
           </port_o>
           <port_o id="reset" dir="IN">
-            <structural_type_descriptor type="BOOL" size="1"/>
+            <structural_type_descriptor type="BOOL" size="1" />
           </port_o>
           <port_vector_o id="S_oe_ram" dir="IN" is_memory="1" is_global="1" is_extern="1">
-            <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
+            <structural_type_descriptor type="BOOL" size="1" />
+            <connected_objects />
           </port_vector_o>
           <port_vector_o id="S_we_ram" dir="IN" is_memory="1" is_global="1" is_extern="1">
-            <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
+            <structural_type_descriptor type="BOOL" size="1" />
+            <connected_objects />
           </port_vector_o>
           <port_vector_o id="S_addr_ram" dir="IN" is_memory="1" is_global="1" is_extern="1" is_addr_bus="1">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1" />
+            <connected_objects />
           </port_vector_o>
           <port_vector_o id="S_Wdata_ram" dir="IN" is_memory="1" is_global="1" is_extern="1" is_data_bus="1">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
-            <connected_objects/>
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8" />
+            <connected_objects />
           </port_vector_o>
           <port_vector_o id="Sin_Rdata_ram" dir="IN" is_memory="1" is_slave="1" is_data_bus="1">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
-            <connected_objects/>
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8" />
+            <connected_objects />
           </port_vector_o>
           <port_vector_o id="Sout_Rdata_ram" dir="OUT" is_memory="1" is_slave="1" is_data_bus="1">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
-            <connected_objects/>
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8" />
+            <connected_objects />
           </port_vector_o>
           <port_vector_o id="S_data_ram_size" dir="IN" is_memory="1" is_global="1" is_extern="1" is_size_bus="1">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1" />
+            <connected_objects />
           </port_vector_o>
           <port_vector_o id="Sin_DataRdy" dir="IN" is_memory="1" is_slave="1">
-            <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
+            <structural_type_descriptor type="BOOL" size="1" />
+            <connected_objects />
           </port_vector_o>
           <port_vector_o id="Sout_DataRdy" dir="OUT" is_memory="1" is_slave="1">
-            <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
+            <structural_type_descriptor type="BOOL" size="1" />
+            <connected_objects />
           </port_vector_o>
           <port_o id="notifyAddress" dir="OUT" is_addr_bus="1">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1" />
           </port_o>
           <port_o id="start_port" dir="OUT">
-            <structural_type_descriptor type="BOOL" size="1"/>
+            <structural_type_descriptor type="BOOL" size="1" />
           </port_o>
           <port_o id="control" dir="OUT">
-            <structural_type_descriptor type="BOOL" size="1"/>
+            <structural_type_descriptor type="BOOL" size="1" />
           </port_o>
           <port_o id="notified" dir="IN">
-            <structural_type_descriptor type="BOOL" size="1"/>
+            <structural_type_descriptor type="BOOL" size="1" />
           </port_o>
           <port_o id="done_port" dir="IN">
-            <structural_type_descriptor type="BOOL" size="1"/>
+            <structural_type_descriptor type="BOOL" size="1" />
           </port_o>
           <NP_functionality LIBRARY="status_registerN_FU notifyAddress S_oe_ram S_we_ram S_addr_ram S_Wdata_ram  Sin_Rdata_ram Sout_Rdata_ram S_data_ram_size Sin_DataRdy Sout_DataRdy ALLOCATED_ADDRESS" VERILOG_PROVIDED="wire [BITSIZE_S_addr_ram - 1:0] statusRegister;
 reg [BITSIZE_S_addr_ram - 1:0] ackAddress 1INIT_ZERO_VALUE;
@@ -883,7 +890,7 @@ always @ (*) begin
       end
    end else begin
    end
-end"/>
+end" />
         </component_o>
       </circuit>
     </cell>
@@ -895,55 +902,55 @@ end"/>
           <copyright>Copyright (C) 2012-2023 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;, Marco Minutoli &lt;mminutoli@gmail.com&gt;, Pietro Fezzardi &lt;pietrofezzardi@gmail.com&gt;</authors>
           <license>PANDA_LGPLv3</license>
-          <structural_type_descriptor id_type="status_register_no_notified_FU"/>
+          <structural_type_descriptor id_type="status_register_no_notified_FU" />
           <parameter name="ALLOCATED_ADDRESS">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
-            <structural_type_descriptor type="BOOL" size="1"/>
+            <structural_type_descriptor type="BOOL" size="1" />
           </port_o>
           <port_o id="reset" dir="IN">
-            <structural_type_descriptor type="BOOL" size="1"/>
+            <structural_type_descriptor type="BOOL" size="1" />
           </port_o>
           <port_o id="S_oe_ram" dir="IN" is_memory="1" is_global="1" is_extern="1">
-            <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
+            <structural_type_descriptor type="BOOL" size="1" />
+            <connected_objects />
           </port_o>
           <port_o id="S_we_ram" dir="IN" is_memory="1" is_global="1" is_extern="1">
-            <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
+            <structural_type_descriptor type="BOOL" size="1" />
+            <connected_objects />
           </port_o>
           <port_o id="S_addr_ram" dir="IN" is_memory="1" is_global="1" is_extern="1" is_addr_bus="1">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1" />
+            <connected_objects />
           </port_o>
           <port_o id="S_Wdata_ram" dir="IN" is_memory="1" is_global="1" is_extern="1" is_data_bus="1">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
-            <connected_objects/>
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8" />
+            <connected_objects />
           </port_o>
           <port_o id="Sin_Rdata_ram" dir="IN" is_memory="1" is_slave="1" is_data_bus="1">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
-            <connected_objects/>
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8" />
+            <connected_objects />
           </port_o>
           <port_o id="S_data_ram_size" dir="IN" is_memory="1" is_global="1" is_extern="1" is_size_bus="1">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1" />
+            <connected_objects />
           </port_o>
           <port_o id="Sin_DataRdy" dir="IN" is_memory="1" is_slave="1">
-            <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
+            <structural_type_descriptor type="BOOL" size="1" />
+            <connected_objects />
           </port_o>
           <port_o id="Sout_Rdata_ram" dir="OUT" is_memory="1" is_slave="1" is_data_bus="1">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
-            <connected_objects/>
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8" />
+            <connected_objects />
           </port_o>
           <port_o id="Sout_DataRdy" dir="OUT" is_memory="1" is_slave="1">
-            <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
+            <structural_type_descriptor type="BOOL" size="1" />
+            <connected_objects />
           </port_o>
           <port_o id="start_port" dir="OUT">
-            <structural_type_descriptor type="BOOL" size="1"/>
+            <structural_type_descriptor type="BOOL" size="1" />
           </port_o>
           <port_o id="done_port" dir="IN">
-            <structural_type_descriptor type="BOOL" size="1"/>
+            <structural_type_descriptor type="BOOL" size="1" />
           </port_o>
           <NP_functionality LIBRARY="status_register_no_notified_FU S_addr_ram S_Wdata_ram Sin_Rdata_ram Sout_Rdata_ram S_data_ram_size ALLOCATED_ADDRESS" VERILOG_PROVIDED="
 wire statusRegister;
@@ -981,7 +988,7 @@ always @ (posedge clock 1RESET_EDGE) begin
    end
 end   
 
-"/>
+" />
         </component_o>
       </circuit>
     </cell>
@@ -993,55 +1000,55 @@ end
           <copyright>Copyright (C) 2016-2023 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
-          <structural_type_descriptor id_type="status_register_no_notifiedN_FU"/>
+          <structural_type_descriptor id_type="status_register_no_notifiedN_FU" />
           <parameter name="ALLOCATED_ADDRESS">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
-            <structural_type_descriptor type="BOOL" size="1"/>
+            <structural_type_descriptor type="BOOL" size="1" />
           </port_o>
           <port_o id="reset" dir="IN">
-            <structural_type_descriptor type="BOOL" size="1"/>
+            <structural_type_descriptor type="BOOL" size="1" />
           </port_o>
           <port_vector_o id="S_oe_ram" dir="IN" is_memory="1" is_global="1" is_extern="1">
-            <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
+            <structural_type_descriptor type="BOOL" size="1" />
+            <connected_objects />
           </port_vector_o>
           <port_vector_o id="S_we_ram" dir="IN" is_memory="1" is_global="1" is_extern="1">
-            <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
+            <structural_type_descriptor type="BOOL" size="1" />
+            <connected_objects />
           </port_vector_o>
           <port_vector_o id="S_addr_ram" dir="IN" is_memory="1" is_global="1" is_extern="1" is_addr_bus="1">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1" />
+            <connected_objects />
           </port_vector_o>
           <port_vector_o id="S_Wdata_ram" dir="IN" is_memory="1" is_global="1" is_extern="1" is_data_bus="1">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
-            <connected_objects/>
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8" />
+            <connected_objects />
           </port_vector_o>
           <port_vector_o id="Sin_Rdata_ram" dir="IN" is_memory="1" is_slave="1" is_data_bus="1">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
-            <connected_objects/>
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8" />
+            <connected_objects />
           </port_vector_o>
           <port_vector_o id="Sout_Rdata_ram" dir="OUT" is_memory="1" is_slave="1" is_data_bus="1">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
-            <connected_objects/>
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8" />
+            <connected_objects />
           </port_vector_o>
           <port_vector_o id="S_data_ram_size" dir="IN" is_memory="1" is_global="1" is_extern="1" is_size_bus="1">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1" />
+            <connected_objects />
           </port_vector_o>
           <port_vector_o id="Sin_DataRdy" dir="IN" is_memory="1" is_slave="1">
-            <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
+            <structural_type_descriptor type="BOOL" size="1" />
+            <connected_objects />
           </port_vector_o>
           <port_vector_o id="Sout_DataRdy" dir="OUT" is_memory="1" is_slave="1">
-            <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
+            <structural_type_descriptor type="BOOL" size="1" />
+            <connected_objects />
           </port_vector_o>
           <port_o id="start_port" dir="OUT">
-            <structural_type_descriptor type="BOOL"/>
+            <structural_type_descriptor type="BOOL" />
           </port_o>
           <port_o id="done_port" dir="IN">
-            <structural_type_descriptor type="BOOL"/>
+            <structural_type_descriptor type="BOOL" />
           </port_o>
           <NP_functionality LIBRARY="status_register_no_notifiedN_FU S_addr_ram S_Wdata_ram Sin_Rdata_ram Sout_Rdata_ram S_data_ram_size ALLOCATED_ADDRESS" VERILOG_PROVIDED="function [PORTSIZE_S_addr_ram-1:0] check_condition;
   input [PORTSIZE_S_addr_ram*BITSIZE_S_addr_ram-1:0] m;
@@ -1089,38 +1096,38 @@ always @ (posedge clock 1RESET_EDGE) begin
       state &lt;= state_next;
       start_port &lt;= next_start_port;
    end
-end"/>
+end" />
         </component_o>
       </circuit>
     </cell>
     <cell>
       <name>bit_ior_concat_expr_FU</name>
-      <operation operation_name="bit_ior_concat_expr" supported_types="INT:*"/>
+      <operation operation_name="bit_ior_concat_expr" supported_types="INT:*" />
       <circuit>
         <component_o id="bit_ior_concat_expr_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
           <copyright>Copyright (C) 2016-2023 Politecnico di Milano</copyright>  
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
           <license>PANDA_LGPLv3</license>
-          <structural_type_descriptor id_type="bit_ior_concat_expr_FU"/>
+          <structural_type_descriptor id_type="bit_ior_concat_expr_FU" />
           <parameter name="OFFSET_PARAMETER">1</parameter>
           <port_o id="in1" dir="IN">
-            <structural_type_descriptor type="INT" size="1"/>
-            <connected_objects/>
+            <structural_type_descriptor type="INT" size="1" />
+            <connected_objects />
           </port_o>
           <port_o id="in2" dir="IN">
-            <structural_type_descriptor type="INT" size="1"/>
-            <connected_objects/>
+            <structural_type_descriptor type="INT" size="1" />
+            <connected_objects />
           </port_o>
           <port_o id="in3" dir="IN">
-            <structural_type_descriptor type="INT" size="1"/>
-            <connected_objects/>
+            <structural_type_descriptor type="INT" size="1" />
+            <connected_objects />
           </port_o>
           <port_o id="out1" dir="OUT">
-            <structural_type_descriptor type="INT" size="1"/>
-            <connected_objects/>
-         </port_o>
-         <NP_functionality LIBRARY="bit_ior_concat_expr_FU in1 in2 in3 out1 OFFSET_PARAMETER" VERILOG_PROVIDED="
+            <structural_type_descriptor type="INT" size="1" />
+            <connected_objects />
+          </port_o>
+          <NP_functionality LIBRARY="bit_ior_concat_expr_FU in1 in2 in3 out1 OFFSET_PARAMETER" VERILOG_PROVIDED="
 parameter nbit_out = BITSIZE_out1 &gt; OFFSET_PARAMETER ? BITSIZE_out1 : 1+OFFSET_PARAMETER;
 wire signed [nbit_out-1:0] tmp_in1;
 wire signed [OFFSET_PARAMETER-1:0] tmp_in2;
@@ -1136,9 +1143,7 @@ generate
   else
     assign tmp_in2={{(OFFSET_PARAMETER-BITSIZE_in2){in2[BITSIZE_in2-1]}},in2};
 endgenerate
-assign out1 = {tmp_in1[nbit_out-1:OFFSET_PARAMETER] , tmp_in2};"
-VHDL_PROVIDED=
-"function integer_ternary_operator(cond : boolean; op1 : integer; op2 : integer) return integer is
+assign out1 = {tmp_in1[nbit_out-1:OFFSET_PARAMETER] , tmp_in2};" VHDL_PROVIDED="function integer_ternary_operator(cond : boolean; op1 : integer; op2 : integer) return integer is
   begin
     if cond then
       return op1;
@@ -1153,40 +1158,38 @@ end integer_ternary_operator;
     tmp_in1 &lt;= resize_signed(in1, nbit_out);
     tmp_in2 &lt;= resize_signed(in2, nbit_out);
     out1 &lt;= resize(tmp_in1(nbit_out-1 downto OFFSET_PARAMETER) &amp; tmp_in2(OFFSET_PARAMETER-1 downto 0), BITSIZE_out1);
-    "/>
+    " />
         </component_o>
       </circuit>
     </cell>
     <cell>
       <name>ui_bit_ior_concat_expr_FU</name>
-      <operation operation_name="bit_ior_concat_expr" supported_types="UINT:*|VECTOR_BOOL:*"/>
+      <operation operation_name="bit_ior_concat_expr" supported_types="UINT:*|VECTOR_BOOL:*" />
       <circuit>
         <component_o id="ui_bit_ior_concat_expr_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
           <copyright>Copyright (C) 2016-2023 Politecnico di Milano</copyright>  
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
           <license>PANDA_LGPLv3</license>
-          <structural_type_descriptor id_type="ui_bit_ior_concat_expr_FU"/>
+          <structural_type_descriptor id_type="ui_bit_ior_concat_expr_FU" />
           <parameter name="OFFSET_PARAMETER">1</parameter>
           <port_o id="in1" dir="IN">
-            <structural_type_descriptor type="UINT" size="1"/>
-            <connected_objects/>
+            <structural_type_descriptor type="UINT" size="1" />
+            <connected_objects />
           </port_o>
           <port_o id="in2" dir="IN">
-            <structural_type_descriptor type="UINT" size="1"/>
-            <connected_objects/>
+            <structural_type_descriptor type="UINT" size="1" />
+            <connected_objects />
           </port_o>
           <port_o id="in3" dir="IN">
-            <structural_type_descriptor type="UINT" size="1"/>
-            <connected_objects/>
+            <structural_type_descriptor type="UINT" size="1" />
+            <connected_objects />
           </port_o>
           <port_o id="out1" dir="OUT">
-            <structural_type_descriptor type="UINT" size="1"/>
-            <connected_objects/>
+            <structural_type_descriptor type="UINT" size="1" />
+            <connected_objects />
           </port_o>
-          <NP_functionality LIBRARY="ui_bit_ior_concat_expr_FU in1 in2 in3 out1 OFFSET_PARAMETER"
-VERILOG_PROVIDED=
-"parameter nbit_out = BITSIZE_out1 &gt; OFFSET_PARAMETER ? BITSIZE_out1 : 1+OFFSET_PARAMETER;
+          <NP_functionality LIBRARY="ui_bit_ior_concat_expr_FU in1 in2 in3 out1 OFFSET_PARAMETER" VERILOG_PROVIDED="parameter nbit_out = BITSIZE_out1 &gt; OFFSET_PARAMETER ? BITSIZE_out1 : 1+OFFSET_PARAMETER;
 wire [nbit_out-1:0] tmp_in1;
 wire [OFFSET_PARAMETER-1:0] tmp_in2;
 generate
@@ -1201,9 +1204,7 @@ generate
   else
     assign tmp_in2={{(OFFSET_PARAMETER-BITSIZE_in2){1&apos;b0}},in2};
 endgenerate
-assign out1 = {tmp_in1[nbit_out-1:OFFSET_PARAMETER] , tmp_in2};"
-VHDL_PROVIDED=
-"function integer_ternary_operator(cond : boolean; op1 : integer; op2 : integer) return integer is
+assign out1 = {tmp_in1[nbit_out-1:OFFSET_PARAMETER] , tmp_in2};" VHDL_PROVIDED="function integer_ternary_operator(cond : boolean; op1 : integer; op2 : integer) return integer is
   begin
     if cond then
       return op1;
@@ -1218,39 +1219,39 @@ end integer_ternary_operator;
     tmp_in1 &lt;= resize(in1, nbit_out);
     tmp_in2 &lt;= resize(in2, nbit_out);
     out1 &lt;= resize(tmp_in1(nbit_out-1 downto OFFSET_PARAMETER) &amp; tmp_in2(OFFSET_PARAMETER-1 downto 0), BITSIZE_out1);
-    "/>
+    " />
         </component_o>
       </circuit>
     </cell>
     <cell>
       <name>__builtin_trap</name>
-      <operation operation_name="trap" bounded="0"/>
-      <operation operation_name="__builtin_trap" bounded="0"/>
+      <operation operation_name="trap" bounded="0" />
+      <operation operation_name="__builtin_trap" bounded="0" />
       <circuit>
         <component_o id="__builtin_trap">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
           <copyright>Copyright (C) 2014-2023 Politecnico di Milano</copyright>  
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
           <license>PANDA_LGPLv3</license>
-          <structural_type_descriptor id_type="__builtin_trap"/>
+          <structural_type_descriptor id_type="__builtin_trap" />
           <port_o id="clock" dir="IN" is_clock="1">
-            <structural_type_descriptor type="BOOL" size="1"/>
+            <structural_type_descriptor type="BOOL" size="1" />
           </port_o>
           <port_o id="start_port" dir="IN">
-            <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
+            <structural_type_descriptor type="BOOL" size="1" />
+            <connected_objects />
           </port_o>
           <port_o id="sel_trap" dir="IN">
-            <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
+            <structural_type_descriptor type="BOOL" size="1" />
+            <connected_objects />
           </port_o>
           <port_o id="sel___builtin_trap" dir="IN">
-            <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
+            <structural_type_descriptor type="BOOL" size="1" />
+            <connected_objects />
           </port_o>
           <port_o id="done_port" dir="OUT">
-            <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
+            <structural_type_descriptor type="BOOL" size="1" />
+            <connected_objects />
           </port_o>
           <NP_functionality LIBRARY="__builtin_trap" VERILOG_PROVIDED="
 reg done_port 1INIT_ZERO_VALUE;
@@ -1268,39 +1269,39 @@ always @(negedge clock)
     $finish;
   end
 // synthesis translate_on
-always @(posedge clock) done_port &lt;= start_port;"/>
+always @(posedge clock) done_port &lt;= start_port;" />
         </component_o>
       </circuit>
     </cell>
     <cell>
       <name>__builtin_unreachable</name>
-      <operation operation_name="__unreachable" bounded="0" cycles="1"/>
-      <operation operation_name="__builtin_unreachable" bounded="0" cycles="1"/>
+      <operation operation_name="__unreachable" bounded="0" cycles="1" />
+      <operation operation_name="__builtin_unreachable" bounded="0" cycles="1" />
       <circuit>
         <component_o id="__builtin_unreachable">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
           <copyright>Copyright (C) 2015-2023 Politecnico di Milano</copyright>  
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
           <license>PANDA_LGPLv3</license>
-          <structural_type_descriptor id_type="__builtin_unreachable"/>
+          <structural_type_descriptor id_type="__builtin_unreachable" />
           <port_o id="clock" dir="IN" is_clock="1">
-            <structural_type_descriptor type="BOOL" size="1"/>
+            <structural_type_descriptor type="BOOL" size="1" />
           </port_o>
           <port_o id="start_port" dir="IN">
-            <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
+            <structural_type_descriptor type="BOOL" size="1" />
+            <connected_objects />
           </port_o>
           <port_o id="sel___unreachable" dir="IN">
-            <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
+            <structural_type_descriptor type="BOOL" size="1" />
+            <connected_objects />
           </port_o>
           <port_o id="sel___builtin_unreachable" dir="IN">
-            <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
+            <structural_type_descriptor type="BOOL" size="1" />
+            <connected_objects />
           </port_o>
           <port_o id="done_port" dir="OUT">
-            <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
+            <structural_type_descriptor type="BOOL" size="1" />
+            <connected_objects />
           </port_o>
           <NP_functionality LIBRARY="__builtin_unreachable" VERILOG_PROVIDED="
 reg done_port 1INIT_ZERO_VALUE;
@@ -1340,43 +1341,43 @@ begin
     done_port &lt;= start_port;
   end if;
 end process;
-"/>
+" />
         </component_o>
       </circuit>
     </cell>
     <cell>
       <name>__builtin_exit</name>
-      <operation operation_name="exit" bounded="0" cycles="1"/>
-      <operation operation_name="__builtin_exit" bounded="0" cycles="1"/>
+      <operation operation_name="exit" bounded="0" cycles="1" />
+      <operation operation_name="__builtin_exit" bounded="0" cycles="1" />
       <circuit>
         <component_o id="__builtin_exit">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>  
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
           <license>PANDA_LGPLv3</license>
-          <structural_type_descriptor id_type="__builtin_exit"/>
+          <structural_type_descriptor id_type="__builtin_exit" />
           <port_o id="clock" dir="IN" is_clock="1">
-            <structural_type_descriptor type="BOOL" size="1"/>
+            <structural_type_descriptor type="BOOL" size="1" />
           </port_o>
           <port_o id="start_port" dir="IN">
-            <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
+            <structural_type_descriptor type="BOOL" size="1" />
+            <connected_objects />
           </port_o>
           <port_o id="status" dir="IN">
             <structural_type_descriptor type="INT" size="32" />
-            <connected_objects/>
+            <connected_objects />
           </port_o>
           <port_o id="sel_exit" dir="IN">
-            <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
+            <structural_type_descriptor type="BOOL" size="1" />
+            <connected_objects />
           </port_o>
           <port_o id="sel___builtin_exit" dir="IN">
-            <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
+            <structural_type_descriptor type="BOOL" size="1" />
+            <connected_objects />
           </port_o>
           <port_o id="done_port" dir="OUT">
-            <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
+            <structural_type_descriptor type="BOOL" size="1" />
+            <connected_objects />
           </port_o>
           <NP_functionality LIBRARY="__builtin_exit" VERILOG_PROVIDED="
 reg done_port 1INIT_ZERO_VALUE;
@@ -1420,39 +1421,39 @@ begin
     done_port &lt;= start_port;
   end if;
 end process;
-"/>
+" />
         </component_o>
       </circuit>
-   </cell>
-   <cell>
+    </cell>
+    <cell>
       <name>__builtin_abort</name>
-      <operation operation_name="abort" bounded="0" cycles="1"/>
-      <operation operation_name="__builtin_abort" bounded="0" cycles="1"/>
+      <operation operation_name="abort" bounded="0" cycles="1" />
+      <operation operation_name="__builtin_abort" bounded="0" cycles="1" />
       <circuit>
         <component_o id="__builtin_abort">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>  
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
           <license>PANDA_LGPLv3</license>
-          <structural_type_descriptor id_type="__builtin_abort"/>
+          <structural_type_descriptor id_type="__builtin_abort" />
           <port_o id="clock" dir="IN" is_clock="1">
-            <structural_type_descriptor type="BOOL" size="1"/>
+            <structural_type_descriptor type="BOOL" size="1" />
           </port_o>
           <port_o id="start_port" dir="IN">
-            <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
+            <structural_type_descriptor type="BOOL" size="1" />
+            <connected_objects />
           </port_o>
           <port_o id="sel_abort" dir="IN">
-            <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
+            <structural_type_descriptor type="BOOL" size="1" />
+            <connected_objects />
           </port_o>
           <port_o id="sel___builtin_abort" dir="IN">
-            <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
+            <structural_type_descriptor type="BOOL" size="1" />
+            <connected_objects />
           </port_o>
           <port_o id="done_port" dir="OUT">
-            <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
+            <structural_type_descriptor type="BOOL" size="1" />
+            <connected_objects />
           </port_o>
           <NP_functionality LIBRARY="__builtin_abort" VERILOG_PROVIDED="
 reg done_port 1INIT_ZERO_VALUE;
@@ -1492,43 +1493,43 @@ begin
     done_port &lt;= start_port;
   end if;
 end process;
-"/>
+" />
         </component_o>
       </circuit>
     </cell>
     <cell>
       <name>__builtin_dwarf_cfa</name>
-      <operation operation_name="dwarf_cfa" bounded="0"/>
-      <operation operation_name="__builtin_dwarf_cfa" bounded="0"/>
+      <operation operation_name="dwarf_cfa" bounded="0" />
+      <operation operation_name="__builtin_dwarf_cfa" bounded="0" />
       <circuit>
         <component_o id="__builtin_dwarf_cfa">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
           <copyright>Copyright (C) 2016-2023 Politecnico di Milano</copyright>  
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
           <license>PANDA_LGPLv3</license>
-          <structural_type_descriptor id_type="__builtin_dwarf_cfa"/>
+          <structural_type_descriptor id_type="__builtin_dwarf_cfa" />
           <port_o id="clock" dir="IN" is_clock="1">
-            <structural_type_descriptor type="BOOL" size="1"/>
+            <structural_type_descriptor type="BOOL" size="1" />
           </port_o>
           <port_o id="start_port" dir="IN">
-            <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
+            <structural_type_descriptor type="BOOL" size="1" />
+            <connected_objects />
           </port_o>
           <port_o id="sel_dwarf_cfa" dir="IN">
-            <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
+            <structural_type_descriptor type="BOOL" size="1" />
+            <connected_objects />
           </port_o>
           <port_o id="sel___builtin_dwarf_cfa" dir="IN">
-            <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
+            <structural_type_descriptor type="BOOL" size="1" />
+            <connected_objects />
           </port_o>
           <port_o id="out1" dir="OUT">
-            <structural_type_descriptor type="UINT" size="1"/>
-            <connected_objects/>
+            <structural_type_descriptor type="UINT" size="1" />
+            <connected_objects />
           </port_o>
           <port_o id="done_port" dir="OUT">
-            <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
+            <structural_type_descriptor type="BOOL" size="1" />
+            <connected_objects />
           </port_o>
           <NP_functionality LIBRARY="__builtin_dwarf_cfa out1" VERILOG_PROVIDED="
 reg done_port 1INIT_ZERO_VALUE;
@@ -1539,7 +1540,7 @@ always @(negedge clock)
     $display(&quot;__builtin_dwarf_cfa called&quot;);
   end
 // synthesis translate_on
-always @(posedge clock) done_port &lt;= start_port; assign out1 = 0;"/>
+always @(posedge clock) done_port &lt;= start_port; assign out1 = 0;" />
         </component_o>
       </circuit>
     </cell>
@@ -1673,4 +1674,3 @@ assign out1 = x;
     </cell>
   </library>
 </technology>
-

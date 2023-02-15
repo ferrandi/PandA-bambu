@@ -301,7 +301,7 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
       }
       double mux_time_estimation =
           (n_levels * HLS->allocation_information->mux_time_unit(32)) + (n_levels > 0 ? controller_delay : 0);
-      if(mux_time_estimation > HLS->allocation_information->getMinimumSlack())
+      if(mux_time_estimation > HLS->allocation_information->getMinimumSlack() && !is_pipelined)
       {
          has_registered_inputs = true;
       }

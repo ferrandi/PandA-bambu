@@ -8,7 +8,7 @@ if [[ "$compiler" != *GCC* ]]; then
    exit 0
 fi
 
-BATCH_ARGS=("--simulator=MODELSIM" "--std=c99" "--experimental-setup=BAMBU" "-O3" "-fno-delete-null-pointer-checks" "-fopenmp" "--pragma-parse" "--mem-delay-read=20" "--mem-delay-write=20" "--channels-type=MEM_ACC_11" "--memory-allocation-policy=NO_BRAM" "--no-iob" "-DMAX_VERTEX_NUMBER=26455" "-DMAX_EDGE_NUMBER=100573" "--simulate")
+BATCH_ARGS=("--simulator=MODELSIM" "--std=c99" "--experimental-setup=BAMBU" "-O3" "-fno-delete-null-pointer-checks" "-fopenmp" "--pragma-parse" "--mem-delay-read=20" "--mem-delay-write=20" "--channels-type=MEM_ACC_11" "--memory-allocation-policy=NO_BRAM" "--no-iob" "-DMAX_VERTEX_NUMBER=26455" "-DMAX_EDGE_NUMBER=100573" "-DNDEBUG" "--simulate")
 OUT_SUFFIX="parallel_queries_1DB"
 
 python3 $script_dir/../../etc/scripts/test_panda.py --tool=bambu  \

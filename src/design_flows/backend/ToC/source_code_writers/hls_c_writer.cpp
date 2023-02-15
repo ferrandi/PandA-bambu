@@ -663,10 +663,23 @@ void HLSCWriter::WriteExpectedResults(const BehavioralHelperConstRef BH,
    const auto fnode = TM->CGetTreeReindex(BH->get_function_index());
    const auto fd = GetPointerS<const function_decl>(GET_CONST_NODE(fnode));
    const auto fname = tree_helper::GetMangledFunctionName(fd);
-   const auto& DesignInterfaceTypename = hls_c_backend_information->HLSMgr->design_interface_typename_orig_signature;
-   const auto& DesignInterfaceSpecifier = hls_c_backend_information->HLSMgr->design_interface;
-   const auto has_interface = DesignInterfaceTypename.find(fname) != DesignInterfaceTypename.end();
-   const auto has_specifier = DesignInterfaceSpecifier.find(fname) != DesignInterfaceSpecifier.end();
+   const auto& DesignAttributes = hls_c_backend_information->HLSMgr->design_attributes;
+   auto has_interface = false;
+   auto has_specifier = false;
+   if(DesignAttributes.find(fname) != DesignAttributes.end())
+   {
+      for(auto& par : DesignAttributes.at(fname))
+      {
+         if(par.second.find(attr_typename) != par.second.end())
+         {
+            has_interface = true;
+         }
+         if(par.second.find(attr_interface_type) != par.second.end())
+         {
+            has_specifier = true;
+         }
+      }
+   }
 
    const auto params = BH->GetParameters();
    for(auto par_idx = 0U; par_idx < params.size(); ++par_idx)
@@ -682,7 +695,7 @@ void HLSCWriter::WriteExpectedResults(const BehavioralHelperConstRef BH,
          const auto arg_typename = [&]() {
             if(has_interface)
             {
-               auto type_name = DesignInterfaceTypename.at(fname).at(par_idx);
+               auto type_name = DesignAttributes.at(fname).at(param).at(attr_typename);
                if(type_name.back() == '&')
                {
                   return type_name.substr(0, type_name.size() - 1U) + "*";
@@ -717,7 +730,7 @@ void HLSCWriter::WriteExpectedResults(const BehavioralHelperConstRef BH,
             }
             return "";
          }();
-         const auto param_interface = has_specifier ? DesignInterfaceSpecifier.at(fname).at(param) : "";
+         const auto param_interface = has_specifier ? DesignAttributes.at(fname).at(param).at(attr_interface_type) : "";
          const auto param_cast = "((" + arg_typename + ")" + param + ")";
 
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
@@ -898,8 +911,8 @@ void HLSCWriter::WriteSimulatorInitMemory(const unsigned int function_id)
 
    const auto fname =
        tree_helper::GetMangledFunctionName(GetPointerS<const function_decl>(TM->CGetTreeNode(function_id)));
-   const auto& DesignInterfaceTypename = hls_c_backend_information->HLSMgr->design_interface_typename;
-   const auto DesignInterfaceArgsTypename_it = DesignInterfaceTypename.find(fname);
+   const auto& DesignAttributes = hls_c_backend_information->HLSMgr->design_attributes;
+   const auto& DesignAttributes_it = hls_c_backend_information->HLSMgr->design_attributes.find(fname);
 
    std::vector<unsigned int> mem_interface;
    const auto& parameters = BH->get_parameters();
@@ -927,12 +940,14 @@ void HLSCWriter::WriteSimulatorInitMemory(const unsigned int function_id)
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Considering memory variable '" + param + "'");
          const auto is_top_param = std::find(parameters.begin(), parameters.end(), l) != parameters.end();
          const auto param_if_typename = [&]() -> std::string {
-            if(DesignInterfaceArgsTypename_it != DesignInterfaceTypename.end())
+            if(DesignAttributes_it != DesignAttributes.end())
             {
-               const auto if_arg_typename = DesignInterfaceArgsTypename_it->second.find(param);
-               if(if_arg_typename != DesignInterfaceArgsTypename_it->second.end())
+               const auto if_arg_typename = DesignAttributes_it->second.find(param);
+               if(if_arg_typename != DesignAttributes_it->second.end())
                {
-                  return boost::regex_replace(if_arg_typename->second, wrapper_def, "$" + STR(WRAPPER_GROUP_WTYPE));
+                  THROW_ASSERT(if_arg_typename->second.count(attr_typename), "");
+                  return boost::regex_replace(if_arg_typename->second.at(attr_typename), wrapper_def,
+                                              "$" + STR(WRAPPER_GROUP_WTYPE));
                }
             }
             return "";
