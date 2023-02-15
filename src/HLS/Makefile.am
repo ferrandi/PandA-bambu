@@ -537,6 +537,7 @@ lib_hls_flow_la_CPPFLAGS = \
    -I$(top_srcdir)/src/design_flows/backend/ToC\
    -I$(top_srcdir)/src/design_flows/backend/ToC/progModels \
    -I$(top_srcdir)/src/design_flows/backend/ToC/source_code_writers \
+   -I$(top_srcdir)/src/design_flows/technology \
    -I$(top_srcdir)/src/frontend_analysis \
    -I$(top_srcdir)/src/graph \
    -I$(top_srcdir)/src/HLS \
@@ -578,10 +579,12 @@ lib_hls_flow_la_CPPFLAGS = \
    -I$(top_srcdir)/src/wrapper/synthesis/xilinx/ise \
    $(AM_CPPFLAGS)
 noinst_HEADERS += \
+   hls_flow/dominator_allocation.hpp \
    hls_flow/initialize_hls.hpp \
    hls_flow/classical_synthesis_flow.hpp \
    hls_flow/write_hls_summary.hpp
 lib_hls_flow_la_SOURCES = \
+   hls_flow/dominator_allocation.cpp \
    hls_flow/initialize_hls.cpp \
    hls_flow/classical_synthesis_flow.cpp \
    hls_flow/write_hls_summary.cpp

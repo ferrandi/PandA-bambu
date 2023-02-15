@@ -175,6 +175,8 @@ const std::string HLS_step::EnumToName(const HLSFlowStep_Type hls_flow_step_type
          return "ControlFlowChecker";
       case HLSFlowStep_Type::C_TESTBENCH_EXECUTION:
          return "CTestbenchExecution";
+      case HLSFlowStep_Type::DOMINATOR_ALLOCATION:
+         return "DominatorAllocation";
       case HLSFlowStep_Type::DOMINATOR_MEMORY_ALLOCATION:
          return "DominatorMemoryAllocation";
       case HLSFlowStep_Type::DOMINATOR_MEMORY_ALLOCATION_CS:

@@ -98,29 +98,6 @@ void fun_dominator_allocation::ComputeRelationships(DesignFlowStepSet& relations
 {
    switch(relationship_type)
    {
-      case(PRECEDENCE_RELATIONSHIP):
-      {
-#if HAVE_EXPERIMENTAL && HAVE_PRAGMA_BUILT
-         if(parameters->isOption(OPT_parse_pragma) and parameters->getOption<bool>(OPT_parse_pragma) and
-            relationship_type == PRECEDENCE_RELATIONSHIP)
-         {
-            const DesignFlowGraphConstRef design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
-            const ActorGraphFlowStepFactory* actor_graph_flow_step_factory =
-                GetPointer<const ActorGraphFlowStepFactory>(
-                    design_flow_manager.lock()->CGetDesignFlowStepFactory("ActorGraph"));
-            const std::string actor_graph_creator_signature =
-                ActorGraphFlowStep::ComputeSignature(ACTOR_GRAPHS_CREATOR, input_function, 0, "");
-            const vertex actor_graph_creator_step =
-                design_flow_manager.lock()->GetDesignFlowStep(actor_graph_creator_signature);
-            const DesignFlowStepRef design_flow_step =
-                actor_graph_creator_step ?
-                    design_flow_graph->CGetDesignFlowStepInfo(actor_graph_creator_step)->design_flow_step :
-                    actor_graph_flow_step_factory->CreateActorGraphStep(ACTOR_GRAPHS_CREATOR, input_function);
-            relationship.insert(design_flow_step);
-         }
-#endif
-         break;
-      }
       case DEPENDENCE_RELATIONSHIP:
       {
          const DesignFlowGraphConstRef design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
@@ -143,6 +120,29 @@ void fun_dominator_allocation::ComputeRelationships(DesignFlowStepSet& relations
                  design_flow_graph->CGetDesignFlowStepInfo(technology_flow_step)->design_flow_step :
                  technology_flow_step_factory->CreateTechnologyFlowStep(TechnologyFlowStep_Type::LOAD_TECHNOLOGY);
          relationship.insert(technology_design_flow_step);
+         break;
+      }
+      case(PRECEDENCE_RELATIONSHIP):
+      {
+#if HAVE_EXPERIMENTAL && HAVE_PRAGMA_BUILT
+         if(parameters->isOption(OPT_parse_pragma) and parameters->getOption<bool>(OPT_parse_pragma) and
+            relationship_type == PRECEDENCE_RELATIONSHIP)
+         {
+            const DesignFlowGraphConstRef design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
+            const ActorGraphFlowStepFactory* actor_graph_flow_step_factory =
+                GetPointer<const ActorGraphFlowStepFactory>(
+                    design_flow_manager.lock()->CGetDesignFlowStepFactory("ActorGraph"));
+            const std::string actor_graph_creator_signature =
+                ActorGraphFlowStep::ComputeSignature(ACTOR_GRAPHS_CREATOR, input_function, 0, "");
+            const vertex actor_graph_creator_step =
+                design_flow_manager.lock()->GetDesignFlowStep(actor_graph_creator_signature);
+            const DesignFlowStepRef design_flow_step =
+                actor_graph_creator_step ?
+                    design_flow_graph->CGetDesignFlowStepInfo(actor_graph_creator_step)->design_flow_step :
+                    actor_graph_flow_step_factory->CreateActorGraphStep(ACTOR_GRAPHS_CREATOR, input_function);
+            relationship.insert(design_flow_step);
+         }
+#endif
          break;
       }
       case INVALIDATION_RELATIONSHIP:
@@ -251,13 +251,14 @@ DesignFlowStep_Status fun_dominator_allocation::Exec()
    std::map<std::string, CustomOrderedSet<vertex>> fun_dom_map;
    std::map<std::string, CustomOrderedSet<unsigned int>> where_used;
    std::map<std::string, bool> indirectlyCalled;
-   const HLS_constraintsRef HLS_C = HLS_constraintsRef(new HLS_constraints(HLSMgr->get_parameter(), ""));
 
    const CallGraphConstRef cg = CG->CGetCallGraph();
    for(const auto& funID : reached_fu_ids)
    {
       vertex vert_dominator, current_vertex;
       current_vertex = CG->GetVertex(funID);
+      THROW_ASSERT(HLSMgr->get_HLS(funID), "Missing HLS initialization");
+      const auto HLS_C = HLSMgr->get_HLS(funID)->HLS_C;
       THROW_ASSERT(cg_dominator_map.find(current_vertex) != cg_dominator_map.end(),
                    "Dominator vertex not in the dominator tree: " +
                        HLSMgr->CGetFunctionBehavior(CG->get_function(current_vertex))

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2023 Politecnico di Milano
+ *              Copyright (C) 2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -31,47 +31,34 @@
  *
  */
 /**
- * @file function_allocation.hpp
- * @brief Base class to allocate functions in high-level synthesis
+ * @file dominator_allocation.hpp
+ * @brief Composed pass to wrap function and memory dominator allocation
  *
- * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
+ * @author Michele Fiorito <michele.fiorito@polimi.it>
  * $Revision$
  * $Date$
  * Last modified by $Author$
  *
  */
 
-#ifndef FUNCTION_ALLOCATION_HPP
-#define FUNCTION_ALLOCATION_HPP
+#ifndef DOMINATOR_ALLOCATION_HPP
+#define DOMINATOR_ALLOCATION_HPP
 
 #include "hls_step.hpp"
-REF_FORWARD_DECL(function_allocation);
 
-/**
- * Allocation function class
- */
-class function_allocation : public HLS_step
+class dominator_allocation : public HLS_step
 {
  protected:
-   virtual const CustomUnorderedSet<
-       std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
+   const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
    ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
  public:
-   /**
-    * Constructor
-    */
-   function_allocation(const ParameterConstRef Param, const HLS_managerRef HLSMgr,
-                       const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStep_Type hls_flow_step_type);
+   dominator_allocation(const ParameterConstRef _parameters, const HLS_managerRef HLSMgr,
+                        const DesignFlowManagerConstRef design_flow_manager);
 
-   /**
-    * Destructor
-    */
-   ~function_allocation() override;
+   bool HasToBeExecuted() const override;
 
-   /**
-    * Initialize the step (i.e., like a constructor, but executed just before exec
-    */
-   void Initialize() override;
+   DesignFlowStep_Status Exec() override;
 };
+
 #endif

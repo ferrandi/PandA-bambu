@@ -887,7 +887,6 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
       num_instances[top_vertex] = 1;
    }
    std::map<unsigned int, std::vector<std::pair<unsigned int, bool>>> memory_allocation_map;
-   const HLS_constraintsRef HLS_C = HLS_constraintsRef(new HLS_constraints(HLSMgr->get_parameter(), ""));
    const CallGraphConstRef cg_projection = CG->CGetCallSubGraph(all_reachable_vertices);
    std::list<vertex> topology_sorted_vertex;
    cg_projection->TopologicalSort(topology_sorted_vertex);
@@ -895,6 +894,8 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
    for(const auto cur : topology_sorted_vertex)
    {
       const unsigned int funID = CG->get_function(cur);
+      THROW_ASSERT(HLSMgr->get_HLS(funID), "Missing HLS initialization");
+      const auto HLS_C = HLSMgr->get_HLS(funID)->HLS_C;
       if(reached_fu_ids.find(funID) == reached_fu_ids.end())
       {
          continue;
