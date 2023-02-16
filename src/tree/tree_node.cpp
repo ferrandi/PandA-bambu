@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -736,12 +736,11 @@ void expr_stmt::visit(tree_node_visitor* const v) const
    VISIT_MEMBER(mask, next, visit(v));
 }
 
-long long int field_decl::offset()
+integer_cst_t field_decl::offset()
 {
    if(bpos)
    {
-      auto* ic = GetPointer<integer_cst>(GET_NODE(bpos));
-      return tree_helper::get_integer_cst_value(ic);
+      return tree_helper::GetConstValue(bpos);
    }
    return 0;
 }
@@ -1175,10 +1174,10 @@ std::string record_type::get_maybe_name() const
    return "#UNKNOWN#";
 }
 
-tree_nodeRef record_type::get_field(long long int offset)
+tree_nodeRef record_type::get_field(integer_cst_t offset)
 {
    unsigned int i;
-   long long int fld_offset;
+   integer_cst_t fld_offset;
    field_decl* fd;
    for(i = 0; i < list_of_flds.size(); i++)
    {

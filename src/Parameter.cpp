@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -438,7 +438,7 @@ void Parameter::PrintFullHeader(std::ostream& os) const
    os << "                         Politecnico di Milano - DEIB" << std::endl;
    os << "                          System Architectures Group" << std::endl;
    os << "********************************************************************************" << std::endl;
-   os << "                Copyright (C) 2004-2022 Politecnico di Milano" << std::endl;
+   os << "                Copyright (C) 2004-2023 Politecnico di Milano" << std::endl;
    std::string version = PrintVersion();
    if(version.size() < 80)
    {
@@ -1447,8 +1447,8 @@ void Parameter::PrintOutputOptionsUsage(std::ostream& os) const
       << "    --max-transformations=<number>\n"
       << "        Set a maximum number of transformations.\n\n"
       << "        To reduce the disk usage two PandA parameter could be used:\n"
-      << "          --panda-parameter=disable-print-tree-manager=1\n"
-      << "          --panda-parameter=disable-print-dot-FF=1\n\n"
+      << "          --panda-parameter=print-tree-manager=1\n"
+      << "          --panda-parameter=print-dot-FF=1\n\n"
       << "    --find-max-transformations\n"
       << "        Find the maximum number of transformations raising an exception.\n\n"
 #endif

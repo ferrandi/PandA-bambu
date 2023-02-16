@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2022-2022 Politecnico di Milano
+ *              Copyright (C) 2022-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -85,15 +85,15 @@ void ReadWriteDP_arrayModuleGenerator::InternalExec(std::ostream& out, const mod
    auto arraySize = 1U;
    const auto TM = HLSMgr->get_tree_manager();
    const auto top_functions = HLSMgr->CGetCallGraphManager()->GetRootFunctions();
-   for(const auto& f_props : HLSMgr->design_interface_arraysize)
+   for(const auto& f_props : HLSMgr->design_attributes)
    {
       const auto& name = f_props.first;
       const auto& props = f_props.second;
       const auto id = TM->function_index_mngl(name);
-      const auto prop_it = props.find(parameter_name);
-      if(top_functions.count(id) && prop_it != props.end() && !foundParam)
+      if(top_functions.count(id) && props.find(parameter_name) != props.end() &&
+         props.at(parameter_name).find(attr_size) != props.at(parameter_name).end() && !foundParam)
       {
-         arraySize = boost::lexical_cast<decltype(arraySize)>(prop_it->second);
+         arraySize = boost::lexical_cast<decltype(arraySize)>(props.at(parameter_name).at(attr_size));
          foundParam = true;
       }
       else if(foundParam)

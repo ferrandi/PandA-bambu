@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -67,6 +67,8 @@
 #include "weight_information.hpp"
 #endif
 
+#define DECLARATION (2) // All nodes including declarations are duplicated (not function_decl)
+
 #define CREATE_TREE_NODE_CASE_BODY(tree_node_name, node_id) \
    {                                                        \
       (node_id) = TM->new_tree_node_id();                   \
@@ -116,9 +118,9 @@ tree_node_dup::tree_node_dup(CustomUnorderedMapStable<unsigned int, unsigned int
    }
 }
 
-unsigned int tree_node_dup::create_tree_node(const tree_nodeRef& tn, tree_node_dup_mode _mode)
+unsigned int tree_node_dup::create_tree_node(const tree_nodeRef& tn, int _mode)
 {
-   unsigned int node_id = 0;
+   unsigned int node_id = 0U;
    mode = _mode;
    switch(tn->get_kind())
    {
@@ -232,7 +234,7 @@ unsigned int tree_node_dup::create_tree_node(const tree_nodeRef& tn, tree_node_d
       case fdesc_expr_K:
          CREATE_TREE_NODE_CASE_BODY(fdesc_expr, node_id)
       case field_decl_K:
-         if(mode == 2)
+         if(mode >= tree_node_dup_mode::FUNCTION)
             CREATE_TREE_NODE_CASE_BODY(field_decl, node_id)
          else
             RET_NODE_ID_CASE_BODY(field_decl, node_id)
@@ -251,12 +253,12 @@ unsigned int tree_node_dup::create_tree_node(const tree_nodeRef& tn, tree_node_d
       case floor_mod_expr_K:
          CREATE_TREE_NODE_CASE_BODY(floor_mod_expr, node_id)
       case function_decl_K:
-         if(mode == 2)
+         if(mode >= tree_node_dup_mode::FUNCTION)
             CREATE_TREE_NODE_CASE_BODY(function_decl, node_id)
          else
             RET_NODE_ID_CASE_BODY(function_decl, node_id)
       case function_type_K:
-         if(mode == 2)
+         if(mode >= tree_node_dup_mode::FUNCTION)
             CREATE_TREE_NODE_CASE_BODY(function_type, node_id)
          else
             RET_NODE_ID_CASE_BODY(function_type, node_id)
@@ -269,7 +271,7 @@ unsigned int tree_node_dup::create_tree_node(const tree_nodeRef& tn, tree_node_d
       case gimple_goto_K:
          CREATE_TREE_NODE_CASE_BODY(gimple_goto, node_id)
       case gimple_label_K:
-         if(mode == 2)
+         if(mode >= DECLARATION)
             CREATE_TREE_NODE_CASE_BODY(gimple_label, node_id)
          else
             RET_NODE_ID_CASE_BODY(gimple_label, node_id)
@@ -294,7 +296,7 @@ unsigned int tree_node_dup::create_tree_node(const tree_nodeRef& tn, tree_node_d
       case integer_type_K:
          RET_NODE_ID_CASE_BODY(integer_type, node_id)
       case label_decl_K:
-         if(mode == 2)
+         if(mode >= DECLARATION)
             CREATE_TREE_NODE_CASE_BODY(label_decl, node_id)
          else
             RET_NODE_ID_CASE_BODY(label_decl, node_id)
@@ -317,7 +319,7 @@ unsigned int tree_node_dup::create_tree_node(const tree_nodeRef& tn, tree_node_d
       case max_expr_K:
          CREATE_TREE_NODE_CASE_BODY(max_expr, node_id)
       case method_type_K:
-         if(mode == 2)
+         if(mode >= tree_node_dup_mode::FUNCTION)
             CREATE_TREE_NODE_CASE_BODY(method_type, node_id)
          else
             RET_NODE_ID_CASE_BODY(method_type, node_id)
@@ -334,10 +336,7 @@ unsigned int tree_node_dup::create_tree_node(const tree_nodeRef& tn, tree_node_d
       case mult_highpart_expr_K:
          CREATE_TREE_NODE_CASE_BODY(mult_highpart_expr, node_id)
       case namespace_decl_K:
-         if(mode == 2)
-            CREATE_TREE_NODE_CASE_BODY(namespace_decl, node_id)
-         else
-            RET_NODE_ID_CASE_BODY(namespace_decl, node_id)
+         RET_NODE_ID_CASE_BODY(namespace_decl, node_id)
       case ne_expr_K:
          CREATE_TREE_NODE_CASE_BODY(ne_expr, node_id)
       case negate_expr_K:
@@ -357,7 +356,7 @@ unsigned int tree_node_dup::create_tree_node(const tree_nodeRef& tn, tree_node_d
       case overload_K:
          CREATE_TREE_NODE_CASE_BODY(overload, node_id)
       case parm_decl_K:
-         if(mode == 2)
+         if(mode >= DECLARATION)
             CREATE_TREE_NODE_CASE_BODY(parm_decl, node_id)
          else
             RET_NODE_ID_CASE_BODY(parm_decl, node_id)
@@ -409,7 +408,7 @@ unsigned int tree_node_dup::create_tree_node(const tree_nodeRef& tn, tree_node_d
       case reinterpret_cast_expr_K:
          CREATE_TREE_NODE_CASE_BODY(reinterpret_cast_expr, node_id)
       case result_decl_K:
-         if(mode == 2)
+         if(mode >= DECLARATION)
             CREATE_TREE_NODE_CASE_BODY(result_decl, node_id)
          else
             RET_NODE_ID_CASE_BODY(result_decl, node_id)
@@ -465,7 +464,7 @@ unsigned int tree_node_dup::create_tree_node(const tree_nodeRef& tn, tree_node_d
       case mem_ref_K:
          CREATE_TREE_NODE_CASE_BODY(mem_ref, node_id)
       case template_decl_K:
-         if(mode == 2)
+         if(mode >= tree_node_dup_mode::FUNCTION)
             CREATE_TREE_NODE_CASE_BODY(template_decl, node_id)
          else
             RET_NODE_ID_CASE_BODY(template_decl, node_id)
@@ -486,10 +485,7 @@ unsigned int tree_node_dup::create_tree_node(const tree_nodeRef& tn, tree_node_d
       case throw_expr_K:
          CREATE_TREE_NODE_CASE_BODY(throw_expr, node_id)
       case translation_unit_decl_K:
-         if(mode == 2)
-            CREATE_TREE_NODE_CASE_BODY(translation_unit_decl, node_id)
-         else
-            RET_NODE_ID_CASE_BODY(translation_unit_decl, node_id)
+         RET_NODE_ID_CASE_BODY(translation_unit_decl, node_id)
       case tree_list_K:
          CREATE_TREE_NODE_CASE_BODY(tree_list, node_id)
       case tree_vec_K:
@@ -541,10 +537,31 @@ unsigned int tree_node_dup::create_tree_node(const tree_nodeRef& tn, tree_node_d
       case va_arg_expr_K:
          CREATE_TREE_NODE_CASE_BODY(va_arg_expr, node_id)
       case var_decl_K:
-         if(mode == 2)
-            CREATE_TREE_NODE_CASE_BODY(var_decl, node_id)
+      {
+         const auto vd = GetPointerS<const var_decl>(tn);
+         if(mode >= DECLARATION && (!vd->scpe || (GET_CONST_NODE(vd->scpe)->get_kind() != translation_unit_decl_K &&
+                                                  GET_CONST_NODE(vd->scpe)->get_kind() != namespace_decl_K)))
+         {
+            if(vd->static_flag)
+            {
+               if(remap.find(tn->index) != remap.end())
+               {
+                  node_id = remap.find(tn->index)->second;
+               }
+               else
+               {
+                  node_id = tn->index;
+               }
+               const auto new_tn = GetPointerS<var_decl>(TM->GetTreeNode(node_id));
+               new_tn->scpe = GetPointerS<const decl_node>(GET_CONST_NODE(new_tn->scpe))->scpe;
+               break;
+            }
+            else
+               CREATE_TREE_NODE_CASE_BODY(var_decl, node_id)
+         }
          else
             RET_NODE_ID_CASE_BODY(var_decl, node_id)
+      }
       case vec_new_expr_K:
          CREATE_TREE_NODE_CASE_BODY(vec_new_expr, node_id)
       case vec_cond_expr_K:
@@ -1140,7 +1157,7 @@ void tree_node_dup::operator()(const constructor* obj, unsigned int& mask)
       {
          unsigned int node_id1 = i->first ? GET_INDEX_NODE(i->first) : 0;
          unsigned int node_id2 = GET_INDEX_NODE(i->second);
-         if(node_id1 && mode && remap.find(node_id1) == remap.end())
+         if(mode && node_id1 && remap.find(node_id1) == remap.end())
          {
             tree_node* saved_curr_tree_node_ptr = curr_tree_node_ptr;
             tree_nodeRef saved_source_tn = source_tn;
@@ -1249,13 +1266,15 @@ void tree_node_dup::operator()(const function_decl* obj, unsigned int& mask)
    SET_VALUE(omp_critical, function_decl);
    SET_VALUE(omp_for_wrapper, function_decl);
 #endif
-   if(mode)
+   const auto prev_mode = mode;
+   if(mode == tree_node_dup_mode::FUNCTION)
    {
       // Avoid recursvie function_decl duplication
-      mode = tree_node_dup_mode::RENAME;
+      mode = DECLARATION;
    }
    SET_NODE_ID(body, function_decl);
    SET_NODE_ID(inline_body, function_decl);
+   mode = prev_mode;
 }
 
 void tree_node_dup::operator()(const function_type* obj, unsigned int& mask)
@@ -1554,38 +1573,6 @@ void tree_node_dup::operator()(const ssa_name* obj, unsigned int& mask)
          dynamic_cast<ssa_name*>(curr_tree_node_ptr)->AddDefStmt(def_stmt);
       }
    }
-   // for(const auto& use : GetPointer<ssa_name>(source_tn)->CGetUseStmts())
-   // {
-   //    const auto& use_stmt = use.first;
-   //    if(mode)
-   //    {
-   //       unsigned int node_id = GET_INDEX_NODE(use_stmt);
-   //       const auto rnode = remap.find(node_id);
-   //       if(rnode != remap.end())
-   //       {
-   //          node_id = rnode->second;
-   //       }
-   //       else
-   //       {
-   //          const auto saved_curr_tree_node_ptr = curr_tree_node_ptr;
-   //          const auto saved_source_tn = source_tn;
-   //          node_id = create_tree_node(GET_NODE(use_stmt), mode);
-   //          curr_tree_node_ptr = saved_curr_tree_node_ptr;
-   //          source_tn = saved_source_tn;
-   //       }
-   //       for(decltype(use.second) u = 0; u < use.second; ++u)
-   //       {
-   //          dynamic_cast<ssa_name*>(curr_tree_node_ptr)->AddUseStmt(TM->GetTreeReindex(node_id));
-   //       }
-   //    }
-   //    else
-   //    {
-   //       for(decltype(use.second) u = 0; u < use.second; ++u)
-   //       {
-   //          dynamic_cast<ssa_name*>(curr_tree_node_ptr)->AddUseStmt(use_stmt);
-   //       }
-   //    }
-   // }
    if(!mode)
    {
       SET_NODE_ID(min, ssa_name);

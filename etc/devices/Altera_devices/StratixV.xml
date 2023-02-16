@@ -30,20 +30,24 @@
       <!--<cmd name="set_global_assignment -name INI_VARS &quot;fit_pack_for_density_light=on; fit_report_lab_usage_stats=on&quot;"/>-->
 
       <!--<cmd name="set_global_assignment -name SMART_RECOMPILE ON"/>-->
-      <cmd name="set_global_assignment -name REMOVE_REDUNDANT_LOGIC_CELLS ON"/>
+      <cmd name="set_global_assignment -name ADV_NETLIST_OPT_SYNTH_WYSIWYG_REMAP ON"/>
+      <cmd name="set_global_assignment -name AUTO_RAM_TO_LCELL_CONVERSION ON"/>
+      <cmd name="set_global_assignment -name DSP_BLOCK_BALANCING Auto"/>
       <cmd name="set_global_assignment -name OPTIMIZATION_TECHNIQUE SPEED"/>
-      <cmd name="set_global_assignment -name SYNTH_TIMING_DRIVEN_SYNTHESIS ON"/>
-      <cmd name="set_global_assignment -name PHYSICAL_SYNTHESIS_REGISTER_RETIMING ON"/>
+      <cmd name="set_global_assignment -name OPTIMIZE_MULTI_CORNER_TIMING ON"/>
+      <cmd name="set_global_assignment -name PHYSICAL_SYNTHESIS_ASYNCHRONOUS_SIGNAL_PIPELINING ON"/>
       <cmd name="set_global_assignment -name PHYSICAL_SYNTHESIS_COMBO_LOGIC ON"/>
       <cmd name="set_global_assignment -name PHYSICAL_SYNTHESIS_COMBO_LOGIC_FOR_AREA ON"/>
-      <cmd name="set_global_assignment -name PHYSICAL_SYNTHESIS_REGISTER_DUPLICATION ON"/>
+      <cmd name="set_global_assignment -name PHYSICAL_SYNTHESIS_EFFORT EXTRA"/>
       <cmd name="set_global_assignment -name PHYSICAL_SYNTHESIS_MAP_LOGIC_TO_MEMORY_FOR_AREA ON"/>
-      <cmd name="set_global_assignment -name PHYSICAL_SYNTHESIS_ASYNCHRONOUS_SIGNAL_PIPELINING ON"/>
-      <cmd name="set_global_assignment -name ADV_NETLIST_OPT_SYNTH_WYSIWYG_REMAP ON"/>
+      <cmd name="set_global_assignment -name PHYSICAL_SYNTHESIS_REGISTER_DUPLICATION ON"/>
+      <cmd name="set_global_assignment -name PHYSICAL_SYNTHESIS_REGISTER_RETIMING ON"/>
+      <cmd name="set_global_assignment -name PLACEMENT_EFFORT_MULTIPLIER 4"/>
       <cmd name="set_global_assignment -name PRE_MAPPING_RESYNTHESIS ON"/>
-      <cmd name="set_global_assignment -name OPTIMIZE_MULTI_CORNER_TIMING ON"/>
-      <cmd name="set_global_assignment -name AUTO_RAM_TO_LCELL_CONVERSION ON"/>
+      <cmd name="set_global_assignment -name REMOVE_REDUNDANT_LOGIC_CELLS ON"/>
+      <cmd name="set_global_assignment -name ROUTER_EFFORT_MULTIPLIER 4"/>
       <cmd name="set_global_assignment -name SYNCHRONIZATION_REGISTER_CHAIN_LENGTH 10"/>
+      <cmd name="set_global_assignment -name SYNTH_TIMING_DRIVEN_SYNTHESIS ON"/>
 
       <cmd name="set_global_assignment -name NUMBER_OF_PATHS_TO_REPORT 100000"/>
       <cmd name="set_global_assignment -name NUM_PARALLEL_PROCESSORS 1" condition="!${__parallel_backend__}"/>
@@ -64,31 +68,35 @@
       <cmd name="set_global_assignment -name DEVICE ${__target_device__}"/>
       <!--<cmd name="set_global_assignment -name DEVICE AUTO"/>-->
       <cmd name="set_global_assignment -name SDC_FILE ${__sdc_file__}"/>
-      <cmd name="set_global_assignment -name NUMBER_OF_PATHS_TO_REPORT 100000"/>
       <cmd name="set_global_assignment -name TIMEQUEST_DO_REPORT_TIMING On"/>
+      
+      <cmd name="set_global_assignment -name ADV_NETLIST_OPT_SYNTH_WYSIWYG_REMAP ON"/>
+      <cmd name="set_global_assignment -name AUTO_RAM_TO_LCELL_CONVERSION ON"/>
       <cmd name="set_global_assignment -name DSP_BLOCK_BALANCING Auto"/>
-
-      <cmd name="set_global_assignment -name REMOVE_REDUNDANT_LOGIC_CELLS ON"/>
       <cmd name="set_global_assignment -name OPTIMIZATION_TECHNIQUE SPEED"/>
-      <cmd name="set_global_assignment -name SYNTH_TIMING_DRIVEN_SYNTHESIS ON"/>
-      <cmd name="set_global_assignment -name PHYSICAL_SYNTHESIS_REGISTER_RETIMING ON"/>
+      <cmd name="set_global_assignment -name OPTIMIZE_MULTI_CORNER_TIMING ON"/>
+      <cmd name="set_global_assignment -name PHYSICAL_SYNTHESIS_ASYNCHRONOUS_SIGNAL_PIPELINING ON"/>
       <cmd name="set_global_assignment -name PHYSICAL_SYNTHESIS_COMBO_LOGIC ON"/>
       <cmd name="set_global_assignment -name PHYSICAL_SYNTHESIS_COMBO_LOGIC_FOR_AREA ON"/>
-      <cmd name="set_global_assignment -name PHYSICAL_SYNTHESIS_REGISTER_DUPLICATION ON"/>
-      <cmd name="set_global_assignment -name PHYSICAL_SYNTHESIS_MAP_LOGIC_TO_MEMORY_FOR_AREA ON"/>
-      <cmd name="set_global_assignment -name PHYSICAL_SYNTHESIS_ASYNCHRONOUS_SIGNAL_PIPELINING ON"/>
-      <cmd name="set_global_assignment -name ADV_NETLIST_OPT_SYNTH_WYSIWYG_REMAP ON"/>
-      <cmd name="set_global_assignment -name AUTO_RESOURCE_SHARING ON"/>
-      <cmd name="set_global_assignment -name PRE_MAPPING_RESYNTHESIS ON"/>
-      <cmd name="set_global_assignment -name OPTIMIZE_MULTI_CORNER_TIMING ON"/>
-      <cmd name="set_global_assignment -name AUTO_RAM_TO_LCELL_CONVERSION ON"/>
-      <cmd name="set_global_assignment -name SYNCHRONIZATION_REGISTER_CHAIN_LENGTH 10"/>
       <cmd name="set_global_assignment -name PHYSICAL_SYNTHESIS_EFFORT EXTRA"/>
+      <cmd name="set_global_assignment -name PHYSICAL_SYNTHESIS_MAP_LOGIC_TO_MEMORY_FOR_AREA ON"/>
+      <cmd name="set_global_assignment -name PHYSICAL_SYNTHESIS_REGISTER_DUPLICATION ON"/>
+      <cmd name="set_global_assignment -name PHYSICAL_SYNTHESIS_REGISTER_RETIMING ON"/>
+      <cmd name="set_global_assignment -name PLACEMENT_EFFORT_MULTIPLIER 4"/>
+      <cmd name="set_global_assignment -name PRE_MAPPING_RESYNTHESIS ON"/>
+      <cmd name="set_global_assignment -name REMOVE_REDUNDANT_LOGIC_CELLS ON"/>
+      <cmd name="set_global_assignment -name ROUTER_EFFORT_MULTIPLIER 4"/>
+      <cmd name="set_global_assignment -name SYNCHRONIZATION_REGISTER_CHAIN_LENGTH 10"/>
+      <cmd name="set_global_assignment -name SYNTH_TIMING_DRIVEN_SYNTHESIS ON"/>
+
+      <cmd name="set_global_assignment -name AUTO_RESOURCE_SHARING ON"/>
+      <cmd name="set_global_assignment -name ENABLE_DRC_SETTINGS ON"/>
+      <cmd name="set_global_assignment -name OPTIMIZE_HOLD_TIMING &quot;IO PATHS AND MINIMUM TPD PATHS&quot;"/>
+      
+      <cmd name="set_global_assignment -name NUMBER_OF_PATHS_TO_REPORT 100000"/>
       <cmd name="set_global_assignment -name NUM_PARALLEL_PROCESSORS 1" condition="!${__parallel_backend__}"/>
       <cmd name="set_global_assignment -name NUM_PARALLEL_PROCESSORS ALL" condition="${__parallel_backend__}"/>
-      <cmd name="set_global_assignment -name OPTIMIZE_HOLD_TIMING &quot;IO PATHS AND MINIMUM TPD PATHS&quot;"/>
 
-      <cmd name="set_global_assignment -name ENABLE_DRC_SETTINGS ON"/>
       <cmd name="create_base_clock -fmax ${__clk_freq__} -target ${__clk_name__} ${__clk_name__}"/>
       <cmd name="${__sources_macro_list__}"/>
       <cmd name="source ${__backend_script_extensions__}" condition="${__has_script_extensions__}"/>

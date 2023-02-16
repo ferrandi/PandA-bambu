@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2016-2022 Politecnico di Milano
+ *              Copyright (c) 2016-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -279,7 +279,7 @@ unsigned long long top_entity_parallel_cs::BW_loop_iter(const structural_objectR
    const FunctionBehaviorConstRef FB = HLSMgr->CGetFunctionBehavior(funId);
    circuit->find_member("__controller_parallel", component_o_K, circuit);
 
-   long long int n = 0;
+   integer_cst_t n = 0;
    const auto listLoops = FB->CGetLoops()->GetList();
    for(const auto& loop : listLoops)
    {
@@ -290,7 +290,7 @@ unsigned long long top_entity_parallel_cs::BW_loop_iter(const structural_objectR
    }
    if(n != 0)
    {
-      auto loopBW = 1 + static_cast<unsigned>(ceil_log2(static_cast<unsigned long long int>(n)));
+      auto loopBW = 1ull + ceil_log2(static_cast<unsigned long long>(n));
       return loopBW;
    }
    else
@@ -314,7 +314,7 @@ void top_entity_parallel_cs::connect_loop_iter(const structural_objectRef circui
    const BehavioralHelperConstRef BH = FB->CGetBehavioralHelper();
    structural_objectRef controller_circuit = circuit->find_member("__controller_parallel", component_o_K, circuit);
 
-   long long int n = 0;
+   integer_cst_t n = 0;
    const auto listLoops = FB->CGetLoops()->GetList();
    for(const auto& loop : listLoops)
    {

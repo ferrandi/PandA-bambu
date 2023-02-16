@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -53,14 +53,14 @@
 
 #include "custom_map.hpp"
 #include "custom_set.hpp"
-#include <string>
-#include <vector>
-
 #include "dbgPrintHelper.hpp"
 #include "exceptions.hpp"
 #include "refcount.hpp"
 #include "simple_indent.hpp"
 #include "utility.hpp"
+
+#include <string>
+#include <vector>
 
 /// Default extension for generated files
 #define FILE_EXT ".vhdl"

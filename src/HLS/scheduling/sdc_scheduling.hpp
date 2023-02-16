@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2014-2022 Politecnico di Milano
+ *              Copyright (C) 2014-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -48,8 +48,10 @@
 #include "custom_map.hpp"
 #include "custom_set.hpp"
 #include "hash_helper.hpp"
-#include "utility.hpp"
+
+#include <list>
 #include <set>
+#include <vector>
 
 CONSTREF_FORWARD_DECL(AllocationInformation);
 class bb_vertex_order_by_map;

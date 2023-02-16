@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -854,8 +854,8 @@ DesignFlowStep_Status MultipleEntryIfReduction::InternalExec()
                            }
                         }
                         tree_nodeRef phi_def_ssa_node;
-                        const auto phi_gimple_stmt = tree_man->create_phi_node(phi_def_ssa_node, def_edges, function_id,
-                                                                               current_id, sn->virtual_flag);
+                        const auto phi_gimple_stmt =
+                            tree_man->create_phi_node(phi_def_ssa_node, def_edges, function_id, sn->virtual_flag);
                         THROW_ASSERT(tree_helper::CGetType(phi_def_ssa_node)->index ==
                                          tree_helper::CGetType(TM->CGetTreeReindex(sn->index))->index,
                                      "");

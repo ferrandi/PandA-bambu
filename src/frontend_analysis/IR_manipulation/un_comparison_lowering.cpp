@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2016-2022 Politecnico di Milano
+ *              Copyright (C) 2016-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -153,7 +153,7 @@ DesignFlowStep_Status UnComparisonLowering::InternalExec()
             const auto new_be = tree_man->create_binary_operation(booleanType, be->op0, be->op1, srcp_string, new_kind);
             const auto new_ga = tree_man->CreateGimpleAssign(booleanType, TreeM->CreateUniqueIntegerCst(0, booleanType),
                                                              TreeM->CreateUniqueIntegerCst(1, booleanType), new_be,
-                                                             function_id, 0, srcp_string);
+                                                             function_id, srcp_string);
             block.second->PushBefore(new_ga, stmt, AppM);
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created " + STR(new_ga));
             const auto new_not = tree_man->create_unary_operation(
@@ -163,7 +163,7 @@ DesignFlowStep_Status UnComparisonLowering::InternalExec()
             {
                const auto new_ga_not = tree_man->CreateGimpleAssign(
                    booleanType, TreeM->CreateUniqueIntegerCst(0, booleanType),
-                   TreeM->CreateUniqueIntegerCst(1, booleanType), new_not, function_id, 0, srcp_string);
+                   TreeM->CreateUniqueIntegerCst(1, booleanType), new_not, function_id, srcp_string);
                block.second->PushBefore(new_ga_not, stmt, AppM);
                const auto new_nop = tree_man->create_unary_operation(
                    be->type, GetPointerS<const gimple_assign>(GET_CONST_NODE(new_ga_not))->op0, srcp_string,

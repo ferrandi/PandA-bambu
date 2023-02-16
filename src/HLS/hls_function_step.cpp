@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -37,34 +37,22 @@
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
  */
-
-/// Header include
 #include "hls_function_step.hpp"
 
-/// behavior include
+#include "behavioral_helper.hpp"
 #include "call_graph_manager.hpp"
-
-/// design_flows include
+#include "dbgPrintHelper.hpp"
 #include "design_flow_graph.hpp"
 #include "design_flow_manager.hpp"
-
-/// HLS includes
 #include "hls.hpp"
 #include "hls_flow_step_factory.hpp"
 #include "hls_manager.hpp"
 #include "hls_target.hpp"
-
-/// HLS/memory include
 #include "memory.hpp"
-
-/// technology include
 #include "technology_manager.hpp"
-
-/// tree include
-#include "behavioral_helper.hpp"
-#include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
+#include "utility.hpp"
 
 HLSFunctionStep::HLSFunctionStep(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr, unsigned int _funId,
                                  const DesignFlowManagerConstRef _design_flow_manager,

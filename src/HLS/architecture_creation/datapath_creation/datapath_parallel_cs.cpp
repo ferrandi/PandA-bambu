@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2016-2022 Politecnico di Milano
+ *              Copyright (c) 2016-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -42,6 +42,7 @@
 #include "BambuParameter.hpp"
 #include "behavioral_helper.hpp"
 #include "copyrights_strings.hpp"
+#include "function_behavior.hpp"
 #include "hls.hpp"
 #include "hls_manager.hpp"
 #include "hls_target.hpp"

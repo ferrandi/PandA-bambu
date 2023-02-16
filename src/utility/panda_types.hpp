@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2022-2022 Politecnico di Milano
+ *              Copyright (C) 2022-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -31,10 +31,8 @@
  *
  */
 /**
- * @file Write_noneDSModuleGenerator.hpp
+ * @file panda_types.hpp
  * @brief
- *
- *
  *
  * @author Michele Fiorito <michele.fiorito@polimi.it>
  * $Revision$
@@ -42,21 +40,10 @@
  * Last modified by $Author$
  *
  */
-#ifndef _WRITE_NONE_DS_MODULE_GENERATOR_HPP_
-#define _WRITE_NONE_DS_MODULE_GENERATOR_HPP_
+#ifndef PANDA_TYPES_HPP
+#define PANDA_TYPES_HPP
 
-#include "ModuleGenerator.hpp"
+#include "APInt.hpp"
+using integer_cst_t = APInt;
 
-class Write_noneDSModuleGenerator : public ModuleGenerator::Registrar<Write_noneDSModuleGenerator>
-{
- public:
-   Write_noneDSModuleGenerator(const HLS_managerRef& HLSMgr);
-
-   void InternalExec(std::ostream& out, const module* mod, unsigned int function_id, vertex op_v,
-                     const HDLWriter_Language language, const std::vector<ModuleGenerator::parameter>& _p,
-                     const std::vector<ModuleGenerator::parameter>& _ports_in,
-                     const std::vector<ModuleGenerator::parameter>& _ports_out,
-                     const std::vector<ModuleGenerator::parameter>& _ports_inout) final;
-};
-
-#endif
+#endif // PANDA_TYPES_HPP

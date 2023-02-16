@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -2929,7 +2929,8 @@ module::module(int _debug_level, const structural_objectRef o)
       last_position_port(0),
       is_critical(false),
       is_generated(false),
-      multi_unit_multiplicity(0)
+      multi_unit_multiplicity(0),
+      keep_hierarchy(false)
 {
 }
 
@@ -2966,6 +2967,16 @@ void module::set_multi_unit_multiplicity(unsigned int value)
 unsigned int module::get_multi_unit_multiplicity() const
 {
    return multi_unit_multiplicity;
+}
+
+void module::set_keep_hierarchy(bool ky)
+{
+   keep_hierarchy = ky;
+}
+
+bool module::get_keep_hierarchy() const
+{
+   return keep_hierarchy;
 }
 
 structural_objectRef module::get_positional_port(unsigned int index) const
@@ -3543,6 +3554,10 @@ void module::copy(structural_objectRef dest) const
    if(multi_unit_multiplicity)
    {
       GetPointer<module>(dest)->set_multi_unit_multiplicity(multi_unit_multiplicity);
+   }
+   if(keep_hierarchy)
+   {
+      GetPointer<module>(dest)->set_keep_hierarchy(keep_hierarchy);
    }
    structural_objectRef obj;
 
@@ -4307,8 +4322,22 @@ void module::xload(const xml_element* Enode, structural_objectRef _owner, struct
          else
          {
             std::string multi_unit_multiplicitySTR = text->get_content();
-            xml_node::convert_escaped(specialized);
+            xml_node::convert_escaped(multi_unit_multiplicitySTR);
             multi_unit_multiplicity = boost::lexical_cast<unsigned>(multi_unit_multiplicitySTR);
+         }
+      }
+      else if(EnodeC->get_name() == GET_CLASS_NAME(keep_hierarchy))
+      {
+         const xml_text_node* text = EnodeC->get_child_text();
+         if(!text)
+         {
+            THROW_WARNING("keep_hierarchy identifier is missing for " + EnodeC->get_name());
+         }
+         else
+         {
+            std::string keep_hierarchySTR = text->get_content();
+            xml_node::convert_escaped(keep_hierarchySTR);
+            keep_hierarchy = boost::lexical_cast<bool>(keep_hierarchySTR);
          }
       }
       else
@@ -4482,6 +4511,11 @@ void module::xwrite(xml_element* rootnode)
    {
       xml_element* xml_specialized = rootnode->add_child_element("specialized");
       xml_specialized->add_child_text(specialized);
+   }
+   if(keep_hierarchy)
+   {
+      xml_element* xml_keep_hierarchy = rootnode->add_child_element("keep_hierarchy");
+      xml_keep_hierarchy->add_child_text("true");
    }
 
    if(in_ports.size())

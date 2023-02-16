@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -134,33 +134,33 @@ DesignFlowStep_Status LoopsAnalysisBambu::InternalExec()
       const auto PM = AppM->get_pragma_manager();
       if(PM)
       {
-         PM->CheckAddOmpFor(function_id, header, AppM);
-         PM->CheckAddOmpSimd(function_id, header, AppM);
+      PM->CheckAddOmpFor(function_id, header, AppM);
+      PM->CheckAddOmpSimd(function_id, header, AppM);
       }
 #endif
       const auto nexit = loop->num_exits();
       if(nexit != 1)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Multiple exits loop");
-         continue;
-      }
+               continue;
+            }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Single exit loop considered");
       loop->loop_type |= SINGLE_EXIT_LOOP;
       const auto exit_vertex = *loop->exit_block_iter_begin();
       bool do_while = false;
       if(exit_vertex == header && loop->num_blocks() != 1)
-      {
+            {
          /// while loop
          loop->loop_type &= ~UNKNOWN_LOOP;
          loop->loop_type |= WHILE_LOOP;
-      }
+            }
       else
-      {
+            {
          /// do while loop
-         loop->loop_type &= ~UNKNOWN_LOOP;
-         loop->loop_type |= DO_WHILE_LOOP;
+               loop->loop_type &= ~UNKNOWN_LOOP;
+               loop->loop_type |= DO_WHILE_LOOP;
          do_while = true;
-      }
+            }
       /// very simple condition
       if(do_while && loop->is_innermost() && loop->num_blocks() == 1)
       {
@@ -331,7 +331,7 @@ DesignFlowStep_Status LoopsAnalysisBambu::InternalExec()
       loop->inc_id = ga->index;
       if(GET_NODE(be->op1)->get_kind() == integer_cst_K)
       {
-         loop->increment = tree_helper::get_integer_cst_value(GetPointer<const integer_cst>(GET_NODE(be->op1)));
+         loop->increment = tree_helper::GetConstValue(be->op1);
          if(be->get_kind() == minus_expr_K)
          {
             loop->increment = -loop->increment;
@@ -343,9 +343,9 @@ DesignFlowStep_Status LoopsAnalysisBambu::InternalExec()
                      "---Comparison is " + STR(cond) + " (" + cond->get_kind_text() + ")");
       if(GET_NODE(init)->get_kind() == integer_cst_K && GET_NODE(cond_be->op1)->get_kind() == integer_cst_K)
       {
+         loop->lower_bound = tree_helper::GetConstValue(init);
+         loop->upper_bound = tree_helper::GetConstValue(cond_be->op1);
          auto cond_type = cond_be->get_kind();
-         loop->lower_bound = tree_helper::get_integer_cst_value(GetPointer<const integer_cst>(GET_NODE(init)));
-         loop->upper_bound = tree_helper::get_integer_cst_value(GetPointer<const integer_cst>(GET_NODE(cond_be->op1)));
          if(cond_type == ge_expr_K || cond_type == le_expr_K || cond_type == unge_expr_K || cond_type == unle_expr_K)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Close interval");

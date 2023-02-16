@@ -11,7 +11,7 @@
  *                     Politecnico di Milano - DEIB
  *                      System Architectures Group
  *           ***********************************************
- *            Copyright (C) 2004-2022 Politecnico di Milano
+ *            Copyright (C) 2004-2023 Politecnico di Milano
  *
  * This file is part of the PandA framework.
  *
@@ -301,7 +301,7 @@ DesignFlowStep_Status CallGraphBuiltinCall::InternalExec()
    auto* stmtList = GetPointer<statement_list>(GET_NODE(functionDecl->body));
 
    if(parameters->getOption<bool>(OPT_print_dot) && DEBUG_LEVEL_PEDANTIC <= debug_level &&
-      !parameters->IsParameter("disable-print-dot-FF"))
+      (!parameters->IsParameter("print-dot-FF") || parameters->GetParameter<unsigned int>("print-dot-FF")))
    {
       AppM->CGetCallGraphManager()->CGetCallGraph()->WriteDot("builtin-graph-pre" + STR(function_id) + ".dot");
    }
@@ -323,7 +323,7 @@ DesignFlowStep_Status CallGraphBuiltinCall::InternalExec()
    }
 
    if(parameters->getOption<bool>(OPT_print_dot) && DEBUG_LEVEL_PEDANTIC <= debug_level &&
-      !parameters->IsParameter("disable-print-dot-FF"))
+      (!parameters->IsParameter("print-dot-FF") || parameters->GetParameter<unsigned int>("print-dot-FF")))
    {
       AppM->CGetCallGraphManager()->CGetCallGraph()->WriteDot("builtin-graph-post" + STR(function_id) + ".dot");
    }

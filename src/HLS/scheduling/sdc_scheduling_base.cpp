@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2014-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -64,18 +64,18 @@ bool SDCSorter::operator()(const vertex& x, const vertex& y) const
          return true;
       }
       if(function_behavior->CheckBBReachability(second_bb_vertex, first_bb_vertex))
-      {
+{
          return false;
       }
-   }
+}
    if(x != y)
    {
       if(function_behavior->CheckReachability(x, y))
-      {
+{
          return true;
-      }
+}
       if(function_behavior->CheckReachability(y, x))
-      {
+{
          return false;
       }
    }

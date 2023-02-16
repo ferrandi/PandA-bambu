@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -40,41 +40,29 @@
  * Last modified by $Author$
  *
  */
-/// Header include
 #include "hls_manager.hpp"
 
-///. include
+#include "BackendFlow.hpp"
 #include "Parameter.hpp"
-
+#include "behavioral_helper.hpp"
+#include "call_graph_manager.hpp"
+#include "ext_tree_node.hpp"
+#include "function_behavior.hpp"
 #include "hls.hpp"
 #include "hls_constraints.hpp"
 #include "hls_target.hpp"
 #include "memory.hpp"
-
-#include "BackendFlow.hpp"
-
-#include "ext_tree_node.hpp"
-
-#include "call_graph_manager.hpp"
-
-#include "behavioral_helper.hpp"
-#include "function_behavior.hpp"
+#include "op_graph.hpp"
+#include "polixml.hpp"
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
 #include "tree_reindex.hpp"
-
-#include "polixml.hpp"
+#include "utility.hpp"
 #include "xml_dom_parser.hpp"
 #include "xml_helper.hpp"
 
-/// behavior include
-#include "op_graph.hpp"
-
 #if HAVE_TASTE
-/// intermediate_representation/aadl include
 #include "aadl_information.hpp"
-
-/// HLS/function_allocation include
 #include "functions.hpp"
 #endif
 #define MAX_BITWIDTH_SIZE 4096
@@ -196,7 +184,7 @@ std::string HLS_manager::get_constant_string(unsigned int node_id, unsigned long
    else if(tree_helper::IsComplexType(node_type))
    {
       const auto cc = GetPointerS<const complex_cst>(GET_CONST_NODE(node));
-      auto* rcc = GetPointer<real_cst>(GET_NODE(cc->real));
+      const auto rcc = GetPointer<const real_cst>(GET_CONST_NODE(cc->real));
       std::string trimmed_value_r;
       if(rcc)
       {
@@ -209,12 +197,9 @@ std::string HLS_manager::get_constant_string(unsigned int node_id, unsigned long
       }
       else
       {
-         auto* ic = GetPointerS<integer_cst>(GET_NODE(cc->real));
-         THROW_ASSERT(ic, "expected an integer_cst");
-         auto ull_value = static_cast<unsigned long long int>(tree_helper::get_integer_cst_value(ic));
-         trimmed_value_r = convert_to_binary(ull_value, precision / 2);
+         trimmed_value_r = convert_to_binary(tree_helper::GetConstValue(cc->real), precision / 2);
       }
-      auto* icc = GetPointer<real_cst>(GET_NODE(cc->imag));
+      const auto icc = GetPointer<const real_cst>(GET_CONST_NODE(cc->imag));
       std::string trimmed_value_i;
       if(icc)
       {
@@ -227,18 +212,13 @@ std::string HLS_manager::get_constant_string(unsigned int node_id, unsigned long
       }
       else
       {
-         auto* ic = GetPointerS<integer_cst>(GET_NODE(cc->imag));
-         THROW_ASSERT(ic, "expected an integer_cst");
-         auto ull_value = static_cast<unsigned long long int>(tree_helper::get_integer_cst_value(ic));
-         trimmed_value_i = convert_to_binary(ull_value, precision / 2);
+         trimmed_value_i = convert_to_binary(tree_helper::GetConstValue(cc->imag), precision / 2);
       }
       trimmed_value = trimmed_value_i + trimmed_value_r;
    }
    else
    {
-      const auto ic = GetPointerS<const integer_cst>(GET_CONST_NODE(node));
-      auto ull_value = static_cast<unsigned long long int>(tree_helper::get_integer_cst_value(ic));
-      trimmed_value = convert_to_binary(ull_value, precision);
+      trimmed_value = convert_to_binary(tree_helper::GetConstValue(node), precision);
    }
    return trimmed_value;
 }

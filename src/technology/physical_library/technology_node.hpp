@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -48,10 +48,10 @@
 #include "config_HAVE_CIRCUIT_BUILT.hpp"
 #include "config_HAVE_EXPERIMENTAL.hpp"
 
-#include "custom_map.hpp"
 #include "refcount.hpp"
 #include "simple_indent.hpp"
 #include "utility.hpp"
+
 #include <ostream>
 #include <string>
 #include <vector>

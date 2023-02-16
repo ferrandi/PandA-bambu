@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2016-2022 Politecnico di Milano
+ *              Copyright (C) 2016-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -42,31 +42,20 @@
 /// Header include
 #include "fix_characterization.hpp"
 
-///. include
 #include "Parameter.hpp"
-
-/// STD include
-#include <string>
-
-/// STL includes
-#include "custom_set.hpp"
-#include <vector>
-
-/// technology include
-#include "technology_manager.hpp"
-
-/// technology/physical_library includes
-#include "library_manager.hpp"
-#include "technology_node.hpp"
-
-/// technology/physical_library/models include
 #include "clb_model.hpp"
-#include "time_model.hpp"
-
-/// technology/target_device include
-#include "dbgPrintHelper.hpp"      // for DEBUG_LEVEL_
-#include "string_manipulation.hpp" // for GET_CLASS
+#include "custom_set.hpp"
+#include "dbgPrintHelper.hpp"
+#include "library_manager.hpp"
+#include "string_manipulation.hpp"
 #include "target_device.hpp"
+#include "technology_manager.hpp"
+#include "technology_node.hpp"
+#include "time_model.hpp"
+#include "utility.hpp"
+
+#include <string>
+#include <vector>
 
 FixCharacterization::FixCharacterization(const technology_managerRef _TM, const target_deviceRef _target,
                                          const DesignFlowManagerConstRef _design_flow_manager,

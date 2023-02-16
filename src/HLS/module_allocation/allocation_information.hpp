@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -50,11 +50,12 @@
 #include "op_graph.hpp"    // for OpGraphConstRef
 #include "refcount.hpp"    // for CONSTREF_FORWARD_DECL, REF_FORWARD_DECL
 #include "schedule.hpp"
-#include "utility.hpp" // for UINT_STRONG_TYPEDEF_FORWARD_DECL
-#include <cstddef>     // for size_t
-#include <iosfwd>      // for ostream
-#include <string>      // for string
-#include <utility>     // for pair
+#include "strong_typedef.hpp" // for UINT_STRONG_TYPEDEF_FORWARD_DECL
+
+#include <cstddef> // for size_t
+#include <iosfwd>  // for ostream
+#include <string>  // for string
+#include <utility> // for pair
 
 CONSTREF_FORWARD_DECL(AllocationInformation);
 CONSTREF_FORWARD_DECL(BehavioralHelper);

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -338,12 +338,12 @@ FunctionFrontendFlowStep_Movable simple_code_motion::CheckMovable(const unsigned
             return FunctionFrontendFlowStep_Movable::UNMOVABLE;
          }
          auto* be = GetPointer<binary_expr>(right);
-         if(tree_helper::is_constant(TM, GET_INDEX_NODE(be->op1)))
+         if(tree_helper::IsConstant(be->op1))
          {
-            auto* ic = GetPointer<integer_cst>(GET_NODE(be->op1));
+            const auto ic = GetPointer<integer_cst>(GET_NODE(be->op1));
             if(ic)
             {
-               long long v = tree_helper::get_integer_cst_value(ic);
+               const auto v = tree_helper::GetConstValue(be->op1);
                if(!(v && !(v & (v - 1))))
                {
                   zero_delay = false;
@@ -527,12 +527,12 @@ FunctionFrontendFlowStep_Movable simple_code_motion::CheckMovable(const unsigned
       case trunc_mod_expr_K:
       {
          auto* be = GetPointer<binary_expr>(right);
-         if(tree_helper::is_constant(TM, GET_INDEX_NODE(be->op1)))
+         if(tree_helper::IsConstant(be->op1))
          {
-            auto* ic = GetPointer<integer_cst>(GET_NODE(be->op1));
+            auto ic = GetPointer<integer_cst>(GET_NODE(be->op1));
             if(ic)
             {
-               long long v = tree_helper::get_integer_cst_value(ic);
+               const auto v = tree_helper::GetConstValue(be->op1);
                if(v)
                {
                   if(!(v && !(v & (v - 1))))
@@ -735,7 +735,8 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
    std::list<vertex> bb_sorted_vertices;
    cyclic_topological_sort(*GCC_bb_graph, std::front_inserter(bb_sorted_vertices));
    static size_t counter = 0;
-   if(debug_level >= DEBUG_LEVEL_VERY_PEDANTIC && !parameters->IsParameter("disable-print-dot-FF"))
+   if(debug_level >= DEBUG_LEVEL_VERY_PEDANTIC &&
+      (!parameters->IsParameter("print-dot-FF") || parameters->GetParameter<unsigned int>("print-dot-FF")))
    {
       GCC_bb_graph->WriteDot("BB_simple_code_motion_" + STR(counter) + ".dot");
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
@@ -864,7 +865,8 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
       bool restart_bb_code_motion = false;
       do
       {
-         if(debug_level >= DEBUG_LEVEL_VERY_PEDANTIC && !parameters->IsParameter("disable-print-dot-FF"))
+         if(debug_level >= DEBUG_LEVEL_VERY_PEDANTIC &&
+            (!parameters->IsParameter("print-dot-FF") || parameters->GetParameter<unsigned int>("print-dot-FF")))
          {
             GCC_bb_graph->WriteDot("BB_simple_code_motion_" + STR(counter) + ".dot");
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
@@ -1208,8 +1210,7 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
                   {
                      if(ga->predicate && GET_NODE(ga->predicate)->get_kind() == integer_cst_K)
                      {
-                        auto ic = GetPointer<integer_cst>(GET_NODE(ga->predicate));
-                        auto cond = tree_helper::get_integer_cst_value(ic);
+                        auto cond = tree_helper::GetConstValue(ga->predicate);
                         if(cond != 0)
                         {
                            if(list_of_bloc.at(dest_bb_index)->true_edge == curr_bb)
@@ -1278,8 +1279,7 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
                               Cur = tree_man->CreateNotExpr(Cur, list_of_bloc.at(dest_bb_index), function_id);
                               if(ga->predicate && GET_NODE(ga->predicate)->get_kind() == integer_cst_K)
                               {
-                                 auto ic = GetPointer<integer_cst>(GET_NODE(ga->predicate));
-                                 auto cond = tree_helper::get_integer_cst_value(ic);
+                                 const auto cond = tree_helper::GetConstValue(ga->predicate);
                                  if(cond != 0)
                                  {
                                     TM->ReplaceTreeNode(*statement, ga->predicate, Cur);
@@ -1296,8 +1296,7 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
                            {
                               if(ga->predicate && GET_NODE(ga->predicate)->get_kind() == integer_cst_K)
                               {
-                                 auto ic = GetPointer<integer_cst>(GET_NODE(ga->predicate));
-                                 auto cond = tree_helper::get_integer_cst_value(ic);
+                                 const auto cond = tree_helper::GetConstValue(ga->predicate);
                                  if(cond != 0)
                                  {
                                     TM->ReplaceTreeNode(*statement, ga->predicate, gmwicond.first);
@@ -1372,7 +1371,8 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
             list_of_bloc.at(curr_bb)->PushFront(adding_front, AppM);
          }
          restart_bb_code_motion = (!to_be_added_back.empty()) or (!to_be_added_front.empty());
-         if(debug_level >= DEBUG_LEVEL_VERY_PEDANTIC && !parameters->IsParameter("disable-print-dot-FF"))
+         if(debug_level >= DEBUG_LEVEL_VERY_PEDANTIC &&
+            (!parameters->IsParameter("print-dot-FF") || parameters->GetParameter<unsigned int>("print-dot-FF")))
          {
             GCC_bb_graph->WriteDot("BB_simple_code_motion_" + STR(counter) + ".dot");
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,

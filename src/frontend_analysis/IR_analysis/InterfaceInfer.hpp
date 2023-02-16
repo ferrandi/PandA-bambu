@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2022-2022 Politecnico di Milano
+ *              Copyright (C) 2022-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -44,6 +44,9 @@
 
 /// utility includes
 #include "refcount.hpp"
+
+/// Included for interface_attributes enum
+#include "hls_manager.hpp"
 
 REF_FORWARD_DECL(tree_node);
 CONSTREF_FORWARD_DECL(tree_node);
@@ -78,14 +81,13 @@ class InterfaceInfer : public ApplicationFrontendFlowStep
    struct interface_info
    {
       std::string name;
-      unsigned n_resources;
       unsigned alignment;
       unsigned long long bitwidth;
       datatype type;
 
       interface_info();
 
-      void update(const tree_nodeRef& tn, const std::string& type_name, ParameterConstRef parameters);
+      void update(const tree_nodeRef& tn, std::string type_name, ParameterConstRef parameters);
    };
 
    bool already_executed;
@@ -107,20 +109,19 @@ class InterfaceInfer : public ApplicationFrontendFlowStep
    void ChasePointerInterface(tree_nodeRef ptr_var, std::list<tree_nodeRef>& writeStmt,
                               std::list<tree_nodeRef>& readStmt, interface_info& info);
 
-   void setReadInterface(tree_nodeRef stmt, const std::string& arg_name, const std::string& interface_fname,
-                         tree_nodeConstRef interface_datatype, const tree_manipulationRef tree_man,
-                         const tree_managerRef TM, bool commonRWSignature);
+   void setReadInterface(tree_nodeRef stmt, const std::string& arg_name, std::set<std::string>& operationsR,
+                         bool commonRWSignature, tree_nodeConstRef interface_datatype,
+                         const tree_manipulationRef tree_man, const tree_managerRef TM);
 
-   void setWriteInterface(tree_nodeRef stmt, const std::string& arg_name, const std::string& interface_fname,
-                          tree_nodeConstRef interface_datatype, const tree_manipulationRef tree_man,
-                          const tree_managerRef TM, bool commonRWSignature);
+   void setWriteInterface(tree_nodeRef stmt, const std::string& arg_name, std::set<std::string>& operationsW,
+                          bool commonRWSignature, tree_nodeConstRef interface_datatype,
+                          const tree_manipulationRef tree_man, const tree_managerRef TM);
 
    void create_resource_Read_simple(const std::set<std::string>& operations, const std::string& arg_name,
                                     const interface_info& info, bool IO_port, unsigned int top_id) const;
 
    void create_resource_Write_simple(const std::set<std::string>& operations, const std::string& arg_name,
-                                     const interface_info& info, bool IO_port, bool isDiffSize,
-                                     unsigned int top_id) const;
+                                     const interface_info& info, bool IO_port, unsigned int top_id) const;
 
    void create_resource_array(const std::set<std::string>& operationsR, const std::set<std::string>& operationsW,
                               const std::string& bundle_name, const interface_info& info, unsigned int arraySize,
@@ -128,11 +129,12 @@ class InterfaceInfer : public ApplicationFrontendFlowStep
 
    void create_resource_m_axi(const std::set<std::string>& operationsR, const std::set<std::string>& operationsW,
                               const std::string& arg_name, const std::string& bundle_name, const interface_info& info,
-                              m_axi_type mat, unsigned int top_id) const;
+                              m_axi_type mat, unsigned int top_id,
+                              const std::map<interface_attributes, std::string>& bundle_attr_map) const;
 
    void create_resource(const std::set<std::string>& operationsR, const std::set<std::string>& operationsW,
-                        const std::string& arg_name, const interface_info& info, bool isDiffSize,
-                        const std::string& fname, unsigned int top_id) const;
+                        const std::string& arg_name, const interface_info& info, const std::string& fname,
+                        unsigned int top_id) const;
 
  public:
    /**

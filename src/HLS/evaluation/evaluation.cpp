@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -44,47 +44,26 @@
 
 #include "config_HAVE_EXPERIMENTAL.hpp"
 
-#include <boost/filesystem/operations.hpp>
-
-///. include
+#include "BackendFlow.hpp"
 #include "Parameter.hpp"
-
-/// behavior include
-#include "call_graph_manager.hpp"
-
-/// constants include
+#include "SimulationInformation.hpp"
+#include "area_model.hpp"
 #include "bambu_results_xml.hpp"
-
-/// hls includes
+#include "behavioral_helper.hpp"
+#include "call_graph_manager.hpp"
+#include "dbgPrintHelper.hpp"
+#include "fileIO.hpp"
 #include "hls.hpp"
 #include "hls_constraints.hpp"
+#include "hls_flow_step_factory.hpp"
 #include "hls_manager.hpp"
-
-/// polixml include
+#include "string_manipulation.hpp"
+#include "time_model.hpp"
+#include "utility.hpp"
 #include "xml_document.hpp"
-
-/// tree include
-#include "behavioral_helper.hpp"
-
-/// utility include
-#include "fileIO.hpp"
 #include "xml_helper.hpp"
 
-/// HLS include
-#include "SimulationInformation.hpp"
-#include "hls_flow_step_factory.hpp"
-
-/// behavior include
-#include "call_graph_manager.hpp"
-
-/// technology/physical_library/models includes
-#include "area_model.hpp"
-#include "time_model.hpp"
-
-/// wrapper/synthesis include
-#include "BackendFlow.hpp"
-#include "dbgPrintHelper.hpp"      // for DEBUG_LEVEL_
-#include "string_manipulation.hpp" // for GET_CLASS
+#include <boost/filesystem/operations.hpp>
 
 Evaluation::Evaluation(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr,
                        const DesignFlowManagerConstRef _design_flow_manager)

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -1068,7 +1068,7 @@ bool pred;
                   }
                   value
                   {
-                    NSV(integer_cst, value, data->curr_long_long_number);
+                    NSV(integer_cst, value, integer_cst_t(data->curr_long_long_number));
                   };
 
    //tree_list:	TOK_BISON_TREE_LIST^ (purp)? valu (chan)?;

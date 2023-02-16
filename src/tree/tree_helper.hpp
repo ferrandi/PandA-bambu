@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -57,6 +57,7 @@
 #include <vector>         // for vector
 
 /// Utility include
+#include "panda_types.hpp"
 #include "refcount.hpp"
 
 /**
@@ -1004,7 +1005,18 @@ class tree_helper
     * Convert a integer_cst in a long long value
     * @param ic is the integer costant data.
     */
-   static long long get_integer_cst_value(const integer_cst* ic);
+   static
+       /// FIXME: to be remove after substitution with GetConstValue
+       integer_cst_t
+       get_integer_cst_value(const integer_cst* ic);
+
+   /**
+    * Get value from integer constant
+    * @param tn Integer constant tree node
+    * @param is_signed Return signed value if true, unsigned equivalent if false
+    * @return integer_cst_t Integer constant value
+    */
+   static integer_cst_t GetConstValue(const tree_nodeConstRef& tn, bool is_signed = true);
 
    /**
     * Return the tree node index of the array variable written or read
@@ -1091,8 +1103,8 @@ class tree_helper
     * @param base_object is the base referenced object
     */
    static void extract_array_indexes(const tree_managerConstRef& TM, const unsigned int index,
-                                     std::vector<unsigned int>& indexes, std::vector<unsigned int>& size_indexes,
-                                     unsigned int& base_object);
+                                     std::vector<unsigned long long>& indexes,
+                                     std::vector<unsigned long long>& size_indexes, unsigned int& base_object);
 
    /**
     * check if a given tree node is a concatenation operation

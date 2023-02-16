@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -45,15 +45,17 @@
 #ifndef MATH_FUNCTION_HPP
 #define MATH_FUNCTION_HPP
 
-/// Utility include
 #include "augmented_vector.hpp"
+
 #include <boost/version.hpp>
 #if BOOST_VERSION >= 105800
 #include <boost/integer/common_factor_rt.hpp>
 #else
 #include <boost/math/common_factor_rt.hpp>
 #endif
+
 #include <type_traits>
+
 /**
  * Return the distance between a point and a line (represented as a couple of points) in a n-dimensional space
  */
@@ -216,6 +218,23 @@ constexpr inline T round_to_power2(T _x)
    x |= x >> 32;
    x++;
    return static_cast<T>(x);
+}
+
+template <typename T, std::enable_if_t<std::is_unsigned<T>::value, bool> = true>
+constexpr inline T get_aligned_bitsize(T bitsize)
+{
+   const auto rbw = std::max(T(8), round_to_power2(bitsize));
+   if(rbw <= 128ULL)
+   {
+      return rbw;
+   }
+   return bitsize + ((32ULL - (bitsize % 32ULL)) & 31ULL);
+}
+
+template <typename T, std::enable_if_t<std::is_unsigned<T>::value, bool> = true>
+constexpr inline T get_aligned_ac_bitsize(T bitsize)
+{
+   return bitsize + ((64ULL - (bitsize % 64ULL)) & 63ULL);
 }
 
 #endif
