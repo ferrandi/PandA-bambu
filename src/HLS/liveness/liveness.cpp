@@ -260,6 +260,11 @@ bool liveness::are_in_conflict(vertex op1, vertex op2) const
    return false;
 }
 
+unsigned liveness::satStep(unsigned BB_index, unsigned step) const
+{
+   return std::min(BB2MaxStep.at(BB_index) + 1, step);
+}
+
 unsigned liveness::get_step(vertex v, vertex op, unsigned int var, bool in) const
 {
    unsigned int step = 0;
@@ -329,7 +334,7 @@ unsigned liveness::GetStep(vertex v, vertex op, unsigned int var, bool in) const
          auto op_BB_index = vertex_BB.at(op);
          if(def_op_BB_index == op_BB_index)
          {
-            return get_step(v, op, var, in);
+            return satStep(def_op_BB_index, get_step(v, op, var, in));
          }
          else
          {
@@ -362,11 +367,11 @@ unsigned liveness::GetStepPhiIn(vertex op, unsigned int var) const
          auto II = BB2II.at(op_BB_index);
          auto step = op_step.at(def_op);
          auto offset = II - 1 - step % II;
-         return step + offset;
+         return satStep(def_op_BB_index, step + offset);
       }
       else
       {
-         return BB2MaxStep.at(def_op_BB_index) + 1;
+         return BB2MaxStep.at(def_op_BB_index);
       }
    }
    else
@@ -390,7 +395,7 @@ unsigned liveness::GetStepPhiOut(vertex op, unsigned int var) const
          auto II = BB2II.at(op_BB_index);
          auto step = op_step.at(def_op);
          auto offset = II - step % II;
-         return step + offset;
+         return satStep(def_op_BB_index, step + offset);
       }
       else
       {
@@ -411,7 +416,7 @@ unsigned liveness::GetStepWrite(vertex v, vertex def_op) const
       /// the def state is pipelined
       THROW_ASSERT(vertex_to_op_step_out_map.count(v), "unexpected condition");
       THROW_ASSERT(vertex_to_op_step_out_map.at(v).count(def_op), "unexpected condition");
-      return 1 + vertex_to_op_step_out_map.at(v).at(def_op);
+      return satStep(def_op_BB_index, 1 + vertex_to_op_step_out_map.at(v).at(def_op));
    }
    else
    {
@@ -511,7 +516,8 @@ unsigned liveness::GetStepDef(unsigned int BB_index, unsigned int var) const
    }
 }
 
-std::pair<bool, unsigned> liveness::GetPrevStep(unsigned int BB_index, unsigned int var, unsigned curr_step) const
+std::pair<bool, unsigned> liveness::GetPrevStep(unsigned int BB_index, unsigned int var, unsigned curr_step,
+                                                unsigned offset) const
 {
    if(var_op_definition.count(var))
    {
@@ -532,7 +538,7 @@ std::pair<bool, unsigned> liveness::GetPrevStep(unsigned int BB_index, unsigned 
                auto& def_state = *ending_operations.at(def_op).begin();
                THROW_ASSERT(vertex_to_op_step_out_map.count(def_state), "unexpected condition");
                auto def_step = vertex_to_op_step_out_map.at(def_state).at(def_op);
-               auto step = curr_step - 1;
+               auto step = curr_step - offset;
                if(def_step < step)
                {
                   return std::make_pair(true, step);
@@ -558,37 +564,6 @@ std::pair<bool, unsigned> liveness::GetPrevStep(unsigned int BB_index, unsigned 
       /// relevant only for parameters
       return std::make_pair(curr_step > 1, curr_step > 1 ? curr_step - 1 : 0);
    }
-}
-unsigned liveness::get_prev_step(unsigned BB_index, unsigned int var, unsigned cur_step) const
-{
-   auto step = cur_step;
-   if(var_op_definition.count(var))
-   {
-      auto def_op = var_op_definition.at(var);
-      auto def_op_BB_index = vertex_BB.at(def_op);
-      if(BB_index != def_op_BB_index)
-      {
-         return BB2MaxStep.at(def_op_BB_index);
-      }
-      else
-      {
-         THROW_ASSERT(ending_operations.count(def_op), "unexpected condition");
-         auto& def_state = *ending_operations.at(def_op).begin();
-         if(vertex_to_op_step_out_map.count(def_state))
-         {
-            auto def_step = vertex_to_op_step_out_map.at(def_state).at(def_op);
-            if(def_step < cur_step)
-            {
-               return cur_step - 1;
-            }
-            else
-            {
-               return def_step;
-            }
-         }
-      }
-   }
-   return step;
 }
 
 void liveness::set_step(vertex v, vertex running_op, unsigned int step, bool in)

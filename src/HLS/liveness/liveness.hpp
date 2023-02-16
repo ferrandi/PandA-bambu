@@ -401,16 +401,9 @@ class liveness
     */
    unsigned get_step(vertex v, vertex running_op, unsigned int var, bool in) const;
 
- public:
-   /**
-    * @brief get_prev_step return the prev step of a given variable used in a given BB
-    * @param BB is the current Basic Block
-    * @param var is the variable under consideration
-    * @param cur_step is the current step
-    * @return
-    */
-   unsigned get_prev_step(unsigned int BB_index, unsigned int var, unsigned cur_step) const;
+   unsigned satStep(unsigned BB_index, unsigned step) const;
 
+ public:
    void set_step(vertex v, vertex running_op, unsigned int step, bool in);
 
    unsigned GetStep(vertex v, vertex op, unsigned int var, bool in) const;
@@ -420,7 +413,8 @@ class liveness
    unsigned GetStepPhiOut(vertex op, unsigned int var) const;
    unsigned GetStepOut(unsigned int var) const;
    unsigned GetStepDef(unsigned int BB_index, unsigned int var) const;
-   std::pair<bool, unsigned> GetPrevStep(unsigned int BB_index, unsigned int var, unsigned curr_step) const;
+   std::pair<bool, unsigned> GetPrevStep(unsigned int BB_index, unsigned int var, unsigned curr_step,
+                                         unsigned int offset) const;
    unsigned GetStepOp(vertex v, vertex exec_op) const;
 
    /**
