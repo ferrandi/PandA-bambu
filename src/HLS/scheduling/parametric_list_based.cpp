@@ -1889,20 +1889,15 @@ bool parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
                      }
                   }
                }
-               //               std::cerr << "latest_cs=" << latest_cs << " cs_first_vertex=" << cs_first_vertex << "
-               //               LP_II=" << LP_II
-               //                         << " cs_last_vertex=" << cs_last_vertex << " last_vertex_n_cycles=" <<
-               //                         last_vertex_n_cycles
-               //                         << "\n";
-               if(latest_cs > cs_first_vertex && (latest_cs + LP_II >= cs_last_vertex + last_vertex_n_cycles))
+               if(latest_cs >= (LP_II + cs_first_vertex))
                {
-                  //                  std::cerr << "move back steps=" << ((latest_cs - cs_first_vertex) % LP_II) <<
-                  //                  "\n";
+                  latest_cs = LP_II + cs_first_vertex - 1;
+               }
+               if(latest_cs > cs_first_vertex && (latest_cs + LP_II >= (cs_last_vertex + last_vertex_n_cycles)))
+               {
                   schedule->remove_sched(first_vertex);
-                  schedule->set_execution(first_vertex,
-                                          ControlStep(latest_cs - ((latest_cs - cs_first_vertex) % LP_II)));
-                  schedule->set_execution_end(first_vertex,
-                                              ControlStep(latest_cs - ((latest_cs - cs_first_vertex) % LP_II)));
+                  schedule->set_execution(first_vertex, ControlStep(latest_cs));
+                  schedule->set_execution_end(first_vertex, ControlStep(latest_cs));
                }
                else
                {
