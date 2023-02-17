@@ -135,7 +135,7 @@ static void update_liveout_with_prev(const HLS_managerRef HLSMgr, hlsRef HLS, co
             auto def_op = HLS->Rliv->get_op_where_defined(scalar_use);
             auto not_have_def = std::find(state_info->ending_operations.begin(), state_info->ending_operations.end(),
                                           def_op) == state_info->ending_operations.end();
-            if(not_have_def || HLS->STG->not_same_step(prev_state, def_op, exec_op))
+            if(isAPhi || not_have_def || HLS->STG->not_same_step(prev_state, def_op, exec_op))
             {
                unsigned int step = isAPhi ? HLS->Rliv->GetStepPhiOut(exec_op, scalar_use) :
                                             HLS->Rliv->GetStep(prev_state, exec_op, scalar_use, true);
@@ -413,7 +413,6 @@ DesignFlowStep_Status FSM_NI_SSA_liveness::InternalExec()
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---bb_index: " + STR(bb_index));
       if(state_info->is_pipelined_state)
       {
-         bool first_last_state_iteration = true;
          OutEdgeIterator o_e_it, o_e_end;
          for(boost::tie(o_e_it, o_e_end) = boost::out_edges(rosl, *stg); o_e_it != o_e_end; ++o_e_it)
          {
@@ -442,28 +441,6 @@ DesignFlowStep_Status FSM_NI_SSA_liveness::InternalExec()
             }
             else
             {
-               if(state_info->is_last_state && first_last_state_iteration)
-               {
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "is_last_state");
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                 "---adding live out of BB " + STR(bb_index) + " to live out of state " +
-                                     state_info->name);
-                  first_last_state_iteration = false;
-
-                  if(0)
-                  {
-                     for(const auto& lo : fbb->CGetBBNodeInfo(bb_index_map[bb_index])->get_live_out())
-                     {
-                        if(HLSMgr->is_register_compatible(lo))
-                        {
-                           auto step = HLS->Rliv->GetStepOut(lo);
-                           INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                          "---" + FB->CGetBehavioralHelper()->PrintVariable(lo) + "-" + STR(step));
-                           HLS->Rliv->set_live_out(rosl, lo, step);
-                        }
-                     }
-                  }
-               }
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                               "---adding live out of " + stg->CGetStateInfo(target_state)->name +
                                   " to live out of state " + state_info->name);
