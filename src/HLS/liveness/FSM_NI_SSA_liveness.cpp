@@ -677,7 +677,7 @@ DesignFlowStep_Status FSM_NI_SSA_liveness::InternalExec()
                         auto phi_in = def_edge.first->index;
                         if(HLSMgr->is_register_compatible(phi_in))
                         {
-                           unsigned int step = HLS->Rliv->GetStepPhiIn(exec_op, phi_in);
+                           unsigned int step = HLS->Rliv->GetStepPhiIn(exec_op, phi_in, def_edge.second);
                            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                                           "---erase " + FB->CGetBehavioralHelper()->PrintVariable(phi_in) + "-" +
                                               STR(step));
@@ -791,7 +791,7 @@ DesignFlowStep_Status FSM_NI_SSA_liveness::InternalExec()
                   if(HLSMgr->is_register_compatible(phi_in) && HLS->Rliv->has_op_where_defined(phi_in) &&
                      GET_BB_INDEX(data, HLS->Rliv->get_op_where_defined(phi_in)) != bb_index)
                   {
-                     auto step = HLS->Rliv->GetStepPhiIn(eoc, phi_in);
+                     auto step = HLS->Rliv->GetStepPhiIn(eoc, phi_in, def_edge.second);
                      HLS->Rliv->set_live_in(target_state, phi_in, step);
                      /// propagate up
                      std::queue<vertex> to_process;

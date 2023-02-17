@@ -352,7 +352,7 @@ unsigned liveness::GetStep(vertex v, vertex op, unsigned int var, bool in) const
    }
 }
 
-unsigned liveness::GetStepPhiIn(vertex op, unsigned int var) const
+unsigned liveness::GetStepPhiIn(vertex op, unsigned int var, unsigned BB_src) const
 {
    auto def_op = get_op_where_defined(var);
    auto def_op_BB_index = vertex_BB.at(def_op);
@@ -371,7 +371,7 @@ unsigned liveness::GetStepPhiIn(vertex op, unsigned int var) const
       }
       else
       {
-         return BB2MaxStep.at(def_op_BB_index);
+         return BB2MaxStep.at(def_op_BB_index) + (BB_src != def_op_BB_index ? 1 : 0);
       }
    }
    else
