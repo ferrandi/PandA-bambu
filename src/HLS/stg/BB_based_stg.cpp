@@ -1209,6 +1209,12 @@ void BB_based_stg::optimize_cycles(vertex bbEndingCycle, CustomUnorderedMap<vert
          return;
       }
 
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Check multi-cycle");
+      if(GetPointer<operation>(op_tn)->time_m->get_cycles() > 1)
+      {
+         return;
+      }
+
       if(GET_TYPE(dfgRef, *it) & TYPE_STORE)
       {
          has_STOREs = true;
