@@ -367,11 +367,6 @@ DesignFlowStep_Status create_tree_manager::Exec()
       for(const auto& raw_file : raw_files)
       {
          INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "Parsing " + raw_file);
-         if(!boost::ends_with(raw_file, ".gimplePSSA"))
-         {
-            INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Skipping non-raw file...");
-            continue;
-         }
          if(!boost::filesystem::exists(boost::filesystem::path(raw_file)))
          {
             THROW_ERROR("File " + raw_file + " does not exist");
