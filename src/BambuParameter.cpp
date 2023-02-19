@@ -493,11 +493,11 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "    --module-binding=<type>\n"
       << "        Set the algorithm used for module binding. Possible values for the\n"
       << "        <type> argument are one the following:\n"
-      << "            BIPARTITE_MATCHING - solve the weighted clique covering problem\n"
-      << "                                 exploiting the bipartite matching approach\n"
-      << "                                 (default)\n"
       << "            WEIGHTED_TS        - solve the weighted clique covering problem by\n"
       << "                                 exploiting the Tseng&Siewiorek heuristics\n"
+      << "                                 (default)\n"
+      << "            BIPARTITE_MATCHING - solve the weighted clique covering problem\n"
+      << "                                 exploiting the bipartite matching approach\n"
       << "            WEIGHTED_COLORING  - solve the weighted clique covering problem\n"
       << "                                 performing a coloring on the conflict graph\n"
       << "            COLORING           - solve the unweighted clique covering problem\n"
@@ -4238,7 +4238,7 @@ void BambuParameter::SetDefaults()
    /// -- Module binding -- //
    /// module binding algorithm
    setOption(OPT_fu_binding_algorithm, HLSFlowStep_Type::CDFC_MODULE_BINDING);
-   setOption(OPT_cdfc_module_binding_algorithm, CliqueCovering_Algorithm::BIPARTITE_MATCHING);
+   setOption(OPT_cdfc_module_binding_algorithm, CliqueCovering_Algorithm::TS_WEIGHTED_CLIQUE_COVERING);
 
    /// -- Finite state machine -- //
    /// flag to check if finite state machine has to be created
