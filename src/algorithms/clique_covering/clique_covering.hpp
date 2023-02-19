@@ -877,6 +877,7 @@ class coloring_based_clique_covering : public clique_covering<vertex_type>
       }
    }
 
+#define THRESHOLD_2_SIMPLIFY 200
    void exec(const filter_clique<vertex_type>& fc, check_clique<vertex_type>&) override
    {
       VertexIndex n = boost::num_vertices(clique_covering_graph_bulk);
@@ -905,7 +906,8 @@ class coloring_based_clique_covering : public clique_covering<vertex_type>
                                      cc_compatibility_graph_vertex_selector<boost_cc_compatibility_graph>(&support)));
 
       std::map<C_vertex, CustomOrderedSet<C_vertex>> current_partitions;
-      if(all_edges)
+
+      if(all_edges || support.size() > THRESHOLD_2_SIMPLIFY)
       {
          do_clique_covering(completeCG, ds, support, all_vertices, fc);
       }
@@ -951,10 +953,11 @@ class coloring_based_clique_covering : public clique_covering<vertex_type>
                            if(!std::binary_search(neighbors.begin(), neighbors.end(), rep_target))
                            {
                               (*completeCG)[*ei].selector = 0;
-                              // std::cerr << names[cur] << "|"<< names[rep] << " -0- " << names[rep_target] <<
+                              // std::cerr << names[cur] << "|" << names[rep] << " -0- " << names[rep_target] <<
                               // std::endl;
                               c_it = current_cliques.begin(); /// restart the pruning
                               restart = true;                 /// and then restart the whole partition analysis
+                              // std::cerr << "restart\n";
                            }
                         }
                      }
@@ -969,7 +972,7 @@ class coloring_based_clique_covering : public clique_covering<vertex_type>
                            if(!std::binary_search(neighbors.begin(), neighbors.end(), cur_target))
                            {
                               (*completeCG)[*ei].selector = 0;
-                              // std::cerr << names[rep] << "|"<< names[cur] << " -1- " << names[cur_target] <<
+                              // std::cerr << names[rep] << "|" << names[cur] << " -1- " << names[cur_target] <<
                               // std::endl;
                            }
                         }
@@ -1237,6 +1240,10 @@ class TS_based_clique_covering : public coloring_based_clique_covering<vertex_ty
                          typename boost::disjoint_sets<rank_pmap_type, pred_pmap_type>& ds,
                          const filter_clique<vertex_type>& fc)
    {
+      if(!fc.is_filtering())
+      {
+         return false;
+      }
       C_vertex vertex_to_be_removed;
       CustomOrderedSet<C_vertex> curr_expandend_clique;
       const CustomUnorderedSet<C_vertex>::const_iterator av_it_end = all_vertices.end();
@@ -1252,6 +1259,7 @@ class TS_based_clique_covering : public coloring_based_clique_covering<vertex_ty
                                            coloring_based_clique_covering<vertex_type>::uv2v, subgraph);
    }
 
+#define MAX_EDGE_CONSIDERED 50
    bool select_edge_start(C_vertex source, C_vertex& tgt, const cc_compatibility_graph& subgraph,
                           const CustomUnorderedSet<C_vertex>& all_vertices,
                           typename boost::disjoint_sets<rank_pmap_type, pred_pmap_type>& ds,
@@ -1261,6 +1269,7 @@ class TS_based_clique_covering : public coloring_based_clique_covering<vertex_ty
       size_t h_min_del_edges = std::numeric_limits<size_t>::max();
       bool first_iter = true;
       C_outEdgeIterator sei0, sei0_end;
+      auto counter = 0u;
       for(boost::tie(sei0, sei0_end) = boost::out_edges(source, subgraph); sei0 != sei0_end; ++sei0)
       {
          C_vertex target = boost::target(*sei0, subgraph);
@@ -1296,9 +1305,18 @@ class TS_based_clique_covering : public coloring_based_clique_covering<vertex_ty
             h_min_del_edges = h_del_edges;
             tgt = target;
          }
+         if(counter > MAX_EDGE_CONSIDERED)
+         {
+            break;
+         }
+         else
+         {
+            ++counter;
+         }
       }
       return !first_iter;
    }
+
    /// Compute the heuristics and return the best matching edge
    bool select_edge(C_vertex& src, C_vertex& tgt, const cc_compatibility_graph& subgraph,
                     const CustomUnorderedSet<C_vertex>& all_vertices,
@@ -1309,6 +1327,7 @@ class TS_based_clique_covering : public coloring_based_clique_covering<vertex_ty
       size_t h_min_del_edges = std::numeric_limits<size_t>::max();
       boost::graph_traits<cc_compatibility_graph>::edge_iterator ei, ei_end;
       bool first_iter = true;
+      auto counter = 0u;
       for(boost::tie(ei, ei_end) = boost::edges(subgraph); ei != ei_end; ++ei)
       {
          C_vertex source, target;
@@ -1347,6 +1366,14 @@ class TS_based_clique_covering : public coloring_based_clique_covering<vertex_ty
             src = source;
             tgt = target;
          }
+         if(counter > MAX_EDGE_CONSIDERED)
+         {
+            break;
+         }
+         else
+         {
+            ++counter;
+         }
       }
       return !first_iter;
    }
@@ -1367,8 +1394,8 @@ class TS_based_clique_covering : public coloring_based_clique_covering<vertex_ty
 
       while(support.size() > 1)
       {
-         // std::cerr << "Looking for a maximum weighted clique on a graph with " << support.size() << " vertices" <<
-         // std::endl;
+         // std::cerr << "Looking for a maximum weighted clique on a graph with " << support.size() << " vertices"
+         //           << std::endl;
          /// build the clique seed
          C_vertex src, tgt;
          bool res_edge = select_edge(src, tgt, *CG, all_vertices, ds, fc);
@@ -1377,7 +1404,6 @@ class TS_based_clique_covering : public coloring_based_clique_covering<vertex_ty
             break;
          }
 
-         size_t cluster_size = 1;
          std::map<edge_descriptor, int> removed_edges;
          CustomUnorderedSet<C_vertex>::iterator current;
 
@@ -1425,7 +1451,6 @@ class TS_based_clique_covering : public coloring_based_clique_covering<vertex_ty
             current = support.find(tgt);
             THROW_ASSERT(current != support.end(), "unexpected condition");
             support.erase(current);
-            ++cluster_size;
          } while(select_edge_start(src, tgt, *CG, all_vertices, ds, fc));
 
          current = support.find(src);
