@@ -164,6 +164,8 @@ class mux_connection_binding : public conn_binding_creator
    unsigned int address_precision(unsigned int precision, const vertex& op, const OpGraphConstRef data,
                                   const tree_managerRef TreeM);
 
+   bool isConstantObj(unsigned int tree_index, const tree_managerRef TreeM);
+
  public:
    /**
     * Main constructor
