@@ -56,6 +56,7 @@ struct filter_clique
                                            const cc_compatibility_graph& cg) const = 0;
    virtual size_t clique_cost(const CustomOrderedSet<C_vertex>& candidate_clique,
                               const CustomUnorderedMap<C_vertex, vertex_type>& converter) const = 0;
+   virtual bool is_filtering() const = 0;
 };
 
 template <typename vertex_type>
@@ -71,6 +72,10 @@ struct no_filter_clique : public filter_clique<vertex_type>
                       const CustomUnorderedMap<C_vertex, vertex_type>&) const override
    {
       return static_cast<size_t>(candidate_clique.size());
+   }
+   bool is_filtering() const override
+   {
+      return false;
    }
 };
 

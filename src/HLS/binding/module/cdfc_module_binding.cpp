@@ -716,6 +716,11 @@ struct slack_based_filtering : public filter_clique<vertex>
       return static_cast<size_t>(total_muxes);
    }
 
+   bool is_filtering() const override
+   {
+      return true;
+   }
+
  private:
    const CustomUnorderedMap<vertex, double>& slack_time;
    const CustomUnorderedMap<vertex, double>& starting_time;
@@ -2478,7 +2483,16 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
          }
          if(output_level >= OUTPUT_LEVEL_VERBOSE)
          {
-            STOP_TIME(clique_iteration_cputime[iteration]);
+            STOP_TIME(clique_iteration_cputime);
+            INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level,
+                           "---Iteration " + STR(iteration) + " completed in " +
+                               print_cpu_time(clique_iteration_cputime) + " seconds");
+            if(output_level >= OUTPUT_LEVEL_VERY_PEDANTIC)
+            {
+               INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level,
+                              "---total_resource_area=" + STR(total_resource_area) + ", total_DSPs=" + STR(total_DSPs) +
+                                  ", total_area_muxes=" + STR(total_area_muxes));
+            }
          }
       }
       std::swap(fu_best, fu);
