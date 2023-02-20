@@ -240,7 +240,7 @@ DesignFlowStep_Status add_library::InternalExec()
       TechM->add_operation(WORK_LIBRARY, module_name, function_name);
       const auto op = GetPointerS<operation>(fu->get_operation(function_name));
       op->primary_inputs_registered = HLS->registered_inputs;
-      op->bounded = HLS->STG->CGetStg()->CGetStateTransitionGraphInfo()->bounded;
+      op->bounded = HLS->STG && HLS->STG->CGetStg()->CGetStateTransitionGraphInfo()->bounded;
       const auto call_delay =
           HLS->allocation_information ? HLS->allocation_information->estimate_call_delay() : clock_period_value;
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Estimated call delay " + STR(call_delay));
