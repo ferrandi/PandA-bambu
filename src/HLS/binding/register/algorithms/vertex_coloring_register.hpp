@@ -48,7 +48,7 @@
 class vertex_coloring_register : public conflict_based_register
 {
  private:
-   DesignFlowStep_Status RegisterBinding() override final;
+   DesignFlowStep_Status RegisterBinding() final;
 
  public:
    /**

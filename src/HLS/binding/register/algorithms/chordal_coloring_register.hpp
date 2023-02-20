@@ -65,7 +65,7 @@ class chordal_coloring_register : public conflict_based_register
     * All previous result are erased.
     * @return the exit status of this step
     */
-   DesignFlowStep_Status RegisterBinding() override final;
+   DesignFlowStep_Status RegisterBinding() final;
 
  public:
    /**
