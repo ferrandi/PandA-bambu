@@ -16147,9 +16147,9 @@ wire valid,tagsmatch;
         begin
            //cache-control hit-miss counters enables
            assign write_hit  = ready &amp; ( hit &amp; write_access);
-           assign write_miss = ready &amp; (~hit &amp; write_access);
+           assign write_miss = replace_valid &amp; write_access;
            assign read_hit   = ready &amp; ( hit &amp;  read_access);
-           assign read_miss  = replace_valid;//will also subtract read_hit
+           assign read_miss  = replace_valid &amp; read_access;
         end
       else
         begin
@@ -16641,7 +16641,6 @@ wire valid,tagsmatch;
 	               else if (read_miss)
 	                 begin
 		            read_miss_cnt &lt;= read_miss_cnt + 1;
-                            read_hit_cnt &lt;= read_hit_cnt - 1;
                          end
 	               else if (write_miss)
 	                 begin
@@ -16970,7 +16969,7 @@ wire valid,tagsmatch;
       .reset (reset),
       //front-end port
       .valid (valid),
-      .addr  (addr),
+      .addr  ({{CTRL_CACHE{1&apos;b0}}, addr}),
       .wdata (wdata),
       .wstrb (wstrb),
       .rdata (rdata),

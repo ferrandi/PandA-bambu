@@ -596,6 +596,26 @@ end)";
       out << "      end\n";
 
       out << R"(
+`ifdef __ICARUS__
+  `define _CACHE_CNT 1
+`elsif VERILATOR
+  `define _CACHE_CNT 1
+`elsif MODEL_TECH
+  `define _CACHE_CNT 1
+`elsif VCS
+  `define _CACHE_CNT 1
+`elsif NCVERILOG
+  `define _CACHE_CNT 1
+`elsif XILINX_SIMULATOR
+  `define _CACHE_CNT 1
+`elsif XILINX_ISIM
+  `define _CACHE_CNT 1
+`else
+  `define _CACHE_CNT 0
+`endif
+      )";
+
+      out << R"(
       IOB_cache_axi #(
           .FE_ADDR_W(BITSIZE_in4),
           .BE_ADDR_W(BITSIZE_in4),
@@ -614,8 +634,8 @@ end)";
           .WRITE_POL()"
           << write_pol << R"(),
           .AXI_ID(0),
-          .CTRL_CACHE(0),
-          .CTRL_CNT(0),
+          .CTRL_CACHE(`_CACHE_CNT),
+          .CTRL_CNT(`_CACHE_CNT),
           .BITSIZE_addr(0 + BITSIZE_in4 - $clog2(BITSIZE_in3 / 8)),
           .BITSIZE_wdata(BITSIZE_in3),
           .BITSIZE_wstrb(BITSIZE_in3 / 8),
@@ -687,5 +707,6 @@ end)";
       out << "          .clk(clock),\n";
       out << "          .reset(!reset) /* IOB reset is active high */\n";
       out << "       );\n";
+      out << "`undef _CACHE_CNT\n";
    }
 }
