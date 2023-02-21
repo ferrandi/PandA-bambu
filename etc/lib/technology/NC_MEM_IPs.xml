@@ -14988,7 +14988,7 @@ wire valid,tagsmatch;
    reg r_empty;
    reg w_full;
 
-   reg error = 0;
+   reg error = 0, next_error;
    reg w_full_nxt = 0;
    reg write_fail_reg;
 
@@ -15033,10 +15033,11 @@ wire valid,tagsmatch;
    end
    
    `IOB_COMB begin
+       next_error = error;
        if(write_fail)
-        error = 1&apos;b1;
+        next_error = 1&apos;b1;
        else if(r_en_int)
-        error = 1&apos;b0;
+        next_error = 1&apos;b0;
        w_full_nxt = w_full;
        if(write_fail)
         w_full_nxt = 1&apos;b1;
@@ -15052,11 +15053,12 @@ wire valid,tagsmatch;
    
    always @(posedge clk) begin
     write_fail_reg &lt;= write_fail;
+    error &lt;= next_error;
    end
 
    //FIFO empty
    `IOB_WIRE(r_empty_nxt, 1)
-   assign r_empty_nxt = (level_nxt[0+:ADDR_W+1] &lt; r_incr) &amp;&amp; (error == 0);
+   assign r_empty_nxt = (level_nxt[0+:ADDR_W+1] &lt; r_incr) &amp;&amp; (next_error == 0);
    `IOB_REG_AR(clk, arst, 1&apos;d1, r_empty, r_empty_nxt)
 
    //FIFO full
@@ -15093,8 +15095,8 @@ wire valid,tagsmatch;
       .w_data        (write_fail_reg ? r_data : w_data),
       .w_addr        (w_addr),
 
-      .r_en          (error || r_en_int),
-      .r_addr        (error ? b_addr : r_addr),
+      .r_en          (next_error || r_en_int),
+      .r_addr        (next_error ? b_addr : r_addr),
       .r_data        (r_data)
       );
    `undef IOB_MAX
