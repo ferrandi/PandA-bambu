@@ -3,6 +3,7 @@
 - Support for Xilinx Alveo and Xilinx Kintex FPGA boards
 - Support for ac_channels and hls::stream interfaces
 - Various bugfixes and stability enhancement
+- Support for customizable caches added to AXI interfaces 
 
 =========== PANDA 0.9.8 ===========
 Ninth public release of PandA framework.
