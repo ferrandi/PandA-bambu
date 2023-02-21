@@ -314,9 +314,9 @@ always @(*) begin
 
       out << R"(
           `ifdef _SIM_HAVE_CLOG2
-            next_ARSIZE = $clog2(in2 / 8);
+            next_ARSIZE = $clog2(in2 >> 3);
           `else
-            next_ARSIZE = `CLOG2(in2 / 8);
+            next_ARSIZE = `CLOG2(in2 >> 3);
           `endif
           next_axi_bready = 1'b0;
           next_axi_rready = 1'b1;
@@ -324,11 +324,11 @@ always @(*) begin
 
       out << "          next_first_read = 1'b1;\n";
       out << "          next_axi_araddr = " << _ports_in[i_in4].name << ";\n";
-      out << "          misalignment = " << _ports_in[i_in4].name << " % (1 << next_ARSIZE);\n";
+      out << "          misalignment = " << _ports_in[i_in4].name << " & ((1 << next_ARSIZE) - 1);\n";
       out << "          if(misalignment > 'b0) begin\n";
       out << "            next_ARLEN = 'b1;\n";
       out << "            next_ARBURST = 'b1;\n";
-      out << "            next_read_mask = -(1 << (misalignment * 8));\n";
+      out << "            next_read_mask = -(1 << (misalignment << 3));\n";
       out << "          end else begin\n";
       out << "            next_ARLEN = 'b0;\n";
       out << "            next_ARBURST = 'b0;\n";
@@ -343,13 +343,16 @@ always @(*) begin
       out << "          next_axi_awaddr = " << _ports_in[i_in4].name << ";\n";
       out << "          next_axi_awvalid = 1'b1;\n";
       out << "          `ifdef _SIM_HAVE_CLOG2\n";
-      out << "            next_AWSIZE = $clog2(in2 / 8);\n";
+      out << "            next_AWSIZE = $clog2(in2 >> 3);\n";
       out << "          `else\n";
-      out << "            next_AWSIZE = `CLOG2(in2 / 8);\n";
+      out << "            next_AWSIZE = `CLOG2(in2 >> 3);\n";
       out << "          `endif\n";
       /* Compute the misalignment, assert all the bits to the left of the misaligned one */
-      out << "          misalignment = " << _ports_in[i_in4].name << " % (1 << next_AWSIZE);\n";
-      out << "          next_WSTRB = -(1 << misalignment);\n";
+      out << "          misalignment = " << _ports_in[i_in4].name << " & ((1 << next_AWSIZE) - 1);\n";
+      for(unsigned i = 0; i < _ports_out[o_WSTRB].type_size; i++)
+      {
+         out << "          next_WSTRB[" << STR(i) << "] = " << STR(i) << " >= misalignment;\n";
+      }
       out << "          next_axi_wdata = " << _ports_in[i_in3].name << ";\n";
       out << R"(          next_axi_wvalid = 1'b1;
           next_axi_wlast = !(misalignment > 'b0);
