@@ -63,6 +63,7 @@
 #define OPT_ALTERA_ROOT (1 + OPT_MENTOR_OPTIMIZER)
 #define OPT_NANOXPLORE_ROOT (1 + OPT_ALTERA_ROOT)
 #define OPT_NANOXPLORE_BYPASS (1 + OPT_NANOXPLORE_ROOT)
+#define OPT_PARALLEL_BACKEND (1 + OPT_NANOXPLORE_BYPASS)
 
 #include "utility.hpp"
 #include "utility/fileIO.hpp"
@@ -174,6 +175,7 @@ int EucalyptusParameter::Exec()
       {"nanoxplore-root", optional_argument, nullptr, OPT_NANOXPLORE_ROOT},
       {"nanoxplore-bypass", optional_argument, nullptr, OPT_NANOXPLORE_BYPASS},
       {"xilinx-root", optional_argument, nullptr, OPT_XILINX_ROOT},
+      {"parallel-backend", no_argument, nullptr, OPT_PARALLEL_BACKEND},
       {nullptr, 0, nullptr, 0}
    };
 
@@ -243,6 +245,11 @@ int EucalyptusParameter::Exec()
          case OPT_XILINX_ROOT:
          {
             setOption(OPT_xilinx_root, GetPath(optarg));
+            break;
+         }
+         case OPT_PARALLEL_BACKEND:
+         {
+            setOption(OPT_parallel_backend, true);
             break;
          }
          /// output options

@@ -402,9 +402,9 @@ void parametric_list_based::CheckSchedulabilityConditions(
    compute_starting_ending_time_asap(operations, current_vertex, fu_type, current_cycle, current_starting_time,
                                      current_ending_time, current_stage_period, cannotBeChained1, res_binding, schedule,
                                      phi_extra_time, setup_hold_time, local_connection_map);
-   bool complex_op = (current_ending_time - current_starting_time) > setup_hold_time;
-   bool is_pipelined = HLS->allocation_information->get_initiation_time(fu_type, current_vertex) != 0;
-   auto n_cycles = HLS->allocation_information->get_cycles(fu_type, current_vertex, flow_graph);
+   const auto complex_op = (current_ending_time - current_starting_time) > setup_hold_time;
+   const auto is_pipelined = HLS->allocation_information->get_initiation_time(fu_type, current_vertex) != 0;
+   const auto n_cycles = HLS->allocation_information->get_cycles(fu_type, current_vertex, flow_graph);
    pipeliningCond = is_pipelined and (current_starting_time > current_cycle_starting_time) and
                     ((current_stage_period + current_starting_time + setup_hold_time + phi_extra_time +
                               (complex_op ? scheduling_mux_margins : 0) >
@@ -414,7 +414,7 @@ void parametric_list_based::CheckSchedulabilityConditions(
    {
       return;
    }
-   auto curr_vertex_type = GET_TYPE(flow_graph, current_vertex);
+   const auto curr_vertex_type = GET_TYPE(flow_graph, current_vertex);
    cannotBeChained0 =
        (current_starting_time >= current_cycle_ending_time) ||
        ((!is_pipelined && !(curr_vertex_type & TYPE_RET) && n_cycles == 0 &&
@@ -494,10 +494,9 @@ void parametric_list_based::CheckSchedulabilityConditions(
    if(cannotBeChained3)
    {
       bool is_chained = false;
-      InEdgeIterator ei, ei_end;
-      for(boost::tie(ei, ei_end) = boost::in_edges(current_vertex, *flow_graph); ei != ei_end; ei++)
+      BOOST_FOREACH(EdgeDescriptor e, boost::in_edges(current_vertex, *flow_graph))
       {
-         vertex from_vertex = boost::source(*ei, *flow_graph);
+         const auto from_vertex = boost::source(e, *flow_graph);
          if(operations.find(from_vertex) == operations.end())
          {
             continue;

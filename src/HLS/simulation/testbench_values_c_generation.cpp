@@ -203,6 +203,9 @@ DesignFlowStep_Status TestbenchValuesCGeneration::Exec()
    {
       compiler_flags += "-fexcess-precision=standard ";
    }
+
+   const auto is_clang =
+       CompilerWrapper::isClangCheck(parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler));
    if(parameters->isOption(OPT_testbench_extra_gcc_flags))
    {
       compiler_flags += parameters->getOption<std::string>(OPT_testbench_extra_gcc_flags) + " ";
@@ -210,7 +213,7 @@ DesignFlowStep_Status TestbenchValuesCGeneration::Exec()
    if((parameters->isOption(OPT_discrepancy) && parameters->getOption<bool>(OPT_discrepancy)) ||
       (parameters->isOption(OPT_discrepancy_hw) && parameters->getOption<bool>(OPT_discrepancy_hw)))
    {
-      if(CompilerWrapper::isClangCheck(parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler))
+      if(is_clang
 #if HAVE_I386_GCC48_COMPILER
          || parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
                 CompilerWrapper_CompilerTarget::CT_I386_GCC48
@@ -264,7 +267,7 @@ DesignFlowStep_Status TestbenchValuesCGeneration::Exec()
       {
          compiler_flags += "-static-libasan ";
       }
-      if(CompilerWrapper::isClangCheck(parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler))
+      if(is_clang
 #if HAVE_I386_GCC5_COMPILER
          || parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
                 CompilerWrapper_CompilerTarget::CT_I386_GCC5
@@ -363,7 +366,7 @@ DesignFlowStep_Status TestbenchValuesCGeneration::Exec()
       {
          main_sources.insert(parameters->getOption<std::string>(OPT_pretty_print));
 
-         if(CompilerWrapper::isClangCheck(parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler)))
+         if(is_clang)
          {
             compiler_flags += "-fbracket-depth=1024 ";
          }

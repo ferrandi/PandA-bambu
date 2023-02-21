@@ -909,7 +909,7 @@ void CompilerWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::st
 #if HAVE_I386_CLANG4_COMPILER || HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER ||    \
     HAVE_I386_CLANG7_COMPILER || HAVE_I386_CLANG8_COMPILER || HAVE_I386_CLANG9_COMPILER ||    \
     HAVE_I386_CLANG10_COMPILER || HAVE_I386_CLANG11_COMPILER || HAVE_I386_CLANG11_COMPILER || \
-    HAVE_I386_CLANG12_COMPILER || HAVE_I386_CLANG13_COMPILER || HAVE_I386_CLANGVVD_COMPILER
+    HAVE_I386_CLANG13_COMPILER || HAVE_I386_CLANGVVD_COMPILER
    if(Param->IsParameter("disable-pragma-parsing") && Param->GetParameter<int>("disable-pragma-parsing") == 1)
    {
       INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "Pragma analysis disabled");
@@ -1032,7 +1032,7 @@ void CompilerWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::st
    if(enable_LTO)
    {
       std::string object_files;
-      for(auto& source_file : source_files)
+      for(const auto& source_file : source_files)
       {
          std::string leaf_name =
              source_file.second == "-" ? "stdin-" : GetBaseName(GetLeafFileName(source_file.second));
@@ -1325,7 +1325,7 @@ void CompilerWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::st
                  .string();
          command += " -o " + temporary_file_o_bc;
          command += " -" + compiler.ssa_plugin_name;
-         const std::string gimpledump_output_file_name =
+         const auto gimpledump_output_file_name =
              Param->getOption<std::string>(OPT_output_temporary_directory) + STR_CST_gcc_output;
          ret = PandaSystem(Param, command, gimpledump_output_file_name);
          if(IsError(ret))
@@ -1349,12 +1349,11 @@ void CompilerWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::st
          THROW_ERROR("LTO compilation not yet implemented for the chosen front-end compiler");
       }
       std::string leaf_name = GetLeafFileName(source_files.begin()->second);
-      if(!boost::filesystem::exists(output_temporary_directory + "/" + leaf_name + STR_CST_gcc_tree_suffix))
-      {
-         THROW_ERROR(output_temporary_directory + "/" + leaf_name + STR_CST_gcc_tree_suffix +
-                     " not found: impossible to create raw file for " + real_file_names);
-      }
       const auto obj = boost::filesystem::path(output_temporary_directory + "/" + leaf_name + STR_CST_gcc_tree_suffix);
+      if(!boost::filesystem::exists(obj))
+      {
+         THROW_ERROR(obj.string() + " not found: impossible to create raw file for " + real_file_names);
+      }
       tree_managerRef TreeM = ParseTreeFile(Param, obj.string());
 #if !NPROFILE
       long int merge_time = 0;
@@ -1694,7 +1693,9 @@ void CompilerWrapper::SetBambuDefault()
           Param->isOption(OPT_input_format) &&
           (Param->getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_CPP ||
            Param->getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_LLVM_CPP);
-      if(!flag_cpp)
+      if(!flag_cpp && opt_level != CompilerWrapper_OptimizationSet::O3 &&
+         opt_level != CompilerWrapper_OptimizationSet::O4 && opt_level != CompilerWrapper_OptimizationSet::Ofast &&
+         opt_level != CompilerWrapper_OptimizationSet::OSF)
       {
          optimization_flags["unroll-loops"] =
              false; // it is preferable to have unrolling disabled by default as with GCC
