@@ -57,7 +57,7 @@ reg_binding_cs::reg_binding_cs(const hlsRef& HLS_, const HLS_managerRef HLSMgr_)
 
 reg_binding_cs::~reg_binding_cs() = default;
 
-std::string reg_binding_cs::CalculateRegisterName(unsigned int)
+std::string reg_binding_cs::GetRegisterFUName(unsigned int)
 {
    return "register_file";
 }

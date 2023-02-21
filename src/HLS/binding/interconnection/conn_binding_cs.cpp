@@ -100,7 +100,7 @@ void conn_binding_cs::instantiate_suspension_component(const HLS_managerRef HLSM
       {
          structural_objectRef portStart = curr_gate->find_member(STR(START_PORT_NAME), port_o_K, curr_gate);
          structural_objectRef startMemOp = GetPointer<port_o>(portStart)->find_bounded_object();
-         THROW_ASSERT(startMemOp != NULL, "No start port for mem_ctrl_found");
+         THROW_ASSERT(startMemOp != nullptr, "No start port for mem_ctrl_found");
          andStartMemOp_required = true;
          break;
       }
@@ -188,7 +188,7 @@ void conn_binding_cs::instantiate_suspension_component(const HLS_managerRef HLSM
       {
          structural_objectRef portStart = curr_gate->find_member(STR(START_PORT_NAME), port_o_K, curr_gate);
          structural_objectRef startMemOp = GetPointer<port_o>(portStart)->find_bounded_object();
-         THROW_ASSERT(startMemOp != NULL, "No start port for mem_ctrl_found");
+         THROW_ASSERT(startMemOp != nullptr, "No start port for mem_ctrl_found");
          SM->add_connection(startMemOp, GetPointer<port_o>(port_in_and)->get_port(1));
          break;
       }

@@ -89,8 +89,8 @@ datapath_parallel_cs::ComputeHLSRelationships(const DesignFlowStep::Relationship
    {
       case DEPENDENCE_RELATIONSHIP:
       {
-         ret.insert(std::make_tuple(HLSFlowStep_Type::INITIALIZE_HLS, HLSFlowStepSpecializationConstRef(),
-                                    HLSFlowStep_Relationship::SAME_FUNCTION));
+         ret.insert(std::make_tuple(HLSFlowStep_Type::DOMINATOR_ALLOCATION, HLSFlowStepSpecializationConstRef(),
+                                    HLSFlowStep_Relationship::WHOLE_APPLICATION));
          ret.insert(std::make_tuple(HLSFlowStep_Type::OMP_BODY_LOOP_SYNTHESIS_FLOW, HLSFlowStepSpecializationConstRef(),
                                     HLSFlowStep_Relationship::CALLED_FUNCTIONS));
          break;

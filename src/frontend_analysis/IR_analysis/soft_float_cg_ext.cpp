@@ -286,7 +286,7 @@ soft_float_cg_ext::soft_float_cg_ext(const ParameterConstRef _parameters, const 
          {
             std::list<CallGraph::vertex_descriptor> func_sort;
             CustomUnorderedSet<CallGraph::vertex_descriptor> reached_v;
-            const auto reached_from_top = CGM->GetReachedBodyFunctionsFrom(root_func);
+            const auto reached_from_top = CGM->GetReachedFunctionsFrom(root_func);
             for(const auto func_id : reached_from_top)
             {
                reached_v.insert(CGM->GetVertex(func_id));

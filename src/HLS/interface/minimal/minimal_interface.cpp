@@ -157,23 +157,24 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
    const auto& base_address = HLSMgr->base_address;
    const auto Has_extern_allocated_data = HLSMgr->Rmem->get_memory_address() - base_address > 0;
    const auto Has_unknown_addresses = HLSMgr->Rmem->has_unknown_addresses();
-   const auto cg_man = HLSMgr->CGetCallGraphManager();
-   const auto top_function_ids = cg_man->GetRootFunctions();
+   const auto FB = HLSMgr->CGetFunctionBehavior(funId);
+   const auto channels_number = FB->GetChannelsNumber();
+   const auto channels_type = FB->GetChannelsType();
+   const auto memory_allocation_policy = FB->GetMemoryAllocationPolicy();
+   const auto top_function_ids = HLSMgr->CGetCallGraphManager()->GetRootFunctions();
    const auto Has_intern_shared_data =
        HLSMgr->Rmem->has_intern_shared_data() ||
-       (parameters->getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) ==
-        MemoryAllocation_Policy::EXT_PIPELINED_BRAM) ||
-       (parameters->getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) ==
-        MemoryAllocation_Policy::NO_BRAM) ||
-       (top_function_ids.find(funId) != top_function_ids.end() &&
-        parameters->getOption<HLSFlowStep_Type>(OPT_interface_type) == HLSFlowStep_Type::WB4_INTERFACE_GENERATION) ||
-       (HLSMgr->hasToBeInterfaced(funId) && top_function_ids.find(funId) == top_function_ids.end()) ||
+       (memory_allocation_policy == MemoryAllocation_Policy::EXT_PIPELINED_BRAM) ||
+       (memory_allocation_policy == MemoryAllocation_Policy::NO_BRAM) ||
+       (top_function_ids.count(funId) ?
+            parameters->getOption<HLSFlowStep_Type>(OPT_interface_type) == HLSFlowStep_Type::WB4_INTERFACE_GENERATION :
+            HLSMgr->hasToBeInterfaced(funId)) ||
        parameters->getOption<bool>(OPT_memory_mapped_top);
    bool with_master = false;
    bool with_slave = false;
-   for(unsigned int i = 0; i < GetPointerS<module>(wrappedObj)->get_in_port_size(); i++)
+   for(auto i = 0U; i < GetPointerS<module>(wrappedObj)->get_in_port_size(); ++i)
    {
-      const structural_objectRef& port_obj = GetPointerS<module>(wrappedObj)->get_in_port(i);
+      const auto port_obj = GetPointerS<module>(wrappedObj)->get_in_port(i);
       if(GetPointerS<port_o>(port_obj)->get_is_memory())
       {
          if(GetPointerS<port_o>(port_obj)->get_is_master())
@@ -371,7 +372,8 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
             /// do nothing
             /// it may happen with ALL_BRAM memory allocation policy
          }
-         else if(with_master && with_slave && Has_unknown_addresses && HLSMgr->Rmem->get_allocated_intern_memory() == 0)
+         else if(with_master && with_slave && Has_unknown_addresses &&
+                 HLSMgr->Rmem->get_allocated_internal_memory() == 0)
          {
             /// intern data is not externally visible
             /// slave INs
@@ -426,9 +428,7 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
       {
          if(with_master && !Has_unknown_addresses && HLSMgr->Rmem->get_ext_memory_variables().empty())
          {
-            THROW_ASSERT(parameters->getOption<MemoryAllocation_ChannelsType>(OPT_channels_type) !=
-                             (MemoryAllocation_ChannelsType::MEM_ACC_P1N),
-                         "unexpected condition");
+            THROW_ASSERT(channels_type != (MemoryAllocation_ChannelsType::MEM_ACC_P1N), "unexpected condition");
             /// allocate the unique shared memory
             structural_objectRef shared_memory;
             bool is_memory_splitted;
@@ -437,10 +437,8 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
             {
                latency_postfix = parameters->getOption<std::string>(OPT_bram_high_latency);
             }
-            if(parameters->getOption<MemoryAllocation_ChannelsType>(OPT_channels_type) ==
-                   MemoryAllocation_ChannelsType::MEM_ACC_11 or
-               parameters->getOption<MemoryAllocation_ChannelsType>(OPT_channels_type) ==
-                   MemoryAllocation_ChannelsType::MEM_ACC_N1)
+            if(channels_type == MemoryAllocation_ChannelsType::MEM_ACC_11 or
+               channels_type == MemoryAllocation_ChannelsType::MEM_ACC_N1)
             {
                is_memory_splitted = false;
                shared_memory = SM_minimal_interface->add_module_from_technology_library(
@@ -496,16 +494,13 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
             {
                shared_memory_module->SetParameter("BUS_PIPELINED", "1");
             }
-            unsigned int n_ports = parameters->isOption(OPT_channels_number) ?
-                                       parameters->getOption<unsigned int>(OPT_channels_number) :
-                                       0;
             for(unsigned int i = 0; i < shared_memory_module->get_in_port_size(); i++)
             {
                structural_objectRef port = shared_memory_module->get_in_port(i);
                if(GetPointer<port_o>(port)->get_kind() == port_vector_o_K &&
                   GetPointer<port_o>(port)->get_ports_size() == 0)
                {
-                  GetPointer<port_o>(port)->add_n_ports(n_ports, port);
+                  GetPointer<port_o>(port)->add_n_ports(channels_number, port);
                }
                if(GetPointer<port_o>(port) && GetPointer<port_o>(port)->get_is_data_bus())
                {
@@ -526,7 +521,7 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
                if(GetPointer<port_o>(port)->get_kind() == port_vector_o_K &&
                   GetPointer<port_o>(port)->get_ports_size() == 0)
                {
-                  GetPointer<port_o>(port)->add_n_ports(n_ports, port);
+                  GetPointer<port_o>(port)->add_n_ports(channels_number, port);
                }
                if(GetPointer<port_o>(port) && GetPointer<port_o>(port)->get_is_data_bus())
                {
@@ -960,7 +955,7 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
          {
             do_not_expose_globals_case();
          }
-         else if(with_slave && (HLSMgr->Rmem->get_allocated_intern_memory() == 0))
+         else if(with_slave && (HLSMgr->Rmem->get_allocated_internal_memory() == 0))
          {
             /// slave INs
             portsToConstant.insert(wrappedObj->find_member("S_oe_ram", port_o_K, wrappedObj));

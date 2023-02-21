@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2023 Politecnico di Milano
+ *              Copyright (C) 2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -31,37 +31,29 @@
  *
  */
 /**
- * @file function_allocation.cpp
- * @brief Base class to allocate functions in high-level synthesis
+ * @file dominator_allocation.cpp
+ * @brief Composed pass to wrap function and memory dominator allocation
  *
- * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
+ * @author Michele Fiorito <michele.fiorito@polimi.it>
  * $Revision$
  * $Date$
  * Last modified by $Author$
  *
  */
-#include "function_allocation.hpp"
-#include "fun_dominator_allocation.hpp"
-#include "hls_manager.hpp"
+#include "dominator_allocation.hpp"
 
 #include "Parameter.hpp"
-#include "polixml.hpp"
-#include "xml_helper.hpp"
+#include "memory_allocation.hpp"
 
-/// HLS/function_allocation include
-#include "functions.hpp"
-
-function_allocation::function_allocation(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr,
-                                         const DesignFlowManagerConstRef _design_flow_manager,
-                                         const HLSFlowStep_Type _hls_flow_step_type)
-    : HLS_step(_Param, _HLSMgr, _design_flow_manager, _hls_flow_step_type)
+dominator_allocation::dominator_allocation(const ParameterConstRef _parameters, const HLS_managerRef _HLS_mgr,
+                                           const DesignFlowManagerConstRef _design_flow_manager)
+    : HLS_step(_parameters, _HLS_mgr, _design_flow_manager, HLSFlowStep_Type::DOMINATOR_ALLOCATION)
 {
+   composed = true;
 }
 
-function_allocation::~function_allocation() = default;
-
 const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
-function_allocation::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+dominator_allocation::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;
    switch(relationship_type)
@@ -72,11 +64,18 @@ function_allocation::ComputeHLSRelationships(const DesignFlowStep::RelationshipT
                                     HLSFlowStep_Relationship::ALL_FUNCTIONS));
          break;
       }
-      case INVALIDATION_RELATIONSHIP:
+      case PRECEDENCE_RELATIONSHIP:
       {
+         ret.insert(std::make_tuple(parameters->getOption<HLSFlowStep_Type>(OPT_function_allocation_algorithm),
+                                    HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::WHOLE_APPLICATION));
+         ret.insert(std::make_tuple(parameters->getOption<HLSFlowStep_Type>(OPT_memory_allocation_algorithm),
+                                    HLSFlowStepSpecializationConstRef(new MemoryAllocationSpecialization(
+                                        parameters->getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy),
+                                        parameters->getOption<MemoryAllocation_ChannelsType>(OPT_channels_type))),
+                                    HLSFlowStep_Relationship::WHOLE_APPLICATION));
          break;
       }
-      case PRECEDENCE_RELATIONSHIP:
+      case INVALIDATION_RELATIONSHIP:
       {
          break;
       }
@@ -86,8 +85,12 @@ function_allocation::ComputeHLSRelationships(const DesignFlowStep::RelationshipT
    return ret;
 }
 
-void function_allocation::Initialize()
+bool dominator_allocation::HasToBeExecuted() const
 {
-   HLS_step::Initialize();
-   HLSMgr->Rfuns = functionsRef(new functions());
+   return true;
+}
+
+DesignFlowStep_Status dominator_allocation::Exec()
+{
+   return DesignFlowStep_Status::EMPTY;
 }

@@ -90,9 +90,6 @@ class compatibility_based_register : public reg_binding_creator
        const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStep_Type hls_flow_step_type,
        const HLSFlowStepSpecializationConstRef hls_flow_step_specialization = HLSFlowStepSpecializationConstRef());
 
-   /**
-    * Destructor
-    */
    ~compatibility_based_register() override;
 
    /**

@@ -62,7 +62,6 @@
 #include "language_writer.hpp"
 #include "memory.hpp"
 #include "memory_allocation.hpp"
-#include "memory_symbol.hpp"
 
 #include "structural_manager.hpp"
 #include "structural_objects.hpp"
@@ -132,8 +131,7 @@ unsigned long long WB4_interface::get_data_bus_bitsize()
 {
    const auto function_behavior = HLSMgr->CGetFunctionBehavior(HLS->functionId);
    const auto behavioral_helper = function_behavior->CGetBehavioralHelper();
-   std::map<unsigned int, memory_symbolRef> function_parameters =
-       HLSMgr->Rmem->get_function_parameters(HLS->functionId);
+   const auto function_parameters = HLSMgr->Rmem->get_function_parameters(HLS->functionId);
 
    auto data_bus_bitsize = HLSMgr->Rmem->get_bus_data_bitsize();
    for(const auto& function_parameter : function_parameters)
@@ -321,7 +319,7 @@ void WB4_interface::build_WB4_complete_logic(structural_managerRef SM, structura
    // check consitency of the interfaces
    bool is_slave = false, is_master = false;
    bool only_mm_parameters_allocated =
-       HLSMgr->Rmem->get_allocated_parameters_memory() == HLSMgr->Rmem->get_allocated_intern_memory();
+       HLSMgr->Rmem->get_allocated_parameters_memory() == HLSMgr->Rmem->get_allocated_internal_memory();
 
    if(S_data_ram_size_port && S_Wdata_ram_port && S_addr_ram_port && S_we_ram_port && S_oe_ram_port &&
       Sout_DataRdy_port && Sout_Rdata_ram_port)
@@ -488,14 +486,14 @@ void WB4_interface::build_WB4_complete_logic(structural_managerRef SM, structura
             SM->add_connection(signControl, orGateControl->find_member("out1", port_o_K, orGateControl));
             PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Added control signal");
 
-            unsigned long long int base_address = HLSMgr->base_address;
-            bool Has_extern_allocated_data = HLSMgr->Rmem->get_memory_address() - base_address > 0;
-            bool Has_unknown_addresses = HLSMgr->Rmem->has_unknown_addresses() &&
-                                         parameters->getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) !=
-                                             MemoryAllocation_Policy::ALL_BRAM &&
-                                         parameters->getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) !=
-                                             MemoryAllocation_Policy::EXT_PIPELINED_BRAM;
-            if(Has_extern_allocated_data || Has_unknown_addresses)
+            const auto memory_allocation_policy = HLSMgr->CGetFunctionBehavior(funId)->GetMemoryAllocationPolicy();
+            const auto Has_extern_allocated_data =
+                ((HLSMgr->Rmem->get_memory_address() - HLSMgr->base_address) > 0 &&
+                 memory_allocation_policy != MemoryAllocation_Policy::EXT_PIPELINED_BRAM) ||
+                (HLSMgr->Rmem->has_unknown_addresses() &&
+                 memory_allocation_policy != MemoryAllocation_Policy::ALL_BRAM &&
+                 memory_allocation_policy != MemoryAllocation_Policy::EXT_PIPELINED_BRAM);
+            if(Has_extern_allocated_data)
             {
                signControl_delayed = signControl;
             }

@@ -404,7 +404,8 @@ void top_entity::add_ports(structural_objectRef circuit, structural_objectRef cl
          top_obj = SM->add_port(FB->CGetBehavioralHelper()->PrintVariable(function_parameter), port_o::IN, circuit,
                                 port_type);
       }
-      if(has_registered_inputs)
+      const auto is_pipelined = HLSMgr->CGetFunctionBehavior(funId)->is_simple_pipeline();
+      if(has_registered_inputs && !is_pipelined)
       {
          const auto port_prefix = GetPointerS<port_o>(in_obj)->get_id();
          if(in_obj->get_kind() == port_vector_o_K)
@@ -657,8 +658,8 @@ void top_entity::add_ports(structural_objectRef circuit, structural_objectRef cl
 
 void top_entity::add_command_signals(structural_objectRef circuit)
 {
-   structural_objectRef Datapath = HLS->datapath->get_circ();
-   structural_objectRef Controller = HLS->controller->get_circ();
+   const auto Datapath = HLS->datapath->get_circ();
+   const auto Controller = HLS->controller->get_circ();
 
    for(const auto& selector : HLS->Rconn->GetSelectors())
    {

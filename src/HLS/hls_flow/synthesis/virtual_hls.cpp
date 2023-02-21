@@ -120,8 +120,8 @@ virtual_hls::ComputeHLSRelationships(const DesignFlowStep::RelationshipType rela
          }
          ret.insert(std::make_tuple(parameters->getOption<HLSFlowStep_Type>(OPT_stg_algorithm),
                                     HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
-         ret.insert(std::make_tuple(HLSFlowStep_Type::INITIALIZE_HLS, HLSFlowStepSpecializationConstRef(),
-                                    HLSFlowStep_Relationship::SAME_FUNCTION));
+         ret.insert(std::make_tuple(HLSFlowStep_Type::DOMINATOR_ALLOCATION, HLSFlowStepSpecializationConstRef(),
+                                    HLSFlowStep_Relationship::WHOLE_APPLICATION));
 #if HAVE_EXPERIMENTAL
          if(parameters->IsParameter("MemoryConflictGraph") and parameters->GetParameter<bool>("MemoryConflictGraph"))
          {
