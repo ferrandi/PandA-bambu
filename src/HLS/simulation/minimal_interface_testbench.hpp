@@ -57,19 +57,20 @@ class MinimalInterfaceTestbench : public TestbenchGenerationBaseStep
 
    std::string memory_aggregate_slices_queue(unsigned int i, unsigned long long bitsize,
                                              unsigned long long Mout_addr_ram_bitsize,
-                                             const std::string& queue_type) const;
+                                             unsigned int Mout_addr_ram_n_ports, const std::string& queue_type) const;
 
    void cond_load(unsigned long long Mout_addr_ram_bitsize, const std::string& post_slice2,
                   const std::string& res_string, unsigned int i, const std::string& in_else,
                   const std::string& mem_aggregate) const;
 
-   void cond_load_from_queue(unsigned long long Mout_addr_ram_bitsize, const std::string& queue_type,
-                             const std::string& post_slice2, const std::string& res_string, unsigned int i,
-                             const std::string& in_else, const std::string& mem_aggregate) const;
+   void cond_load_from_queue(unsigned long long Mout_addr_ram_bitsize, unsigned int Mout_addr_ram_n_ports,
+                             std::string queue_type, const std::string& post_slice, const std::string& res_string,
+                             unsigned int i, const std::string& in_else, const std::string& mem_aggregate) const;
 
    void write_call(bool hasMultiIrq) const override;
 
-   void update_memory_queue(std::string port_name, std::string delay_type) const;
+   void update_memory_queue(std::string port_name, std::string delay_type, unsigned long long int bitsize,
+                            unsigned long long int portsize) const;
 
    void write_memory_handler() const override;
 
