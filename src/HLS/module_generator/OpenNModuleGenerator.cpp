@@ -55,7 +55,7 @@ OpenNModuleGenerator::OpenNModuleGenerator(const HLS_managerRef& _HLSMgr) : Regi
 
 void OpenNModuleGenerator::InternalExec(std::ostream& out, const module* /* mod */, unsigned int /* function_id */,
                                         vertex /* op_v */, const HDLWriter_Language /* language */,
-                                        const std::vector<ModuleGenerator::parameter>& _p,
+                                        const std::vector<ModuleGenerator::parameter>& /* _p */,
                                         const std::vector<ModuleGenerator::parameter>& /* _ports_in */,
                                         const std::vector<ModuleGenerator::parameter>& /* _ports_out */,
                                         const std::vector<ModuleGenerator::parameter>& /* _ports_inout */)
@@ -63,6 +63,7 @@ void OpenNModuleGenerator::InternalExec(std::ostream& out, const module* /* mod 
    out << " // verilator lint_off LITENDIAN\n";
    out << "parameter MAX_BUFF_SIZE = 256;\n";
    out << "reg [0:8*MAX_BUFF_SIZE-1] buffer_name;\n";
+   out << "reg [0:8*MAX_BUFF_SIZE-1] buffer_name_old;\n";
    out << "\n";
    out << "  `ifndef _SIM_HAVE_CLOG2\n";
    out << "    function integer log2;\n";
@@ -81,12 +82,6 @@ void OpenNModuleGenerator::InternalExec(std::ostream& out, const module* /* mod 
    out << "  `else\n";
    out << "    parameter nbits_buffer = log2(MAX_BUFF_SIZE);\n";
    out << "  `endif\n";
-
-   std::string sensitivity;
-   for(auto i = 0U; i < _p.size(); i++)
-   {
-      sensitivity += " or " + _p[i].name;
-   }
 
    std::string modes = "in2";
 
@@ -109,13 +104,15 @@ void OpenNModuleGenerator::InternalExec(std::ostream& out, const module* /* mod 
        "  reg [(PORTSIZE_Mout_data_ram_size*BITSIZE_Mout_data_ram_size)+(-1):0] Mout_data_ram_size;\n"
        "  reg active_request;\n"
        "  reg active_request_next;\n"
+       "  reg active_request_now;\n"
+       "  reg M_DataRdy_reg;\n"
+       "  reg [BITSIZE_M_Rdata_ram-1:0]M_Rdata_ram_reg;\n"
        "  \n"
        "  parameter [1:0] S_0 = 2'd0,\n"
        "                  S_1 = 2'd1,\n"
-       "                  S_2 = 2'd2,\n"
-       "                  S_3 = 2'd3;\n"
-       "  reg [3:0] _present_state 1INIT_ZERO_VALUE;\n"
-       "  reg [3:0] _next_state;\n"
+       "                  S_2 = 2'd2;\n"
+       "  reg [1:0] _present_state 1INIT_ZERO_VALUE;\n"
+       "  reg [1:0] _next_state;\n"
        "  reg [63:0] data1;\n"
        "  reg [7:0] data1_size;\n"
        "  \n"
@@ -125,12 +122,18 @@ void OpenNModuleGenerator::InternalExec(std::ostream& out, const module* /* mod 
        "        _present_state <= S_0;\n"
        "        _present_pointer <= {BITSIZE_Mout_addr_ram{1'b0}};\n"
        "        _present_index <= {nbits_buffer{1'b0}};\n"
+       "        buffer_name_old <= {8*MAX_BUFF_SIZE{1'b0}};\n"
+       "        M_DataRdy_reg <= 0;\n"
+       "        M_Rdata_ram_reg <= 0;\n"
        "      end\n"
        "    else\n"
        "      begin\n"
        "        _present_state <= _next_state;\n"
        "        _present_pointer <= _next_pointer;\n"
        "        _present_index <= _next_index;\n"
+       "        buffer_name_old <= buffer_name;\n"
+       "        M_DataRdy_reg <= M_DataRdy;\n"
+       "        M_Rdata_ram_reg <= M_Rdata_ram;\n"
        "      end\n"
        "  \n"
        "  assign out1 = {1'b0,temp_out1[30:0]};\n"
@@ -145,13 +148,13 @@ void OpenNModuleGenerator::InternalExec(std::ostream& out, const module* /* mod 
        "      active_request <= active_request_next;\n"
        "    end\n"
        "  end\n"
-       "  always @(_present_state or _present_pointer or _present_index or start_port or M_DataRdy[0] or Min_we_ram or "
-       "Min_oe_ram or Min_Wdata_ram or Min_addr_ram or Min_data_ram_size" +
-       sensitivity +
-       " or M_Rdata_ram[7:0])\n"
+       "  always @(*)\n"
        "      begin\n"
        "        Mout_we_ram = Min_we_ram;\n"
        "        Mout_Wdata_ram = Min_Wdata_ram;\n"
+       "        Mout_oe_ram = Min_oe_ram;\n"
+       "        Mout_addr_ram = Min_addr_ram;\n"
+       "        Mout_data_ram_size = Min_data_ram_size;\n"
        "        Mout_oe_ram = Min_oe_ram;\n"
        "        Mout_addr_ram = Min_addr_ram;\n"
        "        Mout_data_ram_size = Min_data_ram_size;\n"
@@ -160,6 +163,8 @@ void OpenNModuleGenerator::InternalExec(std::ostream& out, const module* /* mod 
        "        _next_pointer = _present_pointer;\n"
        "        _next_index = _present_index;\n"
        "        active_request_next = 1'b0;\n"
+       "        active_request_now = 1'b0;\n"
+       "        buffer_name = buffer_name_old;\n"
        "        case (_present_state)\n"
        "          S_0:\n"
        "            if(start_port)\n"
@@ -168,25 +173,30 @@ void OpenNModuleGenerator::InternalExec(std::ostream& out, const module* /* mod 
        "                _next_index={nbits_buffer{1'b0}};\n"
        "                _next_state=S_1;  \n"
        "                active_request_next = 1'b1;\n"
+       "                active_request_next = 1'b1;\n"
        "                buffer_name=0;  \n"
        "              end\n"
-       "            \n"
        "         S_1:\n"
        "           begin\n"
-       "             Mout_addr_ram[BITSIZE_Mout_addr_ram-1:0] = (in1[BITSIZE_Mout_addr_ram-1:0]+_present_pointer) & "
-       "{BITSIZE_Mout_addr_ram{active_request}};\n"
-       "             Mout_data_ram_size[BITSIZE_Mout_data_ram_size-1:0] = {{BITSIZE_Mout_data_ram_size-4{1'b0}}, 4'd8} "
-       "& "
-       "{BITSIZE_Mout_data_ram_size{active_request}};\n"
-       "             Mout_oe_ram[0] = active_request;\n"
-       "             if(M_DataRdy[0])\n"
+       "             if(M_DataRdy_reg)\n"
        "             begin\n"
-       "                buffer_name[_present_index*8 +:8] = M_Rdata_ram[7:0];\n"
-       "                if(M_Rdata_ram[7:0] == 8'd0)\n"
+       "                buffer_name[_present_index*8 +:8] = M_Rdata_ram_reg[7:0];\n"
+       "                if(M_Rdata_ram_reg[7:0] == 8'd0)\n"
        "                  _next_state=S_2;\n"
        "                else\n"
-       "                  _next_state=S_3;\n"
+       "                begin\n"
+       "                  _next_state=S_1;\n"
+       "                  _next_pointer = _present_pointer + 1'd1;\n"
+       "                  _next_index = _present_index + 1'd1;\n"
+       "                  active_request_now = 1'b1;\n"
+       "                end\n"
        "             end\n"
+       "             Mout_addr_ram[BITSIZE_Mout_addr_ram-1:0] = (in1[BITSIZE_Mout_addr_ram-1:0]+_next_pointer) & "
+       "{BITSIZE_Mout_addr_ram{active_request || active_request_now}};\n"
+       "             Mout_data_ram_size[BITSIZE_Mout_data_ram_size-1:0] = {{BITSIZE_Mout_data_ram_size-4{1'b0}}, 4'd8} "
+       "& "
+       "{BITSIZE_Mout_data_ram_size{active_request || active_request_now}};\n"
+       "             Mout_oe_ram[0] = active_request || active_request_now;\n"
        "           end\n"
        "         S_2:\n"
        "           begin\n"
@@ -197,16 +207,6 @@ void OpenNModuleGenerator::InternalExec(std::ostream& out, const module* /* mod 
        "// synthesis translate_on\n"
        "             done_port = 1'b1;\n"
        "             _next_state = S_0;\n"
-       "           end\n"
-       "         S_3:\n"
-       "           begin\n"
-       "             if(!M_DataRdy[0])\n"
-       "             begin\n"
-       "              _next_pointer = _present_pointer + 1'd1;\n"
-       "              _next_index = _present_index + 1'd1;\n"
-       "              _next_state = S_1;\n"
-       "              active_request_next = 1'b1;\n"
-       "             end\n"
        "           end\n"
        "      endcase\n "
        "  end\n";

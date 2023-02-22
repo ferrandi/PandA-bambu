@@ -46,7 +46,6 @@
 #include "hls_manager.hpp"
 #include "hls_target.hpp"
 #include "memory.hpp"
-#include "memory_symbol.hpp"
 #include "structural_manager.hpp"
 #include "structural_objects.hpp"
 #include "technology_manager.hpp"
@@ -109,7 +108,7 @@ static unsigned long long get_data_bus_bitsize(const hlsRef HLS, const HLS_manag
 {
    const auto function_behavior = HLSMgr->CGetFunctionBehavior(HLS->functionId);
    const auto behavioral_helper = function_behavior->CGetBehavioralHelper();
-   std::map<unsigned int, memory_symbolRef> parameters = HLSMgr->Rmem->get_function_parameters(HLS->functionId);
+   const auto parameters = HLSMgr->Rmem->get_function_parameters(HLS->functionId);
 
    auto data_bus_bitsize = HLSMgr->Rmem->get_bus_data_bitsize();
    for(const auto& function_parameter : parameters)
@@ -263,7 +262,7 @@ static void buildCircuit(structural_managerRef SM, structural_objectRef wrappedO
       masters.push_back(wrappedObj);
    }
 
-   const CustomOrderedSet<unsigned int> additionalTops = HLSMgr->CGetCallGraphManager()->GetAddressedFunctions();
+   const auto additionalTops = HLSMgr->CGetCallGraphManager()->GetAddressedFunctions();
    for(unsigned int itr : additionalTops)
    {
       std::string functionName = tree_helper::name_function(TM, itr);

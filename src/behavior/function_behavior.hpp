@@ -848,7 +848,7 @@ class FunctionBehavior
     */
    bool is_a_state_variable(unsigned int node_id) const
    {
-      return state_variables.find(node_id) != state_variables.end();
+      return state_variables.count(node_id);
    }
 
    /**

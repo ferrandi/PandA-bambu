@@ -155,8 +155,8 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
    std::map<unsigned long long, structural_objectRef> null_values;
 
    const auto& base_address = HLSMgr->base_address;
-   const auto Has_extern_allocated_data = HLSMgr->Rmem->get_memory_address() - base_address > 0;
-   const auto Has_unknown_addresses = HLSMgr->Rmem->has_unknown_addresses();
+   const auto has_extern_mem = HLSMgr->Rmem->get_memory_address() - base_address > 0;
+   const auto has_unknown_addresses = HLSMgr->Rmem->has_unknown_addresses();
    const auto FB = HLSMgr->CGetFunctionBehavior(funId);
    const auto channels_number = FB->GetChannelsNumber();
    const auto channels_type = FB->GetChannelsType();
@@ -353,7 +353,7 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
    };
    if(!Has_intern_shared_data)
    {
-      if(!Has_extern_allocated_data)
+      if(!has_extern_mem)
       {
          if(!with_master && with_slave)
          {
@@ -372,7 +372,7 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
             /// do nothing
             /// it may happen with ALL_BRAM memory allocation policy
          }
-         else if(with_master && with_slave && Has_unknown_addresses &&
+         else if(with_master && with_slave && has_unknown_addresses &&
                  HLSMgr->Rmem->get_allocated_internal_memory() == 0)
          {
             /// intern data is not externally visible
@@ -386,7 +386,7 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
             portsToSkip.insert(wrappedObj->find_member("Sout_Rdata_ram", port_o_K, wrappedObj));
             portsToSkip.insert(wrappedObj->find_member("Sout_DataRdy", port_o_K, wrappedObj));
          }
-         else if(with_master && with_slave && !Has_unknown_addresses)
+         else if(with_master && with_slave && !has_unknown_addresses)
          {
             /// slave INs connections
             portsToConnect[wrappedObj->find_member("S_oe_ram", port_o_K, wrappedObj)] =
@@ -426,7 +426,7 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
       }
       else
       {
-         if(with_master && !Has_unknown_addresses && HLSMgr->Rmem->get_ext_memory_variables().empty())
+         if(with_master && !has_unknown_addresses && HLSMgr->Rmem->get_ext_memory_variables().empty())
          {
             THROW_ASSERT(channels_type != (MemoryAllocation_ChannelsType::MEM_ACC_P1N), "unexpected condition");
             /// allocate the unique shared memory
@@ -486,7 +486,7 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
             shared_memory_module->SetParameter("n_elements", STR(vec_size));
             shared_memory_module->SetParameter("data_size", STR(bus_data_bitsize));
             shared_memory_module->SetParameter("BRAM_BITSIZE", STR(bram_bitsize));
-            if((Has_extern_allocated_data) || Has_unknown_addresses)
+            if(has_extern_mem || has_unknown_addresses)
             {
                shared_memory_module->SetParameter("BUS_PIPELINED", "0");
             }

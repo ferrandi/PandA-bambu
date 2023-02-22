@@ -59,7 +59,6 @@
 
 /// HLS/memory includes
 #include "memory.hpp"
-#include "memory_symbol.hpp"
 
 /// HLS/simulation includes
 #include "SimulationInformation.hpp"
@@ -161,7 +160,7 @@ DesignFlowStep_Status TestbenchValuesXMLGeneration::Exec()
    }
    output_stream << "b" + trimmed_value << std::endl;
 
-   const std::map<unsigned int, memory_symbolRef>& mem_vars = HLSMgr->Rmem->get_ext_memory_variables();
+   const auto& mem_vars = HLSMgr->Rmem->get_ext_memory_variables();
    // get the mapping between variables in external memory and their external
    // base address
    std::map<unsigned long long int, unsigned int> address;

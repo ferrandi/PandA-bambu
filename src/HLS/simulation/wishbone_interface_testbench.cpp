@@ -62,7 +62,6 @@
 
 /// HLS/memory includes
 #include "memory.hpp"
-#include "memory_symbol.hpp"
 
 #if HAVE_FROM_DISCREPANCY_BUILT
 // include from HLS/vcd
@@ -166,7 +165,7 @@ void WishboneInterfaceTestbench::write_call(bool hasMultiIrq) const
    const BehavioralHelperConstRef behavioral_helper =
        HLSMgr->CGetFunctionBehavior(topFunctionId)->CGetBehavioralHelper();
    const memoryRef mem = HLSMgr->Rmem;
-   const std::map<unsigned int, memory_symbolRef>& function_parameters = mem->get_function_parameters(topFunctionId);
+   const auto function_parameters = mem->get_function_parameters(topFunctionId);
    std::vector<std::string> parameterNames;
    for(auto const& function_parameter : function_parameters)
    {
@@ -565,7 +564,7 @@ void WishboneInterfaceTestbench::write_signals(const tree_managerConstRef TreeM,
    const BehavioralHelperConstRef behavioral_helper =
        HLSMgr->CGetFunctionBehavior(topFunctionId)->CGetBehavioralHelper();
    const memoryRef mem = HLSMgr->Rmem;
-   const std::map<unsigned int, memory_symbolRef>& function_parameters = mem->get_function_parameters(topFunctionId);
+   const auto function_parameters = mem->get_function_parameters(topFunctionId);
    for(auto const& function_parameter : function_parameters)
    {
       const auto var = function_parameter.first;
@@ -630,7 +629,7 @@ void WishboneInterfaceTestbench::write_file_reading_operations() const
    const BehavioralHelperConstRef behavioral_helper =
        HLSMgr->CGetFunctionBehavior(topFunctionId)->CGetBehavioralHelper();
    const memoryRef mem = HLSMgr->Rmem;
-   const std::map<unsigned int, memory_symbolRef>& function_parameters = mem->get_function_parameters(topFunctionId);
+   const auto function_parameters = mem->get_function_parameters(topFunctionId);
    std::vector<std::string> parameterNames;
    for(auto const& function_parameter : function_parameters)
    {
