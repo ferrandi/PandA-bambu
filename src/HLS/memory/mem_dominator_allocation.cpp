@@ -757,16 +757,14 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
                {
                   const auto type_node = tree_helper::CGetType(TM->CGetTreeReindex(var));
                   const auto is_a_struct_union =
-                      (tree_helper::IsStructType(type_node) && !tree_helper::IsArrayType(type_node)) ||
-                      (tree_helper::IsUnionType(type_node) && !tree_helper::IsArrayType(type_node)) ||
+                      ((tree_helper::IsStructType(type_node) || tree_helper::IsUnionType(type_node)) &&
+                       !tree_helper::IsArrayEquivType(type_node)) ||
                       tree_helper::IsComplexType(type_node);
                   const auto elmt_bitsize = tree_helper::AccessedMaximumBitsize(type_node, 1);
-                  const auto mim_elmt_bitsize = tree_helper::AccessedMinimunBitsize(type_node, elmt_bitsize);
-                  auto elts_size = elmt_bitsize;
-                  if(tree_helper::IsArrayEquivType(type_node))
-                  {
-                     elts_size = tree_helper::GetArrayElementSize(type_node);
-                  }
+                  const auto min_elmt_bitsize = tree_helper::AccessedMinimunBitsize(type_node, elmt_bitsize);
+                  const auto elts_size = tree_helper::IsArrayEquivType(type_node) ?
+                                             tree_helper::GetArrayElementSize(type_node) :
+                                             elmt_bitsize;
                   if(unaligned_access_p)
                   {
                      if(assume_aligned_access_p)
@@ -779,7 +777,7 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                     "---Variable " + STR(var) + " not sds because unaligned_access option specified");
                   }
-                  else if(mim_elmt_bitsize != elmt_bitsize || is_a_struct_union || elts_size != elmt_bitsize)
+                  else if(min_elmt_bitsize != elmt_bitsize || is_a_struct_union || elts_size != elmt_bitsize)
                   {
                      if(assume_aligned_access_p)
                      {
@@ -790,7 +788,7 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
                      HLSMgr->Rmem->set_sds_var(var, false);
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                     "---Variable " + STR(var) + " not sds " + STR(elmt_bitsize) + " vs " +
-                                        STR(mim_elmt_bitsize) + " vs " + STR(elts_size));
+                                        STR(min_elmt_bitsize) + " vs " + STR(elts_size));
                   }
                   else if(value_bitsize != elmt_bitsize)
                   {
