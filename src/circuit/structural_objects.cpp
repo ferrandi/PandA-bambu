@@ -192,7 +192,7 @@ void structural_type_descriptor::print(std::ostream& os) const
       case BOOL:
       {
          THROW_ASSERT(size == 1 && vector_size == 0,
-                      "bool type descriptor not correctly defined" + STR(size) + "|" + STR(vector_size));
+                      "bool type descriptor not correctly defined " + STR(size) + " | " + STR(vector_size));
          os << "Bool {" << id_type << "} ";
          if(treenode > 0)
          {
@@ -634,6 +634,38 @@ bool structural_type_descriptor::check_type(structural_type_descriptorRef src_ty
 simple_indent structural_object::PP('[', ']', 2);
 
 /// ------------- structural object methods --------------------- //
+
+std::string structural_object::convert_so_short(so_kind in) const
+{
+   switch(in)
+   {
+      case component_o_K:
+         return "M";
+      case channel_o_K:
+         return "C";
+      case constant_o_K:
+         return "c";
+      case bus_connection_o_K:
+         return "B";
+      case signal_o_K:
+         return "S";
+      case signal_vector_o_K:
+         return "S";
+      case port_o_K:
+         return "P";
+      case port_vector_o_K:
+         return "P";
+      case event_o_K:
+         return "E";
+      case data_o_K:
+         return "D";
+      case action_o_K:
+         return "A";
+      default:
+         THROW_UNREACHABLE("");
+   }
+   return "";
+}
 
 structural_object::structural_object(int debug, const structural_objectRef o)
     : owner(o),
@@ -2507,7 +2539,7 @@ const structural_objectRef signal_o::get_port(unsigned int n) const
 
 structural_objectRef signal_o::get_port(unsigned int n)
 {
-   THROW_ASSERT(n < connected_objects.size(), "index out of range");
+   THROW_ASSERT(n < connected_objects.size(), "index " + STR(n) + " is out of range for signal " + get_path());
    return connected_objects[n].lock();
 }
 

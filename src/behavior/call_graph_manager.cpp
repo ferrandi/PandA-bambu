@@ -78,16 +78,6 @@
  */
 #define ADD_CALL_POINT(g, e, newstmt) get_edge_info<function_graph_edge_info>(e, *(g))->call_points.insert(newstmt)
 
-/**
- * @name function graph selector
- */
-//@{
-/// Data line selector
-#define STD_SELECTOR 1 << 0
-/// Clock line selector
-#define FEEDBACK_SELECTOR 1 << 1
-//@}
-
 CallGraphManager::CallGraphManager(const FunctionExpanderConstRef _function_expander,
                                    const bool _allow_recursive_functions, const tree_managerConstRef _tree_manager,
                                    const ParameterConstRef _Param)

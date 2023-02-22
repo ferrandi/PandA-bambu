@@ -79,7 +79,7 @@ REF_FORWARD_DECL(tree_manager);
 CONSTREF_FORWARD_DECL(BehavioralHelper);
 #endif
 REF_FORWARD_DECL(structural_manager);
-
+REF_FORWARD_DECL(NP_functionality);
 CONSTREF_FORWARD_DECL(structural_object);
 REF_FORWARD_DECL(structural_object);
 REF_FORWARD_DECL(structural_type_descriptor);
@@ -382,37 +382,7 @@ class structural_object
    /**
     * Convert a so_kind in a short string. Used in debugging.
     */
-   std::string convert_so_short(so_kind in) const
-   {
-      switch(in)
-      {
-         case component_o_K:
-            return "M";
-         case channel_o_K:
-            return "C";
-         case constant_o_K:
-            return "c";
-         case bus_connection_o_K:
-            return "B";
-         case signal_o_K:
-            return "S";
-         case signal_vector_o_K:
-            return "S";
-         case port_o_K:
-            return "P";
-         case port_vector_o_K:
-            return "P";
-         case event_o_K:
-            return "E";
-         case data_o_K:
-            return "D";
-         case action_o_K:
-            return "A";
-         default:
-            THROW_UNREACHABLE("");
-      }
-      return "";
-   }
+   std::string convert_so_short(so_kind in) const;
    /// pretty print functor object used by all print members to indent the output of the print function.
    static simple_indent PP;
 
