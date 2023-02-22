@@ -1294,27 +1294,27 @@ void MinimalInterfaceTestbench::write_signals(const tree_managerConstRef TreeM, 
          write_signal_queue("Mout_addr_ram", "`MEM_MAX_DELAY");
          write_signal_queue("Mout_Wdata_ram", "`MEM_DELAY_WRITE");
          write_signal_queue("Mout_data_ram_size", "`MEM_MAX_DELAY");
-      }
 
-      writer->write("//initialization of memory queue signals\n");
-      writer->write("initial\n");
-      writer->write("begin");
-      writer->write(STR(STD_OPENING_CHAR) + "\n");
-      writer->write("Mout_oe_ram_queue_next = 0;\n");
-      writer->write("Mout_oe_ram_queue_curr = 0;\n");
-      writer->write("Mout_we_ram_queue_next = 0;\n");
-      writer->write("Mout_we_ram_queue_curr = 0;\n");
-      writer->write("Mout_addr_ram_queue_next = 0;\n");
-      writer->write("Mout_addr_ram_queue_curr = 0;\n");
-      writer->write("Mout_Wdata_ram_queue_next = 0;\n");
-      writer->write("Mout_Wdata_ram_queue_curr = 0;\n");
-      writer->write("Mout_data_ram_size_queue_next = 0;\n");
-      writer->write("Mout_data_ram_size_queue_curr = 0;\n");
-      writer->write("M_DataRdy_temp = 0;\n");
-      writer->write("M_Rdata_ram_temp = 0;\n");
-      writer->write("base_addr = 0;\n");
-      writer->write(STR(STD_CLOSING_CHAR));
-      writer->write("end\n\n");
+         writer->write("//initialization of memory queue signals\n");
+         writer->write("initial\n");
+         writer->write("begin");
+         writer->write(STR(STD_OPENING_CHAR) + "\n");
+         writer->write("Mout_oe_ram_queue_next = 0;\n");
+         writer->write("Mout_oe_ram_queue_curr = 0;\n");
+         writer->write("Mout_we_ram_queue_next = 0;\n");
+         writer->write("Mout_we_ram_queue_curr = 0;\n");
+         writer->write("Mout_addr_ram_queue_next = 0;\n");
+         writer->write("Mout_addr_ram_queue_curr = 0;\n");
+         writer->write("Mout_Wdata_ram_queue_next = 0;\n");
+         writer->write("Mout_Wdata_ram_queue_curr = 0;\n");
+         writer->write("Mout_data_ram_size_queue_next = 0;\n");
+         writer->write("Mout_data_ram_size_queue_curr = 0;\n");
+         writer->write("M_DataRdy_temp = 0;\n");
+         writer->write("M_Rdata_ram_temp = 0;\n");
+         writer->write("base_addr = 0;\n");
+         writer->write(STR(STD_CLOSING_CHAR));
+         writer->write("end\n\n");
+      }
 
       if(memory_allocation_policy == MemoryAllocation_Policy::ALL_BRAM or
          memory_allocation_policy == MemoryAllocation_Policy::EXT_PIPELINED_BRAM)
