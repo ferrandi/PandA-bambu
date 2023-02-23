@@ -29,6 +29,27 @@
       <cmd name="table_corner = '+'" />
       <cmd name="table_edge = '|'" />
       <cmd name="table_row = '+--'" />
+      <cmd name="voltage_vdd = 1.0" />
+      <cmd name="en_rate_clk = 0.5" />
+      <cmd name="en_rate_logic = 0.5" />
+      <cmd name="en_rate_brams = 0.25" />
+      <cmd name="en_rate_dsps = 0.25" />
+      <cmd name="leakage = {'RF':{25: 26.32,-40: 26.32,125: 486.92},'DSP':{25: 47.04,-40: 47.04,125: 806.40},'FABRIC':{25: 640.0,-40: 640.0,125: 2000.0},'RAM':{25: 33.6,-40: 23.52,125: 739.2},'IO':{25:25.40,-40:25.40,125:59.41},'CKG':{25:0.31,-40:0.31,125:5.11},'HSSL':{25:2.96,-40:2.96,125:52.80},'SoC':{25:31.65,-40:31.65,125:873.59}}" />
+      <cmd name="ram_dyn_power_a = 0.02" />
+      <cmd name="ram_dyn_power_b = 0.09" />
+      <cmd name="dsp_dyn_power_a = 0.05" />
+      <cmd name="dsp_dyn_power_b = 0.47" />
+      <cmd name="def power_estimation(temp, freq, luts, regs, brams, dsps):" />
+      <cmd name="    pwr_rf = leakage['RF'][temp]*voltage_vdd # RF off power 25°" />
+      <cmd name="    pwr_clk = 0.000000000008*freq*1000000*1000 + 0.0625*0.000000000001*freq*en_rate_clk*1000000*regs" />
+      <cmd name="    pwr_logic = leakage['FABRIC'][temp]*voltage_vdd+((0.000000000000446*(freq*regs*en_rate_logic)*1000000 + 0.000000000000403*(freq*luts*en_rate_logic)*1000000)*1000*voltage_vdd)*1.05" />
+      <cmd name="    pwr_bram = leakage['RAM'][temp]*voltage_vdd+brams*(ram_dyn_power_a*freq*en_rate_brams*+ram_dyn_power_b)" />
+      <cmd name="    pwr_dsps = leakage['DSP'][temp]*voltage_vdd+dsps*(dsp_dyn_power_a*freq*en_rate_dsps*+dsp_dyn_power_b)" />
+      <cmd name="    pwr_io = leakage['IO'][temp] # I/O off power 25°" />
+      <cmd name="    pwr_ckg = leakage['CKG'][temp] # CKG off power 25°" />
+      <cmd name="    pwr_hssl = leakage['HSSL'][temp] # HSSL off power 25°" />
+      <cmd name="    pwr_soc = leakage['SoC'][temp] # SoC off power 25°" />
+      <cmd name="    return str(round((pwr_rf + pwr_clk + pwr_logic + pwr_bram + pwr_dsps + pwr_io + pwr_ckg + pwr_hssl + pwr_soc)/1000.0, 3))" />
       <cmd name="def first_table_after(table_header, lines):" />
       <cmd name="    lines = lines[lines.index(next(iter(filter(lambda x: table_header in x, lines)), None)):]" />
       <cmd name="    lines = lines[lines.index(next(iter(filter(lambda x: table_row in x, lines)), None)):]" />
@@ -91,7 +112,8 @@
       <cmd name="project.setOptions({'ManageAsynchronousReadPort': 'Yes', 'ManageUnconnectedOutputs': 'Ground', 'ManageUnconnectedSignals': 'Ground','DefaultRAMMapping': 'RAM', 'MaxRegisterCount': '12500'})" />
       <cmd name="project.setOptions({'MappingEffort': 'High', 'TimingDriven': 'Yes'})" />
       <cmd name="if NXMAPversion == 3: project.setOptions({'MappingEffort': 'High', 'TimingDriven': 'Yes', 'DensityEffort': 'Medium', 'BypassingEffort': 'High', 'PartitioningEffort': 'High', 'PolishingEffort': 'High', 'RoutingEffort': 'High'})" />
-      <cmd name="project.createClock('getClockNet(${__clk_name__})', '${__clk_name__}', int(math.floor(float(${__clk_period__}) * float(1000))))" />
+      <cmd name="clock_period_ns = float(${__clk_period__})" />
+      <cmd name="project.createClock('getClockNet(${__clk_name__})', '${__clk_name__}', int(math.floor(clock_period_ns * float(1000))))" />
       <cmd name="from ${__backend_script_extensions__} import ${__backend_script_extensions__}" condition="${__has_script_extensions__}" />
       <cmd name="if path.exists(os.path.join(dir, 'pads.py')):" />
       <cmd name="    from pads import pads" />
@@ -117,7 +139,7 @@
       <cmd name="    fr = open(glob.glob(outdir + '/Timing_Constraints_Report_Routed_*.timing')[0], &quot;r&quot;)" />
       <cmd name="lines = fr.readlines()" />
       <cmd name="fr.close()" />
-      <cmd name="design_slack = get_timing(lines)" />
+      <cmd name="design_slack_ns = get_timing(lines)" />
       <cmd name="if NXMAPversion == 2:" />
       <cmd name="    fr = open(os.path.join(outdir, 'logs/general.log'), &quot;r&quot;)" />
       <cmd name="elif NXMAPversion == 3:" />
@@ -125,6 +147,8 @@
       <cmd name="lines = fr.readlines()" />
       <cmd name="fr.close()" />
       <cmd name="FunctionalElements, LUTs, TotalRegisters, TotalMemBlocks, TotalIOPins, TotalDSPs = get_res(lines) " />
+      <cmd name="freq_mhz = 1000.0/(clock_period_ns - float(design_slack_ns))" />
+      <cmd name="power_W = power_estimation(25, freq_mhz, int(LUTs), int(TotalRegisters), int(TotalMemBlocks), int(TotalDSPs))" />
 
       <cmd name="fw = open('/${__nxpython_report__}', &quot;w&quot;)" />
       <cmd name="fw.write('&lt;?xml version=\\&quot;1.0\\&quot;?&gt;\\n')" />
@@ -137,8 +161,8 @@
       <cmd name="fw.write('      &lt;item stringID=\\&quot;NANOXPLORE_MEM\\&quot; value=\\&quot;'+TotalMemBlocks+'\\&quot;/&gt;\\n')" />
       <cmd name="fw.write('      &lt;item stringID=\\&quot;NANOXPLORE_IOPIN\\&quot; value=\\&quot;'+TotalIOPins+'\\&quot;/&gt;&quot;\\n')" />
       <cmd name="fw.write('      &lt;item stringID=\\&quot;NANOXPLORE_DSPS\\&quot; value=\\&quot;'+TotalDSPs+'\\&quot;/&gt;&quot;\\n')" />
-      <cmd name="fw.write('      &lt;item stringID=\\&quot;NANOXPLORE_POWER\\&quot; value=\\&quot;0\\&quot;/&gt;&quot;\\n')" />
-      <cmd name="fw.write('      &lt;item stringID=\\&quot;NANOXPLORE_SLACK\&quot; value=\\&quot;'+design_slack+'\\&quot;/&gt;\\n')" />
+      <cmd name="fw.write('      &lt;item stringID=\\&quot;NANOXPLORE_POWER\\&quot; value=\\&quot;'+power_W+'\\&quot;/&gt;&quot;\\n')" />
+      <cmd name="fw.write('      &lt;item stringID=\\&quot;NANOXPLORE_SLACK\&quot; value=\\&quot;'+design_slack_ns+'\\&quot;/&gt;\\n')" />
       <cmd name="fw.write('    &lt;/section&gt;\\n')" />
       <cmd name="fw.write('  &lt;/application&gt;\\n')" />
       <cmd name="fw.write('&lt;/document&gt;\\n')" />
