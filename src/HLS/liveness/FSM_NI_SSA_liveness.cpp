@@ -157,7 +157,14 @@ static void update_liveout_with_prev(const HLS_managerRef HLSMgr, hlsRef HLS, co
                      }
                      else
                      {
-                        step = prev_pair.second;
+                        if(prev_pair.second != step)
+                        {
+                           step = prev_pair.second;
+                        }
+                        else
+                        {
+                           repeat = false;
+                        }
                      }
                   }
                } while(repeat);
@@ -178,6 +185,10 @@ static void update_liveout_with_prev(const HLS_managerRef HLSMgr, hlsRef HLS, co
                           STR(parStep));
                   HLS->Rliv->set_live_out(current_state, scalar_use, parStep);
                   prev_pair = HLS->Rliv->GetPrevStep(2, scalar_use, parStep, 1);
+                  if(prev_pair.second && parStep == prev_pair.second)
+                  {
+                     break;
+                  }
                   parStep = prev_pair.second;
                } while(prev_pair.first);
             }
@@ -185,12 +196,14 @@ static void update_liveout_with_prev(const HLS_managerRef HLSMgr, hlsRef HLS, co
       };
       if(isAPhi)
       {
+         const auto curr_state_info = stg->CGetStateInfo(current_state);
          const auto phi_node =
              HLSMgr->get_tree_manager()->get_tree_node_const(data->CGetOpNodeInfo(exec_op)->GetNodeId());
          for(const auto& def_edge : GetPointer<const gimple_phi>(phi_node)->CGetDefEdgesList())
          {
             auto phi_in = def_edge.first->index;
-            if(bb_index == def_edge.second)
+            if((curr_state_info->is_prologue.count(exec_op) && bb_index != def_edge.second) ||
+               (!curr_state_info->is_prologue.count(exec_op) && bb_index == def_edge.second))
             {
                manage_scalar_use(phi_in);
             }
@@ -361,6 +374,8 @@ DesignFlowStep_Status FSM_NI_SSA_liveness::InternalExec()
                         "Adding to the live in of state:" + HLS->STG->get_state_name(rosl));
          for(const auto v : state_info->moved_op_use_set)
          {
+            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                           "---" + FB->CGetBehavioralHelper()->PrintVariable(v) + "-m-" + STR(0));
             HLS->Rliv->set_live_in(rosl, v, 0);
          }
          /*
@@ -416,7 +431,6 @@ DesignFlowStep_Status FSM_NI_SSA_liveness::InternalExec()
          OutEdgeIterator o_e_it, o_e_end;
          for(boost::tie(o_e_it, o_e_end) = boost::out_edges(rosl, *stg); o_e_it != o_e_end; ++o_e_it)
          {
-            bool is_feedback = stg->GetSelector(*o_e_it) & TransitionInfo::StateTransitionType::ST_EDGE_FEEDBACK;
             vertex target_state = boost::target(*o_e_it, *stg);
             prev_state = target_state;
             StateInfoConstRef tgt_state_info = stg->CGetStateInfo(target_state);
@@ -441,6 +455,7 @@ DesignFlowStep_Status FSM_NI_SSA_liveness::InternalExec()
             }
             else
             {
+               bool is_feedback = stg->GetSelector(*o_e_it) & TransitionInfo::StateTransitionType::ST_EDGE_FEEDBACK;
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                               "---adding live out of " + stg->CGetStateInfo(target_state)->name +
                                   " to live out of state " + state_info->name);
@@ -627,6 +642,12 @@ DesignFlowStep_Status FSM_NI_SSA_liveness::InternalExec()
          continue;
       }
 
+      // skip exit state
+      if(osl == exit_state && !is_function_pipelined)
+      {
+         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Is an exit state");
+         continue;
+      }
       if(state_info->is_dummy)
       {
          continue;
@@ -641,31 +662,7 @@ DesignFlowStep_Status FSM_NI_SSA_liveness::InternalExec()
             auto src_state = boost::source(*i_e_it, *astg);
             auto src_state_info = astg->CGetStateInfo(src_state);
             prev_bb_index = get_bb_index_from_state_info(data, src_state_info);
-            if(prev_bb_index != bb_index)
-            {
-               for(const auto li : fbb->CGetBBNodeInfo(bb_index_map[bb_index])->get_live_in())
-               {
-                  if(HLSMgr->is_register_compatible(li))
-                  {
-                     auto step_pair = HLS->Rliv->GetStepIn(bb_index, li, osl);
-                     if(step_pair.first)
-                     {
-                        INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
-                                       "---" + FB->CGetBehavioralHelper()->PrintVariable(li) + "--" +
-                                           STR(step_pair.second));
-                        HLS->Rliv->set_live_in(osl, li, step_pair.second);
-                     }
-                  }
-               }
-            }
-            else
-            {
-               for(const auto& li : HLS->Rliv->get_live_out(src_state))
-               {
-                  INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
-                                 "---" + FB->CGetBehavioralHelper()->PrintVariable(li.first) + "-" + STR(li.second));
-                  HLS->Rliv->set_live_in(osl, li.first, li.second);
-               }
+            auto adjust_phi = [&] {
                for(const auto& exec_op : state_info->executing_operations)
                {
                   if((GET_TYPE(data, exec_op) & TYPE_PHI) != 0)
@@ -677,7 +674,7 @@ DesignFlowStep_Status FSM_NI_SSA_liveness::InternalExec()
                         auto phi_in = def_edge.first->index;
                         if(HLSMgr->is_register_compatible(phi_in))
                         {
-                           unsigned int step = HLS->Rliv->GetStepPhiIn(exec_op, phi_in, def_edge.second);
+                           unsigned int step = HLS->Rliv->GetStepPhiOut(exec_op, phi_in);
                            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                                           "---erase " + FB->CGetBehavioralHelper()->PrintVariable(phi_in) + "-" +
                                               STR(step));
@@ -691,6 +688,34 @@ DesignFlowStep_Status FSM_NI_SSA_liveness::InternalExec()
                      HLS->Rliv->set_live_in(osl, phi_res, step);
                   }
                }
+            };
+            if(prev_bb_index != bb_index)
+            {
+               for(const auto li : fbb->CGetBBNodeInfo(bb_index_map[prev_bb_index])->get_live_out())
+               {
+                  if(HLSMgr->is_register_compatible(li))
+                  {
+                     auto step_pair = HLS->Rliv->GetStepIn(bb_index, li, osl);
+                     if(step_pair.first)
+                     {
+                        INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                                       "---" + FB->CGetBehavioralHelper()->PrintVariable(li) + "--" +
+                                           STR(step_pair.second));
+                        HLS->Rliv->set_live_in(osl, li, step_pair.second);
+                     }
+                  }
+               }
+               adjust_phi();
+            }
+            else
+            {
+               for(const auto& li : HLS->Rliv->get_live_out(src_state))
+               {
+                  INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                                 "---" + FB->CGetBehavioralHelper()->PrintVariable(li.first) + "-" + STR(li.second));
+                  HLS->Rliv->set_live_in(osl, li.first, li.second);
+               }
+               adjust_phi();
                for(const auto& li : HLS->Rliv->get_live_out(osl))
                {
                   auto pre_pair = HLS->Rliv->GetPrevStep(bb_index, li.first, li.second, 1);
@@ -712,6 +737,8 @@ DesignFlowStep_Status FSM_NI_SSA_liveness::InternalExec()
          {
             if(HLSMgr->is_register_compatible(li))
             {
+               INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                              "---" + FB->CGetBehavioralHelper()->PrintVariable(li) + "-d-" + STR(0));
                HLS->Rliv->set_live_in(osl, li, 0);
             }
          }
@@ -723,7 +750,12 @@ DesignFlowStep_Status FSM_NI_SSA_liveness::InternalExec()
             unsigned int target_bb_index = *target_state_info->BB_ids.begin();
             if(l_bb_index == target_bb_index && !target_state_info->is_duplicated)
             {
-               HLS->Rliv->set_live_in(target_state, HLS->Rliv->get_live_out(osl));
+               for(const auto& lo : HLS->Rliv->get_live_out(osl))
+               {
+                  INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                                 "---" + FB->CGetBehavioralHelper()->PrintVariable(lo.first) + "-d-" + STR(lo.second));
+                  HLS->Rliv->set_live_in(target_state, lo.first, lo.second);
+               }
                state_to_skip.insert(target_state);
             }
          }
@@ -749,7 +781,12 @@ DesignFlowStep_Status FSM_NI_SSA_liveness::InternalExec()
       }
       else
       {
-         HLS->Rliv->set_live_in(osl, HLS->Rliv->get_live_out(prev_state));
+         for(const auto& lo : HLS->Rliv->get_live_out(prev_state))
+         {
+            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                           "---" + FB->CGetBehavioralHelper()->PrintVariable(lo.first) + "--" + STR(lo.second));
+            HLS->Rliv->set_live_in(osl, lo.first, lo.second);
+         }
       }
       prev_state = osl;
       prev_bb_index = bb_index;
@@ -757,6 +794,7 @@ DesignFlowStep_Status FSM_NI_SSA_liveness::InternalExec()
 
    /// Fixing live in by adding ssa coming into a phi and defined outside the pipelined BB. The phi has to be scheduled
    /// on a step different than the first one.
+#if 0
    for(const auto& rosl : reverse_order_state_list)
    {
       const StateInfoConstRef state_info = astg->CGetStateInfo(rosl);
@@ -792,6 +830,8 @@ DesignFlowStep_Status FSM_NI_SSA_liveness::InternalExec()
                      GET_BB_INDEX(data, HLS->Rliv->get_op_where_defined(phi_in)) != bb_index)
                   {
                      auto step = HLS->Rliv->GetStepPhiIn(eoc, phi_in, def_edge.second);
+                     INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                                    "---" + FB->CGetBehavioralHelper()->PrintVariable(phi_in) + "-aa-" + STR(step));
                      HLS->Rliv->set_live_in(target_state, phi_in, step);
                      /// propagate up
                      std::queue<vertex> to_process;
@@ -826,6 +866,7 @@ DesignFlowStep_Status FSM_NI_SSA_liveness::InternalExec()
          }
       }
    }
+#endif
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Computed live in");
 
    /// fix the live in/out of dummy states
@@ -837,7 +878,13 @@ DesignFlowStep_Status FSM_NI_SSA_liveness::InternalExec()
       {
          vertex src_state = boost::source(e, *astg);
          HLS->Rliv->set_live_out(ds, HLS->Rliv->get_live_out(src_state));
-         HLS->Rliv->set_live_in(ds, HLS->Rliv->get_live_out(src_state));
+
+         for(const auto& li : HLS->Rliv->get_live_out(src_state))
+         {
+            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                           "---" + FB->CGetBehavioralHelper()->PrintVariable(li.first) + "-d-" + STR(li.second));
+            HLS->Rliv->set_live_in(ds, li.first, li.second);
+         }
          /// add all the uses of ds to src_state
          for(const auto& eo : state_info->executing_operations)
          {
@@ -849,12 +896,17 @@ DesignFlowStep_Status FSM_NI_SSA_liveness::InternalExec()
                {
                   unsigned int step = HLS->Rliv->GetStep(ds, eo, scalar_use, true);
                   HLS->Rliv->set_live_out(src_state, scalar_use, step);
+                  INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                                 "---" + FB->CGetBehavioralHelper()->PrintVariable(scalar_use) + "-a-" + STR(step));
                   HLS->Rliv->set_live_in(ds, scalar_use, step);
                   /// extend the lifetime of used variable to reduce the critical path
                   BOOST_FOREACH(EdgeDescriptor oe, boost::out_edges(ds, *astg))
                   {
                      vertex target_state = boost::target(oe, *astg);
                      const StateInfoConstRef tgt_state_info = astg->CGetStateInfo(target_state);
+                     INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                                    "---" + FB->CGetBehavioralHelper()->PrintVariable(scalar_use) + "-a-" +
+                                        STR(tgt_state_info->is_pipelined_state ? step + 1 : 0));
                      HLS->Rliv->set_live_in(target_state, scalar_use,
                                             tgt_state_info->is_pipelined_state ? step + 1 : 0);
                   }
@@ -908,6 +960,8 @@ DesignFlowStep_Status FSM_NI_SSA_liveness::InternalExec()
 
                      if(state_info->moved_op_use_set.find(written_phi) != state_info->moved_op_use_set.end())
                      {
+                        INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                                       "---" + FB->CGetBehavioralHelper()->PrintVariable(tree_var) + "-m-" + STR(0));
                         HLS->Rliv->set_live_in(rosl, tree_var, 0);
                         BOOST_FOREACH(EdgeDescriptor ie, boost::in_edges(rosl, *stg))
                         {
@@ -919,6 +973,8 @@ DesignFlowStep_Status FSM_NI_SSA_liveness::InternalExec()
                      BOOST_FOREACH(EdgeDescriptor e, boost::out_edges(rosl, *stg))
                      {
                         vertex tgt_vrtx = boost::target(e, *stg);
+                        INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                                       "---" + FB->CGetBehavioralHelper()->PrintVariable(written_phi) + "-m-" + STR(0));
                         HLS->Rliv->set_live_in(tgt_vrtx, written_phi, 0);
                      }
                   }
