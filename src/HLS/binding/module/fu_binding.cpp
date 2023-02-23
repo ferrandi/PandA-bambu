@@ -332,25 +332,18 @@ void fu_binding::kill_proxy_memory_units(std::map<unsigned int, unsigned int>& m
       killing_vars.insert(it_mu->second);
       reverse_memory_units[it_mu->second] = it_mu->first;
    }
-   for(auto kv : killing_vars)
+   for(const auto kv : killing_vars)
    {
       structural_objectRef port_proxy_in1 = curr_gate->find_member("proxy_in1_" + STR(kv), port_o_K, curr_gate);
       if(port_proxy_in1)
       {
          var_call_sites_rel[kv].push_back(curr_gate);
-         structural_objectRef port_proxy_in2 = curr_gate->find_member("proxy_in2_" + STR(kv), port_o_K, curr_gate);
-         structural_objectRef port_proxy_in3 = curr_gate->find_member("proxy_in3_" + STR(kv), port_o_K, curr_gate);
-         structural_objectRef port_proxy_out1 = curr_gate->find_member("proxy_out1_" + STR(kv), port_o_K, curr_gate);
-         structural_objectRef port_proxy_sel_LOAD =
-             curr_gate->find_member("proxy_sel_LOAD_" + STR(kv), port_o_K, curr_gate);
-         structural_objectRef port_proxy_sel_STORE =
-             curr_gate->find_member("proxy_sel_STORE_" + STR(kv), port_o_K, curr_gate);
          GetPointer<port_o>(port_proxy_in1)->set_is_memory(false);
-         GetPointer<port_o>(port_proxy_in2)->set_is_memory(false);
-         GetPointer<port_o>(port_proxy_in3)->set_is_memory(false);
-         GetPointer<port_o>(port_proxy_out1)->set_is_memory(false);
-         GetPointer<port_o>(port_proxy_sel_LOAD)->set_is_memory(false);
-         GetPointer<port_o>(port_proxy_sel_STORE)->set_is_memory(false);
+         for(const auto p_name : {"proxy_in2_", "proxy_in3_", "proxy_out1_", "proxy_sel_LOAD_", "proxy_sel_STORE_"})
+         {
+            const auto port = curr_gate->find_member(p_name + STR(kv), port_o_K, curr_gate);
+            GetPointerS<port_o>(port)->set_is_memory(false);
+         }
       }
    }
 }
@@ -581,11 +574,10 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
          const auto fu_lib_unit = TechM->get_fu(MEMCPY_STD, WORK_LIBRARY);
          THROW_ASSERT(fu_lib_unit,
                       "functional unit not available: check the library given. Component: " + std::string(MEMCPY_STD));
-         auto curr_gate = add_gate(HLSMgr, HLS, fu_lib_unit, "parameter_manager_" + STR(function_parameter),
-                                   OpVertexSet(op_graph), clock_port, reset_port);
+         const auto curr_gate = add_gate(HLSMgr, HLS, fu_lib_unit, "parameter_manager_" + STR(function_parameter),
+                                         OpVertexSet(op_graph), clock_port, reset_port);
          const auto curr_gate_m = GetPointerS<module>(curr_gate);
-         auto direction = conn_binding::IN;
-         const auto port_obj = HLS->Rconn->get_port(function_parameter, direction);
+         const auto port_obj = HLS->Rconn->get_port(function_parameter, conn_binding::IN);
          const auto in_par = port_obj->get_out_sign();
          const auto src = curr_gate_m->find_member("src", port_o_K, curr_gate);
          SM->add_connection(in_par, src);
@@ -655,13 +647,11 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
          {
             bus_tag_bitsize = GetPointer<memory_cs>(HLSMgr->Rmem)->get_bus_tag_bitsize();
          }
-         const auto is_multiport = parameters->getOption<MemoryAllocation_ChannelsType>(OPT_channels_type) ==
-                                   MemoryAllocation_ChannelsType::MEM_ACC_NN;
+         const auto is_multiport = FB->GetChannelsType() == MemoryAllocation_ChannelsType::MEM_ACC_NN;
          const auto fu_lib_unit = TechM->get_fu(is_multiport ? MEMSTORE_STDN : MEMSTORE_STD, LIBRARY_STD_FU);
          THROW_ASSERT(fu_lib_unit, "functional unit not available: check the library given. Component: " +
                                        STR(is_multiport ? MEMSTORE_STDN : MEMSTORE_STD));
-         auto max_n_ports =
-             -HLS->Param->isOption(OPT_channels_number) ? parameters->getOption<unsigned int>(OPT_channels_number) : 0;
+         const auto max_n_ports = FB->GetChannelsNumber();
          const auto curr_gate = add_gate(HLSMgr, HLS, fu_lib_unit, "parameter_manager_" + STR(function_parameter),
                                          OpVertexSet(op_graph), clock_port, reset_port);
          const auto port_obj = HLS->Rconn->get_port(function_parameter, conn_binding::IN);
@@ -822,6 +812,8 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
       memory_modules.push_back(curr_gate);
    }
 
+   const auto is_sparse_memory =
+       parameters->isOption(OPT_sparse_memory) && parameters->getOption<bool>(OPT_sparse_memory);
    std::map<unsigned int, unsigned int> memory_units = allocation_information->get_memory_units();
    std::map<unsigned int, structural_objectRef> mem_obj;
    for(const auto& m : memory_units)
@@ -840,6 +832,17 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
       }
       const technology_nodeRef fu_lib_unit = allocation_information->get_fu(fu_type_id);
       THROW_ASSERT(fu_lib_unit, "functional unit not available: check the library given. Component: " + fun_unit_name);
+      const auto is_splitted_memory = [&]() {
+         const auto& memory_type = GetPointerS<const functional_unit>(fu_lib_unit)->memory_type;
+         const auto& channels_type = GetPointerS<const functional_unit>(fu_lib_unit)->channels_type;
+         return memory_type == MEMORY_TYPE_SYNCHRONOUS_UNALIGNED &&
+                (channels_type == CHANNELS_TYPE_MEM_ACC_N1 || channels_type == CHANNELS_TYPE_MEM_ACC_NN);
+      }();
+      const auto is_sds_memory = [&]() {
+         const auto& memory_type = GetPointerS<const functional_unit>(fu_lib_unit)->memory_type;
+         return memory_type == MEMORY_TYPE_SYNCHRONOUS_SDS || memory_type == MEMORY_TYPE_SYNCHRONOUS_SDS_BUS ||
+                memory_type == MEMORY_TYPE_ASYNCHRONOUS;
+      }();
 
       PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                     "Memory Unit: " + allocation_information->get_string_name(fu_type_id) + " for variable: " +
@@ -868,15 +871,8 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
          structural_objectRef curr_gate = add_gate(HLSMgr, HLS, fu_lib_unit, name + "_" + STR(num / n_channels),
                                                    OpVertexSet(op_graph), clock_port, reset_port);
          specialise_fu(HLSMgr, HLS, curr_gate, fu_type_id, operations_set, var);
-         std::string memory_type = GetPointer<functional_unit>(fu_lib_unit)->memory_type;
-         std::string channels_type = GetPointer<functional_unit>(fu_lib_unit)->channels_type;
-         specialize_memory_unit(
-             HLSMgr, HLS, curr_gate, var, base_address, rangesize,
-             memory_type == MEMORY_TYPE_SYNCHRONOUS_UNALIGNED &&
-                 (channels_type == CHANNELS_TYPE_MEM_ACC_N1 || channels_type == CHANNELS_TYPE_MEM_ACC_NN),
-             HLS->Param->isOption(OPT_sparse_memory) && parameters->getOption<bool>(OPT_sparse_memory),
-             memory_type == MEMORY_TYPE_SYNCHRONOUS_SDS || memory_type == MEMORY_TYPE_SYNCHRONOUS_SDS_BUS ||
-                 memory_type == MEMORY_TYPE_ASYNCHRONOUS);
+         specialize_memory_unit(HLSMgr, HLS, curr_gate, var, base_address, rangesize, is_splitted_memory,
+                                is_sparse_memory, is_sds_memory);
          check_parametrization(curr_gate);
          mem_obj[fu_type_id] = curr_gate;
          for(unsigned int channel_index = 0; (channel_index < n_channels) && ((num + channel_index) < total_allocated);
@@ -1095,7 +1091,7 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
    const auto top_function_ids = cg_man->GetRootFunctions();
    if(top_function_ids.find(HLS->functionId) != top_function_ids.end() and cg_man->ExistsAddressedFunction())
    {
-      CustomOrderedSet<unsigned int> addressed_functions = cg_man->GetAddressedFunctions();
+      const auto addressed_functions = cg_man->GetAddressedFunctions();
 
       structural_objectRef constBitZero =
           SM->add_module_from_technology_library("constBitZero", CONSTANT_STD, LIBRARY_STD, circuit, TechM);
@@ -1384,7 +1380,7 @@ void fu_binding::manage_memory_ports_chained(const structural_managerRef SM,
 void fu_binding::join_merge_split(
     const structural_managerRef SM, const hlsRef HLS,
     std::map<structural_objectRef, std::list<structural_objectRef>, jms_sorter>& primary_outs,
-    const structural_objectRef circuit, unsigned int& _unique_id)
+    const structural_objectRef circuit, unsigned int& _unique_id) const
 {
    const auto js_name = "join_signal";
    const auto js_library = HLS->HLS_T->get_technology_manager()->get_library(js_name);
@@ -1803,13 +1799,12 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
                                unsigned int fu, const OpVertexSet& mapped_operations, unsigned int ar)
 {
    const auto FB = HLSMgr->CGetFunctionBehavior(HLS->functionId);
+   const auto memory_allocation_policy = FB->GetMemoryAllocationPolicy();
    auto bus_data_bitsize = HLSMgr->Rmem->get_bus_data_bitsize();
    auto bus_size_bitsize = HLSMgr->Rmem->get_bus_size_bitsize();
    const auto bus_addr_bitsize = HLSMgr->get_address_bitsize();
    const auto bus_tag_bitsize =
-       HLS->Param->getOption<bool>(OPT_parse_pragma) && HLS->Param->isOption(OPT_context_switch) ?
-           GetPointer<memory_cs>(HLSMgr->Rmem)->get_bus_tag_bitsize() :
-           0;
+       HLS->Param->isOption(OPT_context_switch) ? GetPointer<memory_cs>(HLSMgr->Rmem)->get_bus_tag_bitsize() : 0;
    auto* fu_module = GetPointer<module>(fu_obj);
    const auto fu_tech_obj = allocation_information->get_fu(fu);
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
@@ -1899,23 +1894,12 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
       }
       if(fu_module->ExistsParameter("BUS_PIPELINED"))
       {
-         const auto Has_extern_allocated_data =
+         const auto has_extern_mem =
              ((HLSMgr->Rmem->get_memory_address() - HLSMgr->base_address) > 0 &&
-              parameters->getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) !=
-                  MemoryAllocation_Policy::EXT_PIPELINED_BRAM) ||
-             (HLSMgr->Rmem->has_unknown_addresses() &&
-              parameters->getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) !=
-                  MemoryAllocation_Policy::ALL_BRAM &&
-              parameters->getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) !=
-                  MemoryAllocation_Policy::EXT_PIPELINED_BRAM);
-         if(Has_extern_allocated_data)
-         {
-            fu_module->SetParameter("BUS_PIPELINED", "0");
-         }
-         else
-         {
-            fu_module->SetParameter("BUS_PIPELINED", "1");
-         }
+              memory_allocation_policy != MemoryAllocation_Policy::EXT_PIPELINED_BRAM) ||
+             (HLSMgr->Rmem->has_unknown_addresses() && memory_allocation_policy != MemoryAllocation_Policy::ALL_BRAM &&
+              memory_allocation_policy != MemoryAllocation_Policy::EXT_PIPELINED_BRAM);
+         fu_module->SetParameter("BUS_PIPELINED", has_extern_mem ? "0" : "1");
       }
    }
    else
@@ -2178,32 +2162,31 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
                      const auto parameterAddressFileName = "function_addresses_" + STR(index) + ".mem";
                      std::ofstream parameterAddressFile(GetPath(parameterAddressFileName));
 
-                     const auto call = TreeM->GetTreeNode(index);
-                     tree_nodeRef calledFunction = GetPointer<gimple_call>(call)->args[0];
-                     tree_nodeRef hasreturn_node = GetPointer<gimple_call>(call)->args[1];
-                     const auto hasreturn_value = tree_helper::GetConstValue(hasreturn_node);
-                     tree_nodeRef addrExpr = GET_NODE(calledFunction);
-                     tree_nodeRef functionType = getFunctionType(addrExpr);
-                     tree_nodeRef paramList = GetPointer<function_type>(functionType)->prms;
-                     unsigned int count_param = 0;
+                     const auto call = TreeM->CGetTreeNode(index);
+                     const auto& calledFunction = GetPointerS<const gimple_call>(call)->args[0];
+                     const auto& hasreturn_node = GetPointerS<const gimple_call>(call)->args[1];
+                     const auto hasreturn_value = tree_helper::get_integer_cst_value(
+                         GetPointerS<const integer_cst>(GET_CONST_NODE(hasreturn_node)));
+                     const auto addrExpr = GET_NODE(calledFunction);
+                     const auto functionType = getFunctionType(addrExpr);
+                     const auto alignment = HLSMgr->Rmem->get_parameter_alignment();
                      unsigned long long int address = 0;
-                     auto alignment = HLSMgr->Rmem->get_parameter_alignment();
-                     HLSMgr->Rmem->compute_next_base_address(address, index, alignment);
+                     address = HLSMgr->Rmem->compute_next_base_address(address, index, alignment);
+                     auto paramList = GetPointerS<const function_type>(functionType)->prms;
                      while(paramList)
                      {
-                        tree_nodeRef elem = GET_NODE(paramList);
-                        auto* node = GetPointer<tree_list>(elem);
-                        paramList = node->chan;
-                        if(GET_NODE(node->valu)->get_kind() != void_type_K)
+                        const auto node = GetPointerS<const tree_list>(GET_CONST_NODE(paramList));
+                        if(GET_CONST_NODE(node->valu)->get_kind() != void_type_K)
                         {
-                           std::string str_address = convert_to_binary(address, HLSMgr->get_address_bitsize());
+                           const auto str_address = convert_to_binary(address, HLSMgr->get_address_bitsize());
                            parameterAddressFile << str_address << "\n";
-                           HLSMgr->Rmem->compute_next_base_address(address, GET_INDEX_NODE(node->valu), alignment);
-                           count_param++;
+                           address = HLSMgr->Rmem->compute_next_base_address(address, GET_INDEX_CONST_NODE(node->valu),
+                                                                             alignment);
                         }
+                        paramList = node->chan;
                      }
-                     auto return_type = GetPointer<function_type>(functionType)->retn;
-                     if(return_type && GET_NODE(return_type)->get_kind() != void_type_K && hasreturn_value)
+                     const auto return_type = GetPointerS<const function_type>(functionType)->retn;
+                     if(return_type && GET_CONST_NODE(return_type)->get_kind() != void_type_K && hasreturn_value)
                      {
                         const auto str_address = convert_to_binary(address, HLSMgr->get_address_bitsize());
                         parameterAddressFile << str_address << "\n";

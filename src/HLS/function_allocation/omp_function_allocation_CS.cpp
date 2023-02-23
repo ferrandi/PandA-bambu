@@ -99,7 +99,7 @@ DesignFlowStep_Status OmpFunctionAllocationCS::Exec()
    CustomUnorderedSet<vertex> vertex_subset;
    for(const auto f_id : root_functions)
    {
-      for(const auto reached_f_id : call_graph_manager->GetReachedBodyFunctionsFrom(f_id))
+      for(const auto reached_f_id : call_graph_manager->GetReachedFunctionsFrom(f_id))
       {
          vertex_subset.insert(call_graph_manager->GetVertex(reached_f_id));
       }

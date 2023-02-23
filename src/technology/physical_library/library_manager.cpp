@@ -515,13 +515,13 @@ void library_manager::update(const technology_nodeRef& fu_node)
 
 bool library_manager::is_fu(const std::string& _name) const
 {
-   return fu_map.find(_name) != fu_map.end();
+   return fu_map.count(_name);
 }
 
 technology_nodeRef library_manager::get_fu(const std::string& _name) const
 {
    THROW_ASSERT(is_fu(_name), "functional unit " + _name + " not stored");
-   return fu_map.find(_name)->second;
+   return fu_map.at(_name);
 }
 
 size_t library_manager::get_gate_count() const

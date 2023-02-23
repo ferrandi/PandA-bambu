@@ -173,6 +173,10 @@ class DesignFlowManager
     */
    void Consolidate();
 
+#ifndef NDEBUG
+   void WriteLoopDot() const;
+#endif
+
  public:
    /**
     * Constructor

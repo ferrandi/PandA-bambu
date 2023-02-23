@@ -43,6 +43,7 @@
 #include <list>
 #include <string>
 class module;
+enum class MemoryAllocation_ChannelsType;
 
 /**
  * @brief Build a wrapper layer on the top entity implementing the
@@ -91,6 +92,12 @@ class TopEntityMemoryMapped : public top_entity
 
    /// true when the module is a root function
    bool is_root_function{false};
+
+   /// Function scope channels number
+   unsigned int _channels_number;
+
+   /// Function scope channels type
+   MemoryAllocation_ChannelsType _channels_type;
 
    /**
     * Allocates the in/out parameters of the module as internal registers

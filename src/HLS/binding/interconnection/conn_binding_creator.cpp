@@ -126,12 +126,12 @@ conn_binding_creator::ComputeHLSRelationships(const DesignFlowStep::Relationship
 
 void conn_binding_creator::add_parameter_ports()
 {
-   const FunctionBehaviorConstRef FB = HLSMgr->CGetFunctionBehavior(funId);
-   const BehavioralHelperConstRef BH = FB->CGetBehavioralHelper();
+   const auto FB = HLSMgr->CGetFunctionBehavior(funId);
+   const auto BH = FB->CGetBehavioralHelper();
    input_ports.clear();
    output_ports.clear();
    /// list containing the parameters of the original function (representing input and output values)
-   const std::list<unsigned int>& function_parameters = BH->get_parameters();
+   const auto function_parameters = BH->get_parameters();
    PRINT_DBG_STRING(DEBUG_LEVEL_PEDANTIC, debug_level, "Parameters values: ");
    for(auto function_parameter : function_parameters)
    {

@@ -131,8 +131,11 @@ class StateTransitionGraphManager
    CustomOrderedSet<vertex> get_ending_states(const vertex& op) const;
    CustomOrderedSet<vertex> get_starting_states(const vertex& op) const;
 
-   /// compute the minimum and maximum number of cycles when possible
-   void compute_min_max();
+   /**
+    * Compute minimum and maximum number of cycles for bounded scheduling
+    * @param is_pipelined True if scheduling is pipelined
+    */
+   void ComputeCyclesCount(bool is_pipelined);
 
    /**
     * Returns pointer to state transition graph created.

@@ -113,8 +113,8 @@ easy_module_binding::ComputeHLSRelationships(const DesignFlowStep::RelationshipT
    {
       case DEPENDENCE_RELATIONSHIP:
       {
-         ret.insert(std::make_tuple(HLSFlowStep_Type::INITIALIZE_HLS, HLSFlowStepSpecializationConstRef(),
-                                    HLSFlowStep_Relationship::SAME_FUNCTION));
+         ret.insert(std::make_tuple(HLSFlowStep_Type::DOMINATOR_ALLOCATION, HLSFlowStepSpecializationConstRef(),
+                                    HLSFlowStep_Relationship::WHOLE_APPLICATION));
          if(HLSMgr->get_HLS(funId))
          {
             ret.insert(std::make_tuple(HLSMgr->get_HLS(funId)->chaining_algorithm, HLSFlowStepSpecializationConstRef(),
@@ -146,10 +146,10 @@ DesignFlowStep_Status easy_module_binding::InternalExec()
    const auto TM = HLSMgr->get_tree_manager();
    // resource binding and allocation  info
    fu_binding& fu = *(HLS->Rfu);
-   const AllocationInformationConstRef allocation_information = HLS->allocation_information;
+   const auto allocation_information = HLS->allocation_information;
    // pointer to a Control, Data dependence and antidependence graph graph
-   const FunctionBehaviorConstRef FB = HLSMgr->CGetFunctionBehavior(funId);
-   const OpGraphConstRef sdg = FB->CGetOpGraph(FunctionBehavior::SDG);
+   const auto FB = HLSMgr->CGetFunctionBehavior(funId);
+   const auto sdg = FB->CGetOpGraph(FunctionBehavior::SDG);
 
    unsigned int fu_unit;
    /// compute unshared resources
@@ -157,7 +157,7 @@ DesignFlowStep_Status easy_module_binding::InternalExec()
    for(const auto operation : sdg->CGetOperations())
    {
       const auto id = sdg->CGetOpNodeInfo(operation)->GetNodeId();
-      if(id == ENTRY_ID or id == EXIT_ID)
+      if(id == ENTRY_ID || id == EXIT_ID)
       {
          continue;
       }
@@ -175,7 +175,7 @@ DesignFlowStep_Status easy_module_binding::InternalExec()
          n_shared_fu[fu_unit] = 1 + n_shared_fu[fu_unit];
       }
    }
-   if(output_level >= OUTPUT_LEVEL_MINIMUM and output_level <= OUTPUT_LEVEL_PEDANTIC)
+   if(output_level >= OUTPUT_LEVEL_MINIMUM && output_level <= OUTPUT_LEVEL_PEDANTIC)
    {
       INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "");
    }
@@ -247,7 +247,7 @@ DesignFlowStep_Status easy_module_binding::InternalExec()
       INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
                      "---Bound operations:" + STR(easy_bound_vertices.size()) + "/" + STR(boost::num_vertices(*sdg)));
    }
-   if(output_level >= OUTPUT_LEVEL_MINIMUM and output_level <= OUTPUT_LEVEL_PEDANTIC)
+   if(output_level >= OUTPUT_LEVEL_MINIMUM && output_level <= OUTPUT_LEVEL_PEDANTIC)
    {
       STOP_TIME(step_time);
       INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,

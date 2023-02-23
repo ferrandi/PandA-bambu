@@ -148,9 +148,9 @@ DesignFlowStep_Status CTestbenchExecution::Exec()
        HLSMgr->CGetFunctionBehavior(top_function_id)->CGetBehavioralHelper()->get_function_name();
    const CompilerWrapperConstRef compiler_wrapper(
        new CompilerWrapper(parameters, parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler),
-                           CompilerWrapper_OptimizationSet::O0));
+                           CompilerWrapper_OptimizationSet::O2));
 
-   std::string compiler_flags = "-fwrapv -flax-vector-conversions -msse2 -mfpmath=sse "
+   std::string compiler_flags = "-fwrapv -flax-vector-conversions -msse2 -mfpmath=sse -fno-strict-aliasing "
                                 "-D'__builtin_bambu_time_start()=' -D'__builtin_bambu_time_stop()=' -D__BAMBU_SIM__ ";
    if(!CompilerWrapper::isClangCheck(parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler)))
    {
@@ -408,14 +408,14 @@ void CTestbenchExecution::ComputeRelationships(DesignFlowStepSet& relationship,
              design_flow_manager.lock()->CGetDesignFlowStepFactory("Frontend"));
 
          const vertex call_graph_computation_step = design_flow_manager.lock()->GetDesignFlowStep(
-             ApplicationFrontendFlowStep::ComputeSignature(FUNCTION_ANALYSIS));
+             ApplicationFrontendFlowStep::ComputeSignature(COMPLETE_CALL_GRAPH));
 
          const DesignFlowGraphConstRef design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
 
          const DesignFlowStepRef cg_design_flow_step =
              call_graph_computation_step ?
                  design_flow_graph->CGetDesignFlowStepInfo(call_graph_computation_step)->design_flow_step :
-                 frontend_step_factory->CreateApplicationFrontendFlowStep(FUNCTION_ANALYSIS);
+                 frontend_step_factory->CreateApplicationFrontendFlowStep(COMPLETE_CALL_GRAPH);
 
          relationship.insert(cg_design_flow_step);
 

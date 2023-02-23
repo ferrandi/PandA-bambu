@@ -123,11 +123,28 @@ bool technology_manager::can_implement(const std::string& fu_name, const std::st
 technology_nodeRef technology_manager::get_fu(const std::string& fu_name, const std::string& Library) const
 {
    THROW_ASSERT(Library.size(), "Library not specified for component " + fu_name);
-   if(library_map.find(Library) != library_map.end() and library_map.find(Library)->second->is_fu(fu_name))
+   if(library_map.count(Library) && library_map.at(Library)->is_fu(fu_name))
    {
-      return library_map.find(Library)->second->get_fu(fu_name);
+      return library_map.at(Library)->get_fu(fu_name);
    }
-   return technology_nodeRef();
+   return nullptr;
+}
+
+technology_nodeRef technology_manager::get_fu(const std::string& fu_name, std::string* Library) const
+{
+   for(const auto& lib : libraries)
+   {
+      THROW_ASSERT(library_map.count(lib), "Library " + lib + " not found");
+      if(library_map.at(lib)->is_fu(fu_name))
+      {
+         if(Library)
+         {
+            *Library = lib;
+         }
+         return library_map.at(lib)->get_fu(fu_name);
+      }
+   }
+   return nullptr;
 }
 
 ControlStep technology_manager::get_initiation_time(const std::string& fu_name, const std::string& op_name,

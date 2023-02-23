@@ -50,16 +50,15 @@
 #define _WB4_INTERFACE_HPP_
 
 #include "minimal_interface.hpp"
-
-/// utility include
 #include "refcount.hpp"
+
 /**
  * Class generating WB4 interfaces
  */
 
 CONSTREF_FORWARD_DECL(BehavioralHelper);
-REF_FORWARD_DECL(memory_symbol);
 REF_FORWARD_DECL(structural_type_descriptor);
+REF_FORWARD_DECL(structural_object);
 
 class WB4_interface : public minimal_interface
 {

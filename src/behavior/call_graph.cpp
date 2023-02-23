@@ -58,16 +58,6 @@
 #include <ostream>                            // for operator<<, ostream
 #include <utility>                            // for pair
 
-/**
- * @name function graph selector
- */
-//@{
-/// Data line selector
-#define STD_SELECTOR 1 << 0
-/// Clock line selector
-#define FEEDBACK_SELECTOR 1 << 1
-//@}
-
 FunctionInfo::FunctionInfo() : nodeID(0)
 {
 }

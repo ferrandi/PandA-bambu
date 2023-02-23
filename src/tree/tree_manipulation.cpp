@@ -1729,6 +1729,11 @@ tree_nodeRef tree_manipulation::create_gimple_call(const tree_nodeConstRef& call
    std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> ae_IR_schema, gc_IR_schema;
 
    const auto function_type = tree_helper::CGetType(called_function);
+#if HAVE_ASSERTS
+   const auto formal_count = GetPointer<const function_decl>(GET_CONST_NODE(called_function))->list_of_args.size();
+   THROW_ASSERT(formal_count == args.size(), "Formal parameters count different from actual parameters count: " +
+                                                 STR(formal_count) + " != " + STR(args.size()));
+#endif
    ae_IR_schema[TOK(TOK_OP)] = STR(called_function->index);
    ae_IR_schema[TOK(TOK_TYPE)] = STR(GetPointerType(function_type)->index);
    ae_IR_schema[TOK(TOK_SRCP)] = srcp;
