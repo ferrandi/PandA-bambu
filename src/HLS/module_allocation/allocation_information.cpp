@@ -1077,7 +1077,7 @@ double AllocationInformation::estimate_muxNto1_delay(unsigned long long fu_prec,
    fu_prec = resize_to_1_8_16_32_64_128_256_512(fu_prec);
    if(mux_ins > MAX_MUX_N_INPUTS)
    {
-      return std::numeric_limits<double>::max();
+      return HLS_C->get_clock_period();
    }
    if(fu_prec > 128)
    {
