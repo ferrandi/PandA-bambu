@@ -326,6 +326,6 @@ bool StateTransitionGraphManager::not_same_step(vertex state, vertex def, vertex
    }
    else
    {
-      return true;
+      return false;
    }
 }
