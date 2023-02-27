@@ -676,7 +676,7 @@ DesignFlowStep_Status FSM_NI_SSA_liveness::InternalExec()
                         {
                            unsigned int step = HLS->Rliv->GetStepPhiOut(exec_op, phi_in);
                            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
-                                          "---erase phi in" + FB->CGetBehavioralHelper()->PrintVariable(phi_in) + "-" +
+                                          "---erase phi in " + FB->CGetBehavioralHelper()->PrintVariable(phi_in) + "-" +
                                               STR(step));
                            HLS->Rliv->erase_el_live_in(osl, phi_in, step);
                         }
