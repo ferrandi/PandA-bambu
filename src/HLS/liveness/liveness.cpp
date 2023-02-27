@@ -362,12 +362,16 @@ unsigned liveness::GetStepPhiIn(vertex op, unsigned int var, unsigned BB_src) co
       auto op_BB_index = vertex_BB.at(op);
       if(def_op_BB_index == op_BB_index)
       {
-         THROW_ASSERT(BB2II.count(op_BB_index) && BB2II.at(op_BB_index), "unxpected condition");
+         THROW_ASSERT(BB2II.count(op_BB_index) && BB2II.at(op_BB_index), "unexpected condition");
          THROW_ASSERT(op_step.count(def_op), "unexpected condition");
+         THROW_ASSERT(op_step.count(op), "unexpected condition");
          auto II = BB2II.at(op_BB_index);
          auto step = op_step.at(def_op);
-         auto offset = II - 1 - step % II;
-         return satStep(def_op_BB_index, step + offset);
+         auto ostep = op_step.at(op);
+         THROW_ASSERT((ostep % II == 0 ? II : ostep % II) > (step % II), "unexpected condition");
+         auto offset = (ostep % II == 0 ? II : ostep % II) - (step % II);
+         THROW_ASSERT(offset > 0, "unexpected condition");
+         return satStep(def_op_BB_index, step + offset - 1);
       }
       else
       {
@@ -390,11 +394,15 @@ unsigned liveness::GetStepPhiOut(vertex op, unsigned int var) const
       auto op_BB_index = vertex_BB.at(op);
       if(def_op_BB_index == op_BB_index)
       {
-         THROW_ASSERT(BB2II.count(op_BB_index) && BB2II.at(op_BB_index), "unxpected condition");
+         THROW_ASSERT(BB2II.count(op_BB_index) && BB2II.at(op_BB_index), "unexpected condition");
          THROW_ASSERT(op_step.count(def_op), "unexpected condition");
+         THROW_ASSERT(op_step.count(op), "unexpected condition");
          auto II = BB2II.at(op_BB_index);
          auto step = op_step.at(def_op);
-         auto offset = II - step % II;
+         auto ostep = op_step.at(op);
+         THROW_ASSERT((ostep % II == 0 ? II : ostep % II) > (step % II), "unexpected condition");
+         auto offset = (ostep % II == 0 ? II : ostep % II) - (step % II);
+         THROW_ASSERT(offset > 0, "unexpected condition");
          return satStep(def_op_BB_index, step + offset);
       }
       else
