@@ -34,7 +34,7 @@
       <cmd name="        self.enable_rate = {'clock': 0.5,'FABRIC':0.5,'RAM':0.25,'DSP':0.25}" />
       <cmd name="    def compute_power(temp, freq, luts, regs, brams, dsps):" />
       <cmd name="        pass" />
-      <cmd name="class nx2h540tsc(PowerEstimation):" />
+      <cmd name="class NG_ULTRA(PowerEstimation):" />
       <cmd name="    def __init__(self):" />
       <cmd name="        PowerEstimation.__init__(self)" />
       <cmd name="        self.__ram_dyn_power_a = 0.02" />
@@ -54,7 +54,7 @@
       <cmd name="        pwr_hssl = self.__leakage['HSSL'][temp]" />
       <cmd name="        pwr_soc = self.__leakage['SoC'][temp]" />
       <cmd name="        return pwr_rf + pwr_clk + pwr_logic + pwr_bram + pwr_dsps + pwr_io + pwr_ckg + pwr_hssl + pwr_soc" />
-      <cmd name="class nx1h140tsp(PowerEstimation):" />
+      <cmd name="class NG_LARGE(PowerEstimation):" />
       <cmd name="    def __init__(self):" />
       <cmd name="        PowerEstimation.__init__(self)" />
       <cmd name="        self.__voltage_vdd = 1.2" />
@@ -71,7 +71,7 @@
       <cmd name="        pwr_ckg = 0" />
       <cmd name="        pwr_hssl = 0" />
       <cmd name="        return pwr_core + pwr_clk + pwr_logic + pwr_ram + pwr_dsps + pwr_io + pwr_ckg + pwr_hssl" />
-      <cmd name="class nx1h35S(PowerEstimation):" />
+      <cmd name="class NG_MEDIUM(PowerEstimation):" />
       <cmd name="    def __init__(self):" />
       <cmd name="        PowerEstimation.__init__(self)" />
       <cmd name="        self.__voltage_vdd = 1.2" />
@@ -87,7 +87,7 @@
       <cmd name="        pwr_ckg = 0" />
       <cmd name="        return pwr_core + pwr_clk + pwr_logic + pwr_ram + pwr_dsps + pwr_io + pwr_ckg" />
       <cmd name="def power_estimation(device, temp, freq, luts, regs, brams, dsps):" />
-      <cmd name="    class_ = globals()[device]" />
+      <cmd name="    class_ = globals()[device.replace('-','_')]" />
       <cmd name="    power = class_().compute_power(temp, freq, luts, regs, brams, dsps)" />
       <cmd name="    return str(round(power / 1000.0, 3))" />
       <cmd name="def first_table_after(table_header, lines):" />
@@ -188,7 +188,7 @@
       <cmd name="fr.close()" />
       <cmd name="FunctionalElements, LUTs, TotalRegisters, TotalMemBlocks, TotalIOPins, TotalDSPs = get_res(lines) " />
       <cmd name="freq_mhz = 1000.0/(clock_period_ns - float(design_slack_ns))" />
-      <cmd name="power_W = power_estimation('${__target_device__}', 25, freq_mhz, int(LUTs), int(TotalRegisters), int(TotalMemBlocks), int(TotalDSPs))" />
+      <cmd name="power_W = power_estimation('${__target_family__}', 25, freq_mhz, int(LUTs), int(TotalRegisters), int(TotalMemBlocks), int(TotalDSPs))" />
 
       <cmd name="fw = open('/${__nxpython_report__}', &quot;w&quot;)" />
       <cmd name="fw.write('&lt;?xml version=\\&quot;1.0\\&quot;?&gt;\\n')" />
