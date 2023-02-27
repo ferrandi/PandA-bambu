@@ -657,10 +657,10 @@ DesignFlowStep_Status FSM_NI_SSA_liveness::InternalExec()
       if(state_info->is_pipelined_state)
       {
          InEdgeIterator i_e_it, i_e_end;
-         for(boost::tie(i_e_it, i_e_end) = boost::in_edges(osl, *astg); i_e_it != i_e_end; ++i_e_it)
+         for(boost::tie(i_e_it, i_e_end) = boost::in_edges(osl, *stg); i_e_it != i_e_end; ++i_e_it)
          {
-            auto src_state = boost::source(*i_e_it, *astg);
-            auto src_state_info = astg->CGetStateInfo(src_state);
+            auto src_state = boost::source(*i_e_it, *stg);
+            auto src_state_info = stg->CGetStateInfo(src_state);
             prev_bb_index = get_bb_index_from_state_info(data, src_state_info);
             auto adjust_phi = [&] {
                for(const auto& exec_op : state_info->executing_operations)
@@ -676,7 +676,7 @@ DesignFlowStep_Status FSM_NI_SSA_liveness::InternalExec()
                         {
                            unsigned int step = HLS->Rliv->GetStepPhiOut(exec_op, phi_in);
                            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
-                                          "---erase " + FB->CGetBehavioralHelper()->PrintVariable(phi_in) + "-" +
+                                          "---erase phi in" + FB->CGetBehavioralHelper()->PrintVariable(phi_in) + "-" +
                                               STR(step));
                            HLS->Rliv->erase_el_live_in(osl, phi_in, step);
                         }
@@ -792,81 +792,6 @@ DesignFlowStep_Status FSM_NI_SSA_liveness::InternalExec()
       prev_bb_index = bb_index;
    }
 
-   /// Fixing live in by adding ssa coming into a phi and defined outside the pipelined BB. The phi has to be scheduled
-   /// on a step different than the first one.
-#if 0
-   for(const auto& rosl : reverse_order_state_list)
-   {
-      const StateInfoConstRef state_info = astg->CGetStateInfo(rosl);
-      unsigned int bb_index = get_bb_index_from_state_info(data, state_info);
-
-      if(rosl == exit_state || state_info->is_dummy || !state_info->is_pipelined_state)
-      {
-         continue;
-      }
-      OutEdgeIterator o_e_it, o_e_end;
-      for(boost::tie(o_e_it, o_e_end) = boost::out_edges(rosl, *stg); o_e_it != o_e_end; ++o_e_it)
-      {
-         vertex target_state = boost::target(*o_e_it, *stg);
-         const StateInfoConstRef tgt_state_info = stg->CGetStateInfo(target_state);
-         unsigned int tgt_bb_index = get_bb_index_from_state_info(data, tgt_state_info);
-         if(target_state == exit_state || tgt_state_info->is_dummy || !tgt_state_info->is_pipelined_state ||
-            bb_index != tgt_bb_index)
-         {
-            continue;
-         }
-         for(const auto& eoc : tgt_state_info->ending_operations)
-         {
-            THROW_ASSERT(GET_BB_INDEX(data, eoc) == bb_index, "unexpected condition");
-            if((GET_TYPE(data, eoc) & TYPE_PHI) != 0 && tgt_state_info->step_out.at(eoc) != 0)
-            {
-               const auto phi_node =
-                   HLSMgr->get_tree_manager()->get_tree_node_const(data->CGetOpNodeInfo(eoc)->GetNodeId());
-               const BehavioralHelperConstRef BH = FB->CGetBehavioralHelper();
-               for(const auto& def_edge : GetPointer<const gimple_phi>(phi_node)->CGetDefEdgesList())
-               {
-                  auto phi_in = def_edge.first->index;
-                  if(HLSMgr->is_register_compatible(phi_in) && HLS->Rliv->has_op_where_defined(phi_in) &&
-                     GET_BB_INDEX(data, HLS->Rliv->get_op_where_defined(phi_in)) != bb_index)
-                  {
-                     auto step = HLS->Rliv->GetStepPhiIn(eoc, phi_in, def_edge.second);
-                     INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
-                                    "---" + FB->CGetBehavioralHelper()->PrintVariable(phi_in) + "-aa-" + STR(step));
-                     HLS->Rliv->set_live_in(target_state, phi_in, step);
-                     /// propagate up
-                     std::queue<vertex> to_process;
-                     std::set<vertex> visited;
-                     to_process.push(rosl);
-                     while(!to_process.empty())
-                     {
-                        auto cur = to_process.front();
-                        to_process.pop();
-                        if(!visited.count(cur))
-                        {
-                           INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
-                                          "---" + FB->CGetBehavioralHelper()->PrintVariable(phi_in) + "--" + STR(step));
-                           HLS->Rliv->set_live_in(cur, phi_in, step);
-                           HLS->Rliv->set_live_out(cur, phi_in, step);
-                           InEdgeIterator i_e_it, i_e_end;
-                           for(boost::tie(i_e_it, i_e_end) = boost::in_edges(cur, *astg); i_e_it != i_e_end; ++i_e_it)
-                           {
-                              auto src_state = boost::source(*i_e_it, *astg);
-                              const StateInfoConstRef src_state_info = astg->CGetStateInfo(src_state);
-                              unsigned int src_bb_index = get_bb_index_from_state_info(data, src_state_info);
-                              if(bb_index == src_bb_index)
-                              {
-                                 to_process.push(src_state);
-                              }
-                           }
-                        }
-                     }
-                  }
-               }
-            }
-         }
-      }
-   }
-#endif
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Computed live in");
 
    /// fix the live in/out of dummy states
