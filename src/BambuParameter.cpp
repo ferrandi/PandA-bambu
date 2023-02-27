@@ -754,7 +754,7 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "        Enable Xilinx power based optimization (default no).\n\n"
       << "    --no-iob\n"
       << "        Disconnect primary ports from the IOB (the default is to connect\n"
-      << "        primary input and outpur ports to IOBs).\n\n"
+      << "        primary input and output ports to IOBs).\n\n"
       << "    --soft-float (default)\n"
       << "        Enable the soft-based implementation of floating-point operations.\n"
       << "        Bambu uses as default a faithfully rounded version of softfloat with rounding mode\n"
