@@ -379,7 +379,7 @@ VHDL_PROVIDED=
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
           <copyright>Copyright (C) 2016-2023 Politecnico di Milano</copyright>
           <authors>Marco Lattuada &lt;marco.lattuada@polimi.it&gt;</authors>
-          <license>PANDA_GPLv3</license>
+          <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="ui_concat_3_3_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="UINT" size="1"/>
@@ -1543,7 +1543,7 @@ assign out1 = {tmp_in2, tmp_in1};" VHDL_PROVIDED="begin
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
           <copyright>Copyright (C) 2016-2023 Politecnico di Milano</copyright>
           <authors>Marco Lattuada &lt;marco.lattuada@polimi.it&gt;</authors>
-          <license>PANDA_GPLv3</license>
+          <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="concat_24_3_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="INT" size="1"/>
@@ -1582,7 +1582,7 @@ assign out1 = {tmp_in3, tmp_in2, tmp_in1};
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
           <copyright>Copyright (C) 2016-2023 Politecnico di Milano</copyright>
           <authors>Marco Lattuada &lt;marco.lattuada@polimi.it&gt;</authors>
-          <license>PANDA_GPLv3</license>
+          <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="ui_concat_24_3_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="UINT" size="1"/>
@@ -1831,7 +1831,7 @@ assign out1 = {tmp_in8, tmp_in7, tmp_in6, tmp_in5, tmp_in4, tmp_in3, tmp_in2, tm
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>  
           <authors>Marco Lattuada &lt;marco.lattuada@polimi.it&gt;</authors> 
-          <license>PANDA_GPLv3</license>
+          <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="concat_64_8_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="INT" size="1"/>
@@ -1894,7 +1894,7 @@ assign out1 = {tmp_in8, tmp_in7, tmp_in6, tmp_in5, tmp_in4, tmp_in3, tmp_in2, tm
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>  
           <authors>Marco Lattuada &lt;marco.lattuada@polimi.it&gt;</authors> 
-          <license>PANDA_GPLv3</license>
+          <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="ui_concat_64_8_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="UINT" size="1"/>

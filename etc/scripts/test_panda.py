@@ -607,7 +607,7 @@ parser.add_argument(
 parser.add_argument("--csv", help="Print the results in csv format")
 parser.add_argument("--tool", help="The tool to be tested", default="bambu")
 parser.add_argument("--ulimit", help="The ulimit options",
-                    default="-f 8388608 -s 32768 -v 16777216")
+                    default="-f 8388608 -s 32768 -v 33554432")
 parser.add_argument("--stop", help="Stop the execution on first error (default=false)",
                     default=False, action="store_true")
 parser.add_argument("--returnfail", help="Return FAILURE in case at least one test fails (default=false)",

@@ -1326,7 +1326,7 @@ int BambuParameter::Exec()
       {"xilinx-root", optional_argument, nullptr, OPT_XILINX_ROOT},
       {"verilator-parallel", optional_argument, nullptr, OPT_VERILATOR_PARALLEL},
       {"shared-input-registers", no_argument, nullptr, OPT_SHARED_INPUT_REGISTERS},
-      {"inline-fname", no_argument, nullptr, OPT_INLINE_FUNCTIONS},
+      {"inline-fname", required_argument, nullptr, OPT_INLINE_FUNCTIONS},
       GCC_LONG_OPTIONS,
       {nullptr, 0, nullptr, 0}
    };
