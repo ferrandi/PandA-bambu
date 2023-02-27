@@ -192,9 +192,15 @@ bool TestbenchValuesCGeneration::HasToBeExecuted() const
 DesignFlowStep_Status TestbenchValuesCGeneration::Exec()
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "-->Executing C testbench");
-   const CompilerWrapperConstRef compiler_wrapper(
-       new CompilerWrapper(parameters, parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler),
-                           CompilerWrapper_OptimizationSet::O2));
+   const auto default_compiler = parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler);
+   // NOTE: clang 13 seems to not respect the -fno-strict-aliasing flag generating incorrect code when type punning is
+   // present
+   const auto opt_lvl =
+#if HAVE_I386_CLANG13_COMPILER
+       default_compiler == CompilerWrapper_CompilerTarget::CT_I386_CLANG13 ? CompilerWrapper_OptimizationSet::O0 :
+#endif
+                                                                             CompilerWrapper_OptimizationSet::O2;
+   const CompilerWrapperConstRef compiler_wrapper(new CompilerWrapper(parameters, default_compiler, opt_lvl));
    std::string compiler_flags =
        "-fwrapv -ffloat-store -flax-vector-conversions -msse2 -mfpmath=sse -fno-strict-aliasing "
        "-D'__builtin_bambu_time_start()=' -D'__builtin_bambu_time_stop()=' -D__BAMBU_SIM__ ";
@@ -205,8 +211,7 @@ DesignFlowStep_Status TestbenchValuesCGeneration::Exec()
       compiler_flags += "-fexcess-precision=standard ";
    }
 
-   const auto is_clang =
-       CompilerWrapper::isClangCheck(parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler));
+   const auto is_clang = CompilerWrapper::isClangCheck(default_compiler);
    if(parameters->isOption(OPT_testbench_extra_gcc_flags))
    {
       compiler_flags += parameters->getOption<std::string>(OPT_testbench_extra_gcc_flags) + " ";
@@ -216,24 +221,19 @@ DesignFlowStep_Status TestbenchValuesCGeneration::Exec()
    {
       if(is_clang
 #if HAVE_I386_GCC48_COMPILER
-         || parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
-                CompilerWrapper_CompilerTarget::CT_I386_GCC48
+         || default_compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC48
 #endif
 #if HAVE_I386_GCC49_COMPILER
-         || parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
-                CompilerWrapper_CompilerTarget::CT_I386_GCC49
+         || default_compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC49
 #endif
 #if HAVE_I386_GCC5_COMPILER
-         || parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
-                CompilerWrapper_CompilerTarget::CT_I386_GCC5
+         || default_compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC5
 #endif
 #if HAVE_I386_GCC6_COMPILER
-         || parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
-                CompilerWrapper_CompilerTarget::CT_I386_GCC6
+         || default_compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC6
 #endif
 #if HAVE_I386_GCC7_COMPILER
-         || parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
-                CompilerWrapper_CompilerTarget::CT_I386_GCC7
+         || default_compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC7
 #endif
       )
       {
@@ -241,28 +241,22 @@ DesignFlowStep_Status TestbenchValuesCGeneration::Exec()
       }
       if(false
 #if HAVE_I386_GCC48_COMPILER
-         || parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
-                CompilerWrapper_CompilerTarget::CT_I386_GCC48
+         || default_compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC48
 #endif
 #if HAVE_I386_GCC49_COMPILER
-         || parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
-                CompilerWrapper_CompilerTarget::CT_I386_GCC49
+         || default_compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC49
 #endif
 #if HAVE_I386_GCC5_COMPILER
-         || parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
-                CompilerWrapper_CompilerTarget::CT_I386_GCC5
+         || default_compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC5
 #endif
 #if HAVE_I386_GCC6_COMPILER
-         || parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
-                CompilerWrapper_CompilerTarget::CT_I386_GCC6
+         || default_compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC6
 #endif
 #if HAVE_I386_GCC7_COMPILER
-         || parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
-                CompilerWrapper_CompilerTarget::CT_I386_GCC7
+         || default_compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC7
 #endif
 #if HAVE_I386_GCC8_COMPILER
-         || parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
-                CompilerWrapper_CompilerTarget::CT_I386_GCC8
+         || default_compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC8
 #endif
       )
       {
@@ -270,16 +264,13 @@ DesignFlowStep_Status TestbenchValuesCGeneration::Exec()
       }
       if(is_clang
 #if HAVE_I386_GCC5_COMPILER
-         || parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
-                CompilerWrapper_CompilerTarget::CT_I386_GCC5
+         || default_compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC5
 #endif
 #if HAVE_I386_GCC6_COMPILER
-         || parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
-                CompilerWrapper_CompilerTarget::CT_I386_GCC6
+         || default_compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC6
 #endif
 #if HAVE_I386_GCC7_COMPILER
-         || parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
-                CompilerWrapper_CompilerTarget::CT_I386_GCC7
+         || default_compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC7
 #endif
       )
       {
@@ -287,20 +278,16 @@ DesignFlowStep_Status TestbenchValuesCGeneration::Exec()
       }
       if(false
 #if HAVE_I386_GCC5_COMPILER
-         || parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
-                CompilerWrapper_CompilerTarget::CT_I386_GCC5
+         || default_compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC5
 #endif
 #if HAVE_I386_GCC6_COMPILER
-         || parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
-                CompilerWrapper_CompilerTarget::CT_I386_GCC6
+         || default_compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC6
 #endif
 #if HAVE_I386_GCC7_COMPILER
-         || parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
-                CompilerWrapper_CompilerTarget::CT_I386_GCC7
+         || default_compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC7
 #endif
 #if HAVE_I386_GCC8_COMPILER
-         || parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
-                CompilerWrapper_CompilerTarget::CT_I386_GCC8
+         || default_compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC8
 #endif
       )
       {
@@ -394,20 +381,16 @@ DesignFlowStep_Status TestbenchValuesCGeneration::Exec()
    {
       if(false
 #if HAVE_I386_GCC49_COMPILER
-         || parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
-                CompilerWrapper_CompilerTarget::CT_I386_GCC49
+         || default_compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC49
 #endif
 #if HAVE_I386_GCC5_COMPILER
-         || parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
-                CompilerWrapper_CompilerTarget::CT_I386_GCC5
+         || default_compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC5
 #endif
 #if HAVE_I386_GCC6_COMPILER
-         || parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
-                CompilerWrapper_CompilerTarget::CT_I386_GCC6
+         || default_compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC6
 #endif
 #if HAVE_I386_GCC7_COMPILER
-         || parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
-                CompilerWrapper_CompilerTarget::CT_I386_GCC7
+         || default_compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC7
 #endif
       )
       {
