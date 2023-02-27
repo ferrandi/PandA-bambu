@@ -167,7 +167,8 @@ void VerilatorWrapper::GenerateScript(std::ostringstream& script, const std::str
    script << std::endl << std::endl;
    script << "ln -s " + output_directory + " " + SIM_SUBDIR + suffix + "/verilator_obj\n";
 
-   script << "make -C " + SIM_SUBDIR + suffix + "/verilator_obj -j";
+   script << "make -C " + SIM_SUBDIR + suffix + "/verilator_obj";
+   script << " -j " << std::thread::hardware_concurrency();
    script << " OPT=\"-fstrict-aliasing\"";
    script << " -f V" + top_filename + "_tb.mk V" + top_filename << "_tb";
 #ifdef _WIN32
