@@ -4185,6 +4185,12 @@ void BambuParameter::CheckParameters()
    {
       setOption(OPT_bitvalue_ipa, false);
    }
+
+   if(boost::starts_with(getOption<std::string>(OPT_device_string), "nx"))
+   {
+      THROW_WARNING("Asynchronous memories are disabled by default when targeting NanoXplore devices");
+      setOption(OPT_use_asynchronous_memories, false);
+   }
 }
 
 void BambuParameter::SetDefaults()
