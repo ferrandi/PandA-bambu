@@ -692,6 +692,7 @@ void XilinxBackendFlow::CheckSynthesisResults()
       area_clb_model->set_resource_value(clb_model::REGISTERS, design_values[VIVADO_XILINX_SLICE_REGISTERS]);
       area_clb_model->set_resource_value(clb_model::DSP, design_values[VIVADO_XILINX_DSPS]);
       area_clb_model->set_resource_value(clb_model::BRAM, design_values[VIVADO_XILINX_BLOCK_RAMFIFO]);
+      area_clb_model->set_resource_value(clb_model::POWER, design_values[VIVADO_XILINX_POWER]);
 
       time_m = time_model::create_model(TargetDevice_Type::FPGA, Param);
       auto* lut_m = GetPointer<LUT_model>(time_m);
