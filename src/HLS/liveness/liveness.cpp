@@ -371,7 +371,7 @@ unsigned liveness::GetStepPhiIn(vertex op, unsigned int var, unsigned BB_src) co
          THROW_ASSERT((ostep % II == 0 ? II : ostep % II) > (step % II), "unexpected condition");
          auto offset = (ostep % II == 0 ? II : ostep % II) - (step % II);
          THROW_ASSERT(offset > 0, "unexpected condition");
-         return satStep(def_op_BB_index, step + offset - 1);
+         return step + offset - 1;
       }
       else
       {
@@ -403,7 +403,7 @@ unsigned liveness::GetStepPhiOut(vertex op, unsigned int var) const
          THROW_ASSERT((ostep % II == 0 ? II : ostep % II) > (step % II), "unexpected condition");
          auto offset = (ostep % II == 0 ? II : ostep % II) - (step % II);
          THROW_ASSERT(offset > 0, "unexpected condition");
-         return satStep(def_op_BB_index, step + offset);
+         return step + offset;
       }
       else
       {
