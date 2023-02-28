@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2016-2023 Politecnico di Milano
+ *              Copyright (C) 2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -31,55 +31,34 @@
  *
  */
 /**
- * @file mem_dominator_allocation_CS.hpp
- * @brief add tag information
+ * @file dominator_allocation.hpp
+ * @brief Composed pass to wrap function and memory dominator allocation
  *
- * @author Nicola Saporetti <nicola.saporetti@gmail.com>
+ * @author Michele Fiorito <michele.fiorito@polimi.it>
+ * $Revision$
+ * $Date$
+ * Last modified by $Author$
+ *
  */
 
-#ifndef MEMORY_CS_H
-#define MEMORY_CS_H
+#ifndef DOMINATOR_ALLOCATION_HPP
+#define DOMINATOR_ALLOCATION_HPP
 
-#include "memory.hpp"
+#include "hls_step.hpp"
 
-class memory_cs : public memory
+class dominator_allocation : public HLS_step
 {
-   /// bus data bitsize
-   unsigned int bus_tag_bitsize;
+ protected:
+   const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
+   ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
  public:
-   /**
-    * Constructor
-    */
-   memory_cs(const tree_managerConstRef _TreeM, unsigned long long int _off_base_address, unsigned int max_bram,
-             bool _null_pointer_check, bool initial_internal_address_p, unsigned int initial_internal_address,
-             const unsigned int _address_bitsize)
-       : memory(_TreeM, _off_base_address, max_bram, _null_pointer_check, initial_internal_address_p,
-                initial_internal_address, _address_bitsize),
-         bus_tag_bitsize(0)
-   {
-   }
+   dominator_allocation(const ParameterConstRef _parameters, const HLS_managerRef HLSMgr,
+                        const DesignFlowManagerConstRef design_flow_manager);
 
-   /**
-    * Destructor
-    */
-   ~memory_cs() override = default;
+   bool HasToBeExecuted() const override;
 
-   /**
-    * set the bus tag bitsize
-    */
-   void set_bus_tag_bitsize(unsigned int bitsize)
-   {
-      bus_tag_bitsize = bitsize;
-   }
-
-   /**
-    * return the bitsize of the tag bus
-    */
-   unsigned int get_bus_tag_bitsize() const
-   {
-      return bus_tag_bitsize;
-   }
+   DesignFlowStep_Status Exec() override;
 };
 
-#endif // MEMORY_CS_H
+#endif

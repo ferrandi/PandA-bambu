@@ -175,7 +175,7 @@ standard_hls::ComputeHLSRelationships(const DesignFlowStep::RelationshipType rel
 DesignFlowStep_Status standard_hls::InternalExec()
 {
    const auto top_function_ids = HLSMgr->CGetCallGraphManager()->GetRootFunctions();
-   if(top_function_ids.find(funId) != top_function_ids.end())
+   if(top_function_ids.count(funId))
    {
       STOP_TIME(HLSMgr->HLS_execution_time);
    }

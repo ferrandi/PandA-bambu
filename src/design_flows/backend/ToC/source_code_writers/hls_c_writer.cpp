@@ -898,8 +898,7 @@ void HLSCWriter::WriteSimulatorInitMemory(const unsigned int function_id)
    }
    indented_output_stream->Append("fprintf(__bambu_testbench_fp, \"b" + trimmed_value + "\\n\");\n");
 
-   const std::map<unsigned int, memory_symbolRef>& mem_vars =
-       hls_c_backend_information->HLSMgr->Rmem->get_ext_memory_variables();
+   const auto& mem_vars = hls_c_backend_information->HLSMgr->Rmem->get_ext_memory_variables();
    // get the mapping between variables in external memory and their external
    // base address
    std::map<unsigned long long int, unsigned int> address;
@@ -918,7 +917,7 @@ void HLSCWriter::WriteSimulatorInitMemory(const unsigned int function_id)
    const auto& DesignAttributes_it = hls_c_backend_information->HLSMgr->design_attributes.find(fname);
 
    std::vector<unsigned int> mem_interface;
-   const auto& parameters = BH->get_parameters();
+   const auto parameters = BH->get_parameters();
    for(const auto& p : parameters)
    {
       // if the function has some pointer parameters some memory needs to be

@@ -116,7 +116,7 @@ bool chordal_coloring_register::lex_compare_gt(const std::vector<unsigned int>& 
    }
 }
 
-DesignFlowStep_Status chordal_coloring_register::InternalExec()
+DesignFlowStep_Status chordal_coloring_register::RegisterBinding()
 {
    long step_time = 0;
    if(output_level >= OUTPUT_LEVEL_MINIMUM and output_level <= OUTPUT_LEVEL_PEDANTIC)

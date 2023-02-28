@@ -235,9 +235,17 @@ class technology_manager
     * Return the reference to a component given its name.
     * @param fu_name is the name of the component.
     * @param Library is library name where the unit is stored
-    * @return the reference to a component
+    * @return the reference to a component if found, else nullptr
     */
    technology_nodeRef get_fu(const std::string& fu_name, const std::string& Library) const;
+
+   /**
+    * Return the reference to a component given its name.
+    * @param fu_name is the name of the component.
+    * @param Library is library name where the unit is stored if found
+    * @return the reference to a component if found, else nullptr
+    */
+   technology_nodeRef get_fu(const std::string& fu_name, std::string* Library = nullptr) const;
 
    /**
     * Return the higher priority library where the given component is stored

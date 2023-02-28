@@ -5,6 +5,10 @@
 --configuration-name=file_simulate file_simulate/module.c --top-fname=check_printf --benchmark-name=MEM_ACC_11 --experimental-setup=BAMBU --generate-tb=BENCHMARKS_ROOT/file_simulate/test.xml --file-input-data=BENCHMARKS_ROOT/file_simulate/test.xml --channels-type=MEM_ACC_11
 --configuration-name=file_simulate file_simulate/module.c --top-fname=check_printf --benchmark-name=MEM_ACC_NN --experimental-setup=BAMBU --generate-tb=BENCHMARKS_ROOT/file_simulate/test.xml --file-input-data=BENCHMARKS_ROOT/file_simulate/test.xml --channels-type=MEM_ACC_NN
 
+--configuration-name=parallel_queries parallel_queries/common/atominIncrement.c parallel_queries/common/data.c parallel_queries/trinityq3/lubm_trinityq3.c --top-fname=search --compiler=I386_GCC49 --std=c99 --experimental-setup=BAMBU -O3 -fno-delete-null-pointer-checks -fopenmp --pragma-parse --mem-delay-read=20 --mem-delay-write=20 --channels-type=MEM_ACC_11 --memory-allocation-policy=NO_BRAM --device-name=xc7vx690t-3ffg1930-VVD --clock-period=10 -DMAX_VERTEX_NUMBER=26455 -DMAX_EDGE_NUMBER=100573 -DNDEBUG --benchmark-name=02W-04CH-2C-04CS -DN_THREADS=2 --num-accelerators=2 --memory-banks-number=4 --channels-number=2 --context_switch=4 -IBENCHMARKS_ROOT/parallel_queries/common/ --generate-tb=BENCHMARKS_ROOT/parallel_queries/trinityq3/test-1.xml
+
 --configuration-name=sha256 sha-256/sha-256.c --top-fname=calc_sha_256 --generate-tb=BENCHMARKS_ROOT/sha-256/test.xml --speculative-sdc-scheduling
 
 --configuration-name=simple_asm simple_asm/asm.c --top-fname=main --generate-tb=BENCHMARKS_ROOT/simple_asm/test.xml --C-no-parse=BENCHMARKS_ROOT/simple_asm/c_stub.c
+
+--configuration-name=aes MachSuite/aes/aes/aes.c MachSuite/common/harness.c --benchmark-name=aes --file-input-data=BENCHMARKS_ROOT/MachSuite/aes/aes/input.data,BENCHMARKS_ROOT/MachSuite/aes/aes/check.data --experimental-setup=BAMBU-PERFORMANCE-MP --top-fname=main --top-rtldesign-name=run_benchmark -mx32 -fno-tree-vectorize -DBAMBU_PROFILING

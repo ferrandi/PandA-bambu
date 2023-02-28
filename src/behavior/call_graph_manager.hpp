@@ -227,9 +227,10 @@ class CallGraphManager
    /**
     * compute the list of reached function starting from a given function
     * @param from_f is the starting function
+    * @param with_body consider only functions with body IR
     * @return the set of top function
     */
-   CustomOrderedSet<unsigned int> GetReachedBodyFunctionsFrom(unsigned int from_f) const;
+   CustomOrderedSet<unsigned int> GetReachedFunctionsFrom(unsigned int from_f, bool with_body = true) const;
 
    /**
     * Returns the library functions called by the root functions

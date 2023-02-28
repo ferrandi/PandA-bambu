@@ -657,8 +657,8 @@ void top_entity::add_ports(structural_objectRef circuit, structural_objectRef cl
 
 void top_entity::add_command_signals(structural_objectRef circuit)
 {
-   structural_objectRef Datapath = HLS->datapath->get_circ();
-   structural_objectRef Controller = HLS->controller->get_circ();
+   const auto Datapath = HLS->datapath->get_circ();
+   const auto Controller = HLS->controller->get_circ();
 
    for(const auto& selector : HLS->Rconn->GetSelectors())
    {

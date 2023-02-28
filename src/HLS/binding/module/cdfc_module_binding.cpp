@@ -1965,26 +1965,30 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
             total_area_muxes_prev = total_area_muxes;
             total_area_muxes = total_area_muxes_initial;
 
-            DesignFlowStepRef regb;
-            // if(iteration%2)
-            if(parameters->getOption<HLSFlowStep_Type>(OPT_register_allocation_algorithm) ==
-               HLSFlowStep_Type::WEIGHTED_CLIQUE_REGISTER_BINDING)
             {
-               regb = GetPointer<const HLSFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("HLS"))
+               DesignFlowStepRef regb;
+               // if(iteration%2)
+               if(parameters->getOption<HLSFlowStep_Type>(OPT_register_allocation_algorithm) ==
+                  HLSFlowStep_Type::WEIGHTED_CLIQUE_REGISTER_BINDING)
+               {
+                  regb =
+                      GetPointer<const HLSFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("HLS"))
                           ->CreateHLSFlowStep(
                               HLSFlowStep_Type::WEIGHTED_CLIQUE_REGISTER_BINDING, funId,
                               HLSFlowStepSpecializationConstRef(new WeightedCliqueRegisterBindingSpecialization(
                                   parameters->getOption<CliqueCovering_Algorithm>(
                                       OPT_weighted_clique_register_algorithm))));
-            }
-            else
-            {
-               regb = GetPointer<const HLSFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("HLS"))
+               }
+               else
+               {
+                  regb =
+                      GetPointer<const HLSFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("HLS"))
                           ->CreateHLSFlowStep(
                               parameters->getOption<HLSFlowStep_Type>(OPT_register_allocation_algorithm), funId);
+               }
+               regb->Initialize();
+               regb->Exec();
             }
-            regb->Initialize();
-            regb->Exec();
          }
 
          if(output_level >= OUTPUT_LEVEL_VERBOSE)

@@ -5146,8 +5146,8 @@ bool tree_helper::IsAligned(const tree_nodeConstRef& _type)
 
 unsigned int tree_helper::get_var_alignment(const tree_managerConstRef& TM, unsigned int var)
 {
-   const tree_nodeRef varnode = TM->get_tree_node_const(var);
-   const auto vd = GetPointer<var_decl>(varnode);
+   const auto varnode = TM->CGetTreeNode(var);
+   const auto vd = GetPointer<const var_decl>(varnode);
    if(vd)
    {
       return vd->algn < 8 ? 1 : (vd->algn / 8);

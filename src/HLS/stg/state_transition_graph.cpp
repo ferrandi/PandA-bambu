@@ -365,6 +365,7 @@ StateTransitionGraphInfo::StateTransitionGraphInfo(const OpGraphConstRef _op_fun
       entry_node(NULL_VERTEX),
       exit_node(NULL_VERTEX),
       is_a_dag(true),
+      bounded(false),
       min_cycles(0),
       max_cycles(0)
 {

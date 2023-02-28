@@ -147,6 +147,7 @@
 
 /// HLS/hls_flow includes
 #include "classical_synthesis_flow.hpp"
+#include "dominator_allocation.hpp"
 #if HAVE_EXPERIMENTAL && HAVE_BEAGLE
 #include "dse_hls.hpp"
 #endif
@@ -406,6 +407,12 @@ HLSFlowStepFactory::CreateHLSFlowStep(const HLSFlowStep_Type type, const unsigne
       case HLSFlowStep_Type::C_TESTBENCH_EXECUTION:
       {
          design_flow_step = DesignFlowStepRef(new CTestbenchExecution(parameters, HLS_mgr, design_flow_manager.lock()));
+         break;
+      }
+      case HLSFlowStep_Type::DOMINATOR_ALLOCATION:
+      {
+         design_flow_step =
+             DesignFlowStepRef(new dominator_allocation(parameters, HLS_mgr, design_flow_manager.lock()));
          break;
       }
       case HLSFlowStep_Type::DOMINATOR_FUNCTION_ALLOCATION:
@@ -969,6 +976,7 @@ const DesignFlowStepSet HLSFlowStepFactory::CreateHLSFlowSteps(
          }
          case HLSFlowStep_Type::CALL_GRAPH_UNFOLDING:
          case HLSFlowStep_Type::CLASSICAL_HLS_SYNTHESIS_FLOW:
+         case HLSFlowStep_Type::DOMINATOR_ALLOCATION:
          case HLSFlowStep_Type::DOMINATOR_MEMORY_ALLOCATION:
          case HLSFlowStep_Type::DOMINATOR_MEMORY_ALLOCATION_CS:
          case HLSFlowStep_Type::DOMINATOR_FUNCTION_ALLOCATION:

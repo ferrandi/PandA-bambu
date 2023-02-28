@@ -148,6 +148,9 @@ class SDCScheduling : public SDCScheduling_base
    const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
    ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
+   void ComputeRelationships(DesignFlowStepSet& relationship,
+                             const DesignFlowStep::RelationshipType relationship_type) override;
+
  public:
    /**
     * Constructor
@@ -165,14 +168,6 @@ class SDCScheduling : public SDCScheduling_base
     * Destructor
     */
    ~SDCScheduling() override;
-
-   /**
-    * Compute the relationships of a step with other steps
-    * @param dependencies is where relationships will be stored
-    * @param relationship_type is the type of relationship to be computed
-    */
-   void ComputeRelationships(DesignFlowStepSet& relationship,
-                             const DesignFlowStep::RelationshipType relationship_type) override;
 
    /**
     * Check if this step has actually to be executed

@@ -117,37 +117,29 @@ reg_bindingRef reg_binding::create_reg_binding(const hlsRef& HLS, const HLS_mana
       {
          return reg_bindingRef(new reg_binding_cs(HLS, HLSMgr_));
       }
-      else
-      {
-         return reg_bindingRef(new reg_binding(HLS, HLSMgr_));
       }
-   }
-   else
-   {
       return reg_bindingRef(new reg_binding(HLS, HLSMgr_));
    }
-}
 
 void reg_binding::print_el(const_iterator& it) const
 {
    INDENT_OUT_MEX(OUTPUT_LEVEL_VERY_PEDANTIC, HLS->output_level,
-                  "---Storage Value: " + STR(it->first) + " for variable " +
+       "---Storage Value: " + STR(it->first) + " for variable " +
                       FB->CGetBehavioralHelper()->PrintVariable(
                           HLS->storage_value_information->get_variable_index(it->first).first) +
                       " step " + STR(HLS->storage_value_information->get_variable_index(it->first).second) +
-                      " stored into register " + it->second->get_string());
+           " stored into register " + it->second->get_string());
 }
 
 CustomOrderedSet<std::pair<unsigned int, unsigned int>> reg_binding::get_vars(const unsigned int& r) const
 {
    CustomOrderedSet<std::pair<unsigned int, unsigned int>> vars;
-   THROW_ASSERT(reg2storage_values.find(r) != reg2storage_values.end() && !reg2storage_values.find(r)->second.empty(),
+   THROW_ASSERT(reg2storage_values.count(r) && reg2storage_values.at(r).size(),
                 "at least a storage value has to be mapped on register r");
 
-   auto rs_it_end = reg2storage_values.find(r)->second.end();
-   for(auto rs_it = reg2storage_values.find(r)->second.begin(); rs_it != rs_it_end; ++rs_it)
+   for(const auto rs : reg2storage_values.at(r))
    {
-      vars.insert(HLS->storage_value_information->get_variable_index(*rs_it));
+      vars.insert(HLS->storage_value_information->get_variable_index(rs));
    }
    return vars;
 }
@@ -158,13 +150,12 @@ unsigned long long reg_binding::compute_bitsize(unsigned int r)
    auto max_bits = 0ull;
    for(auto reg_var : reg_vars)
    {
-      structural_type_descriptorRef node_type0 =
-          structural_type_descriptorRef(new structural_type_descriptor(reg_var.first, FB->CGetBehavioralHelper()));
-      auto node_size = STD_GET_SIZE(node_type0);
+      structural_type_descriptor node_type0(reg_var.first, FB->CGetBehavioralHelper());
+      auto node_size = STD_GET_SIZE(&node_type0);
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, HLS->debug_level,
                     "- Analyzing node " + STR(reg_var.first) + "(" + STR(reg_var.second) + "), whose type is " +
-                        node_type0->get_name() + " (size: " + STR(node_type0->size) +
-                        ", vector_size: " + STR(node_type0->vector_size) + ")");
+                        node_type0.get_name() + " (size: " + STR(node_type0.size) +
+                        ", vector_size: " + STR(node_type0.vector_size) + ")");
       max_bits = std::max(max_bits, node_size);
    }
    bitsize_map[r] = max_bits;
@@ -173,43 +164,33 @@ unsigned long long reg_binding::compute_bitsize(unsigned int r)
 
 unsigned long long reg_binding::get_bitsize(unsigned int r) const
 {
-   THROW_ASSERT(bitsize_map.find(r) != bitsize_map.end(), "register bitsize not computed");
-   return bitsize_map.find(r)->second;
+   THROW_ASSERT(bitsize_map.count(r), "register bitsize not computed");
+   return bitsize_map.at(r);
 }
 
 void reg_binding::specialise_reg(structural_objectRef& reg, unsigned int r)
 {
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, HLS->debug_level, "Specializing " + reg->get_path() + ":");
-   const structural_type_descriptorRef& in_type = GetPointer<module>(reg)->get_in_port(0)->get_typeRef();
-   const structural_type_descriptorRef& out_type = GetPointer<module>(reg)->get_out_port(0)->get_typeRef();
-   auto max_bits = STD_GET_SIZE(in_type);
-   max_bits = max_bits < STD_GET_SIZE(out_type) ? STD_GET_SIZE(out_type) : max_bits;
-   auto bits = compute_bitsize(r);
-   max_bits = max_bits < bits ? bits : max_bits;
-   unsigned int offset = 0;
-   if(GetPointer<module>(reg)->get_in_port(0)->get_id() == CLOCK_PORT_NAME)
-   {
-      if(GetPointer<module>(reg)->get_in_port(1)->get_id() == RESET_PORT_NAME)
-      {
-         offset = 2;
-      }
-      else
-      {
-         offset = 1;
-      }
-   }
+   const auto reg_m = GetPointerS<module>(reg);
+   const auto& in_type = reg_m->get_in_port(0)->get_typeRef();
+   const auto& out_type = reg_m->get_out_port(0)->get_typeRef();
+   const auto bits = compute_bitsize(r);
+   const auto max_bits = std::max({bits, STD_GET_SIZE(in_type), STD_GET_SIZE(out_type)});
+   const auto offset = static_cast<unsigned int>(reg_m->get_in_port(0U)->get_id() == CLOCK_PORT_NAME) +
+                       static_cast<unsigned int>(reg_m->get_in_port(1U)->get_id() == RESET_PORT_NAME);
+
    if(STD_GET_SIZE(in_type) < max_bits)
    {
-      GetPointer<module>(reg)->get_in_port(offset)->type_resize(max_bits); // in1
+      reg_m->get_in_port(offset)->type_resize(max_bits); // in1
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, HLS->debug_level,
-                    "- " + GetPointer<module>(reg)->get_in_port(0)->get_path() + " -> " + in_type->get_name() +
+                    "- " + reg_m->get_in_port(offset)->get_path() + " -> " + in_type->get_name() +
                         " (size: " + STR(in_type->size) + ", vector_size: " + STR(in_type->vector_size) + ")");
    }
    if(STD_GET_SIZE(out_type) < max_bits)
    {
-      GetPointer<module>(reg)->get_out_port(0)->type_resize(max_bits); // out1
+      reg_m->get_out_port(0)->type_resize(max_bits); // out1
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, HLS->debug_level,
-                    "- " + GetPointer<module>(reg)->get_out_port(0)->get_path() + " -> " + out_type->get_name() +
+                    "- " + reg_m->get_out_port(0)->get_path() + " -> " + out_type->get_name() +
                         " (size: " + STR(out_type->size) + ", vector_size: " + STR(out_type->vector_size) + ")");
    }
 }
@@ -218,61 +199,55 @@ void reg_binding::compute_is_without_enable()
 {
    std::map<std::pair<unsigned int, unsigned int>, unsigned int> n_in;
    std::map<std::pair<unsigned int, unsigned int>, unsigned int> n_out;
-   const std::list<vertex>& support_set = HLS->Rliv->get_support();
-   const auto ss_it_end = support_set.end();
-   for(auto ss_it = support_set.begin(); ss_it != ss_it_end; ++ss_it)
+   for(const auto v : HLS->Rliv->get_support())
    {
-      vertex v = *ss_it;
-      unsigned int dummy_offset = HLS->Rliv->is_a_dummy_state(v) ? 1 : 0;
-      const auto& LI = HLS->Rliv->get_live_in(v);
-      for(const auto& li_it : LI)
+      const auto dummy_offset = HLS->Rliv->is_a_dummy_state(v) ? 1U : 0U;
+      const auto& live_in = HLS->Rliv->get_live_in(v);
+      for(const auto li : live_in)
       {
-         if(n_in.find(li_it) == n_in.end())
+         if(n_in.find(li) == n_in.end())
          {
-            n_in[li_it] = 1 + dummy_offset;
+            n_in[li] = 1U + dummy_offset;
          }
          else
          {
-            n_in[li_it] = n_in[li_it] + 1 + dummy_offset;
+            n_in[li] = n_in[li] + 1U + dummy_offset;
          }
       }
-      const auto& LO = HLS->Rliv->get_live_out(v);
-      for(const auto& lo_it : LO)
+      const auto& live_out = HLS->Rliv->get_live_out(v);
+      for(const auto lo : live_out)
       {
-         if(n_out.find(lo_it) == n_out.end())
+         if(!n_out.count(lo))
          {
-            n_out[lo_it] = 1 + dummy_offset;
-            if(LI.find(lo_it) != LI.end())
+            n_out[lo] = 1 + dummy_offset;
+            if(live_in.count(lo))
             {
-               n_out[lo_it] = 2 + dummy_offset;
+               n_out[lo] = 2 + dummy_offset;
             }
          }
          else
          {
-            n_out[lo_it] = n_out[lo_it] + 1 + dummy_offset;
+            n_out[lo] = n_out[lo] + 1 + dummy_offset;
          }
       }
    }
 
-   for(unsigned int i = 0; i < get_used_regs(); i++)
+   for(auto i = 0U; i < get_used_regs(); i++)
    {
-      const auto& store_vars_set = get_vars(i);
-      const auto svs_it_end = store_vars_set.end();
-      bool all_woe = true;
-      for(auto svs_it = store_vars_set.begin(); svs_it != svs_it_end && all_woe; ++svs_it)
+      const auto all_woe = [&]() {
+         const auto store_vars_set = get_vars(i);
+         for(const auto sv : store_vars_set)
       {
-         if(n_in.find(*svs_it) == n_in.end() || n_out.find(*svs_it) == n_out.end())
+            if(n_in.find(sv) == n_in.end() || n_in.find(sv)->second != 1 || n_out.find(sv) == n_out.end() ||
+               n_out.find(sv)->second != 1)
          {
-            all_woe = false;
+               return false;
          }
-         if(n_in.find(*svs_it)->second != 1 || n_out.find(*svs_it)->second != 1)
-         {
-            all_woe = false;
          }
-      }
+         return true;
+      }();
       if(all_woe)
       {
-         // std::cerr << "register STD " << i << std::endl;
          is_without_enable.insert(i);
       }
    }
@@ -281,10 +256,10 @@ void reg_binding::compute_is_without_enable()
 void reg_binding::bind(unsigned int sv, unsigned int index)
 {
    reverse_map[sv] = index;
-   if(unique_table.find(index) == unique_table.end())
+   if(!unique_table.count(index))
    {
       unique_table[index] = generic_objRef(new register_obj(index));
-   }
+            }
    auto i = this->find(sv);
    if(i == this->end())
    {
@@ -299,43 +274,44 @@ void reg_binding::bind(unsigned int sv, unsigned int index)
 
 const register_obj& reg_binding::operator[](unsigned int v)
 {
-   THROW_ASSERT(this->find(v) != this->end(), "variable not preset");
-   return *GetPointer<register_obj>(this->find(v)->second);
+   THROW_ASSERT(count(v), "variable not preset");
+   return *GetPointerS<register_obj>(at(v));
 }
+
 void reg_binding::add_to_SM(structural_objectRef clock_port, structural_objectRef reset_port)
 {
-   const structural_managerRef& SM = HLS->datapath;
-
-   const structural_objectRef& circuit = SM->get_circ();
+   const auto& SM = HLS->datapath;
+   const auto& circuit = SM->get_circ();
 
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug, "reg_binding::add_registers - Start");
 
-   compute_is_without_enable();
+      compute_is_without_enable();
    /// define boolean type for command signals
    all_regs_without_enable = get_used_regs() != 0;
-   for(unsigned int i = 0; i < get_used_regs(); i++)
+   for(auto i = 0U; i < get_used_regs(); ++i)
    {
-      PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug, "Allocating register number: " + std::to_string(i));
+      PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug, "Allocating register number: " + STR(i));
       generic_objRef regis = get(i);
-      std::string name = regis->get_string();
-      bool curr_is_is_without_enable = is_without_enable.find(i) != is_without_enable.end();
+      auto name = regis->get_string();
+      const auto curr_is_is_without_enable = is_without_enable.count(i);
       all_regs_without_enable = all_regs_without_enable && curr_is_is_without_enable;
-      std::string register_type_name = CalculateRegisterName(i);
-      std::string library = HLS->HLS_T->get_technology_manager()->get_library(register_type_name);
-      structural_objectRef reg_mod = SM->add_module_from_technology_library(name, register_type_name, library, circuit,
+      const auto register_type_name = GetRegisterFUName(i);
+      const auto library = HLS->HLS_T->get_technology_manager()->get_library(register_type_name);
+      auto reg_mod = SM->add_module_from_technology_library(name, register_type_name, library, circuit,
                                                                             HLS->HLS_T->get_technology_manager());
-      this->specialise_reg(reg_mod, i);
-      structural_objectRef port_ck = reg_mod->find_member(CLOCK_PORT_NAME, port_o_K, reg_mod);
+      specialise_reg(reg_mod, i);
+      auto port_ck = reg_mod->find_member(CLOCK_PORT_NAME, port_o_K, reg_mod);
+      THROW_ASSERT(port_ck, "Clock port missing from register.");
       SM->add_connection(clock_port, port_ck);
-      structural_objectRef port_rst = reg_mod->find_member(RESET_PORT_NAME, port_o_K, reg_mod);
-      if(port_rst != nullptr)
+      auto port_rst = reg_mod->find_member(RESET_PORT_NAME, port_o_K, reg_mod);
+      if(port_rst)
       {
          SM->add_connection(reset_port, port_rst);
       }
       regis->set_structural_obj(reg_mod);
-      PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug,
-                    "Register " + boost::lexical_cast<std::string>(i) + " successfully allocated");
-   }
+      PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug, "Register " + STR(i) + " successfully allocated");
+      if(stallable_pipeline && stall_reg_table.count(i))
+      }
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug, "reg_binding::add_registers - End");
    if(HLS->output_level >= OUTPUT_LEVEL_MINIMUM)
    {
@@ -355,7 +331,7 @@ void reg_binding::add_to_SM(structural_objectRef clock_port, structural_objectRe
    }
 }
 
-std::string reg_binding::CalculateRegisterName(unsigned int i)
+std::string reg_binding::GetRegisterFUName(unsigned int i)
 {
    if(is_without_enable.count(i))
    {

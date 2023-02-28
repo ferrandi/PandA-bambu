@@ -68,9 +68,6 @@ class xml_element;
 class time_model
 {
  public:
-   /// statistical delay for this type of operation on a given functional unit.
-   boost::math::normal statistical_delay;
-
    /// map representing the pin-to-pin delay
    std::map<std::string, std::map<std::string, double>> pin_to_pin_delay;
 

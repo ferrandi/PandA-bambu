@@ -190,7 +190,7 @@ structural_objectRef structural_manager::create(std::string id, so_kind ctype, s
    return cc;
 }
 
-structural_objectRef structural_manager::add_port(std::string id, port_o::port_direction pdir,
+structural_objectRef structural_manager::add_port(const std::string& id, port_o::port_direction pdir,
                                                   structural_objectRef owner, structural_type_descriptorRef type_descr,
                                                   unsigned int treenode)
 {
@@ -701,6 +701,10 @@ void structural_manager::add_connection(structural_objectRef src, structural_obj
                        src->get_path() + " " + dest->get_path());
                THROW_ASSERT(check_type(src, dest),
                             "Ports have to be compatible: " + src->get_path() + " -> " + dest->get_path());
+               THROW_ASSERT(!src->find_member(dest->get_id(), port_o_K, dest->get_owner()),
+                            "Port " + src->get_id() + " already bound to " + dest->get_id());
+               THROW_ASSERT(!dest->find_member(src->get_id(), port_o_K, src->get_owner()),
+                            "Port " + dest->get_id() + " already bound to " + src->get_id());
                auto* p_d = GetPointerS<port_o>(dest);
                p_s->add_connection(dest);
                p_d->add_connection(src);
@@ -767,6 +771,10 @@ void structural_manager::add_connection(structural_objectRef src, structural_obj
                        src->get_path() + " " + dest->get_path());
                THROW_ASSERT(check_type(src, dest),
                             "Ports have to be compatible: " + src->get_path() + " -> " + dest->get_path());
+               THROW_ASSERT(!src->find_member(dest->get_id(), port_o_K, dest->get_owner()),
+                            "Port " + src->get_id() + " already bound to " + dest->get_id());
+               THROW_ASSERT(!dest->find_member(src->get_id(), port_o_K, src->get_owner()),
+                            "Port " + dest->get_id() + " already bound to " + src->get_id());
                auto* p_d = GetPointerS<port_o>(dest);
                p_s->add_connection(dest);
                p_d->add_connection(src);

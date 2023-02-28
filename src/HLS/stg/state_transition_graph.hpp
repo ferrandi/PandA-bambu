@@ -284,6 +284,8 @@ struct StateTransitionGraphInfo : public GraphInfo
    /// true when the FSM has cycles
    bool is_a_dag;
 
+   bool bounded;
+
    /// in case of a dag it is possible to compute the minimum number of cycles
    unsigned int min_cycles;
    /// maximum number of cycles

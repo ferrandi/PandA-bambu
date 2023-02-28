@@ -187,6 +187,15 @@ class DesignFlowGraph : public graph
    DesignFlowGraph(const DesignFlowGraphsCollectionRef design_flow_graphs_collection, const int _selector);
 
    /**
+    * Constructor
+    * @param design_flow_graphs_collection is the graph collection
+    * @param selector is the selector used in this view
+    * @param vertices is the set of vertices to be considered
+    */
+   DesignFlowGraph(const DesignFlowGraphsCollectionRef design_flow_graphs_collection, const int _selector,
+                   const CustomUnorderedSet<vertex>& vertices);
+
+   /**
     * Destructor
     */
    ~DesignFlowGraph() override;

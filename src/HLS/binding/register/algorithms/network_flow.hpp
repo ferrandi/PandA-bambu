@@ -44,16 +44,12 @@
 #ifndef NETWORK_FLOW_HPP
 #define NETWORK_FLOW_HPP
 
-#include "refcount.hpp"
-
-#include "custom_map.hpp"
 #include "custom_set.hpp"
+#include "graph.hpp"
+#include "refcount.hpp"
+#include <boost/lexical_cast.hpp>
 #include <iosfwd>
 #include <vector>
-
-#include "graph.hpp"
-
-#include "boost/lexical_cast.hpp"
 
 #define I2S(number) std::to_string(number)
 

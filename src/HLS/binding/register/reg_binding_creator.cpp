@@ -45,24 +45,17 @@
 /// Header include
 #include "reg_binding_creator.hpp"
 
-/// HLS include
-#include "hls_manager.hpp"
-
-/// HLS/binding/module includes
-#include "cdfc_module_binding.hpp"
-
-#include "dbgPrintHelper.hpp"
-#include "refcount.hpp"
-#include "utility.hpp"
-
-#include "function_behavior.hpp"
-
 #include "Parameter.hpp"
+#include "cdfc_module_binding.hpp"
+#include "dbgPrintHelper.hpp"
+#include "function_behavior.hpp"
 #include "hls.hpp"
+#include "hls_manager.hpp"
 #include "liveness.hpp"
-#include "storage_value_insertion.hpp"
-
 #include "polixml.hpp"
+#include "refcount.hpp"
+#include "storage_value_insertion.hpp"
+#include "utility.hpp"
 #include "xml_helper.hpp"
 
 #include <boost/version.hpp>
@@ -77,8 +70,6 @@ reg_binding_creator::reg_binding_creator(const ParameterConstRef _Param, const H
       register_lower_bound(0)
 {
 }
-
-reg_binding_creator::~reg_binding_creator() = default;
 
 const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
 reg_binding_creator::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
@@ -101,8 +92,8 @@ reg_binding_creator::ComputeHLSRelationships(const DesignFlowStep::RelationshipT
                                        HLSFlowStep_Relationship::SAME_FUNCTION));
          }
 
-         ret.insert(std::make_tuple(HLSFlowStep_Type::EASY_MODULE_BINDING, HLSFlowStepSpecializationConstRef(),
-                                    HLSFlowStep_Relationship::SAME_FUNCTION));
+            ret.insert(std::make_tuple(HLSFlowStep_Type::EASY_MODULE_BINDING, HLSFlowStepSpecializationConstRef(),
+                                       HLSFlowStep_Relationship::SAME_FUNCTION));
 
          ret.insert(std::make_tuple(parameters->getOption<HLSFlowStep_Type>(OPT_stg_algorithm),
                                     HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
@@ -112,17 +103,11 @@ reg_binding_creator::ComputeHLSRelationships(const DesignFlowStep::RelationshipT
                                        HLSFlowStep_Relationship::SAME_FUNCTION));
             ret.insert(std::make_tuple(HLSMgr->get_HLS(funId)->liveness_algorithm, HLSFlowStepSpecializationConstRef(),
                                        HLSFlowStep_Relationship::SAME_FUNCTION));
-         }
-         ret.insert(std::make_tuple(parameters->getOption<HLSFlowStep_Type>(OPT_storage_value_insertion_algorithm),
-                                    HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
-         if(HLSMgr->get_HLS(funId))
-         {
-            ret.insert(std::make_tuple(HLSMgr->get_HLS(funId)->module_binding_algorithm,
+               ret.insert(std::make_tuple(HLSMgr->get_HLS(funId)->module_binding_algorithm,
                                        HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
 
             break;
          }
-      }
       case INVALIDATION_RELATIONSHIP:
       {
          break;
@@ -135,4 +120,9 @@ reg_binding_creator::ComputeHLSRelationships(const DesignFlowStep::RelationshipT
          THROW_UNREACHABLE("");
    }
    return ret;
+}
+
+DesignFlowStep_Status reg_binding_creator::InternalExec()
+{
+   return RegisterBinding();
 }

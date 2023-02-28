@@ -37,6 +37,7 @@
  *
  * @author Christian Pilato <pilato@elet.polimi.it>
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
+ * @author Michele Fiorito <michele.fiorito@polimi.it>
  * $Revision$
  * $Date$
  * Last modified by $Author$
@@ -45,11 +46,12 @@
 #ifndef REG_BINDING_HPP
 #define REG_BINDING_HPP
 
-#include <iosfwd>
-#include <string>
-
 #include "Variable.hpp"
+#include "custom_set.hpp"
 #include "refcount.hpp"
+#include <iosfwd>
+#include <map>
+#include <string>
 
 REF_FORWARD_DECL(hls);
 REF_FORWARD_DECL(HLS_manager);
@@ -58,6 +60,7 @@ REF_FORWARD_DECL(generic_obj);
 REF_FORWARD_DECL(structural_object);
 CONSTREF_FORWARD_DECL(FunctionBehavior);
 class register_obj;
+class reg_binsign_creator;
 
 /**
  * Class managing the register binding.
@@ -66,6 +69,8 @@ class register_obj;
  */
 class reg_binding : public variable2obj<generic_objRef>
 {
+   friend class reg_binding_creator;
+
  public:
    using type_t = enum { STG = 0, CDFG };
 
@@ -136,8 +141,10 @@ class reg_binding : public variable2obj<generic_objRef>
 
    /**
     * return the name of register to be used
+    * @param i is the id of the register
+    * @return std::string The FU name for the given register
     */
-   virtual std::string CalculateRegisterName(unsigned int i);
+   virtual std::string GetRegisterFUName(unsigned int i);
 
    /**
     * returns number of used register
