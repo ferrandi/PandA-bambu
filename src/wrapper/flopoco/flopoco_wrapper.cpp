@@ -186,7 +186,6 @@ flopoco_wrapper::flopoco_wrapper(int
    }
    else if(FU_target.find("Ultrascale") != std::string::npos)
    { /// does not exist so we use Virtex 6 target
-      THROW_WARNING("Using FloPoCo version for Virtex6.");
       target = new flopoco::Virtex6();
    }
    else if(FU_target.find("Zynq") != std::string::npos)
