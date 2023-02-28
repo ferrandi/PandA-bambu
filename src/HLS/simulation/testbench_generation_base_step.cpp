@@ -725,15 +725,15 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
                             "unexpected condition");
             }
             else if(boost::ends_with(port_name, "_TDATA"))
-               {
+            {
                port_write = mod->find_member(port_name.substr(0, port_name.size() - sizeof("_TDATA") + 1U) + "_TVALID",
                                              port_o_K, cir);
                THROW_ASSERT(port_write && (GetPointer<port_o>(port_write)->get_port_interface() ==
                                                port_o::port_interface::PI_M_AXIS_TVALID ||
                                            GetPointer<port_o>(port_write)->get_port_interface() ==
                                                port_o::port_interface::PI_S_AXIS_TVALID),
-                               "unexpected condition");
-               }
+                            "unexpected condition");
+            }
             THROW_ASSERT(port_write, "");
 
             writer->write("always @(negedge " CLOCK_PORT_NAME ")\n");
@@ -744,7 +744,7 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
             writer->write("begin\n");
             if(InterfaceType == port_o::port_interface::PI_FDIN)
             {
-            writer->write("registered_" + port_name + "[fifo_counter_" + port_name + "] <= " + port_name + ";\n");
+               writer->write("registered_" + port_name + "[fifo_counter_" + port_name + "] <= " + port_name + ";\n");
             }
             writer->write("fifo_counter_" + port_name + " <= fifo_counter_" + port_name + " + 1;\n");
             writer->write(STR(STD_CLOSING_CHAR));
@@ -1955,7 +1955,7 @@ void TestbenchGenerationBaseStep::write_hdl_testbench_prolog() const
       writer->write("`define MEM_DELAY_READ 3\n\n");
       writer->write("`define MEM_MAX_DELAY " +
                     (parameters->getOption<unsigned>(OPT_mem_delay_write) > 3 ?
-                                                parameters->getOption<std::string>(OPT_mem_delay_write) : 
+                         parameters->getOption<std::string>(OPT_mem_delay_write) :
                          "3") +
                     "\n\n");
    }
@@ -1965,17 +1965,17 @@ void TestbenchGenerationBaseStep::write_hdl_testbench_prolog() const
       writer->write("`define MEM_DELAY_READ 4\n\n");
       writer->write("`define MEM_MAX_DELAY " +
                     (parameters->getOption<unsigned>(OPT_mem_delay_write) > 4 ?
-                                                parameters->getOption<std::string>(OPT_mem_delay_write) : 
+                         parameters->getOption<std::string>(OPT_mem_delay_write) :
                          "4") +
                     "\n\n");
    }
    else if(parameters->getOption<std::string>(OPT_bram_high_latency) == "")
    {
-      writer->write("`define MEM_DELAY_READ " + parameters->getOption<std::string>(OPT_mem_delay_read) + "\n\n");  
+      writer->write("`define MEM_DELAY_READ " + parameters->getOption<std::string>(OPT_mem_delay_read) + "\n\n");
       writer->write(
           "`define MEM_MAX_DELAY " +
           (parameters->getOption<unsigned>(OPT_mem_delay_write) > parameters->getOption<unsigned>(OPT_mem_delay_read) ?
-                                                parameters->getOption<std::string>(OPT_mem_delay_write) : 
+               parameters->getOption<std::string>(OPT_mem_delay_write) :
                parameters->getOption<std::string>(OPT_mem_delay_read)) +
           "\n\n");
    }
@@ -2081,7 +2081,7 @@ void TestbenchGenerationBaseStep::write_auxiliary_signal_declaration() const
 {
    const auto testbench_memsize = [&]() {
       const auto mem_size =
-       HLSMgr->Rmem->get_memory_address() - parameters->getOption<unsigned long long int>(OPT_base_address);
+          HLSMgr->Rmem->get_memory_address() - parameters->getOption<unsigned long long int>(OPT_base_address);
       return mem_size ? mem_size : 1;
    }();
    writer->write("parameter MEMSIZE = " + STR(testbench_memsize));
@@ -2214,9 +2214,9 @@ void TestbenchGenerationBaseStep::write_auxiliary_signal_declaration() const
             const auto portWDATA = mod->find_member(portPrefix + "WDATA", port_o_K, cir);
 
             const auto wAddrSize = GetPointer<port_o>(portAWADDR)->get_typeRef()->size *
-                             GetPointer<port_o>(portAWADDR)->get_typeRef()->vector_size;
+                                   GetPointer<port_o>(portAWADDR)->get_typeRef()->vector_size;
             const auto wDataSize = GetPointer<port_o>(portWDATA)->get_typeRef()->size *
-                             GetPointer<port_o>(portWDATA)->get_typeRef()->vector_size;
+                                   GetPointer<port_o>(portWDATA)->get_typeRef()->vector_size;
 
             writer->write("reg [" + STR(wDataSize - 1) + ":0] " + portPrefix + "wBitmask;\n");
             writer->write("reg [" + STR(wAddrSize - 1) + ":0] " + portPrefix + "currAddr;\n");
@@ -2335,8 +2335,8 @@ void TestbenchGenerationBaseStep::initialize_auxiliary_variables() const
 
 void TestbenchGenerationBaseStep::initialize_input_signals(const tree_managerConstRef TM) const
 {
-      for(unsigned int i = 0; i < mod->get_in_port_size(); i++)
-      {
+   for(unsigned int i = 0; i < mod->get_in_port_size(); i++)
+   {
       const auto port_obj = mod->get_in_port(i);
       const auto port_name = [&]() -> std::string {
          const auto port_id = port_obj->get_id();
@@ -2355,44 +2355,44 @@ void TestbenchGenerationBaseStep::initialize_input_signals(const tree_managerCon
          return port_id;
       }();
 
-         if(GetPointer<port_o>(port_obj)->get_is_memory() || WB_ACKIM_PORT_NAME == port_name)
-         {
-            continue;
-         }
-         if(CLOCK_PORT_NAME != port_name && START_PORT_NAME != port_name && RESET_PORT_NAME != port_name)
-         {
-            writer->write(HDL_manager::convert_to_identifier(writer.get(), port_name) + " = 0;\n");
-         }
+      if(GetPointer<port_o>(port_obj)->get_is_memory() || WB_ACKIM_PORT_NAME == port_name)
+      {
+         continue;
+      }
+      if(CLOCK_PORT_NAME != port_name && START_PORT_NAME != port_name && RESET_PORT_NAME != port_name)
+      {
+         writer->write(HDL_manager::convert_to_identifier(writer.get(), port_name) + " = 0;\n");
+      }
       if(port_obj->get_typeRef()->treenode > 0 && tree_helper::is_a_pointer(TM, port_obj->get_typeRef()->treenode))
-         {
-            writer->write("ex_" + port_name + " = 0;\n");
-         }
+      {
+         writer->write("ex_" + port_name + " = 0;\n");
+      }
       if(GetPointer<port_o>(port_obj)->get_port_interface() == port_o::port_interface::PI_FDOUT)
       {
          writer->write("fifo_counter_" + port_obj->get_id() + " = 0;\n");
       }
    }
-      writer->write("\n");
-      for(unsigned int i = 0; i < mod->get_out_port_size(); i++)
-      {
+   writer->write("\n");
+   for(unsigned int i = 0; i < mod->get_out_port_size(); i++)
+   {
       const auto port_obj = mod->get_out_port(i);
       const auto interfaceType = GetPointer<port_o>(port_obj)->get_port_interface();
-         if(interfaceType == port_o::port_interface::PI_WNONE)
-         {
-            writer->write("ex_" + port_obj->get_id() + " = 0;\n");
-            writer->write("registered_" + port_obj->get_id() + " = 0;\n");
-         }
-         else if(interfaceType == port_o::port_interface::PI_FDIN)
-         {
-            writer->write("fifo_counter_" + port_obj->get_id() + " = 0;\n");
-         }
-         else if(interfaceType == port_o::port_interface::PI_DOUT)
-         {
-            writer->write("ex_" + port_obj->get_id() + " = 0;\n");
-         }
+      if(interfaceType == port_o::port_interface::PI_WNONE)
+      {
+         writer->write("ex_" + port_obj->get_id() + " = 0;\n");
+         writer->write("registered_" + port_obj->get_id() + " = 0;\n");
       }
-      writer->write("\n");
+      else if(interfaceType == port_o::port_interface::PI_FDIN)
+      {
+         writer->write("fifo_counter_" + port_obj->get_id() + " = 0;\n");
+      }
+      else if(interfaceType == port_o::port_interface::PI_DOUT)
+      {
+         writer->write("ex_" + port_obj->get_id() + " = 0;\n");
+      }
    }
+   writer->write("\n");
+}
 
 void TestbenchGenerationBaseStep::testbench_controller_machine() const
 {
@@ -2631,17 +2631,17 @@ void TestbenchGenerationBaseStep::testbench_controller_machine() const
                                       GetPointer<port_o>(portWDATA)->get_typeRef()->vector_size;
             std::string mem_aggregated;
             {
-            mem_aggregated = "{";
-            for(unsigned int bitsize_index = 0; bitsize_index < bitsizeWDATA; bitsize_index = bitsize_index + 8)
-            {
-               if(bitsize_index)
+               mem_aggregated = "{";
+               for(unsigned int bitsize_index = 0; bitsize_index < bitsizeWDATA; bitsize_index = bitsize_index + 8)
                {
-                  mem_aggregated += ", ";
+                  if(bitsize_index)
+                  {
+                     mem_aggregated += ", ";
+                  }
+                  mem_aggregated += "_bambu_testbench_mem_[" + portPrefix + "currAddr + " +
+                                    STR((bitsizeWDATA - bitsize_index) / 8 - 1) + " - base_addr]";
                }
-               mem_aggregated += "_bambu_testbench_mem_[" + portPrefix + "currAddr + " +
-                                 STR((bitsizeWDATA - bitsize_index) / 8 - 1) + " - base_addr]";
-            }
-            mem_aggregated += "}";
+               mem_aggregated += "}";
             }
 
             for(unsigned bitsize_index = 0; bitsize_index < bitsizeWDATA; bitsize_index = bitsize_index + 8)
@@ -2703,17 +2703,17 @@ void TestbenchGenerationBaseStep::testbench_controller_machine() const
             const auto bitsizeRDATA = GetPointer<port_o>(portRDATA)->get_typeRef()->size *
                                       GetPointer<port_o>(portRDATA)->get_typeRef()->vector_size;
             {
-            mem_aggregated = "{";
-            for(unsigned int bitsize_index = 0; bitsize_index < bitsizeRDATA; bitsize_index = bitsize_index + 8)
-            {
-               if(bitsize_index)
+               mem_aggregated = "{";
+               for(unsigned int bitsize_index = 0; bitsize_index < bitsizeRDATA; bitsize_index = bitsize_index + 8)
                {
-                  mem_aggregated += ", ";
+                  if(bitsize_index)
+                  {
+                     mem_aggregated += ", ";
+                  }
+                  mem_aggregated += "_bambu_testbench_mem_[" + portPrefix + "currAddr + " +
+                                    STR((bitsizeRDATA - bitsize_index) / 8 - 1) + " - base_addr]";
                }
-               mem_aggregated += "_bambu_testbench_mem_[" + portPrefix + "currAddr + " +
-                                 STR((bitsizeRDATA - bitsize_index) / 8 - 1) + " - base_addr]";
-            }
-            mem_aggregated += "}";
+               mem_aggregated += "}";
             }
 
             writer->write("    " + portPrefix + "RDATA <= " + mem_aggregated + ";\n");
@@ -2735,7 +2735,7 @@ void TestbenchGenerationBaseStep::testbench_controller_machine() const
             writer->write("        end else begin\n");
             writer->write("          " + portPrefix + "arqueue_size <= " + portPrefix + "arqueue_size - 1;\n");
             writer->write("  end\n");
-               writer->write("    end\n");
+            writer->write("    end\n");
             writer->write("    end else if(" + portPrefix + "RREADY) begin\n");
             writer->write("      " + portPrefix + "arqueue[0][" + STR(COUNT_HIGH_INDEX) + " : " + STR(COUNT_LOW_INDEX) +
                           "] <= " + portPrefix + "arqueue[0][" + STR(COUNT_HIGH_INDEX) + " : " + STR(COUNT_LOW_INDEX) +
@@ -2743,7 +2743,7 @@ void TestbenchGenerationBaseStep::testbench_controller_machine() const
             writer->write("  end\n");
             writer->write("  end\n");
             writer->write("end\n");
-            }
+         }
       }
    }
 }
@@ -2995,8 +2995,8 @@ void TestbenchGenerationBaseStep::read_input_value_from_file(const std::string& 
       writer->write("begin\n");
       {
          std::string nonescaped_name = input_name;
-            nonescaped_name.erase(std::remove(nonescaped_name.begin(), nonescaped_name.end(), '\\'),
-                                  nonescaped_name.end());
+         nonescaped_name.erase(std::remove(nonescaped_name.begin(), nonescaped_name.end(), '\\'),
+                               nonescaped_name.end());
          if(output_level >= OUTPUT_LEVEL_VERY_PEDANTIC)
          {
             writer->write("$display(\"Value found for input " + nonescaped_name + ": %b\", " + input_name + ");\n");

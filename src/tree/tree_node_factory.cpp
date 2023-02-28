@@ -675,9 +675,9 @@ void tree_node_factory::operator()(const attr* obj, unsigned int& mask)
    }
 
 #define SET_VALUE_OPT(token, field, type)                                                        \
-   if(tree_node_schema.find(TOK(token)) != tree_node_schema.end())                    \
-   {                                                                                  \
-      dynamic_cast<type*>(curr_tree_node_ptr)->field =                                \
+   if(tree_node_schema.find(TOK(token)) != tree_node_schema.end())                               \
+   {                                                                                             \
+      dynamic_cast<type*>(curr_tree_node_ptr)->field =                                           \
           boost::lexical_cast<decltype(type::field)>(tree_node_schema.find(TOK(token))->second); \
    }
 

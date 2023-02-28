@@ -254,7 +254,7 @@ DesignFlowStep_Status fun_dominator_allocation::Exec()
          CustomUnorderedSet<vertex> preset;
          preset.insert(top_vertex);
          for(const auto& funID : reached_from_top)
-   {
+         {
             if(!root_functions.count(funID))
             {
                preset.insert(CGM->GetVertex(funID));
@@ -269,7 +269,7 @@ DesignFlowStep_Status fun_dominator_allocation::Exec()
             {
                subset.insert(v);
             }
-   }
+         }
          return std::make_pair(subset.size(), CGM->CGetCallSubGraph(subset));
       }();
 
@@ -279,11 +279,11 @@ DesignFlowStep_Status fun_dominator_allocation::Exec()
          continue;
       }
 
-   /// we do not need the exit vertex since the post-dominator graph is not used
+      /// we do not need the exit vertex since the post-dominator graph is not used
       const auto cg_dominators =
           refcount<dominance<graph>>(new dominance<graph>(*subgraph, top_vertex, NULL_VERTEX, parameters));
-   cg_dominators->calculate_dominance_info(dominance<graph>::CDI_DOMINATORS);
-   const auto& cg_dominator_map = cg_dominators->get_dominator_map();
+      cg_dominators->calculate_dominance_info(dominance<graph>::CDI_DOMINATORS);
+      const auto& cg_dominator_map = cg_dominators->get_dominator_map();
       CustomMap<std::string, CustomOrderedSet<vertex>> fun_dom_map;
       CustomMap<std::string, CustomOrderedSet<unsigned int>> where_used;
       CustomMap<std::string, bool> indirectlyCalled;
@@ -291,18 +291,18 @@ DesignFlowStep_Status fun_dominator_allocation::Exec()
       std::list<vertex> topology_sorted_vertex;
       subgraph->TopologicalSort(topology_sorted_vertex);
       for(const auto& current_vertex : topology_sorted_vertex)
-   {
+      {
          vertex vert_dominator;
          if(boost::in_degree(current_vertex, *subgraph) != 1)
-      {
+         {
             vert_dominator = cg_dominator_map.at(current_vertex);
-      }
-      else
-      {
-         vert_dominator = current_vertex;
-      }
+         }
+         else
+         {
+            vert_dominator = current_vertex;
+         }
          if(boost::out_degree(current_vertex, *subgraph))
-      {
+         {
             const auto current_id = CGM->get_function(current_vertex);
             THROW_ASSERT(HLSMgr->get_HLS(current_id),
                          "Missing HLS initialization for " +
@@ -315,213 +315,213 @@ DesignFlowStep_Status fun_dominator_allocation::Exec()
             {
                const auto called_fu_name =
                    functions::GetFUName(CGM->get_function(boost::target(eo, *subgraph)), HLSMgr);
-         if(simple_functions.find(called_fu_name) == simple_functions.end() &&
-            (HLS_C->get_number_fu(called_fu_name, WORK_LIBRARY) == INFINITE_UINT || // without constraints
-             HLS_C->get_number_fu(called_fu_name, WORK_LIBRARY) == 1))              // or single instance functions
-         {
-            fun_dom_map[called_fu_name].insert(vert_dominator);
+               if(simple_functions.find(called_fu_name) == simple_functions.end() &&
+                  (HLS_C->get_number_fu(called_fu_name, WORK_LIBRARY) == INFINITE_UINT || // without constraints
+                   HLS_C->get_number_fu(called_fu_name, WORK_LIBRARY) == 1)) // or single instance functions
+               {
+                  fun_dom_map[called_fu_name].insert(vert_dominator);
                   const auto info = Cget_edge_info<FunctionEdgeInfo, const CallGraph>(eo, *subgraph);
 
-            if(info->direct_call_points.size())
-            {
+                  if(info->direct_call_points.size())
+                  {
                      where_used[called_fu_name].insert(current_id);
-            }
-            else
-            {
-               where_used[called_fu_name];
-            }
+                  }
+                  else
+                  {
+                     where_used[called_fu_name];
+                  }
 
                   if(info->indirect_call_points.size() || info->function_addresses.size())
-            {
-               indirectlyCalled[called_fu_name] = true;
-            }
-            else
-            {
-               indirectlyCalled[called_fu_name] = false;
-            }
-         }
+                  {
+                     indirectlyCalled[called_fu_name] = true;
+                  }
+                  else
+                  {
+                     indirectlyCalled[called_fu_name] = false;
+                  }
+               }
                INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                               "---Dominator vertex: " +
                                   HLSMgr->CGetFunctionBehavior(CGM->get_function(vert_dominator))
-                               ->CGetBehavioralHelper()
-                               ->get_function_name() +
+                                      ->CGetBehavioralHelper()
+                                      ->get_function_name() +
                                   " => " + called_fu_name);
+            }
+         }
       }
-   }
-      }
-   /// compute the number of instances for each function
+      /// compute the number of instances for each function
       CustomMap<std::string, unsigned int> num_instances;
       num_instances[functions::GetFUName(top_fid, HLSMgr)] = 1;
       CustomMap<unsigned int, std::vector<std::string>> function_allocation_map;
-   for(const auto& cur : topology_sorted_vertex)
-   {
+      for(const auto& cur : topology_sorted_vertex)
+      {
          const auto cur_id = CGM->get_function(cur);
          const auto cur_fu_name = functions::GetFUName(cur_id, HLSMgr);
          if(reached_from_top.find(cur_id) == reached_from_top.end())
-      {
-         continue;
-      }
+         {
+            continue;
+         }
          THROW_ASSERT(num_instances.count(cur_fu_name),
-                   "missing number of instances of function " +
+                      "missing number of instances of function " +
                           HLSMgr->CGetFunctionBehavior(cur_id)->CGetBehavioralHelper()->get_function_name());
          function_allocation_map[cur_id];
          const auto cur_instances = num_instances.at(cur_fu_name);
          BOOST_FOREACH(EdgeDescriptor eo, boost::out_edges(cur, *subgraph))
-      {
+         {
             const auto tgt = boost::target(eo, *subgraph);
             const auto tgt_fu_name = functions::GetFUName(CGM->get_function(tgt), HLSMgr);
             const auto n_call_points = static_cast<unsigned int>(
                 Cget_edge_info<FunctionEdgeInfo, const CallGraph>(eo, *subgraph)->direct_call_points.size());
             if(num_instances.find(tgt_fu_name) == num_instances.end())
-         {
+            {
                num_instances[tgt_fu_name] = cur_instances * n_call_points;
-         }
-         else
-         {
+            }
+            else
+            {
                num_instances[tgt_fu_name] += cur_instances * n_call_points;
-         }
-      }
-   }
-
-      THROW_ASSERT(num_instances.at(functions::GetFUName(top_fid, HLSMgr)) == 1,
-                "top function cannot be called from some other function");
-   /// find the common dominator and decide where to allocate
-   for(const auto& dom_map : fun_dom_map)
-   {
-         unsigned int cur_id = 0;
-      if(dom_map.second.size() == 1)
-      {
-            auto cur = *dom_map.second.begin();
-            while(num_instances.at(functions::GetFUName(CGM->get_function(cur), HLSMgr)) != 1)
-         {
-            cur = cg_dominator_map.at(cur);
-         }
-            cur_id = CGM->get_function(cur);
-      }
-      else
-      {
-            if(dom_map.second.count(top_vertex))
-         {
-               cur_id = top_fid;
-         }
-         else
-         {
-            auto vert_it = dom_map.second.begin();
-               const auto vert_it_end = dom_map.second.end();
-            std::list<vertex> dominator_list1;
-            vertex cur = *vert_it;
-            dominator_list1.push_front(cur);
-            do
-            {
-                  THROW_ASSERT(cg_dominator_map.count(cur), "");
-               cur = cg_dominator_map.at(cur);
-               dominator_list1.push_front(cur);
-            } while(cur != top_vertex);
-            ++vert_it;
-            auto last = dominator_list1.end();
-            for(; vert_it != vert_it_end; ++vert_it)
-            {
-               std::list<vertex> dominator_list2;
-               cur = *vert_it;
-               dominator_list2.push_front(cur);
-               do
-               {
-                     THROW_ASSERT(cg_dominator_map.count(cur), "");
-                     cur = cg_dominator_map.at(cur);
-                  dominator_list2.push_front(cur);
-               } while(cur != top_vertex);
-               /// find the common dominator between two candidates
-               auto dl1_it = dominator_list1.begin(), dl2_it = dominator_list2.begin(),
-                    dl2_it_end = dominator_list2.end(), cur_last = dominator_list1.begin();
-               while(dl1_it != last && dl2_it != dl2_it_end && *dl1_it == *dl2_it &&
-                        (num_instances.at(functions::GetFUName(CGM->get_function(*dl1_it), HLSMgr)) == 1))
-               {
-                  cur = *dl1_it;
-                  ++dl1_it;
-                  cur_last = dl1_it;
-                  ++dl2_it;
-               }
-               last = cur_last;
-                  cur_id = CGM->get_function(cur);
-               if(cur == top_vertex)
-               {
-                  break;
-               }
             }
          }
       }
+
+      THROW_ASSERT(num_instances.at(functions::GetFUName(top_fid, HLSMgr)) == 1,
+                   "top function cannot be called from some other function");
+      /// find the common dominator and decide where to allocate
+      for(const auto& dom_map : fun_dom_map)
+      {
+         unsigned int cur_id = 0;
+         if(dom_map.second.size() == 1)
+         {
+            auto cur = *dom_map.second.begin();
+            while(num_instances.at(functions::GetFUName(CGM->get_function(cur), HLSMgr)) != 1)
+            {
+               cur = cg_dominator_map.at(cur);
+            }
+            cur_id = CGM->get_function(cur);
+         }
+         else
+         {
+            if(dom_map.second.count(top_vertex))
+            {
+               cur_id = top_fid;
+            }
+            else
+            {
+               auto vert_it = dom_map.second.begin();
+               const auto vert_it_end = dom_map.second.end();
+               std::list<vertex> dominator_list1;
+               vertex cur = *vert_it;
+               dominator_list1.push_front(cur);
+               do
+               {
+                  THROW_ASSERT(cg_dominator_map.count(cur), "");
+                  cur = cg_dominator_map.at(cur);
+                  dominator_list1.push_front(cur);
+               } while(cur != top_vertex);
+               ++vert_it;
+               auto last = dominator_list1.end();
+               for(; vert_it != vert_it_end; ++vert_it)
+               {
+                  std::list<vertex> dominator_list2;
+                  cur = *vert_it;
+                  dominator_list2.push_front(cur);
+                  do
+                  {
+                     THROW_ASSERT(cg_dominator_map.count(cur), "");
+                     cur = cg_dominator_map.at(cur);
+                     dominator_list2.push_front(cur);
+                  } while(cur != top_vertex);
+                  /// find the common dominator between two candidates
+                  auto dl1_it = dominator_list1.begin(), dl2_it = dominator_list2.begin(),
+                       dl2_it_end = dominator_list2.end(), cur_last = dominator_list1.begin();
+                  while(dl1_it != last && dl2_it != dl2_it_end && *dl1_it == *dl2_it &&
+                        (num_instances.at(functions::GetFUName(CGM->get_function(*dl1_it), HLSMgr)) == 1))
+                  {
+                     cur = *dl1_it;
+                     ++dl1_it;
+                     cur_last = dl1_it;
+                     ++dl2_it;
+                  }
+                  last = cur_last;
+                  cur_id = CGM->get_function(cur);
+                  if(cur == top_vertex)
+                  {
+                     break;
+                  }
+               }
+            }
+         }
          THROW_ASSERT(cur_id, "null function id index unexpected");
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                         "---Function " + functions::GetFUName(dom_map.first, HLSMgr) + " may be allocated in " +
                             HLSMgr->CGetFunctionBehavior(cur_id)->CGetBehavioralHelper()->get_function_name());
          function_allocation_map[cur_id].push_back(dom_map.first);
-   }
+      }
 
-   /// really allocate
-   const auto HLS_T = HLSMgr->get_HLS_target();
+      /// really allocate
+      const auto HLS_T = HLSMgr->get_HLS_target();
       const auto TechM = HLS_T->get_technology_manager();
 
       for(const auto& funID : reached_from_top)
-   {
-         for(const auto& fu_name : function_allocation_map.at(funID))
       {
+         for(const auto& fu_name : function_allocation_map.at(funID))
+         {
             INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                            "Allocating " + fu_name + " in " +
-                            HLSMgr->CGetFunctionBehavior(funID)->CGetBehavioralHelper()->get_function_name());
+                               HLSMgr->CGetFunctionBehavior(funID)->CGetBehavioralHelper()->get_function_name());
             THROW_ASSERT(where_used.at(fu_name).size() > 0 || indirectlyCalled.at(fu_name),
                          fu_name + " not used anywhere");
             if(where_used.at(fu_name).size() == 1)
-         {
+            {
                INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                               "---Skipped because called only by one other function");
-            continue;
-         }
-            const auto fnode = HLSMgr->get_tree_manager()->GetFunction(fu_name);
-            if(fnode && HLSMgr->hasToBeInterfaced(fnode->index))
-         {
-               INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Skipped because it has to be interfaced");
-            continue;
-         }
-#if HAVE_EXPERIMENTAL && HAVE_FROM_PRAGMA_BUILT
-         if(fun_name == "panda_pthread_mutex")
-         {
-               INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Skipped because is a pthread mutex call");
-            continue;
-         }
-#endif
-            const auto library_name = TechM->get_library(fu_name);
-         if(library_name != "")
-         {
-               const auto libraryManager = TechM->get_library_manager(library_name);
-               const auto techNode_obj = libraryManager->get_fu(fu_name);
-            if(GetPointer<functional_unit_template>(techNode_obj))
-            {
                continue;
             }
-         }
+            const auto fnode = HLSMgr->get_tree_manager()->GetFunction(fu_name);
+            if(fnode && HLSMgr->hasToBeInterfaced(fnode->index))
+            {
+               INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Skipped because it has to be interfaced");
+               continue;
+            }
+#if HAVE_EXPERIMENTAL && HAVE_FROM_PRAGMA_BUILT
+            if(fun_name == "panda_pthread_mutex")
+            {
+               INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Skipped because is a pthread mutex call");
+               continue;
+            }
+#endif
+            const auto library_name = TechM->get_library(fu_name);
+            if(library_name != "")
+            {
+               const auto libraryManager = TechM->get_library_manager(library_name);
+               const auto techNode_obj = libraryManager->get_fu(fu_name);
+               if(GetPointer<functional_unit_template>(techNode_obj))
+               {
+                  continue;
+               }
+            }
 
             HLSMgr->Rfuns->map_shared_function(funID, fu_name);
 
-         const auto cur_function_behavior = HLSMgr->CGetFunctionBehavior(funID);
-         const auto cur_BH = cur_function_behavior->CGetBehavioralHelper();
+            const auto cur_function_behavior = HLSMgr->CGetFunctionBehavior(funID);
+            const auto cur_BH = cur_function_behavior->CGetBehavioralHelper();
             INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level,
                            "---Adding proxy wrapper in function " + cur_BH->get_function_name());
-         /// add proxies
+            /// add proxies
             for(const auto& wu_id : where_used.at(fu_name))
-         {
-            if(wu_id != funID)
             {
-               const auto wiu_function_behavior = HLSMgr->CGetFunctionBehavior(wu_id);
-               const auto wiu_BH = wiu_function_behavior->CGetBehavioralHelper();
+               if(wu_id != funID)
+               {
+                  const auto wiu_function_behavior = HLSMgr->CGetFunctionBehavior(wu_id);
+                  const auto wiu_BH = wiu_function_behavior->CGetBehavioralHelper();
                   INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level,
                                  "---Adding proxy function in function " + wiu_BH->get_function_name());
                   HLSMgr->Rfuns->add_shared_function_proxy(wu_id, fu_name);
+               }
             }
          }
       }
-   }
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--");
-}
+   }
 
    return DesignFlowStep_Status::SUCCESS;
 }

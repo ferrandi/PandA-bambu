@@ -134,33 +134,33 @@ DesignFlowStep_Status LoopsAnalysisBambu::InternalExec()
       const auto PM = AppM->get_pragma_manager();
       if(PM)
       {
-      PM->CheckAddOmpFor(function_id, header, AppM);
-      PM->CheckAddOmpSimd(function_id, header, AppM);
+         PM->CheckAddOmpFor(function_id, header, AppM);
+         PM->CheckAddOmpSimd(function_id, header, AppM);
       }
 #endif
       const auto nexit = loop->num_exits();
       if(nexit != 1)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Multiple exits loop");
-               continue;
-            }
+         continue;
+      }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Single exit loop considered");
       loop->loop_type |= SINGLE_EXIT_LOOP;
       const auto exit_vertex = *loop->exit_block_iter_begin();
       bool do_while = false;
       if(exit_vertex == header && loop->num_blocks() != 1)
-            {
+      {
          /// while loop
          loop->loop_type &= ~UNKNOWN_LOOP;
          loop->loop_type |= WHILE_LOOP;
-            }
+      }
       else
-            {
+      {
          /// do while loop
-               loop->loop_type &= ~UNKNOWN_LOOP;
-               loop->loop_type |= DO_WHILE_LOOP;
+         loop->loop_type &= ~UNKNOWN_LOOP;
+         loop->loop_type |= DO_WHILE_LOOP;
          do_while = true;
-            }
+      }
       /// very simple condition
       if(do_while && loop->is_innermost() && loop->num_blocks() == 1)
       {

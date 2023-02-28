@@ -361,11 +361,11 @@ parametric_list_based::parametric_list_based(const ParameterConstRef _parameters
                                              unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager,
                                              const HLSFlowStepSpecializationConstRef _hls_flow_step_specialization)
     : schedulingBaseStep(_parameters, _HLSMgr, _funId, _design_flow_manager, HLSFlowStep_Type::LIST_BASED_SCHEDULING,
-                 _hls_flow_step_specialization ?
-                     _hls_flow_step_specialization :
-                     HLSFlowStepSpecializationConstRef(
-                         new ParametricListBasedSpecialization(static_cast<ParametricListBased_Metric>(
-                             _parameters->getOption<unsigned int>(OPT_scheduling_priority))))),
+                         _hls_flow_step_specialization ?
+                             _hls_flow_step_specialization :
+                             HLSFlowStepSpecializationConstRef(
+                                 new ParametricListBasedSpecialization(static_cast<ParametricListBased_Metric>(
+                                     _parameters->getOption<unsigned int>(OPT_scheduling_priority))))),
       parametric_list_based_metric(GetPointer<const ParametricListBasedSpecialization>(hls_flow_step_specialization)
                                        ->parametric_list_based_metric),
       ending_time(OpGraphConstRef()),
@@ -861,8 +861,8 @@ bool parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
    /// select the type of graph
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "   Selecting the type of the graph...");
 
-      flow_graph = FB->CGetOpGraph(FunctionBehavior::FLSAODG);
-      flow_graph_with_feedbacks = FB->CGetOpGraph(FunctionBehavior::FFLSAODG);
+   flow_graph = FB->CGetOpGraph(FunctionBehavior::FLSAODG);
+   flow_graph_with_feedbacks = FB->CGetOpGraph(FunctionBehavior::FFLSAODG);
 
    /// Number of operation to be scheduled
    size_t operations_number = Operations.size();
@@ -990,7 +990,7 @@ bool parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
       bool unbounded_RW = false;
       bool LoadStoreOp = false;
       unsigned int n_scheduled_ops = 0;
-      seen_cstep_has_RET_conflict = cstep_has_RET_conflict =
+      cstep_has_RET_conflict =
           ((schedule->num_scheduled() - already_sch) != operations_number - 1) ? registering_output_p : false;
       std::set<std::string> proxy_functions_used;
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
@@ -1024,7 +1024,7 @@ bool parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
             auto live_vertex_type = GET_TYPE(flow_graph, *live_vertex_it);
             if(live_vertex_type & TYPE_STORE)
             {
-               seen_cstep_has_RET_conflict = cstep_has_RET_conflict = true;
+               cstep_has_RET_conflict = true;
             }
             if(live_vertex_type & (TYPE_LOAD | TYPE_STORE))
             {
@@ -1061,7 +1061,7 @@ bool parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
                }
                schedulable =
                    BB_update_resources_use(used_resources.getRefResource(res_binding->get_assign(*live_vertex_it)),
-                                                     res_binding->get_assign(*live_vertex_it));
+                                           res_binding->get_assign(*live_vertex_it));
                if(!schedulable)
                {
                   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "schedule not feasible");
@@ -1162,7 +1162,7 @@ bool parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
                         infeasable_value = infeasable_counter.at(current_vertex);
                      }
                      if(infeasable_value >= LP_II)
-               {
+                     {
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                        "<--Schedule of operation " + GET_NAME(flow_graph, current_vertex) +
                                            " not feasible given this II=" + STR(LP_II));
@@ -1611,7 +1611,7 @@ bool parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
                /// update cstep_vuses
                if(curr_vertex_type & (TYPE_LOAD | TYPE_STORE))
                {
-                  seen_cstep_has_RET_conflict = cstep_has_RET_conflict = (curr_vertex_type & (TYPE_STORE)) != 0;
+                  cstep_has_RET_conflict = (curr_vertex_type & (TYPE_STORE)) != 0;
 
                   bool is_array = HLS->allocation_information->is_direct_access_memory_unit(fu_type);
                   unsigned var = is_array ? (HLS->allocation_information->is_memory_unit(fu_type) ?
@@ -1870,7 +1870,7 @@ bool parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
             if(cs_first_vertex + LP_II < cs_last_vertex + last_vertex_n_cycles)
             {
                if((GET_TYPE(flow_graph, first_vertex) & (TYPE_PHI | TYPE_VPHI)) == 0)
-   {
+               {
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                  "operation pair " + GET_NAME(flow_graph, first_vertex) + " <- " +
                                      GET_NAME(flow_graph, last_vertex) +
@@ -1882,38 +1882,38 @@ bool parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
                /// compute ALAP of first_vertex
                OutEdgeIterator eo, eo_end;
                auto latest_cs = cs_last_vertex;
-      const OpGraphConstRef opDFG = FB->CGetOpGraph(FunctionBehavior::DFG);
+               const OpGraphConstRef opDFG = FB->CGetOpGraph(FunctionBehavior::DFG);
                for(boost::tie(eo, eo_end) = boost::out_edges(first_vertex, *opDFG); eo != eo_end; eo++)
                {
                   vertex target = boost::target(*eo, *opDFG);
                   if(Operations.find(target) != Operations.end())
-      {
+                  {
                      auto cs_tgt_vertex = from_strongtype_cast<unsigned>(schedule->get_cstep(target).second);
                      if(cs_tgt_vertex < latest_cs)
-         {
+                     {
                         latest_cs = cs_tgt_vertex;
                      }
                   }
-         }
+               }
                if(latest_cs >= (LP_II + cs_first_vertex))
                {
                   latest_cs = LP_II + cs_first_vertex - 1;
-      }
+               }
                if(latest_cs > cs_first_vertex && (latest_cs + LP_II >= (cs_last_vertex + last_vertex_n_cycles)))
-      {
+               {
                   schedule->remove_sched(first_vertex);
                   schedule->set_execution(first_vertex, ControlStep(latest_cs));
                   schedule->set_execution_end(first_vertex, ControlStep(latest_cs));
                }
                else
-         {
+               {
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                  "operation " + GET_NAME(flow_graph, op.first) +
                                      " not satisfying the loop pipelining constraints");
                   return false;
                }
+            }
          }
-      }
       }
    }
 

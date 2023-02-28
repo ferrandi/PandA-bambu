@@ -100,7 +100,8 @@ void compatibility_based_register::create_compatibility_graph()
          {
             const auto tail = HLS->storage_value_information->get_storage_value_index(v, k->first, k->second);
             THROW_ASSERT(tail < CG_num_vertices, "wrong compatibility graph index");
-            const auto head = HLS->storage_value_information->get_storage_value_index(v, k_inner->first, k_inner->second);
+            const auto head =
+                HLS->storage_value_information->get_storage_value_index(v, k_inner->first, k_inner->second);
             THROW_ASSERT(head < CG_num_vertices, "wrong compatibility graph index");
             if(tail < head)
             {

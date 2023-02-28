@@ -105,8 +105,8 @@ StateTransitionGraphManager::StateTransitionGraphManager(const HLS_managerConstR
    STG_builder->create_entry_state();
    if(!is_function_pipelined)
    {
-   STG_builder->create_exit_state();
-}
+      STG_builder->create_exit_state();
+   }
 }
 
 StateTransitionGraphManager::~StateTransitionGraphManager() = default;
@@ -131,34 +131,34 @@ void StateTransitionGraphManager::ComputeCyclesCount(bool is_pipelined)
    auto info = STG_graph->GetStateTransitionGraphInfo();
    if(is_pipelined || (info->is_a_dag && !Param->getOption<bool>(OPT_disable_bounded_function)))
    {
-   std::list<vertex> sorted_vertices;
-   ACYCLIC_STG_graph->TopologicalSort(sorted_vertices);
+      std::list<vertex> sorted_vertices;
+      ACYCLIC_STG_graph->TopologicalSort(sorted_vertices);
       CustomUnorderedMap<vertex, unsigned int> CSteps_min, CSteps_max;
       bool has_dummy_state = false;
       for(const auto v : sorted_vertices)
-   {
+      {
          CSteps_min[v] = 0;
          CSteps_max[v] = 0;
          has_dummy_state |= ACYCLIC_STG_graph->GetStateInfo(v)->is_dummy;
          InEdgeIterator ie, iend;
          boost::tie(ie, iend) = boost::in_edges(v, *ACYCLIC_STG_graph);
          const auto ie_first = ie;
-      for(; ie != iend; ie++)
-      {
+         for(; ie != iend; ie++)
+         {
             const auto src = boost::source(*ie, *ACYCLIC_STG_graph);
             CSteps_max[v] = std::max(CSteps_max[v], 1 + CSteps_max[src]);
-         if(ie == ie_first)
-         {
+            if(ie == ie_first)
+            {
                CSteps_min[v] = 1 + CSteps_min[src];
-         }
-         else
-         {
+            }
+            else
+            {
                CSteps_min[v] = std::min(CSteps_min[v], 1 + CSteps_max[src]);
+            }
          }
       }
-   }
-   THROW_ASSERT(CSteps_min.find(info->exit_node) != CSteps_min.end(), "Exit node not reachable");
-   THROW_ASSERT(CSteps_max.find(info->exit_node) != CSteps_max.end(), "Exit node not reachable");
+      THROW_ASSERT(CSteps_min.find(info->exit_node) != CSteps_min.end(), "Exit node not reachable");
+      THROW_ASSERT(CSteps_max.find(info->exit_node) != CSteps_max.end(), "Exit node not reachable");
       info->min_cycles = CSteps_min.find(info->exit_node)->second - (is_pipelined ? 0 : 1);
       info->max_cycles = CSteps_max.find(info->exit_node)->second - (is_pipelined ? 0 : 1);
       info->bounded =

@@ -130,7 +130,8 @@ class mux_connection_binding : public conn_binding_creator
     */
    void determine_connection(const vertex& op, const HLS_manager::io_binding_type& var, generic_objRef fu_obj,
                              unsigned int port_num, unsigned int port_index, const OpGraphConstRef data,
-                             unsigned int precision, unsigned int alignment, vertex state_src, vertex state_tgt, unsigned int src_phi_bb_index);
+                             unsigned int precision, unsigned int alignment, vertex state_src, vertex state_tgt,
+                             unsigned int src_phi_bb_index);
 
    /**
     * Compute the bitsize given a io_binding type
@@ -150,7 +151,8 @@ class mux_connection_binding : public conn_binding_creator
     */
    void connect_to_registers(vertex op, const OpGraphConstRef data, generic_objRef fu_obj, unsigned int port_num,
                              unsigned int port_index, unsigned int tree_var, unsigned long long precision,
-                             const bool is_not_a_phi, vertex state_src, vertex state_tgt, unsigned int src_phi_bb_index);
+                             const bool is_not_a_phi, vertex state_src, vertex state_tgt,
+                             unsigned int src_phi_bb_index);
 
    unsigned int extract_parm_decl(unsigned int tree_var, const tree_managerRef TreeM);
 
