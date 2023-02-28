@@ -701,7 +701,10 @@ void mux_connection_binding::connect_to_registers(vertex op, const OpGraphConstR
          }
          else
          {
-            auto step_in = HLS->Rliv->GetStepPhiIn(op, tree_var, src_phi_bb_index);
+            const StateInfoConstRef src_state_info =
+                is_PC ? StateInfoConstRef() : HLS->STG->GetStg()->CGetStateInfo(state_src);
+            auto src_state_BB_index = *src_state_info->BB_ids.begin();
+            auto step_in = HLS->Rliv->GetStepPhiIn(op, tree_var, src_phi_bb_index, src_state_BB_index);
             PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                           "        step " + (tree_var ? "for variable " + BH->PrintVariable(tree_var) : "") + "=" +
                               STR(step_in));
