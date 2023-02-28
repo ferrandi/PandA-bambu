@@ -717,7 +717,7 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
 
    HLS->STG->ComputeCyclesCount(is_pipelined);
    HLS->registered_done_port = [&]() {
-      if(!HLS->STG->CGetStg()->CGetStateTransitionGraphInfo()->bounded)
+      if(HLS->STG->CGetStg()->CGetStateTransitionGraphInfo()->min_cycles != 1 && !is_pipelined)
       {
          /// check for unbounded op executed in the last step
          /// this ops creates problems with done port registering
