@@ -57,6 +57,9 @@
 
 REF_FORWARD_DECL(FunctionBehavior);
 
+#define STD_SELECTOR (1 << 0)
+#define FEEDBACK_SELECTOR (1 << 1)
+
 /**
  * Information associated with a call_graph node.
  */

@@ -36,26 +36,25 @@
  *
  * @author Christian Pilato <pilato@elet.polimi.it>
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
+ * @author Michele Fiorito <michele.fiorito@polimi.it>
  *
  */
 
 #ifndef _MEMORY_HPP_
 #define _MEMORY_HPP_
 
-/// STD include
-#include <string>
-
-/// STL includes
 #include "custom_map.hpp"
 #include "custom_set.hpp"
-
 #include "refcount.hpp"
+#include <map>
+#include <string>
+
 /**
  * @name forward declarations
  */
 //@{
 REF_FORWARD_DECL(application_manager);
-REF_FORWARD_DECL(tree_manager);
+CONSTREF_FORWARD_DECL(tree_manager);
 REF_FORWARD_DECL(memory);
 REF_FORWARD_DECL(memory_symbol);
 CONSTREF_FORWARD_DECL(Parameter);
@@ -66,8 +65,9 @@ class xml_element;
 
 class memory
 {
+ private:
    /// datastructure containing tree information
-   const tree_managerRef TreeM;
+   const tree_managerConstRef TreeM;
 
    /// set of variables allocated outside the top module
    std::map<unsigned int, memory_symbolRef> external;
@@ -193,22 +193,11 @@ class memory
 
    bool enable_hls_bit_value;
 
-   /**
-    * Alignment utility function
-    */
-   void align(unsigned long long int& address, unsigned long long alignment)
-   {
-      if(address % alignment != 0)
-      {
-         address = ((address / alignment) + 1) * alignment;
-      }
-   }
-
  public:
    /**
     * Constructor
     */
-   memory(const tree_managerRef TreeM, unsigned long long int off_base_address, unsigned int max_bram,
+   memory(const tree_managerConstRef TreeM, unsigned long long int off_base_address, unsigned int max_bram,
           bool null_pointer_check, bool initial_internal_address_p, unsigned long long initial_internal_address,
           const unsigned int& _bus_addr_bitsize);
 
@@ -217,7 +206,7 @@ class memory
     */
    virtual ~memory();
 
-   static memoryRef create_memory(const ParameterConstRef _parameters, const tree_managerRef _TreeM,
+   static memoryRef create_memory(const ParameterConstRef _parameters, const tree_managerConstRef _TreeM,
                                   unsigned long long int _off_base_address, unsigned int max_bram,
                                   bool _null_pointer_check, bool initial_internal_address_p,
                                   unsigned int initial_internal_address, const unsigned int& _address_bitsize);
@@ -255,8 +244,10 @@ class memory
     * @param address is the address to be evaluated
     * @param var is the variable that has to be reserved
     * @param alignment is the address alignment
+    * @return unsigned long long int next base address
     */
-   void compute_next_base_address(unsigned long long& address, unsigned int var, unsigned long long alignment);
+   unsigned long long compute_next_base_address(unsigned long long address, unsigned int var,
+                                                unsigned long long int alignment) const;
 
    /**
     * return the proxied internal variables associated with the function
@@ -524,6 +515,11 @@ class memory
    void reserve_space(unsigned long long space);
 
    /**
+    * Explicitly allocate a certain space in the internal memory
+    */
+   void reserve_internal_space(unsigned long long int space);
+
+   /**
     * Returns the amount of memory allocated internally to the module
     */
    unsigned long long get_allocated_space() const;
@@ -536,10 +532,12 @@ class memory
    /**
     * Returns the amount of memory allocated internally but not private
     */
-   unsigned long long int get_allocated_intern_memory() const
-   {
-      return next_base_address - internal_base_address_start;
-   }
+   unsigned long long int get_allocated_internal_memory() const;
+
+   /**
+    * Returns next free address of memory allocated internally but not private
+    */
+   unsigned long long int get_next_internal_base_address() const;
 
    /**
     * return the maximum address allocated
@@ -733,7 +731,7 @@ class memory
 
    /**
     * @brief update the the packed variables status
-    * @param packed is true when there is at least one packed variables
+    * @param packed is true when there is at least one packed variable
     */
    void set_packed_vars(bool packed)
    {
@@ -823,6 +821,7 @@ class memory
    {
       enable_hls_bit_value = value;
    }
+
    bool get_enable_hls_bit_value()
    {
       return enable_hls_bit_value;

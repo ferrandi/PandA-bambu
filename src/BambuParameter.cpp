@@ -748,12 +748,13 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "                       and package (e.g.,: \"xc7z020,-1,clg484,VVD\")\n"
       << "            - Altera:  a string defining the device string (e.g. EP2C70F896C6)\n"
       << "            - Lattice: a string defining the device string (e.g.\n"
-      << "                       LFE5U85F8BG756C)\n\n"
+      << "                       LFE5U85F8BG756C)\n"
+      << "            - NanoXplore: a string defining the device string (e.g. nx2h540tsc))\n\n"
       << "    --power-optimization\n"
       << "        Enable Xilinx power based optimization (default no).\n\n"
       << "    --no-iob\n"
       << "        Disconnect primary ports from the IOB (the default is to connect\n"
-      << "        primary input and outpur ports to IOBs).\n\n"
+      << "        primary input and output ports to IOBs).\n\n"
       << "    --soft-float (default)\n"
       << "        Enable the soft-based implementation of floating-point operations.\n"
       << "        Bambu uses as default a faithfully rounded version of softfloat with rounding mode\n"
@@ -1326,7 +1327,7 @@ int BambuParameter::Exec()
       {"xilinx-root", optional_argument, nullptr, OPT_XILINX_ROOT},
       {"verilator-parallel", optional_argument, nullptr, OPT_VERILATOR_PARALLEL},
       {"shared-input-registers", no_argument, nullptr, OPT_SHARED_INPUT_REGISTERS},
-      {"inline-fname", no_argument, nullptr, OPT_INLINE_FUNCTIONS},
+      {"inline-fname", required_argument, nullptr, OPT_INLINE_FUNCTIONS},
       GCC_LONG_OPTIONS,
       {nullptr, 0, nullptr, 0}
    };
@@ -4184,6 +4185,12 @@ void BambuParameter::CheckParameters()
    if(getOption<int>(OPT_gcc_openmp_simd))
    {
       setOption(OPT_bitvalue_ipa, false);
+   }
+
+   if(boost::starts_with(getOption<std::string>(OPT_device_string), "nx"))
+   {
+      THROW_WARNING("Asynchronous memories are disabled by default when targeting NanoXplore devices");
+      setOption(OPT_use_asynchronous_memories, false);
    }
 }
 
