@@ -1889,9 +1889,10 @@ bool parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
                      }
                   }
                }
-               if(latest_cs >= (LP_II + cs_first_vertex))
+               auto cs_ratio = (latest_cs - from_strongtype_cast<unsigned>(initialCycle)) / LP_II;
+               if(latest_cs > (cs_ratio * LP_II + from_strongtype_cast<unsigned>(initialCycle)))
                {
-                  latest_cs = LP_II + cs_first_vertex - 1;
+                  latest_cs = cs_ratio * LP_II + from_strongtype_cast<unsigned>(initialCycle);
                }
                if(latest_cs > cs_first_vertex && (latest_cs + LP_II >= (cs_last_vertex + last_vertex_n_cycles)))
                {
