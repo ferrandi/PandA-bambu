@@ -55,5 +55,3 @@ bambu_specific_test6/bin_testbench.c --top-fname=kernel --generate-tb=BENCHMARKS
 
 bambu_specific_test6/test_open.c --benchmark-name=open --top-fname=main --experimental-setup=BAMBU-BALANCED-MP --file-input-data=BENCHMARKS_ROOT/bambu_specific_test6/bin_test.dat --channels-type=MEM_ACC_11
 bambu_specific_test6/test_open.c --benchmark-name=openn --top-fname=main --experimental-setup=BAMBU-BALANCED-MP --file-input-data=BENCHMARKS_ROOT/bambu_specific_test6/bin_test.dat --channels-type=MEM_ACC_NN
-bambu_specific_test6/test_open.c --benchmark-name=open_vhdl --top-fname=main --experimental-setup=BAMBU-BALANCED-MP --file-input-data=BENCHMARKS_ROOT/bambu_specific_test6/bin_test.dat --channels-type=MEM_ACC_11 -wH
-bambu_specific_test6/test_open.c --benchmark-name=openn_vhdl --top-fname=main --experimental-setup=BAMBU-BALANCED-MP --file-input-data=BENCHMARKS_ROOT/bambu_specific_test6/bin_test.dat --channels-type=MEM_ACC_NN -wH
