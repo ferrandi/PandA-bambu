@@ -164,11 +164,6 @@ void StateTransitionGraphManager::ComputeCyclesCount(bool is_pipelined)
       info->bounded =
           is_pipelined || (info->min_cycles == info->max_cycles && info->min_cycles > 0 && !has_dummy_state);
    }
-   else
-   {
-      THROW_ASSERT(Param->getOption<bool>(OPT_disable_bounded_function),
-                   "A pipelined function should always generate a DAG");
-   }
 }
 
 vertex StateTransitionGraphManager::get_entry_state() const
