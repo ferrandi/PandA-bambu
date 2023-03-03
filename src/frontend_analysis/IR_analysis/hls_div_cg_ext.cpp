@@ -139,35 +139,39 @@ DesignFlowStep_Status hls_div_cg_ext::InternalExec()
    const tree_manipulationRef tree_man(new tree_manipulation(TreeM, parameters, AppM));
 
    const auto curr_tn = TreeM->GetTreeNode(function_id);
-   const auto fd = GetPointerS<function_decl>(curr_tn);
-   const auto sl = GetPointerS<statement_list>(GET_NODE(fd->body));
-
-   THROW_ASSERT(GetPointer<const HLS_manager>(AppM)->get_HLS_target(), "unexpected condition");
-   const auto hls_target = GetPointer<const HLS_manager>(AppM)->get_HLS_target();
-   if(hls_target->get_target_device()->has_parameter("use_soft_64_mul") &&
-      hls_target->get_target_device()->get_parameter<size_t>("use_soft_64_mul"))
+   const auto fname = tree_helper::GetFunctionName(TreeM, curr_tn);
+   if(fname != "__umul64" && fname != "__mul64")
    {
-      use64bitMul = true;
-   }
+      const auto fd = GetPointerS<function_decl>(curr_tn);
+      const auto sl = GetPointerS<statement_list>(GET_NODE(fd->body));
 
-   bool modified = false;
-   for(const auto& idx_bb : sl->list_of_bloc)
-   {
-      const auto& BB = idx_bb.second;
-      for(const auto& stmt : BB->CGetStmtList())
+      THROW_ASSERT(GetPointer<const HLS_manager>(AppM)->get_HLS_target(), "unexpected condition");
+      const auto hls_target = GetPointer<const HLS_manager>(AppM)->get_HLS_target();
+      if(hls_target->get_target_device()->has_parameter("use_soft_64_mul") &&
+         hls_target->get_target_device()->get_parameter<size_t>("use_soft_64_mul"))
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                        "-->Examine " + STR(GET_INDEX_NODE(stmt)) + " " + GET_NODE(stmt)->ToString());
-         modified |= recursive_examinate(stmt, stmt, tree_man);
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                        "<--Examined " + STR(GET_INDEX_NODE(stmt)) + " " + GET_NODE(stmt)->ToString());
+         use64bitMul = true;
       }
-   }
 
-   if(modified)
-   {
-      function_behavior->UpdateBBVersion();
-      return DesignFlowStep_Status::SUCCESS;
+      bool modified = false;
+      for(const auto& idx_bb : sl->list_of_bloc)
+      {
+         const auto& BB = idx_bb.second;
+         for(const auto& stmt : BB->CGetStmtList())
+         {
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                           "-->Examine " + STR(GET_INDEX_NODE(stmt)) + " " + GET_NODE(stmt)->ToString());
+            modified |= recursive_examinate(stmt, stmt, tree_man);
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                           "<--Examined " + STR(GET_INDEX_NODE(stmt)) + " " + GET_NODE(stmt)->ToString());
+         }
+      }
+
+      if(modified)
+      {
+         function_behavior->UpdateBBVersion();
+         return DesignFlowStep_Status::SUCCESS;
+      }
    }
    return DesignFlowStep_Status::UNCHANGED;
 }
@@ -215,11 +219,11 @@ bool hls_div_cg_ext::recursive_examinate(const tree_nodeRef& current_tree_node, 
                   const auto expr_type = tree_helper::CGetType(ce->args.at(0));
                   const auto me = tree_man->create_binary_operation(expr_type, ce->args.at(0), ce->args.at(1),
                                                                     BUILTIN_SRCP, mult_expr_K);
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Replaced " + STR(current_statement));
                   TreeM->ReplaceTreeNode(current_statement, current_tree_node, me);
                   AppM->GetCallGraphManager()->RemoveCallPoint(function_id, GET_INDEX_CONST_NODE(fnode),
                                                                GET_INDEX_CONST_NODE(current_statement));
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                 "---Replaced " + STR(current_tree_node) + " -> " + STR(ce));
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---      -> " + STR(current_statement));
                   modified = true;
                }
             }
@@ -295,12 +299,12 @@ bool hls_div_cg_ext::recursive_examinate(const tree_nodeRef& current_tree_node, 
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Adding call to " + fu_name);
                const std::vector<tree_nodeRef> args = {be->op0, be->op1};
                const auto ce = tree_man->CreateCallExpr(called_function, args, get_current_srcp());
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Replaced " + STR(current_statement));
                TreeM->ReplaceTreeNode(current_statement, current_tree_node, ce);
                CallGraphManager::addCallPointAndExpand(already_visited, AppM, function_id, called_function->index,
                                                        GET_INDEX_CONST_NODE(current_statement),
                                                        FunctionEdgeInfo::CallType::direct_call, DEBUG_LEVEL_NONE);
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                              "---Replaced " + STR(current_tree_node) + " -> " + STR(ce));
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---      -> " + STR(current_statement));
                modified = true;
             }
          }
@@ -321,12 +325,12 @@ bool hls_div_cg_ext::recursive_examinate(const tree_nodeRef& current_tree_node, 
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Adding call to " + fname);
                const std::vector<tree_nodeRef> args = {be->op0, be->op1};
                const auto ce = tree_man->CreateCallExpr(called_function, args, get_current_srcp());
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Replaced " + STR(current_statement));
                TreeM->ReplaceTreeNode(current_statement, current_tree_node, ce);
                CallGraphManager::addCallPointAndExpand(already_visited, AppM, function_id, called_function->index,
                                                        GET_INDEX_CONST_NODE(current_statement),
                                                        FunctionEdgeInfo::CallType::direct_call, DEBUG_LEVEL_NONE);
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                              "---Replaced " + STR(current_tree_node) + " -> " + STR(ce));
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---      -> " + STR(current_statement));
                modified = true;
             }
          }

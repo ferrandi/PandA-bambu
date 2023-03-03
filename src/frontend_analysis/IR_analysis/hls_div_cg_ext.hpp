@@ -66,7 +66,6 @@ class hls_div_cg_ext : public FunctionFrontendFlowStep
    /// Already visited tree node (used to avoid infinite recursion)
    CustomUnorderedSet<unsigned int> already_visited;
 
- protected:
    const tree_managerRef TreeM;
 
    bool use64bitMul;
