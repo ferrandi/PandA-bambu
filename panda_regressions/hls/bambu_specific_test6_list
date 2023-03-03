@@ -42,7 +42,6 @@ bambu_specific_test6/sat_op.ll --benchmark-name=usat_sub32-under --top-fname=usa
 bambu_specific_test6/sat_op.ll --benchmark-name=usat_sub64 --top-fname=usat_sub64 --generate-tb="P0=10,P1=5"
 bambu_specific_test6/sat_op.ll --benchmark-name=usat_sub64-under --top-fname=usat_sub64 --generate-tb="P0=10,P1=30"
 
-
 bambu_specific_test6/insert_extract_element.ll --benchmark-name=insert_extract1 --top-fname=test1 --generate-tb="P0=1,P1=2,P2=3,P3=4,P4=5,P5=6,P6=7,P7=8"
 bambu_specific_test6/insert_extract_element.ll --benchmark-name=insert_extract1_output_c --top-fname=test1 --generate-tb="P0=1,P1=2,P2=3,P3=4,P4=5,P5=6,P6=7,P7=8" --pretty-print=output.c
 bambu_specific_test6/insert_extract_element.ll --benchmark-name=insert_extract2 --top-fname=test2 --generate-tb="P0=1,P1=2,P2=3,P3=4,P4=5,P5=6,P6=7,P7=8"
