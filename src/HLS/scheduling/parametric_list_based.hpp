@@ -149,6 +149,8 @@ class parametric_list_based : public schedulingBaseStep
    void compute_exec_stage_time(const unsigned int fu_type, double& stage_period, const ControlStep cs,
                                 const OpGraphConstRef op_graph, vertex v, double& op_execution_time,
                                 double& phi_extra_time, double current_starting_time, double setup_hold_time);
+   unsigned computeLatestStep(unsigned cs_vertex, const OpGraphConstRef opDFG, vertex first_vertex,
+                              const OpVertexSet& Operations, const ScheduleRef schedule);
 
    /// The used metric
    const ParametricListBased_Metric parametric_list_based_metric;

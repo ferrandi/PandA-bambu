@@ -1874,23 +1874,10 @@ bool parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
                /// first vertex is a PHI vertex so we may move as we wish
                /// try to legalize PHIs
                /// compute ALAP of first_vertex
-               OutEdgeIterator eo, eo_end;
-               auto latest_cs = cs_last_vertex;
                const OpGraphConstRef opDFG = FB->CGetOpGraph(FunctionBehavior::DFG);
-               for(boost::tie(eo, eo_end) = boost::out_edges(first_vertex, *opDFG); eo != eo_end; eo++)
-               {
-                  vertex target = boost::target(*eo, *opDFG);
-                  if(Operations.find(target) != Operations.end())
-                  {
-                     auto cs_tgt_vertex = from_strongtype_cast<unsigned>(schedule->get_cstep(target).second);
-                     if(cs_tgt_vertex < latest_cs)
-                     {
-                        latest_cs = cs_tgt_vertex;
-                     }
-                  }
-               }
+               auto latest_cs = computeLatestStep(cs_last_vertex, opDFG, first_vertex, Operations, schedule);
                auto cs_ratio = (latest_cs - from_strongtype_cast<unsigned>(initialCycle)) / LP_II;
-               if(latest_cs > (cs_ratio * LP_II + from_strongtype_cast<unsigned>(initialCycle)))
+               if(cs_ratio != 0 && (latest_cs > (cs_ratio * LP_II + from_strongtype_cast<unsigned>(initialCycle))))
                {
                   latest_cs = cs_ratio * LP_II + from_strongtype_cast<unsigned>(initialCycle);
                }
@@ -1903,7 +1890,8 @@ bool parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
                else
                {
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                 "operation " + GET_NAME(flow_graph, op.first) +
+                                 "operation pair " + GET_NAME(flow_graph, first_vertex) + " <- " +
+                                     GET_NAME(flow_graph, last_vertex) +
                                      " not satisfying the loop pipelining constraints");
                   return false;
                }
@@ -1916,6 +1904,52 @@ bool parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
    schedule->set_csteps(steps);
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "   List Based finished");
    return true;
+}
+
+// approximate function. It works in most of the cases. A more complex function is needed.
+unsigned parametric_list_based::computeLatestStep(unsigned cs_last_vertex, const OpGraphConstRef opDFG,
+                                                  vertex first_vertex, const OpVertexSet& Operations,
+                                                  const ScheduleRef schedule)
+{
+   OutEdgeIterator eo, eo_end;
+   auto latest_cs = cs_last_vertex;
+   for(boost::tie(eo, eo_end) = boost::out_edges(first_vertex, *opDFG); eo != eo_end; eo++)
+   {
+      vertex target = boost::target(*eo, *opDFG);
+      if(Operations.find(target) != Operations.end())
+      {
+         const auto target_index = opDFG->CGetOpNodeInfo(target)->GetNodeId();
+         const auto target_starting_time = schedule->GetStartingTime(target_index);
+         const auto target_ending_time = schedule->GetEndingTime(target_index);
+         if((target_ending_time - target_starting_time) < EPSILON)
+         {
+            unsigned fu_id;
+            unsigned int number_fu = INFINITE_UINT;
+            // in case it is bounded then it is equivalent to having infinite resources
+            if(!HLS->allocation_information->is_vertex_bounded_with(target, fu_id))
+            {
+               number_fu = HLS->allocation_information->min_number_of_resources(target);
+            }
+            if(number_fu == INFINITE_UINT)
+            {
+               auto currentCSTarget = from_strongtype_cast<unsigned>(schedule->get_cstep(target).second);
+               auto latestCSTarget = computeLatestStep(cs_last_vertex, opDFG, target, Operations, schedule);
+               if(latestCSTarget > currentCSTarget)
+               {
+                  schedule->remove_sched(target);
+                  schedule->set_execution(target, ControlStep(latestCSTarget));
+                  schedule->set_execution_end(target, ControlStep(latestCSTarget));
+               }
+            }
+         }
+         auto cs_tgt_vertex = from_strongtype_cast<unsigned>(schedule->get_cstep(target).second);
+         if(cs_tgt_vertex < latest_cs)
+         {
+            latest_cs = cs_tgt_vertex;
+         }
+      }
+   }
+   return latest_cs;
 }
 
 void parametric_list_based::compute_starting_ending_time_asap(
@@ -2346,7 +2380,7 @@ DesignFlowStep_Status parametric_list_based::InternalExec()
                   doLP = false;
                   INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
                                  "---  Loop pipelining not possible for loop (BB" + STR(BBI->block->number) + ")");
-                  /// unroll previous solution
+                  /// revert to the no solution case
                   for(auto& op : operations)
                   {
                      HLS->Rsch->remove_sched(op);
@@ -2365,7 +2399,7 @@ DesignFlowStep_Status parametric_list_based::InternalExec()
                }
                else
                {
-                  /// unroll previous solution
+                  /// revert to the no solution case
                   for(auto& op : operations)
                   {
                      HLS->Rsch->remove_sched(op);
