@@ -597,8 +597,17 @@ double AllocationInformation::get_attribute_of_fu_per_op(const vertex v, const O
 
 unsigned int AllocationInformation::min_number_of_resources(const vertex v) const
 {
-   const auto operation = GET_NAME(op_graph, v);
    const auto node_id = op_graph->CGetOpNodeInfo(v)->GetNodeId();
+   if(node_id == ENTRY_ID)
+   {
+      return INFINITE_UINT;
+   }
+   if(node_id == EXIT_ID)
+   {
+      return INFINITE_UINT;
+   }
+   const auto operation = GetPointer<const gimple_node>(TreeM->CGetTreeNode(node_id))->operation;
+
    const CustomOrderedSet<unsigned int>& fu_set =
        node_id_to_fus.find(std::pair<unsigned int, std::string>(node_id, operation))->second;
 
@@ -1248,8 +1257,17 @@ void AllocationInformation::set_number_channels(unsigned int fu_name, unsigned i
 
 unsigned int AllocationInformation::max_number_of_resources(const vertex v) const
 {
-   const auto operation = GET_NAME(op_graph, v);
    const auto node_id = op_graph->CGetOpNodeInfo(v)->GetNodeId();
+   if(node_id == ENTRY_ID)
+   {
+      return INFINITE_UINT;
+   }
+   if(node_id == EXIT_ID)
+   {
+      return INFINITE_UINT;
+   }
+   const auto operation = GetPointer<const gimple_node>(TreeM->CGetTreeNode(node_id))->operation;
+
    const CustomOrderedSet<unsigned int>& fu_set =
        node_id_to_fus.find(std::pair<unsigned int, std::string>(node_id, operation))->second;
 
