@@ -307,11 +307,11 @@ void fsm_controller::create_state_machine(std::string& parse)
             {
                auto nodeGA = GetPointerS<const gimple_assign>(node);
                auto ssaIndex = GET_INDEX_CONST_NODE(nodeGA->op0);
-               auto step_in = HLS->Rliv->GetStep(v, op, ssaIndex, false);
-               if(HLS->storage_value_information->is_a_storage_value(v, ssaIndex, step_in))
+               auto stepIn = HLS->Rliv->GetStep(v, op, ssaIndex, false);
+               if(HLS->storage_value_information->is_a_storage_value(v, ssaIndex, stepIn))
                {
                   auto storage_value_index =
-                      HLS->storage_value_information->get_storage_value_index(v, ssaIndex, step_in);
+                      HLS->storage_value_information->get_storage_value_index(v, ssaIndex, stepIn);
                   auto written_reg = HLS->Rreg->get_register(storage_value_index);
                   //                     std::cerr << "written_reg " << written_reg << "\n";
                   auto doneCommand =

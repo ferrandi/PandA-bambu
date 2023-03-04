@@ -704,14 +704,14 @@ void mux_connection_binding::connect_to_registers(vertex op, const OpGraphConstR
             const StateInfoConstRef src_state_info =
                 is_PC ? StateInfoConstRef() : HLS->STG->GetStg()->CGetStateInfo(state_src);
             auto src_state_BB_index = *src_state_info->BB_ids.begin();
-            auto step_in = HLS->Rliv->GetStepPhiIn(op, tree_var, src_phi_bb_index, src_state_BB_index);
+            auto stepIn = HLS->Rliv->GetStepPhiIn(op, tree_var, src_phi_bb_index, src_state_BB_index);
             PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                           "        step " + (tree_var ? "for variable " + BH->PrintVariable(tree_var) : "") + "=" +
-                              STR(step_in));
-            if(HLS->storage_value_information->is_a_storage_value(state_src, tree_var, step_in))
+                              STR(stepIn));
+            if(HLS->storage_value_information->is_a_storage_value(state_src, tree_var, stepIn))
             {
                auto storage_value =
-                   HLS->storage_value_information->get_storage_value_index(state_src, tree_var, step_in);
+                   HLS->storage_value_information->get_storage_value_index(state_src, tree_var, stepIn);
                auto r_index = HLS->Rreg->get_register(storage_value);
                PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                              "       - register: " + std::to_string(r_index) + " from " +
@@ -736,7 +736,7 @@ void mux_connection_binding::connect_to_registers(vertex op, const OpGraphConstR
                THROW_ERROR("not expected from " + HLS->Rliv->get_name(state_src) + " to " +
                            HLS->Rliv->get_name(state_tgt) + " " +
                            HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->PrintVariable(tree_var) +
-                           " step=" + STR(step_in));
+                           " step=" + STR(stepIn));
             }
          }
       }
@@ -779,14 +779,14 @@ void mux_connection_binding::connect_to_registers(vertex op, const OpGraphConstR
             }
             else
             {
-               auto step_in = HLS->Rliv->GetStep(state_src, op, tree_var, true);
+               auto stepIn = HLS->Rliv->GetStep(state_src, op, tree_var, true);
                PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                              "        step " + (tree_var ? "for variable " + BH->PrintVariable(tree_var) : "") + "=" +
-                                 STR(step_in));
-               if(HLS->storage_value_information->is_a_storage_value(state_src, tree_var, step_in))
+                                 STR(stepIn));
+               if(HLS->storage_value_information->is_a_storage_value(state_src, tree_var, stepIn))
                {
                   auto storage_value =
-                      HLS->storage_value_information->get_storage_value_index(state_src, tree_var, step_in);
+                      HLS->storage_value_information->get_storage_value_index(state_src, tree_var, stepIn);
                   auto r_index = HLS->Rreg->get_register(storage_value);
                   PRINT_DBG_MEX(
                       DEBUG_LEVEL_PEDANTIC, debug_level,
@@ -880,14 +880,14 @@ void mux_connection_binding::connect_to_registers(vertex op, const OpGraphConstR
                }
                else
                {
-                  auto step_in = HLS->Rliv->GetStep(state_src, op, tree_var, true);
+                  auto stepIn = HLS->Rliv->GetStep(state_src, op, tree_var, true);
                   PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                                 "        step " + (tree_var ? "for variable " + BH->PrintVariable(tree_var) : "") +
-                                    "=" + STR(step_in));
-                  THROW_ASSERT(HLS->storage_value_information->is_a_storage_value(state_src, tree_var, step_in),
+                                    "=" + STR(stepIn));
+                  THROW_ASSERT(HLS->storage_value_information->is_a_storage_value(state_src, tree_var, stepIn),
                                "it has to be a register");
                   auto storage_value =
-                      HLS->storage_value_information->get_storage_value_index(state_src, tree_var, step_in);
+                      HLS->storage_value_information->get_storage_value_index(state_src, tree_var, stepIn);
                   auto r_index = HLS->Rreg->get_register(storage_value);
                   PRINT_DBG_MEX(
                       DEBUG_LEVEL_PEDANTIC, debug_level,
@@ -910,14 +910,14 @@ void mux_connection_binding::connect_to_registers(vertex op, const OpGraphConstR
             }
             else
             {
-               auto step_in = HLS->Rliv->GetStep(state_src, op, tree_var, true);
+               auto stepIn = HLS->Rliv->GetStep(state_src, op, tree_var, true);
                PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                              "        step " + (tree_var ? "for variable " + BH->PrintVariable(tree_var) : "") + "=" +
-                                 STR(step_in));
-               THROW_ASSERT(HLS->storage_value_information->is_a_storage_value(state_src, tree_var, step_in),
+                                 STR(stepIn));
+               THROW_ASSERT(HLS->storage_value_information->is_a_storage_value(state_src, tree_var, stepIn),
                             "it has to be a register");
                auto storage_value =
-                   HLS->storage_value_information->get_storage_value_index(state_src, tree_var, step_in);
+                   HLS->storage_value_information->get_storage_value_index(state_src, tree_var, stepIn);
                auto r_index = HLS->Rreg->get_register(storage_value);
                PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                              "       - register: " + std::to_string(r_index) + " from " +
