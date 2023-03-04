@@ -778,7 +778,7 @@ bool parametric_list_based::compute_minmaxII(const OpVertexSet& Operations, cons
       }
    }
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "   recMII=" + STR(recMII));
-   minII = static_cast<unsigned>(std::max(resMII, recMII));
+   minII = std::max(minII, static_cast<unsigned>(std::max(resMII, recMII)));
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---  minII=" + STR(minII));
 
    CustomUnorderedSet<std::pair<vertex, vertex>> emptySet;
@@ -2325,6 +2325,7 @@ DesignFlowStep_Status parametric_list_based::InternalExec()
          }
       }
       /// some simple checks to avoid waste of time
+      unsigned minIIBC = 1;
       if(isLPBB)
       {
          for(auto op : operations)
@@ -2345,6 +2346,19 @@ DesignFlowStep_Status parametric_list_based::InternalExec()
                }
                break;
             }
+            else
+            {
+               const auto II =
+                   from_strongtype_cast<unsigned>(HLS->allocation_information->get_initiation_time(fu_type, op));
+               auto latency = II == 0 ? HLS->allocation_information->get_cycles(fu_type, op, op_graph) : II;
+               minIIBC = std::max(minIIBC, latency);
+            }
+         }
+         if(minIIBC > 1)
+         {
+            INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
+                           "---  Minimum II=" + STR(minIIBC) + " for (BB" + STR(BBI->block->number) +
+                               ") due to multi-cycles operations");
          }
       }
 
@@ -2354,7 +2368,7 @@ DesignFlowStep_Status parametric_list_based::InternalExec()
                     "  .operations: " + STR(operations.size()) + " LPBB=" + (isLPBB ? "T" : "F"));
       if(isLPBB)
       {
-         unsigned minII, maxII;
+         unsigned minII = minIIBC, maxII;
          CustomUnorderedSet<std::pair<vertex, vertex>> toBeScheduled;
          auto doLP = false;
          doLP = compute_minmaxII(operations, ctrl_steps, BBI->block->number, minII, maxII, toBeScheduled);
