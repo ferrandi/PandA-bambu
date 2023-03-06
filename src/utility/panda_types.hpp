@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2022-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -31,55 +31,19 @@
  *
  */
 /**
- * @file bitfield_obj.hpp
- * @brief Base class for bitfield managing into datapath
+ * @file panda_types.hpp
+ * @brief
  *
- *
- * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
+ * @author Michele Fiorito <michele.fiorito@polimi.it>
  * $Revision$
  * $Date$
  * Last modified by $Author$
  *
  */
+#ifndef PANDA_TYPES_HPP
+#define PANDA_TYPES_HPP
 
-#ifndef BITFIELD_OBJ_HPP
-#define BITFIELD_OBJ_HPP
+#include "APInt.hpp"
+using integer_cst_t = APInt;
 
-#include "generic_obj.hpp"
-
-class bitfield_obj : public generic_obj
-{
-   /// number of bit of in/out ports
-   unsigned int bitsize;
-
- public:
-   /**
-    * Constructor
-    */
-   bitfield_obj(const std::string& _name) : generic_obj(BITFIELD_OBJ, _name), bitsize(0)
-   {
-   }
-
-   /**
-    * Destructor.
-    */
-   ~bitfield_obj() override = default;
-
-   /**
-    * add a size to the component
-    */
-   void add_bitsize(unsigned int _bitsize)
-   {
-      bitsize = _bitsize > bitsize ? _bitsize : bitsize;
-   }
-
-   /**
-    * return the maximum bitsize associated with the component
-    */
-   unsigned int get_bitsize() const
-   {
-      return bitsize;
-   }
-};
-
-#endif
+#endif // PANDA_TYPES_HPP

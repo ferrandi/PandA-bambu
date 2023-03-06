@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -316,12 +316,18 @@ void fsm_controller::create_state_machine(std::string& parse)
                         activations_check.at(std::get<0>(a)).end())
                      {
                         if(std::get<1>(a) == NULL_VERTEX)
+                        {
                            THROW_ERROR("non compatible transitions added");
+                        }
                         else if(activations_check.at(std::get<0>(a)).find(NULL_VERTEX) !=
                                 activations_check.at(std::get<0>(a)).end())
+                        {
                            THROW_ERROR("non compatible transitions added");
+                        }
                         else
+                        {
                            activations_check[std::get<0>(a)].insert(std::get<1>(a));
+                        }
                      }
                      else
                      {
@@ -329,7 +335,9 @@ void fsm_controller::create_state_machine(std::string& parse)
                      }
                   }
                   else
+                  {
                      activations_check[std::get<0>(a)].insert(std::get<1>(a));
+                  }
 #endif
                   if(std::get<0>(a) == v && (stg->CGetStateInfo(v)->loopId == 0 || !FB->is_pipeline_enabled()))
                   {
@@ -355,7 +363,7 @@ void fsm_controller::create_state_machine(std::string& parse)
             active_fu.insert(HLS->Rfu->get(op));
             technology_nodeRef tn = HLS->allocation_information->get_fu(HLS->Rfu->get_assign(op));
             technology_nodeRef op_tn = GetPointer<functional_unit>(tn)->get_operation(
-                tree_helper::normalized_ID(data->CGetOpNodeInfo(op)->GetOperation()));
+                tree_helper::NormalizeTypename(data->CGetOpNodeInfo(op)->GetOperation()));
             THROW_ASSERT(GetPointer<operation>(op_tn)->time_m,
                          "Time model not available for operation: " + GET_NAME(data, op));
             structural_managerRef CM = GetPointer<functional_unit>(tn)->CM;
@@ -496,7 +504,9 @@ void fsm_controller::create_state_machine(std::string& parse)
 #ifndef NDEBUG
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->default output after considering unbounded:");
       for(const auto a : present_state[v])
+      {
          PRINT_DBG_STRING(DEBUG_LEVEL_PEDANTIC, debug_level, STR(a));
+      }
       PRINT_DBG_STRING(DEBUG_LEVEL_PEDANTIC, debug_level, "\n");
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--");
 #endif
@@ -842,23 +852,23 @@ std::string fsm_controller::get_guard_value(const tree_managerRef TM, const unsi
    {
       unsigned int node_id = data->CGetOpNodeInfo(op)->GetNodeId();
       unsigned int pos = tree_helper::get_multi_way_if_pos(TM, node_id, index);
-      return std::string("&") + STR(pos);
+      return "&" + STR(pos);
    }
    else
    {
       tree_nodeRef node = TM->get_tree_node_const(index);
       THROW_ASSERT(node->get_kind() == case_label_expr_K, "case_label_expr expected " + GET_NAME(data, op));
-      auto* cle = GetPointer<case_label_expr>(node);
+      auto cle = GetPointer<case_label_expr>(node);
       THROW_ASSERT(cle->op0, "guard expected in a case_label_expr");
-      auto* ic = GetPointer<integer_cst>(GET_NODE(cle->op0));
-      THROW_ASSERT(ic, "expected integer_cst object as guard in a case_label_expr");
-      long long int low_result = tree_helper::get_integer_cst_value(ic);
-      long long int high_result = 0;
+      THROW_ASSERT(GetPointer<integer_cst>(GET_NODE(cle->op0)),
+                   "expected integer_cst object as guard in a case_label_expr");
+      const auto low_result = tree_helper::GetConstValue(cle->op0);
+      integer_cst_t high_result = 0;
       if(cle->op1)
       {
-         auto* ic_high = GetPointer<integer_cst>(GET_NODE(cle->op1));
-         THROW_ASSERT(ic_high, "expected integer_cst object as guard in a case_label_expr");
-         high_result = tree_helper::get_integer_cst_value(ic_high);
+         THROW_ASSERT(GetPointer<integer_cst>(GET_NODE(cle->op1)),
+                      "expected integer_cst object as guard in a case_label_expr");
+         high_result = tree_helper::GetConstValue(cle->op1);
       }
       if(high_result == 0)
       {
@@ -867,7 +877,7 @@ std::string fsm_controller::get_guard_value(const tree_managerRef TM, const unsi
       else
       {
          std::string res_string;
-         for(long long int current_value = low_result; current_value <= high_result; ++current_value)
+         for(auto current_value = low_result; current_value <= high_result; ++current_value)
          {
             if(current_value == low_result)
             {

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -66,9 +66,7 @@ struct vertex2obj : public CustomUnorderedMapUnstable<vertex, data_obj>
    /**
     * Destructor.
     */
-   virtual ~vertex2obj()
-   {
-   }
+   virtual ~vertex2obj() = default;
 
    /**
     * Function that print the information associated with a vertex.

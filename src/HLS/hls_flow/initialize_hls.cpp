@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -37,31 +37,25 @@
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
  */
-
-/// Header include
 #include "initialize_hls.hpp"
 
-///. include
 #include "Parameter.hpp"
-
-/// circuit include
-#include "structural_manager.hpp"
-#include "structural_objects.hpp"
-
-/// HLS include
+#include "application_frontend_flow_step.hpp"
+#include "call_graph_manager.hpp"
+#include "design_flow_graph.hpp"
+#include "design_flow_manager.hpp"
+#include "frontend_flow_step_factory.hpp"
 #include "hls.hpp"
 #include "hls_constraints.hpp"
 #include "hls_manager.hpp"
 #include "hls_target.hpp"
 #include "memory_allocation.hpp"
-
-/// technology include
+#include "structural_manager.hpp"
+#include "structural_objects.hpp"
+#include "technology_flow_step.hpp"
+#include "technology_flow_step_factory.hpp"
 #include "technology_manager.hpp"
-
-/// technology/physical_library include
 #include "technology_node.hpp"
-
-#include "call_graph_manager.hpp"
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
 #include "tree_node.hpp"
@@ -72,37 +66,66 @@ InitializeHLS::InitializeHLS(const ParameterConstRef _parameters, const HLS_mana
 {
 }
 
-InitializeHLS::~InitializeHLS() = default;
-
-const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
-InitializeHLS::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+void InitializeHLS::ComputeRelationships(DesignFlowStepSet& relationship,
+                                         const DesignFlowStep::RelationshipType relationship_type)
 {
-   CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;
    switch(relationship_type)
    {
       case DEPENDENCE_RELATIONSHIP:
       {
+         const DesignFlowGraphConstRef design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
+         const auto* frontend_flow_step_factory = GetPointer<const FrontendFlowStepFactory>(
+             design_flow_manager.lock()->CGetDesignFlowStepFactory("Frontend"));
+         const std::string frontend_flow_signature = ApplicationFrontendFlowStep::ComputeSignature(BAMBU_FRONTEND_FLOW);
+         const vertex frontend_flow_step = design_flow_manager.lock()->GetDesignFlowStep(frontend_flow_signature);
+         const DesignFlowStepRef design_flow_step =
+             frontend_flow_step ? design_flow_graph->CGetDesignFlowStepInfo(frontend_flow_step)->design_flow_step :
+                                  frontend_flow_step_factory->CreateApplicationFrontendFlowStep(BAMBU_FRONTEND_FLOW);
+         relationship.insert(design_flow_step);
+
+         const auto* technology_flow_step_factory = GetPointer<const TechnologyFlowStepFactory>(
+             design_flow_manager.lock()->CGetDesignFlowStepFactory("Technology"));
+         const std::string technology_flow_signature =
+             TechnologyFlowStep::ComputeSignature(TechnologyFlowStep_Type::LOAD_TECHNOLOGY);
+         const vertex technology_flow_step = design_flow_manager.lock()->GetDesignFlowStep(technology_flow_signature);
+         const DesignFlowStepRef technology_design_flow_step =
+             technology_flow_step ?
+                 design_flow_graph->CGetDesignFlowStepInfo(technology_flow_step)->design_flow_step :
+                 technology_flow_step_factory->CreateTechnologyFlowStep(TechnologyFlowStep_Type::LOAD_TECHNOLOGY);
+         relationship.insert(technology_design_flow_step);
+         break;
+      }
+      case(PRECEDENCE_RELATIONSHIP):
+      {
+#if HAVE_EXPERIMENTAL && HAVE_PRAGMA_BUILT
+         if(parameters->isOption(OPT_parse_pragma) and parameters->getOption<bool>(OPT_parse_pragma) and
+            relationship_type == PRECEDENCE_RELATIONSHIP)
+         {
+            const DesignFlowGraphConstRef design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
+            const ActorGraphFlowStepFactory* actor_graph_flow_step_factory =
+                GetPointer<const ActorGraphFlowStepFactory>(
+                    design_flow_manager.lock()->CGetDesignFlowStepFactory("ActorGraph"));
+            const std::string actor_graph_creator_signature =
+                ActorGraphFlowStep::ComputeSignature(ACTOR_GRAPHS_CREATOR, input_function, 0, "");
+            const vertex actor_graph_creator_step =
+                design_flow_manager.lock()->GetDesignFlowStep(actor_graph_creator_signature);
+            const DesignFlowStepRef design_flow_step =
+                actor_graph_creator_step ?
+                    design_flow_graph->CGetDesignFlowStepInfo(actor_graph_creator_step)->design_flow_step :
+                    actor_graph_flow_step_factory->CreateActorGraphStep(ACTOR_GRAPHS_CREATOR, input_function);
+            relationship.insert(design_flow_step);
+         }
+#endif
          break;
       }
       case INVALIDATION_RELATIONSHIP:
       {
          break;
       }
-      case PRECEDENCE_RELATIONSHIP:
-      {
-         ret.insert(std::make_tuple(parameters->getOption<HLSFlowStep_Type>(OPT_function_allocation_algorithm),
-                                    HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::WHOLE_APPLICATION));
-         ret.insert(std::make_tuple(parameters->getOption<HLSFlowStep_Type>(OPT_memory_allocation_algorithm),
-                                    HLSFlowStepSpecializationConstRef(new MemoryAllocationSpecialization(
-                                        parameters->getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy),
-                                        parameters->getOption<MemoryAllocation_ChannelsType>(OPT_channels_type))),
-                                    HLSFlowStep_Relationship::WHOLE_APPLICATION));
-         break;
-      }
       default:
          THROW_UNREACHABLE("");
    }
-   return ret;
+   HLSFunctionStep::ComputeRelationships(relationship, relationship_type);
 }
 
 void InitializeHLS::Initialize()

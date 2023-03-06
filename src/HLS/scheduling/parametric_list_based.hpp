@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -102,7 +102,7 @@ struct PrioritySorter : public std::binary_function<vertex, vertex, bool>
    bool operator()(const vertex x, const vertex y) const;
 };
 
-typedef std::vector<std::set<vertex, PrioritySorter>> PriorityQueues;
+using PriorityQueues = std::vector<std::set<vertex, PrioritySorter>>;
 #endif
 
 enum class ParametricListBased_Metric
@@ -307,17 +307,13 @@ class parametric_list_based : public Scheduling
        CustomMap<std::pair<unsigned int, unsigned int>, double>& local_connection_map,
        double current_cycle_starting_time, double current_cycle_ending_time, double setup_hold_time,
        double& phi_extra_time, double scheduling_mux_margins, bool unbounded, bool unbounded_Functions,
-       bool nonDirectLoadStore, const std::set<std::string>& proxy_functions_used, bool cstep_has_RET_conflict,
+       bool LoadStoreOp, const std::set<std::string>& proxy_functions_used, bool cstep_has_RET_conflict,
        unsigned int fu_type, const vertex2obj<ControlStep>& current_ASAP, const fu_bindingRef res_binding,
        const ScheduleRef schedule, bool& predecessorsCond, bool& pipeliningCond, bool& cannotBeChained0,
        bool& chainingRetCond, bool& cannotBeChained1, bool& asyncCond, bool& cannotBeChained2, bool& cannotBeChained3,
-       bool& MultiCond0, bool& MultiCond1, bool& nonDirectMemCond, bool& unboundedFunctionsCond, bool& proxyFunCond,
-       bool unbounded_RW);
-   /**
-    * Compute the relationship of this step
-    * @param relationship_type is the type of relationship to be considered
-    * @return the steps in relationship with this
-    */
+       bool& MultiCond0, bool& MultiCond1, bool& LoadStoreFunctionConflict, bool& FunctionStoreconflict,
+       bool& proxyFunCond, bool unbounded_RW);
+
    const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
    ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
@@ -359,13 +355,5 @@ class parametric_list_based : public Scheduling
     * Initialize the step (i.e., like a constructor, but executed just before exec
     */
    void Initialize() override;
-
-   /**
-    * Compute the relationships of a step with other steps
-    * @param dependencies is where relationships will be stored
-    * @param relationship_type is the type of relationship to be computed
-    */
-   void ComputeRelationships(DesignFlowStepSet& relationship,
-                             const DesignFlowStep::RelationshipType relationship_type) override;
 };
 #endif

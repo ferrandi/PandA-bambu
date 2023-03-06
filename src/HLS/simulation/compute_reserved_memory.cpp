@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2018-2022 Politecnico di Milano
+ *              Copyright (c) 2018-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -56,7 +56,7 @@ ComputeReservedMemory::ComputeReservedMemory(const tree_managerConstRef _TM, con
 {
 }
 
-unsigned int ComputeReservedMemory::GetReservedBytes() const
+unsigned long long ComputeReservedMemory::GetReservedBytes() const
 {
    const auto ptd_type = tree_helper::CGetPointedType(tree_helper::CGetType(tn));
    auto reservedMem = elements_number * tree_helper::Size(ptd_type) / 8;

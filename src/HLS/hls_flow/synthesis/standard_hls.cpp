@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -175,7 +175,7 @@ standard_hls::ComputeHLSRelationships(const DesignFlowStep::RelationshipType rel
 DesignFlowStep_Status standard_hls::InternalExec()
 {
    const auto top_function_ids = HLSMgr->CGetCallGraphManager()->GetRootFunctions();
-   if(top_function_ids.find(funId) != top_function_ids.end())
+   if(top_function_ids.count(funId))
    {
       STOP_TIME(HLSMgr->HLS_execution_time);
    }

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -366,6 +366,7 @@ DesignFlowStep_Status create_tree_manager::Exec()
       const auto raw_files = parameters->getOption<const CustomSet<std::string>>(OPT_input_file);
       for(const auto& raw_file : raw_files)
       {
+         INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "Parsing " + raw_file);
          if(!boost::filesystem::exists(boost::filesystem::path(raw_file)))
          {
             THROW_ERROR("File " + raw_file + " does not exist");
@@ -381,14 +382,18 @@ DesignFlowStep_Status create_tree_manager::Exec()
 #if !RELEASE
       // if a XML configuration file has been specified for the GCC/CLANG parameters
       if(parameters->isOption(OPT_gcc_read_xml))
+      {
          compiler_wrapper->ReadXml(parameters->getOption<std::string>(OPT_gcc_read_xml));
+      }
 #endif
       createCostTable();
       compiler_wrapper->FillTreeManager(TreeM, AppM->input_files, getCostTable());
 
 #if !RELEASE
       if(parameters->isOption(OPT_gcc_write_xml))
+      {
          compiler_wrapper->WriteXml(parameters->getOption<std::string>(OPT_gcc_write_xml));
+      }
 #endif
 
       if(debug_level >= DEBUG_LEVEL_PEDANTIC)

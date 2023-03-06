@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -44,9 +44,7 @@
 template <typename vertex_type>
 struct check_clique
 {
-   virtual ~check_clique()
-   {
-   }
+   virtual ~check_clique() = default;
 
    virtual bool check_edge_compatibility(C_vertex& rep, C_vertex& other) = 0;
 

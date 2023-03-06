@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2015-2022 Politecnico di Milano
+ *              Copyright (C) 2015-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -1020,8 +1020,12 @@ DesignFlowStep_Status VcdSignalSelection::Exec()
    {
       PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Selected vcd signals");
       for(const auto& sig_scope : Discr->selected_vcd_signals)
+      {
          for(const auto& sig_name : sig_scope.second)
+         {
             PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "SIGNAL: " + sig_scope.first + sig_name);
+         }
+      }
    }
 #endif
 

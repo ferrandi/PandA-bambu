@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -121,6 +121,7 @@ enum class HLSFlowStep_Type
    COLORING_REGISTER_BINDING,
    CONTROL_FLOW_CHECKER,
    C_TESTBENCH_EXECUTION,
+   DOMINATOR_ALLOCATION,
    DOMINATOR_FUNCTION_ALLOCATION,
    DOMINATOR_MEMORY_ALLOCATION,
    DOMINATOR_MEMORY_ALLOCATION_CS,
@@ -303,7 +304,7 @@ class HLS_step : public DesignFlowStep
    /**
     * Destructor
     */
-   ~HLS_step() override;
+   virtual ~HLS_step() override;
 
    /**
     * Return a unified identifier of this design step

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2015-2022 Politecnico di Milano
+ *              Copyright (c) 2015-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -79,9 +79,7 @@ OmpAllocation::OmpAllocation(const ParameterConstRef _Param, const HLS_managerRe
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
 }
 
-OmpAllocation::~OmpAllocation()
-{
-}
+OmpAllocation::~OmpAllocation() = default;
 
 void OmpAllocation::IntegrateTechnologyLibraries()
 {
@@ -91,7 +89,7 @@ void OmpAllocation::IntegrateTechnologyLibraries()
    VertexIterator operation, operation_end;
    for(boost::tie(operation, operation_end) = boost::vertices(*op_graph); operation != operation_end; operation++)
    {
-      const auto current_op = tree_helper::normalized_ID(op_graph->CGetOpNodeInfo(*operation)->GetOperation());
+      const auto current_op = tree_helper::NormalizeTypename(op_graph->CGetOpNodeInfo(*operation)->GetOperation());
       if(current_op == "panda_pthread_mutex")
       {
          const auto tn = TechM->get_fu("panda_pthread_mutex", OPENMP_LIBRARY);
@@ -114,7 +112,7 @@ void OmpAllocation::AddPandaPthreadMutex()
    const auto top = CM->get_circ();
    /// add description and license
    GetPointer<module>(top)->set_description("Implementation of panda_pthread_mutex");
-   GetPointer<module>(top)->set_copyright("Copyright (C) 2012-2022 Politecnico di Milano");
+   GetPointer<module>(top)->set_copyright("Copyright (C) 2012-2023 Politecnico di Milano");
    GetPointer<module>(top)->set_authors("Marco Lattuada marco.lattuada@polimi.it");
    GetPointer<module>(top)->set_license("PANDA_GPLv3");
    CM->add_NP_functionality(top, NP_functionality::LIBRARY, "panda_pthread_mutex");

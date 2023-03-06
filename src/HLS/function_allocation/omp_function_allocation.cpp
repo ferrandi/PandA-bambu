@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2015-2022 Politecnico di Milano
+ *              Copyright (c) 2015-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -73,9 +73,7 @@ OmpFunctionAllocation::OmpFunctionAllocation(const ParameterConstRef _parameters
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
 }
 
-OmpFunctionAllocation::~OmpFunctionAllocation()
-{
-}
+OmpFunctionAllocation::~OmpFunctionAllocation() = default;
 
 DesignFlowStep_Status OmpFunctionAllocation::Exec()
 {
@@ -97,7 +95,7 @@ DesignFlowStep_Status OmpFunctionAllocation::Exec()
    CustomUnorderedSet<vertex> vertex_subset;
    for(const auto f_id : root_functions)
    {
-      for(const auto reached_f_id : call_graph_manager->GetReachedBodyFunctionsFrom(f_id))
+      for(const auto reached_f_id : call_graph_manager->GetReachedFunctionsFrom(f_id))
       {
          vertex_subset.insert(call_graph_manager->GetVertex(reached_f_id));
       }
@@ -157,10 +155,12 @@ DesignFlowStep_Status OmpFunctionAllocation::Exec()
 #ifndef NDEBUG
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Other locks allocation candidates are:");
          for(const auto current_locks_allocation_candidate : current_locks_allocation_candidates)
+         {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                            "---" + HLSMgr->CGetFunctionBehavior(current_locks_allocation_candidate)
                                        ->CGetBehavioralHelper()
                                        ->get_function_name());
+         }
 #endif
          if(current_locks_allocation_candidates.size() == 0)
          {

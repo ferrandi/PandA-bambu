@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2015-2022 Politecnico di Milano
+ *              Copyright (c) 2015-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -56,7 +56,7 @@ class OmpFunctionAllocation : public fun_dominator_allocation
    /**
     * Destructor
     */
-   ~OmpFunctionAllocation();
+   ~OmpFunctionAllocation() override;
 
    /**
     * Execute the step

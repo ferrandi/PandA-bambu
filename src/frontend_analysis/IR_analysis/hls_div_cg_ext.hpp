@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -66,22 +66,14 @@ class hls_div_cg_ext : public FunctionFrontendFlowStep
    /// Already visited tree node (used to avoid infinite recursion)
    CustomUnorderedSet<unsigned int> already_visited;
 
- protected:
    const tree_managerRef TreeM;
-
-   /// True if already executed
-   bool already_executed;
-
-   bool changed_call_graph;
-
-   bool fix_nop;
 
    bool use64bitMul;
 
    /**
     * Recursive examine tree node
     */
-   void recursive_examinate(const tree_nodeRef& current_tree_node, const tree_nodeRef& current_statement,
+   bool recursive_examinate(const tree_nodeRef& current_tree_node, const tree_nodeRef& current_statement,
                             const tree_manipulationRef tree_man);
 
    /**
@@ -111,16 +103,5 @@ class hls_div_cg_ext : public FunctionFrontendFlowStep
     * Fixes the var_decl duplication.
     */
    DesignFlowStep_Status InternalExec() override;
-
-   /**
-    * Initialize the step (i.e., like a constructor, but executed just before exec
-    */
-   void Initialize() override;
-
-   /**
-    * Check if this step has actually to be executed
-    * @return true if the step has to be executed
-    */
-   bool HasToBeExecuted() const override;
 };
 #endif

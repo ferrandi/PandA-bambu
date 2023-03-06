@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -61,6 +61,21 @@ REF_FORWARD_DECL(memory);
 REF_FORWARD_DECL(SimulationInformation);
 REF_FORWARD_DECL(BackendFlow);
 
+enum interface_attributes
+{
+   attr_interface_type,
+   attr_size,
+   attr_offset,
+   attr_bundle_name,
+   attr_way_lines,
+   attr_line_size,
+   attr_bus_size,
+   attr_n_ways,
+   attr_buf_size,
+   attr_rep_pol,
+   attr_wr_pol,
+   attr_typename
+};
 class HLS_manager : public application_manager
 {
  public:
@@ -110,19 +125,10 @@ class HLS_manager : public application_manager
    /// The information collected from aadl files
    const AadlInformationRef aadl_information;
 #endif
-
-   /// store the design interface directives coming from an xml file: function_name->parameter_name->interface_type
-   std::map<std::string, std::map<std::string, std::string>> design_interface;
-   /// store the design interface array size coming from an xml file: function_name->parameter_name->interface_arraysize
-   std::map<std::string, std::map<std::string, std::string>> design_interface_arraysize;
-   /// store the design interface array size coming from an xml file:
-   /// function_name->parameter_name->interface_attribute2
-   std::map<std::string, std::map<std::string, std::string>> design_interface_attribute2;
-   /// store the design interface array size coming from an xml file:
-   /// function_name->parameter_name->interface_attribute3
-   std::map<std::string, std::map<std::string, std::string>> design_interface_attribute3;
-   /// store the design interface typenames coming from an xml file: function_name->parameter_name->interface_typename
-   std::map<std::string, std::map<std::string, std::string>> design_interface_typename;
+   /** store the design interface attributes coming from an xml file:
+    * function_name->parameter_name->attribute_name->value
+    */
+   std::map<std::string, std::map<std::string, std::map<interface_attributes, std::string>>> design_attributes;
    /// store the design interface signature coming from an xml file: function_name->typename_signature
    std::map<std::string, std::vector<std::string>> design_interface_typename_signature;
    /// store the design interface original signature coming from an xml file: function_name->typename_signature
@@ -130,11 +136,9 @@ class HLS_manager : public application_manager
    /// store the design interface typename includes coming from an xml file:
    /// function_name->parameter_name->interface_typenameinclude
    std::map<std::string, std::map<std::string, std::string>> design_interface_typenameinclude;
-   /// store the design interface read references of parameters: function_name->bb_index->parameter_name->list_of_loads
-   std::map<std::string, std::map<unsigned, std::map<std::string, std::list<unsigned>>>> design_interface_loads;
-   /// store the design interface write references of parameters:
-   /// function_name->bb_index->parameter_name->list_of_stores
-   std::map<std::string, std::map<unsigned, std::map<std::string, std::list<unsigned>>>> design_interface_stores;
+   /// store the design interface read/write references of parameters:
+   /// function_name->bb_index->parameter_name->list_of_loads
+   std::map<std::string, std::map<unsigned, std::map<std::string, std::list<unsigned>>>> design_interface_io;
 
    /// store the constraints on resources added to manage the I/O interfaces:
    /// function_id->library_name->resource_function_name->number of resources
@@ -176,7 +180,7 @@ class HLS_manager : public application_manager
    /**
     * Return the specified constant in string format
     */
-   std::string get_constant_string(unsigned int node, unsigned int precision);
+   std::string get_constant_string(unsigned int node, unsigned long long precision);
 
    /**
     * Writes the current HLS project into an XML file
@@ -223,6 +227,9 @@ class HLS_manager : public application_manager
     * @return the new version
     */
    unsigned int UpdateMemVersion();
+
+   /// check if the maximum bitwidth used for registers, busses, muxes, etc. is compatible with prec
+   static void check_bitwidth(unsigned long long prec);
 };
 /// refcount definition of the class
 using HLS_managerRef = refcount<HLS_manager>;

@@ -13,7 +13,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2016-2022 Politecnico di Milano
+ *              Copyright (c) 2016-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -39,7 +39,9 @@
  */
 
 #include "conn_binding_cs.hpp"
+
 #include "Parameter.hpp"
+#include "dbgPrintHelper.hpp"
 #include "hls.hpp"
 #include "hls_manager.hpp"
 #include "hls_target.hpp"
@@ -48,13 +50,9 @@
 #include "structural_objects.hpp"
 #include "technology_manager.hpp"
 #include "technology_node.hpp"
-
-/// STD include
-#include <string>
-
-/// utility include
-#include "dbgPrintHelper.hpp"
 #include "utility.hpp"
+
+#include <string>
 
 conn_binding_cs::conn_binding_cs(const BehavioralHelperConstRef _BH, const ParameterConstRef _parameters)
     : conn_binding(_BH, _parameters)
@@ -62,9 +60,7 @@ conn_binding_cs::conn_binding_cs(const BehavioralHelperConstRef _BH, const Param
    debug_level = _parameters->get_class_debug_level(GET_CLASS(*this));
 }
 
-conn_binding_cs::~conn_binding_cs()
-{
-}
+conn_binding_cs::~conn_binding_cs() = default;
 
 void conn_binding_cs::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, const structural_managerRef SM)
 {
@@ -104,7 +100,7 @@ void conn_binding_cs::instantiate_suspension_component(const HLS_managerRef HLSM
       {
          structural_objectRef portStart = curr_gate->find_member(STR(START_PORT_NAME), port_o_K, curr_gate);
          structural_objectRef startMemOp = GetPointer<port_o>(portStart)->find_bounded_object();
-         THROW_ASSERT(startMemOp != NULL, "No start port for mem_ctrl_found");
+         THROW_ASSERT(startMemOp != nullptr, "No start port for mem_ctrl_found");
          andStartMemOp_required = true;
          break;
       }
@@ -192,7 +188,7 @@ void conn_binding_cs::instantiate_suspension_component(const HLS_managerRef HLSM
       {
          structural_objectRef portStart = curr_gate->find_member(STR(START_PORT_NAME), port_o_K, curr_gate);
          structural_objectRef startMemOp = GetPointer<port_o>(portStart)->find_bounded_object();
-         THROW_ASSERT(startMemOp != NULL, "No start port for mem_ctrl_found");
+         THROW_ASSERT(startMemOp != nullptr, "No start port for mem_ctrl_found");
          SM->add_connection(startMemOp, GetPointer<port_o>(port_in_and)->get_port(1));
          break;
       }

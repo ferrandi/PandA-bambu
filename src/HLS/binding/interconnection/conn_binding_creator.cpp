@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -41,35 +41,19 @@
  * Last modified by $Author$
  *
  */
-
-/// Autoheader include
-#include "config_HAVE_EXPERIMENTAL.hpp"
-
-#include "conn_binding_creator.hpp"
-
 #include "behavioral_helper.hpp"
-#include "function_behavior.hpp"
-
-#include "polixml.hpp"
-#include "xml_helper.hpp"
 
 #include "Parameter.hpp"
-
-/// HLS includes
+#include "call_graph_manager.hpp"
+#include "cdfc_module_binding.hpp"
+#include "config_HAVE_EXPERIMENTAL.hpp"
+#include "conn_binding.hpp"
+#include "conn_binding_creator.hpp"
+#include "dbgPrintHelper.hpp"
+#include "function_behavior.hpp"
 #include "hls.hpp"
 #include "hls_manager.hpp"
-
-/// HLS/binding/interconnection
-#include "conn_binding.hpp"
-
-/// HLS/binding/module includes
-#include "cdfc_module_binding.hpp"
-
-/// HLS/binding/register/algorithms includes
-#include "weighted_clique_register.hpp"
-/// behavior include
-#include "call_graph_manager.hpp"
-#include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
+#include "utility.hpp"
 
 conn_binding_creator::conn_binding_creator(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr,
                                            unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager,
@@ -142,12 +126,12 @@ conn_binding_creator::ComputeHLSRelationships(const DesignFlowStep::Relationship
 
 void conn_binding_creator::add_parameter_ports()
 {
-   const FunctionBehaviorConstRef FB = HLSMgr->CGetFunctionBehavior(funId);
-   const BehavioralHelperConstRef BH = FB->CGetBehavioralHelper();
+   const auto FB = HLSMgr->CGetFunctionBehavior(funId);
+   const auto BH = FB->CGetBehavioralHelper();
    input_ports.clear();
    output_ports.clear();
    /// list containing the parameters of the original function (representing input and output values)
-   const std::list<unsigned int>& function_parameters = BH->get_parameters();
+   const auto function_parameters = BH->get_parameters();
    PRINT_DBG_STRING(DEBUG_LEVEL_PEDANTIC, debug_level, "Parameters values: ");
    for(auto function_parameter : function_parameters)
    {

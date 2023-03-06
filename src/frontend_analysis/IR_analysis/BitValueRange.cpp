@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -78,6 +78,10 @@ BitValueRange::ComputeFrontendRelationships(const DesignFlowStep::RelationshipTy
             relationships.insert(std::make_pair(BIT_VALUE_OPT, SAME_FUNCTION));
          }
          relationships.insert(std::make_pair(BITVALUE_RANGE, CALLED_FUNCTIONS));
+         if(parameters->isOption(OPT_hls_div) && parameters->getOption<std::string>(OPT_hls_div) != "none")
+         {
+            relationships.insert(std::make_pair(HLS_DIV_CG_EXT, SAME_FUNCTION));
+         }
          relationships.insert(std::make_pair(RANGE_ANALYSIS, WHOLE_APPLICATION));
          relationships.insert(std::make_pair(USE_COUNTING, SAME_FUNCTION));
          break;
@@ -93,6 +97,10 @@ BitValueRange::ComputeFrontendRelationships(const DesignFlowStep::RelationshipTy
             if(!parameters->getOption<int>(OPT_gcc_openmp_simd))
             {
                relationships.insert(std::make_pair(BIT_VALUE, SAME_FUNCTION));
+            }
+            if(parameters->isOption(OPT_hls_div) && parameters->getOption<std::string>(OPT_hls_div) != "none")
+            {
+               relationships.insert(std::make_pair(HLS_DIV_CG_EXT, SAME_FUNCTION));
             }
          }
          break;

@@ -11,7 +11,7 @@
  *                     Politecnico di Milano - DEIB
  *                      System Architectures Group
  *           ***********************************************
- *            Copyright (C) 2004-2022 Politecnico di Milano
+ *            Copyright (C) 2004-2023 Politecnico di Milano
  *
  * This file is part of the PandA framework.
  *
@@ -101,6 +101,9 @@ void TopEntityMemoryMapped::Initialize()
    const auto is_addressed_fun = HLSMgr->hasToBeInterfaced(funId) && !is_root_function;
    needMemoryMappedRegisters = is_wb4_root || is_addressed_fun || parameters->getOption<bool>(OPT_memory_mapped_top);
    AddedComponents.clear();
+   const auto FB = HLSMgr->CGetFunctionBehavior(funId);
+   _channels_number = FB->GetChannelsNumber();
+   _channels_type = FB->GetChannelsType();
 }
 
 DesignFlowStep_Status TopEntityMemoryMapped::InternalExec()
@@ -256,9 +259,8 @@ void TopEntityMemoryMapped::insertMemoryMappedRegister(structural_managerRef SM_
    const auto FB = HLSMgr->CGetFunctionBehavior(funId);
    const auto BH = FB->CGetBehavioralHelper();
 
-   structural_objectRef controlSignal = interfaceObj->find_member("ControlSignal", signal_o_K, interfaceObj);
-   bool multi_channel_bus = parameters->getOption<MemoryAllocation_ChannelsType>(OPT_channels_type) ==
-                            MemoryAllocation_ChannelsType::MEM_ACC_NN;
+   const auto controlSignal = interfaceObj->find_member("ControlSignal", signal_o_K, interfaceObj);
+   const auto multi_channel_bus = _channels_type == MemoryAllocation_ChannelsType::MEM_ACC_NN;
 
    for(const auto& function_parameter : function_parameters)
    {
@@ -277,8 +279,7 @@ void TopEntityMemoryMapped::insertMemoryMappedRegister(structural_managerRef SM_
                                                     interfaceObj, HLS->HLS_T->get_technology_manager());
       if(multi_channel_bus)
       {
-         resizing_IO(GetPointer<module>(memoryMappedRegister),
-                     parameters->getOption<unsigned int>(OPT_channels_number));
+         resizing_IO(GetPointerS<module>(memoryMappedRegister), _channels_number);
       }
       GetPointerS<module>(memoryMappedRegister)
           ->SetParameter("ALLOCATED_ADDRESS",
@@ -339,7 +340,7 @@ void TopEntityMemoryMapped::insertMemoryMappedRegister(structural_managerRef SM_
                                                  interfaceObj, HLS->HLS_T->get_technology_manager());
    if(multi_channel_bus)
    {
-      resizing_IO(GetPointer<module>(returnRegister), parameters->getOption<unsigned int>(OPT_channels_number));
+      resizing_IO(GetPointer<module>(returnRegister), _channels_number);
    }
    GetPointer<module>(returnRegister)
        ->SetParameter("ALLOCATED_ADDRESS", HLSMgr->Rmem->get_symbol(returnType, HLS->functionId)->get_symbol_name());
@@ -401,15 +402,14 @@ void TopEntityMemoryMapped::insertStartDoneLogic(structural_managerRef SM_mm, st
 
    if(HLSMgr->CGetCallGraphManager()->ExistsAddressedFunction())
    {
-      bool multi_channel_bus = parameters->getOption<MemoryAllocation_ChannelsType>(OPT_channels_type) ==
-                               MemoryAllocation_ChannelsType::MEM_ACC_NN;
-      std::string component_name = multi_channel_bus ? NOTYFY_CALLER_MINIMALN_FU : NOTYFY_CALLER_MINIMAL_FU;
-      structural_objectRef notifyCaller = SM_mm->add_module_from_technology_library(
+      const auto multi_channel_bus = _channels_type == MemoryAllocation_ChannelsType::MEM_ACC_NN;
+      const auto component_name = multi_channel_bus ? NOTYFY_CALLER_MINIMALN_FU : NOTYFY_CALLER_MINIMAL_FU;
+      const auto notifyCaller = SM_mm->add_module_from_technology_library(
           "notifyCaller", component_name, HLS->HLS_T->get_technology_manager()->get_library(component_name),
           interfaceObj, HLS->HLS_T->get_technology_manager());
       if(multi_channel_bus)
       {
-         resizing_IO(GetPointer<module>(notifyCaller), parameters->getOption<unsigned int>(OPT_channels_number));
+         resizing_IO(GetPointerS<module>(notifyCaller), _channels_number);
       }
       setBusSizes(notifyCaller, HLSMgr);
       connectClockAndReset(SM_mm, interfaceObj, notifyCaller);
@@ -428,9 +428,8 @@ void TopEntityMemoryMapped::insertStartDoneLogic(structural_managerRef SM_mm, st
 
 void TopEntityMemoryMapped::insertStatusRegister(structural_managerRef SM_mm, structural_objectRef wrappedObj)
 {
-   bool multi_channel_bus = parameters->getOption<MemoryAllocation_ChannelsType>(OPT_channels_type) ==
-                            MemoryAllocation_ChannelsType::MEM_ACC_NN;
-   structural_objectRef interfaceObj = SM_mm->get_circ();
+   const auto multi_channel_bus = _channels_type == MemoryAllocation_ChannelsType::MEM_ACC_NN;
+   const auto interfaceObj = SM_mm->get_circ();
    if(HLSMgr->CGetCallGraphManager()->ExistsAddressedFunction())
    {
       const auto component_name = multi_channel_bus ? STATUS_REGISTERN_FU : STATUS_REGISTER_FU;
@@ -439,7 +438,7 @@ void TopEntityMemoryMapped::insertStatusRegister(structural_managerRef SM_mm, st
           interfaceObj, HLS->HLS_T->get_technology_manager());
       if(multi_channel_bus)
       {
-         resizing_IO(GetPointer<module>(statusRegister), parameters->getOption<unsigned int>(OPT_channels_number));
+         resizing_IO(GetPointer<module>(statusRegister), _channels_number);
       }
       GetPointerS<module>(statusRegister)
           ->SetParameter("ALLOCATED_ADDRESS",
@@ -482,7 +481,7 @@ void TopEntityMemoryMapped::insertStatusRegister(structural_managerRef SM_mm, st
           interfaceObj, HLS->HLS_T->get_technology_manager());
       if(multi_channel_bus)
       {
-         resizing_IO(GetPointer<module>(statusRegister), parameters->getOption<unsigned int>(OPT_channels_number));
+         resizing_IO(GetPointer<module>(statusRegister), _channels_number);
       }
       GetPointerS<module>(statusRegister)
           ->SetParameter("ALLOCATED_ADDRESS",
@@ -553,7 +552,7 @@ static void propagateInterface(structural_managerRef SM, structural_objectRef wr
          continue;
       }
 
-      SM->add_port(portObj->get_id(), portObj->get_port_direction(), interfaceObj, portObj->get_typeRef());
+      SM->add_port(portID, portObj->get_port_direction(), interfaceObj, portObj->get_typeRef());
    }
 
    connectClockAndReset(SM, interfaceObj, wrappedObj);

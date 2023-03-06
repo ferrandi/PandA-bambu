@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -180,7 +180,7 @@ class RealRange : public Range
    RealRange(const Range& s, const Range& e, const Range& f);
    RealRange(const RangeConstRef& s, const RangeConstRef& e, const RangeConstRef& f);
    explicit RealRange(const RangeConstRef& vc);
-   ~RealRange() = default;
+   ~RealRange() override = default;
    RealRange(const RealRange& other) = default;
    RealRange(RealRange&&) = default;
    RealRange& operator=(const RealRange& other) = default;

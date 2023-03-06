@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2022-2022 Politecnico di Milano
+ *              Copyright (C) 2022-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -48,6 +48,25 @@
 
 #include "language_writer.hpp"
 
+enum in_port
+{
+   i_clock = 0,
+   i_reset,
+   i_start,
+   i_in1,
+   i_in3,
+   i_vld,
+   i_last
+};
+
+enum out_port
+{
+   o_done = 0,
+   o_out1,
+   o_ack,
+   o_last
+};
+
 Read_handshakeModuleGenerator::Read_handshakeModuleGenerator(const HLS_managerRef& _HLSMgr) : Registrar(_HLSMgr)
 {
 }
@@ -60,38 +79,32 @@ void Read_handshakeModuleGenerator::InternalExec(std::ostream& out, const module
                                                  const std::vector<ModuleGenerator::parameter>& _ports_out,
                                                  const std::vector<ModuleGenerator::parameter>& /* _ports_inout */)
 {
-   out << "integer ii=0;\n";
-   out << "reg [PORTSIZE_" << _ports_out[1].name << "-1:0] started 1INIT_ZERO_VALUE;\n";
-   out << "reg [PORTSIZE_" << _ports_out[1].name << "-1:0] started0 1INIT_ZERO_VALUE;\n";
-   out << "reg [(PORTSIZE_" << _ports_out[1].name << "*BITSIZE_" << _ports_out[1].name << ")-1:0] "
-       << _ports_out[1].name << " ;\n";
-   out << "reg [PORTSIZE_" << _ports_out[1].name << "-1:0] " << _ports_out[0].name << "0 1INIT_ZERO_VALUE;\n";
+   THROW_ASSERT(_ports_in.size() >= i_last, "");
+   THROW_ASSERT(_ports_out.size() >= o_last, "");
+   out << "reg started 1INIT_ZERO_VALUE;\n";
+   out << "reg started0 1INIT_ZERO_VALUE;\n";
+   out << "reg [BITSIZE_" << _ports_out[o_out1].name << "-1:0] " << _ports_out[o_out1].name << " ;\n";
+   out << "reg " << _ports_out[o_done].name << "0 1INIT_ZERO_VALUE;\n";
 
    out << "always @(*)\n";
-   out << "  for(ii=0; ii<PORTSIZE_" << _ports_out[1].name << "; ii=ii+1)\n";
-   out << "    started0[ii] <= (started[ii] | " << _ports_in[2].name << "[ii]) & !" << _ports_in[5].name << ";\n";
+   out << "  started0 <= (started | " << _ports_in[i_start].name << ") & !" << _ports_in[i_vld].name << ";\n";
    out << "always @(posedge clock 1RESET_EDGE)\n";
    out << "  if (1RESET_VALUE)\n";
    out << "    started <= 0;\n";
    out << "  else\n";
-   out << "    for(ii=0; ii<PORTSIZE_" << _ports_out[1].name << "; ii=ii+1)\n";
-   out << "      started[ii] <= started0[ii];\n";
+   out << "    started <= started0;\n";
 
    out << "always @(*)\n";
    out << "begin\n";
-   out << "  for(ii=0; ii<PORTSIZE_" << _ports_out[1].name << "; ii=ii+1)\n";
-   out << "    " << _ports_out[1].name << "[(BITSIZE_" << _ports_out[1].name << ")*ii+:BITSIZE_" << _ports_out[1].name
-       << "] = " << _ports_in[4].name << " >> (8*" << _ports_in[3].name << "[(BITSIZE_" << _ports_in[3].name
-       << ")*ii+:BITSIZE_" << _ports_in[3].name << "]);\n";
+   out << "  " << _ports_out[o_out1].name << " = " << _ports_in[i_in3].name << ";\n";
    out << "end\n";
 
    out << "always @(*)\n";
    out << "begin\n";
-   out << "  for(ii=0; ii<PORTSIZE_" << _ports_out[1].name << "; ii=ii+1)\n";
-   out << "    " << _ports_out[0].name << "0[ii] = (" << _ports_in[2].name << "[ii] & " << _ports_in[5].name
-       << ") | (started[ii] & " << _ports_in[5].name << ");\n";
+   out << "  " << _ports_out[o_done].name << "0 = (" << _ports_in[i_start].name << " & " << _ports_in[i_vld].name
+       << ") | (started & " << _ports_in[i_vld].name << ");\n";
    out << "end\n";
 
-   out << "assign " << _ports_out[0].name << " = " << _ports_out[0].name << "0;\n";
-   out << "assign " << _ports_out[2].name << " = |" << _ports_out[0].name << "0;\n";
+   out << "assign " << _ports_out[o_done].name << " = " << _ports_out[o_done].name << "0;\n";
+   out << "assign " << _ports_out[o_ack].name << " = " << _ports_out[o_done].name << "0;\n";
 }

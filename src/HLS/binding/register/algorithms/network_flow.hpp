@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -44,16 +44,12 @@
 #ifndef NETWORK_FLOW_HPP
 #define NETWORK_FLOW_HPP
 
-#include "refcount.hpp"
-
-#include "custom_map.hpp"
 #include "custom_set.hpp"
+#include "graph.hpp"
+#include "refcount.hpp"
+#include <boost/lexical_cast.hpp>
 #include <iosfwd>
 #include <vector>
-
-#include "graph.hpp"
-
-#include "boost/lexical_cast.hpp"
 
 #define I2S(number) std::to_string(number)
 

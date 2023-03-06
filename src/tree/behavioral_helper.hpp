@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -225,7 +225,7 @@ class BehavioralHelper
     * @param index is the index of a C object
     * @return the size in bit
     */
-   virtual unsigned int get_size(unsigned int var) const;
+   virtual unsigned long long get_size(unsigned int var) const;
 
    /**
     * Return the name of the function
@@ -593,17 +593,6 @@ class BehavioralHelper
     * return the label name associated with the label expression
     */
    virtual const std::string get_label_name(unsigned int label_expr_nid) const;
-
-   /**
-    * create a gimple_assign
-    * @param function_decl_nid is the node id of the function where the gimple_assign has to be inserted
-    * @param block is the basic block where the gimple_assign has to be inserted
-    * @param position is the statement after which gimple_assign has to be inserted
-    * @param left_part is the tree_node of the left part
-    * @param right_part is tree_node of the right part
-    */
-   virtual void create_gimple_modify_stmt(unsigned int function_decl_nid, blocRef& block, tree_nodeRef left_part,
-                                          tree_nodeRef right_part);
 
    /**
     * Print the declaration of a non built-in type.

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -353,6 +353,7 @@ StateTransitionGraphInfo::StateTransitionGraphInfo(const OpGraphConstRef _op_fun
       entry_node(NULL_VERTEX),
       exit_node(NULL_VERTEX),
       is_a_dag(true),
+      bounded(false),
       min_cycles(0),
       max_cycles(0)
 {

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -50,20 +50,14 @@
 #include "config_HAVE_FROM_LIBERTY.hpp"
 #include "config_HAVE_PHYSICAL_LIBRARY_MODELS_BUILT.hpp"
 
-/// STD include
-#include <ostream>
-#include <string>
-
-/// STL include
 #include "custom_map.hpp"
-#include "custom_set.hpp"
-#include <vector>
-
-/// utility include
 #include "custom_set.hpp"
 #include "refcount.hpp"
 #include "strong_typedef.hpp"
-#include "utility.hpp"
+
+#include <ostream>
+#include <string>
+#include <vector>
 
 /// working library.
 #define DESIGN std::string("design")
@@ -109,6 +103,7 @@ REF_FORWARD_DECL(simple_indent);
 class xml_element;
 class allocation;
 class mixed_hls;
+struct TimeStamp;
 enum class TargetDevice_Type;
 UINT_STRONG_TYPEDEF_FORWARD_DECL(ControlStep);
 class functional_unit;
@@ -240,9 +235,17 @@ class technology_manager
     * Return the reference to a component given its name.
     * @param fu_name is the name of the component.
     * @param Library is library name where the unit is stored
-    * @return the reference to a component
+    * @return the reference to a component if found, else nullptr
     */
    technology_nodeRef get_fu(const std::string& fu_name, const std::string& Library) const;
+
+   /**
+    * Return the reference to a component given its name.
+    * @param fu_name is the name of the component.
+    * @param Library is library name where the unit is stored if found
+    * @return the reference to a component if found, else nullptr
+    */
+   technology_nodeRef get_fu(const std::string& fu_name, std::string* Library = nullptr) const;
 
    /**
     * Return the higher priority library where the given component is stored

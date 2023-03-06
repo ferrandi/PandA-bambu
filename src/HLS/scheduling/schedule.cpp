@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -181,7 +181,7 @@ class ScheduleWriter : public GraphWriter
       {
          inverse_relation[sch->get_cstep(*v).second].insert(*v);
       }
-      for(ControlStep level = ControlStep(0u); level < sch->get_csteps(); ++level)
+      for(auto level = ControlStep(0u); level < sch->get_csteps(); ++level)
       {
          os << "//Control Step: " << level << std::endl;
          os << "CS" << level << " [style=plaintext]\n{rank=same; CS" << level << " ";
@@ -191,7 +191,7 @@ class ScheduleWriter : public GraphWriter
          }
          os << ";}\n";
       }
-      for(ControlStep level = ControlStep(1u); level < sch->get_csteps(); ++level)
+      for(auto level = ControlStep(1u); level < sch->get_csteps(); ++level)
       {
          os << "CS" << level - 1u << "-> CS" << level << ";\n";
       }

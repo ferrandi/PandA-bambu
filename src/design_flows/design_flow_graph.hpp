@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -185,6 +185,15 @@ class DesignFlowGraph : public graph
     * @param selector is the selector used in this view
     */
    DesignFlowGraph(const DesignFlowGraphsCollectionRef design_flow_graphs_collection, const int _selector);
+
+   /**
+    * Constructor
+    * @param design_flow_graphs_collection is the graph collection
+    * @param selector is the selector used in this view
+    * @param vertices is the set of vertices to be considered
+    */
+   DesignFlowGraph(const DesignFlowGraphsCollectionRef design_flow_graphs_collection, const int _selector,
+                   const CustomUnorderedSet<vertex>& vertices);
 
    /**
     * Destructor

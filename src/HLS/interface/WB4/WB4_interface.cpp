@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -62,7 +62,6 @@
 #include "language_writer.hpp"
 #include "memory.hpp"
 #include "memory_allocation.hpp"
-#include "memory_symbol.hpp"
 
 #include "structural_manager.hpp"
 #include "structural_objects.hpp"
@@ -128,15 +127,14 @@ DesignFlowStep_Status WB4_interface::InternalExec()
    return DesignFlowStep_Status::SUCCESS;
 }
 
-unsigned int WB4_interface::get_data_bus_bitsize()
+unsigned long long WB4_interface::get_data_bus_bitsize()
 {
    const auto function_behavior = HLSMgr->CGetFunctionBehavior(HLS->functionId);
    const auto behavioral_helper = function_behavior->CGetBehavioralHelper();
-   std::map<unsigned int, memory_symbolRef> function_parameters =
-       HLSMgr->Rmem->get_function_parameters(HLS->functionId);
+   const auto function_parameters = HLSMgr->Rmem->get_function_parameters(HLS->functionId);
 
-   unsigned int data_bus_bitsize = HLSMgr->Rmem->get_bus_data_bitsize();
-   for(auto function_parameter : function_parameters)
+   auto data_bus_bitsize = HLSMgr->Rmem->get_bus_data_bitsize();
+   for(const auto& function_parameter : function_parameters)
    {
       if(function_parameter.first != HLS->functionId)
       {
@@ -150,8 +148,8 @@ unsigned int WB4_interface::get_data_bus_bitsize()
 
 unsigned int WB4_interface::get_addr_bus_bitsize()
 {
-   unsigned int addr_bus_bitsize = HLSMgr->get_address_bitsize();
-   unsigned long long int allocated_space = HLSMgr->Rmem->get_max_address();
+   auto addr_bus_bitsize = HLSMgr->get_address_bitsize();
+   auto allocated_space = HLSMgr->Rmem->get_max_address();
    unsigned int parameter_addr_bit = 1;
    while(allocated_space >>= 1)
    {
@@ -167,8 +165,8 @@ void WB4_interface::build_WB4_bus_interface(structural_managerRef SM)
 
    structural_type_descriptorRef b_type = structural_type_descriptorRef(new structural_type_descriptor("bool", 1));
 
-   unsigned int data_bus_bitsize = get_data_bus_bitsize();
-   unsigned int addr_bus_bitsize = get_addr_bus_bitsize();
+   auto data_bus_bitsize = get_data_bus_bitsize();
+   auto addr_bus_bitsize = get_addr_bus_bitsize();
 
    structural_type_descriptorRef sel_type =
        structural_type_descriptorRef(new structural_type_descriptor("bool", data_bus_bitsize / 8));
@@ -321,7 +319,7 @@ void WB4_interface::build_WB4_complete_logic(structural_managerRef SM, structura
    // check consitency of the interfaces
    bool is_slave = false, is_master = false;
    bool only_mm_parameters_allocated =
-       HLSMgr->Rmem->get_allocated_parameters_memory() == HLSMgr->Rmem->get_allocated_intern_memory();
+       HLSMgr->Rmem->get_allocated_parameters_memory() == HLSMgr->Rmem->get_allocated_internal_memory();
 
    if(S_data_ram_size_port && S_Wdata_ram_port && S_addr_ram_port && S_we_ram_port && S_oe_ram_port &&
       Sout_DataRdy_port && Sout_Rdata_ram_port)
@@ -375,8 +373,8 @@ void WB4_interface::build_WB4_complete_logic(structural_managerRef SM, structura
    constBitZero->SetParameter("value", "1'b0");
    connect_with_signal(SM, wrappedObj, START_PORT_NAME, constBitZero, "out1");
 
-   unsigned int data_bus_bitsize = get_data_bus_bitsize();
-   unsigned int addr_bus_bitsize = get_addr_bus_bitsize();
+   auto data_bus_bitsize = get_data_bus_bitsize();
+   auto addr_bus_bitsize = get_addr_bus_bitsize();
 
    structural_type_descriptorRef addr_type =
        structural_type_descriptorRef(new structural_type_descriptor("bool", addr_bus_bitsize));
@@ -488,14 +486,14 @@ void WB4_interface::build_WB4_complete_logic(structural_managerRef SM, structura
             SM->add_connection(signControl, orGateControl->find_member("out1", port_o_K, orGateControl));
             PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Added control signal");
 
-            unsigned long long int base_address = HLSMgr->base_address;
-            bool Has_extern_allocated_data = HLSMgr->Rmem->get_memory_address() - base_address > 0;
-            bool Has_unknown_addresses = HLSMgr->Rmem->has_unknown_addresses() &&
-                                         parameters->getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) !=
-                                             MemoryAllocation_Policy::ALL_BRAM &&
-                                         parameters->getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) !=
-                                             MemoryAllocation_Policy::EXT_PIPELINED_BRAM;
-            if(Has_extern_allocated_data || Has_unknown_addresses)
+            const auto memory_allocation_policy = HLSMgr->CGetFunctionBehavior(funId)->GetMemoryAllocationPolicy();
+            const auto Has_extern_allocated_data =
+                ((HLSMgr->Rmem->get_memory_address() - HLSMgr->base_address) > 0 &&
+                 memory_allocation_policy != MemoryAllocation_Policy::EXT_PIPELINED_BRAM) ||
+                (HLSMgr->Rmem->has_unknown_addresses() &&
+                 memory_allocation_policy != MemoryAllocation_Policy::ALL_BRAM &&
+                 memory_allocation_policy != MemoryAllocation_Policy::EXT_PIPELINED_BRAM);
+            if(Has_extern_allocated_data)
             {
                signControl_delayed = signControl;
             }

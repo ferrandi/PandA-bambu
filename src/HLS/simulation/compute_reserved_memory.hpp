@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2018-2022 Politecnico di Milano
+ *              Copyright (c) 2018-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -81,7 +81,7 @@ class ComputeReservedMemory : public CInitializationParserFunctor
    /**
     * Return the computed value
     */
-   unsigned int GetReservedBytes() const;
+   unsigned long long GetReservedBytes() const;
 
    /**
     * Check that all the necessary information was present in the initialization string

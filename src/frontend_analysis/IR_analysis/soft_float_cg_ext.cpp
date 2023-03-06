@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -244,7 +244,8 @@ soft_float_cg_ext::soft_float_cg_ext(const ParameterConstRef _parameters, const 
       {
          auto format = SplitString(opt, "*");
 
-         const auto f_index = [&]() -> unsigned int {
+         const auto f_index = [&]() -> auto
+         {
             if(format[0] == "@")
             {
                if(AppM->CGetCallGraphManager()->GetRootFunctions().size() > 1)
@@ -255,7 +256,8 @@ soft_float_cg_ext::soft_float_cg_ext(const ParameterConstRef _parameters, const 
             }
             const auto f_node = TreeM->GetFunction(format[0]);
             return f_node ? f_node->index : 0;
-         }();
+         }
+         ();
 
          if(!f_index)
          {
@@ -284,7 +286,7 @@ soft_float_cg_ext::soft_float_cg_ext(const ParameterConstRef _parameters, const 
          {
             std::list<CallGraph::vertex_descriptor> func_sort;
             CustomUnorderedSet<CallGraph::vertex_descriptor> reached_v;
-            const auto reached_from_top = CGM->GetReachedBodyFunctionsFrom(root_func);
+            const auto reached_from_top = CGM->GetReachedFunctionsFrom(root_func);
             for(const auto func_id : reached_from_top)
             {
                reached_v.insert(CGM->GetVertex(func_id));
@@ -558,7 +560,7 @@ DesignFlowStep_Status soft_float_cg_ext::InternalExec()
             const auto arg_vc =
                 tree_man->create_unary_operation(ssa->type, ssa_ridx, BUILTIN_SRCP, view_convert_expr_K);
             const auto vc_stmt = tree_man->CreateGimpleAssign(ssa->type, tree_nodeRef(), tree_nodeRef(), arg_vc,
-                                                              function_id, call_bb->number, BUILTIN_SRCP);
+                                                              function_id, BUILTIN_SRCP);
             const auto vc_ssa = GetPointerS<gimple_assign>(GET_NODE(vc_stmt))->op0;
             call_bb->PushBefore(vc_stmt, call_stmt, AppM);
             TreeM->ReplaceTreeNode(call_stmt, ssa_ridx, vc_ssa);
@@ -593,7 +595,7 @@ DesignFlowStep_Status soft_float_cg_ext::InternalExec()
          const auto ret_vc =
              tree_man->create_unary_operation(int_ret_type, ssa_ridx, BUILTIN_SRCP, view_convert_expr_K);
          const auto vc_stmt = tree_man->CreateGimpleAssign(int_ret_type, tree_nodeRef(), tree_nodeRef(), ret_vc,
-                                                           function_id, call_bb->number, BUILTIN_SRCP);
+                                                           function_id, BUILTIN_SRCP);
          const auto vc_ssa = GetPointerS<const gimple_assign>(GET_CONST_NODE(vc_stmt))->op0;
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                         "-->Added statement " + GET_CONST_NODE(vc_stmt)->ToString());
@@ -661,7 +663,7 @@ DesignFlowStep_Status soft_float_cg_ext::InternalExec()
                   const auto vc =
                       tree_man->create_unary_operation(parm_type, parm_ridx, BUILTIN_SRCP, view_convert_expr_K);
                   vc_stmt = tree_man->CreateGimpleAssign(parm_type, tree_nodeRef(), tree_nodeRef(), vc, function_id,
-                                                         first_bb->number, BUILTIN_SRCP);
+                                                         BUILTIN_SRCP);
                   if(!_version->ieee_format())
                   {
                      const auto ssa_ff = tree_helper::Size(parmSSA->type) == 32 ? float32FF : float64FF;
@@ -716,7 +718,7 @@ DesignFlowStep_Status soft_float_cg_ext::InternalExec()
          {
             const auto vc = tree_man->create_unary_operation(ret_ssa->type, gr->op, BUILTIN_SRCP, view_convert_expr_K);
             vc_stmt = tree_man->CreateGimpleAssign(ret_ssa->type, tree_nodeRef(), tree_nodeRef(), vc, function_id,
-                                                   bb->number, BUILTIN_SRCP);
+                                                   BUILTIN_SRCP);
             if(!_version->ieee_format())
             {
                const auto ssa_ff = tree_helper::Size(ret_ssa->type) == 32 ? float32FF : float64FF;
@@ -1100,8 +1102,8 @@ void soft_float_cg_ext::ssa_lowering(ssa_name* ssa, bool internal_type) const
             const auto ssa_ridx = TreeM->CGetTreeReindex(ssa->index);
             const auto def_bb = GetPointerS<statement_list>(GET_NODE(fd->body))->list_of_bloc.at(def->bb_index);
             const auto vc = tree_man->create_unary_operation(vc_type, ssa_ridx, BUILTIN_SRCP, view_convert_expr_K);
-            const auto vc_stmt = tree_man->CreateGimpleAssign(vc_type, tree_nodeRef(), tree_nodeRef(), vc, function_id,
-                                                              def_bb->number, BUILTIN_SRCP);
+            const auto vc_stmt =
+                tree_man->CreateGimpleAssign(vc_type, tree_nodeRef(), tree_nodeRef(), vc, function_id, BUILTIN_SRCP);
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                            "---Inserting view-convert operation after complex part expression - " +
                                GET_NODE(vc_stmt)->ToString());
@@ -1177,7 +1179,8 @@ tree_nodeRef soft_float_cg_ext::cstCast(uint64_t bits, const FloatFormatRef& inF
    uint64_t FExp, SFrac;
    bool ExpOverflow = false;
 
-   const auto needed_bits = [](int i) -> unsigned int {
+   const auto needed_bits = [](int i) -> auto
+   {
       int lz;
       if(i > 0)
       {
@@ -1192,9 +1195,9 @@ tree_nodeRef soft_float_cg_ext::cstCast(uint64_t bits, const FloatFormatRef& inF
    };
    const auto exp_bits_diff =
        inFF->exp_bits > outFF->exp_bits ? (inFF->exp_bits - outFF->exp_bits) : (outFF->exp_bits - inFF->exp_bits);
-   const unsigned int exp_type_size = std::max({static_cast<unsigned int>(inFF->exp_bits) + (exp_bits_diff == 1),
-                                                static_cast<unsigned int>(outFF->exp_bits) + (exp_bits_diff == 1),
-                                                needed_bits(inFF->exp_bias), needed_bits(outFF->exp_bias)});
+   const auto exp_type_size = std::max({static_cast<unsigned int>(inFF->exp_bits) + (exp_bits_diff == 1),
+                                        static_cast<unsigned int>(outFF->exp_bits) + (exp_bits_diff == 1),
+                                        needed_bits(inFF->exp_bias), needed_bits(outFF->exp_bias)});
 
    const auto biasDiff = inFF->exp_bias - outFF->exp_bias;
    const auto rangeDiff = ((1 << outFF->exp_bits) - !outFF->has_subnorm) - ((1 << inFF->exp_bits) - !inFF->has_subnorm);
@@ -1399,7 +1402,7 @@ tree_nodeRef soft_float_cg_ext::generate_interface(const blocRef& bb, tree_nodeR
    const auto float_cast_call = tree_man->CreateCallExpr(spec_function, args, BUILTIN_SRCP);
    const auto ret_type = tree_helper::GetFunctionReturnType(spec_function);
    const auto cast_stmt = tree_man->CreateGimpleAssign(ret_type, tree_nodeConstRef(), tree_nodeConstRef(),
-                                                       float_cast_call, function_id, bb->number, BUILTIN_SRCP);
+                                                       float_cast_call, function_id, BUILTIN_SRCP);
    if(stmt == nullptr)
    {
       bb->PushFront(cast_stmt, AppM);
@@ -1940,8 +1943,8 @@ bool soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef& current_statement
                {
                   if(_version->ieee_format())
                   {
-                     unsigned int bitsize_in = tree_helper::Size(op_expr_type);
-                     unsigned int bitsize_out = tree_helper::Size(expr_type);
+                     auto bitsize_in = tree_helper::Size(op_expr_type);
+                     auto bitsize_out = tree_helper::Size(expr_type);
                      THROW_ASSERT(bitsize_in == 32 || bitsize_in == 64,
                                   "Unhandled input floating point format (size = " + STR(bitsize_in) + ")");
                      THROW_ASSERT(bitsize_out == 32 || bitsize_out == 64,
@@ -1954,7 +1957,7 @@ bool soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef& current_statement
                         THROW_ASSERT(called_function, "The library miss this function " + fu_name);
                         std::vector<tree_nodeRef> args = {
                             ue->op,
-                            TreeM->CreateUniqueIntegerCst(static_cast<unsigned long long>(inFF->exception_mode),
+                            TreeM->CreateUniqueIntegerCst(static_cast<long long>(inFF->exception_mode),
                                                           tree_man->GetSignedIntegerType()),
                             TreeM->CreateUniqueIntegerCst(inFF->has_subnorm, tree_man->GetBooleanType())};
                         TreeM->ReplaceTreeNode(current_statement, current_tree_node,
@@ -2633,13 +2636,13 @@ bool soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef& current_statement
       }
       case integer_cst_K:
       //    {
-      //       const auto ic = GetPointerS<integer_cst>(curr_tn);
-      //       if(tree_helper::IsPointerType(ic->type))
+      //       const auto cst_val = tree_helper::GetConstValue(curr_tn);
+      //       if(tree_helper::IsPointerType(curr_tn))
       //       {
-      //          const auto ptd_type = tree_helper::CGetPointedType(ic->type);
+      //          const auto ptd_type = tree_helper::CGetPointedType(curr_tn);
       //          if(tree_helper::IsRealType(ptd_type))
       //          {
-      //             const auto int_ptr_cst = TreeM->CreateUniqueIntegerCst(ic->value, tree_helper::Size(ptd_type) == 32
+      //             const auto int_ptr_cst = TreeM->CreateUniqueIntegerCst(cst_val, tree_helper::Size(ptd_type) == 32
       //             ? float32_ptr_type : float64_ptr_type); TreeM->ReplaceTreeNode(current_statement,
       //             current_tree_node, int_ptr_cst); INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Real
       //             pointer type constant " + curr_tn->ToString() + " converted to " +
@@ -2875,9 +2878,7 @@ FunctionVersion::FunctionVersion(const FunctionVersion& other)
 {
 }
 
-FunctionVersion::~FunctionVersion()
-{
-}
+FunctionVersion::~FunctionVersion() = default;
 
 int FunctionVersion::compare(const FunctionVersion& other, bool format_only) const
 {

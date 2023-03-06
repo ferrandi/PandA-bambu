@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -659,7 +659,7 @@ void determine_memory_accesses::analyze_node(const tree_nodeConstRef& _tn, bool 
       case gimple_multi_way_if_K:
       {
          const auto gmwi = GetPointerS<const gimple_multi_way_if>(tn);
-         for(auto cond : gmwi->list_of_cond)
+         for(const auto& cond : gmwi->list_of_cond)
          {
             if(cond.first)
             {

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -280,10 +280,10 @@ int main(int argc, char* argv[])
       /// pretty printing
       if(parameters->isOption(OPT_pretty_print))
       {
-         auto outFileName = parameters->getOption<std::string>(OPT_pretty_print);
-         const DesignFlowStepRef c_backend =
+         const auto filename = parameters->getOption<std::string>(OPT_pretty_print);
+         const auto c_backend =
              GetPointer<const CBackendStepFactory>(c_backend_step_factory)
-                 ->CreateCBackendStep(CBackend::CB_SEQUENTIAL, outFileName, CBackendInformationConstRef());
+                 ->CreateCBackendStep(CBackend::CB_SEQUENTIAL, filename, CBackendInformationConstRef());
          design_flow_manager->AddStep(c_backend);
       }
 

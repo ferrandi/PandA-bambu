@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -342,7 +342,7 @@ void FunctionFrontendFlowStep::WriteBBGraphDot(const std::string& filename) cons
          {
             const auto gmwi = GetPointer<const gimple_multi_way_if>(GET_NODE(block.second->CGetStmtList().back()));
             CustomSet<unsigned int> conds;
-            for(auto gmwi_cond : gmwi->list_of_cond)
+            for(const auto& gmwi_cond : gmwi->list_of_cond)
             {
                if(gmwi_cond.second == succ)
                {
@@ -410,7 +410,7 @@ unsigned int FunctionFrontendFlowStep::GetBitValueVersion() const
 
 void FunctionFrontendFlowStep::PrintInitialIR() const
 {
-   if(!parameters->IsParameter("disable-print-dot-FF"))
+   if(!parameters->IsParameter("print-dot-FF") || parameters->GetParameter<unsigned int>("print-dot-FF"))
    {
       WriteBBGraphDot("BB_Before_" + GetName() + ".dot");
    }
@@ -419,7 +419,7 @@ void FunctionFrontendFlowStep::PrintInitialIR() const
 
 void FunctionFrontendFlowStep::PrintFinalIR() const
 {
-   if(!parameters->IsParameter("disable-print-dot-FF"))
+   if(!parameters->IsParameter("print-dot-FF") || parameters->GetParameter<unsigned int>("print-dot-FF"))
    {
       WriteBBGraphDot("BB_After_" + GetName() + ".dot");
    }

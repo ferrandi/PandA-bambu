@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -215,9 +215,7 @@ void DesignCompilerWrapper::set_constraint_file(const std::string& path)
 }
 
 // destructor
-DesignCompilerWrapper::~DesignCompilerWrapper()
-{
-}
+DesignCompilerWrapper::~DesignCompilerWrapper() = default;
 
 void DesignCompilerWrapper::add_link_library(const std::vector<std::string>& link_library)
 {
@@ -810,7 +808,7 @@ std::string DesignCompilerWrapper::write_timing_paths(const std::string& design_
    try
    {
       THROW_ASSERT(design_name.size(), "Module name not specified");
-      std::string timing_path_xml_file = "timing_path.xml";
+      const auto timing_path_xml_file = GetPath("timing_path.xml");
       xml_document document;
       xml_element* nodeRoot = document.create_root_node("synthesis");
 

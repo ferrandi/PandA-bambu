@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -57,16 +57,6 @@
 #include <boost/lexical_cast.hpp>             // for lexical_cast
 #include <ostream>                            // for operator<<, ostream
 #include <utility>                            // for pair
-
-/**
- * @name function graph selector
- */
-//@{
-/// Data line selector
-#define STD_SELECTOR 1 << 0
-/// Clock line selector
-#define FEEDBACK_SELECTOR 1 << 1
-//@}
 
 FunctionInfo::FunctionInfo() : nodeID(0)
 {

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -47,15 +47,14 @@
 #include "function_frontend_flow_step.hpp"
 
 #include "refcount.hpp"
-#include "utility.hpp"
 
-#include "graph.hpp"
+#include <map>
+#include <utility>
 
 /**
  * @name forward declarations
  */
 //@{
-REF_FORWARD_DECL(virtual_phi_nodes_split);
 REF_FORWARD_DECL(tree_manager);
 REF_FORWARD_DECL(tree_node);
 REF_FORWARD_DECL(bloc);

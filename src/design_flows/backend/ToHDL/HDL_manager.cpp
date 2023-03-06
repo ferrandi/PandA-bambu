@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -1103,7 +1103,7 @@ void HDL_manager::write_flopoco_module(const structural_objectRef& cir, std::lis
 ) const
 {
    auto* mod_inst = GetPointer<module>(cir);
-   long long int mod_size_in = 0, mod_size_out = 0;
+   unsigned long long int mod_size_in = 0, mod_size_out = 0;
    for(unsigned int i = 0; i < mod_inst->get_in_port_size(); i++)
    {
       // Size of module is size of the largest output
@@ -1354,7 +1354,7 @@ std::string HDL_manager::get_mod_typename(const language_writer* lan, const stru
    const NP_functionalityRef& np = mod->get_NP_functionality();
    if(np && np->get_NP_functionality(NP_functionality::FLOPOCO_PROVIDED) != "")
    {
-      long long int mod_size_in = 0;
+      unsigned long long int mod_size_in = 0;
       for(unsigned int i = 0; i < mod->get_in_port_size(); i++)
       {
          // Size of module is size of the largest output
@@ -1364,7 +1364,7 @@ std::string HDL_manager::get_mod_typename(const language_writer* lan, const stru
          }
       }
       res = res + "_" + STR(mod_size_in);
-      long long int mod_size_out = 0;
+      unsigned long long int mod_size_out = 0;
       for(unsigned int i = 0; i < mod->get_out_port_size(); i++)
       {
          // Size of module is size of the largest output

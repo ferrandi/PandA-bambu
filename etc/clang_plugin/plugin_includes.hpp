@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2018-2022 Politecnico di Milano
+ *              Copyright (C) 2018-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -44,16 +44,34 @@
 #define __clang_major__ 7
 #endif
 /// Autoheader include
+#include "clang_version_symbol.hpp"
 #include "config_HAVE_LIBBDD.hpp"
 
 #include "llvm/ADT/APFloat.h"
 #include "llvm/ADT/Hashing.h"
+#include "llvm/Analysis/AssumptionCache.h"
+#include "llvm/Analysis/LazyValueInfo.h"
+#include "llvm/Analysis/LoopInfo.h"
+#if __clang_major__ > 4
+#include "llvm/Analysis/MemorySSA.h"
+#else
+#include "llvm/Transforms/Utils/MemorySSA.h"
+#endif
+#if __clang_major__ > 5
+#include "llvm/Analysis/OptimizationRemarkEmitter.h"
+#endif
+#include "llvm/Analysis/TargetLibraryInfo.h"
+#include "llvm/Analysis/TargetTransformInfo.h"
+#include "llvm/IR/Dominators.h"
+#include "llvm/IR/Function.h"
 #include "llvm/IR/GlobalObject.h"
 #include "llvm/IR/LLVMContext.h"
 #include "llvm/Support/raw_ostream.h"
 #if __clang_major__ != 4
 #include "llvm/Transforms/Utils/PredicateInfo.h"
 #endif
+#include "llvm/ADT/STLExtras.h"
+
 #include <deque>
 #include <list>
 #include <map>
@@ -63,40 +81,6 @@
 
 #define GT(code) tree_codes::code
 #define LOCAL_BUFFER_LEN 512
-
-#if __clang_major__ == 12
-#define CLANG_VERSION_SYMBOL(SYMBOL) clang12##SYMBOL
-#define CLANG_VERSION_STRING(SYMBOL) "clang12" #SYMBOL
-#elif __clang_major__ == 11
-#define CLANG_VERSION_SYMBOL(SYMBOL) clang11##SYMBOL
-#define CLANG_VERSION_STRING(SYMBOL) "clang11" #SYMBOL
-#elif __clang_major__ == 10
-#define CLANG_VERSION_SYMBOL(SYMBOL) clang10##SYMBOL
-#define CLANG_VERSION_STRING(SYMBOL) "clang10" #SYMBOL
-#elif __clang_major__ == 9
-#define CLANG_VERSION_SYMBOL(SYMBOL) clang9##SYMBOL
-#define CLANG_VERSION_STRING(SYMBOL) "clang9" #SYMBOL
-#elif __clang_major__ == 8
-#define CLANG_VERSION_SYMBOL(SYMBOL) clang8##SYMBOL
-#define CLANG_VERSION_STRING(SYMBOL) "clang8" #SYMBOL
-#elif __clang_major__ == 7 && !defined(VVD)
-#define CLANG_VERSION_SYMBOL(SYMBOL) clang7##SYMBOL
-#define CLANG_VERSION_STRING(SYMBOL) "clang7" #SYMBOL
-#elif __clang_major__ == 7 && defined(VVD)
-#define CLANG_VERSION_SYMBOL(SYMBOL) clangvvd##SYMBOL
-#define CLANG_VERSION_STRING(SYMBOL) "clangvvd" #SYMBOL
-#elif __clang_major__ == 6
-#define CLANG_VERSION_SYMBOL(SYMBOL) clang6##SYMBOL
-#define CLANG_VERSION_STRING(SYMBOL) "clang6" #SYMBOL
-#elif __clang_major__ == 5
-#define CLANG_VERSION_SYMBOL(SYMBOL) clang5##SYMBOL
-#define CLANG_VERSION_STRING(SYMBOL) "clang5" #SYMBOL
-#elif __clang_major__ == 4
-#define CLANG_VERSION_SYMBOL(SYMBOL) clang4##SYMBOL
-#define CLANG_VERSION_STRING(SYMBOL) "clang4" #SYMBOL
-#else
-#error
-#endif
 
 namespace llvm
 {
@@ -129,6 +113,12 @@ namespace RangeAnalysis
 }
 class Andersen_AA;
 
+#if __clang_major__ >= 13
+using MemorySSAAnalysisResult = llvm::MemorySSAAnalysis::Result;
+#else
+using MemorySSAAnalysisResult = llvm::MemorySSAWrapperPass;
+#endif
+
 namespace llvm
 {
    class DumpGimpleRaw
@@ -136,6 +126,18 @@ namespace llvm
 #if __clang_major__ >= 11
       bool changed;
 #endif
+
+      llvm::function_ref<llvm::TargetLibraryInfo&(llvm::Function&)> GetTLI;
+      llvm::function_ref<llvm::TargetTransformInfo&(llvm::Function&)> GetTTI;
+      llvm::function_ref<llvm::DominatorTree&(llvm::Function&)> GetDomTree;
+      llvm::function_ref<llvm::LoopInfo&(llvm::Function&)> GetLI;
+      llvm::function_ref<MemorySSAAnalysisResult&(llvm::Function&)> GetMSSA;
+      llvm::function_ref<llvm::LazyValueInfo&(llvm::Function&)> GetLVI;
+      llvm::function_ref<llvm::AssumptionCache&(llvm::Function&)> GetAC;
+#if __clang_major__ > 5
+      llvm::function_ref<llvm::OptimizationRemarkEmitter&(llvm::Function&)> GetORE;
+#endif
+
       bool earlyAnalysis;
       /* Serialize column control */
       const int SOL_COLUMN = 25;       /* Start of line column.  */
@@ -236,7 +238,6 @@ namespace llvm
       std::map<const llvm::Argument*, std::string> argNameTable;
       const llvm::DataLayout* DL;
       /// current module pass
-      llvm::ModulePass* modulePass;
       llvm::LLVMContext* moduleContext;
       std::string TopFunctionName;
 
@@ -756,19 +757,27 @@ namespace llvm
 
       void computeValueRange(const llvm::Module& M);
       void ValueRangeOptimizer(llvm::Module& M);
-      bool LoadStoreOptimizer(llvm::Module& M);
       void
       computeMAEntryDefs(const llvm::Function* F,
                          std::map<const llvm::Function*, std::map<const void*, std::set<const llvm::Instruction*>>>&
-                             CurrentListofMAEntryDef,
-                         llvm::ModulePass* modulePass);
+                             CurrentListofMAEntryDef);
 
     public:
       DumpGimpleRaw(const std::string& _outdir_name, const std::string& _InFile, bool onlyGlobals,
                     std::map<std::string, std::vector<std::string>>* fun2params, bool early);
 
-      bool runOnModule(llvm::Module& M, llvm::ModulePass* modulePass, const std::string& TopFunctionName,
-                       const std::string& costTable);
+      bool exec(llvm::Module& M, const std::string& _TopFunctionName,
+                llvm::function_ref<llvm::TargetLibraryInfo&(llvm::Function&)> GetTLI,
+                llvm::function_ref<llvm::TargetTransformInfo&(llvm::Function&)> GetTTI,
+                llvm::function_ref<llvm::DominatorTree&(llvm::Function&)> GetDomTree,
+                llvm::function_ref<llvm::LoopInfo&(llvm::Function&)> GetLI,
+                llvm::function_ref<MemorySSAAnalysisResult&(llvm::Function&)> GetMSSA,
+                llvm::function_ref<llvm::LazyValueInfo&(llvm::Function&)> GetLVI,
+                llvm::function_ref<llvm::AssumptionCache&(llvm::Function&)> GetAC,
+#if __clang_major__ > 5
+                llvm::function_ref<llvm::OptimizationRemarkEmitter&(llvm::Function&)> GetORE,
+#endif
+                const std::string& costTable);
    };
 } // namespace llvm
 

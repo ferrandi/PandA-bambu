@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -58,6 +58,7 @@
 
 /// technology/target_device include
 #include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
+#include "fileIO.hpp"
 #include "target_device.hpp"
 
 WriteTechnology::WriteTechnology(const technology_managerRef _TM, const target_deviceRef _target,
@@ -75,7 +76,7 @@ DesignFlowStep_Status WriteTechnology::Exec()
    {
       const auto output_file = parameters->isOption(OPT_output_file) ?
                                    parameters->getOption<std::string>(OPT_output_file) :
-                                   "technology_out.xml";
+                                   GetPath("technology_out.xml");
       const auto libraries = TM->get_library_list();
       xml_document document;
       xml_element* nodeRoot = document.create_root_node("target");

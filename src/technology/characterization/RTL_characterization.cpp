@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -248,7 +248,7 @@ void RTLCharacterization::fix_proxies_execution_time_std()
    std::vector<std::string> high_latency_postfix_list;
    high_latency_postfix_list.push_back(std::string("_3"));
    high_latency_postfix_list.push_back(std::string("_4"));
-   for(auto high_latency_postfix : high_latency_postfix_list)
+   for(const auto& high_latency_postfix : high_latency_postfix_list)
    {
       technology_nodeRef f_unit_br = TM->get_fu(ARRAY_1D_STD_BRAM, LIBRARY_STD_FU);
       auto* fu_br = GetPointer<functional_unit>(f_unit_br);
@@ -373,7 +373,7 @@ void RTLCharacterization::fix_proxies_execution_time_std()
 
 void RTLCharacterization::xwrite_device_file(const target_deviceRef device)
 {
-   std::string file_name = "characterization.xml";
+   const auto file_name = GetPath("characterization.xml");
    try
    {
       xml_document document;
@@ -991,7 +991,9 @@ void RTLCharacterization::AnalyzeCell(functional_unit* fu, const unsigned int pr
          spec_module->SetParameter("data_size", STR(elts_size));
          if(memory_type != MEMORY_TYPE_SYNCHRONOUS_SDS && memory_type != MEMORY_TYPE_SYNCHRONOUS_SDS_BUS &&
             memory_type != MEMORY_TYPE_ASYNCHRONOUS)
+         {
             spec_module->SetParameter("BRAM_BITSIZE", STR(BRAM_BITSIZE));
+         }
          spec_module->SetParameter("BUS_PIPELINED", "1");
          spec_module->SetParameter("PRIVATE_MEMORY", "0");
       }

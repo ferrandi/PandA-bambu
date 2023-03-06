@@ -14,6 +14,7 @@
     <DSPs_ry_sizes value="16" />
     <max_lut_size value="4" />
     <OutputDSPConnectionRatio value="3" />
+    <RelativeConnectionOffset value="2.0" />
     <OutputCarryConnectionRatio value="3" />
     <use_soft_64_mul value="1" />
   </device>
@@ -25,7 +26,7 @@
         <circuit>
           <component_o id="TRUE_DUAL_PORT_BYTE_ENABLING_RAM">
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2022 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2023 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>NanoXplore</specialized>

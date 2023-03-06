@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -117,7 +117,7 @@ bool bloc::check_function_call(const tree_nodeRef& statement, gimple_assign* ga,
 void bloc::ReorderLUTs()
 {
    TreeNodeSet current_uses;
-   for(auto phi : list_of_phi)
+   for(const auto& phi : list_of_phi)
    {
       auto gp = GetPointer<gimple_phi>(GET_NODE(phi));
       current_uses.insert(gp->res);
@@ -136,7 +136,7 @@ void bloc::ReorderLUTs()
          }
          auto allDefinedP = [&](tree_nodeRef stmt) -> bool {
             const auto& uses = tree_helper::ComputeSsaUses(stmt);
-            for(auto u : uses)
+            for(const auto& u : uses)
             {
                if(current_uses.find(u.first) == current_uses.end())
                {

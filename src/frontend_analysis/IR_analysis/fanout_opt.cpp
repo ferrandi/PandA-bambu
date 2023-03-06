@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2017-2022 Politecnico di Milano
+ *              Copyright (C) 2017-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -196,7 +196,7 @@ DesignFlowStep_Status fanout_opt::InternalExec()
                                      STR(assigned_ssa_type_node));
                   bool is_first_stmt = true;
                   std::list<tree_nodeRef> list_of_dest_statements;
-                  for(auto dest_statement : ssa_defined->CGetUseStmts())
+                  for(const auto& dest_statement : ssa_defined->CGetUseStmts())
                   {
                      if(is_first_stmt)
                      {
@@ -207,11 +207,11 @@ DesignFlowStep_Status fanout_opt::InternalExec()
                         list_of_dest_statements.push_back(dest_statement.first);
                      }
                   }
-                  for(auto dest_statement : list_of_dest_statements)
+                  for(const auto& dest_statement : list_of_dest_statements)
                   {
                      tree_nodeRef temp_assign =
                          tree_man->CreateGimpleAssign(assigned_ssa_type_node, ssa_defined->min, ssa_defined->max,
-                                                      ga->op0, function_id, block.first, srcp_default);
+                                                      ga->op0, function_id, srcp_default);
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                     "---create a temporary assignment " + temp_assign->ToString());
                      block.second->PushAfter(temp_assign, stmt, AppM);
@@ -235,7 +235,7 @@ DesignFlowStep_Status fanout_opt::InternalExec()
       /// fanout duplication may prevent openmp simd detection
       if(!parameters->getOption<int>(OPT_gcc_openmp_simd))
       {
-         for(auto phi : block.second->CGetPhiList())
+         for(const auto& phi : block.second->CGetPhiList())
          {
             auto gp = GetPointer<gimple_phi>(GET_NODE(phi));
             auto* ssa_defined = GetPointer<ssa_name>(GET_NODE(gp->res));
@@ -244,7 +244,7 @@ DesignFlowStep_Status fanout_opt::InternalExec()
             {
                bool is_first_stmt = true;
                std::list<tree_nodeRef> list_of_dest_statements;
-               for(auto dest_statement : ssa_defined->CGetUseStmts())
+               for(const auto& dest_statement : ssa_defined->CGetUseStmts())
                {
                   if(is_first_stmt)
                   {
@@ -255,7 +255,7 @@ DesignFlowStep_Status fanout_opt::InternalExec()
                      list_of_dest_statements.push_back(dest_statement.first);
                   }
                }
-               for(auto dest_statement : list_of_dest_statements)
+               for(const auto& dest_statement : list_of_dest_statements)
                {
                   /// Copy the list of def edges
                   std::vector<std::pair<tree_nodeRef, unsigned int>> list_of_def_edge;
@@ -265,8 +265,8 @@ DesignFlowStep_Status fanout_opt::InternalExec()
                   }
                   tree_nodeRef new_res_var;
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---starting from phi " + phi->ToString());
-                  auto new_phi = tree_man->create_phi_node(new_res_var, list_of_def_edge,
-                                                           GET_INDEX_CONST_NODE(gp->scpe), block.first);
+                  auto new_phi =
+                      tree_man->create_phi_node(new_res_var, list_of_def_edge, GET_INDEX_CONST_NODE(gp->scpe));
                   auto new_res_var_ssa = GetPointer<ssa_name>(GET_NODE(new_res_var));
                   new_res_var_ssa->min = ssa_defined->min;
                   new_res_var_ssa->max = ssa_defined->max;

@@ -18,14 +18,16 @@ main_test (void)
   printf ("%s\n", "hello");
   printf ("%s\n", *s2);
   s3 = s2;
-  printf ("%s\n", *s3++);
+  printf ("%s\n", *s3);
+  s3++;
   if (s3 != s2+1 || *s3 != 0)
     abort();
   
   printf ("%c", '\n');
   printf ("%c", **s2);
   s3 = s2;
-  printf ("%c", **s3++);
+  printf ("%c", **s3);
+  s3++;
   if (s3 != s2+1 || *s3 != 0)
     abort();
   

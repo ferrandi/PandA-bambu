@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2019-2022 Politecnico di Milano
+ *              Copyright (c) 2019-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -152,7 +152,7 @@ void MemoryInitializationCWriter::Process(const std::string& content)
    }
    THROW_ASSERT(base_type, "");
    std::string binary_value = "";
-   unsigned int size = 0;
+   unsigned long long size = 0;
    switch(GET_CONST_NODE(base_type)->get_kind())
    {
       case void_type_K:

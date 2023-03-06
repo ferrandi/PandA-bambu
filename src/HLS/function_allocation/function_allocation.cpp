@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -59,6 +59,32 @@ function_allocation::function_allocation(const ParameterConstRef _Param, const H
 }
 
 function_allocation::~function_allocation() = default;
+
+const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
+function_allocation::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+{
+   CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;
+   switch(relationship_type)
+   {
+      case DEPENDENCE_RELATIONSHIP:
+      {
+         ret.insert(std::make_tuple(HLSFlowStep_Type::INITIALIZE_HLS, HLSFlowStepSpecializationConstRef(),
+                                    HLSFlowStep_Relationship::ALL_FUNCTIONS));
+         break;
+      }
+      case INVALIDATION_RELATIONSHIP:
+      {
+         break;
+      }
+      case PRECEDENCE_RELATIONSHIP:
+      {
+         break;
+      }
+      default:
+         THROW_UNREACHABLE("");
+   }
+   return ret;
+}
 
 void function_allocation::Initialize()
 {

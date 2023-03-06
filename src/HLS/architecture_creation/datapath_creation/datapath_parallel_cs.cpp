@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2016-2022 Politecnico di Milano
+ *              Copyright (c) 2016-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -42,6 +42,7 @@
 #include "BambuParameter.hpp"
 #include "behavioral_helper.hpp"
 #include "copyrights_strings.hpp"
+#include "function_behavior.hpp"
 #include "hls.hpp"
 #include "hls_manager.hpp"
 #include "hls_target.hpp"
@@ -78,9 +79,7 @@ datapath_parallel_cs::datapath_parallel_cs(const ParameterConstRef _parameters, 
 
 // HLSFunctionStep(_parameters, _HLSMgr, _funId, _design_flow_manager, _hls_flow_step_type)
 
-datapath_parallel_cs::~datapath_parallel_cs()
-{
-}
+datapath_parallel_cs::~datapath_parallel_cs() = default;
 
 const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
 datapath_parallel_cs::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
@@ -90,8 +89,8 @@ datapath_parallel_cs::ComputeHLSRelationships(const DesignFlowStep::Relationship
    {
       case DEPENDENCE_RELATIONSHIP:
       {
-         ret.insert(std::make_tuple(HLSFlowStep_Type::INITIALIZE_HLS, HLSFlowStepSpecializationConstRef(),
-                                    HLSFlowStep_Relationship::SAME_FUNCTION));
+         ret.insert(std::make_tuple(HLSFlowStep_Type::DOMINATOR_ALLOCATION, HLSFlowStepSpecializationConstRef(),
+                                    HLSFlowStep_Relationship::WHOLE_APPLICATION));
          ret.insert(std::make_tuple(HLSFlowStep_Type::OMP_BODY_LOOP_SYNTHESIS_FLOW, HLSFlowStepSpecializationConstRef(),
                                     HLSFlowStep_Relationship::CALLED_FUNCTIONS));
          break;
@@ -383,10 +382,10 @@ void datapath_parallel_cs::resize_ctrl_parallel_ports(structural_objectRef mem_p
 
 void datapath_parallel_cs::resize_dimension_bus_port(unsigned int vector_size, structural_objectRef port)
 {
-   unsigned int bus_data_bitsize = HLSMgr->Rmem->get_bus_data_bitsize();
-   unsigned int bus_addr_bitsize = HLSMgr->get_address_bitsize();
-   unsigned int bus_size_bitsize = HLSMgr->Rmem->get_bus_size_bitsize();
-   unsigned int bus_tag_bitsize = GetPointer<memory_cs>(HLSMgr->Rmem)->get_bus_tag_bitsize();
+   auto bus_data_bitsize = HLSMgr->Rmem->get_bus_data_bitsize();
+   auto bus_addr_bitsize = HLSMgr->get_address_bitsize();
+   auto bus_size_bitsize = HLSMgr->Rmem->get_bus_size_bitsize();
+   auto bus_tag_bitsize = GetPointer<memory_cs>(HLSMgr->Rmem)->get_bus_tag_bitsize();
 
    if(GetPointer<port_o>(port)->get_is_data_bus())
    {

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -1138,9 +1138,10 @@ namespace
       }
       else if(const auto* rt = GetPointer<const record_type>(GET_CONST_NODE(type)))
       {
-         THROW_ASSERT(GetPointer<const integer_cst>(GET_CONST_NODE(rt->size)), "record_type has no size");
-         bw = static_cast<bw_t>(
-             tree_helper::get_integer_cst_value(GetPointer<const integer_cst>(GET_CONST_NODE(rt->size))));
+         THROW_ASSERT(GET_CONST_NODE(rt->size)->get_kind() == integer_cst_K &&
+                          tree_helper::GetConstValue(rt->size) >= 0,
+                      "record_type has no size");
+         bw = static_cast<bw_t>(tree_helper::GetConstValue(rt->size));
          THROW_ASSERT(bw, "Invalid bitwidth");
          return RangeRef(new Range(Regular, bw));
       }
@@ -1361,9 +1362,8 @@ int VarNode::updateIR(const tree_managerRef& TM,
       //       if(SSA->min && SSA->max)
       //       {
       //          RangeRef superRange(
-      //              new Range(Regular, interval->getBitWidth(), tree_helper::get_integer_cst_value(GetPointer<const
-      //              integer_cst>(GET_CONST_NODE(SSA->min))), tree_helper::get_integer_cst_value(GetPointer<const
-      //              integer_cst>(GET_CONST_NODE(SSA->max)))));
+      //              new Range(Regular, interval->getBitWidth(), tree_helper::GetConstValue(SSA->min),
+      //              tree_helper::GetConstValue(SSA->max)));
       //          if(superRange->isRegular())
       //          {
       //             // Intersect with computed range, because range computed from LLVM range analysis may not be valid
@@ -1462,9 +1462,9 @@ int VarNode::updateIR(const tree_managerRef& TM,
 /// Pretty print.
 void VarNode::print(std::ostream& OS) const
 {
-   if(const auto* C = GetPointer<const integer_cst>(GET_CONST_NODE(V)))
+   if(GET_CONST_NODE(V)->get_kind() == integer_cst_K)
    {
-      OS << C->value;
+      OS << tree_helper::GetConstValue(V);
    }
    else
    {
@@ -1610,7 +1610,7 @@ class SymbRange : public ValueRange
 
  public:
    SymbRange(const RangeConstRef& range, const tree_nodeConstRef& bound, kind pred);
-   ~SymbRange() = default;
+   ~SymbRange() override = default;
    SymbRange(const SymbRange&) = delete;
    SymbRange(SymbRange&&) = delete;
    SymbRange& operator=(const SymbRange&) = delete;
@@ -2499,9 +2499,9 @@ void PhiOpNode::printDot(std::ostream& OS) const
    for(const VarNode* varNode : sources)
    {
       const auto& V = varNode->getValue();
-      if(const auto* C = GetPointer<const integer_cst>(GET_CONST_NODE(V)))
+      if(GET_CONST_NODE(V)->get_kind() == integer_cst_K)
       {
-         OS << " " << C->value << " -> " << quot << this << quot << "\n";
+         OS << " " << tree_helper::GetConstValue(V) << " -> " << quot << this << quot << "\n";
       }
       else
       {
@@ -2566,7 +2566,7 @@ class UnaryOpNode : public OpNode
    {
       return source;
    }
-   virtual std::vector<tree_nodeConstRef> getSources() const override
+   std::vector<tree_nodeConstRef> getSources() const override
    {
       return {source->getValue()};
    }
@@ -2836,9 +2836,9 @@ void UnaryOpNode::printDot(std::ostream& OS) const
    OS << "\"]\n";
 
    const auto& V = this->getSource()->getValue();
-   if(const auto* C = GetPointer<const integer_cst>(GET_CONST_NODE(V)))
+   if(GET_CONST_NODE(V)->get_kind() == integer_cst_K)
    {
-      OS << " " << C->value << " -> " << quot << this << quot << "\n";
+      OS << " " << tree_helper::GetConstValue(V) << " -> " << quot << this << quot << "\n";
    }
    else
    {
@@ -3030,9 +3030,9 @@ void SigmaOpNode::printDot(std::ostream& OS) const
    this->getIntersect()->print(OS);
    OS << "\"]\n";
    const auto& V = this->getSource()->getValue();
-   if(const auto* C = GetPointer<const integer_cst>(GET_CONST_NODE(V)))
+   if(GET_CONST_NODE(V)->get_kind() == integer_cst_K)
    {
-      OS << " " << C->value << " -> " << quot << this << quot << "\n";
+      OS << " " << tree_helper::GetConstValue(V) << " -> " << quot << this << quot << "\n";
    }
    else
    {
@@ -3043,9 +3043,9 @@ void SigmaOpNode::printDot(std::ostream& OS) const
    if(SymbolicSource)
    {
       const auto& _V = SymbolicSource->getValue();
-      if(const auto* C = GetPointer<const integer_cst>(GET_CONST_NODE(_V)))
+      if(GET_CONST_NODE(_V)->get_kind() == integer_cst_K)
       {
-         OS << " " << C->value << " -> " << quot << this << quot << "\n";
+         OS << " " << tree_helper::GetConstValue(_V) << " -> " << quot << this << quot << "\n";
       }
       else
       {
@@ -3469,9 +3469,9 @@ void BinaryOpNode::printDot(std::ostream& OS) const
    std::string opcodeName = tree_node::GetString(opcode);
    OS << " " << quot << this << quot << R"( [label=")" << opcodeName << "\"]\n";
    const auto& V1 = this->getSource1()->getValue();
-   if(const auto* C = GetPointer<const integer_cst>(GET_CONST_NODE(V1)))
+   if(GET_CONST_NODE(V1)->get_kind() == integer_cst_K)
    {
-      OS << " " << C->value << " -> " << quot << this << quot << "\n";
+      OS << " " << tree_helper::GetConstValue(V1) << " -> " << quot << this << quot << "\n";
    }
    else
    {
@@ -3480,9 +3480,9 @@ void BinaryOpNode::printDot(std::ostream& OS) const
       OS << quot << " -> " << quot << this << quot << "\n";
    }
    const auto& V2 = this->getSource2()->getValue();
-   if(const auto* C = GetPointer<const integer_cst>(GET_CONST_NODE(V2)))
+   if(GET_CONST_NODE(V2)->get_kind() == integer_cst_K)
    {
-      OS << " " << C->value << " -> " << quot << this << quot << "\n";
+      OS << " " << tree_helper::GetConstValue(V2) << " -> " << quot << this << quot << "\n";
    }
    else
    {
@@ -3504,9 +3504,9 @@ unsigned int evaluateBranch(const tree_nodeRef br_op, const blocRef branchBB
 )
 {
    // Evaluate condition variable if possible
-   if(const auto* ic = GetPointer<const integer_cst>(GET_CONST_NODE(br_op)))
+   if(GET_CONST_NODE(br_op)->get_kind() == integer_cst_K)
    {
-      const auto branchValue = tree_helper::get_integer_cst_value(ic);
+      const auto branchValue = tree_helper::GetConstValue(br_op);
       if(branchValue)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
@@ -3820,9 +3820,9 @@ void TernaryOpNode::printDot(std::ostream& OS) const
    OS << " " << quot << this << quot << R"( [label=")" << opcodeName << "\"]\n";
 
    const auto& V1 = this->getSource1()->getValue();
-   if(const auto* C = GetPointer<const integer_cst>(GET_CONST_NODE(V1)))
+   if(GET_CONST_NODE(V1)->get_kind() == integer_cst_K)
    {
-      OS << " " << C->value << " -> " << quot << this << quot << "\n";
+      OS << " " << tree_helper::GetConstValue(V1) << " -> " << quot << this << quot << "\n";
    }
    else
    {
@@ -3831,9 +3831,9 @@ void TernaryOpNode::printDot(std::ostream& OS) const
       OS << quot << " -> " << quot << this << quot << "\n";
    }
    const auto& V2 = this->getSource2()->getValue();
-   if(const auto* C = GetPointer<const integer_cst>(GET_CONST_NODE(V2)))
+   if(GET_CONST_NODE(V2)->get_kind() == integer_cst_K)
    {
-      OS << " " << C->value << " -> " << quot << this << quot << "\n";
+      OS << " " << tree_helper::GetConstValue(V2) << " -> " << quot << this << quot << "\n";
    }
    else
    {
@@ -3843,9 +3843,9 @@ void TernaryOpNode::printDot(std::ostream& OS) const
    }
 
    const auto& V3 = this->getSource3()->getValue();
-   if(const auto* C = GetPointer<const integer_cst>(GET_CONST_NODE(V3)))
+   if(GET_CONST_NODE(V3)->get_kind() == integer_cst_K)
    {
-      OS << " " << C->value << " -> " << quot << this << quot << "\n";
+      OS << " " << tree_helper::GetConstValue(V3) << " -> " << quot << this << quot << "\n";
    }
    else
    {
@@ -3978,8 +3978,8 @@ static RangeRef constructor_range(const tree_managerConstRef TM, const tree_node
 {
    THROW_ASSERT(tn->get_kind() == constructor_K, "tn is not constructor node");
    const auto* c = GetPointer<const constructor>(tn);
-   std::vector<unsigned int> array_dims;
-   unsigned int elements_bitsize;
+   std::vector<unsigned long long> array_dims;
+   unsigned long long elements_bitsize;
    tree_helper::get_array_dim_and_bitsize(TM, GET_INDEX_CONST_NODE(c->type), array_dims, elements_bitsize);
    unsigned int initialized_elements = 0;
    auto ctor_range = RangeRef(init->clone());
@@ -4046,7 +4046,7 @@ LoadOpNode::opCtorGenerator(const tree_nodeConstRef& stmt, unsigned int function
          GET_NODE(ga->op1)->get_kind() == target_mem_ref_K || GET_NODE(ga->op1)->get_kind() == target_mem_ref461_K ||
          GET_NODE(ga->op1)->get_kind() == var_decl_K)
       {
-         unsigned int base_index = tree_helper::get_base_index(TM, GET_INDEX_NODE(ga->op1));
+         auto base_index = tree_helper::get_base_index(TM, GET_INDEX_NODE(ga->op1));
          const auto* hm = GetPointer<HLS_manager>(AppM);
          if(base_index && AppM->get_written_objects().find(base_index) == AppM->get_written_objects().end() && hm &&
             hm->Rmem && FB->is_variable_mem(base_index) && hm->Rmem->is_sds_var(base_index))
@@ -4163,9 +4163,9 @@ void LoadOpNode::printDot(std::ostream& OS) const
    for(auto src : sources)
    {
       const auto& V = src->getValue();
-      if(const auto* C = GetPointer<const integer_cst>(GET_CONST_NODE(V)))
+      if(GET_CONST_NODE(V)->get_kind() == integer_cst_K)
       {
-         OS << " " << C->value << " -> " << quot << this << quot << "\n";
+         OS << " " << tree_helper::GetConstValue(V) << " -> " << quot << this << quot << "\n";
       }
       else
       {
@@ -4418,9 +4418,9 @@ void Nuutila::delControlDependenceEdges(UseMap& useMap)
 #ifndef NDEBUG
          // Add pseudo edge to the string
          const auto& V = cd->getSource()->getValue();
-         if(const auto* C = GetPointer<const integer_cst>(GET_CONST_NODE(V)))
+         if(GET_CONST_NODE(V)->get_kind() == integer_cst_K)
          {
-            pseudoEdgesString << " " << C->value << " -> ";
+            pseudoEdgesString << " " << tree_helper::GetConstValue(V) << " -> ";
          }
          else
          {
@@ -5961,7 +5961,7 @@ class ConstraintGraph : public NodeContainer
 #endif
    }
 
-   virtual ~ConstraintGraph() = default;
+   ~ConstraintGraph() override = default;
 
    CallMap* getCallMap()
    {
@@ -6138,7 +6138,7 @@ class ConstraintGraph : public NodeContainer
             if(DEBUG_LEVEL_VERY_PEDANTIC <= graph_debug)
             {
                std::stringstream ss;
-               for(auto cnst : constantvector)
+               for(const auto& cnst : constantvector)
                {
                   ss << cnst << ", ";
                }
@@ -6250,9 +6250,9 @@ class ConstraintGraph : public NodeContainer
       // Print the body of the .dot file.
       for(const auto& varNode : getVarNodes())
       {
-         if(const auto* C = GetPointer<const integer_cst>(GET_CONST_NODE(varNode.first)))
+         if(GET_CONST_NODE(varNode.first)->get_kind() == integer_cst_K)
          {
-            OS << " " << C->value;
+            OS << " " << tree_helper::GetConstValue(varNode.first);
          }
          else
          {

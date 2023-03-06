@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -51,6 +51,7 @@
 #include "target_device.hpp"
 #include "target_manager.hpp"
 #include "time_model.hpp"
+#include "utility.hpp"
 
 #include "NanoXploreWrapper.hpp"
 
@@ -241,6 +242,7 @@ void NanoXploreBackendFlow::CheckSynthesisResults()
    area_clb_model->set_resource_value(clb_model::REGISTERS, design_values[NANOXPLORE_REGISTERS]);
    area_clb_model->set_resource_value(clb_model::DSP, design_values[NANOXPLORE_DSP]);
    area_clb_model->set_resource_value(clb_model::BRAM, design_values[NANOXPLORE_MEM]);
+   area_clb_model->set_resource_value(clb_model::POWER, design_values[NANOXPLORE_POWER]);
 
    time_m = time_model::create_model(TargetDevice_Type::FPGA, Param);
    auto* lut_m = GetPointer<LUT_model>(time_m);

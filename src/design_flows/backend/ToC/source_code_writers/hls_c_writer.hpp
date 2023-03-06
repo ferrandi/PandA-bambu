@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -152,18 +152,18 @@ class HLSCWriter : public CWriter
    /**
     * Writes the global declarations
     */
-   virtual void WriteGlobalDeclarations() override;
+   void WriteGlobalDeclarations() override;
 
    /**
     * Write function implementation
     * @param function_id is the index of the function to be written
     */
-   virtual void WriteFunctionImplementation(unsigned int function_index) override;
+   void WriteFunctionImplementation(unsigned int function_index) override;
 
    /**
     * Writes implementation of __builtin_wait_call
     */
-   virtual void WriteBuiltinWaitCall() override;
+   void WriteBuiltinWaitCall() override;
 
    /**
     * Write the print to fill values.txt with values for t parameters
@@ -174,7 +174,7 @@ class HLSCWriter : public CWriter
     * @param input specifies if the input syntax must be used
     */
    void WriteParamInMemory(const BehavioralHelperConstRef behavioral_helper, const std::string& param,
-                           const unsigned int type, const unsigned int nesting_level, bool input);
+                           tree_nodeConstRef type, const unsigned int nesting_level = 0, bool input = false);
 
  public:
    /**
@@ -193,17 +193,17 @@ class HLSCWriter : public CWriter
    /**
     * Destructor
     */
-   virtual ~HLSCWriter();
+   ~HLSCWriter() override;
 
    /**
     * Writes the final C file
     * @param file_name is the name of the file to be generated
     */
-   virtual void WriteFile(const std::string& file_name) override;
+   void WriteFile(const std::string& file_name) override;
 
    /**
     * Writes the header of the file
     */
-   virtual void WriteHeader() override;
+   void WriteHeader() override;
 };
 #endif

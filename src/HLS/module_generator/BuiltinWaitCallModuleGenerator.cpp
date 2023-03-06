@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2022-2022 Politecnico di Milano
+ *              Copyright (C) 2022-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -79,9 +79,7 @@ void BuiltinWaitCallModuleGenerator::InternalExec(std::ostream& out, const modul
       const auto called_addr = gc->args.at(0);
       const auto called_hasreturn = gc->args.at(1);
       THROW_ASSERT(GET_CONST_NODE(called_hasreturn)->get_kind() == integer_cst_K, "");
-      const auto hasreturn =
-          tree_helper::get_integer_cst_value(GetPointerS<const integer_cst>(GET_CONST_NODE(called_hasreturn)));
-      if(hasreturn)
+      if(tree_helper::GetConstValue(called_hasreturn))
       {
          const auto fpointer_type = tree_helper::CGetType(called_addr);
          const auto called_ftype = tree_helper::CGetPointedType(fpointer_type);
@@ -91,7 +89,7 @@ void BuiltinWaitCallModuleGenerator::InternalExec(std::ostream& out, const modul
             return tree_helper::Size(return_type);
          }
       }
-      return 0U;
+      return 0ULL;
    }();
 
    // Signals declarations
@@ -115,7 +113,9 @@ void BuiltinWaitCallModuleGenerator::InternalExec(std::ostream& out, const modul
        << "reg Mout_we_ram;\n"
        << "reg [BITSIZE_Mout_addr_ram-1:0] Mout_addr_ram;\n"
        << "reg [BITSIZE_Mout_Wdata_ram-1:0] Mout_Wdata_ram;\n"
-       << "reg [BITSIZE_Mout_data_ram_size-1:0] Mout_data_ram_size;\n\n";
+       << "reg [BITSIZE_Mout_data_ram_size-1:0] Mout_data_ram_size;\n"
+       << "reg active_request;\n"
+       << "reg active_request_next;\n\n";
    if(retval_size)
    {
       out << "reg [" << retval_size << "-1:0] readValue 1INIT_ZERO_VALUE;\n"
@@ -155,6 +155,16 @@ void BuiltinWaitCallModuleGenerator::InternalExec(std::ostream& out, const modul
       out << "assign paramAddressRead = paramAddress[index];\n";
    }
    out << "assign Sout_Rdata_ram = Sin_Rdata_ram;\n";
+
+   out << "always @ (posedge clock 1RESET_EDGE)\n"
+       << "  if (1RESET_VALUE)\n"
+       << "  begin\n"
+       << "    active_request <= 0;\n"
+       << "  end\n"
+       << "  else\n"
+       << "  begin\n"
+       << "    active_request <= active_request_next;\n"
+       << "  end\n";
 
    // State machine
    out << "always @ (posedge clock 1RESET_EDGE)\n"
@@ -239,8 +249,10 @@ void BuiltinWaitCallModuleGenerator::InternalExec(std::ostream& out, const modul
        << "  Mout_oe_ram = Min_oe_ram;\n"
        << "  Mout_addr_ram = Min_addr_ram;\n"
        << "  Mout_data_ram_size = Min_data_ram_size;\n"
+       << "  active_request_next = 0;\n"
        << "  if (step == S_0) begin\n"
-       << "    if (start_port == 1'b1) begin\n";
+       << "    if (start_port == 1'b1) begin\n"
+       << "      active_request_next = 1;\n";
    if(_p.size() == 3U)
    {
       out << "      next_step = in2[0] ? S_2 : S_1;\n";
@@ -262,12 +274,14 @@ void BuiltinWaitCallModuleGenerator::InternalExec(std::ostream& out, const modul
          if(idx != _p.size() - 3U)
          {
             out << "  else if (step == S_" << idx << ") begin\n"
-                << "    Mout_we_ram = 1'b1;\n"
-                << "    Mout_addr_ram = in1 + paramAddressRead;\n"
-                << "    Mout_Wdata_ram = " << _p[idx + 1U].name << ";\n"
-                << "    Mout_data_ram_size = " << _p[idx + 1U].type_size << ";\n"
+                << "    Mout_we_ram = active_request;\n"
+                << "    Mout_addr_ram = (in1 + paramAddressRead) & {BITSIZE_Mout_addr_ram{active_request}};\n"
+                << "    Mout_Wdata_ram = " << _p[idx + 1].name << " & {BITSIZE_Mout_Wdata_ram{active_request}};\n"
+                << "    Mout_data_ram_size = " << _p[idx + 1].type_size
+                << " & {BITSIZE_Mout_data_ram_size{active_request}};\n"
                 << "    if (M_DataRdy == 1'b1) begin\n"
                 << "      next_step = S_" << idx + 1U << ";\n"
+                << "      active_request_next = 1;\n"
                 << "    end else begin\n"
                 << "      next_step = S_" << idx << ";\n"
                 << "    end\n"
@@ -276,12 +290,14 @@ void BuiltinWaitCallModuleGenerator::InternalExec(std::ostream& out, const modul
          else
          {
             out << "  else if (step == S_" << idx << ") begin\n"
-                << "    Mout_we_ram = 1'b1;\n"
-                << "    Mout_addr_ram = in1 + paramAddressRead;\n"
-                << "    Mout_Wdata_ram = " << _p[idx + 1U].name << ";\n"
-                << "    Mout_data_ram_size = " << _p[idx + 1U].type_size << ";\n"
+                << "    Mout_we_ram = active_request;\n"
+                << "    Mout_addr_ram = (in1 + paramAddressRead) & {BITSIZE_Mout_addr_ram{active_request}};\n"
+                << "    Mout_Wdata_ram = " << _p[idx + 1].name << " & {BITSIZE_Mout_Wdata_ram{active_request}};\n"
+                << "    Mout_data_ram_size = " << _p[idx + 1].type_size
+                << " & {BITSIZE_Mout_data_ram_size{active_request}};\n"
                 << "    if (M_DataRdy == 1'b1) begin\n"
                 << "      next_step = in2[0] ? S_" << idx + 2U << " : S_" << idx + 1U << ";\n"
+                << "      active_request_next = 1;\n"
                 << "    end else begin\n"
                 << "      next_step = S_" << idx << ";\n"
                 << "    end\n"
@@ -292,12 +308,14 @@ void BuiltinWaitCallModuleGenerator::InternalExec(std::ostream& out, const modul
    if(_p.size() > 2U)
    {
       out << "  else if (step == S_" << idx << ") begin\n"
-          << "     Mout_we_ram = 1'b1;\n"
-          << "     Mout_addr_ram = in1 + paramAddressRead;\n"
-          << "     Mout_Wdata_ram = " << _p[idx + 1U].name << ";\n"
-          << "     Mout_data_ram_size = " << _p[idx + 1U].type_size << ";\n"
+          << "     Mout_we_ram = active_request;\n"
+          << "     Mout_addr_ram = (in1 + paramAddressRead) & {BITSIZE_Mout_addr_ram{active_request}};\n"
+          << "     Mout_Wdata_ram = " << _p[idx + 1].name << " & {BITSIZE_Mout_Wdata_ram{active_request}};\n"
+          << "     Mout_data_ram_size = " << _p[idx + 1].type_size
+          << " & {BITSIZE_Mout_data_ram_size{active_request}};\n"
           << "   if (M_DataRdy == 1'b1) begin\n"
           << "     next_step = S_" << idx + 1U << ";\n"
+          << "     active_request_next = 1;\n"
           << "   end else begin\n"
           << "     next_step = S_" << idx << ";\n"
           << "   end\n"
@@ -306,12 +324,13 @@ void BuiltinWaitCallModuleGenerator::InternalExec(std::ostream& out, const modul
    }
 
    out << "  else if (step == S_" << idx << ") begin\n"
-       << "    Mout_we_ram = 1'b1;\n"
-       << "    Mout_addr_ram = in1;\n"
-       << "    Mout_Wdata_ram = unlock_address;\n"
-       << "    Mout_data_ram_size = 32;\n"
+       << "    Mout_we_ram = active_request;\n"
+       << "    Mout_addr_ram = in1 & {BITSIZE_Mout_addr_ram{active_request}};\n"
+       << "    Mout_Wdata_ram = unlock_address & {BITSIZE_Mout_Wdata_ram{active_request}};\n"
+       << "    Mout_data_ram_size = BITSIZE_Mout_Wdata_ram & {BITSIZE_Mout_data_ram_size{active_request}};\n"
        << "    if (M_DataRdy == 1'b1) begin\n"
        << "      next_step = S_" << idx + 1U << ";\n"
+       << "      active_request_next = 1;\n"
        << "    end else begin\n"
        << "      next_step = S_" << idx << ";\n"
        << "    end"
@@ -322,6 +341,7 @@ void BuiltinWaitCallModuleGenerator::InternalExec(std::ostream& out, const modul
        << "    if (S_we_ram == 1 && S_addr_ram == unlock_address) begin\n"
        << "      Sout_DataRdy = 1'b1;\n"
        << "      next_step = in2[0] ? S_" << (retval_size ? idx + 1U : 0U) << " : S_0;\n"
+       << "      active_request_next = 1;\n"
        << "      done_port = in2[0] ? 1'b0 : 1'b1;\n"
        << "    end else begin\n"
        << "      next_step = S_" << idx << ";\n"
@@ -332,11 +352,12 @@ void BuiltinWaitCallModuleGenerator::InternalExec(std::ostream& out, const modul
    if(_p.size() > 2U && retval_size)
    {
       out << "  else if (step == S_" << idx << ") begin\n"
-          << "      Mout_oe_ram = 1'b1;\n"
-          << "      Mout_addr_ram = in1 + paramAddressRead ;\n"
-          << "      Mout_data_ram_size = " << retval_size << ";\n"
+          << "      Mout_oe_ram = active_request;\n"
+          << "      Mout_addr_ram = (in1 + paramAddressRead) & {BITSIZE_Mout_addr_ram{active_request}};\n"
+          << "      Mout_data_ram_size = " << retval_size << " & {BITSIZE_Mout_data_ram_size{active_request}};\n"
           << "    if (M_DataRdy == 1'b1) begin\n"
           << "      next_step = S_" << idx + 1U << ";\n"
+          << "      active_request_next = 1;\n"
           << "      next_readValue = M_Rdata_ram;\n"
           << "    end else begin\n"
           << "      next_step = S_" << idx << ";\n"
@@ -345,12 +366,13 @@ void BuiltinWaitCallModuleGenerator::InternalExec(std::ostream& out, const modul
       idx++;
 
       out << "  else if (step == S_" << idx << ") begin\n"
-          << "    Mout_we_ram = 1'b1;\n"
-          << "    Mout_addr_ram = " << _p[_p.size() - 1U].name << ";\n"
-          << "    Mout_Wdata_ram = readValue;\n"
-          << "    Mout_data_ram_size = " << retval_size << ";\n"
+          << "    Mout_we_ram = active_request;\n"
+          << "    Mout_addr_ram = " << _p[_p.size() - 1U].name << " & {BITSIZE_Mout_addr_ram{active_request}};\n"
+          << "    Mout_Wdata_ram = readValue & {BITSIZE_Mout_Wdata_ram{active_request}};\n"
+          << "    Mout_data_ram_size = " << retval_size << " & {BITSIZE_Mout_data_ram_size{active_request}};\n"
           << "    if (M_DataRdy == 1'b1) begin\n"
           << "      next_step = S_0;\n"
+          << "      active_request_next = 1;\n"
           << "      done_port = 1'b1;\n"
           << "    end else begin\n"
           << "      next_step = S_" << idx << ";\n"

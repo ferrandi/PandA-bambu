@@ -13,6 +13,7 @@
     <DSPs_x_sizes value="18"/>
     <DSPs_y_sizes value="24"/>
     <OutputCarryConnectionRatio value="3"/>
+    <RelativeConnectionOffset value="2.0" />
     <OutputDSPConnectionRatio value="3"/>
     <max_lut_size value="4"/>
     <use_soft_64_mul value="1"/>
@@ -34,7 +35,7 @@
             <parameter name="n_byte_on_databus">4</parameter>
             <parameter name="n_mem_elements">4</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2022 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2023 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>NanoXplore</specialized>

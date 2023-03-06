@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -124,7 +124,7 @@ ModuleGeneratorManager::getDataType(unsigned int variable, const FunctionBehavio
        new structural_type_descriptor(variable, function_behavior->CGetBehavioralHelper()));
 }
 
-static unsigned int resize_to_8_or_greater(unsigned int value)
+static unsigned long long resize_to_8_or_greater(unsigned long long value)
 {
    if(value < 8)
    {
@@ -230,8 +230,7 @@ void ModuleGeneratorManager::specialize_fu(std::string fuName, vertex ve, std::s
    }
    else
    {
-      const auto n_ports =
-          parameters->isOption(OPT_channels_number) ? parameters->getOption<unsigned int>(OPT_channels_number) : 0;
+      const auto n_ports = FB->GetChannelsNumber();
 
       const structural_managerRef CM(new structural_manager(parameters));
       const structural_type_descriptorRef module_type(new structural_type_descriptor(new_fu_name));
@@ -445,8 +444,7 @@ void ModuleGeneratorManager::create_generic_module(const std::string& fuName, ve
    const auto fu_obj = structManager_obj->get_circ();
    const auto fu_module = GetPointer<const module>(fu_obj);
    THROW_ASSERT(fu_module, "");
-   const auto n_ports =
-       parameters->isOption(OPT_channels_number) ? parameters->getOption<unsigned int>(OPT_channels_number) : 0;
+   const auto n_ports = FB->GetChannelsNumber();
 
    const structural_managerRef CM(new structural_manager(parameters));
    const structural_type_descriptorRef module_type(new structural_type_descriptor(new_fu_name));

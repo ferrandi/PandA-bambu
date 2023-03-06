@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -191,7 +191,7 @@ void ASLAP::add_constraints_to_ASAP()
 {
    InEdgeIterator ei, ei_end;
    unsigned int m_k;
-   ControlStep cur_et = ControlStep(0u);
+   auto cur_et = ControlStep(0u);
 
    /** ASAP_nip[i] contains the number of non immediate predecessor of node i with the same type of operation.*/
    vertex2int ASAP_nip;
@@ -366,7 +366,7 @@ void ASLAP::add_constraints_to_ALAP()
          }
       }
    }
-   ControlStep cur_et = ControlStep(0u);
+   auto cur_et = ControlStep(0u);
    VertexIterator vi, vi_end;
    for(auto v : levels)
    {
@@ -547,7 +547,7 @@ void ASLAP::compute_ALAP_worst_case()
    vertex vi;
    OutEdgeIterator ei, ei_end;
    // Store the max reverse level
-   ControlStep max_rev_level = ControlStep(0u);
+   auto max_rev_level = ControlStep(0u);
    // Store the current reverse level
    std::map<ControlStep, ControlStep> rev_levels_to_cycles;
    std::map<ControlStep, ControlStep> max_et;

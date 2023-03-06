@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -188,6 +188,10 @@ FunctionBehavior::FunctionBehavior(const application_managerConstRef _AppM, cons
       pipeline_enabled(false),
       simple_pipeline(false),
       initiation_time(1),
+      _channels_number(
+          _parameters->isOption(OPT_channels_number) ? _parameters->getOption<unsigned int>(OPT_channels_number) : 0),
+      _channels_type(_parameters->getOption<MemoryAllocation_ChannelsType>(OPT_channels_type)),
+      _allocation_policy(_parameters->getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy)),
       bb_reachability(),
       feedback_bb_reachability(),
       ogc(new operations_graph_constructor(op_graphs_collection)),
@@ -206,8 +210,7 @@ FunctionBehavior::FunctionBehavior(const application_managerConstRef _AppM, cons
    THROW_ASSERT(_AppM->get_tree_manager()->GetTreeNode(_helper->get_function_index())->get_kind() == function_decl_K,
                 "Called function_behavior on a node which is not a function_decl");
    auto* decl_node = GetPointer<function_decl>(_AppM->get_tree_manager()->GetTreeNode(_helper->get_function_index()));
-   std::string fname;
-   tree_helper::get_mangled_fname(decl_node, fname);
+   const auto fname = tree_helper::GetMangledFunctionName(decl_node);
    if(!_parameters->isOption(OPT_pipelining))
    {
       pipeline_enabled = decl_node->is_pipelined();
@@ -860,6 +863,36 @@ unsigned int FunctionBehavior::UpdateBitValueVersion()
 {
    bitvalue_version++;
    return bitvalue_version;
+}
+
+unsigned int FunctionBehavior::GetChannelsNumber() const
+{
+   return _channels_number;
+}
+
+void FunctionBehavior::SetChannelsNumber(unsigned int val)
+{
+   _channels_number = val;
+}
+
+MemoryAllocation_ChannelsType FunctionBehavior::GetChannelsType() const
+{
+   return _channels_type;
+}
+
+void FunctionBehavior::SetChannelsType(MemoryAllocation_ChannelsType val)
+{
+   _channels_type = val;
+}
+
+MemoryAllocation_Policy FunctionBehavior::GetMemoryAllocationPolicy() const
+{
+   return _allocation_policy;
+}
+
+void FunctionBehavior::SetMemoryAllocationPolicy(MemoryAllocation_Policy val)
+{
+   _allocation_policy = val;
 }
 
 #if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)

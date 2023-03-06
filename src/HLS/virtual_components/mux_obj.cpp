@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -79,4 +79,8 @@ void mux_obj::set_selector(const generic_objRef sel)
 unsigned int mux_obj::get_level() const
 {
    return level;
+}
+unsigned int mux_obj::get_bitsize() const
+{
+   return bitsize;
 }

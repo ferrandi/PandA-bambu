@@ -112,7 +112,9 @@ __attribute__((noinline))
 int search(Graph * graph, NodeId var_2, PropertyId p_var_3, PropertyId p_var_5, PropertyId p_var_6, PropertyId p_var_8, PropertyId p_var_9, PropertyId p_var_10, PropertyId p_var_11, PropertyId p_var_12)
 {
   size_t in_degree_var_2 = getInDegree(graph, var_2);
+#ifndef NDEBUG
   printf("In degree %d\n", in_degree_var_2);
+#endif
   Edge * var_2_1_inEdges = getInEdges(graph, var_2);
   parallel(graph, var_2, p_var_3, p_var_5, p_var_6, p_var_8, p_var_9, p_var_10, p_var_11, p_var_12, in_degree_var_2, var_2_1_inEdges);
   for (int i = 0; i < N_THREADS; ++i)
@@ -140,11 +142,13 @@ int test(NodeId var_2, PropertyId p_var_3, PropertyId p_var_5, PropertyId p_var_
 // p_var_11 = "ub:subOrganizationOf" 5
 // p_var_12 = "ub:undergraduateDegreeFrom" 6 0
   int ret_value = search(&TheGraph, var_2, p_var_3, p_var_5, p_var_6, p_var_8, p_var_9, p_var_10, p_var_11, p_var_12);
+#ifndef NDEBUG
   printf("%d\n", ret_value);
+#endif
   return ret_value;
 }
 
-#ifdef DEBUG
+#ifndef NDEBUG
 int main() {
   return test(25273, 10, 1685, 10, 1828, 10, 4, 14, 3) != 0;
   //return test(74, 14, 11347, 14, 11412, 14, 4, 5, 0);

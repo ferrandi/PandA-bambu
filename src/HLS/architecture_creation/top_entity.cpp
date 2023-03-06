@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -477,7 +477,7 @@ void top_entity::add_ports(structural_objectRef circuit, structural_objectRef cl
    ////////////////////////////////////////////////////////////////////////////////////////
    ////////////////////////////////////////////////////////////////////////////////////////
    ////////////////////////////////////////////////////////////////////////////////////////
-   std::map<unsigned int, structural_objectRef> null_values;
+   std::map<unsigned long long, structural_objectRef> null_values;
    /// creating extern IN port on top starting from extern ports on datapath and add connection
    for(unsigned int j = 0; j < GetPointerS<module>(Datapath)->get_in_port_size(); j++)
    {
@@ -658,8 +658,8 @@ void top_entity::add_ports(structural_objectRef circuit, structural_objectRef cl
 
 void top_entity::add_command_signals(structural_objectRef circuit)
 {
-   structural_objectRef Datapath = HLS->datapath->get_circ();
-   structural_objectRef Controller = HLS->controller->get_circ();
+   const auto Datapath = HLS->datapath->get_circ();
+   const auto Controller = HLS->controller->get_circ();
 
    for(const auto& selector : HLS->Rconn->GetSelectors())
    {

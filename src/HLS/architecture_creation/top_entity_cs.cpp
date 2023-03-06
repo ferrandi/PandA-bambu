@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2016-2022 Politecnico di Milano
+ *              Copyright (c) 2016-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -74,9 +74,7 @@ top_entity_cs::top_entity_cs(const ParameterConstRef _parameters, const HLS_mana
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
 }
 
-top_entity_cs::~top_entity_cs()
-{
-}
+top_entity_cs::~top_entity_cs() = default;
 
 DesignFlowStep_Status top_entity_cs::InternalExec()
 {

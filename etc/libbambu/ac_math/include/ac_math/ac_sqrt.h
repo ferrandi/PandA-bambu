@@ -210,7 +210,7 @@ namespace ac_math
          z <<= 2;
       }
 
-      ac_fixed<RW + 1, RW, false> r2 = (ac_fixed<RW + 1, RW, false>)r;
+      auto r2 = (ac_fixed<RW + 1, RW, false>)r;
       if(OQ == AC_RND_ZERO || OQ == AC_RND_MIN_INF || OQ == AC_RND_CONV || OQ == AC_RND_CONV_ODD)
       {
          bool rem = (d != 0) || ((z >> 2 * RW) != 0);

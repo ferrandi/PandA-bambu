@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -143,12 +143,11 @@ std::string PragmaAnalysis::get_call_parameter(unsigned int tree_node, unsigned 
       if(vd_init->get_kind() == constructor_K)
       {
          const auto* co = GetPointer<const constructor>(vd_init);
-         for(auto idx_valu : co->list_of_idx_valu)
+         for(const auto& idx_valu : co->list_of_idx_valu)
          {
-            auto valu = GET_NODE(idx_valu.second);
-            THROW_ASSERT(valu->get_kind() == integer_cst_K, "unexpected condition");
-            auto ic = GetPointer<const integer_cst>(valu);
-            char val = static_cast<char>(ic->value);
+            THROW_ASSERT(GET_NODE(idx_valu.second)->get_kind() == integer_cst_K, "unexpected condition");
+            const auto cst_val = tree_helper::GetConstValue(idx_valu.second);
+            char val = static_cast<char>(cst_val);
             if(!val)
             {
                break;

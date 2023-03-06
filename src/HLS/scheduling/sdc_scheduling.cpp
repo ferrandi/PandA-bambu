@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2014-2022 Politecnico di Milano
+ *              Copyright (C) 2014-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -37,68 +37,38 @@
  * @author Marco Lattuada <lattuada@elet.polimi.it>
  *
  */
-
-/// Header include
 #include "sdc_scheduling.hpp"
 
-///. include
+#include "ASLAP.hpp"
 #include "Parameter.hpp"
-
-/// algorithms/loops_detection includes
-#include "loop.hpp"
-#include "loops.hpp"
-
-/// behavior include
-#include "basic_block.hpp"
-#include "op_graph.hpp"
-#include "operations_graph_constructor.hpp"
-
-/// boost include
-#include <boost/range/adaptor/reversed.hpp>
-
-/// design_flow includes
-#include "design_flow_graph.hpp"
-#include "design_flow_manager.hpp"
-
-/// frontend_analysis includes
-#include "frontend_flow_step.hpp"
-#include "frontend_flow_step_factory.hpp"
-#include "function_frontend_flow_step.hpp"
-
-/// frontend_analysis/IR_analysis include
-#include "simple_code_motion.hpp"
-
-/// HLS include
-#include "hls.hpp"
-#include "hls_constraints.hpp"
-
-/// HLS/binding/module_binding
-#include "fu_binding.hpp"
-
-/// HLS/memory include
-#include "memory.hpp"
-
-/// HLS/module_allocation includes
 #include "allocation.hpp"
 #include "allocation_information.hpp"
-
-/// HLS/scheduling include
-#include "ASLAP.hpp"
-#include "schedule.hpp"
-
-/// ilp include
-#include "meilp_solver.hpp"
-
-/// STD include
-#include <list>
-
-/// tree include
+#include "basic_block.hpp"
 #include "behavioral_helper.hpp"
-#include "tree_basic_block.hpp"
-
-/// utility include
 #include "cpu_time.hpp"
-#include "string_manipulation.hpp" // for GET_CLASS
+#include "design_flow_graph.hpp"
+#include "design_flow_manager.hpp"
+#include "frontend_flow_step.hpp"
+#include "frontend_flow_step_factory.hpp"
+#include "fu_binding.hpp"
+#include "function_frontend_flow_step.hpp"
+#include "hls.hpp"
+#include "hls_constraints.hpp"
+#include "loop.hpp"
+#include "loops.hpp"
+#include "meilp_solver.hpp"
+#include "memory.hpp"
+#include "op_graph.hpp"
+#include "operations_graph_constructor.hpp"
+#include "schedule.hpp"
+#include "simple_code_motion.hpp"
+#include "string_manipulation.hpp"
+#include "tree_basic_block.hpp"
+#include "utility.hpp"
+
+#include <boost/range/adaptor/reversed.hpp>
+
+#include <list>
 
 CONSTREF_FORWARD_DECL(Schedule);
 
@@ -557,8 +527,8 @@ SDCScheduling::ComputeHLSRelationships(const DesignFlowStep::RelationshipType re
    {
       case DEPENDENCE_RELATIONSHIP:
       {
-         ret.insert(std::make_tuple(HLSFlowStep_Type::INITIALIZE_HLS, HLSFlowStepSpecializationConstRef(),
-                                    HLSFlowStep_Relationship::SAME_FUNCTION));
+         ret.insert(std::make_tuple(HLSFlowStep_Type::DOMINATOR_ALLOCATION, HLSFlowStepSpecializationConstRef(),
+                                    HLSFlowStep_Relationship::WHOLE_APPLICATION));
          break;
       }
       case INVALIDATION_RELATIONSHIP:
@@ -605,7 +575,7 @@ DesignFlowStep_Status SDCScheduling::InternalExec()
    const BBGraphConstRef dominators = FB->CGetBBGraph(FunctionBehavior::DOM_TREE);
    const LoopsConstRef loops = FB->CGetLoops();
    const std::map<vertex, unsigned int>& bb_map_levels = FB->get_bb_map_levels();
-   ControlStep initial_ctrl_step = ControlStep(0u);
+   auto initial_ctrl_step = ControlStep(0u);
    for(const auto& loop : loops->GetList())
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Scheduling loop " + STR(loop->GetId()));
@@ -1403,7 +1373,7 @@ DesignFlowStep_Status SDCScheduling::InternalExec()
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Solution:");
       std::map<int, double> vals;
       solver->get_vars_solution(vals);
-      ControlStep last_relative_step = ControlStep(0u);
+      auto last_relative_step = ControlStep(0u);
       for(const auto operation : loop_operations)
       {
          const unsigned int begin_variable = operation_to_varindex[std::pair<vertex, unsigned int>(operation, 0)];

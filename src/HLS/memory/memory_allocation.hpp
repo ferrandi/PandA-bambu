@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -45,21 +45,29 @@
 #ifndef _MEMORY_ALLOCATION_HPP_
 #define _MEMORY_ALLOCATION_HPP_
 
+#include "custom_set.hpp"
 #include "hls_step.hpp"
-REF_FORWARD_DECL(memory_allocation);
+#include "refcount.hpp"
 #include <list>
+#include <map>
+#include <string>
+#include <tuple>
+
+REF_FORWARD_DECL(memory_allocation);
+REF_FORWARD_DECL(memory);
 
 /**
  * The allocation memory polycy
  */
 enum class MemoryAllocation_Policy
 {
-   LSS = 0,            /// all local variables, static variables and strings are allocated on BRAMs
-   GSS,                /// all global variables, static variables and strings are allocated on BRAMs
-   ALL_BRAM,           /// all objects that need to be stored in memory are allocated on BRAMs
-   NO_BRAM,            /// all objects that need to be stored in memory are allocated on an external memory
-   EXT_PIPELINED_BRAM, /// all objects that need to be stored in memory are allocated on an external pipelined memory
-   NONE                /// no policy
+   LSS = 1,      /// all local variables, static variables and strings are allocated on BRAMs
+   GSS = 2,      /// all global variables, static variables and strings are allocated on BRAMs
+   ALL_BRAM = 3, /// all objects that need to be stored in memory are allocated on BRAMs
+   NO_BRAM = 0,  /// all objects that need to be stored in memory are allocated on an external memory
+   EXT_PIPELINED_BRAM =
+       4,   /// all objects that need to be stored in memory are allocated on an external pipelined memory
+   NONE = 7 /// no policy
 };
 
 /**
@@ -68,10 +76,11 @@ enum class MemoryAllocation_Policy
 enum class MemoryAllocation_ChannelsType
 {
    MEM_ACC_11 = 0, /// for each memory at maximum one direct access and one indirect access
-   MEM_ACC_N1,     /// for each memory at maximum n parallel direct accesses and one indirect access
-   MEM_ACC_NN,     /// for each memory at maximum n parallel direct accesses and n parallel indirect accesses
-   MEM_ACC_P1N, /// only external memory access Datapath see only 1 memory port, while the bus manage parallel accesses
-   MEM_ACC_CS   /// memory architecture for non blocking request
+   MEM_ACC_N1 = 1, /// for each memory at maximum n parallel direct accesses and one indirect access
+   MEM_ACC_NN = 3, /// for each memory at maximum n parallel direct accesses and n parallel indirect accesses
+   MEM_ACC_P1N =
+       6, /// only external memory access Datapath see only 1 memory port, while the bus manage parallel accesses
+   MEM_ACC_CS = 8 /// memory architecture for non blocking request
 };
 
 /**
@@ -113,9 +122,6 @@ class memory_allocation : public HLS_step
  protected:
    /// list of functions to be analyzed
    CustomOrderedSet<unsigned int> func_list;
-
-   /// The memory allocation policy
-   const MemoryAllocation_Policy memory_allocation_policy;
 
    /// The version of memory representation on which this step was applied
    unsigned int memory_version;
@@ -166,7 +172,13 @@ class memory_allocation : public HLS_step
     */
    ~memory_allocation() override;
 
-   void allocate_parameters(unsigned int functionId);
+   /**
+    * @brief Allocate parameters for given function
+    *
+    * @param functionId Id of the function to allocate paramters for
+    * @param Rmem memory object ref to use (Rmem from HLS manager used if nullptr)
+    */
+   void allocate_parameters(unsigned int functionId, memoryRef Rmem = nullptr);
 
    /**
     * Check if this step has actually to be executed

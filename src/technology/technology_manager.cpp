@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -123,11 +123,28 @@ bool technology_manager::can_implement(const std::string& fu_name, const std::st
 technology_nodeRef technology_manager::get_fu(const std::string& fu_name, const std::string& Library) const
 {
    THROW_ASSERT(Library.size(), "Library not specified for component " + fu_name);
-   if(library_map.find(Library) != library_map.end() and library_map.find(Library)->second->is_fu(fu_name))
+   if(library_map.count(Library) && library_map.at(Library)->is_fu(fu_name))
    {
-      return library_map.find(Library)->second->get_fu(fu_name);
+      return library_map.at(Library)->get_fu(fu_name);
    }
-   return technology_nodeRef();
+   return nullptr;
+}
+
+technology_nodeRef technology_manager::get_fu(const std::string& fu_name, std::string* Library) const
+{
+   for(const auto& lib : libraries)
+   {
+      THROW_ASSERT(library_map.count(lib), "Library " + lib + " not found");
+      if(library_map.at(lib)->is_fu(fu_name))
+      {
+         if(Library)
+         {
+            *Library = lib;
+         }
+         return library_map.at(lib)->get_fu(fu_name);
+      }
+   }
+   return nullptr;
 }
 
 ControlStep technology_manager::get_initiation_time(const std::string& fu_name, const std::string& op_name,
@@ -336,7 +353,7 @@ void technology_manager::xload(const xml_element* node, const target_deviceRef d
          }
       }
    }
-   for(auto temp_library : temp_libraries)
+   for(const auto& temp_library : temp_libraries)
    {
       for(const auto& temp_info : info)
       {
@@ -414,17 +431,18 @@ void technology_manager::xwrite(xml_element* rootnode, TargetDevice_Type dv_type
 void technology_manager::lib_write(const std::string& filename, TargetDevice_Type dv_type,
                                    const CustomOrderedSet<std::string>& local_libraries)
 {
-   unsigned int output_level = Param->getOption<unsigned int>(OPT_output_level);
+   const auto output_level = Param->getOption<unsigned int>(OPT_output_level);
+   const auto library_fname = GetPath("__library__.xml");
    try
    {
       xml_document document;
       xml_element* nodeRoot = document.create_root_node("technology");
       xwrite(nodeRoot, dv_type, local_libraries);
-      document.write_to_file_formatted("__library__.xml");
+      document.write_to_file_formatted(library_fname);
 
-      xml2lib("__library__.xml", filename, output_level, debug_level);
+      xml2lib(library_fname, filename, output_level, debug_level);
       if(debug_level < DEBUG_LEVEL_PEDANTIC)
-         boost::filesystem::remove("__library__.xml");
+         boost::filesystem::remove(library_fname);
       for(CustomOrderedSet<std::string>::const_iterator l = local_libraries.begin(); l != local_libraries.end(); ++l)
       {
          if(!is_library_manager(*l))
@@ -456,16 +474,17 @@ void technology_manager::lib_write(const std::string& filename, TargetDevice_Typ
 void technology_manager::lef_write(const std::string& filename, TargetDevice_Type dv_type,
                                    const CustomOrderedSet<std::string>& _libraries)
 {
-   unsigned int output_level = Param->getOption<unsigned int>(OPT_output_level);
+   const auto output_level = Param->getOption<unsigned int>(OPT_output_level);
+   const auto library_fname = GetPath("__library__.xml");
    try
    {
       xml_document document;
       xml_element* nodeRoot = document.create_root_node("technology");
       xwrite(nodeRoot, dv_type, _libraries);
-      document.write_to_file_formatted("__library__.xml");
+      document.write_to_file_formatted(library_fname);
 
-      xml2lef("__library__.xml", filename, output_level, debug_level);
-      boost::filesystem::remove("__library__.xml");
+      xml2lef(library_fname, filename, output_level, debug_level);
+      boost::filesystem::remove(library_fname);
       for(CustomOrderedSet<std::string>::const_iterator l = _libraries.begin(); l != _libraries.end(); ++l)
       {
          if(!is_library_manager(*l))

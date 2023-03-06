@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -128,6 +128,7 @@ bool application_manager::hasToBeInterfaced(unsigned int funId) const
 {
    const auto root_functions = CGetCallGraphManager()->GetRootFunctions();
    const auto addressed_functions = CGetCallGraphManager()->GetAddressedFunctions();
+
    // all the root functions and the reached addressed functions must be interfaced
    return root_functions.count(funId) || addressed_functions.count(funId);
 }

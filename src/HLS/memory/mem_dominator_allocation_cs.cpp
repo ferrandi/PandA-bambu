@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2016-2022 Politecnico di Milano
+ *              Copyright (c) 2016-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -60,9 +60,7 @@ mem_dominator_allocation_cs::mem_dominator_allocation_cs(
    debug_level = _parameters->get_class_debug_level(GET_CLASS(*this));
 }
 
-mem_dominator_allocation_cs::~mem_dominator_allocation_cs()
-{
-}
+mem_dominator_allocation_cs::~mem_dominator_allocation_cs() = default;
 
 DesignFlowStep_Status mem_dominator_allocation_cs::Exec()
 {

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2018-2022 Politecnico di Milano
+ *              Copyright (c) 2018-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -42,6 +42,8 @@
 #include "string_manipulation.hpp"
 
 #include "exceptions.hpp"
+#include "panda_types.hpp"
+
 #include <boost/algorithm/string/classification.hpp>
 #include <boost/algorithm/string/split.hpp>
 #include <boost/regex.hpp>
@@ -117,31 +119,45 @@ static const boost::regex fixed_def("a[cp]_(u)?fixed<\\s*(\\d+)\\s*,\\s*(\\d+),?
 #define FD_GROUP_D 3
 #define FD_GROUP_SIGN 4
 
-std::string ConvertInBinary(const std::string& C_value, const unsigned int precision, const bool real_type,
-                            const bool unsigned_type)
+std::string ConvertInBinary(const std::string& C_value, unsigned long long precision, const bool real_type,
+                            bool unsigned_type)
 {
-   std::string trimmed_value;
-   boost::cmatch what;
+   std::string trimmed_value = C_value;
    THROW_ASSERT(C_value != "", "Empty string for binary conversion");
+
+   bool is_signed, is_fixed;
+   const auto ac_bw = ac_type_bitwidth(C_value, is_signed, is_fixed);
+   if(ac_bw)
+   {
+      unsigned_type = !is_signed;
+      trimmed_value = trimmed_value.substr(trimmed_value.find('>') + 1);
+   }
 
    if(real_type)
    {
       trimmed_value = convert_fp_to_string(C_value, precision);
    }
-   else if(boost::regex_search(C_value.c_str(), what, fixed_def))
+   else if(is_fixed)
    {
+      boost::cmatch what;
+#if HAVE_ASSERTS
+      const auto is_match =
+#endif
+          boost::regex_search(C_value.c_str(), what, fixed_def);
+      THROW_ASSERT(is_match, "");
       const auto w = boost::lexical_cast<unsigned int>(
           what[FD_GROUP_W].first, static_cast<size_t>(what[FD_GROUP_W].second - what[FD_GROUP_W].first));
       const auto d = boost::lexical_cast<unsigned int>(
           what[FD_GROUP_D].first, static_cast<size_t>(what[FD_GROUP_D].second - what[FD_GROUP_D].first));
-      bool is_signed = (what[FD_GROUP_U].second - what[FD_GROUP_U].first) == 0 &&
-                       ((what[FD_GROUP_SIGN].second - what[FD_GROUP_SIGN].first) == 0 ||
-                        strncmp(what[FD_GROUP_SIGN].first, "true", 4) == 0);
+      is_signed = (what[FD_GROUP_U].second - what[FD_GROUP_U].first) == 0 &&
+                  ((what[FD_GROUP_SIGN].second - what[FD_GROUP_SIGN].first) == 0 ||
+                   strncmp(what[FD_GROUP_SIGN].first, "true", 4) == 0);
       THROW_ASSERT(d < w, "Decimal part should be smaller then total length");
       const long double val = strtold(what[0].second, nullptr) * powl(2, w - d);
       // TODO: update regex to handle overflow correctly
-      long long fixp = static_cast<long long>(val);
+      auto fixp = integer_cst_t(val);
       is_signed &= val < 0;
+      trimmed_value.clear();
       while(trimmed_value.size() < w)
       {
          trimmed_value = ((fixp & 1) ? "1" : "0") + trimmed_value;
@@ -155,9 +171,9 @@ std::string ConvertInBinary(const std::string& C_value, const unsigned int preci
    else
    {
       long long int ll_value;
-      if(C_value[0] == '\"')
+      if(trimmed_value[0] == '\"')
       {
-         trimmed_value = C_value.substr(1);
+         trimmed_value = trimmed_value.substr(1);
          trimmed_value = trimmed_value.substr(0, trimmed_value.find('\"'));
          if(trimmed_value[0] == '0' && trimmed_value[1] == 'b')
          {
@@ -222,9 +238,9 @@ std::string ConvertInBinary(const std::string& C_value, const unsigned int preci
          }
          return trimmed_value;
       }
-      else if(C_value[0] == '\'')
+      else if(trimmed_value[0] == '\'')
       {
-         trimmed_value = C_value.substr(1);
+         trimmed_value = trimmed_value.substr(1);
          THROW_ASSERT(trimmed_value.find('\'') != std::string::npos, "unxpected case");
          trimmed_value = trimmed_value.substr(0, trimmed_value.find('\''));
          if(trimmed_value[0] == '\\')
@@ -239,13 +255,13 @@ std::string ConvertInBinary(const std::string& C_value, const unsigned int preci
       else if(unsigned_type)
       {
          std::string::size_type sz = 0;
-         unsigned long long ull = std::stoull(C_value, &sz, 0);
+         unsigned long long ull = std::stoull(trimmed_value, &sz, 0);
          ll_value = static_cast<long long int>(ull);
       }
       else
       {
          std::string::size_type sz = 0;
-         ll_value = std::stoll(C_value, &sz, 0);
+         ll_value = std::stoll(trimmed_value, &sz, 0);
       }
       auto ull_value = static_cast<unsigned long long int>(ll_value);
       trimmed_value = "";
@@ -289,7 +305,7 @@ std::string FixedPointReinterpret(const std::string& FP_vector, const std::strin
       {
          const long double val = strtold(fix_val_it->str().c_str(), nullptr) * powl(2, w - d);
          // TODO: update regex to handle overflow correctly
-         const long long fixp = static_cast<long long>(val);
+         const auto fixp = static_cast<long long>(val);
          new_vector += "{{{" + STR(fixp) + "}}}, ";
          ++fix_val_it;
       }
@@ -318,7 +334,7 @@ const std::vector<std::string> SplitString(const std::string&
    return ret_value;
 }
 
-std::string convert_fp_to_string(std::string num, unsigned int precision)
+std::string convert_fp_to_string(std::string num, unsigned long long precision)
 {
    union
    {
@@ -396,7 +412,7 @@ std::string convert_fp_to_string(std::string num, unsigned int precision)
    return res;
 }
 
-unsigned long long convert_fp_to_bits(std::string num, unsigned int precision)
+unsigned long long convert_fp_to_bits(std::string num, unsigned long long precision)
 {
    union
    {
@@ -412,29 +428,49 @@ unsigned long long convert_fp_to_bits(std::string num, unsigned int precision)
       case 32:
       {
          if(num == "__Inf")
+         {
             u.f = 1.0f / 0.0f;
+         }
          else if(num == "-__Inf")
+         {
             u.f = -1.0f / 0.0f;
+         }
          else if(num == "__Nan")
+         {
             u.f = 0.0f / 0.0f;
+         }
          else if(num == "-__Nan")
+         {
             u.f = -(0.0f / 0.0f);
+         }
          else
+         {
             u.f = strtof(num.c_str(), &endptr);
+         }
          return u.i;
       }
       case 64:
       {
          if(num == "__Inf")
+         {
             u.d = 1.0 / 0.0;
+         }
          else if(num == "-__Inf")
+         {
             u.d = -1.0 / 0.0;
+         }
          else if(num == "__Nan")
+         {
             u.d = 0.0 / 0.0;
+         }
          else if(num == "-__Nan")
+         {
             u.d = -(0.0 / 0.0);
+         }
          else
+         {
             u.d = strtod(num.c_str(), &endptr);
+         }
          return u.ll;
       }
       default:
@@ -449,13 +485,15 @@ static const boost::regex ac_type_def("a[cp]_(u)?(\\w+)<\\s*(\\d+)\\s*,?\\s*(\\d
 #define AC_GROUP_W 3
 #define AC_GROUP_SIGN 4
 
-unsigned int ac_type_bitwidth(const std::string& intType, bool& is_signed, bool& is_fixed)
+unsigned long long ac_type_bitwidth(const std::string& intType, bool& is_signed, bool& is_fixed)
 {
    boost::cmatch what;
+   is_signed = false;
+   is_fixed = false;
    if(boost::regex_search(intType.c_str(), what, ac_type_def))
    {
-      unsigned int w = boost::lexical_cast<unsigned int>(
-          what[AC_GROUP_W].first, static_cast<size_t>(what[AC_GROUP_W].second - what[AC_GROUP_W].first));
+      auto w = boost::lexical_cast<unsigned int>(what[AC_GROUP_W].first,
+                                                 static_cast<size_t>(what[AC_GROUP_W].second - what[AC_GROUP_W].first));
       is_signed = (what[AC_GROUP_U].second - what[AC_GROUP_U].first) == 0 &&
                   ((what[AC_GROUP_SIGN].second - what[AC_GROUP_SIGN].first) == 0 ||
                    strncmp(what[AC_GROUP_SIGN].first, "true", 4) == 0);

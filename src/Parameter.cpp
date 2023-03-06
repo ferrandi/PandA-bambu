@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -50,6 +50,7 @@
 #include "config_HAVE_I386_CLANG10_COMPILER.hpp"
 #include "config_HAVE_I386_CLANG11_COMPILER.hpp"
 #include "config_HAVE_I386_CLANG12_COMPILER.hpp"
+#include "config_HAVE_I386_CLANG13_COMPILER.hpp"
 #include "config_HAVE_I386_CLANG4_COMPILER.hpp"
 #include "config_HAVE_I386_CLANG5_COMPILER.hpp"
 #include "config_HAVE_I386_CLANG6_COMPILER.hpp"
@@ -233,6 +234,7 @@ void Parameter::CheckParameters()
       }
    }
 
+#if HAVE_FROM_C_BUILT
    if(isOption(OPT_gcc_m32_mx32))
    {
       const auto mopt = getOption<std::string>(OPT_gcc_m32_mx32);
@@ -252,6 +254,7 @@ void Parameter::CheckParameters()
                      CompilerWrapper::getCompilerSuffix(OPT_default_compiler) + " compiler.");
       }
    }
+#endif
 }
 
 Parameter::~Parameter() = default;
@@ -435,7 +438,7 @@ void Parameter::PrintFullHeader(std::ostream& os) const
    os << "                         Politecnico di Milano - DEIB" << std::endl;
    os << "                          System Architectures Group" << std::endl;
    os << "********************************************************************************" << std::endl;
-   os << "                Copyright (C) 2004-2022 Politecnico di Milano" << std::endl;
+   os << "                Copyright (C) 2004-2023 Politecnico di Milano" << std::endl;
    std::string version = PrintVersion();
    if(version.size() < 80)
    {
@@ -994,6 +997,13 @@ bool Parameter::ManageGccOptions(int next_option, char* optarg_param)
             break;
          }
 #endif
+#if HAVE_I386_CLANG13_COMPILER
+         if(std::string(optarg_param) == "I386_CLANG13")
+         {
+            setOption(OPT_default_compiler, static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_CLANG13));
+            break;
+         }
+#endif
 #if HAVE_I386_CLANGVVD_COMPILER
          if(std::string(optarg_param) == "I386_CLANGVVD")
          {
@@ -1026,7 +1036,7 @@ bool Parameter::ManageGccOptions(int next_option, char* optarg_param)
       }
       case INPUT_OPT_READ_GCC_XML:
       {
-         setOption(OPT_gcc_read_xml, optarg);
+         setOption(OPT_gcc_read_xml, GetPath(optarg));
          break;
       }
       case INPUT_OPT_STD:
@@ -1041,7 +1051,7 @@ bool Parameter::ManageGccOptions(int next_option, char* optarg_param)
       }
       case INPUT_OPT_WRITE_GCC_XML:
       {
-         setOption(OPT_gcc_write_xml, optarg);
+         setOption(OPT_gcc_write_xml, GetPath(optarg));
          break;
       }
       default:
@@ -1437,8 +1447,8 @@ void Parameter::PrintOutputOptionsUsage(std::ostream& os) const
       << "    --max-transformations=<number>\n"
       << "        Set a maximum number of transformations.\n\n"
       << "        To reduce the disk usage two PandA parameter could be used:\n"
-      << "          --panda-parameter=disable-print-tree-manager=1\n"
-      << "          --panda-parameter=disable-print-dot-FF=1\n\n"
+      << "          --panda-parameter=print-tree-manager=1\n"
+      << "          --panda-parameter=print-dot-FF=1\n\n"
       << "    --find-max-transformations\n"
       << "        Find the maximum number of transformations raising an exception.\n\n"
 #endif
@@ -1533,6 +1543,9 @@ void Parameter::PrintGccOptionsUsage(std::ostream& os) const
 #endif
 #if HAVE_I386_CLANG12_COMPILER
       << "            I386_CLANG12\n"
+#endif
+#if HAVE_I386_CLANG13_COMPILER
+      << "            I386_CLANG13\n"
 #endif
 #if HAVE_I386_CLANGVVD_COMPILER
       << "            I386_CLANGVVD\n"

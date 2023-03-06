@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -114,7 +114,7 @@ const std::string HLS_step::GetSignature() const
 const std::string HLS_step::ComputeSignature(const HLSFlowStep_Type hls_flow_step_type,
                                              const HLSFlowStepSpecializationConstRef hls_flow_step_specialization)
 {
-   return "HLS::" + std::to_string(static_cast<unsigned int>(hls_flow_step_type)) +
+   return "HLS::" + EnumToName(hls_flow_step_type) +
           (hls_flow_step_specialization ? "::" + hls_flow_step_specialization->GetSignature() : "");
 }
 
@@ -175,6 +175,8 @@ const std::string HLS_step::EnumToName(const HLSFlowStep_Type hls_flow_step_type
          return "ControlFlowChecker";
       case HLSFlowStep_Type::C_TESTBENCH_EXECUTION:
          return "CTestbenchExecution";
+      case HLSFlowStep_Type::DOMINATOR_ALLOCATION:
+         return "DominatorAllocation";
       case HLSFlowStep_Type::DOMINATOR_MEMORY_ALLOCATION:
          return "DominatorMemoryAllocation";
       case HLSFlowStep_Type::DOMINATOR_MEMORY_ALLOCATION_CS:
@@ -185,10 +187,11 @@ const std::string HLS_step::EnumToName(const HLSFlowStep_Type hls_flow_step_type
          return "DryRunEvaluation";
 #if HAVE_BEAGLE
       case HLSFlowStep_Type::DSE_DESIGN_FLOW:
-         return "DseDesignFlow"
+         return "DseDesignFlow";
 #endif
 #if HAVE_EXPERIMENTAL
-             case HLSFlowStep_Type::DUMP_DESIGN_FLOW : return "DumpDesignFlow";
+      case HLSFlowStep_Type::DUMP_DESIGN_FLOW:
+         return "DumpDesignFlow";
 #endif
       case HLSFlowStep_Type::EASY_MODULE_BINDING:
          return "EasyModuleBinding";
@@ -418,18 +421,18 @@ void HLS_step::ComputeRelationships(DesignFlowStepSet& design_flow_step_set,
       {
          case HLSFlowStep_Relationship::ALL_FUNCTIONS:
          {
-            const auto* frontend_flow_step_factory = GetPointer<const FrontendFlowStepFactory>(
+            const auto frontend_flow_step_factory = GetPointer<const FrontendFlowStepFactory>(
                 design_flow_manager.lock()->CGetDesignFlowStepFactory("Frontend"));
-            const vertex call_graph_computation_step = design_flow_manager.lock()->GetDesignFlowStep(
-                ApplicationFrontendFlowStep::ComputeSignature(FUNCTION_ANALYSIS));
-            const DesignFlowStepRef cg_design_flow_step =
+            const auto call_graph_computation_step = design_flow_manager.lock()->GetDesignFlowStep(
+                ApplicationFrontendFlowStep::ComputeSignature(COMPLETE_CALL_GRAPH));
+            const auto cg_design_flow_step =
                 call_graph_computation_step ?
                     design_flow_graph->CGetDesignFlowStepInfo(call_graph_computation_step)->design_flow_step :
-                    frontend_flow_step_factory->CreateApplicationFrontendFlowStep(FUNCTION_ANALYSIS);
+                    frontend_flow_step_factory->CreateApplicationFrontendFlowStep(COMPLETE_CALL_GRAPH);
             design_flow_step_set.insert(cg_design_flow_step);
             for(auto const function : functions)
             {
-               std::string function_name = tree_helper::normalized_ID(tree_helper::name_function(TreeM, function));
+               std::string function_name = tree_helper::NormalizeTypename(tree_helper::name_function(TreeM, function));
                /// FIXME: temporary deactivated
                if(false) // function already implemented
                {
@@ -456,11 +459,11 @@ void HLS_step::ComputeRelationships(DesignFlowStepSet& design_flow_step_set,
             const auto* frontend_flow_step_factory = GetPointer<const FrontendFlowStepFactory>(
                 design_flow_manager.lock()->CGetDesignFlowStepFactory("Frontend"));
             const vertex call_graph_computation_step = design_flow_manager.lock()->GetDesignFlowStep(
-                ApplicationFrontendFlowStep::ComputeSignature(FUNCTION_ANALYSIS));
+                ApplicationFrontendFlowStep::ComputeSignature(COMPLETE_CALL_GRAPH));
             const DesignFlowStepRef cg_design_flow_step =
                 call_graph_computation_step ?
                     design_flow_graph->CGetDesignFlowStepInfo(call_graph_computation_step)->design_flow_step :
-                    frontend_flow_step_factory->CreateApplicationFrontendFlowStep(FUNCTION_ANALYSIS);
+                    frontend_flow_step_factory->CreateApplicationFrontendFlowStep(COMPLETE_CALL_GRAPH);
             design_flow_step_set.insert(cg_design_flow_step);
             /// Root function cannot be computed at the beginning
             if(boost::num_vertices(*(call_graph_manager->CGetCallGraph())) == 0)

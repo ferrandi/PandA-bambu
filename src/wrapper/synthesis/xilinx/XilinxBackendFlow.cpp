@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -46,29 +46,23 @@
 
 #include "config_PANDA_DATA_INSTALLDIR.hpp"
 
-/// constants include
-#include "synthesis_constants.hpp"
-
 #include "LUT_model.hpp"
+#include "Parameter.hpp"
+#include "XilinxWrapper.hpp"
 #include "area_model.hpp"
 #include "clb_model.hpp"
+#include "fileIO.hpp"
 #include "map_wrapper.hpp"
+#include "string_manipulation.hpp"
+#include "structural_objects.hpp"
+#include "synthesis_constants.hpp"
 #include "target_device.hpp"
 #include "target_manager.hpp"
 #include "time_model.hpp"
 #include "trce_wrapper.hpp"
-
-#include "XilinxWrapper.hpp"
-
-#include "Parameter.hpp"
-#include "fileIO.hpp"
+#include "utility.hpp"
 #include "xml_dom_parser.hpp"
 #include "xml_script_command.hpp"
-
-/// circuit include
-#include "structural_objects.hpp"
-
-#include "string_manipulation.hpp" // for GET_CLASS
 
 #define XST_NUMBER_OF_SLICE_REGISTERS "XST_NUMBER_OF_SLICE_REGISTERS"
 #define XST_NUMBER_OF_SLICE_LUTS "XST_NUMBER_OF_SLICE_LUTS"
@@ -106,6 +100,8 @@ XilinxBackendFlow::XilinxBackendFlow(const ParameterConstRef _Param, const std::
    default_data["Zynq-VVD"] = "Zynq-VVD.data";
    default_data["Zynq-YOSYS-VVD"] = "Zynq-YOSYS-VVD.data";
    default_data["Zynq"] = "Zynq.data";
+   default_data["Kintex-Ultrascale-VVD"] = "Kintex-Ultrascale-VVD.data";
+   default_data["Alveo-Ultrascale-VVD"] = "Alveo-Ultrascale-VVD.data";
 
    XMLDomParserRef parser;
    if(Param->isOption(OPT_target_device_script))
@@ -696,6 +692,7 @@ void XilinxBackendFlow::CheckSynthesisResults()
       area_clb_model->set_resource_value(clb_model::REGISTERS, design_values[VIVADO_XILINX_SLICE_REGISTERS]);
       area_clb_model->set_resource_value(clb_model::DSP, design_values[VIVADO_XILINX_DSPS]);
       area_clb_model->set_resource_value(clb_model::BRAM, design_values[VIVADO_XILINX_BLOCK_RAMFIFO]);
+      area_clb_model->set_resource_value(clb_model::POWER, design_values[VIVADO_XILINX_POWER]);
 
       time_m = time_model::create_model(TargetDevice_Type::FPGA, Param);
       auto* lut_m = GetPointer<LUT_model>(time_m);

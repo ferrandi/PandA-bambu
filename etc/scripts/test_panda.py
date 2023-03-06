@@ -47,11 +47,11 @@ class StoreOrUpdateMin(argparse.Action):
 def GetChildren(parent_pid):
     ret = set()
     ps_command = subprocess.Popen(
-        "ps -o pid --ppid %d --noheaders" % parent_pid, shell=True, stdout=subprocess.PIPE)
-    ps_output = ps_command.stdout.read()
+        "ps --ppid %d -o pid=" % parent_pid, shell=True, stdout=subprocess.PIPE)
     ps_command.wait()
-    for pid_str in ps_output.split("\n")[:-1]:
-        ret.add(int(pid_str))
+    ps_output = ps_command.stdout.read().decode()
+    for pid_str in ps_output.split('\n')[:-1]:
+        ret.add(int(pid_str, base=10))
     return ret
 
 # Kill a process than kill its children
@@ -421,21 +421,22 @@ def CreateJunitBody(directory, ju_file):
             args_file = open(os.path.join(directory, subdir, "args"))
             command_args = args_file.readlines()[0]
             command_args = command_args.replace(abs_benchmarks_root + "/", "")
+            command_args = command_args.replace("\\", "").replace("\"", "&quot;").replace("\n","")
             args_file.close()
             if return_value == "0":
                 ju_file.write("    <testcase classname=\"PandA-bambu-tests\" name=\"" +
-                              command_args.replace("\\", "").replace("\"", "&quot;") + "\">\n")
+                              command_args + "\">\n")
             else:
                 if return_value == "124":
                     ju_file.write("    <testcase classname=\"PandA-bambu-tests\" name=\"" +
-                                  command_args.replace("\\", "").replace("\"", "&quot;") + "\">\n")
+                                  command_args + "\">\n")
                     ju_file.write(
                         "      <failure type=\"FAILURE(Timeout)\"></failure>\n")
                     ju_file.write("      <system-out>\n")
                     ju_file.write("<![CDATA[\n")
                 else:
                     ju_file.write("    <testcase classname=\"PandA-bambu-tests\" name=\"" +
-                                  command_args.replace("\\", "").replace("\"", "&quot;") + "\">\n")
+                                  command_args + "\">\n")
                     ju_file.write(
                         "      <failure type=\"FAILURE\"></failure>\n")
                     ju_file.write("      <system-out>\n")
@@ -606,7 +607,7 @@ parser.add_argument(
 parser.add_argument("--csv", help="Print the results in csv format")
 parser.add_argument("--tool", help="The tool to be tested", default="bambu")
 parser.add_argument("--ulimit", help="The ulimit options",
-                    default="-f 8388608 -s 32768 -v 16777216")
+                    default="-f 8388608 -s 32768 -v 33554432")
 parser.add_argument("--stop", help="Stop the execution on first error (default=false)",
                     default=False, action="store_true")
 parser.add_argument("--returnfail", help="Return FAILURE in case at least one test fails (default=false)",
@@ -1097,7 +1098,9 @@ try:
             threads[thread_index].join(100)
 except KeyboardInterrupt:
     logging.error("SIGINT received")
-    failure = True
+    with lock_creation_destruction:
+        failure = True
+        args.stop = True
     for local_thread_index in range(n_jobs):
         if children[local_thread_index] != None:
             if children[local_thread_index].poll() == None:
@@ -1105,7 +1108,7 @@ except KeyboardInterrupt:
                     kill_proc_tree(children[local_thread_index].pid)
                 except OSError:
                     pass
-    sys.exit(1)
+    # sys.exit(1)
 
 # Collect results
 CollectResults(abs_path)

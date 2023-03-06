@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -105,6 +105,8 @@ class dominance;
 class ParallelRegionsGraphsCollection;
 class sequence_info;
 class xml_element;
+enum class MemoryAllocation_ChannelsType;
+enum class MemoryAllocation_Policy;
 using tree_class = unsigned int;
 //@}
 
@@ -424,6 +426,14 @@ class FunctionBehavior
 
    /// used only for stallable pipelines
    int initiation_time;
+
+   /// Function scope channels number
+   unsigned int _channels_number;
+
+   /// Function scope channels type
+   MemoryAllocation_ChannelsType _channels_type;
+
+   MemoryAllocation_Policy _allocation_policy;
 
  public:
    /**
@@ -838,7 +848,7 @@ class FunctionBehavior
     */
    bool is_a_state_variable(unsigned int node_id) const
    {
-      return state_variables.find(node_id) != state_variables.end();
+      return state_variables.count(node_id);
    }
 
    /**
@@ -952,6 +962,18 @@ class FunctionBehavior
     * @return the new version
     */
    unsigned int UpdateBitValueVersion();
+
+   unsigned int GetChannelsNumber() const;
+
+   void SetChannelsNumber(unsigned int val);
+
+   MemoryAllocation_ChannelsType GetChannelsType() const;
+
+   void SetChannelsType(MemoryAllocation_ChannelsType val);
+
+   MemoryAllocation_Policy GetMemoryAllocationPolicy() const;
+
+   void SetMemoryAllocationPolicy(MemoryAllocation_Policy val);
 };
 
 using FunctionBehaviorRef = refcount<FunctionBehavior>;

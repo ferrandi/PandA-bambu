@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -128,8 +128,8 @@ Scheduling::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relat
             ret.insert(std::make_tuple(HLSFlowStep_Type::ALLOCATION, HLSFlowStepSpecializationConstRef(),
                                        HLSFlowStep_Relationship::SAME_FUNCTION));
          }
-         ret.insert(std::make_tuple(HLSFlowStep_Type::INITIALIZE_HLS, HLSFlowStepSpecializationConstRef(),
-                                    HLSFlowStep_Relationship::SAME_FUNCTION));
+         ret.insert(std::make_tuple(HLSFlowStep_Type::DOMINATOR_ALLOCATION, HLSFlowStepSpecializationConstRef(),
+                                    HLSFlowStep_Relationship::WHOLE_APPLICATION));
          break;
       }
       case INVALIDATION_RELATIONSHIP:
@@ -241,7 +241,7 @@ ControlStep Scheduling::anticipate_operations(const OpGraphConstRef dependence_g
    const double clock_cycle = HLS->HLS_C->get_clock_period();
 
    /// Last control step
-   ControlStep last_cs = ControlStep(0u);
+   auto last_cs = ControlStep(0u);
 
    std::list<vertex> operations;
    boost::topological_sort(*dependence_graph, std::front_inserter(operations));

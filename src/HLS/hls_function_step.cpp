@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -37,34 +37,22 @@
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
  */
-
-/// Header include
 #include "hls_function_step.hpp"
 
-/// behavior include
+#include "behavioral_helper.hpp"
 #include "call_graph_manager.hpp"
-
-/// design_flows include
+#include "dbgPrintHelper.hpp"
 #include "design_flow_graph.hpp"
 #include "design_flow_manager.hpp"
-
-/// HLS includes
 #include "hls.hpp"
 #include "hls_flow_step_factory.hpp"
 #include "hls_manager.hpp"
 #include "hls_target.hpp"
-
-/// HLS/memory include
 #include "memory.hpp"
-
-/// technology include
 #include "technology_manager.hpp"
-
-/// tree include
-#include "behavioral_helper.hpp"
-#include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
+#include "utility.hpp"
 
 HLSFunctionStep::HLSFunctionStep(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr, unsigned int _funId,
                                  const DesignFlowManagerConstRef _design_flow_manager,
@@ -106,7 +94,7 @@ bool HLSFunctionStep::HasToBeExecuted() const
    std::map<unsigned int, unsigned int> cur_bitvalue_ver;
    const CallGraphManagerConstRef call_graph_manager = HLSMgr->CGetCallGraphManager();
    THROW_ASSERT(funId, "unexpected case");
-   const auto called_functions = call_graph_manager->GetReachedBodyFunctionsFrom(funId);
+   const auto called_functions = call_graph_manager->GetReachedFunctionsFrom(funId);
    for(auto const called_function : called_functions)
    {
       if(called_function == funId)
@@ -137,9 +125,7 @@ HLSFunctionStep::ComputeSignature(const HLSFlowStep_Type hls_flow_step_type,
                                   const HLSFlowStepSpecializationConstRef hls_flow_step_specialization,
                                   const unsigned int function_id)
 {
-   return "HLS::" + std::to_string(static_cast<unsigned int>(hls_flow_step_type)) +
-          (hls_flow_step_specialization ? "::" + hls_flow_step_specialization->GetSignature() : "") +
-          "::" + std::to_string(function_id);
+   return HLS_step::ComputeSignature(hls_flow_step_type, hls_flow_step_specialization) + "::" + STR(function_id);
 }
 
 const std::string HLSFunctionStep::GetName() const
@@ -176,35 +162,27 @@ void HLSFunctionStep::ComputeRelationships(DesignFlowStepSet& design_flow_step_s
       {
          case HLSFlowStep_Relationship::CALLED_FUNCTIONS:
          {
-            const auto called_functions = call_graph_manager->GetReachedBodyFunctionsFrom(funId);
+            const auto called_functions = call_graph_manager->GetReachedFunctionsFrom(funId);
             for(auto const function : called_functions)
             {
-               if(function == funId)
+               if(function != funId)
                {
-                  continue;
+                  const auto hls_step = design_flow_manager.lock()->GetDesignFlowStep(HLSFunctionStep::ComputeSignature(
+                      std::get<0>(step_to_be_created), std::get<1>(step_to_be_created), function));
+                  const auto design_flow_step =
+                      hls_step ? design_flow_graph->CGetDesignFlowStepInfo(hls_step)->design_flow_step :
+                                 hls_flow_step_factory->CreateHLSFlowStep(std::get<0>(step_to_be_created), function,
+                                                                          std::get<1>(step_to_be_created));
+                  design_flow_step_set.insert(design_flow_step);
                }
-               std::string function_name = tree_helper::normalized_ID(tree_helper::name_function(TreeM, function));
-               /// FIXME: temporary deactivated
-               if(false) // function already implemented
-               {
-                  continue;
-               }
-               vertex hls_step = design_flow_manager.lock()->GetDesignFlowStep(HLSFunctionStep::ComputeSignature(
-                   std::get<0>(step_to_be_created), std::get<1>(step_to_be_created), function));
-               const DesignFlowStepRef design_flow_step =
-                   hls_step ? design_flow_graph->CGetDesignFlowStepInfo(hls_step)->design_flow_step :
-                              hls_flow_step_factory->CreateHLSFlowStep(std::get<0>(step_to_be_created), function,
-                                                                       std::get<1>(step_to_be_created));
-               design_flow_step_set.insert(design_flow_step);
             }
-
             break;
          }
          case HLSFlowStep_Relationship::SAME_FUNCTION:
          {
-            vertex hls_step = design_flow_manager.lock()->GetDesignFlowStep(HLSFunctionStep::ComputeSignature(
+            const auto hls_step = design_flow_manager.lock()->GetDesignFlowStep(HLSFunctionStep::ComputeSignature(
                 std::get<0>(step_to_be_created), std::get<1>(step_to_be_created), funId));
-            const DesignFlowStepRef design_flow_step =
+            const auto design_flow_step =
                 hls_step ? design_flow_graph->CGetDesignFlowStepInfo(hls_step)->design_flow_step :
                            hls_flow_step_factory->CreateHLSFlowStep(std::get<0>(step_to_be_created), funId,
                                                                     std::get<1>(step_to_be_created));
@@ -237,7 +215,7 @@ DesignFlowStep_Status HLSFunctionStep::Exec()
    bitvalue_version = FB->GetBitValueVersion();
    memory_version = HLSMgr->GetMemVersion();
    const CallGraphManagerConstRef call_graph_manager = HLSMgr->CGetCallGraphManager();
-   const auto called_functions = call_graph_manager->GetReachedBodyFunctionsFrom(funId);
+   const auto called_functions = call_graph_manager->GetReachedFunctionsFrom(funId);
    for(auto const called_function : called_functions)
    {
       if(called_function == funId)

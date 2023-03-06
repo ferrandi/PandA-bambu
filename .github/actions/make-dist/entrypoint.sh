@@ -54,13 +54,13 @@ cache_dir = $ccache_dir
 EOF
 if [[ -d "dist" ]]; then
    echo "Pre-initialized dist dir found. Installing system wide..."
-   cp -r dist/. /
+   rsync -rtpl dist/. /
    rm -rf dist
 fi
 
 if [[ -d "compiler" ]]; then
    echo "Bambu compiler dir found. Installing system wide..."
-   cp -r compiler/. /
+   rsync -rtpl compiler/. /
    rm -rf compiler
 fi
 

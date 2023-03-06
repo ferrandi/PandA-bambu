@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2017-2022 Politecnico di Milano
+ *              Copyright (C) 2017-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -53,9 +53,7 @@ QuartusPowerWrapper::QuartusPowerWrapper(const ParameterConstRef _Param, const s
 }
 
 // destructor
-QuartusPowerWrapper::~QuartusPowerWrapper()
-{
-}
+QuartusPowerWrapper::~QuartusPowerWrapper() = default;
 
 void QuartusPowerWrapper::EvaluateVariables(const DesignParametersRef dp)
 {

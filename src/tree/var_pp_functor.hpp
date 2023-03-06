@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -63,9 +63,7 @@ REF_FORWARD_DECL(var_pp_functor);
 struct var_pp_functor
 {
    /// Destructor
-   virtual ~var_pp_functor()
-   {
-   }
+   virtual ~var_pp_functor() = default;
 
    /**
     * This functor returns a string representing the variable (usually the name of the variable). This can be used both

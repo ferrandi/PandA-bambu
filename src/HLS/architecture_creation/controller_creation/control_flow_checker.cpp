@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2017-2022 Politecnico di Milano
+ *              Copyright (C) 2017-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -33,46 +33,31 @@
 /**
  * @author Pietro Fezzardi <pietrofezzardi@gmail.com>
  */
-
-// include class header
 #include "control_flow_checker.hpp"
 
-// include from behavior/
+#include "Discrepancy.hpp"
+#include "Parameter.hpp"
+#include "behavioral_helper.hpp"
+#include "copyrights_strings.hpp"
+#include "custom_map.hpp"
+#include "custom_set.hpp"
 #include "function_behavior.hpp"
-
-// include from circuit/
-#include "structural_manager.hpp"
-
-// include from HLS/
 #include "hls.hpp"
-
 #include "hls_manager.hpp"
 #include "hls_target.hpp"
-
-// include from HLS/
-#include "Discrepancy.hpp"
 #include "language_writer.hpp"
 #include "state_transition_graph.hpp"
 #include "state_transition_graph_manager.hpp"
+#include "string_manipulation.hpp"
+#include "structural_manager.hpp"
+#include "utility.hpp"
 
-/// STD include
+#include <boost/algorithm/string/case_conv.hpp>
+#include <utility/fileIO.hpp>
+
 #include <algorithm>
 #include <string>
 #include <tuple>
-
-#include "custom_map.hpp"
-#include "custom_set.hpp"
-
-// include from  tree/
-#include "behavioral_helper.hpp"
-
-// includes from ./
-#include "Parameter.hpp"
-#include "copyrights_strings.hpp"
-#include "string_manipulation.hpp" // for GET_CLASS
-#include <boost/algorithm/string/case_conv.hpp>
-
-#include <utility/fileIO.hpp>
 
 ControlFlowChecker::ControlFlowChecker(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr,
                                        unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager)
@@ -81,9 +66,7 @@ ControlFlowChecker::ControlFlowChecker(const ParameterConstRef _Param, const HLS
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
 }
 
-ControlFlowChecker::~ControlFlowChecker()
-{
-}
+ControlFlowChecker::~ControlFlowChecker() = default;
 
 const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
 ControlFlowChecker::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
@@ -296,8 +279,7 @@ static std::string create_control_flow_checker(size_t epp_trace_bitsize, const u
              "end\n\n";
 
    // helper functions
-   const auto encode_one_hot = [](unsigned int nstates, unsigned int val) -> std::string
-   {
+   const auto encode_one_hot = [](unsigned int nstates, unsigned int val) -> std::string {
       std::string res;
       for(unsigned int i = 0; i < nstates; ++i)
       {
@@ -306,8 +288,7 @@ static std::string create_control_flow_checker(size_t epp_trace_bitsize, const u
       return res;
    };
    const auto compute_state_string = [one_hot_encoding, max_value, state_bitsize,
-                                      encode_one_hot](unsigned int state_id) -> std::string
-   {
+                                      encode_one_hot](unsigned int state_id) -> std::string {
       return one_hot_encoding ? (STR(state_bitsize) + "'b" + encode_one_hot(max_value + 1, state_id)) :
                                 (STR(state_bitsize) + "'d" + STR(state_id));
    };
@@ -405,8 +386,9 @@ static std::string create_control_flow_checker(size_t epp_trace_bitsize, const u
                 "end\n\n";
    }
 
-   const auto epp_val_string = [epp_trace_bitsize](size_t val) -> std::string
-   { return STR(epp_trace_bitsize) + "'d" + STR(val); };
+   const auto epp_val_string = [epp_trace_bitsize](size_t val) -> std::string {
+      return STR(epp_trace_bitsize) + "'d" + STR(val);
+   };
    result += "// compute EPP increments and resets\n"
              "always @(*)\n"
              "begin\n\n"

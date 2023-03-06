@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2018-2022 Politecnico di Milano
+ *              Copyright (c) 2018-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -59,7 +59,6 @@
 
 /// HLS/memory includes
 #include "memory.hpp"
-#include "memory_symbol.hpp"
 
 /// HLS/simulation includes
 #include "SimulationInformation.hpp"
@@ -109,9 +108,7 @@ TestbenchValuesXMLGeneration::TestbenchValuesXMLGeneration(const ParameterConstR
    }
 }
 
-TestbenchValuesXMLGeneration::~TestbenchValuesXMLGeneration()
-{
-}
+TestbenchValuesXMLGeneration::~TestbenchValuesXMLGeneration() = default;
 
 const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
 TestbenchValuesXMLGeneration::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
@@ -163,7 +160,7 @@ DesignFlowStep_Status TestbenchValuesXMLGeneration::Exec()
    }
    output_stream << "b" + trimmed_value << std::endl;
 
-   const std::map<unsigned int, memory_symbolRef>& mem_vars = HLSMgr->Rmem->get_ext_memory_variables();
+   const auto& mem_vars = HLSMgr->Rmem->get_ext_memory_variables();
    // get the mapping between variables in external memory and their external
    // base address
    std::map<unsigned long long int, unsigned int> address;
@@ -179,12 +176,22 @@ DesignFlowStep_Status TestbenchValuesXMLGeneration::Exec()
       mem.push_back(ma.second);
    }
 
-   std::string fname;
    const auto fnode = TM->CGetTreeNode(function_id);
-   tree_helper::get_mangled_fname(GetPointer<const function_decl>(fnode), fname);
-   const auto& DesignInterfaceTypename = HLSMgr->design_interface_typename;
-   const auto DesignInterfaceArgsTypename_it = DesignInterfaceTypename.find(fname);
+   const auto fname = tree_helper::GetMangledFunctionName(GetPointer<const function_decl>(fnode));
 
+   /* Check if there is at least one typename */
+   bool typename_found = false;
+
+   if(HLSMgr->design_attributes.find(fname) != HLSMgr->design_attributes.end())
+   {
+      for(auto& par : HLSMgr->design_attributes.at(fname))
+      {
+         if(par.second.find(attr_typename) != par.second.end())
+         {
+            typename_found = true;
+         }
+      }
+   }
    HLSMgr->RSim->simulationArgSignature.clear();
    const auto& function_parameters = behavioral_helper->GetParameters();
    for(const auto& function_parameter : function_parameters)
@@ -219,11 +226,12 @@ DesignFlowStep_Status TestbenchValuesXMLGeneration::Exec()
                 return GET_INDEX_CONST_NODE(tn) == l;
              }) != function_parameters.end();
          std::string argTypename = "";
-         if(DesignInterfaceArgsTypename_it != DesignInterfaceTypename.end() && is_interface)
+         if(typename_found && is_interface)
          {
-            THROW_ASSERT(DesignInterfaceArgsTypename_it->second.count(param),
+            THROW_ASSERT(HLSMgr->design_attributes.at(fname).find(param) != HLSMgr->design_attributes.at(fname).end() &&
+                             HLSMgr->design_attributes.at(fname).at(param).count(attr_typename),
                          "Parameter should be present in design interface.");
-            argTypename = DesignInterfaceArgsTypename_it->second.at(param) + " ";
+            argTypename = HLSMgr->design_attributes.at(fname).at(param).at(attr_typename) + " ";
             if(argTypename.find("fixed") == std::string::npos)
             {
                argTypename = "";
@@ -289,7 +297,7 @@ DesignFlowStep_Status TestbenchValuesXMLGeneration::Exec()
          }
          else
          {
-            /// Call the parser to translate C initialization to verilog initialization
+            /// Call the parser to translate C initialization to Verilog initialization
             const CInitializationParserFunctorRef c_initialization_parser_functor =
                 CInitializationParserFunctorRef(new MemoryInitializationWriter(
                     output_stream, TM, behavioral_helper, reserved_mem_bytes, TM->CGetTreeReindex(l),
@@ -309,7 +317,7 @@ DesignFlowStep_Status TestbenchValuesXMLGeneration::Exec()
                output_stream << "m00000000" << std::endl;
             }
          }
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Cosidered parameter '" + param + "'");
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Considered parameter '" + param + "'");
       }
       ++v_idx;
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Considered vector");
@@ -364,11 +372,13 @@ DesignFlowStep_Status TestbenchValuesXMLGeneration::Exec()
                {
                   ctv = curr_test_vector.at(param);
                }
-               if(DesignInterfaceArgsTypename_it != DesignInterfaceTypename.end())
+               if(typename_found)
                {
-                  THROW_ASSERT(DesignInterfaceArgsTypename_it->second.count(param),
+                  THROW_ASSERT(HLSMgr->design_attributes.at(fname).find(param) !=
+                                       HLSMgr->design_attributes.at(fname).end() &&
+                                   HLSMgr->design_attributes.at(fname).at(param).count(attr_typename),
                                "Parameter should be present in design interface.");
-                  const auto argTypename = DesignInterfaceArgsTypename_it->second.at(param) + " ";
+                  const auto argTypename = HLSMgr->design_attributes.at(fname).at(param).at(attr_typename) + " ";
                   if(argTypename.find("fixed") != std::string::npos)
                   {
                      return FixedPointReinterpret(ctv, argTypename);

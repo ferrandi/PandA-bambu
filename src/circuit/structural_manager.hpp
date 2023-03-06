@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -222,7 +222,7 @@ class structural_manager
     * @param port_type is the type of the port.
     * @param treenode is the treenode of the port.
     */
-   structural_objectRef add_port(std::string id, port_o::port_direction pdir, structural_objectRef owner,
+   structural_objectRef add_port(const std::string& id, port_o::port_direction pdir, structural_objectRef owner,
                                  structural_type_descriptorRef type_descr, unsigned int treenode = 0);
 
    /**

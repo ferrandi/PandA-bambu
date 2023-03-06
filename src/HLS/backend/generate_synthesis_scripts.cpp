@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -37,29 +37,18 @@
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
  */
-
-/// Header include
 #include "generate_synthesis_scripts.hpp"
 
-/// . include
+#include "BackendFlow.hpp"
 #include "Parameter.hpp"
-
-/// behavior include
+#include "behavioral_helper.hpp"
 #include "call_graph_manager.hpp"
-
-/// HLS include
+#include "custom_set.hpp"
 #include "hls.hpp"
 #include "hls_manager.hpp"
+#include "utility.hpp"
 
-/// STL includes
-#include "custom_set.hpp"
 #include <tuple>
-
-/// tree include
-#include "behavioral_helper.hpp"
-
-/// wrapper/synthesis include
-#include "BackendFlow.hpp"
 
 GenerateSynthesisScripts::GenerateSynthesisScripts(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr,
                                                    const DesignFlowManagerConstRef _design_flow_manager)

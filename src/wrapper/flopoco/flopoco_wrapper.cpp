@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -181,6 +181,10 @@ flopoco_wrapper::flopoco_wrapper(int
       target = new flopoco::Virtex6();
    }
    else if(FU_target.find("Virtex-7") != std::string::npos)
+   { /// does not exist so we use Virtex 6 target
+      target = new flopoco::Virtex6();
+   }
+   else if(FU_target.find("Ultrascale") != std::string::npos)
    { /// does not exist so we use Virtex 6 target
       target = new flopoco::Virtex6();
    }

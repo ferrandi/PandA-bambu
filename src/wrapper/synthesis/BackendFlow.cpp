@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -814,7 +814,7 @@ std::string BackendFlow::CreateScripts(const DesignParametersRef dp)
 
    if(debug_level >= DEBUG_LEVEL_PEDANTIC)
    {
-      create_xml_scripts("exported_flow.xml");
+      create_xml_scripts(GetPath("exported_flow.xml"));
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level,
                   "<--Completed the generation of scripts for module \"" + exec_params->component_name +

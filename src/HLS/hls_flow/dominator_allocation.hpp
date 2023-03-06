@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2022-2022 Politecnico di Milano
+ *              Copyright (C) 2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -31,10 +31,8 @@
  *
  */
 /**
- * @file Write_noneDSModuleGenerator.hpp
- * @brief
- *
- *
+ * @file dominator_allocation.hpp
+ * @brief Composed pass to wrap function and memory dominator allocation
  *
  * @author Michele Fiorito <michele.fiorito@polimi.it>
  * $Revision$
@@ -42,21 +40,25 @@
  * Last modified by $Author$
  *
  */
-#ifndef _WRITE_NONE_DS_MODULE_GENERATOR_HPP_
-#define _WRITE_NONE_DS_MODULE_GENERATOR_HPP_
 
-#include "ModuleGenerator.hpp"
+#ifndef DOMINATOR_ALLOCATION_HPP
+#define DOMINATOR_ALLOCATION_HPP
 
-class Write_noneDSModuleGenerator : public ModuleGenerator::Registrar<Write_noneDSModuleGenerator>
+#include "hls_step.hpp"
+
+class dominator_allocation : public HLS_step
 {
- public:
-   Write_noneDSModuleGenerator(const HLS_managerRef& HLSMgr);
+ protected:
+   const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
+   ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
-   void InternalExec(std::ostream& out, const module* mod, unsigned int function_id, vertex op_v,
-                     const HDLWriter_Language language, const std::vector<ModuleGenerator::parameter>& _p,
-                     const std::vector<ModuleGenerator::parameter>& _ports_in,
-                     const std::vector<ModuleGenerator::parameter>& _ports_out,
-                     const std::vector<ModuleGenerator::parameter>& _ports_inout) final;
+ public:
+   dominator_allocation(const ParameterConstRef _parameters, const HLS_managerRef HLSMgr,
+                        const DesignFlowManagerConstRef design_flow_manager);
+
+   bool HasToBeExecuted() const override;
+
+   DesignFlowStep_Status Exec() override;
 };
 
 #endif

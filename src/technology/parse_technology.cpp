@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -207,7 +207,7 @@ void read_technology_library(const technology_managerRef& TM, const ParameterCon
       PRINT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
                     "(koala) Read the technology library file \"" + LibraryName + "\" in " +
                         boost::lexical_cast<std::string>(print_cpu_time(genlibTime)) + " seconds;\n");
-      write_technology_File(technology_manager::XML, "genlib", local_TM, device->get_type());
+      write_technology_File(technology_manager::XML, GetPath("genlib"), local_TM, device->get_type());
       /// FIXME: setting parameters
       const_cast<Parameter*>(Param.get())->setOption("input_xml_library_file", "genlib.xml");
       const_cast<Parameter*>(Param.get())->removeOption("input_genlib_library_file");
@@ -478,9 +478,10 @@ void write_lib_technology_File(const std::string& f, technology_managerRef const
 
 void write_lib_technology_File(const std::string& f, library_manager* LM, TargetDevice_Type dv_type)
 {
-   write_xml_technology_File("__xml_library__.xml", LM, dv_type);
-   xml2lib("__xml_library__.xml", f, 0, 0);
-   boost::filesystem::remove("__xml_library__.xml");
+   const auto library_xml = GetPath("__xml_library__.xml");
+   write_xml_technology_File(library_xml, LM, dv_type);
+   xml2lib(library_xml, f, 0, 0);
+   boost::filesystem::remove(library_xml);
    LM->set_info(library_manager::LIBERTY, f);
 }
 #endif
@@ -525,9 +526,10 @@ void write_lef_technology_File(const std::string& f, technology_managerRef const
 
 void write_lef_technology_File(const std::string& f, library_manager* LM, TargetDevice_Type dv_type)
 {
-   write_xml_technology_File("__library__.xml", LM, dv_type);
-   xml2lef("__library__.xml", f, 0, 0);
-   boost::filesystem::remove("__library__.xml");
+   const auto library_xml = GetPath("__library__.xml");
+   write_xml_technology_File(library_xml, LM, dv_type);
+   xml2lef(library_xml, f, 0, 0);
+   boost::filesystem::remove(library_xml);
    LM->set_info(library_manager::LEF, f);
 }
 #endif

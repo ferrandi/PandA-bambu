@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -172,6 +172,10 @@ class DesignFlowManager
     * Connect source and sink vertices to entry and exit
     */
    void Consolidate();
+
+#ifndef NDEBUG
+   void WriteLoopDot() const;
+#endif
 
  public:
    /**

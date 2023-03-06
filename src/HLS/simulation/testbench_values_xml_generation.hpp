@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2018-2022 Politecnico di Milano
+ *              Copyright (c) 2018-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -68,16 +68,15 @@ class TestbenchValuesXMLGeneration : public HLS_step
    /**
     * Initialize the step (i.e., like a constructor, but executed just before exec
     */
-   virtual void Initialize();
+   void Initialize() override;
 
    /**
     * Compute the relationship of this step
     * @param relationship_type is the type of relationship to be considered
     * @return the steps in relationship with this
     */
-   virtual const CustomUnorderedSet<
-       std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
-   ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const;
+   const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
+   ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
  public:
    /**
@@ -93,18 +92,18 @@ class TestbenchValuesXMLGeneration : public HLS_step
    /**
     * Destructor.
     */
-   virtual ~TestbenchValuesXMLGeneration();
+   ~TestbenchValuesXMLGeneration() override;
 
    /**
     * Execute the step
     * @return the exit status of this step
     */
-   DesignFlowStep_Status Exec();
+   DesignFlowStep_Status Exec() override;
 
    /**
     * Check if this step has actually to be executed
     * @return true if the step has to be executed
     */
-   bool HasToBeExecuted() const;
+   bool HasToBeExecuted() const override;
 };
 #endif

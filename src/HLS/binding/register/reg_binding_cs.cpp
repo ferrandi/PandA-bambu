@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2016-2022 Politecnico di Milano
+ *              Copyright (c) 2016-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -46,6 +46,7 @@
 #include "structural_manager.hpp"
 #include "structural_objects.hpp"
 #include "technology_manager.hpp"
+#include "utility.hpp"
 
 /// STD include
 #include <string>
@@ -54,11 +55,9 @@ reg_binding_cs::reg_binding_cs(const hlsRef& HLS_, const HLS_managerRef HLSMgr_)
 {
 }
 
-reg_binding_cs::~reg_binding_cs()
-{
-}
+reg_binding_cs::~reg_binding_cs() = default;
 
-std::string reg_binding_cs::CalculateRegisterName(unsigned int)
+std::string reg_binding_cs::GetRegisterFUName(unsigned int)
 {
    return "register_file";
 }

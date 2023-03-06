@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -338,7 +338,7 @@ int tree_panda_gcc_parameter::Exec()
 #if !RELEASE
    if(isOption(OPT_write_parameter_xml))
    {
-      const std::string file_name = getOption<std::string>(OPT_write_parameter_xml);
+      const auto file_name = getOption<std::string>(OPT_write_parameter_xml);
       write_xml_configuration_file(file_name);
       return EXIT_SUCCESS;
    }

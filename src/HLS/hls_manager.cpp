@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -40,43 +40,32 @@
  * Last modified by $Author$
  *
  */
-/// Header include
 #include "hls_manager.hpp"
 
-///. include
+#include "BackendFlow.hpp"
 #include "Parameter.hpp"
-
+#include "behavioral_helper.hpp"
+#include "call_graph_manager.hpp"
+#include "ext_tree_node.hpp"
+#include "function_behavior.hpp"
 #include "hls.hpp"
 #include "hls_constraints.hpp"
 #include "hls_target.hpp"
 #include "memory.hpp"
-
-#include "BackendFlow.hpp"
-
-#include "ext_tree_node.hpp"
-
-#include "call_graph_manager.hpp"
-
-#include "behavioral_helper.hpp"
-#include "function_behavior.hpp"
+#include "op_graph.hpp"
+#include "polixml.hpp"
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
 #include "tree_reindex.hpp"
-
-#include "polixml.hpp"
+#include "utility.hpp"
 #include "xml_dom_parser.hpp"
 #include "xml_helper.hpp"
 
-/// behavior include
-#include "op_graph.hpp"
-
 #if HAVE_TASTE
-/// intermediate_representation/aadl include
 #include "aadl_information.hpp"
-
-/// HLS/function_allocation include
 #include "functions.hpp"
 #endif
+#define MAX_BITWIDTH_SIZE 4096
 
 HLS_manager::HLS_manager(const ParameterConstRef _Param, const HLS_targetRef _HLS_T)
     : application_manager(FunctionExpanderConstRef(new FunctionExpander()), false, _Param),
@@ -132,7 +121,7 @@ hlsRef HLS_manager::create_HLS(const HLS_managerRef HLSMgr, unsigned int functio
       /// creates the new HLS data structure associated with the function
       const std::string function_name = tree_helper::name_function(HLSMgr->get_tree_manager(), functionId);
       HLS_constraintsRef HLS_C = HLS_constraintsRef(new HLS_constraints(HLSMgr->get_parameter(), function_name));
-      for(auto globalRC : HLSMgr->global_resource_constraints)
+      for(const auto& globalRC : HLSMgr->global_resource_constraints)
       {
          if(HLS_C->get_number_fu(globalRC.first.first, globalRC.first.second) == INFINITE_UINT)
          {
@@ -161,7 +150,7 @@ hlsRef HLS_manager::create_HLS(const HLS_managerRef HLSMgr, unsigned int functio
    return HLSMgr->hlsMap[functionId];
 }
 
-std::string HLS_manager::get_constant_string(unsigned int node_id, unsigned int precision)
+std::string HLS_manager::get_constant_string(unsigned int node_id, unsigned long long precision)
 {
    std::string trimmed_value;
    const auto node = TM->CGetTreeReindex(node_id);
@@ -185,7 +174,7 @@ std::string HLS_manager::get_constant_string(unsigned int node_id, unsigned int 
    {
       const auto vc = GetPointerS<const vector_cst>(GET_CONST_NODE(node));
       auto n_elm = static_cast<unsigned int>(vc->list_of_valu.size());
-      unsigned int elm_prec = precision / n_elm;
+      auto elm_prec = precision / n_elm;
       trimmed_value = "";
       for(unsigned int i = 0; i < n_elm; ++i)
       {
@@ -195,7 +184,7 @@ std::string HLS_manager::get_constant_string(unsigned int node_id, unsigned int 
    else if(tree_helper::IsComplexType(node_type))
    {
       const auto cc = GetPointerS<const complex_cst>(GET_CONST_NODE(node));
-      auto* rcc = GetPointer<real_cst>(GET_NODE(cc->real));
+      const auto rcc = GetPointer<const real_cst>(GET_CONST_NODE(cc->real));
       std::string trimmed_value_r;
       if(rcc)
       {
@@ -208,12 +197,9 @@ std::string HLS_manager::get_constant_string(unsigned int node_id, unsigned int 
       }
       else
       {
-         auto* ic = GetPointerS<integer_cst>(GET_NODE(cc->real));
-         THROW_ASSERT(ic, "expected an integer_cst");
-         auto ull_value = static_cast<unsigned long long int>(tree_helper::get_integer_cst_value(ic));
-         trimmed_value_r = convert_to_binary(ull_value, precision / 2);
+         trimmed_value_r = convert_to_binary(tree_helper::GetConstValue(cc->real), precision / 2);
       }
-      auto* icc = GetPointer<real_cst>(GET_NODE(cc->imag));
+      const auto icc = GetPointer<const real_cst>(GET_CONST_NODE(cc->imag));
       std::string trimmed_value_i;
       if(icc)
       {
@@ -226,18 +212,13 @@ std::string HLS_manager::get_constant_string(unsigned int node_id, unsigned int 
       }
       else
       {
-         auto* ic = GetPointerS<integer_cst>(GET_NODE(cc->imag));
-         THROW_ASSERT(ic, "expected an integer_cst");
-         auto ull_value = static_cast<unsigned long long int>(tree_helper::get_integer_cst_value(ic));
-         trimmed_value_i = convert_to_binary(ull_value, precision / 2);
+         trimmed_value_i = convert_to_binary(tree_helper::GetConstValue(cc->imag), precision / 2);
       }
       trimmed_value = trimmed_value_i + trimmed_value_r;
    }
    else
    {
-      const auto ic = GetPointerS<const integer_cst>(GET_CONST_NODE(node));
-      auto ull_value = static_cast<unsigned long long int>(tree_helper::get_integer_cst_value(ic));
-      trimmed_value = convert_to_binary(ull_value, precision);
+      trimmed_value = convert_to_binary(tree_helper::GetConstValue(node), precision);
    }
    return trimmed_value;
 }
@@ -331,4 +312,13 @@ unsigned int HLS_manager::UpdateMemVersion()
 {
    memory_version++;
    return memory_version;
+}
+
+void HLS_manager::check_bitwidth(unsigned long long prec)
+{
+   if(prec > MAX_BITWIDTH_SIZE)
+   {
+      THROW_ERROR("The maximum bit-width size for connection is " + STR(MAX_BITWIDTH_SIZE) +
+                  " Requested size: " + STR(prec));
+   }
 }

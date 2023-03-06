@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2022-2022 Politecnico di Milano
+ *              Copyright (C) 2022-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -66,8 +66,8 @@ class ModuleGenerator : public Factory<ModuleGenerator, const HLS_managerRef&>
    {
       std::string name;
       std::string type;
-      unsigned int type_size;
-      unsigned int alignment;
+      unsigned long long type_size;
+      unsigned long long alignment;
 
       parameter() = default;
       parameter(const structural_objectRef& port);

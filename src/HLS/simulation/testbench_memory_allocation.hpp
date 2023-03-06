@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -38,43 +38,18 @@
 
 class TestbenchMemoryAllocation : public HLS_step
 {
- protected:
-   /// True if the input code is c++
-   bool flag_cpp;
-
- public:
-   /**
-    * Constructor
-    */
-   TestbenchMemoryAllocation(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr,
-                             const DesignFlowManagerConstRef _design_flow_manager);
-
-   /**
-    * Destructor
-    */
-   ~TestbenchMemoryAllocation() override;
-
-   /**
-    * Executes the step
-    */
-   DesignFlowStep_Status Exec() override;
-
-   /**
-    * Compute the HLS relationships of this step
-    */
+ private:
    const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
    ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
- protected:
-   /**
-    * Alloc the extra memory needed for the testbench input values
-    */
-   void AllocTestbenchMemory(void) const;
+ public:
+   TestbenchMemoryAllocation(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr,
+                             const DesignFlowManagerConstRef _design_flow_manager);
 
-   /**
-    * Check if this step has actually to be executed
-    * @return true if the step has to be executed
-    */
+   ~TestbenchMemoryAllocation() override;
+
    bool HasToBeExecuted() const override;
+
+   DesignFlowStep_Status Exec() override;
 };
 #endif

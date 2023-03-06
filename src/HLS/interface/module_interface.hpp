@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -91,7 +91,7 @@ class module_interface : public HLSFunctionStep
     * @param size is the size of the port
     */
    void AddConstant(const structural_managerRef SM, const structural_objectRef component, const std::string& port,
-                    const std::string& constant, const unsigned int size);
+                    const std::string& constant, const unsigned long long size);
 
    /**
     * Connects two ports by adding a vector signal (i.e., wire)

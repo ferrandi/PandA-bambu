@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -272,7 +272,7 @@ void classic_datapath::add_ports()
          std::string value = std::get<0>(c.first);
          std::string param = std::get<1>(c.first);
          std::string trimmed_value;
-         unsigned int precision;
+         unsigned long long precision;
          if(param.size() == 0)
          {
             trimmed_value = "\"" + std::get<0>(c.first) + "\"";

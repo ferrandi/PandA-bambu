@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2020-2022 Politecnico di Milano
+ *              Copyright (C) 2020-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -74,7 +74,7 @@ class PtrIteratorSimplifyPass : public llvm::LoopPass
          /// Go through the gepis and seach the phi operands for externals
 
          /// ASSUMPTION: GepOPs already converted in gepis beforehand
-         if(llvm::GetElementPtrInst* user_as_gepi = llvm::dyn_cast<llvm::GetElementPtrInst>(use_rec->getUser()))
+         if(auto* user_as_gepi = llvm::dyn_cast<llvm::GetElementPtrInst>(use_rec->getUser()))
          {
             /// Since LCSSA, we can go out the loop only through a phi node
             if(blocks.count(user_as_gepi->getParent()) == 0)
@@ -94,12 +94,12 @@ class PtrIteratorSimplifyPass : public llvm::LoopPass
                }
             }
          }
-         else if(llvm::PHINode* user_as_phi = llvm::dyn_cast<llvm::PHINode>(use_rec->getUser()))
+         else if(auto* user_as_phi = llvm::dyn_cast<llvm::PHINode>(use_rec->getUser()))
          {
             /// Go through the Operands and check if some external
             for(llvm::Use& phi_operand : user_as_phi->operands())
             {
-               if(llvm::Instruction* operand_as_inst = llvm::dyn_cast<llvm::Instruction>(phi_operand.get()))
+               if(auto* operand_as_inst = llvm::dyn_cast<llvm::Instruction>(phi_operand.get()))
                {
                   if(blocks.count(operand_as_inst->getParent()) == 0)
                   {
@@ -133,12 +133,12 @@ class PtrIteratorSimplifyPass : public llvm::LoopPass
                }
             }
          }
-         else if(llvm::CmpInst* user_as_cmp = llvm::dyn_cast<llvm::CmpInst>(use_rec->getUser()))
+         else if(auto* user_as_cmp = llvm::dyn_cast<llvm::CmpInst>(use_rec->getUser()))
          {
             /// Go through the Operands and check if some external
             for(llvm::Use& phi_operand : user_as_cmp->operands())
             {
-               if(llvm::Instruction* operand_as_inst = llvm::dyn_cast<llvm::Instruction>(phi_operand.get()))
+               if(auto* operand_as_inst = llvm::dyn_cast<llvm::Instruction>(phi_operand.get()))
                {
                   if(blocks.count(operand_as_inst->getParent()) == 0)
                   {
@@ -174,9 +174,9 @@ class PtrIteratorSimplifyPass : public llvm::LoopPass
    llvm::Value* operate_on_index(llvm::BinaryOperator::BinaryOps bin_op, llvm::Value* lhs_idx, llvm::Value* rhs_idx,
                                  llvm::Instruction* insert_point, llvm::Type* idx_ty)
    {
-      if(llvm::ConstantInt* constant_lhs = llvm::dyn_cast<llvm::ConstantInt>(lhs_idx))
+      if(auto* constant_lhs = llvm::dyn_cast<llvm::ConstantInt>(lhs_idx))
       {
-         if(llvm::ConstantInt* constant_rhs = llvm::dyn_cast<llvm::ConstantInt>(rhs_idx))
+         if(auto* constant_rhs = llvm::dyn_cast<llvm::ConstantInt>(rhs_idx))
          {
             unsigned long value = constant_lhs->getSExtValue() + constant_rhs->getSExtValue();
             return llvm::ConstantInt::get(idx_ty, value);
@@ -197,7 +197,7 @@ class PtrIteratorSimplifyPass : public llvm::LoopPass
       }
       else
       {
-         if(llvm::ConstantInt* constant_rhs = llvm::dyn_cast<llvm::ConstantInt>(rhs_idx))
+         if(auto* constant_rhs = llvm::dyn_cast<llvm::ConstantInt>(rhs_idx))
          {
             if(constant_rhs->getSExtValue() == 0)
             {
@@ -242,7 +242,7 @@ class PtrIteratorSimplifyPass : public llvm::LoopPass
 
       for(llvm::Instruction& i : *L->getHeader())
       {
-         if(llvm::PHINode* phi_node = llvm::dyn_cast<llvm::PHINode>(&i))
+         if(auto* phi_node = llvm::dyn_cast<llvm::PHINode>(&i))
          {
             if(phi_node->getType()->isPointerTy())
             {
@@ -251,16 +251,16 @@ class PtrIteratorSimplifyPass : public llvm::LoopPass
                bool has_arg_operand = false;
                for(auto& opi : phi_node->incoming_values())
                {
-                  if(llvm::Argument* arg = llvm::dyn_cast<llvm::Argument>(&opi))
+                  if(auto* arg = llvm::dyn_cast<llvm::Argument>(&opi))
                   {
                      for(llvm::User* user : arg->getParent()->users())
                      {
-                        if(llvm::CallInst* call_inst = llvm::dyn_cast<llvm::CallInst>(user))
+                        if(auto* call_inst = llvm::dyn_cast<llvm::CallInst>(user))
                         {
                            llvm::Value* opu = call_inst->getOperandUse(arg->getArgNo());
-                           if(llvm::GEPOperator* gep_op = llvm::dyn_cast<llvm::GEPOperator>(opu))
+                           if(auto* gep_op = llvm::dyn_cast<llvm::GEPOperator>(opu))
                            {
-                              if(llvm::GlobalVariable* g_var =
+                              if(auto* g_var =
                                      llvm::dyn_cast<llvm::GlobalVariable>(gep_op->getPointerOperand()))
                               {
                                  if(arg->getType()->getPointerElementType()->isIntegerTy(8))
@@ -340,7 +340,7 @@ class PtrIteratorSimplifyPass : public llvm::LoopPass
                   }
 
                   /// Add the base pointer to the set if value is a gepi
-                  if(llvm::GetElementPtrInst* gepi = llvm::dyn_cast<llvm::GetElementPtrInst>(ptr_addr_set_pair.first))
+                  if(auto* gepi = llvm::dyn_cast<llvm::GetElementPtrInst>(ptr_addr_set_pair.first))
                   {
                      ptr_addr_set_pair.first = gepi->getPointerOperand();
                      ptr_addr_set_pair.second.insert(gepi->getPointerOperand());
@@ -387,7 +387,7 @@ class PtrIteratorSimplifyPass : public llvm::LoopPass
                   llvm::Value*& external_offset_ref = insert_it.first->second;
 
                   llvm::Use* use_rec = external_use;
-                  while(llvm::GetElementPtrInst* use_as_gepi = llvm::dyn_cast<llvm::GetElementPtrInst>(use_rec->get()))
+                  while(auto* use_as_gepi = llvm::dyn_cast<llvm::GetElementPtrInst>(use_rec->get()))
                   {
                      if(use_as_gepi == common_external)
                      {
@@ -424,7 +424,7 @@ class PtrIteratorSimplifyPass : public llvm::LoopPass
                std::set<llvm::Use*> uses_to_set;
                for(llvm::Use* reachable_use : reachable_uses)
                {
-                  if(llvm::PHINode* user_as_phi = llvm::dyn_cast<llvm::PHINode>(reachable_use->getUser()))
+                  if(auto* user_as_phi = llvm::dyn_cast<llvm::PHINode>(reachable_use->getUser()))
                   {
                      phi_map[user_as_phi] = nullptr;
                   }
@@ -486,10 +486,10 @@ class PtrIteratorSimplifyPass : public llvm::LoopPass
 
                   llvm::errs() << "      Transforming use #" << use_to_process->getOperandNo() << " of "
                                << get_val_string(use_to_process->getUser()) << "\n";
-                  if(llvm::GetElementPtrInst* use_as_gepi =
+                  if(auto* use_as_gepi =
                          llvm::dyn_cast<llvm::GetElementPtrInst>(use_to_process->get()))
                   {
-                     if(llvm::PHINode* user_as_phi = llvm::dyn_cast<llvm::PHINode>(use_to_process->getUser()))
+                     if(auto* user_as_phi = llvm::dyn_cast<llvm::PHINode>(use_to_process->getUser()))
                      {
                         auto phi_it = phi_map.find(user_as_phi);
                         if(phi_it != phi_map.end())
@@ -506,7 +506,7 @@ class PtrIteratorSimplifyPass : public llvm::LoopPass
                         }
                         uses_to_set.erase(use_to_process);
                      }
-                     else if(llvm::GetElementPtrInst* user_as_gepi =
+                     else if(auto* user_as_gepi =
                                  llvm::dyn_cast<llvm::GetElementPtrInst>(use_to_process->getUser()))
                      {
                         llvm::Value* new_idx =
@@ -530,7 +530,7 @@ class PtrIteratorSimplifyPass : public llvm::LoopPass
                         inst_to_remove.insert(user_as_gepi);
                         inserted_gepis.insert(new_gepi);
                      }
-                     else if(llvm::CmpInst* user_as_cmp = llvm::dyn_cast<llvm::CmpInst>(use_to_process->getUser()))
+                     else if(auto* user_as_cmp = llvm::dyn_cast<llvm::CmpInst>(use_to_process->getUser()))
                      {
                         unsigned int other_idx = (use_to_process->getOperandNo() == 0 ? 1 : 0);
                         llvm::Use& other_use = user_as_cmp->getOperandUse(other_idx);
@@ -542,7 +542,7 @@ class PtrIteratorSimplifyPass : public llvm::LoopPass
                         }
                         else
                         {
-                           while(llvm::GetElementPtrInst* use_as_gepi_rec =
+                           while(auto* use_as_gepi_rec =
                                      llvm::dyn_cast<llvm::GetElementPtrInst>(use_rec->get()))
                            {
                               if(use_as_gepi_rec == common_external)

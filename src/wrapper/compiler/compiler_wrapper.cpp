@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -39,6 +39,7 @@
  * @author Christian Pilato <pilato@elet.polimi.it>
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  * @author Marco Lattuada <lattuada@elet.polimi.it>
+ * @author Michele Fiorito <michele.fiorito@polimi.it>
  * $Date$
  * Last modified by $Author$
  *
@@ -69,6 +70,10 @@
 #include "config_HAVE_I386_CLANG12_M32.hpp"
 #include "config_HAVE_I386_CLANG12_M64.hpp"
 #include "config_HAVE_I386_CLANG12_MX32.hpp"
+#include "config_HAVE_I386_CLANG13_COMPILER.hpp"
+#include "config_HAVE_I386_CLANG13_M32.hpp"
+#include "config_HAVE_I386_CLANG13_M64.hpp"
+#include "config_HAVE_I386_CLANG13_MX32.hpp"
 #include "config_HAVE_I386_CLANG4_COMPILER.hpp"
 #include "config_HAVE_I386_CLANG4_M32.hpp"
 #include "config_HAVE_I386_CLANG4_M64.hpp"
@@ -159,6 +164,16 @@
 #include "config_I386_CLANG12_SSA_PLUGINCPP.hpp"
 #include "config_I386_CLANG12_TOPFNAME_PLUGIN.hpp"
 #include "config_I386_CLANG12_VERSION.hpp"
+#include "config_I386_CLANG13_ASTANALYZER_PLUGIN.hpp"
+#include "config_I386_CLANG13_CSROA_PLUGIN.hpp"
+#include "config_I386_CLANG13_EMPTY_PLUGIN.hpp"
+#include "config_I386_CLANG13_EXE.hpp"
+#include "config_I386_CLANG13_EXPANDMEMOPS_PLUGIN.hpp"
+#include "config_I386_CLANG13_GEPICANON_PLUGIN.hpp"
+#include "config_I386_CLANG13_SSA_PLUGIN.hpp"
+#include "config_I386_CLANG13_SSA_PLUGINCPP.hpp"
+#include "config_I386_CLANG13_TOPFNAME_PLUGIN.hpp"
+#include "config_I386_CLANG13_VERSION.hpp"
 #include "config_I386_CLANG4_ASTANALYZER_PLUGIN.hpp"
 #include "config_I386_CLANG4_CSROA_PLUGIN.hpp"
 #include "config_I386_CLANG4_EMPTY_PLUGIN.hpp"
@@ -222,6 +237,7 @@
 #include "config_I386_CLANGPP10_EXE.hpp"
 #include "config_I386_CLANGPP11_EXE.hpp"
 #include "config_I386_CLANGPP12_EXE.hpp"
+#include "config_I386_CLANGPP13_EXE.hpp"
 #include "config_I386_CLANGPP4_EXE.hpp"
 #include "config_I386_CLANGPP5_EXE.hpp"
 #include "config_I386_CLANGPP6_EXE.hpp"
@@ -242,6 +258,7 @@
 #include "config_I386_CLANG_CPP10_EXE.hpp"
 #include "config_I386_CLANG_CPP11_EXE.hpp"
 #include "config_I386_CLANG_CPP12_EXE.hpp"
+#include "config_I386_CLANG_CPP13_EXE.hpp"
 #include "config_I386_CLANG_CPP4_EXE.hpp"
 #include "config_I386_CLANG_CPP5_EXE.hpp"
 #include "config_I386_CLANG_CPP6_EXE.hpp"
@@ -331,6 +348,8 @@
 #include "config_I386_LLVM11_OPT_EXE.hpp"
 #include "config_I386_LLVM12_LINK_EXE.hpp"
 #include "config_I386_LLVM12_OPT_EXE.hpp"
+#include "config_I386_LLVM13_LINK_EXE.hpp"
+#include "config_I386_LLVM13_OPT_EXE.hpp"
 #include "config_I386_LLVM4_LINK_EXE.hpp"
 #include "config_I386_LLVM4_OPT_EXE.hpp"
 #include "config_I386_LLVM5_LINK_EXE.hpp"
@@ -444,7 +463,7 @@ void CompilerWrapper::CompileFile(const std::string& original_file_name, std::st
 #if HAVE_I386_CLANG4_COMPILER || HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER ||    \
     HAVE_I386_CLANG7_COMPILER || HAVE_I386_CLANG8_COMPILER || HAVE_I386_CLANG9_COMPILER ||    \
     HAVE_I386_CLANG10_COMPILER || HAVE_I386_CLANG11_COMPILER || HAVE_I386_CLANG12_COMPILER || \
-    HAVE_I386_CLANGVVD_COMPILER
+    HAVE_I386_CLANG13_COMPILER || HAVE_I386_CLANGVVD_COMPILER
       bool flag_cpp;
       if(Param->isOption(OPT_input_format) &&
          (Param->getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_CPP ||
@@ -457,7 +476,9 @@ void CompilerWrapper::CompileFile(const std::string& original_file_name, std::st
          flag_cpp = false;
       }
 #endif
-#if HAVE_I386_CLANG12_COMPILER
+#if HAVE_I386_CLANG13_COMPILER
+      command = flag_cpp ? relocate_compiler_path(I386_CLANGPP13_EXE) : relocate_compiler_path(I386_CLANG13_EXE);
+#elif HAVE_I386_CLANG12_COMPILER
       command = flag_cpp ? relocate_compiler_path(I386_CLANGPP12_EXE) : relocate_compiler_path(I386_CLANG12_EXE);
 #elif HAVE_I386_CLANG11_COMPILER
       command = flag_cpp ? relocate_compiler_path(I386_CLANGPP11_EXE) : relocate_compiler_path(I386_CLANG11_EXE);
@@ -533,7 +554,9 @@ void CompilerWrapper::CompileFile(const std::string& original_file_name, std::st
       real_file_name = temp_file_name;
       if(compiler.is_clang)
       {
-         command += " -c -fplugin=" + compiler.empty_plugin_obj +
+         command += " -c" +
+                    load_plugin(compiler.empty_plugin_obj,
+                                Param->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler)) +
                     " -mllvm -pandaGE-outputdir=" + Param->getOption<std::string>(OPT_output_temporary_directory) +
                     " -mllvm -pandaGE-infile=" + real_file_name;
       }
@@ -618,8 +641,11 @@ void CompilerWrapper::CompileFile(const std::string& original_file_name, std::st
       {
          if(compiler.is_clang)
          {
-            command += " -fplugin=" + compiler.topfname_plugin_obj + " -mllvm -internalize-outputdir=" +
-                       Param->getOption<std::string>(OPT_output_temporary_directory) + " -mllvm -panda-TFN=" + fname;
+            command +=
+                load_plugin(compiler.topfname_plugin_obj,
+                            Param->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler)) +
+                " -mllvm -internalize-outputdir=" + Param->getOption<std::string>(OPT_output_temporary_directory) +
+                " -mllvm -panda-TFN=" + fname;
             if(Param->isOption(OPT_interface_type) && Param->getOption<HLSFlowStep_Type>(OPT_interface_type) ==
                                                           HLSFlowStep_Type::INFERRED_INTERFACE_GENERATION)
             {
@@ -711,7 +737,9 @@ void CompilerWrapper::CompileFile(const std::string& original_file_name, std::st
             if(Param->IsParameter("enable-CSROA") && Param->GetParameter<int>("enable-CSROA") == 1 &&
                !compiler.CSROA_plugin_obj.empty() && !compiler.expandMemOps_plugin_obj.empty())
             {
-               command += " -fplugin=" + compiler.CSROA_plugin_obj + " -mllvm -panda-KN=" + fname;
+               command += load_plugin(compiler.CSROA_plugin_obj,
+                                      Param->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler)) +
+                          " -mllvm -panda-KN=" + fname;
                if(Param->IsParameter("max-CSROA"))
                {
                   auto max_CSROA = Param->GetParameter<int>("max-CSROA");
@@ -727,7 +755,11 @@ void CompilerWrapper::CompileFile(const std::string& original_file_name, std::st
       }
       if(compiler.is_clang)
       {
-         command += " -c -fplugin=" + compiler.ssa_plugin_obj +
+         command += " -c" + load_plugin(compiler.expandMemOps_plugin_obj,
+                                        Param->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler));
+         command += " -c" +
+                    load_plugin(compiler.ssa_plugin_obj,
+                                Param->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler)) +
                     " -mllvm -panda-outputdir=" + Param->getOption<std::string>(OPT_output_temporary_directory) +
                     " -mllvm -panda-infile=" + real_file_name + " -mllvm -panda-cost-table=\"" + costTable + "\"";
          if(addTopFName)
@@ -766,7 +798,6 @@ void CompilerWrapper::CompileFile(const std::string& original_file_name, std::st
       }
       else
       {
-         ;
          temporary_file_run_o =
              boost::filesystem::path(Param->getOption<std::string>(OPT_output_temporary_directory) + "/" +
                                      boost::filesystem::unique_path(std::string(STR_CST_gcc_obj_file)).string())
@@ -775,22 +806,11 @@ void CompilerWrapper::CompileFile(const std::string& original_file_name, std::st
       }
    }
 
-   /// manage optimization level
-   auto local_parameters_line = parameters_line;
-   if(cm == CompilerWrapper_CompilerMode::CM_LTO)
-   {
-      boost::replace_all(local_parameters_line, "-O4", "");
-      boost::replace_all(local_parameters_line, "-O3", "");
-      boost::replace_all(local_parameters_line, "-O2", "");
-      boost::replace_all(local_parameters_line, "-O1", "");
-      local_parameters_line += " -O1 ";
-   }
-
    if(!(Param->getOption<bool>(OPT_compute_size_of)))
    {
       command += " -D\"" + std::string(STR_CST_panda_sizeof) + "(arg)=" + STR_CST_string_sizeof + "(#arg)\"";
    }
-   command += " " + local_parameters_line;
+   command += " " + parameters_line;
    if(original_file_name == "-" || original_file_name == "/dev/null")
    {
       command += real_file_name;
@@ -867,29 +887,29 @@ void CompilerWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::st
    }
 
    /// check for aligned option
-   const CompilerWrapper_OptimizationSet optimization_level =
-       Param->getOption<CompilerWrapper_OptimizationSet>(OPT_compiler_opt_level);
+   const auto optimization_level = Param->getOption<CompilerWrapper_OptimizationSet>(OPT_compiler_opt_level);
    if(optimization_level == CompilerWrapper_OptimizationSet::O3 ||
       optimization_level == CompilerWrapper_OptimizationSet::O4 ||
       optimization_level == CompilerWrapper_OptimizationSet::O5)
    {
-      if(optimization_flags.find("tree-vectorize") == optimization_flags.end() ||
-         optimization_flags.find("tree-vectorize")->second)
+      if((optimization_flags.find("tree-vectorize") == optimization_flags.end() ||
+          optimization_flags.find("tree-vectorize")->second) ||
+         (optimization_flags.find("vectorize") == optimization_flags.end() ||
+          optimization_flags.find("vectorize")->second) ||
+         (optimization_flags.find("slp-vectorize") == optimization_flags.end() ||
+          optimization_flags.find("slp-vectorize")->second))
       {
-         bool assume_aligned_access_p =
-             Param->isOption(OPT_aligned_access) && Param->getOption<bool>(OPT_aligned_access);
-         if(assume_aligned_access_p)
+         if(Param->isOption(OPT_aligned_access) && Param->getOption<bool>(OPT_aligned_access))
          {
-            THROW_ERROR("Option --aligned-access cannot be used with -O3 or -ftree-vectorize");
+            THROW_ERROR("Option --aligned-access cannot be used with -O3 or vectorization");
          }
       }
    }
-   const Compiler compiler = GetCompiler();
 
 #if HAVE_I386_CLANG4_COMPILER || HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER ||    \
     HAVE_I386_CLANG7_COMPILER || HAVE_I386_CLANG8_COMPILER || HAVE_I386_CLANG9_COMPILER ||    \
     HAVE_I386_CLANG10_COMPILER || HAVE_I386_CLANG11_COMPILER || HAVE_I386_CLANG11_COMPILER || \
-    HAVE_I386_CLANG12_COMPILER || HAVE_I386_CLANG12_COMPILER || HAVE_I386_CLANGVVD_COMPILER
+    HAVE_I386_CLANG13_COMPILER || HAVE_I386_CLANGVVD_COMPILER
    if(Param->IsParameter("disable-pragma-parsing") && Param->GetParameter<int>("disable-pragma-parsing") == 1)
    {
       INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "Pragma analysis disabled");
@@ -941,7 +961,8 @@ void CompilerWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::st
    THROW_WARNING("pragma analysis requires CLANG");
 #endif
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Starting compilation of single files");
-   bool enable_LTO = (compiler.is_clang && source_files.size() > 1);
+   const auto compiler = GetCompiler();
+   const auto enable_LTO = (compiler.is_clang && source_files.size() > 1);
    for(auto& source_file : source_files)
    {
       if(already_processed_files.find(source_file.first) != already_processed_files.end())
@@ -1011,7 +1032,7 @@ void CompilerWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::st
    if(enable_LTO)
    {
       std::string object_files;
-      for(auto& source_file : source_files)
+      for(const auto& source_file : source_files)
       {
          std::string leaf_name =
              source_file.second == "-" ? "stdin-" : GetBaseName(GetLeafFileName(source_file.second));
@@ -1024,10 +1045,10 @@ void CompilerWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::st
           boost::filesystem::path(Param->getOption<std::string>(OPT_output_temporary_directory) + "/" +
                                   boost::filesystem::unique_path(std::string(STR_CST_llvm_obj_file)).string())
               .string();
-      std::string command = compiler.llvm_link + " " + object_files + " -o " + temporary_file_o_bc;
-      const std::string llvm_link_output_file_name =
+      auto command = compiler.llvm_link + " " + object_files + " -o " + temporary_file_o_bc;
+      const auto llvm_link_output_file_name =
           Param->getOption<std::string>(OPT_output_temporary_directory) + STR_CST_gcc_output;
-      int ret = PandaSystem(Param, command, llvm_link_output_file_name);
+      auto ret = PandaSystem(Param, command, llvm_link_output_file_name);
       if(IsError(ret))
       {
          PRINT_OUT_MEX(OUTPUT_LEVEL_NONE, 0, "Error in llvm-link");
@@ -1043,7 +1064,7 @@ void CompilerWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::st
             THROW_ERROR("Error in llvm-link invocation");
          }
       }
-      bool isWholeProgram =
+      const auto isWholeProgram =
           Param->isOption(OPT_gcc_optimizations) &&
           Param->getOption<std::string>(OPT_gcc_optimizations).find("whole-program") != std::string::npos &&
           Param->getOption<std::string>(OPT_gcc_optimizations).find("no-whole-program") == std::string::npos;
@@ -1071,9 +1092,8 @@ void CompilerWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::st
          {
             command = compiler.llvm_opt;
 #ifndef _WIN32
-            auto renamed_plugin = compiler.topfname_plugin_obj;
-            boost::replace_all(renamed_plugin, ".so", "_opt.so");
-            command += " -load=" + renamed_plugin;
+            command += load_plugin_opt(compiler.topfname_plugin_obj,
+                                       Param->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler));
 #endif
             command += " -internalize-outputdir=" + Param->getOption<std::string>(OPT_output_temporary_directory);
             command += " -panda-TFN=" + fname;
@@ -1085,28 +1105,28 @@ void CompilerWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::st
             }
             else
             {
-               for(auto& entry :
+               for(const auto& entry :
                    boost::make_iterator_range(boost::filesystem::directory_iterator(output_temporary_directory), {}))
                {
-                  auto source_file = GetLeafFileName(entry.path().string());
+                  const auto source_file = GetLeafFileName(entry.path().string());
                   if(source_file.find(".memory_allocation.xml") != std::string::npos)
                   {
                      xml_files.push_back(source_file);
                   }
                }
             }
-            for(auto XMLfilename : xml_files)
+            for(const auto& XMLfilename : xml_files)
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->parsing " + XMLfilename);
                XMLDomParser parser(XMLfilename);
                parser.Exec();
                if(parser)
                {
-                  const xml_element* node = parser.get_document()->get_root_node(); // deleted by DomParser.
-                  const xml_node::node_list list = node->get_children();
+                  const auto node = parser.get_document()->get_root_node(); // deleted by DomParser.
+                  const auto list = node->get_children();
                   for(const auto& l : list)
                   {
-                     const xml_element* child = GetPointer<xml_element>(l);
+                     const auto child = GetPointer<xml_element>(l);
                      if(!child)
                      {
                         continue;
@@ -1115,7 +1135,7 @@ void CompilerWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::st
                      {
                         for(const auto& it : child->get_children())
                         {
-                           const xml_element* mem_node = GetPointer<xml_element>(it);
+                           const auto mem_node = GetPointer<xml_element>(it);
                            if(!mem_node)
                            {
                               continue;
@@ -1168,7 +1188,7 @@ void CompilerWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::st
                                         boost::filesystem::unique_path(std::string(STR_CST_llvm_obj_file)).string())
                     .string();
             command += " -o " + temporary_file_o_bc;
-            const std::string tfn_output_file_name =
+            const auto tfn_output_file_name =
                 Param->getOption<std::string>(OPT_output_temporary_directory) + STR_CST_gcc_output;
             ret = PandaSystem(Param, command, tfn_output_file_name);
             if(IsError(ret))
@@ -1197,7 +1217,7 @@ void CompilerWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::st
                                         boost::filesystem::unique_path(std::string(STR_CST_llvm_obj_file)).string())
                     .string();
             command += " -o " + temporary_file_o_bc;
-            const std::string int_output_file_name =
+            const auto int_output_file_name =
                 Param->getOption<std::string>(OPT_output_temporary_directory) + STR_CST_gcc_output;
             ret = PandaSystem(Param, command, int_output_file_name);
             if(IsError(ret))
@@ -1233,7 +1253,7 @@ void CompilerWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::st
                                      boost::filesystem::unique_path(std::string(STR_CST_llvm_obj_file)).string())
                  .string();
          command += " -o " + temporary_file_o_bc;
-         const std::string o2_output_file_name =
+         const auto o2_output_file_name =
              Param->getOption<std::string>(OPT_output_temporary_directory) + STR_CST_gcc_output;
          ret = PandaSystem(Param, command, o2_output_file_name);
          if(IsError(ret))
@@ -1275,9 +1295,10 @@ void CompilerWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::st
       {
          command = compiler.llvm_opt;
 #ifndef _WIN32
-         auto renamed_plugin = compiler.ssa_plugin_obj;
-         boost::replace_all(renamed_plugin, ".so", "_opt.so");
-         command += " -load=" + renamed_plugin;
+         command += load_plugin_opt(compiler.ssa_plugin_obj,
+                                    Param->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler));
+         command += load_plugin_opt(compiler.expandMemOps_plugin_obj,
+                                    Param->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler));
 #endif
          command += " -panda-outputdir=" + Param->getOption<std::string>(OPT_output_temporary_directory) +
                     " -panda-infile=" + real_file_names + " -panda-cost-table=\"" + costTable + "\"";
@@ -1286,8 +1307,17 @@ void CompilerWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::st
             command += " -panda-topfname=" + fname;
          }
          command += " -vectorize-loops=false -vectorize-slp=false -domfrontier -domtree -memdep -memoryssa "
-                    "-lazy-value-info -aa -assumption-cache-tracker -targetlibinfo -loops -simplifycfg -mem2reg "
-                    "-globalopt -break-crit-edges -dse -adce -loop-load-elim";
+                    "-lazy-value-info -aa ";
+#if HAVE_I386_CLANG13_COMPILER
+         command += Param->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) !=
+                            CompilerWrapper_CompilerTarget::CT_I386_CLANG13 ?
+                        "-assumption-cache-tracker " :
+                        "";
+#else
+         command += "-assumption-cache-tracker ";
+#endif
+         command +=
+             "-targetlibinfo -loops -simplifycfg -mem2reg  -globalopt -break-crit-edges -dse -adce -loop-load-elim";
          command += " " + temporary_file_o_bc;
          temporary_file_o_bc =
              boost::filesystem::path(Param->getOption<std::string>(OPT_output_temporary_directory) + "/" +
@@ -1295,7 +1325,7 @@ void CompilerWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::st
                  .string();
          command += " -o " + temporary_file_o_bc;
          command += " -" + compiler.ssa_plugin_name;
-         const std::string gimpledump_output_file_name =
+         const auto gimpledump_output_file_name =
              Param->getOption<std::string>(OPT_output_temporary_directory) + STR_CST_gcc_output;
          ret = PandaSystem(Param, command, gimpledump_output_file_name);
          if(IsError(ret))
@@ -1319,14 +1349,11 @@ void CompilerWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::st
          THROW_ERROR("LTO compilation not yet implemented for the chosen front-end compiler");
       }
       std::string leaf_name = GetLeafFileName(source_files.begin()->second);
-      if(not(boost::filesystem::exists(
-             boost::filesystem::path(output_temporary_directory + "/" + leaf_name + STR_CST_gcc_tree_suffix))))
+      const auto obj = boost::filesystem::path(output_temporary_directory + "/" + leaf_name + STR_CST_gcc_tree_suffix);
+      if(!boost::filesystem::exists(obj))
       {
-         THROW_ERROR(output_temporary_directory + "/" + leaf_name + STR_CST_gcc_tree_suffix +
-                     " not found: impossible to create raw file for " + real_file_names);
+         THROW_ERROR(obj.string() + " not found: impossible to create raw file for " + real_file_names);
       }
-      boost::filesystem::path obj =
-          boost::filesystem::path(output_temporary_directory + "/" + leaf_name + STR_CST_gcc_tree_suffix);
       tree_managerRef TreeM = ParseTreeFile(Param, obj.string());
 #if !NPROFILE
       long int merge_time = 0;
@@ -1437,7 +1464,7 @@ void CompilerWrapper::InitializeCompilerParameters()
 #if HAVE_I386_CLANG4_COMPILER || HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER ||    \
     HAVE_I386_CLANG7_COMPILER || HAVE_I386_CLANG8_COMPILER || HAVE_I386_CLANG9_COMPILER ||    \
     HAVE_I386_CLANG10_COMPILER || HAVE_I386_CLANG11_COMPILER || HAVE_I386_CLANG12_COMPILER || \
-    HAVE_I386_CLANGVVD_COMPILER
+    HAVE_I386_CLANG13_COMPILER || HAVE_I386_CLANGVVD_COMPILER
             {
                CompilerWrapper_CompilerTarget compiler =
                    Param->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler);
@@ -1666,7 +1693,9 @@ void CompilerWrapper::SetBambuDefault()
           Param->isOption(OPT_input_format) &&
           (Param->getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_CPP ||
            Param->getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_LLVM_CPP);
-      if(!flag_cpp)
+      if(!flag_cpp && opt_level != CompilerWrapper_OptimizationSet::O3 &&
+         opt_level != CompilerWrapper_OptimizationSet::O4 && opt_level != CompilerWrapper_OptimizationSet::Ofast &&
+         opt_level != CompilerWrapper_OptimizationSet::OSF)
       {
          optimization_flags["unroll-loops"] =
              false; // it is preferable to have unrolling disabled by default as with GCC
@@ -1701,6 +1730,9 @@ void CompilerWrapper::SetBambuDefault()
 #endif
 #if HAVE_I386_CLANG12_COMPILER
       || compiler == CompilerWrapper_CompilerTarget::CT_I386_CLANG12
+#endif
+#if HAVE_I386_CLANG13_COMPILER
+      || compiler == CompilerWrapper_CompilerTarget::CT_I386_CLANG13
 #endif
    )
    {
@@ -1923,14 +1955,7 @@ void CompilerWrapper::SetBambuDefault()
 void CompilerWrapper::SetCompilerDefault()
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "-->Setting front-end compiler defaults");
-   const CompilerWrapper_OptimizationSet optimization_level =
-       Param->getOption<CompilerWrapper_OptimizationSet>(OPT_compiler_opt_level);
-#if HAVE_I386_CLANG4_COMPILER || HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER ||    \
-    HAVE_I386_CLANG7_COMPILER || HAVE_I386_CLANG8_COMPILER || HAVE_I386_CLANG9_COMPILER ||    \
-    HAVE_I386_CLANG10_COMPILER || HAVE_I386_CLANG11_COMPILER || HAVE_I386_CLANG12_COMPILER || \
-    HAVE_I386_CLANGVVD_COMPILER
-   CompilerWrapper_CompilerTarget compiler = Param->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler);
-#endif
+   const auto optimization_level = Param->getOption<CompilerWrapper_OptimizationSet>(OPT_compiler_opt_level);
    optimization_flags["stack-protector"] =
        false; // In Ubuntu 6.10 and later versions this option is enabled by default for C, C++, ObjC, ObjC++
 
@@ -1958,38 +1983,7 @@ void CompilerWrapper::SetCompilerDefault()
       {
          frontend_compiler_parameters += " -O1 ";
 
-         if(true
-#if HAVE_I386_CLANG4_COMPILER
-            && compiler != CompilerWrapper_CompilerTarget::CT_I386_CLANG4
-#endif
-#if HAVE_I386_CLANG5_COMPILER
-            && compiler != CompilerWrapper_CompilerTarget::CT_I386_CLANG5
-#endif
-#if HAVE_I386_CLANG6_COMPILER
-            && compiler != CompilerWrapper_CompilerTarget::CT_I386_CLANG6
-#endif
-#if HAVE_I386_CLANG7_COMPILER
-            && compiler != CompilerWrapper_CompilerTarget::CT_I386_CLANG7
-#endif
-#if HAVE_I386_CLANG8_COMPILER
-            && compiler != CompilerWrapper_CompilerTarget::CT_I386_CLANG8
-#endif
-#if HAVE_I386_CLANG9_COMPILER
-            && compiler != CompilerWrapper_CompilerTarget::CT_I386_CLANG9
-#endif
-#if HAVE_I386_CLANG10_COMPILER
-            && compiler != CompilerWrapper_CompilerTarget::CT_I386_CLANG10
-#endif
-#if HAVE_I386_CLANG11_COMPILER
-            && compiler != CompilerWrapper_CompilerTarget::CT_I386_CLANG11
-#endif
-#if HAVE_I386_CLANG12_COMPILER
-            && compiler != CompilerWrapper_CompilerTarget::CT_I386_CLANG12
-#endif
-#if HAVE_I386_CLANGVVD_COMPILER
-            && compiler != CompilerWrapper_CompilerTarget::CT_I386_CLANGVVD
-#endif
-         )
+         if(!isClangCheck(compiler_target))
          {
             optimization_flags["auto-inc-dec"] = false;
             optimization_flags["cprop-registers"] = false;
@@ -2176,6 +2170,12 @@ void CompilerWrapper::SetCompilerDefault()
                   break;
                }
 #endif
+#if HAVE_I386_CLANG13_COMPILER
+               case(CompilerWrapper_CompilerTarget::CT_I386_CLANG13):
+               {
+                  break;
+               }
+#endif
 #if HAVE_I386_CLANGVVD_COMPILER
                case(CompilerWrapper_CompilerTarget::CT_I386_CLANGVVD):
                {
@@ -2229,21 +2229,17 @@ void CompilerWrapper::SetCompilerDefault()
       }
    }
    /// required by PandA
-   if(!isClangCheck(compiler))
+   if(!isClangCheck(compiler_target))
    {
       optimization_flags["ipa-pure-const"] = true; /// needed to correctly manage global variables
       optimization_flags["tree-dce"] = true;       /// needed to remove unnecessary computations
    }
-#if HAVE_I386_CLANG4_COMPILER || HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER ||    \
-    HAVE_I386_CLANG7_COMPILER || HAVE_I386_CLANG8_COMPILER || HAVE_I386_CLANG9_COMPILER ||    \
-    HAVE_I386_CLANG10_COMPILER || HAVE_I386_CLANG11_COMPILER || HAVE_I386_CLANG12_COMPILER || \
-    HAVE_I386_CLANGVVD_COMPILER
    else
    {
       optimization_flags["vectorize"] = false;     /// disable vectorization
       optimization_flags["slp-vectorize"] = false; /// disable superword-level parallelism vectorization
    }
-#endif
+
    bool flag_cpp;
    if(Param->isOption(OPT_input_format) &&
       (Param->getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_CPP ||
@@ -2274,7 +2270,7 @@ CompilerWrapper::Compiler CompilerWrapper::GetCompiler() const
     HAVE_I386_GCC8_COMPILER || HAVE_I386_CLANG4_COMPILER || HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER || \
     HAVE_I386_CLANG7_COMPILER || HAVE_I386_CLANG8_COMPILER || HAVE_I386_CLANG9_COMPILER ||                            \
     HAVE_I386_CLANG10_COMPILER || HAVE_I386_CLANG11_COMPILER || HAVE_I386_CLANG12_COMPILER ||                         \
-    HAVE_I386_CLANGVVD_COMPILER || HAVE_SPARC_COMPILER || HAVE_ARM_COMPILER
+    HAVE_I386_CLANG13_COMPILER || HAVE_I386_CLANGVVD_COMPILER || HAVE_SPARC_COMPILER || HAVE_ARM_COMPILER
 #ifndef NDEBUG
    CompilerWrapper_CompilerTarget compatible_compilers =
        Param->getOption<CompilerWrapper_CompilerTarget>(OPT_compatible_compilers);
@@ -2286,7 +2282,7 @@ CompilerWrapper::Compiler CompilerWrapper::GetCompiler() const
     HAVE_I386_GCC8_COMPILER || HAVE_I386_CLANG4_COMPILER || HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER || \
     HAVE_I386_CLANG7_COMPILER || HAVE_I386_CLANG8_COMPILER || HAVE_I386_CLANG9_COMPILER ||                            \
     HAVE_I386_CLANG10_COMPILER || HAVE_I386_CLANG11_COMPILER || HAVE_I386_CLANG12_COMPILER ||                         \
-    HAVE_I386_CLANGVVD_COMPILER || HAVE_SPARC_COMPILER || HAVE_ARM_COMPILER
+    HAVE_I386_CLANG13_COMPILER || HAVE_I386_CLANGVVD_COMPILER || HAVE_SPARC_COMPILER || HAVE_ARM_COMPILER
    bool flag_cpp;
    if(Param->isOption(OPT_input_format) &&
       (Param->getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_CPP ||
@@ -2306,7 +2302,8 @@ CompilerWrapper::Compiler CompilerWrapper::GetCompiler() const
     HAVE_I386_GCC8_COMPILER || HAVE_I386_CLANG4_COMPILER || HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER || \
     HAVE_I386_CLANG7_COMPILER || HAVE_I386_CLANG8_COMPILER || HAVE_I386_CLANG9_COMPILER ||                            \
     HAVE_I386_CLANG10_COMPILER || HAVE_I386_CLANG11_COMPILER || HAVE_I386_CLANG12_COMPILER ||                         \
-    HAVE_I386_CLANGVVD_COMPILER || HAVE_SPARC_COMPILER || HAVE_ARM_COMPILER || HAVE_SPARC_ELF_GCC
+    HAVE_I386_CLANG13_COMPILER || HAVE_I386_CLANGVVD_COMPILER || HAVE_SPARC_COMPILER || HAVE_ARM_COMPILER ||          \
+    HAVE_SPARC_ELF_GCC
    std::string gcc_extra_options;
    if(Param->isOption(OPT_gcc_extra_options))
    {
@@ -2319,7 +2316,7 @@ CompilerWrapper::Compiler CompilerWrapper::GetCompiler() const
     HAVE_I386_GCC8_COMPILER || HAVE_I386_CLANG4_COMPILER || HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER || \
     HAVE_I386_CLANG7_COMPILER || HAVE_I386_CLANG8_COMPILER || HAVE_I386_CLANG9_COMPILER ||                            \
     HAVE_I386_CLANG10_COMPILER || HAVE_I386_CLANG11_COMPILER || HAVE_I386_CLANG12_COMPILER ||                         \
-    HAVE_I386_CLANGVVD_COMPILER || HAVE_SPARC_COMPILER || HAVE_ARM_COMPILER
+    HAVE_I386_CLANG13_COMPILER || HAVE_I386_CLANGVVD_COMPILER || HAVE_SPARC_COMPILER || HAVE_ARM_COMPILER
    CompilerWrapper_CompilerTarget preferred_compiler;
    if(compiler_target == CompilerWrapper_CompilerTarget::CT_NO_COMPILER)
    {
@@ -2353,7 +2350,10 @@ CompilerWrapper::Compiler CompilerWrapper::GetCompiler() const
     HAVE_I386_GCC49_COMPILER || HAVE_I386_GCC5_COMPILER || HAVE_I386_GCC6_COMPILER || HAVE_I386_GCC7_COMPILER ||    \
     HAVE_I386_GCC8_COMPILER
    auto fillASTAnalyzer_plugin = [&] {
-#if HAVE_I386_CLANG12_COMPILER
+#if HAVE_I386_CLANG13_COMPILER
+      compiler.ASTAnalyzer_plugin_obj = clang_plugin_dir + I386_CLANG13_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_name = I386_CLANG13_ASTANALYZER_PLUGIN;
+#elif HAVE_I386_CLANG12_COMPILER
       compiler.ASTAnalyzer_plugin_obj = clang_plugin_dir + I386_CLANG12_ASTANALYZER_PLUGIN + plugin_ext;
       compiler.ASTAnalyzer_plugin_name = I386_CLANG12_ASTANALYZER_PLUGIN;
 #elif HAVE_I386_CLANG11_COMPILER
@@ -2959,6 +2959,35 @@ CompilerWrapper::Compiler CompilerWrapper::GetCompiler() const
       compiler.ASTAnalyzer_plugin_name = I386_CLANG12_ASTANALYZER_PLUGIN;
       compiler.llvm_link = relocate_compiler_path(I386_LLVM12_LINK_EXE);
       compiler.llvm_opt = relocate_compiler_path(I386_LLVM12_OPT_EXE);
+   }
+#endif
+
+#if HAVE_I386_CLANG13_COMPILER
+   if(static_cast<int>(preferred_compiler) & static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_CLANG13))
+   {
+      compiler.is_clang = true;
+      compiler.gcc = flag_cpp ? relocate_compiler_path(I386_CLANGPP13_EXE) : relocate_compiler_path(I386_CLANG13_EXE);
+      compiler.cpp = relocate_compiler_path(I386_CLANG_CPP13_EXE);
+      compiler.extra_options =
+          " -D_FORTIFY_SOURCE=0 " + gcc_extra_options + (flag_cpp ? EXTRA_CLANGPP_COMPILER_OPTION : "");
+      compiler.extra_options += " " + Param->getOption<std::string>(OPT_gcc_m32_mx32);
+      compiler.empty_plugin_obj = clang_plugin_dir + I386_CLANG13_EMPTY_PLUGIN + plugin_ext;
+      compiler.empty_plugin_name = I386_CLANG13_EMPTY_PLUGIN;
+      compiler.ssa_plugin_obj =
+          clang_plugin_dir + (flag_cpp ? I386_CLANG13_SSA_PLUGINCPP : I386_CLANG13_SSA_PLUGIN) + plugin_ext;
+      compiler.ssa_plugin_name = (flag_cpp ? I386_CLANG13_SSA_PLUGINCPP : I386_CLANG13_SSA_PLUGIN);
+      compiler.expandMemOps_plugin_obj = clang_plugin_dir + I386_CLANG13_EXPANDMEMOPS_PLUGIN + plugin_ext;
+      compiler.expandMemOps_plugin_name = I386_CLANG13_EXPANDMEMOPS_PLUGIN;
+      compiler.GepiCanon_plugin_obj = clang_plugin_dir + I386_CLANG13_GEPICANON_PLUGIN + plugin_ext;
+      compiler.GepiCanon_plugin_name = I386_CLANG13_GEPICANON_PLUGIN;
+      compiler.CSROA_plugin_obj = clang_plugin_dir + I386_CLANG13_CSROA_PLUGIN + plugin_ext;
+      compiler.CSROA_plugin_name = I386_CLANG13_CSROA_PLUGIN;
+      compiler.topfname_plugin_obj = clang_plugin_dir + I386_CLANG13_TOPFNAME_PLUGIN + plugin_ext;
+      compiler.topfname_plugin_name = I386_CLANG13_TOPFNAME_PLUGIN;
+      compiler.ASTAnalyzer_plugin_obj = clang_plugin_dir + I386_CLANG13_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_name = I386_CLANG13_ASTANALYZER_PLUGIN;
+      compiler.llvm_link = relocate_compiler_path(I386_LLVM13_LINK_EXE);
+      compiler.llvm_opt = relocate_compiler_path(I386_LLVM13_OPT_EXE);
    }
 #endif
 
@@ -3704,7 +3733,7 @@ std::string CompilerWrapper::clang_recipes(
 #if HAVE_I386_CLANG4_COMPILER || HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER ||    \
     HAVE_I386_CLANG7_COMPILER || HAVE_I386_CLANG8_COMPILER || HAVE_I386_CLANG9_COMPILER ||    \
     HAVE_I386_CLANG10_COMPILER || HAVE_I386_CLANG11_COMPILER || HAVE_I386_CLANG12_COMPILER || \
-    HAVE_I386_CLANGVVD_COMPILER
+    HAVE_I386_CLANG13_COMPILER || HAVE_I386_CLANGVVD_COMPILER
         optimization_level
 #endif
     ,
@@ -3712,7 +3741,7 @@ std::string CompilerWrapper::clang_recipes(
 #if HAVE_I386_CLANG4_COMPILER || HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER ||    \
     HAVE_I386_CLANG7_COMPILER || HAVE_I386_CLANG8_COMPILER || HAVE_I386_CLANG9_COMPILER ||    \
     HAVE_I386_CLANG10_COMPILER || HAVE_I386_CLANG11_COMPILER || HAVE_I386_CLANG12_COMPILER || \
-    HAVE_I386_CLANGVVD_COMPILER
+    HAVE_I386_CLANG13_COMPILER || HAVE_I386_CLANGVVD_COMPILER
         compiler
 #endif
     ,
@@ -3725,7 +3754,7 @@ std::string CompilerWrapper::clang_recipes(
 #if HAVE_I386_CLANG4_COMPILER || HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER ||    \
     HAVE_I386_CLANG7_COMPILER || HAVE_I386_CLANG8_COMPILER || HAVE_I386_CLANG9_COMPILER ||    \
     HAVE_I386_CLANG10_COMPILER || HAVE_I386_CLANG11_COMPILER || HAVE_I386_CLANG12_COMPILER || \
-    HAVE_I386_CLANGVVD_COMPILER
+    HAVE_I386_CLANG13_COMPILER || HAVE_I386_CLANGVVD_COMPILER
         expandMemOps_plugin_name
 #endif
     ,
@@ -3739,7 +3768,7 @@ std::string CompilerWrapper::clang_recipes(
         //|| HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER ||
         // HAVE_I386_CLANG7_COMPILER || HAVE_I386_CLANG8_COMPILER || HAVE_I386_CLANG9_COMPILER
         //|| HAVE_I386_CLANG10_COMPILER || HAVE_I386_CLANG11_COMPILER ||
-        // HAVE_I386_CLANG12_COMPILER || HAVE_I386_CLANGVVD_COMPILER
+        // HAVE_I386_CLANG12_COMPILER || HAVE_I386_CLANG13_COMPILER || HAVE_I386_CLANGVVD_COMPILER
         GepiCanon_plugin_name
 #endif
     ,
@@ -3753,7 +3782,7 @@ std::string CompilerWrapper::clang_recipes(
         //|| HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER ||
         // HAVE_I386_CLANG7_COMPILER || HAVE_I386_CLANG8_COMPILER || HAVE_I386_CLANG9_COMPILER
         //|| HAVE_I386_CLANG10_COMPILER || HAVE_I386_CLANG11_COMPILER ||
-        // HAVE_I386_CLANG12_COMPILER || HAVE_I386_CLANGVVD_COMPILER
+        // HAVE_I386_CLANG12_COMPILER || HAVE_I386_CLANG13_COMPILER || HAVE_I386_CLANGVVD_COMPILER
         CSROA_plugin_name
 #endif
     ,
@@ -3761,16 +3790,15 @@ std::string CompilerWrapper::clang_recipes(
 {
    std::string recipe = "";
 #ifndef _WIN32
-   auto renamed_pluginEMO = expandMemOps_plugin_obj;
-   boost::replace_all(renamed_pluginEMO, ".so", "_opt.so");
-   recipe += " -load=" + renamed_pluginEMO;
+   recipe +=
+       load_plugin_opt(expandMemOps_plugin_obj, Param->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler));
 #endif
 #ifndef _WIN32
-   if(!GepiCanon_plugin_obj.empty())
+   if(Param->IsParameter("enable-CSROA") && Param->GetParameter<int>("enable-CSROA") == 1 &&
+      !GepiCanon_plugin_obj.empty())
    {
-      auto renamed_pluginGC = GepiCanon_plugin_obj;
-      boost::replace_all(renamed_pluginGC, ".so", "_opt.so");
-      recipe += " -load=" + renamed_pluginGC;
+      recipe +=
+          load_plugin_opt(GepiCanon_plugin_obj, Param->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler));
    }
 #endif
 
@@ -3781,9 +3809,8 @@ std::string CompilerWrapper::clang_recipes(
    )
    {
 #ifndef _WIN32
-      auto renamed_pluginCSROA = CSROA_plugin_obj;
-      boost::replace_all(renamed_pluginCSROA, ".so", "_opt.so");
-      recipe += " -load=" + renamed_pluginCSROA;
+      recipe +=
+          load_plugin_opt(CSROA_plugin_obj, Param->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler));
 #endif
       recipe += " -panda-KN=" + fname;
       if(Param->IsParameter("max-CSROA"))
@@ -3799,15 +3826,9 @@ std::string CompilerWrapper::clang_recipes(
          optimization_level == CompilerWrapper_OptimizationSet::O3)
       {
          std::string complex_recipe;
-         complex_recipe +=
-             " -tti "
-             "-targetlibinfo "
-             "-tbaa -scoped-noalias -assumption-cache-tracker -profile-summary-info -forceattrs -inferattrs "
-             "-" +
-             expandMemOps_plugin_name +
-             " "
-             "-domtree "
-             "-mem2reg ";
+         complex_recipe += " -tti -targetlibinfo -tbaa -scoped-noalias -assumption-cache-tracker -profile-summary-info "
+                           "-forceattrs -inferattrs " +
+                           ("-" + expandMemOps_plugin_name) + " -domtree -mem2reg ";
          if(Param->IsParameter("enable-CSROA") && Param->GetParameter<int>("enable-CSROA") == 1
 #ifndef _WIN32
             && !GepiCanon_plugin_obj.empty() && !CSROA_plugin_obj.empty()
@@ -3815,18 +3836,10 @@ std::string CompilerWrapper::clang_recipes(
          )
          {
             complex_recipe +=
-                "-" + GepiCanon_plugin_name +
-                "PS "
-                "-" +
-                GepiCanon_plugin_name +
-                "COL "
-                "-" +
-                GepiCanon_plugin_name +
-                "BVR "
-                "-loops -loop-simplify -lcssa-verification -lcssa -basicaa -aa -scalar-evolution -loop-unroll "
-                "-" +
-                CSROA_plugin_name +
-                "FV "
+                ("-" + GepiCanon_plugin_name + "PS ") + ("-" + GepiCanon_plugin_name + "COL ") +
+                ("-" + GepiCanon_plugin_name + "BVR ") +
+                "-loops -loop-simplify -lcssa-verification -lcssa -basicaa -aa -scalar-evolution -loop-unroll " +
+                ("-" + CSROA_plugin_name + "FV ") +
                 "-ipsccp -globaldce -domtree -mem2reg -deadargelim -basiccg -argpromotion -domtree -loops "
                 "-loop-simplify -lcssa-verification -lcssa -basicaa -aa -scalar-evolution -loop-unroll -simplifycfg ";
          }
@@ -3836,149 +3849,28 @@ std::string CompilerWrapper::clang_recipes(
 #endif
          )
          {
-            complex_recipe += "-" + expandMemOps_plugin_name +
-                              " "
-                              "-" +
-                              GepiCanon_plugin_name +
-                              "PS "
-                              "-" +
-                              GepiCanon_plugin_name +
-                              "COL "
-                              "-" +
-                              GepiCanon_plugin_name +
-                              "BVR "
-                              "-" +
-                              CSROA_plugin_name + "D ";
+            complex_recipe += "-" + expandMemOps_plugin_name + (" -" + GepiCanon_plugin_name + "PS ") +
+                              ("-" + GepiCanon_plugin_name + "COL ") + ("-" + GepiCanon_plugin_name + "BVR ") +
+                              ("-" + CSROA_plugin_name + "D ");
          }
-         complex_recipe += "-ipsccp -globalopt -dse -loop-unroll "
-                           "-instcombine "
-                           "-libcalls-shrinkwrap "
-                           "-tailcallelim "
-                           "-simplifycfg "
-                           "-reassociate "
-                           "-domtree "
-                           "-loops "
-                           "-loop-simplify "
-                           "-lcssa-verification "
-                           "-lcssa "
-                           "-basicaa "
-                           "-aa "
-                           "-scalar-evolution "
-                           "-loop-rotate "
-                           "-licm "
-                           "-loop-unswitch "
-                           "-simplifycfg "
-                           "-domtree "
-                           "-basicaa "
-                           "-aa "
-                           " -dse -loop-unroll "
-                           "-instcombine "
-                           "-loops "
-                           "-loop-simplify "
-                           "-lcssa-verification "
-                           "-lcssa "
-                           "-scalar-evolution "
-                           "-indvars "
-                           "-loop-idiom "
-                           "-loop-deletion "
-                           "-loop-unroll "
-                           "-mldst-motion "
-                           "-aa "
-                           "-memdep "
-                           "-lazy-branch-prob "
-                           "-lazy-block-freq "
-                           "-opt-remark-emitter "
-                           "-gvn "
-                           "-basicaa "
-                           "-aa "
-                           "-memdep "
-                           "-memcpyopt "
-                           "-sccp "
-                           "-domtree "
-                           "-demanded-bits "
-                           "-bdce "
-                           "-basicaa "
-                           "-aa "
-                           " -dse -loop-unroll "
-                           "-instcombine "
-                           "-lazy-value-info "
-                           "-jump-threading "
-                           "-correlated-propagation "
-                           "-domtree "
-                           "-basicaa "
-                           "-aa "
-                           "-memdep "
-                           "-dse "
-                           "-loops "
-                           "-loop-simplify "
-                           "-lcssa-verification "
-                           "-lcssa "
-                           "-aa "
-                           "-scalar-evolution "
-                           "-licm "
-                           "-postdomtree "
-                           "-adce "
-                           "-simplifycfg "
-                           "-domtree "
-                           "-basicaa "
-                           "-aa "
-                           " -loop-unroll "
-                           "-instcombine "
-                           "-barrier "
-                           "-elim-avail-extern "
-                           "-basiccg "
-                           "-rpo-functionattrs "
-                           "-globals-aa "
-                           "-float2int "
-                           "-domtree "
-                           "-loops "
-                           "-loop-simplify "
-                           "-lcssa-verification "
-                           "-lcssa "
-                           "-basicaa "
-                           "-aa "
-                           "-scalar-evolution "
-                           "-loop-rotate "
-                           "-loop-accesses "
-                           "-lazy-branch-prob "
-                           "-lazy-block-freq "
-                           "-opt-remark-emitter "
-                           "-loop-distribute "
-                           "-loop-simplify "
-                           "-lcssa-verification "
-                           "-lcssa "
-                           "-branch-prob "
-                           "-block-freq "
-                           "-scalar-evolution "
-                           "-basicaa "
-                           "-aa "
-                           "-loop-accesses "
-                           "-demanded-bits "
-                           "-lazy-branch-prob "
-                           "-lazy-block-freq "
-                           "-opt-remark-emitter "
-                           "-loop-vectorize "
-                           "-loop-simplify "
-                           "-scalar-evolution "
-                           "-aa "
-                           "-loop-accesses "
-                           "-loop-load-elim "
-                           "-basicaa "
-                           "-aa "
-                           " -dse -loop-unroll "
-                           "-instcombine "
-                           "-simplifycfg "
-                           "-domtree "
-                           "-basicaa "
-                           "-aa "
-                           " -dse -loop-unroll "
-                           "-instcombine "
-                           "-loops "
-                           "-loop-simplify "
-                           "-lcssa-verification "
-                           "-lcssa "
-                           "-scalar-evolution "
-                           "-loop-unroll ";
+         complex_recipe +=
+             "-ipsccp -globalopt -dse -loop-unroll -instcombine -libcalls-shrinkwrap -tailcallelim -simplifycfg "
+             "-reassociate -domtree -loops -loop-simplify -lcssa-verification -lcssa -basicaa -aa -scalar-evolution "
+             "-loop-rotate -licm -loop-unswitch -simplifycfg -domtree -basicaa -aa  -dse -loop-unroll -instcombine "
+             "-loops -loop-simplify -lcssa-verification -lcssa -scalar-evolution -indvars -loop-idiom -loop-deletion "
+             "-loop-unroll -mldst-motion -aa -memdep -lazy-branch-prob -lazy-block-freq -opt-remark-emitter -gvn "
+             "-basicaa -aa -memdep -memcpyopt -sccp -domtree -demanded-bits -bdce -basicaa -aa  -dse -loop-unroll "
+             "-instcombine -lazy-value-info -jump-threading -correlated-propagation -domtree -basicaa -aa -memdep -dse "
+             "-loops -loop-simplify -lcssa-verification -lcssa -aa -scalar-evolution -licm -postdomtree -adce "
+             "-simplifycfg -domtree -basicaa -aa  -loop-unroll -instcombine -barrier -elim-avail-extern -basiccg "
+             "-rpo-functionattrs -globals-aa -float2int -domtree -loops -loop-simplify -lcssa-verification -lcssa "
+             "-basicaa -aa -scalar-evolution -loop-rotate -loop-accesses -lazy-branch-prob -lazy-block-freq "
+             "-opt-remark-emitter -loop-distribute -loop-simplify -lcssa-verification -lcssa -branch-prob -block-freq "
+             "-scalar-evolution -basicaa -aa -loop-accesses -demanded-bits -lazy-branch-prob -lazy-block-freq "
+             "-opt-remark-emitter -disable-slp-vectorization -disable-loop-vectorization -scalarizer-loop-simplify "
+             "-scalar-evolution -aa -loop-accesses -loop-load-elim -basicaa -aa  -dse -loop-unroll -instcombine "
+             "-simplifycfg -domtree -basicaa -aa  -dse -loop-unroll -instcombine -loops -loop-simplify "
+             "-lcssa-verification -lcssa -scalar-evolution -loop-unroll ";
          if(Param->IsParameter("enable-CSROA") && Param->GetParameter<int>("enable-CSROA") == 1
 #ifndef _WIN32
             && !GepiCanon_plugin_obj.empty() && !CSROA_plugin_obj.empty()
@@ -3987,36 +3879,13 @@ std::string CompilerWrapper::clang_recipes(
          {
             complex_recipe += " -" + expandMemOps_plugin_name + " -" + CSROA_plugin_name + "WI ";
          }
-         complex_recipe += "-domtree -basicaa -aa -memdep -dse -aa -memoryssa -early-cse-memssa -constprop -ipsccp "
-                           "-globaldce -domtree -mem2reg -deadargelim -basiccg -argpromotion -domtree -loops "
-                           "-loop-simplify -lcssa-verification -lcssa -basicaa -aa "
-                           "-scalar-evolution -loop-unroll "
-                           " -dse -loop-unroll "
-                           "-instcombine "
-                           "-loop-simplify "
-                           "-lcssa-verification "
-                           "-lcssa "
-                           "-scalar-evolution "
-                           "-licm "
-                           "-alignment-from-assumptions "
-                           "-strip-dead-prototypes "
-                           "-globaldce "
-                           "-constmerge "
-                           "-domtree "
-                           "-loops "
-                           "-branch-prob "
-                           "-block-freq "
-                           "-loop-simplify "
-                           "-lcssa-verification "
-                           "-lcssa "
-                           "-basicaa "
-                           "-aa "
-                           "-scalar-evolution "
-                           "-branch-prob "
-                           "-block-freq "
-                           "-loop-sink "
-                           "-instsimplify ";
-         // complex_recipe += complex_recipe;
+         complex_recipe +=
+             "-domtree -basicaa -aa -memdep -dse -aa -memoryssa -early-cse-memssa -constprop -ipsccp -globaldce "
+             "-domtree -mem2reg -deadargelim -basiccg -argpromotion -domtree -loops -loop-simplify -lcssa-verification "
+             "-lcssa -basicaa -aa -scalar-evolution -loop-unroll  -dse -loop-unroll -instcombine -loop-simplify "
+             "-lcssa-verification -lcssa -scalar-evolution -licm -alignment-from-assumptions -strip-dead-prototypes "
+             "-globaldce -constmerge -domtree -loops -branch-prob -block-freq -loop-simplify -lcssa-verification "
+             "-lcssa -basicaa -aa -scalar-evolution -branch-prob -block-freq -loop-sink -instsimplify ";
          recipe += complex_recipe;
       }
       else
@@ -4024,8 +3893,8 @@ std::string CompilerWrapper::clang_recipes(
          const auto opt_level = optimization_level == CompilerWrapper_OptimizationSet::O0 ?
                                     "1" :
                                     WriteOptimizationLevel(optimization_level);
-         recipe += " -O" + opt_level + " -disable-slp-vectorization -disable-loop-vectorization -scalarizer ";
-         recipe += " -" + expandMemOps_plugin_name + " -loop-unroll -simplifycfg ";
+         recipe += " -O" + opt_level + " -disable-slp-vectorization -disable-loop-vectorization -scalarizer";
+         recipe += " -" + expandMemOps_plugin_name + " -simplifycfg ";
       }
    }
    else
@@ -4035,8 +3904,8 @@ std::string CompilerWrapper::clang_recipes(
    {
       const auto opt_level =
           optimization_level == CompilerWrapper_OptimizationSet::O0 ? "1" : WriteOptimizationLevel(optimization_level);
-      recipe += " -O" + opt_level + " -disable-slp-vectorization -disable-loop-vectorization -scalarizer ";
-      recipe += " -" + expandMemOps_plugin_name + " -loop-unroll -simplifycfg ";
+      recipe += " -O" + opt_level + " -disable-slp-vectorization -disable-loop-vectorization -scalarizer";
+      recipe += " -" + expandMemOps_plugin_name + " -simplifycfg ";
    }
    else
 #endif
@@ -4045,8 +3914,8 @@ std::string CompilerWrapper::clang_recipes(
    {
       const auto opt_level =
           optimization_level == CompilerWrapper_OptimizationSet::O0 ? "1" : WriteOptimizationLevel(optimization_level);
-      recipe += " -O" + opt_level + " -disable-slp-vectorization -disable-loop-vectorization -scalarizer ";
-      recipe += " -" + expandMemOps_plugin_name + " -loop-unroll -simplifycfg ";
+      recipe += " -O" + opt_level + " -disable-slp-vectorization -disable-loop-vectorization -scalarizer";
+      recipe += " -" + expandMemOps_plugin_name + " -simplifycfg ";
    }
    else
 #endif
@@ -4055,19 +3924,8 @@ std::string CompilerWrapper::clang_recipes(
    {
       const auto opt_level =
           optimization_level == CompilerWrapper_OptimizationSet::O0 ? "1" : WriteOptimizationLevel(optimization_level);
-      recipe += " -O" + opt_level + " -disable-slp-vectorization -disable-loop-vectorization -scalarizer ";
-      recipe += " -" + expandMemOps_plugin_name;
-      /*
-            recipe += " -" + GepiCanon_plugin_name +
-                      "PS "
-                      "-" +
-                      GepiCanon_plugin_name +
-                      "COL "
-                      "-" +
-                      GepiCanon_plugin_name +
-                      "BVR ";
-      */
-      recipe += " -loop-unroll -simplifycfg ";
+      recipe += " -O" + opt_level + " -disable-slp-vectorization -disable-loop-vectorization -scalarizer";
+      recipe += " -" + expandMemOps_plugin_name + " -simplifycfg ";
    }
    else
 #endif
@@ -4076,19 +3934,8 @@ std::string CompilerWrapper::clang_recipes(
    {
       const auto opt_level =
           optimization_level == CompilerWrapper_OptimizationSet::O0 ? "1" : WriteOptimizationLevel(optimization_level);
-      recipe += " -O" + opt_level + " -disable-slp-vectorization -disable-loop-vectorization -scalarizer ";
-      recipe += " -" + expandMemOps_plugin_name;
-      /*
-            recipe += " -" + GepiCanon_plugin_name +
-                      "PS "
-                      "-" +
-                      GepiCanon_plugin_name +
-                      "COL "
-                      "-" +
-                      GepiCanon_plugin_name +
-                      "BVR ";
-      */
-      recipe += " -loop-unroll -simplifycfg ";
+      recipe += " -O" + opt_level + " -disable-slp-vectorization -disable-loop-vectorization -scalarizer";
+      recipe += " -" + expandMemOps_plugin_name + " -simplifycfg ";
    }
    else
 #endif
@@ -4097,19 +3944,8 @@ std::string CompilerWrapper::clang_recipes(
    {
       const auto opt_level =
           optimization_level == CompilerWrapper_OptimizationSet::O0 ? "1" : WriteOptimizationLevel(optimization_level);
-      recipe += " -O" + opt_level + " -disable-slp-vectorization -scalarizer ";
-      recipe += " -" + expandMemOps_plugin_name;
-      /*
-            recipe += " -" + GepiCanon_plugin_name +
-                      "PS "
-                      "-" +
-                      GepiCanon_plugin_name +
-                      "COL "
-                      "-" +
-                      GepiCanon_plugin_name +
-                      "BVR ";
-      */
-      recipe += " -loop-unroll -simplifycfg ";
+      recipe += " -O" + opt_level + " -disable-slp-vectorization -scalarizer";
+      recipe += " -" + expandMemOps_plugin_name + " -simplifycfg ";
    }
    else
 #endif
@@ -4118,19 +3954,8 @@ std::string CompilerWrapper::clang_recipes(
    {
       const auto opt_level =
           optimization_level == CompilerWrapper_OptimizationSet::O0 ? "1" : WriteOptimizationLevel(optimization_level);
-      recipe += " -O" + opt_level + " -disable-slp-vectorization -scalarizer ";
-      recipe += " -" + expandMemOps_plugin_name;
-      /*
-            recipe += " -" + GepiCanon_plugin_name +
-                      "PS "
-                      "-" +
-                      GepiCanon_plugin_name +
-                      "COL "
-                      "-" +
-                      GepiCanon_plugin_name +
-                      "BVR ";
-      */
-      recipe += " -loop-unroll -simplifycfg ";
+      recipe += " -O" + opt_level + " -disable-slp-vectorization -scalarizer";
+      recipe += " -" + expandMemOps_plugin_name + " -simplifycfg ";
    }
    else
 #endif
@@ -4139,20 +3964,8 @@ std::string CompilerWrapper::clang_recipes(
    {
       const auto opt_level =
           optimization_level == CompilerWrapper_OptimizationSet::O0 ? "1" : WriteOptimizationLevel(optimization_level);
-      recipe +=
-          " -O" + opt_level + " --disable-vector-combine -vectorize-loops=false -vectorize-slp=false -scalarizer ";
-      recipe += " -" + expandMemOps_plugin_name;
-      /*
-            recipe += " -" + GepiCanon_plugin_name +
-                      "PS "
-                      "-" +
-                      GepiCanon_plugin_name +
-                      "COL "
-                      "-" +
-                      GepiCanon_plugin_name +
-                      "BVR ";
-      */
-      recipe += " -loop-unroll -simplifycfg ";
+      recipe += " -O" + opt_level + " --disable-vector-combine -vectorize-loops=false -vectorize-slp=false -scalarizer";
+      recipe += " -" + expandMemOps_plugin_name + " -simplifycfg ";
    }
    else
 #endif
@@ -4161,20 +3974,18 @@ std::string CompilerWrapper::clang_recipes(
    {
       const auto opt_level =
           optimization_level == CompilerWrapper_OptimizationSet::O0 ? "1" : WriteOptimizationLevel(optimization_level);
-      recipe +=
-          " -O" + opt_level + " --disable-vector-combine -vectorize-loops=false -vectorize-slp=false -scalarizer ";
-      recipe += " -" + expandMemOps_plugin_name;
-      /*
-            recipe += " -" + GepiCanon_plugin_name +
-                      "PS "
-                      "-" +
-                      GepiCanon_plugin_name +
-                      "COL "
-                      "-" +
-                      GepiCanon_plugin_name +
-                      "BVR ";
-      */
-      recipe += " -loop-unroll -simplifycfg ";
+      recipe += " -O" + opt_level + " --disable-vector-combine -vectorize-loops=false -vectorize-slp=false -scalarizer";
+      recipe += " -" + expandMemOps_plugin_name + " -simplifycfg ";
+   }
+   else
+#endif
+#if HAVE_I386_CLANG13_COMPILER
+       if(compiler == CompilerWrapper_CompilerTarget::CT_I386_CLANG13)
+   {
+      const auto opt_level =
+          optimization_level == CompilerWrapper_OptimizationSet::O0 ? "1" : WriteOptimizationLevel(optimization_level);
+      recipe += " -O" + opt_level + " --disable-vector-combine -vectorize-loops=false -vectorize-slp=false -scalarizer";
+      recipe += " -" + expandMemOps_plugin_name + " -simplifycfg ";
    }
    else
 #endif
@@ -4183,19 +3994,8 @@ std::string CompilerWrapper::clang_recipes(
    {
       const auto opt_level =
           optimization_level == CompilerWrapper_OptimizationSet::O0 ? "1" : WriteOptimizationLevel(optimization_level);
-      recipe += " -O" + opt_level + " --disable-vector-combine -scalarizer ";
-      recipe += " -" + expandMemOps_plugin_name;
-      /*
-            recipe += " -" + GepiCanon_plugin_name +
-                      "PS "
-                      "-" +
-                      GepiCanon_plugin_name +
-                      "COL "
-                      "-" +
-                      GepiCanon_plugin_name +
-                      "BVR ";
-      */
-      recipe += " -loop-unroll -simplifycfg ";
+      recipe += " -O" + opt_level + " --disable-vector-combine -scalarizer";
+      recipe += " -" + expandMemOps_plugin_name + " -simplifycfg ";
    }
    else
 #endif
@@ -4256,85 +4056,74 @@ size_t CompilerWrapper::CGetPointerSize(const ParameterConstRef parameters)
 
 bool CompilerWrapper::isClangCheck(CompilerWrapper_CompilerTarget ct)
 {
-   if(false
+   return false
 #if HAVE_I386_CLANG4_COMPILER
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG4
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG4
 #endif
 #if HAVE_I386_CLANG5_COMPILER
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG5
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG5
 #endif
 #if HAVE_I386_CLANG6_COMPILER
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG6
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG6
 #endif
 #if HAVE_I386_CLANG7_COMPILER
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG7
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG7
 #endif
 #if HAVE_I386_CLANG8_COMPILER
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG8
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG8
 #endif
 #if HAVE_I386_CLANG9_COMPILER
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG9
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG9
 #endif
 #if HAVE_I386_CLANG10_COMPILER
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG10
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG10
 #endif
 #if HAVE_I386_CLANG11_COMPILER
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG11
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG11
 #endif
 #if HAVE_I386_CLANG12_COMPILER
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG12
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG12
+#endif
+#if HAVE_I386_CLANG13_COMPILER
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG13
 #endif
 #if HAVE_I386_CLANGVVD_COMPILER
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANGVVD
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANGVVD
 #endif
-   )
-   {
-      return true;
-   }
-   else
-   {
-      return false;
-   }
+       ;
 }
 
 bool CompilerWrapper::isGccCheck(CompilerWrapper_CompilerTarget ct)
 {
-   if(false
+   return false
 #if HAVE_I386_GCC45_COMPILER
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_GCC45
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_GCC45
 #endif
 #if HAVE_I386_GCC46_COMPILER
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_GCC46
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_GCC46
 #endif
 #if HAVE_I386_GCC47_COMPILER
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_GCC47
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_GCC47
 #endif
 #if HAVE_I386_GCC48_COMPILER
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_GCC48
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_GCC48
 #endif
 #if HAVE_I386_GCC49_COMPILER
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_GCC49
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_GCC49
 #endif
 #if HAVE_I386_GCC5_COMPILER
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_GCC5
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_GCC5
 #endif
 #if HAVE_I386_GCC6_COMPILER
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_GCC6
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_GCC6
 #endif
 #if HAVE_I386_GCC7_COMPILER
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_GCC7
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_GCC7
 #endif
 #if HAVE_I386_GCC8_COMPILER
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_GCC8
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_GCC8
 #endif
-   )
-   {
-      return true;
-   }
-   else
-   {
-      return false;
-   }
+       ;
 }
 
 int CompilerWrapper::getCompatibleCompilers()
@@ -4394,6 +4183,9 @@ int CompilerWrapper::getCompatibleCompilers()
 #if HAVE_I386_CLANG12_COMPILER
           | static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_CLANG12)
 #endif
+#if HAVE_I386_CLANG13_COMPILER
+          | static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_CLANG13)
+#endif
 #if HAVE_I386_CLANGVVD_COMPILER
           | static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_CLANGVVD)
 #endif
@@ -4447,6 +4239,8 @@ int CompilerWrapper::getDefaultCompiler()
        static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_CLANG11);
 #elif HAVE_I386_CLANG12_COMPILER
        static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_CLANG12);
+#elif HAVE_I386_CLANG13_COMPILER
+       static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_CLANG13);
 #elif HAVE_I386_CLANGVVD_COMPILER
        static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_CLANGVVD);
 #else
@@ -4565,6 +4359,12 @@ std::string CompilerWrapper::getCompilerSuffix(int pc)
       return "clang12";
    }
 #endif
+#if HAVE_I386_CLANG13_COMPILER
+   if(pc & static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_CLANG13))
+   {
+      return "clang13";
+   }
+#endif
 #if HAVE_I386_CLANGVVD_COMPILER
    if(pc & static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_CLANGVVD))
    {
@@ -4577,213 +4377,194 @@ std::string CompilerWrapper::getCompilerSuffix(int pc)
 
 bool CompilerWrapper::hasCompilerM64(CompilerWrapper_CompilerTarget ct)
 {
-   if(false
+   return false
 #if(HAVE_I386_GCC47_COMPILER && HAVE_I386_GCC47_M64)
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_GCC47
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_GCC47
 #endif
 #if(HAVE_I386_GCC48_COMPILER && HAVE_I386_GCC48_M64)
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_GCC48
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_GCC48
 #endif
 #if(HAVE_I386_GCC49_COMPILER && HAVE_I386_GCC49_M64)
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_GCC49
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_GCC49
 #endif
 #if(HAVE_I386_GCC5_COMPILER && HAVE_I386_GCC5_M64)
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_GCC5
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_GCC5
 #endif
 #if(HAVE_I386_GCC6_COMPILER && HAVE_I386_GCC6_M64)
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_GCC6
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_GCC6
 #endif
 #if(HAVE_I386_GCC7_COMPILER && HAVE_I386_GCC7_M64)
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_GCC7
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_GCC7
 #endif
 #if(HAVE_I386_GCC8_COMPILER && HAVE_I386_GCC8_M64)
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_GCC8
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_GCC8
 #endif
 #if(HAVE_I386_CLANG4_COMPILER && HAVE_I386_CLANG4_M64)
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG4
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG4
 #endif
 #if(HAVE_I386_CLANG5_COMPILER && HAVE_I386_CLANG5_M64)
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG5
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG5
 #endif
 #if(HAVE_I386_CLANG6_COMPILER && HAVE_I386_CLANG6_M64)
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG6
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG6
 #endif
 #if(HAVE_I386_CLANG7_COMPILER && HAVE_I386_CLANG7_M64)
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG7
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG7
 #endif
 #if(HAVE_I386_CLANG8_COMPILER && HAVE_I386_CLANG8_M64)
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG8
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG8
 #endif
 #if(HAVE_I386_CLANG9_COMPILER && HAVE_I386_CLANG9_M64)
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG9
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG9
 #endif
 #if(HAVE_I386_CLANG10_COMPILER && HAVE_I386_CLANG10_M64)
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG10
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG10
 #endif
 #if(HAVE_I386_CLANG11_COMPILER && HAVE_I386_CLANG11_M64)
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG11
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG11
 #endif
 #if(HAVE_I386_CLANG12_COMPILER && HAVE_I386_CLANG12_M64)
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG12
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG12
+#endif
+#if(HAVE_I386_CLANG13_COMPILER && HAVE_I386_CLANG13_M64)
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG13
 #endif
 #if(HAVE_I386_CLANGVVD_COMPILER && HAVE_I386_CLANGVVD_M64)
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANGVVD
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANGVVD
 #endif
-   )
-   {
-      return true;
-   }
-   else
-   {
-      return false;
-   }
+       ;
 }
 
 bool CompilerWrapper::hasCompilerMX32(CompilerWrapper_CompilerTarget ct)
 {
-   if(false
+   return false
 #if(HAVE_I386_GCC47_COMPILER && HAVE_I386_GCC47_MX32)
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_GCC47
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_GCC47
 #endif
 #if(HAVE_I386_GCC48_COMPILER && HAVE_I386_GCC48_MX32)
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_GCC48
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_GCC48
 #endif
 #if(HAVE_I386_GCC49_COMPILER && HAVE_I386_GCC49_MX32)
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_GCC49
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_GCC49
 #endif
 #if(HAVE_I386_GCC5_COMPILER && HAVE_I386_GCC5_MX32)
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_GCC5
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_GCC5
 #endif
 #if(HAVE_I386_GCC6_COMPILER && HAVE_I386_GCC6_MX32)
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_GCC6
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_GCC6
 #endif
 #if(HAVE_I386_GCC7_COMPILER && HAVE_I386_GCC7_MX32)
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_GCC7
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_GCC7
 #endif
 #if(HAVE_I386_GCC8_COMPILER && HAVE_I386_GCC8_MX32)
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_GCC8
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_GCC8
 #endif
 #if(HAVE_I386_CLANG4_COMPILER && HAVE_I386_CLANG4_MX32)
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG4
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG4
 #endif
 #if(HAVE_I386_CLANG5_COMPILER && HAVE_I386_CLANG5_MX32)
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG5
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG5
 #endif
 #if(HAVE_I386_CLANG6_COMPILER && HAVE_I386_CLANG6_MX32)
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG6
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG6
 #endif
 #if(HAVE_I386_CLANG7_COMPILER && HAVE_I386_CLANG7_MX32)
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG7
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG7
 #endif
 #if(HAVE_I386_CLANG8_COMPILER && HAVE_I386_CLANG8_MX32)
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG8
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG8
 #endif
 #if(HAVE_I386_CLANG9_COMPILER && HAVE_I386_CLANG9_MX32)
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG9
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG9
 #endif
 #if(HAVE_I386_CLANG10_COMPILER && HAVE_I386_CLANG10_MX32)
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG10
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG10
 #endif
 #if(HAVE_I386_CLANG11_COMPILER && HAVE_I386_CLANG11_MX32)
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG11
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG11
 #endif
 #if(HAVE_I386_CLANG12_COMPILER && HAVE_I386_CLANG12_MX32)
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG12
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG12
+#endif
+#if(HAVE_I386_CLANG13_COMPILER && HAVE_I386_CLANG13_MX32)
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG13
 #endif
 #if(HAVE_I386_CLANGVVD_COMPILER && HAVE_I386_CLANGVVD_MX32)
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANGVVD
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANGVVD
 #endif
-   )
-   {
-      return true;
-   }
-   else
-   {
-      return false;
-   }
+       ;
 }
 
 bool CompilerWrapper::hasCompilerGCCM32(CompilerWrapper_CompilerTarget ct)
 {
-   if(false
+   return false
 #if(HAVE_I386_GCC45_COMPILER)
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_GCC45
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_GCC45
 #endif
 #if(HAVE_I386_GCC46_COMPILER)
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_GCC46
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_GCC46
 #endif
 #if(HAVE_I386_GCC47_COMPILER && HAVE_I386_GCC47_M32)
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_GCC47
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_GCC47
 #endif
 #if(HAVE_I386_GCC48_COMPILER && HAVE_I386_GCC48_M32)
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_GCC48
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_GCC48
 #endif
 #if(HAVE_I386_GCC49_COMPILER && HAVE_I386_GCC49_M32)
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_GCC49
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_GCC49
 #endif
 #if(HAVE_I386_GCC5_COMPILER && HAVE_I386_GCC5_M32)
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_GCC5
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_GCC5
 #endif
 #if(HAVE_I386_GCC6_COMPILER && HAVE_I386_GCC6_M32)
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_GCC6
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_GCC6
 #endif
 #if(HAVE_I386_GCC7_COMPILER && HAVE_I386_GCC7_M32)
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_GCC7
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_GCC7
 #endif
 #if(HAVE_I386_GCC8_COMPILER && HAVE_I386_GCC8_M32)
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_GCC8
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_GCC8
 #endif
-   )
-   {
-      return true;
-   }
-   else
-   {
-      return false;
-   }
+       ;
 }
 
 bool CompilerWrapper::hasCompilerCLANGM32(CompilerWrapper_CompilerTarget ct)
 {
-   if(false
+   return false
 #if(HAVE_I386_CLANG4_COMPILER && HAVE_I386_CLANG4_M32)
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG4
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG4
 #endif
 #if(HAVE_I386_CLANG5_COMPILER && HAVE_I386_CLANG5_M32)
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG5
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG5
 #endif
 #if(HAVE_I386_CLANG6_COMPILER && HAVE_I386_CLANG6_M32)
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG6
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG6
 #endif
 #if(HAVE_I386_CLANG7_COMPILER && HAVE_I386_CLANG7_M32)
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG7
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG7
 #endif
 #if(HAVE_I386_CLANG8_COMPILER && HAVE_I386_CLANG8_M32)
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG8
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG8
 #endif
 #if(HAVE_I386_CLANG9_COMPILER && HAVE_I386_CLANG9_M32)
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG9
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG9
 #endif
 #if(HAVE_I386_CLANG10_COMPILER && HAVE_I386_CLANG10_M32)
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG10
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG10
 #endif
 #if(HAVE_I386_CLANG11_COMPILER && HAVE_I386_CLANG11_M32)
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG11
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG11
 #endif
 #if(HAVE_I386_CLANG12_COMPILER && HAVE_I386_CLANG12_M32)
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG12
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG12
+#endif
+#if(HAVE_I386_CLANG13_COMPILER && HAVE_I386_CLANG13_M32)
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG13
 #endif
 #if(HAVE_I386_CLANGVVD_COMPILER && HAVE_I386_CLANGVVD_M32)
-      || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANGVVD
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANGVVD
 #endif
-   )
-   {
-      return true;
-   }
-   else
-   {
-      return false;
-   }
+       ;
 }
 
 std::string CompilerWrapper::getCompilerVersion(int pc)
@@ -4896,6 +4677,12 @@ std::string CompilerWrapper::getCompilerVersion(int pc)
       return I386_CLANG12_VERSION;
    }
 #endif
+#if HAVE_I386_CLANG13_COMPILER
+   if(pc & static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_CLANG13))
+   {
+      return I386_CLANG13_VERSION;
+   }
+#endif
 #if HAVE_I386_CLANGVVD_COMPILER
    if(pc & static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_CLANGVVD))
    {
@@ -4917,4 +4704,36 @@ std::string CompilerWrapper::getCompilerVersion(int pc)
 #endif
    THROW_ERROR("");
    return "";
+}
+
+std::string CompilerWrapper::load_plugin(const std::string& plugin_obj, CompilerWrapper_CompilerTarget
+#if HAVE_I386_CLANG13_COMPILER
+                                                                            target
+#endif
+)
+{
+#if HAVE_I386_CLANG13_COMPILER
+   if(target == CompilerWrapper_CompilerTarget::CT_I386_CLANG13)
+   {
+      return " -fpass-plugin=" + plugin_obj + " -Xclang -load -Xclang " + plugin_obj;
+   }
+#endif
+   return " -fplugin=" + plugin_obj;
+}
+
+std::string CompilerWrapper::load_plugin_opt(std::string plugin_obj, CompilerWrapper_CompilerTarget
+#if HAVE_I386_CLANG13_COMPILER
+                                                                         target
+#endif
+)
+{
+   boost::replace_all(plugin_obj, ".so", "_opt.so");
+   auto flags = " -load=" + plugin_obj;
+#if HAVE_I386_CLANG13_COMPILER
+   if(target == CompilerWrapper_CompilerTarget::CT_I386_CLANG13)
+   {
+      flags += " -load-pass-plugin=" + plugin_obj;
+   }
+#endif
+   return flags;
 }
