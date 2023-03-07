@@ -46,7 +46,6 @@
 
 /// Autoheader includes
 #include "config_HAVE_ACTOR_GRAPHS_BUILT.hpp"
-#include "config_HAVE_EXPERIMENTAL.hpp"
 #include "config_HAVE_PRAGMA_BUILT.hpp"
 #include "config_NPROFILE.hpp"
 
@@ -287,24 +286,6 @@ int main(int argc, char* argv[])
          design_flow_manager->AddStep(c_backend);
       }
 
-#if HAVE_PRAGMA_BUILT && HAVE_EXPERIMENTAL
-      if(parameters->isOption(OPT_parse_pragma) && parameters->getOption<bool>(OPT_parse_pragma))
-      {
-         const DesignFlowStepFactoryConstRef ag_frontend_flow_step_factory(
-             new ActorGraphFlowStepFactory(HLSMgr, design_flow_manager, parameters));
-         design_flow_manager->RegisterFactory(ag_frontend_flow_step_factory);
-         DesignFlowStepSet design_flow_steps;
-         CustomOrderedSet<unsigned int> input_functions = HLSMgr->get_functions_with_body();
-         for(const auto input_fun_id : input_functions)
-         {
-            const DesignFlowStepRef design_flow_step =
-                GetPointer<const ActorGraphFlowStepFactory>(ag_frontend_flow_step_factory)
-                    ->CreateActorGraphStep(ACTOR_GRAPHS_CREATOR, input_fun_id);
-            design_flow_steps.insert(design_flow_step);
-         }
-         design_flow_manager->AddSteps(design_flow_steps);
-      }
-#endif
       std::pair<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef> hls_flow_step(
           parameters->getOption<HLSFlowStep_Type>(OPT_synthesis_flow), HLSFlowStepSpecializationConstRef());
       design_flow_manager->AddSteps(

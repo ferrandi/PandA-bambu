@@ -60,10 +60,6 @@ const std::string CliqueCovering_AlgorithmToString(const CliqueCovering_Algorith
          return "WEIGHTED_COLORING";
       case CliqueCovering_Algorithm::BIPARTITE_MATCHING:
          return "BIPARTITE_MATCHING";
-#if HAVE_EXPERIMENTAL
-      case CliqueCovering_Algorithm::RANDOMIZED:
-         return "RANDOMIZED";
-#endif
       default:
          THROW_UNREACHABLE("");
    }

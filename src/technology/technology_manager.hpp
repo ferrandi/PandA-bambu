@@ -46,7 +46,6 @@
 #include "config_HAVE_BEAGLE.hpp"
 #include "config_HAVE_BOOLEAN_PARSER_BUILT.hpp"
 #include "config_HAVE_CIRCUIT_BUILT.hpp"
-#include "config_HAVE_EXPERIMENTAL.hpp"
 #include "config_HAVE_FROM_LIBERTY.hpp"
 #include "config_HAVE_PHYSICAL_LIBRARY_MODELS_BUILT.hpp"
 
@@ -353,15 +352,6 @@ class technology_manager
     */
    void lib_write(const std::string& filename, TargetDevice_Type dv_type,
                   const CustomOrderedSet<std::string>& libraries = CustomOrderedSet<std::string>());
-#endif
-
-#if HAVE_EXPERIMENTAL
-   /**
-    *
-    */
-   void lef_write(const std::string& filename, TargetDevice_Type dv_type,
-                  const CustomOrderedSet<std::string>& libraries = CustomOrderedSet<std::string>());
-   //@}
 #endif
 
    /**

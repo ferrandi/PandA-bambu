@@ -294,8 +294,8 @@ technology/target_device/IC/IC_device.cpp : technology/target_device/IC/Nangate.
 technology/target_device/IC/Nangate.data: $(top_srcdir)/etc/devices/ASIC_devices/Nangate_device.xml
 	gzip -c $(top_srcdir)/etc/devices/ASIC_devices/Nangate_device.xml > technology/target_device/IC/Nangate.data
 
-technology_target_device_IC_dir = $(technology_target_device_dir)/IC
-technology_target_device_IC__DATA = technology/target_device/IC/Nangate.data
+  technology_target_device_IC_dir = $(technology_target_device_dir)/IC
+  technology_target_device_IC__DATA = technology/target_device/IC/Nangate.data
 
   lib_target_device_la_LIBADD += lib_IC_device.la
 endif

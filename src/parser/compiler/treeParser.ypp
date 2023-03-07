@@ -927,25 +927,16 @@ bool pred;
 
    omp_atomic_flag : /* empty */
                          | TOK_BISON_OMP_ATOMIC {
-#if HAVE_EXPERIMENTAL && HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
-                         NSV(function_decl, omp_atomic, true)
-#endif
                          }
                          ;
 
    omp_body_loop_flag : /* empty */
                          | TOK_BISON_OMP_BODY_LOOP {
-#if HAVE_EXPERIMENTAL && HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
-                         NSV(function_decl, omp_body_loop, true)
-#endif
                          }
                          ;
 
    omp_for_wrapper_opt : /* empty */
                          | TOK_BISON_OMP_FOR_WRAPPER number_id {
-#if HAVE_EXPERIMENTAL && HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
-                         NSV(function_decl, omp_for_wrapper, data->curr_size_t_number)
-#endif
                          }
                          ;
 
