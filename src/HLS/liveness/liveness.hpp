@@ -45,9 +45,6 @@
 #ifndef LIVENESS_HPP
 #define LIVENESS_HPP
 
-/// Autoheader include
-#include "config_HAVE_EXPERIMENTAL.hpp"
-
 /// graph include
 #include "graph.hpp"
 
@@ -114,10 +111,6 @@ class liveness
    /// store the name of each state
    std::map<vertex, std::string> names;
 
-#if HAVE_EXPERIMENTAL
-   std::map<vertex, CustomOrderedSet<vertex>> in_conflict_ops;
-   std::map<vertex, CustomOrderedSet<vertex>> compatible_ops;
-#endif
    hlsRef HLS;
    const HLS_managerRef HLSMgr;
 

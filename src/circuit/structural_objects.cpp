@@ -80,10 +80,6 @@
 /// utility include
 #include "string_manipulation.hpp"
 
-#if HAVE_EXPERIMENTAL
-#include "layout_model.hpp"
-#endif
-
 inline std::string legalize(const std::string& id)
 {
    // boost::replace_all(id, "[", "_");
@@ -1933,11 +1929,7 @@ void port_o::xwrite(xml_element* rootnode)
 }
 
 #if HAVE_TECHNOLOGY_BUILT
-void port_o::xwrite_attributes(xml_element* rootnode, const technology_nodeRef&
-#if HAVE_EXPERIMENTAL
-                                                          tn
-#endif
-)
+void port_o::xwrite_attributes(xml_element* rootnode, const technology_nodeRef&)
 {
    xml_element* pin_node = rootnode->add_child_element("pin");
 
@@ -1949,21 +1941,6 @@ void port_o::xwrite_attributes(xml_element* rootnode, const technology_nodeRef&
       const attributeRef attr = attributes[o];
       attr->xwrite(pin_node, o);
    }
-
-#if HAVE_EXPERIMENTAL
-   /// writing pin layout information
-   if(GetPointer<functional_unit>(tn) && GetPointer<functional_unit>(tn)->layout_m)
-   {
-      GetPointer<functional_unit>(tn)->layout_m->xwrite(pin_node, get_id());
-   }
-
-   // For functional unit template we have to check that the underling functional unit has a layout
-   if(GetPointer<functional_unit_template>(tn) &&
-      GetPointer<functional_unit>(GetPointer<functional_unit_template>(tn)->FU)->layout_m)
-   {
-      GetPointer<functional_unit>(GetPointer<functional_unit_template>(tn)->FU)->layout_m->xwrite(pin_node, get_id());
-   }
-#endif
 }
 #endif
 
@@ -4629,19 +4606,6 @@ void module::xwrite(xml_element* rootnode)
 void module::xwrite_attributes(xml_element* rootnode, const technology_nodeRef& tn)
 {
    structural_object::xwrite_attributes(rootnode, tn);
-
-#if HAVE_EXPERIMENTAL
-   /// writing pin layout information
-   if(GetPointer<functional_unit>(tn) && GetPointer<functional_unit>(tn)->layout_m)
-   {
-      GetPointer<functional_unit>(tn)->layout_m->xwrite(rootnode);
-   }
-   if(GetPointer<functional_unit_template>(tn) &&
-      GetPointer<functional_unit>(GetPointer<functional_unit_template>(tn)->FU)->layout_m)
-   {
-      GetPointer<functional_unit>(GetPointer<functional_unit_template>(tn)->FU)->layout_m->xwrite(rootnode, get_id());
-   }
-#endif
 
    if(in_ports.size())
    {

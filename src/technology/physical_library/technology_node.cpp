@@ -45,7 +45,6 @@
 #include "config_HAVE_BOOLEAN_PARSER_BUILT.hpp"
 #include "config_HAVE_CIRCUIT_BUILT.hpp"
 #include "config_HAVE_CMOS_BUILT.hpp"
-#include "config_HAVE_EXPERIMENTAL.hpp"
 #include "config_HAVE_TECHNOLOGY_BUILT.hpp"
 
 #include "technology_node.hpp"
@@ -65,10 +64,6 @@
 #include "structural_objects.hpp"
 
 #if HAVE_CMOS_BUILT
-#if HAVE_EXPERIMENTAL
-#include "TimingGenlib.hpp"
-#include "TimingModel.hpp"
-#endif
 #include "timing_group.hpp"
 #endif
 #include "Parameter.hpp"

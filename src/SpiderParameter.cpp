@@ -445,10 +445,6 @@ void SpiderParameter::CheckParameters()
             case(Parameters_FileFormat::FF_CSV_RTL):
             case(Parameters_FileFormat::FF_CSV_TRE):
 #endif
-#if HAVE_EXPERIMENTAL
-            case(Parameters_FileFormat::FF_LOG):
-            case(Parameters_FileFormat::FF_PA):
-#endif
 #if HAVE_FROM_C_BUILT
             case(Parameters_FileFormat::FF_RAW):
 #endif

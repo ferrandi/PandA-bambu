@@ -40,7 +40,6 @@
 #include "complete_call_graph.hpp"
 
 #include "config_HAVE_BAMBU_BUILT.hpp"       // for HAVE_BAMBU_BUILT
-#include "config_HAVE_EXPERIMENTAL.hpp"      // for HAVE_EXPERIMENTAL
 #include "config_HAVE_FROM_PRAGMA_BUILT.hpp" // for HAVE_FROM_PRAGMA_BUILT
 #include "config_HAVE_ZEBU_BUILT.hpp"        // for HAVE_ZEBU_BUILT
 
