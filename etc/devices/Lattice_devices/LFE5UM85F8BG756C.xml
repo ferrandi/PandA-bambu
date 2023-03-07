@@ -2179,12 +2179,6 @@
         <operation operation_name="nop_expr" execution_time="5"/>
       </cell>
       <cell>
-        <name>FSL_handler</name>
-        <attribute name="area" value_type="float64">0</attribute>
-        <characterization_timestamp>1970-01-01T00:00:00</characterization_timestamp>
-        <operation operation_name="FSL_handler"/>
-      </cell>
-      <cell>
         <name>IIconvert_expr_FU</name>
         <attribute name="area" value_type="float64">1</attribute>
         <attribute name="REGISTERS" value_type="float64">64</attribute>

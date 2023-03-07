@@ -42,14 +42,13 @@
  * Last modified by $Author$
  *
  */
+#include "library_manager.hpp"
 
-/// Autoheader include
 #include "config_HAVE_CIRCUIT_BUILT.hpp"
+#include "config_HAVE_EXPERIMENTAL.hpp"
 #include "config_HAVE_FROM_LIBERTY.hpp"
 #include "config_HAVE_KOALA_BUILT.hpp"
 #include "config_HAVE_LIBRARY_COMPILER.hpp"
-
-#include "library_manager.hpp"
 
 #include "area_model.hpp"
 #include "technology_node.hpp"
@@ -556,28 +555,6 @@ std::string library_manager::get_info(info_t type, const TargetDevice_Type dv_ty
             write_lib_technology_File(get_library_name() + ".lib", this, dv_type);
             break;
          }
-#endif
-#if HAVE_EXPERIMENTAL
-         case LEF:
-         {
-            write_lef_technology_File(get_library_name() + ".xml", this, dv_type);
-            break;
-         }
-#if HAVE_LIBRARY_COMPILER
-         case DB:
-         {
-            NOT_YET_IMPLEMENTED();
-#if 0
-            std::string lib_file = get_info(library_manager::LIBERTY);
-            unsigned int output_level = Param->getOption<unsigned int>(OPT_output_level);
-            PRINT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "(library_manager) Library to be compiled: " << name << " - " << lib_file);
-            LibraryCompilerWrapperRef LCW(new LibraryCompilerWrapper(Param, device, ""));
-            std::string db_library = LCW->compile_library(name, lib_file);
-            set_info(library_manager::DB, db_library);
-#endif
-            break;
-         }
-#endif
 #endif
          default:
             THROW_ERROR("Not enough information to return the library information");

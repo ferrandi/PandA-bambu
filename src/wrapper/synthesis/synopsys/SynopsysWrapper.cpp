@@ -45,11 +45,6 @@
 #include "SynopsysWrapper.hpp"
 
 #include "DesignCompilerWrapper.hpp"
-#if HAVE_EXPERIMENTAL
-#include "FormalityWrapper.hpp"
-#include "LibraryCompilerWrapper.hpp"
-#include "PrimeTimeWrapper.hpp"
-#endif
 
 #include "xml_script_command.hpp"
 
@@ -78,17 +73,6 @@ SynthesisToolRef SynopsysWrapper::CreateWrapper(wrapper_t type, const ParameterC
       case DESIGN_COMPILER:
          return SynthesisToolRef(new DesignCompilerWrapper(Param, device, output_dir));
          break;
-#if HAVE_EXPERIMENTAL
-      case FORMALITY:
-         return SynthesisToolRef(new FormalityWrapper(Param, device, output_dir));
-         break;
-      case LIBRARY_COMPILER:
-         return SynthesisToolRef(new LibraryCompilerWrapper(Param, device, output_dir));
-         break;
-      case PRIME_TIME:
-         return SynthesisToolRef(new PrimeTimeWrapper(Param, device, output_dir));
-         break;
-#endif
       default:
          THROW_ERROR("Synopsys's tool not yet supported");
    }

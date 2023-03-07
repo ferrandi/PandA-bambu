@@ -118,14 +118,6 @@
 const char* default_latex_format_stat = {
 #include "latex_format_stat.data"
 };
-#if HAVE_EXPERIMENTAL
-const char* latex_format_af_edges = {
-#include "latex_format_af_edges.data"
-};
-const char* latex_format_edges_reduction = {
-#include "latex_format_edges_reduction.data"
-};
-#endif
 Translator::LatexColumnFormat::LatexColumnFormat()
     : column_alignment("c|"),
       text_format(LatexColumnFormat::TF_number),
@@ -848,37 +840,7 @@ void Translator::write_to_latex(std::map<std::string, CustomMap<std::string, std
    /// The stream
    XMLDomParserRef parser;
 
-#if HAVE_EXPERIMENTAL
-   if(Param->isOption(OPT_evaluation) and
-      (Param->getOption<Evaluation_Mode>(OPT_evaluation_mode) == Evaluation_Mode::EXACT and
-       Param->isOption(OPT_evaluation_objectives)))
-   {
-      PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Case: Estimation=EXACT");
-      std::string objective_string = Param->getOption<std::string>(OPT_evaluation_objectives);
-      std::vector<std::string> objective_vector = convert_string_to_vector<std::string>(objective_string, ",");
-      unsigned int objectives_hits = 0;
-      for(unsigned int v = 0; v < objective_vector.size(); v++)
-      {
-         if(objective_vector[v] == "NUM_AF_EDGES")
-         {
-            PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Case: Objective=NUM_AF_EDGES");
-            parser = XMLDomParserRef(new XMLDomParser("latex_format_af_edges.data", latex_format_af_edges));
-            objectives_hits++;
-         }
-         else if(objective_vector[v] == "EDGES_REDUCTION")
-         {
-            PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Case: Objective=EDGES_REDUCTION");
-            parser =
-                XMLDomParserRef(new XMLDomParser("latex_format_edges_reduction.data", latex_format_edges_reduction));
-            objectives_hits++;
-         }
-         else if(objectives_hits == 0 and v == objective_vector.size() - 1)
-            THROW_ERROR("None of the specified Estimation Objectives is compatible with the EXACT estimation method!");
-      }
-   }
-   else
-#endif
-       if(Param->isOption(OPT_latex_format_file))
+   if(Param->isOption(OPT_latex_format_file))
    {
       parser = XMLDomParserRef(new XMLDomParser(Param->getOption<std::string>(OPT_latex_format_file)));
    }

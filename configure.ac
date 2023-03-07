@@ -505,7 +505,6 @@ AC_CHECK_HEADERS([bdd.h fdd.h bvec.h ], [panda_USE_LIBBDD=yes],[ echo "$ac_heade
     fi
   else
     panda_USE_COIN_OR=no;
-    panda_USE_CUDD=no;
   fi
 
   AC_APPEND(ENABLE_DOC,"BAMBU")
@@ -593,9 +592,6 @@ if test "x$panda_USE_KOALA" = xyes; then
   panda_USE_LIB_TO_HDL=yes;
   panda_USE_PARAMETER=yes;
 
-  if test "x$panda_USE_CUDD" != "xno"; then
-    panda_USE_CUDD=yes;
-  fi
   if test "x$panda_USE_LIB_FROM_LIBERTY" != "xno"; then
     panda_USE_LIB_FROM_LIBERTY=yes;
   fi
@@ -794,16 +790,6 @@ fi
 
 if test "x$panda_USE_GLPK" = xyes || test "x$panda_USE_COIN_OR" = xyes; then
    panda_USE_LIB_ILP=yes;
-fi
-
-if test "x$panda_USE_CUDD" = xyes; then
-  panda_USE_LIB_BDD=yes;
-fi
-
-if test "x$panda_USE_LIB_2LEV" = xyes; then
-  if test "x$panda_USE_CUDD" != xyes; then
-    panda_USE_LIB_2LEV=no;
-  fi
 fi
 
 if test "x$panda_USE_LIB_AIG" = xyes && test "x$panda_USE_LIB_BDD" = xno; then
@@ -1218,21 +1204,6 @@ AC_SUBST(SPARC_GCC_BUILT_DIR)
 AC_SUBST(SPARC_HOST_PLUGIN_COMPILER)
 
 
-
-################################## CUDD stuff ##################################
-if test "x$panda_USE_CUDD" = xyes; then
-   AC_APPEND(ENABLE_DOC,"CUDD")
-
-   AC_DEFINE(HAVE_CUDD, 1, "Define if CUDD is used")
-   $TOPSRCDIR/etc/macros/panda_config_subdir.sh ext/cudd $ac_configure_args "'CXXFLAGS=${CXXFLAGS_EXT}'" "'CFLAGS=${CFLAGS_EXT}'" "'LDFLAGS=$LDFLAGS'"
-   CUDD_CPPFLAGS="-I$TOPSRCDIR/ext/cudd/cudd -I$TOPSRCDIR/ext/cudd/nanotrav -I$TOPSRCDIR/ext/cudd/mtr -I$TOPSRCDIR/ext/cudd/epd -I$TOPSRCDIR/ext/cudd/st -I$TOPSRCDIR/ext/cudd/util -I$TOPSRCDIR/ext/cudd/cplusplus"
-   CUDD_LIBS="$BUILDDIR/ext/cudd/cplusplus/libobj.la $BUILDDIR/ext/cudd/cudd/libcudd.la"
-fi
-AC_SUBST(CUDD_CPPFLAGS)
-AC_SUBST(CUDD_LIBS)
-AM_CONDITIONAL(BUILD_LIB_CUDD, test "x$panda_USE_CUDD" = xyes)
-
-
 ################ FloPoCo stuff #############################
 if test "x$panda_USE_FLOPOCO" = xyes; then
    AC_CHECK_LIB([gmpxx], [main], [HAVE_LIBGMPXX=yes], [])
@@ -1369,7 +1340,7 @@ AM_CONDITIONAL(USE_GRLIB, test "x$panda_USE_TASTE" = xyes)
 
 ##################################### 2lev #####################################
 if test "x$panda_USE_LIB_2LEV" = xyes; then
-   $TOPSRCDIR/etc/macros/panda_config_subdir.sh src/logic_synthesis/2lev $ac_configure_args "'CXXFLAGS=${CXXFLAGS_EXT}'" "'CFLAGS=${CFLAGS_EXT}'" "'LDFLAGS=$LDFLAGS'" "'CUDD_CPPFLAGS=$CUDD_CPPFLAGS'" "'CUDD_LIBS=$CUDD_LIBS'"
+   $TOPSRCDIR/etc/macros/panda_config_subdir.sh src/logic_synthesis/2lev $ac_configure_args "'CXXFLAGS=${CXXFLAGS_EXT}'" "'CFLAGS=${CFLAGS_EXT}'" "'LDFLAGS=$LDFLAGS'"
 fi
 AM_CONDITIONAL(BUILD_LIB_2LEV, test "x$panda_USE_LIB_2LEV" = xyes)
 
@@ -1459,7 +1430,7 @@ AC_SUBST(VFLIB_DIR)
 
 
 #################################### Ext Libraries #############################
-if test test "x$ac_cv_cxx_compile_cxx17_native" = xyes || test "x$ac_cv_cxx_compile_cxx17_cxx" = xyes || test "x$ac_cv_cxx_compile_cxx17_gxx" = xyes || test "x$ac_cv_cxx_compile_cxx17_cxx1z" = xyes || "x$panda_USE_ABSEIL" = xyes || test "x$panda_USE_BEAGLE" = xyes || test "x$panda_USE_COIN_OR" = xyes || test "x$panda_USE_CROSSTOOL_NG" = xyes || test "x$panda_USE_CUDD" = xyes || test "x$panda_USE_FLOPOCO" = xyes || test "x$panda_USE_LIB_FROM_LIBERTY" = xyes || test "x$panda_USE_LP_SOLVE" = xyes || test "x$panda_USE_NODELIB" = xyes || test "x$panda_USE_R" = xyes || test "x$panda_USE_RAPIDMINER" = xyes || test "x$panda_USE_SIMIT" = xyes || test "x$panda_USE_VFLIB" = xyes || test "x$build_ARM_GCC" || test "x$build_SPARC_GCC" = xyes || test "x$panda_USE_TRNG" = xyes; then
+if test test "x$ac_cv_cxx_compile_cxx17_native" = xyes || test "x$ac_cv_cxx_compile_cxx17_cxx" = xyes || test "x$ac_cv_cxx_compile_cxx17_gxx" = xyes || test "x$ac_cv_cxx_compile_cxx17_cxx1z" = xyes || "x$panda_USE_ABSEIL" = xyes || test "x$panda_USE_BEAGLE" = xyes || test "x$panda_USE_COIN_OR" = xyes || test "x$panda_USE_CROSSTOOL_NG" = xyes || test "x$panda_USE_FLOPOCO" = xyes || test "x$panda_USE_LIB_FROM_LIBERTY" = xyes || test "x$panda_USE_LP_SOLVE" = xyes || test "x$panda_USE_NODELIB" = xyes || test "x$panda_USE_R" = xyes || test "x$panda_USE_RAPIDMINER" = xyes || test "x$panda_USE_SIMIT" = xyes || test "x$panda_USE_VFLIB" = xyes || test "x$build_ARM_GCC" || test "x$build_SPARC_GCC" = xyes || test "x$panda_USE_TRNG" = xyes; then
   panda_USE_LIB_EXT=yes;
 fi
 AM_CONDITIONAL(BUILD_EXT, test "x$panda_USE_LIB_EXT" = xyes)
@@ -1544,10 +1515,6 @@ AM_CONDITIONAL(BUILD_LIB_ALGORITHMS,  test "x$panda_USE_LIB_ALGORITHMS" = xyes)
 #                                                                              #
 ################################################################################
 
-################ CUDD stuff ####################################################
-if test "x$panda_USE_LIB_BDD" = xyes; then
-    AC_DEFINE(HAVE_BDD_BUILT, 1, "Define if BBD library is built")
-fi;
 AM_CONDITIONAL(BUILD_LIB_BDD, test "x$panda_USE_LIB_BDD" = xyes)
 
 

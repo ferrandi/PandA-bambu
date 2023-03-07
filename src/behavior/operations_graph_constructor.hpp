@@ -44,14 +44,12 @@
 #ifndef OPERATIONS_GRAPH_CONSTRUCTOR_HPP
 #define OPERATIONS_GRAPH_CONSTRUCTOR_HPP
 
-/// Autoheader include
-#include "config_HAVE_EXPERIMENTAL.hpp"
 #include "custom_map.hpp" // for map
-#include <string>         // for string
-
 #include "graph.hpp"
 #include "refcount.hpp"
 #include "strong_typedef.hpp"
+
+#include <string> // for string
 
 /**
  * @name Forward declarations
@@ -177,17 +175,6 @@ class operations_graph_constructor
    void AddVariable(const vertex op_vertex, const unsigned int variable,
                     const FunctionBehavior_VariableType variable_type,
                     const FunctionBehavior_VariableAccessType access_type);
-
-#if HAVE_EXPERIMENTAL
-   /**
-    * Adds an access to a memory location to an operation vertex
-    * @param op_vertex is the operation to be considered
-    * @param variable is the index of the variable
-    * @param access_type is the type of the access
-    */
-   void AddMemoryLocation(const vertex op_vertex, const MemoryAddress variable,
-                          const FunctionBehavior_VariableAccessType access_type);
-#endif
 
    /**
     * Adds a (ssa-)variable to the set of variables referred by the operation vertex
