@@ -2282,14 +2282,17 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
                   }
                }
             }
-            double area_resource = allocation_information->get_area(partition.first) +
-                                   100 * allocation_information->get_DSPs(partition.first);
-            module_register_binding_spec mrbs;
-            module_binding_check<vertex> cq(fu_prec, area_resource, HLS, HLSMgr, slack_time, starting_time,
-                                            controller_delay, mrbs);
-            module_clique->exec(slack_based_filtering(slack_time, starting_time, controller_delay, fu_prec, HLS, HLSMgr,
-                                                      area_resource, con_rel),
-                                cq);
+            else
+            {
+               double area_resource = allocation_information->get_area(partition.first) +
+                                      100 * allocation_information->get_DSPs(partition.first);
+               module_register_binding_spec mrbs;
+               module_binding_check<vertex> cq(fu_prec, area_resource, HLS, HLSMgr, slack_time, starting_time,
+                                               controller_delay, mrbs);
+               module_clique->exec(slack_based_filtering(slack_time, starting_time, controller_delay, fu_prec, HLS,
+                                                         HLSMgr, area_resource, con_rel),
+                                   cq);
+            }
             INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level,
                            "Number of cliques covering the graph: " + STR(module_clique->num_vertices()) + " for " +
                                allocation_information->get_string_name(partition.first));

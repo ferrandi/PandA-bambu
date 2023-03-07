@@ -1,3 +1,0 @@
----
-Checks: "abseil-*,clang-diagnostic-*,clang-analyzer-*,cppcoreguidelines-*,-cppcoreguidelines-non-private-member-variables-in-classes,modernize-*,-modernize-use-trailing-return-type,hicpp-*,performance-*,readability-*"
-WarningsAsErrors: "false"
