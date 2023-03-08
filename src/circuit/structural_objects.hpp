@@ -50,7 +50,6 @@
 #include "config_HAVE_BAMBU_BUILT.hpp"
 #include "config_HAVE_KOALA_BUILT.hpp"
 #include "config_HAVE_TECHNOLOGY_BUILT.hpp"
-#include "config_HAVE_TUCANO_BUILT.hpp"
 
 #include "NP_functionality.hpp"
 #include "custom_map.hpp"
@@ -72,9 +71,6 @@
  * @name Forward declarations.
  */
 //@{
-#if HAVE_TUCANO_BUILT
-REF_FORWARD_DECL(tree_manager);
-#endif
 #if HAVE_BAMBU_BUILT
 CONSTREF_FORWARD_DECL(BehavioralHelper);
 #endif
@@ -200,14 +196,6 @@ struct structural_type_descriptor
          treenode(treenode_DEFAULT)
    {
    }
-
-#if HAVE_TUCANO_BUILT
-   /**
-    * Object factory for SystemC objects.
-    * @param treenode is the treenode descriptor of the type.
-    */
-   structural_type_descriptor(unsigned int treenode, tree_managerRef tm);
-#endif
 
 #if HAVE_BAMBU_BUILT
    /**

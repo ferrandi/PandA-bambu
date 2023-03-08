@@ -295,6 +295,7 @@ AC_ARG_ENABLE(debug,               [  --enable-debug               compile the s
 AC_ARG_ENABLE(opt,                 [  --enable-opt                 compile the source code with -O2 (default enabled) ],                                    [panda_OPT="$enableval"], [panda_OPT="yes"])
 AC_ARG_ENABLE(allstatic,           [  --enable-allstatic           create static binaries ],                                                                [panda_ALLSTATIC="$enableval"], [panda_ALLSTATIC="yes"])
 AC_ARG_ENABLE(32bits,              [  --enable-32bits              create 32bits binaries ],                                                                [panda_32BITS="$enableval"])
+AC_ARG_ENABLE(experimental,        [  --enable-experimental        compile the source code with experimental features],                                     [panda_USE_EXPERIMENTAL="$enableval"], [panda_USE_EXPERIMENTAL="no"])
 
 
 #etc/ext stuff
@@ -413,24 +414,19 @@ if test "x$panda_USE_ALL" = xyes; then
   panda_USE_BAMBU=yes;
   panda_USE_EUCALYPTUS=yes;
   panda_USE_GECCO=yes;
-  panda_USE_GRIZZLY=yes;
   panda_USE_KOALA=yes;
-  panda_USE_LEMUR=yes;
-  panda_USE_MONGOOSE=yes;
   panda_USE_SPIDER=yes;
-  panda_USE_TUCANO=yes;
-  panda_USE_TURTLE=yes;
   panda_USE_ZEBU=yes;
 fi
 
-if test "x$panda_USE_TUCANO" != xyes && test "x$panda_USE_GECCO" != xyes && test "x$panda_USE_ZEBU" != xyes && test "x$panda_USE_LEMUR" != xyes && test "x$panda_USE_BAMBU" != xyes && test "x$panda_USE_KOALA" != xyes && test "x$panda_USE_GRIZZLY" != xyes && test "x$panda_USE_SPIDER" != xyes && test "x$panda_USE_MONGOOSE" != xyes && test "x$panda_USE_EUCALYPTUS" != xyes; then
+if test "x$panda_USE_GECCO" != xyes && test "x$panda_USE_ZEBU" != xyes && test "x$panda_USE_BAMBU" != xyes && test "x$panda_USE_KOALA" != xyes && test "x$panda_USE_SPIDER" != xyes && test "x$panda_USE_EUCALYPTUS" != xyes; then
   echo "";
   echo "      ERROR: No tools selected. Please configure with --enable-<tool> or --enable-all"; 
   echo "";
   exit 1;
 fi
 
-if test "x$panda_WERROR" != xno && test "x$panda_USE_TUCANO" != xyes && test "x$panda_USE_KOALA" != xyes && test "x$panda_USE_LEMUR" != xyes && test "x$panda_USE_GRIZZLY" != xyes && test "x$GIT_PRIVATE_PANDA" == xyes; then
+if test "x$panda_WERROR" != xno && test "x$panda_USE_KOALA" != xyes && test "x$GIT_PRIVATE_PANDA" == xyes; then
   panda_WERROR=yes;
 fi
 
@@ -485,12 +481,12 @@ if test "x$panda_USE_BAMBU" = xyes; then
     panda_USE_EUCALYPTUS=yes;
   fi
 
-AC_CHECK_HEADERS([bdd.h fdd.h bvec.h ], [panda_USE_LIBBDD=yes],[ echo "$ac_header not found: Clang/LLVM Point-to analysis will not be enabled"])
+  AC_CHECK_HEADERS([bdd.h fdd.h bvec.h ], [panda_USE_LIBBDD=yes],[ echo "$ac_header not found: Clang/LLVM Point-to analysis will not be enabled"])
   if test "x$panda_USE_LIBBDD" = xyes; then
   AC_DEFINE(HAVE_LIBBDD, 1, "Define if bambu is built")
   fi
 
-###  bambu experimental packages ###
+  ###  bambu experimental packages ###
   if test "x$panda_USE_EXPERIMENTAL" = xyes; then
     panda_USE_LIB_CLUSTERING=yes;
     panda_USE_LIB_CODESIGN=yes;
@@ -547,22 +543,6 @@ if test "x$panda_USE_GECCO" = xyes; then
   AC_DEFINE(HAVE_GECCO_BUILT, 1, "Define if gecco is built")
 fi
 AM_CONDITIONAL(BUILD_GECCO,    test "x$panda_USE_GECCO" = xyes)
-
-
-################ Grizzly checking ##############################
-if test "x$panda_USE_GRIZZLY" = xyes; then
-
-  panda_USE_ABSEIL=yes;
-  panda_USE_LIB_GRAPH=yes;
-  panda_USE_LIB_FROM_C=yes;
-  panda_USE_LIB_TO_C=yes;
-  panda_USE_PARAMETER=yes;
-
-  AC_APPEND(ENABLE_DOC,"GRIZZLY")
-  AC_DEFINE(HAVE_GRIZZLY_BUILT, 1, "Define if grizzly is built")
-fi
-AM_CONDITIONAL(BUILD_GRIZZLY,    test "x$panda_USE_GRIZZLY" = xyes)
-
 
 
 ################ Koala checking ##############################
@@ -628,42 +608,6 @@ AM_CONDITIONAL(BUILD_CUDA,       test "x$panda_USE_CUDA" = xyes)
 
 
 
-################ Lemur checking ##############################
-if test "x$panda_USE_LEMUR" = xyes; then
-  AC_APPEND(ENABLE_DOC,"LEMUR")
-  AC_DEFINE(HAVE_LEMUR_BUILT, 1, "Define if lemur is built")
-  panda_USE_ABSEIL=yes;
-  panda_USE_LIB_GSL=yes;
-fi
-AM_CONDITIONAL(BUILD_LEMUR,        test "x$panda_USE_LEMUR" = xyes)
-
-
-
-################ Mongoose checking ##############################
-if test "x$panda_USE_MONGOOSE" = xyes; then
-  AC_APPEND(ENABLE_DOC,"MONGOOSE")
-  AC_DEFINE(HAVE_MONGOOSE_BUILT, 1, "Define if mongoose is built")
-  panda_USE_ABSEIL=yes;
-  panda_USE_LIB_CIRCUIT=yes;
-  panda_USE_LIB_CMOS=yes;
-  panda_USE_LIB_DESIGN_ANALYSIS=yes;
-  panda_USE_LIB_FROM_IPXACT=yes;
-  panda_USE_LIB_FROM_LIBERTY=yes;
-  panda_USE_LIB_GRAPH=yes;
-  panda_USE_LIB_POLIXML=yes;
-  panda_USE_LIB_TECHNOLOGY=yes;
-  panda_USE_PARAMETER=yes;
-  if test "x$panda_USE_SYNTHESIS_TOOL" != "xno" && test "x$panda_USE_DESIGN_COMPILER" != "xno"; then
-     panda_USE_DESIGN_COMPILER=yes;
-  fi
-  if test "x$panda_USE_SYNTHESIS_TOOL" != "xno" && test "x$panda_USE_CORE_TOOLS" != "xno"; then
-     panda_USE_CORE_TOOLS=yes;
-  fi
-fi
-AM_CONDITIONAL(BUILD_MONGOOSE, test "x$panda_USE_MONGOOSE" = xyes)
-
-
-
 ################ Spider checking ##############################
 if test "x$panda_USE_SPIDER" = xyes; then
   panda_USE_ABSEIL=yes;
@@ -690,28 +634,6 @@ if test "x$panda_USE_SPIDER" = xyes; then
   fi
 fi
 AM_CONDITIONAL(BUILD_SPIDER,      test "x$panda_USE_SPIDER" = xyes)
-
-
-
-################ Tucano checking ##############################
-if test "x$panda_USE_TUCANO" = xyes; then
-
-  panda_USE_ABSEIL=yes;
-  panda_USE_LIB_GRAPH=yes;
-  panda_USE_LIB_FROM_SYSTEMC=yes;
-  panda_USE_I386_GCC=yes;
-  AS_VERSION_COMPARE($MIN_GCC_VERSION, [4.5.0], [MIN_GCC_VERSION=4.5.0],,)
-  AS_VERSION_COMPARE($MAX_GCC_VERSION, [4.6.0],,,[MAX_GCC_VERSION=4.6.0])
-  panda_USE_LIB_FROM_C=yes;
-  panda_USE_LIB_METRIC_PARTITIONING=yes;
-  panda_USE_LIB_RTL_METRICS=yes;
-  panda_USE_LIB_TLM=yes;
-  panda_USE_PARAMETER=yes;
-
-  AC_APPEND(ENABLE_DOC,"TUCANO")
-  AC_DEFINE(HAVE_TUCANO_BUILT, 1, "Define if tucano is built")
-fi
-AM_CONDITIONAL(BUILD_TUCANO,      test "x$panda_USE_TUCANO" = xyes)
 
 
 

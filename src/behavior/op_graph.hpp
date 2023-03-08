@@ -47,7 +47,6 @@
 /// Autoheader include
 #include "config_HAVE_BAMBU_BUILT.hpp"
 #include "config_HAVE_HLS_BUILT.hpp"
-#include "config_HAVE_TUCANO_BUILT.hpp"
 #include "config_HAVE_UNORDERED.hpp"
 
 /// Superclasses include
@@ -409,7 +408,7 @@ struct OpNodeInfo : public TypedNodeInfo
    const CustomSet<unsigned int>& GetVariables(const FunctionBehavior_VariableType variable_type,
                                                const FunctionBehavior_VariableAccessType access_type) const;
 
-#if HAVE_BAMBU_BUILT || HAVE_TUCANO_BUILT
+#if HAVE_BAMBU_BUILT
    /**
     * Return the operation associated with the vertex
     */

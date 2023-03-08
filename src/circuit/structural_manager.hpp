@@ -49,7 +49,6 @@
 #include "config_HAVE_BAMBU_BUILT.hpp"
 #include "config_HAVE_EUCALYPTUS_BUILT.hpp"
 #include "config_HAVE_KOALA_BUILT.hpp"
-#include "config_HAVE_TUCANO_BUILT.hpp"
 
 #include "NP_functionality.hpp"
 #include "graph.hpp"
@@ -283,65 +282,6 @@ class structural_manager
     */
    structural_objectRef add_constant(std::string id, structural_objectRef owner, structural_type_descriptorRef type,
                                      std::string value, unsigned int treenode = 0);
-
-#if HAVE_TUCANO_BUILT
-   /**
-    * Create a new local data.
-    * @param id is the name of the local data.
-    * @param owner is the reference to the owner of the local data.
-    * @param data_type is the type of the local data.
-    * @param treenode is the treenode of the local data.
-    */
-   structural_objectRef add_local_data(std::string id, structural_objectRef owner, unsigned int treenode,
-                                       const tree_managerRef& treeM);
-
-   /**
-    * Add a new event to the owner.
-    * @param id is the event name.
-    * @param owner is the reference to the owner of the event.
-    * @param treenode is the treenode of the event.
-    */
-   structural_objectRef add_event(std::string id, structural_objectRef owner, unsigned int treenode,
-                                  const tree_managerRef& treeM);
-
-   /**
-    * Add a new process to the owner.
-    * @param id is the process name.
-    * @param owner is the reference to the owner of the process.
-    * @param treenode is the treenode of the process.
-    * @param scope is the scope of the process.
-    * @param ft is the function type.
-    */
-   structural_objectRef add_process(std::string id, structural_objectRef owner, unsigned int treenode,
-                                    const tree_managerRef& treeM, std::string scope, int ft);
-   /**
-    * Add a new service to the owner.
-    * @param id is the service name.
-    * @param interface is the interface id.
-    * @param owner is the reference to the owner of the service.
-    * @param treenode is the treenode of the service.
-    * @param scope is the scope of the service.
-    * @param ft is the function type.
-    */
-   structural_objectRef add_service(std::string id, std::string interface, structural_objectRef owner,
-                                    unsigned int treenode, const tree_managerRef& treeM, std::string scope);
-   /**
-    * Add a parameter to the process.
-    * @param id is the name of the parameter.
-    * @param owner is the reference to the owner of the parameter.
-    * @param treenode is the treenode of the parameter.
-    */
-   structural_objectRef add_process_param(std::string id, structural_objectRef owner, unsigned int treenode,
-                                          const tree_managerRef& treeM);
-   /**
-    * Add a parameter to the service.
-    * @param id is the name of the parameter.
-    * @param owner is the reference to the owner of the parameter.
-    * @param treenode is the treenode of the parameter.
-    */
-   structural_objectRef add_service_param(std::string id, structural_objectRef owner, unsigned int treenode,
-                                          const tree_managerRef& treeM);
-#endif
 
    /**
     * Add a not-parsed functionality.
