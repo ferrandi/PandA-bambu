@@ -5,7 +5,7 @@ ggo_require_device=1
 ggo_require_period=1
 . $script_dir/../../panda_regressions/hls/generic_getopt.sh
 
-BATCH_ARGS=("--no-iob" "-s" "-fno-delete-null-pointer-checks" "--panda-parameter=simple-benchmark-name=1")
+BATCH_ARGS=("-s" "-fno-delete-null-pointer-checks" "--panda-parameter=simple-benchmark-name=1")
 configuration="${device}_$(printf "%04.1f" $period)_$(echo $compiler | tr '[:upper:]' '[:lower:]')"
 OUT_SUFFIX="${configuration}_hls_study"
 
