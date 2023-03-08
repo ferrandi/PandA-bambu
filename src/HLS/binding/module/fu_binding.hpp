@@ -367,7 +367,7 @@ class fu_binding
    virtual void
    join_merge_split(const structural_managerRef SM, const hlsRef HLS,
                     std::map<structural_objectRef, std::list<structural_objectRef>, jms_sorter>& primary_outs,
-                    const structural_objectRef circuit, unsigned int& unique_id);
+                    const structural_objectRef circuit, unsigned int& unique_id) const;
 
    /**
     * specify if vertex v have or not its ports swapped

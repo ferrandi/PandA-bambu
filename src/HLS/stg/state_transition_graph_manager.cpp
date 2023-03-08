@@ -123,43 +123,49 @@ const StateTransitionGraphConstRef StateTransitionGraphManager::CGetEPPStg() con
    return EPP_STG_graph;
 }
 
-void StateTransitionGraphManager::compute_min_max()
+void StateTransitionGraphManager::ComputeCyclesCount(bool is_pipelined)
 {
-   StateTransitionGraphInfoRef info = STG_graph->GetStateTransitionGraphInfo();
-   if(!info->is_a_dag)
+   auto info = STG_graph->GetStateTransitionGraphInfo();
+   if(info->is_a_dag && !Param->getOption<bool>(OPT_disable_bounded_function))
    {
-      return;
-   }
-   std::list<vertex> sorted_vertices;
-   ACYCLIC_STG_graph->TopologicalSort(sorted_vertices);
-   CustomUnorderedMap<vertex, unsigned int> CSteps_min;
-   CustomUnorderedMap<vertex, unsigned int> CSteps_max;
-   const auto it_sv_end = sorted_vertices.end();
-   for(auto it_sv = sorted_vertices.begin(); it_sv != it_sv_end; ++it_sv)
-   {
-      CSteps_min[*it_sv] = 0;
-      CSteps_max[*it_sv] = 0;
-      InEdgeIterator ie, ie_first, iend;
-      boost::tie(ie, iend) = boost::in_edges(*it_sv, *ACYCLIC_STG_graph);
-      ie_first = ie;
-      for(; ie != iend; ie++)
+      std::list<vertex> sorted_vertices;
+      ACYCLIC_STG_graph->TopologicalSort(sorted_vertices);
+      CustomUnorderedMap<vertex, unsigned int> CSteps_min, CSteps_max;
+      bool has_dummy_state = false;
+      for(const auto v : sorted_vertices)
       {
-         vertex src = boost::source(*ie, *ACYCLIC_STG_graph);
-         CSteps_max[*it_sv] = std::max(CSteps_max[*it_sv], 1 + CSteps_max[src]);
-         if(ie == ie_first)
+         CSteps_min[v] = 0;
+         CSteps_max[v] = 0;
+         has_dummy_state |= ACYCLIC_STG_graph->GetStateInfo(v)->is_dummy;
+         InEdgeIterator ie, iend;
+         boost::tie(ie, iend) = boost::in_edges(v, *ACYCLIC_STG_graph);
+         const auto ie_first = ie;
+         for(; ie != iend; ie++)
          {
-            CSteps_min[*it_sv] = 1 + CSteps_min[src];
-         }
-         else
-         {
-            CSteps_min[*it_sv] = std::min(CSteps_min[*it_sv], 1 + CSteps_max[src]);
+            const auto src = boost::source(*ie, *ACYCLIC_STG_graph);
+            CSteps_max[v] = std::max(CSteps_max[v], 1 + CSteps_max[src]);
+            if(ie == ie_first)
+            {
+               CSteps_min[v] = 1 + CSteps_min[src];
+            }
+            else
+            {
+               CSteps_min[v] = std::min(CSteps_min[v], 1 + CSteps_max[src]);
+            }
          }
       }
+      THROW_ASSERT(CSteps_min.find(info->exit_node) != CSteps_min.end(), "Exit node not reachable");
+      THROW_ASSERT(CSteps_max.find(info->exit_node) != CSteps_max.end(), "Exit node not reachable");
+      info->min_cycles = CSteps_min.find(info->exit_node)->second - 1;
+      info->max_cycles = CSteps_max.find(info->exit_node)->second - 1;
+      info->bounded =
+          is_pipelined || (info->min_cycles == info->max_cycles && info->min_cycles > 0 && !has_dummy_state);
    }
-   THROW_ASSERT(CSteps_min.find(info->exit_node) != CSteps_min.end(), "Exit node not reachable");
-   THROW_ASSERT(CSteps_max.find(info->exit_node) != CSteps_max.end(), "Exit node not reachable");
-   info->min_cycles = CSteps_min.find(info->exit_node)->second - 1;
-   info->max_cycles = CSteps_max.find(info->exit_node)->second - 1;
+   else
+   {
+      THROW_ASSERT(Param->getOption<bool>(OPT_disable_bounded_function) || !is_pipelined,
+                   "A pipelined function should always generate a DAG");
+   }
 }
 
 vertex StateTransitionGraphManager::get_entry_state() const

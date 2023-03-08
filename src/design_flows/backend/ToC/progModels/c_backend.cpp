@@ -250,14 +250,14 @@ void CBackend::ComputeRelationships(DesignFlowStepSet& relationships,
                    design_flow_manager.lock()->CGetDesignFlowStepFactory("Frontend"));
 
                const auto call_graph_computation_step = design_flow_manager.lock()->GetDesignFlowStep(
-                   ApplicationFrontendFlowStep::ComputeSignature(FUNCTION_ANALYSIS));
+                   ApplicationFrontendFlowStep::ComputeSignature(COMPLETE_CALL_GRAPH));
 
                const auto design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
 
                const auto cg_design_flow_step =
                    call_graph_computation_step ?
                        design_flow_graph->CGetDesignFlowStepInfo(call_graph_computation_step)->design_flow_step :
-                       frontend_step_factory->CreateApplicationFrontendFlowStep(FUNCTION_ANALYSIS);
+                       frontend_step_factory->CreateApplicationFrontendFlowStep(COMPLETE_CALL_GRAPH);
 
                relationships.insert(cg_design_flow_step);
 
@@ -356,12 +356,12 @@ void CBackend::ComputeRelationships(DesignFlowStepSet& relationships,
                   const auto frontend_step_factory = GetPointer<const FrontendFlowStepFactory>(
                       design_flow_manager.lock()->CGetDesignFlowStepFactory("Frontend"));
                   const auto call_graph_computation_step = design_flow_manager.lock()->GetDesignFlowStep(
-                      ApplicationFrontendFlowStep::ComputeSignature(FUNCTION_ANALYSIS));
+                      ApplicationFrontendFlowStep::ComputeSignature(COMPLETE_CALL_GRAPH));
                   const auto design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
                   const auto cg_design_flow_step =
                       call_graph_computation_step ?
                           design_flow_graph->CGetDesignFlowStepInfo(call_graph_computation_step)->design_flow_step :
-                          frontend_step_factory->CreateApplicationFrontendFlowStep(FUNCTION_ANALYSIS);
+                          frontend_step_factory->CreateApplicationFrontendFlowStep(COMPLETE_CALL_GRAPH);
                   relationships.insert(cg_design_flow_step);
 
                   // Root function cannot be computed at the beginning so if the

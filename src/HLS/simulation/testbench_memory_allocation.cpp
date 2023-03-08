@@ -30,7 +30,16 @@
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
-
+/**
+ * @file testbench_memory_allocation.cpp
+ * @brief Generate memory allocation map for the co-simulation testbench
+ *
+ * @author Michele Fiorito <michele.fiorito@polimi.it>
+ * $Revision$
+ * $Date$
+ * Last modified by $Author$
+ *
+ */
 #include "testbench_memory_allocation.hpp"
 
 #include "Parameter.hpp"
@@ -67,27 +76,61 @@ TestbenchMemoryAllocation::TestbenchMemoryAllocation(const ParameterConstRef _pa
                                                      const DesignFlowManagerConstRef _design_flow_manager)
     : HLS_step(_parameters, _HLSMgr, _design_flow_manager, HLSFlowStep_Type::TESTBENCH_MEMORY_ALLOCATION)
 {
-   flag_cpp = _HLSMgr.get()->get_tree_manager()->is_CPP() && !_parameters->isOption(OPT_pretty_print) &&
-              (!_parameters->isOption(OPT_discrepancy) || !_parameters->getOption<bool>(OPT_discrepancy) ||
-               !_parameters->isOption(OPT_discrepancy_hw) || !_parameters->getOption<bool>(OPT_discrepancy_hw));
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
 }
 
 TestbenchMemoryAllocation::~TestbenchMemoryAllocation() = default;
 
-DesignFlowStep_Status TestbenchMemoryAllocation::Exec()
+const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
+TestbenchMemoryAllocation::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   AllocTestbenchMemory();
-   return DesignFlowStep_Status::SUCCESS;
+   CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;
+   switch(relationship_type)
+   {
+      case DEPENDENCE_RELATIONSHIP:
+      {
+         ret.insert(std::make_tuple(HLSFlowStep_Type::TEST_VECTOR_PARSER, HLSFlowStepSpecializationConstRef(),
+                                    HLSFlowStep_Relationship::TOP_FUNCTION));
+         break;
+      }
+      case INVALIDATION_RELATIONSHIP:
+      {
+         break;
+      }
+      case PRECEDENCE_RELATIONSHIP:
+      {
+         break;
+      }
+      default:
+         THROW_UNREACHABLE("");
+   }
+   return ret;
 }
 
-void TestbenchMemoryAllocation::AllocTestbenchMemory(void) const
+bool TestbenchMemoryAllocation::HasToBeExecuted() const
 {
+   return true;
+}
+
+DesignFlowStep_Status TestbenchMemoryAllocation::Exec()
+{
+   const auto flag_cpp =
+       HLSMgr.get()->get_tree_manager()->is_CPP() && !parameters->isOption(OPT_pretty_print) &&
+       (!parameters->isOption(OPT_discrepancy) || !parameters->getOption<bool>(OPT_discrepancy) ||
+        !parameters->isOption(OPT_discrepancy_hw) || !parameters->getOption<bool>(OPT_discrepancy_hw));
    const auto TM = HLSMgr->get_tree_manager();
    const auto top_function_ids = HLSMgr->CGetCallGraphManager()->GetRootFunctions();
    THROW_ASSERT(top_function_ids.size() == 1, "Multiple top functions");
    const auto function_id = *(top_function_ids.begin());
    const auto BH = HLSMgr->CGetFunctionBehavior(function_id)->CGetBehavioralHelper();
+   const auto get_param_name = [&](const unsigned int p) {
+      const auto param = BH->PrintVariable(p);
+      if(param.front() == '"')
+      {
+         return "@" + STR(p);
+      }
+      return param;
+   };
 
    const auto mem_vars = HLSMgr->Rmem->get_ext_memory_variables();
    CInitializationParserRef c_initialization_parser(new CInitializationParser(parameters));
@@ -125,44 +168,19 @@ void TestbenchMemoryAllocation::AllocTestbenchMemory(void) const
    unsigned int v_idx = 0;
    for(const auto& curr_test_vector : HLSMgr->RSim->test_vectors)
    {
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Considering test vector " + STR(v_idx));
-      HLSMgr->RSim->param_address[v_idx].clear();
-      // loop on the variables in memory
-      for(auto l = mem.begin(); l != mem.end(); ++l)
-      {
-         std::string param = BH->PrintVariable(*l);
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Considering " + param);
-         if(param[0] == '"')
-         {
-            param = "@" + STR(*l);
-         }
-         bool is_memory = false;
+      const auto get_type_bytes = [&](const unsigned int p, const std::string& param, const bool is_memory) {
          std::string test_v = "0";
-         if(mem_vars.find(*l) != mem_vars.end() &&
-            std::find(func_parameters.begin(), func_parameters.end(), *l) == func_parameters.end())
+         if(is_memory)
          {
-            is_memory = true;
-            test_v = TestbenchGenerationBaseStep::print_var_init(TM, *l, HLSMgr->Rmem);
+            test_v = TestbenchGenerationBaseStep::print_var_init(TM, p, HLSMgr->Rmem);
          }
          else if(curr_test_vector.find(param) != curr_test_vector.end())
          {
             test_v = curr_test_vector.find(param)->second;
          }
-
-         if(v_idx > 0 && is_memory)
-         {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Skipped " + param);
-            continue; // memory has been already initialized
-         }
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Initialization string is " + test_v);
 
-         const auto lnode = TM->CGetTreeReindex(*l);
-         auto reserved_bytes = tree_helper::Size(lnode) / 8;
-         if(reserved_bytes == 0)
-         {
-            reserved_bytes = 1;
-         }
-
+         const auto lnode = TM->CGetTreeReindex(p);
          const auto l_type = tree_helper::CGetType(lnode);
          if(tree_helper::IsPointerType(l_type) && !is_memory)
          {
@@ -174,7 +192,7 @@ void TestbenchMemoryAllocation::AllocTestbenchMemory(void) const
                   THROW_ERROR("File does not exist: " + test_v);
                }
                std::ifstream in(test_v, std::ifstream::ate | std::ifstream::binary);
-               reserved_bytes = static_cast<unsigned long long>(in.tellg());
+               return static_cast<unsigned long long>(in.tellg());
             }
             else if(flag_cpp)
             {
@@ -203,17 +221,44 @@ void TestbenchMemoryAllocation::AllocTestbenchMemory(void) const
                const auto splitted = SplitString(test_v, ",");
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Object size: " + STR(base_type_byte_size));
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Array  size: " + STR(splitted.size()));
-               reserved_bytes = splitted.size() * base_type_byte_size;
+               return splitted.size() * base_type_byte_size;
             }
             else
             {
                const CInitializationParserFunctorRef c_initialization_parser_functor(
                    new ComputeReservedMemory(TM, lnode));
                c_initialization_parser->Parse(c_initialization_parser_functor, test_v);
-               reserved_bytes = GetPointer<ComputeReservedMemory>(c_initialization_parser_functor)->GetReservedBytes();
+               const auto reserved_bytes =
+                   GetPointer<ComputeReservedMemory>(c_initialization_parser_functor)->GetReservedBytes();
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---C object size: " + STR(reserved_bytes));
+               return reserved_bytes;
             }
+         }
+         else if(!is_memory)
+         {
+            THROW_ERROR_CODE(NODE_NOT_YET_SUPPORTED_EC, "not yet supported case");
+         }
+         return std::max(tree_helper::Size(l_type) / 8, 8ull);
+      };
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Considering test vector " + STR(v_idx));
+      HLSMgr->RSim->param_address[v_idx].clear();
 
+      // loop on the variables in memory
+      for(auto l = mem.begin(); l != mem.end(); ++l)
+      {
+         const auto param = get_param_name(*l);
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Considering " + param);
+         const auto is_memory = mem_vars.find(*l) != mem_vars.end() &&
+                                std::find(func_parameters.begin(), func_parameters.end(), *l) == func_parameters.end();
+         if(v_idx > 0 && is_memory)
+         {
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Skipped " + param);
+            continue; // memory has been already initialized
+         }
+         const auto reserved_bytes = get_type_bytes(*l, param, is_memory);
+
+         if(tree_helper::IsPointerType(TM->CGetTreeReindex(*l)) && !is_memory)
+         {
             if(HLSMgr->RSim->param_address[v_idx].find(*l) == HLSMgr->RSim->param_address[v_idx].end())
             {
                HLSMgr->RSim->param_address[v_idx][*l] = HLSMgr->Rmem->get_memory_address();
@@ -225,10 +270,6 @@ void TestbenchMemoryAllocation::AllocTestbenchMemory(void) const
                                   ") allocated at " + STR(HLSMgr->RSim->param_address.at(v_idx).at(*l)) +
                                   " : reserved_mem_size = " + STR(HLSMgr->RSim->param_mem_size.at(v_idx).at(*l)));
             }
-         }
-         else if(!is_memory)
-         {
-            THROW_ERROR_CODE(NODE_NOT_YET_SUPPORTED_EC, "not yet supported case");
          }
 
          std::list<unsigned int>::const_iterator l_next;
@@ -276,41 +317,14 @@ void TestbenchMemoryAllocation::AllocTestbenchMemory(void) const
                         " reserved_bytes=" + STR(reserved_bytes));
          }
          HLSMgr->RSim->param_next_off[v_idx][*l] = next_object_offset;
+
+         INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level,
+                        "Padding of " + STR(next_object_offset - reserved_bytes) + " for parameter " + param);
+
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Considered " + param);
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Considered test vector " + STR(v_idx));
       v_idx++;
    }
-   return;
-}
-
-const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
-TestbenchMemoryAllocation::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
-{
-   CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;
-   switch(relationship_type)
-   {
-      case DEPENDENCE_RELATIONSHIP:
-      {
-         ret.insert(std::make_tuple(HLSFlowStep_Type::TEST_VECTOR_PARSER, HLSFlowStepSpecializationConstRef(),
-                                    HLSFlowStep_Relationship::TOP_FUNCTION));
-         break;
-      }
-      case INVALIDATION_RELATIONSHIP:
-      {
-         break;
-      }
-      case PRECEDENCE_RELATIONSHIP:
-      {
-         break;
-      }
-      default:
-         THROW_UNREACHABLE("");
-   }
-   return ret;
-}
-
-bool TestbenchMemoryAllocation::HasToBeExecuted() const
-{
-   return true;
+   return DesignFlowStep_Status::SUCCESS;
 }

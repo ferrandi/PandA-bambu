@@ -71,6 +71,9 @@ class WeightedCliqueRegisterBindingSpecialization : public HLSFlowStepSpecializa
 
 class weighted_clique_register : public compatibility_based_register
 {
+ private:
+   DesignFlowStep_Status RegisterBinding() final;
+
  public:
    /**
     * Constructor of the class.
@@ -80,20 +83,8 @@ class weighted_clique_register : public compatibility_based_register
                             const DesignFlowManagerConstRef design_flow_manager,
                             const HLSFlowStepSpecializationConstRef hls_flow_step_specialization);
 
-   /**
-    * Destructor of the class.
-    */
    ~weighted_clique_register() override;
 
-   /**
-    * Execute the step
-    * @return the exit status of this step
-    */
-   DesignFlowStep_Status InternalExec() override;
-
-   /**
-    * Initialize the step (i.e., like a constructor, but executed just before exec
-    */
    void Initialize() override;
 };
 

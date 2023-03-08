@@ -102,6 +102,12 @@ DesignFlowGraph::DesignFlowGraph(const DesignFlowGraphsCollectionRef design_flow
 {
 }
 
+DesignFlowGraph::DesignFlowGraph(const DesignFlowGraphsCollectionRef design_flow_graphs_collection, const int _selector,
+                                 const CustomUnorderedSet<vertex>& _vertices)
+    : graph(design_flow_graphs_collection.get(), _selector, _vertices)
+{
+}
+
 DesignFlowGraph::~DesignFlowGraph() = default;
 
 vertex DesignFlowGraph::GetDesignFlowStep(const std::string& signature) const

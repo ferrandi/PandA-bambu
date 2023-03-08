@@ -230,8 +230,7 @@ void ModuleGeneratorManager::specialize_fu(std::string fuName, vertex ve, std::s
    }
    else
    {
-      const auto n_ports =
-          parameters->isOption(OPT_channels_number) ? parameters->getOption<unsigned int>(OPT_channels_number) : 0;
+      const auto n_ports = FB->GetChannelsNumber();
 
       const structural_managerRef CM(new structural_manager(parameters));
       const structural_type_descriptorRef module_type(new structural_type_descriptor(new_fu_name));
@@ -445,8 +444,7 @@ void ModuleGeneratorManager::create_generic_module(const std::string& fuName, ve
    const auto fu_obj = structManager_obj->get_circ();
    const auto fu_module = GetPointer<const module>(fu_obj);
    THROW_ASSERT(fu_module, "");
-   const auto n_ports =
-       parameters->isOption(OPT_channels_number) ? parameters->getOption<unsigned int>(OPT_channels_number) : 0;
+   const auto n_ports = FB->GetChannelsNumber();
 
    const structural_managerRef CM(new structural_manager(parameters));
    const structural_type_descriptorRef module_type(new structural_type_descriptor(new_fu_name));

@@ -188,6 +188,10 @@ FunctionBehavior::FunctionBehavior(const application_managerConstRef _AppM, cons
       pipeline_enabled(false),
       simple_pipeline(false),
       initiation_time(1),
+      _channels_number(
+          _parameters->isOption(OPT_channels_number) ? _parameters->getOption<unsigned int>(OPT_channels_number) : 0),
+      _channels_type(_parameters->getOption<MemoryAllocation_ChannelsType>(OPT_channels_type)),
+      _allocation_policy(_parameters->getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy)),
       bb_reachability(),
       feedback_bb_reachability(),
       ogc(new operations_graph_constructor(op_graphs_collection)),
@@ -859,6 +863,36 @@ unsigned int FunctionBehavior::UpdateBitValueVersion()
 {
    bitvalue_version++;
    return bitvalue_version;
+}
+
+unsigned int FunctionBehavior::GetChannelsNumber() const
+{
+   return _channels_number;
+}
+
+void FunctionBehavior::SetChannelsNumber(unsigned int val)
+{
+   _channels_number = val;
+}
+
+MemoryAllocation_ChannelsType FunctionBehavior::GetChannelsType() const
+{
+   return _channels_type;
+}
+
+void FunctionBehavior::SetChannelsType(MemoryAllocation_ChannelsType val)
+{
+   _channels_type = val;
+}
+
+MemoryAllocation_Policy FunctionBehavior::GetMemoryAllocationPolicy() const
+{
+   return _allocation_policy;
+}
+
+void FunctionBehavior::SetMemoryAllocationPolicy(MemoryAllocation_Policy val)
+{
+   _allocation_policy = val;
 }
 
 #if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)

@@ -128,6 +128,7 @@ bool application_manager::hasToBeInterfaced(unsigned int funId) const
 {
    const auto root_functions = CGetCallGraphManager()->GetRootFunctions();
    const auto addressed_functions = CGetCallGraphManager()->GetAddressedFunctions();
+
    // all the root functions and the reached addressed functions must be interfaced
    return root_functions.count(funId) || addressed_functions.count(funId);
 }

@@ -1578,7 +1578,7 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
       const BehavioralHelperConstRef behavioral_helper =
           HLSMgr->CGetFunctionBehavior(topFunctionId)->CGetBehavioralHelper();
       const memoryRef mem = HLSMgr->Rmem;
-      const std::map<unsigned int, memory_symbolRef>& function_parameters = mem->get_function_parameters(topFunctionId);
+      const auto function_parameters = mem->get_function_parameters(topFunctionId);
       for(auto const& function_parameter : function_parameters)
       {
          const auto var = function_parameter.first;

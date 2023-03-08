@@ -39,6 +39,7 @@
 
 #ifndef MEMORY_CS_H
 #define MEMORY_CS_H
+
 #include "memory.hpp"
 
 class memory_cs : public memory
@@ -50,7 +51,7 @@ class memory_cs : public memory
    /**
     * Constructor
     */
-   memory_cs(const tree_managerRef _TreeM, unsigned long long int _off_base_address, unsigned int max_bram,
+   memory_cs(const tree_managerConstRef _TreeM, unsigned long long int _off_base_address, unsigned int max_bram,
              bool _null_pointer_check, bool initial_internal_address_p, unsigned int initial_internal_address,
              const unsigned int _address_bitsize)
        : memory(_TreeM, _off_base_address, max_bram, _null_pointer_check, initial_internal_address_p,

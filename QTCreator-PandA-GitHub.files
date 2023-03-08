@@ -1663,6 +1663,8 @@ src/HLS/hls_constraints.cpp
 src/HLS/hls_constraints.hpp
 src/HLS/hls_flow/classical_synthesis_flow.cpp
 src/HLS/hls_flow/classical_synthesis_flow.hpp
+src/HLS/hls_flow/dominator_allocation.cpp
+src/HLS/hls_flow/dominator_allocation.hpp
 src/HLS/hls_flow/initialize_hls.cpp
 src/HLS/hls_flow/initialize_hls.hpp
 src/HLS/hls_flow/synthesis/hls_synthesis_flow.cpp

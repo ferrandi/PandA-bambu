@@ -44,37 +44,16 @@
 
 class InitializeHLS : public HLSFunctionStep
 {
- protected:
-   /**
-    * Compute the relationship of this step
-    * @param relationship_type is the type of relationship to be considered
-    * @return the steps in relationship with this
-    */
-   const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
-   ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+ private:
+   void ComputeRelationships(DesignFlowStepSet& relationship,
+                             const DesignFlowStep::RelationshipType relationship_type) final;
 
  public:
-   /**
-    * Constructor
-    * @param DesignFlowManagerConstRef is the design flow manager
-    */
    InitializeHLS(const ParameterConstRef _parameters, const HLS_managerRef _HLS_mgr, unsigned int _function_id,
                  const DesignFlowManagerConstRef design_flow_manager);
 
-   /**
-    * Destructor
-    */
-   ~InitializeHLS() override;
-
-   /**
-    * Execute the step
-    * @return the exit status of this step
-    */
-   DesignFlowStep_Status InternalExec() override;
-
-   /**
-    * Initialize the step (i.e., like a constructor, but executed just before exec
-    */
    void Initialize() override;
+
+   DesignFlowStep_Status InternalExec() override;
 };
 #endif

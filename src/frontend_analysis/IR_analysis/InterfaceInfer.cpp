@@ -773,9 +773,9 @@ void InterfaceInfer::ChasePointerInterfaceRecurse(CustomOrderedSet<unsigned>& Vi
    const auto TM = AppM->get_tree_manager();
    enum call_type
    {
-      forward,
-      read,
-      write
+      ct_forward,
+      ct_read,
+      ct_write
    };
    const auto propagate_arg_use = [&](tree_nodeRef arg_var, size_t use_count, tree_nodeRef fd_node,
                                       const std::vector<tree_nodeRef>& call_args) -> call_type {
@@ -798,11 +798,11 @@ void InterfaceInfer::ChasePointerInterfaceRecurse(CustomOrderedSet<unsigned>& Vi
          {
             if(called_fname.find("::_read") != std::string::npos)
             {
-               return call_type::read;
+               return call_type::ct_read;
             }
             else if(called_fname.find("::_write") != std::string::npos)
             {
-               return call_type::write;
+               return call_type::ct_write;
             }
             THROW_UNREACHABLE("AC channel method not supported: " + called_fname);
          }
@@ -838,7 +838,7 @@ void InterfaceInfer::ChasePointerInterfaceRecurse(CustomOrderedSet<unsigned>& Vi
             INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Sub-function done");
          }
       }
-      return call_type::forward;
+      return call_type::ct_forward;
    };
 
    std::queue<tree_nodeRef> pointer_ssa;
@@ -905,11 +905,11 @@ void InterfaceInfer::ChasePointerInterfaceRecurse(CustomOrderedSet<unsigned>& Vi
                   THROW_ERROR("unexpected pattern");
                }
                const auto ct = propagate_arg_use(ptr_node, use_count, ce->fn, ce->args);
-               if(ct == call_type::read)
+               if(ct == call_type::ct_read)
                {
                   readStmt.push_back(stmt_count.first);
                }
-               else if(ct == call_type::write)
+               else if(ct == call_type::ct_write)
                {
                   writeStmt.push_back(stmt_count.first);
                }
@@ -937,11 +937,11 @@ void InterfaceInfer::ChasePointerInterfaceRecurse(CustomOrderedSet<unsigned>& Vi
                if(ae_op->get_kind() == function_decl_K)
                {
                   const auto ct = propagate_arg_use(ptr_node, use_count, ae->op, gc->args);
-                  if(ct == call_type::read)
+                  if(ct == call_type::ct_read)
                   {
                      readStmt.push_back(stmt_count.first);
                   }
-                  else if(ct == call_type::write)
+                  else if(ct == call_type::ct_write)
                   {
                      writeStmt.push_back(stmt_count.first);
                   }

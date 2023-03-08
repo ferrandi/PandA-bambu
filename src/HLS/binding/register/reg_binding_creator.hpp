@@ -44,8 +44,9 @@
 #ifndef _REG_BINDING_CREATOR_HPP_
 #define _REG_BINDING_CREATOR_HPP_
 
-/// superclass include
 #include "hls_function_step.hpp"
+#include "refcount.hpp"
+
 REF_FORWARD_DECL(reg_binding_creator);
 
 /**
@@ -57,12 +58,10 @@ class reg_binding_creator : public HLSFunctionStep
    /// lower bound
    unsigned int register_lower_bound;
 
-   /**
-    * Compute the relationship of this step
-    * @param relationship_type is the type of relationship to be considered
-    * @return the steps in relationship with this
-    */
-   const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
+   virtual DesignFlowStep_Status RegisterBinding() = 0;
+
+   virtual const CustomUnorderedSet<
+       std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
    ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
  public:
@@ -76,10 +75,7 @@ class reg_binding_creator : public HLSFunctionStep
        const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStep_Type hls_flow_step_type,
        const HLSFlowStepSpecializationConstRef hls_flow_step_specialization = HLSFlowStepSpecializationConstRef());
 
-   /**
-    * Destructor.
-    */
-   ~reg_binding_creator() override;
+   DesignFlowStep_Status InternalExec() override final;
 };
 /// refcount definition of the class
 using reg_binding_creatorRef = refcount<reg_binding_creator>;

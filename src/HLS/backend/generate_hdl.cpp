@@ -87,7 +87,7 @@ generate_hdl::ComputeHLSRelationships(const DesignFlowStep::RelationshipType rel
       {
          ret.insert(std::make_tuple(HLSFlowStep_Type::HLS_SYNTHESIS_FLOW, HLSFlowStepSpecializationConstRef(),
                                     HLSFlowStep_Relationship::ALL_FUNCTIONS));
-         if(parameters->isOption(OPT_discrepancy_hw) and parameters->getOption<bool>(OPT_discrepancy_hw))
+         if(parameters->isOption(OPT_discrepancy_hw) && parameters->getOption<bool>(OPT_discrepancy_hw))
          {
             ret.insert(std::make_tuple(HLSFlowStep_Type::HW_DISCREPANCY_ANALYSIS, HLSFlowStepSpecializationConstRef(),
                                        HLSFlowStep_Relationship::TOP_FUNCTION));
@@ -110,20 +110,19 @@ generate_hdl::ComputeHLSRelationships(const DesignFlowStep::RelationshipType rel
 
 generate_hdl::~generate_hdl() = default;
 
+bool generate_hdl::HasToBeExecuted() const
+{
+   return true;
+}
+
 DesignFlowStep_Status generate_hdl::Exec()
 {
-   HDL_managerRef HM =
-       HDL_managerRef(new HDL_manager(HLSMgr, HLSMgr->get_HLS_target()->get_target_device(), parameters));
-   auto file_name = parameters->getOption<std::string>(OPT_top_file);
+   HDL_manager HM(HLSMgr, HLSMgr->get_HLS_target()->get_target_device(), parameters);
+   const auto file_name = parameters->getOption<std::string>(OPT_top_file);
    std::list<structural_objectRef> top_circuits;
    const auto root_functions = HLSMgr->CGetCallGraphManager()->GetRootFunctions();
    std::transform(root_functions.begin(), root_functions.end(), std::back_inserter(top_circuits),
                   [&](unsigned int top_function) { return HLSMgr->get_HLS(top_function)->top->get_circ(); });
-   HM->hdl_gen(file_name, top_circuits, false, HLSMgr->hdl_files, HLSMgr->aux_files);
+   HM.hdl_gen(file_name, top_circuits, false, HLSMgr->hdl_files, HLSMgr->aux_files);
    return DesignFlowStep_Status::SUCCESS;
-}
-
-bool generate_hdl::HasToBeExecuted() const
-{
-   return true;
 }
