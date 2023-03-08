@@ -43,7 +43,6 @@
 #include "application_frontend_flow_step.hpp"
 
 #include "config_HAVE_BAMBU_BUILT.hpp"          // for HAVE_BAMBU_BUILT
-#include "config_HAVE_EXPERIMENTAL.hpp"         // for HAVE_EXPERIME...
 #include "config_HAVE_FROM_PRAGMA_BUILT.hpp"    // for HAVE_FROM_PRA...
 #include "config_HAVE_HOST_PROFILING_BUILT.hpp" // for HAVE_HOST_PRO...
 #include "config_HAVE_ILP_BUILT.hpp"            // for HAVE_ILP_BUILT
@@ -107,9 +106,6 @@ const std::string ApplicationFrontendFlowStep::ComputeSignature(const FrontendFl
 #if HAVE_BAMBU_BUILT
       case CALL_GRAPH_BUILTIN_CALL:
 #endif
-#if HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT && HAVE_EXPERIMENTAL
-      case CHECK_CRITICAL_SESSION:
-#endif
 #if HAVE_ZEBU_BUILT
       case CHECK_PIPELINABLE_LOOPS:
 #endif
@@ -132,12 +128,6 @@ const std::string ApplicationFrontendFlowStep::ComputeSignature(const FrontendFl
       case ESSA:
       case(FANOUT_OPT):
       case MULTIPLE_ENTRY_IF_REDUCTION:
-#endif
-#if HAVE_ZEBU_BUILT && HAVE_EXPERIMENTAL
-      case DYNAMIC_AGGREGATE_DATA_FLOW_ANALYSIS:
-#endif
-#if HAVE_BAMBU_BUILT && HAVE_EXPERIMENTAL
-      case EXTENDED_PDG_COMPUTATION:
 #endif
 #if HAVE_BAMBU_BUILT
       case EXTRACT_GIMPLE_COND_OP:
@@ -195,13 +185,6 @@ const std::string ApplicationFrontendFlowStep::ComputeSignature(const FrontendFl
       case OP_ORDER_COMPUTATION:
       case OP_REACHABILITY_COMPUTATION:
       case OPERATIONS_CFG_COMPUTATION:
-#if HAVE_ZEBU_BUILT && HAVE_EXPERIMENTAL
-      case PARALLEL_LOOP_SWAP:
-      case PARALLEL_LOOPS_ANALYSIS:
-#endif
-#if HAVE_BAMBU_BUILT && HAVE_EXPERIMENTAL
-      case PARALLEL_REGIONS_GRAPH_COMPUTATION:
-#endif
       case PARM2SSA:
 #if HAVE_BAMBU_BUILT
       case PARM_DECL_TAKEN_ADDRESS:
@@ -220,15 +203,6 @@ const std::string ApplicationFrontendFlowStep::ComputeSignature(const FrontendFl
 #if HAVE_BAMBU_BUILT
       case REBUILD_INITIALIZATION:
       case REBUILD_INITIALIZATION2:
-#endif
-#if HAVE_ZEBU_BUILT
-#if HAVE_EXPERIMENTAL
-      case REFINED_AGGREGATE_DATA_FLOW_ANALYSIS:
-      case REFINED_VAR_COMPUTATION:
-#endif
-#endif
-#if HAVE_BAMBU_BUILT && HAVE_EXPERIMENTAL
-      case REDUCED_PDG_COMPUTATION:
 #endif
 #if HAVE_BAMBU_BUILT
       case REMOVE_CLOBBER_GA:
@@ -255,18 +229,12 @@ const std::string ApplicationFrontendFlowStep::ComputeSignature(const FrontendFl
       case SIMPLE_CODE_MOTION:
       case SOFT_FLOAT_CG_EXT:
 #endif
-#if HAVE_BAMBU_BUILT && HAVE_EXPERIMENTAL
-      case SPECULATION_EDGES_COMPUTATION:
-#endif
 #if HAVE_ZEBU_BUILT
       case SPLIT_PHINODES:
 #endif
       case SWITCH_FIX:
 #if HAVE_BAMBU_BUILT
       case UN_COMPARISON_LOWERING:
-#endif
-#if HAVE_EXPERIMENTAL && HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
-      case UNROLL_LOOPS:
 #endif
 #if HAVE_RTL_BUILT && HAVE_ZEBU_BUILT
       case UPDATE_RTL_WEIGHT:
@@ -309,9 +277,6 @@ const std::string ApplicationFrontendFlowStep::ComputeSignature(const FrontendFl
       case CREATE_ADDRESS_TRANSLATION:
 #endif
       case(CREATE_TREE_MANAGER):
-#if HAVE_ZEBU_BUILT && HAVE_EXPERIMENTAL
-      case DYNAMIC_VAR_COMPUTATION:
-#endif
 #if HAVE_ZEBU_BUILT || HAVE_BAMBU_BUILT
       case DEAD_CODE_ELIMINATION_IPA:
 #endif

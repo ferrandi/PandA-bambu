@@ -42,10 +42,6 @@
  * Last modified by $Author$
  *
  */
-/// Autoheader include
-#include "config_HAVE_EXPERIMENTAL.hpp"
-
-/// header include
 #include "virtual_hls.hpp"
 
 ///. include
@@ -122,14 +118,6 @@ virtual_hls::ComputeHLSRelationships(const DesignFlowStep::RelationshipType rela
                                     HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
          ret.insert(std::make_tuple(HLSFlowStep_Type::DOMINATOR_ALLOCATION, HLSFlowStepSpecializationConstRef(),
                                     HLSFlowStep_Relationship::WHOLE_APPLICATION));
-#if HAVE_EXPERIMENTAL
-         if(parameters->IsParameter("MemoryConflictGraph") and parameters->GetParameter<bool>("MemoryConflictGraph"))
-         {
-            /// MEMORY_CONFLICT_GRAPH
-            ret.insert(std::make_tuple(HLSFlowStep_Type::MEMORY_CONFLICT_GRAPH, HLSFlowStepSpecializationConstRef(),
-                                       HLSFlowStep_Relationship::SAME_FUNCTION));
-         }
-#endif
          if(HLSMgr->get_HLS(funId))
          {
             ret.insert(std::make_tuple(HLSMgr->get_HLS(funId)->chaining_algorithm, HLSFlowStepSpecializationConstRef(),

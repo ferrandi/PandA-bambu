@@ -58,13 +58,6 @@
 
 /// implemented algorithms
 #include "parametric_list_based.hpp"
-#if HAVE_ILP_BUILT && HAVE_EXPERIMENTAL
-#include "ilp_loop_pipelining.hpp"
-#include "ilp_scheduling.hpp"
-#include "ilp_scheduling_new.hpp"
-#include "meilp_solver.hpp"
-#include "silp_scheduling.hpp"
-#endif
 
 #include "polixml.hpp"
 
