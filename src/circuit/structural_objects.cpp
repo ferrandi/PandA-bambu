@@ -44,7 +44,6 @@
 #include "config_HAVE_ASSERTS.hpp"
 #include "config_HAVE_BAMBU_BUILT.hpp"
 #include "config_HAVE_TECHNOLOGY_BUILT.hpp"
-#include "config_HAVE_TUCANO_BUILT.hpp"
 #include "config_RELEASE.hpp"
 
 #include "HDL_manager.hpp"                    // for structur...
@@ -399,78 +398,6 @@ structural_type_descriptor::structural_type_descriptor(const std::string& type_n
       }
    }
 }
-
-#if HAVE_TUCANO_BUILT
-structural_type_descriptor::structural_type_descriptor(unsigned int _treenode, tree_managerRef tm)
-{
-   bool is_a_function = false;
-   /// first set defaults
-   type = UNKNOWN;
-   size = size_DEFAULT;
-   vector_size = vector_size_DEFAULT;
-   treenode = _treenode;
-   while(true)
-   {
-      if(tree_helper::GetElements(tm, treenode))
-      {
-         treenode = tree_helper::GetElements(tm, treenode);
-         continue;
-      }
-      if(tree_helper::get_pointed_type(tm, treenode))
-      {
-         treenode = tree_helper::get_pointed_type(tm, treenode);
-         continue;
-      }
-      if(tree_helper::is_a_function(tm, treenode))
-      {
-         is_a_function = true;
-         continue;
-      }
-      break;
-   }
-   vector_size = tree_helper::size(tm, treenode);
-
-   if(is_a_function || tree_helper::is_module(tm, treenode) || tree_helper::is_channel(tm, treenode) ||
-      tree_helper::is_event(tm, treenode))
-   {
-      id_type = tree_helper::name_type(tm, treenode);
-      type = OTHER;
-   }
-   else
-   {
-      id_type = tree_helper::name_type(tm, treenode);
-      size = tree_helper::size(tm, treenode);
-      if(tree_helper::is_bool(tm, treenode))
-      {
-         if(vector_size)
-            type = VECTOR_BOOL;
-         else
-            type = BOOL;
-      }
-      else if(tree_helper::is_int(tm, treenode))
-      {
-         if(vector_size)
-            type = VECTOR_INT;
-         else
-            type = INT;
-      }
-      else if(tree_helper::is_unsigned(tm, treenode))
-      {
-         if(vector_size)
-            type = VECTOR_UINT;
-         else
-            type = UINT;
-      }
-      else
-      {
-         if(vector_size)
-            type = VECTOR_USER;
-         else
-            type = USER;
-      }
-   }
-}
-#endif
 
 #if HAVE_BAMBU_BUILT
 structural_type_descriptor::structural_type_descriptor(unsigned int index, const BehavioralHelperConstRef helper)

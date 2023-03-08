@@ -71,7 +71,6 @@
 #include "config_HAVE_I386_GCC7_COMPILER.hpp"
 #include "config_HAVE_I386_GCC8_COMPILER.hpp"
 #include "config_HAVE_SPARC_COMPILER.hpp"
-#include "config_HAVE_TUCANO_BUILT.hpp"
 #include "config_HAVE_ZEBU_BUILT.hpp"
 
 /// boost include
@@ -109,9 +108,6 @@ enum class CompilerWrapper_OptimizationSet
 #if HAVE_BAMBU_BUILT
    OBAMBU, /**< Bambu optimizationss + OPT_compiler_opt_level */
    OSF,    /**< Bambu optimizations for soft float: O3 + -finline-limit=10000 */
-#endif
-#if HAVE_TUCANO_BUILT
-   OTUCANO, /**< Tucano optimizations + OPT_compiler_opt_level */
 #endif
 #if HAVE_ZEBU_BUILT
    OZEBU, /**< Zebu optimizations + OPT_compiler_opt_level */
@@ -328,7 +324,7 @@ class CompilerWrapper
     */
    void InitializeCompilerParameters();
 
-#if HAVE_BAMBU_BUILT || HAVE_TUCANO_BUILT || HAVE_ZEBU_BUILT
+#if HAVE_BAMBU_BUILT || HAVE_ZEBU_BUILT
    /**
     * Analyze the command line options
     */

@@ -121,7 +121,7 @@ const CustomSet<unsigned int>& OpNodeInfo::GetVariables(const FunctionBehavior_V
    return variables.find(variable_type)->second.find(access_type)->second;
 }
 
-#if HAVE_BAMBU_BUILT || HAVE_TUCANO_BUILT
+#if HAVE_BAMBU_BUILT
 const std::string OpNodeInfo::GetOperation() const
 {
    if(vertex_name == ENTRY)

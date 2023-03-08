@@ -53,7 +53,6 @@
 #include "config_HAVE_PRAGMA_BUILT.hpp"
 #include "config_HAVE_RTL_BUILT.hpp"
 #include "config_HAVE_TASTE.hpp"
-#include "config_HAVE_TUCANO_BUILT.hpp"
 #include "config_HAVE_ZEBU_BUILT.hpp"
 
 #include "custom_set.hpp" // for unordered_set
@@ -282,7 +281,7 @@ using FrontendFlowStepType = enum FrontendFlowStepType {
 #if HAVE_ZEBU_BUILT
    SOURCE_CODE_STATISTICS,
 #endif
-#if HAVE_TUCANO_BUILT || HAVE_ZEBU_BUILT
+#if HAVE_ZEBU_BUILT
    SPLIT_PHINODES,
 #endif
    STRING_CST_FIX,
