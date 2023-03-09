@@ -81,13 +81,5 @@ class BambuFrontendFlow : public ApplicationFrontendFlowStep
     * @return true if the step has to be executed
     */
    bool HasToBeExecuted() const override;
-
-   /**
-    * Compute the relationships of a step with other steps
-    * @param dependencies is where relationships will be stored
-    * @param relationship_type is the type of relationship to be computed
-    */
-   void ComputeRelationships(DesignFlowStepSet& relationship,
-                             const DesignFlowStep::RelationshipType relationship_type) override;
 };
 #endif

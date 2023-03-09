@@ -51,15 +51,7 @@ class SynopsysWrapper : public SynthesisTool
 {
  public:
    /// implemented wrappers
-   using wrapper_t = enum {
-      UNDEFINED = 0,
-#if HAVE_EXPERIMENTAL
-      PRIME_TIME,
-      FORMALITY,
-      LIBRARY_COMPILER,
-#endif
-      DESIGN_COMPILER
-   };
+   using wrapper_t = enum { UNDEFINED = 0, DESIGN_COMPILER };
 
    /**
     * Constructor

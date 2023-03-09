@@ -199,10 +199,7 @@ src/HLS/hls_flow/design_space_exploration/SA
 src/HLS/hls_flow/design_space_exploration/TS
 src/HLS/hls_flow/synthesis
 src/HLS/interface
-src/HLS/interface/AXI
-src/HLS/interface/FSL
 src/HLS/interface/minimal
-src/HLS/interface/NPI
 src/HLS/interface/WB4
 src/HLS/liveness
 src/HLS/liveness/algorithms

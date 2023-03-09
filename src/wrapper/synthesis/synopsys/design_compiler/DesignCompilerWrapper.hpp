@@ -51,7 +51,6 @@
 #include <vector>
 
 /// Autoheader includes
-#include "config_HAVE_EXPERIMENTAL.hpp"
 #include "config_HAVE_LOGIC_SYNTHESIS_FLOW_BUILT.hpp"
 #include "config_HAVE_TECHNOLOGY_BUILT.hpp"
 

@@ -42,9 +42,6 @@
 #ifndef _SYNTHESIS_TOOL_HPP_
 #define _SYNTHESIS_TOOL_HPP_
 
-/// Autoheader include
-#include "config_HAVE_EXPERIMENTAL.hpp"
-
 #include <string>
 #include <vector>
 
@@ -94,15 +91,6 @@ class SynthesisTool
    using type_t = enum {
       UNKNOWN = 0,
       DESIGN_COMPILER,
-#if HAVE_EXPERIMENTAL
-      PRIME_TIME,
-      FORMALITY,
-      LIBRARY_COMPILER,
-      LIBRARY_CREATOR,
-      DESIGN_OPTIMIZER,
-      SOC_ENCOUNTER,
-      XPWR,
-#endif
       XST,
       NGDBUILD,
       MAP,

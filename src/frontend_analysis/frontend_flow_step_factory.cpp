@@ -47,7 +47,6 @@
 /// Autoheader include
 #include "config_HAVE_ARCH_BUILT.hpp"
 #include "config_HAVE_BAMBU_BUILT.hpp"
-#include "config_HAVE_EXPERIMENTAL.hpp"
 #include "config_HAVE_FROM_PRAGMA_BUILT.hpp"
 #include "config_HAVE_HOST_PROFILING_BUILT.hpp"
 #include "config_HAVE_ILP_BUILT.hpp"    // for HAVE_ILP_BUILT
@@ -102,9 +101,6 @@
 #include "call_graph_builtin_call.hpp"
 #endif
 #include "call_graph_computation.hpp"
-#if HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT && HAVE_EXPERIMENTAL
-#include "check_critical_session.hpp"
-#endif
 #if HAVE_HOST_PROFILING_BUILT && HAVE_ZEBU_BUILT
 #include "check_pipelinable_loops.hpp"
 #endif
@@ -132,19 +128,9 @@
 #include "determine_memory_accesses.hpp"
 #endif
 #include "dom_post_dom_computation.hpp"
-#if HAVE_HOST_PROFILING_BUILT && HAVE_EXPERIMENTAL
-#include "dynamic_aggregate_data_flow_analysis.hpp"
-#include "dynamic_var_computation.hpp"
-#endif
-#if HAVE_BAMBU_BUILT && HAVE_EXPERIMENTAL
-#include "extended_pdg_computation.hpp"
-#endif
 #if HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
 #include "extract_omp_atomic.hpp"
 #include "extract_omp_for.hpp"
-#endif
-#if HAVE_BAMBU_BUILT && HAVE_EXPERIMENTAL
-#include "parallel_regions_graph_computation.hpp"
 #endif
 #if HAVE_BAMBU_BUILT
 #include "FixStructsPassedByValue.hpp"
@@ -204,10 +190,6 @@
 #include "op_order_computation.hpp"
 #include "op_reachability_computation.hpp"
 #include "operations_cfg_computation.hpp"
-#if HAVE_ZEBU_BUILT && HAVE_EXPERIMENTAL
-#include "parallel_loop_swap.hpp"
-#include "parallel_loops_analysis.hpp"
-#endif
 #include "parm2ssa.hpp"
 #if HAVE_BAMBU_BUILT
 #include "parm_decl_taken_address_fix.hpp"
@@ -239,13 +221,6 @@
 #if HAVE_BAMBU_BUILT
 #include "rebuild_initializations.hpp"
 #endif
-#if HAVE_BAMBU_BUILT && HAVE_EXPERIMENTAL
-#include "reduced_pdg_computation.hpp"
-#endif
-#if HAVE_ZEBU_BUILT
-#include "refined_aggregate_data_flow_analysis.hpp"
-#include "refined_var_computation.hpp"
-#endif
 #if HAVE_BAMBU_BUILT
 #include "remove_clobber_ga.hpp"
 #endif
@@ -275,9 +250,6 @@
 #if HAVE_ZEBU_BUILT
 #include "source_code_statistics.hpp"
 #endif
-#if HAVE_BAMBU_BUILT && HAVE_EXPERIMENTAL
-#include "speculation_edges_computation.hpp"
-#endif
 #if HAVE_ZEBU_BUILT
 #include "split_phi_nodes.hpp"
 #endif
@@ -285,9 +257,6 @@
 #include "switch_fix.hpp"
 #if HAVE_BAMBU_BUILT
 #include "un_comparison_lowering.hpp"
-#endif
-#if HAVE_EXPERIMENTAL && HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
-#include "unroll_loops.hpp"
 #endif
 #if HAVE_ZEBU_BUILT && HAVE_RTL_BUILT
 #include "update_rtl_weight.hpp"
@@ -385,9 +354,6 @@ FrontendFlowStepFactory::GenerateFrontendStep(FrontendFlowStepType frontend_flow
 #if HAVE_BAMBU_BUILT
       case CALL_GRAPH_BUILTIN_CALL:
 #endif
-#if HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT && HAVE_EXPERIMENTAL
-      case CHECK_CRITICAL_SESSION:
-#endif
 #if HAVE_ZEBU_BUILT
       case CHECK_PIPELINABLE_LOOPS:
 #endif
@@ -410,12 +376,6 @@ FrontendFlowStepFactory::GenerateFrontendStep(FrontendFlowStepType frontend_flow
       case ESSA:
       case(FANOUT_OPT):
       case MULTIPLE_ENTRY_IF_REDUCTION:
-#endif
-#if HAVE_EXPERIMENTAL && HAVE_ZEBU_BUILT
-      case DYNAMIC_AGGREGATE_DATA_FLOW_ANALYSIS:
-#endif
-#if HAVE_BAMBU_BUILT && HAVE_EXPERIMENTAL
-      case EXTENDED_PDG_COMPUTATION:
 #endif
 #if HAVE_BAMBU_BUILT
       case EXTRACT_GIMPLE_COND_OP:
@@ -473,13 +433,6 @@ FrontendFlowStepFactory::GenerateFrontendStep(FrontendFlowStepType frontend_flow
       case OP_ORDER_COMPUTATION:
       case OP_REACHABILITY_COMPUTATION:
       case OPERATIONS_CFG_COMPUTATION:
-#if HAVE_ZEBU_BUILT && HAVE_EXPERIMENTAL
-      case PARALLEL_LOOP_SWAP:
-      case PARALLEL_LOOPS_ANALYSIS:
-#endif
-#if HAVE_BAMBU_BUILT && HAVE_EXPERIMENTAL
-      case PARALLEL_REGIONS_GRAPH_COMPUTATION:
-#endif
       case PARM2SSA:
 #if HAVE_BAMBU_BUILT
       case PARM_DECL_TAKEN_ADDRESS:
@@ -498,15 +451,6 @@ FrontendFlowStepFactory::GenerateFrontendStep(FrontendFlowStepType frontend_flow
 #if HAVE_BAMBU_BUILT
       case REBUILD_INITIALIZATION:
       case REBUILD_INITIALIZATION2:
-#endif
-#if HAVE_BAMBU_BUILT && HAVE_EXPERIMENTAL
-      case REDUCED_PDG_COMPUTATION:
-#endif
-#if HAVE_ZEBU_BUILT
-#if HAVE_EXPERIMENTAL
-      case REFINED_AGGREGATE_DATA_FLOW_ANALYSIS:
-      case REFINED_VAR_COMPUTATION:
-#endif
 #endif
 #if HAVE_BAMBU_BUILT
       case REMOVE_CLOBBER_GA:
@@ -532,9 +476,6 @@ FrontendFlowStepFactory::GenerateFrontendStep(FrontendFlowStepType frontend_flow
       case SIMPLE_CODE_MOTION:
       case SOFT_FLOAT_CG_EXT:
 #endif
-#if HAVE_BAMBU_BUILT && HAVE_EXPERIMENTAL
-      case SPECULATION_EDGES_COMPUTATION:
-#endif
 #if HAVE_ZEBU_BUILT
       case SPLIT_PHINODES:
 #endif
@@ -554,9 +495,6 @@ FrontendFlowStepFactory::GenerateFrontendStep(FrontendFlowStepType frontend_flow
 #endif
 #if HAVE_BAMBU_BUILT
       case UNROLLING_DEGREE:
-#endif
-#if HAVE_EXPERIMENTAL && HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
-      case UNROLL_LOOPS:
 #endif
       case USE_COUNTING:
       case VAR_ANALYSIS:
@@ -588,9 +526,6 @@ FrontendFlowStepFactory::GenerateFrontendStep(FrontendFlowStepType frontend_flow
       case CREATE_ADDRESS_TRANSLATION:
 #endif
       case(CREATE_TREE_MANAGER):
-#if HAVE_EXPERIMENTAL && HAVE_ZEBU_BUILT
-      case DYNAMIC_VAR_COMPUTATION:
-#endif
 #if HAVE_BAMBU_BUILT || HAVE_ZEBU_BUILT
       case DEAD_CODE_ELIMINATION_IPA:
 #endif
@@ -675,12 +610,6 @@ FrontendFlowStepFactory::CreateApplicationFrontendFlowStep(const FrontendFlowSte
       {
          return DesignFlowStepRef(new create_tree_manager(parameters, AppM, design_flow_manager.lock()));
       }
-#if HAVE_ZEBU_BUILT && HAVE_EXPERIMENTAL
-      case DYNAMIC_VAR_COMPUTATION:
-      {
-         return DesignFlowStepRef(new DynamicVarComputation(AppM, design_flow_manager.lock(), parameters));
-      }
-#endif
 #if HAVE_ZEBU_BUILT || HAVE_BAMBU_BUILT
       case DEAD_CODE_ELIMINATION_IPA:
       {
@@ -790,9 +719,6 @@ FrontendFlowStepFactory::CreateApplicationFrontendFlowStep(const FrontendFlowSte
 #if HAVE_BAMBU_BUILT
       case CALL_GRAPH_BUILTIN_CALL:
 #endif
-#if HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT && HAVE_EXPERIMENTAL
-      case CHECK_CRITICAL_SESSION:
-#endif
 #if HAVE_ZEBU_BUILT
       case CHECK_PIPELINABLE_LOOPS:
 #endif
@@ -815,12 +741,6 @@ FrontendFlowStepFactory::CreateApplicationFrontendFlowStep(const FrontendFlowSte
       case ESSA:
       case(FANOUT_OPT):
       case MULTIPLE_ENTRY_IF_REDUCTION:
-#endif
-#if HAVE_EXPERIMENTAL && HAVE_ZEBU_BUILT
-      case DYNAMIC_AGGREGATE_DATA_FLOW_ANALYSIS:
-#endif
-#if HAVE_BAMBU_BUILT && HAVE_EXPERIMENTAL
-      case EXTENDED_PDG_COMPUTATION:
 #endif
 #if HAVE_BAMBU_BUILT
       case EXTRACT_GIMPLE_COND_OP:
@@ -878,13 +798,6 @@ FrontendFlowStepFactory::CreateApplicationFrontendFlowStep(const FrontendFlowSte
       case OP_ORDER_COMPUTATION:
       case OP_REACHABILITY_COMPUTATION:
       case OPERATIONS_CFG_COMPUTATION:
-#if HAVE_EXPERIMENTAL && HAVE_ZEBU_BUILT
-      case PARALLEL_LOOP_SWAP:
-      case PARALLEL_LOOPS_ANALYSIS:
-#endif
-#if HAVE_BAMBU_BUILT && HAVE_EXPERIMENTAL
-      case PARALLEL_REGIONS_GRAPH_COMPUTATION:
-#endif
       case PARM2SSA:
 #if HAVE_BAMBU_BUILT
       case PARM_DECL_TAKEN_ADDRESS:
@@ -903,13 +816,6 @@ FrontendFlowStepFactory::CreateApplicationFrontendFlowStep(const FrontendFlowSte
 #if HAVE_BAMBU_BUILT
       case REBUILD_INITIALIZATION:
       case REBUILD_INITIALIZATION2:
-#endif
-#if HAVE_BAMBU_BUILT && HAVE_EXPERIMENTAL
-      case REDUCED_PDG_COMPUTATION:
-#endif
-#if HAVE_ZEBU_BUILT && HAVE_EXPERIMENTAL
-      case REFINED_AGGREGATE_DATA_FLOW_ANALYSIS:
-      case REFINED_VAR_COMPUTATION:
 #endif
 #if HAVE_BAMBU_BUILT
       case REMOVE_CLOBBER_GA:
@@ -935,9 +841,6 @@ FrontendFlowStepFactory::CreateApplicationFrontendFlowStep(const FrontendFlowSte
       case SIMPLE_CODE_MOTION:
       case SOFT_FLOAT_CG_EXT:
 #endif
-#if HAVE_BAMBU_BUILT && HAVE_EXPERIMENTAL
-      case SPECULATION_EDGES_COMPUTATION:
-#endif
 #if HAVE_ZEBU_BUILT
       case SPLIT_PHINODES:
 #endif
@@ -945,9 +848,6 @@ FrontendFlowStepFactory::CreateApplicationFrontendFlowStep(const FrontendFlowSte
       case SWITCH_FIX:
 #if HAVE_BAMBU_BUILT
       case UN_COMPARISON_LOWERING:
-#endif
-#if HAVE_EXPERIMENTAL && HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
-      case UNROLL_LOOPS:
 #endif
 #if HAVE_BAMBU_BUILT
       case UNROLLING_DEGREE:
@@ -1092,12 +992,6 @@ FrontendFlowStepFactory::CreateFunctionFrontendFlowStep(const FrontendFlowStepTy
       {
          return DesignFlowStepRef(new CallGraphBuiltinCall(AppM, function_id, design_flow_manager.lock(), parameters));
       }
-#if HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT && HAVE_EXPERIMENTAL
-      case CHECK_CRITICAL_SESSION:
-      {
-         return DesignFlowStepRef(new CheckCriticalSession(AppM, function_id, design_flow_manager.lock(), parameters));
-      }
-#endif
 #if HAVE_ZEBU_BUILT
       case CHECK_PIPELINABLE_LOOPS:
       {
@@ -1163,20 +1057,6 @@ FrontendFlowStepFactory::CreateFunctionFrontendFlowStep(const FrontendFlowStepTy
       {
          return DesignFlowStepRef(
              new MultipleEntryIfReduction(parameters, AppM, function_id, design_flow_manager.lock()));
-      }
-#endif
-#if HAVE_ZEBU_BUILT && HAVE_EXPERIMENTAL
-      case DYNAMIC_AGGREGATE_DATA_FLOW_ANALYSIS:
-      {
-         return DesignFlowStepRef(
-             new DynamicAggregateDataFlowAnalysis(AppM, design_flow_manager.lock(), function_id, parameters));
-      }
-#endif
-#if HAVE_BAMBU_BUILT && HAVE_EXPERIMENTAL
-      case EXTENDED_PDG_COMPUTATION:
-      {
-         return DesignFlowStepRef(
-             new extended_pdg_computation(parameters, AppM, function_id, design_flow_manager.lock()));
       }
 #endif
 #if HAVE_BAMBU_BUILT
@@ -1334,23 +1214,6 @@ FrontendFlowStepFactory::CreateFunctionFrontendFlowStep(const FrontendFlowStepTy
          return DesignFlowStepRef(
              new operations_cfg_computation(parameters, AppM, function_id, design_flow_manager.lock()));
       }
-#if HAVE_EXPERIMENTAL && HAVE_ZEBU_BUILT
-      case PARALLEL_LOOP_SWAP:
-      {
-         return DesignFlowStepRef(new parallel_loop_swap(parameters, AppM, function_id, design_flow_manager.lock()));
-      }
-      case PARALLEL_LOOPS_ANALYSIS:
-      {
-         return DesignFlowStepRef(new ParallelLoopsAnalysis(AppM, function_id, design_flow_manager.lock(), parameters));
-      }
-#endif
-#if HAVE_BAMBU_BUILT && HAVE_EXPERIMENTAL
-      case PARALLEL_REGIONS_GRAPH_COMPUTATION:
-      {
-         return DesignFlowStepRef(
-             new ParallelRegionsGraphComputation(parameters, AppM, function_id, design_flow_manager.lock()));
-      }
-#endif
       case PARM2SSA:
       {
          return DesignFlowStepRef(new parm2ssa(parameters, AppM, function_id, design_flow_manager.lock()));
@@ -1402,25 +1265,6 @@ FrontendFlowStepFactory::CreateFunctionFrontendFlowStep(const FrontendFlowStepTy
       {
          return DesignFlowStepRef(
              new rebuild_initialization2(parameters, AppM, function_id, design_flow_manager.lock()));
-      }
-#endif
-
-#if HAVE_BAMBU_BUILT && HAVE_EXPERIMENTAL
-      case REDUCED_PDG_COMPUTATION:
-      {
-         return DesignFlowStepRef(
-             new reduced_pdg_computation(parameters, AppM, function_id, design_flow_manager.lock()));
-      }
-#endif
-#if HAVE_ZEBU_BUILT && HAVE_EXPERIMENTAL
-      case REFINED_AGGREGATE_DATA_FLOW_ANALYSIS:
-      {
-         return DesignFlowStepRef(
-             new RefinedAggregateDataFlowAnalysis(AppM, function_id, design_flow_manager.lock(), parameters));
-      }
-      case REFINED_VAR_COMPUTATION:
-      {
-         return DesignFlowStepRef(new RefinedVarComputation(AppM, function_id, design_flow_manager.lock(), parameters));
       }
 #endif
 #if HAVE_BAMBU_BUILT
@@ -1480,13 +1324,6 @@ FrontendFlowStepFactory::CreateFunctionFrontendFlowStep(const FrontendFlowStepTy
          return DesignFlowStepRef(new soft_float_cg_ext(parameters, AppM, function_id, design_flow_manager.lock()));
       }
 #endif
-#if HAVE_BAMBU_BUILT && HAVE_EXPERIMENTAL
-      case SPECULATION_EDGES_COMPUTATION:
-      {
-         return DesignFlowStepRef(
-             new speculation_edges_computation(parameters, AppM, function_id, design_flow_manager.lock()));
-      }
-#endif
 #if HAVE_ZEBU_BUILT
       case SPLIT_PHINODES:
       {
@@ -1506,12 +1343,6 @@ FrontendFlowStepFactory::CreateFunctionFrontendFlowStep(const FrontendFlowStepTy
       case UN_COMPARISON_LOWERING:
       {
          return DesignFlowStepRef(new UnComparisonLowering(AppM, function_id, design_flow_manager.lock(), parameters));
-      }
-#endif
-#if HAVE_EXPERIMENTAL && HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
-      case UNROLL_LOOPS:
-      {
-         return DesignFlowStepRef(new UnrollLoops(AppM, function_id, design_flow_manager.lock(), parameters));
       }
 #endif
 #if HAVE_BAMBU_BUILT
@@ -1591,9 +1422,6 @@ FrontendFlowStepFactory::CreateFunctionFrontendFlowStep(const FrontendFlowStepTy
       case CREATE_ADDRESS_TRANSLATION:
 #endif
       case(CREATE_TREE_MANAGER):
-#if HAVE_ZEBU_BUILT && HAVE_EXPERIMENTAL
-      case(DYNAMIC_VAR_COMPUTATION):
-#endif
 #if HAVE_BAMBU_BUILT || HAVE_ZEBU_BUILT
       case DEAD_CODE_ELIMINATION_IPA:
 #endif
