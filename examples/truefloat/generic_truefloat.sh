@@ -3,7 +3,7 @@ script_dir="$(dirname $(readlink -e $0))"
 ggo_require_compiler=1
 . $script_dir/../../panda_regressions/hls/generic_getopt.sh
 
-BATCH_ARGS=("--no-iob" "--soft-float" "--registered-inputs=top" "--panda-parameter=profile-top=1" "--simulate" "--fp-format-propagate")
+BATCH_ARGS=("--soft-float" "--registered-inputs=top" "--panda-parameter=profile-top=1" "--simulate" "--fp-format-propagate")
 OUT_SUFFIX="${compiler}_truefloat"
 
 python3 $script_dir/../../etc/scripts/test_panda.py --tool=bambu  \

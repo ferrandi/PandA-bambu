@@ -42,8 +42,6 @@
  */
 #include "cdfc_module_binding.hpp"
 
-#include "config_HAVE_EXPERIMENTAL.hpp"
-
 #include <boost/filesystem/operations.hpp>
 
 ///. include
@@ -2161,18 +2159,6 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
             if(disabling_slack_based_binding)
             {
                PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Disabled slack based clique covering for: " + res_name);
-#if HAVE_EXPERIMENTAL
-               if(clique_covering_method_used == CliqueCovering_Algorithm::RANDOMIZED)
-               {
-                  double area_resource = allocation_information->get_area(partition.first) +
-                                         100 * allocation_information->get_DSPs(partition.first);
-                  module_register_binding_spec mrbs;
-                  module_binding_check_no_filter<vertex> cq(fu_prec, area_resource, HLS, HLSMgr, slack_time,
-                                                            starting_time, controller_delay, mrbs);
-                  module_clique->exec(no_filter_clique<vertex>(), cq);
-               }
-               else
-#endif
                {
                   no_check_clique<vertex> cq;
                   module_clique->exec(no_filter_clique<vertex>(), cq);
@@ -2296,17 +2282,6 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
                   }
                }
             }
-#if HAVE_EXPERIMENTAL
-            else if(clique_covering_method_used == CliqueCovering_Algorithm::RANDOMIZED)
-            {
-               double area_resource = allocation_information->get_area(partition.first) +
-                                      100 * allocation_information->get_DSPs(partition.first);
-               module_register_binding_spec mrbs;
-               module_binding_check<vertex> cq(fu_prec, area_resource, HLS, HLSMgr, slack_time, starting_time,
-                                               controller_delay, mrbs);
-               module_clique->exec(no_filter_clique<vertex>(), cq);
-            }
-#endif
             else
             {
                double area_resource = allocation_information->get_area(partition.first) +

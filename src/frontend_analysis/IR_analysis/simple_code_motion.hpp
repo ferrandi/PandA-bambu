@@ -131,12 +131,6 @@ class simple_code_motion : public FunctionFrontendFlowStep
    void Initialize() override;
 
    /**
-    * Check if this step has actually to be executed
-    * @return true if the step has to be executed
-    */
-   bool HasToBeExecuted() const override;
-
-   /**
     * Return true if the last run of this step was based on scheduling
     */
    bool IsScheduleBased() const;

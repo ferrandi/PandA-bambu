@@ -46,7 +46,6 @@
 #define LANGUAGE_WRITER_HPP
 
 /// Autoheader include
-#include "config_HAVE_EXPERIMENTAL.hpp"
 #include "config_HAVE_FROM_C_BUILT.hpp"
 
 /// utility include
@@ -80,11 +79,6 @@ enum class HDLWriter_Language
 {
    VERILOG = 0,
    SYSTEM_VERILOG,
-#if HAVE_EXPERIMENTAL
-   SYSTEMC,
-   BLIF,
-   EDIF,
-#endif
    VHDL
 };
 

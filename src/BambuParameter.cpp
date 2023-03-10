@@ -42,7 +42,6 @@
 /// Autoheader
 #include "config_HAVE_BEAGLE.hpp"
 #include "config_HAVE_COIN_OR.hpp"
-#include "config_HAVE_CUDD.hpp"
 #include "config_HAVE_EXPERIMENTAL.hpp"
 #include "config_HAVE_FLOPOCO.hpp"
 #include "config_HAVE_GLPK.hpp"
@@ -184,8 +183,8 @@
 #define OPT_DEVICE_NAME (1 + OPT_CLOCK_PERIOD_RESOURCE_FRACTION)
 #define OPT_DISABLE_BOUNDED_FUNCTION (1 + OPT_DEVICE_NAME)
 #define OPT_DISABLE_FUNCTION_PROXY (1 + OPT_DISABLE_BOUNDED_FUNCTION)
-#define OPT_DISABLE_IOB (1 + OPT_DISABLE_FUNCTION_PROXY)
-#define OPT_DISTRAM_THRESHOLD (1 + OPT_DISABLE_IOB)
+#define OPT_CONNECT_IOB (1 + OPT_DISABLE_FUNCTION_PROXY)
+#define OPT_DISTRAM_THRESHOLD (1 + OPT_CONNECT_IOB)
 #define OPT_DO_NOT_CHAIN_MEMORIES (1 + OPT_DISTRAM_THRESHOLD)
 #define OPT_EXPOSE_GLOBALS (1 + OPT_DO_NOT_CHAIN_MEMORIES)
 #define OPT_ROM_DUPLICATION (1 + OPT_EXPOSE_GLOBALS)
@@ -334,12 +333,9 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "    --writer,-w<language>\n"
       << "        Output RTL language:\n"
       << "            V - Verilog (default)\n"
-#if HAVE_EXPERIMENTAL
-      << "            S - SystemC\n"
-#endif
       << "            H - VHDL\n\n"
       << "    --no-mixed-design\n"
-      << "        Avoid mixed design.\n\n"
+      << "        Avoid mixed output RTL language designs.\n\n"
       << "    --generate-tb=<file>\n"
       << "        Generate testbench for the input values defined in the specified XML\n"
       << "        file.\n\n"
@@ -372,31 +368,10 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "            INFER    -  top function is built with an hardware interface inferred from\n"
       << "                        the pragmas or from the top function signature\n"
       << "            WB4      -  WishBone 4 interface\n"
-#if HAVE_EXPERIMENTAL
-      << "            AXI4LITE -  AXI4-Lite interface\n"
-      << "            FSL      -  interface to the FSL bus\n"
-      << "            NPI      -  interface to the NPI bus\n"
-#endif
       << "\n"
       << "    --interface-xml-filename=<filename>\n"
       << "        User defined interface file.\n\n"
-#if HAVE_EXPERIMENTAL
-      << "    --edk-config <file>\n"
-      << "        Specify the configuration file for Xilinx EDK.\n\n"
-#endif
       << std::endl;
-#if HAVE_EXPERIMENTAL
-
-   // Frontend analysis options
-   os << "  Frontend analysis:\n\n"
-      << "    --pdg-reduction[=<algorithm>]\n"
-      << "        Perform Program Dependence Graph reduction. The reduced PDG is used to\n"
-      << "        build the parallel controller, if enabled.\n"
-      << "        Possible values for <algorithm> are:\n"
-      << "            GP - Girkar-Polychronopoulos algorithm (default)\n"
-      << "            P  - Polimi algorithm (not supported yet)\n\n"
-      << std::endl;
-#endif
 
    // HLS options
    os << "  Scheduling:\n\n"
@@ -410,27 +385,6 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "    --post-rescheduling\n"
       << "        Perform post rescheduling to better distribute resources.\n\n"
 #if HAVE_ILP_BUILT
-#if HAVE_EXPERIMENTAL
-      << "    --ilp-solver=<solver>\n"
-      << "        Sets the ilp solver. Possible values for <solver> are:\n"
-      << "            G - Solve the ilp problem using glpk solver (default)\n"
-#if HAVE_COIN_OR
-      << "            C - Solve the ilp problem using the COIN-OR solver\n"
-#endif
-#if HAVE_LP_SOLVE
-      << "            L - Solve the ilp problem using lp_solve solver\n"
-#endif
-      << "\n"
-      << "    --ilp\n"
-      << "        Perform scheduling by using the integer linear programming formulation.\n"
-      << "        Default: off.\n\n"
-      << "    --ilp-newform\n"
-      << "        Perform scheduling by using the integer linear programming with the new\n"
-      << "        formulation. Default: off.\n\n"
-      << "    --silp\n"
-      << "        Perform scheduling by using the scheduling and allocation with ILP\n"
-      << "        formulation. Default: off.\n\n"
-#endif
       << "    --speculative-sdc-scheduling,-s\n"
       << "        Perform scheduling by using speculative SDC.\n"
       << "        The speculative SDC is more conservative, in case \n"
@@ -449,33 +403,8 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "        Disable chaining optimization.\n\n"
       << std::endl;
 
-#if HAVE_EXPERIMENTAL
-   // Controller style options
-   os << "  Controller style:\n\n"
-      << "    --stg[=<type>]\n"
-      << "        Create the FSM-based controller. This is default for bambu. The\n"
-      << "        optional argument <type> can be used to set options for FSM-based\n"
-      << "        controller as follows:\n"
-      << "            0 - Basic Block-based (exploiting scheduling information) (default)\n\n"
-      << "    --parallel-controller\n"
-      << "        Create the parallel controller\n\n"
-      << std::endl;
-#endif
-
    // Binding options
    os << "  Binding:\n\n"
-#if HAVE_EXPERIMENTAL
-      << "    --storage-value-insertion\n"
-      << "        Specify the storage value insertion algorithm:\n"
-      << "            0 - VARIABLE/VALUES (default)\n"
-      << "            1 - VALUES_INSTANCES\n"
-      << "            2 - LIMITED_VALUES_INSTANCES\n"
-      << "            3 - PAULIN_SCHEME\n\n"
-#endif
-#if HAVE_EXPERIMENTAL
-      << "    --explore-fu-reg=[string]\n"
-      << "        Perform simultaneous FU/reg binding.\n\n"
-#endif
       << "    --register-allocation=<type>\n"
       << "        Set the algorithm used for register allocation. Possible values for the\n"
       << "        <type> argument are the following:\n"
@@ -488,11 +417,6 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "            BIPARTITE_MATCHING  - use bipartite matching algorithm\n"
       << "            TTT_CLIQUE_COVERING - use a weighted clique covering algorithm\n"
       << "            UNIQUE_BINDING      - unique binding algorithm\n"
-#if HAVE_EXPERIMENTAL
-      << "            K_COFAMILY          - use k_cofamily algorithm\n"
-      << "            LEFT_EDGE           - use left edge algorithm\n"
-      << "            CYCLIC_ALLOCATION   - use cyclic allocation algorithm\n"
-#endif
       << "\n"
       << "    --module-binding=<type>\n"
       << "        Set the algorithm used for module binding. Possible values for the\n"
@@ -520,10 +444,6 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "                                 by exploiting the Tseng&Siewiorek heuristic\n"
       << "            BIPARTITE_MATCHING - solve the weighted clique covering problem\n"
       << "                                 exploiting the bipartite matching approach\n"
-#if HAVE_EXPERIMENTAL
-      << "            RANDOMIZED         - solve the weighted clique covering problem\n"
-      << "                                 exploiting a randomized approach\n"
-#endif
       << "            UNIQUE             - use a 1-to-1 binding algorithm\n\n"
       << std::endl;
    os << "    --shared-input-registers\n"
@@ -620,31 +540,6 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "        Perform interconnection binding. Possible values for <type> are:\n"
       << "            M - mux-based architecture (default)\n\n"
       << std::endl;
-
-   // HLS Design Space Exploration Options
-#if HAVE_BEAGLE
-   os << "  High-Level Synthesis Design Space Exploration:\n\n"
-      << "    --dse=<type>\n"
-      << "        Perform design space exploration (default off). Possible values for\n"
-      << "        <type> are the following:\n"
-      << "            MOGA  - Multi-objective Genetic Algorithm with NSGA-II\n"
-      << "            MOSA  - Multi-objective Simulated Annealing\n"
-      << "            MOTS  - Multi-objective Tabu Search\n"
-      << "            ACO   - Multi-objective Ant Colony Optimization\n"
-      << "            GRASP - Grasp\n\n"
-      << "    --max-evaluations=<num>\n"
-      << "        Perform no more than the specified number of evaluations.\n\n"
-      << "    --aco-flow[=<number of ants>]\n"
-      << "        Use Ant Colony Optimization (default off).\n\n"
-      << "    --generations[=<num>]\n"
-      << "        Number ant colony's generations\n\n"
-      << "    --mixed_synthesis, -H[<type>]\n"
-      << "        Determine the exploration space. Possible values for <type> are:\n"
-      << "            0 - based on operation binding information (default)\n"
-      << "            1 - based on scheduling priority information\n"
-      << "            2 - based on binding and scheduling information\n"
-      << std::endl;
-#endif
 #endif
 
    // Options for Evaluation of HLS results
@@ -683,14 +578,7 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "            BRAMS           - number of BRAMs\n"
       << "            CLOCK_SLACK     - Slack between actual and required clock period\n"
       << "            DSPS            - number of DSPs\n"
-#if HAVE_EXPERIMENTAL
-      << "            EDGES_REDUCTION - Performance evaluation for dependence reduction\n"
-#endif
       << "            FREQUENCY       - Maximum target frequency\n"
-#if HAVE_EXPERIMENTAL
-      << "            NUM_AF_EDGES    - Number of incoming edges in the FAFG\n"
-      << "                              techniques\n"
-#endif
       << "            PERIOD          - Actual clock period\n"
       << "            REGISTERS       - number of registers\n"
       << "\n"
@@ -708,17 +596,8 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "        Perform a simulation considering the timing delays.\n\n"
       << "    --timing-violation\n"
       << "        Aborts if synthesized circuit does not meet the timing.\n\n"
-#endif // HAVE_EXPERIMENTAL
-      << std::endl;
-
-   // Export options
-#if HAVE_EXPERIMENTAL
-   os << "  Export:\n\n"
-      << "    --export-core <type>\n"
-      << "        Exports the generated accelerator:\n"
-      << "            PCORE         - Xilinx XPS pcore\n\n"
-      << std::endl;
 #endif
+      << std::endl;
 
    // RTL synthesis options
    os << "  RTL synthesis:\n\n"
@@ -752,9 +631,8 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "            - NanoXplore: a string defining the device string (e.g. nx2h540tsc))\n\n"
       << "    --power-optimization\n"
       << "        Enable Xilinx power based optimization (default no).\n\n"
-      << "    --no-iob\n"
-      << "        Disconnect primary ports from the IOB (the default is to connect\n"
-      << "        primary input and output ports to IOBs).\n\n"
+      << "    --connect-iob\n"
+      << "        Connect primary input and output ports to IOBs.\n\n"
       << "    --soft-float (default)\n"
       << "        Enable the soft-based implementation of floating-point operations.\n"
       << "        Bambu uses as default a faithfully rounded version of softfloat with rounding mode\n"
@@ -971,28 +849,6 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "        Set the number of physical accelerator instantiated in parallel sections. It must\n"
       << "        be a power of two (default=4).\n\n";
 #endif
-#if HAVE_EXPERIMENTAL
-   os << "    --xml-config <file>\n"
-      << "        Define the path to the XML configuration file for the synthesis.\n\n";
-#endif
-#if HAVE_EXPERIMENTAL
-   os << "    --logical-optimization=<level>\n"
-      << "        Enable logic optimization on EPDG:\n"
-      << "             1  - enable optimizations based on CONDITIONAL instructions\n"
-      << "                  information\n"
-      << "             2  - enable optimizations based on ACTIVATION PATH information\n"
-      << "             3  - enable CONDITIONAL and ACTIVATION PATH optimizations\n"
-      << "             4  - enable DATA_TRANSITIVITY optimizations\n"
-      << "             5  - enable CONDITIONAL and DATA_TRANSITIVITY optimizations\n"
-      << "             6  - enable ACTIVATION PATH and DATA_TRANSITIVITY optimizations\n"
-      << "             7  - enable CONDITIONAL, ACTIVATION PATH and DATA_TRANSITIVITY\n"
-      << "                  optimizations\n"
-      << "             8  - enable CONTROL_DATA_TRANSITIVITY optimizations\n"
-      << "             9  - enable CONTROL_DATA_TRANSITIVITY and CONDITIONAL instructions\n"
-      << "                  optimizations\n"
-      << "             16 - enable CONTROL_DATA_CONTROL_FLOW_TRANSITIVITY and CONDITIONAL\n"
-      << "                  instructions optimizations\n\n";
-#endif
 #if HAVE_ILP_BUILT
    os << "    --time, -t <time>\n"
       << "        Set maximum execution time (in seconds) for ILP solvers. (infinite).\n\n";
@@ -1126,43 +982,10 @@ int BambuParameter::Exec()
       /// General options
       {"top-fname", required_argument, nullptr, OPT_TOP_FNAME},
       {"top-rtldesign-name", required_argument, nullptr, OPT_TOP_RTLDESIGN_NAME},
-      {"xml-config", required_argument, nullptr, OPT_XML_CONFIG},
       {"time", required_argument, nullptr, 't'},
       {"file-input-data", required_argument, nullptr, INPUT_OPT_FILE_INPUT_DATA},
       /// Frontend options
       {"circuit-dbg", required_argument, nullptr, 0},
-#if HAVE_EXPERIMENTAL
-      {"pdg-reduction", optional_argument, nullptr, 0},
-      ///--- Flow options ---
-      {"dump-constraints", optional_argument, nullptr, OPT_DUMP_CONSTRAINTS},
-   /// --- Design Space Exploration options ---
-#if HAVE_BEAGLE
-      {"dse", required_argument, nullptr, OPT_DSE},
-      {"max-evaluations", required_argument, nullptr, OPT_MAX_EVALUATIONS},
-      // ACO
-      {"aco-flow", optional_argument, nullptr, OPT_ACO_FLOW},
-      {"generations", optional_argument, nullptr, OPT_ACO_GENERATIONS},
-      // Genetic algorithm
-      {"mixed_synthesis", optional_argument, nullptr, 'H'},
-      {"seed", required_argument, nullptr, 'A'},
-      {"run", required_argument, nullptr, 'B'},
-      {"population", required_argument, nullptr, 'E'},
-      {"generation", required_argument, nullptr, OPT_GENERATION},
-      {"fitness_function", required_argument, nullptr, 'P'},
-      {"inheritance_rate", required_argument, nullptr, 'F'},
-      {"inheritance_mode", required_argument, nullptr, 'G'},
-      {"max_inheritance", required_argument, nullptr, OPT_MAX_INHERITANCE},
-      {"min_inheritance", required_argument, nullptr, OPT_MIN_INHERITANCE},
-      {"distance_rate", required_argument, nullptr, 'M'},
-      {"weighting_function", required_argument, nullptr, 'N'},
-      {"normalize", optional_argument, nullptr, 'Q'},
-      {"time-weight", required_argument, nullptr, OPT_TIME_WEIGHT}, // no short option
-      {"area-weight", required_argument, nullptr, OPT_AREA_WEIGHT}, // no short option
-#endif
-      /// --- Algorithms options ---
-      {"explore-mux", optional_argument, nullptr, 0},
-      {"explore-fu-reg", required_argument, nullptr, 0},
-#endif
    /// Scheduling options
 #if HAVE_ILP_BUILT
       {"speculative-sdc-scheduling", no_argument, nullptr, 's'},
@@ -1198,12 +1021,6 @@ int BambuParameter::Exec()
       {"expose-globals", no_argument, nullptr, OPT_EXPOSE_GLOBALS},
       // interconnections
       {"interconnection", required_argument, nullptr, 'C'},
-#if HAVE_EXPERIMENTAL
-      {"parallel-controller", no_argument, nullptr, OPT_PARALLEL_CONTROLLER},
-#if HAVE_CUDD
-      {"logical-optimization", required_argument, nullptr, OPT_LOGICAL_OPTIMIZATION},
-#endif
-#endif
       /// evaluation options
       {"evaluation", optional_argument, nullptr, OPT_EVALUATION},
 #if HAVE_EXPERIMENTAL
@@ -1219,7 +1036,7 @@ int BambuParameter::Exec()
       {"start-name", required_argument, nullptr, OPT_START_NAME},
       {"done-name", required_argument, nullptr, OPT_DONE_NAME},
       {"power-optimization", no_argument, nullptr, OPT_POWER_OPTIMIZATION},
-      {"no-iob", no_argument, nullptr, OPT_DISABLE_IOB},
+      {"connect-iob", no_argument, nullptr, OPT_CONNECT_IOB},
       {"reset-type", required_argument, nullptr, OPT_RESET_TYPE},
       {"reset-level", required_argument, nullptr, OPT_RESET_LEVEL},
       {"disable-reg-init-value", no_argument, nullptr, OPT_DISABLE_REG_INIT_VALUE},
@@ -1259,15 +1076,10 @@ int BambuParameter::Exec()
       {"fsm-encoding", required_argument, nullptr, OPT_FSM_ENCODING},
       /// target options
       {"target-file", required_argument, nullptr, 'b'},
-#if HAVE_EXPERIMENTAL
-      {"edk-config", required_argument, nullptr, 0},
-#endif
       {"export-core", required_argument, nullptr, 0},
       /// Output options
       {"writer", required_argument, nullptr, 'w'},
-#if HAVE_EXPERIMENTAL
       {"no-mixed-design", no_argument, nullptr, OPT_NO_MIXED_DESIGN},
-#endif
       {"pretty-print", required_argument, nullptr, OPT_PRETTY_PRINT},
       {"pragma-parse", no_argument, nullptr, OPT_PRAGMA_PARSE},
       {"generate-interface", required_argument, nullptr, 0},
@@ -1275,9 +1087,6 @@ int BambuParameter::Exec()
       {"additional-top", required_argument, nullptr, OPT_ADDITIONAL_TOP},
       {"data-bus-bitsize", required_argument, nullptr, 0},
       {"addr-bus-bitsize", required_argument, nullptr, 0},
-#if HAVE_EXPERIMENTAL
-      {"resp-model", required_argument, nullptr, 0},
-#endif
       {"generate-tb", required_argument, nullptr, OPT_TESTBENCH},
       {"testbench-extra-gcc-flags", required_argument, nullptr, OPT_TESTBENCH_EXTRA_GCC_FLAGS},
       {"max-sim-cycles", required_argument, nullptr, OPT_MAX_SIM_CYCLES},
@@ -1396,167 +1205,6 @@ int BambuParameter::Exec()
             setOption(OPT_file_input_data, optarg);
             break;
          }
-#if HAVE_EXPERIMENTAL
-         case OPT_XML_CONFIG:
-         {
-            setOption(OPT_synthesis_flow, HLSFlowStep_Type::XML_HLS_SYNTHESIS_FLOW);
-            setOption(OPT_xml_input_configuration, GetPath(optarg));
-            break;
-         }
-         case OPT_DUMP_CONSTRAINTS:
-         {
-            setOption(OPT_hls_flow, HLSFlowStep_Type::DUMP_DESIGN_FLOW);
-            setOption("dumpConstraints", true);
-            if(optarg)
-               setOption("dumpConstraints_file", optarg);
-            break;
-         }
-         /// frontend options
-         case 'u': // compute the unrolling degree of a loop
-         {
-            setOption("compute_unrolling_degree", true);
-            if(optarg)
-               setOption("IImax", optarg);
-            else
-               throw "BadParameters: compute unrolling degree needs a additional parameter";
-            break;
-         }
-         case OPT_INSERT_VERIFICATION_OPERATION:
-         {
-            setOption("insert_verification_operation", true);
-            break;
-         }
-         /// design space exploration options
-#if HAVE_BEAGLE
-         case OPT_DSE:
-         {
-            setOption(OPT_hls_flow, hls_flow::DSE);
-            if(std::string(optarg) == ("MOSA"))
-               setOption("dse_algorithm", dse_hls::MOSA);
-            else if(std::string(optarg) == ("MOTS"))
-               setOption("dse_algorithm", dse_hls::MOTS);
-            else if(std::string(optarg) == ("ACO"))
-               setOption("dse_algorithm", dse_hls::ACO);
-            else if(std::string(optarg) == ("GRASP"))
-               setOption("dse_algorithm", dse_hls::GRASP);
-            else if(std::string(optarg) == ("MOGA"))
-               setOption("dse_algorithm", dse_hls::MOGA);
-            else
-               THROW_ERROR("Not supported exploration algorithm: " + std::string(optarg));
-            break;
-         }
-         case OPT_MAX_EVALUATIONS:
-         {
-            setOption("max_evaluations", optarg);
-            break;
-         }
-         // ACO
-         case OPT_ACO_FLOW:
-         {
-            setOption(OPT_hls_flow, hls_flow::DSE);
-            setOption("dse_algorithm", dse_hls::ACO);
-            if(optarg)
-               setOption("aco_ant_num", optarg);
-            break;
-         }
-         case OPT_ACO_GENERATIONS:
-         {
-            if(optarg)
-               setOption("aco_generations", optarg);
-            break;
-         }
-         case OPT_MOSA_FLOW:
-         {
-            setOption(OPT_hls_flow, hls_flow::DSE);
-            setOption("dse_algorithm", dse_hls::MOSA);
-            break;
-         }
-         // multi-objective genetic algorithm
-         case 'H': // enable mixed high level synthesis
-         {
-            setOption(OPT_hls_flow, hls_flow::DSE);
-            setOption("dse_algorithm", dse_hls::MOGA);
-            if(optarg)
-               setOption("exploration_technique", optarg);
-            else
-               setOption("exploration_technique", dse_hls::BINDING);
-            break;
-         }
-         case 'Q':
-         {
-            if(optarg)
-               setOption("to_normalize", optarg);
-            else
-               setOption("to_normalize", 1);
-            break;
-         }
-         case 'P': // mixed high level synthesis fitness function
-         {
-            setOption("fitness_function", optarg);
-            break;
-         }
-         case 'A':
-         {
-            setOption("seed", optarg);
-            break;
-         }
-         case 'B':
-         {
-            setOption("run", optarg);
-            break;
-         }
-         case 'E':
-         {
-            setOption("population", optarg);
-            break;
-         }
-         case OPT_GENERATION:
-         {
-            setOption("GA_generation", optarg);
-            break;
-         }
-         case 'F':
-         {
-            setOption("fitness_inheritance_rate", optarg);
-            break;
-         }
-         case 'G':
-         {
-            setOption("inheritance_mode", optarg);
-            break;
-         }
-         case OPT_MAX_INHERITANCE:
-         {
-            setOption("max_for_inheritance", optarg);
-            break;
-         }
-         case OPT_MIN_INHERITANCE:
-         {
-            setOption("min_for_inheritance", optarg);
-            break;
-         }
-         case 'M':
-         {
-            setOption("distance_rate", optarg);
-            break;
-         }
-         case 'N':
-         {
-            setOption("weighting_function", optarg);
-            break;
-         }
-         case OPT_TIME_WEIGHT:
-         {
-            setOption("time_weight", optarg);
-            break;
-         }
-         case OPT_AREA_WEIGHT:
-         {
-            setOption("area_weight", optarg);
-            break;
-         }
-#endif
-#endif
          case OPT_LIST_BASED: // enable list based scheduling
          {
             if(scheduling_set_p)
@@ -1576,68 +1224,6 @@ int BambuParameter::Exec()
             setOption(OPT_post_rescheduling, true);
             break;
          }
-#if HAVE_EXPERIMENTAL
-#if HAVE_ILP_BUILT
-         case OPT_ILP_SOLVER:
-         {
-#if HAVE_GLPK
-            if(optarg[0] == 'G')
-            {
-               setOption(OPT_ilp_solver, meilp_solver::GLPK);
-            }
-            else
-#endif
-#if HAVE_COIN_OR
-                if(optarg[0] == 'C')
-            {
-               setOption(OPT_ilp_solver, meilp_solver::COIN_OR);
-            }
-            else
-#endif
-#if HAVE_LP_SOLVE
-                if(optarg[0] == 'L')
-            {
-               setOption(OPT_ilp_solver, meilp_solver::LP_SOLVE);
-            }
-            else
-#endif
-            {
-               THROW_ERROR("BadParameters: not recognized ilp solver");
-            }
-            break;
-         }
-         case OPT_ILP:
-         {
-            if(scheduling_set_p)
-               THROW_ERROR("BadParameters: only one scheduler can be specified");
-            scheduling_set_p = true;
-            setOption(OPT_scheduling_algorithm, HLSFlowStep_Type::ILP_SCHEDULING);
-            setOption(OPT_chaining, true); /// ILP formulation tries to chain the operations
-            break;
-         }
-         case OPT_ILP_NEWFORM:
-         {
-            if(scheduling_set_p)
-               THROW_ERROR("BadParameters: only one scheduler can be specified");
-            scheduling_set_p = true;
-            setOption(OPT_scheduling_algorithm, HLSFlowStep_Type::ILP_NEW_FORM_SCHEDULING);
-            break;
-         }
-         case OPT_SILP:
-         {
-            if(scheduling_set_p)
-               THROW_ERROR("BadParameters: only one scheduler can be specified");
-            scheduling_set_p = true;
-            setOption(OPT_scheduling_algorithm, HLSFlowStep_Type::SILP_SCHEDULING);
-            break;
-         }
-#endif
-         case OPT_SPECULATIVE: // enable scheduling with speculative computation
-         {
-            setOption(OPT_speculative, true);
-            break;
-         }
-#endif
          case OPT_STG:
          {
             setOption(OPT_stg, true);
@@ -1659,16 +1245,6 @@ int BambuParameter::Exec()
             {
                setOption(OPT_register_allocation_algorithm, HLSFlowStep_Type::CHORDAL_COLORING_REGISTER_BINDING);
             }
-#if HAVE_EXPERIMENTAL
-            else if(std::string(optarg) == "LEFT_EDGE")
-            {
-               setOption(OPT_register_allocation_algorithm, HLSFlowStep_Type::LEFT_EDGE_REGISTER_BINDING);
-            }
-            else if(std::string(optarg) == "K_COFAMILY")
-            {
-               setOption(OPT_register_allocation_algorithm, HLSFlowStep_Type::K_COFAMILY_REGISTER_BINDING);
-            }
-#endif
             else if(std::string(optarg) == "WEIGHTED_COLORING")
             {
                setOption(OPT_register_allocation_algorithm, HLSFlowStep_Type::WEIGHTED_CLIQUE_REGISTER_BINDING);
@@ -1719,13 +1295,6 @@ int BambuParameter::Exec()
             }
             break;
          }
-#if HAVE_EXPERIMENTAL
-         case OPT_PARALLEL_CONTROLLER:
-         {
-            setOption(OPT_controller_architecture, HLSFlowStep_Type::PARALLEL_CONTROLLER_CREATOR);
-            break;
-         }
-#endif
          /// target options
          case 'b':
          {
@@ -1788,15 +1357,6 @@ int BambuParameter::Exec()
                       ;
                   add_evaluation_objective_string(objective_string, to_add);
                }
-#if HAVE_EXPERIMENTAL
-               else if(isOption(OPT_evaluation_mode) &&
-                       getOption<Evaluation_Mode>(OPT_evaluation_mode) == Evaluation_Mode::ESTIMATION)
-               {
-                  add_evaluation_objective_string(objective_string, "AREA,"
-                                                                    "TIME,"
-                                                                    "CLOCK_SLACK");
-               }
-#endif
                else
                {
                   THROW_ERROR("BadParameters: invalid evaluation mode");
@@ -1809,36 +1369,6 @@ int BambuParameter::Exec()
             setOption(OPT_evaluation_objectives, objective_string);
             break;
          }
-#if HAVE_EXPERIMENTAL
-         case OPT_EVALUATION_MODE:
-         {
-            // set OPT_evaluation, because the evaluation has to be performed
-            setOption(OPT_evaluation, true);
-            /*
-             * here don't check if OPT_evaluation mode was already set by
-             * someone else. if someone else has already defined
-             * OPT_evaluation_mode the --evaluation-mode parameter should
-             * overwrite it anyway.
-             */
-            if(optarg == nullptr)
-            {
-               throw "BadParameters: evaluation mode must be specified, use EXACT or LINEAR";
-            }
-            else if(std::string(optarg) == "EXACT")
-            {
-               setOption(OPT_evaluation_mode, Evaluation_Mode::EXACT);
-            }
-            else if(std::string(optarg) == "LINEAR")
-            {
-               setOption(OPT_evaluation_mode, Evaluation_Mode::ESTIMATION);
-            }
-            else
-            {
-               throw "BadParameters: evaluation mode not correctly specified, use EXACT or LINEAR";
-            }
-            break;
-         }
-#endif
          case OPT_SIMULATE:
          {
             /*
@@ -1948,9 +1478,10 @@ int BambuParameter::Exec()
             setOption("power_optimization", true);
             break;
          }
-         case OPT_DISABLE_IOB:
+         case OPT_CONNECT_IOB:
          {
-            setOption(OPT_connect_iob, false);
+            setOption(OPT_connect_iob, true);
+            THROW_WARNING("Input and output ports will be connected to I/O buffers in the generated design.");
             break;
          }
          case OPT_RESET_TYPE:
@@ -2237,10 +1768,6 @@ int BambuParameter::Exec()
             if(std::string(optarg) == "V")
             {
                setOption(OPT_writer_language, static_cast<int>(HDLWriter_Language::VERILOG));
-#if HAVE_EXPERIMENTAL
-               else if(std::string(optarg) == "S")
-                   setOption(OPT_writer_language, static_cast<int>(HDLWriter_Language::SYSTEMC));
-#endif
             }
             else if(std::string(optarg) == "H")
             {
@@ -2291,14 +1818,6 @@ int BambuParameter::Exec()
             setOption(OPT_generate_vcd, true);
             break;
          }
-#if HAVE_CUDD
-         case OPT_LOGICAL_OPTIMIZATION:
-         {
-            if(optarg)
-               setOption("logical_optimization", optarg);
-            break;
-         }
-#endif
          case OPT_ADDITIONAL_TOP:
          {
             setOption(OPT_additional_top, optarg);
@@ -2597,13 +2116,6 @@ int BambuParameter::Exec()
                   setOption(OPT_fu_binding_algorithm, HLSFlowStep_Type::CDFC_MODULE_BINDING);
                   setOption(OPT_cdfc_module_binding_algorithm, CliqueCovering_Algorithm::BIPARTITE_MATCHING);
                }
-#if HAVE_EXPERIMENTAL
-               else if(std::string(optarg) == "RANDOMIZED")
-               {
-                  setOption(OPT_fu_binding_algorithm, HLSFlowStep_Type::CDFC_MODULE_BINDING);
-                  setOption(OPT_cdfc_module_binding_algorithm, CliqueCovering_Algorithm::RANDOMIZED);
-               }
-#endif
                else if(std::string(optarg) == "UNIQUE")
                {
                   setOption(OPT_fu_binding_algorithm, HLSFlowStep_Type::UNIQUE_MODULE_BINDING);
@@ -2732,32 +2244,6 @@ int BambuParameter::Exec()
                setOption(OPT_timing_simulation, true);
                break;
             }
-            if(strcmp(long_options[option_index].name, "resp-model") == 0)
-            {
-               setOption(OPT_resp_model, optarg);
-               break;
-            }
-            // front-end analysis option
-            if(strcmp(long_options[option_index].name, "pdg-reduction") == 0)
-            {
-               // Set the default
-               if(optarg)
-                  setOption("pdg-reduction", optarg);
-               break;
-            }
-            if(strcmp(long_options[option_index].name, "explore-mux") == 0)
-            {
-               setOption("explore-mux", true);
-               if(optarg)
-                  setOption("worst_case_delay", optarg);
-               break;
-            }
-            if(strcmp(long_options[option_index].name, "explore-fu-reg") == 0)
-            {
-               setOption("explore-fu-reg", true);
-               setOption("explore-fu-reg-param", optarg);
-               break;
-            }
 #endif
             if(strcmp(long_options[option_index].name, "assert-debug") == 0)
             {
@@ -2788,41 +2274,12 @@ int BambuParameter::Exec()
                   setOption(OPT_channels_number, 1);
                   setOption(OPT_channels_type, MemoryAllocation_ChannelsType::MEM_ACC_11);
                }
-#if HAVE_EXPERIMENTAL
-               else if(std::string(optarg) == "AXI4LITE")
-               {
-                  setOption(OPT_interface_type, HLSFlowStep_Type::AXI4LITE_INTERFACE_GENERATION);
-               }
-               else if(std::string(optarg) == "FSL")
-               {
-                  setOption(OPT_interface_type, HLSFlowStep_Type::FSL_INTERFACE_GENERATION);
-               }
-               else if(std::string(optarg) == "NPI")
-               {
-                  setOption(OPT_interface_type, HLSFlowStep_Type::NPI_INTERFACE_GENERATION);
-               }
-#endif
                else
                {
                   THROW_ERROR("Not supported interface: |" + std::string(optarg) + "|");
                }
                break;
             }
-#if HAVE_EXPERIMENTAL
-            if(strcmp(long_options[option_index].name, "export-core") == 0)
-            {
-               setOption(OPT_export_core, true);
-               if(std::string(optarg) == "PCORE")
-               {
-                  setOption(OPT_export_core_mode, HLSFlowStep_Type::EXPORT_PCORE);
-               }
-               else
-               {
-                  THROW_ERROR("Not supported export mode: " + std::string(optarg));
-               }
-               break;
-            }
-#endif
             if(strcmp(long_options[option_index].name, "data-bus-bitsize") == 0)
             {
                setOption(OPT_data_bus_bitsize, boost::lexical_cast<int>(optarg));
@@ -2833,14 +2290,6 @@ int BambuParameter::Exec()
                setOption(OPT_addr_bus_bitsize, boost::lexical_cast<int>(optarg));
                break;
             }
-#if HAVE_EXPERIMENTAL
-            if(strcmp(long_options[option_index].name, "edk-config") == 0)
-            {
-               setOption("edk_wrapper", true);
-               setOption("edk_config_file", std::string(optarg));
-               break;
-            }
-#endif
             if(strcmp(long_options[option_index].name, "simulator") == 0)
             {
                setOption(OPT_simulator, std::string(optarg));
@@ -3418,21 +2867,6 @@ void BambuParameter::CheckParameters()
       setOption(OPT_channels_number, 2);
    }
 
-   /// DSE options
-#if HAVE_EXPERIMENTAL
-#if HAVE_BEAGLE
-   if(getOption<int>("exploration_technique") == dse_hls::PRIORITY && getOption<int>("to_normalize"))
-      setOption("to_normalize", false);
-   if(isOption("dse_algorithm") && getOption<unsigned int>("dse_algorithm") == dse_hls::ACO)
-   {
-      if(!isOption("aco_ant_num"))
-         setOption("aco_ant_num", 5);
-      if(!isOption("aco_generations"))
-         setOption("aco_generations", 10);
-   }
-#endif
-#endif
-
    /// circuit debugging options
    if(isOption(OPT_generate_vcd) && getOption<bool>(OPT_generate_vcd))
    {
@@ -3453,13 +2887,6 @@ void BambuParameter::CheckParameters()
 
    /// chaining options
    setOption(OPT_chaining_algorithm, HLSFlowStep_Type::SCHED_CHAINING);
-#if HAVE_EXPERIMENTAL
-   if(getOption<HLSFlowStep_Type>(OPT_controller_architecture) == HLSFlowStep_Type::PARALLEL_CONTROLLER_CREATOR)
-   {
-      setOption(OPT_liveness_algorithm, HLSFlowStep_Type::CHAINING_BASED_LIVENESS);
-      setOption(OPT_chaining_algorithm, HLSFlowStep_Type::EPDG_SCHED_CHAINING);
-   }
-#endif
 
    /// evaluation options
    if(getOption<bool>(OPT_evaluation))
@@ -3491,14 +2918,7 @@ void BambuParameter::CheckParameters()
          }
          const auto is_valid_evaluation_mode = [](const std::string& s) -> bool {
             return s == "AREA" || s == "AREAxTIME" || s == "TIME" || s == "TOTAL_TIME" || s == "CYCLES" ||
-                   s == "TOTAL_CYCLES" || s == "BRAMS" || s == "CLOCK_SLACK" || s == "DSPS" ||
-#if HAVE_EXPERIMENTAL
-                   s == "EDGES_REDUCTION" ||
-#endif
-                   s == "FREQUENCY" ||
-#if HAVE_EXPERIMENTAL
-                   s == "NUM_AD_EDGES" ||
-#endif
+                   s == "TOTAL_CYCLES" || s == "BRAMS" || s == "CLOCK_SLACK" || s == "DSPS" || s == "FREQUENCY" ||
                    s == "PERIOD" || s == "REGISTERS";
          };
          if(!all_of(objective_vector.begin(), objective_vector.end(), is_valid_evaluation_mode))
@@ -3506,32 +2926,11 @@ void BambuParameter::CheckParameters()
             THROW_ERROR("BadParameters: evaluation mode EXACT don't support the evaluation objectives");
          }
       }
-#if HAVE_EXPERIMENTAL
-      else if(getOption<Evaluation_Mode>(OPT_evaluation_mode) == Evaluation_Mode::ESTIMATION)
-      {
-         const auto is_valid_evaluation_mode = [](const std::string& s) -> bool {
-            return s == "AREA" || s == "TIME" || s == "CLOCK_SLACK";
-         };
-         if(!all_of(objective_vector.begin(), objective_vector.end(), is_valid_evaluation_mode))
-         {
-            THROW_ERROR("BadParameters: evaluation mode LINEAR don't support the evaluation objectives");
-         }
-      }
-#endif
       else
       {
          THROW_ERROR("BadParameters: invalid evaluation mode");
       }
    }
-#if HAVE_EXPERIMENTAL
-   /// Export and interface generation
-   if(getOption<bool>(OPT_export_core) &&
-      getOption<HLSFlowStep_Type>(OPT_export_core_mode) == HLSFlowStep_Type::EXPORT_PCORE)
-   {
-      setOption(OPT_interface, true);
-      setOption(OPT_interface_type, HLSFlowStep_Type::AXI4LITE_INTERFACE_GENERATION);
-   }
-#endif
 
    if(isOption(OPT_interface_type) &&
       getOption<HLSFlowStep_Type>(OPT_interface_type) == HLSFlowStep_Type::INFERRED_INTERFACE_GENERATION)
@@ -4015,18 +3414,6 @@ void BambuParameter::CheckParameters()
          THROW_ERROR("-fwhole-program cannot be used with multiple input files");
       }
    }
-#if HAVE_EXPERIMENTAL
-   if(isOption(OPT_interface_type) &&
-      getOption<HLSFlowStep_Type>(OPT_interface_type) == HLSFlowStep_Type::AXI4LITE_INTERFACE_GENERATION)
-   {
-      if(isOption(OPT_evaluation_objectives) &&
-         getOption<std::string>(OPT_evaluation_objectives).find("AREA") != std::string::npos)
-         THROW_ERROR("AXI-based synthesis has to be performed outside of bambu");
-      else
-         THROW_WARNING("Note that synthesis and simulation scripts generated by bambu for AXI-based designs are "
-                       "actually only templates not real synthesis scripts\n");
-   }
-#endif
    if(isOption(OPT_discrepancy) && getOption<bool>(OPT_discrepancy) && isOption(OPT_discrepancy_hw) &&
       getOption<bool>(OPT_discrepancy_hw))
    {
@@ -4134,10 +3521,7 @@ void BambuParameter::CheckParameters()
                            static_cast<unsigned int>(getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler)));
    if(isOption(OPT_evaluation_objectives) &&
       getOption<std::string>(OPT_evaluation_objectives).find("CYCLES") != std::string::npos &&
-      isOption(OPT_device_string) &&
-      (getOption<std::string>(OPT_device_string) == "LFE335EA8FN484C" ||
-       getOption<std::string>(OPT_device_string) == "LFE5UM85F8BG756C" ||
-       getOption<std::string>(OPT_device_string) == "LFE5U85F8BG756C"))
+      isOption(OPT_device_string) && boost::starts_with(getOption<std::string>(OPT_device_string), "LFE"))
    {
       if(getOption<std::string>(OPT_simulator) == "VERILATOR")
       {
@@ -4149,23 +3533,17 @@ void BambuParameter::CheckParameters()
    {
       if(isOption(OPT_evaluation_objectives) &&
          getOption<std::string>(OPT_evaluation_objectives).find("AREA") != std::string::npos &&
-         isOption(OPT_device_string) &&
-         (getOption<std::string>(OPT_device_string) == "LFE335EA8FN484C" ||
-          getOption<std::string>(OPT_device_string) == "LFE5UM85F8BG756C" ||
-          getOption<std::string>(OPT_device_string) == "LFE5U85F8BG756C") &&
+         isOption(OPT_device_string) && boost::starts_with(getOption<std::string>(OPT_device_string), "LFE") &&
          !getOption<bool>(OPT_connect_iob))
       {
-         THROW_WARNING("--no-iob cannot be used when target is a Lattice board");
+         THROW_WARNING("--connect-iob must be used when target is a Lattice board");
       }
    }
    else
    {
       if(isOption(OPT_evaluation_objectives) &&
          getOption<std::string>(OPT_evaluation_objectives).find("CYCLES") != std::string::npos &&
-         isOption(OPT_device_string) &&
-         (getOption<std::string>(OPT_device_string) == "LFE335EA8FN484C" ||
-          getOption<std::string>(OPT_device_string) == "LFE5UM85F8BG756C" ||
-          getOption<std::string>(OPT_device_string) == "LFE5U85F8BG756C"))
+         isOption(OPT_device_string) && boost::starts_with(getOption<std::string>(OPT_device_string), "LFE"))
       {
          THROW_ERROR("Simulation of Lattice devices requires to enable Lattice support. See documentation about "
                      "--lattice-root option.");
@@ -4222,12 +3600,6 @@ void BambuParameter::SetDefaults()
    setOption(OPT_use_rtl, false);
 #endif
 
-   // setOption("pdg-reduction", false);
-
-#if HAVE_EXPERIMENTAL
-   setOption("compute_unrolling_degree", false);
-   setOption("insert_verification_operation", false);
-#endif
    setOption(OPT_frontend_statistics, false);
 
    /// ---------- HLS process options ----------- //
@@ -4316,9 +3688,6 @@ void BambuParameter::SetDefaults()
    /// -- Controller -- //
    /// target architecture for the controller
    setOption(OPT_controller_architecture, HLSFlowStep_Type::FSM_CONTROLLER_CREATOR);
-#if HAVE_CUDD
-   setOption("logical_optimization", 0);
-#endif
 
    /// -- top entity -- //
    /// Output file name for top entity
@@ -4336,11 +3705,6 @@ void BambuParameter::SetDefaults()
    setOption(OPT_evaluation, false);
    setOption(OPT_evaluation_mode, Evaluation_Mode::NONE);
    setOption(OPT_evaluation_objectives, "");
-#if HAVE_EXPERIMENTAL
-   setOption("evaluation_statistic", false);
-   setOption("evaluation_reduced", false);
-   setOption("evaluation_output", "evaluation.txt");
-#endif
 
    setOption(OPT_altera_root, "/opt/altera:/opt/intelFPGA");
    setOption(OPT_lattice_root, "/opt/diamond:/usr/local/diamond");
@@ -4360,36 +3724,7 @@ void BambuParameter::SetDefaults()
    setOption(OPT_timing_violation_abort, false);
    setOption(OPT_target_device_type, static_cast<int>(TargetDevice_Type::FPGA));
    setOption(OPT_export_core, false);
-#if HAVE_EXPERIMENTAL
-   setOption("edk_wrapper", false);
-#endif
-   setOption(OPT_connect_iob, true);
-
-#if(HAVE_EXPERIMENTAL && HAVE_BEAGLE)
-   // -- Parameters for the design space exploration -- //
-   setOption("exploration_technique", dse_hls::BINDING);
-   setOption("to_normalize", 0);
-   setOption("seed", 0);
-   setOption("run", 1);
-   setOption("deme_size", 1);
-   setOption("population", 50);
-   setOption("GA_generation", 10);
-   setOption("max_evaluations", 0);
-   setOption("fitness_function", objective_evaluator::LINEAR);
-   setOption("fitness_inheritance_rate", 0.0);
-   /// if the parameter is even, the cache is analysed. Otherwise only the latest population
-   setOption("inheritance_mode", 0);
-   setOption("max_for_inheritance", 50);
-   setOption("min_for_inheritance", 1);
-   setOption("distance_rate", 0.20);
-   setOption("weighting_function", FitnessFunction::QUADRATIC);
-   setOption("time_weight", 0.5);
-   setOption("area_weight", 0.5);
-   setOption("remove_duplicated", true);
-   setOption("lower", 0.05);
-   setOption("upper", 0.05);
-   setOption("prob_dupl", 0.50);
-#endif
+   setOption(OPT_connect_iob, false);
 
    /// -- Compiler options -- //
    setOption(OPT_default_compiler, CompilerWrapper::getDefaultCompiler());
@@ -4446,9 +3781,7 @@ void BambuParameter::SetDefaults()
    setOption(OPT_host_compiler, CompilerWrapper::getDefaultCompiler());
 #endif
    setOption(OPT_clock_period, 10.0);
-#if HAVE_EXPERIMENTAL
    setOption(OPT_mixed_design, true);
-#endif
 #if HAVE_TASTE
    setOption(OPT_generate_taste_architecture, false);
 #endif

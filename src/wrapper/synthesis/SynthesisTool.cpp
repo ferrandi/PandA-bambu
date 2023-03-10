@@ -43,9 +43,6 @@
 
 #include <utility>
 
-/// Autoheader include
-#include "config_HAVE_EXPERIMENTAL.hpp"
-
 /// supported synthesis tools
 #include "DesignCompilerWrapper.hpp"
 #include "bash_flow_wrapper.hpp"
@@ -62,18 +59,6 @@
 #include "trce_wrapper.hpp"
 #include "vivado_flow_wrapper.hpp"
 #include "xst_wrapper.hpp"
-
-#if HAVE_EXPERIMENTAL
-#if 0
-#include "DesignOptimizerWrapper.hpp"
-#include "FormalityWrapper.hpp"
-#include "LibraryCompilerWrapper.hpp"
-#include "LibraryCreatorWrapper.hpp"
-#include "PrimeTimeWrapper.hpp"
-#include "SocEncounterWrapper.hpp"
-#include "xpwr_wrapper.hpp"
-#endif
-#endif
 
 #include "Parameter.hpp"
 
@@ -169,39 +154,6 @@ SynthesisToolRef SynthesisTool::create_synthesis_tool(type_t type, const Paramet
       case BASH_FLOW:
          return SynthesisToolRef(new bash_flow_wrapper(_Param, _output_dir, _device));
          break;
-#if(0 && HAVE_EXPERIMENTAL)
-      case PRIME_TIME:
-         return SynthesisToolRef(new PrimeTimeWrapper(_Param, _device, _output_dir));
-         break;
-      case FORMALITY:
-         return SynthesisToolRef(new FormalityWrapper(_Param, _device, _output_dir));
-         break;
-      case LIBRARY_COMPILER:
-         return SynthesisToolRef(new LibraryCompilerWrapper(_Param, _device, _output_dir));
-         break;
-      case SOC_ENCOUNTER:
-         return SynthesisToolRef(new SoCEncounterWrapper(_Param, _device, _output_dir));
-         break;
-      case LIBRARY_CREATOR:
-         return SynthesisToolRef(new LibraryCreatorWrapper(_Param, _device, _output_dir));
-         break;
-      case DESIGN_OPTIMIZER:
-         return SynthesisToolRef(new DesignOptimizerWrapper(_Param, _device, _output_dir));
-         break;
-      case XPWR:
-         return SynthesisToolRef(new xpwr_wrapper(_Param, _output_dir));
-         break;
-#else
-#if HAVE_EXPERIMENTAL
-      case PRIME_TIME:
-      case FORMALITY:
-      case LIBRARY_COMPILER:
-      case SOC_ENCOUNTER:
-      case LIBRARY_CREATOR:
-      case DESIGN_OPTIMIZER:
-      case XPWR:
-#endif
-#endif
       default:
          THROW_ERROR("Synthesis tool currently not supported");
    }
