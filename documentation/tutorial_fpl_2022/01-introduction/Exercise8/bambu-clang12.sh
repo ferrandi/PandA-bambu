@@ -9,5 +9,5 @@ clang-12 -O3 -fno-slp-vectorize -fno-vectorize $root_dir/Keccak.c -emit-llvm -S 
 bambu $root_dir/test.ll --top-fname=kekka_coproc \
    --clock-period=2.5 --device-name=xc7vx690t-3ffg1930-VVD \
    --generate-tb=$root_dir/test.xml --simulate \
-   --compiler=I386_CLANG12 --no-iob \
+   --compiler=I386_CLANG12 \
    --print-dot --pretty-print=a.c -v4 "$@" |& tee log.txt

@@ -7,7 +7,7 @@ mkdir -p $basename_dir
 mkdir -p $basename_dir/hls1
 cd $basename_dir/hls1
 echo "#complete synthesis and simulation"
-timeout 2h bambu --simulator=MODELSIM --panda-parameter=disable-pragma-parsing=1 --print-dot $root_dir/coef1.cpp --compiler=I386_GCC5 --no-iob --evaluation --std=c++1y --top-fname=main --top-rtldesign-name=firFixed --file-input-data=$root_dir/input.pcm -DNDEBUG -DWITH_EXTERNC "$@"
+timeout 2h bambu --simulator=MODELSIM --panda-parameter=disable-pragma-parsing=1 --print-dot $root_dir/coef1.cpp --compiler=I386_GCC5 --evaluation --std=c++1y --top-fname=main --top-rtldesign-name=firFixed --file-input-data=$root_dir/input.pcm -DNDEBUG -DWITH_EXTERNC "$@"
 return_value=$?
 if test $return_value != 0; then
    exit $return_value
@@ -21,7 +21,7 @@ cd $current_dir
 mkdir -p $basename_dir/hls2
 cd $basename_dir/hls2
 echo "#focused synthesis and simulation"
-timeout 2h bambu --simulator=MODELSIM --panda-parameter=disable-pragma-parsing=1 --print-dot $root_dir/coef1.cpp --compiler=I386_GCC5 --no-iob --evaluation --std=c++1y --top-fname=firFixed --generate-tb=$root_dir/test.xml "$@"
+timeout 2h bambu --simulator=MODELSIM --panda-parameter=disable-pragma-parsing=1 --print-dot $root_dir/coef1.cpp --compiler=I386_GCC5 --evaluation --std=c++1y --top-fname=firFixed --generate-tb=$root_dir/test.xml "$@"
 return_value=$?
 if test $return_value != 0; then
    exit $return_value
