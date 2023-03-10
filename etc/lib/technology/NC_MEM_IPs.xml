@@ -14988,7 +14988,7 @@ wire valid,tagsmatch;
    reg r_empty;
    reg w_full;
 
-   reg error = 0;
+   reg error = 0, next_error;
    reg w_full_nxt = 0;
    reg write_fail_reg;
 
@@ -15033,10 +15033,11 @@ wire valid,tagsmatch;
    end
    
    `IOB_COMB begin
+       next_error = error;
        if(write_fail)
-        error = 1&apos;b1;
+        next_error = 1&apos;b1;
        else if(r_en_int)
-        error = 1&apos;b0;
+        next_error = 1&apos;b0;
        w_full_nxt = w_full;
        if(write_fail)
         w_full_nxt = 1&apos;b1;
@@ -15052,11 +15053,12 @@ wire valid,tagsmatch;
    
    always @(posedge clk) begin
     write_fail_reg &lt;= write_fail;
+    error &lt;= next_error;
    end
 
    //FIFO empty
    `IOB_WIRE(r_empty_nxt, 1)
-   assign r_empty_nxt = (level_nxt[0+:ADDR_W+1] &lt; r_incr) &amp;&amp; (error == 0);
+   assign r_empty_nxt = (level_nxt[0+:ADDR_W+1] &lt; r_incr) &amp;&amp; (next_error == 0);
    `IOB_REG_AR(clk, arst, 1&apos;d1, r_empty, r_empty_nxt)
 
    //FIFO full
@@ -15093,8 +15095,8 @@ wire valid,tagsmatch;
       .w_data        (write_fail_reg ? r_data : w_data),
       .w_addr        (w_addr),
 
-      .r_en          (error || r_en_int),
-      .r_addr        (error ? b_addr : r_addr),
+      .r_en          (next_error || r_en_int),
+      .r_addr        (next_error ? b_addr : r_addr),
       .r_data        (r_data)
       );
    `undef IOB_MAX
@@ -16145,9 +16147,9 @@ wire valid,tagsmatch;
         begin
            //cache-control hit-miss counters enables
            assign write_hit  = ready &amp; ( hit &amp; write_access);
-           assign write_miss = ready &amp; (~hit &amp; write_access);
+           assign write_miss = replace_valid &amp; write_access;
            assign read_hit   = ready &amp; ( hit &amp;  read_access);
-           assign read_miss  = replace_valid;//will also subtract read_hit
+           assign read_miss  = replace_valid &amp; read_access;
         end
       else
         begin
@@ -16581,16 +16583,16 @@ wire valid,tagsmatch;
           <NP_functionality LIBRARY="IOB_cache_control CTRL_CNT rdata" VERILOG_PROVIDED="
    `define CTRL_ADDR_W 4
     //Addresses for cache controller's task
-   `define ADDR_BUFFER_EMPTY     (`CTRL_ADDR_W'd1)
-   `define ADDR_BUFFER_FULL      (`CTRL_ADDR_W'd2) 
-   `define ADDR_CACHE_HIT        (`CTRL_ADDR_W'd3) 
-   `define ADDR_CACHE_MISS       (`CTRL_ADDR_W'd4) 
-   `define ADDR_CACHE_READ_HIT   (`CTRL_ADDR_W'd5) 
-   `define ADDR_CACHE_READ_MISS  (`CTRL_ADDR_W'd6) 
-   `define ADDR_CACHE_WRITE_HIT  (`CTRL_ADDR_W'd7) 
-   `define ADDR_CACHE_WRITE_MISS (`CTRL_ADDR_W'd8) 
-   `define ADDR_RESET_COUNTER    (`CTRL_ADDR_W'd9) 
-   `define ADDR_CACHE_INVALIDATE (`CTRL_ADDR_W'd10)
+   `define ADDR_BUFFER_EMPTY          (`CTRL_ADDR_W'd1)
+   `define ADDR_BUFFER_FULL           (`CTRL_ADDR_W'd2) 
+   `define ADDR_CACHE_HIT             (`CTRL_ADDR_W'd3) 
+   `define ADDR_CACHE_MISS            (`CTRL_ADDR_W'd4) 
+   `define ADDR_CACHE_READ_ACCESS     (`CTRL_ADDR_W'd5) 
+   `define ADDR_CACHE_READ_MISS       (`CTRL_ADDR_W'd6) 
+   `define ADDR_CACHE_WRITE_ACCESS    (`CTRL_ADDR_W'd7) 
+   `define ADDR_CACHE_WRITE_MISS      (`CTRL_ADDR_W'd8) 
+   `define ADDR_RESET_COUNTER         (`CTRL_ADDR_W'd9) 
+   `define ADDR_CACHE_INVALIDATE      (`CTRL_ADDR_W'd10)
 
    localparam FE_DATA_W = BITSIZE_rdata;
 
@@ -16600,46 +16602,45 @@ wire valid,tagsmatch;
 
    generate
       if(CTRL_CNT)
-        begin
+        begin : cnt
            
-           reg [FE_DATA_W-1:0]             read_hit_cnt, read_miss_cnt, write_hit_cnt, write_miss_cnt;
+           reg [FE_DATA_W-1:0]             read_access_cnt, read_miss_cnt, write_access_cnt, write_miss_cnt;
            wire [FE_DATA_W-1:0]            hit_cnt, miss_cnt;
            reg                             counter_reset;
 
-           assign hit_cnt  = read_hit_cnt  + write_hit_cnt;
+           assign hit_cnt  = read_access_cnt  + write_access_cnt;
            assign miss_cnt = read_miss_cnt + write_miss_cnt;
            
            always @ (posedge clk, posedge reset)
              begin 		
 	        if (reset) 
 	          begin
-                     read_hit_cnt  &lt;= {FE_DATA_W{1&apos;b0}};
+                     read_access_cnt  &lt;= {FE_DATA_W{1&apos;b0}};
 	             read_miss_cnt &lt;= {FE_DATA_W{1&apos;b0}};
-	             write_hit_cnt  &lt;= {FE_DATA_W{1&apos;b0}};
+	             write_access_cnt  &lt;= {FE_DATA_W{1&apos;b0}};
 	             write_miss_cnt &lt;= {FE_DATA_W{1&apos;b0}};
                   end
                 else
                   begin
                      if (counter_reset) 
 	               begin
-                          read_hit_cnt  &lt;= {FE_DATA_W{1&apos;b0}};
+                          read_access_cnt  &lt;= {FE_DATA_W{1&apos;b0}};
 	                  read_miss_cnt &lt;= {FE_DATA_W{1&apos;b0}};
-	                  write_hit_cnt  &lt;= {FE_DATA_W{1&apos;b0}};
+	                  write_access_cnt  &lt;= {FE_DATA_W{1&apos;b0}};
 	                  write_miss_cnt &lt;= {FE_DATA_W{1&apos;b0}};
                        end
                      else
 	               if (read_hit)
 	                 begin
-		            read_hit_cnt &lt;= read_hit_cnt + 1; 
+		            read_access_cnt &lt;= read_access_cnt + 1; 
 	                 end
 	               else if (write_hit)
 	                 begin
-		            write_hit_cnt &lt;= write_hit_cnt + 1;
+		            write_access_cnt &lt;= write_access_cnt + 1;
 	                 end
 	               else if (read_miss)
 	                 begin
 		            read_miss_cnt &lt;= read_miss_cnt + 1;
-                            read_hit_cnt &lt;= read_hit_cnt - 1;
                          end
 	               else if (write_miss)
 	                 begin
@@ -16647,9 +16648,9 @@ wire valid,tagsmatch;
 	                 end
 	               else
 	                 begin
-		            read_hit_cnt &lt;= read_hit_cnt;
+		            read_access_cnt &lt;= read_access_cnt;
 		            read_miss_cnt &lt;= read_miss_cnt;
-		            write_hit_cnt &lt;= write_hit_cnt;
+		            write_access_cnt &lt;= write_access_cnt;
 		            write_miss_cnt &lt;= write_miss_cnt;
 	                 end
 	          end // else: !if(ctrl_arst)   
@@ -16666,12 +16667,12 @@ wire valid,tagsmatch;
 	            rdata &lt;= hit_cnt;
                   else if (addr == `ADDR_CACHE_MISS)
 	            rdata &lt;= miss_cnt;
-	          else if (addr == `ADDR_CACHE_READ_HIT)
-	            rdata &lt;= read_hit_cnt;
+	          else if (addr == `ADDR_CACHE_READ_ACCESS)
+	            rdata &lt;= read_access_cnt;
 	          else if (addr == `ADDR_CACHE_READ_MISS)
 	            rdata &lt;= read_miss_cnt;
-	          else if (addr == `ADDR_CACHE_WRITE_HIT)
-	            rdata &lt;= write_hit_cnt;
+	          else if (addr == `ADDR_CACHE_WRITE_ACCESS)
+	            rdata &lt;= write_access_cnt;
 	          else if (addr == `ADDR_CACHE_WRITE_MISS)
 	            rdata &lt;= write_miss_cnt;
 	          else if (addr == `ADDR_RESET_COUNTER)
@@ -16968,7 +16969,7 @@ wire valid,tagsmatch;
       .reset (reset),
       //front-end port
       .valid (valid),
-      .addr  (addr),
+      .addr  ({{CTRL_CACHE{1&apos;b0}}, addr}),
       .wdata (wdata),
       .wstrb (wstrb),
       .rdata (rdata),
@@ -17150,7 +17151,7 @@ wire valid,tagsmatch;
    
    
    generate
-      if (CTRL_CACHE)
+      if (CTRL_CACHE) begin : ctrl
         IOB_cache_control
           #(
             .CTRL_CNT   (CTRL_CNT),
@@ -17179,7 +17180,7 @@ wire valid,tagsmatch;
          .ready (ctrl_ready),
          .invalidate (invalidate)
          );
-      else
+      end else
         begin
            assign ctrl_rdata = 1&apos;bx;
            assign ctrl_ready = 1&apos;bx;

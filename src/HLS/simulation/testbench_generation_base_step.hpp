@@ -171,6 +171,14 @@ class TestbenchGenerationBaseStep : public HLS_step
    void write_initial_block(const std::string& simulation_values_path, bool withMemory,
                             const tree_managerConstRef TreeM, bool generate_vcd_output) const;
 
+   /** This function takes care of printing cache hit/miss counters. Starting from the root module, it visits all
+    * submodules and checks if they have axi ports, then recursively visits axi children. If no axi children are found,
+    * the current node is the axi controller and can print the axi cache stats.
+    * @param rootMod Root module the search must be started from.
+    * @return true if the node has at least an axi child.
+    */
+   bool printCacheStats(const module* rootMod) const;
+
    /**
     * Generates and execute the Verilator testbench file associated with the given component
     */
