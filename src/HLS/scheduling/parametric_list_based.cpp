@@ -555,6 +555,13 @@ const double parametric_list_based::EPSILON = 0.000000001;
 
 #define CTRL_STEP_MULTIPLIER 1000
 
+enum ResourceAttribute
+{
+   NONE = 0,
+   RW_F = 1,
+   LOAD_STORE_OP = 2,
+};
+
 /// definition of the data structure used to check if a resource is available given a vertex
 /// in case a vertex is not included in a map this mean that the used resources are zero.
 /// First index is the functional unit type, second index is the controller node, third index is the condition
@@ -565,6 +572,7 @@ struct resource_table
    bool hasResource(unsigned fu);
    void initResource(unsigned fu, unsigned n);
    unsigned& getRefResource(unsigned fu);
+   unsigned& getRefAttribute();
 };
 
 template <>
@@ -575,6 +583,10 @@ struct resource_table<true>
       if(used_resources.size() != II)
       {
          used_resources.resize(II);
+      }
+      if(used_attribute.size() != II)
+      {
+         used_attribute.resize(II, ResourceAttribute::NONE);
       }
       current_cycle = from_strongtype_cast<unsigned>(_current_cycle) % II;
    }
@@ -591,10 +603,15 @@ struct resource_table<true>
       THROW_ASSERT(hasResource(fu), "unexpected condition");
       return used_resources.at(current_cycle).at(fu);
    }
+   unsigned& getRefAttribute()
+   {
+      return used_attribute.at(current_cycle);
+   }
 
  private:
    std::vector<CustomMap<unsigned int, unsigned int>> used_resources;
-   unsigned current_cycle = 0;
+   unsigned current_cycle{0};
+   std::vector<unsigned int> used_attribute;
 };
 template <>
 struct resource_table<false>
@@ -602,6 +619,7 @@ struct resource_table<false>
    void init(ControlStep, unsigned)
    {
       used_resources.clear();
+      used_attribute = ResourceAttribute::NONE;
    }
    bool hasResource(unsigned fu)
    {
@@ -616,9 +634,14 @@ struct resource_table<false>
       THROW_ASSERT(hasResource(fu), "unexpected condition");
       return used_resources.at(fu);
    }
+   unsigned& getRefAttribute()
+   {
+      return used_attribute;
+   }
 
  private:
    CustomMap<unsigned int, unsigned int> used_resources;
+   unsigned used_attribute{ResourceAttribute::NONE};
 };
 
 bool parametric_list_based::compute_minmaxII(const OpVertexSet& Operations, const ControlStep& ctrl_steps,
@@ -986,9 +1009,7 @@ bool parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
    while((schedule->num_scheduled() - already_sch) != operations_number)
    {
       bool unbounded = false;
-      bool RWFunctions = false;
       bool unbounded_RW = false;
-      bool LoadStoreOp = false;
       unsigned int n_scheduled_ops = 0;
       cstep_has_RET_conflict =
           ((schedule->num_scheduled() - already_sch) != operations_number - 1) ? registering_output_p : false;
@@ -1026,15 +1047,7 @@ bool parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
             {
                cstep_has_RET_conflict = true;
             }
-            if(live_vertex_type & (TYPE_LOAD | TYPE_STORE))
-            {
-               LoadStoreOp = true;
-            }
-            if((live_vertex_type & TYPE_EXTERNAL) && (live_vertex_type & TYPE_RW) &&
-               RW_stmts.find(*live_vertex_it) == RW_stmts.end())
-            {
-               RWFunctions = true;
-            }
+
             auto fu_name = res_binding->get_assign(*live_vertex_it);
             const auto II = HLS->allocation_information->get_initiation_time(fu_name, *live_vertex_it);
             auto is_bounded = HLS->allocation_information->is_operation_bounded(flow_graph, *live_vertex_it, fu_name);
@@ -1062,6 +1075,27 @@ bool parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
                schedulable =
                    BB_update_resources_use(used_resources.getRefResource(res_binding->get_assign(*live_vertex_it)),
                                            res_binding->get_assign(*live_vertex_it));
+               auto is_a_RWFunctions = (live_vertex_type & TYPE_EXTERNAL) && (live_vertex_type & TYPE_RW) &&
+                                       RW_stmts.find(*live_vertex_it) == RW_stmts.end();
+               auto& attrib = used_resources.getRefAttribute();
+               if((attrib & ResourceAttribute::RW_F) && is_a_RWFunctions)
+               {
+                  schedulable = false;
+               }
+               else if(schedulable && is_a_RWFunctions)
+               {
+                  attrib = attrib | ResourceAttribute::RW_F;
+               }
+               auto is_LoadStoreOp = live_vertex_type & (TYPE_LOAD | TYPE_STORE);
+               if((attrib & ResourceAttribute::LOAD_STORE_OP) && is_LoadStoreOp)
+               {
+                  schedulable = false;
+               }
+               else if(schedulable && is_LoadStoreOp)
+               {
+                  attrib = attrib | ResourceAttribute::LOAD_STORE_OP;
+               }
+
                if(!schedulable)
                {
                   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "schedule not feasible");
@@ -1146,22 +1180,30 @@ bool parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
                }
                bool schedulable =
                    used_resources.getRefResource(fu_type) != HLS->allocation_information->get_number_fu(fu_type);
+               auto update_Infeasible = [&]() -> bool {
+                  unsigned infeasable_value;
+                  if(infeasable_counter.find(current_vertex) == infeasable_counter.end())
+                  {
+                     infeasable_value = 1;
+                     infeasable_counter[current_vertex] = infeasable_value;
+                  }
+                  else
+                  {
+                     ++infeasable_counter.at(current_vertex);
+                     infeasable_value = infeasable_counter.at(current_vertex);
+                  }
+                  if(infeasable_value >= LP_II)
+                  {
+                     return true;
+                  }
+                  return false;
+               };
+
                if(LPBB_predicate)
                {
                   if(!schedulable)
                   {
-                     unsigned infeasable_value;
-                     if(infeasable_counter.find(current_vertex) == infeasable_counter.end())
-                     {
-                        infeasable_value = 1;
-                        infeasable_counter[current_vertex] = infeasable_value;
-                     }
-                     else
-                     {
-                        ++infeasable_counter.at(current_vertex);
-                        infeasable_value = infeasable_counter.at(current_vertex);
-                     }
-                     if(infeasable_value >= LP_II)
+                     if(update_Infeasible())
                      {
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                        "<--Schedule of operation " + GET_NAME(flow_graph, current_vertex) +
@@ -1243,11 +1285,11 @@ bool parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
                   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                 "            Scheduling of Control Vertex " + GET_NAME(flow_graph, current_vertex) +
                                     " postponed to the next cycle");
-                  continue;
+                  schedulable = false;
                }
-               if(((!LPBB_predicate && (curr_vertex_type & (TYPE_IF | TYPE_MULTIIF))) ||
-                   (curr_vertex_type & (TYPE_RET | TYPE_GOTO | TYPE_SWITCH))) &&
-                  (((schedule->num_scheduled() - already_sch) != operations_number - 1)))
+               else if(((!LPBB_predicate && (curr_vertex_type & (TYPE_IF | TYPE_MULTIIF))) ||
+                        (curr_vertex_type & (TYPE_RET | TYPE_GOTO | TYPE_SWITCH))) &&
+                       (((schedule->num_scheduled() - already_sch) != operations_number - 1)))
                {
                   if(postponed_resources.find(fu_type) == postponed_resources.end())
                   {
@@ -1257,10 +1299,10 @@ bool parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
                   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                 "            Scheduling of Control Vertex " + GET_NAME(flow_graph, current_vertex) +
                                     " postponed ");
-                  continue;
+                  schedulable = false;
                }
-               if(LPBB_predicate && (curr_vertex_type & (TYPE_IF | TYPE_MULTIIF)) &&
-                  (LP_II - 1) > (from_strongtype_cast<unsigned>(current_cycle - initialCycle) % LP_II))
+               else if(LPBB_predicate && (curr_vertex_type & (TYPE_IF | TYPE_MULTIIF)) &&
+                       (LP_II - 1) > (from_strongtype_cast<unsigned>(current_cycle - initialCycle) % LP_II))
                {
                   if(black_list.find(fu_type) == black_list.end())
                   {
@@ -1270,12 +1312,11 @@ bool parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
                   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                 "            Scheduling of Control Vertex " + GET_NAME(flow_graph, current_vertex) +
                                     " postponed to the next cycle to satisfy loop pipelining constraints on the FSM");
-                  continue;
+                  schedulable = false;
                }
-
-               if((curr_vertex_type & TYPE_RET) &&
-                  ((schedule->num_scheduled() - already_sch) == operations_number - 1) && n_scheduled_ops != 0 &&
-                  registering_output_p)
+               else if((curr_vertex_type & TYPE_RET) &&
+                       ((schedule->num_scheduled() - already_sch) == operations_number - 1) && n_scheduled_ops != 0 &&
+                       registering_output_p)
                {
                   if(black_list.find(fu_type) == black_list.end())
                   {
@@ -1286,10 +1327,10 @@ bool parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
                   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                 "            Scheduling of Control Vertex " + GET_NAME(flow_graph, current_vertex) +
                                     " postponed to the next cycle to register the output");
-                  continue;
+                  schedulable = false;
                }
-               if(!HLS->allocation_information->is_operation_bounded(flow_graph, current_vertex, fu_type) &&
-                  RW_stmts.find(current_vertex) == RW_stmts.end() && (unbounded_RW || is_live))
+               else if(!HLS->allocation_information->is_operation_bounded(flow_graph, current_vertex, fu_type) &&
+                       RW_stmts.find(current_vertex) == RW_stmts.end() && (unbounded_RW || is_live))
                {
                   if(black_list.find(fu_type) == black_list.end())
                   {
@@ -1299,10 +1340,10 @@ bool parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
                   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                 "            Scheduling of unbounded " + GET_NAME(flow_graph, current_vertex) +
                                     " postponed to the next cycle");
-                  continue;
+                  schedulable = false;
                }
-               if(!HLS->allocation_information->is_operation_bounded(flow_graph, current_vertex, fu_type) &&
-                  RW_stmts.find(current_vertex) != RW_stmts.end() && unbounded)
+               else if(!HLS->allocation_information->is_operation_bounded(flow_graph, current_vertex, fu_type) &&
+                       RW_stmts.find(current_vertex) != RW_stmts.end() && unbounded)
                {
                   if(black_list.find(fu_type) == black_list.end())
                   {
@@ -1312,6 +1353,23 @@ bool parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
                   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                 "            Scheduling of unbounded RW interface " +
                                     GET_NAME(flow_graph, current_vertex) + " postponed to the next cycle");
+                  schedulable = false;
+               }
+               if(!schedulable)
+               {
+                  if(LPBB_predicate)
+                  {
+                     if(!schedulable)
+                     {
+                        if(update_Infeasible())
+                        {
+                           INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                          "---Schedule of operation " + GET_NAME(flow_graph, current_vertex) +
+                                              " not feasible given this II=" + STR(LP_II));
+                           return false;
+                        }
+                     }
+                  }
                   continue;
                }
 
@@ -1335,6 +1393,10 @@ bool parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
                     MultiCond0 = false, MultiCond1 = false, LoadStoreFunctionConflict = false,
                     FunctionLoadStoreConflict = false, proxyFunCond = false;
 
+               const auto attrib = used_resources.getRefAttribute();
+               const bool RWFunctions = attrib & ResourceAttribute::RW_F;
+               const auto LoadStoreOp = attrib & ResourceAttribute::LOAD_STORE_OP;
+
                CheckSchedulabilityConditions(
                    operations, current_vertex, current_cycle, current_starting_time, current_ending_time,
                    current_stage_period, local_connection_map, current_cycle_starting_time, current_cycle_ending_time,
@@ -1354,10 +1416,9 @@ bool parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
                      black_list.emplace(fu_type, OpVertexSet(flow_graph));
                   }
                   black_list.at(fu_type).insert(current_vertex);
-                  continue;
+                  schedulable = false;
                }
-
-               if(pipeliningCond)
+               else if(pipeliningCond)
                {
                   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                 "                  Pipelined unit cannot be chained: starting time is " +
@@ -1368,7 +1429,7 @@ bool parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
                      black_list.emplace(fu_type, OpVertexSet(flow_graph));
                   }
                   black_list.at(fu_type).insert(current_vertex);
-                  continue;
+                  schedulable = false;
                }
                else if(cannotBeChained0)
                {
@@ -1381,7 +1442,7 @@ bool parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
                      black_list.emplace(fu_type, OpVertexSet(flow_graph));
                   }
                   black_list.at(fu_type).insert(current_vertex);
-                  continue;
+                  schedulable = false;
                }
                else if(chainingRetCond)
                {
@@ -1394,7 +1455,7 @@ bool parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
                      black_list.emplace(fu_type, OpVertexSet(flow_graph));
                   }
                   black_list.at(fu_type).insert(current_vertex);
-                  continue;
+                  schedulable = false;
                }
                else if(cannotBeChained1)
                {
@@ -1408,7 +1469,7 @@ bool parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
                      black_list.emplace(fu_type, OpVertexSet(flow_graph));
                   }
                   black_list.at(fu_type).insert(current_vertex);
-                  continue;
+                  schedulable = false;
                }
                /*
                else if(has_read_cond_with_non_direct_operations)
@@ -1433,7 +1494,7 @@ bool parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
                      black_list.emplace(fu_type, OpVertexSet(flow_graph));
                   }
                   black_list.at(fu_type).insert(current_vertex);
-                  continue;
+                  schedulable = false;
                }
                /*else if((current_starting_time > (current_cycle_starting_time)) && (GET_TYPE(flow_graph, current_v) &
                TYPE_STORE) && HLS->allocation_information->is_indirect_access_memory_unit(fu_type))
@@ -1466,7 +1527,7 @@ bool parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
                      black_list.emplace(fu_type, OpVertexSet(flow_graph));
                   }
                   black_list.at(fu_type).insert(current_vertex);
-                  continue;
+                  schedulable = false;
                }
                else if(MultiCond0)
                {
@@ -1478,7 +1539,7 @@ bool parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
                      black_list.emplace(fu_type, OpVertexSet(flow_graph));
                   }
                   black_list.at(fu_type).insert(current_vertex);
-                  continue;
+                  schedulable = false;
                }
                else if(MultiCond1)
                {
@@ -1490,7 +1551,7 @@ bool parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
                      black_list.emplace(fu_type, OpVertexSet(flow_graph));
                   }
                   black_list.at(fu_type).insert(current_vertex);
-                  continue;
+                  schedulable = false;
                }
                else if(LoadStoreFunctionConflict)
                {
@@ -1501,7 +1562,7 @@ bool parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
                      black_list.emplace(fu_type, OpVertexSet(flow_graph));
                   }
                   black_list.at(fu_type).insert(current_vertex);
-                  continue;
+                  schedulable = false;
                }
                else if(FunctionLoadStoreConflict)
                {
@@ -1512,7 +1573,7 @@ bool parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
                      black_list.emplace(fu_type, OpVertexSet(flow_graph));
                   }
                   black_list.at(fu_type).insert(current_vertex);
-                  continue;
+                  schedulable = false;
                }
                else if(proxyFunCond)
                {
@@ -1524,7 +1585,7 @@ bool parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
                      black_list.emplace(fu_type, OpVertexSet(flow_graph));
                   }
                   black_list.at(fu_type).insert(current_vertex);
-                  continue;
+                  schedulable = false;
                }
                /*else if(store_in_chaining_with_load_in(current_cycle, current_vertex))
                {
@@ -1542,6 +1603,23 @@ bool parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
                      black_list.emplace(fu_type, OpVertexSet(flow_graph));
                   }
                   black_list.at(fu_type).insert(current_vertex);
+                  schedulable = false;
+               }
+               if(!schedulable)
+               {
+                  if(LPBB_predicate)
+                  {
+                     if(!schedulable)
+                     {
+                        if(update_Infeasible())
+                        {
+                           INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                          "---Schedule of operation " + GET_NAME(flow_graph, current_vertex) +
+                                              " not feasible given this II=" + STR(LP_II));
+                           return false;
+                        }
+                     }
+                  }
                   continue;
                }
 
@@ -1551,10 +1629,12 @@ bool parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
                used_resources.getRefResource(fu_type)++;
 
                /// check if we have functions accessing the memory
-               if((curr_vertex_type & TYPE_EXTERNAL) && (curr_vertex_type & TYPE_RW) &&
-                  RW_stmts.find(current_vertex) == RW_stmts.end())
+               auto is_a_RWFunctions = (curr_vertex_type & TYPE_EXTERNAL) && (curr_vertex_type & TYPE_RW) &&
+                                       RW_stmts.find(current_vertex) == RW_stmts.end();
+               auto& attrib_update = used_resources.getRefAttribute();
+               if(is_a_RWFunctions)
                {
-                  RWFunctions = true;
+                  attrib_update = attrib_update | ResourceAttribute::RW_F;
                }
 
                if((curr_vertex_type & TYPE_EXTERNAL))
@@ -1605,7 +1685,7 @@ bool parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
                /// check if we have memory accesses
                if((curr_vertex_type & (TYPE_LOAD | TYPE_STORE)))
                {
-                  LoadStoreOp = true;
+                  attrib_update = attrib_update | ResourceAttribute::LOAD_STORE_OP;
                }
 
                /// update cstep_vuses
