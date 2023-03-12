@@ -31,20 +31,14 @@
  *
  */
 /**
- * @file hls_stream.h
- * @brief Implementation of hls::stream object.
+ * @file hls_math.h
+ * @brief Redirect header to ac_math.h
  *
  * @author Michele Fiorito <michele.fiorito@polimi.it>
  */
-#ifndef __HLS_STREAM_H
-#define __HLS_STREAM_H
+#ifndef __HLS_MATH_H
+#define __HLS_MATH_H
 
-#include "ac_channel.h"
+#include "ac_math.h"
 
-namespace hls
-{
-   template <typename T>
-   using stream = ac_channel<T>;
-
-} // namespace hls
 #endif
