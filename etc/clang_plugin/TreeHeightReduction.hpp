@@ -39,7 +39,8 @@
 //
 // The code has been adapted starting from this PR: https://reviews.llvm.org/D67383.
 // The author of the original code is masakazu.ueno
-// The porting has been done by Fabrizio Ferrandi. The main change is related to the operations latencies.
+// The porting has been done by Fabrizio Ferrandi. The main change is related to the operations latencies and on some
+// assumptions.
 
 #include "llvm/ADT/DepthFirstIterator.h"
 #include "llvm/ADT/SmallVector.h"
@@ -135,9 +136,13 @@ namespace llvm
       {
          case Instruction::Add:
          case Instruction::Mul:
+         {
             return true;
+         }
          default:
+         {
             return false;
+         }
       }
    }
 
@@ -157,9 +162,13 @@ namespace llvm
       {
          case Instruction::FAdd:
          case Instruction::FMul:
+         {
             return true;
+         }
          default:
+         {
             return false;
+         }
       }
    }
 
@@ -291,6 +300,11 @@ namespace llvm
          return !isNode();
       }
 
+      bool isPhi() const
+      {
+         return Inst && isa<PHINode>(Inst);
+      }
+
       /// Return true if current node is a root.
       bool isRoot() const
       {
@@ -327,6 +341,7 @@ namespace llvm
          for(auto Begin = Nodes.rbegin(), End = Nodes.rend(); Begin != End; ++Begin)
          {
             Node* CurNode = *Begin;
+            assert(CurNode);
             CurNode->updateNodeLatency();
          }
       }
@@ -359,8 +374,8 @@ namespace llvm
             {
                return getCost(bits, "mult_expr");
             }
-            case Instruction::Ret:
             case Instruction::PHI:
+            case Instruction::Ret:
             case Instruction::Br:
             {
                return 0;
@@ -430,7 +445,8 @@ namespace llvm
             }
             case Instruction::FCmp:
             {
-               return getCost(bits, "Fplus_expr"); // simplified
+               // simplified
+               return getCost(bits, "Fplus_expr");
             }
             case Instruction::Store:
             {
@@ -486,9 +502,16 @@ namespace llvm
       /// Update current node's latency.
       void updateNodeLatency()
       {
-         setLatency(0);
-         setTotalCost(0);
-
+         if(isPhi())
+         {
+            setLatency(100000);
+            setTotalCost(100000);
+         }
+         else
+         {
+            setLatency(0);
+            setTotalCost(0);
+         }
          if(isLeaf())
          {
             return;
@@ -580,7 +603,6 @@ namespace llvm
             Iter = Nodes.erase(Iter);
          }
       }
-
       return Nodes;
    }
 
@@ -659,7 +681,7 @@ namespace llvm
 
       bool runOnModule(const llvm::Module& M, llvm::function_ref<llvm::LoopInfo&(llvm::Function&)> _GetLI,
                        llvm::function_ref<llvm::OptimizationRemarkEmitter&(llvm::Function&)> _GetORE,
-                       const std::string& costTable, bool DisableIntTHR = false, bool EnableFpTHR = false)
+                       const std::string& costTable, bool DisableIntTHR = false, bool EnableFpTHR = true)
       {
          __buildMap(costTable, Node::InstructionLatencyTable);
          bool changed = false;
@@ -670,7 +692,6 @@ namespace llvm
                auto* currentFunction = const_cast<llvm::Function*>(&fun);
                auto& LI = _GetLI(*currentFunction);
                auto ORE = &_GetORE(*currentFunction);
-
                if(!LI.empty())
                {
                   for(auto L : LI)
@@ -688,7 +709,6 @@ namespace llvm
                            Worklist.push_back(CurLoop);
                         }
                      }
-
                      for(Loop* l : Worklist)
                      {
                         auto& LoopBlocks = l->getBlocksVector();
@@ -748,8 +768,8 @@ namespace llvm
                ++NumLeaves;
             }
             // We consider that it is worth applying tree height reduction
-            // if the number of leaves is equal to or more than 4.
-            if(NumLeaves >= 4)
+            // if the number of leaves is equal to or more than 2.
+            if(NumLeaves >= 2)
             {
                return true;
             }
@@ -1056,6 +1076,9 @@ namespace llvm
       void combineLeaves(std::vector<Node*>& Leaves, Node* Op1, Node* Op2, std::vector<Node*>& ReusedNodes)
       {
          Node* N = ReusedNodes.back();
+         assert(N);
+         assert(Op1);
+         assert(Op2);
          ReusedNodes.pop_back();
 
          // Update child and its parent relationship.
@@ -1165,7 +1188,15 @@ namespace llvm
          assert(Op && "Operand should not be nullptr");
          if(!Op->hasOneUse())
          {
-            return false;
+            for(auto U : Op->users())
+            {
+               auto* UserInst = dyn_cast<Instruction>(U);
+               if(UserInst && isTHRTargetInst(UserInst, CurTargetInstTy))
+               {
+                  return false;
+               }
+            }
+            return true;
          }
          if(auto* I = dyn_cast<Instruction>(Op))
          {
