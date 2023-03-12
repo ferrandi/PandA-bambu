@@ -1285,7 +1285,7 @@ bool parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
                   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                 "            Scheduling of Control Vertex " + GET_NAME(flow_graph, current_vertex) +
                                     " postponed to the next cycle");
-                  schedulable = false;
+                  continue;
                }
                else if(((!LPBB_predicate && (curr_vertex_type & (TYPE_IF | TYPE_MULTIIF))) ||
                         (curr_vertex_type & (TYPE_RET | TYPE_GOTO | TYPE_SWITCH))) &&
@@ -1299,7 +1299,7 @@ bool parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
                   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                 "            Scheduling of Control Vertex " + GET_NAME(flow_graph, current_vertex) +
                                     " postponed ");
-                  schedulable = false;
+                  continue;
                }
                else if(LPBB_predicate && (curr_vertex_type & (TYPE_IF | TYPE_MULTIIF)) &&
                        (LP_II - 1) > (from_strongtype_cast<unsigned>(current_cycle - initialCycle) % LP_II))
@@ -1312,7 +1312,7 @@ bool parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
                   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                 "            Scheduling of Control Vertex " + GET_NAME(flow_graph, current_vertex) +
                                     " postponed to the next cycle to satisfy loop pipelining constraints on the FSM");
-                  schedulable = false;
+                  continue;
                }
                else if((curr_vertex_type & TYPE_RET) &&
                        ((schedule->num_scheduled() - already_sch) == operations_number - 1) && n_scheduled_ops != 0 &&
@@ -1327,7 +1327,7 @@ bool parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
                   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                 "            Scheduling of Control Vertex " + GET_NAME(flow_graph, current_vertex) +
                                     " postponed to the next cycle to register the output");
-                  schedulable = false;
+                  continue;
                }
                else if(!HLS->allocation_information->is_operation_bounded(flow_graph, current_vertex, fu_type) &&
                        RW_stmts.find(current_vertex) == RW_stmts.end() && (unbounded_RW || is_live))
@@ -1416,7 +1416,7 @@ bool parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
                      black_list.emplace(fu_type, OpVertexSet(flow_graph));
                   }
                   black_list.at(fu_type).insert(current_vertex);
-                  schedulable = false;
+                  continue;
                }
                else if(pipeliningCond)
                {
@@ -1429,7 +1429,7 @@ bool parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
                      black_list.emplace(fu_type, OpVertexSet(flow_graph));
                   }
                   black_list.at(fu_type).insert(current_vertex);
-                  schedulable = false;
+                  continue;
                }
                else if(cannotBeChained0)
                {
@@ -1442,7 +1442,7 @@ bool parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
                      black_list.emplace(fu_type, OpVertexSet(flow_graph));
                   }
                   black_list.at(fu_type).insert(current_vertex);
-                  schedulable = false;
+                  continue;
                }
                else if(chainingRetCond)
                {
@@ -1455,7 +1455,7 @@ bool parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
                      black_list.emplace(fu_type, OpVertexSet(flow_graph));
                   }
                   black_list.at(fu_type).insert(current_vertex);
-                  schedulable = false;
+                  continue;
                }
                else if(cannotBeChained1)
                {
@@ -1469,7 +1469,7 @@ bool parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
                      black_list.emplace(fu_type, OpVertexSet(flow_graph));
                   }
                   black_list.at(fu_type).insert(current_vertex);
-                  schedulable = false;
+                  continue;
                }
                /*
                else if(has_read_cond_with_non_direct_operations)
@@ -1494,7 +1494,7 @@ bool parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
                      black_list.emplace(fu_type, OpVertexSet(flow_graph));
                   }
                   black_list.at(fu_type).insert(current_vertex);
-                  schedulable = false;
+                  continue;
                }
                /*else if((current_starting_time > (current_cycle_starting_time)) && (GET_TYPE(flow_graph, current_v) &
                TYPE_STORE) && HLS->allocation_information->is_indirect_access_memory_unit(fu_type))
@@ -1527,7 +1527,7 @@ bool parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
                      black_list.emplace(fu_type, OpVertexSet(flow_graph));
                   }
                   black_list.at(fu_type).insert(current_vertex);
-                  schedulable = false;
+                  continue;
                }
                else if(MultiCond0)
                {
@@ -1539,7 +1539,7 @@ bool parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
                      black_list.emplace(fu_type, OpVertexSet(flow_graph));
                   }
                   black_list.at(fu_type).insert(current_vertex);
-                  schedulable = false;
+                  continue;
                }
                else if(MultiCond1)
                {
@@ -1551,7 +1551,7 @@ bool parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
                      black_list.emplace(fu_type, OpVertexSet(flow_graph));
                   }
                   black_list.at(fu_type).insert(current_vertex);
-                  schedulable = false;
+                  continue;
                }
                else if(LoadStoreFunctionConflict)
                {
@@ -1603,7 +1603,7 @@ bool parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
                      black_list.emplace(fu_type, OpVertexSet(flow_graph));
                   }
                   black_list.at(fu_type).insert(current_vertex);
-                  schedulable = false;
+                  continue;
                }
                if(!schedulable)
                {
