@@ -241,7 +241,6 @@ DesignFlowStep_Status add_library::InternalExec()
       const auto op = GetPointerS<operation>(fu->get_operation(function_name));
       op->primary_inputs_registered = HLS->registered_inputs;
       const auto is_function_pipelined = FB->is_function_pipelined();
-      THROW_ASSERT(HLS->STG, "unexpected condition");
       if(is_function_pipelined)
       {
          op->bounded = true;
@@ -256,6 +255,7 @@ DesignFlowStep_Status add_library::InternalExec()
       op->time_m = time_model::create_model(device->get_type(), parameters);
       if(op->bounded)
       {
+         THROW_ASSERT(HLS->STG, "unexpected condition");
          const auto min_cycles = HLS->STG->CGetStg()->CGetStateTransitionGraphInfo()->min_cycles;
          const auto max_cycles = HLS->STG->CGetStg()->CGetStateTransitionGraphInfo()->max_cycles;
          const auto exec_time = [&]() {
