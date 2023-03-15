@@ -8,4 +8,4 @@ cd maxNumbers
 echo "#simulating maxNumbers"
 bambu ../maxNumbers.c --top-fname=maxNumbers \
    --generate-tb=../test_maxNumbers.xml --simulator=VERILATOR --simulate \
-   -v4 --generate-interface=INFER --compiler=I386_CLANG6 "$@" |& tee maxNumbers.log
+   -v4 --generate-interface=INFER --compiler=I386_CLANG12 "$@" |& tee maxNumbers.log

@@ -11,7 +11,7 @@ bambu $dir_script/adpcm.c -O2 --simulate
 cd ..
 mkdir -p O2
 cd O2
-bambu $dir_script/adpcm.c -O2 --simulate --compiler=I386_CLANG6
+bambu $dir_script/adpcm.c -O2 --simulate --compiler=I386_CLANG12
 cd ..
 mkdir -p O3
 cd O3
