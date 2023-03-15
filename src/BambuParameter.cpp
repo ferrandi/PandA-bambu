@@ -183,8 +183,8 @@
 #define OPT_DEVICE_NAME (1 + OPT_CLOCK_PERIOD_RESOURCE_FRACTION)
 #define OPT_DISABLE_BOUNDED_FUNCTION (1 + OPT_DEVICE_NAME)
 #define OPT_DISABLE_FUNCTION_PROXY (1 + OPT_DISABLE_BOUNDED_FUNCTION)
-#define OPT_DISABLE_IOB (1 + OPT_DISABLE_FUNCTION_PROXY)
-#define OPT_DISTRAM_THRESHOLD (1 + OPT_DISABLE_IOB)
+#define OPT_CONNECT_IOB (1 + OPT_DISABLE_FUNCTION_PROXY)
+#define OPT_DISTRAM_THRESHOLD (1 + OPT_CONNECT_IOB)
 #define OPT_DO_NOT_CHAIN_MEMORIES (1 + OPT_DISTRAM_THRESHOLD)
 #define OPT_EXPOSE_GLOBALS (1 + OPT_DO_NOT_CHAIN_MEMORIES)
 #define OPT_ROM_DUPLICATION (1 + OPT_EXPOSE_GLOBALS)
@@ -631,9 +631,8 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "            - NanoXplore: a string defining the device string (e.g. nx2h540tsc))\n\n"
       << "    --power-optimization\n"
       << "        Enable Xilinx power based optimization (default no).\n\n"
-      << "    --no-iob\n"
-      << "        Disconnect primary ports from the IOB (the default is to connect\n"
-      << "        primary input and output ports to IOBs).\n\n"
+      << "    --connect-iob\n"
+      << "        Connect primary input and output ports to IOBs.\n\n"
       << "    --soft-float (default)\n"
       << "        Enable the soft-based implementation of floating-point operations.\n"
       << "        Bambu uses as default a faithfully rounded version of softfloat with rounding mode\n"
@@ -1037,7 +1036,7 @@ int BambuParameter::Exec()
       {"start-name", required_argument, nullptr, OPT_START_NAME},
       {"done-name", required_argument, nullptr, OPT_DONE_NAME},
       {"power-optimization", no_argument, nullptr, OPT_POWER_OPTIMIZATION},
-      {"no-iob", no_argument, nullptr, OPT_DISABLE_IOB},
+      {"connect-iob", no_argument, nullptr, OPT_CONNECT_IOB},
       {"reset-type", required_argument, nullptr, OPT_RESET_TYPE},
       {"reset-level", required_argument, nullptr, OPT_RESET_LEVEL},
       {"disable-reg-init-value", no_argument, nullptr, OPT_DISABLE_REG_INIT_VALUE},
@@ -1479,9 +1478,10 @@ int BambuParameter::Exec()
             setOption("power_optimization", true);
             break;
          }
-         case OPT_DISABLE_IOB:
+         case OPT_CONNECT_IOB:
          {
-            setOption(OPT_connect_iob, false);
+            setOption(OPT_connect_iob, true);
+            THROW_WARNING("Input and output ports will be connected to I/O buffers in the generated design.");
             break;
          }
          case OPT_RESET_TYPE:
@@ -3521,10 +3521,7 @@ void BambuParameter::CheckParameters()
                            static_cast<unsigned int>(getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler)));
    if(isOption(OPT_evaluation_objectives) &&
       getOption<std::string>(OPT_evaluation_objectives).find("CYCLES") != std::string::npos &&
-      isOption(OPT_device_string) &&
-      (getOption<std::string>(OPT_device_string) == "LFE335EA8FN484C" ||
-       getOption<std::string>(OPT_device_string) == "LFE5UM85F8BG756C" ||
-       getOption<std::string>(OPT_device_string) == "LFE5U85F8BG756C"))
+      isOption(OPT_device_string) && boost::starts_with(getOption<std::string>(OPT_device_string), "LFE"))
    {
       if(getOption<std::string>(OPT_simulator) == "VERILATOR")
       {
@@ -3536,23 +3533,17 @@ void BambuParameter::CheckParameters()
    {
       if(isOption(OPT_evaluation_objectives) &&
          getOption<std::string>(OPT_evaluation_objectives).find("AREA") != std::string::npos &&
-         isOption(OPT_device_string) &&
-         (getOption<std::string>(OPT_device_string) == "LFE335EA8FN484C" ||
-          getOption<std::string>(OPT_device_string) == "LFE5UM85F8BG756C" ||
-          getOption<std::string>(OPT_device_string) == "LFE5U85F8BG756C") &&
+         isOption(OPT_device_string) && boost::starts_with(getOption<std::string>(OPT_device_string), "LFE") &&
          !getOption<bool>(OPT_connect_iob))
       {
-         THROW_WARNING("--no-iob cannot be used when target is a Lattice board");
+         THROW_WARNING("--connect-iob must be used when target is a Lattice board");
       }
    }
    else
    {
       if(isOption(OPT_evaluation_objectives) &&
          getOption<std::string>(OPT_evaluation_objectives).find("CYCLES") != std::string::npos &&
-         isOption(OPT_device_string) &&
-         (getOption<std::string>(OPT_device_string) == "LFE335EA8FN484C" ||
-          getOption<std::string>(OPT_device_string) == "LFE5UM85F8BG756C" ||
-          getOption<std::string>(OPT_device_string) == "LFE5U85F8BG756C"))
+         isOption(OPT_device_string) && boost::starts_with(getOption<std::string>(OPT_device_string), "LFE"))
       {
          THROW_ERROR("Simulation of Lattice devices requires to enable Lattice support. See documentation about "
                      "--lattice-root option.");
@@ -3733,7 +3724,36 @@ void BambuParameter::SetDefaults()
    setOption(OPT_timing_violation_abort, false);
    setOption(OPT_target_device_type, static_cast<int>(TargetDevice_Type::FPGA));
    setOption(OPT_export_core, false);
+#if HAVE_EXPERIMENTAL
+   setOption("edk_wrapper", false);
+#endif
    setOption(OPT_connect_iob, true);
+
+#if(HAVE_EXPERIMENTAL && HAVE_BEAGLE)
+   // -- Parameters for the design space exploration -- //
+   setOption("exploration_technique", dse_hls::BINDING);
+   setOption("to_normalize", 0);
+   setOption("seed", 0);
+   setOption("run", 1);
+   setOption("deme_size", 1);
+   setOption("population", 50);
+   setOption("GA_generation", 10);
+   setOption("max_evaluations", 0);
+   setOption("fitness_function", objective_evaluator::LINEAR);
+   setOption("fitness_inheritance_rate", 0.0);
+   /// if the parameter is even, the cache is analysed. Otherwise only the latest population
+   setOption("inheritance_mode", 0);
+   setOption("max_for_inheritance", 50);
+   setOption("min_for_inheritance", 1);
+   setOption("distance_rate", 0.20);
+   setOption("weighting_function", FitnessFunction::QUADRATIC);
+   setOption("time_weight", 0.5);
+   setOption("area_weight", 0.5);
+   setOption("remove_duplicated", true);
+   setOption("lower", 0.05);
+   setOption("upper", 0.05);
+   setOption("prob_dupl", 0.50);
+#endif
 
    /// -- Compiler options -- //
    setOption(OPT_default_compiler, CompilerWrapper::getDefaultCompiler());
