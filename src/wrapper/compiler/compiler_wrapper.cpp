@@ -1411,14 +1411,11 @@ void CompilerWrapper::InitializeCompilerParameters()
             break;
          case(CompilerWrapper_OptimizationSet::OBAMBU):
 #endif
-#if HAVE_TUCANO_BUILT
-         case(CompilerWrapper_OptimizationSet::OTUCANO):
-#endif
 #if HAVE_ZEBU_BUILT
          case(CompilerWrapper_OptimizationSet::OZEBU):
 #endif
             /// Filling optimizations map
-#if HAVE_BAMBU_BUILT || HAVE_TUCANO_BUILT || HAVE_ZEBU_BUILT
+#if HAVE_BAMBU_BUILT || HAVE_ZEBU_BUILT
             SetCompilerDefault();
 
             switch(OS)
@@ -1426,10 +1423,6 @@ void CompilerWrapper::InitializeCompilerParameters()
 #if HAVE_BAMBU_BUILT
                case(CompilerWrapper_OptimizationSet::OBAMBU):
                   SetBambuDefault();
-                  break;
-#endif
-#if HAVE_TUCANO_BUILT
-               case(CompilerWrapper_OptimizationSet::OTUCANO):
                   break;
 #endif
 #if HAVE_ZEBU_BUILT
@@ -2212,9 +2205,6 @@ void CompilerWrapper::SetCompilerDefault()
       }
 #if HAVE_BAMBU_BUILT
       case(CompilerWrapper_OptimizationSet::OBAMBU):
-#endif
-#if HAVE_TUCANO_BUILT
-      case(CompilerWrapper_OptimizationSet::OTUCANO):
 #endif
 #if HAVE_ZEBU_BUILT
       case(CompilerWrapper_OptimizationSet::OZEBU):
@@ -3337,10 +3327,6 @@ std::string CompilerWrapper::WriteOptimizationLevel(const CompilerWrapper_Optimi
          return "bambu";
       case(CompilerWrapper_OptimizationSet::OSF):
          return "softfloat";
-#endif
-#if HAVE_TUCANO_BUILT
-      case(CompilerWrapper_OptimizationSet::OTUCANO):
-         return "tucano";
 #endif
 #if HAVE_ZEBU_BUILT
       case(CompilerWrapper_OptimizationSet::OZEBU):

@@ -40,11 +40,9 @@
  * $Date$
  * Last modified by $Author$
  */
-
-/// Autoheader include
-#include "config_HAVE_EXPERIMENTAL.hpp"
-
 #include "CMOS_technology.hpp"
+
+#include "config_HAVE_EXPERIMENTAL.hpp"
 
 #include "Parameter.hpp"
 #include "constant_strings.hpp"
@@ -60,67 +58,6 @@
 CMOS_technology::CMOS_technology(const ParameterConstRef& param) : target_technology(param)
 {
    type = CMOS;
-
-#if HAVE_EXPERIMENTAL
-   /// Load default resources
-   const char* builtin_technology = {
-#include "CMOS_technology.data"
-   };
-
-   const int output_level = Param->getOption<int>(OPT_output_level);
-
-   try
-   {
-      XMLDomParserRef parser;
-      /// update with specified information
-      if(Param->isOption(OPT_target_technology_file))
-      {
-         std::string file_name = Param->getOption<std::string>(OPT_target_technology_file);
-         PRINT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
-                       "(target technology) Loading information about the target technology from file \"" + file_name +
-                           "\"");
-         if(!boost::filesystem::exists(file_name))
-         {
-            THROW_ERROR("Technology information file " + file_name + " does not exist!");
-         }
-         parser = XMLDomParserRef(new XMLDomParser(file_name));
-      }
-      else
-      {
-         parser = XMLDomParserRef(new XMLDomParser("builtin_technology", builtin_technology));
-      }
-
-      parser->Exec();
-      if(parser and *parser)
-      {
-         // Walk the tree:
-         const xml_element* node = parser->get_document()->get_root_node(); // deleted by DomParser.
-         xload(node);
-      }
-
-      initialize();
-   }
-   catch(const char* msg)
-   {
-      std::cerr << msg << std::endl;
-      THROW_ERROR("Error during parsing of technology file");
-   }
-   catch(const std::string& msg)
-   {
-      std::cerr << msg << std::endl;
-      THROW_ERROR("Error during parsing of technology file");
-   }
-   catch(const std::exception& ex)
-   {
-      std::cout << "Exception caught: " << ex.what() << std::endl;
-      THROW_ERROR("Error during parsing of technology file");
-   }
-   catch(...)
-   {
-      std::cerr << "unknown exception" << std::endl;
-      THROW_ERROR("Error during parsing of technology file");
-   }
-#endif
 }
 
 CMOS_technology::~CMOS_technology() = default;

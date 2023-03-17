@@ -49,7 +49,6 @@
 #include "config_HAVE_CODE_ESTIMATION_BUILT.hpp"
 #include "config_HAVE_DESIGN_ANALYSIS_BUILT.hpp"
 #include "config_HAVE_DIOPSIS.hpp"
-#include "config_HAVE_EXPERIMENTAL.hpp"
 #include "config_HAVE_FROM_AADL_ASN_BUILT.hpp"
 #include "config_HAVE_FROM_ARCH_BUILT.hpp"
 #include "config_HAVE_FROM_C_BUILT.hpp"
@@ -332,16 +331,8 @@ enum class Parameters_FileFormat
    FF_LLVM_CPP,     /**< (Input/Output) LLVM source bitcode file generated from c++ source code*/
 #endif
    FF_CSV, /**< (Input) comma separated value */
-#if HAVE_EXPERIMENTAL
-   FF_CSV_RTL, /**< (Output) comma separated value rtl sequences */
-   FF_CSV_TRE, /**< (Output) comma seperated value tree sequences */
-#endif
 #if HAVE_FROM_LIBERTY
    FF_LIB, /**< (Input) Liberty file */
-#endif
-#if HAVE_EXPERIMENTAL
-   FF_LOG, /**< (Input) log file */
-   FF_PA,  /**< (Input) Profiling analysis */
 #endif
 #if HAVE_FROM_PSPLIB_BUILT
    FF_PSPLIB_MM, /**< (Input) Multi-mode Project Scheduling Problem */

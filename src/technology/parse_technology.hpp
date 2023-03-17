@@ -121,24 +121,6 @@ void write_lib_technology_File(const std::string& f, library_manager* LM, Target
 #endif
 
 #if HAVE_EXPERIMENTAL
-#if HAVE_PHYSICAL_LIBRARY_MODELS_BUILT
-/**
- * Write a LEF file describing the technology data structures.
- * @param f the output file name
- * @param TM is the technology manager.
- * @param libraries names of the libraries to dump. If empty or not given, it dumps all libraries
- */
-void write_lef_technology_File(const std::string& f, technology_managerRef const& TM, TargetDevice_Type dv_type,
-                               const CustomOrderedSet<std::string>& libraries = CustomOrderedSet<std::string>());
-#endif
-
-/**
- * Write a LEF file describing the technology data structures.
- * @param f the output file name
- * @param LM is the pointer to the library to be written
- */
-void write_lef_technology_File(const std::string& f, library_manager* LM, TargetDevice_Type dv_type);
-
 /**
  * Write a file describing the technology data structures.
  * @param f the output file name

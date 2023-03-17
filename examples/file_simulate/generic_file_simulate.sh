@@ -2,7 +2,7 @@
 script_dir="$(dirname $(readlink -e $0))"
 . $script_dir/../../panda_regressions/hls/generic_getopt.sh
 
-BATCH_ARGS=("--no-iob" "--simulate" "--experimental-setup=BAMBU" "--generate-tb=$script_dir/test.xml" "--file-input-data=$script_dir/test.xml")
+BATCH_ARGS=("--simulate" "--experimental-setup=BAMBU" "--generate-tb=$script_dir/test.xml" "--file-input-data=$script_dir/test.xml")
 OUT_SUFFIX="output_file_simulate"
 
 python3 $script_dir/../../etc/scripts/test_panda.py --tool=bambu \

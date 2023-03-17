@@ -42,8 +42,6 @@
  */
 #include "fun_dominator_allocation.hpp"
 
-/// Autoheader include
-#include "config_HAVE_EXPERIMENTAL.hpp"
 #include "config_HAVE_FROM_PRAGMA_BUILT.hpp"
 #include "config_HAVE_PRAGMA_BUILT.hpp"
 
@@ -75,11 +73,6 @@
 #include "tree_manager.hpp"
 #include "tree_node.hpp"
 #include "utility.hpp"
-
-#if HAVE_PRAGMA_BUILT && HAVE_EXPERIMENTAL
-#include "actor_graph_flow_step.hpp"
-#include "actor_graph_flow_step_factory.hpp"
-#endif
 
 #include <boost/range/adaptor/reversed.hpp>
 
@@ -124,25 +117,6 @@ void fun_dominator_allocation::ComputeRelationships(DesignFlowStepSet& relations
       }
       case(PRECEDENCE_RELATIONSHIP):
       {
-#if HAVE_EXPERIMENTAL && HAVE_PRAGMA_BUILT
-         if(parameters->isOption(OPT_parse_pragma) and parameters->getOption<bool>(OPT_parse_pragma) and
-            relationship_type == PRECEDENCE_RELATIONSHIP)
-         {
-            const DesignFlowGraphConstRef design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
-            const ActorGraphFlowStepFactory* actor_graph_flow_step_factory =
-                GetPointer<const ActorGraphFlowStepFactory>(
-                    design_flow_manager.lock()->CGetDesignFlowStepFactory("ActorGraph"));
-            const std::string actor_graph_creator_signature =
-                ActorGraphFlowStep::ComputeSignature(ACTOR_GRAPHS_CREATOR, input_function, 0, "");
-            const vertex actor_graph_creator_step =
-                design_flow_manager.lock()->GetDesignFlowStep(actor_graph_creator_signature);
-            const DesignFlowStepRef design_flow_step =
-                actor_graph_creator_step ?
-                    design_flow_graph->CGetDesignFlowStepInfo(actor_graph_creator_step)->design_flow_step :
-                    actor_graph_flow_step_factory->CreateActorGraphStep(ACTOR_GRAPHS_CREATOR, input_function);
-            relationship.insert(design_flow_step);
-         }
-#endif
          break;
       }
       case INVALIDATION_RELATIONSHIP:
@@ -482,13 +456,6 @@ DesignFlowStep_Status fun_dominator_allocation::Exec()
                INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Skipped because it has to be interfaced");
                continue;
             }
-#if HAVE_EXPERIMENTAL && HAVE_FROM_PRAGMA_BUILT
-            if(fun_name == "panda_pthread_mutex")
-            {
-               INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Skipped because is a pthread mutex call");
-               continue;
-            }
-#endif
             const auto library_name = TechM->get_library(fu_name);
             if(library_name != "")
             {

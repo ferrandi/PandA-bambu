@@ -44,9 +44,6 @@
  *
  */
 
-/// Autoheader include
-#include "config_HAVE_EXPERIMENTAL.hpp"
-
 /// Header include
 #include "PragmaParser.hpp"
 

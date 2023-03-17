@@ -785,10 +785,13 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
             writer->write(STR(STD_CLOSING_CHAR));
             writer->write("end\n");
          }
-         else if(InterfaceType == port_o::port_interface::PI_FDIN || InterfaceType == port_o::port_interface::PI_FDOUT)
+         else if(InterfaceType == port_o::port_interface::PI_FDIN ||
+                 InterfaceType == port_o::port_interface::PI_M_AXIS_TDATA ||
+                 InterfaceType == port_o::port_interface::PI_FDOUT ||
+                 InterfaceType == port_o::port_interface::PI_S_AXIS_TDATA)
          {
             structural_objectRef port_write;
-            if(boost::ends_with(port_name, "_din"))
+            if(InterfaceType == port_o::port_interface::PI_FDIN)
             {
                port_write = mod->find_member(port_name.substr(0, port_name.size() - sizeof("_din") + 1U) + "_write",
                                              port_o_K, cir);
@@ -796,7 +799,7 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
                                               port_o::port_interface::PI_WRITE,
                             "unexpected condition");
             }
-            else if(boost::ends_with(port_name, "_dout"))
+            else if(InterfaceType == port_o::port_interface::PI_FDOUT)
             {
                port_write = mod->find_member(port_name.substr(0, port_name.size() - sizeof("_dout") + 1U) + "_read",
                                              port_o_K, cir);
@@ -804,14 +807,20 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
                                 GetPointer<port_o>(port_write)->get_port_interface() == port_o::port_interface::PI_READ,
                             "unexpected condition");
             }
-            else if(boost::ends_with(port_name, "_TDATA"))
+            else if(InterfaceType == port_o::port_interface::PI_M_AXIS_TDATA)
             {
                port_write = mod->find_member(port_name.substr(0, port_name.size() - sizeof("_TDATA") + 1U) + "_TVALID",
                                              port_o_K, cir);
-               THROW_ASSERT(port_write && (GetPointer<port_o>(port_write)->get_port_interface() ==
-                                               port_o::port_interface::PI_M_AXIS_TVALID ||
-                                           GetPointer<port_o>(port_write)->get_port_interface() ==
-                                               port_o::port_interface::PI_S_AXIS_TVALID),
+               THROW_ASSERT(port_write && GetPointer<port_o>(port_write)->get_port_interface() ==
+                                              port_o::port_interface::PI_M_AXIS_TVALID,
+                            "unexpected condition");
+            }
+            else if(InterfaceType == port_o::port_interface::PI_S_AXIS_TDATA)
+            {
+               port_write = mod->find_member(port_name.substr(0, port_name.size() - sizeof("_TDATA") + 1U) + "_TREADY",
+                                             port_o_K, cir);
+               THROW_ASSERT(port_write && GetPointer<port_o>(port_write)->get_port_interface() ==
+                                              port_o::port_interface::PI_S_AXIS_TREADY,
                             "unexpected condition");
             }
             THROW_ASSERT(port_write, "");
@@ -822,7 +831,8 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
             writer->write("if (" + port_write->get_id() + " == 1)\n");
             writer->write(STR(STD_OPENING_CHAR));
             writer->write("begin\n");
-            if(InterfaceType == port_o::port_interface::PI_FDIN)
+            if(InterfaceType == port_o::port_interface::PI_FDIN ||
+               InterfaceType == port_o::port_interface::PI_M_AXIS_TDATA)
             {
                writer->write("registered_" + port_name + "[fifo_counter_" + port_name + "] <= " + port_name + ";\n");
             }
@@ -1086,7 +1096,8 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
             writer->write("end\n");
          }
          else if(InterfaceType == port_o::port_interface::PI_RNONE || InterfaceType == port_o::port_interface::PI_DIN ||
-                 InterfaceType == port_o::port_interface::PI_FDOUT)
+                 InterfaceType == port_o::port_interface::PI_FDOUT ||
+                 InterfaceType == port_o::port_interface::PI_S_AXIS_TDATA)
          {
             writer->write("\n");
             writer->write_comment("OPTIONAL - skip expected value for " + portInst->get_id() +
@@ -1276,7 +1287,8 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
             writer->write(STR(STD_CLOSING_CHAR));
             writer->write("end\n");
          }
-         else if(InterfaceType == port_o::port_interface::PI_FDIN)
+         else if(InterfaceType == port_o::port_interface::PI_FDIN ||
+                 InterfaceType == port_o::port_interface::PI_M_AXIS_TDATA)
          {
             auto orig_name = portInst->get_id();
             auto port_to_be_compared = "registered_" + orig_name + "[_i_]";
@@ -2276,7 +2288,10 @@ void TestbenchGenerationBaseStep::write_auxiliary_signal_declaration() const
          const auto input_name = HDL_manager::convert_to_identifier(writer.get(), portInst->get_id());
          if(InterfaceType == port_o::port_interface::PI_RNONE || InterfaceType == port_o::port_interface::PI_WNONE ||
             InterfaceType == port_o::port_interface::PI_DIN || InterfaceType == port_o::port_interface::PI_DOUT ||
-            InterfaceType == port_o::port_interface::PI_FDOUT || InterfaceType == port_o::port_interface::PI_FDIN)
+            InterfaceType == port_o::port_interface::PI_FDOUT ||
+            InterfaceType == port_o::port_interface::PI_S_AXIS_TDATA ||
+            InterfaceType == port_o::port_interface::PI_FDIN ||
+            InterfaceType == port_o::port_interface::PI_M_AXIS_TDATA)
          {
             writer->write("reg [31:0] paddr" + input_name + ";\n");
             writeP = true;
@@ -2440,6 +2455,7 @@ void TestbenchGenerationBaseStep::initialize_input_signals(const tree_managerCon
    for(unsigned int i = 0; i < mod->get_in_port_size(); i++)
    {
       const auto port_obj = mod->get_in_port(i);
+      const auto port_if = GetPointer<port_o>(port_obj)->get_port_interface();
       const auto port_name = [&]() -> std::string
       {
          const auto port_id = port_obj->get_id();
@@ -2470,7 +2486,7 @@ void TestbenchGenerationBaseStep::initialize_input_signals(const tree_managerCon
       {
          writer->write("ex_" + port_name + " = 0;\n");
       }
-      if(GetPointer<port_o>(port_obj)->get_port_interface() == port_o::port_interface::PI_FDOUT)
+      if(port_if == port_o::port_interface::PI_FDOUT || port_if == port_o::port_interface::PI_S_AXIS_TDATA)
       {
          writer->write("fifo_counter_" + port_obj->get_id() + " = 0;\n");
       }
@@ -2485,7 +2501,8 @@ void TestbenchGenerationBaseStep::initialize_input_signals(const tree_managerCon
          writer->write("ex_" + port_obj->get_id() + " = 0;\n");
          writer->write("registered_" + port_obj->get_id() + " = 0;\n");
       }
-      else if(interfaceType == port_o::port_interface::PI_FDIN)
+      else if(interfaceType == port_o::port_interface::PI_FDIN ||
+              interfaceType == port_o::port_interface::PI_M_AXIS_TDATA)
       {
          writer->write("fifo_counter_" + port_obj->get_id() + " = 0;\n");
       }
