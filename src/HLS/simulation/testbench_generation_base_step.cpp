@@ -1031,9 +1031,11 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
                   {
                      if(output_level >= OUTPUT_LEVEL_VERY_PEDANTIC)
                      {
-                        writer->write("$display(\"" + nonescaped_name + " = _bambu_testbench_mem_[" + nonescaped_name +
-                                      " + %d - base_addr] = %d  expected = %d \\n\", _i_, _bambu_testbench_mem_[(" +
-                                      port_name + " - base_addr) + _i_], " + output_name + ");\n");
+                        writer->write(
+                            "$display(\"" + nonescaped_name + " = %d _bambu_testbench_mem_[" + nonescaped_name +
+                            " + %d - base_addr] = %d  expected = %d \\n\", _bambu_testbench_mem_[(" + port_name +
+                            " - base_addr) + _i_] == " + output_name + ", _i_, _bambu_testbench_mem_[(" + port_name +
+                            " - base_addr) + _i_], " + output_name + ");\n");
                      }
                      writer->write("if (_bambu_testbench_mem_[(" + port_name +
                                    " - base_addr) + _i_] !== " + output_name + ")\n");
@@ -1735,9 +1737,11 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
                   {
                      if(output_level > OUTPUT_LEVEL_MINIMUM)
                      {
-                        writer->write("$display(\"comparison = _bambu_testbench_mem_[" + nonescaped_name +
-                                      " + %d - base_addr] = %d  expected = %d \\n\", _i_, _bambu_testbench_mem_[(" +
-                                      port_name + " - base_addr) + _i_], " + output_name + ");\n");
+                        writer->write("$display(\"comparison = %d _bambu_testbench_mem_[" + nonescaped_name +
+                                      " + %d - base_addr] = %d  expected = %d \\n\", _bambu_testbench_mem_[(" +
+                                      port_name + " - base_addr) + _i_] == " + output_name +
+                                      ", _i_, _bambu_testbench_mem_[(" + port_name + " - base_addr) + _i_], " +
+                                      output_name + ");\n");
                      }
                      writer->write("if (_bambu_testbench_mem_[(" + port_name +
                                    " - base_addr) + _i_] !== " + output_name + ")\n");
