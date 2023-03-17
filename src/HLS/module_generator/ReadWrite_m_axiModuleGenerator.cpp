@@ -279,7 +279,6 @@ always @(*) begin
   next_ARSIZE = ARSIZE;
   next_ARBURST = ARBURST;
   next_ARLEN = ARLEN;
-  misalignment = 0;
   next_first_read = first_read;
   next_read_mask = read_mask;
   next_AWREADY = AWREADY;
@@ -288,6 +287,7 @@ always @(*) begin
       out << R"(
    case (_present_state)
     S_IDLE: begin 
+      misalignment = 0;
       next_axi_awaddr = 'b0;
       next_axi_awvalid = 1'b0;
       next_axi_wdata = 'b0;
@@ -334,6 +334,7 @@ always @(*) begin
       out << "            next_ARBURST = 'b0;\n";
       out << "            next_read_mask = -1;\n";
       out << "          end\n";
+      out << "          next_read_mask = next_read_mask & ((1 << in2) - 1);\n";
       out << "          next_axi_arvalid = 1'b1;\n";
       out << "          _next_state = S_RD_BURST;\n";
       out << "      end else if (" << _ports_in[i_start].name << " && " << _ports_in[i_in1].name << ") begin\n";
@@ -351,9 +352,10 @@ always @(*) begin
       out << "          misalignment = " << _ports_in[i_in4].name << " & ((1 << next_AWSIZE) - 1);\n";
       for(unsigned i = 0; i < _ports_out[o_WSTRB].type_size; i++)
       {
-         out << "          next_WSTRB[" << STR(i) << "] = " << STR(i) << " >= misalignment;\n";
+         out << "          next_WSTRB[" << STR(i) << "] = " << STR(i) << " >= misalignment && (in2 >> 3 > " << STR(i)
+             << ");\n";
       }
-      out << "          next_axi_wdata = " << _ports_in[i_in3].name << ";\n";
+      out << "          next_axi_wdata = " << _ports_in[i_in3].name << " << (misalignment << 3);\n";
       out << R"(          next_axi_wvalid = 1'b1;
           next_axi_wlast = !(misalignment > 'b0);
           if(next_axi_wlast) begin
@@ -393,7 +395,7 @@ always @(*) begin
       out << R"(          if(!first_read) begin
             if(~read_mask != 'b0)
               next_acc_rdata = acc_rdata | ()" +
-                 _ports_in[i_RDATA].name + R"( & (~read_mask));
+                 _ports_in[i_RDATA].name + R"( & (~read_mask & ((1 << in2) - 1)));
             next_axi_rready = 1'b0;
 )";
       out << "             if(!" << _ports_in[i_RLAST].name << ") begin\n";
@@ -448,9 +450,10 @@ always @(*) begin
       out << R"(
         /* If the last transfer was not aligned and the slave is ready, transfer the rest */
         next_WSTRB = ~WSTRB;
-        next_axi_wdata = axi_wdata;
-        next_axi_wvalid = 1'b1;
-        next_axi_wlast = 1'b1;
+        next_axi_wdata = )"
+          << _ports_in[i_in3].name << R"( >> (misalignment << 3);
+          next_axi_wvalid = 1'b1;
+      next_axi_wlast = 1'b1;
 )";
       out << R"(      end
       else if (next_AWREADY && !WSTRB[0]) begin

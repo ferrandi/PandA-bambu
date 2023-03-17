@@ -2727,6 +2727,10 @@ void TestbenchGenerationBaseStep::testbench_controller_machine() const
             writer->write("    end else begin\n");
             writer->write("      " + portPrefix + "currAddr = " + portPrefix + "AWADDR;\n");
             writer->write("    end\n");
+            /* Realign address */
+            writer->write("    " + portPrefix + "currAddr = " + portPrefix + "currAddr - (" + portPrefix +
+                          "currAddr % (1 << " + portPrefix + "awqueue[_i_][" + STR(SIZE_HIGH_INDEX) + " : " +
+                          STR(SIZE_LOW_INDEX) + "]));\n");
 
             /* Compute aggregate memory for WDATA */
             const auto portWDATA = mod->find_member(portPrefix + "WDATA", port_o_K, cir);
@@ -2800,6 +2804,11 @@ void TestbenchGenerationBaseStep::testbench_controller_machine() const
                           portPrefix + "arqueue[0][" + STR(SIZE_HIGH_INDEX) + " : " + STR(SIZE_LOW_INDEX) + "]));\n");
             writer->write("      end\n");
             writer->write("    end\n");
+
+            /* Realign address */
+            writer->write("    " + portPrefix + "currAddr = " + portPrefix + "currAddr - (" + portPrefix +
+                          "currAddr % (1 << " + portPrefix + "arqueue[_i_][" + STR(SIZE_HIGH_INDEX) + " : " +
+                          STR(SIZE_LOW_INDEX) + "]));\n");
 
             /* Compute aggregate memory for RDATA */
             const auto portRDATA = mod->find_member(portPrefix + "RDATA", port_o_K, cir);
