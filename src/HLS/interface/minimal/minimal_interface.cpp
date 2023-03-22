@@ -1054,7 +1054,8 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
                if(int_port)
                {
                   if(GetPointer<port_o>(int_port)->get_port_interface() == port_o::port_interface::PI_RNONE ||
-                     GetPointer<port_o>(int_port)->get_port_interface() == port_o::port_interface::PI_FDOUT)
+                     GetPointer<port_o>(int_port)->get_port_interface() == port_o::port_interface::PI_FDOUT ||
+                     GetPointer<port_o>(int_port)->get_port_interface() == port_o::port_interface::PI_S_AXIS_TDATA)
                   {
                      portsToSkip.insert(int_port);
                      if(port_in->get_kind() == port_vector_o_K)
@@ -1083,7 +1084,8 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
                   if(int_port)
                   {
                      if(GetPointer<port_o>(int_port)->get_port_interface() == port_o::port_interface::PI_WNONE ||
-                        GetPointer<port_o>(int_port)->get_port_interface() == port_o::port_interface::PI_FDIN)
+                        GetPointer<port_o>(int_port)->get_port_interface() == port_o::port_interface::PI_FDIN ||
+                        GetPointer<port_o>(int_port)->get_port_interface() == port_o::port_interface::PI_M_AXIS_TDATA)
                      {
                         int_port = wrappedObj->find_member(port_name, port_o_K, wrappedObj);
                         THROW_ASSERT(int_port, "unexpected condition");
@@ -1122,7 +1124,10 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
                            int_port = wrappedObj->find_member("_m_axis_" + port_name + "_TDATA", port_o_K, wrappedObj);
                            if(int_port)
                            {
-                              if(GetPointer<port_o>(int_port)->get_port_interface() == port_o::port_interface::PI_FDIN)
+                              if(GetPointer<port_o>(int_port)->get_port_interface() ==
+                                     port_o::port_interface::PI_FDIN ||
+                                 GetPointer<port_o>(int_port)->get_port_interface() ==
+                                     port_o::port_interface::PI_M_AXIS_TDATA)
                               {
                                  int_port = wrappedObj->find_member(port_name, port_o_K, wrappedObj);
                                  THROW_ASSERT(int_port, "unexpected condition");
@@ -1137,7 +1142,9 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
                               if(int_port)
                               {
                                  if(GetPointer<port_o>(int_port)->get_port_interface() ==
-                                    port_o::port_interface::PI_FDOUT)
+                                        port_o::port_interface::PI_FDOUT ||
+                                    GetPointer<port_o>(int_port)->get_port_interface() ==
+                                        port_o::port_interface::PI_S_AXIS_TDATA)
                                  {
                                     portsToSkip.insert(int_port);
                                     if(port_in->get_kind() == port_vector_o_K)
@@ -1368,7 +1375,8 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
                               port_o::port_interface::S_AXIL_RDATA,    port_o::port_interface::S_AXIL_RRESP,
                               port_o::port_interface::S_AXIL_BVALID,   port_o::port_interface::S_AXIL_BREADY,
                               port_o::port_interface::S_AXIL_BRESP,    port_o::port_interface::PI_S_AXIS_TREADY,
-                              port_o::port_interface::PI_M_AXIS_TVALID}))
+                              port_o::port_interface::PI_S_AXIS_TDATA, port_o::port_interface::PI_M_AXIS_TVALID,
+                              port_o::port_interface::PI_M_AXIS_TDATA}))
          {
             portsToSkip.insert(port_out);
             std::string ext_name = port_name[0] == '_' ? port_name.substr(1) : port_name;

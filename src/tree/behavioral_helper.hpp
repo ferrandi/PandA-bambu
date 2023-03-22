@@ -45,7 +45,6 @@
 
 /// Autoheader include
 #include "config_HAVE_BAMBU_BUILT.hpp"
-#include "config_HAVE_EXPERIMENTAL.hpp"
 #include "config_HAVE_FROM_PRAGMA_BUILT.hpp"
 
 #include "custom_map.hpp"

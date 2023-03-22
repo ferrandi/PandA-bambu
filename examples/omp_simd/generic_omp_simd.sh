@@ -10,7 +10,7 @@ if [[ "$compiler" != *GCC* ]]; then
    exit 0
 fi
 
-BATCH_ARGS=("--no-iob" "-fwhole-program" "-fno-delete-null-pointer-checks" "--experimental-setup=BAMBU-BALANCED-MP" "--simulate")
+BATCH_ARGS=("-fwhole-program" "-fno-delete-null-pointer-checks" "--experimental-setup=BAMBU-BALANCED-MP" "--simulate")
 configuration="${device}_$(printf "%04.1f" $period)_$(echo $compiler | tr '[:upper:]' '[:lower:]')"
 OUT_SUFFIX="${configuration}_omp_simd"
 

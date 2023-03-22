@@ -100,14 +100,6 @@ HLSSynthesisFlow::ComputeHLSRelationships(const DesignFlowStep::RelationshipType
                                                 HLSFlowStepSpecializationConstRef(),
                                                 HLSFlowStep_Relationship::SAME_FUNCTION));
                   }
-#if HAVE_EXPERIMENTAL
-                  else
-                  {
-                     ret.insert(std::make_tuple(HLSFlowStep_Type::OMP_FOR_WRAPPER_SYNTHESIS_FLOW,
-                                                HLSFlowStepSpecializationConstRef(),
-                                                HLSFlowStep_Relationship::SAME_FUNCTION));
-                  }
-#endif
                }
                else
                {

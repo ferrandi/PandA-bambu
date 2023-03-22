@@ -139,22 +139,12 @@ const std::string HLS_step::EnumToName(const HLSFlowStep_Type hls_flow_step_type
          return "AddLibrary";
       case HLSFlowStep_Type::ALLOCATION:
          return "Allocation";
-#if HAVE_EXPERIMENTAL
-      case HLSFlowStep_Type::AREA_ESTIMATION:
-         return "AreaEstimation";
-      case HLSFlowStep_Type::AXI4LITE_INTERFACE_GENERATION:
-         return "Axi4LiteInterfaceGeneration";
-#endif
       case HLSFlowStep_Type::BB_STG_CREATOR:
          return "BBStgCreator";
       case HLSFlowStep_Type::CDFC_MODULE_BINDING:
          return "CdfcModuleBinding";
       case HLSFlowStep_Type::CALL_GRAPH_UNFOLDING:
          return "CallGraphUnfolding";
-#if HAVE_EXPERIMENTAL
-      case HLSFlowStep_Type::CHAINING_BASED_LIVENESS:
-         return "ChainingBasedLiveness";
-#endif
       case HLSFlowStep_Type::CHORDAL_COLORING_REGISTER_BINDING:
          return "ChordalColoringRegisterBinding";
       case HLSFlowStep_Type::CLASSIC_DATAPATH_CREATOR:
@@ -165,10 +155,6 @@ const std::string HLS_step::EnumToName(const HLSFlowStep_Type hls_flow_step_type
          return "DatapathCreatorCSParallel";
       case HLSFlowStep_Type::CLASSICAL_HLS_SYNTHESIS_FLOW:
          return "ClassicalHLSSynthesisFlow";
-#if HAVE_EXPERIMENTAL
-      case HLSFlowStep_Type::CLOCK_SLACK_ESTIMATION:
-         return "ClockSlackEstimation";
-#endif
       case HLSFlowStep_Type::COLORING_REGISTER_BINDING:
          return "ColoringRegisterBinding";
       case HLSFlowStep_Type::CONTROL_FLOW_CHECKER:
@@ -189,46 +175,18 @@ const std::string HLS_step::EnumToName(const HLSFlowStep_Type hls_flow_step_type
       case HLSFlowStep_Type::DSE_DESIGN_FLOW:
          return "DseDesignFlow";
 #endif
-#if HAVE_EXPERIMENTAL
-      case HLSFlowStep_Type::DUMP_DESIGN_FLOW:
-         return "DumpDesignFlow";
-#endif
       case HLSFlowStep_Type::EASY_MODULE_BINDING:
          return "EasyModuleBinding";
-#if HAVE_EXPERIMENTAL
-      case HLSFlowStep_Type::EDGES_REDUCTION_EVALUATION:
-         return "EdgesReductionEvaluation";
-      case HLSFlowStep_Type::EPDG_SCHED_CHAINING:
-         return "EpdgSchedChaining";
-#endif
       case HLSFlowStep_Type::EVALUATION:
          return "Evaluation";
-#if HAVE_EXPERIMENTAL
-      case HLSFlowStep_Type::EXPLORE_MUX_DESIGN_FLOW:
-         return "ExploreMuxDesignFlow";
-      case HLSFlowStep_Type::EXPORT_PCORE:
-         return "ExportPcore";
-#endif
-#if HAVE_EXPERIMENTAL
-      case HLSFlowStep_Type::FSL_INTERFACE_GENERATION:
-         return "FslInterfaceGeneration";
-#endif
       case HLSFlowStep_Type::FSM_CONTROLLER_CREATOR:
          return "FsmControllerCreator";
       case HLSFlowStep_Type::FSM_CS_CONTROLLER_CREATOR:
          return "FsmCSControllerCreator";
       case HLSFlowStep_Type::FSM_NI_SSA_LIVENESS:
          return "FsmNiSsaLiveness";
-#if HAVE_EXPERIMENTAL
-      case HLSFlowStep_Type::FU_REG_BINDING_DESIGN_FLOW:
-         return "FuRegBindingDesignFlow";
-#endif
       case HLSFlowStep_Type::GENERATE_HDL:
          return "GenerateHdl";
-#if HAVE_EXPERIMENTAL
-      case HLSFlowStep_Type::GENERATE_RESP:
-         return "GenerateResp";
-#endif
 #if HAVE_SIMULATION_WRAPPER_BUILT
       case HLSFlowStep_Type::GENERATE_SIMULATION_SCRIPT:
          return "GenerateSimulationScript";
@@ -245,28 +203,12 @@ const std::string HLS_step::EnumToName(const HLSFlowStep_Type hls_flow_step_type
          return "HLSFunctionBitValue";
       case HLSFlowStep_Type::HLS_SYNTHESIS_FLOW:
          return "HLSFlow";
-#if HAVE_ILP_BUILT && HAVE_EXPERIMENTAL
-      case HLSFlowStep_Type::ILP_NEW_FORM_SCHEDULING:
-         return "IlpNewFormScheduling";
-      case HLSFlowStep_Type::ILP_SCHEDULING:
-         return "IlpScheduling";
-#endif
       case HLSFlowStep_Type::INITIALIZE_HLS:
          return "InitializeHLS";
       case HLSFlowStep_Type::INTERFACE_CS_GENERATION:
          return "InterfaceCSGeneration";
-#if HAVE_EXPERIMENTAL
-      case HLSFlowStep_Type::K_COFAMILY_REGISTER_BINDING:
-         return "KCofamilyRegisterBinding";
-      case HLSFlowStep_Type::LEFT_EDGE_REGISTER_BINDING:
-         return "LeftEdgeRegisterBinding";
-#endif
       case HLSFlowStep_Type::LIST_BASED_SCHEDULING:
          return "ParametricListBased";
-#if HAVE_EXPERIMENTAL
-      case HLSFlowStep_Type::MEMORY_CONFLICT_GRAPH:
-         return "MemoryConflictGraph";
-#endif
       case HLSFlowStep_Type::MINIMAL_INTERFACE_GENERATION:
          return "MinimalInterfaceGeneration";
       case HLSFlowStep_Type::INFERRED_INTERFACE_GENERATION:
@@ -275,12 +217,6 @@ const std::string HLS_step::EnumToName(const HLSFlowStep_Type hls_flow_step_type
          return "MinimalTestbenchGeneration";
       case HLSFlowStep_Type::MUX_INTERCONNECTION_BINDING:
          return "MuxInterconnectionBinding";
-#if HAVE_EXPERIMENTAL
-      case HLSFlowStep_Type::NPI_INTERFACE_GENERATION:
-         return "NpiInterfaceGeneration";
-      case HLSFlowStep_Type::NUM_AF_EDGES_EVALUATION:
-         return "NumAfEdgesEvaluation";
-#endif
 #if HAVE_FROM_PRAGMA_BUILT
       case HLSFlowStep_Type::OMP_ALLOCATION:
          return "OmpAllocation";
@@ -288,10 +224,6 @@ const std::string HLS_step::EnumToName(const HLSFlowStep_Type hls_flow_step_type
 #if HAVE_FROM_PRAGMA_BUILT
       case HLSFlowStep_Type::OMP_BODY_LOOP_SYNTHESIS_FLOW:
          return "OmpBodyLoopSynthesisFlow";
-#endif
-#if HAVE_EXPERIMENTAL && HAVE_FROM_PRAGMA_BUILT
-      case HLSFlowStep_Type::OMP_FOR_WRAPPER_SYNTHESIS_FLOW:
-         return "OmpForWrapperSynthesisFlow";
 #endif
 #if HAVE_FROM_PRAGMA_BUILT
       case HLSFlowStep_Type::OMP_FOR_WRAPPER_CS_SYNTHESIS_FLOW:
@@ -305,10 +237,6 @@ const std::string HLS_step::EnumToName(const HLSFlowStep_Type hls_flow_step_type
       case HLSFlowStep_Type::OMP_FUNCTION_ALLOCATION_CS:
          return "OmpFunctionAllocationCS";
 #endif
-#if HAVE_EXPERIMENTAL
-      case HLSFlowStep_Type::PARALLEL_CONTROLLER_CREATOR:
-         return "ParallelControllerCreator";
-#endif
       case HLSFlowStep_Type::PIPELINE_CONTROLLER_CREATOR:
          return "PipelineControllerCreator";
       case HLSFlowStep_Type::PORT_SWAPPING:
@@ -318,10 +246,6 @@ const std::string HLS_step::EnumToName(const HLSFlowStep_Type hls_flow_step_type
 #if HAVE_ILP_BUILT
       case HLSFlowStep_Type::SDC_SCHEDULING:
          return "SDCScheduling";
-#endif
-#if HAVE_ILP_BUILT && HAVE_EXPERIMENTAL
-      case HLSFlowStep_Type::SILP_SCHEDULING:
-         return "SilpScheduling";
 #endif
       case HLSFlowStep_Type::SIMULATION_EVALUATION:
          return "SimulationEvaluation";
@@ -345,10 +269,6 @@ const std::string HLS_step::EnumToName(const HLSFlowStep_Type hls_flow_step_type
          return "TestbenchValuesXMLGeneration";
       case HLSFlowStep_Type::TEST_VECTOR_PARSER:
          return "TestVectorParser";
-#if HAVE_EXPERIMENTAL
-      case HLSFlowStep_Type::TIME_ESTIMATION:
-         return "TimeEstimation";
-#endif
       case HLSFlowStep_Type::TOP_ENTITY_CREATION:
          return "TopEntityCreation";
       case HLSFlowStep_Type::TOP_ENTITY_CS_CREATION:
@@ -385,10 +305,6 @@ const std::string HLS_step::EnumToName(const HLSFlowStep_Type hls_flow_step_type
          return "WeightedCliqueRegisterBinding";
       case HLSFlowStep_Type::WRITE_HLS_SUMMARY:
          return "WriteHLSSummary";
-#if HAVE_EXPERIMENTAL
-      case HLSFlowStep_Type::XML_HLS_SYNTHESIS_FLOW:
-         return "XMLHLSSynthesisFlow";
-#endif
       default:
          THROW_UNREACHABLE("HLS flow step type does not exist");
    }

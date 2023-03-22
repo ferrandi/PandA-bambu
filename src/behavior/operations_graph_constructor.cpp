@@ -182,14 +182,6 @@ void operations_graph_constructor::AddVariable(const vertex op_vertex, const uns
    op_graph->GetOpNodeInfo(op_vertex)->variables[variable_type][access_type].insert(variable);
 }
 
-#if HAVE_EXPERIMENTAL
-void operations_graph_constructor::AddMemoryLocation(const vertex op_vertex, const MemoryAddress variable,
-                                                     const FunctionBehavior_VariableAccessType access_type)
-{
-   op_graph->GetOpNodeInfo(op_vertex)->dynamic_memory_locations[access_type].insert(variable);
-}
-#endif
-
 void operations_graph_constructor::add_parameter(const vertex& Ver, unsigned int Var)
 {
    op_graph->GetOpNodeInfo(Ver)->actual_parameters.push_back(Var);

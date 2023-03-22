@@ -487,10 +487,6 @@ endif
 
 CLEANFILES = $(noinst_SCRIPT)
 
-if BUILD_LIB_CUDD
-   SUBDIRS += cudd
-endif
-
 create_abc:Makefile
 	touch create_abc
 	tar xzf $(top_srcdir)/abc70930.tar.gz

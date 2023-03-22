@@ -520,7 +520,7 @@ namespace clang
                            interface != "handshake" && interface != "valid" && interface != "ovalid" &&
                            interface != "acknowledge" && interface != "fifo" && interface != "bus" &&
                             interface != "m_axi" && interface != "axis") ||
-                           (is_channel_if && interface != "fifo"))
+                           (is_channel_if && interface != "fifo" && interface != "axis"))
                         {
                            print_error("#pragma HLS_interface non-consistent with parameter of pointer "
                                        "type, where user defined interface is: " +

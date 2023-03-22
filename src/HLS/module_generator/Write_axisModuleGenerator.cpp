@@ -64,6 +64,7 @@ enum out_port
 {
    o_done = 0,
    o_out1,
+   o_tdata,
    o_valid,
    o_last
 };
@@ -82,42 +83,24 @@ void Write_axisModuleGenerator::InternalExec(std::ostream& out, const module* /*
    THROW_ASSERT(_ports_in.size() >= i_last, "");
    THROW_ASSERT(_ports_out.size() >= o_last, "");
    out << "reg started 1INIT_ZERO_VALUE;\n";
-   out << "reg started0 1INIT_ZERO_VALUE;\n";
-   out << "reg [" << _ports_out[o_out1].type_size << "-1:0] " << _ports_out[o_out1].name << "_0;\n";
-   out << "reg " << _ports_out[o_done].name << "0 1INIT_ZERO_VALUE;\n\n";
+   out << "reg started_0 1INIT_ZERO_VALUE;\n";
+   out << "reg " << _ports_out[o_done].name << "_0 1INIT_ZERO_VALUE;\n\n";
 
    out << "always @(*)\n";
-   out << "  started0 = (started | " << _ports_in[i_start].name << ") & !" << _ports_in[i_ready].name << ";\n";
+   out << "  started_0 = (started | " << _ports_in[i_start].name << ") & !" << _ports_in[i_ready].name << ";\n";
    out << "always @(posedge clock 1RESET_EDGE)\n";
    out << "  if (1RESET_VALUE)\n";
    out << "    started <= 0;\n";
    out << "  else\n";
-   out << "    started <= started0;\n\n";
+   out << "    started <= started_0;\n\n";
 
-   out << "assign " << _ports_out[o_out1].name << " = " << _ports_out[o_out1].name << "_0;\n";
-   out << "always @(*)\n";
-   out << "begin\n";
-   out << "  " << _ports_out[o_out1].name << "_0 = 0;\n";
-   out << "  " << _ports_out[o_out1].name << "_0 = (" << _ports_in[i_in1].name << ">=" << _ports_out[o_out1].type_size
-       << ")?" << _ports_in[i_in2].name << ":(" << _ports_out[o_out1].name << "_0^((((BITSIZE_" << _ports_in[i_in2].name
-       << ">=" << _ports_out[o_out1].type_size << "?" << _ports_in[i_in2].name << ":{{(" << _ports_out[o_out1].type_size
-       << "<BITSIZE_" << _ports_in[i_in2].name << " ? 1 : " << _ports_out[o_out1].type_size << "-BITSIZE_"
-       << _ports_in[i_in2].name << "){1'b0}}," << _ports_in[i_in2].name << "})<<" << _ports_in[i_in3].name << "*8)^"
-       << _ports_out[o_out1].name << "_0) & (((" << _ports_in[i_in1].name << "+" << _ports_in[i_in3].name << "*8)>"
-       << _ports_out[o_out1].type_size << ") ? ((({(" << _ports_out[o_out1].type_size << "){1'b1}})>>("
-       << _ports_in[i_in3].name << "*8))<<(" << _ports_in[i_in3].name << "*8)) : ((((({("
-       << _ports_out[o_out1].type_size << "){1'b1}})>>(" << _ports_in[i_in3].name << "*8))<<(" << _ports_in[i_in3].name
-       << "*8))<<(" << _ports_out[o_out1].type_size << "-" << _ports_in[i_in1].name << "-" << _ports_in[i_in3].name
-       << "*8))>>(" << _ports_out[o_out1].type_size << "-" << _ports_in[i_in1].name << "-" << _ports_in[i_in3].name
-       << "*8)))));\n";
-   out << "end\n\n";
-
-   out << "always @(*)\n";
-   out << "begin\n";
-   out << "  " << _ports_out[o_done].name << "0 = (" << _ports_in[i_start].name << " & " << _ports_in[i_ready].name
-       << ") | (started & " << _ports_in[i_ready].name << ") ;\n";
-   out << "end\n\n";
-
-   out << "assign " << _ports_out[o_done].name << " = " << _ports_out[o_done].name << "0;\n";
+   out << "always @(*)\n"
+       << "begin\n"
+       << "  " << _ports_out[o_done].name << "_0 = (" << _ports_in[i_start].name << " & " << _ports_in[i_ready].name
+       << ") | (started & " << _ports_in[i_ready].name << ") ;\n"
+       << "end\n\n";
+   out << "assign " << _ports_out[o_done].name << " = " << _ports_out[o_done].name << "_0;\n";
    out << "assign " << _ports_out[o_valid].name << " = " << _ports_in[i_start].name << " | started;\n";
+   out << "assign " << _ports_out[o_out1].name << " = " << _ports_in[i_ready].name << ";\n";
+   out << "assign " << _ports_out[o_tdata].name << " = " << _ports_in[i_in2].name << ";\n";
 }

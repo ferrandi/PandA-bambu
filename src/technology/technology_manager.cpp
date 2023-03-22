@@ -53,11 +53,8 @@
 #include "technology_node.hpp"
 
 #include "area_model.hpp"
-#include "time_model.hpp"
-#if HAVE_EXPERIMENTAL
-#include "lef2xml.hpp"
-#endif
 #include "graph.hpp"
+#include "time_model.hpp"
 
 #include <boost/algorithm/string.hpp>
 #include <boost/filesystem.hpp>
@@ -449,48 +446,6 @@ void technology_manager::lib_write(const std::string& filename, TargetDevice_Typ
             continue;
          const library_managerRef LM = get_library_manager(*l);
          LM->set_info(library_manager::LIBERTY, filename);
-      }
-   }
-   catch(const char* msg)
-   {
-      std::cerr << msg << std::endl;
-   }
-   catch(const std::string& msg)
-   {
-      std::cerr << msg << std::endl;
-   }
-   catch(const std::exception& ex)
-   {
-      std::cout << "Exception caught: " << ex.what() << std::endl;
-   }
-   catch(...)
-   {
-      std::cerr << "unknown exception" << std::endl;
-   }
-}
-#endif
-
-#if HAVE_EXPERIMENTAL
-void technology_manager::lef_write(const std::string& filename, TargetDevice_Type dv_type,
-                                   const CustomOrderedSet<std::string>& _libraries)
-{
-   const auto output_level = Param->getOption<unsigned int>(OPT_output_level);
-   const auto library_fname = GetPath("__library__.xml");
-   try
-   {
-      xml_document document;
-      xml_element* nodeRoot = document.create_root_node("technology");
-      xwrite(nodeRoot, dv_type, _libraries);
-      document.write_to_file_formatted(library_fname);
-
-      xml2lef(library_fname, filename, output_level, debug_level);
-      boost::filesystem::remove(library_fname);
-      for(CustomOrderedSet<std::string>::const_iterator l = _libraries.begin(); l != _libraries.end(); ++l)
-      {
-         if(!is_library_manager(*l))
-            continue;
-         const library_managerRef LM = get_library_manager(*l);
-         LM->set_info(library_manager::LEF, filename);
       }
    }
    catch(const char* msg)

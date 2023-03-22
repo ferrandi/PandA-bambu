@@ -3584,11 +3584,6 @@
         <operation operation_name="exact_div_expr" supported_types="INT:32"/>
       </cell>
       <cell>
-        <name>FSL_handler</name>
-        <attribute name="area" value_type="float64">0</attribute>
-        <operation operation_name="FSL_handler" execution_time="9.9999999999999995e-08"/>
-      </cell>
-      <cell>
         <name>truth_andif_expr_FU_64_64_64</name>
         <attribute name="area" value_type="float64">1493.0579929999999</attribute>
         <template name="truth_andif_expr_FU" parameter="64 64 64"/>

@@ -387,12 +387,12 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
          }
          if(GET_TYPE(dfgRef, op) & (TYPE_VPHI))
          {
-                  continue;
-               }
+            continue;
+         }
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing operation " + GET_NAME(dfgRef, op));
          const auto cstep = sch->get_cstep(op).second;
          if(GET_TYPE(dfgRef, op) & (TYPE_PHI))
-               {
+         {
             phi_cstep.insert(std::make_pair(op, cstep));
          }
          unsigned int fu_name = HLS->Rfu->get_assign(op);
@@ -481,14 +481,14 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
          {
             have_previous = false;
          }
-      for(auto l = min_cstep; l <= max_cstep; l++)
-      {
+         for(auto l = min_cstep; l <= max_cstep; l++)
+         {
             if(is_function_pipelined && l >= min_cstep + LPII)
             {
                continue;
             }
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Considering control step " + STR(l));
-         std::list<vertex> exec_ops, start_ops, end_ops, onf_ops;
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Considering control step " + STR(l));
+            std::list<vertex> exec_ops, start_ops, end_ops, onf_ops;
 
             std::map<vertex, unsigned> vertex_step_in, vertex_step_out;
             std::set<vertex> is_prologue;
@@ -513,32 +513,32 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
                {
                   exec_ops.insert(exec_ops.end(), executing_ops.at(c_offset).begin(), executing_ops.at(c_offset).end());
                   for(auto vop : executing_ops.at(c_offset))
-         {
+                  {
                      vertex_step_in[vop] = from_strongtype_cast<unsigned int>(c_offset - min_cstep);
                   }
-         }
+               }
 
                if(starting_ops.find(c_offset) != starting_ops.end())
-         {
+               {
                   start_ops.insert(start_ops.end(), starting_ops.at(c_offset).begin(), starting_ops.at(c_offset).end());
-         }
+               }
                if(ending_ops.find(c_offset) != ending_ops.end())
                {
                   end_ops.insert(end_ops.end(), ending_ops.at(c_offset).begin(), ending_ops.at(c_offset).end());
                   for(auto vop : ending_ops.at(c_offset))
-         {
+                  {
                      vertex_step_out[vop] = from_strongtype_cast<unsigned int>(c_offset - min_cstep);
                   }
-         }
+               }
                if(onfly_ops.find(c_offset) != onfly_ops.end())
-         {
+               {
                   onf_ops.insert(onf_ops.end(), onfly_ops.at(c_offset).begin(), onfly_ops.at(c_offset).end());
-         }
+               }
                ++LP_Index_inner;
             } while(LP_Index_inner <= LP_Index);
 
-         CustomOrderedSet<unsigned int> BB_ids;
-         BB_ids.insert(operations->get_bb_index());
+            CustomOrderedSet<unsigned int> BB_ids;
+            BB_ids.insert(operations->get_bb_index());
             s_cur = STG_builder->create_state(
                 exec_ops, start_ops, end_ops, BB_ids, vertex_step_in, vertex_step_out, LPII,
                 isLP ? from_strongtype_cast<unsigned int>(max_cstep - min_cstep) : 0, isLP && has_last_step_op);
@@ -547,57 +547,57 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
                STG_builder->set_pipelined_state(s_cur, is_prologue);
             }
 
-         global_executing_ops[s_cur] = exec_ops;
-         global_starting_ops[s_cur] = start_ops;
-         global_ending_ops[s_cur] = end_ops;
-         global_onfly_ops.insert({s_cur, onf_ops});
+            global_executing_ops[s_cur] = exec_ops;
+            global_starting_ops[s_cur] = start_ops;
+            global_ending_ops[s_cur] = end_ops;
+            global_onfly_ops.insert({s_cur, onf_ops});
 
             for(const auto& exec_op : exec_ops)
-         {
-            const auto tn = HLS->allocation_information->get_fu(HLS->Rfu->get_assign(exec_op));
-            const auto op_tn = GetPointer<functional_unit>(tn)->get_operation(
-                tree_helper::NormalizeTypename(dfgRef->CGetOpNodeInfo(exec_op)->GetOperation()));
-            THROW_ASSERT(GetPointer<operation>(op_tn)->time_m,
-                         "Time model not available for operation: " + GET_NAME(dfgRef, exec_op));
-            if(!GetPointer<operation>(op_tn)->is_bounded())
             {
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                              "---" + GET_NAME(dfgRef, exec_op) + " is unbounded");
-               call_operations[s_cur].push_back(exec_op);
+               const auto tn = HLS->allocation_information->get_fu(HLS->Rfu->get_assign(exec_op));
+               const auto op_tn = GetPointer<functional_unit>(tn)->get_operation(
+                   tree_helper::NormalizeTypename(dfgRef->CGetOpNodeInfo(exec_op)->GetOperation()));
+               THROW_ASSERT(GetPointer<operation>(op_tn)->time_m,
+                            "Time model not available for operation: " + GET_NAME(dfgRef, exec_op));
+               if(!GetPointer<operation>(op_tn)->is_bounded())
+               {
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                 "---" + GET_NAME(dfgRef, exec_op) + " is unbounded");
+                  call_operations[s_cur].push_back(exec_op);
+               }
             }
-         }
-         // THROW_ASSERT(call_operations.find(s_cur) == call_operations.end() ||
-         // call_operations.find(s_cur)->second.size() <= 1, "currently only one unbounded operation per state is
-         // admitted");
-         if(call_operations.find(s_cur) != call_operations.end() && call_operations.find(s_cur)->second.size())
-         {
-            THROW_ASSERT(call_operations.find(s_cur) != call_operations.end() &&
+            // THROW_ASSERT(call_operations.find(s_cur) == call_operations.end() ||
+            // call_operations.find(s_cur)->second.size() <= 1, "currently only one unbounded operation per state is
+            // admitted");
+            if(call_operations.find(s_cur) != call_operations.end() && call_operations.find(s_cur)->second.size())
+            {
+               THROW_ASSERT(call_operations.find(s_cur) != call_operations.end() &&
                                 call_operations.find(s_cur)->second.begin() !=
                                     call_operations.find(s_cur)->second.end(),
-                         "unexpected condition");
+                            "unexpected condition");
                std::list<vertex> call_ops(call_operations.find(s_cur)->second.begin(),
                                           call_operations.find(s_cur)->second.end()),
                    empty_ops;
 
-            CustomOrderedSet<unsigned int> call_BB_ids;
-            call_BB_ids.insert(operations->get_bb_index());
+               CustomOrderedSet<unsigned int> call_BB_ids;
+               call_BB_ids.insert(operations->get_bb_index());
                vertex s_call = STG_builder->create_state(
                    call_ops, empty_ops, call_ops, call_BB_ids, vertex_step_in, vertex_step_out, LPII,
                    isLP ? from_strongtype_cast<unsigned int>(max_cstep - min_cstep) : 0, isLP && has_last_step_op);
-            HLS->STG->GetStg()->GetStateInfo(s_call)->is_dummy = true;
-            call_states[s_cur].push_back(s_call);
-            CustomOrderedSet<vertex> ops;
-            ops.insert(call_ops.begin(), call_ops.end());
-            if(ops.size() > 1)
-            {
-               HLS->STG->add_multi_unbounded_obj(s_cur, ops);
+               HLS->STG->GetStg()->GetStateInfo(s_call)->is_dummy = true;
+               call_states[s_cur].push_back(s_call);
+               CustomOrderedSet<vertex> ops;
+               ops.insert(call_ops.begin(), call_ops.end());
+               if(ops.size() > 1)
+               {
+                  HLS->STG->add_multi_unbounded_obj(s_cur, ops);
+               }
             }
-         }
 
-         if(have_previous)
-         {
-            if(call_states.find(previous) == call_states.end())
+            if(have_previous)
             {
+               if(call_states.find(previous) == call_states.end())
+               {
                   if(isLP && (l == min_cstep + LPII))
                   {
                      auto s_e = STG_builder->connect_state(previous, s_cur,
@@ -615,35 +615,35 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
                   }
                   else
                   {
-               STG_builder->connect_state(previous, s_cur, TransitionInfo::StateTransitionType::ST_EDGE_NORMAL);
-            }
+                     STG_builder->connect_state(previous, s_cur, TransitionInfo::StateTransitionType::ST_EDGE_NORMAL);
+                  }
                }
-            else
-            {
-               THROW_ASSERT(call_operations.find(previous) != call_operations.end() &&
-                                call_operations.find(previous)->second.begin() !=
-                                    call_operations.find(previous)->second.end(),
-                            "unexpected condition");
-               THROW_ASSERT(call_states.count(previous), "unexpected condition");
-               CustomOrderedSet<vertex> ops;
+               else
+               {
+                  THROW_ASSERT(call_operations.find(previous) != call_operations.end() &&
+                                   call_operations.find(previous)->second.begin() !=
+                                       call_operations.find(previous)->second.end(),
+                               "unexpected condition");
+                  THROW_ASSERT(call_states.count(previous), "unexpected condition");
+                  CustomOrderedSet<vertex> ops;
                   ops.insert(call_operations.find(previous)->second.begin(),
                              call_operations.find(previous)->second.end());
                   auto call_sets = call_states.find(previous)->second;
                   for(auto& call_set : call_sets)
-               {
+                  {
                      EdgeDescriptor s_e = STG_builder->connect_state(
                          call_set, s_cur, TransitionInfo::StateTransitionType::ST_EDGE_NORMAL);
+                     STG_builder->set_unbounded_condition(s_e, ALL_FINISHED, ops, previous);
+                  }
+                  EdgeDescriptor s_e =
+                      STG_builder->connect_state(previous, s_cur, TransitionInfo::StateTransitionType::ST_EDGE_NORMAL);
                   STG_builder->set_unbounded_condition(s_e, ALL_FINISHED, ops, previous);
                }
-               EdgeDescriptor s_e =
-                   STG_builder->connect_state(previous, s_cur, TransitionInfo::StateTransitionType::ST_EDGE_NORMAL);
-               STG_builder->set_unbounded_condition(s_e, ALL_FINISHED, ops, previous);
             }
-         }
-         else
-         {
-            have_previous = true;
-         }
+            else
+            {
+               have_previous = true;
+            }
             if(isLP && l == min_cstep && LP_Index && has_previous_LP_first_state)
             {
                auto s_e = STG_builder->connect_state(previous_LP_first_state, s_cur,
@@ -660,33 +660,33 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
                current_LP_first_state = s_cur;
             }
 
-         previous = s_cur;
-         if(first_state_p)
-         {
-            first_state[*vit] = s_cur;
-            first_state_p = false;
-         }
-         if(call_states.count(s_cur))
-         {
-            THROW_ASSERT(call_operations.find(s_cur) != call_operations.end() &&
+            previous = s_cur;
+            if(first_state_p)
+            {
+               first_state[*vit] = s_cur;
+               first_state_p = false;
+            }
+            if(call_states.count(s_cur))
+            {
+               THROW_ASSERT(call_operations.find(s_cur) != call_operations.end() &&
                                 call_operations.find(s_cur)->second.begin() !=
                                     call_operations.find(s_cur)->second.end(),
-                         "unexpected condition");
-            THROW_ASSERT(call_states.find(s_cur) != call_states.end() &&
-                             call_states.find(s_cur)->second.begin() != call_states.find(s_cur)->second.end(),
-                         "unexpected condition");
-            const auto waiting_state = call_states.at(s_cur).front();
+                            "unexpected condition");
+               THROW_ASSERT(call_states.find(s_cur) != call_states.end() &&
+                                call_states.find(s_cur)->second.begin() != call_states.find(s_cur)->second.end(),
+                            "unexpected condition");
+               const auto waiting_state = call_states.at(s_cur).front();
                EdgeDescriptor s_e = STG_builder->connect_state(s_cur, waiting_state,
                                                                TransitionInfo::StateTransitionType::ST_EDGE_NORMAL);
 
-            CustomOrderedSet<vertex> ops;
-            ops.insert(call_operations.at(s_cur).begin(), call_operations.at(s_cur).end());
-            STG_builder->set_unbounded_condition(s_e, NOT_ALL_FINISHED, ops, s_cur);
+               CustomOrderedSet<vertex> ops;
+               ops.insert(call_operations.at(s_cur).begin(), call_operations.at(s_cur).end());
+               STG_builder->set_unbounded_condition(s_e, NOT_ALL_FINISHED, ops, s_cur);
 
-            s_e = STG_builder->connect_state(waiting_state, waiting_state,
-                                             TransitionInfo::StateTransitionType::ST_EDGE_FEEDBACK);
-            STG_builder->set_unbounded_condition(s_e, NOT_ALL_FINISHED, ops, s_cur);
-         }
+               s_e = STG_builder->connect_state(waiting_state, waiting_state,
+                                                TransitionInfo::StateTransitionType::ST_EDGE_FEEDBACK);
+               STG_builder->set_unbounded_condition(s_e, NOT_ALL_FINISHED, ops, s_cur);
+            }
             if(l == max_cstep)
             {
                if(isLP)
@@ -695,16 +695,16 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
                }
                else
                {
-         last_state[*vit] = s_cur;
+                  last_state[*vit] = s_cur;
                }
             }
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Considered control step " + STR(l));
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Considered control step " + STR(l));
             if(is_function_pipelined && isLP && LP_Index == n_iter_LP_STG_building - 1 && l == min_cstep + (LPII - 1))
             {
                STG_builder->set_exit_state(s_cur);
                STG_builder->connect_state(s_cur, current_LP_first_state,
                                           TransitionInfo::StateTransitionType::ST_EDGE_FEEDBACK);
-      }
+            }
             else if(isLP && LP_Index == n_iter_LP_STG_building - 1 && l == min_cstep + (LPII - 1))
             {
                auto s_e_f = STG_builder->connect_state(s_cur, current_LP_first_state,
@@ -790,67 +790,67 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
             THROW_ASSERT(last_state.find(bb_src) != last_state.end(), "missing a state vertex");
             s_src = last_state.find(bb_src)->second;
          }
-      // THROW_ASSERT(s_src != s_tgt, "chaining between basic block is not expected");
+         // THROW_ASSERT(s_src != s_tgt, "chaining between basic block is not expected");
 
-      EdgeDescriptor s_e;
-      if(FB_CFG_SELECTOR & fbb->GetSelector(e))
-      {
-         s_e = STG_builder->connect_state(s_src, s_tgt, TransitionInfo::StateTransitionType::ST_EDGE_FEEDBACK);
-         if(call_states.count(s_src))
+         EdgeDescriptor s_e;
+         if(FB_CFG_SELECTOR & fbb->GetSelector(e))
          {
-            const auto& call_sets = call_states.at(s_src);
-            CustomOrderedSet<vertex> ops;
-            ops.insert(call_operations[s_src].begin(), call_operations[s_src].end());
-            if(call_sets.begin() != call_sets.end())
+            s_e = STG_builder->connect_state(s_src, s_tgt, TransitionInfo::StateTransitionType::ST_EDGE_FEEDBACK);
+            if(call_states.count(s_src))
             {
-               STG_builder->set_unbounded_condition(s_e, ALL_FINISHED, ops, s_src);
-            }
+               const auto& call_sets = call_states.at(s_src);
+               CustomOrderedSet<vertex> ops;
+               ops.insert(call_operations[s_src].begin(), call_operations[s_src].end());
+               if(call_sets.begin() != call_sets.end())
+               {
+                  STG_builder->set_unbounded_condition(s_e, ALL_FINISHED, ops, s_src);
+               }
                for(const auto& call_set : call_sets)
-            {
+               {
                   EdgeDescriptor s_e1 = STG_builder->connect_state(
                       call_set, s_tgt, TransitionInfo::StateTransitionType::ST_EDGE_FEEDBACK);
-               STG_builder->set_unbounded_condition(s_e1, ALL_FINISHED, ops, s_src);
+                  STG_builder->set_unbounded_condition(s_e1, ALL_FINISHED, ops, s_src);
+               }
             }
-         }
-      }
-      else
-      {
-         if(call_states.find(s_src) == call_states.end())
-         {
-            s_e = STG_builder->connect_state(s_src, s_tgt, TransitionInfo::StateTransitionType::ST_EDGE_NORMAL);
          }
          else
          {
-            THROW_ASSERT(call_operations.find(s_src) != call_operations.end() &&
-                             call_operations.find(s_src)->second.size() != 0,
-                         "State " + HLS->STG->get_state_name(s_src) + " does not contain any call expression");
-            const auto& call_sets = call_states.at(s_src);
-            CustomOrderedSet<vertex> ops;
-            ops.insert(call_operations.at(s_src).begin(), call_operations.at(s_src).end());
-            for(auto& call_set : call_sets)
+            if(call_states.find(s_src) == call_states.end())
             {
-               EdgeDescriptor s_edge =
-                   STG_builder->connect_state(call_set, s_tgt, TransitionInfo::StateTransitionType::ST_EDGE_NORMAL);
-               STG_builder->set_unbounded_condition(s_edge, ALL_FINISHED, ops, s_src);
+               s_e = STG_builder->connect_state(s_src, s_tgt, TransitionInfo::StateTransitionType::ST_EDGE_NORMAL);
             }
+            else
+            {
+               THROW_ASSERT(call_operations.find(s_src) != call_operations.end() &&
+                                call_operations.find(s_src)->second.size() != 0,
+                            "State " + HLS->STG->get_state_name(s_src) + " does not contain any call expression");
+               const auto& call_sets = call_states.at(s_src);
+               CustomOrderedSet<vertex> ops;
+               ops.insert(call_operations.at(s_src).begin(), call_operations.at(s_src).end());
+               for(auto& call_set : call_sets)
+               {
+                  EdgeDescriptor s_edge =
+                      STG_builder->connect_state(call_set, s_tgt, TransitionInfo::StateTransitionType::ST_EDGE_NORMAL);
+                  STG_builder->set_unbounded_condition(s_edge, ALL_FINISHED, ops, s_src);
+               }
 
-            s_e = STG_builder->connect_state(s_src, s_tgt, TransitionInfo::StateTransitionType::ST_EDGE_NORMAL);
-            STG_builder->set_unbounded_condition(s_e, ALL_FINISHED, ops, s_src);
+               s_e = STG_builder->connect_state(s_src, s_tgt, TransitionInfo::StateTransitionType::ST_EDGE_NORMAL);
+               STG_builder->set_unbounded_condition(s_e, ALL_FINISHED, ops, s_src);
+            }
          }
-      }
-      CustomOrderedSet<std::pair<vertex, unsigned int>> out_conditions;
-      /// compute the controlling vertex
-      const auto bb_node_info = fbb->CGetBBNodeInfo(bb_src);
-      THROW_ASSERT(bb_node_info->statements_list.size(), "at least one operation should belong to this basic block");
-      const auto last_operation = *(bb_node_info->statements_list.rbegin());
+         CustomOrderedSet<std::pair<vertex, unsigned int>> out_conditions;
+         /// compute the controlling vertex
+         const auto bb_node_info = fbb->CGetBBNodeInfo(bb_src);
+         THROW_ASSERT(bb_node_info->statements_list.size(), "at least one operation should belong to this basic block");
+         const auto last_operation = *(bb_node_info->statements_list.rbegin());
          const auto& cfg_edge_ids = fbb->CGetBBEdgeInfo(e)->get_labels(CFG_SELECTOR);
 
          set_edge_condition(cfg_edge_ids, STG_builder, last_operation, s_e);
 
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                     "<--Analyzed BB" + STR(fbb->CGetBBNodeInfo(bb_src)->block->number) + "-->" +
-                         STR(fbb->CGetBBNodeInfo(bb_tgt)->block->number));
-   }
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                        "<--Analyzed BB" + STR(fbb->CGetBBNodeInfo(bb_src)->block->number) + "-->" +
+                            STR(fbb->CGetBBNodeInfo(bb_tgt)->block->number));
+      }
    }
    ///*****************************************************
    if(parameters->getOption<bool>(OPT_print_dot) && DEBUG_LEVEL_VERY_PEDANTIC <= debug_level)
@@ -875,15 +875,15 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
             if(!HLS->Rsch->IsLoopPipelined(fbb->CGetBBNodeInfo(bbStartingCycle)->block->number) &&
                !HLS->Rsch->IsLoopPipelined(fbb->CGetBBNodeInfo(bbEndingCycle)->block->number))
             {
-            // std::cerr << "begin cycles optimization" << std::endl;
-            optimize_cycles(bbEndingCycle, first_state, last_state, global_starting_ops, global_ending_ops,
-                            global_executing_ops, global_onfly_ops);
-            // std::cerr << "end cycles optimization " << STR(instance) << std::endl;
-            if(parameters->getOption<bool>(OPT_print_dot) && DEBUG_LEVEL_VERY_PEDANTIC <= debug_level)
-            {
-               HLS->STG->CGetStg()->WriteDot("HLS_STGraph-post" + STR(instance) + ".dot");
-            }
-            ++instance;
+               // std::cerr << "begin cycles optimization" << std::endl;
+               optimize_cycles(bbEndingCycle, first_state, last_state, global_starting_ops, global_ending_ops,
+                               global_executing_ops, global_onfly_ops);
+               // std::cerr << "end cycles optimization " << STR(instance) << std::endl;
+               if(parameters->getOption<bool>(OPT_print_dot) && DEBUG_LEVEL_VERY_PEDANTIC <= debug_level)
+               {
+                  HLS->STG->CGetStg()->WriteDot("HLS_STGraph-post" + STR(instance) + ".dot");
+               }
+               ++instance;
             }
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                            "<--Analyzed cycle starting from " + STR(fbb->CGetBBNodeInfo(bbEndingCycle)->block->number) +

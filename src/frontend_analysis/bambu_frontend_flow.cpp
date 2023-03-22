@@ -38,7 +38,6 @@
  */
 #include "bambu_frontend_flow.hpp"
 
-#include "config_HAVE_EXPERIMENTAL.hpp"         // for HAVE_EXPERIMENTAL
 #include "config_HAVE_HOST_PROFILING_BUILT.hpp" // for HAVE_HOST_PROFILING_...
 #include "config_HAVE_ILP_BUILT.hpp"            // for HAVE_ILP_BUILT
 #include "config_HAVE_PRAGMA_BUILT.hpp"         // for HAVE_PRAGMA_BUILT
@@ -165,12 +164,6 @@ BambuFrontendFlow::ComputeFrontendRelationships(const DesignFlowStep::Relationsh
          {
             relationships.insert(std::make_pair(EXTRACT_OMP_ATOMIC, WHOLE_APPLICATION));
             relationships.insert(std::make_pair(EXTRACT_OMP_FOR, WHOLE_APPLICATION));
-#if HAVE_EXPERIMENTAL
-            if(!parameters->isOption(OPT_context_switch))
-            {
-               relationships.insert(std::make_pair(UNROLL_LOOPS, WHOLE_APPLICATION));
-            }
-#endif
          }
          if(parameters->getOption<int>(OPT_gcc_openmp_simd))
          {
@@ -205,42 +198,6 @@ BambuFrontendFlow::ComputeFrontendRelationships(const DesignFlowStep::Relationsh
       }
    }
    return relationships;
-}
-
-void BambuFrontendFlow::ComputeRelationships(DesignFlowStepSet& relationship,
-                                             const DesignFlowStep::RelationshipType relationship_type)
-{
-   if(parameters->getOption<bool>(OPT_parse_pragma) and relationship_type == DesignFlowStep::DEPENDENCE_RELATIONSHIP)
-   {
-#if HAVE_EXPERIMENTAL
-      const auto TM = AppM->get_tree_manager();
-      const FrontendFlowStepFactory* frontend_flow_step_factory =
-          GetPointer<const FrontendFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("Frontend"));
-      CustomOrderedSet<FrontendFlowStepType> step_types;
-      if(parameters->isOption(OPT_chaining) and parameters->getOption<bool>(OPT_chaining))
-         step_types.insert(PARALLEL_REGIONS_GRAPH_COMPUTATION);
-      step_types.insert(EXTENDED_PDG_COMPUTATION);
-      for(const auto body_function : AppM->CGetCallGraphManager()->GetReachedBodyFunctions())
-      {
-         if(GetPointer<const function_decl>(TM->CGetTreeNode(body_function))->omp_for_wrapper)
-         {
-            for(const auto step_type : step_types)
-            {
-               const auto step = design_flow_manager.lock()->GetDesignFlowStep(
-                   FunctionFrontendFlowStep::ComputeSignature(step_type, body_function));
-               const auto design_flow_step =
-                   step ? design_flow_manager.lock()
-                              ->CGetDesignFlowGraph()
-                              ->CGetDesignFlowStepInfo(step)
-                              ->design_flow_step :
-                          frontend_flow_step_factory->CreateFunctionFrontendFlowStep(step_type, body_function);
-               relationship.insert(design_flow_step);
-            }
-         }
-      }
-#endif
-   }
-   ApplicationFrontendFlowStep::ComputeRelationships(relationship, relationship_type);
 }
 
 bool BambuFrontendFlow::HasToBeExecuted() const

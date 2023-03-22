@@ -103,6 +103,84 @@ static unsigned long long local_port_size(const structural_objectRef portInst)
    return get_aligned_bitsize(port_bitwidth);
 }
 
+/* Visits all submodules and checks if they have axi ports. Recursively visits axi children. If no axi children are
+ * found, current node is the axi controller and can print the axi cache stats. Returns true if it has axi children,
+ * false otherwise */
+bool TestbenchGenerationBaseStep::printCacheStats(const module* rootMod) const
+{
+   const unsigned intObjCount = rootMod->get_internal_objects_size();
+   bool hasAxiChildren = false;
+   for(unsigned i = 0; i < intObjCount; i++)
+   {
+      const auto subMod = rootMod->get_internal_object(i);
+      bool isSubModAxi = false;
+      if(subMod->get_kind() == component_o_K)
+      {
+         if(GetPointer<module>(subMod)->get_out_port_size())
+         {
+            for(unsigned j = 0; j < GetPointer<module>(subMod)->get_out_port_size(); j++)
+            {
+               const structural_objectRef& port = GetPointer<module>(subMod)->get_out_port(j);
+               if(GetPointer<port_o>(port)->get_port_interface() == port_o::port_interface::M_AXI_AWADDR)
+               {
+                  hasAxiChildren = true;
+                  isSubModAxi = true;
+               }
+            }
+         }
+         if(isSubModAxi)
+         {
+            if(!printCacheStats(GetPointer<module>(subMod)))
+            {
+               /* This module is an AXI controller check for cache */
+               const auto params = GetPointer<module>(subMod)->GetParameters();
+               if(params.find("WAY_LINES") != params.end() && boost::lexical_cast<unsigned>(params.at("WAY_LINES")) > 0)
+               {
+                  const std::string topModuleName =
+                      parameters->getOption<std::string>(OPT_simulator) == "VERILATOR" ? "" : "DUT.";
+                  std::string moduleHierarchy = topModuleName + GetPointer<module>(subMod)->get_path();
+                  std::replace(moduleHierarchy.begin(), moduleHierarchy.end(), '/', '.');
+                  const std::string moduleToCounters = ".cache.ctrl.cache_control.cnt";
+                  if(output_level >= DEBUG_LEVEL_PEDANTIC)
+                  {
+                     writer->write("$display(\"Read hits on module " + subMod->get_id() + " : %d\", " +
+                                   moduleHierarchy + moduleToCounters + ".read_access_cnt);\n");
+                     writer->write("$display(\"Read misses on module " + subMod->get_id() + " : %d\", " +
+                                   moduleHierarchy + moduleToCounters + ".read_miss_cnt);\n");
+                     writer->write("$display(\"Write hits on module " + subMod->get_id() + " : %d\", " +
+                                   moduleHierarchy + moduleToCounters + ".write_access_cnt);\n");
+                     writer->write("$display(\"Write misses on module " + subMod->get_id() + " : %d\", " +
+                                   moduleHierarchy + moduleToCounters + ".write_miss_cnt);\n");
+                  }
+                  writer->write("stats_file = $fopen(\"" + subMod->get_id() + "_cache_stats.txt\", \"w\");\n");
+                  writer->write_comment("Error in file open\n");
+                  writer->write("if (stats_file == `NULL)\n");
+                  writer->write(STR(STD_OPENING_CHAR));
+                  writer->write("begin\n");
+                  writer->write("$warning(\"ERROR - Error opening the cache stats file. Simulation will continue, but "
+                                "cache stats will not be saved.\");\n");
+                  writer->write(STR(STD_CLOSING_CHAR));
+                  writer->write("end else\n");
+                  writer->write(STR(STD_OPENING_CHAR));
+                  writer->write("begin\n");
+                  writer->write("$fwrite(stats_file, \"Read hits: %d\\n\", " + moduleHierarchy + moduleToCounters +
+                                ".read_access_cnt - " + moduleHierarchy + moduleToCounters + ".read_miss_cnt);\n");
+                  writer->write("$fwrite(stats_file, \"Read misses: %d\\n\", " + moduleHierarchy + moduleToCounters +
+                                ".read_miss_cnt);\n");
+                  writer->write("$fwrite(stats_file, \"Write hits: %d\\n\", " + moduleHierarchy + moduleToCounters +
+                                ".write_access_cnt - " + moduleHierarchy + moduleToCounters + ".write_miss_cnt);\n");
+                  writer->write("$fwrite(stats_file, \"Write misses: %d\\n\", " + moduleHierarchy + moduleToCounters +
+                                ".write_miss_cnt);\n");
+                  writer->write(STR(STD_CLOSING_CHAR));
+                  writer->write("end\n");
+               }
+            }
+         }
+      }
+   }
+   return hasAxiChildren;
+}
+
 TestbenchGenerationBaseStep::TestbenchGenerationBaseStep(const ParameterConstRef _parameters,
                                                          const HLS_managerRef _HLSMgr,
                                                          const DesignFlowManagerConstRef _design_flow_manager,
@@ -705,10 +783,13 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
             writer->write(STR(STD_CLOSING_CHAR));
             writer->write("end\n");
          }
-         else if(InterfaceType == port_o::port_interface::PI_FDIN || InterfaceType == port_o::port_interface::PI_FDOUT)
+         else if(InterfaceType == port_o::port_interface::PI_FDIN ||
+                 InterfaceType == port_o::port_interface::PI_M_AXIS_TDATA ||
+                 InterfaceType == port_o::port_interface::PI_FDOUT ||
+                 InterfaceType == port_o::port_interface::PI_S_AXIS_TDATA)
          {
             structural_objectRef port_write;
-            if(boost::ends_with(port_name, "_din"))
+            if(InterfaceType == port_o::port_interface::PI_FDIN)
             {
                port_write = mod->find_member(port_name.substr(0, port_name.size() - sizeof("_din") + 1U) + "_write",
                                              port_o_K, cir);
@@ -716,7 +797,7 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
                                               port_o::port_interface::PI_WRITE,
                             "unexpected condition");
             }
-            else if(boost::ends_with(port_name, "_dout"))
+            else if(InterfaceType == port_o::port_interface::PI_FDOUT)
             {
                port_write = mod->find_member(port_name.substr(0, port_name.size() - sizeof("_dout") + 1U) + "_read",
                                              port_o_K, cir);
@@ -724,14 +805,20 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
                                 GetPointer<port_o>(port_write)->get_port_interface() == port_o::port_interface::PI_READ,
                             "unexpected condition");
             }
-            else if(boost::ends_with(port_name, "_TDATA"))
+            else if(InterfaceType == port_o::port_interface::PI_M_AXIS_TDATA)
             {
                port_write = mod->find_member(port_name.substr(0, port_name.size() - sizeof("_TDATA") + 1U) + "_TVALID",
                                              port_o_K, cir);
-               THROW_ASSERT(port_write && (GetPointer<port_o>(port_write)->get_port_interface() ==
-                                               port_o::port_interface::PI_M_AXIS_TVALID ||
-                                           GetPointer<port_o>(port_write)->get_port_interface() ==
-                                               port_o::port_interface::PI_S_AXIS_TVALID),
+               THROW_ASSERT(port_write && GetPointer<port_o>(port_write)->get_port_interface() ==
+                                              port_o::port_interface::PI_M_AXIS_TVALID,
+                            "unexpected condition");
+            }
+            else if(InterfaceType == port_o::port_interface::PI_S_AXIS_TDATA)
+            {
+               port_write = mod->find_member(port_name.substr(0, port_name.size() - sizeof("_TDATA") + 1U) + "_TREADY",
+                                             port_o_K, cir);
+               THROW_ASSERT(port_write && GetPointer<port_o>(port_write)->get_port_interface() ==
+                                              port_o::port_interface::PI_S_AXIS_TREADY,
                             "unexpected condition");
             }
             THROW_ASSERT(port_write, "");
@@ -742,7 +829,8 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
             writer->write("if (" + port_write->get_id() + " == 1)\n");
             writer->write(STR(STD_OPENING_CHAR));
             writer->write("begin\n");
-            if(InterfaceType == port_o::port_interface::PI_FDIN)
+            if(InterfaceType == port_o::port_interface::PI_FDIN ||
+               InterfaceType == port_o::port_interface::PI_M_AXIS_TDATA)
             {
                writer->write("registered_" + port_name + "[fifo_counter_" + port_name + "] <= " + port_name + ";\n");
             }
@@ -1004,7 +1092,8 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
             writer->write("end\n");
          }
          else if(InterfaceType == port_o::port_interface::PI_RNONE || InterfaceType == port_o::port_interface::PI_DIN ||
-                 InterfaceType == port_o::port_interface::PI_FDOUT)
+                 InterfaceType == port_o::port_interface::PI_FDOUT ||
+                 InterfaceType == port_o::port_interface::PI_S_AXIS_TDATA)
          {
             writer->write("\n");
             writer->write_comment("OPTIONAL - skip expected value for " + portInst->get_id() +
@@ -1194,7 +1283,8 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
             writer->write(STR(STD_CLOSING_CHAR));
             writer->write("end\n");
          }
-         else if(InterfaceType == port_o::port_interface::PI_FDIN)
+         else if(InterfaceType == port_o::port_interface::PI_FDIN ||
+                 InterfaceType == port_o::port_interface::PI_M_AXIS_TDATA)
          {
             auto orig_name = portInst->get_id();
             auto port_to_be_compared = "registered_" + orig_name + "[_i_]";
@@ -1837,6 +1927,23 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
    writer->write(STR(STD_OPENING_CHAR));
    writer->write("begin\n");
    {
+      bool hasAxi = false;
+      if(mod->get_out_port_size())
+      {
+         for(unsigned int i = 0; i < mod->get_out_port_size(); i++)
+         {
+            const structural_objectRef& port = mod->get_out_port(i);
+            if(GetPointer<port_o>(port)->get_port_interface() == port_o::port_interface::M_AXI_AWADDR)
+            {
+               hasAxi = true;
+            }
+         }
+      }
+      if(hasAxi)
+      {
+         printCacheStats(mod);
+      }
+
       writer->write("$display(\"Simulation ended after %d cycles.\\n\", sim_time);\n");
       writer->write("if (success == 1)\n");
       writer->write(STR(STD_OPENING_CHAR));
@@ -2114,7 +2221,7 @@ void TestbenchGenerationBaseStep::write_auxiliary_signal_declaration() const
 
    writer->write_comment("AUXILIARY VARIABLES DECLARATION\n");
    writer->write("time startTime, endTime, sim_time;\n");
-   writer->write("integer res_file, file, _r_, _n_, _i_, _addr_i_;\n");
+   writer->write("integer res_file, file, stats_file, _r_, _n_, _i_, _addr_i_;\n");
    writer->write("integer _ch_;\n");
    writer->write("reg compare_outputs, success; // Flag: True if input vector specifies expected outputs\n");
    writer->write("reg [8*`MAX_COMMENT_LENGTH:0] line; // Comment line read from file\n\n");
@@ -2174,7 +2281,10 @@ void TestbenchGenerationBaseStep::write_auxiliary_signal_declaration() const
          const auto input_name = HDL_manager::convert_to_identifier(writer.get(), portInst->get_id());
          if(InterfaceType == port_o::port_interface::PI_RNONE || InterfaceType == port_o::port_interface::PI_WNONE ||
             InterfaceType == port_o::port_interface::PI_DIN || InterfaceType == port_o::port_interface::PI_DOUT ||
-            InterfaceType == port_o::port_interface::PI_FDOUT || InterfaceType == port_o::port_interface::PI_FDIN)
+            InterfaceType == port_o::port_interface::PI_FDOUT ||
+            InterfaceType == port_o::port_interface::PI_S_AXIS_TDATA ||
+            InterfaceType == port_o::port_interface::PI_FDIN ||
+            InterfaceType == port_o::port_interface::PI_M_AXIS_TDATA)
          {
             writer->write("reg [31:0] paddr" + input_name + ";\n");
             writeP = true;
@@ -2186,8 +2296,8 @@ void TestbenchGenerationBaseStep::write_auxiliary_signal_declaration() const
       }
    }
 
-   /* Check if AWADDR ports are present. If there are, declare a variable to store the last valid AWADDR for each bundle
-    * and the delay vectors
+   /* Check if AWADDR ports are present. If there are, declare a variable to store the last valid AWADDR for each
+    * bundle and the delay vectors
     */
    if(mod->get_out_port_size())
    {
@@ -2338,6 +2448,7 @@ void TestbenchGenerationBaseStep::initialize_input_signals(const tree_managerCon
    for(unsigned int i = 0; i < mod->get_in_port_size(); i++)
    {
       const auto port_obj = mod->get_in_port(i);
+      const auto port_if = GetPointer<port_o>(port_obj)->get_port_interface();
       const auto port_name = [&]() -> std::string {
          const auto port_id = port_obj->get_id();
          if(parameters->isOption(OPT_clock_name) && port_id == parameters->getOption<std::string>(OPT_clock_name))
@@ -2367,7 +2478,7 @@ void TestbenchGenerationBaseStep::initialize_input_signals(const tree_managerCon
       {
          writer->write("ex_" + port_name + " = 0;\n");
       }
-      if(GetPointer<port_o>(port_obj)->get_port_interface() == port_o::port_interface::PI_FDOUT)
+      if(port_if == port_o::port_interface::PI_FDOUT || port_if == port_o::port_interface::PI_S_AXIS_TDATA)
       {
          writer->write("fifo_counter_" + port_obj->get_id() + " = 0;\n");
       }
@@ -2382,7 +2493,8 @@ void TestbenchGenerationBaseStep::initialize_input_signals(const tree_managerCon
          writer->write("ex_" + port_obj->get_id() + " = 0;\n");
          writer->write("registered_" + port_obj->get_id() + " = 0;\n");
       }
-      else if(interfaceType == port_o::port_interface::PI_FDIN)
+      else if(interfaceType == port_o::port_interface::PI_FDIN ||
+              interfaceType == port_o::port_interface::PI_M_AXIS_TDATA)
       {
          writer->write("fifo_counter_" + port_obj->get_id() + " = 0;\n");
       }
@@ -2556,9 +2668,9 @@ void TestbenchGenerationBaseStep::testbench_controller_machine() const
             writer->write("      for(_i_ = 1; _i_ < " + portPrefix + "awqueue_size; _i_ = _i_ + 1) begin\n");
             writer->write("        " + portPrefix + "awqueue[_i_ - 1] = " + portPrefix + "awqueue[_i_];\n");
             writer->write("  end\n");
-            /* It is possible that we are both removing and adding an element from the queue. In this case, the size is
-             * not yet updated, so we must move the new element outside the loop and keep the same queue length in this
-             * clock cycle */
+            /* It is possible that we are both removing and adding an element from the queue. In this case, the size
+             * is not yet updated, so we must move the new element outside the loop and keep the same queue length in
+             * this clock cycle */
             writer->write("      if(" + portPrefix + "AWVALID && " + portPrefix + "AWREADY) begin\n");
             writer->write("        " + portPrefix + "awqueue[" + portPrefix + "awqueue_size - 1] = " + portPrefix +
                           "awqueue[" + portPrefix + "awqueue_size];\n");
@@ -2726,7 +2838,8 @@ void TestbenchGenerationBaseStep::testbench_controller_machine() const
             writer->write("        for(_i_ = 1; _i_ < " + portPrefix + "arqueue_size; _i_ = _i_ + 1) begin\n");
             writer->write("          " + portPrefix + "arqueue[_i_ - 1] = " + portPrefix + "arqueue[_i_];\n");
             writer->write("  end\n");
-            /* As for the write queue, it's also possible that we are adding and removing a transaction at the same time
+            /* As for the write queue, it's also possible that we are adding and removing a transaction at the same
+             * time
              */
             writer->write("        if(" + portPrefix + "ARVALID && " + portPrefix + "ARREADY) begin\n");
             writer->write("          " + portPrefix + "arqueue[" + portPrefix + "arqueue_size - 1] = " + portPrefix +
@@ -2863,8 +2976,8 @@ void TestbenchGenerationBaseStep::begin_file_reading_operation() const
 void TestbenchGenerationBaseStep::end_file_reading_operation() const
 {
    writer->write_comment("Simulation start\n");
-   writer->write(
-       "startTime = $time;\n$display(\"Reading of vector values from input file completed. Simulation started.\");\n");
+   writer->write("startTime = $time;\n$display(\"Reading of vector values from input file completed. Simulation "
+                 "started.\");\n");
    writer->write(STR(STD_CLOSING_CHAR));
    writer->write("end\n");
    writer->write(STR(STD_CLOSING_CHAR));

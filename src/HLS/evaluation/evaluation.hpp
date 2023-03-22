@@ -53,9 +53,6 @@ enum class Evaluation_Mode
 {
    NONE,
    DRY_RUN,
-#if HAVE_EXPERIMENTAL
-   ESTIMATION,
-#endif
    EXACT,
 };
 

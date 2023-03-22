@@ -47,7 +47,6 @@
 
 /// Autoheader include
 #include "config_HAVE_BAMBU_BUILT.hpp"
-#include "config_HAVE_EXPERIMENTAL.hpp"
 #include "config_HAVE_GRAPH_PARTITIONING_BUILT.hpp"
 #include "config_HAVE_HLS_BUILT.hpp"
 #include "config_HAVE_HOST_PROFILING_BUILT.hpp"

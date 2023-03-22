@@ -57,12 +57,16 @@
 #ifndef CLIQUE_COVERING_HPP
 #define CLIQUE_COVERING_HPP
 
-/// Autoheader include
-#include "config_HAVE_EXPERIMENTAL.hpp"
-
+#include "clique_covering_graph.hpp"
 #include "custom_map.hpp" // for map
 #include "custom_set.hpp" // for set
-#include <algorithm>      // for binary_search, sort
+#include "dsatur2_coloring.hpp"
+#include "exceptions.hpp"
+#include "ortools/graph/assignment.h"
+#include "refcount.hpp"
+#include "string_manipulation.hpp"
+
+#include <algorithm> // for binary_search, sort
 #include <boost/graph/adjacency_matrix.hpp>
 #include <boost/graph/filtered_graph.hpp>
 #include <boost/graph/graphviz.hpp>
@@ -78,16 +82,6 @@
 #include <string>   // for string, operator+
 #include <utility>  // for pair, swap
 #include <vector>   // for vector, allocator
-
-#include "dsatur2_coloring.hpp"
-#include "exceptions.hpp"
-#include "ortools/graph/assignment.h"
-#include "refcount.hpp"
-#if HAVE_EXPERIMENTAL
-#include "DawsonRun.hpp"
-#endif
-#include "clique_covering_graph.hpp"
-#include "string_manipulation.hpp"
 
 #if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)
 #pragma GCC diagnostic push
@@ -152,10 +146,7 @@ enum class CliqueCovering_Algorithm
    TTT_CLIQUE_COVERING_FAST2,
    TS_CLIQUE_COVERING,
    TS_WEIGHTED_CLIQUE_COVERING,
-   BIPARTITE_MATCHING,
-#if HAVE_EXPERIMENTAL
-   RANDOMIZED
-#endif
+   BIPARTITE_MATCHING
 };
 
 /**
@@ -953,7 +944,7 @@ class coloring_based_clique_covering : public clique_covering<vertex_type>
                            if(!std::binary_search(neighbors.begin(), neighbors.end(), rep_target))
                            {
                               (*completeCG)[*ei].selector = 0;
-                              // std::cerr << names[cur] << "|" << names[rep] << " -0- " << names[rep_target] <<
+                              // std::cerr << names[cur] << "|"<< names[rep] << " -0- " << names[rep_target] <<
                               // std::endl;
                               c_it = current_cliques.begin(); /// restart the pruning
                               restart = true;                 /// and then restart the whole partition analysis
@@ -972,7 +963,7 @@ class coloring_based_clique_covering : public clique_covering<vertex_type>
                            if(!std::binary_search(neighbors.begin(), neighbors.end(), cur_target))
                            {
                               (*completeCG)[*ei].selector = 0;
-                              // std::cerr << names[rep] << "|" << names[cur] << " -1- " << names[cur_target] <<
+                              // std::cerr << names[rep] << "|"<< names[cur] << " -1- " << names[cur_target] <<
                               // std::endl;
                            }
                         }
@@ -1892,189 +1883,6 @@ class bipartite_matching_clique_covering : public clique_covering<vertex_type>
 
 //******************************************************************************************************************
 
-#if HAVE_EXPERIMENTAL
-template <typename vertex_type>
-class randomized_clique_covering : public clique_covering<vertex_type>
-{
-   boost_cc_compatibility_graph compatibility_graph;
-
-   /// Variables used to describe the solution found
-   size_t number_of_cliques;
-
-   std::vector<CustomOrderedSet<vertex_type>> cliques;
-
-   /// map between vertex_type and C_vertex
-   CustomUnorderedMap<vertex_type, C_vertex> Rv2uv;
-
-   /// minimum number of cliques
-   size_t minimum_number_of_cliques;
-
-   /// maximum number of cliques
-   size_t maximum_number_of_cliques;
-
- protected:
-   /// map between C_vertex and vertex_type
-   CustomUnorderedMap<C_vertex, vertex_type> Ruv2v;
-   /// name map for the C_vertex vertices
-   CustomUnorderedMap<C_vertex, std::string> names;
-
-   /// vertices index type
-   typedef boost::graph_traits<boost_cc_compatibility_graph>::vertices_size_type VertexIndex;
-   /// index map type
-   typedef boost::property_map<boost_cc_compatibility_graph, boost::vertex_index_t>::type vertex_index_pmap_t;
-   /// rank property map definition
-   typedef boost::iterator_property_map<std::vector<VertexIndex>::iterator, vertex_index_pmap_t> rank_pmap_type;
-   /// parent property map definition
-   typedef boost::iterator_property_map<std::vector<C_vertex>::iterator, vertex_index_pmap_t> pred_pmap_type;
-
- public:
-   randomized_clique_covering()
-       : number_of_cliques(0),
-         minimum_number_of_cliques(0),
-         maximum_number_of_cliques(std::numeric_limits<size_t>::max())
-   {
-   }
-
-   /**
-    * Adds a vertex to graph. It checks if element is already into graph. If it is, an assertion fails, otherwise
-    * the vertex is added and the new index is saved for future checks
-    * @param vertex_type& is the reference to element that deals with compatibility
-    * @return the new vertex index
-    */
-   C_vertex add_vertex(const vertex_type& element, const std::string& name)
-   {
-      C_vertex result;
-      THROW_ASSERT(Rv2uv.find(element) == Rv2uv.end(), "vertex already added");
-      /// vertex weight not considered
-
-      result = boost::add_vertex(compatibility_graph);
-      Rv2uv[element] = result;
-      Ruv2v[result] = element;
-      names[result] = name;
-      return result;
-   }
-
-   /**
-    * Adds an edge to graph. It checks if source and vertex are stored into graph. If one of them isn't into graph,
-    * the related assertion fails. If both vertices are stored, a (weighted) edge is added
-    * @param src is the index of first vertex
-    * @param dest is the index of second vertex
-    * @param weight is the weight associated with edge (optional, set to unitary value as default)
-    */
-   void add_edge(const vertex_type& src, const vertex_type& dest, int _weight)
-   {
-      THROW_ASSERT(src != dest, "autoloops are not allowed in a compatibility graph");
-      THROW_ASSERT(Rv2uv.find(src) != Rv2uv.end(), "src not added");
-      THROW_ASSERT(Rv2uv.find(dest) != Rv2uv.end(), "dest not added");
-      THROW_ASSERT(_weight > 0 && _weight < 32, "weights from 1 to 31 are allowed " + STR(_weight));
-      C_vertex SRC = Rv2uv.find(src)->second;
-      C_vertex DEST = Rv2uv.find(dest)->second;
-      boost::add_edge(SRC, DEST, edge_compatibility_selector(1 << _weight, _weight), compatibility_graph);
-   }
-
-   /**
-    * Abstract method that will execute clique covering algorithm. If you want to specialize the implementation
-    * with your favourite algorithm, you have to implement this method.
-    * @param fc is the filtering clique functor used to reduce the proposed clique
-    */
-   void exec(const filter_clique<vertex_type>&, check_clique<vertex_type>& cq)
-   {
-      cq.initialize_structures(compatibility_graph, Ruv2v);
-      dawson(compatibility_graph, cq);
-   }
-
-   /**
-    * Returns a clique
-    * @param i is the i-th clique into graph
-    * @return set of elements into clique
-    */
-   CustomOrderedSet<vertex_type> get_clique(unsigned int i)
-   {
-      return cliques[i];
-   }
-
-   /**
-    * Returns number of cliques into graph after performing clique covering
-    */
-   size_t num_vertices() override
-   {
-      return number_of_cliques;
-   }
-
-   /**
-    * Writes a dotty representation of the actual graph
-    * @param filename is the output filename
-    */
-   void writeDot(const std::string& filename) const override
-   {
-      // THROW_WARNING("randomized_clique_covering::writeDot not yet implemented");
-
-      std::ofstream f(filename.c_str());
-      boost::write_graphviz(f, compatibility_graph, compatibility_node_info_writer(names),
-                            compatibility_edge_writer(compatibility_graph));
-
-      return;
-   }
-
-   /**
-    * suggest that the problem have at least a given number of resources
-    * @param n_resources is the number of resources available
-    */
-   void suggest_min_resources(size_t) override
-   {
-   }
-
-   void suggest_max_resources(size_t) override
-   {
-   }
-
-   void min_resources(size_t _minimum_number_of_cliques) override
-   {
-      minimum_number_of_cliques = _minimum_number_of_cliques;
-   }
-
-   void max_resources(size_t _maximum_number_of_cliques) override
-   {
-      maximum_number_of_cliques = _maximum_number_of_cliques;
-   }
-
-   void dawson(boost_cc_compatibility_graph& g, check_clique<vertex_type>& cq)
-   {
-      std::vector<C_vertex> result;
-
-      DawsonMain<vertex_type>(result, g, cq, minimum_number_of_cliques, maximum_number_of_cliques);
-
-      /*
-         update variable number_of_cliques and set cliques, in order to
-         describe the result obtained
-         */
-      typedef boost::component_index<RVertexIndex> Components;
-      Components components(result.begin(), result.end());
-      number_of_cliques = 0;
-
-      BOOST_FOREACH(RVertexIndex current_index, components)
-      {
-         CustomOrderedSet<vertex_type> operations_in_clique;
-
-         BOOST_FOREACH(RVertexIndex child_index, components[current_index])
-         {
-            vertex_type operation_to_insert = Ruv2v[child_index];
-            operations_in_clique.insert(operation_to_insert);
-         }
-
-         cliques.push_back(operations_in_clique);
-         number_of_cliques++;
-      }
-   }
-
-   void add_subpartitions(size_t, vertex_type)
-   {
-   }
-};
-#endif
-
-//******************************************************************************************************************
-
 template <typename VertexType>
 refcount<clique_covering<VertexType>> clique_covering<VertexType>::create_solver(CliqueCovering_Algorithm solver,
                                                                                  unsigned int nvert)
@@ -2099,10 +1907,6 @@ refcount<clique_covering<VertexType>> clique_covering<VertexType>::create_solver
          return refcount<clique_covering<VertexType>>(new TS_based_clique_covering<VertexType>(false, nvert));
       case CliqueCovering_Algorithm::BIPARTITE_MATCHING:
          return refcount<clique_covering<VertexType>>(new bipartite_matching_clique_covering<VertexType>(nvert));
-#if HAVE_EXPERIMENTAL
-      case CliqueCovering_Algorithm::RANDOMIZED:
-         return refcount<clique_covering<VertexType>>(new randomized_clique_covering<VertexType>());
-#endif
       default:
          THROW_UNREACHABLE("This clique covering algorithm has not been implemented");
    }

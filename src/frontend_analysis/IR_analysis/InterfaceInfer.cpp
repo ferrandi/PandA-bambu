@@ -1392,20 +1392,25 @@ void InterfaceInfer::create_resource_Read_simple(const std::set<std::string>& op
       GetPointerS<port_o>(addrPort)->set_is_addr_bus(true);
       CM->add_port("out1", port_o::OUT, interface_top, outType);
 
-      std::string port_data_name;
+      std::string port_data_name = "_" + arg_name;
+      port_o::port_interface port_if = port_o::port_interface::PI_RNONE;
       if(if_name == "axis")
       {
          port_data_name = "_s_axis_" + arg_name + "_TDATA";
+         port_if = port_o::port_interface::PI_S_AXIS_TDATA;
       }
-      else
+      else if(if_name == "fifo")
       {
-         port_data_name = "_" + arg_name + (if_name == "fifo" ? "_dout" : (IO_port ? "_i" : ""));
+         port_data_name += "_dout";
+         port_if = port_o::port_interface::PI_FDOUT;
+      }
+      else if(IO_port)
+      {
+         port_data_name += "_i";
       }
       const auto inPort = CM->add_port(port_data_name, port_o::IN, interface_top, dataType);
       GetPointerS<port_o>(inPort)->set_port_alignment(info.alignment);
-      GetPointerS<port_o>(inPort)->set_port_interface((if_name == "axis" || if_name == "fifo") ?
-                                                          port_o::port_interface::PI_FDOUT :
-                                                          port_o::port_interface::PI_RNONE);
+      GetPointerS<port_o>(inPort)->set_port_interface(port_if);
       if(if_name == "acknowledge" || if_name == "handshake")
       {
          const auto inPort_o_ack =
@@ -1538,23 +1543,29 @@ void InterfaceInfer::create_resource_Write_simple(const std::set<std::string>& o
       CM->add_port("in2", port_o::IN, interface_top, rwtype);
       const auto addrPort = CM->add_port("in3", port_o::IN, interface_top, addrType);
       GetPointerS<port_o>(addrPort)->set_is_addr_bus(true);
-      std::string port_data_name;
-      if(if_name == "axis")
-      {
-         port_data_name = "_m_axis_" + arg_name + "_TDATA";
-      }
-      else
-      {
-         port_data_name = "_" + arg_name + (if_name == "fifo" ? "_din" : (IO_port ? "_o" : ""));
-      }
-      if(if_name == "fifo")
+      if(if_name == "fifo" || if_name == "axis")
       {
          CM->add_port("out1", port_o::OUT, interface_top, bool_type);
       }
+      std::string port_data_name = "_" + arg_name;
+      port_o::port_interface port_if = port_o::port_interface::PI_WNONE;
+      if(if_name == "axis")
+      {
+         port_data_name = "_m_axis_" + arg_name + "_TDATA";
+         port_if = port_o::port_interface::PI_M_AXIS_TDATA;
+      }
+      else if(if_name == "fifo")
+      {
+         port_data_name += "_din";
+         port_if = port_o::port_interface::PI_FDIN;
+      }
+      else if(IO_port)
+      {
+         port_data_name += "_o";
+      }
       const auto inPort_o = CM->add_port(port_data_name, port_o::OUT, interface_top, dataType);
-      GetPointerS<port_o>(inPort_o)->set_port_interface((if_name == "axis" || if_name == "fifo") ?
-                                                            port_o::port_interface::PI_FDIN :
-                                                            port_o::port_interface::PI_WNONE);
+      // GetPointerS<port_o>(inPort_o)->set_port_alignment(info.alignment);
+      GetPointerS<port_o>(inPort_o)->set_port_interface(port_if);
       if(if_name == "acknowledge" || if_name == "handshake")
       {
          const auto inPort_o_ack =
