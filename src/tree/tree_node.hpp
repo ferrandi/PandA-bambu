@@ -51,7 +51,6 @@
 #include "config_HAVE_BAMBU_BUILT.hpp"
 #include "config_HAVE_CODE_ESTIMATION_BUILT.hpp"
 #include "config_HAVE_FROM_PRAGMA_BUILT.hpp"
-#include "config_HAVE_TUCANO_BUILT.hpp"
 #include "config_HAVE_UNORDERED.hpp"
 
 #include <cstddef>    // for size_t
@@ -1172,7 +1171,7 @@ struct gimple_node : public srcp, public WeightedNode
    /// The basic block to which this gimple_node belongs
    unsigned int bb_index;
 
-#if HAVE_BAMBU_BUILT || HAVE_TUCANO_BUILT
+#if HAVE_BAMBU_BUILT
    /// The operation
    std::string operation;
 #endif

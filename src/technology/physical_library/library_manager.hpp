@@ -45,7 +45,6 @@
 #ifndef _LIBRARY_MANAGER_HPP
 #define _LIBRARY_MANAGER_HPP
 
-#include "config_HAVE_EXPERIMENTAL.hpp"
 #include "config_HAVE_FROM_LIBERTY.hpp"
 #include "config_HAVE_LIBRARY_COMPILER.hpp"
 
@@ -136,9 +135,6 @@ class library_manager
       XML,
 #if HAVE_FROM_LIBERTY
       LIBERTY,
-#endif
-#if HAVE_EXPERIMENTAL
-      LEF,
 #endif
 #if HAVE_LIBRARY_COMPILER
       DB,

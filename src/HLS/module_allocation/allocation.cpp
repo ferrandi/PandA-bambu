@@ -875,11 +875,6 @@ void allocation::BuildProxyFunction(functional_unit* current_fu)
          break;
       }
       case HDLWriter_Language::SYSTEM_VERILOG:
-#if HAVE_EXPERIMENTAL
-      case HDLWriter_Language::SYSTEMC:
-      case HDLWriter_Language::BLIF:
-      case HDLWriter_Language::EDIF:
-#endif
       default:
          THROW_UNREACHABLE("");
    }

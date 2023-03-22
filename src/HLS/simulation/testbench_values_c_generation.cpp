@@ -42,44 +42,25 @@
  * @author Marco Lattuada<marco.lattuada@polimi.it>
  *
  */
-
-/// Header include
 #include "testbench_values_c_generation.hpp"
 
-///. include
+#include "config_HAVE_EXPERIMENTAL.hpp"
+
 #include "Parameter.hpp"
-
-/// behavior includes
+#include "behavioral_helper.hpp"
+#include "c_backend.hpp"
+#include "c_backend_step_factory.hpp"
 #include "call_graph_manager.hpp"
-#include "function_behavior.hpp"
-
-/// constants include
-#include "testbench_generation_constants.hpp"
-
-/// design_flows includes
+#include "compiler_wrapper.hpp"
 #include "design_flow_graph.hpp"
 #include "design_flow_manager.hpp"
-
-/// design_flows/backend/ToC/progModels include
-#include "c_backend.hpp"
-
-/// design_flows/backend/ToC include
-#include "c_backend_step_factory.hpp"
-#include "hls_c_backend_information.hpp"
-
-/// HLS include
-#include "hls_manager.hpp"
-
-/// tree include
-#include "behavioral_helper.hpp"
-#include "tree_manager.hpp"
-
-/// utility includes
 #include "fileIO.hpp"
+#include "function_behavior.hpp"
+#include "hls_c_backend_information.hpp"
+#include "hls_manager.hpp"
+#include "testbench_generation_constants.hpp"
+#include "tree_manager.hpp"
 #include "utility.hpp"
-
-/// wrapper/compiler include
-#include "compiler_wrapper.hpp"
 
 TestbenchValuesCGeneration::TestbenchValuesCGeneration(const ParameterConstRef _parameters,
                                                        const HLS_managerRef _hls_manager,

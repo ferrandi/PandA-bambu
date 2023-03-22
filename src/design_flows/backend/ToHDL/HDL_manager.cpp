@@ -46,6 +46,7 @@
 
 /// Autoheader include
 #include "config_HAVE_ASSERTS.hpp" // for HAVE_ASSERTS
+#include "config_HAVE_EXPERIMENTAL.hpp"
 #include "config_HAVE_FLOPOCO.hpp"
 #include "config_PACKAGE_BUGREPORT.hpp"
 #include "config_PACKAGE_NAME.hpp"
@@ -292,16 +293,15 @@ void HDL_manager::write_components(const std::string& filename, const std::list<
          else if(np && (np->exist_NP_functionality(NP_functionality::VERILOG_PROVIDED) ||
                         np->exist_NP_functionality(NP_functionality::VERILOG_FILE_PROVIDED)))
          {
-#if HAVE_EXPERIMENTAL
-            const auto module_type = mod->get_typeRef()->id_type;
-            const auto fu = GetPointer<functional_unit>(TM->get_fu(module_type, TM->get_library(module_type)));
-            if(not parameters->getOption<bool>(OPT_mixed_design))
+            if(!parameters->getOption<bool>(OPT_mixed_design))
             {
-               THROW_ERROR("VHDL implementation of " + (*cit)->get_path() + " - type " + module_type +
-                           " is not available");
+               THROW_ERROR("VHDL implementation of " + component->get_path() + " is not available");
             }
+#if HAVE_EXPERIMENTAL
             else
             {
+               const auto module_type = mod->get_typeRef()->id_type;
+               const auto fu = GetPointer<functional_unit>(TM->get_fu(module_type, TM->get_library(module_type)));
                if(module_type.find("gimple_asm") == std::string::npos and
                   module_type.find("__builtin_trap") == std::string::npos and
                   module_type.find("return_value_mm_register") == std::string::npos and
@@ -329,14 +329,14 @@ void HDL_manager::write_components(const std::string& filename, const std::list<
                         np->exist_NP_functionality(NP_functionality::FLOPOCO_PROVIDED) ||
                         np->exist_NP_functionality(NP_functionality::VHDL_FILE_PROVIDED)))
          {
-#if HAVE_EXPERIMENTAL
-            if(not parameters->getOption<bool>(OPT_mixed_design))
+            if(!parameters->getOption<bool>(OPT_mixed_design))
             {
-               THROW_ERROR("Verilog implementation of " + (*cit)->get_path() + " is not available");
+               THROW_ERROR("Verilog implementation of " + component->get_path() + " is not available");
             }
             else
-#endif
+            {
                THROW_WARNING(component->get_path() + " is available only in VHDL");
+            }
             component_language[HDLWriter_Language::VHDL].push_back(component);
          }
          else if(np && np->exist_NP_functionality(NP_functionality::SYSTEM_VERILOG_PROVIDED))
