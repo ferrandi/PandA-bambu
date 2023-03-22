@@ -253,9 +253,9 @@ class parametric_list_based : public schedulingBaseStep
     */
    void compute_function_topological_order();
 
-   bool compute_minmaxII(const OpVertexSet& Operations, const ControlStep& ctrl_steps, unsigned int bb_index,
-                         unsigned& minII, unsigned& maxII,
-                         CustomUnorderedSet<std::pair<vertex, vertex>>& toBeScheduled);
+   bool compute_minmaxII(std::list<vertex>& bb_operations, const OpVertexSet& Operations, const ControlStep& ctrl_steps,
+                         unsigned int bb_index, unsigned& minII, unsigned& maxII,
+                         std::vector<std::pair<vertex, vertex>>& toBeScheduled);
 
  public:
    /**
@@ -287,7 +287,7 @@ class parametric_list_based : public schedulingBaseStep
     */
    template <bool LPBB_predicate>
    bool exec(const OpVertexSet& operations, ControlStep current_cycle, unsigned II,
-             const CustomUnorderedSet<std::pair<vertex, vertex>>& toBeScheduled, bool& stopSearch);
+             const std::vector<std::pair<vertex, vertex>>& toBeScheduled, bool& stopSearch);
 
    /**
     * Initialize the step (i.e., like a constructor, but executed just before exec

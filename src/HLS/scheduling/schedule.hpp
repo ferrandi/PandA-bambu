@@ -114,7 +114,6 @@ struct AbsControlStep : std::pair<unsigned int, ControlStep>
 struct loopPipelinedInfo
 {
    unsigned int II = 0;
-   const CustomUnorderedSet<std::pair<vertex, vertex>> feedback_edges;
 };
 
 /**
@@ -402,9 +401,9 @@ class Schedule
     * @param II are the initiation interval
     * @param fe are the data feedback edges
     */
-   void AddLoopPipelinedInfor(unsigned BB_index, unsigned II, const CustomUnorderedSet<std::pair<vertex, vertex>>& fe)
+   void AddLoopPipelinedInfor(unsigned BB_index, unsigned II)
    {
-      loopPipelinedMap.insert({BB_index, {II, fe}});
+      loopPipelinedMap.insert({BB_index, {II}});
    }
    bool IsLoopPipelined(unsigned BB_index) const
    {
