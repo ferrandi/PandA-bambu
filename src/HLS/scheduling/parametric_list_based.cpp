@@ -1939,10 +1939,9 @@ bool parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
       ++current_cycle;
       if(LPBB_predicate && !LPBB_satisfied && from_strongtype_cast<unsigned>(current_cycle - initialCycle) / LP_II)
       {
-         for(auto op : toBeScheduled)
+         for(const auto& op : toBeScheduled)
          {
-            THROW_ASSERT(op.first != NULL_VERTEX, "unexpected condition");
-            if(op.second == NULL_VERTEX && !schedule->is_scheduled(op.first))
+            if(op.first != NULL_VERTEX && op.second == NULL_VERTEX && !schedule->is_scheduled(op.first))
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                               "operation " + GET_NAME(flow_graph, op.first) + " not scheduled before the last stage");
@@ -1961,7 +1960,7 @@ bool parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
    /// check if FB edge meet the loop pipelining constraints
    if(LPBB_predicate)
    {
-      for(auto op : toBeScheduled)
+      for(const auto& op : toBeScheduled)
       {
          if(op.second != NULL_VERTEX)
          {
