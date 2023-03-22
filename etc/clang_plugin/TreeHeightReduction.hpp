@@ -509,20 +509,16 @@ namespace llvm
       /// Update current node's latency.
       void updateNodeLatency()
       {
-         llvm::errs() << "prima\n";
          if(isPhi())
          {
-            llvm::errs() << "dopo1\n";
             setLatency(100000);
             setTotalCost(100000);
          }
          else
          {
-            llvm::errs() << "dopo2\n";
             setLatency(0);
             setTotalCost(0);
          }
-         llvm::errs() << "dopo\n";
          if(isLeaf())
          {
             return;
