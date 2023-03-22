@@ -787,8 +787,17 @@ bool parametric_list_based::compute_minmaxII(std::list<vertex>& bb_operations, c
                            "---feedback edge " + GET_NAME(flow_graph_with_feedbacks, operation) + "-" +
                                GET_NAME(flow_graph_with_feedbacks, tgt) + "(" + STR(op_varindex) + ")");
             feedbacks[operation_to_varindex.at(tgt)].insert(op_varindex);
-            THROW_ASSERT(phi_to_position.find(tgt) != phi_to_position.end(), "unexpected condition");
-            toBeScheduled.at(phi_curr - phi_to_position.at(tgt)) = {operation, tgt};
+            if(GET_TYPE(flow_graph, tgt) & (TYPE_PHI | TYPE_VPHI))
+            {
+               THROW_ASSERT(phi_to_position.find(tgt) != phi_to_position.end(),
+                            "unexpected condition " + GET_NAME(flow_graph_with_feedbacks, operation) + "-" +
+                                GET_NAME(flow_graph_with_feedbacks, tgt));
+               toBeScheduled.at(phi_curr - phi_to_position.at(tgt)) = {operation, tgt};
+            }
+            else
+            {
+               toBeScheduled.emplace_back(operation, tgt);
+            }
          }
       }
       if(GET_TYPE(flow_graph, operation) & (TYPE_IF | TYPE_MULTIIF))
