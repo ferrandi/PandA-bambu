@@ -7,6 +7,6 @@ mkdir hls
 cd hls
 echo "#simulation of qsort"
 bambu $root_dir/test.c $root_dir/less.c $root_dir/qsort.c --top-fname=test \
-   -Os  \
+   -Os \
    --generate-tb=$root_dir/test.xml --simulate \
    -v2 --print-dot --pretty-print=a.c "$@" |& tee log.txt

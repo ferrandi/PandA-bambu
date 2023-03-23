@@ -8,4 +8,4 @@ cd read
 echo "#simulating read"
 bambu ../read.c --top-fname=read \
    --generate-tb=../test_read.xml --simulator=VERILATOR --simulate \
-   -v4 --generate-interface=INFER --compiler=I386_CLANG6 "$@" |& tee read.log
+   -v4 --generate-interface=INFER --compiler=I386_CLANG13 "$@" |& tee read.log

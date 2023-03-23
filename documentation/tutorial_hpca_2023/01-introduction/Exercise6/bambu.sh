@@ -11,6 +11,6 @@ bambu $root_dir/main_test.c $root_dir/top.c --top-fname=main --top-rtldesign-nam
    --file-input-data=$root_dir/module1.v,$root_dir/module2.v,$root_dir/printer1.v,$root_dir/printer2.v \
    $root_dir/module_lib.xml $root_dir/constraints_STD.xml \
    --experimental-setup=BAMBU -O3 \
-    --memory-allocation-policy=ALL_BRAM \
+   --memory-allocation-policy=ALL_BRAM \
    --generate-tb=$root_dir/test.xml --simulate --simulator=VERILATOR \
    --print-dot -v4 "$@" |& tee log.txt

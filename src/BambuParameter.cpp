@@ -3724,36 +3724,7 @@ void BambuParameter::SetDefaults()
    setOption(OPT_timing_violation_abort, false);
    setOption(OPT_target_device_type, static_cast<int>(TargetDevice_Type::FPGA));
    setOption(OPT_export_core, false);
-#if HAVE_EXPERIMENTAL
-   setOption("edk_wrapper", false);
-#endif
-   setOption(OPT_connect_iob, true);
-
-#if(HAVE_EXPERIMENTAL && HAVE_BEAGLE)
-   // -- Parameters for the design space exploration -- //
-   setOption("exploration_technique", dse_hls::BINDING);
-   setOption("to_normalize", 0);
-   setOption("seed", 0);
-   setOption("run", 1);
-   setOption("deme_size", 1);
-   setOption("population", 50);
-   setOption("GA_generation", 10);
-   setOption("max_evaluations", 0);
-   setOption("fitness_function", objective_evaluator::LINEAR);
-   setOption("fitness_inheritance_rate", 0.0);
-   /// if the parameter is even, the cache is analysed. Otherwise only the latest population
-   setOption("inheritance_mode", 0);
-   setOption("max_for_inheritance", 50);
-   setOption("min_for_inheritance", 1);
-   setOption("distance_rate", 0.20);
-   setOption("weighting_function", FitnessFunction::QUADRATIC);
-   setOption("time_weight", 0.5);
-   setOption("area_weight", 0.5);
-   setOption("remove_duplicated", true);
-   setOption("lower", 0.05);
-   setOption("upper", 0.05);
-   setOption("prob_dupl", 0.50);
-#endif
+   setOption(OPT_connect_iob, false);
 
    /// -- Compiler options -- //
    setOption(OPT_default_compiler, CompilerWrapper::getDefaultCompiler());
