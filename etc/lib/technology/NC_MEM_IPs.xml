@@ -13756,6 +13756,7 @@ wire valid,tagsmatch;
 
    assign m_axi_arvalid = m_axi_arvalid_int;
    assign m_axi_rready = m_axi_rready_int;
+   assign m_axi_arqos = 'b0;
            
    generate
       if(LINE2MEM_W &gt; 0)
@@ -14107,6 +14108,7 @@ wire valid,tagsmatch;
 
    assign m_axi_awvalid = m_axi_awvalid_int;
    assign m_axi_wvalid = m_axi_wvalid_int;
+   assign m_axi_awqos = 'b0;
 
    // Write failed signals
    assign b_fail = m_axi_bvalid &amp;&amp; (m_axi_bresp != 2&apos;b00);
@@ -16663,9 +16665,9 @@ wire valid,tagsmatch;
 	        counter_reset &lt;= 1&apos;b0;
 	        ready &lt;= valid; // Sends acknowlege the next clock cycle after request (handshake)               
 	        if(valid)
-                  if (addr == `ADDR_CACHE_HIT)
+            if (addr == `ADDR_CACHE_HIT)
 	            rdata &lt;= hit_cnt;
-                  else if (addr == `ADDR_CACHE_MISS)
+            else if (addr == `ADDR_CACHE_MISS)
 	            rdata &lt;= miss_cnt;
 	          else if (addr == `ADDR_CACHE_READ_ACCESS)
 	            rdata &lt;= read_access_cnt;
@@ -16680,9 +16682,9 @@ wire valid,tagsmatch;
 	          else if (addr == `ADDR_CACHE_INVALIDATE)
 	            invalidate &lt;= 1&apos;b1;	
 	          else if (addr == `ADDR_BUFFER_EMPTY)
-                    rdata &lt;= wtbuf_empty;
-                  else if (addr == `ADDR_BUFFER_FULL)
-                    rdata &lt;= wtbuf_full;   
+              rdata &lt;= wtbuf_empty;
+            else if (addr == `ADDR_BUFFER_FULL)
+              rdata &lt;= wtbuf_full;
              end // always @ (posedge clk)
         end // if (CTRL_CNT)
       else
