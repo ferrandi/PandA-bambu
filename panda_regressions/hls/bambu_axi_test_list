@@ -1,0 +1,2 @@
+bambu_axi_test/mm_axi.c --top-fname=mmult
+bambu_axi_test/mm_axi_cache.c --top-fname=mmult
