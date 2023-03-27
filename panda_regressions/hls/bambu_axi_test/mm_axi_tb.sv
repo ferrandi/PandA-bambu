@@ -34,6 +34,8 @@ module mmult_tb(
     reg [31:0] c;
     logic start;
     logic done;
+
+    logic error = 0;
     
     integer file;
     integer _ch_ = 0, _r_;
@@ -69,7 +71,7 @@ module mmult_tb(
         if (file == `NULL)
         begin
           $display("ERROR - Error opening the file");
-          $finish;// Terminate
+          error = 1;$fatal;// Terminate
         end
         _ch_ = $fgetc(file);
         if ($feof(file))
@@ -128,13 +130,13 @@ module mmult_tb(
           begin
             $display("ERROR - End of file reached before getting all the values for the parameters");
             $fclose(file);
-            $finish;
+            error = 1;$fatal;
           end
           else // generic error
           begin
             $display("ERROR - Unknown error while reading the file. Character found: %c", _ch_[7:0]);
             $fclose(file);
-            $finish;
+            error = 1;$fatal;
           end
         end
         else
@@ -164,13 +166,13 @@ module mmult_tb(
           begin
             $display("ERROR - End of file reached before getting all the values for the parameters");
             $fclose(file);
-            $finish;
+            error = 1;$fatal;
           end
           else // generic error
           begin
             $display("ERROR - Unknown error while reading the file. Character found: %c", _ch_[7:0]);
             $fclose(file);
-            $finish;
+            error = 1;$fatal;
           end
         end
         else
@@ -200,13 +202,13 @@ module mmult_tb(
           begin
             $display("ERROR - End of file reached before getting all the values for the parameters");
             $fclose(file);
-            $finish;
+            error = 1;$fatal;
           end
           else // generic error
           begin
             $display("ERROR - Unknown error while reading the file. Character found: %c", _ch_[7:0]);
             $fclose(file);
-            $finish;
+            error = 1;$fatal;
           end
         end
         else
@@ -235,7 +237,7 @@ module mmult_tb(
               // error
               $display("ERROR - Unknown error while reading the file. Character found: %c", _ch_[7:0]);
               $fclose(file);
-              $finish;
+              error = 1;$fatal;
             end
             if(byte_cnt % 4 == 0) begin
                 backdoor_mem_read(a + byte_cnt, mem_rd_byte);
@@ -267,7 +269,7 @@ module mmult_tb(
         // error
           $display("ERROR - Unknown error while reading the file. Character found: %c", _ch_[7:0]);
           $fclose(file);
-          $finish;
+          error = 1;$fatal;
         end
         _ch_ = $fgetc(file);
         byte_cnt = 0;
@@ -281,7 +283,7 @@ module mmult_tb(
               // error
               $display("ERROR - Unknown error while reading the file. Character found: %c", _ch_[7:0]);
               $fclose(file);
-              $finish;
+              error = 1;$fatal;
             end
             if(byte_cnt % 4 == 0) begin
                 backdoor_mem_read(b + byte_cnt, mem_rd_byte);
@@ -313,7 +315,7 @@ module mmult_tb(
         // error
           $display("ERROR - Unknown error while reading the file. Character found: %c", _ch_[7:0]);
           $fclose(file);
-          $finish;
+          error = 1;$fatal;
         end
         _ch_ = $fgetc(file);
         byte_cnt = 0;
@@ -327,7 +329,7 @@ module mmult_tb(
               // error
               $display("ERROR - Unknown error while reading the file. Character found: %c", _ch_[7:0]);
               $fclose(file);
-              $finish;
+              error = 1;$fatal;
             end
             if(byte_cnt % 4 == 0) begin
                 backdoor_mem_read(c + byte_cnt, mem_rd_byte);
@@ -359,7 +361,7 @@ module mmult_tb(
         // error
           $display("ERROR - Unknown error while reading the file. Character found: %c", _ch_[7:0]);
           $fclose(file);
-          $finish;
+          error = 1;$fatal;
         end
         
         
@@ -367,7 +369,7 @@ module mmult_tb(
         
         if(success == 0) begin
             $display("Simulation not correct");
-            $fatal;
+            error = 1;$fatal;
         end
         
         $display("Simulation ended correctly");

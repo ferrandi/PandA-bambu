@@ -34,5 +34,7 @@ close_bd_design [get_bd_designs VIP]
 
 set_property top mmult_tb [get_filesets sim_1]
 launch_simulation
-run all
-exit
+set simError [get_value -radix unsigned /mmult_tb/error]
+if { $simError == 0 } { run all }
+set simError [get_value -radix unsigned /mmult_tb/error]
+exit $simError

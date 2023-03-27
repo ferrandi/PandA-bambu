@@ -17,9 +17,11 @@ while read line; do
   cd $script_dir
   echo "executing $tcl_file"
   vivado -mode tcl -source $script_dir/$tcl_file
-  if [ $? != 0 ]; then
-    exit $?
+  retval=$?
+  if [ $retval != 0 ]; then
+    echo "$script_dir/$tcl_file failed with error $retval"
+    exit $retval
   fi
 done < $script_dir/bambu_axi_test_list
 
-exit $?
+exit 0
