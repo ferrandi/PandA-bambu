@@ -6,7 +6,7 @@ OUT_SUFFIX="bambu_axi_test"
 # Needed to open values.txt file, relative path seems not to work
 sed -i "s+__placeholder__+$script_dir/bambu_axi_test/values.txt+g" $script_dir/bambu_axi_test/mm_axi_tb.sv
 
-"/opt/Xilinx/Vivado/$(ls /opt/Xilinx/Vivado | sort -t - | tail -1)/settings64.sh"
+". /opt/Xilinx/Vivado/$(ls /opt/Xilinx/Vivado | sort -t - | tail -1)/settings64.sh"
 
 mkdir out_$OUT_SUFFIX
 while read line; do
