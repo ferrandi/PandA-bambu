@@ -100,17 +100,21 @@ void MinimalInterfaceTestbench::cond_load(unsigned long long Mout_addr_ram_bitsi
 void MinimalInterfaceTestbench::cond_load_from_queue(unsigned long long Mout_addr_ram_bitsize,
                                                      unsigned int Mout_addr_ram_n_ports, std::string queue_type,
                                                      const std::string& post_slice, const std::string& res_string,
-                                                     unsigned int i, const std::string& in_else,
+                                                     unsigned int i, const std::string& in_else_low,
+                                                     const std::string& in_else_high,
                                                      const std::string& mem_aggregate) const
 {
-   writer->write(res_string + post_slice + " = ((base_addr <= Mout_addr_ram_queue_curr[" +
+   /* In case of address not belonging to the bambu address space return  different values. Low addresses can be
+    * associated to BRAMS */
+   writer->write(res_string + post_slice + " = base_addr <= Mout_addr_ram_queue_curr[" +
                  STR((i + 1) * Mout_addr_ram_bitsize - 1) + "+(" + queue_type + "-1)*" +
                  STR(Mout_addr_ram_bitsize * Mout_addr_ram_n_ports) + ":" + STR(i * Mout_addr_ram_bitsize) + "+(" +
                  queue_type + "-1)*" + STR(Mout_addr_ram_bitsize * Mout_addr_ram_n_ports) +
-                 "] && Mout_addr_ram_queue_curr[" + STR((i + 1) * Mout_addr_ram_bitsize - 1) + "+(" + queue_type +
+                 "] ? (Mout_addr_ram_queue_curr[" + STR((i + 1) * Mout_addr_ram_bitsize - 1) + "+(" + queue_type +
                  "-1)*" + STR(Mout_addr_ram_bitsize * Mout_addr_ram_n_ports) + ":" + STR(i * Mout_addr_ram_bitsize) +
                  "+(" + queue_type + "-1)*" + STR(Mout_addr_ram_bitsize * Mout_addr_ram_n_ports) +
-                 "] < (base_addr + MEMSIZE)))" + " ? " + mem_aggregate + " : " + in_else + ";\n");
+                 "] < (base_addr + MEMSIZE)" + " ? " + mem_aggregate + " : " + in_else_high + ") : " + in_else_low +
+                 ";\n");
 }
 
 void MinimalInterfaceTestbench::write_call(bool) const
@@ -733,7 +737,8 @@ void MinimalInterfaceTestbench::write_memory_handler() const
             writer->write("begin");
             writer->write(STR(STD_OPENING_CHAR) + "\n");
             cond_load_from_queue(Mout_addr_ram_bitsize, Mout_addr_ram_n_ports, "`MEM_DELAY_READ", post_slice,
-                                 "M_Rdata_ram_temp", i, STR(M_Rdata_ram_bitsize) + "'bX", mem_aggregate);
+                                 "M_Rdata_ram_temp", i, STR(M_Rdata_ram_bitsize) + "'b0",
+                                 STR(M_Rdata_ram_bitsize) + "'bX", mem_aggregate);
             writer->write(STR(STD_CLOSING_CHAR));
             writer->write("end\n");
             if(Sout_Rdata_ram_port)
@@ -793,14 +798,22 @@ void MinimalInterfaceTestbench::write_memory_handler() const
                           "*(`MEM_DELAY_WRITE-1) + " + STR(i * Mout_we_ram_bitsize) + "] === 1'b1)\n");
             writer->write("begin");
             writer->write(STR(STD_OPENING_CHAR) + "\n");
-            writer->write("M_DataRdy_temp" + post_slice + " = 1'b1;\n");
+            writer->write("M_DataRdy_temp" + post_slice + " = ");
+            writer->write("Mout_addr_ram_queue_curr[" + STR((i + 1) * Mout_addr_ram_bitsize - 1) +
+                          "+(`MEM_DELAY_WRITE-1)*" + STR(Mout_addr_ram_bitsize * Mout_addr_ram_n_ports) + ":" +
+                          STR(i * Mout_addr_ram_bitsize) + "+(`MEM_DELAY_WRITE-1)*" +
+                          STR(Mout_addr_ram_bitsize * Mout_addr_ram_n_ports) + "] >= base_addr;");
             writer->write(STR(STD_CLOSING_CHAR) + "\n");
             writer->write("end\n");
             writer->write("else if(Mout_oe_ram_queue_curr[" + STR(Mout_oe_ram_bitsize * Mout_oe_ram_n_ports) +
                           "*(`MEM_DELAY_READ-1) + " + STR(i * Mout_oe_ram_bitsize) + "] === 1'b1)\n");
             writer->write("begin");
             writer->write(STR(STD_OPENING_CHAR) + "\n");
-            writer->write("M_DataRdy_temp" + post_slice + " = 1'b1;\n");
+            writer->write("M_DataRdy_temp" + post_slice + " = ");
+            writer->write("Mout_addr_ram_queue_curr[" + STR((i + 1) * Mout_addr_ram_bitsize - 1) +
+                          "+(`MEM_DELAY_WRITE-1)*" + STR(Mout_addr_ram_bitsize * Mout_addr_ram_n_ports) + ":" +
+                          STR(i * Mout_addr_ram_bitsize) + "+(`MEM_DELAY_WRITE-1)*" +
+                          STR(Mout_addr_ram_bitsize * Mout_addr_ram_n_ports) + "] >= base_addr;");
             writer->write(STR(STD_CLOSING_CHAR) + "\n");
             writer->write("end");
             writer->write(STR(STD_CLOSING_CHAR) + "\n");

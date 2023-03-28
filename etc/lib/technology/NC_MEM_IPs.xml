@@ -18373,7 +18373,7 @@ wire valid,tagsmatch;
      end
    end
 
-   assign Mout_addr_ram =  (mem_valid_read)? mem_addr_read : mem_addr_write;
+   assign Mout_addr_ram =  mem_valid_read ? mem_addr_read : mem_valid_write ? mem_addr_write : 'b0;
    assign Mout_oe_ram = mem_valid_read;
    assign Mout_we_ram = mem_valid_write;
    assign Mout_data_ram_size = BE_DATA_W;
@@ -18603,10 +18603,11 @@ wire valid,tagsmatch;
    reg [BITSIZE_Min_addr_ram - 1 : 0]                                      addr_reg;
 
    reg                                                                     done;
+   reg [BITSIZE_Min_Rdata_ram - 1 : 0]                                     rdata;
 
    always @(*) begin
      done_input_next = done_input ? 1'b1 : done_input_reg;
-     if((Min_oe_ram || Min_we_ram) &amp;&amp; !Min_back_pressure_in) begin
+     if((Min_oe_ram || Min_we_ram) &amp;&amp; !data_valid_reg) begin
        addr_reg = Min_addr_ram;
      end
    end
@@ -18624,7 +18625,8 @@ wire valid,tagsmatch;
    end
 
    assign Min_accelerator_context = acc_ctxt;
-   
+   assign Min_Rdata_ram = Min_datardy &amp;&amp; data_wstrb_reg == 'b0 ? rdata : 'b0;
+
    IOB_front_end
      #(
        .FE_ADDR_W (FE_ADDR_W),
@@ -18651,7 +18653,7 @@ wire valid,tagsmatch;
       .addr  (addr_reg[FE_ADDR_W - 1 : FE_BYTE_W]),
       .wdata (Min_Wdata_ram),
       .wstrb ({FE_NBYTES{Min_we_ram}}),
-      .rdata (Min_Rdata_ram),
+      .rdata (rdata),
       .ready (Min_datardy),
       //cache-memory input signals
       .data_valid (data_valid),
