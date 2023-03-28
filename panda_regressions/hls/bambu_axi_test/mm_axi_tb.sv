@@ -289,8 +289,6 @@ module mmult_tb(
             end else begin
                 mem_rd_byte = mem_rd_byte >> 8;
             end
-
-            $display("comparison = %d memory[%d] = %d  expected = %d \n", mem_rd_byte[7:0] == databyte, b + byte_cnt, mem_rd_byte[7:0], databyte);
             if (mem_rd_byte[7:0] !== databyte)            begin
               success = 0;
             end
@@ -335,7 +333,6 @@ module mmult_tb(
             end else begin
                 mem_rd_byte = mem_rd_byte >> 8;
             end
-            $display("comparison = %d memory[%d] = %d  expected = %d \n", mem_rd_byte[7:0] == databyte, c + byte_cnt, mem_rd_byte[7:0], databyte);
             if (mem_rd_byte[7:0] !== databyte)
             begin
               success = 0;
