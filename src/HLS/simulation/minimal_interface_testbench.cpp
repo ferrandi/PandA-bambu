@@ -811,8 +811,8 @@ void MinimalInterfaceTestbench::write_memory_handler() const
             writer->write(STR(STD_OPENING_CHAR) + "\n");
             writer->write("M_DataRdy_temp" + post_slice + " = ");
             writer->write("Mout_addr_ram_queue_curr[" + STR((i + 1) * Mout_addr_ram_bitsize - 1) +
-                          "+(`MEM_DELAY_WRITE-1)*" + STR(Mout_addr_ram_bitsize * Mout_addr_ram_n_ports) + ":" +
-                          STR(i * Mout_addr_ram_bitsize) + "+(`MEM_DELAY_WRITE-1)*" +
+                          "+(`MEM_DELAY_READ-1)*" + STR(Mout_addr_ram_bitsize * Mout_addr_ram_n_ports) + ":" +
+                          STR(i * Mout_addr_ram_bitsize) + "+(`MEM_DELAY_READ-1)*" +
                           STR(Mout_addr_ram_bitsize * Mout_addr_ram_n_ports) + "] >= base_addr;");
             writer->write(STR(STD_CLOSING_CHAR) + "\n");
             writer->write("end");

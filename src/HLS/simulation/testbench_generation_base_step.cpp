@@ -620,8 +620,7 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
                auto InterfaceType = GetPointer<port_o>(portInst)->get_port_interface();
                if(InterfaceType == port_o::port_interface::PI_DOUT)
                {
-                  const auto manage_pidout = [&](const std::string& portID)
-                  {
+                  const auto manage_pidout = [&](const std::string& portID) {
                      auto port_name = portInst->get_id();
                      auto terminate = port_name.size() > 3 ? port_name.size() - std::string("_d" + portID).size() : 0;
                      THROW_ASSERT(port_name.substr(terminate) == "_d" + portID, "inconsistent interface");
@@ -704,8 +703,7 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
                auto InterfaceType = GetPointer<port_o>(portInst)->get_port_interface();
                if(InterfaceType == port_o::port_interface::PI_DIN)
                {
-                  const auto manage_pidin = [&](const std::string& portID)
-                  {
+                  const auto manage_pidin = [&](const std::string& portID) {
                      auto port_name = portInst->get_id();
                      auto terminate = port_name.size() > 3 ? port_name.size() - std::string("_q" + portID).size() : 0;
                      THROW_ASSERT(port_name.substr(terminate) == "_q" + portID, "inconsistent interface");
@@ -2192,8 +2190,7 @@ void TestbenchGenerationBaseStep::write_module_instantiation(bool xilinx_isim) c
 
 void TestbenchGenerationBaseStep::write_auxiliary_signal_declaration() const
 {
-   const auto testbench_memsize = [&]()
-   {
+   const auto testbench_memsize = [&]() {
       const auto mem_size =
           HLSMgr->Rmem->get_memory_address() - parameters->getOption<unsigned long long int>(OPT_base_address);
       return mem_size ? mem_size : 1;
@@ -2456,8 +2453,7 @@ void TestbenchGenerationBaseStep::initialize_input_signals(const tree_managerCon
    {
       const auto port_obj = mod->get_in_port(i);
       const auto port_if = GetPointer<port_o>(port_obj)->get_port_interface();
-      const auto port_name = [&]() -> std::string
-      {
+      const auto port_name = [&]() -> std::string {
          const auto port_id = port_obj->get_id();
          if(parameters->isOption(OPT_clock_name) && port_id == parameters->getOption<std::string>(OPT_clock_name))
          {
