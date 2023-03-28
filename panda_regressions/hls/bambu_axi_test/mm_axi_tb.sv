@@ -66,7 +66,7 @@ module mmult_tb(
         user_gen_wready();
         
         // OPEN FILE WITH VALUES FOR SIMULATION
-        file = $fopen("/data2/home/barone/panda/PandA-bambu/panda_regressions/hls/bambu_axi_test/values.txt","r");
+        file = $fopen("__placeholder__","r");
         // Error in file open
         if (file == `NULL)
         begin
