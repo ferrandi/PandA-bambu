@@ -296,9 +296,11 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
       {
          ;
       }
+      auto dfp_P =
+          parameters->isOption(OPT_disable_function_proxy) && parameters->getOption<bool>(OPT_disable_function_proxy);
       double mux_time_estimation =
           (n_levels * HLS->allocation_information->mux_time_unit(32)) + (n_levels > 0 ? controller_delay : 0);
-      if(mux_time_estimation > HLS->allocation_information->getMinimumSlack() && !is_function_pipelined)
+      if(mux_time_estimation > HLS->allocation_information->getMinimumSlack() && (!is_function_pipelined || !dfp_P))
       {
          has_registered_inputs = true;
       }
@@ -930,7 +932,7 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
    {
       INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Parameters are registered");
    }
-   if(HLS->registered_done_port || is_function_pipelined)
+   if(HLS->registered_done_port)
    {
       INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Done port is registered");
    }

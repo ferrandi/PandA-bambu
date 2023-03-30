@@ -203,10 +203,7 @@ DesignFlowStep_Status fun_dominator_allocation::Exec()
       {
          INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---" + fname);
       }
-      if(not function_behavior->is_function_pipelined())
-      {
-         HLSMgr->global_resource_constraints[std::make_pair(fname, WORK_LIBRARY)] = 1;
-      }
+      HLSMgr->global_resource_constraints[std::make_pair(fname, WORK_LIBRARY)] = 1;
    }
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "<--");
    if(output_level <= OUTPUT_LEVEL_PEDANTIC)

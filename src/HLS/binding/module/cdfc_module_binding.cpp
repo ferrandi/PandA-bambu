@@ -143,7 +143,6 @@
 #include "dbgPrintHelper.hpp"
 #include "hash_helper.hpp"
 #include "utility.hpp"
-
 #ifdef HC_APPROACH
 #include "hierarchical_clustering.hpp"
 struct spec_hierarchical_clustering : public hierarchical_clustering<>
@@ -1406,28 +1405,36 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
       /// add tabu for each pair of vertices in conflict: vertices concurrently running
       for(const auto& fu_cv : candidate_vertices)
       {
-         const CustomOrderedSet<vertex>::const_iterator cv_it_end = fu_cv.second.end();
-         for(CustomOrderedSet<vertex>::const_iterator cv_it = fu_cv.second.begin(); cv_it != cv_it_end;)
+         auto cv_it_end = fu_cv.second.end();
+         for(auto cv_it = fu_cv.second.begin(); cv_it != cv_it_end;)
          {
-            CustomOrderedSet<vertex>::const_iterator cv1_it = cv_it;
+            auto cv1_it = cv_it;
             ++cv_it;
-            for(CustomOrderedSet<vertex>::const_iterator cv2_it = cv_it; cv2_it != cv_it_end; ++cv2_it)
+            for(auto cv2_it = cv_it; cv2_it != cv_it_end; ++cv2_it)
             {
                if(!can_be_clustered(*cv1_it, fsdg, fu, slack_time, 0))
+               {
                   continue;
+               }
                if(!can_be_clustered(*cv2_it, fsdg, fu, slack_time, 0))
+               {
                   continue;
+               }
                if(clock_cycle <
                   (setup_hold_time + starting_time[*cv1_it] + ending_time[*cv2_it] - starting_time[*cv2_it]))
                   hc.add_tabu_pair(boost::get(boost::vertex_index, *fsdg, *cv1_it),
                                    boost::get(boost::vertex_index, *fsdg, *cv2_it));
                if(clock_cycle <
                   (setup_hold_time + starting_time[*cv2_it] + ending_time[*cv1_it] - starting_time[*cv1_it]))
+               {
                   hc.add_tabu_pair(boost::get(boost::vertex_index, *fsdg, *cv1_it),
                                    boost::get(boost::vertex_index, *fsdg, *cv2_it));
+               }
                if(HLS->Rliv->are_in_conflict(*cv1_it, *cv2_it))
+               {
                   hc.add_tabu_pair(boost::get(boost::vertex_index, *fsdg, *cv1_it),
                                    boost::get(boost::vertex_index, *fsdg, *cv2_it));
+               }
                // else if(allocation_information->get_worst_execution_time(fu_s1)==0)
                // hc.add_tabu_pair(boost::get(boost::vertex_index, *fsdg, *cv1_it), boost::get(boost::vertex_index,
                // *fsdg, *cv2_it));
@@ -1442,7 +1449,9 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
             unsigned int fu_s1 = fu_cv.first;
             const double mux_time = MODULE_BINDING_MUX_MARGIN * allocation_information->estimate_mux_time(fu_s1);
             if(!can_be_clustered(cv, fsdg, fu, slack_time, mux_time))
+            {
                continue;
+            }
             std::vector<HLS_manager::io_binding_type> vars_read1 = HLSMgr->get_required_values(HLS->functionId, cv);
             unsigned int index = 0;
             for(auto var_pair : vars_read1)
@@ -1455,9 +1464,11 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
                   if(all_candidate_vertices.find(src) != all_candidate_vertices.end() &&
                      can_be_clustered(src, fsdg, fu, slack_time, 0) &&
                      !HLS->chaining_information->may_be_chained_ops(src, tgt))
+                  {
                      hc.add_edge(boost::get(boost::vertex_index, *fsdg, src),
                                  boost::get(boost::vertex_index, *fsdg, tgt),
                                  2 * index + (HLS->chaining_information->may_be_chained_ops(src, tgt) ? 1 : 0));
+                  }
                }
                ++index;
             }
@@ -1524,11 +1535,13 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
          const double mux_time = MODULE_BINDING_MUX_MARGIN * allocation_information->estimate_mux_time(fu_s1);
          double controller_delay = allocation_information->EstimateControllerDelay();
          double resource_area = allocation_information->compute_normalized_area(fu_s1);
+         auto dfp_P = parameters->isOption(OPT_disable_function_proxy) &&
+                      parameters->getOption<bool>(OPT_disable_function_proxy);
          bool disabling_slack_based_binding =
              ((allocation_information->get_number_channels(fu_s1) >= 1) and
               (!allocation_information->is_readonly_memory_unit(fu_s1) ||
                (!parameters->isOption(OPT_rom_duplication) || !parameters->getOption<bool>(OPT_rom_duplication)))) ||
-             lib_name == WORK_LIBRARY || lib_name == PROXY_LIBRARY ||
+             (!dfp_P && (lib_name == WORK_LIBRARY || lib_name == PROXY_LIBRARY)) ||
              allocation_information->get_number_fu(fu_s1) != INFINITE_UINT;
          //         for(auto cv : fu_cv.second)
          //         {
@@ -2027,8 +2040,10 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
             const CliqueCovering_Algorithm clique_covering_method_used = clique_covering_algorithm;
             std::string res_name = allocation_information->get_fu_name(partition.first).first;
             std::string lib_name = HLS->HLS_T->get_technology_manager()->get_library(res_name);
+            auto dfp_P = parameters->isOption(OPT_disable_function_proxy) &&
+                         parameters->getOption<bool>(OPT_disable_function_proxy);
             bool disabling_slack_based_binding =
-                disabling_slack_cond0 || lib_name == WORK_LIBRARY || lib_name == PROXY_LIBRARY ||
+                disabling_slack_cond0 || (!dfp_P && (lib_name == WORK_LIBRARY || lib_name == PROXY_LIBRARY)) ||
                 allocation_information->get_number_fu(partition.first) != INFINITE_UINT;
             //            for(auto cv : partition.second)
             //            {
@@ -2810,14 +2825,16 @@ int cdfc_module_binding::weight_computation(bool cond1, bool cond2, vertex v1, v
    {
       _w = 0;
 #ifdef HC_APPROACH
-      int _w_saved = _w;
+      size_t _w_saved = _w;
       if(can_be_clustered(v1, fsdg, fu, slack_time, mux_time) && can_be_clustered(v2, fsdg, fu, slack_time, mux_time))
       {
          double p_weight =
              hc.pair_weight(boost::get(boost::vertex_index, *fsdg, v1), boost::get(boost::vertex_index, *fsdg, v2));
-         int delta = static_cast<int>(static_cast<double>(threshold1) * p_weight);
+         auto delta = static_cast<size_t>(static_cast<double>(threshold1) * p_weight);
          if(p_weight >= 1.0)
+         {
             _w += delta;
+         }
       }
       if(_w != _w_saved)
       {
