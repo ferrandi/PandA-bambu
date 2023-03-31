@@ -14,7 +14,8 @@ while read line; do
   tcl_file=${c_file/.c/.tcl}
   mkdir out_$OUT_SUFFIX/$(basename $c_file .c)
   cd out_$OUT_SUFFIX/$(basename $c_file .c)
-  bambu $script_dir/$line $BATCH_ARGS
+  bambu $script_dir/$(eval echo $line) $BATCH_ARGS
+  mv HLS_output/simulation/values.txt $script_dir/bambu_axi_test/values.txt
   export OUT_DIR="$(pwd)"
   cd $script_dir
   echo "executing $tcl_file"

@@ -1,2 +1,2 @@
-bambu_axi_test/mm_axi.c --top-fname=mmult
-bambu_axi_test/mm_axi_cache.c --top-fname=mmult
+bambu_axi_test/mm_axi.c --top-fname=mmult --generate-tb=$script_dir/bambu_axi_test/mm_axi_tb.xml
+bambu_axi_test/mm_axi_cache.c --top-fname=mmult --generate-tb=$script_dir/bambu_axi_test/mm_axi_tb.xml
