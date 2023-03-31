@@ -941,7 +941,8 @@ float ADD_BUILTIN_PREFIX(sinf)(float x)
       unsigned char global_e_final;
       unsigned int global_mantissa;
       unsigned char n;
-      unsigned int res_rr = __bambu_range_redux(fabs(x), &global_b_fract, &global_e_final, &global_mantissa, &n);
+      extern float fabsf(float x);
+      unsigned int res_rr = __bambu_range_redux(fabsf(x), &global_b_fract, &global_e_final, &global_mantissa, &n);
       float_uint_converter func_out;
       func_out.b = res_rr;
       float y = func_out.f;
@@ -1008,7 +1009,8 @@ float ADD_BUILTIN_PREFIX(cosf)(float x)
       unsigned char global_e_final;
       unsigned int global_mantissa;
       unsigned char n;
-      unsigned int res_rr = __bambu_range_redux(fabs(x), &global_b_fract, &global_e_final, &global_mantissa, &n);
+      extern float fabsf(float x);
+      unsigned int res_rr = __bambu_range_redux(fabsf(x), &global_b_fract, &global_e_final, &global_mantissa, &n);
       float_uint_converter func_out;
       func_out.b = res_rr;
       float y = func_out.f;
@@ -1052,6 +1054,7 @@ float ADD_BUILTIN_PREFIX(cosf)(float x)
 
 float _Complex ADD_BUILTIN_PREFIX(cexpif)(float x)
 {
+   extern float fabsf(float x);
    unsigned int y;
    float _Complex Res;
    _Bool s;
@@ -1080,7 +1083,7 @@ float _Complex ADD_BUILTIN_PREFIX(cexpif)(float x)
    }
    else if(e < 115) // if x is less than 2^-12 return x
    {
-      __imag__ Res = fabs(x);
+      __imag__ Res = fabsf(x);
       __real__ Res = 1.0;
    }
    else
@@ -1089,7 +1092,7 @@ float _Complex ADD_BUILTIN_PREFIX(cexpif)(float x)
       unsigned char global_e_final;
       unsigned int global_mantissa;
       unsigned char n;
-      unsigned int res_rr = __bambu_range_redux(fabs(x), &global_b_fract, &global_e_final, &global_mantissa, &n);
+      unsigned int res_rr = __bambu_range_redux(fabsf(x), &global_b_fract, &global_e_final, &global_mantissa, &n);
       float_uint_converter func_out;
       func_out.b = res_rr;
       float y = func_out.f;

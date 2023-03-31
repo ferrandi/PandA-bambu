@@ -147,13 +147,18 @@ DesignFlowStep_Status CTestbenchExecution::Exec()
    const auto top_function_name =
        HLSMgr->CGetFunctionBehavior(top_function_id)->CGetBehavioralHelper()->get_function_name();
    const auto default_compiler = parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler);
-   // NOTE: clang 13 seems to not respect the -fno-strict-aliasing flag generating incorrect code when type punning is
-   // present
+   // NOTE: clang 13 and 16 seems to not respect the -fno-strict-aliasing flag generating incorrect code when type
+   // punning is present
    const auto opt_lvl =
 #if HAVE_I386_CLANG13_COMPILER
-       default_compiler == CompilerWrapper_CompilerTarget::CT_I386_CLANG13 ? CompilerWrapper_OptimizationSet::O0 :
+       default_compiler == CompilerWrapper_CompilerTarget::CT_I386_CLANG13
+#if HAVE_I386_CLANG16_COMPILER
+               || default_compiler == CompilerWrapper_CompilerTarget::CT_I386_CLANG16
 #endif
-                                                                             CompilerWrapper_OptimizationSet::O2;
+           ?
+           CompilerWrapper_OptimizationSet::O0 :
+#endif
+           CompilerWrapper_OptimizationSet::O2;
    const CompilerWrapperConstRef compiler_wrapper(new CompilerWrapper(parameters, default_compiler, opt_lvl));
 
    std::string compiler_flags = "-fwrapv -flax-vector-conversions -msse2 -mfpmath=sse -fno-strict-aliasing "

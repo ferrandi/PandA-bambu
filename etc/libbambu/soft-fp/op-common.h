@@ -1555,8 +1555,6 @@
    {                                                            \
       if(sizeof(_FP_W_TYPE) == sizeof(unsigned int))            \
          r = clz(x);                                            \
-      else if(sizeof(_FP_W_TYPE) == sizeof(unsigned long))      \
-         r = clzl(x);                                           \
       else if(sizeof(_FP_W_TYPE) == sizeof(unsigned long long)) \
          r = clzll(x);                                          \
       else                                                      \

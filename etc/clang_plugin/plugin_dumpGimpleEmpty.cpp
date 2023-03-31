@@ -269,8 +269,13 @@ llvm::PassPluginLibraryInfo CLANG_PLUGIN_INFO(_plugin_dumpGimpleEmpty)()
                  }
                  return false;
               });
-              PB.registerOptimizerLastEPCallback(
-                  [&](llvm::ModulePassManager& MPM, llvm::PassBuilder::OptimizationLevel) { return load(MPM); });
+              PB.registerOptimizerLastEPCallback([&](llvm::ModulePassManager& MPM,
+#if __clang_major__ < 16
+                                                     llvm::PassBuilder::OptimizationLevel
+#else
+                  llvm::OptimizationLevel
+#endif
+                                                 ) { return load(MPM); });
            }};
 }
 

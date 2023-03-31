@@ -142,6 +142,8 @@ namespace llvm
 
 } // namespace llvm
 
+#if __clang_major__ >= 13
+#else
 // This function is of type PassManagerBuilder::ExtensionFn
 static void loadPass(const llvm::PassManagerBuilder&, llvm::legacy::PassManagerBase& PM)
 {
@@ -302,7 +304,7 @@ static llvm::RegisterStandardPasses
 // loadPassLate);
 
 #endif
-
+#endif
 #ifdef _WIN32
 using namespace llvm;
 

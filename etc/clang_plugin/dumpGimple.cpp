@@ -43,7 +43,6 @@
 
 #include "plugin_includes.hpp"
 
-#include "CustomScalarReplacementOfAggregatesPass.hpp"
 #include "llvm/RangeAnalysis.hpp"
 #include "llvm/eSSA.hpp"
 
@@ -1511,9 +1510,18 @@ namespace llvm
          auto demangled = getDemangled(funName);
          bool is_a_top_parameter = isa<llvm::Argument>(store.getPointerOperand()) &&
                                    (funName == TopFunctionName || demangled == TopFunctionName);
+#if __clang_major__ < 16
          if(store.getAlignment() && written_obj_size > (8 * store.getAlignment()) && !is_a_top_parameter && !isVecType)
+#else
+         if(store.getAlign().value() && written_obj_size > (8 * store.getAlign().value()) && !is_a_top_parameter &&
+            !isVecType)
+#endif
          {
+#if __clang_major__ < 16
             PRINT_DBG("MISALIGNED_INDIRECT_REF " << written_obj_size << " " << store.getAlignment() << "\n");
+#else
+            PRINT_DBG("MISALIGNED_INDIRECT_REF " << written_obj_size << " " << store.getAlign().value() << "\n");
+#endif
             return build1(GT(MISALIGNED_INDIRECT_REF), type, addr);
          }
          else
@@ -2066,7 +2074,10 @@ namespace llvm
       if(gep_op->hasAllConstantIndices())
       {
          llvm::APInt OffsetAI(DL->getPointerTypeSizeInBits(gep_op->getType()), 0);
-         auto resVal = gep_op->accumulateConstantOffset(*DL, OffsetAI);
+#ifndef NDEBUG
+         auto resVal =
+#endif
+             gep_op->accumulateConstantOffset(*DL, OffsetAI);
          assert(resVal);
          isZero = !OffsetAI;
          return assignCodeAuto(llvm::ConstantInt::get(gep_op->getContext(), OffsetAI));
@@ -2325,7 +2336,12 @@ namespace llvm
          bool is_a_top_parameter = isa<llvm::Argument>(load.getPointerOperand()) &&
                                    (funName == TopFunctionName || demangled == TopFunctionName);
 
+#if __clang_major__ < 16
          if(load.getAlignment() && read_obj_size > (8 * load.getAlignment()) && !is_a_top_parameter && !isVecType)
+#else
+         if(load.getAlign().value() && read_obj_size > (8 * load.getAlign().value()) && !is_a_top_parameter &&
+            !isVecType)
+#endif
             return build1(GT(MISALIGNED_INDIRECT_REF), type, addr);
          else
             return build2(GT(MEM_REF), type, addr, zero);
@@ -2482,7 +2498,11 @@ namespace llvm
    unsigned int DumpGimpleRaw::gimple_call_num_args(const void* g)
    {
       const llvm::CallInst* ci = reinterpret_cast<const llvm::CallInst*>(g);
+#if __clang_major__ < 14
       return ci->getNumArgOperands();
+#else
+      return ci->arg_size();
+#endif
    }
 
    const void* DumpGimpleRaw::gimple_call_arg(const void* g, unsigned int arg_index)
@@ -2697,7 +2717,7 @@ namespace llvm
       if(isa<llvm::GlobalVariable>(llvm_obj))
          return llvm_obj->hasExternalLinkage() && !cast<llvm::GlobalVariable>(llvm_obj)->hasInitializer();
       else if(isa<llvm::Function>(llvm_obj))
-         return cast<llvm::Function>(llvm_obj)->getBasicBlockList().empty();
+         return cast<llvm::Function>(llvm_obj)->empty();
       else
          report_fatal_error("unexpected case");
    }
@@ -2802,12 +2822,20 @@ namespace llvm
       if(TREE_CODE(t) == GT(VAR_DECL))
       {
          const llvm::GlobalVariable* llvm_obj = reinterpret_cast<const llvm::GlobalVariable*>(t);
+#if __clang_major__ < 16
          return std::max(8u, 8 * llvm_obj->getAlignment());
+#else
+         return std::max(8u, 8 * static_cast<unsigned>(llvm_obj->getAlign()->value()));
+#endif
       }
       else if(TREE_CODE(t) == GT(ALLOCAVAR_DECL))
       {
          const alloca_var* av = reinterpret_cast<const alloca_var*>(t);
+#if __clang_major__ < 16
          auto algn = av->alloc_inst->getAlignment();
+#else
+         auto algn = static_cast<unsigned>(av->alloc_inst->getAlign().value());
+#endif
          if(algn == 0)
          {
             auto arraySize = av->alloc_inst->getArraySize();
@@ -3079,7 +3107,12 @@ namespace llvm
             case llvm::Type::ArrayTyID:
                return assignCodeType(cast<llvm::ArrayType>(ty)->getElementType());
             case llvm::Type::PointerTyID:
+#if __clang_major__ < 16
                return assignCodeType(cast<llvm::PointerType>(ty)->getElementType());
+#else
+               return assignCodeType(ty->isOpaquePointerTy() ? llvm::Type::getVoidTy(*moduleContext) :
+                                                               ty->getNonOpaquePointerElementType());
+#endif
 #if __clang_major__ >= 11
             case llvm::Type::FixedVectorTyID:
             case llvm::Type::ScalableVectorTyID:
@@ -3303,7 +3336,11 @@ namespace llvm
       llvm::Type* ty = const_cast<llvm::Type*>(NormalizeSignedTag(Cty));
       if(!ty->isSized())
          return 8;
+#if __clang_major__ < 12
       return std::max(8u, 8 * DL->getABITypeAlignment(ty));
+#else
+      return std::max(8ull, 8ull * DL->getABITypeAlign(ty).value());
+#endif
    }
 
    const void* DumpGimpleRaw::TYPE_ARG_TYPES(const void* t)
@@ -3426,8 +3463,12 @@ namespace llvm
 
    const void* DumpGimpleRaw::getStatement_list(const void* t)
    {
-      const llvm::Function* fd = reinterpret_cast<const llvm::Function*>(t);
-      return assignCode(&fd->getBasicBlockList(), GT(STATEMENT_LIST));
+      if(index2statement_list.find(t) == index2statement_list.end())
+      {
+         const llvm::Function* fd = reinterpret_cast<const llvm::Function*>(t);
+         index2statement_list[t].F = fd;
+      }
+      return assignCode(&index2statement_list.at(t), GT(STATEMENT_LIST));
    }
 
    const void* DumpGimpleRaw::getGimpleScpe(const void* g)
@@ -4008,7 +4049,7 @@ namespace llvm
             if(dyn_cast<llvm::ArrayType>(type) || dyn_cast<llvm::VectorType>(type))
             {
 #if __clang_major__ >= 13
-               for(unsigned index = 0; index < val->getElementCount().getValue(); ++index)
+               for(unsigned index = 0; index < val->getElementCount().getFixedValue(); ++index)
 #else
                for(unsigned index = 0; index < val->getNumElements(); ++index)
 #endif
@@ -4025,7 +4066,7 @@ namespace llvm
             {
                const void* ty = TREE_TYPE(t);
 #if __clang_major__ >= 13
-               for(unsigned index = 0; index < val->getElementCount().getValue(); ++index)
+               for(unsigned index = 0; index < val->getElementCount().getFixedValue(); ++index)
 #else
                for(unsigned index = 0; index < val->getNumElements(); ++index)
 #endif
@@ -4882,9 +4923,8 @@ namespace llvm
                         - the successor basic block
                         - list of statement
                      + otherwise it prints only the list of statements */
-      const llvm::Function::BasicBlockListType& bblist =
-          *reinterpret_cast<const llvm::Function::BasicBlockListType*>(t);
-      llvm::Function* currentFunction = const_cast<llvm::Function*>(bblist.front().getParent());
+      const auto sl = reinterpret_cast<const statement_list*>(t);
+      llvm::Function* currentFunction = const_cast<llvm::Function*>(sl->F);
       auto& LI = GetLI(*currentFunction);
       std::map<const llvm::Loop*, unsigned> loopLabes;
       if(!LI.empty())
@@ -4894,7 +4934,7 @@ namespace llvm
             computeLoopLabels(loopLabes, *it, label);
       }
       std::set<const llvm::BasicBlock*> BB_with_gimple_label;
-      for(const auto& BB : bblist)
+      for(const auto& BB : *currentFunction)
       {
          if(isa<llvm::SwitchInst>(BB.getTerminator()))
          {
@@ -4912,7 +4952,7 @@ namespace llvm
       }
       auto& MSSA = GetMSSA(*currentFunction).getMSSA();
 
-      for(const auto& BB : bblist)
+      for(const auto& BB : *currentFunction)
       {
          const char* field;
          serialize_new_line();
@@ -4992,7 +5032,7 @@ namespace llvm
             serialize_gimple_child("phi", getVirtualGimplePhi(MSSA.getMemoryAccess(&BB), MSSA));
          }
          bool firstStmt = BB_with_gimple_label.find(&BB) != BB_with_gimple_label.end();
-         for(const auto& inst : BB.getInstList())
+         for(const auto& inst : BB)
          {
             if(isa<llvm::PHINode>(inst))
                serialize_gimple_child("phi", assignCodeAuto(&inst));
@@ -5173,8 +5213,7 @@ namespace llvm
             /// with clang/llvm there is no type definition
             snprintf(buffer, LOCAL_BUFFER_LEN, "srcp: \"");
             stream << buffer;
-            if(code == GT(FUNCTION_DECL) && is_builtin_fn(t) &&
-               reinterpret_cast<const llvm::Function*>(t)->getBasicBlockList().empty())
+            if(code == GT(FUNCTION_DECL) && is_builtin_fn(t) && reinterpret_cast<const llvm::Function*>(t)->empty())
             {
                auto headerFile = getHeaderForBuiltin(t);
                if(headerFile != "")
@@ -5217,7 +5256,6 @@ namespace llvm
 
          /* All types have alignments.  */
          serialize_int("algn", TYPE_ALIGN(t));
-
          if(TYPE_PACKED(t))
          {
             serialize_string("packed");
@@ -5646,96 +5684,13 @@ namespace llvm
       }
    }
 
-   static bool addrIsOfIntArrayType(llvm::Value* DstAddr, unsigned& Align, const llvm::DataLayout* DL)
-   {
-      llvm::Type* srcType = nullptr;
-      if(llvm::dyn_cast<llvm::BitCastInst>(DstAddr))
-      {
-         srcType = llvm::cast<llvm::BitCastInst>(DstAddr)->getSrcTy();
-      }
-      else if(llvm::dyn_cast<llvm::ConstantExpr>(DstAddr) &&
-              cast<llvm::ConstantExpr>(DstAddr)->getOpcode() == llvm::Instruction::BitCast)
-      {
-         srcType = cast<llvm::ConstantExpr>(DstAddr)->getOperand(0)->getType();
-      }
-      if(srcType)
-      {
-         if(srcType->isPointerTy())
-         {
-            auto pointee = llvm::cast<llvm::PointerType>(srcType)->getElementType();
-            if(pointee->isArrayTy())
-            {
-               auto elType = llvm::cast<llvm::ArrayType>(pointee)->getArrayElementType();
-               auto size = elType->isSized() ? DL->getTypeAllocSizeInBits(elType) : 8ULL;
-               if(size <= Align * 8)
-               {
-                  Align = size / 8;
-                  return elType->isIntegerTy();
-               }
-            }
-         }
-      }
-      return false;
-   }
-   static unsigned getLoopOperandSizeInBytesLocal(llvm::Type* Type)
-   {
-      if(llvm::VectorType* VTy = dyn_cast<llvm::VectorType>(Type))
-      {
-#if __clang_major__ >= 12
-         return (VTy->getElementCount().getValue() * VTy->getElementType()->getPrimitiveSizeInBits()) / 8;
-#else
-         return (VTy->getNumElements() * VTy->getElementType()->getPrimitiveSizeInBits()) / 8;
-#endif
-      }
-      return Type->getPrimitiveSizeInBits() / 8;
-   }
-
-   static llvm::Type* getMemcpyLoopLoweringTypeLocal(llvm::LLVMContext& Context, llvm::ConstantInt* Length,
-                                                     unsigned SrcAlign, unsigned DestAlign, llvm::Value* SrcAddr,
-                                                     llvm::Value* DstAddr, const llvm::DataLayout* DL, bool isVolatile,
-                                                     bool& Optimize)
-   {
-      if(!isVolatile)
-      {
-         if(SrcAlign == DestAlign && DestAlign == Length->getZExtValue() && DestAlign <= 8)
-         {
-            PRINT_DBG("memcpy can be optimized\n");
-            PRINT_DBG("Align=" << SrcAlign << "\n");
-            return llvm::Type::getIntNTy(Context, SrcAlign * 8);
-         }
-         unsigned localSrcAlign = SrcAlign;
-         auto srcCheck = addrIsOfIntArrayType(SrcAddr, localSrcAlign, DL);
-         if(srcCheck)
-         {
-            unsigned localDstAlign = DestAlign;
-            auto dstCheck = addrIsOfIntArrayType(DstAddr, localDstAlign, DL);
-            if(dstCheck && localSrcAlign == localDstAlign)
-            {
-               Optimize = true;
-               PRINT_DBG("memcpy can be optimized\n");
-               PRINT_DBG("Align=" << SrcAlign << "\n");
-               return llvm::Type::getIntNTy(Context, SrcAlign * 8);
-            }
-         }
-      }
-      return llvm::Type::getInt8Ty(Context);
-   }
-
-   static void getMemcpyLoopResidualLoweringTypeLocal(llvm::SmallVectorImpl<llvm::Type*>& OpsOut,
-                                                      llvm::LLVMContext& Context, unsigned RemainingBytes,
-                                                      unsigned SrcAlign, unsigned DestAlign)
-   {
-      for(unsigned i = 0; i != RemainingBytes; ++i)
-         OpsOut.push_back(llvm::Type::getInt8Ty(Context));
-   }
-
    void DumpGimpleRaw::buildMetaDataMap(const llvm::Module& M)
    {
       for(auto& fun : M.getFunctionList())
       {
          if(!fun.isIntrinsic() && !fun.isDeclaration())
          {
-            for(const auto& BB : fun.getBasicBlockList())
+            for(const auto& BB : fun)
             {
                for(const auto& inst : BB)
                {
@@ -5770,8 +5725,14 @@ namespace llvm
    {
       // Conservatively, avoid aggregate types. This is because we don't
       // want to worry about them partially overlapping other stores.
+#if __clang_major__ < 16
       if(!cast<llvm::PointerType>(C->getType())->getElementType()->isSingleValueType())
+#else
+      if(C->getType()->isOpaquePointerTy() || !C->getType()->getNonOpaquePointerElementType()->isSingleValueType())
+#endif
+      {
          return false;
+      }
 
       if(llvm::GlobalVariable* GV = dyn_cast<llvm::GlobalVariable>(C))
          // Do not allow weak/*_odr/linkonce linkage or external globals.
@@ -5794,11 +5755,18 @@ namespace llvm
             if(!CI || !CI->isZero())
                return false;
 
-            // The remaining indices must be compile-time known integers within the
-            // notional bounds of the corresponding static array types.
+               // The remaining indices must be compile-time known integers within the
+               // notional bounds of the corresponding static array types.
+#if __clang_major__ > 15
+            Constant* StrippedC = cast<Constant>(CE->stripInBoundsConstantOffsets());
+            if(StrippedC == C)
+#else
             if(!CE->isGEPWithNoNotionalOverIndexing())
+#endif
                return false;
-#if __clang_major__ >= 13
+#if __clang_major__ > 15
+            return ConstantFoldLoadFromUniformValue(GV->getInitializer(), C->getType()->getPointerElementType());
+#elif __clang_major__ >= 13
             return ConstantFoldLoadThroughGEPConstantExpr(GV->getInitializer(), CE,
                                                           C->getType()->getPointerElementType(), DL);
 #else
@@ -5897,7 +5865,7 @@ namespace llvm
       else if(dyn_cast<llvm::VectorType>(initType))
       {
 #if __clang_major__ >= 12
-         NumElts = dyn_cast<llvm::VectorType>(initType)->getElementCount().getValue();
+         NumElts = dyn_cast<llvm::VectorType>(initType)->getElementCount().getFixedValue();
 #else
          NumElts = dyn_cast<llvm::VectorType>(initType)->getNumElements();
 #endif
@@ -6015,7 +5983,7 @@ namespace llvm
             else if(auto* VTy = dyn_cast<llvm::VectorType>(Ty))
             {
 #if __clang_major__ >= 12
-               NumElts = VTy->getElementCount().getValue();
+               NumElts = VTy->getElementCount().getFixedValue();
 #else
                NumElts = VTy->getNumElements();
 #endif
@@ -6089,7 +6057,16 @@ namespace llvm
             // stored value.
             Ptr = CE->getOperand(0);
 
+#if __clang_major__ < 16
             llvm::Type* NewTy = cast<llvm::PointerType>(Ptr->getType())->getElementType();
+#else
+            if(Ptr->getType()->isOpaquePointerTy())
+            {
+               PRINT_DBG("Opaque BitCast.\n");
+               return false;
+            }
+            llvm::Type* NewTy = Ptr->getType()->getNonOpaquePointerElementType();
+#endif
 
             // In order to push the bitcast onto the stored value, a bitcast
             // from NewTy to Val's type must be legal.  If it's not, we can try
@@ -6174,7 +6151,9 @@ namespace llvm
             case llvm::Instruction::GetElementPtr:
                if(auto* I = getInitializerLocal(CE->getOperand(0)))
                {
-#if __clang_major__ >= 13
+#if __clang_major__ > 15
+                  return ConstantFoldLoadFromUniformValue(I, P->getType());
+#elif __clang_major__ >= 13
                   return llvm::ConstantFoldLoadThroughGEPConstantExpr(I, CE, P->getType()->getPointerElementType(), DL);
 #else
                   return llvm::ConstantFoldLoadThroughGEPConstantExpr(I, CE);
@@ -6274,7 +6253,9 @@ namespace llvm
                               {
                                  llvm::Constant* Val = nullptr;
                                  llvm::Constant* Ptr = nullptr;
+#ifndef NDEBUG
                                  auto resRS =
+#endif
                                      removableStore(dyn_cast<llvm::StoreInst>(CurInst), GV, TLI, *DL, Ptr, Val, false);
                                  assert(dyn_cast<llvm::StoreInst>(CurInst) && resRS);
                                  MutatedMemory[Ptr] = Val;
@@ -6409,10 +6390,10 @@ namespace llvm
       {
          auto& F = *currFuncIterator;
          auto fname = std::string(getName(&F));
-         for(auto& BB : currFuncIterator->getBasicBlockList())
+         for(auto& BB : *currFuncIterator)
          {
-            auto curInstIterator = BB.getInstList().begin();
-            while(curInstIterator != BB.getInstList().end())
+            auto curInstIterator = BB.begin();
+            while(curInstIterator != BB.end())
             {
                if(isa<llvm::CallInst>(*curInstIterator))
                {
@@ -6423,7 +6404,7 @@ namespace llvm
                   {
                      res = true;
                      auto me = curInstIterator;
-                     bool atBegin(BB.getInstList().begin() == me);
+                     bool atBegin(BB.begin() == me);
                      if(!atBegin)
                         --me;
                      if(noLoweringIntrinsic(Callee->getIntrinsicID()))
@@ -6442,7 +6423,7 @@ namespace llvm
                      else
                         IL->LowerIntrinsicCall(&ci);
                      if(atBegin)
-                        curInstIterator = BB.getInstList().begin();
+                        curInstIterator = BB.begin();
                      else
                      {
                         curInstIterator = me;
@@ -6486,10 +6467,10 @@ namespace llvm
             llvm::errs() << "ValueRangeOptimizer: Analysis for function: " << getName(&F) << "\n";
 #endif
             std::list<llvm::Instruction*> deadList;
-            for(auto& BB : F.getBasicBlockList())
+            for(auto& BB : F)
             {
-               auto curInstIterator = BB.getInstList().begin();
-               while(curInstIterator != BB.getInstList().end())
+               auto curInstIterator = BB.begin();
+               while(curInstIterator != BB.end())
                {
                   llvm::Instruction* I = &*curInstIterator;
                   assert(I->getParent());
@@ -6596,7 +6577,7 @@ namespace llvm
            CurrentListofMAEntryDef)
    {
       auto& MSSA = GetMSSA(*const_cast<llvm::Function*>(F)).getMSSA();
-      for(const auto& BB : F->getBasicBlockList())
+      for(const auto& BB : *F)
       {
          for(const auto& inst : BB)
          {
@@ -6668,6 +6649,7 @@ namespace llvm
          res |= RebuildConstants(M);
 
          res |= lowerIntrinsics(M);
+#if __clang_major__ < 16
 #if HAVE_LIBBDD
          if(!onlyGlobals)
          {
@@ -6683,6 +6665,7 @@ namespace llvm
                PRINT_DBG("Performed alias analysis\n");
             }
          }
+#endif
 #endif
       }
 

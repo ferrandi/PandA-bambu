@@ -65,42 +65,42 @@ struct BM_cost_functor
     * @param x is the index of the row
     * @param y is the index of the column
     */
-   virtual int operator()(size_t x, size_t y) const = 0;
+   virtual int operator()(std::size_t x, std::size_t y) const = 0;
 
    /**
     * return the maximum cost for a given row
     * @param x is the index of the row
     */
-   virtual int max_row(size_t x) const = 0;
+   virtual int max_row(std::size_t x) const = 0;
 };
 
 template <class CostFunctor>
 class bipartite_matching
 {
  private:
-   const size_t MINUS_ONE;
-   const size_t MINUS_TWO;
-   size_t num_rows;
-   size_t num_cols;
-   size_t nel;
+   const std::size_t MINUS_ONE;
+   const std::size_t MINUS_TWO;
+   std::size_t num_rows;
+   std::size_t num_cols;
+   std::size_t nel;
    /// define labels for x and y
    std::vector<int> lx;
    std::vector<int> ly;
 
    /// initialize xy and yx
-   std::vector<size_t> xy;
-   std::vector<size_t> yx;
+   std::vector<std::size_t> xy;
+   std::vector<std::size_t> yx;
 
    std::vector<int> slack;
-   std::vector<size_t> slackx;
+   std::vector<std::size_t> slackx;
    std::vector<bool> S;
    std::vector<bool> T;
-   std::vector<size_t> prev;
+   std::vector<std::size_t> prev;
 
    const CostFunctor& cost;
 
    /// this function returns w_{x,y} givent the cost vector and the actual number of columns
-   int get_cost(size_t x, size_t y)
+   int get_cost(std::size_t x, std::size_t y)
    {
       if(x < num_rows && y < num_cols)
       {
@@ -111,13 +111,13 @@ class bipartite_matching
          return 0;
       }
    }
-   void add_to_tree(size_t x, size_t prevx)
+   void add_to_tree(std::size_t x, std::size_t prevx)
    // x - current vertex,prevx - vertex from X before x in the alternating path,
    // so we add edges (prevx, xy[x]), (xy[x], x)
    {
       S[x] = true;     // add x to S
       prev[x] = prevx; // we need this when augmenting
-      for(size_t y = 0; y < nel; y++)
+      for(std::size_t y = 0; y < nel; y++)
       { // update slacks, because we add new vertex to S
          if(lx[x] + ly[y] - get_cost(x, y) < slack[y])
          {
@@ -128,7 +128,7 @@ class bipartite_matching
    }
    void update_labels()
    {
-      size_t x, y;
+      std::size_t x, y;
       int delta = std::numeric_limits<int>::max(); // init delta as infinity
       for(y = 0; y < nel; y++)
       { // calculate delta using slack
@@ -162,9 +162,9 @@ class bipartite_matching
 
  public:
    /// constructor
-   bipartite_matching(size_t _num_rows, size_t _num_cols, const CostFunctor& _cost)
-       : MINUS_ONE(std::numeric_limits<size_t>::max()),
-         MINUS_TWO(std::numeric_limits<size_t>::max() - 1),
+   bipartite_matching(std::size_t _num_rows, std::size_t _num_cols, const CostFunctor& _cost)
+       : MINUS_ONE(std::numeric_limits<std::size_t>::max()),
+         MINUS_TWO(std::numeric_limits<std::size_t>::max() - 1),
          num_rows(_num_rows),
          num_cols(_num_cols),
          nel(std::max(_num_rows, _num_cols)),
@@ -181,22 +181,22 @@ class bipartite_matching
    {
       /// initialize lx
       /// given the cost matrix we have we just have to iterate over the row
-      for(size_t i = 0; i < nel; ++i)
+      for(std::size_t i = 0; i < nel; ++i)
       {
          lx[i] = cost.max_row(i);
       }
    }
-   std::vector<size_t>& get_solution()
+   std::vector<std::size_t>& get_solution()
    {
       return xy;
    }
    void solve_bipartite_matching()
    {
-      for(size_t max_match = 0; max_match < nel; ++max_match)
+      for(std::size_t max_match = 0; max_match < nel; ++max_match)
       {
-         size_t x, y, root = MINUS_ONE; // just counters and root vertex
-         std::vector<size_t> q(nel);
-         size_t wr = 0, rd = 0; // q - queue for bfs, wr,rd - write and read
+         std::size_t x, y, root = MINUS_ONE; // just counters and root vertex
+         std::vector<std::size_t> q(nel);
+         std::size_t wr = 0, rd = 0; // q - queue for bfs, wr,rd - write and read
          // pos in queue
          S.assign(nel, false);        // init set S
          T.assign(nel, false);        // init set T
@@ -289,7 +289,7 @@ class bipartite_matching
 
          assert(found);
          // in this cycle we inverse edges along augmenting path
-         for(size_t cx = x, cy = y, ty; cx != MINUS_TWO; cx = prev[cx], cy = ty)
+         for(std::size_t cx = x, cy = y, ty; cx != MINUS_TWO; cx = prev[cx], cy = ty)
          {
             ty = xy[cx];
             yx[cy] = cx;
