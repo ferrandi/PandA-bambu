@@ -260,8 +260,7 @@ class PtrIteratorSimplifyPass : public llvm::LoopPass
                            llvm::Value* opu = call_inst->getOperandUse(arg->getArgNo());
                            if(auto* gep_op = llvm::dyn_cast<llvm::GEPOperator>(opu))
                            {
-                              if(auto* g_var =
-                                     llvm::dyn_cast<llvm::GlobalVariable>(gep_op->getPointerOperand()))
+                              if(auto* g_var = llvm::dyn_cast<llvm::GlobalVariable>(gep_op->getPointerOperand()))
                               {
                                  if(arg->getType()->getPointerElementType()->isIntegerTy(8))
                                  {
@@ -467,8 +466,8 @@ class PtrIteratorSimplifyPass : public llvm::LoopPass
                   std::vector<llvm::Value*> idxs;
                   idxs.push_back(phi_index);
                   llvm::GetElementPtrInst* first_gepi = llvm::GetElementPtrInst::CreateInBounds(
-                      common_external, idxs, phi_iter->getName().str() + ".firstgepi",
-                      &*phi_iter->getParent()->getFirstInsertionPt());
+                      common_external->getType()->getScalarType()->getPointerElementType(), common_external, idxs,
+                      phi_iter->getName().str() + ".firstgepi", &*phi_iter->getParent()->getFirstInsertionPt());
 
                   llvm::errs() << "      Assigning first gepi " << get_val_string(first_gepi) << " to phi "
                                << get_val_string(phi_index) << "\n";
@@ -486,8 +485,7 @@ class PtrIteratorSimplifyPass : public llvm::LoopPass
 
                   llvm::errs() << "      Transforming use #" << use_to_process->getOperandNo() << " of "
                                << get_val_string(use_to_process->getUser()) << "\n";
-                  if(auto* use_as_gepi =
-                         llvm::dyn_cast<llvm::GetElementPtrInst>(use_to_process->get()))
+                  if(auto* use_as_gepi = llvm::dyn_cast<llvm::GetElementPtrInst>(use_to_process->get()))
                   {
                      if(auto* user_as_phi = llvm::dyn_cast<llvm::PHINode>(use_to_process->getUser()))
                      {
@@ -506,8 +504,7 @@ class PtrIteratorSimplifyPass : public llvm::LoopPass
                         }
                         uses_to_set.erase(use_to_process);
                      }
-                     else if(auto* user_as_gepi =
-                                 llvm::dyn_cast<llvm::GetElementPtrInst>(use_to_process->getUser()))
+                     else if(auto* user_as_gepi = llvm::dyn_cast<llvm::GetElementPtrInst>(use_to_process->getUser()))
                      {
                         llvm::Value* new_idx =
                             operate_on_index(llvm::BinaryOperator::BinaryOps::Add, use_as_gepi->getOperand(1),
@@ -516,7 +513,8 @@ class PtrIteratorSimplifyPass : public llvm::LoopPass
                         std::vector<llvm::Value*> idxs;
                         idxs.push_back(new_idx);
                         llvm::GetElementPtrInst* new_gepi = llvm::GetElementPtrInst::CreateInBounds(
-                            common_external, idxs, user_as_gepi->getName().str() + ".gepi", user_as_gepi);
+                            common_external->getType()->getScalarType()->getPointerElementType(), common_external, idxs,
+                            user_as_gepi->getName().str() + ".gepi", user_as_gepi);
 
                         llvm::errs() << "            as " << get_val_string(new_gepi) << "\n";
 
@@ -542,8 +540,7 @@ class PtrIteratorSimplifyPass : public llvm::LoopPass
                         }
                         else
                         {
-                           while(auto* use_as_gepi_rec =
-                                     llvm::dyn_cast<llvm::GetElementPtrInst>(use_rec->get()))
+                           while(auto* use_as_gepi_rec = llvm::dyn_cast<llvm::GetElementPtrInst>(use_rec->get()))
                            {
                               if(use_as_gepi_rec == common_external)
                               {

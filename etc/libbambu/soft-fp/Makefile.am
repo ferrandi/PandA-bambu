@@ -465,3 +465,25 @@ libhls_cdiv_clang13_a_CFLAGS = --compiler=I386_CLANG13  $(common_cflags_clang)  
 libhls_cdiv_clang13_a_AR = $(top_builddir)/src/tree-panda-gcc --compiler=I386_CLANG13 $(common_treegccflags_clang) -C
 endif
 
+if BUILD_I386_CLANG16
+pkglib_LIBRARIES += libsoft-fp_clang16.a libhls-divNR_clang16.a libhls-divnr1_clang16.a libhls-divnr2_clang16.a libhls-divas_clang16.a  libhls-cdiv_clang16.a
+libsoft_fp_clang16_a_SOURCES = $(common_libsoft_fp_src)
+libsoft_fp_clang16_a_CFLAGS = --compiler=I386_CLANG16 $(common_cflags_clang)  -I$(BOOST_DIR) --extra-gcc-options="-mllvm -inline-threshold=10000"
+libsoft_fp_clang16_a_AR = $(top_builddir)/src/tree-panda-gcc --compiler=I386_CLANG16 $(common_treegccflags_clang) -C
+libhls_divNR_clang16_a_SOURCES = $(common_libhls_div_src)
+libhls_divNR_clang16_a_CFLAGS = --compiler=I386_CLANG16 $(common_cflags_nr_clang)  -I$(BOOST_DIR) --extra-gcc-options="-mllvm -inline-threshold=10000"
+libhls_divNR_clang16_a_AR = $(top_builddir)/src/tree-panda-gcc --compiler=I386_CLANG16 $(common_treegccflags_clang) -C
+libhls_divnr1_clang16_a_SOURCES = $(common_libhls_divnr_src)
+libhls_divnr1_clang16_a_CFLAGS = --compiler=I386_CLANG16  $(common_cflags_clang)  -I$(BOOST_DIR) -DUNROLL_FACTOR=1 --extra-gcc-options="-mllvm -inline-threshold=10000"
+libhls_divnr1_clang16_a_AR = $(top_builddir)/src/tree-panda-gcc --compiler=I386_CLANG16 $(common_treegccflags_clang) -C
+libhls_divnr2_clang16_a_SOURCES = $(common_libhls_divnr_src)
+libhls_divnr2_clang16_a_CFLAGS = --compiler=I386_CLANG16  $(common_cflags_clang)  -I$(BOOST_DIR) -DUNROLL_FACTOR=2 --extra-gcc-options="-mllvm -inline-threshold=10000"
+libhls_divnr2_clang16_a_AR = $(top_builddir)/src/tree-panda-gcc --compiler=I386_CLANG16 $(common_treegccflags_clang) -C
+libhls_divas_clang16_a_SOURCES = $(common_libhls_divas_src)
+libhls_divas_clang16_a_CFLAGS = --compiler=I386_CLANG16  $(common_cflags_clang)  -I$(BOOST_DIR) --extra-gcc-options="-mllvm -inline-threshold=10000"
+libhls_divas_clang16_a_AR = $(top_builddir)/src/tree-panda-gcc --compiler=I386_CLANG16 $(common_treegccflags_clang) -C
+libhls_cdiv_clang16_a_SOURCES = $(common_libhls_cdiv_src)
+libhls_cdiv_clang16_a_CFLAGS = --compiler=I386_CLANG16  $(common_cflags_clang)  -I$(BOOST_DIR) --extra-gcc-options="-mllvm -inline-threshold=10000"
+libhls_cdiv_clang16_a_AR = $(top_builddir)/src/tree-panda-gcc --compiler=I386_CLANG16 $(common_treegccflags_clang) -C
+endif
+

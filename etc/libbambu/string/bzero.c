@@ -7,5 +7,6 @@
 
 void bzero(void* s, size_t n)
 {
+   extern void* memset(void* dest, int val, size_t len);
    memset(s, 0, n);
 }

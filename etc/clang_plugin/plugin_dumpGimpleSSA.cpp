@@ -45,7 +45,6 @@
 #include <llvm-c/Transforms/Scalar.h>
 #include <llvm/Analysis/AliasAnalysis.h>
 #include <llvm/Analysis/AssumptionCache.h>
-#include <llvm/Analysis/CFLSteensAliasAnalysis.h>
 #include <llvm/Analysis/DominanceFrontier.h>
 #include <llvm/Analysis/LazyValueInfo.h>
 #include <llvm/Analysis/LoopInfo.h>
@@ -90,13 +89,18 @@
 #include <llvm/Transforms/IPO/ArgumentPromotion.h>
 #include <llvm/Transforms/IPO/GlobalOpt.h>
 #include <llvm/Transforms/InstCombine/InstCombine.h>
+#if __clang_major__ >= 16
+#include <llvm/Transforms/Scalar/LowerAtomicPass.h>
+#else
 #include <llvm/Transforms/Scalar/LowerAtomic.h>
+#endif
 #include <llvm/Transforms/Utils/BreakCriticalEdges.h>
 #include <llvm/Transforms/Utils/Mem2Reg.h>
 #include <llvm/Transforms/Utils/UnifyFunctionExitNodes.h>
 #endif
 
 #include <boost/tokenizer.hpp>
+#include <fstream>
 #include <sstream>
 #include <string>
 
@@ -192,15 +196,12 @@ namespace llvm
          std::map<std::string, std::vector<std::string>> Fun2Params;
          for(const auto& file_string : FileTokenizer)
          {
-            auto parms_file_name = create_file_basename_string(outdir_name, file_string) + ".params.txt";
-            ErrorOr<std::unique_ptr<MemoryBuffer>> BufOrErr = MemoryBuffer::getFile(parms_file_name);
-            if(BufOrErr)
+            const std::string parms_file_name = create_file_basename_string(outdir_name, file_string) + ".params.txt";
+            std::ifstream infile(parms_file_name);
+            if(infile)
             {
-               std::unique_ptr<MemoryBuffer> Buffer = std::move(BufOrErr.get());
-               std::string buf = Buffer->getBuffer().data();
-               std::stringstream ss(buf);
                std::string item;
-               while(std::getline(ss, item, '\n'))
+               while(std::getline(infile, item, '\n'))
                {
                   bool is_first = true;
                   std::stringstream ss_inner(item);
@@ -382,8 +383,13 @@ llvm::PassPluginLibraryInfo CLANG_PLUGIN_INFO(_plugin_dumpGimpleSSA)()
                  }
                  return false;
               });
-              PB.registerOptimizerLastEPCallback(
-                  [&](llvm::ModulePassManager& MPM, llvm::PassBuilder::OptimizationLevel) { return load(MPM); });
+              PB.registerOptimizerLastEPCallback([&](llvm::ModulePassManager& MPM,
+#if __clang_major__ < 16
+                                                     llvm::PassBuilder::OptimizationLevel
+#else
+                           llvm::OptimizationLevel
+#endif
+                                                 ) { return load(MPM); });
            }};
 }
 

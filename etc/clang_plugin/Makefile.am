@@ -109,6 +109,9 @@ include $(top_srcdir)/etc/clang_plugin/clang12.am
 ###### clang 13.0
 include $(top_srcdir)/etc/clang_plugin/clang13.am
 
+###### clang 16.0
+include $(top_srcdir)/etc/clang_plugin/clang16.am
+
 clean :
 	rm -rf *.o *.so *.h bambuS2S-*
 
