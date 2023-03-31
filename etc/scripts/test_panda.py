@@ -889,130 +889,126 @@ if not args.restart:
 
     # Reordering elements in each row
     reordered_list_name = os.path.join(abs_path, "reordered_list")
-    reordered_list = open(reordered_list_name, "w")
-
-    logging.info("Preparing benchmark list")
-    logging.info("   Reordering arguments")
-    for abs_list in abs_lists:
-        list_file = open(abs_list)
-        lines = list_file.readlines()
-        list_file.close()
-        for line in lines:
-            if line.strip() == "":
-                continue
-            if line[0] == '#':
-                continue
-            if args.tool != "bambu" and args.tool != "zebu":
-                reordered_list.write(line)
-                continue
-            tokens = shlex.split(line)
-            parameters = list()
-            escape_regex = re.compile(
-                "(-|_|\{|\}|=|!|\$|#|&|\"|\'|\(|\)|\||<|>|`|\\\|;|\.|,)")
-            # Flag used to ad-hoc manage --param arg
-            follow_param = False
-            for token in tokens:
-                if token[0] == '-':
-                    parameters.append(
-                        escape_regex.sub(r"\\\1", token))
-                    if token.find("--param") != -1:
-                        follow_param = True
-                    else:
-                        follow_param = False
-                else:
-                    if follow_param == True:
+    with open(reordered_list_name, "w") as reordered_list:
+        logging.info("Preparing benchmark list")
+        logging.info("   Reordering arguments")
+        for abs_list in abs_lists:
+            list_file = open(abs_list)
+            lines = list_file.readlines()
+            list_file.close()
+            for line in lines:
+                if line.strip() == "":
+                    continue
+                if line[0] == '#':
+                    continue
+                if args.tool != "bambu" and args.tool != "zebu":
+                    reordered_list.write(line)
+                    continue
+                tokens = shlex.split(line)
+                parameters = list()
+                escape_regex = re.compile(
+                    "(-|_|\{|\}|=|!|\$|#|&|\"|\'|\(|\)|\||<|>|`|\\\|;|\.|,)")
+                # Flag used to ad-hoc manage --param arg
+                follow_param = False
+                for token in tokens:
+                    if token[0] == '-':
                         parameters.append(
                             escape_regex.sub(r"\\\1", token))
-                    elif token.find("BENCHMARK_ENV") == 0:
-                        vars = token[14:-1].split(',')
-                        escaped_vars = []
-                        for var in vars:
-                            if var.find("=") != -1:
-                                escaped_var = re.sub("=", "=\\\'", var)
-                                escaped_var += "\\\'"
-                                escaped_vars.append(escaped_var)
-                            else:
-                                escaped_vars.append(var)
-                        reordered_list.write(
-                            "BENCHMARK_ENV=" + ','.join(escaped_vars) + " ")
+                        if token.find("--param") != -1:
+                            follow_param = True
+                        else:
+                            follow_param = False
                     else:
-                        reordered_list.write(token + " ")
-                    follow_param = False
-            for parameter in parameters:
-                reordered_list.write(
-                    escape_regex.sub(r"\\\1", parameter) + " ")
-            reordered_list.write("\n")
-    reordered_list.close()
+                        if follow_param == True:
+                            parameters.append(
+                                escape_regex.sub(r"\\\1", token))
+                        elif token.find("BENCHMARK_ENV") == 0:
+                            vars = token[14:-1].split(',')
+                            escaped_vars = []
+                            for var in vars:
+                                if var.find("=") != -1:
+                                    escaped_var = re.sub("=", "=\\\'", var)
+                                    escaped_var += "\\\'"
+                                    escaped_vars.append(escaped_var)
+                                else:
+                                    escaped_vars.append(var)
+                            reordered_list.write(
+                                "BENCHMARK_ENV=" + ','.join(escaped_vars) + " ")
+                        else:
+                            reordered_list.write(token + " ")
+                        follow_param = False
+                for parameter in parameters:
+                    reordered_list.write(
+                        escape_regex.sub(r"\\\1", parameter) + " ")
+                reordered_list.write("\n")
 
     # Expanding directory
     expanded_list_name = os.path.join(abs_path, "expanded_list")
-    expanded_list = open(expanded_list_name, "w")
-
-    logging.info("   Expanding directory")
-    lines = open(reordered_list_name).readlines()
-    for line in lines:
-        if line.strip() == "":
-            continue
-        tokens = shlex.split(line)
-        if args.tool == "bambu" or args.tool == "zebu":
-            if(tokens[0][0] != '/'):
-                first_parameter = os.path.join(abs_benchmarks_root, tokens[0])
-            else:
-                first_parameter = tokens[0]
-        else:
-            first_parameter = tokens[0].replace(
-                "BENCHMARKS\_ROOT", abs_benchmarks_root)
-        other_parameters = tokens[1:len(tokens)]
-        if not os.path.exists(first_parameter) and (args.tool == "bambu" or args.tool == "zebu"):
-            logging.error(first_parameter + " does not exist")
-            sys.exit(1)
-        # Check if it is a directory or a file
-        if os.path.isdir(first_parameter):
-            logging.info("       " + tokens[0])
-            c_files = SearchCFiles(first_parameter)
-            c_files = sorted(c_files)
-            for c_file in c_files:
-                expanded_list.write(c_file)
-                for other_parameter in other_parameters:
-                    expanded_list.write(
-                        " " + other_parameter.replace("BENCHMARKS\_ROOT", abs_benchmarks_root))
-                expanded_list.write("\n")
-        else:
-            expanded_list.write(first_parameter)
-            for other_parameter in other_parameters:
-                if ((other_parameter[-2:] == ".c") or (other_parameter[-2:] == ".C") or (other_parameter[-4:] == ".CPP") or (other_parameter[-4:] == ".cpp") or (other_parameter[-4:] == ".cxx") or (other_parameter[-3:] == ".cc") or (other_parameter[-4:] == ".c++") or other_parameter[-4:] == ".xml") and other_parameter[0] != '\\':
-                    if other_parameter[0] == '/':
-                        expanded_list.write(" " + other_parameter)
-                    else:
-                        expanded_list.write(
-                            " " + os.path.join(abs_benchmarks_root, other_parameter))
+    with open(expanded_list_name, "w") as expanded_list, open(reordered_list_name) as reordered_list:
+        logging.info("   Expanding directory")
+        for line in reordered_list.readlines():
+            if line.strip() == "":
+                continue
+            tokens = shlex.split(line)
+            if args.tool == "bambu" or args.tool == "zebu":
+                if(tokens[0][0] != '/'):
+                    first_parameter = os.path.join(abs_benchmarks_root, tokens[0])
                 else:
-                    expanded_list.write(" " + other_parameter.replace("BENCHMARKS\_ROOT",
-                                        abs_benchmarks_root).replace("BENCHMARKS_ROOT", abs_benchmarks_root))
-            expanded_list.write("\n")
-    expanded_list.close()
+                    first_parameter = tokens[0]
+            else:
+                first_parameter = tokens[0].replace(
+                    "BENCHMARKS\_ROOT", abs_benchmarks_root)
+            other_parameters = tokens[1:len(tokens)]
+            if not os.path.exists(first_parameter) and (args.tool == "bambu" or args.tool == "zebu"):
+                logging.error(first_parameter + " does not exist")
+                sys.exit(1)
+            # Check if it is a directory or a file
+            if os.path.isdir(first_parameter):
+                logging.info("       " + tokens[0])
+                c_files = SearchCFiles(first_parameter)
+                c_files = sorted(c_files)
+                for c_file in c_files:
+                    expanded_list.write(c_file)
+                    for other_parameter in other_parameters:
+                        expanded_list.write(
+                            " " + other_parameter.replace("BENCHMARKS\_ROOT", abs_benchmarks_root))
+                    expanded_list.write("\n")
+            else:
+                expanded_list.write(first_parameter)
+                for other_parameter in other_parameters:
+                    if ((other_parameter[-2:] == ".c") or (other_parameter[-2:] == ".C") or (other_parameter[-4:] == ".CPP") or (other_parameter[-4:] == ".cpp") or (other_parameter[-4:] == ".cxx") or (other_parameter[-3:] == ".cc") or (other_parameter[-4:] == ".c++") or other_parameter[-4:] == ".xml") and other_parameter[0] != '\\':
+                        if other_parameter[0] == '/':
+                            expanded_list.write(" " + other_parameter)
+                        else:
+                            expanded_list.write(
+                                " " + os.path.join(abs_benchmarks_root, other_parameter))
+                    else:
+                        expanded_list.write(" " + other_parameter.replace("BENCHMARKS\_ROOT",
+                                            abs_benchmarks_root).replace("BENCHMARKS_ROOT", abs_benchmarks_root))
+                expanded_list.write("\n")
 
     # Adding parameters
-    logging.info("   Considering all tool arguments")
-    arg_lists = args.args
-    if not arg_lists:
-        arg_lists = [("")]
     arged_list_name = os.path.join(abs_path, "arged_list")
-    arged_list = open(arged_list_name, "w")
-    lines = open(expanded_list_name).readlines()
-    for arg_list in arg_lists:
-        for line in lines:
-            arged_list.write(line.rstrip())
-            if len(arg_list) > 0:
-                arg = arg_list[0]
-                if arg[0] == "\"":
-                    arg = arg[1:-1]
-                arged_list.write(" " + arg)
-            if args.commonargs != None and len(args.commonargs) > 0:
-                for commonarg in args.commonargs:
-                    arged_list.write(" " + commonarg[0].replace("#", " "))
-            arged_list.write("\n")
-    arged_list.close()
+    with open(arged_list_name, "w") as arged_list, open(expanded_list_name) as expanded_list:
+        logging.info("   Considering all tool arguments")
+        arg_lists = args.args if args.args else [("")]
+        expanded_list_lines = expanded_list.readlines()
+        for arg_list in arg_lists:
+            for line in expanded_list_lines:
+                files_args = line.rstrip().partition(' \-')
+                line_files = files_args[0]
+                line_args = ''.join(files_args[1:])
+                arged_list.write(line_files)
+                if len(arg_list) > 0:
+                    arg = arg_list[0]
+                    if arg[0] == "\"":
+                        arg = arg[1:-1]
+                    arged_list.write(" " + arg)
+                if args.commonargs != None and len(args.commonargs) > 0:
+                    for commonarg in args.commonargs:
+                        arged_list.write(" " + commonarg[0].replace("#", " "))
+                arged_list.write(" " + line_args)
+                arged_list.write("\n")
 
     # Name of benchmarks
     full_names = set()
@@ -1029,39 +1025,37 @@ if not args.restart:
                 bench_name_skips.add(s)
 
     # Adding benchmark name
-    logging.info("   Adding benchmark name")
     named_list_name = os.path.join(abs_path, "named_list")
-    named_list = open(named_list_name, "w")
-    lines = open(arged_list_name).readlines()
-    for line in lines:
-        named_list_string = line.rstrip()
-        # Retrieve configuration name and benchmark name
-        configuration_name = ""
-        benchmark_name = ""
-        tokens = shlex.split(line)
-        for token in tokens:
-            if token.find("--configuration-name") != -1:
-                configuration_name = token[len("--configuration-name="):]
-            if token.find("--benchmark-name") != -1:
-                benchmark_name = token[len("--benchmark-name="):]
-        if benchmark_name == "":
-            if args.tool != "bambu" and args.tool != "zebu":
-                logging.error("Missing benchmark name")
+    with open(named_list_name, "w") as named_list, open(arged_list_name) as arged_list:
+        logging.info("   Adding benchmark name")
+        for line in arged_list.readlines():
+            named_list_string = line.rstrip()
+            # Retrieve configuration name and benchmark name
+            configuration_name = ""
+            benchmark_name = ""
+            tokens = shlex.split(line)
+            for token in tokens:
+                if token.find("--configuration-name") != -1:
+                    configuration_name = token[len("--configuration-name="):]
+                if token.find("--benchmark-name") != -1:
+                    benchmark_name = token[len("--benchmark-name="):]
+            if benchmark_name == "":
+                if args.tool != "bambu" and args.tool != "zebu":
+                    logging.error("Missing benchmark name")
+                    sys.exit(1)
+                benchmark_name = os.path.basename(line.split()[0])[:-2]
+                named_list_string += " --benchmark-name=" + benchmark_name
+            full_name = configuration_name + ":" + benchmark_name
+            if full_name in full_names:
+                logging.error(
+                    "Duplicated configuration name - benchmark name: " + full_name)
                 sys.exit(1)
-            benchmark_name = os.path.basename(line.split()[0])[:-2]
-            named_list_string += " --benchmark-name=" + benchmark_name
-        full_name = configuration_name + ":" + benchmark_name
-        if full_name in full_names:
-            logging.error(
-                "Duplicated configuration name - benchmark name: " + full_name)
-            sys.exit(1)
-        if full_name in full_name_skips or benchmark_name in bench_name_skips:
-            logging.info("     " + full_name + "  skipped")
-            continue
-        logging.info("     " + full_name)
-        full_names.add(full_name)
-        named_list.write(named_list_string + "\n")
-    named_list.close()
+            if full_name in full_name_skips or benchmark_name in bench_name_skips:
+                logging.info("     " + full_name + "  skipped")
+                continue
+            logging.info("     " + full_name)
+            full_names.add(full_name)
+            named_list.write(named_list_string + "\n")
 
     # Generating folder
     logging.info("   Generating output directories")
