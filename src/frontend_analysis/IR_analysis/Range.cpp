@@ -69,7 +69,7 @@
 using bw_t = Range::bw_t;
 
 // The number of bits needed to store the largest variable of the function (APInt).
-const bw_t Range::MAX_BIT_INT = static_cast<bw_t>(128U);
+const bw_t Range::MAX_BIT_INT = static_cast<bw_t>(4096U);
 const APInt Range::Min = APInt::getSignedMinValue(Range::MAX_BIT_INT);
 const APInt Range::Max = APInt::getSignedMaxValue(Range::MAX_BIT_INT);
 const APInt Range::MinDelta(1);
