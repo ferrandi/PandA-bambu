@@ -1770,10 +1770,12 @@ void CompilerWrapper::SetBambuDefault()
       optimization_flags["builtin-memcpy"] = false;
       optimization_flags["builtin-memmove"] = false;
       optimization_flags["builtin-bcmp"] = false;
+#if HAVE_I386_CLANG16_COMPILER
       if(compiler == CompilerWrapper_CompilerTarget::CT_I386_CLANG16)
       {
          optimization_flags["fp-contract"] = false;
       }
+#endif
       return;
    }
 #if HAVE_I386_CLANGVVD_COMPILER
