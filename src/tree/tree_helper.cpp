@@ -5554,8 +5554,7 @@ std::string tree_helper::PrintType(const tree_managerConstRef& TM, const tree_no
                   }
                   else
                   {
-                     THROW_ERROR(std::string("Node not yet supported: ") + node_type->get_kind_text() +
-                                 " with alignment " + STR(tn->algn));
+                     res += "_BitInt(" + STR(tn->algn) + ")";
                   }
                   break;
                }
