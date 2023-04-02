@@ -184,7 +184,7 @@ DesignFlowStep_Status TestbenchMemoryAllocation::Exec()
          const auto l_type = tree_helper::CGetType(lnode);
          if(tree_helper::IsPointerType(l_type) && !is_memory)
          {
-            if(test_v.size() > 4 && test_v.substr(test_v.size() - 4) == ".dat")
+            if(boost::ends_with(test_v, ".dat"))
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Binary file initialization");
                if(!boost::filesystem::exists(test_v))
