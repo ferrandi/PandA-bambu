@@ -87,43 +87,74 @@
 #define ENCODE_FDNAME(arg_name, MODE, interface_type) \
    ((arg_name) + STR_CST_interface_parameter_keyword + (MODE) + (interface_type))
 
-InterfaceInfer::interface_info::interface_info() : name(""), alignment(1U), bitwidth(1ULL), type(datatype::generic)
+enum class InterfaceInfer::m_axi_type
 {
-}
+   none,
+   direct,
+   axi_slave
+};
 
-void InterfaceInfer::interface_info::update(const tree_nodeRef& tn, std::string type_name, ParameterConstRef parameters)
+enum class InterfaceInfer::datatype
 {
-   const auto ptd_type = tree_helper::CGetPointedType(tree_helper::CGetType(tn));
-   bool is_signed = tree_helper::IsSignedIntegerType(ptd_type);
-   bool is_fixed = false;
-   type_name = boost::regex_replace(type_name, boost::regex("(ac_channel|stream|hls::stream)<(.*)>"), "$2");
-   const auto ac_bitwidth = ac_type_bitwidth(type_name, is_signed, is_fixed);
-   const auto _type = ac_bitwidth != 0ULL ? datatype::ac_type :
-                                            (tree_helper::IsRealType(ptd_type) ? datatype::real : datatype::generic);
-   if(type != datatype::ac_type)
+   generic,
+   ac_type,
+   real
+};
+
+struct InterfaceInfer::interface_info
+{
+   bool _fixed_size;
+
+ public:
+   std::string name;
+   unsigned alignment;
+   unsigned long long bitwidth;
+   datatype type;
+
+   interface_info(bool fixed_size)
+       : _fixed_size(fixed_size), name(""), alignment(1U), bitwidth(0ULL), type(datatype::generic)
    {
-      const auto _bitwidth = [&]() {
-         if(_type == datatype::ac_type)
-         {
-            return ac_bitwidth;
-         }
-         else if(tree_helper::IsArrayEquivType(ptd_type))
-         {
-            return tree_helper::GetArrayElementSize(ptd_type);
-         }
-         else if(tree_helper::IsPointerType(ptd_type) || tree_helper::IsStructType(ptd_type))
-         {
-            return static_cast<unsigned long long>(CompilerWrapper::CGetPointerSize(parameters));
-         }
-         return tree_helper::Size(ptd_type);
-      }();
-      const auto _alignment = static_cast<unsigned>(
-          (_type == datatype::ac_type ? get_aligned_ac_bitsize(_bitwidth) : get_aligned_bitsize(_bitwidth)) >> 3);
-      alignment = std::max(alignment, _alignment);
-      bitwidth = std::max(bitwidth, _bitwidth);
-      type = (_type == datatype::ac_type || _type == type) ? _type : datatype::generic;
    }
-}
+
+   void update(const tree_nodeRef& tn, const std::string& _type_name, ParameterConstRef parameters)
+   {
+      const auto ptd_type = tree_helper::CGetPointedType(tree_helper::CGetType(tn));
+      bool is_signed = tree_helper::IsSignedIntegerType(ptd_type);
+      bool is_fixed = false;
+      const auto type_name =
+          boost::regex_replace(_type_name, boost::regex("(ac_channel|stream|hls::stream)<(.*)>"), "$2");
+      const auto ac_bitwidth = ac_type_bitwidth(type_name, is_signed, is_fixed);
+      const auto _type = ac_bitwidth != 0ULL ? datatype::ac_type :
+                                               (tree_helper::IsRealType(ptd_type) ? datatype::real : datatype::generic);
+      if(type != datatype::ac_type)
+      {
+         const auto _bitwidth = [&]() {
+            if(_type == datatype::ac_type)
+            {
+               return ac_bitwidth;
+            }
+            else if(tree_helper::IsArrayEquivType(ptd_type))
+            {
+               return tree_helper::GetArrayElementSize(ptd_type);
+            }
+            else if(tree_helper::IsPointerType(ptd_type) || tree_helper::IsStructType(ptd_type))
+            {
+               return static_cast<unsigned long long>(CompilerWrapper::CGetPointerSize(parameters));
+            }
+            return tree_helper::Size(ptd_type);
+         }();
+         const auto _alignment = static_cast<unsigned>(
+             (_type == datatype::ac_type ? get_aligned_ac_bitsize(_bitwidth) : get_aligned_bitsize(_bitwidth)) >> 3);
+         alignment = std::max(alignment, _alignment);
+         if(_fixed_size && bitwidth && bitwidth != _bitwidth)
+         {
+            THROW_ERROR("Unaligned access not allowed for required interface!");
+         }
+         bitwidth = std::max(bitwidth, _bitwidth);
+         type = (_type == datatype::ac_type || _type == type) ? _type : datatype::generic;
+      }
+   }
+};
 
 InterfaceInfer::InterfaceInfer(const application_managerRef _AppM, const DesignFlowManagerConstRef _design_flow_manager,
                                const ParameterConstRef _parameters)
@@ -558,7 +589,7 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                const auto& arg_type = arg_pd->type;
                THROW_ASSERT(GetPointer<const identifier_node>(GET_CONST_NODE(arg_pd->name)), "unexpected condition");
                const auto& arg_name = GetPointerS<const identifier_node>(GET_CONST_NODE(arg_pd->name))->strg;
-               INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Parameter @" + STR(arg_id) + " " + arg_name);
+               INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Parameter @" + STR(arg_id) + " " + arg_name);
                THROW_ASSERT(DesignAttributes.count(arg_name) &&
                                 DesignAttributes.at(arg_name).count(attr_interface_type),
                             "Not matched parameter name: " + arg_name);
@@ -589,7 +620,8 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                   if(tree_helper::IsPointerType(arg_type))
                   {
                      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Is a pointer type");
-                     interface_info info;
+                     interface_info info(interface_type == "array" || interface_type == "fifo" ||
+                                         interface_type == "axis");
                      info.update(arg_ssa, HLSMgr->design_attributes.at(fname).at(arg_name).at(attr_typename),
                                  parameters);
 
@@ -669,6 +701,7 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                      INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Bitwidth  : " + STR(info.bitwidth));
                      INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Alignment : " + STR(info.alignment));
                      INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "<--");
+                     THROW_ASSERT(info.bitwidth, "");
 
                      std::set<std::string> operationsR, operationsW;
                      const auto interface_datatype = tree_man->GetCustomIntegerType(info.bitwidth, true);
@@ -1131,19 +1164,8 @@ void InterfaceInfer::setReadInterface(tree_nodeRef stmt, const std::string& arg_
          const auto sel_value = TM->CreateUniqueIntegerCst(0, boolean_type);
          const auto size_value =
              TM->CreateUniqueIntegerCst(static_cast<long long>(tree_helper::Size(actual_type)), bit_size_type);
-         const auto data_value = [&]() -> tree_nodeRef {
-            if(tree_helper::IsEnumType(interface_datatype) || tree_helper::IsPointerType(interface_datatype) ||
-               GET_CONST_NODE(interface_datatype)->get_kind() == integer_type_K)
-            {
-               return TM->CreateUniqueIntegerCst(0, interface_datatype);
-            }
-            else if(tree_helper::IsRealType(interface_datatype))
-            {
-               return TM->CreateUniqueRealCst(0.l, interface_datatype);
-            }
-            THROW_ERROR("unexpected data type");
-            return nullptr;
-         }();
+
+         const auto data_value = TM->CreateUniqueIntegerCst(0, interface_datatype);
          args.push_back(sel_value);
          args.push_back(size_value);
          args.push_back(data_value);
@@ -1659,7 +1681,7 @@ void InterfaceInfer::create_resource_array(const std::set<std::string>& operatio
                                            unsigned int top_id) const
 {
    const auto n_channels = parameters->getOption<unsigned int>(OPT_channels_number);
-   const auto isDP = info.bitwidth <= 64ULL && n_channels == 2;
+   const auto isDP = n_channels == 2;
    const auto n_resources = isDP ? 2U : 1U;
    const auto read_write_string = (isDP ? std::string("ReadWriteDP_") : std::string("ReadWrite_"));
    const auto ResourceName = ENCODE_FDNAME(bundle_name, "", "");
