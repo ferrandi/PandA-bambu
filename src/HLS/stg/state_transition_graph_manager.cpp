@@ -80,6 +80,9 @@
 #include "boost/graph/topological_sort.hpp"
 #include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
 
+#define PP_MAX_STATES_BOUNDED "max-states-bounded"
+#define DEFAULT_MAX_STATES_BOUNDED (10)
+
 StateTransitionGraphManager::StateTransitionGraphManager(const HLS_managerConstRef _HLSMgr, hlsRef _HLS,
                                                          const ParameterConstRef _Param)
     : state_transition_graphs_collection(StateTransitionGraphsCollectionRef(new StateTransitionGraphsCollection(
@@ -98,6 +101,9 @@ StateTransitionGraphManager::StateTransitionGraphManager(const HLS_managerConstR
       Param(_Param),
       output_level(_Param->getOption<int>(OPT_output_level)),
       debug_level(_Param->getOption<int>(OPT_debug_level)),
+      _max_states_bounded(_Param->IsParameter(PP_MAX_STATES_BOUNDED) ?
+                              _Param->GetParameter<unsigned int>(PP_MAX_STATES_BOUNDED) :
+                              DEFAULT_MAX_STATES_BOUNDED),
       HLS(_HLS),
       STG_builder(StateTransitionGraph_constructorRef(
           new StateTransitionGraph_constructor(state_transition_graphs_collection, _HLSMgr, _HLS->functionId)))
@@ -126,7 +132,9 @@ const StateTransitionGraphConstRef StateTransitionGraphManager::CGetEPPStg() con
 void StateTransitionGraphManager::ComputeCyclesCount(bool is_pipelined)
 {
    auto info = STG_graph->GetStateTransitionGraphInfo();
-   if(info->is_a_dag && !Param->getOption<bool>(OPT_disable_bounded_function))
+   const auto state_count = get_number_of_states();
+   if(info->is_a_dag && (is_pipelined || state_count <= _max_states_bounded) &&
+      !Param->getOption<bool>(OPT_disable_bounded_function))
    {
       std::list<vertex> sorted_vertices;
       ACYCLIC_STG_graph->TopologicalSort(sorted_vertices);
