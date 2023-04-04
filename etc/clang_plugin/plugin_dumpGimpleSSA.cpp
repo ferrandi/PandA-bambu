@@ -394,32 +394,31 @@ llvm::PassPluginLibraryInfo CLANG_PLUGIN_INFO(_plugin_dumpGimpleSSA)()
                  MPM.addPass(llvm::createModuleToFunctionPassAdaptor(std::move(FPM0)));
              if(doOpt)
              {
-                MPM.addPass(llvm::GlobalDCEPass());
-                MPM.addPass(llvm::ForceFunctionAttrsPass());
-                MPM.addPass(llvm::InferFunctionAttrsPass());
-                MPM.addPass(llvm::createModuleToPostOrderCGSCCPassAdaptor(llvm::PostOrderFunctionAttrsPass()));
-                MPM.addPass(llvm::ReversePostOrderFunctionAttrsPass());
-                MPM.addPass(llvm::GlobalSplitPass());
-                MPM.addPass(llvm::GlobalOptPass());
+                 MPM.addPass(llvm::GlobalDCEPass());
+                 MPM.addPass(llvm::ForceFunctionAttrsPass());
+                 MPM.addPass(llvm::InferFunctionAttrsPass());
+                 MPM.addPass(llvm::createModuleToPostOrderCGSCCPassAdaptor(llvm::PostOrderFunctionAttrsPass()));
+                 MPM.addPass(llvm::ReversePostOrderFunctionAttrsPass());
+                 MPM.addPass(llvm::GlobalSplitPass());
+                 MPM.addPass(llvm::GlobalOptPass());
              }
-             MPM.addPass(createModuleToFunctionPassAdaptor(llvm::PromotePass()));
+                 MPM.addPass(createModuleToFunctionPassAdaptor(llvm::PromotePass()));
              if(doOpt)
              {
-                MPM.addPass(llvm::DeadArgumentEliminationPass());
-                llvm::FunctionPassManager PeepholeFPM;
-                PeepholeFPM.addPass(llvm::InstCombinePass());
-                MPM.addPass(llvm::createModuleToFunctionPassAdaptor(std::move(PeepholeFPM)));
+                 MPM.addPass(llvm::DeadArgumentEliminationPass());
+                 llvm::FunctionPassManager PeepholeFPM;
+                 PeepholeFPM.addPass(llvm::InstCombinePass());
+                 MPM.addPass(llvm::createModuleToFunctionPassAdaptor(std::move(PeepholeFPM)));
              }
-             MPM.addPass(llvm::GlobalOptPass());
-             MPM.addPass(llvm::GlobalDCEPass());
-             MPM.addPass(llvm::createModuleToPostOrderCGSCCPassAdaptor(llvm::ArgumentPromotionPass(256)));
+                 MPM.addPass(llvm::GlobalOptPass());
+                 MPM.addPass(llvm::GlobalDCEPass());
+                 MPM.addPass(llvm::createModuleToPostOrderCGSCCPassAdaptor(llvm::ArgumentPromotionPass(256)));
              llvm::FunctionPassManager FPM1a;
              FPM1a.addPass(llvm::InstCombinePass());
              MPM.addPass(llvm::createModuleToFunctionPassAdaptor(std::move(FPM1a)));
              if(doOpt)
              {
                  llvm::FunctionPassManager FPM1;
-                 FPM1.addPass(llvm::InstCombinePass());
                  FPM1.addPass(llvm::JumpThreadingPass());
 #if __clang_major__ >= 16
                  FPM1.addPass(llvm::SROAPass(llvm::SROAOptions::ModifyCFG));
@@ -445,15 +444,15 @@ llvm::PassPluginLibraryInfo CLANG_PLUGIN_INFO(_plugin_dumpGimpleSSA)()
                  llvm::LoopPassManager LPM2;
                  LPM2.addPass(llvm::LoopRotatePass());
 #if __clang_major__ >= 16
-                LPM2.addPass(llvm::LoopFlattenPass());
+                 LPM2.addPass(llvm::LoopFlattenPass());
 #endif
-                LPM2.addPass(llvm::IndVarSimplifyPass());
-                LPM2.addPass(llvm::LoopDeletionPass());
-                LPM2.addPass(llvm::LoopRotatePass());
-                FPM2.addPass(llvm::createFunctionToLoopPassAdaptor(std::move(LPM2), /*UseMemorySSA=*/false,
-                                                                   /*UseBlockFrequencyInfo=*/true));
-                FPM2.addPass(llvm::LoopFusePass());
-                FPM2.addPass(llvm::JumpThreadingPass());
+                 LPM2.addPass(llvm::IndVarSimplifyPass());
+                 LPM2.addPass(llvm::LoopDeletionPass());
+                 LPM2.addPass(llvm::LoopRotatePass());
+                 FPM2.addPass(llvm::createFunctionToLoopPassAdaptor(std::move(LPM2), /*UseMemorySSA=*/false,
+                                                                    /*UseBlockFrequencyInfo=*/true));
+                 FPM2.addPass(llvm::LoopFusePass());
+                 FPM2.addPass(llvm::JumpThreadingPass());
                  MPM.addPass(llvm::createModuleToFunctionPassAdaptor(std::move(FPM2)));
                  MPM.addPass(createModuleToFunctionPassAdaptor(llvm::SimplifyCFGPass(llvm::SimplifyCFGOptions()
 #if __clang_major__ >= 16
