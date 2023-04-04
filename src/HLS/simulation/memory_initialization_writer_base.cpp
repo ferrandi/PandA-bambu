@@ -208,8 +208,8 @@ void MemoryInitializationWriterBase::GoDown()
       {
          return tree_helper::CGetPointedType(type_node);
       }
-      THROW_ERROR("Unexpected nested initialization " + type_node->get_kind_text() + " - Current status is " +
-                  PrintStatus());
+      THROW_ERROR("Unexpected nested initialization " + GET_CONST_NODE(type_node)->get_kind_text() +
+                  " - Current status is " + PrintStatus());
       return tree_nodeConstRef();
    }();
    status.push_back(std::make_pair(new_type, 0));
@@ -256,7 +256,7 @@ const std::string MemoryInitializationWriterBase::PrintStatus() const
       {
          ret += ":";
       }
-      ret += level.first->get_kind_text() + "[" + STR(level.second) + "]";
+      ret += GET_CONST_NODE(level.first)->get_kind_text() + "[" + STR(level.second) + "]";
    }
    return ret;
 }
