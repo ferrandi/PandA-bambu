@@ -74,13 +74,11 @@ size_t FunctionCallOpt::inline_max_cost = DEAFULT_MAX_INLINE_CONST;
 unsigned FunctionCallOpt::version_uid = 1U;
 
 static CustomUnorderedMap<kind, size_t> op_costs = {
-    {call_expr_K, 8},          {mult_expr_K, 3},          {widen_mult_expr_K, 3},
-    {widen_mult_hi_expr_K, 3}, {widen_mult_lo_expr_K, 3}, {trunc_div_expr_K, 3},
-    {exact_div_expr_K, 3},     {round_div_expr_K, 3},     {ceil_div_expr_K, 3},
-    {floor_div_expr_K, 3},     {trunc_mod_expr_K, 3},     {round_mod_expr_K, 3},
-    {ceil_mod_expr_K, 3},      {floor_mod_expr_K, 3},     {view_convert_expr_K, 0},
-    {convert_expr_K, 0},       {nop_expr_K, 0},           {ssa_name_K, 0},
-    {addr_expr_K, 0},          {lut_expr_K, 0},           {bit_ior_concat_expr_K, 0},
+    {call_expr_K, 8},          {mult_expr_K, 3},      {widen_mult_expr_K, 3},   {widen_mult_hi_expr_K, 3},
+    {widen_mult_lo_expr_K, 3}, {trunc_div_expr_K, 3}, {exact_div_expr_K, 3},    {round_div_expr_K, 3},
+    {ceil_div_expr_K, 3},      {floor_div_expr_K, 3}, {trunc_mod_expr_K, 3},    {round_mod_expr_K, 3},
+    {ceil_mod_expr_K, 3},      {floor_mod_expr_K, 3}, {view_convert_expr_K, 0}, {convert_expr_K, 0},
+    {nop_expr_K, 0},           {ssa_name_K, 0},       {addr_expr_K, 0},         {bit_ior_concat_expr_K, 0},
     {extract_bit_expr_K, 0}};
 
 FunctionCallOpt::FunctionCallOpt(const ParameterConstRef Param, const application_managerRef _AppM,
@@ -352,9 +350,7 @@ DesignFlowStep_Status FunctionCallOpt::InternalExec()
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---OpenMP SIMD    : " + STR(has_simd ? "yes" : "no"));
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                         "---Force inline   : " + STR(always_inline.count(function_id) ? "yes" : "no"));
-         const bool inline_funciton = always_inline.count(function_id) ||
-                                      ((body_cost * call_count) <= inline_max_cost) ||
-                                      (call_count == 1 && ((body_cost / 2) <= inline_max_cost));
+         const bool inline_funciton = always_inline.count(function_id) || ((body_cost * call_count) <= inline_max_cost);
          if(has_simd)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
