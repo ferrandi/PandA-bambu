@@ -42,26 +42,27 @@
 
 #include "FunctionCallOpt.hpp"
 
+#include "Dominance.hpp"
+#include "Parameter.hpp"
 #include "application_manager.hpp"
 #include "basic_block.hpp"
 #include "basic_blocks_graph_constructor.hpp"
 #include "call_graph.hpp"
 #include "call_graph_manager.hpp"
+#include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
 #include "design_flow_graph.hpp"
 #include "design_flow_manager.hpp"
 #include "ext_tree_node.hpp"
 #include "function_behavior.hpp"
+#include "hls.hpp"
+#include "hls_manager.hpp"
+#include "string_manipulation.hpp" // for GET_CLASS
 #include "tree_basic_block.hpp"
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
 #include "tree_manipulation.hpp"
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
-
-#include "Dominance.hpp"
-#include "Parameter.hpp"
-#include "dbgPrintHelper.hpp"      // for DEBUG_LEVEL_
-#include "string_manipulation.hpp" // for GET_CLASS
 
 #define PARAMETER_INLINE_MAX_COST "inline-max-cost"
 #define DEAFULT_MAX_INLINE_CONST 60
@@ -178,6 +179,13 @@ DesignFlowStep_Status FunctionCallOpt::InternalExec()
 {
    THROW_ASSERT(!parameters->IsParameter("function-opt") || parameters->GetParameter<bool>("function-opt"),
                 "Function call optimization should not be executed");
+   if(GetPointer<const HLS_manager>(AppM) && GetPointer<const HLS_manager>(AppM)->get_HLS(function_id) &&
+      GetPointer<const HLS_manager>(AppM)->get_HLS(function_id)->Rsch)
+   {
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                     "---Function already scheduled, inlining is not possible any more");
+      return DesignFlowStep_Status::UNCHANGED;
+   }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
    const auto TM = AppM->get_tree_manager();
    const auto fd = GetPointerS<function_decl>(TM->GetTreeNode(function_id));
