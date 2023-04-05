@@ -94,7 +94,7 @@ class StateTransitionGraphManager
    /// debugging level
    int debug_level;
 
-   const unsigned int _max_states_bounded;
+   const unsigned int _max_cycles_bounded;
 
    // Tells to the get_states method which states you are looking for
    enum StateTypes
