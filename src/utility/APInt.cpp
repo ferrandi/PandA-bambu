@@ -272,12 +272,22 @@ bool APInt::sign() const
    return _data < 0;
 }
 
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wconversion"
+#pragma clang diagnostic ignored "-Wsign-conversion"
+#else
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wconversion"
+#pragma GCC diagnostic ignored "-Wsign-conversion"
+#endif
+
 APInt& APInt::extOrTrunc(bw_t bw, bool sign)
 {
    THROW_ASSERT(bw, "Minimum bitwidth of 1 is required");
    const number mask = (0x1_apint << bw) - 1;
    _data &= mask;
-   if(sign && bit_tst(static_cast<bw_t>(bw - 1U)))
+   if(sign && bit_tst(bw - 1U))
    {
       _data += (-0x1_apint << bw);
    }
@@ -289,7 +299,7 @@ APInt APInt::extOrTrunc(bw_t bw, bool sign) const
    THROW_ASSERT(bw, "Minimum bitwidth of 1 is required");
    const number mask = (0x1_apint << bw) - 1;
    APInt val(_data & mask);
-   if(sign && val.bit_tst(static_cast<bw_t>(bw - 1U)))
+   if(sign && val.bit_tst(bw - 1U))
    {
       val += (-0x1_apint << bw);
    }
@@ -335,7 +345,7 @@ bw_t APInt::leadingZeros(bw_t bw) const
       const auto& val = limbs[i];
       if(val != 0)
       {
-         return lzc + static_cast<bw_t>(__builtin_clzll(val));
+         return lzc + __builtin_clzll(val);
       }
       lzc += backend::limb_bits;
    }
@@ -347,10 +357,10 @@ bw_t APInt::leadingOnes(bw_t bw) const
    bw_t i = bw;
    for(; i > 0; --i)
    {
-      if(!bit_tst(static_cast<bw_t>(i - 1U)))
+      if(!bit_tst(i - 1U))
          break;
    }
-   return static_cast<bw_t>(bw - i);
+   return bw - i;
 }
 
 APInt::bw_t APInt::minBitwidth(bool sign) const
@@ -359,7 +369,7 @@ APInt::bw_t APInt::minBitwidth(bool sign) const
    {
       if(!sign)
       {
-         return static_cast<bw_t>(std::numeric_limits<number>::digits);
+         return std::numeric_limits<number>::digits;
       }
       return std::numeric_limits<number>::digits + 1 -
              APInt(-_data - 1).leadingZeros(std::numeric_limits<number>::digits);
@@ -370,6 +380,12 @@ APInt::bw_t APInt::minBitwidth(bool sign) const
    }
    return std::numeric_limits<number>::digits - leadingZeros(std::numeric_limits<number>::digits) + sign;
 }
+
+#ifdef __clang__
+#pragma clang diagnostic pop
+#else
+#pragma GCC diagnostic pop
+#endif
 
 APInt APInt::getMaxValue(bw_t bw)
 {
