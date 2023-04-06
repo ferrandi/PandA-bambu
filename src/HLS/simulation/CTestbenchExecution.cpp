@@ -147,8 +147,8 @@ DesignFlowStep_Status CTestbenchExecution::Exec()
    const auto top_function_name =
        HLSMgr->CGetFunctionBehavior(top_function_id)->CGetBehavioralHelper()->get_function_name();
    const auto default_compiler = parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler);
-   // NOTE: clang 13 and 16 seems to not respect the -fno-strict-aliasing flag generating incorrect code when type
-   // punning is present
+   // NOTE: starting from version 13 on it seems clang is not respecting the -fno-strict-aliasing flag generating
+   // incorrect code when type punning is present
    const auto opt_lvl =
 #if HAVE_I386_CLANG13_COMPILER
        default_compiler == CompilerWrapper_CompilerTarget::CT_I386_CLANG13

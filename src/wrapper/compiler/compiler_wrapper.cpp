@@ -4832,18 +4832,17 @@ std::string CompilerWrapper::load_plugin(const std::string& plugin_obj, Compiler
 #endif
 )
 {
+   if(false
 #if HAVE_I386_CLANG13_COMPILER
-   if(target == CompilerWrapper_CompilerTarget::CT_I386_CLANG13)
-   {
-      return " -fpass-plugin=" + plugin_obj + " -Xclang -load -Xclang " + plugin_obj;
-   }
+      || target == CompilerWrapper_CompilerTarget::CT_I386_CLANG13
 #endif
 #if HAVE_I386_CLANG16_COMPILER
-   if(target == CompilerWrapper_CompilerTarget::CT_I386_CLANG16)
+      || target == CompilerWrapper_CompilerTarget::CT_I386_CLANG16
+#endif
+   )
    {
       return " -fpass-plugin=" + plugin_obj + " -Xclang -load -Xclang " + plugin_obj;
    }
-#endif
    return " -fplugin=" + plugin_obj;
 }
 
@@ -4855,17 +4854,16 @@ std::string CompilerWrapper::load_plugin_opt(std::string plugin_obj, CompilerWra
 {
    boost::replace_all(plugin_obj, ".so", "_opt.so");
    auto flags = " -load=" + plugin_obj;
+   if(false
 #if HAVE_I386_CLANG13_COMPILER
-   if(target == CompilerWrapper_CompilerTarget::CT_I386_CLANG13)
-   {
-      flags += " -load-pass-plugin=" + plugin_obj;
-   }
+      || target == CompilerWrapper_CompilerTarget::CT_I386_CLANG13
 #endif
 #if HAVE_I386_CLANG16_COMPILER
-   if(target == CompilerWrapper_CompilerTarget::CT_I386_CLANG16)
+      || target == CompilerWrapper_CompilerTarget::CT_I386_CLANG16
+#endif
+   )
    {
       flags += " -load-pass-plugin=" + plugin_obj;
    }
-#endif
    return flags;
 }
