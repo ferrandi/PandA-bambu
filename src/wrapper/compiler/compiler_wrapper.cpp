@@ -4435,11 +4435,9 @@ std::string CompilerWrapper::load_plugin(const std::string& plugin_obj, Compiler
       return " -fpass-plugin=" + plugin_obj + " -Xclang -load -Xclang " + plugin_obj;
    }
 #if HAVE_I386_CLANG16_COMPILER
-   if(target == CompilerWrapper_CompilerTarget::CT_I386_CLANG16)
    {
       return " -fpass-plugin=" + plugin_obj + " -Xclang -load -Xclang " + plugin_obj;
    }
-#endif
    return " -fplugin=" + plugin_obj;
 }
 
@@ -4453,10 +4451,8 @@ std::string CompilerWrapper::load_plugin_opt(std::string plugin_obj, CompilerWra
       flags += " -load-pass-plugin=" + plugin_obj;
    }
 #if HAVE_I386_CLANG16_COMPILER
-   if(target == CompilerWrapper_CompilerTarget::CT_I386_CLANG16)
    {
       flags += " -load-pass-plugin=" + plugin_obj;
    }
-#endif
    return flags;
 }
