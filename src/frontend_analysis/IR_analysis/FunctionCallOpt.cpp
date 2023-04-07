@@ -86,32 +86,36 @@ FunctionCallOpt::FunctionCallOpt(const ParameterConstRef Param, const applicatio
     : FunctionFrontendFlowStep(_AppM, _function_id, FUNCTION_CALL_OPT, _design_flow_manager, Param), caller_bb()
 {
    debug_level = Param->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
-   if(Param->IsParameter(PARAMETER_INLINE_MAX_COST))
+   if(never_inline.empty())
    {
-      inline_max_cost = Param->GetParameter<size_t>(PARAMETER_INLINE_MAX_COST);
-   }
-   if(Param->isOption(OPT_inline_functions))
-   {
-      const auto TM = AppM->get_tree_manager();
-      const auto fnames = SplitString(Param->getOption<std::string>(OPT_inline_functions), ",");
-      for(const auto& fname_cond : fnames)
+      if(Param->IsParameter(PARAMETER_INLINE_MAX_COST))
       {
-         const auto toks = SplitString(fname_cond, "=");
-         const auto& fname = toks.at(0);
-         const auto fnode = TM->GetFunction(fname);
-         if(fnode)
+         inline_max_cost = Param->GetParameter<size_t>(PARAMETER_INLINE_MAX_COST);
+      }
+      if(Param->isOption(OPT_inline_functions))
+      {
+         const auto TM = AppM->get_tree_manager();
+         const auto fnames = SplitString(Param->getOption<std::string>(OPT_inline_functions), ",");
+         for(const auto& fname_cond : fnames)
          {
-            auto& inline_set = (!(toks.size() > 1) || toks.at(1) == "1") ? always_inline : never_inline;
-            inline_set.insert(fnode->index);
-            INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
-                           "Required " + STR((!(toks.size() > 1) || toks.at(1) == "1") ? "always" : "never") +
-                               " inline for function " + fname);
-         }
-         else
-         {
-            INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "Required inline function not found: " + fname);
+            const auto toks = SplitString(fname_cond, "=");
+            const auto& fname = toks.at(0);
+            const auto fnode = TM->GetFunction(fname);
+            if(fnode)
+            {
+               auto& inline_set = (!(toks.size() > 1) || toks.at(1) == "1") ? always_inline : never_inline;
+               inline_set.insert(fnode->index);
+               INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
+                              "Required " + STR((!(toks.size() > 1) || toks.at(1) == "1") ? "always" : "never") +
+                                  " inline for function " + fname);
+            }
+            else
+            {
+               INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "Required inline function not found: " + fname);
+            }
          }
       }
+      never_inline.insert(0);
    }
 }
 
@@ -318,6 +322,10 @@ DesignFlowStep_Status FunctionCallOpt::InternalExec()
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                      "Current function is marked as top RTL design, skipping...");
+   }
+   else if(never_inline.count(function_id))
+   {
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Current function is marked as never inline, skipping...");
    }
    else
    {
