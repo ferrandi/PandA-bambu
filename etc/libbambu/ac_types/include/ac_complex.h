@@ -70,13 +70,13 @@ namespace __AC_NAMESPACE
          template <typename T2>
          struct op1
          {
-            typedef typename T::template rt_T<ac_complex<T2>>::mult mult;
-            typedef typename T::template rt_T<ac_complex<T2>>::plus plus;
-            typedef typename T::template rt_T<ac_complex<T2>>::minus2 minus;
-            typedef typename T::template rt_T<ac_complex<T2>>::minus minus2;
-            typedef typename T::template rt_T<ac_complex<T2>>::logic logic;
-            typedef typename T::template rt_T<ac_complex<T2>>::div2 div;
-            typedef typename T::template rt_T<ac_complex<T2>>::div div2;
+            using mult = typename T::template rt_T<ac_complex<T2>>::mult;
+            using plus = typename T::template rt_T<ac_complex<T2>>::plus;
+            using minus = typename T::template rt_T<ac_complex<T2>>::minus2;
+            using minus2 = typename T::template rt_T<ac_complex<T2>>::minus;
+            using logic = typename T::template rt_T<ac_complex<T2>>::logic;
+            using div = typename T::template rt_T<ac_complex<T2>>::div2;
+            using div2 = typename T::template rt_T<ac_complex<T2>>::div;
          };
       };
    } // namespace ac_private
@@ -87,42 +87,40 @@ namespace __AC_NAMESPACE
     public: // temporary workaround
       T _r;
       T _i;
-      typedef typename ac_private::map<T>::t map_T;
-      typedef typename map_T::rt_unary::mag_sqr T_sqr;
-      typedef typename ac_private::map<T_sqr>::t map_T_sqr;
-      typedef typename ac_private::map<typename map_T::rt_unary::mag>::t map_T_mag;
+      using map_T = typename ac_private::map<T>::t;
+      using T_sqr = typename map_T::rt_unary::mag_sqr;
+      using map_T_sqr = typename ac_private::map<T_sqr>::t;
+      using map_T_mag = typename ac_private::map<typename map_T::rt_unary::mag>::t;
 
     public:
-      typedef T element_type;
+      using element_type = T;
       template <typename T2>
       struct rt_T
       {
-         typedef typename ac_private::map<T2>::t map_T2;
-         typedef typename ac_private::rt_ac_complex_T<map_T2>::template op1<map_T>::mult mult;
-         typedef typename ac_private::rt_ac_complex_T<map_T2>::template op1<map_T>::plus plus;
-         typedef typename ac_private::rt_ac_complex_T<map_T2>::template op1<map_T>::minus minus;
-         typedef typename ac_private::rt_ac_complex_T<map_T2>::template op1<map_T>::minus2 minus2;
-         typedef typename ac_private::rt_ac_complex_T<map_T2>::template op1<map_T>::logic logic;
-         typedef typename ac_private::rt_ac_complex_T<map_T2>::template op1<map_T>::div div;
-         typedef typename ac_private::rt_ac_complex_T<map_T2>::template op1<map_T>::div2 div2;
-         typedef ac_complex<T> arg1;
+         using map_T2 = typename ac_private::map<T2>::t;
+         using mult = typename ac_private::rt_ac_complex_T<map_T2>::template op1<map_T>::mult;
+         using plus = typename ac_private::rt_ac_complex_T<map_T2>::template op1<map_T>::plus;
+         using minus = typename ac_private::rt_ac_complex_T<map_T2>::template op1<map_T>::minus;
+         using minus2 = typename ac_private::rt_ac_complex_T<map_T2>::template op1<map_T>::minus2;
+         using logic = typename ac_private::rt_ac_complex_T<map_T2>::template op1<map_T>::logic;
+         using div = typename ac_private::rt_ac_complex_T<map_T2>::template op1<map_T>::div;
+         using div2 = typename ac_private::rt_ac_complex_T<map_T2>::template op1<map_T>::div2;
+         using arg1 = ac_complex<T>;
       };
 
       struct rt_unary
       {
-         typedef typename map_T_sqr::template rt_T<map_T_sqr>::plus mag_sqr;
-         typedef typename map_T_mag::template rt_T<map_T_mag>::plus mag; // overly conservative for signed
-         typedef ac_complex<typename map_T::rt_unary::neg> neg;
+         using mag_sqr = typename map_T_sqr::template rt_T<map_T_sqr>::plus;
+         using mag = typename map_T_mag::template rt_T<map_T_mag>::plus; // overly conservative for signed
+         using neg = ac_complex<typename map_T::rt_unary::neg>;
          template <unsigned N>
          struct set
          {
-            typedef ac_complex<typename map_T::rt_unary::template set<N>::sum> sum;
+            using sum = ac_complex<typename map_T::rt_unary::template set<N>::sum>;
          };
       };
 
-      ac_complex()
-      {
-      }
+      ac_complex() = default;
       template <typename T2>
       ac_complex(const ac_complex<T2>& c)
       {
@@ -304,84 +302,83 @@ namespace __AC_NAMESPACE
          template <typename T>
          struct op1
          {
-            typedef ac_complex<typename ac::rt_2T<T, T2>::plus> plus;
-            typedef ac_complex<typename ac::rt_2T<T, T2>::minus> minus;
-            typedef ac_complex<typename ac::rt_2T<T, T2>::minus2> minus2;
-            typedef ac_complex<typename ac::rt_2T<T, T2>::logic> logic;
-            typedef ac_complex<typename ac::rt_2T<T, T2>::div> div;
-            typedef ac_complex<typename ac::rt_2T<T, T2>::div2> div2;
-            typedef ac_complex<typename ac::rt_2T<
+            using plus = ac_complex<typename ac::rt_2T<T, T2>::plus>;
+            using minus = ac_complex<typename ac::rt_2T<T, T2>::minus>;
+            using minus2 = ac_complex<typename ac::rt_2T<T, T2>::minus2>;
+            using logic = ac_complex<typename ac::rt_2T<T, T2>::logic>;
+            using div = ac_complex<typename ac::rt_2T<T, T2>::div>;
+            using div2 = ac_complex<typename ac::rt_2T<T, T2>::div2>;
+            using mult = ac_complex<typename ac::rt_2T<
                 typename ac::rt_2T<typename ac::rt_2T<T, T2>::mult, typename ac::rt_2T<T, T2>::mult>::plus,
-                typename ac::rt_2T<typename ac::rt_2T<T, T2>::mult, typename ac::rt_2T<T, T2>::mult>::minus>::logic>
-                mult;
+                typename ac::rt_2T<typename ac::rt_2T<T, T2>::mult, typename ac::rt_2T<T, T2>::mult>::minus>::logic>;
          };
       };
       // with T2 == ac_float
       template <AC_FL_T0(2)>
       struct rt_ac_complex_T<AC_FL0(2)>
       {
-         typedef AC_FL0(2) T2;
+         using T2 = ac_float<W2, I2, E2>;
          template <typename T>
          struct op1
          {
-            typedef ac_complex<typename T::template rt_T<T2>::plus> plus;
-            typedef ac_complex<typename T::template rt_T<T2>::minus> minus;
-            typedef ac_complex<typename T::template rt_T<T2>::minus2> minus2;
-            typedef ac_complex<typename T::template rt_T<T2>::logic> logic;
-            typedef ac_complex<typename T::template rt_T<T2>::div> div;
-            typedef ac_complex<typename T::template rt_T<T2>::div2> div2;
-            typedef ac_complex<typename T::template rt_T<T2>::mult> mult;
+            using plus = ac_complex<typename T::template rt_T<T2>::plus>;
+            using minus = ac_complex<typename T::template rt_T<T2>::minus>;
+            using minus2 = ac_complex<typename T::template rt_T<T2>::minus2>;
+            using logic = ac_complex<typename T::template rt_T<T2>::logic>;
+            using div = ac_complex<typename T::template rt_T<T2>::div>;
+            using div2 = ac_complex<typename T::template rt_T<T2>::div2>;
+            using mult = ac_complex<typename T::template rt_T<T2>::mult>;
          };
       };
       // with T2 == ac_fixed
       template <int W2, int I2, bool S2>
       struct rt_ac_complex_T<ac_fixed<W2, I2, S2>>
       {
-         typedef ac_fixed<W2, I2, S2> T2;
+         using T2 = ac_fixed<W2, I2, S2>;
          template <typename T>
          struct op1
          {
-            typedef ac_complex<typename T::template rt_T<T2>::plus> plus;
-            typedef ac_complex<typename T::template rt_T<T2>::minus> minus;
-            typedef ac_complex<typename T::template rt_T<T2>::minus2> minus2;
-            typedef ac_complex<typename T::template rt_T<T2>::logic> logic;
-            typedef ac_complex<typename T::template rt_T<T2>::div> div;
-            typedef ac_complex<typename T::template rt_T<T2>::div2> div2;
-            typedef ac_complex<typename T::template rt_T<T2>::mult> mult;
+            using plus = ac_complex<typename T::template rt_T<T2>::plus>;
+            using minus = ac_complex<typename T::template rt_T<T2>::minus>;
+            using minus2 = ac_complex<typename T::template rt_T<T2>::minus2>;
+            using logic = ac_complex<typename T::template rt_T<T2>::logic>;
+            using div = ac_complex<typename T::template rt_T<T2>::div>;
+            using div2 = ac_complex<typename T::template rt_T<T2>::div2>;
+            using mult = ac_complex<typename T::template rt_T<T2>::mult>;
          };
       };
       // with T2 == ac_int
       template <int W2, bool S2>
       struct rt_ac_complex_T<ac_int<W2, S2>>
       {
-         typedef ac_int<W2, S2> T2;
+         using T2 = ac_int<W2, S2>;
          template <typename T>
          struct op1
          {
-            typedef ac_complex<typename T::template rt_T<T2>::plus> plus;
-            typedef ac_complex<typename T::template rt_T<T2>::minus> minus;
-            typedef ac_complex<typename T::template rt_T<T2>::minus2> minus2;
-            typedef ac_complex<typename T::template rt_T<T2>::logic> logic;
-            typedef ac_complex<typename T::template rt_T<T2>::div> div;
-            typedef ac_complex<typename T::template rt_T<T2>::div2> div2;
-            typedef ac_complex<typename T::template rt_T<T2>::mult> mult;
+            using plus = ac_complex<typename T::template rt_T<T2>::plus>;
+            using minus = ac_complex<typename T::template rt_T<T2>::minus>;
+            using minus2 = ac_complex<typename T::template rt_T<T2>::minus2>;
+            using logic = ac_complex<typename T::template rt_T<T2>::logic>;
+            using div = ac_complex<typename T::template rt_T<T2>::div>;
+            using div2 = ac_complex<typename T::template rt_T<T2>::div2>;
+            using mult = ac_complex<typename T::template rt_T<T2>::mult>;
          };
       };
       // with T2 == c_type<TC>
       template <typename TC>
       struct rt_ac_complex_T<c_type<TC>>
       {
-         typedef c_type<TC> T2;
+         using T2 = c_type<TC>;
          template <typename T>
          struct op1
          {
-            typedef ac_complex<typename T::template rt_T<T2>::plus> plus;
-            typedef ac_complex<typename T::template rt_T<T2>::minus> minus;
-            typedef ac_complex<typename T::template rt_T<T2>::minus2> minus2;
-            typedef ac_complex<typename T::template rt_T<T2>::logic> logic;
-            typedef ac_complex<typename T::template rt_T<T2>::div> div;
-            typedef ac_complex<typename T::template rt_T<T2>::div2> div2;
-            typedef ac_complex<typename T::template rt_T<T2>::mult> mult;
+            using plus = ac_complex<typename T::template rt_T<T2>::plus>;
+            using minus = ac_complex<typename T::template rt_T<T2>::minus>;
+            using minus2 = ac_complex<typename T::template rt_T<T2>::minus2>;
+            using logic = ac_complex<typename T::template rt_T<T2>::logic>;
+            using div = ac_complex<typename T::template rt_T<T2>::div>;
+            using div2 = ac_complex<typename T::template rt_T<T2>::div2>;
+            using mult = ac_complex<typename T::template rt_T<T2>::mult>;
          };
       };
    } // namespace ac_private
@@ -540,7 +537,9 @@ namespace __AC_NAMESPACE
       {
          ac_complex<T> t = value<V>(*a);
          for(int i = 0; i < n; i++)
+         {
             a[i] = t;
+         }
          return true;
       }
    } // namespace ac

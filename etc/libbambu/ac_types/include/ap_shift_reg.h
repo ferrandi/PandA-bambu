@@ -46,7 +46,7 @@ template <typename DATATYPE, unsigned N = 32>
 struct ap_shift_reg
 {
    ap_shift_reg() = default;
-   ap_shift_reg(const char*)
+   explicit ap_shift_reg(const char*)
    {
    }
    ap_shift_reg(const ap_shift_reg<DATATYPE, N>& sr) = delete;
@@ -58,7 +58,9 @@ struct ap_shift_reg
       if(en)
       {
          for(auto i = N - 1; i > 0; --i)
+         {
             data[i] = data[i - 1];
+         }
          data[0] = val;
       }
       return res;

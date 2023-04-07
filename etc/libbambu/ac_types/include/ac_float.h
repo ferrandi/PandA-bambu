@@ -54,17 +54,6 @@
 #error Microsoft Visual Studio 8 or newer is required to include this header file
 #endif
 
-#if(defined(_MSC_VER) && !defined(__EDG__))
-#pragma warning(push)
-#pragma warning(disable : 4003 4127 4308 4365 4514 4800)
-#endif
-#if defined(__clang__)
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wparentheses"
-#pragma clang diagnostic ignored "-Wlogical-op-parentheses"
-#pragma clang diagnostic ignored "-Wbitwise-op-parentheses"
-#endif
-
 // for safety
 #if(defined(E) || defined(WF) || defined(IF) || defined(SF))
 #error One or more of the following is defined: E, WF, IF, SF. Definition conflicts with their usage as template parameters.
@@ -88,8 +77,8 @@ namespace __AC_NAMESPACE
 
    namespace ac_private
    {
-      typedef ac_float<54, 2, 11> ac_float_cdouble_t;
-      typedef ac_float<25, 2, 8> ac_float_cfloat_t;
+      using ac_float_cdouble_t = ac_float<54, 2, 11>;
+      using ac_float_cfloat_t = ac_float<25, 2, 8>;
 
       template <typename T>
       struct rt_ac_float_T
@@ -97,14 +86,14 @@ namespace __AC_NAMESPACE
          template <AC_FL_T0()>
          struct op1
          {
-            typedef AC_FL0() fl_t;
-            typedef typename T::template rt_T<fl_t>::mult mult;
-            typedef typename T::template rt_T<fl_t>::plus plus;
-            typedef typename T::template rt_T<fl_t>::minus2 minus;
-            typedef typename T::template rt_T<fl_t>::minus minus2;
-            typedef typename T::template rt_T<fl_t>::logic logic;
-            typedef typename T::template rt_T<fl_t>::div2 div;
-            typedef typename T::template rt_T<fl_t>::div div2;
+            using fl_t = ac_float<W, I, E>;
+            using mult = typename T::template rt_T<fl_t>::mult;
+            using plus = typename T::template rt_T<fl_t>::plus;
+            using minus = typename T::template rt_T<fl_t>::minus2;
+            using minus2 = typename T::template rt_T<fl_t>::minus;
+            using logic = typename T::template rt_T<fl_t>::logic;
+            using div = typename T::template rt_T<fl_t>::div2;
+            using div2 = typename T::template rt_T<fl_t>::div;
          };
       };
       // specializations after definition of ac_float
@@ -129,8 +118,8 @@ namespace __AC_NAMESPACE
       };
 
     public:
-      typedef ac_fixed<W, I, S> mant_t;
-      typedef ac_int<E, true> exp_t;
+      using mant_t = ac_fixed<W, I, S>;
+      using exp_t = ac_int<E, true>;
       mant_t m;
       exp_t e;
 
@@ -141,7 +130,9 @@ namespace __AC_NAMESPACE
       void set_exp(const ac_int<E, true>& exp)
       {
          if(E)
+         {
             e = exp;
+         }
       }
 
     private:
@@ -194,12 +185,12 @@ namespace __AC_NAMESPACE
             logic_s = S || S2,
             logic_e = AC_MAX(E, E2)
          };
-         typedef ac_float<mult_w, mult_i, mult_e> mult;
-         typedef ac_float<plus_w, plus_i, plus_e> plus;
-         typedef ac_float<minus_w, minus_i, minus_e> minus;
-         typedef ac_float<logic_w, logic_i, logic_e> logic;
-         typedef ac_float<div_w, div_i, div_e> div;
-         typedef ac_float arg1;
+         using mult = ac_float<mult_w, mult_i, mult_e>;
+         using plus = ac_float<plus_w, plus_i, plus_e>;
+         using minus = ac_float<minus_w, minus_i, minus_e>;
+         using logic = ac_float<logic_w, logic_i, logic_e>;
+         using div = ac_float<div_w, div_i, div_e>;
+         using arg1 = ac_float;
       };
 
       template <int WI, bool SI>
@@ -218,36 +209,36 @@ namespace __AC_NAMESPACE
             rshift_e_0 = exp_t::template rt<WI, SI>::minus::width,
             rshift_e = AC_MIN(rshift_e_0, 24)
          };
-         typedef ac_float<lshift_w, lshift_i, lshift_e> lshift;
-         typedef ac_float<rshift_w, rshift_i, rshift_e> rshift;
+         using lshift = ac_float<lshift_w, lshift_i, lshift_e>;
+         using rshift = ac_float<rshift_w, rshift_i, rshift_e>;
       };
 
       template <typename T>
       struct rt_T
       {
-         typedef typename ac_private::map<T>::t map_T;
-         typedef typename ac_private::rt_ac_float_T<map_T>::template op1<AC_FL_TV0()>::mult mult;
-         typedef typename ac_private::rt_ac_float_T<map_T>::template op1<AC_FL_TV0()>::plus plus;
-         typedef typename ac_private::rt_ac_float_T<map_T>::template op1<AC_FL_TV0()>::minus minus;
-         typedef typename ac_private::rt_ac_float_T<map_T>::template op1<AC_FL_TV0()>::minus2 minus2;
-         typedef typename ac_private::rt_ac_float_T<map_T>::template op1<AC_FL_TV0()>::logic logic;
-         typedef typename ac_private::rt_ac_float_T<map_T>::template op1<AC_FL_TV0()>::div div;
-         typedef typename ac_private::rt_ac_float_T<map_T>::template op1<AC_FL_TV0()>::div2 div2;
-         typedef ac_float arg1;
+         using map_T = typename ac_private::map<T>::t;
+         using mult = typename ac_private::rt_ac_float_T<map_T>::template op1<W, I, E>::mult;
+         using plus = typename ac_private::rt_ac_float_T<map_T>::template op1<W, I, E>::plus;
+         using minus = typename ac_private::rt_ac_float_T<map_T>::template op1<W, I, E>::minus;
+         using minus2 = typename ac_private::rt_ac_float_T<map_T>::template op1<W, I, E>::minus2;
+         using logic = typename ac_private::rt_ac_float_T<map_T>::template op1<W, I, E>::logic;
+         using div = typename ac_private::rt_ac_float_T<map_T>::template op1<W, I, E>::div;
+         using div2 = typename ac_private::rt_ac_float_T<map_T>::template op1<W, I, E>::div2;
+         using arg1 = ac_float;
       };
 
       template <typename T>
       struct rt_T2
       {
-         typedef typename ac_private::map<T>::t map_T;
-         typedef typename ac_private::rt_ac_float_T<map_T>::template op1<AC_FL_TV0()>::mult mult;
-         typedef typename ac_private::rt_ac_float_T<map_T>::template op1<AC_FL_TV0()>::plus plus;
-         typedef typename ac_private::rt_ac_float_T<map_T>::template op1<AC_FL_TV0()>::minus2 minus;
-         typedef typename ac_private::rt_ac_float_T<map_T>::template op1<AC_FL_TV0()>::minus minus2;
-         typedef typename ac_private::rt_ac_float_T<map_T>::template op1<AC_FL_TV0()>::logic logic;
-         typedef typename ac_private::rt_ac_float_T<map_T>::template op1<AC_FL_TV0()>::div2 div;
-         typedef typename ac_private::rt_ac_float_T<map_T>::template op1<AC_FL_TV0()>::div div2;
-         typedef ac_float arg1;
+         using map_T = typename ac_private::map<T>::t;
+         using mult = typename ac_private::rt_ac_float_T<map_T>::template op1<W, I, E>::mult;
+         using plus = typename ac_private::rt_ac_float_T<map_T>::template op1<W, I, E>::plus;
+         using minus = typename ac_private::rt_ac_float_T<map_T>::template op1<W, I, E>::minus2;
+         using minus2 = typename ac_private::rt_ac_float_T<map_T>::template op1<W, I, E>::minus;
+         using logic = typename ac_private::rt_ac_float_T<map_T>::template op1<W, I, E>::logic;
+         using div = typename ac_private::rt_ac_float_T<map_T>::template op1<W, I, E>::div2;
+         using div2 = typename ac_private::rt_ac_float_T<map_T>::template op1<W, I, E>::div;
+         using arg1 = ac_float;
       };
 
       struct rt_unary
@@ -272,9 +263,9 @@ namespace __AC_NAMESPACE
             to_i_w = AC_MAX(to_fx_i, 1),
             to_i_s = S
          };
-         typedef ac_float<neg_w, neg_i, neg_e> neg;
-         typedef ac_float<mag_sqr_w, mag_sqr_i, mag_sqr_e> mag_sqr;
-         typedef ac_float<mag_w, mag_i, mag_e> mag;
+         using neg = ac_float<neg_w, neg_i, neg_e>;
+         using mag_sqr = ac_float<mag_sqr_w, mag_sqr_i, mag_sqr_e>;
+         using mag = ac_float<mag_w, mag_i, mag_e>;
          template <unsigned N>
          struct set
          {
@@ -285,20 +276,16 @@ namespace __AC_NAMESPACE
                sum_e = E,
                sum_s = S
             };
-            typedef ac_float<sum_w, sum_i, sum_e> sum;
+            using sum = ac_float<sum_w, sum_i, sum_e>;
          };
-         typedef ac_fixed<to_fx_w, to_fx_i, to_fx_s> to_ac_fixed_t;
-         typedef ac_int<to_i_w, to_i_s> to_ac_int_t;
+         using to_ac_fixed_t = ac_fixed<to_fx_w, to_fx_i, to_fx_s>;
+         using to_ac_int_t = ac_int<to_i_w, to_i_s>;
       };
 
       template <AC_FL_T(2)>
       friend class ac_float;
 
-      ac_float()
-      {
-#if defined(AC_DEFAULT_IN_RANGE)
-#endif
-      }
+      ac_float() = default;
       ac_float(const ac_float& op)
       {
          m = op.m;
@@ -342,7 +329,9 @@ namespace __AC_NAMESPACE
          }
          m.set_slc(0, m_1.template slc<W>(0));
          if(fx_t::width > W && assert_on_rounding)
+         {
             AC_ASSERT(m == t, "Loss of precision due to Rounding in ac_float constructor");
+         }
          ac_int<ET, true> exp = !m ? ac_int<ET, true>(0) : ac_int<ET, true>(op.e + I_DIFF + (RND & rnd_ovfl));
          adjust(exp, false, assert_on_overflow);
       }
@@ -353,12 +342,16 @@ namespace __AC_NAMESPACE
          if(E)
          {
             if(!m)
+            {
                e = 0;
+            }
             else
             {
                e = e2;
                if(normalize)
+               {
                   m.normalize(e);
+               }
             }
          }
       }
@@ -509,7 +502,9 @@ namespace __AC_NAMESPACE
       {
          bool normalized = operator!() || !S && m[W - 1] || S && (m[W - 1] ^ m[W - 2]);
          if(E && !normalized)
+         {
             normalized = m.normalize(e);
+         }
          return normalized;
       }
 
@@ -520,7 +515,9 @@ namespace __AC_NAMESPACE
          {
             e = new_e;
             if(E && normalize)
+            {
                m.normalize(e);
+            }
          }
          else
          {
@@ -538,16 +535,22 @@ namespace __AC_NAMESPACE
                // other bits can be tested separetely
                ac_int<ET, false> e_u = e_s;
                if(ET && normalize)
+               {
                   m.normalize(e_u);
+               }
                e_u -= offset;
-               if(e_u[ET - 1] | !(e_u >> (E - 1))) // what about E == 0 or ET == 0 ???
+               if(e_u[ET - 1] | !(e_u >> (E - 1)))
+               { // what about E == 0 or ET == 0 ???
                   e = e_u;
+               }
                else
                {
                   e = MAX_EXP;
                   m = m < 0 ? value<AC_VAL_MIN>(m) : value<AC_VAL_MAX>(m);
                   if(assert_on_overflow)
+                  {
                      AC_ASSERT(0, "OVERFLOW ON ASSIGNMENT TO AC_FLOAT");
+                  }
                }
             }
          }
@@ -598,12 +601,12 @@ namespace __AC_NAMESPACE
          fx_t op2_m = op2_m_0;
          int e_dif = exp() - op2.exp() + I - I2;
          bool op2_m_neg = op2_m[fx_t::width - 1];
-         fx_t out_bits = op2_m ^ ((op2_m_neg & e_dif < 0) ? ~fx_t(0) : fx_t(0));
+         fx_t out_bits = op2_m ^ ((op2_m_neg & (e_dif < 0)) ? ~fx_t(0) : fx_t(0));
          out_bits &= ~(fxu_t(~fxu_t(0)) << e_dif);
          op2_m >>= e_dif;
-         bool overflow = e_dif < 0 & !!out_bits | op2_m_neg ^ op2_m[fx_t::width - 1];
+         bool overflow = (e_dif < 0) & !!out_bits | op2_m_neg ^ op2_m[fx_t::width - 1];
 
-         *gt = overflow & op2_m_neg | !overflow & op1_m > op2_m;
+         *gt = (overflow & op2_m_neg) | (!overflow & (op1_m > op2_m));
          bool eq = op1_m == op2_m & !overflow & !out_bits;
          return eq;
       }
@@ -647,7 +650,9 @@ namespace __AC_NAMESPACE
          mt_t op2_m = 0;
          op2_m.set_slc(0, op2_m_0.template slc<mt_t::width>(0));
          if(sub)
+         {
             op2_m = -op2_m;
+         }
          int op2_e = op2.exp() + I2 - IT + (SR & !S2);
 
          bool op1_zero = operator!();
@@ -849,21 +854,29 @@ namespace __AC_NAMESPACE
             mantissa.set_slc(0, m.template slc<W>(0));
             std::string r = mantissa.to_string(base_rep, sign_mag);
             r += "e2";
-            r += (e + I).to_string(base_rep, sign_mag | base_rep == AC_DEC);
+            r += (e + I).to_string(base_rep, sign_mag | (base_rep == AC_DEC));
             return r;
          }
          else
          {
             std::string r = m.to_string(base_rep, sign_mag);
             if(base_rep != AC_DEC)
+            {
                r += "_";
+            }
             r += "e2";
             if(base_rep != AC_DEC)
+            {
                r += "_";
+            }
             if(E)
-               r += e.to_string(base_rep, sign_mag | base_rep == AC_DEC);
+            {
+               r += e.to_string(base_rep, sign_mag | (base_rep == AC_DEC));
+            }
             else
+            {
                r += "0";
+            }
             return r;
          }
       }
@@ -889,11 +902,17 @@ namespace __AC_NAMESPACE
       {
          m.template set_val<V>();
          if(V == AC_VAL_MIN)
+         {
             e.template set_val<AC_VAL_MAX>();
+         }
          else if(V == AC_VAL_QUANTUM)
+         {
             e.template set_val<AC_VAL_MIN>();
+         }
          else
+         {
             e.template set_val<V>();
+         }
          return *this;
       }
    };
@@ -919,9 +938,13 @@ namespace __AC_NAMESPACE
          bool inf;
          bool nan = ac_fpclassify(d, inf);
          if(nan)
+         {
             AC_ASSERT(0, "In conversion from double to ac_float: double is NaN");
+         }
          else if(inf)
+         {
             AC_ASSERT(0, "In conversion from double to ac_float: double is Infinite");
+         }
 #endif
          r_t::exp_t exp;
          r_t::mant_t mant = ac::frexp_d(d, exp);
@@ -935,9 +958,13 @@ namespace __AC_NAMESPACE
          bool inf;
          bool nan = ac_fpclassify(f, inf);
          if(nan)
+         {
             AC_ASSERT(0, "In conversion from float to ac_float: float is NaN");
+         }
          else if(inf)
+         {
             AC_ASSERT(0, "In conversion from float to ac_float: float is Infinite");
+         }
 #endif
          r_t::exp_t exp;
          r_t::mant_t mant = ac::frexp_f(f, exp);
@@ -950,18 +977,18 @@ namespace __AC_NAMESPACE
       template <typename T>
       struct ac_float_represent
       {
-         typedef typename ac_fixed_represent<T>::type fx_t;
-         typedef ac_float<fx_t::width + !fx_t::sign, fx_t::i_width + !fx_t::sign, 1, fx_t::q_mode> type;
+         using fx_t = typename ac_fixed_represent<T>::type;
+         using type = ac_float<fx_t::width + !fx_t::sign, fx_t::i_width + !fx_t::sign, 1, fx_t::q_mode>;
       };
       template <>
       struct ac_float_represent<float>
       {
-         typedef ac_private::ac_float_cfloat_t type;
+         using type = ac_private::ac_float_cfloat_t;
       };
       template <>
       struct ac_float_represent<double>
       {
-         typedef ac_private::ac_float_cdouble_t type;
+         using type = ac_private::ac_float_cdouble_t;
       };
    } // namespace ac
 
@@ -971,18 +998,18 @@ namespace __AC_NAMESPACE
       template <AC_FL_T0(2)>
       struct rt_ac_float_T<AC_FL0(2)>
       {
-         typedef AC_FL0(2) fl2_t;
+         using fl2_t = ac_float<W2, I2, E2>;
          template <AC_FL_T0()>
          struct op1
          {
-            typedef AC_FL0() fl_t;
-            typedef typename fl_t::template rt<AC_FL_TV0(2)>::mult mult;
-            typedef typename fl_t::template rt<AC_FL_TV0(2)>::plus plus;
-            typedef typename fl_t::template rt<AC_FL_TV0(2)>::minus minus;
-            typedef typename fl2_t::template rt<AC_FL_TV0()>::minus minus2;
-            typedef typename fl_t::template rt<AC_FL_TV0(2)>::logic logic;
-            typedef typename fl_t::template rt<AC_FL_TV0(2)>::div div;
-            typedef typename fl2_t::template rt<AC_FL_TV0()>::div div2;
+            using fl_t = ac_float<W, I, E>;
+            using mult = typename fl_t::template rt<W2, I2, E2>::mult;
+            using plus = typename fl_t::template rt<W2, I2, E2>::plus;
+            using minus = typename fl_t::template rt<W2, I2, E2>::minus;
+            using minus2 = typename fl2_t::template rt<W, I, E>::minus;
+            using logic = typename fl_t::template rt<W2, I2, E2>::logic;
+            using div = typename fl_t::template rt<W2, I2, E2>::div;
+            using div2 = typename fl2_t::template rt<W, I, E>::div;
          };
       };
       // with T == ac_fixed
@@ -997,18 +1024,18 @@ namespace __AC_NAMESPACE
             W2 = WFX + !SFX,
             I2 = IFX + !SFX
          };
-         typedef AC_FL0(2) fl2_t;
+         using fl2_t = ac_float<W2, I2, E2>;
          template <AC_FL_T0()>
          struct op1
          {
-            typedef AC_FL0() fl_t;
-            typedef typename fl_t::template rt<AC_FL_TV0(2)>::mult mult;
-            typedef typename fl_t::template rt<AC_FL_TV0(2)>::plus plus;
-            typedef typename fl_t::template rt<AC_FL_TV0(2)>::minus minus;
-            typedef typename fl2_t::template rt<AC_FL_TV0()>::minus minus2;
-            typedef typename fl_t::template rt<AC_FL_TV0(2)>::logic logic;
-            typedef typename fl_t::template rt<AC_FL_TV0(2)>::div div;
-            typedef typename fl2_t::template rt<AC_FL_TV0()>::div div2;
+            using fl_t = ac_float<W, I, E>;
+            using mult = typename fl_t::template rt<W2, I2, E2>::mult;
+            using plus = typename fl_t::template rt<W2, I2, E2>::plus;
+            using minus = typename fl_t::template rt<W2, I2, E2>::minus;
+            using minus2 = typename fl2_t::template rt<W, I, E>::minus;
+            using logic = typename fl_t::template rt<W2, I2, E2>::logic;
+            using div = typename fl_t::template rt<W2, I2, E2>::div;
+            using div2 = typename fl2_t::template rt<W, I, E>::div;
          };
       };
       // with T == ac_int
@@ -1023,18 +1050,18 @@ namespace __AC_NAMESPACE
             I2 = WI + !SI,
             W2 = I2
          };
-         typedef AC_FL0(2) fl2_t;
+         using fl2_t = ac_float<W2, I2, E2>;
          template <AC_FL_T0()>
          struct op1
          {
-            typedef AC_FL0() fl_t;
-            typedef typename fl_t::template rt<AC_FL_TV0(2)>::mult mult;
-            typedef typename fl_t::template rt<AC_FL_TV0(2)>::plus plus;
-            typedef typename fl_t::template rt<AC_FL_TV0(2)>::minus minus;
-            typedef typename fl2_t::template rt<AC_FL_TV0()>::minus minus2;
-            typedef typename fl_t::template rt<AC_FL_TV0(2)>::logic logic;
-            typedef typename fl_t::template rt<AC_FL_TV0(2)>::div div;
-            typedef typename fl2_t::template rt<AC_FL_TV0()>::div div2;
+            using fl_t = ac_float<W, I, E>;
+            using mult = typename fl_t::template rt<W2, I2, E2>::mult;
+            using plus = typename fl_t::template rt<W2, I2, E2>::plus;
+            using minus = typename fl_t::template rt<W2, I2, E2>::minus;
+            using minus2 = typename fl2_t::template rt<W, I, E>::minus;
+            using logic = typename fl_t::template rt<W2, I2, E2>::logic;
+            using div = typename fl_t::template rt<W2, I2, E2>::div;
+            using div2 = typename fl2_t::template rt<W, I, E>::div;
          };
       };
 
@@ -1051,18 +1078,18 @@ namespace __AC_NAMESPACE
             I2 = c_type_params<T>::I + !SCT,
             E2 = AC_MAX(1, c_type_params<T>::E)
          };
-         typedef AC_FL0(2) fl2_t;
+         using fl2_t = ac_float<W2, I2, E2>;
          template <AC_FL_T0()>
          struct op1
          {
-            typedef AC_FL0() fl_t;
-            typedef typename fl_t::template rt<AC_FL_TV0(2)>::mult mult;
-            typedef typename fl_t::template rt<AC_FL_TV0(2)>::plus plus;
-            typedef typename fl_t::template rt<AC_FL_TV0(2)>::minus minus;
-            typedef typename fl2_t::template rt<AC_FL_TV0()>::minus minus2;
-            typedef typename fl_t::template rt<AC_FL_TV0(2)>::logic logic;
-            typedef typename fl_t::template rt<AC_FL_TV0(2)>::div div;
-            typedef typename fl2_t::template rt<AC_FL_TV0()>::div div2;
+            using fl_t = ac_float<W, I, E>;
+            using mult = typename fl_t::template rt<W2, I2, E2>::mult;
+            using plus = typename fl_t::template rt<W2, I2, E2>::plus;
+            using minus = typename fl_t::template rt<W2, I2, E2>::minus;
+            using minus2 = typename fl2_t::template rt<W, I, E>::minus;
+            using logic = typename fl_t::template rt<W2, I2, E2>::logic;
+            using div = typename fl_t::template rt<W2, I2, E2>::div;
+            using div2 = typename fl2_t::template rt<W, I, E>::div;
          };
       };
    } // namespace ac_private
@@ -1335,19 +1362,14 @@ namespace __AC_NAMESPACE
       {
          AC_FL0() t = value<V>(*a);
          for(int i = 0; i < n; i++)
+         {
             a[i] = t;
+         }
          return true;
       }
    } // namespace ac
 
    ///////////////////////////////////////////////////////////////////////////////
-
-#if(defined(_MSC_VER) && !defined(__EDG__))
-#pragma warning(pop)
-#endif
-#if defined(__clang__)
-#pragma clang diagnostic pop
-#endif
 
 #ifdef __AC_NAMESPACE
 }

@@ -137,7 +137,7 @@
 
 #ifndef __ASSERT_H__
 #define __ASSERT_H__
-#include <assert.h>
+#include <cassert>
 #endif
 #include <limits>
 #if !defined(__BAMBU__) || defined(__BAMBU_SIM__)
@@ -147,7 +147,7 @@
 #include <ostream>
 #endif
 #endif
-#include <math.h>
+#include <cmath>
 #include <string>
 
 #if !defined(__BAMBU__) || defined(__BAMBU_SIM__)
@@ -257,8 +257,8 @@ namespace __AC_NAMESPACE
    typedef unsigned __int64 Ulong;
    typedef signed __int64 Slong;
 #else
-typedef unsigned long long Ulong;
-typedef signed long long Slong;
+using Ulong = unsigned long long;
+using Slong = long long;
 #endif
 
    enum ac_base_mode
@@ -326,9 +326,13 @@ typedef signed long long Slong;
       {
          std::cerr << "Assert";
          if(file)
+         {
             std::cerr << " in file " << file << ":" << line;
+         }
          if(msg)
+         {
             std::cerr << " " << msg;
+         }
          std::cerr << std::endl;
          assert(0);
       }
@@ -459,81 +463,77 @@ typedef signed long long Slong;
          return ldexpr32<N / 32>(N < 0 ? d / ((unsigned)1 << (-N & 31)) : d * ((unsigned)1 << (N & 31)));
       }
 
-      template <int N, bool C>
+#if __clang_major__ >= 16
+      template <int N, bool C, int W0, bool S0>
       class iv_base
       {
-         // #if defined(__clang__)
-         //   typedef int type __attribute__((ext_vector_type(N)));
-         // #else
-         //   typedef int type __attribute__((vector_size(sizeof(int)*N)));
-         // #endif
-         //       type v = {};
-         int v[N] __INIT_VALUE;
+         signed _BitInt(W0) v __INIT_VALUE;
 
        public:
          template <int W, bool S>
          __FORCE_INLINE constexpr void bit_adjust()
          {
-            constexpr const unsigned rem = (32 - W) & 31;
-            set(N - 1,
-                S ? (((int)(((unsigned)v[N - 1]) << rem)) >> rem) : (rem ? ((unsigned)v[N - 1] << rem) >> rem : 0));
          }
 
          __FORCE_INLINE void assign_int64(Slong l)
          {
-            set(0, static_cast<int>(l));
-            if(N > 1)
-            {
-               set(1, static_cast<int>(l >> 32));
-               LOOP(int, i, 2, exclude, N, { set(i, (v[1] < 0) ? ~0 : 0); });
-            }
+            v = l;
          }
 
          __FORCE_INLINE constexpr void assign_uint64(Ulong l)
          {
-            set(0, static_cast<int>(l));
-            if(N > 1)
-            {
-               set(1, static_cast<int>(l >> 32));
-               LOOP(int, i, 2, exclude, N, { set(i, 0); });
-            }
+            v = l;
          }
          __FORCE_INLINE constexpr void set(int x, int value)
          {
-            v[x] = value;
+            AC_ASSERT(x >= 0 && x < N, "unexpected condition");
+            bool updateRes = x * 32 < W0;
+            auto mask1 = static_cast<unsigned _BitInt(W0)>(all_ones);
+            mask1 <<= x * 32;
+            mask1 = updateRes ? mask1 : 0;
+            unsigned uvalue = value;
+            unsigned _BitInt(W0) uvalueBI = uvalue;
+            uvalueBI <<= x * 32;
+            v ^= (v ^ (uvalueBI)) & mask1;
          }
 
          __FORCE_INLINE constexpr Slong to_int64() const
          {
-            return N == 1 ? v[0] : ((Ulong)v[1] << 32) | (Ulong)(unsigned)v[0];
+            Slong conv = v;
+            return conv;
          }
 
          __FORCE_INLINE constexpr int operator[](int x) const
          {
-            return v[x];
+            AC_ASSERT(x >= 0 && x < N, "unexpected condition");
+            bool returnRes = x * 32 < W0;
+            if(S0)
+            {
+               int res = returnRes ? v >> (32 * x) : v >> (W0 - 1);
+               return res;
+            }
+            else
+            {
+               unsigned _BitInt(W0) uv = v;
+               unsigned res = returnRes ? uv >> (32 * x) : 0;
+               return res;
+            }
          }
 
          iv_base() = default;
-         template <int N2, bool C2>
-         __FORCE_INLINE constexpr iv_base(const iv_base<N2, C2>& b)
+         template <int N2, bool C2, int W2, bool S2>
+         __FORCE_INLINE constexpr iv_base(const iv_base<N2, C2, W2, S2>& b)
          {
             constexpr int M = AC_MIN(N, N2);
             LOOP(int, idx, 0, exclude, M, { set(idx, b[idx]); });
-            auto last = v[M - 1] < 0 ? ~0 : 0;
+            auto last = (*this)[M - 1] < 0 ? ~0 : 0;
             LOOP(int, idx, M, exclude, N, { set(idx, last); });
          }
       } __attribute__((aligned(8)));
-
-      template <int N>
-      class iv_base<N, true>
+      template <int N, bool C>
+      class iv_base<N, C, 1, true>
       {
-         // #if defined(__clang__)
-         //   typedef int type __attribute__((ext_vector_type(N)));
-         // #else
-         //   typedef int type __attribute__((vector_size(sizeof(int)*N)));
-         // #endif
-         //       type v = {};
-         int v[N - 1] __INIT_VALUE;
+         bool v __INIT_VALUE;
 
        public:
          template <int W, bool S>
@@ -544,480 +544,677 @@ typedef signed long long Slong;
          __FORCE_INLINE void assign_int64(Slong l)
          {
             set(0, static_cast<int>(l));
-            if(N > 2)
-            {
-               set(1, static_cast<int>(l >> 32));
-               LOOP(int, i, 2, exclude, N, { set(i, (v[1] < 0) ? ~0 : 0); });
-            }
          }
 
          __FORCE_INLINE constexpr void assign_uint64(Ulong l)
          {
             set(0, static_cast<int>(l));
-            if(N > 2)
-            {
-               set(1, static_cast<int>(l >> 32));
-               LOOP(int, i, 2, exclude, N - 1, { set(i, 0); });
-            }
          }
-
          __FORCE_INLINE constexpr void set(int x, int value)
          {
-            if(x != N - 1)
-               v[x] = value;
-            //            else
-            //               assert(value==0);
+            AC_ASSERT(x >= 0 && x < N, "unexpected condition");
+            v = value;
          }
 
          __FORCE_INLINE constexpr Slong to_int64() const
          {
-            return N <= 2 ? v[0] : ((Ulong)v[1] << 32) | (Ulong)(unsigned)v[0];
+            return v;
          }
 
          __FORCE_INLINE constexpr int operator[](int x) const
          {
-            if(x != N - 1)
-               return v[x];
-            else
-               return 0;
+            AC_ASSERT(x >= 0 && x < N, "unexpected condition");
+            return v;
          }
 
-         __FORCE_INLINE constexpr iv_base()
+         iv_base() = default;
+         template <int N2, bool C2, int W2, bool S2>
+         __FORCE_INLINE constexpr iv_base(const iv_base<N2, C2, W2, S2>& b) : v(false)
          {
-         }
-
-         template <int N2, bool C2>
-         __FORCE_INLINE constexpr iv_base(const iv_base<N2, C2>& b)
-         {
-            constexpr int M = AC_MIN(N - 1, N2);
-            LOOP(int, idx, 0, exclude, M, { set(idx, b[idx]); });
-            auto last = v[M - 1] < 0 ? ~0 : 0;
-            LOOP(int, idx, M, exclude, N - 1, { set(idx, last); });
+            set(0, b.to_int64());
          }
       } __attribute__((aligned(8)));
 
-      template <>
-      class iv_base<1, false>
+      template <int N, bool C>
+      class iv_base<N, C, 1, false>
       {
-         int v __INIT_VALUE;
+         bool v __INIT_VALUE;
 
        public:
          template <int W, bool S>
          __FORCE_INLINE constexpr void bit_adjust()
          {
-            constexpr const unsigned rem = (32 - W) & 31;
-            v = S ? (((int)(((unsigned)v) << rem)) >> rem) : (rem ? ((unsigned)v << rem) >> rem : 0);
          }
-         void assign_int64(Slong l)
+
+         __FORCE_INLINE void assign_int64(Slong l)
          {
-            v = static_cast<int>(l);
+            set(0, static_cast<int>(l));
          }
-         void constexpr assign_uint64(Ulong l)
+
+         __FORCE_INLINE constexpr void assign_uint64(Ulong l)
          {
-            v = static_cast<int>(l);
+            set(0, static_cast<int>(l));
          }
-         constexpr void set(int, int value)
+         __FORCE_INLINE constexpr void set(int x, int value)
+         {
+            AC_ASSERT(x >= 0 && x < N, "unexpected condition");
+            v = value;
+         }
+
+         __FORCE_INLINE constexpr Slong to_int64() const
+         {
+            return v;
+         }
+
+         __FORCE_INLINE constexpr int operator[](int x) const
+         {
+            AC_ASSERT(x >= 0 && x < N, "unexpected condition");
+            return v;
+         }
+
+         iv_base() = default;
+         template <int N2, bool C2, int W2, bool S2>
+         __FORCE_INLINE constexpr iv_base(const iv_base<N2, C2, W2, S2>& b) : v(false)
+         {
+            set(0, b.to_int64());
+         }
+      } __attribute__((aligned(8)));
+
+#else
+   template <int N, bool C, int W0, bool S0>
+   class iv_base
+   {
+      // #if defined(__clang__)
+      //   typedef int type __attribute__((ext_vector_type(N)));
+      // #else
+      //   typedef int type __attribute__((vector_size(sizeof(int)*N)));
+      // #endif
+      //       type v = {};
+      int v[N] __INIT_VALUE;
+
+    public:
+      template <int W, bool S>
+      __FORCE_INLINE constexpr void bit_adjust()
+      {
+         constexpr const unsigned rem = (32 - W) & 31;
+         set(N - 1, S ? (((int)(((unsigned)v[N - 1]) << rem)) >> rem) : (rem ? ((unsigned)v[N - 1] << rem) >> rem : 0));
+      }
+
+      __FORCE_INLINE void assign_int64(Slong l)
+      {
+         set(0, static_cast<int>(l));
+         if(N > 1)
+         {
+            set(1, static_cast<int>(l >> 32));
+            LOOP(int, i, 2, exclude, N, { set(i, (v[1] < 0) ? ~0 : 0); });
+         }
+      }
+
+      __FORCE_INLINE constexpr void assign_uint64(Ulong l)
+      {
+         set(0, static_cast<int>(l));
+         if(N > 1)
+         {
+            set(1, static_cast<int>(l >> 32));
+            LOOP(int, i, 2, exclude, N, { set(i, 0); });
+         }
+      }
+      __FORCE_INLINE constexpr void set(int x, int value)
+      {
+         v[x] = value;
+      }
+
+      __FORCE_INLINE constexpr Slong to_int64() const
+      {
+         return N == 1 ? v[0] : ((Ulong)v[1] << 32) | (Ulong)(unsigned)v[0];
+      }
+
+      __FORCE_INLINE constexpr int operator[](int x) const
+      {
+         return v[x];
+      }
+
+      iv_base() = default;
+      template <int N2, bool C2, int W2, bool S2>
+      __FORCE_INLINE constexpr iv_base(const iv_base<N2, C2, W2, S2>& b)
+      {
+         constexpr int M = AC_MIN(N, N2);
+         LOOP(int, idx, 0, exclude, M, { set(idx, b[idx]); });
+         auto last = v[M - 1] < 0 ? ~0 : 0;
+         LOOP(int, idx, M, exclude, N, { set(idx, last); });
+      }
+   } __attribute__((aligned(8)));
+
+   template <int N, int W0, bool S0>
+   class iv_base<N, true, W0, S0>
+   {
+      // #if defined(__clang__)
+      //   typedef int type __attribute__((ext_vector_type(N)));
+      // #else
+      //   typedef int type __attribute__((vector_size(sizeof(int)*N)));
+      // #endif
+      //       type v = {};
+      int v[N - 1] __INIT_VALUE;
+
+    public:
+      template <int W, bool S>
+      __FORCE_INLINE constexpr void bit_adjust()
+      {
+      }
+
+      __FORCE_INLINE void assign_int64(Slong l)
+      {
+         set(0, static_cast<int>(l));
+         if(N > 2)
+         {
+            set(1, static_cast<int>(l >> 32));
+            LOOP(int, i, 2, exclude, N, { set(i, (v[1] < 0) ? ~0 : 0); });
+         }
+      }
+
+      __FORCE_INLINE constexpr void assign_uint64(Ulong l)
+      {
+         set(0, static_cast<int>(l));
+         if(N > 2)
+         {
+            set(1, static_cast<int>(l >> 32));
+            LOOP(int, i, 2, exclude, N - 1, { set(i, 0); });
+         }
+      }
+
+      __FORCE_INLINE constexpr void set(int x, int value)
+      {
+         if(x != N - 1)
+         {
+            v[x] = value;
+         }
+         //            else
+         //               assert(value==0);
+      }
+
+      __FORCE_INLINE constexpr Slong to_int64() const
+      {
+         return N <= 2 ? v[0] : ((Ulong)v[1] << 32) | (Ulong)(unsigned)v[0];
+      }
+
+      __FORCE_INLINE constexpr int operator[](int x) const
+      {
+         if(x != N - 1)
+         {
+            return v[x];
+         }
+         else
+         {
+            return 0;
+         }
+      }
+
+      __FORCE_INLINE constexpr iv_base() = default;
+
+      template <int N2, bool C2, int W2, bool S2>
+      __FORCE_INLINE constexpr iv_base(const iv_base<N2, C2, W2, S2>& b)
+      {
+         constexpr int M = AC_MIN(N - 1, N2);
+         LOOP(int, idx, 0, exclude, M, { set(idx, b[idx]); });
+         auto last = v[M - 1] < 0 ? ~0 : 0;
+         LOOP(int, idx, M, exclude, N - 1, { set(idx, last); });
+      }
+   } __attribute__((aligned(8)));
+
+   template <int W0, bool S0>
+   class iv_base<1, false, W0, S0>
+   {
+      int v __INIT_VALUE;
+
+    public:
+      template <int W, bool S>
+      __FORCE_INLINE constexpr void bit_adjust()
+      {
+         constexpr const unsigned rem = (32 - W) & 31;
+         v = S ? (((int)(((unsigned)v) << rem)) >> rem) : (rem ? ((unsigned)v << rem) >> rem : 0);
+      }
+      __FORCE_INLINE void assign_int64(Slong l)
+      {
+         v = static_cast<int>(l);
+      }
+      __FORCE_INLINE void constexpr assign_uint64(Ulong l)
+      {
+         v = static_cast<int>(l);
+      }
+      __FORCE_INLINE constexpr void set(int, int value)
+      {
+         v = value;
+      }
+      __FORCE_INLINE constexpr Slong to_int64() const
+      {
+         return v;
+      }
+      __FORCE_INLINE constexpr int operator[](int) const
+      {
+         return v;
+      }
+      iv_base() = default;
+      template <int N2, bool C2, int W2, bool S2>
+      __FORCE_INLINE constexpr iv_base(const iv_base<N2, C2, W2, S2>& b) : v(b[0])
+      {
+      }
+   } __attribute__((aligned(8)));
+
+   template <int W0, bool S0>
+   class iv_base<1, true, W0, S0>
+   {
+      /// not possible to instantiate this class specialization
+   };
+
+   template <int W0, bool S0>
+   class iv_base<2, false, W0, S0>
+   {
+      long long int v __INIT_VALUE_LL;
+
+    public:
+      template <int W, bool S>
+      __FORCE_INLINE constexpr void bit_adjust()
+      {
+         constexpr const unsigned rem = (64 - W) & 63;
+         v = S ? (((long long int)(((unsigned long long)v) << rem)) >> rem) :
+                 (rem ? ((unsigned long long)v << rem) >> rem : 0);
+      }
+      __FORCE_INLINE void assign_int64(Slong l)
+      {
+         v = l;
+      }
+      __FORCE_INLINE void constexpr assign_uint64(Ulong l)
+      {
+         v = static_cast<Slong>(l);
+      }
+      __FORCE_INLINE constexpr void set(int x, int value)
+      {
+         if(x)
+         {
+            v = (all_ones & v) | (((Slong)value) << 32);
+         }
+         else
+         {
+            v = ((((Ulong)all_ones) << 32) & v) | ((Ulong)((unsigned)value));
+         }
+      }
+      __FORCE_INLINE constexpr Slong to_int64() const
+      {
+         return v;
+      }
+      __FORCE_INLINE constexpr int operator[](int x) const
+      {
+         return x ? (int)(v >> 32) : (int)v;
+      }
+      iv_base() = default;
+      template <int N2, bool C2, int W2, bool S2>
+      __FORCE_INLINE constexpr iv_base(const iv_base<N2, C2, W2, S2>& b)
+      {
+         const int M = AC_MIN(2, N2);
+         if(M == 2)
+         {
+            v = b.to_int64();
+         }
+         else
+         {
+            AC_ASSERT(M == 1, "unexpected condition");
+            v = b[0];
+         }
+      }
+   } __attribute__((aligned(8)));
+
+   template <int W0, bool S0>
+   class iv_base<2, true, W0, S0>
+   {
+      int v __INIT_VALUE_LL;
+
+    public:
+      template <int W, bool S>
+      __FORCE_INLINE constexpr void bit_adjust()
+      {
+      }
+      __FORCE_INLINE void assign_int64(Slong l)
+      {
+         v = l;
+      }
+      __FORCE_INLINE void constexpr assign_uint64(Ulong l)
+      {
+         v = static_cast<Slong>(l);
+      }
+      __FORCE_INLINE constexpr void set(int x, int value)
+      {
+         if(!x)
          {
             v = value;
          }
-         __FORCE_INLINE constexpr Slong to_int64() const
-         {
-            return v;
-         }
-         constexpr int operator[](int) const
-         {
-            return v;
-         }
-         iv_base() = default;
-         template <int N2, bool C2>
-         constexpr iv_base(const iv_base<N2, C2>& b) : v(b[0])
-         {
-         }
-      } __attribute__((aligned(8)));
-
-      template <>
-      class iv_base<1, true>
+      }
+      __FORCE_INLINE constexpr Slong to_int64() const
       {
-         /// not possible to instantiate this class specialization
-      };
-
-      template <>
-      class iv_base<2, false>
+         return v;
+      }
+      __FORCE_INLINE constexpr int operator[](int x) const
       {
-         long long int v __INIT_VALUE_LL;
-
-       public:
-         template <int W, bool S>
-         constexpr void bit_adjust()
-         {
-            constexpr const unsigned rem = (64 - W) & 63;
-            v = S ? (((long long int)(((unsigned long long)v) << rem)) >> rem) :
-                    (rem ? ((unsigned long long)v << rem) >> rem : 0);
-         }
-         void assign_int64(Slong l)
-         {
-            v = l;
-         }
-         void constexpr assign_uint64(Ulong l)
-         {
-            v = static_cast<Slong>(l);
-         }
-         constexpr void set(int x, int value)
-         {
-            if(x)
-               v = (all_ones & v) | (((Slong)value) << 32);
-            else
-               v = ((((Ulong)all_ones) << 32) & v) | ((Ulong)((unsigned)value));
-         }
-         __FORCE_INLINE constexpr Slong to_int64() const
-         {
-            return v;
-         }
-         constexpr int operator[](int x) const
-         {
-            return x ? (int)(v >> 32) : (int)v;
-         }
-         iv_base() = default;
-         template <int N2, bool C2>
-         constexpr iv_base(const iv_base<N2, C2>& b)
-         {
-            const int M = AC_MIN(2, N2);
-            if(M == 2)
-            {
-               v = b.to_int64();
-            }
-            else
-            {
-               AC_ASSERT(M == 1, "unexpected condition");
-               v = b[0];
-            }
-         }
-      } __attribute__((aligned(8)));
-
-      template <>
-      class iv_base<2, true>
+         return x ? 0 : v;
+      }
+      iv_base() = default;
+      template <int N2, bool C2, int W2, bool S2>
+      __FORCE_INLINE constexpr iv_base(const iv_base<N2, C2, W2, S2>& b)
       {
-         int v __INIT_VALUE_LL;
+         const int M = AC_MIN(2, N2);
+         if(M == 2)
+         {
+            v = b.to_int64();
+         }
+         else
+         {
+            AC_ASSERT(M == 1, "unexpected condition");
+            v = b[0];
+         }
+      }
+   } __attribute__((aligned(8)));
 
-       public:
-         template <int W, bool S>
-         constexpr void bit_adjust()
-         {
-         }
-         void assign_int64(Slong l)
-         {
-            v = l;
-         }
-         void constexpr assign_uint64(Ulong l)
-         {
-            v = static_cast<Slong>(l);
-         }
-         constexpr void set(int x, int value)
-         {
-            if(!x)
-               v = value;
-         }
-         __FORCE_INLINE constexpr Slong to_int64() const
-         {
-            return v;
-         }
-         constexpr int operator[](int x) const
-         {
-            return x ? 0 : v;
-         }
-         iv_base() = default;
-         template <int N2, bool C2>
-         constexpr iv_base(const iv_base<N2, C2>& b)
-         {
-            const int M = AC_MIN(2, N2);
-            if(M == 2)
-            {
-               v = b.to_int64();
-            }
-            else
-            {
-               AC_ASSERT(M == 1, "unexpected condition");
-               v = b[0];
-            }
-         }
-      } __attribute__((aligned(8)));
+   template <int W0, bool S0>
+   class iv_base<3, false, W0, S0>
+   {
+      long long int va __INIT_VALUE_LL;
+      long long int v2 __INIT_VALUE_LL;
 
-      template <>
-      class iv_base<3, false>
+    public:
+      template <int W, bool S>
+      __FORCE_INLINE constexpr void bit_adjust()
       {
-         long long int va __INIT_VALUE_LL;
-         long long int v2 __INIT_VALUE_LL;
-
-       public:
-         template <int W, bool S>
-         __FORCE_INLINE constexpr void bit_adjust()
+         constexpr const unsigned rem = (64 - W) & 63;
+         v2 = S ? (((long long int)(((unsigned long long)v2) << rem)) >> rem) :
+                  (rem ? ((unsigned long long)v2 << rem) >> rem : 0);
+      }
+      __FORCE_INLINE void assign_int64(Slong l)
+      {
+         va = l;
+         v2 = va < 0 ? ~0LL : 0;
+      }
+      __FORCE_INLINE void constexpr assign_uint64(Ulong l)
+      {
+         va = static_cast<Slong>(l);
+         v2 = 0;
+      }
+      __FORCE_INLINE constexpr void set(int x, int value)
+      {
+         x = x & 3;
+         if(x == 0)
          {
-            constexpr const unsigned rem = (64 - W) & 63;
-            v2 = S ? (((long long int)(((unsigned long long)v2) << rem)) >> rem) :
-                     (rem ? ((unsigned long long)v2 << rem) >> rem : 0);
+            va = ((((Ulong)all_ones) << 32) & va) | ((Ulong)((unsigned)value));
          }
-         void assign_int64(Slong l)
+         else if(x == 1)
          {
-            va = l;
+            va = (all_ones & va) | (((Slong)value) << 32);
+         }
+         else
+         {
+            v2 = value;
+         }
+      }
+      __FORCE_INLINE constexpr Slong to_int64() const
+      {
+         return va;
+      }
+      __FORCE_INLINE constexpr int operator[](int x) const
+      {
+         x = x & 3;
+         return x == 0 ? (int)va : (x == 1 ? (int)(va >> 32) : v2);
+      }
+      iv_base() = default;
+      template <int N2, bool C2, int W2, bool S2>
+      __FORCE_INLINE constexpr iv_base(const iv_base<N2, C2, W2, S2>& b)
+      {
+         const int M = AC_MIN(2, N2);
+         if(M == 3)
+         {
+            va = b.to_int64();
+            v2 = b[2];
+         }
+         else if(M == 2)
+         {
+            va = b.to_int64();
+            v2 = va < 0 ? ~0 : 0;
+         }
+         else
+         {
+            AC_ASSERT(M == 1, "unexpected condition");
+            va = b.to_int64();
             v2 = va < 0 ? ~0LL : 0;
          }
-         void constexpr assign_uint64(Ulong l)
-         {
-            va = static_cast<Slong>(l);
-            v2 = 0;
-         }
-         constexpr void set(int x, int value)
-         {
-            x = x & 3;
-            if(x == 0)
-               va = ((((Ulong)all_ones) << 32) & va) | ((Ulong)((unsigned)value));
-            else if(x == 1)
-               va = (all_ones & va) | (((Slong)value) << 32);
-            else
-               v2 = value;
-         }
-         __FORCE_INLINE constexpr Slong to_int64() const
-         {
-            return va;
-         }
-         constexpr int operator[](int x) const
-         {
-            x = x & 3;
-            return x == 0 ? (int)va : (x == 1 ? (int)(va >> 32) : v2);
-         }
-         iv_base() = default;
-         template <int N2, bool C2>
-         constexpr iv_base(const iv_base<N2, C2>& b)
-         {
-            const int M = AC_MIN(2, N2);
-            if(M == 3)
-            {
-               va = b.to_int64();
-               v2 = b[2];
-            }
-            else if(M == 2)
-            {
-               va = b.to_int64();
-               v2 = va < 0 ? ~0 : 0;
-            }
-            else
-            {
-               AC_ASSERT(M == 1, "unexpected condition");
-               va = b.to_int64();
-               v2 = va < 0 ? ~0LL : 0;
-            }
-         }
-      } __attribute__((aligned(8)));
+      }
+   } __attribute__((aligned(8)));
 
-      template <>
-      class iv_base<3, true>
+   template <int W0, bool S0>
+   class iv_base<3, true, W0, S0>
+   {
+      long long int va __INIT_VALUE_LL;
+
+    public:
+      template <int W, bool S>
+      __FORCE_INLINE constexpr void bit_adjust()
       {
-         long long int va __INIT_VALUE_LL;
-
-       public:
-         template <int W, bool S>
-         __FORCE_INLINE constexpr void bit_adjust()
-         {
-         }
-         void assign_int64(Slong l)
-         {
-            va = l;
-         }
-         void constexpr assign_uint64(Ulong l)
-         {
-            va = static_cast<Slong>(l);
-         }
-         constexpr void set(int x, int value)
-         {
-            x = x & 3;
-            if(x == 0)
-               va = ((((Ulong)all_ones) << 32) & va) | ((Ulong)((unsigned)value));
-            else if(x == 1)
-               va = (all_ones & va) | (((Slong)value) << 32);
-         }
-         __FORCE_INLINE constexpr Slong to_int64() const
-         {
-            return va;
-         }
-         constexpr int operator[](int x) const
-         {
-            x = x & 3;
-            return x == 0 ? (int)va : (x == 1 ? (int)(va >> 32) : 0);
-         }
-         iv_base() = default;
-         template <int N2, bool C2>
-         iv_base(const iv_base<N2, C2>& b)
-         {
-            const int M = AC_MIN(2, N2);
-            if(M == 3)
-            {
-               va = b.to_int64();
-            }
-            else if(M == 2)
-            {
-               va = b.to_int64();
-            }
-            else
-            {
-               AC_ASSERT(M == 1, "unexpected condition");
-               va = b.to_int64();
-            }
-         }
-      } __attribute__((aligned(8)));
-
-      template <>
-      class iv_base<4, false>
+      }
+      __FORCE_INLINE void assign_int64(Slong l)
       {
-         long long int va __INIT_VALUE_LL;
-         long long int vb __INIT_VALUE_LL;
-
-       public:
-         template <int W, bool S>
-         __FORCE_INLINE constexpr void bit_adjust()
+         va = l;
+      }
+      __FORCE_INLINE void constexpr assign_uint64(Ulong l)
+      {
+         va = static_cast<Slong>(l);
+      }
+      __FORCE_INLINE constexpr void set(int x, int value)
+      {
+         x = x & 3;
+         if(x == 0)
          {
-            constexpr const unsigned rem = (64 - W) & 63;
-            vb = S ? (((long long int)(((unsigned long long)vb) << rem)) >> rem) :
-                     (rem ? ((unsigned long long)vb << rem) >> rem : 0);
+            va = ((((Ulong)all_ones) << 32) & va) | ((Ulong)((unsigned)value));
          }
-         void assign_int64(Slong l)
+         else if(x == 1)
          {
-            va = l;
+            va = (all_ones & va) | (((Slong)value) << 32);
+         }
+      }
+      __FORCE_INLINE constexpr Slong to_int64() const
+      {
+         return va;
+      }
+      __FORCE_INLINE constexpr int operator[](int x) const
+      {
+         x = x & 3;
+         return x == 0 ? (int)va : (x == 1 ? (int)(va >> 32) : 0);
+      }
+      iv_base() = default;
+      template <int N2, bool C2, int W2, bool S2>
+      __FORCE_INLINE iv_base(const iv_base<N2, C2, W2, S2>& b)
+      {
+         const int M = AC_MIN(2, N2);
+         if(M == 3)
+         {
+            va = b.to_int64();
+         }
+         else if(M == 2)
+         {
+            va = b.to_int64();
+         }
+         else
+         {
+            AC_ASSERT(M == 1, "unexpected condition");
+            va = b.to_int64();
+         }
+      }
+   } __attribute__((aligned(8)));
+
+   template <int W0, bool S0>
+   class iv_base<4, false, W0, S0>
+   {
+      long long int va __INIT_VALUE_LL;
+      long long int vb __INIT_VALUE_LL;
+
+    public:
+      template <int W, bool S>
+      __FORCE_INLINE constexpr void bit_adjust()
+      {
+         constexpr const unsigned rem = (64 - W) & 63;
+         vb = S ? (((long long int)(((unsigned long long)vb) << rem)) >> rem) :
+                  (rem ? ((unsigned long long)vb << rem) >> rem : 0);
+      }
+      __FORCE_INLINE void assign_int64(Slong l)
+      {
+         va = l;
+         vb = va < 0 ? ~0LL : 0;
+      }
+      __FORCE_INLINE void constexpr assign_uint64(Ulong l)
+      {
+         va = static_cast<Slong>(l);
+         vb = 0;
+      }
+      __FORCE_INLINE void set(int x, int value)
+      {
+         x = x & 3;
+         if(x == 0)
+         {
+            va = ((((Ulong)all_ones) << 32) & va) | ((Ulong)((unsigned)value));
+         }
+         else if(x == 1)
+         {
+            va = (all_ones & va) | (((Slong)value) << 32);
+         }
+         else if(x == 2)
+         {
+            vb = ((((Ulong)all_ones) << 32) & vb) | ((Ulong)((unsigned)value));
+         }
+         else
+         {
+            vb = (all_ones & vb) | (((Slong)value) << 32);
+         }
+      }
+      __FORCE_INLINE constexpr Slong to_int64() const
+      {
+         return va;
+      }
+      __FORCE_INLINE constexpr int operator[](int x) const
+      {
+         x = x & 3;
+         return x == 0 ? (int)va : (x == 1 ? (int)(va >> 32) : (x == 2 ? (int)vb : (int)(vb >> 32)));
+      }
+
+      iv_base() = default;
+      template <int N2, bool C2, int W2, bool S2>
+      __FORCE_INLINE constexpr iv_base(const iv_base<N2, C2, W2, S2>& b)
+      {
+         const int M = AC_MIN(2, N2);
+         if(M == 4)
+         {
+            va = b.to_int64();
+            vb = (((Slong)b[3]) << 32) | ((Ulong)((unsigned)b[2]));
+         }
+         else if(M == 3)
+         {
+            va = b.to_int64();
+            vb = b[2];
+         }
+         else if(M == 2)
+         {
+            va = b.to_int64();
+            vb = va < 0 ? ~0 : 0;
+         }
+         else
+         {
+            AC_ASSERT(M == 1, "unexpected condition");
+            va = b.to_int64();
             vb = va < 0 ? ~0LL : 0;
          }
-         void constexpr assign_uint64(Ulong l)
-         {
-            va = static_cast<Slong>(l);
-            vb = 0;
-         }
-         void set(int x, int value)
-         {
-            x = x & 3;
-            if(x == 0)
-               va = ((((Ulong)all_ones) << 32) & va) | ((Ulong)((unsigned)value));
-            else if(x == 1)
-               va = (all_ones & va) | (((Slong)value) << 32);
-            else if(x == 2)
-               vb = ((((Ulong)all_ones) << 32) & vb) | ((Ulong)((unsigned)value));
-            else
-               vb = (all_ones & vb) | (((Slong)value) << 32);
-         }
-         __FORCE_INLINE constexpr Slong to_int64() const
-         {
-            return va;
-         }
-         constexpr int operator[](int x) const
-         {
-            x = x & 3;
-            return x == 0 ? (int)va : (x == 1 ? (int)(va >> 32) : (x == 2 ? (int)vb : (int)(vb >> 32)));
-         }
+      }
+   } __attribute__((aligned(8)));
 
-         iv_base() = default;
-         template <int N2, bool C2>
-         constexpr iv_base(const iv_base<N2, C2>& b)
-         {
-            const int M = AC_MIN(2, N2);
-            if(M == 4)
-            {
-               va = b.to_int64();
-               vb = (((Slong)b[3]) << 32) | ((Ulong)((unsigned)b[2]));
-            }
-            else if(M == 3)
-            {
-               va = b.to_int64();
-               vb = b[2];
-            }
-            else if(M == 2)
-            {
-               va = b.to_int64();
-               vb = va < 0 ? ~0 : 0;
-            }
-            else
-            {
-               AC_ASSERT(M == 1, "unexpected condition");
-               va = b.to_int64();
-               vb = va < 0 ? ~0LL : 0;
-            }
-         }
-      } __attribute__((aligned(8)));
+   template <int W0, bool S0>
+   class iv_base<4, true, W0, S0> : public iv_base<4, false, W0, S0>
+   {
+   };
 
-      template <>
-      class iv_base<4, true> : public iv_base<4, false>
+   template <int W0, bool S0>
+   class iv_base<5, true, W0, S0>
+   {
+      long long int va __INIT_VALUE_LL;
+      long long int vb __INIT_VALUE_LL;
+
+    public:
+      template <int W, bool S>
+      __FORCE_INLINE constexpr void bit_adjust()
       {
-      };
-
-      template <>
-      class iv_base<5, true>
+      }
+      __FORCE_INLINE void assign_int64(Slong l)
       {
-         long long int va __INIT_VALUE_LL;
-         long long int vb __INIT_VALUE_LL;
-
-       public:
-         template <int W, bool S>
-         __FORCE_INLINE constexpr void bit_adjust()
+         va = l;
+         vb = va < 0 ? ~0LL : 0;
+      }
+      __FORCE_INLINE void constexpr assign_uint64(Ulong l)
+      {
+         va = static_cast<Slong>(l);
+         vb = 0;
+      }
+      __FORCE_INLINE void set(int x, int value)
+      {
+         x = x & 7;
+         if(x == 0)
          {
+            va = ((((Ulong)all_ones) << 32) & va) | ((Ulong)((unsigned)value));
          }
-         void assign_int64(Slong l)
+         else if(x == 1)
          {
-            va = l;
+            va = (all_ones & va) | (((Slong)value) << 32);
+         }
+         else if(x == 2)
+         {
+            vb = ((((Ulong)all_ones) << 32) & vb) | ((Ulong)((unsigned)value));
+         }
+         else if(x == 3)
+         {
+            vb = (all_ones & vb) | (((Slong)value) << 32);
+         }
+      }
+      __FORCE_INLINE constexpr Slong to_int64() const
+      {
+         return va;
+      }
+      __FORCE_INLINE constexpr int operator[](int x) const
+      {
+         x = x & 3;
+         return x == 0 ? (int)va : (x == 1 ? (int)(va >> 32) : (x == 2 ? (int)vb : (x == 2 ? (int)(vb >> 32) : 0)));
+      }
+      iv_base() = default;
+      template <int N2, bool C2, int W2, bool S2>
+      __FORCE_INLINE iv_base(const iv_base<N2, C2, W2, S2>& b)
+      {
+         const int M = AC_MIN(2, N2);
+         if(M == 4 || M == 5)
+         {
+            va = b.to_int64();
+            vb = (((Slong)b[3]) << 32) | ((Ulong)((unsigned)b[2]));
+         }
+         else if(M == 3)
+         {
+            va = b.to_int64();
+            vb = b[2];
+         }
+         else if(M == 2)
+         {
+            va = b.to_int64();
+            vb = va < 0 ? ~0 : 0;
+         }
+         else
+         {
+            AC_ASSERT(M == 1, "unexpected condition");
+            va = b.to_int64();
             vb = va < 0 ? ~0LL : 0;
          }
-         void constexpr assign_uint64(Ulong l)
-         {
-            va = static_cast<Slong>(l);
-            vb = 0;
-         }
-         void set(int x, int value)
-         {
-            x = x & 7;
-            if(x == 0)
-               va = ((((Ulong)all_ones) << 32) & va) | ((Ulong)((unsigned)value));
-            else if(x == 1)
-               va = (all_ones & va) | (((Slong)value) << 32);
-            else if(x == 2)
-               vb = ((((Ulong)all_ones) << 32) & vb) | ((Ulong)((unsigned)value));
-            else if(x == 3)
-               vb = (all_ones & vb) | (((Slong)value) << 32);
-         }
-         __FORCE_INLINE constexpr Slong to_int64() const
-         {
-            return va;
-         }
-         constexpr int operator[](int x) const
-         {
-            x = x & 3;
-            return x == 0 ? (int)va : (x == 1 ? (int)(va >> 32) : (x == 2 ? (int)vb : (x == 2 ? (int)(vb >> 32) : 0)));
-         }
-         iv_base() = default;
-         template <int N2, bool C2>
-         iv_base(const iv_base<N2, C2>& b)
-         {
-            const int M = AC_MIN(2, N2);
-            if(M == 4 || M == 5)
-            {
-               va = b.to_int64();
-               vb = (((Slong)b[3]) << 32) | ((Ulong)((unsigned)b[2]));
-            }
-            else if(M == 3)
-            {
-               va = b.to_int64();
-               vb = b[2];
-            }
-            else if(M == 2)
-            {
-               va = b.to_int64();
-               vb = va < 0 ? ~0 : 0;
-            }
-            else
-            {
-               AC_ASSERT(M == 1, "unexpected condition");
-               va = b.to_int64();
-               vb = va < 0 ? ~0LL : 0;
-            }
-         }
-      } __attribute__((aligned(8)));
-
-      template <int N, int START, int N1, bool C1, int Nr, bool Cr>
-      __FORCE_INLINE void iv_copy(const iv_base<N1, C1>& op, iv_base<Nr, Cr>& r)
+      }
+   } __attribute__((aligned(8)));
+#endif
+      template <int N, int START, int N1, bool C1, int W1, bool S1, int Nr, bool Cr, int Wr, bool Sr>
+      __FORCE_INLINE void iv_copy(const iv_base<N1, C1, W1, S1>& op, iv_base<Nr, Cr, Wr, Sr>& r)
       {
          if(START < N)
          {
@@ -1025,8 +1222,8 @@ typedef signed long long Slong;
          }
       }
 
-      template <int START, int N, int N1, bool C1>
-      __FORCE_INLINE bool iv_equal_zero(const iv_base<N1, C1>& op)
+      template <int START, int N, int N1, bool C1, int W1, bool S1>
+      __FORCE_INLINE bool iv_equal_zero(const iv_base<N1, C1, W1, S1>& op)
       {
          bool retval = true;
          if(START < N)
@@ -1036,8 +1233,8 @@ typedef signed long long Slong;
          return retval;
       }
 
-      template <int START, int N, int N1, bool C1>
-      __FORCE_INLINE bool iv_equal_ones(const iv_base<N1, C1>& op)
+      template <int START, int N, int N1, bool C1, int W1, bool S1>
+      __FORCE_INLINE bool iv_equal_ones(const iv_base<N1, C1, W1, S1>& op)
       {
          bool retval = true;
          if(START < N)
@@ -1047,17 +1244,21 @@ typedef signed long long Slong;
          return retval;
       }
 
-      template <int N1, bool C1, int N2, bool C2>
-      __FORCE_INLINE bool iv_equal(const iv_base<N1, C1>& op1, const iv_base<N2, C2>& op2)
+      template <int N1, bool C1, int W1, bool S1, int N2, bool C2, int W2, bool S2>
+      __FORCE_INLINE bool iv_equal(const iv_base<N1, C1, W1, S1>& op1, const iv_base<N2, C2, W2, S2>& op2)
       {
-         const int M1 = AC_MAX(N1, N2);
-         const int M2 = AC_MIN(N1, N2);
-         const bool M1C1 = N1 >= N2 ? C1 : C2;
-         const bool M2C1 = N1 >= N2 ? C2 : C1;
-         const iv_base<M1, M1C1>& OP1 =
-             N1 >= N2 ? static_cast<iv_base<M1, M1C1>>(op1) : static_cast<iv_base<M1, M1C1>>(op2);
-         const iv_base<M2, M2C1>& OP2 =
-             N1 >= N2 ? static_cast<iv_base<M2, M2C1>>(op2) : static_cast<iv_base<M2, M2C1>>(op1);
+         constexpr int M1 = AC_MAX(N1, N2);
+         constexpr int M2 = AC_MIN(N1, N2);
+         constexpr int MW1 = N1 >= N2 ? W1 : W2;
+         constexpr int MW2 = N1 >= N2 ? W2 : W1;
+         constexpr int MS1 = N1 >= N2 ? S1 : S2;
+         constexpr int MS2 = N1 >= N2 ? S2 : S1;
+         constexpr bool M1C1 = N1 >= N2 ? C1 : C2;
+         constexpr bool M2C1 = N1 >= N2 ? C2 : C1;
+         const iv_base<M1, M1C1, MW1, MS1>& OP1 =
+             N1 >= N2 ? static_cast<iv_base<M1, M1C1, MW1, MS1>>(op1) : static_cast<iv_base<M1, M1C1, MW1, MS1>>(op2);
+         const iv_base<M2, M2C1, MW2, MS2>& OP2 =
+             N1 >= N2 ? static_cast<iv_base<M2, M2C1, MW2, MS2>>(op2) : static_cast<iv_base<M2, M2C1, MW2, MS2>>(op1);
 
          bool retval = true;
          LOOP(int, i, 0, exclude, M2, { retval &= OP1[i] == OP2[i]; });
@@ -1071,56 +1272,73 @@ typedef signed long long Slong;
          return retval;
       }
 
-      template <int B, int N, bool C>
-      __FORCE_INLINE bool iv_equal_ones_from(const iv_base<N, C>& op)
+      template <int B, int N, bool C, int W, bool S>
+      __FORCE_INLINE bool iv_equal_ones_from(const iv_base<N, C, W, S>& op)
       {
          if((B >= 32 * N && op[N - 1] >= 0) || (B & 31 && ~(op[B / 32] >> (B & 31))))
+         {
             return false;
+         }
          return iv_equal_ones<(B + 31) / 32, N>(op);
       }
 
-      template <int B, int N, bool C>
-      __FORCE_INLINE bool iv_equal_zeros_from(const iv_base<N, C>& op)
+      template <int B, int N, bool C, int W, bool S>
+      __FORCE_INLINE bool iv_equal_zeros_from(const iv_base<N, C, W, S>& op)
       {
          if((B >= 32 * N && op[N - 1] < 0) || (B & 31 && (op[B / 32] >> (B & 31))))
+         {
             return false;
+         }
          return iv_equal_zero<(B + 31) / 32, N>(op);
       }
 
-      template <int B, int N, bool C>
-      __FORCE_INLINE bool iv_equal_ones_to(const iv_base<N, C>& op)
+      template <int B, int N, bool C, int W, bool S>
+      __FORCE_INLINE bool iv_equal_ones_to(const iv_base<N, C, W, S>& op)
       {
          if((B >= 32 * N && op[N - 1] >= 0) || (B & 31 && ~(op[B / 32] | (all_ones << (B & 31)))))
+         {
             return false;
+         }
          return iv_equal_ones<0, B / 32>(op);
       }
 
-      template <int B, int N, bool C>
-      __FORCE_INLINE bool iv_equal_zeros_to(const iv_base<N, C>& op)
+      template <int B, int N, bool C, int W, bool S>
+      __FORCE_INLINE bool iv_equal_zeros_to(const iv_base<N, C, W, S>& op)
       {
          if((B >= 32 * N && op[N - 1] < 0) || (B & 31 && (op[B / 32] & ~(all_ones << (B & 31)))))
+         {
             return false;
+         }
          if(B < 32)
+         {
             return true;
+         }
          return iv_equal_zero<0, (B / 32)>(op);
       }
 
-      template <bool greater, int N1, bool C1, int N2, bool C2>
-      __FORCE_INLINE bool iv_compare(const iv_base<N1, C1>& op1, const iv_base<N2, C2>& op2)
+      template <bool greater, int N1, bool C1, int W1, bool S1, int N2, bool C2, int W2, bool S2>
+      __FORCE_INLINE bool iv_compare(const iv_base<N1, C1, W1, S1>& op1, const iv_base<N2, C2, W2, S2>& op2)
       {
-         const int M1 = AC_MAX(N1, N2);
-         const int M2 = AC_MIN(N1, N2);
-         const bool M1C1 = N1 >= N2 ? C1 : C2;
-         const iv_base<M1, M1C1>& OP1 =
-             N1 >= N2 ? static_cast<iv_base<M1, M1C1>>(op1) : static_cast<iv_base<M1, M1C1>>(op2);
-         const bool M2C1 = N1 >= N2 ? C2 : C1;
-         const iv_base<M2, M2C1>& OP2 =
-             N1 >= N2 ? static_cast<iv_base<M2, M2C1>>(op2) : static_cast<iv_base<M2, M2C1>>(op1);
+         constexpr int M1 = AC_MAX(N1, N2);
+         constexpr int M2 = AC_MIN(N1, N2);
+         constexpr int MW1 = N1 >= N2 ? W1 : W2;
+         constexpr int MW2 = N1 >= N2 ? W2 : W1;
+         constexpr int MS1 = N1 >= N2 ? S1 : S2;
+         constexpr int MS2 = N1 >= N2 ? S2 : S1;
+         constexpr bool M1C1 = N1 >= N2 ? C1 : C2;
+         constexpr bool M2C1 = N1 >= N2 ? C2 : C1;
+
+         const iv_base<M1, M1C1, MW1, MS1>& OP1 =
+             N1 >= N2 ? static_cast<iv_base<M1, M1C1, MW1, MS1>>(op1) : static_cast<iv_base<M1, M1C1, MW1, MS1>>(op2);
+         const iv_base<M2, M2C1, MW2, MS2>& OP2 =
+             N1 >= N2 ? static_cast<iv_base<M2, M2C1, MW2, MS2>>(op2) : static_cast<iv_base<M2, M2C1, MW2, MS2>>(op1);
          const bool b = (N1 >= N2) == greater;
          int ext = OP2[M2 - 1] < 0 ? ~0 : 0;
          int i2 = M1 > M2 ? ext : OP2[M1 - 1];
          if(OP1[M1 - 1] != i2)
+         {
             return b ^ (OP1[M1 - 1] < i2);
+         }
          bool retval = false;
          bool invalidate = false;
          if((M1 - 2) >= M2)
@@ -1160,8 +1378,8 @@ typedef signed long long Slong;
          return false;
       }
 
-      template <int START, int N, bool C>
-      __FORCE_INLINE constexpr void iv_extend(iv_base<N, C>& r, int ext)
+      template <int START, int N, bool C, int W, bool S>
+      __FORCE_INLINE constexpr void iv_extend(iv_base<N, C, W, S>& r, int ext)
       {
          if(START < N)
          {
@@ -1169,14 +1387,14 @@ typedef signed long long Slong;
          }
       }
 
-      template <int Nr, bool Cr>
-      __FORCE_INLINE void iv_assign_int64(iv_base<Nr, Cr>& r, Slong l)
+      template <int Nr, bool Cr, int Wr, bool Sr>
+      __FORCE_INLINE void iv_assign_int64(iv_base<Nr, Cr, Wr, Sr>& r, Slong l)
       {
          r.assign_int64(l);
       }
 
-      template <int Nr, bool Cr>
-      __FORCE_INLINE constexpr void iv_assign_uint64(iv_base<Nr, Cr>& r, Ulong l)
+      template <int Nr, bool Cr, int Wr, bool Sr>
+      __FORCE_INLINE constexpr void iv_assign_uint64(iv_base<Nr, Cr, Wr, Sr>& r, Ulong l)
       {
          r.assign_uint64(l);
       }
@@ -1208,28 +1426,39 @@ typedef signed long long Slong;
          l2 += a >> 32;
       }
 
-      template <int N1, bool C1, int N2, bool C2, int Nr, bool Cr>
-      __FORCE_INLINE void iv_mult(const iv_base<N1, C1>& op1, const iv_base<N2, C2>& op2, iv_base<Nr, Cr>& r)
+      template <int N1, bool C1, int W1, bool S1, int N2, bool C2, int W2, bool S2, int Nr, bool Cr, int Wr, bool Sr>
+      __FORCE_INLINE void iv_mult(const iv_base<N1, C1, W1, S1>& op1, const iv_base<N2, C2, W2, S2>& op2,
+                                  iv_base<Nr, Cr, Wr, Sr>& r)
       {
          if(Nr == 1)
+         {
             r.set(0, op1[0] * op2[0]);
+         }
          else if(Nr == 2)
+         {
             iv_assign_int64(r, (op1.to_int64() * op2.to_int64()));
+         }
          else if(N1 == 1 && N2 == 1)
+         {
             iv_assign_int64(r, (op1.to_int64() * op2.to_int64()));
+         }
          else
          {
             constexpr int M1 = AC_MAX(N1, N2);
             constexpr int M2 = AC_MIN(N1, N2);
+            constexpr int MW1 = N1 >= N2 ? W1 : W2;
+            constexpr int MW2 = N1 >= N2 ? W2 : W1;
+            constexpr int MS1 = N1 >= N2 ? S1 : S2;
+            constexpr int MS2 = N1 >= N2 ? S2 : S1;
             constexpr bool M1C1 = N1 >= N2 ? C1 : C2;
             constexpr bool M2C1 = N1 >= N2 ? C2 : C1;
             constexpr int T1 = AC_MIN(M2 - 1, Nr);
             constexpr int T2 = AC_MIN(M1 - 1, Nr);
             constexpr int T3 = AC_MIN(M1 + M2 - 2, Nr);
-            const iv_base<M1, M1C1> OP1 =
-                N1 >= N2 ? static_cast<iv_base<M1, M1C1>>(op1) : static_cast<iv_base<M1, M1C1>>(op2);
-            const iv_base<M2, M2C1> OP2 =
-                N1 >= N2 ? static_cast<iv_base<M2, M2C1>>(op2) : static_cast<iv_base<M2, M2C1>>(op1);
+            const iv_base<M1, M1C1, MW1, MS1> OP1 = N1 >= N2 ? static_cast<iv_base<M1, M1C1, MW1, MS1>>(op1) :
+                                                               static_cast<iv_base<M1, M1C1, MW1, MS1>>(op2);
+            const iv_base<M2, M2C1, MW2, MS2> OP2 = N1 >= N2 ? static_cast<iv_base<M2, M2C1, MW2, MS2>>(op2) :
+                                                               static_cast<iv_base<M2, M2C1, MW2, MS2>>(op1);
 
             Ulong l1 = 0;
             Slong l2 = 0;
@@ -1287,8 +1516,8 @@ typedef signed long long Slong;
          }
       }
 
-      template <int N, bool C>
-      __FORCE_INLINE constexpr bool iv_uadd_carry(const iv_base<N, C>& op1, bool carry, iv_base<N, C>& r)
+      template <int N, bool C, int W, bool S>
+      __FORCE_INLINE constexpr bool iv_uadd_carry(const iv_base<N, C, W, S>& op1, bool carry, iv_base<N, C, W, S>& r)
       {
          Slong l = carry;
          LOOP(int, i, 0, exclude, N, {
@@ -1299,11 +1528,14 @@ typedef signed long long Slong;
          return l != 0;
       }
 
-      template <int START, int N, bool C, int Nr, bool Cr>
-      __FORCE_INLINE bool iv_add_int_carry(const iv_base<N, C>& op1, int op2, bool carry, iv_base<Nr, Cr>& r)
+      template <int START, int N, bool C, int W, bool S, int Nr, bool Cr, int Wr, bool Sr>
+      __FORCE_INLINE bool iv_add_int_carry(const iv_base<N, C, W, S>& op1, int op2, bool carry,
+                                           iv_base<Nr, Cr, Wr, Sr>& r)
       {
          if(N == START)
+         {
             return carry;
+         }
          if(N == START + 1)
          {
             Ulong l = carry + (Slong)op1[START] + (Slong)op2;
@@ -1326,8 +1558,10 @@ typedef signed long long Slong;
          return (l >> 32) & 1;
       }
 
-      template <int N, int N1, bool C1, int N2, bool C2, int Nr, bool Cr>
-      __FORCE_INLINE bool iv_uadd_n(const iv_base<N1, C1>& op1, const iv_base<N2, C2>& op2, iv_base<Nr, Cr>& r)
+      template <int N, int N1, bool C1, int W1, bool S1, int N2, bool C2, int W2, bool S2, int Nr, bool Cr, int Wr,
+                bool Sr>
+      __FORCE_INLINE bool iv_uadd_n(const iv_base<N1, C1, W1, S1>& op1, const iv_base<N2, C2, W2, S2>& op2,
+                                    iv_base<Nr, Cr, Wr, Sr>& r)
       {
          AC_ASSERT(AC_MIN(N, AC_MIN(N1, AC_MIN(N2, Nr))) == N, "unexpected condition");
          Ulong l = 0;
@@ -1339,23 +1573,30 @@ typedef signed long long Slong;
          return l & 1;
       }
 
-      template <int N1, bool C1, int N2, bool C2, int Nr, bool Cr>
-      __FORCE_INLINE void iv_add(const iv_base<N1, C1>& op1, const iv_base<N2, C2>& op2, iv_base<Nr, Cr>& r)
+      template <int N1, bool C1, int W1, bool S1, int N2, bool C2, int W2, bool S2, int Nr, bool Cr, int Wr, bool Sr>
+      __FORCE_INLINE void iv_add(const iv_base<N1, C1, W1, S1>& op1, const iv_base<N2, C2, W2, S2>& op2,
+                                 iv_base<Nr, Cr, Wr, Sr>& r)
       {
          if(Nr == 1)
+         {
             r.set(0, op1[0] + op2[0]);
+         }
          else
          {
             constexpr int M1 = AC_MAX(N1, N2);
             constexpr int M2 = AC_MIN(N1, N2);
+            constexpr int MW1 = N1 >= N2 ? W1 : W2;
+            constexpr int MW2 = N1 >= N2 ? W2 : W1;
+            constexpr int MS1 = N1 >= N2 ? S1 : S2;
+            constexpr int MS2 = N1 >= N2 ? S2 : S1;
             constexpr bool M1C1 = N1 >= N2 ? C1 : C2;
             constexpr bool M2C1 = N1 >= N2 ? C2 : C1;
             constexpr int T1 = AC_MIN(M2 - 1, Nr);
             constexpr int T2 = AC_MIN(M1, Nr);
-            const iv_base<M1, M1C1> OP1 =
-                N1 >= N2 ? static_cast<iv_base<M1, M1C1>>(op1) : static_cast<iv_base<M1, M1C1>>(op2);
-            const iv_base<M2, M2C1> OP2 =
-                N1 >= N2 ? static_cast<iv_base<M2, M2C1>>(op2) : static_cast<iv_base<M2, M2C1>>(op1);
+            const iv_base<M1, M1C1, MW1, MS1> OP1 = N1 >= N2 ? static_cast<iv_base<M1, M1C1, MW1, MS1>>(op1) :
+                                                               static_cast<iv_base<M1, M1C1, MW1, MS1>>(op2);
+            const iv_base<M2, M2C1, MW2, MS2> OP2 = N1 >= N2 ? static_cast<iv_base<M2, M2C1, MW2, MS2>>(op2) :
+                                                               static_cast<iv_base<M2, M2C1, MW2, MS2>>(op1);
 
             bool carry = iv_uadd_n<T1>(OP1, OP2, r);
             carry = iv_add_int_carry<T1>(OP1, OP2[T1], carry, r);
@@ -1363,11 +1604,14 @@ typedef signed long long Slong;
          }
       }
 
-      template <int N, int START, int N1, bool C1, int Nr, bool Cr>
-      __FORCE_INLINE bool iv_sub_int_borrow(const iv_base<N1, C1>& op1, int op2, bool borrow, iv_base<Nr, Cr>& r)
+      template <int N, int START, int N1, bool C1, int W1, bool S1, int Nr, bool Cr, int Wr, bool Sr>
+      __FORCE_INLINE bool iv_sub_int_borrow(const iv_base<N1, C1, W1, S1>& op1, int op2, bool borrow,
+                                            iv_base<Nr, Cr, Wr, Sr>& r)
       {
          if(START == N)
+         {
             return borrow;
+         }
          if(N == (START + 1))
          {
             Ulong l = (Slong)op1[START] - (Slong)op2 - borrow;
@@ -1390,11 +1634,14 @@ typedef signed long long Slong;
          return (l >> 32) & 1;
       }
 
-      template <int N, int START, int N2, bool C2, int Nr, bool Cr>
-      __FORCE_INLINE bool iv_sub_int_borrow(int op1, const iv_base<N2, C2>& op2, bool borrow, iv_base<Nr, Cr>& r)
+      template <int N, int START, int N2, bool C2, int W2, bool S2, int Nr, bool Cr, int Wr, bool Sr>
+      __FORCE_INLINE bool iv_sub_int_borrow(int op1, const iv_base<N2, C2, W2, S2>& op2, bool borrow,
+                                            iv_base<Nr, Cr, Wr, Sr>& r)
       {
          if(START == N)
+         {
             return borrow;
+         }
          if(N == START + 1)
          {
             Ulong l = (Slong)op1 - (Slong)op2[START] - borrow;
@@ -1417,8 +1664,10 @@ typedef signed long long Slong;
          return (l >> 32) & 1;
       }
 
-      template <int N, int N1, bool C1, int N2, bool C2, int Nr, bool Cr>
-      __FORCE_INLINE bool iv_usub_n(const iv_base<N1, C1>& op1, const iv_base<N2, C2>& op2, iv_base<Nr, Cr>& r)
+      template <int N, int N1, bool C1, int W1, bool S1, int N2, bool C2, int W2, bool S2, int Nr, bool Cr, int Wr,
+                bool Sr>
+      __FORCE_INLINE bool iv_usub_n(const iv_base<N1, C1, W1, S1>& op1, const iv_base<N2, C2, W2, S2>& op2,
+                                    iv_base<Nr, Cr, Wr, Sr>& r)
       {
          AC_ASSERT(AC_MIN(N, AC_MIN(N1, AC_MIN(N2, Nr))) == N, "unexpected condition");
          Slong l = 0;
@@ -1430,29 +1679,36 @@ typedef signed long long Slong;
          return l & 1;
       }
 
-      template <int N1, bool C1, int N2, bool C2, int Nr, bool Cr>
-      __FORCE_INLINE void iv_sub(const iv_base<N1, C1>& op1, const iv_base<N2, C2>& op2, iv_base<Nr, Cr>& r)
+      template <int N1, bool C1, int W1, bool S1, int N2, bool C2, int W2, bool S2, int Nr, bool Cr, int Wr, bool Sr>
+      __FORCE_INLINE void iv_sub(const iv_base<N1, C1, W1, S1>& op1, const iv_base<N2, C2, W2, S2>& op2,
+                                 iv_base<Nr, Cr, Wr, Sr>& r)
       {
          if(Nr == 1)
+         {
             r.set(0, op1[0] - op2[0]);
+         }
          else
          {
-            const int M1 = AC_MAX(N1, N2);
-            const int M2 = AC_MIN(N1, N2);
-            const int T1 = AC_MIN(M2 - 1, Nr);
-            const int T2 = AC_MIN(M1, Nr);
+            constexpr int M1 = AC_MAX(N1, N2);
+            constexpr int M2 = AC_MIN(N1, N2);
+            constexpr int T1 = AC_MIN(M2 - 1, Nr);
+            constexpr int T2 = AC_MIN(M1, Nr);
 
             bool borrow = iv_usub_n<T1>(op1, op2, r);
             if(N1 > N2)
+            {
                borrow = iv_sub_int_borrow<T2, T1>(op1, op2[T1], borrow, r);
+            }
             else
+            {
                borrow = iv_sub_int_borrow<T2, T1>(op1[T1], op2, borrow, r);
+            }
             iv_extend<T2>(r, borrow ? ~0 : 0);
          }
       }
 
-      template <int N, bool C, int Nr, bool Cr>
-      __FORCE_INLINE void iv_neg(const iv_base<N, C>& op1, iv_base<Nr, Cr>& r)
+      template <int N, bool C, int W, bool S, int Nr, bool Cr, int Wr, bool Sr>
+      void iv_neg(const iv_base<N, C, W, S>& op1, iv_base<Nr, Cr, Wr, Sr>& r)
       {
          Slong l = 0;
          LOOP(int, k, 0, exclude, AC_MIN(N, Nr), {
@@ -1467,10 +1723,10 @@ typedef signed long long Slong;
          }
       }
 
-      template <bool S, int N, bool C, int Nr, bool Cr>
-      __FORCE_INLINE void iv_abs(const iv_base<N, C>& op1, iv_base<Nr, Cr>& r)
+      template <bool S0, int N, bool C, int W, bool S, int Nr, bool Cr, int Wr, bool Sr>
+      __FORCE_INLINE void iv_abs(const iv_base<N, C, W, S>& op1, iv_base<Nr, Cr, Wr, Sr>& r)
       {
-         if(S && op1[N - 1] < 0)
+         if(S0 && op1[N - 1] < 0)
          {
             iv_neg(op1, r);
          }
@@ -1482,9 +1738,10 @@ typedef signed long long Slong;
       }
 
       template <int N, int D, int Q, int R, typename uw2, typename sw4, typename uw4, int w1_length, int Nn, bool Cn,
-                int Nd, bool Cd, int Nq, bool Cq, int Nr, bool Cr>
-      __FORCE_INLINE void iv_udiv(const iv_base<Nn, Cn>& n, const iv_base<Nd, Cd>& d, iv_base<Nq, Cq>& q,
-                                  iv_base<Nr, Cr>& r)
+                int Wn, bool Sn, int Nd, bool Cd, int Wd, bool Sd, int Nq, bool Cq, int Wq, bool Sq, int Nr, bool Cr,
+                int Wr, bool Sr>
+      __FORCE_INLINE void iv_udiv(const iv_base<Nn, Cn, Wn, Sn>& n, const iv_base<Nd, Cd, Wd, Sd>& d,
+                                  iv_base<Nq, Cq, Wq, Sq>& q, iv_base<Nr, Cr, Wr, Sr>& r)
       {
          constexpr int w2_length = 2 * w1_length;
          int d_msi = D - 1; // most significant int for d
@@ -1516,7 +1773,9 @@ typedef signed long long Slong;
          int d_mss = 2 * d_msi + d_mss_odd; // index to most significant short (16-bit)
          d1 = (uw4)(uw2)d[d_msi] << (w1_length << (int)!d_mss_odd);
          if(d_msi)
+         {
             d1 |= (uw2)d[d_msi - 1] >> (d_mss_odd ? w1_length : 0);
+         }
          bool n_mss_odd = (bool)(n[n_msi] >> w1_length);
          int n_mss = 2 * n_msi + n_mss_odd;
          if(n_mss < d_mss)
@@ -1597,15 +1856,21 @@ typedef signed long long Slong;
             {
                int r_msi = AC_MIN(R - 1, n_msi);
                for(int j = 0; j <= r_msi; j++)
+               {
                   r.set(j, r1[j]);
+               }
                for(int j = r_msi + 1; j < R; j++)
+               {
                   r.set(j, 0);
+               }
             }
          }
       }
 
-      template <int Num_s, int Den_s, int N1, bool C1, int N2, bool C2, int Nr, bool Cr>
-      __FORCE_INLINE void iv_div(const iv_base<N1, C1>& op1, const iv_base<N2, C2>& op2, iv_base<Nr, Cr>& r)
+      template <int Num_s, int Den_s, int N1, bool C1, int W1, bool S1, int N2, bool C2, int W2, bool S2, int Nr,
+                bool Cr, int Wr, bool Sr>
+      __FORCE_INLINE void iv_div(const iv_base<N1, C1, W1, S1>& op1, const iv_base<N2, C2, W2, S2>& op2,
+                                 iv_base<Nr, Cr, Wr, Sr>& r)
       {
          enum
          {
@@ -1617,10 +1882,12 @@ typedef signed long long Slong;
             iv_extend<1>(r, ((Num_s || Den_s) && (r[0] < 0)) ? ~0 : 0);
          }
          else if(N1_over <= 2 && N2 <= 2)
+         {
             iv_assign_int64(r, op1.to_int64() / op2.to_int64());
+         }
          else if(!Num_s && !Den_s)
          {
-            iv_base<1, false> dummy;
+            iv_base<1, false, 32, false> dummy{};
             iv_udiv<N1, N2, N1, 0, unsigned, Slong, Ulong, 16>(op1, op2, r, dummy);
             iv_extend<N1>(r, 0);
          }
@@ -1631,15 +1898,17 @@ typedef signed long long Slong;
                N1_neg = N1 + (Num_s == 2),
                N2_neg = N2 + (Den_s == 2)
             };
-            iv_base<N1_neg, false> numerator;
-            iv_base<N2_neg, false> denominator;
-            iv_base<N1_neg, false> quotient;
+            iv_base<N1_neg, false, 32 * N1_neg, false> numerator;
+            iv_base<N2_neg, false, 32 * N2_neg, false> denominator;
+            iv_base<N1_neg, false, 32 * N1_neg, false> quotient;
             iv_abs<(bool)Num_s>(op1, numerator);
             iv_abs<(bool)Den_s>(op2, denominator);
-            iv_base<1, false> dummy;
+            iv_base<1, false, 32, false> dummy{};
             iv_udiv<N1_neg, N2_neg, N1_neg, 0, unsigned, Slong, Ulong, 16>(numerator, denominator, quotient, dummy);
             if((Num_s && op1[N1 - 1] < 0) ^ (Den_s && op2[N2 - 1] < 0))
+            {
                iv_neg(quotient, r);
+            }
             else
             {
                iv_copy<AC_MIN(N1_neg, Nr), 0>(quotient, r);
@@ -1648,8 +1917,10 @@ typedef signed long long Slong;
          }
       }
 
-      template <int Num_s, int Den_s, int N1, bool C1, int N2, bool C2, int Nr, bool Cr>
-      __FORCE_INLINE void iv_rem(const iv_base<N1, C1>& op1, const iv_base<N2, C2>& op2, iv_base<Nr, Cr>& r)
+      template <int Num_s, int Den_s, int N1, bool C1, int W1, bool S1, int N2, bool C2, int W2, bool S2, int Nr,
+                bool Cr, int Wr, bool Sr>
+      __FORCE_INLINE void iv_rem(const iv_base<N1, C1, W1, S1>& op1, const iv_base<N2, C2, W2, S2>& op2,
+                                 iv_base<Nr, Cr, Wr, Sr>& r)
       {
          enum
          {
@@ -1661,10 +1932,12 @@ typedef signed long long Slong;
             iv_extend<1>(r, Num_s && r[0] < 0 ? ~0 : 0);
          }
          else if(N1_over <= 2 && N2 <= 2)
+         {
             iv_assign_int64(r, op1.to_int64() % op2.to_int64());
+         }
          else if(!Num_s && !Den_s)
          {
-            iv_base<1, false> dummy;
+            iv_base<1, false, 32, false> dummy{};
             iv_udiv<N1, N2, 0, N2, unsigned, Slong, Ulong, 16>(op1, op2, dummy, r);
             iv_extend<N2>(r, 0);
          }
@@ -1675,15 +1948,17 @@ typedef signed long long Slong;
                N1_neg = N1 + (Num_s == 2),
                N2_neg = N2 + (Den_s == 2)
             };
-            iv_base<N1_neg, false> numerator;
-            iv_base<N2_neg, false> denominator;
-            iv_base<N2, false> remainder;
+            iv_base<N1_neg, false, 32 * N1_neg, false> numerator;
+            iv_base<N2_neg, false, 32 * N2_neg, false> denominator;
+            iv_base<N2, false, 32 * N2, false> remainder;
             iv_abs<(bool)Num_s>(op1, numerator);
             iv_abs<(bool)Den_s>(op2, denominator);
-            iv_base<1, false> dummy;
+            iv_base<1, false, 32, false> dummy{};
             iv_udiv<N1_neg, N2_neg, 0, N2, unsigned, Slong, Ulong, 16>(numerator, denominator, dummy, remainder);
             if((Num_s && op1[N1 - 1] < 0))
+            {
                iv_neg(remainder, r);
+            }
             else
             {
                iv_copy<AC_MIN(N2, Nr), 0>(remainder, r);
@@ -1692,8 +1967,8 @@ typedef signed long long Slong;
          }
       }
 
-      template <int N, int START, int N1, bool C1, int Nr, bool Cr>
-      __FORCE_INLINE void iv_bitwise_complement_n(const iv_base<N1, C1>& op, iv_base<Nr, Cr>& r)
+      template <int N, int START, int N1, bool C1, int W1, bool S1, int Nr, bool Cr, int Wr, bool Sr>
+      __FORCE_INLINE void iv_bitwise_complement_n(const iv_base<N1, C1, W1, S1>& op, iv_base<Nr, Cr, Wr, Sr>& r)
       {
          if(START < N)
          {
@@ -1701,94 +1976,131 @@ typedef signed long long Slong;
          }
       }
 
-      template <int N, bool C, int Nr, bool Cr>
-      __FORCE_INLINE void iv_bitwise_complement(const iv_base<N, C>& op, iv_base<Nr, Cr>& r)
+      template <int N, bool C, int W, bool S, int Nr, bool Cr, int Wr, bool Sr>
+      __FORCE_INLINE void iv_bitwise_complement(const iv_base<N, C, W, S>& op, iv_base<Nr, Cr, Wr, Sr>& r)
       {
          const int M = AC_MIN(N, Nr);
          iv_bitwise_complement_n<M, 0>(op, r);
          iv_extend<M>(r, (r[M - 1] < 0) ? ~0 : 0);
       }
 
-      template <int N, int N1, bool C1, int N2, bool C2, int Nr, bool Cr>
-      __FORCE_INLINE void iv_bitwise_and_n(const iv_base<N1, C1>& op1, const iv_base<N2, C2>& op2, iv_base<Nr, Cr>& r)
+      template <int N, int N1, bool C1, int W1, bool S1, int N2, bool C2, int W2, bool S2, int Nr, bool Cr, int Wr,
+                bool Sr>
+      __FORCE_INLINE void iv_bitwise_and_n(const iv_base<N1, C1, W1, S1>& op1, const iv_base<N2, C2, W2, S2>& op2,
+                                           iv_base<Nr, Cr, Wr, Sr>& r)
       {
          LOOP(int, i, 0, exclude, N, { r.set(i, op1[i] & op2[i]); });
       }
 
-      template <int N1, bool C1, int N2, bool C2, int Nr, bool Cr>
-      __FORCE_INLINE void iv_bitwise_and(const iv_base<N1, C1>& op1, const iv_base<N2, C2>& op2, iv_base<Nr, Cr>& r)
+      template <int N1, bool C1, int W1, bool S1, int N2, bool C2, int W2, bool S2, int Nr, bool Cr, int Wr, bool Sr>
+      __FORCE_INLINE void iv_bitwise_and(const iv_base<N1, C1, W1, S1>& op1, const iv_base<N2, C2, W2, S2>& op2,
+                                         iv_base<Nr, Cr, Wr, Sr>& r)
       {
-         const int M1 = AC_MIN(AC_MAX(N1, N2), Nr);
-         const int M2 = AC_MIN(AC_MIN(N1, N2), Nr);
-         const bool M1C1 = N1 > N2 ? C1 : C2;
-         const iv_base<AC_MAX(N1, N2), M1C1>& OP1 = N1 > N2 ? static_cast<iv_base<AC_MAX(N1, N2), M1C1>>(op1) :
-                                                              static_cast<iv_base<AC_MAX(N1, N2), M1C1>>(op2);
-         const bool M2C1 = N1 > N2 ? C2 : C1;
-         const iv_base<AC_MIN(N1, N2), M2C1>& OP2 = N1 > N2 ? static_cast<iv_base<AC_MIN(N1, N2), M2C1>>(op2) :
-                                                              static_cast<iv_base<AC_MIN(N1, N2), M2C1>>(op1);
+         constexpr int M1 = AC_MIN(AC_MAX(N1, N2), Nr);
+         constexpr int M2 = AC_MIN(AC_MIN(N1, N2), Nr);
+         constexpr bool MW1 = N1 > N2 ? W1 : W2;
+         constexpr bool MW2 = N1 > N2 ? W2 : W1;
+         constexpr bool MS1 = N1 > N2 ? S1 : S2;
+         constexpr bool MS2 = N1 > N2 ? S2 : S1;
+         constexpr bool M1C1 = N1 > N2 ? C1 : C2;
+         constexpr bool M2C1 = N1 > N2 ? C2 : C1;
+         const iv_base<AC_MAX(N1, N2), M1C1, MW1, MS1>& OP1 =
+             N1 > N2 ? static_cast<iv_base<AC_MAX(N1, N2), M1C1, MW1, MS1>>(op1) :
+                       static_cast<iv_base<AC_MAX(N1, N2), M1C1, MW1, MS1>>(op2);
+         const iv_base<AC_MIN(N1, N2), M2C1, MW2, MS2>& OP2 =
+             N1 > N2 ? static_cast<iv_base<AC_MIN(N1, N2), M2C1, MW2, MS2>>(op2) :
+                       static_cast<iv_base<AC_MIN(N1, N2), M2C1, MW2, MS2>>(op1);
 
          iv_bitwise_and_n<M2>(op1, op2, r);
          if(OP2[M2 - 1] < 0)
+         {
             iv_copy<M1, M2>(OP1, r);
+         }
          else
+         {
             iv_extend<M2>(r, 0);
+         }
          iv_extend<M1>(r, (r[M1 - 1] < 0) ? ~0 : 0);
       }
 
-      template <int N, int N1, bool C1, int N2, bool C2, int Nr, bool Cr>
-      __FORCE_INLINE void iv_bitwise_or_n(const iv_base<N1, C1>& op1, const iv_base<N2, C2>& op2, iv_base<Nr, Cr>& r)
+      template <int N, int N1, bool C1, int W1, bool S1, int N2, bool C2, int W2, bool S2, int Nr, bool Cr, int Wr,
+                bool Sr>
+      __FORCE_INLINE void iv_bitwise_or_n(const iv_base<N1, C1, W1, S1>& op1, const iv_base<N2, C2, W2, S2>& op2,
+                                          iv_base<Nr, Cr, Wr, Sr>& r)
       {
          LOOP(int, i, 0, exclude, N, { r.set(i, op1[i] | op2[i]); });
       }
 
-      template <int N1, bool C1, int N2, bool C2, int Nr, bool Cr>
-      __FORCE_INLINE void iv_bitwise_or(const iv_base<N1, C1>& op1, const iv_base<N2, C2>& op2, iv_base<Nr, Cr>& r)
+      template <int N1, bool C1, int W1, bool S1, int N2, bool C2, int W2, bool S2, int Nr, bool Cr, int Wr, bool Sr>
+      __FORCE_INLINE void iv_bitwise_or(const iv_base<N1, C1, W1, S1>& op1, const iv_base<N2, C2, W2, S2>& op2,
+                                        iv_base<Nr, Cr, Wr, Sr>& r)
       {
-         const int M1 = AC_MIN(AC_MAX(N1, N2), Nr);
-         const int M2 = AC_MIN(AC_MIN(N1, N2), Nr);
-         const bool M1C1 = N1 >= N2 ? C1 : C2;
-         const iv_base<M1, M1C1>& OP1 =
-             N1 >= N2 ? static_cast<iv_base<M1, M1C1>>(op1) : static_cast<iv_base<M1, M1C1>>(op2);
-         const bool M2C1 = N1 >= N2 ? C2 : C1;
-         const iv_base<M2, M2C1>& OP2 =
-             N1 >= N2 ? static_cast<iv_base<M2, M2C1>>(op2) : static_cast<iv_base<M2, M2C1>>(op1);
+         constexpr int M1 = AC_MIN(AC_MAX(N1, N2), Nr);
+         constexpr int M2 = AC_MIN(AC_MIN(N1, N2), Nr);
+         constexpr int MW1 = N1 >= N2 ? W1 : W2;
+         constexpr int MW2 = N1 >= N2 ? W2 : W1;
+         constexpr int MS1 = N1 >= N2 ? S1 : S2;
+         constexpr int MS2 = N1 >= N2 ? S2 : S1;
+         constexpr bool M1C1 = N1 >= N2 ? C1 : C2;
+         constexpr bool M2C1 = N1 >= N2 ? C2 : C1;
+         const iv_base<M1, M1C1, MW1, MS1>& OP1 =
+             N1 >= N2 ? static_cast<iv_base<M1, M1C1, MW1, MS1>>(op1) : static_cast<iv_base<M1, M1C1, MW1, MS1>>(op2);
+         const iv_base<M2, M2C1, MW1, MS2>& OP2 =
+             N1 >= N2 ? static_cast<iv_base<M2, M2C1, MW2, MS2>>(op2) : static_cast<iv_base<M2, M2C1, MW2, MS2>>(op1);
 
          iv_bitwise_or_n<M2>(op1, op2, r);
          if(OP2[M2 - 1] < 0)
+         {
             iv_extend<M2>(r, ~0);
+         }
          else
+         {
             iv_copy<M1, M2>(OP1, r);
+         }
          iv_extend<M1>(r, (r[M1 - 1] < 0) ? ~0 : 0);
       }
 
-      template <int N, int N1, bool C1, int N2, bool C2, int Nr, bool Cr>
-      __FORCE_INLINE void iv_bitwise_xor_n(const iv_base<N1, C1>& op1, const iv_base<N2, C2>& op2, iv_base<Nr, Cr>& r)
+      template <int N, int N1, bool C1, int W1, bool S1, int N2, bool C2, int W2, bool S2, int Nr, bool Cr, int Wr,
+                bool Sr>
+      __FORCE_INLINE void iv_bitwise_xor_n(const iv_base<N1, C1, W1, S1>& op1, const iv_base<N2, C2, W2, S2>& op2,
+                                           iv_base<Nr, Cr, Wr, Sr>& r)
       {
          LOOP(int, i, 0, exclude, N, { r.set(i, op1[i] ^ op2[i]); });
       }
 
-      template <int N1, bool C1, int N2, bool C2, int Nr, bool Cr>
-      __FORCE_INLINE void iv_bitwise_xor(const iv_base<N1, C1>& op1, const iv_base<N2, C2>& op2, iv_base<Nr, Cr>& r)
+      template <int N1, bool C1, int W1, bool S1, int N2, bool C2, int W2, bool S2, int Nr, bool Cr, int Wr, bool Sr>
+      __FORCE_INLINE void iv_bitwise_xor(const iv_base<N1, C1, W1, S1>& op1, const iv_base<N2, C2, W2, S2>& op2,
+                                         iv_base<Nr, Cr, Wr, Sr>& r)
       {
-         const int M1 = AC_MIN(AC_MAX(N1, N2), Nr);
-         const int M2 = AC_MIN(AC_MIN(N1, N2), Nr);
-         const bool M1C1 = N1 >= N2 ? C1 : C2;
-         const bool M2C1 = N1 >= N2 ? C2 : C1;
-         const iv_base<AC_MAX(N1, N2), M1C1>& OP1 = N1 >= N2 ? static_cast<iv_base<AC_MAX(N1, N2), M1C1>>(op1) :
-                                                               static_cast<iv_base<AC_MAX(N1, N2), M1C1>>(op2);
-         const iv_base<AC_MIN(N1, N2), M2C1>& OP2 = N1 >= N2 ? static_cast<iv_base<AC_MIN(N1, N2), M2C1>>(op2) :
-                                                               static_cast<iv_base<AC_MIN(N1, N2), M2C1>>(op1);
+         constexpr int M1 = AC_MIN(AC_MAX(N1, N2), Nr);
+         constexpr int M2 = AC_MIN(AC_MIN(N1, N2), Nr);
+         constexpr bool MW1 = N1 >= N2 ? W1 : W2;
+         constexpr bool MW2 = N1 >= N2 ? W2 : W1;
+         constexpr bool MS1 = N1 >= N2 ? S1 : S2;
+         constexpr bool MS2 = N1 >= N2 ? S2 : S1;
+         constexpr bool M1C1 = N1 >= N2 ? C1 : C2;
+         constexpr bool M2C1 = N1 >= N2 ? C2 : C1;
+         const iv_base<AC_MAX(N1, N2), M1C1, MW1, MS1>& OP1 =
+             N1 >= N2 ? static_cast<iv_base<AC_MAX(N1, N2), M1C1, MW1, MS1>>(op1) :
+                        static_cast<iv_base<AC_MAX(N1, N2), M1C1, MW1, MS1>>(op2);
+         const iv_base<AC_MIN(N1, N2), M2C1, MW2, MS2>& OP2 =
+             N1 >= N2 ? static_cast<iv_base<AC_MIN(N1, N2), M2C1, MW2, MS2>>(op2) :
+                        static_cast<iv_base<AC_MIN(N1, N2), M2C1, MW2, MS2>>(op1);
 
          iv_bitwise_xor_n<M2>(op1, op2, r);
          if(OP2[M2 - 1] < 0)
+         {
             iv_bitwise_complement_n<M1, M2>(OP1, r);
+         }
          else
+         {
             iv_copy<M1, M2>(OP1, r);
+         }
          iv_extend<M1>(r, (r[M1 - 1] < 0) ? ~0 : 0);
       }
 
-      template <int N, bool C, int Nr, bool Cr>
-      __FORCE_INLINE void iv_shift_l(const iv_base<N, C>& op1, unsigned op2, iv_base<Nr, Cr>& r)
+      template <int N, bool C, int W, bool S, int Nr, bool Cr, int Wr, bool Sr>
+      __FORCE_INLINE void iv_shift_l(const iv_base<N, C, W, S>& op1, unsigned op2, iv_base<Nr, Cr, Wr, Sr>& r)
       {
          AC_ASSERT(Nr <= N, "iv_shift_l, incorrect usage Nr > N");
          unsigned s31 = op2 & 31;
@@ -1808,8 +2120,8 @@ typedef signed long long Slong;
          }
       }
 
-      template <int N, bool C, int Nr, bool Cr>
-      __FORCE_INLINE void iv_shift_r(const iv_base<N, C>& op1, unsigned op2, iv_base<Nr, Cr>& r)
+      template <int N, bool C, int W, bool S, int Nr, bool Cr, int Wr, bool Sr>
+      __FORCE_INLINE void iv_shift_r(const iv_base<N, C, W, S>& op1, unsigned op2, iv_base<Nr, Cr, Wr, Sr>& r)
       {
          unsigned s31 = op2 & 31;
          unsigned ishift = (op2 >> 5) > N ? N : (op2 >> 5);
@@ -1829,26 +2141,34 @@ typedef signed long long Slong;
          }
       }
 
-      template <bool S, int N, bool C, int Nr, bool Cr>
-      __FORCE_INLINE void iv_shift_l2(const iv_base<N, C>& op1, signed op2, iv_base<Nr, Cr>& r)
+      template <bool S0, int N, bool C, int W, bool S, int Nr, bool Cr, int Wr, bool Sr>
+      __FORCE_INLINE void iv_shift_l2(const iv_base<N, C, W, S>& op1, signed op2, iv_base<Nr, Cr, Wr, Sr>& r)
       {
-         if(S && op2 < 0)
+         if(S0 && op2 < 0)
+         {
             iv_shift_r(op1, -op2, r);
+         }
          else
+         {
             iv_shift_l(op1, op2, r);
+         }
       }
 
-      template <bool S, int N, bool C, int Nr, bool Cr>
-      __FORCE_INLINE void iv_shift_r2(const iv_base<N, C>& op1, signed op2, iv_base<Nr, Cr>& r)
+      template <bool S0, int N, bool C, int W, bool S, int Nr, bool Cr, int Wr, bool Sr>
+      __FORCE_INLINE void iv_shift_r2(const iv_base<N, C, W, S>& op1, signed op2, iv_base<Nr, Cr, Wr, Sr>& r)
       {
-         if(S && op2 < 0)
+         if(S0 && op2 < 0)
+         {
             iv_shift_l(op1, -op2, r);
+         }
          else
+         {
             iv_shift_r(op1, op2, r);
+         }
       }
 
-      template <int B, int N, bool C, int Nr, bool Cr>
-      __FORCE_INLINE constexpr void iv_const_shift_l(const iv_base<N, C>& op1, iv_base<Nr, Cr>& r)
+      template <int B, int N, bool C, int W, bool S, int Nr, bool Cr, int Wr, bool Sr>
+      __FORCE_INLINE constexpr void iv_const_shift_l(const iv_base<N, C, W, S>& op1, iv_base<Nr, Cr, Wr, Sr>& r)
       {
          // B >= 0
          if(!B)
@@ -1891,8 +2211,8 @@ typedef signed long long Slong;
          }
       }
 
-      template <int B, int N, bool C, int Nr, bool Cr>
-      __FORCE_INLINE void iv_const_shift_r(const iv_base<N, C>& op1, iv_base<Nr, Cr>& r)
+      template <int B, int N, bool C, int W, bool S, int Nr, bool Cr, int Wr, bool Sr>
+      __FORCE_INLINE void iv_const_shift_r(const iv_base<N, C, W, S>& op1, iv_base<Nr, Cr, Wr, Sr>& r)
       {
          if(!B)
          {
@@ -1921,8 +2241,8 @@ typedef signed long long Slong;
          }
       }
 
-      template <int N, bool C>
-      __FORCE_INLINE constexpr void iv_conv_from_fraction(const double d, iv_base<N, C>& r, bool* qb, bool* rbits,
+      template <int N, bool C, int W, bool S>
+      __FORCE_INLINE constexpr void iv_conv_from_fraction(const double d, iv_base<N, C, W, S>& r, bool* qb, bool* rbits,
                                                           bool* o)
       {
          bool b = d < 0;
@@ -1942,12 +2262,14 @@ typedef signed long long Slong;
          *rbits = d2 != 0.0;
          *qb = (b && *rbits) ^ k;
          if(b && !*rbits && !*qb)
+         {
             iv_uadd_carry(r, true, r);
+         }
          *o |= b ^ (r[N - 1] < 0);
       }
 
-      template <int N, bool C>
-      __FORCE_INLINE constexpr void iv_conv_from_fraction(const float d, iv_base<N, C>& r, bool* qb, bool* rbits,
+      template <int N, bool C, int W, bool S>
+      __FORCE_INLINE constexpr void iv_conv_from_fraction(const float d, iv_base<N, C, W, S>& r, bool* qb, bool* rbits,
                                                           bool* o)
       {
          bool b = d < 0;
@@ -1967,14 +2289,16 @@ typedef signed long long Slong;
          *rbits = d2 != 0.0;
          *qb = (b && *rbits) ^ k;
          if(b && !*rbits && !*qb)
+         {
             iv_uadd_carry(r, true, r);
+         }
          *o |= b ^ (r[N - 1] < 0);
       }
 
-      template <ac_base_mode b, int N, bool C>
+      template <ac_base_mode b, int N, bool C, int W, bool S>
       struct to_strImpl
       {
-         static __FORCE_INLINE int to_str(iv_base<N, C>& v, int w, bool left_just, char* r)
+         static __FORCE_INLINE int to_str(iv_base<N, C, W, S>& v, int w, bool left_just, char* r)
          {
             const char digits[] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
             const unsigned char B = b == AC_BIN ? 1 : (b == AC_OCT ? 3 : (b == AC_HEX ? 4 : 0));
@@ -1984,12 +2308,16 @@ typedef signed long long Slong;
             if(b != AC_BIN && left_just)
             {
                if((bits = -(w % B)))
+               {
                   r[--k] = 0;
+               }
             }
             for(int i = 0; i < n; i++)
             {
                if(b != AC_BIN && bits < 0)
+               {
                   r[k] += (unsigned char)((v[i] << (B + bits)) & (b - 1));
+               }
                unsigned int m = (unsigned)v[i] >> -bits;
                for(bits += 32; bits > 0 && k; bits -= B)
                {
@@ -1998,14 +2326,16 @@ typedef signed long long Slong;
                }
             }
             for(int i = 0; i < (w + B - 1) / B; i++)
+            {
                r[i] = digits[(int)r[i]];
+            }
             return (w + B - 1) / B;
          }
       };
-      template <int N, bool C>
-      struct to_strImpl<AC_DEC, N, C>
+      template <int N, bool C, int W, bool S>
+      struct to_strImpl<AC_DEC, N, C, W, S>
       {
-         static __FORCE_INLINE int to_str(iv_base<N, C>& v, int w, bool left_just, char* r)
+         static __FORCE_INLINE int to_str(iv_base<N, C, W, S>& v, int w, bool left_just, char* r)
          {
             int k = 0;
             int msw = (w - 1) >> 5;
@@ -2016,7 +2346,9 @@ typedef signed long long Slong;
                {
                   unsigned left_shift = 32 - bits_msw;
                   for(int i = msw; i > 0; i--)
+                  {
                      v.set(i, v[i] << left_shift | (unsigned)v[i - 1] >> bits_msw);
+                  }
                   v.set(0, v[0] << left_shift);
                }
                int lsw = 0;
@@ -2029,7 +2361,9 @@ typedef signed long long Slong;
                      v.set(i, l);
                      l >>= 32;
                      if(i == lsw && !v[i])
+                     {
                         lsw++;
+                     }
                   }
                   r[k++] = (char)('0' + (int)l);
                }
@@ -2052,7 +2386,9 @@ typedef signed long long Slong;
                      v.set(i, q);
                   }
                   if(!v[msw])
+                  {
                      msw--;
+                  }
                   bool last = msw == -1;
                   auto rem = (unsigned)nl;
                   for(int i = 0; (i < 9 && !last) || rem; i++)
@@ -2072,8 +2408,9 @@ typedef signed long long Slong;
             return k;
          }
       };
-      template <int N, bool C>
-      __FORCE_INLINE int to_string(iv_base<N, C>& v, int w, bool sign_mag, ac_base_mode base, bool left_just, char* r)
+      template <int N, bool C, int W, bool S>
+      __FORCE_INLINE int to_string(iv_base<N, C, W, S>& v, int w, bool sign_mag, ac_base_mode base, bool left_just,
+                                   char* r)
       {
          int n = (w + 31) >> 5;
          bool neg = !sign_mag && v[n - 1] < 0;
@@ -2089,50 +2426,76 @@ typedef signed long long Slong;
                for(int i = 16; i > 0; i >>= 1)
                {
                   if((m >> i) == (neg ? ~0 : 0))
+                  {
                      w2 -= i;
+                  }
                   else
+                  {
                      m >>= i;
+                  }
                }
             }
             if(w2 < w)
+            {
                w = w2;
+            }
             w += !sign_mag;
          }
          if(base == AC_DEC)
-            return to_strImpl<AC_DEC, N, C>::to_str(v, w, left_just, r);
+         {
+            return to_strImpl<AC_DEC, N, C, W, S>::to_str(v, w, left_just, r);
+         }
          else if(base == AC_HEX)
-            return to_strImpl<AC_HEX, N, C>::to_str(v, w, left_just, r);
+         {
+            return to_strImpl<AC_HEX, N, C, W, S>::to_str(v, w, left_just, r);
+         }
          else if(base == AC_OCT)
-            return to_strImpl<AC_OCT, N, C>::to_str(v, w, left_just, r);
+         {
+            return to_strImpl<AC_OCT, N, C, W, S>::to_str(v, w, left_just, r);
+         }
          else if(base == AC_BIN)
-            return to_strImpl<AC_BIN, N, C>::to_str(v, w, left_just, r);
+         {
+            return to_strImpl<AC_BIN, N, C, W, S>::to_str(v, w, left_just, r);
+         }
          return 0;
       }
 
-      template <int N, bool C>
-      __FORCE_INLINE unsigned iv_leading_bits_base(const iv_base<N, C>& op, bool bit, int POS)
+      template <int N, bool C, int W, bool S>
+      __FORCE_INLINE unsigned iv_leading_bits_base(const iv_base<N, C, W, S>& op, bool bit, int POS)
       {
          const unsigned char tab[] = {4, 3, 2, 2, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0};
          unsigned t = bit ? ~op[POS] : op[POS];
          unsigned cnt = 0;
          if(t >> 16)
+         {
             t >>= 16;
+         }
          else
+         {
             cnt += 16;
+         }
          if(t >> 8)
+         {
             t >>= 8;
+         }
          else
+         {
             cnt += 8;
+         }
          if(t >> 4)
+         {
             t >>= 4;
+         }
          else
+         {
             cnt += 4;
+         }
          cnt += tab[t];
          return cnt;
       }
 
-      template <int N, bool C>
-      __FORCE_INLINE unsigned iv_leading_bits(const iv_base<N, C>& op, bool bit)
+      template <int N, bool C, int W, bool S>
+      __FORCE_INLINE unsigned iv_leading_bits(const iv_base<N, C, W, S>& op, bool bit)
       {
          int ext_sign = bit ? -1 : 0;
          int k;
@@ -2145,7 +2508,7 @@ typedef signed long long Slong;
       //////////////////////////////////////////////////////////////////////////////
       //  Integer Vector class: iv
       //////////////////////////////////////////////////////////////////////////////
-      template <int N, bool C>
+      template <int N, bool C, int W, bool S>
       class iv
       {
        protected:
@@ -2153,11 +2516,11 @@ typedef signed long long Slong;
          {
             using size_t = decltype(sizeof(0));                     // avoid including extra headers
             static constexpr const long double _0x1p256 = 0x1p256L; // 2^256
-            typedef union
+            using ieee_double_shape_type = union
             {
                double dvalue;
                unsigned long long int ull_value;
-            } ieee_double_shape_type;
+            };
 
             template <size_t begin, char charToFind, size_t NN>
             struct HfindCharImpl
@@ -2210,7 +2573,9 @@ typedef signed long long Slong;
                ieee_double_shape_type in;
                in.dvalue = value;
                if(in.ull_value << 1 == 0)
+               {
                   return value;
+               }
                unsigned long long cur_exp = (((int)((in.ull_value >> 52) & 0x7ff)) + exponent);
                in.ull_value = (in.ull_value & (~(0x7ffULL << 52))) | (cur_exp << 52);
                return in.dvalue;
@@ -2305,18 +2670,16 @@ typedef signed long long Slong;
                return get1(str, HmantissaEnd(str));
             }
          };
-         iv_base<N, C> v;
+         iv_base<N, C, W, S> v;
 
        public:
-         template <int N2, bool C2>
+         template <int N2, bool C2, int W2, bool S2>
          friend class iv;
          __FORCE_INLINE
-         constexpr iv()
-         {
-         }
+         constexpr iv() = default;
 
-         template <int N2, bool C2>
-         __FORCE_INLINE constexpr iv(const iv<N2, C2>& b)
+         template <int N2, bool C2, int W2, bool S2>
+         __FORCE_INLINE constexpr iv(const iv<N2, C2, W2, S2>& b)
          {
             const int M = AC_MIN(N, N2);
             iv_copy<M, 0>(b.v, v);
@@ -2353,7 +2716,9 @@ typedef signed long long Slong;
                iv_extend<1>(v, (t < 0) ? ~0 : 0);
             }
             else
+            {
                iv_assign_int64(v, t);
+            }
          }
 
          __FORCE_INLINE constexpr iv(unsigned long t)
@@ -2364,7 +2729,9 @@ typedef signed long long Slong;
                iv_extend<1>(v, 0);
             }
             else
+            {
                iv_assign_uint64(v, t);
+            }
          }
 
          __FORCE_INLINE constexpr iv(double d)
@@ -2429,28 +2796,28 @@ typedef signed long long Slong;
             iv_conv_from_fraction(d, v, qb, rbits, o);
          }
 
-         template <int N2, bool C2, int Nr, bool Cr>
-         __FORCE_INLINE void mult(const iv<N2, C2>& op2, iv<Nr, Cr>& r) const
+         template <int N2, bool C2, int W2, bool S2, int Nr, bool Cr, int Wr, bool Sr>
+         __FORCE_INLINE void mult(const iv<N2, C2, W2, S2>& op2, iv<Nr, Cr, Wr, Sr>& r) const
          {
             iv_mult(v, op2.v, r.v);
          }
-         template <int N2, bool C2, int Nr, bool Cr>
-         __FORCE_INLINE void add(const iv<N2, C2>& op2, iv<Nr, Cr>& r) const
+         template <int N2, bool C2, int W2, bool S2, int Nr, bool Cr, int Wr, bool Sr>
+         __FORCE_INLINE void add(const iv<N2, C2, W2, S2>& op2, iv<Nr, Cr, Wr, Sr>& r) const
          {
             iv_add(v, op2.v, r.v);
          }
-         template <int N2, bool C2, int Nr, bool Cr>
-         __FORCE_INLINE void sub(const iv<N2, C2>& op2, iv<Nr, Cr>& r) const
+         template <int N2, bool C2, int W2, bool S2, int Nr, bool Cr, int Wr, bool Sr>
+         __FORCE_INLINE void sub(const iv<N2, C2, W2, S2>& op2, iv<Nr, Cr, Wr, Sr>& r) const
          {
             iv_sub(v, op2.v, r.v);
          }
-         template <int Num_s, int Den_s, int N2, bool C2, int Nr, bool Cr>
-         __FORCE_INLINE void div(const iv<N2, C2>& op2, iv<Nr, Cr>& r) const
+         template <int Num_s, int Den_s, int N2, bool C2, int W2, bool S2, int Nr, bool Cr, int Wr, bool Sr>
+         __FORCE_INLINE void div(const iv<N2, C2, W2, S2>& op2, iv<Nr, Cr, Wr, Sr>& r) const
          {
             iv_div<Num_s, Den_s>(v, op2.v, r.v);
          }
-         template <int Num_s, int Den_s, int N2, bool C2, int Nr, bool Cr>
-         __FORCE_INLINE void rem(const iv<N2, C2>& op2, iv<Nr, Cr>& r) const
+         template <int Num_s, int Den_s, int N2, bool C2, int W2, bool S2, int Nr, bool Cr, int Wr, bool Sr>
+         __FORCE_INLINE void rem(const iv<N2, C2, W2, S2>& op2, iv<Nr, Cr, Wr, Sr>& r) const
          {
             iv_rem<Num_s, Den_s>(v, op2.v, r.v);
          }
@@ -2462,82 +2829,83 @@ typedef signed long long Slong;
          {
             iv_sub_int_borrow<N>(v, 0, true, v);
          }
-         template <int Nr, bool Cr>
-         __FORCE_INLINE void neg(iv<Nr, Cr>& r) const
+         template <int Nr, bool Cr, int Wr, bool Sr>
+         void neg(iv<Nr, Cr, Wr, Sr>& r) const
          {
             iv_neg(v, r.v);
          }
-         template <int Nr, bool Cr>
-         __FORCE_INLINE void shift_l(unsigned op2, iv<Nr, Cr>& r) const
+         template <int Nr, bool Cr, int Wr, bool Sr>
+         __FORCE_INLINE void shift_l(unsigned op2, iv<Nr, Cr, Wr, Sr>& r) const
          {
             iv_shift_l(v, op2, r.v);
          }
-         template <int Nr, bool Cr>
-         __FORCE_INLINE void shift_l2(signed op2, iv<Nr, Cr>& r) const
+         template <int Nr, bool Cr, int Wr, bool Sr>
+         __FORCE_INLINE void shift_l2(signed op2, iv<Nr, Cr, Wr, Sr>& r) const
          {
             iv_shift_l2<true>(v, op2, r.v);
          }
-         template <int Nr, bool Cr>
-         __FORCE_INLINE void shift_r(unsigned op2, iv<Nr, Cr>& r) const
+         template <int Nr, bool Cr, int Wr, bool Sr>
+         __FORCE_INLINE void shift_r(unsigned op2, iv<Nr, Cr, Wr, Sr>& r) const
          {
             iv_shift_r(v, op2, r.v);
          }
-         template <int Nr, bool Cr>
-         __FORCE_INLINE void shift_r2(signed op2, iv<Nr, Cr>& r) const
+         template <int Nr, bool Cr, int Wr, bool Sr>
+         __FORCE_INLINE void shift_r2(signed op2, iv<Nr, Cr, Wr, Sr>& r) const
          {
             iv_shift_r2<true>(v, op2, r.v);
          }
-         template <int B, int Nr, bool Cr>
-         __FORCE_INLINE constexpr void const_shift_l(iv<Nr, Cr>& r) const
+         template <int B, int Nr, bool Cr, int Wr, bool Sr>
+         __FORCE_INLINE constexpr void const_shift_l(iv<Nr, Cr, Wr, Sr>& r) const
          {
             iv_const_shift_l<B>(v, r.v);
          }
-         template <int B, int Nr, bool Cr>
-         __FORCE_INLINE void const_shift_r(iv<Nr, Cr>& r) const
+         template <int B, int Nr, bool Cr, int Wr, bool Sr>
+         __FORCE_INLINE void const_shift_r(iv<Nr, Cr, Wr, Sr>& r) const
          {
             iv_const_shift_r<B>(v, r.v);
          }
-         template <int Nr, bool Cr>
-         __FORCE_INLINE void bitwise_complement(iv<Nr, Cr>& r) const
+         template <int Nr, bool Cr, int Wr, bool Sr>
+         __FORCE_INLINE void bitwise_complement(iv<Nr, Cr, Wr, Sr>& r) const
          {
             iv_bitwise_complement(v, r.v);
          }
-         template <int N2, bool C2, int Nr, bool Cr>
-         __FORCE_INLINE void bitwise_and(const iv<N2, C2>& op2, iv<Nr, Cr>& r) const
+         template <int N2, bool C2, int W2, bool S2, int Nr, bool Cr, int Wr, bool Sr>
+         __FORCE_INLINE void bitwise_and(const iv<N2, C2, W2, S2>& op2, iv<Nr, Cr, Wr, Sr>& r) const
          {
             iv_bitwise_and(v, op2.v, r.v);
          }
-         template <int N2, bool C2, int Nr, bool Cr>
-         __FORCE_INLINE void bitwise_or(const iv<N2, C2>& op2, iv<Nr, Cr>& r) const
+         template <int N2, bool C2, int W2, bool S2, int Nr, bool Cr, int Wr, bool Sr>
+         __FORCE_INLINE void bitwise_or(const iv<N2, C2, W2, S2>& op2, iv<Nr, Cr, Wr, Sr>& r) const
          {
             iv_bitwise_or(v, op2.v, r.v);
          }
-         template <int N2, bool C2, int Nr, bool Cr>
-         __FORCE_INLINE void bitwise_xor(const iv<N2, C2>& op2, iv<Nr, Cr>& r) const
+         template <int N2, bool C2, int W2, bool S2, int Nr, bool Cr, int Wr, bool Sr>
+         __FORCE_INLINE void bitwise_xor(const iv<N2, C2, W2, S2>& op2, iv<Nr, Cr, Wr, Sr>& r) const
          {
             iv_bitwise_xor(v, op2.v, r.v);
          }
-         template <int N2, bool C2>
-         __FORCE_INLINE bool equal(const iv<N2, C2>& op2) const
+         template <int N2, bool C2, int W2, bool S2>
+         __FORCE_INLINE bool equal(const iv<N2, C2, W2, S2>& op2) const
          {
             return iv_equal(v, op2.v);
          }
-         template <int N2, bool C2>
-         __FORCE_INLINE bool greater_than(const iv<N2, C2>& op2) const
+         template <int N2, bool C2, int W2, bool S2>
+         __FORCE_INLINE bool greater_than(const iv<N2, C2, W2, S2>& op2) const
          {
             return iv_compare<true>(v, op2.v);
          }
-         template <int N2, bool C2>
-         __FORCE_INLINE bool less_than(const iv<N2, C2>& op2) const
+         template <int N2, bool C2, int W2, bool S2>
+         __FORCE_INLINE bool less_than(const iv<N2, C2, W2, S2>& op2) const
          {
-            return iv_compare<false>(v, op2.v);
+            auto res = iv_compare<false>(v, op2.v);
+            return res;
          }
          __FORCE_INLINE bool equal_zero() const
          {
             return iv_equal_zero<0, N>(v);
          }
-         template <int N2, bool C2>
-         __FORCE_INLINE constexpr void set_slc(unsigned lsb, int WS, const iv<N2, C2>& op2)
+         template <int N2, bool C2, int W2, bool S2>
+         __FORCE_INLINE constexpr void set_slc(unsigned lsb, int WS, const iv<N2, C2, W2, S2>& op2)
          {
             AC_ASSERT((31 + WS) / 32 == N2, "Bad usage: WS greater than length of slice");
             unsigned msb = lsb + WS - 1;
@@ -2548,8 +2916,10 @@ typedef signed long long Slong;
             if(N2 == 1)
             {
                if(msb_v == lsb_v)
+               {
                   v.set(lsb_v,
                         v[lsb_v] ^ ((v[lsb_v] ^ (op2.v[0] << lsb_b)) & ((WS == 32 ? ~0 : ((1u << WS) - 1)) << lsb_b)));
+               }
                else
                {
                   v.set(lsb_v, v[lsb_v] ^ ((v[lsb_v] ^ (op2.v[0] << lsb_b)) & (all_ones << lsb_b)));
@@ -2570,13 +2940,15 @@ typedef signed long long Slong;
                   m = (((unsigned)op2.v[N2 - 1] >> 1) >> (31 - lsb_b));
                }
                else
+               {
                   m = t;
+               }
                v.set(msb_v, v[msb_v] ^ ((v[msb_v] ^ m) & ~((all_ones << 1) << msb_b)));
             }
          }
 
-         template <int N_2, bool C_2>
-         __FORCE_INLINE constexpr void set_slc2(unsigned lsb, int WS, const iv<N_2, C_2>& op2)
+         template <int N_2, bool C_2, int W2, bool S2>
+         __FORCE_INLINE constexpr void set_slc2(unsigned lsb, int WS, const iv<N_2, C_2, W2, S2>& op2)
          {
             AC_ASSERT((31 + WS) / 32 <= N_2, "Bad usage: WS greater than length of slice");
             const int N2 = (31 + WS) / 32;
@@ -2588,8 +2960,10 @@ typedef signed long long Slong;
             if(N2 == 1)
             {
                if(msb_v == lsb_v)
+               {
                   v.set(lsb_v,
                         v[lsb_v] ^ ((v[lsb_v] ^ (op2.v[0] << lsb_b)) & ((WS == 32 ? ~0 : ((1u << WS) - 1)) << lsb_b)));
+               }
                else
                {
                   v.set(lsb_v, v[lsb_v] ^ ((v[lsb_v] ^ (op2.v[0] << lsb_b)) & (all_ones << lsb_b)));
@@ -2610,7 +2984,9 @@ typedef signed long long Slong;
                   m = (((unsigned)op2.v[N2 - 1] >> 1) >> (31 - lsb_b));
                }
                else
+               {
                   m = t;
+               }
                v.set(msb_v, v[msb_v] ^ ((v[msb_v] ^ m) & ~((all_ones << 1) << msb_b)));
             }
          }
@@ -2622,13 +2998,15 @@ typedef signed long long Slong;
 
       template <>
       template <>
-      __FORCE_INLINE constexpr void iv<1, false>::set_slc(unsigned lsb, int WS, const iv<1, false>& op2)
+      __FORCE_INLINE constexpr void iv<1, false, 32, false>::set_slc(unsigned lsb, int WS,
+                                                                     const iv<1, false, 32, false>& op2)
       {
          v.set(0, v[0] ^ ((v[0] ^ ((unsigned)op2.v[0] << lsb)) & ((WS == 32 ? ~0u : ((1u << WS) - 1)) << lsb)));
       }
       template <>
       template <>
-      __FORCE_INLINE constexpr void iv<2, false>::set_slc(unsigned lsb, int WS, const iv<1, false>& op2)
+      __FORCE_INLINE constexpr void iv<2, false, 64, false>::set_slc(unsigned lsb, int WS,
+                                                                     const iv<1, false, 32, false>& op2)
       {
          Ulong l = to_uint64();
          Ulong l2 = op2.to_uint64();
@@ -2637,7 +3015,8 @@ typedef signed long long Slong;
       }
       template <>
       template <>
-      __FORCE_INLINE constexpr void iv<2, false>::set_slc(unsigned lsb, int WS, const iv<2, false>& op2)
+      __FORCE_INLINE constexpr void iv<2, false, 64, false>::set_slc(unsigned lsb, int WS,
+                                                                     const iv<2, false, 64, false>& op2)
       {
          Ulong l = to_uint64();
          Ulong l2 = op2.to_uint64();
@@ -2647,63 +3026,61 @@ typedef signed long long Slong;
 
       // add automatic conversion to Slong/Ulong depending on S and LTE64
       template <int N, bool S, bool LTE64, bool C, int W>
-      class iv_conv : public iv<N, C>
+      class iv_conv : public iv<N, C, W, S>
       {
        protected:
          __FORCE_INLINE
-         constexpr iv_conv()
-         {
-         }
+         constexpr iv_conv() = default;
          template <class T>
-         __FORCE_INLINE constexpr iv_conv(const T& t) : iv<N, C>(t)
+         __FORCE_INLINE constexpr iv_conv(const T& t) : iv<N, C, W, S>(t)
          {
          }
       };
 
       template <int N, bool C, int W>
-      class iv_conv<N, false, true, C, W> : public iv<N, C>
+      class iv_conv<N, false, true, C, W> : public iv<N, C, W, false>
       {
        public:
          __FORCE_INLINE
          operator Ulong() const
          {
-            auto res = iv<N, C>::to_uint64();
+            auto res = iv<N, C, W, false>::to_uint64();
             if(W != 64)
+            {
                res = (res << (64 - W)) >> (64 - W);
+            }
             return res;
          }
 
        protected:
          __FORCE_INLINE
-         constexpr iv_conv()
-         {
-         }
+         constexpr iv_conv() = default;
          template <class T>
-         __FORCE_INLINE constexpr iv_conv(const T& t) : iv<N, C>(t)
+         __FORCE_INLINE constexpr iv_conv(const T& t) : iv<N, C, W, false>(t)
          {
          }
       };
 
       template <int N, bool C, int W>
-      class iv_conv<N, true, true, C, W> : public iv<N, C>
+      class iv_conv<N, true, true, C, W> : public iv<N, C, W, true>
       {
        public:
          __FORCE_INLINE
          operator Slong() const
          {
-            auto res = iv<N, C>::to_int64();
+            auto res = iv<N, C, W, true>::to_int64();
             if(W != 64)
+            {
                res = (res << (64 - W)) >> (64 - W);
+            }
             return res;
          }
 
        protected:
          __FORCE_INLINE
-         constexpr iv_conv()
-         {
-         }
+         constexpr iv_conv() = default;
          template <class T>
-         __FORCE_INLINE constexpr iv_conv(const T& t) : iv<N, C>(t)
+         __FORCE_INLINE constexpr iv_conv(const T& t) : iv<N, C, W, true>(t)
          {
          }
       };
@@ -2713,42 +3090,42 @@ typedef signed long long Slong;
       template <typename T>
       struct c_prom
       {
-         typedef int promoted_type;
+         using promoted_type = int;
       };
       template <>
       struct c_prom<unsigned>
       {
-         typedef unsigned promoted_type;
+         using promoted_type = unsigned int;
       };
       template <>
       struct c_prom<long>
       {
-         typedef long promoted_type;
+         using promoted_type = long;
       };
       template <>
       struct c_prom<unsigned long>
       {
-         typedef unsigned long promoted_type;
+         using promoted_type = unsigned long;
       };
       template <>
       struct c_prom<Slong>
       {
-         typedef Slong promoted_type;
+         using promoted_type = Slong;
       };
       template <>
       struct c_prom<Ulong>
       {
-         typedef Ulong promoted_type;
+         using promoted_type = Ulong;
       };
       template <>
       struct c_prom<float>
       {
-         typedef float promoted_type;
+         using promoted_type = float;
       };
       template <>
       struct c_prom<double>
       {
-         typedef double promoted_type;
+         using promoted_type = double;
       };
 
       template <typename T, typename T2>
@@ -2760,7 +3137,7 @@ typedef signed long long Slong;
       template <typename T>
       struct c_arith<T, T>
       {
-         typedef T arith_conv;
+         using arith_conv = T;
       };
 
 #define C_ARITH(C_TYPE1, C_TYPE2)   \
@@ -2797,7 +3174,7 @@ typedef signed long long Slong;
       template <typename T>
       struct map
       {
-         typedef T t;
+         using t = T;
       };
       template <typename T>
       struct c_type_params
@@ -2890,40 +3267,40 @@ typedef signed long long Slong;
          template <typename T2>
          struct op1
          {
-            typedef typename T::template rt_T<c_type<T2>>::mult mult;
-            typedef typename T::template rt_T<c_type<T2>>::plus plus;
-            typedef typename T::template rt_T<c_type<T2>>::minus2 minus;
-            typedef typename T::template rt_T<c_type<T2>>::minus minus2;
-            typedef typename T::template rt_T<c_type<T2>>::logic logic;
-            typedef typename T::template rt_T<c_type<T2>>::div2 div;
-            typedef typename T::template rt_T<c_type<T2>>::div div2;
+            using mult = typename T::template rt_T<c_type<T2>>::mult;
+            using plus = typename T::template rt_T<c_type<T2>>::plus;
+            using minus = typename T::template rt_T<c_type<T2>>::minus2;
+            using minus2 = typename T::template rt_T<c_type<T2>>::minus;
+            using logic = typename T::template rt_T<c_type<T2>>::logic;
+            using div = typename T::template rt_T<c_type<T2>>::div2;
+            using div2 = typename T::template rt_T<c_type<T2>>::div;
          };
       };
       template <typename T>
       struct c_type
       {
-         typedef typename c_prom<T>::promoted_type c_prom_T;
+         using c_prom_T = typename c_prom<T>::promoted_type;
          struct rt_unary
          {
-            typedef c_prom_T neg;
-            typedef c_prom_T mag_sqr;
-            typedef c_prom_T mag;
+            using neg = c_prom_T;
+            using mag_sqr = c_prom_T;
+            using mag = c_prom_T;
             template <unsigned N>
             struct set
             {
-               typedef c_prom_T sum;
+               using sum = c_prom_T;
             };
          };
          template <typename T2>
          struct rt_T
          {
-            typedef typename rt_c_type_T<T2>::template op1<T>::mult mult;
-            typedef typename rt_c_type_T<T2>::template op1<T>::plus plus;
-            typedef typename rt_c_type_T<T2>::template op1<T>::minus minus;
-            typedef typename rt_c_type_T<T2>::template op1<T>::minus2 minus2;
-            typedef typename rt_c_type_T<T2>::template op1<T>::logic logic;
-            typedef typename rt_c_type_T<T2>::template op1<T>::div div;
-            typedef typename rt_c_type_T<T2>::template op1<T>::div2 div2;
+            using mult = typename rt_c_type_T<T2>::template op1<T>::mult;
+            using plus = typename rt_c_type_T<T2>::template op1<T>::plus;
+            using minus = typename rt_c_type_T<T2>::template op1<T>::minus;
+            using minus2 = typename rt_c_type_T<T2>::template op1<T>::minus2;
+            using logic = typename rt_c_type_T<T2>::template op1<T>::logic;
+            using div = typename rt_c_type_T<T2>::template op1<T>::div;
+            using div2 = typename rt_c_type_T<T2>::template op1<T>::div2;
          };
          __FORCE_INLINE static std::string type_name()
          {
@@ -2935,18 +3312,18 @@ typedef signed long long Slong;
       template <typename T>
       struct rt_c_type_T<c_type<T>>
       {
-         typedef typename c_prom<T>::promoted_type c_prom_T;
+         using c_prom_T = typename c_prom<T>::promoted_type;
          template <typename T2>
          struct op1
          {
-            typedef typename c_prom<T2>::promoted_type c_prom_T2;
-            typedef typename c_arith<c_prom_T, c_prom_T2>::arith_conv mult;
-            typedef typename c_arith<c_prom_T, c_prom_T2>::arith_conv plus;
-            typedef typename c_arith<c_prom_T, c_prom_T2>::arith_conv minus;
-            typedef typename c_arith<c_prom_T, c_prom_T2>::arith_conv minus2;
-            typedef typename c_arith<c_prom_T, c_prom_T2>::arith_conv logic;
-            typedef typename c_arith<c_prom_T, c_prom_T2>::arith_conv div;
-            typedef typename c_arith<c_prom_T, c_prom_T2>::arith_conv div2;
+            using c_prom_T2 = typename c_prom<T2>::promoted_type;
+            using mult = typename c_arith<c_prom_T, c_prom_T2>::arith_conv;
+            using plus = typename c_arith<c_prom_T, c_prom_T2>::arith_conv;
+            using minus = typename c_arith<c_prom_T, c_prom_T2>::arith_conv;
+            using minus2 = typename c_arith<c_prom_T, c_prom_T2>::arith_conv;
+            using logic = typename c_arith<c_prom_T, c_prom_T2>::arith_conv;
+            using div = typename c_arith<c_prom_T, c_prom_T2>::arith_conv;
+            using div2 = typename c_arith<c_prom_T, c_prom_T2>::arith_conv;
          };
       };
 
@@ -3018,13 +3395,13 @@ typedef signed long long Slong;
          template <int W, bool S>
          struct op1
          {
-            typedef typename T::template rt_T<ac_int<W, S>>::mult mult;
-            typedef typename T::template rt_T<ac_int<W, S>>::plus plus;
-            typedef typename T::template rt_T<ac_int<W, S>>::minus2 minus;
-            typedef typename T::template rt_T<ac_int<W, S>>::minus minus2;
-            typedef typename T::template rt_T<ac_int<W, S>>::logic logic;
-            typedef typename T::template rt_T<ac_int<W, S>>::div2 div;
-            typedef typename T::template rt_T<ac_int<W, S>>::div div2;
+            using mult = typename T::template rt_T<ac_int<W, S>>::mult;
+            using plus = typename T::template rt_T<ac_int<W, S>>::plus;
+            using minus = typename T::template rt_T<ac_int<W, S>>::minus2;
+            using minus2 = typename T::template rt_T<ac_int<W, S>>::minus;
+            using logic = typename T::template rt_T<ac_int<W, S>>::logic;
+            using div = typename T::template rt_T<ac_int<W, S>>::div2;
+            using div2 = typename T::template rt_T<ac_int<W, S>>::div;
          };
       };
    } // namespace ac_private
@@ -3084,7 +3461,7 @@ typedef signed long long Slong;
             u_nbits = nbits<AC_ABS(UpperBound + u_s) + u_s>::val,
             nbits = AC_MAX(l_nbits, u_nbits + (!u_s && signedness))
          };
-         typedef ac_int<nbits, signedness> type;
+         using type = ac_int<nbits, signedness>;
       };
    } // namespace ac
 
@@ -3125,8 +3502,8 @@ typedef signed long long Slong;
       {
          N = (W + 31 + !S) / 32
       };
-      typedef ac_private::iv_conv<N, S, W <= 64, !S && ((W % 32) == 0), W> ConvBase;
-      typedef ac_private::iv<N, !S && ((W % 32) == 0)> Base;
+      using ConvBase = ac_private::iv_conv<N, S, W <= 64, !S && ((W % 32) == 0), W>;
+      using Base = ac_private::iv<N, !S && ((W % 32) == 0), W, S>;
 
       __FORCE_INLINE constexpr void bit_adjust()
       {
@@ -3136,13 +3513,21 @@ typedef signed long long Slong;
       __FORCE_INLINE void bit_fill(const char (&str)[N])
       {
          if(str[0] == '0' && str[1] == 'x')
+         {
             bit_fill_hex(str, 2);
+         }
          if(str[0] == '0' && str[1] == 'o')
+         {
             bit_fill_oct(str, 2);
+         }
          else if(str[0] == '0' && str[1] == 'b')
+         {
             bit_fill_bin(str, 2);
+         }
          else
+         {
             AC_ASSERT(false, "unexpected string format");
+         }
       }
       __FORCE_INLINE bool is_neg() const
       {
@@ -3208,27 +3593,27 @@ typedef signed long long Slong;
             logic_w = AC_MAX(W + (S2 && !S), W2 + (S && !S2)),
             logic_s = S || S2
          };
-         typedef ac_int<mult_w, mult_s> mult;
-         typedef ac_int<plus_w, plus_s> plus;
-         typedef ac_int<minus_w, minus_s> minus;
-         typedef ac_int<logic_w, logic_s> logic;
-         typedef ac_int<div_w, div_s> div;
-         typedef ac_int<mod_w, mod_s> mod;
-         typedef ac_int<W, S> arg1;
+         using mult = ac_int<mult_w, mult_s>;
+         using plus = ac_int<plus_w, plus_s>;
+         using minus = ac_int<minus_w, minus_s>;
+         using logic = ac_int<logic_w, logic_s>;
+         using div = ac_int<div_w, div_s>;
+         using mod = ac_int<mod_w, mod_s>;
+         using arg1 = ac_int<W, S>;
       };
 
       template <typename T>
       struct rt_T
       {
-         typedef typename ac_private::map<T>::t map_T;
-         typedef typename ac_private::rt_ac_int_T<map_T>::template op1<W, S>::mult mult;
-         typedef typename ac_private::rt_ac_int_T<map_T>::template op1<W, S>::plus plus;
-         typedef typename ac_private::rt_ac_int_T<map_T>::template op1<W, S>::minus minus;
-         typedef typename ac_private::rt_ac_int_T<map_T>::template op1<W, S>::minus2 minus2;
-         typedef typename ac_private::rt_ac_int_T<map_T>::template op1<W, S>::logic logic;
-         typedef typename ac_private::rt_ac_int_T<map_T>::template op1<W, S>::div div;
-         typedef typename ac_private::rt_ac_int_T<map_T>::template op1<W, S>::div2 div2;
-         typedef ac_int<W, S> arg1;
+         using map_T = typename ac_private::map<T>::t;
+         using mult = typename ac_private::rt_ac_int_T<map_T>::template op1<W, S>::mult;
+         using plus = typename ac_private::rt_ac_int_T<map_T>::template op1<W, S>::plus;
+         using minus = typename ac_private::rt_ac_int_T<map_T>::template op1<W, S>::minus;
+         using minus2 = typename ac_private::rt_ac_int_T<map_T>::template op1<W, S>::minus2;
+         using logic = typename ac_private::rt_ac_int_T<map_T>::template op1<W, S>::logic;
+         using div = typename ac_private::rt_ac_int_T<map_T>::template op1<W, S>::div;
+         using div2 = typename ac_private::rt_ac_int_T<map_T>::template op1<W, S>::div2;
+         using arg1 = ac_int<W, S>;
       };
 
       struct rt_unary
@@ -3244,10 +3629,10 @@ typedef signed long long Slong;
             leading_sign_w = ac::log2_ceil<W + !S>::val,
             leading_sign_s = false
          };
-         typedef ac_int<neg_w, neg_s> neg;
-         typedef ac_int<mag_sqr_w, mag_sqr_s> mag_sqr;
-         typedef ac_int<mag_w, mag_s> mag;
-         typedef ac_int<leading_sign_w, leading_sign_s> leading_sign;
+         using neg = ac_int<neg_w, neg_s>;
+         using mag_sqr = ac_int<mag_sqr_w, mag_sqr_s>;
+         using mag = ac_int<mag_w, mag_s>;
+         using leading_sign = ac_int<leading_sign_w, leading_sign_s>;
          template <unsigned N>
          struct set
          {
@@ -3256,7 +3641,7 @@ typedef signed long long Slong;
                sum_w = W + ac::log2_ceil<N>::val,
                sum_s = S
             };
-            typedef ac_int<sum_w, sum_s> sum;
+            using sum = ac_int<sum_w, sum_s>;
          };
       };
 
@@ -3266,12 +3651,7 @@ typedef signed long long Slong;
       friend class ac_fixed;
 
       __FORCE_INLINE
-      constexpr ac_int()
-      {
-#if(!defined(__BAMBU__) || defined(__BAMBU_SIM__)) && defined(AC_DEFAULT_IN_RANGE)
-         bit_adjust();
-#endif
-      }
+      constexpr ac_int() = default;
 
       template <int W2, bool S2>
       __FORCE_INLINE constexpr ac_int(const ac_int<W2, S2>& op)
@@ -3344,26 +3724,15 @@ typedef signed long long Slong;
          bit_adjust();
       }
 
-#if(defined(_MSC_VER) && !defined(__EDG__))
-#pragma warning(push)
-#pragma warning(disable : 4700)
-#endif
-#if(defined(__GNUC__) && (__GNUC__ == 4 && __GNUC_MINOR__ >= 6 || __GNUC__ > 4) && !defined(__EDG__))
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wuninitialized"
-#endif
-#if defined(__clang__)
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wuninitialized"
-#endif
       template <ac_special_val V>
       __FORCE_INLINE ac_int& set_val()
       {
          if(V == AC_VAL_DC)
          {
-            // ac_int r;
-            // Base::operator=(r);
+            ac_int r = 0;
+            Base::operator=(r);
             bit_adjust();
+            Base::v.set(0, 0);
          }
          else if(V == AC_VAL_0 || V == AC_VAL_MIN || V == AC_VAL_QUANTUM)
          {
@@ -3374,7 +3743,9 @@ typedef signed long long Slong;
                Base::v.set(N - 1, (~0u << rem));
             }
             else if(V == AC_VAL_QUANTUM)
+            {
                Base::v.set(0, 1);
+            }
          }
          else if(V == AC_VAL_MAX)
          {
@@ -3384,15 +3755,6 @@ typedef signed long long Slong;
          }
          return *this;
       }
-#if(defined(_MSC_VER) && !defined(__EDG__))
-#pragma warning(pop)
-#endif
-#if(defined(__GNUC__) && (__GNUC__ == 4 && __GNUC_MINOR__ >= 6 || __GNUC__ > 4) && !defined(__EDG__))
-#pragma GCC diagnostic pop
-#endif
-#if defined(__clang__)
-#pragma clang diagnostic pop
-#endif
 
       // Explicit conversion functions to C built-in types -------------
       __FORCE_INLINE int to_int() const
@@ -3497,9 +3859,13 @@ typedef signed long long Slong;
          char r[N * 32 + 4] = {0};
          int i = 0;
          if(sign_mag)
+         {
             r[i++] = is_neg() ? '-' : '+';
+         }
          else if(base_rep == AC_DEC && is_neg())
+         {
             r[i++] = '-';
+         }
          if(base_rep != AC_DEC)
          {
             r[i++] = '0';
@@ -3570,10 +3936,6 @@ typedef signed long long Slong;
          r.bit_adjust();
          return r;
       }
-#if(defined(__GNUC__) && (__GNUC__ == 4 && __GNUC_MINOR__ >= 6 || __GNUC__ > 4) && !defined(__EDG__))
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wenum-compare"
-#endif
 
       template <int W2, bool S2>
       __FORCE_INLINE const typename rt<W2, S2>::div operator/(const ac_int<W2, S2>& op2) const
@@ -3617,9 +3979,6 @@ typedef signed long long Slong;
          r.bit_adjust();
          return r;
       }
-#if(defined(__GNUC__) && (__GNUC__ == 4 && __GNUC_MINOR__ >= 6 || __GNUC__ > 4) && !defined(__EDG__))
-#pragma GCC diagnostic pop
-#endif
       // Arithmetic assign  ------------------------------------------------------
       template <int W2, bool S2>
       __FORCE_INLINE ac_int& operator*=(const ac_int<W2, S2>& op2)
@@ -3657,10 +4016,7 @@ typedef signed long long Slong;
          bit_adjust();
          return *this;
       }
-#if(defined(__GNUC__) && (__GNUC__ == 4 && __GNUC_MINOR__ >= 6 || __GNUC__ > 4) && !defined(__EDG__))
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wenum-compare"
-#endif
+
       template <int W2, bool S2>
       __FORCE_INLINE ac_int& operator/=(const ac_int<W2, S2>& op2)
       {
@@ -3703,9 +4059,7 @@ typedef signed long long Slong;
          bit_adjust();
          return *this;
       }
-#if(defined(__GNUC__) && (__GNUC__ == 4 && __GNUC_MINOR__ >= 6 || __GNUC__ > 4) && !defined(__EDG__))
-#pragma GCC diagnostic pop
-#endif
+
       // Arithmetic prefix increment, decrement ----------------------------------
       __FORCE_INLINE ac_int& operator++()
       {
@@ -4013,7 +4367,9 @@ typedef signed long long Slong;
       template <int WS, int WX, bool SX>
       __FORCE_INLINE ac_int<WS, S> slc(const ac_int<WX, SX>& index) const
       {
+#if !defined(__BAMBU__) || defined(__BAMBU_SIM__)
          using ac_intX = ac_int<WX, SX>;
+#endif
          ac_int<WS, S> r;
          AC_ASSERT(index >= ac_intX(0), "Attempting to read slc with negative indices");
          ac_int<WX - SX, false> uindex = index;
@@ -4283,21 +4639,33 @@ typedef signed long long Slong;
             r = (r << rem) >> rem;
          }
          if(N > 1)
+         {
             r ^= Base::v[N - 2];
+         }
          if(N > 2)
          {
             LOOP(int, i, 0, exclude, N - 2, { r ^= Base::v[i]; });
          }
          if(W > 16)
+         {
             r ^= r >> 16;
+         }
          if(W > 8)
+         {
             r ^= r >> 8;
+         }
          if(W > 4)
+         {
             r ^= r >> 4;
+         }
          if(W > 2)
+         {
             r ^= r >> 2;
+         }
          if(W > 1)
+         {
             r ^= r >> 1;
+         }
          return r & 1;
       }
 
@@ -4537,15 +4905,15 @@ typedef signed long long Slong;
       template <typename T, typename T2>
       struct rt_2T
       {
-         typedef typename ac_private::map<T>::t map_T;
-         typedef typename ac_private::map<T2>::t map_T2;
-         typedef typename map_T::template rt_T<map_T2>::mult mult;
-         typedef typename map_T::template rt_T<map_T2>::plus plus;
-         typedef typename map_T::template rt_T<map_T2>::minus minus;
-         typedef typename map_T::template rt_T<map_T2>::minus2 minus2;
-         typedef typename map_T::template rt_T<map_T2>::logic logic;
-         typedef typename map_T::template rt_T<map_T2>::div div;
-         typedef typename map_T::template rt_T<map_T2>::div2 div2;
+         using map_T = typename ac_private::map<T>::t;
+         using map_T2 = typename ac_private::map<T2>::t;
+         using mult = typename map_T::template rt_T<map_T2>::mult;
+         using plus = typename map_T::template rt_T<map_T2>::plus;
+         using minus = typename map_T::template rt_T<map_T2>::minus;
+         using minus2 = typename map_T::template rt_T<map_T2>::minus2;
+         using logic = typename map_T::template rt_T<map_T2>::logic;
+         using div = typename map_T::template rt_T<map_T2>::div;
+         using div2 = typename map_T::template rt_T<map_T2>::div2;
       };
    } // namespace ac
 
@@ -4559,7 +4927,7 @@ typedef signed long long Slong;
             t_w = ac_private::c_type_params<T>::W,
             t_s = ac_private::c_type_params<T>::S
          };
-         typedef ac_int<t_w, t_s> type;
+         using type = ac_int<t_w, t_s>;
       };
       template <>
       struct ac_int_represent<float>
@@ -4572,7 +4940,7 @@ typedef signed long long Slong;
       template <int W, bool S>
       struct ac_int_represent<ac_int<W, S>>
       {
-         typedef ac_int<W, S> type;
+         using type = ac_int<W, S>;
       };
    } // namespace ac
 
@@ -4581,27 +4949,27 @@ typedef signed long long Slong;
       template <int W2, bool S2>
       struct rt_ac_int_T<ac_int<W2, S2>>
       {
-         typedef ac_int<W2, S2> i2_t;
+         using i2_t = ac_int<W2, S2>;
          template <int W, bool S>
          struct op1
          {
-            typedef ac_int<W, S> i_t;
-            typedef typename i_t::template rt<W2, S2>::mult mult;
-            typedef typename i_t::template rt<W2, S2>::plus plus;
-            typedef typename i_t::template rt<W2, S2>::minus minus;
-            typedef typename i2_t::template rt<W, S>::minus minus2;
-            typedef typename i_t::template rt<W2, S2>::logic logic;
-            typedef typename i_t::template rt<W2, S2>::div div;
-            typedef typename i2_t::template rt<W, S>::div div2;
-            typedef typename i_t::template rt<W2, S2>::mod mod;
-            typedef typename i2_t::template rt<W, S>::mod mod2;
+            using i_t = ac_int<W, S>;
+            using mult = typename i_t::template rt<W2, S2>::mult;
+            using plus = typename i_t::template rt<W2, S2>::plus;
+            using minus = typename i_t::template rt<W2, S2>::minus;
+            using minus2 = typename i2_t::template rt<W, S>::minus;
+            using logic = typename i_t::template rt<W2, S2>::logic;
+            using div = typename i_t::template rt<W2, S2>::div;
+            using div2 = typename i2_t::template rt<W, S>::div;
+            using mod = typename i_t::template rt<W2, S2>::mod;
+            using mod2 = typename i2_t::template rt<W, S>::mod;
          };
       };
 
       template <typename T>
       struct rt_ac_int_T<c_type<T>>
       {
-         typedef typename ac::ac_int_represent<T>::type i2_t;
+         using i2_t = typename ac::ac_int_represent<T>::type;
          enum
          {
             W2 = i2_t::width,
@@ -4610,16 +4978,16 @@ typedef signed long long Slong;
          template <int W, bool S>
          struct op1
          {
-            typedef ac_int<W, S> i_t;
-            typedef typename i_t::template rt<W2, S2>::mult mult;
-            typedef typename i_t::template rt<W2, S2>::plus plus;
-            typedef typename i_t::template rt<W2, S2>::minus minus;
-            typedef typename i2_t::template rt<W, S>::minus minus2;
-            typedef typename i_t::template rt<W2, S2>::logic logic;
-            typedef typename i_t::template rt<W2, S2>::div div;
-            typedef typename i2_t::template rt<W, S>::div div2;
-            typedef typename i_t::template rt<W2, S2>::mod mod;
-            typedef typename i2_t::template rt<W, S>::mod mod2;
+            using i_t = ac_int<W, S>;
+            using mult = typename i_t::template rt<W2, S2>::mult;
+            using plus = typename i_t::template rt<W2, S2>::plus;
+            using minus = typename i_t::template rt<W2, S2>::minus;
+            using minus2 = typename i2_t::template rt<W, S>::minus;
+            using logic = typename i_t::template rt<W2, S2>::logic;
+            using div = typename i_t::template rt<W2, S2>::div;
+            using div2 = typename i2_t::template rt<W, S>::div;
+            using mod = typename i_t::template rt<W2, S2>::mod;
+            using mod2 = typename i2_t::template rt<W, S>::mod;
          };
       };
    } // namespace ac_private
@@ -5169,132 +5537,132 @@ typedef signed long long Slong;
       ///////////////////////////////////////////////////////////////////////////////
       //  Predefined for ease of use
       ///////////////////////////////////////////////////////////////////////////////
-      typedef ac_int<1, true> int1;
-      typedef ac_int<1, false> uint1;
-      typedef ac_int<2, true> int2;
-      typedef ac_int<2, false> uint2;
-      typedef ac_int<3, true> int3;
-      typedef ac_int<3, false> uint3;
-      typedef ac_int<4, true> int4;
-      typedef ac_int<4, false> uint4;
-      typedef ac_int<5, true> int5;
-      typedef ac_int<5, false> uint5;
-      typedef ac_int<6, true> int6;
-      typedef ac_int<6, false> uint6;
-      typedef ac_int<7, true> int7;
-      typedef ac_int<7, false> uint7;
-      typedef ac_int<8, true> int8;
-      typedef ac_int<8, false> uint8;
-      typedef ac_int<9, true> int9;
-      typedef ac_int<9, false> uint9;
-      typedef ac_int<10, true> int10;
-      typedef ac_int<10, false> uint10;
-      typedef ac_int<11, true> int11;
-      typedef ac_int<11, false> uint11;
-      typedef ac_int<12, true> int12;
-      typedef ac_int<12, false> uint12;
-      typedef ac_int<13, true> int13;
-      typedef ac_int<13, false> uint13;
-      typedef ac_int<14, true> int14;
-      typedef ac_int<14, false> uint14;
-      typedef ac_int<15, true> int15;
-      typedef ac_int<15, false> uint15;
-      typedef ac_int<16, true> int16;
-      typedef ac_int<16, false> uint16;
-      typedef ac_int<17, true> int17;
-      typedef ac_int<17, false> uint17;
-      typedef ac_int<18, true> int18;
-      typedef ac_int<18, false> uint18;
-      typedef ac_int<19, true> int19;
-      typedef ac_int<19, false> uint19;
-      typedef ac_int<20, true> int20;
-      typedef ac_int<20, false> uint20;
-      typedef ac_int<21, true> int21;
-      typedef ac_int<21, false> uint21;
-      typedef ac_int<22, true> int22;
-      typedef ac_int<22, false> uint22;
-      typedef ac_int<23, true> int23;
-      typedef ac_int<23, false> uint23;
-      typedef ac_int<24, true> int24;
-      typedef ac_int<24, false> uint24;
-      typedef ac_int<25, true> int25;
-      typedef ac_int<25, false> uint25;
-      typedef ac_int<26, true> int26;
-      typedef ac_int<26, false> uint26;
-      typedef ac_int<27, true> int27;
-      typedef ac_int<27, false> uint27;
-      typedef ac_int<28, true> int28;
-      typedef ac_int<28, false> uint28;
-      typedef ac_int<29, true> int29;
-      typedef ac_int<29, false> uint29;
-      typedef ac_int<30, true> int30;
-      typedef ac_int<30, false> uint30;
-      typedef ac_int<31, true> int31;
-      typedef ac_int<31, false> uint31;
-      typedef ac_int<32, true> int32;
-      typedef ac_int<32, false> uint32;
-      typedef ac_int<33, true> int33;
-      typedef ac_int<33, false> uint33;
-      typedef ac_int<34, true> int34;
-      typedef ac_int<34, false> uint34;
-      typedef ac_int<35, true> int35;
-      typedef ac_int<35, false> uint35;
-      typedef ac_int<36, true> int36;
-      typedef ac_int<36, false> uint36;
-      typedef ac_int<37, true> int37;
-      typedef ac_int<37, false> uint37;
-      typedef ac_int<38, true> int38;
-      typedef ac_int<38, false> uint38;
-      typedef ac_int<39, true> int39;
-      typedef ac_int<39, false> uint39;
-      typedef ac_int<40, true> int40;
-      typedef ac_int<40, false> uint40;
-      typedef ac_int<41, true> int41;
-      typedef ac_int<41, false> uint41;
-      typedef ac_int<42, true> int42;
-      typedef ac_int<42, false> uint42;
-      typedef ac_int<43, true> int43;
-      typedef ac_int<43, false> uint43;
-      typedef ac_int<44, true> int44;
-      typedef ac_int<44, false> uint44;
-      typedef ac_int<45, true> int45;
-      typedef ac_int<45, false> uint45;
-      typedef ac_int<46, true> int46;
-      typedef ac_int<46, false> uint46;
-      typedef ac_int<47, true> int47;
-      typedef ac_int<47, false> uint47;
-      typedef ac_int<48, true> int48;
-      typedef ac_int<48, false> uint48;
-      typedef ac_int<49, true> int49;
-      typedef ac_int<49, false> uint49;
-      typedef ac_int<50, true> int50;
-      typedef ac_int<50, false> uint50;
-      typedef ac_int<51, true> int51;
-      typedef ac_int<51, false> uint51;
-      typedef ac_int<52, true> int52;
-      typedef ac_int<52, false> uint52;
-      typedef ac_int<53, true> int53;
-      typedef ac_int<53, false> uint53;
-      typedef ac_int<54, true> int54;
-      typedef ac_int<54, false> uint54;
-      typedef ac_int<55, true> int55;
-      typedef ac_int<55, false> uint55;
-      typedef ac_int<56, true> int56;
-      typedef ac_int<56, false> uint56;
-      typedef ac_int<57, true> int57;
-      typedef ac_int<57, false> uint57;
-      typedef ac_int<58, true> int58;
-      typedef ac_int<58, false> uint58;
-      typedef ac_int<59, true> int59;
-      typedef ac_int<59, false> uint59;
-      typedef ac_int<60, true> int60;
-      typedef ac_int<60, false> uint60;
-      typedef ac_int<61, true> int61;
-      typedef ac_int<61, false> uint61;
-      typedef ac_int<62, true> int62;
-      typedef ac_int<62, false> uint62;
-      typedef ac_int<63, true> int63;
-      typedef ac_int<63, false> uint63;
+      using int1 = ac_int<1, true>;
+      using uint1 = ac_int<1, false>;
+      using int2 = ac_int<2, true>;
+      using uint2 = ac_int<2, false>;
+      using int3 = ac_int<3, true>;
+      using uint3 = ac_int<3, false>;
+      using int4 = ac_int<4, true>;
+      using uint4 = ac_int<4, false>;
+      using int5 = ac_int<5, true>;
+      using uint5 = ac_int<5, false>;
+      using int6 = ac_int<6, true>;
+      using uint6 = ac_int<6, false>;
+      using int7 = ac_int<7, true>;
+      using uint7 = ac_int<7, false>;
+      using int8 = ac_int<8, true>;
+      using uint8 = ac_int<8, false>;
+      using int9 = ac_int<9, true>;
+      using uint9 = ac_int<9, false>;
+      using int10 = ac_int<10, true>;
+      using uint10 = ac_int<10, false>;
+      using int11 = ac_int<11, true>;
+      using uint11 = ac_int<11, false>;
+      using int12 = ac_int<12, true>;
+      using uint12 = ac_int<12, false>;
+      using int13 = ac_int<13, true>;
+      using uint13 = ac_int<13, false>;
+      using int14 = ac_int<14, true>;
+      using uint14 = ac_int<14, false>;
+      using int15 = ac_int<15, true>;
+      using uint15 = ac_int<15, false>;
+      using int16 = ac_int<16, true>;
+      using uint16 = ac_int<16, false>;
+      using int17 = ac_int<17, true>;
+      using uint17 = ac_int<17, false>;
+      using int18 = ac_int<18, true>;
+      using uint18 = ac_int<18, false>;
+      using int19 = ac_int<19, true>;
+      using uint19 = ac_int<19, false>;
+      using int20 = ac_int<20, true>;
+      using uint20 = ac_int<20, false>;
+      using int21 = ac_int<21, true>;
+      using uint21 = ac_int<21, false>;
+      using int22 = ac_int<22, true>;
+      using uint22 = ac_int<22, false>;
+      using int23 = ac_int<23, true>;
+      using uint23 = ac_int<23, false>;
+      using int24 = ac_int<24, true>;
+      using uint24 = ac_int<24, false>;
+      using int25 = ac_int<25, true>;
+      using uint25 = ac_int<25, false>;
+      using int26 = ac_int<26, true>;
+      using uint26 = ac_int<26, false>;
+      using int27 = ac_int<27, true>;
+      using uint27 = ac_int<27, false>;
+      using int28 = ac_int<28, true>;
+      using uint28 = ac_int<28, false>;
+      using int29 = ac_int<29, true>;
+      using uint29 = ac_int<29, false>;
+      using int30 = ac_int<30, true>;
+      using uint30 = ac_int<30, false>;
+      using int31 = ac_int<31, true>;
+      using uint31 = ac_int<31, false>;
+      using int32 = ac_int<32, true>;
+      using uint32 = ac_int<32, false>;
+      using int33 = ac_int<33, true>;
+      using uint33 = ac_int<33, false>;
+      using int34 = ac_int<34, true>;
+      using uint34 = ac_int<34, false>;
+      using int35 = ac_int<35, true>;
+      using uint35 = ac_int<35, false>;
+      using int36 = ac_int<36, true>;
+      using uint36 = ac_int<36, false>;
+      using int37 = ac_int<37, true>;
+      using uint37 = ac_int<37, false>;
+      using int38 = ac_int<38, true>;
+      using uint38 = ac_int<38, false>;
+      using int39 = ac_int<39, true>;
+      using uint39 = ac_int<39, false>;
+      using int40 = ac_int<40, true>;
+      using uint40 = ac_int<40, false>;
+      using int41 = ac_int<41, true>;
+      using uint41 = ac_int<41, false>;
+      using int42 = ac_int<42, true>;
+      using uint42 = ac_int<42, false>;
+      using int43 = ac_int<43, true>;
+      using uint43 = ac_int<43, false>;
+      using int44 = ac_int<44, true>;
+      using uint44 = ac_int<44, false>;
+      using int45 = ac_int<45, true>;
+      using uint45 = ac_int<45, false>;
+      using int46 = ac_int<46, true>;
+      using uint46 = ac_int<46, false>;
+      using int47 = ac_int<47, true>;
+      using uint47 = ac_int<47, false>;
+      using int48 = ac_int<48, true>;
+      using uint48 = ac_int<48, false>;
+      using int49 = ac_int<49, true>;
+      using uint49 = ac_int<49, false>;
+      using int50 = ac_int<50, true>;
+      using uint50 = ac_int<50, false>;
+      using int51 = ac_int<51, true>;
+      using uint51 = ac_int<51, false>;
+      using int52 = ac_int<52, true>;
+      using uint52 = ac_int<52, false>;
+      using int53 = ac_int<53, true>;
+      using uint53 = ac_int<53, false>;
+      using int54 = ac_int<54, true>;
+      using uint54 = ac_int<54, false>;
+      using int55 = ac_int<55, true>;
+      using uint55 = ac_int<55, false>;
+      using int56 = ac_int<56, true>;
+      using uint56 = ac_int<56, false>;
+      using int57 = ac_int<57, true>;
+      using uint57 = ac_int<57, false>;
+      using int58 = ac_int<58, true>;
+      using uint58 = ac_int<58, false>;
+      using int59 = ac_int<59, true>;
+      using uint59 = ac_int<59, false>;
+      using int60 = ac_int<60, true>;
+      using uint60 = ac_int<60, false>;
+      using int61 = ac_int<61, true>;
+      using uint61 = ac_int<61, false>;
+      using int62 = ac_int<62, true>;
+      using uint62 = ac_int<62, false>;
+      using int63 = ac_int<63, true>;
+      using uint63 = ac_int<63, false>;
    } // namespace ac_intN
 
 #ifndef AC_NOT_USING_INTN
@@ -5303,21 +5671,9 @@ typedef signed long long Slong;
 
    ///////////////////////////////////////////////////////////////////////////////
 
-#if(defined(_MSC_VER) && !defined(__EDG__))
-#pragma warning(disable : 4700)
-#endif
-#if(defined(__GNUC__) && (__GNUC__ == 4 && __GNUC_MINOR__ >= 6 || __GNUC__ > 4) && !defined(__EDG__))
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wuninitialized"
-#endif
-#if defined(__clang__)
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wuninitialized"
-#endif
-
    // Global templatized functions for easy initialization to special values
    template <ac_special_val V, int W, bool S>
-   __FORCE_INLINE ac_int<W, S> value(ac_int<W, S>)
+   __FORCE_INLINE ac_int<W, S> value(ac_int<W, S> v)
    {
       ac_int<W, S> r;
       return r.template set_val<V>();
@@ -5326,12 +5682,12 @@ typedef signed long long Slong;
    template <ac_special_val V, int W, int I, bool S, ac_q_mode Q, ac_o_mode O>
    __FORCE_INLINE ac_fixed<W, I, S, Q, O> value(ac_fixed<W, I, S, Q, O>);
 
-#define SPECIAL_VAL_FOR_INTS_DC(C_TYPE, WI, SI)   \
-   template <>                                    \
-   __FORCE_INLINE C_TYPE value<AC_VAL_DC>(C_TYPE) \
-   {                                              \
-      C_TYPE x;                                   \
-      return x;                                   \
+#define SPECIAL_VAL_FOR_INTS_DC(C_TYPE, WI, SI)     \
+   template <>                                      \
+   __FORCE_INLINE C_TYPE value<AC_VAL_DC>(C_TYPE b) \
+   {                                                \
+      C_TYPE x = b;                                 \
+      return x;                                     \
    }
 
 // -- C int types
@@ -5393,7 +5749,9 @@ typedef signed long long Slong;
       {
          ac_int<W, S> t = value<V>(*a);
          for(int i = 0; i < n; i++)
+         {
             a[i] = t;
+         }
          return true;
       }
 
@@ -5410,16 +5768,6 @@ typedef signed long long Slong;
       INIT_ARRAY_SPECIAL_VAL_FOR_INTS(signed long long)
       INIT_ARRAY_SPECIAL_VAL_FOR_INTS(unsigned long long)
    } // namespace ac
-
-#if(defined(_MSC_VER) && !defined(__EDG__))
-#pragma warning(pop)
-#endif
-#if(defined(__GNUC__) && (__GNUC__ == 4 && __GNUC_MINOR__ >= 6 || __GNUC__ > 4) && !defined(__EDG__))
-#pragma GCC diagnostic pop
-#endif
-#if defined(__clang__)
-#pragma clang diagnostic pop
-#endif
 
 #ifdef __AC_NAMESPACE
 }
