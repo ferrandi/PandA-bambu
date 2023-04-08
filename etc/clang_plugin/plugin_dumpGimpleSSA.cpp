@@ -389,96 +389,96 @@ llvm::PassPluginLibraryInfo CLANG_PLUGIN_INFO(_plugin_dumpGimpleSSA)()
    return {
        LLVM_PLUGIN_API_VERSION, CLANG_VERSION_STRING_DUMP_SSA, "v0.12", [](llvm::PassBuilder& PB) {
           const auto load = [](llvm::ModulePassManager& MPM, bool doOpt) {
-                 llvm::FunctionPassManager FPM0;
-                 FPM0.addPass(llvm::LowerAtomicPass());
-                 MPM.addPass(llvm::createModuleToFunctionPassAdaptor(std::move(FPM0)));
+             llvm::FunctionPassManager FPM0;
+             FPM0.addPass(llvm::LowerAtomicPass());
+             MPM.addPass(llvm::createModuleToFunctionPassAdaptor(std::move(FPM0)));
              if(doOpt)
              {
-                 MPM.addPass(llvm::GlobalDCEPass());
-                 MPM.addPass(llvm::ForceFunctionAttrsPass());
-                 MPM.addPass(llvm::InferFunctionAttrsPass());
-                 MPM.addPass(llvm::createModuleToPostOrderCGSCCPassAdaptor(llvm::PostOrderFunctionAttrsPass()));
-                 MPM.addPass(llvm::ReversePostOrderFunctionAttrsPass());
-                 MPM.addPass(llvm::GlobalSplitPass());
-                 MPM.addPass(llvm::GlobalOptPass());
+                MPM.addPass(llvm::GlobalDCEPass());
+                MPM.addPass(llvm::ForceFunctionAttrsPass());
+                MPM.addPass(llvm::InferFunctionAttrsPass());
+                MPM.addPass(llvm::createModuleToPostOrderCGSCCPassAdaptor(llvm::PostOrderFunctionAttrsPass()));
+                MPM.addPass(llvm::ReversePostOrderFunctionAttrsPass());
+                MPM.addPass(llvm::GlobalSplitPass());
+                MPM.addPass(llvm::GlobalOptPass());
              }
-                 MPM.addPass(createModuleToFunctionPassAdaptor(llvm::PromotePass()));
+             MPM.addPass(createModuleToFunctionPassAdaptor(llvm::PromotePass()));
              if(doOpt)
              {
-                 MPM.addPass(llvm::DeadArgumentEliminationPass());
-                 llvm::FunctionPassManager PeepholeFPM;
-                 PeepholeFPM.addPass(llvm::InstCombinePass());
-                 MPM.addPass(llvm::createModuleToFunctionPassAdaptor(std::move(PeepholeFPM)));
+                MPM.addPass(llvm::DeadArgumentEliminationPass());
+                llvm::FunctionPassManager PeepholeFPM;
+                PeepholeFPM.addPass(llvm::InstCombinePass());
+                MPM.addPass(llvm::createModuleToFunctionPassAdaptor(std::move(PeepholeFPM)));
              }
-                 MPM.addPass(llvm::GlobalOptPass());
-                 MPM.addPass(llvm::GlobalDCEPass());
-                 MPM.addPass(llvm::createModuleToPostOrderCGSCCPassAdaptor(llvm::ArgumentPromotionPass(256)));
+             MPM.addPass(llvm::GlobalOptPass());
+             MPM.addPass(llvm::GlobalDCEPass());
+             MPM.addPass(llvm::createModuleToPostOrderCGSCCPassAdaptor(llvm::ArgumentPromotionPass(256)));
              llvm::FunctionPassManager FPM1a;
              FPM1a.addPass(llvm::InstCombinePass());
              MPM.addPass(llvm::createModuleToFunctionPassAdaptor(std::move(FPM1a)));
              if(doOpt)
              {
-                 llvm::FunctionPassManager FPM1;
-                 FPM1.addPass(llvm::JumpThreadingPass());
+                llvm::FunctionPassManager FPM1;
+                FPM1.addPass(llvm::JumpThreadingPass());
 #if __clang_major__ >= 16
-                 FPM1.addPass(llvm::SROAPass(llvm::SROAOptions::ModifyCFG));
+                FPM1.addPass(llvm::SROAPass(llvm::SROAOptions::ModifyCFG));
 #endif
-                 FPM1.addPass(llvm::TailCallElimPass());
-                 MPM.addPass(llvm::createModuleToFunctionPassAdaptor(std::move(FPM1)));
-                 MPM.addPass(llvm::createModuleToPostOrderCGSCCPassAdaptor(llvm::PostOrderFunctionAttrsPass()));
-                 MPM.addPass(llvm::createModuleToFunctionPassAdaptor(llvm::InvalidateAnalysisPass<llvm::AAManager>()));
+                FPM1.addPass(llvm::TailCallElimPass());
+                MPM.addPass(llvm::createModuleToFunctionPassAdaptor(std::move(FPM1)));
+                MPM.addPass(llvm::createModuleToPostOrderCGSCCPassAdaptor(llvm::PostOrderFunctionAttrsPass()));
+                MPM.addPass(llvm::createModuleToFunctionPassAdaptor(llvm::InvalidateAnalysisPass<llvm::AAManager>()));
 
-                 llvm::FunctionPassManager FPM2;
-                 FPM2.addPass(llvm::createFunctionToLoopPassAdaptor(llvm::LICMPass(
+                llvm::FunctionPassManager FPM2;
+                FPM2.addPass(llvm::createFunctionToLoopPassAdaptor(llvm::LICMPass(
 #if __clang_major__ >= 16
-                                                                        llvm::LICMOptions()
+                                                                       llvm::LICMOptions()
 #endif
-                                                                            ),
-                                                                    /*USeMemorySSA=*/true,
-                                                                    /*UseBlockFrequencyInfo=*/true));
-                 FPM2.addPass(llvm::NewGVNPass());
-                 FPM2.addPass(llvm::MemCpyOptPass());
-                 FPM2.addPass(llvm::DSEPass());
-                 FPM2.addPass(llvm::MergedLoadStoreMotionPass());
+                                                                           ),
+                                                                   /*USeMemorySSA=*/true,
+                                                                   /*UseBlockFrequencyInfo=*/true));
+                FPM2.addPass(llvm::NewGVNPass());
+                FPM2.addPass(llvm::MemCpyOptPass());
+                FPM2.addPass(llvm::DSEPass());
+                FPM2.addPass(llvm::MergedLoadStoreMotionPass());
 
-                 llvm::LoopPassManager LPM2;
-                 LPM2.addPass(llvm::LoopRotatePass());
+                llvm::LoopPassManager LPM2;
+                LPM2.addPass(llvm::LoopRotatePass());
 #if __clang_major__ >= 16
-                 LPM2.addPass(llvm::LoopFlattenPass());
+                LPM2.addPass(llvm::LoopFlattenPass());
 #endif
-                 LPM2.addPass(llvm::IndVarSimplifyPass());
-                 LPM2.addPass(llvm::LoopDeletionPass());
-                 LPM2.addPass(llvm::LoopRotatePass());
-                 FPM2.addPass(llvm::createFunctionToLoopPassAdaptor(std::move(LPM2), /*UseMemorySSA=*/false,
-                                                                    /*UseBlockFrequencyInfo=*/true));
-                 FPM2.addPass(llvm::LoopFusePass());
-                 FPM2.addPass(llvm::JumpThreadingPass());
-                 MPM.addPass(llvm::createModuleToFunctionPassAdaptor(std::move(FPM2)));
-                 MPM.addPass(createModuleToFunctionPassAdaptor(llvm::SimplifyCFGPass(llvm::SimplifyCFGOptions()
+                LPM2.addPass(llvm::IndVarSimplifyPass());
+                LPM2.addPass(llvm::LoopDeletionPass());
+                LPM2.addPass(llvm::LoopRotatePass());
+                FPM2.addPass(llvm::createFunctionToLoopPassAdaptor(std::move(LPM2), /*UseMemorySSA=*/false,
+                                                                   /*UseBlockFrequencyInfo=*/true));
+                FPM2.addPass(llvm::LoopFusePass());
+                FPM2.addPass(llvm::JumpThreadingPass());
+                MPM.addPass(llvm::createModuleToFunctionPassAdaptor(std::move(FPM2)));
+                MPM.addPass(createModuleToFunctionPassAdaptor(llvm::SimplifyCFGPass(llvm::SimplifyCFGOptions()
 #if __clang_major__ >= 16
-                                                                                         .convertSwitchRangeToICmp(true)
+                                                                                        .convertSwitchRangeToICmp(true)
 #endif
-                                                                                         .sinkCommonInsts(true)
-                                                                                         .hoistCommonInsts(true))));
-                 MPM.addPass(llvm::GlobalDCEPass());
-                 MPM.addPass(llvm::MergeFunctionsPass());
+                                                                                        .sinkCommonInsts(true)
+                                                                                        .hoistCommonInsts(true))));
+                MPM.addPass(llvm::GlobalDCEPass());
+                MPM.addPass(llvm::MergeFunctionsPass());
              }
-                 llvm::FunctionPassManager FPM3;
-                 FPM3.addPass(llvm::BreakCriticalEdgesPass());
-                 FPM3.addPass(llvm::UnifyFunctionExitNodesPass());
-                 MPM.addPass(llvm::createModuleToFunctionPassAdaptor(std::move(FPM3)));
-                 MPM.addPass(llvm::CLANG_VERSION_SYMBOL_DUMP_SSA());
-                 return true;
-              };
-              PB.registerPipelineParsingCallback([&](llvm::StringRef Name, llvm::ModulePassManager& MPM,
-                                                     llvm::ArrayRef<llvm::PassBuilder::PipelineElement>) {
-                 if(Name == CLANG_VERSION_STRING_DUMP_SSA)
-                 {
+             llvm::FunctionPassManager FPM3;
+             FPM3.addPass(llvm::BreakCriticalEdgesPass());
+             FPM3.addPass(llvm::UnifyFunctionExitNodesPass());
+             MPM.addPass(llvm::createModuleToFunctionPassAdaptor(std::move(FPM3)));
+             MPM.addPass(llvm::CLANG_VERSION_SYMBOL_DUMP_SSA());
+             return true;
+          };
+          PB.registerPipelineParsingCallback([&](llvm::StringRef Name, llvm::ModulePassManager& MPM,
+                                                 llvm::ArrayRef<llvm::PassBuilder::PipelineElement>) {
+             if(Name == CLANG_VERSION_STRING_DUMP_SSA)
+             {
                 return load(MPM, false);
-                 }
-                 return false;
-              });
-              PB.registerOptimizerLastEPCallback([&](llvm::ModulePassManager& MPM,
+             }
+             return false;
+          });
+          PB.registerOptimizerLastEPCallback([&](llvm::ModulePassManager& MPM,
 #if __clang_major__ <= 13
                                                  llvm::PassBuilder::OptimizationLevel Opt
 #else
@@ -494,7 +494,7 @@ llvm::PassPluginLibraryInfo CLANG_PLUGIN_INFO(_plugin_dumpGimpleSSA)()
 #endif
              );
           });
-           }};
+       }};
 }
 
 // This part is the new way of registering your pass
