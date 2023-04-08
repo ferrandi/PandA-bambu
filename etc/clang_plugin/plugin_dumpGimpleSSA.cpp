@@ -409,7 +409,6 @@ llvm::PassPluginLibraryInfo CLANG_PLUGIN_INFO(_plugin_dumpGimpleSSA)()
                 llvm::FunctionPassManager PeepholeFPM;
                 PeepholeFPM.addPass(llvm::InstCombinePass());
                 MPM.addPass(llvm::createModuleToFunctionPassAdaptor(std::move(PeepholeFPM)));
-                MPM.addPass(llvm::ModuleInlinerWrapperPass(llvm::getInlineParams(), true));
              }
              MPM.addPass(llvm::GlobalOptPass());
              MPM.addPass(llvm::GlobalDCEPass());
