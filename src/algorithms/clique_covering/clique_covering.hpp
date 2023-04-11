@@ -57,7 +57,6 @@
 #ifndef CLIQUE_COVERING_HPP
 #define CLIQUE_COVERING_HPP
 
-#include "bipartite_matching.hpp"
 #include "clique_covering_graph.hpp"
 #include "custom_map.hpp" // for map
 #include "custom_set.hpp" // for set
