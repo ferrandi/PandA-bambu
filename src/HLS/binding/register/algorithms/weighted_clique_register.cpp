@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -105,28 +105,26 @@ void weighted_clique_register::Initialize()
    HLS->Rreg = reg_binding::create_reg_binding(HLS, HLSMgr);
 }
 
-DesignFlowStep_Status weighted_clique_register::InternalExec()
+DesignFlowStep_Status weighted_clique_register::RegisterBinding()
 {
-   const FunctionBehaviorConstRef FB = HLSMgr->CGetFunctionBehavior(funId);
+   const auto FB = HLSMgr->CGetFunctionBehavior(funId);
    long step_time = 0;
-   if(output_level >= OUTPUT_LEVEL_MINIMUM and output_level <= OUTPUT_LEVEL_PEDANTIC)
+   if(output_level >= OUTPUT_LEVEL_MINIMUM && output_level <= OUTPUT_LEVEL_PEDANTIC)
    {
       START_TIME(step_time);
    }
-   const CliqueCovering_Algorithm clique_covering_algorithm =
+   const auto clique_covering_algorithm =
        GetPointer<const WeightedCliqueRegisterBindingSpecialization>(hls_flow_step_specialization)
            ->clique_covering_algorithm;
-   refcount<clique_covering<CG_vertex_descriptor>> register_clique =
-       clique_covering<CG_vertex_descriptor>::create_solver(
-           clique_covering_algorithm, HLS->storage_value_information->get_number_of_storage_values());
+   const auto register_clique = clique_covering<CG_vertex_descriptor>::create_solver(
+       clique_covering_algorithm, HLS->storage_value_information->get_number_of_storage_values());
    create_compatibility_graph();
 
-   auto v_it_end = verts.end();
-   unsigned int vertex_index = 0;
+   size_t vertex_index = 0;
    unsigned int num_registers = 0;
-   for(auto v_it = verts.begin(); v_it != v_it_end; ++v_it, ++vertex_index)
+   for(const auto v : verts)
    {
-      register_clique->add_vertex(*v_it, STR(vertex_index));
+      register_clique->add_vertex(v, STR(vertex_index++));
    }
    if(vertex_index > 0)
    {
@@ -146,12 +144,11 @@ DesignFlowStep_Status weighted_clique_register::InternalExec()
          }
       }
       HLS->Rreg->set_used_regs(num_registers);
-      boost::graph_traits<compatibility_graph>::edge_iterator cg_ei, cg_ei_end;
-      for(boost::tie(cg_ei, cg_ei_end) = boost::edges(*CG); cg_ei != cg_ei_end; ++cg_ei)
+      BOOST_FOREACH(compatibility_graph::edge_descriptor e, boost::edges(*CG))
       {
-         CG_vertex_descriptor src = boost::source(*cg_ei, *CG);
-         CG_vertex_descriptor tgt = boost::target(*cg_ei, *CG);
-         register_clique->add_edge(src, tgt, (*CG)[*cg_ei].weight);
+         const auto src = boost::source(e, *CG);
+         const auto tgt = boost::target(e, *CG);
+         register_clique->add_edge(src, tgt, (*CG)[e].weight);
       }
       if(parameters->getOption<bool>(OPT_print_dot))
       {
@@ -173,25 +170,18 @@ DesignFlowStep_Status weighted_clique_register::InternalExec()
       num_registers = static_cast<unsigned int>(register_clique->num_vertices());
       for(unsigned int i = 0; i < num_registers; ++i)
       {
-         CustomOrderedSet<CG_vertex_descriptor> clique = register_clique->get_clique(i);
-         auto v_end = clique.end();
-         for(auto v = clique.begin(); v != v_end; ++v)
+         for(const auto v : register_clique->get_clique(i))
          {
-            v2c[*v] = i;
+            v2c[v] = i;
          }
       }
       /// finalize
       HLS->Rreg = reg_binding::create_reg_binding(HLS, HLSMgr);
-      const std::list<vertex>& support = HLS->Rliv->get_support();
-
-      const auto vEnd = support.end();
-      for(auto vIt = support.begin(); vIt != vEnd; ++vIt)
+      for(const auto v : HLS->Rliv->get_support())
       {
-         const CustomOrderedSet<unsigned int>& live = HLS->Rliv->get_live_in(*vIt);
-         auto k_end = live.end();
-         for(auto k = live.begin(); k != k_end; ++k)
+         for(const auto k : HLS->Rliv->get_live_in(v))
          {
-            unsigned int storage_value_index = HLS->storage_value_information->get_storage_value_index(*vIt, *k);
+            unsigned int storage_value_index = HLS->storage_value_information->get_storage_value_index(v, k);
             HLS->Rreg->bind(storage_value_index, v2c[verts[storage_value_index]]);
          }
       }
@@ -203,7 +193,7 @@ DesignFlowStep_Status weighted_clique_register::InternalExec()
    }
    delete CG;
    HLS->Rreg->set_used_regs(num_registers);
-   if(output_level >= OUTPUT_LEVEL_MINIMUM and output_level <= OUTPUT_LEVEL_PEDANTIC)
+   if(output_level >= OUTPUT_LEVEL_MINIMUM && output_level <= OUTPUT_LEVEL_PEDANTIC)
    {
       STOP_TIME(step_time);
    }
@@ -223,7 +213,7 @@ DesignFlowStep_Status weighted_clique_register::InternalExec()
    {
       HLS->Rreg->print();
    }
-   if(output_level >= OUTPUT_LEVEL_MINIMUM and output_level <= OUTPUT_LEVEL_PEDANTIC)
+   if(output_level >= OUTPUT_LEVEL_MINIMUM && output_level <= OUTPUT_LEVEL_PEDANTIC)
    {
       INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
                      "Time to perform register binding: " + print_cpu_time(step_time) + " seconds");

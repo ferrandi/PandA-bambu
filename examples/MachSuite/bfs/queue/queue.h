@@ -80,7 +80,7 @@ int INPUT_SIZE = sizeof(struct bench_args_t);
 
 void bfs(node_t nodes[N_NODES], edge_t edges[N_EDGES], node_index_t starting_node, level_t level[N_NODES], edge_index_t level_counts[N_LEVELS]);
 
-void run_benchmark( void *vargs ) {
+__attribute((noinline)) void run_benchmark( void *vargs ) {
   struct bench_args_t *args = (struct bench_args_t *)vargs;
   bfs(args->nodes, args->edges, args->starting_node, args->level, args->level_counts);
 }

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -78,23 +78,12 @@
  */
 #define ADD_CALL_POINT(g, e, newstmt) get_edge_info<function_graph_edge_info>(e, *(g))->call_points.insert(newstmt)
 
-/**
- * @name function graph selector
- */
-//@{
-/// Data line selector
-#define STD_SELECTOR 1 << 0
-/// Clock line selector
-#define FEEDBACK_SELECTOR 1 << 1
-//@}
-
-CallGraphManager::CallGraphManager(const FunctionExpanderConstRef _function_expander, const bool _single_root_function,
+CallGraphManager::CallGraphManager(const FunctionExpanderConstRef _function_expander,
                                    const bool _allow_recursive_functions, const tree_managerConstRef _tree_manager,
                                    const ParameterConstRef _Param)
     : call_graphs_collection(new CallGraphsCollection(CallGraphInfoRef(new CallGraphInfo()), _Param)),
       call_graph(new CallGraph(call_graphs_collection, STD_SELECTOR | FEEDBACK_SELECTOR)),
       tree_manager(_tree_manager),
-      single_root_function(_single_root_function),
       allow_recursive_functions(_allow_recursive_functions),
       Param(_Param),
       debug_level(_Param->get_class_debug_level(GET_CLASS(*this))),
@@ -124,8 +113,8 @@ void CallGraphManager::AddFunction(unsigned int new_function_id, const FunctionB
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---vertex already present");
       THROW_ASSERT(call_graph->GetCallGraphInfo()->behaviors.at(new_function_id) == fun_behavior,
                    "adding a different behavior for " + STR(new_function_id) +
-                       "prev: " + STR(call_graph->GetCallGraphInfo()->behaviors.at(new_function_id)) +
-                       "new: " + STR(fun_behavior));
+                       " prev: " + STR(call_graph->GetCallGraphInfo()->behaviors.at(new_function_id)) +
+                       " new: " + STR(fun_behavior));
    }
 }
 
@@ -569,12 +558,12 @@ const CustomOrderedSet<unsigned int>& CallGraphManager::GetReachedBodyFunctions(
    return reached_body_functions;
 }
 
-CustomOrderedSet<unsigned int> CallGraphManager::GetReachedBodyFunctionsFrom(unsigned int from) const
+CustomOrderedSet<unsigned int> CallGraphManager::GetReachedFunctionsFrom(unsigned int from, bool with_body) const
 {
    CustomOrderedSet<unsigned int> dummy;
    CustomOrderedSet<unsigned int> f_list;
 
-   CalledFunctionsVisitor vis(allow_recursive_functions, this, f_list, dummy);
+   CalledFunctionsVisitor vis(allow_recursive_functions, this, f_list, with_body ? dummy : f_list);
    std::vector<boost::default_color_type> color_vec(boost::num_vertices(*call_graph));
    const auto top_vertex = GetVertex(from);
    boost::depth_first_visit(*call_graph, top_vertex, vis,

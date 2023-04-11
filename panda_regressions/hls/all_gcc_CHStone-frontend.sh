@@ -5,7 +5,7 @@ script_dir="$(dirname $(readlink -e $0))"
 BATCH_ARGS=("--simulate" "-O0" "-fwhole-program" "--clock-period=15" "-D'printf(fmt, ...)='" "--channels-type=MEM_ACC_NN" "--experimental-setup=BAMBU")
 OUT_SUFFIX="all_gcc_CHStone-frontend"
 
-$script_dir/../../etc/scripts/test_panda.py --tool=bambu \
+python3 $script_dir/../../etc/scripts/test_panda.py --tool=bambu \
    --args="--configuration-name=GCC45-O0-wp-NN --compiler=I386_GCC45 ${BATCH_ARGS[*]}" \
    --args="--configuration-name=GCC46-O0-wp-NN --compiler=I386_GCC46 ${BATCH_ARGS[*]}" \
    --args="--configuration-name=GCC47-O0-wp-NN --compiler=I386_GCC47 ${BATCH_ARGS[*]}" \

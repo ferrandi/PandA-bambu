@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -146,6 +146,11 @@ static kind ternary_operation_type1(kind operation_kind1, kind operation_kind2)
 
 DesignFlowStep_Status extract_patterns::InternalExec()
 {
+   if(parameters->IsParameter("disable-extract-patterns") &&
+      parameters->GetParameter<unsigned int>("disable-extract-patterns") == 1)
+   {
+      return DesignFlowStep_Status::UNCHANGED;
+   }
    PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, " --------- EXTRACT_PATTERNS ---------- ");
    const auto TM = AppM->get_tree_manager();
    const auto tn = TM->CGetTreeNode(function_id);

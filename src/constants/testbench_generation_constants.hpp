@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2018-2022 Politecnico di Milano
+ *              Copyright (c) 2018-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -45,5 +45,8 @@
 
 /// threshold used to switch from data directly printed to data written to a file and then copied
 #define DATA_SIZE_THRESHOLD (1024 * 8)
+
+/// Constant delay for testbench initialization. It is relevant for XILINX devices.
+#define STR_CST_INIT_TIME "100"
 
 #endif

@@ -13,7 +13,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2016-2022 Politecnico di Milano
+ *              Copyright (c) 2016-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -50,13 +50,13 @@ class fu_binding_cs : public fu_binding
    /**
     * Destructor
     */
-   virtual ~fu_binding_cs();
+   ~fu_binding_cs() override;
 
    /**
     * Call different method that instantiate the new component for each function_type
     */
-   virtual void add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, structural_objectRef clock_port,
-                          structural_objectRef reset_port) override;
+   void add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, structural_objectRef clock_port,
+                  structural_objectRef reset_port) override;
 
    /**
     * @brief decide based on function what function to call in order to connect appropriately the datapath memory_signal

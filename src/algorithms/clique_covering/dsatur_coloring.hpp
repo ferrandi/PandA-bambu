@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -124,7 +124,7 @@ namespace boost
       size_type data;
       dsatur_d_list* prev;
       dsatur_d_list* next;
-      explicit dsatur_d_list(size_type _data) : data(_data), prev(0), next(0)
+      explicit dsatur_d_list(size_type _data) : data(_data), prev(nullptr), next(nullptr)
       {
       }
    };
@@ -133,8 +133,8 @@ namespace boost
    class dsatur_coloring_helper
    {
     private:
-      typedef graph_traits<VertexListGraph> GraphTraits;
-      typedef typename GraphTraits::vertex_descriptor Vertex;
+      using GraphTraits = graph_traits<VertexListGraph>;
+      using Vertex = typename GraphTraits::vertex_descriptor;
       const size_type num_node;
       std::vector<dsatur_d_list<size_type>*> satur_to_list;
       std::vector<size_type> vertex_to_satur;
@@ -155,16 +155,20 @@ namespace boost
       {
          std::vector<size_type> tmp_vertex_degree_ordering(_num_node);
          for(size_type i = 0; i < _num_node; i++)
+         {
             tmp_vertex_degree_ordering[i] = i;
+         }
          std::stable_sort(tmp_vertex_degree_ordering.begin(), tmp_vertex_degree_ordering.end(),
                           dsatur_degree_compare_functor<size_type, VertexListGraph>(_G));
-         dsatur_d_list<size_type>* last = 0;
+         dsatur_d_list<size_type>* last = nullptr;
          for(size_type i = 0; i < _num_node; i++)
          {
             size_type curr_vert = tmp_vertex_degree_ordering[i];
-            dsatur_d_list<size_type>* dobj = new dsatur_d_list<size_type>(curr_vert);
+            auto* dobj = new dsatur_d_list<size_type>(curr_vert);
             if(!last)
+            {
                last = satur_to_list[0] = dobj;
+            }
             else
             {
                last->next = dobj;
@@ -183,22 +187,30 @@ namespace boost
          {
             /// scan for maximum saturation list
             while(!satur_to_list[maxsatur])
+            {
                maxsatur--;
+            }
             /// v is vertex to color, remove from list
             size_type v = satur_to_list[maxsatur]->data;
             dsatur_d_list<size_type>* to_be_deleted = satur_to_list[maxsatur];
             satur_to_list[maxsatur] = satur_to_list[maxsatur]->next;
             delete to_be_deleted;
             if(satur_to_list[maxsatur])
-               satur_to_list[maxsatur]->prev = 0;
-            vertex_to_iter[v] = 0;
+            {
+               satur_to_list[maxsatur]->prev = nullptr;
+            }
+            vertex_to_iter[v] = nullptr;
             /// assign minimum color not adjacent to v
             size_type color = 0;
             while(color_set[v].find(color) != color_set[v].end())
+            {
                color++;
+            }
             color_set[v].insert(color);
             if(maxclr < color)
+            {
                maxclr = color;
+            }
             put(CM, vertex(v, G), color);
             /// update neighbors saturation
             typename GraphTraits::adjacency_iterator vit, vend;
@@ -216,15 +228,17 @@ namespace boost
                      /// remove vertex from satur list
                      size_type w_satur = vertex_to_satur[w];
                      dsatur_d_list<size_type>* vertex_to_be_moved = vertex_to_iter[w];
-                     if(vertex_to_be_moved->prev == 0)
+                     if(vertex_to_be_moved->prev == nullptr)
                      {
                         satur_to_list[w_satur] = vertex_to_be_moved->next;
                         if(vertex_to_be_moved->next)
-                           satur_to_list[w_satur]->prev = 0;
+                        {
+                           satur_to_list[w_satur]->prev = nullptr;
+                        }
                      }
-                     else if(vertex_to_be_moved->next == 0)
+                     else if(vertex_to_be_moved->next == nullptr)
                      {
-                        vertex_to_be_moved->prev->next = 0;
+                        vertex_to_be_moved->prev->next = nullptr;
                      }
                      else
                      {
@@ -238,19 +252,19 @@ namespace boost
                      {
                         maxsatur = w_satur;
                         satur_to_list.resize(maxsatur + 1); /// add a new  empty list
-                        satur_to_list[maxsatur] = 0;
+                        satur_to_list[maxsatur] = nullptr;
                      }
                      /// insert w into new list
                      dsatur_degree_predicate_functor<size_type, VertexListGraph> DPF(G, w);
-                     if(satur_to_list[w_satur] == 0)
+                     if(satur_to_list[w_satur] == nullptr)
                      {
                         satur_to_list[w_satur] = vertex_to_be_moved;
-                        vertex_to_be_moved->prev = 0;
-                        vertex_to_be_moved->next = 0;
+                        vertex_to_be_moved->prev = nullptr;
+                        vertex_to_be_moved->next = nullptr;
                      }
                      else if(DPF(satur_to_list[w_satur]->data))
                      {
-                        vertex_to_be_moved->prev = 0;
+                        vertex_to_be_moved->prev = nullptr;
                         vertex_to_be_moved->next = satur_to_list[w_satur];
                         satur_to_list[w_satur]->prev = vertex_to_be_moved;
                         satur_to_list[w_satur] = vertex_to_be_moved;
@@ -259,11 +273,15 @@ namespace boost
                      {
                         dsatur_d_list<size_type>* iter = satur_to_list[w_satur];
                         while(iter->next && !DPF(iter->next->data))
+                        {
                            iter = iter->next;
+                        }
 
                         vertex_to_be_moved->next = iter->next;
                         if(iter->next)
+                        {
                            iter->next->prev = vertex_to_be_moved;
+                        }
                         iter->next = vertex_to_be_moved;
                         vertex_to_be_moved->prev = iter;
                      }
@@ -280,13 +298,15 @@ namespace boost
    template <typename VertexListGraph, typename ColorMap>
    typename property_traits<ColorMap>::value_type dsatur_coloring(const VertexListGraph& G, ColorMap color)
    {
-      typedef graph_traits<VertexListGraph> GraphTraits;
-      typedef typename GraphTraits::vertex_descriptor Vertex;
-      typedef typename property_traits<ColorMap>::value_type size_type;
+      using GraphTraits = graph_traits<VertexListGraph>;
+      using Vertex = typename GraphTraits::vertex_descriptor;
+      using size_type = typename property_traits<ColorMap>::value_type;
 
       const size_type num_node = num_vertices(G);
       if(num_node == 0)
+      {
          return 0;
+      }
       dsatur_coloring_helper<VertexListGraph, ColorMap, size_type> DCH(G, color, num_node);
 
       return DCH.SeqColor();

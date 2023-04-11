@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -43,6 +43,7 @@
  */
 
 /// Autoheader include
+#include "config_HAVE_BAMBU_BUILT.hpp"
 #include "config_HAVE_FROM_AADL_ASN_BUILT.hpp"
 #include "config_HAVE_FROM_PRAGMA_BUILT.hpp"
 
@@ -73,6 +74,18 @@
 #include "fileIO.hpp"
 #include "string_manipulation.hpp" // for GET_CLASS
 
+#if HAVE_BAMBU_BUILT
+#include "cost_latency_table.hpp"
+#include "hls_manager.hpp"
+#include "hls_target.hpp"
+#include "string_manipulation.hpp"
+#include "technology_flow_step.hpp"
+#include "technology_flow_step_factory.hpp"
+#include "technology_manager.hpp"
+#include "technology_node.hpp"
+#include "time_model.hpp"
+#endif
+
 create_tree_manager::create_tree_manager(const ParameterConstRef _parameters, const application_managerRef _AppM,
                                          const DesignFlowManagerConstRef _design_flow_manager)
     : ApplicationFrontendFlowStep(_AppM, CREATE_TREE_MANAGER, _design_flow_manager, _parameters),
@@ -88,38 +101,67 @@ create_tree_manager::~create_tree_manager() = default;
 void create_tree_manager::ComputeRelationships(DesignFlowStepSet& relationship,
                                                const DesignFlowStep::RelationshipType relationship_type)
 {
-   ApplicationFrontendFlowStep::ComputeRelationships(relationship, relationship_type);
-#if HAVE_FROM_AADL_ASN_BUILT
-   if(relationship_type == DEPENDENCE_RELATIONSHIP and
-      parameters->getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_AADL)
+   switch(relationship_type)
    {
-      const auto input_files = AppM->input_files;
-      for(const auto& input_file : input_files)
+      case(PRECEDENCE_RELATIONSHIP):
       {
-         const auto file_format = parameters->GetFileFormat(input_file.first);
-         if(file_format == Parameters_FileFormat::FF_AADL)
-         {
-            const auto signature = ParserFlowStep::ComputeSignature(ParserFlowStep_Type::AADL, input_file.first);
-            vertex parser_step = design_flow_manager.lock()->GetDesignFlowStep(signature);
-            const DesignFlowGraphConstRef design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
-            const DesignFlowStepRef design_flow_step =
-                parser_step != NULL_VERTEX ? design_flow_graph->CGetDesignFlowStepInfo(parser_step)->design_flow_step :
-                                             design_flow_manager.lock()->CreateFlowStep(signature);
-            relationship.insert(design_flow_step);
-         }
-         else if(file_format == Parameters_FileFormat::FF_ASN)
-         {
-            const auto signature = ParserFlowStep::ComputeSignature(ParserFlowStep_Type::ASN, input_file.first);
-            vertex parser_step = design_flow_manager.lock()->GetDesignFlowStep(signature);
-            const DesignFlowGraphConstRef design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
-            const DesignFlowStepRef design_flow_step =
-                parser_step != NULL_VERTEX ? design_flow_graph->CGetDesignFlowStepInfo(parser_step)->design_flow_step :
-                                             design_flow_manager.lock()->CreateFlowStep(signature);
-            relationship.insert(design_flow_step);
-         }
+         break;
       }
-   }
+      case DEPENDENCE_RELATIONSHIP:
+      {
+#if HAVE_FROM_AADL_ASN_BUILT
+         if(parameters->getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_AADL)
+         {
+            const auto input_files = AppM->input_files;
+            for(const auto& input_file : input_files)
+            {
+               const auto file_format = parameters->GetFileFormat(input_file.first);
+               if(file_format == Parameters_FileFormat::FF_AADL)
+               {
+                  const auto signature = ParserFlowStep::ComputeSignature(ParserFlowStep_Type::AADL, input_file.first);
+                  vertex parser_step = design_flow_manager.lock()->GetDesignFlowStep(signature);
+                  const DesignFlowGraphConstRef design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
+                  const DesignFlowStepRef design_flow_step =
+                      parser_step != NULL_VERTEX ?
+                          design_flow_graph->CGetDesignFlowStepInfo(parser_step)->design_flow_step :
+                          design_flow_manager.lock()->CreateFlowStep(signature);
+                  relationship.insert(design_flow_step);
+               }
+               else if(file_format == Parameters_FileFormat::FF_ASN)
+               {
+                  const auto signature = ParserFlowStep::ComputeSignature(ParserFlowStep_Type::ASN, input_file.first);
+                  vertex parser_step = design_flow_manager.lock()->GetDesignFlowStep(signature);
+                  const DesignFlowGraphConstRef design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
+                  const DesignFlowStepRef design_flow_step =
+                      parser_step != NULL_VERTEX ?
+                          design_flow_graph->CGetDesignFlowStepInfo(parser_step)->design_flow_step :
+                          design_flow_manager.lock()->CreateFlowStep(signature);
+                  relationship.insert(design_flow_step);
+               }
+            }
+         }
 #endif
+         const DesignFlowGraphConstRef design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
+         const auto* technology_flow_step_factory = GetPointer<const TechnologyFlowStepFactory>(
+             design_flow_manager.lock()->CGetDesignFlowStepFactory("Technology"));
+         const std::string technology_flow_signature =
+             TechnologyFlowStep::ComputeSignature(TechnologyFlowStep_Type::LOAD_TECHNOLOGY);
+         const vertex technology_flow_step = design_flow_manager.lock()->GetDesignFlowStep(technology_flow_signature);
+         const DesignFlowStepRef technology_design_flow_step =
+             technology_flow_step ?
+                 design_flow_graph->CGetDesignFlowStepInfo(technology_flow_step)->design_flow_step :
+                 technology_flow_step_factory->CreateTechnologyFlowStep(TechnologyFlowStep_Type::LOAD_TECHNOLOGY);
+         relationship.insert(technology_design_flow_step);
+         break;
+      }
+      case INVALIDATION_RELATIONSHIP:
+      {
+         break;
+      }
+      default:
+         THROW_UNREACHABLE("");
+   }
+   ApplicationFrontendFlowStep::ComputeRelationships(relationship, relationship_type);
 }
 
 const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
@@ -157,6 +199,92 @@ create_tree_manager::ComputeFrontendRelationships(const DesignFlowStep::Relation
 bool create_tree_manager::HasToBeExecuted() const
 {
    return true;
+}
+
+void create_tree_manager::createCostTable()
+{
+#if HAVE_BAMBU_BUILT
+   if(GetPointer<HLS_manager>(AppM) &&
+      (!parameters->IsParameter("disable-THR") || parameters->GetParameter<unsigned int>("disable-THR") == 0))
+   {
+      std::map<std::pair<std::string, std::string>, std::string> default_InstructionLatencyTable;
+      auto latencies = SplitString(STR_cost_latency_table_default, ",");
+      for(const auto& el : latencies)
+      {
+         auto key_value = SplitString(el, "=");
+         THROW_ASSERT(key_value.size() == 2, "unexpected condition");
+         auto op_bit = SplitString(key_value.at(0), "|");
+         THROW_ASSERT(op_bit.size() == 2, "unexpected condition");
+         default_InstructionLatencyTable[std::make_pair(op_bit.at(0), op_bit.at(1))] = key_value.at(1);
+      }
+
+      const HLS_targetRef HLS_T = GetPointer<HLS_manager>(AppM)->get_HLS_target();
+      const technology_managerRef TechManager = HLS_T->get_technology_manager();
+      double clock_period =
+          parameters->isOption(OPT_clock_period) ? parameters->getOption<double>(OPT_clock_period) : 10;
+      /// manage loads and stores
+      CostTable = "store_expr|32=" + STR(clock_period);
+      CostTable += ",load_expr|32=" + STR(clock_period);
+      CostTable += ",nop_expr|32=" + STR(clock_period);
+      for(const std::string& op_name : {"mult_expr", "plus_expr", "trunc_div_expr", "trunc_mod_expr", "lshift_expr",
+                                        "rshift_expr", "bit_and_expr", "bit_ior_expr", "bit_xor_expr", "cond_expr"})
+      {
+         for(auto fu_prec : {1, 8, 16, 32, 64})
+         {
+            auto component_name_op =
+                "ui_" + op_name + std::string("_FU_") + STR(fu_prec) + "_" + STR(fu_prec) + "_" + STR(fu_prec) +
+                ((op_name == "mult_expr" || op_name == "trunc_div_expr" || op_name == "trunc_mod_expr") ? "_0" : "") +
+                (op_name == "cond_expr" ? ("_" + STR(fu_prec)) : "");
+            technology_nodeRef op_f_unit = TechManager->get_fu(component_name_op, LIBRARY_STD_FU);
+            if(op_f_unit)
+            {
+               auto* op_fu = GetPointer<functional_unit>(op_f_unit);
+               technology_nodeRef op_node = op_fu->get_operation(op_name);
+               THROW_ASSERT(op_node, "missing " + op_name + " from " + component_name_op);
+               auto* op = GetPointer<operation>(op_node);
+               double op_delay = op->time_m->get_execution_time();
+               CostTable += "," + op_name + "|" + STR(fu_prec) + "=" + STR(op_delay);
+            }
+            else
+            {
+               THROW_ASSERT(default_InstructionLatencyTable.find(std::make_pair(op_name, STR(fu_prec))) !=
+                                default_InstructionLatencyTable.end(),
+                            "");
+               CostTable += "," + op_name + "|" + STR(fu_prec) + "=" +
+                            default_InstructionLatencyTable.at(std::make_pair(op_name, STR(fu_prec)));
+            }
+         }
+      }
+      for(const std::string& op_name : {"mult_expr", "plus_expr", "rdiv_expr"})
+      {
+         for(auto fu_prec : {32, 64})
+         {
+            auto component_name_op = "fp_" + op_name + std::string("_FU_") + STR(fu_prec) + "_" + STR(fu_prec) + "_" +
+                                     STR(fu_prec) + ((op_name == "mult_expr") ? "_200" : "_100");
+            technology_nodeRef op_f_unit = TechManager->get_fu(component_name_op, LIBRARY_STD_FU);
+            if(op_f_unit)
+            {
+               auto* op_fu = GetPointer<functional_unit>(op_f_unit);
+               technology_nodeRef op_node = op_fu->get_operation(op_name);
+               THROW_ASSERT(op_node, "missing " + op_name + " from " + component_name_op);
+               auto* op = GetPointer<operation>(op_node);
+               auto op_cycles = op->time_m->get_cycles();
+               double op_delay = op_cycles ? clock_period * op_cycles : op->time_m->get_execution_time();
+               CostTable += ",F" + op_name + "|" + STR(fu_prec) + "=" + STR(op_delay);
+            }
+            else
+            {
+               THROW_ASSERT(default_InstructionLatencyTable.find(std::make_pair("F" + op_name, STR(fu_prec))) !=
+                                default_InstructionLatencyTable.end(),
+                            "");
+               CostTable += "," + op_name + "|" + STR(fu_prec) + "=" +
+                            default_InstructionLatencyTable.at(std::make_pair("F" + op_name, STR(fu_prec)));
+            }
+         }
+      }
+   }
+
+#endif
 }
 
 DesignFlowStep_Status create_tree_manager::Exec()
@@ -238,6 +366,7 @@ DesignFlowStep_Status create_tree_manager::Exec()
       const auto raw_files = parameters->getOption<const CustomSet<std::string>>(OPT_input_file);
       for(const auto& raw_file : raw_files)
       {
+         INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "Parsing " + raw_file);
          if(!boost::filesystem::exists(boost::filesystem::path(raw_file)))
          {
             THROW_ERROR("File " + raw_file + " does not exist");
@@ -253,13 +382,18 @@ DesignFlowStep_Status create_tree_manager::Exec()
 #if !RELEASE
       // if a XML configuration file has been specified for the GCC/CLANG parameters
       if(parameters->isOption(OPT_gcc_read_xml))
+      {
          compiler_wrapper->ReadXml(parameters->getOption<std::string>(OPT_gcc_read_xml));
+      }
 #endif
-      compiler_wrapper->FillTreeManager(TreeM, AppM->input_files);
+      createCostTable();
+      compiler_wrapper->FillTreeManager(TreeM, AppM->input_files, getCostTable());
 
 #if !RELEASE
       if(parameters->isOption(OPT_gcc_write_xml))
+      {
          compiler_wrapper->WriteXml(parameters->getOption<std::string>(OPT_gcc_write_xml));
+      }
 #endif
 
       if(debug_level >= DEBUG_LEVEL_PEDANTIC)

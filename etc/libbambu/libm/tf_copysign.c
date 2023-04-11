@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2021-2022 Politecnico di Milano
+ *              Copyright (C) 2021-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -43,9 +43,11 @@
 
 #include "math_privatetf.h"
 
-unsigned long long __copysign(unsigned long long x, unsigned long long y, unsigned char __exp_bits,
-                              unsigned char __frac_bits, int __exp_bias, _Bool __rounding, _Bool __nan, _Bool __one,
-                              _Bool __subnorm, signed char __sign)
+static unsigned long long
+    __attribute__((always_inline)) inline __local_copysign(unsigned long long x, unsigned long long y,
+                                                           unsigned char __exp_bits, unsigned char __frac_bits,
+                                                           int __exp_bias, _Bool __rounding, _Bool __nan, _Bool __one,
+                                                           _Bool __subnorm, signed char __sign)
 {
    if(__sign == -1)
    {
@@ -56,3 +58,24 @@ unsigned long long __copysign(unsigned long long x, unsigned long long y, unsign
       return x;
    }
 }
+
+unsigned long long __copysign(unsigned long long x, unsigned long long y, unsigned char __exp_bits,
+                              unsigned char __frac_bits, int __exp_bias, _Bool __rounding, _Bool __nan, _Bool __one,
+                              _Bool __subnorm, signed char __sign)
+{
+   return __local_copysign(x, y, __exp_bits, __frac_bits, __exp_bias, __rounding, __nan, __one, __subnorm, __sign);
+}
+
+#if defined(__llvm__) || defined(__CLANG__)
+float copysignf(float x, float y)
+{
+   unsigned int r = __local_copysign(*((unsigned int*)&x), *((unsigned int*)&y), IEEE32_SPEC);
+   return *((float*)&r);
+}
+
+double copysign(double x, double y)
+{
+   unsigned long long r = __local_copysign(*((unsigned long long*)&x), *((unsigned long long*)&y), IEEE64_SPEC);
+   return *((double*)&r);
+}
+#endif

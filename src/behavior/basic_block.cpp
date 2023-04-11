@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -240,8 +240,12 @@ bool BBEdgeSorter::operator()(const EdgeDescriptor x, const EdgeDescriptor y) co
    const vertex source_x = boost::source(x, *bb_graph);
    const vertex source_y = boost::source(y, *bb_graph);
    if(source_x == source_y)
+   {
       return bb_sorter(boost::target(x, *bb_graph), boost::target(y, *bb_graph));
+   }
    else
+   {
       return bb_sorter(source_x, source_y);
+   }
 }
 #endif

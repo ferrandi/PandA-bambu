@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2015-2022 Politecnico di Milano
+ *              Copyright (C) 2015-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -702,7 +702,9 @@ DesignFlowStep_Status HWDiscrepancyAnalysis::Exec()
                      "---state trace length for function scope: " + i.first + ": " + STR(i.second.size()));
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->scope " + i.first);
       for(const auto id : i.second)
+      {
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---S_" + STR(id));
+      }
 
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--");
    }
@@ -712,7 +714,9 @@ DesignFlowStep_Status HWDiscrepancyAnalysis::Exec()
                      "---EPP trace length for function scope: " + i.first + ": " + STR(i.second.size()));
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->scope " + i.first);
       for(const auto id : i.second)
+      {
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---EPP_" + STR(id));
+      }
 
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--");
    }
@@ -795,7 +799,9 @@ DesignFlowStep_Status HWDiscrepancyAnalysis::Exec()
       GetPointer<module>(curr_module)->SetParameter("EPP_TRACE_INITIAL_METADATA", STR(i.second.begin()->first));
 #ifndef NDEBUG
       for(const auto& id : i.second)
+      {
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---COMPRESSED_EPP " + STR(id.first) + ":" + STR(id.second));
+      }
 #endif
       const std::string init_filename = "epp_control_flow_trace_scope__" + STR(scope_id) + ".mem";
       std::ofstream init_file(GetPath(init_filename));
@@ -825,7 +831,7 @@ DesignFlowStep_Status HWDiscrepancyAnalysis::Exec()
       }
       init_file << NumberToBinaryString(invalid_epp_id, data_word_size) << std::endl;
       init_file.close();
-      GetPointer<module>(curr_module)->SetParameter("MEMORY_INIT_file", "\"\"" + init_filename + "\"\"");
+      GetPointer<module>(curr_module)->SetParameter("MEMORY_INIT_file", "\"\"" + GetPath(init_filename) + "\"\"");
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Initialized checker for scope " + i.first);
       scope_id++;
    }

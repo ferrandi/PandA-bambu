@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -37,6 +37,7 @@
  *
  * @author Christian Pilato <pilato@elet.polimi.it>
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
+ * @author Michele Fiorito <michele.fiorito@polimi.it>
  * $Revision$
  * $Date$
  * Last modified by $Author$
@@ -45,19 +46,21 @@
 #ifndef REG_BINDING_HPP
 #define REG_BINDING_HPP
 
-#include "custom_map.hpp"
-#include <iosfwd>
-#include <string>
-
 #include "Variable.hpp"
+#include "custom_set.hpp"
 #include "refcount.hpp"
+#include <iosfwd>
+#include <map>
+#include <string>
 
 REF_FORWARD_DECL(hls);
 REF_FORWARD_DECL(HLS_manager);
 REF_FORWARD_DECL(reg_binding);
 REF_FORWARD_DECL(generic_obj);
 REF_FORWARD_DECL(structural_object);
+CONSTREF_FORWARD_DECL(FunctionBehavior);
 class register_obj;
+class reg_binsign_creator;
 
 /**
  * Class managing the register binding.
@@ -66,6 +69,8 @@ class register_obj;
  */
 class reg_binding : public variable2obj<generic_objRef>
 {
+   friend class reg_binding_creator;
+
  public:
    using type_t = enum { STG = 0, CDFG };
 
@@ -86,7 +91,7 @@ class reg_binding : public variable2obj<generic_objRef>
    std::map<unsigned int, unsigned int> reverse_map;
 
    /// relation between registers and their bitsize
-   std::map<unsigned int, unsigned int> bitsize_map;
+   std::map<unsigned int, unsigned long long> bitsize_map;
 
    /// HLS datastructure
    hlsRef HLS;
@@ -103,6 +108,10 @@ class reg_binding : public variable2obj<generic_objRef>
    /// when true all registers do not require write enable: pipelining comes for free
    bool all_regs_without_enable;
 
+   const FunctionBehaviorConstRef FB;
+
+   static std::string reset_type;
+
    /**
     * compute the is with out enable relation
     */
@@ -111,7 +120,7 @@ class reg_binding : public variable2obj<generic_objRef>
    /**
     * Specialise a register according to the type of the variables crossing it.
     * @param reg is the register
-    * @param reg is the id of the register
+    * @param r is the id of the register
     */
    virtual void specialise_reg(structural_objectRef& reg, unsigned int r);
 
@@ -124,7 +133,7 @@ class reg_binding : public variable2obj<generic_objRef>
    /**
     * Destructor.
     */
-   virtual ~reg_binding();
+   ~reg_binding() override;
 
    static reg_bindingRef create_reg_binding(const hlsRef& HLS, const HLS_managerRef HLSMgr_);
 
@@ -135,8 +144,10 @@ class reg_binding : public variable2obj<generic_objRef>
 
    /**
     * return the name of register to be used
+    * @param i is the id of the register
+    * @return std::string The FU name for the given register
     */
-   virtual std::string CalculateRegisterName(unsigned int i);
+   virtual std::string GetRegisterFUName(unsigned int i);
 
    /**
     * returns number of used register
@@ -175,7 +186,7 @@ class reg_binding : public variable2obj<generic_objRef>
    /**
     * Function that print the register binding associated with a storage value.
     */
-   void print_el(const_iterator& it) const;
+   void print_el(const_iterator& it) const override;
 
    /**
     * Returns reference to register object associated to a given index
@@ -200,7 +211,7 @@ class reg_binding : public variable2obj<generic_objRef>
    /**
     * return bitsize
     */
-   unsigned int get_bitsize(unsigned int r) const;
+   unsigned long long get_bitsize(unsigned int r) const;
 
  private:
    /**
@@ -215,7 +226,7 @@ class reg_binding : public variable2obj<generic_objRef>
     * @param r is the register
     * @return the bitsize of register r
     */
-   unsigned int compute_bitsize(unsigned int r);
+   unsigned long long compute_bitsize(unsigned int r);
 };
 
 /**

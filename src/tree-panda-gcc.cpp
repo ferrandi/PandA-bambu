@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -72,6 +72,7 @@
 
 /// Wrapper include
 #include "compiler_wrapper.hpp"
+#include "cost_latency_table.hpp"
 
 static char* alloc_long_option(char* argv[], int& i, int& dec)
 {
@@ -225,7 +226,7 @@ int main(int argc, char* argv_orig[])
          }
 
          /// creating the tree manager from the data structure
-         Wrap->FillTreeManager(TM, temp_input_files);
+         Wrap->FillTreeManager(TM, temp_input_files, STR_cost_latency_table_default);
 
          // Dump the configuration file if it has been requested by the user. Note that if the configuration
          // has been dumped in this point (after GCC compiler has been invoked), the compilation has been completed

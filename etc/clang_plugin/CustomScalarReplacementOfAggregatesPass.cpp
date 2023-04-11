@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2018-2022 Politecnico di Milano
+ *              Copyright (C) 2018-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -37,35 +37,35 @@
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  *
  */
+#include "CustomScalarReplacementOfAggregatesPass.hpp"
 
-#include <llvm/Pass.h>
-
-#include "llvm/Analysis/TargetTransformInfo.h"
-#if __clang_major__ < 11
-#include "llvm/IR/CallSite.h"
-#endif
-#include "llvm/IR/Verifier.h"
-#include "llvm/Transforms/Utils/Local.h"
-#include "llvm/Transforms/Utils/PromoteMemToReg.h"
+#include <llvm/ADT/Statistic.h>
 #include <llvm/Analysis/InlineCost.h>
 #include <llvm/Analysis/ScalarEvolution.h>
 #include <llvm/Analysis/ScalarEvolutionExpressions.h>
+#include <llvm/Analysis/TargetTransformInfo.h>
 #include <llvm/IR/GetElementPtrTypeIterator.h>
 #include <llvm/IR/IntrinsicInst.h>
+#include <llvm/IR/Verifier.h>
+#include <llvm/Pass.h>
 #include <llvm/Transforms/Utils/BasicBlockUtils.h>
 #include <llvm/Transforms/Utils/Cloning.h>
-#include <stack>
-#if __clang_major__ >= 10
-#include "llvm/Support/CommandLine.h"
+#include <llvm/Transforms/Utils/Local.h>
+#include <llvm/Transforms/Utils/PromoteMemToReg.h>
+
+#if __clang_major__ < 11
+#include <llvm/IR/CallSite.h>
 #endif
+#if __clang_major__ >= 10
+#include <llvm/Support/CommandLine.h>
+#endif
+
 #include <cxxabi.h>
-#include <llvm/ADT/Statistic.h>
+#include <stack>
 
 #define DEBUG_TYPE "csroa"
 
-#include "CustomScalarReplacementOfAggregatesPass.hpp"
-
-#define DEBUG_CSROA
+// #define DEBUG_CSROA
 
 static unsigned TotalAllocaBytes /*"Total amount of aggregate bytes by alloca instructions"*/;
 static unsigned TotalGlobalBytes /*"Total amount of aggregate bytes by Global variables"*/;
@@ -2642,7 +2642,12 @@ expand_signatures_and_call_sites(std::set<llvm::Function*>& function_worklist,
 
       // Clone the function
       llvm::SmallVector<llvm::ReturnInst*, 8> returns;
+#if __clang_major__ >= 13
+      llvm::CloneFunctionInto(expanded_function, called_function, VMap, llvm::CloneFunctionChangeType::GlobalChanges,
+                              returns);
+#else
       llvm::CloneFunctionInto(expanded_function, called_function, VMap, true, returns);
+#endif
       fun_to_remove.insert(called_function);
 
       // Track the function mapping (old->new)
@@ -3011,7 +3016,12 @@ static void gen_gepi_map(llvm::Value* gepi_base, llvm::Argument* arg, llvm::Use*
             }
             else if(ptd_ty->isVectorTy())
             {
+#if __clang_major__ >= 12
+               for(unsigned long long idx = 0;
+                   idx < llvm::dyn_cast<llvm::VectorType>(ptd_ty)->getElementCount().getValue(); idx++)
+#else
                for(unsigned long long idx = 0; idx < llvm::dyn_cast<llvm::VectorType>(ptd_ty)->getNumElements(); idx++)
+#endif
                {
                   type_vec.push_back(ptd_ty->getScalarType());
                }

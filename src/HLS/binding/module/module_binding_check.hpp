@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -40,6 +40,8 @@
 #include "allocation_information.hpp"
 #include "check_clique.hpp"
 #include "clique_covering_graph.hpp"
+#include "custom_map.hpp"
+#include "custom_set.hpp"
 #include "filter_clique.hpp"
 #include "fu_binding.hpp"
 #include "hls.hpp"
@@ -47,14 +49,10 @@
 
 #include <boost/property_map/property_map.hpp>
 
-/// STD include
 #include <algorithm>
 #include <limits>
 #include <utility>
 #include <vector>
-
-#include "custom_map.hpp"
-#include "custom_set.hpp"
 
 class fu_binding;
 class module_register_binding_spec
@@ -100,7 +98,7 @@ struct module_binding_check : public check_clique<vertex_type>
    CustomUnorderedMap<C_vertex, std::vector<CustomOrderedSet<unsigned int>>> input_variables;
 
    /// resource precision
-   unsigned int fu_prec;
+   unsigned long long fu_prec;
 
    /// area resource
    double area_resource;
@@ -177,8 +175,8 @@ struct module_binding_check : public check_clique<vertex_type>
    //-----------------------------------------------------------------------------------------------
    // methods
 
-   module_binding_check(unsigned int _fu_prec, double _area_resource, const hlsRef _HLS, const HLS_managerRef _HLSMgr,
-                        const CustomUnorderedMap<vertex, double>& _slack_time,
+   module_binding_check(unsigned long long _fu_prec, double _area_resource, const hlsRef _HLS,
+                        const HLS_managerRef _HLSMgr, const CustomUnorderedMap<vertex, double>& _slack_time,
                         const CustomUnorderedMap<vertex, double>& _starting_time, double _controller_delay,
                         module_register_binding_spec& _tree_index_dsets)
        : fu_prec(_fu_prec),
@@ -228,9 +226,9 @@ struct module_binding_check : public check_clique<vertex_type>
 
       CustomOrderedSet<unsigned int> tree_index_set;
       CustomUnorderedMap<std::pair<unsigned int, unsigned int>, unsigned int> tree_var_resource_relation;
-      for(auto input_var : input_variables)
+      for(const auto& input_var : input_variables)
       {
-         for(auto vars : input_var.second)
+         for(const auto& vars : input_var.second)
          {
             for(auto tree_var : vars)
             {
@@ -243,7 +241,7 @@ struct module_binding_check : public check_clique<vertex_type>
                   {
                      unsigned int fu_name = HLS->Rfu->get_assign(def_op);
                      unsigned int fu_index = HLS->Rfu->get_index(def_op);
-                     if(fu_index != INFINITE_UINT)
+                     if(fu_index != std::numeric_limits<unsigned int>::max())
                      {
                         if(tree_var_resource_relation.find(std::make_pair(fu_name, fu_index)) !=
                            tree_var_resource_relation.end())
@@ -266,9 +264,9 @@ struct module_binding_check : public check_clique<vertex_type>
    double cost(size_t clique_count) override
    {
       double area_muxes = 0;
-      for(auto input_var : input_variables)
+      for(const auto& input_var : input_variables)
       {
-         for(auto vars : input_var.second)
+         for(const auto& vars : input_var.second)
          {
             if(vars.size() > 1)
             {
@@ -286,9 +284,9 @@ struct module_binding_check : public check_clique<vertex_type>
    size_t num_mux() override
    {
       size_t n_muxes = 0;
-      for(auto input_var : input_variables)
+      for(const auto& input_var : input_variables)
       {
-         for(auto vars : input_var.second)
+         for(const auto& vars : input_var.second)
          {
             if(vars.size() > 1)
             {

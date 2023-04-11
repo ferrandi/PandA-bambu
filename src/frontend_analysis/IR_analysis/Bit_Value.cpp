@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -816,13 +816,13 @@ const std::map<bit_lattice, std::map<bit_lattice, bit_lattice>> Bit_Value::bit_a
     },
 };
 
-unsigned int Bit_Value::pointer_resizing(unsigned int output_id) const
+unsigned long long Bit_Value::pointer_resizing(unsigned int output_id) const
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                   "-->Pointer resizing starting from " + TM->CGetTreeNode(output_id)->ToString());
    unsigned int var = tree_helper::get_base_index(TM, output_id);
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Base variable is " + TM->CGetTreeNode(var)->ToString());
-   unsigned int address_bitsize;
+   unsigned long long address_bitsize;
    if(not_frontend)
    {
       auto* hm = GetPointer<HLS_manager>(AppM);
@@ -1046,7 +1046,7 @@ void Bit_Value::Initialize()
 
 DesignFlowStep_Status Bit_Value::InternalExec()
 {
-   if(parameters->IsParameter("disable-BV") && parameters->GetParameter<unsigned int>("disable-BV") == 1)
+   if(parameters->IsParameter("bitvalue") && !parameters->GetParameter<unsigned int>("bitvalue"))
    {
       return DesignFlowStep_Status::UNCHANGED;
    }
@@ -1339,10 +1339,10 @@ void Bit_Value::initialize()
                            }
                            else if(GET_CONST_NODE(vd->init)->get_kind() == integer_cst_K)
                            {
-                              const auto int_const = GetPointerS<const integer_cst>(GET_CONST_NODE(vd->init));
+                              const auto cst_val = tree_helper::GetConstValue(vd->init);
                               current_inf = create_bitstring_from_constant(
-                                  int_const->value, BitLatticeManipulator::Size(GET_CONST_NODE(vd->init)),
-                                  tree_helper::IsSignedIntegerType(int_const->type));
+                                  cst_val, BitLatticeManipulator::Size(GET_CONST_NODE(vd->init)),
+                                  tree_helper::IsSignedIntegerType(vd->init));
                            }
                            else if(GET_CONST_NODE(vd->init)->get_kind() == string_cst_K)
                            {
@@ -1383,10 +1383,10 @@ void Bit_Value::initialize()
                                     }
                                     else if(GET_CONST_NODE(vd->init)->get_kind() == integer_cst_K)
                                     {
-                                       const auto int_const = GetPointerS<const integer_cst>(GET_CONST_NODE(vd->init));
+                                       const auto cst_val = tree_helper::GetConstValue(vd->init);
                                        current_inf = create_bitstring_from_constant(
-                                           int_const->value, BitLatticeManipulator::Size(GET_CONST_NODE(vd->init)),
-                                           tree_helper::IsSignedIntegerType(int_const->type));
+                                           cst_val, BitLatticeManipulator::Size(GET_CONST_NODE(vd->init)),
+                                           tree_helper::IsSignedIntegerType(vd->init));
                                     }
                                     else if(GET_CONST_NODE(vd->init)->get_kind() == string_cst_K)
                                     {
@@ -1463,9 +1463,9 @@ void Bit_Value::initialize()
                                     else if(cur_node->get_kind() == integer_cst_K)
                                     {
                                        INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Integer constant");
-                                       const auto cst = GetPointerS<const integer_cst>(cur_node);
+                                       const auto cst_val = tree_helper::GetConstValue(cur_node);
                                        cur_bitstring =
-                                           create_bitstring_from_constant(cst->value, source_type_size, lhs_signed);
+                                           create_bitstring_from_constant(cst_val, source_type_size, lhs_signed);
                                        INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                                                       "---bitstring = " + bitstring_to_string(cur_bitstring));
                                        sign_reduce_bitstring(cur_bitstring, lhs_signed);
@@ -1597,10 +1597,9 @@ void Bit_Value::initialize()
 
       if(use_node->get_kind() == integer_cst_K)
       {
-         const auto int_const = GetPointerS<const integer_cst>(use_node);
-         const auto is_signed = tree_helper::IsSignedIntegerType(int_const->type);
-         best[node_id] =
-             create_bitstring_from_constant(int_const->value, BitLatticeManipulator::Size(use_node), is_signed);
+         const auto cst_val = tree_helper::GetConstValue(use_node);
+         const auto is_signed = tree_helper::IsSignedIntegerType(use_node);
+         best[node_id] = create_bitstring_from_constant(cst_val, BitLatticeManipulator::Size(use_node), is_signed);
          if(is_signed)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---is signed");

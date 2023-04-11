@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -92,17 +92,9 @@
 /// design_flows/backend/ToC/source_code_writers includes
 #if HAVE_HOST_PROFILING_BUILT
 #include "basic_blocks_profiling_c_writer.hpp"
-#if HAVE_EXPERIMENTAL
-#include "data_memory_profiling_c_writer.hpp"
-#include "data_memory_profiling_instruction_writer.hpp"
-#include "efficient_path_profiling_c_writer.hpp"
-#endif
 #endif
 #if HAVE_TARGET_PROFILING
 #include "escape_instruction_writer.hpp"
-#endif
-#if HAVE_EXPERIMENTAL && HAVE_HOST_PROFILING_BUILT
-#include "hierarchical_path_profiling_c_writer.hpp"
 #endif
 #if HAVE_BAMBU_BUILT
 #include "discrepancy_analysis_c_writer.hpp"
@@ -121,9 +113,6 @@
 #if HAVE_TARGET_PROFILING
 #include "instrument_writer.hpp"
 #endif
-#if HAVE_EXPERIMENTAL && HAVE_HOST_PROFILING_BUILT
-#include "loops_profiling_c_writer.hpp"
-#endif
 #if HAVE_TARGET_PROFILING
 #include "loops_instrument_c_writer.hpp"
 #endif
@@ -133,9 +122,6 @@
 #endif
 #if HAVE_GRAPH_PARTITIONING_BUILT
 #include "parallel_c_writer.hpp"
-#endif
-#if HAVE_EXPERIMENTAL && HAVE_HOST_PROFILING_BUILT
-#include "tree_path_profiling_c_writer.hpp"
 #endif
 
 /// design_flows/codesign/partitioning/graph_partitioning include
@@ -625,7 +611,9 @@ void CWriter::writeRoutineInstructions_rec(vertex current_vertex, bool bracket, 
 
       std::string frontier_string;
       for(const auto bb : bb_frontier)
+      {
          frontier_string += "BB" + STR(local_rec_bb_fcfgGraph->CGetBBNodeInfo(bb)->block->number) + " ";
+      }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Frontier at the moment is: " + frontier_string);
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Its post-dominator is BB" + STR(bb_number_PD));
    }

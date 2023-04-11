@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2018-2022 Politecnico di Milano
+ *              Copyright (c) 2018-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -65,14 +65,17 @@ class TestbenchValuesCGeneration : public HLS_step
    /// output directory
    const std::string output_directory;
 
+   const std::string impl_filename;
+
+   const std::string values_filename;
+
    /**
     * Compute the relationship of this step
     * @param relationship_type is the type of relationship to be considered
     * @return the steps in relationship with this
     */
-   virtual const CustomUnorderedSet<
-       std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
-   ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const;
+   const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
+   ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
  public:
    /**
@@ -88,19 +91,19 @@ class TestbenchValuesCGeneration : public HLS_step
    /**
     * Destructor.
     */
-   virtual ~TestbenchValuesCGeneration();
+   ~TestbenchValuesCGeneration() override;
 
    /**
     * Execute the step
     * @return the exit status of this step
     */
-   DesignFlowStep_Status Exec();
+   DesignFlowStep_Status Exec() override;
 
    /**
     * Check if this step has actually to be executed
     * @return true if the step has to be executed
     */
-   bool HasToBeExecuted() const;
+   bool HasToBeExecuted() const override;
 
    /**
     * Compute the relationships of this step with other steps
@@ -108,6 +111,6 @@ class TestbenchValuesCGeneration : public HLS_step
     * @param relationship_type is the type of relationship to be computed
     */
    void ComputeRelationships(DesignFlowStepSet& design_flow_step_set,
-                             const DesignFlowStep::RelationshipType relationship_type);
+                             const DesignFlowStep::RelationshipType relationship_type) override;
 };
 #endif

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2015-2022 Politecnico di Milano
+ *              Copyright (C) 2015-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -44,16 +44,16 @@
 class CallGraphUnfolding : public HLS_step
 {
  public:
-   virtual DesignFlowStep_Status Exec();
+   DesignFlowStep_Status Exec() override;
 
    const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
-   ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const;
+   ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
    CallGraphUnfolding(const ParameterConstRef Param, const HLS_managerRef HLSMgr,
                       const DesignFlowManagerConstRef design_flow_manager);
 
-   virtual ~CallGraphUnfolding();
+   ~CallGraphUnfolding() override;
 
-   virtual bool HasToBeExecuted() const;
+   bool HasToBeExecuted() const override;
 };
 #endif

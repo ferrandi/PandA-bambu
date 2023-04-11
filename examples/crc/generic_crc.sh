@@ -2,10 +2,10 @@
 script_dir="$(dirname $(readlink -e $0))"
 . $script_dir/../../panda_regressions/hls/generic_getopt.sh
 
-BATCH_ARGS=("--no-iob" "--simulate" "--experimental-setup=BAMBU")
+BATCH_ARGS=("--simulate" "--experimental-setup=BAMBU")
 OUT_SUFFIX="output_crc"
 
-$script_dir/../../etc/scripts/test_panda.py --tool=bambu  \
+python3 $script_dir/../../etc/scripts/test_panda.py --tool=bambu  \
    --args="--configuration-name=base   --channels-type=MEM_ACC_11 ${BATCH_ARGS[*]}"\
    --args="--configuration-name=mem-N1 --channels-type=MEM_ACC_N1 ${BATCH_ARGS[*]}"\
    --args="--configuration-name=mem-NN --channels-type=MEM_ACC_NN ${BATCH_ARGS[*]}"\

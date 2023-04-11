@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -927,25 +927,16 @@ bool pred;
 
    omp_atomic_flag : /* empty */
                          | TOK_BISON_OMP_ATOMIC {
-#if HAVE_EXPERIMENTAL && HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
-                         NSV(function_decl, omp_atomic, true)
-#endif
                          }
                          ;
 
    omp_body_loop_flag : /* empty */
                          | TOK_BISON_OMP_BODY_LOOP {
-#if HAVE_EXPERIMENTAL && HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
-                         NSV(function_decl, omp_body_loop, true)
-#endif
                          }
                          ;
 
    omp_for_wrapper_opt : /* empty */
                          | TOK_BISON_OMP_FOR_WRAPPER number_id {
-#if HAVE_EXPERIMENTAL && HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
-                         NSV(function_decl, omp_for_wrapper, data->curr_size_t_number)
-#endif
                          }
                          ;
 
@@ -1073,7 +1064,7 @@ bool pred;
                   }
                   value
                   {
-                    NSV(integer_cst, value, data->curr_long_long_number);
+                    NSV(integer_cst, value, integer_cst_t(data->curr_long_long_number));
                   };
 
    //tree_list:	TOK_BISON_TREE_LIST^ (purp)? valu (chan)?;

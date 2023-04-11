@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2016-2022 Politecnico di Milano
+ *              Copyright (C) 2016-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -59,8 +59,7 @@ std::string Quartus13Wrapper::get_command_line(const DesignParametersRef& dp) co
 {
    std::ostringstream s;
    s << get_tool_exec() << " -t ";
-   THROW_ASSERT(Param->isOption(OPT_quartus_13_64bit), "");
-   if(Param->getOption<bool>(OPT_quartus_13_64bit))
+   if(Param->isOption(OPT_quartus_13_64bit) && Param->getOption<bool>(OPT_quartus_13_64bit))
    {
       s << " --64bit ";
    }

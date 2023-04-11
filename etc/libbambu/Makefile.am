@@ -153,3 +153,10 @@ libbambu_clang12_a_CFLAGS =$(common_cflags_clang) --compiler=I386_CLANG12
 libbambu_clang12_a_AR =$(top_builddir)/src/tree-panda-gcc $(common_treegccflags_clang) --compiler=I386_CLANG12 -C
 endif
 
+if BUILD_I386_CLANG13
+pkglib_LIBRARIES += libbambu_clang13.a
+libbambu_clang13_a_SOURCES = $(common_libbambu_src)
+libbambu_clang13_a_CFLAGS =$(common_cflags_clang) --compiler=I386_CLANG13
+libbambu_clang13_a_AR =$(top_builddir)/src/tree-panda-gcc $(common_treegccflags_clang) --compiler=I386_CLANG13 -C
+endif
+

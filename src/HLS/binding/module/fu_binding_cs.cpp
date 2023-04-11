@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2016-2022 Politecnico di Milano
+ *              Copyright (c) 2016-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -37,10 +37,15 @@
  * @author Nicola Saporetti <nicola.saporetti@gmail.com>
  */
 #include "fu_binding_cs.hpp"
+
 #include "Parameter.hpp"
+#include "custom_map.hpp"
+#include "custom_set.hpp"
+#include "dbgPrintHelper.hpp"
 #include "hls.hpp"
 #include "hls_manager.hpp"
 #include "hls_target.hpp"
+#include "math_function.hpp"
 #include "memory.hpp"
 #include "memory_cs.hpp"
 #include "omp_functions.hpp"
@@ -48,17 +53,10 @@
 #include "structural_manager.hpp"
 #include "structural_objects.hpp"
 #include "technology_manager.hpp"
-/// STD include
+#include "utility.hpp"
+
 #include <cmath>
 #include <string>
-
-/// STL include
-#include "custom_map.hpp"
-#include "custom_set.hpp"
-
-/// utility include
-#include "dbgPrintHelper.hpp"
-#include "math_function.hpp"
 
 fu_binding_cs::fu_binding_cs(const HLS_managerConstRef _HLSMgr, const unsigned int _function_id,
                              const ParameterConstRef _parameters)
@@ -67,9 +65,7 @@ fu_binding_cs::fu_binding_cs(const HLS_managerConstRef _HLSMgr, const unsigned i
    debug_level = _parameters->get_class_debug_level(GET_CLASS(*this));
 }
 
-fu_binding_cs::~fu_binding_cs()
-{
-}
+fu_binding_cs::~fu_binding_cs() = default;
 
 void fu_binding_cs::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, structural_objectRef clock_port,
                               structural_objectRef reset_port)
@@ -108,7 +104,7 @@ void fu_binding_cs::instantiate_component_kernel(const HLS_managerRef HLSMgr, co
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Starting setting parameter scheduler!");
    GetPointer<module>(scheduler_mod)
        ->SetParameter("NUM_TASKS", STR(parameters->getOption<unsigned int>(OPT_context_switch)));
-   int addr_acc = ceil_log2(parameters->getOption<unsigned long long>(OPT_num_accelerators));
+   auto addr_acc = ceil_log2(parameters->getOption<unsigned long long>(OPT_num_accelerators));
    if(!addr_acc)
    {
       addr_acc = 1;
@@ -172,10 +168,10 @@ void fu_binding_cs::resize_scheduler_ports(const HLS_managerRef HLSMgr, structur
 
 void fu_binding_cs::resize_dimension_bus_port(const HLS_managerRef HLSMgr, structural_objectRef port)
 {
-   unsigned int bus_data_bitsize = HLSMgr->Rmem->get_bus_data_bitsize();
-   unsigned int bus_addr_bitsize = HLSMgr->get_address_bitsize();
-   unsigned int bus_size_bitsize = HLSMgr->Rmem->get_bus_size_bitsize();
-   unsigned int bus_tag_bitsize = GetPointer<memory_cs>(HLSMgr->Rmem)->get_bus_tag_bitsize();
+   auto bus_data_bitsize = HLSMgr->Rmem->get_bus_data_bitsize();
+   auto bus_addr_bitsize = HLSMgr->get_address_bitsize();
+   auto bus_size_bitsize = HLSMgr->Rmem->get_bus_size_bitsize();
+   auto bus_tag_bitsize = GetPointer<memory_cs>(HLSMgr->Rmem)->get_bus_tag_bitsize();
 
    if(GetPointer<port_o>(port)->get_is_data_bus())
    {
@@ -216,7 +212,8 @@ void fu_binding_cs::connect_selector_kernel(const hlsRef HLS)
 {
    const structural_managerRef SM = HLS->datapath;
    const structural_objectRef circuit = SM->get_circ();
-   int num_slots = ceil_log2(parameters->getOption<unsigned long long int>(OPT_context_switch)); // resize selector-port
+   auto num_slots =
+       ceil_log2(parameters->getOption<unsigned long long int>(OPT_context_switch)); // resize selector-port
    if(!num_slots)
    {
       num_slots = 1;
@@ -264,17 +261,17 @@ void fu_binding_cs::set_atomic_memory_parameter(const hlsRef HLS)
       if(curr_gate->ExistsParameter("TAG_MEM_REQ"))
       {
          unsigned long long int tag_num = 0;
-         int addr_tasks = ceil_log2(parameters->getOption<unsigned long long int>(OPT_context_switch));
+         auto addr_tasks = ceil_log2(parameters->getOption<unsigned long long int>(OPT_context_switch));
          if(!addr_tasks)
          {
             addr_tasks = 1;
          }
-         int addr_acc = ceil_log2(parameters->getOption<unsigned long long>(OPT_num_accelerators));
+         auto addr_acc = ceil_log2(parameters->getOption<unsigned long long>(OPT_num_accelerators));
          if(!addr_acc)
          {
             addr_acc = 1;
          }
-         int bit_atomic = addr_tasks + addr_acc;
+         const auto bit_atomic = addr_tasks + addr_acc;
          if(bit_atomic >= 64)
          {
             THROW_ERROR("too large tag value for TAG_MEM_REQ");

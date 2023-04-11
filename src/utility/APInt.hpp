@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2020-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -47,28 +47,35 @@
 #include <string>
 #include <type_traits>
 
-#include <boost/multiprecision/gmp.hpp>
+#include <boost/multiprecision/cpp_int.hpp>
+#include <boost/multiprecision/cpp_int/literals.hpp>
 
 class APInt
 {
  public:
-   using APInt_internal = boost::multiprecision::mpz_int;
-#ifndef NDEBUG
+   using backend = boost::multiprecision::backends::cpp_int_backend<4096, 4096, boost::multiprecision::signed_magnitude,
+                                                                    boost::multiprecision::unchecked, void>;
+   using number = boost::multiprecision::number<backend>;
    using bw_t = uint16_t;
-#else
-   using bw_t = uint8_t;
-#endif
 
  private:
-   APInt_internal _data;
+   number _data;
 
  public:
    APInt();
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wzero-as-null-pointer-constant"
-   template <typename T>
-   APInt(T val, typename std::enable_if<std::is_arithmetic<T>::value>* = nullptr) : _data(val)
+   template <typename T, typename = typename std::enable_if<std::is_arithmetic<T>::value>::type>
+   APInt(T val) : _data(val)
+   {
+   }
+
+   APInt(const number& v) : _data(v)
+   {
+   }
+
+   APInt(const std::string& str) : _data(boost::lexical_cast<number>(str))
    {
    }
 #pragma GCC diagnostic pop
@@ -131,25 +138,30 @@ class APInt
    bw_t leadingOnes(bw_t bw) const;
    bw_t minBitwidth(bool sign) const;
 
-   template <typename T>
-   typename std::enable_if<std::is_arithmetic<T>::value, T>::type cast_to() const
+   template <typename T, typename = typename std::enable_if<std::is_arithmetic<T>::value, T>::type>
+   explicit operator T() const
    {
       using U = typename std::make_unsigned<T>::type;
-      if(_data < 0)
-      {
-         return static_cast<T>(
-             static_cast<U>(static_cast<U>(_data.convert_to<long long>()) & std::numeric_limits<U>::max()));
-      }
-      return static_cast<T>(static_cast<U>(_data.convert_to<unsigned long long>() & std::numeric_limits<U>::max()));
+      return static_cast<T>(static_cast<U>(_data & std::numeric_limits<U>::max()));
    }
-   std::string str(int base = 10) const;
 
    static APInt getMaxValue(bw_t bw);
    static APInt getMinValue(bw_t bw);
    static APInt getSignedMaxValue(bw_t bw);
    static APInt getSignedMinValue(bw_t bw);
+
+   friend std::ostream& operator<<(std::ostream& str, const APInt& v);
+   friend std::istream& operator>>(std::istream& str, APInt& v);
 };
 
 std::ostream& operator<<(std::ostream& str, const APInt& v);
+std::istream& operator>>(std::istream& str, APInt& v);
+
+template <char... STR>
+constexpr APInt::number operator"" _apint()
+{
+   typedef typename boost::multiprecision::literals::detail::make_packed_value_from_str<STR...>::type pt;
+   return boost::multiprecision::literals::detail::make_backend_from_pack<pt, APInt::backend>::value;
+}
 
 #endif

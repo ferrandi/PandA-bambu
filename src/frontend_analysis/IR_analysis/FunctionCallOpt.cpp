@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2021-2022 Politecnico di Milano
+ *              Copyright (C) 2021-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -278,7 +278,7 @@ DesignFlowStep_Status FunctionCallOpt::InternalExec()
                      else
                      {
                         const auto version_call =
-                            tree_man->create_gimple_call(version_fn, *args, function_id, BUILTIN_SRCP, bb->number);
+                            tree_man->create_gimple_call(version_fn, *args, function_id, BUILTIN_SRCP);
                         bb->Replace(stmt, version_call, true, AppM);
                         AppM->RegisterTransformation(GetName(), version_call);
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
@@ -314,160 +314,174 @@ DesignFlowStep_Status FunctionCallOpt::InternalExec()
       opt_call.erase(function_id);
    }
 
-   const auto CGM = AppM->CGetCallGraphManager();
-   const auto CG = CGM->CGetCallGraph();
-   const auto function_v = CGM->GetVertex(function_id);
-   const auto call_count = [&]() -> size_t {
-      size_t call_points = 0u;
-      InEdgeIterator it, it_end;
-      for(boost::tie(it, it_end) = boost::in_edges(function_v, *CG); it != it_end; ++it)
-      {
-         const auto caller_info = CG->CGetFunctionEdgeInfo(*it);
-         call_points += static_cast<size_t>(caller_info->direct_call_points.size());
-         call_points += static_cast<size_t>(caller_info->indirect_call_points.size());
-         call_points += static_cast<size_t>(caller_info->function_addresses.size());
-      }
-      return call_points;
-   }();
-   if(call_count != 0)
+   if(parameters->isOption(OPT_top_design_name) &&
+      TM->GetFunction(parameters->getOption<std::string>(OPT_top_design_name))->index == function_id)
    {
-      const auto loop_count = detect_loops(sl);
-      bool has_simd = false;
-      bool has_memory = false;
-      const auto body_cost = compute_cost(sl, has_simd, has_memory);
-      const auto omp_simd_enabled = parameters->getOption<int>(OPT_gcc_openmp_simd);
-      has_simd &= omp_simd_enabled;
-      const bool force_inline =
-          always_inline.count(function_id) || ((body_cost * call_count) <= max_inline_cost) || call_count == 1;
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Current function information:");
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Internal loops : " + STR(loop_count));
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Call points    : " + STR(call_count));
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Body cost      : " + STR(body_cost));
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Memory access  : " + STR(has_memory ? "yes" : "no"));
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---OpenMP SIMD    : " + STR(has_simd ? "yes" : "no"));
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Force inline   : " + STR(force_inline ? "yes" : "no"));
-      if(!has_simd && !has_memory)
-      {
-         InEdgeIterator ie, ie_end;
-         for(boost::tie(ie, ie_end) = boost::in_edges(function_v, *CG); ie != ie_end; ++ie)
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                     "Current function is marked as top RTL design, skipping...");
+   }
+   else
+   {
+      const auto CGM = AppM->CGetCallGraphManager();
+      const auto CG = CGM->CGetCallGraph();
+      const auto function_v = CGM->GetVertex(function_id);
+      const auto call_count = [&]() -> size_t {
+         size_t call_points = 0u;
+         InEdgeIterator it, it_end;
+         for(boost::tie(it, it_end) = boost::in_edges(function_v, *CG); it != it_end; ++it)
          {
-            const auto caller_id = CGM->get_function(ie->m_source);
-            caller_bb.insert(std::make_pair(caller_id, AppM->CGetFunctionBehavior(caller_id)->GetBBVersion()));
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                           "Analysing call points from " +
-                               tree_helper::print_function_name(
-                                   TM, GetPointerS<const function_decl>(TM->CGetTreeNode(caller_id))));
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
-            const auto caller_node = TM->CGetTreeNode(caller_id);
-            THROW_ASSERT(caller_node->get_kind() == function_decl_K, "");
-            const auto caller_fd = GetPointerS<const function_decl>(caller_node);
-            THROW_ASSERT(caller_fd->body, "");
-            const auto caller_sl = GetPointerS<const statement_list>(GET_CONST_NODE(caller_fd->body));
-            if(omp_simd_enabled)
+            const auto caller_info = CG->CGetFunctionEdgeInfo(*it);
+            call_points += static_cast<size_t>(caller_info->direct_call_points.size());
+            call_points += static_cast<size_t>(caller_info->indirect_call_points.size());
+            call_points += static_cast<size_t>(caller_info->function_addresses.size());
+         }
+         return call_points;
+      }();
+      if(call_count != 0)
+      {
+         const auto loop_count = detect_loops(sl);
+         bool has_simd = false;
+         bool has_memory = false;
+         const auto body_cost = compute_cost(sl, has_simd, has_memory);
+         const auto omp_simd_enabled = parameters->getOption<int>(OPT_gcc_openmp_simd);
+         has_simd &= omp_simd_enabled;
+         const bool force_inline =
+             always_inline.count(function_id) || ((body_cost * call_count) <= max_inline_cost) || call_count == 1;
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Current function information:");
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Internal loops : " + STR(loop_count));
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Call points    : " + STR(call_count));
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Body cost      : " + STR(body_cost));
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                        "---Memory access  : " + STR(has_memory ? "yes" : "no"));
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---OpenMP SIMD    : " + STR(has_simd ? "yes" : "no"));
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                        "---Force inline   : " + STR(force_inline ? "yes" : "no"));
+         if(!has_simd && !has_memory)
+         {
+            InEdgeIterator ie, ie_end;
+            for(boost::tie(ie, ie_end) = boost::in_edges(function_v, *CG); ie != ie_end; ++ie)
             {
-               const auto caller_has_simd = tree_helper::has_omp_simd(caller_sl);
-               if(caller_has_simd)
+               const auto caller_id = CGM->get_function(ie->m_source);
+               caller_bb.insert(std::make_pair(caller_id, AppM->CGetFunctionBehavior(caller_id)->GetBBVersion()));
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                              "Analysing call points from " +
+                                  tree_helper::print_function_name(
+                                      TM, GetPointerS<const function_decl>(TM->CGetTreeNode(caller_id))));
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
+               const auto caller_node = TM->CGetTreeNode(caller_id);
+               THROW_ASSERT(caller_node->get_kind() == function_decl_K, "");
+               const auto caller_fd = GetPointerS<const function_decl>(caller_node);
+               THROW_ASSERT(caller_fd->body, "");
+               const auto caller_sl = GetPointerS<const statement_list>(GET_CONST_NODE(caller_fd->body));
+               if(omp_simd_enabled)
                {
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                 "<--Caller has OpenMP SIMD constructs, analysis postponed");
-                  continue;
-               }
-            }
-            const auto caller_info = CG->CGetFunctionEdgeInfo(*ie);
-            bool all_inlined = true;
-            for(const auto& call_id : caller_info->direct_call_points)
-            {
-               const auto call_stmt = TM->CGetTreeNode(call_id);
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Analysing direct call point " + STR(call_stmt));
-               const auto call_gn = GetPointerS<const gimple_node>(call_stmt);
-               if(call_gn->vdef || call_gn->vuses.size() || call_gn->vovers.size())
-               {
-                  // TODO: alias analysis is not able to handle inlining yet
-                  all_inlined = false;
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                 "---Call statement carries alias dependencies, skipping...");
-                  continue;
-               }
-               if(force_inline)
-               {
-                  if(!omp_simd_enabled || loop_count == 0)
+                  const auto caller_has_simd = tree_helper::has_omp_simd(caller_sl);
+                  if(caller_has_simd)
                   {
-                     const auto is_unique_bb_call = [&]() -> bool {
-                        THROW_ASSERT(caller_sl->list_of_bloc.count(call_gn->bb_index),
-                                     "BB" + STR(call_gn->bb_index) + " not found in function " +
-                                         tree_helper::print_function_name(TM, caller_fd) + " (" + STR(call_id) + ")");
-                        const auto bb = caller_sl->list_of_bloc.at(call_gn->bb_index);
-                        for(const auto& tn : bb->CGetStmtList())
-                        {
-                           if(tn->index != call_gn->index &&
-                              (GET_CONST_NODE(tn)->get_kind() == gimple_call_K ||
-                               (GET_CONST_NODE(tn)->get_kind() == gimple_assign_K &&
-                                GET_CONST_NODE(GetPointerS<const gimple_assign>(GET_CONST_NODE(tn))->op1)->get_kind() ==
-                                    call_expr_K)))
-                           {
-                              return false;
-                           }
-                        }
-                        return true;
-                     }();
-                     if(is_unique_bb_call || loop_count == 0)
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                    "<--Caller has OpenMP SIMD constructs, analysis postponed");
+                     continue;
+                  }
+               }
+               const auto caller_info = CG->CGetFunctionEdgeInfo(*ie);
+               bool all_inlined = true;
+               for(const auto& call_id : caller_info->direct_call_points)
+               {
+                  const auto call_stmt = TM->CGetTreeNode(call_id);
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                 "Analysing direct call point " + STR(call_stmt));
+                  const auto call_gn = GetPointerS<const gimple_node>(call_stmt);
+                  if(call_gn->vdef || call_gn->vuses.size() || call_gn->vovers.size())
+                  {
+                     // TODO: alias analysis is not able to handle inlining yet
+                     all_inlined = false;
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                    "---Call statement carries alias dependencies, skipping...");
+                     continue;
+                  }
+                  if(force_inline)
+                  {
+                     if(!omp_simd_enabled || loop_count == 0)
                      {
-                        opt_call[caller_id].insert(std::make_pair(call_id, FunctionOptType::INLINE));
-                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                       "---" +
-                                           STR(always_inline.count(function_id) ? "Always inline function" :
-                                                                                  "Low body cost function") +
-                                           ", inlining required");
-                        continue;
+                        const auto is_unique_bb_call = [&]() -> bool {
+                           THROW_ASSERT(caller_sl->list_of_bloc.count(call_gn->bb_index),
+                                        "BB" + STR(call_gn->bb_index) + " not found in function " +
+                                            tree_helper::print_function_name(TM, caller_fd) + " (" + STR(call_id) +
+                                            ")");
+                           const auto bb = caller_sl->list_of_bloc.at(call_gn->bb_index);
+                           for(const auto& tn : bb->CGetStmtList())
+                           {
+                              if(tn->index != call_gn->index &&
+                                 (GET_CONST_NODE(tn)->get_kind() == gimple_call_K ||
+                                  (GET_CONST_NODE(tn)->get_kind() == gimple_assign_K &&
+                                   GET_CONST_NODE(GetPointerS<const gimple_assign>(GET_CONST_NODE(tn))->op1)
+                                           ->get_kind() == call_expr_K)))
+                              {
+                                 return false;
+                              }
+                           }
+                           return true;
+                        }();
+                        if(is_unique_bb_call || loop_count == 0)
+                        {
+                           opt_call[caller_id].insert(std::make_pair(call_id, FunctionOptType::INLINE));
+                           INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                          "---" +
+                                              STR(always_inline.count(function_id) ? "Always inline function" :
+                                                                                     "Low body cost function") +
+                                              ", inlining required");
+                           continue;
+                        }
+                        else
+                        {
+                           INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                          "---BB" + STR(call_gn->bb_index) + " from function " +
+                                              tree_helper::print_function_name(TM, caller_fd) +
+                                              " has multiple call points, skipping...");
+                        }
                      }
                      else
                      {
-                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                       "---BB" + STR(call_gn->bb_index) + " from function " +
-                                           tree_helper::print_function_name(TM, caller_fd) +
-                                           " has multiple call points, skipping...");
+                        INDENT_DBG_MEX(
+                            DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                            "---Inlining of functions with internal loops disabled with OpenMP, skipping...");
                      }
                   }
-                  else
+                  const auto all_const_args = HasConstantArgs(TM->CGetTreeReindex(call_id));
+                  if(all_const_args && loop_count == 0)
                   {
+                     opt_call[caller_id].insert(std::make_pair(call_id, FunctionOptType::VERSION));
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                    "---Inlining of functions with internal loops disabled with OpenMP, skipping...");
+                                    "---Current call has all constant arguments, versioning required");
+                     continue;
                   }
+                  all_inlined = false;
                }
-               const auto all_const_args = HasConstantArgs(TM->CGetTreeReindex(call_id));
-               if(all_const_args && loop_count == 0)
+               if(all_inlined)
                {
-                  opt_call[caller_id].insert(std::make_pair(call_id, FunctionOptType::VERSION));
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                 "---Current call has all constant arguments, versioning required");
-                  continue;
+                  caller_bb.erase(caller_id);
                }
-               all_inlined = false;
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                              "Analysed call points from " +
+                                  tree_helper::print_function_name(
+                                      TM, GetPointerS<const function_decl>(TM->CGetTreeNode(caller_id))));
             }
-            if(all_inlined)
-            {
-               caller_bb.erase(caller_id);
-            }
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
+         }
+         else
+         {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                           "Analysed call points from " +
-                               tree_helper::print_function_name(
-                                   TM, GetPointerS<const function_decl>(TM->CGetTreeNode(caller_id))));
+                           "Current function has " +
+                               STR((has_simd && has_memory) ? "OpenMP SIMD and memory access" :
+                                                              (has_simd ? "OpenMP SIMD" : "memory access")) +
+                               " constructs, inlining postponed");
          }
       }
       else
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                        "Current function has " +
-                            STR((has_simd && has_memory) ? "OpenMP SIMD and memory access" :
-                                                           (has_simd ? "OpenMP SIMD" : "memory access")) +
-                            " constructs, inlining postponed");
+                        "Current function has zero call points, skipping analysis...");
       }
-   }
-   else
-   {
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                     "Current function has zero call points, skipping analysis...");
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
    if(modified)

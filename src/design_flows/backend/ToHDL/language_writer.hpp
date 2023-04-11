@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -46,7 +46,6 @@
 #define LANGUAGE_WRITER_HPP
 
 /// Autoheader include
-#include "config_HAVE_EXPERIMENTAL.hpp"
 #include "config_HAVE_FROM_C_BUILT.hpp"
 
 /// utility include
@@ -80,11 +79,6 @@ enum class HDLWriter_Language
 {
    VERILOG = 0,
    SYSTEM_VERILOG,
-#if HAVE_EXPERIMENTAL
-   SYSTEMC,
-   BLIF,
-   EDIF,
-#endif
    VHDL
 };
 
@@ -280,7 +274,7 @@ class language_writer
     * @param reset_state is the reset state.
     * @param reset_port is the reset port.
     * @param clock_port is the clock port.
-    * @param synch_reset when true the FSM will have an synchronous reset
+    * @param reset_type when true the FSM will have an synchronous reset
     */
    virtual void write_present_state_update(const structural_objectRef cir, const std::string& reset_state,
                                            const std::string& reset_port, const std::string& clock_port,

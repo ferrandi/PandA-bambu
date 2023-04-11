@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2021-2022 Politecnico di Milano
+ *              Copyright (C) 2021-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -70,3 +70,25 @@ int __isfinite(unsigned long long x, unsigned char __exp_bits, unsigned char __f
 {
    return __local_finite(x, __exp_bits, __frac_bits, __exp_bias, __rounding, __nan, __one, __subnorm, __sign);
 }
+
+#if defined(__llvm__) || defined(__CLANG__)
+int finitef(float f)
+{
+   return __local_finite(*((unsigned int*)&f), IEEE32_SPEC);
+}
+
+int finite(double d)
+{
+   return __local_finite(*((unsigned long long*)&d), IEEE64_SPEC);
+}
+
+int isfinitef(float f)
+{
+   return __local_finite(*((unsigned int*)&f), IEEE32_SPEC);
+}
+
+int isfinite(double d)
+{
+   return __local_finite(*((unsigned long long*)&d), IEEE64_SPEC);
+}
+#endif

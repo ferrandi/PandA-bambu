@@ -3,14 +3,14 @@ name: Build AppImage
 on:
   workflow_dispatch:
     inputs:
+      package-name:
+        description: "Bambu AppImage name"
+        required: true
+        default: "bambu-gcc7_clang11"
       branch:
         description: "Repository branch to build from"
         required: false
         default: "main"
-      version:
-        description: "Bambu version identifier"
-        required: true
-        default: "gcc7_clang11"
       compilers:
         description: "Comma separated list of compilers to include"
         required: true
@@ -24,142 +24,127 @@ on:
         required: true
         default: "--enable-glpk --enable-flopoco --enable-opt --with-opt-level=2 --enable-release CC=gcc-8 CXX=g++-8 --with-gcc8=/bin/false"
 
-concurrency:
-  group: build-appimage-${{ github.event.inputs.version }}
-  cancel-in-progress: true
+  workflow_call:
+    inputs:
+      package-name:
+        description: "Bambu AppImage package name"
+        required: true
+        type: string
+      compilers:
+        description: "Comma separated list of compilers to include"
+        required: false
+        type: string
+        default: "gcc-7,clang-12"
+      build-compiler:
+        description: "Compiler used to build bambu (if not already included in compilers)"
+        required: false
+        type: string
+        default: "gcc-8"
+      configure:
+        description: "Bambu configuration options"
+        required: false
+        type: string
+        default: "--enable-glpk --enable-flopoco --enable-opt --with-opt-level=2 --enable-release CC=gcc-8 CXX=g++-8 --with-gcc8=/bin/false"
+      upload_config:
+        description: "Upload configuration <CI|release|both>"
+        required: false
+        type: string
+        default: "CI"
+    secrets:
+      CI_STORAGE_URL:
+        required: true
+      CI_STORAGE_USER:
+        required: true
+      CI_STORAGE_TOKEN:
+        required: true
+    outputs:
+      package-name:
+        description: "Package name to download built AppImage"
+        value: ${{jobs.build.outputs.package-name}}
 
 env:
+  compilers: ${{inputs.compilers}}
+  build-compiler: ${{inputs.build-compiler}}
+  configure: ${{inputs.configure}}
   storage-url: ${{secrets.CI_STORAGE_URL}}
   storage-user: ${{secrets.CI_STORAGE_USER}}
   storage-token: ${{secrets.CI_STORAGE_TOKEN}}
   storage-path: release
-  dist-pkg: bambu-${{github.event.inputs.version}}
+  package-name: ${{inputs.package-name}}
   dist-dir: dist
   bcompiler-dir: compiler
   host_jobs: $J
+  upload_config: ${{inputs.upload_config}}
 
 jobs:
   build:
     runs-on: [self-hosted]
+    outputs:
+      package-name: ${{env.package-name}}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
-          ref: ${{github.event.inputs.branch}}
+          ref: ${{inputs.branch}}
       - name: Env setup
-        id: host
+        id: setup
         shell: bash
         run: |
           echo "Current host supports ${{env.host_jobs}} parallel jobs"
-          echo "::set-output name=jobs::${{env.host_jobs}}"
-      - name: Compilers download configuration
-        id: compilers
-        shell: bash
-        run: |
-          IFS=',' read -r -a compilers <<< "${{github.event.inputs.compilers}}"
-          for compiler in "${compilers[@]}"
-          do
-            echo "::set-output name=$compiler::1"
-          done
-          mkdir ${{env.dist-dir}}
-      - name: Build compiler configuration
-        id: bcompiler
-        shell: bash
-        run: |
-          if [[ ! -z "${{github.event.inputs.build-compiler}}" ]]
-          then
-            mkdir ${{env.bcompiler-dir}}
-            echo "::set-output name=${{github.event.inputs.build-compiler}}::1"
+          echo "jobs=${{env.host_jobs}}" >> $GITHUB_OUTPUT
+          env_id="$(echo $(sed 's/,/\n/g' <<< "${{env.compilers}}" | sort -V) | sed 's/ //g')"
+          if [[ ! -z "${{env.build-compiler}}" ]]; then
+            if [[ "$env_id" != *"${{env.build-compiler}}"* ]]; then
+              env_id+="${{env.build-compiler}}"
+            fi
           fi
+          echo "version=$(cat configure.ac | grep AC_INIT | sed -E 's/.*,(.*),.*/\1/g;s/ //g')" >> $GITHUB_OUTPUT
+          echo "env_id=$env_id" >> $GITHUB_OUTPUT
+          echo "timestamp=$(date -u +'%Y-%m-%d-%H;%M;%S')" >> $GITHUB_OUTPUT
+      - name: CCache cache files
+        uses: actions/cache@v3
+        with:
+          path: .ccache
+          key: panda-build-ccache-${{steps.setup.outputs.version}}-${{ steps.setup.outputs.timestamp }}
+          restore-keys: |
+            panda-build-ccache-${{steps.setup.outputs.version}}-
+      - name: Autoconf cache files
+        uses: actions/cache@v3
+        with:
+          path: .autoconf
+          key: panda-build-autoconf-${{steps.setup.outputs.version}}-${{ steps.setup.outputs.env_id }}-${{ steps.setup.outputs.timestamp }}
+          restore-keys: |
+            panda-build-autoconf-${{steps.setup.outputs.version}}-${{ steps.setup.outputs.env_id }}-
       - name: Download compilers
         shell: bash
         run: |
-          set -e
-          export XZ_OPT='-T0'
-
-          inflate() {
-            echo "Installing $1"
-            case $1 in
-              clang-12 )
-                wget https://github.com/llvm/llvm-project/releases/download/llvmorg-12.0.1/clang+llvm-12.0.1-x86_64-linux-gnu-ubuntu-16.04.tar.xz -nv -O - | tar -C $2 -xJf - &
-                ;;
-              clang-11 )
-                wget https://github.com/llvm/llvm-project/releases/download/llvmorg-11.1.0/clang+llvm-11.1.0-x86_64-linux-gnu-ubuntu-16.04.tar.xz -nv -O - | tar -C $2 -xJf - &
-                ;;
-              clang-10 )
-                wget https://github.com/llvm/llvm-project/releases/download/llvmorg-10.0.1/clang+llvm-10.0.1-x86_64-linux-gnu-ubuntu-16.04.tar.xz -nv -O - | tar -C $2 -xJf - &
-                ;;
-              clang-9 )
-                wget https://github.com/llvm/llvm-project/releases/download/llvmorg-9.0.1/clang+llvm-9.0.1-x86_64-linux-gnu-ubuntu-16.04.tar.xz -nv -O - | tar -C $2 -xJf - &
-                ;;
-              clang-8 )
-                wget https://releases.llvm.org/8.0.0/clang+llvm-8.0.0-x86_64-linux-gnu-ubuntu-16.04.tar.xz -nv -O - | tar -C $2 -xJf - &
-                ;;
-              clang-7 )
-                wget https://releases.llvm.org/7.0.1/clang+llvm-7.0.1-x86_64-linux-gnu-ubuntu-16.04.tar.xz -nv -O - | tar -C $2 -xJf - &
-                ;;
-              clang-6 )
-                wget https://releases.llvm.org/6.0.1/clang+llvm-6.0.1-x86_64-linux-gnu-ubuntu-16.04.tar.xz -nv -O - | tar -C $2 -xJf - &
-                ;;
-              clang-5 )
-                wget https://releases.llvm.org/5.0.2/clang+llvm-5.0.2-x86_64-linux-gnu-ubuntu-16.04.tar.xz -nv -O - | tar -C $2 -xJf - &
-                ;;
-              clang-4 )
-                wget https://releases.llvm.org/4.0.0/clang+llvm-4.0.0-x86_64-linux-gnu-ubuntu-16.04.tar.xz -nv -O - | tar -C $2 -xJf - &
-                ;;
-              gcc-4.5 )
-                wget https://release.bambuhls.eu:8080/compiler/gcc-4.5-bambu-Ubuntu_16.04.tar.xz --no-check-certificate -nv -O - | tar -C $2 -xJf - 
-                ;;
-              gcc-4.6 )
-                wget https://release.bambuhls.eu:8080/compiler/gcc-4.6-bambu-Ubuntu_16.04.tar.xz --no-check-certificate -nv -O - | tar -C $2 -xJf - 
-                ;;
-              gcc-4.7 )
-                wget https://release.bambuhls.eu:8080/compiler/gcc-4.7-bambu-Ubuntu_16.04.tar.xz --no-check-certificate -nv -O - | tar -C $2 -xJf - 
-                ;;
-              gcc-4.8 )
-                wget https://release.bambuhls.eu:8080/compiler/gcc-4.8-bambu-Ubuntu_16.04.tar.xz --no-check-certificate -nv -O - | tar -C $2 -xJf - 
-                ;;
-              gcc-4.9 )
-                wget https://release.bambuhls.eu:8080/compiler/gcc-4.9-bambu-Ubuntu_16.04.tar.xz --no-check-certificate -nv -O - | tar -C $2 -xJf - 
-                ;;
-              gcc-5 )
-                wget https://release.bambuhls.eu:8080/compiler/gcc-5-bambu-Ubuntu_16.04.tar.xz --no-check-certificate -nv -O - | tar -C $2 -xJf - 
-                ;;
-              gcc-6 )
-                wget https://release.bambuhls.eu:8080/compiler/gcc-6-bambu-Ubuntu_16.04.tar.xz --no-check-certificate -nv -O - | tar -C $2 -xJf - 
-                ;;
-              gcc-7 )
-                wget https://release.bambuhls.eu:8080/compiler/gcc-7-bambu-Ubuntu_16.04.tar.xz --no-check-certificate -nv -O - | tar -C $2 -xJf - 
-                ;;
-              gcc-8 )
-                wget https://release.bambuhls.eu:8080/compiler/gcc-8-bambu-Ubuntu_16.04.tar.xz --no-check-certificate -nv -O - | tar -C $2 -xJf - 
-                ;;
-              * )
-                ;;
-            esac
-          } 
-          IFS=',' read -r -a compilers <<< "${{github.event.inputs.compilers}}"
-          compilers=( $(IFS=$'\n'; echo "${compilers[*]}" | sort -V) )
-          for compiler in "${compilers[@]}"
-          do
-            inflate $compiler ${{env.dist-dir}}
-          done
-          wait
-          if [[ ! -z "${{github.event.inputs.build-compiler}}" ]]
-          then
-            inflate ${{github.event.inputs.build-compiler}} ${{env.bcompiler-dir}}
+          mkdir ${{env.dist-dir}}
+          bash ./.devcontainer/library-scripts/compiler-download.sh "${{env.dist-dir}}" "${{env.compilers}}"
+          if [[ ! -z "${{env.build-compiler}}" ]]; then
+            mkdir ${{env.bcompiler-dir}}
+            bash ./.devcontainer/library-scripts/compiler-download.sh "${{env.bcompiler-dir}}" "${{env.build-compiler}}"
           fi
-          wait
       - name: Build Bambu application
         id: build
-        uses: ./.github/actions/generate-bin
+        uses: ./.github/actions/generate-appimage
         with:
-          config-args: ${{github.event.inputs.configure}} --enable-Werror
-          jobs: ${{steps.host.outputs.jobs}}
-      - name: Upload Panda install directory
+          config-args: ${{env.configure}} --enable-Werror
+          jobs: ${{steps.setup.outputs.jobs}}
+      - name: Upload PandA Bambu HLS AppImage for CI
+        if: ${{ env.upload_config != '' && env.upload_config != 'release' }}
+        uses: ./.github/actions/storage-upload
+        with:
+          name: ${{env.package-name}}
+          path: ${{steps.build.outputs.appimage}}
+          storage-url: ${{env.storage-url}}
+          username: "${{env.storage-user}}"
+          password: "${{env.storage-token}}"
+          storage-compression: false
+      - name: Upload Panda Bambu HLS Release
+        if: ${{ env.upload_config != 'CI' }}
         shell: bash
         run: |
-          APP_FILE="${{env.dist-pkg}}.AppImage"
+          APP_FILE="${{env.package-name}}.AppImage"
           STORAGE_URL="${{env.storage-url}}/${{env.storage-path}}/$APP_FILE"
           curl -L --fail -u '${{env.storage-user}}':'${{env.storage-token}}' -T "${{steps.build.outputs.appimage}}" "$STORAGE_URL"
-          echo "::notice New release available at https://release.bambuhls.eu:8080/appimage/$APP_FILE"
+          echo "::notice New release available at https://release.bambuhls.eu/appimage/$APP_FILE"

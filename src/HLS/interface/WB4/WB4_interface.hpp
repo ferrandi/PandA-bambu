@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -50,21 +50,20 @@
 #define _WB4_INTERFACE_HPP_
 
 #include "minimal_interface.hpp"
-
-/// utility include
 #include "refcount.hpp"
+
 /**
  * Class generating WB4 interfaces
  */
 
 CONSTREF_FORWARD_DECL(BehavioralHelper);
-REF_FORWARD_DECL(memory_symbol);
 REF_FORWARD_DECL(structural_type_descriptor);
+REF_FORWARD_DECL(structural_object);
 
 class WB4_interface : public minimal_interface
 {
  protected:
-   unsigned int get_data_bus_bitsize();
+   unsigned long long get_data_bus_bitsize();
 
    unsigned int get_addr_bus_bitsize();
 

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2016-2022 Politecnico di Milano
+ *              Copyright (c) 2016-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -59,13 +59,13 @@ class cs_interface : public module_interface
    /**
     * Destructor
     */
-   virtual ~cs_interface();
+   ~cs_interface() override;
 
    /**
     * Execute the step
     * @return the exit status of this step
     */
-   virtual DesignFlowStep_Status InternalExec() override;
+   DesignFlowStep_Status InternalExec() override;
 
  protected:
    /**

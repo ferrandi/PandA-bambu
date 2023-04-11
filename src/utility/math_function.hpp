@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -45,14 +45,17 @@
 #ifndef MATH_FUNCTION_HPP
 #define MATH_FUNCTION_HPP
 
-/// Utility include
 #include "augmented_vector.hpp"
+
 #include <boost/version.hpp>
 #if BOOST_VERSION >= 105800
 #include <boost/integer/common_factor_rt.hpp>
 #else
 #include <boost/math/common_factor_rt.hpp>
 #endif
+
+#include <type_traits>
+
 /**
  * Return the distance between a point and a line (represented as a couple of points) in a n-dimensional space
  */
@@ -92,7 +95,8 @@ Integer LeastCommonMultiple(const Integer first, const Integer second)
 #endif
 }
 
-inline unsigned int resize_to_1_8_16_32_64_128_256_512(unsigned int value)
+template <typename T, std::enable_if_t<std::is_unsigned<T>::value, bool> = true>
+inline T resize_to_1_8_16_32_64_128_256_512(T value)
 {
    if(value == 1)
    {
@@ -133,67 +137,104 @@ inline unsigned int resize_to_1_8_16_32_64_128_256_512(unsigned int value)
    return 0;
 }
 
-inline unsigned int compute_n_bytes(unsigned bitsize)
+template <typename T>
+inline T compute_n_bytes(T bitsize)
 {
-   return bitsize / 8 + ((bitsize % 8) ? 1 : 0);
+   return bitsize / 8 + ((bitsize % 8) != 0);
 }
 
 /// Test whether a value is zero of a power of two.
 #define EXACT_POWER_OF_2_OR_ZERO_P(x) (((x) & ((x)-1)) == 0)
 
 /// Given X, an unsigned number, return the largest int Y such that 2**Y <= X. If X is 0, return -1.
-inline int floor_log2(unsigned long long int x)
+template <typename T, std::enable_if_t<std::is_unsigned<T>::value, bool> = true>
+inline T floor_log2(T x)
 {
-   int t = 0;
+   unsigned long long t = 0;
 
    if(x == 0)
    {
-      return -1;
+      return static_cast<T>(-1LL);
    }
 
-   if(x >= (static_cast<unsigned long long int>(1)) << (t + 32))
+   if(x >= 1ULL << (t + 32))
    {
       t += 32;
    }
-   if(x >= (static_cast<unsigned long long int>(1)) << (t + 16))
+   if(x >= 1ULL << (t + 16))
    {
       t += 16;
    }
-   if(x >= (static_cast<unsigned long long int>(1)) << (t + 8))
+   if(x >= 1ULL << (t + 8))
    {
       t += 8;
    }
-   if(x >= (static_cast<unsigned long long int>(1)) << (t + 4))
+   if(x >= 1ULL << (t + 4))
    {
       t += 4;
    }
-   if(x >= (static_cast<unsigned long long int>(1)) << (t + 2))
+   if(x >= 1ULL << (t + 2))
    {
       t += 2;
    }
-   if(x >= (static_cast<unsigned long long int>(1)) << (t + 1))
+   if(x >= 1ULL << (t + 1))
    {
       t += 1;
    }
 
-   return t;
+   return static_cast<T>(t);
 }
 
 /** Return the logarithm of X, base 2, considering X unsigned,
    if X is a power of 2.  Otherwise, returns -1.  */
-inline int exact_log2(unsigned long long int x)
+template <typename T, std::enable_if_t<std::is_unsigned<T>::value, bool> = true>
+inline T exact_log2(T x)
 {
    if(x != (x & -x))
    {
-      return -1;
+      return static_cast<T>(-1LL);
    }
    return floor_log2(x);
 }
 
 /// Return the smallest n such that 2**n >= X.
-inline int ceil_log2(unsigned long long int x)
+template <typename T, std::enable_if_t<std::is_unsigned<T>::value, bool> = true>
+inline T ceil_log2(T x)
 {
-   return floor_log2(x - 1) + 1;
+   return static_cast<T>(floor_log2(static_cast<T>(x - 1)) + 1);
+}
+
+/// Return the smallest n such tat
+template <typename T, std::enable_if_t<std::is_unsigned<T>::value, bool> = true>
+constexpr inline T round_to_power2(T _x)
+{
+   unsigned long long x = _x;
+   x--;
+   x |= x >> 1;
+   x |= x >> 2;
+   x |= x >> 4;
+   x |= x >> 8;
+   x |= x >> 16;
+   x |= x >> 32;
+   x++;
+   return static_cast<T>(x);
+}
+
+template <typename T, std::enable_if_t<std::is_unsigned<T>::value, bool> = true>
+constexpr inline T get_aligned_bitsize(T bitsize)
+{
+   const auto rbw = std::max(T(8), round_to_power2(bitsize));
+   if(rbw <= 128ULL)
+   {
+      return rbw;
+   }
+   return bitsize + ((32ULL - (bitsize % 32ULL)) & 31ULL);
+}
+
+template <typename T, std::enable_if_t<std::is_unsigned<T>::value, bool> = true>
+constexpr inline T get_aligned_ac_bitsize(T bitsize)
+{
+   return bitsize + ((64ULL - (bitsize % 64ULL)) & 63ULL);
 }
 
 #endif

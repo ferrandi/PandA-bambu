@@ -7,7 +7,7 @@ ggo_require_compiler=1
 BATCH_ARGS=("--simulate" "-O3" "-fwhole-program" "--experimental-setup=BAMBU" "--clock-period=15" "-D'printf(fmt, ...)='")
 OUT_SUFFIX="${compiler}_CHStone-memarch"
 
-$script_dir/../../etc/scripts/test_panda.py --tool=bambu \
+python3 $script_dir/../../etc/scripts/test_panda.py --tool=bambu \
    --args="--configuration-name=${compiler}-O3-wp-11-D00-EXT --memory-allocation-policy=EXT_PIPELINED_BRAM --channels-type=MEM_ACC_11 --memory-ctrl-type=D00 ${BATCH_ARGS[*]}"\
    --args="--configuration-name=${compiler}-O3-wp-N1-D00-EXT --memory-allocation-policy=EXT_PIPELINED_BRAM --channels-type=MEM_ACC_N1 --memory-ctrl-type=D00 ${BATCH_ARGS[*]}"\
    --args="--configuration-name=${compiler}-O3-wp-NN-D00-EXT --memory-allocation-policy=EXT_PIPELINED_BRAM --channels-type=MEM_ACC_NN --memory-ctrl-type=D00 ${BATCH_ARGS[*]}"\

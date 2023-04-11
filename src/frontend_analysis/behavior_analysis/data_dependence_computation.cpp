@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -37,11 +37,6 @@
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
  */
-
-/// Autoheader include
-#include "config_HAVE_EXPERIMENTAL.hpp"
-
-/// Header include
 #include "data_dependence_computation.hpp"
 
 ///. include
@@ -81,24 +76,13 @@ DesignFlowStep_Status DataDependenceComputation::InternalExec()
       return Computedependencies<unsigned int>(DFG_SCA_SELECTOR, FB_DFG_SCA_SELECTOR, ADG_SCA_SELECTOR,
                                                FB_ADG_SCA_SELECTOR);
    }
-   else if(frontend_flow_step_type == VIRTUAL_AGGREGATE_DATA_FLOW_ANALYSIS
-#if HAVE_EXPERIMENTAL && HAVE_ZEBU_BUILT
-           or frontend_flow_step_type == REFINED_AGGREGATE_DATA_FLOW_ANALYSIS
-#endif
-   )
+   else if(frontend_flow_step_type == VIRTUAL_AGGREGATE_DATA_FLOW_ANALYSIS)
    {
       auto res = Computedependencies<unsigned int>(DFG_AGG_SELECTOR, FB_DFG_AGG_SELECTOR, ADG_AGG_SELECTOR,
                                                    FB_ADG_AGG_SELECTOR);
       do_dependence_reduction();
       return res;
    }
-#if HAVE_ZEBU_BUILT && HAVE_EXPERIMENTAL
-   else if(frontend_flow_step_type == DYNAMIC_AGGREGATE_DATA_FLOW_ANALYSIS)
-   {
-      return Computedependencies<unsigned int>(DFG_AGG_SELECTOR, FB_DFG_AGG_SELECTOR, ADG_AGG_SELECTOR,
-                                               FB_ADG_AGG_SELECTOR);
-   }
-#endif
    else
    {
       THROW_UNREACHABLE("Unexpected data flow analysis type");
@@ -413,16 +397,6 @@ DataDependenceComputation::GetVariables(const vertex statement,
    {
       variable_type = FunctionBehavior_VariableType::SCALAR;
    }
-#if HAVE_EXPERIMENTAL && HAVE_ZEBU_BUILT
-   else if(frontend_flow_step_type == REFINED_AGGREGATE_DATA_FLOW_ANALYSIS)
-   {
-      variable_type = FunctionBehavior_VariableType::AGGREGATE;
-   }
-   else if(frontend_flow_step_type == DYNAMIC_AGGREGATE_DATA_FLOW_ANALYSIS)
-   {
-      THROW_UNREACHABLE("Unexpected dynamic aggregate data flow analysis");
-   }
-#endif
    else
    {
       THROW_UNREACHABLE("Unexpected data flow analysis type");
@@ -431,16 +405,3 @@ DataDependenceComputation::GetVariables(const vertex statement,
        ->CGetOpNodeInfo(statement)
        ->GetVariables(variable_type, variable_access_type);
 }
-
-#if HAVE_EXPERIMENTAL && HAVE_ZEBU_BUILT
-template <>
-CustomSet<MemoryAddress>
-DataDependenceComputation::GetVariables(const vertex statement,
-                                        const FunctionBehavior_VariableAccessType variable_access_type) const
-{
-   THROW_ASSERT(frontend_flow_step_type == DYNAMIC_AGGREGATE_DATA_FLOW_ANALYSIS, "Unexpected data flow analysis type");
-   return function_behavior->CGetOpGraph(FunctionBehavior::CFG)
-       ->CGetOpNodeInfo(statement)
-       ->GetDynamicMemoryLocations(variable_access_type);
-}
-#endif

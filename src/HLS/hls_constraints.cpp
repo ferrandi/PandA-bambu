@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -66,6 +66,7 @@
 #include <vector>
 
 /// utility include
+#include "fileIO.hpp"
 #include "string_manipulation.hpp"
 
 const double HLS_constraints::clock_period_resource_fraction_DEFAULT = 1.0;
@@ -185,7 +186,7 @@ HLS_constraints::HLS_constraints(const ParameterConstRef& _Param, std::string _f
    // ---------- Save XML file ------------ //
    if(debug_level >= DEBUG_LEVEL_PEDANTIC)
    {
-      write_HLS_constraints_File("HLS_constraints.out.XML");
+      write_HLS_constraints_File(GetPath("HLS_constraints.out.xml"));
    }
 }
 
@@ -335,7 +336,7 @@ void HLS_constraints::xload(const xml_element* Enode)
             LOAD_XVM(fu_library, EnodeC);
          }
          LOAD_XVM(n, EnodeC);
-         tech_constraints[ENCODE_FU_LIB(fu_name, fu_library)] = n;
+         set_number_fu(fu_name, fu_library, n);
       }
       else if(EnodeC->get_name() == "binding_constraints")
       {

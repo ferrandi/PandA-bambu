@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -51,6 +51,7 @@
 #include "target_device.hpp"
 #include "target_manager.hpp"
 #include "time_model.hpp"
+#include "utility.hpp"
 
 #include "NanoXploreWrapper.hpp"
 
@@ -69,25 +70,23 @@
 #define NANOXPLORE_MEM "NANOXPLORE_MEM"
 #define NANOXPLORE_POWER "NANOXPLORE_POWER"
 
-#define NANOXPLORE_BYPASS_SET(NANOXPLORE_BYPASS) \
-   (std::string("export NANOXPLORE_BYPASS=") + STR(NANOXPLORE_BYPASS) + std::string(";"))
-
 NanoXploreBackendFlow::NanoXploreBackendFlow(const ParameterConstRef _Param, const std::string& _flow_name,
                                              const target_managerRef _target)
     : BackendFlow(_Param, _flow_name, _target)
 {
    debug_level = _Param->get_class_debug_level(GET_CLASS(*this));
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Creating NanoXplore Backend Flow ::.");
-   if(!Param->isOption(OPT_nanoxplore_settings))
+   if(!Param->isOption(OPT_nanoxplore_root))
    {
       THROW_WARNING("NanoXplore install directory was not specified, fallback on path. Specifying NanoXplore root "
                     "through --nanoxplore-root option is preferred.");
    }
    const auto lic_path = std::getenv("LM_LICENSE_FILE");
-   if(!lic_path || std::string(lic_path) == "")
+   const auto nx_lic_path = std::getenv("NXLMD_LICENSE_FILE");
+   if((!lic_path || std::string(lic_path) == "") && (!nx_lic_path || std::string(nx_lic_path) == ""))
    {
-      THROW_WARNING("NanoXplore license file has not been specified. User must set LM_LICENSE_FILE variable to point "
-                    "to the license file location.");
+      THROW_WARNING("NanoXplore license file has not been specified. User must set LM_LICENSE_FILE or "
+                    "NXLMD_LICENSE_FILE variable to point to the license file location.");
    }
    const auto bypass_name = std::getenv("NANOXPLORE_BYPASS");
    if((!bypass_name || std::string(bypass_name) == "") && !Param->isOption(OPT_nanoxplore_bypass))
@@ -96,8 +95,9 @@ NanoXploreBackendFlow::NanoXploreBackendFlow(const ParameterConstRef _Param, con
                     "--nanoxplore-bypass option.");
    }
 
-   default_data["NG-medium"] = "NG-medium.data";
-   default_data["NG-large"] = "NG-large.data";
+   default_data["NG-MEDIUM"] = "NG.data";
+   default_data["NG-LARGE"] = "NG.data";
+   default_data["NG-ULTRA"] = "NG.data";
 
    XMLDomParserRef parser;
    if(Param->isOption(OPT_target_device_script))
@@ -120,7 +120,7 @@ NanoXploreBackendFlow::NanoXploreBackendFlow(const ParameterConstRef _Param, con
       }
       else
       {
-         device_string = "NG-medium";
+         device_string = "NG-MEDIUM";
       }
       if(default_data.find(device_string) == default_data.end())
       {
@@ -242,6 +242,7 @@ void NanoXploreBackendFlow::CheckSynthesisResults()
    area_clb_model->set_resource_value(clb_model::REGISTERS, design_values[NANOXPLORE_REGISTERS]);
    area_clb_model->set_resource_value(clb_model::DSP, design_values[NANOXPLORE_DSP]);
    area_clb_model->set_resource_value(clb_model::BRAM, design_values[NANOXPLORE_MEM]);
+   area_clb_model->set_resource_value(clb_model::POWER, design_values[NANOXPLORE_POWER]);
 
    time_m = time_model::create_model(TargetDevice_Type::FPGA, Param);
    auto* lut_m = GetPointer<LUT_model>(time_m);
@@ -273,27 +274,21 @@ void NanoXploreBackendFlow::CheckSynthesisResults()
 void NanoXploreBackendFlow::WriteFlowConfiguration(std::ostream& script)
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Writing flow configuration");
-   std::string setupscr;
-   if(Param->isOption(OPT_nanoxplore_settings))
+   script << "#configuration" << std::endl;
+   if(Param->isOption(OPT_nanoxplore_root))
    {
-      setupscr = Param->getOption<std::string>(OPT_nanoxplore_settings);
+      const auto nxroot = Param->getOption<std::string>(OPT_nanoxplore_root);
+      script << "export PATH=$PATH:" + nxroot + "/bin" << std::endl << std::endl;
    }
-   if(setupscr.size() && setupscr != "0")
-   {
-      script << "#configuration" << std::endl;
-      if(boost::algorithm::starts_with(setupscr, "export"))
-      {
-         script << setupscr + " >& /dev/null; ";
-      }
-      else
-      {
-         script << ". " << setupscr << " >& /dev/null; ";
-      }
-      script << std::endl << std::endl;
-   }
+   script << "if [ ! -z \"$NXLMD_LICENSE_FILE\" ]; then" << std::endl;
+   script << "  if [[ \"$NXLMD_LICENSE_FILE\" != \"$LM_LICENSE_FILE\" ]]; then" << std::endl;
+   script << "    export LM_LICENSE_FILE=\"$NXLMD_LICENSE_FILE\"" << std::endl;
+   script << "  fi" << std::endl;
+   script << "fi" << std::endl << std::endl;
    if(Param->isOption(OPT_nanoxplore_bypass))
    {
-      script << NANOXPLORE_BYPASS_SET(Param->getOption<std::string>(OPT_nanoxplore_bypass)) << std::endl;
+      script << "export NANOXPLORE_BYPASS=\"" << Param->getOption<std::string>(OPT_nanoxplore_bypass) << "\""
+             << std::endl;
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Written flow configuration");
 }
@@ -314,12 +309,14 @@ void NanoXploreBackendFlow::InitDesignParameters()
       xpwr_enabled = true;
    }
    actual_parameters->parameter_values[PARAM_power_optimization] = STR(xpwr_enabled);
-   const target_deviceRef device = target->get_target_device();
-   auto device_name = device->get_parameter<std::string>("model");
-   auto package = device->get_parameter<std::string>("package");
-   auto speed_grade = device->get_parameter<std::string>("speed_grade");
+   const auto device = target->get_target_device();
+   const auto family = device->get_parameter<std::string>("family");
+   const auto device_name = device->get_parameter<std::string>("model");
+   const auto package = device->get_parameter<std::string>("package");
+   const auto speed_grade = device->get_parameter<std::string>("speed_grade");
    std::string device_string = device_name + package + speed_grade;
    actual_parameters->parameter_values[PARAM_target_device] = device_string;
+   actual_parameters->parameter_values[PARAM_target_family] = family;
 
    std::string HDL_files = actual_parameters->parameter_values[PARAM_HDL_files];
    std::vector<std::string> file_list = convert_string_to_vector<std::string>(HDL_files, ";");

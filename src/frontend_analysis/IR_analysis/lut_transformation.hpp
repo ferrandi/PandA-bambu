@@ -12,7 +12,7 @@
  *                              Politecnico di Milano - DEIB
  *                                System Architectures Group
  *                 ***********************************************
- *                  Copyright (C) 2004-2022 Politecnico di Milano
+ *                  Copyright (C) 2004-2023 Politecnico di Milano
  *
  *    This file is part of the PandA framework.
  *
@@ -123,7 +123,7 @@ class lut_transformation : public FunctionFrontendFlowStep
 
    bool CheckIfProcessable(std::pair<unsigned int, blocRef> block);
 
-   tree_nodeRef CreateBitSelectionNodeOrCast(const tree_nodeRef source, int index, unsigned int BB_index,
+   tree_nodeRef CreateBitSelectionNodeOrCast(const tree_nodeRef source, int index,
                                              std::vector<tree_nodeRef>& prev_stmts_to_add);
 
 #endif

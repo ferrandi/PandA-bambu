@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -38,6 +38,7 @@
  * @author Marco Lattuada <lattuada@elet.polimi.it>
  *
  */
+#include "Parameter.hpp"
 
 /// Autoheader include
 #include "config_HAVE_ARM_COMPILER.hpp"
@@ -50,6 +51,7 @@
 #include "config_HAVE_I386_CLANG10_COMPILER.hpp"
 #include "config_HAVE_I386_CLANG11_COMPILER.hpp"
 #include "config_HAVE_I386_CLANG12_COMPILER.hpp"
+#include "config_HAVE_I386_CLANG13_COMPILER.hpp"
 #include "config_HAVE_I386_CLANG4_COMPILER.hpp"
 #include "config_HAVE_I386_CLANG5_COMPILER.hpp"
 #include "config_HAVE_I386_CLANG6_COMPILER.hpp"
@@ -75,9 +77,6 @@
 #include "config_HAVE_WEIGHT_MODELS_XML.hpp"
 #include "config_PACKAGE_BUGREPORT.hpp"
 #include "config_PACKAGE_STRING.hpp"
-
-/// Header include
-#include "Parameter.hpp"
 
 #if HAVE_FROM_C_BUILT
 /// wrapper/compiler
@@ -110,14 +109,11 @@
 #if HAVE_SOURCE_CODE_STATISTICS_XML
 #include "source_code_statistics_xml.hpp"
 #endif
-#if(HAVE_WEIGHT_MODELS_XML && HAVE_EXPERIMENTAL) || HAVE_PERFORMANCE_METRICS_XML
+#if HAVE_PERFORMANCE_METRICS_XML
 #include "probability_distribution_xml.hpp"
 #endif
 #if HAVE_TECHNOLOGY_BUILT
 #include "technology_xml.hpp"
-#endif
-#if HAVE_WEIGHT_MODELS_XML && HAVE_EXPERIMENTAL
-#include "weights_xml.hpp"
 #endif
 #if HAVE_FROM_SDF3_BUILT
 #include "sdf3_xml.hpp"
@@ -232,6 +228,28 @@ void Parameter::CheckParameters()
          THROW_ERROR("not able to create directory " + dot_directory);
       }
    }
+
+#if HAVE_FROM_C_BUILT
+   if(isOption(OPT_gcc_m32_mx32))
+   {
+      const auto mopt = getOption<std::string>(OPT_gcc_m32_mx32);
+      if(mopt == "-m32" &&
+         CompilerWrapper::hasCompilerGCCM32(getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler)))
+      {
+         setOption(OPT_gcc_m32_mx32, "-m32 -mno-sse2");
+      }
+      else if((mopt == "-m32" && !CompilerWrapper::hasCompilerCLANGM32(
+                                     getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler))) ||
+              (mopt == "-mx32" &&
+               !CompilerWrapper::hasCompilerMX32(getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler))) ||
+              (mopt == "-m64" &&
+               !CompilerWrapper::hasCompilerM64(getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler))))
+      {
+         THROW_ERROR("Option " + mopt + " not supported by " +
+                     CompilerWrapper::getCompilerSuffix(OPT_default_compiler) + " compiler.");
+      }
+   }
+#endif
 }
 
 Parameter::~Parameter() = default;
@@ -415,7 +433,7 @@ void Parameter::PrintFullHeader(std::ostream& os) const
    os << "                         Politecnico di Milano - DEIB" << std::endl;
    os << "                          System Architectures Group" << std::endl;
    os << "********************************************************************************" << std::endl;
-   os << "                Copyright (C) 2004-2022 Politecnico di Milano" << std::endl;
+   os << "                Copyright (C) 2004-2023 Politecnico di Milano" << std::endl;
    std::string version = PrintVersion();
    if(version.size() < 80)
    {
@@ -678,41 +696,15 @@ bool Parameter::ManageGccOptions(int next_option, char* optarg_param)
             const std::string opt_level = std::string(optarg_param);
             if(opt_level == "32")
             {
-               if(CompilerWrapper::hasCompilerGCCM32(getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler)))
-               {
-                  setOption(OPT_gcc_m32_mx32, "-m32 -mno-sse2");
-               }
-               else if(CompilerWrapper::hasCompilerCLANGM32(
-                           getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler)))
-               {
-                  setOption(OPT_gcc_m32_mx32, "-m32");
-               }
-               else
-               {
-                  THROW_ERROR("Option -m32 not supported");
-               }
+               setOption(OPT_gcc_m32_mx32, "-m32");
             }
             else if(opt_level == "x32")
             {
-               if(CompilerWrapper::hasCompilerMX32(getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler)))
-               {
-                  setOption(OPT_gcc_m32_mx32, "-mx32");
-               }
-               else
-               {
-                  THROW_ERROR("Option -mx32 not supported");
-               }
+               setOption(OPT_gcc_m32_mx32, "-mx32");
             }
             else if(opt_level == "64")
             {
-               if(CompilerWrapper::hasCompilerM64(getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler)))
-               {
-                  setOption(OPT_gcc_m32_mx32, "-m64");
-               }
-               else
-               {
-                  THROW_ERROR("Option -m64 not supported");
-               }
+               setOption(OPT_gcc_m32_mx32, "-m64");
             }
          }
          break;
@@ -1000,6 +992,13 @@ bool Parameter::ManageGccOptions(int next_option, char* optarg_param)
             break;
          }
 #endif
+#if HAVE_I386_CLANG13_COMPILER
+         if(std::string(optarg_param) == "I386_CLANG13")
+         {
+            setOption(OPT_default_compiler, static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_CLANG13));
+            break;
+         }
+#endif
 #if HAVE_I386_CLANGVVD_COMPILER
          if(std::string(optarg_param) == "I386_CLANGVVD")
          {
@@ -1032,7 +1031,7 @@ bool Parameter::ManageGccOptions(int next_option, char* optarg_param)
       }
       case INPUT_OPT_READ_GCC_XML:
       {
-         setOption(OPT_gcc_read_xml, optarg);
+         setOption(OPT_gcc_read_xml, GetPath(optarg));
          break;
       }
       case INPUT_OPT_STD:
@@ -1047,7 +1046,7 @@ bool Parameter::ManageGccOptions(int next_option, char* optarg_param)
       }
       case INPUT_OPT_WRITE_GCC_XML:
       {
-         setOption(OPT_gcc_write_xml, optarg);
+         setOption(OPT_gcc_write_xml, GetPath(optarg));
          break;
       }
       default:
@@ -1154,13 +1153,6 @@ Parameters_FileFormat Parameter::GetFileFormat(const std::string& file_name, con
    if(extension == "lib")
    {
       return Parameters_FileFormat::FF_LIB;
-   }
-#endif
-#if HAVE_EXPERIMENTAL
-   if(extension == "log")
-   {
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--log file");
-      return Parameters_FileFormat::FF_LOG;
    }
 #endif
 #if HAVE_FROM_PSPLIB_BUILT
@@ -1290,49 +1282,6 @@ Parameters_FileFormat Parameter::GetFileFormat(const std::string& file_name, con
             return Parameters_FileFormat::FF_XML_TEX_TABLE;
          }
 #endif
-#if HAVE_WEIGHT_MODELS_XML && HAVE_EXPERIMENTAL
-         if(root->get_name() == STR_XML_Metrics)
-         {
-            const xml_node::node_list list = root->get_children();
-            for(xml_node::node_list::const_iterator iter = list.begin(); iter != list.end(); ++iter)
-            {
-               const xml_element* static_or_dynamic = GetPointer<const xml_element>(*iter);
-               if(!static_or_dynamic)
-                  continue;
-               if(static_or_dynamic->get_name() == STR_XML_Metrics_Static)
-               {
-                  const xml_node::node_list static_children = static_or_dynamic->get_children();
-                  for(xml_node::node_list::const_iterator static_child = static_children.begin();
-                      static_child != static_children.end(); static_child++)
-                  {
-                     const xml_element* static_child_xml = GetPointer<const xml_element>(*static_child);
-                     if(!static_child_xml)
-                        continue;
-                     if(static_child_xml->get_name() == STR_XML_Metrics_Sequential_Estimation)
-                     {
-                        const xml_node::node_list sequential_children = static_child_xml->get_children();
-                        for(xml_node::node_list::const_iterator sequential_child = sequential_children.begin();
-                            sequential_child != sequential_children.end(); sequential_child++)
-                        {
-                           const xml_element* sequential_child_xml = GetPointer<const xml_element>(*sequential_child);
-                           if(sequential_child_xml and
-                              sequential_child_xml->get_attribute(STR_XML_Metrics_Distribution))
-                           {
-                              const std::string distribution =
-                                  sequential_child_xml->get_attribute(STR_XML_Metrics_Distribution)->get_value();
-                              if(distribution == STR_XML_probability_distribution_stochastic)
-                              {
-                                 INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Symbolic distribution");
-                                 return Parameters_FileFormat::FF_XML_SYM_SIM;
-                              }
-                           }
-                        }
-                     }
-                  }
-               }
-            }
-         }
-#endif
 #if HAVE_FROM_SDF3_BUILT
          if(root->get_name() == STR_XML_sdf3_root)
          {
@@ -1345,25 +1294,6 @@ Parameters_FileFormat Parameter::GetFileFormat(const std::string& file_name, con
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Skip rows data");
             return Parameters_FileFormat::FF_XML_SKIP_ROW;
-         }
-#endif
-#if HAVE_WEIGHT_MODELS_XML && HAVE_EXPERIMENTAL
-         if(root->get_name() == STR_XML_weights_root)
-         {
-            const xml_node::node_list list = root->get_children();
-            for(xml_node::node_list::const_iterator iter = list.begin(); iter != list.end(); ++iter)
-            {
-               const xml_element* model = GetPointer<const xml_element>(*iter);
-               if(not model)
-                  continue;
-               if(model->get_attribute(STR_XML_weights_distribution) and
-                  model->get_attribute(STR_XML_weights_distribution)->get_value() ==
-                      STR_XML_probability_distribution_symbolic)
-               {
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Symbolic distribution model");
-                  return Parameters_FileFormat::FF_XML_WGT_SYM;
-               }
-            }
          }
 #endif
 #endif
@@ -1402,10 +1332,8 @@ void Parameter::PrintGeneralOptionsUsage(std::ostream& os) const
       << "        Display this usage information.\n\n"
       << "    --version, -V\n"
       << "        Display the version of the program.\n\n"
-#if HAVE_EXPERIMENTAL
       << "    --seed=<number>\n"
       << "        Set the seed of the random number generator (default=0).\n\n"
-#endif
 #if !RELEASE
       << "    --read-parameters-XML=<xml_file_name>\n"
       << "        Read command line options from a XML file.\n\n"
@@ -1443,8 +1371,8 @@ void Parameter::PrintOutputOptionsUsage(std::ostream& os) const
       << "    --max-transformations=<number>\n"
       << "        Set a maximum number of transformations.\n\n"
       << "        To reduce the disk usage two PandA parameter could be used:\n"
-      << "          --panda-parameter=disable-print-tree-manager=1\n"
-      << "          --panda-parameter=disable-print-dot-FF=1\n\n"
+      << "          --panda-parameter=print-tree-manager=1\n"
+      << "          --panda-parameter=print-dot-FF=1\n\n"
       << "    --find-max-transformations\n"
       << "        Find the maximum number of transformations raising an exception.\n\n"
 #endif
@@ -1539,6 +1467,9 @@ void Parameter::PrintGccOptionsUsage(std::ostream& os) const
 #endif
 #if HAVE_I386_CLANG12_COMPILER
       << "            I386_CLANG12\n"
+#endif
+#if HAVE_I386_CLANG13_COMPILER
+      << "            I386_CLANG13\n"
 #endif
 #if HAVE_I386_CLANGVVD_COMPILER
       << "            I386_CLANGVVD\n"

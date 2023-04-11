@@ -484,10 +484,10 @@ namespace eSSAInfoClasses
          if(llvm::isa<PredicateWithEdge>(ValInfo))
          {
             llvm::IRBuilder<> B(&llvm::cast<PredicateWithEdge>(ValInfo)->To->front());
-            auto* PIC = B.CreatePHI(Op->getType(), 1, Op->getName() + "." + llvm::Twine(Counter++));
-            PIC->addIncoming(Op, llvm::cast<PredicateWithEdge>(ValInfo)->From);
-            PredicateMap.insert({PIC, ValInfo});
-            Result.Def = PIC;
+            auto* pic = B.CreatePHI(Op->getType(), 1, Op->getName() + "." + llvm::Twine(Counter++));
+            pic->addIncoming(Op, llvm::cast<PredicateWithEdge>(ValInfo)->From);
+            PredicateMap.insert({pic, ValInfo});
+            Result.Def = pic;
          }
          else
          {
@@ -497,9 +497,9 @@ namespace eSSAInfoClasses
             // llvm::IRBuilder<> B(PAssume->AssumeInst);
             // llvm::Function *IF = llvm::Intrinsic::getDeclaration(
             //                        F.getParent(), llvm::Intrinsic::ssa_copy, Op->getType());
-            // llvm::CallInst *PIC = B.CreateCall(IF, Op);
-            // PredicateMap.insert({PIC, ValInfo});
-            // Result.Def = PIC;
+            // llvm::CallInst *pic = B.CreateCall(IF, Op);
+            // PredicateMap.insert({pic, ValInfo});
+            // Result.Def = pic;
          }
       }
       return RenameStack.back().Def;
@@ -907,16 +907,13 @@ namespace eSSAInfoClasses
 
 } // namespace eSSAInfoClasses
 
-bool eSSA::runOnFunction(llvm::Function& fun, llvm::ModulePass* modulePass, bool* changed)
+bool eSSA::exec(llvm::Function& fun, bool* changed,
+                llvm::function_ref<llvm::DominatorTree&(llvm::Function&)> GetDomTree)
 {
-#if __clang_major__ >= 11
-   auto DT = &modulePass->getAnalysis<llvm::DominatorTreeWrapperPass>(fun, changed).getDomTree();
-#else
-   auto DT = &modulePass->getAnalysis<llvm::DominatorTreeWrapperPass>(fun).getDomTree();
-#endif
+   auto& DT = GetDomTree(fun);
    // auto AC = &modulePass->getAnalysis<llvm::AssumptionCacheTracker>().getAssumptionCache(fun);
-   auto OI = new llvm::OrderedInstructions(DT);
-   DT->updateDFSNumbers();
+   auto OI = new llvm::OrderedInstructions(&DT);
+   DT.updateDFSNumbers();
    // This stores info about each operand or comparison result we make copies
    // of.  The real ValueInfos start at index 1, index 0 is unused so that we can
    // more easily detect invalid indexing.
@@ -933,7 +930,7 @@ bool eSSA::runOnFunction(llvm::Function& fun, llvm::ModulePass* modulePass, bool
    // Collect operands to rename from all conditional branch terminators, as well
    // as assume statements.
    llvm::SmallPtrSet<llvm::Value*, 8> OpsToRename;
-   for(auto DTN : depth_first(DT->getRootNode()))
+   for(auto DTN : depth_first(DT.getRootNode()))
    {
       llvm::BasicBlock* BranchBB = DTN->getBlock();
       if(auto* BI = llvm::dyn_cast<llvm::BranchInst>(BranchBB->getTerminator()))
@@ -961,7 +958,7 @@ bool eSSA::runOnFunction(llvm::Function& fun, llvm::ModulePass* modulePass, bool
    }
 #endif
    // Now rename all our operations.
-   renameUses(OpsToRename, ValueInfoNums, ValueInfos, fun, DT, OI, EdgeUsesOnly);
+   renameUses(OpsToRename, ValueInfoNums, ValueInfos, fun, &DT, OI, EdgeUsesOnly);
    delete OI;
    return true;
 }

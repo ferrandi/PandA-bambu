@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -61,6 +61,11 @@ class create_tree_manager : public ApplicationFrontendFlowStep
    const CompilerWrapperRef compiler_wrapper;
 
    /**
+    * @brief CostTable: string storing the operations' latency in an encoded map.
+    */
+   std::string CostTable;
+
+   /**
     * Return the set of analyses in relationship with this design step
     * @param relationship_type is the type of relationship to be considered
     */
@@ -74,6 +79,19 @@ class create_tree_manager : public ApplicationFrontendFlowStep
     */
    void ComputeRelationships(DesignFlowStepSet& relationship,
                              const DesignFlowStep::RelationshipType relationship_type) override;
+
+   /**
+    * return the latency table used by THR to balance the computation
+    */
+   const std::string getCostTable() const
+   {
+      return CostTable;
+   }
+
+   /**
+    * @brief createCostTable: Fill the CostTable starting from the technology files
+    */
+   void createCostTable();
 
  public:
    /**

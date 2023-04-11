@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -53,6 +53,7 @@
 #include "config_HAVE_I386_CLANG10_COMPILER.hpp"
 #include "config_HAVE_I386_CLANG11_COMPILER.hpp"
 #include "config_HAVE_I386_CLANG12_COMPILER.hpp"
+#include "config_HAVE_I386_CLANG13_COMPILER.hpp"
 #include "config_HAVE_I386_CLANG4_COMPILER.hpp"
 #include "config_HAVE_I386_CLANG5_COMPILER.hpp"
 #include "config_HAVE_I386_CLANG6_COMPILER.hpp"
@@ -70,7 +71,6 @@
 #include "config_HAVE_I386_GCC7_COMPILER.hpp"
 #include "config_HAVE_I386_GCC8_COMPILER.hpp"
 #include "config_HAVE_SPARC_COMPILER.hpp"
-#include "config_HAVE_TUCANO_BUILT.hpp"
 #include "config_HAVE_ZEBU_BUILT.hpp"
 
 /// boost include
@@ -108,9 +108,6 @@ enum class CompilerWrapper_OptimizationSet
 #if HAVE_BAMBU_BUILT
    OBAMBU, /**< Bambu optimizationss + OPT_compiler_opt_level */
    OSF,    /**< Bambu optimizations for soft float: O3 + -finline-limit=10000 */
-#endif
-#if HAVE_TUCANO_BUILT
-   OTUCANO, /**< Tucano optimizations + OPT_compiler_opt_level */
 #endif
 #if HAVE_ZEBU_BUILT
    OZEBU, /**< Zebu optimizations + OPT_compiler_opt_level */
@@ -177,15 +174,18 @@ enum class CompilerWrapper_CompilerTarget
 #if HAVE_I386_CLANG12_COMPILER
    CT_I386_CLANG12 = 131072,
 #endif
+#if HAVE_I386_CLANG13_COMPILER
+   CT_I386_CLANG13 = 262144,
+#endif
 #if HAVE_I386_CLANGVVD_COMPILER
-   CT_I386_CLANGVVD = 262144,
+   CT_I386_CLANGVVD = 524288,
 #endif
 #if HAVE_ARM_COMPILER
-   CT_ARM_GCC = 524288,
+   CT_ARM_GCC = 1048576,
 #endif
 #if HAVE_SPARC_COMPILER
-   CT_SPARC_GCC = 1048576,
-   CT_SPARC_ELF_GCC = 2097152
+   CT_SPARC_GCC = 2097152,
+   CT_SPARC_ELF_GCC = 4194304
 #endif
 };
 
@@ -258,6 +258,7 @@ class CompilerWrapper
 #endif
       /// true when compiler is based on clang/llvm
       bool is_clang;
+
       Compiler() : is_clang(false)
       {
       }
@@ -307,7 +308,8 @@ class CompilerWrapper
     * @param cm is the mode in which we compile
     */
    void CompileFile(const std::string& original_file_name, std::string& real_file_name,
-                    const std::string& parameters_line, bool multiple_files, CompilerWrapper_CompilerMode cm);
+                    const std::string& parameters_line, bool multiple_files, CompilerWrapper_CompilerMode cm,
+                    const std::string& costTable);
 
    /**
     * Return the compiler for a given target
@@ -322,7 +324,7 @@ class CompilerWrapper
     */
    void InitializeCompilerParameters();
 
-#if HAVE_BAMBU_BUILT || HAVE_TUCANO_BUILT || HAVE_ZEBU_BUILT
+#if HAVE_BAMBU_BUILT || HAVE_ZEBU_BUILT
    /**
     * Analyze the command line options
     */
@@ -376,6 +378,10 @@ class CompilerWrapper
                              const std::string& CSROA_plugin_obj, const std::string& CSROA_plugin_name,
                              const std::string& fname);
 
+   std::string load_plugin(const std::string& plugin_obj, CompilerWrapper_CompilerTarget target);
+
+   std::string load_plugin_opt(std::string plugin_obj, CompilerWrapper_CompilerTarget target);
+
  public:
    /// The version of the frontend compiler
    static std::string current_compiler_version;
@@ -403,7 +409,8 @@ class CompilerWrapper
     * @param source_files are the source files to be compiled; key is the original source code file, value is the
     * transformed source code file
     */
-   void FillTreeManager(const tree_managerRef TM, std::map<std::string, std::string>& source_files);
+   void FillTreeManager(const tree_managerRef TM, std::map<std::string, std::string>& source_files,
+                        const std::string& costTable);
 
    /**
     * Return the list of the frontend compiler system includes

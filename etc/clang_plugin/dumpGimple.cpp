@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2018-2022 Politecnico di Milano
+ *              Copyright (C) 2018-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -38,78 +38,78 @@
  *
  */
 
-#ifdef NDEBUG
-#undef NDEBUG
-#endif
+// #undef NDEBUG
+#include "debug_print.hpp"
 
 #include "plugin_includes.hpp"
 
-#include "llvm/Analysis/AssumptionCache.h"
-#include "llvm/Analysis/CFG.h"
-#include "llvm/Analysis/ConstantFolding.h"
-#include "llvm/Analysis/InstructionSimplify.h"
-#include "llvm/Analysis/LoopPass.h"
-#include "llvm/Analysis/ValueTracking.h"
-#include "llvm/IR/Attributes.h"
-#if __clang_major__ < 11
-#include "llvm/IR/CallSite.h"
-#endif
-#include "llvm/IR/CFG.h"
-#include "llvm/IR/ConstantRange.h"
-#include "llvm/IR/Constants.h"
-#include "llvm/IR/DebugInfo.h"
-#include "llvm/IR/DebugInfoMetadata.h"
-#include "llvm/IR/Dominators.h"
-#include "llvm/IR/Function.h"
-#include "llvm/IR/GetElementPtrTypeIterator.h"
-#include "llvm/IR/GlobalVariable.h"
-#include "llvm/IR/IntrinsicInst.h"
-#include "llvm/IR/Intrinsics.h"
-#include "llvm/IR/Metadata.h"
-#include "llvm/IR/Module.h"
-#include "llvm/IR/Operator.h"
-#include "llvm/IR/Type.h"
-#include "llvm/IR/Verifier.h"
-#include "llvm/Pass.h"
-#include "llvm/Support/ErrorHandling.h"
-
-#if __clang_major__ == 4
-#include "llvm/Transforms/Utils/MemorySSA.h"
-#else
-#include "llvm/Analysis/MemorySSA.h"
-#include "llvm/Support/KnownBits.h"
-#include "llvm/Transforms/Utils/LowerMemIntrinsics.h"
-#endif
-#include "llvm/Analysis/AliasAnalysis.h"
-#include "llvm/Analysis/LazyValueInfo.h"
-#include "llvm/Analysis/TargetLibraryInfo.h"
-#include "llvm/Analysis/TargetTransformInfo.h"
-#include "llvm/CodeGen/IntrinsicLowering.h"
-#include "llvm/IR/DerivedTypes.h"
-#include "llvm/IR/IRBuilder.h"
-#include "llvm/IR/InlineAsm.h"
-#include "llvm/IR/InstrTypes.h"
-#include "llvm/IR/Instructions.h"
-#include "llvm/IR/ModuleSlotTracker.h"
-#include "llvm/Support/ErrorHandling.h"
-#include "llvm/Support/FileSystem.h"
-#include "llvm/Transforms/Utils/Local.h"
+#include "CustomScalarReplacementOfAggregatesPass.hpp"
+#include "llvm/RangeAnalysis.hpp"
+#include "llvm/eSSA.hpp"
 
 #if HAVE_LIBBDD
 #include "HardekopfLin_AA.hpp"
 #endif
 
-#include "llvm/RangeAnalysis.hpp"
-#include "llvm/eSSA.hpp"
+#if __clang_major__ > 5
+#include "TreeHeightReduction.hpp"
+#endif
 
-#include "CustomScalarReplacementOfAggregatesPass.hpp"
+#include <llvm/Analysis/AliasAnalysis.h>
+#include <llvm/Analysis/AssumptionCache.h>
+#include <llvm/Analysis/CFG.h>
+#include <llvm/Analysis/ConstantFolding.h>
+#include <llvm/Analysis/InstructionSimplify.h>
+#include <llvm/Analysis/LazyValueInfo.h>
+#include <llvm/Analysis/LoopPass.h>
+#include <llvm/Analysis/TargetLibraryInfo.h>
+#include <llvm/Analysis/TargetTransformInfo.h>
+#include <llvm/Analysis/ValueTracking.h>
+#include <llvm/CodeGen/IntrinsicLowering.h>
+#include <llvm/IR/Attributes.h>
+#include <llvm/IR/CFG.h>
+#include <llvm/IR/ConstantRange.h>
+#include <llvm/IR/Constants.h>
+#include <llvm/IR/DebugInfo.h>
+#include <llvm/IR/DebugInfoMetadata.h>
+#include <llvm/IR/DerivedTypes.h>
+#include <llvm/IR/Dominators.h>
+#include <llvm/IR/Function.h>
+#include <llvm/IR/GetElementPtrTypeIterator.h>
+#include <llvm/IR/GlobalVariable.h>
+#include <llvm/IR/IRBuilder.h>
+#include <llvm/IR/InlineAsm.h>
+#include <llvm/IR/InstrTypes.h>
+#include <llvm/IR/Instructions.h>
+#include <llvm/IR/IntrinsicInst.h>
+#include <llvm/IR/Intrinsics.h>
+#include <llvm/IR/Metadata.h>
+#include <llvm/IR/Module.h>
+#include <llvm/IR/ModuleSlotTracker.h>
+#include <llvm/IR/Operator.h>
+#include <llvm/IR/Type.h>
+#include <llvm/IR/Verifier.h>
+#include <llvm/Pass.h>
+#include <llvm/Support/ErrorHandling.h>
+#include <llvm/Support/FileSystem.h>
+#include <llvm/Transforms/Utils/Local.h>
+
+#if __clang_major__ == 4
+#include <llvm/Transforms/Utils/MemorySSA.h>
+#else
+#include <llvm/Analysis/MemorySSA.h>
+#include <llvm/Support/KnownBits.h>
+#include <llvm/Transforms/Utils/LowerMemIntrinsics.h>
+#endif
+#if __clang_major__ < 11
+#include <llvm/IR/CallSite.h>
+#endif
 
 #include <cxxabi.h>
+#include <float.h>
 #include <iomanip>
 
-#include <float.h>
-
-#define PRINT_DBG_MSG 0
+#define ANDERSEN_AA 1
 
 static std::string create_file_name_string(const std::string& outdir_name, const std::string& original_filename)
 {
@@ -140,28 +140,24 @@ namespace llvm
           GIMPLE_ASSIGN_ALLOCA, "gimple_assign", GSS_WITH_MEM_OPS) DEFGSCODE(GIMPLE_NOPMEM, "gimple_nop", GSS_BASE)
           DEFGSCODE(GETELEMENTPTR, "gimple_assign", GSS_WITH_OPS) DEFGSCODE(
               GIMPLE_SSACOPY, "gimple_assign", GSS_WITH_OPS) DEFTREECODE(ALLOCAVAR_DECL, "var_decl", tcc_declaration, 0)
-              DEFTREECODE(ORIGVAR_DECL, "var_decl", tcc_declaration, 0)
-                  DEFTREECODE(INTEGER_CST_SIGNED, "integer_cst", tcc_constant, 0)
-                      DEFTREECODE(SIGNEDPOINTERTYPE, "integer_type", tcc_type, 0)
-                          DEFTREECODE(MISALIGNED_INDIRECT_REF, "misaligned_indirect_ref", tcc_reference, 2)
-                              DEFTREECODE(FCMP_OEQ, "truth_andif_expr", tcc_expression, 2)
-                                  DEFTREECODE(FCMP_ONE, "truth_andif_expr", tcc_expression, 2)
-                                      DEFTREECODE(FCMP_ORD, "truth_andif_expr", tcc_expression, 2)
-                                          DEFTREECODE(FCMP_UEQ, "truth_orif_expr", tcc_expression, 2)
-                                              DEFTREECODE(FCMP_UNE, "truth_orif_expr", tcc_expression, 2)
-                                                  DEFTREECODE(FCMP_UNO, "truth_orif_expr", tcc_expression, 2)
-                                                      DEFTREECODE(SAT_PLUS_EXPR, "sat_plus_expr", tcc_binary, 2)
-                                                          DEFTREECODE(SAT_MINUS_EXPR, "sat_minus_expr", tcc_binary, 2)
-                                                              DEFTREECODE(FSHL_EXPR, "fshl_expr", tcc_expression, 3)
-                                                                  DEFTREECODE(FSHR_EXPR, "fshr_expr", tcc_expression, 3)
-                                                                      DEFTREECODE(INSERTVALUE, "insertvalue_expr",
-                                                                                  tcc_expression, 3)
-                                                                          DEFTREECODE(EXTRACTVALUE, "extractvalue_expr",
-                                                                                      tcc_expression, 2)
-                                                                              DEFTREECODE(INSERTELEMENT, "insertelement_expr",
-                                                                                          tcc_expression, 3)
-                                                                                  DEFTREECODE(EXTRACTELEMENT, "extractelement_expr",
-                                                                                              tcc_binary, 2)
+              DEFTREECODE(ORIGVAR_DECL, "var_decl", tcc_declaration,
+                          0) DEFTREECODE(INTEGER_CST_SIGNED, "integer_cst", tcc_constant,
+                                         0) DEFTREECODE(SIGNEDPOINTERTYPE, "integer_type", tcc_type, 0)
+                  DEFTREECODE(MISALIGNED_INDIRECT_REF, "misaligned_indirect_ref", tcc_reference,
+                              2) DEFTREECODE(FCMP_OEQ, "truth_andif_expr", tcc_expression,
+                                             2) DEFTREECODE(FCMP_ONE, "truth_andif_expr", tcc_expression, 2)
+                      DEFTREECODE(FCMP_ORD, "truth_andif_expr", tcc_expression,
+                                  2) DEFTREECODE(FCMP_UEQ, "truth_orif_expr", tcc_expression,
+                                                 2) DEFTREECODE(FCMP_UNE, "truth_orif_expr", tcc_expression, 2)
+                          DEFTREECODE(FCMP_UNO, "truth_orif_expr", tcc_expression,
+                                      2) DEFTREECODE(SAT_PLUS_EXPR, "sat_plus_expr", tcc_binary, 2)
+                              DEFTREECODE(SAT_MINUS_EXPR, "sat_minus_expr", tcc_binary, 2)
+                                  DEFTREECODE(FSHL_EXPR, "fshl_expr", tcc_expression, 3)
+                                      DEFTREECODE(FSHR_EXPR, "fshr_expr", tcc_expression, 3)
+                                          DEFTREECODE(INSERTVALUE, "insertvalue_expr", tcc_expression, 3)
+                                              DEFTREECODE(EXTRACTVALUE, "extractvalue_expr", tcc_expression, 2)
+                                                  DEFTREECODE(INSERTELEMENT, "insertelement_expr", tcc_expression, 3)
+                                                      DEFTREECODE(EXTRACTELEMENT, "extractelement_expr", tcc_binary, 2)
    };
 #undef DEFTREECODE
 #undef DEFGSCODE
@@ -173,34 +169,29 @@ namespace llvm
 #include "gcc/cp-tree.def"
 #include "gcc/gimple.def"
 #include "gcc/tree.def"
-       DEFGSCODE(GIMPLE_PHI_VIRTUAL, "gimple_phi", GSS_PHI) DEFGSCODE(GIMPLE_ASSIGN_ALLOCA, "gimple_assign",
-                                                                      GSS_WITH_MEM_OPS)
-           DEFGSCODE(GIMPLE_NOPMEM, "gimple_nop", GSS_BASE) DEFGSCODE(GETELEMENTPTR, "gimple_assign", GSS_WITH_OPS)
-               DEFGSCODE(GIMPLE_SSACOPY, "gimple_assign",
-                         GSS_WITH_OPS) DEFTREECODE(ALLOCAVAR_DECL, "var_decl", tcc_declaration,
-                                                   0) DEFTREECODE(ORIGVAR_DECL, "var_decl", tcc_declaration, 0)
-                   DEFTREECODE(INTEGER_CST_SIGNED, "integer_cst", tcc_constant,
-                               0) DEFTREECODE(SIGNEDPOINTERTYPE, "integer_type", tcc_type, 0)
-                       DEFTREECODE(MISALIGNED_INDIRECT_REF, "misaligned_indirect_ref", tcc_reference, 2)
-                           DEFTREECODE(FCMP_OEQ, "truth_andif_expr", tcc_expression, 2)
-                               DEFTREECODE(FCMP_ONE, "truth_andif_expr", tcc_expression, 2)
-                                   DEFTREECODE(FCMP_ORD, "truth_andif_expr", tcc_expression, 2)
-                                       DEFTREECODE(FCMP_UEQ, "truth_orif_expr", tcc_expression, 2)
-                                           DEFTREECODE(FCMP_UNE, "truth_orif_expr", tcc_expression, 2)
-                                               DEFTREECODE(FCMP_UNO, "truth_orif_expr", tcc_expression, 2)
-                                                   DEFTREECODE(SAT_PLUS_EXPR, "sat_plus_expr", tcc_binary, 2)
-                                                       DEFTREECODE(SAT_MINUS_EXPR, "sat_minus_expr", tcc_binary, 2)
-                                                           DEFTREECODE(FSHL_EXPR, "fshl_expr", tcc_expression, 3)
-                                                               DEFTREECODE(FSHR_EXPR, "fshr_expr", tcc_expression, 3)
-                                                                   DEFTREECODE(INSERTVALUE, "insertvalue_expr",
-                                                                               tcc_expression, 2)
-                                                                       DEFTREECODE(EXTRACTVALUE, "extractvalue_expr",
-                                                                                   tcc_expression, 2)
-                                                                           DEFTREECODE(INSERTELEMENT, "insertelement_expr",
-                                                                                       tcc_expression, 3)
-                                                                               DEFTREECODE(EXTRACTELEMENT, "extractelement_expr",
-                                                                                           tcc_binary, 2)
-   };
+       DEFGSCODE(GIMPLE_PHI_VIRTUAL, "gimple_phi", GSS_PHI) DEFGSCODE(
+           GIMPLE_ASSIGN_ALLOCA, "gimple_assign", GSS_WITH_MEM_OPS) DEFGSCODE(GIMPLE_NOPMEM, "gimple_nop", GSS_BASE)
+           DEFGSCODE(GETELEMENTPTR, "gimple_assign",
+                     GSS_WITH_OPS) DEFGSCODE(GIMPLE_SSACOPY, "gimple_assign",
+                                             GSS_WITH_OPS) DEFTREECODE(ALLOCAVAR_DECL, "var_decl", tcc_declaration, 0)
+               DEFTREECODE(ORIGVAR_DECL, "var_decl", tcc_declaration,
+                           0) DEFTREECODE(INTEGER_CST_SIGNED, "integer_cst", tcc_constant,
+                                          0) DEFTREECODE(SIGNEDPOINTERTYPE, "integer_type", tcc_type, 0)
+                   DEFTREECODE(MISALIGNED_INDIRECT_REF, "misaligned_indirect_ref", tcc_reference,
+                               2) DEFTREECODE(FCMP_OEQ, "truth_andif_expr", tcc_expression,
+                                              2) DEFTREECODE(FCMP_ONE, "truth_andif_expr", tcc_expression, 2)
+                       DEFTREECODE(FCMP_ORD, "truth_andif_expr", tcc_expression, 2) DEFTREECODE(
+                           FCMP_UEQ, "truth_orif_expr", tcc_expression,
+                           2) DEFTREECODE(FCMP_UNE, "truth_orif_expr", tcc_expression,
+                                          2) DEFTREECODE(FCMP_UNO, "truth_orif_expr", tcc_expression,
+                                                         2) DEFTREECODE(SAT_PLUS_EXPR, "sat_plus_expr", tcc_binary, 2)
+                           DEFTREECODE(SAT_MINUS_EXPR, "sat_minus_expr", tcc_binary, 2)
+                               DEFTREECODE(FSHL_EXPR, "fshl_expr", tcc_expression, 3)
+                                   DEFTREECODE(FSHR_EXPR, "fshr_expr", tcc_expression, 3)
+                                       DEFTREECODE(INSERTVALUE, "insertvalue_expr", tcc_expression, 2)
+                                           DEFTREECODE(EXTRACTVALUE, "extractvalue_expr", tcc_expression, 2)
+                                               DEFTREECODE(INSERTELEMENT, "insertelement_expr", tcc_expression, 3)
+                                                   DEFTREECODE(EXTRACTELEMENT, "extractelement_expr", tcc_binary, 2)};
 #undef DEFTREECODE
 #undef DEFGSCODE
 #define DEFTREECODE(SYM, STRING, TYPE, NARGS) TYPE,
@@ -218,26 +209,23 @@ namespace llvm
                                                    0) DEFTREECODE(ORIGVAR_DECL, "var_decl", tcc_declaration, 0)
                    DEFTREECODE(INTEGER_CST_SIGNED, "integer_cst", tcc_constant,
                                0) DEFTREECODE(SIGNEDPOINTERTYPE, "integer_type", tcc_type, 0)
-                       DEFTREECODE(MISALIGNED_INDIRECT_REF, "misaligned_indirect_ref", tcc_reference, 2)
-                           DEFTREECODE(FCMP_OEQ, "truth_andif_expr", tcc_expression, 2)
-                               DEFTREECODE(FCMP_ONE, "truth_andif_expr", tcc_expression, 2)
-                                   DEFTREECODE(FCMP_ORD, "truth_andif_expr", tcc_expression, 2)
-                                       DEFTREECODE(FCMP_UEQ, "truth_orif_expr", tcc_expression, 2)
-                                           DEFTREECODE(FCMP_UNE, "truth_orif_expr", tcc_expression, 2)
-                                               DEFTREECODE(FCMP_UNO, "truth_orif_expr", tcc_expression, 2)
-                                                   DEFTREECODE(SAT_PLUS_EXPR, "sat_plus_expr", tcc_binary, 2)
-                                                       DEFTREECODE(SAT_MINUS_EXPR, "sat_minus_expr", tcc_binary, 2)
-                                                           DEFTREECODE(FSHL_EXPR, "fshl_expr", tcc_expression, 3)
-                                                               DEFTREECODE(FSHR_EXPR, "fshr_expr", tcc_expression, 3)
-                                                                   DEFTREECODE(INSERTVALUE, "insertvalue_expr",
-                                                                               tcc_expression, 3)
-                                                                       DEFTREECODE(EXTRACTVALUE, "extractvalue_expr",
-                                                                                   tcc_binary, 2)
-                                                                           DEFTREECODE(INSERTELEMENT, "insertelement_expr",
-                                                                                       tcc_expression, 3)
-                                                                               DEFTREECODE(EXTRACTELEMENT, "extractelement_expr",
-                                                                                           tcc_binary, 2)
-   };
+                       DEFTREECODE(MISALIGNED_INDIRECT_REF, "misaligned_indirect_ref", tcc_reference,
+                                   2) DEFTREECODE(FCMP_OEQ, "truth_andif_expr", tcc_expression,
+                                                  2) DEFTREECODE(FCMP_ONE, "truth_andif_expr", tcc_expression, 2)
+                           DEFTREECODE(FCMP_ORD, "truth_andif_expr", tcc_expression, 2)
+                               DEFTREECODE(FCMP_UEQ, "truth_orif_expr", tcc_expression, 2)
+                                   DEFTREECODE(FCMP_UNE, "truth_orif_expr", tcc_expression, 2)
+                                       DEFTREECODE(FCMP_UNO, "truth_orif_expr", tcc_expression, 2)
+                                           DEFTREECODE(SAT_PLUS_EXPR, "sat_plus_expr", tcc_binary,
+                                                       2) DEFTREECODE(SAT_MINUS_EXPR, "sat_minus_expr", tcc_binary, 2)
+                                               DEFTREECODE(FSHL_EXPR, "fshl_expr", tcc_expression, 3)
+                                                   DEFTREECODE(FSHR_EXPR, "fshr_expr", tcc_expression, 3)
+                                                       DEFTREECODE(INSERTVALUE, "insertvalue_expr", tcc_expression, 3)
+                                                           DEFTREECODE(EXTRACTVALUE, "extractvalue_expr", tcc_binary, 2)
+                                                               DEFTREECODE(INSERTELEMENT, "insertelement_expr",
+                                                                           tcc_expression, 3)
+                                                                   DEFTREECODE(EXTRACTELEMENT, "extractelement_expr",
+                                                                               tcc_binary, 2)};
 #undef DEFTREECODE
 #undef DEFGSCODE
 #define DEFTREECODE(SYM, STRING, TYPE, NARGS) NARGS,
@@ -255,45 +243,43 @@ namespace llvm
                                                    0) DEFTREECODE(ORIGVAR_DECL, "var_decl", tcc_declaration, 0)
                    DEFTREECODE(INTEGER_CST_SIGNED, "integer_cst", tcc_constant,
                                0) DEFTREECODE(SIGNEDPOINTERTYPE, "integer_type", tcc_type, 0)
-                       DEFTREECODE(MISALIGNED_INDIRECT_REF, "misaligned_indirect_ref", tcc_reference, 2)
-                           DEFTREECODE(FCMP_OEQ, "truth_andif_expr", tcc_expression, 2)
-                               DEFTREECODE(FCMP_ONE, "truth_andif_expr", tcc_expression, 2)
-                                   DEFTREECODE(FCMP_ORD, "truth_andif_expr", tcc_expression, 2)
-                                       DEFTREECODE(FCMP_UEQ, "truth_orif_expr", tcc_expression, 2)
-                                           DEFTREECODE(FCMP_UNE, "truth_orif_expr", tcc_expression, 2)
-                                               DEFTREECODE(FCMP_UNO, "truth_orif_expr", tcc_expression, 2)
-                                                   DEFTREECODE(SAT_PLUS_EXPR, "sat_plus_expr", tcc_binary, 2)
-                                                       DEFTREECODE(SAT_MINUS_EXPR, "sat_minus_expr", tcc_binary, 2)
-                                                           DEFTREECODE(FSHL_EXPR, "fshl_expr", tcc_expression, 3)
-                                                               DEFTREECODE(FSHR_EXPR, "fshr_expr", tcc_expression, 3)
-                                                                   DEFTREECODE(INSERTVALUE, "insertvalue_expr", tcc_expression, 3)
-                                                                       DEFTREECODE(EXTRACTVALUE, "extractvalue_expr", tcc_binary, 2)
-                                                                           DEFTREECODE(INSERTELEMENT, "insertelement_expr", tcc_expression, 3)
-                                                                               DEFTREECODE(EXTRACTELEMENT, "extractelement_expr", tcc_binary, 2)
-   };
+                       DEFTREECODE(MISALIGNED_INDIRECT_REF, "misaligned_indirect_ref", tcc_reference,
+                                   2) DEFTREECODE(FCMP_OEQ, "truth_andif_expr", tcc_expression,
+                                                  2) DEFTREECODE(FCMP_ONE, "truth_andif_expr", tcc_expression, 2)
+                           DEFTREECODE(FCMP_ORD, "truth_andif_expr", tcc_expression, 2)
+                               DEFTREECODE(FCMP_UEQ, "truth_orif_expr", tcc_expression, 2)
+                                   DEFTREECODE(FCMP_UNE, "truth_orif_expr", tcc_expression, 2)
+                                       DEFTREECODE(FCMP_UNO, "truth_orif_expr", tcc_expression, 2)
+                                           DEFTREECODE(SAT_PLUS_EXPR, "sat_plus_expr", tcc_binary,
+                                                       2) DEFTREECODE(SAT_MINUS_EXPR, "sat_minus_expr", tcc_binary, 2)
+                                               DEFTREECODE(FSHL_EXPR, "fshl_expr", tcc_expression, 3)
+                                                   DEFTREECODE(FSHR_EXPR, "fshr_expr", tcc_expression, 3)
+                                                       DEFTREECODE(INSERTVALUE, "insertvalue_expr", tcc_expression, 3)
+                                                           DEFTREECODE(EXTRACTVALUE, "extractvalue_expr", tcc_binary, 2)
+                                                               DEFTREECODE(INSERTELEMENT, "insertelement_expr",
+                                                                           tcc_expression, 3)
+                                                                   DEFTREECODE(EXTRACTELEMENT, "extractelement_expr",
+                                                                               tcc_binary, 2)};
 #undef DEFTREECODE
 #undef DEFGSCODE
 
-#define DEFTREECODE(SYM, STRING, TYPE, NARGS)                                                                       \
-   ((TYPE) == tcc_unary ?                                                                                           \
-        GIMPLE_UNARY_RHS :                                                                                          \
-        ((TYPE) == tcc_binary || (TYPE) == tcc_comparison) ?                                                        \
-        GIMPLE_BINARY_RHS :                                                                                         \
-        ((TYPE) == tcc_constant || (TYPE) == tcc_declaration || (TYPE) == tcc_reference) ?                          \
-        GIMPLE_SINGLE_RHS :                                                                                         \
-        (GT(SYM) == GT(TRUTH_AND_EXPR) || GT(SYM) == GT(TRUTH_OR_EXPR) || GT(SYM) == GT(TRUTH_XOR_EXPR)) ?          \
-        GIMPLE_BINARY_RHS :                                                                                         \
-        GT(SYM) == GT(TRUTH_NOT_EXPR) ?                                                                             \
-        GIMPLE_UNARY_RHS :                                                                                          \
-        (GT(SYM) == GT(COND_EXPR) || GT(SYM) == GT(WIDEN_MULT_PLUS_EXPR) || GT(SYM) == GT(WIDEN_MULT_MINUS_EXPR) || \
-         GT(SYM) == GT(DOT_PROD_EXPR) || GT(SYM) == GT(SAD_EXPR) || GT(SYM) == GT(REALIGN_LOAD_EXPR) ||             \
-         GT(SYM) == GT(VEC_COND_EXPR) || GT(SYM) == GT(VEC_PERM_EXPR) || GT(SYM) == GT(BIT_INSERT_EXPR) ||          \
-         GT(SYM) == GT(FMA_EXPR) || GT(SYM) == GT(FSHL_EXPR) || GT(SYM) == GT(FSHR_EXPR) || GT(SYM) == GT(INSERTELEMENT)) ?                         \
-        GIMPLE_TERNARY_RHS :                                                                                        \
-        (GT(SYM) == GT(CONSTRUCTOR) || GT(SYM) == GT(OBJ_TYPE_REF) || GT(SYM) == GT(ASSERT_EXPR) ||                 \
-         GT(SYM) == GT(ADDR_EXPR) || GT(SYM) == GT(WITH_SIZE_EXPR) || GT(SYM) == GT(SSA_NAME)) ?                    \
-        GIMPLE_SINGLE_RHS :                                                                                         \
-        GIMPLE_INVALID_RHS),
+#define DEFTREECODE(SYM, STRING, TYPE, NARGS)                                                                   \
+   ((TYPE) == tcc_unary                                                              ? GIMPLE_UNARY_RHS :       \
+    ((TYPE) == tcc_binary || (TYPE) == tcc_comparison)                               ? GIMPLE_BINARY_RHS :      \
+    ((TYPE) == tcc_constant || (TYPE) == tcc_declaration || (TYPE) == tcc_reference) ? GIMPLE_SINGLE_RHS :      \
+    (GT(SYM) == GT(TRUTH_AND_EXPR) || GT(SYM) == GT(TRUTH_OR_EXPR) || GT(SYM) == GT(TRUTH_XOR_EXPR)) ?          \
+                                                                                       GIMPLE_BINARY_RHS :      \
+    GT(SYM) == GT(TRUTH_NOT_EXPR)                                                    ? GIMPLE_UNARY_RHS :       \
+    (GT(SYM) == GT(COND_EXPR) || GT(SYM) == GT(WIDEN_MULT_PLUS_EXPR) || GT(SYM) == GT(WIDEN_MULT_MINUS_EXPR) || \
+     GT(SYM) == GT(DOT_PROD_EXPR) || GT(SYM) == GT(SAD_EXPR) || GT(SYM) == GT(REALIGN_LOAD_EXPR) ||             \
+     GT(SYM) == GT(VEC_COND_EXPR) || GT(SYM) == GT(VEC_PERM_EXPR) || GT(SYM) == GT(BIT_INSERT_EXPR) ||          \
+     GT(SYM) == GT(FMA_EXPR) || GT(SYM) == GT(FSHL_EXPR) || GT(SYM) == GT(FSHR_EXPR) ||                         \
+     GT(SYM) == GT(INSERTELEMENT)) ?                                                                            \
+                                    GIMPLE_TERNARY_RHS :                                                        \
+    (GT(SYM) == GT(CONSTRUCTOR) || GT(SYM) == GT(OBJ_TYPE_REF) || GT(SYM) == GT(ASSERT_EXPR) ||                 \
+     GT(SYM) == GT(ADDR_EXPR) || GT(SYM) == GT(WITH_SIZE_EXPR) || GT(SYM) == GT(SSA_NAME)) ?                    \
+                                    GIMPLE_SINGLE_RHS :                                                         \
+                                    GIMPLE_INVALID_RHS),
 #define END_OF_BASE_TREE_CODES GIMPLE_INVALID_RHS,
 #define DEFGSCODE(SYM, NAME, GSSCODE) GIMPLE_INVALID_RHS,
    const DumpGimpleRaw::gimple_rhs_class DumpGimpleRaw::gimple_rhs_class_table[] = {
@@ -301,34 +287,29 @@ namespace llvm
 #include "gcc/cp-tree.def"
 #include "gcc/gimple.def"
 #include "gcc/tree.def"
-       DEFGSCODE(GIMPLE_PHI_VIRTUAL, "gimple_phi", GSS_PHI) DEFGSCODE(GIMPLE_ASSIGN_ALLOCA, "gimple_assign",
-                                                                      GSS_WITH_MEM_OPS)
-           DEFGSCODE(GIMPLE_NOPMEM, "gimple_nop", GSS_BASE) DEFGSCODE(GETELEMENTPTR, "gimple_assign", GSS_WITH_OPS)
-               DEFGSCODE(GIMPLE_SSACOPY, "gimple_assign",
-                         GSS_WITH_OPS) DEFTREECODE(ALLOCAVAR_DECL, "var_decl", tcc_declaration,
-                                                   0) DEFTREECODE(ORIGVAR_DECL, "var_decl", tcc_declaration, 0)
-                   DEFTREECODE(INTEGER_CST_SIGNED, "integer_cst", tcc_constant,
-                               0) DEFTREECODE(SIGNEDPOINTERTYPE, "integer_type", tcc_type, 0)
-                       DEFTREECODE(MISALIGNED_INDIRECT_REF, "misaligned_indirect_ref", tcc_reference, 2)
-                           DEFTREECODE(FCMP_OEQ, "truth_andif_expr", tcc_expression, 2)
-                               DEFTREECODE(FCMP_ONE, "truth_andif_expr", tcc_expression, 2)
-                                   DEFTREECODE(FCMP_ORD, "truth_andif_expr", tcc_expression, 2)
-                                       DEFTREECODE(FCMP_UEQ, "truth_orif_expr", tcc_expression, 2)
-                                           DEFTREECODE(FCMP_UNE, "truth_orif_expr", tcc_expression, 2)
-                                               DEFTREECODE(FCMP_UNO, "truth_orif_expr", tcc_expression, 2)
-                                                   DEFTREECODE(SAT_PLUS_EXPR, "sat_plus_expr", tcc_binary, 2)
-                                                       DEFTREECODE(SAT_MINUS_EXPR, "sat_minus_expr", tcc_binary, 2)
-                                                           DEFTREECODE(FSHL_EXPR, "fshl_expr", tcc_expression, 3)
-                                                               DEFTREECODE(FSHR_EXPR, "fshr_expr", tcc_expression, 3)
-                                                                   DEFTREECODE(INSERTVALUE, "insertvalue_expr",
-                                                                               tcc_expression, 3)
-                                                                       DEFTREECODE(EXTRACTVALUE, "extractvalue_expr",
-                                                                                   tcc_expression, 2)
-                                                                           DEFTREECODE(INSERTELEMENT, "insertelement_expr",
-                                                                                       tcc_expression, 3)
-                                                                               DEFTREECODE(EXTRACTELEMENT, "extractelement_expr",
-                                                                                           tcc_binary, 2)
-   };
+       DEFGSCODE(GIMPLE_PHI_VIRTUAL, "gimple_phi", GSS_PHI) DEFGSCODE(
+           GIMPLE_ASSIGN_ALLOCA, "gimple_assign", GSS_WITH_MEM_OPS) DEFGSCODE(GIMPLE_NOPMEM, "gimple_nop", GSS_BASE)
+           DEFGSCODE(GETELEMENTPTR, "gimple_assign",
+                     GSS_WITH_OPS) DEFGSCODE(GIMPLE_SSACOPY, "gimple_assign",
+                                             GSS_WITH_OPS) DEFTREECODE(ALLOCAVAR_DECL, "var_decl", tcc_declaration, 0)
+               DEFTREECODE(ORIGVAR_DECL, "var_decl", tcc_declaration,
+                           0) DEFTREECODE(INTEGER_CST_SIGNED, "integer_cst", tcc_constant,
+                                          0) DEFTREECODE(SIGNEDPOINTERTYPE, "integer_type", tcc_type, 0)
+                   DEFTREECODE(MISALIGNED_INDIRECT_REF, "misaligned_indirect_ref", tcc_reference,
+                               2) DEFTREECODE(FCMP_OEQ, "truth_andif_expr", tcc_expression,
+                                              2) DEFTREECODE(FCMP_ONE, "truth_andif_expr", tcc_expression, 2)
+                       DEFTREECODE(FCMP_ORD, "truth_andif_expr", tcc_expression, 2) DEFTREECODE(
+                           FCMP_UEQ, "truth_orif_expr", tcc_expression,
+                           2) DEFTREECODE(FCMP_UNE, "truth_orif_expr", tcc_expression,
+                                          2) DEFTREECODE(FCMP_UNO, "truth_orif_expr", tcc_expression,
+                                                         2) DEFTREECODE(SAT_PLUS_EXPR, "sat_plus_expr", tcc_binary, 2)
+                           DEFTREECODE(SAT_MINUS_EXPR, "sat_minus_expr", tcc_binary, 2)
+                               DEFTREECODE(FSHL_EXPR, "fshl_expr", tcc_expression, 3)
+                                   DEFTREECODE(FSHR_EXPR, "fshr_expr", tcc_expression, 3)
+                                       DEFTREECODE(INSERTVALUE, "insertvalue_expr", tcc_expression, 3)
+                                           DEFTREECODE(EXTRACTVALUE, "extractvalue_expr", tcc_expression, 2)
+                                               DEFTREECODE(INSERTELEMENT, "insertelement_expr", tcc_expression, 3)
+                                                   DEFTREECODE(EXTRACTELEMENT, "extractelement_expr", tcc_binary, 2)};
 #undef DEFTREECODE
 #undef END_OF_BASE_TREE_CODE
 
@@ -389,7 +370,18 @@ namespace llvm
 
    DumpGimpleRaw::DumpGimpleRaw(const std::string& _outdir_name, const std::string& _InFile, bool _onlyGlobals,
                                 std::map<std::string, std::vector<std::string>>* _fun2params, bool early)
-       : earlyAnalysis(early),
+       :
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wnull-dereference"
+         GetTLI([](llvm::Function&) -> llvm::TargetLibraryInfo& { return *((llvm::TargetLibraryInfo*)nullptr); }),
+         GetTTI([](llvm::Function&) -> llvm::TargetTransformInfo& { return *((llvm::TargetTransformInfo*)nullptr); }),
+         GetDomTree([](llvm::Function&) -> llvm::DominatorTree& { return *((llvm::DominatorTree*)nullptr); }),
+         GetLI([](llvm::Function&) -> llvm::LoopInfo& { return *((llvm::LoopInfo*)nullptr); }),
+         GetMSSA([](llvm::Function&) -> MemorySSAAnalysisResult& { return *((MemorySSAAnalysisResult*)nullptr); }),
+         GetLVI([](llvm::Function&) -> llvm::LazyValueInfo& { return *((llvm::LazyValueInfo*)nullptr); }),
+         GetAC([](llvm::Function&) -> llvm::AssumptionCache& { return *((llvm::AssumptionCache*)nullptr); }),
+#pragma clang diagnostic pop
+         earlyAnalysis(early),
          outdir_name(_outdir_name),
          InFile(_InFile),
          filename(create_file_name_string(_outdir_name, _InFile)),
@@ -401,7 +393,6 @@ namespace llvm
          onlyGlobals(_onlyGlobals),
          fun2params(_fun2params),
          DL(nullptr),
-         modulePass(nullptr),
          moduleContext(nullptr),
          last_used_index(0),
          column(0),
@@ -451,10 +442,10 @@ namespace llvm
             else if(ty->getScalarSizeInBits() > 32 && ty->getScalarSizeInBits() <= 64)
                return is_signed ? "long long int" : "unsigned long long int";
             else
-               llvm_unreachable("not expected integer bitwidth size");
+               report_fatal_error("not expected integer bitwidth size");
          }
       }
-      llvm_unreachable("not managed");
+      report_fatal_error("not managed");
    }
 
    const void* DumpGimpleRaw::assignCodeAuto(const void* t)
@@ -505,8 +496,8 @@ namespace llvm
                llvm_obj->print(llvm::errs(), true);
                llvm::errs() << "\n";
                stream.close();
-               llvm_unreachable(
-                   (std::string("unexpected condition: ") + std::string(ValueTyNames[llvm_obj->getValueID()])).c_str());
+               report_fatal_error(
+                   std::string("unexpected condition: " + std::string(ValueTyNames[llvm_obj->getValueID()])).c_str());
             }
          }
          case llvm::Value::ConstantExprVal:
@@ -531,8 +522,8 @@ namespace llvm
                llvm::errs() << "\n";
                llvm::errs() << cast<llvm::ConstantExpr>(llvm_obj)->getOpcodeName() << "\n";
                stream.close();
-               llvm_unreachable(
-                   (std::string("unexpected condition: ") + std::string(ValueTyNames[llvm_obj->getValueID()])).c_str());
+               report_fatal_error(
+                   std::string("unexpected condition: " + std::string(ValueTyNames[llvm_obj->getValueID()])).c_str());
             }
          }
          case llvm::Value::ConstantVectorVal:
@@ -607,13 +598,20 @@ namespace llvm
                   case llvm::Intrinsic::fshl:
                   case llvm::Intrinsic::fshr:
                   case llvm::Intrinsic::abs:
+                  case llvm::Intrinsic::smax:
+                  case llvm::Intrinsic::smin:
+                  case llvm::Intrinsic::umax:
+                  case llvm::Intrinsic::umin:
+#if __clang_major__ > 12
+                  case llvm::Intrinsic::bitreverse:
+#endif
                      return assignCode(t, GT(GIMPLE_ASSIGN));
 #endif
                   default:
                      llvm::errs() << "assignCodeAuto kind not supported: " << ValueTyNames[vid] << "\n";
                      ci->print(llvm::errs(), true);
                      stream.close();
-                     llvm_unreachable("Plugin Error");
+                     report_fatal_error("Plugin Error");
                }
             }
 #if __clang_major__ >= 11
@@ -663,7 +661,7 @@ namespace llvm
          default:
             llvm::errs() << "assignCodeAuto kind not supported: " << ValueTyNames[vid] << "\n";
             stream.close();
-            llvm_unreachable("Plugin Error");
+            report_fatal_error("Plugin Error");
       }
    }
    bool DumpGimpleRaw::DECL_ASSEMBLER_NAME_SET_P(const void* t) const
@@ -714,7 +712,7 @@ namespace llvm
          return assignCode(dn, GT(IDENTIFIER_NODE));
       }
       else
-         llvm_unreachable("DECL_ASSEMBLER_NAME: DECL_ASSEMBLER_NAME_SET_P is not true");
+         report_fatal_error("DECL_ASSEMBLER_NAME: DECL_ASSEMBLER_NAME_SET_P is not true");
    }
 
    static std::string getIntrinsicName(const llvm::Function* fd)
@@ -731,7 +729,7 @@ namespace llvm
             else if(fd->getReturnType()->isFP128Ty())
                return "fabsl";
             fd->print(llvm::errs());
-            llvm_unreachable("Plugin Error");
+            report_fatal_error("Plugin Error");
          case llvm::Intrinsic::memcpy:
          {
             auto funType = cast<llvm::FunctionType>(fd->getValueType());
@@ -740,7 +738,7 @@ namespace llvm
             else if(funType->getParamType(2)->isIntegerTy() && funType->getParamType(2)->getScalarSizeInBits() == 64)
                return "_llvm_memcpy_p0i8_p0i8_i64";
             fd->print(llvm::errs());
-            llvm_unreachable("Plugin Error");
+            report_fatal_error("Plugin Error");
          }
 
          case llvm::Intrinsic::memset:
@@ -751,7 +749,7 @@ namespace llvm
             else if(funType->getParamType(2)->isIntegerTy() && funType->getParamType(2)->getScalarSizeInBits() == 64)
                return "_llvm_memset_p0i8_i64";
             fd->print(llvm::errs());
-            llvm_unreachable("Plugin Error");
+            report_fatal_error("Plugin Error");
          }
          case llvm::Intrinsic::memmove:
          {
@@ -761,7 +759,7 @@ namespace llvm
             else if(funType->getParamType(2)->isIntegerTy() && funType->getParamType(2)->getScalarSizeInBits() == 64)
                return "_llvm_memmove_p0i8_p0i8_i64";
             fd->print(llvm::errs());
-            llvm_unreachable("Plugin Error");
+            report_fatal_error("Plugin Error");
          }
          case llvm::Intrinsic::trap:
             return "__builtin_trap";
@@ -790,7 +788,52 @@ namespace llvm
             return "__llvm_fshr";
          case llvm::Intrinsic::abs:
             return "__llvm_abs";
+         case llvm::Intrinsic::smax:
+         {
+            return "__llvm_smax";
+         }
+         case llvm::Intrinsic::smin:
+         {
+            return "__llvm_smin";
+         }
+         case llvm::Intrinsic::umax:
+         {
+            return "__llvm_umax";
+         }
+         case llvm::Intrinsic::umin:
+         {
+            return "__llvm_umin";
+         }
 #endif
+#if __clang_major__ > 12
+         case llvm::Intrinsic::bitreverse:
+         {
+            auto funType = cast<llvm::FunctionType>(fd->getValueType());
+            if(funType->getParamType(0)->isIntegerTy())
+            {
+               auto bitsize = funType->getParamType(0)->getScalarSizeInBits();
+               if(bitsize == 8)
+               {
+                  return "__llvm_bitreverse_i8";
+               }
+               else if(bitsize == 16)
+               {
+                  return "__llvm_bitreverse_i16";
+               }
+               else if(bitsize == 32)
+               {
+                  return "__llvm_bitreverse_i32";
+               }
+               else if(bitsize == 64)
+               {
+                  return "__llvm_bitreverse_i64";
+               }
+            }
+            fd->print(llvm::errs());
+            report_fatal_error("Plugin Error");
+         }
+#endif
+
          case llvm::Intrinsic::rint:
          {
             if(fd->getReturnType()->isFloatTy())
@@ -800,7 +843,7 @@ namespace llvm
             else if(fd->getReturnType()->isFP128Ty())
                return "rintl";
             fd->print(llvm::errs());
-            llvm_unreachable("Plugin Error");
+            report_fatal_error("Plugin Error");
          }
          case llvm::Intrinsic::fmuladd:
          {
@@ -809,7 +852,7 @@ namespace llvm
             else if(fd->getReturnType()->isDoubleTy())
                return "__float64_muladd";
             fd->print(llvm::errs());
-            llvm_unreachable("Plugin Error");
+            report_fatal_error("Plugin Error");
          }
          case llvm::Intrinsic::minnum:
          {
@@ -820,7 +863,7 @@ namespace llvm
             else if(fd->getReturnType()->isFP128Ty())
                return "fminl";
             fd->print(llvm::errs());
-            llvm_unreachable("Plugin Error");
+            report_fatal_error("Plugin Error");
          }
          case llvm::Intrinsic::maxnum:
          {
@@ -831,11 +874,11 @@ namespace llvm
             else if(fd->getReturnType()->isFP128Ty())
                return "fmaxl";
             fd->print(llvm::errs());
-            llvm_unreachable("Plugin Error");
+            report_fatal_error("Plugin Error");
          }
          default:
             fd->print(llvm::errs());
-            llvm_unreachable("Plugin Error");
+            report_fatal_error("Plugin Error");
       }
    }
    const void* DumpGimpleRaw::DECL_NAME(const void* t)
@@ -846,11 +889,11 @@ namespace llvm
       {
          const alloca_var* av = reinterpret_cast<const alloca_var*>(t);
          const llvm::Instruction* ti = av->alloc_inst;
-         if (MDNode* N = ti->getMetadata("annotation"))
+         if(MDNode* N = ti->getMetadata("annotation"))
          {
             std::string allocaname = std::string(cast<MDString>(N->getOperand(0))->getString());
             if(identifierTable.find(allocaname) == identifierTable.end())
-              identifierTable.insert(allocaname);
+               identifierTable.insert(allocaname);
             const void* an = identifierTable.find(allocaname)->c_str();
             return assignCode(an, GT(IDENTIFIER_NODE));
          }
@@ -1134,7 +1177,7 @@ namespace llvm
       else
       {
          snprintf(buffer, LOCAL_BUFFER_LEN, "expand_location: unexpected location %d", llvm_obj->getMetadataID());
-         llvm_unreachable(buffer);
+         report_fatal_error(buffer);
       }
       return res;
    }
@@ -1274,7 +1317,7 @@ namespace llvm
          case llvm::Instruction::SRem:
             return GT(TRUNC_MOD_EXPR);
          case llvm::Instruction::FRem:
-            llvm_unreachable("floating point remainder not foreseen yet");
+            report_fatal_error("floating point remainder not foreseen yet");
          // Logical operators (integer operands)
          case llvm::Instruction::Shl: // Shift left  (logical)
             return GT(LSHIFT_EXPR);
@@ -1311,6 +1354,14 @@ namespace llvm
                return GT(FSHR_EXPR);
             else if(CallID == llvm::Intrinsic::abs)
                return GT(ABS_EXPR);
+            else if(CallID == llvm::Intrinsic::smax)
+               return GT(MAX_EXPR);
+            else if(CallID == llvm::Intrinsic::smin)
+               return GT(MIN_EXPR);
+            else if(CallID == llvm::Intrinsic::umax)
+               return GT(MAX_EXPR);
+            else if(CallID == llvm::Intrinsic::umin)
+               return GT(MIN_EXPR);
 #endif
             else
 #endif
@@ -1382,7 +1433,7 @@ namespace llvm
                default:
                   llvm::errs() << "gimple_expr_code::ICmpInst kind not supported: " << predicate << "\n";
                   stream.close();
-                  llvm_unreachable("Plugin Error");
+                  report_fatal_error("Plugin Error");
             }
          }
 
@@ -1422,7 +1473,7 @@ namespace llvm
             llvm::errs() << "gimple_expr_code kind not supported: "
                          << ValueTyNames[llvm::Value::InstructionVal + opcode] << "\n";
             stream.close();
-            llvm_unreachable("Plugin Error");
+            report_fatal_error("Plugin Error");
       }
    }
    DumpGimpleRaw::tree_codes DumpGimpleRaw::gimple_expr_code(const void* g)
@@ -1462,7 +1513,7 @@ namespace llvm
                                    (funName == TopFunctionName || demangled == TopFunctionName);
          if(store.getAlignment() && written_obj_size > (8 * store.getAlignment()) && !is_a_top_parameter && !isVecType)
          {
-            llvm::errs() << "MISALIGNED_INDIRECT_REF " << written_obj_size << " " << store.getAlignment() << "\n";
+            PRINT_DBG("MISALIGNED_INDIRECT_REF " << written_obj_size << " " << store.getAlignment() << "\n");
             return build1(GT(MISALIGNED_INDIRECT_REF), type, addr);
          }
          else
@@ -1482,12 +1533,7 @@ namespace llvm
          av.alloc_inst = inst;
          std::set<const llvm::User*> visited;
          visited.insert(inst);
-#if __clang_major__ >= 10
-         const llvm::TargetLibraryInfo& TLI =
-             modulePass->getAnalysis<llvm::TargetLibraryInfoWrapperPass>().getTLI(*inst->getFunction());
-#else
-         const llvm::TargetLibraryInfo& TLI = modulePass->getAnalysis<llvm::TargetLibraryInfoWrapperPass>().getTLI();
-#endif
+         const auto& TLI = GetTLI(*const_cast<llvm::Function*>(inst->getFunction()));
          av.addr = temporary_addr_check(inst, visited, TLI);
          allocaVar = assignCode(&av, GT(ALLOCAVAR_DECL));
       }
@@ -1547,7 +1593,7 @@ namespace llvm
          }
          else
          {
-            llvm_unreachable("type not supported");
+            report_fatal_error("type not supported");
          }
          AccumulateOffset(idx, DL->getTypeSizeInBits(currTy));
          continue;
@@ -1705,7 +1751,8 @@ namespace llvm
             auto CallID = getIntrinsicIDTEC(inst);
             return (CallID == llvm::Intrinsic::sadd_sat || CallID == llvm::Intrinsic::ssub_sat
 #if __clang_major__ > 11
-                    || CallID == llvm::Intrinsic::abs
+                    || CallID == llvm::Intrinsic::smax || CallID == llvm::Intrinsic::smin ||
+                    CallID == llvm::Intrinsic::umax || CallID == llvm::Intrinsic::umin || CallID == llvm::Intrinsic::abs
 #endif
             );
          }
@@ -1919,13 +1966,7 @@ namespace llvm
             if(operand->getType()->isPointerTy() && PtoSets_AA)
             {
                auto varId = PtoSets_AA->PE(operand);
-#if __clang_major__ >= 10
-               const llvm::TargetLibraryInfo& TLI =
-                   modulePass->getAnalysis<llvm::TargetLibraryInfoWrapperPass>().getTLI(*currentFunction);
-#else
-               const llvm::TargetLibraryInfo& TLI =
-                   modulePass->getAnalysis<llvm::TargetLibraryInfoWrapperPass>().getTLI();
-#endif
+               const auto& TLI = GetTLI(*const_cast<llvm::Function*>(currentFunction));
                if(is_PTS(varId, TLI, true))
                {
                   const std::vector<u32>* pts = PtoSets_AA->pointsToSet(varId);
@@ -1964,7 +2005,7 @@ namespace llvm
                         {
                            val->print(llvm::errs());
                            stream.close();
-                           llvm_unreachable(
+                           report_fatal_error(
                                ("unexpected pointer to variable " + std::string(ValueTyNames[val->getValueID()]))
                                    .c_str());
                         }
@@ -2041,7 +2082,7 @@ namespace llvm
             {
                if(GTI.getStructTypeOrNull())
                {
-                  llvm_unreachable("unexpected condition: struct LowerGetElementPtrOffset");
+                  report_fatal_error("unexpected condition: struct LowerGetElementPtrOffset");
                   // continue;
                }
                // For array or vector indices, scale the index by the size of the type.
@@ -2182,7 +2223,7 @@ namespace llvm
                   return build1(GT(VIEW_CONVERT_EXPR), ltype, rhs);
             }
             else
-               llvm_unreachable("unexpected condition");
+               report_fatal_error("unexpected condition");
          }
       }
       else if(isa<llvm::UndefValue>(operand))
@@ -2201,19 +2242,20 @@ namespace llvm
             operand->print(llvm::errs(), true);
             llvm::errs() << "\n";
             stream.close();
-            llvm_unreachable(
+            report_fatal_error(
                 (std::string("unexpected condition: ") + std::string(ValueTyNames[operand->getValueID()])).c_str());
          }
       }
       else if(isa<llvm::ConstantDataArray>(operand) || isa<llvm::ConstantDataVector>(operand) ||
-              isa<llvm::ConstantStruct>(operand) || isa<llvm::ConstantArray>(operand) || isa<llvm::ConstantVector>(operand))
+              isa<llvm::ConstantStruct>(operand) || isa<llvm::ConstantArray>(operand) ||
+              isa<llvm::ConstantVector>(operand))
          return assignCodeAuto(operand);
       else
       {
          operand->print(llvm::errs(), true);
          llvm::errs() << "\n";
          stream.close();
-         llvm_unreachable(
+         report_fatal_error(
              (std::string("unexpected condition: ") + std::string(ValueTyNames[operand->getValueID()])).c_str());
       }
    }
@@ -2657,7 +2699,7 @@ namespace llvm
       else if(isa<llvm::Function>(llvm_obj))
          return cast<llvm::Function>(llvm_obj)->getBasicBlockList().empty();
       else
-         llvm_unreachable("unexpected case");
+         report_fatal_error("unexpected case");
    }
 
    bool DumpGimpleRaw::TREE_PUBLIC(const void* t) const
@@ -2743,7 +2785,7 @@ namespace llvm
          {
             llvm::errs() << "Size type " << ValueTyNames[arraySize->getValueID()] << "\n";
             stream.close();
-            llvm_unreachable("Plugin error");
+            report_fatal_error("Plugin error");
          }
       }
       else if(TREE_CODE(t) == GT(ORIGVAR_DECL))
@@ -2831,19 +2873,33 @@ namespace llvm
 
    bool DumpGimpleRaw::TREE_READONLY(const void* t) const
    {
-      if(TREE_CODE(t) == GT(FIELD_DECL))
-         return false;
-      else if(TREE_CODE(t) == GT(ALLOCAVAR_DECL))
-         return false;
-      else if(TREE_CODE(t) == GT(ORIGVAR_DECL))
+      tree_codes code = TREE_CODE(t);
+      if(code == GT(ORIGVAR_DECL))
       {
          const orig_var* ov = reinterpret_cast<const orig_var*>(t);
          return TREE_READONLY(ov->orig);
       }
-      else if(TREE_CODE(t) == GT(RESULT_DECL))
-         return false;
-      const llvm::GlobalVariable* llvm_obj = reinterpret_cast<const llvm::GlobalVariable*>(t);
-      return llvm_obj->isConstant();
+      else if(code == GT(VAR_DECL) || code == GT(PARM_DECL))
+      {
+         const auto llvm_val = reinterpret_cast<const llvm::Value*>(t);
+         if(code == GT(VAR_DECL))
+         {
+            const auto llvm_glb = llvm::dyn_cast<llvm::GlobalVariable>(llvm_val);
+            if(llvm_glb)
+            {
+               return llvm_glb->isConstant();
+            }
+         }
+         else if(code == GT(PARM_DECL))
+         {
+            const auto llvm_arg = llvm::dyn_cast<llvm::Argument>(llvm_val);
+            if(llvm_arg)
+            {
+               return llvm_arg->onlyReadsMemory();
+            }
+         }
+      }
+      return false;
    }
    bool DumpGimpleRaw::TREE_ADDRESSABLE(const void* t) const
    {
@@ -2861,7 +2917,7 @@ namespace llvm
       else if(index == 2)
          return te->op3;
       else
-         llvm_unreachable("unexpected condition");
+         report_fatal_error("unexpected condition");
    }
 
    int64_t DumpGimpleRaw::TREE_INT_CST_LOW(const void* t)
@@ -2902,17 +2958,17 @@ namespace llvm
          case llvm::Type::LabelTyID:
             llvm::errs() << "assignCodeType kind not supported: LabelTyID\n";
             stream.close();
-            llvm_unreachable("Plugin Error");
+            report_fatal_error("Plugin Error");
          case llvm::Type::MetadataTyID:
             return assignCode(ty, GT(ANNOTATE_EXPR));
          case llvm::Type::X86_MMXTyID:
             llvm::errs() << "assignCodeType kind not supported: X86_MMXTyID\n";
             stream.close();
-            llvm_unreachable("Plugin Error");
+            report_fatal_error("Plugin Error");
          case llvm::Type::TokenTyID:
             llvm::errs() << "assignCodeType kind not supported: TokenTyID\n";
             stream.close();
-            llvm_unreachable("Plugin Error");
+            report_fatal_error("Plugin Error");
          case llvm::Type::IntegerTyID:
             return assignCode(ty, GT(INTEGER_TYPE));
          case llvm::Type::FunctionTyID:
@@ -2934,7 +2990,7 @@ namespace llvm
          {
             llvm::errs() << "type id not managed\n";
             stream.close();
-            llvm_unreachable("Plugin error");
+            report_fatal_error("Plugin error");
          }
       }
    }
@@ -2969,7 +3025,7 @@ namespace llvm
       }
       else if(code == GT(GIMPLE_NOP))
       {
-         llvm_unreachable("unexpected");
+         report_fatal_error("unexpected");
          // const gimple_nop* gn = reinterpret_cast<const gimple_nop*>(t);
          // return TREE_TYPE(gn->parm_decl);
       }
@@ -2995,7 +3051,7 @@ namespace llvm
       if(code_class == tcc_type)
       {
          bool isSigned = CheckSignedTag(t);
-         t=NormalizeSignedTag(t);
+         t = NormalizeSignedTag(t);
          const llvm::Type* ty = reinterpret_cast<const llvm::Type*>(t);
          auto typeId = ty->getTypeID();
          switch(typeId)
@@ -3016,7 +3072,7 @@ namespace llvm
                llvm::errs() << "TREE_TYPE kind not supported: type of type: " << GET_TREE_CODE_NAME(TREE_CODE(t)) << ":"
                             << typeId << " ptr " << (unsigned long long)t << "\n";
                stream.close();
-               llvm_unreachable("Plugin Error");
+               report_fatal_error("Plugin Error");
 
             case llvm::Type::FunctionTyID:
                return assignCodeType(cast<llvm::FunctionType>(ty)->getReturnType());
@@ -3038,7 +3094,7 @@ namespace llvm
             {
                llvm::errs() << "type id not managed\n";
                stream.close();
-               llvm_unreachable("Plugin error");
+               report_fatal_error("Plugin error");
             }
          }
       }
@@ -3071,7 +3127,7 @@ namespace llvm
       if(code == GT(SIGNEDPOINTERTYPE))
          return false;
       if(code == GT(COMPLEX_TYPE))
-         llvm_unreachable("unexpected call to TYPE_UNSIGNED");
+         report_fatal_error("unexpected call to TYPE_UNSIGNED");
       const llvm::Type* ty = reinterpret_cast<const llvm::Type*>(t);
       assert(NormalizeSignedTag(ty)->isIntegerTy());
       return !CheckSignedTag(ty);
@@ -3079,12 +3135,12 @@ namespace llvm
 
    bool DumpGimpleRaw::COMPLEX_FLOAT_TYPE_P(const void*) const
    {
-      llvm_unreachable("unexpected call to COMPLEX_FLOAT_TYPE_P");
+      report_fatal_error("unexpected call to COMPLEX_FLOAT_TYPE_P");
    }
 
    bool DumpGimpleRaw::TYPE_SATURATING(const void*) const
    {
-      llvm_unreachable("unexpected call to COMPLEX_FLOAT_TYPE_P");
+      report_fatal_error("unexpected call to COMPLEX_FLOAT_TYPE_P");
    }
 
    int DumpGimpleRaw::TYPE_PRECISION(const void* t) const
@@ -3126,7 +3182,7 @@ namespace llvm
 #endif
          default:
             llvm::errs() << "TYPE_PRECISION kind not supported\n";
-            llvm_unreachable("Plugin Error");
+            report_fatal_error("Plugin Error");
       }
    }
 
@@ -3166,7 +3222,7 @@ namespace llvm
 
    const void* DumpGimpleRaw::TYPE_VALUES(const void*)
    {
-      llvm_unreachable("unexpected call to TYPE_VALUES");
+      report_fatal_error("unexpected call to TYPE_VALUES");
    }
 
    const void* DumpGimpleRaw::TYPE_NAME(const void* t)
@@ -3199,7 +3255,7 @@ namespace llvm
          auto obj_size = 32u;
          if(uicTable.find(obj_size) == uicTable.end())
             uicTable[obj_size] =
-                assignCodeAuto(llvm::ConstantInt::get(llvm::Type::getInt32Ty(ty->getContext()), obj_size, false));
+                assignCodeAuto(llvm::ConstantInt::get(llvm::Type::getInt64Ty(ty->getContext()), obj_size, false));
          return uicTable.find(obj_size)->second;
       }
       else if(ty->isFunctionTy())
@@ -3207,7 +3263,7 @@ namespace llvm
          auto obj_size = 8u;
          if(uicTable.find(obj_size) == uicTable.end())
             uicTable[obj_size] =
-                assignCodeAuto(llvm::ConstantInt::get(llvm::Type::getInt32Ty(ty->getContext()), obj_size, false));
+                assignCodeAuto(llvm::ConstantInt::get(llvm::Type::getInt64Ty(ty->getContext()), obj_size, false));
          return uicTable.find(obj_size)->second;
       }
       else if(ty->isVoidTy())
@@ -3217,7 +3273,7 @@ namespace llvm
          auto obj_size = ty->isSized() ? DL->getTypeAllocSizeInBits(ty) : 8ULL;
          if(uicTable.find(obj_size) == uicTable.end())
             uicTable[obj_size] =
-                assignCodeAuto(llvm::ConstantInt::get(llvm::Type::getInt32Ty(ty->getContext()), obj_size, false));
+                assignCodeAuto(llvm::ConstantInt::get(llvm::Type::getInt64Ty(ty->getContext()), obj_size, false));
          return uicTable.find(obj_size)->second;
       }
    }
@@ -3290,7 +3346,7 @@ namespace llvm
       /// create the context
       if(ArraysContexts.find(at) == ArraysContexts.end())
          ArraysContexts[at] = new llvm::LLVMContext;
-      llvm::Type* IT = llvm::Type::getInt32Ty(*ArraysContexts.find(at)->second);
+      llvm::Type* IT = llvm::Type::getInt64Ty(*ArraysContexts.find(at)->second);
       assignCodeType(IT);
       maxValueITtable[IT] = nelements - 1;
       return IT;
@@ -3330,7 +3386,7 @@ namespace llvm
          uint64_t offset = DL->getStructLayout(const_cast<llvm::StructType*>(scty))->getElementOffsetInBits(pos);
          if(uicTable.find(offset) == uicTable.end())
             uicTable[offset] =
-                assignCodeAuto(llvm::ConstantInt::get(llvm::Type::getInt32Ty(scty->getContext()), offset, false));
+                assignCodeAuto(llvm::ConstantInt::get(llvm::Type::getInt64Ty(scty->getContext()), offset, false));
          index2field_decl[std::make_pair(scpe, pos)].bpos = uicTable.find(offset)->second;
       }
       return assignCode(&index2field_decl.find(std::make_pair(scpe, pos))->second, GT(FIELD_DECL));
@@ -3338,12 +3394,12 @@ namespace llvm
 
    const void* DumpGimpleRaw::GET_METHOD_TYPE(const llvm::Type*, unsigned int, const void*)
    {
-      llvm_unreachable("unexpected condition");
+      report_fatal_error("unexpected condition");
    }
 
    const void* DumpGimpleRaw::TYPE_METHOD_BASETYPE(const void*)
    {
-      llvm_unreachable("unexpected condition");
+      report_fatal_error("unexpected condition");
    }
 
    const std::list<const void*> DumpGimpleRaw::DECL_ARGUMENTS(const void* t)
@@ -3427,11 +3483,7 @@ namespace llvm
          return false;
       llvm::Instruction* inst = const_cast<llvm::Instruction*>(reinterpret_cast<const llvm::Instruction*>(g));
       llvm::Function* currentFunction = inst->getFunction();
-#if __clang_major__ >= 11
-      auto& MSSA = modulePass->getAnalysis<llvm::MemorySSAWrapperPass>(*currentFunction, &changed).getMSSA();
-#else
-      auto& MSSA = modulePass->getAnalysis<llvm::MemorySSAWrapperPass>(*currentFunction).getMSSA();
-#endif
+      llvm::MemorySSA& MSSA = GetMSSA(*currentFunction).getMSSA();
       return MSSA.getMemoryAccess(inst);
    }
 
@@ -3493,11 +3545,7 @@ namespace llvm
       assert(TREE_CODE(g) != GT(GIMPLE_PHI_VIRTUAL));
       llvm::Instruction* inst = const_cast<llvm::Instruction*>(reinterpret_cast<const llvm::Instruction*>(g));
       llvm::Function* currentFunction = inst->getFunction();
-#if __clang_major__ >= 11
-      auto& MSSA = modulePass->getAnalysis<llvm::MemorySSAWrapperPass>(*currentFunction, &changed).getMSSA();
-#else
-      auto& MSSA = modulePass->getAnalysis<llvm::MemorySSAWrapperPass>(*currentFunction).getMSSA();
-#endif
+      auto& MSSA = GetMSSA(*currentFunction).getMSSA();
       const llvm::MemoryUseOrDef* ma = MSSA.getMemoryAccess(inst);
       if(ma->getValueID() == llvm::Value::MemoryUseVal || ma->getValueID() == llvm::Value::MemoryDefVal)
       {
@@ -3532,6 +3580,27 @@ namespace llvm
       {
          const void* vdef = getSSA(ma, g, currentFunction, false);
          serialize_child("vdef", vdef);
+         llvm::MemoryAccess* defAccess = ma->getDefiningAccess();
+         auto da = dyn_cast<llvm::MemoryUseOrDef>(defAccess);
+         if(da)
+         {
+            auto defvuseStmt = da->getMemoryInst();
+            if((((dyn_cast<llvm::LoadInst>(inst) && dyn_cast<llvm::LoadInst>(inst)->isVolatile()) ||
+                 (dyn_cast<llvm::StoreInst>(inst) && dyn_cast<llvm::StoreInst>(inst)->isVolatile()))) ||
+               (defvuseStmt &&
+                ((dyn_cast<llvm::LoadInst>(defvuseStmt) && dyn_cast<llvm::LoadInst>(defvuseStmt)->isVolatile()) ||
+                 (dyn_cast<llvm::StoreInst>(defvuseStmt) && dyn_cast<llvm::StoreInst>(defvuseStmt)->isVolatile()))))
+            {
+               bool isDefault = false;
+               const void* def_stmt = getVirtualDefStatement(defAccess, isDefault, MSSA, currentFunction);
+               const void* vuse = getSSA(ma, def_stmt, currentFunction, isDefault);
+               if(!isDefault)
+               {
+                  serialize_child("vuse", vuse);
+               }
+            }
+         }
+
          std::set<llvm::MemoryAccess*> visited;
          auto startingMA = MSSA.getMemoryAccess(inst);
          if(isa<llvm::CallInst>(inst) || isa<llvm::InvokeInst>(inst) || isa<llvm::FenceInst>(inst))
@@ -3682,34 +3751,14 @@ namespace llvm
          {
             llvm::BasicBlock* BB = inst->getParent();
             llvm::Function* currentFunction = inst->getFunction();
-            assert(modulePass);
-#if __clang_major__ >= 11
-            llvm::LazyValueInfo& LVI =
-                modulePass->getAnalysis<llvm::LazyValueInfoWrapperPass>(*currentFunction, &changed).getLVI();
-#else
-            llvm::LazyValueInfo& LVI =
-                modulePass->getAnalysis<llvm::LazyValueInfoWrapperPass>(*currentFunction).getLVI();
-#endif
+            llvm::LazyValueInfo& LVI = GetLVI(*currentFunction);
             unsigned long long int zeroMask = 0;
 #if __clang_major__ != 4
             llvm::KnownBits KnownOneZero;
-            auto AC = modulePass->getAnalysis<llvm::AssumptionCacheTracker>().getAssumptionCache(*currentFunction);
-#if __clang_major__ >= 11
-            auto& DT = modulePass->getAnalysis<llvm::DominatorTreeWrapperPass>(*currentFunction, &changed).getDomTree();
-#else
-            auto& DT = modulePass->getAnalysis<llvm::DominatorTreeWrapperPass>(*currentFunction).getDomTree();
-#endif
+            auto AC = GetAC(*currentFunction);
+            auto& DT = GetDomTree(*currentFunction);
             KnownOneZero = llvm::computeKnownBits(inst, *DL, 0, &AC, inst, &DT);
             zeroMask = KnownOneZero.Zero.getZExtValue();
-#else
-            //         llvm::APInt KnownZero;
-            //         llvm::APInt KnownOne;
-            //         auto AC =
-            //         modulePass->getAnalysis<llvm::AssumptionCacheTracker>().getAssumptionCache(*currentFunction);
-            //         const auto& DT =
-            //         modulePass->getAnalysis<llvm::DominatorTreeWrapperPass>(*currentFunction).getDomTree();
-            //         llvm::computeKnownBits(inst,KnownZero, KnownOne, *DL, 0, &AC, inst, &DT);
-            //         zeroMask = KnownZero.getZExtValue();
 #endif
             auto ty = inst->getType();
             auto obj_size = ty->isSized() ? DL->getTypeAllocSizeInBits(ty) : 8ULL;
@@ -3816,6 +3865,7 @@ namespace llvm
       else
          return nullptr;
    }
+
    const void* DumpGimpleRaw::getMaxValue(const void* t)
    {
       const ssa_name* ssa = reinterpret_cast<const ssa_name*>(t);
@@ -3842,35 +3892,14 @@ namespace llvm
          {
             llvm::BasicBlock* BB = inst->getParent();
             llvm::Function* currentFunction = inst->getFunction();
-            assert(modulePass);
-#if __clang_major__ >= 11
-            llvm::LazyValueInfo& LVI =
-                modulePass->getAnalysis<llvm::LazyValueInfoWrapperPass>(*currentFunction, &changed).getLVI();
-#else
-            llvm::LazyValueInfo& LVI =
-                modulePass->getAnalysis<llvm::LazyValueInfoWrapperPass>(*currentFunction).getLVI();
-#endif
+            auto& LVI = GetLVI(*currentFunction);
             unsigned long long int zeroMask = 0;
 #if __clang_major__ != 4
             llvm::KnownBits KnownOneZero;
-            auto AC = modulePass->getAnalysis<llvm::AssumptionCacheTracker>().getAssumptionCache(*currentFunction);
-#if __clang_major__ >= 11
-            const auto& DT =
-                modulePass->getAnalysis<llvm::DominatorTreeWrapperPass>(*currentFunction, &changed).getDomTree();
-#else
-            const auto& DT = modulePass->getAnalysis<llvm::DominatorTreeWrapperPass>(*currentFunction).getDomTree();
-#endif
+            auto AC = GetAC(*currentFunction);
+            const auto& DT = GetDomTree(*currentFunction);
             KnownOneZero = llvm::computeKnownBits(inst, *DL, 0, &AC, inst, &DT);
             zeroMask = KnownOneZero.Zero.getZExtValue();
-#else
-            //         llvm::APInt KnownZero;
-            //         llvm::APInt KnownOne;
-            //         auto AC =
-            //         modulePass->getAnalysis<llvm::AssumptionCacheTracker>().getAssumptionCache(*currentFunction);
-            //         const auto& DT =
-            //         modulePass->getAnalysis<llvm::DominatorTreeWrapperPass>(*currentFunction).getDomTree();
-            //         llvm::computeKnownBits(inst,KnownZero, KnownOne, *DL, 0, &AC, inst, &DT);
-            //         zeroMask = KnownZero.getZExtValue();
 #endif
             auto ty = inst->getType();
             auto obj_size = ty->isSized() ? DL->getTypeAllocSizeInBits(ty) : 8ULL;
@@ -3978,7 +4007,11 @@ namespace llvm
             auto type = val->getType();
             if(dyn_cast<llvm::ArrayType>(type) || dyn_cast<llvm::VectorType>(type))
             {
+#if __clang_major__ >= 13
+               for(unsigned index = 0; index < val->getElementCount().getValue(); ++index)
+#else
                for(unsigned index = 0; index < val->getNumElements(); ++index)
+#endif
                {
                   if(uicTable.find(index) == uicTable.end())
                      uicTable[index] = assignCodeAuto(
@@ -3991,7 +4024,11 @@ namespace llvm
             else
             {
                const void* ty = TREE_TYPE(t);
+#if __clang_major__ >= 13
+               for(unsigned index = 0; index < val->getElementCount().getValue(); ++index)
+#else
                for(unsigned index = 0; index < val->getNumElements(); ++index)
+#endif
                {
                   auto op = val->getStructElement(index);
                   const void* valu = getOperand(op, nullptr);
@@ -4022,7 +4059,7 @@ namespace llvm
             {
                if(uicTable.find(index) == uicTable.end())
                   uicTable[index] = assignCodeAuto(
-                      llvm::ConstantInt::get(llvm::Type::getInt32Ty(llvm_obj->getContext()), index, false));
+                      llvm::ConstantInt::get(llvm::Type::getInt64Ty(llvm_obj->getContext()), index, false));
                const void* idx = uicTable.find(index)->second;
                const void* valu = getOperand(val->getElementAsConstant(index), nullptr);
                res.push_back(std::make_pair(idx, valu));
@@ -4036,7 +4073,7 @@ namespace llvm
             {
                if(uicTable.find(index) == uicTable.end())
                   uicTable[index] = assignCodeAuto(
-                      llvm::ConstantInt::get(llvm::Type::getInt32Ty(llvm_obj->getContext()), index, false));
+                      llvm::ConstantInt::get(llvm::Type::getInt64Ty(llvm_obj->getContext()), index, false));
                const void* idx = uicTable.find(index)->second;
                auto elmnt = val->getOperand(index);
                const void* valu = getOperand(elmnt, nullptr);
@@ -4048,7 +4085,7 @@ namespace llvm
          default:
             llvm::errs() << "CONSTRUCTOR_ELTS kind not supported: " << ValueTyNames[vid] << "\n";
             stream.close();
-            llvm_unreachable("Plugin Error");
+            report_fatal_error("Plugin Error");
       }
    }
 
@@ -4160,7 +4197,7 @@ namespace llvm
       }
       else if(sem == &llvm::APFloat::PPCDoubleDouble())
       {
-         llvm_unreachable("PPCDoubleDouble format not supported in real_to_hexadecimal");
+         report_fatal_error("PPCDoubleDouble format not supported in real_to_hexadecimal");
       }
       else if(sem == &llvm::APFloat::IEEEquad())
       {
@@ -4168,7 +4205,7 @@ namespace llvm
          nbitsMan = 112;
       }
       else
-         llvm_unreachable("unexpected floating point format in real_to_hexadecimal");
+         report_fatal_error("unexpected floating point format in real_to_hexadecimal");
 
       unsigned ExpBiased = API.lshr(nbitsMan).getZExtValue() & ((1U << nbitsExp) - 1);
       int ExpUnbiased =
@@ -4429,12 +4466,12 @@ namespace llvm
 
    void DumpGimpleRaw::queue_and_serialize_index(const char* field, const void* t)
    {
-#if PRINT_DBG_MSG
-      llvm::errs() << "field:" << field << "\n";
-#endif
+      PRINT_DBG("field:" << field << "\n");
       unsigned int index;
       if(t == nullptr)
+      {
          return;
+      }
       if(llvm2index.find(t) != llvm2index.end())
       {
          index = llvm2index.find(t)->second;
@@ -4503,24 +4540,26 @@ namespace llvm
 
       auto code = TREE_CODE(g);
       const char* code_name = GET_TREE_CODE_NAME(code);
-#if PRINT_DBG_MSG
+#ifndef NDEBUG
       if(code != GT(GIMPLE_NOP) && code != GT(GIMPLE_PHI_VIRTUAL) && code != GT(GIMPLE_LABEL))
       {
          llvm::Instruction* inst = const_cast<llvm::Instruction*>(reinterpret_cast<const llvm::Instruction*>(g));
          llvm::Function* currentFunction = inst->getFunction();
-         llvm::errs() << "@" << code_name << " @" << index << "\n";
-         inst->print(llvm::errs());
-         llvm::errs() << "\n";
-#if __clang_major__ >= 11
-         auto& MSSA = modulePass->getAnalysis<llvm::MemorySSAWrapperPass>(*currentFunction, &changed).getMSSA();
-#else
-         auto& MSSA = modulePass->getAnalysis<llvm::MemorySSAWrapperPass>(*currentFunction).getMSSA();
-#endif
+         PRINT_DBG("@" << code_name << " @" << index << "\n");
+         auto& MSSA = GetMSSA(*currentFunction).getMSSA();
          if(MSSA.getMemoryAccess(inst))
-            llvm::errs() << "| " << *MSSA.getMemoryAccess(inst) << "\n";
+         {
+            PRINT_DBG(*inst << " | " << *MSSA.getMemoryAccess(inst) << "\n");
+         }
+         else
+         {
+            PRINT_DBG_VAR("", inst);
+         }
       }
       else
-         llvm::errs() << "@" << code_name << "\n";
+      {
+         PRINT_DBG("@" << code_name << "\n");
+      }
 #endif
       /* Print the node index.  */
       serialize_index(index);
@@ -4552,7 +4591,7 @@ namespace llvm
          case GT(GIMPLE_ASM):
          {
             serialize_string_field("str", gimple_asm_string(g));
-            llvm_unreachable("gimple asm unsupported");
+            report_fatal_error("gimple asm unsupported");
             break;
          }
          case GT(GIMPLE_ASSIGN_ALLOCA):
@@ -4575,13 +4614,8 @@ namespace llvm
             std::set<const llvm::User*> visited;
             auto currInst = reinterpret_cast<const llvm::User*>(g);
             visited.insert(currInst);
-#if __clang_major__ >= 10
             auto castInst = reinterpret_cast<const llvm::Instruction*>(g);
-            const llvm::TargetLibraryInfo& TLI =
-                modulePass->getAnalysis<llvm::TargetLibraryInfoWrapperPass>().getTLI(*castInst->getFunction());
-#else
-            const llvm::TargetLibraryInfo& TLI = modulePass->getAnalysis<llvm::TargetLibraryInfoWrapperPass>().getTLI();
-#endif
+            const llvm::TargetLibraryInfo& TLI = GetTLI(*const_cast<llvm::Function*>(castInst->getFunction()));
             if(temporary_addr_check(currInst, visited, TLI))
                serialize_string("addr");
             break;
@@ -4671,7 +4705,7 @@ namespace llvm
                auto abs_op1 = build2(GT(RSHIFT_EXPR), vcType, lshift_op1, constOne);
                auto lshift_op2 = build2(GT(LSHIFT_EXPR), vcType, vc_op2, constOne);
                auto abs_op2 = build2(GT(RSHIFT_EXPR), vcType, lshift_op2, constOne);
-               const void* constNAN=nullptr;
+               const void* constNAN = nullptr;
                if(prec1 == 32)
                   constNAN = assignCodeAuto(llvm::ConstantInt::get(intObjType, 0x7f800000, false));
                else if(prec1 == 64)
@@ -4679,11 +4713,11 @@ namespace llvm
                else
                {
                   llvm::errs() << prec1 << "\n";
-                  llvm_unreachable("unsupported floating point precision");
+                  report_fatal_error("unsupported floating point precision");
                }
                auto isNAN_op1 = build2(GT(GT_EXPR), btype, abs_op1, constNAN);
                auto isNAN_op2 = build2(GT(GT_EXPR), btype, abs_op2, constNAN);
-               const void* rhs=nullptr;
+               const void* rhs = nullptr;
                auto gcode = gimple_expr_code(g);
                if(gcode == GT(FCMP_ORD) || gcode == GT(FCMP_OEQ) || gcode == GT(FCMP_ONE))
                {
@@ -4706,7 +4740,7 @@ namespace llvm
                      rhs = noNAN ? neq : build2(GT(TRUTH_ANDIF_EXPR), btype, ordered, neq);
                   }
                   else
-                     llvm_unreachable("unexpected case");
+                     report_fatal_error("unexpected case");
                }
                else
                {
@@ -4727,7 +4761,7 @@ namespace llvm
                      rhs = noNAN ? neq : build2(GT(TRUTH_ORIF_EXPR), btype, unordered, neq);
                   }
                   else
-                     llvm_unreachable("unexpected case");
+                     report_fatal_error("unexpected case");
                }
                serialize_child("op", rhs);
             }
@@ -4744,7 +4778,7 @@ namespace llvm
                serialize_child("op", rhs);
             }
             else
-               llvm_unreachable("unexpected condition");
+               report_fatal_error("unexpected condition");
             break;
          }
          case GT(GIMPLE_COND):
@@ -4756,7 +4790,7 @@ namespace llvm
             break;
 
          case GT(GIMPLE_GOTO):
-            llvm_unreachable("unexpected GIMPLE_GOTO"); /// serialize_child ("op", gimple_goto_dest (g));
+            report_fatal_error("unexpected GIMPLE_GOTO"); /// serialize_child ("op", gimple_goto_dest (g));
             break;
 
          case GT(GIMPLE_NOPMEM):
@@ -4772,7 +4806,7 @@ namespace llvm
          case GT(GIMPLE_SWITCH):
             serialize_child("op", gimple_switch_index(g));
             serialize_child("op", gimple_switch_vec(g));
-            // llvm_unreachable("not yet supported");
+            // report_fatal_error("not yet supported");
             break;
 
          case GT(GIMPLE_PHI):
@@ -4819,7 +4853,7 @@ namespace llvm
             break;
          }
          default:
-            llvm_unreachable("unexpected gimple statement");
+            report_fatal_error("unexpected gimple statement");
       }
 
       /* Terminate the line.  */
@@ -4851,12 +4885,7 @@ namespace llvm
       const llvm::Function::BasicBlockListType& bblist =
           *reinterpret_cast<const llvm::Function::BasicBlockListType*>(t);
       llvm::Function* currentFunction = const_cast<llvm::Function*>(bblist.front().getParent());
-      assert(modulePass);
-#if __clang_major__ >= 11
-      auto& LI = modulePass->getAnalysis<llvm::LoopInfoWrapperPass>(*currentFunction, &changed).getLoopInfo();
-#else
-      auto& LI = modulePass->getAnalysis<llvm::LoopInfoWrapperPass>(*currentFunction).getLoopInfo();
-#endif
+      auto& LI = GetLI(*currentFunction);
       std::map<const llvm::Loop*, unsigned> loopLabes;
       if(!LI.empty())
       {
@@ -4881,29 +4910,31 @@ namespace llvm
             }
          }
       }
-#if __clang_major__ >= 11
-      auto& MSSA = modulePass->getAnalysis<llvm::MemorySSAWrapperPass>(*currentFunction, &changed).getMSSA();
-#else
-      auto& MSSA = modulePass->getAnalysis<llvm::MemorySSAWrapperPass>(*currentFunction).getMSSA();
-#endif
+      auto& MSSA = GetMSSA(*currentFunction).getMSSA();
 
       for(const auto& BB : bblist)
       {
          const char* field;
          serialize_new_line();
          serialize_int("bloc", getBB_index(&BB));
-#if PRINT_DBG_MSG
-         llvm::errs() << "BB" << getBB_index(&BB) << "\n";
+         PRINT_DBG("BB" << getBB_index(&BB) << "\n");
          if(MSSA.getMemoryAccess(&BB))
-            llvm::errs() << "|!!!!!!!!!!!!!!!!!! " << *MSSA.getMemoryAccess(&BB) << "\n";
-#endif
+         {
+            PRINT_DBG("|!!!!!!!!!!!!!!!!!! " << *MSSA.getMemoryAccess(&BB) << "\n");
+         }
          if(!LI.empty() && LI.getLoopFor(&BB) && LI.getLoopFor(&BB)->getHeader() == &BB &&
             LI.getLoopFor(&BB)->isAnnotatedParallel())
+         {
             serialize_string("hpl");
+         }
          if(LI.empty() || !LI.getLoopFor(&BB))
+         {
             serialize_int("loop_id", 0);
+         }
          else
+         {
             serialize_int("loop_id", loopLabes.find(LI.getLoopFor(&BB))->second);
+         }
          if(llvm::pred_begin(&BB) == llvm::pred_end(&BB))
          {
             serialize_maybe_newline();
@@ -5080,15 +5111,13 @@ namespace llvm
       /* Print the node index.  */
       serialize_index(index);
 
-      const char* code_name = GET_TREE_CODE_NAME(TREE_CODE(t));
-#if PRINT_DBG_MSG
-      llvm::errs() << "|" << code_name << "\n";
-#endif
+      tree_codes code = TREE_CODE(t);
+      const char* code_name = GET_TREE_CODE_NAME(code);
+      PRINT_DBG("|" << code_name << "\n");
       snprintf(buffer, LOCAL_BUFFER_LEN, "%-16s ", code_name);
       stream << buffer;
       column = 25;
 
-      tree_codes code = TREE_CODE(t);
       tree_codes_class code_class = TREE_CODE_CLASS(code);
 
       if(IS_EXPR_CODE_CLASS(code_class))
@@ -5121,7 +5150,7 @@ namespace llvm
                break;
 
             default:
-               llvm_unreachable("Unexpected case");
+               report_fatal_error("Unexpected case");
          }
       }
       else if(DECL_P(t))
@@ -5276,7 +5305,7 @@ namespace llvm
          case GT(RECORD_TYPE):
          case GT(UNION_TYPE):
          {
-            if(TREE_CODE(t) == GT(RECORD_TYPE))
+            if(code == GT(RECORD_TYPE))
                serialize_string("struct");
             else
                serialize_string("union");
@@ -5323,42 +5352,42 @@ namespace llvm
          case GT(PARM_DECL):
          case GT(FIELD_DECL):
          case GT(RESULT_DECL):
-            if(TREE_CODE(t) == GT(FIELD_DECL) && DECL_C_BIT_FIELD(t))
+            if(code == GT(FIELD_DECL) && DECL_C_BIT_FIELD(t))
                serialize_string("bitfield");
-            if(TREE_CODE(t) == GT(VAR_DECL) || TREE_CODE(t) == GT(ORIGVAR_DECL))
+            if(code == GT(VAR_DECL) || code == GT(ORIGVAR_DECL))
             {
                if(DECL_EXTERNAL(t))
                   serialize_string("extern");
                else if(!TREE_PUBLIC(t) && TREE_STATIC(t))
                   serialize_string("static");
             }
-            if(TREE_CODE(t) == GT(PARM_DECL))
+            if(code == GT(PARM_DECL))
                serialize_child("argt", DECL_ARG_TYPE(t));
             else if(DECL_INITIAL(t))
                serialize_child("init", DECL_INITIAL(t));
             serialize_child("size", DECL_SIZE(t));
             serialize_int("algn", DECL_ALIGN(t));
-            if(TREE_CODE(t) == GT(FIELD_DECL) && DECL_PACKED(t))
+            if(code == GT(FIELD_DECL) && DECL_PACKED(t))
             {
                serialize_string("packed");
             }
 
-            if(TREE_CODE(t) == GT(FIELD_DECL))
+            if(code == GT(FIELD_DECL))
             {
                if(DECL_FIELD_OFFSET(t))
                   serialize_child("bpos", bit_position(t));
             }
-            else if(TREE_CODE(t) == GT(ALLOCAVAR_DECL) || TREE_CODE(t) == GT(ORIGVAR_DECL) ||
-                    TREE_CODE(t) == GT(VAR_DECL) || TREE_CODE(t) == GT(PARM_DECL))
+            else if(code == GT(ALLOCAVAR_DECL) || code == GT(ORIGVAR_DECL) || code == GT(VAR_DECL) ||
+                    code == GT(PARM_DECL))
             {
                serialize_int("used", TREE_USED(t));
                if(DECL_REGISTER(t))
                   serialize_string("register");
             }
-            if(TREE_READONLY(t) && TREE_CODE(t) != GT(RESULT_DECL) && TREE_CODE(t) != GT(FIELD_DECL))
+            if(TREE_READONLY(t))
                serialize_string("readonly");
 #if HAVE_LIBBDD
-            if(TREE_CODE(t) == GT(ALLOCAVAR_DECL) && PtoSets_AA)
+            if(code == GT(ALLOCAVAR_DECL) && PtoSets_AA)
             {
                if(TREE_ADDRESSABLE(t))
                   ; // serialize_string("addr_taken");
@@ -5390,7 +5419,7 @@ namespace llvm
             break;
 
          case GT(STRING_CST):
-            llvm_unreachable("Unexpected. Strings should be converted in standard arrays");
+            report_fatal_error("Unexpected. Strings should be converted in standard arrays");
             //           if (TREE_TYPE (t))
             //             serialize_string_cst("strg" , TREE_STRING_POINTER (t), TREE_STRING_LENGTH (t),
             //             TYPE_ALIGN(TREE_TYPE (t)));
@@ -5590,6 +5619,13 @@ namespace llvm
          case llvm::Intrinsic::fshl:
          case llvm::Intrinsic::fshr:
          case llvm::Intrinsic::abs:
+         case llvm::Intrinsic::smax:
+         case llvm::Intrinsic::smin:
+         case llvm::Intrinsic::umax:
+         case llvm::Intrinsic::umin:
+#if __clang_major__ > 12
+         case llvm::Intrinsic::bitreverse:
+#endif
 #endif
             return true;
          default:
@@ -5645,7 +5681,11 @@ namespace llvm
    {
       if(llvm::VectorType* VTy = dyn_cast<llvm::VectorType>(Type))
       {
+#if __clang_major__ >= 12
+         return (VTy->getElementCount().getValue() * VTy->getElementType()->getPrimitiveSizeInBits()) / 8;
+#else
          return (VTy->getNumElements() * VTy->getElementType()->getPrimitiveSizeInBits()) / 8;
+#endif
       }
       return Type->getPrimitiveSizeInBits() / 8;
    }
@@ -5659,10 +5699,8 @@ namespace llvm
       {
          if(SrcAlign == DestAlign && DestAlign == Length->getZExtValue() && DestAlign <= 8)
          {
-#if PRINT_DBG_MSG
-            llvm::errs() << "memcpy can be optimized\n";
-            llvm::errs() << "Align=" << SrcAlign << "\n";
-#endif
+            PRINT_DBG("memcpy can be optimized\n");
+            PRINT_DBG("Align=" << SrcAlign << "\n");
             return llvm::Type::getIntNTy(Context, SrcAlign * 8);
          }
          unsigned localSrcAlign = SrcAlign;
@@ -5674,10 +5712,8 @@ namespace llvm
             if(dstCheck && localSrcAlign == localDstAlign)
             {
                Optimize = true;
-#if PRINT_DBG_MSG
-               llvm::errs() << "memcpy can be optimized\n";
-               llvm::errs() << "Align=" << SrcAlign << "\n";
-#endif
+               PRINT_DBG("memcpy can be optimized\n");
+               PRINT_DBG("Align=" << SrcAlign << "\n");
                return llvm::Type::getIntNTy(Context, SrcAlign * 8);
             }
          }
@@ -5691,235 +5727,6 @@ namespace llvm
    {
       for(unsigned i = 0; i != RemainingBytes; ++i)
          OpsOut.push_back(llvm::Type::getInt8Ty(Context));
-   }
-
-   static void createMemCpyLoopKnownSizeLocal(llvm::Instruction* InsertBefore, llvm::Value* SrcAddr,
-                                              llvm::Value* DstAddr, llvm::ConstantInt* CopyLen, unsigned SrcAlign,
-                                              unsigned DestAlign, bool SrcIsVolatile, bool DstIsVolatile,
-                                              const llvm::DataLayout* DL)
-   {
-      // No need to expand zero length copies.
-      if(CopyLen->isZero())
-         return;
-
-      llvm::BasicBlock* PreLoopBB = InsertBefore->getParent();
-      llvm::BasicBlock* PostLoopBB = nullptr;
-      llvm::Function* ParentFunc = PreLoopBB->getParent();
-      llvm::LLVMContext& Ctx = PreLoopBB->getContext();
-
-      bool PeelCandidate = false;
-      llvm::Type* TypeOfCopyLen = CopyLen->getType();
-      llvm::Type* LoopOpType = getMemcpyLoopLoweringTypeLocal(Ctx, CopyLen, SrcAlign, DestAlign, SrcAddr, DstAddr, DL,
-                                                              SrcIsVolatile || DstIsVolatile, PeelCandidate);
-
-      unsigned LoopOpSize = getLoopOperandSizeInBytesLocal(LoopOpType);
-      uint64_t LoopEndCount = CopyLen->getZExtValue() / LoopOpSize;
-
-      unsigned SrcAS = cast<llvm::PointerType>(SrcAddr->getType())->getAddressSpace();
-      unsigned DstAS = cast<llvm::PointerType>(DstAddr->getType())->getAddressSpace();
-
-      uint64_t BytesCopied = LoopEndCount * LoopOpSize;
-      uint64_t RemainingBytes = CopyLen->getZExtValue() - BytesCopied;
-
-      bool do_unrolling;
-#if __clang_major__ == 7
-      do_unrolling = false;
-#else
-      do_unrolling = true;
-#endif
-      bool srcIsAlloca = false;
-      bool srcIsGlobal = false;
-      if(llvm::dyn_cast<llvm::BitCastInst>(SrcAddr) &&
-         dyn_cast<llvm::AllocaInst>(llvm::dyn_cast<llvm::BitCastInst>(SrcAddr)->getOperand(0)))
-      {
-         srcIsAlloca = true;
-         do_unrolling = do_unrolling && (LoopEndCount <= PEEL_THRESHOLD);
-      }
-      else if(llvm::dyn_cast<llvm::ConstantExpr>(SrcAddr) &&
-              cast<llvm::ConstantExpr>(SrcAddr)->getOpcode() == llvm::Instruction::BitCast &&
-              dyn_cast<llvm::GlobalVariable>(cast<llvm::ConstantExpr>(SrcAddr)->getOperand(0)))
-      {
-         srcIsGlobal = true;
-         do_unrolling =
-             do_unrolling &&
-             (dyn_cast<llvm::GlobalVariable>(cast<llvm::ConstantExpr>(SrcAddr)->getOperand(0))->isConstant() ||
-              (LoopEndCount <= PEEL_THRESHOLD));
-      }
-      else if(LoopEndCount == 1)
-         do_unrolling = true;
-      if(do_unrolling && !SrcIsVolatile && !DstIsVolatile && (srcIsAlloca || srcIsGlobal) &&
-         llvm::dyn_cast<llvm::BitCastInst>(DstAddr) && PeelCandidate)
-      {
-         llvm::PointerType* SrcOpType = llvm::PointerType::get(LoopOpType, SrcAS);
-         llvm::PointerType* DstOpType = llvm::PointerType::get(LoopOpType, DstAS);
-         llvm::IRBuilder<> Builder(InsertBefore);
-         auto srcAddress =
-             Builder.CreateBitCast(srcIsAlloca ? llvm::dyn_cast<llvm::BitCastInst>(SrcAddr)->getOperand(0) :
-                                                 cast<llvm::ConstantExpr>(SrcAddr)->getOperand(0),
-                                   SrcOpType);
-         auto dstAddress = Builder.CreateBitCast(llvm::dyn_cast<llvm::BitCastInst>(DstAddr)->getOperand(0), DstOpType);
-         for(auto LI = 0u; LI < LoopEndCount; ++LI)
-         {
-            llvm::Value* SrcGEP =
-                Builder.CreateInBoundsGEP(LoopOpType, srcAddress, llvm::ConstantInt::get(TypeOfCopyLen, LI));
-            llvm::Value* Load = Builder.CreateLoad(SrcGEP, SrcIsVolatile);
-            llvm::Value* DstGEP =
-                Builder.CreateInBoundsGEP(LoopOpType, dstAddress, llvm::ConstantInt::get(TypeOfCopyLen, LI));
-            Builder.CreateStore(Load, DstGEP, DstIsVolatile);
-         }
-      }
-      else if(LoopEndCount != 0)
-      {
-         // Split
-         PostLoopBB = PreLoopBB->splitBasicBlock(InsertBefore, "memcpy-split");
-         llvm::BasicBlock* LoopBB = llvm::BasicBlock::Create(Ctx, "load-store-loop", ParentFunc, PostLoopBB);
-         PreLoopBB->getTerminator()->setSuccessor(0, LoopBB);
-
-         llvm::IRBuilder<> PLBuilder(PreLoopBB->getTerminator());
-
-         // Cast the Src and Dst pointers to pointers to the loop operand type (if
-         // needed).
-         llvm::PointerType* SrcOpType = llvm::PointerType::get(LoopOpType, SrcAS);
-         llvm::PointerType* DstOpType = llvm::PointerType::get(LoopOpType, DstAS);
-         if(SrcAddr->getType() != SrcOpType)
-         {
-            SrcAddr = PLBuilder.CreateBitCast(SrcAddr, SrcOpType);
-         }
-         if(DstAddr->getType() != DstOpType)
-         {
-            DstAddr = PLBuilder.CreateBitCast(DstAddr, DstOpType);
-         }
-
-         llvm::IRBuilder<> LoopBuilder(LoopBB);
-         llvm::PHINode* LoopIndex = LoopBuilder.CreatePHI(TypeOfCopyLen, 2, "loop-index");
-         LoopIndex->addIncoming(llvm::ConstantInt::get(TypeOfCopyLen, 0U), PreLoopBB);
-         // Loop Body
-         llvm::Value* SrcGEP = LoopBuilder.CreateInBoundsGEP(LoopOpType, SrcAddr, LoopIndex);
-         llvm::Value* Load = LoopBuilder.CreateLoad(SrcGEP, SrcIsVolatile);
-         llvm::Value* DstGEP = LoopBuilder.CreateInBoundsGEP(LoopOpType, DstAddr, LoopIndex);
-         LoopBuilder.CreateStore(Load, DstGEP, DstIsVolatile);
-
-         llvm::Value* NewIndex = LoopBuilder.CreateAdd(LoopIndex, llvm::ConstantInt::get(TypeOfCopyLen, 1U));
-         LoopIndex->addIncoming(NewIndex, LoopBB);
-
-         // Create the loop branch condition.
-         llvm::Constant* LoopEndCI = llvm::ConstantInt::get(TypeOfCopyLen, LoopEndCount);
-         LoopBuilder.CreateCondBr(LoopBuilder.CreateICmpULT(NewIndex, LoopEndCI), LoopBB, PostLoopBB);
-      }
-
-      if(RemainingBytes)
-      {
-         llvm::IRBuilder<> RBuilder(PostLoopBB ? PostLoopBB->getFirstNonPHI() : InsertBefore);
-
-         // Update the alignment based on the copy size used in the loop body.
-         SrcAlign = std::min(SrcAlign, LoopOpSize);
-         DestAlign = std::min(DestAlign, LoopOpSize);
-
-         llvm::SmallVector<llvm::Type*, 5> RemainingOps;
-         getMemcpyLoopResidualLoweringTypeLocal(RemainingOps, Ctx, RemainingBytes, SrcAlign, DestAlign);
-
-         for(auto OpTy : RemainingOps)
-         {
-            // Calculate the new index
-            unsigned OperandSize = getLoopOperandSizeInBytesLocal(OpTy);
-            uint64_t GepIndex = BytesCopied / OperandSize;
-            assert(GepIndex * OperandSize == BytesCopied && "Division should have no Remainder!");
-            // Cast source to operand type and load
-            llvm::PointerType* SrcPtrType = llvm::PointerType::get(OpTy, SrcAS);
-            llvm::Value* CastedSrc =
-                SrcAddr->getType() == SrcPtrType ? SrcAddr : RBuilder.CreateBitCast(SrcAddr, SrcPtrType);
-            llvm::Value* SrcGEP =
-                RBuilder.CreateInBoundsGEP(OpTy, CastedSrc, llvm::ConstantInt::get(TypeOfCopyLen, GepIndex));
-            llvm::Value* Load = RBuilder.CreateLoad(SrcGEP, SrcIsVolatile);
-
-            // Cast destination to operand type and store.
-            llvm::PointerType* DstPtrType = llvm::PointerType::get(OpTy, DstAS);
-            llvm::Value* CastedDst =
-                DstAddr->getType() == DstPtrType ? DstAddr : RBuilder.CreateBitCast(DstAddr, DstPtrType);
-            llvm::Value* DstGEP =
-                RBuilder.CreateInBoundsGEP(OpTy, CastedDst, llvm::ConstantInt::get(TypeOfCopyLen, GepIndex));
-            RBuilder.CreateStore(Load, DstGEP, DstIsVolatile);
-
-            BytesCopied += OperandSize;
-         }
-      }
-      assert(BytesCopied == CopyLen->getZExtValue() && "Bytes copied should match size in the call!");
-   }
-
-   static void expandMemSetAsLoopLocal(llvm::MemSetInst* Memset, const llvm::DataLayout* DL)
-   {
-      llvm::Instruction* InsertBefore = Memset;
-      llvm::Value* DstAddr = Memset->getRawDest();
-      llvm::Value* CopyLen = Memset->getLength();
-      llvm::Value* SetValue = Memset->getValue();
-#if __clang_major__ >= 7
-      unsigned Align = Memset->getDestAlignment();
-#else
-      unsigned Align = Memset->getAlignment();
-#endif
-      bool IsVolatile = Memset->isVolatile();
-      llvm::Type* TypeOfCopyLen = CopyLen->getType();
-      llvm::BasicBlock* OrigBB = InsertBefore->getParent();
-      llvm::Function* F = OrigBB->getParent();
-      llvm::BasicBlock* NewBB = OrigBB->splitBasicBlock(InsertBefore, "split");
-      llvm::BasicBlock* LoopBB = llvm::BasicBlock::Create(F->getContext(), "loadstoreloop", F, NewBB);
-
-      addrIsOfIntArrayType(DstAddr, Align, DL);
-
-      bool AlignCanBeUsed = false;
-      if(isa<llvm::ConstantInt>(CopyLen) && isa<llvm::Constant>(SetValue) &&
-         cast<llvm::Constant>(SetValue)->isNullValue() && Align > 1 && Align <= 8 && SetValue->getType()->isIntegerTy())
-         AlignCanBeUsed = true;
-      if(AlignCanBeUsed)
-      {
-#if PRINT_DBG_MSG
-         llvm::errs() << "memset can be optimized\n";
-         llvm::errs() << "Align=" << Align << "\n";
-#endif
-         SetValue = llvm::ConstantInt::get(llvm::Type::getIntNTy(F->getContext(), Align * 8), 0);
-      }
-#if PRINT_DBG_MSG
-      else
-         llvm::errs() << "memset cannot be optimized\n";
-#endif
-      llvm::IRBuilder<> Builder(OrigBB->getTerminator());
-
-      auto ActualCopyLen =
-          AlignCanBeUsed ?
-              llvm::ConstantInt::get(TypeOfCopyLen, cast<llvm::ConstantInt>(CopyLen)->getValue().udiv(
-                                                        llvm::APInt(TypeOfCopyLen->getIntegerBitWidth(), Align))) :
-              CopyLen;
-
-      // Cast pointer to the type of value getting stored
-      unsigned dstAS = cast<llvm::PointerType>(DstAddr->getType())->getAddressSpace();
-      DstAddr = Builder.CreateBitCast(DstAddr, llvm::PointerType::get(SetValue->getType(), dstAS));
-
-      Builder.CreateCondBr(Builder.CreateICmpEQ(llvm::ConstantInt::get(TypeOfCopyLen, 0), CopyLen), NewBB, LoopBB);
-      OrigBB->getTerminator()->eraseFromParent();
-
-      llvm::IRBuilder<> LoopBuilder(LoopBB);
-      llvm::PHINode* LoopIndex = LoopBuilder.CreatePHI(TypeOfCopyLen, 0);
-      LoopIndex->addIncoming(llvm::ConstantInt::get(TypeOfCopyLen, 0), OrigBB);
-
-      if(AlignCanBeUsed)
-      {
-#if __clang_major__ >= 11
-         LoopBuilder.CreateAlignedStore(SetValue,
-                                        LoopBuilder.CreateInBoundsGEP(SetValue->getType(), DstAddr, LoopIndex),
-                                        llvm::MaybeAlign(Align), IsVolatile);
-#else
-         LoopBuilder.CreateAlignedStore(
-             SetValue, LoopBuilder.CreateInBoundsGEP(SetValue->getType(), DstAddr, LoopIndex), Align, IsVolatile);
-#endif
-      }
-      else
-         LoopBuilder.CreateStore(SetValue, LoopBuilder.CreateInBoundsGEP(SetValue->getType(), DstAddr, LoopIndex),
-                                 IsVolatile);
-
-      llvm::Value* NewIndex = LoopBuilder.CreateAdd(LoopIndex, llvm::ConstantInt::get(TypeOfCopyLen, 1));
-      LoopIndex->addIncoming(NewIndex, LoopBB);
-
-      LoopBuilder.CreateCondBr(LoopBuilder.CreateICmpULT(NewIndex, ActualCopyLen), LoopBB, NewBB);
    }
 
    void DumpGimpleRaw::buildMetaDataMap(const llvm::Module& M)
@@ -5940,17 +5747,17 @@ namespace llvm
                         MetaDataMap[val] = dbgInstrCall->getRawVariable();
                         //                        auto DIExpr = dbgInstrCall->getExpression();
                         //                        if(DIExpr)
-                        {
-                           //                           llvm::errs() << "Inst: ";
-                           //                           inst.print(llvm::errs());
-                           //                           llvm::errs() << "\n";
-                           //                           llvm::errs() << "Value: ";
-                           //                           val->print(llvm::errs());
-                           //                           llvm::errs() << "\n";
-                           //                           llvm::errs() << "Metadata: ";
-                           //                           dbgInstrCall->getRawVariable()->print(llvm::errs());
-                           //                           llvm::errs() <<"\n";
-                        }
+                        // {
+                        //                           llvm::errs() << "Inst: ";
+                        //                           inst.print(llvm::errs());
+                        //                           llvm::errs() << "\n";
+                        //                           llvm::errs() << "Value: ";
+                        //                           val->print(llvm::errs());
+                        //                           llvm::errs() << "\n";
+                        //                           llvm::errs() << "Metadata: ";
+                        //                           dbgInstrCall->getRawVariable()->print(llvm::errs());
+                        //                           llvm::errs() <<"\n";
+                        // }
                      }
                   }
                }
@@ -5959,93 +5766,7 @@ namespace llvm
       }
    }
 
-   /// Intrinsic lowering
-   bool DumpGimpleRaw::lowerMemIntrinsics(llvm::Module& M)
-   {
-      auto res = false;
-      auto currFuncIterator = M.getFunctionList().begin();
-      while(currFuncIterator != M.getFunctionList().end())
-      {
-         auto& F = *currFuncIterator;
-#if __clang_major__ != 4
-         const llvm::TargetTransformInfo& TTI =
-             modulePass->getAnalysis<llvm::TargetTransformInfoWrapperPass>().getTTI(F);
-#endif
-         auto fname = std::string(getName(&F));
-         llvm::SmallVector<llvm::MemIntrinsic*, 4> MemCalls;
-         for(llvm::Function::iterator BI = F.begin(), BE = F.end(); BI != BE; ++BI)
-         {
-            for(llvm::BasicBlock::iterator II = BI->begin(), IE = BI->end(); II != IE; ++II)
-            {
-               if(llvm::MemIntrinsic* InstrCall = dyn_cast<llvm::MemIntrinsic>(II))
-               {
-#if PRINT_DBG_MSG
-                  llvm::errs() << "Found a memIntrinsic Call\n";
-#endif
-                  MemCalls.push_back(InstrCall);
-#if PRINT_DBG_MSG
-                  if(llvm::MemCpyInst* Memcpy = dyn_cast<llvm::MemCpyInst>(InstrCall))
-                  {
-                     if(llvm::ConstantInt* CI = dyn_cast<llvm::ConstantInt>(Memcpy->getLength()))
-                        llvm::errs() << "Found a memcpy with a constant number of iterations\n";
-                     else
-                        llvm::errs() << "Found a memcpy with an unknown number of iterations\n";
-                  }
-                  else if(llvm::MemSetInst* Memset = dyn_cast<llvm::MemSetInst>(InstrCall))
-                  {
-                     llvm::errs() << "Found a memset intrinsic\n";
-                  }
-#endif
-               }
-            }
-         }
-         // Transform mem* intrinsic calls.
-         for(llvm::MemIntrinsic* MemCall : MemCalls)
-         {
-            bool do_erase;
-            do_erase = false;
-            if(llvm::MemCpyInst* Memcpy = dyn_cast<llvm::MemCpyInst>(MemCall))
-            {
-               if(llvm::ConstantInt* CI = dyn_cast<llvm::ConstantInt>(Memcpy->getLength()))
-               {
-                  createMemCpyLoopKnownSizeLocal(Memcpy, Memcpy->getRawSource(), Memcpy->getRawDest(), CI,
-#if __clang_major__ > 6
-                                                 Memcpy->getSourceAlignment(), Memcpy->getDestAlignment(),
-#else
-                                                 Memcpy->getAlignment(), Memcpy->getAlignment(),
-#endif
-                                                 Memcpy->isVolatile(), Memcpy->isVolatile(), DL);
-                  do_erase = true;
-               }
-#if __clang_major__ != 4
-               else
-               {
-                  llvm::expandMemCpyAsLoop(Memcpy, TTI);
-                  do_erase = true;
-               }
-#endif
-            }
-            else if(llvm::MemMoveInst* Memmove = dyn_cast<llvm::MemMoveInst>(MemCall))
-            {
-#if __clang_major__ != 4
-               llvm::expandMemMoveAsLoop(Memmove);
-               do_erase = true;
-#endif
-            }
-            else if(llvm::MemSetInst* Memset = dyn_cast<llvm::MemSetInst>(MemCall))
-            {
-               expandMemSetAsLoopLocal(Memset, DL);
-               do_erase = true;
-            }
-            if(do_erase)
-               MemCall->eraseFromParent();
-         }
-         ++currFuncIterator;
-      }
-      return res;
-   }
-
-   static bool isSimpleEnoughPointerToCommitLocal(llvm::Constant* C)
+   static bool isSimpleEnoughPointerToCommitLocal(llvm::Constant* C, const llvm::DataLayout& DL)
    {
       // Conservatively, avoid aggregate types. This is because we don't
       // want to worry about them partially overlapping other stores.
@@ -6077,8 +5798,12 @@ namespace llvm
             // notional bounds of the corresponding static array types.
             if(!CE->isGEPWithNoNotionalOverIndexing())
                return false;
-
+#if __clang_major__ >= 13
+            return ConstantFoldLoadThroughGEPConstantExpr(GV->getInitializer(), CE,
+                                                          C->getType()->getPointerElementType(), DL);
+#else
             return ConstantFoldLoadThroughGEPConstantExpr(GV->getInitializer(), CE);
+#endif
 
             // A constantexpr bitcast from a pointer to another pointer is a no-op,
             // and we know how to evaluate it by moving the bitcast from the pointer
@@ -6166,11 +5891,21 @@ namespace llvm
       auto initType = Init->getType();
       uint64_t NumElts = 0;
       if(dyn_cast<llvm::ArrayType>(initType))
+      {
          NumElts = dyn_cast<llvm::ArrayType>(initType)->getNumElements();
+      }
       else if(dyn_cast<llvm::VectorType>(initType))
+      {
+#if __clang_major__ >= 12
+         NumElts = dyn_cast<llvm::VectorType>(initType)->getElementCount().getValue();
+#else
          NumElts = dyn_cast<llvm::VectorType>(initType)->getNumElements();
+#endif
+      }
       else
-         llvm_unreachable("unexpected case");
+      {
+         report_fatal_error("unexpected case");
+      }
 
       // Break up the array into elements.
       for(uint64_t i = 0, e = NumElts; i != e; ++i)
@@ -6270,15 +6005,29 @@ namespace llvm
             Elts.clear();
             unsigned NumElts = 0;
             if(auto* STy = dyn_cast<llvm::StructType>(Ty))
+            {
                NumElts = STy->getNumElements();
+            }
             else if(auto* ATy = dyn_cast<llvm::ArrayType>(Ty))
+            {
                NumElts = ATy->getNumElements();
+            }
             else if(auto* VTy = dyn_cast<llvm::VectorType>(Ty))
+            {
+#if __clang_major__ >= 12
+               NumElts = VTy->getElementCount().getValue();
+#else
                NumElts = VTy->getNumElements();
+#endif
+            }
             else
-               llvm_unreachable("unexpected case");
+            {
+               report_fatal_error("unexpected case");
+            }
             for(unsigned i = 0, e = NumElts; i != e; ++i)
+            {
                Elts.push_back(Init->getAggregateElement(i));
+            }
          }
       };
 
@@ -6302,31 +6051,31 @@ namespace llvm
    {
       if(!SI->isSimple())
       {
-         // llvm::errs() << "Store is not simple! Can not evaluate.\n";
+         PRINT_DBG("Store is not simple! Can not evaluate.\n");
          return false; // no volatile/atomic accesses.
       }
 
       if(!dyn_cast<llvm::Constant>(SI->getOperand(1)))
       {
-         // llvm::errs() << "Ptr is not constant.\n";
+         PRINT_DBG("Ptr is not constant.\n");
          return false;
       }
       Ptr = dyn_cast<llvm::Constant>(SI->getOperand(1));
       if(auto* FoldedPtr = llvm::ConstantFoldConstant(Ptr, DL, &TLI))
       {
-         // llvm::errs() << "Folding constant ptr expression: " << *Ptr;
+         PRINT_DBG("Folding constant ptr expression: " << *Ptr);
          Ptr = FoldedPtr;
-         // llvm::errs() << "; To: " << *Ptr << "\n";
+         PRINT_DBG("; To: " << *Ptr << "\n");
       }
-      if(!isSimpleEnoughPointerToCommitLocal(Ptr))
+      if(!isSimpleEnoughPointerToCommitLocal(Ptr, DL))
       {
          // If this is too complex for us to commit, reject it.
-         // llvm::errs() << "Pointer is too complex for us to evaluate store.";
+         PRINT_DBG("Pointer is too complex for us to evaluate store.");
          return false;
       }
       if(!dyn_cast<llvm::Constant>(SI->getOperand(0)))
       {
-         // llvm::errs() << "Value stored is not constant.\n";
+         PRINT_DBG("Value stored is not constant.\n");
          return false;
       }
       Val = dyn_cast<llvm::Constant>(SI->getOperand(0));
@@ -6334,7 +6083,7 @@ namespace llvm
       {
          if(CE->getOpcode() == llvm::Instruction::BitCast)
          {
-            // llvm::errs() << "Attempting to resolve bitcast on constant ptr.\n";
+            PRINT_DBG("Attempting to resolve bitcast on constant ptr.\n");
             // If we're evaluating a store through a bitcast, then we need
             // to pull the bitcast off the pointer type and push it onto the
             // stored value.
@@ -6368,12 +6117,12 @@ namespace llvm
                }
                else
                {
-                  // llvm::errs() << "Failed to bitcast constant ptr, can not evaluate.\n";
+                  PRINT_DBG("Failed to bitcast constant ptr, can not evaluate.\n");
                   return false;
                }
             }
             Val = NewVal;
-            // llvm::errs() << "Evaluated bitcast: " << *Val << "\n";
+            PRINT_DBG("Evaluated bitcast: " << *Val << "\n");
          }
       }
       if(firstPart)
@@ -6424,7 +6173,13 @@ namespace llvm
             // Handle a constantexpr getelementptr.
             case llvm::Instruction::GetElementPtr:
                if(auto* I = getInitializerLocal(CE->getOperand(0)))
+               {
+#if __clang_major__ >= 13
+                  return llvm::ConstantFoldLoadThroughGEPConstantExpr(I, CE, P->getType()->getPointerElementType(), DL);
+#else
                   return llvm::ConstantFoldLoadThroughGEPConstantExpr(I, CE);
+#endif
+               }
                break;
                // Handle a constantexpr bitcast.
             case llvm::Instruction::BitCast:
@@ -6473,9 +6228,6 @@ namespace llvm
    }
    bool DumpGimpleRaw::RebuildConstants(llvm::Module& M)
    {
-#if __clang_major__ < 10
-      llvm::TargetLibraryInfo& TLI = modulePass->getAnalysis<llvm::TargetLibraryInfoWrapperPass>().getTLI();
-#endif
       llvm::SmallPtrSet<llvm::GlobalVariable*, 8> Invariants;
       llvm::SmallPtrSet<llvm::Instruction*, 8> Stores;
       auto res = false;
@@ -6484,9 +6236,7 @@ namespace llvm
       {
          auto& F = *currFuncIterator;
          auto fname = std::string(getName(&F));
-#if __clang_major__ >= 10
-         llvm::TargetLibraryInfo& TLI = modulePass->getAnalysis<llvm::TargetLibraryInfoWrapperPass>().getTLI(F);
-#endif
+         llvm::TargetLibraryInfo& TLI = GetTLI(F);
          std::list<llvm::Instruction*> deadList;
          for(llvm::Function::iterator BI = F.begin(), BE = F.end(); BI != BE; ++BI)
          {
@@ -6519,14 +6269,14 @@ namespace llvm
                            {
                               llvm::GlobalVariable* GVi = nullptr;
                               llvm::DenseMap<llvm::Constant*, llvm::Constant*> MutatedMemory;
-                              llvm::errs() << "Found a global var that is an invariant: " << *GV << "\n";
+                              PRINT_DBG("Found a global var that is an invariant: " << *GV << "\n");
                               for(llvm::BasicBlock::iterator CurInst = BI->begin(); CurInst != II;)
                               {
-                                 llvm::Constant* Val;
-                                 llvm::Constant* Ptr;
-                                 assert(
-                                     dyn_cast<llvm::StoreInst>(CurInst) &&
-                                     removableStore(dyn_cast<llvm::StoreInst>(CurInst), GV, TLI, *DL, Ptr, Val, false));
+                                 llvm::Constant* Val = nullptr;
+                                 llvm::Constant* Ptr = nullptr;
+                                 auto resRS =
+                                     removableStore(dyn_cast<llvm::StoreInst>(CurInst), GV, TLI, *DL, Ptr, Val, false);
+                                 assert(dyn_cast<llvm::StoreInst>(CurInst) && resRS);
                                  MutatedMemory[Ptr] = Val;
 
                                  auto me = CurInst;
@@ -6547,8 +6297,8 @@ namespace llvm
                               ++GuardInst;
                               if(GuardInst != IE)
                               {
-                                 llvm::Constant* Val;
-                                 llvm::Constant* Ptr;
+                                 llvm::Constant* Val = nullptr;
+                                 llvm::Constant* Ptr = nullptr;
                                  llvm::StoreInst* SI = dyn_cast<llvm::StoreInst>(GuardInst);
                                  auto Removable = SI && removableStore(SI, GV, TLI, *DL, Ptr, Val, true);
                                  if(Removable)
@@ -6619,7 +6369,7 @@ namespace llvm
                         }
                         else
                         {
-                           llvm::errs() << "Found a global var, but can not treat it as an invariant.\n";
+                           PRINT_DBG("Found a global var, but can not treat it as an invariant.\n");
                         }
                      }
                   }
@@ -6631,8 +6381,7 @@ namespace llvm
                I->eraseFromParent();
          if(!deadList.empty())
          {
-            const llvm::TargetTransformInfo& TTI =
-                modulePass->getAnalysis<llvm::TargetTransformInfoWrapperPass>().getTTI(F);
+            const llvm::TargetTransformInfo& TTI = GetTTI(F);
             for(llvm::Function::iterator BBIt = F.begin(); BBIt != F.end();)
                llvm::SimplifyInstructionsInBlock(&*BBIt++, &TLI);
             for(llvm::Function::iterator BBIt = F.begin(); BBIt != F.end();)
@@ -6720,33 +6469,19 @@ namespace llvm
       {
          if(!fun.isIntrinsic() && !fun.isDeclaration())
          {
-            bool res = eSSAHelper.runOnFunction(fun, modulePass, changed);
+            bool res = eSSAHelper.exec(fun, changed, GetDomTree);
             *changed = *changed || res;
          }
       }
-   }
-
-   void DumpGimpleRaw::computeValueRange(const llvm::Module& M)
-   {
-#if __clang_major__ < 10
-      RA = new RangeAnalysis::InterProceduralRACropDFSHelper();
-      RA->runOnModule(M, modulePass, PtoSets_AA);
-#endif
    }
 
    void DumpGimpleRaw::ValueRangeOptimizer(llvm::Module& M)
    {
       if(RA)
       {
-#if __clang_major__ < 10
-         llvm::TargetLibraryInfo& TLI = modulePass->getAnalysis<llvm::TargetLibraryInfoWrapperPass>().getTLI();
-#endif
-
          for(llvm::Function& F : M)
          {
-#if __clang_major__ >= 10
-            llvm::TargetLibraryInfo& TLI = modulePass->getAnalysis<llvm::TargetLibraryInfoWrapperPass>().getTLI(F);
-#endif
+            llvm::TargetLibraryInfo& TLI = GetTLI(F);
 #ifdef DEBUG_RA
             llvm::errs() << "ValueRangeOptimizer: Analysis for function: " << getName(&F) << "\n";
 #endif
@@ -6765,9 +6500,7 @@ namespace llvm
                   }
                   if(I->user_empty() && llvm::isInstructionTriviallyDead(I, &TLI))
                   {
-                     llvm::errs() << "this instruction is not used by anyone: ";
-                     I->print(llvm::errs());
-                     llvm::errs() << "\n";
+                     PRINT_DBG_VAR("this instruction is not used by anyone: ", I);
                      deadList.push_back(I);
                      ++curInstIterator;
                      continue;
@@ -6775,9 +6508,7 @@ namespace llvm
                   RangeAnalysis::Range R = RA->getRange(I);
                   if(R.isEmpty())
                   {
-                     llvm::errs() << "this instruction is dead: ";
-                     I->print(llvm::errs());
-                     llvm::errs() << "\n";
+                     PRINT_DBG_VAR("this instruction is dead: ", I);
                      assert(!I->getType()->isVoidTy());
                      I->replaceAllUsesWith(llvm::UndefValue::get(I->getType()));
                      if(llvm::isInstructionTriviallyDead(I, &TLI))
@@ -6794,12 +6525,14 @@ namespace llvm
                      {
                         if(R.isConstant())
                         {
-                           llvm::errs()
-                               << "the value associated with this instruction is constant and could be propagated: ";
+#ifndef NDEBUG
+                           PRINT_DBG(
+                               "the value associated with this instruction is constant and could be propagated: ");
                            I->print(llvm::errs());
-                           llvm::errs() << " -> ";
+                           PRINT_DBG(" -> ");
                            R.print(llvm::errs());
-                           llvm::errs() << "\n";
+                           PRINT_DBG("\n");
+#endif
                            auto cInt = R.getLower().sextOrTrunc(I->getType()->getPrimitiveSizeInBits());
                            auto C = llvm::ConstantInt::get(I->getContext(), cInt);
                            I->replaceAllUsesWith(C);
@@ -6815,12 +6548,14 @@ namespace llvm
                            if(nbitS < nbitU && nbitS < bw && !isSignedResult(I))
                            {
                               assert(bw > nbitS);
-                              llvm::errs() << "the range associated with this unsigned instruction could be reduced "
-                                              "with the signed range: ";
+#ifndef NDEBUG
+                              PRINT_DBG("the range associated with this unsigned instruction could be reduced with the "
+                                        "signed range: ");
                               I->print(llvm::errs());
-                              llvm::errs() << " -> " << R.getBitWidth() << " -> " << nbitS << " -> " << nbitU << " -> ";
+                              PRINT_DBG(" -> " << R.getBitWidth() << " -> " << nbitS << " -> " << nbitU << " -> ");
                               R.print(llvm::errs());
-                              llvm::errs() << "\n";
+                              PRINT_DBG("\n");
+#endif
                               llvm::IRBuilder<> B(curInstIterator->getNextNode());
 
                               auto leftShiftConstant = B.getIntN(bw, bw - nbitS);
@@ -6840,8 +6575,7 @@ namespace llvm
                   I->eraseFromParent();
             if(!deadList.empty())
             {
-               //               const llvm::TargetTransformInfo& TTI =
-               //               modulePass->getAnalysis<llvm::TargetTransformInfoWrapperPass>().getTTI(F);
+               //               const llvm::TargetTransformInfo& TTI = GetTTI(F);
                for(llvm::Function::iterator BBIt = F.begin(); BBIt != F.end();)
                   llvm::SimplifyInstructionsInBlock(&*BBIt++, &TLI);
                //               for(llvm::Function::iterator BBIt = F.begin(); BBIt != F.end();)
@@ -6856,271 +6590,12 @@ namespace llvm
       }
    }
 
-   bool DumpGimpleRaw::LoadStoreOptimizer(llvm::Module& M)
-   {
-      bool changed = false;
-      for(llvm::Function& F : M)
-      {
-         std::list<llvm::Instruction*> StoreLoadList;
-         std::list<llvm::BasicBlock*> BBlist;
-         for(auto& BB : F.getBasicBlockList())
-            BBlist.push_back(&BB);
-         for(auto BB : BBlist)
-         {
-            auto curInstIterator = BB->getInstList().begin();
-            while(curInstIterator != BB->getInstList().end())
-            {
-#if HAVE_LIBBDD
-               llvm::Instruction* I = &*curInstIterator;
-               if(dyn_cast<llvm::StoreInst>(I) || dyn_cast<llvm::LoadInst>(I))
-               {
-                  auto PO = dyn_cast<llvm::StoreInst>(I) ? dyn_cast<llvm::StoreInst>(I)->getPointerOperand() :
-                                                           dyn_cast<llvm::LoadInst>(I)->getPointerOperand();
-                  auto PTS = PtoSets_AA->pointsToSet(PO);
-                  if(PTS->size() > 1)
-                  {
-                     bool res = true;
-                     for(auto var : *PTS)
-                     {
-                        auto varValue = PtoSets_AA->getValue(var);
-                        if(!varValue)
-                        {
-                           res = false;
-                           break;
-                        }
-                        auto vid = varValue->getValueID();
-                        if(vid != llvm::Value::InstructionVal + llvm::Instruction::Alloca &&
-                           vid != llvm::Value::GlobalVariableVal)
-                        {
-                           res = false;
-                           break;
-                        }
-                        auto AI = llvm::dyn_cast<const llvm::AllocaInst>(varValue);
-                        auto GV = llvm::dyn_cast<const llvm::GlobalVariable>(varValue);
-                        if(AI && AI->getAllocatedType()->isAggregateType() && !AI->getAllocatedType()->isArrayTy())
-                        {
-                           res = false;
-                           break;
-                        }
-                        else if(GV && GV->getValueType()->isAggregateType() && !GV->getValueType()->isArrayTy())
-                        {
-                           res = false;
-                           break;
-                        }
-                     }
-                     if(res)
-                     {
-                        StoreLoadList.push_back(I);
-                     }
-                  }
-               }
-#endif
-               ++curInstIterator;
-            }
-         }
-#if HAVE_LIBBDD
-         for(auto& I : StoreLoadList)
-         {
-            if(llvm::StoreInst* SI = dyn_cast<llvm::StoreInst>(I))
-            {
-               auto PO = SI->getPointerOperand();
-               auto PTS = PtoSets_AA->pointsToSet(PO);
-               llvm::IRBuilder<> Builder(SI);
-               llvm::errs() << "Store to be optimized: ";
-               SI->print(llvm::errs());
-               llvm::errs() << "\n";
-               llvm::errs() << "PO to be used: ";
-               PO->print(llvm::errs());
-               llvm::errs() << "\n";
-               llvm::errs() << "Var to be written: ";
-               SI->getValueOperand()->print(llvm::errs());
-               llvm::errs() << "\n";
-               llvm::BasicBlock* BB0 = SI->getParent();
-               auto LastBB = BB0->splitBasicBlock(SI);
-               llvm::BasicBlock* PrevBB = BB0;
-               llvm::IRBuilder<> Builder0(BB0->getTerminator());
-               auto ptrToInt1 = Builder0.CreatePtrToInt(PO, llvm::Type::getInt64Ty(F.getContext()));
-
-               for(auto var : *PTS)
-               {
-                  auto varValue = PtoSets_AA->getValue(var);
-                  auto AI = llvm::dyn_cast<const llvm::AllocaInst>(varValue);
-                  auto GV = llvm::dyn_cast<const llvm::GlobalVariable>(varValue);
-                  assert(AI || GV);
-                  llvm::Type* objType;
-                  if(AI)
-                     objType = AI->getAllocatedType();
-                  else if(GV)
-                     objType = GV->getValueType();
-                  else
-                     llvm_unreachable("unexpected condition");
-
-                  if(objType->isArrayTy())
-                  {
-                     auto gep1 = Builder0.CreateBitCast(const_cast<llvm::Value*>(varValue), PO->getType());
-
-                     auto ptrToInt2 = Builder0.CreatePtrToInt(gep1, llvm::Type::getInt64Ty(F.getContext()));
-                     auto sub1 = Builder0.CreateSub(ptrToInt1, ptrToInt2);
-
-                     auto sge1 = Builder0.CreateICmpSGE(sub1, Builder0.getInt64(0));
-                     auto varValueSize = objType->isSized() ? DL->getTypeAllocSize(objType) : 1ULL;
-
-                     auto ult1 = Builder0.CreateICmpULT(sub1, Builder0.getInt64(varValueSize));
-                     auto and1 = Builder0.CreateAnd(sge1, ult1);
-
-                     llvm::BasicBlock* TrueBB = llvm::BasicBlock::Create(F.getContext(), "StoreBB", &F, LastBB);
-                     llvm::BasicBlock* FalseBB = llvm::BasicBlock::Create(F.getContext(), "StoreBB", &F, LastBB);
-                     PrevBB->getTerminator()->eraseFromParent();
-                     Builder.SetInsertPoint(PrevBB);
-                     Builder.CreateCondBr(and1, TrueBB, FalseBB);
-                     if(PrevBB == BB0)
-                        Builder0.SetInsertPoint(BB0->getTerminator());
-                     PrevBB = FalseBB;
-                     llvm::IRBuilder<> FalseBuilder(FalseBB);
-                     FalseBuilder.CreateBr(LastBB);
-
-                     llvm::IRBuilder<> StoreBuilder(TrueBB);
-                     auto bitcast1 = StoreBuilder.CreateBitCast(gep1, llvm::Type::getInt8PtrTy(F.getContext()));
-                     auto gep3 = StoreBuilder.CreateGEP(bitcast1, sub1);
-                     auto bitcast2 = StoreBuilder.CreateBitCast(gep3, PO->getType());
-                     StoreBuilder.CreateStore(SI->getValueOperand(), bitcast2);
-                     StoreBuilder.CreateBr(LastBB);
-                     changed = true;
-                  }
-                  else
-                  {
-                     auto gep1 = Builder0.CreateBitCast(const_cast<llvm::Value*>(varValue), PO->getType());
-                     auto eq1 = Builder0.CreateICmpEQ(PO, gep1);
-                     llvm::BasicBlock* TrueBB = llvm::BasicBlock::Create(F.getContext(), "StoreBB", &F, LastBB);
-                     llvm::BasicBlock* FalseBB = llvm::BasicBlock::Create(F.getContext(), "StoreBB", &F, LastBB);
-                     PrevBB->getTerminator()->eraseFromParent();
-                     Builder.SetInsertPoint(PrevBB);
-                     Builder.CreateCondBr(eq1, TrueBB, FalseBB);
-                     if(PrevBB == BB0)
-                        Builder0.SetInsertPoint(BB0->getTerminator());
-                     PrevBB = FalseBB;
-                     llvm::IRBuilder<> FalseBuilder(FalseBB);
-                     FalseBuilder.CreateBr(LastBB);
-                     llvm::IRBuilder<> StoreBuilder(TrueBB);
-                     StoreBuilder.CreateStore(SI->getValueOperand(), gep1);
-                     StoreBuilder.CreateBr(LastBB);
-                     changed = true;
-                  }
-               }
-            }
-            else if(llvm::LoadInst* LI = dyn_cast<llvm::LoadInst>(I))
-            {
-               auto PO = LI->getPointerOperand();
-               auto PTS = PtoSets_AA->pointsToSet(PO);
-
-               llvm::BasicBlock* BB0 = LI->getParent();
-               auto LastBB = BB0->splitBasicBlock(LI);
-               llvm::BasicBlock* PrevBB = BB0;
-               llvm::IRBuilder<> Builder0(BB0->getTerminator());
-               auto ptrToInt1 = Builder0.CreatePtrToInt(PO, llvm::Type::getInt64Ty(F.getContext()));
-               llvm::IRBuilder<> Builder(LI);
-               auto phi1 = Builder.CreatePHI(LI->getType(), 1 + PTS->size());
-               LI->replaceAllUsesWith(phi1);
-               unsigned index = 0;
-
-               for(auto var : *PTS)
-               {
-                  ++index;
-                  auto varValue = PtoSets_AA->getValue(var);
-                  auto AI = llvm::dyn_cast<const llvm::AllocaInst>(varValue);
-                  auto GV = llvm::dyn_cast<const llvm::GlobalVariable>(varValue);
-                  assert(AI || GV);
-                  llvm::Type* objType;
-                  if(AI)
-                     objType = AI->getAllocatedType();
-                  else if(GV)
-                     objType = GV->getValueType();
-                  else
-                     llvm_unreachable("unexpected condition");
-
-                  if(objType->isArrayTy())
-                  {
-                     auto gep1 = Builder0.CreateBitCast(const_cast<llvm::Value*>(varValue), PO->getType());
-
-                     auto ptrToInt2 = Builder0.CreatePtrToInt(gep1, llvm::Type::getInt64Ty(F.getContext()));
-                     auto sub1 = Builder0.CreateSub(ptrToInt1, ptrToInt2);
-
-                     auto sge1 = Builder0.CreateICmpSGE(sub1, Builder0.getInt64(0));
-                     auto varValueSize = objType->isSized() ? DL->getTypeAllocSize(objType) : 1ULL;
-
-                     auto ult1 = Builder0.CreateICmpULT(sub1, Builder0.getInt64(varValueSize));
-                     auto and1 = Builder0.CreateAnd(sge1, ult1);
-
-                     llvm::BasicBlock* TrueBB = llvm::BasicBlock::Create(F.getContext(), "StoreBB", &F, LastBB);
-                     llvm::BasicBlock* FalseBB = llvm::BasicBlock::Create(F.getContext(), "StoreBB", &F, LastBB);
-                     PrevBB->getTerminator()->eraseFromParent();
-                     Builder.SetInsertPoint(PrevBB);
-                     Builder.CreateCondBr(and1, TrueBB, FalseBB);
-                     if(PrevBB == BB0)
-                        Builder0.SetInsertPoint(BB0->getTerminator());
-                     PrevBB = FalseBB;
-                     llvm::IRBuilder<> FalseBuilder(FalseBB);
-                     FalseBuilder.CreateBr(LastBB);
-
-                     llvm::IRBuilder<> LoadBuilder(TrueBB);
-                     auto bitcast1 = LoadBuilder.CreateBitCast(gep1, llvm::Type::getInt8PtrTy(F.getContext()));
-                     auto gep3 = LoadBuilder.CreateGEP(bitcast1, sub1);
-                     auto bitcast2 = LoadBuilder.CreateBitCast(gep3, PO->getType());
-                     auto load1 = LoadBuilder.CreateLoad(bitcast2);
-                     phi1->addIncoming(load1, TrueBB);
-                     LoadBuilder.CreateBr(LastBB);
-                     if(index == PTS->size())
-                        phi1->addIncoming(llvm::UndefValue::get(I->getType()), FalseBB);
-                     changed = true;
-                  }
-                  else
-                  {
-                     auto gep1 = Builder0.CreateBitCast(const_cast<llvm::Value*>(varValue), PO->getType());
-                     auto eq1 = Builder0.CreateICmpEQ(PO, gep1);
-                     llvm::BasicBlock* TrueBB = llvm::BasicBlock::Create(F.getContext(), "LoadBB", &F, LastBB);
-                     llvm::BasicBlock* FalseBB = llvm::BasicBlock::Create(F.getContext(), "LoadBB", &F, LastBB);
-                     PrevBB->getTerminator()->eraseFromParent();
-                     Builder.SetInsertPoint(PrevBB);
-                     Builder.CreateCondBr(eq1, TrueBB, FalseBB);
-                     if(PrevBB == BB0)
-                        Builder0.SetInsertPoint(BB0->getTerminator());
-                     PrevBB = FalseBB;
-                     llvm::IRBuilder<> FalseBuilder(FalseBB);
-                     FalseBuilder.CreateBr(LastBB);
-
-                     llvm::IRBuilder<> LoadBuilder(TrueBB);
-                     auto load1 = LoadBuilder.CreateLoad(gep1);
-                     phi1->addIncoming(load1, TrueBB);
-                     LoadBuilder.CreateBr(LastBB);
-                     if(index == PTS->size())
-                        phi1->addIncoming(llvm::UndefValue::get(I->getType()), FalseBB);
-                     changed = true;
-                  }
-               }
-            }
-            else
-               llvm_unreachable("unexpected condition");
-         }
-#endif
-         for(auto& I : StoreLoadList)
-            I->eraseFromParent();
-      }
-      // M.print(llvm::errs(),nullptr);
-      return changed;
-   }
-
    void DumpGimpleRaw::computeMAEntryDefs(
        const llvm::Function* F,
        std::map<const llvm::Function*, std::map<const void*, std::set<const llvm::Instruction*>>>&
-           CurrentListofMAEntryDef,
-       llvm::ModulePass* modulePass)
+           CurrentListofMAEntryDef)
    {
-#if __clang_major__ >= 11
-      auto& MSSA =
-          modulePass->getAnalysis<llvm::MemorySSAWrapperPass>(*const_cast<llvm::Function*>(F), &changed).getMSSA();
-#else
-      auto& MSSA = modulePass->getAnalysis<llvm::MemorySSAWrapperPass>(*const_cast<llvm::Function*>(F)).getMSSA();
-#endif
+      auto& MSSA = GetMSSA(*const_cast<llvm::Function*>(F)).getMSSA();
       for(const auto& BB : F->getBasicBlockList())
       {
          for(const auto& inst : BB)
@@ -7128,13 +6603,17 @@ namespace llvm
             const llvm::MemoryUseOrDef* ma = MSSA.getMemoryAccess(&inst);
             if(ma && ma->getValueID() == llvm::Value::MemoryDefVal)
             {
-               auto defMA = MSSA.getWalker()->getClobberingMemoryAccess(&inst);
+               auto defMA = MSSA.getWalker()->getClobberingMemoryAccess(MSSA.getMemoryAccess(&inst));
                if(MSSA.isLiveOnEntryDef(defMA))
+               {
                   CurrentListofMAEntryDef[F][nullptr].insert(&inst);
+               }
                else if(defMA->getValueID() == llvm::Value::MemoryPhiVal)
+               {
                   CurrentListofMAEntryDef[F][gimple_phi_virtual_result(
                                                  getVirtualGimplePhi(dyn_cast<llvm::MemoryPhi>(defMA), MSSA))]
                       .insert(&inst);
+               }
                else
                {
                   assert(defMA->getValueID() == llvm::Value::MemoryDefVal);
@@ -7144,68 +6623,74 @@ namespace llvm
          }
       }
    }
-   bool DumpGimpleRaw::runOnModule(llvm::Module& M, llvm::ModulePass* _modulePass, const std::string& _TopFunctionName)
+
+   bool DumpGimpleRaw::exec(llvm::Module& M, const std::string& _TopFunctionName,
+                            llvm::function_ref<llvm::TargetLibraryInfo&(llvm::Function&)> _GetTLI,
+                            llvm::function_ref<llvm::TargetTransformInfo&(llvm::Function&)> _GetTTI,
+                            llvm::function_ref<llvm::DominatorTree&(llvm::Function&)> _GetDomTree,
+                            llvm::function_ref<llvm::LoopInfo&(llvm::Function&)> _GetLI,
+                            llvm::function_ref<MemorySSAAnalysisResult&(llvm::Function&)> _GetMSSA,
+                            llvm::function_ref<llvm::LazyValueInfo&(llvm::Function&)> _GetLVI,
+                            llvm::function_ref<llvm::AssumptionCache&(llvm::Function&)> _GetAC,
+#if __clang_major__ > 5
+                            llvm::function_ref<llvm::OptimizationRemarkEmitter&(llvm::Function&)> GetORE,
+#endif
+                            const std::string& costTable)
    {
       DL = &M.getDataLayout();
-      modulePass = _modulePass;
+      GetTLI = _GetTLI;
+      GetTTI = _GetTTI;
+      GetDomTree = _GetDomTree;
+      GetLI = _GetLI;
+      GetMSSA = _GetMSSA;
+      GetLVI = _GetLVI;
+      GetAC = _GetAC;
       moduleContext = &M.getContext();
       TopFunctionName = _TopFunctionName;
       bool res = false;
-#if PRINT_DBG_MSG
-      llvm::errs() << "Computing e-SSA\n";
+#if __clang_major__ > 5
+      if(!costTable.empty())
+      {
+         TreeHeightReduction THR;
+         res |= THR.runOnModule(M, GetLI, GetORE, costTable);
+      }
 #endif
+
+      PRINT_DBG("Computing e-SSA\n");
       compute_eSSA(M, &res);
-#if PRINT_DBG_MSG
-      llvm::errs() << "Computed e-SSA\n";
-#endif
+      PRINT_DBG("Computed e-SSA\n");
+
       if(!earlyAnalysis)
       {
-#if PRINT_DBG_MSG
-         llvm::errs() << "Building metadata\n";
-#endif
+         PRINT_DBG("Building metadata\n");
          buildMetaDataMap(M);
-      }
-      res = !earlyAnalysis && lowerMemIntrinsics(M);
 
-      auto res_RC = (!earlyAnalysis && RebuildConstants(M));
+         res |= RebuildConstants(M);
 
-      res = res || res_RC;
-      auto res_LI = (!earlyAnalysis && lowerIntrinsics(M));
-      res = res || res_LI;
+         res |= lowerIntrinsics(M);
 #if HAVE_LIBBDD
-      if(!earlyAnalysis && !onlyGlobals)
-      {
-         std::string starting_function = TopFunctionName;
-         if(starting_function == "")
+         if(!onlyGlobals)
          {
-            const llvm::Function* main = M.getFunction("main");
-            if(main)
-               starting_function = "main";
-         }
-         if(starting_function != "")
-         {
-#define ANDERSEN 1
-#if PRINT_DBG_MSG
-            llvm::errs() << "Performing alias analysis\n";
-#endif
-#if ANDERSEN
-            PtoSets_AA = new Andersen_AA(starting_function);
+            if(TopFunctionName != "")
+            {
+               PRINT_DBG("Performing alias analysis\n");
+#if ANDERSEN_AA
+               PtoSets_AA = new Andersen_AA(TopFunctionName);
 #else
-            PtoSets_AA = new Staged_Flow_Sensitive_AA(starting_function);
+               PtoSets_AA = new Staged_Flow_Sensitive_AA(TopFunctionName);
 #endif
-            PtoSets_AA->computePointToSet(M);
-            //            auto changed = LoadStoreOptimizer(M);
-            //            res = res | changed;
+               PtoSets_AA->computePointToSet(M);
+               PRINT_DBG("Performed alias analysis\n");
+            }
          }
+#endif
       }
-#endif
 
-#if PRINT_DBG_MSG
-      llvm::errs() << "Performing value-range analysis\n";
-#endif
-      computeValueRange(M);
-#if PRINT_DBG_MSG
-      llvm::errs() << "Performed value-range analysis\n";
+#if __clang_major__ < 10
+      PRINT_DBG("Performing value-range analysis\n");
+      RA = new RangeAnalysis::InterProceduralRACropDFSHelper();
+      RA->exec(M, PtoSets_AA, GetDomTree, GetLVI, GetAC, GetMSSA);
+      PRINT_DBG("Performed value-range analysis\n");
 #endif
 
 #ifdef DEBUG_RA
@@ -7216,49 +6701,44 @@ namespace llvm
       assert(!llvm::verifyModule(M, &llvm::errs()));
 #endif
 
-      if(!earlyAnalysis && !onlyGlobals)
+      if(!earlyAnalysis)
       {
-         for(const auto& fun : M.getFunctionList())
+         if(!onlyGlobals)
          {
-            if(!fun.isDeclaration() && !fun.isIntrinsic())
+            for(const auto& fun : M.getFunctionList())
             {
-               computeMAEntryDefs(&fun, CurrentListofMAEntryDef, modulePass);
+               if(!fun.isDeclaration() && !fun.isIntrinsic())
+               {
+                  computeMAEntryDefs(&fun, CurrentListofMAEntryDef);
+               }
             }
+         }
+
+         for(const auto& globalVar : M.getGlobalList())
+         {
+            PRINT_DBG("Found global name: " << globalVar.getName() << "|" << ValueTyNames[globalVar.getValueID()]
+                                            << "\n");
+            SerializeGimpleGlobalTreeNode(assignCodeAuto(&globalVar));
+         }
+         if(!onlyGlobals)
+         {
+            for(const auto& fun : M.getFunctionList())
+            {
+               if(fun.isIntrinsic())
+               {
+                  PRINT_DBG("Function intrinsic skipped: " << getName(&fun) << "|" << ValueTyNames[fun.getValueID()]
+                                                           << "\n");
+               }
+               else
+               {
+                  PRINT_DBG("Found function: " << getName(&fun) << "|" << ValueTyNames[fun.getValueID()] << "\n");
+                  SerializeGimpleGlobalTreeNode(assignCodeAuto(&fun));
+               }
+            }
+            CurrentListofMAEntryDef.clear();
          }
       }
 
-      if(!earlyAnalysis)
-      {
-         for(const auto& globalVar : M.getGlobalList())
-         {
-#if PRINT_DBG_MSG
-            llvm::errs() << "Found global name: " << globalVar.getName() << "|" << ValueTyNames[globalVar.getValueID()]
-                         << "\n";
-#endif
-            SerializeGimpleGlobalTreeNode(assignCodeAuto(&globalVar));
-         }
-      }
-      if(!earlyAnalysis && !onlyGlobals)
-      {
-         for(const auto& fun : M.getFunctionList())
-         {
-            if(fun.isIntrinsic())
-            {
-#if PRINT_DBG_MSG
-               llvm::errs() << "Function intrinsic skipped: " << getName(&fun) << "|" << ValueTyNames[fun.getValueID()]
-                            << "\n";
-#endif
-            }
-            else
-            {
-#if PRINT_DBG_MSG
-               llvm::errs() << "Found function: " << getName(&fun) << "|" << ValueTyNames[fun.getValueID()] << "\n";
-#endif
-               SerializeGimpleGlobalTreeNode(assignCodeAuto(&fun));
-            }
-         }
-         CurrentListofMAEntryDef.clear();
-      }
 #if HAVE_LIBBDD
       if(PtoSets_AA)
       {
@@ -7266,9 +6746,12 @@ namespace llvm
          PtoSets_AA = nullptr;
       }
 #endif
+
       if(RA)
       {
+#ifndef NDEBUG
          RA->printRanges(M, llvm::errs());
+#endif
          delete RA;
       }
       // M.print(llvm::errs(), nullptr);

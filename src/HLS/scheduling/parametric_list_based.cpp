@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -88,7 +88,8 @@
 #include "xml_document.hpp"
 
 #include "behavioral_helper.hpp"
-#include "call_graph_manager.hpp"  // for CallGraphManager, CallGrap...
+#include "call_graph_manager.hpp" // for CallGraphManager, CallGrap...
+#include "fileIO.hpp"
 #include "string_manipulation.hpp" // for GET_CLASS
 
 #if !HAVE_UNORDERED
@@ -102,7 +103,9 @@ bool PrioritySorter::operator()(const vertex x, const vertex y) const
    const auto x_priority = (*priority)(x);
    const auto y_priority = (*priority)(y);
    if(x_priority != y_priority)
+   {
       return x_priority > y_priority;
+   }
    return GET_NAME(op_graph, x) < GET_NAME(op_graph, y);
 }
 #endif
@@ -350,21 +353,6 @@ parametric_list_based::parametric_list_based(const ParameterConstRef _parameters
 
 parametric_list_based::~parametric_list_based() = default;
 
-void parametric_list_based::ComputeRelationships(DesignFlowStepSet& relationship,
-                                                 const DesignFlowStep::RelationshipType relationship_type)
-{
-#if 0
-   if(relationship_type == INVALIDATION_RELATIONSHIP and (static_cast<HLSFlowStep_Type>(parameters->getOption<unsigned int>(OPT_scheduling_algorithm))) == HLSFlowStep_Type::SDC_SCHEDULING and executions_number == 1)
-   {
-      vertex frontend_step = design_flow_manager.lock()->GetDesignFlowStep(FunctionFrontendFlowStep::ComputeSignature(FrontendFlowStepType::MULTI_WAY_IF, funId));
-      const auto design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
-      const auto design_flow_step = frontend_step != NULL_VERTEX ? design_flow_graph->CGetDesignFlowStepInfo(frontend_step)->design_flow_step : GetPointer<const FrontendFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("Frontend"))->CreateFunctionFrontendFlowStep(FrontendFlowStepType::MULTI_WAY_IF, funId);
-      relationship.insert(design_flow_step);
-   }
-#endif
-   Scheduling::ComputeRelationships(relationship, relationship_type);
-}
-
 void parametric_list_based::Initialize()
 {
    Scheduling::Initialize();
@@ -374,8 +362,7 @@ void parametric_list_based::Initialize()
 
 static bool has_element_in_common(const std::set<std::string>& set1, const std::set<std::string>& set2)
 {
-   std::set<std::string>::const_iterator first1 = set1.begin(), last1 = set1.end(), first2 = set2.begin(),
-                                         last2 = set2.end();
+   auto first1 = set1.begin(), last1 = set1.end(), first2 = set2.begin(), last2 = set2.end();
    while(first1 != last1 and first2 != last2)
    {
       if(*first1 < *first2)
@@ -399,12 +386,12 @@ void parametric_list_based::CheckSchedulabilityConditions(
     double& current_starting_time, double& current_ending_time, double& current_stage_period,
     CustomMap<std::pair<unsigned int, unsigned int>, double>& local_connection_map, double current_cycle_starting_time,
     double current_cycle_ending_time, double setup_hold_time, double& phi_extra_time, double scheduling_mux_margins,
-    bool unbounded, bool RWFunctions, bool nonDirectLoadStore, const std::set<std::string>& proxy_functions_used,
+    bool unbounded, bool RWFunctions, bool LoadStoreOp, const std::set<std::string>& proxy_functions_used,
     bool cstep_has_RET_conflict, unsigned int fu_type, const vertex2obj<ControlStep>& current_ASAP,
     const fu_bindingRef res_binding, const ScheduleRef schedule, bool& predecessorsCond, bool& pipeliningCond,
     bool& cannotBeChained0, bool& chainingRetCond, bool& cannotBeChained1, bool& asyncCond, bool& cannotBeChained2,
-    bool& cannotBeChained3, bool& MultiCond0, bool& MultiCond1, bool& nonDirectMemCond, bool& unboundedFunctionsCond,
-    bool& proxyFunCond)
+    bool& cannotBeChained3, bool& MultiCond0, bool& MultiCond1, bool& LoadStoreFunctionConflict,
+    bool& FunctionLoadStoreConflict, bool& proxyFunCond, bool unbounded_RW)
 {
    predecessorsCond = current_ASAP.find(current_vertex) != current_ASAP.end() and
                       current_ASAP.find(current_vertex)->second > current_cycle;
@@ -415,9 +402,9 @@ void parametric_list_based::CheckSchedulabilityConditions(
    compute_starting_ending_time_asap(operations, current_vertex, fu_type, current_cycle, current_starting_time,
                                      current_ending_time, current_stage_period, cannotBeChained1, res_binding, schedule,
                                      phi_extra_time, setup_hold_time, local_connection_map);
-   bool complex_op = (current_ending_time - current_starting_time) > setup_hold_time;
-   bool is_pipelined = HLS->allocation_information->get_initiation_time(fu_type, current_vertex) != 0;
-   auto n_cycles = HLS->allocation_information->get_cycles(fu_type, current_vertex, flow_graph);
+   const auto complex_op = (current_ending_time - current_starting_time) > setup_hold_time;
+   const auto is_pipelined = HLS->allocation_information->get_initiation_time(fu_type, current_vertex) != 0;
+   const auto n_cycles = HLS->allocation_information->get_cycles(fu_type, current_vertex, flow_graph);
    pipeliningCond = is_pipelined and (current_starting_time > current_cycle_starting_time) and
                     ((current_stage_period + current_starting_time + setup_hold_time + phi_extra_time +
                               (complex_op ? scheduling_mux_margins : 0) >
@@ -427,7 +414,7 @@ void parametric_list_based::CheckSchedulabilityConditions(
    {
       return;
    }
-   auto curr_vertex_type = GET_TYPE(flow_graph, current_vertex);
+   const auto curr_vertex_type = GET_TYPE(flow_graph, current_vertex);
    cannotBeChained0 =
        (current_starting_time >= current_cycle_ending_time) ||
        ((!is_pipelined && !(curr_vertex_type & TYPE_RET) && n_cycles == 0 &&
@@ -438,8 +425,7 @@ void parametric_list_based::CheckSchedulabilityConditions(
    {
       return;
    }
-   chainingRetCond = (unbounded || (cstep_has_RET_conflict && current_starting_time > (current_cycle_starting_time))) &&
-                     (curr_vertex_type & TYPE_RET);
+   chainingRetCond = (unbounded || cstep_has_RET_conflict) && (curr_vertex_type & TYPE_RET);
    if(chainingRetCond)
    {
       return;
@@ -466,37 +452,38 @@ void parametric_list_based::CheckSchedulabilityConditions(
    {
       return;
    }
-   MultiCond0 = (!is_pipelined && n_cycles > 0 && current_starting_time > (current_cycle_starting_time)) &&
-                current_ending_time - (n_cycles - 1) * clock_cycle + setup_hold_time + phi_extra_time +
-                        (complex_op ? scheduling_mux_margins : 0) >
-                    current_cycle_ending_time;
+   MultiCond0 = (n_cycles > 1 && (unbounded_RW || unbounded)) ||
+                ((!is_pipelined && n_cycles > 0 && current_starting_time > (current_cycle_starting_time)) &&
+                 current_ending_time - (n_cycles - 1) * clock_cycle + setup_hold_time + phi_extra_time +
+                         (complex_op ? scheduling_mux_margins : 0) >
+                     current_cycle_ending_time);
    if(MultiCond0)
    {
       return;
    }
    MultiCond1 = current_ending_time + setup_hold_time + phi_extra_time + (complex_op ? scheduling_mux_margins : 0) >
                     current_cycle_ending_time &&
-                unbounded;
+                unbounded && HLS->allocation_information->is_operation_bounded(flow_graph, current_vertex, fu_type);
    if(MultiCond1)
    {
       return;
    }
-   nonDirectMemCond = (curr_vertex_type & (TYPE_LOAD | TYPE_STORE)) &&
-                      !HLS->allocation_information->is_direct_access_memory_unit(fu_type) && RWFunctions;
-   if(nonDirectMemCond)
+   const auto curr_node = flow_graph->CGetOpNodeInfo(current_vertex);
+   const auto curr_node_name = curr_node->GetOperation();
+   LoadStoreFunctionConflict = (curr_vertex_type & (TYPE_LOAD | TYPE_STORE)) && RWFunctions;
+   if(LoadStoreFunctionConflict)
    {
       return;
    }
-   unboundedFunctionsCond =
-       (curr_vertex_type & TYPE_EXTERNAL) && (curr_vertex_type & TYPE_RW) && (nonDirectLoadStore || RWFunctions);
-   if(unboundedFunctionsCond)
+   FunctionLoadStoreConflict =
+       (curr_vertex_type & TYPE_EXTERNAL) && (curr_vertex_type & TYPE_RW) && (LoadStoreOp || RWFunctions);
+   if(FunctionLoadStoreConflict)
    {
       return;
    }
-   auto curr_node_name = flow_graph->CGetOpNodeInfo(current_vertex)->GetOperation();
    proxyFunCond = (curr_vertex_type & TYPE_EXTERNAL) &&
-                  (proxy_functions_used.find(curr_node_name) != proxy_functions_used.end() ||
-                   (reachable_proxy_functions.find(curr_node_name) != reachable_proxy_functions.end() &&
+                  (proxy_functions_used.count(curr_node_name) ||
+                   (reachable_proxy_functions.count(curr_node_name) &&
                     has_element_in_common(proxy_functions_used, reachable_proxy_functions.at(curr_node_name))));
    if(proxyFunCond)
    {
@@ -507,10 +494,9 @@ void parametric_list_based::CheckSchedulabilityConditions(
    if(cannotBeChained3)
    {
       bool is_chained = false;
-      InEdgeIterator ei, ei_end;
-      for(boost::tie(ei, ei_end) = boost::in_edges(current_vertex, *flow_graph); ei != ei_end; ei++)
+      BOOST_FOREACH(EdgeDescriptor e, boost::in_edges(current_vertex, *flow_graph))
       {
-         vertex from_vertex = boost::source(*ei, *flow_graph);
+         const auto from_vertex = boost::source(e, *flow_graph);
          if(operations.find(from_vertex) == operations.end())
          {
             continue;
@@ -715,8 +701,8 @@ void parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
 #endif
    unsigned int cstep_vuses_ARRAYs = 0;
    unsigned int cstep_vuses_others = 0;
-   bool cstep_has_RET_conflict = registering_output_p;
-   bool seen_cstep_has_RET_conflict = registering_output_p;
+   bool cstep_has_RET_conflict = false;
+   bool seen_cstep_has_RET_conflict = false;
 
    OpVertexSet::const_iterator rv, rv_end = ready_vertices.end();
 
@@ -728,12 +714,11 @@ void parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
    const auto TM = HLSMgr->get_tree_manager();
    auto fnode = TM->get_tree_node_const(funId);
    auto fd = GetPointer<function_decl>(fnode);
-   std::string fname;
-   tree_helper::get_mangled_fname(fd, fname);
+   const auto fname = tree_helper::GetMangledFunctionName(fd);
    CustomUnorderedSet<vertex> RW_stmts;
-   if(HLSMgr->design_interface_loads.find(fname) != HLSMgr->design_interface_loads.end())
+   if(HLSMgr->design_interface_io.find(fname) != HLSMgr->design_interface_io.end())
    {
-      for(const auto& bb2arg2stmtsR : HLSMgr->design_interface_loads.at(fname))
+      for(const auto& bb2arg2stmtsR : HLSMgr->design_interface_io.at(fname))
       {
          for(const auto& arg2stms : bb2arg2stmtsR.second)
          {
@@ -741,29 +726,11 @@ void parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
             {
                for(const auto& stmt : arg2stms.second)
                {
-                  THROW_ASSERT(flow_graph->CGetOpGraphInfo()->tree_node_to_operation.find(stmt) !=
-                                   flow_graph->CGetOpGraphInfo()->tree_node_to_operation.end(),
-                               "unexpected condition: STMT=" + STR(stmt));
-                  RW_stmts.insert(flow_graph->CGetOpGraphInfo()->tree_node_to_operation.at(stmt));
-               }
-            }
-         }
-      }
-   }
-   if(HLSMgr->design_interface_stores.find(fname) != HLSMgr->design_interface_stores.end())
-   {
-      for(const auto& bb2arg2stmtsW : HLSMgr->design_interface_stores.at(fname))
-      {
-         for(const auto& arg2stms : bb2arg2stmtsW.second)
-         {
-            if(arg2stms.second.size() > 0)
-            {
-               for(const auto& stmt : arg2stms.second)
-               {
-                  THROW_ASSERT(flow_graph->CGetOpGraphInfo()->tree_node_to_operation.find(stmt) !=
-                                   flow_graph->CGetOpGraphInfo()->tree_node_to_operation.end(),
-                               "unexpected condition");
-                  RW_stmts.insert(flow_graph->CGetOpGraphInfo()->tree_node_to_operation.at(stmt));
+                  const auto op_it = flow_graph->CGetOpGraphInfo()->tree_node_to_operation.find(stmt);
+                  if(op_it != flow_graph->CGetOpGraphInfo()->tree_node_to_operation.end())
+                  {
+                     RW_stmts.insert(op_it->second);
+                  }
                }
             }
          }
@@ -777,8 +744,10 @@ void parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
       bool unbounded = false;
       bool RWFunctions = false;
       bool unbounded_RW = false;
-      bool nonDirectLoadStore = false;
+      bool LoadStoreOp = false;
       unsigned int n_scheduled_ops = 0;
+      seen_cstep_has_RET_conflict = cstep_has_RET_conflict =
+          ((schedule->num_scheduled() - already_sch) != operations_number - 1) ? registering_output_p : false;
       std::set<std::string> proxy_functions_used;
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                     "      schedule->num_scheduled() " + std::to_string(schedule->num_scheduled()));
@@ -811,6 +780,20 @@ void parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
          }
          else
          {
+            auto live_vertex_type = GET_TYPE(flow_graph, *live_vertex_it);
+            if(live_vertex_type & TYPE_STORE)
+            {
+               seen_cstep_has_RET_conflict = cstep_has_RET_conflict = true;
+            }
+            if(live_vertex_type & (TYPE_LOAD | TYPE_STORE))
+            {
+               LoadStoreOp = true;
+            }
+            if((live_vertex_type & TYPE_EXTERNAL) && (live_vertex_type & TYPE_RW) &&
+               RW_stmts.find(*live_vertex_it) == RW_stmts.end())
+            {
+               RWFunctions = true;
+            }
             const auto II = HLS->allocation_information->get_initiation_time(res_binding->get_assign(*live_vertex_it),
                                                                              *live_vertex_it);
             if(FB->is_simple_pipeline() && (II > 1 || II == 0))
@@ -1060,17 +1043,17 @@ void parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
 
                bool predecessorsCond = false, pipeliningCond = false, cannotBeChained0 = false, chainingRetCond = false,
                     cannotBeChained1 = false, asyncCond = false, cannotBeChained2 = false, cannotBeChained3 = false,
-                    MultiCond0 = false, MultiCond1 = false, nonDirectMemCond = false, unboundedFunctionsCond = false,
-                    proxyFunCond = false;
+                    MultiCond0 = false, MultiCond1 = false, LoadStoreFunctionConflict = false,
+                    FunctionLoadStoreConflict = false, proxyFunCond = false;
 
                CheckSchedulabilityConditions(
                    operations, current_vertex, current_cycle, current_starting_time, current_ending_time,
                    current_stage_period, local_connection_map, current_cycle_starting_time, current_cycle_ending_time,
-                   setup_hold_time, phi_extra_time, scheduling_mux_margins, unbounded, RWFunctions, nonDirectLoadStore,
+                   setup_hold_time, phi_extra_time, scheduling_mux_margins, unbounded, RWFunctions, LoadStoreOp,
                    proxy_functions_used, cstep_has_RET_conflict, fu_type, current_ASAP, res_binding, schedule,
                    predecessorsCond, pipeliningCond, cannotBeChained0, chainingRetCond, cannotBeChained1, asyncCond,
-                   cannotBeChained2, cannotBeChained3, MultiCond0, MultiCond1, nonDirectMemCond, unboundedFunctionsCond,
-                   proxyFunCond);
+                   cannotBeChained2, cannotBeChained3, MultiCond0, MultiCond1, LoadStoreFunctionConflict,
+                   FunctionLoadStoreConflict, proxyFunCond, unbounded_RW);
 
                /// checking if predecessors have finished
                if(predecessorsCond)
@@ -1220,11 +1203,10 @@ void parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
                   black_list.at(fu_type).insert(current_vertex);
                   continue;
                }
-               else if(nonDirectMemCond)
+               else if(LoadStoreFunctionConflict)
                {
                   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                "                  Non-direct memory access operations may conflict with unbounded "
-                                "function calls");
+                                "                  Memory access operations may conflict with function calls");
                   if(black_list.find(fu_type) == black_list.end())
                   {
                      black_list.emplace(fu_type, OpVertexSet(flow_graph));
@@ -1232,11 +1214,10 @@ void parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
                   black_list.at(fu_type).insert(current_vertex);
                   continue;
                }
-               else if(unboundedFunctionsCond)
+               else if(FunctionLoadStoreConflict)
                {
                   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                "                  Unbounded function calls may conflict with non-direct memory access "
-                                "operations ");
+                                "                  function calls may conflict with memory access operations ");
                   if(black_list.find(fu_type) == black_list.end())
                   {
                      black_list.emplace(fu_type, OpVertexSet(flow_graph));
@@ -1332,16 +1313,17 @@ void parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                  "---" + GET_NAME(flow_graph, current_vertex) + " is bounded");
                }
-               /// check if we have non-direct memory accesses
-               if((curr_vertex_type & (TYPE_LOAD | TYPE_STORE)) &&
-                  !HLS->allocation_information->is_direct_access_memory_unit(fu_type))
+               /// check if we have memory accesses
+               if((curr_vertex_type & (TYPE_LOAD | TYPE_STORE)))
                {
-                  nonDirectLoadStore = true;
+                  LoadStoreOp = true;
                }
 
                /// update cstep_vuses
                if(curr_vertex_type & (TYPE_LOAD | TYPE_STORE))
                {
+                  seen_cstep_has_RET_conflict = cstep_has_RET_conflict = (curr_vertex_type & (TYPE_STORE)) != 0;
+
                   bool is_array = HLS->allocation_information->is_direct_access_memory_unit(fu_type);
                   unsigned var = is_array ? (HLS->allocation_information->is_memory_unit(fu_type) ?
                                                  HLS->allocation_information->get_memory_var(fu_type) :
@@ -1349,7 +1331,6 @@ void parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
                                             0;
                   if(!var || !HLSMgr->Rmem->is_private_memory(var))
                   {
-                     seen_cstep_has_RET_conflict = cstep_has_RET_conflict = true;
                      if(HLS->allocation_information->is_direct_access_memory_unit(fu_type) && !cstep_vuses_others)
                      {
                         cstep_vuses_ARRAYs = 1;
@@ -1364,9 +1345,10 @@ void parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
                      }
                   }
                }
-               // if((curr_vertex_type&TYPE_EXTERNAL) && (curr_vertex_type&TYPE_RW) &&
-               // !HLS->allocation_information->is_operation_bounded(flow_graph, current_vertex, fu_type))
-               //   seen_cstep_has_RET_conflict=cstep_has_RET_conflict = true;
+               if((curr_vertex_type & TYPE_EXTERNAL) && (curr_vertex_type & TYPE_RW))
+               {
+                  seen_cstep_has_RET_conflict = cstep_has_RET_conflict = true;
+               }
                /// set the schedule information
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                               "---" + GET_NAME(flow_graph, current_vertex) + " scheduled at " +
@@ -1561,7 +1543,6 @@ void parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
       /// clear the vises
       cstep_vuses_ARRAYs = cstep_vuses_ARRAYs > 0 ? cstep_vuses_ARRAYs - 1 : 0;
       cstep_vuses_others = cstep_vuses_others > 0 ? cstep_vuses_others - 1 : 0;
-      cstep_has_RET_conflict = registering_output_p;
       /// move to the next cycle
       ++current_cycle;
    }
@@ -1963,7 +1944,7 @@ void parametric_list_based::compute_function_topological_order()
    const CallGraphManagerConstRef CG = HLSMgr->CGetCallGraphManager();
    CG->CGetCallGraph()->TopologicalSort(topology_sorted_vertex);
 
-   CustomOrderedSet<unsigned> reachable_functions = CG->GetReachedBodyFunctionsFrom(funId);
+   CustomOrderedSet<unsigned> reachable_functions = CG->GetReachedFunctionsFrom(funId);
 
    std::list<unsigned int> topological_sorted_functions;
    for(auto v : topology_sorted_vertex)
@@ -2014,7 +1995,7 @@ DesignFlowStep_Status parametric_list_based::InternalExec()
    std::deque<vertex> vertices;
    boost::topological_sort(*bbg, std::front_inserter(vertices));
    auto viend = vertices.end();
-   ControlStep ctrl_steps = ControlStep(0u);
+   auto ctrl_steps = ControlStep(0u);
    /// initialize topological_sorted_functions
    compute_function_topological_order();
    for(auto vi = vertices.begin(); vi != viend; ++vi)
@@ -2110,7 +2091,7 @@ DesignFlowStep_Status parametric_list_based::InternalExec()
       xml_document document;
       xml_element* nodeRoot = document.create_root_node("hls");
       HLS->xwrite(nodeRoot, FB->CGetOpGraph(FunctionBehavior::FDFG));
-      document.write_to_file_formatted(function_name + "_scheduling.XML");
+      document.write_to_file_formatted(GetPath(function_name + "_scheduling.xml"));
    }
    return DesignFlowStep_Status::SUCCESS;
 }
@@ -2448,8 +2429,8 @@ void parametric_list_based::do_balanced_scheduling(const CustomUnorderedSet<vert
    /// step 2: compute operation distribution
    std::map<ControlStep, std::deque<vertex>> T;
    std::map<ControlStep, double> T_area;
-   ControlStep min_cycle = ControlStep(std::numeric_limits<unsigned int>::max());
-   ControlStep max_cycle = ControlStep(0u);
+   auto min_cycle = ControlStep(std::numeric_limits<unsigned int>::max());
+   auto max_cycle = ControlStep(0u);
    double total_resource_area = 0;
    for(auto current_op : sub_levels)
    {
@@ -2734,8 +2715,8 @@ void parametric_list_based::do_balanced_scheduling1(const CustomUnorderedSet<ver
 
    std::map<unsigned int, double> total_obj;
    std::map<unsigned int, std::map<ControlStep, double>> T_obj;
-   ControlStep min_cycle = ControlStep(std::numeric_limits<unsigned int>::max());
-   ControlStep max_cycle = ControlStep(0u);
+   auto min_cycle = ControlStep(std::numeric_limits<unsigned int>::max());
+   auto max_cycle = ControlStep(0u);
    for(auto current_op : sub_levels)
    {
       const auto curr_cs = schedule->get_cstep(current_op).second;
@@ -2924,7 +2905,7 @@ void parametric_list_based::do_balanced_scheduling1(const CustomUnorderedSet<ver
                if(!is_pipelined &&
                   (candidate_op_execution_time + setup_hold_time + phi_extra_time + scheduling_mux_margins) >
                       clock_cycle &&
-                  has_unbounded)
+                  has_unbounded && HLS->allocation_information->is_operation_bounded(opDFG, candidate_v, fu_type))
                {
                   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                 "   Multi-cycles operations cannot be scheduled together with unbounded operations");
@@ -3289,8 +3270,8 @@ parametric_list_based::ComputeHLSRelationships(const DesignFlowStep::Relationshi
                                        HLSFlowStep_Relationship::SAME_FUNCTION));
          }
 #endif
-         ret.insert(std::make_tuple(HLSFlowStep_Type::INITIALIZE_HLS, HLSFlowStepSpecializationConstRef(),
-                                    HLSFlowStep_Relationship::SAME_FUNCTION));
+         ret.insert(std::make_tuple(HLSFlowStep_Type::DOMINATOR_ALLOCATION, HLSFlowStepSpecializationConstRef(),
+                                    HLSFlowStep_Relationship::WHOLE_APPLICATION));
          break;
       }
       case INVALIDATION_RELATIONSHIP:

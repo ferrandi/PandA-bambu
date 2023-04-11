@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -52,6 +52,7 @@
 #include "custom_set.hpp"
 #include "hash_helper.hpp"
 /// utility include
+#include "panda_types.hpp"
 #include "refcount.hpp"
 
 /// STL include
@@ -83,9 +84,6 @@ enum class TreeVocabularyTokenTypes_TokenEnum;
 class tree_manager
 {
  private:
-   /// map between string and corresponding enum kinds
-   CustomUnorderedMap<std::string, enum kind> string_to_kind;
-
    /// cache for tree_manager::find
    CustomUnorderedMapUnstable<std::string, unsigned int> find_cache;
 
@@ -482,7 +480,7 @@ class tree_manager
     * @param type_index is the type of the integer constant
     * @return a tree reindex node for the integer value with as type type
     */
-   tree_nodeRef CreateUniqueIntegerCst(long long int value, const tree_nodeConstRef& type);
+   tree_nodeRef CreateUniqueIntegerCst(integer_cst_t value, const tree_nodeConstRef& type);
 
    /**
     * memoization of integer constants

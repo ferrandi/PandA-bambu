@@ -1,0 +1,186 @@
+name: Characterize device
+
+on:
+  workflow_dispatch:
+    inputs:
+      device:
+        description: "Device name"
+        required: true
+      technology:
+        description: "Technology files"
+        required: false
+        default: "C_COMPLEX,C_FP,C_HLS,C_IO,C_MEM,C_PC,C_PROFILING,C_STD,C_VEC"
+  workflow_call:
+    inputs:
+      device:
+        description: "Device name"
+        required: true
+        type: string
+      technology:
+        description: "Technology files"
+        required: false
+        type: string
+        default: "C_COMPLEX,C_FP,C_HLS,C_IO,C_MEM,C_PC,C_PROFILING,C_STD,C_VEC"
+    secrets:
+      CI_STORAGE_URL:
+        required: true
+      CI_STORAGE_USER:
+        required: true
+      CI_STORAGE_TOKEN:
+        required: true
+
+env:
+  device: ${{inputs.device}}
+  technology: ${{inputs.technology}}
+  tech_root: ./etc/lib/technology/
+  device_fu_list: device_fu_list
+  batch_size: 300
+  storage-url: ${{secrets.CI_STORAGE_URL}}
+  storage-user: ${{secrets.CI_STORAGE_USER}}
+  storage-token: ${{secrets.CI_STORAGE_TOKEN}}
+  host_jobs: $J
+
+jobs:
+  build:
+    uses: ./.github/workflows/build-appimage.yml
+    with:
+      package-name: bambu-characterize
+      compilers: ""
+      build-compiler: gcc-8
+      configure: --disable-bambu --enable-spider --enable-eucalyptus --enable-flopoco --enable-opt --with-opt-level=2 --enable-release CC=gcc-8 CXX=g++-8 --with-gcc8=/bin/false
+    secrets: inherit
+
+  setup:
+    needs: [build]
+    runs-on: [self-hosted]
+    outputs:
+      characterize-matrix: ${{steps.matrix.outputs.value}}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      - name: Download Bambu AppImage
+        uses: ./.github/actions/storage-download
+        with:
+          name: ${{needs.build.outputs.package-name}}
+          storage-url: "${{env.storage-url}}"
+          username: "${{env.storage-user}}"
+          password: "${{env.storage-token}}"
+      - name: Setup binaries
+        id: setup
+        shell: bash
+        run: |
+          mkdir bin
+          ln -s $PWD/*.AppImage bin/bambu
+          ln -s $PWD/*.AppImage bin/eucalyptus
+          ln -s $PWD/*.AppImage bin/spider
+          echo "local-bin=$PWD/bin" >> $GITHUB_OUTPUT
+      - name: Generate device FUs list
+        id: matrix
+        shell: bash
+        run: |
+          export PATH=${{steps.setup.outputs.local-bin}}:$PATH
+          IFS=$',' read -e -a tech_files <<< "${{env.technology}}"
+          tech="${{env.tech_root}}${tech_files[0]}_IPs.xml"
+          cnt=${#tech_files[@]}
+          for ((i=1;i<cnt;i++)) do
+            tech+=",${{env.tech_root}}${tech_files[i]}_IPs.xml"
+          done
+          python3 etc/scripts/characterize.py --device=${{env.device}} --technology-files=${tech} --list-only=${{env.device_fu_list}}
+          size="$(cat ${{env.device_fu_list}} | wc -l)"
+          count=$(($size / ${{env.batch_size}}))
+          if [[ $(($size % ${{env.batch_size}})) -ne 0 ]]; then count=$(($count + 1)); fi
+          array="{\"index\":\"0\"}"
+          for ((i=1;i<count;i++)) do
+            array+=",{\"index\":\"$i\"}"
+          done
+          array+="]}"
+          echo "value={\"include\":[${array}]}" >> $GITHUB_OUTPUT
+      - name: Upload device FUs list
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{env.device_fu_list}}
+          path: ${{env.device_fu_list}}
+
+  characterize:
+    needs: [build, setup]
+    runs-on: [self-hosted, long]
+    strategy:
+      fail-fast: false
+      matrix: ${{fromJson(needs.setup.outputs.characterize-matrix)}}
+    env:
+      upload-dir: upload
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      - name: Download Bambu AppImage
+        uses: ./.github/actions/storage-download
+        with:
+          name: ${{needs.build.outputs.package-name}}
+          storage-url: "${{env.storage-url}}"
+          username: "${{env.storage-user}}"
+          password: "${{env.storage-token}}"
+      - name: Setup binaries
+        id: setup
+        shell: bash
+        run: |
+          mkdir bin
+          ln -s $PWD/*.AppImage bin/bambu
+          ln -s $PWD/*.AppImage bin/eucalyptus
+          ln -s $PWD/*.AppImage bin/spider
+          echo "local-bin=$PWD/bin" >> $GITHUB_OUTPUT
+      - name: Download device FUs list
+        uses: actions/download-artifact@v3
+        with:
+          name: ${{env.device_fu_list}}
+      - name: Launch Bambu specific tests ${{matrix.index}}
+        shell: bash
+        run: |
+          export PATH=${{steps.setup.outputs.local-bin}}:$PATH
+          first_row="$((${{matrix.index}}*${{env.batch_size}}+1))"
+          last_row="$(((${{matrix.index}}+1)*${{env.batch_size}}))"
+          sed -n -e "${first_row},${last_row}p" ${{env.device_fu_list}} > current_list
+          python3 etc/scripts/characterize.py --from-list current_list
+          mkdir -p ${{env.upload-dir}}
+          mv ${{env.device}}.xml ${{env.upload-dir}}/${{env.device}}.${{matrix.index}}.xml
+      - name: Upload characterization batch ${{matrix.index}}
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{env.device}}
+          path: ${{env.upload-dir}}
+
+  aggregate:
+    needs: [characterize]
+    runs-on: [self-hosted]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      - name: Download Bambu AppImage
+        uses: ./.github/actions/storage-download
+        with:
+          name: ${{needs.build.outputs.package-name}}
+          storage-url: "${{env.storage-url}}"
+          username: "${{env.storage-user}}"
+          password: "${{env.storage-token}}"
+      - name: Setup binaries
+        id: setup
+        shell: bash
+        run: |
+          mkdir bin
+          ln -s $PWD/*.AppImage bin/bambu
+          ln -s $PWD/*.AppImage bin/eucalyptus
+          ln -s $PWD/*.AppImage bin/spider
+          echo "local-bin=$PWD/bin" >> $GITHUB_OUTPUT
+      - name: Download device FUs characterizations
+        uses: actions/download-artifact@v3
+        with:
+          name: ${{env.device}}
+      - name: Merge characterization results
+        shell: bash
+        run: |
+          export PATH=${{steps.setup.outputs.local-bin}}:$PATH
+          spider $(find ${{env.upload-dir}} -type f) ${{env.device}}.xml
+      - name: Upload device characterization
+        uses: actions/upload-artifact@v3
+        with:
+          name: "${{env.device}}_characterization"
+          path: "${{env.device}}.xml"

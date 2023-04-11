@@ -1,0 +1,190 @@
+name: Reusable GCC Regression Simple
+
+on:
+  workflow_call:
+    inputs:
+      package-name:
+        description: "Bambu AppImage package name"
+        required: true
+        type: string
+      test-compilers:
+        description: "Compiler used during tests"
+        required: true
+        type: string
+      additional-args:
+        description: "Additional arguments to be used during tests"
+        required: false
+        type: string
+        default: ""
+    secrets:
+      CI_STORAGE_URL:
+        required: true
+      CI_STORAGE_USER:
+        required: true
+      CI_STORAGE_TOKEN:
+        required: true
+
+env:
+  package-name: ${{inputs.package-name}}
+  test-compilers: ${{inputs.test-compilers}}
+  additional-args: ${{inputs.additional-args}}
+  report-dir: test-reports
+  storage-url: ${{secrets.CI_STORAGE_URL}}
+  storage-user: ${{secrets.CI_STORAGE_USER}}
+  storage-token: ${{secrets.CI_STORAGE_TOKEN}}
+  host_jobs: $J
+
+jobs:
+  setup:
+    runs-on: [self-hosted]
+    env:
+      grs-scripts: \"generic_gcc_regression_simple_bambu_pretty_print.sh --skip_list 20071029-1\",generic_gcc_regression_simple_bambu.sh,generic_gcc_regression_simple_eg_ext_pipelined.sh,generic_gcc_regression_simple_eg.sh
+    outputs:
+      grs-matrix: ${{steps.matrix.outputs.grs}}
+      libm-matrix: ${{steps.matrix.outputs.libm}}
+    steps:
+      - name: Check parameters
+        shell: bash
+        run: |
+          if [ -z "${{env.test-compilers}}" ]; then
+            echo "::error:: No test compiler specified"
+            exit 1
+          fi
+      - name: Generate matrix json
+        id: matrix
+        shell: bash
+        run: |
+          to_json_obj_rec() {
+            if [ $# -eq 1 ]; then
+              echo -n "{$1},"
+            else
+              [ -z "$1" ] && local current="$1" || local current="$1,"
+              local label="$2"
+              local array=()
+              IFS=$',' read -e -a array <<< $(sed -E ':a;s/("[^",]+),([^"]+")/\1|\2/g;ta' <<< "$3")
+              shift;shift;shift
+              local out=""
+              for item in "${array[@]}"; do
+                local string="$current\"$label\":\"$(sed -E 's/\"//g;s/\|/,/g' <<< "$item")\""
+                if [ -z "$current" ]; then
+                  out+="$(to_json_obj_rec "$string" "$@")"
+                else
+                  to_json_obj_rec "$string" "$@"
+                fi
+              done
+              [ ! -z "$out" ] && echo "$(sed -e 's/,$//' <<< $out)"
+            fi
+          }
+          args="$([ -z "${{env.additional-args}}"] && echo "\"\"" || echo "${{env.additional-args}}")"
+          grs_array="$(to_json_obj_rec "" "script" "${{env.grs-scripts}}" "args" "${args}" "compiler" "${{env.test-compilers}}")"
+          echo "grs={\"include\":[${grs_array}]}" >> $GITHUB_OUTPUT
+          libm_array="$(to_json_obj_rec "" "args" "${args}" "compiler" "${{env.test-compilers}}")"
+          echo "libm={\"include\":[${libm_array}]}" >> $GITHUB_OUTPUT
+
+  regressions:
+    needs: [setup]
+    runs-on: [self-hosted, long]
+    env:
+      args: -c=--simulator=VERILATOR -t150m
+    strategy:
+      fail-fast: false
+      matrix: ${{fromJson(needs.setup.outputs.grs-matrix)}}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      - name: Download Bambu AppImage
+        uses: ./.github/actions/storage-download
+        with:
+          name: ${{env.package-name}}
+          storage-url: "${{env.storage-url}}"
+          username: "${{env.storage-user}}"
+          password: "${{env.storage-token}}"
+      - name: Setup binaries
+        id: setup
+        shell: bash
+        run: |
+          mkdir bin
+          ln -s $PWD/*.AppImage bin/bambu
+          ln -s $PWD/*.AppImage bin/spider
+          echo "local-bin=$PWD/bin" >> $GITHUB_OUTPUT
+      - name: Generate out name
+        id: get
+        shell: bash
+        run: |
+          COMPILER="$(echo '${{matrix.compiler}}' | cut -d' ' -f1 | sed -r 's/I386_//g' | tr '[:upper:]' '[:lower:]')"
+          SCRIPT="$(echo '${{matrix.script}}' | cut -d' ' -f1 | sed -r 's/(\.sh|generic_gcc_)//g')"
+          OUTNAME="${COMPILER}_${SCRIPT}"
+          if [[ "${{matrix.args}}" = *-c=--speculative-sdc-scheduling* ]]; then
+            OUTNAME+="_sdc"
+          fi
+          echo "outname=$OUTNAME" >> $GITHUB_OUTPUT
+      - name: Launch test suite
+        id: suite
+        shell: bash
+        run: |
+          export PATH=${{steps.setup.outputs.local-bin}}:$PATH
+          mkdir ${{env.report-dir}}
+          out_dir="$PWD/${{env.report-dir}}"
+          echo "test-reports-dir=$out_dir" >> $GITHUB_OUTPUT
+          ./panda_regressions/hls/${{matrix.script}} --returnfail --junitdir="$out_dir" --csv="$out_dir/perf.csv" --table="$out_dir/perf.tex" -c=--compiler=${{matrix.compiler}} ${{env.args}} ${{matrix.args}}
+      - name: Upload test reports
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{steps.get.outputs.outname}}
+          path: ${{steps.suite.outputs.test-reports-dir}}
+
+  libm:
+    needs: [setup]
+    runs-on: [self-hosted, long]
+    strategy:
+      fail-fast: false
+      matrix: ${{fromJson(needs.setup.outputs.libm-matrix)}}
+    env:
+      script: generic_libm-tests.sh
+      args: -c=--simulator=VERILATOR -t150m
+      basename: libm
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      - name: Download Bambu AppImage
+        uses: ./.github/actions/storage-download
+        with:
+          name: ${{env.package-name}}
+          storage-url: "${{env.storage-url}}"
+          username: "${{env.storage-user}}"
+          password: "${{env.storage-token}}"
+      - name: Setup binaries
+        id: setup
+        shell: bash
+        run: |
+          mkdir bin
+          ln -s $PWD/*.AppImage bin/bambu
+          ln -s $PWD/*.AppImage bin/spider
+          echo "local-bin=$PWD/bin" >> $GITHUB_OUTPUT
+      - name: Generate out name
+        id: get
+        shell: bash
+        run: |
+          COMPILER="$(echo '${{matrix.compiler}}' | cut -d' ' -f1 | sed -r 's/I386_//g' | tr '[:upper:]' '[:lower:]')"
+          OUTNAME="${COMPILER}"
+          if [[ "${{matrix.args}}" = *-c=--speculative-sdc-scheduling* ]]; then
+            OUTNAME+="_sdc"
+          fi
+          OUTNAME+="_${{env.basename}}"
+          echo "outname=$OUTNAME" >> $GITHUB_OUTPUT
+      - name: Launch test suite
+        id: suite
+        shell: bash
+        run: |
+          export PATH=${{steps.setup.outputs.local-bin}}:$PATH
+          mkdir ${{env.report-dir}}
+          out_dir="$PWD/${{env.report-dir}}"
+          echo "test-reports-dir=$out_dir" >> $GITHUB_OUTPUT
+          ./panda_regressions/hls/${{env.script}} --returnfail --junitdir="$out_dir" --csv="$out_dir/perf.csv" --table="$out_dir/perf.tex" -c=--compiler=${{matrix.compiler}} ${{env.args}} ${{matrix.args}}
+      - name: Upload test reports
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{steps.get.outputs.outname}}
+          path: ${{steps.suite.outputs.test-reports-dir}}

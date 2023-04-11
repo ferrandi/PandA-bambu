@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -44,12 +44,13 @@
 #ifndef FILEIO_HPP
 #define FILEIO_HPP
 
-#include "Parameter.hpp"                   // for ParameterConstRef
-#include "dbgPrintHelper.hpp"              // for OUTPUT_LEVEL_PED...
-#include "exceptions.hpp"                  // for THROW_UNREACHABLE
-#include "file_IO_constants.hpp"           // for STR_CST_file_IO_...
-#include "gzstream.hpp"                    // for igzstream, ogzst...
-#include "refcount.hpp"                    // for refcount
+#include "Parameter.hpp"         // for ParameterConstRef
+#include "dbgPrintHelper.hpp"    // for OUTPUT_LEVEL_PED...
+#include "exceptions.hpp"        // for THROW_UNREACHABLE
+#include "file_IO_constants.hpp" // for STR_CST_file_IO_...
+#include "gzstream.hpp"          // for igzstream, ogzst...
+#include "refcount.hpp"          // for refcount
+#include "string_manipulation.hpp"
 #include <boost/filesystem/operations.hpp> // for copy_file, remove
 #include <boost/filesystem/path.hpp>       // for path
 #include <boost/lexical_cast.hpp>          // for lexical_cast
@@ -59,6 +60,7 @@
 #include <cstdlib>                         // for system
 #include <iostream>                        // for operator<<, basi...
 #include <string>                          // for string, operator+
+#include <type_traits>
 
 /// Return value of timeout signaling timeout has reached
 #define TIMEOUT 124
@@ -455,5 +457,24 @@ inline int PandaSystem(const ParameterConstRef Param, const std::string& system_
       const std::string command = "bash -f " + script_file_name + "";
       return system(command.c_str());
    }
+}
+
+inline bool NaturalVersionOrder(const boost::filesystem::path& _x, const boost::filesystem::path& _y)
+{
+   const auto splitx = SplitString(_x.string(), ".");
+   const auto splity = SplitString(_y.string(), ".");
+   for(size_t i = 0U; i < splitx.size(); ++i)
+   {
+      if(splity.size() <= i)
+      {
+         return false;
+      }
+      if(splitx.at(i).size() != splity.at(i).size())
+      {
+         return splitx.at(i).size() < splity.at(i).size();
+      }
+      return splitx.at(i) < splity.at(i);
+   }
+   return false;
 }
 #endif

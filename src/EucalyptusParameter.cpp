@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -41,23 +41,26 @@
  * Last modified by $Author$
  *
  */
-
-/// Autoheader include
-#include "config_HAVE_EXPERIMENTAL.hpp"
-
-/// Header include
 #include "EucalyptusParameter.hpp"
 
-#include "target_device.hpp"
-
 #include "language_writer.hpp"
+#include "target_device.hpp"
 
 #define TOOL_OPT_BASE 256
 #define INPUT_OPT_CHARACTERIZE (1 + TOOL_OPT_BASE)
 #define INPUT_OPT_TARGET_DATAFILE (1 + INPUT_OPT_CHARACTERIZE)
 #define INPUT_OPT_TARGET_SCRIPTFILE (1 + INPUT_OPT_TARGET_DATAFILE)
+#define OPT_LATTICE_ROOT (1 + INPUT_OPT_TARGET_SCRIPTFILE)
+#define OPT_XILINX_ROOT (1 + OPT_LATTICE_ROOT)
+#define OPT_MENTOR_ROOT (1 + OPT_XILINX_ROOT)
+#define OPT_MENTOR_OPTIMIZER (1 + OPT_MENTOR_ROOT)
+#define OPT_ALTERA_ROOT (1 + OPT_MENTOR_OPTIMIZER)
+#define OPT_NANOXPLORE_ROOT (1 + OPT_ALTERA_ROOT)
+#define OPT_NANOXPLORE_BYPASS (1 + OPT_NANOXPLORE_ROOT)
+#define OPT_PARALLEL_BACKEND (1 + OPT_NANOXPLORE_BYPASS)
 
 #include "utility.hpp"
+#include "utility/fileIO.hpp"
 #include <boost/filesystem.hpp>
 #include <getopt.h>
 
@@ -90,15 +93,33 @@ void EucalyptusParameter::PrintHelp(std::ostream& os) const
       << "    --target-scriptfile=file        Specify a script XML file including the scripts for the synthesis w.r.t. "
          "the target device.\n"
       << "    --clock-period=value            Specify the period of the clock signal (default 10 nanoseconds)\n"
-      << "    --characterize=<component_name> Characterize the given component"
-#if HAVE_EXPERIMENTAL
-      << "\n"
-      << "  Component Integration:\n"
-      << "    --import-ip-core=<file>         Converts the specified file into an XML-based representation.\n"
-      << "    --export-ip-core=<name>         Generates the HDL description of the specified component.\n"
-      << "    --output=<file>                 Specifies the name of the output file.\n"
-#endif
-      << "\n"
+      << "    --characterize=<component_name> Characterize the given component\n"
+      << std::endl;
+   // options defining where backend tools could be found
+   os << "  Backend configuration:\n\n"
+      << "    --mentor-visualizer\n"
+      << "        Simulate the RTL implementation and then open Mentor Visualizer.\n"
+      << "        (Mentor root has to be correctly set, see --mentor-root)\n\n"
+      << "    --mentor-optimizer=<0|1>\n"
+      << "        Enable or disable mentor optimizer. (default=enabled)\n\n"
+      << "    --nanoxplore-bypass=<name>\n"
+      << "        Define NanoXplore bypass when using NanoXplore. User may set NANOXPLORE_BYPASS\n"
+      << "        variable otherwise.\n\n"
+      << "    --altera-root=<path>\n"
+      << "        Define Altera tools path. Given path is searched for Quartus.\n"
+      << "        (default=/opt/altera:/opt/intelFPGA)\n\n"
+      << "    --lattice-root=<path>\n"
+      << "        Define Lattice tools path. Given path is searched for Diamond.\n"
+      << "        (default=/opt/diamond:/usr/local/diamond)\n\n"
+      << "    --mentor-root=<path>\n"
+      << "        Define Mentor tools path. Given directory is searched for Modelsim and Visualizer\n"
+      << "        (default=/opt/mentor)\n\n"
+      << "    --nanoxplore-root=<path>\n"
+      << "        Define NanoXplore tools path. Given directory is searched for NXMap.\n"
+      << "        (default=/opt/NanoXplore/NXMap3)\n\n"
+      << "    --xilinx-root=<path>\n"
+      << "        Define Xilinx tools path. Given directory is searched for both ISE and Vivado\n"
+      << "        (default=/opt/Xilinx)\n\n"
       << std::endl;
 }
 
@@ -120,21 +141,22 @@ int EucalyptusParameter::Exec()
    // this is a GNU extension.
    const char* const short_options = COMMON_SHORT_OPTIONS_STRING "w:";
 
-   const struct option long_options[] = {
-      COMMON_LONG_OPTIONS,
-      {"characterize", required_argument, nullptr, INPUT_OPT_CHARACTERIZE},
-      {"clock-period", required_argument, nullptr, 0},
-#if HAVE_EXPERIMENTAL
-      {"export-ip-core", required_argument, nullptr, 0},
-      {"import-ip-core", required_argument, nullptr, 0},
-      {"output", required_argument, nullptr, 0},
-#endif
-      {"target-datafile", required_argument, nullptr, INPUT_OPT_TARGET_DATAFILE},
-      {"target-device", required_argument, nullptr, 0},
-      {"target-scriptfile", required_argument, nullptr, INPUT_OPT_TARGET_SCRIPTFILE},
-      {"writer", required_argument, nullptr, 'w'},
-      {nullptr, 0, nullptr, 0}
-   };
+   const struct option long_options[] = {COMMON_LONG_OPTIONS,
+                                         {"characterize", required_argument, nullptr, INPUT_OPT_CHARACTERIZE},
+                                         {"clock-period", required_argument, nullptr, 0},
+                                         {"target-datafile", required_argument, nullptr, INPUT_OPT_TARGET_DATAFILE},
+                                         {"target-device", required_argument, nullptr, 0},
+                                         {"target-scriptfile", required_argument, nullptr, INPUT_OPT_TARGET_SCRIPTFILE},
+                                         {"writer", required_argument, nullptr, 'w'},
+                                         {"altera-root", optional_argument, nullptr, OPT_ALTERA_ROOT},
+                                         {"lattice-root", optional_argument, nullptr, OPT_LATTICE_ROOT},
+                                         {"mentor-root", optional_argument, nullptr, OPT_MENTOR_ROOT},
+                                         {"mentor-optimizer", optional_argument, nullptr, OPT_MENTOR_OPTIMIZER},
+                                         {"nanoxplore-root", optional_argument, nullptr, OPT_NANOXPLORE_ROOT},
+                                         {"nanoxplore-bypass", optional_argument, nullptr, OPT_NANOXPLORE_BYPASS},
+                                         {"xilinx-root", optional_argument, nullptr, OPT_XILINX_ROOT},
+                                         {"parallel-backend", no_argument, nullptr, OPT_PARALLEL_BACKEND},
+                                         {nullptr, 0, nullptr, 0}};
 
    if(argc == 1) // Bambu called without arguments, it simple prints help message
    {
@@ -169,16 +191,52 @@ int EucalyptusParameter::Exec()
             setOption(OPT_target_device_script, optarg);
             break;
          }
+         case OPT_ALTERA_ROOT:
+         {
+            setOption(OPT_altera_root, GetPath(optarg));
+            break;
+         }
+         case OPT_LATTICE_ROOT:
+         {
+            setOption(OPT_lattice_root, GetPath(optarg));
+            break;
+         }
+         case OPT_MENTOR_ROOT:
+         {
+            setOption(OPT_mentor_root, GetPath(optarg));
+            break;
+         }
+         case OPT_MENTOR_OPTIMIZER:
+         {
+            setOption(OPT_mentor_optimizer, boost::lexical_cast<bool>(optarg));
+            break;
+         }
+         case OPT_NANOXPLORE_ROOT:
+         {
+            setOption(OPT_nanoxplore_root, GetPath(optarg));
+            break;
+         }
+         case OPT_NANOXPLORE_BYPASS:
+         {
+            setOption(OPT_nanoxplore_bypass, std::string(optarg));
+            break;
+         }
+         case OPT_XILINX_ROOT:
+         {
+            setOption(OPT_xilinx_root, GetPath(optarg));
+            break;
+         }
+         case OPT_PARALLEL_BACKEND:
+         {
+            setOption(OPT_parallel_backend, true);
+            break;
+         }
          /// output options
          case 'w':
          {
             if(std::string(optarg) == "V")
             {
                setOption(OPT_writer_language, static_cast<int>(HDLWriter_Language::VERILOG));
-#if HAVE_EXPERIMENTAL
-               else if(std::string(optarg) == "S")
-                   setOption(OPT_writer_language, static_cast<int>(HDLWriter_Language::SYSTEMC));
-#endif
             }
             else if(std::string(optarg) == "H")
             {
@@ -226,20 +284,6 @@ int EucalyptusParameter::Exec()
             {
                setOption(OPT_clock_period, optarg);
             }
-#if HAVE_EXPERIMENTAL
-            else if(long_options[option_index].name == std::string("import-ip-core"))
-            {
-               setOption(OPT_import_ip_core, optarg);
-            }
-            else if(long_options[option_index].name == std::string("export-ip-core"))
-            {
-               setOption(OPT_export_ip_core, optarg);
-            }
-            else if(long_options[option_index].name == std::string("output"))
-            {
-               setOption(OPT_output_file, GetPath(optarg));
-            }
-#endif
             else
             {
                THROW_ERROR("Not supported option: " + std::string(long_options[option_index].name));
@@ -288,7 +332,7 @@ void EucalyptusParameter::CheckParameters()
       std::vector<boost::filesystem::path> sorted_paths;
       std::copy(boost::filesystem::directory_iterator(parent_dir), boost::filesystem::directory_iterator(),
                 std::back_inserter(sorted_paths));
-      std::sort(sorted_paths.begin(), sorted_paths.end());
+      std::sort(sorted_paths.begin(), sorted_paths.end(), NaturalVersionOrder);
       return sorted_paths;
    };
 
@@ -444,7 +488,7 @@ void EucalyptusParameter::CheckParameters()
    const auto search_xmap = [&](const std::string& dir) {
       if(boost::filesystem::exists(dir + "/bin/nxpython"))
       {
-         setOption(OPT_nanoxplore_settings, "export PATH=$PATH:" + dir + "/bin");
+         setOption(OPT_nanoxplore_root, dir);
       }
    };
    for(const auto& nanox_dir : nanox_dirs)
@@ -631,17 +675,6 @@ void EucalyptusParameter::CheckParameters()
       }
       setOption(OPT_device_string, device_string);
    }
-#if HAVE_EXPERIMENTAL
-   /// checking of import/export of IP cores
-   if(isOption(OPT_import_ip_core) and isOption(OPT_export_ip_core))
-   {
-      THROW_ERROR("Importing and exporting of IP cores are mutually exclusive");
-   }
-   if((isOption(OPT_import_ip_core) or isOption(OPT_export_ip_core)) and !isOption(OPT_output_file))
-   {
-      THROW_ERROR("Importing/Exporting of IP cores requires to specify the name of the output file (--output)");
-   }
-#endif
 }
 
 void EucalyptusParameter::SetDefaults()
@@ -655,7 +688,7 @@ void EucalyptusParameter::SetDefaults()
    setOption(OPT_lattice_root, "/opt/diamond:/usr/local/diamond");
    setOption(OPT_mentor_root, "/opt/mentor");
    setOption(OPT_mentor_optimizer, true);
-   setOption(OPT_nanoxplore_root, "/opt/NanoXplore/NXmap");
+   setOption(OPT_nanoxplore_root, "/opt/NanoXplore/NXmap3");
    setOption(OPT_verilator_parallel, false);
    setOption(OPT_xilinx_root, "/opt/Xilinx");
 
@@ -675,13 +708,11 @@ void EucalyptusParameter::SetDefaults()
    /// backend HDL
    setOption(OPT_writer_language, static_cast<int>(HDLWriter_Language::VERILOG));
    setOption(OPT_timing_simulation, false);
-   setOption(OPT_sync_reset, "no");
+   setOption(OPT_reset_type, "no");
    setOption(OPT_reg_init_value, false);
 
-   setOption(OPT_output_directory, "work");
+   setOption(OPT_output_directory, GetCurrentPath() + "/HLS_output/");
    setOption(OPT_rtl, true);
-   setOption(OPT_level_reset, false);
-#if HAVE_EXPERIMENTAL
+   setOption(OPT_reset_level, false);
    setOption(OPT_mixed_design, true);
-#endif
 }

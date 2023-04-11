@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -43,6 +43,10 @@
 #ifndef _TIME_MODEL_HPP_
 #define _TIME_MODEL_HPP_
 
+#include "refcount.hpp"
+#include "schedule.hpp"
+#include "target_device.hpp"
+
 #include <boost/version.hpp>
 
 #if BOOST_VERSION >= 104600
@@ -52,18 +56,8 @@
 #endif
 #include <boost/math/distributions.hpp>
 
-#include "custom_map.hpp"
 #include <string>
 #include <vector>
-
-#include "target_device.hpp"
-
-/// HLS/scheduling include
-#include "schedule.hpp"
-
-/// utility includes
-#include "refcount.hpp"
-#include "utility.hpp"
 
 /// refcount definition for the class
 CONSTREF_FORWARD_DECL(Parameter);
@@ -74,9 +68,6 @@ class xml_element;
 class time_model
 {
  public:
-   /// statistical delay for this type of operation on a given functional unit.
-   boost::math::normal statistical_delay;
-
    /// map representing the pin-to-pin delay
    std::map<std::string, std::map<std::string, double>> pin_to_pin_delay;
 

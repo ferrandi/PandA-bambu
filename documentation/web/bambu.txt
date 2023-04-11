@@ -303,7 +303,7 @@ In the following the current Bambu options are reported:
                          Politecnico di Milano - DEIB
                           System Architectures Group
 ********************************************************************************
-                Copyright (c) 2004-2022 Politecnico di Milano
+                Copyright (c) 2004-2023 Politecnico di Milano
 Version: PandA 0.9.6
 
 Usage:

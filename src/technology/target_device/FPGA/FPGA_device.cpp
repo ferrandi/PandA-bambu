@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -43,7 +43,6 @@
  */
 #include "FPGA_device.hpp"
 
-#include "config_HAVE_EXPERIMENTAL.hpp"
 #include "config_PANDA_DATA_INSTALLDIR.hpp"
 
 #include "target_technology.hpp"
@@ -90,10 +89,8 @@ void FPGA_device::load_devices(const target_deviceRef device)
    default_device_data["xc7vx690t-3ffg1930-VVD"] = "xc7vx690t-3ffg1930-VVD.data";
    default_device_data["xc7vx330t-1ffg1157"] = "xc7vx330t-1ffg1157.data";
    default_device_data["xc7a100t-1csg324-VVD"] = "xc7a100t-1csg324-VVD.data";
-
-#if(0 && HAVE_EXPERIMENTAL)
-   default_device_data["xc3s1500l-4fg676"] = "Spartan-3-xc3s1500l-4fg676.data";
-#endif
+   default_device_data["xcku060-3ffva1156-VVD"] = "xcku060-3ffva1156-VVD.data";
+   default_device_data["xcu280-2Lfsvh2892-VVD"] = "xcu280-2Lfsvh2892-VVD.data";
 
    default_device_data["EP2C70F896C6"] = "EP2C70F896C6.data";
    default_device_data["EP2C70F896C6-R"] = "EP2C70F896C6-R.data";
@@ -105,6 +102,7 @@ void FPGA_device::load_devices(const target_deviceRef device)
    default_device_data["LFE5U85F8BG756C"] = "LFE5U85F8BG756C.data";
    default_device_data["nx1h35S"] = "nx1h35S.data";
    default_device_data["nx1h140tsp"] = "nx1h140tsp.data";
+   default_device_data["nx2h540tsc"] = "nx2h540tsc.data";
 
    default_device_data["nangate45"] = "nangate45.data";
    default_device_data["asap7-BC"] = "asap7-BC.data";

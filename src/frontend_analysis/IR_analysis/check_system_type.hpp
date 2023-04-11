@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -43,22 +43,18 @@
 #ifndef CHECK_SYSTEM_TYPE_HPP
 #define CHECK_SYSTEM_TYPE_HPP
 
-/// Autoheader include
 #include "config_HAVE_LEON3.hpp"
 
-/// Superclass include
-#include "function_frontend_flow_step.hpp"
-
-/// STD include
 #include "custom_map.hpp"
 #include "custom_set.hpp"
+#include "function_frontend_flow_step.hpp"
+#include "refcount.hpp"
+
+#include <string>
 #include <vector>
 
-/// Utility include
-#include "refcount.hpp"
-#include "utility.hpp"
-
 CONSTREF_FORWARD_DECL(BehavioralHelper);
+CONSTREF_FORWARD_DECL(Parameter);
 REF_FORWARD_DECL(tree_manager);
 REF_FORWARD_DECL(tree_node);
 
@@ -78,27 +74,27 @@ class CheckSystemType : public FunctionFrontendFlowStep
    static std::vector<std::string> systemIncPath;
 
    /// Associates to each system header file its full path
-   static CustomUnorderedMapUnstable<std::string, std::string> inclNameToPath;
+   static const CustomUnorderedMap<std::string, std::string> inclNameToPath;
 
    /// Associates a function to its original name
-   static CustomUnorderedMapUnstable<std::string, std::string> rename_function;
+   static const CustomUnorderedMap<std::string, std::string> rename_function;
 
    /// Associates a type to its original name
-   static CustomUnorderedMapUnstable<std::string, std::string> rename_types;
+   static const CustomUnorderedMap<std::string, std::string> rename_types;
 
    /// The set of functions which have to be considered library_system
-   static CustomUnorderedSet<std::string> library_system_functions;
+   static const CustomUnorderedSet<std::string> library_system_functions;
 
    /// The set of headers which contains function which have to be considered library_system
-   static CustomUnorderedSet<std::string> library_system_includes;
+   static const CustomUnorderedSet<std::string> library_system_includes;
 
 #if HAVE_LEON3
    /// The set of system function not supported by bcc
-   static CustomUnorderedSet<std::string> not_supported_leon3_functions;
+   static const CustomUnorderedSet<std::string> not_supported_leon3_functions;
 #endif
 
    /// Map undefined library function to corresponding header
-   static CustomUnorderedMapUnstable<std::string, std::string> undefined_library_function_include;
+   static const CustomUnorderedMap<std::string, std::string> undefined_library_function_include;
 
    /// Already executed
    bool already_executed;
@@ -107,7 +103,7 @@ class CheckSystemType : public FunctionFrontendFlowStep
     * Examinate recursively the tree to detect system types and system variables
     * @param tn is the root of the subtree to be examinated; it must be a tree_reindex
     */
-   void recursive_examinate(const tree_nodeRef& tn, CustomUnorderedSet<unsigned int>& already_visited);
+   void recursive_examinate(const tree_nodeRef& tn, CustomUnorderedSet<unsigned int>& already_visited) const;
 
    /**
     * Examinate recursively the tree to detect system types and system variables
@@ -115,7 +111,7 @@ class CheckSystemType : public FunctionFrontendFlowStep
     * @param index is the index of the tree_node
     */
    void recursive_examinate(const tree_nodeRef& curr_tn, const unsigned int index,
-                            CustomUnorderedSet<unsigned int>& already_visited);
+                            CustomUnorderedSet<unsigned int>& already_visited) const;
 
    /**
     * Check if an header is a system header
@@ -126,14 +122,14 @@ class CheckSystemType : public FunctionFrontendFlowStep
    /**
     * Build the include map, the function rename map and library system sets
     */
-   void build_include_structures();
+   static void build_include_structures(ParameterConstRef parameters);
 
    /**
     * Given the string stored in a srcp of the raw return the correct include name
     * @param include is the string of srcp to be checked
-    * @param real_name is the string fixed
+    * @return std::string is the string fixed
     */
-   void getRealInclName(const std::string& include, std::string& real_name) const;
+   static std::string getRealInclName(const std::string& include);
 
    /**
     * Return the set of analyses in relationship with this design step

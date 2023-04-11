@@ -1,0 +1,58 @@
+name: GCC Regression Simple VHDL
+
+on:
+  workflow_dispatch:
+    inputs:
+      package-name:
+        description: "Bambu AppImage name"
+        required: false
+        type: string
+        default: bambu-grs
+      compilers:
+        description: "Front-end compiler string"
+        required: false
+        type: string
+        default: gcc-4.9,clang-4
+      configure:
+        description: "Bambu build configuration arguments"
+        required: false
+        type: string
+        default: --enable-glpk --enable-flopoco --enable-opt --with-opt-level=2 --enable-release --with-gcc8=/bin/false
+      test-compilers:
+        description: "Compiler used during tests"
+        required: false
+        type: string
+        default: I386_GCC49
+      additional-args:
+        description: "Additional arguments to be used during tests"
+        required: false
+        type: string
+        default: ""
+
+jobs:
+  build:
+    uses: ./.github/workflows/build-appimage.yml
+    with:
+      version: ${{inputs.package-name}}
+      compilers: ${{ inputs.compilers }}
+      build-compiler: gcc-8
+      configure: ${{ inputs.configure }} CC=gcc-8 CXX=g++-8
+    secrets: inherit
+
+  test-suite:
+    needs: [build]
+    uses: ./.github/workflows/reusable-grs-vhdl.yml
+    with:
+      package-name: ${{needs.build.outputs.package-name}}
+      test-compilers: ${{inputs.test-compilers}}
+      additional-args: ${{inputs.additional-args}}
+    secrets: inherit
+
+  success:
+    if: ${{always()}}
+    needs: [test-suite]
+    runs-on: [self-hosted]
+    steps:
+      - name: Check test suite status
+        if: ${{ needs.test-suite.result != 'success' }}
+        run: exit 1

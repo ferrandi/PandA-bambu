@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -191,7 +191,7 @@ CustomUnorderedSet<std::string> pragma_manager::getFunctionCallPragmas(const std
 void pragma_manager::AddFunctionDefinitionPragmas(const std::string& function_name,
                                                   const CustomUnorderedSet<std::string>& pragmas)
 {
-   for(auto pragma : pragmas)
+   for(const auto& pragma : pragmas)
    {
       boost::match_results<std::string::const_iterator> what;
       boost::regex expr;
@@ -356,7 +356,7 @@ pragma_manager::ExtractClauses(const std::string& clauses_list) const
 
    std::vector<std::string> splitted = SplitString(trimmed_clauses, " \t\n");
 
-   for(auto clause : splitted)
+   for(const auto& clause : splitted)
    {
       if(clause.find('(') != std::string::npos)
       {

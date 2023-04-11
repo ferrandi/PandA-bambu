@@ -13,7 +13,7 @@ ssize_t read(int fd, void* __restrict buf, size_t count)
    signed short int res;
    long long int res_ll_int;
    int index = 0;
-   while(index + 4 < count)
+   while(index + 4 <= count)
    {
       char control_word;
       res_ll_int = (long long int)__bambu_read4c((unsigned int)fd);

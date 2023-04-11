@@ -58,7 +58,7 @@ struct bench_args_t {
 };
 int INPUT_SIZE = sizeof(struct bench_args_t);
 
-void run_benchmark( void *vargs ) {
+__attribute((noinline)) void run_benchmark( void *vargs ) {
   struct bench_args_t *args = (struct bench_args_t *)vargs;
   needwun( args->seqA, args->seqB, args->allignedA, args->allignedB, args->A, args->ptr);
 }

@@ -167,7 +167,6 @@ if BUILD_BAMBU
      frontend_analysis/IR_analysis/hls_div_cg_ext.hpp \
      frontend_analysis/IR_analysis/HWCallInjection.hpp \
      frontend_analysis/IR_analysis/InterfaceInfer.hpp \
-     frontend_analysis/IR_analysis/FunctionInterfaceInfer.hpp \
      frontend_analysis/IR_analysis/IR_lowering.hpp \
      frontend_analysis/IR_analysis/loops_analysis_bambu.hpp \
      frontend_analysis/IR_analysis/lut_transformation.hpp \
@@ -215,7 +214,6 @@ if BUILD_BAMBU
      frontend_analysis/IR_analysis/hls_div_cg_ext.cpp \
      frontend_analysis/IR_analysis/HWCallInjection.cpp \
      frontend_analysis/IR_analysis/InterfaceInfer.cpp \
-     frontend_analysis/IR_analysis/FunctionInterfaceInfer.cpp \
      frontend_analysis/IR_analysis/loops_analysis_bambu.cpp \
      frontend_analysis/IR_analysis/lut_transformation.cpp \
      frontend_analysis/IR_analysis/multi_way_if.cpp \
@@ -320,11 +318,18 @@ lib_IR_manipulation_la_CPPFLAGS = \
    -I$(top_srcdir)/src/graph \
    -I$(top_srcdir)/src/parser/compiler \
    -I$(top_srcdir)/src/rtl \
+   -I$(top_srcdir)/src/technology/physical_library \
+   -I$(top_srcdir)/src/technology/target_device \
    -I$(top_srcdir)/src/tree \
    -I$(top_srcdir)/src/utility \
    -I$(top_srcdir)/src/utility/probability_distribution \
    -I$(top_srcdir)/src/wrapper/compiler \
    $(AM_CPPFLAGS)
+
+if BUILD_BAMBU
+lib_IR_manipulation_la_CPPFLAGS += \
+   -I$(top_srcdir)/src/technology/physical_library/models
+endif
 
 if BUILD_LIB_FROM_PRAGMA
   lib_IR_manipulation_la_CPPFLAGS += \

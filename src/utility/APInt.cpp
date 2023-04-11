@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2020-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -49,9 +49,12 @@ using namespace boost::multiprecision;
 
 using bw_t = APInt::bw_t;
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wzero-as-null-pointer-constant"
 APInt::APInt() : _data(57)
 {
 }
+#pragma GCC diagnostic pop
 
 bool operator<(const APInt& lhs, const APInt& rhs)
 {
@@ -191,13 +194,13 @@ APInt& APInt::operator^=(const APInt& rhs)
 
 APInt& APInt::operator<<=(const APInt& rhs)
 {
-   mpz_mul_2exp(_data.backend().data(), _data.backend().data(), mpz_get_ui(rhs._data.backend().data()));
+   _data <<= static_cast<bw_t>(rhs._data);
    return *this;
 }
 
 APInt& APInt::operator>>=(const APInt& rhs)
 {
-   mpz_div_2exp(_data.backend().data(), _data.backend().data(), mpz_get_ui(rhs._data.backend().data()));
+   _data >>= static_cast<bw_t>(rhs._data);
    return *this;
 }
 
@@ -251,17 +254,17 @@ APInt& APInt::operator--()
 
 void APInt::bit_set(bw_t i)
 {
-   boost::multiprecision::bit_set(_data, i);
+   _data |= 0x1_apint << i;
 }
 
 void APInt::bit_clr(bw_t i)
 {
-   boost::multiprecision::bit_unset(_data, i);
+   _data &= ~(0x1_apint << i);
 }
 
 bool APInt::bit_tst(bw_t i) const
 {
-   return boost::multiprecision::bit_test(_data, i);
+   return ((_data >> i) & 1) != 0;
 }
 
 bool APInt::sign() const
@@ -269,14 +272,24 @@ bool APInt::sign() const
    return _data < 0;
 }
 
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wconversion"
+#pragma clang diagnostic ignored "-Wsign-conversion"
+#else
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wconversion"
+#pragma GCC diagnostic ignored "-Wsign-conversion"
+#endif
+
 APInt& APInt::extOrTrunc(bw_t bw, bool sign)
 {
    THROW_ASSERT(bw, "Minimum bitwidth of 1 is required");
-   const APInt_internal mask((APInt_internal(1) << bw) - APInt_internal(1), nullptr);
+   const number mask = (0x1_apint << bw) - 1;
    _data &= mask;
-   if(sign && bit_test(_data, static_cast<unsigned>(bw - 1)))
+   if(sign && bit_tst(bw - 1U))
    {
-      _data += (APInt_internal(-1) << bw);
+      _data += (-0x1_apint << bw);
    }
    return *this;
 }
@@ -284,65 +297,95 @@ APInt& APInt::extOrTrunc(bw_t bw, bool sign)
 APInt APInt::extOrTrunc(bw_t bw, bool sign) const
 {
    THROW_ASSERT(bw, "Minimum bitwidth of 1 is required");
-   const APInt_internal mask((APInt_internal(1) << bw) - APInt_internal(1), nullptr);
-   APInt_internal val = _data & mask;
-   if(sign && bit_test(val, static_cast<unsigned>(bw - 1)))
+   const number mask = (0x1_apint << bw) - 1;
+   APInt val(_data & mask);
+   if(sign && val.bit_tst(bw - 1U))
    {
-      val += (APInt_internal(-1) << bw);
+      val += (-0x1_apint << bw);
    }
    return APInt(val);
 }
 
 bw_t APInt::trailingZeros(bw_t bw) const
 {
-   return static_cast<bw_t>(std::min(static_cast<mp_bitcnt_t>(bw), mpz_scan1(_data.backend().data(), 0)));
+   bw_t i = 0;
+   for(; i < bw; ++i)
+   {
+      if(bit_tst(i))
+         break;
+   }
+   return i;
 }
 
 bw_t APInt::trailingOnes(bw_t bw) const
 {
-   return static_cast<bw_t>(std::min(static_cast<mp_bitcnt_t>(bw), mpz_scan0(_data.backend().data(), 0)));
+   bw_t i = 0;
+   for(; i < bw; ++i)
+   {
+      if(!bit_tst(i))
+         break;
+   }
+   return i;
 }
 
 bw_t APInt::leadingZeros(bw_t bw) const
 {
-   int i = bw;
-   for(; i > 0;)
+   if(_data < 0)
    {
-      if(bit_test(_data, static_cast<unsigned>(--i)))
-      {
-         break;
-      }
+      return 0;
    }
-   i = i ? (i + 1) : i;
-   return static_cast<bw_t>(bw - i);
+   if(_data == 0)
+   {
+      return bw;
+   }
+   bw_t lzc = (bw < backend::limb_bits) ? (bw - backend::limb_bits) : 0;
+   const auto limbs = _data.backend().limbs();
+   for(int i = (bw - 1U) / backend::limb_bits; i >= 0; --i)
+   {
+      const auto& val = limbs[i];
+      if(val != 0)
+      {
+         return lzc + __builtin_clzll(val);
+      }
+      lzc += backend::limb_bits;
+   }
+   return lzc;
 }
 
 bw_t APInt::leadingOnes(bw_t bw) const
 {
-   int i = bw;
-   for(; i >= 0;)
+   bw_t i = bw;
+   for(; i > 0; --i)
    {
-      if(!bit_test(_data, static_cast<unsigned>(--i)))
-      {
+      if(!bit_tst(i - 1U))
          break;
-      }
    }
-   ++i;
-   return static_cast<bw_t>(bw - i);
+   return bw - i;
 }
 
 APInt::bw_t APInt::minBitwidth(bool sign) const
 {
-   const auto bw = static_cast<bw_t>(mpz_sizeinbase(_data.backend().data(), 2));
-   return sign ? (leadingOnes(bw) == 1 ? bw : static_cast<bw_t>(bw + 1)) :
-                 (_data.sign() < 0 ? static_cast<bw_t>(std::numeric_limits<bw_t>::max()) : bw);
+   if(_data.backend().isneg())
+   {
+      if(!sign)
+      {
+         return std::numeric_limits<number>::digits;
+      }
+      return std::numeric_limits<number>::digits + 1 -
+             APInt(-_data - 1).leadingZeros(std::numeric_limits<number>::digits);
+   }
+   else if(_data.is_zero())
+   {
+      return 1U;
+   }
+   return std::numeric_limits<number>::digits - leadingZeros(std::numeric_limits<number>::digits) + sign;
 }
 
-std::string APInt::str(int base) const
-{
-   std::unique_ptr<char, void (*)(void*)> res(mpz_get_str(NULL, base, _data.backend().data()), std::free);
-   return std::string(res.get());
-}
+#ifdef __clang__
+#pragma clang diagnostic pop
+#else
+#pragma GCC diagnostic pop
+#endif
 
 APInt APInt::getMaxValue(bw_t bw)
 {
@@ -366,6 +409,12 @@ APInt APInt::getSignedMinValue(bw_t bw)
 
 std::ostream& operator<<(std::ostream& str, const APInt& v)
 {
-   str << v.str();
+   str << v._data;
+   return str;
+}
+
+std::istream& operator>>(std::istream& str, APInt& v)
+{
+   str >> v._data;
    return str;
 }

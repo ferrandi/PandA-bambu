@@ -1,7 +1,7 @@
 #!/bin/bash
 abs_script=$(readlink -e $0)
 dir_script=$(dirname $abs_script)
-$dir_script/../../test_panda.py --tool=bambu --bambu=bambu --spider=spider \
+python3 $dir_script/../../test_panda.py --tool=bambu --bambu=bambu --spider=spider \
    --args="--configuration-name=pow_square " \
    --args="--configuration-name=mult_square -DMULT_SQUARE" \
    --args="--configuration-name=single_pow_square -DFP_SINGLE" \

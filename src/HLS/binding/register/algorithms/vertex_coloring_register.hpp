@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -47,6 +47,9 @@
 
 class vertex_coloring_register : public conflict_based_register
 {
+ private:
+   DesignFlowStep_Status RegisterBinding() final;
+
  public:
    /**
     * Constructor of the class.
@@ -55,16 +58,7 @@ class vertex_coloring_register : public conflict_based_register
    vertex_coloring_register(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId,
                             const DesignFlowManagerConstRef design_flow_manager);
 
-   /**
-    * Destructor of the class.
-    */
    ~vertex_coloring_register() override;
-
-   /**
-    * Execute the step
-    * @return the exit status of this step
-    */
-   DesignFlowStep_Status InternalExec() override;
 };
 
 #endif

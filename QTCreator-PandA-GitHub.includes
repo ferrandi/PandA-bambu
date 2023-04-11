@@ -6,6 +6,7 @@ build/ext
 build/ext/flopoco
 build/ext/libfplll-4.0.3
 build/ext/sollya
+build/src/
 build/src/HLS
 build/src/technology/target_device/FPGA
 build/src/technology/target_device/IC
@@ -197,10 +198,7 @@ src/HLS/hls_flow/design_space_exploration/SA
 src/HLS/hls_flow/design_space_exploration/TS
 src/HLS/hls_flow/synthesis
 src/HLS/interface
-src/HLS/interface/AXI
-src/HLS/interface/FSL
 src/HLS/interface/minimal
-src/HLS/interface/NPI
 src/HLS/interface/WB4
 src/HLS/liveness
 src/HLS/liveness/algorithms
@@ -403,7 +401,7 @@ ext/mockturtle/lib/json/nlohmann
 ext/mockturtle/lib/abcsat
 ext/mockturtle/lib/abcsat/abc
 ext/abseil-cpp
-/usr/local/llvm-10.0.0/include
+/opt/clang+llvm-13.0.0-x86_64-linux-gnu-ubuntu-20.04/include/
 
 ext/mockturtle/lib/abcresub/abcresub
 ext/mockturtle/lib/parallel_hashmap/parallel_hashmap

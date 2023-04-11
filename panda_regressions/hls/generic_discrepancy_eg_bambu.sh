@@ -7,7 +7,7 @@ ggo_require_compiler=1
 BATCH_ARGS=("-lm" "--simulate" "--experimental-setup=BAMBU" "--expose-globals" "--discrepancy")
 OUT_SUFFIX="${compiler}_d"
 
-$script_dir/../../etc/scripts/test_panda.py --tool=bambu  \
+python3 $script_dir/../../etc/scripts/test_panda.py --tool=bambu  \
    --args="--configuration-name=${compiler} -O2 ${BATCH_ARGS[*]}" \
    -ldiscrepancy_list \
    -o "out_${OUT_SUFFIX}" -b$script_dir \

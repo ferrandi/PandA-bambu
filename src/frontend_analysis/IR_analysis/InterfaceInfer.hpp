@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2022-2022 Politecnico di Milano
+ *              Copyright (C) 2022-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -42,15 +42,77 @@
 
 #include "application_frontend_flow_step.hpp"
 
+/// utility includes
+#include "refcount.hpp"
+
+/// Included for interface_attributes enum
+#include "hls_manager.hpp"
+
+REF_FORWARD_DECL(tree_node);
+CONSTREF_FORWARD_DECL(tree_node);
+REF_FORWARD_DECL(tree_manipulation);
+REF_FORWARD_DECL(tree_manager);
+struct statement_list;
+struct function_decl;
+struct gimple_assign;
+struct gimple_node;
+
+#include "custom_set.hpp"
+#include <list>
+#include <set>
+
 class InterfaceInfer : public ApplicationFrontendFlowStep
 {
  private:
+   enum class m_axi_type;
+   enum class datatype;
+   struct interface_info;
+
+   bool already_executed;
+
    /**
     * Return the set of analyses in relationship with this design step
     * @param relationship_type is the type of relationship to be considered
     */
    const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>>
    ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+
+   void ComputeRelationships(DesignFlowStepSet& relationship,
+                             const DesignFlowStep::RelationshipType relationship_type) override;
+
+   void ChasePointerInterfaceRecurse(CustomOrderedSet<unsigned>& Visited, tree_nodeRef ptr_var,
+                                     std::list<tree_nodeRef>& writeStmt, std::list<tree_nodeRef>& readStmt,
+                                     interface_info& info);
+
+   void ChasePointerInterface(tree_nodeRef ptr_var, std::list<tree_nodeRef>& writeStmt,
+                              std::list<tree_nodeRef>& readStmt, interface_info& info);
+
+   void setReadInterface(tree_nodeRef stmt, const std::string& arg_name, std::set<std::string>& operationsR,
+                         bool commonRWSignature, tree_nodeConstRef interface_datatype,
+                         const tree_manipulationRef tree_man, const tree_managerRef TM);
+
+   void setWriteInterface(tree_nodeRef stmt, const std::string& arg_name, std::set<std::string>& operationsW,
+                          bool commonRWSignature, tree_nodeConstRef interface_datatype,
+                          const tree_manipulationRef tree_man, const tree_managerRef TM);
+
+   void create_resource_Read_simple(const std::set<std::string>& operations, const std::string& arg_name,
+                                    const interface_info& info, bool IO_port, unsigned int top_id) const;
+
+   void create_resource_Write_simple(const std::set<std::string>& operations, const std::string& arg_name,
+                                     const interface_info& info, bool IO_port, unsigned int top_id) const;
+
+   void create_resource_array(const std::set<std::string>& operationsR, const std::set<std::string>& operationsW,
+                              const std::string& bundle_name, const interface_info& info, unsigned int arraySize,
+                              unsigned int top_id) const;
+
+   void create_resource_m_axi(const std::set<std::string>& operationsR, const std::set<std::string>& operationsW,
+                              const std::string& arg_name, const std::string& bundle_name, const interface_info& info,
+                              m_axi_type mat, unsigned int top_id,
+                              const std::map<interface_attributes, std::string>& bundle_attr_map) const;
+
+   void create_resource(const std::set<std::string>& operationsR, const std::set<std::string>& operationsW,
+                        const std::string& arg_name, const interface_info& info, const std::string& fname,
+                        unsigned int top_id) const;
 
  public:
    /**
@@ -66,6 +128,10 @@ class InterfaceInfer : public ApplicationFrontendFlowStep
     * Destructor
     */
    ~InterfaceInfer() override;
+
+   bool HasToBeExecuted() const override;
+
+   void Initialize() override;
 
    /**
     * Execute this step

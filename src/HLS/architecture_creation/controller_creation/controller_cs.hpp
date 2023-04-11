@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2016-2022 Politecnico di Milano
+ *              Copyright (c) 2016-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -53,7 +53,7 @@ class controller_cs : public fsm_controller
    /**
     * Destructor.
     */
-   virtual ~controller_cs();
+   ~controller_cs() override;
 
  protected:
    void add_common_ports(structural_objectRef circuit, structural_managerRef SM) override;

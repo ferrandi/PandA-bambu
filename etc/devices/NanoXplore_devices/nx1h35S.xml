@@ -2,7 +2,7 @@
 <target>
   <device>
     <vendor value="NanoXplore"/>
-    <family value="NG-medium"/>
+    <family value="NG-MEDIUM"/>
     <model value="nx1h35S"/>
     <package value="LG625V"/>
     <speed_grade value="std"/>
@@ -35,7 +35,7 @@
             <parameter name="n_byte_on_databus">4</parameter>
             <parameter name="n_mem_elements">4</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2022 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2023 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>NanoXplore</specialized>

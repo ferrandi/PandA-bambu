@@ -1,4 +1,4 @@
-noinst_HEADERS += constants/file_IO_constants.hpp constants/compiler_xml.hpp constants/constants.hpp constants/copyrights_strings.hpp
+noinst_HEADERS += constants/file_IO_constants.hpp constants/compiler_xml.hpp constants/constants.hpp constants/copyrights_strings.hpp constants/cost_latency_table.hpp
 
 if BUILD_BAMBU
    noinst_HEADERS += constants/bambu_results_xml.hpp constants/testbench_generation_constants.hpp

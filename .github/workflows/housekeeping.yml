@@ -3,25 +3,45 @@ on:
   schedule:
     - cron: "0 3 * * *"
     # Run dayly, at 03:00 .
+
   workflow_dispatch:
     inputs:
-      days:
-        description: "Number of days."
+      retain_days:
+        description: "Number of days to retain a workflow run."
         required: true
+        type: string
         default: "3"
       minimum_runs:
         description: "The minimum runs to keep for each workflow."
         required: true
+        type: string
         default: "3"
+
+env:
+  retain_days: 3
+  minimum_runs: 3
 
 jobs:
   del_runs:
     runs-on: [self-hosted]
     steps:
+      - name: Parameters setup
+        id: setup
+        shell: bash
+        run: |
+          if [[ -z "${{ inputs.days }}" ]]; then
+            retain_days="${{env.retain_days}}"
+            minimum_runs="${{env.minimum_runs}}"
+          else
+            retain_days="${{inputs.retain_days}}"
+            minimum_runs="${{inputs.minimum_runs}}"
+          fi
+          echo "retain_days=${retain_days}" >> $GITHUB_OUTPUT
+          echo "minimum_runs=${minimum_runs}" >> $GITHUB_OUTPUT
       - name: Delete workflow runs
         uses: Mattraks/delete-workflow-runs@v2
         with:
           token: ${{ github.token }}
           repository: ${{ github.repository }}
-          retain_days: ${{ github.event.inputs.days }}
-          keep_minimum_runs: ${{ github.event.inputs.minimum_runs }}
+          retain_days: ${{ steps.setup.outputs.retain_days }}
+          keep_minimum_runs: ${{ steps.setup.otuputs.minimum_runs }}

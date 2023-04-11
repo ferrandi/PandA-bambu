@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -49,7 +49,6 @@
 #include "config_HAVE_CODE_ESTIMATION_BUILT.hpp"
 #include "config_HAVE_DESIGN_ANALYSIS_BUILT.hpp"
 #include "config_HAVE_DIOPSIS.hpp"
-#include "config_HAVE_EXPERIMENTAL.hpp"
 #include "config_HAVE_FROM_AADL_ASN_BUILT.hpp"
 #include "config_HAVE_FROM_ARCH_BUILT.hpp"
 #include "config_HAVE_FROM_C_BUILT.hpp"
@@ -127,7 +126,7 @@ enum class DiopsisInstrumentWriter_Type;
        stg_algorithm)(register_allocation_algorithm)(register_grouping)(registered_inputs)(resp_model)(                \
        datapath_interconnection_algorithm)(insert_memory_profile)(timing_simulation)(top_file)(assert_debug)(          \
        memory_allocation_algorithm)(memory_allocation_policy)(xml_memory_allocation)(rom_duplication)(base_address)(   \
-       sync_reset)(level_reset)(reg_init_value)(clock_period_resource_fraction)(channels_type)(channels_number)(       \
+       reset_type)(reset_level)(reg_init_value)(clock_period_resource_fraction)(channels_type)(channels_number)(       \
        memory_controller_type)(soft_float)(soft_fp)(fp_subnormal)(max_sim_cycles)(sparse_memory)(max_ulp)(             \
        skip_pipe_parameter)(gcc_serialize_memory_accesses)(unaligned_access)(aligned_access)(                          \
        backend_script_extensions)(backend_sdc_extensions)(VHDL_library)(bitvalue_ipa)(use_asynchronous_memories)(      \
@@ -332,16 +331,8 @@ enum class Parameters_FileFormat
    FF_LLVM_CPP,     /**< (Input/Output) LLVM source bitcode file generated from c++ source code*/
 #endif
    FF_CSV, /**< (Input) comma separated value */
-#if HAVE_EXPERIMENTAL
-   FF_CSV_RTL, /**< (Output) comma separated value rtl sequences */
-   FF_CSV_TRE, /**< (Output) comma seperated value tree sequences */
-#endif
 #if HAVE_FROM_LIBERTY
    FF_LIB, /**< (Input) Liberty file */
-#endif
-#if HAVE_EXPERIMENTAL
-   FF_LOG, /**< (Input) log file */
-   FF_PA,  /**< (Input) Profiling analysis */
 #endif
 #if HAVE_FROM_PSPLIB_BUILT
    FF_PSPLIB_MM, /**< (Input) Multi-mode Project Scheduling Problem */

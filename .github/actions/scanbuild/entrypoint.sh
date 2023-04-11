@@ -2,6 +2,8 @@
 set -e
 
 workspace_dir="$PWD"
+ccache_dir="$workspace_dir/.ccache"
+autoconf_cache_dir="$workspace_dir/.autoconf"
 report_dir="$1"
 shift
 
@@ -28,43 +30,54 @@ export PATH=/usr/lib/ccache:$PATH
 mkdir -p ~/.ccache/
 cat > ~/.ccache/ccache.conf << EOF
 max_size = 5.0G
-cache_dir = $workspace_dir/.ccache
+cache_dir = $ccache_dir
 EOF
 if [[ -d "dist" ]]; then
    echo "Pre-initialized dist dir found. Installing system wide..."
-   cp -r dist/. /
+   rsync -rtpl dist/. /
+   rm -rf dist
+fi
+
+if [[ -d "compiler" ]]; then
+   echo "Bambu compiler dir found. Installing system wide..."
+   rsync -rtpl compiler/. /
+   rm -rf compiler
 fi
 
 GCC_BINS=("`find /usr/bin -type f -regextype posix-extended -regex '.*g(cc|\+\+)-[0-9]+\.?[0-9]?'`")
 CLANG_BINS=("`find /clang+llvm-*/bin -type f -regextype posix-extended -regex '.*clang-[0-9]+\.?[0-9]?'`")
-cd /usr/bin
+CLANG_EXES=("clang" "clang++" "clang-cl" "clang-cpp" "ld.lld" "lld" "lld-link" "llvm-ar" "llvm-config" "llvm-dis" "llvm-link" "llvm-lto" "llvm-lto2" "llvm-ranlib" "mlir-opt" "mlir-translate" "opt" "scan-build")
+
 for clang_exe in $CLANG_BINS
 do
    CLANG_VER=$(sed 's/clang-//g' <<< "$(basename $clang_exe)")
    CLANG_DIR=$(dirname $clang_exe)
    echo "Generating system links for clang/llvm $CLANG_VER"
-   ln -sf "$CLANG_DIR/clang-$CLANG_VER" "clang-$CLANG_VER"
-   ln -sf "$CLANG_DIR/clang-$CLANG_VER" "clang++-$CLANG_VER"
-   ln -sf "$CLANG_DIR/clang-$CLANG_VER" "clang-cpp-$CLANG_VER"
-   ln -sf "$CLANG_DIR/llvm-config" "llvm-config-$CLANG_VER"
-   ln -sf "$CLANG_DIR/llvm-link" "llvm-link-$CLANG_VER"
-   ln -sf "$CLANG_DIR/opt" "opt-$CLANG_VER"
-   ln -sf "$CLANG_DIR/scan-build" "scan-build-$CLANG_VER"
+   for app in "${CLANG_EXES[@]}"
+   do
+      if [[ -f "$CLANG_DIR/$app" ]]; then
+         ln -sf "$CLANG_DIR/$app" "/usr/bin/$app-$CLANG_VER"
+      fi
+   done
+   echo "Generating ccache alias for clang-$CLANG_VER"
+   ln -sf ../../bin/ccache "/usr/lib/ccache/clang-$CLANG_VER"
+   echo "Generating ccache alias for clang++-$CLANG_VER"
+   ln -sf ../../bin/ccache "/usr/lib/ccache/clang++-$CLANG_VER"
 done
-cd /usr/lib/ccache
+
 for compiler in $GCC_BINS
 do
    echo "Generating ccache alias for $(basename $compiler)"
-   ln -sf ../../bin/ccache "$(basename $compiler)"
+   ln -sf ../../bin/ccache "/usr/lib/ccache/$(basename $compiler)"
 done
-for compiler in $CLANG_BINS
-do
-   CLANG_VER=$(sed 's/clang-//g' <<< "$(basename $compiler)")
-   echo "Generating ccache alias for clang-$CLANG_VER"
-   ln -sf ../../bin/ccache "clang-$CLANG_VER"
-   echo "Generating ccache alias for clang++-$CLANG_VER"
-   ln -sf ../../bin/ccache "clang++-$CLANG_VER"
-done
+
+max_gcc_ver="$(ls -x -v -1a /usr/include/c++ 2> /dev/null | tail -1)"
+if [[ -z "${max_gcc_ver}" ]]
+then
+  echo "At least one gcc version must be there"
+  exit -1
+fi
+echo "Latest bundled GCC version: ${max_gcc_ver}"
 cd $workspace_dir
 
 echo "Initializing build environment..."
@@ -74,7 +87,18 @@ echo "::endgroup::"
 echo "::group::Configure build environment"
 mkdir build
 cd build
-../configure --prefix=/usr $@
+if [[ -d "$autoconf_cache_dir" ]]; then
+   echo "Restoring autoconf cache"
+   mv $autoconf_cache_dir/* .
+fi
+../configure --prefix=/usr -C $@
+autoconf_caches=("`find . -type f -path '**/config.cache'`")
+for cache in $autoconf_caches
+do
+   mirror_dir="$autoconf_cache_dir/$(dirname $cache)"
+   mkdir -p $mirror_dir
+   cp $cache $mirror_dir
+done
 cd ..
 echo "::endgroup::"
 
@@ -87,4 +111,4 @@ scan-build-$CLANG_VERSION -v -v --use-cc=/usr/bin/clang-$CLANG_VERSION --use-c++
 echo "::endgroup"
 
 mkdir -p "$report_dir"
-echo "::set-output name=report-dir::$report_dir"
+echo "report-dir=$report_dir" >> $GITHUB_OUTPUT

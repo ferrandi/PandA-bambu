@@ -2,17 +2,18 @@ name: CPP Checks
 
 on:
   pull_request:
-
+    branches-ignore:
+      - main
   workflow_dispatch:
 
 concurrency:
-  group: codechecks-${{ github.ref }}
+  group: codechecks-${{ github.head_ref }}
   cancel-in-progress: true
 
 env:
   storage-url: ${{secrets.CI_STORAGE_URL}}
-  storage-user: '${{secrets.CI_STORAGE_USER}}'
-  storage-token: '${{secrets.CI_STORAGE_TOKEN}}'
+  storage-user: ${{secrets.CI_STORAGE_USER}}
+  storage-token: ${{secrets.CI_STORAGE_TOKEN}}
   host_jobs: $J
 
 jobs:
@@ -20,13 +21,13 @@ jobs:
     runs-on: [self-hosted]
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Env setup
         id: host
         shell: bash
         run: |
           echo "Current host supports ${{env.host_jobs}} parallel jobs"
-          echo "::set-output name=jobs::${{env.host_jobs}}"
+          echo "jobs=${{env.host_jobs}}" >> $GITHUB_OUTPUT
       - name: Run CPP checks on Bambu source
         id: cppcheck
         uses: ./.github/actions/cppcheck
@@ -34,7 +35,7 @@ jobs:
           jobs: ${{steps.host.outputs.jobs}}
           args: --enable=all --force --suppress=unusedFunction --suppress=unmatchedSuppression --inline-suppr
       - name: Upload cppcheck HTML report
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: CPPCheck-report
           path: ${{steps.cppcheck.outputs.report-dir}}
@@ -48,93 +49,52 @@ jobs:
     runs-on: [self-hosted]
     env:
       dist-dir: dist
+      compilers: gcc-4.9,gcc-5,gcc-6,gcc-7,gcc-8,clang-4,clang-5,clang-6,clang-7,clang-11,clang-12
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Env setup
-        id: host
+        id: setup
         shell: bash
         run: |
           echo "Current host supports ${{env.host_jobs}} parallel jobs"
-          echo "::set-output name=jobs::${{env.host_jobs}}"
-      - name: Prepare ccache timestamp
-        id: ccache_cache_timestamp
-        shell: bash
-        run: |
-          echo "::set-output name=timestamp::$(date -u +'%Y-%m-%d-%H;%M;%S')"
-      - name: ccache cache files
-        uses: actions/cache@v2
+          echo "jobs=${{env.host_jobs}}" >> $GITHUB_OUTPUT
+          env_id="$(echo $(sed 's/,/\n/g' <<< "${{env.compilers}}" | sort -V) | sed 's/ //g')"
+          if [[ ! -z "${{env.build-compiler}}" ]]; then
+            if [[ "$env_id" != *"${{env.build-compiler}}"* ]]; then
+              env_id+="${{env.build-compiler}}"
+            fi
+          fi
+          echo "version=$(cat configure.ac | grep AC_INIT | sed -E 's/.*,(.*),.*/\1/g;s/ //g')" >> $GITHUB_OUTPUT
+          echo "env_id=$env_id" >> $GITHUB_OUTPUT
+          echo "timestamp=$(date -u +'%Y-%m-%d-%H;%M;%S')" >> $GITHUB_OUTPUT
+      - name: CCache cache files
+        uses: actions/cache@v3
         with:
           path: .ccache
-          key: scanbuild-ccache-${{ steps.ccache_cache_timestamp.outputs.timestamp }}
+          key: scanbuild-ccache-${{steps.setup.outputs.version}}-${{steps.setup.outputs.timestamp}}
           restore-keys: |
-            scanbuild-ccache-
-      - name: Download clang compilers
+            scanbuild-ccache-${{steps.setup.outputs.version}}-
+      - name: Autoconf cache files
+        uses: actions/cache@v3
+        with:
+          path: .autoconf
+          key: scanbuild-autoconf-${{steps.setup.outputs.version}}-${{steps.setup.outputs.env_id}}-${{ steps.setup.outputs.timestamp }}
+          restore-keys: |
+            scanbuild-autoconf-${{steps.setup.outputs.version}}-${{steps.setup.outputs.env_id}}-
+      - name: Download compilers
         shell: bash
         run: |
-          set -e
-          export XZ_OPT='-T0'
-          mkdir ${{env.dist-dir}}
-          wget https://github.com/llvm/llvm-project/releases/download/llvmorg-12.0.1/clang+llvm-12.0.1-x86_64-linux-gnu-ubuntu-16.04.tar.xz -nv -O - | tar -C ${{env.dist-dir}} -xJf - &
-          wget https://github.com/llvm/llvm-project/releases/download/llvmorg-11.1.0/clang+llvm-11.1.0-x86_64-linux-gnu-ubuntu-16.04.tar.xz -nv -O - | tar -C ${{env.dist-dir}} -xJf - &
-          wget https://releases.llvm.org/7.0.1/clang+llvm-7.0.1-x86_64-linux-gnu-ubuntu-16.04.tar.xz -nv -O - | tar -C ${{env.dist-dir}} -xJf - &
-          wget https://releases.llvm.org/6.0.1/clang+llvm-6.0.1-x86_64-linux-gnu-ubuntu-16.04.tar.xz -nv -O - | tar -C ${{env.dist-dir}} -xJf - &
-          wget https://releases.llvm.org/5.0.2/clang+llvm-5.0.2-x86_64-linux-gnu-ubuntu-16.04.tar.xz -nv -O - | tar -C ${{env.dist-dir}} -xJf - &
-          wget https://releases.llvm.org/4.0.0/clang+llvm-4.0.0-x86_64-linux-gnu-ubuntu-16.04.tar.xz -nv -O - | tar -C ${{env.dist-dir}} -xJf - &
-          wait
-      - name: Download gcc 4.9
-        uses: ./.github/actions/storage-download
-        with:
-          name: gcc-4.9-bambu-Ubuntu_16.04
-          path: ./${{env.dist-dir}}
-          storage-url: '${{env.storage-url}}'
-          storage-path: compilers
-          username: '${{env.storage-user}}'
-          password: '${{env.storage-token}}'
-      - name: Download gcc 5
-        uses: ./.github/actions/storage-download
-        with:
-          name: gcc-5-bambu-Ubuntu_16.04
-          path: ./${{env.dist-dir}}
-          storage-url: '${{env.storage-url}}'
-          storage-path: compilers
-          username: '${{env.storage-user}}'
-          password: '${{env.storage-token}}'
-      - name: Download gcc 6
-        uses: ./.github/actions/storage-download
-        with:
-          name: gcc-6-bambu-Ubuntu_16.04
-          path: ./${{env.dist-dir}}
-          storage-url: '${{env.storage-url}}'
-          storage-path: compilers
-          username: '${{env.storage-user}}'
-          password: '${{env.storage-token}}'
-      - name: Download gcc 7
-        uses: ./.github/actions/storage-download
-        with:
-          name: gcc-7-bambu-Ubuntu_16.04
-          path: ./${{env.dist-dir}}
-          storage-url: '${{env.storage-url}}'
-          storage-path: compilers
-          username: '${{env.storage-user}}'
-          password: '${{env.storage-token}}'
-      - name: Download gcc 8
-        uses: ./.github/actions/storage-download
-        with:
-          name: gcc-8-bambu-Ubuntu_16.04
-          path: ./${{env.dist-dir}}
-          storage-url: '${{env.storage-url}}'
-          storage-path: compilers
-          username: '${{env.storage-user}}'
-          password: '${{env.storage-token}}'
+          mkdir "${{env.dist-dir}}"
+          bash ./.devcontainer/library-scripts/compiler-download.sh "${{env.dist-dir}}" "${{env.compilers}}"
       - name: Scan build Bambu
         id: scanbuild
         uses: ./.github/actions/scanbuild
         with:
-          jobs: ${{steps.host.outputs.jobs}}
+          jobs: ${{steps.setup.outputs.jobs}}
           config-args: CC=clang-11 CXX=clang++-11 --disable-release --enable-flopoco --enable-glpk
       - name: Upload scan-build report
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: scanbuild-report
           path: ${{steps.scanbuild.outputs.report-dir}}
@@ -143,87 +103,46 @@ jobs:
     runs-on: [self-hosted, classA]
     env:
       dist-dir: dist
+      compilers: gcc-4.9,gcc-5,gcc-6,gcc-7,gcc-8,clang-4,clang-5,clang-6,clang-7,clang-11,clang-12
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Env setup
-        id: host
+        id: setup
         shell: bash
         run: |
           echo "Current host supports ${{env.host_jobs}} parallel jobs"
-          echo "::set-output name=jobs::${{env.host_jobs}}"
-      - name: Prepare ccache timestamp
-        id: ccache_cache_timestamp
-        shell: bash
-        run: |
-          echo "::set-output name=timestamp::$(date -u +'%Y-%m-%d-%H;%M;%S')"
-      - name: ccache cache files
-        uses: actions/cache@v2
+          echo "jobs=${{env.host_jobs}}" >> $GITHUB_OUTPUT
+          env_id="$(echo $(sed 's/,/\n/g' <<< "${{env.compilers}}" | sort -V) | sed 's/ //g')"
+          if [[ ! -z "${{env.build-compiler}}" ]]; then
+            if [[ "$env_id" != *"${{env.build-compiler}}"* ]]; then
+              env_id+="${{env.build-compiler}}"
+            fi
+          fi
+          echo "version=$(cat configure.ac | grep AC_INIT | sed -E 's/.*,(.*),.*/\1/g;s/ //g')" >> $GITHUB_OUTPUT
+          echo "env_id=$env_id" >> $GITHUB_OUTPUT
+          echo "timestamp=$(date -u +'%Y-%m-%d-%H;%M;%S')" >> $GITHUB_OUTPUT
+      - name: CCache cache files
+        uses: actions/cache@v3
         with:
           path: .ccache
-          key: makedist-ccache-${{ steps.ccache_cache_timestamp.outputs.timestamp }}
+          key: makedist-ccache-${{steps.setup.outputs.version}}-${{ steps.setup.outputs.timestamp }}
           restore-keys: |
-            makedist-ccache-
-      - name: Download clang compilers
+            makedist-ccache-${{steps.setup.outputs.version}}-
+      - name: Autoconf cache files
+        uses: actions/cache@v3
+        with:
+          path: .autoconf
+          key: makedist-autoconf-${{steps.setup.outputs.version}}-${{ steps.setup.outputs.env_id }}-${{ steps.setup.outputs.timestamp }}
+          restore-keys: |
+            makedist-autoconf-${{steps.setup.outputs.version}}-${{ steps.setup.outputs.env_id }}-
+      - name: Download compilers
         shell: bash
         run: |
-          set -e
-          export XZ_OPT='-T0'
-          mkdir ${{env.dist-dir}}
-          wget https://github.com/llvm/llvm-project/releases/download/llvmorg-12.0.1/clang+llvm-12.0.1-x86_64-linux-gnu-ubuntu-16.04.tar.xz -nv -O - | tar -C ${{env.dist-dir}} -xJf - &
-          wget https://github.com/llvm/llvm-project/releases/download/llvmorg-11.1.0/clang+llvm-11.1.0-x86_64-linux-gnu-ubuntu-16.04.tar.xz -nv -O - | tar -C ${{env.dist-dir}} -xJf - &
-          wget https://releases.llvm.org/7.0.1/clang+llvm-7.0.1-x86_64-linux-gnu-ubuntu-16.04.tar.xz -nv -O - | tar -C ${{env.dist-dir}} -xJf - &
-          wget https://releases.llvm.org/6.0.1/clang+llvm-6.0.1-x86_64-linux-gnu-ubuntu-16.04.tar.xz -nv -O - | tar -C ${{env.dist-dir}} -xJf - &
-          wget https://releases.llvm.org/5.0.2/clang+llvm-5.0.2-x86_64-linux-gnu-ubuntu-16.04.tar.xz -nv -O - | tar -C ${{env.dist-dir}} -xJf - &
-          wget https://releases.llvm.org/4.0.0/clang+llvm-4.0.0-x86_64-linux-gnu-ubuntu-16.04.tar.xz -nv -O - | tar -C ${{env.dist-dir}} -xJf - &
-          wait
-      - name: Download gcc 4.9
-        uses: ./.github/actions/storage-download
-        with:
-          name: gcc-4.9-bambu-Ubuntu_16.04
-          path: ./${{env.dist-dir}}
-          storage-url: '${{env.storage-url}}'
-          storage-path: compilers
-          username: '${{env.storage-user}}'
-          password: '${{env.storage-token}}'
-      - name: Download gcc 5
-        uses: ./.github/actions/storage-download
-        with:
-          name: gcc-5-bambu-Ubuntu_16.04
-          path: ./${{env.dist-dir}}
-          storage-url: '${{env.storage-url}}'
-          storage-path: compilers
-          username: '${{env.storage-user}}'
-          password: '${{env.storage-token}}'
-      - name: Download gcc 6
-        uses: ./.github/actions/storage-download
-        with:
-          name: gcc-6-bambu-Ubuntu_16.04
-          path: ./${{env.dist-dir}}
-          storage-url: '${{env.storage-url}}'
-          storage-path: compilers
-          username: '${{env.storage-user}}'
-          password: '${{env.storage-token}}'
-      - name: Download gcc 7
-        uses: ./.github/actions/storage-download
-        with:
-          name: gcc-7-bambu-Ubuntu_16.04
-          path: ./${{env.dist-dir}}
-          storage-url: '${{env.storage-url}}'
-          storage-path: compilers
-          username: '${{env.storage-user}}'
-          password: '${{env.storage-token}}'
-      - name: Download gcc 8
-        uses: ./.github/actions/storage-download
-        with:
-          name: gcc-8-bambu-Ubuntu_16.04
-          path: ./${{env.dist-dir}}
-          storage-url: '${{env.storage-url}}'
-          storage-path: compilers
-          username: '${{env.storage-user}}'
-          password: '${{env.storage-token}}'
+          mkdir "${{env.dist-dir}}"
+          bash ./.devcontainer/library-scripts/compiler-download.sh "${{env.dist-dir}}" "${{env.compilers}}"
       - name: Make Dist
         uses: ./.github/actions/make-dist
         with:
-          jobs: ${{steps.host.outputs.jobs}}
+          jobs: ${{steps.setup.outputs.jobs}}
           config-args: CC=gcc-8 CXX=g++-8 --enable-release --enable-opt --enable-flopoco

@@ -1,0 +1,117 @@
+name: Full Regressions GCC
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths-ignore:
+      - "documentation/**"
+
+  workflow_dispatch:
+
+concurrency:
+  group: full-gcc-${{ github.head_ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    uses: ./.github/workflows/build-appimage.yml
+    with:
+      package-name: bambu-gcc-full
+      compilers: gcc-4.5,gcc-4.6,gcc-4.7,gcc-4.8,gcc-4.9,gcc-5,gcc-6,gcc-7,gcc-8,clang-6
+      build-compiler: gcc-8
+      configure: --enable-glpk --enable-flopoco --enable-opt --with-opt-level=2 --enable-release CC=gcc-8 CXX=g++-8
+    secrets: inherit
+
+  simulate-all:
+    needs: [build]
+    runs-on: [self-hosted, long, mentor]
+    env:
+      report-dir: test-reports
+      args: -c=--simulator=MODELSIM
+    strategy:
+      max-parallel: 2
+      fail-fast: false
+      matrix:
+        include:
+          - outname: all_gcc_softfloat-tests
+            script: all_gcc_softfloat-tests.sh
+          - outname: all_gcc_CHStone-frontend
+            script: all_gcc_CHStone-frontend.sh
+          - outname: all_gcc_softfloat-tests-vhdl
+            script: all_gcc_softfloat-tests.sh -c=-wH
+          - outname: all_gcc_CHStone-frontend-vhdl
+            script: all_gcc_CHStone-frontend.sh -c=-wH
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      - name: Download Bambu AppImage
+        uses: ./.github/actions/storage-download
+        with:
+          name: ${{needs.build.outputs.package-name}}
+          storage-url: "${{secrets.CI_STORAGE_URL}}"
+          username: "${{secrets.CI_STORAGE_USER}}"
+          password: "${{secrets.CI_STORAGE_TOKEN}}"
+      - name: Setup binaries
+        id: setup
+        shell: bash
+        run: |
+          mkdir bin
+          ln -s $PWD/*.AppImage bin/bambu
+          ln -s $PWD/*.AppImage bin/spider
+          echo "local-bin=$PWD/bin" >> $GITHUB_OUTPUT
+      - name: Launch test suite
+        id: suite
+        shell: bash
+        run: |
+          export PATH=${{steps.setup.outputs.local-bin}}:$PATH
+          mkdir ${{env.report-dir}}
+          out_dir="$PWD/${{env.report-dir}}"
+          echo "test-reports-dir=$out_dir" >> $GITHUB_OUTPUT
+          ./panda_regressions/hls/${{matrix.script}} --returnfail --junitdir="$out_dir" --csv="$out_dir/perf.csv" --table="$out_dir/perf.tex" ${{env.args}} ${{matrix.args}}
+      - name: Upload test reports
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{matrix.outname}}
+          path: ${{steps.suite.outputs.test-reports-dir}}
+
+  grs:
+    needs: [build, simulate-all]
+    uses: ./.github/workflows/reusable-grs.yml
+    with:
+      package-name: ${{needs.build.outputs.package-name}}
+      test-compilers: \"I386_GCC45 --skip_list 20071202-1\",I386_GCC46,I386_GCC47,I386_GCC48,I386_GCC49,I386_GCC5,I386_GCC6,I386_GCC7,I386_GCC8
+      additional-args: \"\",\"-c=--speculative-sdc-scheduling --skip_list 20040705-1,20040705-2,20040629-1,memset-3\"
+    secrets: inherit
+
+  grs-vhdl:
+    needs: [build, simulate-all]
+    uses: ./.github/workflows/reusable-grs-vhdl.yml
+    with:
+      package-name: ${{needs.build.outputs.package-name}}
+      test-compilers: \"I386_GCC45 --skip_list 20071202-1\",I386_GCC46,I386_GCC47,I386_GCC48,I386_GCC49,I386_GCC5,I386_GCC6,I386_GCC7,I386_GCC8
+    secrets: inherit
+
+  examples:
+    needs: [build, simulate-all]
+    uses: ./.github/workflows/reusable-examples.yml
+    with:
+      package-name: ${{needs.build.outputs.package-name}}
+      test-compiler: I386_GCC49
+    secrets: inherit
+
+  success:
+    if: ${{always()}}
+    needs: [grs, grs-vhdl, examples]
+    runs-on: [self-hosted]
+    steps:
+      - name: Check GCC Regression Simple status
+        if: ${{ needs.grs.result != 'success' }}
+        run: exit 1
+      - name: Check GCC Regression Simple VHDL status
+        if: ${{ needs.grs-vhdl.result != 'success' }}
+        run: exit 1
+      - name: Check Examples status
+        if: ${{ needs.examples.result != 'success' }}
+        run: exit 1

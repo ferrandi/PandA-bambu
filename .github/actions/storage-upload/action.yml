@@ -1,34 +1,34 @@
-name: 'Storage upload'
-description: 'Upload a file or directory to private storage'
+name: "Storage upload"
+description: "Upload a file or directory to private storage"
 inputs:
   path:
-    description: 'Path of the file or directory to upload'
+    description: "Path of the file or directory to upload"
     required: true
   name:
-    description: 'Storage id for the given path'
+    description: "Storage id for the given path"
     required: false
-    default: ''
+    default: ""
   storage-url:
-    description: 'Url of private storage'
+    description: "Url of private storage"
     required: true
   username:
-    description: 'Username for private storage access'
+    description: "Username for private storage access"
     required: false
-    default: ''
+    default: ""
   password:
-    description: 'Password for private storage access'
+    description: "Password for private storage access"
     required: false
-    default: ''
+    default: ""
   storage-path:
-    description: 'Custom storage path'
+    description: "Custom storage path"
     required: false
-    default: ''
+    default: ""
   storage-compression:
-    description: 'Specify if compression is required'
+    description: "Specify if compression is required"
     required: false
-    default: true
+    default: "true"
 runs:
-  using: 'composite'
+  using: "composite"
   steps:
     - name: Generate and upload package
       shell: bash
@@ -50,7 +50,7 @@ runs:
         if [[ ! -z "${{inputs.storage-path}}" ]]; then
           PKG_URL="${{inputs.storage-url}}/${{inputs.storage-path}}/$PKG_FILE"
         else
-          PKG_URL="${{inputs.storage-url}}/${{github.ref}}/$PKG_FILE"
+          PKG_URL="${{inputs.storage-url}}/${{github.head_ref}}/$PKG_FILE"
         fi
         CURL_CMD='curl -L --fail -T- '
         if [[ ! -z '${{inputs.username}}' ]]; then
@@ -58,7 +58,11 @@ runs:
         fi
         if [[ -f "${{inputs.path}}" || -d "${{inputs.path}}" ]]; then 
           tar -C "$(dirname ${{inputs.path}})" "$(basename ${{inputs.path}})" --mode="u+rwX,g+rwX,o+rX" $TAR_OPT - | $CURL_CMD "$PKG_URL"
-          echo "${{inputs.storage-compression}}" | $CURL_CMD "$PKG_URL.nfo"
+          TMP="$(mktemp /tmp/nfo_XXXXXX)"
+          echo "${{inputs.storage-compression}}" > $TMP
+          find ${{inputs.path}} -type f -print0 | sort -z | xargs -0 sha1sum >> $TMP
+          $CURL_CMD "$PKG_URL.nfo" < $TMP
+          rm -rf $TMP
           echo "Package successfully uploaded to $PKG_URL"
         else 
           echo "Path '${{inputs.path}}' does not name a file or directory"

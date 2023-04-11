@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -41,8 +41,6 @@
  *
  */
 #include "cdfc_module_binding.hpp"
-
-#include "config_HAVE_EXPERIMENTAL.hpp"
 
 #include <boost/filesystem/operations.hpp>
 
@@ -144,6 +142,7 @@
 #include "cpu_time.hpp"
 #include "dbgPrintHelper.hpp"
 #include "hash_helper.hpp"
+#include "utility.hpp"
 
 #ifdef HC_APPROACH
 #include "hierarchical_clustering.hpp"
@@ -153,8 +152,7 @@ struct spec_hierarchical_clustering : public hierarchical_clustering<>
 #endif
 #include "string_manipulation.hpp" // for GET_CLASS
 
-#define TOOSMALL_NORMALIZED_RESOURCE_AREA 0.9
-#define DEFAULT_SMALL_NORMALIZED_RESOURCE_AREA 1.0
+#define DEFAULT_SMALL_NORMALIZED_RESOURCE_AREA 2.0
 #define MODULE_BINDING_MUX_MARGIN 1.0
 #define DSP_MARGIN 1.0
 #define CLOCK_MARGIN 0.97
@@ -286,7 +284,7 @@ void cdfc_module_binding::initialize_connection_relation(connection_relation& co
       for(unsigned int port_index = 0; port_index < n_ports; ++port_index)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Considering port " + STR(port_index));
-         unsigned int tree_var = std::get<0>(vars_read[port_index]);
+         auto tree_var = std::get<0>(vars_read[port_index]);
          if(tree_var != 0)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---" + STR(TreeM->CGetTreeNode(tree_var)));
@@ -315,8 +313,7 @@ void cdfc_module_binding::initialize_connection_relation(connection_relation& co
                      }
                      else if(HLS->storage_value_information->is_a_storage_value(state, tree_var))
                      {
-                        unsigned int storage_value =
-                            HLS->storage_value_information->get_storage_value_index(state, tree_var);
+                        auto storage_value = HLS->storage_value_information->get_storage_value_index(state, tree_var);
                         con_rel_per_vertex_per_port_index.insert(
                             std::make_pair(no_phi_no_chained, std::make_pair(storage_value, def_op)));
                      }
@@ -327,8 +324,7 @@ void cdfc_module_binding::initialize_connection_relation(connection_relation& co
                   }
                   else
                   {
-                     unsigned int storage_value =
-                         HLS->storage_value_information->get_storage_value_index(state, tree_var);
+                     auto storage_value = HLS->storage_value_information->get_storage_value_index(state, tree_var);
                      THROW_ASSERT(HLS->storage_value_information->is_a_storage_value(state, tree_var),
                                   "unxpected case");
                      con_rel_per_vertex_per_port_index.insert(
@@ -344,7 +340,7 @@ void cdfc_module_binding::initialize_connection_relation(connection_relation& co
 }
 
 template <bool do_estimation, bool do_conversion, typename vertex_type, class cluster_type, bool IS_DEBUGGING = true>
-void estimate_muxes(const connection_relation& con_rel, unsigned int mux_prec, double& tot_mux_delay,
+void estimate_muxes(const connection_relation& con_rel, unsigned long long mux_prec, double& tot_mux_delay,
                     double& tot_mux_area, const cluster_type& cluster, unsigned int& total_muxes,
                     unsigned int& n_shared, const CustomUnorderedMap<vertex_type, vertex>& converter,
                     const HLS_managerRef HLSMgr, const hlsRef HLS,
@@ -400,7 +396,7 @@ void estimate_muxes(const connection_relation& con_rel, unsigned int mux_prec, d
       for(unsigned int port_index_actual = 0; port_index_actual < con_rel.find(current_v)->second.size();
           ++port_index_actual)
       {
-         unsigned int port_index = port_index_actual;
+         auto port_index = port_index_actual;
          const CustomOrderedSet<std::pair<conn_code, std::pair<unsigned int, vertex>>>&
              con_rel_per_vertex_per_port_index = con_rel.find(current_v)->second[port_index];
          if(fu->get_ports_are_swapped(current_v))
@@ -420,14 +416,14 @@ void estimate_muxes(const connection_relation& con_rel, unsigned int mux_prec, d
             {
                case no_def:
                {
-                  unsigned int tree_var = triple.second.first;
+                  auto tree_var = triple.second.first;
                   chained_in[port_index].insert(
                       tree_var); /// it is not chained but from the mux binding it counts as input to the mux tree
                   break;
                }
                case no_phi_chained:
                {
-                  unsigned int tree_var = triple.second.first;
+                  auto tree_var = triple.second.first;
                   vertex def_op = triple.second.second;
                   if(fu->get_index(def_op) != INFINITE_UINT)
                   {
@@ -441,7 +437,7 @@ void estimate_muxes(const connection_relation& con_rel, unsigned int mux_prec, d
                }
                case no_phi_no_chained:
                {
-                  unsigned int storage_value = triple.second.first;
+                  auto storage_value = triple.second.first;
                   vertex def_op = triple.second.second;
                   if(has_register_done)
                   {
@@ -459,7 +455,7 @@ void estimate_muxes(const connection_relation& con_rel, unsigned int mux_prec, d
                }
                case phi:
                {
-                  unsigned int storage_value = triple.second.first;
+                  auto storage_value = triple.second.first;
                   vertex def_op = triple.second.second;
                   if(has_register_done)
                   {
@@ -485,7 +481,7 @@ void estimate_muxes(const connection_relation& con_rel, unsigned int mux_prec, d
 
       if(IS_DEBUGGING && has_register_done)
       {
-         unsigned int var_written = HLSMgr->get_produced_value(HLS->functionId, current_v);
+         auto var_written = HLSMgr->get_produced_value(HLS->functionId, current_v);
          if(var_written)
          {
             const CustomOrderedSet<vertex>& end = HLS->Rliv->get_state_where_end(current_v);
@@ -586,7 +582,7 @@ struct slack_based_filtering : public filter_clique<vertex>
 {
    slack_based_filtering(const CustomUnorderedMap<vertex, double>& _slack_time,
                          const CustomUnorderedMap<vertex, double>& _starting_time, double _controller_delay,
-                         unsigned int _mux_prec, const hlsRef _HLS, const HLS_managerRef _HLSMgr,
+                         unsigned long long _mux_prec, const hlsRef _HLS, const HLS_managerRef _HLSMgr,
                          const double _area_resource, const connection_relation& _con_rel)
        : slack_time(_slack_time),
          starting_time(_starting_time),
@@ -725,7 +721,7 @@ struct slack_based_filtering : public filter_clique<vertex>
    const CustomUnorderedMap<vertex, double>& slack_time;
    const CustomUnorderedMap<vertex, double>& starting_time;
    double controller_delay;
-   const unsigned int mux_prec;
+   const unsigned long long mux_prec;
    const hlsRef HLS;
    const HLS_managerRef HLSMgr;
    const OpGraphConstRef data;
@@ -975,10 +971,10 @@ static inline bool compute_condition1(const std::string& lib_name,
    return cond1;
 }
 
-static inline bool compute_condition2(bool cond1, unsigned int fu_prec, double resource_area,
+static inline bool compute_condition2(bool cond1, unsigned long long fu_prec, double resource_area,
                                       const double small_normalized_resource_area)
 {
-   bool cond2 = cond1 && (fu_prec <= 8 || resource_area <= small_normalized_resource_area);
+   bool cond2 = cond1 && (fu_prec <= 8 || resource_area < small_normalized_resource_area);
 
    return cond2;
 }
@@ -1106,8 +1102,7 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
    long falseloop_cputime = 0;
    long weight_cputime = 0;
    long slack_cputime = 0;
-   CustomMap<unsigned int, long> clique_iteration_cputime;
-   bool clique_covering_executed = false;
+   long clique_iteration_cputime = 0;
    unsigned int n_performance_conflicts = 0;
 
    /// in case no vertices was left we have done
@@ -1165,7 +1160,7 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
          else
          {
             const auto statement_index = fdfg->CGetOpNodeInfo(operation)->GetNodeId();
-            unsigned int fu_type = fu->get_assign(operation);
+            auto fu_type = fu->get_assign(operation);
             const auto ii_time = allocation_information->get_initiation_time(fu_type, statement_index);
             const auto n_cycles = allocation_information->get_cycles(fu_type, statement_index);
             if(ii_time != (0u))
@@ -1254,6 +1249,8 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
       if(output_level >= OUTPUT_LEVEL_MINIMUM)
       {
          STOP_TIME(slack_cputime);
+         INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
+                        "---Slack computed in " + print_cpu_time(slack_cputime) + " seconds");
       }
 
       boost::graph_traits<graph>::vertices_size_type n_vert = boost::num_vertices(*fdfg);
@@ -1284,7 +1281,7 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
          std::map<unsigned int, vertex> rep_vertex;
          for(const auto& cur_v : fu_eb.second)
          {
-            unsigned int vertex_index = fu->get_index(cur_v);
+            auto vertex_index = fu->get_index(cur_v);
             if(rep_vertex.find(vertex_index) == rep_vertex.end())
             {
                rep_vertex[vertex_index] = cur_v;
@@ -1334,7 +1331,7 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
       for(boost::tie(ei, ei_end) = boost::edges(*sdg); ei != ei_end; ++ei)
       {
          vertex src = boost::source(*ei, *sdg);
-         unsigned int fu_unit_src = fu->get_assign(src);
+         auto fu_unit_src = fu->get_assign(src);
          const auto II_src = allocation_information->get_initiation_time(fu_unit_src, src);
          vertex tgt = boost::target(*ei, *sdg);
          if(HLS->chaining_information->may_be_chained_ops(tgt, src) /// only the chained operations are relevant
@@ -1508,7 +1505,7 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
 
       for(const auto& fu_cv : candidate_vertices)
       {
-         unsigned int fu_s1 = fu_cv.first;
+         auto fu_s1 = fu_cv.first;
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                         "-->Considering fu " + allocation_information->get_fu_name(fu_s1).first);
 
@@ -1539,7 +1536,7 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
          //            }
          //         }
          double local_mux_time = (disabling_slack_based_binding ? -std::numeric_limits<double>::infinity() : mux_time);
-         unsigned int fu_prec = allocation_information->get_prec(fu_s1);
+         auto fu_prec = allocation_information->get_prec(fu_s1);
          bool cond1 = compute_condition1(lib_name, allocation_information, local_mux_time, fu_s1);
          bool cond2 = compute_condition2(cond1, fu_prec, resource_area, small_normalized_resource_area);
 
@@ -1666,6 +1663,8 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
       if(output_level >= OUTPUT_LEVEL_MINIMUM)
       {
          STOP_TIME(weight_cputime);
+         INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
+                        "---Weight computation completed in " + print_cpu_time(weight_cputime) + " seconds");
       }
 
       const cdfc_graphRef CG = cdfc_graphRef(new cdfc_graph(
@@ -1853,6 +1852,8 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
       if(output_level >= OUTPUT_LEVEL_MINIMUM)
       {
          STOP_TIME(falseloop_cputime);
+         INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
+                        "---False-loop computation completed in " + print_cpu_time(falseloop_cputime) + " seconds");
       }
 
       if(parameters->getOption<bool>(OPT_print_dot))
@@ -1952,32 +1953,35 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
             total_area_muxes_prev = total_area_muxes;
             total_area_muxes = total_area_muxes_initial;
 
-            DesignFlowStepRef regb;
-            // if(iteration%2)
-            if(parameters->getOption<HLSFlowStep_Type>(OPT_register_allocation_algorithm) ==
-               HLSFlowStep_Type::WEIGHTED_CLIQUE_REGISTER_BINDING)
             {
-               regb = GetPointer<const HLSFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("HLS"))
+               DesignFlowStepRef regb;
+               // if(iteration%2)
+               if(parameters->getOption<HLSFlowStep_Type>(OPT_register_allocation_algorithm) ==
+                  HLSFlowStep_Type::WEIGHTED_CLIQUE_REGISTER_BINDING)
+               {
+                  regb =
+                      GetPointer<const HLSFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("HLS"))
                           ->CreateHLSFlowStep(
                               HLSFlowStep_Type::WEIGHTED_CLIQUE_REGISTER_BINDING, funId,
                               HLSFlowStepSpecializationConstRef(new WeightedCliqueRegisterBindingSpecialization(
                                   parameters->getOption<CliqueCovering_Algorithm>(
                                       OPT_weighted_clique_register_algorithm))));
-            }
-            else
-            {
-               regb = GetPointer<const HLSFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("HLS"))
+               }
+               else
+               {
+                  regb =
+                      GetPointer<const HLSFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("HLS"))
                           ->CreateHLSFlowStep(
                               parameters->getOption<HLSFlowStep_Type>(OPT_register_allocation_algorithm), funId);
+               }
+               regb->Initialize();
+               regb->Exec();
             }
-            regb->Initialize();
-            regb->Exec();
          }
 
-         clique_iteration_cputime[iteration] = 0;
          if(output_level >= OUTPUT_LEVEL_VERBOSE)
          {
-            START_TIME(clique_iteration_cputime[iteration]);
+            START_TIME(clique_iteration_cputime);
          }
          for(const auto& partition : partitions)
          {
@@ -1987,7 +1991,7 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
                 MODULE_BINDING_MUX_MARGIN * allocation_information->estimate_mux_time(partition.first);
             double controller_delay = allocation_information->EstimateControllerDelay();
             double resource_area = allocation_information->compute_normalized_area(partition.first);
-            unsigned int fu_prec = allocation_information->get_prec(partition.first);
+            auto fu_prec = allocation_information->get_prec(partition.first);
 
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                            "---controller_delay: " + STR(controller_delay) +
@@ -2160,18 +2164,6 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
             if(disabling_slack_based_binding)
             {
                PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Disabled slack based clique covering for: " + res_name);
-#if HAVE_EXPERIMENTAL
-               if(clique_covering_method_used == CliqueCovering_Algorithm::RANDOMIZED)
-               {
-                  double area_resource = allocation_information->get_area(partition.first) +
-                                         100 * allocation_information->get_DSPs(partition.first);
-                  module_register_binding_spec mrbs;
-                  module_binding_check_no_filter<vertex> cq(fu_prec, area_resource, HLS, HLSMgr, slack_time,
-                                                            starting_time, controller_delay, mrbs);
-                  module_clique->exec(no_filter_clique<vertex>(), cq);
-               }
-               else
-#endif
                {
                   no_check_clique<vertex> cq;
                   module_clique->exec(no_filter_clique<vertex>(), cq);
@@ -2295,17 +2287,6 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
                   }
                }
             }
-#if HAVE_EXPERIMENTAL
-            else if(clique_covering_method_used == CliqueCovering_Algorithm::RANDOMIZED)
-            {
-               double area_resource = allocation_information->get_area(partition.first) +
-                                      100 * allocation_information->get_DSPs(partition.first);
-               module_register_binding_spec mrbs;
-               module_binding_check<vertex> cq(fu_prec, area_resource, HLS, HLSMgr, slack_time, starting_time,
-                                               controller_delay, mrbs);
-               module_clique->exec(no_filter_clique<vertex>(), cq);
-            }
-#endif
             else
             {
                double area_resource = allocation_information->get_area(partition.first) +
@@ -2500,10 +2481,11 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
       std::swap(total_resource_area_best, total_resource_area);
       std::swap(total_area_muxes_best, total_area_muxes);
       std::swap(total_DSPs_best, total_DSPs);
-      clique_covering_executed = true;
       if(output_level >= OUTPUT_LEVEL_MINIMUM)
       {
          STOP_TIME(clique_cputime);
+         INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
+                        "---Clique covering computation completed in " + print_cpu_time(clique_cputime) + " seconds");
       }
    }
 
@@ -2517,40 +2499,13 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
                   "---Number of modules instantiated: " + STR(total_modules_allocated));
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
-                  "---Number of possible conflicts for possible false paths introduced by resource sharing: " +
-                      STR(n_performance_conflicts));
+                  "---Number of performance conflicts: " + STR(n_performance_conflicts));
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
                   "---Estimated resources area (no Muxes and address logic): " + STR(total_resource_area));
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Estimated area of MUX21: " + STR(total_area_muxes));
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
                   "---Total estimated area: " + STR(total_area_muxes + total_resource_area));
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Estimated number of DSPs: " + STR(total_DSPs));
-   INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
-                  "---Slack computed in " + print_cpu_time(slack_cputime) + " seconds");
-   if(clique_covering_executed)
-   {
-      INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
-                     "---False-loop computation completed in " + print_cpu_time(falseloop_cputime) + " seconds");
-      INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
-                     "---Weight computation completed in " + print_cpu_time(weight_cputime) + " seconds");
-      if(output_level == OUTPUT_LEVEL_MINIMUM)
-      {
-         INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
-                        "---Clique covering computation completed in " + print_cpu_time(clique_cputime) + " seconds");
-      }
-      else
-      {
-         INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "---Clique covering computation:");
-         INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "-->");
-         for(const auto& iteration : clique_iteration_cputime)
-         {
-            INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level,
-                           "---Iteration " + STR(iteration.first) + " completed in " +
-                               print_cpu_time(iteration.second) + " seconds");
-         }
-         INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "<--");
-      }
-   }
    if(output_level >= OUTPUT_LEVEL_MINIMUM and output_level <= OUTPUT_LEVEL_PEDANTIC)
    {
       STOP_TIME(step_time);
@@ -2689,7 +2644,7 @@ bool cdfc_module_binding::can_be_clustered(vertex v, OpGraphConstRef fsdg, fu_bi
       can_be_clustered_table[v] = false;
       return false;
    }
-   unsigned int fu_s1 = fu->get_assign(v);
+   auto fu_s1 = fu->get_assign(v);
    /*
    HLS->Rliv->set_HLS(HLS);
    std::string res_name = HLS->allocation_information->get_fu_name(fu_s1).first;
@@ -2776,7 +2731,8 @@ int cdfc_module_binding::weight_computation(bool cond1, bool cond2, vertex v1, v
 #ifdef HC_APPROACH
                                             spec_hierarchical_clustering& hc,
 #endif
-                                            connection_relation& con_rel, double controller_delay, unsigned int prec)
+                                            connection_relation& con_rel, double controller_delay,
+                                            unsigned long long prec)
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                   "-->Weight computation of " + GET_NAME(fsdg, v1) + "-->" + GET_NAME(fsdg, v2));

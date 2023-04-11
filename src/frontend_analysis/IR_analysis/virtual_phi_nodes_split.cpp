@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -249,7 +249,7 @@ void virtual_phi_nodes_split::virtual_split_phi(tree_nodeRef tree_phi, blocRef& 
          }
          const auto list_of_stmt = source_bb->CGetStmtList();
 
-         const auto created_stmt = tree_man->create_gimple_modify_stmt(res, def, function_id, BUILTIN_SRCP, 0);
+         const auto created_stmt = tree_man->create_gimple_modify_stmt(res, def, function_id, BUILTIN_SRCP);
          phi->ReplaceDefEdge(TM, def_edge, gimple_phi::DefEdge(def_edge.first, source_bb->number));
          if(list_of_stmt.size() and (GetPointer<gimple_goto>(GET_NODE(list_of_stmt.back())) ||
                                      GetPointer<gimple_while>(GET_NODE(list_of_stmt.back())) ||

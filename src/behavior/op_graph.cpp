@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -111,19 +111,6 @@ void OpNodeInfo::Initialize()
        CustomSet<unsigned int>();
    variables[FunctionBehavior_VariableType::VIRTUAL][FunctionBehavior_VariableAccessType::ADDRESS] =
        CustomSet<unsigned int>();
-#if HAVE_EXPERIMENTAL
-   variables[FunctionBehavior_VariableType::AGGREGATE][FunctionBehavior_VariableAccessType::USE] =
-       CustomSet<unsigned int>();
-   variables[FunctionBehavior_VariableType::AGGREGATE][FunctionBehavior_VariableAccessType::DEFINITION] =
-       CustomSet<unsigned int>();
-   variables[FunctionBehavior_VariableType::AGGREGATE][FunctionBehavior_VariableAccessType::OVER] =
-       CustomSet<unsigned int>();
-   variables[FunctionBehavior_VariableType::AGGREGATE][FunctionBehavior_VariableAccessType::ADDRESS] =
-       CustomSet<unsigned int>();
-   dynamic_memory_locations[FunctionBehavior_VariableAccessType::USE] = CustomSet<MemoryAddress>();
-   dynamic_memory_locations[FunctionBehavior_VariableAccessType::DEFINITION] = CustomSet<MemoryAddress>();
-   dynamic_memory_locations[FunctionBehavior_VariableAccessType::OVER] = CustomSet<MemoryAddress>();
-#endif
 }
 
 OpNodeInfo::~OpNodeInfo() = default;
@@ -134,15 +121,7 @@ const CustomSet<unsigned int>& OpNodeInfo::GetVariables(const FunctionBehavior_V
    return variables.find(variable_type)->second.find(access_type)->second;
 }
 
-#if HAVE_EXPERIMENTAL
-const CustomSet<MemoryAddress>&
-OpNodeInfo::GetDynamicMemoryLocations(const FunctionBehavior_VariableAccessType access_type) const
-{
-   return dynamic_memory_locations.find(access_type)->second;
-}
-#endif
-
-#if HAVE_BAMBU_BUILT || HAVE_TUCANO_BUILT
+#if HAVE_BAMBU_BUILT
 const std::string OpNodeInfo::GetOperation() const
 {
    if(vertex_name == ENTRY)
@@ -256,17 +235,10 @@ void OpNodeInfo::Print(std::ostream& stream, const BehavioralHelperConstRef beha
    PrintVariablesList(stream, "source code variables", cited_variables, behavioral_helper, dotty_format);
    PrintVariablesLists(stream, "SCALARS", variables.find(FunctionBehavior_VariableType::SCALAR)->second,
                        behavioral_helper, dotty_format);
-#if HAVE_EXPERIMENTAL
-   PrintVariablesLists(stream, "AGGREGATE", variables.find(FunctionBehavior_VariableType::AGGREGATE)->second,
-                       behavioral_helper, dotty_format);
-#endif
    PrintVariablesLists(stream, "MEMORY", variables.find(FunctionBehavior_VariableType::MEMORY)->second,
                        behavioral_helper, dotty_format);
    PrintVariablesLists(stream, "VIRTUAL", variables.find(FunctionBehavior_VariableType::VIRTUAL)->second,
                        behavioral_helper, dotty_format);
-#if HAVE_EXPERIMENTAL
-   PrintMemoriesLists(stream, "DYNAMIC MEMORY", dynamic_memory_locations, behavioral_helper, dotty_format);
-#endif
 }
 
 OpGraphInfo::OpGraphInfo(const BehavioralHelperConstRef _BH)

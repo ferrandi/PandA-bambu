@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -40,9 +40,6 @@
  *
  */
 
-/// Autoheader include
-#include "config_HAVE_EXPERIMENTAL.hpp"
-
 #include <boost/filesystem/operations.hpp>
 
 /// design_flows include
@@ -61,9 +58,6 @@
 #include "technology_manager.hpp"
 
 #include "RTL_characterization.hpp"
-#if HAVE_EXPERIMENTAL
-#include "core_generation.hpp"
-#endif
 
 #include "cpu_time.hpp"
 #include "utility.hpp"
@@ -166,29 +160,6 @@ int main(int argc, char* argv[])
       }
       design_flow_manager->Exec();
 
-#if HAVE_EXPERIMENTAL
-      if(parameters->isOption(OPT_import_ip_core))
-      {
-         START_TIME(cpu_time);
-         std::string core_hdl = parameters->getOption<std::string>(OPT_import_ip_core);
-         core_generationRef core_gen = core_generationRef(new core_generation(parameters));
-         core_gen->convert_to_XML(core_hdl, device->get_type());
-         STOP_TIME(cpu_time);
-         PRINT_OUT_MEX(DEBUG_LEVEL_MINIMUM, output_level,
-                       " ==== Core generation performed in " + print_cpu_time(cpu_time) + " seconds; ====\n");
-      }
-
-      if(parameters->isOption(OPT_export_ip_core))
-      {
-         START_TIME(cpu_time);
-         std::string core_name = parameters->getOption<std::string>(OPT_export_ip_core);
-         core_generationRef core_gen = core_generationRef(new core_generation(parameters));
-         core_gen->export_core(TM, core_name);
-         STOP_TIME(cpu_time);
-         PRINT_OUT_MEX(DEBUG_LEVEL_MINIMUM, output_level,
-                       " ==== Core exported in " + print_cpu_time(cpu_time) + " seconds; ====\n");
-      }
-#endif
       STOP_TIME(total_time);
       PRINT_MSG(" ==== Total Execution Time: " + print_cpu_time(total_time) + " seconds; ====\n");
 

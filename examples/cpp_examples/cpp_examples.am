@@ -8,6 +8,10 @@ EXTRA_DIST +=\
              %D%/fir_filter/input.pcm\
              %D%/fir_filter/outputFixed.gold.pcm\
              %D%/fir_filter/test.xml\
+             %D%/tb_exporter/bambu.sh\
+             %D%/tb_exporter/bambu_tb_exporter.hpp\
+             %D%/tb_exporter/sum3numbers.cpp\
+             %D%/tb_exporter/tb.cpp\
              %D%/Xilinx_Examples/Math/fp_accum/3_FP_accum.pdf\
              %D%/Xilinx_Examples/Math/fp_accum/bambu.sh\
              %D%/Xilinx_Examples/Math/fp_accum/CONTRIBUTING.md\

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -41,7 +41,6 @@
 
 /// Autoheader include
 #include "config_HAVE_CMOS_BUILT.hpp"
-#include "config_HAVE_EXPERIMENTAL.hpp"
 #include "config_HAVE_FROM_ARCH_BUILT.hpp"
 #include "config_HAVE_FROM_CSV_BUILT.hpp"
 #include "config_HAVE_FROM_LIBERTY.hpp"
@@ -92,9 +91,6 @@
 #include "to_data_file_step_factory.hpp"
 #endif
 #include "translator.hpp"
-#if HAVE_EXPERIMENTAL
-#include "xml_generator.hpp"
-#endif
 
 #if HAVE_TECHNOLOGY_BUILT
 /// design_flows/technology include
@@ -187,7 +183,7 @@ int main(int argc, char* argv[])
             THROW_ERROR("Bad Parameters parsing");
          }
       }
-#if !defined(NDEBUG) || HAVE_EXPERIMENTAL
+#if !defined(NDEBUG)
       auto debug_level = parameters->getOption<int>(OPT_debug_level);
 #endif
       Parameters_FileFormat input_format = parameters->getOption<Parameters_FileFormat>(OPT_input_format);
@@ -297,24 +293,7 @@ int main(int argc, char* argv[])
                                      parameters->getOption<std::string>(OPT_output_file));
                   break;
                }
-#if HAVE_EXPERIMENTAL
                case(Parameters_FileFormat::FF_XML):
-               {
-                  PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Input: XML - Output: XML");
-                  CustomUnorderedMap<std::string, long double> results;
-                  std::map<enum rtl_kind, std::map<enum mode_kind, long double>> output;
-                  const auto input_files = parameters->getOption<const CustomSet<std::string>>(OPT_input_file);
-                  if(input_files.size() != 1)
-                     THROW_ERROR("Only one rapid miner output can be analyzed at a time");
-                  parse_rapid_miner(*(input_files.begin()), results, debug_level);
-                  TranslatorConstRef tr(new Translator(parameters));
-                  tr->Translate(results, output);
-                  tr->write_to_xml(output, parameters->getOption<std::string>(OPT_output_file));
-                  break;
-               }
-#else
-               case(Parameters_FileFormat::FF_XML):
-#endif
 #if HAVE_FROM_AADL_ASN_BUILT
                case(Parameters_FileFormat::FF_AADL):
                case(Parameters_FileFormat::FF_ASN):
@@ -335,10 +314,6 @@ int main(int argc, char* argv[])
 #endif
 #if HAVE_FROM_LIBERTY
                case(Parameters_FileFormat::FF_LIB):
-#endif
-#if HAVE_EXPERIMENTAL
-               case(Parameters_FileFormat::FF_LOG):
-               case(Parameters_FileFormat::FF_PA):
 #endif
 #if HAVE_FROM_C_BUILT
                case(Parameters_FileFormat::FF_RAW):
@@ -529,10 +504,6 @@ int main(int argc, char* argv[])
 #endif
 #if HAVE_FROM_LIBERTY
                case(Parameters_FileFormat::FF_LIB):
-#endif
-#if HAVE_EXPERIMENTAL
-               case(Parameters_FileFormat::FF_LOG):
-               case(Parameters_FileFormat::FF_PA):
 #endif
 #if HAVE_FROM_C_BUILT
                case(Parameters_FileFormat::FF_RAW):
@@ -784,112 +755,7 @@ int main(int argc, char* argv[])
             break;
          }
 #endif
-#if HAVE_EXPERIMENTAL
          case(Parameters_FileFormat::FF_XML_WGT_SYM):
-         {
-            switch(output_format)
-            {
-               case(Parameters_FileFormat::FF_XML):
-               {
-                  int output_level = parameters->getOption<int>(OPT_output_level);
-                  if(output_level >= OUTPUT_LEVEL_MINIMUM)
-                  {
-                     if(output_level >= OUTPUT_LEVEL_VERBOSE)
-                     {
-                        INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "");
-                        INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "");
-                        INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "");
-                        INDENT_OUT_MEX(
-                            OUTPUT_LEVEL_VERBOSE, output_level,
-                            "*******************************************************************************");
-                        INDENT_OUT_MEX(
-                            OUTPUT_LEVEL_VERBOSE, output_level,
-                            "*                   Genereting symbolic sequence weight model                 *");
-                        INDENT_OUT_MEX(
-                            OUTPUT_LEVEL_VERBOSE, output_level,
-                            "*******************************************************************************");
-                     }
-                     else
-                     {
-                        INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "");
-                        INDENT_OUT_MEX(
-                            OUTPUT_LEVEL_MINIMUM, output_level,
-                            " ================== Generating symbolic sequence weight models =============== ");
-                     }
-                  }
-                  XMLGeneratorConstRef generator(new XMLGenerator(parameters));
-                  const auto input_files = parameters->getOption<const CustomSet<std::string>>(OPT_input_file);
-                  if(input_files.size() > 1)
-                     THROW_ERROR("Symbolic sequence weight models can be built only starting from a single file");
-                  const std::string output_file = parameters->getOption<std::string>(OPT_output_file);
-                  generator->GenerateSymbolicSequenceWeightModel(*(input_files.begin()), output_file);
-                  break;
-               }
-#if HAVE_FROM_AADL_ASN_BUILT
-               case(Parameters_FileFormat::FF_AADL):
-               case(Parameters_FileFormat::FF_ASN):
-#endif
-#if HAVE_FROM_C_BUILT
-               case(Parameters_FileFormat::FF_C):
-               case(Parameters_FileFormat::FF_OBJECTIVEC):
-               case(Parameters_FileFormat::FF_OBJECTIVECPP):
-               case(Parameters_FileFormat::FF_CPP):
-               case(Parameters_FileFormat::FF_FORTRAN):
-               case(Parameters_FileFormat::FF_LLVM):
-               case(Parameters_FileFormat::FF_LLVM_CPP):
-#endif
-               case(Parameters_FileFormat::FF_CSV):
-               case(Parameters_FileFormat::FF_CSV_RTL):
-               case(Parameters_FileFormat::FF_CSV_TRE):
-#if HAVE_FROM_LIBERTY
-               case(Parameters_FileFormat::FF_LIB):
-#endif
-               case(Parameters_FileFormat::FF_LOG):
-               case(Parameters_FileFormat::FF_PA):
-#if HAVE_FROM_C_BUILT
-               case(Parameters_FileFormat::FF_RAW):
-#endif
-               case(Parameters_FileFormat::FF_TEX):
-               case(Parameters_FileFormat::FF_VERILOG):
-               case(Parameters_FileFormat::FF_VHDL):
-               case(Parameters_FileFormat::FF_XML_AGG):
-#if HAVE_FROM_ARCH_BUILT
-               case(Parameters_FileFormat::FF_XML_ARCHITECTURE):
-#endif
-               case(Parameters_FileFormat::FF_XML_BAMBU_RESULTS):
-#if HAVE_FROM_LIBERTY
-               case(Parameters_FileFormat::FF_XML_CELLS):
-#endif
-#if HAVE_HLS_BUILT
-               case(Parameters_FileFormat::FF_XML_CON):
-#endif
-               case Parameters_FileFormat::FF_XML_EXPERIMENTAL_SETUP:
-               case(Parameters_FileFormat::FF_XML_IP_XACT_COMPONENT):
-               case(Parameters_FileFormat::FF_XML_IP_XACT_CONFIG):
-               case(Parameters_FileFormat::FF_XML_IP_XACT_DESIGN):
-               case(Parameters_FileFormat::FF_XML_IP_XACT_GENERATOR):
-               case(Parameters_FileFormat::FF_XML_SKIP_ROW):
-               case(Parameters_FileFormat::FF_XML_STAT):
-               case(Parameters_FileFormat::FF_XML_SYM_SIM):
-#if HAVE_TECHNOLOGY_BUILT
-               case(Parameters_FileFormat::FF_XML_TARGET):
-               case(Parameters_FileFormat::FF_XML_TEC):
-#endif
-               case(Parameters_FileFormat::FF_XML_TEX_TABLE):
-               case(Parameters_FileFormat::FF_TGFF):
-               case(Parameters_FileFormat::FF_XML_WGT_GM):
-               case(Parameters_FileFormat::FF_XML_WGT_SYM):
-               case(Parameters_FileFormat::FF_UNKNOWN):
-               default:
-               {
-                  THROW_ERROR("Not supported combination input file - output file types");
-               }
-            }
-            break;
-         }
-#else
-         case(Parameters_FileFormat::FF_XML_WGT_SYM):
-#endif
 #if !HAVE_FROM_CSV_BUILT
          case(Parameters_FileFormat::FF_CSV):
 #endif
@@ -912,10 +778,6 @@ int main(int argc, char* argv[])
 #endif
 #if HAVE_FROM_LIBERTY
          case(Parameters_FileFormat::FF_LIB):
-#endif
-#if HAVE_EXPERIMENTAL
-         case(Parameters_FileFormat::FF_LOG):
-         case(Parameters_FileFormat::FF_PA):
 #endif
 #if HAVE_FROM_C_BUILT
          case(Parameters_FileFormat::FF_RAW):

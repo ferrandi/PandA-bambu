@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -47,7 +47,6 @@
 
 /// Autoheader include
 #include "config_HAVE_BAMBU_BUILT.hpp"
-#include "config_HAVE_EXPERIMENTAL.hpp"
 #include "config_HAVE_GRAPH_PARTITIONING_BUILT.hpp"
 #include "config_HAVE_HLS_BUILT.hpp"
 #include "config_HAVE_HOST_PROFILING_BUILT.hpp"

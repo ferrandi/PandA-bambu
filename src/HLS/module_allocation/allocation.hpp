@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -109,13 +109,14 @@ class allocation : public HLSFunctionStep
    /// store the precomputed pipeline unit: given a functional unit it return the pipeline id compliant
    std::map<std::string, std::string> precomputed_pipeline_unit;
 
-   std::map<technology_nodeRef, std::map<unsigned int, std::map<HLS_manager::io_binding_type, unsigned int>>> fu_list;
+   std::map<technology_nodeRef, std::map<unsigned long long, std::map<HLS_manager::io_binding_type, unsigned int>>>
+       fu_list;
 
    /// The HLS target
    HLS_targetRef HLS_T;
 
    /// The technology manager
-   technology_managerRef TM;
+   technology_managerRef TechM;
 
    /**
     * Returns the technology_node associated with the given operation
@@ -130,7 +131,7 @@ class allocation : public HLSFunctionStep
    std::string get_compliant_pipelined_unit(double clock, const std::string& pipe_parameter,
                                             const technology_nodeRef current_fu, const std::string& curr_op,
                                             const std::string& library_name, const std::string& template_suffix,
-                                            unsigned int module_prec);
+                                            unsigned long long module_prec);
 
    technology_nodeRef extract_bambu_provided(const std::string& library_name, operation* curr_op,
                                              const std::string& bambu_provided_resource_);
@@ -192,7 +193,7 @@ class allocation : public HLSFunctionStep
    bool check_templated_units(double clock_period, node_kind_prec_infoRef node_info, const library_managerRef library,
                               technology_nodeRef current_fu, operation* curr_op);
    bool check_for_memory_compliancy(bool Has_extern_allocated_data, technology_nodeRef current_fu,
-                                    const std::string& memory_ctrl_type, std::string channels_type);
+                                    const std::string& memory_ctrl_type, const std::string& channels_type);
    bool check_type_and_precision(operation* curr_op, node_kind_prec_infoRef node_info);
    bool check_proxies(const library_managerRef library, const std::string& fu_name_);
    bool check_generated_bambu_flopoco(bool skip_softfloat_resources, structural_managerRef structManager_obj,

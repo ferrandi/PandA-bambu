@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2016-2022 Politecnico di Milano
+ *              Copyright (c) 2016-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -74,9 +74,7 @@ top_entity_cs::top_entity_cs(const ParameterConstRef _parameters, const HLS_mana
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
 }
 
-top_entity_cs::~top_entity_cs()
-{
-}
+top_entity_cs::~top_entity_cs() = default;
 
 DesignFlowStep_Status top_entity_cs::InternalExec()
 {
@@ -125,7 +123,7 @@ void top_entity_cs::add_context_switch_port()
        datapath_circuit->find_member(STR(SUSPENSION), port_o_K, datapath_circuit);
    SM->add_connection(datapath_suspension, suspension_obj);
 
-   int num_slots = ceil_log2(parameters->getOption<unsigned long long int>(OPT_context_switch));
+   auto num_slots = ceil_log2(parameters->getOption<unsigned long long int>(OPT_context_switch));
    if(!num_slots)
    {
       num_slots = 1;
@@ -156,7 +154,7 @@ void top_entity_cs::add_context_switch_port_kernel()
    structural_objectRef controller_circuit = Controller->get_circ();
    structural_objectRef circuit = SM->get_circ();
    structural_type_descriptorRef bool_type = structural_type_descriptorRef(new structural_type_descriptor("bool", 0));
-   int num_slots = ceil_log2(parameters->getOption<unsigned long long int>(OPT_context_switch));
+   auto num_slots = ceil_log2(parameters->getOption<unsigned long long int>(OPT_context_switch));
    if(!num_slots)
    {
       num_slots = 1;
@@ -239,8 +237,8 @@ void top_entity_cs::add_input_register(structural_objectRef port_in, const std::
    auto register_file_selector_port =
        controller_circuit->find_member(SELECTOR_REGISTER_FILE, port_o_K, controller_circuit);
    auto rf_register_file_selector_port = GetPointer<module>(register_file_module)->get_in_port(3);
-   int sel_bits = ceil_log2(cs_number);
-   rf_register_file_selector_port->type_resize(static_cast<unsigned>(sel_bits));
+   const auto sel_bits = ceil_log2(cs_number);
+   rf_register_file_selector_port->type_resize(sel_bits);
 
    auto register_file_selector_signal = circuit->find_member(SELECTOR_REGISTER_FILE "_signal", signal_o_K, circuit);
    if(not register_file_selector_signal)

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -40,27 +40,20 @@
  * Last modified by $Author$
  *
  */
-
-/// Autoheader include
 #include "config_HAVE_CMOS_BUILT.hpp"
 
-#include "Statistics.hpp"
 #include "time_model.hpp"
+
+#include "LUT_model.hpp"
+#include "exceptions.hpp"
+#include "polixml.hpp"
+#include "schedule.hpp"
+#include "target_device.hpp"
+#include "xml_helper.hpp"
 
 #if HAVE_CMOS_BUILT
 #include "liberty_model.hpp"
 #endif
-#include "LUT_model.hpp"
-
-#include "polixml.hpp"
-#include "xml_helper.hpp"
-
-#include "target_device.hpp"
-
-#include "exceptions.hpp"
-
-/// HLS/scheduling include
-#include "schedule.hpp"
 
 const double time_model::execution_time_DEFAULT = 0;
 const ControlStep time_model::initiation_time_DEFAULT =
@@ -70,8 +63,7 @@ const unsigned int time_model::cycles_time_DEFAULT =
 const double time_model::stage_period_DEFAULT = 0; /// zero means a non-pipelined operation
 
 time_model::time_model(const ParameterConstRef _Param_)
-    : statistical_delay(ComputeStatisticalDelay(execution_time_DEFAULT, 250)),
-      Param(_Param_),
+    : Param(_Param_),
       initiation_time(initiation_time_DEFAULT),
       cycles(cycles_time_DEFAULT),
       synthesis_dependent(false),
@@ -196,13 +188,13 @@ unsigned int time_model::xload_timing_path(xml_element* node)
 
 std::vector<std::string> time_model::get_critical_path(unsigned int type) const
 {
-   THROW_ASSERT(critical_paths.find(type) != critical_paths.end(), "Missing critical path type");
-   return critical_paths.find(type)->second;
+   THROW_ASSERT(critical_paths.count(type), "Missing critical path type");
+   return critical_paths.at(type);
 }
 
 bool time_model::has_max_delay(unsigned int type) const
 {
-   return max_delay.find(type) != max_delay.end();
+   return max_delay.count(type);
 }
 
 void time_model::set_max_delay(unsigned int type, float value)
@@ -213,5 +205,5 @@ void time_model::set_max_delay(unsigned int type, float value)
 float time_model::get_max_delay(unsigned int type) const
 {
    THROW_ASSERT(has_max_delay(type), "Missing value");
-   return max_delay.find(type)->second;
+   return max_delay.at(type);
 }

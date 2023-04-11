@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2020-2022 Politecnico di Milano
+ *              Copyright (C) 2020-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -37,25 +37,22 @@
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@elet.polimi.it>
  *
  */
-/// Header include
 #include "BashBackendFlow.hpp"
 
 #include "DesignCompilerWrapper.hpp"
-#include "SynthesisTool.hpp"
-
-#include "synthesis_constants.hpp"
-
 #include "LUT_model.hpp"
+#include "Parameter.hpp"
+#include "SynthesisTool.hpp"
 #include "area_model.hpp"
 #include "clb_model.hpp"
+#include "fileIO.hpp"
+#include "string_manipulation.hpp"
+#include "structural_objects.hpp"
+#include "synthesis_constants.hpp"
 #include "target_device.hpp"
 #include "target_manager.hpp"
 #include "time_model.hpp"
-
-#include "Parameter.hpp"
-#include "fileIO.hpp"
-#include "string_manipulation.hpp" // for GET_CLASS
-#include "structural_objects.hpp"
+#include "utility.hpp"
 #include "xml_dom_parser.hpp"
 #include "xml_script_command.hpp"
 

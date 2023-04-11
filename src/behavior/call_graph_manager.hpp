@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -87,9 +87,6 @@ class CallGraphManager
    /// put into relation function F_i and the vertex in the call graph representing it
    std::map<unsigned int, vertex> functionID_vertex_map;
 
-   /// True if only
-   const bool single_root_function;
-
    /// True if recursive calls are allowed
    const bool allow_recursive_functions;
 
@@ -155,14 +152,12 @@ class CallGraphManager
     * Constructor. The data structure is initialized.
     * @param function_expander is the functor used to determine if a function has to be considered during construction
     * of call graph
-    * @param single_root_function specifies if only one root function has to be considered
     * @param allow_recursive_functions specifies if recursive functions are allowed
     * @param tree_manager is the tree manager
     * @param Param is the set of input parameters
     */
-   CallGraphManager(const FunctionExpanderConstRef function_expander, const bool single_root_function,
-                    const bool allow_recursive_functions, const tree_managerConstRef tree_manager,
-                    const ParameterConstRef Param);
+   CallGraphManager(const FunctionExpanderConstRef function_expander, const bool allow_recursive_functions,
+                    const tree_managerConstRef tree_manager, const ParameterConstRef Param);
 
    /**
     * Destructor
@@ -232,9 +227,10 @@ class CallGraphManager
    /**
     * compute the list of reached function starting from a given function
     * @param from_f is the starting function
+    * @param with_body consider only functions with body IR
     * @return the set of top function
     */
-   CustomOrderedSet<unsigned int> GetReachedBodyFunctionsFrom(unsigned int from_f) const;
+   CustomOrderedSet<unsigned int> GetReachedFunctionsFrom(unsigned int from_f, bool with_body = true) const;
 
    /**
     * Returns the library functions called by the root functions

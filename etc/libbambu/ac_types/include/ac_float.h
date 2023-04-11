@@ -109,8 +109,8 @@ namespace __AC_NAMESPACE
       };
       // specializations after definition of ac_float
 
-      inline ac_float_cdouble_t double_to_ac_float(double d);
-      inline ac_float_cfloat_t float_to_ac_float(float f);
+      __FORCE_INLINE ac_float_cdouble_t double_to_ac_float(double d);
+      __FORCE_INLINE ac_float_cfloat_t float_to_ac_float(float f);
    } // namespace ac_private
 
    //////////////////////////////////////////////////////////////////////////////
@@ -145,7 +145,7 @@ namespace __AC_NAMESPACE
       }
 
     private:
-      inline bool is_neg() const
+      __FORCE_INLINE bool is_neg() const
       {
          return m < 0; // is_neg would be more efficient
       }
@@ -402,97 +402,97 @@ namespace __AC_NAMESPACE
          *this = ac_fixed<WI, WI, SI>(op);
       }
 
-      inline ac_float(bool b)
+      __FORCE_INLINE ac_float(bool b)
       {
          *this = (ac_int<1, false>)b;
       }
-      inline ac_float(char b)
+      __FORCE_INLINE ac_float(char b)
       {
          *this = (ac_int<8, true>)b;
       }
-      inline ac_float(signed char b)
+      __FORCE_INLINE ac_float(signed char b)
       {
          *this = (ac_int<8, true>)b;
       }
-      inline ac_float(unsigned char b)
+      __FORCE_INLINE ac_float(unsigned char b)
       {
          *this = (ac_int<8, false>)b;
       }
-      inline ac_float(signed short b)
+      __FORCE_INLINE ac_float(signed short b)
       {
          *this = (ac_int<16, true>)b;
       }
-      inline ac_float(unsigned short b)
+      __FORCE_INLINE ac_float(unsigned short b)
       {
          *this = (ac_int<16, false>)b;
       }
-      inline ac_float(signed int b)
+      __FORCE_INLINE ac_float(signed int b)
       {
          *this = (ac_int<32, true>)b;
       }
-      inline ac_float(unsigned int b)
+      __FORCE_INLINE ac_float(unsigned int b)
       {
          *this = (ac_int<32, false>)b;
       }
-      inline ac_float(signed long b)
+      __FORCE_INLINE ac_float(signed long b)
       {
          *this = (ac_int<ac_private::long_w, true>)b;
       }
-      inline ac_float(unsigned long b)
+      __FORCE_INLINE ac_float(unsigned long b)
       {
          *this = (ac_int<ac_private::long_w, false>)b;
       }
-      inline ac_float(Slong b)
+      __FORCE_INLINE ac_float(Slong b)
       {
          *this = (ac_int<64, true>)b;
       }
-      inline ac_float(Ulong b)
+      __FORCE_INLINE ac_float(Ulong b)
       {
          *this = (ac_int<64, false>)b;
       }
 
       // Explicit conversion functions to ac_int and ac_fixed
-      inline typename rt_unary::to_ac_fixed_t to_ac_fixed() const
+      __FORCE_INLINE typename rt_unary::to_ac_fixed_t to_ac_fixed() const
       {
          typename rt_unary::to_ac_fixed_t r = m;
          r <<= e;
          return r;
       }
-      inline typename rt_unary::to_ac_int_t to_ac_int() const
+      __FORCE_INLINE typename rt_unary::to_ac_int_t to_ac_int() const
       {
          return to_ac_fixed().to_ac_int();
       }
 
       // Explicit conversion functions to C built-in types -------------
-      inline int to_int() const
+      __FORCE_INLINE int to_int() const
       {
          return to_ac_int().to_int();
       }
-      inline unsigned to_uint() const
+      __FORCE_INLINE unsigned to_uint() const
       {
          return to_ac_int().to_uint();
       }
-      inline long to_long() const
+      __FORCE_INLINE long to_long() const
       {
          return (signed long)to_ac_int().to_int64();
       }
-      inline unsigned long to_ulong() const
+      __FORCE_INLINE unsigned long to_ulong() const
       {
          return (unsigned long)to_ac_int().to_uint64();
       }
-      inline Slong to_int64() const
+      __FORCE_INLINE Slong to_int64() const
       {
          return to_ac_int().to_int64();
       }
-      inline Ulong to_uint64() const
+      __FORCE_INLINE Ulong to_uint64() const
       {
          return to_ac_int().to_uint64();
       }
-      inline float to_float() const
+      __FORCE_INLINE float to_float() const
       {
          return ldexpf(m.to_double(), exp());
       }
-      inline double to_double() const
+      __FORCE_INLINE double to_double() const
       {
          return ldexp(m.to_double(), exp());
       }
@@ -840,7 +840,7 @@ namespace __AC_NAMESPACE
          return !operator>(f);
       }
 
-      inline std::string to_string(ac_base_mode base_rep, bool sign_mag = false, bool hw = true) const
+      __FORCE_INLINE std::string to_string(ac_base_mode base_rep, bool sign_mag = false, bool hw = true) const
       {
          // TODO: printing decimal with exponent
          if(!hw)
@@ -868,7 +868,7 @@ namespace __AC_NAMESPACE
          }
       }
 
-      inline static std::string type_name()
+      __FORCE_INLINE static std::string type_name()
       {
          const char* tf[] = {"false", "true"};
          const char* q[] = {"AC_TRN",     "AC_RND",         "AC_TRN_ZERO", "AC_RND_ZERO",
@@ -885,7 +885,7 @@ namespace __AC_NAMESPACE
       }
 
       template <ac_special_val V>
-      inline ac_float& set_val()
+      __FORCE_INLINE ac_float& set_val()
       {
          m.template set_val<V>();
          if(V == AC_VAL_MIN)
@@ -912,7 +912,7 @@ namespace __AC_NAMESPACE
          return nan;
       }
 
-      inline ac_float_cdouble_t double_to_ac_float(double d)
+      __FORCE_INLINE ac_float_cdouble_t double_to_ac_float(double d)
       {
          typedef ac_float_cdouble_t r_t;
 #ifndef __BAMBU__
@@ -928,7 +928,7 @@ namespace __AC_NAMESPACE
          return r_t(mant, exp, false);
       }
 
-      inline ac_float_cfloat_t float_to_ac_float(float f)
+      __FORCE_INLINE ac_float_cfloat_t float_to_ac_float(float f)
       {
          typedef ac_float_cfloat_t r_t;
 #ifndef __BAMBU__
@@ -1071,36 +1071,36 @@ namespace __AC_NAMESPACE
 
 #ifndef __BAMBU__
    template <AC_FL_T()>
-   inline std::ostream& operator<<(std::ostream& os, const AC_FL() & x)
+   __FORCE_INLINE std::ostream& operator<<(std::ostream& os, const AC_FL() & x)
    {
       os << x.to_string(AC_DEC);
       return os;
    }
 #endif
 
-#define FL_BIN_OP_WITH_CTYPE(BIN_OP, C_TYPE, RTYPE)                                                        \
-   template <AC_FL_T()>                                                                                    \
-   inline typename AC_FL()::template rt_T2<C_TYPE>::RTYPE operator BIN_OP(C_TYPE c_op, const AC_FL() & op) \
-   {                                                                                                       \
-      typedef typename ac::template ac_float_represent<C_TYPE>::type fl2_t;                                \
-      return fl2_t(c_op).operator BIN_OP(op);                                                              \
-   }                                                                                                       \
-   template <AC_FL_T()>                                                                                    \
-   inline typename AC_FL()::template rt_T<C_TYPE>::RTYPE operator BIN_OP(const AC_FL() & op, C_TYPE c_op)  \
-   {                                                                                                       \
-      typedef typename ac::template ac_float_represent<C_TYPE>::type fl2_t;                                \
-      return op.operator BIN_OP(fl2_t(c_op));                                                              \
+#define FL_BIN_OP_WITH_CTYPE(BIN_OP, C_TYPE, RTYPE)                                                                \
+   template <AC_FL_T()>                                                                                            \
+   __FORCE_INLINE typename AC_FL()::template rt_T2<C_TYPE>::RTYPE operator BIN_OP(C_TYPE c_op, const AC_FL() & op) \
+   {                                                                                                               \
+      typedef typename ac::template ac_float_represent<C_TYPE>::type fl2_t;                                        \
+      return fl2_t(c_op).operator BIN_OP(op);                                                                      \
+   }                                                                                                               \
+   template <AC_FL_T()>                                                                                            \
+   __FORCE_INLINE typename AC_FL()::template rt_T<C_TYPE>::RTYPE operator BIN_OP(const AC_FL() & op, C_TYPE c_op)  \
+   {                                                                                                               \
+      typedef typename ac::template ac_float_represent<C_TYPE>::type fl2_t;                                        \
+      return op.operator BIN_OP(fl2_t(c_op));                                                                      \
    }
 
 #define FL_REL_OP_WITH_CTYPE(REL_OP, C_TYPE)                                \
    template <AC_FL_T()>                                                     \
-   inline bool operator REL_OP(const AC_FL() & op, C_TYPE op2)              \
+   __FORCE_INLINE bool operator REL_OP(const AC_FL() & op, C_TYPE op2)      \
    {                                                                        \
       typedef typename ac::template ac_float_represent<C_TYPE>::type fl2_t; \
       return op.operator REL_OP(fl2_t(op2));                                \
    }                                                                        \
    template <AC_FL_T()>                                                     \
-   inline bool operator REL_OP(C_TYPE op2, const AC_FL() & op)              \
+   __FORCE_INLINE bool operator REL_OP(C_TYPE op2, const AC_FL() & op)      \
    {                                                                        \
       typedef typename ac::template ac_float_represent<C_TYPE>::type fl2_t; \
       return fl2_t(op2).operator REL_OP(op);                                \
@@ -1108,7 +1108,7 @@ namespace __AC_NAMESPACE
 
 #define FL_ASSIGN_OP_WITH_CTYPE_2(ASSIGN_OP, C_TYPE)                        \
    template <AC_FL_T()>                                                     \
-   inline AC_FL()& operator ASSIGN_OP(AC_FL() & op, C_TYPE op2)             \
+   __FORCE_INLINE AC_FL()& operator ASSIGN_OP(AC_FL() & op, C_TYPE op2)     \
    {                                                                        \
       typedef typename ac::template ac_float_represent<C_TYPE>::type fl2_t; \
       return op.operator ASSIGN_OP(fl2_t(op2));                             \
@@ -1132,22 +1132,22 @@ namespace __AC_NAMESPACE
    FL_ASSIGN_OP_WITH_CTYPE_2(*=, C_TYPE)  \
    FL_ASSIGN_OP_WITH_CTYPE_2(/=, C_TYPE)
 
-#define FL_SHIFT_OP_WITH_INT_CTYPE(BIN_OP, C_TYPE, RTYPE)                              \
-   template <AC_FL_T()>                                                                \
-   inline typename AC_FL()::template rt_i<ac_private::c_type_params<C_TYPE>::W,        \
-                                          ac_private::c_type_params<C_TYPE>::S>::RTYPE \
-   operator BIN_OP(const AC_FL() & op, C_TYPE i_op)                                    \
-   {                                                                                   \
-      typedef typename ac::template ac_int_represent<C_TYPE>::type i_t;                \
-      return op.operator BIN_OP(i_t(i_op));                                            \
+#define FL_SHIFT_OP_WITH_INT_CTYPE(BIN_OP, C_TYPE, RTYPE)                                      \
+   template <AC_FL_T()>                                                                        \
+   __FORCE_INLINE typename AC_FL()::template rt_i<ac_private::c_type_params<C_TYPE>::W,        \
+                                                  ac_private::c_type_params<C_TYPE>::S>::RTYPE \
+   operator BIN_OP(const AC_FL() & op, C_TYPE i_op)                                            \
+   {                                                                                           \
+      typedef typename ac::template ac_int_represent<C_TYPE>::type i_t;                        \
+      return op.operator BIN_OP(i_t(i_op));                                                    \
    }
 
-#define FL_SHIFT_ASSIGN_OP_WITH_INT_CTYPE(ASSIGN_OP, C_TYPE)            \
-   template <AC_FL_T()>                                                 \
-   inline AC_FL()& operator ASSIGN_OP(AC_FL() & op, C_TYPE i_op)        \
-   {                                                                    \
-      typedef typename ac::template ac_int_represent<C_TYPE>::type i_t; \
-      return op.operator ASSIGN_OP(i_t(i_op));                          \
+#define FL_SHIFT_ASSIGN_OP_WITH_INT_CTYPE(ASSIGN_OP, C_TYPE)             \
+   template <AC_FL_T()>                                                  \
+   __FORCE_INLINE AC_FL()& operator ASSIGN_OP(AC_FL() & op, C_TYPE i_op) \
+   {                                                                     \
+      typedef typename ac::template ac_int_represent<C_TYPE>::type i_t;  \
+      return op.operator ASSIGN_OP(i_t(i_op));                           \
    }
 
 #define FL_SHIFT_OPS_WITH_INT_CTYPE(C_TYPE)       \
@@ -1183,48 +1183,48 @@ namespace __AC_NAMESPACE
    // Macros for Binary Operators with ac_int
    // --------------------------------------------
 
-#define FL_BIN_OP_WITH_AC_INT_1(BIN_OP, RTYPE)                                                                \
-   template <AC_FL_T(), int WI, bool SI>                                                                      \
-   inline typename AC_FL()::template rt_T2<ac_int<WI, SI>>::RTYPE operator BIN_OP(const ac_int<WI, SI>& i_op, \
-                                                                                  const AC_FL() & op)         \
-   {                                                                                                          \
-      typedef typename ac::template ac_float_represent<ac_int<WI, SI>>::type fl2_t;                           \
-      return fl2_t(i_op).operator BIN_OP(op);                                                                 \
+#define FL_BIN_OP_WITH_AC_INT_1(BIN_OP, RTYPE)                                                                        \
+   template <AC_FL_T(), int WI, bool SI>                                                                              \
+   __FORCE_INLINE typename AC_FL()::template rt_T2<ac_int<WI, SI>>::RTYPE operator BIN_OP(const ac_int<WI, SI>& i_op, \
+                                                                                          const AC_FL() & op)         \
+   {                                                                                                                  \
+      typedef typename ac::template ac_float_represent<ac_int<WI, SI>>::type fl2_t;                                   \
+      return fl2_t(i_op).operator BIN_OP(op);                                                                         \
    }
 
-#define FL_BIN_OP_WITH_AC_INT_2(BIN_OP, RTYPE)                                                                \
-   template <AC_FL_T(), int WI, bool SI>                                                                      \
-   inline typename AC_FL()::template rt_T2<ac_int<WI, SI>>::RTYPE operator BIN_OP(const AC_FL() & op,         \
-                                                                                  const ac_int<WI, SI>& i_op) \
-   {                                                                                                          \
-      typedef typename ac::template ac_float_represent<ac_int<WI, SI>>::type fl2_t;                           \
-      return op.operator BIN_OP(fl2_t(i_op));                                                                 \
+#define FL_BIN_OP_WITH_AC_INT_2(BIN_OP, RTYPE)                                                                        \
+   template <AC_FL_T(), int WI, bool SI>                                                                              \
+   __FORCE_INLINE typename AC_FL()::template rt_T2<ac_int<WI, SI>>::RTYPE operator BIN_OP(const AC_FL() & op,         \
+                                                                                          const ac_int<WI, SI>& i_op) \
+   {                                                                                                                  \
+      typedef typename ac::template ac_float_represent<ac_int<WI, SI>>::type fl2_t;                                   \
+      return op.operator BIN_OP(fl2_t(i_op));                                                                         \
    }
 
 #define FL_BIN_OP_WITH_AC_INT(BIN_OP, RTYPE) \
    FL_BIN_OP_WITH_AC_INT_1(BIN_OP, RTYPE)    \
    FL_BIN_OP_WITH_AC_INT_2(BIN_OP, RTYPE)
 
-#define FL_REL_OP_WITH_AC_INT(REL_OP)                                               \
-   template <AC_FL_T(), int WI, bool SI>                                            \
-   inline bool operator REL_OP(const AC_FL() & op, const ac_int<WI, SI>& op2)       \
-   {                                                                                \
-      typedef typename ac::template ac_float_represent<ac_int<WI, SI>>::type fl2_t; \
-      return op.operator REL_OP(fl2_t(op2));                                        \
-   }                                                                                \
-   template <AC_FL_T(), int WI, bool SI>                                            \
-   inline bool operator REL_OP(ac_int<WI, SI>& op2, const AC_FL() & op)             \
-   {                                                                                \
-      typedef typename ac::template ac_float_represent<ac_int<WI, SI>>::type fl2_t; \
-      return fl2_t(op2).operator REL_OP(op);                                        \
+#define FL_REL_OP_WITH_AC_INT(REL_OP)                                                 \
+   template <AC_FL_T(), int WI, bool SI>                                              \
+   __FORCE_INLINE bool operator REL_OP(const AC_FL() & op, const ac_int<WI, SI>& op2) \
+   {                                                                                  \
+      typedef typename ac::template ac_float_represent<ac_int<WI, SI>>::type fl2_t;   \
+      return op.operator REL_OP(fl2_t(op2));                                          \
+   }                                                                                  \
+   template <AC_FL_T(), int WI, bool SI>                                              \
+   __FORCE_INLINE bool operator REL_OP(ac_int<WI, SI>& op2, const AC_FL() & op)       \
+   {                                                                                  \
+      typedef typename ac::template ac_float_represent<ac_int<WI, SI>>::type fl2_t;   \
+      return fl2_t(op2).operator REL_OP(op);                                          \
    }
 
-#define FL_ASSIGN_OP_WITH_AC_INT(ASSIGN_OP)                                         \
-   template <AC_FL_T(), int WI, bool SI>                                            \
-   inline AC_FL()& operator ASSIGN_OP(AC_FL() & op, const ac_int<WI, SI>& op2)      \
-   {                                                                                \
-      typedef typename ac::template ac_float_represent<ac_int<WI, SI>>::type fl2_t; \
-      return op.operator ASSIGN_OP(fl2_t(op2));                                     \
+#define FL_ASSIGN_OP_WITH_AC_INT(ASSIGN_OP)                                            \
+   template <AC_FL_T(), int WI, bool SI>                                               \
+   __FORCE_INLINE AC_FL()& operator ASSIGN_OP(AC_FL() & op, const ac_int<WI, SI>& op2) \
+   {                                                                                   \
+      typedef typename ac::template ac_float_represent<ac_int<WI, SI>>::type fl2_t;    \
+      return op.operator ASSIGN_OP(fl2_t(op2));                                        \
    }
 
    // -------------------------------------------- End of Macros for Binary
@@ -1253,48 +1253,48 @@ namespace __AC_NAMESPACE
    // Macros for Binary Operators with ac_fixed
    // --------------------------------------------
 
-#define FL_BIN_OP_WITH_AC_FIXED_1(BIN_OP, RTYPE)                                          \
-   template <AC_FL_T(), int WF, int IF, bool SF, ac_q_mode QF, ac_o_mode OF>              \
-   inline typename AC_FL()::template rt_T2<ac_fixed<WF, IF, SF>>::RTYPE operator BIN_OP(  \
-       const ac_fixed<WF, IF, SF, QF, OF>& f_op, const AC_FL() & op)                      \
-   {                                                                                      \
-      typedef typename ac::template ac_float_represent<ac_fixed<WF, IF, SF>>::type fl2_t; \
-      return fl2_t(f_op).operator BIN_OP(op);                                             \
+#define FL_BIN_OP_WITH_AC_FIXED_1(BIN_OP, RTYPE)                                                 \
+   template <AC_FL_T(), int WF, int IF, bool SF, ac_q_mode QF, ac_o_mode OF>                     \
+   __FORCE_INLINE typename AC_FL()::template rt_T2<ac_fixed<WF, IF, SF>>::RTYPE operator BIN_OP( \
+       const ac_fixed<WF, IF, SF, QF, OF>& f_op, const AC_FL() & op)                             \
+   {                                                                                             \
+      typedef typename ac::template ac_float_represent<ac_fixed<WF, IF, SF>>::type fl2_t;        \
+      return fl2_t(f_op).operator BIN_OP(op);                                                    \
    }
 
-#define FL_BIN_OP_WITH_AC_FIXED_2(BIN_OP, RTYPE)                                          \
-   template <AC_FL_T(), int WF, int IF, bool SF, ac_q_mode QF, ac_o_mode OF>              \
-   inline typename AC_FL()::template rt_T2<ac_fixed<WF, IF, SF>>::RTYPE operator BIN_OP(  \
-       const AC_FL() & op, const ac_fixed<WF, IF, SF, QF, OF>& f_op)                      \
-   {                                                                                      \
-      typedef typename ac::template ac_float_represent<ac_fixed<WF, IF, SF>>::type fl2_t; \
-      return op.operator BIN_OP(fl2_t(f_op));                                             \
+#define FL_BIN_OP_WITH_AC_FIXED_2(BIN_OP, RTYPE)                                                 \
+   template <AC_FL_T(), int WF, int IF, bool SF, ac_q_mode QF, ac_o_mode OF>                     \
+   __FORCE_INLINE typename AC_FL()::template rt_T2<ac_fixed<WF, IF, SF>>::RTYPE operator BIN_OP( \
+       const AC_FL() & op, const ac_fixed<WF, IF, SF, QF, OF>& f_op)                             \
+   {                                                                                             \
+      typedef typename ac::template ac_float_represent<ac_fixed<WF, IF, SF>>::type fl2_t;        \
+      return op.operator BIN_OP(fl2_t(f_op));                                                    \
    }
 
 #define FL_BIN_OP_WITH_AC_FIXED(BIN_OP, RTYPE) \
    FL_BIN_OP_WITH_AC_FIXED_1(BIN_OP, RTYPE)    \
    FL_BIN_OP_WITH_AC_FIXED_2(BIN_OP, RTYPE)
 
-#define FL_REL_OP_WITH_AC_FIXED(REL_OP)                                                     \
-   template <AC_FL_T(), int WF, int IF, bool SF, ac_q_mode QF, ac_o_mode OF>                \
-   inline bool operator REL_OP(const AC_FL() & op, const ac_fixed<WF, IF, SF, QF, OF>& op2) \
-   {                                                                                        \
-      typedef typename ac::template ac_float_represent<ac_fixed<WF, IF, SF>>::type fl2_t;   \
-      return op.operator REL_OP(fl2_t(op2));                                                \
-   }                                                                                        \
-   template <AC_FL_T(), int WF, int IF, bool SF, ac_q_mode QF, ac_o_mode OF>                \
-   inline bool operator REL_OP(ac_fixed<WF, IF, SF, QF, OF>& op2, const AC_FL() & op)       \
-   {                                                                                        \
-      typedef typename ac::template ac_float_represent<ac_fixed<WF, IF, SF>>::type fl2_t;   \
-      return fl2_t(op2).operator REL_OP(op);                                                \
+#define FL_REL_OP_WITH_AC_FIXED(REL_OP)                                                             \
+   template <AC_FL_T(), int WF, int IF, bool SF, ac_q_mode QF, ac_o_mode OF>                        \
+   __FORCE_INLINE bool operator REL_OP(const AC_FL() & op, const ac_fixed<WF, IF, SF, QF, OF>& op2) \
+   {                                                                                                \
+      typedef typename ac::template ac_float_represent<ac_fixed<WF, IF, SF>>::type fl2_t;           \
+      return op.operator REL_OP(fl2_t(op2));                                                        \
+   }                                                                                                \
+   template <AC_FL_T(), int WF, int IF, bool SF, ac_q_mode QF, ac_o_mode OF>                        \
+   __FORCE_INLINE bool operator REL_OP(ac_fixed<WF, IF, SF, QF, OF>& op2, const AC_FL() & op)       \
+   {                                                                                                \
+      typedef typename ac::template ac_float_represent<ac_fixed<WF, IF, SF>>::type fl2_t;           \
+      return fl2_t(op2).operator REL_OP(op);                                                        \
    }
 
-#define FL_ASSIGN_OP_WITH_AC_FIXED(ASSIGN_OP)                                                \
-   template <AC_FL_T(), int WF, int IF, bool SF, ac_q_mode QF, ac_o_mode OF>                 \
-   inline AC_FL()& operator ASSIGN_OP(AC_FL() & op, const ac_fixed<WF, IF, SF, QF, OF>& op2) \
-   {                                                                                         \
-      typedef typename ac::template ac_float_represent<ac_fixed<WF, IF, SF>>::type fl2_t;    \
-      return op.operator ASSIGN_OP(fl2_t(op2));                                              \
+#define FL_ASSIGN_OP_WITH_AC_FIXED(ASSIGN_OP)                                                        \
+   template <AC_FL_T(), int WF, int IF, bool SF, ac_q_mode QF, ac_o_mode OF>                         \
+   __FORCE_INLINE AC_FL()& operator ASSIGN_OP(AC_FL() & op, const ac_fixed<WF, IF, SF, QF, OF>& op2) \
+   {                                                                                                 \
+      typedef typename ac::template ac_float_represent<ac_fixed<WF, IF, SF>>::type fl2_t;            \
+      return op.operator ASSIGN_OP(fl2_t(op2));                                                      \
    }
 
    // -------------------------------------------- End of Macros for Binary
@@ -1321,7 +1321,7 @@ namespace __AC_NAMESPACE
 
    // Global templatized functions for easy initialization to special values
    template <ac_special_val V, AC_FL_T()>
-   inline AC_FL() value(AC_FL())
+   __FORCE_INLINE AC_FL() value(AC_FL())
    {
       AC_FL() r;
       return r.template set_val<V>();
@@ -1331,7 +1331,7 @@ namespace __AC_NAMESPACE
    {
       // function to initialize (or uninitialize) arrays
       template <ac_special_val V, AC_FL_T()>
-      inline bool init_array(AC_FL() * a, int n)
+      __FORCE_INLINE bool init_array(AC_FL() * a, int n)
       {
          AC_FL0() t = value<V>(*a);
          for(int i = 0; i < n; i++)

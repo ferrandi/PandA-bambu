@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -46,7 +46,6 @@
 #include "DesignCompilerWrapper.hpp"
 #include "DesignParameters.hpp"
 #include "ToolManager.hpp"
-#include "config_HAVE_EXPERIMENTAL.hpp"
 #include "config_HAVE_LOGIC_SYNTHESIS_FLOW_BUILT.hpp"
 #include "xml_script_command.hpp"
 
@@ -60,12 +59,6 @@
 #include "target_device.hpp"
 #include "technology_manager.hpp"
 #include "time_model.hpp"
-
-#if HAVE_EXPERIMENTAL
-#include "Design.hpp"
-#include "Design_manager.hpp"
-#include "design_compiler_constants.hpp"
-#endif
 
 #include "HDL_manager.hpp"
 #include "language_writer.hpp"
@@ -215,9 +208,7 @@ void DesignCompilerWrapper::set_constraint_file(const std::string& path)
 }
 
 // destructor
-DesignCompilerWrapper::~DesignCompilerWrapper()
-{
-}
+DesignCompilerWrapper::~DesignCompilerWrapper() = default;
 
 void DesignCompilerWrapper::add_link_library(const std::vector<std::string>& link_library)
 {
@@ -810,7 +801,7 @@ std::string DesignCompilerWrapper::write_timing_paths(const std::string& design_
    try
    {
       THROW_ASSERT(design_name.size(), "Module name not specified");
-      std::string timing_path_xml_file = "timing_path.xml";
+      const auto timing_path_xml_file = GetPath("timing_path.xml");
       xml_document document;
       xml_element* nodeRoot = document.create_root_node("synthesis");
 

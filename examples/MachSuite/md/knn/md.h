@@ -66,7 +66,7 @@ void md_kernel(TYPE d_force_x[nAtoms],
                TYPE position_z[nAtoms],
                TYPE NL[nAtoms*maxNeighbors]);
 
-void run_benchmark( void *vargs ) {
+__attribute((noinline)) void run_benchmark( void *vargs ) {
   struct bench_args_t *args = (struct bench_args_t *)vargs;
   md_kernel( args->d_force_x, args->d_force_y, args->d_force_z,
              args->position_x, args->position_y, args->position_z,

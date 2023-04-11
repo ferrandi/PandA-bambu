@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2016-2022 Politecnico di Milano
+ *              Copyright (c) 2016-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -54,21 +54,11 @@ class reg_binding_cs : public reg_binding
    /**
     * Destructor.
     */
-   virtual ~reg_binding_cs();
+   ~reg_binding_cs() override;
 
  protected:
-   /**
-    * @brief CalculateRegisterName
-    * @param i
-    * @return
-    */
-   std::string CalculateRegisterName(unsigned int i) override;
+   std::string GetRegisterFUName(unsigned int i) override;
 
-   /**
-    * @brief specialise_reg add dimension selector
-    * @param reg
-    * @param r
-    */
    void specialise_reg(structural_objectRef& reg, unsigned int r) override;
 };
 

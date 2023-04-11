@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -42,16 +42,16 @@
 class HWPathComputation : public HLS_step
 {
  public:
-   virtual DesignFlowStep_Status Exec();
+   DesignFlowStep_Status Exec() override;
 
    const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
-   ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const;
+   ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
    HWPathComputation(const ParameterConstRef Param, const HLS_managerRef HLSMgr,
                      const DesignFlowManagerConstRef design_flow_manager);
 
-   virtual ~HWPathComputation();
+   ~HWPathComputation() override;
 
-   virtual bool HasToBeExecuted() const;
+   bool HasToBeExecuted() const override;
 };
 #endif

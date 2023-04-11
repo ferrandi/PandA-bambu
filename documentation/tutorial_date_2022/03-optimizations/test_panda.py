@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!python
 
 import argparse
 import datetime

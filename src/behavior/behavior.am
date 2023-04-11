@@ -16,15 +16,31 @@ lib_behavior_la_CPPFLAGS = \
 
 noinst_HEADERS += \
    behavior/application_manager.hpp \
-   behavior/call_graph.hpp behavior/call_graph_manager.hpp behavior/function_behavior.hpp behavior/basic_block.hpp \
-   behavior/behavioral_writer_helper.hpp behavior/basic_blocks_graph_constructor.hpp behavior/level_constructor.hpp behavior/operations_graph_constructor.hpp \
-   behavior/op_graph.hpp behavior/cdfg_edge_info.hpp
+   behavior/basic_block.hpp \
+   behavior/basic_blocks_graph_constructor.hpp \
+   behavior/behavioral_writer_helper.hpp \
+   behavior/call_graph.hpp \
+   behavior/call_graph_manager.hpp \
+   behavior/cdfg_edge_info.hpp \
+   behavior/function_behavior.hpp \
+   behavior/level_constructor.hpp \
+   behavior/operations_graph_constructor.hpp \
+   behavior/op_graph.hpp \
+   behavior/OrderedInstructions.hpp
 
 lib_behavior_la_SOURCES = \
    behavior/application_manager.cpp \
-   behavior/call_graph.cpp behavior/call_graph_manager.cpp behavior/function_behavior.cpp behavior/basic_block.cpp \
-   behavior/behavioral_writer_helper.cpp behavior/basic_blocks_graph_constructor.cpp behavior/level_constructor.cpp behavior/operations_graph_constructor.cpp \
-   behavior/op_graph.cpp behavior/cdfg_edge_info.cpp
+   behavior/basic_block.cpp \
+   behavior/basic_blocks_graph_constructor.cpp \
+   behavior/behavioral_writer_helper.cpp \
+   behavior/call_graph.cpp \
+   behavior/call_graph_manager.cpp \
+   behavior/cdfg_edge_info.cpp \
+   behavior/function_behavior.cpp \
+   behavior/level_constructor.cpp \
+   behavior/operations_graph_constructor.cpp \
+   behavior/op_graph.cpp \
+   behavior/OrderedInstructions.cpp
 
 if BUILD_BAMBU
    lib_behavior_la_CPPFLAGS += \

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -56,6 +56,9 @@
 #include <string> // for string
 
 REF_FORWARD_DECL(FunctionBehavior);
+
+#define STD_SELECTOR (1 << 0)
+#define FEEDBACK_SELECTOR (1 << 1)
 
 /**
  * Information associated with a call_graph node.

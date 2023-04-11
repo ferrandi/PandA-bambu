@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -297,11 +297,11 @@ DesignFlowStep_Status CSE::InternalExec()
                if(GET_CONST_NODE(ga_op_type)->get_kind() == integer_type_K && ref_ssa->min && ref_ssa->max &&
                   dead_ssa->min && dead_ssa->max)
                {
-                  const auto dead_min_ic = GetPointerS<const integer_cst>(GET_CONST_NODE(ref_ssa->min));
-                  const auto ref_min_ic = GetPointerS<const integer_cst>(GET_CONST_NODE(dead_ssa->min));
-                  const auto dead_max_ic = GetPointerS<const integer_cst>(GET_CONST_NODE(ref_ssa->max));
-                  const auto ref_max_ic = GetPointerS<const integer_cst>(GET_CONST_NODE(dead_ssa->max));
-                  if(dead_min_ic->value == ref_min_ic->value && dead_max_ic->value == ref_max_ic->value)
+                  const auto ref_min = tree_helper::GetConstValue(ref_ssa->min);
+                  const auto dead_min = tree_helper::GetConstValue(dead_ssa->min);
+                  const auto ref_max = tree_helper::GetConstValue(ref_ssa->max);
+                  const auto dead_max = tree_helper::GetConstValue(dead_ssa->max);
+                  if(dead_min == ref_min && dead_max == ref_max)
                   {
                      same_range = true;
                   }
@@ -420,7 +420,8 @@ bool CSE::has_memory_access(const gimple_assign* ga) const
          skip_check = true;
       }
    }
-   if(!tree_helper::IsVectorType(ga->op0) && tree_helper::IsArrayType(ga->op0) && !tree_helper::IsPointerType(ga->op0))
+   if(!tree_helper::IsVectorType(ga->op0) && tree_helper::IsArrayEquivType(ga->op0) &&
+      !tree_helper::IsPointerType(ga->op0))
    {
       skip_check = true;
    }

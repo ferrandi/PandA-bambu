@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2016-2022 Politecnico di Milano
+ *              Copyright (c) 2016-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -42,6 +42,7 @@
 #include "BambuParameter.hpp"
 #include "behavioral_helper.hpp"
 #include "copyrights_strings.hpp"
+#include "function_behavior.hpp"
 #include "hls.hpp"
 #include "hls_manager.hpp"
 #include "hls_target.hpp"
@@ -78,9 +79,7 @@ datapath_parallel_cs::datapath_parallel_cs(const ParameterConstRef _parameters, 
 
 // HLSFunctionStep(_parameters, _HLSMgr, _funId, _design_flow_manager, _hls_flow_step_type)
 
-datapath_parallel_cs::~datapath_parallel_cs()
-{
-}
+datapath_parallel_cs::~datapath_parallel_cs() = default;
 
 const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
 datapath_parallel_cs::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
@@ -90,8 +89,8 @@ datapath_parallel_cs::ComputeHLSRelationships(const DesignFlowStep::Relationship
    {
       case DEPENDENCE_RELATIONSHIP:
       {
-         ret.insert(std::make_tuple(HLSFlowStep_Type::INITIALIZE_HLS, HLSFlowStepSpecializationConstRef(),
-                                    HLSFlowStep_Relationship::SAME_FUNCTION));
+         ret.insert(std::make_tuple(HLSFlowStep_Type::DOMINATOR_ALLOCATION, HLSFlowStepSpecializationConstRef(),
+                                    HLSFlowStep_Relationship::WHOLE_APPLICATION));
          ret.insert(std::make_tuple(HLSFlowStep_Type::OMP_BODY_LOOP_SYNTHESIS_FLOW, HLSFlowStepSpecializationConstRef(),
                                     HLSFlowStep_Relationship::CALLED_FUNCTIONS));
          break;
@@ -144,7 +143,7 @@ DesignFlowStep_Status datapath_parallel_cs::InternalExec()
 
    instantiate_component_parallel(clock, reset);
 
-   CustomOrderedSet<structural_objectRef> memory_modules;
+   std::vector<structural_objectRef> memory_modules;
    const auto& SM = this->HLS->datapath;
    const auto circuit = SM->get_circ();
    const auto omp_functions = GetPointerS<const OmpFunctions>(HLSMgr->Rfuns);
@@ -176,7 +175,7 @@ DesignFlowStep_Status datapath_parallel_cs::InternalExec()
       const auto kernel_module_name = kernel_function_name + "_" + STR(i);
       kernel_mod = SM->add_module_from_technology_library(kernel_module_name, kernel_function_name, kernel_library,
                                                           circuit, HLS->HLS_T->get_technology_manager());
-      memory_modules.insert(kernel_mod);
+      memory_modules.push_back(kernel_mod);
       connect_module_kernel(kernel_mod, i);
       // setting num of kernel in each scheduler
       GetPointer<module>(kernel_mod)
@@ -326,13 +325,13 @@ void datapath_parallel_cs::instantiate_component_parallel(structural_objectRef c
        ->SetParameter("NUM_CHANNEL", STR(parameters->getOption<unsigned int>(OPT_channels_number)));
    GetPointer<module>(mem_par_mod)
        ->SetParameter("NUM_ACC", STR(parameters->getOption<unsigned int>(OPT_num_accelerators)));
-   int addr_task = ceil_log2(parameters->getOption<unsigned long long int>(OPT_context_switch));
+   auto addr_task = ceil_log2(parameters->getOption<unsigned long long int>(OPT_context_switch));
    if(!addr_task)
    {
       addr_task = 1;
    }
    GetPointer<module>(mem_par_mod)->SetParameter("ADDR_TASKS", STR(addr_task));
-   int addr_kern = ceil_log2(parameters->getOption<unsigned long long>(OPT_num_accelerators));
+   auto addr_kern = ceil_log2(parameters->getOption<unsigned long long>(OPT_num_accelerators));
    if(!addr_kern)
    {
       addr_kern = 1;
@@ -383,10 +382,10 @@ void datapath_parallel_cs::resize_ctrl_parallel_ports(structural_objectRef mem_p
 
 void datapath_parallel_cs::resize_dimension_bus_port(unsigned int vector_size, structural_objectRef port)
 {
-   unsigned int bus_data_bitsize = HLSMgr->Rmem->get_bus_data_bitsize();
-   unsigned int bus_addr_bitsize = HLSMgr->get_address_bitsize();
-   unsigned int bus_size_bitsize = HLSMgr->Rmem->get_bus_size_bitsize();
-   unsigned int bus_tag_bitsize = GetPointer<memory_cs>(HLSMgr->Rmem)->get_bus_tag_bitsize();
+   auto bus_data_bitsize = HLSMgr->Rmem->get_bus_data_bitsize();
+   auto bus_addr_bitsize = HLSMgr->get_address_bitsize();
+   auto bus_size_bitsize = HLSMgr->Rmem->get_bus_size_bitsize();
+   auto bus_tag_bitsize = GetPointer<memory_cs>(HLSMgr->Rmem)->get_bus_tag_bitsize();
 
    if(GetPointer<port_o>(port)->get_is_data_bus())
    {
@@ -408,9 +407,9 @@ void datapath_parallel_cs::resize_dimension_bus_port(unsigned int vector_size, s
    GetPointer<port_o>(port)->add_n_ports(vector_size, port);
 }
 
-void datapath_parallel_cs::manage_extern_global_port_parallel(
-    const structural_managerRef SM, const CustomOrderedSet<structural_objectRef>& memory_modules,
-    const structural_objectRef circuit)
+void datapath_parallel_cs::manage_extern_global_port_parallel(const structural_managerRef SM,
+                                                              const std::vector<structural_objectRef>& memory_modules,
+                                                              const structural_objectRef circuit)
 {
    structural_objectRef cir_port;
    structural_objectRef mem_paral_port;

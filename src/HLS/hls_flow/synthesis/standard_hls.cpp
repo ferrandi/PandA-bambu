@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -39,9 +39,6 @@
  *
  */
 #include "standard_hls.hpp"
-
-/// Autoheader include
-#include "config_HAVE_EXPERIMENTAL.hpp"
 
 #include "Parameter.hpp"
 #include "TopEntityMemoryMapped.hpp"
@@ -89,16 +86,6 @@ standard_hls::ComputeHLSRelationships(const DesignFlowStep::RelationshipType rel
       case DEPENDENCE_RELATIONSHIP:
       {
          HLSFlowStep_Type synthesis_flow = HLSFlowStep_Type::VIRTUAL_DESIGN_FLOW;
-#if HAVE_EXPERIMENTAL
-         if(parameters->isOption("explore-mux") && parameters->getOption<bool>("explore-mux"))
-         {
-            synthesis_flow = HLSFlowStep_Type::EXPLORE_MUX_DESIGN_FLOW;
-         }
-         if(parameters->isOption("explore-fu-reg") && parameters->getOption<bool>("explore-fu-reg"))
-         {
-            synthesis_flow = HLSFlowStep_Type::FU_REG_BINDING_DESIGN_FLOW;
-         }
-#endif
          ret.insert(std::make_tuple(synthesis_flow, HLSFlowStepSpecializationConstRef(),
                                     HLSFlowStep_Relationship::SAME_FUNCTION));
          ret.insert(std::make_tuple(parameters->getOption<HLSFlowStep_Type>(OPT_datapath_architecture),
@@ -175,7 +162,7 @@ standard_hls::ComputeHLSRelationships(const DesignFlowStep::RelationshipType rel
 DesignFlowStep_Status standard_hls::InternalExec()
 {
    const auto top_function_ids = HLSMgr->CGetCallGraphManager()->GetRootFunctions();
-   if(top_function_ids.find(funId) != top_function_ids.end())
+   if(top_function_ids.count(funId))
    {
       STOP_TIME(HLSMgr->HLS_execution_time);
    }

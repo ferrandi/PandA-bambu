@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -46,6 +46,7 @@
 
 /// Autoheader include
 #include "config_HAVE_ASSERTS.hpp" // for HAVE_ASSERTS
+#include "config_HAVE_EXPERIMENTAL.hpp"
 #include "config_HAVE_FLOPOCO.hpp"
 #include "config_PACKAGE_BUGREPORT.hpp"
 #include "config_PACKAGE_NAME.hpp"
@@ -292,16 +293,15 @@ void HDL_manager::write_components(const std::string& filename, const std::list<
          else if(np && (np->exist_NP_functionality(NP_functionality::VERILOG_PROVIDED) ||
                         np->exist_NP_functionality(NP_functionality::VERILOG_FILE_PROVIDED)))
          {
-#if HAVE_EXPERIMENTAL
-            const auto module_type = mod->get_typeRef()->id_type;
-            const auto fu = GetPointer<functional_unit>(TM->get_fu(module_type, TM->get_library(module_type)));
-            if(not parameters->getOption<bool>(OPT_mixed_design))
+            if(!parameters->getOption<bool>(OPT_mixed_design))
             {
-               THROW_ERROR("VHDL implementation of " + (*cit)->get_path() + " - type " + module_type +
-                           " is not available");
+               THROW_ERROR("VHDL implementation of " + component->get_path() + " is not available");
             }
+#if HAVE_EXPERIMENTAL
             else
             {
+               const auto module_type = mod->get_typeRef()->id_type;
+               const auto fu = GetPointer<functional_unit>(TM->get_fu(module_type, TM->get_library(module_type)));
                if(module_type.find("gimple_asm") == std::string::npos and
                   module_type.find("__builtin_trap") == std::string::npos and
                   module_type.find("return_value_mm_register") == std::string::npos and
@@ -329,14 +329,14 @@ void HDL_manager::write_components(const std::string& filename, const std::list<
                         np->exist_NP_functionality(NP_functionality::FLOPOCO_PROVIDED) ||
                         np->exist_NP_functionality(NP_functionality::VHDL_FILE_PROVIDED)))
          {
-#if HAVE_EXPERIMENTAL
-            if(not parameters->getOption<bool>(OPT_mixed_design))
+            if(!parameters->getOption<bool>(OPT_mixed_design))
             {
-               THROW_ERROR("Verilog implementation of " + (*cit)->get_path() + " is not available");
+               THROW_ERROR("Verilog implementation of " + component->get_path() + " is not available");
             }
             else
-#endif
+            {
                THROW_WARNING(component->get_path() + " is available only in VHDL");
+            }
             component_language[HDLWriter_Language::VHDL].push_back(component);
          }
          else if(np && np->exist_NP_functionality(NP_functionality::SYSTEM_VERILOG_PROVIDED))
@@ -1103,7 +1103,7 @@ void HDL_manager::write_flopoco_module(const structural_objectRef& cir, std::lis
 ) const
 {
    auto* mod_inst = GetPointer<module>(cir);
-   long long int mod_size_in = 0, mod_size_out = 0;
+   unsigned long long int mod_size_in = 0, mod_size_out = 0;
    for(unsigned int i = 0; i < mod_inst->get_in_port_size(); i++)
    {
       // Size of module is size of the largest output
@@ -1268,7 +1268,7 @@ void HDL_manager::write_fsm(const language_writerRef writer, const structural_ob
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "write the present_state update");
    /// write the present_state update
    writer->write_present_state_update(cir, reset_state, reset_port, clock_port,
-                                      parameters->getOption<std::string>(OPT_sync_reset),
+                                      parameters->getOption<std::string>(OPT_reset_type),
                                       cir->find_member(PRESENT_STATE_PORT_NAME, port_o_K, cir).get() != nullptr);
 
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "write transition and output functions");
@@ -1354,7 +1354,7 @@ std::string HDL_manager::get_mod_typename(const language_writer* lan, const stru
    const NP_functionalityRef& np = mod->get_NP_functionality();
    if(np && np->get_NP_functionality(NP_functionality::FLOPOCO_PROVIDED) != "")
    {
-      long long int mod_size_in = 0;
+      unsigned long long int mod_size_in = 0;
       for(unsigned int i = 0; i < mod->get_in_port_size(); i++)
       {
          // Size of module is size of the largest output
@@ -1364,7 +1364,7 @@ std::string HDL_manager::get_mod_typename(const language_writer* lan, const stru
          }
       }
       res = res + "_" + STR(mod_size_in);
-      long long int mod_size_out = 0;
+      unsigned long long int mod_size_out = 0;
       for(unsigned int i = 0; i < mod->get_out_port_size(); i++)
       {
          // Size of module is size of the largest output

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2015-2022 Politecnico di Milano
+ *              Copyright (C) 2015-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -839,59 +839,56 @@ void VcdSignalSelection::SelectAddrSsa(
 void VcdSignalSelection::SelectInternalSignals(
     CustomUnorderedMap<unsigned int, UnorderedSetStdStable<std::string>>& fun_id_to_sig_names) const
 {
-   const auto ssa_to_skip_end = Discr->ssa_to_skip.cend();
-   CustomOrderedSet<unsigned int> fun_with_body = HLSMgr->CGetCallGraphManager()->GetReachedBodyFunctions();
+   const auto& fun_with_body = HLSMgr->CGetCallGraphManager()->GetReachedBodyFunctions();
    for(const unsigned int f_id : fun_with_body)
    {
-      const FunctionBehaviorConstRef FB = HLSMgr->CGetFunctionBehavior(f_id);
+      const auto FB = HLSMgr->CGetFunctionBehavior(f_id);
       /*
        * if the function is not printed in C there's no need to select signals
        * in vcd, because there will not be C assignments to compare them with
        */
-      if(not FB->CGetBehavioralHelper()->has_implementation() or
-         not FB->CGetBehavioralHelper()->function_has_to_be_printed(f_id))
+      if(!FB->CGetBehavioralHelper()->has_implementation() ||
+         !FB->CGetBehavioralHelper()->function_has_to_be_printed(f_id))
       {
          continue;
       }
       fun_id_to_sig_names[f_id];
       // get the opgraph and information on binding and allocation of this function
-      const OpGraphConstRef op_graph = FB->CGetOpGraph(FunctionBehavior::FCFG);
-      const fu_bindingConstRef fu_bind = HLSMgr->get_HLS(f_id)->Rfu;
-      const AllocationInformationRef alloc_info = HLSMgr->get_HLS(f_id)->allocation_information;
+      const auto op_graph = FB->CGetOpGraph(FunctionBehavior::FCFG);
+      const auto& fu_bind = HLSMgr->get_HLS(f_id)->Rfu;
+      const auto& alloc_info = HLSMgr->get_HLS(f_id)->allocation_information;
       VertexIterator op_vi, op_vi_end;
       // loop on the opgraph
       for(boost::tie(op_vi, op_vi_end) = boost::vertices(*op_graph); op_vi != op_vi_end; op_vi++)
       {
-         const unsigned int op_node_id = op_graph->CGetOpNodeInfo(*op_vi)->GetNodeId();
-         if(op_node_id == ENTRY_ID or op_node_id == EXIT_ID)
+         const auto op_node_id = op_graph->CGetOpNodeInfo(*op_vi)->GetNodeId();
+         if(op_node_id == ENTRY_ID || op_node_id == EXIT_ID)
          {
             continue;
          }
-         const unsigned int assigned_tree_node_id = HLSMgr->get_produced_value(f_id, *op_vi);
+         const auto assigned_tree_node_id = HLSMgr->get_produced_value(f_id, *op_vi);
          if(assigned_tree_node_id == 0)
          {
             continue;
          }
-         const tree_nodeRef assigned_var_tree_node = TM->get_tree_node_const(assigned_tree_node_id);
-         if(assigned_var_tree_node->get_kind() != ssa_name_K or
-            Discr->ssa_to_skip.find(assigned_var_tree_node) != ssa_to_skip_end)
+         const auto assigned_var_tree_node = TM->GetTreeNode(assigned_tree_node_id);
+         if(assigned_var_tree_node->get_kind() != ssa_name_K || Discr->ssa_to_skip.count(assigned_var_tree_node))
          {
             continue;
          }
-         const tree_nodeRef op_node = TM->get_tree_node_const(op_node_id);
+         const auto op_node = TM->CGetTreeNode(op_node_id);
          if(op_node->get_kind() == gimple_assign_K)
          {
-            unsigned int fu_type_id = fu_bind->get_assign(*op_vi);
-            unsigned int fu_instance_id = fu_bind->get_index(*op_vi);
-            std::string to_select =
-                "out_" + fu_bind->get_fu_name(*op_vi) + "_i" + STR(fu_bind->get_index(*op_vi)) + "_";
+            const auto fu_type_id = fu_bind->get_assign(*op_vi);
+            const auto fu_instance_id = fu_bind->get_index(*op_vi);
+            auto to_select = "out_" + fu_bind->get_fu_name(*op_vi) + "_i" + STR(fu_bind->get_index(*op_vi)) + "_";
 
-            if(alloc_info->is_direct_access_memory_unit(fu_type_id) and alloc_info->is_memory_unit(fu_type_id))
+            if(alloc_info->is_direct_access_memory_unit(fu_type_id) && alloc_info->is_memory_unit(fu_type_id))
             {
                to_select += "array_" + STR(alloc_info->get_memory_var(fu_type_id)) + "_" +
                             STR(fu_bind->get_index(*op_vi) / alloc_info->get_number_channels(fu_type_id));
             }
-            else if((alloc_info->is_direct_proxy_memory_unit(fu_type_id)) or
+            else if((alloc_info->is_direct_proxy_memory_unit(fu_type_id)) ||
                     alloc_info->is_indirect_access_memory_unit(fu_type_id))
             {
                to_select += fu_bind->get_fu_name(*op_vi) + "_i" +
@@ -899,11 +896,10 @@ void VcdSignalSelection::SelectInternalSignals(
             }
             else if(alloc_info->is_proxy_wrapped_unit(fu_type_id))
             {
-               std::string fu_unit_name = fu_bind->get_fu_name(*op_vi);
+               const auto fu_unit_name = fu_bind->get_fu_name(*op_vi);
                if(boost::algorithm::starts_with(fu_unit_name, WRAPPED_PROXY_PREFIX))
                {
-                  to_select +=
-                      alloc_info->get_fu_name(fu_type_id).first.substr(std::string(WRAPPED_PROXY_PREFIX).size());
+                  to_select += alloc_info->get_fu_name(fu_type_id).first.substr(sizeof(WRAPPED_PROXY_PREFIX) - 1);
                }
                else
                {
@@ -929,23 +925,22 @@ void VcdSignalSelection::SelectInternalSignals(
          }
          else if(op_node->get_kind() == gimple_phi_K)
          {
-            const auto* phi = GetPointer<const gimple_phi>(op_node);
-            if(not phi->virtual_flag)
+            const auto phi = GetPointerS<const gimple_phi>(op_node);
+            if(!phi->virtual_flag)
             {
-               const StorageValueInformationRef storage_val_info = HLSMgr->get_HLS(f_id)->storage_value_information;
+               const auto& storage_val_info = HLSMgr->get_HLS(f_id)->storage_value_information;
                THROW_ASSERT(storage_val_info->is_a_storage_value(nullptr, assigned_tree_node_id),
                             " variable " +
                                 HLSMgr->CGetFunctionBehavior(f_id)->CGetBehavioralHelper()->PrintVariable(
                                     assigned_tree_node_id) +
                                 " with tree node index " + STR(assigned_tree_node_id) + " has to be a storage value");
-               const unsigned int storage_index =
-                   storage_val_info->get_storage_value_index(nullptr, assigned_tree_node_id);
-               const reg_bindingRef regbind = HLSMgr->get_HLS(f_id)->Rreg;
-               const std::string reg_name = regbind->get(regbind->get_register(storage_index))->get_string();
-               const std::string reg_outsig_name = "out_" + reg_name + "_" + reg_name;
+               const auto storage_index = storage_val_info->get_storage_value_index(nullptr, assigned_tree_node_id);
+               const auto& regbind = HLSMgr->get_HLS(f_id)->Rreg;
+               const auto reg_name = regbind->get(regbind->get_register(storage_index))->get_string();
+               const auto reg_outsig_name = "out_" + reg_name + "_" + reg_name;
                fun_id_to_sig_names[f_id].insert(reg_outsig_name);
                Discr->opid_to_outsignal[op_node_id] = reg_outsig_name;
-               const std::string reg_wrenable_sig_name = "wrenable_" + reg_name;
+               const auto reg_wrenable_sig_name = "wrenable_" + reg_name;
                fun_id_to_sig_names[f_id].insert(reg_wrenable_sig_name);
             }
          }
@@ -1025,8 +1020,12 @@ DesignFlowStep_Status VcdSignalSelection::Exec()
    {
       PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Selected vcd signals");
       for(const auto& sig_scope : Discr->selected_vcd_signals)
+      {
          for(const auto& sig_name : sig_scope.second)
+         {
             PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "SIGNAL: " + sig_scope.first + sig_name);
+         }
+      }
    }
 #endif
 

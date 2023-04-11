@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -132,9 +132,6 @@ void VarComputation::Initialize()
             const OpNodeInfoRef op_node_info = mod_cfg->GetOpNodeInfo(*op);
             op_node_info->cited_variables.clear();
             op_node_info->variables.clear();
-#if HAVE_EXPERIMENTAL
-            op_node_info->dynamic_memory_locations.clear();
-#endif
             op_node_info->actual_parameters.clear();
             op_node_info->Initialize();
          }

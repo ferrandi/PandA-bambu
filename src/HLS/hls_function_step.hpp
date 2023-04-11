@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -71,6 +71,9 @@ class HLSFunctionStep : public HLS_step
    /// The version of memory representation on which this step was applied
    unsigned int memory_version;
 
+   virtual void ComputeRelationships(DesignFlowStepSet& design_flow_step_set,
+                                     const DesignFlowStep::RelationshipType relationship_type) override;
+
    /**
     * Execute the step
     * @return the exit status of this step
@@ -96,7 +99,7 @@ class HLSFunctionStep : public HLS_step
    /**
     * Destructor
     */
-   ~HLSFunctionStep() override;
+   virtual ~HLSFunctionStep() override;
 
    /**
     * Check if this step has actually to be executed
@@ -131,14 +134,6 @@ class HLSFunctionStep : public HLS_step
     * @return the name of the pass (for debug purpose)
     */
    const std::string GetName() const override;
-
-   /**
-    * Compute the relationships of a step with other steps
-    * @param dependencies is where relationships will be stored
-    * @param relationship_type is the type of relationship to be computed
-    */
-   void ComputeRelationships(DesignFlowStepSet& design_flow_step_set,
-                             const DesignFlowStep::RelationshipType relationship_type) override;
 
    /**
     * Execute the step

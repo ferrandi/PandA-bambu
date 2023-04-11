@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -50,9 +50,6 @@
 
 #if HAVE_FROM_LIBERTY
 #include "lib2xml.hpp"
-#endif
-#if HAVE_EXPERIMENTAL
-#include "lef2xml.hpp"
 #endif
 
 #if HAVE_BOOLEAN_PARSER_BUILT
@@ -116,7 +113,7 @@ void read_technology_File(const std::string& fn, const technology_managerRef& TM
                input_libraries.push_back(librarie);
             }
          }
-         /// FIXME: setting paraemeters
+         /// FIXME: setting parameters
          const_cast<Parameter*>(Param.get())
              ->setOption(OPT_input_libraries, convert_vector_to_string<std::string>(input_libraries, ";"));
       }
@@ -142,7 +139,7 @@ void read_technology_File(const std::string& fn, const technology_managerRef& TM
 void read_technology_library(const technology_managerRef& TM, const ParameterConstRef& Param,
                              const target_deviceRef& device)
 {
-#if HAVE_EXPERIMENTAL || HAVE_FROM_LIBERTY || HAVE_LIBRARY_COMPILER
+#if HAVE_FROM_LIBERTY || HAVE_LIBRARY_COMPILER
    int output_level = Param->getOption<int>(OPT_output_level);
 #endif
 #ifndef NDEBUG
@@ -207,7 +204,7 @@ void read_technology_library(const technology_managerRef& TM, const ParameterCon
       PRINT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
                     "(koala) Read the technology library file \"" + LibraryName + "\" in " +
                         boost::lexical_cast<std::string>(print_cpu_time(genlibTime)) + " seconds;\n");
-      write_technology_File(technology_manager::XML, "genlib", local_TM, device->get_type());
+      write_technology_File(technology_manager::XML, GetPath("genlib"), local_TM, device->get_type());
       /// FIXME: setting parameters
       const_cast<Parameter*>(Param.get())->setOption("input_xml_library_file", "genlib.xml");
       const_cast<Parameter*>(Param.get())->removeOption("input_genlib_library_file");
@@ -248,38 +245,6 @@ void read_technology_library(const technology_managerRef& TM, const ParameterCon
       }
 #endif
    }
-
-#if HAVE_EXPERIMENTAL
-   if(Param->isOption("input_lef_library_file"))
-   {
-      std::string FileList = Param->getOption<std::string>("input_lef_library_file");
-      std::vector<std::string> SplittedLibs = SplitString(FileList, ";");
-      for(unsigned int i = 0; i < SplittedLibs.size(); i++)
-      {
-         if(SplittedLibs.size() == 0)
-            continue;
-         boost::trim(SplittedLibs[i]);
-
-         std::vector<std::string> SplittedName = SplitString(SplittedLibs[i], ":");
-
-         if(SplittedName.size() != 2)
-            THROW_ERROR("Malformed LEF description: \"" + SplittedLibs[i] + "\"");
-         std::string LibraryName = SplittedName[0];
-         std::string LefFileName = SplittedName[1];
-
-         if(!boost::filesystem::exists(LefFileName))
-            THROW_ERROR("Lef file \"" + LefFileName + "\" does not exists!");
-
-         if(!TM->is_library_manager(LibraryName))
-            THROW_ERROR("Library \"" + LibraryName + "\" is not contained into the datastructure");
-         const library_managerRef& LM = TM->get_library_manager(LibraryName);
-         LM->set_info(library_manager::LEF, LefFileName);
-
-         PRINT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
-                       "(koala) Stored LEF file \"" + LefFileName + "\" for library \"" + LibraryName + "\";\n");
-      }
-   }
-#endif
 
 #if HAVE_LIBRARY_COMPILER
    if(Param->isOption("input_db_library_file"))
@@ -345,22 +310,18 @@ void read_genlib_technology_File(const std::string& fn, const technology_manager
 
 void write_technology_File(unsigned int type,
                            const std::string&
-#if HAVE_EXPERIMENTAL || HAVE_FROM_LIBERTY
+#if HAVE_FROM_LIBERTY
                                f
 #endif
                            ,
                            const technology_managerRef&
-#if HAVE_EXPERIMENTAL || HAVE_FROM_LIBERTY
+#if HAVE_FROM_LIBERTY
                                TM
 #endif
                            ,
-                           TargetDevice_Type
-#if HAVE_EXPERIMENTAL
-                               dv_type
-#endif
-                           ,
+                           TargetDevice_Type,
                            const CustomOrderedSet<std::string>&
-#if HAVE_EXPERIMENTAL || HAVE_FROM_LIBERTY
+#if HAVE_FROM_LIBERTY
                                libraries
 #endif
 )
@@ -368,9 +329,6 @@ void write_technology_File(unsigned int type,
    if((type & technology_manager::XML) != 0)
    {
       THROW_UNREACHABLE("Unexpected case");
-#if HAVE_EXPERIMENTAL
-      write_lef_technology_File(f + ".lef", TM, dv_type, libraries);
-#endif
    }
 #if HAVE_FROM_LIBERTY
    if((type & technology_manager::LIB) != 0)
@@ -378,14 +336,9 @@ void write_technology_File(unsigned int type,
       write_lib_technology_File(f + ".lib", TM, libraries);
    }
 #endif
-#if HAVE_EXPERIMENTAL
-   if((type & technology_manager::LEF) != 0)
-   {
-      write_lef_technology_File(f + ".lef", TM, dv_type, libraries);
-   }
-#endif
 }
 
+#if HAVE_EXPERIMENTAL
 void write_technology_File(unsigned int type, const std::string& f, library_manager* LM, TargetDevice_Type dv_type)
 {
    if((type & technology_manager::XML) != 0)
@@ -398,13 +351,8 @@ void write_technology_File(unsigned int type, const std::string& f, library_mana
       write_lib_technology_File(f + ".lib", LM, dv_type);
    }
 #endif
-#if HAVE_EXPERIMENTAL
-   if((type & technology_manager::LEF) != 0)
-   {
-      write_lef_technology_File(f + ".lef", LM, dv_type);
-   }
-#endif
 }
+#endif
 
 void write_xml_technology_File(const std::string& f, library_manager* LM, TargetDevice_Type dv_type)
 {
@@ -478,56 +426,10 @@ void write_lib_technology_File(const std::string& f, technology_managerRef const
 
 void write_lib_technology_File(const std::string& f, library_manager* LM, TargetDevice_Type dv_type)
 {
-   write_xml_technology_File("__xml_library__.xml", LM, dv_type);
-   xml2lib("__xml_library__.xml", f, 0, 0);
-   boost::filesystem::remove("__xml_library__.xml");
+   const auto library_xml = GetPath("__xml_library__.xml");
+   write_xml_technology_File(library_xml, LM, dv_type);
+   xml2lib(library_xml, f, 0, 0);
+   boost::filesystem::remove(library_xml);
    LM->set_info(library_manager::LIBERTY, f);
-}
-#endif
-
-#if HAVE_EXPERIMENTAL
-void write_lef_technology_File(const std::string& f, technology_managerRef const& TM, TargetDevice_Type dv_type,
-                               const CustomOrderedSet<std::string>& libraries)
-{
-   try
-   {
-      size_t count_cells = 0;
-      for(CustomOrderedSet<std::string>::const_iterator n = libraries.begin(); n != libraries.end(); ++n)
-      {
-         if(WORK_LIBRARY == *n)
-            continue;
-         count_cells += TM->get_library_count(*n);
-      }
-      if(!count_cells)
-      {
-         THROW_WARNING("Specified libraries do not contain any cell");
-         return;
-      }
-      TM->lef_write(f, dv_type, libraries);
-   }
-   catch(const char* msg)
-   {
-      std::cerr << msg << std::endl;
-   }
-   catch(const std::string& msg)
-   {
-      std::cerr << msg << std::endl;
-   }
-   catch(const std::exception& ex)
-   {
-      std::cout << "Exception caught: " << ex.what() << std::endl;
-   }
-   catch(...)
-   {
-      std::cerr << "unknown exception" << std::endl;
-   }
-}
-
-void write_lef_technology_File(const std::string& f, library_manager* LM, TargetDevice_Type dv_type)
-{
-   write_xml_technology_File("__library__.xml", LM, dv_type);
-   xml2lef("__library__.xml", f, 0, 0);
-   boost::filesystem::remove("__library__.xml");
-   LM->set_info(library_manager::LEF, f);
 }
 #endif

@@ -3,10 +3,10 @@ script_dir="$(dirname $(readlink -e $0))"
 ggo_require_compiler=1
 . $script_dir/../../panda_regressions/hls/generic_getopt.sh
 
-BATCH_ARGS=("--no-iob" "--soft-float" "--registered-inputs=top" "--panda-parameter=profile-top=1" "--simulate" "--fp-format-propagate")
+BATCH_ARGS=("--soft-float" "--registered-inputs=top" "--panda-parameter=profile-top=1" "--simulate" "--fp-format-propagate")
 OUT_SUFFIX="${compiler}_truefloat"
 
-$script_dir/../../etc/scripts/test_panda.py --tool=bambu  \
+python3 $script_dir/../../etc/scripts/test_panda.py --tool=bambu  \
    --args="--configuration-name=${compiler}_exc-ovf --fp-exception-mode=overflow --max-ulp=1 ${BATCH_ARGS[*]}"\
    --args="--configuration-name=${compiler}_rnd-trunc --fp-rounding-mode=truncate --max-ulp=4 --pretty-print=a.c ${BATCH_ARGS[*]}"\
    --args="--configuration-name=${compiler}_e11m52 --fp-format=@*e11m52b-1023nih --max-ulp=1 ${BATCH_ARGS[*]}"\

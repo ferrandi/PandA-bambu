@@ -1,391 +1,51 @@
-name: GCC examples synthesis
+name: Examples synthesis
 
 on:
   workflow_dispatch:
-
-  workflow_call:
-
-env:
-  build-args: --enable-glpk --enable-flopoco --enable-opt --with-opt-level=2 --enable-release
-  dist-pkg: bambu-gcc-dist-examples
-  dist-dir: dist
-  report-dir: test-reports
-  storage-url: ${{secrets.CI_STORAGE_URL}}
-  storage-user: "${{secrets.CI_STORAGE_USER}}"
-  storage-token: "${{secrets.CI_STORAGE_TOKEN}}"
-  host_jobs: $J
+    inputs:
+      package-name:
+        description: "Bambu AppImage name"
+        required: false
+        type: string
+        default: bambu-examples
+      compilers:
+        description: "Front-end compiler string"
+        required: false
+        type: string
+        default: gcc-4.9,clang-4
+      configure:
+        description: "Bambu build configuration arguments"
+        required: false
+        type: string
+        default: --enable-glpk --enable-flopoco --enable-opt --with-opt-level=2 --enable-release --with-gcc8=/bin/false
+      test-compiler:
+        description: "Compiler used during tests"
+        required: false
+        type: string
+        default: I386_GCC49
 
 jobs:
   build:
-    runs-on: [self-hosted, long, classA]
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v2
-      - name: Env setup
-        id: host
-        shell: bash
-        run: |
-          echo "Current host supports ${{env.host_jobs}} parallel jobs"
-          echo "::set-output name=jobs::${{env.host_jobs}}"
-      - name: Prepare ccache timestamp
-        id: ccache_cache_timestamp
-        shell: bash
-        run: |
-          echo "::set-output name=timestamp::$(date -u +'%Y-%m-%d-%H;%M;%S')"
-      - name: ccache cache files
-        uses: actions/cache@v2
-        with:
-          path: .ccache
-          key: panda-build-ccache-${{ steps.ccache_cache_timestamp.outputs.timestamp }}
-          restore-keys: |
-            panda-build-ccache-
-      - name: Download clang compilers
-        shell: bash
-        run: |
-          set -e
-          export XZ_OPT='-T0'
-          mkdir ${{env.dist-dir}}
-          wget https://releases.llvm.org/6.0.1/clang+llvm-6.0.1-x86_64-linux-gnu-ubuntu-16.04.tar.xz -nv -O - | tar -C ${{env.dist-dir}} -xJf -
-      - name: Download gcc 4.9
-        uses: ./.github/actions/storage-download
-        with:
-          name: gcc-4.9-bambu-Ubuntu_16.04
-          path: ./${{env.dist-dir}}
-          storage-url: "${{env.storage-url}}"
-          storage-path: compilers
-          username: "${{env.storage-user}}"
-          password: "${{env.storage-token}}"
-      - name: Download gcc 8
-        uses: ./.github/actions/storage-download
-        with:
-          name: gcc-8-bambu-Ubuntu_16.04
-          path: ./${{env.dist-dir}}
-          storage-url: "${{env.storage-url}}"
-          storage-path: compilers
-          username: "${{env.storage-user}}"
-          password: "${{env.storage-token}}"
-      - name: Build Bambu application
-        id: build
-        uses: ./.github/actions/generate-bin
-        with:
-          config-args: ${{env.build-args}} --enable-Werror CC=gcc-8 CXX=g++-8
-          jobs: ${{steps.host.outputs.jobs}}
-      - name: Upload Panda install directory
-        uses: ./.github/actions/storage-upload
-        with:
-          name: ${{env.dist-pkg}}
-          path: ${{steps.build.outputs.appimage}}
-          storage-url: "${{env.storage-url}}"
-          username: "${{env.storage-user}}"
-          password: "${{env.storage-token}}"
-          storage-compression: false
+    uses: ./.github/workflows/build-appimage.yml
+    with:
+      version: ${{inputs.package-name}}
+      compilers: ${{ inputs.compilers }}
+      build-compiler: gcc-8
+      configure: ${{ inputs.configure }} CC=gcc-8 CXX=g++-8
+    secrets: inherit
 
-  example-altera:
-    needs: [build]
-    runs-on: [self-hosted, long, altera, intelFPGA]
-    timeout-minutes: 600
-    env:
-      basename: altera
-      args: --spider-style="latex_format_bambu_results_altera.xml" -c=--evaluation -t180m
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - basename: softfloat
-            script: ./examples/softfloat/generic_softfloat.sh
-            batch: "5CSEMA5F31C6_6.6,5CSEMA5F31C6_10.0,5SGXEA7N2F45C1_3.3,5SGXEA7N2F45C1_10.0,EP2C70F896C6-R_10.0,5CSEMA5F31C6_6.6 --flopoco,5CSEMA5F31C6_10.0 --flopoco,5SGXEA7N2F45C1_3.3 --flopoco,5SGXEA7N2F45C1_10.0 --flopoco,EP2C70F896C6-R_10.0 --flopoco"
-            compiler: I386_GCC49
-          - basename: truefloat
-            script: ./examples/truefloat/generic_truefloat.sh
-            args: -c=--evaluation=CYCLES
-            batch: "5CSEMA5F31C6_6.6,5CSEMA5F31C6_10.0,5SGXEA7N2F45C1_3.3,5SGXEA7N2F45C1_10.0,EP2C70F896C6-R_10.0"
-            compiler: I386_GCC49
-          - basename: libm
-            script: ./examples/libm/generic_libm.sh
-            batch: "5SGXEA7N2F45C1_3.3,5SGXEA7N2F45C1_5.0,5SGXEA7N2F45C1_10.0,EP2C70F896C6-R_10.0"
-            compiler: I386_GCC49
-          - basename: libm-flopoco
-            script: ./examples/libm/generic_libm.sh
-            batch: "5SGXEA7N2F45C1_3.3 --flopoco,5SGXEA7N2F45C1_5.0 --flopoco,5SGXEA7N2F45C1_10.0 --flopoco,EP2C70F896C6-R_10.0 --flopoco"
-            compiler: I386_GCC49
-          - basename: CHStone_O2
-            script: ./examples/CHStone/generic_CHStone.sh
-            compiler: I386_GCC49
-            args: -c=--experimental-setup=BAMBU-BALANCED-MP -lchstone_aa_list
-            batch: "5CSEMA5F31C6_10.0,5CSEMA5F31C6_15.0,5SGXEA7N2F45C1_5.0,5SGXEA7N2F45C1_10.0,EP2C70F896C6-R_10.0,EP2C70F896C6-R_15.0"
-          - basename: CHStone_O3
-            script: ./examples/CHStone/generic_CHStone.sh
-            compiler: I386_GCC49
-            args: -c=--experimental-setup=BAMBU-PERFORMANCE-MP -lchstone_altera_O3_list
-            batch: "5CSEMA5F31C6_10.0,5CSEMA5F31C6_15.0,5SGXEA7N2F45C1_5.0,5SGXEA7N2F45C1_10.0,EP2C70F896C6-R_10.0,EP2C70F896C6-R_15.0"
-          - basename: hls_study
-            script: ./examples/hls_study/generic_hls_study.sh
-            compiler: I386_GCC49
-            batch: "5SGXEA7N2F45C1_2.5 --aligned-access"
-          - basename: omp_simd
-            script: ./examples/omp_simd/generic_omp_simd.sh
-            compiler: I386_GCC49
-            args: "--skip_list inline_blackscholes8,blackscholes8"
-            batch: "5SGXEA7N2F45C1_10.0"
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v2
-      - name: Download Bambu AppImage
-        uses: ./.github/actions/storage-download
-        with:
-          name: ${{env.dist-pkg}}
-          storage-url: "${{env.storage-url}}"
-          username: "${{env.storage-user}}"
-          password: "${{env.storage-token}}"
-      - name: Setup binaries
-        id: setup
-        shell: bash
-        run: |
-          mkdir bin
-          ln -s $PWD/*.AppImage bin/bambu
-          ln -s $PWD/*.AppImage bin/spider
-          echo "::set-output name=local-bin::$PWD/bin"
-      - name: Generate out name
-        id: get
-        shell: bash
-        run: |
-          COMPILER="$(echo '${{matrix.compiler}}' | cut -d' ' -f1 | sed -r 's/I386_//g' | tr '[:upper:]' '[:lower:]')"
-          OUTNAME="${COMPILER}_${{matrix.basename}}_${{env.basename}}"
-          echo "::set-output name=outname::$OUTNAME"
-      - name: Launch test batch
-        id: batch
-        shell: bash
-        run: |
-          export PATH=${{steps.setup.outputs.local-bin}}:$PATH
-          mkdir ${{env.report-dir}}
-          out_dir="$PWD/${{env.report-dir}}"
-          test_dir="test_out"
-          echo "::set-output name=test-reports-dir::$out_dir"
-          IFS=',' read -r -a configurations <<< "${{matrix.batch}}"
-          for configuration in "${configurations[@]}"
-          do
-            unset device
-            unset period
-            unset args
-            rm -rf $test_dir
-            IFS='_ ' read device period args <<< "$configuration"
-            echo "::group::Run for ${device} at ${period} ${args[@]/#/'with additional args '}"
-            IFS=' ' read -r -a args <<< "$args"
-            config_name="${device}_${period}$(sed -e 's/\([-]\+\)/_/g' <<< $args)"
-            config_out="$out_dir/$config_name"
-            ${{matrix.script}} -o $test_dir --returnfail --junitdir="$config_out" --csv="$config_out/${basename}_${config_name}.csv" --table="$config_out/${basename}_${config_name}.tex" -c=--compiler=${{matrix.compiler}} -c=--device-name=${device} -c=--clock-period=${period} ${{env.args}} ${{matrix.args}} ${args[@]/#/-c=}
-            echo "::endgroup::"
-          done
-      - name: Upload test reports
-        if: ${{ always() }}
-        uses: actions/upload-artifact@v2
-        with:
-          name: ${{steps.get.outputs.outname}}
-          path: ${{steps.batch.outputs.test-reports-dir}}
+  test-suite:
+    uses: ./.github/workflows/reusable-examples.yml
+    with:
+      package-name: ${{needs.build.outputs.package-name}}
+      test-compiler: ${{inputs.test-compiler}}
+    secrets: inherit
 
-  example-xilinx:
-    needs: [build]
-    runs-on: [self-hosted, long, xilinx]
-    timeout-minutes: 600
-    env:
-      basename: xilinx
-      args: --spider-style="latex_format_bambu_results_xilinx.xml" -c=--evaluation -t180m
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - basename: softfloat
-            script: ./examples/softfloat/generic_softfloat.sh
-            batch: "xc7vx330t-1ffg1157_10.0,xc7vx690t-3ffg1930-VVD_5.0,xc7vx690t-3ffg1930-VVD_10.0,xc7z020-1clg484-VVD_5.0,xc7z020-1clg484-VVD_10.0,xc7vx330t-1ffg1157_10.0 --flopoco,xc7vx690t-3ffg1930-VVD_5.0 --flopoco,xc7vx690t-3ffg1930-VVD_10.0 --flopoco,xc7z020-1clg484-VVD_5.0 --flopoco,xc7z020-1clg484-VVD_10.0 --flopoco"
-            compiler: I386_GCC49
-          - basename: truefloat
-            script: ./examples/truefloat/generic_truefloat.sh
-            args: -c=--evaluation=CYCLES
-            batch: "xc7vx330t-1ffg1157_10.0,xc7vx690t-3ffg1930-VVD_5.0,xc7vx690t-3ffg1930-VVD_10.0,xc7z020-1clg484-VVD_5.0,xc7z020-1clg484-VVD_10.0"
-            compiler: I386_GCC49
-          - basename: libm
-            script: ./examples/libm/generic_libm.sh
-            batch: "xc7vx330t-1ffg1157_10.0,xc7vx690t-3ffg1930-VVD_5.0,xc7vx690t-3ffg1930-VVD_10.0,xc7z020-1clg484-VVD_5.0,xc7z020-1clg484-VVD_10.0"
-            compiler: I386_GCC49
-          - basename: libm-flopoco
-            script: ./examples/libm/generic_libm.sh
-            batch: "xc7vx330t-1ffg1157_10.0 --flopoco,xc7vx690t-3ffg1930-VVD_5.0 --flopoco,xc7vx690t-3ffg1930-VVD_10.0 --flopoco,xc7z020-1clg484-VVD_5.0 --flopoco,xc7z020-1clg484-VVD_10.0 --flopoco"
-            compiler: I386_GCC49
-          - basename: CHStone_O2
-            script: ./examples/CHStone/generic_CHStone.sh
-            compiler: I386_GCC49
-            args: -c=--experimental-setup=BAMBU-BALANCED-MP -lchstone_aa_list
-            batch: "xc7vx330t-1ffg1157_10.0,xc7vx690t-3ffg1930-VVD_5.0,xc7vx690t-3ffg1930-VVD_10.0,xc7z020-1clg484-VVD_10.0,xc7z020-1clg484-VVD_15.0"
-          - basename: CHStone_O3
-            script: ./examples/CHStone/generic_CHStone.sh
-            compiler: I386_GCC49
-            args: -c=--experimental-setup=BAMBU-PERFORMANCE-MP -lchstone_altera_O3_list
-            batch: "xc7vx330t-1ffg1157_10.0,xc7vx690t-3ffg1930-VVD_5.0,xc7vx690t-3ffg1930-VVD_10.0,xc7z020-1clg484-VVD_10.0,xc7z020-1clg484-VVD_15.0"
-          - basename: MachSuite
-            script: ./examples/MachSuite/generic_MachSuite.sh
-            compiler: I386_GCC49
-            batch: "xc7vx690t-3ffg1930-VVD_10.0"
-          - basename: hls_study
-            script: ./examples/hls_study/generic_hls_study.sh
-            compiler: I386_GCC49
-            batch: "xc7vx690t-3ffg1930-VVD_2.5 --aligned-access"
-          - basename: omp_simd
-            script: ./examples/omp_simd/generic_omp_simd.sh
-            compiler: I386_GCC49
-            args: "--skip_list inline_blackscholes8,blackscholes8"
-            batch: "xc7vx690t-3ffg1930-VVD_10.0"
-          - basename: parallel_queries
-            script: ./examples/parallel_queries/context_switch_xilinx_10_1DB_simulate.sh
-            compiler: I386_GCC49
-            args: -c=--evaluation=CYCLES
-            batch: "xc7vx690t-3ffg1930-VVD_10.0"
+  success:
+    if: ${{always()}}
+    needs: [test-suite]
+    runs-on: [self-hosted]
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v2
-      - name: Download Bambu AppImage
-        uses: ./.github/actions/storage-download
-        with:
-          name: ${{env.dist-pkg}}
-          storage-url: "${{env.storage-url}}"
-          username: "${{env.storage-user}}"
-          password: "${{env.storage-token}}"
-      - name: Setup binaries
-        id: setup
-        shell: bash
-        run: |
-          mkdir bin
-          ln -s $PWD/*.AppImage bin/bambu
-          ln -s $PWD/*.AppImage bin/spider
-          echo "::set-output name=local-bin::$PWD/bin"
-      - name: Generate out name
-        id: get
-        shell: bash
-        run: |
-          COMPILER="$(echo '${{matrix.compiler}}' | cut -d' ' -f1 | sed -r 's/I386_//g' | tr '[:upper:]' '[:lower:]')"
-          OUTNAME="${COMPILER}_${{matrix.basename}}_${{env.basename}}"
-          echo "::set-output name=outname::$OUTNAME"
-      - name: Launch test batch
-        id: batch
-        shell: bash
-        run: |
-          export PATH=${{steps.setup.outputs.local-bin}}:$PATH
-          mkdir ${{env.report-dir}}
-          out_dir="$PWD/${{env.report-dir}}"
-          test_dir="test_out"
-          echo "::set-output name=test-reports-dir::$out_dir"
-          IFS=',' read -r -a configurations <<< "${{matrix.batch}}"
-          for configuration in "${configurations[@]}"
-          do
-            unset device
-            unset period
-            unset args
-            rm -rf $test_dir
-            IFS='_ ' read device period args <<< "$configuration"
-            echo "::group::Run for ${device} at ${period} ${args[@]/#/'with additional args '}"
-            IFS=' ' read -r -a args <<< "$args"
-            config_name="${device}_${period}$(sed -e 's/\([-]\+\)/_/g' <<< $args)"
-            config_out="$out_dir/$config_name"
-            ${{matrix.script}} -o $test_dir --returnfail --junitdir="$config_out" --csv="$config_out/${basename}_${config_name}.csv" --table="$config_out/${basename}_${config_name}.tex" -c=--compiler=${{matrix.compiler}} -c=--device-name=${device} -c=--clock-period=${period} ${{env.args}} ${{matrix.args}} ${args[@]/#/-c=}
-            echo "::endgroup::"
-          done
-      - name: Upload test reports
-        if: ${{ always() }}
-        uses: actions/upload-artifact@v2
-        with:
-          name: ${{steps.get.outputs.outname}}
-          path: ${{steps.batch.outputs.test-reports-dir}}
-
-  example-lattice:
-    needs: [build]
-    runs-on: [self-hosted, long, lattice]
-    env:
-      basename: lattice
-      args: --spider-style="latex_format_bambu_results_lattice.xml" -c=--evaluation -t180m
-    continue-on-error: ${{ matrix.known-issues }}
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - basename: softfloat
-            script: ./examples/softfloat/generic_softfloat.sh
-            known-issues: false
-            batch: "LFE335EA8FN484C_10.0,LFE335EA8FN484C_10.0 --flopoco"
-            compiler: I386_GCC49
-          - basename: truefloat
-            script: ./examples/truefloat/generic_truefloat.sh
-            known-issues: false
-            args: -c=--evaluation=CYCLES
-            batch: "LFE335EA8FN484C_10.0"
-            compiler: I386_GCC49
-          - basename: libm
-            script: ./examples/libm/generic_libm.sh
-            known-issues: true
-            batch: "LFE335EA8FN484C_10.0,LFE335EA8FN484C_10.0 --flopoco"
-            compiler: I386_GCC49
-          - basename: CHStone_O2
-            script: ./examples/CHStone/generic_CHStone.sh
-            known-issues: true
-            compiler: I386_GCC49
-            args: -c=--experimental-setup=BAMBU-BALANCED-MP -c=--aligned-access -lchstone_aa_ECP3_list
-            batch: "LFE335EA8FN484C_15.0"
-          - basename: CHStone_O3
-            script: ./examples/CHStone/generic_CHStone.sh
-            known-issues: true
-            compiler: I386_GCC49
-            args: -c=--experimental-setup=BAMBU-PERFORMANCE-MP -c=--aligned-access -lchstone_ECP3_list
-            batch: "LFE335EA8FN484C_15.0"
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v2
-      - name: Download Bambu AppImage
-        uses: ./.github/actions/storage-download
-        with:
-          name: ${{env.dist-pkg}}
-          storage-url: "${{env.storage-url}}"
-          username: "${{env.storage-user}}"
-          password: "${{env.storage-token}}"
-      - name: Setup binaries
-        id: setup
-        shell: bash
-        run: |
-          mkdir bin
-          ln -s $PWD/*.AppImage bin/bambu
-          ln -s $PWD/*.AppImage bin/spider
-          echo "::set-output name=local-bin::$PWD/bin"
-      - name: Generate out name
-        id: get
-        shell: bash
-        run: |
-          COMPILER="$(echo '${{matrix.compiler}}' | cut -d' ' -f1 | sed -r 's/I386_//g' | tr '[:upper:]' '[:lower:]')"
-          OUTNAME="${COMPILER}_${{matrix.basename}}_${{env.basename}}"
-          echo "::set-output name=outname::$OUTNAME"
-      - name: Launch test batch
-        id: batch
-        shell: bash
-        run: |
-          export PATH=${{steps.setup.outputs.local-bin}}:$PATH
-          mkdir ${{env.report-dir}}
-          out_dir="$PWD/${{env.report-dir}}"
-          test_dir="test_out"
-          echo "::set-output name=test-reports-dir::$out_dir"
-          IFS=',' read -r -a configurations <<< "${{matrix.batch}}"
-          for configuration in "${configurations[@]}"
-          do
-            unset device
-            unset period
-            unset args
-            rm -rf $test_dir
-            IFS='_ ' read device period args <<< "$configuration"
-            echo "::group::Run for ${device} at ${period} ${args[@]/#/'with additional args '}"
-            IFS=' ' read -r -a args <<< "$args"
-            config_name="${device}_${period}$(sed -e 's/\([-]\+\)/_/g' <<< $args)"
-            config_out="$out_dir/$config_name"
-            ${{matrix.script}} -o $test_dir --returnfail --junitdir="$config_out" --csv="$config_out/${basename}_${config_name}.csv" --table="$config_out/${basename}_${config_name}.tex" -c=--compiler=${{matrix.compiler}} -c=--device-name=${device} -c=--clock-period=${period} ${{env.args}} ${{matrix.args}} ${args[@]/#/-c=}
-            echo "::endgroup::"
-          done
-      - name: Upload test reports
-        if: ${{ always() }}
-        uses: actions/upload-artifact@v2
-        with:
-          name: ${{steps.get.outputs.outname}}
-          path: ${{steps.batch.outputs.test-reports-dir}}
+      - name: Check test suite status
+        if: ${{ needs.test-suite.result != 'success' }}
+        run: exit 1

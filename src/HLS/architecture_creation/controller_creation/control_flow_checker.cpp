@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2017-2022 Politecnico di Milano
+ *              Copyright (C) 2017-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -33,44 +33,31 @@
 /**
  * @author Pietro Fezzardi <pietrofezzardi@gmail.com>
  */
-
-// include class header
 #include "control_flow_checker.hpp"
 
-// include from behavior/
+#include "Discrepancy.hpp"
+#include "Parameter.hpp"
+#include "behavioral_helper.hpp"
+#include "copyrights_strings.hpp"
+#include "custom_map.hpp"
+#include "custom_set.hpp"
 #include "function_behavior.hpp"
-
-// include from circuit/
-#include "structural_manager.hpp"
-
-// include from HLS/
 #include "hls.hpp"
-
 #include "hls_manager.hpp"
 #include "hls_target.hpp"
-
-// include from HLS/
-#include "Discrepancy.hpp"
 #include "language_writer.hpp"
 #include "state_transition_graph.hpp"
 #include "state_transition_graph_manager.hpp"
+#include "string_manipulation.hpp"
+#include "structural_manager.hpp"
+#include "utility.hpp"
 
-/// STD include
+#include <boost/algorithm/string/case_conv.hpp>
+#include <utility/fileIO.hpp>
+
 #include <algorithm>
 #include <string>
 #include <tuple>
-
-#include "custom_map.hpp"
-#include "custom_set.hpp"
-
-// include from  tree/
-#include "behavioral_helper.hpp"
-
-// includes from ./
-#include "Parameter.hpp"
-#include "copyrights_strings.hpp"
-#include "string_manipulation.hpp" // for GET_CLASS
-#include <boost/algorithm/string/case_conv.hpp>
 
 ControlFlowChecker::ControlFlowChecker(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr,
                                        unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager)
@@ -79,9 +66,7 @@ ControlFlowChecker::ControlFlowChecker(const ParameterConstRef _Param, const HLS
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
 }
 
-ControlFlowChecker::~ControlFlowChecker()
-{
-}
+ControlFlowChecker::~ControlFlowChecker() = default;
 
 const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
 ControlFlowChecker::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
@@ -572,12 +557,12 @@ static std::string create_control_flow_checker(size_t epp_trace_bitsize, const u
              "   epp_trace_reg <= epp_trace_memory[next_epp_trace_offset];\n"
              "end\n\n";
 
-   const auto reset_type = HLSMgr->get_parameter()->getOption<std::string>(OPT_sync_reset);
+   const auto reset_type = HLSMgr->get_parameter()->getOption<std::string>(OPT_reset_type);
    if(reset_type == "no" || reset_type == "sync")
    {
       result += "always @(posedge " CLOCK_PORT_NAME ")\n";
    }
-   else if(!HLSMgr->get_parameter()->getOption<bool>(OPT_level_reset))
+   else if(!HLSMgr->get_parameter()->getOption<bool>(OPT_reset_level))
    {
       result += "always @(posedge " CLOCK_PORT_NAME " or negedge " RESET_PORT_NAME ")\n";
    }
@@ -586,7 +571,7 @@ static std::string create_control_flow_checker(size_t epp_trace_bitsize, const u
       result += "always @(posedge " CLOCK_PORT_NAME " or posedge " RESET_PORT_NAME ")\n";
    }
 
-   if(!HLSMgr->get_parameter()->getOption<bool>(OPT_level_reset))
+   if(!HLSMgr->get_parameter()->getOption<bool>(OPT_reset_level))
    {
       result += "if (" RESET_PORT_NAME " == 1'b0)\n";
    }
@@ -766,7 +751,7 @@ DesignFlowStep_Status ControlFlowChecker::InternalExec()
    GetPointer<module>(checker_circuit)->SetParameter("STATE_BITSIZE", STR(state_bitsize));
    GetPointer<module>(checker_circuit)->SetParameter("EPP_TRACE_BITSIZE", STR(epp_trace_bitsize));
    GetPointer<module>(checker_circuit)->SetParameter("EPP_TRACE_METADATA_BITSIZE", STR(0));
-   GetPointer<module>(checker_circuit)->SetParameter("MEMORY_INIT_file", R"(""trace.mem"")");
+   GetPointer<module>(checker_circuit)->SetParameter("MEMORY_INIT_file", GetPath("trace.mem"));
    GetPointer<module>(checker_circuit)->SetParameter("EPP_TRACE_LENGTH", STR(0));
    GetPointer<module>(checker_circuit)->SetParameter("EPP_MISMATCH_ID", STR(0));
    GetPointer<module>(checker_circuit)->SetParameter("EPP_TRACE_INITIAL_METADATA", STR(0));

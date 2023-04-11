@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -674,18 +674,18 @@ void tree_node_factory::operator()(const attr* obj, unsigned int& mask)
       dynamic_cast<type*>(curr_tree_node_ptr)->field = TM.GetTreeReindex(node_id);                 \
    }
 
-#define SET_VALUE_OPT(token, field, type, value_type)                                 \
-   if(tree_node_schema.find(TOK(token)) != tree_node_schema.end())                    \
-   {                                                                                  \
-      dynamic_cast<type*>(curr_tree_node_ptr)->field =                                \
-          boost::lexical_cast<value_type>(tree_node_schema.find(TOK(token))->second); \
+#define SET_VALUE_OPT(token, field, type)                                                        \
+   if(tree_node_schema.find(TOK(token)) != tree_node_schema.end())                               \
+   {                                                                                             \
+      dynamic_cast<type*>(curr_tree_node_ptr)->field =                                           \
+          boost::lexical_cast<decltype(type::field)>(tree_node_schema.find(TOK(token))->second); \
    }
 
-#define SET_VALUE(token, field, type, value_type)                                     \
+#define SET_VALUE(token, field, type)                                                 \
    THROW_ASSERT(tree_node_schema.find(TOK(token)) != tree_node_schema.end(),          \
                 std::string("tree node schema must have ") + STOK(token) + " value"); \
    dynamic_cast<type*>(curr_tree_node_ptr)->field =                                   \
-       boost::lexical_cast<value_type>(tree_node_schema.find(TOK(token))->second);
+       boost::lexical_cast<decltype(type::field)>(tree_node_schema.find(TOK(token))->second);
 
 #define TREE_NOT_YET_IMPLEMENTED(token)                                      \
    THROW_ASSERT(tree_node_schema.find(TOK(token)) == tree_node_schema.end(), \
@@ -695,12 +695,12 @@ void tree_node_factory::operator()(const WeightedNode*, unsigned int&)
 {
 #if HAVE_CODE_ESTIMATION_BUILT
    /// FIXME: TOK_TIME_WEIGHT not supported
-   SET_VALUE_OPT(TOK_SIZE_WEIGHT, weight_information->instruction_size, WeightedNode, unsigned int);
+   SET_VALUE_OPT(TOK_SIZE_WEIGHT, weight_information->instruction_size, WeightedNode);
    THROW_ASSERT(tree_node_schema.find(TOK(TOK_TIME_WEIGHT)) == tree_node_schema.end(),
                 "Field time weight not supported");
-   SET_VALUE_OPT(TOK_SIZE_WEIGHT, weight_information->instruction_size, WeightedNode, unsigned int);
+   SET_VALUE_OPT(TOK_SIZE_WEIGHT, weight_information->instruction_size, WeightedNode);
 #if HAVE_RTL_BUILT
-   SET_VALUE_OPT(TOK_RTL_SIZE_WEIGHT, weight_information->rtl_instruction_size, WeightedNode, unsigned int);
+   SET_VALUE_OPT(TOK_RTL_SIZE_WEIGHT, weight_information->rtl_instruction_size, WeightedNode);
 #endif
 #endif
 }
@@ -733,14 +733,14 @@ void tree_node_factory::operator()(const decl_node* obj, unsigned int& mask)
    SET_NODE_ID_OPT(TOK_SCPE, scpe, decl_node);
    SET_NODE_ID_OPT(TOK_ATTRIBUTES, attributes, decl_node);
    SET_NODE_ID_OPT(TOK_CHAN, chan, decl_node);
-   SET_VALUE_OPT(TOK_ARTIFICIAL, artificial_flag, decl_node, bool);
-   SET_VALUE_OPT(TOK_PACKED, packed_flag, decl_node, bool);
-   SET_VALUE_OPT(TOK_OPERATING_SYSTEM, operating_system_flag, decl_node, bool);
-   SET_VALUE_OPT(TOK_LIBRARY_SYSTEM, library_system_flag, decl_node, bool);
+   SET_VALUE_OPT(TOK_ARTIFICIAL, artificial_flag, decl_node);
+   SET_VALUE_OPT(TOK_PACKED, packed_flag, decl_node);
+   SET_VALUE_OPT(TOK_OPERATING_SYSTEM, operating_system_flag, decl_node);
+   SET_VALUE_OPT(TOK_LIBRARY_SYSTEM, library_system_flag, decl_node);
 #if HAVE_BAMBU_BUILT
-   SET_VALUE_OPT(TOK_LIBBAMBU, libbambu_flag, decl_node, bool);
+   SET_VALUE_OPT(TOK_LIBBAMBU, libbambu_flag, decl_node);
 #endif
-   SET_VALUE_OPT(TOK_C, C_flag, decl_node, bool);
+   SET_VALUE_OPT(TOK_C, C_flag, decl_node);
 }
 
 void tree_node_factory::operator()(const expr_node* obj, unsigned int& mask)
@@ -756,7 +756,7 @@ void tree_node_factory::operator()(const gimple_node* obj, unsigned int& mask)
    SET_NODE_ID_OPT(TOK_MEMUSE, memuse, gimple_node);
    SET_NODE_ID_OPT(TOK_MEMDEF, memdef, gimple_node);
    SET_NODE_ID_OPT(TOK_SCPE, scpe, gimple_node);
-   SET_VALUE_OPT(TOK_BB_INDEX, bb_index, gimple_node, unsigned int);
+   SET_VALUE_OPT(TOK_BB_INDEX, bb_index, gimple_node);
    TREE_NOT_YET_IMPLEMENTED(TOK_VUSE);
    TREE_NOT_YET_IMPLEMENTED(TOK_VDEF);
 }
@@ -808,9 +808,9 @@ void tree_node_factory::operator()(const type_node* obj, unsigned int& mask)
    SET_NODE_ID_OPT(TOK_UNQL, unql, type_node);
    SET_NODE_ID_OPT(TOK_SIZE, size, type_node);
    SET_NODE_ID_OPT(TOK_SCPE, scpe, type_node);
-   SET_VALUE_OPT(TOK_SYSTEM, packed_flag, type_node, bool);
-   SET_VALUE_OPT(TOK_SYSTEM, system_flag, type_node, bool);
-   SET_VALUE_OPT(TOK_ALGN, algn, type_node, unsigned int);
+   SET_VALUE_OPT(TOK_SYSTEM, packed_flag, type_node);
+   SET_VALUE_OPT(TOK_SYSTEM, system_flag, type_node);
+   SET_VALUE_OPT(TOK_ALGN, algn, type_node);
 }
 
 void tree_node_factory::operator()(const memory_tag* obj, unsigned int& mask)
@@ -849,8 +849,8 @@ void tree_node_factory::operator()(const gimple_asm* obj, unsigned int& mask)
 {
    THROW_ASSERT(obj == curr_tree_node_ptr, "wrong factory setup");
    tree_node_mask::operator()(obj, mask);
-   SET_VALUE_OPT(TOK_CTOR, volatile_flag, gimple_asm, bool);
-   SET_VALUE_OPT(TOK_STR, str, gimple_asm, std::string);
+   SET_VALUE_OPT(TOK_CTOR, volatile_flag, gimple_asm);
+   SET_VALUE_OPT(TOK_STR, str, gimple_asm);
    SET_NODE_ID_OPT(TOK_OUT, out, gimple_asm);
    SET_NODE_ID_OPT(TOK_IN, in, gimple_asm);
    SET_NODE_ID_OPT(TOK_CLOB, clob, gimple_asm);
@@ -879,8 +879,8 @@ void tree_node_factory::operator()(const binfo* obj, unsigned int& mask)
    THROW_ASSERT(obj == curr_tree_node_ptr, "wrong factory setup");
    tree_node_mask::operator()(obj, mask);
    SET_NODE_ID_OPT(TOK_TYPE, type, binfo);
-   SET_VALUE_OPT(TOK_VIRT, virt_flag, binfo, bool);
-   SET_VALUE(TOK_BASES, bases, binfo, int);
+   SET_VALUE_OPT(TOK_VIRT, virt_flag, binfo);
+   SET_VALUE(TOK_BASES, bases, binfo);
    TREE_NOT_YET_IMPLEMENTED(TOK_BINF);
    // std::vector<std::pair< unsigned int, tree_nodeRef> >::const_iterator vend = obj->list_of_access_binf.end();
    // for (std::vector<std::pair< unsigned int, tree_nodeRef> >::const_iterator i = obj->list_of_access_binf.begin(); i
@@ -919,7 +919,7 @@ void tree_node_factory::operator()(const aggr_init_expr* obj, unsigned int& mask
 {
    THROW_ASSERT(obj == curr_tree_node_ptr, "wrong factory setup");
    tree_node_mask::operator()(obj, mask);
-   SET_VALUE(TOK_CTOR, ctor, aggr_init_expr, int);
+   SET_VALUE(TOK_CTOR, ctor, aggr_init_expr);
    SET_NODE_ID_OPT(TOK_SLOT, slot, aggr_init_expr);
 }
 
@@ -945,7 +945,7 @@ void tree_node_factory::operator()(const case_label_expr* obj, unsigned int& mas
    tree_node_mask::operator()(obj, mask);
    SET_NODE_ID_OPT(TOK_OP0, op0, case_label_expr);
    SET_NODE_ID_OPT(TOK_OP1, op1, case_label_expr);
-   SET_VALUE_OPT(TOK_DEFAULT, default_flag, case_label_expr, bool);
+   SET_VALUE_OPT(TOK_DEFAULT, default_flag, case_label_expr);
    SET_NODE_ID_OPT(TOK_GOTO, got, case_label_expr);
 }
 
@@ -968,8 +968,8 @@ void tree_node_factory::operator()(const complex_type* obj, unsigned int& mask)
 {
    THROW_ASSERT(obj == curr_tree_node_ptr, "wrong factory setup");
    tree_node_mask::operator()(obj, mask);
-   SET_VALUE_OPT(TOK_UNSIGNED, unsigned_flag, complex_type, bool);
-   SET_VALUE_OPT(TOK_UNSIGNED, real_flag, complex_type, bool);
+   SET_VALUE_OPT(TOK_UNSIGNED, unsigned_flag, complex_type);
+   SET_VALUE_OPT(TOK_UNSIGNED, real_flag, complex_type);
 }
 
 void tree_node_factory::operator()(const gimple_cond* obj, unsigned int& mask)
@@ -1006,8 +1006,8 @@ void tree_node_factory::operator()(const enumeral_type* obj, unsigned int& mask)
 {
    THROW_ASSERT(obj == curr_tree_node_ptr, "wrong factory setup");
    tree_node_mask::operator()(obj, mask);
-   SET_VALUE_OPT(TOK_PREC, prec, enumeral_type, unsigned int);
-   SET_VALUE_OPT(TOK_UNSIGNED, unsigned_flag, enumeral_type, bool);
+   SET_VALUE_OPT(TOK_PREC, prec, enumeral_type);
+   SET_VALUE_OPT(TOK_UNSIGNED, unsigned_flag, enumeral_type);
    SET_NODE_ID_OPT(TOK_MIN, min, enumeral_type);
    SET_NODE_ID_OPT(TOK_MAX, max, enumeral_type);
    SET_NODE_ID_OPT(TOK_CSTS, csts, enumeral_type);
@@ -1018,7 +1018,7 @@ void tree_node_factory::operator()(const expr_stmt* obj, unsigned int& mask)
    THROW_ASSERT(obj == curr_tree_node_ptr, "wrong factory setup");
    tree_node_mask::operator()(obj, mask);
 
-   SET_VALUE_OPT(TOK_LINE, line, expr_stmt, int);
+   SET_VALUE_OPT(TOK_LINE, line, expr_stmt);
    SET_NODE_ID_OPT(TOK_EXPR, expr, expr_stmt);
    SET_NODE_ID_OPT(TOK_NEXT, next, expr_stmt);
 }
@@ -1027,7 +1027,7 @@ void tree_node_factory::operator()(const field_decl* obj, unsigned int& mask)
 {
    THROW_ASSERT(obj == curr_tree_node_ptr, "wrong factory setup");
    tree_node_mask::operator()(obj, mask);
-   SET_VALUE_OPT(TOK_ALGN, algn, field_decl, unsigned int);
+   SET_VALUE_OPT(TOK_ALGN, algn, field_decl);
    SET_NODE_ID_OPT(TOK_INIT, init, field_decl);
    SET_NODE_ID_OPT(TOK_SIZE, size, field_decl);
    SET_NODE_ID_OPT(TOK_BPOS, bpos, field_decl);
@@ -1038,38 +1038,38 @@ void tree_node_factory::operator()(const function_decl* obj, unsigned int& mask)
 {
    THROW_ASSERT(obj == curr_tree_node_ptr, "wrong factory setup");
    tree_node_mask::operator()(obj, mask);
-   SET_VALUE_OPT(TOK_OPERATOR, operator_flag, function_decl, bool);
+   SET_VALUE_OPT(TOK_OPERATOR, operator_flag, function_decl);
    // std::vector<std::string>::const_iterator vend = obj->list_of_op_names.end();
    // for (std::vector<std::string>::const_iterator i = obj->list_of_op_names.begin(); i != vend; i++)
    //   WRITE_UFIELD_STRING(os, *i);
    SET_NODE_ID_OPT(TOK_TMPL_PARMS, tmpl_parms, function_decl);
    SET_NODE_ID_OPT(TOK_TMPL_ARGS, tmpl_args, function_decl);
 
-   SET_VALUE_OPT(TOK_FIXD, fixd, function_decl, int);
-   SET_VALUE_OPT(TOK_FIXD, fixd_flag, function_decl, bool);
-   SET_VALUE_OPT(TOK_VIRT, virt_flag, function_decl, bool);
-   SET_VALUE_OPT(TOK_VIRT, virt, function_decl, int);
+   SET_VALUE_OPT(TOK_FIXD, fixd, function_decl);
+   SET_VALUE_OPT(TOK_FIXD, fixd_flag, function_decl);
+   SET_VALUE_OPT(TOK_VIRT, virt_flag, function_decl);
+   SET_VALUE_OPT(TOK_VIRT, virt, function_decl);
    SET_NODE_ID_OPT(TOK_FN, fn, function_decl);
    TREE_NOT_YET_IMPLEMENTED(TOK_ARG);
    // std::vector<tree_nodeRef>::const_iterator vend2 = obj->list_of_args.end();
    // for (std::vector<tree_nodeRef>::const_iterator i = obj->list_of_args.begin(); i != vend2; i++)
    //   write_when_not_null(STOK(TOK_ARGS), *i);
 
-   SET_VALUE_OPT(TOK_UNDEFINED, undefined_flag, function_decl, bool);
-   SET_VALUE_OPT(TOK_UNDEFINED, builtin_flag, function_decl, bool);
-   SET_VALUE_OPT(TOK_STATIC, static_flag, function_decl, bool);
-   SET_VALUE_OPT(TOK_HWCALL, hwcall_flag, function_decl, bool);
-   SET_VALUE_OPT(TOK_REVERSE_RESTRICT, reverse_restrict_flag, function_decl, bool);
-   SET_VALUE_OPT(TOK_WRITING_MEMORY, writing_memory, function_decl, bool);
-   SET_VALUE_OPT(TOK_READING_MEMORY, reading_memory, function_decl, bool);
-   SET_VALUE_OPT(TOK_PIPELINE_ENABLED, pipeline_enabled, function_decl, bool);
-   SET_VALUE_OPT(TOK_SIMPLE_PIPELINE, simple_pipeline, function_decl, bool);
-   SET_VALUE_OPT(TOK_INITIATION_TIME, initiation_time, function_decl, int);
+   SET_VALUE_OPT(TOK_UNDEFINED, undefined_flag, function_decl);
+   SET_VALUE_OPT(TOK_UNDEFINED, builtin_flag, function_decl);
+   SET_VALUE_OPT(TOK_STATIC, static_flag, function_decl);
+   SET_VALUE_OPT(TOK_HWCALL, hwcall_flag, function_decl);
+   SET_VALUE_OPT(TOK_REVERSE_RESTRICT, reverse_restrict_flag, function_decl);
+   SET_VALUE_OPT(TOK_WRITING_MEMORY, writing_memory, function_decl);
+   SET_VALUE_OPT(TOK_READING_MEMORY, reading_memory, function_decl);
+   SET_VALUE_OPT(TOK_PIPELINE_ENABLED, pipeline_enabled, function_decl);
+   SET_VALUE_OPT(TOK_SIMPLE_PIPELINE, simple_pipeline, function_decl);
+   SET_VALUE_OPT(TOK_INITIATION_TIME, initiation_time, function_decl);
 #if HAVE_FROM_PRAGMA_BUILT
-   SET_VALUE_OPT(TOK_OMP_ATOMIC, omp_atomic, function_decl, bool);
-   SET_VALUE_OPT(TOK_OMP_BODY_LOOP, omp_body_loop, function_decl, bool);
-   SET_VALUE_OPT(TOK_OMP_CRITICAL_SESSION, omp_critical, function_decl, std::string);
-   SET_VALUE_OPT(TOK_OMP_FOR_WRAPPER, omp_for_wrapper, function_decl, size_t);
+   SET_VALUE_OPT(TOK_OMP_ATOMIC, omp_atomic, function_decl);
+   SET_VALUE_OPT(TOK_OMP_BODY_LOOP, omp_body_loop, function_decl);
+   SET_VALUE_OPT(TOK_OMP_CRITICAL_SESSION, omp_critical, function_decl);
+   SET_VALUE_OPT(TOK_OMP_FOR_WRAPPER, omp_for_wrapper, function_decl);
 #endif
    SET_NODE_ID_OPT(TOK_BODY, body, function_decl);
    SET_NODE_ID_OPT(TOK_INLINE_BODY, inline_body, function_decl);
@@ -1081,7 +1081,7 @@ void tree_node_factory::operator()(const function_type* obj, unsigned int& mask)
    tree_node_mask::operator()(obj, mask);
    SET_NODE_ID_OPT(TOK_RETN, retn, function_type);
    SET_NODE_ID_OPT(TOK_PRMS, prms, function_type);
-   SET_VALUE_OPT(TOK_VARARGS, varargs_flag, function_type, bool);
+   SET_VALUE_OPT(TOK_VARARGS, varargs_flag, function_type);
 }
 
 void tree_node_factory::operator()(const gimple_assign* obj, unsigned int& mask)
@@ -1091,9 +1091,9 @@ void tree_node_factory::operator()(const gimple_assign* obj, unsigned int& mask)
    SET_NODE_ID(TOK_OP0, op0, gimple_assign);
    SET_NODE_ID(TOK_OP1, op1, gimple_assign);
    SET_NODE_ID_OPT(TOK_PREDICATE, predicate, gimple_assign);
-   SET_VALUE_OPT(TOK_INIT, init_assignment, gimple_assign, bool);
-   SET_VALUE_OPT(TOK_CLOBBER, clobber, gimple_assign, bool);
-   SET_VALUE_OPT(TOK_ADDR, temporary_address, gimple_assign, bool);
+   SET_VALUE_OPT(TOK_INIT, init_assignment, gimple_assign);
+   SET_VALUE_OPT(TOK_CLOBBER, clobber, gimple_assign);
+   SET_VALUE_OPT(TOK_ADDR, temporary_address, gimple_assign);
 }
 
 void tree_node_factory::operator()(const gimple_goto* obj, unsigned int& mask)
@@ -1108,7 +1108,7 @@ void tree_node_factory::operator()(const handler* obj, unsigned int& mask)
    THROW_ASSERT(obj == curr_tree_node_ptr, "wrong factory setup");
    tree_node_mask::operator()(obj, mask);
 
-   SET_VALUE_OPT(TOK_LINE, line, handler, int);
+   SET_VALUE_OPT(TOK_LINE, line, handler);
    SET_NODE_ID_OPT(TOK_BODY, body, handler);
 }
 
@@ -1123,17 +1123,17 @@ void tree_node_factory::operator()(const integer_cst* obj, unsigned int& mask)
 {
    THROW_ASSERT(obj == curr_tree_node_ptr, "wrong factory setup");
    tree_node_mask::operator()(obj, mask);
-   SET_VALUE_OPT(TOK_VALUE, value, integer_cst, long long int);
+   SET_VALUE_OPT(TOK_VALUE, value, integer_cst);
 }
 
 void tree_node_factory::operator()(const integer_type* obj, unsigned int& mask)
 {
    THROW_ASSERT(obj == curr_tree_node_ptr, "wrong factory setup");
    tree_node_mask::operator()(obj, mask);
-   SET_VALUE_OPT(TOK_PREC, prec, integer_type, unsigned int);
+   SET_VALUE_OPT(TOK_PREC, prec, integer_type);
    // if (obj->str != "")
    //   WRITE_UFIELD(os, obj->str);
-   SET_VALUE_OPT(TOK_UNSIGNED, unsigned_flag, integer_type, bool);
+   SET_VALUE_OPT(TOK_UNSIGNED, unsigned_flag, integer_type);
    SET_NODE_ID_OPT(TOK_MIN, min, integer_type);
    SET_NODE_ID_OPT(TOK_MAX, max, integer_type);
 }
@@ -1174,10 +1174,10 @@ void tree_node_factory::operator()(const parm_decl* obj, unsigned int& mask)
    tree_node_mask::operator()(obj, mask);
    SET_NODE_ID_OPT(TOK_ARGT, argt, parm_decl);
    SET_NODE_ID_OPT(TOK_SIZE, size, parm_decl);
-   SET_VALUE_OPT(TOK_ALGN, algn, parm_decl, unsigned int);
-   SET_VALUE_OPT(TOK_USED, used, parm_decl, int);
-   SET_VALUE_OPT(TOK_REGISTER, register_flag, parm_decl, bool);
-   SET_VALUE_OPT(TOK_READONLY, readonly_flag, parm_decl, bool);
+   SET_VALUE_OPT(TOK_ALGN, algn, parm_decl);
+   SET_VALUE_OPT(TOK_USED, used, parm_decl);
+   SET_VALUE_OPT(TOK_REGISTER, register_flag, parm_decl);
+   SET_VALUE_OPT(TOK_READONLY, readonly_flag, parm_decl);
    SET_NODE_ID_OPT(TOK_SMT_ANN, smt_ann, parm_decl);
 }
 
@@ -1187,7 +1187,7 @@ void tree_node_factory::operator()(const gimple_phi* obj, unsigned int& mask)
    tree_node_mask::operator()(obj, mask);
 
    SET_NODE_ID_OPT(TOK_RES, res, gimple_phi);
-   SET_VALUE_OPT(TOK_VIRTUAL, virtual_flag, gimple_phi, bool);
+   SET_VALUE_OPT(TOK_VIRTUAL, virtual_flag, gimple_phi);
    // TREE_NOT_YET_IMPLEMENTED(TOK_DEF);
    // TREE_NOT_YET_IMPLEMENTED(TOK_EDGE);
    // std::vector<std::pair< tree_nodeRef, int> >::const_iterator vend = obj->list_of_def_edge.end();
@@ -1210,16 +1210,16 @@ void tree_node_factory::operator()(const real_cst* obj, unsigned int& mask)
 {
    THROW_ASSERT(obj == curr_tree_node_ptr, "wrong factory setup");
    tree_node_mask::operator()(obj, mask);
-   SET_VALUE_OPT(TOK_OVERFLOW, overflow_flag, real_cst, bool);
-   SET_VALUE_OPT(TOK_VALR, valr, real_cst, std::string);
-   SET_VALUE_OPT(TOK_VALX, valx, real_cst, std::string);
+   SET_VALUE_OPT(TOK_OVERFLOW, overflow_flag, real_cst);
+   SET_VALUE_OPT(TOK_VALR, valr, real_cst);
+   SET_VALUE_OPT(TOK_VALX, valx, real_cst);
 }
 
 void tree_node_factory::operator()(const real_type* obj, unsigned int& mask)
 {
    THROW_ASSERT(obj == curr_tree_node_ptr, "wrong factory setup");
    tree_node_mask::operator()(obj, mask);
-   SET_VALUE_OPT(TOK_PREC, prec, real_type, unsigned int);
+   SET_VALUE_OPT(TOK_PREC, prec, real_type);
 }
 
 void tree_node_factory::operator()(const record_type* obj, unsigned int& mask)
@@ -1229,13 +1229,13 @@ void tree_node_factory::operator()(const record_type* obj, unsigned int& mask)
    SET_NODE_ID_OPT(TOK_TMPL_PARMS, tmpl_parms, record_type);
    SET_NODE_ID_OPT(TOK_TMPL_ARGS, tmpl_args, record_type);
 
-   SET_VALUE_OPT(TOK_PTRMEM, ptrmem_flag, record_type, bool);
+   SET_VALUE_OPT(TOK_PTRMEM, ptrmem_flag, record_type);
    SET_NODE_ID_OPT(TOK_PTD, ptd, record_type);
    SET_NODE_ID_OPT(TOK_CLS, cls, record_type);
    SET_NODE_ID_OPT(TOK_BFLD, bfld, record_type);
    SET_NODE_ID_OPT(TOK_VFLD, vfld, record_type);
-   SET_VALUE_OPT(TOK_SPEC, spec_flag, record_type, bool);
-   SET_VALUE_OPT(TOK_STRUCT, struct_flag, record_type, bool);
+   SET_VALUE_OPT(TOK_SPEC, spec_flag, record_type);
+   SET_VALUE_OPT(TOK_STRUCT, struct_flag, record_type);
    TREE_NOT_YET_IMPLEMENTED(TOK_FLDS);
    // std::vector<tree_nodeRef>::const_iterator vend1 = obj->list_of_flds.end();
    // for (std::vector<tree_nodeRef>::const_iterator i = obj->list_of_flds.begin(); i != vend1; i++)
@@ -1260,7 +1260,7 @@ void tree_node_factory::operator()(const result_decl* obj, unsigned int& mask)
    tree_node_mask::operator()(obj, mask);
    SET_NODE_ID_OPT(TOK_INIT, init, result_decl);
    SET_NODE_ID_OPT(TOK_SIZE, size, result_decl);
-   SET_VALUE_OPT(TOK_ALGN, algn, result_decl, unsigned int);
+   SET_VALUE_OPT(TOK_ALGN, algn, result_decl);
    SET_NODE_ID_OPT(TOK_SMT_ANN, smt_ann, result_decl);
 }
 
@@ -1276,7 +1276,7 @@ void tree_node_factory::operator()(const return_stmt* obj, unsigned int& mask)
    THROW_ASSERT(obj == curr_tree_node_ptr, "wrong factory setup");
    tree_node_mask::operator()(obj, mask);
 
-   SET_VALUE_OPT(TOK_LINE, line, return_stmt, int);
+   SET_VALUE_OPT(TOK_LINE, line, return_stmt);
    SET_NODE_ID_OPT(TOK_EXPR, expr, return_stmt);
 }
 
@@ -1295,15 +1295,15 @@ void tree_node_factory::operator()(const ssa_name* obj, unsigned int& mask)
 
    SET_NODE_ID_OPT(TOK_TYPE, type, ssa_name);
    SET_NODE_ID_OPT(TOK_VAR, var, ssa_name);
-   SET_VALUE_OPT(TOK_VERS, vers, ssa_name, unsigned int);
-   SET_VALUE_OPT(TOK_ORIG_VERS, orig_vers, ssa_name, unsigned int);
+   SET_VALUE_OPT(TOK_VERS, vers, ssa_name);
+   SET_VALUE_OPT(TOK_ORIG_VERS, orig_vers, ssa_name);
    // SET_NODE_ID_OPT(TOK_PTR_INFO,ptr_info,ssa_name);
 
-   SET_VALUE_OPT(TOK_VOLATILE, volatile_flag, ssa_name, bool);
-   SET_VALUE_OPT(TOK_VIRTUAL, virtual_flag, ssa_name, bool);
+   SET_VALUE_OPT(TOK_VOLATILE, volatile_flag, ssa_name);
+   SET_VALUE_OPT(TOK_VIRTUAL, virtual_flag, ssa_name);
    SET_NODE_ID_OPT(TOK_MIN, min, ssa_name);
    SET_NODE_ID_OPT(TOK_MAX, max, ssa_name);
-   SET_VALUE_OPT(TOK_BIT_VALUES, bit_values, ssa_name, std::string);
+   SET_VALUE_OPT(TOK_BIT_VALUES, bit_values, ssa_name);
 }
 
 void tree_node_factory::operator()(const statement_list* obj, unsigned int& mask)
@@ -1324,7 +1324,7 @@ void tree_node_factory::operator()(const string_cst* obj, unsigned int& mask)
 {
    THROW_ASSERT(obj == curr_tree_node_ptr, "wrong factory setup");
    tree_node_mask::operator()(obj, mask);
-   SET_VALUE_OPT(TOK_STRG, strg, string_cst, std::string);
+   SET_VALUE_OPT(TOK_STRG, strg, string_cst);
 }
 
 void tree_node_factory::operator()(const gimple_switch* obj, unsigned int& mask)
@@ -1375,11 +1375,11 @@ void tree_node_factory::operator()(const template_parm_index* obj, unsigned int&
    tree_node_mask::operator()(obj, mask);
    SET_NODE_ID_OPT(TOK_TYPE, type, template_parm_index);
    SET_NODE_ID_OPT(TOK_DECL, decl, template_parm_index);
-   SET_VALUE_OPT(TOK_CONSTANT, constant_flag, template_parm_index, bool);
-   SET_VALUE_OPT(TOK_READONLY, readonly_flag, template_parm_index, bool);
-   SET_VALUE_OPT(TOK_IDX, idx, template_parm_index, int);
-   SET_VALUE_OPT(TOK_LEVEL, level, template_parm_index, int);
-   SET_VALUE_OPT(TOK_ORIG_LEVEL, orig_level, template_parm_index, int);
+   SET_VALUE_OPT(TOK_CONSTANT, constant_flag, template_parm_index);
+   SET_VALUE_OPT(TOK_READONLY, readonly_flag, template_parm_index);
+   SET_VALUE_OPT(TOK_IDX, idx, template_parm_index);
+   SET_VALUE_OPT(TOK_LEVEL, level, template_parm_index);
+   SET_VALUE_OPT(TOK_ORIG_LEVEL, orig_level, template_parm_index);
 }
 
 void tree_node_factory::operator()(const tree_list* obj, unsigned int& mask)
@@ -1397,7 +1397,7 @@ void tree_node_factory::operator()(const tree_vec* obj, unsigned int& mask)
    THROW_ASSERT(obj == curr_tree_node_ptr, "wrong factory setup");
    tree_node_mask::operator()(obj, mask);
 
-   SET_VALUE_OPT(TOK_LNGT, lngt, tree_vec, unsigned int);
+   SET_VALUE_OPT(TOK_LNGT, lngt, tree_vec);
    TREE_NOT_YET_IMPLEMENTED(TOK_OP);
    // std::vector<tree_nodeRef>::const_iterator vend = obj->list_of_op.end();
    // for (std::vector<tree_nodeRef>::const_iterator i = obj->list_of_op.begin(); i != vend; i++)
@@ -1409,7 +1409,7 @@ void tree_node_factory::operator()(const try_block* obj, unsigned int& mask)
    THROW_ASSERT(obj == curr_tree_node_ptr, "wrong factory setup");
    tree_node_mask::operator()(obj, mask);
 
-   SET_VALUE_OPT(TOK_LINE, line, try_block, int);
+   SET_VALUE_OPT(TOK_LINE, line, try_block);
    SET_NODE_ID_OPT(TOK_BODY, body, try_block);
    SET_NODE_ID_OPT(TOK_HDLR, hdlr, try_block);
    SET_NODE_ID_OPT(TOK_NEXT, next, try_block);
@@ -1443,19 +1443,19 @@ void tree_node_factory::operator()(const var_decl* obj, unsigned int& mask)
    THROW_ASSERT(obj == curr_tree_node_ptr, "wrong factory setup");
    tree_node_mask::operator()(obj, mask);
 
-   SET_VALUE_OPT(TOK_USE_TMPL, use_tmpl, var_decl, int);
-   SET_VALUE_OPT(TOK_STATIC_STATIC, static_static_flag, var_decl, bool);
-   SET_VALUE_OPT(TOK_EXTERN, extern_flag, var_decl, bool);
-   SET_VALUE_OPT(TOK_ADDR_TAKEN, addr_taken, var_decl, bool);
-   SET_VALUE_OPT(TOK_ADDR_NOT_TAKEN, addr_not_taken, var_decl, bool);
-   SET_VALUE_OPT(TOK_STATIC, static_flag, var_decl, bool);
+   SET_VALUE_OPT(TOK_USE_TMPL, use_tmpl, var_decl);
+   SET_VALUE_OPT(TOK_STATIC_STATIC, static_static_flag, var_decl);
+   SET_VALUE_OPT(TOK_EXTERN, extern_flag, var_decl);
+   SET_VALUE_OPT(TOK_ADDR_TAKEN, addr_taken, var_decl);
+   SET_VALUE_OPT(TOK_ADDR_NOT_TAKEN, addr_not_taken, var_decl);
+   SET_VALUE_OPT(TOK_STATIC, static_flag, var_decl);
    SET_NODE_ID_OPT(TOK_INIT, init, var_decl);
    SET_NODE_ID_OPT(TOK_SIZE, size, var_decl);
-   SET_VALUE_OPT(TOK_ALGN, algn, var_decl, unsigned int);
-   SET_VALUE_OPT(TOK_USED, used, var_decl, int);
-   SET_VALUE_OPT(TOK_REGISTER, register_flag, var_decl, bool);
-   SET_VALUE_OPT(TOK_READONLY, readonly_flag, var_decl, bool);
-   SET_VALUE_OPT(TOK_BIT_VALUES, bit_values, var_decl, std::string);
+   SET_VALUE_OPT(TOK_ALGN, algn, var_decl);
+   SET_VALUE_OPT(TOK_USED, used, var_decl);
+   SET_VALUE_OPT(TOK_REGISTER, register_flag, var_decl);
+   SET_VALUE_OPT(TOK_READONLY, readonly_flag, var_decl);
+   SET_VALUE_OPT(TOK_BIT_VALUES, bit_values, var_decl);
    SET_NODE_ID_OPT(TOK_SMT_ANN, smt_ann, var_decl);
    TREE_NOT_YET_IMPLEMENTED(TOK_ADDR_STMT);
    TREE_NOT_YET_IMPLEMENTED(TOK_DEF_STMT);
@@ -1543,8 +1543,8 @@ void tree_node_factory::operator()(const bloc* obj, unsigned int& mask)
 {
    tree_node_mask::operator()(obj, mask);
    // WRITE_UFIELD(os, obj->number);
-   SET_VALUE_OPT(TOK_HPL, hpl, bloc, bool);
-   SET_VALUE_OPT(TOK_LOOP_ID, loop_id, bloc, unsigned int);
+   SET_VALUE_OPT(TOK_HPL, hpl, bloc);
+   SET_VALUE_OPT(TOK_LOOP_ID, loop_id, bloc);
    TREE_NOT_YET_IMPLEMENTED(TOK_PRED);
    // std::vector<int>::const_iterator vend1 = obj->list_of_pred.end();
    // for (std::vector<int>::const_iterator i = obj->list_of_pred.begin(); i != vend1; i++)
@@ -1559,8 +1559,8 @@ void tree_node_factory::operator()(const bloc* obj, unsigned int& mask)
    //      WRITE_NFIELD(os, STOK(TOK_SUCC), STOK(TOK_EXIT));
    // else
    //   WRITE_NFIELD(os, STOK(TOK_SUCC), *i);
-   SET_VALUE_OPT(TOK_TRUE_EDGE, true_edge, bloc, unsigned int);
-   SET_VALUE_OPT(TOK_FALSE_EDGE, false_edge, bloc, unsigned int);
+   SET_VALUE_OPT(TOK_TRUE_EDGE, true_edge, bloc);
+   SET_VALUE_OPT(TOK_FALSE_EDGE, false_edge, bloc);
    TREE_NOT_YET_IMPLEMENTED(TOK_PHI);
    // std::vector<tree_nodeRef>::const_iterator vend3 = obj->list_of_phi.end();
    // for (std::vector<tree_nodeRef>::const_iterator i = obj->list_of_phi.begin(); i != vend3; i++)
@@ -1603,17 +1603,12 @@ void tree_node_factory::operator()(const gimple_pragma* obj, unsigned int& mask)
 {
    THROW_ASSERT(obj == curr_tree_node_ptr, "wrong factory setup");
    tree_node_mask::operator()(obj, mask);
-   SET_VALUE_OPT(TOK_IS_BLOCK, is_block, gimple_pragma, bool);
-   SET_VALUE_OPT(TOK_OPEN, is_opening, gimple_pragma, bool);
-   SET_VALUE_OPT(TOK_LINE, line, gimple_pragma, std::string);
+   SET_VALUE_OPT(TOK_IS_BLOCK, is_block, gimple_pragma);
+   SET_VALUE_OPT(TOK_OPEN, is_opening, gimple_pragma);
+   SET_VALUE_OPT(TOK_LINE, line, gimple_pragma);
    SET_NODE_ID_OPT(TOK_PRAGMA_SCOPE, scope, gimple_pragma);
    SET_NODE_ID_OPT(TOK_PRAGMA_DIRECTIVE, directive, gimple_pragma);
-   /// FIXME: after creation of pragma node, the control has not to be optional
-#if 0
-   SET_VALUE(TOK_BB_INDEX, bb_index, gimple_pragma, unsigned int);
-#else
-   SET_VALUE_OPT(TOK_BB_INDEX, bb_index, gimple_pragma, unsigned int);
-#endif
+   SET_VALUE_OPT(TOK_BB_INDEX, bb_index, gimple_pragma);
 }
 
 void tree_node_factory::operator()(const omp_pragma* obj, unsigned int& mask)
@@ -1662,14 +1657,14 @@ void tree_node_factory::operator()(const omp_parallel_pragma* obj, unsigned int&
 {
    THROW_ASSERT(obj == curr_tree_node_ptr, "wrong factory setup");
    tree_node_mask::operator()(obj, mask);
-   SET_VALUE_OPT(TOK_PRAGMA_OMP_SHORTCUT, is_shortcut, omp_parallel_pragma, bool);
+   SET_VALUE_OPT(TOK_PRAGMA_OMP_SHORTCUT, is_shortcut, omp_parallel_pragma);
 }
 
 void tree_node_factory::operator()(const omp_sections_pragma* obj, unsigned int& mask)
 {
    THROW_ASSERT(obj == curr_tree_node_ptr, "wrong factory setup");
    tree_node_mask::operator()(obj, mask);
-   SET_VALUE_OPT(TOK_PRAGMA_OMP_SHORTCUT, is_shortcut, omp_sections_pragma, bool);
+   SET_VALUE_OPT(TOK_PRAGMA_OMP_SHORTCUT, is_shortcut, omp_sections_pragma);
 }
 
 void tree_node_factory::operator()(const omp_parallel_sections_pragma* obj, unsigned int& mask)
@@ -1697,17 +1692,17 @@ void tree_node_factory::operator()(const call_hw_pragma* obj, unsigned int& mask
    THROW_ASSERT(obj == curr_tree_node_ptr, "wrong factory setup");
    tree_node_mask::operator()(obj, mask);
    THROW_ASSERT(tree_node_schema.find(TOK(TOK_HW_COMPONENT)) != tree_node_schema.end(), "error");
-   SET_VALUE_OPT(TOK_HW_COMPONENT, HW_component, call_hw_pragma, std::string);
-   SET_VALUE_OPT(TOK_ID_IMPLEMENTATION, ID_implementation, call_hw_pragma, std::string);
+   SET_VALUE_OPT(TOK_HW_COMPONENT, HW_component, call_hw_pragma);
+   SET_VALUE_OPT(TOK_ID_IMPLEMENTATION, ID_implementation, call_hw_pragma);
 }
 
 void tree_node_factory::operator()(const call_point_hw_pragma* obj, unsigned int& mask)
 {
    THROW_ASSERT(obj == curr_tree_node_ptr, "wrong factory setup");
    tree_node_mask::operator()(obj, mask);
-   SET_VALUE_OPT(TOK_HW_COMPONENT, HW_component, call_point_hw_pragma, std::string);
-   SET_VALUE_OPT(TOK_ID_IMPLEMENTATION, ID_implementation, call_hw_pragma, std::string);
-   SET_VALUE_OPT(TOK_RECURSIVE, recursive, call_point_hw_pragma, bool);
+   SET_VALUE_OPT(TOK_HW_COMPONENT, HW_component, call_point_hw_pragma);
+   SET_VALUE_OPT(TOK_ID_IMPLEMENTATION, ID_implementation, call_hw_pragma);
+   SET_VALUE_OPT(TOK_RECURSIVE, recursive, call_point_hw_pragma);
 }
 
 void tree_node_factory::operator()(const issue_pragma* obj, unsigned int& mask)

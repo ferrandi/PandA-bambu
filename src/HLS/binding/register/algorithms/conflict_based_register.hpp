@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -75,14 +75,8 @@ class conflict_based_register : public reg_binding_creator
                            const DesignFlowManagerConstRef design_flow_manager,
                            const HLSFlowStep_Type hls_flow_step_type);
 
-   /**
-    * Destructor of the class.
-    */
    ~conflict_based_register() override;
 
-   /**
-    * Create the conflict graph
-    */
    void create_conflict_graph();
 };
 

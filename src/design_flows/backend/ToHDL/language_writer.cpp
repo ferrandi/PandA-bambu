@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -42,24 +42,15 @@
  * Last modified by $Author$
  *
  */
-
-/// Autoheader include
-#include "config_HAVE_EXPERIMENTAL.hpp"
+#include "language_writer.hpp"
 
 /// constants include
 #include "copyrights_strings.hpp"
 
-#include "language_writer.hpp"
-
 #include "VHDL_writer.hpp"
+#include "structural_objects.hpp"
 #include "sv_writer.hpp"
 #include "verilog_writer.hpp"
-#if HAVE_EXPERIMENTAL
-#include "SystemC_writer.hpp"
-#include "blif_writer.hpp"
-#include "edif_writer.hpp"
-#endif
-#include "structural_objects.hpp"
 
 #include "exceptions.hpp"
 
@@ -109,17 +100,6 @@ language_writerRef language_writer::create_writer(const HDLWriter_Language langu
       case HDLWriter_Language::VHDL:
          return language_writerRef(new VHDL_writer(_TM, _parameters));
          break;
-#if HAVE_EXPERIMENTAL
-      case HDLWriter_Language::SYSTEMC:
-         return language_writerRef(new SystemC_writer(_parameters));
-         break;
-      case HDLWriter_Language::BLIF:
-         return language_writerRef(new blif_writer(_parameters));
-         break;
-      case HDLWriter_Language::EDIF:
-         return language_writerRef(new edif_writer(_parameters));
-         break;
-#endif
       default:
          THROW_ERROR("HDL backend language not supported");
    }

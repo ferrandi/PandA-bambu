@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -73,6 +73,7 @@
 #include <boost/preprocessor/facilities/empty.hpp>
 #include <boost/preprocessor/seq/for_each.hpp>
 #include <iostream>
+#include <unordered_map>
 #include <utility>
 
 #include "config_HAVE_ASSERTS.hpp"
@@ -86,28 +87,18 @@
       VISIT_SC(mask, data, visit(v));                 \
    }
 
+enum kind tree_node::get_kind(const std::string& input_name)
+{
+   static std::unordered_map<std::string, enum kind> to_kind = []() {
+      std::unordered_map<std::string, enum kind> out;
+      std::string name;
+
 #define NAME_KIND(r, data, elem)                                                    \
    name = #elem;                                                                    \
    name = name.substr(19);                                                          \
    name = name.substr(name.front() == ' ', name.find(')') - (name.front() == ' ')); \
-   string_to_kind[name] = BOOST_PP_CAT(elem, _K);
+   out[name] = BOOST_PP_CAT(elem, _K);
 
-#define KIND_NAME(r, data, elem)                                                    \
-   name = #elem;                                                                    \
-   name = name.substr(19);                                                          \
-   name = name.substr(name.front() == ' ', name.find(')') - (name.front() == ' ')); \
-   kind_to_string[BOOST_PP_CAT(elem, _K)] = name;
-
-std::map<std::string, enum kind> tree_node::string_to_kind;
-
-std::map<enum kind, std::string> tree_node::kind_to_string;
-
-enum kind tree_node::get_kind(const std::string& input_name)
-{
-   if(string_to_kind.empty())
-   {
-      // cppcheck-suppress unusedVariable
-      std::string name;
       BOOST_PP_SEQ_FOR_EACH(NAME_KIND, BOOST_PP_EMPTY, BINARY_EXPRESSION_TREE_NODES);
       BOOST_PP_SEQ_FOR_EACH(NAME_KIND, BOOST_PP_EMPTY, CONST_OBJ_TREE_NODES);
       BOOST_PP_SEQ_FOR_EACH(NAME_KIND, BOOST_PP_EMPTY, CPP_STMT_NODES);
@@ -121,21 +112,29 @@ enum kind tree_node::get_kind(const std::string& input_name)
       BOOST_PP_SEQ_FOR_EACH(NAME_KIND, BOOST_PP_EMPTY, TYPE_NODE_TREE_NODES);
       BOOST_PP_SEQ_FOR_EACH(NAME_KIND, BOOST_PP_EMPTY, UNARY_EXPRESSION_TREE_NODES(last_tree));
 #if HAVE_ASSERTS
-      for(const auto& sk : string_to_kind)
+      for(const auto& sk : out)
       {
          THROW_ASSERT(sk.first.find(' ') == std::string::npos,
                       "Kind name string should not contain spaces: '" + sk.first + "'");
       }
 #endif
-   }
-   return string_to_kind[input_name];
+      return out;
+   }();
+   return to_kind[input_name];
 }
 
 std::string tree_node::GetString(enum kind k)
 {
-   if(kind_to_string.empty())
-   {
+   static std::unordered_map<enum kind, std::string> to_string = []() {
+      std::unordered_map<enum kind, std::string> out;
       std::string name;
+
+#define KIND_NAME(r, data, elem)                                                    \
+   name = #elem;                                                                    \
+   name = name.substr(19);                                                          \
+   name = name.substr(name.front() == ' ', name.find(')') - (name.front() == ' ')); \
+   out[BOOST_PP_CAT(elem, _K)] = name;
+
       BOOST_PP_SEQ_FOR_EACH(KIND_NAME, BOOST_PP_EMPTY, BINARY_EXPRESSION_TREE_NODES);
       BOOST_PP_SEQ_FOR_EACH(KIND_NAME, BOOST_PP_EMPTY, CONST_OBJ_TREE_NODES);
       BOOST_PP_SEQ_FOR_EACH(KIND_NAME, BOOST_PP_EMPTY, CPP_STMT_NODES);
@@ -149,14 +148,16 @@ std::string tree_node::GetString(enum kind k)
       BOOST_PP_SEQ_FOR_EACH(KIND_NAME, BOOST_PP_EMPTY, TYPE_NODE_TREE_NODES);
       BOOST_PP_SEQ_FOR_EACH(KIND_NAME, BOOST_PP_EMPTY, UNARY_EXPRESSION_TREE_NODES(last_tree))
 #if HAVE_ASSERTS
-      for(const auto& ks : kind_to_string)
+      for(const auto& ks : out)
       {
          THROW_ASSERT(ks.second.find(' ') == std::string::npos,
                       "Kind name string should not contain spaces: '" + ks.second + "'");
       }
 #endif
-   }
-   return kind_to_string[k];
+
+      return out;
+   }();
+   return to_string[k];
 }
 
 BOOST_PP_SEQ_FOR_EACH(VISIT_TREE_NODE_MACRO, unary_expr, UNARY_EXPRESSION_TREE_NODES)
@@ -735,12 +736,11 @@ void expr_stmt::visit(tree_node_visitor* const v) const
    VISIT_MEMBER(mask, next, visit(v));
 }
 
-long long int field_decl::offset()
+integer_cst_t field_decl::offset()
 {
    if(bpos)
    {
-      auto* ic = GetPointer<integer_cst>(GET_NODE(bpos));
-      return tree_helper::get_integer_cst_value(ic);
+      return tree_helper::GetConstValue(bpos);
    }
    return 0;
 }
@@ -1185,10 +1185,10 @@ std::string record_type::get_maybe_name() const
    return "#UNKNOWN#";
 }
 
-tree_nodeRef record_type::get_field(long long int offset)
+tree_nodeRef record_type::get_field(integer_cst_t offset)
 {
    unsigned int i;
-   long long int fld_offset;
+   integer_cst_t fld_offset;
    field_decl* fd;
    for(i = 0; i < list_of_flds.size(); i++)
    {

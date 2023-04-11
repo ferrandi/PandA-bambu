@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -69,15 +69,9 @@
 #include "controller_cs.hpp"
 #include "fsm_controller.hpp"
 #include "pipeline_controller.hpp"
-#if HAVE_EXPERIMENTAL
-#include "ParallelController.hpp"
-#endif
 
 /// HLS backend include
 #include "generate_hdl.hpp"
-#if HAVE_EXPERIMENTAL
-#include "generate_resp.hpp"
-#endif
 #include "generate_simulation_scripts.hpp"
 #include "generate_synthesis_scripts.hpp"
 #if HAVE_TASTE
@@ -97,10 +91,6 @@
 /// HLS/binding/register/algorithms includes
 #include "chordal_coloring_register.hpp"
 #include "compatibility_based_register.hpp"
-#if HAVE_EXPERIMENTAL
-#include "k_cofamily_register.hpp"
-#include "left_edge_register.hpp"
-#endif
 #include "unique_binding_register.hpp"
 #include "vertex_coloring_register.hpp"
 #include "weighted_clique_register.hpp"
@@ -109,9 +99,6 @@
 #include "values_scheme.hpp"
 
 /// HLS/chaining
-#if HAVE_EXPERIMENTAL
-#include "epdg_sched_based_chaining_computation.hpp"
-#endif
 #include "sched_based_chaining_computation.hpp"
 
 /// HLS/evaluation
@@ -119,24 +106,8 @@
 #include "evaluation.hpp"
 
 /// HLS/evaluation/exact includes
-#if HAVE_EXPERIMENTAL
-#include "edges_reduction_evaluation.hpp"
-#include "num_AF_edges_evaluation.hpp"
-#endif
 #include "simulation_evaluation.hpp"
 #include "synthesis_evaluation.hpp"
-
-/// HLS/evaluation/linear includes
-#if HAVE_EXPERIMENTAL
-#include "area_estimation.hpp"
-#include "clock_slack_estimation.hpp"
-#include "time_estimation.hpp"
-#endif
-
-#if HAVE_EXPERIMENTAL
-/// HLS/export include
-#include "export_pcore.hpp"
-#endif
 
 /// HLS/function_allocation
 #include "fun_dominator_allocation.hpp"
@@ -147,20 +118,10 @@
 
 /// HLS/hls_flow includes
 #include "classical_synthesis_flow.hpp"
-#if HAVE_EXPERIMENTAL && HAVE_BEAGLE
-#include "dse_hls.hpp"
-#endif
-#if HAVE_EXPERIMENTAL
-#include "dump_hls.hpp"
-#include "explore_mux_hls.hpp"
-#include "fu_reg_binding_hls.hpp"
-#endif
+#include "dominator_allocation.hpp"
 #include "initialize_hls.hpp"
 #if HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
 #include "omp_body_loop_synthesis_flow.hpp"
-#endif
-#if HAVE_EXPERIMENTAL && HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
-#include "omp_for_wrapper_synthesis_flow.hpp"
 #endif
 #if HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
 #include "omp_for_wrapper_cs_synthesis_flow.hpp"
@@ -168,9 +129,6 @@
 #include "standard_hls.hpp"
 #include "virtual_hls.hpp"
 #include "write_hls_summary.hpp"
-#if HAVE_EXPERIMENTAL
-#include "xml_config_hls.hpp"
-#endif
 
 /// HLS/hls_flow/synthesis includes
 #include "hls_synthesis_flow.hpp"
@@ -180,37 +138,18 @@
 #include "taste_interface_generation.hpp"
 #endif
 
-#if HAVE_EXPERIMENTAL
-/// HLS/interface/AXI include
-#include "axi4lite_interface.hpp"
-
-/// HLS/interface/FSL include
-#include "FSL_interface.hpp"
-#endif
-
 #include "cs_interface.hpp"
 #include "minimal_interface.hpp"
-
-/// HLS/interface/NPI include
-#if HAVE_EXPERIMENTAL
-#include "NPI_interface.hpp"
-#endif
 
 /// HLS/interface/WB4 includes
 #include "WB4Intercon_interface.hpp"
 #include "WB4_interface.hpp"
 
 /// HLS/liveness includes
-#if HAVE_EXPERIMENTAL
-#include "chaining_based_liveness.hpp"
-#endif
 #include "FSM_NI_SSA_liveness.hpp"
 
 /// HLS/memory includes
 #include "memory.hpp"
-#if HAVE_EXPERIMENTAL
-#include "memory_conflict_graph.hpp"
-#endif
 
 /// HLS/memory
 #include "mem_dominator_allocation.hpp"
@@ -225,17 +164,10 @@
 #endif
 
 /// HLS/scheduling include
-#if HAVE_ILP_BUILT && HAVE_EXPERIMENTAL
-#include "ilp_scheduling.hpp"
-#include "ilp_scheduling_new.hpp"
-#endif
 #include "parametric_list_based.hpp"
 #include "scheduling.hpp"
 #if HAVE_ILP_BUILT
 #include "sdc_scheduling.hpp"
-#endif
-#if HAVE_ILP_BUILT && HAVE_EXPERIMENTAL
-#include "silp_scheduling.hpp"
 #endif
 
 /// HLS/simulation includes
@@ -314,20 +246,6 @@ HLSFlowStepFactory::CreateHLSFlowStep(const HLSFlowStep_Type type, const unsigne
          design_flow_step = DesignFlowStepRef(new allocation(parameters, HLS_mgr, funId, design_flow_manager.lock()));
          break;
       }
-#if HAVE_EXPERIMENTAL
-      case HLSFlowStep_Type::AREA_ESTIMATION:
-      {
-         design_flow_step =
-             DesignFlowStepRef(new area_estimation(parameters, HLS_mgr, funId, design_flow_manager.lock()));
-         break;
-      }
-      case HLSFlowStep_Type::AXI4LITE_INTERFACE_GENERATION:
-      {
-         design_flow_step =
-             DesignFlowStepRef(new axi4lite_interface(parameters, HLS_mgr, funId, design_flow_manager.lock()));
-         break;
-      }
-#endif
       case HLSFlowStep_Type::BB_STG_CREATOR:
       {
          design_flow_step = DesignFlowStepRef(new BB_based_stg(parameters, HLS_mgr, funId, design_flow_manager.lock()));
@@ -344,14 +262,6 @@ HLSFlowStepFactory::CreateHLSFlowStep(const HLSFlowStep_Type type, const unsigne
              parameters, HLS_mgr, funId, design_flow_manager.lock(), hls_flow_step_specialization));
          break;
       }
-#if HAVE_EXPERIMENTAL
-      case HLSFlowStep_Type::CHAINING_BASED_LIVENESS:
-      {
-         design_flow_step =
-             DesignFlowStepRef(new chaining_based_liveness(parameters, HLS_mgr, funId, design_flow_manager.lock()));
-         break;
-      }
-#endif
       case HLSFlowStep_Type::CHORDAL_COLORING_REGISTER_BINDING:
       {
          design_flow_step =
@@ -382,14 +292,6 @@ HLSFlowStepFactory::CreateHLSFlowStep(const HLSFlowStep_Type type, const unsigne
              DesignFlowStepRef(new ClassicalHLSSynthesisFlow(parameters, HLS_mgr, design_flow_manager.lock()));
          break;
       }
-#if HAVE_EXPERIMENTAL
-      case HLSFlowStep_Type::CLOCK_SLACK_ESTIMATION:
-      {
-         design_flow_step =
-             DesignFlowStepRef(new clock_slack_estimation(parameters, HLS_mgr, design_flow_manager.lock()));
-         break;
-      }
-#endif
       case HLSFlowStep_Type::COLORING_REGISTER_BINDING:
       {
          design_flow_step =
@@ -405,6 +307,12 @@ HLSFlowStepFactory::CreateHLSFlowStep(const HLSFlowStep_Type type, const unsigne
       case HLSFlowStep_Type::C_TESTBENCH_EXECUTION:
       {
          design_flow_step = DesignFlowStepRef(new CTestbenchExecution(parameters, HLS_mgr, design_flow_manager.lock()));
+         break;
+      }
+      case HLSFlowStep_Type::DOMINATOR_ALLOCATION:
+      {
+         design_flow_step =
+             DesignFlowStepRef(new dominator_allocation(parameters, HLS_mgr, design_flow_manager.lock()));
          break;
       }
       case HLSFlowStep_Type::DOMINATOR_FUNCTION_ALLOCATION:
@@ -444,59 +352,17 @@ HLSFlowStepFactory::CreateHLSFlowStep(const HLSFlowStep_Type type, const unsigne
              DesignFlowStepRef(new easy_module_binding(parameters, HLS_mgr, funId, design_flow_manager.lock()));
          break;
       }
-#if HAVE_EXPERIMENTAL
-      case HLSFlowStep_Type::DUMP_DESIGN_FLOW:
-      {
-         design_flow_step = DesignFlowStepRef(new dump_hls(parameters, HLS_mgr, funId, design_flow_manager.lock()));
-         break;
-      }
-#endif
       case HLSFlowStep_Type::LIST_BASED_SCHEDULING:
       {
          design_flow_step = DesignFlowStepRef(new parametric_list_based(
              parameters, HLS_mgr, funId, design_flow_manager.lock(), hls_flow_step_specialization));
          break;
       }
-#if HAVE_EXPERIMENTAL
-      case HLSFlowStep_Type::EDGES_REDUCTION_EVALUATION:
-      {
-         design_flow_step =
-             DesignFlowStepRef(new edges_reduction_evaluation(parameters, HLS_mgr, funId, design_flow_manager.lock()));
-         break;
-      }
-      case HLSFlowStep_Type::EPDG_SCHED_CHAINING:
-      {
-         design_flow_step = DesignFlowStepRef(
-             new epdg_sched_based_chaining_computation(parameters, HLS_mgr, funId, design_flow_manager.lock()));
-         break;
-      }
-#endif
       case HLSFlowStep_Type::EVALUATION:
       {
          design_flow_step = DesignFlowStepRef(new Evaluation(parameters, HLS_mgr, design_flow_manager.lock()));
          break;
       }
-#if HAVE_EXPERIMENTAL
-      case HLSFlowStep_Type::EXPLORE_MUX_DESIGN_FLOW:
-      {
-         design_flow_step =
-             DesignFlowStepRef(new explore_mux_hls(parameters, HLS_mgr, funId, design_flow_manager.lock()));
-         break;
-      }
-      case HLSFlowStep_Type::EXPORT_PCORE:
-      {
-         design_flow_step = DesignFlowStepRef(new export_pcore(parameters, HLS_mgr, funId, design_flow_manager.lock()));
-         break;
-      }
-#endif
-#if HAVE_EXPERIMENTAL
-      case HLSFlowStep_Type::FSL_INTERFACE_GENERATION:
-      {
-         design_flow_step =
-             DesignFlowStepRef(new FSL_interface(parameters, HLS_mgr, funId, design_flow_manager.lock()));
-         break;
-      }
-#endif
       case HLSFlowStep_Type::FSM_CONTROLLER_CREATOR:
       {
          design_flow_step =
@@ -515,27 +381,11 @@ HLSFlowStepFactory::CreateHLSFlowStep(const HLSFlowStep_Type type, const unsigne
              DesignFlowStepRef(new FSM_NI_SSA_liveness(parameters, HLS_mgr, funId, design_flow_manager.lock()));
          break;
       }
-#if HAVE_EXPERIMENTAL
-      case HLSFlowStep_Type::FU_REG_BINDING_DESIGN_FLOW:
-      {
-         design_flow_step =
-             DesignFlowStepRef(new fu_reg_binding_hls(parameters, HLS_mgr, funId, design_flow_manager.lock()));
-         break;
-      }
-#endif
       case HLSFlowStep_Type::GENERATE_HDL:
       {
          design_flow_step = DesignFlowStepRef(new generate_hdl(parameters, HLS_mgr, design_flow_manager.lock()));
          break;
       }
-#if HAVE_EXPERIMENTAL
-      case HLSFlowStep_Type::GENERATE_RESP:
-      {
-         design_flow_step =
-             DesignFlowStepRef(new generate_resp(parameters, HLS_mgr, funId, design_flow_manager.lock()));
-         break;
-      }
-#endif
 #if HAVE_SIMULATION_WRAPPER_BUILT
       case HLSFlowStep_Type::GENERATE_SIMULATION_SCRIPT:
       {
@@ -587,20 +437,6 @@ HLSFlowStepFactory::CreateHLSFlowStep(const HLSFlowStep_Type type, const unsigne
              DesignFlowStepRef(new HWDiscrepancyAnalysis(parameters, HLS_mgr, design_flow_manager.lock()));
          break;
       }
-#if HAVE_ILP_BUILT && HAVE_EXPERIMENTAL
-      case HLSFlowStep_Type::ILP_NEW_FORM_SCHEDULING:
-      {
-         design_flow_step =
-             DesignFlowStepRef(new ilp_scheduling_new(parameters, HLS_mgr, funId, design_flow_manager.lock()));
-         break;
-      }
-      case HLSFlowStep_Type::ILP_SCHEDULING:
-      {
-         design_flow_step =
-             DesignFlowStepRef(new ilp_scheduling(parameters, HLS_mgr, funId, design_flow_manager.lock()));
-         break;
-      }
-#endif
       case HLSFlowStep_Type::INITIALIZE_HLS:
       {
          design_flow_step =
@@ -612,28 +448,6 @@ HLSFlowStepFactory::CreateHLSFlowStep(const HLSFlowStep_Type type, const unsigne
          design_flow_step = DesignFlowStepRef(new cs_interface(parameters, HLS_mgr, funId, design_flow_manager.lock()));
          break;
       }
-#if HAVE_EXPERIMENTAL
-      case HLSFlowStep_Type::K_COFAMILY_REGISTER_BINDING:
-      {
-         design_flow_step =
-             DesignFlowStepRef(new k_cofamily_register(parameters, HLS_mgr, funId, design_flow_manager.lock()));
-         break;
-      }
-      case HLSFlowStep_Type::LEFT_EDGE_REGISTER_BINDING:
-      {
-         design_flow_step =
-             DesignFlowStepRef(new left_edge_register(parameters, HLS_mgr, funId, design_flow_manager.lock()));
-         break;
-      }
-#endif
-#if HAVE_EXPERIMENTAL
-      case HLSFlowStep_Type::MEMORY_CONFLICT_GRAPH:
-      {
-         design_flow_step =
-             DesignFlowStepRef(new mem_conflict_graph(parameters, HLS_mgr, funId, design_flow_manager.lock()));
-         break;
-      }
-#endif
       case HLSFlowStep_Type::MINIMAL_INTERFACE_GENERATION:
       {
          design_flow_step =
@@ -658,20 +472,6 @@ HLSFlowStepFactory::CreateHLSFlowStep(const HLSFlowStep_Type type, const unsigne
              DesignFlowStepRef(new mux_connection_binding(parameters, HLS_mgr, funId, design_flow_manager.lock()));
          break;
       }
-#if HAVE_EXPERIMENTAL
-      case HLSFlowStep_Type::NPI_INTERFACE_GENERATION:
-      {
-         design_flow_step =
-             DesignFlowStepRef(new NPI_interface(parameters, HLS_mgr, funId, design_flow_manager.lock()));
-         break;
-      }
-      case HLSFlowStep_Type::NUM_AF_EDGES_EVALUATION:
-      {
-         design_flow_step =
-             DesignFlowStepRef(new NumAFEdgesEvaluation(parameters, HLS_mgr, funId, design_flow_manager.lock()));
-         break;
-      }
-#endif
 #if HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
       case HLSFlowStep_Type::OMP_ALLOCATION:
       {
@@ -685,14 +485,6 @@ HLSFlowStepFactory::CreateHLSFlowStep(const HLSFlowStep_Type type, const unsigne
       {
          design_flow_step =
              DesignFlowStepRef(new OmpBodyLoopSynthesisFlow(parameters, HLS_mgr, funId, design_flow_manager.lock()));
-         break;
-      }
-#endif
-#if HAVE_EXPERIMENTAL && HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
-      case HLSFlowStep_Type::OMP_FOR_WRAPPER_SYNTHESIS_FLOW:
-      {
-         design_flow_step =
-             DesignFlowStepRef(new OmpForWrapperSynthesisFlow(parameters, HLS_mgr, funId, design_flow_manager.lock()));
          break;
       }
 #endif
@@ -720,14 +512,6 @@ HLSFlowStepFactory::CreateHLSFlowStep(const HLSFlowStep_Type type, const unsigne
          break;
       }
 #endif
-#if HAVE_EXPERIMENTAL
-      case HLSFlowStep_Type::PARALLEL_CONTROLLER_CREATOR:
-      {
-         design_flow_step =
-             DesignFlowStepRef(new ParallelController(parameters, HLS_mgr, funId, design_flow_manager.lock()));
-         break;
-      }
-#endif
       case HLSFlowStep_Type::PIPELINE_CONTROLLER_CREATOR:
       {
          design_flow_step =
@@ -751,14 +535,6 @@ HLSFlowStepFactory::CreateHLSFlowStep(const HLSFlowStep_Type type, const unsigne
       {
          design_flow_step = DesignFlowStepRef(
              new SDCScheduling(parameters, HLS_mgr, funId, design_flow_manager.lock(), hls_flow_step_specialization));
-         break;
-      }
-#endif
-#if HAVE_ILP_BUILT && HAVE_EXPERIMENTAL
-      case HLSFlowStep_Type::SILP_SCHEDULING:
-      {
-         design_flow_step =
-             DesignFlowStepRef(new silp_scheduling(parameters, HLS_mgr, funId, design_flow_manager.lock()));
          break;
       }
 #endif
@@ -816,14 +592,6 @@ HLSFlowStepFactory::CreateHLSFlowStep(const HLSFlowStep_Type type, const unsigne
          design_flow_step = DesignFlowStepRef(new TestVectorParser(parameters, HLS_mgr, design_flow_manager.lock()));
          break;
       }
-#if HAVE_EXPERIMENTAL
-      case HLSFlowStep_Type::TIME_ESTIMATION:
-      {
-         design_flow_step =
-             DesignFlowStepRef(new time_estimation(parameters, HLS_mgr, funId, design_flow_manager.lock()));
-         break;
-      }
-#endif
       case HLSFlowStep_Type::TOP_ENTITY_CREATION:
       {
          design_flow_step = DesignFlowStepRef(new top_entity(parameters, HLS_mgr, funId, design_flow_manager.lock()));
@@ -914,13 +682,6 @@ HLSFlowStepFactory::CreateHLSFlowStep(const HLSFlowStep_Type type, const unsigne
          design_flow_step = DesignFlowStepRef(new WriteHLSSummary(parameters, HLS_mgr, design_flow_manager.lock()));
          break;
       }
-#if HAVE_EXPERIMENTAL
-      case HLSFlowStep_Type::XML_HLS_SYNTHESIS_FLOW:
-      {
-         design_flow_step = DesignFlowStepRef(new XMLHLSSynthesisFlow(parameters, HLS_mgr, design_flow_manager.lock()));
-         break;
-      }
-#endif
       case HLSFlowStep_Type::UNKNOWN:
       {
          THROW_UNREACHABLE("");
@@ -958,6 +719,7 @@ const DesignFlowStepSet HLSFlowStepFactory::CreateHLSFlowSteps(
          }
          case HLSFlowStep_Type::CALL_GRAPH_UNFOLDING:
          case HLSFlowStep_Type::CLASSICAL_HLS_SYNTHESIS_FLOW:
+         case HLSFlowStep_Type::DOMINATOR_ALLOCATION:
          case HLSFlowStep_Type::DOMINATOR_MEMORY_ALLOCATION:
          case HLSFlowStep_Type::DOMINATOR_MEMORY_ALLOCATION_CS:
          case HLSFlowStep_Type::DOMINATOR_FUNCTION_ALLOCATION:
@@ -974,9 +736,6 @@ const DesignFlowStepSet HLSFlowStepFactory::CreateHLSFlowSteps(
          case HLSFlowStep_Type::VCD_UTILITY:
 #endif
          case HLSFlowStep_Type::WRITE_HLS_SUMMARY:
-#if HAVE_EXPERIMENTAL
-         case HLSFlowStep_Type::XML_HLS_SYNTHESIS_FLOW:
-#endif
 
          {
             ret.insert(CreateHLSFlowStep(hls_flow_step.first, 0, hls_flow_step.second));
@@ -985,21 +744,11 @@ const DesignFlowStepSet HLSFlowStepFactory::CreateHLSFlowSteps(
          case HLSFlowStep_Type::UNKNOWN:
          case HLSFlowStep_Type::ADD_LIBRARY:
          case HLSFlowStep_Type::ALLOCATION:
-#if HAVE_EXPERIMENTAL
-         case HLSFlowStep_Type::AREA_ESTIMATION:
-         case HLSFlowStep_Type::AXI4LITE_INTERFACE_GENERATION:
-#endif
          case HLSFlowStep_Type::BB_STG_CREATOR:
          case HLSFlowStep_Type::HLS_FUNCTION_BIT_VALUE:
          case HLSFlowStep_Type::CDFC_MODULE_BINDING:
-#if HAVE_EXPERIMENTAL
-         case HLSFlowStep_Type::CHAINING_BASED_LIVENESS:
-#endif
          case HLSFlowStep_Type::CHORDAL_COLORING_REGISTER_BINDING:
          case HLSFlowStep_Type::CLASSIC_DATAPATH_CREATOR:
-#if HAVE_EXPERIMENTAL
-         case HLSFlowStep_Type::CLOCK_SLACK_ESTIMATION:
-#endif
          case HLSFlowStep_Type::COLORING_REGISTER_BINDING:
          case HLSFlowStep_Type::CONTROL_FLOW_CHECKER:
          case HLSFlowStep_Type::C_TESTBENCH_EXECUTION:
@@ -1008,62 +757,26 @@ const DesignFlowStepSet HLSFlowStepFactory::CreateHLSFlowSteps(
 #if HAVE_BEAGLE
          case HLSFlowStep_Type::DSE_DESIGN_FLOW:
 #endif
-#if HAVE_EXPERIMENTAL
-         case HLSFlowStep_Type::DUMP_DESIGN_FLOW:
-#endif
          case HLSFlowStep_Type::EASY_MODULE_BINDING:
-#if HAVE_EXPERIMENTAL
-         case HLSFlowStep_Type::EDGES_REDUCTION_EVALUATION:
-#endif
-#if HAVE_EXPERIMENTAL
-         case HLSFlowStep_Type::EPDG_SCHED_CHAINING:
-         case HLSFlowStep_Type::EXPLORE_MUX_DESIGN_FLOW:
-         case HLSFlowStep_Type::EXPORT_PCORE:
-#endif
-#if HAVE_EXPERIMENTAL
-         case HLSFlowStep_Type::FSL_INTERFACE_GENERATION:
-#endif
          case HLSFlowStep_Type::FSM_CONTROLLER_CREATOR:
          case HLSFlowStep_Type::FSM_CS_CONTROLLER_CREATOR:
          case HLSFlowStep_Type::FSM_NI_SSA_LIVENESS:
-#if HAVE_EXPERIMENTAL
-         case HLSFlowStep_Type::FU_REG_BINDING_DESIGN_FLOW:
-         case HLSFlowStep_Type::GENERATE_RESP:
-#endif
 #if HAVE_TASTE
          case HLSFlowStep_Type::GENERATE_TASTE_HDL_ARCHITECTURE:
          case HLSFlowStep_Type::GENERATE_TASTE_SYNTHESIS_SCRIPT:
 #endif
-#if HAVE_ILP_BUILT && HAVE_EXPERIMENTAL
-         case HLSFlowStep_Type::ILP_NEW_FORM_SCHEDULING:
-         case HLSFlowStep_Type::ILP_SCHEDULING:
-#endif
          case HLSFlowStep_Type::INFERRED_INTERFACE_GENERATION:
          case HLSFlowStep_Type::INITIALIZE_HLS:
          case HLSFlowStep_Type::INTERFACE_CS_GENERATION:
-#if HAVE_EXPERIMENTAL
-         case HLSFlowStep_Type::K_COFAMILY_REGISTER_BINDING:
-         case HLSFlowStep_Type::LEFT_EDGE_REGISTER_BINDING:
-#endif
          case HLSFlowStep_Type::LIST_BASED_SCHEDULING:
-#if HAVE_EXPERIMENTAL
-         case HLSFlowStep_Type::MEMORY_CONFLICT_GRAPH:
-#endif
          case HLSFlowStep_Type::MINIMAL_INTERFACE_GENERATION:
          case HLSFlowStep_Type::MINIMAL_TESTBENCH_GENERATION:
          case HLSFlowStep_Type::MUX_INTERCONNECTION_BINDING:
-#if HAVE_EXPERIMENTAL
-         case HLSFlowStep_Type::NPI_INTERFACE_GENERATION:
-         case HLSFlowStep_Type::NUM_AF_EDGES_EVALUATION:
-#endif
 #if HAVE_FROM_PRAGMA_BUILT
          case HLSFlowStep_Type::OMP_ALLOCATION:
 #endif
 #if HAVE_FROM_PRAGMA_BUILT
          case HLSFlowStep_Type::OMP_BODY_LOOP_SYNTHESIS_FLOW:
-#endif
-#if HAVE_EXPERIMENTAL && HAVE_FROM_PRAGMA_BUILT
-         case HLSFlowStep_Type::OMP_FOR_WRAPPER_SYNTHESIS_FLOW:
 #endif
 #if HAVE_FROM_PRAGMA_BUILT
          case HLSFlowStep_Type::OMP_FOR_WRAPPER_CS_SYNTHESIS_FLOW:
@@ -1074,17 +787,11 @@ const DesignFlowStepSet HLSFlowStepFactory::CreateHLSFlowSteps(
 #if HAVE_FROM_PRAGMA_BUILT
          case HLSFlowStep_Type::OMP_FUNCTION_ALLOCATION_CS:
 #endif
-#if HAVE_EXPERIMENTAL
-         case HLSFlowStep_Type::PARALLEL_CONTROLLER_CREATOR:
-#endif
          case HLSFlowStep_Type::PIPELINE_CONTROLLER_CREATOR:
          case HLSFlowStep_Type::PORT_SWAPPING:
          case HLSFlowStep_Type::SCHED_CHAINING:
 #if HAVE_ILP_BUILT
          case HLSFlowStep_Type::SDC_SCHEDULING:
-#endif
-#if HAVE_ILP_BUILT && HAVE_EXPERIMENTAL
-         case HLSFlowStep_Type::SILP_SCHEDULING:
 #endif
 #if HAVE_SIMULATION_WRAPPER_BUILT
          case HLSFlowStep_Type::SIMULATION_EVALUATION:
@@ -1095,9 +802,6 @@ const DesignFlowStepSet HLSFlowStepFactory::CreateHLSFlowSteps(
 #endif
 #if HAVE_TASTE
          case HLSFlowStep_Type::TASTE_INTERFACE_GENERATION:
-#endif
-#if HAVE_EXPERIMENTAL
-         case HLSFlowStep_Type::TIME_ESTIMATION:
 #endif
          case HLSFlowStep_Type::TOP_ENTITY_CREATION:
          case HLSFlowStep_Type::TOP_ENTITY_CS_CREATION:

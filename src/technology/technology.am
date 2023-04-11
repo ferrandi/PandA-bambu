@@ -101,12 +101,14 @@ technology/target_device/FPGA/EP2C70F896C6.data technology/target_device/FPGA/EP
 technology/target_device/FPGA/EP4SGX530KH40C2.data \
 technology/target_device/FPGA/5CSEMA5F31C6.data technology/target_device/FPGA/5SGXEA7N2F45C1.data\
 technology/target_device/FPGA/xc7z020-1clg484-VVD.data technology/target_device/FPGA/xc7z045-2ffg900-VVD.data technology/target_device/FPGA/xc7vx485t-2ffg1761-VVD.data technology/target_device/FPGA/xc7vx690t-3ffg1930-VVD.data\
-technology/target_device/FPGA/xc7a100t-1csg324-VVD.data\
+technology/target_device/FPGA/xc7a100t-1csg324-VVD.data \
+technology/target_device/FPGA/xcku060-3ffva1156-VVD.data \
+technology/target_device/FPGA/xcu280-2Lfsvh2892-VVD.data \
 technology/target_device/FPGA/xc7z020-1clg484-YOSYS-VVD.data \
 technology/target_device/FPGA/LFE335EA8FN484C.data \
 technology/target_device/FPGA/LFE5UM85F8BG756C.data \
 technology/target_device/FPGA/LFE5U85F8BG756C.data \
-technology/target_device/FPGA/nx1h35S.data technology/target_device/FPGA/nx1h140tsp.data \
+technology/target_device/FPGA/nx1h35S.data technology/target_device/FPGA/nx1h140tsp.data technology/target_device/FPGA/nx2h540tsc.data \
 technology/target_device/FPGA/nangate45.data\
 technology/target_device/FPGA/asap7-BC.data \
 technology/target_device/FPGA/asap7-TC.data \
@@ -118,12 +120,14 @@ technology/target_device/FPGA/EP2C70F896C6.data technology/target_device/FPGA/EP
 technology/target_device/FPGA/EP4SGX530KH40C2.data \
 technology/target_device/FPGA/5CSEMA5F31C6.data technology/target_device/FPGA/5SGXEA7N2F45C1.data\
 technology/target_device/FPGA/xc7z020-1clg484-VVD.data technology/target_device/FPGA/xc7z045-2ffg900-VVD.data technology/target_device/FPGA/xc7vx485t-2ffg1761-VVD.data technology/target_device/FPGA/xc7vx690t-3ffg1930-VVD.data\
-technology/target_device/FPGA/xc7a100t-1csg324-VVD.data\
+technology/target_device/FPGA/xc7a100t-1csg324-VVD.data \
+technology/target_device/FPGA/xcku060-3ffva1156-VVD.data \
+technology/target_device/FPGA/xcu280-2Lfsvh2892-VVD.data \
 technology/target_device/FPGA/xc7z020-1clg484-YOSYS-VVD.data \
 technology/target_device/FPGA/LFE335EA8FN484C.data \
 technology/target_device/FPGA/LFE5UM85F8BG756C.data \
 technology/target_device/FPGA/LFE5U85F8BG756C.data \
-technology/target_device/FPGA/nx1h35S.data technology/target_device/FPGA/nx1h140tsp.data \
+technology/target_device/FPGA/nx1h35S.data technology/target_device/FPGA/nx1h140tsp.data technology/target_device/FPGA/nx2h540tsc.data \
 technology/target_device/FPGA/nangate45.data\
 technology/target_device/FPGA/asap7-BC.data\
 technology/target_device/FPGA/asap7-TC.data\
@@ -166,6 +170,12 @@ technology/target_device/FPGA/xc7vx485t-2ffg1761-VVD.data: $(top_srcdir)/etc/dev
 technology/target_device/FPGA/xc7vx690t-3ffg1930-VVD.data: $(top_srcdir)/etc/devices/Xilinx_devices/xc7vx690t-3ffg1930-VVD.xml
 	gzip -c  $(top_srcdir)/etc/devices/Xilinx_devices/xc7vx690t-3ffg1930-VVD.xml > technology/target_device/FPGA/xc7vx690t-3ffg1930-VVD.data
 
+technology/target_device/FPGA/xcku060-3ffva1156-VVD.data: $(top_srcdir)/etc/devices/Xilinx_devices/xcku060-3ffva1156-VVD.xml
+	gzip -c  $(top_srcdir)/etc/devices/Xilinx_devices/xcku060-3ffva1156-VVD.xml > technology/target_device/FPGA/xcku060-3ffva1156-VVD.data
+
+technology/target_device/FPGA/xcu280-2Lfsvh2892-VVD.data: $(top_srcdir)/etc/devices/Xilinx_devices/xcu280-2Lfsvh2892-VVD.xml
+	gzip -c  $(top_srcdir)/etc/devices/Xilinx_devices/xcu280-2Lfsvh2892-VVD.xml > technology/target_device/FPGA/xcu280-2Lfsvh2892-VVD.data
+
 technology/target_device/FPGA/xc7a100t-1csg324-VVD.data: $(top_srcdir)/etc/devices/Xilinx_devices/xc7a100t-1csg324-VVD.xml
 	gzip -c  $(top_srcdir)/etc/devices/Xilinx_devices/xc7a100t-1csg324-VVD.xml > technology/target_device/FPGA/xc7a100t-1csg324-VVD.data
 
@@ -202,6 +212,9 @@ technology/target_device/FPGA/nx1h35S.data: $(top_srcdir)/etc/devices/NanoXplore
 technology/target_device/FPGA/nx1h140tsp.data: $(top_srcdir)/etc/devices/NanoXplore_devices/nx1h140tsp.xml
 	gzip -c  $(top_srcdir)/etc/devices/NanoXplore_devices/nx1h140tsp.xml > technology/target_device/FPGA/nx1h140tsp.data
 
+technology/target_device/FPGA/nx2h540tsc.data: $(top_srcdir)/etc/devices/NanoXplore_devices/nx2h540tsc.xml
+	gzip -c  $(top_srcdir)/etc/devices/NanoXplore_devices/nx2h540tsc.xml > technology/target_device/FPGA/nx2h540tsc.data
+
 technology/target_device/FPGA/nangate45.data: $(top_srcdir)/etc/devices/Generic_devices/nangate45.xml
 	gzip -c  $(top_srcdir)/etc/devices/Generic_devices/nangate45.xml > technology/target_device/FPGA/nangate45.data
 
@@ -223,12 +236,14 @@ technology_target_device_FPGA__DATA = technology/target_device/FPGA/xc4vlx100-10
                                       technology/target_device/FPGA/EP4SGX530KH40C2.data \
                                       technology/target_device/FPGA/5CSEMA5F31C6.data technology/target_device/FPGA/5SGXEA7N2F45C1.data\
                                       technology/target_device/FPGA/xc7z020-1clg484-VVD.data technology/target_device/FPGA/xc7z045-2ffg900-VVD.data technology/target_device/FPGA/xc7vx485t-2ffg1761-VVD.data technology/target_device/FPGA/xc7vx690t-3ffg1930-VVD.data\
-                                      technology/target_device/FPGA/xc7a100t-1csg324-VVD.data\
+                                      technology/target_device/FPGA/xc7a100t-1csg324-VVD.data \
+                                      technology/target_device/FPGA/xcku060-3ffva1156-VVD.data \
+                                      technology/target_device/FPGA/xcu280-2Lfsvh2892-VVD.data \
                                       technology/target_device/FPGA/xc7z020-1clg484-YOSYS-VVD.data \
                                       technology/target_device/FPGA/LFE335EA8FN484C.data \
                                       technology/target_device/FPGA/LFE5UM85F8BG756C.data \
                                       technology/target_device/FPGA/LFE5U85F8BG756C.data \
-                                      technology/target_device/FPGA/nx1h35S.data technology/target_device/FPGA/nx1h140tsp.data \
+                                      technology/target_device/FPGA/nx1h35S.data technology/target_device/FPGA/nx1h140tsp.data technology/target_device/FPGA/nx2h540tsc.data \
                                       technology/target_device/FPGA/nangate45.data \
                                       technology/target_device/FPGA/asap7-BC.data\
                                       technology/target_device/FPGA/asap7-TC.data\
@@ -279,8 +294,8 @@ technology/target_device/IC/IC_device.cpp : technology/target_device/IC/Nangate.
 technology/target_device/IC/Nangate.data: $(top_srcdir)/etc/devices/ASIC_devices/Nangate_device.xml
 	gzip -c $(top_srcdir)/etc/devices/ASIC_devices/Nangate_device.xml > technology/target_device/IC/Nangate.data
 
-technology_target_device_IC_dir = $(technology_target_device_dir)/IC
-technology_target_device_IC__DATA = technology/target_device/IC/Nangate.data
+  technology_target_device_IC_dir = $(technology_target_device_dir)/IC
+  technology_target_device_IC__DATA = technology/target_device/IC/Nangate.data
 
   lib_target_device_la_LIBADD += lib_IC_device.la
 endif

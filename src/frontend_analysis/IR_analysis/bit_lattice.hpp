@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -49,6 +49,7 @@
 #include "custom_set.hpp"
 #include <deque>
 
+#include "panda_types.hpp"
 #include "refcount.hpp"
 
 CONSTREF_FORWARD_DECL(Parameter);
@@ -199,9 +200,9 @@ class BitLatticeManipulator
    static std::deque<bit_lattice> inf(const std::deque<bit_lattice>& a, const std::deque<bit_lattice>& b,
                                       const size_t out_type_size, const bool out_is_signed, const bool out_is_bool);
 
-   static unsigned int Size(const tree_nodeConstRef& t);
+   static unsigned long long Size(const tree_nodeConstRef& t);
 
-   static unsigned int size(const tree_managerConstRef tm, unsigned int index);
+   static unsigned long long size(const tree_managerConstRef tm, unsigned int index);
 
    static bool isBetter(const std::string& a_string, const std::string& b_string);
 };
@@ -218,7 +219,7 @@ std::deque<bit_lattice> create_u_bitstring(size_t lenght);
  * @param lenght the lenght of the bitstring
  * @return a bitstring of the specified length containing <X> values.
  */
-std::deque<bit_lattice> create_x_bitstring(unsigned int lenght);
+std::deque<bit_lattice> create_x_bitstring(size_t lenght);
 
 /**
  * Creates a bitstring from a constant input
@@ -227,7 +228,8 @@ std::deque<bit_lattice> create_x_bitstring(unsigned int lenght);
  * @param signed_value specified if this bitstring can have negative values
  * @return bitstring generated from the integer constant
  */
-std::deque<bit_lattice> create_bitstring_from_constant(long long int value_int, unsigned int length, bool signed_value);
+std::deque<bit_lattice> create_bitstring_from_constant(integer_cst_t value_int, unsigned long long length,
+                                                       bool signed_value);
 
 /**
  * Translates a bitstring ( expressed as an std::deque of bit_lattice ) into a string of characters.

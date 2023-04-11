@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -44,7 +44,6 @@
 #include "config_HAVE_ASSERTS.hpp"
 #include "config_HAVE_BAMBU_BUILT.hpp"
 #include "config_HAVE_TECHNOLOGY_BUILT.hpp"
-#include "config_HAVE_TUCANO_BUILT.hpp"
 #include "config_RELEASE.hpp"
 
 #include "HDL_manager.hpp"                    // for structur...
@@ -79,10 +78,6 @@
 
 /// utility include
 #include "string_manipulation.hpp"
-
-#if HAVE_EXPERIMENTAL
-#include "layout_model.hpp"
-#endif
 
 inline std::string legalize(const std::string& id)
 {
@@ -192,7 +187,7 @@ void structural_type_descriptor::print(std::ostream& os) const
       case BOOL:
       {
          THROW_ASSERT(size == 1 && vector_size == 0,
-                      "bool type descriptor not correctly defined" + STR(size) + "|" + STR(vector_size));
+                      "bool type descriptor not correctly defined " + STR(size) + " | " + STR(vector_size));
          os << "Bool {" << id_type << "} ";
          if(treenode > 0)
          {
@@ -312,7 +307,7 @@ void structural_type_descriptor::print(std::ostream& os) const
    }
 }
 
-structural_type_descriptor::structural_type_descriptor(const std::string& type_name, unsigned int _vector_size)
+structural_type_descriptor::structural_type_descriptor(const std::string& type_name, unsigned long long _vector_size)
     : vector_size(_vector_size), id_type(type_name), treenode(structural_type_descriptor::treenode_DEFAULT)
 {
    /// first set defaults
@@ -404,78 +399,6 @@ structural_type_descriptor::structural_type_descriptor(const std::string& type_n
    }
 }
 
-#if HAVE_TUCANO_BUILT
-structural_type_descriptor::structural_type_descriptor(unsigned int _treenode, tree_managerRef tm)
-{
-   bool is_a_function = false;
-   /// first set defaults
-   type = UNKNOWN;
-   size = size_DEFAULT;
-   vector_size = vector_size_DEFAULT;
-   treenode = _treenode;
-   while(true)
-   {
-      if(tree_helper::GetElements(tm, treenode))
-      {
-         treenode = tree_helper::GetElements(tm, treenode);
-         continue;
-      }
-      if(tree_helper::get_pointed_type(tm, treenode))
-      {
-         treenode = tree_helper::get_pointed_type(tm, treenode);
-         continue;
-      }
-      if(tree_helper::is_a_function(tm, treenode))
-      {
-         is_a_function = true;
-         continue;
-      }
-      break;
-   }
-   vector_size = tree_helper::size(tm, treenode);
-
-   if(is_a_function || tree_helper::is_module(tm, treenode) || tree_helper::is_channel(tm, treenode) ||
-      tree_helper::is_event(tm, treenode))
-   {
-      id_type = tree_helper::name_type(tm, treenode);
-      type = OTHER;
-   }
-   else
-   {
-      id_type = tree_helper::name_type(tm, treenode);
-      size = tree_helper::size(tm, treenode);
-      if(tree_helper::is_bool(tm, treenode))
-      {
-         if(vector_size)
-            type = VECTOR_BOOL;
-         else
-            type = BOOL;
-      }
-      else if(tree_helper::is_int(tm, treenode))
-      {
-         if(vector_size)
-            type = VECTOR_INT;
-         else
-            type = INT;
-      }
-      else if(tree_helper::is_unsigned(tm, treenode))
-      {
-         if(vector_size)
-            type = VECTOR_UINT;
-         else
-            type = UINT;
-      }
-      else
-      {
-         if(vector_size)
-            type = VECTOR_USER;
-         else
-            type = USER;
-      }
-   }
-}
-#endif
-
 #if HAVE_BAMBU_BUILT
 structural_type_descriptor::structural_type_descriptor(unsigned int index, const BehavioralHelperConstRef helper)
 {
@@ -504,8 +427,8 @@ structural_type_descriptor::structural_type_descriptor(unsigned int index, const
    }
    else if(helper->is_an_array(index) && !helper->is_a_struct(index) && !helper->is_an_union(index))
    {
-      const unsigned int element_type = helper->GetElements(type_index);
-      const auto element_size = static_cast<unsigned int>(helper->get_size(element_type));
+      const auto element_type = helper->GetElements(type_index);
+      const auto element_size = helper->get_size(element_type);
       vector_size = size / element_size;
       size = element_size;
       if(helper->is_bool(element_type) || helper->is_a_complex(index))
@@ -532,8 +455,8 @@ structural_type_descriptor::structural_type_descriptor(unsigned int index, const
    }
    else if(helper->is_a_vector(index))
    {
-      const unsigned int element_type = helper->GetElements(type_index);
-      const auto element_size = static_cast<unsigned int>(helper->get_size(element_type));
+      const auto element_type = helper->GetElements(type_index);
+      const auto element_size = helper->get_size(element_type);
       vector_size = size / element_size;
       size = element_size;
       if(helper->is_bool(element_type) || helper->is_a_complex(index))
@@ -635,6 +558,38 @@ simple_indent structural_object::PP('[', ']', 2);
 
 /// ------------- structural object methods --------------------- //
 
+std::string structural_object::convert_so_short(so_kind in) const
+{
+   switch(in)
+   {
+      case component_o_K:
+         return "M";
+      case channel_o_K:
+         return "C";
+      case constant_o_K:
+         return "c";
+      case bus_connection_o_K:
+         return "B";
+      case signal_o_K:
+         return "S";
+      case signal_vector_o_K:
+         return "S";
+      case port_o_K:
+         return "P";
+      case port_vector_o_K:
+         return "P";
+      case event_o_K:
+         return "E";
+      case data_o_K:
+         return "D";
+      case action_o_K:
+         return "A";
+      default:
+         THROW_UNREACHABLE("");
+   }
+   return "";
+}
+
 structural_object::structural_object(int debug, const structural_objectRef o)
     : owner(o),
       treenode(o ? o->treenode : treenode_DEFAULT),
@@ -690,7 +645,7 @@ void structural_object::set_id(const std::string& s)
    id = s;
 }
 
-const std::string structural_object::get_id() const
+const std::string& structural_object::get_id() const
 {
    return id;
 }
@@ -706,7 +661,7 @@ const structural_type_descriptorRef& structural_object::get_typeRef() const
    return type;
 }
 
-void structural_object::type_resize(unsigned int new_bit_size)
+void structural_object::type_resize(unsigned long long new_bit_size)
 {
    switch(type->type)
    {
@@ -748,7 +703,7 @@ void structural_object::type_resize(unsigned int new_bit_size)
    }
 }
 
-void structural_object::type_resize(unsigned int new_bit_size, unsigned int new_vec_size)
+void structural_object::type_resize(unsigned long long new_bit_size, unsigned long long new_vec_size)
 {
    switch(type->type)
    {
@@ -856,7 +811,7 @@ std::string structural_object::GetDefaultParameter(std::string name) const
    return default_parameters.at(name);
 }
 
-CustomMap<std::string, std::string> structural_object::GetParameters()
+CustomMap<std::string, std::string> structural_object::GetParameters() const
 {
    CustomMap<std::string, std::string> ret;
    for(const auto& default_parameter : default_parameters)
@@ -1047,10 +1002,6 @@ const std::string structural_object::get_path() const
    }
 }
 
-const char* port_o::port_directionNames[] = {"IN", "OUT", "IO", "GEN", "UNKNOWN"};
-
-const char* port_o::port_interfaceNames[] = {"PI_DEFAULT", "PI_RNONE", "PI_WNONE"};
-
 port_o::port_o(int _debug_level, const structural_objectRef o, port_direction _dir, so_kind _port_type)
     : structural_object(_debug_level, o),
       dir(_dir),
@@ -1224,7 +1175,7 @@ port_o::port_direction port_o::get_port_direction() const
 void port_o::set_port_direction(port_direction _dir)
 {
    dir = _dir;
-   for(auto p : ports)
+   for(const auto& p : ports)
    {
       GetPointer<port_o>(p)->set_port_direction(_dir);
    }
@@ -1250,12 +1201,12 @@ void port_o::set_port_interface(port_interface _pi)
    pi = _pi;
 }
 
-unsigned port_o::get_port_alignment() const
+unsigned int port_o::get_port_alignment() const
 {
    return aligment;
 }
 
-void port_o::set_port_alignment(unsigned algn)
+void port_o::set_port_alignment(unsigned int algn)
 {
    aligment = algn;
 }
@@ -1774,7 +1725,7 @@ port_o::port_direction port_o::to_port_direction(const std::string& val)
    unsigned int i;
    for(i = 0; i < UNKNOWN; i++)
    {
-      if(val == port_directionNames[i])
+      if(val == GetString(static_cast<port_direction>(i)))
       {
          break;
       }
@@ -1787,7 +1738,7 @@ port_o::port_interface port_o::to_port_interface(const std::string& val)
    unsigned int i;
    for(i = 0; i < UNKNOWN; i++)
    {
-      if(val == port_interfaceNames[i])
+      if(val == GetString(static_cast<port_interface>(i)))
       {
          break;
       }
@@ -1803,21 +1754,31 @@ void port_o::xwrite(xml_element* rootnode)
    std::string tlm_directionality;
    std::string id_type = structural_object::get_typeRef()->id_type;
    if(id_type.find("put_if", 0) != std::string::npos)
+   {
       tlm_directionality = "->";
+   }
    else if(id_type.find("get_if", 0) != std::string::npos)
+   {
       tlm_directionality = "<-";
+   }
    else if(id_type.find("transport_if", 0) != std::string::npos)
+   {
       tlm_directionality = "<->";
+   }
    else
+   {
       tlm_directionality = "--";
+   }
    if(tlm_directionality != "--")
+   {
       WRITE_XVM(tlm_directionality, Enode);
+   }
 #endif
    //   WRITE_XVM(structural_object::get_typeRef()->id_type,Enode);
-   WRITE_XNVM(dir, port_directionNames[dir], Enode);
+   WRITE_XNVM(dir, GetString(dir), Enode);
    if(pi != port_interface::PI_DEFAULT)
    {
-      WRITE_XNVM(pi, port_interfaceNames[pi], Enode);
+      WRITE_XNVM(pi, GetString(pi), Enode);
    }
    if(aligment != port_interface_alignment_DEFAULT)
    {
@@ -1895,11 +1856,7 @@ void port_o::xwrite(xml_element* rootnode)
 }
 
 #if HAVE_TECHNOLOGY_BUILT
-void port_o::xwrite_attributes(xml_element* rootnode, const technology_nodeRef&
-#if HAVE_EXPERIMENTAL
-                                                          tn
-#endif
-)
+void port_o::xwrite_attributes(xml_element* rootnode, const technology_nodeRef&)
 {
    xml_element* pin_node = rootnode->add_child_element("pin");
 
@@ -1911,21 +1868,6 @@ void port_o::xwrite_attributes(xml_element* rootnode, const technology_nodeRef&
       const attributeRef attr = attributes[o];
       attr->xwrite(pin_node, o);
    }
-
-#if HAVE_EXPERIMENTAL
-   /// writing pin layout information
-   if(GetPointer<functional_unit>(tn) && GetPointer<functional_unit>(tn)->layout_m)
-   {
-      GetPointer<functional_unit>(tn)->layout_m->xwrite(pin_node, get_id());
-   }
-
-   // For functional unit template we have to check that the underling functional unit has a layout
-   if(GetPointer<functional_unit_template>(tn) &&
-      GetPointer<functional_unit>(GetPointer<functional_unit_template>(tn)->FU)->layout_m)
-   {
-      GetPointer<functional_unit>(GetPointer<functional_unit_template>(tn)->FU)->layout_m->xwrite(pin_node, get_id());
-   }
-#endif
 }
 #endif
 
@@ -1933,10 +1875,10 @@ void port_o::print(std::ostream& os) const
 {
    PP(os, "PORT:\n");
    structural_object::print(os);
-   PP(os, "[Dir: " + std::string(port_directionNames[dir]));
+   PP(os, "[Dir: " + GetString(dir));
    if(pi != port_interface::PI_DEFAULT)
    {
-      PP(os, "[Interface: " + std::string(port_interfaceNames[pi]));
+      PP(os, "[Interface: " + GetString(pi));
    }
    if(aligment != port_interface_alignment_DEFAULT)
    {
@@ -2331,7 +2273,7 @@ void constant_o::copy(structural_objectRef dest) const
    /// the field connected_objects has to be updated outside!!!
 }
 
-unsigned int constant_o::get_size() const
+unsigned long long constant_o::get_size() const
 {
    return GET_TYPE_SIZE(this);
 }
@@ -2501,7 +2443,7 @@ const structural_objectRef signal_o::get_port(unsigned int n) const
 
 structural_objectRef signal_o::get_port(unsigned int n)
 {
-   THROW_ASSERT(n < connected_objects.size(), "index out of range");
+   THROW_ASSERT(n < connected_objects.size(), "index " + STR(n) + " is out of range for signal " + get_path());
    return connected_objects[n].lock();
 }
 
@@ -2923,7 +2865,8 @@ module::module(int _debug_level, const structural_objectRef o)
       last_position_port(0),
       is_critical(false),
       is_generated(false),
-      multi_unit_multiplicity(0)
+      multi_unit_multiplicity(0),
+      keep_hierarchy(false)
 {
 }
 
@@ -2960,6 +2903,16 @@ void module::set_multi_unit_multiplicity(unsigned int value)
 unsigned int module::get_multi_unit_multiplicity() const
 {
    return multi_unit_multiplicity;
+}
+
+void module::set_keep_hierarchy(bool ky)
+{
+   keep_hierarchy = ky;
+}
+
+bool module::get_keep_hierarchy() const
+{
+   return keep_hierarchy;
 }
 
 structural_objectRef module::get_positional_port(unsigned int index) const
@@ -3538,12 +3491,18 @@ void module::copy(structural_objectRef dest) const
    {
       GetPointer<module>(dest)->set_multi_unit_multiplicity(multi_unit_multiplicity);
    }
+   if(keep_hierarchy)
+   {
+      GetPointer<module>(dest)->set_keep_hierarchy(keep_hierarchy);
+   }
    structural_objectRef obj;
 
    /// copying of the ports of the module: be aware of respecting the initial order of the ports
 #ifndef NDEBUG
    if(last_position_port)
+   {
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, " - copying ports: " << last_position_port);
+   }
 #endif
    for(unsigned int i = 0; i < last_position_port; i++)
    {
@@ -3599,9 +3558,11 @@ void module::copy(structural_objectRef dest) const
    /// copy all the internal objects
 #ifndef NDEBUG
    if(internal_objects.size())
+   {
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, " - copying internal objects: " << internal_objects.size());
+   }
 #endif
-   for(auto int_obj : internal_objects)
+   for(const auto& int_obj : internal_objects)
    {
       switch(int_obj->get_kind())
       {
@@ -3658,7 +3619,7 @@ void module::copy(structural_objectRef dest) const
       {
          ports.push_back(int_obj);
       }
-      for(auto port_obj : ports)
+      for(const auto& port_obj : ports)
       {
          const structural_objectRef dest_port = dest->find_isomorphic(port_obj);
          PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
@@ -3769,7 +3730,7 @@ void module::copy(structural_objectRef dest) const
          }
       }
       signal_objs.push_back(int_obj);
-      for(auto signal_obj : signal_objs)
+      for(const auto& signal_obj : signal_objs)
       {
          const structural_objectRef signal_el = dest->find_isomorphic(signal_obj);
          PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
@@ -4297,8 +4258,22 @@ void module::xload(const xml_element* Enode, structural_objectRef _owner, struct
          else
          {
             std::string multi_unit_multiplicitySTR = text->get_content();
-            xml_node::convert_escaped(specialized);
+            xml_node::convert_escaped(multi_unit_multiplicitySTR);
             multi_unit_multiplicity = boost::lexical_cast<unsigned>(multi_unit_multiplicitySTR);
+         }
+      }
+      else if(EnodeC->get_name() == GET_CLASS_NAME(keep_hierarchy))
+      {
+         const xml_text_node* text = EnodeC->get_child_text();
+         if(!text)
+         {
+            THROW_WARNING("keep_hierarchy identifier is missing for " + EnodeC->get_name());
+         }
+         else
+         {
+            std::string keep_hierarchySTR = text->get_content();
+            xml_node::convert_escaped(keep_hierarchySTR);
+            keep_hierarchy = boost::lexical_cast<bool>(keep_hierarchySTR);
          }
       }
       else
@@ -4449,8 +4424,10 @@ void module::xload(const xml_element* Enode, structural_objectRef _owner, struct
 
 #ifndef NDEBUG
    if(get_black_box())
+   {
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                     "   Component " + get_id() + " (" + get_typeRef()->id_type + ") is a black box");
+   }
 #endif
 }
 
@@ -4470,6 +4447,11 @@ void module::xwrite(xml_element* rootnode)
    {
       xml_element* xml_specialized = rootnode->add_child_element("specialized");
       xml_specialized->add_child_text(specialized);
+   }
+   if(keep_hierarchy)
+   {
+      xml_element* xml_keep_hierarchy = rootnode->add_child_element("keep_hierarchy");
+      xml_keep_hierarchy->add_child_text("true");
    }
 
    if(in_ports.size())
@@ -4551,19 +4533,6 @@ void module::xwrite(xml_element* rootnode)
 void module::xwrite_attributes(xml_element* rootnode, const technology_nodeRef& tn)
 {
    structural_object::xwrite_attributes(rootnode, tn);
-
-#if HAVE_EXPERIMENTAL
-   /// writing pin layout information
-   if(GetPointer<functional_unit>(tn) && GetPointer<functional_unit>(tn)->layout_m)
-   {
-      GetPointer<functional_unit>(tn)->layout_m->xwrite(rootnode);
-   }
-   if(GetPointer<functional_unit_template>(tn) &&
-      GetPointer<functional_unit>(GetPointer<functional_unit_template>(tn)->FU)->layout_m)
-   {
-      GetPointer<functional_unit>(GetPointer<functional_unit_template>(tn)->FU)->layout_m->xwrite(rootnode, get_id());
-   }
-#endif
 
    if(in_ports.size())
    {
@@ -5162,13 +5131,14 @@ void port_o::set_port_size(unsigned int dim)
    get_typeRef()->size = dim;
 }
 
-unsigned int port_o::get_port_size() const
+unsigned long long port_o::get_port_size() const
 {
    return get_typeRef()->size;
 }
 
-void port_o::resize_busport(unsigned int bus_size_bitsize, unsigned int bus_addr_bitsize, unsigned int bus_data_bitsize,
-                            unsigned int bus_tag_bitsize, structural_objectRef port)
+void port_o::resize_busport(unsigned long long bus_size_bitsize, unsigned long long bus_addr_bitsize,
+                            unsigned long long bus_data_bitsize, unsigned long long bus_tag_bitsize,
+                            structural_objectRef port)
 {
    if(GetPointer<port_o>(port)->get_is_data_bus())
    {
@@ -5211,8 +5181,8 @@ void port_o::resize_busport(unsigned int bus_size_bitsize, unsigned int bus_addr
    }
 }
 
-void port_o::resize_std_port(unsigned int bitsize_variable, unsigned int n_elements, int DEBUG_PARAMETER(debug_level),
-                             structural_objectRef port)
+void port_o::resize_std_port(unsigned long long bitsize_variable, unsigned long long n_elements,
+                             int DEBUG_PARAMETER(debug_level), structural_objectRef port)
 {
    if(n_elements == 0)
    {
@@ -5499,3 +5469,28 @@ std::string structural_object::get_equation(const structural_objectRef out_obj, 
 #endif
 }
 #endif
+
+#define __TO_STRING_HELPER(r, data, elem)                                           \
+   name = #elem;                                                                    \
+   name = name.substr(19);                                                          \
+   name = name.substr(name.front() == ' ', name.find(')') - (name.front() == ' ')); \
+   out[data::elem] = name;
+#define TO_STRING(enum_type, elem_list)                                      \
+   static std::unordered_map<enum enum_type, std::string> to_string = []() { \
+      std::unordered_map<enum enum_type, std::string> out;                   \
+      std::string name;                                                      \
+      BOOST_PP_SEQ_FOR_EACH(__TO_STRING_HELPER, enum_type, elem_list);       \
+      return out;                                                            \
+   }()
+
+std::string port_o::GetString(enum port_o::port_interface v)
+{
+   TO_STRING(port_interface, PORT_INTERFACE_ENUM);
+   return to_string[v];
+}
+
+std::string port_o::GetString(enum port_o::port_direction v)
+{
+   TO_STRING(port_direction, PORT_DIRECTION_ENUM);
+   return to_string[v];
+}

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -46,24 +46,17 @@
 #include "config_HAVE_BEAGLE.hpp"
 #include "config_HAVE_BOOLEAN_PARSER_BUILT.hpp"
 #include "config_HAVE_CIRCUIT_BUILT.hpp"
-#include "config_HAVE_EXPERIMENTAL.hpp"
 #include "config_HAVE_FROM_LIBERTY.hpp"
 #include "config_HAVE_PHYSICAL_LIBRARY_MODELS_BUILT.hpp"
 
-/// STD include
-#include <ostream>
-#include <string>
-
-/// STL include
 #include "custom_map.hpp"
-#include "custom_set.hpp"
-#include <vector>
-
-/// utility include
 #include "custom_set.hpp"
 #include "refcount.hpp"
 #include "strong_typedef.hpp"
-#include "utility.hpp"
+
+#include <ostream>
+#include <string>
+#include <vector>
 
 /// working library.
 #define DESIGN std::string("design")
@@ -109,6 +102,7 @@ REF_FORWARD_DECL(simple_indent);
 class xml_element;
 class allocation;
 class mixed_hls;
+struct TimeStamp;
 enum class TargetDevice_Type;
 UINT_STRONG_TYPEDEF_FORWARD_DECL(ControlStep);
 class functional_unit;
@@ -148,6 +142,9 @@ class technology_manager
 
    /// The builtin components
    CustomSet<std::string> builtins;
+
+   /// Map function names to hardware module used for implementation
+   CustomUnorderedMap<std::string, technology_nodeRef> function_fu;
 
    /**
     * Return the functional unit used to compute the setup hold time
@@ -197,7 +194,8 @@ class technology_manager
    /**
     * Add an operation to the specified functional unit
     */
-   void add_operation(const std::string& Library, const std::string& fu_name, const std::string& operation_name);
+   technology_nodeRef add_operation(const std::string& Library, const std::string& fu_name,
+                                    const std::string& operation_name);
 
 #if HAVE_CIRCUIT_BUILT
    /**
@@ -236,9 +234,17 @@ class technology_manager
     * Return the reference to a component given its name.
     * @param fu_name is the name of the component.
     * @param Library is library name where the unit is stored
-    * @return the reference to a component
+    * @return the reference to a component if found, else nullptr
     */
    technology_nodeRef get_fu(const std::string& fu_name, const std::string& Library) const;
+
+   /**
+    * Return the reference to a component given its name.
+    * @param fu_name is the name of the component.
+    * @param Library is library name where the unit is stored if found
+    * @return the reference to a component if found, else nullptr
+    */
+   technology_nodeRef get_fu(const std::string& fu_name, std::string* Library = nullptr) const;
 
    /**
     * Return the higher priority library where the given component is stored
@@ -348,15 +354,6 @@ class technology_manager
                   const CustomOrderedSet<std::string>& libraries = CustomOrderedSet<std::string>());
 #endif
 
-#if HAVE_EXPERIMENTAL
-   /**
-    *
-    */
-   void lef_write(const std::string& filename, TargetDevice_Type dv_type,
-                  const CustomOrderedSet<std::string>& libraries = CustomOrderedSet<std::string>());
-   //@}
-#endif
-
    /**
     * @name Print functions.
     */
@@ -398,6 +395,13 @@ class technology_manager
     * @return the characterization timestamp of the setup hold time
     */
    TimeStamp CGetSetupHoldTimeStamp() const;
+
+   /**
+    * Return FU used to implement given function if any
+    * @param fname function name
+    * @return technology_nodeRef Functional unit with fname in the supported operations' set or nullptr
+    */
+   technology_nodeRef GetFunctionFU(const std::string& fname) const;
 };
 
 using technology_managerRef = refcount<technology_manager>;

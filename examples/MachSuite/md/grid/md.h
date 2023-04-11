@@ -71,7 +71,7 @@ void md( int n_points[blockSide][blockSide][blockSide],
          dvector_t position[blockSide][blockSide][blockSide][densityFactor]
        );
 
-void run_benchmark( void *vargs ) {
+__attribute((noinline)) void run_benchmark( void *vargs ) {
   struct bench_args_t *args = (struct bench_args_t *)vargs;
   md( args->n_points, args->d_force, args->position );
 }

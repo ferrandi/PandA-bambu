@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -48,24 +48,17 @@
 #define FUNCTION_BEHAVIOR_HPP
 
 #include "config_HAVE_ASSERTS.hpp"
-#include "config_HAVE_EXPERIMENTAL.hpp"
 #include "config_HAVE_HOST_PROFILING_BUILT.hpp"
+
+#include "custom_map.hpp"
+#include "custom_set.hpp"
+#include "graph.hpp"
+#include "refcount.hpp"
+
 #include <deque>      // for deque
 #include <functional> // for binary_function
 #include <iosfwd>     // for ostream, size_t
 #include <typeindex>  // for hash
-
-#include "custom_map.hpp"
-#include "custom_set.hpp"
-
-/// Behavior include (because of enums)
-#if HAVE_EXPERIMENTAL
-#include "epd_graph.hpp"
-#include "parallel_regions_graph.hpp"
-#endif
-/// Graph include
-#include "graph.hpp"
-#include "refcount.hpp"
 
 /**
  * @name forward declarations
@@ -105,6 +98,8 @@ class dominance;
 class ParallelRegionsGraphsCollection;
 class sequence_info;
 class xml_element;
+enum class MemoryAllocation_ChannelsType;
+enum class MemoryAllocation_Policy;
 using tree_class = unsigned int;
 //@}
 
@@ -136,9 +131,6 @@ enum class FunctionBehavior_VariableAccessType
 enum class FunctionBehavior_VariableType
 {
    UNKNOWN = 0,
-#if HAVE_EXPERIMENTAL
-   AGGREGATE,
-#endif
    MEMORY,
    SCALAR,
    VIRTUAL
@@ -306,48 +298,8 @@ class FunctionBehavior
    /// The system dependence graph with feedback
    const OpGraphRef fsdg;
 
-#if HAVE_EXPERIMENTAL
-   /// The reduced program dependence graph
-   const OpGraphRef rpdg;
-#endif
-
    /// The speculation graph
    const OpGraphRef sg;
-
-#if HAVE_EXPERIMENTAL
-   /// bulk graph for extended PDG
-   const EpdGraphsCollectionRef epdg_bulk;
-
-   /// extended PDG with only control edges
-   EpdGraphRef cepdg;
-
-   /// extended PDG with only data edges
-   EpdGraphRef depdg;
-
-   /// extended PDG with only control and data edges
-   EpdGraphRef cdepdg;
-
-   /// extended PDG with only control, data edges and control flow
-   EpdGraphRef cdcfepdg;
-
-   /// extended PDG (acyclic version)
-   EpdGraphRef epdg;
-
-   /// extended PDG with feedback edges
-   EpdGraphRef fepdg;
-
-   /// represents activation functions (acyclic version)
-   EpdGraphRef afg;
-
-   /// represents activation functions
-   EpdGraphRef fafg;
-
-   /// bulk graph for the PRG
-   const ParallelRegionsGraphsCollectionRef prg_bulk;
-
-   /// parallel regions graph (Basic Block version)
-   const ParallelRegionsGraphRef prg;
-#endif
 
    /// Anti + Data flow graph on aggregates
    const OpGraphRef agg_virtualg;
@@ -425,6 +377,14 @@ class FunctionBehavior
    /// used only for stallable pipelines
    int initiation_time;
 
+   /// Function scope channels number
+   unsigned int _channels_number;
+
+   /// Function scope channels type
+   MemoryAllocation_ChannelsType _channels_type;
+
+   MemoryAllocation_Policy _allocation_policy;
+
  public:
    /**
     * Constructor
@@ -466,13 +426,10 @@ class FunctionBehavior
 #ifndef NDEBUG
       FLSAODDG, /**< System dependence + anti-dependence + output dependence graph + flow graph + debug graph*/
 #endif
-      FFLSAODG, /**< System dependence + anti-dependence + output dependence graph + flow graph with feedback */
-      FLAODDG,  /**< Anti-dependence + data dependence + output dependence + flow graph */
-      FFLAODDG, /**< Anti dependence + data dependence + output dependence + flow graph with feedback */
-      SG,       /**< Speculation graph */
-#if HAVE_EXPERIMENTAL
-      RPDG, /**< Reduced Program Dependence graph */
-#endif
+      FFLSAODG,    /**< System dependence + anti-dependence + output dependence graph + flow graph with feedback */
+      FLAODDG,     /**< Anti-dependence + data dependence + output dependence + flow graph */
+      FFLAODDG,    /**< Anti dependence + data dependence + output dependence + flow graph with feedback */
+      SG,          /**< Speculation graph */
       AGG_VIRTUALG /**< Anti + Data flow graph dependence between aggregates */
    };
 
@@ -503,14 +460,6 @@ class FunctionBehavior
 
    /// reference to the basic block graph constructor
    const BasicBlocksGraphConstructorRef bbgc;
-
-#if HAVE_EXPERIMENTAL
-   /// reference to the extended PDG constructor
-   const extended_pdg_constructorRef epdgc;
-
-   /// reference to the basic block PRG constructor
-   const ParallelRegionsGraphConstructorRef prgc;
-#endif
 
    /// reference to the level constructor
    const level_constructorRef lm;
@@ -600,29 +549,6 @@ class FunctionBehavior
     * @return the pointer to the bb_graph.
     */
    const BBGraphConstRef CGetBBGraph(FunctionBehavior::bb_graph_type gt = FunctionBehavior::BB) const;
-
-#if HAVE_EXPERIMENTAL
-   /**
-    * This method returns the extended PDG graph.
-    * @param type is the type of the graph to be returned
-    * @return the corresponding EpdGraph.
-    */
-   EpdGraphRef GetEpdGraph(EpdGraph::Type type);
-
-   /**
-    * This method returns the extended PDG graph.
-    * @param type is the type of the graph to be returned
-    * @return the corresponding EpdGraph.
-    */
-   const EpdGraphRef CGetEpdGraph(EpdGraph::Type type) const;
-
-   /**
-    * This method returns the PRG.
-    * @param type is the type of the graph to be returned
-    * @return the pointer to the corresponding ParallelRegionsGraph.
-    */
-   const ParallelRegionsGraphRef GetPrgGraph(ParallelRegionsGraph::Type type) const;
-#endif
 
    /**
     * Function that prints the class behavioral_manager.
@@ -838,7 +764,7 @@ class FunctionBehavior
     */
    bool is_a_state_variable(unsigned int node_id) const
    {
-      return state_variables.find(node_id) != state_variables.end();
+      return state_variables.count(node_id);
    }
 
    /**
@@ -952,6 +878,18 @@ class FunctionBehavior
     * @return the new version
     */
    unsigned int UpdateBitValueVersion();
+
+   unsigned int GetChannelsNumber() const;
+
+   void SetChannelsNumber(unsigned int val);
+
+   MemoryAllocation_ChannelsType GetChannelsType() const;
+
+   void SetChannelsType(MemoryAllocation_ChannelsType val);
+
+   MemoryAllocation_Policy GetMemoryAllocationPolicy() const;
+
+   void SetMemoryAllocationPolicy(MemoryAllocation_Policy val);
 };
 
 using FunctionBehaviorRef = refcount<FunctionBehavior>;

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -248,10 +248,8 @@ DesignFlowStep_Status FixStructsPassedByValue::InternalExec()
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Substituting parm_decl of " + STR(p_decl));
                const auto ptr_p_name = "bambu_artificial_ptr_param_" + original_param_name;
                const auto ptr_p_identifier = tree_man->create_identifier_node(ptr_p_name);
-               const auto ptr_p_decl = tree_man->create_parm_decl(
-                   ptr_p_identifier, ptr_type, pd->scpe, GetPointer<type_node>(GET_NODE(ptr_type))->size, ptr_type,
-                   tree_nodeRef(), tree_nodeRef(), srcp, GetPointer<const type_node>(GET_NODE(ptr_type))->algn, 1,
-                   false, true);
+               const auto ptr_p_decl = tree_man->create_parm_decl(ptr_p_identifier, ptr_type, pd->scpe, ptr_type,
+                                                                  tree_nodeRef(), tree_nodeRef(), srcp, 1, false, true);
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                               "---Changing parm_decl from " + STR(p_decl) + " to " + STR(GET_NODE(ptr_p_decl)));
                *p_decl_it = ptr_p_decl;
@@ -292,8 +290,7 @@ DesignFlowStep_Status FixStructsPassedByValue::InternalExec()
                 tree_man->create_ssa_name(*p_decl_it, ptr_type, tree_nodeRef(), tree_nodeRef()),
                 // sizeof(var_decl)
                 TM->CreateUniqueIntegerCst(static_cast<long long>(ptd_type_size), formal_type_node)};
-            const auto gimple_call_memcpy =
-                tree_man->create_gimple_call(memcpy_function, args, function_id, srcp, bb_index);
+            const auto gimple_call_memcpy = tree_man->create_gimple_call(memcpy_function, args, function_id, srcp);
             auto gn = GetPointer<gimple_node>(GET_NODE(gimple_call_memcpy));
             /*
              * the call is artificial. this is necessary because this memcpy
@@ -408,8 +405,8 @@ DesignFlowStep_Status FixStructsPassedByValue::InternalExec()
                                          " which has a struct/union parameter with type: " +
                                          STR(GET_CONST_NODE(p->valu)) + " but " + STR(actual_argument_node) + " is a " +
                                          STR(tree_helper::CGetType(actual_argument_node)));
-                        auto new_ga_node = tree_man->CreateGimpleAssignAddrExpr(actual_argument_node, function_id,
-                                                                                gn->bb_index, srcp_default);
+                        auto new_ga_node =
+                            tree_man->CreateGimpleAssignAddrExpr(actual_argument_node, function_id, srcp_default);
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                        "---Changing parameter: creating pointer " + STR(GET_NODE(new_ga_node)));
                         block.second->PushBefore(new_ga_node, stmt, AppM);
@@ -496,8 +493,8 @@ DesignFlowStep_Status FixStructsPassedByValue::InternalExec()
                                       " which has a struct/union parameter: " + STR(p_decl) + " but " +
                                       STR(actual_argument_node) + " is a " +
                                       STR(tree_helper::CGetType(actual_argument_node)));
-                     const auto new_ga_node = tree_man->CreateGimpleAssignAddrExpr(actual_argument_node, function_id,
-                                                                                   gn->bb_index, srcp_default);
+                     const auto new_ga_node =
+                         tree_man->CreateGimpleAssignAddrExpr(actual_argument_node, function_id, srcp_default);
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                     "---Changing parameter: creating pointer " + STR(GET_NODE(new_ga_node)));
                      block.second->PushBefore(new_ga_node, stmt, AppM);

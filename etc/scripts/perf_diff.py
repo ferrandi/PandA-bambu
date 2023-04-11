@@ -1,9 +1,10 @@
-#!/usr/bin/python3
+#!python3
 
 import argparse
 import csv
 import math
 import os
+import sys
 from collections import defaultdict
 
 benchname_col = 'Benchmark'
@@ -181,7 +182,8 @@ def main():
     print('Valid pairs compared: ' + str(len(perf_dict)) +
           '/' + str(len(base_bench_dict)))
     if len(perf_dict) == 0:
-        exit(-1)
+        print('-1', file=sys.stderr)
+        exit(0)
 
     if user_score:
         selected_datapoints.append(score_col)
@@ -233,6 +235,7 @@ def main():
         print(row_format.format(
             perf_sd[0], *[diff_string(x + 1.0) for x in perf_sd[1:]]))
 
+    print(str(len(bad_perf)), file=sys.stderr)
     if args.returnfail:
         exit(len(bad_perf))
     exit(0)

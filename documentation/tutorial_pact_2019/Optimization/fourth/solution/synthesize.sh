@@ -2,7 +2,7 @@
 abs_script=$(readlink -e $0)
 dir_script=$(dirname $abs_script)
 rm -rf output
-$dir_script/test_panda.py --tool=bambu --bambu=/opt/panda/bin/bambu --spider=/opt/panda/bin/spider \
+python3 $dir_script/test_panda.py --tool=bambu --bambu=/opt/panda/bin/bambu --spider=/opt/panda/bin/spider \
    --args="--configuration-name=pow --top-fname=formula_pow" \
    --args="--configuration-name=mult --top-fname=formula_mult " \
    --args="--configuration-name=double_pow --top-fname=double_formula_pow" \

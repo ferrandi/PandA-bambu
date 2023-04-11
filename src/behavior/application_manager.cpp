@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -73,17 +73,14 @@
 #include "tree_reindex.hpp"
 
 application_manager::application_manager(const FunctionExpanderConstRef function_expander,
-                                         const bool _single_root_function, const bool _allow_recursive_functions,
-                                         const ParameterConstRef _Param)
+                                         const bool _allow_recursive_functions, const ParameterConstRef _Param)
     : TM(new tree_manager(_Param)),
-      call_graph_manager(
-          new CallGraphManager(function_expander, _single_root_function, _allow_recursive_functions, TM, _Param)),
+      call_graph_manager(new CallGraphManager(function_expander, _allow_recursive_functions, TM, _Param)),
       Param(_Param),
       address_bitsize(
           _Param->isOption(OPT_addr_bus_bitsize) ?
               _Param->getOption<unsigned int>(OPT_addr_bus_bitsize) :
               (_Param->getOption<std::string>(OPT_gcc_m32_mx32).find("-m64") != std::string::npos ? 64 : 32)),
-      single_root_function(_single_root_function),
 #if HAVE_PRAGMA_BUILT
       PM(new pragma_manager(application_managerRef(this, null_deleter()), _Param)),
 #endif
@@ -131,6 +128,7 @@ bool application_manager::hasToBeInterfaced(unsigned int funId) const
 {
    const auto root_functions = CGetCallGraphManager()->GetRootFunctions();
    const auto addressed_functions = CGetCallGraphManager()->GetAddressedFunctions();
+
    // all the root functions and the reached addressed functions must be interfaced
    return root_functions.count(funId) || addressed_functions.count(funId);
 }
@@ -422,20 +420,19 @@ void application_manager::RegisterTransformation(const std::string&
 #endif
 }
 
-bool application_manager::isParmUsed(unsigned int functionID, unsigned parm_index) const
-{
-   return Parm2SSA_map.find(functionID) != Parm2SSA_map.end() &&
-          Parm2SSA_map.find(functionID)->second.count(parm_index);
-}
-
 unsigned application_manager::getSSAFromParm(unsigned int functionID, unsigned parm_index) const
 {
    THROW_ASSERT(parm_index, "unexpected null parm_decl index");
-   THROW_ASSERT(Parm2SSA_map.find(functionID) != Parm2SSA_map.end(),
-                "relation not computed for function id: " + STR(functionID));
-   THROW_ASSERT(Parm2SSA_map.at(functionID).find(parm_index) != Parm2SSA_map.at(functionID).end(),
-                "unexpected condition " + STR(functionID) + " " + STR(parm_index));
-   return Parm2SSA_map.at(functionID).at(parm_index);
+   const auto fun_parms = Parm2SSA_map.find(functionID);
+   if(fun_parms != Parm2SSA_map.end())
+   {
+      const auto parm = fun_parms->second.find(parm_index);
+      if(parm != fun_parms->second.end())
+      {
+         return parm->second;
+      }
+   }
+   return 0U;
 }
 
 void application_manager::setSSAFromParm(unsigned int functionID, unsigned int parm_index, unsigned ssa_index)

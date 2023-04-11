@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2021-2022 Politecnico di Milano
+ *              Copyright (C) 2021-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -48,8 +48,10 @@
 
 #include "math_privatetf.h"
 
-int __isinf_sign(unsigned long long x, unsigned char __exp_bits, unsigned char __frac_bits, int __exp_bias,
-                 _Bool __rounding, _Bool __nan, _Bool __one, _Bool __subnorm, signed char __sign)
+static int __attribute__((always_inline)) inline __local_isinf_sign(unsigned long long x, unsigned char __exp_bits,
+                                                                    unsigned char __frac_bits, int __exp_bias,
+                                                                    _Bool __rounding, _Bool __nan, _Bool __one,
+                                                                    _Bool __subnorm, signed char __sign)
 {
    unsigned char __bw = (__sign == -1) + __exp_bits + __frac_bits;
    if(__nan)
@@ -85,3 +87,21 @@ int __isinf_sign(unsigned long long x, unsigned char __exp_bits, unsigned char _
       return 0;
    }
 }
+
+int __isinf_sign(unsigned long long x, unsigned char __exp_bits, unsigned char __frac_bits, int __exp_bias,
+                 _Bool __rounding, _Bool __nan, _Bool __one, _Bool __subnorm, signed char __sign)
+{
+   return __local_isinf_sign(x, __exp_bits, __frac_bits, __exp_bias, __rounding, __nan, __one, __subnorm, __sign);
+}
+
+#if defined(__llvm__) || defined(__CLANG__)
+int isinf_signf(float f)
+{
+   return __local_isinf_sign(*((unsigned int*)&f), IEEE32_SPEC);
+}
+
+int isinf_sign(double d)
+{
+   return __local_isinf_sign(*((unsigned long long*)&d), IEEE64_SPEC);
+}
+#endif

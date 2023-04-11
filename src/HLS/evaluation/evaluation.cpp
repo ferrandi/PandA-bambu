@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -42,49 +42,26 @@
  */
 #include "evaluation.hpp"
 
-#include "config_HAVE_EXPERIMENTAL.hpp"
-
-#include <boost/filesystem/operations.hpp>
-
-///. include
+#include "BackendFlow.hpp"
 #include "Parameter.hpp"
-
-/// behavior include
-#include "call_graph_manager.hpp"
-
-/// constants include
+#include "SimulationInformation.hpp"
+#include "area_model.hpp"
 #include "bambu_results_xml.hpp"
-
-/// hls includes
+#include "behavioral_helper.hpp"
+#include "call_graph_manager.hpp"
+#include "dbgPrintHelper.hpp"
+#include "fileIO.hpp"
 #include "hls.hpp"
 #include "hls_constraints.hpp"
+#include "hls_flow_step_factory.hpp"
 #include "hls_manager.hpp"
-
-/// polixml include
+#include "string_manipulation.hpp"
+#include "time_model.hpp"
+#include "utility.hpp"
 #include "xml_document.hpp"
-
-/// tree include
-#include "behavioral_helper.hpp"
-
-/// utility include
-#include "fileIO.hpp"
 #include "xml_helper.hpp"
 
-/// HLS include
-#include "SimulationInformation.hpp"
-#include "hls_flow_step_factory.hpp"
-
-/// behavior include
-#include "call_graph_manager.hpp"
-
-/// technology/physical_library/models includes
-#include "area_model.hpp"
-#include "time_model.hpp"
-
-/// wrapper/synthesis include
-#include "BackendFlow.hpp"
-#include "dbgPrintHelper.hpp"      // for DEBUG_LEVEL_
-#include "string_manipulation.hpp" // for GET_CLASS
+#include <boost/filesystem/operations.hpp>
 
 Evaluation::Evaluation(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr,
                        const DesignFlowManagerConstRef _design_flow_manager)
@@ -113,27 +90,6 @@ Evaluation::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relat
                                           HLSFlowStep_Relationship::WHOLE_APPLICATION));
                break;
             }
-#if HAVE_EXPERIMENTAL
-            case Evaluation_Mode::ESTIMATION:
-            {
-               for(const auto objective : objective_vector)
-               {
-                  if(objective == "AREA")
-                     ret.insert(std::make_tuple(HLSFlowStep_Type::AREA_ESTIMATION, HLSFlowStepSpecializationConstRef(),
-                                                HLSFlowStep_Relationship::WHOLE_APPLICATION));
-                  else if(objective == "CLOCK_SLACK")
-                     ret.insert(std::make_tuple(HLSFlowStep_Type::CLOCK_SLACK_ESTIMATION,
-                                                HLSFlowStepSpecializationConstRef(),
-                                                HLSFlowStep_Relationship::WHOLE_APPLICATION));
-                  else if(objective == "TIME")
-                     ret.insert(std::make_tuple(HLSFlowStep_Type::TIME_ESTIMATION, HLSFlowStepSpecializationConstRef(),
-                                                HLSFlowStep_Relationship::WHOLE_APPLICATION));
-                  else
-                     THROW_ERROR("Estimation objective not yet supported " + objective);
-               }
-               break;
-            }
-#endif
             case Evaluation_Mode::EXACT:
             {
                for(const auto& objective : objective_vector)
@@ -190,12 +146,6 @@ Evaluation::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relat
                                                 HLSFlowStep_Relationship::WHOLE_APPLICATION));
                   }
 #endif
-#if HAVE_EXPERIMENTAL
-                  else if(objective == "EDGES_REDUCTION_EVALUATION")
-                     ret.insert(std::make_tuple(HLSFlowStep_Type::EDGES_REDUCTION_EVALUATION,
-                                                HLSFlowStepSpecializationConstRef(),
-                                                HLSFlowStep_Relationship::ALL_FUNCTIONS));
-#endif
 #if HAVE_LIBRARY_CHARACTERIZATION_BUILT
                   else if(objective == "FREQUENCY")
                   {
@@ -215,12 +165,6 @@ Evaluation::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relat
                                                 HLSFlowStepSpecializationConstRef(),
                                                 HLSFlowStep_Relationship::WHOLE_APPLICATION));
                   }
-#endif
-#if HAVE_EXPERIMENTAL
-                  else if(objective == "NUM_AF_EDGES")
-                     ret.insert(std::make_tuple(HLSFlowStep_Type::NUM_AF_EDGES_EVALUATION,
-                                                HLSFlowStepSpecializationConstRef(),
-                                                HLSFlowStep_Relationship::ALL_FUNCTIONS));
 #endif
 #if HAVE_LIBRARY_CHARACTERIZATION_BUILT && HAVE_SIMULATION_WRAPPER_BUILT
                   else if(objective == "TIME" || objective == "TOTAL_TIME")
@@ -411,16 +355,16 @@ DesignFlowStep_Status Evaluation::Exec()
       }
    }
 
-   std::string out_file_name = "bambu_results";
+   unsigned int progressive = 0U;
+   const auto out_file_name = [&]() {
+      std::string candidate_out_file_name;
+      do
+      {
+         candidate_out_file_name = GetPath("bambu_results_" + STR(progressive++) + ".xml");
+      } while(boost::filesystem::exists(candidate_out_file_name));
+      return candidate_out_file_name;
+   }();
 
-   unsigned int progressive = 0;
-   std::string candidate_out_file_name;
-   do
-   {
-      candidate_out_file_name = GetPath(out_file_name + "_" + STR(progressive++) + ".xml");
-   } while(boost::filesystem::exists(candidate_out_file_name));
-
-   out_file_name = candidate_out_file_name;
    xml_document document;
    xml_element* nodeRoot = document.create_root_node("bambu_results");
 

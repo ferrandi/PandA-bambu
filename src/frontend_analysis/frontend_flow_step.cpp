@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -42,6 +42,7 @@
  *
  */
 #include "frontend_flow_step.hpp"
+
 #include "Parameter.hpp"                      // for Parameter, OPT_output_...
 #include "application_frontend_flow_step.hpp" // for ApplicationFrontendFlo...
 #include "application_manager.hpp"            // for application_manager
@@ -56,7 +57,8 @@
 #include "hash_helper.hpp"                    // for hash
 #include "string_manipulation.hpp"            // for STR GET_CLASS
 #include "tree_manager.hpp"                   // for tree_managerConstRef
-#include <iosfwd>                             // for ofstream
+
+#include <iosfwd> // for ofstream
 
 FrontendFlowStep::FrontendFlowStep(const application_managerRef _AppM,
                                    const FrontendFlowStepType _frontend_flow_step_type,
@@ -221,10 +223,6 @@ const std::string FrontendFlowStep::EnumToKindText(const FrontendFlowStepType fr
       case CALL_GRAPH_BUILTIN_CALL:
          return "CallGraphBuiltinCall";
 #endif
-#if HAVE_FROM_PRAGMA_BUILT && HAVE_EXPERIMENTAL && HAVE_BAMBU_BUILT
-      case CHECK_CRITICAL_SESSION:
-         return "CheckCriticalSession";
-#endif
 #if HAVE_ZEBU_BUILT
       case(CHECK_PIPELINABLE_LOOPS):
          return "CheckPipelinableLoops";
@@ -269,19 +267,9 @@ const std::string FrontendFlowStep::EnumToKindText(const FrontendFlowStepType fr
       case(MULTIPLE_ENTRY_IF_REDUCTION): // modified here
          return "MultipleEntryIfReduction";
 #endif
-#if HAVE_ZEBU_BUILT && HAVE_EXPERIMENTAL
-      case(DYNAMIC_AGGREGATE_DATA_FLOW_ANALYSIS):
-         return "DynamicAggregateDataFlowAnalysis";
-      case(DYNAMIC_VAR_COMPUTATION):
-         return "DynamicVarComputation";
-#endif
 #if HAVE_BAMBU_BUILT
       case ESSA:
          return "eSSA";
-#endif
-#if HAVE_BAMBU_BUILT && HAVE_EXPERIMENTAL
-      case(EXTENDED_PDG_COMPUTATION):
-         return "ExtendedPdgComputation";
 #endif
 #if HAVE_BAMBU_BUILT
       case(EXTRACT_GIMPLE_COND_OP):
@@ -312,8 +300,6 @@ const std::string FrontendFlowStep::EnumToKindText(const FrontendFlowStepType fr
          return "FunctionCallTypeCleanup";
       case FUNCTION_CALL_OPT:
          return "FunctionCallOpt";
-      case FUNCTION_INTERFACE_INFER:
-         return "FunctionInterfaceInfer";
 #endif
 #if HAVE_ZEBU_BUILT
       case(FUNCTION_POINTER_CALLGRAPH_COMPUTATION):
@@ -393,16 +379,6 @@ const std::string FrontendFlowStep::EnumToKindText(const FrontendFlowStepType fr
          return "OpReachabilityComputation";
       case(OPERATIONS_CFG_COMPUTATION):
          return "OperationsCfgComputation";
-#if HAVE_ZEBU_BUILT && HAVE_EXPERIMENTAL
-      case(PARALLEL_LOOP_SWAP):
-         return "ParallelLoopSwap";
-      case(PARALLEL_LOOPS_ANALYSIS):
-         return "ParallelLoopsAnalysis";
-#endif
-#if HAVE_BAMBU_BUILT && HAVE_EXPERIMENTAL
-      case(PARALLEL_REGIONS_GRAPH_COMPUTATION):
-         return "ParallelRegionsGraphComputation";
-#endif
       case PARM2SSA:
          return "Parm2SSA";
 #if HAVE_BAMBU_BUILT
@@ -440,16 +416,6 @@ const std::string FrontendFlowStep::EnumToKindText(const FrontendFlowStepType fr
          return "RebuildInitialization";
       case(REBUILD_INITIALIZATION2):
          return "RebuildInitialization2";
-#endif
-#if HAVE_BAMBU_BUILT && HAVE_EXPERIMENTAL
-      case(REDUCED_PDG_COMPUTATION):
-         return "ReducedPdgComputation";
-#endif
-#if HAVE_ZEBU_BUILT && HAVE_EXPERIMENTAL
-      case(REFINED_AGGREGATE_DATA_FLOW_ANALYSIS):
-         return "RefinedDataFlowAnalysis";
-      case(REFINED_VAR_COMPUTATION):
-         return "RefinedVarComputation";
 #endif
 #if HAVE_BAMBU_BUILT
       case REMOVE_CLOBBER_GA:
@@ -492,10 +458,6 @@ const std::string FrontendFlowStep::EnumToKindText(const FrontendFlowStepType fr
       case(SOURCE_CODE_STATISTICS):
          return "SourceCodeStatistics";
 #endif
-#if HAVE_BAMBU_BUILT && HAVE_EXPERIMENTAL
-      case(SPECULATION_EDGES_COMPUTATION):
-         return "SpeculationEdgesComputation";
-#endif
 #if HAVE_ZEBU_BUILT
       case(SPLIT_PHINODES):
          return "SplitPhinodes";
@@ -511,10 +473,6 @@ const std::string FrontendFlowStep::EnumToKindText(const FrontendFlowStepType fr
 #if HAVE_BAMBU_BUILT
       case UN_COMPARISON_LOWERING:
          return "UnComparisonLowering";
-#endif
-#if HAVE_EXPERIMENTAL && HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
-      case(UNROLL_LOOPS):
-         return "UnrollLoops";
 #endif
 #if HAVE_BAMBU_BUILT
       case(UNROLLING_DEGREE):
@@ -582,7 +540,7 @@ void FrontendFlowStep::PrintTreeManager(const bool before) const
 
 void FrontendFlowStep::PrintInitialIR() const
 {
-   if(!parameters->IsParameter("disable-print-tree-manager"))
+   if(!parameters->IsParameter("print-tree-manager") || parameters->GetParameter<unsigned int>("print-tree-manager"))
    {
       PrintTreeManager(true);
    }
@@ -590,7 +548,7 @@ void FrontendFlowStep::PrintInitialIR() const
 
 void FrontendFlowStep::PrintFinalIR() const
 {
-   if(!parameters->IsParameter("disable-print-tree-manager"))
+   if(!parameters->IsParameter("print-tree-manager") || parameters->GetParameter<unsigned int>("print-tree-manager"))
    {
       PrintTreeManager(false);
    }

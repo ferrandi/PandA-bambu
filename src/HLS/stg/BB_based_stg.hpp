@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -50,11 +50,6 @@ CONSTREF_FORWARD_DECL(OpGraph);
 class BB_based_stg : public STG_creator
 {
  protected:
-   /**
-    * Compute the relationship of this step
-    * @param relationship_type is the type of relationship to be considered
-    * @return the steps in relationship with this
-    */
    const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
    ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
@@ -65,11 +60,6 @@ class BB_based_stg : public STG_creator
     */
    BB_based_stg(const ParameterConstRef _parameters, const HLS_managerRef HLSMgr, unsigned int funId,
                 const DesignFlowManagerConstRef design_flow_manager);
-
-   /**
-    * Destructor
-    */
-   ~BB_based_stg() override;
 
    /**
     * Execute the step

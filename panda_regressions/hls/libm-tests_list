@@ -4,18 +4,18 @@ libm-tests/test-float.c --top-fname=acosf_test --benchmark-name=acosf --generate
 libm-tests/test-float.c --top-fname=acoshf_test --benchmark-name=acoshf --generate-tb=BENCHMARKS_ROOT/libm-tests/test.acosh.xml
 libm-tests/test-float.c --top-fname=asinf_test --benchmark-name=asinf --generate-tb=BENCHMARKS_ROOT/libm-tests/test.asin.xml
 libm-tests/test-float.c --top-fname=asinhf_test --benchmark-name=asinhf --generate-tb=BENCHMARKS_ROOT/libm-tests/test.asinh.xml
-libm-tests/test-float.c --top-fname=atan2f_test --benchmark-name=atan2f --generate-tb=BENCHMARKS_ROOT/libm-tests/test.atan2.xml
+libm-tests/test-float.c --top-fname=atan2f_test --benchmark-name=atan2f --generate-tb=BENCHMARKS_ROOT/libm-tests/test.atan2.xml --max-ulp=1
 libm-tests/test-float.c --top-fname=atanf_test --benchmark-name=atanf --generate-tb=BENCHMARKS_ROOT/libm-tests/test.atan.xml
-libm-tests/test-float.c --top-fname=atanhf_test --benchmark-name=atanhf --generate-tb=BENCHMARKS_ROOT/libm-tests/test.atanh.xml
-libm-tests/test-float.c --top-fname=cbrtf_test --benchmark-name=cbrtf --generate-tb=BENCHMARKS_ROOT/libm-tests/test.cbrt.xml
+libm-tests/test-float.c --top-fname=atanhf_test --benchmark-name=atanhf --generate-tb=BENCHMARKS_ROOT/libm-tests/test.atanh.xml --max-ulp=1
+libm-tests/test-float.c --top-fname=cbrtf_test --benchmark-name=cbrtf --generate-tb=BENCHMARKS_ROOT/libm-tests/test.cbrt.xml --max-ulp=1
 libm-tests/test-float.c --top-fname=ceilf_test --benchmark-name=ceilf --generate-tb=BENCHMARKS_ROOT/libm-tests/test.ceil.xml
 libm-tests/test-float.c --top-fname=copysignf_test --benchmark-name=copysignf --generate-tb=BENCHMARKS_ROOT/libm-tests/test.copysign.xml
-libm-tests/test-float.c --top-fname=cosf_test --benchmark-name=cosf --generate-tb=BENCHMARKS_ROOT/libm-tests/test.cos.xml
+libm-tests/test-float.c --top-fname=cosf_test --benchmark-name=cosf --generate-tb=BENCHMARKS_ROOT/libm-tests/test.cos.xml --max-ulp=1
 libm-tests/test-float.c --top-fname=coshf_test --benchmark-name=coshf --generate-tb=BENCHMARKS_ROOT/libm-tests/test.cosh.xml
-libm-tests/test-float.c --top-fname=erfcf_test --benchmark-name=erfcf --generate-tb=BENCHMARKS_ROOT/libm-tests/test.erfc.xml
+libm-tests/test-float.c --top-fname=erfcf_test --benchmark-name=erfcf --generate-tb=BENCHMARKS_ROOT/libm-tests/test.erfc.xml --max-ulp=1
 libm-tests/test-float.c --top-fname=erff_test --benchmark-name=erff --generate-tb=BENCHMARKS_ROOT/libm-tests/test.erf.xml
 libm-tests/test-float.c --top-fname=expf_test --benchmark-name=expf --generate-tb=BENCHMARKS_ROOT/libm-tests/test.exp.xml
-libm-tests/test-float.c --top-fname=expm1f_test --benchmark-name=expm1f --generate-tb=BENCHMARKS_ROOT/libm-tests/test.expm1.xml
+libm-tests/test-float.c --top-fname=expm1f_test --benchmark-name=expm1f --generate-tb=BENCHMARKS_ROOT/libm-tests/test.expm1.xml --max-ulp=1
 libm-tests/test-float.c --top-fname=fabsf_test --benchmark-name=fabsf --generate-tb=BENCHMARKS_ROOT/libm-tests/test.fabs.xml
 libm-tests/test-float.c --top-fname=floorf_test --benchmark-name=floorf --generate-tb=BENCHMARKS_ROOT/libm-tests/test.floor.xml
 libm-tests/test-float.c --top-fname=fmodf_test --benchmark-name=fmodf --generate-tb=BENCHMARKS_ROOT/libm-tests/test.fmod.xml
@@ -29,9 +29,9 @@ libm-tests/test-float.c --top-fname=isnormal_test --benchmark-name=isnormalf --g
 libm-tests/test-float.c --top-fname=ldexpf_test --benchmark-name=ldexpf --generate-tb=BENCHMARKS_ROOT/libm-tests/test.ldexp.xml
 libm-tests/test-float.c --top-fname=lgammaf_test --benchmark-name=lgammaf --generate-tb=BENCHMARKS_ROOT/libm-tests/test.lgamma.xml
 libm-tests/test-float.c --top-fname=log10f_test --benchmark-name=log10f --generate-tb=BENCHMARKS_ROOT/libm-tests/test.log10.xml --max-ulp=2
-libm-tests/test-float.c --top-fname=log1pf_test --benchmark-name=log1pf --generate-tb=BENCHMARKS_ROOT/libm-tests/test.log1p.xml
+libm-tests/test-float.c --top-fname=log1pf_test --benchmark-name=log1pf --generate-tb=BENCHMARKS_ROOT/libm-tests/test.log1p.xml --max-ulp=1
 libm-tests/test-float.c --top-fname=logbf_test --benchmark-name=logbf --generate-tb=BENCHMARKS_ROOT/libm-tests/test.logb.xml
-libm-tests/test-float.c --top-fname=logf_test --benchmark-name=logf --generate-tb=BENCHMARKS_ROOT/libm-tests/test.log.xml
+libm-tests/test-float.c --top-fname=logf_test --benchmark-name=logf --generate-tb=BENCHMARKS_ROOT/libm-tests/test.log.xml --max-ulp=1
 libm-tests/test-float.c --top-fname=modff_test --benchmark-name=modff --generate-tb=BENCHMARKS_ROOT/libm-tests/test.modf.xml
 libm-tests/test-float.c --top-fname=powf_test --benchmark-name=powf --generate-tb=BENCHMARKS_ROOT/libm-tests/test.pow.xml
 libm-tests/test-float.c --top-fname=remainderf_test --benchmark-name=remainderf --generate-tb=BENCHMARKS_ROOT/libm-tests/test.remainder.xml
@@ -40,7 +40,7 @@ libm-tests/test-float.c --top-fname=scalbf_test --benchmark-name=scalbf --genera
 libm-tests/test-float.c --top-fname=scalbnf_test --benchmark-name=scalbnf --generate-tb=BENCHMARKS_ROOT/libm-tests/test.scalbn.xml
 libm-tests/test-float.c --top-fname=signbit_test --benchmark-name=signbitf --generate-tb=BENCHMARKS_ROOT/libm-tests/test.signbit.xml
 libm-tests/test-float.c --top-fname=significandf_test --benchmark-name=significandf --generate-tb=BENCHMARKS_ROOT/libm-tests/test.significand.xml
-libm-tests/test-float.c --top-fname=sincosf_test --benchmark-name=sincosf --generate-tb=BENCHMARKS_ROOT/libm-tests/test.sincos.xml
+libm-tests/test-float.c --top-fname=sincosf_test --benchmark-name=sincosf --generate-tb=BENCHMARKS_ROOT/libm-tests/test.sincos.xml --max-ulp=1
 libm-tests/test-float.c --top-fname=sinf_test --benchmark-name=sinf --generate-tb=BENCHMARKS_ROOT/libm-tests/test.sin.xml
 libm-tests/test-float.c --top-fname=sinhf_test --benchmark-name=sinhf --generate-tb=BENCHMARKS_ROOT/libm-tests/test.sinh.xml
 libm-tests/test-float.c --top-fname=sqrtf_test --benchmark-name=sqrtf --generate-tb=BENCHMARKS_ROOT/libm-tests/test.sqrt.xml
@@ -55,28 +55,28 @@ libm-tests/test-double.c --top-fname=asinh_test --benchmark-name=asinh --generat
 libm-tests/test-double.c --top-fname=atan2_test --benchmark-name=atan2 --generate-tb=BENCHMARKS_ROOT/libm-tests/test.atan2.xml
 libm-tests/test-double.c --top-fname=atan_test --benchmark-name=atan --generate-tb=BENCHMARKS_ROOT/libm-tests/test.atan.xml
 libm-tests/test-double.c --top-fname=atanh_test --benchmark-name=atanh --generate-tb=BENCHMARKS_ROOT/libm-tests/test.atanh.xml
-libm-tests/test-double.c --top-fname=cbrt_test --benchmark-name=cbrt --generate-tb=BENCHMARKS_ROOT/libm-tests/test.cbrt.xml
+libm-tests/test-double.c --top-fname=cbrt_test --benchmark-name=cbrt --generate-tb=BENCHMARKS_ROOT/libm-tests/test.cbrt.xml --max-ulp=1
 libm-tests/test-double.c --top-fname=ceil_test --benchmark-name=ceil --generate-tb=BENCHMARKS_ROOT/libm-tests/test.ceil.xml
 libm-tests/test-double.c --top-fname=copysign_test --benchmark-name=copysign --generate-tb=BENCHMARKS_ROOT/libm-tests/test.copysign.xml
 libm-tests/test-double.c --top-fname=cos_test --benchmark-name=cos --generate-tb=BENCHMARKS_ROOT/libm-tests/test.cos.xml
 libm-tests/test-double.c --top-fname=cosh_test --benchmark-name=cosh --generate-tb=BENCHMARKS_ROOT/libm-tests/test.cosh.xml
-libm-tests/test-double.c --top-fname=erf_test --benchmark-name=erf --generate-tb=BENCHMARKS_ROOT/libm-tests/test.erf.xml
-libm-tests/test-double.c --top-fname=erfc_test --benchmark-name=erfc --generate-tb=BENCHMARKS_ROOT/libm-tests/test.erfc.xml
-libm-tests/test-double.c --top-fname=exp_test --benchmark-name=exp --generate-tb=BENCHMARKS_ROOT/libm-tests/test.exp.xml
-libm-tests/test-double.c --top-fname=expm1_test --benchmark-name=expm1 --generate-tb=BENCHMARKS_ROOT/libm-tests/test.expm1.xml
+libm-tests/test-double.c --top-fname=erf_test --benchmark-name=erf --generate-tb=BENCHMARKS_ROOT/libm-tests/test.erf.xml --max-ulp=1
+libm-tests/test-double.c --top-fname=erfc_test --benchmark-name=erfc --generate-tb=BENCHMARKS_ROOT/libm-tests/test.erfc.xml --max-ulp=1
+libm-tests/test-double.c --top-fname=exp_test --benchmark-name=exp --generate-tb=BENCHMARKS_ROOT/libm-tests/test.exp.xml --max-ulp=1
+libm-tests/test-double.c --top-fname=expm1_test --benchmark-name=expm1 --generate-tb=BENCHMARKS_ROOT/libm-tests/test.expm1.xml --max-ulp=1
 libm-tests/test-double.c --top-fname=fabs_test --benchmark-name=fabs --generate-tb=BENCHMARKS_ROOT/libm-tests/test.fabs.xml
 libm-tests/test-double.c --top-fname=floor_test --benchmark-name=floor --generate-tb=BENCHMARKS_ROOT/libm-tests/test.floor.xml
 libm-tests/test-double.c --top-fname=fmod_test --benchmark-name=fmod --generate-tb=BENCHMARKS_ROOT/libm-tests/test.fmod.xml
 libm-tests/test-double.c --top-fname=fpclassify_test --benchmark-name=fpclassify --generate-tb=BENCHMARKS_ROOT/libm-tests/test.fpclassify.xml
 libm-tests/test-double.c --top-fname=frexp_test --benchmark-name=frexp --generate-tb=BENCHMARKS_ROOT/libm-tests/test.frexp.xml
-libm-tests/test-double.c --top-fname=gamma_test --benchmark-name=gamma --generate-tb=BENCHMARKS_ROOT/libm-tests/test.gamma.xml
+libm-tests/test-double.c --top-fname=gamma_test --benchmark-name=gamma --generate-tb=BENCHMARKS_ROOT/libm-tests/test.gamma.xml --max-ulp=1
 libm-tests/test-double.c --top-fname=hypot_test --benchmark-name=hypot --generate-tb=BENCHMARKS_ROOT/libm-tests/test.hypot.xml
 libm-tests/test-double.c --top-fname=ilogb_test --benchmark-name=ilogb --generate-tb=BENCHMARKS_ROOT/libm-tests/test.ilogb.xml
 libm-tests/test-double.c --top-fname=isfinite_test --benchmark-name=isfinite --generate-tb=BENCHMARKS_ROOT/libm-tests/test.isfinite.xml
 libm-tests/test-double.c --top-fname=isnormal_test --benchmark-name=isnormal --generate-tb=BENCHMARKS_ROOT/libm-tests/test.isnormal.xml
 libm-tests/test-double.c --top-fname=ldexp_test --benchmark-name=ldexp --generate-tb=BENCHMARKS_ROOT/libm-tests/test.ldexp.xml
-libm-tests/test-double.c --top-fname=lgamma_test --benchmark-name=lgamma --generate-tb=BENCHMARKS_ROOT/libm-tests/test.lgamma.xml
-libm-tests/test-double.c --top-fname=log10_test --benchmark-name=log10 --generate-tb=BENCHMARKS_ROOT/libm-tests/test.log10.xml
+libm-tests/test-double.c --top-fname=lgamma_test --benchmark-name=lgamma --generate-tb=BENCHMARKS_ROOT/libm-tests/test.lgamma.xml --max-ulp=1
+libm-tests/test-double.c --top-fname=log10_test --benchmark-name=log10 --generate-tb=BENCHMARKS_ROOT/libm-tests/test.log10.xml --max-ulp=1
 libm-tests/test-double.c --top-fname=log1p_test --benchmark-name=log1p --generate-tb=BENCHMARKS_ROOT/libm-tests/test.log1p.xml
 libm-tests/test-double.c --top-fname=log_test --benchmark-name=log --generate-tb=BENCHMARKS_ROOT/libm-tests/test.log.xml
 libm-tests/test-double.c --top-fname=logb_test --benchmark-name=logb --generate-tb=BENCHMARKS_ROOT/libm-tests/test.logb.xml
