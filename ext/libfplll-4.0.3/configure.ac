@@ -1,7 +1,5 @@
 #                                               -*- Autoconf -*-
 # Process this file with autoconf to produce a configure script.
-
-AC_PREREQ([2.71])
 AC_INIT([libfplll],[4.0.3])
 AC_CONFIG_SRCDIR([src/fplll.cpp])
 AM_INIT_AUTOMAKE

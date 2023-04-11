@@ -3,7 +3,6 @@
 #                      Checking common prerequisites                           #
 #                                                                              #
 ################################################################################
-AC_PREREQ([2.71])
 AC_INIT([PandA],[2023.1],[panda-info@polimi.it])
 AC_CANONICAL_TARGET
 AM_INIT_AUTOMAKE([-Wno-portability 1.9 tar-pax subdir-objects])
