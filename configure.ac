@@ -3,9 +3,9 @@
 #                      Checking common prerequisites                           #
 #                                                                              #
 ################################################################################
-AC_PREREQ(2.57)
-AC_INIT(PandA, 2023.1, panda-info@polimi.it)
-AC_CANONICAL_SYSTEM
+AC_PREREQ([2.71])
+AC_INIT([PandA],[2023.1],[panda-info@polimi.it])
+AC_CANONICAL_TARGET
 AM_INIT_AUTOMAKE([-Wno-portability 1.9 tar-pax subdir-objects])
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 AC_CONFIG_SRCDIR([configure.ac])
@@ -141,7 +141,15 @@ AC_CHECK_LIB([z], [gzopen])
 
 # Checks for header files.
 AC_FUNC_ALLOCA
-AC_HEADER_STDC
+m4_warn([obsolete],
+[The preprocessor macro `STDC_HEADERS' is obsolete.
+  Except in unusual embedded environments, you can safely include all
+  ISO C90 headers unconditionally.])dnl
+# Autoupdate added the next two lines to ensure that your configure
+# script's behavior did not change.  They are probably safe to remove.
+AC_CHECK_INCLUDES_DEFAULT
+AC_PROG_EGREP
+
 AC_CHECK_HEADERS([float.h limits.h sys/timeb.h zlib.h stddef.h getopt.h ], [],[AC_MSG_ERROR("$ac_header not found")])
 AC_HEADER_SYS_WAIT
 
@@ -160,7 +168,19 @@ AC_FUNC_STRTOD
 AC_CHECK_FUNCS([floor memset modf pow sqrt strchr strcasecmp ])
 
 AC_LANG_PUSH([C++])
-AC_TYPE_SIGNAL
+m4_warn([obsolete],
+[your code may safely assume C89 semantics that RETSIGTYPE is void.
+Remove this warning and the `AC_CACHE_CHECK' when you adjust the code.])dnl
+AC_CACHE_CHECK([return type of signal handlers],[ac_cv_type_signal],[AC_COMPILE_IFELSE(
+[AC_LANG_PROGRAM([#include <sys/types.h>
+#include <signal.h>
+],
+		 [return *(signal (0, 0)) (0) == 1;])],
+		   [ac_cv_type_signal=int],
+		   [ac_cv_type_signal=void])])
+AC_DEFINE_UNQUOTED([RETSIGTYPE],[$ac_cv_type_signal],[Define as the return type of signal handlers
+		    (`int' or `void').])
+
 AC_STRUCT_TM
 
 AC_LIBTOOL_DLOPEN
@@ -2868,7 +2888,7 @@ AC_SUBST(ENABLE_DOC)
 AC_SUBST(all_includes)
 
 
-AC_OUTPUT()
+AC_OUTPUT
 
 if test "$no_create" = yes; then
 /bin/bash ./config.status lconfig.h
