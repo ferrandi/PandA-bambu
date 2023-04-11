@@ -62,12 +62,11 @@
 #include "custom_set.hpp" // for set
 #include "dsatur2_coloring.hpp"
 #include "exceptions.hpp"
+#include "ortools/graph/assignment.h"
 #include "refcount.hpp"
 #include "string_manipulation.hpp"
-#include "ortools/graph/assignment.h"
 
-
-#include <algorithm>      // for binary_search, sort
+#include <algorithm> // for binary_search, sort
 #include <boost/graph/adjacency_matrix.hpp>
 #include <boost/graph/filtered_graph.hpp>
 #include <boost/graph/graphviz.hpp>
@@ -1299,7 +1298,7 @@ class TS_based_clique_covering : public coloring_based_clique_covering<vertex_ty
          if(counter > MAX_EDGE_CONSIDERED)
          {
             break;
-      }
+         }
          else
          {
             ++counter;
@@ -1364,7 +1363,7 @@ class TS_based_clique_covering : public coloring_based_clique_covering<vertex_ty
          else
          {
             ++counter;
-      }
+         }
       }
       return !first_iter;
    }
@@ -1645,7 +1644,7 @@ class bipartite_matching_clique_covering : public clique_covering<vertex_type>
       /// now color the graph and then do the bipartite matching on the vertex having the same color
       /// usually this reduces the number of the partitions and simplifies the problem
       partitions.clear();
-         num_cols = color_the_cc_compatibility_graph(clique_covering_graph_bulk);
+      num_cols = color_the_cc_compatibility_graph(clique_covering_graph_bulk);
       // std::cerr << "initial max_num_cols " << max_num_cols << std::endl;
       auto completeCG = cc_compatibility_graphRef(
           new cc_compatibility_graph(clique_covering_graph_bulk,
@@ -1679,7 +1678,7 @@ class bipartite_matching_clique_covering : public clique_covering<vertex_type>
       do
       {
          restart_bipartite = false;
-      /// compute the assignment for each element of a partition
+         /// compute the assignment for each element of a partition
          // int pindex = 0;
          for(const auto& p : partitionsSorted)
          {
@@ -1696,29 +1695,29 @@ class bipartite_matching_clique_covering : public clique_covering<vertex_type>
                {
                   // std::cerr << "over\n";
                   for(unsigned int y = 0; y < num_cols; ++y)
-      {
+                  {
                      assignment.AddArcWithCost(static_cast<operations_research::NodeIndex>(i),
                                                static_cast<operations_research::NodeIndex>(y), 1);
                      // std::cerr << "i" << i << "-> y" << y << " (1)\n";
                   }
                }
                else
-         {
-                  /// check if already assigned
-            bool compatible_exist = false;
-                  unsigned compatible_column = 0;
-            for(unsigned int y = 0; y < num_cols; ++y)
-            {
-               if(cliques[y].find(*v_it) != cliques[y].end())
                {
-                  /// already assigned to a clique
+                  /// check if already assigned
+                  bool compatible_exist = false;
+                  unsigned compatible_column = 0;
+                  for(unsigned int y = 0; y < num_cols; ++y)
+                  {
+                     if(cliques[y].find(*v_it) != cliques[y].end())
+                     {
+                        /// already assigned to a clique
                         // std::cerr << "already assigned to a clique\n";
-                  compatible_exist = true;
+                        compatible_exist = true;
                         compatible_column = y;
                         THROW_ASSERT(column_already_assigned.count(y) == 0, "unexpected condition");
                         column_already_assigned.insert(y);
-                  break;
-               }
+                        break;
+                     }
                   }
                   if(compatible_exist)
                   {
@@ -1728,58 +1727,58 @@ class bipartite_matching_clique_covering : public clique_covering<vertex_type>
                      // std::cerr << "compatible_exist\n";
                   }
                   else
-               {
+                  {
                      // std::cerr << "compatible does not exist " << max_num_cols << " " << num_cols << "\n";
                      bool added_an_element = false;
                      // unsigned to_removed_number = 0;
                      for(unsigned int y = 0; y < num_cols; ++y)
-                  {
+                     {
                         if(column_already_assigned.find(y) == column_already_assigned.end())
-               {
+                        {
                            CustomOrderedSet<C_vertex> curr_expandend_clique;
                            const auto& current_clique = cliques.at(y);
                            // std::cerr << "current_clique.size=" << current_clique.size() << "y=" << y << "\n";
                            // std::cerr << "y=" << y << "\n";
                            bool to_be_removed = false;
                            for(const auto cv : current_clique)
-                  {
+                           {
                               // std::cerr << "*v_it=" << *v_it << " cv=" << cv << "\n";
                               auto edge_check = boost::edge(*v_it, cv, *completeCG);
                               if(!edge_check.second)
-                     {
+                              {
                                  to_be_removed = true;
                                  break;
-                     }
-                  }
+                              }
+                           }
                            if(!to_be_removed && current_clique.size())
-                  {
+                           {
                               curr_expandend_clique.insert(current_clique.begin(), current_clique.end());
                               curr_expandend_clique.insert(*v_it);
                               // std::cerr << "curr_expandend_clique.size=" << curr_expandend_clique.size() << "\n";
-                     C_vertex vertex_to_be_removed;
+                              C_vertex vertex_to_be_removed;
                               to_be_removed = fc.select_candidate_to_remove(curr_expandend_clique, vertex_to_be_removed,
                                                                             uv2v, *completeCG);
                            }
                            if(to_be_removed)
-                     {
+                           {
                               // std::cerr << "to be removed\n";
                               //++to_removed_number;
-                     }
+                           }
                            if(!to_be_removed)
-                     {
+                           {
                               auto clique_cost = 1 + fc.clique_cost(curr_expandend_clique, uv2v);
                               assignment.AddArcWithCost(static_cast<operations_research::NodeIndex>(i),
                                                         static_cast<operations_research::NodeIndex>(y), clique_cost);
                               added_an_element = true;
                               // std::cerr << "i" << i << "-> y" << y << " (" << clique_cost << ")\n";
+                           }
+                        }
                      }
-                  }
-               }
                      // min_to_be_removed = std::min(min_to_be_removed, to_removed_number);
                      // std::cerr << "to_removed_number=" << to_removed_number << " p.size() " << p.size()
                      //           << " num_columns " << num_cols << "\n";
                      if(!added_an_element)
-               {
+                     {
                         restart_bipartite = true;
                         //++skip_infeasibles;
                         // std::cerr << "restart the problem (" + STR(num_cols) + ")\n";
@@ -1794,28 +1793,28 @@ class bipartite_matching_clique_covering : public clique_covering<vertex_type>
                for(unsigned int i = 0; i < num_rows; ++i)
                {
                   if(v_it != v_it_end)
-            {
+                  {
                      auto s = assignment.RightMate(i);
                      // std::cerr << "assign " << names[*v_it] << " to clique" << s << "\n";
                      cliques[s].insert(*v_it);
                      ++v_it;
+                  }
+               }
             }
-         }
-         }
             else
-         {
+            {
                // std::cerr << "restart assignment problem " << num_cols << "\n";
                THROW_ASSERT(max_num_cols == 0 || max_num_cols > num_cols,
                             "Module binding does not have a solution\n  Current number of resources=" + STR(num_cols) +
                                 " Maximum number of resources" + STR(max_num_cols));
                for(unsigned sindex = 0; sindex < 1; ++sindex)
-            {
+               {
                   ++num_cols;
                   ++num_rows;
                   CustomUnorderedSet<C_vertex> empty;
                   cliques.push_back(empty);
                   if(max_num_cols != 0 && num_cols == max_num_cols)
-               {
+                  {
                      break;
                   }
                }
@@ -1826,23 +1825,23 @@ class bipartite_matching_clique_covering : public clique_covering<vertex_type>
                THROW_ASSERT(max_num_cols == 0 || max_num_cols >= num_cols,
                             "Module binding does not have a solution\n  Current number of resources=" + STR(num_cols) +
                                 " Maximum number of resources" + STR(max_num_cols));
-                  restart_bipartite = true;
-                  break;
-               }
+               restart_bipartite = true;
+               break;
             }
+         }
       } while(restart_bipartite);
 
       /// clean the results from empty cliques
       for(auto itC = cliques.begin(); itC != cliques.end();)
-            {
+      {
          if(itC->empty())
-               {
+         {
             itC = cliques.erase(itC);
-               }
+         }
          else
          {
             ++itC;
-            }
+         }
       }
    }
 

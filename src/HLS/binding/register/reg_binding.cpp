@@ -119,16 +119,16 @@ reg_bindingRef reg_binding::create_reg_binding(const hlsRef& HLS, const HLS_mana
          return reg_bindingRef(new reg_binding_cs(HLS, HLSMgr_));
       }
    }
-      return reg_bindingRef(new reg_binding(HLS, HLSMgr_));
-   }
+   return reg_bindingRef(new reg_binding(HLS, HLSMgr_));
+}
 
 void reg_binding::print_el(const_iterator& it) const
 {
    INDENT_OUT_MEX(
        OUTPUT_LEVEL_VERY_PEDANTIC, HLS->output_level,
-                  "---Storage Value: " + STR(it->first) + " for variable " +
+       "---Storage Value: " + STR(it->first) + " for variable " +
            FB->CGetBehavioralHelper()->PrintVariable(HLS->storage_value_information->get_variable_index(it->first)) +
-                      " stored into register " + it->second->get_string());
+           " stored into register " + it->second->get_string());
 }
 
 CustomOrderedSet<unsigned int> reg_binding::get_vars(const unsigned int& r) const
@@ -236,12 +236,12 @@ void reg_binding::compute_is_without_enable()
       const auto all_woe = [&]() {
          const auto store_vars_set = get_vars(i);
          for(const auto sv : store_vars_set)
-      {
+         {
             if(n_in.find(sv) == n_in.end() || n_in.find(sv)->second != 1 || n_out.find(sv) == n_out.end() ||
                n_out.find(sv)->second != 1)
-         {
+            {
                return false;
-         }
+            }
          }
          return true;
       }();
@@ -327,7 +327,7 @@ void reg_binding::add_to_SM(structural_objectRef clock_port, structural_objectRe
       const auto register_type_name = GetRegisterFUName(i);
       const auto library = HLS->HLS_T->get_technology_manager()->get_library(register_type_name);
       auto reg_mod = SM->add_module_from_technology_library(name, register_type_name, library, circuit,
-                                                                            HLS->HLS_T->get_technology_manager());
+                                                            HLS->HLS_T->get_technology_manager());
       specialise_reg(reg_mod, i);
       auto port_ck = reg_mod->find_member(CLOCK_PORT_NAME, port_o_K, reg_mod);
       THROW_ASSERT(port_ck, "Clock port missing from register.");
