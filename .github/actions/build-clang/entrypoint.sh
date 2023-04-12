@@ -21,9 +21,9 @@ git clone --depth 1 --branch $BRANCH https://github.com/llvm/llvm-project.git
 cd llvm-project
 mkdir build
 cd build
-cmake $@ -DCMAKE_INSTALL_PREFIX="$DIST_DIR" -G Ninja ../llvm
-ninja -j$J
-ninja install
+cmake $@ -G "Unix Makefile" ../llvm
+make -j$J 
+make DESTDIR="$DIST_DIR" install
 
 lsb_release -a >> "$DIST_DIR/VERSION"
 
