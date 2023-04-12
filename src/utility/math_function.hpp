@@ -45,8 +45,6 @@
 #ifndef MATH_FUNCTION_HPP
 #define MATH_FUNCTION_HPP
 
-#include "augmented_vector.hpp"
-
 #include <boost/version.hpp>
 #if BOOST_VERSION >= 105800
 #include <boost/integer/common_factor_rt.hpp>
@@ -55,13 +53,6 @@
 #endif
 
 #include <type_traits>
-
-/**
- * Return the distance between a point and a line (represented as a couple of points) in a n-dimensional space
- */
-long double get_point_line_distance(const AugmentedVector<long double>& point,
-                                    const AugmentedVector<long double>& line_point1,
-                                    const AugmentedVector<long double>& line_point2);
 
 /**
  * Return the greatest common divisor
