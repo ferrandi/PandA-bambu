@@ -15,6 +15,9 @@ failure_file="${install_dir}/download_failed"
 inflate() {
    echo "Installing $1 into $2"
    case $1 in
+      clang-16 )
+         wget ${bambuhls_compiler_url}/clang-16-bambu-Ubuntu_18.04.tar.xz $wget_opt | tar -C $2 -xJf - || touch ${failure_file} &
+         ;;
       clang-13 )
          wget https://github.com/llvm/llvm-project/releases/download/llvmorg-13.0.1/clang+llvm-13.0.1-x86_64-linux-gnu-ubuntu-18.04.tar.xz $wget_opt | tar -C $2 -xJf - || touch ${failure_file} &
          ;;
@@ -73,6 +76,8 @@ inflate() {
          wget ${bambuhls_compiler_url}/gcc-8-bambu-Ubuntu_16.04.tar.xz $wget_opt | tar -C $2 -xJf - 
          ;;
       * )
+         echo "Unknown compiler required"
+         exit -1
          ;;
    esac
 } 
