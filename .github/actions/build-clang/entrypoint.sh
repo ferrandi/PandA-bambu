@@ -28,7 +28,7 @@ git clone --depth 1 --branch $BRANCH https://github.com/llvm/llvm-project.git
 cd llvm-project
 mkdir build
 cd build
-cmake $@ -G "Unix Makefile" ../llvm
+cmake $@ -G "Unix Makefiles" ../llvm
 make -j$J 
 make DESTDIR="$DIST_DIR" install
 
