@@ -1,9 +1,7 @@
 #                                               -*- Autoconf -*-
 # Process this file with autoconf to produce a configure script.
-
-AC_PREREQ(2.59)
-AC_INIT([sollya], [3.0], [christoph.lauter@ens-lyon.org, sylvain.chevillard@ens-lyon.org, mioara.joldes@ens-lyon.fr])
-AC_CONFIG_HEADER([config.h])
+AC_INIT([sollya],[3.0],[christoph.lauter@ens-lyon.org, sylvain.chevillard@ens-lyon.org, mioara.joldes@ens-lyon.fr])
+AC_CONFIG_HEADERS([config.h])
 AM_INIT_AUTOMAKE([1.6 no-define dist-zip dist-bzip2])
 
  
@@ -30,9 +28,12 @@ if test "$LEX" != flex; then
   AC_SUBST(LEXLIB, '')
 fi
 #AC_PROG_RANLIB
-AC_LIBTOOL_DLOPEN
+_LT_SET_OPTION([LT_INIT],[dlopen])
+m4_warn([obsolete],[AC_LIBTOOL_DLOPEN: Remove this warning and the call to _LT_SET_OPTION when you
+put the 'dlopen' option into LT_INIT's first parameter.])
+
 #AC_DISABLE_SHARED
-AC_PROG_LIBTOOL
+LT_INIT
 AC_SUBST(LIBTOOL_DEPS)
 AC_CONFIG_MACRO_DIR([m4])
 
@@ -184,26 +185,61 @@ AC_ARG_WITH(mpfi,
   ])
 
 
-#Add xml2 include and lib
-
+# The xml2 include and lib can be found either by xml2-config or pkg-config
+# depending on what is available or provided by the user.
 XML2CONFIGGIVEN=""
+XML2CONFIG=""
 AC_ARG_WITH(xml2-config,
-   [  --with-xml2-config=executable XML2 config tool ], [
-      XML2CONFIG="$withval"
-      XML2CONFIGGIVEN=1
-   ])
+            [  --with-xml2-config=executable XML2 config tool ],
+            [if test "x$withval" != "xyes" -a "x$withval" != "x"
+             then
+               XML2CONFIG="$withval"
+               XML2CONFIGGIVEN=1
+	     fi
+            ])
 
-if test "x$XML2CONFIGGIVEN" = "x"; then
-AC_CHECK_PROG(XML2CONFIG,xml2-config,[xml2-config],[false])
+PKGCONFIGGIVEN=""
+PKGCONFIG=""
+AC_ARG_WITH(pkg-config,
+            [  --with-pkg-config=executable pkg-config tool ],
+            [if test "x$withval" != "xyes" -a "x$withval" != "x"
+             then
+               PKGCONFIG="$withval"
+               PKGCONFIGGIVEN=1
+	     fi
+            ])
+
+# If none of xml2-config and pkg-config is provided by the user, we pick one
+if test "x$XML2CONFIGGIVEN" = "x" -a "x$PKGCONFIGGIVEN" = "x"
+then
+  AC_CHECK_PROG(PKGCONFIG, pkg-config, [pkg-config])
+  if test "x$PKGCONFIG" = "x"
+  then
+    AC_CHECK_PROG(XML2CONFIG, xml2-config, [xml2-config])
+  fi
 fi
 
-if test "x$XML2INCLUDEGIVEN" = "x"; then
-  AM_CPPFLAGS="$AM_CPPFLAGS "`$XML2CONFIG --cflags`
+XML2CFLAGS=""
+XML2LIBS=""
+if test "x$PKGCONFIG" != "x"
+then
+  XML2CFLAGS=`$PKGCONFIG --cflags libxml-2.0 2> /dev/null`
+  XML2LIBS=`$PKGCONFIG --libs libxml-2.0 --static 2> /dev/null`
+else
+  if test "x$XML2CONFIG" != "x"
+  then
+    XML2CFLAGS=`$XML2CONFIG --cflags`
+    XML2LIBS=`$XML2CONFIG --libs`
+  fi
+fi
+if test "x$XML2INCLUDEGIVEN" = "x" -a "x$XML2CFLAGS" != "x"
+then
+  AM_CPPFLAGS="$AM_CPPFLAGS $XML2CFLAGS"
 fi
 
-if test "x$XML2LIBGIVEN" = "x"; then
-  XML2LIBS=`$XML2CONFIG --libs`
-  AC_SEARCH_LIBS([xmlTextReaderIsEmptyElement], [$XML2LIBS], [])
+if test "x$XML2LIBGIVEN" = "x" -a "x$XML2LIBS" != "x"
+then
+  AC_SEARCH_LIBS([xmlTextReaderIsEmptyElement], [xml2], [LIBS="$LIBS $XML2LIBS"], [], [])
 fi
 
 
@@ -231,11 +267,8 @@ AC_CHECK_LIB([mpfr], [mpfr_init], [], AC_MSG_ERROR([libmpfr unusable]))
 AC_CHECK_LIB([mpfr], [mpfr_erfc], [], AC_MSG_ERROR([libmpfr version too old]))
 AC_CHECK_LIB([z], [gzdopen], [], [])
 AC_CHECK_LIB([iconv], [libiconv_open], [], [])
+AC_CHECK_LIB([m],[cos])
 AC_CHECK_LIB([lzma], [lzma_code], [], AC_MSG_ERROR([libxml2 unusable because of missing liblzma]))
-AC_CHECK_ICU(32, LIBS="$ICU_LIBS $LIBS", AC_MSG_ERROR([libxml2 unusable because of missing icu]))
-AC_LANG_PUSH([C++])
-AC_CHECK_LIB([xml2], [xmlTextReaderIsEmptyElement], [], AC_MSG_ERROR([libxml2 unusable]))
-AC_LANG_POP([C++])	
 
 #Special check for fplll
 FPLLLUSABLE="yes"
@@ -340,7 +373,7 @@ LDFLAGS="$OLDLDFLAGS"
 
 # Checks for header files.
 AC_FUNC_ALLOCA
-AC_HEADER_STDC
+
 AC_HEADER_SYS_WAIT
 AC_CHECK_HEADERS([inttypes.h libintl.h malloc.h stddef.h stdlib.h string.h sys/ioctl.h sys/time.h termios.h unistd.h limits.h])
 
@@ -349,11 +382,18 @@ AC_C_CONST
 AC_HEADER_STDBOOL
 AC_TYPE_INT32_T
 AC_TYPE_SIZE_T
-AC_HEADER_TIME
+AC_CHECK_HEADERS_ONCE([sys/time.h])
+# Obsolete code to be removed.
+if test $ac_cv_header_sys_time_h = yes; then
+  AC_DEFINE([TIME_WITH_SYS_TIME],[1],[Define to 1 if you can safely include both <sys/time.h>
+	     and <time.h>.  This macro is obsolete.])
+fi
+# End of obsolete code.
+
 AC_TYPE_INT16_T
 AC_TYPE_INT8_T
 AC_TYPE_SIZE_T
-AC_HEADER_TIME
+
 AC_TYPE_UINT16_T
 AC_TYPE_UINT32_T
 AC_TYPE_UINT8_T
@@ -363,7 +403,19 @@ AC_C_VOLATILE
 AC_FUNC_ERROR_AT_LINE
 AC_FUNC_FORK
 AC_PROG_GCC_TRADITIONAL
-AC_TYPE_SIGNAL
+m4_warn([obsolete],
+[your code may safely assume C89 semantics that RETSIGTYPE is void.
+Remove this warning and the `AC_CACHE_CHECK' when you adjust the code.])dnl
+AC_CACHE_CHECK([return type of signal handlers],[ac_cv_type_signal],[AC_COMPILE_IFELSE(
+[AC_LANG_PROGRAM([#include <sys/types.h>
+#include <signal.h>
+],
+		 [return *(signal (0, 0)) (0) == 1;])],
+		   [ac_cv_type_signal=int],
+		   [ac_cv_type_signal=void])])
+AC_DEFINE_UNQUOTED([RETSIGTYPE],[$ac_cv_type_signal],[Define as the return type of signal handlers
+		    (`int' or `void').])
+
 AC_FUNC_VPRINTF
 AC_FUNC_MALLOC
 AC_FUNC_REALLOC

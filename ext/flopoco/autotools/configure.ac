@@ -1,6 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-
-AC_INIT([FloPoCo], [svn-trunk], [BUG_REPORT_ADDRESS])
+AC_INIT([FloPoCo],[svn-trunk],[BUG_REPORT_ADDRESS])
 AC_CONFIG_MACRO_DIR([m4])
 AM_INIT_AUTOMAKE([-Wall -Werror foreign subdir-objects])
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
@@ -11,7 +10,7 @@ AC_PROG_CXX
 AC_PROG_CC
 AC_PROG_CPP
 AC_PROG_INSTALL
-AC_PROG_LIBTOOL
+LT_INIT
 AM_PROG_LEX
 AC_PROG_YACC
 

@@ -4,7 +4,6 @@ dir_script=$(dirname $abs_script)
 cppcheck --enable=all --force --suppress=unusedFunction --suppress=unmatchedSuppression --inline-suppr ${dir_script}/../../src \
    -i${dir_script}/../../src/frontend_analysis/IR_analysis/lut_transformation.cpp \
    -I${dir_script}/../../src \
-   -I${dir_script}/../../src/algorithms/bipartite_matching/ \
    -I${dir_script}/../../src/algorithms/clique_covering \
    -I${dir_script}/../../src/algorithms/dominance \
    -I${dir_script}/../../src/algorithms/graph_helpers \
