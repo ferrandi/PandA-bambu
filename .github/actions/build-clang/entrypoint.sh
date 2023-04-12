@@ -17,11 +17,11 @@ trap cleanup EXIT
 
 # Install CMake from source
 git clone --depth 1 --branch v3.26.3 https://gitlab.kitware.com/cmake/cmake.git cmake
-push cmake
+cd cmake
 ./bootstrap -- -DCMAKE_BUILD_TYPE:STRING=Release -DCMAKE_USE_OPENSSL=OFF
 make -j$J
 make install
-pop
+cd ..
 
 git clone --depth 1 --branch $BRANCH https://github.com/llvm/llvm-project.git
 
