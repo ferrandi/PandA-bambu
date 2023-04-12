@@ -16,7 +16,7 @@ function cleanup {
 trap cleanup EXIT
 
 # Install CMake from source
-git clone --depth 1 --branch 3.26.3 https://gitlab.kitware.com/cmake/cmake.git cmake
+git clone --depth 1 --branch v3.26.3 https://gitlab.kitware.com/cmake/cmake.git cmake
 push cmake
 ./bootstrap -- -DCMAKE_BUILD_TYPE:STRING=Release -DCMAKE_USE_OPENSSL=OFF
 make -j$J
