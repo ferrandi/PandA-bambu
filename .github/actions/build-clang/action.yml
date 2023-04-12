@@ -1,0 +1,28 @@
+name: 'Build Clang'
+description: 'Configure, build, and generate Clang dist'
+inputs:
+  branch:
+    description: 'Branch to build from'
+    required: true
+  dist-name:
+    description: 'Dist package name'
+    required: true
+  config-args:
+    description: 'Configure command line arguments'
+    required: true
+  jobs:
+    description: 'Parallel jobs'
+    required: false
+    default: '1'
+outputs:
+  dist-dir:
+    description: 'Output dist directory'
+runs:
+  using: 'docker'
+  image: 'Dockerfile'
+  env:
+    J: ${{inputs.jobs}}
+  args:
+    - ${{inputs.branch}}
+    - ${{inputs.dist-name}}
+    - ${{inputs.config-args}}
