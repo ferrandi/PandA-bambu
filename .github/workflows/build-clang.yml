@@ -10,9 +10,9 @@ on:
         description: "Compiled Clang version number (e.g.: 16)"
         required: true
       configure:
-        description: "Clang configuration options"
+        description: "Clang enabled projects"
         required: false
-        default: '-DLLVM_ENABLE_PROJECTS="clang;mlir;polly" -DCMAKE_BUILD_TYPE=Release -DLLVM_PARALLEL_LINK_JOBS=4  -DLLVM_ENABLE_ASSERTIONS=ON'
+        default: 'clang;mlir;polly'
 
 concurrency:
   group: build-clang-${{ inputs.version }}
