@@ -54,7 +54,6 @@ ext/vflib/include
 ext/vflib/src
 src
 src/algorithms
-src/algorithms/bipartite_matching
 src/algorithms/boolean_functions
 src/algorithms/clique_covering
 src/algorithms/clustering
@@ -412,3 +411,7 @@ ext/mockturtle/lib/bill/bill/sat/solver
 ext/mockturtle/lib/bill/bill/sat/solver/abc
 ext/mockturtle/lib/bill/bill/utils
 ext/mockturtle/lib/bill/bill/dd
+ext/or-tools/
+ext/or-tools/ortools/graph
+ext/or-tools/ortools/base
+ext/or-tools/ortools/util

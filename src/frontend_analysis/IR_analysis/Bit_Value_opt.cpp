@@ -1235,7 +1235,7 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                               }
                               else
                               {
-                                 if(cst_val >> shift_const == 0)
+                                 if((cst_val >> shift_const) == 0)
                                  {
                                     is_op1_null = true;
                                  }

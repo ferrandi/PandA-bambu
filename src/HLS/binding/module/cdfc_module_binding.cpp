@@ -701,7 +701,7 @@ struct slack_based_filtering : public filter_clique<vertex>
    }
 
    size_t clique_cost(const CustomOrderedSet<C_vertex>& candidate_clique,
-                      const CustomUnorderedMap<C_vertex, vertex>& converter) const
+                      const CustomUnorderedMap<C_vertex, vertex>& converter) const override
    {
       unsigned int total_muxes;
       unsigned int n_shared;
@@ -710,6 +710,11 @@ struct slack_based_filtering : public filter_clique<vertex>
                                             candidate_clique, total_muxes, n_shared, converter, HLSMgr, HLS,
                                             HLS->debug_level);
       return static_cast<size_t>(total_muxes);
+   }
+
+   bool is_filtering() const override
+   {
+      return true;
    }
 
  private:
@@ -2438,6 +2443,12 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
             INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level,
                            "---Iteration " + STR(iteration) + " completed in " +
                                print_cpu_time(clique_iteration_cputime) + " seconds");
+            if(output_level >= OUTPUT_LEVEL_VERY_PEDANTIC)
+            {
+               INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level,
+                              "---total_resource_area=" + STR(total_resource_area) + ", total_DSPs=" + STR(total_DSPs) +
+                                  ", total_area_muxes=" + STR(total_area_muxes));
+            }
          }
       }
       std::swap(fu_best, fu);

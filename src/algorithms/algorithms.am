@@ -5,12 +5,11 @@ lib_algorithms_la_SOURCES =
 noinst_HEADERS += algorithms/graph_helpers/cyclic_topological_sort.hpp
 
 if BUILD_LIB_CLIQUECOVER
-  noinst_HEADERS += algorithms/bipartite_matching/bipartite_matching.hpp
 
   noinst_LTLIBRARIES +=  lib_clique_covering.la
   lib_clique_covering_la_CPPFLAGS = \
    -I$(top_srcdir)/src/ \
-   -I$(top_srcdir)/src/algorithms/bipartite_matching \
+   -isystem $(top_srcdir)/ext/or-tools \
    -I$(top_srcdir)/src/algorithms/clique_covering \
    -I$(top_srcdir)/src/utility \
    $(AM_CPPFLAGS)
