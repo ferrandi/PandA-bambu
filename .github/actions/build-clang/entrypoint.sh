@@ -28,6 +28,7 @@ git clone --depth 1 --branch $BRANCH https://github.com/llvm/llvm-project.git
 cd llvm-project
 mkdir build
 cd build
+echo cmake -DLLVM_ENABLE_PROJECTS="$@"-DCMAKE_BUILD_TYPE=Release -DLLVM_ENABLE_ASSERTIONS=ON -G "Unix Makefiles" ../llvm
 cmake -DLLVM_ENABLE_PROJECTS="$@"-DCMAKE_BUILD_TYPE=Release -DLLVM_ENABLE_ASSERTIONS=ON -G "Unix Makefiles" ../llvm
 make -j$J 
 make DESTDIR="$DIST_DIR" install
