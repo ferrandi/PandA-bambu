@@ -1577,7 +1577,10 @@ void CompilerWrapper::InitializeCompilerParameters()
       const auto warnings = Param->getOption<const CustomSet<std::string>>(OPT_gcc_warnings);
       for(const auto& warning : warnings)
       {
-         frontend_compiler_parameters += "-W" + warning + " ";
+         if(!warning.empty())
+         {
+            frontend_compiler_parameters += "-W" + warning + " ";
+         }
       }
    }
 #if HAVE_BAMBU_BUILT
@@ -4143,6 +4146,15 @@ size_t CompilerWrapper::CGetPointerSize(const ParameterConstRef parameters)
       THROW_ERROR("-m parameter not supported: " + gcc_m32_mx32);
    }
    return 0;
+}
+
+bool CompilerWrapper::isClang16orGreater(CompilerWrapper_CompilerTarget ct)
+{
+   return false
+#if HAVE_I386_CLANG16_COMPILER
+          || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG16
+#endif
+       ;
 }
 
 bool CompilerWrapper::isClangCheck(CompilerWrapper_CompilerTarget ct)

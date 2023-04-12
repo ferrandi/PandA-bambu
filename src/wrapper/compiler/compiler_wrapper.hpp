@@ -491,6 +491,7 @@ class CompilerWrapper
    static size_t CGetPointerSize(const ParameterConstRef parameters);
 
    static bool isClangCheck(CompilerWrapper_CompilerTarget ct);
+   static bool isClang16orGreater(CompilerWrapper_CompilerTarget ct);
    static bool isGccCheck(CompilerWrapper_CompilerTarget ct);
    static int getCompatibleCompilers();
    static int getDefaultCompiler();

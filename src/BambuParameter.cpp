@@ -2975,6 +2975,44 @@ void BambuParameter::CheckParameters()
          setOption(OPT_gcc_standard, "c++14");
       }
    }
+   else if(!isOption(OPT_gcc_standard))
+   {
+      setOption(OPT_gcc_standard, "gnu89");
+   }
+   if(CompilerWrapper::isClang16orGreater(getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler)))
+   {
+      std::string gcc_warnings;
+      if(isOption(OPT_gcc_warnings))
+      {
+         gcc_warnings = getOption<std::string>(OPT_gcc_warnings) + STR_CST_string_separator;
+      }
+      const auto empty_set = CustomSet<std::string>();
+      const auto warnings =
+          isOption(OPT_gcc_warnings) ? getOption<const CustomSet<std::string>>(OPT_gcc_warnings) : empty_set;
+      const auto addWarning = [&](const std::string& warn) {
+         if(warn.length() > 3 && warn.substr(0, 3) == "no-")
+         {
+            auto substr = warn.substr(3);
+            if(warnings.count(substr) == 0)
+            {
+               setOption(OPT_gcc_warnings, gcc_warnings + warn);
+               gcc_warnings = gcc_warnings + warn + STR_CST_string_separator;
+            }
+         }
+         else
+         {
+            if(warnings.count("no-" + warn) == 0)
+            {
+               setOption(OPT_gcc_warnings, gcc_warnings + warn);
+               gcc_warnings = gcc_warnings + warn + STR_CST_string_separator;
+            }
+         }
+      };
+      addWarning("implicit-int");
+      addWarning("no-incompatible-function-pointer-types");
+      addWarning("no-implicit-function-declaration");
+      addWarning("no-int-conversion");
+   }
    /// add experimental setup options
    if(getOption<std::string>(OPT_experimental_setup) == "VVD")
    {
