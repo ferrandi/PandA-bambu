@@ -18,7 +18,7 @@ trap cleanup EXIT
 # Install CMake from source
 git clone --depth 1 --branch v3.26.3 https://gitlab.kitware.com/cmake/cmake.git cmake
 cd cmake
-./bootstrap -- -DCMAKE_BUILD_TYPE:STRING=Release -DCMAKE_USE_OPENSSL=OFF
+./bootstrap --parallel=$J -- -DCMAKE_BUILD_TYPE:STRING=Release -DCMAKE_USE_OPENSSL=OFF
 make -j$J
 make install
 cd ..
@@ -28,7 +28,7 @@ git clone --depth 1 --branch $BRANCH https://github.com/llvm/llvm-project.git
 cd llvm-project
 mkdir build
 cd build
-cmake $@ -G "Unix Makefiles" ../llvm
+cmake "$@" -G "Unix Makefiles" ../llvm
 make -j$J 
 make DESTDIR="$DIST_DIR" install
 
