@@ -3465,7 +3465,7 @@ namespace llvm
    {
       if(index2statement_list.find(t) == index2statement_list.end())
       {
-      const llvm::Function* fd = reinterpret_cast<const llvm::Function*>(t);
+         const llvm::Function* fd = reinterpret_cast<const llvm::Function*>(t);
          index2statement_list[t].F = fd;
       }
       return assignCode(&index2statement_list.at(t), GT(STATEMENT_LIST));
@@ -5755,8 +5755,8 @@ namespace llvm
             if(!CI || !CI->isZero())
                return false;
 
-            // The remaining indices must be compile-time known integers within the
-            // notional bounds of the corresponding static array types.
+               // The remaining indices must be compile-time known integers within the
+               // notional bounds of the corresponding static array types.
 #if __clang_major__ > 15
             Constant* StrippedC = cast<Constant>(CE->stripInBoundsConstantOffsets());
             if(StrippedC == C)
