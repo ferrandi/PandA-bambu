@@ -383,7 +383,5 @@ bool StorageValueInformation::are_value_bitsize_compatible(unsigned int storage_
    const auto size1 = tree_helper::Size(var1);
    const auto size2 = tree_helper::Size(var2);
    return isInt1 == isInt2 && isReal1 == isReal2 &&
-          (((isInt1 && isInt2) || (isReal1 && isReal2)) ?
-               size1 == size2 :
-               resize_to_1_8_16_32_64_128_256_512(size1) == resize_to_1_8_16_32_64_128_256_512(size2));
+          (((isInt1 && isInt2) || (isReal1 && isReal2)) ? size1 == size2 : ceil_pow2(size1) == ceil_pow2(size2));
 }

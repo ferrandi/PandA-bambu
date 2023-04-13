@@ -1882,7 +1882,7 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
          if(HLSMgr->Rmem->is_private_memory(ar))
          {
             auto accessed_bitsize = std::max(required_variables[0], produced_variables);
-            accessed_bitsize = resize_to_1_8_16_32_64_128_256_512(accessed_bitsize);
+            accessed_bitsize = ceil_pow2(accessed_bitsize);
             bram_bitsize = has_misaligned_indirect_ref ? std::max(bram_bitsize, accessed_bitsize) :
                                                          std::max(bram_bitsize, accessed_bitsize / 2);
             if(bram_bitsize > HLSMgr->Rmem->get_maxbram_bitsize())

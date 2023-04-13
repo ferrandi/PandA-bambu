@@ -1300,7 +1300,7 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
          }
       }
       /// Round up to the next highest power of 2
-      max_byte_size = round_to_power2(max_byte_size);
+      max_byte_size = ceil_pow2(max_byte_size);
       HLSMgr->Rmem->set_internal_base_address_alignment(max_byte_size);
       INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level,
                      "Sparse memory alignemnt set to " + STR(max_byte_size) + " bytes");

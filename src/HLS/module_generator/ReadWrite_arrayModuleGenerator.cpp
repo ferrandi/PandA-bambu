@@ -102,7 +102,7 @@ void ReadWrite_arrayModuleGenerator::InternalExec(std::ostream& out, const modul
       }
    }
 
-   const auto isAlignedPowerOfTwo = _ports_out[1].alignment == round_to_power2(_ports_out[1].alignment);
+   const auto isAlignedPowerOfTwo = _ports_out[1].alignment == ceil_pow2(_ports_out[1].alignment);
    out << "//" << (isAlignedPowerOfTwo ? "T" : "F") << "\n";
    out << "integer ii=0;\n";
    out << "reg [" << _ports_out[1].type_size << "-1:0] " << _ports_out[1].name << ";\n";

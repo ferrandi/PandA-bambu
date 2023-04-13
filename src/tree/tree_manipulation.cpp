@@ -1516,7 +1516,7 @@ tree_nodeRef tree_manipulation::GetCustomIntegerType(unsigned long long prec, bo
 {
    std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> IR_schema;
 
-   IR_schema[TOK(TOK_ALGN)] = STR(resize_to_1_8_16_32_64_128_256_512(prec));
+   IR_schema[TOK(TOK_ALGN)] = STR(get_aligned_bitsize(prec));
    IR_schema[TOK(TOK_PREC)] = STR(prec);
    IR_schema[TOK(TOK_UNSIGNED)] = STR(unsigned_p);
 

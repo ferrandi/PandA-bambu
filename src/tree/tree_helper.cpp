@@ -2469,7 +2469,7 @@ static bool same_size_fields(const tree_nodeConstRef& t)
       {
          return false;
       }
-      else if(resize_to_1_8_16_32_64_128_256_512(sizeFlds) != sizeFlds)
+      else if(ceil_pow2(sizeFlds) != sizeFlds)
       {
          return false;
       }

@@ -512,7 +512,7 @@ void memory_allocation::finalize_memory_allocation()
    const auto bram_bitsize_max = HLS_T->get_target_device()->get_parameter<unsigned int>("BRAM_bitsize_max");
    HLSMgr->Rmem->set_maxbram_bitsize(bram_bitsize_max);
 
-   maximum_bus_size = resize_to_1_8_16_32_64_128_256_512(maximum_bus_size);
+   maximum_bus_size = ceil_pow2(maximum_bus_size);
 
    if(has_misaligned_indirect_ref || has_unaligned_accesses)
    {
