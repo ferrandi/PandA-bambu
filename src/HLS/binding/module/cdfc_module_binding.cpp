@@ -2330,7 +2330,6 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
                                   STR(num) + " = " + STR(clique.size()));
                /// compute maximum starting time
                double max_starting_time = 0.0;
-               int my_counter = 0;
                for(const auto current_vert : clique)
                {
                   max_starting_time = std::max(max_starting_time, starting_time[current_vert]);
