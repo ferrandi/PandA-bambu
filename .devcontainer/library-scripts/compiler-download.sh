@@ -16,7 +16,7 @@ inflate() {
    echo "Installing $1 into $2"
    case $1 in
       clang-16 )
-         wget ${bambuhls_compiler_url}/clang-16-bambu-Ubuntu_18.04.tar.xz $wget_opt | tar -C $2 -xJf - || touch ${failure_file} &
+         wget ${bambuhls_compiler_url}/clang+llvm-16.0.1-bambu-Ubuntu_18.04.tar.xz $wget_opt | tar -C $2 -xJf - || touch ${failure_file} &
          ;;
       clang-13 )
          wget https://github.com/llvm/llvm-project/releases/download/llvmorg-13.0.1/clang+llvm-13.0.1-x86_64-linux-gnu-ubuntu-18.04.tar.xz $wget_opt | tar -C $2 -xJf - || touch ${failure_file} &
