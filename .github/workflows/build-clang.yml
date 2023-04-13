@@ -12,7 +12,7 @@ on:
       configure:
         description: "Clang enabled projects"
         required: false
-        default: 'clang;mlir;polly'
+        default: clang;mlir;polly
 
 concurrency:
   group: build-clang-${{ inputs.version }}
@@ -43,7 +43,7 @@ jobs:
         with:
           jobs: ${{steps.host.outputs.jobs}}
           branch: ${{inputs.clang_ref}}
-          dist-name: clang-${{inputs.version}}-bambu
+          dist-name: clang+llvm-${{inputs.version}}-bambu
           config-args: ${{ inputs.configure }}
       - name: Upload clang-${{inputs.version}} dist directory
         uses: ./.github/actions/storage-upload
