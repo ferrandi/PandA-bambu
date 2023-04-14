@@ -4148,13 +4148,9 @@ size_t CompilerWrapper::CGetPointerSize(const ParameterConstRef parameters)
    return 0;
 }
 
-bool CompilerWrapper::isClang16orGreater(CompilerWrapper_CompilerTarget
-#if HAVE_I386_CLANG16_COMPILER
-                                             ct
-#endif
-)
+bool CompilerWrapper::isClang16orGreater(CompilerWrapper_CompilerTarget ct)
 {
-   return false
+   return isGccCheck(ct)
 #if HAVE_I386_CLANG16_COMPILER
           || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG16
 #endif
