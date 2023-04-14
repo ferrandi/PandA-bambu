@@ -347,7 +347,7 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "        Define functions to be always inlined.\n"
       << "        Automatic inlining is always performed using internal metrics.\n"
       << "        Maximum cost to allow function inlining is defined through\n"
-      << "        --panda-parameter=inline-max-cost=<value>. (default=65)\n\n"
+      << "        --panda-parameter=inline-max-cost=<value>. (default=60)\n\n"
       << "    --file-input-data=<file_list>\n"
       << "        A comma-separated list of input files used by the C specification.\n\n"
       << "    --C-no-parse=<file>\n"

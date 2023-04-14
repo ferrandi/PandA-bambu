@@ -599,7 +599,6 @@ gcc_regression_simple/compare-2.c
 gcc_regression_simple/compare-3.c
 gcc_regression_simple/complex-1.c
 gcc_regression_simple/complex-4.c
-gcc_regression_simple/complex-5.c
 gcc_regression_simple/complex-7.c
 gcc_regression_simple/conversion.c
 gcc_regression_simple/cvt-1.c
