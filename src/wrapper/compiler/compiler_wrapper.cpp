@@ -976,6 +976,17 @@ void CompilerWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::st
                analyzing_compiling_parameters += "-U" + escaped_string + " ";
             }
          }
+         if(Param->isOption(OPT_gcc_warnings))
+         {
+            const auto warnings = Param->getOption<const CustomSet<std::string>>(OPT_gcc_warnings);
+            for(const auto& warning : warnings)
+            {
+               if(!warning.empty())
+               {
+                  analyzing_compiling_parameters += "-W" + warning + " ";
+               }
+            }
+         }
          if(Param->isOption(OPT_gcc_includes))
          {
             analyzing_compiling_parameters += Param->getOption<std::string>(OPT_gcc_includes) + " ";
