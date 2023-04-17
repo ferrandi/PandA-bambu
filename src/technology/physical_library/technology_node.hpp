@@ -55,6 +55,7 @@
 #include <ostream>
 #include <string>
 #include <vector>
+#include <map>
 
 /**
  * @name forward declarations
