@@ -21,51 +21,39 @@
           </port_o>
           <port_o id="start_port" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="color" dir="IN">
             <structural_type_descriptor type="UINT" size="3"/>
-            <connected_objects/>
           </port_o>
           <port_o id="x" dir="IN">
             <structural_type_descriptor type="UINT" size="19"/>
-            <connected_objects/>
           </port_o>
           <port_o id="y" dir="IN">
             <structural_type_descriptor type="UINT" size="19"/>
-            <connected_objects/>
           </port_o>
           <port_o id="sel_plot" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="sel___plot" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="done_port" dir="OUT">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="VGA_R" dir="OUT" is_global="1" is_extern="1">
             <structural_type_descriptor type="UINT" size="4" />
-            <connected_objects/>
           </port_o>
           <port_o id="VGA_G" dir="OUT" is_global="1" is_extern="1">
             <structural_type_descriptor type="UINT" size="4" />
-            <connected_objects/>
           </port_o>
           <port_o id="VGA_B" dir="OUT" is_global="1" is_extern="1">
             <structural_type_descriptor type="UINT" size="4" />
-            <connected_objects/>
           </port_o>
         <port_o id="VGA_HS" dir="OUT" is_global="1" is_extern="1">
             <structural_type_descriptor type="BOOL" size="1" />
-            <connected_objects/>
           </port_o>
         <port_o id="VGA_VS" dir="OUT" is_global="1" is_extern="1">
             <structural_type_descriptor type="BOOL" size="1" />
-            <connected_objects/>
           </port_o>
         <NP_functionality LIBRARY="plot " VERILOG_FILE_PROVIDED="plot.v"/>
         </component_o>

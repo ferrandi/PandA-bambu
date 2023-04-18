@@ -1594,15 +1594,12 @@ endgenerate"/>
           <structural_type_descriptor id_type="vec_pack_trunc_expr_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="in2" dir="IN">
             <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="vec_pack_trunc_expr_FU in1 in2 out1" VERILOG_PROVIDED="generate
 genvar o1;
@@ -1633,15 +1630,12 @@ endgenerate"/>
           <structural_type_descriptor id_type="ui_vec_pack_trunc_expr_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="in2" dir="IN">
             <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="ui_vec_pack_trunc_expr_FU in1 in2 out1" VERILOG_PROVIDED="generate
 genvar o1;
@@ -1672,11 +1666,9 @@ endgenerate"/>
           <structural_type_descriptor id_type="vec_unpack_hi_expr_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="out1" dir="OUT" is_doubled="1">
             <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="vec_unpack_hi_expr_FU in1 out1" VERILOG_PROVIDED="generate
 genvar o1;
@@ -1700,11 +1692,9 @@ endgenerate"/>
           <structural_type_descriptor id_type="ui_vec_unpack_hi_expr_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="out1" dir="OUT" is_doubled="1">
             <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="ui_vec_unpack_hi_expr_FU in1 out1" VERILOG_PROVIDED="generate
 genvar o1;
@@ -1728,11 +1718,9 @@ endgenerate"/>
           <structural_type_descriptor id_type="vec_unpack_lo_expr_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="out1" dir="OUT" is_doubled="1">
             <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="vec_unpack_lo_expr_FU in1 out1" VERILOG_PROVIDED="generate
 genvar o1;
@@ -1756,11 +1744,9 @@ endgenerate"/>
           <structural_type_descriptor id_type="ui_vec_unpack_lo_expr_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="out1" dir="OUT" is_doubled="1">
             <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="ui_vec_unpack_lo_expr_FU in1 out1" VERILOG_PROVIDED="generate
 genvar o1;

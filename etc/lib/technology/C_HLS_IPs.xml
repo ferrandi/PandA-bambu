@@ -796,15 +796,12 @@ assign xdenom = in2;"/>
           <structural_type_descriptor id_type="min_expr_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="INT" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="in2" dir="IN">
             <structural_type_descriptor type="INT" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="INT" size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="min_expr_FU in1 in2 out1" VERILOG_PROVIDED="assign out1 = in1 &lt; in2 ? in1 : in2;" VHDL_PROVIDED="begin\n  out1 &lt;= resize_signed(in1, BITSIZE_out1) when (in1 &lt;= in2) else resize_signed(in2, BITSIZE_out1);\n"/>
         </component_o>
@@ -822,15 +819,12 @@ assign xdenom = in2;"/>
           <structural_type_descriptor id_type="ui_min_expr_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="UINT" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="in2" dir="IN">
             <structural_type_descriptor type="UINT" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="UINT" size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="ui_min_expr_FU in1 in2 out1" VERILOG_PROVIDED="assign out1 = in1 &lt; in2 ? in1 : in2;" VHDL_PROVIDED="begin\n  out1 &lt;= resize(in1, BITSIZE_out1) when (in1 &lt; in2) else resize(in2, BITSIZE_out1);\n"/>
         </component_o>
@@ -848,15 +842,12 @@ assign xdenom = in2;"/>
           <structural_type_descriptor id_type="bit_xor_expr_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="INT" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="in2" dir="IN">
             <structural_type_descriptor type="INT" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="INT" size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="bit_xor_expr_FU in1 in2 out1" VERILOG_PROVIDED="assign out1 = in1 ^ in2;" VHDL_PROVIDED="begin\nout1 &lt;= resize_signed(in1, BITSIZE_out1) xor resize_signed(in2, BITSIZE_out1);"/>
         </component_o>
@@ -874,15 +865,12 @@ assign xdenom = in2;"/>
           <structural_type_descriptor id_type="ui_bit_xor_expr_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="UINT" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="in2" dir="IN">
             <structural_type_descriptor type="UINT" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="UINT" size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="ui_bit_xor_expr_FU in1 in2 out1" VERILOG_PROVIDED="assign out1 = in1 ^ in2;" VHDL_PROVIDED="begin\nout1 &lt;= resize(in1, BITSIZE_out1) xor resize(in2, BITSIZE_out1);"/>
         </component_o>
@@ -900,15 +888,12 @@ assign xdenom = in2;"/>
           <structural_type_descriptor id_type="truth_andif_expr_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="in2" dir="IN">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="truth_andif_expr_FU in1 in2 out1" VERILOG_PROVIDED="assign out1 = (in1 != {BITSIZE_in1{1&apos;b0}}) &amp;&amp; (in2 != {BITSIZE_in2{1&apos;b0}});" VHDL_PROVIDED="begin\nout1 &lt;= in1 and in2;"/>
         </component_o>
@@ -928,15 +913,12 @@ assign xdenom = in2;"/>
           <parameter name="PRECISION">1</parameter>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="INT" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="in2" dir="IN">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="INT" size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="lshift_expr_FU in1 in2 out1 PRECISION" VERILOG_PROVIDED=
 "`ifndef _SIM_HAVE_CLOG2
@@ -985,15 +967,12 @@ VHDL_PROVIDED=
           <parameter name="PRECISION">1</parameter>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="UINT" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="in2" dir="IN">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="UINT" size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="ui_lshift_expr_FU in1 in2 out1 PRECISION" VERILOG_PROVIDED=
 "`ifndef _SIM_HAVE_CLOG2
@@ -1040,15 +1019,12 @@ VHDL_PROVIDED=
           <structural_type_descriptor id_type="lt_expr_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="INT" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="in2" dir="IN">
             <structural_type_descriptor type="INT" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="lt_expr_FU in1 in2 out1" VERILOG_PROVIDED=
 "assign out1 = in1 &lt; in2;
@@ -1079,15 +1055,12 @@ end process
           <structural_type_descriptor id_type="ui_lt_expr_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="UINT" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="in2" dir="IN">
             <structural_type_descriptor type="UINT" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="ui_lt_expr_FU in1 in2 out1" VERILOG_PROVIDED="assign out1 = in1 &lt; in2;" VHDL_PROVIDED=
 "begin
@@ -1109,15 +1082,12 @@ out1 &lt;= std_logic_vector(resize(to_unsigned(1, BITSIZE_out1), BITSIZE_out1)) 
           <parameter name="PRECISION">1</parameter>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="UINT" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="in2" dir="IN">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="UINT" size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="ui_lrotate_expr_FU in1 in2 out1 PRECISION" VERILOG_PROVIDED=
 "`ifndef _SIM_HAVE_CLOG2
@@ -1158,19 +1128,15 @@ assign out1 = (in1 &lt;&lt; (in2[marg2_bitsize-1:0]))|(in1 &gt;&gt; (PRECISION-(
           <parameter name="PRECISION">1</parameter>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="UINT" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="in2" dir="IN">
             <structural_type_descriptor type="UINT" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="in3" dir="IN">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="UINT" size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="ui_fshl_expr_FU in1 in2 in3 out1 PRECISION" VERILOG_PROVIDED=
 "`ifndef _SIM_HAVE_CLOG2
@@ -1211,19 +1177,15 @@ assign out1 = (in1 &lt;&lt; (in3[marg_bitsize-1:0]))|(in2 &gt;&gt; (PRECISION-(i
           <parameter name="PRECISION">1</parameter>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="UINT" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="in2" dir="IN">
             <structural_type_descriptor type="UINT" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="in3" dir="IN">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="UINT" size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="ui_fshr_expr_FU in1 in2 in3 out1 PRECISION" VERILOG_PROVIDED=
 "`ifndef _SIM_HAVE_CLOG2
@@ -1395,15 +1357,12 @@ begin
           </port_o>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="UINT" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="in2" dir="IN">
             <structural_type_descriptor type="UINT" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="out1" dir="OUT" is_doubled="1">
             <structural_type_descriptor type="UINT" size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="ui_widen_mult_expr_FU in1 in2 out1 PIPE_PARAMETER" IP_COMPONENT="ui_mult_expr_FU" VERILOG_PROVIDED="ui_mult_expr_FU #(.BITSIZE_in1(BITSIZE_in1), .BITSIZE_in2(BITSIZE_in2), .BITSIZE_out1(BITSIZE_out1), .PIPE_PARAMETER(PIPE_PARAMETER)) m1 (.out1(out1), .clock(clock), .in1(in1), .in2(in2));" VHDL_PROVIDED=
 "begin
@@ -1428,15 +1387,12 @@ begin
           </port_o>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="UINT" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="in2" dir="IN">
             <structural_type_descriptor type="UINT" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="UINT" size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="ui_mult_expr_FU in1 in2 out1 PIPE_PARAMETER" VERILOG_PROVIDED=
 "generate
@@ -1584,15 +1540,12 @@ begin
           <parameter name="PRECISION">1</parameter>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="UINT" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="in2" dir="IN">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="UINT" size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="ui_rrotate_expr_FU in1 in2 out1 PRECISION" VERILOG_PROVIDED=
 "`ifndef _SIM_HAVE_CLOG2
@@ -1631,11 +1584,9 @@ assign out1 = (in1 &gt;&gt; (in2[marg2_bitsize-1:0]))|(in1 &lt;&lt;(PRECISION-(i
           <structural_type_descriptor id_type="negate_expr_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="INT" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="INT" size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="negate_expr_FU in1 out1" VERILOG_PROVIDED="assign out1 = -in1;" VHDL_PROVIDED="begin\n  out1 &lt;= -resize_signed(in1, BITSIZE_out1);\n"/>
         </component_o>
@@ -1653,43 +1604,33 @@ assign out1 = (in1 &gt;&gt; (in2[marg2_bitsize-1:0]))|(in1 &lt;&lt;(PRECISION-(i
           <structural_type_descriptor id_type="lut_expr_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="in2" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="in3" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="in4" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="in5" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="in6" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="in7" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="in8" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="in9" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="lut_expr_FU in1 out1" VERILOG_PROVIDED="reg[7:0] cleaned_in0;
 wire [7:0] in0;
@@ -1748,15 +1689,12 @@ begin
           <structural_type_descriptor id_type="extract_bit_expr_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="INT" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="in2" dir="IN">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="extract_bit_expr_FU in1 in2" VERILOG_PROVIDED="assign out1 = (in1 &gt;&gt;&gt; in2)&amp;1;" VHDL_PROVIDED=
 "begin
@@ -1781,15 +1719,12 @@ begin
           <structural_type_descriptor id_type="ui_extract_bit_expr_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="UINT" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="in2" dir="IN">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="ui_extract_bit_expr_FU in1 in2" VERILOG_PROVIDED="assign out1 = (in1 &gt;&gt; in2)&amp;1;" VHDL_PROVIDED=
 "begin
@@ -1814,15 +1749,12 @@ begin
           <structural_type_descriptor id_type="extractvalue_expr_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="in2" dir="IN">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="extractvalue_expr_FU in1 in2" VERILOG_PROVIDED="assign out1 = (in1 &gt;&gt; in2);" VHDL_PROVIDED=
 "begin
@@ -1847,19 +1779,15 @@ begin
           <structural_type_descriptor id_type="insertvalue_expr_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="in2" dir="IN">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="in3" dir="IN">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="insertvalue_expr_FU in1 in2 in3" VERILOG_PROVIDED="reg [BITSIZE_in1-1:0] temp;
           always@(*) begin
@@ -1890,11 +1818,9 @@ begin
           <structural_type_descriptor id_type="ui_negate_expr_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="UINT" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="UINT" size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="ui_negate_expr_FU in1 out1" VERILOG_PROVIDED="assign out1 = -in1;" VHDL_PROVIDED="begin\n  out1 &lt;= unsigned(-signed(resize(in1, BITSIZE_out1)));\n"/>
         </component_o>
@@ -1912,15 +1838,12 @@ begin
           <structural_type_descriptor id_type="truth_xor_expr_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="in2" dir="IN">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="truth_xor_expr_FU in1 in2 out1" VERILOG_PROVIDED="assign out1 = (in1!={BITSIZE_in1{1&apos;b0}}) ^ (in2!={BITSIZE_in2{1&apos;b0}});" VHDL_PROVIDED="begin\nout1 &lt;= in1 xor in2;"/>
         </component_o>
@@ -1938,15 +1861,12 @@ begin
           <structural_type_descriptor id_type="truth_and_expr_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="in2" dir="IN">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="truth_and_expr_FU in1 in2 out1" VERILOG_PROVIDED="assign out1 = in1 &amp;&amp; in2;" VHDL_PROVIDED="begin\nout1 &lt;= std_logic_vector(resize(unsigned(in1), BITSIZE_out1) and resize(unsigned(in2), BITSIZE_out1));"/>
         </component_o>
@@ -1964,11 +1884,9 @@ begin
           <structural_type_descriptor id_type="truth_not_expr_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="truth_not_expr_FU in1 out1" VERILOG_PROVIDED="assign out1 = !in1;" VHDL_PROVIDED="begin\nout1 &lt;= std_logic_vector(resize(to_unsigned(1, BITSIZE_out1), BITSIZE_out1)) when (in1(0) = &apos;0&apos;) else (others =&gt; &apos;0&apos;);"/>
         </component_o>
@@ -1986,15 +1904,12 @@ begin
           <structural_type_descriptor id_type="eq_expr_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="INT" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="in2" dir="IN">
             <structural_type_descriptor type="INT" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="eq_expr_FU in1 in2 out1" VERILOG_PROVIDED="assign out1 = in1 == in2;" VHDL_PROVIDED="begin\n  out1 &lt;= std_logic_vector(resize(to_unsigned(1, BITSIZE_out1), BITSIZE_out1)) when (in1 = in2) else (others =&gt; &apos;0&apos;);\n"/>
         </component_o>
@@ -2012,15 +1927,12 @@ begin
           <structural_type_descriptor id_type="ui_eq_expr_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="UINT" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="in2" dir="IN">
             <structural_type_descriptor type="UINT" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="ui_eq_expr_FU in1 in2 out1" VERILOG_PROVIDED="assign out1 = in1 == in2;" VHDL_PROVIDED="begin\n  out1 &lt;= std_logic_vector(resize(to_unsigned(1, BITSIZE_out1), BITSIZE_out1)) when (in1 = in2) else (others =&gt; &apos;0&apos;);\n"/>
         </component_o>
@@ -2040,15 +1952,12 @@ begin
           <parameter name="PRECISION">1</parameter>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="INT" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="in2" dir="IN">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="INT" size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="rshift_expr_FU in1 in2 out1 PRECISION" VERILOG_PROVIDED=
 "`ifndef _SIM_HAVE_CLOG2
@@ -2097,15 +2006,12 @@ VHDL_PROVIDED=
           <parameter name="PRECISION">1</parameter>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="UINT" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="in2" dir="IN">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="UINT" size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="ui_rshift_expr_FU in1 in2 out1 PRECISION" VERILOG_PROVIDED=
 "`ifndef _SIM_HAVE_CLOG2
@@ -2157,15 +2063,12 @@ endgenerate
           </port_o>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="INT" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="in2" dir="IN">
             <structural_type_descriptor type="INT" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="INT" size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="exact_div_expr_FU in1 in2 out1 PIPE_PARAMETER" VERILOG_PROVIDED=
 "parameter required_iterations = BITSIZE_in1 &gt; PIPE_PARAMETER ? BITSIZE_in1 : PIPE_PARAMETER;
@@ -2311,15 +2214,12 @@ assign xdenom = in2 &gt;= $signed({BITSIZE_in2{1&apos;b0}}) ? in2 : -in2;"/>
           </port_o>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="INT" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="in2" dir="IN">
             <structural_type_descriptor type="INT" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="INT" size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="trunc_div_expr_FU in1 in2 out1 PIPE_PARAMETER" VERILOG_PROVIDED=
 "parameter required_iterations = BITSIZE_in1 &gt; PIPE_PARAMETER ? BITSIZE_in1 : PIPE_PARAMETER;
@@ -2465,15 +2365,12 @@ assign xdenom = in2 &gt;= $signed({BITSIZE_in2{1&apos;b0}}) ? in2 : -in2;"/>
           </port_o>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="UINT" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="in2" dir="IN">
             <structural_type_descriptor type="UINT" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="UINT" size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="ui_trunc_div_expr_FU in1 in2 out1 PIPE_PARAMETER" VERILOG_PROVIDED=
 "parameter required_iterations = BITSIZE_in1 &gt; PIPE_PARAMETER ? BITSIZE_in1 : PIPE_PARAMETER;
@@ -2611,15 +2508,12 @@ assign xdenom = in2;"/>
           <structural_type_descriptor id_type="le_expr_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="INT" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="in2" dir="IN">
             <structural_type_descriptor type="INT" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="le_expr_FU in1 in2 out1" VERILOG_PROVIDED="assign out1 = in1 &lt;= in2;" VHDL_PROVIDED="begin\nout1(0) &lt;= &apos;1&apos; when (signed(in1) &lt;= signed(in2)) else &apos;0&apos;;"/>
         </component_o>
@@ -2637,15 +2531,12 @@ assign xdenom = in2;"/>
           <structural_type_descriptor id_type="ui_le_expr_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="UINT" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="in2" dir="IN">
             <structural_type_descriptor type="UINT" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="ui_le_expr_FU in1 in2 out1" VERILOG_PROVIDED="assign out1 = in1 &lt;= in2;" VHDL_PROVIDED="begin\nout1(0) &lt;= &apos;1&apos; when (unsigned(in1) &lt;= unsigned(in2)) else &apos;0&apos;;"/>
         </component_o>
@@ -2663,15 +2554,12 @@ assign xdenom = in2;"/>
           <structural_type_descriptor id_type="bit_and_expr_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="INT" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="in2" dir="IN">
             <structural_type_descriptor type="INT" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="INT" size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="bit_and_expr_FU in1 in2 out1" VERILOG_PROVIDED="assign out1 = in1 &amp; in2;" VHDL_PROVIDED="begin\nout1 &lt;= resize_signed(in1, BITSIZE_out1) and resize_signed(in2, BITSIZE_out1);"/>
         </component_o>
@@ -2689,15 +2577,12 @@ assign xdenom = in2;"/>
           <structural_type_descriptor id_type="ui_bit_and_expr_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="UINT" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="in2" dir="IN">
             <structural_type_descriptor type="UINT" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="UINT" size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="ui_bit_and_expr_FU in1 in2 out1" VERILOG_PROVIDED="assign out1 = in1 &amp; in2;" VHDL_PROVIDED="begin\nout1 &lt;= resize(in1, BITSIZE_out1) and resize(in2, BITSIZE_out1);"/>
         </component_o>
@@ -2715,11 +2600,9 @@ assign xdenom = in2;"/>
           <structural_type_descriptor id_type="addr_expr_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="addr_expr_FU in1 out1" VERILOG_PROVIDED="assign out1 = in1;" VHDL_PROVIDED="begin\n out1 &lt;= std_logic_vector(resize(unsigned(in1), BITSIZE_out1));\n"/>
         </component_o>
@@ -2737,15 +2620,12 @@ assign xdenom = in2;"/>
           <structural_type_descriptor id_type="widen_sum_expr_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="INT" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="in2" dir="IN">
             <structural_type_descriptor type="INT" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="out1" dir="OUT" is_doubled="1">
             <structural_type_descriptor type="INT" size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="widen_sum_expr_FU in1 in2 out1" VERILOG_PROVIDED="assign out1 = in1 + in2;"/>
         </component_o>
@@ -2763,15 +2643,12 @@ assign xdenom = in2;"/>
           <structural_type_descriptor id_type="ui_widen_sum_expr_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="UINT" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="in2" dir="IN">
             <structural_type_descriptor type="UINT" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="out1" dir="OUT" is_doubled="1">
             <structural_type_descriptor type="UINT" size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="ui_widen_sum_expr_FU in1 in2 out1" VERILOG_PROVIDED="assign out1 = in1 + in2;"/>
         </component_o>
@@ -2789,15 +2666,12 @@ assign xdenom = in2;"/>
           <structural_type_descriptor id_type="plus_expr_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="INT" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="in2" dir="IN">
             <structural_type_descriptor type="INT" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="INT" size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="plus_expr_FU in1 in2 out1" VERILOG_PROVIDED="assign out1 = in1 + in2;" VHDL_PROVIDED="  signal resized_in1 : signed (BITSIZE_out1-1 downto 0);\n  signal resized_in2 : signed (BITSIZE_out1-1 downto 0);\n  begin\n    process(in1,in2,resized_in1,resized_in2)\n    begin\n      if(BITSIZE_out1 &lt;= BITSIZE_in1) then\n        resized_in1 &lt;= in1(BITSIZE_out1-1 downto 0);\n      else\n        resized_in1 &lt;= resize(in1, BITSIZE_out1);\n      end if;\n      if(BITSIZE_out1 &lt; BITSIZE_in2) then\n        resized_in2 &lt;= in2(BITSIZE_out1-1 downto 0);\n      else\n        resized_in2 &lt;= resize(in2, BITSIZE_out1);\n      end if;\n      out1 &lt;= resized_in1 + resized_in2;\n    end process;\n"/>
         </component_o>
@@ -2815,15 +2689,12 @@ assign xdenom = in2;"/>
           <structural_type_descriptor id_type="ui_plus_expr_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="UINT" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="in2" dir="IN">
             <structural_type_descriptor type="UINT" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="UINT" size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="ui_plus_expr_FU in1 in2 out1" VERILOG_PROVIDED="assign out1 = in1 + in2;" VHDL_PROVIDED="  signal resized_in1 : unsigned(BITSIZE_out1-1 downto 0);\n  signal resized_in2 : unsigned(BITSIZE_out1-1 downto 0);\n  begin\n    process(in1,in2,resized_in1,resized_in2)\n    begin\n      if(BITSIZE_out1 &lt;= BITSIZE_in1) then\n        resized_in1 &lt;= in1(BITSIZE_out1-1 downto 0);\n      else\n        resized_in1 &lt;= resize(in1, BITSIZE_out1);\n      end if;\n      if(BITSIZE_out1 &lt; BITSIZE_in2) then\n        resized_in2 &lt;= in2(BITSIZE_out1-1 downto 0);\n      else\n        resized_in2 &lt;= resize(in2, BITSIZE_out1);\n      end if;\n      out1 &lt;= resized_in1 + resized_in2;\n    end process;\n"/>
         </component_o>
@@ -2841,15 +2712,12 @@ assign xdenom = in2;"/>
           <structural_type_descriptor id_type="sat_plus_expr_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="INT" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="in2" dir="IN">
             <structural_type_descriptor type="INT" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="INT" size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="sat_plus_expr_FU in1 in2 out1" 
 VERILOG_PROVIDED="
@@ -2879,15 +2747,12 @@ assign out1 = cond2 ? mask_min : (cond1 ? mask_max : add_tmp);
           <structural_type_descriptor id_type="ui_sat_plus_expr_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="UINT" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="in2" dir="IN">
             <structural_type_descriptor type="UINT" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="UINT" size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="ui_sat_plus_expr_FU in1 in2 out1" 
 VERILOG_PROVIDED="
@@ -2910,19 +2775,15 @@ assign out1 = add_tmp[BITSIZE_out1] ? {BITSIZE_out1{1&apos;b1}} : add_tmp[BITSIZ
           <structural_type_descriptor id_type="ternary_plus_expr_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="INT" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="in2" dir="IN">
             <structural_type_descriptor type="INT" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="in3" dir="IN">
             <structural_type_descriptor type="INT" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="INT" size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="ternary_plus_expr_FU in1 in2 in3 out1" VERILOG_PROVIDED="assign out1 = in1 + in2 + in3;" VHDL_PROVIDED="begin\nout1 &lt;= resize_signed(in1, BITSIZE_out1) + resize_signed(in2, BITSIZE_out1) + resize_signed(in3, BITSIZE_out1);"/>
         </component_o>
@@ -2940,19 +2801,15 @@ assign out1 = add_tmp[BITSIZE_out1] ? {BITSIZE_out1{1&apos;b1}} : add_tmp[BITSIZ
           <structural_type_descriptor id_type="ui_ternary_plus_expr_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="UINT" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="in2" dir="IN">
             <structural_type_descriptor type="UINT" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="in3" dir="IN">
             <structural_type_descriptor type="UINT" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="UINT" size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="ui_ternary_plus_expr_FU in1 in2 in3 out1" VERILOG_PROVIDED="assign out1 = in1 + in2 + in3;" VHDL_PROVIDED="begin\nout1 &lt;= resize(in1, BITSIZE_out1) + resize(in2, BITSIZE_out1) + resize(in3, BITSIZE_out1);"/>
         </component_o>
@@ -2970,19 +2827,15 @@ assign out1 = add_tmp[BITSIZE_out1] ? {BITSIZE_out1{1&apos;b1}} : add_tmp[BITSIZ
           <structural_type_descriptor id_type="ternary_pm_expr_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="INT" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="in2" dir="IN">
             <structural_type_descriptor type="INT" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="in3" dir="IN">
             <structural_type_descriptor type="INT" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="INT" size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="ternary_pm_expr_FU in1 in2 in3 out1" VERILOG_PROVIDED="assign out1 = in1 + in2 - in3;" VHDL_PROVIDED="begin\nout1 &lt;= resize_signed(in1, BITSIZE_out1) + resize_signed(in2, BITSIZE_out1) - resize_signed(in3, BITSIZE_out1);"/>
         </component_o>
@@ -3000,19 +2853,15 @@ assign out1 = add_tmp[BITSIZE_out1] ? {BITSIZE_out1{1&apos;b1}} : add_tmp[BITSIZ
           <structural_type_descriptor id_type="ui_ternary_pm_expr_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="UINT" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="in2" dir="IN">
             <structural_type_descriptor type="UINT" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="in3" dir="IN">
             <structural_type_descriptor type="UINT" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="UINT" size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="ui_ternary_pm_expr_FU in1 in2 in3 out1" VERILOG_PROVIDED="assign out1 = in1 + in2 - in3;" VHDL_PROVIDED="begin\nout1 &lt;= resize(in1, BITSIZE_out1) + resize(in2, BITSIZE_out1) - resize(in3, BITSIZE_out1);"/>
         </component_o>
@@ -3030,19 +2879,15 @@ assign out1 = add_tmp[BITSIZE_out1] ? {BITSIZE_out1{1&apos;b1}} : add_tmp[BITSIZ
           <structural_type_descriptor id_type="ternary_mp_expr_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="INT" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="in2" dir="IN">
             <structural_type_descriptor type="INT" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="in3" dir="IN">
             <structural_type_descriptor type="INT" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="INT" size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="ternary_mp_expr_FU in1 in2 in3 out1" VERILOG_PROVIDED="assign out1 = in1 - in2 + in3;" VHDL_PROVIDED="begin\nout1 &lt;= resize_signed(in1, BITSIZE_out1) - resize_signed(in2, BITSIZE_out1) + resize_signed(in3, BITSIZE_out1);"/>
         </component_o>
@@ -3060,19 +2905,15 @@ assign out1 = add_tmp[BITSIZE_out1] ? {BITSIZE_out1{1&apos;b1}} : add_tmp[BITSIZ
           <structural_type_descriptor id_type="ui_ternary_mp_expr_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="UINT" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="in2" dir="IN">
             <structural_type_descriptor type="UINT" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="in3" dir="IN">
             <structural_type_descriptor type="UINT" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="UINT" size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="ui_ternary_mp_expr_FU in1 in2 in3 out1" VERILOG_PROVIDED="assign out1 = in1 - in2 + in3;" VHDL_PROVIDED="begin\nout1 &lt;= resize(in1, BITSIZE_out1) - resize(in2, BITSIZE_out1) + resize(in3, BITSIZE_out1);"/>
         </component_o>
@@ -3090,19 +2931,15 @@ assign out1 = add_tmp[BITSIZE_out1] ? {BITSIZE_out1{1&apos;b1}} : add_tmp[BITSIZ
           <structural_type_descriptor id_type="ternary_mm_expr_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="INT" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="in2" dir="IN">
             <structural_type_descriptor type="INT" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="in3" dir="IN">
             <structural_type_descriptor type="INT" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="INT" size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="ternary_mm_expr_FU in1 in2 in3 out1" VERILOG_PROVIDED="assign out1 = in1 - in2 - in3;" VHDL_PROVIDED="begin\nout1 &lt;= resize_signed(in1, BITSIZE_out1) - resize_signed(in2, BITSIZE_out1) - resize_signed(in3, BITSIZE_out1);"/>
         </component_o>
@@ -3120,19 +2957,15 @@ assign out1 = add_tmp[BITSIZE_out1] ? {BITSIZE_out1{1&apos;b1}} : add_tmp[BITSIZ
           <structural_type_descriptor id_type="ui_ternary_mm_expr_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="UINT" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="in2" dir="IN">
             <structural_type_descriptor type="UINT" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="in3" dir="IN">
             <structural_type_descriptor type="UINT" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="UINT" size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="ui_ternary_mm_expr_FU in1 in2 in3 out1" VERILOG_PROVIDED="assign out1 = in1 - in2 - in3;" VHDL_PROVIDED="begin\nout1 &lt;= resize(in1, BITSIZE_out1) - resize(in2, BITSIZE_out1) - resize(in3, BITSIZE_out1);"/>
         </component_o>
@@ -3155,43 +2988,33 @@ assign out1 = add_tmp[BITSIZE_out1] ? {BITSIZE_out1{1&apos;b1}} : add_tmp[BITSIZ
           <structural_type_descriptor id_type="ternary_alu_expr_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="INT" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="in2" dir="IN">
             <structural_type_descriptor type="INT" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="in3" dir="IN">
             <structural_type_descriptor type="INT" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="sel_ternary_plus_expr" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="sel_ternary_pm_expr" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="sel_ternary_mp_expr" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="sel_ternary_mm_expr" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="sel_plus_expr" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="sel_minus_expr" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="INT" size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="ternary_alu_expr_FU in1 in2 in3 out1" VERILOG_PROVIDED="wire [1:0] in1_tail;
 wire [1:0] in2_tail;
@@ -3360,43 +3183,33 @@ assign out1 = (c_vector+s_vector)&gt;&gt;2;
           <structural_type_descriptor id_type="ui_ternary_alu_expr_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="UINT" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="in2" dir="IN">
             <structural_type_descriptor type="UINT" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="in3" dir="IN">
             <structural_type_descriptor type="UINT" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="sel_ternary_plus_expr" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="sel_ternary_pm_expr" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="sel_ternary_mp_expr" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="sel_ternary_mm_expr" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="sel_plus_expr" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="sel_minus_expr" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="UINT" size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="ui_ternary_alu_expr_FU in1 in2 in3 out1" VERILOG_PROVIDED="wire [1:0] in1_tail;
 wire [1:0] in2_tail;
@@ -3554,15 +3367,12 @@ assign out1 = (c_vector+s_vector)&gt;&gt;2;"/>
           <parameter name="LSB_PARAMETER">-1</parameter>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="INT" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="in2" dir="IN">
             <structural_type_descriptor type="INT" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="INT" size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="pointer_plus_expr_FU in1 in2 out1 LSB_PARAMETER" VERILOG_PROVIDED="generate if (BITSIZE_out1 &gt; LSB_PARAMETER) assign out1[BITSIZE_out1-1:LSB_PARAMETER] = (in1[BITSIZE_in1-1:LSB_PARAMETER] + in2[BITSIZE_in2-1:LSB_PARAMETER]); else assign out1 = 0; endgenerate\ngenerate if (LSB_PARAMETER != 0 &amp;&amp; BITSIZE_out1 &gt; LSB_PARAMETER) assign out1[LSB_PARAMETER-1:0] = 0; endgenerate"/>
         </component_o>
@@ -3581,15 +3391,12 @@ assign out1 = (c_vector+s_vector)&gt;&gt;2;"/>
           <parameter name="LSB_PARAMETER">-1</parameter>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="UINT" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="in2" dir="IN">
             <structural_type_descriptor type="UINT" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="UINT" size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="ui_pointer_plus_expr_FU in1 in2 out1 LSB_PARAMETER" VERILOG_PROVIDED="wire [BITSIZE_out1-1:0] in1_tmp;\nwire [BITSIZE_out1-1:0] in2_tmp;\nassign in1_tmp = in1;\nassign in2_tmp = in2;generate if (BITSIZE_out1 &gt; LSB_PARAMETER) assign out1[BITSIZE_out1-1:LSB_PARAMETER] = (in1_tmp[BITSIZE_out1-1:LSB_PARAMETER] + in2_tmp[BITSIZE_out1-1:LSB_PARAMETER]); else assign out1 = 0; endgenerate\ngenerate if (LSB_PARAMETER != 0 &amp;&amp; BITSIZE_out1 &gt; LSB_PARAMETER) assign out1[LSB_PARAMETER-1:0] = 0; endgenerate" VHDL_PROVIDED="begin\n  out1 &lt;= resize(in1, BITSIZE_out1) + resize(in2, BITSIZE_out1);"/>
         </component_o>
@@ -3607,15 +3414,12 @@ assign out1 = (c_vector+s_vector)&gt;&gt;2;"/>
           <structural_type_descriptor id_type="truth_orif_expr_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="in2" dir="IN">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="truth_orif_expr_FU in1 in2 out1" VERILOG_PROVIDED="assign out1 = (in1 != {BITSIZE_in1{1&apos;b0}}) || (in2 != {BITSIZE_in2{1&apos;b0}});" VHDL_PROVIDED="begin\nout1 &lt;= in1 or in2;"/>
         </component_o>
@@ -3633,11 +3437,9 @@ assign out1 = (c_vector+s_vector)&gt;&gt;2;"/>
           <structural_type_descriptor id_type="view_convert_expr_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="INT" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="view_convert_expr_FU in1 out1" VERILOG_PROVIDED="assign out1 = in1;" VHDL_PROVIDED="begin\nout1 &lt;= std_logic_vector(resize(signed(in1), BITSIZE_out1));"/>
         </component_o>
@@ -3655,11 +3457,9 @@ assign out1 = (c_vector+s_vector)&gt;&gt;2;"/>
           <structural_type_descriptor id_type="ui_view_convert_expr_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="ui_view_convert_expr_FU in1 out1" VERILOG_PROVIDED="assign out1 = in1;" VHDL_PROVIDED="begin\nout1 &lt;= std_logic_vector(resize(unsigned(in1), BITSIZE_out1));"/>
         </component_o>
@@ -3677,11 +3477,9 @@ assign out1 = (c_vector+s_vector)&gt;&gt;2;"/>
           <structural_type_descriptor id_type="fp_view_convert_expr_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="REAL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="fp_view_convert_expr_FU in1 out1" VERILOG_PROVIDED="assign out1 = in1;" VHDL_PROVIDED="begin\nout1 &lt;= std_logic_vector(resize(unsigned(in1), BITSIZE_out1));"/>
         </component_o>
@@ -3699,11 +3497,9 @@ assign out1 = (c_vector+s_vector)&gt;&gt;2;"/>
           <structural_type_descriptor id_type="UUdata_converter_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="UUdata_converter_FU in1 out1" VERILOG_PROVIDED="generate\nif (BITSIZE_out1 &lt;= BITSIZE_in1)\nbegin\n  assign out1 = in1[BITSIZE_out1-1:0];\nend\nelse\nbegin\n  assign out1 = {{(BITSIZE_out1-BITSIZE_in1){1&apos;b0}},in1};\nend\nendgenerate" VHDL_PROVIDED="begin\nout1 &lt;= std_logic_vector(resize(unsigned(in1), BITSIZE_out1));"/>
         </component_o>
@@ -3721,11 +3517,9 @@ assign out1 = (c_vector+s_vector)&gt;&gt;2;"/>
           <structural_type_descriptor id_type="UUconvert_expr_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="UUconvert_expr_FU in1 out1" VERILOG_PROVIDED="generate\nif (BITSIZE_out1 &lt;= BITSIZE_in1)\nbegin\n  assign out1 = in1[BITSIZE_out1-1:0];\nend\nelse\nbegin\n  assign out1 = {{(BITSIZE_out1-BITSIZE_in1){1&apos;b0}},in1};\nend\nendgenerate" VHDL_PROVIDED="begin\nout1 &lt;= std_logic_vector(resize(unsigned(in1), BITSIZE_out1));"/>
         </component_o>
@@ -3743,11 +3537,9 @@ assign out1 = (c_vector+s_vector)&gt;&gt;2;"/>
           <structural_type_descriptor id_type="IUdata_converter_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="INT" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="UINT" size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="IUdata_converter_FU in1 out1" VERILOG_PROVIDED="generate\nif (BITSIZE_out1 &lt;= BITSIZE_in1)\nbegin\n  assign out1 = in1[BITSIZE_out1-1:0];\nend\nelse\nbegin\n  assign out1 = {{(BITSIZE_out1-BITSIZE_in1){in1[BITSIZE_in1-1]}},in1};\nend\nendgenerate" VHDL_PROVIDED="begin\n  process(in1)\n  begin\n    if(BITSIZE_out1 &lt;= BITSIZE_in1) then\n      out1 &lt;= unsigned(in1(BITSIZE_out1-1 downto 0));\n    else\n      out1 &lt;= unsigned(resize(in1, BITSIZE_out1));\n    end if;\n  end process;"/>
         </component_o>
@@ -3765,11 +3557,9 @@ assign out1 = (c_vector+s_vector)&gt;&gt;2;"/>
           <structural_type_descriptor id_type="IUconvert_expr_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="INT" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="UINT" size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="IUconvert_expr_FU in1 out1" VERILOG_PROVIDED=
 "generate
@@ -3800,11 +3590,9 @@ endgenerate" VHDL_PROVIDED=
           <structural_type_descriptor id_type="UIdata_converter_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="UINT" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="INT" size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="UIdata_converter_FU in1 out1" VERILOG_PROVIDED="generate\nif (BITSIZE_out1 &lt;= BITSIZE_in1)\nbegin\n  assign out1 = in1[BITSIZE_out1-1:0];\nend\nelse\nbegin\n  assign out1 = {{(BITSIZE_out1-BITSIZE_in1){1&apos;b0}},in1};\nend\nendgenerate" VHDL_PROVIDED="begin\n  process(in1)\n  begin\n    if(BITSIZE_out1 &gt; BITSIZE_in1) then\n      out1 &lt;= signed(resize(in1, BITSIZE_out1));\n    else\n      out1 &lt;= signed(in1 (BITSIZE_out1-1 downto 0));\n    end if;\n  end process;"/>
         </component_o>
@@ -3822,11 +3610,9 @@ endgenerate" VHDL_PROVIDED=
           <structural_type_descriptor id_type="UIconvert_expr_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="UINT" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="INT" size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="UIconvert_expr_FU in1 out1" VERILOG_PROVIDED="generate\nif (BITSIZE_out1 &lt;= BITSIZE_in1)\nbegin\n  assign out1 = in1[BITSIZE_out1-1:0];\nend\nelse\nbegin\n  assign out1 = {{(BITSIZE_out1-BITSIZE_in1){1&apos;b0}},in1};\nend\nendgenerate" VHDL_PROVIDED="begin\n  process(in1)\n  begin\n    if(BITSIZE_out1 &gt; BITSIZE_in1) then\n      out1 &lt;= signed(resize(in1, BITSIZE_out1));\n    else\n      out1 &lt;= signed(in1 (BITSIZE_out1-1 downto 0));\n    end if;\n  end process;"/>
         </component_o>
@@ -3844,11 +3630,9 @@ endgenerate" VHDL_PROVIDED=
           <structural_type_descriptor id_type="IIdata_converter_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="INT" size="1" />
-            <connected_objects/>
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="INT" size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="IIdata_converter_FU in1 out1" VERILOG_PROVIDED="generate\nif (BITSIZE_out1 &lt;= BITSIZE_in1)\nbegin\n  assign out1 = in1[BITSIZE_out1-1:0];\nend\nelse\nbegin\n  assign out1 = {{(BITSIZE_out1-BITSIZE_in1){in1[BITSIZE_in1-1]}},in1};\nend\nendgenerate" VHDL_PROVIDED="begin\n  process(in1)\n  begin\n    if(BITSIZE_out1 &gt; BITSIZE_in1) then\n      out1 &lt;= resize(in1, BITSIZE_out1);\n    else\n      out1 &lt;= in1 (BITSIZE_out1-1 downto 0);\n    end if;\n  end process;"/>
         </component_o>
@@ -3866,11 +3650,9 @@ endgenerate" VHDL_PROVIDED=
           <structural_type_descriptor id_type="IIconvert_expr_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="INT" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="INT" size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="IIconvert_expr_FU in1 out1"
 VERILOG_PROVIDED="generate
@@ -3907,15 +3689,12 @@ VHDL_PROVIDED="begin
           <structural_type_descriptor id_type="gt_expr_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="INT" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="in2" dir="IN">
             <structural_type_descriptor type="INT" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="gt_expr_FU in1 in2 out1" VERILOG_PROVIDED="assign out1 = in1 &gt; in2;" VHDL_PROVIDED="begin
 out1 &lt;= std_logic_vector(resize(to_unsigned(1, BITSIZE_out1), BITSIZE_out1))  when (signed(in1) &gt; signed(in2)) else (others =&gt; &apos;0&apos;);"/>
@@ -3934,15 +3713,12 @@ out1 &lt;= std_logic_vector(resize(to_unsigned(1, BITSIZE_out1), BITSIZE_out1)) 
           <structural_type_descriptor id_type="ui_gt_expr_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="UINT" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="in2" dir="IN">
             <structural_type_descriptor type="UINT" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="ui_gt_expr_FU in1 in2 out1" VERILOG_PROVIDED="assign out1 = in1 &gt; in2;" VHDL_PROVIDED="begin
 out1 &lt;= std_logic_vector(resize(to_unsigned(1, BITSIZE_out1), BITSIZE_out1)) when (unsigned(in1) &gt; unsigned(in2)) else (others =&gt; &apos;0&apos;);"/>
@@ -3961,11 +3737,9 @@ out1 &lt;= std_logic_vector(resize(to_unsigned(1, BITSIZE_out1), BITSIZE_out1)) 
           <structural_type_descriptor id_type="__builtin_abs"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="INT" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="INT" size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="__builtin_abs in1 out1" VERILOG_PROVIDED="assign out1 = in1[BITSIZE_in1-1] ? -in1 : in1;" VHDL_PROVIDED="begin
   out1 &lt;= -resize_signed(in1, BITSIZE_out1) when (in1(BITSIZE_in1-1) = '1') else resize_signed(in1, BITSIZE_out1);
@@ -3985,11 +3759,9 @@ out1 &lt;= std_logic_vector(resize(to_unsigned(1, BITSIZE_out1), BITSIZE_out1)) 
           <structural_type_descriptor id_type="bit_not_expr_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="INT" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="INT" size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="bit_not_expr_FU in1 out1" VERILOG_PROVIDED="assign out1 = ~in1;" VHDL_PROVIDED="begin
 out1 &lt;= not resize_signed(in1, BITSIZE_out1);"/>
@@ -4008,11 +3780,9 @@ out1 &lt;= not resize_signed(in1, BITSIZE_out1);"/>
           <structural_type_descriptor id_type="ui_bit_not_expr_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="UINT" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="UINT" size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="ui_bit_not_expr_FU in1 out1" VERILOG_PROVIDED="assign out1 = ~in1;" VHDL_PROVIDED="begin
 out1 &lt;= not resize(in1, BITSIZE_out1);"/>
@@ -4031,15 +3801,12 @@ out1 &lt;= not resize(in1, BITSIZE_out1);"/>
           <structural_type_descriptor id_type="truth_or_expr_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="in2" dir="IN">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="truth_or_expr_FU in1 in2 out1" VERILOG_PROVIDED="assign out1 = in1 || in2;" VHDL_PROVIDED=
 "begin
@@ -4067,15 +3834,12 @@ out1 &lt;= not resize(in1, BITSIZE_out1);"/>
           <structural_type_descriptor id_type="minus_expr_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="INT" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="in2" dir="IN">
             <structural_type_descriptor type="INT" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="INT" size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="minus_expr_FU in1 in2 out1" VERILOG_PROVIDED="assign out1 = in1 - in2;"  VHDL_PROVIDED="begin
 out1 &lt;= resize_signed(in1, BITSIZE_out1) - resize_signed(in2, BITSIZE_out1);"/>
@@ -4094,15 +3858,12 @@ out1 &lt;= resize_signed(in1, BITSIZE_out1) - resize_signed(in2, BITSIZE_out1);"
           <structural_type_descriptor id_type="ui_minus_expr_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="UINT" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="in2" dir="IN">
             <structural_type_descriptor type="UINT" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="UINT" size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="ui_minus_expr_FU in1 in2 out1" VERILOG_PROVIDED="assign out1 = in1 - in2;" VHDL_PROVIDED="begin
 out1 &lt;= resize(in1, BITSIZE_out1) - resize(in2, BITSIZE_out1);"/>
@@ -4121,15 +3882,12 @@ out1 &lt;= resize(in1, BITSIZE_out1) - resize(in2, BITSIZE_out1);"/>
           <structural_type_descriptor id_type="sat_minus_expr_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="INT" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="in2" dir="IN">
             <structural_type_descriptor type="INT" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="INT" size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="sat_minus_expr_FU in1 in2 out1" 
 VERILOG_PROVIDED="
@@ -4159,15 +3917,12 @@ assign out1 = cond2 ? mask_min : (cond1 ? mask_max : sub_tmp);
           <structural_type_descriptor id_type="ui_sat_minus_expr_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="UINT" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="in2" dir="IN">
             <structural_type_descriptor type="UINT" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="UINT" size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="ui_sat_minus_expr_FU in1 in2 out1" 
 VERILOG_PROVIDED="
@@ -4190,15 +3945,12 @@ assign out1 = sub_tmp[BITSIZE_out1] ? {BITSIZE_out1{1&apos;b0}} : sub_tmp[BITSIZ
           <structural_type_descriptor id_type="ne_expr_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="INT" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="in2" dir="IN">
             <structural_type_descriptor type="INT" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="ne_expr_FU in1 in2 out1" VERILOG_PROVIDED="assign out1 = in1 != in2;" VHDL_PROVIDED="signal xs1 : unsigned(in1&apos;range) := (others =&gt; &apos;X&apos;);
 signal xs2 : unsigned(in2&apos;range) := (others =&gt; &apos;X&apos;);
@@ -4220,15 +3972,12 @@ begin
           <structural_type_descriptor id_type="ui_ne_expr_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="UINT" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="in2" dir="IN">
             <structural_type_descriptor type="UINT" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="ui_ne_expr_FU in1 in2 out1" VERILOG_PROVIDED="assign out1 = in1 != in2;" VHDL_PROVIDED="signal xs1 : unsigned(in1&apos;range) := (others =&gt; &apos;X&apos;);
 signal xs2 : unsigned(in2&apos;range) := (others =&gt; &apos;X&apos;);
@@ -4250,15 +3999,12 @@ begin
           <structural_type_descriptor id_type="bit_ior_expr_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="INT" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="in2" dir="IN">
             <structural_type_descriptor type="INT" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="INT" size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="bit_ior_expr_FU in1 in2 out1" VERILOG_PROVIDED="assign out1 = in1 | in2;" VHDL_PROVIDED="begin
 out1 &lt;= resize_signed(in1, BITSIZE_out1) or resize_signed(in2, BITSIZE_out1);"/>
@@ -4277,15 +4023,12 @@ out1 &lt;= resize_signed(in1, BITSIZE_out1) or resize_signed(in2, BITSIZE_out1);
           <structural_type_descriptor id_type="ui_bit_ior_expr_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="UINT" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="in2" dir="IN">
             <structural_type_descriptor type="UINT" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="UINT" size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="ui_bit_ior_expr_FU in1 in2 out1" VERILOG_PROVIDED="assign out1 = in1 | in2;" VHDL_PROVIDED="begin
 out1 &lt;= resize(in1, BITSIZE_out1) or resize(in2, BITSIZE_out1);"/>
@@ -4309,77 +4052,60 @@ out1 &lt;= resize(in1, BITSIZE_out1) or resize(in2, BITSIZE_out1);"/>
           </port_o>
           <port_o id="reset" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="start_port" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="var_arg" dir="IN" is_var_args="1">
             <structural_type_descriptor type="INT" size="1"/>
           </port_o>
           <port_o id="sel_printf" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="sel___builtin_printf" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="done_port" dir="OUT">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="INT" size="1" />
           </port_o>
           <port_o id="Min_oe_ram" dir="IN" is_memory="1" is_master="1">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="Mout_oe_ram" dir="OUT" is_memory="1" is_master="1">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="Min_we_ram" dir="IN" is_memory="1" is_master="1">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="Mout_we_ram" dir="OUT" is_memory="1" is_master="1">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="Min_addr_ram" dir="IN" is_memory="1" is_master="1" is_addr_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="Mout_addr_ram" dir="OUT" is_memory="1" is_master="1" is_addr_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="M_Rdata_ram" dir="IN" is_memory="1" is_global="1" is_extern="1" is_data_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
-            <connected_objects/>
           </port_o>
           <port_o id="Min_Wdata_ram" dir="IN" is_memory="1" is_master="1" is_data_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
-            <connected_objects/>
           </port_o>
           <port_o id="Mout_Wdata_ram" dir="OUT" is_memory="1" is_master="1" is_data_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
-            <connected_objects/>
           </port_o>
           <port_o id="Min_data_ram_size" dir="IN" is_memory="1" is_master="1" is_size_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="Mout_data_ram_size" dir="OUT" is_memory="1" is_master="1" is_size_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="M_DataRdy" dir="IN" is_memory="1" is_global="1" is_extern="1">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="out1 Min_addr_ram Mout_addr_ram M_Rdata_ram Min_Wdata_ram Mout_Wdata_ram Min_data_ram_size Mout_data_ram_size" VERILOG_GENERATOR="PrintfModuleGenerator"/>
         </component_o>
@@ -4402,77 +4128,60 @@ out1 &lt;= resize(in1, BITSIZE_out1) or resize(in2, BITSIZE_out1);"/>
           </port_o>
           <port_o id="reset" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="start_port" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="var_arg" dir="IN" is_var_args="1">
             <structural_type_descriptor type="INT" size="1"/>
           </port_o>
           <port_o id="sel_printf" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="sel___builtin_printf" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="done_port" dir="OUT">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="INT" size="1" />
           </port_o>
           <port_vector_o id="Min_oe_ram" dir="IN" is_memory="1" is_master="1">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_vector_o>
           <port_vector_o id="Mout_oe_ram" dir="OUT" is_memory="1" is_master="1">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_vector_o>
           <port_vector_o id="Min_we_ram" dir="IN" is_memory="1" is_master="1">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_vector_o>
           <port_vector_o id="Mout_we_ram" dir="OUT" is_memory="1" is_master="1">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_vector_o>
           <port_vector_o id="Min_addr_ram" dir="IN" is_memory="1" is_master="1" is_addr_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_vector_o>
           <port_vector_o id="Mout_addr_ram" dir="OUT" is_memory="1" is_master="1" is_addr_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_vector_o>
           <port_vector_o id="M_Rdata_ram" dir="IN" is_memory="1" is_global="1" is_extern="1" is_data_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
-            <connected_objects/>
           </port_vector_o>
           <port_vector_o id="Min_Wdata_ram" dir="IN" is_memory="1" is_master="1" is_data_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
-            <connected_objects/>
           </port_vector_o>
           <port_vector_o id="Mout_Wdata_ram" dir="OUT" is_memory="1" is_master="1" is_data_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
-            <connected_objects/>
           </port_vector_o>
           <port_vector_o id="Min_data_ram_size" dir="IN" is_memory="1" is_master="1" is_size_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_vector_o>
           <port_vector_o id="Mout_data_ram_size" dir="OUT" is_memory="1" is_master="1" is_size_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_vector_o>
           <port_vector_o id="M_DataRdy" dir="IN" is_memory="1" is_global="1" is_extern="1">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_vector_o>
           <NP_functionality LIBRARY="out1 Min_oe_ram Mout_oe_ram Min_we_ram Mout_we_ram Min_addr_ram Mout_addr_ram M_Rdata_ram Min_Wdata_ram Mout_Wdata_ram Min_data_ram_size Mout_data_ram_size M_DataRdy" VERILOG_GENERATOR="PrintfNModuleGenerator"/>
         </component_o>
@@ -4495,85 +4204,66 @@ out1 &lt;= resize(in1, BITSIZE_out1) or resize(in2, BITSIZE_out1);"/>
           </port_o>
           <port_o id="reset" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="start_port" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="var_arg" dir="IN" is_var_args="1">
             <structural_type_descriptor type="INT" size="1"/>
           </port_o>
           <port_o id="sel_printf" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="sel___builtin_printf" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="done_port" dir="OUT">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="INT" size="1" />
           </port_o>
           <port_vector_o id="Min_oe_ram" dir="IN" is_memory="1" is_master="1">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_vector_o>
           <port_vector_o id="Mout_oe_ram" dir="OUT" is_memory="1" is_master="1">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_vector_o>
           <port_vector_o id="Min_we_ram" dir="IN" is_memory="1" is_master="1">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_vector_o>
           <port_vector_o id="Mout_we_ram" dir="OUT" is_memory="1" is_master="1">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_vector_o>
           <port_vector_o id="Min_addr_ram" dir="IN" is_memory="1" is_master="1" is_addr_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_vector_o>
           <port_vector_o id="Mout_addr_ram" dir="OUT" is_memory="1" is_master="1" is_addr_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_vector_o>
           <port_vector_o id="M_Rdata_ram" dir="IN" is_memory="1" is_global="1" is_extern="1" is_data_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
-            <connected_objects/>
           </port_vector_o>
           <port_vector_o id="Min_Wdata_ram" dir="IN" is_memory="1" is_master="1" is_data_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
-            <connected_objects/>
           </port_vector_o>
           <port_vector_o id="Mout_Wdata_ram" dir="OUT" is_memory="1" is_master="1" is_data_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
-            <connected_objects/>
           </port_vector_o>
           <port_vector_o id="Min_data_ram_size" dir="IN" is_memory="1" is_master="1" is_size_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_vector_o>
           <port_vector_o id="Mout_data_ram_size" dir="OUT" is_memory="1" is_master="1" is_size_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_vector_o>
           <port_vector_o id="M_DataRdy" dir="IN" is_memory="1" is_global="1" is_extern="1">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_vector_o>
           <port_vector_o id="access_allowed" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_vector_o>
           <port_vector_o id="access_request" dir="OUT" is_memory="1">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_vector_o>
           <NP_functionality LIBRARY="out1 Min_oe_ram Mout_oe_ram Min_we_ram Mout_we_ram Min_addr_ram Mout_addr_ram M_Rdata_ram Min_Wdata_ram Mout_Wdata_ram Min_data_ram_size Mout_data_ram_size M_DataRdy access_allowed access_request" IP_COMPONENT="MEMORY_CTRL_P1N" VERILOG_GENERATOR="PrintfP1NModuleGenerator"/>
         </component_o>
@@ -4597,69 +4287,54 @@ out1 &lt;= resize(in1, BITSIZE_out1) or resize(in2, BITSIZE_out1);"/>
           </port_o>
           <port_o id="reset" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="start_port" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="var_arg" dir="IN" is_var_args="1">
             <structural_type_descriptor type="INT" size="1"/>
           </port_o>
           <port_o id="sel_printf" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="sel___builtin_printf" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="done_port" dir="OUT">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="out1" dir="OUT">
              <structural_type_descriptor type="INT" size="1" />
           </port_o>
           <port_o id="M_Rdata_ram" dir="IN" is_memory="1" is_global="1" is_extern="1" is_data_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="M_DataRdy" dir="IN" is_memory="1" is_global="1" is_extern="1">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="Min_tag" dir="IN" is_memory="1" is_global="1" is_extern="1" is_tag_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="request_accepted" dir="IN" is_memory="1" is_global="1" is_extern="1">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="Mout_oe_ram" dir="OUT" is_memory="1" is_master="1" >
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="Mout_we_ram" dir="OUT" is_memory="1" is_master="1" >
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="Mout_addr_ram" dir="OUT" is_memory="1" is_master="1" is_addr_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="Mout_data_ram_size" dir="OUT" is_memory="1" is_master="1" is_size_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="Mout_Wdata_ram" dir="OUT" is_memory="1" is_master="1" is_data_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="Mout_tag_ram" dir="OUT" is_memory="1" is_master="1" is_tag_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="out1 M_Rdata_ram M_DataRdy Min_tag request_accepted Mout_oe_ram Mout_we_ram Mout_addr_ram Mout_data_ram_size Mout_Wdata_ram Mout_tag_ram TAG_MEM_REQ" IP_COMPONENT="mem_ctrl_kernel" VERILOG_GENERATOR="PrintfCSModuleGenerator"/>
         </component_o>
@@ -4678,27 +4353,21 @@ out1 &lt;= resize(in1, BITSIZE_out1) or resize(in2, BITSIZE_out1);"/>
           <structural_type_descriptor id_type="__builtin_llabs"/>
           <port_o id="start_port" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="INT" size="1" />
-            <connected_objects/>
           </port_o>
           <port_o id="sel_llabs" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="sel___builtin_llabs" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="done_port" dir="OUT">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="INT" size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="__builtin_llabs in1 out1" VERILOG_PROVIDED="assign out1 = in1[BITSIZE_in1-1] ? -in1 : in1;"/>
         </component_o>
@@ -4717,27 +4386,21 @@ out1 &lt;= resize(in1, BITSIZE_out1) or resize(in2, BITSIZE_out1);"/>
           <structural_type_descriptor id_type="__builtin_labs"/>
           <port_o id="start_port" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="INT" size="1" />
-            <connected_objects/>
           </port_o>
           <port_o id="sel_labs" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="sel___builtin_labs" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="done_port" dir="OUT">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="INT" size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="__builtin_labs in1 out1" VERILOG_PROVIDED="assign out1 = in1[BITSIZE_in1-1] ? -in1 : in1;"/>
         </component_o>
@@ -4759,27 +4422,21 @@ out1 &lt;= resize(in1, BITSIZE_out1) or resize(in2, BITSIZE_out1);"/>
           </port_o>
           <port_o id="start_port" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="c" dir="IN">
             <structural_type_descriptor type="UINT" size="32"/>
-            <connected_objects/>
           </port_o>
           <port_o id="sel_putchar" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="sel___builtin_putchar" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="done_port" dir="OUT">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="return_port" dir="OUT">
             <structural_type_descriptor type="UINT" size="32"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="__builtin_putchar" VERILOG_PROVIDED="reg done_port;
 // synthesis translate_off

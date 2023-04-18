@@ -86,26 +86,21 @@
           </port_o>
           <port_o id="reset" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="start_port" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="var_arg" dir="IN" is_var_args="1">
             <structural_type_descriptor type="INT" size="1"/>
           </port_o>
           <port_o id="sel_gimple_asm" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="sel___gimple_asm" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="done_port" dir="OUT">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
@@ -134,11 +129,9 @@
           <structural_type_descriptor id_type="switch_cond_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="switch_cond_FU in1 out1" VHDL_PROVIDED="begin
   out1 &lt;= in1;" VERILOG_PROVIDED="assign out1 = in1;"/>
@@ -159,11 +152,9 @@
           <structural_type_descriptor id_type="read_cond_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="read_cond_FU in1" VHDL_PROVIDED="constant zeroes : std_logic_vector(in1&apos;range) := (others =&gt; &apos;0&apos;); 
 constant xs : std_logic_vector(in1&apos;range) := (others =&gt; &apos;X&apos;);
@@ -185,11 +176,9 @@ constant xs : std_logic_vector(in1&apos;range) := (others =&gt; &apos;X&apos;);
           <structural_type_descriptor id_type="multi_read_cond_FU"/>
           <port_vector_o id="in1" dir="IN">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_vector_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="multi_read_cond_FU in1 out1" VHDL_PROVIDED="begin
   out1 &lt;= in1;" VERILOG_PROVIDED="assign out1 = in1;"/>
@@ -212,7 +201,6 @@ constant xs : std_logic_vector(in1&apos;range) := (others =&gt; &apos;X&apos;);
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="concat_1_1_FU in1 out1" VERILOG_PROVIDED="assign out1 = in1;" VHDL_PROVIDED="begin
   out1 &lt;= std_logic_vector(resize(in1,BITSIZE_out1));
@@ -236,7 +224,6 @@ constant xs : std_logic_vector(in1&apos;range) := (others =&gt; &apos;X&apos;);
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="ui_concat_1_1_FU in1 out1" VERILOG_PROVIDED="assign out1 = in1;" VHDL_PROVIDED="begin
   out1 &lt;= std_logic_vector(resize(in1,BITSIZE_out1));
@@ -260,7 +247,6 @@ constant xs : std_logic_vector(in1&apos;range) := (others =&gt; &apos;X&apos;);
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="ui_concat_2_1_FU in1 out1" VERILOG_PROVIDED="assign out1 = in1;" VHDL_PROVIDED="begin
   out1 &lt;= std_logic_vector(resize(in1, BITSIZE_out1));
@@ -287,7 +273,6 @@ constant xs : std_logic_vector(in1&apos;range) := (others =&gt; &apos;X&apos;);
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="concat_2_2_FU in1 in2 out1" VERILOG_PROVIDED="wire signed [BITSIZE_out1-1:0] tmp_in1;
 wire signed [BITSIZE_out1-1:0] tmp_in2;
@@ -318,7 +303,6 @@ assign out1 = {tmp_in2, tmp_in1};" VHDL_PROVIDED="begin
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="ui_concat_2_2_FU in1 in2 out1" VERILOG_PROVIDED="
 wire [BITSIZE_out1-1:0] tmp_in1;
@@ -353,7 +337,6 @@ begin
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="concat_3_3_FU in1 in2 in3 out1" VERILOG_PROVIDED=
 "wire signed [BITSIZE_out1-1:0] tmp_in1;
@@ -392,7 +375,6 @@ VHDL_PROVIDED=
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="ui_concat_3_3_FU in1 in2 in3 out1" VERILOG_PROVIDED="
 wire [BITSIZE_out1-1:0] tmp_in1;
@@ -434,7 +416,6 @@ assign out1 = {tmp_in3, tmp_in2, tmp_in1};
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="concat_4_4_FU in1 in2 in3 in4 out1" VERILOG_PROVIDED="
 wire signed [BITSIZE_out1-1:0] tmp_in1;
@@ -477,7 +458,6 @@ assign out1 = {tmp_in4, tmp_in3, tmp_in2, tmp_in1};" VHDL_PROVIDED=
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="ui_concat_4_4_FU in1 in2 in3 in4 out1" VERILOG_PROVIDED="
 wire [BITSIZE_out1-1:0] tmp_in1;
@@ -511,7 +491,6 @@ assign out1 = {tmp_in4, tmp_in3, tmp_in2, tmp_in1};" VHDL_PROVIDED=
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="concat_4_1_FU in1 out1" VERILOG_PROVIDED="assign out1 = in1;" VHDL_PROVIDED="begin
   out1 &lt;= std_logic_vector(resize(in1, BITSIZE_out1));
@@ -535,7 +514,6 @@ assign out1 = {tmp_in4, tmp_in3, tmp_in2, tmp_in1};" VHDL_PROVIDED=
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="ui_concat_4_1_FU in1 out1" VERILOG_PROVIDED="assign out1 = in1;" VHDL_PROVIDED="begin
   out1 &lt;= std_logic_vector(resize(in1, BITSIZE_out1));
@@ -562,7 +540,6 @@ assign out1 = {tmp_in4, tmp_in3, tmp_in2, tmp_in1};" VHDL_PROVIDED=
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="concat_4_2_FU in1 in2 out1" VERILOG_PROVIDED="
 wire signed [BITSIZE_out1-1:0] tmp_in1;
@@ -595,7 +572,6 @@ assign out1 = {tmp_in2, tmp_in1};" VHDL_PROVIDED=
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="ui_concat_4_2_FU in1 in2 out1" VERILOG_PROVIDED="
 wire signed [BITSIZE_out1-1:0] tmp_in1;
@@ -631,7 +607,6 @@ assign out1 = {tmp_in2, tmp_in1};" VHDL_PROVIDED=
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="ui_concat_6_3_FU in1 in2 in3 out1" VERILOG_PROVIDED="
 wire [BITSIZE_out1-1:0] tmp_in1;
@@ -664,7 +639,6 @@ VHDL_PROVIDED=
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="concat_8_1_FU in1 out1" VERILOG_PROVIDED="assign out1 = in1;" VHDL_PROVIDED="begin
   out1 &lt;= std_logic_vector(resize(in1, BITSIZE_out1));
@@ -688,7 +662,6 @@ VHDL_PROVIDED=
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="ui_concat_8_1_FU in1 out1" VERILOG_PROVIDED="assign out1 = in1;" VHDL_PROVIDED="begin
   out1 &lt;= std_logic_vector(resize(in1, BITSIZE_out1));
@@ -715,7 +688,6 @@ VHDL_PROVIDED=
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="concat_8_2_FU in1 in2 out1" VERILOG_PROVIDED="
 wire signed [BITSIZE_out1-1:0] tmp_in1;
@@ -747,7 +719,6 @@ assign out1 = {tmp_in2, tmp_in1};" VHDL_PROVIDED="begin
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="ui_concat_8_2_FU in1 in2 out1" VERILOG_PROVIDED="
 wire signed [BITSIZE_out1-1:0] tmp_in1;
@@ -785,7 +756,6 @@ assign out1 = {tmp_in2, tmp_in1};" VHDL_PROVIDED="begin
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="concat_8_4_FU in1 in2 in3 in4 out1" VERILOG_PROVIDED="
 wire signed [BITSIZE_out1-1:0] tmp_in1;
@@ -828,7 +798,6 @@ assign out1 = {tmp_in4, tmp_in3, tmp_in2, tmp_in1};" VHDL_PROVIDED=
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="ui_concat_8_4_FU in1 in2 in3 in4 out1" VERILOG_PROVIDED="
 wire [BITSIZE_out1-1:0] tmp_in1;
@@ -883,7 +852,6 @@ assign out1 = {tmp_in4, tmp_in3, tmp_in2, tmp_in1};" VHDL_PROVIDED=
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="concat_8_8_FU in1 in2 in3 in4 in5 in6 in7 in8 out1" VERILOG_PROVIDED="
 wire signed [BITSIZE_out1-1:0] tmp_in1;
@@ -947,7 +915,6 @@ begin
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="ui_concat_8_8_FU in1 in2 in3 in4 in5 in6 in7 in8 out1" VERILOG_PROVIDED="
 wire [BITSIZE_out1-1:0] tmp_in1;
@@ -1035,7 +1002,6 @@ begin
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="concat_16_16_FU in1 in2 in3 in4 in5 in6 in7 in8 in9 in10 in11 in12 in13 in14 in15 in16 out1" VERILOG_PROVIDED="
 wire signed [BITSIZE_out1-1:0] tmp_in1;
@@ -1138,7 +1104,6 @@ begin
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="ui_concat_16_16_FU in1 in2 in3 in4 in5 in6 in7 in8 in9 in10 in11 in12 in13 in14 in15 in16 out1" VERILOG_PROVIDED="
 wire [BITSIZE_out1-1:0] tmp_in1;
@@ -1217,7 +1182,6 @@ begin
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="concat_16_8_FU in1 in2 in3 in4 in5 in6 in7 in8 out1" VERILOG_PROVIDED="
 wire signed [BITSIZE_out1-1:0] tmp_in1;
@@ -1281,7 +1245,6 @@ assign out1 = {tmp_in8, tmp_in7, tmp_in6, tmp_in5, tmp_in4, tmp_in3, tmp_in2, tm
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="ui_concat_16_8_FU in1 in2 in3 in4 in5 in6 in7 in8 out1" VERILOG_PROVIDED="
 wire [BITSIZE_out1-1:0] tmp_in1;
@@ -1333,7 +1296,6 @@ begin
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="concat_16_4_FU in1 in2 in3 in4 out1" VERILOG_PROVIDED="
 wire signed [BITSIZE_out1-1:0] tmp_in1;
@@ -1376,7 +1338,6 @@ begin
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="ui_concat_16_4_FU in1 in2 in3 in4 out1" VERILOG_PROVIDED="
 wire [BITSIZE_out1-1:0] tmp_in1;
@@ -1416,7 +1377,6 @@ begin
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="concat_12_3_FU in1 in2 in3 out1" VERILOG_PROVIDED="
 wire signed [BITSIZE_out1-1:0] tmp_in1;
@@ -1455,7 +1415,6 @@ begin
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="ui_concat_12_3_FU in1 in2 in3 out1" VERILOG_PROVIDED=
 "wire [BITSIZE_out1-1:0] tmp_in1;
@@ -1491,7 +1450,6 @@ VHDL_PROVIDED=
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="concat_16_2_FU in1 in2 out1" VERILOG_PROVIDED="wire signed [BITSIZE_out1-1:0] tmp_in1;
 wire signed [BITSIZE_out1-1:0] tmp_in2;
@@ -1522,7 +1480,6 @@ assign out1 = {tmp_in2, tmp_in1};"  VHDL_PROVIDED="begin
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="ui_concat_16_2_FU in1 in2 out1" VERILOG_PROVIDED="wire [BITSIZE_out1-1:0] tmp_in1;
 wire [BITSIZE_out1-1:0] tmp_in2;
@@ -1556,7 +1513,6 @@ assign out1 = {tmp_in2, tmp_in1};" VHDL_PROVIDED="begin
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="concat_24_3_FU in1 in2 in3 out1" VERILOG_PROVIDED=
 "wire signed [BITSIZE_out1-1:0] tmp_in1;
@@ -1595,7 +1551,6 @@ assign out1 = {tmp_in3, tmp_in2, tmp_in1};
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="ui_concat_24_3_FU in1 in2 in3 out1" VERILOG_PROVIDED=
 "wire signed [BITSIZE_out1-1:0] tmp_in1;
@@ -1637,7 +1592,6 @@ assign out1 = {tmp_in3, tmp_in2, tmp_in1};
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="concat_32_4_FU in1 in2 in3 in4 out1" VERILOG_PROVIDED="wire signed [BITSIZE_out1-1:0] tmp_in1;
 wire signed [BITSIZE_out1-1:0] tmp_in2;
@@ -1679,7 +1633,6 @@ assign out1 = {tmp_in4, tmp_in3, tmp_in2, tmp_in1};"  VHDL_PROVIDED=
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="ui_concat_32_4_FU in1 in2 in3 in4 out1" VERILOG_PROVIDED="wire [BITSIZE_out1-1:0] tmp_in1;
 wire [BITSIZE_out1-1:0] tmp_in2;
@@ -1733,7 +1686,6 @@ assign out1 = {tmp_in4, tmp_in3, tmp_in2, tmp_in1};"  VHDL_PROVIDED=
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="concat_32_8_FU in1 in2 in3 in4 in5 in6 in7 in8 out1" VERILOG_PROVIDED="wire signed [BITSIZE_out1-1:0] tmp_in1;
 wire signed [BITSIZE_out1-1:0] tmp_in2;
@@ -1796,7 +1748,6 @@ assign out1 = {tmp_in8, tmp_in7, tmp_in6, tmp_in5, tmp_in4, tmp_in3, tmp_in2, tm
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="ui_concat_32_8_FU in1 in2 in3 in4 in5 in6 in7 in8 out1" VERILOG_PROVIDED="wire [BITSIZE_out1-1:0] tmp_in1;
 wire [BITSIZE_out1-1:0] tmp_in2;
@@ -1859,7 +1810,6 @@ assign out1 = {tmp_in8, tmp_in7, tmp_in6, tmp_in5, tmp_in4, tmp_in3, tmp_in2, tm
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="concat_64_8_FU in1 in2 in3 in4 in5 in6 in7 in8 out1" VERILOG_PROVIDED=
 "wire signed [BITSIZE_out1-1:0] tmp_in1;
@@ -1922,7 +1872,6 @@ assign out1 = {tmp_in8, tmp_in7, tmp_in6, tmp_in5, tmp_in4, tmp_in3, tmp_in2, tm
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="ui_concat_64_8_FU in1 in2 in3 in4 in5 in6 in7 in8 out1" VERILOG_PROVIDED=
 "wire signed [BITSIZE_out1-1:0] tmp_in1;
@@ -2127,11 +2076,9 @@ begin
           <structural_type_descriptor id_type="join_signal"/>
           <port_vector_o id="in1" dir="IN">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_vector_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="join_signal in1 out1" VERILOG_PROVIDED="
 generate
@@ -2711,11 +2658,9 @@ end generate nonzero_case;
           <structural_type_descriptor id_type="split_signal"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <port_vector_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_vector_o>
           <NP_functionality LIBRARY="split_signal in1 out1" VERILOG_PROVIDED="assign out1 = in1;" VHDL_PROVIDED="begin
   out1 &lt;= in1;"/>
@@ -2850,15 +2795,12 @@ end generate nonzero_case;
           <parameter name="VALUE_PARAMETER">0</parameter>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="UINT" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="in2" dir="IN">
             <structural_type_descriptor type="UINT" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="UINT" size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="ui_const_mult_expr_FU in1 in2 out1 VALUE_PARAMETER" VERILOG_PROVIDED="assign out1 = in1 * VALUE_PARAMETER;" VHDL_PROVIDED="begin
   out1 &lt;= resize(in1 * VALUE_PARAMETER, BITSIZE_out1);
@@ -2878,15 +2820,12 @@ end generate nonzero_case;
           <parameter name="VALUE_PARAMETER">0</parameter>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="UINT" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="in2" dir="IN">
             <structural_type_descriptor type="UINT" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="UINT" size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="ui_align_plus_expr_FU in1 in2 out1 VALUE_PARAMETER" VERILOG_PROVIDED="generate if (BITSIZE_out1 &gt; VALUE_PARAMETER) assign out1[BITSIZE_out1-1:VALUE_PARAMETER] = (in1[BITSIZE_in1-1:VALUE_PARAMETER] + in2[BITSIZE_in2-1:VALUE_PARAMETER]); endgenerate
 generate if (VALUE_PARAMETER != 0) assign out1[VALUE_PARAMETER-1:0] = 0; endgenerate" VHDL_PROVIDED="begin

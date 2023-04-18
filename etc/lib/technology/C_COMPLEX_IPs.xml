@@ -20,7 +20,6 @@
           </port_o>
           <port_o id="out1" dir="OUT" is_doubled="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="complex_expr_FU in1 in2 out1" VERILOG_PROVIDED=
 "assign out1 = {in2, in1};"
@@ -46,7 +45,6 @@ VHDL_PROVIDED=
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="realpart_expr_FU in1 out1" VERILOG_PROVIDED=
 "assign out1 = in1[BITSIZE_out1-1:0];"
@@ -72,7 +70,6 @@ VHDL_PROVIDED=
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="imagpart_expr_FU in1 out1" VERILOG_PROVIDED=
 "assign out1 = in1[BITSIZE_out1*2-1:BITSIZE_out1];"
