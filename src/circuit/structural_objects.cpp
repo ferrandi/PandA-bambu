@@ -5136,49 +5136,31 @@ unsigned long long port_o::get_port_size() const
    return get_typeRef()->size;
 }
 
-void port_o::resize_busport(unsigned long long bus_size_bitsize, unsigned long long bus_addr_bitsize,
-                            unsigned long long bus_data_bitsize, unsigned long long bus_tag_bitsize,
-                            structural_objectRef port)
+bool port_o::resize_if_busport(unsigned long long bus_size_bitsize, unsigned long long bus_addr_bitsize,
+                               unsigned long long bus_data_bitsize, unsigned long long bus_tag_bitsize,
+                               structural_objectRef port)
 {
-   if(GetPointer<port_o>(port)->get_is_data_bus())
+   const auto bus_bitsize = GetPointer<port_o>(port)->get_is_data_bus() ? bus_data_bitsize :
+                            GetPointer<port_o>(port)->get_is_addr_bus() ? bus_addr_bitsize :
+                            GetPointer<port_o>(port)->get_is_size_bus() ? bus_size_bitsize :
+                            GetPointer<port_o>(port)->get_is_tag_bus()  ? bus_tag_bitsize :
+                                                                          0U;
+   if(bus_bitsize)
    {
-      port->type_resize(bus_data_bitsize);
-   }
-   else if(GetPointer<port_o>(port)->get_is_addr_bus())
-   {
-      port->type_resize(bus_addr_bitsize);
-   }
-   else if(GetPointer<port_o>(port)->get_is_size_bus())
-   {
-      port->type_resize(bus_size_bitsize);
-   }
-   else if(GetPointer<port_o>(port)->get_is_tag_bus())
-   {
-      port->type_resize(bus_tag_bitsize);
-   }
-   if(port->get_kind() == port_vector_o_K)
-   {
-      for(unsigned int pi = 0; pi < GetPointer<port_o>(port)->get_ports_size(); ++pi)
+      if(port->get_kind() == port_vector_o_K)
       {
-         structural_objectRef port_d = GetPointer<port_o>(port)->get_port(pi);
-         if(GetPointer<port_o>(port)->get_is_data_bus())
+         for(auto pi = 0U; pi < GetPointer<port_o>(port)->get_ports_size(); ++pi)
          {
-            port_d->type_resize(bus_data_bitsize);
-         }
-         else if(GetPointer<port_o>(port)->get_is_addr_bus())
-         {
-            port_d->type_resize(bus_addr_bitsize);
-         }
-         else if(GetPointer<port_o>(port)->get_is_size_bus())
-         {
-            port_d->type_resize(bus_size_bitsize);
-         }
-         else if(GetPointer<port_o>(port)->get_is_tag_bus())
-         {
-            port_d->type_resize(bus_tag_bitsize);
+            const auto port_d = GetPointer<port_o>(port)->get_port(pi);
+            port_d->type_resize(bus_bitsize);
          }
       }
+      else
+      {
+         port->type_resize(bus_bitsize);
+      }
    }
+   return bus_bitsize;
 }
 
 void port_o::resize_std_port(unsigned long long bitsize_variable, unsigned long long n_elements,

@@ -482,11 +482,7 @@ DesignFlowStep_Status TasteInterfaceGeneration::InternalExec()
          {
             GetPointer<port_o>(port)->add_n_ports(2, port);
          }
-         if(GetPointer<port_o>(port)->get_is_data_bus() || GetPointer<port_o>(port)->get_is_addr_bus() ||
-            GetPointer<port_o>(port)->get_is_size_bus() || GetPointer<port_o>(port)->get_is_tag_bus())
-         {
-            port_o::resize_busport(bus_size_bitsize, bus_addr_bitsize, bus_data_bitsize, bus_tag_bitsize, port);
-         }
+         port_o::resize_if_busport(bus_size_bitsize, bus_addr_bitsize, bus_data_bitsize, bus_tag_bitsize, port);
       }
 
       const auto in1_port = memory->find_member("in1", port_vector_o_K, memory);
@@ -508,11 +504,7 @@ DesignFlowStep_Status TasteInterfaceGeneration::InternalExec()
          {
             GetPointer<port_o>(port)->add_n_ports(2, port);
          }
-         if(GetPointer<port_o>(port)->get_is_data_bus() || GetPointer<port_o>(port)->get_is_addr_bus() ||
-            GetPointer<port_o>(port)->get_is_size_bus() || GetPointer<port_o>(port)->get_is_tag_bus())
-         {
-            port_o::resize_busport(bus_size_bitsize, bus_addr_bitsize, bus_data_bitsize, bus_tag_bitsize, port);
-         }
+         port_o::resize_if_busport(bus_size_bitsize, bus_addr_bitsize, bus_data_bitsize, bus_tag_bitsize, port);
       }
 
       CustomSet<std::pair<std::string, std::string>> mem_signals;

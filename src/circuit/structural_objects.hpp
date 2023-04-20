@@ -1024,10 +1024,11 @@ struct port_o : public structural_object
     * @param bus_data_bitsize bitsize of data
     * @param bus_tag_bitsize bitsize of tag
     * @param port is the port to be resized
+    * @return bool True if resize happened, false else
     */
-   static void resize_busport(unsigned long long bus_size_bitsize, unsigned long long bus_addr_bitsize,
-                              unsigned long long bus_data_bitsize, unsigned long long bus_tag_bitsize,
-                              structural_objectRef port);
+   static bool resize_if_busport(unsigned long long bus_size_bitsize, unsigned long long bus_addr_bitsize,
+                                 unsigned long long bus_data_bitsize, unsigned long long bus_tag_bitsize,
+                                 structural_objectRef port);
 
    /**
     * auxiliary function used to resize the standard ports
