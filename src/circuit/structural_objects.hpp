@@ -364,6 +364,8 @@ class structural_object
    CustomMap<std::string, std::string> default_parameters;
 
  protected:
+   friend structural_manager;
+
    /// debug level for the object
    int debug_level;
 

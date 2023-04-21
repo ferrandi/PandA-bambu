@@ -163,7 +163,7 @@ class structural_manager
     * @param so_kind is the type of the object.
     * @return true if the object is already associated with owner, false otherwise.
     */
-   bool check_object(std::string id, structural_objectRef owner, so_kind type);
+   static bool check_object(std::string id, structural_objectRef owner, so_kind type);
 
    /**
     * Return the objectRef given the id of the object and the c_object of the owner.
@@ -221,8 +221,8 @@ class structural_manager
     * @param port_type is the type of the port.
     * @param treenode is the treenode of the port.
     */
-   structural_objectRef add_port(const std::string& id, port_o::port_direction pdir, structural_objectRef owner,
-                                 structural_type_descriptorRef type_descr, unsigned int treenode = 0);
+   static structural_objectRef add_port(const std::string& id, port_o::port_direction pdir, structural_objectRef owner,
+                                        structural_type_descriptorRef type_descr, unsigned int treenode = 0);
 
    /**
     * Change the direction of the port
@@ -230,8 +230,8 @@ class structural_manager
     * @param pdir represent the new direction of the port (in, out, in-out, gen).
     * @param owner is the reference to the owner of the port.
     */
-   void change_port_direction(structural_objectRef port_object, port_o::port_direction pdir,
-                              structural_objectRef owner);
+   static void change_port_direction(structural_objectRef port_object, port_o::port_direction pdir,
+                                     structural_objectRef owner);
 
    /**
     * Create a new port_vector.
@@ -243,9 +243,9 @@ class structural_manager
     * @param port_type is the type of the port_vector.
     * @param treenode is the treenode of the port_vector.
     */
-   structural_objectRef add_port_vector(std::string id, port_o::port_direction pdir, unsigned int n_ports,
-                                        structural_objectRef owner, structural_type_descriptorRef type_descr,
-                                        unsigned int treenode = 0);
+   static structural_objectRef add_port_vector(std::string id, port_o::port_direction pdir, unsigned int n_ports,
+                                               structural_objectRef owner, structural_type_descriptorRef type_descr,
+                                               unsigned int treenode = 0);
    /**
     * Create a new signal.
     * @param id is the name of the signal.
@@ -253,11 +253,11 @@ class structural_manager
     * @param sign_type is the type of the signal.
     * @param treenode is the treenode of the signal.
     */
-   structural_objectRef add_sign(std::string id, structural_objectRef owner, structural_type_descriptorRef sign_type,
-                                 unsigned int treenode = 0);
-
-   structural_objectRef add_sign_vector(std::string id, unsigned int n_signs, structural_objectRef owner,
+   static structural_objectRef add_sign(std::string id, structural_objectRef owner,
                                         structural_type_descriptorRef sign_type, unsigned int treenode = 0);
+
+   static structural_objectRef add_sign_vector(std::string id, unsigned int n_signs, structural_objectRef owner,
+                                               structural_type_descriptorRef sign_type, unsigned int treenode = 0);
 
    /**
     * Remove an existing signal from the SM.
@@ -289,8 +289,8 @@ class structural_manager
     * @param dt is the type of the not-parsed functionality.
     * @param descr is the description of the functionality.
     */
-   void add_NP_functionality(structural_objectRef cir, NP_functionality::NP_functionaly_type dt,
-                             std::string functionality_description);
+   static void add_NP_functionality(structural_objectRef cir, NP_functionality::NP_functionaly_type dt,
+                                    std::string functionality_description);
 
    /**
     * Specify a parameter for the top module
