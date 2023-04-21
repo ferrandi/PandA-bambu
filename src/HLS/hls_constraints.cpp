@@ -228,7 +228,7 @@ void HLS_constraints::bind_vertex_to_fu(const std::string& vertex_name, const st
 
 bool HLS_constraints::has_binding_to_fu(const std::string& vertex_name) const
 {
-   return binding_constraints.find(vertex_name) != binding_constraints.end();
+   return binding_constraints.count(vertex_name);
 }
 
 void HLS_constraints::set_clock_period(double period)
