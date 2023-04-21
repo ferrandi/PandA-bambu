@@ -133,7 +133,7 @@ std::string ModuleGeneratorManager::get_specialized_name(
     unsigned int firstIndexToSpecialize, const std::vector<std::tuple<unsigned int, unsigned int>>& required_variables,
     const FunctionBehaviorConstRef FB) const
 {
-   std::string fuName = "";
+   std::string fu_name = "";
    auto index = 0U;
    for(const auto& required_variable : required_variables)
    {
@@ -141,15 +141,15 @@ std::string ModuleGeneratorManager::get_specialized_name(
       {
          const auto typeRef = getDataType(std::get<0>(required_variable), FB);
          const auto dataSize = typeRef->vector_size != 0U ? typeRef->vector_size : typeRef->size;
-         fuName += NAMESEPARATOR + typeRef->get_name() + STR(resize_to_8_or_greater(dataSize));
+         fu_name += NAMESEPARATOR + typeRef->get_name() + STR(resize_to_8_or_greater(dataSize));
       }
       ++index;
    }
-   return fuName;
+   return fu_name;
 }
 
 std::string ModuleGeneratorManager::GenerateHDL(
-    const std::string& hdl_template, const module* mod, unsigned int function_id, vertex op_v,
+    const std::string& hdl_template, structural_objectRef mod, unsigned int function_id, vertex op_v,
     const std::vector<std::tuple<unsigned int, unsigned int>>& required_variables, HDLWriter_Language language)
 {
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level,
@@ -196,11 +196,11 @@ void ModuleGeneratorManager::add_port_parameters(structural_objectRef gen_port, 
    gen_port->get_typeRef()->vector_size = original_port->get_typeRef()->vector_size;
 }
 
-void ModuleGeneratorManager::specialize_fu(std::string fuName, vertex ve, std::string libraryId,
-                                           const FunctionBehaviorConstRef FB, std::string new_fu_name,
+void ModuleGeneratorManager::specialize_fu(const std::string& fu_name, vertex ve, const FunctionBehaviorConstRef FB,
+                                           const std::string& libraryId, const std::string& new_fu_name,
                                            std::map<std::string, technology_nodeRef>& new_fu)
 {
-   PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Specializing: " + fuName + " as " + new_fu_name);
+   PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Specializing: " + fu_name + " as " + new_fu_name);
 
    if(new_fu.count(new_fu_name))
    {
@@ -212,17 +212,19 @@ void ModuleGeneratorManager::specialize_fu(std::string fuName, vertex ve, std::s
       const auto dv_type = HLS_T->get_target_device()->get_type();
 
       const auto libraryManager = HLS_T->get_technology_manager()->get_library_manager(libraryId);
-      const auto techNode_obj = libraryManager->get_fu(fuName);
+      const auto techNode_obj = libraryManager->get_fu(fu_name);
       THROW_ASSERT(techNode_obj->get_kind() == functional_unit_K, "");
       const auto structManager_obj = GetPointerS<const functional_unit>(techNode_obj)->CM;
       const auto fu_obj = structManager_obj->get_circ();
       const auto fu_module = GetPointer<const module>(fu_obj);
       THROW_ASSERT(fu_module, "");
-      PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Found variable component: " + fuName);
-      const auto required_variables = HLSMgr->get_required_values(FB->CGetBehavioralHelper()->get_function_index(), ve);
+      PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Found variable component: " + fu_name);
+      const auto required_variables =
+          FB ? HLSMgr->get_required_values(FB->CGetBehavioralHelper()->get_function_index(), ve) :
+               std::vector<HLS_manager::io_binding_type>();
       auto param_list = fu_module->get_NP_functionality()->get_NP_functionality(NP_functionality::LIBRARY);
       const auto multiplicitiy = fu_module->get_multi_unit_multiplicity();
-      const auto n_ports = FB->GetChannelsNumber();
+      const auto n_ports = FB ? FB->GetChannelsNumber() : 1U;
 
       const structural_managerRef CM(new structural_manager(parameters));
       const structural_type_descriptorRef module_type(new structural_type_descriptor(new_fu_name));
@@ -366,12 +368,12 @@ void ModuleGeneratorManager::specialize_fu(std::string fuName, vertex ve, std::s
          }
          if(parameters->isOption(OPT_mixed_design) && !parameters->getOption<bool>(OPT_mixed_design))
          {
-            THROW_ERROR("Missing VHDL GENERATOR for " + fuName);
+            THROW_ERROR("Missing VHDL GENERATOR for " + fu_name);
          }
          if(!np->exist_NP_functionality(NP_functionality::VERILOG_GENERATOR) &&
             !np->exist_NP_functionality(NP_functionality::VHDL_GENERATOR))
          {
-            THROW_ERROR("Missing GENERATOR for " + fuName);
+            THROW_ERROR("Missing GENERATOR for " + fu_name);
          }
          if(np->exist_NP_functionality(NP_functionality::VERILOG_GENERATOR))
          {
@@ -387,8 +389,8 @@ void ModuleGeneratorManager::specialize_fu(std::string fuName, vertex ve, std::s
           writer == HDLWriter_Language::VERILOG ? NP_functionality::VERILOG_GENERATOR :
                                                   NP_functionality::VHDL_GENERATOR);
       PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, new_fu_name + ": Generating dynamic HDL code");
-      const auto hdl_code = GenerateHDL(hdl_template, top_module, FB->CGetBehavioralHelper()->get_function_index(), ve,
-                                        required_variables, writer);
+      const auto hdl_code = GenerateHDL(hdl_template, top, FB ? FB->CGetBehavioralHelper()->get_function_index() : 0U,
+                                        ve, required_variables, writer);
 
       CM->add_NP_functionality(top,
                                writer == HDLWriter_Language::VERILOG ? NP_functionality::VERILOG_PROVIDED :
@@ -416,7 +418,7 @@ void ModuleGeneratorManager::specialize_fu(std::string fuName, vertex ve, std::s
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Specialization completed");
 }
 
-void ModuleGeneratorManager::create_generic_module(const std::string& fuName, vertex ve,
+void ModuleGeneratorManager::create_generic_module(const std::string& fu_name, vertex ve,
                                                    const FunctionBehaviorConstRef FB, const std::string& libraryId,
                                                    const std::string& new_fu_name)
 {
@@ -424,14 +426,14 @@ void ModuleGeneratorManager::create_generic_module(const std::string& fuName, ve
    const auto TechM = HLS_T->get_technology_manager();
 
    const auto libraryManager = TechM->get_library_manager(libraryId);
-   const auto techNode_obj = libraryManager->get_fu(fuName);
+   const auto techNode_obj = libraryManager->get_fu(fu_name);
    THROW_ASSERT(techNode_obj->get_kind() == functional_unit_K, "");
    const auto structManager_obj = GetPointerS<const functional_unit>(techNode_obj)->CM;
    const auto fu_obj = structManager_obj->get_circ();
    const auto fu_module = GetPointer<const module>(fu_obj);
    THROW_ASSERT(fu_module, "");
    const auto multiplicitiy = fu_module->get_multi_unit_multiplicity();
-   const auto n_ports = FB->GetChannelsNumber();
+   const auto n_ports = FB ? FB->GetChannelsNumber() : 1U;
 
    const structural_managerRef CM(new structural_manager(parameters));
    {
@@ -446,7 +448,9 @@ void ModuleGeneratorManager::create_generic_module(const std::string& fuName, ve
       }
    }
 
+   CM->set_top_info(new_fu_name, structural_type_descriptorRef(new structural_type_descriptor(new_fu_name)));
    const auto top = CM->get_circ();
+   THROW_ASSERT(top, "");
    const auto top_module = GetPointerS<module>(top);
    top_module->set_generated();
    /// add description and license
@@ -460,7 +464,6 @@ void ModuleGeneratorManager::create_generic_module(const std::string& fuName, ve
       top_module->SetParameter(module_parameter.first, module_parameter.second);
    }
    top_module->set_multi_unit_multiplicity(multiplicitiy);
-   CM->set_top_info(new_fu_name, structural_type_descriptorRef(new structural_type_descriptor(new_fu_name)));
    const auto NP_parameters =
        new_fu_name + " " + fu_module->get_NP_functionality()->get_NP_functionality(NP_functionality::LIBRARY);
    CM->add_NP_functionality(top, NP_functionality::LIBRARY, NP_parameters);
@@ -538,12 +541,12 @@ void ModuleGeneratorManager::create_generic_module(const std::string& fuName, ve
       }
       if(parameters->isOption(OPT_mixed_design) && !parameters->getOption<bool>(OPT_mixed_design))
       {
-         THROW_ERROR("Missing VHDL GENERATOR for " + fuName);
+         THROW_ERROR("Missing VHDL GENERATOR for " + fu_name);
       }
       if(!np->exist_NP_functionality(NP_functionality::VERILOG_GENERATOR) &&
          !np->exist_NP_functionality(NP_functionality::VHDL_GENERATOR))
       {
-         THROW_ERROR("Missing GENERATOR for " + fuName);
+         THROW_ERROR("Missing GENERATOR for " + fu_name);
       }
       if(np->exist_NP_functionality(NP_functionality::VERILOG_GENERATOR))
       {
@@ -558,7 +561,7 @@ void ModuleGeneratorManager::create_generic_module(const std::string& fuName, ve
        writer == HDLWriter_Language::VERILOG ? NP_functionality::VERILOG_GENERATOR : NP_functionality::VHDL_GENERATOR);
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, new_fu_name + ": Generating dynamic HDL code");
    std::vector<std::tuple<unsigned int, unsigned int>> required_variables;
-   const auto hdl_code = GenerateHDL(hdl_template, top_module, FB->CGetBehavioralHelper()->get_function_index(), ve,
+   const auto hdl_code = GenerateHDL(hdl_template, top, FB ? FB->CGetBehavioralHelper()->get_function_index() : 0U, ve,
                                      required_variables, writer);
    CM->add_NP_functionality(top,
                             writer == HDLWriter_Language::VERILOG ? NP_functionality::VERILOG_PROVIDED :

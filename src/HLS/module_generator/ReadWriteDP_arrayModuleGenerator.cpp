@@ -61,7 +61,7 @@ ReadWriteDP_arrayModuleGenerator::ReadWriteDP_arrayModuleGenerator(const HLS_man
 {
 }
 
-void ReadWriteDP_arrayModuleGenerator::InternalExec(std::ostream& out, const module* /* mod */,
+void ReadWriteDP_arrayModuleGenerator::InternalExec(std::ostream& out, structural_objectRef /* mod */,
                                                     unsigned int function_id, vertex op_v,
                                                     const HDLWriter_Language /* language */,
                                                     const std::vector<ModuleGenerator::parameter>& /* _p */,

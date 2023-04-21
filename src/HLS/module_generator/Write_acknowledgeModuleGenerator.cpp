@@ -71,7 +71,7 @@ Write_acknowledgeModuleGenerator::Write_acknowledgeModuleGenerator(const HLS_man
 {
 }
 
-void Write_acknowledgeModuleGenerator::InternalExec(std::ostream& out, const module* /* mod */,
+void Write_acknowledgeModuleGenerator::InternalExec(std::ostream& out, structural_objectRef /* mod */,
                                                     unsigned int /* function_id */, vertex /* op_v */,
                                                     const HDLWriter_Language /* language */,
                                                     const std::vector<ModuleGenerator::parameter>& /* _p */,

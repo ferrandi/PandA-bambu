@@ -68,7 +68,7 @@ Write_validModuleGenerator::Write_validModuleGenerator(const HLS_managerRef& _HL
 {
 }
 
-void Write_validModuleGenerator::InternalExec(std::ostream& out, const module* /* mod */,
+void Write_validModuleGenerator::InternalExec(std::ostream& out, structural_objectRef /* mod */,
                                               unsigned int /* function_id */, vertex /* op_v */,
                                               const HDLWriter_Language /* language */,
                                               const std::vector<ModuleGenerator::parameter>& /* _p */,
