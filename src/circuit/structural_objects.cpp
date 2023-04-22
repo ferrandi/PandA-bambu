@@ -5147,6 +5147,7 @@ bool port_o::resize_if_busport(unsigned long long bus_size_bitsize, unsigned lon
                                                                           0U;
    if(bus_bitsize)
    {
+      port->type_resize(bus_bitsize);
       if(port->get_kind() == port_vector_o_K)
       {
          for(auto pi = 0U; pi < GetPointer<port_o>(port)->get_ports_size(); ++pi)
@@ -5154,10 +5155,6 @@ bool port_o::resize_if_busport(unsigned long long bus_size_bitsize, unsigned lon
             const auto port_d = GetPointer<port_o>(port)->get_port(pi);
             port_d->type_resize(bus_bitsize);
          }
-      }
-      else
-      {
-         port->type_resize(bus_bitsize);
       }
    }
    return bus_bitsize;

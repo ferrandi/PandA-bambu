@@ -595,20 +595,23 @@ void RTLCharacterization::specialize_fu(const module* mod, unsigned int prec, un
    for(unsigned int i = 0; i < mod->get_in_port_size(); i++)
    {
       const structural_objectRef& port = mod->get_in_port(i);
-      if(!port_o::resize_if_busport(bus_size_bitsize, bus_addr_bitsize, bus_data_bitsize, bus_tag_bitsize, port))
+      if(port->get_kind() == port_vector_o_K)
       {
-         if(port->get_kind() == port_vector_o_K)
+         if(GetPointer<port_o>(port)->get_ports_size() == 0)
          {
-            if(GetPointer<port_o>(port)->get_ports_size() == 0)
-            {
-               GetPointer<port_o>(port)->add_n_ports(static_cast<unsigned int>(portsize_value), port);
-            }
+            GetPointer<port_o>(port)->add_n_ports(static_cast<unsigned int>(portsize_value), port);
+         }
+         if(!port_o::resize_if_busport(bus_size_bitsize, bus_addr_bitsize, bus_data_bitsize, bus_tag_bitsize, port))
+         {
             for(unsigned int p = 0; p < GetPointer<port_o>(port)->get_ports_size(); ++p)
             {
                resize_port(GetPointer<port_o>(port)->get_port(p), prec);
             }
          }
-         else
+      }
+      else
+      {
+         if(!port_o::resize_if_busport(bus_size_bitsize, bus_addr_bitsize, bus_data_bitsize, bus_tag_bitsize, port))
          {
             resize_port(port, prec);
          }
@@ -617,20 +620,23 @@ void RTLCharacterization::specialize_fu(const module* mod, unsigned int prec, un
    for(unsigned int i = 0; i < mod->get_out_port_size(); i++)
    {
       const structural_objectRef& port = mod->get_out_port(i);
-      if(!port_o::resize_if_busport(bus_size_bitsize, bus_addr_bitsize, bus_data_bitsize, bus_tag_bitsize, port))
+      if(port->get_kind() == port_vector_o_K)
       {
-         if(port->get_kind() == port_vector_o_K)
+         if(GetPointer<port_o>(port)->get_ports_size() == 0)
          {
-            if(GetPointer<port_o>(port)->get_ports_size() == 0)
-            {
-               GetPointer<port_o>(port)->add_n_ports(static_cast<unsigned int>(portsize_value), port);
-            }
+            GetPointer<port_o>(port)->add_n_ports(static_cast<unsigned int>(portsize_value), port);
+         }
+         if(!port_o::resize_if_busport(bus_size_bitsize, bus_addr_bitsize, bus_data_bitsize, bus_tag_bitsize, port))
+         {
             for(unsigned int p = 0; p < GetPointer<port_o>(port)->get_ports_size(); ++p)
             {
                resize_port(GetPointer<port_o>(port)->get_port(p), prec);
             }
          }
-         else
+      }
+      else
+      {
+         if(!port_o::resize_if_busport(bus_size_bitsize, bus_addr_bitsize, bus_data_bitsize, bus_tag_bitsize, port))
          {
             resize_port(port, prec);
          }
