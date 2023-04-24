@@ -2949,16 +2949,8 @@ void BambuParameter::CheckParameters()
    }
    tree_helper::debug_level = get_class_debug_level("tree_helper");
 
-   bool flag_cpp;
-   if(isOption(OPT_input_format) && getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_CPP)
-   {
-      flag_cpp = true;
-   }
-   else
-   {
-      flag_cpp = false;
-   }
-
+   const auto flag_cpp = isOption(OPT_input_format) &&
+                         getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_CPP;
    if(flag_cpp)
    {
       /// add -I <ac_types_dir> and -I <ac_math_dir>

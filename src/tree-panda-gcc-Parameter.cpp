@@ -39,43 +39,31 @@
  * Last modified by $Author$
  *
  */
-
-/// Autoheader include
-#include "config_HAVE_MAPPING_BUILT.hpp"
-#include "config_RELEASE.hpp"
-
-/// Header include
 #include "tree-panda-gcc-Parameter.hpp"
 
-/// Boost include
-#include <boost/algorithm/string/classification.hpp>
-#include <boost/algorithm/string/predicate.hpp>
-#include <boost/filesystem/convenience.hpp>
-#include <boost/filesystem/path.hpp>
+#include "config_HAVE_MAPPING_BUILT.hpp"
+#include "config_PANDA_DATA_INSTALLDIR.hpp"
+#include "config_RELEASE.hpp"
 
-/// Constants include
+#include "compiler_wrapper.hpp"
 #include "constants.hpp"
-
-/// STD include
-#include <climits>
-#include <cstring>
-#include <iosfwd>
-
-/// STL include
-#include "custom_set.hpp"
-#include <vector>
-
-/// Utility include
-#include "boost/lexical_cast.hpp"
 #include "cpu_time.hpp"
+#include "custom_set.hpp"
 #include "dbgPrintHelper.hpp"
 #include "fileIO.hpp"
 #include "module_interface.hpp"
 #include "utility.hpp"
-#include <getopt.h>
 
-/// Wrapper include
-#include "compiler_wrapper.hpp"
+#include <boost/algorithm/string/classification.hpp>
+#include <boost/algorithm/string/predicate.hpp>
+#include <boost/filesystem/convenience.hpp>
+#include <boost/filesystem/path.hpp>
+#include <boost/lexical_cast.hpp>
+#include <climits>
+#include <cstring>
+#include <getopt.h>
+#include <iosfwd>
+#include <vector>
 
 #define OPT_PRINT_FILE_NAME 256
 #define OPT_INCLUDE 257
@@ -383,6 +371,48 @@ int tree_panda_gcc_parameter::Exec()
 void tree_panda_gcc_parameter::CheckParameters()
 {
    Parameter::CheckParameters();
+
+   const auto flag_cpp = isOption(OPT_input_format) &&
+                         getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_CPP;
+   if(flag_cpp)
+   {
+      /// add -I <ac_types_dir> and -I <ac_math_dir>
+      std::string includes =
+          "-isystem " + relocate_compiler_path(std::string(PANDA_DATA_INSTALLDIR "/panda/ac_types/include")) +
+          " -isystem " + relocate_compiler_path(std::string(PANDA_DATA_INSTALLDIR "/panda/ac_math/include"));
+      if(isOption(OPT_gcc_includes))
+      {
+         includes = getOption<std::string>(OPT_gcc_includes) + " " + includes;
+      }
+      setOption(OPT_gcc_includes, includes);
+      if(!isOption(OPT_gcc_standard))
+      {
+         setOption(OPT_gcc_standard, "c++14");
+      }
+   }
+   else if(!isOption(OPT_gcc_standard))
+   {
+      setOption(OPT_gcc_standard, "gnu89");
+   }
+   if(CompilerWrapper::isClang16orGreater(getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler)))
+   {
+      std::string gcc_warnings;
+      if(isOption(OPT_gcc_warnings))
+      {
+         gcc_warnings = getOption<std::string>(OPT_gcc_warnings) + STR_CST_string_separator;
+      }
+      const auto addWarning = [&](const std::string& warn) {
+         if(gcc_warnings.find(boost::replace_first_copy(warn, "no-", "")) == std::string::npos)
+         {
+            gcc_warnings += warn + STR_CST_string_separator;
+         }
+      };
+      addWarning("implicit-int");
+      addWarning("no-incompatible-function-pointer-types");
+      addWarning("no-implicit-function-declaration");
+      addWarning("no-int-conversion");
+      setOption(OPT_gcc_warnings, gcc_warnings);
+   }
 }
 
 void tree_panda_gcc_parameter::PrintHelp(std::ostream& os) const
