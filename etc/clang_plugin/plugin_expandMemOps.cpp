@@ -365,13 +365,13 @@ void llvm::CLANG_VERSION_SYMBOL(_plugin_expandMemOps)::expandMemSetAsLoopLocal(l
    llvm::Value* dst_addr = Memset->getRawDest();
    llvm::Value* CopyLen = Memset->getLength();
    llvm::Value* SetValue = Memset->getValue();
+   unsigned Align =
 #if __clang_major__ <= 6
-   unsigned Align = Memset->getAlignment();
+       Memset->getAlignment();
 #elif __clang_major__ < 16
-   unsigned Align = Memset->getDestAlignment();
+       Memset->getDestAlignment();
 #else
-   auto Align0 = Memset->getDestAlign().valueOrOne();
-   unsigned Align = Memset->paramHasAttr(0, Attribute::Alignment) ? Memset->getDestAlign().valueOrOne().value() : 0;
+       dst_addr->getPointerAlignment(*DL).value();
 #endif
    bool IsVolatile = Memset->isVolatile();
    llvm::Type* TypeOfCopyLen = CopyLen->getType();
@@ -520,8 +520,8 @@ bool llvm::CLANG_VERSION_SYMBOL(_plugin_expandMemOps)::exec(
 #elif __clang_major__ < 16
                                               Memcpy->getSourceAlignment(), Memcpy->getDestAlignment(),
 #else
-                                              Memcpy->getSourceAlign().valueOrOne().value(),
-                                              Memcpy->getDestAlign().valueOrOne().value(),
+                                              Memcpy->getRawSource()->getPointerAlignment(*DL).value(),
+                                              Memcpy->getRawDest()->getPointerAlignment(*DL).value(),
 #endif
                                               Memcpy->isVolatile(), Memcpy->isVolatile(), DL);
                do_erase = true;
