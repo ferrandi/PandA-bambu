@@ -239,7 +239,7 @@ namespace clang
          {
             return RemoveTypedef(t->getAs<TypedefType>()->getDecl()->getUnderlyingType());
          }
-         else if(t->getTypeClass() == Type::Elaborated)
+         else if(t->getTypeClass() == Type::Elaborated && !t->isClassType())
          {
             return RemoveTypedef(t->getAs<ElaboratedType>()->getNamedType());
          }
@@ -449,7 +449,7 @@ namespace clang
                   if(isa<DecayedType>(argType))
                   {
                      const auto DT = cast<DecayedType>(argType)->getOriginalType().IgnoreParens();
-                     if(DT->isConstantArrayType())
+                     if(isa<ConstantArrayType>(DT))
                      {
                         manageArray(cast<ConstantArrayType>(DT), true);
                      }
@@ -479,7 +479,7 @@ namespace clang
                   }
                   else if(argType->isPointerType() || argType->isReferenceType())
                   {
-                     if(argType->getPointeeType().IgnoreParens()->isConstantArrayType())
+                     if(isa<ConstantArrayType>(argType->getPointeeType().IgnoreParens()))
                      {
                         manageArray(cast<ConstantArrayType>(argType->getPointeeType().IgnoreParens()), false);
                      }
