@@ -338,16 +338,14 @@ begin
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="concat_3_3_FU in1 in2 in3 out1" VERILOG_PROVIDED=
-"wire signed [BITSIZE_out1-1:0] tmp_in1;
+          <NP_functionality LIBRARY="concat_3_3_FU in1 in2 in3 out1" VERILOG_PROVIDED="wire signed [BITSIZE_out1-1:0] tmp_in1;
 wire signed [BITSIZE_out1-1:0] tmp_in2;
 wire signed [BITSIZE_out1-1:0] tmp_in3;
 assign tmp_in1 = in1;
 assign tmp_in2 = in2;
 assign tmp_in3 = in3;
 assign out1 = {tmp_in3, tmp_in2, tmp_in1};"
-VHDL_PROVIDED=
-"begin
+            VHDL_PROVIDED="begin
   out1 &lt;= std_logic_vector(resize(in3, BITSIZE_out1)) &amp; std_logic_vector(resize(in2, BITSIZE_out1)) &amp; std_logic_vector(resize(in1, BITSIZE_out1));
 "/>
         </component_o>
@@ -384,8 +382,7 @@ assign tmp_in1 = in1;
 assign tmp_in2 = in2;
 assign tmp_in3 = in3;
 assign out1 = {tmp_in3, tmp_in2, tmp_in1};
-" VHDL_PROVIDED=
-"begin
+" VHDL_PROVIDED="begin
   out1 &lt;= std_logic_vector(resize(in3, BITSIZE_out1)) &amp; std_logic_vector(resize(in2, BITSIZE_out1)) &amp; std_logic_vector(resize(in1, BITSIZE_out1));
   "/>
         </component_o>
@@ -426,8 +423,7 @@ assign tmp_in1 = in1;
 assign tmp_in2 = in2;
 assign tmp_in3 = in3;
 assign tmp_in4 = in4;
-assign out1 = {tmp_in4, tmp_in3, tmp_in2, tmp_in1};" VHDL_PROVIDED=
-"begin
+assign out1 = {tmp_in4, tmp_in3, tmp_in2, tmp_in1};" VHDL_PROVIDED="begin
   out1 &lt;= std_logic_vector(resize(in4, BITSIZE_out1)) &amp; std_logic_vector(resize(in3, BITSIZE_out1)) &amp; std_logic_vector(resize(in2, BITSIZE_out1)) &amp; std_logic_vector(resize(in1, BITSIZE_out1));"
           />
         </component_o>
@@ -468,8 +464,7 @@ assign tmp_in1 = in1;
 assign tmp_in2 = in2;
 assign tmp_in3 = in3;
 assign tmp_in4 = in4;
-assign out1 = {tmp_in4, tmp_in3, tmp_in2, tmp_in1};" VHDL_PROVIDED=
-"begin
+assign out1 = {tmp_in4, tmp_in3, tmp_in2, tmp_in1};" VHDL_PROVIDED="begin
   out1 &lt;= std_logic_vector(resize(in4, BITSIZE_out1)) &amp; std_logic_vector(resize(in3, BITSIZE_out1)) &amp; std_logic_vector(resize(in2, BITSIZE_out1)) &amp; std_logic_vector(resize(in1, BITSIZE_out1));"
           />
         </component_o>
@@ -546,8 +541,7 @@ wire signed [BITSIZE_out1-1:0] tmp_in1;
 wire signed [BITSIZE_out1-1:0] tmp_in2;
 assign tmp_in1 = in1;
 assign tmp_in2 = in2;
-assign out1 = {tmp_in2, tmp_in1};" VHDL_PROVIDED=
-"begin
+assign out1 = {tmp_in2, tmp_in1};" VHDL_PROVIDED="begin
    out1 &lt;= std_logic_vector(resize(in2, BITSIZE_out1)) &amp; std_logic_vector(resize(in3, BITSIZE_out1));"
           />
         </component_o>
@@ -578,8 +572,7 @@ wire signed [BITSIZE_out1-1:0] tmp_in1;
 wire signed [BITSIZE_out1-1:0] tmp_in2;
 assign tmp_in1 = in1;
 assign tmp_in2 = in2;
-assign out1 = {tmp_in2, tmp_in1};" VHDL_PROVIDED=
-"begin
+assign out1 = {tmp_in2, tmp_in1};" VHDL_PROVIDED="begin
    out1 &lt;= std_logic_vector(resize(in2, BITSIZE_out1)) &amp; std_logic_vector(resize(in3, BITSIZE_out1));"
           />
         </component_o>
@@ -616,8 +609,7 @@ assign tmp_in1 = in1;
 assign tmp_in2 = in2;
 assign tmp_in3 = in3;
 assign out1 = {tmp_in3, tmp_in2, tmp_in1};"
-VHDL_PROVIDED=
-"begin
+            VHDL_PROVIDED="begin
   out1 &lt;= std_logic_vector(resize(in3, BITSIZE_out1)) &amp; std_logic_vector(resize(in2, BITSIZE_out1)) &amp; std_logic_vector(resize(in1, BITSIZE_out1));
 "/>
         </component_o>
@@ -766,8 +758,7 @@ assign tmp_in1 = in1;
 assign tmp_in2 = in2;
 assign tmp_in3 = in3;
 assign tmp_in4 = in4;
-assign out1 = {tmp_in4, tmp_in3, tmp_in2, tmp_in1};" VHDL_PROVIDED=
-"begin
+assign out1 = {tmp_in4, tmp_in3, tmp_in2, tmp_in1};" VHDL_PROVIDED="begin
   out1 &lt;= std_logic_vector(resize(in4, BITSIZE_out1)) &amp; std_logic_vector(resize(in3, BITSIZE_out1)) &amp; std_logic_vector(resize(in2, BITSIZE_out1)) &amp; std_logic_vector(resize(in1, BITSIZE_out1));"
           />
         </component_o>
@@ -808,8 +799,7 @@ assign tmp_in1 = in1;
 assign tmp_in2 = in2;
 assign tmp_in3 = in3;
 assign tmp_in4 = in4;
-assign out1 = {tmp_in4, tmp_in3, tmp_in2, tmp_in1};" VHDL_PROVIDED=
-"begin
+assign out1 = {tmp_in4, tmp_in3, tmp_in2, tmp_in1};" VHDL_PROVIDED="begin
   out1 &lt;= std_logic_vector(resize(in4, BITSIZE_out1)) &amp; std_logic_vector(resize(in3, BITSIZE_out1)) &amp; std_logic_vector(resize(in2, BITSIZE_out1)) &amp; std_logic_vector(resize(in1, BITSIZE_out1));"
           />
         </component_o>
@@ -1200,8 +1190,7 @@ assign tmp_in5 = in5;
 assign tmp_in6 = in6;
 assign tmp_in7 = in7;
 assign tmp_in8 = in8;
-assign out1 = {tmp_in8, tmp_in7, tmp_in6, tmp_in5, tmp_in4, tmp_in3, tmp_in2, tmp_in1};" VHDL_PROVIDED=
-"begin
+assign out1 = {tmp_in8, tmp_in7, tmp_in6, tmp_in5, tmp_in4, tmp_in3, tmp_in2, tmp_in1};" VHDL_PROVIDED="begin
    out1 &lt;= std_logic_vector(resize(in8, BITSIZE_out1)) &amp; std_logic_vector(resize(in7, BITSIZE_out1)) &amp; std_logic_vector(resize(in6, BITSIZE_out1)) &amp; std_logic_vector(resize(in5, BITSIZE_out1)) &amp; std_logic_vector(resize(in4, BITSIZE_out1)) &amp; std_logic_vector(resize(in3, BITSIZE_out1)) &amp; std_logic_vector(resize(in2, BITSIZE_out1)) &amp; std_logic_vector(resize(in1, BITSIZE_out1));
 "
           />
@@ -1306,7 +1295,7 @@ assign tmp_in1 = in1;
 assign tmp_in2 = in2;
 assign tmp_in3 = in3;
 assign tmp_in4 = in4;
-assign out1 = {tmp_in4, tmp_in3, tmp_in2, tmp_in1};"  VHDL_PROVIDED="
+assign out1 = {tmp_in4, tmp_in3, tmp_in2, tmp_in1};" VHDL_PROVIDED="
 begin
   out1 &lt;= std_logic_vector(resize(in4, BITSIZE_out1)) &amp; std_logic_vector(resize(in3, BITSIZE_out1)) &amp; std_logic_vector(resize(in2, BITSIZE_out1)) &amp; std_logic_vector(resize(in1, BITSIZE_out1));"
           />
@@ -1348,7 +1337,7 @@ assign tmp_in1 = in1;
 assign tmp_in2 = in2;
 assign tmp_in3 = in3;
 assign tmp_in4 = in4;
-assign out1 = {tmp_in4, tmp_in3, tmp_in2, tmp_in1};"  VHDL_PROVIDED="
+assign out1 = {tmp_in4, tmp_in3, tmp_in2, tmp_in1};" VHDL_PROVIDED="
 begin
   out1 &lt;= std_logic_vector(resize(in4, BITSIZE_out1)) &amp; std_logic_vector(resize(in3, BITSIZE_out1)) &amp; std_logic_vector(resize(in2, BITSIZE_out1)) &amp; std_logic_vector(resize(in1, BITSIZE_out1));"
           />
@@ -1416,16 +1405,14 @@ begin
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="ui_concat_12_3_FU in1 in2 in3 out1" VERILOG_PROVIDED=
-"wire [BITSIZE_out1-1:0] tmp_in1;
+          <NP_functionality LIBRARY="ui_concat_12_3_FU in1 in2 in3 out1" VERILOG_PROVIDED="wire [BITSIZE_out1-1:0] tmp_in1;
 wire [BITSIZE_out1-1:0] tmp_in2;
 wire [BITSIZE_out1-1:0] tmp_in3;
 assign tmp_in1 = in1;
 assign tmp_in2 = in2;
 assign tmp_in3 = in3;
 assign out1 = {tmp_in3, tmp_in2, tmp_in1};"
-VHDL_PROVIDED=
-"begin
+            VHDL_PROVIDED="begin
   out1 &lt;= std_logic_vector(resize(in3, BITSIZE_out1)) &amp; std_logic_vector(resize(in2, BITSIZE_out1)) &amp; std_logic_vector(resize(in1, BITSIZE_out1));
 "/>
         </component_o>
@@ -1455,7 +1442,7 @@ VHDL_PROVIDED=
 wire signed [BITSIZE_out1-1:0] tmp_in2;
 assign tmp_in1 = in1;
 assign tmp_in2 = in2;
-assign out1 = {tmp_in2, tmp_in1};"  VHDL_PROVIDED="begin
+assign out1 = {tmp_in2, tmp_in1};" VHDL_PROVIDED="begin
   out1 &lt;= std_logic_vector(resize(in2, BITSIZE_out1)) &amp; std_logic_vector(resize(in1, BITSIZE_out1));
 "/>
         </component_o>
@@ -1514,16 +1501,14 @@ assign out1 = {tmp_in2, tmp_in1};" VHDL_PROVIDED="begin
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="concat_24_3_FU in1 in2 in3 out1" VERILOG_PROVIDED=
-"wire signed [BITSIZE_out1-1:0] tmp_in1;
+          <NP_functionality LIBRARY="concat_24_3_FU in1 in2 in3 out1" VERILOG_PROVIDED="wire signed [BITSIZE_out1-1:0] tmp_in1;
 wire signed [BITSIZE_out1-1:0] tmp_in2;
 wire signed [BITSIZE_out1-1:0] tmp_in3;
 assign tmp_in1 = in1;
 assign tmp_in2 = in2;
 assign tmp_in3 = in3;
 assign out1 = {tmp_in3, tmp_in2, tmp_in1};
-" VHDL_PROVIDED=
-"begin
+" VHDL_PROVIDED="begin
   out1 &lt;= std_logic_vector(resize(in3, BITSIZE_out1)) &amp; std_logic_vector(resize(in2, BITSIZE_out1)) &amp; std_logic_vector(resize(in1, BITSIZE_out1));
 "/>
         </component_o>
@@ -1552,16 +1537,14 @@ assign out1 = {tmp_in3, tmp_in2, tmp_in1};
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="ui_concat_24_3_FU in1 in2 in3 out1" VERILOG_PROVIDED=
-"wire signed [BITSIZE_out1-1:0] tmp_in1;
+          <NP_functionality LIBRARY="ui_concat_24_3_FU in1 in2 in3 out1" VERILOG_PROVIDED="wire signed [BITSIZE_out1-1:0] tmp_in1;
 wire signed [BITSIZE_out1-1:0] tmp_in2;
 wire signed [BITSIZE_out1-1:0] tmp_in3;
 assign tmp_in1 = in1;
 assign tmp_in2 = in2;
 assign tmp_in3 = in3;
 assign out1 = {tmp_in3, tmp_in2, tmp_in1};
-" VHDL_PROVIDED=
-"begin
+" VHDL_PROVIDED="begin
   out1 &lt;= std_logic_vector(resize(in3, BITSIZE_out1)) &amp; std_logic_vector(resize(in2, BITSIZE_out1)) &amp; std_logic_vector(resize(in1, BITSIZE_out1));
 "/>
         </component_o>
@@ -1601,8 +1584,7 @@ assign tmp_in1 = in1;
 assign tmp_in2 = in2;
 assign tmp_in3 = in3;
 assign tmp_in4 = in4;
-assign out1 = {tmp_in4, tmp_in3, tmp_in2, tmp_in1};"  VHDL_PROVIDED=
-"begin
+assign out1 = {tmp_in4, tmp_in3, tmp_in2, tmp_in1};" VHDL_PROVIDED="begin
    out1 &lt;= std_logic_vector(resize(in4,BITSIZE_out1)) &amp; std_logic_vector(resize(in3, BITSIZE_out1)) &amp; std_logic_vector(resize(in2, BITSIZE_out1)) &amp; std_logic_vector(resize(in1, BITSIZE_out1));
 "/>
         </component_o>
@@ -1642,8 +1624,7 @@ assign tmp_in1 = in1;
 assign tmp_in2 = in2;
 assign tmp_in3 = in3;
 assign tmp_in4 = in4;
-assign out1 = {tmp_in4, tmp_in3, tmp_in2, tmp_in1};"  VHDL_PROVIDED=
-"begin
+assign out1 = {tmp_in4, tmp_in3, tmp_in2, tmp_in1};" VHDL_PROVIDED="begin
    out1 &lt;= std_logic_vector(resize(in4,BITSIZE_out1)) &amp; std_logic_vector(resize(in3, BITSIZE_out1)) &amp; std_logic_vector(resize(in2, BITSIZE_out1)) &amp; std_logic_vector(resize(in1, BITSIZE_out1));
 "/>
         </component_o>
@@ -1703,8 +1684,7 @@ assign tmp_in5 = in5;
 assign tmp_in6 = in6;
 assign tmp_in7 = in7;
 assign tmp_in8 = in8;
-assign out1 = {tmp_in8, tmp_in7, tmp_in6, tmp_in5, tmp_in4, tmp_in3, tmp_in2, tmp_in1};" VHDL_PROVIDED=
-"begin
+assign out1 = {tmp_in8, tmp_in7, tmp_in6, tmp_in5, tmp_in4, tmp_in3, tmp_in2, tmp_in1};" VHDL_PROVIDED="begin
    out1 &lt;= std_logic_vector(resize(in8, BITSIZE_out1)) &amp; std_logic_vector(resize(in7, BITSIZE_out1)) &amp; std_logic_vector(resize(in6, BITSIZE_out1)) &amp; std_logic_vector(resize(in5, BITSIZE_out1)) &amp; std_logic_vector(resize(in4, BITSIZE_out1)) &amp; std_logic_vector(resize(in3, BITSIZE_out1)) &amp; std_logic_vector(resize(in2, BITSIZE_out1)) &amp; std_logic_vector(resize(in1, BITSIZE_out1));
 "
           />
@@ -1765,8 +1745,7 @@ assign tmp_in5 = in5;
 assign tmp_in6 = in6;
 assign tmp_in7 = in7;
 assign tmp_in8 = in8;
-assign out1 = {tmp_in8, tmp_in7, tmp_in6, tmp_in5, tmp_in4, tmp_in3, tmp_in2, tmp_in1};" VHDL_PROVIDED=
-"begin
+assign out1 = {tmp_in8, tmp_in7, tmp_in6, tmp_in5, tmp_in4, tmp_in3, tmp_in2, tmp_in1};" VHDL_PROVIDED="begin
    out1 &lt;= std_logic_vector(resize(in8, BITSIZE_out1)) &amp; std_logic_vector(resize(in7, BITSIZE_out1)) &amp; std_logic_vector(resize(in6, BITSIZE_out1)) &amp; std_logic_vector(resize(in5, BITSIZE_out1)) &amp; std_logic_vector(resize(in4, BITSIZE_out1)) &amp; std_logic_vector(resize(in3, BITSIZE_out1)) &amp; std_logic_vector(resize(in2, BITSIZE_out1)) &amp; std_logic_vector(resize(in1, BITSIZE_out1));
 "
           />
@@ -1811,8 +1790,7 @@ assign out1 = {tmp_in8, tmp_in7, tmp_in6, tmp_in5, tmp_in4, tmp_in3, tmp_in2, tm
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="concat_64_8_FU in1 in2 in3 in4 in5 in6 in7 in8 out1" VERILOG_PROVIDED=
-"wire signed [BITSIZE_out1-1:0] tmp_in1;
+          <NP_functionality LIBRARY="concat_64_8_FU in1 in2 in3 in4 in5 in6 in7 in8 out1" VERILOG_PROVIDED="wire signed [BITSIZE_out1-1:0] tmp_in1;
 wire signed [BITSIZE_out1-1:0] tmp_in2;
 wire signed [BITSIZE_out1-1:0] tmp_in3;
 wire signed [BITSIZE_out1-1:0] tmp_in4;
@@ -1873,8 +1851,7 @@ assign out1 = {tmp_in8, tmp_in7, tmp_in6, tmp_in5, tmp_in4, tmp_in3, tmp_in2, tm
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="ui_concat_64_8_FU in1 in2 in3 in4 in5 in6 in7 in8 out1" VERILOG_PROVIDED=
-"wire signed [BITSIZE_out1-1:0] tmp_in1;
+          <NP_functionality LIBRARY="ui_concat_64_8_FU in1 in2 in3 in4 in5 in6 in7 in8 out1" VERILOG_PROVIDED="wire signed [BITSIZE_out1-1:0] tmp_in1;
 wire signed [BITSIZE_out1-1:0] tmp_in2;
 wire signed [BITSIZE_out1-1:0] tmp_in3;
 wire signed [BITSIZE_out1-1:0] tmp_in4;
@@ -2467,8 +2444,7 @@ always @(posedge clock)
     reg_out1 &lt;= {BITSIZE_out1{1&apos;b0}};
   else
     reg_out1 &lt;= in1;"
-VHDL_PROVIDED=
-"signal reg_out1 : std_logic_vector(BITSIZE_out1-1 downto 0) 1INIT_ZERO_VALUE;
+            VHDL_PROVIDED="signal reg_out1 : std_logic_vector(BITSIZE_out1-1 downto 0) 1INIT_ZERO_VALUE;
 begin
   out1 &lt; reg_out1;
   process(clock)
@@ -2558,8 +2534,7 @@ begin
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="register_STD in1 out1" VERILOG_PROVIDED=
-"reg [BITSIZE_out1-1:0] reg_out1 1INIT_ZERO_VALUE;
+          <NP_functionality LIBRARY="register_STD in1 out1" VERILOG_PROVIDED="reg [BITSIZE_out1-1:0] reg_out1 1INIT_ZERO_VALUE;
 assign out1 = reg_out1;
 always @(posedge clock)
   reg_out1 &lt;= in1;
@@ -2602,8 +2577,7 @@ end process;
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="register_SHIFT CONTROLLER_LENGTH" VERILOG_PROVIDED=
-"
+          <NP_functionality LIBRARY="register_SHIFT CONTROLLER_LENGTH" VERILOG_PROVIDED="
 generate if (CONTROLLER_LENGTH == 0) 
 begin
   assign out1 = in1;

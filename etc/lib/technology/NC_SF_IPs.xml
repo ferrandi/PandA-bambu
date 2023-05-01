@@ -8,8 +8,8 @@
       <circuit>
         <component_o id="sf_FFdata_converter_FU_32_64">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2014-2023 Politecnico di Milano</copyright>  
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2014-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="sf_FFdata_converter_FU_32_64"/>
           <port_o id="in1" dir="IN">
@@ -28,8 +28,8 @@
       <circuit>
         <component_o id="sf_FFdata_converter_FU_64_32">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2014-2023 Politecnico di Milano</copyright>  
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2014-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="sf_FFdata_converter_FU_64_32"/>
           <port_o id="in1" dir="IN">
@@ -39,7 +39,7 @@
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="32"/>
           </port_o>
           <NP_functionality LIBRARY="sf_FFdata_converter_FU_64_32" VERILOG_PROVIDED="wire [10:0] exponent1;\nwire [51:0] mantissa1;\nwire is_exp_zero;\nwire is_all_ones;\nwire is_mantissa_zero;\nwire underflow;\nwire overflow;\nwire rounding;\nwire [7:0] exp_temp;\nwire [31:0] expmantissa;\nwire is_NaN;\nwire is_zero;\nwire is_infinite;\n\nassign exponent1 = in1[62:52];\nassign mantissa1 = in1[51:0];\nassign is_exp_zero = exponent1 == 11&apos;d0;\nassign is_all_ones = exponent1 == {11{1&apos;b1}};\nassign is_mantissa_zero = mantissa1 == 52&apos;d0;\n\nassign underflow = exponent1 &lt;= 11&apos;d896;\nassign overflow = 11&apos;d1151 &lt;= exponent1;\nassign rounding = mantissa1[28] &amp;&amp; ((mantissa1[27:0] != 28&apos;d0) | mantissa1[29]);\n\nassign exp_temp = {!exponent1[7], exponent1[6:0]};\nassign expmantissa = {1&apos;b0, exp_temp, mantissa1[51:29]}  +  {31&apos;d0, rounding};\n\n assign is_NaN = is_all_ones &amp; !is_mantissa_zero;\n assign is_zero = is_exp_zero | underflow;\n assign is_infinite = (is_all_ones &amp; is_mantissa_zero) | (!is_NaN &amp; (overflow | expmantissa[31]));\n assign out1[31] = in1[63];\n assign out1[30:23] = is_zero ? 8&apos;d0 : (is_all_ones|overflow|expmantissa[31] ? {8{1&apos;b1}} : expmantissa[30:23]);\n assign out1[22:0] = is_zero|is_infinite ? 23&apos;d0 : (is_NaN ? {1&apos;b1,22&apos;d0} : expmantissa[22:0]);" VHDL_PROVIDED="signal exponent1 : std_logic_vector(10 downto 0);\nsignal mantissa1 : std_logic_vector(51 downto 0);\nsignal is_exp_zero : std_logic;\nsignal is_all_ones : std_logic;\nsignal is_mantissa_zero : std_logic;\nsignal underflow : std_logic;\nsignal overflow : std_logic;\nsignal rounding : std_logic_vector(0 downto 0);\nsignal exp_temp : std_logic_vector(7 downto 0);\n signal expmantissa : std_logic_vector(31 downto 0);\nsignal is_NaN : std_logic;\nsignal is_zero: std_logic;\nsignal is_infinite : std_logic;\nbegin\n  exponent1 &lt;= in1(62 downto 52);\n  mantissa1 &lt;= in1(51 downto 0);\n  is_exp_zero &lt;= &apos;1&apos; when(exponent1 = &quot;00000000000&quot;) else &apos;0&apos;;\n  is_all_ones &lt;= &apos;1&apos; when (exponent1 = &quot;11111111111&quot;) else &apos;0&apos;;\n  is_mantissa_zero &lt;= &apos;1&apos; when(unsigned(mantissa1) = 0) else &apos;0&apos;;\n  underflow &lt;= &apos;1&apos; when(unsigned(exponent1) &lt;= 896) else &apos;0&apos;;\n  overflow &lt;= &apos;1&apos; when (1151 &lt;= unsigned(exponent1)) else &apos;0&apos;;\n  rounding(0) &lt;= mantissa1(28) when (unsigned(mantissa1(28 downto 0)) /= 0) else mantissa1(28) or mantissa1(29);\n  exp_temp &lt;= (not exponent1(7)) &amp; exponent1(6 downto 0);\n  expmantissa &lt;= std_logic_vector(unsigned(&apos;0&apos; &amp; exp_temp &amp; mantissa1(51 downto 29)) + unsigned(rounding));\n  is_Nan &lt;= is_all_ones and not is_mantissa_zero;\n  is_zero &lt;= is_exp_zero or underflow;\n  is_infinite &lt;= (is_all_ones and is_mantissa_zero) or (not is_NaN and (overflow or expmantissa(31)));\n  out1(31) &lt;= in1(63);\n  out1(30 downto 23) &lt;= &quot;00000000&quot; when(is_zero = &apos;1&apos;) else &quot;11111111&quot; when ((is_all_ones or overflow or expmantissa(31)) = &apos;1&apos;) else expmantissa(30 downto 23);\n  out1(22 downto 0) &lt;= (others =&gt; &apos;0&apos;) when ((is_zero or is_infinite) = &apos;1&apos;) else (22 =&gt; &apos;1&apos;, others =&gt; &apos;0&apos;) when (is_NaN = &apos;1&apos;) else expmantissa(22 downto 0);\n"/>
-       </component_o>
+        </component_o>
       </circuit>
     </cell>
   </library>

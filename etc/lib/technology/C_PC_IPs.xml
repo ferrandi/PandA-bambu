@@ -22,17 +22,11 @@
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="in1" dir="IN">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            data to be written
-          </port_o>
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/> data to be written </port_o>
           <port_o id="in2" dir="IN" is_addr_bus="1">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            address
-          </port_o>
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/> address </port_o>
           <port_o id="in3" dir="IN" is_size_bus="1">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            data size
-          </port_o>
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/> data size </port_o>
           <port_o id="in4" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>

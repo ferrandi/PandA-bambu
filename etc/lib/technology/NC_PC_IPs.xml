@@ -549,7 +549,7 @@ assign rop = sop | rop_reg;"/>
       <name>CE_FU</name>
       <operation operation_name="CE_FU"/>
       <circuit>
-        <component_o id="CE_FU" >
+        <component_o id="CE_FU">
           <structural_type_descriptor id_type="CE_FU"/>
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
           <copyright>Copyright (C) 2012-2023 Politecnico di Milano</copyright>
@@ -602,7 +602,7 @@ assign rop=rop_out;
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_vector_o>
           <port_o id="out1" dir="OUT">
-             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <NP_functionality LIBRARY="MUX selector in1 out1 NUM_ch" VERILOG_PROVIDED="
   wire[BITSIZE_in1-1:0] inputarray [0:NUM_ch-1];
@@ -620,8 +620,7 @@ assign rop=rop_out;
     </cell>
     <cell>
       <name>ALLOW_MEM_ACCESS_FU</name>
-      <operation operation_name=""/>LLOW_MEM_ACCESS_FU
-      <circuit>
+      <operation operation_name=""/>LLOW_MEM_ACCESS_FU <circuit>
         <component_o id="ALLOW_MEM_ACCESS_FU">
           <structural_type_descriptor id_type="ALLOW_MEM_ACCESS_FU"/>
           <parameter name="NUM_ch">2</parameter>
@@ -645,10 +644,10 @@ assign rop=rop_out;
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_vector_o>
           <port_vector_o id="memory_enabled" dir="OUT" is_global="1" is_extern="1">
-             <structural_type_descriptor type="BOOL" size="1"/>
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_vector_o>
           <port_vector_o id="op" dir="OUT">
-             <structural_type_descriptor type="BOOL" size="1"/>
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_vector_o>
           <NP_functionality LIBRARY="ALLOW_MEM_ACCESS_FU access_allowed start_port done memory_enabled op" VERILOG_PROVIDED="
 reg [PORTSIZE_access_allowed-1:0] state 1INIT_ZERO_VALUE;
@@ -703,7 +702,7 @@ assign memory_enabled = ~state;"/>
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <port_vector_o id="out1" dir="OUT">
-             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_vector_o>
           <NP_functionality LIBRARY="EXPAND selector in1 out1" VERILOG_PROVIDED="
   genvar i;
