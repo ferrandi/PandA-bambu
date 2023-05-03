@@ -771,8 +771,6 @@ jobs:
           - test: hw
             args: -c=--evaluation=PERIOD,AREA,FREQUENCY,CLOCK_SLACK,REGISTERS,DSPS,BRAMS
             datapoints: PERIOD,AREA,REGISTERS,DSPS,BRAMS
-          - test: lattice
-            datapoints: CYCLES,PERIOD,AREA,REGISTERS,DSPS,BRAMS
           - test: nanoxplore
             datapoints: CYCLES,PERIOD,AREA,REGISTERS,DSPS,BRAMS
           - test: sim

@@ -128,6 +128,21 @@ DesignFlowStep_Status weighted_clique_register::RegisterBinding()
    }
    if(vertex_index > 0)
    {
+      if(clique_covering_algorithm == CliqueCovering_Algorithm::BIPARTITE_MATCHING)
+      {
+         const std::list<vertex>& support = HLS->Rliv->get_support();
+         unsigned current_partition = 0;
+         for(auto vState : support)
+         {
+            const CustomOrderedSet<unsigned int>& live = HLS->Rliv->get_live_in(vState);
+            for(auto l : live)
+            {
+               unsigned int sv = HLS->storage_value_information->get_storage_value_index(vState, l);
+               register_clique->add_subpartitions(current_partition, verts[sv]);
+            }
+            ++current_partition;
+         }
+      }
       HLS->Rreg->set_used_regs(num_registers);
       BOOST_FOREACH(compatibility_graph::edge_descriptor e, boost::edges(*CG))
       {

@@ -844,16 +844,15 @@ void parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
          do_again = false;
          while(ready_resources.size())
          {
-            unsigned int fu_type;
-            auto best_res_it = ready_resources.begin();
-            fu_type = *best_res_it;
+            const auto fu_type = *ready_resources.begin();
+            ready_resources.erase(ready_resources.begin());
+            THROW_ASSERT(fu_type != static_cast<unsigned>(-1), "");
 
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                            "-->Considering functional unit type " + STR(fu_type) + "(" +
                                HLS->allocation_information->get_fu_name(fu_type).first + "-" +
                                HLS->allocation_information->get_fu_name(fu_type).second + ")" + " at clock cycle " +
                                STR(current_cycle));
-            ready_resources.erase(best_res_it);
 
             auto& queue = priority_queues[fu_type];
             /// Ignore empty list
@@ -1400,8 +1399,7 @@ void parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
 
                PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                              "                  Current cycles ends at " + STR(current_cycle_ending_time) +
-                                 "  - operation ends at " +
-                                 boost::lexical_cast<std::string>(ending_time[current_vertex]));
+                                 "  - operation ends at " + STR(ending_time[current_vertex]));
                if(ending_time[current_vertex] > current_cycle_ending_time)
                {
                   live_vertices.insert(current_vertex);

@@ -3,9 +3,8 @@
 #                      Checking common prerequisites                           #
 #                                                                              #
 ################################################################################
-AC_PREREQ(2.57)
-AC_INIT(PandA, 2023.1, panda-info@polimi.it)
-AC_CANONICAL_SYSTEM
+AC_INIT([PandA],[2023.1],[panda-info@polimi.it])
+AC_CANONICAL_TARGET
 AM_INIT_AUTOMAKE([-Wno-portability 1.9 tar-pax subdir-objects])
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 AC_CONFIG_SRCDIR([configure.ac])
@@ -141,7 +140,7 @@ AC_CHECK_LIB([z], [gzopen])
 
 # Checks for header files.
 AC_FUNC_ALLOCA
-AC_HEADER_STDC
+
 AC_CHECK_HEADERS([float.h limits.h sys/timeb.h zlib.h stddef.h getopt.h ], [],[AC_MSG_ERROR("$ac_header not found")])
 AC_HEADER_SYS_WAIT
 
@@ -160,7 +159,6 @@ AC_FUNC_STRTOD
 AC_CHECK_FUNCS([floor memset modf pow sqrt strchr strcasecmp ])
 
 AC_LANG_PUSH([C++])
-AC_TYPE_SIGNAL
 AC_STRUCT_TM
 
 AC_LIBTOOL_DLOPEN
@@ -2868,7 +2866,7 @@ AC_SUBST(ENABLE_DOC)
 AC_SUBST(all_includes)
 
 
-AC_OUTPUT()
+AC_OUTPUT
 
 if test "$no_create" = yes; then
 /bin/bash ./config.status lconfig.h

@@ -1455,6 +1455,13 @@ ext/mockturtle/lib/percy/percy/solvers/solver_wrapper.hpp
 ext/mockturtle/lib/percy/percy/spec.hpp
 ext/mockturtle/lib/percy/percy/tt_utils.hpp
 ext/mockturtle/lib/rang/rang/rang.hpp
+ext/or-tools/ortools/base/integral_types.h
+ext/or-tools/ortools/base/macros.h
+ext/or-tools/ortools/graph/assignment.h
+ext/or-tools/ortools/graph/ebert_graph.h
+ext/or-tools/ortools/graph/linear_assignment.h
+ext/or-tools/ortools/util/permutation.h
+ext/or-tools/ortools/util/zvector.h
 ext/sollya/assignment.c
 ext/sollya/assignment.h
 ext/sollya/autodiff.c
@@ -1879,7 +1886,6 @@ src/Parameter.cpp
 src/Parameter.hpp
 src/SpiderParameter.cpp
 src/SpiderParameter.hpp
-src/algorithms/bipartite_matching/bipartite_matching.hpp
 src/algorithms/clique_covering/check_clique.hpp
 src/algorithms/clique_covering/clique_covering.cpp
 src/algorithms/clique_covering/clique_covering.hpp

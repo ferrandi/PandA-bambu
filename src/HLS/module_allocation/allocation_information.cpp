@@ -1890,58 +1890,59 @@ unsigned int AllocationInformation::GetCycleLatency(const unsigned int operation
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Latency of allocation fu is " + STR(ret_value));
       return ret_value;
    }
-   else
+
+   THROW_ASSERT(operationID != ENTRY_ID && operationID != EXIT_ID, "Entry or exit not allocated");
+   const auto tn = TreeM->CGetTreeNode(operationID);
+   const auto ga = GetPointer<const gimple_assign>(tn);
+   if(ga)
    {
-      THROW_ASSERT(operationID != ENTRY_ID && operationID != EXIT_ID, "Entry or exit not allocated");
-      const auto tn = TreeM->CGetTreeNode(operationID);
-      const auto ga = GetPointer<const gimple_assign>(tn);
-      if(ga)
+      const auto right_kind = GET_CONST_NODE(ga->op1)->get_kind();
+      if(right_kind == widen_mult_expr_K || right_kind == mult_expr_K)
       {
-         const auto right_kind = GET_CONST_NODE(ga->op1)->get_kind();
-         if(right_kind == widen_mult_expr_K || right_kind == mult_expr_K)
-         {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                           "<--Latency of not allocated fu is 1: possibly inaccurate");
-            const auto data_bitsize = tree_helper::Size(ga->op0);
-            const auto fu_prec = resize_to_1_8_16_32_64_128_256_512(data_bitsize);
-            const auto in_prec = right_kind == mult_expr_K ? fu_prec : (fu_prec / 2);
-            const auto fu_name = tree_node::GetString(right_kind) + "_FU_" + STR(in_prec) + "_" + STR(in_prec) + "_" +
-                                 STR(fu_prec) + "_0";
-            const auto new_stmt_temp = HLS_T->get_technology_manager()->get_fu(fu_name, LIBRARY_STD_FU);
-            THROW_ASSERT(new_stmt_temp, "Functional unit '" + fu_name + "' not found");
-            const auto new_stmt_fu = GetPointer<const functional_unit>(new_stmt_temp);
-            const auto new_stmt_op_temp = new_stmt_fu->get_operation(tree_node::GetString(right_kind));
-            const auto new_stmt_op = GetPointer<operation>(new_stmt_op_temp);
-            return new_stmt_op->time_m->get_cycles();
-         }
-         else if(right_kind == ssa_name_K || right_kind == integer_cst_K || right_kind == cond_expr_K ||
-                 right_kind == vec_cond_expr_K || right_kind == nop_expr_K || right_kind == convert_expr_K ||
-                 right_kind == lut_expr_K || right_kind == extract_bit_expr_K || right_kind == bit_ior_concat_expr_K ||
-                 right_kind == truth_not_expr_K || right_kind == bit_not_expr_K || right_kind == negate_expr_K ||
-                 right_kind == truth_and_expr_K || right_kind == truth_or_expr_K || right_kind == truth_xor_expr_K ||
-                 right_kind == bit_and_expr_K || right_kind == bit_ior_expr_K || right_kind == bit_xor_expr_K ||
-                 right_kind == rshift_expr_K || right_kind == lshift_expr_K || right_kind == plus_expr_K ||
-                 right_kind == minus_expr_K || right_kind == eq_expr_K || right_kind == ne_expr_K ||
-                 right_kind == lt_expr_K || right_kind == le_expr_K || right_kind == gt_expr_K ||
-                 right_kind == ge_expr_K || right_kind == ternary_plus_expr_K || right_kind == ternary_mp_expr_K ||
-                 right_kind == ternary_pm_expr_K || right_kind == ternary_mm_expr_K)
-         {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Latency of not allocated fu is 1");
-            return 1;
-         }
-         else
-         {
-            THROW_UNREACHABLE("Unsupported right part (" + tree_node::GetString(right_kind) +
-                              ") of gimple assignment " + ga->ToString());
-         }
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                        "<--Latency of not allocated fu is 1: possibly inaccurate");
+         const auto data_bitsize = tree_helper::Size(ga->op0);
+         const auto fu_prec = resize_to_1_8_16_32_64_128_256_512(data_bitsize);
+         const auto in_prec = right_kind == mult_expr_K ? fu_prec : (fu_prec / 2);
+         const auto fu_name =
+             tree_node::GetString(right_kind) + "_FU_" + STR(in_prec) + "_" + STR(in_prec) + "_" + STR(fu_prec) + "_0";
+         const auto new_stmt_temp = HLS_T->get_technology_manager()->get_fu(fu_name, LIBRARY_STD_FU);
+         THROW_ASSERT(new_stmt_temp, "Functional unit '" + fu_name + "' not found");
+         const auto new_stmt_fu = GetPointer<const functional_unit>(new_stmt_temp);
+         const auto new_stmt_op_temp = new_stmt_fu->get_operation(tree_node::GetString(right_kind));
+         const auto new_stmt_op = GetPointer<operation>(new_stmt_op_temp);
+         return new_stmt_op->time_m->get_cycles();
       }
-      if(tn->get_kind() == gimple_multi_way_if_K || tn->get_kind() == gimple_cond_K || tn->get_kind() == gimple_phi_K ||
-         tn->get_kind() == gimple_nop_K || tn->get_kind() == gimple_return_K)
+      else if(right_kind == call_expr_K)
+      {
+         return 0;
+      }
+      else if(right_kind == ssa_name_K || right_kind == integer_cst_K || right_kind == cond_expr_K ||
+              right_kind == vec_cond_expr_K || right_kind == nop_expr_K || right_kind == addr_expr_K ||
+              right_kind == convert_expr_K || right_kind == lut_expr_K || right_kind == extract_bit_expr_K ||
+              right_kind == bit_ior_concat_expr_K || right_kind == truth_not_expr_K || right_kind == bit_not_expr_K ||
+              right_kind == negate_expr_K || right_kind == truth_and_expr_K || right_kind == truth_or_expr_K ||
+              right_kind == truth_xor_expr_K || right_kind == bit_and_expr_K || right_kind == bit_ior_expr_K ||
+              right_kind == bit_xor_expr_K || right_kind == rshift_expr_K || right_kind == lshift_expr_K ||
+              right_kind == plus_expr_K || right_kind == pointer_plus_expr_K || right_kind == minus_expr_K ||
+              right_kind == eq_expr_K || right_kind == ne_expr_K || right_kind == lt_expr_K ||
+              right_kind == le_expr_K || right_kind == gt_expr_K || right_kind == ge_expr_K ||
+              right_kind == ternary_plus_expr_K || right_kind == ternary_mp_expr_K || right_kind == ternary_pm_expr_K ||
+              right_kind == ternary_mm_expr_K)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Latency of not allocated fu is 1");
          return 1;
       }
+      THROW_UNREACHABLE("Unsupported right part (" + tree_node::GetString(right_kind) + ") of gimple assignment " +
+                        ga->ToString());
    }
+   else if(tn->get_kind() == gimple_multi_way_if_K || tn->get_kind() == gimple_cond_K ||
+           tn->get_kind() == gimple_phi_K || tn->get_kind() == gimple_nop_K || tn->get_kind() == gimple_return_K)
+   {
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Latency of not allocated fu is 1");
+      return 1;
+   }
+
    return 0;
 }
 
@@ -2102,7 +2103,8 @@ std::pair<double, double> AllocationInformation::GetTimeLatency(const unsigned i
          const auto ga = GetPointerS<const gimple_assign>(op_stmt);
          const auto op1_kind = GET_CONST_NODE(ga->op1)->get_kind();
          if(op1_kind == ssa_name_K || op1_kind == integer_cst_K || op1_kind == convert_expr_K ||
-            op1_kind == nop_expr_K || op1_kind == bit_ior_concat_expr_K || op1_kind == extract_bit_expr_K)
+            op1_kind == nop_expr_K || op1_kind == addr_expr_K || op1_kind == bit_ior_concat_expr_K ||
+            op1_kind == extract_bit_expr_K)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Time is 0.0,0.0");
             return std::make_pair(0.0, 0.0);
