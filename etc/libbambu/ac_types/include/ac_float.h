@@ -286,11 +286,8 @@ namespace __AC_NAMESPACE
       friend class ac_float;
 
       ac_float() = default;
-      ac_float(const ac_float& op)
-      {
-         m = op.m;
-         e = op.e;
-      }
+      ac_float(const ac_float& op) = default;
+      ac_float& operator=(const ac_float&) = default;
 
       template <AC_FL_T(2)>
       ac_float(const AC_FL(2) & op, bool assert_on_overflow = false, bool assert_on_rounding = false)
@@ -500,7 +497,7 @@ namespace __AC_NAMESPACE
       }
       bool normalize()
       {
-         bool normalized = operator!() || !S && m[W - 1] || S && (m[W - 1] ^ m[W - 2]);
+         bool normalized = operator!() || (!S && m[W - 1]) || (S && (m[W - 1] ^ m[W - 2]));
          if(E && !normalized)
          {
             normalized = m.normalize(e);
@@ -539,7 +536,7 @@ namespace __AC_NAMESPACE
                   m.normalize(e_u);
                }
                e_u -= offset;
-               if(e_u[ET - 1] | !(e_u >> (E - 1)))
+               if(e_u[ET - 1] || !(e_u >> (E - 1)))
                { // what about E == 0 or ET == 0 ???
                   e = e_u;
                }

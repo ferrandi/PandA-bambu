@@ -303,7 +303,8 @@ using Slong = long long;
             return T(0);
          }
          const T rnd = T(static_cast<long long int>(v));
-         return rnd - T(rnd != v && v < T(0));
+         auto res = rnd - T(rnd != v && v < T(0));
+         return res;
       }
 
       __FORCE_INLINE constexpr double mgc_floor(double d)
@@ -463,6 +464,8 @@ using Slong = long long;
          return ldexpr32<N / 32>(N < 0 ? d / ((unsigned)1 << (-N & 31)) : d * ((unsigned)1 << (N & 31)));
       }
 
+static unsigned counter=0;
+
 #if __clang_major__ >= 16
       template <int N, bool C, int W0, bool S0>
       class iv_base
@@ -488,9 +491,12 @@ using Slong = long long;
          {
             AC_ASSERT(x >= 0 && x < N, "unexpected condition");
             bool updateRes = x * 32 < W0;
+            if(!updateRes)
+            {
+               return;
+            }
             auto mask1 = static_cast<unsigned _BitInt(W0)>(all_ones);
             mask1 <<= x * 32;
-            mask1 = updateRes ? mask1 : 0;
             unsigned uvalue = value;
             unsigned _BitInt(W0) uvalueBI = uvalue;
             uvalueBI <<= x * 32;
@@ -499,25 +505,35 @@ using Slong = long long;
 
          __FORCE_INLINE constexpr Slong to_int64() const
          {
-            Slong conv = v;
-            return conv;
+            if(S0)
+            {
+               Slong conv = v;
+               return conv;
+            }
+            else
+            {
+               unsigned _BitInt(W0) uv = v;
+               Slong conv = uv;
+               return conv;
+            }
          }
 
          __FORCE_INLINE constexpr int operator[](int x) const
          {
             AC_ASSERT(x >= 0 && x < N, "unexpected condition");
             bool returnRes = x * 32 < W0;
+            int res = 0;
             if(S0)
             {
-               int res = returnRes ? v >> (32 * x) : v >> (W0 - 1);
-               return res;
+               res = returnRes ? v >> (32 * x) : v >> (W0 - 1);
             }
             else
             {
                unsigned _BitInt(W0) uv = v;
-               unsigned res = returnRes ? uv >> (32 * x) : 0;
-               return res;
+               unsigned resu = returnRes ? uv >> (32 * x) : 0;
+               res = resu;
             }
+            return res;
          }
 
          iv_base() = default;
@@ -530,6 +546,7 @@ using Slong = long long;
             LOOP(int, idx, M, exclude, N, { set(idx, last); });
          }
       } __attribute__((aligned(8)));
+
       template <int N, bool C>
       class iv_base<N, C, 1, true>
       {
@@ -553,18 +570,19 @@ using Slong = long long;
          __FORCE_INLINE constexpr void set(int x, int value)
          {
             AC_ASSERT(x >= 0 && x < N, "unexpected condition");
-            v = value;
+            v = value & 1;
          }
 
          __FORCE_INLINE constexpr Slong to_int64() const
          {
-            return v;
+            return v ? -1LL : 0;
          }
 
          __FORCE_INLINE constexpr int operator[](int x) const
          {
             AC_ASSERT(x >= 0 && x < N, "unexpected condition");
-            return v;
+            int res = v ? -1 : 0;
+            return res;
          }
 
          iv_base() = default;
@@ -598,18 +616,19 @@ using Slong = long long;
          __FORCE_INLINE constexpr void set(int x, int value)
          {
             AC_ASSERT(x >= 0 && x < N, "unexpected condition");
-            v = value;
+            v = value & 1;
          }
 
          __FORCE_INLINE constexpr Slong to_int64() const
          {
-            return v;
+            return v ? 1 : 0;
          }
 
          __FORCE_INLINE constexpr int operator[](int x) const
          {
             AC_ASSERT(x >= 0 && x < N, "unexpected condition");
-            return v;
+            int res = v ? 1 : 0;
+            return res;
          }
 
          iv_base() = default;
@@ -1251,8 +1270,8 @@ using Slong = long long;
          constexpr int M2 = AC_MIN(N1, N2);
          constexpr int MW1 = N1 >= N2 ? W1 : W2;
          constexpr int MW2 = N1 >= N2 ? W2 : W1;
-         constexpr int MS1 = N1 >= N2 ? S1 : S2;
-         constexpr int MS2 = N1 >= N2 ? S2 : S1;
+         constexpr bool MS1 = N1 >= N2 ? S1 : S2;
+         constexpr bool MS2 = N1 >= N2 ? S2 : S1;
          constexpr bool M1C1 = N1 >= N2 ? C1 : C2;
          constexpr bool M2C1 = N1 >= N2 ? C2 : C1;
          const iv_base<M1, M1C1, MW1, MS1>& OP1 =
@@ -1323,8 +1342,8 @@ using Slong = long long;
          constexpr int M2 = AC_MIN(N1, N2);
          constexpr int MW1 = N1 >= N2 ? W1 : W2;
          constexpr int MW2 = N1 >= N2 ? W2 : W1;
-         constexpr int MS1 = N1 >= N2 ? S1 : S2;
-         constexpr int MS2 = N1 >= N2 ? S2 : S1;
+         constexpr bool MS1 = N1 >= N2 ? S1 : S2;
+         constexpr bool MS2 = N1 >= N2 ? S2 : S1;
          constexpr bool M1C1 = N1 >= N2 ? C1 : C2;
          constexpr bool M2C1 = N1 >= N2 ? C2 : C1;
 
@@ -1448,8 +1467,8 @@ using Slong = long long;
             constexpr int M2 = AC_MIN(N1, N2);
             constexpr int MW1 = N1 >= N2 ? W1 : W2;
             constexpr int MW2 = N1 >= N2 ? W2 : W1;
-            constexpr int MS1 = N1 >= N2 ? S1 : S2;
-            constexpr int MS2 = N1 >= N2 ? S2 : S1;
+            constexpr bool MS1 = N1 >= N2 ? S1 : S2;
+            constexpr bool MS2 = N1 >= N2 ? S2 : S1;
             constexpr bool M1C1 = N1 >= N2 ? C1 : C2;
             constexpr bool M2C1 = N1 >= N2 ? C2 : C1;
             constexpr int T1 = AC_MIN(M2 - 1, Nr);
@@ -1587,8 +1606,8 @@ using Slong = long long;
             constexpr int M2 = AC_MIN(N1, N2);
             constexpr int MW1 = N1 >= N2 ? W1 : W2;
             constexpr int MW2 = N1 >= N2 ? W2 : W1;
-            constexpr int MS1 = N1 >= N2 ? S1 : S2;
-            constexpr int MS2 = N1 >= N2 ? S2 : S1;
+            constexpr bool MS1 = N1 >= N2 ? S1 : S2;
+            constexpr bool MS2 = N1 >= N2 ? S2 : S1;
             constexpr bool M1C1 = N1 >= N2 ? C1 : C2;
             constexpr bool M2C1 = N1 >= N2 ? C2 : C1;
             constexpr int T1 = AC_MIN(M2 - 1, Nr);
@@ -1998,8 +2017,8 @@ using Slong = long long;
       {
          constexpr int M1 = AC_MIN(AC_MAX(N1, N2), Nr);
          constexpr int M2 = AC_MIN(AC_MIN(N1, N2), Nr);
-         constexpr bool MW1 = N1 > N2 ? W1 : W2;
-         constexpr bool MW2 = N1 > N2 ? W2 : W1;
+         constexpr int MW1 = N1 > N2 ? W1 : W2;
+         constexpr int MW2 = N1 > N2 ? W2 : W1;
          constexpr bool MS1 = N1 > N2 ? S1 : S2;
          constexpr bool MS2 = N1 > N2 ? S2 : S1;
          constexpr bool M1C1 = N1 > N2 ? C1 : C2;
@@ -2039,8 +2058,8 @@ using Slong = long long;
          constexpr int M2 = AC_MIN(AC_MIN(N1, N2), Nr);
          constexpr int MW1 = N1 >= N2 ? W1 : W2;
          constexpr int MW2 = N1 >= N2 ? W2 : W1;
-         constexpr int MS1 = N1 >= N2 ? S1 : S2;
-         constexpr int MS2 = N1 >= N2 ? S2 : S1;
+         constexpr bool MS1 = N1 >= N2 ? S1 : S2;
+         constexpr bool MS2 = N1 >= N2 ? S2 : S1;
          constexpr bool M1C1 = N1 >= N2 ? C1 : C2;
          constexpr bool M2C1 = N1 >= N2 ? C2 : C1;
          const iv_base<M1, M1C1, MW1, MS1>& OP1 =
@@ -2074,8 +2093,8 @@ using Slong = long long;
       {
          constexpr int M1 = AC_MIN(AC_MAX(N1, N2), Nr);
          constexpr int M2 = AC_MIN(AC_MIN(N1, N2), Nr);
-         constexpr bool MW1 = N1 >= N2 ? W1 : W2;
-         constexpr bool MW2 = N1 >= N2 ? W2 : W1;
+         constexpr int MW1 = N1 >= N2 ? W1 : W2;
+         constexpr int MW2 = N1 >= N2 ? W2 : W1;
          constexpr bool MS1 = N1 >= N2 ? S1 : S2;
          constexpr bool MS2 = N1 >= N2 ? S2 : S1;
          constexpr bool M1C1 = N1 >= N2 ? C1 : C2;
@@ -2251,9 +2270,14 @@ using Slong = long long;
          *o = dfloor != 0.0;
          d2 = d2 - dfloor;
          LOOP(int, i, N - 1, include, 0, {
-            d2 *= (Ulong)1 << 32;
+            d2 *= 1ULL << 32;
             auto k = (unsigned int)d2;
             r.set(i, b ? ~k : k);
+#if __clang_major__ >= 16
+            constexpr const unsigned rem = W & 31;
+            auto kr = rem ? k >> rem : k;
+            *o |= (0 != kr) && rem != 0 && (i == (N - 1));
+#endif
             d2 -= k;
          });
          d2 *= 2;
@@ -2278,9 +2302,14 @@ using Slong = long long;
          *o = dfloor != 0.0;
          d2 = d2 - dfloor;
          LOOP(int, i, N - 1, include, 0, {
-            d2 *= (Ulong)1 << 32;
+            d2 *= 1ULL << 32;
             auto k = static_cast<unsigned int>(d2);
             r.set(i, b ? ~k : k);
+#if __clang_major__ >= 16
+            constexpr const unsigned rem = W & 31;
+            auto kr = rem ? k >> rem : k;
+            *o |= (0 != kr) && rem != 0 && (i == (N - 1));
+#endif
             d2 -= k;
          });
          d2 *= 2;
@@ -4497,6 +4526,7 @@ using Slong = long long;
          __FORCE_INLINE ac_bitref(ac_int* bv, unsigned index = 0) : d_bv(*bv), d_index(index)
          {
          }
+         constexpr ac_bitref(const ac_bitref& rhs) = default;
          __FORCE_INLINE
          operator bool() const
          {
@@ -4670,10 +4700,10 @@ using Slong = long long;
       }
 
       template <size_t NN>
-      __FORCE_INLINE constexpr void bit_fill_bin(const char (&str)[NN], unsigned start = 0);
+      __FORCE_INLINE constexpr void bit_fill_bin(const char (&str)[NN], int start = 0);
 
       template <size_t NN>
-      __FORCE_INLINE constexpr void bit_fill_oct(const char (&str)[NN], unsigned start = 0)
+      __FORCE_INLINE constexpr void bit_fill_oct(const char (&str)[NN], int start = 0)
       {
          // Zero Pads if str is too short, throws ms bits away if str is too long
          // Asserts if anything other than 0-9a-fA-F is encountered
@@ -4720,7 +4750,7 @@ using Slong = long long;
       }
 
       template <size_t NN>
-      __FORCE_INLINE constexpr void bit_fill_hex(const char (&str)[NN], unsigned start = 0)
+      __FORCE_INLINE constexpr void bit_fill_hex(const char (&str)[NN], int start = 0)
       {
          // Zero Pads if str is too short, throws ms bits away if str is too long
          // Asserts if anything other than 0-9a-fA-F is encountered
@@ -5213,7 +5243,7 @@ using Slong = long long;
 
    template <int W, bool S>
    template <size_t NN>
-   __FORCE_INLINE constexpr void ac_int<W, S>::bit_fill_bin(const char (&str)[NN], unsigned start)
+   __FORCE_INLINE constexpr void ac_int<W, S>::bit_fill_bin(const char (&str)[NN], int start)
    {
       ac_int<W, S> res = 0;
       bool loop_exit = false;

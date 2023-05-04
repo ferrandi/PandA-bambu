@@ -129,7 +129,7 @@ namespace __AC_NAMESPACE
          return *this;
       }
 
-      __FORCE_INLINE void overflow_adjust(bool underflow, bool overflow)
+      __FORCE_INLINE void overflow_adjust(bool overflow, bool neg)
       {
          if(O == AC_WRAP)
          {
@@ -138,7 +138,7 @@ namespace __AC_NAMESPACE
          }
          else if(O == AC_SAT_ZERO)
          {
-            if((overflow || underflow))
+            if(overflow)
             {
                ac_private::iv_extend<0>(Base::v, 0);
             }
@@ -151,16 +151,19 @@ namespace __AC_NAMESPACE
          {
             if(overflow)
             {
-               LOOP(int, idx, 0, exclude, N - 1, { Base::v.set(idx, ~0); });
-               Base::v.set(N - 1, (~((unsigned)~0 << ((W - 1) & 31))));
-            }
-            else if(underflow)
-            {
-               LOOP(int, idx, 0, exclude, N - 1, { Base::v.set(idx, 0); });
-               Base::v.set(N - 1, ((unsigned)~0 << ((W - 1) & 31)));
-               if(O == AC_SAT_SYM)
+               if(!neg)
                {
-                  Base::v.set(0, Base::v[0] | 1);
+                  LOOP(int, idx, 0, exclude, N - 1, { Base::v.set(idx, ~0); });
+                  Base::v.set(N - 1, (~((unsigned)~0 << ((W - 1) & 31))));
+               }
+               else
+               {
+                  LOOP(int, idx, 0, exclude, N - 1, { Base::v.set(idx, 0); });
+                  Base::v.set(N - 1, ((unsigned)~0 << ((W - 1) & 31)));
+                  if(O == AC_SAT_SYM)
+                  {
+                     Base::v.set(0, Base::v[0] | 1);
+                  }
                }
             }
             else
@@ -172,12 +175,15 @@ namespace __AC_NAMESPACE
          {
             if(overflow)
             {
-               LOOP(int, idx, 0, exclude, N - 1, { Base::v.set(idx, ~0); });
-               Base::v.set(N - 1, ~((unsigned)~0 << (W & 31)));
-            }
-            else if(underflow)
-            {
-               ac_private::iv_extend<0>(Base::v, 0);
+               if(!neg)
+               {
+                  LOOP(int, idx, 0, exclude, N - 1, { Base::v.set(idx, ~0); });
+                  Base::v.set(N - 1, ~((unsigned)~0 << (W & 31)));
+               }
+               else
+               {
+                  ac_private::iv_extend<0>(Base::v, 0);
+               }
             }
             else
             {
@@ -366,15 +372,14 @@ namespace __AC_NAMESPACE
             bool deleted_bits_zero = (!(W & 31) && S) || 0 == (Base::v[N - 1] >> (W & 31));
             bool deleted_bits_one = (!(W & 31) && S) || 0 == (~(Base::v[N - 1] >> (W & 31)));
             bool neg_src = false;
-            if((F2 - F + 32 * N) < W2)
+            if((F2 - F + W) < W2)
             {
-               bool all_ones = ac_private::iv_equal_ones_from<F2 - F + 32 * N, N2>(op.v);
+               bool all_ones = ac_private::iv_equal_ones_from<F2 - F + W, N2>(op.v);
                deleted_bits_zero =
-                   deleted_bits_zero && (carry ? all_ones : ac_private::iv_equal_zeros_from<F2 - F + 32 * N, N2>(op.v));
+                   deleted_bits_zero && (carry ? all_ones : ac_private::iv_equal_zeros_from<F2 - F + W, N2>(op.v));
                deleted_bits_one =
                    deleted_bits_one &&
-                   (carry ? ac_private::iv_equal_ones_from<1 + F2 - F + 32 * N, N2>(op.v) && !op[F2 - F + 32 * N] :
-                            all_ones);
+                   (carry ? ac_private::iv_equal_ones_from<1 + F2 - F + W, N2>(op.v) && !op[F2 - F + W] : all_ones);
                neg_src = S2 && op.v[N2 - 1] < 0 && 0 == (carry & all_ones);
             }
             else
@@ -383,13 +388,12 @@ namespace __AC_NAMESPACE
             }
             bool neg_trg = S && (bool)this->operator[](W - 1);
             bool overflow = !neg_src && (neg_trg || !deleted_bits_zero);
-            bool underflow = neg_src && (!neg_trg || !deleted_bits_one);
+            overflow |= neg_src && (!neg_trg || !deleted_bits_one);
             if(O == AC_SAT_SYM && S && S2)
             {
-               underflow |=
-                   neg_src && (W > 1 ? ac_private::iv_equal_zeros_to<((W > 1) ? W - 1 : 1), N>(Base::v) : true);
+               overflow |= neg_src && (W > 1 ? ac_private::iv_equal_zeros_to<W - 1, N>(Base::v) : true);
             }
-            overflow_adjust(underflow, overflow);
+            overflow_adjust(overflow, neg_src);
          }
          else
          {
@@ -476,26 +480,24 @@ namespace __AC_NAMESPACE
 
          if(O != AC_WRAP)
          { // saturation
-            bool overflow = false, underflow = false;
+            bool overflow = false;
             bool neg_trg = S && (bool)this->operator[](W - 1);
             if(o)
             {
-               overflow = !neg_src;
-               underflow = neg_src;
+               overflow = true;
             }
             else
             {
-               bool deleted_bits_zero = !(W & 31) & S || !(Base::v[N - 1] >> (W & 31));
-               bool deleted_bits_one = !(W & 31) & S || !~(Base::v[N - 1] >> (W & 31));
+               bool deleted_bits_zero = (!(W & 31) & S) || !(Base::v[N - 1] >> (W & 31));
+               bool deleted_bits_one = (!(W & 31) & S) || !~(Base::v[N - 1] >> (W & 31));
                overflow = !neg_src && (neg_trg || !deleted_bits_zero);
-               underflow = neg_src && (!neg_trg || !deleted_bits_one);
+               overflow |= neg_src && (!neg_trg || !deleted_bits_one);
             }
             if(O == AC_SAT_SYM && S)
             {
-               underflow |=
-                   neg_src && (W > 1 ? ac_private::iv_equal_zeros_to<((W > 1) ? W - 1 : 1), N>(Base::v) : true);
+               overflow |= neg_src && (W > 1 ? ac_private::iv_equal_zeros_to<W - 1, N>(Base::v) : true);
             }
-            overflow_adjust(underflow, overflow);
+            overflow_adjust(overflow, neg_src);
          }
          else
          {
@@ -515,32 +517,32 @@ namespace __AC_NAMESPACE
 
          if(O != AC_WRAP)
          { // saturation
-            bool overflow = false, underflow = false;
+            bool overflow = false;
             bool neg_trg = S && (bool)this->operator[](W - 1);
             if(o)
             {
-               overflow = !neg_src;
-               underflow = neg_src;
+               overflow = true;
             }
             else
             {
                bool deleted_bits_zero = !(W & 31) & S || !(Base::v[N - 1] >> (W & 31));
                bool deleted_bits_one = !(W & 31) & S || !~(Base::v[N - 1] >> (W & 31));
                overflow = !neg_src && (neg_trg || !deleted_bits_zero);
-               underflow = neg_src && (!neg_trg || !deleted_bits_one);
+               overflow |= neg_src && (!neg_trg || !deleted_bits_one);
             }
             if(O == AC_SAT_SYM && S)
             {
-               underflow |=
+               overflow |=
                    neg_src && (W > 1 ? ac_private::iv_equal_zeros_to<((W > 1) ? W - 1 : 1), N>(Base::v) : true);
             }
-            overflow_adjust(underflow, overflow);
+            overflow_adjust(overflow, neg_src);
          }
          else
          {
             bit_adjust();
          }
       }
+
       template <size_t NN>
       __FORCE_INLINE constexpr ac_fixed(const char (&str)[NN])
       {
@@ -731,8 +733,8 @@ namespace __AC_NAMESPACE
          {
             t = *this;
          }
-         ac_fixed<AC_MAX(I + 1, 1), AC_MAX(I + 1, 1), true> i_part = t;
-         ac_fixed<AC_MAX(W - I, 1), 0, false> f_part = t;
+         ac_fixed<AC_MAX(I + 1, 1)+31, AC_MAX(I + 1, 1)+31, true> i_part = t;
+         ac_fixed<AC_MAX(W - I, 1)+31, 31, false> f_part = t;
          i += ac_private::to_string(i_part.v, AC_MAX(I + 1, 1), sign_mag, base_rep, false, r + i);
          if(W - I > 0)
          {
@@ -1489,15 +1491,17 @@ namespace __AC_NAMESPACE
          unsigned d_index;
 
        public:
-         ac_bitref(ac_fixed* bv, unsigned index = 0) : d_bv(*bv), d_index(index)
+         constexpr ac_bitref(ac_fixed* bv, unsigned index = 0) : d_bv(*bv), d_index(index)
          {
          }
-         __FORCE_INLINE operator bool() const
+         constexpr ac_bitref(const ac_bitref& rhs) = default;
+
+         __FORCE_INLINE constexpr operator bool() const
          {
             return (d_index < W) ? (d_bv.v[d_index >> 5] >> (d_index & 31) & 1) : 0;
          }
 
-         __FORCE_INLINE ac_bitref operator=(int val)
+         __FORCE_INLINE constexpr ac_bitref operator=(int val)
          {
             // lsb of int (val&1) is written to bit
             if(d_index < W)
@@ -1509,23 +1513,23 @@ namespace __AC_NAMESPACE
             return *this;
          }
          template <int W2, bool S2>
-         __FORCE_INLINE ac_bitref operator=(const ac_int<W2, S2>& val)
+         __FORCE_INLINE constexpr ac_bitref operator=(const ac_int<W2, S2>& val)
          {
             return operator=(val.to_int());
          }
-         __FORCE_INLINE ac_bitref operator=(const ac_bitref& val)
+         __FORCE_INLINE constexpr ac_bitref operator=(const ac_bitref& val)
          {
             return operator=((int)(bool)val);
          }
       };
 
-      __FORCE_INLINE ac_bitref operator[](unsigned int uindex)
+      __FORCE_INLINE constexpr ac_bitref operator[](unsigned int uindex)
       {
          AC_ASSERT(uindex < W, "Attempting to read bit beyond MSB");
          ac_bitref bvh(this, uindex);
          return bvh;
       }
-      __FORCE_INLINE ac_bitref operator[](int index)
+      __FORCE_INLINE constexpr ac_bitref operator[](int index)
       {
          AC_ASSERT(index >= 0, "Attempting to read bit with negative index");
          AC_ASSERT(index < W, "Attempting to read bit beyond MSB");
@@ -1534,7 +1538,7 @@ namespace __AC_NAMESPACE
          return bvh;
       }
       template <int W2, bool S2>
-      __FORCE_INLINE ac_bitref operator[](const ac_int<W2, S2>& index)
+      __FORCE_INLINE constexpr ac_bitref operator[](const ac_int<W2, S2>& index)
       {
          AC_ASSERT(index >= 0, "Attempting to read bit with negative index");
          AC_ASSERT(index < W, "Attempting to read bit beyond MSB");
@@ -1543,12 +1547,12 @@ namespace __AC_NAMESPACE
          return bvh;
       }
 
-      __FORCE_INLINE bool operator[](unsigned int uindex) const
+      __FORCE_INLINE constexpr bool operator[](unsigned int uindex) const
       {
          AC_ASSERT(uindex < W, "Attempting to read bit beyond MSB");
          return (uindex < W) ? (Base::v[uindex >> 5] >> (uindex & 31) & 1) : 0;
       }
-      __FORCE_INLINE bool operator[](int index) const
+      __FORCE_INLINE constexpr bool operator[](int index) const
       {
          AC_ASSERT(index >= 0, "Attempting to read bit with negative index");
          AC_ASSERT(index < W, "Attempting to read bit beyond MSB");
@@ -1556,7 +1560,7 @@ namespace __AC_NAMESPACE
          return (uindex < W) ? (Base::v[uindex >> 5] >> (uindex & 31) & 1) : 0;
       }
       template <int W2, bool S2>
-      __FORCE_INLINE bool operator[](const ac_int<W2, S2>& index) const
+      __FORCE_INLINE constexpr bool operator[](const ac_int<W2, S2>& index) const
       {
          AC_ASSERT(index >= 0, "Attempting to read bit with negative index");
          AC_ASSERT(index < W, "Attempting to read bit beyond MSB");
