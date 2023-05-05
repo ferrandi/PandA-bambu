@@ -4575,7 +4575,7 @@ begin
   begin
     if (clock&apos;event and clock=&apos;1&apos;) then
       if(READ_ONLY_MEMORY=0) then
-        if(bram_write='1') then
+        if(bram_write=&apos;1&apos;) then
 -- synthesis translate_off
           if (to_integer(unsigned(memory_addr_a)) &lt; n_elements) then
 -- synthesis translate_on
@@ -5130,7 +5130,7 @@ begin
   L14 : process(proxy_sel_STORE,proxy_in1,in1)
   begin
     for i14 in 0 to max_n_reads-1 loop
-      if(proxy_sel_STORE(i14)='1') then
+      if(proxy_sel_STORE(i14)=&apos;1&apos;) then
         din_value_aggregated((i14+1)*data_size-1 downto i14*data_size) &lt;= std_logic_vector(resize(unsigned(proxy_in1((i14+1)*BITSIZE_proxy_in1-1 downto i14*BITSIZE_proxy_in1)), data_size));
       else
         din_value_aggregated((i14+1)*data_size-1 downto i14*data_size) &lt;= in1((i14+1)*BITSIZE_in1-1 downto i14*BITSIZE_in1);
@@ -5155,7 +5155,7 @@ begin
     if (clock&apos;event and clock=&apos;1&apos;) then
        if(READ_ONLY_MEMORY=0) then
         for index2 in 0 to max_n_writes-1 loop
-          if(bram_write(index2)='1') then
+          if(bram_write(index2)=&apos;1&apos;) then
             mem(to_integer(unsigned(memory_addr_a((index2+1)*nbit_read_addr-1 downto index2*nbit_read_addr)))) &lt;= din_value_aggregated((index2+1)*data_size-1 downto index2*data_size);
           end if;
         end loop;

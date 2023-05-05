@@ -27,9 +27,9 @@
 reg isInRange;
 always @ (address or base or max_address)
    if (address >= base &amp;&amp; address &lt;= max_address)
-     isInRange = 1'b1;
+     isInRange = 1&apos;b1;
    else
-     isInRange = 1'b0;"/>
+     isInRange = 1&apos;b0;"/>
         </component_o>
       </circuit>
     </cell>
@@ -73,7 +73,7 @@ begin
 end
 else
 begin
-  assign out1 = {{(BITSIZE_out1-nbit_addr-1){1'b0}},in1[nbit_addr:0]};
+  assign out1 = {{(BITSIZE_out1-nbit_addr-1){1&apos;b0}},in1[nbit_addr:0]};
 end
 endgenerate"/>
         </component_o>
@@ -101,14 +101,14 @@ generate
    if (BITSIZE_sel == 1)
      begin
         always @ (sel)
-            dataRamSize = { {BITSIZE_dataRamSize-4{1'b0}}, 4'd8};
+            dataRamSize = { {BITSIZE_dataRamSize-4{1&apos;b0}}, 4&apos;d8};
      end // if (BITSIZE_sel == 4)
    if (BITSIZE_sel == 2)
      begin
         always @ (sel)
           case (sel)
-            2'h1: dataRamSize = { {BITSIZE_dataRamSize-4{1'b0}}, 4'd8};
-            default: dataRamSize = { 1'b1, {BITSIZE_dataRamSize-1{1'b0}}};
+            2&apos;h1: dataRamSize = { {BITSIZE_dataRamSize-4{1&apos;b0}}, 4&apos;d8};
+            default: dataRamSize = { 1&apos;b1, {BITSIZE_dataRamSize-1{1&apos;b0}}};
           endcase // case (sel)
      end
    if (BITSIZE_sel == 4)
@@ -117,15 +117,15 @@ generate
           begin
              always @ (sel)
                case (sel)
-                 4'h1: dataRamSize = { {BITSIZE_dataRamSize-4{1'b0}}, 4'd8};
-                 4'h3: dataRamSize = { {BITSIZE_dataRamSize-5{1'b0}}, 5'd16};
-                 default: dataRamSize = { 1'b1, {BITSIZE_dataRamSize-1{1'b0}}};
+                 4&apos;h1: dataRamSize = { {BITSIZE_dataRamSize-4{1&apos;b0}}, 4&apos;d8};
+                 4&apos;h3: dataRamSize = { {BITSIZE_dataRamSize-5{1&apos;b0}}, 5&apos;d16};
+                 default: dataRamSize = { 1&apos;b1, {BITSIZE_dataRamSize-1{1&apos;b0}}};
                endcase // case (sel)
           end
         else
           begin
              always @ (sel)
-            dataRamSize = { 1'b1, {BITSIZE_dataRamSize-1{1'b0}}};
+            dataRamSize = { 1&apos;b1, {BITSIZE_dataRamSize-1{1&apos;b0}}};
           end
      end
    if (BITSIZE_sel == 8)
@@ -134,25 +134,25 @@ generate
           begin
              always @ (sel)
                case (sel)
-                 8'h1: dataRamSize = { {BITSIZE_dataRamSize-4{1'b0}}, 4'd8};
-                 8'h3: dataRamSize = { {BITSIZE_dataRamSize-5{1'b0}}, 5'd16};
-                 8'hf: dataRamSize = { {BITSIZE_dataRamSize-6{1'b0}}, 6'd32};
-                 default: dataRamSize = { 1'b1, {BITSIZE_dataRamSize-1{1'b0}}};
+                 8&apos;h1: dataRamSize = { {BITSIZE_dataRamSize-4{1&apos;b0}}, 4&apos;d8};
+                 8&apos;h3: dataRamSize = { {BITSIZE_dataRamSize-5{1&apos;b0}}, 5&apos;d16};
+                 8&apos;hf: dataRamSize = { {BITSIZE_dataRamSize-6{1&apos;b0}}, 6&apos;d32};
+                 default: dataRamSize = { 1&apos;b1, {BITSIZE_dataRamSize-1{1&apos;b0}}};
                endcase // case (sel)
           end
         else if (BITSIZE_dataRamSize == 5)
           begin
              always @ (sel)
                case (sel)
-                 8'h1: dataRamSize = { {BITSIZE_dataRamSize-4{1'b0}}, 4'd8};
-                 8'h3: dataRamSize = { {BITSIZE_dataRamSize-5{1'b0}}, 5'd16};
-                 default: dataRamSize = { 1'b1, {BITSIZE_dataRamSize-1{1'b0}}};
+                 8&apos;h1: dataRamSize = { {BITSIZE_dataRamSize-4{1&apos;b0}}, 4&apos;d8};
+                 8&apos;h3: dataRamSize = { {BITSIZE_dataRamSize-5{1&apos;b0}}, 5&apos;d16};
+                 default: dataRamSize = { 1&apos;b1, {BITSIZE_dataRamSize-1{1&apos;b0}}};
                endcase // case (sel)
           end
         else
           begin
              always @ (sel)
-            dataRamSize = { 1'b1, {BITSIZE_dataRamSize-1{1'b0}}};
+            dataRamSize = { 1&apos;b1, {BITSIZE_dataRamSize-1{1&apos;b0}}};
           end
      end
    if (BITSIZE_sel == 16)
@@ -161,36 +161,36 @@ generate
           begin
              always @ (sel)
                case (sel)
-                 16'h1: dataRamSize = { {BITSIZE_dataRamSize-4{1'b0}}, 4'd8};
-                 16'h3: dataRamSize = { {BITSIZE_dataRamSize-5{1'b0}}, 5'd16};
-                 16'hf: dataRamSize = { {BITSIZE_dataRamSize-6{1'b0}}, 6'd32};
-                 16'hff: dataRamSize = { {BITSIZE_dataRamSize-7{1'b0}}, 7'd64};
-                 default: dataRamSize = { 1'b1, {BITSIZE_dataRamSize-1{1'b0}}};
+                 16&apos;h1: dataRamSize = { {BITSIZE_dataRamSize-4{1&apos;b0}}, 4&apos;d8};
+                 16&apos;h3: dataRamSize = { {BITSIZE_dataRamSize-5{1&apos;b0}}, 5&apos;d16};
+                 16&apos;hf: dataRamSize = { {BITSIZE_dataRamSize-6{1&apos;b0}}, 6&apos;d32};
+                 16&apos;hff: dataRamSize = { {BITSIZE_dataRamSize-7{1&apos;b0}}, 7&apos;d64};
+                 default: dataRamSize = { 1&apos;b1, {BITSIZE_dataRamSize-1{1&apos;b0}}};
                endcase // case (sel)
           end
         else if (BITSIZE_dataRamSize == 6)
           begin
              always @ (sel)
                case (sel)
-                 16'h1: dataRamSize = { {BITSIZE_dataRamSize-4{1'b0}}, 4'd8};
-                 16'h3: dataRamSize = { {BITSIZE_dataRamSize-5{1'b0}}, 5'd16};
-                 16'hf: dataRamSize = { {BITSIZE_dataRamSize-6{1'b0}}, 6'd32};
-                 default: dataRamSize = { 1'b1, {BITSIZE_dataRamSize-1{1'b0}}};
+                 16&apos;h1: dataRamSize = { {BITSIZE_dataRamSize-4{1&apos;b0}}, 4&apos;d8};
+                 16&apos;h3: dataRamSize = { {BITSIZE_dataRamSize-5{1&apos;b0}}, 5&apos;d16};
+                 16&apos;hf: dataRamSize = { {BITSIZE_dataRamSize-6{1&apos;b0}}, 6&apos;d32};
+                 default: dataRamSize = { 1&apos;b1, {BITSIZE_dataRamSize-1{1&apos;b0}}};
                endcase // case (sel)
           end
         else if (BITSIZE_dataRamSize == 5)
           begin
              always @ (sel)
                case (sel)
-                 16'h1: dataRamSize = { {BITSIZE_dataRamSize-4{1'b0}}, 4'd8};
-                 16'h3: dataRamSize = { {BITSIZE_dataRamSize-5{1'b0}}, 5'd16};
-                 default: dataRamSize = { 1'b1, {BITSIZE_dataRamSize-1{1'b0}}};
+                 16&apos;h1: dataRamSize = { {BITSIZE_dataRamSize-4{1&apos;b0}}, 4&apos;d8};
+                 16&apos;h3: dataRamSize = { {BITSIZE_dataRamSize-5{1&apos;b0}}, 5&apos;d16};
+                 default: dataRamSize = { 1&apos;b1, {BITSIZE_dataRamSize-1{1&apos;b0}}};
                endcase // case (sel)
           end
         else
           begin
              always @ (sel)
-            dataRamSize = { 1'b1, {BITSIZE_dataRamSize-1{1'b0}}};
+            dataRamSize = { 1&apos;b1, {BITSIZE_dataRamSize-1{1&apos;b0}}};
           end
      end
 endgenerate
@@ -221,50 +221,50 @@ generate
      begin
         always @ (dataRamSize)
           case (dataRamSize)
-            4'd8: sel = {{BITSIZE_sel-1{1'b0}}, 1'h1};
-            default: sel = {BITSIZE_sel{1'b1}};
+            4&apos;d8: sel = {{BITSIZE_sel-1{1&apos;b0}}, 1&apos;h1};
+            default: sel = {BITSIZE_sel{1&apos;b1}};
           endcase
      end
    if (BITSIZE_dataRamSize == 5)
      begin
         always @ (dataRamSize)
           case (dataRamSize)
-            5'd8: sel = {{BITSIZE_sel-1{1'b0}}, 1'h1};
-            5'd16: sel = {{BITSIZE_sel-2{1'b0}}, 2'h3};
-            default: sel = {BITSIZE_sel{1'b1}};
+            5&apos;d8: sel = {{BITSIZE_sel-1{1&apos;b0}}, 1&apos;h1};
+            5&apos;d16: sel = {{BITSIZE_sel-2{1&apos;b0}}, 2&apos;h3};
+            default: sel = {BITSIZE_sel{1&apos;b1}};
           endcase
      end
    if (BITSIZE_dataRamSize == 6)
      begin
         always @ (dataRamSize)
           case (dataRamSize)
-            6'd8: sel = {{BITSIZE_sel-1{1'b0}}, 1'h1};
-            6'd16: sel = {{BITSIZE_sel-2{1'b0}}, 2'h3};
-            6'd32: sel = {{BITSIZE_sel-4{1'b0}}, 4'hf};
-            default: sel = {BITSIZE_sel{1'b1}};
+            6&apos;d8: sel = {{BITSIZE_sel-1{1&apos;b0}}, 1&apos;h1};
+            6&apos;d16: sel = {{BITSIZE_sel-2{1&apos;b0}}, 2&apos;h3};
+            6&apos;d32: sel = {{BITSIZE_sel-4{1&apos;b0}}, 4&apos;hf};
+            default: sel = {BITSIZE_sel{1&apos;b1}};
           endcase
      end
    if (BITSIZE_dataRamSize == 7)
      begin
         always @ (dataRamSize)
           case (dataRamSize)
-            7'd8: sel = {{BITSIZE_sel-1{1'b0}}, 1'h1};
-            7'd16: sel = {{BITSIZE_sel-2{1'b0}}, 2'h3};
-            7'd32: sel = {{BITSIZE_sel-4{1'b0}}, 4'hf};
-            7'd64: sel = {{BITSIZE_sel-8{1'b0}}, 8'hff};
-            default: sel = {BITSIZE_sel{1'b1}};
+            7&apos;d8: sel = {{BITSIZE_sel-1{1&apos;b0}}, 1&apos;h1};
+            7&apos;d16: sel = {{BITSIZE_sel-2{1&apos;b0}}, 2&apos;h3};
+            7&apos;d32: sel = {{BITSIZE_sel-4{1&apos;b0}}, 4&apos;hf};
+            7&apos;d64: sel = {{BITSIZE_sel-8{1&apos;b0}}, 8&apos;hff};
+            default: sel = {BITSIZE_sel{1&apos;b1}};
           endcase
      end
    if (BITSIZE_dataRamSize == 8)
      begin
         always @ (dataRamSize)
           case (dataRamSize)
-            8'd8: sel = {{BITSIZE_sel-1{1'b0}}, 1'h1};
-            8'd16: sel = {{BITSIZE_sel-2{1'b0}}, 2'h3};
-            8'd32: sel = {{BITSIZE_sel-4{1'b0}}, 4'hf};
-            8'd64: sel = {{BITSIZE_sel-8{1'b0}}, 8'hff};
-            8'd128: sel = {{BITSIZE_sel-16{1'b0}}, 16'hffff};
-            default: sel = {BITSIZE_sel{1'b1}};
+            8&apos;d8: sel = {{BITSIZE_sel-1{1&apos;b0}}, 1&apos;h1};
+            8&apos;d16: sel = {{BITSIZE_sel-2{1&apos;b0}}, 2&apos;h3};
+            8&apos;d32: sel = {{BITSIZE_sel-4{1&apos;b0}}, 4&apos;hf};
+            8&apos;d64: sel = {{BITSIZE_sel-8{1&apos;b0}}, 8&apos;hff};
+            8&apos;d128: sel = {{BITSIZE_sel-16{1&apos;b0}}, 16&apos;hffff};
+            default: sel = {BITSIZE_sel{1&apos;b1}};
           endcase
      end
 endgenerate
@@ -311,7 +311,7 @@ assign ack_temp = ALLOCATED_ADDRESS == address;
 assign ack = ack_temp;
 always @(posedge clock 1RESET_EDGE)
   if (1RESET_VALUE)
-    reg_out1 &lt;= {BITSIZE_out1{1'b0}};
+    reg_out1 &lt;= {BITSIZE_out1{1&apos;b0}};
   else if (wenable &amp;&amp; ack_temp)
     reg_out1 &lt;= in1;
 "/>
@@ -373,9 +373,9 @@ assign startRegValue = {ackAddress[BITSIZE_dat_is-1:2], startAndWait};
 always @ (weI_CS or addr_is_f)
 if (!weI_CS &amp;&amp;
 addr_is_f == START_REGISTER_ADDRESS)
-startAndWaitRead = 1'b1;
+startAndWaitRead = 1&apos;b1;
 else
-startAndWaitRead = 1'b0;
+startAndWaitRead = 1&apos;b0;
 
 assign start_port = startAndWait[0];
 assign ack_startAndWait = addr_is_f == START_REGISTER_ADDRESS &amp; cyc_is;
@@ -383,8 +383,8 @@ assign ack_startAndWait = addr_is_f == START_REGISTER_ADDRESS &amp; cyc_is;
 always @ (posedge clock 1RESET_EDGE)
   if (1RESET_VALUE)
   begin
-    startAndWait = 2'b00;
-    ackAddress = {BITSIZE_dat_is{1'b0}};
+    startAndWait = 2&apos;b00;
+    ackAddress = {BITSIZE_dat_is{1&apos;b0}};
   end
 else
 begin
@@ -393,33 +393,33 @@ begin
 end
 
 always @ (done_port, ack_startAndWait, startAndWait, startAndWaitRead)
-if (startAndWait == 2'b00) begin
+if (startAndWait == 2&apos;b00) begin
 if (ack_startAndWait &amp; !startAndWaitRead) begin
-startAndWait_next = 2'b01;ackAddress_next = dat_is;
+startAndWait_next = 2&apos;b01;ackAddress_next = dat_is;
 end
 else begin
-startAndWait_next = 2'b00;
+startAndWait_next = 2&apos;b00;
 ackAddress_next = ackAddress;
 end
-end else if (startAndWait == 2'b01) begin
+end else if (startAndWait == 2&apos;b01) begin
 ackAddress_next = ackAddress;
 if (done_port)
-startAndWait_next = 2'b10;
+startAndWait_next = 2&apos;b10;
 else
-startAndWait_next = 2'b01;
-end else if (startAndWait == 2'b10) begin
+startAndWait_next = 2&apos;b01;
+end else if (startAndWait == 2&apos;b10) begin
 if (ack_startAndWait &amp; startAndWaitRead) begin
-startAndWait_next = 2'b00;
-ackAddress_next = {BITSIZE_dat_is{1'b0}};
+startAndWait_next = 2&apos;b00;
+ackAddress_next = {BITSIZE_dat_is{1&apos;b0}};
 end
 else begin
-startAndWait_next = 2'b10;
+startAndWait_next = 2&apos;b10;
 ackAddress_next = ackAddress;
 end
 end
 else begin
-startAndWait_next = 2'b00;
-ackAddress_next = {BITSIZE_dat_is{1'b0}};
+startAndWait_next = 2&apos;b00;
+ackAddress_next = {BITSIZE_dat_is{1&apos;b0}};
 end
 "/>
         </component_o>
@@ -474,12 +474,12 @@ reg state 1INIT_ZERO_VALUE;
 reg state_next;
 wire [BITSIZE_status_reg-1:0] notify_addr;
 
-assign notify_addr = {status_reg[BITSIZE_status_reg-1:2], {2{1'b0}}};
+assign notify_addr = {status_reg[BITSIZE_status_reg-1:2], {2{1&apos;b0}}};
 
 always @ (posedge clock 1RESET_EDGE)
   if (1RESET_VALUE)
     begin
-       state &lt;= 1'b0;
+       state &lt;= 1&apos;b0;
     end
   else
     begin
@@ -488,37 +488,37 @@ always @ (posedge clock 1RESET_EDGE)
 
 always @ (*)
   begin
-     state_next = 1'b0;
-     cyc_om  = 1'b0;
-     stb_om  = 1'b0;
-     addr_om = {BITSIZE_addr_om{1'b0}};
-     we_om   = 1'b0;
-     outctrl = 1'b0;
-     if (state == 1'b0)
+     state_next = 1&apos;b0;
+     cyc_om  = 1&apos;b0;
+     stb_om  = 1&apos;b0;
+     addr_om = {BITSIZE_addr_om{1&apos;b0}};
+     we_om   = 1&apos;b0;
+     outctrl = 1&apos;b0;
+     if (state == 1&apos;b0)
        begin
-          if (done_port == 1'b1 &amp;&amp; (| notify_addr))
+          if (done_port == 1&apos;b1 &amp;&amp; (| notify_addr))
             begin
-               state_next = 1'b1;
-               cyc_om  = 1'b1;
-               stb_om  = 1'b1;
+               state_next = 1&apos;b1;
+               cyc_om  = 1&apos;b1;
+               stb_om  = 1&apos;b1;
                addr_om = notify_addr;
-               we_om   = 1'b1;
-               outctrl = 1'b1;
+               we_om   = 1&apos;b1;
+               outctrl = 1&apos;b1;
             end
           else
-            state_next = 1'b0;
+            state_next = 1&apos;b0;
        end
      else
        begin
-          cyc_om  = 1'b1;
-          stb_om  = 1'b1;
+          cyc_om  = 1&apos;b1;
+          stb_om  = 1&apos;b1;
           addr_om = notify_addr;
-          we_om   = 1'b1;
-          outctrl = 1'b1;
-          if (ack_im == 1'b1)
-            state_next = 1'b0;
+          we_om   = 1&apos;b1;
+          outctrl = 1&apos;b1;
+          if (ack_im == 1&apos;b1)
+            state_next = 1&apos;b0;
           else
-            state_next = 1'b1;
+            state_next = 1&apos;b1;
        end
   end
 "/>
@@ -781,24 +781,24 @@ always @(posedge clock)
         stop = 0;
 
         for (i = 0; i &lt; PORTSIZE_arb_requests; i = i + 1)
-          if (arb_requests[i] == arb_grant[i] &amp;&amp; arb_grant[i] == 1'b1)
+          if (arb_requests[i] == arb_grant[i] &amp;&amp; arb_grant[i] == 1&apos;b1)
             busy = 1;
 
         if (busy == 1)
-          // I don't want to interrupt ongoing cycles.
+          // I don&apos;t want to interrupt ongoing cycles.
           arb_grant_next = arb_grant;
         else
           for (i = 0; i &lt; PORTSIZE_arb_requests; i = i + 1)
-            if (stop == 0 &amp;&amp; arb_requests[i] == 1'b1) begin
-               arb_grant_next[i] = 1'b1;
+            if (stop == 0 &amp;&amp; arb_requests[i] == 1&apos;b1) begin
+               arb_grant_next[i] = 1&apos;b1;
                stop = 1;
             end else
-              arb_grant_next[i] = 1'b0;
+              arb_grant_next[i] = 1&apos;b0;
      end
 
    always @ (posedge clock 1RESET_EDGE)
      if (1RESET_VALUE) begin
-        arb_grant = {PORTSIZE_arb_grant{1'b0}};
+        arb_grant = {PORTSIZE_arb_grant{1&apos;b0}};
      end
      else begin
         arb_grant = arb_grant_next;
@@ -904,12 +904,12 @@ always @ (posedge clock 1RESET_EDGE)
   begin
      if (1RESET_VALUE)
        begin
-          cyc_om_next  = {(PORTSIZE_ack_im*BITSIZE_ack_im){1'b0}};  
-          stb_om_next  = {(PORTSIZE_stb_om*BITSIZE_stb_om){1'b0}};  
-          we_om_next   = {(PORTSIZE_we_om*BITSIZE_we_om){1'b0}};   
-          sel_om_next  = {(PORTSIZE_sel_om*BITSIZE_sel_om){1'b0}};  
-          addr_om_next = {(PORTSIZE_addr_om*BITSIZE_addr_om){1'b0}};
-          dat_om_next  = {(PORTSIZE_dat_om*BITSIZE_dat_om){1'b0}};
+          cyc_om_next  = {(PORTSIZE_ack_im*BITSIZE_ack_im){1&apos;b0}};  
+          stb_om_next  = {(PORTSIZE_stb_om*BITSIZE_stb_om){1&apos;b0}};  
+          we_om_next   = {(PORTSIZE_we_om*BITSIZE_we_om){1&apos;b0}};   
+          sel_om_next  = {(PORTSIZE_sel_om*BITSIZE_sel_om){1&apos;b0}};  
+          addr_om_next = {(PORTSIZE_addr_om*BITSIZE_addr_om){1&apos;b0}};
+          dat_om_next  = {(PORTSIZE_dat_om*BITSIZE_dat_om){1&apos;b0}};
        end
      else
        begin
@@ -924,8 +924,8 @@ always @ (posedge clock 1RESET_EDGE)
  
 initial
   begin
-     slave_addresses[0] = {BITSIZE_addr_om{1'b0}};
-     slave_addresses[1] = {BITSIZE_addr_om{1'b0}};
+     slave_addresses[0] = {BITSIZE_addr_om{1&apos;b0}};
+     slave_addresses[1] = {BITSIZE_addr_om{1&apos;b0}};
      $readmemb(MEMORY_INIT_file, slave_addresses, 2, 2*SLAVES-1);
   end
 
@@ -933,20 +933,20 @@ generate
 genvar                            idx;
    for (idx = 0; idx &lt; SLAVES; idx = idx + 1)
      begin: mst_to_slv_common_bus
-        assign cyc_is  [idx] = requested_slave[idx] ? mst_comm_cyc_o  : 1'b0;
-        assign stb_is  [idx] = requested_slave[idx] ? mst_comm_stb_o  : 1'b0;
-        assign we_is   [idx] = requested_slave[idx] ? mst_comm_we_o   : 1'b0;
-        assign sel_is  [idx * BITSIZE_sel_om+:BITSIZE_sel_om]   = requested_slave[idx] ? mst_comm_sel_o  : {BITSIZE_sel_om{1'b0}};
-        assign addr_is [idx * BITSIZE_addr_om+:BITSIZE_addr_om] = requested_slave[idx] ? mst_comm_addr_o : {BITSIZE_addr_om{1'b0}};
-        assign dat_is  [idx * BITSIZE_dat_om+:BITSIZE_dat_om] = requested_slave[idx] ? mst_comm_dat_o  : {BITSIZE_dat_om{1'b0}};
+        assign cyc_is  [idx] = requested_slave[idx] ? mst_comm_cyc_o  : 1&apos;b0;
+        assign stb_is  [idx] = requested_slave[idx] ? mst_comm_stb_o  : 1&apos;b0;
+        assign we_is   [idx] = requested_slave[idx] ? mst_comm_we_o   : 1&apos;b0;
+        assign sel_is  [idx * BITSIZE_sel_om+:BITSIZE_sel_om]   = requested_slave[idx] ? mst_comm_sel_o  : {BITSIZE_sel_om{1&apos;b0}};
+        assign addr_is [idx * BITSIZE_addr_om+:BITSIZE_addr_om] = requested_slave[idx] ? mst_comm_addr_o : {BITSIZE_addr_om{1&apos;b0}};
+        assign dat_is  [idx * BITSIZE_dat_om+:BITSIZE_dat_om] = requested_slave[idx] ? mst_comm_dat_o  : {BITSIZE_dat_om{1&apos;b0}};
      end
 endgenerate
 
 generate
    for (idx = 0; idx &lt; MASTERS; idx = idx + 1)
      begin: slv_to_mst_common_bus
-        assign ack_im [idx] = arb_grant[idx] ? slv_comm_ack_o : 1'b0;
-        assign dat_im [idx * BITSIZE_dat_om+:BITSIZE_dat_om] = arb_grant[idx] ? slv_comm_dat_o : {BITSIZE_dat_om{1'b0}};
+        assign ack_im [idx] = arb_grant[idx] ? slv_comm_ack_o : 1&apos;b0;
+        assign dat_im [idx * BITSIZE_dat_om+:BITSIZE_dat_om] = arb_grant[idx] ? slv_comm_dat_o : {BITSIZE_dat_om{1&apos;b0}};
      end
 endgenerate
 
@@ -955,12 +955,12 @@ always @ (*)
   begin : MST_MUX
      integer i;
 
-     mst_comm_cyc_o = 1'b0;
-     mst_comm_stb_o = 1'b0;
-     mst_comm_we_o = 1'b0;
-     mst_comm_sel_o = {BITSIZE_sel_om{1'b0}};
-     mst_comm_addr_o = {BITSIZE_addr_om{1'b0}};
-     mst_comm_dat_o = {BITSIZE_dat_om{1'b0}};
+     mst_comm_cyc_o = 1&apos;b0;
+     mst_comm_stb_o = 1&apos;b0;
+     mst_comm_we_o = 1&apos;b0;
+     mst_comm_sel_o = {BITSIZE_sel_om{1&apos;b0}};
+     mst_comm_addr_o = {BITSIZE_addr_om{1&apos;b0}};
+     mst_comm_dat_o = {BITSIZE_dat_om{1&apos;b0}};
 
      for (i = 0; i &lt; MASTERS; i = i + 1) begin
         // Grant the master
@@ -979,11 +979,11 @@ always @ (*)
   begin : SLV_MUX
      integer j;
 
-     slv_comm_ack_o = 1'b0;
-     slv_comm_dat_o = {BITSIZE_dat_om{1'b0}};
+     slv_comm_ack_o = 1&apos;b0;
+     slv_comm_dat_o = {BITSIZE_dat_om{1&apos;b0}};
 
      for (j = 0; j &lt; SLAVES; j = j + 1) begin
-        if (requested_slave[j] == 1'b1) begin
+        if (requested_slave[j] == 1&apos;b1) begin
            slv_comm_ack_o = ack_os[j];
            slv_comm_dat_o = dat_os[j*BITSIZE_dat_om+:BITSIZE_dat_om];
         end
@@ -996,9 +996,9 @@ always @ (*) begin : RQS_SLAVE
      begin
         if (mst_comm_addr_o[BITSIZE_addr_om-1:0] &gt;= slave_addresses[2 * j] &amp;&amp;
             mst_comm_addr_o[BITSIZE_addr_om-1:0] &lt;= slave_addresses[2 * j + 1])
-          requested_slave[j] = 1'b1;
+          requested_slave[j] = 1&apos;b1;
         else
-          requested_slave[j] = 1'b0;
+          requested_slave[j] = 1&apos;b0;
      end
    requested_slave[0] = (~| requested_slave[SLAVES - 1:1]);
 end

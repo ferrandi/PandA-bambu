@@ -1293,7 +1293,7 @@ begin
     out1 &lt;= resize_signed(in1_int * in2_int, BITSIZE_out1);
     process(clock)
     begin
-      if clock'event and clock = '1' then
+      if clock&apos;event and clock = &apos;1&apos; then
         in1_int &lt;= resize(in1, BITSIZE_in1);
         in2_int &lt;= resize(in2, BITSIZE_in2);
       end if;
@@ -1305,7 +1305,7 @@ begin
   begin
     process(clock)
     begin
-      if clock'event and clock = '1' then
+      if clock&apos;event and clock = &apos;1&apos; then
         in1_int &lt;= in1;
         in2_int &lt;= in2;
         out1_int(PIPE_PARAMETER-2) &lt;= signed(resize_signed(signed(in1_int * in2_int), BITSIZE_out1));
@@ -1417,7 +1417,7 @@ begin
     out1 &lt;= resize(in1_int * in2_int, BITSIZE_out1);
     process(clock)
     begin
-      if clock'event and clock = '1' then
+      if clock&apos;event and clock = &apos;1&apos; then
         in1_int &lt;= in1;
         in2_int &lt;= in2;
       end if;
@@ -1430,7 +1430,7 @@ begin
     out1 &lt;= out1_int (0);
     process(clock)
     begin
-      if clock'event and clock = '1' then
+      if clock&apos;event and clock = &apos;1&apos; then
         in1_int &lt;= in1;
         in2_int &lt;= in2;
         out1_int(PIPE_PARAMETER-2) &lt;= resize(in1_int * in2_int, BITSIZE_out1);
@@ -1618,10 +1618,10 @@ generate
   begin : L0
         always @(*)
         begin
-           if (in0[i0] == 1'b1)
-              cleaned_in0[i0] = 1'b1;
+           if (in0[i0] == 1&apos;b1)
+              cleaned_in0[i0] = 1&apos;b1;
            else
-              cleaned_in0[i0] = 1'b0;
+              cleaned_in0[i0] = 1&apos;b0;
         end
   end
 endgenerate
@@ -3704,7 +3704,7 @@ out1 &lt;= std_logic_vector(resize(to_unsigned(1, BITSIZE_out1), BITSIZE_out1)) 
             <structural_type_descriptor type="INT" size="1"/>
           </port_o>
           <NP_functionality LIBRARY="__builtin_abs in1 out1" VERILOG_PROVIDED="assign out1 = in1[BITSIZE_in1-1] ? -in1 : in1;" VHDL_PROVIDED="begin
-  out1 &lt;= -resize_signed(in1, BITSIZE_out1) when (in1(BITSIZE_in1-1) = '1') else resize_signed(in1, BITSIZE_out1);
+  out1 &lt;= -resize_signed(in1, BITSIZE_out1) when (in1(BITSIZE_in1-1) = &apos;1&apos;) else resize_signed(in1, BITSIZE_out1);
 "/>
         </component_o>
       </circuit>

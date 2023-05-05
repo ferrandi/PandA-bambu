@@ -8,8 +8,8 @@
       <circuit>
         <component_o id="constant_value">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>  
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;, Christian Pilato &lt;christian.pilato@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;, Christian Pilato &lt;christian.pilato@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="constant_value"/>
           <parameter name="value">&quot;0&quot;</parameter>
@@ -77,8 +77,8 @@
       <circuit>
         <component_o id="gimple_asm_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2015-2023 Politecnico di Milano</copyright>  
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;, Marco Lattuada &lt;marco.lattuada@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2015-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;, Marco Lattuada &lt;marco.lattuada@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="gimple_asm_FU"/>
           <port_o id="clock" dir="IN" is_clock="1">
@@ -123,8 +123,8 @@
       <circuit>
         <component_o id="switch_cond_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>  
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="switch_cond_FU"/>
           <port_o id="in1" dir="IN">
@@ -146,8 +146,8 @@
       <circuit>
         <component_o id="read_cond_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>  
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="read_cond_FU"/>
           <port_o id="in1" dir="IN">
@@ -170,8 +170,8 @@ constant xs : std_logic_vector(in1&apos;range) := (others =&gt; &apos;X&apos;);
       <circuit>
         <component_o id="multi_read_cond_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>  
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="multi_read_cond_FU"/>
           <port_vector_o id="in1" dir="IN">
@@ -238,8 +238,8 @@ constant xs : std_logic_vector(in1&apos;range) := (others =&gt; &apos;X&apos;);
       <circuit>
         <component_o id="ui_concat_2_1_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>  
-          <authors>Marco Lattuada &lt;marco.lattuada@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
+          <authors>Marco Lattuada &lt;marco.lattuada@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="ui_concat_2_1_FU"/>
           <port_o id="in1" dir="IN">
@@ -261,8 +261,8 @@ constant xs : std_logic_vector(in1&apos;range) := (others =&gt; &apos;X&apos;);
       <circuit>
         <component_o id="concat_2_2_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>  
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="concat_2_2_FU"/>
           <port_o id="in1" dir="IN">
@@ -291,8 +291,8 @@ assign out1 = {tmp_in2, tmp_in1};" VHDL_PROVIDED="begin
       <circuit>
         <component_o id="ui_concat_2_2_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>  
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="ui_concat_2_2_FU"/>
           <port_o id="in1" dir="IN">
@@ -395,8 +395,8 @@ assign out1 = {tmp_in3, tmp_in2, tmp_in1};
       <circuit>
         <component_o id="concat_4_4_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>  
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="concat_4_4_FU"/>
           <port_o id="in1" dir="IN">
@@ -436,8 +436,8 @@ assign out1 = {tmp_in4, tmp_in3, tmp_in2, tmp_in1};" VHDL_PROVIDED="begin
       <circuit>
         <component_o id="ui_concat_4_4_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>  
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="ui_concat_4_4_FU"/>
           <port_o id="in1" dir="IN">
@@ -477,8 +477,8 @@ assign out1 = {tmp_in4, tmp_in3, tmp_in2, tmp_in1};" VHDL_PROVIDED="begin
       <circuit>
         <component_o id="concat_4_1_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>  
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="concat_4_1_FU"/>
           <port_o id="in1" dir="IN">
@@ -500,8 +500,8 @@ assign out1 = {tmp_in4, tmp_in3, tmp_in2, tmp_in1};" VHDL_PROVIDED="begin
       <circuit>
         <component_o id="ui_concat_4_1_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>  
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="ui_concat_4_1_FU"/>
           <port_o id="in1" dir="IN">
@@ -523,8 +523,8 @@ assign out1 = {tmp_in4, tmp_in3, tmp_in2, tmp_in1};" VHDL_PROVIDED="begin
       <circuit>
         <component_o id="concat_4_2_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>  
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="concat_4_2_FU"/>
           <port_o id="in1" dir="IN">
@@ -554,8 +554,8 @@ assign out1 = {tmp_in2, tmp_in1};" VHDL_PROVIDED="begin
       <circuit>
         <component_o id="ui_concat_4_2_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>  
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="ui_concat_4_2_FU"/>
           <port_o id="in1" dir="IN">
@@ -668,8 +668,8 @@ assign out1 = {tmp_in3, tmp_in2, tmp_in1};"
       <circuit>
         <component_o id="concat_8_2_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>  
-          <authors>Marco Lattuada &lt;marco.lattuada@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
+          <authors>Marco Lattuada &lt;marco.lattuada@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="concat_8_2_FU"/>
           <port_o id="in1" dir="IN">
@@ -699,8 +699,8 @@ assign out1 = {tmp_in2, tmp_in1};" VHDL_PROVIDED="begin
       <circuit>
         <component_o id="ui_concat_8_2_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>  
-          <authors>Marco Lattuada &lt;marco.lattuada@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
+          <authors>Marco Lattuada &lt;marco.lattuada@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="ui_concat_8_2_FU"/>
           <port_o id="in1" dir="IN">
@@ -730,8 +730,8 @@ assign out1 = {tmp_in2, tmp_in1};" VHDL_PROVIDED="begin
       <circuit>
         <component_o id="concat_8_4_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>  
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="concat_8_4_FU"/>
           <port_o id="in1" dir="IN">
@@ -771,8 +771,8 @@ assign out1 = {tmp_in4, tmp_in3, tmp_in2, tmp_in1};" VHDL_PROVIDED="begin
       <circuit>
         <component_o id="ui_concat_8_4_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>  
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="ui_concat_8_4_FU"/>
           <port_o id="in1" dir="IN">
@@ -812,8 +812,8 @@ assign out1 = {tmp_in4, tmp_in3, tmp_in2, tmp_in1};" VHDL_PROVIDED="begin
       <circuit>
         <component_o id="concat_8_8_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>  
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="concat_8_8_FU"/>
           <port_o id="in1" dir="IN">
@@ -875,8 +875,8 @@ begin
       <circuit>
         <component_o id="ui_concat_8_8_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>  
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="ui_concat_8_8_FU"/>
           <port_o id="in1" dir="IN">
@@ -938,8 +938,8 @@ begin
       <circuit>
         <component_o id="concat_16_16_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>  
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="concat_16_16_FU"/>
           <port_o id="in1" dir="IN">
@@ -1040,8 +1040,8 @@ begin
       <circuit>
         <component_o id="ui_concat_16_16_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>  
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="ui_concat_16_16_FU"/>
           <port_o id="in1" dir="IN">
@@ -1142,8 +1142,8 @@ begin
       <circuit>
         <component_o id="concat_16_8_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>  
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="concat_16_8_FU"/>
           <port_o id="in1" dir="IN">
@@ -1204,8 +1204,8 @@ assign out1 = {tmp_in8, tmp_in7, tmp_in6, tmp_in5, tmp_in4, tmp_in3, tmp_in2, tm
       <circuit>
         <component_o id="ui_concat_16_8_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>  
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="ui_concat_16_8_FU"/>
           <port_o id="in1" dir="IN">
@@ -1267,8 +1267,8 @@ begin
       <circuit>
         <component_o id="concat_16_4_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>  
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="concat_16_4_FU"/>
           <port_o id="in1" dir="IN">
@@ -1309,8 +1309,8 @@ begin
       <circuit>
         <component_o id="ui_concat_16_4_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>  
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="ui_concat_16_4_FU"/>
           <port_o id="in1" dir="IN">
@@ -1375,7 +1375,7 @@ assign tmp_in1 = in1;
 assign tmp_in2 = in2;
 assign tmp_in3 = in3;
 assign out1 = {tmp_in3, tmp_in2, tmp_in1};"
-VHDL_PROVIDED="
+            VHDL_PROVIDED="
 begin
   out1 &lt;= std_logic_vector(resize(in3, BITSIZE_out1)) &amp; std_logic_vector(resize(in2, BITSIZE_out1)) &amp; std_logic_vector(resize(in1, BITSIZE_out1));
 "/>
@@ -1425,8 +1425,8 @@ assign out1 = {tmp_in3, tmp_in2, tmp_in1};"
       <circuit>
         <component_o id="concat_16_2_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>  
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="concat_16_2_FU"/>
           <port_o id="in1" dir="IN">
@@ -1455,8 +1455,8 @@ assign out1 = {tmp_in2, tmp_in1};" VHDL_PROVIDED="begin
       <circuit>
         <component_o id="ui_concat_16_2_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>  
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="ui_concat_16_2_FU"/>
           <port_o id="in1" dir="IN">
@@ -1637,8 +1637,8 @@ assign out1 = {tmp_in4, tmp_in3, tmp_in2, tmp_in1};" VHDL_PROVIDED="begin
       <circuit>
         <component_o id="concat_32_8_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>  
-          <authors>Marco Lattuada &lt;marco.lattuada@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
+          <authors>Marco Lattuada &lt;marco.lattuada@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="concat_32_8_FU"/>
           <port_o id="in1" dir="IN">
@@ -1698,8 +1698,8 @@ assign out1 = {tmp_in8, tmp_in7, tmp_in6, tmp_in5, tmp_in4, tmp_in3, tmp_in2, tm
       <circuit>
         <component_o id="ui_concat_32_8_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>  
-          <authors>Marco Lattuada &lt;marco.lattuada@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
+          <authors>Marco Lattuada &lt;marco.lattuada@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="ui_concat_32_8_FU"/>
           <port_o id="in1" dir="IN">
@@ -1759,8 +1759,8 @@ assign out1 = {tmp_in8, tmp_in7, tmp_in6, tmp_in5, tmp_in4, tmp_in3, tmp_in2, tm
       <circuit>
         <component_o id="concat_64_8_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>  
-          <authors>Marco Lattuada &lt;marco.lattuada@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
+          <authors>Marco Lattuada &lt;marco.lattuada@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="concat_64_8_FU"/>
           <port_o id="in1" dir="IN">
@@ -1820,8 +1820,8 @@ assign out1 = {tmp_in8, tmp_in7, tmp_in6, tmp_in5, tmp_in4, tmp_in3, tmp_in2, tm
       <circuit>
         <component_o id="ui_concat_64_8_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>  
-          <authors>Marco Lattuada &lt;marco.lattuada@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
+          <authors>Marco Lattuada &lt;marco.lattuada@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="ui_concat_64_8_FU"/>
           <port_o id="in1" dir="IN">
@@ -1879,8 +1879,8 @@ assign out1 = {tmp_in8, tmp_in7, tmp_in6, tmp_in5, tmp_in4, tmp_in3, tmp_in2, tm
       <circuit>
         <component_o id="bus_merger">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2013-2023 Politecnico di Milano</copyright>  
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2013-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="bus_merger"/>
           <port_vector_o id="in1" dir="IN">
@@ -1922,8 +1922,8 @@ end process;
       <circuit>
         <component_o id="DEMUX_GATE">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2012-2023 Politecnico di Milano</copyright>  
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;, Marco Minutoli &lt;mminutoli@gmail.com&gt;</authors> 
+          <copyright>Copyright (C) 2012-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;, Marco Minutoli &lt;mminutoli@gmail.com&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="DEMUX_GATE"/>
           <port_o id="sel" dir="IN">
@@ -1943,8 +1943,8 @@ reg [BITSIZE_out1-1:0] out1;
 reg [BITSIZE_out2-1:0] out2;
 always @ (sel or in1)
   case (sel)
-    1'b1: {out1, out2} = {{BITSIZE_out1{1'b0}}, in1};
-    default: {out1, out2} = {in1, {BITSIZE_out2{1'b0}}};
+    1&apos;b1: {out1, out2} = {{BITSIZE_out1{1&apos;b0}}, in1};
+    default: {out1, out2} = {in1, {BITSIZE_out2{1&apos;b0}}};
   endcase"/>
         </component_o>
       </circuit>
@@ -1954,8 +1954,8 @@ always @ (sel or in1)
       <circuit>
         <component_o id="flipflop_AR">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>  
-          <authors>Marco Lattuada &lt;marco.lattuada@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
+          <authors>Marco Lattuada &lt;marco.lattuada@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="flipflop_AR"/>
           <port_o id="clock" dir="IN" is_clock="1">
@@ -1998,7 +1998,7 @@ begin
       <circuit>
         <component_o id="flipflop_SR">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>  
+          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
           <authors>Marco Lattuada &lt;marco.lattuada@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="flipflop_SR"/>
@@ -2047,8 +2047,8 @@ begin
       <circuit>
         <component_o id="join_signal">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>  
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="join_signal"/>
           <port_vector_o id="in1" dir="IN">
@@ -2081,8 +2081,8 @@ begin
       <circuit>
         <component_o id="register_AR">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>  
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="register_AR"/>
           <port_o id="clock" dir="IN" is_clock="1">
@@ -2125,8 +2125,8 @@ begin
       <circuit>
         <component_o id="register_AR_NORETIME">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2013-2023 Politecnico di Milano</copyright>  
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2013-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="register_AR_NORETIME"/>
           <port_o id="clock" dir="IN" is_clock="1">
@@ -2175,8 +2175,8 @@ begin
       <circuit>
         <component_o id="register_AR_NORETIME_INT">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2020-2023 Politecnico di Milano</copyright>  
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2020-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="register_AR_NORETIME_INT"/>
           <port_o id="clock" dir="IN" is_clock="1">
@@ -2225,8 +2225,8 @@ begin
       <circuit>
         <component_o id="register_AR_NORETIME_UINT">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2020-2023 Politecnico di Milano</copyright>  
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2020-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="register_AR_NORETIME_UINT"/>
           <port_o id="clock" dir="IN" is_clock="1">
@@ -2275,8 +2275,8 @@ begin
       <circuit>
         <component_o id="register_AR_NORETIME_REAL">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2020-2023 Politecnico di Milano</copyright>  
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2020-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="register_AR_NORETIME_REAL"/>
           <port_o id="clock" dir="IN" is_clock="1">
@@ -2325,8 +2325,8 @@ begin
       <circuit>
         <component_o id="register_SARSE">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>  
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="register_SARSE"/>
           <port_o id="clock" dir="IN" is_clock="1">
@@ -2374,8 +2374,8 @@ begin
       <circuit>
         <component_o id="register_SE">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>  
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="register_SE"/>
           <port_o id="clock" dir="IN" is_clock="1">
@@ -2399,7 +2399,7 @@ assign out1 = reg_out1;
 always @(posedge clock)
   if (wenable)
     reg_out1 &lt;= in1;"
-VHDL_PROVIDED="
+            VHDL_PROVIDED="
 signal reg_out1 : std_logic_vector(BITSIZE_out1-1 downto 0) 1INIT_ZERO_VALUE;
 begin
   out1 &lt;= reg_out1;
@@ -2420,8 +2420,8 @@ begin
       <circuit>
         <component_o id="register_SR">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>  
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="register_SR"/>
           <port_o id="clock" dir="IN" is_clock="1">
@@ -2466,8 +2466,8 @@ begin
       <circuit>
         <component_o id="register_SRSE">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>  
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="register_SRSE"/>
           <port_o id="clock" dir="IN" is_clock="1">
@@ -2515,8 +2515,8 @@ begin
       <circuit>
         <component_o id="register_STD">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>  
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="register_STD"/>
           <port_o id="clock" dir="IN" is_clock="1">
@@ -2626,8 +2626,8 @@ end generate nonzero_case;
       <circuit>
         <component_o id="split_signal">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>  
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="split_signal"/>
           <port_o id="in1" dir="IN">
@@ -2677,9 +2677,9 @@ end generate nonzero_case;
           <port_o id="stall_wenable" dir="OUT">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="Stage_controller" VERILOG_PROVIDED="parameter [1:0] IDLE = 2'b00;
-  parameter [1:0] SEND = 2'b01;
-  parameter [1:0] FULL = 2'b10;
+          <NP_functionality LIBRARY="Stage_controller" VERILOG_PROVIDED="parameter [1:0] IDLE = 2&apos;b00;
+  parameter [1:0] SEND = 2&apos;b01;
+  parameter [1:0] FULL = 2&apos;b10;
 
   reg selector_out;
   reg std_wenable;
@@ -2762,8 +2762,8 @@ end generate nonzero_case;
       <circuit>
         <component_o id="ui_const_mult_expr_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2014-2023 Politecnico di Milano</copyright>  
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2014-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="ui_const_mult_expr_FU"/>
           <parameter name="VALUE_PARAMETER">0</parameter>
@@ -2787,8 +2787,8 @@ end generate nonzero_case;
       <circuit>
         <component_o id="ui_align_plus_expr_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2015-2023 Politecnico di Milano</copyright>  
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2015-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="ui_align_plus_expr_FU"/>
           <parameter name="VALUE_PARAMETER">0</parameter>

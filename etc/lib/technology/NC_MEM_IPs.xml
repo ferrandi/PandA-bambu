@@ -6428,7 +6428,7 @@ begin
   begin
     if (clock&apos;event and clock=&apos;1&apos;) then
       if(READ_ONLY_MEMORY=0) then
-        if(write_enable='1') then
+        if(write_enable=&apos;1&apos;) then
 -- synthesis translate_off
           if (to_integer(unsigned(address_in)) &lt; n_elements) then
 -- synthesis translate_on
@@ -11776,7 +11776,7 @@ begin
   L0 : process(tmp_addr, Min_addr_ram, int_sel_LOAD, int_sel_STORE)
   begin
     for i in 0 to max_n_rw-1 loop
-      if((i &lt; PORTSIZE_sel_LOAD and int_sel_LOAD(i)='1') or (i &lt; PORTSIZE_sel_STORE and int_sel_STORE(i)='1')) then
+      if((i &lt; PORTSIZE_sel_LOAD and int_sel_LOAD(i)=&apos;1&apos;) or (i &lt; PORTSIZE_sel_STORE and int_sel_STORE(i)=&apos;1&apos;)) then
         Mout_addr_ram((i+1)*BITSIZE_Mout_addr_ram-1 downto i*BITSIZE_Mout_addr_ram) &lt;= tmp_addr((i+1)*BITSIZE_in2-1 downto i*BITSIZE_in2);
       else
         Mout_addr_ram((i+1)*BITSIZE_Mout_addr_ram-1 downto i*BITSIZE_Mout_addr_ram) &lt;= Min_addr_ram((i+1)*BITSIZE_Min_addr_ram-1 downto i*BITSIZE_Min_addr_ram);
@@ -11797,7 +11797,7 @@ begin
   L2 : process(int_sel_STORE, in1,Min_Wdata_ram)
   begin
      for i in 0 to max_n_rw-1 loop
-       if(int_sel_STORE(i)='1') then
+       if(int_sel_STORE(i)=&apos;1&apos;) then
          Mout_Wdata_ram((i+1)*BITSIZE_Mout_Wdata_ram-1 downto i*BITSIZE_Mout_Wdata_ram) &lt;= std_logic_vector(resize(unsigned(in1((i+1)*BITSIZE_in1-1 downto i*BITSIZE_in1)), BITSIZE_Mout_Wdata_ram));
        else
          Mout_Wdata_ram((i+1)*BITSIZE_Mout_Wdata_ram-1 downto i*BITSIZE_Mout_Wdata_ram) &lt;= std_logic_vector(resize(unsigned(Min_Wdata_ram((i+1)*BITSIZE_Min_Wdata_ram-1 downto i*BITSIZE_Min_Wdata_ram)), BITSIZE_Mout_Wdata_ram));
@@ -11808,7 +11808,7 @@ begin
   L3 : process(int_sel_LOAD, int_sel_STORE, in3, Min_data_ram_size)
   begin
     for i in 0 to max_n_rw-1 loop
-      if((i &lt; PORTSIZE_sel_LOAD and int_sel_LOAD(i)='1') or (i &lt; PORTSIZE_sel_STORE and int_sel_STORE(i)='1')) then
+      if((i &lt; PORTSIZE_sel_LOAD and int_sel_LOAD(i)=&apos;1&apos;) or (i &lt; PORTSIZE_sel_STORE and int_sel_STORE(i)=&apos;1&apos;)) then
         Mout_data_ram_size((i+1)*BITSIZE_Mout_data_ram_size-1 downto i*BITSIZE_Mout_data_ram_size) &lt;= in3((i+1)*BITSIZE_in3-1 downto i*BITSIZE_in3);
       else
         Mout_data_ram_size((i+1)*BITSIZE_Mout_data_ram_size-1 downto i*BITSIZE_Mout_data_ram_size) &lt;= Min_data_ram_size((i+1)*BITSIZE_Min_data_ram_size-1 downto i*BITSIZE_Min_data_ram_size);
@@ -12069,7 +12069,7 @@ begin
   Mout_addr_ram=Min_addr_ram;
   case (_present_state)
     S_0 :
-      if(start_port != 1'b1)
+      if(start_port != 1&apos;b1)
       begin
         _next_state=S_0;
       end
@@ -12202,7 +12202,7 @@ begin
   Mout_addr_ram=Min_addr_ram;
   case (_present_state)
     S_0 :
-      if(start_port != 1'b1)
+      if(start_port != 1&apos;b1)
       begin
         _next_state=S_0;
       end
@@ -12244,7 +12244,7 @@ process(clock,reset)
 begin
   if(1RESET_VALUE) then
     present_state &lt;= &quot;00&quot;;
-  elsif (clock'event and clock = &apos;1&apos;) then
+  elsif (clock&apos;event and clock = &apos;1&apos;) then
     present_state &lt;= next_state;
   end if;
 end process;
@@ -12770,7 +12770,7 @@ wire valid,tagsmatch;
            assign m_axi_arcache = 4&apos;b0011;
            assign m_axi_arprot  = 3&apos;d0;
            //Burst parameters
-           assign m_axi_arlen   = 2**LINE2MEM_W -1; //will choose the burst lenght depending on the cache's and slave's data width
+           assign m_axi_arlen   = 2**LINE2MEM_W -1; //will choose the burst lenght depending on the cache&apos;s and slave&apos;s data width
            assign m_axi_arsize  = BE_BYTE_W; //each word will be the width of the memory for maximum bandwidth
            assign m_axi_arburst = 2&apos;b01; //incremental burst
            assign m_axi_araddr  = {BE_ADDR_W{1&apos;b0}} + {replace_addr, {(LINE2MEM_W+BE_BYTE_W){1&apos;b0}}}; //base address for the burst, with width extension 
@@ -14848,7 +14848,7 @@ wire valid,tagsmatch;
           </port_o>
           <NP_functionality LIBRARY="IOB_cache_memory FE_ADDR_W N_WAYS LINE_OFF_W WORD_OFF_W WTBUF_DEPTH_W REP_POLICY CTRL_CACHE CTRL_CNT WRITE_POL addr rdata addr_reg wdata_reg wstrb_reg write_addr write_wdata write_wstrb replace_addr read_addr read_rdata" IP_COMPONENT="IOB_ram_2p,IOB_fifo_sync,IOB_gen_sp_ram,IOB_gen_sp_ram_no_addr,IOB_ram_sp,IOB_ram_sp_no_addr,IOB_replacement_policy,IOB_onehot_to_bin" VERILOG_PROVIDED="
    //Control-ports
-   `define CTRL_IO //ports that allow from outside signals to influence the invalidate and write-through buffer empty cache-control's functions.
+   `define CTRL_IO //ports that allow from outside signals to influence the invalidate and write-through buffer empty cache-control&apos;s functions.
    //Write Policy
    `define WRITE_THROUGH 0 //write-through not allocate: implements a write-through buffer
    `define WRITE_BACK 1    //write-back allocate: implementes a dirty-memory
@@ -14906,7 +14906,7 @@ wire valid,tagsmatch;
    reg [N_WAYS*(2**LINE_OFF_W)-1:0]                                            dirty_reg;
 
 
-   localparam S_IDLE = 2'b00, S_ADDR = 2'b01, S_WRITE = 2'b10;
+   localparam S_IDLE = 2&apos;b00, S_ADDR = 2&apos;b01, S_WRITE = 2&apos;b10;
    reg [1:0]                                                                        flush_state = S_IDLE, next_flush_state;
    reg [(LINE_OFF_W + NWAY_W) - 1: 0]                                               flush_addr, next_flush_addr;
 
@@ -15091,7 +15091,7 @@ wire valid,tagsmatch;
        assign replace_addr = addr[FE_ADDR_W -1 - (BE_BYTE_W + LINE2MEM_W):BE_BYTE_W+LINE2MEM_W - (BE_BYTE_W + LINE2MEM_W)];
       
        //back-end write channel
-       assign write_wstrb = {FE_NBYTES{1'bx}};
+       assign write_wstrb = {FE_NBYTES{1&apos;bx}};
        assign write_addr = buffer_dout[FIFO_DATA_W - 1 -: (FE_ADDR_W - FE_BYTE_W)];
        assign write_wdata = buffer_dout[(2**WORD_OFF_W)*FE_DATA_W - 1 : 0];        
       end
@@ -15129,7 +15129,7 @@ wire valid,tagsmatch;
 
 
    ///////////////////////////////////////////////////////////////
-   // Hit signal: data available and in the memory's output
+   // Hit signal: data available and in the memory&apos;s output
    ///////////////////////////////////////////////////////////////
    assign hit = |way_hit &amp; ~replace &amp; (~raw);
 
@@ -15585,17 +15585,17 @@ wire valid,tagsmatch;
           </port_o>
           <NP_functionality LIBRARY="IOB_cache_control CTRL_CNT rdata" VERILOG_PROVIDED="
    `define CTRL_ADDR_W 4
-    //Addresses for cache controller's task
-   `define ADDR_BUFFER_EMPTY          (`CTRL_ADDR_W'd1)
-   `define ADDR_BUFFER_FULL           (`CTRL_ADDR_W'd2) 
-   `define ADDR_CACHE_HIT             (`CTRL_ADDR_W'd3) 
-   `define ADDR_CACHE_MISS            (`CTRL_ADDR_W'd4) 
-   `define ADDR_CACHE_READ_ACCESS     (`CTRL_ADDR_W'd5) 
-   `define ADDR_CACHE_READ_MISS       (`CTRL_ADDR_W'd6) 
-   `define ADDR_CACHE_WRITE_ACCESS    (`CTRL_ADDR_W'd7) 
-   `define ADDR_CACHE_WRITE_MISS      (`CTRL_ADDR_W'd8) 
-   `define ADDR_RESET_COUNTER         (`CTRL_ADDR_W'd9) 
-   `define ADDR_CACHE_INVALIDATE      (`CTRL_ADDR_W'd10)
+    //Addresses for cache controller&apos;s task
+   `define ADDR_BUFFER_EMPTY          (`CTRL_ADDR_W&apos;d1)
+   `define ADDR_BUFFER_FULL           (`CTRL_ADDR_W&apos;d2) 
+   `define ADDR_CACHE_HIT             (`CTRL_ADDR_W&apos;d3) 
+   `define ADDR_CACHE_MISS            (`CTRL_ADDR_W&apos;d4) 
+   `define ADDR_CACHE_READ_ACCESS     (`CTRL_ADDR_W&apos;d5) 
+   `define ADDR_CACHE_READ_MISS       (`CTRL_ADDR_W&apos;d6) 
+   `define ADDR_CACHE_WRITE_ACCESS    (`CTRL_ADDR_W&apos;d7) 
+   `define ADDR_CACHE_WRITE_MISS      (`CTRL_ADDR_W&apos;d8) 
+   `define ADDR_RESET_COUNTER         (`CTRL_ADDR_W&apos;d9) 
+   `define ADDR_CACHE_INVALIDATE      (`CTRL_ADDR_W&apos;d10)
 
    localparam FE_DATA_W = BITSIZE_rdata;
 
@@ -15890,7 +15890,7 @@ wire valid,tagsmatch;
    `define CTRL_IO
    `define CTRL_ADDR_W 4
    //Address-port
-   `define WORD_ADDR // Word-addressable, (BE) addr becomes word-addressable (doesn't receive the byte-offset).
+   `define WORD_ADDR // Word-addressable, (BE) addr becomes word-addressable (doesn&apos;t receive the byte-offset).
 
    
    localparam FE_DATA_W = BITSIZE_wdata;
@@ -16052,7 +16052,7 @@ wire valid,tagsmatch;
       .read_valid (read_valid),
       .read_addr  (read_addr),
       .read_rdata (read_rdata),
-      //control's signals
+      //control&apos;s signals
       .wtbuf_empty (wtbuf_empty),
       .wtbuf_full  (wtbuf_full),
       .write_hit   (write_hit),

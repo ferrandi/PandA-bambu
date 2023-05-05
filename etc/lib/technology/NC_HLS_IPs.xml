@@ -1244,6 +1244,7 @@ end process;
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="__builtin_exit"/>
+          <parameter name="RESFILE">&quot;&quot;results.txt&quot;&quot;</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
@@ -1262,23 +1263,23 @@ end process;
           <port_o id="done_port" dir="OUT">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="__builtin_exit" VERILOG_PROVIDED="
+          <NP_functionality LIBRARY="__builtin_exit RESFILE" VERILOG_PROVIDED="
 reg done_port 1INIT_ZERO_VALUE;
 // synthesis translate_off
 integer res_file;
 always @(negedge clock)
   if(start_port == 1&apos;b1)
   begin
-    res_file = $fopen(&quot;results.txt&quot;,&quot;w&quot;);
-    $display(&quot;Exit called&quot;);
-    $fwrite(res_file, &quot;%d\\t&quot;, (status!=0 ? 0 : 3));
-    $fwrite(res_file, &quot;%d\\t&quot;, $time);
-    $fwrite(res_file, &quot;ns\\n&quot;);
+    res_file = $fopen(RESFILE,&quot;a&quot;);
+    $display(&quot;Exit called: %0d&quot;, status);
+    $fwrite(res_file, &quot;%0d\\n&quot;, $time);
+    $fwrite(res_file, &quot;%0d\\n&quot;, status);
     $fclose(res_file);
     $finish;
   end
 // synthesis translate_on
 always @(posedge clock) done_port &lt;= start_port;" VHDL_PROVIDED="begin
+ERROR this must be updated to reflect Verilog implementation
 -- synthesis translate_off
 process(clock)
   file res_file : text;
@@ -1319,6 +1320,7 @@ end process;
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="__builtin_abort"/>
+          <parameter name="RESFILE">&quot;&quot;results.txt&quot;&quot;</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
@@ -1341,16 +1343,15 @@ integer res_file;
 always @(negedge clock)
   if(start_port == 1&apos;b1)
   begin
-    res_file = $fopen(&quot;results.txt&quot;,&quot;w&quot;);
+    res_file = $fopen(RESFILE,&quot;a&quot;);
     $display(&quot;Abort called&quot;);
-    $fwrite(res_file, &quot;0\\t&quot;);
-    $fwrite(res_file, &quot;%d\\t&quot;, $time);
-    $fwrite(res_file, &quot;ns\\n&quot;);
+    $fwrite(res_file, &quot;A\\n&quot;);
     $fclose(res_file);
     $finish;
   end
 // synthesis translate_on
 always @(posedge clock) done_port &lt;= start_port;" VHDL_PROVIDED="begin
+ERROR this must be updated to reflect Verilog implementation
 -- synthesis translate_off
 process(clock)
   file res_file : text;
