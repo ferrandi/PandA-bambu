@@ -464,8 +464,6 @@ using Slong = long long;
          return ldexpr32<N / 32>(N < 0 ? d / ((unsigned)1 << (-N & 31)) : d * ((unsigned)1 << (N & 31)));
       }
 
-static unsigned counter=0;
-
 #if __clang_major__ >= 16
       template <int N, bool C, int W0, bool S0>
       class iv_base
