@@ -163,6 +163,8 @@
 /// Wrapper include
 #include "compiler_wrapper.hpp"
 
+#include <boost/regex.hpp>
+
 /// Design Space Exploration
 #define OPT_ACCEPT_NONZERO_RETURN 256
 #define INPUT_OPT_C_NO_PARSE (1 + OPT_ACCEPT_NONZERO_RETURN)
@@ -1792,10 +1794,10 @@ int BambuParameter::Exec()
          case OPT_TESTBENCH:
          {
             setOption(OPT_generate_testbench, true);
-            const std::string arg = TrimSpaces(std::string(optarg));
-            if(arg.size() >= 4 && arg.substr(arg.size() - 4) == ".xml")
+            const auto arg = TrimSpaces(std::string(optarg));
+            if(boost::regex_match(arg, boost::regex("^[\\w\\d\\-\\./]+\\.\\w+$")))
             {
-               setOption(OPT_testbench_input_xml, GetPath(optarg));
+               setOption(OPT_testbench_input_string, GetPath(arg));
             }
             else
             {
@@ -2913,7 +2915,7 @@ void BambuParameter::CheckParameters()
             if(!getOption<bool>(OPT_generate_testbench))
             {
                setOption(OPT_generate_testbench, true);
-               setOption(OPT_testbench_input_xml, GetPath("test.xml"));
+               setOption(OPT_testbench_input_string, GetPath("test.xml"));
             }
          }
          const auto is_valid_evaluation_mode = [](const std::string& s) -> bool {
