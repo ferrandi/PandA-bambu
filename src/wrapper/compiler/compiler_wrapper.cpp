@@ -1635,9 +1635,9 @@ void CompilerWrapper::SetZebuDefault()
       opt_level == CompilerWrapper_OptimizationSet::O3)
    {
       optimization_flags["guess-branch-probability"] =
-          false; /// error in declaration of structure used probably by profiling.
+          false;                                    /// error in declaration of structure used probably by profiling.
       optimization_flags["tree-ch"] = false;
-      optimization_flags["tree-copy-prop"] = false;      /// va_list undeclared - problem with split of phi nodes
+      optimization_flags["tree-copy-prop"] = false; /// va_list undeclared - problem with split of phi nodes
       optimization_flags["tree-dominator-opts"] = false; /// va_list undeclared
       optimization_flags["tree-sra"] = false;            /// Introduces conversion from struct to scalar
       optimization_flags["rename-registers"] = false;    /// cross compilation problems
@@ -2339,7 +2339,8 @@ CompilerWrapper::Compiler CompilerWrapper::GetCompiler() const
 #if HAVE_I386_GCC45_COMPILER || HAVE_I386_GCC46_COMPILER || HAVE_I386_GCC47_COMPILER || HAVE_I386_GCC48_COMPILER || \
     HAVE_I386_GCC49_COMPILER || HAVE_I386_GCC5_COMPILER || HAVE_I386_GCC6_COMPILER || HAVE_I386_GCC7_COMPILER ||    \
     HAVE_I386_GCC8_COMPILER
-   auto fillASTAnalyzer_plugin = [&] {
+   auto fillASTAnalyzer_plugin = [&]
+   {
 #if HAVE_I386_CLANG13_COMPILER
       compiler.ASTAnalyzer_plugin_obj = clang_plugin_dir + I386_CLANG13_ASTANALYZER_PLUGIN + plugin_ext;
       compiler.ASTAnalyzer_plugin_name = I386_CLANG13_ASTANALYZER_PLUGIN;
@@ -3145,7 +3146,7 @@ size_t CompilerWrapper::GetSourceCodeLines(const ParameterConstRef Param)
    for(const auto& source_file : source_files)
    {
       boost::filesystem::path absolute_path = boost::filesystem::system_complete(source_file);
-      command += absolute_path.branch_path().string() + "/*\\.h ";
+      command += absolute_path.parent_path().string() + "/*\\.h ";
       command += source_file + " ";
    }
    command += std::string(" 2> /dev/null | wc -l");
@@ -3688,7 +3689,7 @@ const std::string CompilerWrapper::AddSourceCodeIncludes(const std::list<std::st
    for(const auto& source_file : source_files)
    {
       boost::filesystem::path absolute_path = boost::filesystem::system_complete(source_file);
-      std::string new_path = "-iquote " + absolute_path.branch_path().string() + " ";
+      std::string new_path = "-iquote " + absolute_path.parent_path().string() + " ";
 #ifdef _WIN32
       boost::replace_all(new_path, "\\", "/");
 #endif
