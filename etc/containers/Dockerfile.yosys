@@ -15,8 +15,6 @@ RUN apt-get update -qq \
 
 FROM base AS openroad
 
-COPY OpenROAD-dep-install.sh .
-
 RUN apt-get update -qq \
    && DEBIAN_FRONTEND=noninteractive apt-get -y install --no-install-recommends \
       automake autotools-dev bison ca-certificates clang flex \
@@ -24,18 +22,13 @@ RUN apt-get update -qq \
       python3-dev tcl-dev tcllib tzdata wget zlib1g-dev \
    && apt-get autoclean && apt-get clean && apt-get -y autoremove \
    && update-ca-certificates \
-   && rm -rf /var/lib/apt/lists \
-   && bash OpenROAD-dep-install.sh
+   && rm -rf /var/lib/apt/lists
 
-RUN git clone --recursive https://github.com/The-OpenROAD-Project/OpenROAD.git OpenROAD
-
-WORKDIR /OpenROAD
-
-RUN mkdir build \
-   && cd build \
-   && cmake .. -DCMAKE_INSTALL_PREFIX=/opt/openroad \
-   && make -j8 \
-   && make install
+RUN git clone --depth 1 --recursive https://github.com/The-OpenROAD-Project/OpenROAD.git /OpenROAD \
+   && cd /OpenROAD \
+   && ./etc/DependencyInstaller.sh \
+   && ./etc/Build.sh -dir="build" -cmake="-DCMAKE_INSTALL_PREFIX=/opt/openroad" \
+   && cmake --install build
 
 #---
 
@@ -43,16 +36,14 @@ FROM base as yosys
 
 RUN apt-get update -qq \
    && DEBIAN_FRONTEND=noninteractive apt-get -y install --no-install-recommends \
-      bison ca-certificates clang curl flex g++ gawk gcc git libfl-dev pkg-config \
+      bison ca-certificates clang cmake curl flex g++ gawk gcc git libfl-dev pkg-config \
    && apt-get autoclean && apt-get clean && apt-get -y autoremove \
    && update-ca-certificates \
    && rm -rf /var/lib/apt/lists
 
-RUN git clone https://github.com/The-OpenROAD-Project/yosys.git /yosys
-
 ENV PREFIX /opt/yosys
-
-RUN cd /yosys \
+RUN git clone --depth 1 --branch yosys-0.23 https://github.com/The-OpenROAD-Project/yosys.git /yosys \
+   && cd /yosys \
    && make -j8 \
    && make install
 

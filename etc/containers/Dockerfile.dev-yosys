@@ -1,9 +1,9 @@
-ARG VARIANT=focal
+ARG VARIANT=focal-23.04
 
 FROM bambuhls/yosys:${VARIANT} as yosys
 FROM bambuhls/iverilog:${VARIANT} as iverilog
 
-FROM bambuhls/appimage:${VARIANT} as base
+FROM bambuhls/dev:${VARIANT} as base
 
 RUN apt-get update && apt-get install --no-install-recommends -y \
     binutils curl graphviz libffi-dev libgomp1 libpython3.8 libreadline-dev libtcl \
