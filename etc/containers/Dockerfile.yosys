@@ -53,6 +53,7 @@ FROM base
 
 COPY --from=yosys /opt/yosys /opt/yosys
 COPY --from=openroad /opt/openroad /opt/openroad
+COPY --from=openroad /opt/or-tools /opt/or-tools
 
 ENV PATH /opt/openroad/bin:/opt/yosys/bin:$PATH
 
