@@ -30,7 +30,7 @@ jobs:
   ACMath-tests:
     runs-on: [self-hosted]
     container:
-      image: bambuhls/appimage:focal
+      image: bambuhls/dev:focal-23.04
       env:
         J: ${{env.host_jobs}}
     strategy:

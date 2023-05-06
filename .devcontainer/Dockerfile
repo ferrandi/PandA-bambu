@@ -1,9 +1,9 @@
-ARG VARIANT=bionic
+ARG VARIANT=bionic-23.04
 
 FROM bambuhls/iverilog:${VARIANT} as iverilog
 FROM bambuhls/verilator:${VARIANT} as verilator
 
-FROM bambuhls/appimage:${VARIANT} as base
+FROM bambuhls/dev:${VARIANT} as base
 
 ### From https://github.com/microsoft/vscode-dev-containers/blob/main/containers/ubuntu/.devcontainer/base.Dockerfile
 # Options for setup script

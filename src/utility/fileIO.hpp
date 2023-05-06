@@ -44,12 +44,12 @@
 #ifndef FILEIO_HPP
 #define FILEIO_HPP
 
-#include "Parameter.hpp"         // for ParameterConstRef
-#include "dbgPrintHelper.hpp"    // for OUTPUT_LEVEL_PED...
-#include "exceptions.hpp"        // for THROW_UNREACHABLE
-#include "file_IO_constants.hpp" // for STR_CST_file_IO_...
-#include "gzstream.hpp"          // for igzstream, ogzst...
-#include "refcount.hpp"          // for refcount
+#include "Parameter.hpp"                   // for ParameterConstRef
+#include "dbgPrintHelper.hpp"              // for OUTPUT_LEVEL_PED...
+#include "exceptions.hpp"                  // for THROW_UNREACHABLE
+#include "file_IO_constants.hpp"           // for STR_CST_file_IO_...
+#include "gzstream.hpp"                    // for igzstream, ogzst...
+#include "refcount.hpp"                    // for refcount
 #include "string_manipulation.hpp"
 #include <boost/filesystem/operations.hpp> // for copy_file, remove
 #include <boost/filesystem/path.hpp>       // for path
@@ -321,7 +321,7 @@ inline void CopyFile(boost::filesystem::path file_source, boost::filesystem::pat
    }
    else
    {
-      boost::filesystem::copy_file(file_source, file_target, boost::filesystem::copy_option::overwrite_if_exists);
+      boost::filesystem::copy_file(file_source, file_target, boost::filesystem::copy_options::overwrite_existing);
    }
 }
 
