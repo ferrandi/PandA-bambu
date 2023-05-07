@@ -178,13 +178,14 @@ DesignFlowStep_Status TestbenchValuesCGeneration::Exec()
    // incorrect code when type punning is present
    const auto opt_lvl = false
 #if HAVE_I386_CLANG13_COMPILER
-         || default_compiler == CompilerWrapper_CompilerTarget::CT_I386_CLANG13
+                                || default_compiler == CompilerWrapper_CompilerTarget::CT_I386_CLANG13
 #endif
 #if HAVE_I386_CLANG16_COMPILER
-         || default_compiler == CompilerWrapper_CompilerTarget::CT_I386_CLANG16
+                                || default_compiler == CompilerWrapper_CompilerTarget::CT_I386_CLANG16
 #endif
-      ? CompilerWrapper_OptimizationSet::O0
-      : CompilerWrapper_OptimizationSet::O2;
+                            ?
+                            CompilerWrapper_OptimizationSet::O0 :
+                            CompilerWrapper_OptimizationSet::O2;
    const CompilerWrapperConstRef compiler_wrapper(new CompilerWrapper(parameters, default_compiler, opt_lvl));
    std::string compiler_flags =
        "-fwrapv -ffloat-store -flax-vector-conversions -msse2 -mfpmath=sse -fno-strict-aliasing "

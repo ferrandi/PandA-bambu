@@ -52,10 +52,10 @@
 #include "simple_indent.hpp"
 #include "utility.hpp"
 
+#include <map>
 #include <ostream>
 #include <string>
 #include <vector>
-#include <map>
 
 /**
  * @name forward declarations
