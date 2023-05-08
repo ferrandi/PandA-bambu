@@ -254,6 +254,8 @@ class CompilerWrapper
     */
    Compiler GetCompiler() const;
 
+   std::string GetAnalyzeCompiler() const;
+
    /**
     * Initialize the frontend compiler parameters line
     * @param OS is the optimizations set to be considered

@@ -41,6 +41,7 @@
  */
 #include "tree-panda-gcc-Parameter.hpp"
 
+#include "config_HAVE_I386_CLANG16_COMPILER.hpp"
 #include "config_HAVE_MAPPING_BUILT.hpp"
 #include "config_PANDA_DATA_INSTALLDIR.hpp"
 #include "config_RELEASE.hpp"
@@ -411,8 +412,8 @@ void tree_panda_gcc_parameter::CheckParameters()
          setOption(OPT_gcc_standard, "gnu11");
       }
    }
-   if(CompilerWrapper::isClangCheck(default_compiler) &&
-      CompilerWrapper::isCurrentOrNewer(default_compiler, CompilerWrapper_CompilerTarget::CT_I386_CLANG16))
+#if HAVE_I386_CLANG16_COMPILER
+   if(CompilerWrapper::isGccCheck(default_compiler))
    {
       std::string gcc_warnings;
       if(isOption(OPT_gcc_warnings))
@@ -431,6 +432,7 @@ void tree_panda_gcc_parameter::CheckParameters()
       addWarning("no-int-conversion");
       setOption(OPT_gcc_warnings, gcc_warnings);
    }
+#endif
 }
 
 void tree_panda_gcc_parameter::PrintHelp(std::ostream& os) const

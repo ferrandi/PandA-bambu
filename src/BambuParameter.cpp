@@ -46,6 +46,7 @@
 #include "config_HAVE_FLOPOCO.hpp"
 #include "config_HAVE_GLPK.hpp"
 #include "config_HAVE_HOST_PROFILING_BUILT.hpp"
+#include "config_HAVE_I386_CLANG16_COMPILER.hpp"
 #include "config_HAVE_ILP_BUILT.hpp"
 #include "config_HAVE_LIBRARY_CHARACTERIZATION_BUILT.hpp"
 #include "config_HAVE_LP_SOLVE.hpp"
@@ -2980,8 +2981,8 @@ void BambuParameter::CheckParameters()
          setOption(OPT_gcc_standard, "gnu11");
       }
    }
-   if(CompilerWrapper::isClangCheck(default_compiler) &&
-      CompilerWrapper::isCurrentOrNewer(default_compiler, CompilerWrapper_CompilerTarget::CT_I386_CLANG16))
+#if HAVE_I386_CLANG16_COMPILER
+   if(CompilerWrapper::isGccCheck(default_compiler))
    {
       std::string gcc_warnings;
       if(isOption(OPT_gcc_warnings))
@@ -3000,6 +3001,7 @@ void BambuParameter::CheckParameters()
       addWarning("no-int-conversion");
       setOption(OPT_gcc_warnings, gcc_warnings);
    }
+#endif
    /// add experimental setup options
    if(getOption<std::string>(OPT_experimental_setup) == "VVD")
    {

@@ -478,49 +478,7 @@ void CompilerWrapper::CompileFile(const std::string& original_file_name, std::st
    std::string command = compiler.gcc;
    if(cm == CompilerWrapper_CompilerMode::CM_ANALYZER && !compiler.is_clang)
    {
-#if HAVE_I386_CLANG4_COMPILER || HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER ||    \
-    HAVE_I386_CLANG7_COMPILER || HAVE_I386_CLANG8_COMPILER || HAVE_I386_CLANG9_COMPILER ||    \
-    HAVE_I386_CLANG10_COMPILER || HAVE_I386_CLANG11_COMPILER || HAVE_I386_CLANG12_COMPILER || \
-    HAVE_I386_CLANG13_COMPILER || HAVE_I386_CLANG16_COMPILER || HAVE_I386_CLANGVVD_COMPILER
-      bool flag_cpp;
-      if(Param->isOption(OPT_input_format) &&
-         (Param->getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_CPP ||
-          Param->getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_LLVM_CPP))
-      {
-         flag_cpp = true;
-      }
-      else
-      {
-         flag_cpp = false;
-      }
-#endif
-#if HAVE_I386_CLANG16_COMPILER
-      command = flag_cpp ? relocate_compiler_path(I386_CLANGPP16_EXE) : relocate_compiler_path(I386_CLANG16_EXE);
-#elif HAVE_I386_CLANG13_COMPILER
-      command = flag_cpp ? relocate_compiler_path(I386_CLANGPP13_EXE) : relocate_compiler_path(I386_CLANG13_EXE);
-#elif HAVE_I386_CLANG12_COMPILER
-      command = flag_cpp ? relocate_compiler_path(I386_CLANGPP12_EXE) : relocate_compiler_path(I386_CLANG12_EXE);
-#elif HAVE_I386_CLANG11_COMPILER
-      command = flag_cpp ? relocate_compiler_path(I386_CLANGPP11_EXE) : relocate_compiler_path(I386_CLANG11_EXE);
-#elif HAVE_I386_CLANG10_COMPILER
-      command = flag_cpp ? relocate_compiler_path(I386_CLANGPP10_EXE) : relocate_compiler_path(I386_CLANG10_EXE);
-#elif HAVE_I386_CLANG9_COMPILER
-      command = flag_cpp ? relocate_compiler_path(I386_CLANGPP9_EXE) : relocate_compiler_path(I386_CLANG9_EXE);
-#elif HAVE_I386_CLANG8_COMPILER
-      command = flag_cpp ? relocate_compiler_path(I386_CLANGPP8_EXE) : relocate_compiler_path(I386_CLANG8_EXE);
-#elif HAVE_I386_CLANG7_COMPILER
-      command = flag_cpp ? relocate_compiler_path(I386_CLANGPP7_EXE) : relocate_compiler_path(I386_CLANG7_EXE);
-#elif HAVE_I386_CLANG6_COMPILER
-      command = flag_cpp ? relocate_compiler_path(I386_CLANGPP6_EXE) : relocate_compiler_path(I386_CLANG6_EXE);
-#elif HAVE_I386_CLANG5_COMPILER
-      command = flag_cpp ? relocate_compiler_path(I386_CLANGPP5_EXE) : relocate_compiler_path(I386_CLANG5_EXE);
-#elif HAVE_I386_CLANG4_COMPILER
-      command = flag_cpp ? relocate_compiler_path(I386_CLANGPP4_EXE) : relocate_compiler_path(I386_CLANG4_EXE);
-#elif HAVE_I386_CLANGVVD_COMPILER
-      command = flag_cpp ? relocate_compiler_path(I386_CLANGPPVVD_EXE) : relocate_compiler_path(I386_CLANGVVD_EXE);
-#else
-      THROW_ERROR("unexpected condition");
-#endif
+      command = GetAnalyzeCompiler();
       if(getenv("APPDIR"))
       {
          const auto inc_dir = std::string(getenv("APPDIR")) + "/usr/include/c++";
@@ -2121,17 +2079,10 @@ void CompilerWrapper::SetCompilerDefault()
       optimization_flags["slp-vectorize"] = false; /// disable superword-level parallelism vectorization
    }
 
-   bool flag_cpp;
-   if(Param->isOption(OPT_input_format) &&
-      (Param->getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_CPP ||
-       Param->getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_LLVM_CPP))
-   {
-      flag_cpp = true;
-   }
-   else
-   {
-      flag_cpp = false;
-   }
+   const auto flag_cpp =
+       Param->isOption(OPT_input_format) &&
+       (Param->getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_CPP ||
+        Param->getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_LLVM_CPP);
    /// in case we are compiling C++ code
    if(flag_cpp)
    {
@@ -2151,18 +2102,10 @@ CompilerWrapper::Compiler CompilerWrapper::GetCompiler() const
        Param->getOption<CompilerWrapper_CompilerTarget>(OPT_compatible_compilers);
 #endif
 
-   bool flag_cpp;
-   if(Param->isOption(OPT_input_format) &&
-      (Param->getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_CPP ||
-       Param->getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_LLVM_CPP) &&
-      !Param->isOption(OPT_pretty_print))
-   {
-      flag_cpp = true;
-   }
-   else
-   {
-      flag_cpp = false;
-   }
+   const auto flag_cpp =
+       Param->isOption(OPT_input_format) &&
+       (Param->getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_CPP ||
+        Param->getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_LLVM_CPP);
 
    std::string gcc_extra_options;
    if(Param->isOption(OPT_gcc_extra_options))
@@ -2958,6 +2901,43 @@ CompilerWrapper::Compiler CompilerWrapper::GetCompiler() const
                      compiler.cpp;
    }
    return compiler;
+}
+
+std::string CompilerWrapper::GetAnalyzeCompiler() const
+{
+   const auto flag_cpp =
+       Param->isOption(OPT_input_format) &&
+       (Param->getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_CPP ||
+        Param->getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_LLVM_CPP);
+
+#if HAVE_I386_CLANG16_COMPILER
+   return flag_cpp ? relocate_compiler_path(I386_CLANGPP16_EXE) : relocate_compiler_path(I386_CLANG16_EXE);
+#elif HAVE_I386_CLANG13_COMPILER
+   return flag_cpp ? relocate_compiler_path(I386_CLANGPP13_EXE) : relocate_compiler_path(I386_CLANG13_EXE);
+#elif HAVE_I386_CLANG12_COMPILER
+   return flag_cpp ? relocate_compiler_path(I386_CLANGPP12_EXE) : relocate_compiler_path(I386_CLANG12_EXE);
+#elif HAVE_I386_CLANG11_COMPILER
+   return flag_cpp ? relocate_compiler_path(I386_CLANGPP11_EXE) : relocate_compiler_path(I386_CLANG11_EXE);
+#elif HAVE_I386_CLANG10_COMPILER
+   return flag_cpp ? relocate_compiler_path(I386_CLANGPP10_EXE) : relocate_compiler_path(I386_CLANG10_EXE);
+#elif HAVE_I386_CLANG9_COMPILER
+   return flag_cpp ? relocate_compiler_path(I386_CLANGPP9_EXE) : relocate_compiler_path(I386_CLANG9_EXE);
+#elif HAVE_I386_CLANG8_COMPILER
+   return flag_cpp ? relocate_compiler_path(I386_CLANGPP8_EXE) : relocate_compiler_path(I386_CLANG8_EXE);
+#elif HAVE_I386_CLANG7_COMPILER
+   return flag_cpp ? relocate_compiler_path(I386_CLANGPP7_EXE) : relocate_compiler_path(I386_CLANG7_EXE);
+#elif HAVE_I386_CLANG6_COMPILER
+   return flag_cpp ? relocate_compiler_path(I386_CLANGPP6_EXE) : relocate_compiler_path(I386_CLANG6_EXE);
+#elif HAVE_I386_CLANG5_COMPILER
+   return flag_cpp ? relocate_compiler_path(I386_CLANGPP5_EXE) : relocate_compiler_path(I386_CLANG5_EXE);
+#elif HAVE_I386_CLANG4_COMPILER
+   return flag_cpp ? relocate_compiler_path(I386_CLANGPP4_EXE) : relocate_compiler_path(I386_CLANG4_EXE);
+#elif HAVE_I386_CLANGVVD_COMPILER
+   return flag_cpp ? relocate_compiler_path(I386_CLANGPPVVD_EXE) : relocate_compiler_path(I386_CLANGVVD_EXE);
+#else
+   THROW_ERROR("unexpected condition");
+   return "";
+#endif
 }
 
 void CompilerWrapper::GetSystemIncludes(std::vector<std::string>& includes) const
