@@ -2995,7 +2995,6 @@ void BambuParameter::CheckParameters()
             gcc_warnings += warn + STR_CST_string_separator;
          }
       };
-      addWarning("implicit-int");
       addWarning("no-incompatible-function-pointer-types");
       addWarning("no-implicit-function-declaration");
       addWarning("no-int-conversion");
