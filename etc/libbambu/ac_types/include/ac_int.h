@@ -468,9 +468,8 @@ using Slong = long long;
       template <int N, bool C, int W0, bool S0>
       class iv_base
       {
-         signed _BitInt(W0) v __INIT_VALUE;
-
        public:
+         signed _BitInt(W0) v __INIT_VALUE;
          template <int W, bool S>
          __FORCE_INLINE constexpr void bit_adjust()
          {
@@ -536,12 +535,8 @@ using Slong = long long;
 
          iv_base() = default;
          template <int N2, bool C2, int W2, bool S2>
-         __FORCE_INLINE constexpr iv_base(const iv_base<N2, C2, W2, S2>& b)
+         __FORCE_INLINE constexpr iv_base(const iv_base<N2, C2, W2, S2>& b) : v(b.v)
          {
-            constexpr int M = AC_MIN(N, N2);
-            LOOP(int, idx, 0, exclude, M, { set(idx, b[idx]); });
-            auto last = (*this)[M - 1] < 0 ? ~0 : 0;
-            LOOP(int, idx, M, exclude, N, { set(idx, last); });
          }
       } __attribute__((aligned(8)));
 
@@ -1472,9 +1467,9 @@ using Slong = long long;
             constexpr int T1 = AC_MIN(M2 - 1, Nr);
             constexpr int T2 = AC_MIN(M1 - 1, Nr);
             constexpr int T3 = AC_MIN(M1 + M2 - 2, Nr);
-            const iv_base<M1, M1C1, MW1, MS1> OP1 = N1 >= N2 ? static_cast<iv_base<M1, M1C1, MW1, MS1>>(op1) :
+            const iv_base<M1, M1C1, MW1, MS1>& OP1 = N1 >= N2 ? static_cast<iv_base<M1, M1C1, MW1, MS1>>(op1) :
                                                                static_cast<iv_base<M1, M1C1, MW1, MS1>>(op2);
-            const iv_base<M2, M2C1, MW2, MS2> OP2 = N1 >= N2 ? static_cast<iv_base<M2, M2C1, MW2, MS2>>(op2) :
+            const iv_base<M2, M2C1, MW2, MS2>& OP2 = N1 >= N2 ? static_cast<iv_base<M2, M2C1, MW2, MS2>>(op2) :
                                                                static_cast<iv_base<M2, M2C1, MW2, MS2>>(op1);
 
             Ulong l1 = 0;
@@ -1610,14 +1605,18 @@ using Slong = long long;
             constexpr bool M2C1 = N1 >= N2 ? C2 : C1;
             constexpr int T1 = AC_MIN(M2 - 1, Nr);
             constexpr int T2 = AC_MIN(M1, Nr);
-            const iv_base<M1, M1C1, MW1, MS1> OP1 = N1 >= N2 ? static_cast<iv_base<M1, M1C1, MW1, MS1>>(op1) :
-                                                               static_cast<iv_base<M1, M1C1, MW1, MS1>>(op2);
-            const iv_base<M2, M2C1, MW2, MS2> OP2 = N1 >= N2 ? static_cast<iv_base<M2, M2C1, MW2, MS2>>(op2) :
-                                                               static_cast<iv_base<M2, M2C1, MW2, MS2>>(op1);
-
-            bool carry = iv_uadd_n<T1>(OP1, OP2, r);
-            carry = iv_add_int_carry<T1>(OP1, OP2[T1], carry, r);
-            iv_extend<T2>(r, carry ? ~0 : 0);
+            if(N1 >= N2)
+            {
+               bool carry = iv_uadd_n<T1>(op1, op2, r);
+               carry = iv_add_int_carry<T1>(op1, op2[T1], carry, r);
+               iv_extend<T2>(r, carry ? ~0 : 0);
+            }
+            else
+            {
+               bool carry = iv_uadd_n<T1>(op2, op1, r);
+               carry = iv_add_int_carry<T1>(op2, op1[T1], carry, r);
+               iv_extend<T2>(r, carry ? ~0 : 0);
+            }
          }
       }
 
