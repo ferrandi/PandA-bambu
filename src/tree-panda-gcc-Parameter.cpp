@@ -372,6 +372,7 @@ void tree_panda_gcc_parameter::CheckParameters()
 {
    Parameter::CheckParameters();
 
+   const auto default_compiler = getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler);
    const auto flag_cpp = isOption(OPT_input_format) &&
                          getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_CPP;
    if(flag_cpp)
@@ -387,14 +388,31 @@ void tree_panda_gcc_parameter::CheckParameters()
       setOption(OPT_gcc_includes, includes);
       if(!isOption(OPT_gcc_standard))
       {
-         setOption(OPT_gcc_standard, "c++14");
+         if(CompilerWrapper::isGccCheck(default_compiler) &&
+            !CompilerWrapper::isCurrentOrNewer(default_compiler, CompilerWrapper_CompilerTarget::CT_I386_GCC6))
+         {
+            setOption(OPT_gcc_standard, "gnu++98");
+         }
+         else
+         {
+            setOption(OPT_gcc_standard, "gnu++14");
+         }
       }
    }
    else if(!isOption(OPT_gcc_standard))
    {
-      setOption(OPT_gcc_standard, "gnu89");
+      if(CompilerWrapper::isGccCheck(default_compiler) &&
+         !CompilerWrapper::isCurrentOrNewer(default_compiler, CompilerWrapper_CompilerTarget::CT_I386_GCC5))
+      {
+         setOption(OPT_gcc_standard, "gnu90");
+      }
+      else
+      {
+         setOption(OPT_gcc_standard, "gnu11");
+      }
    }
-   if(CompilerWrapper::isClang16orGreater(getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler)))
+   if(CompilerWrapper::isClangCheck(default_compiler) &&
+      CompilerWrapper::isCurrentOrNewer(default_compiler, CompilerWrapper_CompilerTarget::CT_I386_CLANG16))
    {
       std::string gcc_warnings;
       if(isOption(OPT_gcc_warnings))

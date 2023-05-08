@@ -46,15 +46,6 @@
 #include "config_HAVE_FLOPOCO.hpp"
 #include "config_HAVE_GLPK.hpp"
 #include "config_HAVE_HOST_PROFILING_BUILT.hpp"
-#include "config_HAVE_I386_GCC45_COMPILER.hpp"
-#include "config_HAVE_I386_GCC46_COMPILER.hpp"
-#include "config_HAVE_I386_GCC47_COMPILER.hpp"
-#include "config_HAVE_I386_GCC48_COMPILER.hpp"
-#include "config_HAVE_I386_GCC49_COMPILER.hpp"
-#include "config_HAVE_I386_GCC5_COMPILER.hpp"
-#include "config_HAVE_I386_GCC6_COMPILER.hpp"
-#include "config_HAVE_I386_GCC7_COMPILER.hpp"
-#include "config_HAVE_I386_GCC8_COMPILER.hpp"
 #include "config_HAVE_ILP_BUILT.hpp"
 #include "config_HAVE_LIBRARY_CHARACTERIZATION_BUILT.hpp"
 #include "config_HAVE_LP_SOLVE.hpp"
@@ -2442,19 +2433,20 @@ void BambuParameter::add_experimental_setup_compiler_options(bool kill_printf)
    /// Set the default value for OPT_gcc_m32_mx32
    if(!isOption(OPT_gcc_m32_mx32))
    {
-      if(CompilerWrapper::hasCompilerM64(getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler)))
+      const auto default_compiler = getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler);
+      if(CompilerWrapper::hasCompilerM64(default_compiler))
       {
          setOption(OPT_gcc_m32_mx32, "-m64");
       }
-      if(CompilerWrapper::hasCompilerMX32(getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler)))
+      if(CompilerWrapper::hasCompilerMX32(default_compiler))
       {
          setOption(OPT_gcc_m32_mx32, "-mx32");
       }
-      if(CompilerWrapper::hasCompilerGCCM32(getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler)))
+      if(CompilerWrapper::hasCompilerGCCM32(default_compiler))
       {
          setOption(OPT_gcc_m32_mx32, "-m32 -mno-sse2");
       }
-      if(CompilerWrapper::hasCompilerCLANGM32(getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler)))
+      if(CompilerWrapper::hasCompilerCLANGM32(default_compiler))
       {
          setOption(OPT_gcc_m32_mx32, "-m32");
       }
@@ -2949,6 +2941,7 @@ void BambuParameter::CheckParameters()
    }
    tree_helper::debug_level = get_class_debug_level("tree_helper");
 
+   const auto default_compiler = getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler);
    const auto flag_cpp = isOption(OPT_input_format) &&
                          getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_CPP;
    if(flag_cpp)
@@ -2964,14 +2957,31 @@ void BambuParameter::CheckParameters()
       setOption(OPT_gcc_includes, includes);
       if(!isOption(OPT_gcc_standard))
       {
-         setOption(OPT_gcc_standard, "c++14");
+         if(CompilerWrapper::isGccCheck(default_compiler) &&
+            !CompilerWrapper::isCurrentOrNewer(default_compiler, CompilerWrapper_CompilerTarget::CT_I386_GCC6))
+         {
+            setOption(OPT_gcc_standard, "gnu++98");
+         }
+         else
+         {
+            setOption(OPT_gcc_standard, "gnu++14");
+         }
       }
    }
    else if(!isOption(OPT_gcc_standard))
    {
-      setOption(OPT_gcc_standard, "gnu89");
+      if(CompilerWrapper::isGccCheck(default_compiler) &&
+         !CompilerWrapper::isCurrentOrNewer(default_compiler, CompilerWrapper_CompilerTarget::CT_I386_GCC5))
+      {
+         setOption(OPT_gcc_standard, "gnu90");
+      }
+      else
+      {
+         setOption(OPT_gcc_standard, "gnu11");
+      }
    }
-   if(CompilerWrapper::isClang16orGreater(getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler)))
+   if(CompilerWrapper::isClangCheck(default_compiler) &&
+      CompilerWrapper::isCurrentOrNewer(default_compiler, CompilerWrapper_CompilerTarget::CT_I386_CLANG16))
    {
       std::string gcc_warnings;
       if(isOption(OPT_gcc_warnings))
@@ -3043,57 +3053,29 @@ void BambuParameter::CheckParameters()
       {
          setOption(OPT_compiler_opt_level, CompilerWrapper_OptimizationSet::O2);
          /// GCC SECTION
-         if(CompilerWrapper::isGccCheck(getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler)))
+         if(CompilerWrapper::isGccCheck(default_compiler))
          {
             tuning_optimizations += "inline-functions" + STR_CST_string_separator + "gcse-after-reload" +
                                     STR_CST_string_separator + "ipa-cp-clone" + STR_CST_string_separator +
                                     "unswitch-loops" + STR_CST_string_separator + "no-tree-loop-ivcanon";
-            if(false
-#if HAVE_I386_GCC48_COMPILER
-               || getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
-                      CompilerWrapper_CompilerTarget::CT_I386_GCC48
-#endif
-#if HAVE_I386_GCC49_COMPILER
-               || getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
-                      CompilerWrapper_CompilerTarget::CT_I386_GCC49
-#endif
-#if HAVE_I386_GCC5_COMPILER
-               || getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
-                      CompilerWrapper_CompilerTarget::CT_I386_GCC5
-#endif
-#if HAVE_I386_GCC6_COMPILER
-               || getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
-                      CompilerWrapper_CompilerTarget::CT_I386_GCC6
-#endif
-#if HAVE_I386_GCC7_COMPILER
-               || getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
-                      CompilerWrapper_CompilerTarget::CT_I386_GCC7
-#endif
-#if HAVE_I386_GCC8_COMPILER
-               || getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
-                      CompilerWrapper_CompilerTarget::CT_I386_GCC8
-#endif
-            )
+            if(default_compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC48 ||
+               default_compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC49 ||
+               default_compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC5 ||
+               default_compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC6 ||
+               default_compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC7 ||
+               default_compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC8)
             {
                tuning_optimizations +=
                    STR_CST_string_separator + "tree-partial-pre" + STR_CST_string_separator + "disable-tree-bswap";
             }
-            if(false
-#if HAVE_I386_GCC7_COMPILER
-               || getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
-                      CompilerWrapper_CompilerTarget::CT_I386_GCC7
-#endif
-#if HAVE_I386_GCC8_COMPILER
-               || getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
-                      CompilerWrapper_CompilerTarget::CT_I386_GCC8
-#endif
-            )
+            if(default_compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC7 ||
+               default_compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC8)
             {
                tuning_optimizations += STR_CST_string_separator + "no-store-merging";
             }
          }
          /// CLANG SECTION
-         else if(CompilerWrapper::isClangCheck(getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler)))
+         else if(CompilerWrapper::isClangCheck(default_compiler))
          {
             tuning_optimizations += "inline-functions";
          }
@@ -3456,28 +3438,11 @@ void BambuParameter::CheckParameters()
    }
    if(isOption(OPT_discrepancy) && getOption<bool>(OPT_discrepancy))
    {
-      if(false
-#if HAVE_I386_GCC45_COMPILER
-         || getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
-                CompilerWrapper_CompilerTarget::CT_I386_GCC45
-#endif
-#if HAVE_I386_GCC46_COMPILER
-         || getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
-                CompilerWrapper_CompilerTarget::CT_I386_GCC46
-#endif
-#if HAVE_I386_GCC47_COMPILER
-         || getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
-                CompilerWrapper_CompilerTarget::CT_I386_GCC47
-#endif
-#if HAVE_I386_GCC48_COMPILER
-         || getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
-                CompilerWrapper_CompilerTarget::CT_I386_GCC48
-#endif
-#if HAVE_I386_GCC49_COMPILER
-         || getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
-                CompilerWrapper_CompilerTarget::CT_I386_GCC49
-#endif
-      )
+      if(default_compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC45 ||
+         default_compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC46 ||
+         default_compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC47 ||
+         default_compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC48 ||
+         default_compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC49)
       {
          THROW_WARNING("discrepancy analysis can report false positives with old compilers, use --compiler=I386_GCC5 "
                        "or higher to avoid them");
@@ -3532,8 +3497,7 @@ void BambuParameter::CheckParameters()
       THROW_ERROR("Include directories and library directories for Python bindings are missing.\n"
                   "use --testbench-extra-gcc-flags=\"string\" to provide them");
    }
-   setOption<unsigned int>(OPT_host_compiler,
-                           static_cast<unsigned int>(getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler)));
+   setOption<unsigned int>(OPT_host_compiler, static_cast<unsigned int>(default_compiler));
    if(isOption(OPT_evaluation_objectives) &&
       getOption<std::string>(OPT_evaluation_objectives).find("CYCLES") != std::string::npos &&
       isOption(OPT_device_string) && boost::starts_with(getOption<std::string>(OPT_device_string), "LFE"))
@@ -3813,7 +3777,7 @@ void BambuParameter::SetDefaults()
 
 void BambuParameter::add_bambu_library(std::string lib)
 {
-   auto preferred_compiler = getOption<unsigned int>(OPT_default_compiler);
+   auto preferred_compiler = getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler);
    std::string archive_files;
    bool is_subnormals = isOption(OPT_fp_subnormal) && getOption<bool>(OPT_fp_subnormal);
    std::string VSuffix = "";
@@ -3841,6 +3805,5 @@ void BambuParameter::add_bambu_library(std::string lib)
    }
 
    setOption(OPT_archive_files, archive_files + relocate_compiler_path(PANDA_LIB_INSTALLDIR "/panda/lib") + lib + "_" +
-                                    CompilerWrapper::getCompilerSuffix(static_cast<int>(preferred_compiler)) + VSuffix +
-                                    ".a");
+                                    CompilerWrapper::getCompilerSuffix(preferred_compiler) + VSuffix + ".a");
 }

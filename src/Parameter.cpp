@@ -246,8 +246,10 @@ void Parameter::CheckParameters()
               (mopt == "-m64" &&
                !CompilerWrapper::hasCompilerM64(getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler))))
       {
-         THROW_ERROR("Option " + mopt + " not supported by " +
-                     CompilerWrapper::getCompilerSuffix(OPT_default_compiler) + " compiler.");
+         THROW_ERROR(
+             "Option " + mopt + " not supported by " +
+             CompilerWrapper::getCompilerSuffix(getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler)) +
+             " compiler.");
       }
    }
 #endif
@@ -1504,7 +1506,8 @@ void Parameter::PrintGccOptionsUsage(std::ostream& os) const
       << "    --std=<standard>\n"
       << "        Assume that the input sources are for <standard>. All\n"
       << "        the --std options available in GCC/CLANG are supported.\n"
-      << "        The default value is gnu89 for C and c++14 for C++.\n\n"
+      << "        The default value is gnu90/gnu11 for C and gnu++98/gnu++14 for C++ \n"
+      << "        depending on the selected frontend compiler support.\n\n"
       << "    -D<name>\n"
       << "        Predefine name as a macro, with definition 1.\n\n"
       << "    -D<name=definition>\n"
