@@ -11,7 +11,7 @@ RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone \
    texlive-latex-recommended texlive-latex-extra time wget xz-utils \
    g++ gcc gcc-multilib g++-multilib libc6-dev-i386 linux-libc-dev zlib1g-dev \
    libbdd-dev libfl-dev libglpk-dev libicu-dev libltdl-dev liblzma-dev libmpc-dev \
-   libmpfi-dev libmpfr-dev libsuitesparse-dev libtool libxml2-dev \
+   libmpfi-dev libmpfr-dev libsuitesparse-dev libtinfo5 libtool libxml2-dev \
    locales \
    && rm -rf /var/lib/apt/lists/* \
    && update-ca-certificates \
