@@ -1,7 +1,22 @@
 #ifndef CLANG_VERSION_SYMBOL_HPP
 #define CLANG_VERSION_SYMBOL_HPP
 
-#if __clang_major__ == 13
+#if __clang_major__ == 16
+#define CLANG_VERSION_SYMBOL(SYMBOL) clang16##SYMBOL
+#define CLANG_VERSION_STRING(SYMBOL) "clang16" #SYMBOL
+#define CLANG_PLUGIN_INIT(SYMBOL) initializeclang16##SYMBOL##Pass
+#define CLANG_PLUGIN_INFO(SYMBOL) getclang16##SYMBOL##PluginInfo
+#elif __clang_major__ == 15
+#define CLANG_VERSION_SYMBOL(SYMBOL) clang15##SYMBOL
+#define CLANG_VERSION_STRING(SYMBOL) "clang15" #SYMBOL
+#define CLANG_PLUGIN_INIT(SYMBOL) initializeclang15##SYMBOL##Pass
+#define CLANG_PLUGIN_INFO(SYMBOL) getclang15##SYMBOL##PluginInfo
+#elif __clang_major__ == 14
+#define CLANG_VERSION_SYMBOL(SYMBOL) clang14##SYMBOL
+#define CLANG_VERSION_STRING(SYMBOL) "clang14" #SYMBOL
+#define CLANG_PLUGIN_INIT(SYMBOL) initializeclang14##SYMBOL##Pass
+#define CLANG_PLUGIN_INFO(SYMBOL) getclang14##SYMBOL##PluginInfo
+#elif __clang_major__ == 13
 #define CLANG_VERSION_SYMBOL(SYMBOL) clang13##SYMBOL
 #define CLANG_VERSION_STRING(SYMBOL) "clang13" #SYMBOL
 #define CLANG_PLUGIN_INIT(SYMBOL) initializeclang13##SYMBOL##Pass
