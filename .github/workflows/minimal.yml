@@ -172,7 +172,7 @@ jobs:
             args: -c=--compiler=I386_CLANG13 -c=--simulator=VERILATOR
           - setup: clang-16
             script: generic_gcc_regression_simple_eg_ext_pipelined.sh
-            args: -c=--compiler=I386_CLANG16 -c=--simulator=VERILATOR
+            args: -c=--compiler=I386_CLANG16 -c=--simulator=VERILATOR -c=-Wno-int-conversion
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
