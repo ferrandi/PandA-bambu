@@ -16,7 +16,7 @@ ifneq "$(CXXFLAGS)" ""
 CXXUSERFLAGS = $(CXXFLAGS)
 endif
 
-CXXFLAGS = -O2 -std=c++14 -DAC_TYPES_INIT $(CXXUSERFLAGS)
+CXXFLAGS = -O2 -std=c++14 $(CXXUSERFLAGS)
 LDFLAGS = -s -static-libstdc++
 WD = $(shell pwd)
 GCOV_ENABLED = false
