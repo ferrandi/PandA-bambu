@@ -116,10 +116,6 @@ namespace __AC_NAMESPACE
 
       using Base = ac_private::iv<N, false, W, S>;
 
-      __FORCE_INLINE constexpr void bit_adjust()
-      {
-         Base::v.template bit_adjust<W, S>();
-      }
       __FORCE_INLINE constexpr Base& base()
       {
          return *this;
@@ -133,7 +129,6 @@ namespace __AC_NAMESPACE
       {
          if(O == AC_WRAP)
          {
-            bit_adjust();
             return;
          }
          else if(O == AC_SAT_ZERO)
@@ -144,7 +139,6 @@ namespace __AC_NAMESPACE
             }
             else
             {
-               bit_adjust();
             }
          }
          else if(S)
@@ -168,7 +162,6 @@ namespace __AC_NAMESPACE
             }
             else
             {
-               bit_adjust();
             }
          }
          else
@@ -187,7 +180,6 @@ namespace __AC_NAMESPACE
             }
             else
             {
-               bit_adjust();
             }
          }
       }
@@ -324,7 +316,6 @@ namespace __AC_NAMESPACE
       constexpr ac_fixed()
       {
 #if defined(__BAMBU__) || !defined(AC_DEFAULT_IN_RANGE)
-         bit_adjust();
          if(O == AC_SAT_SYM && S && Base::v[N - 1] < 0 &&
             (W > 1 ? ac_private::iv_equal_zeros_to<W - 1, N>(Base::v) : true))
          {
@@ -397,7 +388,6 @@ namespace __AC_NAMESPACE
          }
          else
          {
-            bit_adjust();
          }
       }
 
@@ -501,7 +491,6 @@ namespace __AC_NAMESPACE
          }
          else
          {
-            bit_adjust();
          }
       }
       __FORCE_INLINE constexpr ac_fixed(float d)
@@ -532,14 +521,12 @@ namespace __AC_NAMESPACE
             }
             if(O == AC_SAT_SYM && S)
             {
-               overflow |=
-                   neg_src && (W > 1 ? ac_private::iv_equal_zeros_to<((W > 1) ? W - 1 : 1), N>(Base::v) : true);
+               overflow |= neg_src && (W > 1 ? ac_private::iv_equal_zeros_to<((W > 1) ? W - 1 : 1), N>(Base::v) : true);
             }
             overflow_adjust(overflow, neg_src);
          }
          else
          {
-            bit_adjust();
          }
       }
 
@@ -556,7 +543,6 @@ namespace __AC_NAMESPACE
          {
             ac_fixed r;
             Base::operator=(r);
-            bit_adjust();
          }
          else if(V == AC_VAL_0 || V == AC_VAL_MIN || V == AC_VAL_QUANTUM)
          {
@@ -733,8 +719,8 @@ namespace __AC_NAMESPACE
          {
             t = *this;
          }
-         ac_fixed<AC_MAX(I + 1, 1)+31, AC_MAX(I + 1, 1)+31, true> i_part = t;
-         ac_fixed<AC_MAX(W - I, 1)+31, 31, false> f_part = t;
+         ac_fixed<AC_MAX(I + 1, 1) + 31, AC_MAX(I + 1, 1) + 31, true> i_part = t;
+         ac_fixed<AC_MAX(W - I, 1) + 31, 31, false> f_part = t;
          i += ac_private::to_string(i_part.v, AC_MAX(I + 1, 1), sign_mag, base_rep, false, r + i);
          if(W - I > 0)
          {
@@ -773,13 +759,8 @@ namespace __AC_NAMESPACE
       template <int W2, int I2, bool S2, ac_q_mode Q2, ac_o_mode O2>
       typename rt<W2, I2, S2>::mult operator*(const ac_fixed<W2, I2, S2, Q2, O2>& op2) const
       {
-         auto op1_local = *this;
-         op1_local.bit_adjust();
-         auto op2_local = op2;
-         op2_local.bit_adjust();
          typename rt<W2, I2, S2>::mult r;
-         op1_local.Base::mult(op2_local, r);
-         r.bit_adjust();
+         this->Base::mult(op2, r);
          return r;
       }
       template <int W2, int I2, bool S2, ac_q_mode Q2, ac_o_mode O2>
@@ -803,7 +784,6 @@ namespace __AC_NAMESPACE
          {
             shiftl<F2 - F>().add(op2, r);
          }
-         r.bit_adjust();
          return r;
       }
       template <int W2, int I2, bool S2, ac_q_mode Q2, ac_o_mode O2>
@@ -827,7 +807,6 @@ namespace __AC_NAMESPACE
          {
             shiftl<F2 - F>().sub(op2, r);
          }
-         r.bit_adjust();
          return r;
       }
 
@@ -851,7 +830,6 @@ namespace __AC_NAMESPACE
          };
          ac_fixed<Num_w, Num_i, S> t = *this;
          t.template div<num_s, den_s>(op2, r);
-         r.bit_adjust();
          return r;
       }
 
@@ -917,15 +895,12 @@ namespace __AC_NAMESPACE
       // Arithmetic Unary --------------------------------------------------------
       __FORCE_INLINE ac_fixed operator+() const
       {
-         ac_fixed t = *this;
-         t.bit_adjust();
-         return t;
+         return *this;
       }
       __FORCE_INLINE typename rt_unary::neg operator-() const
       {
          typename rt_unary::neg r;
          Base::neg(r);
-         r.bit_adjust();
          return r;
       }
       // ! ------------------------------------------------------------------------
@@ -939,7 +914,6 @@ namespace __AC_NAMESPACE
       {
          ac_fixed<W + !S, I + !S, true> r;
          Base::bitwise_complement(r);
-         r.bit_adjust();
          return r;
       }
       // Bitwise (not arithmetic) bit complement  -----------------------------
@@ -947,7 +921,6 @@ namespace __AC_NAMESPACE
       {
          ac_fixed<W, I, false> r;
          Base::bitwise_complement(r);
-         r.bit_adjust();
          return r;
       }
       // Bitwise (not arithmetic): and, or, xor ----------------------------------
@@ -972,7 +945,6 @@ namespace __AC_NAMESPACE
          {
             shiftl<F2 - F>().bitwise_and(op2, r);
          }
-         r.bit_adjust();
          return r;
       }
       template <int W2, int I2, bool S2, ac_q_mode Q2, ac_o_mode O2>
@@ -996,7 +968,6 @@ namespace __AC_NAMESPACE
          {
             shiftl<F2 - F>().bitwise_or(op2, r);
          }
-         r.bit_adjust();
          return r;
       }
       template <int W2, int I2, bool S2, ac_q_mode Q2, ac_o_mode O2>
@@ -1020,7 +991,6 @@ namespace __AC_NAMESPACE
          {
             shiftl<F2 - F>().bitwise_xor(op2, r);
          }
-         r.bit_adjust();
          return r;
       }
       // Bitwise assign (not arithmetic): and, or, xor ----------------------------
@@ -1049,7 +1019,6 @@ namespace __AC_NAMESPACE
          // currently not written to overflow or quantize (neg shift)
          ac_fixed r;
          Base::shift_l2(op2.to_int(), r);
-         r.bit_adjust();
          return r;
       }
       template <int W2>
@@ -1058,7 +1027,6 @@ namespace __AC_NAMESPACE
          // currently not written to overflow
          ac_fixed r;
          Base::shift_l(op2.to_uint(), r);
-         r.bit_adjust();
          return r;
       }
       template <int W2>
@@ -1067,7 +1035,6 @@ namespace __AC_NAMESPACE
          // currently not written to quantize or overflow (neg shift)
          ac_fixed r;
          Base::shift_r2(op2.to_int(), r);
-         r.bit_adjust();
          return r;
       }
       template <int W2>
@@ -1076,7 +1043,6 @@ namespace __AC_NAMESPACE
          // currently not written to quantize
          ac_fixed r;
          Base::shift_r(op2.to_uint(), r);
-         r.bit_adjust();
          return r;
       }
       // Shift assign ------------------------------------------------------------
@@ -1087,7 +1053,6 @@ namespace __AC_NAMESPACE
          Base r;
          Base::shift_l2(op2.to_int(), r);
          Base::operator=(r);
-         bit_adjust();
          return *this;
       }
       template <int W2>
@@ -1097,7 +1062,6 @@ namespace __AC_NAMESPACE
          Base r;
          Base::shift_l(op2.to_uint(), r);
          Base::operator=(r);
-         bit_adjust();
          return *this;
       }
       template <int W2>
@@ -1107,7 +1071,6 @@ namespace __AC_NAMESPACE
          Base r;
          Base::shift_r2(op2.to_int(), r);
          Base::operator=(r);
-         bit_adjust();
          return *this;
       }
       template <int W2>
@@ -1117,7 +1080,6 @@ namespace __AC_NAMESPACE
          Base r;
          Base::shift_r(op2.to_uint(), r);
          Base::operator=(r);
-         bit_adjust();
          return *this;
       }
       // Relational ---------------------------------------------------------------
@@ -1373,7 +1335,6 @@ namespace __AC_NAMESPACE
          AC_ASSERT(index >= 0, "Attempting to read slc with negative indices");
          ac_int<WX - SX, false> uindex = index;
          Base::shift_r(uindex.to_uint(), r);
-         r.bit_adjust();
          return r;
       }
       __FORCE_INLINE ac_int<W, S> operator()(int Hi, int Lo) const
@@ -1425,7 +1386,6 @@ namespace __AC_NAMESPACE
          AC_ASSERT(index >= 0, "Attempting to read slc with negative indices");
          unsigned uindex = index & ((unsigned)~0 >> 1);
          Base::shift_r(uindex, r);
-         r.bit_adjust();
          return r;
       }
       template <int WS>
@@ -1433,7 +1393,6 @@ namespace __AC_NAMESPACE
       {
          ac_int<WS, S> r;
          Base::shift_r(uindex, r);
-         r.bit_adjust();
          return r;
       }
       __FORCE_INLINE ac_int<W, S> slc(int Hi, int Lo) const
@@ -1444,7 +1403,6 @@ namespace __AC_NAMESPACE
          AC_ASSERT(W > Hi, "Out of range selection");
          ac_int<W, S> r;
          Base::shift_l(W - 1 - Hi, r);
-         r.bit_adjust();
          return r >> (Lo + W - 1 - Hi);
       }
 
@@ -1454,7 +1412,6 @@ namespace __AC_NAMESPACE
          AC_ASSERT(lsb.to_int() + W2 <= W && lsb.to_int() >= 0, "Out of bounds set_slc");
          ac_int<WX - SX, false> ulsb = lsb;
          Base::set_slc(ulsb.to_uint(), W2, (ac_int<W2, true>)slc);
-         bit_adjust(); // in case sign bit was assigned
          return *this;
       }
       template <int W2, bool S2>
@@ -1463,7 +1420,6 @@ namespace __AC_NAMESPACE
          AC_ASSERT(lsb + W2 <= W && lsb >= 0, "Out of bounds set_slc");
          unsigned ulsb = lsb & ((unsigned)~0 >> 1);
          Base::set_slc(ulsb, W2, (ac_int<W2, true>)slc);
-         bit_adjust(); // in case sign bit was assigned
          return *this;
       }
       template <int W2, bool S2>
@@ -1471,7 +1427,6 @@ namespace __AC_NAMESPACE
       {
          AC_ASSERT(ulsb + W2 <= W, "Out of bounds set_slc");
          Base::set_slc(ulsb, W2, (ac_int<W2, true>)slc);
-         bit_adjust(); // in case sign bit was assigned
          return *this;
       }
       template <int W2, bool S2>
@@ -1481,7 +1436,6 @@ namespace __AC_NAMESPACE
          // std::to_string(umsb) + std::string(" , ulsb: ") + std::to_string(ulsb) + std::string(" , W: ") +
          // std::to_string(W)).c_str());
          Base::set_slc(ulsb, umsb + 1 - ulsb, (ac_int<W2, true>)slc);
-         bit_adjust(); // in case sign bit was assigned
          return *this;
       }
 
@@ -1508,7 +1462,6 @@ namespace __AC_NAMESPACE
             {
                d_bv.v.set(d_index >> 5, d_bv.v[d_index >> 5] ^
                                             ((d_bv.v[d_index >> 5] ^ (val << (d_index & 31))) & 1 << (d_index & 31)));
-               d_bv.bit_adjust(); // in case sign bit was assigned
             }
             return *this;
          }
