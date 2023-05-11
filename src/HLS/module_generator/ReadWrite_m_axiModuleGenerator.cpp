@@ -394,8 +394,8 @@ always @(*) begin
       out << "      if(" << _ports_in[i_RVALID].name << " && axi_rready) begin\n";
       out << R"(          if(!first_read) begin
             if(~read_mask != 'b0)
-              next_acc_rdata = acc_rdata | ()" +
-                 _ports_in[i_RDATA].name + R"( & (~read_mask & ((1 << in2) - 1)));
+              next_acc_rdata = acc_rdata >> (misalignment << 3) | (()" +
+                 _ports_in[i_RDATA].name + R"( & (~read_mask & ((1 << in2) - 1))) << (misalignment << 3));
             next_axi_rready = 1'b0;
 )";
       out << "             if(!" << _ports_in[i_RLAST].name << ") begin\n";

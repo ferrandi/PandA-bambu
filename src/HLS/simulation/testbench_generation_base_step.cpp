@@ -2820,7 +2820,7 @@ void TestbenchGenerationBaseStep::testbench_controller_machine() const
 
             /* Realign address */
             writer->write("    " + portPrefix + "currAddr = " + portPrefix + "currAddr - (" + portPrefix +
-                          "currAddr % (1 << " + portPrefix + "arqueue[_i_][" + STR(SIZE_HIGH_INDEX) + " : " +
+                          "currAddr % (1 << " + portPrefix + "arqueue[0][" + STR(SIZE_HIGH_INDEX) + " : " +
                           STR(SIZE_LOW_INDEX) + "]));\n");
 
             /* Compute aggregate memory for RDATA */
