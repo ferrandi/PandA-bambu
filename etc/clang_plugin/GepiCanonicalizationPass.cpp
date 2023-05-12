@@ -175,8 +175,14 @@ void recursive_copy_lowering(llvm::Type* type, std::vector<unsigned long long> g
       llvm::GetElementPtrInst* store_gep_inst =
           llvm::GetElementPtrInst::CreateInBounds(nullptr, store_ptr, gepi_value_idxs, "", store_inst);
 
-      auto* lowered_load = new llvm::LoadInst(llvm::cast<llvm::PointerType>(load_gep_inst->getType())->getElementType(),
-                                              load_gep_inst, "", load_inst);
+      auto* lowered_load = new llvm::LoadInst(
+#if __clang_major__ < 16
+          llvm::cast<llvm::PointerType>(load_gep_inst->getType())->getElementType()
+#else
+          load_gep_inst->getType()->getNonOpaquePointerElementType()
+#endif
+              ,
+          load_gep_inst, "", load_inst);
       auto* lowered_store = new llvm::StoreInst(lowered_load, store_gep_inst, store_inst);
 
       llvm::errs() << "Lowered load gepi: ";
@@ -1403,16 +1409,26 @@ bool select_lowering(llvm::Function& function)
                            assert(!gepi_idxs.empty());
                            llvm::GetElementPtrInst* true_gepi = llvm::GetElementPtrInst::CreateInBounds(
                                nullptr, select_inst->getTrueValue(), gepi_idxs, "", ThenTerm);
-                           auto* true_load =
-                               new llvm::LoadInst(llvm::cast<llvm::PointerType>(true_gepi->getType())->getElementType(),
-                                                  true_gepi, "", ThenTerm);
+                           auto* true_load = new llvm::LoadInst(
+#if __clang_major__ < 16
+                               llvm::cast<llvm::PointerType>(true_gepi->getType())->getElementType()
+#else
+                               true_gepi->getType()->getNonOpaquePointerElementType()
+#endif
+                                   ,
+                               true_gepi, "", ThenTerm);
 
                            assert(!gepi_idxs.empty());
                            llvm::GetElementPtrInst* false_gepi = llvm::GetElementPtrInst::CreateInBounds(
                                nullptr, select_inst->getFalseValue(), gepi_idxs, "", ElseTerm);
                            auto* false_load = new llvm::LoadInst(
-                               llvm::cast<llvm::PointerType>(false_gepi->getType())->getElementType(), false_gepi, "",
-                               ElseTerm);
+#if __clang_major__ < 16
+                               llvm::cast<llvm::PointerType>(false_gepi->getType())->getElementType()
+#else
+                               false_gepi->getType()->getNonOpaquePointerElementType()
+#endif
+                                   ,
+                               false_gepi, "", ElseTerm);
 
                            auto phiType = true_load->getType();
                            auto phi = llvm::PHINode::Create(phiType, 2, "", gepi);
@@ -1711,7 +1727,9 @@ bool gepi_explicitation(llvm::Function& function)
             if(gep_op->isInBounds())
             {
                assert(!idxs.empty());
-               gepi = llvm::GetElementPtrInst::CreateInBounds(gep_op->getPointerOperand(), idxs, "", insert_point_inst);
+               gepi =
+                   llvm::GetElementPtrInst::CreateInBounds(gep_op->getType()->getScalarType()->getPointerElementType(),
+                                                           gep_op->getPointerOperand(), idxs, "", insert_point_inst);
             }
             else
             {

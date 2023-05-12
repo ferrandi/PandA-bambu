@@ -47,16 +47,19 @@
 #include <string>
 #include <type_traits>
 
-#include <boost/multiprecision/gmp.hpp>
+#include <boost/multiprecision/cpp_int.hpp>
+#include <boost/multiprecision/cpp_int/literals.hpp>
 
 class APInt
 {
  public:
-   using APInt_internal = boost::multiprecision::mpz_int;
+   using backend = boost::multiprecision::backends::cpp_int_backend<4096, 4096, boost::multiprecision::signed_magnitude,
+                                                                    boost::multiprecision::unchecked, void>;
+   using number = boost::multiprecision::number<backend>;
    using bw_t = uint16_t;
 
  private:
-   APInt_internal _data;
+   number _data;
 
  public:
    APInt();
@@ -68,11 +71,11 @@ class APInt
    {
    }
 
-   APInt(const APInt_internal& v) : _data(v)
+   APInt(const number& v) : _data(v)
    {
    }
 
-   APInt(const std::string& str) : _data(boost::lexical_cast<APInt_internal>(str))
+   APInt(const std::string& str) : _data(boost::lexical_cast<number>(str))
    {
    }
 #pragma GCC diagnostic pop
@@ -153,5 +156,12 @@ class APInt
 
 std::ostream& operator<<(std::ostream& str, const APInt& v);
 std::istream& operator>>(std::istream& str, APInt& v);
+
+template <char... STR>
+constexpr APInt::number operator"" _apint()
+{
+   typedef typename boost::multiprecision::literals::detail::make_packed_value_from_str<STR...>::type pt;
+   return boost::multiprecision::literals::detail::make_backend_from_pack<pt, APInt::backend>::value;
+}
 
 #endif

@@ -42,9 +42,6 @@
  *
  */
 
-/// Autoheader include
-#include "config_HAVE_I386_GCC45_COMPILER.hpp"
-
 /// Header include
 #include "var_computation.hpp"
 
@@ -343,7 +340,6 @@ void VarComputation::RecursivelyAnalyze(const vertex op_vertex, const tree_nodeC
       }
       case var_decl_K:
       {
-#if HAVE_I386_GCC45_COMPILER
          if(parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
             CompilerWrapper_CompilerTarget::CT_I386_GCC45)
          {
@@ -352,7 +348,6 @@ void VarComputation::RecursivelyAnalyze(const vertex op_vertex, const tree_nodeC
                THROW_ERROR("Volatile variables or types not supported with gcc 4.5");
             }
          }
-#endif
          ogc->AddSourceCodeVariable(op_vertex, tree_node->index);
          const auto* vd = GetPointer<const var_decl>(tree_node);
          if(vd && (!vd->scpe || GET_CONST_NODE(vd->scpe)->get_kind() == translation_unit_decl_K))
@@ -497,7 +492,6 @@ void VarComputation::RecursivelyAnalyze(const vertex op_vertex, const tree_nodeC
       {
          const auto* te = GetPointerS<const ternary_expr>(tree_node);
          /// GCC 4.5 plugin does not writer vuse for component ref of volatile variable
-#if HAVE_I386_GCC45_COMPILER
          if(parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
             CompilerWrapper_CompilerTarget::CT_I386_GCC45)
          {
@@ -509,7 +503,6 @@ void VarComputation::RecursivelyAnalyze(const vertex op_vertex, const tree_nodeC
                }
             }
          }
-#endif
 
          if(te->get_kind() == component_ref_K || te->get_kind() == bit_field_ref_K)
          {

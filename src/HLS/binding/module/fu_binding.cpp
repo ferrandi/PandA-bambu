@@ -173,7 +173,7 @@ fu_bindingRef fu_binding::create_fu_binding(const HLS_managerConstRef _HLSMgr, c
 void fu_binding::bind(const vertex& v, unsigned int unit, unsigned int index)
 {
    const auto key = std::make_pair(unit, index);
-   if(unique_table.count(key) == 0)
+   if(!unique_table.count(key))
    {
       unique_table[key] =
           generic_objRef(new funit_obj(allocation_information->get_string_name(unit) + "_i" + STR(index), unit, index));
@@ -203,8 +203,8 @@ OpVertexSet fu_binding::get_operations(unsigned int unit, unsigned int index) co
 const funit_obj& fu_binding::operator[](const vertex& v)
 {
    const auto statement_index = op_graph->CGetOpNodeInfo(v)->GetNodeId();
-   THROW_ASSERT(op_binding.find(statement_index) != op_binding.end(), "vertex not preset");
-   return *(GetPointer<funit_obj>(op_binding.find(statement_index)->second));
+   THROW_ASSERT(op_binding.count(statement_index), "vertex not preset");
+   return *(GetPointer<funit_obj>(op_binding.at(statement_index)));
 }
 
 bool fu_binding::is_assigned(const vertex& v) const
@@ -215,7 +215,7 @@ bool fu_binding::is_assigned(const vertex& v) const
 
 bool fu_binding::is_assigned(const unsigned int statement_index) const
 {
-   return op_binding.find(statement_index) != op_binding.end();
+   return op_binding.count(statement_index);
 }
 
 std::list<unsigned int> fu_binding::get_allocation_list() const
@@ -250,7 +250,7 @@ unsigned int fu_binding::get_assign(const unsigned int statement_index) const
    THROW_ASSERT(op_binding.find(statement_index) != op_binding.end(),
                 "Operation " + TreeM->get_tree_node_const(statement_index)->ToString() + " not assigned");
    THROW_ASSERT(GetPointer<funit_obj>(op_binding.find(statement_index)->second), "");
-   return GetPointer<funit_obj>(op_binding.find(statement_index)->second)->get_fu();
+   return GetPointer<funit_obj>(op_binding.at(statement_index))->get_fu();
 }
 
 std::string fu_binding::get_fu_name(vertex const& v) const
@@ -261,7 +261,7 @@ std::string fu_binding::get_fu_name(vertex const& v) const
 unsigned int fu_binding::get_index(vertex const& v) const
 {
    const auto statement_index = op_graph->CGetOpNodeInfo(v)->GetNodeId();
-   return GetPointer<funit_obj>(op_binding.find(statement_index)->second)->get_index();
+   return GetPointer<funit_obj>(op_binding.at(statement_index))->get_index();
 }
 
 structural_objectRef fu_binding::add_gate(const HLS_managerRef HLSMgr, const hlsRef HLS, const technology_nodeRef fu,
@@ -3457,5 +3457,5 @@ void fu_binding::set_ports_are_swapped(vertex v, bool condition)
 generic_objRef fu_binding::get(const vertex v) const
 {
    const auto statement_index = op_graph->CGetOpNodeInfo(v)->GetNodeId();
-   return op_binding.find(statement_index)->second;
+   return op_binding.at(statement_index);
 }

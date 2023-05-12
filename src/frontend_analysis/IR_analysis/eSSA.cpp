@@ -334,8 +334,7 @@ void processBranch(tree_nodeConstRef bi, CustomSet<OperandRef>& OpsToRename, eSS
       return;
    }
 
-   auto InsertHelper = [&](tree_nodeRef Op)
-   {
+   auto InsertHelper = [&](tree_nodeRef Op) {
       for(const auto& Succ : SuccsToProcess)
       {
          if(Succ->number == BranchBB->number)
@@ -406,8 +405,7 @@ void processMultiWayIf(tree_nodeConstRef mwii, CustomSet<OperandRef>& OpsToRenam
    THROW_ASSERT(MWII, "Multi way if instruction should be gimple_multi_way_if");
    const auto BranchBBI = MWII->bb_index;
    const auto BranchBB = BBs.at(BranchBBI);
-   auto InsertHelper = [&](tree_nodeRef ssa_var, tree_nodeRef use_stmt, unsigned int TargetBBI)
-   {
+   auto InsertHelper = [&](tree_nodeRef ssa_var, tree_nodeRef use_stmt, unsigned int TargetBBI) {
       THROW_ASSERT(static_cast<bool>(BBs.count(TargetBBI)), "Target BB should be in BB list");
       const auto& TargetBB = BBs.at(TargetBBI);
 
@@ -563,10 +561,10 @@ struct ValueDFS_Compare
       if(!VD.Def && VD.U)
       {
          const auto* PHI = GetPointer<const gimple_phi>(GET_CONST_NODE(VD.U->getUser()));
-         auto phiDefEdge =
-             std::find_if(PHI->CGetDefEdgesList().begin(), PHI->CGetDefEdgesList().end(),
-                          [&](const gimple_phi::DefEdge& de)
-                          { return GET_INDEX_CONST_NODE(de.first) == GET_INDEX_CONST_NODE(VD.U->getOperand()); });
+         auto phiDefEdge = std::find_if(
+             PHI->CGetDefEdgesList().begin(), PHI->CGetDefEdgesList().end(), [&](const gimple_phi::DefEdge& de) {
+                return GET_INDEX_CONST_NODE(de.first) == GET_INDEX_CONST_NODE(VD.U->getOperand());
+             });
          THROW_ASSERT(phiDefEdge != PHI->CGetDefEdgesList().end(), "Unable to find variable in phi definitions");
          return std::make_pair(phiDefEdge->second, PHI->bb_index);
       }
@@ -670,10 +668,10 @@ bool stackIsInScope(const ValueDFSStack& Stack, const ValueDFS& VDUse, const Ord
          return false;
       }
       // Check edge
-      auto EdgePredIt =
-          std::find_if(PHI->CGetDefEdgesList().begin(), PHI->CGetDefEdgesList().end(),
-                       [&](const gimple_phi::DefEdge& de)
-                       { return GET_INDEX_CONST_NODE(de.first) == GET_INDEX_CONST_NODE(VDUse.U->getOperand()); });
+      auto EdgePredIt = std::find_if(
+          PHI->CGetDefEdgesList().begin(), PHI->CGetDefEdgesList().end(), [&](const gimple_phi::DefEdge& de) {
+             return GET_INDEX_CONST_NODE(de.first) == GET_INDEX_CONST_NODE(VDUse.U->getOperand());
+          });
       if(EdgePredIt->second != getBranchBlock(Stack.back().PInfo))
       {
          return false;
@@ -735,8 +733,7 @@ void convertUsesToDFSOrdered(tree_nodeRef Op, std::vector<ValueDFS>& DFSOrderedS
          continue;
       }
 
-      const auto dfs_gen = [&](unsigned int IBlock)
-      {
+      const auto dfs_gen = [&](unsigned int IBlock) {
          ValueDFS VD;
          if(gp)
          {
@@ -998,8 +995,9 @@ bool eSSA::renameUses(CustomSet<OperandRef>& OpSet, eSSA::ValueInfoLookup& Value
    // Sort OpsToRename since we are going to iterate it.
    std::vector<OperandRef> OpsToRename(OpSet.begin(), OpSet.end());
    OrderedInstructions OI(DT);
-   auto Comparator = [&](const OperandRef A, const OperandRef B)
-   { return valueComesBefore(OI, A->getUser(), B->getUser()); };
+   auto Comparator = [&](const OperandRef A, const OperandRef B) {
+      return valueComesBefore(OI, A->getUser(), B->getUser());
+   };
    std::sort(OpsToRename.begin(), OpsToRename.end(), Comparator);
    ValueDFS_Compare Compare(OI);
 
@@ -1308,8 +1306,7 @@ DesignFlowStep_Status eSSA::InternalExec()
    // as multi-way if.
    CustomSet<OperandRef> OpsToRename;
 
-   const auto BBvisit = [&](blocRef BB)
-   {
+   const auto BBvisit = [&](blocRef BB) {
       const auto& stmt_list = BB->CGetStmtList();
 
       // Skip empty BB

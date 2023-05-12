@@ -49,8 +49,10 @@
 #endif
 
 #include <deque>
+#include <fstream>
 #include <initializer_list>
 #include <iostream>
+#include <string>
 
 #if !defined(AC_USER_DEFINED_ASSERT) && !defined(AC_ASSERT_THROW_EXCEPTION)
 #include <assert.h>
@@ -134,6 +136,7 @@ class ac_channel
    ac_channel(int init);
    ac_channel(int init, T val);
    ac_channel(std::initializer_list<T> val);
+   ac_channel(const char* bin_file);
 
    __FORCE_INLINE T read()
    {
@@ -793,10 +796,12 @@ class ac_channel
    fifo chan;
 
  private:
+#if defined(__BAMBU__) && !defined(__BAMBU_SIM__)
    // Prevent the compiler from autogenerating these.
    //  (This enforces that channels are always passed by reference.)
    ac_channel(const ac_channel<T>&);
    ac_channel& operator=(const ac_channel<T>&);
+#endif
 };
 
 template <class T>
@@ -826,6 +831,19 @@ ac_channel<T>::ac_channel(std::initializer_list<T> val) : chan(val.size())
 {
    for(auto& v : val)
    {
+      write(v);
+   }
+}
+
+template <class T>
+ac_channel<T>::ac_channel(const char* bin_file)
+    : chan(std::ifstream(bin_file, std::ifstream::ate | std::ifstream::binary).tellg() / sizeof(T))
+{
+   std::ifstream init_file(bin_file, std::ifstream::in | std::ifstream::binary);
+   T v;
+   while(chan.num_free())
+   {
+      init_file.read((char*)&v, sizeof(T));
       write(v);
    }
 }

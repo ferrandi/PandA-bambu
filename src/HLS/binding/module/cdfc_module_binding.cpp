@@ -701,7 +701,7 @@ struct slack_based_filtering : public filter_clique<vertex>
    }
 
    size_t clique_cost(const CustomOrderedSet<C_vertex>& candidate_clique,
-                      const CustomUnorderedMap<C_vertex, vertex>& converter) const
+                      const CustomUnorderedMap<C_vertex, vertex>& converter) const override
    {
       unsigned int total_muxes;
       unsigned int n_shared;
@@ -710,6 +710,11 @@ struct slack_based_filtering : public filter_clique<vertex>
                                             candidate_clique, total_muxes, n_shared, converter, HLSMgr, HLS,
                                             HLS->debug_level);
       return static_cast<size_t>(total_muxes);
+   }
+
+   bool is_filtering() const override
+   {
+      return true;
    }
 
  private:
@@ -1515,25 +1520,11 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
                (!parameters->isOption(OPT_rom_duplication) || !parameters->getOption<bool>(OPT_rom_duplication)))) ||
              lib_name == WORK_LIBRARY || lib_name == PROXY_LIBRARY ||
              allocation_information->get_number_fu(fu_s1) != INFINITE_UINT;
-         //         for(auto cv : fu_cv.second)
-         //         {
-         //            auto curr_vertex_type = GET_TYPE(sdg, cv);
-         //            if((curr_vertex_type & TYPE_EXTERNAL) && (curr_vertex_type & TYPE_RW))
-         //            {
-         //               disabling_slack_based_binding = true;
-         //               break;
-         //            }
-         //            else if((curr_vertex_type & TYPE_EXTERNAL) && allocation_information->get_cycles(fu_s1, cv, sdg)
-         //            > 1)
-         //            {
-         //               disabling_slack_based_binding = true;
-         //               break;
-         //            }
-         //         }
-         double local_mux_time = (disabling_slack_based_binding ? -std::numeric_limits<double>::infinity() : mux_time);
-         auto fu_prec = allocation_information->get_prec(fu_s1);
-         bool cond1 = compute_condition1(lib_name, allocation_information, local_mux_time, fu_s1);
-         bool cond2 = compute_condition2(cond1, fu_prec, resource_area, small_normalized_resource_area);
+         const auto local_mux_time =
+             (disabling_slack_based_binding ? -std::numeric_limits<double>::infinity() : mux_time);
+         const auto fu_prec = allocation_information->get_prec(fu_s1);
+         const auto cond1 = compute_condition1(lib_name, allocation_information, local_mux_time, fu_s1);
+         const auto cond2 = compute_condition2(cond1, fu_prec, resource_area, small_normalized_resource_area);
 
          const auto cv_it_end = fu_cv.second.end();
          for(auto cv_it = fu_cv.second.begin(); cv_it != cv_it_end;)
@@ -1995,69 +1986,53 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
                            "---mux_time: " + STR(mux_time) +
                                " area_mux=" + STR(allocation_information->estimate_mux_area(partition.first)));
 
-            CliqueCovering_Algorithm clique_covering_algorithm =
-                GetPointer<const CDFCModuleBindingSpecialization>(hls_flow_step_specialization)
-                    ->clique_covering_algorithm;
-            bool disabling_slack_cond0 =
+            const auto disabling_slack_cond0 =
                 ((allocation_information->get_number_channels(partition.first) >= 1) and
                  (!allocation_information->is_readonly_memory_unit(partition.first) ||
                   (!parameters->isOption(OPT_rom_duplication) || !parameters->getOption<bool>(OPT_rom_duplication))));
-            if(disabling_slack_cond0)
-            {
-               clique_covering_algorithm = CliqueCovering_Algorithm::BIPARTITE_MATCHING;
-               PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level,
-                             "DISABLING STD clique covering algorithm. Forced to BIPARTITE_MATCHING");
-            }
+            const auto clique_covering_method = [&]() {
+               if(disabling_slack_cond0)
+               {
+                  PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level,
+                                "DISABLING STD clique covering algorithm. Forced to BIPARTITE_MATCHING");
+                  return CliqueCovering_Algorithm::BIPARTITE_MATCHING;
+               }
+               return GetPointer<const CDFCModuleBindingSpecialization>(hls_flow_step_specialization)
+                   ->clique_covering_algorithm;
+            }();
 
-            const CliqueCovering_Algorithm clique_covering_method_used = clique_covering_algorithm;
-            std::string res_name = allocation_information->get_fu_name(partition.first).first;
-            std::string lib_name = HLS->HLS_T->get_technology_manager()->get_library(res_name);
-            bool disabling_slack_based_binding =
+            const auto res_name = allocation_information->get_fu_name(partition.first).first;
+            const auto lib_name = HLS->HLS_T->get_technology_manager()->get_library(res_name);
+            const auto disabling_slack_based_binding =
                 disabling_slack_cond0 || lib_name == WORK_LIBRARY || lib_name == PROXY_LIBRARY ||
                 allocation_information->get_number_fu(partition.first) != INFINITE_UINT;
-            //            for(auto cv : partition.second)
-            //            {
-            //               auto curr_vertex_type = GET_TYPE(sdg, c2s[boost::get(boost::vertex_index, *CG, cv)]);
-            //               if((curr_vertex_type & TYPE_EXTERNAL) && (curr_vertex_type & TYPE_RW))
-            //               {
-            //                  disabling_slack_based_binding = true;
-            //                  break;
-            //               }
-            //               else if((curr_vertex_type & TYPE_EXTERNAL) &&
-            //               allocation_information->get_cycles(partition.first, c2s[boost::get(boost::vertex_index,
-            //               *CG, cv)], sdg) > 1)
-            //               {
-            //                  disabling_slack_based_binding = true;
-            //                  break;
-            //               }
-
-            //            }
             THROW_ASSERT(lib_name != PROXY_LIBRARY || 1 == allocation_information->get_number_fu(partition.first),
                          "unexpected condition");
 
             /// build the clique covering solver
-            refcount<clique_covering<vertex>> module_clique(clique_covering<vertex>::create_solver(
-                clique_covering_method_used, static_cast<unsigned>(partition.second.size())));
+            auto module_clique = clique_covering<vertex>::create_solver(clique_covering_method,
+                                                                        static_cast<unsigned>(partition.second.size()));
             /// add vertex to the clique covering solver
-            for(auto vert_it = partition.second.begin(); vert_it != vert_it_end; ++vert_it)
+            for(const auto v : partition.second)
             {
-               std::string el1_name =
-                   GET_NAME(sdg, c2s[boost::get(boost::vertex_index, *CG, *vert_it)]) + "(" +
-                   sdg->CGetOpNodeInfo(c2s[boost::get(boost::vertex_index, *CG, *vert_it)])->GetOperation() + ")";
-               module_clique->add_vertex(c2s[boost::get(boost::vertex_index, *CG, *vert_it)], el1_name);
+               const auto el1_name = GET_NAME(sdg, c2s[boost::get(boost::vertex_index, *CG, v)]) + "(" +
+                                     sdg->CGetOpNodeInfo(c2s[boost::get(boost::vertex_index, *CG, v)])->GetOperation() +
+                                     ")";
+               module_clique->add_vertex(c2s[boost::get(boost::vertex_index, *CG, v)], el1_name);
             }
 
-            if(clique_covering_method_used == CliqueCovering_Algorithm::BIPARTITE_MATCHING)
+            if(clique_covering_method == CliqueCovering_Algorithm::BIPARTITE_MATCHING)
             {
                CustomUnorderedMap<vertex, size_t> v2id;
                size_t max_id = 0, curr_id;
-               for(auto vert_it = partition.second.begin(); vert_it != vert_it_end; ++vert_it)
+               for(const auto v : partition.second)
                {
-                  const CustomOrderedSet<vertex>& running_states =
-                      HLS->Rliv->get_state_where_run(c2s[boost::get(boost::vertex_index, *CG, *vert_it)]);
+                  const auto& running_states =
+                      HLS->Rliv->get_state_where_run(c2s[boost::get(boost::vertex_index, *CG, v)]);
                   for(const auto state : running_states)
                   {
-                     if(v2id.find(state) == v2id.end())
+                     const auto v2id_it = v2id.find(state);
+                     if(v2id_it == v2id.end())
                      {
                         curr_id = max_id;
                         v2id[state] = max_id;
@@ -2065,16 +2040,16 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
                      }
                      else
                      {
-                        curr_id = v2id.find(state)->second;
+                        curr_id = v2id_it->second;
                      }
-                     module_clique->add_subpartitions(curr_id, c2s[boost::get(boost::vertex_index, *CG, *vert_it)]);
+                     module_clique->add_subpartitions(curr_id, c2s[boost::get(boost::vertex_index, *CG, v)]);
                   }
                }
             }
             double local_mux_time =
                 (disabling_slack_based_binding ? -std::numeric_limits<double>::infinity() : mux_time);
-            bool cond1 = compute_condition1(lib_name, allocation_information, local_mux_time, partition.first);
-            bool cond2 = compute_condition2(cond1, fu_prec, resource_area, small_normalized_resource_area);
+            const auto cond1 = compute_condition1(lib_name, allocation_information, local_mux_time, partition.first);
+            const auto cond2 = compute_condition2(cond1, fu_prec, resource_area, small_normalized_resource_area);
 
             /// add the edges
             cdfc_edge_iterator cg_ei, cg_ei_end;
@@ -2184,30 +2159,33 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
                       static_cast<unsigned>(partition.second.size()));
                   for(auto vert_it = partition.second.begin(); vert_it != vert_it_end; ++vert_it)
                   {
-                     std::string el1_name =
+                     const auto el1_name =
                          GET_NAME(sdg, c2s[boost::get(boost::vertex_index, *CG, *vert_it)]) + "(" +
                          sdg->CGetOpNodeInfo(c2s[boost::get(boost::vertex_index, *CG, *vert_it)])->GetOperation() + ")";
                      module_clique->add_vertex(c2s[boost::get(boost::vertex_index, *CG, *vert_it)], el1_name);
                   }
-                  CustomUnorderedMap<vertex, size_t> v2id;
-                  size_t max_id = 0, curr_id;
-                  for(auto vert_it = partition.second.begin(); vert_it != vert_it_end; ++vert_it)
                   {
-                     const CustomOrderedSet<vertex>& running_states =
-                         HLS->Rliv->get_state_where_run(c2s[boost::get(boost::vertex_index, *CG, *vert_it)]);
-                     for(const auto state : running_states)
+                     CustomUnorderedMap<vertex, size_t> v2id;
+                     size_t max_id = 0, curr_id;
+                     for(const auto v : partition.second)
                      {
-                        if(v2id.find(state) == v2id.end())
+                        const CustomOrderedSet<vertex>& running_states =
+                            HLS->Rliv->get_state_where_run(c2s[boost::get(boost::vertex_index, *CG, v)]);
+                        for(const auto state : running_states)
                         {
-                           curr_id = max_id;
-                           v2id[state] = max_id;
-                           ++max_id;
+                           const auto v2di_it = v2id.find(state);
+                           if(v2di_it == v2id.end())
+                           {
+                              curr_id = max_id;
+                              v2id[state] = max_id;
+                              ++max_id;
+                           }
+                           else
+                           {
+                              curr_id = v2di_it->second;
+                           }
+                           module_clique->add_subpartitions(curr_id, c2s[boost::get(boost::vertex_index, *CG, v)]);
                         }
-                        else
-                        {
-                           curr_id = v2id.find(state)->second;
-                        }
-                        module_clique->add_subpartitions(curr_id, c2s[boost::get(boost::vertex_index, *CG, *vert_it)]);
                      }
                   }
                   const cdfc_graphConstRef CG_subgraph0(
@@ -2216,17 +2194,16 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
                                      cdfc_graph_vertex_selector<boost_cdfc_graph>(&partition.second)));
                   for(boost::tie(cg_ei, cg_ei_end) = boost::edges(*CG_subgraph0); cg_ei != cg_ei_end; ++cg_ei)
                   {
-                     vertex src =
+                     const auto src =
                          c2s[boost::get(boost::vertex_index, *CG_subgraph0, boost::source(*cg_ei, *CG_subgraph0))];
-                     vertex tgt =
+                     const auto tgt =
                          c2s[boost::get(boost::vertex_index, *CG_subgraph0, boost::target(*cg_ei, *CG_subgraph0))];
 #if HAVE_UNORDERED
                      if(src > tgt)
-                     {
 #else
                      if(GET_NAME(dfg, src) > GET_NAME(dfg, tgt))
-                     {
 #endif
+                     {
                         continue; /// only one edge is needed to build the undirected compatibility graph
                      }
                      _w = weight_computation(cond1, cond2, src, tgt, local_mux_time, dfg, fu, slack_time, starting_time,
@@ -2264,8 +2241,10 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
                   {
                      module_clique->min_resources(allocation_information->get_number_channels(partition.first));
                   }
-                  no_check_clique<vertex> cq;
-                  module_clique->exec(no_filter_clique<vertex>(), cq);
+                  {
+                     no_check_clique<vertex> cq;
+                     module_clique->exec(no_filter_clique<vertex>(), cq);
+                  }
                   if(allocation_information->get_number_fu(partition.first) != INFINITE_UINT)
                   {
                      THROW_ASSERT(allocation_information->get_number_channels(partition.first) == 0 ||
@@ -2284,8 +2263,8 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
             }
             else
             {
-               double area_resource = allocation_information->get_area(partition.first) +
-                                      100 * allocation_information->get_DSPs(partition.first);
+               const auto area_resource = allocation_information->get_area(partition.first) +
+                                          100 * allocation_information->get_DSPs(partition.first);
                module_register_binding_spec mrbs;
                module_binding_check<vertex> cq(fu_prec, area_resource, HLS, HLSMgr, slack_time, starting_time,
                                                controller_delay, mrbs);
@@ -2351,7 +2330,7 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
                                   STR(num) + " = " + STR(clique.size()));
                /// compute maximum starting time
                double max_starting_time = 0.0;
-               for(auto current_vert : clique)
+               for(const auto current_vert : clique)
                {
                   max_starting_time = std::max(max_starting_time, starting_time[current_vert]);
                }
@@ -2363,7 +2342,7 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
                bool first_vertex = true;
                bool first_vertex_has_negative_slack = false;
 
-               for(auto current_vert : clique)
+               for(const auto current_vert : clique)
                {
                   const auto node_id = sdg->CGetOpNodeInfo(current_vert)->GetNodeId();
 
@@ -2463,6 +2442,12 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
             INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level,
                            "---Iteration " + STR(iteration) + " completed in " +
                                print_cpu_time(clique_iteration_cputime) + " seconds");
+            if(output_level >= OUTPUT_LEVEL_VERY_PEDANTIC)
+            {
+               INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level,
+                              "---total_resource_area=" + STR(total_resource_area) + ", total_DSPs=" + STR(total_DSPs) +
+                                  ", total_area_muxes=" + STR(total_area_muxes));
+            }
          }
       }
       std::swap(fu_best, fu);

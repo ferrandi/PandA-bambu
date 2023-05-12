@@ -53,6 +53,7 @@
 #include <llvm/Pass.h>
 
 #include <set>
+#include <map>
 
 typedef std::set<llvm::Instruction*> inst_set_ty;
 typedef std::map<llvm::Function*, std::set<llvm::AllocaInst*>> fun_to_alloca_map_ty;

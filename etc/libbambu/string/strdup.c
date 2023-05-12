@@ -8,6 +8,8 @@
 
 char* strdup(const char* s)
 {
+   extern void *malloc(size_t size);
+   extern void *memcpy(void *dest, const void *src, size_t n);
    const char *c = s, *d;
    size_t l;
    for(; *c; c++)

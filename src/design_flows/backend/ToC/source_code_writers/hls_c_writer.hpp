@@ -125,8 +125,7 @@ class HLSCWriter : public CWriter
     * the tested function. The output is in a format that is recognized by
     * the HDL testbench generation
     */
-   void WriteExpectedResults(const BehavioralHelperConstRef behavioral_helper,
-                             const std::map<std::string, std::string>& curr_test_vector, const unsigned v_idx);
+   void WriteExpectedResults(const BehavioralHelperConstRef behavioral_helper, const unsigned v_idx);
 
    /**
     * Write some print statements used to dump the values used by the HDL to

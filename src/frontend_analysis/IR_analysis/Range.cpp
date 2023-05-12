@@ -69,19 +69,19 @@
 using bw_t = Range::bw_t;
 
 // The number of bits needed to store the largest variable of the function (APInt).
-const bw_t Range::MAX_BIT_INT = static_cast<bw_t>(128U);
-const APInt Range::Min = APInt::getSignedMinValue(Range::MAX_BIT_INT);
-const APInt Range::Max = APInt::getSignedMaxValue(Range::MAX_BIT_INT);
+const bw_t Range::max_digits = static_cast<bw_t>(std::numeric_limits<APInt::number>::digits);
+const APInt Range::Min = APInt::getSignedMinValue(Range::max_digits);
+const APInt Range::Max = APInt::getSignedMaxValue(Range::max_digits);
 const APInt Range::MinDelta(1);
 
 Range::Range(RangeType rType, bw_t rbw) : l(Min), u(Max), bw(rbw), type(rType)
 {
-   THROW_ASSERT(rbw > 0 && rbw <= MAX_BIT_INT, "Invalid bitwidth for range (bw = " + STR(rbw) + ")");
+   THROW_ASSERT(rbw > 0 && rbw <= max_digits, "Invalid bitwidth for range (bw = " + STR(rbw) + ")");
 }
 
 Range::Range(RangeType rType, bw_t rbw, const APInt& lb, const APInt& ub) : l(lb), u(ub), bw(rbw), type(rType)
 {
-   THROW_ASSERT(rbw > 0 && rbw <= MAX_BIT_INT, "Invalid bitwidth for range (bw = " + STR(rbw) + ")");
+   THROW_ASSERT(rbw > 0 && rbw <= max_digits, "Invalid bitwidth for range (bw = " + STR(rbw) + ")");
    normalizeRange(lb, ub, rType);
 }
 
@@ -1354,15 +1354,16 @@ RangeRef Range::shr(const RangeConstRef& other, bool sign) const
  */
 namespace
 {
-   APInt minOR(APInt a, const APInt& b, APInt c, const APInt& d)
+   APInt minOR(bw_t bw, APInt a, const APInt& b, APInt c, const APInt& d)
    {
       APInt temp;
-      APInt m = APInt(1) << (Range::MAX_BIT_INT - 1);
-      while(m != 0)
+      APInt m = APInt(1) << (bw - 1U);
+      APInt nm = APInt(-1) << (bw - 1U);
+      for(auto i = 0; i < bw; ++i)
       {
          if(~a & c & m)
          {
-            temp = (a | m) & (~m + 1);
+            temp = (a | m) & nm;
             if(temp <= b)
             {
                a = temp;
@@ -1371,45 +1372,48 @@ namespace
          }
          else if(a & ~c & m)
          {
-            temp = (c | m) & (~m + 1);
+            temp = (c | m) & nm;
             if(temp <= d)
             {
                c = temp;
                break;
             }
          }
-         m = m >> 1;
+         m >>= 1;
+         nm >>= 1;
       }
       return a | c;
    }
 
-   APInt maxOR(const APInt& a, APInt b, const APInt& c, APInt d)
+   APInt maxOR(bw_t bw, const APInt& a, APInt b, const APInt& c, APInt d)
    {
       APInt temp;
-      APInt m = APInt(1) << (Range::MAX_BIT_INT - 1);
-      while(m != 0)
+      APInt m = APInt(1) << (bw - 1);
+      APInt mm = m - 1;
+      for(auto i = 0; i < bw; ++i)
       {
          if(b & d & m)
          {
-            temp = (b - m) | (m - 1);
+            temp = (b - m) | mm;
             if(temp >= a)
             {
                b = temp;
                break;
             }
-            temp = (d - m) | (m - 1);
+            temp = (d - m) | mm;
             if(temp >= c)
             {
                d = temp;
                break;
             }
          }
-         m = m >> 1;
+         m >>= 1;
+         mm >>= 1;
       }
       return b | d;
    }
 
-   std::pair<APInt, APInt> OR(const APInt& a, const APInt& b, const APInt& c, const APInt& d)
+   std::pair<APInt, APInt> OR(bw_t bw, const APInt& a, const APInt& b, const APInt& c, const APInt& d)
    {
       auto abcd = ((a >= 0) << 3) | ((b >= 0) << 2) | ((c >= 0) << 1) | (d >= 0);
 
@@ -1420,8 +1424,8 @@ namespace
          case 3:
          case 12:
          case 15:
-            res_l = minOR(a, b, c, d);
-            res_u = maxOR(a, b, c, d);
+            res_l = minOR(bw, a, b, c, d);
+            res_u = maxOR(bw, a, b, c, d);
             break;
          case 1:
             return std::make_pair(a, -1);
@@ -1429,15 +1433,15 @@ namespace
             return std::make_pair(c, -1);
          case 5:
             res_l = std::min({a, c});
-            res_u = maxOR(0, b, 0, d);
+            res_u = maxOR(bw, 0, b, 0, d);
             break;
          case 7:
-            res_l = minOR(a, -1, c, d);
-            res_u = maxOR(0, b, c, d);
+            res_l = minOR(bw, a, -1, c, d);
+            res_u = maxOR(bw, 0, b, c, d);
             break;
          case 13:
-            res_l = minOR(a, b, c, -1);
-            res_u = maxOR(a, b, 0, d);
+            res_l = minOR(bw, a, b, c, -1);
+            res_u = maxOR(bw, a, b, 0, d);
             break;
          default:
             THROW_UNREACHABLE("OR unreachable state " + STR(abcd));
@@ -1445,41 +1449,44 @@ namespace
       return std::make_pair(res_l, res_u);
    }
 
-   APInt minAND(APInt a, const APInt& b, APInt c, const APInt& d)
+   APInt minAND(bw_t bw, APInt a, const APInt& b, APInt c, const APInt& d)
    {
       APInt temp;
-      APInt m = APInt(1) << (Range::MAX_BIT_INT - 1);
-      while(m != 0)
+      APInt m = APInt(1) << (bw - 1U);
+      APInt nm = APInt(-1) << (bw - 1U);
+      for(auto i = 0; i < bw; ++i)
       {
          if(~a & ~c & m)
          {
-            temp = (a | m) & (~m + 1);
+            temp = (a | m) & nm;
             if(temp <= b)
             {
                a = temp;
                break;
             }
-            temp = (c | m) & (~m + 1);
+            temp = (c | m) & nm;
             if(temp <= d)
             {
                c = temp;
                break;
             }
          }
-         m = m >> 1;
+         m >>= 1;
+         nm >>= 1;
       }
       return a & c;
    }
 
-   APInt maxAND(const APInt& a, APInt b, const APInt& c, APInt d)
+   APInt maxAND(bw_t bw, const APInt& a, APInt b, const APInt& c, APInt d)
    {
       APInt temp;
-      APInt m = APInt(1) << (Range::MAX_BIT_INT - 1);
-      while(m != 0)
+      APInt m = APInt(1) << (bw - 1);
+      APInt mm = m - 1;
+      for(auto i = 0; i < bw; ++i)
       {
          if(b & ~d & m)
          {
-            temp = (b & ~m) | (m - 1);
+            temp = (b & ~m) | mm;
             if(temp >= a)
             {
                b = temp;
@@ -1488,19 +1495,20 @@ namespace
          }
          else if(~b & d & m)
          {
-            temp = (d & ~m) | (m - 1);
+            temp = (d & ~m) | mm;
             if(temp >= c)
             {
                d = temp;
                break;
             }
          }
-         m = m >> 1;
+         m >>= 1;
+         mm >>= 1;
       }
       return b & d;
    }
 
-   std::pair<APInt, APInt> AND(const APInt& a, const APInt& b, const APInt& c, const APInt& d)
+   std::pair<APInt, APInt> AND(bw_t bw, const APInt& a, const APInt& b, const APInt& c, const APInt& d)
    {
       auto abcd = ((a >= 0) << 3) | ((b >= 0) << 2) | ((c >= 0) << 1) | (d >= 0);
 
@@ -1511,19 +1519,19 @@ namespace
          case 3:
          case 12:
          case 15:
-            res_l = minAND(a, b, c, d);
-            res_u = maxAND(a, b, c, d);
+            res_l = minAND(bw, a, b, c, d);
+            res_u = maxAND(bw, a, b, c, d);
             break;
          case 1:
-            res_l = minAND(a, b, c, -1);
-            res_u = maxAND(a, b, 0, d);
+            res_l = minAND(bw, a, b, c, -1);
+            res_u = maxAND(bw, a, b, 0, d);
             break;
          case 4:
-            res_l = minAND(a, -1, c, d);
-            res_u = maxAND(0, b, c, d);
+            res_l = minAND(bw, a, -1, c, d);
+            res_u = maxAND(bw, 0, b, c, d);
             break;
          case 5:
-            res_l = minAND(a, -1, c, -1);
+            res_l = minAND(bw, a, -1, c, -1);
             res_u = std::max({b, d});
             break;
          case 7:
@@ -1536,15 +1544,16 @@ namespace
       return std::make_pair(res_l, res_u);
    }
 
-   APInt minXOR(APInt a, const APInt& b, APInt c, const APInt& d)
+   APInt minXOR(bw_t bw, APInt a, const APInt& b, APInt c, const APInt& d)
    {
       APInt temp;
-      APInt m = APInt(1) << (Range::MAX_BIT_INT - 1);
-      while(m != 0)
+      APInt m = APInt(1) << (bw - 1U);
+      APInt nm = APInt(-1) << (bw - 1U);
+      for(auto i = 0; i < bw; ++i)
       {
          if(~a & c & m)
          {
-            temp = (a | m) & (~m + 1);
+            temp = (a | m) & nm;
             if(temp <= b)
             {
                a = temp;
@@ -1552,47 +1561,50 @@ namespace
          }
          else if(a & ~c & m)
          {
-            temp = (c | m) & (~m + 1);
+            temp = (c | m) & nm;
             if(temp <= d)
             {
                c = temp;
             }
          }
-         m = m >> 1;
+         m >>= 1;
+         nm >>= 1;
       }
       return a ^ c;
    }
 
-   APInt maxXOR(const APInt& a, APInt b, const APInt& c, APInt d)
+   APInt maxXOR(bw_t bw, const APInt& a, APInt b, const APInt& c, APInt d)
    {
       APInt temp;
-      APInt m = APInt(1) << (Range::MAX_BIT_INT - 1);
-      while(m != 0)
+      APInt m = APInt(1) << (bw - 1);
+      APInt mm = m - 1;
+      for(auto i = 0; i < bw; ++i)
       {
          if(b & d & m)
          {
-            temp = (b - m) | (m - 1);
+            temp = (b - m) | mm;
             if(temp >= a)
             {
                b = temp;
             }
             else
             {
-               temp = (d - m) | (m - 1);
+               temp = (d - m) | mm;
                if(temp >= c)
                {
                   d = temp;
                }
             }
          }
-         m = m >> 1;
+         m >>= 1;
+         mm >>= 1;
       }
       return b ^ d;
    }
 
-   std::pair<APInt, APInt> uXOR(const APInt& a, const APInt& b, const APInt& c, const APInt& d)
+   std::pair<APInt, APInt> uXOR(bw_t bw, const APInt& a, const APInt& b, const APInt& c, const APInt& d)
    {
-      return std::make_pair(minXOR(a, b, c, d), maxXOR(a, b, c, d));
+      return std::make_pair(minXOR(bw, a, b, c, d), maxXOR(bw, a, b, c, d));
    }
 
 } // namespace
@@ -1616,7 +1628,7 @@ RangeRef Range::Or(const RangeConstRef& other) const
    const auto& c = other->isAnti() ? Min : other->getLower();
    const auto& d = other->isAnti() ? Max : other->getUpper();
 
-   const auto res = OR(a, b, c, d);
+   const auto res = OR(bw, a, b, c, d);
    return RangeRef(new Range(Regular, bw, res.first, res.second));
 }
 
@@ -1639,7 +1651,7 @@ RangeRef Range::And(const RangeConstRef& other) const
    const auto& c = other->isAnti() ? Min : other->getLower();
    const auto& d = other->isAnti() ? Max : other->getUpper();
 
-   const auto res = AND(a, b, c, d);
+   const auto res = AND(bw, a, b, c, d);
    return RangeRef(new Range(Regular, bw, res.first, res.second));
 }
 
@@ -1656,7 +1668,7 @@ RangeRef Range::Xor(const RangeConstRef& other) const
 
    if(a >= 0 && b >= 0 && c >= 0 && d >= 0)
    {
-      const auto res = uXOR(a, b, c, d);
+      const auto res = uXOR(bw, a, b, c, d);
       return RangeRef(new Range(Regular, bw, res.first, res.second));
    }
    else if(a == -1 && b == -1 && c >= 0 && d >= 0)
@@ -2675,12 +2687,12 @@ RealRange::RealRange(const RangeConstRef& vc)
 {
    if(vc->getBitWidth() == 32)
    {
-      exponent = vc->shr(RangeRef(new Range(Regular, MAX_BIT_INT, 23, 23)), false)->zextOrTrunc(8);
+      exponent = vc->shr(RangeRef(new Range(Regular, max_digits, 23, 23)), false)->zextOrTrunc(8);
       significand = vc->zextOrTrunc(23);
    }
    else if(vc->getBitWidth() == 64)
    {
-      exponent = vc->shr(RangeRef(new Range(Regular, MAX_BIT_INT, 52, 52)), false)->zextOrTrunc(11);
+      exponent = vc->shr(RangeRef(new Range(Regular, max_digits, 52, 52)), false)->zextOrTrunc(11);
       significand = vc->zextOrTrunc(52);
    }
    else
@@ -2694,14 +2706,14 @@ RangeRef RealRange::getRange() const
    const auto _bw = getBitWidth();
    if(_bw == 32)
    {
-      auto s = sign->zextOrTrunc(32)->shl(RangeRef(new Range(Regular, MAX_BIT_INT, 31, 31)));
-      auto e = exponent->zextOrTrunc(32)->shl(RangeRef(new Range(Regular, MAX_BIT_INT, 23, 23)));
+      auto s = sign->zextOrTrunc(32)->shl(RangeRef(new Range(Regular, max_digits, 31, 31)));
+      auto e = exponent->zextOrTrunc(32)->shl(RangeRef(new Range(Regular, max_digits, 23, 23)));
       return significand->zextOrTrunc(32)->Or(e)->Or(s);
    }
    else if(_bw == 64)
    {
-      auto s = sign->zextOrTrunc(64)->shl(RangeRef(new Range(Regular, MAX_BIT_INT, 63, 63)));
-      auto e = exponent->zextOrTrunc(64)->shl(RangeRef(new Range(Regular, MAX_BIT_INT, 52, 52)));
+      auto s = sign->zextOrTrunc(64)->shl(RangeRef(new Range(Regular, max_digits, 63, 63)));
+      auto e = exponent->zextOrTrunc(64)->shl(RangeRef(new Range(Regular, max_digits, 52, 52)));
       return significand->zextOrTrunc(64)->Or(e)->Or(s);
    }
    THROW_UNREACHABLE("Unhandled view convert bitwidth");

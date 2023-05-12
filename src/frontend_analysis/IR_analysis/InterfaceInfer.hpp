@@ -64,31 +64,9 @@ struct gimple_node;
 class InterfaceInfer : public ApplicationFrontendFlowStep
 {
  private:
-   enum class m_axi_type
-   {
-      none,
-      direct,
-      axi_slave
-   };
-
-   enum class datatype
-   {
-      generic,
-      ac_type,
-      real
-   };
-
-   struct interface_info
-   {
-      std::string name;
-      unsigned alignment;
-      unsigned long long bitwidth;
-      datatype type;
-
-      interface_info();
-
-      void update(const tree_nodeRef& tn, std::string type_name, ParameterConstRef parameters);
-   };
+   enum class m_axi_type;
+   enum class datatype;
+   struct interface_info;
 
    bool already_executed;
 

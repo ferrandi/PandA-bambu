@@ -75,7 +75,7 @@
 #include "compiler_wrapper.hpp"
 #include "string_manipulation.hpp" // for GET_CLASS
 
-#define FILENAME_NORM(name) ((boost::filesystem::path(name)).normalize().string())
+#define FILENAME_NORM(name) ((boost::filesystem::path(name)).lexically_normal().string())
 
 std::vector<std::string> CheckSystemType::systemIncPath;
 

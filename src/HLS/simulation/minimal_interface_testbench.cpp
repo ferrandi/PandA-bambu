@@ -906,6 +906,21 @@ void MinimalInterfaceTestbench::write_memory_handler() const
 
 void MinimalInterfaceTestbench::write_interface_handler() const
 {
+   const auto get_elem_count = [&](const std::string& parm_name, const std::string& data_port) -> unsigned long long {
+      THROW_ASSERT(HLSMgr->RSim->test_vectors.size() && HLSMgr->RSim->test_vectors.front().count(parm_name),
+                   "Unable to find initialization for FIFO parameter " + parm_name);
+      const auto dport = mod->find_member(data_port, port_o_K, cir);
+      THROW_ASSERT(dport, "Port '" + data_port + "' not found");
+      const auto& test_v = HLSMgr->RSim->test_vectors.front().at(parm_name);
+      if(boost::ends_with(test_v, ".dat"))
+      {
+         const auto elem_bytes = local_port_size(dport) / 8;
+         const auto file_bytes = std::ifstream(test_v, std::ios::ate | std::ios::binary).tellg();
+         return static_cast<unsigned long long>(file_bytes) / elem_bytes;
+      }
+      return SplitString(test_v, ",").size();
+   };
+
    if(mod->get_in_port_size())
    {
       bool firstRValid = true;
@@ -976,11 +991,7 @@ void MinimalInterfaceTestbench::write_interface_handler() const
                   else if(InterfaceType == port_o::port_interface::PI_FULL_N)
                   {
                      const auto parm_name = boost::replace_last_copy(portInst->get_id(), "_full_n", "");
-                     THROW_ASSERT(HLSMgr->RSim->test_vectors.size() &&
-                                      HLSMgr->RSim->test_vectors.front().count(parm_name),
-                                  "Unable to find initialization for FIFO parameter " + parm_name);
-                     const auto& test_v = HLSMgr->RSim->test_vectors.front().at(parm_name);
-                     const auto fifo_depth = SplitString(test_v, ",").size();
+                     const auto fifo_depth = get_elem_count(parm_name, parm_name + "_din");
                      const auto write_counter =
                          "fifo_counter_" + HDL_manager::convert_to_identifier(writer.get(), parm_name + "_din");
                      writer->write(HDL_manager::convert_to_identifier(writer.get(), portInst->get_id()) +
@@ -989,11 +1000,7 @@ void MinimalInterfaceTestbench::write_interface_handler() const
                   else if(InterfaceType == port_o::port_interface::PI_EMPTY_N)
                   {
                      const auto parm_name = boost::replace_last_copy(portInst->get_id(), "_empty_n", "");
-                     THROW_ASSERT(HLSMgr->RSim->test_vectors.size() &&
-                                      HLSMgr->RSim->test_vectors.front().count(parm_name),
-                                  "Unable to find initialization for FIFO parameter " + parm_name);
-                     const auto& test_v = HLSMgr->RSim->test_vectors.front().at(parm_name);
-                     const auto fifo_depth = SplitString(test_v, ",").size();
+                     const auto fifo_depth = get_elem_count(parm_name, parm_name + "_dout");
                      const auto read_counter =
                          "fifo_counter_" + HDL_manager::convert_to_identifier(writer.get(), parm_name + "_dout");
                      writer->write(HDL_manager::convert_to_identifier(writer.get(), portInst->get_id()) +
@@ -1003,11 +1010,7 @@ void MinimalInterfaceTestbench::write_interface_handler() const
                   {
                      const auto parm_name = boost::replace_last_copy(
                          boost::replace_first_copy(portInst->get_id(), "m_axis_", ""), "_TREADY", "");
-                     THROW_ASSERT(HLSMgr->RSim->test_vectors.size() &&
-                                      HLSMgr->RSim->test_vectors.front().count(parm_name),
-                                  "Unable to find initialization for FIFO parameter " + parm_name);
-                     const auto& test_v = HLSMgr->RSim->test_vectors.front().at(parm_name);
-                     const auto fifo_depth = SplitString(test_v, ",").size();
+                     const auto fifo_depth = get_elem_count(parm_name, "m_axis_" + parm_name + "_TDATA");
                      const auto read_counter = "fifo_counter_" + HDL_manager::convert_to_identifier(
                                                                      writer.get(), "m_axis_" + parm_name + "_TDATA");
                      writer->write(HDL_manager::convert_to_identifier(writer.get(), portInst->get_id()) +
@@ -1017,11 +1020,7 @@ void MinimalInterfaceTestbench::write_interface_handler() const
                   {
                      const auto parm_name = boost::replace_last_copy(
                          boost::replace_first_copy(portInst->get_id(), "s_axis_", ""), "_TVALID", "");
-                     THROW_ASSERT(HLSMgr->RSim->test_vectors.size() &&
-                                      HLSMgr->RSim->test_vectors.front().count(parm_name),
-                                  "Unable to find initialization for FIFO parameter " + parm_name);
-                     const auto& test_v = HLSMgr->RSim->test_vectors.front().at(parm_name);
-                     const auto fifo_depth = SplitString(test_v, ",").size();
+                     const auto fifo_depth = get_elem_count(parm_name, "s_axis_" + parm_name + "_TDATA");
                      const auto read_counter = "fifo_counter_" + HDL_manager::convert_to_identifier(
                                                                      writer.get(), "s_axis_" + parm_name + "_TDATA");
                      writer->write(HDL_manager::convert_to_identifier(writer.get(), portInst->get_id()) +

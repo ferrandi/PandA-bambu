@@ -6805,7 +6805,11 @@ namespace RangeAnalysis
                PO = SI->getPointerOperand();
                auto writtenObj = SI->getValueOperand();
                bw = writtenObj->getType()->getPrimitiveSizeInBits();
+#if __clang_major__ >= 16
+               if(SI->getAlign().value() && bw > (8 * SI->getAlign().value()))
+#else
                if(SI->getAlignment() && bw > (8 * SI->getAlignment()))
+#endif
                {
                   return false;
                }
@@ -6814,7 +6818,11 @@ namespace RangeAnalysis
             {
                assert(LI);
                bw = LI->getType()->getPrimitiveSizeInBits();
+#if __clang_major__ >= 16
+               if(LI->getAlign().value() && bw > (8 * LI->getAlign().value()))
+#else
                if(LI->getAlignment() && bw > (8 * LI->getAlignment()))
+#endif
                {
                   return false;
                }
