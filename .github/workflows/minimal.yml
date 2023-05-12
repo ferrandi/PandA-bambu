@@ -35,7 +35,7 @@ jobs:
         J: ${{env.host_jobs}}
     strategy:
       matrix:
-        compiler: [gcc, gcc_c++17, clang, clang_c++17]
+        compiler: [gcc, gcc_c++17, clang, clang_c++17, clang16_c++17]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -45,6 +45,8 @@ jobs:
         run: |
           apt-get update
           DEBIAN_FRONTEND=noninteractive apt-get -y install --no-install-recommends clang
+          bash .devcontainer/library-scripts/compiler-download.sh / clang-16
+          bash .devcontainer/library-scripts/compiler-setup.sh
       - name: Launch ACMath tests for ${{matrix.compiler}}
         working-directory: ./etc/libbambu/ac_math
         shell: bash

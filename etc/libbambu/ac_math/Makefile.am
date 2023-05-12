@@ -80,6 +80,7 @@ EXTRA_DIST= \
 	ac_math_test_gcc.sh \
 	ac_math_test_gcc_c++17.sh \
 	ac_math_test_clang.sh \
+	ac_math_test_clang_c++17.sh\
 	ac_math_test_clang_c++17.sh
 
 ac_math_dir = $(pkgdatadir)/ac_math
