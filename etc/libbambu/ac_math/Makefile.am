@@ -77,11 +77,7 @@ EXTRA_DIST= \
 	include/ac_math/ac_hyperbolic_tan_pwl.h \
 	include/ac_math/ac_pow_pwl.h \
 	pdfdocs/ac_math_ref.pdf \
-	ac_math_test_gcc.sh \
-	ac_math_test_gcc_c++17.sh \
-	ac_math_test_clang.sh \
-	ac_math_test_clang_c++17.sh\
-	ac_math_test_clang_c++17.sh
+	ac_math_test.sh
 
 ac_math_dir = $(pkgdatadir)/ac_math
 ac_math_lutgen_dir = $(ac_math_dir)/lutgen
@@ -178,5 +174,5 @@ ac_math_include_ac_math__DATA = \
 ac_math_pdfdocs__DATA = \
 	../../../etc/libbambu/ac_math/pdfdocs/ac_math_ref.pdf
 
-TESTS=ac_math_test_gcc.sh ac_math_test_gcc_c++17.sh ac_math_test_clang.sh ac_math_test_clang_c++17.sh
+TESTS=ac_math_test.sh
 
