@@ -35,20 +35,34 @@ jobs:
         J: ${{env.host_jobs}}
     strategy:
       matrix:
-        compiler: [gcc, gcc_c++17, clang, clang_c++17]
+        include:
+          - compiler: g++
+          - compiler: g++
+            flags: -std=c++17
+          - compiler: clang++
+          - compiler: clang++
+            flags: -std=c++17
+          - compiler: clang++-16
+            flags: -std=c++17
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
-      - name: Install clang
-        if: ${{ startsWith(matrix.compiler, 'clang') }}
+      - name: Install Clang
+        if: ${{ matrix.compiler == 'clang++' }}
         shell: bash
         run: |
           apt-get update
           DEBIAN_FRONTEND=noninteractive apt-get -y install --no-install-recommends clang
-      - name: Launch ACMath tests for ${{matrix.compiler}}
+      - name: Install Clang 16
+        if: ${{ matrix.compiler == 'clang++-16' }}
+        shell: bash
+        run: |
+          bash .devcontainer/library-scripts/compiler-download.sh / clang-16
+          bash .devcontainer/library-scripts/compiler-setup.sh
+      - name: Launch ACMath tests for ${{matrix.compiler}} ${{matrix.flags}}
         working-directory: ./etc/libbambu/ac_math
         shell: bash
-        run: ./ac_math_test_${{matrix.compiler}}.sh
+        run: ./ac_math_test.sh $(mktemp -d /tmp/ac_math_XXX) CXX=${{matrix.compiler}} CXXUSERFLAGS="${{matrix.flags}}"
 
   specific-test:
     needs: [build, ACMath-tests]
