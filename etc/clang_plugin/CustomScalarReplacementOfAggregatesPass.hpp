@@ -52,8 +52,8 @@
 #include <llvm/IR/Module.h>
 #include <llvm/Pass.h>
 
-#include <set>
 #include <map>
+#include <set>
 
 typedef std::set<llvm::Instruction*> inst_set_ty;
 typedef std::map<llvm::Function*, std::set<llvm::AllocaInst*>> fun_to_alloca_map_ty;
