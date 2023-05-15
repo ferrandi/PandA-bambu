@@ -2,7 +2,7 @@
 
 long fact(long);
 
-main()
+int main()
 {
     long n=0;
 

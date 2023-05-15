@@ -1642,6 +1642,12 @@ void AllocationInformation::GetNodeTypePrec(const vertex node, const OpGraphCons
                max_size_in = out_prec;
             }
          }
+         else if(current_op == "bit_and_expr" || current_op == "bit_ior_expr" || current_op == "bit_xor_expr" ||
+                 current_op == "bit_not_expr" || current_op == "bit_ior_concat_expr")
+         {
+            /// timing does not change for these operations
+            out_prec = std::min(out_prec, 64ull);
+         }
          info->output_prec = resize_to_1_8_16_32_64_128_256_512(out_prec);
          info->real_output_nelem = 0;
          info->base128_output_nelem = 0;
@@ -1686,6 +1692,11 @@ void AllocationInformation::GetNodeTypePrec(const vertex node, const OpGraphCons
       }
       else
       {
+         if(is_second_constant && info->output_prec > 64)
+         {
+            info->output_prec = 64;
+            max_size_in = 64;
+         }
          info->real_output_nelem = 0;
          info->base128_output_nelem = 0;
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Output is not a vector");
@@ -1702,6 +1713,16 @@ void AllocationInformation::GetNodeTypePrec(const vertex node, const OpGraphCons
          info->base128_output_nelem = min_n_elements;
          info->real_output_nelem = min_n_elements;
       }
+   }
+   else if(current_op == "rshift_expr")
+   {
+      if(is_second_constant && max_size_in > 64)
+      {
+         max_size_in = 64;
+      }
+      info->output_prec = max_size_in;
+      info->base128_output_nelem = min_n_elements;
+      info->real_output_nelem = min_n_elements;
    }
    else
    {

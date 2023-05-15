@@ -4,7 +4,7 @@ script_dir="$(dirname $(readlink -e $0))"
 ggo_require_compiler=1
 . $script_dir/generic_getopt.sh
 
-BATCH_ARGS=("-lm" "--simulate" "--experimental-setup=BAMBU")
+BATCH_ARGS=("-lm" "--simulate" "--experimental-setup=BAMBU" "--std=gnu89")
 OUT_SUFFIX="${compiler}_bambu"
 
 python3 $script_dir/../../etc/scripts/test_panda.py gcc_regression_simple --tool=bambu \

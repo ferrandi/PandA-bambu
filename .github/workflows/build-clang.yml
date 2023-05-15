@@ -12,7 +12,7 @@ on:
       configure:
         description: "Clang enabled projects"
         required: false
-        default: 'clang;mlir;polly'
+        default: clang;mlir;polly
 
 concurrency:
   group: build-clang-${{ inputs.version }}
@@ -43,13 +43,13 @@ jobs:
         with:
           jobs: ${{steps.host.outputs.jobs}}
           branch: ${{inputs.clang_ref}}
-          dist-name: clang-${{inputs.version}}-bambu
+          dist-name: clang+llvm-${{inputs.version}}-bambu
           config-args: ${{ inputs.configure }}
-      - name: Upload clang-${{inputs.version}} dist directory
-        uses: ./.github/actions/storage-upload
-        with:
-          path: ${{steps.build.outputs.dist-dir}}/.
-          storage-url: "${{env.storage-url}}"
-          storage-path: "${{env.storage-path}}"
-          username: "${{env.storage-user}}"
-          password: "${{env.storage-token}}"
+      - name: Upload Clang-${{inputs.version}} dist directory
+        shell: bash
+        run: |
+          DIST_TAR="${{steps.build.outputs.dist-dir}}.tar.xz"
+          STORAGE_URL="${{env.storage-url}}/${{env.storage-path}}/${DIST_TAR}"
+          tar -C ${{steps.build.outputs.dist-dir}} . --mode="u+rwX,g+rwX,o+rX" -cJf ${DIST_TAR}
+          curl -L --fail -u '${{env.storage-user}}':'${{env.storage-token}}' -T "${DIST_TAR}" "$STORAGE_URL"
+          echo "### New release available at https://release.bambuhls.eu/compiler/${DIST_TAR}" >> $GITHUB_STEP_SUMMARY

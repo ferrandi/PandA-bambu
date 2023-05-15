@@ -174,12 +174,11 @@ DesignFlowStep_Status TestbenchValuesCGeneration::Exec()
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "-->Executing C testbench");
    const auto default_compiler = parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler);
-   // NOTE: clang 13 seems to not respect the -fno-strict-aliasing flag generating incorrect code when type punning is
-   // present
-   const auto opt_lvl =
-#if HAVE_I386_CLANG13_COMPILER
-       default_compiler == CompilerWrapper_CompilerTarget::CT_I386_CLANG13 ? CompilerWrapper_OptimizationSet::O0 :
-#endif
+   // NOTE: starting from version 13 on it seems clang is not respecting the -fno-strict-aliasing flag generating
+   // incorrect code when type punning is present
+   const auto opt_lvl = default_compiler == CompilerWrapper_CompilerTarget::CT_I386_CLANG13 ||
+                                default_compiler == CompilerWrapper_CompilerTarget::CT_I386_CLANG16 ?
+           CompilerWrapper_OptimizationSet::O0 :
                                                                              CompilerWrapper_OptimizationSet::O2;
    const CompilerWrapperConstRef compiler_wrapper(new CompilerWrapper(parameters, default_compiler, opt_lvl));
    std::string compiler_flags =
@@ -200,77 +199,33 @@ DesignFlowStep_Status TestbenchValuesCGeneration::Exec()
    if((parameters->isOption(OPT_discrepancy) && parameters->getOption<bool>(OPT_discrepancy)) ||
       (parameters->isOption(OPT_discrepancy_hw) && parameters->getOption<bool>(OPT_discrepancy_hw)))
    {
-      if(is_clang
-#if HAVE_I386_GCC48_COMPILER
-         || default_compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC48
-#endif
-#if HAVE_I386_GCC49_COMPILER
-         || default_compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC49
-#endif
-#if HAVE_I386_GCC5_COMPILER
-         || default_compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC5
-#endif
-#if HAVE_I386_GCC6_COMPILER
-         || default_compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC6
-#endif
-#if HAVE_I386_GCC7_COMPILER
-         || default_compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC7
-#endif
-      )
+      if(is_clang || default_compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC48 ||
+         default_compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC49 ||
+         default_compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC5 ||
+         default_compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC6 ||
+         default_compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC7)
       {
          compiler_flags += "-g -fsanitize=address -fno-omit-frame-pointer -fno-common ";
       }
-      if(false
-#if HAVE_I386_GCC48_COMPILER
-         || default_compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC48
-#endif
-#if HAVE_I386_GCC49_COMPILER
-         || default_compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC49
-#endif
-#if HAVE_I386_GCC5_COMPILER
-         || default_compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC5
-#endif
-#if HAVE_I386_GCC6_COMPILER
-         || default_compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC6
-#endif
-#if HAVE_I386_GCC7_COMPILER
-         || default_compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC7
-#endif
-#if HAVE_I386_GCC8_COMPILER
-         || default_compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC8
-#endif
-      )
+      if(default_compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC48 ||
+         default_compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC49 ||
+         default_compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC5 ||
+         default_compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC6 ||
+         default_compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC7 ||
+         default_compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC8)
       {
          compiler_flags += "-static-libasan ";
       }
-      if(is_clang
-#if HAVE_I386_GCC5_COMPILER
-         || default_compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC5
-#endif
-#if HAVE_I386_GCC6_COMPILER
-         || default_compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC6
-#endif
-#if HAVE_I386_GCC7_COMPILER
-         || default_compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC7
-#endif
-      )
+      if(is_clang || default_compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC5 ||
+         default_compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC6 ||
+         default_compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC7)
       {
          compiler_flags += "-fsanitize=undefined -fsanitize-recover=undefined ";
       }
-      if(false
-#if HAVE_I386_GCC5_COMPILER
-         || default_compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC5
-#endif
-#if HAVE_I386_GCC6_COMPILER
-         || default_compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC6
-#endif
-#if HAVE_I386_GCC7_COMPILER
-         || default_compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC7
-#endif
-#if HAVE_I386_GCC8_COMPILER
-         || default_compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC8
-#endif
-      )
+      if(default_compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC5 ||
+         default_compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC6 ||
+         default_compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC7 ||
+         default_compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC8)
       {
          compiler_flags += "-static-libubsan ";
       }
@@ -360,20 +315,10 @@ DesignFlowStep_Status TestbenchValuesCGeneration::Exec()
    // executing the test to generate inputs and executed outputs values
    if(parameters->isOption(OPT_discrepancy) && parameters->getOption<bool>(OPT_discrepancy))
    {
-      if(false
-#if HAVE_I386_GCC49_COMPILER
-         || default_compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC49
-#endif
-#if HAVE_I386_GCC5_COMPILER
-         || default_compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC5
-#endif
-#if HAVE_I386_GCC6_COMPILER
-         || default_compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC6
-#endif
-#if HAVE_I386_GCC7_COMPILER
-         || default_compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC7
-#endif
-      )
+      if(default_compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC49 ||
+         default_compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC5 ||
+         default_compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC6 ||
+         default_compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC7)
       {
          exec_name.insert(0, "ASAN_OPTIONS='symbolize=1:redzone=2048' ");
       }
