@@ -47,25 +47,19 @@
 #include "llvm/ADT/DepthFirstIterator.h"
 #include "llvm/ADT/SmallVector.h"
 #include "llvm/ADT/Twine.h"
-#include "llvm/Analysis/LoopPass.h"
+#include "llvm/Analysis/LoopInfo.h"
 #include "llvm/Analysis/OptimizationRemarkEmitter.h"
-#include "llvm/Analysis/TargetTransformInfo.h"
 #include "llvm/IR/BasicBlock.h"
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/Instruction.h"
-#include "llvm/IR/LLVMContext.h"
-#include "llvm/IR/OptBisect.h"
 #include "llvm/IR/Type.h"
 #include "llvm/IR/User.h"
 #include "llvm/IR/Value.h"
-#include "llvm/Pass.h"
-#include "llvm/Support/CommandLine.h"
-#include "llvm/Support/Debug.h"
 #include "llvm/Support/raw_ostream.h"
-#include "llvm/Transforms/Scalar.h"
 #include <cstdlib>
 #include <map>
 #include <queue>
+#include <set>
 #include <sstream>
 #include <string>
 #include <utility>
@@ -121,7 +115,7 @@ namespace llvm
          if(UserInst && isa<T>(*UserInst))
          {
             return true;
-         }
+      }
       }
       return false;
    }
@@ -149,8 +143,8 @@ namespace llvm
          default:
          {
             return false;
-         }
       }
+   }
    }
 
    // Return true if 'I' is floating-point type and is target instruction
@@ -175,8 +169,8 @@ namespace llvm
          default:
          {
             return false;
-         }
       }
+   }
    }
 
    class Node
@@ -209,7 +203,7 @@ namespace llvm
             if(Node* R = CurNode->getRight())
             {
                Nodes.push_back(R);
-            }
+         }
          }
 
          return Nodes;
@@ -502,8 +496,8 @@ namespace llvm
             {
                // We don't have any information on this instruction.
                return 0;
-            }
          }
+      }
       }
 
       /// Update current node's latency.
@@ -516,8 +510,8 @@ namespace llvm
          }
          else
          {
-            setLatency(0);
-            setTotalCost(0);
+         setLatency(0);
+         setTotalCost(0);
          }
          if(isLeaf())
          {
@@ -560,7 +554,7 @@ namespace llvm
             default:
             {
                llvm_unreachable("Should not reach here.");
-            }
+         }
          }
 
          assert(SubNode && "Left or right node should not be nullptr.");
@@ -667,7 +661,7 @@ namespace llvm
          while(std::getline(ss, token, delim))
          {
             cont.push_back(token);
-         }
+      }
       }
       void __buildMap(const std::string& input, std::map<std::pair<std::string, std::string>, double>& _map)
       {
@@ -705,7 +699,7 @@ namespace llvm
                   {
                      // Tree height reduction is applied only to inner-most loop.
                      SmallVector<Loop*, 4> Worklist;
-                     for(Loop* CurLoop : depth_first(L))
+                     for(Loop* CurLoop : llvm::depth_first(L))
                      {
 #if __clang_major__ >= 12
                         if(CurLoop->isInnermost())
@@ -728,14 +722,14 @@ namespace llvm
                            if(EnableFpTHR)
                            {
                               changed |= runOnBasicBlock(BB, TargetInstTy::FLOATING_POINT, ORE);
-                           }
                         }
                      }
                   }
                }
-               else if(!currentFunction->getBasicBlockList().empty())
+               }
+               else if(!currentFunction->empty())
                {
-                  for(auto& BB : currentFunction->getBasicBlockList())
+                  for(auto& BB : *currentFunction)
                   {
                      if(!DisableIntTHR)
                      {
@@ -744,10 +738,10 @@ namespace llvm
                      if(EnableFpTHR)
                      {
                         changed |= runOnBasicBlock(&BB, TargetInstTy::FLOATING_POINT, ORE);
-                     }
                   }
                }
             }
+         }
          }
          return changed;
       }
@@ -779,7 +773,7 @@ namespace llvm
             if(NumLeaves >= 2)
             {
                return true;
-            }
+         }
          }
 
          return false;
@@ -792,7 +786,7 @@ namespace llvm
             if(I)
             {
                I->eraseFromParent();
-            }
+      }
          }
       }
 
@@ -884,8 +878,8 @@ namespace llvm
             default:
             {
                return false;
-            }
          }
+      }
       }
 
       // Construct operation tree from value 'V'.
@@ -932,7 +926,7 @@ namespace llvm
          for(auto* CurNode : Nodes)
          {
             delete CurNode;
-         }
+      }
       }
 
       // Collect original instructions to be erased from BasicBlock.
@@ -946,7 +940,7 @@ namespace llvm
             {
                Insts.push_back(CurNode->getOrgInst());
             }
-         }
+      }
       }
 
       // Apply tree height reduction to 'N'.
@@ -994,7 +988,7 @@ namespace llvm
             else
             {
                Parent->setRight(NewNode);
-            }
+         }
          }
          // Return value has meaning only if 'Parent' is nullptr because
          // this means 'Node' is a root node.
@@ -1027,8 +1021,8 @@ namespace llvm
             if(Node* Right = CurNode->getRight())
             {
                Worklist.push_back(Right);
-            }
          }
+      }
       }
 
       // Apply tree height reduction to under a node 'N', and construct
@@ -1156,8 +1150,10 @@ namespace llvm
                break;
             }
             default:
+            {
                assert(0);
                return nullptr;
+         }
          }
 
          // Take over the original instruction IR flags.
@@ -1198,8 +1194,8 @@ namespace llvm
                auto* UserInst = dyn_cast<Instruction>(U);
                if(UserInst && isTHRTargetInst(UserInst, CurTargetInstTy))
                {
-                  return false;
-               }
+            return false;
+         }
             }
             return true;
          }
@@ -1239,7 +1235,7 @@ namespace llvm
          if(Node* Right = N->getRight())
          {
             printTree(Right, Indent + 2);
-         }
+      }
       }
 
       void printLeaves(const std::vector<Node*>& Leaves, bool isBefore) const
@@ -1255,7 +1251,7 @@ namespace llvm
          for(auto* Node : Leaves)
          {
             printTree(Node, 2);
-         }
+      }
       }
    };
 

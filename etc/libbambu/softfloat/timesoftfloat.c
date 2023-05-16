@@ -2410,7 +2410,7 @@ static void timeFunction(__uint8 functionCode, __int8 roundingPrecisionIn, __int
    }
 }
 
-main(int argc, char** argv)
+int main(int argc, char** argv)
 {
    char* argPtr;
    __flag functionArgument;

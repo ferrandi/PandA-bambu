@@ -52,6 +52,7 @@
 #include <llvm/IR/Module.h>
 #include <llvm/Pass.h>
 
+#include <map>
 #include <set>
 
 typedef std::set<llvm::Instruction*> inst_set_ty;

@@ -251,8 +251,7 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
        parameters->getOption<bool>(OPT_memory_mapped_top);
    bool has_registered_inputs = HLS->registered_inputs && !needMemoryMappedRegisters;
    const auto top_function_ids = HLSMgr->CGetCallGraphManager()->GetRootFunctions();
-   if(top_function_ids.find(funId) != top_function_ids.end() and
-      parameters->getOption<std::string>(OPT_registered_inputs) == "top")
+   if(top_function_ids.count(funId) && parameters->getOption<std::string>(OPT_registered_inputs) == "top")
    {
       has_registered_inputs = true;
    }
@@ -308,7 +307,7 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
    auto omp_functions = GetPointer<OmpFunctions>(HLSMgr->Rfuns);
    if(HLS->Param->isOption(OPT_context_switch))
    {
-      if(omp_functions->kernel_functions.find(funId) != omp_functions->kernel_functions.end())
+      if(omp_functions->kernel_functions.count(funId))
       {
          has_registered_inputs = true;
       }

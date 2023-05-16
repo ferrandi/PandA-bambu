@@ -24,31 +24,45 @@ jobs:
     uses: ./.github/workflows/build-appimage.yml
     with:
       package-name: bambu-minimal
-      compilers: gcc-4.9,gcc-5,gcc-6,gcc-7,clang-4,clang-5,clang-6,clang-7,clang-11,clang-13
+      compilers: gcc-4.9,gcc-5,gcc-6,gcc-7,clang-4,clang-5,clang-6,clang-7,clang-11,clang-13,clang-16
     secrets: inherit
 
   ACMath-tests:
     runs-on: [self-hosted]
     container:
-      image: bambuhls/appimage:focal
+      image: bambuhls/dev:focal-23.04
       env:
         J: ${{env.host_jobs}}
     strategy:
       matrix:
-        compiler: [gcc, gcc_c++17, clang, clang_c++17]
+        include:
+          - compiler: g++
+          - compiler: g++
+            flags: -std=c++17
+          - compiler: clang++
+          - compiler: clang++
+            flags: -std=c++17
+          - compiler: clang++-16
+            flags: -std=c++17
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
-      - name: Install clang
-        if: ${{ startsWith(matrix.compiler, 'clang') }}
+      - name: Install Clang
+        if: ${{ matrix.compiler == 'clang++' }}
         shell: bash
         run: |
           apt-get update
           DEBIAN_FRONTEND=noninteractive apt-get -y install --no-install-recommends clang
-      - name: Launch ACMath tests for ${{matrix.compiler}}
+      - name: Install Clang 16
+        if: ${{ matrix.compiler == 'clang++-16' }}
+        shell: bash
+        run: |
+          bash .devcontainer/library-scripts/compiler-download.sh / clang-16
+          bash .devcontainer/library-scripts/compiler-setup.sh
+      - name: Launch ACMath tests for ${{matrix.compiler}} ${{matrix.flags}}
         working-directory: ./etc/libbambu/ac_math
         shell: bash
-        run: ./ac_math_test_${{matrix.compiler}}.sh
+        run: ./ac_math_test.sh $(mktemp -d /tmp/ac_math_XXX) CXX=${{matrix.compiler}} CXXUSERFLAGS="${{matrix.flags}}"
 
   specific-test:
     needs: [build, ACMath-tests]
@@ -170,6 +184,9 @@ jobs:
           - setup: clang-13
             script: generic_gcc_regression_simple_eg_ext_pipelined.sh
             args: -c=--compiler=I386_CLANG13 -c=--simulator=VERILATOR
+          - setup: clang-16
+            script: generic_gcc_regression_simple_eg_ext_pipelined.sh
+            args: -c=--compiler=I386_CLANG16 -c=--simulator=VERILATOR -c=-Wno-int-conversion
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -480,6 +497,8 @@ jobs:
             args: -c=--compiler=I386_CLANG11 -c=--simulator=MODELSIM
           - setup: clang-13
             args: -c=--compiler=I386_CLANG13 -c=--simulator=VERILATOR
+          - setup: clang-16
+            args: -c=--compiler=I386_CLANG16 -c=--simulator=VERILATOR
     env:
       script: generic_libm-tests.sh
       args: -c=--speculative-sdc-scheduling

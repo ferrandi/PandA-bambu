@@ -554,6 +554,15 @@ namespace llvm
       };
       std::map<const llvm::BasicBlock*, gimple_label> index2gimple_label;
 
+      struct statement_list
+      {
+         const llvm::Function* F;
+         statement_list() : F(nullptr)
+         {
+         }
+      };
+      std::map<const void*, statement_list> index2statement_list;
+
       const void* createGimpleLabelStmt(const llvm::BasicBlock* BB);
 
       const void* getVirtualDefStatement(llvm::MemoryAccess* defAccess, bool& isDefault, const llvm::MemorySSA& MSSA,

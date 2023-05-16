@@ -80,6 +80,9 @@
 #include "boost/graph/topological_sort.hpp"
 #include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
 
+#define PP_MAX_CYCLES_BOUNDED "max-cycles-bounded"
+#define DEFAULT_MAX_CYCLES_BOUNDED (8)
+
 StateTransitionGraphManager::StateTransitionGraphManager(const HLS_managerConstRef _HLSMgr, hlsRef _HLS,
                                                          const ParameterConstRef _Param, bool is_function_pipelined)
     : state_transition_graphs_collection(StateTransitionGraphsCollectionRef(new StateTransitionGraphsCollection(
@@ -98,6 +101,9 @@ StateTransitionGraphManager::StateTransitionGraphManager(const HLS_managerConstR
       Param(_Param),
       output_level(_Param->getOption<int>(OPT_output_level)),
       debug_level(_Param->getOption<int>(OPT_debug_level)),
+      _max_cycles_bounded(_Param->IsParameter(PP_MAX_CYCLES_BOUNDED) ?
+                              _Param->GetParameter<unsigned int>(PP_MAX_CYCLES_BOUNDED) :
+                              DEFAULT_MAX_CYCLES_BOUNDED),
       HLS(_HLS),
       STG_builder(StateTransitionGraph_constructorRef(
           new StateTransitionGraph_constructor(state_transition_graphs_collection, _HLSMgr, _HLS->functionId)))
@@ -162,7 +168,8 @@ void StateTransitionGraphManager::ComputeCyclesCount(bool is_pipelined)
       info->min_cycles = CSteps_min.find(info->exit_node)->second - (is_pipelined ? 0 : 1);
       info->max_cycles = CSteps_max.find(info->exit_node)->second - (is_pipelined ? 0 : 1);
       info->bounded =
-          is_pipelined || (info->min_cycles == info->max_cycles && info->min_cycles > 0 && !has_dummy_state);
+          is_pipelined || (info->min_cycles == info->max_cycles && info->max_cycles <= _max_cycles_bounded &&
+                           info->min_cycles > 0 && !has_dummy_state);
    }
 }
 

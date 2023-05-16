@@ -418,7 +418,17 @@ mockturtle/test/io/write_patterns.cpp\
 mockturtle/test/utils/index_list.cpp\
 mockturtle/test/utils/window_utils.cpp\
 mockturtle/test/views/aqfp_view.cpp\
-mockturtle/test/views/color_view.cpp
+mockturtle/test/views/color_view.cpp\
+or-tools/LICENSE\
+or-tools/README.md\
+or-tools/ortools/util/permutation.h\
+or-tools/ortools/util/zvector.h\
+or-tools/ortools/base/integral_types.h\
+or-tools/ortools/base/macros.h\
+or-tools/ortools/graph/ebert_graph.h\
+or-tools/ortools/graph/linear_assignment.h\
+or-tools/ortools/graph/assignment.h
+
 
 SUBDIRS = abseil-cpp
 DIST_SUBDIRS = abseil-cpp
@@ -608,5 +618,7 @@ or-tools/ortools/base/macros.h\
 or-tools/ortools/graph/ebert_graph.h\
 or-tools/ortools/graph/linear_assignment.h\
 or-tools/ortools/graph/assignment.h
+
+
 
 

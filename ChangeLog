@@ -1,3 +1,7 @@
+=========== PANDA 2023.02 ===========
+- Added support to Clang/LLVM 16
+- The synthesis of ac_types of any size is now supported by  Clang/LLVM 16
+
 =========== PANDA 2023.01 ===========
 - Support for LLVM 13
 - Support for Xilinx Alveo and Xilinx Kintex FPGA boards

@@ -321,7 +321,7 @@ inline void CopyFile(boost::filesystem::path file_source, boost::filesystem::pat
    }
    else
    {
-      boost::filesystem::copy_file(file_source, file_target, boost::filesystem::copy_option::overwrite_if_exists);
+      boost::filesystem::copy_file(file_source, file_target, boost::filesystem::copy_options::overwrite_existing);
    }
 }
 
