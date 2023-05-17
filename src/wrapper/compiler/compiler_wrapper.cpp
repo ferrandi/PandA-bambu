@@ -3170,49 +3170,12 @@ size_t CompilerWrapper::GetSourceCodeLines(const ParameterConstRef Param)
    return 0;
 }
 
-void CompilerWrapper::CreateExecutable(const CustomSet<std::string>& file_names, const std::string& executable_name,
-                                       const std::string& extra_compiler_options,
-                                       bool no_frontend_compiler_parameters) const
+std::string CompilerWrapper::GetCompilerParameters(const std::string& extra_compiler_options,
+                                                   bool no_frontend_compiler_parameters) const
 {
-   std::list<std::string> sorted_file_names;
-   for(const auto& file_name : file_names)
-   {
-      sorted_file_names.push_back(file_name);
-   }
-   CreateExecutable(sorted_file_names, executable_name, extra_compiler_options, no_frontend_compiler_parameters);
-}
-void CompilerWrapper::CreateExecutable(const std::list<std::string>& file_names, const std::string& executable_name,
-                                       const std::string& extra_compiler_options,
-                                       bool no_frontend_compiler_parameters) const
-{
-   std::string file_names_string;
-   bool has_cpp_file = false;
-   for(const auto& file_name : file_names)
-   {
-      auto file_format = Param->GetFileFormat(file_name, false);
-      if(file_format == Parameters_FileFormat::FF_CPP || file_format == Parameters_FileFormat::FF_LLVM_CPP)
-      {
-         has_cpp_file = true;
-      }
-      file_names_string += file_name + " ";
-   }
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                  "-->Creating executable " + executable_name + " from " + file_names_string);
-   std::string command = "";
-
-   Compiler compiler = GetCompiler();
-   command += compiler.gcc + " ";
-
-   command += file_names_string + " ";
-
-   command += (no_frontend_compiler_parameters ? "" : frontend_compiler_parameters) + " " +
-              AddSourceCodeIncludes(file_names) + " " + compiler_linking_parameters + " ";
-   static const boost::regex c_std("[-]{1,2}std=c\\+\\+\\w+");
-   if(!has_cpp_file)
-   {
-      command = boost::regex_replace(command, c_std, "");
-   }
-
+   const auto compiler = GetCompiler();
+   std::string command =
+       (no_frontend_compiler_parameters ? "" : frontend_compiler_parameters) + " " + compiler_linking_parameters + " ";
    command += "-D__NO_INLINE__ "; /// needed to avoid problem with glibc inlines
 
    std::string local_compiler_extra_options = no_frontend_compiler_parameters ? "" : compiler.extra_options;
@@ -3230,16 +3193,55 @@ void CompilerWrapper::CreateExecutable(const std::list<std::string>& file_names,
 
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Extra options are " + local_compiler_extra_options);
    command += local_compiler_extra_options + " " + extra_compiler_options + " ";
-   if(command.find("-target fpga64-xilinx-linux-gnu") != std::string::npos)
+   boost::replace_all(command, "-target fpga64-xilinx-linux-gnu", "");
+
+   return command;
+}
+
+void CompilerWrapper::CreateExecutable(const CustomSet<std::string>& file_names, const std::string& executable_name,
+                                       const std::string& extra_compiler_options,
+                                       bool no_frontend_compiler_parameters) const
+{
+   std::list<std::string> sorted_file_names;
+   for(const auto& file_name : file_names)
    {
-      boost::replace_all(command, "-target fpga64-xilinx-linux-gnu", "");
+      sorted_file_names.push_back(file_name);
+   }
+   CreateExecutable(sorted_file_names, executable_name, extra_compiler_options, no_frontend_compiler_parameters);
+}
+
+void CompilerWrapper::CreateExecutable(const std::list<std::string>& file_names, const std::string& executable_name,
+                                       const std::string& extra_compiler_options,
+                                       bool no_frontend_compiler_parameters) const
+{
+   std::string file_names_string;
+   bool has_cpp_file = false;
+   for(const auto& file_name : file_names)
+   {
+      auto file_format = Param->GetFileFormat(file_name, false);
+      if(file_format == Parameters_FileFormat::FF_CPP || file_format == Parameters_FileFormat::FF_LLVM_CPP)
+      {
+         has_cpp_file = true;
+      }
+      file_names_string += file_name + " ";
+   }
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                  "-->Creating executable " + executable_name + " from " + file_names_string);
+
+   const auto compiler = GetCompiler();
+   std::string command = compiler.gcc + " ";
+   command += GetCompilerParameters(extra_compiler_options, no_frontend_compiler_parameters);
+   command += "-o " + executable_name + " ";
+   command += file_names_string + " ";
+   command += AddSourceCodeIncludes(file_names) + " ";
+
+   if(!has_cpp_file)
+   {
+      command = boost::regex_replace(command, boost::regex("[-]{1,2}std=c\\+\\+\\w+"), "");
    }
 
-   command += "-o " + executable_name + " ";
-
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Compilation command is " + command);
-   const std::string gcc_output_file_name =
-       Param->getOption<std::string>(OPT_output_temporary_directory) + STR_CST_gcc_output;
+   const auto gcc_output_file_name = Param->getOption<std::string>(OPT_output_temporary_directory) + STR_CST_gcc_output;
 
    int ret = PandaSystem(Param, command, gcc_output_file_name);
    if(IsError(ret))

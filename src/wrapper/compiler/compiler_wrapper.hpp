@@ -312,12 +312,6 @@ class CompilerWrapper
                     const std::string& costTable);
 
    /**
-    * Return the compiler for a given target
-    * @return a structure containing information about compiler
-    */
-   Compiler GetCompiler() const;
-
-   /**
     * Initialize the frontend compiler parameters line
     * @param OS is the optimizations set to be considered
     * @return the string with the parameters
@@ -404,6 +398,12 @@ class CompilerWrapper
    ~CompilerWrapper();
 
    /**
+    * Return the compiler for a given target
+    * @return a structure containing information about compiler
+    */
+   Compiler GetCompiler() const;
+
+   /**
     * This function fills the tree manager with the nodes created from a set of source files
     * @param TM is where tree_manager will be stored
     * @param source_files are the source files to be compiled; key is the original source code file, value is the
@@ -434,6 +434,9 @@ class CompilerWrapper
     * @return the total number of lines of the benchmark
     */
    static size_t GetSourceCodeLines(const ParameterConstRef Param);
+
+   std::string GetCompilerParameters(const std::string& extra_compiler_options,
+                                     bool no_frontend_compiler_parameters = false) const;
 
    /**
     * Create an executable starting from source code
