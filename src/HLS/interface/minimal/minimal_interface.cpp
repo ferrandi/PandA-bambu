@@ -553,8 +553,8 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
             std::list<std::pair<unsigned int, memory_symbolRef>>::const_iterator m_next;
             for(auto m = mem_variables.begin(); m != mem_variables.end(); ++m)
             {
-               init_v = TestbenchGenerationBaseStep::print_var_init(HLSMgr->get_tree_manager(), m->first, HLSMgr->Rmem);
-               std::vector<std::string> splitted = SplitString(init_v, ",");
+               const auto splitted =
+                   TestbenchGenerationBaseStep::print_var_init(HLSMgr->get_tree_manager(), m->first, HLSMgr->Rmem);
                unsigned int byte_allocated = 0;
                unsigned long long int actual_byte =
                    tree_helper::Size(HLSMgr->get_tree_manager()->CGetTreeReindex(m->first)) / 8;
