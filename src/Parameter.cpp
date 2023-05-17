@@ -246,7 +246,7 @@ void Parameter::CheckParameters()
                !CompilerWrapper::hasCompilerM64(getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler))))
       {
          THROW_ERROR("Option " + mopt + " not supported by " +
-                     CompilerWrapper::getCompilerSuffix(OPT_default_compiler) + " compiler.");
+                     CompilerWrapper::getCompilerSuffix(getOption<int>(OPT_default_compiler)) + " compiler.");
       }
    }
 #endif

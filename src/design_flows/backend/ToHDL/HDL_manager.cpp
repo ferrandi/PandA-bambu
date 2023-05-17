@@ -402,7 +402,6 @@ void HDL_manager::hdl_gen(const std::string& filename, const std::list<structura
 
    /// generate the HDL descriptions for all the components
    write_components(filename, list_of_com, equation, hdl_files, aux_files);
-   return;
 }
 
 /**
