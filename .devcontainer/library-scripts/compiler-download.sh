@@ -38,7 +38,7 @@ inflate() {
    url=""
    case $1 in
       clang-16 )
-         url="${bambuhls_compiler_url}/clang+llvm-16.0.1-bambu-Ubuntu_18.04.tar.xz"
+         url="https://github.com/llvm/llvm-project/releases/download/llvmorg-16.0.0/clang+llvm-16.0.0-x86_64-linux-gnu-ubuntu-18.04.tar.xz"
          ;;
       clang-13 )
          url="https://github.com/llvm/llvm-project/releases/download/llvmorg-13.0.1/clang+llvm-13.0.1-x86_64-linux-gnu-ubuntu-18.04.tar.xz"
