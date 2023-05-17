@@ -2308,25 +2308,28 @@ void verilog_writer::write_timing_specification(const technology_managerConstRef
 
 void verilog_writer::write_header()
 {
-   indented_output_stream->Append("`ifdef __ICARUS__\n");
-   indented_output_stream->Append("  `define _SIM_HAVE_CLOG2\n");
-   indented_output_stream->Append("`endif\n");
-   indented_output_stream->Append("`ifdef VERILATOR\n");
-   indented_output_stream->Append("  `define _SIM_HAVE_CLOG2\n");
-   indented_output_stream->Append("`endif\n");
-   indented_output_stream->Append("`ifdef MODEL_TECH\n");
-   indented_output_stream->Append("  `define _SIM_HAVE_CLOG2\n");
-   indented_output_stream->Append("`endif\n");
-   indented_output_stream->Append("`ifdef VCS\n");
-   indented_output_stream->Append("  `define _SIM_HAVE_CLOG2\n");
-   indented_output_stream->Append("`endif\n");
-   indented_output_stream->Append("`ifdef NCVERILOG\n");
-   indented_output_stream->Append("  `define _SIM_HAVE_CLOG2\n");
-   indented_output_stream->Append("`endif\n");
-   indented_output_stream->Append("`ifdef XILINX_SIMULATOR\n");
-   indented_output_stream->Append("  `define _SIM_HAVE_CLOG2\n");
-   indented_output_stream->Append("`endif\n");
-   indented_output_stream->Append("`ifdef XILINX_ISIM\n");
-   indented_output_stream->Append("  `define _SIM_HAVE_CLOG2\n");
-   indented_output_stream->Append("`endif\n\n");
+   indented_output_stream->Append(R"(
+`ifdef __ICARUS__
+  `define _SIM_HAVE_CLOG2
+`endif
+`ifdef VERILATOR
+  `define _SIM_HAVE_CLOG2
+`endif
+`ifdef MODEL_TECH
+  `define _SIM_HAVE_CLOG2
+`endif
+`ifdef VCS
+  `define _SIM_HAVE_CLOG2
+`endif
+`ifdef NCVERILOG
+  `define _SIM_HAVE_CLOG2
+`endif
+`ifdef XILINX_SIMULATOR
+  `define _SIM_HAVE_CLOG2
+`endif
+`ifdef XILINX_ISIM
+  `define _SIM_HAVE_CLOG2
+`endif
+
+)");
 }
