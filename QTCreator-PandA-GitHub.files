@@ -2440,6 +2440,7 @@ src/utility/indented_output_stream.cpp
 src/utility/indented_output_stream.hpp
 src/utility/math_function.cpp
 src/utility/math_function.hpp
+src/utility/panda_types.hpp
 src/utility/parsing_error.hpp
 src/utility/refcount.hpp
 src/utility/simple_indent.cpp
