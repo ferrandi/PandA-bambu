@@ -48,6 +48,8 @@
 #include "config_HAVE_LIBBDD.hpp"
 
 #include "llvm/ADT/APFloat.h"
+#include "llvm/ADT/DenseMap.h"
+#include "llvm/ADT/DenseMapInfo.h"
 #include "llvm/ADT/Hashing.h"
 #include "llvm/Analysis/AssumptionCache.h"
 #include "llvm/Analysis/LazyValueInfo.h"
@@ -121,6 +123,14 @@ using MemorySSAAnalysisResult = llvm::MemorySSAWrapperPass;
 
 namespace llvm
 {
+   struct APIntCompare
+   {
+      bool operator()(const APInt& lhs, const APInt& rhs) const
+      {
+         return lhs.getBitWidth() < rhs.getBitWidth() || (lhs.getBitWidth() == rhs.getBitWidth() && lhs.ult(rhs));
+      }
+   };
+
    class DumpGimpleRaw
    {
 #if __clang_major__ >= 11
@@ -256,7 +266,7 @@ namespace llvm
       /// internal identifier table
       std::set<std::string> identifierTable;
       /// unsigned integer constant table
-      std::map<uint64_t, const void*> uicTable;
+      std::map<llvm::APInt, const void*, APIntCompare> uicTable;
       /// type_integer with specific max value
       std::map<const void*, unsigned long long int> maxValueITtable;
       std::map<const void*, llvm::LLVMContext*> ArraysContexts;
@@ -652,7 +662,7 @@ namespace llvm
       bool TREE_READONLY(const void* t) const;
       bool TREE_ADDRESSABLE(const void* t) const;
       const void* TREE_OPERAND(const void* t, unsigned index);
-      int64_t TREE_INT_CST_LOW(const void* t);
+      std::string TREE_INT_CST(const void* t);
       const void* TREE_TYPE(const void* t);
       bool POINTER_TYPE_P(const void* t) const;
       bool TYPE_UNSIGNED(const void* t) const;
@@ -710,7 +720,7 @@ namespace llvm
 
       void serialize_int(const char* field, int i);
 
-      void serialize_wide_int(const char* field, int64_t i);
+      void serialize_int_cst(const char* field, const std::string& i);
 
       void serialize_real(const void* t);
 
