@@ -3240,15 +3240,9 @@ namespace llvm
       }
    }
 
-   const void* DumpGimpleRaw::TYPE_MIN_VALUE(const void* t)
+   const void* DumpGimpleRaw::getIntegerCST(bool isSigned, llvm::LLVMContext& context, const APInt& val, const void* t)
    {
-      const llvm::Type* Cty = reinterpret_cast<const llvm::Type*>(t);
-      bool isSigned = CheckSignedTag(Cty) || TREE_CODE(t) == GT(SIGNEDPOINTERTYPE);
-      llvm::Type* ty = const_cast<llvm::Type*>(NormalizeSignedTag(Cty));
-      auto obj_size = TREE_CODE(t) == GT(SIGNEDPOINTERTYPE) ? 32 : DL->getTypeAllocSizeInBits(ty);
-      auto val = isSigned ? llvm::APInt::getSignedMinValue(obj_size) : llvm::APInt::getMinValue(obj_size);
-      auto context = TREE_CODE(t) == GT(SIGNEDPOINTERTYPE) ? moduleContext : &ty->getContext();
-      auto nodeVal = assignCodeAuto(llvm::ConstantInt::get(*context, val));
+      auto nodeVal = assignCodeAuto(llvm::ConstantInt::get(context, val));
       if(isSigned)
       {
          const void* ics;
@@ -3272,6 +3266,17 @@ namespace llvm
       return uicTable.find(val)->second;
    }
 
+   const void* DumpGimpleRaw::TYPE_MIN_VALUE(const void* t)
+   {
+      const llvm::Type* Cty = reinterpret_cast<const llvm::Type*>(t);
+      bool isSigned = CheckSignedTag(Cty) || TREE_CODE(t) == GT(SIGNEDPOINTERTYPE);
+      llvm::Type* ty = const_cast<llvm::Type*>(NormalizeSignedTag(Cty));
+      auto obj_size = TREE_CODE(t) == GT(SIGNEDPOINTERTYPE) ? 32 : DL->getTypeAllocSizeInBits(ty);
+      auto val = isSigned ? llvm::APInt::getSignedMinValue(obj_size) : llvm::APInt::getMinValue(obj_size);
+      auto context = TREE_CODE(t) == GT(SIGNEDPOINTERTYPE) ? moduleContext : &ty->getContext();
+      return getIntegerCST(isSigned, *context, val, t);
+   }
+
    const void* DumpGimpleRaw::TYPE_MAX_VALUE(const void* t)
    {
       const llvm::Type* Cty = reinterpret_cast<const llvm::Type*>(t);
@@ -3284,28 +3289,7 @@ namespace llvm
          val = maxValueITtable.find(t)->second;
       }
       auto context = TREE_CODE(t) == GT(SIGNEDPOINTERTYPE) ? moduleContext : &ty->getContext();
-      auto nodeVal = assignCodeAuto(llvm::ConstantInt::get(*context, val));
-      if(isSigned)
-      {
-         const void* ics;
-         if(index2integer_cst_signed.find(nodeVal) == index2integer_cst_signed.end())
-         {
-            auto& ics_obj = index2integer_cst_signed[nodeVal];
-            ics_obj.ic = nodeVal;
-            ics_obj.type = t;
-            ics = assignCode(&ics_obj, GT(INTEGER_CST_SIGNED));
-         }
-         else
-         {
-            ics = &index2integer_cst_signed.find(nodeVal)->second;
-         }
-         return ics;
-      }
-      if(uicTable.find(val) == uicTable.end())
-      {
-         uicTable[val] = nodeVal;
-      }
-      return uicTable.find(val)->second;
+      return getIntegerCST(isSigned, *context, val, t);
    }
 
    const void* DumpGimpleRaw::TYPE_VALUES(const void*)
@@ -3845,8 +3829,8 @@ namespace llvm
                                  (varRange.getUnsignedMin().zextOrTrunc(64).getZExtValue() <=
                                   varRange.getUnsignedMax().zextOrTrunc(64).getZExtValue()));
 #endif
-               return assignCodeAuto(llvm::ConstantInt::get(
-                   inst->getContext(), (isSigned ? varRange.getSignedMin() : varRange.getUnsignedMin())));
+               auto val = isSigned ? varRange.getSignedMin() : varRange.getUnsignedMin();
+               return getIntegerCST(isSigned, inst->getContext(), val, t);
             }
             else
                return nullptr;
@@ -3873,8 +3857,8 @@ namespace llvm
                inst->print(llvm::errs());
                llvm::errs() << "\n";
 #endif
-               return assignCodeAuto(llvm::ConstantInt::get(
-                   inst->getContext(), (isSigned ? range.getSignedMin() : range.getUnsignedMin())));
+               auto val = isSigned ? range.getSignedMin() : range.getUnsignedMin();
+               return getIntegerCST(isSigned, inst->getContext(), val, TREE_TYPE(t));
             }
             else
                return nullptr;
@@ -3899,8 +3883,8 @@ namespace llvm
             if(!varRange.isMaxRange())
             {
                auto isSigned = CheckSignedTag(TREE_TYPE(t));
-               return assignCodeAuto(llvm::ConstantInt::get(
-                   inst->getContext(), (isSigned ? varRange.getSignedMax() : varRange.getUnsignedMax())));
+               auto val = isSigned ? varRange.getSignedMax() : varRange.getUnsignedMax();
+               return getIntegerCST(isSigned, inst->getContext(), val, TREE_TYPE(t));
             }
             else
                return nullptr;
@@ -3919,8 +3903,8 @@ namespace llvm
                                                              inst);
             if(!range.isFullSet())
             {
-               return assignCodeAuto(llvm::ConstantInt::get(
-                   inst->getContext(), (isSigned ? range.getSignedMax() : range.getUnsignedMax())));
+               auto val = isSigned ? range.getSignedMax() : range.getUnsignedMax();
+               return getIntegerCST(isSigned, inst->getContext(), val, TREE_TYPE(t));
             }
             else
             {

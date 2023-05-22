@@ -671,6 +671,7 @@ namespace llvm
       int TYPE_PRECISION(const void* t) const;
       bool COMPLEX_FLOAT_TYPE_P(const void* t) const;
       bool TYPE_SATURATING(const void* t) const;
+      const void* getIntegerCST(bool isSigned, llvm::LLVMContext& context, const APInt& val, const void* t);
       const void* TYPE_MIN_VALUE(const void* t);
       const void* TYPE_MAX_VALUE(const void* t);
       const void* TYPE_VALUES(const void* t);
