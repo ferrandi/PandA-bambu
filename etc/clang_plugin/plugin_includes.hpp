@@ -125,7 +125,7 @@ namespace llvm
 {
    struct APIntCompare
    {
-      bool operator()(const APInt& lhs, const APInt& rhs) const
+      bool operator()(const llvm::APInt& lhs, const llvm::APInt& rhs) const
       {
          return lhs.getBitWidth() < rhs.getBitWidth() || (lhs.getBitWidth() == rhs.getBitWidth() && lhs.ult(rhs));
       }
@@ -279,7 +279,9 @@ namespace llvm
       const void* assignCode(const void* o, tree_codes c)
       {
          if(HAS_CODE(o) && (TREE_CODE(o) != c))
+         {
             llvm::errs() << GET_TREE_CODE_NAME(c) << " vs " << GET_TREE_CODE_NAME(TREE_CODE(o)) << "\n";
+         }
          assert(!HAS_CODE(o) || (TREE_CODE(o) == c));
          llvm2tree_code[o] = c;
          return o;
@@ -309,7 +311,7 @@ namespace llvm
       }
       const void* AddSignedTag(const void* t) const
       {
-         return AddSignedTag(reinterpret_cast<const llvm::Type*>(t));
+         return reinterpret_cast<const llvm::Type*>(reinterpret_cast<size_t>(t) | 1);
       }
 
       struct expanded_location

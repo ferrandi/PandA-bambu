@@ -273,7 +273,7 @@ llvm::PassPluginLibraryInfo CLANG_PLUGIN_INFO(_plugin_dumpGimpleEmpty)()
 #if __clang_major__ < 16
                                                      llvm::PassBuilder::OptimizationLevel
 #else
-                  llvm::OptimizationLevel
+                                                     llvm::OptimizationLevel
 #endif
                                                  ) { return load(MPM); });
            }};

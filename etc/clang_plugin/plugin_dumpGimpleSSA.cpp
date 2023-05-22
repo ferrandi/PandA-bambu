@@ -482,7 +482,7 @@ llvm::PassPluginLibraryInfo CLANG_PLUGIN_INFO(_plugin_dumpGimpleSSA)()
 #if __clang_major__ <= 13
                                                  llvm::PassBuilder::OptimizationLevel Opt
 #else
-                           llvm::OptimizationLevel Opt
+                  llvm::OptimizationLevel Opt
 #endif
                                              ) {
              return load(
@@ -490,7 +490,7 @@ llvm::PassPluginLibraryInfo CLANG_PLUGIN_INFO(_plugin_dumpGimpleSSA)()
 #if __clang_major__ <= 13
                  Opt != llvm::PassBuilder::OptimizationLevel::O0 && Opt != llvm::PassBuilder::OptimizationLevel::O1
 #else
-                                                    Opt != llvm::OptimizationLevel::O0 && Opt != llvm::OptimizationLevel::O1
+                     Opt != llvm::OptimizationLevel::O0 && Opt != llvm::OptimizationLevel::O1
 #endif
              );
           });
