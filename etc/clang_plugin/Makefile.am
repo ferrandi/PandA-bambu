@@ -15,9 +15,6 @@ EXTRA_DIST = \
 	$(top_srcdir)/etc/clang_plugin/gcc/cilk-builtins.def \
 	$(top_srcdir)/etc/clang_plugin/gcc/chkp-builtins.def \
 	$(top_srcdir)/etc/clang_plugin/gcc/COPYING3 \
-	$(top_srcdir)/etc/clang_plugin/llvm/eSSA.hpp \
-	$(top_srcdir)/etc/clang_plugin/llvm/eSSA.cpp \
-	$(top_srcdir)/etc/clang_plugin/llvm/LICENSE.TXT \
 	$(top_srcdir)/etc/clang_plugin/plugin_ASTAnalyzer.cpp \
 	$(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp \
 	$(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleEmpty.cpp \
