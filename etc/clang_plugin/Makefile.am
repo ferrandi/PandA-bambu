@@ -18,12 +18,6 @@ EXTRA_DIST = \
 	$(top_srcdir)/etc/clang_plugin/llvm/eSSA.hpp \
 	$(top_srcdir)/etc/clang_plugin/llvm/eSSA.cpp \
 	$(top_srcdir)/etc/clang_plugin/llvm/LICENSE.TXT \
-	$(top_srcdir)/etc/clang_plugin/llvm/my_OrderedInstructions.cpp \
-	$(top_srcdir)/etc/clang_plugin/llvm/my_OrderedInstructions.hpp \
-	$(top_srcdir)/etc/clang_plugin/llvm/my_OrderedBasicBlock.hpp \
-	$(top_srcdir)/etc/clang_plugin/llvm/my_OrderedBasicBlock.cpp \
-	$(top_srcdir)/etc/clang_plugin/llvm/RangeAnalysis.hpp \
-	$(top_srcdir)/etc/clang_plugin/llvm/RangeAnalysis.cpp \
 	$(top_srcdir)/etc/clang_plugin/plugin_ASTAnalyzer.cpp \
 	$(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp \
 	$(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleEmpty.cpp \

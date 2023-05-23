@@ -71,7 +71,6 @@
 #else
 #include <llvm/Transforms/Scalar/LowerAtomic.h>
 #endif
-#include <llvm/Transforms/Utils/BreakCriticalEdges.h>
 #include <llvm/Transforms/Utils/Mem2Reg.h>
 #include <llvm/Transforms/Utils/UnifyFunctionExitNodes.h>
 #endif
@@ -617,7 +616,6 @@ llvm::PassPluginLibraryInfo CLANG_PLUGIN_INFO(_plugin_expandMemOps)()
               const auto load = [](llvm::ModulePassManager& MPM) {
                  llvm::FunctionPassManager FPM;
                  FPM.addPass(llvm::InstCombinePass());
-                 FPM.addPass(llvm::BreakCriticalEdgesPass());
                  FPM.addPass(llvm::UnifyFunctionExitNodesPass());
                  MPM.addPass(llvm::createModuleToFunctionPassAdaptor(std::move(FPM)));
                  MPM.addPass(llvm::CLANG_VERSION_SYMBOL(_plugin_expandMemOps)());
