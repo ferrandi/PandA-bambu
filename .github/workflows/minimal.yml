@@ -154,6 +154,35 @@ jobs:
           name: bambu_specific_test_modelsim
           path: ${{env.report-dir}}
 
+  specific-test-AXI:
+    needs: [build]
+    runs-on: [self-hosted,mentor]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      - name: Download Bambu AppImage
+        uses: ./.github/actions/storage-download
+        with:
+          name: ${{needs.build.outputs.package-name}}
+          storage-url: "${{env.storage-url}}"
+          username: "${{env.storage-user}}"
+          password: "${{env.storage-token}}"
+      - name: Setup binaries
+        id: setup
+        shell: bash
+        run: |
+          mkdir bin
+          ln -s $PWD/*.AppImage bin/bambu
+          ln -s $PWD/*.AppImage bin/spider
+          echo "local-bin=$PWD/bin" >> $GITHUB_OUTPUT
+      - name: Launch AXI test
+        shell: bash
+        run: |
+          export PATH=${{steps.setup.outputs.local-bin}}:$PATH
+          mkdir ${{env.report-dir}}
+          ./panda_regressions/hls/bambu_axi_test.sh --returnfail --junitdir="${{env.report-dir}}" --csv="${{env.report-dir}}/perf.csv" ${{env.args}}
+
+
   gcc_regression_simple:
     needs: [build, specific-test]
     runs-on: [self-hosted, mentor]
