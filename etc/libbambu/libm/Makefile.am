@@ -420,4 +420,4 @@ libm_clang16_subnormals_std_a_CFLAGS = $(compiler_flags_clang) --compiler=I386_C
 libm_clang16_subnormals_std_a_AR = $(top_builddir)/src/tree-panda-gcc --compiler=I386_CLANG16 $(common_treegccflags_clang) -C
 endif
 
-
+DIST_SOURCES = $(common_libm_src) $(common_libm_src_fr) $(common_libm_src_std)

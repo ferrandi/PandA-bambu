@@ -228,7 +228,7 @@ jobs:
     runs-on: [self-hosted, long, lattice]
     env:
       basename: lattice
-      args: --spider-style="latex_format_bambu_results_lattice.xml" -c=--evaluation -t180m
+      args: --spider-style="latex_format_bambu_results_lattice.xml" -c=--evaluation=CYCLES -t180m
     continue-on-error: ${{ matrix.known-issues }}
     strategy:
       fail-fast: false
