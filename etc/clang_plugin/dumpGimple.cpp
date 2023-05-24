@@ -43,9 +43,6 @@
 
 #include "plugin_includes.hpp"
 
-#include "llvm/RangeAnalysis.hpp"
-#include "llvm/eSSA.hpp"
-
 #if HAVE_LIBBDD
 #include "HardekopfLin_AA.hpp"
 #endif
@@ -398,8 +395,7 @@ namespace llvm
          PtoSets_AA(nullptr),
          SignedPointerTypeReference(0),
          last_memory_ssa_vers(std::numeric_limits<int>::max()),
-         last_BB_index(2),
-         RA(nullptr)
+         last_BB_index(2)
    {
       if(EC)
       {
@@ -1498,9 +1494,12 @@ namespace llvm
       if(isa<llvm::StoreInst>(inst))
       {
          const llvm::StoreInst& store = cast<const llvm::StoreInst>(*inst);
-         if(uicTable.find(0) == uicTable.end())
-            uicTable[0] = assignCodeAuto(llvm::ConstantInt::get(llvm::Type::getInt32Ty(inst->getContext()), 0, false));
-         const void* zero = uicTable.find(0)->second;
+         auto val_zero = llvm::APInt(32, 0);
+         if(uicTable.find(val_zero) == uicTable.end())
+         {
+            uicTable[val_zero] = assignCodeAuto(llvm::ConstantInt::get(inst->getContext(), val_zero));
+         }
+         const void* zero = uicTable.find(val_zero)->second;
          auto addr = getOperand(store.getPointerOperand(), currentFunction);
          auto ty = store.getValueOperand()->getType();
          auto isVecType = ty->isVectorTy();
@@ -2294,13 +2293,19 @@ namespace llvm
                ics = assignCode(&ics_obj, GT(INTEGER_CST_SIGNED));
             }
             else
+            {
                ics = &index2integer_cst_signed.find(op)->second;
+            }
             return ics;
          }
          else if(!CheckSignedTag(TREE_TYPE(op)))
+         {
             return build1(GT(NOP_EXPR), AddSignedTag(type_operand), op);
+         }
          else
+         {
             return op;
+         }
       }
       else if(isUnsignedOperand(inst, index) && (CheckSignedTag(TREE_TYPE(op))))
          return build1(GT(NOP_EXPR), NormalizeSignedTag(TREE_TYPE(op)), op);
@@ -2323,9 +2328,12 @@ namespace llvm
       {
          assert(index == 0);
          const llvm::LoadInst& load = cast<const llvm::LoadInst>(*inst);
-         if(uicTable.find(0) == uicTable.end())
-            uicTable[0] = assignCodeAuto(llvm::ConstantInt::get(llvm::Type::getInt32Ty(inst->getContext()), 0, false));
-         const void* zero = uicTable.find(0)->second;
+         auto val_zero = llvm::APInt(32, 0);
+         if(uicTable.find(val_zero) == uicTable.end())
+         {
+            uicTable[val_zero] = assignCodeAuto(llvm::ConstantInt::get(inst->getContext(), val_zero));
+         }
+         const void* zero = uicTable.find(val_zero)->second;
          auto addr = getOperand(load.getPointerOperand(), currentFunction);
          auto ty = load.getType();
          auto isVecType = ty->isVectorTy();
@@ -2352,11 +2360,12 @@ namespace llvm
       {
          assert(index == 0);
          const llvm::SExtInst& sext = cast<const llvm::SExtInst>(*inst);
-         auto MSB_pos = sext.getType()->getIntegerBitWidth() - 1;
-         assert(MSB_pos > 0);
+         auto MSB_pos = llvm::APInt(32, sext.getType()->getIntegerBitWidth() - 1);
+         assert(MSB_pos.ugt(0));
          if(uicTable.find(MSB_pos) == uicTable.end())
-            uicTable[MSB_pos] =
-                assignCodeAuto(llvm::ConstantInt::get(llvm::Type::getInt32Ty(inst->getContext()), MSB_pos, false));
+         {
+            uicTable[MSB_pos] = assignCodeAuto(llvm::ConstantInt::get(inst->getContext(), MSB_pos));
+         }
          const void* MSB_posNode = uicTable.find(MSB_pos)->second;
          auto type = AddSignedTag(assignCodeType(sext.getType()));
          auto casted = build1(GT(NOP_EXPR), type, getOperand(inst->getOperand(index), currentFunction));
@@ -2370,10 +2379,11 @@ namespace llvm
          auto bw = tI.getType()->getIntegerBitWidth();
          if(bw != 8 && bw != 16 && bw != 32 && bw != 64)
          {
-            auto mask = (1ULL << bw) - 1;
+            auto mask = (llvm::APInt(64, 1) << bw) - 1;
             if(uicTable.find(mask) == uicTable.end())
-               uicTable[mask] =
-                   assignCodeAuto(llvm::ConstantInt::get(llvm::Type::getInt64Ty(inst->getContext()), mask, false));
+            {
+               uicTable[mask] = assignCodeAuto(llvm::ConstantInt::get(inst->getContext(), mask));
+            }
             const void* maskNode = uicTable.find(mask)->second;
             auto type = assignCodeType(tI.getType());
             return build2(GT(BIT_AND_EXPR), type, getOperand(inst->getOperand(index), currentFunction), maskNode);
@@ -2948,7 +2958,7 @@ namespace llvm
          report_fatal_error("unexpected condition");
    }
 
-   int64_t DumpGimpleRaw::TREE_INT_CST_LOW(const void* t)
+   std::string DumpGimpleRaw::TREE_INT_CST(const void* t)
    {
       const llvm::ConstantData* cd;
       bool isSigned = TREE_CODE(t) == GT(INTEGER_CST_SIGNED);
@@ -2957,14 +2967,21 @@ namespace llvm
       else
          cd = reinterpret_cast<const llvm::ConstantData*>(t);
       if(isa<llvm::ConstantPointerNull>(cd))
-         return 0;
+         return "0";
       const llvm::ConstantInt* llvm_obj = cast<const llvm::ConstantInt>(cd);
       const llvm::APInt& val = llvm_obj->getValue();
-      assert(val.getNumWords() == 1);
       if(isSigned || CheckSignedTag(TREE_TYPE(t)))
-         return val.getSExtValue();
+      {
+         SmallString<40> S;
+         val.toStringSigned(S);
+         return S.c_str();
+      }
       else
-         return static_cast<int64_t>(val.getZExtValue());
+      {
+         SmallString<40> S;
+         val.toStringUnsigned(S);
+         return S.c_str();
+      }
    }
 
    const void* DumpGimpleRaw::assignCodeType(const llvm::Type* ty)
@@ -3219,38 +3236,56 @@ namespace llvm
       }
    }
 
+   const void* DumpGimpleRaw::getIntegerCST(bool isSigned, llvm::LLVMContext& context, const APInt& val, const void* t)
+   {
+      auto nodeVal = assignCodeAuto(llvm::ConstantInt::get(context, val));
+      if(isSigned)
+      {
+         const void* ics;
+         if(index2integer_cst_signed.find(nodeVal) == index2integer_cst_signed.end())
+         {
+            auto& ics_obj = index2integer_cst_signed[nodeVal];
+            ics_obj.ic = nodeVal;
+            ics_obj.type = t;
+            ics = assignCode(&ics_obj, GT(INTEGER_CST_SIGNED));
+         }
+         else
+         {
+            ics = &index2integer_cst_signed.find(nodeVal)->second;
+         }
+         return ics;
+      }
+      if(uicTable.find(val) == uicTable.end())
+      {
+         uicTable[val] = nodeVal;
+      }
+      return uicTable.find(val)->second;
+   }
+
    const void* DumpGimpleRaw::TYPE_MIN_VALUE(const void* t)
    {
       const llvm::Type* Cty = reinterpret_cast<const llvm::Type*>(t);
-      bool isSigned = TREE_CODE(t) == GT(SIGNEDPOINTERTYPE) || CheckSignedTag(Cty);
+      bool isSigned = CheckSignedTag(Cty) || TREE_CODE(t) == GT(SIGNEDPOINTERTYPE);
       llvm::Type* ty = const_cast<llvm::Type*>(NormalizeSignedTag(Cty));
       auto obj_size = TREE_CODE(t) == GT(SIGNEDPOINTERTYPE) ? 32 : DL->getTypeAllocSizeInBits(ty);
-      uint64_t val;
-      if(isSigned)
-      {
-         val = -(1ULL << (obj_size - 1));
-      }
-      else
-         val = 0;
+      auto val = isSigned ? llvm::APInt::getSignedMinValue(obj_size) : llvm::APInt::getMinValue(obj_size);
       auto context = TREE_CODE(t) == GT(SIGNEDPOINTERTYPE) ? moduleContext : &ty->getContext();
-      if(uicTable.find(val) == uicTable.end())
-         uicTable[val] = assignCodeAuto(llvm::ConstantInt::get(llvm::Type::getInt64Ty(*context), val, false));
-      return uicTable.find(val)->second;
+      return getIntegerCST(isSigned, *context, val, t);
    }
 
    const void* DumpGimpleRaw::TYPE_MAX_VALUE(const void* t)
    {
       const llvm::Type* Cty = reinterpret_cast<const llvm::Type*>(t);
-      bool isSigned = TREE_CODE(t) == GT(SIGNEDPOINTERTYPE) || CheckSignedTag(Cty);
+      bool isSigned = CheckSignedTag(Cty) || TREE_CODE(t) == GT(SIGNEDPOINTERTYPE);
       llvm::Type* ty = const_cast<llvm::Type*>(NormalizeSignedTag(Cty));
       auto obj_size = TREE_CODE(t) == GT(SIGNEDPOINTERTYPE) ? 32 : DL->getTypeAllocSizeInBits(ty);
-      auto maxvalue = llvm::APInt::getMaxValue(std::max((isSigned ? obj_size - 1ULL : obj_size), 1ULL)).getZExtValue();
+      auto val = isSigned ? llvm::APInt::getSignedMaxValue(obj_size) : llvm::APInt::getMaxValue(obj_size);
       if(maxValueITtable.find(t) != maxValueITtable.end())
-         maxvalue = maxValueITtable.find(t)->second;
+      {
+         val = maxValueITtable.find(t)->second;
+      }
       auto context = TREE_CODE(t) == GT(SIGNEDPOINTERTYPE) ? moduleContext : &ty->getContext();
-      if(uicTable.find(maxvalue) == uicTable.end())
-         uicTable[maxvalue] = assignCodeAuto(llvm::ConstantInt::get(llvm::Type::getInt64Ty(*context), maxvalue, false));
-      return uicTable.find(maxvalue)->second;
+      return getIntegerCST(isSigned, *context, val, t);
    }
 
    const void* DumpGimpleRaw::TYPE_VALUES(const void*)
@@ -3285,28 +3320,33 @@ namespace llvm
       llvm::Type* ty = const_cast<llvm::Type*>(NormalizeSignedTag(Cty));
       if(TREE_CODE(t) == GT(SIGNEDPOINTERTYPE))
       {
-         auto obj_size = 32u;
+         auto obj_size = llvm::APInt(64, 32u);
          if(uicTable.find(obj_size) == uicTable.end())
-            uicTable[obj_size] =
-                assignCodeAuto(llvm::ConstantInt::get(llvm::Type::getInt64Ty(ty->getContext()), obj_size, false));
+         {
+            uicTable[obj_size] = assignCodeAuto(llvm::ConstantInt::get(ty->getContext(), obj_size));
+         }
          return uicTable.find(obj_size)->second;
       }
       else if(ty->isFunctionTy())
       {
-         auto obj_size = 8u;
+         auto obj_size = llvm::APInt(64, 8u);
          if(uicTable.find(obj_size) == uicTable.end())
-            uicTable[obj_size] =
-                assignCodeAuto(llvm::ConstantInt::get(llvm::Type::getInt64Ty(ty->getContext()), obj_size, false));
+         {
+            uicTable[obj_size] = assignCodeAuto(llvm::ConstantInt::get(ty->getContext(), obj_size));
+         }
          return uicTable.find(obj_size)->second;
       }
       else if(ty->isVoidTy())
+      {
          return nullptr;
+      }
       else
       {
-         auto obj_size = ty->isSized() ? DL->getTypeAllocSizeInBits(ty) : 8ULL;
+         auto obj_size = llvm::APInt(64, ty->isSized() ? DL->getTypeAllocSizeInBits(ty) : 8ULL);
          if(uicTable.find(obj_size) == uicTable.end())
-            uicTable[obj_size] =
-                assignCodeAuto(llvm::ConstantInt::get(llvm::Type::getInt64Ty(ty->getContext()), obj_size, false));
+         {
+            uicTable[obj_size] = assignCodeAuto(llvm::ConstantInt::get(ty->getContext(), obj_size));
+         }
          return uicTable.find(obj_size)->second;
       }
    }
@@ -3412,7 +3452,9 @@ namespace llvm
          snprintf(buffer, LOCAL_BUFFER_LEN, "fd%d", pos);
          std::string fdName = buffer;
          if(identifierTable.find(fdName) == identifierTable.end())
+         {
             identifierTable.insert(fdName);
+         }
          index2field_decl[std::make_pair(scpe, pos)].name =
              assignCode(identifierTable.find(fdName)->c_str(), GT(IDENTIFIER_NODE));
          assert(CheckSignedTag(reinterpret_cast<const llvm::Type*>(t)) == 0);
@@ -3420,10 +3462,12 @@ namespace llvm
          index2field_decl[std::make_pair(scpe, pos)].scpe = assignCodeAuto(scpe);
          index2field_decl[std::make_pair(scpe, pos)].size = TYPE_SIZE(t);
          index2field_decl[std::make_pair(scpe, pos)].algn = TYPE_ALIGN(t);
-         uint64_t offset = DL->getStructLayout(const_cast<llvm::StructType*>(scty))->getElementOffsetInBits(pos);
+         auto offset =
+             llvm::APInt(64, DL->getStructLayout(const_cast<llvm::StructType*>(scty))->getElementOffsetInBits(pos));
          if(uicTable.find(offset) == uicTable.end())
-            uicTable[offset] =
-                assignCodeAuto(llvm::ConstantInt::get(llvm::Type::getInt64Ty(scty->getContext()), offset, false));
+         {
+            uicTable[offset] = assignCodeAuto(llvm::ConstantInt::get(scty->getContext(), offset));
+         }
          index2field_decl[std::make_pair(scpe, pos)].bpos = uicTable.find(offset)->second;
       }
       return assignCode(&index2field_decl.find(std::make_pair(scpe, pos))->second, GT(FIELD_DECL));
@@ -3762,146 +3806,31 @@ namespace llvm
           const_cast<llvm::Instruction*>(reinterpret_cast<const llvm::Instruction*>(ssa->def_stmts));
       if(inst->getType()->isIntegerTy())
       {
-         if(RA)
-         {
-            auto varRange = RA->getRange(inst);
-            if(!varRange.isMaxRange())
-            {
-               auto isSigned = CheckSignedTag(TREE_TYPE(t));
-#ifdef DEBUG_RA
-               if(isSigned)
-                  llvm::errs() << "Range: <" << varRange.getSignedMin() << "," << varRange.getSignedMax() << "> ";
-               else
-                  llvm::errs() << "Range: <" << varRange.getUnsignedMin().getZExtValue() << ","
-                               << varRange.getUnsignedMax().getZExtValue() << "> ";
-               inst->print(llvm::errs());
-               llvm::errs() << "\n";
-               assert(isSigned ? (varRange.getSignedMin().sextOrTrunc(64).getSExtValue() <=
-                                  varRange.getSignedMax().sextOrTrunc(64).getSExtValue()) :
-                                 (varRange.getUnsignedMin().zextOrTrunc(64).getZExtValue() <=
-                                  varRange.getUnsignedMax().zextOrTrunc(64).getZExtValue()));
+         llvm::BasicBlock* BB = inst->getParent();
+         llvm::Function* currentFunction = inst->getFunction();
+         llvm::LazyValueInfo& LVI = GetLVI(*currentFunction);
+         llvm::ConstantRange range = LVI.getConstantRange(inst,
+#if __clang_major__ < 12
+                                                          BB,
 #endif
-               return assignCodeAuto(llvm::ConstantInt::get(
-                   inst->getContext(),
-                   (isSigned ? varRange.getSignedMin().sextOrTrunc(64) : varRange.getUnsignedMin().zextOrTrunc(64))));
-            }
+                                                          inst);
+         auto isSigned = CheckSignedTag(TREE_TYPE(t));
+         if(!range.isFullSet())
+         {
+#ifdef DEBUG_RA
+            if(isSigned)
+               llvm::errs() << "Range: <" << range.getSignedMin() << "," << range.getSignedMax() << "> ";
             else
-               return nullptr;
+               llvm::errs() << "Range: <" << range.getUnsignedMin().getZExtValue() << ","
+                            << range.getUnsignedMax().getZExtValue() << "> ";
+            inst->print(llvm::errs());
+            llvm::errs() << "\n";
+#endif
+            auto val = isSigned ? range.getSignedMin() : range.getUnsignedMin();
+            return getIntegerCST(isSigned, inst->getContext(), val, TREE_TYPE(t));
          }
          else
-         {
-            llvm::BasicBlock* BB = inst->getParent();
-            llvm::Function* currentFunction = inst->getFunction();
-            llvm::LazyValueInfo& LVI = GetLVI(*currentFunction);
-            unsigned long long int zeroMask = 0;
-#if __clang_major__ != 4
-            llvm::KnownBits KnownOneZero;
-            auto AC = GetAC(*currentFunction);
-            auto& DT = GetDomTree(*currentFunction);
-            KnownOneZero = llvm::computeKnownBits(inst, *DL, 0, &AC, inst, &DT);
-            zeroMask = KnownOneZero.Zero.getZExtValue();
-#endif
-            auto ty = inst->getType();
-            auto obj_size = ty->isSized() ? DL->getTypeAllocSizeInBits(ty) : 8ULL;
-            auto active_size = ty->isSized() ? DL->getTypeSizeInBits(ty) : 8ULL;
-            auto isSigned = CheckSignedTag(TREE_TYPE(t));
-            auto i = active_size;
-            for(; i > 1; --i)
-            {
-               if((zeroMask & (1ULL << (i - 1))) == 0)
-                  break;
-            }
-            if(i != active_size)
-            {
-               if(isSigned)
-                  ++i;
-               if(i < active_size)
-                  active_size = i;
-            }
-            llvm::ConstantRange range = LVI.getConstantRange(inst,
-#if __clang_major__ < 12
-                                                             BB,
-#endif
-                                                             inst);
-            //            if(!range.isFullSet() && !isSigned)
-            //            {
-            //               if(range.getUnsignedMin().getZExtValue() > range.getUnsignedMax().getZExtValue())
-            //                  isSigned = true;
-            //            }
-
-            if(obj_size != active_size)
-            {
-               uint64_t val;
-               if(isSigned)
-               {
-                  val = -(1ULL << (active_size - 1));
-               }
-               else
-                  val = 0;
-               if(!range.isFullSet())
-               {
-                  if(isSigned)
-                  {
-                     if(range.getSignedMin().getSExtValue() > (int64_t)val)
-                        val = range.getSignedMin().getSExtValue();
-                  }
-                  else
-                  {
-                     if(range.getUnsignedMin().getZExtValue() > val)
-                        val = range.getUnsignedMin().getZExtValue();
-                  }
-               }
-
-#ifdef DEBUG_RA
-               if(isSigned)
-                  llvm::errs() << "Range: " << (int64_t)val << ",";
-               else
-                  llvm::errs() << "Range: " << val << ",";
-#endif
-               auto context = TREE_CODE(t) == GT(SIGNEDPOINTERTYPE) ? moduleContext : &ty->getContext();
-               if(uicTable.find(val) == uicTable.end())
-                  uicTable[val] = assignCodeAuto(llvm::ConstantInt::get(llvm::Type::getInt64Ty(*context), val, false));
-               return uicTable.find(val)->second;
-            }
-            else
-            {
-               if(!range.isFullSet())
-               {
-                  //               llvm::errs() << "Range:\n";
-                  //               range.print(llvm::errs());
-                  //               llvm::errs() << range.getBitWidth() << "\n";
-                  //               auto low = range.getLower();
-                  //               llvm::errs() << "Min: " << (low.isMinValue()?"Tmin":"Fmin") << " " <<
-                  //               (low.isMaxValue()?"Tmax":"Fmax") << "\n"; llvm::errs() << "Min: " <<
-                  //               (low.isMinSignedValue()?"Tmin_signed":"Fmin_signed") << " " <<
-                  //               (low.isMaxSignedValue()?"Tmax_signed":"Fmax_signed") << "\n"; llvm::errs() << "Min: "
-                  //               << (range.getUnsignedMin()).getZExtValue() << "\n"; llvm::errs() << "Min: " <<
-                  //               (range.getSignedMin()) << "\n"; low.print(llvm::errs(), isSigned); llvm::errs() <<
-                  //               (isSigned?"T":"F") << "\n"; auto upper = range.getUpper()-1; llvm::errs() << "Max: "
-                  //               << (upper.isMinValue()?"Tmin":"Fmin") << " " << (upper.isMaxValue()?"Tmax":"Fmax") <<
-                  //               "\n"; llvm::errs() << "Max: " <<
-                  //               (upper.isMinSignedValue()?"Tmin_signed":"Fmin_signed") << " " <<
-                  //               (upper.isMaxSignedValue()?"Tmax_signed":"Fmax_signed") << "\n"; llvm::errs() << "Max:
-                  //               " << (range.getUnsignedMax()).getZExtValue() << "\n"; llvm::errs() << "Max: " <<
-                  //               (range.getSignedMax()) << "\n"; upper.print(llvm::errs(), isSigned); llvm::errs() <<
-                  //               (isSigned?"T":"F") << "\n";
-#ifdef DEBUG_RA
-                  if(isSigned)
-                     llvm::errs() << "Range: <" << range.getSignedMin() << "," << range.getSignedMax() << "> ";
-                  else
-                     llvm::errs() << "Range: <" << range.getUnsignedMin().getZExtValue() << ","
-                                  << range.getUnsignedMax().getZExtValue() << "> ";
-                  inst->print(llvm::errs());
-                  llvm::errs() << "\n";
-#endif
-                  return assignCodeAuto(llvm::ConstantInt::get(
-                      inst->getContext(),
-                      (isSigned ? range.getSignedMin().sextOrTrunc(64) : range.getUnsignedMin().zextOrTrunc(64))));
-               }
-               else
-                  return nullptr;
-            }
-         }
+            return nullptr;
       }
       else
          return nullptr;
@@ -3916,119 +3845,24 @@ namespace llvm
           const_cast<llvm::Instruction*>(reinterpret_cast<const llvm::Instruction*>(ssa->def_stmts));
       if(inst->getType()->isIntegerTy())
       {
-         if(RA)
+         llvm::BasicBlock* BB = inst->getParent();
+         llvm::Function* currentFunction = inst->getFunction();
+         auto& LVI = GetLVI(*currentFunction);
+         auto isSigned = CheckSignedTag(TREE_TYPE(t));
+
+         llvm::ConstantRange range = LVI.getConstantRange(inst,
+#if __clang_major__ < 12
+                                                          BB,
+#endif
+                                                          inst);
+         if(!range.isFullSet())
          {
-            auto varRange = RA->getRange(inst);
-            if(!varRange.isMaxRange())
-            {
-               auto isSigned = CheckSignedTag(TREE_TYPE(t));
-               return assignCodeAuto(llvm::ConstantInt::get(
-                   inst->getContext(),
-                   (isSigned ? varRange.getSignedMax().sextOrTrunc(64) : varRange.getUnsignedMax().zextOrTrunc(64))));
-            }
-            else
-               return nullptr;
+            auto val = isSigned ? range.getSignedMax() : range.getUnsignedMax();
+            return getIntegerCST(isSigned, inst->getContext(), val, TREE_TYPE(t));
          }
          else
          {
-            llvm::BasicBlock* BB = inst->getParent();
-            llvm::Function* currentFunction = inst->getFunction();
-            auto& LVI = GetLVI(*currentFunction);
-            unsigned long long int zeroMask = 0;
-#if __clang_major__ != 4
-            llvm::KnownBits KnownOneZero;
-            auto AC = GetAC(*currentFunction);
-            const auto& DT = GetDomTree(*currentFunction);
-            KnownOneZero = llvm::computeKnownBits(inst, *DL, 0, &AC, inst, &DT);
-            zeroMask = KnownOneZero.Zero.getZExtValue();
-#endif
-            auto ty = inst->getType();
-            auto obj_size = ty->isSized() ? DL->getTypeAllocSizeInBits(ty) : 8ULL;
-            auto active_size = ty->isSized() ? DL->getTypeSizeInBits(ty) : 8ULL;
-            auto isSigned = CheckSignedTag(TREE_TYPE(t));
-            auto i = active_size;
-            for(; i > 1; --i)
-            {
-               if((zeroMask & (1ULL << (i - 1))) == 0)
-                  break;
-            }
-            if(i != active_size)
-            {
-               if(isSigned)
-                  ++i;
-               if(i < active_size)
-                  active_size = i;
-            }
-            llvm::ConstantRange range = LVI.getConstantRange(inst,
-#if __clang_major__ < 12
-                                                             BB,
-#endif
-                                                             inst);
-            //            if(!range.isFullSet() && !isSigned)
-            //            {
-            //               if(range.getUnsignedMin().getZExtValue() > range.getUnsignedMax().getZExtValue())
-            //                  isSigned = true;
-            //            }
-            if(obj_size != active_size)
-            {
-               uint64_t val;
-               assert(active_size < 64);
-               if(isSigned)
-               {
-                  val = (1ULL << (active_size - 1)) - 1;
-               }
-               else
-                  val = (1ULL << (active_size)) - 1;
-               if(!range.isFullSet())
-               {
-                  if(isSigned)
-                  {
-                     if(range.getSignedMax().getSExtValue() < (int64_t)val)
-                        val = range.getSignedMin().getSExtValue();
-                  }
-                  else
-                  {
-                     if(range.getUnsignedMax().getZExtValue() < val)
-                        val = range.getUnsignedMax().getZExtValue();
-                  }
-               }
-               else
-               {
-                  assert(range.getBitWidth() >= active_size);
-               }
-
-#ifdef DEBUG_RA
-               if(isSigned)
-                  llvm::errs() << (int64_t)val << ") ";
-               else
-                  llvm::errs() << val << ") ";
-               inst->print(llvm::errs());
-               llvm::errs() << "\n";
-#endif
-               // auto maxvalue =
-               // llvm::APInt::getMaxValue(std::max((isSigned?active_size-1ULL:active_size),1ULL)).getZExtValue();
-               auto maxvalue = val;
-               auto context = TREE_CODE(t) == GT(SIGNEDPOINTERTYPE) ? moduleContext : &ty->getContext();
-               if(uicTable.find(maxvalue) == uicTable.end())
-                  uicTable[maxvalue] =
-                      assignCodeAuto(llvm::ConstantInt::get(llvm::Type::getInt64Ty(*context), maxvalue, false));
-               return uicTable.find(maxvalue)->second;
-            }
-            else
-            {
-               if(!range.isFullSet())
-               {
-                  auto isSigned = CheckSignedTag(TREE_TYPE(t));
-                  return assignCodeAuto(llvm::ConstantInt::get(
-                      inst->getContext(),
-                      (isSigned ? range.getSignedMax().sextOrTrunc(64) : range.getUnsignedMax().zextOrTrunc(64))));
-               }
-               else
-               {
-                  assert(range.getBitWidth() == active_size);
-                  return nullptr;
-               }
-            }
+            return nullptr;
          }
       }
       else
@@ -4054,10 +3888,12 @@ namespace llvm
                for(unsigned index = 0; index < val->getNumElements(); ++index)
 #endif
                {
-                  if(uicTable.find(index) == uicTable.end())
-                     uicTable[index] = assignCodeAuto(
-                         llvm::ConstantInt::get(llvm::Type::getInt32Ty(llvm_obj->getContext()), index, false));
-                  const void* idx = uicTable.find(index)->second;
+                  auto indexAPInt = llvm::APInt(32, index);
+                  if(uicTable.find(indexAPInt) == uicTable.end())
+                  {
+                     uicTable[indexAPInt] = assignCodeAuto(llvm::ConstantInt::get(llvm_obj->getContext(), indexAPInt));
+                  }
+                  const void* idx = uicTable.find(indexAPInt)->second;
                   const void* valu = getOperand(val->getSequentialElement(), nullptr);
                   res.push_back(std::make_pair(idx, valu));
                }
@@ -4098,10 +3934,12 @@ namespace llvm
             const llvm::ConstantDataSequential* val = reinterpret_cast<const llvm::ConstantDataSequential*>(t);
             for(unsigned index = 0; index < val->getNumElements(); ++index)
             {
-               if(uicTable.find(index) == uicTable.end())
-                  uicTable[index] = assignCodeAuto(
-                      llvm::ConstantInt::get(llvm::Type::getInt64Ty(llvm_obj->getContext()), index, false));
-               const void* idx = uicTable.find(index)->second;
+               auto indexAPInt = llvm::APInt(64, index);
+               if(uicTable.find(indexAPInt) == uicTable.end())
+               {
+                  uicTable[indexAPInt] = assignCodeAuto(llvm::ConstantInt::get(llvm_obj->getContext(), indexAPInt));
+               }
+               const void* idx = uicTable.find(indexAPInt)->second;
                const void* valu = getOperand(val->getElementAsConstant(index), nullptr);
                res.push_back(std::make_pair(idx, valu));
             }
@@ -4112,10 +3950,12 @@ namespace llvm
             const llvm::ConstantArray* val = reinterpret_cast<const llvm::ConstantArray*>(t);
             for(unsigned index = 0; index < val->getNumOperands(); ++index)
             {
-               if(uicTable.find(index) == uicTable.end())
-                  uicTable[index] = assignCodeAuto(
-                      llvm::ConstantInt::get(llvm::Type::getInt64Ty(llvm_obj->getContext()), index, false));
-               const void* idx = uicTable.find(index)->second;
+               auto indexAPInt = llvm::APInt(64, index);
+               if(uicTable.find(indexAPInt) == uicTable.end())
+               {
+                  uicTable[indexAPInt] = assignCodeAuto(llvm::ConstantInt::get(llvm_obj->getContext(), indexAPInt));
+               }
+               const void* idx = uicTable.find(indexAPInt)->second;
                auto elmnt = val->getOperand(index);
                const void* valu = getOperand(elmnt, nullptr);
                res.push_back(std::make_pair(idx, valu));
@@ -4197,13 +4037,13 @@ namespace llvm
    }
 
    /* Serialize wide integer i using FIELD to identify it.  */
-   void DumpGimpleRaw::serialize_wide_int(const char* field, int64_t i)
+   void DumpGimpleRaw::serialize_int_cst(const char* field, const std::string& i)
    {
       serialize_maybe_newline();
       snprintf(buffer, LOCAL_BUFFER_LEN,
                "%-4s: "
-               "%" PRId64,
-               field, i);
+               "%s",
+               field, i.c_str());
       stream << buffer;
       column += 21;
    }
@@ -5453,7 +5293,7 @@ namespace llvm
          }
          case GT(INTEGER_CST_SIGNED):
          case GT(INTEGER_CST):
-            serialize_wide_int("value", TREE_INT_CST_LOW(t));
+            serialize_int_cst("value", TREE_INT_CST(t));
             break;
 
          case GT(STRING_CST):
@@ -6443,134 +6283,6 @@ namespace llvm
       return res;
    }
 
-   void DumpGimpleRaw::compute_eSSA(llvm::Module& M, bool* changed)
-   {
-      eSSA eSSAHelper;
-      for(auto& fun : M.getFunctionList())
-      {
-         if(!fun.isIntrinsic() && !fun.isDeclaration())
-         {
-            bool res = eSSAHelper.exec(fun, changed, GetDomTree);
-            *changed = *changed || res;
-         }
-      }
-   }
-
-   void DumpGimpleRaw::ValueRangeOptimizer(llvm::Module& M)
-   {
-      if(RA)
-      {
-         for(llvm::Function& F : M)
-         {
-            llvm::TargetLibraryInfo& TLI = GetTLI(F);
-#ifdef DEBUG_RA
-            llvm::errs() << "ValueRangeOptimizer: Analysis for function: " << getName(&F) << "\n";
-#endif
-            std::list<llvm::Instruction*> deadList;
-            for(auto& BB : F)
-            {
-               auto curInstIterator = BB.begin();
-               while(curInstIterator != BB.end())
-               {
-                  llvm::Instruction* I = &*curInstIterator;
-                  assert(I->getParent());
-                  if(I->getType()->isVoidTy())
-                  {
-                     ++curInstIterator;
-                     continue;
-                  }
-                  if(I->user_empty() && llvm::isInstructionTriviallyDead(I, &TLI))
-                  {
-                     PRINT_DBG_VAR("this instruction is not used by anyone: ", I);
-                     deadList.push_back(I);
-                     ++curInstIterator;
-                     continue;
-                  }
-                  RangeAnalysis::Range R = RA->getRange(I);
-                  if(R.isEmpty())
-                  {
-                     PRINT_DBG_VAR("this instruction is dead: ", I);
-                     assert(!I->getType()->isVoidTy());
-                     I->replaceAllUsesWith(llvm::UndefValue::get(I->getType()));
-                     if(llvm::isInstructionTriviallyDead(I, &TLI))
-                        deadList.push_back(I);
-                  }
-                  else if(dyn_cast<llvm::PHINode>(I))
-                  {
-                     ++curInstIterator;
-                     continue;
-                  }
-                  else if(!R.isUnknown())
-                  {
-                     if(!R.isMaxRange())
-                     {
-                        if(R.isConstant())
-                        {
-#ifndef NDEBUG
-                           PRINT_DBG(
-                               "the value associated with this instruction is constant and could be propagated: ");
-                           I->print(llvm::errs());
-                           PRINT_DBG(" -> ");
-                           R.print(llvm::errs());
-                           PRINT_DBG("\n");
-#endif
-                           auto cInt = R.getLower().sextOrTrunc(I->getType()->getPrimitiveSizeInBits());
-                           auto C = llvm::ConstantInt::get(I->getContext(), cInt);
-                           I->replaceAllUsesWith(C);
-                           if(llvm::isInstructionTriviallyDead(I, &TLI))
-                              deadList.push_back(I);
-                        }
-                        else
-                        {
-                           auto nbitU =
-                               RangeAnalysis::Range_base::neededBits(R.getUnsignedMin(), R.getUnsignedMax(), false);
-                           auto nbitS = RangeAnalysis::Range_base::neededBits(R.getSignedMin(), R.getSignedMax(), true);
-                           auto bw = R.getBitWidth();
-                           if(nbitS < nbitU && nbitS < bw && !isSignedResult(I))
-                           {
-                              assert(bw > nbitS);
-#ifndef NDEBUG
-                              PRINT_DBG("the range associated with this unsigned instruction could be reduced with the "
-                                        "signed range: ");
-                              I->print(llvm::errs());
-                              PRINT_DBG(" -> " << R.getBitWidth() << " -> " << nbitS << " -> " << nbitU << " -> ");
-                              R.print(llvm::errs());
-                              PRINT_DBG("\n");
-#endif
-                              llvm::IRBuilder<> B(curInstIterator->getNextNode());
-
-                              auto leftShiftConstant = B.getIntN(bw, bw - nbitS);
-                              auto lsh = B.CreateShl(dyn_cast<llvm::Value>(I), leftShiftConstant);
-                              auto ashr = B.CreateAShr(lsh, leftShiftConstant);
-                              I->replaceAllUsesWith(ashr);
-                              cast<llvm::Instruction>(lsh)->setOperand(0, I);
-                           }
-                        }
-                     }
-                  }
-                  ++curInstIterator;
-               }
-            }
-            for(auto I : deadList)
-               if(llvm::isInstructionTriviallyDead(I, &TLI))
-                  I->eraseFromParent();
-            if(!deadList.empty())
-            {
-               //               const llvm::TargetTransformInfo& TTI = GetTTI(F);
-               for(llvm::Function::iterator BBIt = F.begin(); BBIt != F.end();)
-                  llvm::SimplifyInstructionsInBlock(&*BBIt++, &TLI);
-               //               for(llvm::Function::iterator BBIt = F.begin(); BBIt != F.end();)
-               //#if __clang_major__ >= 6
-               //                  llvm::simplifyCFG(&*BBIt++, TTI, 1);
-               //#else
-               //                  llvm::SimplifyCFG(&*BBIt++, TTI, 1);
-               //#endif
-               llvm::removeUnreachableBlocks(F);
-            }
-         }
-      }
-   }
-
    void DumpGimpleRaw::computeMAEntryDefs(
        const llvm::Function* F,
        std::map<const llvm::Function*, std::map<const void*, std::set<const llvm::Instruction*>>>&
@@ -6637,10 +6349,6 @@ namespace llvm
       }
 #endif
 
-      PRINT_DBG("Computing e-SSA\n");
-      compute_eSSA(M, &res);
-      PRINT_DBG("Computed e-SSA\n");
-
       if(!earlyAnalysis)
       {
          PRINT_DBG("Building metadata\n");
@@ -6668,21 +6376,6 @@ namespace llvm
 #endif
 #endif
       }
-
-#if __clang_major__ < 10
-      PRINT_DBG("Performing value-range analysis\n");
-      RA = new RangeAnalysis::InterProceduralRACropDFSHelper();
-      RA->exec(M, PtoSets_AA, GetDomTree, GetLVI, GetAC, GetMSSA);
-      PRINT_DBG("Performed value-range analysis\n");
-#endif
-
-#ifdef DEBUG_RA
-      assert(!llvm::verifyModule(M, &llvm::errs()));
-#endif
-      ValueRangeOptimizer(M);
-#ifdef DEBUG_RA
-      assert(!llvm::verifyModule(M, &llvm::errs()));
-#endif
 
       if(!earlyAnalysis)
       {
@@ -6730,13 +6423,6 @@ namespace llvm
       }
 #endif
 
-      if(RA)
-      {
-#ifndef NDEBUG
-         RA->printRanges(M, llvm::errs());
-#endif
-         delete RA;
-      }
       // M.print(llvm::errs(), nullptr);
       return res;
    }
