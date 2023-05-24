@@ -6,7 +6,7 @@
     <model value="EP4SGX530KH40C2"/>
     <package value="896PinFineLineFBGA"/>
     <speed_grade value="-2"/>
-    <BRAM_bitsize_max value="128"/>
+    <BRAM_bitsize_max value="4096"/>
     <BRAM_bitsize_min value="8"/>
     <DSPs_rx_sizes value="8,8,16,32"/>
     <DSPs_ry_sizes value="8,8,16,32"/>
