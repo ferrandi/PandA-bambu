@@ -7,7 +7,7 @@
       <package value="clg484"/>
       <speed_grade value="-1"/>
       <BRAM_bitsize_min value="8"/>
-      <BRAM_bitsize_max value="128"/>
+      <BRAM_bitsize_max value="4096"/>
       <memory_correction_coefficient value="0.2"/>
       <DSPs_x_sizes value="18"/>
       <DSPs_y_sizes value="25"/>
