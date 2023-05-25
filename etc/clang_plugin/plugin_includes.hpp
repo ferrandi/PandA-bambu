@@ -48,6 +48,8 @@
 #include "config_HAVE_LIBBDD.hpp"
 
 #include "llvm/ADT/APFloat.h"
+#include "llvm/ADT/DenseMap.h"
+#include "llvm/ADT/DenseMapInfo.h"
 #include "llvm/ADT/Hashing.h"
 #include "llvm/Analysis/AssumptionCache.h"
 #include "llvm/Analysis/LazyValueInfo.h"
@@ -121,6 +123,14 @@ using MemorySSAAnalysisResult = llvm::MemorySSAWrapperPass;
 
 namespace llvm
 {
+   struct APIntCompare
+   {
+      bool operator()(const llvm::APInt& lhs, const llvm::APInt& rhs) const
+      {
+         return lhs.getBitWidth() < rhs.getBitWidth() || (lhs.getBitWidth() == rhs.getBitWidth() && lhs.ult(rhs));
+      }
+   };
+
    class DumpGimpleRaw
    {
 #if __clang_major__ >= 11
@@ -256,7 +266,7 @@ namespace llvm
       /// internal identifier table
       std::set<std::string> identifierTable;
       /// unsigned integer constant table
-      std::map<uint64_t, const void*> uicTable;
+      std::map<llvm::APInt, const void*, APIntCompare> uicTable;
       /// type_integer with specific max value
       std::map<const void*, unsigned long long int> maxValueITtable;
       std::map<const void*, llvm::LLVMContext*> ArraysContexts;
@@ -269,7 +279,9 @@ namespace llvm
       const void* assignCode(const void* o, tree_codes c)
       {
          if(HAS_CODE(o) && (TREE_CODE(o) != c))
+         {
             llvm::errs() << GET_TREE_CODE_NAME(c) << " vs " << GET_TREE_CODE_NAME(TREE_CODE(o)) << "\n";
+         }
          assert(!HAS_CODE(o) || (TREE_CODE(o) == c));
          llvm2tree_code[o] = c;
          return o;
@@ -299,7 +311,7 @@ namespace llvm
       }
       const void* AddSignedTag(const void* t) const
       {
-         return AddSignedTag(reinterpret_cast<const llvm::Type*>(t));
+         return reinterpret_cast<const llvm::Type*>(reinterpret_cast<size_t>(t) | 1);
       }
 
       struct expanded_location
@@ -652,13 +664,14 @@ namespace llvm
       bool TREE_READONLY(const void* t) const;
       bool TREE_ADDRESSABLE(const void* t) const;
       const void* TREE_OPERAND(const void* t, unsigned index);
-      int64_t TREE_INT_CST_LOW(const void* t);
+      std::string TREE_INT_CST(const void* t);
       const void* TREE_TYPE(const void* t);
       bool POINTER_TYPE_P(const void* t) const;
       bool TYPE_UNSIGNED(const void* t) const;
       int TYPE_PRECISION(const void* t) const;
       bool COMPLEX_FLOAT_TYPE_P(const void* t) const;
       bool TYPE_SATURATING(const void* t) const;
+      const void* getIntegerCST(bool isSigned, llvm::LLVMContext& context, const APInt& val, const void* t);
       const void* TYPE_MIN_VALUE(const void* t);
       const void* TYPE_MAX_VALUE(const void* t);
       const void* TYPE_VALUES(const void* t);
@@ -693,7 +706,6 @@ namespace llvm
       const void* SSA_NAME_DEF_STMT(const void* t) const;
       const void* getMinValue(const void* t);
       const void* getMaxValue(const void* t);
-      RangeAnalysis::InterProceduralRACropDFSHelper* RA;
       const std::list<std::pair<const void*, const void*>> CONSTRUCTOR_ELTS(const void* t);
 
       const void* CASE_LOW(const void* t);
@@ -710,7 +722,7 @@ namespace llvm
 
       void serialize_int(const char* field, int i);
 
-      void serialize_wide_int(const char* field, int64_t i);
+      void serialize_int_cst(const char* field, const std::string& i);
 
       void serialize_real(const void* t);
 
@@ -762,10 +774,6 @@ namespace llvm
       bool RebuildConstants(llvm::Module& M);
       bool lowerIntrinsics(llvm::Module& M);
 
-      void compute_eSSA(llvm::Module& M, bool* changed);
-
-      void computeValueRange(const llvm::Module& M);
-      void ValueRangeOptimizer(llvm::Module& M);
       void
       computeMAEntryDefs(const llvm::Function* F,
                          std::map<const llvm::Function*, std::map<const void*, std::set<const llvm::Instruction*>>>&

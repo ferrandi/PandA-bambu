@@ -121,7 +121,6 @@
 #else
 #include <llvm/Transforms/Scalar/LowerAtomic.h>
 #endif
-#include <llvm/Transforms/Utils/BreakCriticalEdges.h>
 #include <llvm/Transforms/Utils/Mem2Reg.h>
 #include <llvm/Transforms/Utils/UnifyFunctionExitNodes.h>
 #endif
@@ -464,7 +463,6 @@ llvm::PassPluginLibraryInfo CLANG_PLUGIN_INFO(_plugin_dumpGimpleSSA)()
                 MPM.addPass(llvm::MergeFunctionsPass());
              }
              llvm::FunctionPassManager FPM3;
-             FPM3.addPass(llvm::BreakCriticalEdgesPass());
              FPM3.addPass(llvm::UnifyFunctionExitNodesPass());
              MPM.addPass(llvm::createModuleToFunctionPassAdaptor(std::move(FPM3)));
              MPM.addPass(llvm::CLANG_VERSION_SYMBOL_DUMP_SSA());
@@ -482,7 +480,7 @@ llvm::PassPluginLibraryInfo CLANG_PLUGIN_INFO(_plugin_dumpGimpleSSA)()
 #if __clang_major__ <= 13
                                                  llvm::PassBuilder::OptimizationLevel Opt
 #else
-                           llvm::OptimizationLevel Opt
+                  llvm::OptimizationLevel Opt
 #endif
                                              ) {
              return load(
@@ -490,7 +488,7 @@ llvm::PassPluginLibraryInfo CLANG_PLUGIN_INFO(_plugin_dumpGimpleSSA)()
 #if __clang_major__ <= 13
                  Opt != llvm::PassBuilder::OptimizationLevel::O0 && Opt != llvm::PassBuilder::OptimizationLevel::O1
 #else
-                                                    Opt != llvm::OptimizationLevel::O0 && Opt != llvm::OptimizationLevel::O1
+                     Opt != llvm::OptimizationLevel::O0 && Opt != llvm::OptimizationLevel::O1
 #endif
              );
           });
@@ -515,7 +513,6 @@ static void loadPass(const llvm::PassManagerBuilder&, llvm::legacy::PassManagerB
    PM.add(llvm::createGlobalOptimizerPass());
    PM.add(llvm::createArgumentPromotionPass(256));
    PM.add(llvm::createInstructionCombiningPass(true));
-   PM.add(llvm::createBreakCriticalEdgesPass());
    PM.add(llvm::createUnifyFunctionExitNodesPass());
 
    PM.add(new llvm::CLANG_VERSION_SYMBOL_DUMP_SSA());
@@ -527,7 +524,6 @@ static llvm::RegisterStandardPasses llvmtoolLoader_Ox(llvm::PassManagerBuilder::
 //    {
 //       PM.add(llvm::createPromoteMemoryToRegisterPass());
 //       PM.add(llvm::createGlobalOptimizerPass());
-//       PM.add(llvm::createBreakCriticalEdgesPass());
 //       PM.add(new llvm::CLANG_VERSION_SYMBOL_DUMP_SSA < true > ());
 //    }
 // These constructors add our pass to a list of global extensions.
