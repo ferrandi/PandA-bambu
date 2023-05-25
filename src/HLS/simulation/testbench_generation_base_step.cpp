@@ -620,7 +620,8 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
                auto InterfaceType = GetPointer<port_o>(portInst)->get_port_interface();
                if(InterfaceType == port_o::port_interface::PI_DOUT)
                {
-                  const auto manage_pidout = [&](const std::string& portID) {
+                  const auto manage_pidout = [&](const std::string& portID)
+                  {
                      auto port_name = portInst->get_id();
                      auto terminate = port_name.size() > 3 ? port_name.size() - std::string("_d" + portID).size() : 0;
                      THROW_ASSERT(port_name.substr(terminate) == "_d" + portID, "inconsistent interface");
@@ -703,7 +704,8 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
                auto InterfaceType = GetPointer<port_o>(portInst)->get_port_interface();
                if(InterfaceType == port_o::port_interface::PI_DIN)
                {
-                  const auto manage_pidin = [&](const std::string& portID) {
+                  const auto manage_pidin = [&](const std::string& portID)
+                  {
                      auto port_name = portInst->get_id();
                      auto terminate = port_name.size() > 3 ? port_name.size() - std::string("_q" + portID).size() : 0;
                      THROW_ASSERT(port_name.substr(terminate) == "_q" + portID, "inconsistent interface");
@@ -2190,7 +2192,8 @@ void TestbenchGenerationBaseStep::write_module_instantiation(bool xilinx_isim) c
 
 void TestbenchGenerationBaseStep::write_auxiliary_signal_declaration() const
 {
-   const auto testbench_memsize = [&]() {
+   const auto testbench_memsize = [&]()
+   {
       const auto mem_size =
           HLSMgr->Rmem->get_memory_address() - parameters->getOption<unsigned long long int>(OPT_base_address);
       return mem_size ? mem_size : 1;
@@ -2453,7 +2456,8 @@ void TestbenchGenerationBaseStep::initialize_input_signals(const tree_managerCon
    {
       const auto port_obj = mod->get_in_port(i);
       const auto port_if = GetPointer<port_o>(port_obj)->get_port_interface();
-      const auto port_name = [&]() -> std::string {
+      const auto port_name = [&]() -> std::string
+      {
          const auto port_id = port_obj->get_id();
          if(parameters->isOption(OPT_clock_name) && port_id == parameters->getOption<std::string>(OPT_clock_name))
          {
@@ -2745,32 +2749,27 @@ void TestbenchGenerationBaseStep::testbench_controller_machine() const
                           "currAddr % (1 << " + portPrefix + "awqueue[_i_][" + STR(SIZE_HIGH_INDEX) + " : " +
                           STR(SIZE_LOW_INDEX) + "]));\n");
 
-            /* Compute aggregate memory for WDATA */
+            /* Compute bitmask and overwrite data */
             const auto portWDATA = mod->find_member(portPrefix + "WDATA", port_o_K, cir);
             const auto bitsizeWDATA = GetPointer<port_o>(portWDATA)->get_typeRef()->size *
                                       GetPointer<port_o>(portWDATA)->get_typeRef()->vector_size;
-            std::string mem_aggregated;
-            {
-               mem_aggregated = "{";
-               for(unsigned int bitsize_index = 0; bitsize_index < bitsizeWDATA; bitsize_index = bitsize_index + 8)
-               {
-                  if(bitsize_index)
-                  {
-                     mem_aggregated += ", ";
-                  }
-                  mem_aggregated += "_bambu_testbench_mem_[" + portPrefix + "currAddr + " +
-                                    STR((bitsizeWDATA - bitsize_index) / 8 - 1) + " - base_addr]";
-               }
-               mem_aggregated += "}";
-            }
 
             for(unsigned bitsize_index = 0; bitsize_index < bitsizeWDATA; bitsize_index = bitsize_index + 8)
             {
                writer->write("    " + portPrefix + "wBitmask[" + STR(bitsize_index + 7) + " : " + STR(bitsize_index) +
                              "] = {8{" + portPrefix + "WSTRB[" + STR(bitsize_index / 8) + "]}};\n");
             }
-            writer->write("    " + mem_aggregated + " <= (" + mem_aggregated + " & ~" + portPrefix + "wBitmask) | (" +
-                          portPrefix + "WDATA & " + portPrefix + "wBitmask);\n");
+            for(unsigned bitsize_index = 0; bitsize_index < bitsizeWDATA; bitsize_index = bitsize_index + 8)
+            {
+               writer->write("    _bambu_testbench_mem_[" + portPrefix + "currAddr + " +
+                             STR((bitsizeWDATA - bitsize_index) / 8 - 1) + " - base_addr] <= (_bambu_testbench_mem_[" +
+                             portPrefix + "currAddr + " + STR((bitsizeWDATA - bitsize_index) / 8 - 1) +
+                             " - base_addr] & ~" + portPrefix + "wBitmask[" + STR(bitsizeWDATA - bitsize_index - 1) +
+                             " : " + STR(bitsizeWDATA - bitsize_index - 8) + "]) | (" + portPrefix + "WDATA[" +
+                             STR(bitsizeWDATA - bitsize_index - 1) + " : " + STR(bitsizeWDATA - bitsize_index - 8) +
+                             "] & " + portPrefix + "wBitmask[" + STR(bitsizeWDATA - bitsize_index - 1) + " : " +
+                             STR(bitsizeWDATA - bitsize_index - 8) + "]);\n");
+            }
             writer->write("    if(" + portPrefix + "WLAST) begin\n");
             writer->write("      " + portPrefix + "awqueue[_i_][" + STR(COUNT_HIGH_INDEX) + " : " +
                           STR(COUNT_LOW_INDEX) + "] <= -(32'd`MEM_DELAY_WRITE - 1);\n");
@@ -2824,6 +2823,7 @@ void TestbenchGenerationBaseStep::testbench_controller_machine() const
                           STR(SIZE_LOW_INDEX) + "]));\n");
 
             /* Compute aggregate memory for RDATA */
+            std::string mem_aggregated;
             const auto portRDATA = mod->find_member(portPrefix + "RDATA", port_o_K, cir);
             const auto bitsizeRDATA = GetPointer<port_o>(portRDATA)->get_typeRef()->size *
                                       GetPointer<port_o>(portRDATA)->get_typeRef()->vector_size;
