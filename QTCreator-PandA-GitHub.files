@@ -450,14 +450,6 @@ etc/clang_plugin/PtrIteratorSimplifyPass.hpp
 etc/clang_plugin/TreeHeightReduction.hpp
 etc/clang_plugin/bambuS2S.cpp
 etc/clang_plugin/dumpGimple.cpp
-etc/clang_plugin/llvm/RangeAnalysis.cpp
-etc/clang_plugin/llvm/RangeAnalysis.hpp
-etc/clang_plugin/llvm/eSSA.cpp
-etc/clang_plugin/llvm/eSSA.hpp
-etc/clang_plugin/llvm/my_OrderedBasicBlock.cpp
-etc/clang_plugin/llvm/my_OrderedBasicBlock.hpp
-etc/clang_plugin/llvm/my_OrderedInstructions.cpp
-etc/clang_plugin/llvm/my_OrderedInstructions.hpp
 etc/clang_plugin/plugin_ASTAnalyzer.cpp
 etc/clang_plugin/plugin_ASTAnnotate.cpp
 etc/clang_plugin/plugin_CSROA.cpp
@@ -2441,6 +2433,7 @@ src/utility/indented_output_stream.cpp
 src/utility/indented_output_stream.hpp
 src/utility/math_function.cpp
 src/utility/math_function.hpp
+src/utility/panda_types.hpp
 src/utility/parsing_error.hpp
 src/utility/refcount.hpp
 src/utility/simple_indent.cpp
