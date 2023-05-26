@@ -2327,18 +2327,6 @@ void TestbenchGenerationBaseStep::write_auxiliary_signal_declaration() const
 
             writer->write("reg [" + STR(bitsize - 1) + ":0] last_" + GetPointer<port_o>(port)->get_id() + ";\n");
 
-            const auto portAWADDR = mod->find_member(portPrefix + "AWADDR", port_o_K, cir);
-            const auto portWDATA = mod->find_member(portPrefix + "WDATA", port_o_K, cir);
-
-            const auto wAddrSize = GetPointer<port_o>(portAWADDR)->get_typeRef()->size *
-                                   GetPointer<port_o>(portAWADDR)->get_typeRef()->vector_size;
-            const auto wDataSize = GetPointer<port_o>(portWDATA)->get_typeRef()->size *
-                                   GetPointer<port_o>(portWDATA)->get_typeRef()->vector_size;
-
-            writer->write("reg [" + STR(wDataSize - 1) + ":0] " + portPrefix + "wBitmask;\n");
-            writer->write("reg [" + STR(wAddrSize - 1) + ":0] " + portPrefix + "currAddr;\n");
-            writer->write("reg [" + STR(wAddrSize - 1) + ":0] " + portPrefix + "endAddr;\n");
-
             /* Get queue size from pragma parameters, if present */
             std::string queueSize = "10";
             const std::string interfaceType = "m_axi_";
@@ -2625,6 +2613,17 @@ void TestbenchGenerationBaseStep::testbench_controller_machine() const
             }
 
             writer->write("always@(posedge " CLOCK_PORT_NAME ") begin\n");
+            const auto portAWADDR = mod->find_member(portPrefix + "AWADDR", port_o_K, cir);
+            const auto portWDATA = mod->find_member(portPrefix + "WDATA", port_o_K, cir);
+
+            const auto wAddrSize = GetPointer<port_o>(portAWADDR)->get_typeRef()->size *
+                                   GetPointer<port_o>(portAWADDR)->get_typeRef()->vector_size;
+            const auto wDataSize = GetPointer<port_o>(portWDATA)->get_typeRef()->size *
+                                   GetPointer<port_o>(portWDATA)->get_typeRef()->vector_size;
+
+            writer->write("  automatic reg [" + STR(wDataSize - 1) + ":0] " + portPrefix + "wBitmask;\n");
+            writer->write("  automatic reg [" + STR(wAddrSize - 1) + ":0] " + portPrefix + "currAddr;\n");
+            writer->write("  automatic reg [" + STR(wAddrSize - 1) + ":0] " + portPrefix + "endAddr;\n");
             writer->write("  " + portPrefix + "ARREADY <= (" + portPrefix + "arqueue_size < `" + portPrefix +
                           "MAX_QUEUE_SIZE);\n");
             writer->write("  " + portPrefix + "AWREADY <= (" + portPrefix + "awqueue_size < `" + portPrefix +
@@ -2750,7 +2749,6 @@ void TestbenchGenerationBaseStep::testbench_controller_machine() const
                           STR(SIZE_LOW_INDEX) + "]));\n");
 
             /* Compute bitmask and overwrite data */
-            const auto portWDATA = mod->find_member(portPrefix + "WDATA", port_o_K, cir);
             const auto bitsizeWDATA = GetPointer<port_o>(portWDATA)->get_typeRef()->size *
                                       GetPointer<port_o>(portWDATA)->get_typeRef()->vector_size;
 
