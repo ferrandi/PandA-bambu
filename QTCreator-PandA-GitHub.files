@@ -459,6 +459,7 @@ etc/clang_plugin/llvm/my_OrderedBasicBlock.hpp
 etc/clang_plugin/llvm/my_OrderedInstructions.cpp
 etc/clang_plugin/llvm/my_OrderedInstructions.hpp
 etc/clang_plugin/plugin_ASTAnalyzer.cpp
+etc/clang_plugin/plugin_ASTAnnotate.cpp
 etc/clang_plugin/plugin_CSROA.cpp
 etc/clang_plugin/plugin_GepiCanon.cpp
 etc/clang_plugin/plugin_dumpGimpleEmpty.cpp

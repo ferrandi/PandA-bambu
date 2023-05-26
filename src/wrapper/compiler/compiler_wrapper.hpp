@@ -179,9 +179,13 @@ class CompilerWrapper
       std::string topfname_plugin_obj;
       std::string topfname_plugin_name;
 
-      /// The plugin making visible only the top function
+      /// AST analysis
       std::string ASTAnalyzer_plugin_obj;
       std::string ASTAnalyzer_plugin_name;
+
+      /// AST annotation
+      std::string ASTAnnotate_plugin_obj;
+      std::string ASTAnnotate_plugin_name;
 
       /// The clang llvm-link executable
       std::string llvm_link;
