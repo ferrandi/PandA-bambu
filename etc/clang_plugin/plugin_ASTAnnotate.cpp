@@ -187,7 +187,7 @@ namespace clang
             {
                Analyze(CS, filename);
             }
-            FD->print(llvm::errs());
+            //FD->print(llvm::errs());
          }
       }
 
