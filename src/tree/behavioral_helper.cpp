@@ -1081,6 +1081,11 @@ std::string BehavioralHelper::get_function_name() const
    return function_name;
 }
 
+std::string BehavioralHelper::GetMangledFunctionName() const
+{
+   return tree_helper::GetMangledFunctionName(GetPointerS<const function_decl>(TM->CGetTreeNode(function_index)));
+}
+
 unsigned int BehavioralHelper::get_function_index() const
 {
    return function_index;
