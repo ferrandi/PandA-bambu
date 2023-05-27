@@ -77,7 +77,7 @@ const std::map<std::string, std::string> verilog_writer::builtin_to_verilog_keyw
     {NOT_GATE_STD, "not"}, {DFF_GATE_STD, "dff"},   {BUFF_GATE_STD, "buf"},
 };
 
-const char* verilog_writer::tokenNames[] = {
+const std::set<std::string> verilog_writer::keywords = {
     "abs", "abstol", "access", "acos", "acosh", "always", "analog", "and", "asin", "asinh", "assign", "atan", "atan2",
     "atanh", "automatic", "begin", "bool", "buf", "bufif0", "bufif1", "case", "casex", "casez", "ceil", "cell", "cmos",
     "config", "continuous", "cos", "cosh", "ddt_nature", "deassign", "default", "defparam", "design", "disable",
@@ -2224,17 +2224,18 @@ verilog_writer::verilog_writer(const ParameterConstRef _parameters)
     : language_writer(STD_OPENING_CHAR, STD_CLOSING_CHAR, _parameters)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
-   for(auto& tokenName : tokenNames)
-   {
-      keywords.insert(tokenName);
-   }
 }
 
 verilog_writer::~verilog_writer() = default;
 
-bool verilog_writer::check_keyword(std::string id) const
+bool verilog_writer::check_keyword(const std::string& id) const
 {
-   return keywords.find(id) != keywords.end();
+   return check_keyword_verilog(id);
+}
+
+bool verilog_writer::check_keyword_verilog(const std::string& id)
+{
+   return keywords.count(id);
 }
 
 void verilog_writer::write_timing_specification(const technology_managerConstRef TM, const structural_objectRef& circ)

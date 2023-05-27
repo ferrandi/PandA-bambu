@@ -38,18 +38,18 @@
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
  */
-
-/// Autoheader include
-#include "config_HAVE_FROM_C_BUILT.hpp"
-
 #include "VHDL_writer.hpp"
 
 #include "HDL_manager.hpp"
-
 #include "NP_functionality.hpp"
+#include "Parameter.hpp"
 #include "dbgPrintHelper.hpp"
 #include "exceptions.hpp"
+#include "indented_output_stream.hpp"
+#include "state_transition_graph_manager.hpp"
+#include "string_manipulation.hpp"
 #include "structural_objects.hpp"
+#include "technology_node.hpp"
 
 #include <algorithm>
 #include <boost/algorithm/string.hpp>
@@ -59,25 +59,9 @@
 #include <fstream>
 #include <functional>
 #include <iosfwd>
-#include <vector>
-
-///. include
-#include "Parameter.hpp"
-
-/// HLS/stg include
-#include "state_transition_graph_manager.hpp"
-
-/// STL include
 #include <utility>
 
-/// technology/physical_library include
-#include "technology_node.hpp"
-
-/// utility include
-#include "indented_output_stream.hpp"
-#include "string_manipulation.hpp" // for GET_CLASS
-
-const char* VHDL_writer::tokenNames[] = {
+const std::set<std::string> VHDL_writer::keywords = {
     "abs",          "access",     "after",   "alias",     "all",       "and",
     "architecture", "array",      "assert",  "attribute", "begin",     "block",
     "body",         "buffer",     "bus",     "case",      "component", "configuration",
@@ -99,10 +83,6 @@ VHDL_writer::VHDL_writer(const technology_managerConstRef _TM, const ParameterCo
     : language_writer(STD_OPENING_CHAR, STD_OPENING_CHAR, _parameters), TM(_TM)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
-   for(auto& tokenName : tokenNames)
-   {
-      keywords.insert(boost::to_upper_copy<std::string>(tokenName));
-   }
 }
 
 VHDL_writer::~VHDL_writer() = default;
@@ -2195,9 +2175,14 @@ void VHDL_writer::write_module_parametrization_decl(const structural_objectRef& 
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Written generics of entity " + cir->get_id());
 }
 
-bool VHDL_writer::check_keyword(std::string id) const
+bool VHDL_writer::check_keyword(const std::string& id) const
 {
-   return keywords.find(boost::to_upper_copy<std::string>(id)) != keywords.end();
+   return check_keyword_vhdl(id);
+}
+
+bool VHDL_writer::check_keyword_vhdl(const std::string& id)
+{
+   return keywords.count(boost::to_upper_copy(id));
 }
 
 void VHDL_writer::WriteBuiltin(const structural_objectConstRef component)
