@@ -87,7 +87,7 @@ void Write_acknowledgeModuleGenerator::InternalExec(std::ostream& out, structura
    out << "reg " << _ports_out[o_done].name << " 1INIT_ZERO_VALUE;\n\n";
 
    out << "always @(*)\n";
-   out << "  started0 <= (started | " << _ports_in[i_start].name << ") & !(" << _ports_in[i_ack].name << ");\n";
+   out << "  started0 = (started | " << _ports_in[i_start].name << ") & !(" << _ports_in[i_ack].name << ");\n";
    out << "always @(posedge clock 1RESET_EDGE)\n";
    out << "  if (1RESET_VALUE)\n";
    out << "    started <= 0;\n";

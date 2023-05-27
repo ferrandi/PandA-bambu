@@ -87,7 +87,7 @@ void Read_handshakeModuleGenerator::InternalExec(std::ostream& out, structural_o
    out << "reg " << _ports_out[o_done].name << "0 1INIT_ZERO_VALUE;\n";
 
    out << "always @(*)\n";
-   out << "  started0 <= (started | " << _ports_in[i_start].name << ") & !" << _ports_in[i_vld].name << ";\n";
+   out << "  started0 = (started | " << _ports_in[i_start].name << ") & !" << _ports_in[i_vld].name << ";\n";
    out << "always @(posedge clock 1RESET_EDGE)\n";
    out << "  if (1RESET_VALUE)\n";
    out << "    started <= 0;\n";

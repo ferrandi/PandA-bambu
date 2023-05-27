@@ -98,7 +98,7 @@ void Read_validModuleGenerator::InternalExec(std::ostream& out, structural_objec
    out << "    started <= started0;\n\n";
 
    out << "always @(*)\n";
-   out << "  validated0 <= (validated | " << _ports_in[i_vld].name << ") & !(started | " << _ports_in[i_start].name
+   out << "  validated0 = (validated | " << _ports_in[i_vld].name << ") & !(started | " << _ports_in[i_start].name
        << ");\n\n";
 
    out << "always @(posedge clock 1RESET_EDGE)\n";
