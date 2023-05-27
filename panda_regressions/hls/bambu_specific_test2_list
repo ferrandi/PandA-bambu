@@ -4,8 +4,8 @@ bambu_specific_test2/irr2.c --top-fname=irr2_test --generate-tb=a=2,b=5,c=10 --e
 bambu_specific_test2/irr3_a.c --top-fname=irr3_test  bambu_specific_test2/irr3_b.c --generate-tb=a=2,b=5,c=10 --experimental-setup=BAMBU
 bambu_specific_test2/irr4_a.c --top-fname=irr4_test  bambu_specific_test2/irr4_b.c --generate-tb=a=2,b=5,c=10 --experimental-setup=BAMBU
 bambu_specific_test2/par-bool1.c --top-fname=exam --generate-tb=a=2,b=5,c=10,d=3,e=4,f=5,cond=1 --speculative-sdc-scheduling --experimental-setup=BAMBU
-bambu_specific_test2/port_swapping_test.c --top-fname=function bambu_specific_test2/ps_constraints.xml --no-chaining --experimental-setup=BAMBU
-bambu_specific_test2/port_swapping_test2.c --top-fname=function bambu_specific_test2/ps_constraints.xml --no-chaining --experimental-setup=BAMBU
+bambu_specific_test2/port_swapping_test.c --top-fname=function bambu_specific_test2/ps_constraints.xml --no-chaining --experimental-setup=BAMBU --generate-tb=a=1,b=2,c=3,d=4,e=5,f=6,g=7,h=8,i=9,l=0,m=1,n=2,o=3,p=4,q=5,r=6
+bambu_specific_test2/port_swapping_test2.c --top-fname=function bambu_specific_test2/ps_constraints.xml --no-chaining --experimental-setup=BAMBU --generate-tb=a=1,b=2,c=3,d=4,e=5,f=6
 bambu_specific_test2/complex_test.c --top-fname=sum --generate-tb=BENCHMARKS_ROOT/bambu_specific_test2/complex_test.xml --experimental-setup=BAMBU
 bambu_specific_test2/multiarray.c --top-fname=fun2 --generate-tb=arr1="{{{3,0},{0,0}},{{8,3},{8,0}}}",arr2="{{{5,2},{0,1}},{{7,3},{5,0}}}",arr3="{{{3,0},{7,0}},{{3,5},{0,0}}}" --std=c99 --experimental-setup=BAMBU
 bambu_specific_test2/mod_test.c --top-fname=test --generate-tb=BENCHMARKS_ROOT/bambu_specific_test2/mod_test_c.xml 
