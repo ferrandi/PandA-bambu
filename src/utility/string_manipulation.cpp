@@ -113,6 +113,18 @@ std::string string_demangle(const std::string& input)
    return status == 0 ? std::string(res.get()) : "";
 }
 
+std::string capitalize(const std::string& str)
+{
+   std::string s(str);
+   return capitalize(s);
+}
+
+std::string& capitalize(std::string& str)
+{
+   str[0] = static_cast<char>(toupper(str[0]));
+   return str;
+}
+
 static const boost::regex fixed_def("a[cp]_(u)?fixed<\\s*(\\d+)\\s*,\\s*(\\d+),?\\s*(\\w+)?[^>]*>[^\\d-]*");
 #define FD_GROUP_U 1
 #define FD_GROUP_W 2
