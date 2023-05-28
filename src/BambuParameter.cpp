@@ -1672,7 +1672,14 @@ int BambuParameter::Exec()
          }
          case OPT_MAX_ULP:
          {
-            setOption(OPT_max_ulp, optarg);
+            if(boost::regex_search(std::string(optarg), boost::regex("^\\d+(\\.\\d+)?$")))
+            {
+               setOption(OPT_max_ulp, optarg);
+            }
+            else
+            {
+               THROW_ERROR("BadParameters: max ulp value must be a number.");
+            }
             break;
          }
          case OPT_SKIP_PIPE_PARAMETER:
