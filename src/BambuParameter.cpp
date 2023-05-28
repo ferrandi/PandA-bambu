@@ -2666,10 +2666,12 @@ void BambuParameter::CheckParameters()
          if(target_64 && boost::filesystem::exists(dir + "/settings64.sh"))
          {
             setOption(OPT_xilinx_settings, dir + "/settings64.sh");
+            setOption(OPT_xilinx_root, dir);
          }
          else if(boost::filesystem::exists(dir + "/settings32.sh"))
          {
             setOption(OPT_xilinx_settings, dir + "/settings32.sh");
+            setOption(OPT_xilinx_root, dir);
          }
          if(boost::filesystem::exists(dir + "/ISE/verilog/src/glbl.v"))
          {
@@ -2683,10 +2685,12 @@ void BambuParameter::CheckParameters()
          if(target_64 && boost::filesystem::exists(dir + "/settings64.sh"))
          {
             setOption(OPT_xilinx_vivado_settings, dir + "/settings64.sh");
+            setOption(OPT_xilinx_root, dir);
          }
          else if(boost::filesystem::exists(dir + "/settings32.sh"))
          {
             setOption(OPT_xilinx_vivado_settings, dir + "/settings32.sh");
+            setOption(OPT_xilinx_root, dir);
          }
          if(boost::filesystem::exists(dir + "/data/verilog/src/glbl.v"))
          {
