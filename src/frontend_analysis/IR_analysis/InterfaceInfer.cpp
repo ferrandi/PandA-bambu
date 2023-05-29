@@ -636,6 +636,7 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                      info.name = [&]() -> std::string {
                         if(isRead && isWrite)
                         {
+                           DesignAttributes.at(arg_name)[attr_interface_dir] = port_o::GetString(port_o::IO);
                            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---I/O interface");
                            if(interface_type == "ptrdefault")
                            {
@@ -654,11 +655,12 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                            else if(interface_type == "fifo" || interface_type == "axis")
                            {
                               THROW_ERROR("parameter " + arg_name + " cannot have interface " + interface_type +
-                                          " because it cannot be read and write at the same time");
+                                          " because it cannot be read and written at the same time");
                            }
                         }
                         else if(isRead)
                         {
+                           DesignAttributes.at(arg_name)[attr_interface_dir] = port_o::GetString(port_o::IN);
                            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Read-only interface");
                            if(interface_type == "ptrdefault")
                            {
@@ -672,6 +674,7 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                         }
                         else if(isWrite)
                         {
+                           DesignAttributes.at(arg_name)[attr_interface_dir] = port_o::GetString(port_o::OUT);
                            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Write-only interface");
                            if(interface_type == "ptrdefault")
                            {
@@ -690,6 +693,8 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                         }
                         return interface_type;
                      }();
+                     DesignAttributes.at(arg_name)[attr_interface_bitwidth] = STR(info.bitwidth);
+                     DesignAttributes.at(arg_name)[attr_interface_alignment] = STR(info.alignment);
                      interface_type = info.name;
 
                      INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "-->Interface specification:");
