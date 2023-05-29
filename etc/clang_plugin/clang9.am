@@ -39,7 +39,7 @@ endif
 $(I386_CLANG9_SSA_PLUGIN) : clang9_plugin_dumpGimpleSSA.so clang9_plugin_dumpGimpleSSA_opt.so
 clang9_plugin_dumpGimpleSSA_opt.so : clang9_plugin_dumpGimpleSSA.so
 if BUILD_PTAA
-clang9_plugin_dumpGimpleSSA.so : clang9_plugin_dumpGimpleSSA.o clang9_dumpGimple.o clang9_HardekopfLin_AA.o clang9_RangeAnalysis.o clang9_eSSA.o
+clang9_plugin_dumpGimpleSSA.so : clang9_plugin_dumpGimpleSSA.o clang9_dumpGimple.o clang9_HardekopfLin_AA.o
 	case $(host_os) in \
 	  mingw*) \
 	    compile_options='$(CLANG9_LIBS) -lversion `$(I386_LLVM_CONFIG9_EXE) --ldflags --libs --system-libs` -lbdd';\
@@ -49,13 +49,13 @@ clang9_plugin_dumpGimpleSSA.so : clang9_plugin_dumpGimpleSSA.o clang9_dumpGimple
 	  *) \
 	    compile_options='-fPIC -shared -fno-rtti -Wl,-znodelete -lbdd';;\
 	esac;\
-	obj_list='clang9_dumpGimple.o clang9_HardekopfLin_AA.o clang9_RangeAnalysis.o clang9_eSSA.o';\
+	obj_list='clang9_dumpGimple.o clang9_HardekopfLin_AA.o';\
 	if test -n "$$compile_options"; then \
 	  $(I386_CLANG9_PLUGIN_COMPILER) opt_clang9_plugin_dumpGimpleSSA.o $$obj_list $$compile_options -o clang9_plugin_dumpGimpleSSA_opt.so;\
 	  $(I386_CLANG9_PLUGIN_COMPILER) clang9_plugin_dumpGimpleSSA.o $$obj_list $$compile_options -o clang9_plugin_dumpGimpleSSA.so ; \
 	fi;
 else
-clang9_plugin_dumpGimpleSSA.so : clang9_plugin_dumpGimpleSSA.o clang9_dumpGimple.o clang9_RangeAnalysis.o clang9_eSSA.o
+clang9_plugin_dumpGimpleSSA.so : clang9_plugin_dumpGimpleSSA.o clang9_dumpGimple.o
 	case $(host_os) in \
 	  mingw*) \
 	    compile_options='$(CLANG9_LIBS) -lversion `$(I386_LLVM_CONFIG9_EXE) --ldflags --libs --system-libs`'; \
@@ -65,7 +65,7 @@ clang9_plugin_dumpGimpleSSA.so : clang9_plugin_dumpGimpleSSA.o clang9_dumpGimple
 	  *) \
 	    compile_options='-fPIC -shared -fno-rtti -Wl,-znodelete';;\
 	esac;\
-	obj_list='clang9_dumpGimple.o clang9_RangeAnalysis.o clang9_eSSA.o';\
+	obj_list='clang9_dumpGimple.o';\
 	if test -n "$$compile_options"; then \
 	  $(I386_CLANG9_PLUGIN_COMPILER) opt_clang9_plugin_dumpGimpleSSA.o $$obj_list $$compile_options -o clang9_plugin_dumpGimpleSSA_opt.so;\
 	  $(I386_CLANG9_PLUGIN_COMPILER) clang9_plugin_dumpGimpleSSA.o $$obj_list $$compile_options -o clang9_plugin_dumpGimpleSSA.so ; \
@@ -75,7 +75,7 @@ endif
 $(I386_CLANG9_SSA_PLUGINCPP) : clang9_plugin_dumpGimpleSSACpp.so clang9_plugin_dumpGimpleSSACpp_opt.so
 clang9_plugin_dumpGimpleSSACpp_opt.so : clang9_plugin_dumpGimpleSSACpp.so
 if BUILD_PTAA
-clang9_plugin_dumpGimpleSSACpp.so : clang9_plugin_dumpGimpleSSACpp.o clang9_dumpGimple.o clang9_HardekopfLin_AA.o clang9_RangeAnalysis.o clang9_eSSA.o
+clang9_plugin_dumpGimpleSSACpp.so : clang9_plugin_dumpGimpleSSACpp.o clang9_dumpGimple.o clang9_HardekopfLin_AA.o
 	case $(host_os) in \
 	  mingw*) \
 	    compile_options='$(CLANG9_LIBS) -lversion `$(I386_LLVM_CONFIG9_EXE) --ldflags --libs --system-libs` -lbdd'; \
@@ -85,13 +85,13 @@ clang9_plugin_dumpGimpleSSACpp.so : clang9_plugin_dumpGimpleSSACpp.o clang9_dump
 	  *) \
 	    compile_options='-fPIC -shared -fno-rtti -Wl,-znodelete -lbdd';;\
 	esac;\
-	obj_list='clang9_dumpGimple.o clang9_HardekopfLin_AA.o clang9_RangeAnalysis.o clang9_eSSA.o';\
+	obj_list='clang9_dumpGimple.o clang9_HardekopfLin_AA.o';\
 	if test -n "$$compile_options"; then \
 	  $(I386_CLANG9_PLUGIN_COMPILER) opt_clang9_plugin_dumpGimpleSSACpp.o $$obj_list $$compile_options -o clang9_plugin_dumpGimpleSSACpp_opt.so;\
 	  $(I386_CLANG9_PLUGIN_COMPILER) clang9_plugin_dumpGimpleSSACpp.o $$obj_list $$compile_options -o clang9_plugin_dumpGimpleSSACpp.so;\
 	fi;
 else
-clang9_plugin_dumpGimpleSSACpp.so : clang9_plugin_dumpGimpleSSACpp.o clang9_dumpGimple.o clang9_RangeAnalysis.o clang9_eSSA.o
+clang9_plugin_dumpGimpleSSACpp.so : clang9_plugin_dumpGimpleSSACpp.o clang9_dumpGimple.o
 	case $(host_os) in \
 	  mingw*) \
 	    compile_options='$(CLANG9_LIBS) -lversion `$(I386_LLVM_CONFIG9_EXE) --ldflags --libs --system-libs`'; \
@@ -101,7 +101,7 @@ clang9_plugin_dumpGimpleSSACpp.so : clang9_plugin_dumpGimpleSSACpp.o clang9_dump
 	  *) \
 	    compile_options='-fPIC -shared -fno-rtti -Wl,-znodelete';;\
 	esac;\
-	obj_list='clang9_dumpGimple.o clang9_RangeAnalysis.o clang9_eSSA.o';\
+	obj_list='clang9_dumpGimple.o';\
 	if test -n "$$compile_options"; then \
 	  $(I386_CLANG9_PLUGIN_COMPILER) opt_clang9_plugin_dumpGimpleSSACpp.o $$obj_list $$compile_options -o clang9_plugin_dumpGimpleSSACpp_opt.so;\
 	  $(I386_CLANG9_PLUGIN_COMPILER) clang9_plugin_dumpGimpleSSACpp.o $$obj_list $$compile_options -o clang9_plugin_dumpGimpleSSACpp.so;\
@@ -111,7 +111,7 @@ endif
 $(I386_CLANG9_EMPTY_PLUGIN) : clang9_plugin_dumpGimpleEmpty.so clang9_plugin_dumpGimpleEmpty_opt.so
 clang9_plugin_dumpGimpleEmpty_opt.so : clang9_plugin_dumpGimpleEmpty.so
 if BUILD_PTAA
-clang9_plugin_dumpGimpleEmpty.so : clang9_plugin_dumpGimpleEmpty.o clang9_dumpGimple.o clang9_HardekopfLin_AA.o clang9_RangeAnalysis.o clang9_eSSA.o
+clang9_plugin_dumpGimpleEmpty.so : clang9_plugin_dumpGimpleEmpty.o clang9_dumpGimple.o clang9_HardekopfLin_AA.o
 	case $(host_os) in \
 	  mingw*) \
 	    compile_options='$(CLANG9_LIBS) -lversion `$(I386_LLVM_CONFIG9_EXE) --ldflags --libs --system-libs` -lbdd'; \
@@ -121,13 +121,13 @@ clang9_plugin_dumpGimpleEmpty.so : clang9_plugin_dumpGimpleEmpty.o clang9_dumpGi
 	  *) \
 	    compile_options='-fPIC -shared -fno-rtti -Wl,-znodelete -lbdd';;\
 	esac;\
-	obj_list='clang9_dumpGimple.o clang9_HardekopfLin_AA.o clang9_RangeAnalysis.o clang9_eSSA.o';\
+	obj_list='clang9_dumpGimple.o clang9_HardekopfLin_AA.o';\
 	if test -n "$$compile_options"; then \
 	  $(I386_CLANG9_PLUGIN_COMPILER) opt_clang9_plugin_dumpGimpleEmpty.o $$obj_list $$compile_options -o clang9_plugin_dumpGimpleEmpty_opt.so; \
 	  $(I386_CLANG9_PLUGIN_COMPILER) clang9_plugin_dumpGimpleEmpty.o $$obj_list $$compile_options -o clang9_plugin_dumpGimpleEmpty.so; \
 	fi;
 else
-clang9_plugin_dumpGimpleEmpty.so : clang9_plugin_dumpGimpleEmpty.o clang9_dumpGimple.o clang9_RangeAnalysis.o clang9_eSSA.o
+clang9_plugin_dumpGimpleEmpty.so : clang9_plugin_dumpGimpleEmpty.o clang9_dumpGimple.o
 	case $(host_os) in \
 	  mingw*) \
 	    compile_options='$(CLANG9_LIBS) -lversion `$(I386_LLVM_CONFIG9_EXE) --ldflags --libs --system-libs`'; \
@@ -137,7 +137,7 @@ clang9_plugin_dumpGimpleEmpty.so : clang9_plugin_dumpGimpleEmpty.o clang9_dumpGi
 	  *) \
 	    compile_options='-fPIC -shared -fno-rtti -Wl,-znodelete';;\
 	esac;\
-	obj_list='clang9_dumpGimple.o clang9_RangeAnalysis.o clang9_eSSA.o';\
+	obj_list='clang9_dumpGimple.o';\
 	if test -n "$$compile_options"; then \
 	  $(I386_CLANG9_PLUGIN_COMPILER) opt_clang9_plugin_dumpGimpleEmpty.o $$obj_list $$compile_options -o clang9_plugin_dumpGimpleEmpty_opt.so; \
 	  $(I386_CLANG9_PLUGIN_COMPILER) clang9_plugin_dumpGimpleEmpty.o $$obj_list $$compile_options -o clang9_plugin_dumpGimpleEmpty.so; \
