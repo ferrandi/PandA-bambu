@@ -157,11 +157,11 @@ begin
     begin
       automatic ptr_t val_next_addr = addr_next + ALIGNMENT;
       addr <= val_next_addr;
-      if(addr_next < addr_last_next)
+      if(val_next_addr < addr_last_next)
       begin
         val <= m_utils.read(val_next_addr);
       end
-      else
+      if(addr_next >= addr_last_next)
       begin
         $display("Too many read requests for parameter )"
           << port_prefix << R"(");
@@ -212,6 +212,17 @@ begin
     addr <= addr_next;
     addr_last <= addr_last_next;
     enable <= enable_next;
+    if(enable == 1'b1 && )"
+          << port_prefix << R"(_TVALID == 1'b1)
+    begin
+      if(addr_next >= addr_last_next)
+      begin
+        $display("Too many write requests for parameter )"
+          << port_prefix << R"(");
+        $finish;
+      end
+      addr <= addr_next + ALIGNMENT;
+    end
   end
 end
 
@@ -220,7 +231,7 @@ begin
   addr_next = addr;
   addr_last_next = addr_last;
   enable_next = enable && !done_port;
-  if (enable && )"
+  if (enable == 1'b1 && )"
           << port_prefix << R"(_TVALID == 1'b1)
   begin
     if(addr < addr_last)
@@ -228,13 +239,6 @@ begin
       m_utils.write(BITSIZE_data, )"
           << port_prefix << R"(_TDATA, addr);
     end
-    else
-    begin
-      $display("Too many write requests for parameter )"
-          << port_prefix << R"(");
-      $finish;
-    end
-    addr_next = addr + ALIGNMENT;
   end
 end
 )";

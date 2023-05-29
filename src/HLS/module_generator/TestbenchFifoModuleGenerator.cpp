@@ -156,11 +156,11 @@ begin
     begin
       automatic ptr_t val_next_addr = raddr_next + ALIGNMENT;
       raddr <= val_next_addr;
-      if(raddr_next < raddr_last_next)
+      if(val_next_addr < raddr_last_next)
       begin
         val <= m_utils.read(val_next_addr);
       end
-      else
+      if(raddr_next >= raddr_last_next)
       begin
         $display("Too many read requests for parameter )"
           << arg_name << R"(");
@@ -214,6 +214,17 @@ begin
     waddr <= waddr_next;
     waddr_last <= waddr_last_next;
     enable <= enable_next;
+    if(enable == 1'b1 && )"
+          << arg_name << R"(_write == 1'b1)
+    begin
+      if(waddr_next >= waddr_last_next)
+      begin
+        $display("Too many write requests for parameter )"
+          << arg_name << R"(");
+        $finish;
+      end
+      waddr <= waddr_next + ALIGNMENT;
+    end
   end
 end
 
@@ -222,7 +233,7 @@ begin
   waddr_next = waddr;
   waddr_last_next = waddr_last;
   enable_next = enable && !done_port;
-  if (enable && )"
+  if (enable == 1'b1 && )"
           << arg_name << R"(_write == 1'b1)
   begin
     if(waddr < waddr_last)
@@ -230,13 +241,6 @@ begin
       m_utils.write(BITSIZE_data, )"
           << arg_name << R"(_din, waddr);
     end
-    else
-    begin
-      $display("Too many write requests for parameter )"
-          << arg_name << R"(");
-      $finish;
-    end
-    waddr_next = waddr + ALIGNMENT;
   end
 end
 )";
