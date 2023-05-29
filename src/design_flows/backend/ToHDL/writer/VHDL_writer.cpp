@@ -823,11 +823,11 @@ void VHDL_writer::write_vector_port_binding(const structural_objectRef& port, bo
 void VHDL_writer::write_port_binding(const structural_objectRef& port, const structural_objectRef& object_bounded,
                                      bool first_port_analyzed)
 {
+   THROW_ASSERT(port, "NULL object_bounded received");
    INDENT_DBG_MEX(
        DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
        "-->Write port binding " + port->get_id() + " (" + port->get_typeRef()->get_name() + ") => " +
            (object_bounded ? object_bounded->get_id() + " (" + object_bounded->get_typeRef()->get_name() + ")" : ""));
-   THROW_ASSERT(port, "NULL object_bounded received");
    THROW_ASSERT(port->get_kind() == port_o_K, "Expected a port got something of different");
    THROW_ASSERT(port->get_owner(), "The port has to have an owner");
    if(first_port_analyzed)
@@ -838,7 +838,7 @@ void VHDL_writer::write_port_binding(const structural_objectRef& port, const str
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Vector port");
       const auto port_name = HDL_manager::convert_to_identifier(this, port->get_owner()->get_id());
-      if(object_bounded->get_typeRef()->type == structural_type_descriptor::BOOL)
+      if(object_bounded && object_bounded->get_typeRef()->type == structural_type_descriptor::BOOL)
       {
          indented_output_stream->Append(port_name + "(" + STR(port->get_id()) + ") => ");
       }
@@ -850,9 +850,9 @@ void VHDL_writer::write_port_binding(const structural_objectRef& port, const str
              STR(boost::lexical_cast<unsigned int>(port->get_id()) * GET_TYPE_SIZE(port)) + ") => ");
       }
    }
-   else if((port->get_typeRef()->type == structural_type_descriptor::VECTOR_BOOL or
-            port->get_typeRef()->type == structural_type_descriptor::UINT) and
-           object_bounded->get_typeRef()->type == structural_type_descriptor::BOOL)
+   else if((port->get_typeRef()->type == structural_type_descriptor::VECTOR_BOOL ||
+            port->get_typeRef()->type == structural_type_descriptor::UINT) &&
+           object_bounded && object_bounded->get_typeRef()->type == structural_type_descriptor::BOOL)
    {
       indented_output_stream->Append(HDL_manager::convert_to_identifier(this, port->get_id()) + "(0) => ");
    }
@@ -1351,6 +1351,7 @@ void VHDL_writer::write_module_parametrization(const structural_objectRef& cir)
                   break;
                }
                case structural_type_descriptor::INT:
+               case structural_type_descriptor::REAL:
                {
                   if(parameter.front() == '\"' and parameter.back() == '\"')
                   {
@@ -1381,7 +1382,6 @@ void VHDL_writer::write_module_parametrization(const structural_objectRef& cir)
                }
                case structural_type_descriptor::BOOL:
                case structural_type_descriptor::UINT:
-               case structural_type_descriptor::REAL:
                case structural_type_descriptor::USER:
                case structural_type_descriptor::VECTOR_INT:
                case structural_type_descriptor::VECTOR_UINT:
@@ -2150,9 +2150,13 @@ void VHDL_writer::write_module_parametrization_decl(const structural_objectRef& 
                   indented_output_stream->Append(" " + name + ": std_logic_vector");
                   break;
                }
+               case structural_type_descriptor::REAL:
+               {
+                  indented_output_stream->Append(" " + name + ": real");
+                  break;
+               }
                case structural_type_descriptor::BOOL:
                case structural_type_descriptor::UINT:
-               case structural_type_descriptor::REAL:
                case structural_type_descriptor::USER:
                case structural_type_descriptor::VECTOR_INT:
                case structural_type_descriptor::VECTOR_UINT:

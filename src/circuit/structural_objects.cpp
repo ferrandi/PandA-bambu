@@ -46,38 +46,38 @@
 #include "config_HAVE_TECHNOLOGY_BUILT.hpp"
 #include "config_RELEASE.hpp"
 
-#include "HDL_manager.hpp"                    // for structur...
-#include "NP_functionality.hpp"               // for NP_funct...
-#include "custom_set.hpp"                     // for set, set...
-#include <algorithm>                          // for find, min
-#include <boost/algorithm/string/replace.hpp> // for replace_all
-#include <boost/iterator/iterator_facade.hpp> // for operator!=
-#include <boost/iterator/iterator_traits.hpp> // for iterator...
-#include <boost/lexical_cast.hpp>             // for lexical_...
-#include <climits>                            // for UINT_MAX
-#include <iostream>                           // for cout
-#include <list>                               // for _List_co...
-#include <memory>                             // for allocato...
-#include <utility>
-#if HAVE_BAMBU_BUILT
-#include "behavioral_helper.hpp" // for Behavior...
-#endif
-#include "dbgPrintHelper.hpp"     // for DEBUG_LE...
-#include "exceptions.hpp"         // for THROW_AS...
-#include "library_manager.hpp"    // for attribute
-#include "simple_indent.hpp"      // for simple_i...
-#include "structural_manager.hpp" // for structur...
-#include "technology_manager.hpp" // for technolo...
-#include "technology_node.hpp"    // for function...
-#include "utility.hpp"            // for GET_CLAS...
-#include "xml_attribute.hpp"      // for attribut...
-#include "xml_element.hpp"        // for xml_element
-#include "xml_helper.hpp"         // for CE_XVM
-#include "xml_node.hpp"           // for xml_node...
-#include "xml_text_node.hpp"      // for xml_text...
-
-/// utility include
+#include "HDL_manager.hpp"
+#include "NP_functionality.hpp"
+#include "custom_set.hpp"
+#include "dbgPrintHelper.hpp"
+#include "exceptions.hpp"
+#include "library_manager.hpp"
+#include "simple_indent.hpp"
 #include "string_manipulation.hpp"
+#include "structural_manager.hpp"
+#include "technology_manager.hpp"
+#include "technology_node.hpp"
+#include "utility.hpp"
+#include "xml_attribute.hpp"
+#include "xml_element.hpp"
+#include "xml_helper.hpp"
+#include "xml_node.hpp"
+#include "xml_text_node.hpp"
+#if HAVE_BAMBU_BUILT
+#include "behavioral_helper.hpp"
+#endif
+
+#include <algorithm>
+#include <boost/algorithm/string/replace.hpp>
+#include <boost/iterator/iterator_facade.hpp>
+#include <boost/iterator/iterator_traits.hpp>
+#include <boost/lexical_cast.hpp>
+#include <boost/regex.hpp>
+#include <climits>
+#include <iostream>
+#include <list>
+#include <memory>
+#include <utility>
 
 inline std::string legalize(const std::string& id)
 {
@@ -867,6 +867,10 @@ structural_type_descriptor::s_type module::get_parameter_type(const technology_m
       }
       return structural_type_descriptor::VECTOR_BOOL;
    }
+   if(boost::regex_search(default_value, boost::regex("^\\d+\\.\\d+$")))
+   {
+      return structural_type_descriptor::REAL;
+   }
    if(default_value.front() >= '0' and default_value.front() <= '9')
    {
       return structural_type_descriptor::INT;
@@ -887,7 +891,7 @@ structural_type_descriptor::s_type module::get_parameter_type(const technology_m
 
 bool structural_object::ExistsParameter(std::string name) const
 {
-   return default_parameters.find(name) != default_parameters.end();
+   return default_parameters.count(name);
 }
 
 void structural_object::xload(const xml_element* Enode, structural_objectRef, structural_managerRef const&)
