@@ -1980,14 +1980,8 @@ int BambuParameter::Exec()
          }
          case INPUT_OPT_C_NO_PARSE:
          {
-            std::vector<std::string> Splitted = SplitString(optarg, " ,");
-            std::string no_parse_files;
-            for(auto& i : Splitted)
-            {
-               boost::trim(i);
-               no_parse_files += GetPath(i) + " ";
-            }
-            setOption(OPT_no_parse_files, no_parse_files);
+            setOption(OPT_no_parse_files,
+                      boost::regex_replace(std::string(optarg), boost::regex("\\s*,\\s*"), STR_CST_string_separator));
             break;
          }
          case INPUT_OPT_C_PYTHON_NO_PARSE:
