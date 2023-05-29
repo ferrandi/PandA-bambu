@@ -62,22 +62,22 @@
 #include <utility>
 
 const std::set<std::string> VHDL_writer::keywords = {
-    "abs",          "access",     "after",   "alias",     "all",       "and",
-    "architecture", "array",      "assert",  "attribute", "begin",     "block",
-    "body",         "buffer",     "bus",     "case",      "component", "configuration",
-    "constant",     "disconnect", "downto",  "else",      "elsif",     "end",
-    "entity",       "exit",       "file",    "for",       "function",  "generate",
-    "generic",      "group",      "guarded", "if",        "impure",    "in",
-    "inertial",     "inout",      "is",      "label",     "library",   "linkage",
-    "literal",      "loop",       "map",     "mod",       "nand",      "new",
-    "next",         "nor",        "not",     "null",      "of",        "on",
-    "open",         "or",         "others",  "out",       "package",   "port",
-    "postponed",    "procedure",  "process", "pure",      "range",     "record",
-    "register",     "reject",     "rem",     "return",    "rol",       "ror",
-    "select",       "severity",   "signal",  "shared",    "sla",       "sli",
-    "sra",          "srl",        "subtype", "then",      "to",        "transport",
-    "type",         "unaffected", "units",   "until",     "use",       "variable",
-    "wait",         "when",       "while",   "with",      "xnor",      "xor"};
+    "ABS",          "ACCESS",     "AFTER",   "ALIAS",     "ALL",       "AND",
+    "ARCHITECTURE", "ARRAY",      "ASSERT",  "ATTRIBUTE", "BEGIN",     "BLOCK",
+    "BODY",         "BUFFER",     "BUS",     "CASE",      "COMPONENT", "CONFIGURATION",
+    "CONSTANT",     "DISCONNECT", "DOWNTO",  "ELSE",      "ELSIF",     "END",
+    "ENTITY",       "EXIT",       "FILE",    "FOR",       "FUNCTION",  "GENERATE",
+    "GENERIC",      "GROUP",      "GUARDED", "IF",        "IMPURE",    "IN",
+    "INERTIAL",     "INOUT",      "IS",      "LABEL",     "LIBRARY",   "LINKAGE",
+    "LITERAL",      "LOOP",       "MAP",     "MOD",       "NAND",      "NEW",
+    "NEXT",         "NOR",        "NOT",     "NULL",      "OF",        "ON",
+    "OPEN",         "OR",         "OTHERS",  "OUT",       "PACKAGE",   "PORT",
+    "POSTPONED",    "PROCEDURE",  "PROCESS", "PURE",      "RANGE",     "RECORD",
+    "REGISTER",     "REJECT",     "REM",     "RETURN",    "ROL",       "ROR",
+    "SELECT",       "SEVERITY",   "SIGNAL",  "SHARED",    "SLA",       "SLI",
+    "SRA",          "SRL",        "SUBTYPE", "THEN",      "TO",        "TRANSPORT",
+    "TYPE",         "UNAFFECTED", "UNITS",   "UNTIL",     "USE",       "VARIABLE",
+    "WAIT",         "WHEN",       "WHILE",   "WITH",      "XNOR",      "XOR"};
 
 VHDL_writer::VHDL_writer(const technology_managerConstRef _TM, const ParameterConstRef _parameters)
     : language_writer(STD_OPENING_CHAR, STD_OPENING_CHAR, _parameters), TM(_TM)
