@@ -941,7 +941,7 @@ void HLSCWriter::WriteMainTestbench()
    memcpy(P##idx##_gold, ptr, P##idx##_size)
 
 #define typeof __typeof__
-#ifdef __cpluplus
+#ifdef __cplusplus
 template <typename T> struct __m_type { typedef T type; };
 template <typename T> struct __m_type<T*> { typedef typename __m_type<T>::type type; };
 #define m_getptrt(val) __m_type<typeof(val)>::type*
@@ -977,7 +977,7 @@ template <typename T> T* m_getptr(T* obj) { return obj; }
    free(P##idx##_gold);
 
 #define m_channelcmp(idx, cmp)                                                                              \
-   P##idx##_count = m_getptr(P##idx).size();                                                                \
+   P##idx##_count = m_getptr(P##idx)->size();                                                               \
    for(i = 0; i < P##idx##_count; ++i)                                                                      \
    {                                                                                                        \
       if(m_cmp##cmp((m_getvalt(m_getptr(P##idx))::element_type*)P##idx##_sim + i, &(*m_getptr(P##idx))[i])) \
