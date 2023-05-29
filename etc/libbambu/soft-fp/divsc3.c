@@ -62,6 +62,7 @@ __complex__ float __divsc3(float a, float b, float c, float d)
 {
    float denom, ratio, x, y;
    __complex__ float res;
+   extern float fabsf(float x);
 
    if(fabsf(c) < fabsf(d))
    {

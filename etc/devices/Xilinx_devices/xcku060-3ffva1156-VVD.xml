@@ -6,7 +6,7 @@
     <model value="xcku060"/>
     <package value="-ffva1156"/>
     <speed_grade value="-3-e"/>
-    <BRAM_bitsize_max value="128"/>
+    <BRAM_bitsize_max value="4096"/>
     <BRAM_bitsize_min value="8"/>
     <DSPs_x_sizes value="18"/>
     <DSPs_y_sizes value="27"/>

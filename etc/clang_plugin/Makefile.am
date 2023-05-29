@@ -15,15 +15,6 @@ EXTRA_DIST = \
 	$(top_srcdir)/etc/clang_plugin/gcc/cilk-builtins.def \
 	$(top_srcdir)/etc/clang_plugin/gcc/chkp-builtins.def \
 	$(top_srcdir)/etc/clang_plugin/gcc/COPYING3 \
-	$(top_srcdir)/etc/clang_plugin/llvm/eSSA.hpp \
-	$(top_srcdir)/etc/clang_plugin/llvm/eSSA.cpp \
-	$(top_srcdir)/etc/clang_plugin/llvm/LICENSE.TXT \
-	$(top_srcdir)/etc/clang_plugin/llvm/my_OrderedInstructions.cpp \
-	$(top_srcdir)/etc/clang_plugin/llvm/my_OrderedInstructions.hpp \
-	$(top_srcdir)/etc/clang_plugin/llvm/my_OrderedBasicBlock.hpp \
-	$(top_srcdir)/etc/clang_plugin/llvm/my_OrderedBasicBlock.cpp \
-	$(top_srcdir)/etc/clang_plugin/llvm/RangeAnalysis.hpp \
-	$(top_srcdir)/etc/clang_plugin/llvm/RangeAnalysis.cpp \
 	$(top_srcdir)/etc/clang_plugin/plugin_ASTAnalyzer.cpp \
 	$(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp \
 	$(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleEmpty.cpp \
@@ -108,6 +99,9 @@ include $(top_srcdir)/etc/clang_plugin/clang12.am
 
 ###### clang 13.0
 include $(top_srcdir)/etc/clang_plugin/clang13.am
+
+###### clang 16.0
+include $(top_srcdir)/etc/clang_plugin/clang16.am
 
 clean :
 	rm -rf *.o *.so *.h bambuS2S-*

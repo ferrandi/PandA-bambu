@@ -7,7 +7,7 @@
       <package value="896PinFineLineBGA"/>
       <speed_grade value="-6"/>
       <BRAM_bitsize_min value="8"/>
-      <BRAM_bitsize_max value="128"/>
+      <BRAM_bitsize_max value="4096"/>
       <DSPs_x_sizes value="9,18,27"/>
       <DSPs_y_sizes value="9,18,27"/>
       <DSPs_rx_sizes value="8,16,16"/>

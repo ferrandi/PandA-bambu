@@ -1,8 +1,8 @@
 EXTRA_DIST = \
-   Dockerfile.appimage \
-   Dockerfile.appimage-yosys \
+   Dockerfile.colab \
    Dockerfile.cppcheck \
+   Dockerfile.dev \
+   Dockerfile.dev-yosys \
    Dockerfile.iverilog \
    Dockerfile.verilator \
-   Dockerfile.yosys \
-   OpenROAD-dep-install.sh
+   Dockerfile.yosys

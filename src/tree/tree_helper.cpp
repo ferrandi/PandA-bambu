@@ -5536,8 +5536,7 @@ std::string tree_helper::PrintType(const tree_managerConstRef& TM, const tree_no
                   }
                   else
                   {
-                     THROW_ERROR(std::string("Node not yet supported: ") + node_type->get_kind_text() +
-                                 " with alignment " + STR(tn->algn));
+                     res += "_BitInt(" + STR(tn->algn) + ")";
                   }
                   break;
                }
@@ -6173,6 +6172,7 @@ tree_nodeConstRef tree_helper::GetFormalIth(const tree_nodeConstRef& _obj, unsig
    if(obj->get_kind() == gimple_call_K)
    {
       const auto gc = GetPointerS<const gimple_call>(obj);
+      THROW_ASSERT(gc->fn, "unexpected condition");
 
       const auto fn_type = GET_CONST_NODE(CGetType(gc->fn));
       if(fn_type->get_kind() == pointer_type_K)
@@ -6187,6 +6187,7 @@ tree_nodeConstRef tree_helper::GetFormalIth(const tree_nodeConstRef& _obj, unsig
          else if(ft->prms)
          {
             auto tl = GetPointerS<const tree_list>(GET_CONST_NODE(ft->prms));
+            THROW_ASSERT(tl, "unexpected condition");
             unsigned int ith = 0;
             if(parm_index == ith)
             {

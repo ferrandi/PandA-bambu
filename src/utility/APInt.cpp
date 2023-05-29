@@ -312,7 +312,9 @@ bw_t APInt::trailingZeros(bw_t bw) const
    for(; i < bw; ++i)
    {
       if(bit_tst(i))
+      {
          break;
+      }
    }
    return i;
 }
@@ -323,7 +325,9 @@ bw_t APInt::trailingOnes(bw_t bw) const
    for(; i < bw; ++i)
    {
       if(!bit_tst(i))
+      {
          break;
+      }
    }
    return i;
 }
@@ -358,7 +362,9 @@ bw_t APInt::leadingOnes(bw_t bw) const
    for(; i > 0; --i)
    {
       if(!bit_tst(i - 1U))
+      {
          break;
+      }
    }
    return bw - i;
 }

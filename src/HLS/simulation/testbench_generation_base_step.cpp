@@ -843,7 +843,7 @@ unsigned long long TestbenchGenerationBaseStep::generate_init_file(const std::st
          char byteval = 0;
          for(size_t k = 0; k < 8; ++k)
          {
-            byteval |= char(bitstring.at(i - k - 1U) != '0') << k;
+            byteval |= static_cast<char>(char(bitstring.at(i - k - 1U) != '0') << k);
          }
          init_dat.put(byteval);
       }
@@ -1517,9 +1517,11 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
                   {
                      if(output_level >= OUTPUT_LEVEL_VERY_PEDANTIC)
                      {
-                        writer->write("$display(\"" + nonescaped_name + " = _bambu_testbench_mem_[" + nonescaped_name +
-                                      " + %d - base_addr] = %d  expected = %d \\n\", _i_, _bambu_testbench_mem_[(" +
-                                      port_name + " - base_addr) + _i_], " + output_name + ");\n");
+                        writer->write(
+                            "$display(\"" + nonescaped_name + " = %d _bambu_testbench_mem_[" + nonescaped_name +
+                            " + %d - base_addr] = %d  expected = %d \\n\", _bambu_testbench_mem_[(" + port_name +
+                            " - base_addr) + _i_] == " + output_name + ", _i_, _bambu_testbench_mem_[(" + port_name +
+                            " - base_addr) + _i_], " + output_name + ");\n");
                      }
                      writer->write("if (_bambu_testbench_mem_[(" + port_name +
                                    " - base_addr) + _i_] !== " + output_name + ")\n");
@@ -2223,9 +2225,11 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
                   {
                      if(output_level > OUTPUT_LEVEL_MINIMUM)
                      {
-                        writer->write("$display(\"comparison = _bambu_testbench_mem_[" + nonescaped_name +
-                                      " + %d - base_addr] = %d  expected = %d \\n\", _i_, _bambu_testbench_mem_[(" +
-                                      port_name + " - base_addr) + _i_], " + output_name + ");\n");
+                        writer->write("$display(\"comparison = %d _bambu_testbench_mem_[" + nonescaped_name +
+                                      " + %d - base_addr] = %d  expected = %d \\n\", _bambu_testbench_mem_[(" +
+                                      port_name + " - base_addr) + _i_] == " + output_name +
+                                      ", _i_, _bambu_testbench_mem_[(" + port_name + " - base_addr) + _i_], " +
+                                      output_name + ");\n");
                      }
                      writer->write("if (_bambu_testbench_mem_[(" + port_name +
                                    " - base_addr) + _i_] !== " + output_name + ")\n");
@@ -3214,33 +3218,32 @@ void TestbenchGenerationBaseStep::testbench_controller_machine() const
             writer->write("    end else begin\n");
             writer->write("      " + portPrefix + "currAddr = " + portPrefix + "AWADDR;\n");
             writer->write("    end\n");
+            /* Realign address */
+            writer->write("    " + portPrefix + "currAddr = " + portPrefix + "currAddr - (" + portPrefix +
+                          "currAddr % (1 << " + portPrefix + "awqueue[_i_][" + STR(SIZE_HIGH_INDEX) + " : " +
+                          STR(SIZE_LOW_INDEX) + "]));\n");
 
-            /* Compute aggregate memory for WDATA */
+            /* Compute bitmask and overwrite data */
             const auto portWDATA = mod->find_member(portPrefix + "WDATA", port_o_K, cir);
             const auto bitsizeWDATA = GetPointer<port_o>(portWDATA)->get_typeRef()->size *
                                       GetPointer<port_o>(portWDATA)->get_typeRef()->vector_size;
-            std::string mem_aggregated;
-            {
-               mem_aggregated = "{";
-               for(unsigned int bitsize_index = 0; bitsize_index < bitsizeWDATA; bitsize_index = bitsize_index + 8)
-               {
-                  if(bitsize_index)
-                  {
-                     mem_aggregated += ", ";
-                  }
-                  mem_aggregated += "_bambu_testbench_mem_[" + portPrefix + "currAddr + " +
-                                    STR((bitsizeWDATA - bitsize_index) / 8 - 1) + " - base_addr]";
-               }
-               mem_aggregated += "}";
-            }
 
             for(unsigned bitsize_index = 0; bitsize_index < bitsizeWDATA; bitsize_index = bitsize_index + 8)
             {
                writer->write("    " + portPrefix + "wBitmask[" + STR(bitsize_index + 7) + " : " + STR(bitsize_index) +
                              "] = {8{" + portPrefix + "WSTRB[" + STR(bitsize_index / 8) + "]}};\n");
             }
-            writer->write("    " + mem_aggregated + " <= (" + mem_aggregated + " & ~" + portPrefix + "wBitmask) | (" +
-                          portPrefix + "WDATA & " + portPrefix + "wBitmask);\n");
+            for(unsigned bitsize_index = 0; bitsize_index < bitsizeWDATA; bitsize_index = bitsize_index + 8)
+            {
+               writer->write("    _bambu_testbench_mem_[" + portPrefix + "currAddr + " +
+                             STR((bitsizeWDATA - bitsize_index) / 8 - 1) + " - base_addr] <= (_bambu_testbench_mem_[" +
+                             portPrefix + "currAddr + " + STR((bitsizeWDATA - bitsize_index) / 8 - 1) +
+                             " - base_addr] & ~" + portPrefix + "wBitmask[" + STR(bitsizeWDATA - bitsize_index - 1) +
+                             " : " + STR(bitsizeWDATA - bitsize_index - 8) + "]) | (" + portPrefix + "WDATA[" +
+                             STR(bitsizeWDATA - bitsize_index - 1) + " : " + STR(bitsizeWDATA - bitsize_index - 8) +
+                             "] & " + portPrefix + "wBitmask[" + STR(bitsizeWDATA - bitsize_index - 1) + " : " +
+                             STR(bitsizeWDATA - bitsize_index - 8) + "]);\n");
+            }
             writer->write("    if(" + portPrefix + "WLAST) begin\n");
             writer->write("      " + portPrefix + "awqueue[_i_][" + STR(COUNT_HIGH_INDEX) + " : " +
                           STR(COUNT_LOW_INDEX) + "] <= -(32'd`MEM_DELAY_WRITE - 1);\n");
@@ -3288,7 +3291,13 @@ void TestbenchGenerationBaseStep::testbench_controller_machine() const
             writer->write("      end\n");
             writer->write("    end\n");
 
+            /* Realign address */
+            writer->write("    " + portPrefix + "currAddr = " + portPrefix + "currAddr - (" + portPrefix +
+                          "currAddr % (1 << " + portPrefix + "arqueue[0][" + STR(SIZE_HIGH_INDEX) + " : " +
+                          STR(SIZE_LOW_INDEX) + "]));\n");
+
             /* Compute aggregate memory for RDATA */
+            std::string mem_aggregated;
             const auto portRDATA = mod->find_member(portPrefix + "RDATA", port_o_K, cir);
             const auto bitsizeRDATA = GetPointer<port_o>(portRDATA)->get_typeRef()->size *
                                       GetPointer<port_o>(portRDATA)->get_typeRef()->vector_size;

@@ -3,7 +3,7 @@ set -e
 
 BRANCH=$1
 DIST_NAME="$2-$(lsb_release -is)_$(lsb_release -rs)"
-DIST_DIR="$GITHUB_WORKSPACE/$DIST_NAME"
+DIST_DIR="$GITHUB_WORKSPACE/$DIST_NAME/$DIST_NAME"
 shift
 shift
 
@@ -28,9 +28,9 @@ git clone --depth 1 --branch $BRANCH https://github.com/llvm/llvm-project.git
 cd llvm-project
 mkdir build
 cd build
-cmake -DLLVM_ENABLE_PROJECTS="$@" -DCMAKE_BUILD_TYPE=Release -DLLVM_ENABLE_ASSERTIONS=ON -G "Unix Makefiles" ../llvm
-make -j$J 
-make DESTDIR="$DIST_DIR" install
+cmake -DLLVM_ENABLE_PROJECTS="$@" -DCMAKE_INSTALL_PREFIX="$DIST_DIR" -DCMAKE_BUILD_TYPE=Release -DLLVM_ENABLE_ASSERTIONS=ON -G "Unix Makefiles" ../llvm
+make -j$J
+make install
 
 lsb_release -a >> "$DIST_DIR/VERSION"
 

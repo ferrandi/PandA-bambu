@@ -66,8 +66,11 @@
 #include <llvm/Transforms/IPO/ArgumentPromotion.h>
 #include <llvm/Transforms/IPO/GlobalOpt.h>
 #include <llvm/Transforms/InstCombine/InstCombine.h>
+#if __clang_major__ >= 16
+#include <llvm/Transforms/Scalar/LowerAtomicPass.h>
+#else
 #include <llvm/Transforms/Scalar/LowerAtomic.h>
-#include <llvm/Transforms/Utils/BreakCriticalEdges.h>
+#endif
 #include <llvm/Transforms/Utils/Mem2Reg.h>
 #include <llvm/Transforms/Utils/UnifyFunctionExitNodes.h>
 #endif
@@ -91,9 +94,17 @@ bool llvm::CLANG_VERSION_SYMBOL(_plugin_expandMemOps)::addrIsOfIntArrayType(llvm
    {
       srcType = cast<llvm::ConstantExpr>(dst_addr)->getOperand(0)->getType();
    }
-   if(srcType && srcType->isPointerTy())
+   if(srcType && srcType->isPointerTy()
+#if __clang_major__ >= 13
+      && !srcType->isOpaquePointerTy()
+#endif
+   )
    {
+#if __clang_major__ < 16
       const auto pointee = llvm::cast<llvm::PointerType>(srcType)->getElementType();
+#else
+      const auto pointee = srcType->getNonOpaquePointerElementType();
+#endif
       if(pointee->isArrayTy())
       {
          const auto elType = llvm::cast<llvm::ArrayType>(pointee)->getArrayElementType();
@@ -125,10 +136,10 @@ bool llvm::CLANG_VERSION_SYMBOL(_plugin_expandMemOps)::addrIsOfIntArrayType(llvm
 
 unsigned llvm::CLANG_VERSION_SYMBOL(_plugin_expandMemOps)::getLoopOperandSizeInBytesLocal(llvm::Type* Type)
 {
-   if(llvm::VectorType* VTy = dyn_cast<llvm::VectorType>(Type))
+   if(auto* VTy = dyn_cast<llvm::VectorType>(Type))
    {
 #if __clang_major__ >= 12
-      return (VTy->getElementCount().getValue() * VTy->getElementType()->getPrimitiveSizeInBits()) / 8;
+      return (VTy->getElementCount().getFixedValue() * VTy->getElementType()->getPrimitiveSizeInBits()) / 8;
 #else
       return (VTy->getNumElements() * VTy->getElementType()->getPrimitiveSizeInBits()) / 8;
 #endif
@@ -171,7 +182,9 @@ void llvm::CLANG_VERSION_SYMBOL(_plugin_expandMemOps)::getMemcpyLoopResidualLowe
     unsigned dst_align)
 {
    for(unsigned i = 0; i != RemainingBytes; ++i)
+   {
       OpsOut.push_back(llvm::Type::getInt8Ty(Context));
+   }
 }
 
 void llvm::CLANG_VERSION_SYMBOL(_plugin_expandMemOps)::createMemCpyLoopKnownSizeLocal(
@@ -182,7 +195,9 @@ void llvm::CLANG_VERSION_SYMBOL(_plugin_expandMemOps)::createMemCpyLoopKnownSize
    PRINT_DBG("dst: align: " << dst_align << ", volatile: " << dst_volatile << "\n");
    // No need to expand zero length copies.
    if(CopyLen->isZero())
+   {
       return;
+   }
 
    llvm::BasicBlock* PreLoopBB = InsertBefore->getParent();
    llvm::BasicBlock* PostLoopBB = nullptr;
@@ -247,7 +262,11 @@ void llvm::CLANG_VERSION_SYMBOL(_plugin_expandMemOps)::createMemCpyLoopKnownSize
       {
          llvm::Value* SrcGEP =
              Builder.CreateInBoundsGEP(LoopOpType, srcAddress, llvm::ConstantInt::get(TypeOfCopyLen, LI));
+#if __clang_major__ <= 11
          llvm::Value* Load = Builder.CreateLoad(SrcGEP, src_volatile);
+#else
+         llvm::Value* Load = Builder.CreateLoad(SrcGEP->getType()->getPointerElementType(), SrcGEP, src_volatile);
+#endif
          llvm::Value* DstGEP =
              Builder.CreateInBoundsGEP(LoopOpType, dstAddress, llvm::ConstantInt::get(TypeOfCopyLen, LI));
          Builder.CreateStore(Load, DstGEP, dst_volatile);
@@ -280,7 +299,11 @@ void llvm::CLANG_VERSION_SYMBOL(_plugin_expandMemOps)::createMemCpyLoopKnownSize
       LoopIndex->addIncoming(llvm::ConstantInt::get(TypeOfCopyLen, 0U), PreLoopBB);
       // Loop Body
       llvm::Value* SrcGEP = LoopBuilder.CreateInBoundsGEP(LoopOpType, src_addr, LoopIndex);
+#if __clang_major__ <= 11
       llvm::Value* Load = LoopBuilder.CreateLoad(SrcGEP, src_volatile);
+#else
+      llvm::Value* Load = LoopBuilder.CreateLoad(SrcGEP->getType()->getPointerElementType(), SrcGEP, src_volatile);
+#endif
       llvm::Value* DstGEP = LoopBuilder.CreateInBoundsGEP(LoopOpType, dst_addr, LoopIndex);
       LoopBuilder.CreateStore(Load, DstGEP, dst_volatile);
 
@@ -315,8 +338,11 @@ void llvm::CLANG_VERSION_SYMBOL(_plugin_expandMemOps)::createMemCpyLoopKnownSize
              src_addr->getType() == SrcPtrType ? src_addr : RBuilder.CreateBitCast(src_addr, SrcPtrType);
          llvm::Value* SrcGEP =
              RBuilder.CreateInBoundsGEP(OpTy, CastedSrc, llvm::ConstantInt::get(TypeOfCopyLen, GepIndex));
+#if __clang_major__ <= 11
          llvm::Value* Load = RBuilder.CreateLoad(SrcGEP, src_volatile);
-
+#else
+         llvm::Value* Load = RBuilder.CreateLoad(SrcGEP->getType()->getPointerElementType(), SrcGEP, src_volatile);
+#endif
          // Cast destination to operand type and store.
          llvm::PointerType* DstPtrType = llvm::PointerType::get(OpTy, DstAS);
          llvm::Value* CastedDst =
@@ -338,10 +364,13 @@ void llvm::CLANG_VERSION_SYMBOL(_plugin_expandMemOps)::expandMemSetAsLoopLocal(l
    llvm::Value* dst_addr = Memset->getRawDest();
    llvm::Value* CopyLen = Memset->getLength();
    llvm::Value* SetValue = Memset->getValue();
-#if __clang_major__ >= 7
-   unsigned Align = Memset->getDestAlignment();
+   unsigned Align =
+#if __clang_major__ <= 6
+       Memset->getAlignment();
+#elif __clang_major__ < 16
+       Memset->getDestAlignment();
 #else
-   unsigned Align = Memset->getAlignment();
+       dst_addr->getPointerAlignment(*DL).value();
 #endif
    bool IsVolatile = Memset->isVolatile();
    llvm::Type* TypeOfCopyLen = CopyLen->getType();
@@ -355,7 +384,9 @@ void llvm::CLANG_VERSION_SYMBOL(_plugin_expandMemOps)::expandMemSetAsLoopLocal(l
    bool AlignCanBeUsed = false;
    if(isa<llvm::ConstantInt>(CopyLen) && isa<llvm::Constant>(SetValue) &&
       cast<llvm::Constant>(SetValue)->isNullValue() && Align > 1 && Align <= 8 && SetValue->getType()->isIntegerTy())
+   {
       AlignCanBeUsed = true;
+   }
    if(AlignCanBeUsed)
    {
       PRINT_DBG("memset can be optimized\n");
@@ -440,11 +471,11 @@ bool llvm::CLANG_VERSION_SYMBOL(_plugin_expandMemOps)::exec(
       auto& F = *currFuncIterator;
       PRINT_DBG("  Function " << F.getName().str() << "\n");
       llvm::SmallVector<llvm::MemIntrinsic*, 4> MemCalls;
-      for(llvm::Function::iterator BI = F.begin(), BE = F.end(); BI != BE; ++BI)
+      for(auto& BI : F)
       {
-         for(llvm::BasicBlock::iterator II = BI->begin(), IE = BI->end(); II != IE; ++II)
+         for(auto& I : BI)
          {
-            if(llvm::MemIntrinsic* InstrCall = dyn_cast<llvm::MemIntrinsic>(II))
+            if(auto InstrCall = dyn_cast<llvm::MemIntrinsic>(&I))
             {
                PRINT_DBG("    Found mem intrinsic: ");
 #ifndef NDEBUG
@@ -452,9 +483,10 @@ bool llvm::CLANG_VERSION_SYMBOL(_plugin_expandMemOps)::exec(
 #endif
                PRINT_DBG("\n");
                MemCalls.push_back(InstrCall);
-               if(llvm::MemCpyInst* Memcpy = dyn_cast<llvm::MemCpyInst>(InstrCall))
+#ifndef NDEBUG
+               if(auto* Memcpy = dyn_cast<llvm::MemCpyInst>(InstrCall))
                {
-                  if(llvm::ConstantInt* CI = dyn_cast<llvm::ConstantInt>(Memcpy->getLength()))
+                  if(dyn_cast<llvm::ConstantInt>(Memcpy->getLength()))
                   {
                      PRINT_DBG("    Found a memcpy with a constant number of iterations\n");
                   }
@@ -463,10 +495,11 @@ bool llvm::CLANG_VERSION_SYMBOL(_plugin_expandMemOps)::exec(
                      PRINT_DBG("    Found a memcpy with an unknown number of iterations\n");
                   }
                }
-               else if(llvm::MemSetInst* Memset = dyn_cast<llvm::MemSetInst>(InstrCall))
+               else if(dyn_cast<llvm::MemSetInst>(InstrCall))
                {
                   PRINT_DBG("    Found a memset intrinsic\n");
                }
+#endif
             }
          }
       }
@@ -475,19 +508,23 @@ bool llvm::CLANG_VERSION_SYMBOL(_plugin_expandMemOps)::exec(
       {
          bool do_erase;
          do_erase = false;
-         if(llvm::MemCpyInst* Memcpy = dyn_cast<llvm::MemCpyInst>(MemCall))
+         if(auto Memcpy = dyn_cast<llvm::MemCpyInst>(MemCall))
          {
-            if(llvm::ConstantInt* CI = dyn_cast<llvm::ConstantInt>(Memcpy->getLength()))
+            if(auto CI = dyn_cast<llvm::ConstantInt>(Memcpy->getLength()))
             {
                PRINT_DBG("Expanding memcpy constant\n");
                createMemCpyLoopKnownSizeLocal(Memcpy, Memcpy->getRawSource(), Memcpy->getRawDest(), CI,
-#if __clang_major__ > 6
+#if __clang_major__ <= 6
+                                              Memcpy->getAlignment(), Memcpy->getAlignment(),
+#elif __clang_major__ < 16
                                               Memcpy->getSourceAlignment(), Memcpy->getDestAlignment(),
 #else
-                                              Memcpy->getAlignment(), Memcpy->getAlignment(),
+                                              Memcpy->getRawSource()->getPointerAlignment(*DL).value(),
+                                              Memcpy->getRawDest()->getPointerAlignment(*DL).value(),
 #endif
                                               Memcpy->isVolatile(), Memcpy->isVolatile(), DL);
                do_erase = true;
+               res = true;
             }
 #if __clang_major__ != 4
             else
@@ -496,22 +533,25 @@ bool llvm::CLANG_VERSION_SYMBOL(_plugin_expandMemOps)::exec(
                const llvm::TargetTransformInfo& TTI = GetTTI(F);
                llvm::expandMemCpyAsLoop(Memcpy, TTI);
                do_erase = true;
+               res = true;
             }
 #endif
          }
-         else if(llvm::MemMoveInst* Memmove = dyn_cast<llvm::MemMoveInst>(MemCall))
+         else if(auto Memmove = dyn_cast<llvm::MemMoveInst>(MemCall))
          {
             PRINT_DBG("Expanding memmove\n");
 #if __clang_major__ != 4
             llvm::expandMemMoveAsLoop(Memmove);
             do_erase = true;
+            res = true;
 #endif
          }
-         else if(llvm::MemSetInst* Memset = dyn_cast<llvm::MemSetInst>(MemCall))
+         else if(auto Memset = dyn_cast<llvm::MemSetInst>(MemCall))
          {
             PRINT_DBG("Expanding memset\n");
             expandMemSetAsLoopLocal(Memset, DL);
             do_erase = true;
+            res = true;
          }
          if(do_erase)
          {
@@ -576,7 +616,6 @@ llvm::PassPluginLibraryInfo CLANG_PLUGIN_INFO(_plugin_expandMemOps)()
               const auto load = [](llvm::ModulePassManager& MPM) {
                  llvm::FunctionPassManager FPM;
                  FPM.addPass(llvm::InstCombinePass());
-                 FPM.addPass(llvm::BreakCriticalEdgesPass());
                  FPM.addPass(llvm::UnifyFunctionExitNodesPass());
                  MPM.addPass(llvm::createModuleToFunctionPassAdaptor(std::move(FPM)));
                  MPM.addPass(llvm::CLANG_VERSION_SYMBOL(_plugin_expandMemOps)());
@@ -590,8 +629,13 @@ llvm::PassPluginLibraryInfo CLANG_PLUGIN_INFO(_plugin_expandMemOps)()
                  }
                  return false;
               });
-              PB.registerOptimizerLastEPCallback(
-                  [&](llvm::ModulePassManager& MPM, llvm::PassBuilder::OptimizationLevel) { return load(MPM); });
+              PB.registerOptimizerLastEPCallback([&](llvm::ModulePassManager& MPM,
+#if __clang_major__ < 16
+                                                     llvm::PassBuilder::OptimizationLevel
+#else
+                                                     llvm::OptimizationLevel
+#endif
+                                                 ) { return load(MPM); });
            }};
 }
 

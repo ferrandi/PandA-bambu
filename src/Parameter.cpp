@@ -52,6 +52,7 @@
 #include "config_HAVE_I386_CLANG11_COMPILER.hpp"
 #include "config_HAVE_I386_CLANG12_COMPILER.hpp"
 #include "config_HAVE_I386_CLANG13_COMPILER.hpp"
+#include "config_HAVE_I386_CLANG16_COMPILER.hpp"
 #include "config_HAVE_I386_CLANG4_COMPILER.hpp"
 #include "config_HAVE_I386_CLANG5_COMPILER.hpp"
 #include "config_HAVE_I386_CLANG6_COMPILER.hpp"
@@ -245,8 +246,10 @@ void Parameter::CheckParameters()
               (mopt == "-m64" &&
                !CompilerWrapper::hasCompilerM64(getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler))))
       {
-         THROW_ERROR("Option " + mopt + " not supported by " +
-                     CompilerWrapper::getCompilerSuffix(getOption<int>(OPT_default_compiler)) + " compiler.");
+         THROW_ERROR(
+             "Option " + mopt + " not supported by " +
+             CompilerWrapper::getCompilerSuffix(getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler)) +
+             " compiler.");
       }
    }
 #endif
@@ -999,6 +1002,13 @@ bool Parameter::ManageGccOptions(int next_option, char* optarg_param)
             break;
          }
 #endif
+#if HAVE_I386_CLANG16_COMPILER
+         if(std::string(optarg_param) == "I386_CLANG16")
+         {
+            setOption(OPT_default_compiler, static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_CLANG16));
+            break;
+         }
+#endif
 #if HAVE_I386_CLANGVVD_COMPILER
          if(std::string(optarg_param) == "I386_CLANGVVD")
          {
@@ -1471,6 +1481,9 @@ void Parameter::PrintGccOptionsUsage(std::ostream& os) const
 #if HAVE_I386_CLANG13_COMPILER
       << "            I386_CLANG13\n"
 #endif
+#if HAVE_I386_CLANG16_COMPILER
+      << "            I386_CLANG16\n"
+#endif
 #if HAVE_I386_CLANGVVD_COMPILER
       << "            I386_CLANGVVD\n"
 #endif
@@ -1492,7 +1505,9 @@ void Parameter::PrintGccOptionsUsage(std::ostream& os) const
       << "        Enable preprocessing mode of GCC/CLANG.\n\n"
       << "    --std=<standard>\n"
       << "        Assume that the input sources are for <standard>. All\n"
-      << "        the --std options available in GCC/CLANG are supported.\n\n"
+      << "        the --std options available in GCC/CLANG are supported.\n"
+      << "        The default value is gnu90/gnu11 for C and gnu++98/gnu++14 for C++ \n"
+      << "        depending on the selected frontend compiler support.\n\n"
       << "    -D<name>\n"
       << "        Predefine name as a macro, with definition 1.\n\n"
       << "    -D<name=definition>\n"

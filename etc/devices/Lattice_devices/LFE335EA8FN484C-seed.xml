@@ -6,7 +6,7 @@
     <model value="LFE3-35EA-8FN484C"/>
     <package value="FN484C"/>
     <speed_grade value="-8"/>
-    <BRAM_bitsize_max value="128"/>
+    <BRAM_bitsize_max value="4096"/>
     <BRAM_bitsize_min value="8"/>
     <connection_offset value="0.3"/>
     <DSPs_x_sizes value="18"/>

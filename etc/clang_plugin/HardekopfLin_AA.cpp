@@ -988,7 +988,7 @@ extf_t ExtInfo::get_type(const llvm::Function* F) const
 bool ExtInfo::is_ext(const llvm::Function* F)
 {
    assert(F);
-   if(!F->getBasicBlockList().empty())
+   if(!F->empty())
    {
       return false;
    }
@@ -4835,9 +4835,9 @@ void Andersen_AA::visit_func(const llvm::Function* F)
    // First make nodes for all ptr-return insn
    //  (since trace_int may sometimes return values below the current insn).
    // Also number all unnamed instructions that have a result.
-   for(auto& BB : F->getBasicBlockList())
+   for(auto& BB : *F)
    {
-      for(auto& Inst : BB.getInstList())
+      for(auto& Inst : BB)
       {
          const llvm::Instruction* I = &Inst;
          if(llvm::isa<llvm::PointerType>(I->getType()))
@@ -7352,7 +7352,11 @@ void Andersen_AA::handle_ext(const llvm::Function* F, const CallInstOrInvokeInst
          // The function pointer may point to realloc at one time
          //  and to a function with fewer args at another time;
          //  we should skip the realloc if the current call has fewer args.
+#if __clang_major__ < 14
          if(I->getNumArgOperands() < 1)
+#else
+         if(I->arg_size() < 1)
+#endif
          {
             break;
          }
@@ -7410,7 +7414,11 @@ void Andersen_AA::handle_ext(const llvm::Function* F, const CallInstOrInvokeInst
             default:
                i_arg = 0;
          }
+#if __clang_major__ < 14
          if(I->getNumArgOperands() <= i_arg)
+#else
+         if(I->arg_size() <= i_arg)
+#endif
          {
             break;
          }
@@ -7673,7 +7681,7 @@ bool Andersen_AA::has_malloc_obj(u32 n, const llvm::TargetLibraryInfo* TLI, u32 
       if(val)
       {
          auto ci = llvm::dyn_cast<const llvm::CallInst>(val);
-         if(ci && llvm::isMallocLikeFn(ci, TLI))
+         if(ci && llvm::isAllocationFn(val, TLI))
          {
             return true;
          }
@@ -9656,9 +9664,9 @@ void Staged_Flow_Sensitive_AA::visit_func(const llvm::Function* F)
 {
    // First make nodes for all ptr-return insn
    //  (since trace_int may sometimes return values below the current insn).
-   for(auto& BB : F->getBasicBlockList())
+   for(auto& BB : *F)
    {
-      for(auto& Inst : BB.getInstList())
+      for(auto& Inst : BB)
       {
          const llvm::Instruction* I = &Inst;
          if(llvm::isa<llvm::PointerType>(I->getType()))

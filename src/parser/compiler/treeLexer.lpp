@@ -128,7 +128,7 @@ node_lit	"@"{unsigned_lit}
 
 {alpha_p_}{alnum_p_}* { int res = tokens->check_tokens(YYText()); if(res <0){ LexerError("Unrecognized keyword"); }  else return res;}
 
-{int_lit}         {lvalp->long_value = boost::lexical_cast<long long int>(YYText()); return TOK_BISON_NUMBER;}
+{int_lit}         {lvalp->text=YYText(); return TOK_BISON_NUMBER;}
 {node_lit} {lvalp->value= strtol(YYText()+1, (char **)NULL, 10); return NODE_ID;}
 {string_lit}      {lvalp->text=YYText(); return TOK_BISON_STRING;}
 
