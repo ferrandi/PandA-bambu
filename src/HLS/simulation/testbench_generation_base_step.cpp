@@ -843,7 +843,7 @@ unsigned long long TestbenchGenerationBaseStep::generate_init_file(const std::st
          char byteval = 0;
          for(size_t k = 0; k < 8; ++k)
          {
-            byteval |= static_cast<char>(char(bitstring.at(i - k - 1U) != '0') << k);
+            byteval = byteval | static_cast<char>((bitstring.at(i - k - 1U) != '0') << k);
          }
          init_dat.put(byteval);
       }
