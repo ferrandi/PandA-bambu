@@ -41,20 +41,19 @@
  * @author Pietro Fezzardi <pietrofezzardi@gmail.com>
  *
  */
-
 #ifndef HLS_TESTBENCH_HPP
 #define HLS_TESTBENCH_HPP
 
 #include "application_manager.hpp"
+#include "custom_map.hpp"
+#include "custom_set.hpp"
+#include "hls_step.hpp"
 #include "refcount.hpp"
 
-/// Superclass include
-#include "hls_step.hpp"
+#include <string>
+#include <tuple>
+#include <vector>
 
-/**
- * @name forward declarations
- */
-//@{
 class module;
 CONSTREF_FORWARD_DECL(BehavioralHelper);
 CONSTREF_FORWARD_DECL(Parameter);
@@ -65,16 +64,6 @@ REF_FORWARD_DECL(HLS_constraints);
 REF_FORWARD_DECL(structural_object);
 REF_FORWARD_DECL(memory);
 REF_FORWARD_DECL(language_writer);
-//@}
-
-/// STD include
-#include <string>
-
-/// STL include
-#include "custom_map.hpp"
-#include "custom_set.hpp"
-#include <tuple>
-#include <vector>
 
 /**
  * TestbenchGenerationBaseStep is a Facade class that hide implementation details of the
@@ -180,16 +169,11 @@ class TestbenchGenerationBaseStep : public HLS_step
    bool printCacheStats(const module* rootMod) const;
 
    /**
-    * Generates and execute the Verilator testbench file associated with the given component
-    */
-   std::string verilator_testbench() const;
-
-   /**
     * Write the verilator testbench.
     *
     * @param input_file Filename of the stimuli file.
     */
-   std::string write_verilator_testbench(const std::string& input_file) const;
+   std::string write_verilator_testbench() const;
 
    /**
     * Initialize the step (i.e., like a constructor, but executed just before exec
@@ -210,13 +194,11 @@ class TestbenchGenerationBaseStep : public HLS_step
 
    virtual void init_extra_signals(bool withMemory) const;
 
-   /**
-    * Compute the relationship of this step
-    * @param relationship_type is the type of relationship to be considered
-    * @return the steps in relationship with this
-    */
    const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
    ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+
+   void ComputeRelationships(DesignFlowStepSet& design_flow_step_set,
+                             const DesignFlowStep::RelationshipType relationship_type) override;
 
    /**
     * Constructor.
@@ -234,7 +216,11 @@ class TestbenchGenerationBaseStep : public HLS_step
     */
    ~TestbenchGenerationBaseStep() override;
 
-   static std::string print_var_init(const tree_managerConstRef TreeM, unsigned int var, const memoryRef mem);
+   static std::vector<std::string> print_var_init(const tree_managerConstRef TreeM, unsigned int var,
+                                                  const memoryRef mem);
+
+   static unsigned long long generate_init_file(const std::string& dat_filename, const tree_managerConstRef TreeM,
+                                                unsigned int var, const memoryRef mem);
 
    /**
     * Execute the step

@@ -263,10 +263,6 @@ const std::string HLS_step::EnumToName(const HLSFlowStep_Type hls_flow_step_type
          return "TestbenchGeneration";
       case HLSFlowStep_Type::TESTBENCH_MEMORY_ALLOCATION:
          return "TestbenchMemoryAllocation";
-      case HLSFlowStep_Type::TESTBENCH_VALUES_C_GENERATION:
-         return "TestbenchValuesCGeneration";
-      case HLSFlowStep_Type::TESTBENCH_VALUES_XML_GENERATION:
-         return "TestbenchValuesXMLGeneration";
       case HLSFlowStep_Type::TEST_VECTOR_PARSER:
          return "TestVectorParser";
       case HLSFlowStep_Type::TOP_ENTITY_CREATION:

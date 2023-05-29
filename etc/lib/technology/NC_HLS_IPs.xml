@@ -1266,34 +1266,29 @@ end process;
           <NP_functionality LIBRARY="__builtin_exit RESFILE" VERILOG_PROVIDED="
 reg done_port 1INIT_ZERO_VALUE;
 // synthesis translate_off
-integer res_file;
-always @(negedge clock)
+always @(posedge clock)
   if(start_port == 1&apos;b1)
   begin
+    automatic integer res_file;
     res_file = $fopen(RESFILE,&quot;a&quot;);
-    $display(&quot;Exit called: %0d&quot;, status);
     $fwrite(res_file, &quot;%0d\\n&quot;, $time);
     $fwrite(res_file, &quot;%0d\\n&quot;, status);
     $fclose(res_file);
+    $display(&quot;Sim: Exit called: %0d&quot;, status);
     $finish;
   end
 // synthesis translate_on
 always @(posedge clock) done_port &lt;= start_port;" VHDL_PROVIDED="begin
-ERROR this must be updated to reflect Verilog implementation
 -- synthesis translate_off
 process(clock)
   file res_file : text;
 begin
-    if (clock&apos;event and clock = &apos;0&apos;) then
+    if (clock&apos;event and clock = &apos;1&apos;) then
       if(start_port = &apos;1&apos;) then
-        file_open(res_file, &quot;results.txt&quot;, WRITE_MODE);
-        report(&quot;Exit called&quot;);
-        if (status /= 0) then
-        write(res_file, &quot;0&quot; &amp; HT &amp; time&apos;image(now) &amp; LF);
-      else
-         write(res_file, &quot;3&quot; &amp; HT &amp; time&apos;image(now) &amp; LF);
-      end if;
+        file_open(res_file, RESFILE, APPEND_MODE);
+        write(res_file, integer&apos;image(now / 1 ns) &amp; LF &amp; integer&apos;image(to_integer(status)) &amp; LF);
         file_close(res_file);
+        write(output, &quot;Sim: Exit called: &quot; &amp; integer&apos;image(to_integer(status)) &amp; LF);
         finish(1);
       end if;
     end if;
@@ -1336,32 +1331,31 @@ end process;
           <port_o id="done_port" dir="OUT">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="__builtin_abort" VERILOG_PROVIDED="
+          <NP_functionality LIBRARY="__builtin_abort RESFILE" VERILOG_PROVIDED="
 reg done_port 1INIT_ZERO_VALUE;
 // synthesis translate_off
-integer res_file;
 always @(negedge clock)
   if(start_port == 1&apos;b1)
   begin
+    automatic integer res_file;
     res_file = $fopen(RESFILE,&quot;a&quot;);
-    $display(&quot;Abort called&quot;);
     $fwrite(res_file, &quot;A\\n&quot;);
     $fclose(res_file);
+    $display(&quot;ERROR: Sim: Abort called&quot;);
     $finish;
   end
 // synthesis translate_on
 always @(posedge clock) done_port &lt;= start_port;" VHDL_PROVIDED="begin
-ERROR this must be updated to reflect Verilog implementation
 -- synthesis translate_off
 process(clock)
   file res_file : text;
 begin
-    if (clock&apos;event and clock = &apos;0&apos;) then
+    if (clock&apos;event and clock = &apos;1&apos;) then
       if(start_port = &apos;1&apos;) then
-        file_open(res_file, &quot;results.txt&quot;, WRITE_MODE);
-        report(&quot;Abort called&quot;);
-        write(res_file, &quot;0&quot; &amp; HT &amp; time&apos;image(now) &amp; LF);
+        file_open(res_file, RESFILE, APPEND_MODE);
+        write(res_file, &quot;A&quot; &amp; LF);
         file_close(res_file);
+        write(output, &quot;ERROR: Sim: Abort called&quot; &amp; LF);
         finish(1);
       end if;
     end if;

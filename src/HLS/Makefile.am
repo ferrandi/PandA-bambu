@@ -1173,6 +1173,7 @@ lib_module_generator_la_CPPFLAGS = \
    -I$(top_srcdir)/src/design_flows/backend/ToC/progModels \
    -I$(top_srcdir)/src/design_flows/backend/ToC/source_code_writers \
    -I$(top_srcdir)/src/design_flows/backend/ToHDL \
+   -I$(top_srcdir)/src/design_flows/backend/ToHDL/writer \
    -I$(top_srcdir)/src/behavior \
    -I$(top_srcdir)/src/HLS/binding \
    -I$(top_srcdir)/src/HLS/binding/interconnection \
@@ -1219,6 +1220,15 @@ noinst_HEADERS += \
    module_generator/ReadWrite_arrayModuleGenerator.hpp \
    module_generator/ReadWriteDP_arrayModuleGenerator.hpp \
    module_generator/ReadWrite_m_axiModuleGenerator.hpp \
+   module_generator/TestbenchAcknowledgeModuleGenerator.hpp \
+   module_generator/TestbenchArrayModuleGenerator.hpp \
+   module_generator/TestbenchAxisModuleGenerator.hpp \
+   module_generator/TestbenchDUTModuleGenerator.hpp \
+   module_generator/TestbenchFifoModuleGenerator.hpp \
+   module_generator/TestbenchHandshakeModuleGenerator.hpp \
+   module_generator/TestbenchNoneModuleGenerator.hpp \
+   module_generator/TestbenchOvalidModuleGenerator.hpp \
+   module_generator/TestbenchValidModuleGenerator.hpp \
    module_generator/Write_acknowledgeModuleGenerator.hpp \
    module_generator/Write_axisModuleGenerator.hpp \
    module_generator/Write_fifoModuleGenerator.hpp \
@@ -1249,6 +1259,15 @@ lib_module_generator_la_SOURCES = \
    module_generator/ReadWrite_arrayModuleGenerator.cpp \
    module_generator/ReadWriteDP_arrayModuleGenerator.cpp \
    module_generator/ReadWrite_m_axiModuleGenerator.cpp \
+   module_generator/TestbenchAcknowledgeModuleGenerator.cpp \
+   module_generator/TestbenchArrayModuleGenerator.cpp \
+   module_generator/TestbenchAxisModuleGenerator.cpp \
+   module_generator/TestbenchDUTModuleGenerator.cpp \
+   module_generator/TestbenchFifoModuleGenerator.cpp \
+   module_generator/TestbenchHandshakeModuleGenerator.cpp \
+   module_generator/TestbenchNoneModuleGenerator.cpp \
+   module_generator/TestbenchOvalidModuleGenerator.cpp \
+   module_generator/TestbenchValidModuleGenerator.cpp \
    module_generator/Write_acknowledgeModuleGenerator.cpp \
    module_generator/Write_axisModuleGenerator.cpp \
    module_generator/Write_fifoModuleGenerator.cpp \

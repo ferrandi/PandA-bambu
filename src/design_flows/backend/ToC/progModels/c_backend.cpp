@@ -41,85 +41,62 @@
  * Last modified by $Author$
  *
  */
+#include "c_backend.hpp"
 
-// include for autoheader
 #include "config_PACKAGE_NAME.hpp"
 #include "config_RELEASE.hpp"
 
-/// Header include
-#include "c_backend.hpp"
-
-/// design_flows include
-#include "design_flow_graph.hpp"
-#include "design_flow_manager.hpp"
-
-/// design_flows/backend/ToC
-#include "c_backend_step_factory.hpp"
-
-/// design_flows/backend/ToC/source_code_writers include
-#include "c_writer.hpp"
-
-/// frontend_analysis
+#include "Parameter.hpp"
 #include "application_frontend_flow_step.hpp"
-#include "frontend_flow_step.hpp"
-#include "frontend_flow_step_factory.hpp"
-
-/// Behavior include
 #include "application_manager.hpp"
 #include "behavioral_helper.hpp"
+#include "c_backend_step_factory.hpp"
+#include "c_writer.hpp"
 #include "call_graph.hpp"
 #include "call_graph_manager.hpp"
+#include "custom_map.hpp"
+#include "custom_set.hpp"
+#include "dbgPrintHelper.hpp"
+#include "design_flow_graph.hpp"
+#include "design_flow_manager.hpp"
+#include "frontend_flow_step.hpp"
+#include "frontend_flow_step_factory.hpp"
 #include "function_behavior.hpp"
+#include "graph.hpp"
+#include "indented_output_stream.hpp"
 #include "op_graph.hpp"
 #include "prettyPrintVertex.hpp"
-
-/// Graph include
-#include "graph.hpp"
+#include "refcount.hpp"
+#include "string_manipulation.hpp"
+#include "tree_helper.hpp"
+#include "tree_manager.hpp"
+#include "tree_node.hpp"
+#include "tree_reindex.hpp"
+#include "utility.hpp"
+#include "var_pp_functor.hpp"
 
 #if HAVE_BAMBU_BUILT
-/// HLS include
 #include "hls_flow_step_factory.hpp"
 #include "hls_function_step.hpp"
 #endif
 
-/// Paramter include
-#include "Parameter.hpp"
-
-/// STD include
-#include <fstream>
-#include <iosfwd>
-#include <ostream>
-#include <sstream>
-#include <string>
-
-/// STL include
-#include "custom_map.hpp"
-#include "custom_set.hpp"
-#include <deque>
-#include <list>
-#include <utility>
-#include <vector>
-
-/// tree includes
-#include "tree_helper.hpp"
-#include "tree_manager.hpp"
-#include "tree_node.hpp"
-#include "var_pp_functor.hpp"
-
-/// Utility include
-#include "boost/filesystem/operations.hpp"
-#include "boost/filesystem/path.hpp"
-#include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_NONE
-#include "indented_output_stream.hpp"
-#include "refcount.hpp"
-#include "string_manipulation.hpp" // for GET_CLASS
-#include "utility.hpp"
 #include <boost/config.hpp>
+#include <boost/filesystem/operations.hpp>
+#include <boost/filesystem/path.hpp>
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/filtered_graph.hpp>
 #include <boost/graph/graph_utility.hpp>
 #include <boost/graph/topological_sort.hpp>
 #include <boost/lexical_cast.hpp>
+#include <deque>
+#include <fstream>
+#include <iosfwd>
+#include <list>
+#include <ostream>
+#include <sstream>
+#include <string>
+#include <utility>
+#include <vector>
 
 CBackend::CBackend(const Type _c_backend_type, const CBackendInformationConstRef c_backend_information,
                    const DesignFlowManagerConstRef _design_flow_manager, const application_managerConstRef _AppM,
@@ -439,11 +416,7 @@ void CBackend::Initialize()
       boost::filesystem::remove_all(file_name);
    }
    already_visited.clear();
-   if(c_backend_type == CB_HLS)
-   {
-      functions_to_be_declared = AppM->CGetCallGraphManager()->GetRootFunctions();
-   }
-   else
+   if(c_backend_type != CB_HLS)
    {
       functions_to_be_declared = AppM->get_functions_without_body();
       functions_to_be_defined = AppM->get_functions_with_body();

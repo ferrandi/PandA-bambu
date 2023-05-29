@@ -868,7 +868,7 @@ void HDL_manager::write_module(const language_writerRef writer, const structural
                             GetPointer<port_o>(mod_inst->get_in_port(i))->find_bounded_object(cir);
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                        "---Bounded object is " +
-                                           (object_bounded ? object_bounded->get_path() : " nothing"));
+                                           (object_bounded ? object_bounded->get_path() : "nothing"));
                         writer->write_port_binding(mod_inst->get_in_port(i), object_bounded, first_port_analyzed);
                      }
                      else

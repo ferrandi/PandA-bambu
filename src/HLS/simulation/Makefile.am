@@ -23,6 +23,7 @@ lib_simulation_la_CPPFLAGS = \
    -I$(top_srcdir)/src/HLS/binding/register \
    -I$(top_srcdir)/src/HLS/interface \
    -I$(top_srcdir)/src/HLS/memory \
+   -I$(top_srcdir)/src/HLS/module_generator \
    -I$(top_srcdir)/src/HLS/scheduling \
    -I$(top_srcdir)/src/HLS/vcd \
    -I$(top_srcdir)/src/HLS/virtual_components \
@@ -59,8 +60,6 @@ noinst_HEADERS = \
    testbench_generation.hpp \
    testbench_generation_base_step.hpp \
    testbench_memory_allocation.hpp \
-   testbench_values_c_generation.hpp \
-   testbench_values_xml_generation.hpp \
    wishbone_interface_testbench.hpp
 
 lib_simulation_la_SOURCES = \
@@ -78,8 +77,6 @@ lib_simulation_la_SOURCES = \
    testbench_generation.cpp \
    testbench_generation_base_step.cpp \
    testbench_memory_allocation.cpp \
-   testbench_values_c_generation.cpp \
-   testbench_values_xml_generation.cpp \
    wishbone_interface_testbench.cpp
 
 if BISON_2_7_OR_GREATER

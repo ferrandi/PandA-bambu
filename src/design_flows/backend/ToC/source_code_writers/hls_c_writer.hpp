@@ -58,29 +58,6 @@ class HLSCWriter : public CWriter
    const HLSCBackendInformationConstRef hls_c_backend_information;
 
    /**
-    * Check if a binary string is a sequence of zeros with
-    * length multiple of 8
-    */
-   bool is_all_8zeros(const std::string& str);
-
-   /**
-    * Write printf statements to write n_bytes bytes initialized to 0 for the
-    * memory initialization of the HDL simulator
-    * @param [in] n_bytes the number of zeroed bytes to be printed
-    */
-   inline void WriteZeroedBytes(const size_t n_bytes);
-
-   /**
-    * Takes a binary string and writes in the C file a series of statements
-    * used to print the equivalent memory initialization data for the HDL
-    * simulator
-    */
-   size_t WriteBinaryMemoryInit(const std::string& binary_string, const size_t data_bitsize, std::string& bits_offset);
-
-   size_t WriteBinaryMemoryInitToFile(std::ofstream& parameter_init_file, const std::string& binary_string,
-                                      const size_t data_bitsize, std::string& bits_offset);
-
-   /**
     * Write global variables needed by the tesbench
     */
    void WriteTestbenchGlobalVars();
@@ -104,13 +81,9 @@ class HLSCWriter : public CWriter
     * declaration code must be printed before the initialization code.
     * @param behavioral_helper is the function to which the parameters are referred
     * @param curr_test_vector is the test vector used to initialize the parameters
-    * @param vector_index is the index of the test_vector (this should not be
-    * needed here, since it's used to get memory information, it will be
-    * removed when tesbench memory allocation and c testbench creation will
-    * be executed as separate steps)
     */
    void WriteParamInitialization(const BehavioralHelperConstRef behavioral_helper,
-                                 const std::map<std::string, std::string>& curr_test_vector, const unsigned int v_idx);
+                                 const std::map<std::string, std::string>& curr_test_vector);
 
    /**
     * Writes a call to the top function to be tested, using its parameters.
@@ -119,13 +92,6 @@ class HLSCWriter : public CWriter
     * @param behavioral_helper refers to the function to be tested
     */
    void WriteTestbenchFunctionCall(const BehavioralHelperConstRef behavioral_helper);
-
-   /**
-    * Write some print statements used to dump the results of each call to
-    * the tested function. The output is in a format that is recognized by
-    * the HDL testbench generation
-    */
-   void WriteExpectedResults(const BehavioralHelperConstRef behavioral_helper, const unsigned v_idx);
 
    /**
     * Write some print statements used to dump the values used by the HDL to
@@ -164,17 +130,6 @@ class HLSCWriter : public CWriter
     */
    void WriteBuiltinWaitCall() override;
 
-   /**
-    * Write the print to fill values.txt with values for t parameters
-    * @param behavioral_helper is the helper used to print field names
-    * @param param is the string of the parameter currently printed
-    * @param type is the type of the currently printed piece of parameter
-    * @param nesting_level is the level of nesting of the currently printed field/element
-    * @param input specifies if the input syntax must be used
-    */
-   void WriteParamInMemory(const BehavioralHelperConstRef behavioral_helper, const std::string& param,
-                           tree_nodeConstRef type, const unsigned int nesting_level = 0, bool input = false);
-
  public:
    /**
     * Constructor of the class
@@ -188,11 +143,6 @@ class HLSCWriter : public CWriter
    HLSCWriter(const HLSCBackendInformationConstRef hls_c_backend_information, const application_managerConstRef _AppM,
               const InstructionWriterRef instruction_writer, const IndentedOutputStreamRef indented_output_stream,
               const ParameterConstRef _parameters, bool verbose = true);
-
-   /**
-    * Destructor
-    */
-   ~HLSCWriter() override;
 
    /**
     * Writes the final C file

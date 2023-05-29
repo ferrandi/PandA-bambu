@@ -1580,16 +1580,6 @@ void CompilerWrapper::InitializeCompilerParameters()
          compiler_linking_parameters += "-L" + library_directory + " ";
       }
    }
-
-   /// Adding no parse
-   if(Param->isOption(OPT_no_parse_files))
-   {
-      const auto no_parse_files = Param->getOption<const CustomSet<std::string>>(OPT_no_parse_files);
-      for(const auto& no_parse_file : no_parse_files)
-      {
-         compiler_linking_parameters += no_parse_file + " ";
-      }
-   }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Initialized gcc parameters");
 }
 

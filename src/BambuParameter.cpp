@@ -2478,6 +2478,17 @@ void BambuParameter::CheckParameters()
       THROW_WARNING("Using 'main' as top function name is strongly discouraged.");
       THROW_WARNING("   Please note that C simulation output may be truncated down to 8-bits.");
    }
+   if((isOption(OPT_input_format) &&
+       getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_RAW) ||
+      (isOption(OPT_top_functions_names) && getOption<std::string>(OPT_top_functions_names) == "main"))
+   {
+      std::string gcc_defines = "CUSTOM_VERIFICATION";
+      if(isOption(OPT_gcc_defines))
+      {
+         gcc_defines += STR_CST_string_separator + getOption<std::string>(OPT_gcc_defines);
+      }
+      setOption(OPT_gcc_defines, gcc_defines);
+   }
 
    const auto sorted_dirs = [](const std::string& parent_dir) {
       std::vector<boost::filesystem::path> sorted_paths;

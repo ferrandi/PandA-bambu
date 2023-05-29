@@ -87,7 +87,7 @@ class ISE_isim_wrapper : public SimulationTool
     * Constructor
     * @param Param is the set of parameters
     */
-   ISE_isim_wrapper(const ParameterConstRef& Param, std::string suffix);
+   ISE_isim_wrapper(const ParameterConstRef& Param, const std::string& suffix, const std::string& top_fname);
 
    /**
     * Destructor

@@ -24,15 +24,14 @@
           </port_o>
           <NP_functionality LIBRARY="__builtin_bambu_time_start PRORESFILE" VERILOG_PROVIDED="reg done_port;
 // synthesis translate_off
-integer res_file;
 always @(posedge clock)
   if(start_port == 1&apos;b1)
   begin
+    automatic integer res_file;
     res_file = $fopen(PRORESFILE,&quot;a&quot;);
-    /*$display(&quot;__builtin_bambu_time_start %d&quot;, $time);*/
-    $fwrite(res_file, &quot;2\\t&quot;);
-    $fwrite(res_file, &quot;%d\\n&quot;, $time);
+    $fwrite(res_file, &quot;%0d|&quot;, $time);
     $fclose(res_file);
+    $display(&quot;__builtin_bambu_time_start %d&quot;, $time);
   end
 // synthesis translate_on
 always @(posedge clock) done_port &lt;= start_port;"/>
@@ -61,15 +60,14 @@ always @(posedge clock) done_port &lt;= start_port;"/>
           </port_o>
           <NP_functionality LIBRARY="__builtin_bambu_time_stop PRORESFILE" VERILOG_PROVIDED="reg done_port;
 // synthesis translate_off
-integer res_file;
 always @(posedge clock)
   if(start_port == 1&apos;b1)
   begin
+    automatic integer res_file;
     res_file = $fopen(PRORESFILE,&quot;a&quot;);
-    /*$display(&quot;__builtin_bambu_time_stop %d&quot;, $time);*/
-    $fwrite(res_file, &quot;3\\t&quot;);
-    $fwrite(res_file, &quot;%d\\n&quot;, $time);
+    $fwrite(res_file, &quot;%0d,&quot;, $time);
     $fclose(res_file);
+    $display(&quot;__builtin_bambu_time_stop %d&quot;, $time);
   end
 // synthesis translate_on
 always @(posedge clock) done_port &lt;= start_port;"/>

@@ -119,6 +119,13 @@ DesignFlowStep_Status TestVectorParser::Exec()
       {
          HLSMgr->RSim->test_vectors = ParseXMLFile(input_string);
       }
+      else if(boost::ends_with(input_string, ".c") || boost::ends_with(input_string, ".cc") ||
+              boost::ends_with(input_string, ".cpp"))
+      {
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                        "<--User provided co-simulation will be used for test vectors generation");
+         return DesignFlowStep_Status::SUCCESS;
+      }
       else
       {
          THROW_UNREACHABLE("Unsupported testbench file format");

@@ -172,7 +172,7 @@ DesignFlowStep_Status TestbenchMemoryAllocation::Exec()
          std::string test_v = "0";
          if(is_memory)
          {
-            test_v = TestbenchGenerationBaseStep::print_var_init(TM, p, HLSMgr->Rmem);
+            // test_v = TestbenchGenerationBaseStep::print_var_init(TM, p, HLSMgr->Rmem);
          }
          else if(curr_test_vector.find(param) != curr_test_vector.end())
          {
