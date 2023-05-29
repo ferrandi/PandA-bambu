@@ -339,7 +339,7 @@ void HLSCWriter::WriteParamDecl(const BehavioralHelperConstRef BH)
    for(const auto& par : BH->GetParameters())
    {
       const auto parm_type = tree_helper::CGetType(par);
-      const auto type = tree_helper::PrintType(TM, parm_type);
+      const auto type = tree_helper::IsPointerType(par) ? "void*" : tree_helper::PrintType(TM, parm_type);
       const auto param = BH->PrintVariable(par->index);
       hls_c_backend_information->HLSMgr->RSim->simulationArgSignature.push_back(param);
 
@@ -348,16 +348,7 @@ void HLSCWriter::WriteParamDecl(const BehavioralHelperConstRef BH)
          THROW_ERROR("parameter " + param + " of function under test " + BH->get_function_name() + " has type " + type +
                      "\nco-simulation does not support vectorized parameters at top level");
       }
-      if(tree_helper::IsPointerType(par))
-      {
-         const var_pp_functorRef var_functor(new std_var_pp_functor(BH));
-         const auto type_declaration = tree_helper::PrintType(TM, parm_type, false, false, false, par, var_functor);
-         indented_output_stream->Append(type_declaration + ";\n");
-      }
-      else
-      {
-         indented_output_stream->Append(type + " " + param + ";\n");
-      }
+      indented_output_stream->Append(type + " " + param + ";\n");
    }
 }
 
@@ -453,19 +444,6 @@ void HLSCWriter::WriteParamInitialization(const BehavioralHelperConstRef BH,
          const auto ptd_type = tree_helper::GetRealType(tree_helper::CGetPointedType(parm_type));
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                         "---Pointed type: " + GET_CONST_NODE(ptd_type)->get_kind_text() + " - " + STR(ptd_type));
-         const auto c_type_cast = [&]() {
-            auto bare_ptd_type = ptd_type;
-            while(tree_helper::IsArrayType(bare_ptd_type))
-            {
-               bare_ptd_type = tree_helper::CGetElements(bare_ptd_type);
-            }
-            auto type_name = tree_helper::PrintType(TM, bare_ptd_type);
-            if(tree_helper::IsVoidType(bare_ptd_type))
-            {
-               boost::replace_all(type_name, "void ", "char ");
-            }
-            return "(" + type_name + "*)";
-         }();
 
          std::string param_size;
          if(is_binary_init)
@@ -476,9 +454,8 @@ void HLSCWriter::WriteParamInitialization(const BehavioralHelperConstRef BH,
             indented_output_stream->Append("fseek(" + fp + ", 0, SEEK_END);\n");
             indented_output_stream->Append("size_t " + param + "_size = ftell(" + fp + ");\n");
             indented_output_stream->Append("fseek(" + fp + ", 0, SEEK_SET);\n");
-            indented_output_stream->Append("unsigned char* " + param + "_buf = (unsigned char*)malloc(" + param +
-                                           "_size);\n");
-            indented_output_stream->Append("if(fread(" + param + "_buf, 1, " + param + "_size, " + fp +
+            indented_output_stream->Append("void* " + param + "_buf = malloc(" + param + "_size);\n");
+            indented_output_stream->Append("if(fread((unsigned char*)" + param + "_buf, 1, " + param + "_size, " + fp +
                                            ") != " + param + "_size)\n");
             indented_output_stream->Append("{\n");
             indented_output_stream->Append("fclose(" + fp + ");\n");
@@ -487,7 +464,7 @@ void HLSCWriter::WriteParamInitialization(const BehavioralHelperConstRef BH,
             indented_output_stream->Append("exit(-1);\n");
             indented_output_stream->Append("}\n");
             indented_output_stream->Append("fclose(" + fp + ");\n");
-            indented_output_stream->Append(param + " = " + c_type_cast + "" + param + "_buf;\n");
+            indented_output_stream->Append(param + " = " + param + "_buf;\n");
             indented_output_stream->Append("m_alloc_param(" + STR(par_idx) + ", " + param + "_size);\n");
          }
          else
@@ -498,8 +475,7 @@ void HLSCWriter::WriteParamInitialization(const BehavioralHelperConstRef BH,
                 ((test_v.front() != '{' && test_v.back() != '}' && is_a_true_pointer) ? "{" + test_v + "}" : test_v) +
                 ";\n";
             indented_output_stream->Append(temp_initialization);
-            indented_output_stream->Append(param + " = " + c_type_cast + (is_a_true_pointer ? "" : "&") + param +
-                                           "_temp;\n");
+            indented_output_stream->Append(param + " = (void*)" + (is_a_true_pointer ? "" : "&") + param + "_temp;\n");
             if(!arg_channel)
             {
                indented_output_stream->Append("m_alloc_param(" + STR(par_idx) + ", sizeof(" + param + "_temp));\n");
@@ -599,7 +575,7 @@ void HLSCWriter::WriteTestbenchFunctionCall(const BehavioralHelperConstRef BH)
       const auto top_fname_mngl = BH->GetMangledFunctionName();
       const auto& DesignInterfaceTypenameOrig =
           hls_c_backend_information->HLSMgr->design_interface_typename_orig_signature;
-      for(const auto& p : BH->GetParameters())
+      for(const auto& par : BH->GetParameters())
       {
          if(!is_first_argument)
          {
@@ -609,7 +585,7 @@ void HLSCWriter::WriteTestbenchFunctionCall(const BehavioralHelperConstRef BH)
          {
             is_first_argument = false;
          }
-         if(flag_cpp && tree_helper::IsPointerType(p))
+         if(tree_helper::IsPointerType(par))
          {
             if(DesignInterfaceTypenameOrig.find(top_fname_mngl) != DesignInterfaceTypenameOrig.end())
             {
@@ -628,8 +604,12 @@ void HLSCWriter::WriteTestbenchFunctionCall(const BehavioralHelperConstRef BH)
                   indented_output_stream->Append(") ");
                }
             }
+            else
+            {
+               indented_output_stream->Append("(" + tree_helper::PrintType(TM, par) + ")");
+            }
          }
-         const auto param = BH->PrintVariable(GET_INDEX_CONST_NODE(p));
+         const auto param = BH->PrintVariable(GET_INDEX_CONST_NODE(par));
          indented_output_stream->Append(param);
          ++par_index;
       }
