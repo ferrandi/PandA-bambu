@@ -394,15 +394,15 @@ std::string SimulationTool::GenerateLibraryBuildScript(std::ostringstream& scrip
           << "done\n\n";
    const auto dpi_cwrapper_file =
        Param->getOption<std::string>(OPT_output_directory) + "/simulation/" STR_CST_testbench_generation_basename ".c";
-   script << "${CC} -c ${CFLAGS} -I" PANDA_INCLUDE_INSTALLDIR " -fPIC -o " << output_dir << "/m_wrapper.o "
-          << dpi_cwrapper_file << std::endl
+   script << "${CC} -c ${CFLAGS} -I" << relocate_compiler_path(PANDA_INCLUDE_INSTALLDIR) << " -fPIC -o " << output_dir
+          << "/m_wrapper.o " << dpi_cwrapper_file << std::endl
           << "objs+=(\"" << output_dir << "/m_wrapper.o\")" << std::endl;
    if(Param->isOption(OPT_testbench_input_string))
    {
       const auto tb_file = Param->getOption<std::string>(OPT_testbench_input_string);
       if(boost::ends_with(tb_file, ".c") || boost::ends_with(tb_file, ".cc") || boost::ends_with(tb_file, ".cpp"))
       {
-         script << "${CC} -c ${CFLAGS} -I" PANDA_INCLUDE_INSTALLDIR " -fPIC";
+         script << "${CC} -c ${CFLAGS} -I" << relocate_compiler_path(PANDA_INCLUDE_INSTALLDIR) << " -fPIC";
          if(Param->isOption(OPT_testbench_extra_gcc_flags))
          {
             script << " " << Param->getOption<std::string>(OPT_testbench_extra_gcc_flags);
@@ -412,7 +412,8 @@ std::string SimulationTool::GenerateLibraryBuildScript(std::ostringstream& scrip
       }
    }
    const auto libtb_filename = output_dir + "/libtb.so";
-   script << "bash " PANDA_INCLUDE_INSTALLDIR "/mdpi/build.sh ${objs[*]} -o " << libtb_filename << std::endl
+   script << "bash " << relocate_compiler_path(PANDA_INCLUDE_INSTALLDIR "/mdpi/build.sh") << " ${objs[*]} -o "
+          << libtb_filename << std::endl
           << std::endl;
    return libtb_filename;
 }
