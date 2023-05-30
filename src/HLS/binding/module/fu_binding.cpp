@@ -2325,7 +2325,7 @@ void fu_binding::specialize_memory_unit(const HLS_managerRef HLSMgr, const hlsRe
    fu_module->SetParameter("USE_SPARSE_MEMORY", is_sparse_memory ? "1" : "0");
    memory::add_memory_parameter(HLS->datapath, base_address, STR(HLSMgr->Rmem->get_base_address(ar, HLS->functionId)));
 
-   long long int vec_size = 0;
+   unsigned long long vec_size = 0;
    /// array ref initialization
    THROW_ASSERT(ar, "expected a real tree node index");
    const auto init_filename = "array_ref_" + STR(ar) + ".mem";
@@ -2358,7 +2358,7 @@ void fu_binding::specialize_memory_unit(const HLS_managerRef HLSMgr, const hlsRe
 #define CHANGE_SDS_MEMORY_LAYOUT 0
 
 void fu_binding::fill_array_ref_memory(std::ostream& init_file_a, std::ostream& init_file_b, unsigned int ar,
-                                       long long int& vec_size, unsigned long long& elts_size, const memoryRef mem,
+                                       unsigned long long& vec_size, unsigned long long& elts_size, const memoryRef mem,
                                        bool is_memory_splitted, bool is_sds, module* fu_module)
 {
    unsigned long long bram_bitsize;
@@ -2380,7 +2380,8 @@ void fu_binding::fill_array_ref_memory(std::ostream& init_file_a, std::ostream& 
       std::vector<unsigned long long> dims;
       tree_helper::get_array_dim_and_bitsize(TreeM, array_type_node->index, dims, elts_size);
       THROW_ASSERT(dims.size(), "something of wrong happen");
-      vec_size = std::accumulate(dims.begin(), dims.end(), 1, [](unsigned int a, unsigned int b) { return a * b; });
+      vec_size = std::accumulate(dims.begin(), dims.end(), 1ULL,
+                                 [](unsigned long long a, unsigned long long b) { return a * b; });
    }
    else if(GetPointer<const integer_type>(GET_CONST_NODE(array_type_node)) ||
            tree_helper::IsRealType(array_type_node) || tree_helper::IsEnumType(array_type_node) ||
@@ -2812,10 +2813,9 @@ void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_n
                   }
                   const auto idx_curr_fd = GetPointer<field_decl>(GET_NODE(*fli));
                   const auto field_decl_size = tree_helper::Size(tree_helper::CGetType(*fli));
-                  THROW_ASSERT(tree_helper::GetConstValue(idx_curr_fd->bpos) >= 0, "");
-                  nbits = nbits - static_cast<unsigned long long int>(tree_helper::GetConstValue(idx_curr_fd->bpos));
-                  nbits = nbits - field_decl_size;
-                  THROW_ASSERT(nbits >= 0, "");
+                  THROW_ASSERT(nbits >= (tree_helper::GetConstValue(idx_curr_fd->bpos) + field_decl_size), "");
+                  nbits -= static_cast<unsigned long long int>(tree_helper::GetConstValue(idx_curr_fd->bpos)) +
+                           field_decl_size;
                   if(nbits)
                   {
                      /// add padding
@@ -2870,10 +2870,9 @@ void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_n
                   }
                   const auto field_decl_size = tree_helper::Size(tree_helper::CGetType(iv_it->first));
                   const auto idx_curr_fd = GetPointerS<field_decl>(GET_NODE(iv_it->first));
-                  THROW_ASSERT(tree_helper::GetConstValue(idx_curr_fd->bpos) >= 0, "");
-                  nbits = nbits - static_cast<unsigned long long int>(tree_helper::GetConstValue(idx_curr_fd->bpos));
-                  nbits = nbits - field_decl_size;
-                  THROW_ASSERT(nbits >= 0, "");
+                  THROW_ASSERT(nbits >= (tree_helper::GetConstValue(idx_curr_fd->bpos) + field_decl_size), "");
+                  nbits -= static_cast<unsigned long long int>(tree_helper::GetConstValue(idx_curr_fd->bpos)) +
+                           field_decl_size;
                   if(nbits)
                   {
                      /// add padding
@@ -2885,8 +2884,8 @@ void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_n
                   /// check if padding is needed
                   THROW_ASSERT(co->list_of_idx_valu.size() == 1, "just one initializer is possible");
                   const auto field_decl_size = tree_helper::Size(iv_it->first);
+                  THROW_ASSERT(union_size >= field_decl_size, "");
                   const auto nbits = union_size - field_decl_size;
-                  THROW_ASSERT(nbits >= 0, "");
                   if(nbits)
                   {
                      /// add padding
@@ -2911,8 +2910,8 @@ void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_n
                THROW_ERROR("C description not supported: Array with undefined size or not correctly initialized " +
                            STR(co->list_of_idx_valu.size()) + "-" + STR(num_elements));
             }
-            num_elements = num_elements - static_cast<unsigned int>(co->list_of_idx_valu.size());
-            THROW_ASSERT(num_elements >= 0, "");
+            THROW_ASSERT(num_elements >= static_cast<unsigned long long>(co->list_of_idx_valu.size()), "");
+            num_elements -= static_cast<unsigned long long>(co->list_of_idx_valu.size());
             init_file.insert(init_file.end(), num_elements, std::string(size_of_data, '0'));
          }
          break;
@@ -2974,16 +2973,15 @@ void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_n
          unsigned long long size_of_data;
          tree_helper::get_array_dim_and_bitsize(TreeM, type_n->index, dims, size_of_data);
          THROW_ASSERT(size_of_data == elmt_bitsize, "something of wrong happen");
-         auto num_elements =
-             std::accumulate(dims.begin(), dims.end(), 1U, [](unsigned int a, unsigned int b) { return a * b; });
+         auto num_elements = std::accumulate(dims.begin(), dims.end(), 1ULL,
+                                             [](unsigned long long a, unsigned long long b) { return a * b; });
          std::string value;
          if(num_elements < (string_value.size() + 1))
          {
             THROW_ERROR("C description not supported: string with undefined size or not correctly initialized " +
                         STR(string_value.size() + 1) + "-" + STR(num_elements));
          }
-         num_elements = num_elements - static_cast<unsigned int>(string_value.size() + 1);
-         THROW_ASSERT(num_elements >= 0, "");
+         num_elements -= string_value.size() + 1;
          init_file.insert(init_file.end(), num_elements, std::string(size_of_data, '0'));
          break;
       }

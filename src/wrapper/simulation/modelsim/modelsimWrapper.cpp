@@ -77,8 +77,8 @@
 
 // constructor
 modelsimWrapper::modelsimWrapper(const ParameterConstRef& _Param, const std::string& _suffix,
-                                 const std::string& top_fname)
-    : SimulationTool(_Param, top_fname), suffix(_suffix)
+                                 const std::string& _top_fname)
+    : SimulationTool(_Param, _top_fname), suffix(_suffix)
 {
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Creating the modelsim wrapper...");
    const auto lic_path = std::getenv("LM_LICENSE_FILE");

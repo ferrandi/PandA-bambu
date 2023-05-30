@@ -65,8 +65,8 @@
 
 // constructor
 ISE_isim_wrapper::ISE_isim_wrapper(const ParameterConstRef& _Param, const std::string& _suffix,
-                                   const std::string& top_fname)
-    : SimulationTool(_Param, top_fname), suffix(_suffix)
+                                   const std::string& _top_fname)
+    : SimulationTool(_Param, _top_fname), suffix(_suffix)
 {
    PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Creating the ISIM wrapper...");
    boost::filesystem::create_directory(ISIM_SUBDIR + suffix + "/");
