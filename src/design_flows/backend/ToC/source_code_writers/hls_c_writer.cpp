@@ -801,9 +801,10 @@ void HLSCWriter::WriteMainTestbench()
       }
       return "val";
    };
+   const auto extern_decl = top_fname == top_fname_mngl ? "EXTERN_C " : "";
 
-   std::string top_decl;
-   std::string gold_decl;
+   std::string top_decl = extern_decl;
+   std::string gold_decl = extern_decl;
    std::string gold_call;
    std::string args_init;
    std::string args_decl = "void* args[] = {";

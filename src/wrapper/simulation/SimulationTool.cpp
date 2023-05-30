@@ -354,7 +354,6 @@ std::string SimulationTool::GenerateLibraryBuildScript(std::ostringstream& scrip
       const auto top_dfname = string_demangle(top_fname);
       if(top_dfname.size() && top_fname != top_dfname)
       {
-         std::cout << "'" << top_fname << "' != '" << top_dfname << "'" << std::endl;
          const auto fname = top_dfname.substr(0, top_dfname.find('('));
          return boost::replace_first_copy(top_fname, STR(fname.size()) + fname, STR(fname.size() + 4) + "__m_" + fname);
       }
