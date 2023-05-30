@@ -169,8 +169,11 @@ always @(*)
 begin
   addr_next = addr;
   enable_next = enable && !done_port;
-  if(enable && )"
-          << arg_name << out_suffix << R"(_vld)
+end
+always @(negedge clock)
+begin
+  if(enable == 1'b1 && )"
+          << arg_name << out_suffix << R"(_vld == 1'b1)
   begin
     m_utils.write(BITSIZE_data, )"
           << arg_name << out_suffix << R"(, addr);

@@ -233,6 +233,9 @@ begin
   waddr_next = waddr;
   waddr_last_next = waddr_last;
   enable_next = enable && !done_port;
+end
+always @(negedge clock)
+begin
   if (enable == 1'b1 && )"
           << arg_name << R"(_write == 1'b1)
   begin

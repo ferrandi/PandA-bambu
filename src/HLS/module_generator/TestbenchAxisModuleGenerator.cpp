@@ -231,6 +231,9 @@ begin
   addr_next = addr;
   addr_last_next = addr_last;
   enable_next = enable && !done_port;
+end
+always @(negedge clock)
+begin
   if (enable == 1'b1 && )"
           << port_prefix << R"(_TVALID == 1'b1)
   begin

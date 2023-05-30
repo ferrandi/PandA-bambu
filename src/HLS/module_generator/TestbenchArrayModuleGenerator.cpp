@@ -93,12 +93,12 @@ void TestbenchArrayModuleGenerator::InternalExec(std::ostream& out, structural_o
    {
       add_port_parametric(i, "address", port_o::IN, 1U);
       add_port_parametric(i, "ce", port_o::IN, 0U);
-      if(if_dir == port_o::OUT)
+      if(if_dir != port_o::IN)
       {
          add_port_parametric(i, "we", port_o::IN, 0U);
          add_port_parametric(i, "d", port_o::IN, 1U);
       }
-      if(if_dir == port_o::IN)
+      if(if_dir != port_o::OUT)
       {
          add_port_parametric(i, "q", port_o::OUT, 1U);
       }
@@ -218,7 +218,7 @@ generate
   begin : write_port
     if(WRITE_DELAY > 1)
     begin
-      always @(posedge clock)
+      always @(negedge clock)
       begin
         if(reset != 1'b0)
         begin
@@ -240,7 +240,7 @@ generate
     end
     else
     begin
-      always @(*)
+      always @(negedge clock)
       begin
         if(queue[BITSIZE_item*i+BITSIZE_ce_offset+BITSIZE_ce-1:BITSIZE_item*i+BITSIZE_ce_offset] == 1'b1
           && queue[BITSIZE_item*i+BITSIZE_we_offset+BITSIZE_we-1:BITSIZE_item*i+BITSIZE_we_offset] == 1'b1)

@@ -23,8 +23,6 @@ function automatic integer log2;
       temp_value = temp_value &gt;&gt; 1;
   `endif
 endfunction
-          
-parameter BITSIZE_mem_bus = 1 &lt;&lt; log2(BITSIZE_data);
 
 import &quot;DPI-C&quot; function void m_getarg(inout logic [127:0] data, input int unsigned index);
 import &quot;DPI-C&quot; function void m_setarg(input logic [127:0] data, input int unsigned index);
@@ -75,8 +73,8 @@ function automatic integer log2;
       temp_value = temp_value &gt;&gt; 1;
   `endif
 endfunction
-          
-parameter BITSIZE_mem_bus = 1 &lt;&lt; log2(BITSIZE_data);
+
+parameter BITSIZE_mem_bus = 1 &lt;&lt; (log2(BITSIZE_data) &gt; 3 ? log2(BITSIZE_data) : 3);
 
 import &quot;DPI-C&quot; function void m_read8    (output logic    [7:0] data, input ptr_t addr);
 import &quot;DPI-C&quot; function void m_read16   (output logic   [15:0] data, input ptr_t addr);
@@ -568,7 +566,7 @@ endgenerate
 generate
   for(i = 0; i &lt; CHANNELS_NUMBER; i = i + 1)
   begin : memory_port
-    always @(posedge clock)
+    always @(negedge clock)
     begin : write_channel
       automatic shortint unsigned size =
         Mout_data_ram_size_queue_curr[(elm_BITSIZE_Mout_data_ram_size*(i+1))-1+(MEM_DELAY_WRITE-1)*BITSIZE_Mout_data_ram_size:
