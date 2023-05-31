@@ -360,7 +360,11 @@ std::string SimulationTool::GenerateLibraryBuildScript(std::ostringstream& scrip
       return "__m_" + top_fname;
    }();
 
-   script << "export CC=\"" << compiler_wrapper->GetCompiler().gcc << "\"\n"
+   auto compiler_env = boost::regex_replace("\n" + compiler_wrapper->GetCompiler().gcc,
+                                            boost::regex("([\\w\\d]+=(\".*\"|[^\\s]+))\\s*"), "export $1\n");
+   boost::replace_last(compiler_env, "\n", "\nexport CC=\"");
+   compiler_env += "\"";
+   script << compiler_env << "\n"
           << "export CFLAGS=\"" << cflags << "\"\n"
           << "srcs=(\n";
    for(const auto& src : input_files)
