@@ -41,6 +41,10 @@
  */
 #include "mdpi_user.h"
 
+#ifndef __cplusplus
+#error This file must be compiled as C++
+#endif
+
 EXTERN_C float m_float_distancef(float a, float b)
 {
    return m_float_distance(a, b);

@@ -55,7 +55,7 @@
 #define FORCE_INLINE __attribute__((always_inline)) inline
 
 #ifndef NDEBUG
-volatile long int __m_main_tid;
+volatile pthread_t __m_main_tid;
 #define debug(str, ...) fprintf(stdout, "Sim %10s: " str, __func__, ##__VA_ARGS__)
 #define error(str, ...) fprintf(stdout, "ERROR: Sim %10s: " str, __func__, ##__VA_ARGS__)
 #else
