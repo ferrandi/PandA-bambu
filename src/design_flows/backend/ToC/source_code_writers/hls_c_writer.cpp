@@ -817,7 +817,7 @@ void HLSCWriter::WriteMainTestbench()
       top_decl += return_type_str;
       gold_decl += return_type_str;
       gold_call += "retval_gold = ";
-      args_decl = "static volatile " + return_type_str + " retval, retval_gold;\n" + args_decl + "(void*)&retval, ";
+      args_decl = return_type_str + " retval, retval_gold;\n" + args_decl + "(void*)&retval, ";
       args_set += "__m_setarg(0, args[0], " + STR(tree_helper::Size(return_type)) + ");\n";
       ++args_decl_idx;
    }
@@ -1033,7 +1033,8 @@ template <typename T> T* m_getptr(T* obj) { return obj; }
    indented_output_stream->Append("if(state != MDPI_COSIM_INIT)\n");
    indented_output_stream->Append("{\n");
    indented_output_stream->Append("error(\"Unexpected simulator state : %s\\n\", mdpi_state_str(state));\n");
-   indented_output_stream->Append("abort();\n");
+   indented_output_stream->Append("__m_signal_to(MDPI_ENTITY_SIM, MDPI_COSIM_END);\n");
+   indented_output_stream->Append("pthread_exit((void*)((ptr_t)(MDPI_COSIM_ABORT)));\n");
    indented_output_stream->Append("}\n");
 
    if(gold_cmp.size() || return_type)
@@ -1064,7 +1065,8 @@ template <typename T> T* m_getptr(T* obj) { return obj; }
 if(mismatch_count)
 {
 error("Memory parameter mismatch for %u parameters.\n", mismatch_count);
-abort();
+__m_signal_to(MDPI_ENTITY_SIM, MDPI_COSIM_END);
+pthread_exit((void*)((ptr_t)(MDPI_COSIM_ABORT)));
 }
 else
 {
