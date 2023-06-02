@@ -47,15 +47,30 @@
 
 EXTERN_C float m_float_distancef(float a, float b)
 {
-   return m_float_distance(a, b);
+   return m_float_distance<float>(a, b);
 }
 
 EXTERN_C double m_float_distance(double a, double b)
 {
-   return m_float_distance(a, b);
+   return m_float_distance<double>(a, b);
 }
 
 EXTERN_C long double m_float_distancel(long double a, long double b)
 {
-   return m_float_distance(a, b);
+   return m_float_distance<long double>(a, b);
+}
+
+EXTERN_C float m_floats_distancef(float a, float b)
+{
+   return m_floats_distance<float>(a, b);
+}
+
+EXTERN_C double m_floats_distance(double a, double b)
+{
+   return m_floats_distance<double>(a, b);
+}
+
+EXTERN_C long double m_floats_distancel(long double a, long double b)
+{
+   return m_floats_distance<long double>(a, b);
 }

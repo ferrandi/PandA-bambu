@@ -779,6 +779,7 @@ void HLSCWriter::WriteMainTestbench()
    const auto return_type = tree_helper::GetFunctionReturnType(top_fnode);
    const auto top_params = top_bh->GetParameters();
    const auto args_decl_size = top_params.size() + (return_type != nullptr);
+   const auto has_subnormals = Param->isOption(OPT_fp_subnormal) && Param->getOption<bool>(OPT_fp_subnormal);
    const auto cmp_type = [&](tree_nodeConstRef t, const std::string& tname) -> std::string {
       if(boost::starts_with(tname, "struct") || boost::starts_with(tname, "union"))
       {
@@ -796,7 +797,7 @@ void HLSCWriter::WriteMainTestbench()
          }
          if(tree_helper::IsRealType(t))
          {
-            return "flt";
+            return has_subnormals ? "flts" : "flt";
          }
       }
       return "val";
@@ -936,11 +937,14 @@ template <typename T> T* m_getptr(T* obj) { return obj; }
 #define m_getptr(ptr) (ptr)
 #define __m_float_distance(a, b) \
    ((typeof(a)(*)(typeof(a), typeof(a)))((sizeof(a) == sizeof(float)) ? m_float_distancef : m_float_distance))(a, b)
+#define __m_floats_distance(a, b) \
+   ((typeof(a)(*)(typeof(a), typeof(a)))((sizeof(a) == sizeof(float)) ? m_floats_distancef : m_floats_distance))(a, b)
 #endif
 
 #define m_cmpval(ptra, ptrb) *(ptra) != *(ptrb)
 #define m_cmpmem(ptra, ptrb) memcmp(ptra, ptrb, sizeof(*ptrb))
 #define m_cmpflt(ptra, ptrb) __m_float_distance(*(ptra), *(ptrb)) > max_ulp
+#define m_cmpflts(ptra, ptrb) __m_floats_distance(*(ptra), *(ptrb)) > max_ulp
 
 #define m_argcmp(idx, cmp)                                                                             \
    const size_t P##idx##_count = P##idx##_size / sizeof(m_getvalt(P##idx));                            \

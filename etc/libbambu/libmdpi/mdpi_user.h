@@ -59,6 +59,9 @@ EXTERN_C void m_alloc_param(uint8_t idx, size_t size);
 EXTERN_C float m_float_distancef(float, float) __attribute__((const));
 EXTERN_C double m_float_distance(double, double) __attribute__((const));
 EXTERN_C long double m_float_distancel(long double, long double) __attribute__((const));
+EXTERN_C float m_floats_distancef(float, float) __attribute__((const));
+EXTERN_C double m_floats_distance(double, double) __attribute__((const));
+EXTERN_C long double m_floats_distancel(long double, long double) __attribute__((const));
 #else
 #include <algorithm>
 #include <cassert>
@@ -75,7 +78,7 @@ EXTERN_C long double m_float_distancel(long double, long double) __attribute__((
  *  LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
  */
 template <class T>
-T m_float_distance(const T& a, const T& b)
+T m_floats_distance(const T& a, const T& b)
 {
    //
    // Error handling:
@@ -93,21 +96,21 @@ T m_float_distance(const T& a, const T& b)
    if(std::isnan(a) && std::isnan(b))
       return T(0);
    if(a > b)
-      return m_float_distance(b, a);
+      return m_floats_distance<T>(b, a);
    if(a == 0)
-      return 1 + std::fabs(m_float_distance(static_cast<T>((b < 0) ? T(-std::numeric_limits<T>::epsilon()) :
-                                                                     std::numeric_limits<T>::epsilon()),
-                                            b));
+      return 1 + std::fabs(m_floats_distance<T>(static_cast<T>((b < 0) ? T(-std::numeric_limits<T>::epsilon()) :
+                                                                         std::numeric_limits<T>::epsilon()),
+                                                b));
    if(b == 0)
-      return 1 + std::fabs(m_float_distance(static_cast<T>((a < 0) ? T(-std::numeric_limits<T>::epsilon()) :
-                                                                     std::numeric_limits<T>::epsilon()),
-                                            a));
+      return 1 + std::fabs(m_floats_distance<T>(static_cast<T>((a < 0) ? T(-std::numeric_limits<T>::epsilon()) :
+                                                                         std::numeric_limits<T>::epsilon()),
+                                                a));
    if((a > 0) != (b > 0))
       return 2 +
-             std::fabs(m_float_distance(
+             std::fabs(m_floats_distance<T>(
                  static_cast<T>((b < 0) ? T(-std::numeric_limits<T>::epsilon()) : std::numeric_limits<T>::epsilon()),
                  b)) +
-             std::fabs(m_float_distance(
+             std::fabs(m_floats_distance<T>(
                  static_cast<T>((a < 0) ? T(-std::numeric_limits<T>::epsilon()) : std::numeric_limits<T>::epsilon()),
                  a));
    //
@@ -115,7 +118,7 @@ T m_float_distance(const T& a, const T& b)
    // b > a and both positive for the following logic:
    //
    if(a < 0)
-      return m_float_distance(static_cast<T>(-b), static_cast<T>(-a));
+      return m_floats_distance<T>(static_cast<T>(-b), static_cast<T>(-a));
 
    assert(a >= 0);
    assert(b >= a);
@@ -138,7 +141,7 @@ T m_float_distance(const T& a, const T& b)
       int expon2;
       (void)std::frexp(b, &expon2);
       T upper2 = std::ldexp(T(0.5), expon2);
-      result = m_float_distance(upper2, b);
+      result = m_floats_distance<T>(upper2, b);
       result += (expon2 - expon - 1) * std::ldexp(T(1), std::numeric_limits<T>::digits - 1);
    }
    //
@@ -156,7 +159,7 @@ T m_float_distance(const T& a, const T& b)
       //
       T a2 = std::ldexp(a, std::numeric_limits<T>::digits);
       T b2 = std::ldexp(b, std::numeric_limits<T>::digits);
-      mb = -(std::min)(T(ldexp(upper, std::numeric_limits<T>::digits)), b2);
+      mb = -(std::min)(T(std::ldexp(upper, std::numeric_limits<T>::digits)), b2);
       x = a2 + mb;
       z = x - a2;
       y = (a2 - (x - z)) + (mb - z);
@@ -175,12 +178,19 @@ T m_float_distance(const T& a, const T& b)
       x = -x;
       y = -y;
    }
-   result += ldexp(x, expon) + ldexp(y, expon);
+   result += std::ldexp(x, expon) + std::ldexp(y, expon);
    //
    // Result must be an integer:
    //
-   assert(result == floor(result));
+   assert(result == std::floor(result));
    return result;
+}
+
+template <class T>
+T m_float_distance(const T& a, const T& b)
+{
+   return m_floats_distance<T>((std::fpclassify)(a) == (int)FP_SUBNORMAL ? copysign(T(0), a) : a,
+                               (std::fpclassify)(b) == (int)FP_SUBNORMAL ? copysign(T(0), b) : b);
 }
 #endif
 
