@@ -322,6 +322,10 @@ std::string SimulationTool::GenerateLibraryBuildScript(std::ostringstream& scrip
       std::string flags = cflags +
                           " -fwrapv -ffloat-store -flax-vector-conversions -msse2 -mfpmath=sse -fno-strict-aliasing "
                           "-D__builtin_bambu_time_start()= -D__builtin_bambu_time_stop()= -D__BAMBU_SIM__";
+      if(Param->isOption(OPT_pretty_print))
+      {
+         flags += " -DPP_VERIFICATION";
+      }
       if(!Param->isOption(OPT_input_format) ||
          Param->getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_C ||
          Param->isOption(OPT_pretty_print))
@@ -396,6 +400,19 @@ std::string SimulationTool::GenerateLibraryBuildScript(std::ostringstream& scrip
           << "    ;;\n"
           << "  esac\n"
           << "done\n\n";
+
+   if(Param->isOption(OPT_pretty_print))
+   {
+      const auto pp_file = boost::filesystem::path(Param->getOption<std::string>(OPT_pretty_print));
+      const auto pp_fileo = output_dir + "/" + pp_file.stem().string() + ".o";
+      script << "${CC} -c ${CFLAGS} -fvisibility=hidden -fno-strict-aliasing -fPIC -o " << pp_fileo << " "
+             << pp_file.string() << "\n"
+             << "objcopy --localize-hidden " << pp_fileo << "\n"
+             << "objcopy --globalize-symbol " << top_fname << " " << pp_fileo << "\n"
+             << "objcopy --redefine-sym " << top_fname << "=__m_pp_" << top_fname << " " << pp_fileo << "\n"
+             << "objs+=(\"" << pp_fileo << "\")\n\n";
+   }
+
    const auto dpi_cwrapper_file =
        Param->getOption<std::string>(OPT_output_directory) + "/simulation/" STR_CST_testbench_generation_basename ".c";
    script << "${CC} -c ${CFLAGS} -I" << relocate_compiler_path(PANDA_INCLUDE_INSTALLDIR) << " -fPIC -o " << output_dir

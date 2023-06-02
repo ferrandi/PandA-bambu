@@ -810,7 +810,14 @@ void HLSCWriter::WriteMainTestbench()
 
    std::string top_decl = extern_decl;
    std::string gold_decl = extern_decl;
+   std::string pp_decl = "EXTERN_C " +
+                         tree_helper::PrintType(TM, TM->CGetTreeReindex(top_id), false, true, false, nullptr,
+                                                var_pp_functorConstRef(new std_var_pp_functor(top_bh))) +
+                         ";\n";
+   THROW_ASSERT(pp_decl.find(top_fname) != std::string::npos, "");
+   boost::replace_first(pp_decl, top_fname, "__m_pp_" + top_fname);
    std::string gold_call;
+   std::string pp_call;
    std::string args_init;
    std::string args_decl = "void* args[] = {";
    std::string args_set;
@@ -822,7 +829,8 @@ void HLSCWriter::WriteMainTestbench()
       top_decl += return_type_str;
       gold_decl += return_type_str;
       gold_call += "retval_gold = ";
-      args_decl = return_type_str + " retval, retval_gold;\n" + args_decl + "(void*)&retval, ";
+      pp_call += "retval_pp = ";
+      args_decl = return_type_str + " retval, retval_gold, retval_pp;\n" + args_decl + "(void*)&retval, ";
       args_set += "__m_setarg(0, args[0], " + STR(tree_helper::Size(return_type)) + ");\n";
       ++args_decl_idx;
    }
@@ -834,6 +842,7 @@ void HLSCWriter::WriteMainTestbench()
    top_decl += " " + top_fname + "(";
    gold_decl += " __m_" + top_fname + "(";
    gold_call += "__m_" + top_fname + "(";
+   pp_call += "__m_pp_" + top_fname + "(";
    if(top_params.size())
    {
       for(const auto& arg : top_params)
@@ -887,6 +896,7 @@ void HLSCWriter::WriteMainTestbench()
          else if(is_pointer_type)
          {
             gold_call += "(" + arg_typename + ")" + arg_name + "_gold, ";
+            pp_call += "(" + tree_helper::PrintType(TM, arg_type, false, true) + ")" + arg_name + "_pp, ";
             gold_cmp += "m_argcmp(" + STR(args_decl_idx) + ", " + cmp_type(arg_type, arg_typename) + ");\n";
             args_decl += "(void*)" + arg_name + ", ";
             args_set += "m_setargptr";
@@ -895,6 +905,7 @@ void HLSCWriter::WriteMainTestbench()
          {
             arg_typename.pop_back();
             gold_call += "*(" + arg_typename + "*)" + arg_name + "_gold, ";
+            pp_call += "(" + tree_helper::PrintType(TM, arg_type, false, true) + "*)" + arg_name + "_pp, ";
             gold_cmp += "m_argcmp(" + STR(args_decl_idx) + ", " + cmp_type(arg_type, arg_typename) + ");\n";
             args_init += "m_alloc_param(" + STR(param_idx) + ", sizeof(" + arg_typename + "));\n";
             args_decl += "(void*)&" + arg_name + ", ";
@@ -903,6 +914,7 @@ void HLSCWriter::WriteMainTestbench()
          else
          {
             gold_call += arg_name + ", ";
+            pp_call += arg_name + ", ";
             args_decl += "(void*)&" + arg_name + ", ";
             args_set += arg_interface == "default" ? "__m_setarg" : "m_setargptr";
          }
@@ -912,24 +924,17 @@ void HLSCWriter::WriteMainTestbench()
       top_decl.erase(top_decl.size() - 2);
       gold_decl.erase(gold_decl.size() - 2);
       gold_call.erase(gold_call.size() - 2);
+      pp_call.erase(pp_call.size() - 2);
       args_decl.erase(args_decl.size() - 2);
    }
    top_decl += ")\n";
    gold_decl += ");\n";
    gold_call += ");\n";
+   pp_call += ");\n";
    args_decl += "};\n";
 
    indented_output_stream->AppendIndented(
        std::string() + R"(
-#ifndef CUSTOM_VERIFICATION
-#define m_setargptr(idx, ptr, ptrsize)                   \
-   __m_setargptr(idx, ptr, ptrsize);                     \
-   const size_t P##idx##_size = __m_param_size(idx)" +
-       (return_type ? " - 1" : "") +
-       R"(); \
-   void* P##idx##_gold = malloc(P##idx##_size);          \
-   memcpy(P##idx##_gold, ptr, P##idx##_size)
-
 #define typeof __typeof__
 #ifdef __cplusplus
 template <typename T> struct __m_type { typedef T type; };
@@ -954,20 +959,39 @@ template <typename T> T* m_getptr(T* obj) { return obj; }
 #define m_cmpflt(ptra, ptrb) __m_float_distance(*(ptra), *(ptrb)) > max_ulp
 #define m_cmpflts(ptra, ptrb) __m_floats_distance(*(ptra), *(ptrb)) > max_ulp
 
-#define m_argcmp(idx, cmp)                                                                             \
-   const size_t P##idx##_count = P##idx##_size / sizeof(m_getvalt(P##idx));                            \
-   for(i = 0; i < P##idx##_count; ++i)                                                                 \
-   {                                                                                                   \
-      if(m_cmp##cmp((m_getptrt(P##idx))P##idx##_gold + i, &m_getptr(P##idx)[i]))                       \
-      {                                                                                                \
-         error("Memory parameter %u (%u/%u) mismatch with respect to golden reference.\n", idx)" +
+#define _ms_setargptr(suffix, idx, ptr)                           \
+   const size_t P##idx##_size_##suffix = __m_param_size(idx)" +
        (return_type ? " - 1" : "") +
-       R"(, i + 1, \
-               P##idx##_count);                                                                        \
-         ++mismatch_count;                                                                             \
-      }                                                                                                \
-   }                                                                                                   \
-   free(P##idx##_gold);
+       R"(); \
+   void* P##idx##_##suffix = malloc(P##idx##_size_##suffix);      \
+   memcpy(P##idx##_##suffix, ptr, P##idx##_size_##suffix)
+
+#define _ms_argcmp(suffix, idx, cmp)                                                                            \
+   const size_t P##idx##_count_##suffix = P##idx##_size_##suffix / sizeof(m_getvalt(P##idx));                   \
+   for(i = 0; i < P##idx##_count_##suffix; ++i)                                                                 \
+   {                                                                                                            \
+      if(m_cmp##cmp((m_getptrt(P##idx))P##idx##_##suffix + i, &m_getptr(P##idx)[i]))                            \
+      {                                                                                                         \
+         error("Memory parameter %u (%u/%u) mismatch with respect to " #suffix " reference.\n", idx)" +
+       (return_type ? " - 1" : "") + ", i" + (return_type ? " + 1" : "") +
+       R"(, \
+               P##idx##_count_##suffix);                                                                        \
+         ++mismatch_count;                                                                                      \
+      }                                                                                                         \
+   }                                                                                                            \
+   free(P##idx##_##suffix)
+
+#define _ms_retvalcmp(suffix, cmp)                                             \
+   if(m_cmp##cmp(&retval, &retval_##suffix))                                   \
+   {                                                                           \
+      error("Return value mismatch with respect to " #suffix " reference.\n"); \
+      ++mismatch_count;                                                        \
+   }
+
+#ifndef CUSTOM_VERIFICATION
+#define _m_setargptr(idx, ptr) _ms_setargptr(gold, idx, ptr)
+#define _m_argcmp(idx, cmp) _ms_argcmp(gold, idx, cmp)
+#define _m_retvalcmp(cmp) _ms_retvalcmp(gold, cmp)
 
 #define m_channelcmp(idx, cmp)                                                                              \
    P##idx##_count = m_getptr(P##idx)->size();                                                               \
@@ -987,9 +1011,9 @@ template <typename T> T* m_getptr(T* obj) { return obj; }
 
 )" + gold_decl +
        R"(#else
-#define m_setargptr __m_setptrarg
-
-#define m_argcmp(...)
+#define _m_setargptr(...)
+#define _m_argcmp(...)
+#define _m_retvalcmp(...)
 
 #define m_channelcmp(idx, cmp)                                                                                      \
    for(i = 0; i < P##idx##_count; ++i)                                                                              \
@@ -998,6 +1022,29 @@ template <typename T> T* m_getptr(T* obj) { return obj; }
    }                                                                                                                \
    free(P##idx##_sim)
 #endif
+
+#ifdef PP_VERIFICATION
+#define _m_pp_setargptr(idx, ptr) _ms_setargptr(pp, idx, ptr)
+#define _m_pp_argcmp(idx, cmp) _ms_argcmp(pp, idx, ptr)
+#define _m_pp_retvalcmp(cmp) _ms_retvalcmp(pp, cmp)
+
+)" + pp_decl +
+       R"(#else
+#define _m_pp_setargptr(...)
+#define _m_pp_argcmp(...)
+#define _m_pp_retvalcmp(...)
+#endif
+
+#define m_setargptr(idx, ptr, ptrsize) \
+   __m_setargptr(idx, ptr, ptrsize);   \
+   _m_pp_setargptr(idx, ptr);          \
+   _m_setargptr(idx, ptr)
+
+#define m_argcmp(idx, cmp) \
+   _m_pp_argcmp(idx, cmp); \
+   _m_argcmp(idx, cmp)
+
+#define m_retvalcmp(cmp) _m_pp_retvalcmp(cmp) _m_retvalcmp(cmp)
 
 #define m_channel_init(idx)                                                                                         \
    const size_t P##idx##_item = sizeof(m_getvalt(m_getptr(P##idx))::element_type);                                  \
@@ -1039,6 +1086,9 @@ template <typename T> T* m_getptr(T* obj) { return obj; }
    indented_output_stream->Append("#ifndef CUSTOM_VERIFICATION\n");
    indented_output_stream->Append(gold_call);
    indented_output_stream->Append("#endif\n\n");
+   indented_output_stream->Append("#ifdef PP_VERIFICATION\n");
+   indented_output_stream->Append(pp_call);
+   indented_output_stream->Append("#endif\n\n");
    indented_output_stream->Append("state = __m_wait_for(MDPI_ENTITY_COSIM);\n");
    indented_output_stream->Append("__m_arg_fini();\n\n");
 
@@ -1063,28 +1113,19 @@ template <typename T> T* m_getptr(T* obj) { return obj; }
 )");
       indented_output_stream->Append("size_t mismatch_count = 0;\n");
       indented_output_stream->Append(gold_cmp + "\n");
-      indented_output_stream->Append("#ifndef CUSTOM_VERIFICATION\n");
       if(return_type)
       {
-         indented_output_stream->Append("// Compare return value\n");
-         indented_output_stream->Append("if(m_cmp" + cmp_type(return_type, "") + "(&retval, &retval_gold))\n");
-         indented_output_stream->Append("{\n");
-         indented_output_stream->Append("error(\"Return value mismatch with respect to golden reference.\\n\");\n");
-         indented_output_stream->Append("++mismatch_count;\n");
-         indented_output_stream->Append("}\n\n");
+         indented_output_stream->Append("// Return value compare\n");
+         indented_output_stream->Append("m_retvalcmp(" + cmp_type(return_type, "") + ")\n\n");
       }
       indented_output_stream->Append(R"(
 if(mismatch_count)
 {
-error("Memory parameter mismatch for %u parameters.\n", mismatch_count);
+error("Memory parameter mismatch has been found.\n");
 __m_signal_to(MDPI_ENTITY_SIM, MDPI_COSIM_END);
 pthread_exit((void*)((ptr_t)(MDPI_COSIM_ABORT)));
 }
-else
-{
-debug("Simulation matches golden reference.\n");
-}
-#endif
+
 #ifdef __clang__
 #pragma clang diagnostic pop
 #else
