@@ -589,7 +589,11 @@ void HLSCWriter::WriteTestbenchFunctionCall(const BehavioralHelperConstRef BH)
          {
             if(DesignInterfaceTypenameOrig.find(top_fname_mngl) != DesignInterfaceTypenameOrig.end())
             {
-               const auto arg_typename = DesignInterfaceTypenameOrig.find(top_fname_mngl)->second.at(par_index);
+               auto arg_typename = DesignInterfaceTypenameOrig.find(top_fname_mngl)->second.at(par_index);
+               if(arg_typename.find("(*)") != std::string::npos)
+               {
+                  arg_typename = arg_typename.substr(0, arg_typename.find("(*)")) + "*";
+               }
                if(arg_typename.back() != '*')
                {
                   indented_output_stream->Append("*(");
@@ -837,21 +841,25 @@ void HLSCWriter::WriteMainTestbench()
          std::string arg_typename, arg_interface, arg_size;
          const auto param_idx = args_decl_idx - (return_type != nullptr);
          const auto arg_type = tree_helper::CGetType(arg);
+         if(arg_signature_typename != hls_c_backend_information->HLSMgr->design_interface_typename_orig_signature.end())
+         {
+            THROW_ASSERT(arg_signature_typename->second.size() > param_idx,
+                         "Original signature missing for parameter " + STR(param_idx));
+            arg_typename = arg_signature_typename->second.at(param_idx);
+         }
+         else
+         {
+            arg_typename = tree_helper::PrintType(TM, arg_type, false, true);
+         }
          if(is_interface_inferred)
          {
             const auto param_name = top_bh->PrintVariable(GET_INDEX_CONST_NODE(arg));
             THROW_ASSERT(arg_attributes->second.count(param_name),
                          "Attributes missing for parameter " + param_name + " in function " + top_fname);
-            THROW_ASSERT(arg_signature_typename->second.size() > param_idx,
-                         "Original signature missing for parameter " + STR(param_idx));
-            THROW_ASSERT(arg_attributes->second.count(param_name),
-                         "Design attributes missing for parameter " + param_name);
-            arg_typename = arg_signature_typename->second.at(param_idx);
             arg_interface = arg_attributes->second.at(param_name).at(attr_interface_type);
          }
          else
          {
-            arg_typename = tree_helper::PrintType(TM, arg_type, false, true);
             arg_interface = "default";
          }
          if(arg_typename.find("(*)") != std::string::npos)
