@@ -72,13 +72,14 @@ void TestbenchDUTModuleGenerator::InternalExec(std::ostream& out, structural_obj
 
    std::string signals;
    std::string modules;
-   const auto mod_id = [&]() {
-      if(verilog_writer::check_keyword_verilog(top_mod->get_id()))
+   const auto escape_keyword = [&](const std::string& str) -> std::string {
+      if(verilog_writer::check_keyword_verilog(str))
       {
-         return "\\" + top_mod->get_id();
+         return "\\" + str + " ";
       }
-      return top_mod->get_id();
-   }();
+      return str;
+   };
+   const auto mod_id = escape_keyword(top_mod->get_id());
    std::string dut_body = mod_id + " top(";
    const auto port_count = top_mod->get_num_ports();
    for(auto i = 0U; i < port_count; ++i)
@@ -117,7 +118,7 @@ void TestbenchDUTModuleGenerator::InternalExec(std::ostream& out, structural_obj
           top_port->get_kind() == port_vector_o_K ? (port_bitsize * top_port->get_ports_size()) : port_bitsize;
       structural_manager::add_port(port_id, top_port->get_port_direction(), dut_cir,
                                    structural_type_descriptorRef(new structural_type_descriptor("bool", port_size)));
-      dut_body += "\n  ." + port_id + "(" + port_id + "),";
+      dut_body += "\n  ." + escape_keyword(port_id) + "(" + escape_keyword(port_id) + "),";
       // }
    }
    dut_body.pop_back();
