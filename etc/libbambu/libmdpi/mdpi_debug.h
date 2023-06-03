@@ -42,12 +42,6 @@
 #ifndef __MDPI_DEBUG_H
 #define __MDPI_DEBUG_H
 
-#ifndef NDEBUG
-#ifdef __cplusplus
-#include <cstdio>
-#else
-#include <stdio.h>
-#endif
 #include <pthread.h>
 
 #ifdef __cplusplus
@@ -55,7 +49,15 @@ extern "C"
 #else
 extern
 #endif
-    volatile long int __m_main_tid;
+    volatile pthread_t __m_main_tid;
+
+#ifndef NDEBUG
+#ifdef __cplusplus
+#include <cstdio>
+#else
+#include <stdio.h>
+#endif
+
 #define debug(str, ...) \
    fprintf(stdout, "%s %10s: " str, __m_main_tid == pthread_self() ? "Sim" : "Co-sim", __func__, ##__VA_ARGS__)
 #define error(str, ...) \

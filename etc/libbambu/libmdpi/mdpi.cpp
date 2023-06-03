@@ -54,8 +54,9 @@
 
 #define FORCE_INLINE __attribute__((always_inline)) inline
 
-#ifndef NDEBUG
 volatile pthread_t __m_main_tid;
+
+#ifndef NDEBUG
 #define debug(str, ...) fprintf(stdout, "Sim %10s: " str, __func__, ##__VA_ARGS__)
 #define error(str, ...) fprintf(stdout, "ERROR: Sim %10s: " str, __func__, ##__VA_ARGS__)
 #else
@@ -71,9 +72,7 @@ EXTERN_C void m_init()
 {
    int retval;
 
-#ifndef NDEBUG
    __m_main_tid = pthread_self();
-#endif
 
    __m_signal_init();
 
