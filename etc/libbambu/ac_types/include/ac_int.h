@@ -3614,11 +3614,11 @@ using Slong = long long;
          bool fully_normalized = true;
          ac_int<WE, SE> min_exp;
          min_exp.template set_val<AC_VAL_MIN>();
-         int max_shift = exp - min_exp - reserved_min_exp;
+         int max_shift = exp - min_exp - ac_int<WE, false>(reserved_min_exp);
          if(lshift > max_shift)
          {
             lshift = ac_int<WE, false>(max_shift);
-            expt = min_exp + reserved_min_exp;
+            expt = min_exp + ac_int<WE, false>(reserved_min_exp);
             fully_normalized = false;
          }
          else
