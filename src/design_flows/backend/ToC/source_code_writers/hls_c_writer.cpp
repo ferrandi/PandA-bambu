@@ -1062,7 +1062,7 @@ template <typename T> T* m_getptr(T* obj) { return obj; }
 
 #ifdef PP_VERIFICATION
 #define _m_pp_setargptr(idx, ptr) _ms_setargptr(pp, idx, ptr)
-#define _m_pp_argcmp(idx, cmp) _ms_argcmp(pp, idx, ptr)
+#define _m_pp_argcmp(idx, cmp) _ms_argcmp(pp, idx, cmp)
 #define _m_pp_retvalcmp(cmp) _ms_retvalcmp(pp, cmp)
 
 )" + pp_decl +
