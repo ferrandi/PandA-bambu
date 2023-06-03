@@ -544,8 +544,8 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "        Specify the simulator used in generated simulation scripts:\n"
       << "            MODELSIM - Mentor Modelsim\n"
       << "            XSIM - Xilinx XSim\n"
-      << "            ISIM - Xilinx iSim\n"
-      << "            ICARUS - Verilog Icarus simulator\n"
+      // << "            ISIM - Xilinx iSim\n"
+      // << "            ICARUS - Verilog Icarus simulator\n"
       << "            VERILATOR - Verilator simulator\n\n"
       << "    --verilator-parallel\n"
       << "        Enable multi-threaded simulation when using verilator\n\n"
@@ -2771,8 +2771,8 @@ void BambuParameter::CheckParameters()
       }
    }
 
-   /// Search for icarus
-   setOption(OPT_icarus, system("which iverilog > /dev/null 2>&1") == 0);
+   // /// Search for icarus
+   // setOption(OPT_icarus, system("which iverilog > /dev/null 2>&1") == 0);
 
    if(isOption(OPT_simulator))
    {
@@ -2784,18 +2784,18 @@ void BambuParameter::CheckParameters()
       {
          THROW_ERROR("Xilinx XSim was not detected by Bambu. Please check --xilinx-root option is correct.");
       }
-      else if(getOption<std::string>(OPT_simulator) == "ISIM" && !isOption(OPT_xilinx_settings))
-      {
-         THROW_ERROR("Xilinx ISim was not detected by Bambu. Please check --xilinx-root option is correct.");
-      }
       else if(getOption<std::string>(OPT_simulator) == "VERILATOR" && !isOption(OPT_verilator))
       {
          THROW_ERROR("Verilator was not detected by Bambu. Please make sure it is installed in the system.");
       }
-      else if(getOption<std::string>(OPT_simulator) == "ICARUS" && !isOption(OPT_icarus))
-      {
-         THROW_ERROR("Icarus was not detected by Bambu. Please make sure it is installed in the system.");
-      }
+      // else if(getOption<std::string>(OPT_simulator) == "ISIM" && !isOption(OPT_xilinx_settings))
+      // {
+      //    THROW_ERROR("Xilinx ISim was not detected by Bambu. Please check --xilinx-root option is correct.");
+      // }
+      // else if(getOption<std::string>(OPT_simulator) == "ICARUS" && !isOption(OPT_icarus))
+      // {
+      //    THROW_ERROR("Icarus was not detected by Bambu. Please make sure it is installed in the system.");
+      // }
    }
    else
    {
@@ -2807,22 +2807,22 @@ void BambuParameter::CheckParameters()
       {
          setOption(OPT_simulator, "XSIM"); /// Mixed language simulator
       }
-      else if(isOption(OPT_xilinx_settings))
-      {
-         setOption(OPT_simulator, "ISIM"); /// Mixed language simulator
-      }
       else if(getOption<bool>(OPT_verilator))
       {
          setOption(OPT_simulator, "VERILATOR");
-      }
-      else if(getOption<bool>(OPT_icarus))
-      {
-         setOption(OPT_simulator, "ICARUS");
       }
       else
       {
          THROW_ERROR("No valid simulator was found in the system.");
       }
+      // else if(isOption(OPT_xilinx_settings))
+      // {
+      //    setOption(OPT_simulator, "ISIM"); /// Mixed language simulator
+      // }
+      // else if(getOption<bool>(OPT_icarus))
+      // {
+      //    setOption(OPT_simulator, "ICARUS");
+      // }
    }
 
 #if HAVE_TASTE

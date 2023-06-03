@@ -612,8 +612,8 @@ void EucalyptusParameter::CheckParameters()
       }
    }
 
-   /// Search for icarus
-   setOption(OPT_icarus, system("which iverilog > /dev/null 2>&1") == 0);
+   // /// Search for icarus
+   // setOption(OPT_icarus, system("which iverilog > /dev/null 2>&1") == 0);
 
    if(isOption(OPT_simulator))
    {
@@ -648,14 +648,6 @@ void EucalyptusParameter::CheckParameters()
       {
          setOption(OPT_simulator, "XSIM"); /// Mixed language simulator
       }
-      else if(isOption(OPT_xilinx_settings))
-      {
-         setOption(OPT_simulator, "ISIM"); /// Mixed language simulator
-      }
-      else if(isOption(OPT_icarus))
-      {
-         setOption(OPT_simulator, "ICARUS");
-      }
       else if(isOption(OPT_verilator))
       {
          setOption(OPT_simulator, "VERILATOR");
@@ -664,6 +656,14 @@ void EucalyptusParameter::CheckParameters()
       {
          THROW_ERROR("No valid simulator was found in the system.");
       }
+      // else if(isOption(OPT_xilinx_settings))
+      // {
+      //    setOption(OPT_simulator, "ISIM"); /// Mixed language simulator
+      // }
+      // else if(isOption(OPT_icarus))
+      // {
+      //    setOption(OPT_simulator, "ICARUS");
+      // }
    }
    if(not isOption(OPT_device_string))
    {
