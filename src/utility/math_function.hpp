@@ -183,7 +183,7 @@ constexpr inline T get_aligned_bitsize(T bitsize)
    return bitsize + ((32ULL - (bitsize % 32ULL)) & 31ULL);
 }
 
-template <typename T, typename K, std::enable_if_t<std::is_unsigned<T>::value, bool> = true>
+template <typename T, std::enable_if_t<std::is_unsigned<T>::value, bool> = true>
 constexpr inline T get_aligned_bitsize(T bitsize, T align)
 {
    return std::max(align, ((bitsize / align) + (bitsize % align != 0)) * align);
