@@ -865,6 +865,8 @@ void HLSCWriter::WriteMainTestbench()
             const auto param_name = top_bh->PrintVariable(GET_INDEX_CONST_NODE(arg));
             THROW_ASSERT(arg_attributes->second.count(param_name),
                          "Attributes missing for parameter " + param_name + " in function " + top_fname);
+            THROW_ASSERT(arg_attributes->second.at(param_name).count(attr_interface_type),
+                         "Attribute 'interface type' is missing for parameter " + param_name);
             arg_interface = arg_attributes->second.at(param_name).at(attr_interface_type);
          }
          else
@@ -882,7 +884,9 @@ void HLSCWriter::WriteMainTestbench()
          top_decl += arg_typename + " " + arg_name + ", ";
          gold_decl += arg_typename + ", ";
          boost::cmatch what;
-         if(boost::regex_search(arg_typename.data(), what, boost::regex("(ac_channel|stream|hls::stream)<(.*)>")))
+         const auto arg_is_channel =
+             boost::regex_search(arg_typename.data(), what, boost::regex("(ac_channel|stream|hls::stream)<(.*)>"));
+         if(arg_is_channel)
          {
             THROW_ASSERT(is_pointer_type || is_reference_type, "Channel parameters must be pointers or references.");
             const std::string channel_type(what[1].first, what[1].second);
@@ -917,6 +921,39 @@ void HLSCWriter::WriteMainTestbench()
             pp_call += arg_name + ", ";
             args_decl += "(void*)&" + arg_name + ", ";
             args_set += arg_interface == "default" ? "__m_setarg" : "m_setargptr";
+         }
+         if(tree_helper::IsPointerType(arg_type))
+         {
+            if(is_interface_inferred && !arg_is_channel)
+            {
+               const auto param_name = top_bh->PrintVariable(GET_INDEX_CONST_NODE(arg));
+               THROW_ASSERT(arg_attributes->second.count(param_name),
+                            "Attributes missing for parameter " + param_name + " in function " + top_fname);
+               THROW_ASSERT(arg_attributes->second.at(param_name).count(attr_interface_bitwidth),
+                            "Attribute 'bitwidth' is missing for array parameter " + param_name);
+               THROW_ASSERT(arg_attributes->second.at(param_name).count(attr_interface_alignment),
+                            "Attribute 'alignment' is missing for array parameter " + param_name);
+               const auto item_bw = boost::lexical_cast<unsigned long long>(
+                   arg_attributes->second.at(param_name).at(attr_interface_bitwidth));
+               const auto item_align = boost::lexical_cast<unsigned long long>(
+                   arg_attributes->second.at(param_name).at(attr_interface_alignment));
+               const auto item_count =
+                   arg_attributes->second.at(param_name).count(attr_size) ?
+                       boost::lexical_cast<unsigned long long>(arg_attributes->second.at(param_name).at(attr_size)) :
+                       1ULL;
+               const auto array_bytes = get_aligned_bitsize(item_bw, item_align) / 8 * item_count;
+               args_init += "m_alloc_param(" + STR(param_idx) + ", " + STR(array_bytes) + ");\n";
+            }
+            else
+            {
+               const auto ptd_type = tree_helper::CGetPointedType(arg_type);
+               if(tree_helper::IsArrayType(ptd_type))
+               {
+                  const auto array_bytes = get_aligned_bitsize(tree_helper::GetArrayElementSize(ptd_type)) / 8 *
+                                           tree_helper::GetArrayTotalSize(ptd_type);
+                  args_init += "m_alloc_param(" + STR(param_idx) + ", " + STR(array_bytes) + ");\n";
+               }
+            }
          }
          args_set += "(" + STR(args_decl_idx) + ", args[" + STR(args_decl_idx) + "], " + arg_size + ");\n";
          ++args_decl_idx;
