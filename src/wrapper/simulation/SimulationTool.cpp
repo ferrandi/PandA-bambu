@@ -395,7 +395,7 @@ std::string SimulationTool::GenerateLibraryBuildScript(std::ostringstream& scrip
           << "  *)\n"
           << "    obj=\"" << output_dir << "/${obj%.*}.o\"\n"
           << "    ${CC} -c ${CFLAGS} " << kill_printf << " -fPIC -o ${obj} ${src}\n"
-          << "    objcopy --redefine-sym " << top_fname << "=" << m_top_fname << " ${obj}\n"
+          << "    objcopy --weaken --redefine-sym " << top_fname << "=" << m_top_fname << " ${obj}\n"
           << "    objs+=(\"${obj}\")\n"
           << "    ;;\n"
           << "  esac\n"
@@ -428,8 +428,9 @@ std::string SimulationTool::GenerateLibraryBuildScript(std::ostringstream& scrip
          {
             script << " " << Param->getOption<std::string>(OPT_testbench_extra_gcc_flags);
          }
-         script << " -o " << output_dir << "/tb.o " << tb_file << std::endl
-                << "objs+=(\"" << output_dir << "/tb.o\")" << std::endl;
+         script << " -o " << output_dir << "/tb.o " << tb_file << "\n"
+                << "objcopy -W " << top_fname << " " << output_dir << "/tb.o\n"
+                << "objs+=(\"" << output_dir << "/tb.o\")\n";
       }
    }
    const auto libtb_filename = output_dir + "/libtb.so";
