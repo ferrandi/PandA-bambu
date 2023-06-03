@@ -51,7 +51,7 @@ CONSTREF_FORWARD_DECL(Parameter);
 
 /**
  * @class VerilatorWrapper
- * Main class for wrapping the Icarus verilog compiler.
+ * Main class for wrapping Verilator.
  */
 class VerilatorWrapper : public SimulationTool
 {
