@@ -269,7 +269,9 @@ begin
   SIM_READY:
     begin
       automatic integer unsigned next_state = m_next(int&apos;(COSIM_INIT));
+      `ifndef NDEBUG
       $display(&quot;Sim: next state: %0d&quot;, next_state);
+      `endif
       state_succ &lt;= next_state[2:0];
     end
   SIM_SETUP:
@@ -280,7 +282,9 @@ begin
       res_file = $fopen(RESFILE, &quot;a&quot;);
       $fwrite(res_file, &quot;%0d|&quot;, start_time);
       $fclose(res_file);
+      `ifndef NDEBUG
       $display(&quot;Sim: Argument setup\\nSim: Simulation started at cycle %0d&quot;, start_cycle);
+      `endif
       over_time &lt;= start_cycle + MAX_SIM_CYCLES;
     end
   SIM_RUNNING:
@@ -304,7 +308,9 @@ begin
       res_file = $fopen(RESFILE, &quot;a&quot;);
       $fwrite(res_file, &quot;%0d,&quot;, curr_time);
       $fclose(res_file);
+      `ifndef NDEBUG
       $display(&quot;Sim: DUT port writeback\\nSim: Simulation ended at cycle %0d&quot;, curr_cycle);
+      `endif
     end
   COSIM_END:
     begin

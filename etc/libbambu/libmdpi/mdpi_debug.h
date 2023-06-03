@@ -45,23 +45,24 @@
 #include <pthread.h>
 
 #ifdef __cplusplus
+#include <cstdio>
+#else
+#include <stdio.h>
+#endif
+
+#ifdef __cplusplus
 extern "C"
 #else
 extern
 #endif
     volatile pthread_t __m_main_tid;
 
-#ifndef NDEBUG
-#ifdef __cplusplus
-#include <cstdio>
-#else
-#include <stdio.h>
-#endif
-
-#define debug(str, ...) \
+#define info(str, ...) \
    fprintf(stdout, "%s %10s: " str, __m_main_tid == pthread_self() ? "Sim" : "Co-sim", __func__, ##__VA_ARGS__)
-#define error(str, ...) \
-   fprintf(stdout, "ERROR: %s %10s: " str, __m_main_tid == pthread_self() ? "Sim" : "Co-sim", __func__, ##__VA_ARGS__)
+
+#ifndef NDEBUG
+#define debug(...) info(__VA_ARGS__)
+#define error(str, ...) info("ERROR: " str, ##__VA_ARGS__)
 #else
 #define debug(...)
 #define error(str, ...) \

@@ -56,12 +56,16 @@
 
 volatile pthread_t __m_main_tid;
 
+#define info(str, ...) \
+   fprintf(stdout, "%s %10s: " str, __m_main_tid == pthread_self() ? "Sim" : "Co-sim", __func__, ##__VA_ARGS__)
+
 #ifndef NDEBUG
-#define debug(str, ...) fprintf(stdout, "Sim %10s: " str, __func__, ##__VA_ARGS__)
-#define error(str, ...) fprintf(stdout, "ERROR: Sim %10s: " str, __func__, ##__VA_ARGS__)
+#define debug(...) info(__VA_ARGS__)
+#define error(str, ...) info("ERROR: " str, ##__VA_ARGS__)
 #else
 #define debug(...)
-#define error(str, ...) fprintf(stderr, "ERROR: Sim %10s: " str, __func__, ##__VA_ARGS__)
+#define error(str, ...) \
+   fprintf(stderr, "ERROR: %s %10s: " str, __m_main_tid == pthread_self() ? "Sim" : "Co-sim", __func__, ##__VA_ARGS__)
 #endif
 
 extern mdpi_params_t __m_params;
@@ -110,7 +114,7 @@ EXTERN_C unsigned int m_next(unsigned int state)
 
 EXTERN_C int m_fini()
 {
-   int retval;
+   int retval = 0;
    pthread_join(__m_cosim_thread, (void**)&retval);
 
    debug("Finalization successful\n");

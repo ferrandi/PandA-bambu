@@ -629,6 +629,11 @@ DesignFlowStep_Status TestbenchGenerationBaseStep::Exec()
                    << "`define MAX_COMMENT_LENGTH 1000\n"
                    << "`define INIT_TIME " STR_CST_INIT_TIME "\n\n";
 
+      if(parameters->getOption<int>(OPT_output_level) < OUTPUT_LEVEL_VERY_PEDANTIC)
+      {
+         bambu_tb_dpi << "`define NDEBUG\n\n";
+      }
+
       bambu_tb_dpi << R"(
 `ifdef M32
 typedef int unsigned ptr_t;

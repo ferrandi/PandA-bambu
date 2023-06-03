@@ -434,6 +434,10 @@ std::string SimulationTool::GenerateLibraryBuildScript(std::ostringstream& scrip
       }
    }
    const auto libtb_filename = output_dir + "/libtb.so";
+   if(Param->getOption<int>(OPT_output_level) < OUTPUT_LEVEL_VERY_PEDANTIC)
+   {
+      script << "CFLAGS+=\" -DNDEBUG\"\n";
+   }
    script << "bash " << relocate_compiler_path(PANDA_INCLUDE_INSTALLDIR "/mdpi/build.sh") << " ${objs[*]} -o "
           << libtb_filename << std::endl
           << std::endl;

@@ -58,9 +58,9 @@ void* __m_cosim_main(void*)
    enum mdpi_state sim_state = __m_wait_for(MDPI_ENTITY_COSIM);
    if(sim_state == MDPI_COSIM_INIT)
    {
-      debug("Co-simulation started\n");
+      info("Co-simulation started\n");
       retval = m_cosim_main();
-      debug("Co-simulation finished\n");
+      info("Co-simulation finished\n");
    }
    else
    {
@@ -75,7 +75,7 @@ void* __m_cosim_main(void*)
 void __m_exit(int __status)
 {
    enum mdpi_state state;
-   debug("Exit called with value %d\n", __status);
+   info("Exit called with value %d\n", __status);
    debug("Waiting for simulator to complete...\n");
    state = __m_wait_for(MDPI_ENTITY_COSIM);
    debug("Simulator reported state: %s\n", mdpi_state_str(state));
