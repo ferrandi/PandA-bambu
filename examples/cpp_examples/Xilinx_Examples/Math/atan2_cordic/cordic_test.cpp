@@ -50,11 +50,11 @@ int main(void)
 
 	//const float angle = M_PI_2/N;
 
-	fp = fopen("./test_data/vector.dat", "w");
+	fp = fopen("./vector.dat", "w");
 	if (fp == NULL) {
 		fprintf(stderr, "unable to open output file\n");
 	}
-	fm = fopen("./test_data/check_res.m", "w");
+	fm = fopen("./check_res.m", "w");
 	if (fm == NULL) {
 		fprintf(stderr, "unable to open MATLAB ile\n");
 	}
@@ -71,8 +71,8 @@ int main(void)
 	fprintf(fm, "sum_abs_err2 = sum(diff2)\n");
 
 	//read files
-	read_file<N, 2, coord_t>("./test_data/input_data.txt", input_data);
-	read_file<N, 1, phase_t>("./test_data/ref_results.txt", ref_results);
+	read_file<N, 2, coord_t>("./input_data.txt", input_data);
+	read_file<N, 1, phase_t>("./ref_results.txt", ref_results);
 
 	// vectoring mode
 	inp_rad = 0;
