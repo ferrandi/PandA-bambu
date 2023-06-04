@@ -322,10 +322,6 @@ std::string SimulationTool::GenerateLibraryBuildScript(std::ostringstream& scrip
       std::string flags = cflags +
                           " -fwrapv -ffloat-store -flax-vector-conversions -msse2 -mfpmath=sse -fno-strict-aliasing "
                           "-D__builtin_bambu_time_start()= -D__builtin_bambu_time_stop()= -D__BAMBU_SIM__";
-      if(Param->isOption(OPT_pretty_print))
-      {
-         flags += " -DPP_VERIFICATION";
-      }
       if(!Param->isOption(OPT_input_format) ||
          Param->getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_C ||
          Param->isOption(OPT_pretty_print))
@@ -415,8 +411,12 @@ std::string SimulationTool::GenerateLibraryBuildScript(std::ostringstream& scrip
 
    const auto dpi_cwrapper_file =
        Param->getOption<std::string>(OPT_output_directory) + "/simulation/" STR_CST_testbench_generation_basename ".c";
-   script << "${CC} -c ${CFLAGS} -I" << relocate_compiler_path(PANDA_INCLUDE_INSTALLDIR) << " -fPIC -o " << output_dir
-          << "/m_wrapper.o " << dpi_cwrapper_file << std::endl
+   script << "${CC} -c ${CFLAGS} -I" << relocate_compiler_path(PANDA_INCLUDE_INSTALLDIR);
+   if(Param->isOption(OPT_pretty_print) && top_fname != "main")
+   {
+      script << " -DPP_VERIFICATION";
+   }
+   script << " -fPIC -o " << output_dir << "/m_wrapper.o " << dpi_cwrapper_file << std::endl
           << "objs+=(\"" << output_dir << "/m_wrapper.o\")" << std::endl;
    if(Param->isOption(OPT_testbench_input_string))
    {
