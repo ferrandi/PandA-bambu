@@ -160,7 +160,7 @@ void VerilatorWrapper::GenerateScript(std::ostringstream& script, const std::str
       script << " --trace --trace-underscore"; // --trace-params
       if(Param->getOption<bool>(OPT_verilator_l2_name))
       {
-         script << " --l2-name v";
+         script << " --l2-name bambu_testbench";
       }
    }
    if(Param->isOption(OPT_verilator_timescale_override))

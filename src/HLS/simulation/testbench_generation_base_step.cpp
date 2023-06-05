@@ -94,6 +94,8 @@
 #include <string>
 #include <utility>
 
+#define CST_STR_BAMBU_TESTBENCH "bambu_testbench"
+
 #define COUNT_LOW_INDEX 0
 #define COUNT_HIGH_INDEX 31
 #define BURST_LOW_INDEX 32
@@ -328,10 +330,9 @@ void TestbenchGenerationBaseStep::Initialize()
 DesignFlowStep_Status TestbenchGenerationBaseStep::Exec()
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "-->Generating testbench HDL");
-   const std::string tb_module_name = "bambu_testbench";
    const structural_managerRef tb_top(new structural_manager(parameters));
-   tb_top->set_top_info(tb_module_name + "_impl",
-                        structural_type_descriptorRef(new structural_type_descriptor(tb_module_name + "_impl")));
+   tb_top->set_top_info(CST_STR_BAMBU_TESTBENCH "_impl",
+                        structural_type_descriptorRef(new structural_type_descriptor(CST_STR_BAMBU_TESTBENCH "_impl")));
    const auto tb_cir = tb_top->get_circ();
    const auto tb_mod = GetPointerS<module>(tb_cir);
    const auto add_internal_connection = [&](structural_objectRef src, structural_objectRef dest) {
@@ -597,7 +598,7 @@ DesignFlowStep_Status TestbenchGenerationBaseStep::Exec()
    }
 
    INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "Generating testbench HDL...");
-   const auto tb_filename = output_directory + tb_module_name;
+   const auto tb_filename = output_directory + CST_STR_BAMBU_TESTBENCH;
    const auto is_sim_verilator = parameters->getOption<std::string>(OPT_simulator) == "VERILATOR";
    HDL_manager HDLMgr(HLSMgr, HLSMgr->get_HLS_target()->get_target_device(), parameters);
    std::list<std::string> hdl_files, aux_files;
@@ -648,7 +649,7 @@ typedef longint unsigned ptr_t;
                                                       HLSMgr->get_HLS_target()->get_technology_manager(), parameters);
 
       tb_writer->write_comment("MODULE DECLARATION\n");
-      tb_writer->write("module " + tb_module_name + "(" CLOCK_PORT_NAME ");\n");
+      tb_writer->write("module " CST_STR_BAMBU_TESTBENCH "(" CLOCK_PORT_NAME ");\n");
       tb_writer->write(STR(STD_OPENING_CHAR));
       tb_writer->write("\ninput " CLOCK_PORT_NAME ";\n\n");
 
@@ -722,13 +723,13 @@ typedef longint unsigned ptr_t;
       tb_writer->write("endmodule\n\n");
 
       tb_writer->write("`ifndef VERILATOR\n");
-      tb_writer->write("module clocked_" + tb_module_name + ";\n");
+      tb_writer->write("module clocked_" CST_STR_BAMBU_TESTBENCH ";\n");
       tb_writer->write(STR(STD_OPENING_CHAR));
       tb_writer->write("parameter HALF_CLOCK_PERIOD=1.0;\n");
       tb_writer->write("\nreg " CLOCK_PORT_NAME ";\n");
       tb_writer->write("initial " CLOCK_PORT_NAME " = 1;\n");
       tb_writer->write("always # HALF_CLOCK_PERIOD " CLOCK_PORT_NAME " = !" CLOCK_PORT_NAME ";\n\n");
-      tb_writer->write(tb_module_name + " bambu_testbench(." CLOCK_PORT_NAME "(" CLOCK_PORT_NAME "));\n\n");
+      tb_writer->write(CST_STR_BAMBU_TESTBENCH " bambu_testbench(." CLOCK_PORT_NAME "(" CLOCK_PORT_NAME "));\n\n");
       tb_writer->write(STR(STD_CLOSING_CHAR));
       tb_writer->write("endmodule\n");
       tb_writer->write("`endif\n\n");
@@ -889,7 +890,7 @@ std::string TestbenchGenerationBaseStep::write_verilator_testbench() const
    PP(os, "   std::string vcd_output_filename = \"" + output_directory + "test.vcd\";\n");
    PP(os, "   Verilated::commandArgs(argc, argv);\n");
    PP(os, "   Verilated::debug(0);\n");
-   PP(os, "   top = new Vbambu_testbench;\n");
+   PP(os, "   top = new Vbambu_testbench{\"clocked_" CST_STR_BAMBU_TESTBENCH "\"};\n");
    PP(os, "   \n");
    PP(os, "   \n");
    PP(os, "   #if VM_TRACE\n");
