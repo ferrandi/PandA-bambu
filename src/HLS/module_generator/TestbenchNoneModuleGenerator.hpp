@@ -34,7 +34,7 @@
  * @file TestbenchNoneModuleGenerator.hpp
  * @brief
  *
- * @author Name Surname <your.contact@email.com>
+ * @author Michele Fiorito <michele.fiorito@polimi.it>
  * $Revision$
  * $Date$
  * Last modified by $Author$
