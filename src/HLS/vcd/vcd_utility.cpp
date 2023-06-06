@@ -35,73 +35,43 @@
  */
 #include "vcd_utility.hpp"
 
-#include <boost/filesystem/operations.hpp>
-#include <iterator>
-
-// include from ./
+#include "Discrepancy.hpp"
 #include "Parameter.hpp"
-
-// include from behavior/
+#include "application_frontend_flow_step.hpp"
+#include "behavioral_helper.hpp"
+#include "c_backend_step_factory.hpp"
 #include "call_graph.hpp"
 #include "call_graph_manager.hpp"
-#include "function_behavior.hpp"
-
-// include from circuit/
-#include "structural_manager.hpp"
-
-// include from design_flows/
+#include "control_flow_checker.hpp"
+#include "cpu_stats.hpp"
+#include "cpu_time.hpp"
 #include "design_flow_graph.hpp"
 #include "design_flow_manager.hpp"
-
-// includes from design_flows/backend/ToC/
-#include "c_backend_step_factory.hpp"
-#include "hls_c_backend_information.hpp"
-
-// includes from design_flows/backend/ToHDL
-#include "language_writer.hpp"
-
-// include from frontend_analysis/
-#include "application_frontend_flow_step.hpp"
 #include "frontend_flow_step_factory.hpp"
-
-// include from HLS/
+#include "function_behavior.hpp"
 #include "hls.hpp"
+#include "hls_c_backend_information.hpp"
 #include "hls_manager.hpp"
 #include "hls_target.hpp"
-
-// include from HLS/binding/register/
-#include "reg_binding.hpp"
-
-// include from HLS/memory/
+#include "language_writer.hpp"
 #include "memory.hpp"
-
-// include from HLS/stg/
+#include "parse_discrepancy.hpp"
+#include "reg_binding.hpp"
 #include "state_transition_graph.hpp"
 #include "state_transition_graph_manager.hpp"
-
-// include from HLS/vcd/
-#include "Discrepancy.hpp"
-#include "vcd_trace_head.hpp"
-
-// include from parser/discrepancy/
-#include "parse_discrepancy.hpp"
-
-// include from tree/
-#include "behavioral_helper.hpp"
+#include "string_manipulation.hpp"
+#include "structural_manager.hpp"
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
+#include "vcd_trace_head.hpp"
 
-// include from utility
-#include "cpu_stats.hpp"
-#include "cpu_time.hpp"
-
-// external include
-#include "string_manipulation.hpp" // for GET_CLASS
 #include <boost/algorithm/string/case_conv.hpp>
+#include <boost/filesystem/operations.hpp>
 #include <cfloat>
 #include <fstream>
+#include <iterator>
 #include <utility>
 
 DiscrepancyLog::DiscrepancyLog(const HLS_managerConstRef HLSMgr, const vcd_trace_head& t, const uint64_t c_context,
@@ -137,14 +107,14 @@ vcd_utility::vcd_utility(const ParameterConstRef _parameters, const HLS_managerR
       TM(HLSMgr->get_tree_manager()),
       Discr(_HLSMgr->RDiscr),
       allow_uninitialized(
-          (parameters->isOption(OPT_discrepancy_force) and parameters->getOption<bool>(OPT_discrepancy_force))),
+          (parameters->isOption(OPT_discrepancy_force) && parameters->getOption<bool>(OPT_discrepancy_force))),
       present_state_name(static_cast<HDLWriter_Language>(_parameters->getOption<unsigned int>(OPT_writer_language)) ==
                                  HDLWriter_Language::VERILOG ?
                              "_present_state" :
                              "present_state")
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
-   THROW_ASSERT(parameters->isOption(OPT_discrepancy) and parameters->getOption<bool>(OPT_discrepancy),
+   THROW_ASSERT(parameters->isOption(OPT_discrepancy) && parameters->getOption<bool>(OPT_discrepancy),
                 "Step " + STR(__PRETTY_FUNCTION__) + " should not be added without discrepancy");
    THROW_ASSERT(HLSMgr->RDiscr, "Discr data structure is not correctly initialized");
 }
@@ -222,29 +192,6 @@ unsigned long long vcd_utility::GetClockPeriod(const vcd_parser::vcd_trace_t& vc
 
 DesignFlowStep_Status vcd_utility::Exec()
 {
-   std::string vendor;
-   const auto tgt_device = HLSMgr->get_HLS_target()->get_target_device();
-   if(tgt_device->has_parameter("vendor"))
-   {
-      vendor = tgt_device->get_parameter<std::string>("vendor");
-      boost::algorithm::to_lower(vendor);
-   }
-   auto isOneHot = [&](unsigned int funId) -> bool {
-      auto one_hot_encoding = false;
-      if(parameters->getOption<std::string>(OPT_fsm_encoding) == "one-hot")
-      {
-         one_hot_encoding = true;
-      }
-      else if(parameters->getOption<std::string>(OPT_fsm_encoding) == "auto" && vendor == "xilinx" &&
-              HLSMgr->get_HLS(funId)->STG->get_number_of_states() < 256)
-      {
-         one_hot_encoding = true;
-      }
-      return one_hot_encoding;
-   };
-
-   const CallGraphManagerConstRef cg_man = HLSMgr->CGetCallGraphManager();
-   const CallGraphConstRef cg = cg_man->CGetCallGraph();
    // cleanup member data structures to allow multiple executions of this step
    THROW_ASSERT(Discr, "Discr data structure is not correctly initialized");
    possibly_lost_address = 0;
@@ -258,7 +205,7 @@ DesignFlowStep_Status vcd_utility::Exec()
    std::string disc_stat_filename =
        parameters->getOption<std::string>(OPT_output_directory) + "/simulation/dynamic_discrepancy_stats";
    disc_stat_file.open(disc_stat_filename, std::ofstream::app);
-   if(not disc_stat_file.is_open())
+   if(!disc_stat_file.is_open())
    {
       THROW_ERROR("can't open file " + disc_stat_filename);
    }
@@ -303,9 +250,9 @@ DesignFlowStep_Status vcd_utility::Exec()
    {
       THROW_WARNING(
           "Discrepancy Analysis: the trace of the C execution is empty. Discrepancy Analysis cannot be performed");
-      if((not parameters->isOption(OPT_no_clean)) or (!parameters->getOption<bool>(OPT_no_clean)))
+      if(!parameters->isOption(OPT_no_clean) || !parameters->getOption<bool>(OPT_no_clean))
       {
-         if((not parameters->isOption(OPT_generate_vcd)) or (!parameters->getOption<bool>(OPT_generate_vcd)))
+         if(!parameters->isOption(OPT_generate_vcd) || !parameters->getOption<bool>(OPT_generate_vcd))
          {
             boost::filesystem::remove(vcd_filename);
          }
@@ -340,7 +287,7 @@ DesignFlowStep_Status vcd_utility::Exec()
       THROW_ASSERT(Discr->f_id_to_scope.find(op_info.stg_fun_id) != Discr->f_id_to_scope.end(),
                    "no scope for function " + STR(op_info.stg_fun_id));
       const auto& scope_set = Discr->f_id_to_scope.at(op_info.stg_fun_id);
-      if(not scope_set.empty())
+      if(!scope_set.empty())
       {
          op_id_to_scope_to_vcd_head[op_info.op_id];
       }
@@ -363,19 +310,20 @@ DesignFlowStep_Status vcd_utility::Exec()
           * vcd_trace_head to compute the exact starting time for the operation,
           * when the initial state of the FSM is a starting state for this operation
           */
-         const StateTransitionGraphManagerConstRef stg_man = HLSMgr->get_HLS(op_info.stg_fun_id)->STG;
-         vertex entry = stg_man->get_entry_state();
-         const StateTransitionGraphConstRef stg = stg_man->CGetStg();
+         const auto stg_man = HLSMgr->get_HLS(op_info.stg_fun_id)->STG;
+         const auto entry = stg_man->get_entry_state();
+         const auto stg = stg_man->CGetStg();
          THROW_ASSERT(boost::out_degree(entry, *stg) == 1, "Non deterministic initial state");
          OutEdgeIterator oe, oend;
          tie(oe, oend) = boost::out_edges(entry, *stg);
-         vertex first_state = boost::target(*oe, *stg);
-         const unsigned int initial_state_id = stg->CGetStateTransitionGraphInfo()->vertex_to_state_id.at(first_state);
+         const auto first_state = boost::target(*oe, *stg);
+         const auto initial_state_id = stg->CGetStateTransitionGraphInfo()->vertex_to_state_id.at(first_state);
 
          op_id_to_scope_to_vcd_head.at(op_info.op_id)
-             .insert(std::make_pair(scope, vcd_trace_head(op_info, fullsigname, present_state_vars, op_out_vars,
-                                                          start_vars, initial_state_id, GetClockPeriod(vcd_trace),
-                                                          HLSMgr, TM, isOneHot(op_info.stg_fun_id))));
+             .insert(
+                 std::make_pair(scope, vcd_trace_head(op_info, fullsigname, present_state_vars, op_out_vars, start_vars,
+                                                      initial_state_id, GetClockPeriod(vcd_trace), HLSMgr, TM,
+                                                      ControlFlowChecker::IsOneHotFSM(op_info.stg_fun_id, HLSMgr))));
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed scope " + scope);
       }
 
@@ -417,13 +365,14 @@ DesignFlowStep_Status vcd_utility::Exec()
                vcd_head.advance();
                if(vcd_head.state == vcd_trace_head::init_fail)
                {
-                  print_failed_vcd_head(vcd_head, isOneHot(op_info.stg_fun_id), OUTPUT_LEVEL_VERBOSE);
+                  print_failed_vcd_head(vcd_head, ControlFlowChecker::IsOneHotFSM(op_info.stg_fun_id, HLSMgr),
+                                        OUTPUT_LEVEL_VERBOSE);
                }
                break;
             }
             case vcd_trace_head::initialized:
             {
-               if((not discr_list.empty()) and vcd_head.ends_after(discr_list.front().op_end_time))
+               if((!discr_list.empty()) && vcd_head.ends_after(discr_list.front().op_end_time))
                {
                   vcd_head.state = vcd_trace_head::after_discrepancy;
                   break;
@@ -475,14 +424,14 @@ DesignFlowStep_Status vcd_utility::Exec()
                   "---DISCREPANCY CHECKS: " + STR(Discr->n_checked_operations) + "/" + STR(Discr->n_total_operations));
 
    bool first_discrepancy_print = true;
-   if(not discr_list.empty() or not soft_discr_list.empty())
+   if(!discr_list.empty() || !soft_discr_list.empty())
    {
       INDENT_OUT_MEX(OUTPUT_LEVEL_NONE, output_level,
                      "\n\n\n"
                      "/====================================\\\n"
                      "|      FINAL DISCREPANCY REPORT      |\n"
                      "\\====================================/");
-      if(not discr_list.empty())
+      if(!discr_list.empty())
       {
          INDENT_OUT_MEX(OUTPUT_LEVEL_NONE, output_level,
                         "\n\n"
@@ -491,10 +440,10 @@ DesignFlowStep_Status vcd_utility::Exec()
                         "\\--------------------------------/");
          for(const auto& l : discr_list)
          {
-            print_discrepancy(l, isOneHot(l.fun_id), OUTPUT_LEVEL_NONE);
+            print_discrepancy(l, ControlFlowChecker::IsOneHotFSM(l.fun_id, HLSMgr), OUTPUT_LEVEL_NONE);
          }
       }
-      if(not soft_discr_list.empty())
+      if(!soft_discr_list.empty())
       {
          INDENT_OUT_MEX(OUTPUT_LEVEL_NONE, output_level,
                         "\n\n"
@@ -503,7 +452,7 @@ DesignFlowStep_Status vcd_utility::Exec()
                         "\\--------------------------------/");
          for(const auto& l : soft_discr_list)
          {
-            print_discrepancy(l, isOneHot(l.fun_id), OUTPUT_LEVEL_NONE);
+            print_discrepancy(l, ControlFlowChecker::IsOneHotFSM(l.fun_id, HLSMgr), OUTPUT_LEVEL_NONE);
          }
       }
       first_discrepancy_print = false;
@@ -517,14 +466,14 @@ DesignFlowStep_Status vcd_utility::Exec()
    {
       for(const auto& t : id_to_scope_to_head.second)
       {
-         before_discrepancy = discr_list.empty() or not t.second.starts_after(discr_list.front().op_start_time);
+         before_discrepancy = discr_list.empty() || !t.second.starts_after(discr_list.front().op_start_time);
 
-         suspended_op_never_ends = t.second.state == vcd_trace_head::suspended and
+         suspended_op_never_ends = t.second.state == vcd_trace_head::suspended &&
                                    t.second.consecutive_state_executions !=
                                        std::numeric_limits<decltype(t.second.consecutive_state_executions)>::max();
 
-         if(before_discrepancy and t.second.has_been_initialized and
-            (t.second.state == vcd_trace_head::init_fail or suspended_op_never_ends))
+         if(before_discrepancy && t.second.has_been_initialized &&
+            (t.second.state == vcd_trace_head::init_fail || suspended_op_never_ends))
          {
             if(first_discrepancy_print)
             {
@@ -535,7 +484,7 @@ DesignFlowStep_Status vcd_utility::Exec()
                               "\\====================================/");
                first_discrepancy_print = false;
             }
-            if(not persisting_warning)
+            if(!persisting_warning)
             {
                INDENT_OUT_MEX(OUTPUT_LEVEL_NONE, output_level,
                               "\n\n"
@@ -543,21 +492,22 @@ DesignFlowStep_Status vcd_utility::Exec()
                               "|       PERSISTING ERRORS      |\n"
                               "\\------------------------------/");
             }
-            print_failed_vcd_head(t.second, isOneHot(t.second.op_info.stg_fun_id), OUTPUT_LEVEL_NONE);
+            print_failed_vcd_head(t.second, ControlFlowChecker::IsOneHotFSM(t.second.op_info.stg_fun_id, HLSMgr),
+                                  OUTPUT_LEVEL_NONE);
             persisting_warning = true;
          }
       }
    }
-   if(persisting_warning or not discr_list.empty() or not soft_discr_list.empty())
+   if(persisting_warning || !discr_list.empty() || !soft_discr_list.empty())
    {
       THROW_ERROR("DISCREPANCY FOUND");
    }
    else
    {
       INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---DISCREPANCY NOT FOUND");
-      if((not parameters->isOption(OPT_no_clean)) or (!parameters->getOption<bool>(OPT_no_clean)))
+      if((!parameters->isOption(OPT_no_clean)) || (!parameters->getOption<bool>(OPT_no_clean)))
       {
-         if((not parameters->isOption(OPT_generate_vcd)) or (!parameters->getOption<bool>(OPT_generate_vcd)))
+         if((!parameters->isOption(OPT_generate_vcd)) || (!parameters->getOption<bool>(OPT_generate_vcd)))
          {
             boost::filesystem::remove(vcd_filename);
          }
@@ -577,7 +527,7 @@ bool vcd_utility::detect_mismatch(const vcd_trace_head& t, const uint64_t c_cont
 {
    const std::string& vcd_val = t.out_var_it->value;
    bool is_mismatch = false;
-   if(parameters->isOption(OPT_discrepancy_force) and parameters->getOption<bool>(OPT_discrepancy_force) and
+   if(parameters->isOption(OPT_discrepancy_force) && parameters->getOption<bool>(OPT_discrepancy_force) &&
       vcd_val.find_first_not_of("01") != std::string::npos)
    {
       /*
@@ -713,7 +663,7 @@ bool vcd_utility::detect_mismatch_simple(const vcd_trace_head& t, const uint64_t
    const bool resized = c_val.length() != c_size;
    const std::string& resized_c_val = resized ? c_val.substr(first_c_bit, c_size) : c_val;
 
-   THROW_ASSERT(not resized or (t.op_info.type & (DISCR_COMPLEX | DISCR_VECTOR)),
+   THROW_ASSERT(!resized || (t.op_info.type & (DISCR_COMPLEX | DISCR_VECTOR)),
                 "operation " + STR(t.op_info.op_id) + " assigns ssa " + STR(t.op_info.ssa_name) +
                     ": only complex or vectors are supposed to be resized for discrepancy analysis");
 
@@ -729,9 +679,9 @@ bool vcd_utility::detect_mismatch_simple(const vcd_trace_head& t, const uint64_t
 
    bool discrepancy_found = detect_regular_mismatch(t, resized_c_val, resized_vcd_val);
 
-   if(discrepancy_found and (t.op_info.type & DISCR_ADDR))
+   if(discrepancy_found && (t.op_info.type & DISCR_ADDR))
    {
-      THROW_ASSERT(not(t.op_info.type & DISCR_REAL) and not(t.op_info.type & DISCR_COMPLEX),
+      THROW_ASSERT(not(t.op_info.type & DISCR_REAL) && not(t.op_info.type & DISCR_COMPLEX),
                    "address ssa cannot be real or complex: "
                    "real = " +
                        STR(static_cast<bool>(t.op_info.type & DISCR_VECTOR)) +
@@ -757,15 +707,15 @@ void vcd_utility::update_discr_list(const vcd_trace_head& t, const uint64_t c_co
                                     const std::string::size_type c_size, const unsigned int base_index)
 {
    bool hard_discrepancy = true;
-   if(parameters->isOption(OPT_discrepancy_permissive_ptrs) and
-      parameters->getOption<bool>(OPT_discrepancy_permissive_ptrs) and (t.op_info.type & DISCR_ADDR))
+   if(parameters->isOption(OPT_discrepancy_permissive_ptrs) &&
+      parameters->getOption<bool>(OPT_discrepancy_permissive_ptrs) && (t.op_info.type & DISCR_ADDR))
    {
       hard_discrepancy = false;
    }
 
    if(hard_discrepancy)
    {
-      if(not discr_list.empty() and t.op_end_time < discr_list.front().op_end_time)
+      if(!discr_list.empty() && t.op_end_time < discr_list.front().op_end_time)
       {
          /*
           * if the list is not empty look for end times to see if the discrepancy
@@ -802,7 +752,7 @@ void vcd_utility::update_discr_list(const vcd_trace_head& t, const uint64_t c_co
    }
    else
    {
-      if(discr_list.empty() or t.op_end_time <= discr_list.front().op_end_time)
+      if(discr_list.empty() || t.op_end_time <= discr_list.front().op_end_time)
       {
          soft_discr_list.emplace_back(HLSMgr, t, c_context, c_val, el_idx, first_c_bit, c_size, base_index);
       }
@@ -830,11 +780,11 @@ bool vcd_utility::detect_binary_float_mismatch(const std::string& c_val, const s
    float ulp = 0.0;
    float& c = computed.f;
    float& e = expected.f;
-   if(std::isnan(c) and std::isnan(e))
+   if(std::isnan(c) && std::isnan(e))
    {
       return false;
    }
-   else if(std::isinf(c) and std::isinf(e))
+   else if(std::isinf(c) && std::isinf(e))
    {
       if(std::signbit(c) != std::signbit(e))
       {
@@ -845,7 +795,7 @@ bool vcd_utility::detect_binary_float_mismatch(const std::string& c_val, const s
          return false;
       }
    }
-   else if(std::isinf(c) or std::isinf(e) or std::isnan(c) or std::isnan(e))
+   else if(std::isinf(c) || std::isinf(e) || std::isnan(c) || std::isnan(e))
    {
       return false;
    }
@@ -885,11 +835,11 @@ bool vcd_utility::detect_binary_double_mismatch(const std::string& c_val, const 
    double ulp = 0.0;
    double& c = computed.f;
    double& e = expected.f;
-   if(std::isnan(c) and std::isnan(e))
+   if(std::isnan(c) && std::isnan(e))
    {
       return false;
    }
-   else if(std::isinf(c) and std::isinf(e))
+   else if(std::isinf(c) && std::isinf(e))
    {
       if(std::signbit(c) != std::signbit(e))
       {
@@ -900,7 +850,7 @@ bool vcd_utility::detect_binary_double_mismatch(const std::string& c_val, const 
          return false;
       }
    }
-   else if(std::isinf(c) or std::isinf(e) or std::isnan(c) or std::isnan(e))
+   else if(std::isinf(c) || std::isinf(e) || std::isnan(c) || std::isnan(e))
    {
       return false;
    }
@@ -945,7 +895,7 @@ bool vcd_utility::detect_fixed_address_mismatch(const DiscrepancyOpInfo& op_info
        std::max(8ull, tree_helper::Size(tree_helper::CGetType(TM->CGetTreeReindex(base_index))));
    THROW_ASSERT(memory_area_bitsize % 8 == 0,
                 "bitsize of a variable in memory must be multiple of 8 --> is " + STR(memory_area_bitsize));
-   if(c_offset_is_negative or ((memory_area_bitsize / 8) <= (c_addr - c_base_addr)))
+   if(c_offset_is_negative || ((memory_area_bitsize / 8) <= (c_addr - c_base_addr)))
    {
       return false;
    }
@@ -972,7 +922,7 @@ bool vcd_utility::detect_fixed_address_mismatch(const DiscrepancyOpInfo& op_info
       vcd_addr_offset = vcd_base_addr - vcd_addr;
    }
    /* if the vcd is out of range even if the address in C is in range, we have a mismatch */
-   if(vcd_offset_is_negative or ((memory_area_bitsize / 8) <= (vcd_addr - vcd_base_addr)))
+   if(vcd_offset_is_negative || ((memory_area_bitsize / 8) <= (vcd_addr - vcd_base_addr)))
    {
       return true;
    }
@@ -988,7 +938,7 @@ bool vcd_utility::detect_address_mismatch(const DiscrepancyOpInfo& op_info, cons
 {
    const auto* ssa = GetPointer<const ssa_name>(TM->get_tree_node_const(op_info.ssa_name_node_id));
    base_index = tree_helper::get_base_index(TM, op_info.ssa_name_node_id);
-   if(base_index != 0 and HLSMgr->Rmem->has_base_address(base_index))
+   if(base_index != 0 && HLSMgr->Rmem->has_base_address(base_index))
    {
       return detect_fixed_address_mismatch(op_info, c_context, c_val, vcd_val, base_index);
    }
@@ -1002,7 +952,7 @@ bool vcd_utility::detect_address_mismatch(const DiscrepancyOpInfo& op_info, cons
          for(const tree_nodeRef& pointed_var_decl_id : ssa->use_set->variables)
          {
             base_index = tree_helper::get_base_index(TM, GET_INDEX_NODE(pointed_var_decl_id));
-            THROW_ASSERT(base_index != 0 and HLSMgr->Rmem->has_base_address(base_index),
+            THROW_ASSERT(base_index != 0 && HLSMgr->Rmem->has_base_address(base_index),
                          "opid = " + STR(op_info.op_id) + " base index = " + STR(base_index) + " has no base address");
             THROW_ASSERT(Discr->c_addr_map.find(c_context) != Discr->c_addr_map.end(),
                          "no address map found for context " + STR(c_context));
@@ -1115,7 +1065,7 @@ bool vcd_utility::detect_regular_mismatch(const vcd_trace_head& t, const std::st
       const std::string vcd_trimmed_val = vcd_val.substr(first_not_x_pos);
       const std::string& longer = (vcd_trimmed_val.length() <= c_val.length()) ? c_val : vcd_trimmed_val;
       const std::string& shorter = (vcd_trimmed_val.length() <= c_val.length()) ? vcd_trimmed_val : c_val;
-      if(longer.find_first_not_of("01") != std::string::npos or shorter.find_first_not_of("01") != std::string::npos)
+      if(longer.find_first_not_of("01") != std::string::npos || shorter.find_first_not_of("01") != std::string::npos)
       {
          return allow_uninitialized;
       }

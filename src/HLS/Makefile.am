@@ -1106,6 +1106,7 @@ if BUILD_LIB_VCD
       -I$(top_srcdir)/src/design_flows/backend/ToHDL \
       -I$(top_srcdir)/src/graph \
       -I$(top_srcdir)/src/HLS \
+      -I$(top_srcdir)/src/HLS/architecture_creation/controller_creation \
       -I$(top_srcdir)/src/HLS/binding/module \
       -I$(top_srcdir)/src/HLS/binding/register \
       -I$(top_srcdir)/src/HLS/binding/storage_value_insertion \
