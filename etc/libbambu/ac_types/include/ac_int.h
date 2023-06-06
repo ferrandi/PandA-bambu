@@ -1196,9 +1196,10 @@ using Slong = long long;
       __FORCE_INLINE constexpr iv_base(const iv_base<N2, C2, W2, S2>& b) = delete;
    } __attribute__((aligned(8)));
 #endif
-      template<bool select>
+      template <bool select>
       struct iv_copy_base_struct
-      {};
+      {
+      };
       template <>
       struct iv_copy_base_struct<true>
       {
@@ -1220,10 +1221,10 @@ using Slong = long long;
       template <int N, int START, int N1, bool C1, int W1, bool S1, int Nr, bool Cr, int Wr, bool Sr>
       __FORCE_INLINE void iv_copy(const iv_base<N1, C1, W1, S1>& op, iv_base<Nr, Cr, Wr, Sr>& r)
       {
-         if(START==0 && N==Nr && Nr==N1 && C1==Cr && W1==Wr && S1==Sr)
+         if(START == 0 && N == Nr && Nr == N1 && C1 == Cr && W1 == Wr && S1 == Sr)
          {
-            iv_copy_base_struct<START==0 && N==Nr && Nr==N1 && C1==Cr && W1==Wr && S1==Sr> icbs;
-            icbs.iv_copy_base(op,r);
+            iv_copy_base_struct<START == 0 && N == Nr && Nr == N1 && C1 == Cr && W1 == Wr && S1 == Sr> icbs;
+            icbs.iv_copy_base(op, r);
          }
          else if(START < N)
          {
@@ -2782,15 +2783,15 @@ using Slong = long long;
          explicit constexpr iv() = default;
          __FORCE_INLINE explicit constexpr iv(const iv& b)
          {
-               iv_copy<N, 0>(b.v, v);
+            iv_copy<N, 0>(b.v, v);
          }
          __FORCE_INLINE constexpr iv(iv&& b)
          {
-               iv_copy<N, 0>(b.v, v);
+            iv_copy<N, 0>(b.v, v);
          }
          __FORCE_INLINE constexpr iv& operator=(const iv& b)
          {
-               iv_copy<N, 0>(b.v, v);
+            iv_copy<N, 0>(b.v, v);
             return *this;
          }
          template <int N2, bool C2, int W2, bool S2>
@@ -4771,6 +4772,12 @@ using Slong = long long;
       __FORCE_INLINE const range_ref& operator=(const ac_int<W2, S2>& op) const
       {
          ref.set_slc(high, low, op);
+         return *this;
+      }
+      __FORCE_INLINE const range_ref& operator=(const unsigned long long op) const
+      {
+         ac_int<W1, S1> tmp(op);
+         ref.set_slc(high, low, tmp);
          return *this;
       }
       template <int W2, bool S2>
