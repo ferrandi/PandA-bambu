@@ -764,6 +764,11 @@ void CompilerWrapper::CompileFile(const std::string& original_file_name, std::st
    }
    else if(cm == CompilerWrapper_CompilerMode::CM_LTO)
    {
+      if(Param->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
+          CompilerWrapper_CompilerTarget::CT_I386_CLANG16)
+      {
+         command += " -Xclang -no-opaque-pointers";
+      }
       command += " -c -flto -o " + Param->getOption<std::string>(OPT_output_temporary_directory) + "/" +
                  GetBaseName(real_file_name) + ".o ";
    }
@@ -1098,6 +1103,11 @@ void CompilerWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::st
 #endif
             command += " -internalize-outputdir=" + Param->getOption<std::string>(OPT_output_temporary_directory);
             command += " -panda-TFN=" + fname;
+            if(Param->isOption(OPT_interface_type) && Param->getOption<HLSFlowStep_Type>(OPT_interface_type) ==
+                                                           HLSFlowStep_Type::INFERRED_INTERFACE_GENERATION)
+            {
+               command += " -add-noalias";
+            }
             std::string extern_symbols;
             std::vector<std::string> xml_files;
             if(Param->isOption(OPT_xml_memory_allocation))
