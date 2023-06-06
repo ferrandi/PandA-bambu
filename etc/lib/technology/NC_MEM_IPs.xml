@@ -15056,6 +15056,9 @@ wire valid,tagsmatch;
    always @(posedge clk) begin
     write_fail_reg &lt;= write_fail;
     error &lt;= next_error;
+    if(rst) begin
+      error &lt;= 1'b0;
+    end
    end
 
    //FIFO empty
