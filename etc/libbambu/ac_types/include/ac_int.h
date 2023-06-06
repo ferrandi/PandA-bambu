@@ -522,6 +522,10 @@ using Slong = long long;
             }
             return res;
          }
+         __FORCE_INLINE constexpr void assign(const iv_base& b)
+         {
+            v = b.v;
+         }
 
          __FORCE_INLINE explicit constexpr iv_base() = default;
          __FORCE_INLINE explicit constexpr iv_base(const iv_base& b) = delete;
@@ -563,6 +567,10 @@ using Slong = long long;
             int res = v ? -1 : 0;
             return res;
          }
+         __FORCE_INLINE constexpr void assign(const iv_base& b)
+         {
+            v = b.v;
+         }
 
          __FORCE_INLINE explicit constexpr iv_base() = default;
          __FORCE_INLINE explicit constexpr iv_base(const iv_base& b) = delete;
@@ -603,6 +611,10 @@ using Slong = long long;
             AC_ASSERT(x >= 0 && x < N, "unexpected condition");
             int res = v ? 1 : 0;
             return res;
+         }
+         __FORCE_INLINE constexpr void assign(const iv_base& b)
+         {
+            v = b.v;
          }
 
          __FORCE_INLINE explicit constexpr iv_base() = default;
@@ -711,6 +723,10 @@ using Slong = long long;
          }
          return res;
       }
+      __FORCE_INLINE constexpr void assign(const iv_base& b)
+      {
+         LOOP(int, i, 0, exclude, N, { set(i, b[i]); });
+      }
       __FORCE_INLINE explicit constexpr iv_base() = default;
       __FORCE_INLINE explicit constexpr iv_base(const iv_base& b) = delete;
       __FORCE_INLINE constexpr iv_base(iv_base&& b) = delete;
@@ -756,6 +772,10 @@ using Slong = long long;
       {
          AC_ASSERT(x >= 0 && x < 1, "unexpected condition");
          return constrain_bits<W0, S0>(v);
+      }
+      __FORCE_INLINE constexpr void assign(const iv_base& b)
+      {
+         v = b.v;
       }
       __FORCE_INLINE explicit constexpr iv_base() = default;
       __FORCE_INLINE explicit constexpr iv_base(const iv_base& b) = delete;
@@ -846,6 +866,10 @@ using Slong = long long;
          }
          return res;
       }
+      __FORCE_INLINE constexpr void assign(const iv_base& b)
+      {
+         v = b.v;
+      }
       __FORCE_INLINE explicit constexpr iv_base() = default;
       __FORCE_INLINE explicit constexpr iv_base(const iv_base& b) = delete;
       __FORCE_INLINE constexpr iv_base(iv_base&& b) = delete;
@@ -903,6 +927,10 @@ using Slong = long long;
             res = S0 ? va >> 63 : 0;
          }
          return res;
+      }
+      __FORCE_INLINE constexpr void assign(const iv_base& b)
+      {
+         va = b.va;
       }
       __FORCE_INLINE explicit constexpr iv_base() = default;
       __FORCE_INLINE explicit constexpr iv_base(const iv_base& b) = delete;
@@ -969,6 +997,11 @@ using Slong = long long;
             res = constrain_bits<W0, S0>(v2);
          }
          return res;
+      }
+      __FORCE_INLINE constexpr void assign(const iv_base& b)
+      {
+         va = b.va;
+         v2 = b.v2;
       }
       __FORCE_INLINE explicit constexpr iv_base() = default;
       __FORCE_INLINE explicit constexpr iv_base(const iv_base& b) = delete;
@@ -1061,6 +1094,11 @@ using Slong = long long;
          }
          return res;
       }
+      __FORCE_INLINE constexpr void assign(const iv_base& b)
+      {
+         va = b.va;
+         v2 = b.v2;
+      }
       __FORCE_INLINE explicit constexpr iv_base() = default;
       __FORCE_INLINE explicit constexpr iv_base(const iv_base& b) = delete;
       __FORCE_INLINE constexpr iv_base(iv_base&& b) = delete;
@@ -1145,6 +1183,11 @@ using Slong = long long;
          }
          return res;
       }
+      __FORCE_INLINE constexpr void assign(const iv_base& b)
+      {
+         va = b.va;
+         v2 = b.v2;
+      }
       __FORCE_INLINE explicit constexpr iv_base() = default;
       __FORCE_INLINE explicit constexpr iv_base(const iv_base& b) = delete;
       __FORCE_INLINE constexpr iv_base(iv_base&& b) = delete;
@@ -1153,11 +1196,36 @@ using Slong = long long;
       __FORCE_INLINE constexpr iv_base(const iv_base<N2, C2, W2, S2>& b) = delete;
    } __attribute__((aligned(8)));
 #endif
-
+      template<bool select>
+      struct iv_copy_base_struct
+      {};
+      template <>
+      struct iv_copy_base_struct<true>
+      {
+         template <int N, bool C, int W, bool S>
+         __FORCE_INLINE void iv_copy_base(const iv_base<N, C, W, S>& op, iv_base<N, C, W, S>& r)
+         {
+            r.assign(op);
+         }
+      };
+      template <>
+      struct iv_copy_base_struct<false>
+      {
+         template <int N1, bool C1, int W1, bool S1, int Nr, bool Cr, int Wr, bool Sr>
+         __FORCE_INLINE void iv_copy_base(const iv_base<N1, C1, W1, S1>& op, iv_base<Nr, Cr, Wr, Sr>& r)
+         {
+            LOOP(int, i, 0, exclude, Nr, { r.set(i, op[i]); });
+         }
+      };
       template <int N, int START, int N1, bool C1, int W1, bool S1, int Nr, bool Cr, int Wr, bool Sr>
       __FORCE_INLINE void iv_copy(const iv_base<N1, C1, W1, S1>& op, iv_base<Nr, Cr, Wr, Sr>& r)
       {
-         if(START < N)
+         if(START==0 && N==Nr && Nr==N1 && C1==Cr && W1==Wr && S1==Sr)
+         {
+            iv_copy_base_struct<START==0 && N==Nr && Nr==N1 && C1==Cr && W1==Wr && S1==Sr> icbs;
+            icbs.iv_copy_base(op,r);
+         }
+         else if(START < N)
          {
             LOOP(int, i, START, exclude, N, { r.set(i, op[i]); });
          }
@@ -2714,27 +2782,15 @@ using Slong = long long;
          explicit constexpr iv() = default;
          __FORCE_INLINE explicit constexpr iv(const iv& b)
          {
-            if(this != &b)
-            {
-               iv_assign_int64(v, 0);
                iv_copy<N, 0>(b.v, v);
-            }
          }
          __FORCE_INLINE constexpr iv(iv&& b)
          {
-            if(this != &b)
-            {
-               iv_assign_int64(v, 0);
                iv_copy<N, 0>(b.v, v);
-            }
          }
          __FORCE_INLINE constexpr iv& operator=(const iv& b)
          {
-            if(this != &b)
-            {
-               iv_assign_int64(v, 0);
                iv_copy<N, 0>(b.v, v);
-            }
             return *this;
          }
          template <int N2, bool C2, int W2, bool S2>
