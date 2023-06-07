@@ -173,6 +173,7 @@ bambu_specific_test4/simple_c4_handshake.c \
 bambu_specific_test4/simpleif_c1_none.c \
 bambu_specific_test4/simpleif_c1_none_test.xml \
 bambu_specific_test4/simple_test.c \
+bambu_specific_test4/ac_range.cpp \
 bambu_specific_test4_list \
 bambu_specific_test5.sh \
 bambu_specific_test5/adders.c \

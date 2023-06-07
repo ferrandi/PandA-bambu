@@ -315,6 +315,8 @@ class CompilerWrapper
 
    std::string load_plugin_opt(std::string plugin_obj, CompilerWrapper_CompilerTarget target);
 
+   std::string add_plugin_prefix(CompilerWrapper_CompilerTarget target, std::string O_level = "");
+
  public:
    /// The version of the frontend compiler
    static std::string current_compiler_version;
