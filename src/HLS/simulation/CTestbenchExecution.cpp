@@ -156,8 +156,7 @@ DesignFlowStep_Status CTestbenchExecution::Exec()
    }
 
    if(!parameters->isOption(OPT_input_format) ||
-      parameters->getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_C ||
-      parameters->isOption(OPT_pretty_print))
+      parameters->getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_C)
    {
       if(!CompilerWrapper::isClangCheck(default_compiler))
       {

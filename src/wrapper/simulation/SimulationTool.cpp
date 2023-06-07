@@ -323,8 +323,7 @@ std::string SimulationTool::GenerateLibraryBuildScript(std::ostringstream& scrip
                           " -fwrapv -ffloat-store -flax-vector-conversions -msse2 -mfpmath=sse -fno-strict-aliasing "
                           "-D__builtin_bambu_time_start()= -D__builtin_bambu_time_stop()= -D__BAMBU_SIM__";
       if(!Param->isOption(OPT_input_format) ||
-         Param->getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_C ||
-         Param->isOption(OPT_pretty_print))
+         Param->getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_C)
       {
          flags += " -fexcess-precision=standard";
       }
