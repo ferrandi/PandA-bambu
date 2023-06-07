@@ -745,13 +745,13 @@ DesignFlowStep_Status ControlFlowChecker::InternalExec()
    const unsigned int state_bitsize = comp_state_bitsize(one_hot_encoding, HLSMgr, funId, max_value);
 
    size_t epp_trace_bitsize = discr_info->fu_id_to_epp_trace_bitsize.at(funId);
-   GetPointer<module>(checker_circuit)->SetParameter("STATE_BITSIZE", STR(state_bitsize));
-   GetPointer<module>(checker_circuit)->SetParameter("EPP_TRACE_BITSIZE", STR(epp_trace_bitsize));
-   GetPointer<module>(checker_circuit)->SetParameter("EPP_TRACE_METADATA_BITSIZE", STR(0));
-   GetPointer<module>(checker_circuit)->SetParameter("MEMORY_INIT_file", GetPath("trace.mem"));
-   GetPointer<module>(checker_circuit)->SetParameter("EPP_TRACE_LENGTH", STR(0));
-   GetPointer<module>(checker_circuit)->SetParameter("EPP_MISMATCH_ID", STR(0));
-   GetPointer<module>(checker_circuit)->SetParameter("EPP_TRACE_INITIAL_METADATA", STR(0));
+   GetPointer<module>(checker_circuit)->AddParameter("STATE_BITSIZE", STR(state_bitsize));
+   GetPointer<module>(checker_circuit)->AddParameter("EPP_TRACE_BITSIZE", STR(epp_trace_bitsize));
+   GetPointer<module>(checker_circuit)->AddParameter("EPP_TRACE_METADATA_BITSIZE", "0");
+   GetPointer<module>(checker_circuit)->AddParameter("MEMORY_INIT_file", GetPath("trace.mem"));
+   GetPointer<module>(checker_circuit)->AddParameter("EPP_TRACE_LENGTH", "0");
+   GetPointer<module>(checker_circuit)->AddParameter("EPP_MISMATCH_ID", "0");
+   GetPointer<module>(checker_circuit)->AddParameter("EPP_TRACE_INITIAL_METADATA", "0");
 
    add_common_ports(checker_circuit, state_bitsize);
 
