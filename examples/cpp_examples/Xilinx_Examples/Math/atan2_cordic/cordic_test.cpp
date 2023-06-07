@@ -32,10 +32,17 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "cordic.h"
 
-const int N = 110465;
+#define MAX_TEST_COUNT 110465
+#ifndef TEST_COUNT
+#define TEST_COUNT MAX_TEST_COUNT
+#else
+#if TEST_COUNT > MAX_TEST_COUNT
+#error TEST_COUNT is above maximum
+#endif
+#endif
 
-coord_t input_data[N][2];
-phase_t ref_results[N][1];
+coord_t input_data[TEST_COUNT][2];
+phase_t ref_results[TEST_COUNT][1];
 
 int main(void)
 {
@@ -71,12 +78,12 @@ int main(void)
 	fprintf(fm, "sum_abs_err2 = sum(diff2)\n");
 
 	//read files
-	read_file<N, 2, coord_t>("./input_data.txt", input_data);
-	read_file<N, 1, phase_t>("./ref_results.txt", ref_results);
+	read_file<TEST_COUNT, 2, coord_t>("./input_data.txt", input_data);
+	read_file<TEST_COUNT, 1, phase_t>("./ref_results.txt", ref_results);
 
 	// vectoring mode
 	inp_rad = 0;
-	for (i = 0; i < N; i++) {
+	for (i = 0; i < TEST_COUNT; i++) {
 		inp_y = (coord_t) input_data[i][0];
 		inp_x = (coord_t) input_data[i][1];
 		ref_res = (phase_t) ref_results[i][0];
@@ -102,7 +109,7 @@ int main(void)
 	}
 
 	fprintf(stderr, "total    error = %f\n", total_error);
-	fprintf(stderr, "relative error = %f\n", total_error / N);
+	fprintf(stderr, "relative error = %f\n", total_error / TEST_COUNT);
 
 	fclose(fp);
 	fclose(fm);
