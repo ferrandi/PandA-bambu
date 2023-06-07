@@ -322,7 +322,7 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "Options:\n\n";
    PrintGeneralOptionsUsage(os);
    PrintOutputOptionsUsage(os);
-   os << "    --pretty-print=<file>\n"
+   os << "    --pretty-print=<file>.c\n"
       << "        C-based pretty print of the internal IRx\n\n"
       << "    --writer,-w<language>\n"
       << "        Output RTL language:\n"
@@ -1782,7 +1782,16 @@ int BambuParameter::Exec()
          }
          case OPT_PRETTY_PRINT:
          {
-            setOption(OPT_pretty_print, GetPath(optarg));
+            boost::filesystem::path pp_src(GetPath(optarg));
+            if(!pp_src.has_extension())
+            {
+               pp_src.append(".c");
+            }
+            if(pp_src.extension() != ".c")
+            {
+               throw "BadParameters: pretty print output file must have .c extension";
+            }
+            setOption(OPT_pretty_print, pp_src.string());
             break;
          }
          case OPT_PRAGMA_PARSE:
