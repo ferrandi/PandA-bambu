@@ -1959,8 +1959,6 @@ src/design_flows/backend/ToC/c_backend_information.cpp
 src/design_flows/backend/ToC/c_backend_information.hpp
 src/design_flows/backend/ToC/c_backend_step_factory.cpp
 src/design_flows/backend/ToC/c_backend_step_factory.hpp
-src/design_flows/backend/ToC/hls_c_backend_information.cpp
-src/design_flows/backend/ToC/hls_c_backend_information.hpp
 src/design_flows/backend/ToC/progModels/actor_graph_backend.cpp
 src/design_flows/backend/ToC/progModels/actor_graph_backend.hpp
 src/design_flows/backend/ToC/progModels/c_backend.cpp

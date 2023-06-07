@@ -53,6 +53,7 @@
 #include "SimulationInformation.hpp"
 #include "behavioral_helper.hpp"
 #include "c_backend.hpp"
+#include "c_backend_information.hpp"
 #include "c_backend_step_factory.hpp"
 #include "call_graph_manager.hpp"
 #include "copyrights_strings.hpp"
@@ -61,7 +62,6 @@
 #include "fu_binding.hpp"
 #include "function_behavior.hpp"
 #include "hls.hpp"
-#include "hls_c_backend_information.hpp"
 #include "hls_constraints.hpp"
 #include "hls_manager.hpp"
 #include "hls_target.hpp"
@@ -237,8 +237,11 @@ TestbenchGenerationBaseStep::ComputeHLSRelationships(const DesignFlowStep::Relat
          }
          break;
       }
-      case INVALIDATION_RELATIONSHIP:
       case PRECEDENCE_RELATIONSHIP:
+      {
+         break;
+      }
+      case INVALIDATION_RELATIONSHIP:
       {
          break;
       }
@@ -257,47 +260,18 @@ void TestbenchGenerationBaseStep::ComputeRelationships(DesignFlowStepSet& design
    {
       case DEPENDENCE_RELATIONSHIP:
       {
-         const auto DFMgr = design_flow_manager.lock();
-         const auto* c_backend_factory =
-             GetPointer<const CBackendStepFactory>(DFMgr->CGetDesignFlowStepFactory("CBackend"));
+         const auto c_backend_factory =
+             GetPointer<const CBackendStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("CBackend"));
 
-         CBackend::Type hls_c_backend_type;
-#if HAVE_HLS_BUILT
-         if(parameters->isOption(OPT_discrepancy) && parameters->getOption<bool>(OPT_discrepancy))
-         {
-            hls_c_backend_type = CBackend::CB_DISCREPANCY_ANALYSIS;
-         }
-         else
-#endif
-         {
-            hls_c_backend_type = CBackend::CB_HLS;
-            if(parameters->isOption(OPT_pretty_print))
-            {
-               const auto design_flow_graph = DFMgr->CGetDesignFlowGraph();
-               const auto* c_backend_step_factory =
-                   GetPointer<const CBackendStepFactory>(DFMgr->CGetDesignFlowStepFactory("CBackend"));
-               const auto output_file_name = parameters->getOption<std::string>(OPT_pretty_print);
-               const auto c_backend_vertex =
-                   DFMgr->GetDesignFlowStep(CBackend::ComputeSignature(CBackend::CB_SEQUENTIAL));
-               const auto c_backend_step =
-                   c_backend_vertex ? design_flow_graph->CGetDesignFlowStepInfo(c_backend_vertex)->design_flow_step :
-                                      c_backend_step_factory->CreateCBackendStep(
-                                          CBackend::CB_SEQUENTIAL, output_file_name, CBackendInformationConstRef());
-               design_flow_step_set.insert(c_backend_step);
-            }
-         }
-
-         const auto hls_c_backend_step =
-             c_backend_factory->CreateCBackendStep(hls_c_backend_type, output_directory + c_testbench_basename + ".c",
-                                                   CBackendInformationConstRef(new HLSCBackendInformation("", HLSMgr)));
-         design_flow_step_set.insert(hls_c_backend_step);
-         break;
-      }
-      case INVALIDATION_RELATIONSHIP:
-      {
+         design_flow_step_set.insert(c_backend_factory->CreateCBackendStep(CBackendInformationConstRef(
+             new CBackendInformation(CBackendInformation::CB_HLS, output_directory + c_testbench_basename + ".c"))));
          break;
       }
       case PRECEDENCE_RELATIONSHIP:
+      {
+         break;
+      }
+      case INVALIDATION_RELATIONSHIP:
       {
          break;
       }

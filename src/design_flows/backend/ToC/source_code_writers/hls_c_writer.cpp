@@ -37,6 +37,7 @@
  * @author Marco Minutoli <mminutoli@gmail.com>
  * @author Pietro Fezzardi <pietro.fezzardi@polimi.it>
  * @author Marco Lattuada <marco.lattuada@polimi.it>
+ * @author Michele Fiorito <michele.fiorito@polimi.it>
  *
  */
 #include "hls_c_writer.hpp"
@@ -50,7 +51,6 @@
 #include "custom_set.hpp"
 #include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_NONE
 #include "function_behavior.hpp"
-#include "hls_c_backend_information.hpp"
 #include "hls_manager.hpp"
 #include "indented_output_stream.hpp"
 #include "instruction_writer.hpp"
@@ -82,12 +82,12 @@ REF_FORWARD_DECL(memory_symbol);
 static const boost::regex wrapper_def("(ac_channel|stream|hls::stream)<(.*)>");
 #define WRAPPER_GROUP_WTYPE 2
 
-HLSCWriter::HLSCWriter(const HLSCBackendInformationConstRef _hls_c_backend_information,
-                       const application_managerConstRef _AppM, const InstructionWriterRef _instruction_writer,
+HLSCWriter::HLSCWriter(const CBackendInformationConstRef _c_backend_info, const HLS_managerConstRef _HLSMgr,
+                       const InstructionWriterRef _instruction_writer,
                        const IndentedOutputStreamRef _indented_output_stream, const ParameterConstRef _parameters,
                        bool _verbose)
-    : CWriter(_AppM, _instruction_writer, _indented_output_stream, _parameters, _verbose),
-      hls_c_backend_information(_hls_c_backend_information)
+    : CWriter(_HLSMgr, _instruction_writer, _indented_output_stream, _parameters, _verbose),
+      c_backend_info(_c_backend_info)
 {
    /// include from cpp
    flag_cpp = TM->is_CPP() && !Param->isOption(OPT_pretty_print) &&
@@ -96,9 +96,13 @@ HLSCWriter::HLSCWriter(const HLSCBackendInformationConstRef _hls_c_backend_infor
    debug_level = _parameters->get_class_debug_level(GET_CLASS(*this));
 }
 
+HLSCWriter::~HLSCWriter() = default;
+
 void HLSCWriter::WriteHeader()
 {
    indented_output_stream->Append(R"(
+#define _FILE_OFFSET_BITS 64
+
 #define __Inf (1.0 / 0.0)
 #define __Nan (0.0 / 0.0)
 
@@ -107,17 +111,11 @@ void HLSCWriter::WriteHeader()
 
 #include <cstdio>
 #include <cstdlib>
-#ifndef CUSTOM_VERIFICATION
-#include <cstring>
-#endif
 
 typedef bool _Bool;
 #else
 #include <stdio.h>
 #include <stdlib.h>
-#ifndef CUSTOM_VERIFICATION
-#include <string.h>
-#endif
 
 extern void exit(int status);
 #endif
@@ -128,19 +126,16 @@ extern void exit(int status);
 using namespace __AC_NAMESPACE;
 #endif
 
-#include <mdpi/mdpi_debug.h>
-#include <mdpi/mdpi_wrapper.h>
-
 )");
 
    // get the root function to be tested by the testbench
-   const auto top_function_ids = AppM->CGetCallGraphManager()->GetRootFunctions();
+   const auto top_function_ids = HLSMgr->CGetCallGraphManager()->GetRootFunctions();
    THROW_ASSERT(top_function_ids.size() == 1, "Multiple top function");
    const auto function_id = *(top_function_ids.begin());
    const auto fnode = TM->CGetTreeNode(function_id);
    const auto fd = GetPointerS<const function_decl>(fnode);
    const auto fname = tree_helper::GetMangledFunctionName(fd);
-   auto& DesignInterfaceInclude = hls_c_backend_information->HLSMgr->design_interface_typenameinclude;
+   auto& DesignInterfaceInclude = HLSMgr->design_interface_typenameinclude;
    if(DesignInterfaceInclude.find(fname) != DesignInterfaceInclude.end())
    {
       CustomOrderedSet<std::string> includes;
@@ -160,188 +155,19 @@ using namespace __AC_NAMESPACE;
 void HLSCWriter::WriteGlobalDeclarations()
 {
    instrWriter->write_declarations();
-   WriteTestbenchGlobalVars();
-   // WriteTestbenchHelperFunctions();
-}
-
-void HLSCWriter::WriteTestbenchGlobalVars()
-{
-}
-
-void HLSCWriter::WriteTestbenchHelperFunctions()
-{
-   // exit function
-   indented_output_stream->Append("//variable used to detect a standard end of the main (exit has not been called)\n");
-   indented_output_stream->Append("unsigned int __standard_exit;\n");
-   indented_output_stream->Append("//definition of __bambu_testbench_exit function\n");
-   indented_output_stream->Append("void __bambu_testbench_exit(void) __attribute__ ((destructor));\n");
-   indented_output_stream->Append("void __bambu_testbench_exit(void)\n");
-   indented_output_stream->Append("{\n");
-   indented_output_stream->Append("if (!__standard_exit)\n");
-   indented_output_stream->Append("{\n");
-   indented_output_stream->Append("fprintf(__bambu_testbench_fp, \"//expected value for return value\\n\");\n");
-   indented_output_stream->Append("fprintf(__bambu_testbench_fp, \"o00000000000000000000000000000000\\n\");\n");
-   indented_output_stream->Append("fprintf(__bambu_testbench_fp, \"e\\n\");\n");
-   indented_output_stream->Append("}\n");
-   indented_output_stream->Append("}\n\n");
-   // decimal to binary conversion function
-   indented_output_stream->Append(
-       "void _Dec2Bin_(FILE * __bambu_testbench_fp, long long int num, unsigned int precision)\n");
-   indented_output_stream->Append("{\n");
-   indented_output_stream->Append("unsigned int i;\n");
-   indented_output_stream->Append("unsigned long long int ull_value = (unsigned long long int) num;\n");
-   indented_output_stream->Append("for (i = 0; i < precision; ++i)\n");
-   indented_output_stream->Append(
-       "fprintf(__bambu_testbench_fp, \"%c\", (((1LLU << (precision - i -1)) & ull_value) ? '1' : '0'));\n");
-   indented_output_stream->Append("}\n\n");
-   // pointer to binary conversion function
-   indented_output_stream->Append(
-       "void _Ptd2Bin_(FILE * __bambu_testbench_fp, unsigned char * num, unsigned int precision)\n");
-   indented_output_stream->Append("{\n");
-   indented_output_stream->Append("unsigned int i, j;\n");
-   indented_output_stream->Append("char value;\n");
-   indented_output_stream->Append("if (precision%8)\n");
-   indented_output_stream->Append("{\n");
-   indented_output_stream->Append("value = *(num+precision/8);\n");
-   indented_output_stream->Append("for (j = 8-precision%8; j < 8; ++j)\n");
-   indented_output_stream->Append(
-       "fprintf(__bambu_testbench_fp, \"%c\", (((1LLU << (8 - j - 1)) & value) ? '1' : '0'));\n");
-   indented_output_stream->Append("}\n");
-   indented_output_stream->Append("for (i = 0; i < 8*(precision/8); i = i + 8)\n");
-   indented_output_stream->Append("{\n");
-   indented_output_stream->Append("value = *(num + (precision / 8) - (i / 8) - 1);\n");
-   indented_output_stream->Append("for (j = 0; j < 8; ++j)\n");
-   indented_output_stream->Append(
-       "fprintf(__bambu_testbench_fp, \"%c\", (((1LLU << (8 - j - 1)) & value) ? '1' : '0'));\n");
-   indented_output_stream->Append("}\n");
-   indented_output_stream->Append("}\n\n");
-   if(Param->isOption(OPT_discrepancy) and Param->getOption<bool>(OPT_discrepancy))
-   {
-      // Builtin floating point checkers
-      indented_output_stream->Append("typedef union view_convert32 {\n");
-      indented_output_stream->Append("unsigned int bits;\n");
-      indented_output_stream->Append("float fp32;\n");
-      indented_output_stream->Append("};\n\n");
-      indented_output_stream->Append("typedef union view_convert64 {\n");
-      indented_output_stream->Append("unsigned long long bits;\n");
-      indented_output_stream->Append("double fp64;\n");
-      indented_output_stream->Append("};\n\n");
-      indented_output_stream->Append("float _Int32_ViewConvert(unsigned int i)\n");
-      indented_output_stream->Append("{\n");
-      indented_output_stream->Append("union view_convert32 vc;\n");
-      indented_output_stream->Append("vc.bits = i;\n");
-      indented_output_stream->Append("return vc.fp32;\n");
-      indented_output_stream->Append("}\n\n");
-      indented_output_stream->Append("double _Int64_ViewConvert(unsigned long long i)\n");
-      indented_output_stream->Append("{\n");
-      indented_output_stream->Append("union view_convert64 vc;\n");
-      indented_output_stream->Append("vc.bits = i;\n");
-      indented_output_stream->Append("return vc.fp64;\n");
-      indented_output_stream->Append("}\n");
-      indented_output_stream->Append("\n\n");
-      indented_output_stream->Append("unsigned char _FPs32Mismatch_(float c, float e, float max_ulp)\n");
-      indented_output_stream->Append("{\n");
-      indented_output_stream->Append("unsigned int binary_c = *((unsigned int*)&c);\n");
-      indented_output_stream->Append("unsigned int binary_e = *((unsigned int*)&e);\n");
-      indented_output_stream->Append("unsigned int binary_abs_c = binary_c&(~(1U<<31));\n");
-      indented_output_stream->Append("unsigned int binary_abs_e = binary_e&(~(1U<<31));\n");
-      indented_output_stream->Append("unsigned int denom_0 = 0x34000000;\n");
-      indented_output_stream->Append("unsigned int denom_e = ((binary_abs_e>> 23)-23)<<23;\n");
-      indented_output_stream->Append("float cme=c - e;\n");
-      indented_output_stream->Append("unsigned int binary_cme = *((unsigned int*)&cme);\n");
-      indented_output_stream->Append("unsigned int binary_abs_cme = binary_cme&(~(1U<<31));\n");
-      indented_output_stream->Append("float abs_cme=*((float*)&binary_abs_cme);\n");
-      indented_output_stream->Append("float ulp = 0.0;\n");
-      indented_output_stream->Append("if (binary_abs_c>0X7F800000 && binary_abs_c>0X7F800000) return 0;\n");
-      indented_output_stream->Append("else if (binary_abs_c==0X7F800000 && binary_abs_e==0X7F800000)\n");
-      indented_output_stream->Append("{\n");
-      indented_output_stream->Append("if ((binary_c>>31) != (binary_e>>31))\n");
-      indented_output_stream->Append("return 1;\n");
-      indented_output_stream->Append("else\n");
-      indented_output_stream->Append("return 0;\n");
-      indented_output_stream->Append("}\n");
-      indented_output_stream->Append("else if (binary_abs_c==0X7F800000 || binary_abs_e==0X7F800000 || "
-                                     "binary_abs_c>0X7F800000 || binary_abs_e==0X7F800000) return 0;\n");
-      indented_output_stream->Append("else\n");
-      indented_output_stream->Append("{\n");
-      indented_output_stream->Append("if (binary_abs_e == 0) ulp = abs_cme / (*((float *)&denom_0));\n");
-      indented_output_stream->Append("else ulp = abs_cme / (*((float *)&denom_e));\n");
-      indented_output_stream->Append("return ulp > max_ulp;\n");
-      indented_output_stream->Append("}\n");
-      indented_output_stream->Append("}\n\n");
-      indented_output_stream->Append("unsigned char _FPs64Mismatch_(double c, double e, double max_ulp)\n");
-      indented_output_stream->Append("{\n");
-      indented_output_stream->Append("unsigned long long int binary_c = *((unsigned long long int*)&c);\n");
-      indented_output_stream->Append("unsigned long long int binary_e = *((unsigned long long int*)&e);\n");
-      indented_output_stream->Append("unsigned long long int binary_abs_c = binary_c&(~(1ULL<<63));\n");
-      indented_output_stream->Append("unsigned long long int binary_abs_e = binary_e&(~(1ULL<<63));\n");
-      indented_output_stream->Append("unsigned long long int denom_0 = 0x3CB0000000000000;\n");
-      indented_output_stream->Append("unsigned long long int denom_e = ((binary_abs_e>> 52)-52)<<52;\n");
-      indented_output_stream->Append("double cme=c - e;\n");
-      indented_output_stream->Append("unsigned long long int binary_cme = *((unsigned int*)&cme);\n");
-      indented_output_stream->Append("unsigned long long int binary_abs_cme = binary_cme&(~(1U<<31));\n");
-      indented_output_stream->Append("double abs_cme=*((double*)&binary_abs_cme);\n");
-      indented_output_stream->Append("double ulp = 0.0;\n");
-      indented_output_stream->Append(
-          "if (binary_abs_c>0X7FF0000000000000 && binary_abs_c>0X7FF0000000000000) return 0;\n");
-      indented_output_stream->Append(
-          "else if (binary_abs_c==0X7FF0000000000000 && binary_abs_e==0X7FF0000000000000)\n");
-      indented_output_stream->Append("{\n");
-      indented_output_stream->Append("if ((binary_c>>63) != (binary_e>>63))\n");
-      indented_output_stream->Append("return 1;\n");
-      indented_output_stream->Append("else\n");
-      indented_output_stream->Append("return 0;\n");
-      indented_output_stream->Append("}\n");
-      indented_output_stream->Append(
-          "else if (binary_abs_c==0X7FF0000000000000 || binary_abs_e==0X7FF0000000000000 || "
-          "binary_abs_c>0X7FF0000000000000 || binary_abs_e==0X7FF0000000000000) return 0;\n");
-      indented_output_stream->Append("else\n");
-      indented_output_stream->Append("{\n");
-      indented_output_stream->Append("if (binary_abs_e == 0) ulp = abs_cme / (*((double *)&denom_0));\n");
-      indented_output_stream->Append("else ulp = abs_cme / (*((double *)&denom_e));\n");
-      indented_output_stream->Append("return ulp > max_ulp;\n");
-      indented_output_stream->Append("}\n");
-      indented_output_stream->Append("}\n\n");
-      indented_output_stream->Append("void _CheckBuiltinFPs32_(char * chk_str, unsigned char neq, float par_expected, "
-                                     "float par_res, float par_a, float par_b)\n");
-      indented_output_stream->Append("{\n");
-      indented_output_stream->Append("if(neq)\n");
-      indented_output_stream->Append("{\n");
-      indented_output_stream->Append(
-          "printf(\"\\n\\n***********************************************************\\nERROR ON A BASIC FLOATING "
-          "POINT OPERATION : %s : expected=%a (%.20e) res=%a (%.20e) a=%a (%.20e) "
-          "b=%a (%.20e)\\n***********************************************************\\n\\n\", chk_str, "
-          "par_expected, par_expected, par_res, par_res, par_a, par_a, par_b, par_b);\n");
-      indented_output_stream->Append("exit(1);\n");
-      indented_output_stream->Append("}\n");
-      indented_output_stream->Append("}\n\n");
-      indented_output_stream->Append("void _CheckBuiltinFPs64_(char * chk_str, unsigned char neq, double par_expected, "
-                                     "double par_res, double par_a, double par_b)\n");
-      indented_output_stream->Append("{\n");
-      indented_output_stream->Append("if(neq)\n");
-      indented_output_stream->Append("{\n");
-      indented_output_stream->Append(
-          "printf(\"\\n\\n***********************************************************\\nERROR ON A BASIC FLOATING "
-          "POINT OPERATION : %s : expected=%a (%.35e) res=%a (%.35e) a=%a (%.35e) "
-          "b=%a (%.35e)\\n***********************************************************\\n\\n\", chk_str, "
-          "par_expected, par_expected, par_res, par_res, par_a, par_a, par_b, par_b);\n");
-      indented_output_stream->Append("exit(1);\n");
-      indented_output_stream->Append("}\n");
-      indented_output_stream->Append("}\n\n");
-   }
 }
 
 void HLSCWriter::WriteParamDecl(const BehavioralHelperConstRef BH)
 {
    indented_output_stream->Append("// parameters declaration\n");
-   hls_c_backend_information->HLSMgr->RSim->simulationArgSignature.clear();
+   HLSMgr->RSim->simulationArgSignature.clear();
 
    for(const auto& par : BH->GetParameters())
    {
       const auto parm_type = tree_helper::CGetType(par);
       const auto type = tree_helper::IsPointerType(par) ? "void*" : tree_helper::PrintType(TM, parm_type);
       const auto param = BH->PrintVariable(par->index);
-      hls_c_backend_information->HLSMgr->RSim->simulationArgSignature.push_back(param);
+      HLSMgr->RSim->simulationArgSignature.push_back(param);
 
       if(tree_helper::IsVectorType(parm_type))
       {
@@ -357,7 +183,7 @@ void HLSCWriter::WriteParamInitialization(const BehavioralHelperConstRef BH,
 {
    const auto fnode = TM->CGetTreeReindex(BH->get_function_index());
    const auto fname = tree_helper::GetMangledFunctionName(GetPointerS<const function_decl>(GET_CONST_NODE(fnode)));
-   const auto& DesignAttributes = hls_c_backend_information->HLSMgr->design_attributes;
+   const auto& DesignAttributes = HLSMgr->design_attributes;
    const auto function_if = [&]() -> const std::map<std::string, std::map<interface_attributes, std::string>>* {
       const auto it = DesignAttributes.find(fname);
       if(it != DesignAttributes.end())
@@ -368,12 +194,9 @@ void HLSCWriter::WriteParamInitialization(const BehavioralHelperConstRef BH,
    }();
    const auto interface_type = Param->getOption<HLSFlowStep_Type>(OPT_interface_type);
    const auto is_interface_inferred = interface_type == HLSFlowStep_Type::INFERRED_INTERFACE_GENERATION;
-   const auto arg_signature_typename =
-       hls_c_backend_information->HLSMgr->design_interface_typename_orig_signature.find(fname);
-   THROW_ASSERT(!is_interface_inferred ||
-                    arg_signature_typename !=
-                        hls_c_backend_information->HLSMgr->design_interface_typename_orig_signature.end(),
-                "");
+   const auto arg_signature_typename = HLSMgr->design_interface_typename_orig_signature.find(fname);
+   THROW_ASSERT(
+       !is_interface_inferred || arg_signature_typename != HLSMgr->design_interface_typename_orig_signature.end(), "");
    const auto params = BH->GetParameters();
    for(auto par_idx = 0U; par_idx < params.size(); ++par_idx)
    {
@@ -573,8 +396,7 @@ void HLSCWriter::WriteTestbenchFunctionCall(const BehavioralHelperConstRef BH)
       bool is_first_argument = true;
       unsigned par_index = 0;
       const auto top_fname_mngl = BH->GetMangledFunctionName();
-      const auto& DesignInterfaceTypenameOrig =
-          hls_c_backend_information->HLSMgr->design_interface_typename_orig_signature;
+      const auto& DesignInterfaceTypenameOrig = HLSMgr->design_interface_typename_orig_signature;
       for(const auto& par : BH->GetParameters())
       {
          if(!is_first_argument)
@@ -642,7 +464,6 @@ void HLSCWriter::WriteTestbenchFunctionCall(const BehavioralHelperConstRef BH)
 void HLSCWriter::WriteSimulatorInitMemory(const unsigned int function_id)
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Writing simulator init memory");
-   const auto& HLSMgr = hls_c_backend_information->HLSMgr;
    const auto mem_vars = HLSMgr->Rmem->get_ext_memory_variables();
    const auto BH = HLSMgr->CGetFunctionBehavior(function_id)->CGetBehavioralHelper();
    const auto parameters = BH->get_parameters();
@@ -679,8 +500,8 @@ ptr_t prev, curr_base;
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Writing initialization for " + var_name);
             const auto var_addr = HLSMgr->Rmem->get_external_base_address(var_id);
             const auto var_init_dat = output_directory + "init." + var_name + ".dat";
-            const auto byte_count = TestbenchGenerationBaseStep::generate_init_file(
-                var_init_dat, TM, var_id, hls_c_backend_information->HLSMgr->Rmem);
+            const auto byte_count =
+                TestbenchGenerationBaseStep::generate_init_file(var_init_dat, TM, var_id, HLSMgr->Rmem);
             indented_output_stream->Append("  {\"" + var_init_dat + "\", " + STR(byte_count) + ", " + STR(var_addr) +
                                            ", NULL},\n");
             base_addr = std::max(base_addr, var_addr + byte_count);
@@ -748,6 +569,7 @@ free(m_extmem);
 }
 
 )");
+
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Written simulator init memory");
 }
 
@@ -761,23 +583,21 @@ void HLSCWriter::WriteExtraCodeBeforeEveryMainCall()
 
 void HLSCWriter::WriteMainTestbench()
 {
-   THROW_ASSERT(AppM->CGetCallGraphManager()->GetRootFunctions().size() == 1, "Multiple top functions not supported");
-   const auto top_id = *AppM->CGetCallGraphManager()->GetRootFunctions().begin();
-   const auto top_fb = AppM->CGetFunctionBehavior(top_id);
+   THROW_ASSERT(HLSMgr->CGetCallGraphManager()->GetRootFunctions().size() == 1, "Multiple top functions not supported");
+   const auto top_id = *HLSMgr->CGetCallGraphManager()->GetRootFunctions().begin();
+   const auto top_fb = HLSMgr->CGetFunctionBehavior(top_id);
    const auto top_bh = top_fb->CGetBehavioralHelper();
    const auto top_fnode = TM->CGetTreeReindex(top_id);
    const auto top_fname = top_bh->get_function_name();
    const auto top_fname_mngl = top_bh->GetMangledFunctionName();
    const auto interface_type = Param->getOption<HLSFlowStep_Type>(OPT_interface_type);
    const auto is_interface_inferred = interface_type == HLSFlowStep_Type::INFERRED_INTERFACE_GENERATION;
-   const auto arg_signature_typename =
-       hls_c_backend_information->HLSMgr->design_interface_typename_orig_signature.find(top_fname_mngl);
-   const auto arg_attributes = hls_c_backend_information->HLSMgr->design_attributes.find(top_fname_mngl);
+   const auto arg_signature_typename = HLSMgr->design_interface_typename_orig_signature.find(top_fname_mngl);
+   const auto arg_attributes = HLSMgr->design_attributes.find(top_fname_mngl);
    THROW_ASSERT(!is_interface_inferred ||
-                    arg_signature_typename !=
-                        hls_c_backend_information->HLSMgr->design_interface_typename_orig_signature.end(),
+                    arg_signature_typename != HLSMgr->design_interface_typename_orig_signature.end(),
                 "Original signature not found for function: " + top_fname_mngl + " (" + top_fname + ")");
-   THROW_ASSERT(!is_interface_inferred || arg_attributes != hls_c_backend_information->HLSMgr->design_attributes.end(),
+   THROW_ASSERT(!is_interface_inferred || arg_attributes != HLSMgr->design_attributes.end(),
                 "Design attributes not found for function: " + top_fname_mngl + " (" + top_fname + ")");
 
    const auto return_type = tree_helper::GetFunctionReturnType(top_fnode);
@@ -810,7 +630,7 @@ void HLSCWriter::WriteMainTestbench()
 
    std::string top_decl = extern_decl;
    std::string gold_decl = extern_decl;
-   std::string pp_decl = "EXTERN_C " +
+   std::string pp_decl = extern_decl +
                          tree_helper::PrintType(TM, TM->CGetTreeReindex(top_id), false, true, false, nullptr,
                                                 var_pp_functorConstRef(new std_var_pp_functor(top_bh))) +
                          ";\n";
@@ -850,7 +670,7 @@ void HLSCWriter::WriteMainTestbench()
          std::string arg_typename, arg_interface, arg_size;
          const auto param_idx = args_decl_idx - (return_type != nullptr);
          const auto arg_type = tree_helper::CGetType(arg);
-         if(arg_signature_typename != hls_c_backend_information->HLSMgr->design_interface_typename_orig_signature.end())
+         if(arg_signature_typename != HLSMgr->design_interface_typename_orig_signature.end())
          {
             THROW_ASSERT(arg_signature_typename->second.size() > param_idx,
                          "Original signature missing for parameter " + STR(param_idx));
@@ -972,6 +792,17 @@ void HLSCWriter::WriteMainTestbench()
 
    indented_output_stream->AppendIndented(
        std::string() + R"(
+#ifndef CUSTOM_VERIFICATION
+#ifdef __cplusplus
+#include <cstring>
+#else
+#include <string.h>
+#endif
+#endif
+
+#include <mdpi/mdpi_debug.h>
+#include <mdpi/mdpi_wrapper.h>
+
 #define typeof __typeof__
 #ifdef __cplusplus
 template <typename T> struct __m_type { typedef T type; };
@@ -1177,7 +1008,7 @@ pthread_exit((void*)((ptr_t)(MDPI_COSIM_ABORT)));
    }
    indented_output_stream->Append("}\n\n");
 
-   const auto& test_vectors = hls_c_backend_information->HLSMgr->RSim->test_vectors;
+   const auto& test_vectors = HLSMgr->RSim->test_vectors;
    if(top_fname != "main" && test_vectors.size())
    {
       indented_output_stream->Append("int main()\n{\n");
@@ -1228,10 +1059,10 @@ pthread_exit((void*)((ptr_t)(MDPI_COSIM_ABORT)));
 
 void HLSCWriter::WriteFile(const std::string& file_name)
 {
-   const auto top_function_ids = AppM->CGetCallGraphManager()->GetRootFunctions();
+   const auto top_function_ids = HLSMgr->CGetCallGraphManager()->GetRootFunctions();
    THROW_ASSERT(top_function_ids.size() == 1, "Multiple top function");
    const auto function_id = *(top_function_ids.begin());
-   const auto BH = AppM->CGetFunctionBehavior(function_id)->CGetBehavioralHelper();
+   const auto BH = HLSMgr->CGetFunctionBehavior(function_id)->CGetBehavioralHelper();
    INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level,
                   "-->C-based testbench generation for function " + BH->get_function_name() + ": " + file_name);
 

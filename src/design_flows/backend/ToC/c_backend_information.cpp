@@ -35,15 +35,52 @@
  * @brief Base class to pass information to a c backend
  *
  * @author Marco Lattuada <lattuada@elet.polimi.it>
+ * @author Michele Fiorito <michele.fiorito@polimi.it>
  * $Revision: $
  * $Date: $
  * Last modified by $Author: $
  *
  */
-
-/// Header include
 #include "c_backend_information.hpp"
 
-CBackendInformation::CBackendInformation() = default;
+CBackendInformation::CBackendInformation(Type _type, const std::string& _src_filename, const std::string& _out_filename)
+    : type(_type), src_filename(_src_filename), out_filename(_out_filename)
+{
+}
 
 CBackendInformation::~CBackendInformation() = default;
+
+std::string CBackendInformation::GetKindText() const
+{
+   switch(type)
+   {
+#if HAVE_HOST_PROFILING_BUILT
+      case(CBackendInformation::CB_BBP):
+         return "BasicBlocksProfiling";
+#endif
+#if HAVE_HLS_BUILT
+      case(CBackendInformation::CB_DISCREPANCY_ANALYSIS):
+         return "DiscrepancyAnalysis";
+#endif
+#if HAVE_BAMBU_BUILT
+      case(CBackendInformation::CB_HLS):
+         return "HighLevelSynthesis";
+#endif
+#if HAVE_ZEBU_BUILT
+      case(CBackendInformation::CB_POINTED_DATA_EVALUATION):
+         return "PointedDataEvaluation";
+#endif
+      case(CBackendInformation::CB_SEQUENTIAL):
+         return "Sequential";
+      default:
+      {
+         THROW_UNREACHABLE("");
+      }
+   }
+   return "";
+}
+
+std::string CBackendInformation::GetSignature() const
+{
+   return "CBackend::" + GetKindText();
+}

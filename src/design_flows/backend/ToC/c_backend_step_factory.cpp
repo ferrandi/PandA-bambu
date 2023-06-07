@@ -40,17 +40,11 @@
  * Last modified by $Author$
  *
  */
-
-/// Autoheader include
-#include "config_HAVE_MPPB.hpp"
-
-/// Header include
 #include "c_backend_step_factory.hpp"
 
-///. includes
 #include "Parameter.hpp"
-
-#include "string_manipulation.hpp" // for GET_CLASS
+#include "c_backend.hpp"
+#include "string_manipulation.hpp"
 
 CBackendStepFactory::CBackendStepFactory(const DesignFlowManagerConstRef _design_flow_manager,
                                          const application_managerConstRef _application_manager,
@@ -60,17 +54,14 @@ CBackendStepFactory::CBackendStepFactory(const DesignFlowManagerConstRef _design
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
 }
 
-CBackendStepFactory::~CBackendStepFactory() = default;
-
 const std::string CBackendStepFactory::GetPrefix() const
 {
    return "CBackend";
 }
 
 const DesignFlowStepRef
-CBackendStepFactory::CreateCBackendStep(const CBackend::Type c_backend_type, const std::string& file_name,
-                                        const CBackendInformationConstRef c_backend_information) const
+CBackendStepFactory::CreateCBackendStep(const CBackendInformationConstRef c_backend_information) const
 {
-   return DesignFlowStepRef(new CBackend(c_backend_type, c_backend_information, design_flow_manager.lock(),
-                                         application_manager, file_name, parameters));
+   return DesignFlowStepRef(
+       new CBackend(c_backend_information, design_flow_manager.lock(), application_manager, parameters));
 }

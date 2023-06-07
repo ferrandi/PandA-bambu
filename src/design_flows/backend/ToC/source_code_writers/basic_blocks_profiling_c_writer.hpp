@@ -42,7 +42,6 @@
 #ifndef BASIC_BLOCKS_PROFILING_C_WRITER_HPP
 #define BASIC_BLOCKS_PROFILING_C_WRITER_HPP
 
-/// Super class include
 #include "edge_c_writer.hpp"
 
 /**
@@ -50,7 +49,6 @@
  */
 class BasicBlocksProfilingCWriter : public EdgeCWriter
 {
- private:
    /**
     * Dump operations requested for record information about a loop path which ends
     * @param e is the feedback or outgoing edge
@@ -86,24 +84,18 @@ class BasicBlocksProfilingCWriter : public EdgeCWriter
  public:
    /**
     * Constructor of the class
-    * @param _AppM is the application manager
+    * @param HLSMgr is the hls manager
     * @param instruction_writer is the instruction writer to use to print the single instruction
     * @param indented_output_stream is the output stream
     * @param Param is the set of parameters
     * @param verbose tells if annotations
     */
-   BasicBlocksProfilingCWriter(const application_managerConstRef _AppM, const InstructionWriterRef instruction_writer,
+   BasicBlocksProfilingCWriter(const HLS_managerConstRef _HLSMgr, const InstructionWriterRef instruction_writer,
                                const IndentedOutputStreamRef indented_output_stream, const ParameterConstRef Param,
                                bool verbose = true);
 
-   /**
-    * Destructor
-    */
-   ~BasicBlocksProfilingCWriter() override;
+   ~BasicBlocksProfilingCWriter() override final;
 
-   /**
-    * Write global declarations
-    */
-   void WriteGlobalDeclarations() override;
+   void WriteGlobalDeclarations() override final;
 };
 #endif

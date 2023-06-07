@@ -34,6 +34,7 @@
  * @file hls_c_writer.hpp
  *
  * @author Marco Lattuada <marco.lattuada@polimi.it>
+ * @author Michele Fiorito <michele.fiorito@polimi.it>
  *
  */
 
@@ -55,19 +56,7 @@ class HLSCWriter : public CWriter
    bool flag_cpp;
 
    /// Backend information
-   const HLSCBackendInformationConstRef hls_c_backend_information;
-
-   /**
-    * Write global variables needed by the tesbench
-    */
-   void WriteTestbenchGlobalVars();
-
-   /**
-    * Write helper functions used by the testbench, like an __exit() helper
-    * and some binary conversion functions used to print memory
-    * initialization information
-    */
-   void WriteTestbenchHelperFunctions();
+   const CBackendInformationConstRef c_backend_info;
 
    /**
     * Write declaration of the top function parameters.
@@ -112,7 +101,7 @@ class HLSCWriter : public CWriter
    /**
     * Writes the main() of the testbench C program
     */
-   void WriteMainTestbench();
+   virtual void WriteMainTestbench();
 
    /**
     * Writes the global declarations
@@ -134,15 +123,17 @@ class HLSCWriter : public CWriter
    /**
     * Constructor of the class
     * @param hls_c_backend_information is the information about backend
-    * @param AppM is the manager of the application
+    * @param HLSMgr is the hls manager
     * @param instruction_writer is the instruction writer to use to print the single instruction
     * @param indented_output_stream is the stream where code has to be printed
     * @param Param is the set of parameters
     * @param verbose tells if annotations
     */
-   HLSCWriter(const HLSCBackendInformationConstRef hls_c_backend_information, const application_managerConstRef _AppM,
+   HLSCWriter(const CBackendInformationConstRef hls_c_backend_information, const HLS_managerConstRef _HLSMgr,
               const InstructionWriterRef instruction_writer, const IndentedOutputStreamRef indented_output_stream,
               const ParameterConstRef _parameters, bool verbose = true);
+
+   virtual ~HLSCWriter();
 
    /**
     * Writes the final C file

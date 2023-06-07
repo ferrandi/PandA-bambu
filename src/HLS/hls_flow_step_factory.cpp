@@ -304,7 +304,8 @@ HLSFlowStepFactory::CreateHLSFlowStep(const HLSFlowStep_Type type, const unsigne
       }
       case HLSFlowStep_Type::C_TESTBENCH_EXECUTION:
       {
-         design_flow_step = DesignFlowStepRef(new CTestbenchExecution(parameters, HLS_mgr, design_flow_manager.lock()));
+         design_flow_step = DesignFlowStepRef(
+             new CTestbenchExecution(parameters, HLS_mgr, design_flow_manager.lock(), hls_flow_step_specialization));
          break;
       }
       case HLSFlowStep_Type::DOMINATOR_ALLOCATION:

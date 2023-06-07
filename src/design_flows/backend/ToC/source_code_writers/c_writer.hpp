@@ -48,40 +48,34 @@
 #ifndef CWRITER_HPP
 #define CWRITER_HPP
 
-/// design_flows/backend/ToC/progModels
-#include "c_backend.hpp"
-
-/// Graph include
+#include "custom_map.hpp"
+#include "custom_set.hpp"
 #include "graph.hpp"
+#include "refcount.hpp"
 
 #include <deque>
 #include <list>
 #include <vector>
 
-#include "custom_map.hpp"
-#include "custom_set.hpp"
-
-/// Utility include
-#include "refcount.hpp"
-
-CONSTREF_FORWARD_DECL(application_manager);
 CONSTREF_FORWARD_DECL(BBGraph);
 CONSTREF_FORWARD_DECL(BBNodeInfo);
 CONSTREF_FORWARD_DECL(BehavioralHelper);
-class CBackendInformation;
-REF_FORWARD_DECL(CWriter);
+CONSTREF_FORWARD_DECL(CBackendInformation);
 CONSTREF_FORWARD_DECL(FunctionBehavior);
-REF_FORWARD_DECL(IndentedOutputStream);
 CONSTREF_FORWARD_DECL(InstructionWriter);
+CONSTREF_FORWARD_DECL(HLS_manager);
+CONSTREF_FORWARD_DECL(OpGraph);
+CONSTREF_FORWARD_DECL(Parameter);
+CONSTREF_FORWARD_DECL(tree_manager);
+CONSTREF_FORWARD_DECL(tree_node);
+CONSTREF_FORWARD_DECL(var_pp_functor);
+REF_FORWARD_DECL(CWriter);
+REF_FORWARD_DECL(IndentedOutputStream);
 REF_FORWARD_DECL(InstructionWriter);
 REF_FORWARD_DECL(Loop);
 REF_FORWARD_DECL(machine_node);
-CONSTREF_FORWARD_DECL(OpGraph);
-class OpVertexSet;
-CONSTREF_FORWARD_DECL(Parameter);
-CONSTREF_FORWARD_DECL(tree_manager);
-CONSTREF_FORWARD_DECL(var_pp_functor);
 
+class OpVertexSet;
 class graph;
 class instrumented_call_instr_writer;
 
@@ -97,8 +91,8 @@ class dominance;
 class CWriter
 {
  protected:
-   /// the manager of the application
-   const application_managerConstRef AppM;
+   /// the hls manager
+   const HLS_managerConstRef HLSMgr;
 
    /// The tree manager
    const tree_managerConstRef TM;
@@ -258,32 +252,28 @@ class CWriter
  protected:
    /**
     * Constructor of the class
-    * @param AppM is the manager of the application
+    * @param HLSMgr is the hls manager
     * @param instruction_writer is the instruction writer to use to print the single instruction
     * @param indented_output_stream is the stream where code has to be printed
     * @param Param is the set of parameters
     * @param verbose tells if annotations
     */
-   CWriter(const application_managerConstRef _AppM, const InstructionWriterRef instruction_writer,
+   CWriter(const HLS_managerConstRef _HLSMgr, const InstructionWriterRef instruction_writer,
            const IndentedOutputStreamRef indented_output_stream, const ParameterConstRef Param, bool verbose = true);
 
  public:
-   /**
-    * Destructor
-    */
    virtual ~CWriter();
 
    /**
     * Factory method
-    * @param type is the type of backend we are creating
     * @param c_backend_information is the information about the backend we are creating
-    * @param app_man is the application manager
+    * @param hls_man is the hls manager
     * @param indented_output_stream is the output stream
     * @param parameters is the set of input parameters
     * @param verbose tells if produced source code has to be commented
     */
-   static CWriterRef CreateCWriter(const CBackend::Type type, const CBackendInformationConstRef c_backend_information,
-                                   const application_managerConstRef app_man,
+   static CWriterRef CreateCWriter(const CBackendInformationConstRef c_backend_information,
+                                   const HLS_managerConstRef hls_man,
                                    const IndentedOutputStreamRef indented_output_stream,
                                    const ParameterConstRef parameters, const bool verbose);
 

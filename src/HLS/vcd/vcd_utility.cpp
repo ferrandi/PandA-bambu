@@ -39,6 +39,7 @@
 #include "Parameter.hpp"
 #include "application_frontend_flow_step.hpp"
 #include "behavioral_helper.hpp"
+#include "c_backend_information.hpp"
 #include "c_backend_step_factory.hpp"
 #include "call_graph.hpp"
 #include "call_graph_manager.hpp"
@@ -50,7 +51,6 @@
 #include "frontend_flow_step_factory.hpp"
 #include "function_behavior.hpp"
 #include "hls.hpp"
-#include "hls_c_backend_information.hpp"
 #include "hls_manager.hpp"
 #include "hls_target.hpp"
 #include "language_writer.hpp"
@@ -129,12 +129,15 @@ vcd_utility::ComputeHLSRelationships(const DesignFlowStep::RelationshipType rela
       {
          ret.insert(std::make_tuple(HLSFlowStep_Type::SIMULATION_EVALUATION, HLSFlowStepSpecializationConstRef(),
                                     HLSFlowStep_Relationship::TOP_FUNCTION));
-         ret.insert(std::make_tuple(HLSFlowStep_Type::TESTBENCH_GENERATION, HLSFlowStepSpecializationConstRef(),
-                                    HLSFlowStep_Relationship::TOP_FUNCTION));
          ret.insert(std::make_tuple(HLSFlowStep_Type::VCD_SIGNAL_SELECTION, HLSFlowStepSpecializationConstRef(),
                                     HLSFlowStep_Relationship::TOP_FUNCTION));
-         ret.insert(std::make_tuple(HLSFlowStep_Type::C_TESTBENCH_EXECUTION, HLSFlowStepSpecializationConstRef(),
-                                    HLSFlowStep_Relationship::TOP_FUNCTION));
+         ret.insert(std::make_tuple(
+             HLSFlowStep_Type::C_TESTBENCH_EXECUTION,
+             HLSFlowStepSpecializationConstRef(new CBackendInformation(
+                 CBackendInformation::CB_DISCREPANCY_ANALYSIS,
+                 parameters->getOption<std::string>(OPT_output_directory) + "/simulation/discrepancy.c",
+                 parameters->getOption<std::string>(OPT_output_directory) + "/simulation/dynamic_discrepancy_stats")),
+             HLSFlowStep_Relationship::TOP_FUNCTION));
          break;
       }
       case INVALIDATION_RELATIONSHIP:
