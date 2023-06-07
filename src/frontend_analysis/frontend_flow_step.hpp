@@ -403,7 +403,7 @@ class FrontendFlowStep : public DesignFlowStep
    /**
     * Return the name of the type of this frontend flow step
     */
-   virtual const std::string GetKindText() const;
+   virtual std::string GetKindText() const;
 
    /**
     * Given a frontend flow step type, return the name of the type
@@ -416,7 +416,7 @@ class FrontendFlowStep : public DesignFlowStep
     * Return the factory to create this type of steps
     * @return the factory to create frontend flow step
     */
-   const DesignFlowStepFactoryConstRef CGetDesignFlowStepFactory() const override;
+   DesignFlowStepFactoryConstRef CGetDesignFlowStepFactory() const override;
 
    /**
     * Dump the tree manager

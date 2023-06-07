@@ -80,12 +80,12 @@ const std::string TechnologyFlowStep::ComputeSignature(const TechnologyFlowStep_
    return "Technology::" + STR(static_cast<int>(technology_flow_step_type));
 }
 
-const std::string TechnologyFlowStep::GetSignature() const
+std::string TechnologyFlowStep::GetSignature() const
 {
    return ComputeSignature(technology_flow_step_type);
 }
 
-const std::string TechnologyFlowStep::GetName() const
+std::string TechnologyFlowStep::GetName() const
 {
    return "Technology::" + EnumToName(technology_flow_step_type);
 }
@@ -106,7 +106,7 @@ void TechnologyFlowStep::ComputeRelationships(DesignFlowStepSet& steps,
    }
 }
 
-const DesignFlowStepFactoryConstRef TechnologyFlowStep::CGetDesignFlowStepFactory() const
+DesignFlowStepFactoryConstRef TechnologyFlowStep::CGetDesignFlowStepFactory() const
 {
    return design_flow_manager.lock()->CGetDesignFlowStepFactory("Technology");
 }

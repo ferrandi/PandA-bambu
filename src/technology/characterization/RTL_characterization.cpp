@@ -744,12 +744,12 @@ bool RTLCharacterization::HasToBeExecuted() const
    return true;
 }
 
-const std::string RTLCharacterization::GetSignature() const
+std::string RTLCharacterization::GetSignature() const
 {
    return "RTLCharacterization";
 }
 
-const std::string RTLCharacterization::GetName() const
+std::string RTLCharacterization::GetName() const
 {
    return "RTLCharacterization";
 }
@@ -786,7 +786,7 @@ void RTLCharacterization::ComputeRelationships(DesignFlowStepSet& relationship,
    }
 }
 
-const DesignFlowStepFactoryConstRef RTLCharacterization::CGetDesignFlowStepFactory() const
+DesignFlowStepFactoryConstRef RTLCharacterization::CGetDesignFlowStepFactory() const
 {
    THROW_UNREACHABLE("Not implemented");
    return DesignFlowStepFactoryConstRef();

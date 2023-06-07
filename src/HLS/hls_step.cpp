@@ -83,6 +83,8 @@
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
 
+HLSFlowStepSpecialization::HLSFlowStepSpecialization() = default;
+
 HLSFlowStepSpecialization::~HLSFlowStepSpecialization() = default;
 
 HLS_step::HLS_step(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr,
@@ -106,7 +108,7 @@ HLS_step::~HLS_step() = default;
 
 CustomUnorderedMap<std::string, HLSFlowStep_Type> HLS_step::command_line_name_to_enum;
 
-const std::string HLS_step::GetSignature() const
+std::string HLS_step::GetSignature() const
 {
    return ComputeSignature(hls_flow_step_type, hls_flow_step_specialization);
 }
@@ -118,18 +120,18 @@ const std::string HLS_step::ComputeSignature(const HLSFlowStep_Type hls_flow_ste
           (hls_flow_step_specialization ? "::" + hls_flow_step_specialization->GetSignature() : "");
 }
 
-const std::string HLS_step::GetName() const
+std::string HLS_step::GetName() const
 {
    return "HLS::" + GetKindText();
 }
 
-const std::string HLS_step::GetKindText() const
+std::string HLS_step::GetKindText() const
 {
    return EnumToName(hls_flow_step_type) +
           (hls_flow_step_specialization ? "(" + hls_flow_step_specialization->GetKindText() + ")" : "");
 }
 
-const std::string HLS_step::EnumToName(const HLSFlowStep_Type hls_flow_step_type)
+std::string HLS_step::EnumToName(const HLSFlowStep_Type hls_flow_step_type)
 {
    switch(hls_flow_step_type)
    {
@@ -412,7 +414,7 @@ void HLS_step::ComputeRelationships(DesignFlowStepSet& design_flow_step_set,
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Computing relationships of " + GetName());
 }
 
-const DesignFlowStepFactoryConstRef HLS_step::CGetDesignFlowStepFactory() const
+DesignFlowStepFactoryConstRef HLS_step::CGetDesignFlowStepFactory() const
 {
    return design_flow_manager.lock()->CGetDesignFlowStepFactory("HLS");
 }

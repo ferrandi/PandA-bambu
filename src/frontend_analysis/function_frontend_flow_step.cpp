@@ -91,7 +91,7 @@ FunctionFrontendFlowStep::FunctionFrontendFlowStep(const application_managerRef 
 
 FunctionFrontendFlowStep::~FunctionFrontendFlowStep() = default;
 
-const std::string FunctionFrontendFlowStep::GetSignature() const
+std::string FunctionFrontendFlowStep::GetSignature() const
 {
    return ComputeSignature(frontend_flow_step_type, function_id);
 }
@@ -103,7 +103,7 @@ const std::string FunctionFrontendFlowStep::ComputeSignature(const FrontendFlowS
           "::" + boost::lexical_cast<std::string>(function_id);
 }
 
-const std::string FunctionFrontendFlowStep::GetName() const
+std::string FunctionFrontendFlowStep::GetName() const
 {
 #ifndef NDEBUG
    const std::string version = bb_version != 0 ? ("(" + STR(bb_version) + ")") : "";

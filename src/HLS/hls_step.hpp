@@ -76,20 +76,19 @@ class xml_element;
 class HLSFlowStepSpecialization
 {
  public:
-   /**
-    * Destructor
-    */
+   HLSFlowStepSpecialization();
+
    virtual ~HLSFlowStepSpecialization();
 
    /**
     * Return the string representation of this
     */
-   virtual const std::string GetKindText() const = 0;
+   virtual std::string GetKindText() const = 0;
 
    /**
     * Return the contribution to the signature of a step given by the specialization
     */
-   virtual const std::string GetSignature() const = 0;
+   virtual std::string GetSignature() const = 0;
 };
 /// const refcount definition of the class
 using HLSFlowStepSpecializationConstRef = refcount<const HLSFlowStepSpecialization>;
@@ -247,7 +246,38 @@ class HLS_step : public DesignFlowStep
     * Return a unified identifier of this design step
     * @return the signature of the design step
     */
-   const std::string GetSignature() const override;
+   virtual std::string GetSignature() const override;
+
+   /**
+    * Return the name of this design step
+    * @return the name of the pass (for debug purpose)
+    */
+   virtual std::string GetName() const override;
+
+   /**
+    * Return the name of the type of this frontend flow step
+    */
+   virtual std::string GetKindText() const;
+
+   /**
+    * Given a HLS flow step type, return the name of the type
+    * @param hls_flow_step_type is the type to be considered
+    * @return the name of the type
+    */
+   static std::string EnumToName(const HLSFlowStep_Type hls_flow_step_type);
+
+   /**
+    * Return the factory to create this type of steps
+    */
+   DesignFlowStepFactoryConstRef CGetDesignFlowStepFactory() const override final;
+
+   /**
+    * Compute the relationships of a step with other steps
+    * @param dependencies is where relationships will be stored
+    * @param relationship_type is the type of relationship to be computed
+    */
+   virtual void ComputeRelationships(DesignFlowStepSet& design_flow_step_set,
+                                     const DesignFlowStep::RelationshipType relationship_type) override;
 
    /**
     * Compute the signature of a hls flow step
@@ -257,37 +287,6 @@ class HLS_step : public DesignFlowStep
     */
    static const std::string ComputeSignature(const HLSFlowStep_Type hls_flow_step_type,
                                              const HLSFlowStepSpecializationConstRef hls_flow_step_specialization);
-
-   /**
-    * Return the name of this design step
-    * @return the name of the pass (for debug purpose)
-    */
-   const std::string GetName() const override;
-
-   /**
-    * Return the name of the type of this frontend flow step
-    */
-   virtual const std::string GetKindText() const;
-
-   /**
-    * Given a HLS flow step type, return the name of the type
-    * @param hls_flow_step_type is the type to be considered
-    * @return the name of the type
-    */
-   static const std::string EnumToName(const HLSFlowStep_Type hls_flow_step_type);
-
-   /**
-    * Return the factory to create this type of steps
-    */
-   const DesignFlowStepFactoryConstRef CGetDesignFlowStepFactory() const override;
-
-   /**
-    * Compute the relationships of a step with other steps
-    * @param dependencies is where relationships will be stored
-    * @param relationship_type is the type of relationship to be computed
-    */
-   void ComputeRelationships(DesignFlowStepSet& design_flow_step_set,
-                             const DesignFlowStep::RelationshipType relationship_type) override;
 };
 /// refcount definition of the class
 using HLS_stepRef = refcount<HLS_step>;

@@ -232,7 +232,7 @@ class DesignFlowManager
     * @param prefix is the beginning of the steps that the factory should be created
     * @return the corresponding factory
     */
-   const DesignFlowStepFactoryConstRef CGetDesignFlowStepFactory(const std::string& prefix) const;
+   DesignFlowStepFactoryConstRef CGetDesignFlowStepFactory(const std::string& prefix) const;
 
    /**
     * Register a design flow step factory

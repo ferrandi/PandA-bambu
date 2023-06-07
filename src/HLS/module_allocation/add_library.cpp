@@ -80,12 +80,12 @@ AddLibrarySpecialization::AddLibrarySpecialization(const bool _interfaced) : int
 {
 }
 
-const std::string AddLibrarySpecialization::GetKindText() const
+std::string AddLibrarySpecialization::GetKindText() const
 {
    return interfaced ? "Interfaced" : "";
 }
 
-const std::string AddLibrarySpecialization::GetSignature() const
+std::string AddLibrarySpecialization::GetSignature() const
 {
    return interfaced ? "Interfaced" : "";
 }

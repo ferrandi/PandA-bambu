@@ -88,7 +88,7 @@ MemoryAllocationSpecialization::MemoryAllocationSpecialization(
 {
 }
 
-const std::string MemoryAllocationSpecialization::GetKindText() const
+std::string MemoryAllocationSpecialization::GetKindText() const
 {
    std::string ret;
    switch(memory_allocation_policy)
@@ -136,7 +136,7 @@ const std::string MemoryAllocationSpecialization::GetKindText() const
    return ret;
 }
 
-const std::string MemoryAllocationSpecialization::GetSignature() const
+std::string MemoryAllocationSpecialization::GetSignature() const
 {
    return STR(static_cast<unsigned int>(memory_allocation_policy)) +
           "::" + STR(static_cast<unsigned int>(memory_allocation_channels_type));
