@@ -2355,6 +2355,27 @@ void TestbenchGenerationBaseStep::write_auxiliary_signal_declaration() const
 
             writer->write("`define " + portPrefix + "MAX_QUEUE_SIZE " + queueSize + "\n");
 
+            /* Queue explanation:
+               When a read or write transaction is received, some information needs to be stored in these queues.
+               This information is needed to specify the kind of transaction (starting address, burst type, burst
+               length, data size) and to keep track of the progress of the transaction (counter).
+               The counter has a double function: it tracks both the number of beats of the burst and the transaction
+               delay set by the user.
+               When the counter is negative, the transaction is in the delay phase. For the read
+               transaction this means that the request has been accepted, but the AXI slave should wait before starting
+               to put the data on the bus until this counter reaches 0. For the write transaction, this means that all
+               the data that needs to be written has been received, and the slave should wait before sending the write
+               response until this counter reaches 0. After that, the transaction is over and the element can be removed
+               from the queue.
+               If in delay phase, both read and write counters are incremented once per clock cycle. ALL
+               counters in delay phase are incremented, not just the first one in the queue.
+               If the counter is positive, it tracks the current beat number. This is used to access the correct address
+               starting from the one provided by the master at the beginning of the transaction. The beat counter is
+               handled differently for read and write transactions. For read transactions, since the slave is always
+               ready to provide data, the counter is increased once every time the master is ready to accept it. Once
+               the beat counter is equal to the burst length, the transaction is over and can be removed from the queue.
+               For write transaction, the counter is increased every time the master sends data to be written. When the
+               counter reaches the total burst length, the transaction is ready to enter the delay phase.*/
             writer->write("reg [(" + STR(QUEUE_RECORD_SIZE) + " * " + "`" + portPrefix + "MAX_QUEUE_SIZE - 1) : 0] " +
                           portPrefix + "awqueue, next_" + portPrefix + "awqueue;\n");
             writer->write("reg [(" + STR(QUEUE_RECORD_SIZE) + " * " + "`" + portPrefix + "MAX_QUEUE_SIZE - 1) : 0] " +
@@ -2615,23 +2636,10 @@ void TestbenchGenerationBaseStep::testbench_controller_machine() const
                portPrefix.erase(index, portSpecializer.length());
             }
 
+            writer->write_comment("Combinatorial logic for read transactions\n");
             writer->write("always@(*) begin\n");
-            writer->write("  automatic int _i_;\n");
-            writer->write("  next_" + portPrefix + "awqueue = " + portPrefix + "awqueue;\n");
             writer->write("  next_" + portPrefix + "arqueue = " + portPrefix + "arqueue;\n");
-            writer->write("  next_" + portPrefix + "awqueue_size = " + portPrefix + "awqueue_size;\n");
             writer->write("  next_" + portPrefix + "arqueue_size = " + portPrefix + "arqueue_size;\n");
-
-            writer->write("  if(" + portPrefix + "AWVALID) begin\n");
-            writer->write("    if(" + portPrefix + "awqueue_size < `" + portPrefix + "MAX_QUEUE_SIZE) begin\n");
-
-            writer->write("      next_" + portPrefix + "awqueue[" + STR(ADDR_HIGH_INDEX) + " + (" + portPrefix +
-                          "awqueue_size * " + STR(QUEUE_RECORD_SIZE) + ") -: " + STR(QUEUE_RECORD_SIZE) + "] = {" +
-                          portPrefix + "AWADDR, " + portPrefix + "AWSIZE, " + portPrefix + "AWLEN, " + portPrefix +
-                          "AWBURST, 32'd1};\n");
-            writer->write("      next_" + portPrefix + "awqueue_size = " + portPrefix + "awqueue_size + 1;\n");
-            writer->write("    end\n");
-            writer->write("  end\n");
 
             writer->write("  if(" + portPrefix + "ARVALID) begin\n");
             writer->write("    if(" + portPrefix + "arqueue_size < `" + portPrefix + "MAX_QUEUE_SIZE) begin\n");
@@ -2643,19 +2651,7 @@ void TestbenchGenerationBaseStep::testbench_controller_machine() const
             writer->write("    end\n");
             writer->write("  end\n");
 
-            /* Check if the first elements of the queues are ready to be deleted */
-            writer->write("  if(next_" + portPrefix + "awqueue_size > 0 && next_" + portPrefix + "awqueue[" +
-                          STR(COUNT_HIGH_INDEX) + " : " + STR(COUNT_LOW_INDEX) + "] == 0 && " + portPrefix +
-                          "BREADY) begin\n");
-            writer->write("    for(_i_ = 1; _i_ < `" + portPrefix + "MAX_QUEUE_SIZE; _i_ = _i_ + 1) begin\n");
-            writer->write("      next_" + portPrefix + "awqueue[(_i_ - 1) * " + STR(QUEUE_RECORD_SIZE) + " + " +
-                          STR(ADDR_HIGH_INDEX) + " -: " + STR(QUEUE_RECORD_SIZE) + "] = next_" + portPrefix +
-                          "awqueue[_i_ * " + STR(QUEUE_RECORD_SIZE) + " + " + STR(ADDR_HIGH_INDEX) +
-                          " -: " + STR(QUEUE_RECORD_SIZE) + "];\n");
-            writer->write("    end\n");
-            writer->write("    next_" + portPrefix + "awqueue_size = next_" + portPrefix + "awqueue_size - 1;\n");
-            writer->write("  end\n");
-
+            /* Check if the first element of the read queue is ready to be deleted */
             writer->write("  if(next_" + portPrefix + "arqueue[" + STR(COUNT_HIGH_INDEX) + " : " +
                           STR(COUNT_LOW_INDEX) + "] == next_" + portPrefix + "arqueue[" + STR(LEN_HIGH_INDEX) + " : " +
                           STR(LEN_LOW_INDEX) + "] &&" + portPrefix + "RREADY) begin\n");
@@ -2668,7 +2664,57 @@ void TestbenchGenerationBaseStep::testbench_controller_machine() const
             writer->write("    next_" + portPrefix + "arqueue_size = next_" + portPrefix + "arqueue_size - 1;\n");
             writer->write("  end\n");
 
-            /* Increase beat counters */
+            /* Increase read transaction beat counter */
+            writer->write("  if(next_" + portPrefix + "arqueue_size > 0 && next_" + portPrefix + "arqueue[" +
+                          STR(COUNT_HIGH_INDEX) + "] == 1'b0 && " + portPrefix + "RREADY) begin\n");
+            writer->write("    next_" + portPrefix + "arqueue[" + STR(COUNT_HIGH_INDEX) + " : " + STR(COUNT_LOW_INDEX) +
+                          "] = next_" + portPrefix + "arqueue[" + STR(COUNT_HIGH_INDEX) + " : " + STR(COUNT_LOW_INDEX) +
+                          "] + 1;\n");
+            writer->write("  end\n");
+
+            /* Increment delay counter */
+            writer->write("  for(_i_ = 0; _i_ < `" + portPrefix + "MAX_QUEUE_SIZE; _i_ = _i_ + 1) begin\n");
+            writer->write("    if(" + portPrefix + "arqueue[_i_ * " + STR(QUEUE_RECORD_SIZE) + " + " +
+                          STR(COUNT_HIGH_INDEX) + "] == 1'b1) begin\n");
+            writer->write("      next_" + portPrefix + "arqueue[_i_ * " + STR(QUEUE_RECORD_SIZE) + " + " +
+                          STR(COUNT_HIGH_INDEX) + " -: " + STR(COUNT_HIGH_INDEX - COUNT_LOW_INDEX + 1) +
+                          "] = " + portPrefix + "arqueue[_i_ * " + STR(QUEUE_RECORD_SIZE) + " + " +
+                          STR(COUNT_HIGH_INDEX) + " -: " + STR(COUNT_HIGH_INDEX - COUNT_LOW_INDEX + 1) + "] + 1;\n");
+            writer->write("    end\n");
+            writer->write("  end\n");
+            writer->write("end\n");
+
+            writer->write_comment("Combinatorial logic for write transactions\n");
+            writer->write("always@(*) begin\n");
+            writer->write("  automatic int _i_;\n");
+            writer->write("  next_" + portPrefix + "awqueue = " + portPrefix + "awqueue;\n");
+            writer->write("  next_" + portPrefix + "awqueue_size = " + portPrefix + "awqueue_size;\n");
+
+            writer->write("  if(" + portPrefix + "AWVALID) begin\n");
+            writer->write("    if(" + portPrefix + "awqueue_size < `" + portPrefix + "MAX_QUEUE_SIZE) begin\n");
+
+            writer->write("      next_" + portPrefix + "awqueue[" + STR(ADDR_HIGH_INDEX) + " + (" + portPrefix +
+                          "awqueue_size * " + STR(QUEUE_RECORD_SIZE) + ") -: " + STR(QUEUE_RECORD_SIZE) + "] = {" +
+                          portPrefix + "AWADDR, " + portPrefix + "AWSIZE, " + portPrefix + "AWLEN, " + portPrefix +
+                          "AWBURST, 32'd1};\n");
+            writer->write("      next_" + portPrefix + "awqueue_size = " + portPrefix + "awqueue_size + 1;\n");
+            writer->write("    end\n");
+            writer->write("  end\n");
+
+            /* Check if the first element of the write queue is ready to be deleted */
+            writer->write("  if(next_" + portPrefix + "awqueue_size > 0 && next_" + portPrefix + "awqueue[" +
+                          STR(COUNT_HIGH_INDEX) + " : " + STR(COUNT_LOW_INDEX) + "] == 0 && " + portPrefix +
+                          "BREADY) begin\n");
+            writer->write("    for(_i_ = 1; _i_ < `" + portPrefix + "MAX_QUEUE_SIZE; _i_ = _i_ + 1) begin\n");
+            writer->write("      next_" + portPrefix + "awqueue[(_i_ - 1) * " + STR(QUEUE_RECORD_SIZE) + " + " +
+                          STR(ADDR_HIGH_INDEX) + " -: " + STR(QUEUE_RECORD_SIZE) + "] = next_" + portPrefix +
+                          "awqueue[_i_ * " + STR(QUEUE_RECORD_SIZE) + " + " + STR(ADDR_HIGH_INDEX) +
+                          " -: " + STR(QUEUE_RECORD_SIZE) + "];\n");
+            writer->write("    end\n");
+            writer->write("    next_" + portPrefix + "awqueue_size = next_" + portPrefix + "awqueue_size - 1;\n");
+            writer->write("  end\n");
+
+            /* Increase write beats counter */
             writer->write("  if(" + portPrefix + "WVALID) begin\n");
             writer->write("    _i_ = 0;\n");
             writer->write("    while((next_" + portPrefix + "awqueue[_i_ * " + STR(QUEUE_RECORD_SIZE) + " + " +
@@ -2689,14 +2735,7 @@ void TestbenchGenerationBaseStep::testbench_controller_machine() const
             writer->write("    end\n");
             writer->write("  end\n");
 
-            writer->write("  if(next_" + portPrefix + "arqueue_size > 0 && next_" + portPrefix + "arqueue[" +
-                          STR(COUNT_HIGH_INDEX) + "] == 1'b0 && " + portPrefix + "RREADY) begin\n");
-            writer->write("    next_" + portPrefix + "arqueue[" + STR(COUNT_HIGH_INDEX) + " : " + STR(COUNT_LOW_INDEX) +
-                          "] = next_" + portPrefix + "arqueue[" + STR(COUNT_HIGH_INDEX) + " : " + STR(COUNT_LOW_INDEX) +
-                          "] + 1;\n");
-            writer->write("  end\n");
-
-            /* Increment delay counters at each clock cycle, if they are in the delay phase */
+            /* Increment delay counter */
             writer->write("  for(_i_ = 0; _i_ < `" + portPrefix + "MAX_QUEUE_SIZE; _i_ = _i_ + 1) begin\n");
             writer->write("    if(next_" + portPrefix + "awqueue[_i_ * " + STR(QUEUE_RECORD_SIZE) + " + " +
                           STR(COUNT_HIGH_INDEX) + "] == 1'b1) begin\n");
@@ -2706,18 +2745,8 @@ void TestbenchGenerationBaseStep::testbench_controller_machine() const
                           " -: " + STR(COUNT_HIGH_INDEX - COUNT_LOW_INDEX + 1) + "] + 1;\n");
             writer->write("    end\n");
             writer->write("  end\n");
-            writer->write("  for(_i_ = 0; _i_ < `" + portPrefix + "MAX_QUEUE_SIZE; _i_ = _i_ + 1) begin\n");
-            writer->write("    if(" + portPrefix + "arqueue[_i_ * " + STR(QUEUE_RECORD_SIZE) + " + " +
-                          STR(COUNT_HIGH_INDEX) + "] == 1'b1) begin\n");
-            writer->write("      next_" + portPrefix + "arqueue[_i_ * " + STR(QUEUE_RECORD_SIZE) + " + " +
-                          STR(COUNT_HIGH_INDEX) + " -: " + STR(COUNT_HIGH_INDEX - COUNT_LOW_INDEX + 1) +
-                          "] = " + portPrefix + "arqueue[_i_ * " + STR(QUEUE_RECORD_SIZE) + " + " +
-                          STR(COUNT_HIGH_INDEX) + " -: " + STR(COUNT_HIGH_INDEX - COUNT_LOW_INDEX + 1) + "] + 1;\n");
-            writer->write("    end\n");
-            writer->write("  end\n");
             writer->write("end\n");
 
-            writer->write("always@(posedge " CLOCK_PORT_NAME ") begin\n");
             const auto portAWADDR = mod->find_member(portPrefix + "AWADDR", port_o_K, cir);
             const auto portWDATA = mod->find_member(portPrefix + "WDATA", port_o_K, cir);
 
@@ -2725,22 +2754,107 @@ void TestbenchGenerationBaseStep::testbench_controller_machine() const
                                    GetPointer<port_o>(portAWADDR)->get_typeRef()->vector_size;
             const auto wDataSize = GetPointer<port_o>(portWDATA)->get_typeRef()->size *
                                    GetPointer<port_o>(portWDATA)->get_typeRef()->vector_size;
-
-            writer->write("  automatic reg [" + STR(wDataSize - 1) + ":0] " + portPrefix + "wBitmask;\n");
+            writer->write_comment("Sequential logic for read transactions\n");
+            writer->write("always@(posedge " CLOCK_PORT_NAME ") begin\n");
+            /* Helper variables */
             writer->write("  automatic reg [" + STR(wAddrSize - 1) + ":0] " + portPrefix + "currAddr;\n");
             writer->write("  automatic reg [" + STR(wAddrSize - 1) + ":0] " + portPrefix + "endAddr;\n");
             writer->write("  automatic int _i_;\n");
+
             writer->write("  " + portPrefix + "ARREADY <= (" + portPrefix + "arqueue_size < `" + portPrefix +
                           "MAX_QUEUE_SIZE);\n");
-            writer->write("  " + portPrefix + "AWREADY <= (" + portPrefix + "awqueue_size < `" + portPrefix +
-                          "MAX_QUEUE_SIZE);\n");
-            writer->write("  " + portPrefix + "WREADY <= 1'b1;\n");
-            writer->write("  " + portPrefix + "BVALID <= 1'b0;\n");
             writer->write("  " + portPrefix + "RVALID <= 1'b0;\n");
             writer->write("  " + portPrefix + "RRESP <= 2'b00;\n");
             writer->write("  " + portPrefix + "RLAST <= 1'b0;\n");
 
-            /* Check if the first element of the write queue is supposed to be handled (delay = 0) */
+            /* Check if the first element in the read queue is ready to be handled (delay is positive) */
+            writer->write("  if(" + portPrefix + "arqueue_size > 0 && " + portPrefix + "arqueue[" +
+                          STR(COUNT_HIGH_INDEX) + "] == 1'b0) begin\n");
+            writer->write("    " + portPrefix + "RVALID <= 1'b1;\n");
+            writer->write("    if(" + portPrefix + "arqueue[" + STR(BURST_HIGH_INDEX) + " : " + STR(BURST_LOW_INDEX) +
+                          "] == 2'b00) begin\n");
+            /* Fixed burst */
+            writer->write("      " + portPrefix + "currAddr = " + portPrefix + "arqueue[" + STR(ADDR_HIGH_INDEX) +
+                          " : " + STR(ADDR_LOW_INDEX) + "];\n");
+            writer->write("    end else if(" + portPrefix + "arqueue[" + STR(BURST_HIGH_INDEX) + " : " +
+                          STR(BURST_LOW_INDEX) + "] == 2'b01) begin\n");
+            /* Incremental burst */
+            writer->write("      " + portPrefix + "currAddr = " + portPrefix + "arqueue[" + STR(ADDR_HIGH_INDEX) +
+                          " : " + STR(ADDR_LOW_INDEX) + "] + " + portPrefix + "arqueue[" + STR(COUNT_HIGH_INDEX) +
+                          " : " + STR(COUNT_LOW_INDEX) + "] * (1 << " + portPrefix + "arqueue[" + STR(SIZE_HIGH_INDEX) +
+                          " : " + STR(SIZE_LOW_INDEX) + "]);\n");
+            writer->write("    end else if(" + portPrefix + "arqueue[" + STR(BURST_HIGH_INDEX) + " : " +
+                          STR(BURST_LOW_INDEX) + "] == 2'b10) begin\n");
+            /* Wrap burst */
+            writer->write("      " + portPrefix + "endAddr = " + portPrefix + "arqueue[" + STR(ADDR_HIGH_INDEX) +
+                          " : " + STR(ADDR_LOW_INDEX) + "] - (" + portPrefix + "arqueue[" + STR(ADDR_HIGH_INDEX) +
+                          " : " + STR(ADDR_LOW_INDEX) + "] % ((" + portPrefix + "arqueue[" + STR(LEN_HIGH_INDEX) +
+                          " : " + STR(LEN_LOW_INDEX) + "] + 1) * (1 << " + portPrefix + "arqueue[" +
+                          STR(SIZE_HIGH_INDEX) + " : " + STR(SIZE_LOW_INDEX) + "]))) + ((" + portPrefix + "arqueue[" +
+                          STR(LEN_HIGH_INDEX) + " : " + STR(LEN_LOW_INDEX) + "] + 1) * (1 << " + portPrefix +
+                          "arqueue[" + STR(SIZE_HIGH_INDEX) + " : " + STR(SIZE_LOW_INDEX) + "]));\n");
+            writer->write("      " + portPrefix + "currAddr = " + portPrefix + "arqueue[" + STR(ADDR_HIGH_INDEX) +
+                          " : " + STR(ADDR_LOW_INDEX) + "] + " + portPrefix + "arqueue[" + STR(COUNT_HIGH_INDEX) +
+                          " : " + STR(COUNT_LOW_INDEX) + "] * (1 << " + portPrefix + "arqueue[" + STR(SIZE_HIGH_INDEX) +
+                          " : " + STR(SIZE_LOW_INDEX) + "]);\n");
+            writer->write("      if(" + portPrefix + "currAddr > " + portPrefix + "endAddr) begin\n");
+            writer->write("        " + portPrefix + "currAddr = " + portPrefix + "currAddr - ((" + portPrefix +
+                          "arqueue[" + STR(LEN_HIGH_INDEX) + " : " + STR(LEN_LOW_INDEX) + "] + 1) * (1 << " +
+                          portPrefix + "arqueue[" + STR(SIZE_HIGH_INDEX) + " : " + STR(SIZE_LOW_INDEX) + "]));\n");
+            writer->write("      end\n");
+            writer->write("    end\n");
+
+            /* Realign address */
+            writer->write("    " + portPrefix + "currAddr = " + portPrefix + "currAddr - (" + portPrefix +
+                          "currAddr % (1 << " + portPrefix + "arqueue[" + STR(SIZE_HIGH_INDEX) + " : " +
+                          STR(SIZE_LOW_INDEX) + "]));\n");
+
+            /* Compute aggregate memory for RDATA */
+            std::string mem_aggregated;
+            const auto portRDATA = mod->find_member(portPrefix + "RDATA", port_o_K, cir);
+            const auto bitsizeRDATA = GetPointer<port_o>(portRDATA)->get_typeRef()->size *
+                                      GetPointer<port_o>(portRDATA)->get_typeRef()->vector_size;
+            {
+               mem_aggregated = "{";
+               for(unsigned int bitsize_index = 0; bitsize_index < bitsizeRDATA; bitsize_index = bitsize_index + 8)
+               {
+                  if(bitsize_index)
+                  {
+                     mem_aggregated += ", ";
+                  }
+                  mem_aggregated += "_bambu_testbench_mem_[" + portPrefix + "currAddr + " +
+                                    STR((bitsizeRDATA - bitsize_index) / 8 - 1) + " - base_addr]";
+               }
+               mem_aggregated += "}";
+            }
+
+            writer->write("    " + portPrefix + "RDATA <= " + mem_aggregated + ";\n");
+            writer->write("    " + portPrefix + "RRESP <= 2'b00;\n");
+            writer->write("    if(" + portPrefix + "arqueue[" + STR(COUNT_HIGH_INDEX) + " : " + STR(COUNT_LOW_INDEX) +
+                          "] == " + portPrefix + "arqueue[" + STR(LEN_HIGH_INDEX) + " : " + STR(LEN_LOW_INDEX) +
+                          "]) begin\n");
+            writer->write("      " + portPrefix + "RLAST <= 1'b1;\n");
+            writer->write("    end\n");
+            writer->write("  end\n");
+            /* Update read queue */
+            writer->write("  " + portPrefix + "arqueue <= next_" + portPrefix + "arqueue;\n");
+            writer->write("  " + portPrefix + "arqueue_size <= next_" + portPrefix + "arqueue_size;\n");
+            writer->write("end\n");
+
+            writer->write_comment("Sequential logic for write transactions\n");
+            writer->write("always@(posedge " CLOCK_PORT_NAME ") begin\n");
+            /* Helper variables */
+            writer->write("  automatic reg [" + STR(wDataSize - 1) + ":0] " + portPrefix + "wBitmask;\n");
+            writer->write("  automatic reg [" + STR(wAddrSize - 1) + ":0] " + portPrefix + "currAddr;\n");
+            writer->write("  automatic reg [" + STR(wAddrSize - 1) + ":0] " + portPrefix + "endAddr;\n");
+            writer->write("  automatic int _i_;\n");
+
+            writer->write("  " + portPrefix + "AWREADY <= (" + portPrefix + "awqueue_size < `" + portPrefix +
+                          "MAX_QUEUE_SIZE);\n");
+            writer->write("  " + portPrefix + "WREADY <= 1'b1;\n");
+            writer->write("  " + portPrefix + "BVALID <= 1'b0;\n");
+
+            /* Check if the first element of the write has finished the delay phase and send write response */
             writer->write("  if(" + portPrefix + "awqueue_size > 0 && " + portPrefix + "awqueue[" +
                           STR(COUNT_HIGH_INDEX) + " : " + STR(COUNT_LOW_INDEX) + "] == 0) begin \n");
             writer->write("    " + portPrefix + "BRESP <= 2'b00;\n");
@@ -2851,79 +2965,9 @@ void TestbenchGenerationBaseStep::testbench_controller_machine() const
             }
             writer->write("  end\n");
 
-            /* Check if the first element in the read queue is ready to be handled (delay is positive) */
-            writer->write("  if(" + portPrefix + "arqueue_size > 0 && " + portPrefix + "arqueue[" +
-                          STR(COUNT_HIGH_INDEX) + "] == 1'b0) begin\n");
-            writer->write("    " + portPrefix + "RVALID <= 1'b1;\n");
-            writer->write("    if(" + portPrefix + "arqueue[" + STR(BURST_HIGH_INDEX) + " : " + STR(BURST_LOW_INDEX) +
-                          "] == 2'b00) begin\n");
-            /* Fixed burst */
-            writer->write("      " + portPrefix + "currAddr = " + portPrefix + "arqueue[" + STR(ADDR_HIGH_INDEX) +
-                          " : " + STR(ADDR_LOW_INDEX) + "];\n");
-            writer->write("    end else if(" + portPrefix + "arqueue[" + STR(BURST_HIGH_INDEX) + " : " +
-                          STR(BURST_LOW_INDEX) + "] == 2'b01) begin\n");
-            /* Incremental burst */
-            writer->write("      " + portPrefix + "currAddr = " + portPrefix + "arqueue[" + STR(ADDR_HIGH_INDEX) +
-                          " : " + STR(ADDR_LOW_INDEX) + "] + " + portPrefix + "arqueue[" + STR(COUNT_HIGH_INDEX) +
-                          " : " + STR(COUNT_LOW_INDEX) + "] * (1 << " + portPrefix + "arqueue[" + STR(SIZE_HIGH_INDEX) +
-                          " : " + STR(SIZE_LOW_INDEX) + "]);\n");
-            writer->write("    end else if(" + portPrefix + "arqueue[" + STR(BURST_HIGH_INDEX) + " : " +
-                          STR(BURST_LOW_INDEX) + "] == 2'b10) begin\n");
-            /* Wrap burst */
-            writer->write("      " + portPrefix + "endAddr = " + portPrefix + "arqueue[" + STR(ADDR_HIGH_INDEX) +
-                          " : " + STR(ADDR_LOW_INDEX) + "] - (" + portPrefix + "arqueue[" + STR(ADDR_HIGH_INDEX) +
-                          " : " + STR(ADDR_LOW_INDEX) + "] % ((" + portPrefix + "arqueue[" + STR(LEN_HIGH_INDEX) +
-                          " : " + STR(LEN_LOW_INDEX) + "] + 1) * (1 << " + portPrefix + "arqueue[" +
-                          STR(SIZE_HIGH_INDEX) + " : " + STR(SIZE_LOW_INDEX) + "]))) + ((" + portPrefix + "arqueue[" +
-                          STR(LEN_HIGH_INDEX) + " : " + STR(LEN_LOW_INDEX) + "] + 1) * (1 << " + portPrefix +
-                          "arqueue[" + STR(SIZE_HIGH_INDEX) + " : " + STR(SIZE_LOW_INDEX) + "]));\n");
-            writer->write("      " + portPrefix + "currAddr = " + portPrefix + "arqueue[" + STR(ADDR_HIGH_INDEX) +
-                          " : " + STR(ADDR_LOW_INDEX) + "] + " + portPrefix + "arqueue[" + STR(COUNT_HIGH_INDEX) +
-                          " : " + STR(COUNT_LOW_INDEX) + "] * (1 << " + portPrefix + "arqueue[" + STR(SIZE_HIGH_INDEX) +
-                          " : " + STR(SIZE_LOW_INDEX) + "]);\n");
-            writer->write("      if(" + portPrefix + "currAddr > " + portPrefix + "endAddr) begin\n");
-            writer->write("        " + portPrefix + "currAddr = " + portPrefix + "currAddr - ((" + portPrefix +
-                          "arqueue[" + STR(LEN_HIGH_INDEX) + " : " + STR(LEN_LOW_INDEX) + "] + 1) * (1 << " +
-                          portPrefix + "arqueue[" + STR(SIZE_HIGH_INDEX) + " : " + STR(SIZE_LOW_INDEX) + "]));\n");
-            writer->write("      end\n");
-            writer->write("    end\n");
-
-            /* Realign address */
-            writer->write("    " + portPrefix + "currAddr = " + portPrefix + "currAddr - (" + portPrefix +
-                          "currAddr % (1 << " + portPrefix + "arqueue[" + STR(SIZE_HIGH_INDEX) + " : " +
-                          STR(SIZE_LOW_INDEX) + "]));\n");
-
-            /* Compute aggregate memory for RDATA */
-            std::string mem_aggregated;
-            const auto portRDATA = mod->find_member(portPrefix + "RDATA", port_o_K, cir);
-            const auto bitsizeRDATA = GetPointer<port_o>(portRDATA)->get_typeRef()->size *
-                                      GetPointer<port_o>(portRDATA)->get_typeRef()->vector_size;
-            {
-               mem_aggregated = "{";
-               for(unsigned int bitsize_index = 0; bitsize_index < bitsizeRDATA; bitsize_index = bitsize_index + 8)
-               {
-                  if(bitsize_index)
-                  {
-                     mem_aggregated += ", ";
-                  }
-                  mem_aggregated += "_bambu_testbench_mem_[" + portPrefix + "currAddr + " +
-                                    STR((bitsizeRDATA - bitsize_index) / 8 - 1) + " - base_addr]";
-               }
-               mem_aggregated += "}";
-            }
-
-            writer->write("    " + portPrefix + "RDATA <= " + mem_aggregated + ";\n");
-            writer->write("    " + portPrefix + "RRESP <= 2'b00;\n");
-            writer->write("    if(" + portPrefix + "arqueue[" + STR(COUNT_HIGH_INDEX) + " : " + STR(COUNT_LOW_INDEX) +
-                          "] == " + portPrefix + "arqueue[" + STR(LEN_HIGH_INDEX) + " : " + STR(LEN_LOW_INDEX) +
-                          "]) begin\n");
-            writer->write("      " + portPrefix + "RLAST <= 1'b1;\n");
-            writer->write("    end\n");
-            writer->write("  end\n");
+            /* Update write queue */
             writer->write("  " + portPrefix + "awqueue <= next_" + portPrefix + "awqueue;\n");
-            writer->write("  " + portPrefix + "arqueue <= next_" + portPrefix + "arqueue;\n");
             writer->write("  " + portPrefix + "awqueue_size <= next_" + portPrefix + "awqueue_size;\n");
-            writer->write("  " + portPrefix + "arqueue_size <= next_" + portPrefix + "arqueue_size;\n");
             writer->write("end\n");
          }
       }
