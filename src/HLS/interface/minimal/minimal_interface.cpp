@@ -64,7 +64,7 @@
 #include "call_graph_manager.hpp"
 
 // HLS/simulation include
-#include "testbench_generation_base_step.hpp"
+#include "testbench_generation.hpp"
 
 /// STD include
 #include <string>
@@ -554,7 +554,7 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
             for(auto m = mem_variables.begin(); m != mem_variables.end(); ++m)
             {
                const auto splitted =
-                   TestbenchGenerationBaseStep::print_var_init(HLSMgr->get_tree_manager(), m->first, HLSMgr->Rmem);
+                   TestbenchGeneration::print_var_init(HLSMgr->get_tree_manager(), m->first, HLSMgr->Rmem);
                unsigned int byte_allocated = 0;
                unsigned long long int actual_byte =
                    tree_helper::Size(HLSMgr->get_tree_manager()->CGetTreeReindex(m->first)) / 8;

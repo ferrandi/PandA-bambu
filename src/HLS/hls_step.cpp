@@ -215,8 +215,6 @@ std::string HLS_step::EnumToName(const HLSFlowStep_Type hls_flow_step_type)
          return "MinimalInterfaceGeneration";
       case HLSFlowStep_Type::INFERRED_INTERFACE_GENERATION:
          return "InferInterfaceGeneration";
-      case HLSFlowStep_Type::MINIMAL_TESTBENCH_GENERATION:
-         return "MinimalTestbenchGeneration";
       case HLSFlowStep_Type::MUX_INTERCONNECTION_BINDING:
          return "MuxInterconnectionBinding";
 #if HAVE_FROM_PRAGMA_BUILT
@@ -297,8 +295,6 @@ std::string HLS_step::EnumToName(const HLSFlowStep_Type hls_flow_step_type)
          return "WB4InterconInterfaceGeneration";
       case HLSFlowStep_Type::WB4_INTERFACE_GENERATION:
          return "WB4InterfaceGeneration";
-      case HLSFlowStep_Type::WB4_TESTBENCH_GENERATION:
-         return "WB4TestbenchGeneration";
       case HLSFlowStep_Type::WEIGHTED_CLIQUE_REGISTER_BINDING:
          return "WeightedCliqueRegisterBinding";
       case HLSFlowStep_Type::WRITE_HLS_SUMMARY:

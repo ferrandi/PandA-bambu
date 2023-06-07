@@ -35,6 +35,7 @@
  * @brief Implementation of some methods for the interface with simulation tools
  *
  * @author Christian Pilato <pilato@elet.polimi.it>
+ * @author Michele Fiorito <michele.fiorito@polimi.it>
  *
  */
 #include "SimulationTool.hpp"

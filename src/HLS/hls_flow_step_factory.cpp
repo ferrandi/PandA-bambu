@@ -172,11 +172,9 @@
 
 /// HLS/simulation includes
 #include "CTestbenchExecution.hpp"
-#include "minimal_interface_testbench.hpp"
 #include "test_vector_parser.hpp"
 #include "testbench_generation.hpp"
 #include "testbench_memory_allocation.hpp"
-#include "wishbone_interface_testbench.hpp"
 
 /// HLS/stg
 #include "BB_based_stg.hpp"
@@ -459,12 +457,6 @@ HLSFlowStepFactory::CreateHLSFlowStep(const HLSFlowStep_Type type, const unsigne
              DesignFlowStepRef(new minimal_interface(parameters, HLS_mgr, funId, design_flow_manager.lock()));
          break;
       }
-      case HLSFlowStep_Type::MINIMAL_TESTBENCH_GENERATION:
-      {
-         design_flow_step =
-             DesignFlowStepRef(new MinimalInterfaceTestbench(parameters, HLS_mgr, design_flow_manager.lock()));
-         break;
-      }
       case HLSFlowStep_Type::MUX_INTERCONNECTION_BINDING:
       {
          design_flow_step =
@@ -652,12 +644,6 @@ HLSFlowStepFactory::CreateHLSFlowStep(const HLSFlowStep_Type type, const unsigne
              DesignFlowStepRef(new WB4Intercon_interface(parameters, HLS_mgr, funId, design_flow_manager.lock()));
          break;
       }
-      case HLSFlowStep_Type::WB4_TESTBENCH_GENERATION:
-      {
-         design_flow_step =
-             DesignFlowStepRef(new WishboneInterfaceTestbench(parameters, HLS_mgr, design_flow_manager.lock()));
-         break;
-      }
       case HLSFlowStep_Type::WEIGHTED_CLIQUE_REGISTER_BINDING:
       {
          design_flow_step = DesignFlowStepRef(new weighted_clique_register(
@@ -751,7 +737,6 @@ const DesignFlowStepSet HLSFlowStepFactory::CreateHLSFlowSteps(
          case HLSFlowStep_Type::INTERFACE_CS_GENERATION:
          case HLSFlowStep_Type::LIST_BASED_SCHEDULING:
          case HLSFlowStep_Type::MINIMAL_INTERFACE_GENERATION:
-         case HLSFlowStep_Type::MINIMAL_TESTBENCH_GENERATION:
          case HLSFlowStep_Type::MUX_INTERCONNECTION_BINDING:
 #if HAVE_FROM_PRAGMA_BUILT
          case HLSFlowStep_Type::OMP_ALLOCATION:
@@ -794,7 +779,6 @@ const DesignFlowStepSet HLSFlowStepFactory::CreateHLSFlowSteps(
          case HLSFlowStep_Type::VIRTUAL_DESIGN_FLOW:
          case HLSFlowStep_Type::WB4_INTERCON_INTERFACE_GENERATION:
          case HLSFlowStep_Type::WB4_INTERFACE_GENERATION:
-         case HLSFlowStep_Type::WB4_TESTBENCH_GENERATION:
          case HLSFlowStep_Type::WEIGHTED_CLIQUE_REGISTER_BINDING:
          default:
             THROW_UNREACHABLE("Step not expected: " + HLS_step::EnumToName(hls_flow_step.first));
