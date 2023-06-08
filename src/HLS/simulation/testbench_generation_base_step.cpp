@@ -2637,7 +2637,8 @@ void TestbenchGenerationBaseStep::testbench_controller_machine() const
             }
 
             writer->write_comment("Combinatorial logic for read transactions\n");
-            writer->write("always@(*) begin\n");
+            writer->write("always@(*) begin: read_comb\n");
+            writer->write("  automatic integer _i_;\n");
             writer->write("  next_" + portPrefix + "arqueue = " + portPrefix + "arqueue;\n");
             writer->write("  next_" + portPrefix + "arqueue_size = " + portPrefix + "arqueue_size;\n");
 
@@ -2652,9 +2653,10 @@ void TestbenchGenerationBaseStep::testbench_controller_machine() const
             writer->write("  end\n");
 
             /* Check if the first element of the read queue is ready to be deleted */
-            writer->write("  if(next_" + portPrefix + "arqueue[" + STR(COUNT_HIGH_INDEX) + " : " +
-                          STR(COUNT_LOW_INDEX) + "] == next_" + portPrefix + "arqueue[" + STR(LEN_HIGH_INDEX) + " : " +
-                          STR(LEN_LOW_INDEX) + "] &&" + portPrefix + "RREADY) begin\n");
+            writer->write("  if(" + portPrefix + "arqueue_size > 0 && next_" + portPrefix + "arqueue[" +
+                          STR(COUNT_HIGH_INDEX) + " : " + STR(COUNT_LOW_INDEX) + "] == next_" + portPrefix +
+                          "arqueue[" + STR(LEN_HIGH_INDEX) + " : " + STR(LEN_LOW_INDEX) + "] &&" + portPrefix +
+                          "RREADY) begin\n");
             writer->write("    for(_i_ = 1; _i_ < `" + portPrefix + "MAX_QUEUE_SIZE; _i_ = _i_ + 1) begin\n");
             writer->write("      next_" + portPrefix + "arqueue[(_i_ - 1) * " + STR(QUEUE_RECORD_SIZE) + " + " +
                           STR(ADDR_HIGH_INDEX) + " -: " + STR(QUEUE_RECORD_SIZE) + "] = next_" + portPrefix +
@@ -2685,8 +2687,9 @@ void TestbenchGenerationBaseStep::testbench_controller_machine() const
             writer->write("end\n");
 
             writer->write_comment("Combinatorial logic for write transactions\n");
-            writer->write("always@(*) begin\n");
-            writer->write("  automatic int _i_;\n");
+            writer->write("always@(*) begin: write_comb\n");
+            writer->write("  automatic integer _i_;\n");
+            writer->write("  automatic reg [31:0] counter;\n");
             writer->write("  next_" + portPrefix + "awqueue = " + portPrefix + "awqueue;\n");
             writer->write("  next_" + portPrefix + "awqueue_size = " + portPrefix + "awqueue_size;\n");
 
@@ -2717,10 +2720,10 @@ void TestbenchGenerationBaseStep::testbench_controller_machine() const
             /* Increase write beats counter */
             writer->write("  if(" + portPrefix + "WVALID) begin\n");
             writer->write("    _i_ = 0;\n");
-            writer->write("    while((next_" + portPrefix + "awqueue[_i_ * " + STR(QUEUE_RECORD_SIZE) + " + " +
-                          STR(COUNT_HIGH_INDEX) + " -: " + STR(COUNT_HIGH_INDEX - COUNT_LOW_INDEX + 1) +
-                          "] == 0 || next_" + portPrefix + "awqueue[_i_ * " + STR(QUEUE_RECORD_SIZE) + " + " +
-                          STR(COUNT_HIGH_INDEX) + "] == 1) && _i_ < next_" + portPrefix + "awqueue_size) begin\n");
+            writer->write("    counter = next_" + portPrefix + "awqueue[_i_ * " + STR(QUEUE_RECORD_SIZE) + " + " +
+                          STR(COUNT_HIGH_INDEX) + " -: " + STR(COUNT_HIGH_INDEX - COUNT_LOW_INDEX + 1) + "];\n");
+            writer->write("    while((counter == 0 || counter[" + STR(COUNT_HIGH_INDEX) + "] == 1) && _i_ < next_" +
+                          portPrefix + "awqueue_size) begin\n");
             writer->write("      _i_ = _i_ + 1;\n");
             writer->write("    end\n");
             writer->write("    if(" + portPrefix + "WLAST) begin\n");
@@ -2755,11 +2758,11 @@ void TestbenchGenerationBaseStep::testbench_controller_machine() const
             const auto wDataSize = GetPointer<port_o>(portWDATA)->get_typeRef()->size *
                                    GetPointer<port_o>(portWDATA)->get_typeRef()->vector_size;
             writer->write_comment("Sequential logic for read transactions\n");
-            writer->write("always@(posedge " CLOCK_PORT_NAME ") begin\n");
+            writer->write("always@(posedge " CLOCK_PORT_NAME ") begin: read_seq\n");
             /* Helper variables */
             writer->write("  automatic reg [" + STR(wAddrSize - 1) + ":0] " + portPrefix + "currAddr;\n");
             writer->write("  automatic reg [" + STR(wAddrSize - 1) + ":0] " + portPrefix + "endAddr;\n");
-            writer->write("  automatic int _i_;\n");
+            writer->write("  automatic integer _i_;\n");
 
             writer->write("  " + portPrefix + "ARREADY <= (" + portPrefix + "arqueue_size < `" + portPrefix +
                           "MAX_QUEUE_SIZE);\n");
@@ -2842,12 +2845,12 @@ void TestbenchGenerationBaseStep::testbench_controller_machine() const
             writer->write("end\n");
 
             writer->write_comment("Sequential logic for write transactions\n");
-            writer->write("always@(posedge " CLOCK_PORT_NAME ") begin\n");
+            writer->write("always@(posedge " CLOCK_PORT_NAME ") begin: write_seq\n");
             /* Helper variables */
             writer->write("  automatic reg [" + STR(wDataSize - 1) + ":0] " + portPrefix + "wBitmask;\n");
             writer->write("  automatic reg [" + STR(wAddrSize - 1) + ":0] " + portPrefix + "currAddr;\n");
             writer->write("  automatic reg [" + STR(wAddrSize - 1) + ":0] " + portPrefix + "endAddr;\n");
-            writer->write("  automatic int _i_;\n");
+            writer->write("  automatic integer _i_;\n");
 
             writer->write("  " + portPrefix + "AWREADY <= (" + portPrefix + "awqueue_size < `" + portPrefix +
                           "MAX_QUEUE_SIZE);\n");
