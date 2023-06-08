@@ -621,7 +621,8 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
                auto InterfaceType = GetPointer<port_o>(portInst)->get_port_interface();
                if(InterfaceType == port_o::port_interface::PI_DOUT)
                {
-                  const auto manage_pidout = [&](const std::string& portID) {
+                  const auto manage_pidout = [&](const std::string& portID)
+                  {
                      auto port_name = portInst->get_id();
                      auto terminate = port_name.size() > 3 ? port_name.size() - std::string("_d" + portID).size() : 0;
                      THROW_ASSERT(port_name.substr(terminate) == "_d" + portID, "inconsistent interface");
@@ -704,7 +705,8 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
                auto InterfaceType = GetPointer<port_o>(portInst)->get_port_interface();
                if(InterfaceType == port_o::port_interface::PI_DIN)
                {
-                  const auto manage_pidin = [&](const std::string& portID) {
+                  const auto manage_pidin = [&](const std::string& portID)
+                  {
                      auto port_name = portInst->get_id();
                      auto terminate = port_name.size() > 3 ? port_name.size() - std::string("_q" + portID).size() : 0;
                      THROW_ASSERT(port_name.substr(terminate) == "_q" + portID, "inconsistent interface");
@@ -2191,7 +2193,8 @@ void TestbenchGenerationBaseStep::write_module_instantiation(bool xilinx_isim) c
 
 void TestbenchGenerationBaseStep::write_auxiliary_signal_declaration() const
 {
-   const auto testbench_memsize = [&]() {
+   const auto testbench_memsize = [&]()
+   {
       const auto mem_size =
           HLSMgr->Rmem->get_memory_address() - parameters->getOption<unsigned long long int>(OPT_base_address);
       return mem_size ? mem_size : 1;
@@ -2465,7 +2468,8 @@ void TestbenchGenerationBaseStep::initialize_input_signals(const tree_managerCon
    {
       const auto port_obj = mod->get_in_port(i);
       const auto port_if = GetPointer<port_o>(port_obj)->get_port_interface();
-      const auto port_name = [&]() -> std::string {
+      const auto port_name = [&]() -> std::string
+      {
          const auto port_id = port_obj->get_id();
          if(parameters->isOption(OPT_clock_name) && port_id == parameters->getOption<std::string>(OPT_clock_name))
          {
@@ -2633,7 +2637,7 @@ void TestbenchGenerationBaseStep::testbench_controller_machine() const
             }
 
             writer->write_comment("Combinatorial logic for read transactions\n");
-            writer->write("always@(*) begin: read_comb\n");
+            writer->write("always@(*) begin: read_comb_" + portPrefix + "\n");
             writer->write("  automatic integer _i_;\n");
             writer->write("  next_" + portPrefix + "arqueue = " + portPrefix + "arqueue;\n");
             writer->write("  next_" + portPrefix + "arqueue_size = " + portPrefix + "arqueue_size;\n");
@@ -2683,7 +2687,7 @@ void TestbenchGenerationBaseStep::testbench_controller_machine() const
             writer->write("end\n");
 
             writer->write_comment("Combinatorial logic for write transactions\n");
-            writer->write("always@(*) begin: write_comb\n");
+            writer->write("always@(*) begin: write_comb_" + portPrefix + "\n");
             writer->write("  automatic integer _i_;\n");
             writer->write("  automatic reg [31:0] counter;\n");
             writer->write("  next_" + portPrefix + "awqueue = " + portPrefix + "awqueue;\n");
@@ -2754,7 +2758,7 @@ void TestbenchGenerationBaseStep::testbench_controller_machine() const
             const auto wDataSize = GetPointer<port_o>(portWDATA)->get_typeRef()->size *
                                    GetPointer<port_o>(portWDATA)->get_typeRef()->vector_size;
             writer->write_comment("Sequential logic for read transactions\n");
-            writer->write("always@(posedge " CLOCK_PORT_NAME ") begin: read_seq\n");
+            writer->write("always@(posedge " CLOCK_PORT_NAME ") begin: read_seq_" + portPrefix + "\n");
             /* Helper variables */
             writer->write("  automatic reg [" + STR(wAddrSize - 1) + ":0] " + portPrefix + "currAddr;\n");
             writer->write("  automatic reg [" + STR(wAddrSize - 1) + ":0] " + portPrefix + "endAddr;\n");
@@ -2841,7 +2845,7 @@ void TestbenchGenerationBaseStep::testbench_controller_machine() const
             writer->write("end\n");
 
             writer->write_comment("Sequential logic for write transactions\n");
-            writer->write("always@(posedge " CLOCK_PORT_NAME ") begin: write_seq\n");
+            writer->write("always@(posedge " CLOCK_PORT_NAME ") begin: write_seq_" + portPrefix + "\n");
             /* Helper variables */
             writer->write("  automatic reg [" + STR(wDataSize - 1) + ":0] " + portPrefix + "wBitmask;\n");
             writer->write("  automatic reg [" + STR(wAddrSize - 1) + ":0] " + portPrefix + "currAddr;\n");
