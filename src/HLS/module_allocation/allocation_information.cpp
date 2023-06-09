@@ -1716,8 +1716,14 @@ void AllocationInformation::GetNodeTypePrec(const vertex node, const OpGraphCons
    }
    else if(current_op == "rshift_expr")
    {
-      if(is_second_constant && max_size_in > 64)
+      if(max_size_in > 64)
       {
+         if(!is_second_constant)
+         {
+            THROW_WARNING(
+                "A bad estimation of the timing of the rshift_expr operator will happen. This may occur when a "
+                "non-constant bit reference of a long ac_type is used. Unrolling such a part may fix the issue.");
+         }
          max_size_in = 64;
       }
       info->output_prec = max_size_in;

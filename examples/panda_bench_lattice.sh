@@ -1,6 +1,6 @@
 #!/bin/bash
 script_dir="$(dirname $(readlink -e $0))"
-BATCH_ARGS=("--evaluation")
+BATCH_ARGS=("--evaluation=CYCLES")
 OUT_SUFFIX="pb_lattice"
 
 python3 $script_dir/../etc/scripts/test_panda.py --tool=bambu  \

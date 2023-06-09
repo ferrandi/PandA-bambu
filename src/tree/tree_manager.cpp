@@ -204,13 +204,25 @@ tree_nodeRef tree_manager::GetFunction(const std::string& function_name) const
       const auto& curr_tn = function_decl_node.second;
       const auto fd = GetPointerS<const function_decl>(curr_tn);
       const auto id_name = GET_CONST_NODE(fd->name);
-      std::string simple_name;
+      std::string simple_name, mangled_name;
       if(id_name->get_kind() == identifier_node_K)
       {
          const auto in = GetPointerS<const identifier_node>(id_name);
          if(!in->operator_flag)
          {
             simple_name = in->strg;
+         }
+      }
+      if(fd->mngl)
+      {
+         tree_nodeRef mangled_id_name = GET_NODE(fd->mngl);
+         if(mangled_id_name->get_kind() == identifier_node_K)
+         {
+            auto* in = GetPointer<identifier_node>(mangled_id_name);
+            if(!in->operator_flag)
+            {
+                mangled_name = in->strg;
+            }
          }
       }
       const auto name = [&]() {
@@ -227,7 +239,8 @@ tree_nodeRef tree_manager::GetFunction(const std::string& function_name) const
          return fname;
       }();
       if(name == function_name || function_name == std::string("-") ||
-         (!simple_name.empty() && function_name == simple_name))
+         (!simple_name.empty() && function_name == simple_name) ||
+         (!mangled_name.empty() && mangled_name == function_name))
       {
          return CGetTreeReindex(function_decl_node.first);
       }
