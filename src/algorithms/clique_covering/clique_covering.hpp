@@ -352,7 +352,7 @@ class TTT_maximal_weighted_clique
             result = *it;
          }
       }
-      THROW_ASSERT(max_weighted_intersection >= 0, "something of wrong happen");
+      THROW_ASSERT(max_weighted_intersection >= 0, "something wrong happened");
       return result;
    }
 
@@ -378,7 +378,7 @@ class TTT_maximal_weighted_clique
             max_weight = cur_weight;
          }
       }
-      THROW_ASSERT(max_weight >= 0, "something of wrong happen");
+      THROW_ASSERT(max_weight >= 0, "something wrong happened");
       return result;
    }
 
@@ -540,7 +540,7 @@ class TTT_maximal_weighted_clique_fast
             result = *it;
          }
       }
-      THROW_ASSERT(max_weighted_intersection >= 0, "something of wrong happen");
+      THROW_ASSERT(max_weighted_intersection >= 0, "something wrong happened");
       return result;
    }
 
@@ -566,7 +566,7 @@ class TTT_maximal_weighted_clique_fast
             max_weight = cur_weight;
          }
       }
-      THROW_ASSERT(max_weight >= 0, "something of wrong happen");
+      THROW_ASSERT(max_weight >= 0, "something wrong happened");
       return result;
    }
 

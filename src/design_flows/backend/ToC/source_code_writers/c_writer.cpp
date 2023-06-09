@@ -1239,7 +1239,7 @@ void CWriter::writeRoutineInstructions_rec(vertex current_vertex, bool bracket, 
       // recurse on the post dominator
       bb_frontier.erase(bb_PD);
       THROW_ASSERT(bb_analyzed.find(bb_PD) == bb_analyzed.end(),
-                   "something of wrong happen " + STR(local_rec_bb_fcfgGraph->CGetBBNodeInfo(bb_PD)->block->number) +
+                   "something wrong happened " + STR(local_rec_bb_fcfgGraph->CGetBBNodeInfo(bb_PD)->block->number) +
                        " Fun(" + STR(local_rec_behavioral_helper->get_function_index()) + ")");
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Printing the post dominator");
       writeRoutineInstructions_rec(bb_PD, false, function_index);
