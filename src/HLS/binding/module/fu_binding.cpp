@@ -2395,7 +2395,7 @@ void fu_binding::fill_array_ref_memory(std::ostream& init_file_a, std::ostream& 
    {
       std::vector<unsigned long long> dims;
       tree_helper::get_array_dim_and_bitsize(TreeM, array_type_node->index, dims, elts_size);
-      THROW_ASSERT(dims.size(), "something of wrong happen");
+      THROW_ASSERT(dims.size(), "something wrong happened");
       vec_size = std::accumulate(dims.begin(), dims.end(), 1, [](unsigned int a, unsigned int b) { return a * b; });
    }
    else if(GetPointer<const integer_type>(GET_CONST_NODE(array_type_node)) ||
@@ -2806,7 +2806,7 @@ void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_n
          const auto main_element_precision = element_precision;
          if(designated_initializers_used)
          {
-            THROW_ASSERT(field_list, "something of wrong happen");
+            THROW_ASSERT(field_list, "something wrong happened");
             auto flend = field_list->end();
             auto fli = field_list->begin();
             std::vector<tree_nodeRef>::const_iterator inext;
@@ -3048,7 +3048,7 @@ void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_n
          unsigned long long size_of_data;
          dims.clear();
          tree_helper::get_array_dim_and_bitsize(TreeM, type_n->index, dims, size_of_data);
-         THROW_ASSERT(size_of_data == elmt_bitsize, "something of wrong happen");
+         THROW_ASSERT(size_of_data == elmt_bitsize, "something wrong happened");
          auto num_elements =
              std::accumulate(dims.begin(), dims.end(), 1U, [](unsigned int a, unsigned int b) { return a * b; });
          std::string value;
@@ -3085,7 +3085,7 @@ void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_n
          }
          else
          {
-            THROW_ERROR("Something of unexpected happened: " + STR(init_node->index) + " | " +
+            THROW_ERROR("Something unexpected happened: " + STR(init_node->index) + " | " +
                         GET_NODE(ue->op)->get_kind_text());
          }
          break;
