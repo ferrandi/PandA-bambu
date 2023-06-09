@@ -123,7 +123,7 @@ void ReadWrite_arrayModuleGenerator::InternalExec(std::ostream& out, structural_
 
    const auto addressMaxValue = _ports_out[1].alignment * arraySize - 1U;
    const auto nbitAddress =
-       addressMaxValue == 1U ? 1U : (64u - static_cast<unsigned>(__builtin_clzll(addressMaxValue)));
+       addressMaxValue <= 1U ? 1U : (64u - static_cast<unsigned>(__builtin_clzll(addressMaxValue)));
 
    if(log2nbyte > 0U)
    {
