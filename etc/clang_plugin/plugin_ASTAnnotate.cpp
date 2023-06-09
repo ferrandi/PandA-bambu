@@ -69,8 +69,6 @@ enum attributeOptions
    inline_opt_off,
    inline_opt_recursice,
    unroll_opt_factor,
-   unroll_opt_region,
-   unroll_opt_skip_exit_check
 };
 
 namespace clang
@@ -80,75 +78,6 @@ namespace clang
        file_loc_directive;
    class FunctionDirectiveConsumer : public clang::ASTConsumer
    {
-      Preprocessor& PP;
-      void Analyze(ForStmt* S, const char* filename)
-      {
-         const auto prev = S->getSourceRange().getBegin();
-         const auto locEnd = S->getSourceRange().getEnd();
-         if(file_loc_directive.find(filename) == file_loc_directive.end())
-         {
-            return;
-         }
-         for(const auto& location_directives : file_loc_directive.find(filename)->second)
-         {
-            const auto& loc = location_directives.first;
-            const auto& dAttr = location_directives.second;
-            if((prev < loc) && (loc < locEnd))
-            {
-               llvm::errs() << "do something\n";
-               if(dAttr.find(unroll_directive) != dAttr.end())
-               {
-                  auto unroll_options = dAttr.find(unroll_directive)->second;
-                  auto* Info = new(PP.getPreprocessorAllocator()) PragmaLoopHintInfo;
-                  Info->PragmaName = unroll_options.first;
-                  if(unroll_options.second.find(unroll_opt_factor) != unroll_options.second.end())
-                  {
-                     llvm::errs() << "inject unroll factor\n";
-                     Info->Option = unroll_options.first;
-                     SmallVector<Token, 1> ValueList;
-                     ValueList.push_back(unroll_options.second.find(unroll_opt_factor)->second);
-                     Token EOFTok;
-                     EOFTok.startToken();
-                     EOFTok.setKind(tok::eof);
-                     EOFTok.setLocation(prev);
-                     ValueList.push_back(EOFTok); // Terminates expression for parsing.
-                     for(auto& T : ValueList)
-                     {
-                        T.setFlag(clang::Token::IsReinjected);
-                     }
-                     Info->Toks = llvm::makeArrayRef(ValueList).copy(PP.getPreprocessorAllocator());
-                  }
-                  else
-                  {
-                     Info->Option.startToken();
-                  }
-                  auto TokenArray = std::make_unique<Token[]>(1);
-                  TokenArray[0].startToken();
-                  TokenArray[0].setKind(tok::annot_pragma_loop_hint);
-                  TokenArray[0].setLocation(prev);
-                  TokenArray[0].setAnnotationEndLoc(prev);
-                  TokenArray[0].setAnnotationValue(static_cast<void*>(Info));
-                  PP.EnterTokenStream(std::move(TokenArray), 1,
-                                      /*DisableMacroExpansion=*/false, /*IsReinject=*/true);
-               }
-            }
-         }
-         if(auto CS = dyn_cast<CompoundStmt>(S->getBody()))
-         {
-            Analyze(CS, filename);
-         }
-      }
-      void Analyze(CompoundStmt* C, const char* filename)
-      {
-         for(auto stmt : C->body())
-         {
-            if(isa<ForStmt>(stmt))
-            {
-               Analyze(cast<ForStmt>(stmt), filename);
-            }
-         }
-      }
-
       void Analyze(FunctionDecl* FD)
       {
          auto& SM = FD->getASTContext().getSourceManager();
@@ -170,31 +99,19 @@ namespace clang
                   auto inline_options = dAttr.find(inline_directive)->second;
                   if(inline_options.second.find(inline_opt_off) != inline_options.second.end())
                   {
-                     llvm::errs() << "Adding noinline attribute\n";
                      FD->addAttr(NoInlineAttr::CreateImplicit(FD->getASTContext()));
                   }
                   else
                   {
-                     llvm::errs() << "Adding inline attribute\n";
                      FD->addAttr(AlwaysInlineAttr::CreateImplicit(FD->getASTContext()));
                   }
                }
             }
          }
-         if(FD->hasBody())
-         {
-            if(auto CS = dyn_cast<CompoundStmt>(FD->getBody()))
-            {
-               Analyze(CS, filename);
-            }
-            //FD->print(llvm::errs());
-         }
       }
 
     public:
-      FunctionDirectiveConsumer(Preprocessor& _PP) : PP(_PP)
-      {
-      }
+      FunctionDirectiveConsumer() = default;
 
       bool HandleTopLevelDecl(DeclGroupRef DG) override
       {
@@ -227,19 +144,22 @@ namespace clang
    {
       std::pair<Token, std::map<attributeOptions, Token>> mapRelation;
       std::set<attributeOptions> hasValueRelation;
+      std::map<attributeOptions, Token> TokenMap;
 
       Preprocessor& PP;
+      const StringRef& PragmaClass;
       std::map<std::string, attributeOptions> expected_tokens;
       void print_error(const std::string& msg, Token& Tok)
       {
          auto& D = PP.getDiagnostics();
-         D.Report(Tok.getLocation(), D.getCustomDiagID(DiagnosticsEngine::Error, "#pragma HLS %0"))
-             .AddString(msg + " Token: " + PP.getSpelling(Tok));
+         D.Report(Tok.getLocation(), D.getCustomDiagID(DiagnosticsEngine::Error, "#pragma %0"))
+             .AddString(PragmaClass.str() + " " + msg + " Token: " + PP.getSpelling(Tok));
       };
 
     public:
-      parsePragma(Token PragmaName, Preprocessor& _PP, const std::map<std::string, attributeOptions>& _expected_tokens)
-          : PP(_PP), expected_tokens(_expected_tokens)
+      parsePragma(const StringRef& _PragmaClass, Token PragmaName, Preprocessor& _PP,
+                  const std::map<std::string, attributeOptions>& _expected_tokens)
+          : PP(_PP), PragmaClass(_PragmaClass), expected_tokens(_expected_tokens)
       {
          mapRelation.first = PragmaName;
       }
@@ -261,6 +181,12 @@ namespace clang
             {
                print_error("malformed pragma,", Tok);
             }
+            if(expected_tokens.find(identifier) == expected_tokens.end())
+            {
+               print_error("not supported token,", Tok);
+            }
+            auto id = expected_tokens.find(identifier)->second;
+            TokenMap[id] = Tok;
             PP.Lex(Tok);
             if(Tok.is(tok::equal))
             {
@@ -279,12 +205,7 @@ namespace clang
                }
                PP.Lex(Tok);
             }
-            llvm::errs() << "Identifier=" << identifier << " value=" << PP.getSpelling(value) << "\n";
-            if(expected_tokens.find(identifier) == expected_tokens.end())
-            {
-               print_error("not supported token,", Tok);
-            }
-            auto id = expected_tokens.find(identifier)->second;
+
             if(mapRelation.second.count(id))
             {
                print_error("duplicated identifier,", Tok);
@@ -310,6 +231,11 @@ namespace clang
          assert(hasValue(id));
          return mapRelation.second.find(id)->second;
       }
+      Token getToken(attributeOptions id) const
+      {
+         assert(hasIdentifier(id));
+         return TokenMap.find(id)->second;
+      }
       std::pair<Token, std::map<attributeOptions, Token>> getMap()
       {
          return mapRelation;
@@ -319,7 +245,7 @@ namespace clang
    class HLS_PragmaHandler : public PragmaHandler
    {
     public:
-      HLS_PragmaHandler() : PragmaHandler("HLS")
+      explicit HLS_PragmaHandler(StringRef Name) : PragmaHandler(Name)
       {
       }
 
@@ -337,8 +263,15 @@ namespace clang
          Token Tok{};
          const auto print_error = [&](const std::string& msg) {
             auto& D = PP.getDiagnostics();
-            D.Report(Tok.getLocation(), D.getCustomDiagID(DiagnosticsEngine::Error, "#pragma HLS %0")).AddString(msg);
+            D.Report(Tok.getLocation(), D.getCustomDiagID(DiagnosticsEngine::Error, "#pragma %0"))
+                .AddString(getName().str() + " " + msg);
          };
+         const auto print_warning = [&](const std::string& msg) {
+            auto& D = PP.getDiagnostics();
+            D.Report(Tok.getLocation(), D.getCustomDiagID(DiagnosticsEngine::Warning, "#pragma %0"))
+                .AddString(getName().str() + " " + msg);
+         };
+
          const auto loc = PragmaTok.getLocation();
          auto& SM = PP.getSourceManager();
          auto filename = SM.getPresumedLoc(loc, false).getFilename();
@@ -346,13 +279,14 @@ namespace clang
          PP.Lex(Tok);
          if(Tok.is(tok::kw_inline))
          {
-            llvm::errs() << "pragma HLS ->inline\n";
-            parsePragma pp(Tok, PP, {{"recursive", inline_opt_recursice}, {"off", inline_opt_off}});
+            parsePragma pp(getName(), Tok, PP, {{"recursive", inline_opt_recursice}, {"off", inline_opt_off}});
             pp.analyzePragma();
             bool has_recursive = pp.hasIdentifier(inline_opt_off);
             bool has_off = pp.hasIdentifier(inline_opt_recursice);
-            llvm::errs() << "has_recursive=" << (has_recursive ? "T" : "F") << " has_off=" << (has_off ? "T" : "F")
-                         << "\n";
+            if(has_recursive)
+            {
+               print_warning("recursive clause not yet implemented");
+            }
             file_loc_directive[filename][loc][inline_directive] = pp.getMap();
          }
          else if(Tok.isNot(tok::identifier))
@@ -362,41 +296,66 @@ namespace clang
          else
          {
             const std::string name = PP.getSpelling(Tok);
-            llvm::errs() << "pragma HLS ->" << name << "\n";
-            if(s2directive.count(name) && s2directive.at(name) == unroll_directive)
+            const auto PragmaName = Tok;
+            if(s2directive.count(name))
             {
-               llvm::errs() << "pragma HLS ->unroll\n";
-               parsePragma pp(Tok, PP,
-                              {{"factor", unroll_opt_factor},
-                               {"region", unroll_opt_region},
-                               {"skip_exit_check", unroll_opt_skip_exit_check}});
-               pp.analyzePragma();
-               bool has_factor = pp.hasIdentifier(unroll_opt_factor);
-               bool has_factor_value = pp.hasValue(unroll_opt_factor);
-               bool has_region = pp.hasIdentifier(unroll_opt_region);
-               bool has_skip_exit_check = pp.hasIdentifier(unroll_opt_skip_exit_check);
-               llvm::errs() << "has_factor="
-                            << (has_factor ? (has_factor_value ? PP.getSpelling(pp.getValue(unroll_opt_factor)) : "0") :
-                                             "F")
-                            << " has_region=" << (has_region ? "T" : "F")
-                            << " has_skip_exit_check=" << (has_skip_exit_check ? "T" : "F") << "\n";
-               file_loc_directive[filename][loc][unroll_directive] = pp.getMap();
+               if(s2directive.at(name) == unroll_directive)
+               {
+                  parsePragma pp(getName(), Tok, PP, {{"factor", unroll_opt_factor}});
+                  pp.analyzePragma();
+                  bool has_factor = pp.hasIdentifier(unroll_opt_factor);
+                  bool has_factor_value = pp.hasValue(unroll_opt_factor);
+
+                  auto* Info = new(PP.getPreprocessorAllocator()) PragmaLoopHintInfo;
+                  Info->PragmaName = PragmaName;
+                  Info->Option.startToken();
+                  if(has_factor_value)
+                  {
+                     SmallVector<Token, 1> ValueList;
+                     ValueList.push_back(pp.getValue(unroll_opt_factor));
+                     Token EOFTok;
+                     EOFTok.startToken();
+                     EOFTok.setKind(tok::eof);
+                     EOFTok.setLocation(Tok.getLocation());
+                     ValueList.push_back(EOFTok);
+                     for(auto& T : ValueList)
+                     {
+                        T.setFlag(clang::Token::IsReinjected);
+                     }
+                     Info->Toks = llvm::makeArrayRef(ValueList).copy(PP.getPreprocessorAllocator());
+                  }
+                  auto TokenArray = std::make_unique<Token[]>(1);
+                  TokenArray[0].startToken();
+                  TokenArray[0].setKind(tok::annot_pragma_loop_hint);
+                  TokenArray[0].setLocation(loc);
+                  TokenArray[0].setAnnotationEndLoc(loc);
+                  TokenArray[0].setAnnotationValue(static_cast<void*>(Info));
+                  PP.EnterTokenStream(std::move(TokenArray), 1,
+                                      /*DisableMacroExpansion=*/false, /*IsReinject=*/false);
+               }
             }
          }
       }
    };
 
+   class MyPPCallbacks : public PPCallbacks
+   {
+    public:
+      // Implement callbacks here
+   };
    class CLANG_VERSION_SYMBOL(_plugin_ASTAnnotate) : public PluginASTAction
    {
     protected:
       std::unique_ptr<ASTConsumer> CreateASTConsumer(CompilerInstance& CI, llvm::StringRef) override
       {
          clang::Preprocessor& PP = CI.getPreprocessor();
-         PP.AddPragmaHandler(new HLS_PragmaHandler());
+         PP.AddPragmaHandler(new HLS_PragmaHandler("HLS"));
+         PP.AddPragmaHandler(new HLS_PragmaHandler("hls"));
+         PP.AddPragmaHandler(new HLS_PragmaHandler("bambu"));
 #if __clang_major__ > 9
-         return std::make_unique<FunctionDirectiveConsumer>(PP);
+         return std::make_unique<FunctionDirectiveConsumer>();
 #else
-         return llvm::make_unique<FunctionDirectiveConsumer>(PP);
+         return llvm::make_unique<FunctionDirectiveConsumer>();
 #endif
       }
 
