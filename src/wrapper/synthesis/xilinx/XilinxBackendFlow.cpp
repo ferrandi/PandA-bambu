@@ -485,7 +485,7 @@ void XilinxBackendFlow::parse_timing(const std::string& log_file)
       }
       if(!time_m)
       {
-         THROW_WARNING("something of wrong happen with synthesis. It may happen in some corner cases.");
+         THROW_WARNING("Something wrong happened during synthesis.");
          time_m = time_model::create_model(TargetDevice_Type::FPGA, Param);
       }
    }
