@@ -179,6 +179,7 @@
 #include "config_I386_CLANG13_TOPFNAME_PLUGIN.hpp"
 #include "config_I386_CLANG13_VERSION.hpp"
 #include "config_I386_CLANG16_ASTANALYZER_PLUGIN.hpp"
+#include "config_I386_CLANG16_ASTANNOTATE_PLUGIN.hpp"
 #include "config_I386_CLANG16_CSROA_PLUGIN.hpp"
 #include "config_I386_CLANG16_EMPTY_PLUGIN.hpp"
 #include "config_I386_CLANG16_EXE.hpp"
@@ -577,7 +578,7 @@ void CompilerWrapper::CompileFile(const std::string& original_file_name, std::st
          (Param->getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_CPP ||
           Param->getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_LLVM_CPP))
       {
-         command += " -Xclang -add-plugin -Xclang " + compiler.ASTAnalyzer_plugin_name + " -Xclang -plugin-arg-" +
+         command += " -Xclang -plugin-arg-" +
                     compiler.ASTAnalyzer_plugin_name + " -Xclang -cppflag -Xclang -plugin-arg-" +
                     compiler.ASTAnalyzer_plugin_name + " -Xclang 1";
       }
@@ -731,6 +732,12 @@ void CompilerWrapper::CompileFile(const std::string& original_file_name, std::st
       }
       if(compiler.is_clang)
       {
+         if(Param->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
+             CompilerWrapper_CompilerTarget::CT_I386_CLANG16)
+         {
+            command += " -c -fplugin=" + compiler.ASTAnnotate_plugin_obj;
+            command += " -Xclang -add-plugin -Xclang " + compiler.ASTAnnotate_plugin_name;
+         }
          command += " -c" + load_plugin(compiler.expandMemOps_plugin_obj,
                                         Param->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler));
          command += " -c" +
@@ -2165,6 +2172,8 @@ CompilerWrapper::Compiler CompilerWrapper::GetCompiler() const
 #if HAVE_I386_CLANG16_COMPILER
       compiler.ASTAnalyzer_plugin_obj = clang_plugin_dir + I386_CLANG16_ASTANALYZER_PLUGIN + plugin_ext;
       compiler.ASTAnalyzer_plugin_name = I386_CLANG16_ASTANALYZER_PLUGIN;
+      compiler.ASTAnnotate_plugin_obj = clang_plugin_dir + I386_CLANG16_ASTANNOTATE_PLUGIN + plugin_ext;
+      compiler.ASTAnnotate_plugin_name = I386_CLANG16_ASTANNOTATE_PLUGIN;
 #elif HAVE_I386_CLANG13_COMPILER
       compiler.ASTAnalyzer_plugin_obj = clang_plugin_dir + I386_CLANG13_ASTANALYZER_PLUGIN + plugin_ext;
       compiler.ASTAnalyzer_plugin_name = I386_CLANG13_ASTANALYZER_PLUGIN;
@@ -2830,6 +2839,8 @@ CompilerWrapper::Compiler CompilerWrapper::GetCompiler() const
       compiler.topfname_plugin_name = I386_CLANG16_TOPFNAME_PLUGIN;
       compiler.ASTAnalyzer_plugin_obj = clang_plugin_dir + I386_CLANG16_ASTANALYZER_PLUGIN + plugin_ext;
       compiler.ASTAnalyzer_plugin_name = I386_CLANG16_ASTANALYZER_PLUGIN;
+      compiler.ASTAnnotate_plugin_obj = clang_plugin_dir + I386_CLANG16_ASTANNOTATE_PLUGIN + plugin_ext;
+      compiler.ASTAnnotate_plugin_name = I386_CLANG16_ASTANNOTATE_PLUGIN;
       compiler.llvm_link = relocate_compiler_path(I386_LLVM16_LINK_EXE);
       compiler.llvm_opt = relocate_compiler_path(I386_LLVM16_OPT_EXE);
    }

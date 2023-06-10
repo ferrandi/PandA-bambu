@@ -451,6 +451,7 @@ etc/clang_plugin/TreeHeightReduction.hpp
 etc/clang_plugin/bambuS2S.cpp
 etc/clang_plugin/dumpGimple.cpp
 etc/clang_plugin/plugin_ASTAnalyzer.cpp
+etc/clang_plugin/plugin_ASTAnnotate.cpp
 etc/clang_plugin/plugin_CSROA.cpp
 etc/clang_plugin/plugin_GepiCanon.cpp
 etc/clang_plugin/plugin_dumpGimpleEmpty.cpp
