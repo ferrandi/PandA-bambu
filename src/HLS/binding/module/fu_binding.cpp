@@ -2379,7 +2379,7 @@ void fu_binding::fill_array_ref_memory(std::ostream& init_file_a, std::ostream& 
    {
       std::vector<unsigned long long> dims;
       tree_helper::get_array_dim_and_bitsize(TreeM, array_type_node->index, dims, elts_size);
-      THROW_ASSERT(dims.size(), "something of wrong happen");
+      THROW_ASSERT(dims.size(), "something wrong happened");
       vec_size = std::accumulate(dims.begin(), dims.end(), 1ULL,
                                  [](unsigned long long a, unsigned long long b) { return a * b; });
    }
@@ -2755,7 +2755,7 @@ void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_n
          const auto main_element_align = element_align;
          if(designated_initializers_used)
          {
-            THROW_ASSERT(field_list, "something of wrong happen");
+            THROW_ASSERT(field_list, "something wrong happened");
             auto fli = field_list->begin();
             const auto flend = field_list->end();
             auto iv_it = co->list_of_idx_valu.begin();
@@ -2820,7 +2820,7 @@ void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_n
                   {
                      /// add padding
                      init_file.push_back(std::string(nbits, '0'));
-                  }
+                     }
                }
             }
          }
@@ -2890,7 +2890,7 @@ void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_n
                   {
                      /// add padding
                      init_file.push_back(std::string(nbits, '0'));
-                  }
+                     }
                }
             }
          }
@@ -2913,27 +2913,27 @@ void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_n
             THROW_ASSERT(num_elements >= static_cast<unsigned long long>(co->list_of_idx_valu.size()), "");
             num_elements -= static_cast<unsigned long long>(co->list_of_idx_valu.size());
             init_file.insert(init_file.end(), num_elements, std::string(size_of_data, '0'));
-         }
+            }
          break;
       }
       case string_cst_K:
       {
          const auto sc = GetPointerS<const string_cst>(init_node);
          const auto string_value = [&]() {
-            std::string tmp;
+         std::string tmp;
             const char* c_str = sc->strg.c_str();
             for(size_t index = 0; index < sc->strg.size(); ++index)
-            {
+         {
                if(c_str[index] == '\\' && c_str[index + 1] == '0')
-               {
-                  tmp += '\0';
-                  ++index;
-               }
-               else
-               {
-                  tmp += c_str[index];
-               }
+            {
+               tmp += '\0';
+               ++index;
             }
+            else
+            {
+                  tmp += c_str[index];
+            }
+         }
             boost::replace_all(tmp, "\\a", "\a");
             boost::replace_all(tmp, "\\b", "\b");
             boost::replace_all(tmp, "\\t", "\t");
@@ -2956,14 +2956,14 @@ void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_n
          }
          for(const auto j : string_value)
          {
-            auto ull_value = static_cast<unsigned long int>(j);
-            trimmed_value = "";
+               auto ull_value = static_cast<unsigned long int>(j);
+               trimmed_value = "";
             for(auto ind = 0U; ind < elmt_bitsize; ++ind)
-            {
-               trimmed_value = trimmed_value + (((1LLU << (elmt_bitsize - ind - 1)) & ull_value) ? '1' : '0');
+               {
+                  trimmed_value = trimmed_value + (((1LLU << (elmt_bitsize - ind - 1)) & ull_value) ? '1' : '0');
+               }
+               init_file.push_back(trimmed_value);
             }
-            init_file.push_back(trimmed_value);
-         }
          // String terminator
          init_file.push_back(std::string(elmt_bitsize, '0'));
 
@@ -2972,7 +2972,7 @@ void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_n
          dims.clear();
          unsigned long long size_of_data;
          tree_helper::get_array_dim_and_bitsize(TreeM, type_n->index, dims, size_of_data);
-         THROW_ASSERT(size_of_data == elmt_bitsize, "something of wrong happen");
+         THROW_ASSERT(size_of_data == elmt_bitsize, "something wrong happened");
          auto num_elements = std::accumulate(dims.begin(), dims.end(), 1ULL,
                                              [](unsigned long long a, unsigned long long b) { return a * b; });
          std::string value;
@@ -3001,7 +3001,7 @@ void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_n
          }
          else
          {
-            THROW_ERROR("Something of unexpected happened: " + STR(init_node->index) + " | " +
+            THROW_ERROR("Something unexpected happened: " + STR(init_node->index) + " | " +
                         GET_NODE(ue->op)->get_kind_text());
          }
          break;
