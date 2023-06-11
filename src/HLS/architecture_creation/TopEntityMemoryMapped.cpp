@@ -96,10 +96,8 @@ void TopEntityMemoryMapped::Initialize()
    const auto CGM = HLSMgr->CGetCallGraphManager();
    const auto& top_function_ids = CGM->GetRootFunctions();
    is_root_function = top_function_ids.count(funId);
-   const auto is_wb4_root = is_root_function && parameters->getOption<HLSFlowStep_Type>(OPT_interface_type) ==
-                                                    HLSFlowStep_Type::WB4_INTERFACE_GENERATION;
-   const auto is_addressed_fun = HLSMgr->hasToBeInterfaced(funId) && !is_root_function;
-   needMemoryMappedRegisters = is_wb4_root || is_addressed_fun || parameters->getOption<bool>(OPT_memory_mapped_top);
+   needMemoryMappedRegisters =
+       is_root_function ? parameters->getOption<bool>(OPT_memory_mapped_top) : HLSMgr->hasToBeInterfaced(funId);
    AddedComponents.clear();
    const auto FB = HLSMgr->CGetFunctionBehavior(funId);
    _channels_number = FB->GetChannelsNumber();

@@ -94,9 +94,7 @@ void HWCallPathCalculator::start_vertex(const UnfoldedVertexDescriptor& v, const
    const auto top_fu_name =
        Cget_node_info<UnfoldedFunctionInfo>(v, ufcg)->behavior->CGetBehavioralHelper()->get_function_name();
    const auto parameters = HLSMgr->get_parameter();
-   if(HLSMgr->CGetCallGraphManager()->ExistsAddressedFunction() ||
-      (parameters->isOption(OPT_interface_type) &&
-       parameters->getOption<HLSFlowStep_Type>(OPT_interface_type) == HLSFlowStep_Type::WB4_INTERFACE_GENERATION))
+   if(HLSMgr->CGetCallGraphManager()->ExistsAddressedFunction() || parameters->getOption<bool>(OPT_memory_mapped_top))
    {
       top_fun_scope += "_" + top_fu_name + "_int_i0" HIERARCHY_SEPARATOR;
    }

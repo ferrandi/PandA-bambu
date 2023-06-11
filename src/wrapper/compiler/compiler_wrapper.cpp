@@ -622,8 +622,8 @@ void CompilerWrapper::CompileFile(const std::string& original_file_name, std::st
                             Param->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler)) +
                 " -mllvm -internalize-outputdir=" + Param->getOption<std::string>(OPT_output_temporary_directory) +
                 " -mllvm -panda-TFN=" + fname;
-            if(Param->isOption(OPT_interface_type) && Param->getOption<HLSFlowStep_Type>(OPT_interface_type) ==
-                                                          HLSFlowStep_Type::INFERRED_INTERFACE_GENERATION)
+            if(Param->getOption<HLSFlowStep_Type>(OPT_interface_type) ==
+               HLSFlowStep_Type::INFERRED_INTERFACE_GENERATION)
             {
                command += " -mllvm -add-noalias";
             }
@@ -758,7 +758,7 @@ void CompilerWrapper::CompileFile(const std::string& original_file_name, std::st
    else if(cm == CompilerWrapper_CompilerMode::CM_LTO)
    {
       if(Param->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
-          CompilerWrapper_CompilerTarget::CT_I386_CLANG16)
+         CompilerWrapper_CompilerTarget::CT_I386_CLANG16)
       {
          command += " -Xclang -no-opaque-pointers";
       }
@@ -1096,8 +1096,8 @@ void CompilerWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::st
 #endif
             command += " -internalize-outputdir=" + Param->getOption<std::string>(OPT_output_temporary_directory);
             command += " -panda-TFN=" + fname;
-            if(Param->isOption(OPT_interface_type) && Param->getOption<HLSFlowStep_Type>(OPT_interface_type) ==
-                                                           HLSFlowStep_Type::INFERRED_INTERFACE_GENERATION)
+            if(Param->getOption<HLSFlowStep_Type>(OPT_interface_type) ==
+               HLSFlowStep_Type::INFERRED_INTERFACE_GENERATION)
             {
                command += " -add-noalias";
             }
@@ -1739,7 +1739,6 @@ void CompilerWrapper::SetBambuDefault()
       optimization_flags["ipa-pta"] = true;
    }
 
-   /// NOTE: the false here is used to be sure that the first operand of the first or always exists
    if(compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC46 ||
       compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC47 ||
       compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC48 ||
@@ -1754,19 +1753,9 @@ void CompilerWrapper::SetBambuDefault()
       optimization_flags["tree-loop-distribute-patterns"] = false;
       optimization_flags["partial-inlining"] = false; /// artificial functions are not analyzed by the plugin
    }
-   /// NOTE: the false here is used to be sure that the first operand of the first or always exists
-   if(compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC45 ||
-      compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC46 ||
-      compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC47 ||
-      compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC48 ||
-      compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC49 ||
-      compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC5 ||
-      compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC6 ||
-      compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC7 ||
-      compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC8)
+   if(isGccCheck(compiler))
    {
-      if(Param->isOption(OPT_interface_type) &&
-         Param->getOption<HLSFlowStep_Type>(OPT_interface_type) == HLSFlowStep_Type::INFERRED_INTERFACE_GENERATION)
+      if(Param->getOption<HLSFlowStep_Type>(OPT_interface_type) == HLSFlowStep_Type::INFERRED_INTERFACE_GENERATION)
       {
          optimization_flags["tree-vectorize"] = false;
       }

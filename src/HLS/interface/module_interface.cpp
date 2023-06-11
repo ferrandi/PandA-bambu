@@ -93,8 +93,8 @@ module_interface::ComputeHLSRelationships(const DesignFlowStep::RelationshipType
       case DEPENDENCE_RELATIONSHIP:
       {
          const auto cg_man = HLSMgr->CGetCallGraphManager();
-         if(HLSMgr->hasToBeInterfaced(funId) and
-            (cg_man->ExistsAddressedFunction() or hls_flow_step_type == HLSFlowStep_Type::WB4_INTERFACE_GENERATION))
+         if(HLSMgr->hasToBeInterfaced(funId) &&
+            (cg_man->ExistsAddressedFunction() || parameters->getOption<bool>(OPT_memory_mapped_top)))
          {
             ret.insert(std::make_tuple(HLSFlowStep_Type::TOP_ENTITY_MEMORY_MAPPED_CREATION,
                                        HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));

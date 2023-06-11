@@ -280,9 +280,8 @@ void memory_allocation::finalize_memory_allocation()
       const auto function_behavior = HLSMgr->CGetFunctionBehavior(fun_id);
       const auto behavioral_helper = function_behavior->CGetBehavioralHelper();
       const auto is_interfaced = HLSMgr->hasToBeInterfaced(behavioral_helper->get_function_index());
-      const auto is_inferred_interface =
-          parameters->isOption(OPT_interface_type) && parameters->getOption<HLSFlowStep_Type>(OPT_interface_type) ==
-                                                          HLSFlowStep_Type::INFERRED_INTERFACE_GENERATION;
+      const auto is_inferred_interface = parameters->getOption<HLSFlowStep_Type>(OPT_interface_type) ==
+                                         HLSFlowStep_Type::INFERRED_INTERFACE_GENERATION;
       if(function_behavior->get_has_globals() && parameters->isOption(OPT_expose_globals) &&
          parameters->getOption<bool>(OPT_expose_globals))
       {
@@ -464,11 +463,9 @@ void memory_allocation::finalize_memory_allocation()
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed " + GET_NAME(g, *v));
       }
       const auto top_functions = HLSMgr->CGetCallGraphManager()->GetRootFunctions();
-      const auto local_needMemoryMappedRegisters =
-          (top_functions.count(fun_id) ? parameters->getOption<HLSFlowStep_Type>(OPT_interface_type) ==
-                                             HLSFlowStep_Type::WB4_INTERFACE_GENERATION :
-                                         HLSMgr->hasToBeInterfaced(fun_id)) ||
-          parameters->getOption<bool>(OPT_memory_mapped_top);
+      const auto local_needMemoryMappedRegisters = top_functions.count(fun_id) ?
+                                                       parameters->getOption<bool>(OPT_memory_mapped_top) :
+                                                       HLSMgr->hasToBeInterfaced(fun_id);
       needMemoryMappedRegisters = needMemoryMappedRegisters || local_needMemoryMappedRegisters;
       if(local_needMemoryMappedRegisters)
       {

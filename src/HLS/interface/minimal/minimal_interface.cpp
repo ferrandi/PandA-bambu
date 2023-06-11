@@ -166,10 +166,8 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
        HLSMgr->Rmem->has_intern_shared_data() ||
        (memory_allocation_policy == MemoryAllocation_Policy::EXT_PIPELINED_BRAM) ||
        (memory_allocation_policy == MemoryAllocation_Policy::NO_BRAM) ||
-       (top_function_ids.count(funId) ?
-            parameters->getOption<HLSFlowStep_Type>(OPT_interface_type) == HLSFlowStep_Type::WB4_INTERFACE_GENERATION :
-            HLSMgr->hasToBeInterfaced(funId)) ||
-       parameters->getOption<bool>(OPT_memory_mapped_top);
+       (top_function_ids.count(funId) ? parameters->getOption<bool>(OPT_memory_mapped_top) :
+                                        HLSMgr->hasToBeInterfaced(funId));
    bool with_master = false;
    bool with_slave = false;
    for(auto i = 0U; i < GetPointerS<module>(wrappedObj)->get_in_port_size(); ++i)
