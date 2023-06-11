@@ -63,6 +63,7 @@
 #include "library_manager.hpp"
 #include "math_function.hpp"
 #include "memory.hpp"
+#include "memory_symbol.hpp"
 #include "structural_manager.hpp"
 #include "structural_objects.hpp"
 #include "technology_manager.hpp"
@@ -229,6 +230,7 @@ DesignFlowStep_Status TestbenchGeneration::Exec()
    mgm.create_generic_module("TestbenchDUT", nullptr, top_fb, LIBRARY_STD, "TestbenchDUT");
    const auto dut = tb_top->add_module_from_technology_library("DUT", "TestbenchDUT", LIBRARY_STD, tb_cir, TechM);
    const auto dut_clock = dut->find_member(CLOCK_PORT_NAME, port_o_K, dut);
+   THROW_ASSERT(dut_clock, "");
    tb_top->add_connection(clock_port, dut_clock);
 
    // Add generated testbench FSM
@@ -242,126 +244,217 @@ DesignFlowStep_Status TestbenchGeneration::Exec()
    const auto fsm_clock = tb_fsm->find_member(CLOCK_PORT_NAME, port_o_K, tb_fsm);
    tb_top->add_connection(clock_port, fsm_clock);
    const auto dut_reset = dut->find_member(RESET_PORT_NAME, port_o_K, dut);
+   THROW_ASSERT(dut_reset, "");
    const auto fsm_reset = tb_fsm->find_member(RESET_PORT_NAME, port_o_K, tb_fsm);
    add_internal_connection(fsm_reset, dut_reset);
-   const auto dut_start = dut->find_member(START_PORT_NAME, port_o_K, dut);
-   const auto fsm_start = tb_fsm->find_member(START_PORT_NAME, port_o_K, tb_fsm);
-   add_internal_connection(fsm_start, dut_start);
    const auto dut_done = dut->find_member(DONE_PORT_NAME, port_o_K, dut);
+   THROW_ASSERT(dut_done, "");
    const auto fsm_done = tb_fsm->find_member(DONE_PORT_NAME, port_o_K, tb_fsm);
    add_internal_connection(fsm_done, dut_done);
+   auto fsm_start = tb_fsm->find_member(START_PORT_NAME, port_o_K, tb_fsm);
 
-   INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "Generating handler modules for top level parameters...");
    std::list<structural_objectRef> if_modules;
-   // Add interface components relative to each top function argument
-   const auto top_bh = top_fb->CGetBehavioralHelper();
-   auto idx = 0U;
-   {
-      const auto return_port = dut->find_member(RETURN_PORT_NAME, port_o_K, dut);
-      if(return_port)
-      {
-         const auto if_port =
-             tb_top->add_module_from_technology_library("if_return_port", "IF_PORT_OUT", LIBRARY_STD, tb_cir, TechM);
-         if_modules.push_back(if_port);
-         if_port->SetParameter("index", STR(idx));
-
-         const auto val_port = if_port->find_member("val_port", port_o_K, if_port);
-         add_internal_connection(val_port, return_port);
-         ++idx;
-      }
-   }
-
    const auto interface_type = parameters->getOption<HLSFlowStep_Type>(OPT_interface_type);
-   const auto is_interface_inferred = interface_type == HLSFlowStep_Type::INFERRED_INTERFACE_GENERATION;
-   const auto DesignAttributes = HLSMgr->design_attributes.find(top_bh->GetMangledFunctionName());
-   THROW_ASSERT(!is_interface_inferred || DesignAttributes != HLSMgr->design_attributes.end(),
-                "Original signature not found for function: " + top_bh->GetMangledFunctionName() + " (" +
-                    top_bh->get_function_name() + ")");
-   for(const auto& arg : top_bh->GetParameters())
+   INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "Generating handler modules for top level parameters...");
+   const auto top_bh = top_fb->CGetBehavioralHelper();
+   if(parameters->getOption<bool>(OPT_memory_mapped_top))
    {
-      const auto arg_name = top_bh->PrintVariable(GET_INDEX_CONST_NODE(arg));
-      INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "-->Parameter " + arg_name);
-      THROW_ASSERT(!is_interface_inferred || DesignAttributes->second.count(arg_name),
-                   "Interface attributes missing for parameter " + arg_name);
-      if(is_interface_inferred && tree_helper::IsPointerType(arg) &&
-         !DesignAttributes->second.at(arg_name).count(attr_interface_dir))
+      const std::string if_suffix =
+          interface_type == HLSFlowStep_Type::MINIMAL_INTERFACE_GENERATION ? "Minimal" : "WishboneB4";
+      const auto master_port_module = "TestbenchArgMap" + if_suffix;
+      size_t idx = top_bh->GetFunctionReturnType(top_id) ? 1 : 0;
+      std::list<structural_objectRef> master_ports;
+      for(const auto& par : top_bh->GetParameters())
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "<--Unused parameter");
+         const auto par_name = top_bh->PrintVariable(GET_INDEX_CONST_NODE(par));
+         INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "-->Parameter " + par_name);
+         const auto par_bitsize = tree_helper::Size(par);
+         const auto par_symbol = HLSMgr->Rmem->get_symbol(GET_INDEX_CONST_NODE(par), top_id);
+         INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level,
+                        "---Interface: " + STR(par_bitsize) + "-bits memory mapped at " +
+                            STR(par_symbol->get_address()));
+         const auto master_port = tb_top->add_module_from_technology_library("master_" + par_name, master_port_module,
+                                                                             LIBRARY_STD, tb_cir, TechM);
+         master_port->SetParameter("index", STR(idx));
+         master_port->SetParameter("bitsize", STR(par_bitsize));
+         master_port->SetParameter("tgt_addr", STR(par_symbol->get_address()));
+
+         master_ports.push_back(master_port);
          ++idx;
-         continue;
+         INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "<--");
       }
-      const auto arg_port = dut->find_member(arg_name, port_o_K, dut);
-      const auto arg_interface = [&]() -> std::string {
-         if(is_interface_inferred)
+
+      const auto start_symbol = HLSMgr->Rmem->get_symbol(top_id, top_id);
+      const auto master_start = tb_top->add_module_from_technology_library(
+          "_master_start", "TestbenchStartMap" + if_suffix, LIBRARY_STD, tb_cir, TechM);
+      master_start->SetParameter("tgt_addr", STR(start_symbol->get_address()));
+      master_ports.push_back(master_start);
+
+      if_modules.insert(if_modules.end(), master_ports.begin(), master_ports.end());
+      if(master_ports.size())
+      {
+         const auto master_mod = GetPointerS<module>(master_ports.front());
+         THROW_ASSERT(master_mod->get_in_port_size() >= 3, "At least three in ports must be present.");
+         THROW_ASSERT(master_mod->get_out_port_size() >= 1, "At least an out port must be present.");
+         unsigned int k = 0;
+
+         // Daisy chain start_port signal through all memory master modules
+         for(const auto& master_port : master_ports)
          {
-            THROW_ASSERT(DesignAttributes->second.at(arg_name).count(attr_interface_type),
-                         "Not matched parameter name: " + arg_name);
-            return DesignAttributes->second.at(arg_name).at(attr_interface_type);
+            const auto mmod = GetPointerS<module>(master_port);
+            const auto m_start = mmod->get_in_port(2);
+            const auto m_start_o = mmod->get_out_port(0);
+            THROW_ASSERT(m_start->get_id() == "i_" START_PORT_NAME, "");
+            THROW_ASSERT(m_start_o->get_id() == START_PORT_NAME, "");
+            const auto sig = tb_top->add_sign("sig_" START_PORT_NAME + STR(k), tb_cir, fsm_start->get_typeRef());
+            tb_top->add_connection(fsm_start, sig);
+            tb_top->add_connection(sig, m_start);
+            fsm_start = m_start_o;
+            ++k;
          }
-         return "default";
-      }();
-      const auto bundle_name = [&]() {
-         if(is_interface_inferred)
+
+         // Merge all matching out signals from memory master modules
+         for(unsigned int i = 1; i < master_mod->get_out_port_size(); ++i)
          {
-            const auto attr_it = DesignAttributes->second.at(arg_name).find(attr_bundle_name);
-            if(attr_it != DesignAttributes->second.at(arg_name).end())
+            const auto out_port = master_mod->get_out_port(i);
+            const auto bus_merger = tb_top->add_module_from_technology_library(
+                "merge_" + out_port->get_id(), "bus_merger", LIBRARY_STD, tb_cir, TechM);
+            const auto merge_out = GetPointerS<module>(bus_merger)->get_out_port(0);
+            const auto dut_port = dut->find_member(out_port->get_id(), port_o_K, dut);
+            THROW_ASSERT(dut_port, "Port " + out_port->get_id() + " not found in module " + dut->get_path());
+            add_internal_connection(merge_out, dut_port);
+            const auto merge_port = GetPointerS<module>(bus_merger)->get_in_port(0);
+            const auto merge_port_o = GetPointerS<port_o>(merge_port);
+            merge_port_o->add_n_ports(static_cast<unsigned int>(master_ports.size()), merge_port);
+            merge_port_o->type_resize(STD_GET_SIZE(dut_port->get_typeRef()));
+            k = 0;
+            for(const auto& master_port : master_ports)
             {
-               return attr_it->second;
+               const auto m_port = GetPointerS<module>(master_port)->get_out_port(i);
+               m_port->type_resize(STD_GET_SIZE(dut_port->get_typeRef()));
+               const auto sig =
+                   tb_top->add_sign("sig_" + out_port->get_id() + "_" + STR(k), tb_cir, dut_port->get_typeRef());
+               tb_top->add_connection(m_port, sig);
+               tb_top->add_connection(sig, merge_port_o->get_port(k));
+               ++k;
             }
          }
-         return arg_name;
-      }();
-
-      if(arg_interface == "default")
-      {
-         const auto arg_port_dir = GetPointer<port_o>(arg_port)->get_port_direction();
-         INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level,
-                        "---Interface: " + arg_interface + " " + port_o::GetString(arg_port_dir));
-         const auto if_port = tb_top->add_module_from_technology_library("if_" + arg_interface + "_" + arg_name,
-                                                                         "IF_PORT_" + port_o::GetString(arg_port_dir),
-                                                                         LIBRARY_STD, tb_cir, TechM);
-         if_modules.push_back(if_port);
-         if_port->SetParameter("index", STR(idx));
-
-         THROW_ASSERT(arg_port, "Top level interface is missing port for argument '" + arg_name + "'");
-         const auto val_port = if_port->find_member("val_port", port_o_K, if_port);
-         add_internal_connection(val_port, arg_port);
       }
-      else if(arg_interface == "m_axi")
+   }
+   else
+   {
+      const auto dut_start = dut->find_member(START_PORT_NAME, port_o_K, dut);
+      THROW_ASSERT(dut_start, "");
+      add_internal_connection(fsm_start, dut_start);
+
+      // Add interface components relative to each top function argument
+      auto idx = 0U;
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level,
-                        "---Interface: " + arg_interface + " (bundle: " + bundle_name + ")");
-         const auto axim_bundle_name = "if_m_axi_" + bundle_name;
-         const auto axim_bundle = tb_cir->find_member(axim_bundle_name, component_o_K, tb_cir);
-         if(!axim_bundle)
+         const auto return_port = dut->find_member(RETURN_PORT_NAME, port_o_K, dut);
+         if(return_port)
          {
-            mgm.create_generic_module("TestbenchAXIM", nullptr, top_fb, LIBRARY_STD, axim_bundle_name);
-            const auto if_port = tb_top->add_module_from_technology_library(axim_bundle_name, axim_bundle_name,
-                                                                            LIBRARY_STD, tb_cir, TechM);
-            if_modules.push_back(if_port);
-         }
-         // TODO: add offset port constant value
-      }
-      else
-      {
-         INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level,
-                        "---Interface: " + arg_interface + " " +
-                            DesignAttributes->second.at(arg_name).at(attr_interface_dir) +
-                            (bundle_name != arg_name ? (" (bundle: " + bundle_name + ")") : ""));
-         const auto if_port_name = "if_" + arg_interface + "_" + bundle_name;
-         const auto if_port_bundle = tb_cir->find_member(if_port_name, component_o_K, tb_cir);
-         if(!if_port_bundle)
-         {
-            mgm.create_generic_module("Testbench" + capitalize(arg_interface), nullptr, top_fb, LIBRARY_STD,
-                                      if_port_name);
             const auto if_port =
-                tb_top->add_module_from_technology_library(if_port_name, if_port_name, LIBRARY_STD, tb_cir, TechM);
-            if_port->SetParameter("index", STR(idx));
+                tb_top->add_module_from_technology_library("if_return_port", "IF_PORT_OUT", LIBRARY_STD, tb_cir, TechM);
             if_modules.push_back(if_port);
+            if_port->SetParameter("index", STR(idx));
+
+            const auto val_port = if_port->find_member("val_port", port_o_K, if_port);
+            add_internal_connection(val_port, return_port);
+            ++idx;
          }
       }
-      INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "<--");
-      ++idx;
+
+      const auto is_interface_inferred = interface_type == HLSFlowStep_Type::INFERRED_INTERFACE_GENERATION;
+      const auto DesignAttributes = HLSMgr->design_attributes.find(top_bh->GetMangledFunctionName());
+      THROW_ASSERT(!is_interface_inferred || DesignAttributes != HLSMgr->design_attributes.end(),
+                   "Original signature not found for function: " + top_bh->GetMangledFunctionName() + " (" +
+                       top_bh->get_function_name() + ")");
+      for(const auto& arg : top_bh->GetParameters())
+      {
+         const auto arg_name = top_bh->PrintVariable(GET_INDEX_CONST_NODE(arg));
+         INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "-->Parameter " + arg_name);
+         THROW_ASSERT(!is_interface_inferred || DesignAttributes->second.count(arg_name),
+                      "Interface attributes missing for parameter " + arg_name);
+         if(is_interface_inferred && tree_helper::IsPointerType(arg) &&
+            !DesignAttributes->second.at(arg_name).count(attr_interface_dir))
+         {
+            INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "<--Unused parameter");
+            ++idx;
+            continue;
+         }
+         const auto arg_port = dut->find_member(arg_name, port_o_K, dut);
+         const auto arg_interface = [&]() -> std::string {
+            if(is_interface_inferred)
+            {
+               THROW_ASSERT(DesignAttributes->second.at(arg_name).count(attr_interface_type),
+                            "Not matched parameter name: " + arg_name);
+               return DesignAttributes->second.at(arg_name).at(attr_interface_type);
+            }
+            return "default";
+         }();
+         const auto bundle_name = [&]() {
+            if(is_interface_inferred)
+            {
+               const auto attr_it = DesignAttributes->second.at(arg_name).find(attr_bundle_name);
+               if(attr_it != DesignAttributes->second.at(arg_name).end())
+               {
+                  return attr_it->second;
+               }
+            }
+            return arg_name;
+         }();
+
+         if(arg_interface == "default")
+         {
+            const auto arg_port_dir = GetPointer<port_o>(arg_port)->get_port_direction();
+            INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level,
+                           "---Interface: " + arg_interface + " " + port_o::GetString(arg_port_dir));
+            const auto if_port = tb_top->add_module_from_technology_library(
+                "if_" + arg_interface + "_" + arg_name, "IF_PORT_" + port_o::GetString(arg_port_dir), LIBRARY_STD,
+                tb_cir, TechM);
+            if_modules.push_back(if_port);
+            if_port->SetParameter("index", STR(idx));
+
+            THROW_ASSERT(arg_port, "Top level interface is missing port for argument '" + arg_name + "'");
+            const auto val_port = if_port->find_member("val_port", port_o_K, if_port);
+            add_internal_connection(val_port, arg_port);
+         }
+         else if(arg_interface == "m_axi")
+         {
+            INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level,
+                           "---Interface: " + arg_interface + " (bundle: " + bundle_name + ")");
+            const auto axim_bundle_name = "if_m_axi_" + bundle_name;
+            const auto axim_bundle = tb_cir->find_member(axim_bundle_name, component_o_K, tb_cir);
+            if(!axim_bundle)
+            {
+               mgm.create_generic_module("TestbenchAXIM", nullptr, top_fb, LIBRARY_STD, axim_bundle_name);
+               const auto if_port = tb_top->add_module_from_technology_library(axim_bundle_name, axim_bundle_name,
+                                                                               LIBRARY_STD, tb_cir, TechM);
+               if_modules.push_back(if_port);
+            }
+            // TODO: add offset port constant value
+         }
+         else
+         {
+            INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level,
+                           "---Interface: " + arg_interface + " " +
+                               DesignAttributes->second.at(arg_name).at(attr_interface_dir) +
+                               (bundle_name != arg_name ? (" (bundle: " + bundle_name + ")") : ""));
+            const auto if_port_name = "if_" + arg_interface + "_" + bundle_name;
+            const auto if_port_bundle = tb_cir->find_member(if_port_name, component_o_K, tb_cir);
+            if(!if_port_bundle)
+            {
+               mgm.create_generic_module("Testbench" + capitalize(arg_interface), nullptr, top_fb, LIBRARY_STD,
+                                         if_port_name);
+               const auto if_port =
+                   tb_top->add_module_from_technology_library(if_port_name, if_port_name, LIBRARY_STD, tb_cir, TechM);
+               if_port->SetParameter("index", STR(idx));
+               if_modules.push_back(if_port);
+            }
+         }
+         INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "<--");
+         ++idx;
+      }
    }
 
    INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "Generating memory interface...");
@@ -369,13 +462,14 @@ DesignFlowStep_Status TestbenchGeneration::Exec()
    if(interface_type == HLSFlowStep_Type::MINIMAL_INTERFACE_GENERATION ||
       interface_type == HLSFlowStep_Type::INFERRED_INTERFACE_GENERATION)
    {
-      tb_mem = tb_top->add_module_from_technology_library("SystemMEM", "TestbenchMinimal", LIBRARY_STD, tb_cir, TechM);
+      tb_mem =
+          tb_top->add_module_from_technology_library("SystemMEM", "TestbenchMEMMinimal", LIBRARY_STD, tb_cir, TechM);
    }
    else if(interface_type == HLSFlowStep_Type::WB4_INTERFACE_GENERATION ||
            interface_type == HLSFlowStep_Type::WB4_INTERCON_INTERFACE_GENERATION)
    {
       tb_mem =
-          tb_top->add_module_from_technology_library("SystemMEM", "TestbenchWishboneB4", LIBRARY_STD, tb_cir, TechM);
+          tb_top->add_module_from_technology_library("SystemMEM", "TestbenchMEMWishboneB4", LIBRARY_STD, tb_cir, TechM);
    }
    else
    {
@@ -398,6 +492,11 @@ DesignFlowStep_Status TestbenchGeneration::Exec()
       for(unsigned i = 0; i < if_mod->get_in_port_size(); ++i)
       {
          const auto in_port = if_mod->get_in_port(i);
+         if(GetPointerS<port_o>(in_port)->get_connections_size())
+         {
+            INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "---" + in_port->get_path() + " already connected");
+            continue;
+         }
          if(in_port->get_id() == CLOCK_PORT_NAME)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level,
@@ -425,11 +524,12 @@ DesignFlowStep_Status TestbenchGeneration::Exec()
                               "---" + in_port->get_path() + " <-> " + dut_port->get_path());
                add_internal_connection(in_port, dut_port);
             }
-            else if(GetPointer<port_o>(in_port)->get_connections_size())
+            else if(GetPointerS<port_o>(in_port)->get_is_memory())
             {
-               INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "---" + in_port->get_path() + " already connected");
+               INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level,
+                              "---Memory port " + in_port->get_id() + " not present in DUT module " + dut->get_path());
             }
-            else if(!GetPointer<port_o>(in_port)->get_is_memory())
+            else
             {
                THROW_UNREACHABLE("Port " + in_port->get_id() + " not found in DUT module " + dut->get_path());
             }
@@ -439,6 +539,11 @@ DesignFlowStep_Status TestbenchGeneration::Exec()
       for(unsigned i = 0; i < if_mod->get_out_port_size(); ++i)
       {
          const auto out_port = if_mod->get_out_port(i);
+         if(GetPointerS<port_o>(out_port)->get_connections_size())
+         {
+            INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "---" + out_port->get_path() + " already connected");
+            continue;
+         }
          const auto dut_port = dut->find_member(out_port->get_id(), port_o_K, dut);
          if(dut_port)
          {
@@ -446,13 +551,14 @@ DesignFlowStep_Status TestbenchGeneration::Exec()
                            "---" + out_port->get_path() + " <-> " + dut_port->get_path());
             add_internal_connection(out_port, dut_port);
          }
-         else if(GetPointer<port_o>(out_port)->get_connections_size())
+         else if(GetPointerS<port_o>(out_port)->get_is_memory())
          {
-            INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "---" + out_port->get_path() + " already connected");
+            INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level,
+                           "---Memory port " + out_port->get_id() + " not present in DUT module " + dut->get_path());
          }
-         else if(!GetPointer<port_o>(out_port)->get_is_memory())
+         else
          {
-            THROW_UNREACHABLE("Port " + out_port->get_path() + " not found in top level interface");
+            THROW_UNREACHABLE("Port " + out_port->get_id() + " not found in DUT module " + dut->get_path());
          }
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "<--");
