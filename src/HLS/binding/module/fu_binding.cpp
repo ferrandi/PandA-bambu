@@ -2379,7 +2379,7 @@ void fu_binding::fill_array_ref_memory(std::ostream& init_file_a, std::ostream& 
    {
       std::vector<unsigned long long> dims;
       tree_helper::get_array_dim_and_bitsize(TreeM, array_type_node->index, dims, elts_size);
-      THROW_ASSERT(dims.size(), "something of wrong happen");
+      THROW_ASSERT(dims.size(), "something wrong happen");
       vec_size = std::accumulate(dims.begin(), dims.end(), 1ULL,
                                  [](unsigned long long a, unsigned long long b) { return a * b; });
    }
@@ -2755,7 +2755,7 @@ void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_n
          const auto main_element_align = element_align;
          if(designated_initializers_used)
          {
-            THROW_ASSERT(field_list, "something of wrong happen");
+            THROW_ASSERT(field_list, "something wrong happened");
             auto fli = field_list->begin();
             const auto flend = field_list->end();
             auto iv_it = co->list_of_idx_valu.begin();
@@ -2972,7 +2972,7 @@ void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_n
          dims.clear();
          unsigned long long size_of_data;
          tree_helper::get_array_dim_and_bitsize(TreeM, type_n->index, dims, size_of_data);
-         THROW_ASSERT(size_of_data == elmt_bitsize, "something of wrong happen");
+         THROW_ASSERT(size_of_data == elmt_bitsize, "something wrong happened");
          auto num_elements = std::accumulate(dims.begin(), dims.end(), 1ULL,
                                              [](unsigned long long a, unsigned long long b) { return a * b; });
          std::string value;
@@ -3001,7 +3001,7 @@ void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_n
          }
          else
          {
-            THROW_ERROR("Something of unexpected happened: " + STR(init_node->index) + " | " +
+            THROW_ERROR("Something unexpected happened: " + STR(init_node->index) + " | " +
                         GET_NODE(ue->op)->get_kind_text());
          }
          break;
