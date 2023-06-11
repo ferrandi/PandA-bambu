@@ -113,7 +113,7 @@ DesignFlowStep_Status TestVectorParser::Exec()
 
    const auto input_string = parameters->getOption<std::string>(OPT_testbench_input_string);
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Examining " + input_string);
-   if(boost::regex_match(input_string, boost::regex("^[\\w\\d\\-\\./]+\\.\\w+$")))
+   if(boost::regex_match(input_string, boost::regex("^[\\w\\d\\-\\.\\/]+\\.\\w+$")))
    {
       if(boost::ends_with(input_string, ".xml"))
       {
