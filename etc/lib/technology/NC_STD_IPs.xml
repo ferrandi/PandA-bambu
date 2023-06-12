@@ -1502,7 +1502,7 @@ end"/>
       </circuit>
     </cell>
     <cell>
-      <name>TestbenchMAXI</name>
+      <name>TestbenchAXIM</name>
       <circuit>
         <component_o id="TestbenchAXIM">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
@@ -1510,7 +1510,9 @@ end"/>
           <authors>Michele Fiorito &lt;michele.fiorito@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="TestbenchAXIM"/>
-          <parameter name="index">0</parameter>
+          <parameter name="WRITE_DELAY">1</parameter>
+          <parameter name="READ_DELAY">2</parameter>
+          <parameter name="QUEUE_SIZE">12</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
@@ -1520,7 +1522,7 @@ end"/>
           <port_o id="done_port" dir="IN">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
-          <NP_functionality IP_COMPONENT="arg_utils,mem_utils" LIBRARY="TestbenchAXIM index" VERILOG_GENERATOR="TestbenchAXIMModuleGenerator"/>
+          <NP_functionality IP_COMPONENT="mem_utils" LIBRARY="TestbenchAXIM WRITE_DELAY READ_DELAY QUEUE_SIZE" VERILOG_GENERATOR="TestbenchAXIMModuleGenerator"/>
         </component_o>
       </circuit>
     </cell>
