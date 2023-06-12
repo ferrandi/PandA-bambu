@@ -178,9 +178,18 @@ size_t __m_param_size(uint8_t idx)
    return 0;
 }
 
+void __m_alloc_param(uint8_t idx, size_t size)
+{
+   if(!__m_params_size.count(idx))
+   {
+      __m_params_size[idx] = size;
+      debug("Memory size for parameter %u set to %u bytes.\n", idx, size);
+   }
+}
+
 void m_alloc_param(uint8_t idx, size_t size)
 {
-   debug("Memory parameter size for parameter %u set to %u bytes.\n", idx, size);
+   info("Memory size for parameter %u set to %u bytes.\n", idx, size);
    __m_params_size[idx] = size;
 }
 

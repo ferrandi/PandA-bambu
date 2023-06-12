@@ -729,7 +729,7 @@ void HLSCWriter::WriteMainTestbench()
             gold_call += "*(" + arg_typename + "*)" + arg_name + "_gold, ";
             pp_call += "(" + tree_helper::PrintType(TM, arg_type, false, true) + "*)" + arg_name + "_pp, ";
             gold_cmp += "m_argcmp(" + STR(args_decl_idx) + ", " + cmp_type(arg_type, arg_typename) + ");\n";
-            args_init += "m_alloc_param(" + STR(param_idx) + ", sizeof(" + arg_typename + "));\n";
+            args_init += "__m_alloc_param(" + STR(param_idx) + ", sizeof(" + arg_typename + "));\n";
             args_decl += "(void*)&" + arg_name + ", ";
             args_set += "m_setargptr";
          }
@@ -760,7 +760,7 @@ void HLSCWriter::WriteMainTestbench()
                        boost::lexical_cast<unsigned long long>(arg_attributes->second.at(param_name).at(attr_size)) :
                        1ULL;
                const auto array_bytes = get_aligned_bitsize(item_bw, item_align) / 8 * item_count;
-               args_init += "m_alloc_param(" + STR(param_idx) + ", " + STR(array_bytes) + ");\n";
+               args_init += "__m_alloc_param(" + STR(param_idx) + ", " + STR(array_bytes) + ");\n";
             }
             else
             {
@@ -769,7 +769,7 @@ void HLSCWriter::WriteMainTestbench()
                {
                   const auto array_bytes = get_aligned_bitsize(tree_helper::GetArrayElementSize(ptd_type)) / 8 *
                                            tree_helper::GetArrayTotalSize(ptd_type);
-                  args_init += "m_alloc_param(" + STR(param_idx) + ", " + STR(array_bytes) + ");\n";
+                  args_init += "__m_alloc_param(" + STR(param_idx) + ", " + STR(array_bytes) + ");\n";
                }
             }
          }
@@ -915,9 +915,9 @@ template <typename T> T* m_getptr(T* obj) { return obj; }
 #define m_channel_init(idx)                                                                                         \
    const size_t P##idx##_item = sizeof(m_getvalt(m_getptr(P##idx))::element_type);                                  \
    size_t P##idx##_count = m_getptr(P##idx)->size();                                                                \
-   m_alloc_param(idx)" +
+   __m_alloc_param(idx)" +
        (return_type ? " - 1" : "") +
-       R"(, P##idx##_count * P##idx##_item);                                                          \
+       R"(, P##idx##_count * P##idx##_item);                                                        \
    void* P##idx##_sim = malloc(P##idx##_count * P##idx##_item);                                                     \
    for(i = 0; i < P##idx##_count; ++i)                                                                              \
    {                                                                                                                \

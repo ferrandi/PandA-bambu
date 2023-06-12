@@ -52,6 +52,7 @@ EXTERN_C void __m_setptrarg(uint8_t index, void* bits, uint16_t bitsize);
 EXTERN_C void __m_memmap_init();
 EXTERN_C void __m_memmap(ptr_t dst, void* src);
 EXTERN_C ptr_t __m_memaddr(ptr_t sim_addr);
+EXTERN_C void __m_alloc_param(uint8_t idx, size_t size);
 EXTERN_C size_t __m_param_size(uint8_t idx);
 
 EXTERN_C void __m_signal_init();
