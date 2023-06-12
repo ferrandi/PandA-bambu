@@ -85,6 +85,8 @@ import &quot;DPI-C&quot; function void m_read128  (output logic  [127:0] data, i
 import &quot;DPI-C&quot; function void m_read256  (output logic  [255:0] data, input ptr_t addr);
 import &quot;DPI-C&quot; function void m_read512  (output logic  [511:0] data, input ptr_t addr);
 import &quot;DPI-C&quot; function void m_read1024 (output logic [1023:0] data, input ptr_t addr);
+import &quot;DPI-C&quot; function void m_read2048 (output logic [2047:0] data, input ptr_t addr);
+import &quot;DPI-C&quot; function void m_read4096 (output logic [4095:0] data, input ptr_t addr);
 
 import &quot;DPI-C&quot; function void m_write8    (input shortint unsigned size, input logic    [7:0] data, input ptr_t addr);
 import &quot;DPI-C&quot; function void m_write16   (input shortint unsigned size, input logic   [15:0] data, input ptr_t addr);
@@ -94,42 +96,32 @@ import &quot;DPI-C&quot; function void m_write128  (input shortint unsigned size
 import &quot;DPI-C&quot; function void m_write256  (input shortint unsigned size, input logic  [255:0] data, input ptr_t addr);
 import &quot;DPI-C&quot; function void m_write512  (input shortint unsigned size, input logic  [511:0] data, input ptr_t addr);
 import &quot;DPI-C&quot; function void m_write1024 (input shortint unsigned size, input logic [1023:0] data, input ptr_t addr);
+import &quot;DPI-C&quot; function void m_write2048 (input shortint unsigned size, input logic [2047:0] data, input ptr_t addr);
+import &quot;DPI-C&quot; function void m_write4096 (input shortint unsigned size, input logic [4095:0] data, input ptr_t addr);
 
 function automatic [BITSIZE_data-1:0] read(input ptr_t addr);
-  automatic reg [1023:0] wtmp = 0;
+  automatic reg [4095:0] wtmp = 0;
 
   if(BITSIZE_mem_bus == 8)
-  begin
     m_read8(wtmp[7:0], addr);
-  end
   else if(BITSIZE_mem_bus == 16)
-  begin
     m_read16(wtmp[15:0], addr);
-  end
   else if(BITSIZE_mem_bus == 32)
-  begin
     m_read32(wtmp[31:0], addr);
-  end
   else if(BITSIZE_mem_bus == 64)
-  begin
     m_read64(wtmp[63:0], addr);
-  end
   else if(BITSIZE_mem_bus == 128)
-  begin
     m_read128(wtmp[127:0], addr);
-  end
   else if(BITSIZE_mem_bus == 256)
-  begin
     m_read256(wtmp[255:0], addr);
-  end
   else if(BITSIZE_mem_bus == 512)
-  begin
     m_read512(wtmp[511:0], addr);
-  end
   else if(BITSIZE_mem_bus == 1024)
-  begin
     m_read1024(wtmp[1023:0], addr);
-  end
+  else if(BITSIZE_mem_bus == 2048)
+    m_read2048(wtmp[2047:0], addr);
+  else if(BITSIZE_mem_bus == 4096)
+    m_read4096(wtmp[4095:0], addr);
   else
   begin
     $display(&quot;Unsupported memory bus size: %0d&quot;, BITSIZE_mem_bus);
@@ -161,6 +153,10 @@ function automatic void write(
     m_write512(size, tmp, addr);
   else if(BITSIZE_mem_bus == 1024)
     m_write1024(size, tmp, addr);
+  else if(BITSIZE_mem_bus == 2048)
+    m_write2048(size, tmp, addr);
+  else if(BITSIZE_mem_bus == 4096)
+    m_write4096(size, tmp, addr);
   else
   begin
     $display(&quot;Unsupported memory bus size: %0d&quot;, BITSIZE_mem_bus);
