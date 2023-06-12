@@ -105,6 +105,10 @@ void TestbenchDUTModuleGenerator::InternalExec(std::ostream& out, structural_obj
       {
          THROW_ERROR("Interface type not supported for memory mapped top simulation.");
       }
+
+      // Dummy start port
+      structural_manager::add_port(START_PORT_NAME, port_o::port_direction::IN, dut_cir,
+                                   structural_type_descriptorRef(new structural_type_descriptor("bool", 0)));
    }
 
    const auto mod_id = escape_keyword(top_mod->get_id());
