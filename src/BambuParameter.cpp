@@ -2415,7 +2415,7 @@ void BambuParameter::add_experimental_setup_compiler_options(bool kill_printf)
       {
          defines = getOption<std::string>(OPT_gcc_defines) + STR_CST_string_separator;
       }
-      defines += "\'printf(fmt, ...)=\'";
+      defines += "printf(fmt, ...)=";
       setOption(OPT_gcc_defines, defines);
    }
    if(isOption(OPT_top_functions_names) && getOption<std::string>(OPT_top_functions_names) == "main")

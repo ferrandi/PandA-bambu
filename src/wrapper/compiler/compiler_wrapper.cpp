@@ -442,6 +442,11 @@
 #include "xml_dom_parser.hpp"
 #include "xml_helper.hpp"
 
+static std::string __escape_define(const std::string& str)
+{
+   return boost::regex_replace(str, boost::regex("([\\(\\) ])"), "\\\\$1");
+}
+
 std::string CompilerWrapper::current_compiler_version;
 
 std::string CompilerWrapper::current_plugin_version;
@@ -578,9 +583,8 @@ void CompilerWrapper::CompileFile(const std::string& original_file_name, std::st
          (Param->getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_CPP ||
           Param->getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_LLVM_CPP))
       {
-         command += " -Xclang -plugin-arg-" +
-                    compiler.ASTAnalyzer_plugin_name + " -Xclang -cppflag -Xclang -plugin-arg-" +
-                    compiler.ASTAnalyzer_plugin_name + " -Xclang 1";
+         command += " -Xclang -plugin-arg-" + compiler.ASTAnalyzer_plugin_name +
+                    " -Xclang -cppflag -Xclang -plugin-arg-" + compiler.ASTAnalyzer_plugin_name + " -Xclang 1";
       }
       if(addTopFName)
       {
@@ -733,7 +737,7 @@ void CompilerWrapper::CompileFile(const std::string& original_file_name, std::st
       if(compiler.is_clang)
       {
          if(Param->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
-             CompilerWrapper_CompilerTarget::CT_I386_CLANG16)
+            CompilerWrapper_CompilerTarget::CT_I386_CLANG16)
          {
             command += " -c -fplugin=" + compiler.ASTAnnotate_plugin_obj;
             command += " -Xclang -add-plugin -Xclang " + compiler.ASTAnnotate_plugin_name;
@@ -927,9 +931,7 @@ void CompilerWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::st
             const auto defines = Param->getOption<const CustomSet<std::string>>(OPT_gcc_defines);
             for(const auto& define : defines)
             {
-               std::string escaped_string = define;
-               // add_escape(escaped_string, "\"");
-               analyzing_compiling_parameters += "-D" + escaped_string + " ";
+               analyzing_compiling_parameters += "-D" + __escape_define(define) + " ";
             }
          }
          if(Param->isOption(OPT_gcc_undefines))
@@ -937,9 +939,7 @@ void CompilerWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::st
             const auto undefines = Param->getOption<const CustomSet<std::string>>(OPT_gcc_undefines);
             for(const auto& undefine : undefines)
             {
-               std::string escaped_string = undefine;
-               // add_escape(escaped_string, "\"");
-               analyzing_compiling_parameters += "-U" + escaped_string + " ";
+               analyzing_compiling_parameters += "-U" + __escape_define(undefine) + " ";
             }
          }
          if(Param->isOption(OPT_gcc_warnings))
@@ -1535,9 +1535,7 @@ void CompilerWrapper::InitializeCompilerParameters()
       const auto defines = Param->getOption<const CustomSet<std::string>>(OPT_gcc_defines);
       for(const auto& define : defines)
       {
-         std::string escaped_string = define;
-         // add_escape(escaped_string, "\"");
-         frontend_compiler_parameters += "-D" + escaped_string + " ";
+         frontend_compiler_parameters += "-D" + __escape_define(define) + " ";
       }
    }
 
@@ -1547,9 +1545,7 @@ void CompilerWrapper::InitializeCompilerParameters()
       const auto undefines = Param->getOption<const CustomSet<std::string>>(OPT_gcc_undefines);
       for(const auto& undefine : undefines)
       {
-         std::string escaped_string = undefine;
-         // add_escape(escaped_string, "\"");
-         frontend_compiler_parameters += "-U" + escaped_string + " ";
+         frontend_compiler_parameters += "-U" + __escape_define(undefine) + " ";
       }
    }
 

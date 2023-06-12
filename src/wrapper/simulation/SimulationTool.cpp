@@ -342,7 +342,7 @@ std::string SimulationTool::GenerateLibraryBuildScript(std::ostringstream& scrip
    cflags = compiler_wrapper->GetCompilerParameters(extra_compiler_flags);
    boost::cmatch what;
    std::string kill_printf;
-   if(boost::regex_search(cflags.c_str(), what, boost::regex("\\s*(\\-D'?printf\\([\\w\\d\\s\\.\\,]*\\)='?)'*")))
+   if(boost::regex_search(cflags.c_str(), what, boost::regex("\\s*(\\-D'?printf[^=]*='?)'*")))
    {
       kill_printf.append(what[1].first, what[1].second);
       cflags.erase(static_cast<size_t>(what[0].first - cflags.c_str()),
