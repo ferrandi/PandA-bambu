@@ -181,7 +181,7 @@ reg [CHANNELS_NUMBER*BITSIZE_dq-1:0] q, q_next;
    out << R"(
 always @(posedge clock)
 begin
-  if(reset == 1'b0)
+  if(1RESET_VALUE)
   begin
     base_addr <= a_utils.getptrarg(index);
     queue[BITSIZE_chunk*MAX_DELAY-1:BITSIZE_chunk] <= 0;
@@ -220,7 +220,7 @@ generate
     begin
       always @(negedge clock)
       begin
-        if(reset != 1'b0)
+        if(!(1RESET_VALUE))
         begin
         if(queue_next[BITSIZE_chunk*(WRITE_DELAY-1)+BITSIZE_item*i+BITSIZE_ce_offset+BITSIZE_ce-1:
                       BITSIZE_chunk*(WRITE_DELAY-1)+BITSIZE_item*i+BITSIZE_ce_offset] == 1'b1
@@ -268,7 +268,7 @@ generate
     begin
       always @(posedge clock)
       begin
-        if(reset != 1'b0)
+        if(!(1RESET_VALUE))
         begin
           if(queue_next[BITSIZE_chunk*(READ_DELAY-1)+BITSIZE_item*i+BITSIZE_ce_offset+BITSIZE_ce-1:
                         BITSIZE_chunk*(READ_DELAY-1)+BITSIZE_item*i+BITSIZE_ce_offset] == 1'b1

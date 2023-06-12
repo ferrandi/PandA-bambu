@@ -965,9 +965,7 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
             const auto tgt = boost::target(e, *top_cg);
             const auto tgt_fu_name = functions::GetFUName(CGM->get_function(tgt), HLSMgr);
             if(HLSMgr->Rfuns->is_a_proxied_function(tgt_fu_name) ||
-               (parameters->getOption<HLSFlowStep_Type>(OPT_interface_type) ==
-                    HLSFlowStep_Type::WB4_INTERFACE_GENERATION &&
-                HLSMgr->hasToBeInterfaced(f_id)))
+               (parameters->getOption<bool>(OPT_memory_mapped_top) && HLSMgr->hasToBeInterfaced(f_id)))
             {
                num_instances.at(top_id)[tgt] = 1;
             }
@@ -1306,9 +1304,7 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
                      "Sparse memory alignemnt set to " + STR(max_byte_size) + " bytes");
    }
 
-   const auto memory_mapped_top_if =
-       parameters->getOption<bool>(OPT_memory_mapped_top) ||
-       parameters->getOption<HLSFlowStep_Type>(OPT_interface_type) == HLSFlowStep_Type::WB4_INTERFACE_GENERATION;
+   const auto memory_mapped_top_if = parameters->getOption<bool>(OPT_memory_mapped_top);
    const auto allocate_function_mem = [&](const func_id_t f_id, const top_id_t top_id, const memoryRef& Rmem) {
 #ifndef NDEBUG
       const auto dbg_lvl = Rmem == HLSMgr->Rmem ? debug_level : DEBUG_LEVEL_NONE;

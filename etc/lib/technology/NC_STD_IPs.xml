@@ -384,14 +384,14 @@ end"/>
       </circuit>
     </cell>
     <cell>
-      <name>TestbenchMEM</name>
+      <name>TestbenchMEMMinimal</name>
       <circuit>
-        <component_o id="TestbenchMEM">
+        <component_o id="TestbenchMEMMinimal">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
           <copyright>Copyright (C) 2023 Politecnico di Milano</copyright>
           <authors>Michele Fiorito &lt;michele.fiorito@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
-          <structural_type_descriptor id_type="TestbenchMEM"/>
+          <structural_type_descriptor id_type="TestbenchMEMMinimal"/>
           <parameter name="MEM_DELAY_READ">2</parameter>
           <parameter name="MEM_DELAY_WRITE">1</parameter>
           <parameter name="base_addr">1073741824</parameter>
@@ -405,21 +405,6 @@ end"/>
             <structural_type_descriptor type="VECTOR_BOOL" size="1"/>
           </port_o>
           <port_o id="M_Rdata_ram" dir="OUT" is_memory="1" is_global="1" is_extern="1" is_data_bus="1">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
-          </port_o>
-          <port_o id="Min_oe_ram" dir="OUT" is_memory="1" is_master="1">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1"/>
-          </port_o>
-          <port_o id="Min_we_ram" dir="OUT" is_memory="1" is_master="1">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1"/>
-          </port_o>
-          <port_o id="Min_addr_ram" dir="OUT" is_memory="1" is_master="1" is_addr_bus="1">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-          </port_o>
-          <port_o id="Min_data_ram_size" dir="OUT" is_memory="1" is_master="1" is_size_bus="1">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-          </port_o>
-          <port_o id="Min_Wdata_ram" dir="OUT" is_memory="1" is_master="1" is_data_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
           </port_o>
           <port_o id="Mout_oe_ram" dir="IN" is_memory="1" is_master="1">
@@ -439,9 +424,9 @@ end"/>
           </port_o>
           <NP_functionality
             IP_COMPONENT="mem_utils"
-            LIBRARY="TestbenchMEM MEM_DELAY_READ MEM_DELAY_WRITE base_addr M_DataRdy M_Rdata_ram Min_oe_ram Min_we_ram Min_addr_ram Min_data_ram_size Min_Wdata_ram Mout_oe_ram Mout_we_ram Mout_addr_ram Mout_data_ram_size Mout_Wdata_ram"
+            LIBRARY="TestbenchMEMMinimal MEM_DELAY_READ MEM_DELAY_WRITE base_addr M_DataRdy M_Rdata_ram Mout_oe_ram Mout_we_ram Mout_addr_ram Mout_data_ram_size Mout_Wdata_ram"
             VERILOG_PROVIDED="
-parameter MEM_MAX_DELAY= MEM_DELAY_READ > MEM_DELAY_WRITE ? MEM_DELAY_READ : MEM_DELAY_WRITE,
+parameter MEM_DELAY_MAX= MEM_DELAY_READ > MEM_DELAY_WRITE ? MEM_DELAY_READ : MEM_DELAY_WRITE,
   CHANNELS_NUMBER= BITSIZE_Mout_oe_ram,
   elm_BITSIZE_Mout_addr_ram= BITSIZE_Mout_addr_ram / CHANNELS_NUMBER,
   elm_BITSIZE_Mout_data_ram_size= BITSIZE_Mout_data_ram_size / CHANNELS_NUMBER,
@@ -456,10 +441,10 @@ reg [CHANNELS_NUMBER*MEM_DELAY_READ-1:0] Mout_oe_ram_queue_next;
 reg [CHANNELS_NUMBER*MEM_DELAY_READ-1:0] Mout_oe_ram_queue_curr;
 reg [CHANNELS_NUMBER*MEM_DELAY_WRITE-1:0] Mout_we_ram_queue_next;
 reg [CHANNELS_NUMBER*MEM_DELAY_WRITE-1:0] Mout_we_ram_queue_curr;
-reg [BITSIZE_Mout_addr_ram*MEM_MAX_DELAY-1:0] Mout_addr_ram_queue_next;
-reg [BITSIZE_Mout_addr_ram*MEM_MAX_DELAY-1:0] Mout_addr_ram_queue_curr;
-reg [BITSIZE_Mout_data_ram_size*MEM_MAX_DELAY-1:0] Mout_data_ram_size_queue_next;
-reg [BITSIZE_Mout_data_ram_size*MEM_MAX_DELAY-1:0] Mout_data_ram_size_queue_curr;
+reg [BITSIZE_Mout_addr_ram*MEM_DELAY_MAX-1:0] Mout_addr_ram_queue_next;
+reg [BITSIZE_Mout_addr_ram*MEM_DELAY_MAX-1:0] Mout_addr_ram_queue_curr;
+reg [BITSIZE_Mout_data_ram_size*MEM_DELAY_MAX-1:0] Mout_data_ram_size_queue_next;
+reg [BITSIZE_Mout_data_ram_size*MEM_DELAY_MAX-1:0] Mout_data_ram_size_queue_curr;
 reg [BITSIZE_Mout_Wdata_ram*MEM_DELAY_WRITE-1:0] Mout_Wdata_ram_queue_next;
 reg [BITSIZE_Mout_Wdata_ram*MEM_DELAY_WRITE-1:0] Mout_Wdata_ram_queue_curr;
 
@@ -539,22 +524,22 @@ generate
 endgenerate
 
 generate
-  if(MEM_MAX_DELAY != 1)
+  if(MEM_DELAY_MAX != 1)
   begin
     always @(posedge clock)
     begin
-      Mout_addr_ram_queue_next[MEM_MAX_DELAY*BITSIZE_Mout_addr_ram-1:BITSIZE_Mout_addr_ram] &lt;= 
-        Mout_addr_ram_queue_curr[(MEM_MAX_DELAY-1)*BITSIZE_Mout_addr_ram-1:0];
-      Mout_data_ram_size_queue_next[MEM_MAX_DELAY*BITSIZE_Mout_data_ram_size-1:BITSIZE_Mout_data_ram_size] &lt;= 
-        Mout_data_ram_size_queue_curr[(MEM_MAX_DELAY-1)*BITSIZE_Mout_data_ram_size-1:0];
+      Mout_addr_ram_queue_next[MEM_DELAY_MAX*BITSIZE_Mout_addr_ram-1:BITSIZE_Mout_addr_ram] &lt;= 
+        Mout_addr_ram_queue_curr[(MEM_DELAY_MAX-1)*BITSIZE_Mout_addr_ram-1:0];
+      Mout_data_ram_size_queue_next[MEM_DELAY_MAX*BITSIZE_Mout_data_ram_size-1:BITSIZE_Mout_data_ram_size] &lt;= 
+        Mout_data_ram_size_queue_curr[(MEM_DELAY_MAX-1)*BITSIZE_Mout_data_ram_size-1:0];
     end
     always @(*)
     begin
-      Mout_addr_ram_queue_curr[MEM_MAX_DELAY*BITSIZE_Mout_addr_ram-1:BITSIZE_Mout_addr_ram] = 
-        Mout_addr_ram_queue_next[MEM_MAX_DELAY*BITSIZE_Mout_addr_ram-1:BITSIZE_Mout_addr_ram];
+      Mout_addr_ram_queue_curr[MEM_DELAY_MAX*BITSIZE_Mout_addr_ram-1:BITSIZE_Mout_addr_ram] = 
+        Mout_addr_ram_queue_next[MEM_DELAY_MAX*BITSIZE_Mout_addr_ram-1:BITSIZE_Mout_addr_ram];
       Mout_addr_ram_queue_curr[BITSIZE_Mout_addr_ram-1:0] = Mout_addr_ram;
-      Mout_data_ram_size_queue_curr[MEM_MAX_DELAY*BITSIZE_Mout_data_ram_size-1:BITSIZE_Mout_data_ram_size] = 
-        Mout_data_ram_size_queue_next[MEM_MAX_DELAY*BITSIZE_Mout_data_ram_size-1:BITSIZE_Mout_data_ram_size];
+      Mout_data_ram_size_queue_curr[MEM_DELAY_MAX*BITSIZE_Mout_data_ram_size-1:BITSIZE_Mout_data_ram_size] = 
+        Mout_data_ram_size_queue_next[MEM_DELAY_MAX*BITSIZE_Mout_data_ram_size-1:BITSIZE_Mout_data_ram_size];
       Mout_data_ram_size_queue_curr[BITSIZE_Mout_data_ram_size-1:0] = Mout_data_ram_size;
     end
   end
@@ -634,6 +619,158 @@ end"/>
       </circuit>
     </cell>
     <cell>
+      <name>TestbenchMEMWishboneB4</name>
+      <circuit>
+        <component_o id="TestbenchMEMWishboneB4">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2023 Politecnico di Milano</copyright>
+          <authors>Michele Fiorito &lt;michele.fiorito@polimi.it&gt;</authors>
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="TestbenchMEMWishboneB4"/>
+          <parameter name="MEM_DELAY_READ">2</parameter>
+          <parameter name="MEM_DELAY_WRITE">1</parameter>
+          <parameter name="base_addr">1073741824</parameter>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="reset" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="cyc_om" dir="IN" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="stb_om" dir="IN" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="we_om" dir="IN" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="addr_om" dir="IN" is_memory="1" is_addr_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="dat_om" dir="IN" is_memory="1" is_data_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
+          </port_o>
+          <port_o id="sel_om" dir="IN" is_memory="1" is_size_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="dat_im" dir="OUT" is_memory="1" is_data_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
+          </port_o>
+          <port_o id="stall_im" dir="OUT" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="ack_im" dir="OUT" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <NP_functionality
+            IP_COMPONENT="mem_utils"
+            LIBRARY="TestbenchMEMWishboneB4 MEM_DELAY_READ MEM_DELAY_WRITE base_addr addr_om dat_om sel_om dat_im"
+            VERILOG_PROVIDED="parameter MEM_DELAY_MAX= MEM_DELAY_READ > MEM_DELAY_WRITE ? MEM_DELAY_READ : MEM_DELAY_WRITE,
+  BITSIZE_item=BITSIZE_dat_im+1+1;
+reg cyc, stb, we, stall, ack;
+reg [BITSIZE_addr_om-1:0] addr;
+reg [BITSIZE_dat_om-1:0] Wdata;
+reg [7:0] size;
+reg [BITSIZE_dat_im-1:0] Rdata;
+
+reg [MEM_DELAY_MAX*BITSIZE_item-1:0] queue, queue_next;
+
+mem_utils #(BITSIZE_dat_im) m_utils();
+
+initial
+begin
+  stall = 0;
+  ack = 0;
+  Rdata = 0;
+  queue = 0;
+  queue_next = 0;
+end
+
+assign cyc = cyc_om;
+assign stb = stb_om;
+assign we = we_om;
+assign addr = addr_om;
+assign Wdata = dat_om;
+assign size = sel_om;
+assign stall_im = stall; // &amp; cyc
+assign ack_im = ack; // &amp; cyc
+assign dat_im = Rdata; // &amp; {BITSIZE_dat_im{cyc}};
+
+always @(posedge clock)
+begin
+  automatic reg w_ack = queue_next[(MEM_DELAY_WRITE-1)*BITSIZE_item] &amp; queue_next[(MEM_DELAY_WRITE-1)*BITSIZE_item+1];
+  automatic reg r_ack = queue_next[(MEM_DELAY_READ-1)*BITSIZE_item] &amp; !queue_next[(MEM_DELAY_READ-1)*BITSIZE_item+1];
+  ack &lt;= w_ack | r_ack;
+  Rdata &lt;= queue_next[(MEM_DELAY_READ-1)*BITSIZE_item+2 +:BITSIZE_dat_im];
+  queue &lt;= queue_next;
+end
+
+always @(*)
+begin
+  queue_next = {queue[(MEM_DELAY_MAX-1)*BITSIZE_item-1:0], {BITSIZE_dat_im{1&apos;b0}}, 1&apos;b0, 1&apos;b0};
+  if(cyc &amp; stb)
+  begin
+    queue_next[1:0] = {we, 1&apos;b1};
+  end
+end
+
+always @(negedge clock)
+begin
+  if(queue_next[0])
+  begin
+    automatic ptr_t ptr_addr = addr;
+    if(queue_next[1])
+    begin
+      if(size == 8&apos;b11111111)
+      begin
+        m_utils.write(64, Wdata, ptr_addr);
+      end
+      else if(size == 8&apos;b01111111)
+      begin
+        m_utils.write(56, Wdata, ptr_addr);
+      end
+      else if(size == 8&apos;b00111111)
+      begin
+        m_utils.write(48, Wdata, ptr_addr);
+      end
+      else if(size == 8&apos;b00011111)
+      begin
+        m_utils.write(40, Wdata, ptr_addr);
+      end
+      else if(size == 8&apos;b00001111)
+      begin
+        m_utils.write(32, Wdata, ptr_addr);
+      end
+      else if(size == 8&apos;b00000111)
+      begin
+        m_utils.write(24, Wdata, ptr_addr);
+      end
+      else if(size == 8&apos;b00000011)
+      begin
+        m_utils.write(16, Wdata, ptr_addr);
+      end
+      else if(size == 8&apos;b00000001)
+      begin
+        m_utils.write(8, Wdata, ptr_addr);
+      end
+      else
+      begin
+        $display(&quot;Wishbone B4 scattered write operations not supported: %0X&quot;, size);
+        $finish;
+      end
+    end
+    else
+    begin
+      queue_next[BITSIZE_item-1:2] &lt;= m_utils.read(ptr_addr);
+    end
+  end
+end
+"/>
+        </component_o>
+      </circuit>
+    </cell>
+    <cell>
       <name>IF_PORT_IN</name>
       <circuit>
         <component_o id="IF_PORT_IN">
@@ -674,6 +811,466 @@ end
 always @(*)
 begin
   val_next = val;
+end"/>
+        </component_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>TestbenchArgMapMinimal</name>
+      <circuit>
+        <component_o id="TestbenchArgMapMinimal">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2023 Politecnico di Milano</copyright>
+          <authors>Michele Fiorito &lt;michele.fiorito@polimi.it&gt;</authors>
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="TestbenchArgMapMinimal"/>
+          <parameter name="index">0</parameter>
+          <parameter name="tgt_addr">1024</parameter>
+          <parameter name="bitsize">32</parameter>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="reset" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="i_start_port" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="start_port" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="S_oe_ram" dir="OUT" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="S_we_ram" dir="OUT" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="S_addr_ram" dir="OUT" is_memory="1" is_addr_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="S_Wdata_ram" dir="OUT" is_memory="1" is_data_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
+          </port_o>
+          <port_o id="S_data_ram_size" dir="OUT" is_memory="1" is_size_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="Sout_Rdata_ram" dir="IN" is_memory="1" is_data_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
+          </port_o>
+          <port_o id="Sout_DataRdy" dir="IN" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <NP_functionality IP_COMPONENT="arg_utils" LIBRARY="TestbenchArgMapMinimal index tgt_addr bitsize S_oe_ram S_we_ram S_addr_ram S_Wdata_ram S_data_ram_size Sout_Rdata_ram Sout_DataRdy" VERILOG_PROVIDED="reg [bitsize-1:0] val, val_next;
+reg oe, oe_next, we, we_next, rdy, start;
+reg [BITSIZE_S_addr_ram-1:0] addr, addr_next;
+reg [BITSIZE_S_data_ram-1:0] data, data_next;
+reg [BITSIZE_S_data_ram_size-1:0] data_size, data_size_next;
+
+arg_utils #(bitsize) a_utils();
+
+initial
+begin
+  val = 0;
+  val_next = 0;
+  oe = 0;
+  oe_next = 0;
+  we = 0;
+  we_next = 0;
+  addr = 0;
+  addr_next = 0;
+  data = 0;
+  data_next = 0;
+  data_size = 0;
+  data_size_next = 0;
+  start = 0;
+end
+
+assign S_oe_ram = oe_next;
+assign S_we_ram = we_next;
+assign S_addr_ram = addr_next;
+assign S_Wdata_ram = data_next;
+assign S_data_ram_size = data_size_next;
+assign rdy = Sout_DataRdy;
+assign start_port = start;
+
+always @(posedge clock) 
+begin
+  automatic reg active_tx = (oe_next) &amp; !rdy;
+  val &lt;= val_next;
+  oe &lt;= active_tx;
+  we &lt;= we_next &amp; active_tx;
+  addr &lt;= addr_next &amp; {BITSIZE_S_addr_ram{active_tx}};
+  data &lt;= data_next &amp; {BITSIZE_S_data_ram{active_tx}};
+  data_size &lt;= data_size_next &amp; {BITSIZE_S_data_ram_size{active_tx}};
+  start &lt;= rdy &amp; oe_next;
+  if(1RESET_VALUE)
+  begin
+    val &lt;= a_utils.getarg(index);
+  end
+end
+
+always @(*)
+begin
+  val_next = val;
+  oe_next = oe;
+  we_next = we;
+  addr_next = addr;
+  data_next = data;
+  data_size_next = data_size;
+  if(i_start_port)
+  begin
+    oe_next = 1;
+    we_next = 1;
+    addr_next = tgt_addr;
+    data_next[bitsize-1:0] = val;
+    data_size_next = bitsize;
+  end
+end"/>
+        </component_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>TestbenchStartMapMinimal</name>
+      <circuit>
+        <component_o id="TestbenchStartMapMinimal">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2023 Politecnico di Milano</copyright>
+          <authors>Michele Fiorito &lt;michele.fiorito@polimi.it&gt;</authors>
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="TestbenchStartMapMinimal"/>
+          <parameter name="tgt_addr">1024</parameter>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="reset" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="i_start_port" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="start_port" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="S_oe_ram" dir="OUT" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="S_we_ram" dir="OUT" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="S_addr_ram" dir="OUT" is_memory="1" is_addr_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="S_Wdata_ram" dir="OUT" is_memory="1" is_data_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
+          </port_o>
+          <port_o id="S_data_ram_size" dir="OUT" is_memory="1" is_size_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="Sout_Rdata_ram" dir="IN" is_memory="1" is_data_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
+          </port_o>
+          <port_o id="Sout_DataRdy" dir="IN" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="TestbenchStartMapMinimal tgt_addr S_oe_ram S_we_ram S_addr_ram S_Wdata_ram S_data_ram_size Sout_Rdata_ram Sout_DataRdy" VERILOG_PROVIDED="reg oe, oe_next, we, we_next, rdy, start;
+reg [BITSIZE_S_addr_ram-1:0] addr, addr_next;
+reg [BITSIZE_S_data_ram-1:0] data, data_next;
+reg [BITSIZE_S_data_ram_size-1:0] data_size, data_size_next;
+
+initial
+begin
+  oe = 0;
+  oe_next = 0;
+  we = 0;
+  we_next = 0;
+  addr = 0;
+  addr_next = 0;
+  data = 0;
+  data_next = 0;
+  data_size = 0;
+  data_size_next = 0;
+  start = 0;
+end
+
+assign S_oe_ram = oe_next;
+assign S_we_ram = we_next;
+assign S_addr_ram = addr_next;
+assign S_Wdata_ram = data_next;
+assign S_data_ram_size = data_size_next;
+assign rdy = Sout_DataRdy;
+assign start_port = start;
+
+always @(posedge clock) 
+begin
+  automatic reg active_tx = (oe_next) &amp; !rdy;
+  oe &lt;= active_tx;
+  we &lt;= we_next &amp; active_tx;
+  addr &lt;= addr_next &amp; {BITSIZE_S_addr_ram{active_tx}};
+  data &lt;= data_next &amp; {BITSIZE_S_data_ram{active_tx}};
+  data_size &lt;= data_size_next &amp; {BITSIZE_S_data_ram_size{active_tx}};
+  start &lt;= rdy &amp; oe_next;
+end
+
+always @(*)
+begin
+  oe_next = oe;
+  we_next = we;
+  addr_next = addr;
+  data_next = data;
+  data_size_next = data_size;
+  if(i_start_port)
+  begin
+    oe_next = 1;
+    we_next = 1;
+    addr_next = tgt_addr;
+    data_next[0:0] = 1;
+    data_size_next = bitsize;
+  end
+end"/>
+        </component_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>TestbenchArgMapWishboneB4</name>
+      <circuit>
+        <component_o id="TestbenchArgMapWishboneB4">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2023 Politecnico di Milano</copyright>
+          <authors>Michele Fiorito &lt;michele.fiorito@polimi.it&gt;</authors>
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="TestbenchArgMapWishboneB4"/>
+          <parameter name="index">0</parameter>
+          <parameter name="tgt_addr">1024</parameter>
+          <parameter name="bitsize">32</parameter>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="reset" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="i_start_port" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="start_port" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="cyc_is" dir="OUT" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="stb_is" dir="OUT" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="we_is" dir="OUT" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="addr_is" dir="OUT" is_memory="1" is_addr_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="dat_is" dir="OUT" is_memory="1" is_data_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
+          </port_o>
+          <port_o id="sel_is" dir="OUT" is_memory="1" is_size_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="dat_os" dir="IN" is_memory="1" is_data_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
+          </port_o>
+          <port_o id="stall_os" dir="IN" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="ack_os" dir="IN" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <NP_functionality IP_COMPONENT="arg_utils" LIBRARY="TestbenchArgMapWishboneB4 index tgt_addr bitsize addr_is dat_is sel_is dat_os" VERILOG_PROVIDED="parameter bytesize=((bitsize&gt;&gt;3)&lt;&lt;3) == bitsize ? (bitsize&gt;&gt;3) : ((bitsize&gt;&gt;3) + 1);
+reg [bitsize-1:0] val, val_next;
+reg cyc, cyc_next, stb, stb_next, we, we_next, stall, ack, start;
+reg [BITSIZE_addr_is-1:0] addr, addr_next;
+reg [BITSIZE_dat_is-1:0] data, data_next;
+reg [BITSIZE_sel_is-1:0] sel, sel_next;
+
+arg_utils #(bitsize) a_utils();
+
+initial
+begin
+  val = 0;
+  val_next = 0;
+  cyc = 0;
+  cyc_next = 0;
+  stb = 0;
+  stb_next = 0;
+  we = 0;
+  we_next = 0;
+  addr = 0;
+  addr_next = 0;
+  data = 0;
+  data_next = 0;
+  sel = 0;
+  sel_next = 0;
+  start = 0;
+end
+
+assign cyc_is = cyc_next;
+assign stb_is = stb_next;
+assign we_is = we_next;
+assign addr_is = addr_next;
+assign dat_is = data_next;
+assign sel_is = sel_next;
+assign stall = !ack_os; // TODO: this should be stall_os
+assign ack = ack_os;
+assign start_port = start;
+
+always @(posedge clock) 
+begin
+  automatic reg active_tx = cyc_next &amp; !ack;
+  automatic reg wait_tx = active_tx &amp; stall;
+  val &lt;= val_next;
+  cyc &lt;= active_tx;
+  stb &lt;= stb_next &amp; wait_tx;
+  we &lt;= we_next &amp; wait_tx;
+  addr &lt;= addr_next &amp; {BITSIZE_addr_is{wait_tx}};
+  data &lt;= data_next &amp; {BITSIZE_dat_is{wait_tx}};
+  sel &lt;= sel_next &amp; {BITSIZE_sel_is{wait_tx}};
+  start &lt;= ack &amp; cyc_next;
+  if(1RESET_VALUE)
+  begin
+    val &lt;= a_utils.getarg(index);
+  end
+end
+
+always @(*)
+begin
+  val_next = val;
+  cyc_next = cyc;
+  stb_next = stb;
+  we_next = we;
+  addr_next = addr;
+  data_next = data;
+  sel_next = sel;
+  if(i_start_port)
+  begin
+    cyc_next = 1;
+    stb_next = 1;
+    we_next = 1;
+    addr_next = tgt_addr;
+    data_next[bitsize-1:0] = val;
+    sel_next = {bytesize{1&apos;b1}};
+  end
+end"/>
+        </component_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>TestbenchStartMapWishboneB4</name>
+      <circuit>
+        <component_o id="TestbenchStartMapWishboneB4">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2023 Politecnico di Milano</copyright>
+          <authors>Michele Fiorito &lt;michele.fiorito@polimi.it&gt;</authors>
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="TestbenchStartMapWishboneB4"/>
+          <parameter name="tgt_addr">1024</parameter>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="reset" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="i_start_port" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="start_port" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="cyc_is" dir="OUT" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="stb_is" dir="OUT" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="we_is" dir="OUT" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="addr_is" dir="OUT" is_memory="1" is_addr_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="dat_is" dir="OUT" is_memory="1" is_data_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
+          </port_o>
+          <port_o id="sel_is" dir="OUT" is_memory="1" is_size_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="dat_os" dir="IN" is_memory="1" is_data_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
+          </port_o>
+          <port_o id="stall_os" dir="IN" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="ack_os" dir="IN" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="TestbenchStartMapWishboneB4 tgt_addr addr_is dat_is sel_is dat_os" VERILOG_PROVIDED="parameter bytesize=1;
+reg cyc, cyc_next, stb, stb_next, we, we_next, stall, ack, start;
+reg [BITSIZE_addr_is-1:0] addr, addr_next;
+reg [BITSIZE_dat_is-1:0] data, data_next;
+reg [BITSIZE_sel_is-1:0] sel, sel_next;
+
+initial
+begin
+  cyc = 0;
+  cyc_next = 0;
+  stb = 0;
+  stb_next = 0;
+  we = 0;
+  we_next = 0;
+  addr = 0;
+  addr_next = 0;
+  data = 0;
+  data_next = 0;
+  sel = 0;
+  sel_next = 0;
+  start = 0;
+end
+
+assign cyc_is = cyc_next;
+assign stb_is = stb_next;
+assign we_is = we_next;
+assign addr_is = addr_next;
+assign dat_is = data_next;
+assign sel_is = sel_next;
+assign stall = !ack_os; // TODO: this should be stall_os
+assign ack = ack_os;
+assign start_port = start;
+
+always @(posedge clock) 
+begin
+  automatic reg active_tx = cyc_next &amp; !ack;
+  automatic reg wait_tx = active_tx &amp; stall;
+  cyc &lt;= active_tx;
+  stb &lt;= stb_next &amp; wait_tx;
+  we &lt;= we_next &amp; wait_tx;
+  addr &lt;= addr_next &amp; {BITSIZE_addr_is{wait_tx}};
+  data &lt;= data_next &amp; {BITSIZE_dat_is{wait_tx}};
+  sel &lt;= sel_next &amp; {BITSIZE_sel_is{wait_tx}};
+  start &lt;= ack &amp; cyc_next;
+end
+
+always @(*)
+begin
+  cyc_next = cyc;
+  stb_next = stb;
+  we_next = we;
+  addr_next = addr;
+  data_next = data;
+  sel_next = sel;
+  if(i_start_port)
+  begin
+    cyc_next = 1;
+    stb_next = 1;
+    we_next = 1;
+    addr_next = tgt_addr;
+    data_next[0:0] = 1;
+    sel_next = {bytesize{1&apos;b1}};
+  end
 end"/>
         </component_o>
       </circuit>

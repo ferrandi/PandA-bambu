@@ -54,13 +54,10 @@ noinst_HEADERS = \
    memory_initialization_writer.hpp \
    memory_initialization_writer_base.hpp \
    memory_initialization_c_writer.hpp \
-   minimal_interface_testbench.hpp \
    SimulationInformation.hpp \
    test_vector_parser.hpp \
    testbench_generation.hpp \
-   testbench_generation_base_step.hpp \
-   testbench_memory_allocation.hpp \
-   wishbone_interface_testbench.hpp
+   testbench_memory_allocation.hpp
 
 lib_simulation_la_SOURCES = \
    c_initialization_flex_lexer.lpp \
@@ -72,12 +69,9 @@ lib_simulation_la_SOURCES = \
    memory_initialization_writer.cpp \
    memory_initialization_writer_base.cpp \
    memory_initialization_c_writer.cpp \
-   minimal_interface_testbench.cpp \
    test_vector_parser.cpp \
    testbench_generation.cpp \
-   testbench_generation_base_step.cpp \
-   testbench_memory_allocation.cpp \
-   wishbone_interface_testbench.cpp
+   testbench_memory_allocation.cpp
 
 if BISON_2_7_OR_GREATER
 BUILT_SOURCES = c_initialization_yparser.hpp c_initialization_flex_lexer.cpp c_initialization_yparser.cpp

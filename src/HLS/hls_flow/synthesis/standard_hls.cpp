@@ -124,9 +124,8 @@ standard_hls::ComputeHLSRelationships(const DesignFlowStep::RelationshipType rel
          if(!found) // use standard
          {
             top_entity_type =
-                HLSMgr->hasToBeInterfaced(funId) and (HLSMgr->CGetCallGraphManager()->ExistsAddressedFunction() or
-                                                      parameters->getOption<HLSFlowStep_Type>(OPT_interface_type) ==
-                                                          HLSFlowStep_Type::WB4_INTERFACE_GENERATION) ?
+                HLSMgr->hasToBeInterfaced(funId) && (HLSMgr->CGetCallGraphManager()->ExistsAddressedFunction() ||
+                                                     parameters->getOption<bool>(OPT_memory_mapped_top)) ?
                     HLSFlowStep_Type::TOP_ENTITY_MEMORY_MAPPED_CREATION :
                     HLSFlowStep_Type::TOP_ENTITY_CREATION;
          }

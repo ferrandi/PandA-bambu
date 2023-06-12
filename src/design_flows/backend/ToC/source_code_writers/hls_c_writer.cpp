@@ -61,7 +61,6 @@
 #include "structural_objects.hpp"
 #include "technology_node.hpp"
 #include "testbench_generation.hpp"
-#include "testbench_generation_base_step.hpp"
 #include "testbench_generation_constants.hpp"
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
@@ -500,8 +499,7 @@ ptr_t prev, curr_base;
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Writing initialization for " + var_name);
             const auto var_addr = HLSMgr->Rmem->get_external_base_address(var_id);
             const auto var_init_dat = output_directory + "init." + var_name + ".dat";
-            const auto byte_count =
-                TestbenchGenerationBaseStep::generate_init_file(var_init_dat, TM, var_id, HLSMgr->Rmem);
+            const auto byte_count = TestbenchGeneration::generate_init_file(var_init_dat, TM, var_id, HLSMgr->Rmem);
             indented_output_stream->Append("  {\"" + var_init_dat + "\", " + STR(byte_count) + ", " + STR(var_addr) +
                                            ", NULL},\n");
             base_addr = std::max(base_addr, var_addr + byte_count);

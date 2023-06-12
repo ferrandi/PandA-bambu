@@ -361,10 +361,12 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "            MINIMAL  -  minimal interface (default)\n"
       << "            INFER    -  top function is built with an hardware interface inferred from\n"
       << "                        the pragmas or from the top function signature\n"
-      << "            WB4      -  WishBone 4 interface\n"
-      << "\n"
+      << "            WB4      -  WishBone 4 interface\n\n"
       << "    --interface-xml-filename=<filename>\n"
       << "        User defined interface file.\n\n"
+      << "    --memory-mapped-top\n"
+      << "        Generate a memory mapped interface for the top level function.\n"
+      << "        The start signal and each one of function parameter are mapped to a memory address\n\n"
       << std::endl;
 
    // HLS options
@@ -2274,6 +2276,7 @@ int BambuParameter::Exec()
                else if(std::string(optarg) == "WB4")
                {
                   setOption(OPT_interface_type, HLSFlowStep_Type::WB4_INTERFACE_GENERATION);
+                  setOption(OPT_memory_mapped_top, true);
                   setOption(OPT_memory_allocation_policy, MemoryAllocation_Policy::NO_BRAM);
                   setOption(OPT_channels_number, 1);
                   setOption(OPT_channels_type, MemoryAllocation_ChannelsType::MEM_ACC_11);
@@ -2412,7 +2415,7 @@ void BambuParameter::add_experimental_setup_compiler_options(bool kill_printf)
       {
          defines = getOption<std::string>(OPT_gcc_defines) + STR_CST_string_separator;
       }
-      defines += "\'printf(fmt, ...)=\'";
+      defines += "printf(fmt, ...)=";
       setOption(OPT_gcc_defines, defines);
    }
    if(isOption(OPT_top_functions_names) && getOption<std::string>(OPT_top_functions_names) == "main")
@@ -2952,8 +2955,7 @@ void BambuParameter::CheckParameters()
       }
    }
 
-   if(isOption(OPT_interface_type) &&
-      getOption<HLSFlowStep_Type>(OPT_interface_type) == HLSFlowStep_Type::INFERRED_INTERFACE_GENERATION)
+   if(getOption<HLSFlowStep_Type>(OPT_interface_type) == HLSFlowStep_Type::INFERRED_INTERFACE_GENERATION)
    {
       setOption(OPT_expose_globals, false);
    }
@@ -2961,8 +2963,7 @@ void BambuParameter::CheckParameters()
    if(!getOption<bool>(OPT_expose_globals))
    {
       if(getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) == MemoryAllocation_Policy::NONE &&
-         (!isOption(OPT_interface_type) ||
-          getOption<HLSFlowStep_Type>(OPT_interface_type) != HLSFlowStep_Type::WB4_INTERFACE_GENERATION))
+         getOption<HLSFlowStep_Type>(OPT_interface_type) != HLSFlowStep_Type::WB4_INTERFACE_GENERATION)
       {
          setOption(OPT_memory_allocation_policy, MemoryAllocation_Policy::ALL_BRAM);
       }
@@ -3397,32 +3398,29 @@ void BambuParameter::CheckParameters()
                      "--memory-allocation-policy=NO_BRAM or --memory-allocation-policy=EXT_PIPELINED_BRAM");
       }
    }
-   if(getOption<MemoryAllocation_ChannelsType>(OPT_channels_type) == MemoryAllocation_ChannelsType::MEM_ACC_NN &&
-      isOption(OPT_interface_type) &&
-      getOption<HLSFlowStep_Type>(OPT_interface_type) == HLSFlowStep_Type::WB4_INTERFACE_GENERATION)
+
+   if(getOption<HLSFlowStep_Type>(OPT_interface_type) == HLSFlowStep_Type::WB4_INTERFACE_GENERATION)
    {
-      THROW_ERROR("Wishbone 4 interface does not yet support multi-channel architectures (MEM_ACC_NN)");
+      if(getOption<MemoryAllocation_ChannelsType>(OPT_channels_type) == MemoryAllocation_ChannelsType::MEM_ACC_NN)
+      {
+         THROW_ERROR("Wishbone 4 interface does not yet support multi-channel architectures (MEM_ACC_NN)");
+      }
+
+      if(getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) == MemoryAllocation_Policy::ALL_BRAM)
+      {
+         THROW_ERROR("Wishbone 4 interface does not yet support --memory-allocation-policy=ALL_BRAM");
+      }
+      else if(getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) ==
+              MemoryAllocation_Policy::EXT_PIPELINED_BRAM)
+      {
+         THROW_ERROR("Wishbone 4 interface does not yet support --memory-allocation-policy=EXT_PIPELINED_BRAM");
+      }
    }
 
-   if(getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) == MemoryAllocation_Policy::ALL_BRAM &&
-      isOption(OPT_interface_type) &&
-      getOption<HLSFlowStep_Type>(OPT_interface_type) == HLSFlowStep_Type::WB4_INTERFACE_GENERATION)
-   {
-      THROW_ERROR("Wishbone 4 interface does not yet support --memory-allocation-policy=ALL_BRAM");
-   }
-
-   if(getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) == MemoryAllocation_Policy::EXT_PIPELINED_BRAM &&
-      isOption(OPT_interface_type) &&
-      getOption<HLSFlowStep_Type>(OPT_interface_type) == HLSFlowStep_Type::WB4_INTERFACE_GENERATION)
-   {
-      THROW_ERROR("Wishbone 4 interface does not yet support --memory-allocation-policy=EXT_PIPELINED_BRAM");
-   }
-
-   if(isOption(OPT_interface_type) &&
-      getOption<HLSFlowStep_Type>(OPT_interface_type) == HLSFlowStep_Type::WB4_INTERFACE_GENERATION &&
+   if(getOption<bool>(OPT_memory_mapped_top) &&
       (isOption(OPT_clock_name) || isOption(OPT_reset_name) || isOption(OPT_start_name) || isOption(OPT_done_name)))
    {
-      THROW_ERROR("Wishbone 4 interface does not allow the renaming of the control signals");
+      THROW_ERROR("Memory mapped top interface does not allow the renaming of the control signals");
    }
 
    if(!getOption<bool>(OPT_gcc_include_sysdir))

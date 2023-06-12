@@ -633,14 +633,7 @@ bool Parameter::ManageGccOptions(int next_option, char* optarg_param)
          {
             defines = getOption<std::string>(OPT_gcc_defines) + STR_CST_string_separator;
          }
-         std::string def(optarg_param);
-         if(def.find('=') != std::string::npos && def.find('(') != std::string::npos &&
-            def.find(')') != std::string::npos)
-         {
-            boost::replace_first(def, "=", "=\'");
-            def += "\'";
-         }
-         defines += def;
+         defines += std::string(optarg_param);
          setOption(OPT_gcc_defines, defines);
          break;
       }
