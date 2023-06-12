@@ -13707,6 +13707,8 @@ wire valid,tagsmatch;
    always @(posedge clk)
       if(r_en)
         r_data &lt;= mem[r_addr];
+      else
+        r_data &lt;= 0;
 
    //write port
    always @(posedge clk)
@@ -13993,7 +13995,7 @@ wire valid,tagsmatch;
    reg r_empty;
    reg w_full;
 
-   reg error = 0, next_error;
+   reg error = 0, next_error = 0;
    reg w_full_nxt = 0;
    reg write_fail_reg;
 
