@@ -13120,7 +13120,7 @@ wire valid,tagsmatch;
    reg [FE_DATA_W + WRITE_POL*(FE_DATA_W*(2**WORD_OFF_W)-FE_DATA_W)-1 :0]  reg_wdata;
 
    localparam
-     aw_idle     = 1&apos;b00,
+     aw_idle     = 2&apos;b00,
      aw_address  = 2&apos;b01,
      aw_wait     = 2&apos;b10;
             
