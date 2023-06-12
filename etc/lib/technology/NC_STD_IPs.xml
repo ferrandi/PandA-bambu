@@ -74,7 +74,8 @@ function automatic integer log2;
   `endif
 endfunction
 
-parameter BITSIZE_mem_bus = 1 &lt;&lt; (log2(BITSIZE_data) &gt; 3 ? log2(BITSIZE_data) : 3);
+parameter BITSIZE_mem_bus=1&lt;&lt;(log2(BITSIZE_data) &gt; 3 ? log2(BITSIZE_data) : 3),
+  BITSIZE_strobe=BITSIZE_mem_bus/8;
 
 import &quot;DPI-C&quot; function void m_read8    (output logic    [7:0] data, input ptr_t addr);
 import &quot;DPI-C&quot; function void m_read16   (output logic   [15:0] data, input ptr_t addr);
@@ -165,6 +166,31 @@ function automatic void write(
     $display(&quot;Unsupported memory bus size: %0d&quot;, BITSIZE_mem_bus);
     $finish;
   end
+endfunction
+
+function automatic void write_strobe(
+  input logic [BITSIZE_strobe-1:0] strobe,
+  input logic [BITSIZE_data-1:0] data,
+  input ptr_t addr);
+  automatic shortint unsigned size = 0;
+  
+  while(strobe != 0 &amp;&amp; !strobe[0])
+  begin
+    addr = addr + 1;
+    strobe = strobe &gt;&gt; 1;
+  end
+  while(strobe[0])
+  begin
+    size = size + 8;
+    strobe = strobe &gt;&gt; 1;
+  end
+  if(strobe != 0)
+  begin
+    $display(&quot;Scattered strobe write operations not supported&quot;);
+    $finish;
+  end
+
+  write(size, data, addr);
 endfunction"/>
         </component_o>
       </circuit>
@@ -722,43 +748,7 @@ begin
     automatic ptr_t ptr_addr = addr;
     if(queue_next[1])
     begin
-      if(size == 8&apos;b11111111)
-      begin
-        m_utils.write(64, Wdata, ptr_addr);
-      end
-      else if(size == 8&apos;b01111111)
-      begin
-        m_utils.write(56, Wdata, ptr_addr);
-      end
-      else if(size == 8&apos;b00111111)
-      begin
-        m_utils.write(48, Wdata, ptr_addr);
-      end
-      else if(size == 8&apos;b00011111)
-      begin
-        m_utils.write(40, Wdata, ptr_addr);
-      end
-      else if(size == 8&apos;b00001111)
-      begin
-        m_utils.write(32, Wdata, ptr_addr);
-      end
-      else if(size == 8&apos;b00000111)
-      begin
-        m_utils.write(24, Wdata, ptr_addr);
-      end
-      else if(size == 8&apos;b00000011)
-      begin
-        m_utils.write(16, Wdata, ptr_addr);
-      end
-      else if(size == 8&apos;b00000001)
-      begin
-        m_utils.write(8, Wdata, ptr_addr);
-      end
-      else
-      begin
-        $display(&quot;Wishbone B4 scattered write operations not supported: %0X&quot;, size);
-        $finish;
-      end
+      m_utils.write_strobe(sel_om, Wdata, ptr_addr);
     end
     else
     begin
