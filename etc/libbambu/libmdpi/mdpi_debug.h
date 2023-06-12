@@ -57,16 +57,16 @@ extern
 #endif
     volatile pthread_t __m_main_tid;
 
-#define info(str, ...) \
-   fprintf(stdout, "%s %10s: " str, __m_main_tid == pthread_self() ? "Sim" : "Co-sim", __func__, ##__VA_ARGS__)
+#define info(str, ...) fprintf(stdout, "%s: " str, __m_main_tid == pthread_self() ? "Sim" : "Co-sim", ##__VA_ARGS__)
 
 #ifndef NDEBUG
-#define debug(...) info(__VA_ARGS__)
-#define error(str, ...) info("ERROR: " str, ##__VA_ARGS__)
+#define debug(str, ...) \
+   fprintf(stdout, "%s %10s: " str, __m_main_tid == pthread_self() ? "Sim" : "Co-sim", __func__, ##__VA_ARGS__)
+#define error(str, ...) debug("ERROR: " str, ##__VA_ARGS__)
 #else
 #define debug(...)
 #define error(str, ...) \
-   fprintf(stderr, "ERROR: %s %10s: " str, __m_main_tid == pthread_self() ? "Sim" : "Co-sim", __func__, ##__VA_ARGS__)
+   fprintf(stderr, "ERROR: %s: " str, __m_main_tid == pthread_self() ? "Sim" : "Co-sim", ##__VA_ARGS__)
 #endif
 
 #endif // __MDPI_DEBUG_H
