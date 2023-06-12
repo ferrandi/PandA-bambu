@@ -1,5 +1,5 @@
 /* mockturtle: C++ logic network library
- * Copyright (C) 2018-2021  EPFL
+ * Copyright (C) 2018-2022  EPFL
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -87,6 +87,17 @@ std::optional<NtkDest> miter( NtkSource1 const& ntk1, NtkSource2 const& ntk2 )
   /* copy networks */
   const auto pos1 = cleanup_dangling( ntk1, dest, pis.begin(), pis.end() );
   const auto pos2 = cleanup_dangling( ntk2, dest, pis.begin(), pis.end() );
+
+  if constexpr ( has_EXODC_interface_v<NtkSource1> )
+  {
+    ntk1.build_oe_miter( dest, pos1, pos2 );
+    return dest;
+  }
+  if constexpr ( has_EXODC_interface_v<NtkSource2> )
+  {
+    ntk2.build_oe_miter( dest, pos1, pos2 );
+    return dest;
+  }
 
   /* create XOR of output pairs */
   std::vector<signal<NtkDest>> xor_outputs;

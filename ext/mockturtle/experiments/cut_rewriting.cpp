@@ -1,5 +1,5 @@
 /* mockturtle: C++ logic network library
- * Copyright (C) 2018-2019  EPFL
+ * Copyright (C) 2018-2022  EPFL
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -50,8 +50,14 @@ int main()
   {
     fmt::print( "[i] processing {}\n", benchmark );
     aig_network aig, aig2;
-    lorina::read_aiger( benchmark_path( benchmark ), aiger_reader( aig ) );
-    lorina::read_aiger( benchmark_path( benchmark ), aiger_reader( aig2 ) );
+    if ( lorina::read_aiger( benchmark_path( benchmark ), aiger_reader( aig ) ) != lorina::return_code::success )
+    {
+      continue;
+    }
+    if ( lorina::read_aiger( benchmark_path( benchmark ), aiger_reader( aig2 ) ) != lorina::return_code::success )
+    {
+      continue;
+    }
 
     cut_rewriting_params ps;
     ps.cut_enumeration_ps.cut_size = 4;

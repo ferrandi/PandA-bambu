@@ -1,12 +1,12 @@
 #include <catch.hpp>
 
 #include <mockturtle/networks/aig.hpp>
+#include <mockturtle/traits.hpp>
+#include <mockturtle/utils/window_utils.hpp>
 #include <mockturtle/views/color_view.hpp>
 #include <mockturtle/views/depth_view.hpp>
 #include <mockturtle/views/fanout_view.hpp>
 #include <mockturtle/views/window_view.hpp>
-#include <mockturtle/utils/window_utils.hpp>
-#include <mockturtle/traits.hpp>
 
 using namespace mockturtle;
 
@@ -26,12 +26,12 @@ TEST_CASE( "expand node set towards TFI without cut-size", "[window_utils]" )
   auto const f5 = _aig.create_and( f3, f4 );
   _aig.create_po( f5 );
 
-  color_view aig{_aig};
+  color_view aig{ _aig };
   {
     aig.new_color();
 
     /* a cut that can be expanded without increasing cut-size */
-    std::vector<node> inputs{aig.get_node( a ), aig.get_node( b ), aig.get_node( f1 ), aig.get_node( d )};
+    std::vector<node> inputs{ aig.get_node( a ), aig.get_node( b ), aig.get_node( f1 ), aig.get_node( d ) };
     for ( const auto& i : inputs )
     {
       aig.paint( i );
@@ -41,14 +41,14 @@ TEST_CASE( "expand node set towards TFI without cut-size", "[window_utils]" )
     CHECK( trivial_cut );
 
     std::sort( std::begin( inputs ), std::end( inputs ) );
-    CHECK( inputs == std::vector<node>{aig.get_node( a ), aig.get_node( b ), aig.get_node( c ), aig.get_node( d )} );
+    CHECK( inputs == std::vector<node>{ aig.get_node( a ), aig.get_node( b ), aig.get_node( c ), aig.get_node( d ) } );
   }
 
   {
     aig.new_color();
 
     /* a cut that cannot be expanded without increasing cut-size */
-    std::vector<node> inputs{aig.get_node( f3 ), aig.get_node( f4 )};
+    std::vector<node> inputs{ aig.get_node( f3 ), aig.get_node( f4 ) };
     for ( const auto& i : inputs )
     {
       aig.paint( i );
@@ -58,14 +58,14 @@ TEST_CASE( "expand node set towards TFI without cut-size", "[window_utils]" )
     CHECK( !trivial_cut );
 
     std::sort( std::begin( inputs ), std::end( inputs ) );
-    CHECK( inputs == std::vector<node>{aig.get_node( f3 ), aig.get_node( f4 )} );
+    CHECK( inputs == std::vector<node>{ aig.get_node( f3 ), aig.get_node( f4 ) } );
   }
 
   {
     aig.new_color();
 
     /* a cut that can be moved towards the PIs */
-    std::vector<node> inputs{aig.get_node( f2 ), aig.get_node( f3 ), aig.get_node( f4 )};
+    std::vector<node> inputs{ aig.get_node( f2 ), aig.get_node( f3 ), aig.get_node( f4 ) };
     for ( const auto& i : inputs )
     {
       aig.paint( i );
@@ -75,14 +75,14 @@ TEST_CASE( "expand node set towards TFI without cut-size", "[window_utils]" )
     CHECK( !trivial_cut );
 
     std::sort( std::begin( inputs ), std::end( inputs ) );
-    CHECK( inputs == std::vector<node>{aig.get_node( a ), aig.get_node( d ), aig.get_node( f2 )} );
+    CHECK( inputs == std::vector<node>{ aig.get_node( a ), aig.get_node( d ), aig.get_node( f2 ) } );
   }
 
   {
     aig.new_color();
 
     /* the cut { f3, f5 } can be simplified to { f3, f4 } */
-    std::vector<node> inputs{aig.get_node( f3 ), aig.get_node( f5 )};
+    std::vector<node> inputs{ aig.get_node( f3 ), aig.get_node( f5 ) };
     for ( const auto& i : inputs )
     {
       aig.paint( i );
@@ -92,14 +92,14 @@ TEST_CASE( "expand node set towards TFI without cut-size", "[window_utils]" )
     CHECK( !trivial_cut );
 
     std::sort( std::begin( inputs ), std::end( inputs ) );
-    CHECK( inputs == std::vector<node>{aig.get_node( f3 ), aig.get_node( f4 )} );
+    CHECK( inputs == std::vector<node>{ aig.get_node( f3 ), aig.get_node( f4 ) } );
   }
 
   {
     aig.new_color();
 
     /* the cut { f4, f5 } also can be simplified to { f3, f4 } */
-    std::vector<node> inputs{aig.get_node( f4 ), aig.get_node( f5 )};
+    std::vector<node> inputs{ aig.get_node( f4 ), aig.get_node( f5 ) };
     for ( const auto& i : inputs )
     {
       aig.paint( i );
@@ -109,7 +109,7 @@ TEST_CASE( "expand node set towards TFI without cut-size", "[window_utils]" )
     CHECK( !trivial_cut );
 
     std::sort( std::begin( inputs ), std::end( inputs ) );
-    CHECK( inputs == std::vector<node>{aig.get_node( f3 ), aig.get_node( f4 )} );
+    CHECK( inputs == std::vector<node>{ aig.get_node( f3 ), aig.get_node( f4 ) } );
   }
 }
 
@@ -129,13 +129,13 @@ TEST_CASE( "expand node set towards TFI", "[window_utils]" )
   auto const f5 = _aig.create_and( f3, f4 );
   _aig.create_po( f5 );
 
-  color_view aig{_aig};
+  color_view aig{ _aig };
 
   {
     aig.new_color();
 
     /* expand from { f5 } to 4-cut { a, b, c, d } */
-    std::vector<node> inputs{aig.get_node( f5 )};
+    std::vector<node> inputs{ aig.get_node( f5 ) };
     for ( const auto& i : inputs )
     {
       aig.paint( i );
@@ -144,14 +144,14 @@ TEST_CASE( "expand node set towards TFI", "[window_utils]" )
     expand_towards_tfi( aig, inputs, 4u );
 
     std::sort( std::begin( inputs ), std::end( inputs ) );
-    CHECK( inputs == std::vector<node>{aig.get_node( a ), aig.get_node( b ), aig.get_node( c ), aig.get_node( d )} );
+    CHECK( inputs == std::vector<node>{ aig.get_node( a ), aig.get_node( b ), aig.get_node( c ), aig.get_node( d ) } );
   }
 
   {
     aig.new_color();
 
     /* expand from { f3, f5 } to 3-cut { a, d, f2 } */
-    std::vector<node> inputs{aig.get_node( f3 ), aig.get_node( f5 )};
+    std::vector<node> inputs{ aig.get_node( f3 ), aig.get_node( f5 ) };
     for ( const auto& i : inputs )
     {
       aig.paint( i );
@@ -160,14 +160,14 @@ TEST_CASE( "expand node set towards TFI", "[window_utils]" )
     expand_towards_tfi( aig, inputs, 3u );
 
     std::sort( std::begin( inputs ), std::end( inputs ) );
-    CHECK( inputs == std::vector<node>{aig.get_node( a ), aig.get_node( d ), aig.get_node( f2 )} );
+    CHECK( inputs == std::vector<node>{ aig.get_node( a ), aig.get_node( d ), aig.get_node( f2 ) } );
   }
 
   {
     aig.new_color();
 
     /* expand from { f4, f5 } to 3-cut { a, d, f2 } */
-    std::vector<node> inputs{aig.get_node( f4 ), aig.get_node( f5 )};
+    std::vector<node> inputs{ aig.get_node( f4 ), aig.get_node( f5 ) };
     for ( const auto& i : inputs )
     {
       aig.paint( i );
@@ -176,7 +176,7 @@ TEST_CASE( "expand node set towards TFI", "[window_utils]" )
     expand_towards_tfi( aig, inputs, 3u );
 
     std::sort( std::begin( inputs ), std::end( inputs ) );
-    CHECK( inputs == std::vector<node>{aig.get_node( a ), aig.get_node( d ), aig.get_node( f2 )} );
+    CHECK( inputs == std::vector<node>{ aig.get_node( a ), aig.get_node( d ), aig.get_node( f2 ) } );
   }
 }
 
@@ -196,19 +196,19 @@ TEST_CASE( "expand node set towards TFO", "[window_utils]" )
   auto const f5 = _aig.create_and( f3, f4 );
   _aig.create_po( f5 );
 
-  std::vector<node> inputs{_aig.get_node( a ), _aig.get_node( b ), _aig.get_node( c ), _aig.get_node( d )};
+  std::vector<node> inputs{ _aig.get_node( a ), _aig.get_node( b ), _aig.get_node( c ), _aig.get_node( d ) };
 
-  fanout_view fanout_aig{_aig};
-  depth_view depth_aig{fanout_aig};
-  color_view aig{depth_aig};
+  fanout_view fanout_aig{ _aig };
+  depth_view depth_aig{ fanout_aig };
+  color_view aig{ depth_aig };
 
   {
     std::vector<node> nodes;
     expand_towards_tfo( aig, inputs, nodes );
 
     std::sort( std::begin( nodes ), std::end( nodes ) );
-    CHECK( nodes == std::vector<node>{aig.get_node( f1 ), aig.get_node( f2 ), aig.get_node( f3 ),
-                                       aig.get_node( f4 ), aig.get_node( f5 )} );
+    CHECK( nodes == std::vector<node>{ aig.get_node( f1 ), aig.get_node( f2 ), aig.get_node( f3 ),
+                                       aig.get_node( f4 ), aig.get_node( f5 ) } );
   }
 
   {
@@ -216,8 +216,8 @@ TEST_CASE( "expand node set towards TFO", "[window_utils]" )
     levelized_expand_towards_tfo( aig, inputs, nodes );
 
     std::sort( std::begin( nodes ), std::end( nodes ) );
-    CHECK( nodes == std::vector<node>{aig.get_node( f1 ), aig.get_node( f2 ), aig.get_node( f3 ),
-                                      aig.get_node( f4 ), aig.get_node( f5 )} );
+    CHECK( nodes == std::vector<node>{ aig.get_node( f1 ), aig.get_node( f2 ), aig.get_node( f3 ),
+                                       aig.get_node( f4 ), aig.get_node( f5 ) } );
   }
 }
 
@@ -235,9 +235,9 @@ TEST_CASE( "create window for pivot", "[window_utils]" )
   auto const f5 = _aig.create_and( f3, f4 );
   _aig.create_po( f5 );
 
-  fanout_view fanout_aig{_aig};
-  depth_view depth_aig{fanout_aig};
-  color_view aig{depth_aig};
+  fanout_view fanout_aig{ _aig };
+  depth_view depth_aig{ fanout_aig };
+  color_view aig{ depth_aig };
 
   create_window_impl windowing( aig );
   if ( auto w = windowing.run( aig.get_node( f5 ), 6u, 5u ) )

@@ -1,13 +1,12 @@
 #include <catch.hpp>
 
-#include <mockturtle/networks/aig.hpp>
 #include <mockturtle/io/write_aiger.hpp>
+#include <mockturtle/networks/aig.hpp>
 
 template<
-  typename T,
-  typename Traits = std::char_traits<T>,
-  typename Container = std::vector<T>
->
+    typename T,
+    typename Traits = std::char_traits<T>,
+    typename Container = std::vector<T>>
 struct seq_buffer : std::basic_streambuf<T, Traits>
 {
   using base_type = std::basic_streambuf<T, Traits>;
@@ -51,15 +50,15 @@ TEST_CASE( "write single-gate AIG into AIGER file", "[write_aiger]" )
 
   CHECK( buffer.data() ==
          std::vector<char>{
-           0x61, 0x69, 0x67, 0x20, // aig
-           0x33, 0x20, // M=3 (I+L+A)
-           0x32, 0x20, // I=2
-           0x30, 0x20, // L=0
-           0x31, 0x20, // O=1
-           0x31, 0x0a, // A=1
-           0x37, 0x0a, // 1 PO
-           0x01, 0x02, // 1 AND gate
-           0x63 // comment
+             0x61, 0x69, 0x67, 0x20, // aig
+             0x33, 0x20,             // M=3 (I+L+A)
+             0x32, 0x20,             // I=2
+             0x30, 0x20,             // L=0
+             0x31, 0x20,             // O=1
+             0x31, 0x0a,             // A=1
+             0x37, 0x0a,             // 1 PO
+             0x01, 0x02,             // 1 AND gate
+             0x63                    // comment
          } );
 }
 
@@ -83,17 +82,17 @@ TEST_CASE( "write AIG for XOR into AIGERfile", "[write_aiger]" )
 
   CHECK( buffer.data() ==
          std::vector<char>{
-           0x61, 0x69, 0x67, 0x20, // aig
-           0x36, 0x20, // M=6 (I+L+A)
-           0x32, 0x20, // I=2
-           0x30, 0x20, // L=0
-           0x31, 0x20, // O=1
-           0x34, 0x0a, // A=4
-           0x31, 0x33, 0x0a, // 1 PO
-           0x02, 0x02, // 4 AND gates
-           0x01, 0x05,
-           0x03, 0x03,
-           0x01, 0x02,
-           0x63 // comment
+             0x61, 0x69, 0x67, 0x20, // aig
+             0x36, 0x20,             // M=6 (I+L+A)
+             0x32, 0x20,             // I=2
+             0x30, 0x20,             // L=0
+             0x31, 0x20,             // O=1
+             0x34, 0x0a,             // A=4
+             0x31, 0x33, 0x0a,       // 1 PO
+             0x02, 0x02,             // 4 AND gates
+             0x01, 0x05,
+             0x03, 0x03,
+             0x01, 0x02,
+             0x63 // comment
          } );
 }

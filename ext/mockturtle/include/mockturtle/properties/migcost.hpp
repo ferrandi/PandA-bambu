@@ -1,5 +1,5 @@
 /* mockturtle: C++ logic network library
- * Copyright (C) 2018-2021  EPFL
+ * Copyright (C) 2018-2022  EPFL
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -93,7 +93,7 @@ uint32_t num_dangling_inputs( Ntk const& ntk )
   static_assert( has_is_pi_v<Ntk>, "Ntk does not implement the is_pi method" );
   static_assert( has_get_node_v<Ntk>, "Ntk does not implement the get_node method" );
 
-  uint32_t costs{0u};
+  uint32_t costs{ 0u };
 
   ntk.foreach_gate( [&]( auto const& n ) {
     ntk.foreach_fanin( n, [&]( auto const& f ) {

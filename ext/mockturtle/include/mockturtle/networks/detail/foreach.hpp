@@ -1,5 +1,5 @@
 /* mockturtle: C++ logic network library
- * Copyright (C) 2018-2021  EPFL
+ * Copyright (C) 2018-2022  EPFL
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -67,7 +67,7 @@ Iterator foreach_element( Iterator begin, Iterator end, Fn&& fn, uint32_t counte
   }
   else if constexpr ( is_callable_with_index_v<Fn, ElementType, bool> )
   {
-    uint32_t index{counter_offset};
+    uint32_t index{ counter_offset };
     while ( begin != end )
     {
       if ( !fn( *begin++, index++ ) )
@@ -88,7 +88,7 @@ Iterator foreach_element( Iterator begin, Iterator end, Fn&& fn, uint32_t counte
   }
   else if constexpr ( is_callable_with_index_v<Fn, ElementType, void> )
   {
-    uint32_t index{counter_offset};
+    uint32_t index{ counter_offset };
     while ( begin != end )
     {
       fn( *begin++, index++ );
@@ -124,7 +124,7 @@ Iterator foreach_element_if( Iterator begin, Iterator end, Pred&& pred, Fn&& fn,
   }
   else if constexpr ( is_callable_with_index_v<Fn, ElementType, bool> )
   {
-    uint32_t index{counter_offset};
+    uint32_t index{ counter_offset };
     while ( begin != end )
     {
       if ( !pred( *begin ) )
@@ -155,7 +155,7 @@ Iterator foreach_element_if( Iterator begin, Iterator end, Pred&& pred, Fn&& fn,
   }
   else if constexpr ( is_callable_with_index_v<Fn, ElementType, void> )
   {
-    uint32_t index{counter_offset};
+    uint32_t index{ counter_offset };
     while ( begin != end )
     {
       if ( !pred( *begin ) )
@@ -191,7 +191,7 @@ Iterator foreach_element_transform( Iterator begin, Iterator end, Transform&& tr
   }
   else if constexpr ( is_callable_with_index_v<Fn, ElementType, bool> )
   {
-    uint32_t index{counter_offset};
+    uint32_t index{ counter_offset };
     while ( begin != end )
     {
       if ( !fn( transform( *begin++ ), index++ ) )
@@ -212,7 +212,7 @@ Iterator foreach_element_transform( Iterator begin, Iterator end, Transform&& tr
   }
   else if constexpr ( is_callable_with_index_v<Fn, ElementType, void> )
   {
-    uint32_t index{counter_offset};
+    uint32_t index{ counter_offset };
     while ( begin != end )
     {
       fn( transform( *begin++ ), index++ );
@@ -221,4 +221,4 @@ Iterator foreach_element_transform( Iterator begin, Iterator end, Transform&& tr
   }
 }
 
-} /* namespace mockturtle */
+} // namespace mockturtle::detail

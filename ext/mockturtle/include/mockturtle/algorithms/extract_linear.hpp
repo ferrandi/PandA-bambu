@@ -1,5 +1,5 @@
 /* mockturtle: C++ logic network library
- * Copyright (C) 2018-2021  EPFL
+ * Copyright (C) 2018-2022  EPFL
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -53,7 +53,7 @@ namespace mockturtle
  * AND gates are traversed in topological order.
  *
  * Besides the new XAG, this function returns a vector of the size of all
- * original AND gates with pointers to the signals refering to the AND's fanin
+ * original AND gates with pointers to the signals referring to the AND's fanin
  * and fanout (in that order).
  */
 inline std::pair<xag_network, std::vector<std::array<xag_network::signal, 3>>>
@@ -68,7 +68,7 @@ extract_linear_circuit( xag_network const& xag )
     old_to_new[n] = dest.create_pi();
   } );
 
-  topo_view topo{xag};
+  topo_view topo{ xag };
   topo.foreach_node( [&]( auto const& n ) {
     if ( xag.is_constant( n ) || xag.is_pi( n ) )
       return;
@@ -104,7 +104,7 @@ extract_linear_circuit( xag_network const& xag )
     dest.create_po( b );
   }
 
-  return {dest, and_tuples};
+  return { dest, and_tuples };
 }
 
 namespace detail

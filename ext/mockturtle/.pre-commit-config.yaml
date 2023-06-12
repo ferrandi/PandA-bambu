@@ -1,8 +1,13 @@
 repos:
-- repo: https://github.com/pre-commit/pre-commit-hooks
-  rev: v2.2.1
-  hooks:
-  - id: end-of-file-fixer
-    exclude: lib/
-  - id: trailing-whitespace
-    exclude: lib/
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v2.2.1
+    hooks:
+      - id: end-of-file-fixer
+        exclude: lib/
+      - id: trailing-whitespace
+        exclude: lib/
+  - repo: https://github.com/crate-ci/typos
+    rev: v1.8.1
+    hooks:
+      - id: typos
+        exclude: ^(lib/|experiments/|docs/|.github/|.ql/)

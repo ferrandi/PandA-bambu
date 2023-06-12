@@ -35,7 +35,7 @@ TEST_CASE( "create a simple miter of non-equivalent functions with cnf_view", "[
   const auto result = xag.solve();
   CHECK( result );  /* has result */
   CHECK( *result ); /* result is SAT */
-  CHECK( xag.pi_model_values() == std::vector<bool>{{true, true}} );
+  CHECK( xag.pi_model_values() == std::vector<bool>{ { true, true } } );
 }
 
 TEST_CASE( "cnf_view with custom clauses", "[cnf_view]" )
@@ -150,14 +150,14 @@ TEST_CASE( "build cnf_view for k-LUT network", "[cnf_view]" )
   CHECK( result );
   CHECK( *result );
   auto v = ntk.pi_model_values();
-  auto check = ( v == std::vector<bool>{{true, true, true}} ) || ( v == std::vector<bool>{{false, false, false}} );
+  auto check = ( v == std::vector<bool>{ { true, true, true } } ) || ( v == std::vector<bool>{ { false, false, false } } );
   CHECK( check );
   ntk.block();
   result = ntk.solve();
   CHECK( result );
   CHECK( *result );
   v = ntk.pi_model_values();
-  check = ( v == std::vector<bool>{{true, true, true}} ) || ( v == std::vector<bool>{{false, false, false}} );
+  check = ( v == std::vector<bool>{ { true, true, true } } ) || ( v == std::vector<bool>{ { false, false, false } } );
   CHECK( check );
   ntk.block();
   result = ntk.solve();
@@ -175,9 +175,9 @@ TEST_CASE( "destructor", "[cnf_view]" )
 
   {
     cnf_view view( mig );
-    mig.events().on_add.push_back( []( auto const& n ) { (void)n; } );
+    auto add_event = mig.events().register_add_event( []( auto const& n ) { (void)n; } );
   }
-  
+
   CHECK( mig.events().on_add.size() == 1 );
   CHECK( mig.events().on_delete.size() == 0 );
 }

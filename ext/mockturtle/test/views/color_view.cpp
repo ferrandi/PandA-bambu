@@ -1,11 +1,11 @@
 #include <catch.hpp>
 
-#include <mockturtle/traits.hpp>
 #include <mockturtle/networks/aig.hpp>
+#include <mockturtle/networks/klut.hpp>
 #include <mockturtle/networks/mig.hpp>
 #include <mockturtle/networks/xag.hpp>
 #include <mockturtle/networks/xmg.hpp>
-#include <mockturtle/networks/klut.hpp>
+#include <mockturtle/traits.hpp>
 #include <mockturtle/views/color_view.hpp>
 
 using namespace mockturtle;
@@ -81,7 +81,7 @@ TEST_CASE( "in-place color view", "[color_view]" )
   const auto f8 = _aig.create_and( f4, f7 );
   _aig.create_po( f8 );
 
-  color_view aig{_aig};
+  color_view aig{ _aig };
 
   auto const white = aig.new_color();
   auto const yellow = aig.new_color();
@@ -96,31 +96,31 @@ TEST_CASE( "in-place color view", "[color_view]" )
 
   /* f1 and f3 have the same color */
   CHECK( aig.eval_color( aig.get_node( f1 ), aig.get_node( f3 ),
-                         [&]( auto c0, auto c1 ){ return c0 == c1; } ) );
+                         [&]( auto c0, auto c1 ) { return c0 == c1; } ) );
 
   /* f1 and f5 have different colors */
   CHECK( aig.eval_color( aig.get_node( f1 ), aig.get_node( f5 ),
-                         [&]( auto c0, auto c1 ){ return c0 != c1; } ) );
+                         [&]( auto c0, auto c1 ) { return c0 != c1; } ) );
 
   /* f5 is at least white */
   CHECK( aig.eval_color( aig.get_node( f5 ),
-                         [&]( auto color ){ return color >= white; } ) );
+                         [&]( auto color ) { return color >= white; } ) );
 
   /* f5 is not yellow */
   CHECK( aig.eval_color( aig.get_node( f5 ),
-                         [&]( auto color ){ return color != yellow; } ) );
+                         [&]( auto color ) { return color != yellow; } ) );
 
   /* the fanin's of f5 are at least white */
   CHECK( aig.eval_fanins_color( aig.get_node( f5 ),
-                                [&]( auto color ){ return color >= white; } ) );
+                                [&]( auto color ) { return color >= white; } ) );
 
   /* the fanins of f5 are yellow */
   CHECK( aig.eval_fanins_color( aig.get_node( f5 ),
-                                [&]( auto color ){ return color == yellow; } ) );
+                                [&]( auto color ) { return color == yellow; } ) );
 
   /* at least one fanin of f5 is not red */
   CHECK( aig.eval_fanins_color( aig.get_node( f5 ),
-                                [&]( auto color ){ return color != red; } ) );
+                                [&]( auto color ) { return color != red; } ) );
 
   /* colors are stored in the visited flags */
   CHECK( aig.visited( aig.get_node( f5 ) ) == white );
@@ -147,7 +147,7 @@ TEST_CASE( "out-of-place color view", "[color_view]" )
   const auto f8 = _aig.create_and( f4, f7 );
   _aig.create_po( f8 );
 
-  out_of_place_color_view aig{_aig};
+  out_of_place_color_view aig{ _aig };
 
   auto const white = aig.new_color();
   auto const yellow = aig.new_color();
@@ -162,31 +162,31 @@ TEST_CASE( "out-of-place color view", "[color_view]" )
 
   /* f1 and f3 have the same color */
   CHECK( aig.eval_color( aig.get_node( f1 ), aig.get_node( f3 ),
-                         [&]( auto c0, auto c1 ){ return c0 == c1; } ) );
+                         [&]( auto c0, auto c1 ) { return c0 == c1; } ) );
 
   /* f1 and f5 have different colors */
   CHECK( aig.eval_color( aig.get_node( f1 ), aig.get_node( f5 ),
-                         [&]( auto c0, auto c1 ){ return c0 != c1; } ) );
+                         [&]( auto c0, auto c1 ) { return c0 != c1; } ) );
 
   /* f5 is at least white */
   CHECK( aig.eval_color( aig.get_node( f5 ),
-                         [&]( auto color ){ return color >= white; } ) );
+                         [&]( auto color ) { return color >= white; } ) );
 
   /* f5 is not yellow */
   CHECK( aig.eval_color( aig.get_node( f5 ),
-                         [&]( auto color ){ return color != yellow; } ) );
+                         [&]( auto color ) { return color != yellow; } ) );
 
   /* the fanin's of f5 are at least white */
   CHECK( aig.eval_fanins_color( aig.get_node( f5 ),
-                                [&]( auto color ){ return color >= white; } ) );
+                                [&]( auto color ) { return color >= white; } ) );
 
   /* the fanins of f5 are yellow */
   CHECK( aig.eval_fanins_color( aig.get_node( f5 ),
-                                [&]( auto color ){ return color == yellow; } ) );
+                                [&]( auto color ) { return color == yellow; } ) );
 
   /* at least one fanin of f5 is not red */
   CHECK( aig.eval_fanins_color( aig.get_node( f5 ),
-                                [&]( auto color ){ return color != red; } ) );
+                                [&]( auto color ) { return color != red; } ) );
 
   /* visited flags have not been affected by assigning colors */
   CHECK( aig.visited( aig.get_node( f5 ) ) == 0u );

@@ -120,7 +120,7 @@ public:
    *
    * \param os Output stream
    */
-  pla_writer( std::ostream& os )
+  explicit pla_writer( std::ostream& os )
     : _os( os )
   {}
 
@@ -251,7 +251,7 @@ static std::regex term( R"(^([01\-]+)\s+([01\-]+)$)" );
  * \param diag An optional diagnostic engine with callback methods for parse errors
  * \return Success if parsing has been successful, or parse error if parsing has failed
  */
-inline return_code read_pla( std::istream& in, const pla_reader& reader, diagnostic_engine* diag = nullptr )
+[[nodiscard]] inline return_code read_pla( std::istream& in, const pla_reader& reader, diagnostic_engine* diag = nullptr )
 {
   auto loc = 0ul;
   auto errors = 0ul;
@@ -294,10 +294,9 @@ inline return_code read_pla( std::istream& in, const pla_reader& reader, diagnos
         }
 
         if ( diag )
-          diag->report( diagnostic_level::error,
-                        fmt::format( "Unsupported keyword `{2}`\n"
-                                     "in line {0}: `{1}`",
-                                     loc, line, std::string( m[1] ) ) );
+        {
+          diag->report( diag_id::ERR_UNSUPPORTED_KEYWORD ).add_argument( line );
+        }
         ++errors;
         return true; /* understood error case, go on parsing */
       }
@@ -312,10 +311,9 @@ inline return_code read_pla( std::istream& in, const pla_reader& reader, diagnos
     }
 
     if ( diag )
-      diag->report( diagnostic_level::error,
-                    fmt::format( "Unable to parse line\n"
-                                 "line {0}: `{1}`",
-                                 loc, line ) );
+    {
+      diag->report( diag_id::ERR_PARSE_LINE ).add_argument( line );
+    }
     ++errors;
     return true; /* understood error case, go on parsing */
   } );
@@ -340,15 +338,14 @@ inline return_code read_pla( std::istream& in, const pla_reader& reader, diagnos
  * \param diag An optional diagnostic engine with callback methods for parse errors
  * \return Success if parsing has been successful, or parse error if parsing has failed
  */
-inline return_code read_pla( const std::string& filename, const pla_reader& reader, diagnostic_engine* diag = nullptr )
+[[nodiscard]] inline return_code read_pla( const std::string& filename, const pla_reader& reader, diagnostic_engine* diag = nullptr )
 {
   std::ifstream in( detail::word_exp_filename( filename ), std::ifstream::in );
   if ( !in.is_open() )
   {
     if ( diag )
     {
-      diag->report( diagnostic_level::fatal,
-                    fmt::format( "could not open file `{0}`", filename ) );
+      diag->report( diag_id::ERR_FILE_OPEN ).add_argument( filename );
     }
     return return_code::parse_error;
   }

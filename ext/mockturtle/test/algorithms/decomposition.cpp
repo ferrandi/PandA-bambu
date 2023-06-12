@@ -49,7 +49,7 @@ TEST_CASE( "Partial Shannon decomposition on random 6-input functions on two var
     xag_network ntk;
     std::vector<xag_network::signal> pis( 6u );
     std::generate( pis.begin(), pis.end(), [&]() { return ntk.create_pi(); } );
-    ntk.create_po( shannon_decomposition( ntk, func, {0u, 3u}, pis, resyn ) );
+    ntk.create_po( shannon_decomposition( ntk, func, { 0u, 3u }, pis, resyn ) );
 
     default_simulator<kitty::dynamic_truth_table> sim( func.num_vars() );
     CHECK( simulate<kitty::dynamic_truth_table>( ntk, sim )[0] == func );
@@ -93,8 +93,8 @@ TEST_CASE( "Partial Davio decomposition on random 6-input functions on two varia
     xag_network ntk;
     std::vector<xag_network::signal> pis( 6u );
     std::generate( pis.begin(), pis.end(), [&]() { return ntk.create_pi(); } );
-    ntk.create_po( positive_davio_decomposition( ntk, func, {0u, 3u}, pis, resyn ) );
-    ntk.create_po( negative_davio_decomposition( ntk, func, {0u, 3u}, pis, resyn ) );
+    ntk.create_po( positive_davio_decomposition( ntk, func, { 0u, 3u }, pis, resyn ) );
+    ntk.create_po( negative_davio_decomposition( ntk, func, { 0u, 3u }, pis, resyn ) );
 
     default_simulator<kitty::dynamic_truth_table> sim( func.num_vars() );
     CHECK( simulate<kitty::dynamic_truth_table>( ntk, sim )[0] == func );

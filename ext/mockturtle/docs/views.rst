@@ -1,3 +1,5 @@
+.. _views:
+
 Views
 -----
 
@@ -24,6 +26,14 @@ algorithm.  Several views are implemented in mockturtle.
 **Header:** ``mockturtle/views/depth_view.hpp``
 
 .. doxygenclass:: mockturtle::depth_view
+   :members:
+
+`rank_view`: Order nodes within each level
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+**Header:** ``mockturtle/views/rank_view.hpp``
+
+.. doxygenclass:: mockturtle::rank_view
    :members:
 
 `mapping_view`: Add mapping interface methods
@@ -74,8 +84,24 @@ algorithm.  Several views are implemented in mockturtle.
 .. doxygenclass:: mockturtle::window_view
    :members:
 
+`binding_view`: Add bindings to a technology library
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+**Header:** ``mockturtle/views/binding_view.hpp``
+
+.. doxygenclass:: mockturtle::binding_view
+   :members:
+
 `names_view`: Assign names to signals and outputs
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+**Header:** ``mockturtle/views/choice_view.hpp``
+
+.. doxygenclass:: mockturtle::choice_view
+   :members:
+
+`choice_view`: Implements choices in networks
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 **Header:** ``mockturtle/views/names_view.hpp``
 
@@ -101,10 +127,17 @@ algorithm.  Several views are implemented in mockturtle.
 .. doxygenclass:: mockturtle::out_of_place_color_view
    :members:
 
-`aqfp_view`: Counts number of buffers and splitters after AQFP technology mapping
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+`cost_view`: Manages global cost and maintains context
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-**Header:** ``mockturtle/views/aqfp_view.hpp``
+**Header:** ``mockturtle/views/cost_view.hpp``
 
-.. doxygenclass:: mockturtle::aqfp_view
+.. doxygenclass:: mockturtle::cost_view
    :members:
+
+`dont_care_view`: Manages external don't care information
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+**Header:** ``mockturtle/views/dont_care_view.hpp``
+
+.. doxygenclass:: mockturtle::dont_care_view

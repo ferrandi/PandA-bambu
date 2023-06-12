@@ -1,5 +1,5 @@
 /* mockturtle: C++ logic network library
- * Copyright (C) 2018-2019  EPFL
+ * Copyright (C) 2018-2022  EPFL
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -23,8 +23,8 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include <string>
 #include <algorithm>
+#include <string>
 #include <vector>
 
 #include <fmt/format.h>
@@ -71,7 +71,7 @@ int main()
     lut_mapping_params lmps;
     lmps.cut_enumeration_ps.cut_size = 8;
     lut_mapping_stats lmst;
-    mapping_view<aig_network, true> mapped_aig{aig};
+    mapping_view<aig_network, true> mapped_aig{ aig };
     lut_mapping<decltype( mapped_aig ), true, cut_enumeration_mf_cut>( mapped_aig, lmps, &lmst );
     const auto klut = *collapse_mapped_network<klut_network>( mapped_aig );
 

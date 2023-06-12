@@ -22,7 +22,7 @@ TEST_CASE( "create cut view on AIG for XOR", "[cut_view]" )
   CHECK( aig.num_pos() == 1 );
   CHECK( aig.num_gates() == 4 );
 
-  cut_view cut1{aig, {aig.get_node( a ), aig.get_node( b )}, f4};
+  cut_view cut1{ aig, { aig.get_node( a ), aig.get_node( b ) }, f4 };
 
   CHECK( is_network_type_v<decltype( cut1 )> );
   CHECK( cut1.size() == 7 );
@@ -30,7 +30,7 @@ TEST_CASE( "create cut view on AIG for XOR", "[cut_view]" )
   CHECK( cut1.num_pos() == 1 );
   CHECK( cut1.num_gates() == 4 );
 
-  cut_view cut2{aig, {aig.get_node( a ), aig.get_node( b ), aig.get_node( a )}, f4};
+  cut_view cut2{ aig, { aig.get_node( a ), aig.get_node( b ), aig.get_node( a ) }, f4 };
 
   CHECK( is_network_type_v<decltype( cut1 )> );
   CHECK( cut2.size() == 7 );
@@ -38,7 +38,7 @@ TEST_CASE( "create cut view on AIG for XOR", "[cut_view]" )
   CHECK( cut2.num_pos() == 1 );
   CHECK( cut2.num_gates() == 4 );
 
-  cut_view cut3{aig, {aig.get_node( f2 ), aig.get_node( f3 )}, f4};
+  cut_view cut3{ aig, { aig.get_node( f2 ), aig.get_node( f3 ) }, f4 };
   CHECK( cut3.size() == 4 );
   CHECK( cut3.num_pis() == 2 );
   CHECK( cut3.num_pos() == 1 );

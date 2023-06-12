@@ -375,23 +375,23 @@ class klut_network_ext : public mockturtle::klut_network
 
 #pragma region utilities
 
-   std::vector<signal> create_pi_v(size_t size, std::vector<std::string> const& names = {})
+   std::vector<signal> create_pi_v(size_t size)
    {
       std::vector<signal> pis(size);
 
       for(size_t i = 0; i < size; ++i)
       {
-         pis[i] = create_pi(i >= names.size() ? std::string() : names[i]);
+         pis[i] = create_pi();
       }
 
       return pis;
    }
 
-   void create_po_v(std::vector<signal> pos, std::vector<std::string> const& names = {})
+   void create_po_v(std::vector<signal> pos)
    {
       for(size_t i = 0; i < pos.size(); ++i)
       {
-         create_po(pos[i], i >= names.size() ? std::string() : names[i]);
+         create_po(pos[i]);
       }
    }
 

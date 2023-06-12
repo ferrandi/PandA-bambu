@@ -1,5 +1,5 @@
 /* mockturtle: C++ logic network library
- * Copyright (C) 2018-2021  EPFL
+ * Copyright (C) 2018-2022  EPFL
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -37,8 +37,8 @@
 #include <optional>
 #include <vector>
 
-#include <bill/sat/interface/glucose.hpp>
 #include <bill/sat/interface/common.hpp>
+#include <bill/sat/interface/glucose.hpp>
 #include <kitty/bit_operations.hpp>
 #include <kitty/constructors.hpp>
 #include <kitty/dynamic_truth_table.hpp>
@@ -60,52 +60,52 @@ namespace mockturtle
 struct exact_mc_synthesis_params
 {
   /* \brief Minimum number of AND gates. */
-  uint32_t min_and_gates{0u};
+  uint32_t min_and_gates{ 0u };
 
   /*! \brief Use CEGAR based solving strategy. */
-  bool use_cegar{false};
+  bool use_cegar{ false };
 
   /*! \brief Use subset symmetry breaking. */
-  bool break_subset_symmetries{true};
+  bool break_subset_symmetries{ true };
 
   /*! \brief Use multi-level subset symmetry breaking. */
-  bool break_multi_level_subset_symmetries{true};
+  bool break_multi_level_subset_symmetries{ true };
 
   /*! \brief Use symmetric variables. */
-  bool break_symmetric_variables{true};
+  bool break_symmetric_variables{ true };
 
   /*! \brief User-specified variable symmetries. */
   std::vector<std::pair<uint32_t, uint32_t>> custom_symmetric_variables;
 
   /*! \brief Ensure to use all gates and essential variables. */
-  bool ensure_to_use_gates{true};
+  bool ensure_to_use_gates{ true };
 
   /*! \brief Heuristic XOR bound (based on sorter network). */
   std::optional<uint32_t> heuristic_xor_bound{};
 
   /*! \brief Updates XOR bound heuristic after each found solution. */
-  bool auto_update_xor_bound{false};
+  bool auto_update_xor_bound{ false };
 
   /*! \brief Conflict limit for the SAT solver. */
-  uint32_t conflict_limit{0u};
+  uint32_t conflict_limit{ 0u };
 
   /*! \brief Use conflict limit only when searching for multiple solutions
    *
    * The conflict limit will be ignored for the first call.
    */
-  bool ignore_conflict_limit_for_first_solution{false};
+  bool ignore_conflict_limit_for_first_solution{ false };
 
   /*! \brief Show progress (in CEGAR). */
-  bool progress{false};
+  bool progress{ false };
 
   /*! \brief Write DIMACS file, everytime solve is called. */
   std::optional<std::string> write_dimacs{};
 
   /*! \brief Be verbose. */
-  bool verbose{false};
+  bool verbose{ false };
 
   /*! \brief Be very verbose */
-  bool very_verbose{false};
+  bool very_verbose{ false };
 };
 
 struct exact_mc_synthesis_stats
@@ -423,7 +423,7 @@ private:
     // left linear TFI is lexicographically smaller than right one
     for ( auto i = 0u; i < ltfi_vars_.size() / 2u; ++i )
     {
-      auto const& ltfi2 =ltfi_vars_[2 * i];
+      auto const& ltfi2 = ltfi_vars_[2 * i];
       auto const& ltfi1 = ltfi_vars_[2 * i + 1];
 
       auto n = ltfi1.size();
@@ -507,7 +507,7 @@ private:
     if ( ps_.ensure_to_use_gates )
     {
       const auto num_ands = ltfi_vars_.size() / 2;
-      for ( auto j = 0u ; j < num_vars_ + num_ands; ++j )
+      for ( auto j = 0u; j < num_vars_ + num_ands; ++j )
       {
         if ( j < num_vars_ && !kitty::has_var( func_, j ) )
         {
@@ -590,7 +590,7 @@ private:
   std::vector<std::vector<signal<problem_network_t>>> truth_vars_;
   std::vector<signal<problem_network_t>> xor_counter_;
   kitty::dynamic_truth_table func_;
-  bool invert_{false};
+  bool invert_{ false };
   std::optional<uint32_t> heuristic_xor_bound_;
   uint32_t num_solutions_;
   exact_mc_synthesis_params const& ps_;
@@ -603,7 +603,7 @@ template<class Ntk = xag_network, bill::solvers Solver = bill::solvers::glucose_
 Ntk exact_mc_synthesis( kitty::dynamic_truth_table const& func, exact_mc_synthesis_params const& ps = {}, exact_mc_synthesis_stats* pst = nullptr )
 {
   exact_mc_synthesis_stats st;
-  const auto xag = detail::exact_mc_synthesis_impl<Ntk, Solver>{func, 1u, ps, st}.run().front();
+  const auto xag = detail::exact_mc_synthesis_impl<Ntk, Solver>{ func, 1u, ps, st }.run().front();
 
   if ( ps.verbose )
   {
@@ -621,7 +621,7 @@ template<class Ntk = xag_network, bill::solvers Solver = bill::solvers::glucose_
 std::vector<Ntk> exact_mc_synthesis_multiple( kitty::dynamic_truth_table const& func, uint32_t num_solutions, exact_mc_synthesis_params const& ps = {}, exact_mc_synthesis_stats* pst = nullptr )
 {
   exact_mc_synthesis_stats st;
-  const auto xags = detail::exact_mc_synthesis_impl<Ntk, Solver>{func, num_solutions, ps, st}.run();
+  const auto xags = detail::exact_mc_synthesis_impl<Ntk, Solver>{ func, num_solutions, ps, st }.run();
 
   if ( ps.verbose )
   {
