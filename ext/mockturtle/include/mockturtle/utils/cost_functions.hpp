@@ -1,5 +1,5 @@
 /* mockturtle: C++ logic network library
- * Copyright (C) 2018-2021  EPFL
+ * Copyright (C) 2018-2022  EPFL
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -29,11 +29,14 @@
 
   \author Heinz Riener
   \author Mathias Soeken
+  \author Alessandro Tempia Calvino
 */
 
 #pragma once
 
 #include <cstdint>
+
+#include <kitty/dynamic_truth_table.hpp>
 
 #include "../traits.hpp"
 
@@ -109,17 +112,34 @@ struct mc_cost
   }
 };
 
+struct lut_unitary_cost
+{
+  std::pair<uint32_t, uint32_t> operator()( uint32_t num_leaves ) const
+  {
+    if ( num_leaves < 2u )
+      return { 0u, 0u };
+    return { 1u, 1u }; /* area, delay */
+  }
+
+  std::pair<uint32_t, uint32_t> operator()( kitty::dynamic_truth_table const& tt ) const
+  {
+    if ( tt.num_vars() < 2u )
+      return { 0u, 0u };
+    return { 1u, 1u }; /* area, delay */
+  }
+};
+
 template<class Ntk, class NodeCostFn = unit_cost<Ntk>>
 uint32_t costs( Ntk const& ntk )
 {
   static_assert( is_network_type_v<Ntk>, "Ntk is not a network type" );
   static_assert( has_foreach_gate_v<Ntk>, "Ntk does not implement the foreach_gate method" );
 
-  uint32_t total{0u};
+  uint32_t total{ 0u };
   NodeCostFn cost_fn{};
   ntk.foreach_gate( [&]( auto const& n ) {
     total += cost_fn( ntk, n );
-  });
+  } );
   return total;
 }
 

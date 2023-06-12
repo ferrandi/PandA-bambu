@@ -69,7 +69,7 @@ namespace percy
         }
 
         spec.nr_steps = spec.initial_steps;
-        while (true) {
+        while (spec.nr_steps <= spec.max_nr_steps) {
             solver.restart();
             if (!encoder.encode(spec)) {
                 spec.nr_steps++;
@@ -110,6 +110,7 @@ namespace percy
                 return timeout;
             }
         }
+        return timeout;
     }
 
     inline synth_result

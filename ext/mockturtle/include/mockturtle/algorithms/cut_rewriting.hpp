@@ -1,5 +1,5 @@
 /* mockturtle: C++ logic network library
- * Copyright (C) 2018-2021  EPFL
+ * Copyright (C) 2018-2022  EPFL
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -80,10 +80,10 @@ struct cut_rewriting_params
   cut_enumeration_params cut_enumeration_ps{};
 
   /*! \brief Allow zero-gain substitutions. */
-  bool allow_zero_gain{false};
+  bool allow_zero_gain{ false };
 
   /*! \brief Use don't cares for optimization. */
-  bool use_dont_cares{false};
+  bool use_dont_cares{ false };
 
   /*! \brief Candidate selection strategy. */
   enum
@@ -93,22 +93,22 @@ struct cut_rewriting_params
   } candidate_selection_strategy = minimize_weight;
 
   /*! \brief Minimum candidate cut size */
-  uint32_t min_cand_cut_size{3u};
+  uint32_t min_cand_cut_size{ 3u };
 
   /*! \brief Minimum candidate cut size override (in conflict graph) */
   std::optional<uint32_t> min_cand_cut_size_override{};
 
   /*! \brief If true, candidates are only accepted if they do not increase logic level of node. */
-  bool preserve_depth{false};
+  bool preserve_depth{ false };
 
   /*! \brief Show progress. */
-  bool progress{false};
+  bool progress{ false };
 
   /*! \brief Be verbose. */
-  bool verbose{false};
+  bool verbose{ false };
 
   /*! \brief Be very verbose. */
-  bool very_verbose{false};
+  bool very_verbose{ false };
 };
 
 /*! \brief Statistics for cut_rewriting.
@@ -119,16 +119,16 @@ struct cut_rewriting_params
 struct cut_rewriting_stats
 {
   /*! \brief Total runtime. */
-  stopwatch<>::duration time_total{0};
+  stopwatch<>::duration time_total{ 0 };
 
   /*! \brief Runtime for cut enumeration. */
-  stopwatch<>::duration time_cuts{0};
+  stopwatch<>::duration time_cuts{ 0 };
 
   /*! \brief Accumulated runtime for rewriting. */
-  stopwatch<>::duration time_rewriting{0};
+  stopwatch<>::duration time_rewriting{ 0 };
 
   /*! \brief Runtime to find minimal independent set. */
-  stopwatch<>::duration time_mis{0};
+  stopwatch<>::duration time_mis{ 0 };
 
   void report( bool show_time_mis = true ) const
   {
@@ -217,8 +217,8 @@ public:
   auto num_edges() const { return _num_edges; }
 
 private:
-  uint32_t _num_vertices{0u};
-  std::size_t _num_edges{0u};
+  uint32_t _num_vertices{ 0u };
+  std::size_t _num_edges{ 0u };
 
   std::vector<std::set<uint32_t>> _adjacent;
 
@@ -285,7 +285,7 @@ inline std::vector<uint32_t> maximal_weighted_independent_set( graph& g )
 
 struct cut_enumeration_cut_rewriting_cut
 {
-  int32_t gain{-1};
+  int32_t gain{ -1 };
 };
 
 template<typename Ntk, bool ComputeTruth>
@@ -314,7 +314,7 @@ std::tuple<graph, std::vector<std::pair<node<Ntk>, uint32_t>>> network_cuts_grap
 
     const auto& set = cuts.cuts( ntk.node_to_index( n ) );
 
-    auto cctr{0u};
+    auto cctr{ 0u };
     for ( auto const& cut : set )
     {
       if ( ps.min_cand_cut_size_override )
@@ -335,8 +335,8 @@ std::tuple<graph, std::vector<std::pair<node<Ntk>, uint32_t>>> network_cuts_grap
       }
       cut_view<Ntk> dcut( ntk, leaves, ntk.make_signal( n ) );
       dcut.foreach_gate( [&]( auto const& n2 ) {
-        //if ( dcut.is_constant( n2 ) || dcut.is_pi( n2 ) )
-        //  return;
+        // if ( dcut.is_constant( n2 ) || dcut.is_pi( n2 ) )
+        //   return;
         conflicts[ntk.node_to_index( n2 )].emplace_back( n, cctr );
       } );
 
@@ -366,7 +366,7 @@ std::tuple<graph, std::vector<std::pair<node<Ntk>, uint32_t>>> network_cuts_grap
     }
   }
 
-  return {g, vertex_to_cut_addr};
+  return { g, vertex_to_cut_addr };
 }
 
 template<class Ntk, class RewritingFn, class Iterator, class = void>
@@ -419,7 +419,7 @@ public:
     /* iterate over all original nodes in the network */
     const auto size = ntk.size();
     auto max_total_gain = 0u;
-    progress_bar pbar{ntk.size(), "cut_rewriting |{0}| node = {1:>4}@{2:>2} / " + std::to_string( size ) + "   comm. gain = {3}", ps.progress};
+    progress_bar pbar{ ntk.size(), "cut_rewriting |{0}| node = {1:>4}@{2:>2} / " + std::to_string( size ) + "   comm. gain = {3}", ps.progress };
     ntk.foreach_node( [&]( auto const& n, auto index ) {
       /* stop once all original nodes were visited */
       if ( index >= size )
@@ -454,7 +454,7 @@ public:
         int32_t value = recursive_deref<Ntk, NodeCostFn>( ntk, n );
         {
           stopwatch t( st.time_rewriting );
-          int32_t best_gain{-1};
+          int32_t best_gain{ -1 };
 
           const auto on_signal = [&]( auto const& f_new ) {
             auto [v, contains] = recursive_ref_contains( ntk.get_node( f_new ), n );
@@ -559,7 +559,7 @@ private:
   {
     /* terminate? */
     if ( ntk.is_constant( n ) || ntk.is_pi( n ) )
-      return {0, false};
+      return { 0, false };
 
     /* recursively collect nodes */
     int32_t value = cost_fn( ntk, n );
@@ -573,7 +573,7 @@ private:
         contains = contains || c;
       }
     } );
-    return {value, contains};
+    return { value, contains };
   }
 
 private:
@@ -586,7 +586,7 @@ private:
 
 } /* namespace detail */
 
-/*! \brief In-place cut rewriting algorithm with compabitility graph.
+/*! \brief In-place cut rewriting algorithm with compatibility graph.
  *
  * This algorithm enumerates cut of a network and then tries to rewrite the cut
  * in terms of gates of the same network.  The rewritten structures are added
@@ -601,7 +601,7 @@ private:
  * parameters compose an iterator pair where the distance matches the number of
  * variables of the truth table that is passed as second parameter.  There are
  * some rewriting algorithms in the folder
- * `mockturtle/algorithms/node_resyntesis`, since the resynthesis functions
+ * `mockturtle/algorithms/node_resynthesis`, since the resynthesis functions
  * have the same signature.
  *
  * In contrast to node resynthesis, cut rewriting uses the same type for the
@@ -657,7 +657,7 @@ void cut_rewriting_with_compatibility_graph( Ntk& ntk, RewritingFn&& rewriting_f
   {
     fanout_view_params fvps;
     fvps.update_on_delete = false;
-    fanout_view<Ntk> ntk_fo{ntk, fvps};
+    fanout_view<Ntk> ntk_fo{ ntk, fvps };
     detail::cut_rewriting_with_compatibility_graph_impl<fanout_view<Ntk>, RewritingFn, NodeCostFn> p( ntk_fo, rewriting_fn, ps, st, cost_fn );
     p.run();
   }
@@ -710,7 +710,7 @@ struct cut_rewriting_impl
     /* original cost */
     const auto orig_cost = costs<Ntk, NodeCostFn>( ntk_ );
 
-    progress_bar pbar{ntk_.num_gates(), "cut_rewriting |{0}| node = {1:>4} / " + std::to_string( ntk_.num_gates() ) + "   original cost = " + std::to_string( orig_cost ), ps_.progress};
+    progress_bar pbar{ ntk_.num_gates(), "cut_rewriting |{0}| node = {1:>4} / " + std::to_string( ntk_.num_gates() ) + "   original cost = " + std::to_string( orig_cost ), ps_.progress };
     ntk_.foreach_gate( [&]( auto const& n, auto i ) {
       pbar( i, i );
 
@@ -825,7 +825,7 @@ private:
  * parameters compose an iterator pair where the distance matches the number of
  * variables of the truth table that is passed as second parameter.  There are
  * some rewriting algorithms in the folder
- * `mockturtle/algorithms/node_resyntesis`, since the resynthesis functions
+ * `mockturtle/algorithms/node_resynthesis`, since the resynthesis functions
  * have the same signature.
  *
  * In contrast to node resynthesis, cut rewriting uses the same type for the
@@ -843,7 +843,7 @@ Ntk cut_rewriting( Ntk const& ntk, RewritingFn const& rewriting_fn = {}, cut_rew
   const auto result = [&]() {
     if ( ps.preserve_depth )
     {
-      depth_view<Ntk, NodeCostFn> depth_ntk{ntk};
+      depth_view<Ntk, NodeCostFn> depth_ntk{ ntk };
       return detail::cut_rewriting_impl<Ntk, depth_view<Ntk, NodeCostFn>, RewritingFn, NodeCostFn>( depth_ntk, rewriting_fn, ps, st ).run();
     }
     else

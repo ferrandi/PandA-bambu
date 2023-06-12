@@ -1,5 +1,5 @@
 /* mockturtle: C++ logic network library
- * Copyright (C) 2018-2021  EPFL
+ * Copyright (C) 2018-2022  EPFL
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -70,7 +70,7 @@ public:
   template<typename LeavesIterator, typename Fn>
   void operator()( Ntk& ntk, kitty::dynamic_truth_table const& function, kitty::dynamic_truth_table const& dc, LeavesIterator begin, LeavesIterator end, Fn&& fn ) const
   {
-    fn( bi_decomposition<Ntk>( ntk, function, ~dc, {begin, end} ) );
+    fn( bi_decomposition<Ntk>( ntk, function, ~dc, { begin, end } ) );
   }
 
   template<typename LeavesIterator, typename Fn>

@@ -1,5 +1,5 @@
 /* mockturtle: C++ logic network library
- * Copyright (C) 2018-2021  EPFL
+ * Copyright (C) 2018-2022  EPFL
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -41,12 +41,12 @@
 #include <map>
 #include <vector>
 
+#include "../../utils/cuts.hpp"
 #include "../cut_enumeration.hpp"
 #include "../lut_mapping.hpp"
 #include <kitty/constructors.hpp>
 #include <kitty/spectral.hpp>
 #include <kitty/static_truth_table.hpp>
-#include <mockturtle/utils/cuts.hpp>
 
 namespace mockturtle
 {
@@ -59,15 +59,15 @@ namespace mockturtle
 */
 struct cut_enumeration_spectr_cut
 {
-  uint32_t delay{0u};
-  float flow{0.0f};
-  float cost{0.0f};
+  uint32_t delay{ 0u };
+  float flow{ 0.0f };
+  float cost{ 0.0f };
 };
 
 template<bool ComputeTruth>
 bool operator<( cut_type<ComputeTruth, cut_enumeration_spectr_cut> const& c1, cut_type<ComputeTruth, cut_enumeration_spectr_cut> const& c2 )
 {
-  constexpr auto eps{0.005f};
+  constexpr auto eps{ 0.005f };
 
   if ( c1.size() == c2.size() )
   {
@@ -166,7 +166,7 @@ struct cut_enumeration_update_cut<cut_enumeration_spectr_cut>
   template<typename Cut, typename NetworkCuts, typename Ntk>
   static void apply( Cut& cut, NetworkCuts const& cuts, Ntk const& ntk, node<Ntk> const& n )
   {
-    uint32_t delay{0};
+    uint32_t delay{ 0 };
 
     auto tt = cuts.truth_table( cut );
     auto spectrum = kitty::rademacher_walsh_spectrum( tt );

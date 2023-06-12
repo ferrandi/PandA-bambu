@@ -1,5 +1,5 @@
 /* mockturtle: C++ logic network library
- * Copyright (C) 2018-2021  EPFL
+ * Copyright (C) 2018-2022  EPFL
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -43,7 +43,7 @@
 
 namespace abc::exorcism
 {
-  extern int Abc_ExorcismMain( Vec_Wec_t * vEsop, int nIns, int nOuts, std::function<void(uint32_t, uint32_t)> const& onCube, int Quality, int Verbosity, int nCubesMax, int fUseQCost );
+extern int Abc_ExorcismMain( Vec_Wec_t* vEsop, int nIns, int nOuts, std::function<void( uint32_t, uint32_t )> const& onCube, int Quality, int Verbosity, int nCubesMax, int fUseQCost );
 }
 
 namespace mockturtle
@@ -58,14 +58,16 @@ inline std::vector<kitty::cube> exorcism( std::vector<kitty::cube> const& esop, 
     auto vcube = abc::exorcism::Vec_WecPushLevel( vesop );
     for ( auto i = 0u; i < num_vars; ++i )
     {
-      if ( !cube.get_mask( i ) ) continue;
+      if ( !cube.get_mask( i ) )
+        continue;
       abc::exorcism::Vec_IntPush( vcube, cube.get_bit( i ) ? 2 * i : 2 * i + 1 );
     }
     abc::exorcism::Vec_IntPush( vcube, -1 );
   }
 
   std::vector<kitty::cube> exorcism_esop;
-  abc::exorcism::Abc_ExorcismMain( vesop, num_vars, 1, [&]( uint32_t bits, uint32_t mask ) { exorcism_esop.emplace_back( bits, mask ); }, 2, 0, 4 * esop.size(), 0 );
+  abc::exorcism::Abc_ExorcismMain(
+      vesop, num_vars, 1, [&]( uint32_t bits, uint32_t mask ) { exorcism_esop.emplace_back( bits, mask ); }, 2, 0, 4 * esop.size(), 0 );
 
   abc::exorcism::Vec_WecFree( vesop );
 
@@ -77,4 +79,4 @@ inline std::vector<kitty::cube> exorcism( kitty::dynamic_truth_table const& func
   return exorcism( kitty::esop_from_optimum_pkrm( func ), func.num_vars() );
 }
 
-}
+} // namespace mockturtle

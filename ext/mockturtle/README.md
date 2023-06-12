@@ -1,7 +1,7 @@
 [![Actions Status](https://github.com/lsils/mockturtle/workflows/Linux%20CI/badge.svg)](https://github.com/lsils/mockturtle/actions)
 [![Actions Status](https://github.com/lsils/mockturtle/workflows/MacOS%20CI/badge.svg)](https://github.com/lsils/mockturtle/actions)
 [![Actions Status](https://github.com/lsils/mockturtle/workflows/Windows%20CI/badge.svg)](https://github.com/lsils/mockturtle/actions)
-[![Coverage Status](https://coveralls.io/repos/github/lsils/mockturtle/badge.svg?branch=master)](https://coveralls.io/github/lsils/mockturtle?branch=master)
+[![Coverage Status](https://codecov.io/gh/lsils/mockturtle/branch/master/graph/badge.svg?token=KSC1MP2VCM)](https://codecov.io/gh/lsils/mockturtle)
 [![Documentation Status](https://readthedocs.org/projects/mockturtle/badge/?version=latest)](http://mockturtle.readthedocs.io/en/latest/?badge=latest)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
@@ -25,9 +25,10 @@ and prints them for each node.
 #include <lorina/aiger.hpp>
 
 mockturtle::aig_network aig;
-lorina::read_aiger( "file.aig", mockturtle::aiger_reader( aig ) );
+auto const result = lorina::read_aiger( "file.aig", mockturtle::aiger_reader( aig ) );
+assert( result == lorina::return_code::success );
 
-const auto cuts = cut_enumeration( aig );
+auto const cuts = cut_enumeration( aig );
 aig.foreach_node( [&]( auto node ) {
   std::cout << cuts.cuts( aig.node_to_index( node ) ) << "\n";
 } );
@@ -35,10 +36,10 @@ aig.foreach_node( [&]( auto node ) {
 
 ## Installation requirements
 
-A modern compiler is required to build *mockturtle*.  We are continously
-testing with Clang 6.0.1, GCC 7.3.0, and GCC 8.2.0.  More information can be
-found in the [documentation](http://mockturtle.readthedocs.io/en/latest/installation.html).
+A modern compiler is required to build *mockturtle*.  We are continuously
+testing with Clang 12.0.1, GCC 9.3.0, and GCC 10.2.0.  More information can be
+found in the [documentation](http://mockturtle.readthedocs.io/en/latest/getting_started.html).
 
-## EPFL logic sythesis libraries
+## EPFL logic synthesis libraries
 
 mockturtle is part of the [EPFL logic synthesis](https://lsi.epfl.ch/page-138455-en.html) libraries.  The other libraries and several examples on how to use and integrate the libraries can be found in the [logic synthesis tool showcase](https://github.com/lsils/lstools-showcase).

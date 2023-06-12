@@ -1,5 +1,5 @@
 /* mockturtle: C++ logic network library
- * Copyright (C) 2018-2021  EPFL
+ * Copyright (C) 2018-2022  EPFL
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -29,6 +29,7 @@
 
   \author Heinz Riener
   \author Mathias Soeken
+  \author Siang-Yun (Sonia) Lee
 */
 
 #pragma once
@@ -62,8 +63,10 @@ public:
   {
   }
 
-  signal create_pi( std::string const& name = {} ) = delete;
-  void create_po( signal const& s, std::string const& name = {} ) = delete;
+  signal create_pi() = delete;
+  void create_po( signal const& s ) = delete;
+  signal create_ro() = delete;
+  void create_ri( signal const& s ) = delete;
   signal create_buf( signal const& f ) = delete;
   signal create_not( signal const& f ) = delete;
   signal create_and( signal const& f, signal const& g ) = delete;
@@ -83,4 +86,4 @@ public:
   void substitute_node( node const& old_node, node const& new_node ) = delete;
 };
 
-}
+} // namespace mockturtle

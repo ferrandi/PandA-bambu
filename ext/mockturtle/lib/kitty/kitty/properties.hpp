@@ -1,5 +1,5 @@
 /* kitty: C++ truth table library
- * Copyright (C) 2017-2021  EPFL
+ * Copyright (C) 2017-2022  EPFL
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -61,7 +61,8 @@ std::pair<uint32_t, std::vector<uint32_t>> chow_parameters( const TT& tt )
   const auto nf = static_cast<uint32_t>( count_ones( tt ) );
 
   std::vector<uint32_t> sf( n, 0u );
-  for_each_one_bit( tt, [&sf]( auto minterm ) {
+  for_each_one_bit( tt, [&sf]( auto minterm )
+                    {
     for ( auto i = 0u; minterm; ++i )
     {
       if ( minterm & 1 )
@@ -69,10 +70,9 @@ std::pair<uint32_t, std::vector<uint32_t>> chow_parameters( const TT& tt )
         ++sf[i];
       }
       minterm >>= 1;
-    }
-  } );
+    } } );
 
-  return {nf, sf};
+  return { nf, sf };
 }
 
 /*! \brief Checks whether a function is canalizing
@@ -259,7 +259,7 @@ template<typename TT, typename Fn>
 void foreach_runlength( const TT& tt, Fn&& fn )
 {
   bool current = get_bit( tt, 0 );
-  uint32_t length{1u};
+  uint32_t length{ 1u };
 
   for ( auto i = 1ull; i < tt.num_bits(); ++i )
   {
@@ -287,9 +287,8 @@ template<typename TT>
 std::vector<uint32_t> runlength_pattern( const TT& tt )
 {
   std::vector<uint32_t> pattern;
-  foreach_runlength( tt, [&]( bool, uint32_t length ) {
-    pattern.push_back( length );
-  } );
+  foreach_runlength( tt, [&]( bool, uint32_t length )
+                     { pattern.push_back( length ); } );
   return pattern;
 }
 
@@ -307,7 +306,8 @@ inline uint32_t polynomial_degree( const TT& tt )
     return 0u;
   }
   const auto max = std::max_element( cubes.begin(), cubes.end(),
-                                     []( auto const& c1, auto const& c2 ) { return c1.num_literals() < c2.num_literals(); } );
+                                     []( auto const& c1, auto const& c2 )
+                                     { return c1.num_literals() < c2.num_literals(); } );
   return max->num_literals();
 }
 
@@ -331,7 +331,7 @@ inline uint64_t absolute_distinguishing_power( const TT& tt )
 template<typename TT>
 inline uint64_t relative_distinguishing_power( const TT& tt, const TT& target_tt )
 {
-  return count_ones( ~tt & ~target_tt ) * count_ones( tt & target_tt ) + count_ones( ~tt & target_tt ) * count_ones( tt & ~target_tt ); 
+  return count_ones( ~tt & ~target_tt ) * count_ones( tt & target_tt ) + count_ones( ~tt & target_tt ) * count_ones( tt & ~target_tt );
 }
 
 /*! \brief Return true iff each distinguishing bit pair of the target

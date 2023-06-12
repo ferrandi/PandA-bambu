@@ -9,6 +9,7 @@
 
 using namespace mockturtle;
 
+#if !__clang__ || __clang_major__ > 10
 TEST_CASE( "Exact XAG for MAJ cached", "[cached]" )
 {
 #if __GNUC__ == 7
@@ -25,7 +26,7 @@ TEST_CASE( "Exact XAG for MAJ cached", "[cached]" )
   const auto b = xag.create_pi();
   const auto c = xag.create_pi();
 
-  std::vector<xag_network::signal> pis = {a, b, c};
+  std::vector<xag_network::signal> pis = { a, b, c };
 
   {
     exact_aig_resynthesis<xag_network> exact_resyn;
@@ -50,3 +51,4 @@ TEST_CASE( "Exact XAG for MAJ cached", "[cached]" )
   CHECK( !fs::exists( "mockturtle-test-cache.db.bak" ) );
   fs::remove( "mockturtle-test-cache.db" );
 }
+#endif

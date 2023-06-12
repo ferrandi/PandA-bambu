@@ -1,5 +1,5 @@
 /* kitty: C++ truth table library
- * Copyright (C) 2017-2021  EPFL
+ * Copyright (C) 2017-2022  EPFL
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -44,9 +44,11 @@
 #include "cube.hpp"
 #include "decomposition.hpp"
 #include "enumeration.hpp"
+//#include "esop.hpp" // deprecated!
 #include "hash.hpp"
 #include "implicant.hpp"
 #include "isop.hpp"
+#include "karnaugh_map.hpp"
 #include "npn.hpp"
 #include "operations.hpp"
 #include "operators.hpp"
@@ -54,6 +56,7 @@
 #include "print.hpp"
 #include "properties.hpp"
 #include "spectral.hpp"
+#include "spp.hpp"
 #include "traits.hpp"
 
 /*

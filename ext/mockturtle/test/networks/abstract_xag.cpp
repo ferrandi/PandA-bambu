@@ -42,8 +42,8 @@ TEST_CASE( "Check subset resolution", "[abstract_xag]" )
     const auto b = ntk.create_pi();
     const auto c = ntk.create_pi();
 
-    ntk.create_po( ntk.create_and( ntk.create_xor( b, a ), ntk.create_nary_xor( {a, c, b} ) ) );
-    ntk.create_po( ntk.create_and( ntk.create_nary_xor( {c, b, a} ), ntk.create_xor( c, a ) ) );
+    ntk.create_po( ntk.create_and( ntk.create_xor( b, a ), ntk.create_nary_xor( { a, c, b } ) ) );
+    ntk.create_po( ntk.create_and( ntk.create_nary_xor( { c, b, a } ), ntk.create_xor( c, a ) ) );
     ntk = cleanup_dangling( ntk );
   };
 
@@ -87,7 +87,7 @@ TEST_CASE( "Parse GF(2^4) function", "[abstract_xag]" )
 
   std::stringstream str;
   str << verilog;
-  const auto result = lorina::read_verilog( str, verilog_reader( xag ) );
+  const auto result = lorina::read_verilog( str, verilog_reader( xag, "GF24Inversion" ) );
   CHECK( result == lorina::return_code::success );
   xag = cleanup_dangling( xag );
   CHECK( xag.num_pis() == 4u );

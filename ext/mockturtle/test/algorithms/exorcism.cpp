@@ -4,7 +4,6 @@
 
 using namespace mockturtle;
 
-
 TEST_CASE( "Call exorcism on 4-input function", "[exorcism]" )
 {
   kitty::dynamic_truth_table func( 4u );
@@ -13,7 +12,7 @@ TEST_CASE( "Call exorcism on 4-input function", "[exorcism]" )
   {
     kitty::create_random( func );
     auto esop = exorcism( func );
-  
+
     auto func2 = func.construct();
     kitty::create_from_cubes( func2, esop, true );
 

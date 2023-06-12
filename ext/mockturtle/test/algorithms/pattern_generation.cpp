@@ -1,8 +1,8 @@
 #include <catch.hpp>
 
 #include <mockturtle/algorithms/cleanup.hpp>
-#include <mockturtle/algorithms/simulation.hpp>
 #include <mockturtle/algorithms/pattern_generation.hpp>
+#include <mockturtle/algorithms/simulation.hpp>
 #include <mockturtle/networks/aig.hpp>
 #include <mockturtle/networks/xag.hpp>
 
@@ -23,8 +23,8 @@ TEST_CASE( "Stuck-at pattern generation", "[pattern_generation]" )
   aig.create_po( f );
 
   partial_simulator sim( aig.num_pis(), 0 );
-  sim.add_pattern( {0, 0, 0, 0} );
-  sim.add_pattern( {1, 1, 1, 1} );
+  sim.add_pattern( { 0, 0, 0, 0 } );
+  sim.add_pattern( { 1, 1, 1, 1 } );
 
   pattern_generation( aig, sim );
 
@@ -56,9 +56,7 @@ TEST_CASE( "Constant node removal", "[pattern_generation]" )
   CHECK( aig.num_gates() == 7 );
 
   partial_simulator sim( aig.num_pis(), 0 );
-  pattern_generation_params ps;
-  ps.substitute_const = true;
-  pattern_generation( aig, sim, ps );
+  pattern_generation<true>( aig, sim );
 
   CHECK( aig.num_gates() == 6 );
 }
@@ -76,10 +74,10 @@ TEST_CASE( "Multiple stuck-at pattern generation", "[pattern_generation]" )
   aig.create_po( f );
 
   partial_simulator sim( aig.num_pis(), 0 );
-  sim.add_pattern( {0, 0, 0, 0} );
-  sim.add_pattern( {1, 1, 1, 1} );
-  sim.add_pattern( {1, 1, 0, 1} );
-  sim.add_pattern( {0, 1, 1, 1} );
+  sim.add_pattern( { 0, 0, 0, 0 } );
+  sim.add_pattern( { 1, 1, 1, 1 } );
+  sim.add_pattern( { 1, 1, 0, 1 } );
+  sim.add_pattern( { 0, 1, 1, 1 } );
 
   pattern_generation_params ps;
   ps.num_stuck_at = 2;
@@ -106,9 +104,9 @@ TEST_CASE( "With observability awareness", "[pattern_generation]" )
   xag.create_po( f4 );
 
   partial_simulator sim( xag.num_pis(), 0 );
-  sim.add_pattern( {0, 1, 1} ); // this is the only pattern making f1 = 0, but it's not observable
-  sim.add_pattern( {1, 1, 0} );
-  sim.add_pattern( {1, 1, 1} );
+  sim.add_pattern( { 0, 1, 1 } ); // this is the only pattern making f1 = 0, but it's not observable
+  sim.add_pattern( { 1, 1, 0 } );
+  sim.add_pattern( { 1, 1, 1 } );
 
   pattern_generation_params ps;
   ps.odc_levels = -1;
