@@ -323,6 +323,7 @@ std::string SimulationTool::GenerateLibraryBuildScript(std::ostringstream& scrip
       std::string flags = cflags +
                           " -fwrapv -ffloat-store -flax-vector-conversions -msse2 -mfpmath=sse -fno-strict-aliasing "
                           "-D__builtin_bambu_time_start()= -D__builtin_bambu_time_stop()= -D__BAMBU_SIM__";
+      flags += " -I" + relocate_compiler_path(PANDA_INCLUDE_INSTALLDIR);
       if(!Param->isOption(OPT_input_format) ||
          Param->getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_C)
       {
@@ -414,7 +415,7 @@ std::string SimulationTool::GenerateLibraryBuildScript(std::ostringstream& scrip
 
    const auto dpi_cwrapper_file =
        Param->getOption<std::string>(OPT_output_directory) + "/simulation/" STR_CST_testbench_generation_basename ".c";
-   script << "${CC} -c ${CFLAGS} -I" << relocate_compiler_path(PANDA_INCLUDE_INSTALLDIR);
+   script << "${CC} -c ${CFLAGS}";
    if(Param->isOption(OPT_pretty_print) && top_fname != "main")
    {
       script << " -DPP_VERIFICATION";
@@ -426,7 +427,7 @@ std::string SimulationTool::GenerateLibraryBuildScript(std::ostringstream& scrip
       const auto tb_file = Param->getOption<std::string>(OPT_testbench_input_string);
       if(boost::ends_with(tb_file, ".c") || boost::ends_with(tb_file, ".cc") || boost::ends_with(tb_file, ".cpp"))
       {
-         script << "${CC} -c ${CFLAGS} -I" << relocate_compiler_path(PANDA_INCLUDE_INSTALLDIR) << " -fPIC";
+         script << "${CC} -c ${CFLAGS} -fPIC";
          if(Param->isOption(OPT_testbench_extra_gcc_flags))
          {
             script << " " << Param->getOption<std::string>(OPT_testbench_extra_gcc_flags);
