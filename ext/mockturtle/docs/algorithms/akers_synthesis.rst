@@ -19,7 +19,7 @@ The easiest way to run Akers' synthesis is by doing:
 Here, the function returns an MIG, with as many inputs as the number of
 variables of func and one primary output.
 
-The synthesis method can also be run using already existing signals from an mig as inputs.
+The synthesis method can also be run using already existing signals from an MIG as inputs.
 As an example, consider an MIG with 4 primary inputs `a`, `b`, `c`, and `d`,
 as well as two gates:
 

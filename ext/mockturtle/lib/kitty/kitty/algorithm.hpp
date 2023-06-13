@@ -1,5 +1,5 @@
 /* kitty: C++ truth table library
- * Copyright (C) 2017-2021  EPFL
+ * Copyright (C) 2017-2022  EPFL
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -32,13 +32,13 @@
 
 #pragma once
 
-#include <algorithm>
-#include <cassert>
-
 #include "bit_operations.hpp"
 #include "detail/constants.hpp"
 #include "static_truth_table.hpp"
 #include "partial_truth_table.hpp"
+
+#include <algorithm>
+#include <cassert>
 
 namespace kitty
 {
@@ -71,8 +71,8 @@ auto unary_operation( const static_truth_table<NumVars, true>& tt, Fn&& op )
 /*! \endcond */
 
 /*! \cond PRIVATE */
-/*! 
-    \param num_blocks_offset Number of blocks that don't need to be computed 
+/*!
+    \param num_blocks_offset Number of blocks that don't need to be computed
     (the first `num_blocks_offset` blocks of `result` will remain the same before computation)
  */
 template<typename Fn>
@@ -131,8 +131,8 @@ auto binary_operation( const partial_truth_table& first, const partial_truth_tab
 /*! \endcond */
 
 /*! \cond PRIVATE */
-/*! 
-    \param num_blocks_offset Number of blocks that don't need to be computed 
+/*!
+    \param num_blocks_offset Number of blocks that don't need to be computed
     (the first `num_blocks_offset` blocks of `result` will remain the same before computation)
  */
 template<typename Fn>
@@ -154,7 +154,7 @@ void binary_operation( partial_truth_table& result, const partial_truth_table& f
   \param first First truth table
   \param second Second truth table
   \param third Third truth table
-  \param op Ternary operation that takes as input two words (`uint64_t`) and returns a word
+  \param op Ternary operation that takes as input three words (`uint64_t`) and returns a word
 
   \return new constructed truth table of same type and dimensions
  */
@@ -213,6 +213,77 @@ auto ternary_operation( const partial_truth_table& first, const partial_truth_ta
 }
 /*! \endcond */
 
+/*! \brief Perform bitwise quaternary operation on four truth tables
+
+  The dimensions of all truth tables must match.  This
+  is ensured at compile-time for static truth tables, but at run-time
+  for dynamic truth tables.
+
+  \param first First truth table
+  \param second Second truth table
+  \param third Third truth table
+  \param fourth Fourth truth table
+  \param op Quaternary operation that takes as input four words (`uint64_t`) and returns a word
+
+  \return new constructed truth table of same type and dimensions
+ */
+template<typename TT, typename Fn>
+auto quaternary_operation( const TT& first, const TT& second, const TT& third, const TT& fourth, Fn&& op )
+{
+  assert( first.num_vars() == second.num_vars() && second.num_vars() == third.num_vars() && third.num_vars() == fourth.num_vars() );
+
+  auto result = first.construct();
+  auto it1 = first.cbegin();
+  const auto it1_e = first.cend();
+  auto it2 = second.cbegin();
+  auto it3 = third.cbegin();
+  auto it4 = fourth.cbegin();
+  auto it = result.begin();
+
+  while ( it1 != it1_e )
+  {
+    *it++ = op( *it1++, *it2++, *it3++, *it4++ );
+  }
+
+  result.mask_bits();
+  return result;
+}
+
+/*! \cond PRIVATE */
+template<uint32_t NumVars, typename Fn>
+auto quaternary_operation( const static_truth_table<NumVars, true>& first, const static_truth_table<NumVars, true>& second, const static_truth_table<NumVars, true>& third, const static_truth_table<NumVars, true>& fourth, Fn&& op )
+{
+  auto result = first.construct();
+  result._bits = op( first._bits, second._bits, third._bits, fourth._bits );
+  result.mask_bits();
+  return result;
+}
+/*! \endcond */
+
+/*! \cond PRIVATE */
+template<typename Fn>
+auto quaternary_operation( const partial_truth_table& first, const partial_truth_table& second, const partial_truth_table& third, const partial_truth_table& fourth, Fn&& op )
+{
+  assert( first.num_bits() == second.num_bits() && second.num_bits() == third.num_bits() && third.num_bits() == fourth.num_bits() );
+
+  auto result = first.construct();
+  auto it1 = first.cbegin();
+  const auto it1_e = first.cend();
+  auto it2 = second.cbegin();
+  auto it3 = third.cbegin();
+  auto it4 = fourth.cbegin();
+  auto it = result.begin();
+
+  while ( it1 != it1_e )
+  {
+    *it++ = op( *it1++, *it2++, *it3++, *it4++ );
+  }
+
+  result.mask_bits();
+  return result;
+}
+/*! \endcond */
+
 /*! \brief Computes a predicate based on two truth tables
 
   The dimensions of `first` and `second` must match.  This is ensured
@@ -248,6 +319,42 @@ bool binary_predicate( const partial_truth_table& first, const partial_truth_tab
   assert( first.num_bits() == second.num_bits() );
 
   return std::equal( first.begin(), first.end(), second.begin(), op );
+}
+/*! \endcond */
+
+/*! \brief Computes a predicate based on three truth tables
+
+  The dimensions of `first`, `second` and `third` must match.  This is ensured
+  at compile-time for static truth tables, but at run-time for dynamic
+  truth tables.
+
+  \param first First truth table
+  \param second Second truth table
+  \param third Third truth table
+  \param op Ternary operation that takes as input three words (`uint64_t`) and returns a Boolean
+
+  \return true or false based on the predicate
+ */
+template<typename TT, typename Fn>
+bool ternary_predicate( const TT& first, const TT& second, const TT& third, Fn&& op )
+{
+  assert( first.num_blocks() == second.num_blocks() && first.num_blocks() == third.num_blocks() );
+
+  for ( auto i = 0u; i < first.num_blocks(); ++i )
+  {
+    if ( !op( first._bits[i], second._bits[i], third._bits[i] ) )
+    {
+      return false;
+    }
+  }
+  return true;
+}
+
+/*! \cond PRIVATE */
+template<uint32_t NumVars, typename Fn>
+bool ternary_predicate( const static_truth_table<NumVars, true>& first, const static_truth_table<NumVars, true>& second, const static_truth_table<NumVars, true>& third, Fn&& op )
+{
+  return op( first._bits, second._bits, third._bits );
 }
 /*! \endcond */
 

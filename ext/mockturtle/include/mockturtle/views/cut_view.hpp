@@ -1,5 +1,5 @@
 /* mockturtle: C++ logic network library
- * Copyright (C) 2018-2021  EPFL
+ * Copyright (C) 2018-2022  EPFL
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -50,7 +50,7 @@ namespace mockturtle
 
 /*! \brief Implements an isolated view on a single cut in a network.
  *
- * This view can create a network from a single cut in a larget network.  This
+ * This view can create a network from a single cut in a largest network.  This
  * cut has a single output `root` and set of `leaves`.  The view reimplements
  * the methods `size`, `num_pis`, `num_pos`, `foreach_pi`, `foreach_po`,
  * `foreach_node`, `foreach_gate`, `is_pi`, `node_to_index`, and
@@ -127,10 +127,10 @@ private:
     traverse( this->get_node( _root ) );
 
     /* restore visited */
-    //for ( auto const& n : _nodes )
+    // for ( auto const& n : _nodes )
     //{
-    //  this->set_visited( n, 0 );
-    //}
+    //   this->set_visited( n, 0 );
+    // }
   }
 
 public:
@@ -145,7 +145,7 @@ public:
   template<typename Fn>
   void foreach_po( Fn&& fn ) const
   {
-    std::vector<signal> roots{{_root}};
+    std::vector<signal> roots{ { _root } };
     detail::foreach_element( roots.begin(), roots.end(), fn );
   }
 
@@ -216,17 +216,17 @@ private:
   }
 
 public:
-  unsigned _num_constants{1};
-  unsigned _num_leaves{0};
+  unsigned _num_constants{ 1 };
+  unsigned _num_leaves{ 0 };
   std::vector<node> _nodes;
   phmap::flat_hash_map<node, uint32_t> _node_to_index;
   signal _root;
 };
 
 template<class T>
-cut_view(T const&, std::vector<node<T>> const&, signal<T> const&) -> cut_view<T>;
+cut_view( T const&, std::vector<node<T>> const&, signal<T> const& ) -> cut_view<T>;
 
 template<class T, typename = std::enable_if_t<!std::is_same_v<typename T::signal, typename T::node>>>
-cut_view(T const&, std::vector<signal<T>> const&, signal<T> const&) -> cut_view<T>;
+cut_view( T const&, std::vector<signal<T>> const&, signal<T> const& ) -> cut_view<T>;
 
 } /* namespace mockturtle */

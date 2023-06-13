@@ -50,9 +50,9 @@ TEST_CASE( "Translate k-LUT network into CNF", "[cnf]" )
   kitty::create_from_hex_string( _maj, "e8" );
   kitty::create_from_hex_string( _xnor, "9" );
 
-  const auto f1 = ntk.create_node( {a, b, c}, _xor3 );
-  const auto f2 = ntk.create_node( {a, b, c}, _maj );
-  const auto f3 = ntk.create_node( {f1, f2}, _xnor );
+  const auto f1 = ntk.create_node( { a, b, c }, _xor3 );
+  const auto f2 = ntk.create_node( { a, b, c }, _maj );
+  const auto f3 = ntk.create_node( { f1, f2 }, _xnor );
   ntk.create_po( f3 );
 
   percy::bsat_wrapper solver;
@@ -93,15 +93,17 @@ TEST_CASE( "Use CNF generation for CEC on XAG", "[cnf]" )
     solver.add_clause( clause );
   } )[0];
 
-  auto output2 = generate_cnf( xag2, [&]( auto const& clause ) {
-    solver.add_clause( clause );
-  }, std::make_optional( node_literals( xag2, xag1.size() ) ) )[0];
+  auto output2 = generate_cnf(
+      xag2, [&]( auto const& clause ) {
+        solver.add_clause( clause );
+      },
+      std::make_optional( node_literals( xag2, xag1.size() ) ) )[0];
 
   CHECK( output1 == 13 );
   CHECK( output2 == 14 );
 
-  solver.add_clause( {output1, output2} );
-  solver.add_clause( {lit_not( output1 ), lit_not( output2 )} );
+  solver.add_clause( { output1, output2 } );
+  solver.add_clause( { lit_not( output1 ), lit_not( output2 ) } );
 
   const auto res = solver.solve( 0 );
   CHECK( res == percy::synth_result::failure );

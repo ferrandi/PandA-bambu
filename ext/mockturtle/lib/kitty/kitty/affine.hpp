@@ -1,5 +1,5 @@
 /* kitty: C++ truth table library
- * Copyright (C) 2017-2021  EPFL
+ * Copyright (C) 2017-2022  EPFL
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -130,9 +130,8 @@ TT exact_linear_canonization_old( const TT& tt )
 
   auto min = tt;
 
-  detail::for_each_permutation_mask( tt.num_vars(), [&min, &tt]( const auto* mask ) {
-    min = std::min( min, detail::permute_with_masks_opt( tt, mask ) );
-  } );
+  detail::for_each_permutation_mask( tt.num_vars(), [&min, &tt]( const auto* mask )
+                                     { min = std::min( min, detail::permute_with_masks_opt( tt, mask ) ); } );
 
   return min;
 }

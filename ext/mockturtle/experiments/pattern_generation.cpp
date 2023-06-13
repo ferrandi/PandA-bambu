@@ -1,5 +1,5 @@
 /* mockturtle: C++ logic network library
- * Copyright (C) 2018-2020  EPFL
+ * Copyright (C) 2018-2022  EPFL
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -28,9 +28,9 @@
 
 #include <fmt/format.h>
 #include <lorina/aiger.hpp>
-#include <mockturtle/algorithms/simulation.hpp>
-#include <mockturtle/algorithms/pattern_generation.hpp>
 #include <mockturtle/algorithms/cleanup.hpp>
+#include <mockturtle/algorithms/pattern_generation.hpp>
+#include <mockturtle/algorithms/simulation.hpp>
 #include <mockturtle/io/aiger_reader.hpp>
 #include <mockturtle/networks/aig.hpp>
 
@@ -47,7 +47,11 @@ int main()
   {
     fmt::print( "[i] processing {}\n", benchmark );
     aig_network aig;
-    lorina::read_aiger( benchmark_path( benchmark ), aiger_reader( aig ) );
+    if ( lorina::read_aiger( benchmark_path( benchmark ), aiger_reader( aig ) ) != lorina::return_code::success )
+    {
+      continue;
+    }
+
     auto size_before = aig.num_gates();
 
     pattern_generation_params ps;

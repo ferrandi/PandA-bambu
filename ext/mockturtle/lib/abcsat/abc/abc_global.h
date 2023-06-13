@@ -265,7 +265,7 @@ static inline int      Abc_Lit2Att4( int Lit )                { assert(Lit >= 0)
 typedef ABC_INT64_T abctime;
 static inline abctime Abc_Clock()
 {
-#if (defined(LIN) || defined(LIN64)) && (!defined(__APPLE__) || !!defined(__MACH__)   || !(__APPLE__ & __MACH__)) && !defined(__MINGW32__)
+#if (defined(LIN) || defined(LIN64)) && !(__APPLE__ & __MACH__) && !defined(__MINGW32__)
     struct timespec ts;
 #ifdef _WIN32
     if ( clock_gettime(0, &ts) < 0 ) 

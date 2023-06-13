@@ -1,5 +1,5 @@
 /* mockturtle: C++ logic network library
- * Copyright (C) 2018-2021  EPFL
+ * Copyright (C) 2018-2022  EPFL
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -38,8 +38,8 @@
 #include <unordered_map>
 #include <vector>
 
-#include "../../utils/index_list.hpp"
 #include "../../networks/xag.hpp"
+#include "../../utils/index_list.hpp"
 #include "../detail/minmc_xags.hpp"
 #include "../equivalence_classes.hpp"
 
@@ -56,9 +56,8 @@ namespace mockturtle::future
 struct xag_minmc_resynthesis_params
 {
   /*! \brief Be verbose. */
-  bool verbose{false};
+  bool verbose{ false };
 };
-
 
 struct xag_minmc_resynthesis_stats
 {
@@ -115,7 +114,7 @@ public:
     else
     {
       repr = *kitty::hybrid_exact_spectral_canonization( function, [&]( auto const& ops ) { trans = ops; } ).cbegin();
-      cache_[num_vars][*function.cbegin()] = {repr, trans};
+      cache_[num_vars][*function.cbegin()] = { repr, trans };
     }
 
     const auto it = db_[num_vars].find( repr );
@@ -126,11 +125,10 @@ public:
     }
 
     const auto f = apply_spectral_transformations( ntk, trans, std::vector<signal<Ntk>>( begin, end ), [&]( xag_network& ntk, std::vector<signal<Ntk>> const& leaves ) {
-      xag_index_list il{it->second};
+      xag_index_list il{ it->second };
       std::vector<xag_network::signal> pos;
       insert( ntk, std::begin( leaves ), std::begin( leaves ) + il.num_pis(), il,
-              [&]( xag_network::signal const& f )
-              {
+              [&]( xag_network::signal const& f ) {
                 pos.push_back( f );
               } );
       assert( pos.size() == 1u );
@@ -163,8 +161,8 @@ private:
   }
 
 private:
-  std::vector<std::unordered_map<uint64_t, std::vector<uint32_t>>> db_{7u};
-  mutable std::vector<std::unordered_map<uint64_t, std::pair<uint64_t, std::vector<kitty::detail::spectral_operation>>>> cache_{7u};
+  std::vector<std::unordered_map<uint64_t, std::vector<uint32_t>>> db_{ 7u };
+  mutable std::vector<std::unordered_map<uint64_t, std::pair<uint64_t, std::vector<kitty::detail::spectral_operation>>>> cache_{ 7u };
 
 private:
   xag_minmc_resynthesis_params ps_;

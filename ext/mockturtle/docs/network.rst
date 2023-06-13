@@ -3,10 +3,11 @@
 Network interface API
 =====================
 
-This page describes the interface of a logic network data structure in
-*mockturtle*.
+This page describes the common interfaces of a logic network data structure in
+*mockturtle*. Besides those listed below, more interfaces may be extended to
+a network by wrapping the network with *views* (see :ref:`views`).
 
-.. warning:
+.. warning::
 
    This part of the documentation makes use of a class called ``network``.
    This class has been created solely for the purpose of creating this
@@ -21,7 +22,7 @@ Mandatory types and constants
 The interaction with a logic network data structure is performed using four
 types for which no application details are assumed.  The following four types
 must be defined within the network data structure.  They can be implemented as
-nested type, but may also be exposed as type alias.
+nested types, or be exposed as type aliases.
 
 .. doxygenclass:: mockturtle::network
    :members: base_type, node, signal, storage
@@ -47,12 +48,12 @@ network type:
      static_assert( is_network_type_v<Ntk>, "Ntk is not a network type" );
    }
 
-Constructors
-------------
+Constructors and copy assignment
+--------------------------------
 
-.. code-block:: c++
-
-   network( storage& storage );
+.. doxygenclass:: mockturtle::network
+   :members: network, network(storage), operator=
+   :no-link:
 
 Methods
 -------
@@ -60,7 +61,7 @@ Methods
 The remainder lists methods that may be implemented by a network data structure.
 Algorithms can check whether a method ``method`` is implemented using the
 ``has_method`` struct.  As an example to check whether the method
-``get_constant`` is implemented one of the following two static assertions
+``get_constant`` is implemented, one of the following two static assertions
 can be added to the beginning of an algorithm:
 
 .. code-block:: c++
@@ -71,11 +72,18 @@ can be added to the beginning of an algorithm:
    // variant 2
    static_assert( has_get_constant_v<Ntk>, "Ntk does not implement the get_constant method" );
 
+Duplicate network
+~~~~~~~~~~~~~~~~~
+
+.. doxygenclass:: mockturtle::network
+   :members: clone
+   :no-link:
+
 Primary I/O and constants
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. doxygenclass:: mockturtle::network
-   :members: get_constant, create_pi, create_po, create_ro, create_ri, is_combinational, is_constant, is_ci, is_pi, is_ro, constant_value, latch_reset
+   :members: get_constant, create_pi, create_po, is_constant, is_pi, is_ci, constant_value
    :no-link:
 
 Create unary functions
@@ -117,14 +125,14 @@ Restructuring
 ~~~~~~~~~~~~~
 
 .. doxygenclass:: mockturtle::network
-   :members: substitute_node, substitute_nodes, replace_in_node, replace_in_outputs, take_out_node, is_dead, substitute_node_of_parents
+   :members: substitute_node, substitute_nodes, replace_in_node, replace_in_outputs, take_out_node, is_dead
    :no-link:
 
 Structural properties
 ~~~~~~~~~~~~~~~~~~~~~
 
 .. doxygenclass:: mockturtle::network
-   :members: size, num_cis, num_cos, num_pis, num_pos, num_gates, num_registers, fanin_size, fanout_size, incr_fanout_size, decr_fanout_size, depth, level, is_and, is_or, is_xor, is_maj, is_ite, is_xor3, is_function
+   :members: is_combinational, size, num_pis, num_pos, num_cis, num_cos, num_gates, fanin_size, fanout_size, incr_fanout_size, decr_fanout_size, depth, level, is_and, is_or, is_xor, is_maj, is_ite, is_xor3, is_nary_and, is_nary_or, is_nary_xor, is_function
    :no-link:
 
 Functional properties
@@ -138,14 +146,14 @@ Nodes and signals
 ~~~~~~~~~~~~~~~~~
 
 .. doxygenclass:: mockturtle::network
-   :members: get_node, make_signal, is_complemented, node_to_index, index_to_node, ci_at, co_at, pi_at, po_at, ro_at, ri_at, ci_index, co_index, pi_index, po_index, ri_index, ro_index, ri_to_ro, ro_to_ri
+   :members: get_node, make_signal, is_complemented, node_to_index, index_to_node, pi_at, po_at, ci_at, co_at, pi_index, po_index, ci_index, co_index
    :no-link:
 
 Node and signal iterators
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. doxygenclass:: mockturtle::network
-   :members: foreach_node, foreach_pi, foreach_po, foreach_gate, foreach_register, foreach_fanin, foreach_fanout
+   :members: foreach_node, foreach_gate, foreach_pi, foreach_po, foreach_ci, foreach_co, foreach_fanin, foreach_fanout
    :no-link:
 
 Simulate values
@@ -153,26 +161,6 @@ Simulate values
 
 .. doxygenclass:: mockturtle::network
    :members: compute
-   :no-link:
-
-Mapping
-~~~~~~~
-
-The following methods are used to represent a mapping that is annotated to a
-subject graph.  The interface can, e.g., be used for LUT mapping or standard
-cell mapping.  For a common terminology, we call a collection of nodes that
-belong to the same unit a cell, which has a single root.  The *mapped node* is
-the cell root.  A cell root, and therefore the cell it represents, may be
-assigned a function by means of a truth table.
-
-.. note::
-
-   If a network implements `has_mapping` it also needs to implement all other
-   mapping methods, except `cell_function` and `set_cell_function`, which are
-   optional but must be implemented both if one is present.
-
-.. doxygenclass:: mockturtle::network
-   :members: has_mapping, is_cell_root, clear_mapping, num_cells, add_to_mapping, remove_from_mapping, cell_function, set_cell_function, foreach_cell_fanin
    :no-link:
 
 Custom node values

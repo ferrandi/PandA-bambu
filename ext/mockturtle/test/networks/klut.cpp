@@ -79,122 +79,6 @@ TEST_CASE( "create and use primary outputs in a k-LUT network", "[klut]" )
   CHECK( klut.num_pos() == 3 );
 }
 
-TEST_CASE( "create and use register in a k-LUT network", "[klut]" )
-{
-  klut_network klut;
-
-  CHECK( has_foreach_po_v<klut_network> );
-  CHECK( has_create_po_v<klut_network> );
-  CHECK( has_create_pi_v<klut_network> );
-  CHECK( has_create_ro_v<klut_network> );
-  CHECK( has_create_ri_v<klut_network> );
-  CHECK( has_create_maj_v<klut_network> );
-
-  const auto c0 = klut.get_constant( false );
-  const auto x1 = klut.create_pi();
-  const auto x2 = klut.create_pi();
-  const auto x3 = klut.create_pi();
-  const auto x4 = klut.create_pi();
-
-  CHECK( klut.size() == 6 );
-  CHECK( klut.num_registers() == 0 );
-  CHECK( klut.num_cis() == 4 );
-  CHECK( klut.num_cos() == 0 );
-
-  const auto f1 = klut.create_maj( x1, x2, x3 );
-  klut.create_po( f1 );
-
-  CHECK( klut.num_pos() == 1 );
-
-  const auto s1 = klut.create_ro(); // ntk. input
-  klut.create_po( s1 );             // po
-
-  const auto f2 = klut.create_maj( f1, x4, c0 );
-  klut.create_ri( f2 ); // ntk. output
-
-  CHECK( klut.num_registers() == 1 );
-  CHECK( klut.num_cis() == 4 + 1 );
-  CHECK( klut.num_cos() == 2 + 1 );
-
-  klut.foreach_pi( [&]( auto const& node, auto index ) {
-    CHECK( klut.is_pi( node ) );
-    switch ( index )
-    {
-    case 0:
-      CHECK( node == x1 ); /* first pi */
-      break;
-    case 1:
-      CHECK( node == x2 ); /* second pi */
-      break;
-    case 2:
-      CHECK( node == x3 ); /* third pi */
-      break;
-    case 3:
-      CHECK( node == x4 ); /* fourth pi */
-      break;
-    default:
-      CHECK( false );
-    }
-  } );
-
-  klut.foreach_ci( [&]( auto const& node, auto index ) {
-    CHECK( klut.is_ci( node ) );
-    switch ( index )
-    {
-    case 0:
-      CHECK( node == x1 ); /* first pi */
-      break;
-    case 1:
-      CHECK( node == x2 ); /* second pi */
-      break;
-    case 2:
-      CHECK( node == x3 ); /* third pi */
-      break;
-    case 3:
-      CHECK( node == x4 ); /* fourth pi */
-      break;
-    case 4:
-      CHECK( node == s1 ); /* first state-bit */
-      CHECK( klut.is_ci( node ) );
-      CHECK( !klut.is_pi( node ) );
-      break;
-    default:
-      CHECK( false );
-    }
-  } );
-
-  klut.foreach_po( [&]( auto const& node, auto index ) {
-    switch ( index )
-    {
-    case 0:
-      CHECK( node == f1 ); /* first po */
-      break;
-    case 1:
-      CHECK( node == s1 ); /* second po */
-      break;
-    default:
-      CHECK( false );
-    }
-  } );
-
-  klut.foreach_co( [&]( auto const& node, auto index ) {
-    switch ( index )
-    {
-    case 0:
-      CHECK( node == f1 ); /* first po */
-      break;
-    case 1:
-      CHECK( node == s1 ); /* second po */
-      break;
-    case 2:
-      CHECK( node == f2 ); /* first next-state bit */
-      break;
-    default:
-      CHECK( false );
-    }
-  } );
-}
-
 TEST_CASE( "create unary operations in a k-LUT network", "[klut]" )
 {
   klut_network klut;
@@ -235,6 +119,34 @@ TEST_CASE( "create binary operations in a k-LUT network", "[klut]" )
   CHECK( klut.size() == 6 );
 }
 
+TEST_CASE( "clone a k-LUT network", "[klut]" )
+{
+  CHECK( has_clone_v<klut_network> );
+
+  klut_network ntk1;
+  auto a = ntk1.create_pi();
+  auto b = ntk1.create_pi();
+  auto f1 = ntk1.create_and( a, b );
+  ntk1.create_po( f1 );
+  CHECK( ntk1.size() == 5 );
+  CHECK( ntk1.num_gates() == 1 );
+  CHECK( ntk1.num_pos() == 1 );
+
+  auto ntk2 = ntk1;
+  auto ntk3 = ntk1.clone();
+
+  auto c = ntk2.create_pi();
+  auto f2 = ntk2.create_or( f1, c );
+  ntk2.create_po( f2 );
+  CHECK( ntk1.size() == 7 );
+  CHECK( ntk1.num_gates() == 2 );
+  CHECK( ntk1.num_pos() == 2 );
+
+  CHECK( ntk3.size() == 5 );
+  CHECK( ntk3.num_gates() == 1 );
+  CHECK( ntk3.num_pos() == 1 );
+}
+
 TEST_CASE( "clone a node in a k-LUT network", "[klut]" )
 {
   klut_network klut1, klut2;
@@ -250,7 +162,7 @@ TEST_CASE( "clone a node in a k-LUT network", "[klut]" )
   auto b2 = klut2.create_pi();
   CHECK( klut2.size() == 4 );
 
-  auto f2 = klut2.clone_node( klut1, klut1.get_node( f1 ), {a2, b2} );
+  auto f2 = klut2.clone_node( klut1, klut1.get_node( f1 ), { a2, b2 } );
   CHECK( klut2.size() == 5 );
 
   klut2.foreach_fanin( klut2.get_node( f2 ), [&]( auto const& s ) {
@@ -303,8 +215,8 @@ TEST_CASE( "create nodes and compute a function in a k-LUT network", "[klut]" )
   CHECK( _const0 == klut.get_constant( false ) );
   CHECK( _const1 == klut.get_constant( true ) );
 
-  const auto _maj = klut.create_node( {a, b, c}, tt_maj );
-  const auto _xor = klut.create_node( {a, b, c}, tt_xor );
+  const auto _maj = klut.create_node( { a, b, c }, tt_maj );
+  const auto _xor = klut.create_node( { a, b, c }, tt_xor );
 
   CHECK( klut.size() == 7 );
 
@@ -335,17 +247,17 @@ TEST_CASE( "hash nodes in K-LUT network", "[klut]" )
   kitty::create_from_hex_string( tt_maj, "e8" );
   kitty::create_from_hex_string( tt_xor, "96" );
 
-  klut.create_node( {a, b, c}, tt_maj );
-  klut.create_node( {a, b, c}, tt_xor );
+  klut.create_node( { a, b, c }, tt_maj );
+  klut.create_node( { a, b, c }, tt_xor );
 
   CHECK( klut.size() == 7 );
 
-  klut.create_node( {a, b, c}, tt_maj );
+  klut.create_node( { a, b, c }, tt_maj );
 
   CHECK( klut.size() == 7 );
 }
 
-TEST_CASE( "subsitute node by another", "[klut]" )
+TEST_CASE( "substitute node by another", "[klut]" )
 {
   klut_network klut;
 
@@ -361,16 +273,16 @@ TEST_CASE( "subsitute node by another", "[klut]" )
   kitty::create_from_hex_string( tt_or, "e" );
 
   // XOR with NAND
-  const auto n1 = klut.create_node( {a, b}, tt_nand );
-  const auto n2 = klut.create_node( {a, n1}, tt_nand );
-  const auto n3 = klut.create_node( {b, n1}, tt_nand );
-  const auto n4 = klut.create_node( {n2, n3}, tt_nand );
+  const auto n1 = klut.create_node( { a, b }, tt_nand );
+  const auto n2 = klut.create_node( { a, n1 }, tt_nand );
+  const auto n3 = klut.create_node( { b, n1 }, tt_nand );
+  const auto n4 = klut.create_node( { n2, n3 }, tt_nand );
   klut.create_po( n4 );
 
   std::vector<node<klut_network>> nodes;
   klut.foreach_node( [&]( auto node ) { nodes.push_back( node ); } );
 
-  CHECK( nodes == std::vector<klut_network::node>{c0, c1, a, b, n1, n2, n3, n4} );
+  CHECK( nodes == std::vector<klut_network::node>{ c0, c1, a, b, n1, n2, n3, n4 } );
   CHECK( klut.fanout_size( n4 ) == 1 );
   klut.foreach_po( [&]( auto f ) {
     CHECK( f == n4 );
@@ -378,14 +290,14 @@ TEST_CASE( "subsitute node by another", "[klut]" )
   } );
 
   // XOR with AND and OR
-  const auto n5 = klut.create_node( {a, b}, tt_le );
-  const auto n6 = klut.create_node( {a, b}, tt_ge );
-  const auto n7 = klut.create_node( {n5, n6}, tt_or );
+  const auto n5 = klut.create_node( { a, b }, tt_le );
+  const auto n6 = klut.create_node( { a, b }, tt_ge );
+  const auto n7 = klut.create_node( { n5, n6 }, tt_or );
 
   nodes.clear();
   klut.foreach_node( [&]( auto node ) { nodes.push_back( node ); } );
 
-  CHECK( nodes == std::vector{c0, c1, a, b, n1, n2, n3, n4, n5, n6, n7} );
+  CHECK( nodes == std::vector{ c0, c1, a, b, n1, n2, n3, n4, n5, n6, n7 } );
   CHECK( klut.fanout_size( n7 ) == 0 );
 
   // substitute nodes
@@ -453,7 +365,7 @@ TEST_CASE( "node and signal iteration in a k-LUT network", "[klut]" )
   CHECK( klut.size() == 6 );
 
   /* iterate over nodes */
-  uint32_t mask{0}, counter{0};
+  uint32_t mask{ 0 }, counter{ 0 };
   klut.foreach_node( [&]( auto n, auto i ) { mask |= ( 1 << n ); counter += i; } );
   CHECK( mask == 63 );
   CHECK( counter == 15 );

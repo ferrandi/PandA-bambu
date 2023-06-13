@@ -1,5 +1,5 @@
 /* mockturtle: C++ logic network library
- * Copyright (C) 2018-2021  EPFL
+ * Copyright (C) 2018-2022  EPFL
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -59,13 +59,13 @@ namespace mockturtle
 struct xmg3_npn_resynthesis_params
 {
   /*! \brief Be verbose. */
-  bool verbose{false};
+  bool verbose{ false };
 };
 
 struct xmg3_npn_resynthesis_stats
 {
-  stopwatch<>::duration time_classes{0};
-  stopwatch<>::duration time_db{0};
+  stopwatch<>::duration time_classes{ 0 };
+  stopwatch<>::duration time_db{ 0 };
 
   uint32_t db_size;
   uint32_t covered_classes;
@@ -187,10 +187,10 @@ public:
     {
       std::unordered_map<node<DatabaseNtk>, signal<Ntk>> db_to_ntk;
 
-      db_to_ntk.insert( {0, ntk.get_constant( false )} );
+      db_to_ntk.insert( { 0, ntk.get_constant( false ) } );
       for ( auto i = 0; i < 4; ++i )
       {
-        db_to_ntk.insert( {i + 1, pis_perm[i]} );
+        db_to_ntk.insert( { i + 1, pis_perm[i] } );
       }
       auto f = copy_db_entry( ntk, _db.get_node( cand ), db_to_ntk );
       if ( _db.is_complemented( cand ) != ( ( phase >> 4 ) & 1 ) )
@@ -214,7 +214,7 @@ private:
     }
 
     std::vector<signal<Ntk>> fanin;
-    //std::array<signal<Ntk>, 2> fanin;
+    // std::array<signal<Ntk>, 2> fanin;
     _db.foreach_fanin( n, [&]( auto const& f ) {
       auto ntk_f = copy_db_entry( ntk, _db.get_node( f ), db_to_ntk );
       if ( _db.is_complemented( f ) )
@@ -225,7 +225,7 @@ private:
     } );
 
     const auto f = _db.is_xor3( n ) ? ntk.create_xor3( fanin[0], fanin[1], fanin[2] ) : ntk.create_maj( fanin[0], fanin[1], fanin[2] );
-    db_to_ntk.insert( {n, f} );
+    db_to_ntk.insert( { n, f } );
     return f;
   }
 
@@ -297,7 +297,7 @@ private:
       {
         if ( _repr_to_signal.count( sim_res[n] ) == 0 )
         {
-          _repr_to_signal.insert( {sim_res[n], {_db.make_signal( n )}} );
+          _repr_to_signal.insert( { sim_res[n], { _db.make_signal( n ) } } );
         }
         else
         {
@@ -311,7 +311,7 @@ private:
         {
           if ( _repr_to_signal.count( f ) == 0 )
           {
-            _repr_to_signal.insert( {f, {!_db.make_signal( n )}} );
+            _repr_to_signal.insert( { f, { !_db.make_signal( n ) } } );
           }
           else
           {
@@ -327,7 +327,7 @@ private:
 
   xmg3_npn_resynthesis_params ps;
   xmg3_npn_resynthesis_stats st;
-  xmg3_npn_resynthesis_stats* pst{nullptr};
+  xmg3_npn_resynthesis_stats* pst{ nullptr };
 
   std::vector<kitty::static_truth_table<4u>> _repr;
   std::vector<uint32_t> _classes;

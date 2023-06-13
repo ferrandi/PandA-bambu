@@ -42,7 +42,7 @@ namespace verilog_regex
 {
 static std::regex immediate_assign( R"(^(~)?\(?([[:alnum:]\[\]_']+)\)?$)" );
 static std::regex binary_expression( R"(^(~)?([[:alnum:]\[\]_']+)([&|^])(~)?([[:alnum:]\[\]_']+)$)" );
-static std::regex ternary_expression( R"(^(~)?([[:alnum:]\[\]_']+)([&|^])(~)?([[:alnum:]\[\]_']+)([&|^])(~)?([[:alnum:]\[\]_']+)$)" );
+static std::regex ternary_expression( R"(^(~)?([[:alnum:]\[\]_']+)([&|^?])(~)?([[:alnum:]\[\]_']+)([&|^:])(~)?([[:alnum:]\[\]_']+)$)" );
 static std::regex maj3_expression( R"(^\((~)?([[:alnum:]\[\]_']+)&(~)?([[:alnum:]\[\]_']+)\)\|\((~)?([[:alnum:]\[\]_']+)&(~)?([[:alnum:]\[\]_']+)\)\|\((~)?([[:alnum:]\[\]_']+)&(~)?([[:alnum:]\[\]_']+)\)$)" );
 static std::regex negated_binary_expression( R"(^~\((~)?([[:alnum:]\[\]_']+)([&|^])(~)?([[:alnum:]\[\]_']+)\)$)" );
 static std::regex const_size_range( R"(^(\d+):(\d+)$)" );

@@ -1,5 +1,5 @@
 /* kitty: C++ truth table library
- * Copyright (C) 2017-2021  EPFL
+ * Copyright (C) 2017-2022  EPFL
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -46,7 +46,7 @@ namespace kitty
 {
 
 /*! Truth table with resizable, arbitrary number of bits
-*/
+ */
 struct partial_truth_table
 {
   /*! \brief Standard constructor.
@@ -154,8 +154,8 @@ struct partial_truth_table
   /*! \brief Resize the truth table to have the given number of bits.
 
     If the desired length is larger than the current length, zeros will
-    be filled up in the end of the truth table. If the desired length 
-    is shorter than the current length, extra bits in the end of the 
+    be filled up in the end of the truth table. If the desired length
+    is shorter than the current length, extra bits in the end of the
     truth table will be discarded.
 
     \param num_bits Desired length (number of bits)
@@ -255,7 +255,7 @@ struct partial_truth_table
 
   /*! \brief Erase the bit at the given position and shift all the following bits.
 
-    This method keeps the order of the bits but is slower and 
+    This method keeps the order of the bits but is slower and
     do not keep the position of the bits.
 
     \param position Position of the bit to be erased
@@ -283,9 +283,18 @@ public: /* fields */
 };
 
 template<>
-struct is_truth_table<kitty::partial_truth_table> : std::true_type {};
+struct is_truth_table<kitty::partial_truth_table> : std::true_type
+{
+};
 
 template<>
-struct is_complete_truth_table<kitty::partial_truth_table> : std::false_type {};
+struct is_complete_truth_table<kitty::partial_truth_table> : std::false_type
+{
+};
+
+template<>
+struct is_completely_specified_truth_table<kitty::partial_truth_table> : std::true_type
+{
+};
 
 } // namespace kitty

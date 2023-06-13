@@ -1,5 +1,5 @@
 /* mockturtle: C++ logic network library
- * Copyright (C) 2018-2021  EPFL
+ * Copyright (C) 2018-2022  EPFL
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -30,6 +30,8 @@
   \author Heinz Riener
   \author Mathias Soeken
 */
+
+#pragma once
 
 #include <algorithm>
 #include <array>
@@ -70,7 +72,7 @@ template<class Ntk>
 signal<Ntk> majority5( Ntk& ntk, std::array<signal<Ntk>, 5> const& xs )
 {
   const auto lhs = ntk.create_maj( xs[0], xs[1], xs[2] );
-  const auto rhs = detail::general_associativity( ntk, xs[3], {xs[0], xs[1], xs[2]} );
+  const auto rhs = detail::general_associativity( ntk, xs[3], { xs[0], xs[1], xs[2] } );
   return ntk.create_maj( lhs, xs[4], rhs );
 }
 
@@ -83,13 +85,13 @@ signal<Ntk> majority7( Ntk& ntk, std::array<signal<Ntk>, 7> const& xs )
 {
   const auto side = [&]( std::array<signal<Ntk>, 6> const& ws ) {
     const auto l1 = ntk.create_maj( ws[0], ws[1], ws[2] );
-    return detail::general_associativity( ntk, l1, {ws[3], ws[4], ws[5]} );
+    return detail::general_associativity( ntk, l1, { ws[3], ws[4], ws[5] } );
   };
 
   return ntk.create_maj(
-      side( {xs[1], xs[2], xs[3], xs[4], xs[5], xs[6]} ),
+      side( { xs[1], xs[2], xs[3], xs[4], xs[5], xs[6] } ),
       xs[0],
-      side( {xs[4], xs[5], xs[6], xs[1], xs[2], xs[3]} ) );
+      side( { xs[4], xs[5], xs[6], xs[1], xs[2], xs[3] } ) );
 }
 
 /*! \brief Implements Majority-9 using 13 MAJ operations.
@@ -101,14 +103,14 @@ signal<Ntk> majority9_13( Ntk& ntk, std::array<signal<Ntk>, 9> const& xs )
 {
   const auto side = [&]( std::array<signal<Ntk>, 9> const& ws ) {
     const auto l1 = ntk.create_maj( ws[3], ws[4], ws[5] );
-    const auto l2 = detail::general_associativity( ntk, l1, {ws[0], ws[1], ws[2]} );
-    return detail::general_associativity( ntk, l2, {ws[6], ws[7], ws[8]} );
+    const auto l2 = detail::general_associativity( ntk, l1, { ws[0], ws[1], ws[2] } );
+    return detail::general_associativity( ntk, l2, { ws[6], ws[7], ws[8] } );
   };
 
   return ntk.create_maj(
       side( xs ),
       detail::fake_majority9( ntk, xs ),
-      side( {xs[0], xs[1], xs[2], xs[6], xs[7], xs[8], xs[3], xs[4], xs[5]} ) );
+      side( { xs[0], xs[1], xs[2], xs[6], xs[7], xs[8], xs[3], xs[4], xs[5] } ) );
 }
 
 /*! \brief Implements Majority-9 using 12 MAJ operations.
@@ -122,13 +124,13 @@ signal<Ntk> majority9_12( Ntk& ntk, std::array<signal<Ntk>, 9> const& xs )
     const auto bottom = ntk.create_maj( ntk.create_not( ws[0] ), ws[1], ws[2] );
     const auto l1 = ntk.create_maj( ws[3], ws[4], ws[5] );
     const auto l2 = ntk.create_maj( ws[0], l1, bottom );
-    return detail::general_associativity( ntk, l2, {ws[6], ws[7], ws[8]} );
+    return detail::general_associativity( ntk, l2, { ws[6], ws[7], ws[8] } );
   };
 
   return ntk.create_maj(
       side( xs ),
       detail::fake_majority9( ntk, xs ),
-      side( {xs[0], xs[1], xs[2], xs[6], xs[7], xs[8], xs[3], xs[4], xs[5]} ) );
+      side( { xs[0], xs[1], xs[2], xs[6], xs[7], xs[8], xs[3], xs[4], xs[5] } ) );
 }
 
 } // namespace mockturtle

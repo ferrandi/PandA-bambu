@@ -1,5 +1,5 @@
 /* mockturtle: C++ logic network library
- * Copyright (C) 2018-2021  EPFL
+ * Copyright (C) 2018-2022  EPFL
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -27,7 +27,10 @@
   \file xag.hpp
   \brief Xor-And Graph (XAG) logic network implementation
 
+  \author Alessandro Tempia Calvino
+  \author Bruno Schmitt
   \author Eleonora Testa
+  \author Hanyu Wang
   \author Heinz Riener
   \author Jinzheng Tu
   \author Mathias Soeken
@@ -55,7 +58,7 @@
 namespace mockturtle
 {
 
-/*! \brief Hash function for XAGs -- the same as for xags (from ABC) */
+/*! \brief Hash function for XAGs -- the same as for AIGs (from ABC) */
 template<class Node>
 struct xag_hash
 {
@@ -70,14 +73,6 @@ struct xag_hash
   }
 };
 
-struct xag_storage_data
-{
-  uint32_t num_pis = 0u;
-  uint32_t num_pos = 0u;
-  std::vector<int8_t> latches;
-  uint32_t trav_id = 0;
-};
-
 /*! \brief XAG storage container
 
   XAGs have nodes with fan-in 2.  We split of one bit of the index pointer to
@@ -89,7 +84,7 @@ struct xag_storage_data
   `data[1].h1`: Visited flag
 */
 using xag_storage = storage<regular_node<2, 2, 1>,
-                            xag_storage_data,
+                            empty_storage_data,
                             xag_hash<regular_node<2, 2, 1>>>;
 
 class xag_network
@@ -122,7 +117,8 @@ public:
     {
     }
 
-    union {
+    union
+    {
       struct
       {
         uint64_t complement : 1;
@@ -138,12 +134,12 @@ public:
 
     signal operator+() const
     {
-      return {index, 0};
+      return { index, 0 };
     }
 
     signal operator-() const
     {
-      return {index, 1};
+      return { index, 1 };
     }
 
     signal operator^( bool complement ) const
@@ -168,7 +164,7 @@ public:
 
     operator xag_storage::node_type::pointer_type() const
     {
-      return {index, complement};
+      return { index, complement };
     }
 
 #if __cplusplus > 201703L
@@ -190,71 +186,40 @@ public:
         _events( std::make_shared<decltype( _events )::element_type>() )
   {
   }
+
+  xag_network clone() const
+  {
+    return { std::make_shared<xag_storage>( *_storage ) };
+  }
 #pragma endregion
 
 #pragma region Primary I / O and constants
   signal get_constant( bool value ) const
   {
-    return {0, static_cast<uint64_t>( value ? 1 : 0 )};
+    return { 0, static_cast<uint64_t>( value ? 1 : 0 ) };
   }
 
-  signal create_pi( std::string const& name = std::string() )
+  signal create_pi()
   {
-    (void)name;
-
     const auto index = _storage->nodes.size();
     auto& node = _storage->nodes.emplace_back();
     node.children[0].data = node.children[1].data = _storage->inputs.size();
     _storage->inputs.emplace_back( index );
-    ++_storage->data.num_pis;
-    return {index, 0};
+    return { index, 0 };
   }
 
-  uint32_t create_po( signal const& f, std::string const& name = std::string() )
+  uint32_t create_po( signal const& f )
   {
-    (void)name;
-
     /* increase ref-count to children */
     _storage->nodes[f.index].data[0].h1++;
     auto const po_index = static_cast<uint32_t>( _storage->outputs.size() );
     _storage->outputs.emplace_back( f.index, f.complement );
-    ++_storage->data.num_pos;
     return po_index;
-  }
-
-  signal create_ro( std::string const& name = std::string() )
-  {
-    (void)name;
-
-    auto const index = _storage->nodes.size();
-    auto& node = _storage->nodes.emplace_back();
-    node.children[0].data = node.children[1].data = _storage->inputs.size();
-    _storage->inputs.emplace_back( index );
-    return {index, 0};
-  }
-
-  uint32_t create_ri( signal const& f, int8_t reset = 0, std::string const& name = std::string() )
-  {
-    (void)name;
-
-    /* increase ref-count to children */
-    _storage->nodes[f.index].data[0].h1++;
-    auto const ri_index = static_cast<uint32_t>( _storage->outputs.size() );
-    _storage->outputs.emplace_back( f.index, f.complement );
-    _storage->data.latches.emplace_back( reset );
-    return ri_index;
-  }
-
-  int8_t latch_reset( uint32_t index ) const
-  {
-    assert( index < _storage->data.latches.size() );
-    return _storage->data.latches[index];
   }
 
   bool is_combinational() const
   {
-    return ( static_cast<uint32_t>( _storage->inputs.size() ) == _storage->data.num_pis &&
-             static_cast<uint32_t>( _storage->outputs.size() ) == _storage->data.num_pos );
+    return true;
   }
 
   bool is_constant( node const& n ) const
@@ -269,12 +234,7 @@ public:
 
   bool is_pi( node const& n ) const
   {
-    return _storage->nodes[n].children[0].data == _storage->nodes[n].children[1].data && _storage->nodes[n].children[0].data < static_cast<uint64_t>( _storage->data.num_pis );
-  }
-
-  bool is_ro( node const& n ) const
-  {
-    return _storage->nodes[n].children[0].data == _storage->nodes[n].children[1].data && _storage->nodes[n].children[0].data >= static_cast<uint64_t>( _storage->data.num_pis );
+    return _storage->nodes[n].children[0].data == _storage->nodes[n].children[1].data && !is_constant( n );
   }
 
   bool constant_value( node const& n ) const
@@ -307,7 +267,7 @@ public:
     const auto it = _storage->hash.find( node );
     if ( it != _storage->hash.end() )
     {
-      return {it->second, 0};
+      return { it->second, 0 };
     }
 
     const auto index = _storage->nodes.size();
@@ -328,10 +288,10 @@ public:
 
     for ( auto const& fn : _events->on_add )
     {
-      fn( index );
+      ( *fn )( index );
     }
 
-    return {index, 0};
+    return { index, 0 };
   }
 
   signal create_and( signal a, signal b )
@@ -409,7 +369,7 @@ public:
 #pragma region Create ternary functions
   signal create_ite( signal cond, signal f_then, signal f_else )
   {
-    bool f_compl{false};
+    bool f_compl{ false };
     if ( f_then.index < f_else.index )
     {
       std::swap( f_then, f_else );
@@ -471,6 +431,77 @@ public:
   }
 #pragma endregion
 
+#pragma region Has node
+  std::optional<signal> has_and( signal a, signal b )
+  {
+    /* order inputs */
+    if ( a.index > b.index )
+    {
+      std::swap( a, b );
+    }
+
+    /* trivial cases */
+    if ( a.index == b.index )
+    {
+      return ( a.complement == b.complement ) ? a : get_constant( false );
+    }
+    else if ( a.index == 0 )
+    {
+      return a.complement == false ? get_constant( false ) : b;
+    }
+
+    storage::element_type::node_type node;
+    node.children[0] = a;
+    node.children[1] = b;
+
+    /* structural hashing */
+    const auto it = _storage->hash.find( node );
+    if ( it != _storage->hash.end() )
+    {
+      assert( !is_dead( it->second ) );
+      return signal( it->second, 0 );
+    }
+
+    return {};
+  }
+
+  std::optional<signal> has_xor( signal a, signal b )
+  {
+    /* order inputs */
+    if ( a.index < b.index )
+    {
+      std::swap( a, b );
+    }
+
+    bool f_compl = a.complement != b.complement;
+    a.complement = b.complement = false;
+
+    /* trivial cases */
+    if ( a.index == b.index )
+    {
+      return get_constant( f_compl );
+    }
+    else if ( b.index == 0 )
+    {
+      return a ^ f_compl;
+    }
+
+    storage::element_type::node_type node;
+    node.children[0] = a;
+    node.children[1] = b;
+
+    /* structural hashing */
+    const auto it = _storage->hash.find( node );
+    if ( it != _storage->hash.end() )
+    {
+      assert( !is_dead( it->second ) );
+      return signal( it->second, f_compl );
+    }
+
+    return {};
+  }
+#pragma endregion
+
 #pragma region Restructuring
   std::optional<std::pair<node, signal>> replace_in_node( node const& n, node const& old_node, signal new_signal )
   {
@@ -517,30 +548,27 @@ public:
         return std::make_pair( n, get_constant( diff_pol ) );
       }
     }
-    else if ( child0.index == 0 ) /* constant child */
+    else if ( _is_and && child0.index == 0 ) /* constant child */
     {
-      if ( _is_and )
-      {
-        return std::make_pair( n, child0.complement ? child1 : get_constant( false ) );
-      }
-      else
-      {
-        return std::make_pair( n, child1 ^ child0.complement );
-      }
+      return std::make_pair( n, child0.complement ? child1 : get_constant( false ) );
+    }
+    else if ( !_is_and && child1.index == 0 )
+    {
+      return std::make_pair( n, child0 ^ child1.complement );
     }
 
     // node already in hash table
     storage::element_type::node_type _hash_obj;
     _hash_obj.children[0] = child0;
     _hash_obj.children[1] = child1;
-    if ( const auto it = _storage->hash.find( _hash_obj ); it != _storage->hash.end() )
+    if ( const auto it = _storage->hash.find( _hash_obj ); it != _storage->hash.end() && it->second != old_node )
     {
       return std::make_pair( n, signal( it->second, 0 ) );
     }
 
     // remember before
-    const auto old_child0 = signal{node.children[0]};
-    const auto old_child1 = signal{node.children[1]};
+    const auto old_child0 = signal{ node.children[0] };
+    const auto old_child1 = signal{ node.children[1] };
 
     // erase old node in hash table
     _storage->hash.erase( node );
@@ -555,7 +583,7 @@ public:
 
     for ( auto const& fn : _events->on_modified )
     {
-      fn( n, {old_child0, old_child1} );
+      ( *fn )( n, { old_child0, old_child1 } );
     }
 
     return std::nullopt;
@@ -563,6 +591,9 @@ public:
 
   void replace_in_outputs( node const& old_node, signal const& new_signal )
   {
+    if ( is_dead( old_node ) )
+      return;
+
     for ( auto& output : _storage->outputs )
     {
       if ( output.index == old_node )
@@ -570,8 +601,11 @@ public:
         output.index = new_signal.index;
         output.weight ^= new_signal.complement;
 
-        // increment fan-in of new node
-        _storage->nodes[new_signal.index].data[0].h1++;
+        if ( old_node != new_signal.index )
+        {
+          /* increment fan-in of new node */
+          _storage->nodes[new_signal.index].data[0].h1++;
+        }
       }
     }
   }
@@ -579,7 +613,7 @@ public:
   void take_out_node( node const& n )
   {
     /* we cannot delete CIs or constants */
-    if ( n == 0 || is_ci( n ) )
+    if ( n == 0 || is_ci( n ) || is_dead( n ) )
       return;
 
     auto& nobj = _storage->nodes[n];
@@ -588,7 +622,7 @@ public:
 
     for ( auto const& fn : _events->on_delete )
     {
-      fn( n );
+      ( *fn )( n );
     }
 
     for ( auto i = 0u; i < 2u; ++i )
@@ -604,6 +638,32 @@ public:
     }
   }
 
+  void revive_node( node const& n )
+  {
+    if ( !is_dead( n ) )
+      return;
+
+    assert( n < _storage->nodes.size() );
+    auto& nobj = _storage->nodes[n];
+    nobj.data[0].h1 = UINT32_C( 0 ); /* fanout size 0, but not dead (like just created) */
+    _storage->hash[nobj] = n;
+
+    for ( auto const& fn : _events->on_add )
+    {
+      ( *fn )( n );
+    }
+
+    /* revive its children if dead, and increment their fanout_size */
+    for ( auto i = 0u; i < 2u; ++i )
+    {
+      if ( is_dead( nobj.children[i].index ) )
+      {
+        revive_node( nobj.children[i].index );
+      }
+      incr_fanout_size( nobj.children[i].index );
+    }
+  }
+
   inline bool is_dead( node const& n ) const
   {
     return ( _storage->nodes[n].data[0].h1 >> 31 ) & 1;
@@ -611,17 +671,35 @@ public:
 
   void substitute_node( node const& old_node, signal const& new_signal )
   {
+    std::unordered_map<node, signal> old_to_new;
     std::stack<std::pair<node, signal>> to_substitute;
-    to_substitute.push( {old_node, new_signal} );
+    to_substitute.push( { old_node, new_signal } );
 
     while ( !to_substitute.empty() )
     {
-      const auto [_old, _new] = to_substitute.top();
+      const auto [_old, _curr] = to_substitute.top();
       to_substitute.pop();
+
+      signal _new = _curr;
+      /* find the real new node */
+      if ( is_dead( get_node( _new ) ) )
+      {
+        auto it = old_to_new.find( get_node( _new ) );
+        while ( it != old_to_new.end() )
+        {
+          _new = is_complemented( _new ) ? create_not( it->second ) : it->second;
+          it = old_to_new.find( get_node( _new ) );
+        }
+      }
+      /* revive */
+      if ( is_dead( get_node( _new ) ) )
+      {
+        revive_node( get_node( _new ) );
+      }
 
       for ( auto idx = 1u; idx < _storage->nodes.size(); ++idx )
       {
-        if ( is_ci( idx ) )
+        if ( is_ci( idx ) || is_dead( idx ) )
           continue; /* ignore CIs */
 
         if ( const auto repl = replace_in_node( idx, _old, _new ); repl )
@@ -634,14 +712,17 @@ public:
       replace_in_outputs( _old, _new );
 
       // reset fan-in of old node
-      take_out_node( _old );
+      if ( _old != _new.index )
+      {
+        old_to_new.insert( { _old, _new } );
+        take_out_node( _old );
+      }
     }
   }
 #pragma endregion
 
 #pragma region Structural properties
-  auto
-  size() const
+  auto size() const
   {
     return static_cast<uint32_t>( _storage->nodes.size() );
   }
@@ -656,25 +737,14 @@ public:
     return static_cast<uint32_t>( _storage->outputs.size() );
   }
 
-  uint32_t num_latches() const
-  {
-      return static_cast<uint32_t>( _storage->data.latches.size());
-  }
-
   auto num_pis() const
   {
-    return _storage->data.num_pis;
+    return static_cast<uint32_t>( _storage->inputs.size() );
   }
 
   auto num_pos() const
   {
-    return _storage->data.num_pos;
-  }
-
-  auto num_registers() const
-  {
-    assert( static_cast<uint32_t>( _storage->inputs.size() - _storage->data.num_pis ) == static_cast<uint32_t>( _storage->outputs.size() - _storage->data.num_pos ) );
-    return static_cast<uint32_t>( _storage->inputs.size() - _storage->data.num_pis );
+    return static_cast<uint32_t>( _storage->outputs.size() );
   }
 
   auto num_gates() const
@@ -814,26 +884,14 @@ public:
 
   node pi_at( uint32_t index ) const
   {
-    assert( index < _storage->data.num_pis );
+    assert( index < _storage->inputs.size() );
     return *( _storage->inputs.begin() + index );
   }
 
   signal po_at( uint32_t index ) const
   {
-    assert( index < _storage->data.num_pos );
+    assert( index < _storage->outputs.size() );
     return *( _storage->outputs.begin() + index );
-  }
-
-  node ro_at( uint32_t index ) const
-  {
-    assert( index < _storage->inputs.size() - _storage->data.num_pis );
-    return *( _storage->inputs.begin() + _storage->data.num_pis + index );
-  }
-
-  signal ri_at( uint32_t index ) const
-  {
-    assert( index < _storage->outputs.size() - _storage->data.num_pos );
-    return *( _storage->outputs.begin() + _storage->data.num_pos + index );
   }
 
   uint32_t ci_index( node const& n ) const
@@ -859,8 +917,6 @@ public:
   uint32_t pi_index( node const& n ) const
   {
     assert( _storage->nodes[n].children[0].data == _storage->nodes[n].children[1].data );
-    assert( _storage->nodes[n].children[0].data < _storage->data.num_pis );
-
     return static_cast<uint32_t>( _storage->nodes[n].children[0].data );
   }
 
@@ -877,38 +933,6 @@ public:
     } );
     return i;
   }
-
-  uint32_t ro_index( node const& n ) const
-  {
-    assert( _storage->nodes[n].children[0].data == _storage->nodes[n].children[1].data );
-    assert( _storage->nodes[n].children[0].data >= _storage->data.num_pis );
-
-    return static_cast<uint32_t>( _storage->nodes[n].children[0].data - _storage->data.num_pis );
-  }
-
-  uint32_t ri_index( signal const& s ) const
-  {
-    uint32_t i = -1;
-    foreach_ri( [&]( const auto& x, auto index ) {
-      if ( x == s )
-      {
-        i = index;
-        return false;
-      }
-      return true;
-    } );
-    return i;
-  }
-
-  signal ro_to_ri( signal const& s ) const
-  {
-    return *( _storage->outputs.begin() + _storage->data.num_pos + _storage->nodes[s.index].children[0].data - _storage->data.num_pis );
-  }
-
-  node ri_to_ro( signal const& s ) const
-  {
-    return *( _storage->inputs.begin() + _storage->data.num_pis + ri_index( s ) );
-  }
 #pragma endregion
 
 #pragma region Node and signal iterators
@@ -916,9 +940,10 @@ public:
   void foreach_node( Fn&& fn ) const
   {
     auto r = range<uint64_t>( _storage->nodes.size() );
-    detail::foreach_element_if( r.begin(), r.end(),
-                                [this]( auto n ) { return !is_dead( n ); },
-                                fn );
+    detail::foreach_element_if(
+        r.begin(), r.end(),
+        [this]( auto n ) { return !is_dead( n ); },
+        fn );
   }
 
   template<typename Fn>
@@ -936,79 +961,23 @@ public:
   template<typename Fn>
   void foreach_pi( Fn&& fn ) const
   {
-    detail::foreach_element( _storage->inputs.begin(), _storage->inputs.begin() + _storage->data.num_pis, fn );
+    detail::foreach_element( _storage->inputs.begin(), _storage->inputs.end(), fn );
   }
 
   template<typename Fn>
   void foreach_po( Fn&& fn ) const
   {
-    detail::foreach_element( _storage->outputs.begin(), _storage->outputs.begin() + _storage->data.num_pos, fn );
-  }
-
-  template<typename Fn>
-  void foreach_ro( Fn&& fn ) const
-  {
-    detail::foreach_element( _storage->inputs.begin() + _storage->data.num_pis, _storage->inputs.end(), fn );
-  }
-
-  template<typename Fn>
-  void foreach_ri( Fn&& fn ) const
-  {
-    detail::foreach_element( _storage->outputs.begin() + _storage->data.num_pos, _storage->outputs.end(), fn );
-  }
-
-  template<typename Fn>
-  void foreach_register( Fn&& fn ) const
-  {
-    static_assert( detail::is_callable_with_index_v<Fn, std::pair<signal, node>, void> ||
-                   detail::is_callable_without_index_v<Fn, std::pair<signal, node>, void> ||
-                   detail::is_callable_with_index_v<Fn, std::pair<signal, node>, bool> ||
-                   detail::is_callable_without_index_v<Fn, std::pair<signal, node>, bool> );
-
-    assert( _storage->inputs.size() - _storage->data.num_pis == _storage->outputs.size() - _storage->data.num_pos );
-    auto ro = _storage->inputs.begin() + _storage->data.num_pis;
-    auto ri = _storage->outputs.begin() + _storage->data.num_pos;
-    if constexpr ( detail::is_callable_without_index_v<Fn, std::pair<signal, node>, bool> )
-    {
-      while ( ro != _storage->inputs.end() && ri != _storage->outputs.end() )
-      {
-        if ( !fn( std::make_pair( ri++, ro++ ) ) )
-          return;
-      }
-    }
-    else if constexpr ( detail::is_callable_with_index_v<Fn, std::pair<signal, node>, bool> )
-    {
-      uint32_t index{0};
-      while ( ro != _storage->inputs.end() && ri != _storage->outputs.end() )
-      {
-        if ( !fn( std::make_pair( ri++, ro++ ), index++ ) )
-          return;
-      }
-    }
-    else if constexpr ( detail::is_callable_without_index_v<Fn, std::pair<signal, node>, void> )
-    {
-      while ( ro != _storage->inputs.end() && ri != _storage->outputs.end() )
-      {
-        fn( std::make_pair( *ri++, *ro++ ) );
-      }
-    }
-    else if constexpr ( detail::is_callable_with_index_v<Fn, std::pair<signal, node>, void> )
-    {
-      uint32_t index{0};
-      while ( ro != _storage->inputs.end() && ri != _storage->outputs.end() )
-      {
-        fn( std::make_pair( *ri++, *ro++ ), index++ );
-      }
-    }
+    detail::foreach_element( _storage->outputs.begin(), _storage->outputs.end(), fn );
   }
 
   template<typename Fn>
   void foreach_gate( Fn&& fn ) const
   {
     auto r = range<uint64_t>( 1u, _storage->nodes.size() ); /* start from 1 to avoid constant */
-    detail::foreach_element_if( r.begin(), r.end(),
-                                [this]( auto n ) { return !is_ci( n ) && !is_dead( n ); },
-                                fn );
+    detail::foreach_element_if(
+        r.begin(), r.end(),
+        [this]( auto n ) { return !is_ci( n ) && !is_dead( n ); },
+        fn );
   }
 
   template<typename Fn>
@@ -1025,25 +994,25 @@ public:
     /* we don't use foreach_element here to have better performance */
     if constexpr ( detail::is_callable_without_index_v<Fn, signal, bool> )
     {
-      if ( !fn( signal{_storage->nodes[n].children[0]} ) )
+      if ( !fn( signal{ _storage->nodes[n].children[0] } ) )
         return;
-      fn( signal{_storage->nodes[n].children[1]} );
+      fn( signal{ _storage->nodes[n].children[1] } );
     }
     else if constexpr ( detail::is_callable_with_index_v<Fn, signal, bool> )
     {
-      if ( !fn( signal{_storage->nodes[n].children[0]}, 0 ) )
+      if ( !fn( signal{ _storage->nodes[n].children[0] }, 0 ) )
         return;
-      fn( signal{_storage->nodes[n].children[1]}, 1 );
+      fn( signal{ _storage->nodes[n].children[1] }, 1 );
     }
     else if constexpr ( detail::is_callable_without_index_v<Fn, signal, void> )
     {
-      fn( signal{_storage->nodes[n].children[0]} );
-      fn( signal{_storage->nodes[n].children[1]} );
+      fn( signal{ _storage->nodes[n].children[0] } );
+      fn( signal{ _storage->nodes[n].children[1] } );
     }
     else if constexpr ( detail::is_callable_with_index_v<Fn, signal, void> )
     {
-      fn( signal{_storage->nodes[n].children[0]}, 0 );
-      fn( signal{_storage->nodes[n].children[1]}, 1 );
+      fn( signal{ _storage->nodes[n].children[0] }, 0 );
+      fn( signal{ _storage->nodes[n].children[1] }, 1 );
     }
   }
 #pragma endregion
@@ -1120,11 +1089,11 @@ public:
     result.resize( tt1.num_bits() );
     if ( c1.index < c2.index )
     {
-      result._bits.back() = ( c1.weight ? ~(tt1._bits.back()) : tt1._bits.back() ) & ( c2.weight ? ~(tt2._bits.back()) : tt2._bits.back() );
+      result._bits.back() = ( c1.weight ? ~( tt1._bits.back() ) : tt1._bits.back() ) & ( c2.weight ? ~( tt2._bits.back() ) : tt2._bits.back() );
     }
     else
     {
-      result._bits.back() = ( c1.weight ? ~(tt1._bits.back()) : tt1._bits.back() ) ^ ( c2.weight ? ~(tt2._bits.back()) : tt2._bits.back() );
+      result._bits.back() = ( c1.weight ? ~( tt1._bits.back() ) : tt1._bits.back() ) ^ ( c2.weight ? ~( tt2._bits.back() ) : tt2._bits.back() );
     }
     result.mask_bits();
   }
@@ -1175,12 +1144,12 @@ public:
 
   uint32_t trav_id() const
   {
-    return _storage->data.trav_id;
+    return _storage->trav_id;
   }
 
   void incr_trav_id() const
   {
-    ++_storage->data.trav_id;
+    ++_storage->trav_id;
   }
 #pragma endregion
 

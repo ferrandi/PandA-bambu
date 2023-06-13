@@ -1,5 +1,5 @@
 /* mockturtle: C++ logic network library
- * Copyright (C) 2018-2021  EPFL
+ * Copyright (C) 2018-2022  EPFL
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -82,7 +82,7 @@ private:
   void add_row( nlohmann::json const& row )
   {
     std::vector<std::string> entry;
-    uint32_t ctr{0u};
+    uint32_t ctr{ 0u };
     for ( auto const& key : columns_ )
     {
       auto const& data = row[key];
@@ -184,8 +184,8 @@ public:
       data_.erase( data_.size() - 1u );
     }
 
-    data_.push_back( {{"version", version_},
-                      {"entries", entries}} );
+    data_.push_back( { { "version", version_ },
+                       { "entries", entries } } );
 
     std::ofstream os( filename_, std::ofstream::out );
     os << data_.dump( 2 ) << "\n";
@@ -314,11 +314,11 @@ public:
         {
           if ( it_old == entries_old.end() )
           {
-            row[column_names_[0]] = (*it)[column_names_[0]];
+            row[column_names_[0]] = ( *it )[column_names_[0]];
           }
           for ( auto i = 1u; i < column_names_.size(); ++i )
           {
-            row[column_names_[i] + "'"] = (*it)[column_names_[i]];
+            row[column_names_[i] + "'"] = ( *it )[column_names_[i]];
 
             if ( it_old != entries_old.end() )
             {
@@ -334,10 +334,14 @@ public:
 
       json_table( compare_entries, compare_columns ).print( os );
 
-      for ( const auto& [k, v] : differences ) {
-        if ( v == 0u ) {
+      for ( const auto& [k, v] : differences )
+      {
+        if ( v == 0u )
+        {
           os << fmt::format( "[i] no differences in column '{}'\n", k );
-        } else {
+        }
+        else
+        {
           os << fmt::format( "[i] {} differences in column '{}'\n", v, k );
         }
       }
@@ -442,7 +446,7 @@ static const char* benchmarks[] = {
     "simple_spi", "spi", "ss_pcm", "systemcaes", "systemcdes", "tv80", "usb_funct", "usb_phy",
     "vga_lcd", "wb_conmax",
 
-    "c17", "c432", "c499", "c880", "c1355", "c1908", "c2670", "c3540", "c5315", "c6288", "c7552"};
+    "c17", "c432", "c499", "c880", "c1355", "c1908", "c2670", "c3540", "c5315", "c6288", "c7552" };
 
 std::vector<std::string> epfl_benchmarks( uint64_t selection = epfl )
 {

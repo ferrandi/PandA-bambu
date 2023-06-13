@@ -45,7 +45,7 @@ enum class tokenizer_return_code
 class tokenizer
 {
 public:
-  tokenizer( std::istream& is )
+  explicit tokenizer( std::istream& is )
     : _is( is )
   {}
 

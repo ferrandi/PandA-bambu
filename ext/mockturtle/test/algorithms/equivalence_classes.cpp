@@ -5,8 +5,8 @@
 #include <mockturtle/algorithms/detail/minmc_xags.hpp>
 #include <mockturtle/algorithms/equivalence_classes.hpp>
 #include <mockturtle/algorithms/simulation.hpp>
-#include <mockturtle/utils/index_list.hpp>
 #include <mockturtle/networks/xag.hpp>
+#include <mockturtle/utils/index_list.hpp>
 
 #include <kitty/constructors.hpp>
 #include <kitty/dynamic_truth_table.hpp>
@@ -38,7 +38,7 @@ TEST_CASE( "Synthesize MAJ from AND", "[equivalence_classes]" )
   } );
   xag.create_po( f );
 
-  CHECK( simulate<kitty::dynamic_truth_table>( xag, {static_cast<uint32_t>( func.num_vars() )} )[0] == func );
+  CHECK( simulate<kitty::dynamic_truth_table>( xag, { static_cast<uint32_t>( func.num_vars() ) } )[0] == func );
 }
 
 TEST_CASE( "Synthesize from database for 4-input functions", "[equivalence_classes]" )
@@ -70,14 +70,14 @@ TEST_CASE( "Synthesize from database for 4-input functions", "[equivalence_class
     std::generate( pis.begin(), pis.end(), [&]() { return xag.create_pi(); } );
 
     const auto f = apply_spectral_transformations( xag, transformations, pis, [&]( xag_network& ntk, std::vector<xag_network::signal> const& leaves ) {
-      xag_index_list il{*db[repr]};
+      xag_index_list il{ *db[repr] };
       std::vector<xag_network::signal> pos;
       insert( ntk, std::begin( leaves ), std::begin( leaves ) + il.num_pis(), il,
-              [&]( xag_network::signal const& s ){ pos.emplace_back( s ); });
+              [&]( xag_network::signal const& s ) { pos.emplace_back( s ); } );
       return pos[0];
     } );
     xag.create_po( f );
 
-    CHECK( simulate<kitty::dynamic_truth_table>( xag, {static_cast<uint32_t>( func.num_vars() )} )[0] == func );
+    CHECK( simulate<kitty::dynamic_truth_table>( xag, { static_cast<uint32_t>( func.num_vars() ) } )[0] == func );
   }
 }

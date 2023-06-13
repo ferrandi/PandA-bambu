@@ -1,0 +1,15 @@
+[default.extend-words]
+fo = "fo"
+mis = "mis"
+lits = "lits"
+fot = "fot"
+CLAS = "CLAS"
+inouts = "inouts"
+"SEH" = "SEH"
+
+[type.po]
+extend-glob = ["*.aig", "catch.hpp"]
+check-file = false
+
+[files]
+extend-exclude = [".github/", ".ql/", "docs/", "examples/", "lib/", "experiments/"]
