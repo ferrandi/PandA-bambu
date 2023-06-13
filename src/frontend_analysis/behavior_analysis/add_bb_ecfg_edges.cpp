@@ -64,7 +64,7 @@
 #include <list>
 
 /// Utility include
-#include "boost/lexical_cast.hpp"
+#include <boost/lexical_cast.hpp>
 #include "dbgPrintHelper.hpp"
 #include "exceptions.hpp"
 #include "hash_helper.hpp"
