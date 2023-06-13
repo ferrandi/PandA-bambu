@@ -589,7 +589,10 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                THROW_ASSERT(DesignAttributes.count(arg_name) &&
                                 DesignAttributes.at(arg_name).count(attr_interface_type),
                             "Not matched parameter name: " + arg_name);
-               auto& interface_type = DesignAttributes.at(arg_name).at(attr_interface_type);
+               auto& arg_attributes = DesignAttributes.at(arg_name);
+               arg_attributes[attr_interface_bitwidth] = STR(tree_helper::Size(arg_type));
+               arg_attributes[attr_interface_alignment] = STR(get_aligned_bitsize(tree_helper::Size(arg_type)));
+               auto& interface_type = arg_attributes.at(attr_interface_type);
                if(interface_type != "default")
                {
                   const auto arg_ssa_id = AppM->getSSAFromParm(top_id, arg_id);
@@ -636,7 +639,7 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                      info.name = [&]() -> std::string {
                         if(isRead && isWrite)
                         {
-                           DesignAttributes.at(arg_name)[attr_interface_dir] = port_o::GetString(port_o::IO);
+                           arg_attributes[attr_interface_dir] = port_o::GetString(port_o::IO);
                            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---I/O interface");
                            if(interface_type == "ptrdefault")
                            {
@@ -660,7 +663,7 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                         }
                         else if(isRead)
                         {
-                           DesignAttributes.at(arg_name)[attr_interface_dir] = port_o::GetString(port_o::IN);
+                           arg_attributes[attr_interface_dir] = port_o::GetString(port_o::IN);
                            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Read-only interface");
                            if(interface_type == "ptrdefault")
                            {
@@ -674,7 +677,7 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                         }
                         else if(isWrite)
                         {
-                           DesignAttributes.at(arg_name)[attr_interface_dir] = port_o::GetString(port_o::OUT);
+                           arg_attributes[attr_interface_dir] = port_o::GetString(port_o::OUT);
                            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Write-only interface");
                            if(interface_type == "ptrdefault")
                            {
@@ -693,8 +696,8 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                         }
                         return interface_type;
                      }();
-                     DesignAttributes.at(arg_name)[attr_interface_bitwidth] = STR(info.bitwidth);
-                     DesignAttributes.at(arg_name)[attr_interface_alignment] = STR(info.alignment);
+                     arg_attributes[attr_interface_bitwidth] = STR(info.bitwidth);
+                     arg_attributes[attr_interface_alignment] = STR(info.alignment);
                      interface_type = info.name;
 
                      INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "-->Interface specification:");
