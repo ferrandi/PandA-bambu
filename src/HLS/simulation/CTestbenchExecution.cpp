@@ -194,15 +194,6 @@ DesignFlowStep_Status CTestbenchExecution::Exec()
       {
          compiler_flags += "-g -fsanitize=address -fno-omit-frame-pointer -fno-common ";
       }
-      if(default_compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC48 ||
-         default_compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC49 ||
-         default_compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC5 ||
-         default_compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC6 ||
-         default_compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC7 ||
-         default_compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC8)
-      {
-         compiler_flags += "-static-libasan ";
-      }
       if(CompilerWrapper::isClangCheck(default_compiler) ||
          default_compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC5 ||
          default_compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC6 ||
@@ -210,13 +201,6 @@ DesignFlowStep_Status CTestbenchExecution::Exec()
          default_compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC8)
       {
          compiler_flags += "-fsanitize=undefined -fsanitize-recover=undefined ";
-      }
-      if(default_compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC5 ||
-         default_compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC6 ||
-         default_compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC7 ||
-         default_compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC8)
-      {
-         compiler_flags += "-static-libubsan ";
       }
    }
    // setup source files
