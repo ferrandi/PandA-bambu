@@ -480,12 +480,6 @@ void CompilerWrapper::CompileFile(const std::string& original_file_name, std::st
    if(cm == CompilerWrapper_CompilerMode::CM_ANALYZER && !compiler.is_clang)
    {
       command = GetAnalyzeCompiler();
-      if(getenv("APPDIR"))
-      {
-         const auto inc_dir = std::string(getenv("APPDIR")) + "/usr/include/c++";
-         command =
-             "CPLUS_INCLUDE_PATH=\"" + inc_dir + "/$(ls -x -v -1a " + inc_dir + " 2> /dev/null | tail -1)\" " + command;
-      }
    }
    command += " -D__NO_INLINE__ "; /// needed to avoid problem with glibc inlines
 #ifdef _WIN32
@@ -578,9 +572,8 @@ void CompilerWrapper::CompileFile(const std::string& original_file_name, std::st
          (Param->getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_CPP ||
           Param->getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_LLVM_CPP))
       {
-         command += " -Xclang -plugin-arg-" +
-                    compiler.ASTAnalyzer_plugin_name + " -Xclang -cppflag -Xclang -plugin-arg-" +
-                    compiler.ASTAnalyzer_plugin_name + " -Xclang 1";
+         command += " -Xclang -plugin-arg-" + compiler.ASTAnalyzer_plugin_name +
+                    " -Xclang -cppflag -Xclang -plugin-arg-" + compiler.ASTAnalyzer_plugin_name + " -Xclang 1";
       }
       if(addTopFName)
       {
@@ -733,7 +726,7 @@ void CompilerWrapper::CompileFile(const std::string& original_file_name, std::st
       if(compiler.is_clang)
       {
          if(Param->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
-             CompilerWrapper_CompilerTarget::CT_I386_CLANG16)
+            CompilerWrapper_CompilerTarget::CT_I386_CLANG16)
          {
             command += " -c -fplugin=" + compiler.ASTAnnotate_plugin_obj;
             command += " -Xclang -add-plugin -Xclang " + compiler.ASTAnnotate_plugin_name;
@@ -765,7 +758,7 @@ void CompilerWrapper::CompileFile(const std::string& original_file_name, std::st
    else if(cm == CompilerWrapper_CompilerMode::CM_LTO)
    {
       if(Param->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
-          CompilerWrapper_CompilerTarget::CT_I386_CLANG16)
+         CompilerWrapper_CompilerTarget::CT_I386_CLANG16)
       {
          command += " -Xclang -no-opaque-pointers";
       }
@@ -1104,7 +1097,7 @@ void CompilerWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::st
             command += " -internalize-outputdir=" + Param->getOption<std::string>(OPT_output_temporary_directory);
             command += " -panda-TFN=" + fname;
             if(Param->isOption(OPT_interface_type) && Param->getOption<HLSFlowStep_Type>(OPT_interface_type) ==
-                                                           HLSFlowStep_Type::INFERRED_INTERFACE_GENERATION)
+                                                          HLSFlowStep_Type::INFERRED_INTERFACE_GENERATION)
             {
                command += " -add-noalias";
             }
@@ -2131,9 +2124,13 @@ CompilerWrapper::Compiler CompilerWrapper::GetCompiler() const
         Param->getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_LLVM_CPP);
 
    std::string gcc_extra_options;
+   if(getenv("APPDIR"))
+   {
+      gcc_extra_options += " --sysroot=$APPDIR";
+   }
    if(Param->isOption(OPT_gcc_extra_options))
    {
-      gcc_extra_options = Param->getOption<std::string>(OPT_gcc_extra_options);
+      gcc_extra_options += " " + Param->getOption<std::string>(OPT_gcc_extra_options);
    }
 
    CompilerWrapper_CompilerTarget preferred_compiler;
@@ -2919,14 +2916,6 @@ CompilerWrapper::Compiler CompilerWrapper::GetCompiler() const
       THROW_ERROR("Not found any compatible compiler");
    }
 
-   if(compiler.is_clang && getenv("APPDIR"))
-   {
-      const auto inc_dir = std::string(getenv("APPDIR")) + "/usr/include/c++";
-      compiler.gcc = "CPLUS_INCLUDE_PATH=\"" + inc_dir + "/$(ls -x -v -1a " + inc_dir + " 2> /dev/null | tail -1)\" " +
-                     compiler.gcc;
-      compiler.cpp = "CPLUS_INCLUDE_PATH=\"" + inc_dir + "/$(ls -x -v -1a " + inc_dir + " 2> /dev/null | tail -1)\" " +
-                     compiler.cpp;
-   }
    return compiler;
 }
 
@@ -2970,10 +2959,13 @@ std::string CompilerWrapper::GetAnalyzeCompiler() const
 void CompilerWrapper::GetSystemIncludes(std::vector<std::string>& includes) const
 {
    /// This string contains the path and name of the compiler to be invoked
-   const std::string cpp = GetCompiler().cpp;
-
-   std::string command =
-       cpp +
+   const auto compiler = GetCompiler();
+   std::string command = compiler.cpp;
+   if(getenv("APPDIR"))
+   {
+      command += " --sysroot=$APPDIR";
+   }
+   command +=
        " -v  < /dev/null 2>&1 | grep -v -E \"(#|Configured with|Using built-in|Target|Thread model|gcc version|End of "
        "search list|ignoring nonexistent directory|cc1 -E -quiet|cc1.exe -E "
        "-quiet|COMPILER_PATH|LIBRARY_PATH|COLLECT_GCC|OFFLOAD_TARGET_NAMES|OFFLOAD_TARGET_DEFAULT|ignoring duplicate "
