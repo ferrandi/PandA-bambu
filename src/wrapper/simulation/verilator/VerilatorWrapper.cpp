@@ -150,10 +150,6 @@ void VerilatorWrapper::GenerateScript(std::ostringstream& script, const std::str
          script << " --l2-name v";
       }
    }
-   if(Param->isOption(OPT_verilator_timescale_override))
-   {
-      script << " --timescale-override \"" << Param->getOption<std::string>(OPT_verilator_timescale_override) << "\"";
-   }
    for(const auto& file : file_list)
    {
       script << " " << file;
