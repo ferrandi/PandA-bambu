@@ -61,6 +61,8 @@ EXTERN_C EXPORT void m_read128(svLogicVecVal* data, ptr_t addr);
 EXTERN_C EXPORT void m_read256(svLogicVecVal* data, ptr_t addr);
 EXTERN_C EXPORT void m_read512(svLogicVecVal* data, ptr_t addr);
 EXTERN_C EXPORT void m_read1024(svLogicVecVal* data, ptr_t addr);
+EXTERN_C EXPORT void m_read2048(svLogicVecVal* data, ptr_t addr);
+EXTERN_C EXPORT void m_read4096(svLogicVecVal* data, ptr_t addr);
 
 EXTERN_C EXPORT void m_write8(unsigned short size, CONSTARG svLogicVecVal* data, ptr_t addr);
 EXTERN_C EXPORT void m_write16(unsigned short size, CONSTARG svLogicVecVal* data, ptr_t addr);
@@ -70,5 +72,7 @@ EXTERN_C EXPORT void m_write128(unsigned short size, CONSTARG svLogicVecVal* dat
 EXTERN_C EXPORT void m_write256(unsigned short size, CONSTARG svLogicVecVal* data, ptr_t addr);
 EXTERN_C EXPORT void m_write512(unsigned short size, CONSTARG svLogicVecVal* data, ptr_t addr);
 EXTERN_C EXPORT void m_write1024(unsigned short size, CONSTARG svLogicVecVal* data, ptr_t addr);
+EXTERN_C EXPORT void m_write2048(unsigned short size, CONSTARG svLogicVecVal* data, ptr_t addr);
+EXTERN_C EXPORT void m_write4096(unsigned short size, CONSTARG svLogicVecVal* data, ptr_t addr);
 
 #endif // __MDPI_H

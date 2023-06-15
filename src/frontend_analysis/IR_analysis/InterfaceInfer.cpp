@@ -2298,11 +2298,17 @@ void InterfaceInfer::create_resource(const std::set<std::string>& operationsR, c
          }
       }
       if(HLSMgr->design_attributes.find(fname) != HLSMgr->design_attributes.end() &&
-         HLSMgr->design_attributes.at(fname).find(arg_name) != HLSMgr->design_attributes.at(fname).end() &&
-         HLSMgr->design_attributes.at(fname).at(arg_name).find(attr_bundle_name) !=
-             HLSMgr->design_attributes.at(fname).at(arg_name).end())
+         HLSMgr->design_attributes.at(fname).find(arg_name) != HLSMgr->design_attributes.at(fname).end())
       {
-         bundle_name = HLSMgr->design_attributes.at(fname).at(arg_name).at(attr_bundle_name);
+         if(HLSMgr->design_attributes.at(fname).at(arg_name).find(attr_bundle_name) !=
+            HLSMgr->design_attributes.at(fname).at(arg_name).end())
+         {
+            bundle_name = HLSMgr->design_attributes.at(fname).at(arg_name).at(attr_bundle_name);
+         }
+         else
+         {
+            HLSMgr->design_attributes.at(fname).at(arg_name)[attr_bundle_name] = bundle_name;
+         }
       }
       if(HLSMgr->design_attributes.find(fname) != HLSMgr->design_attributes.end())
       {

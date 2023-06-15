@@ -56,16 +56,16 @@
 
 volatile pthread_t __m_main_tid;
 
-#define info(str, ...) \
-   fprintf(stdout, "%s %10s: " str, __m_main_tid == pthread_self() ? "Sim" : "Co-sim", __func__, ##__VA_ARGS__)
+#define info(str, ...) fprintf(stdout, "%s: " str, __m_main_tid == pthread_self() ? "Sim" : "Co-sim", ##__VA_ARGS__)
 
 #ifndef NDEBUG
-#define debug(...) info(__VA_ARGS__)
-#define error(str, ...) info("ERROR: " str, ##__VA_ARGS__)
+#define debug(str, ...) \
+   fprintf(stdout, "%s %10s: " str, __m_main_tid == pthread_self() ? "Sim" : "Co-sim", __func__, ##__VA_ARGS__)
+#define error(str, ...) debug("ERROR: " str, ##__VA_ARGS__)
 #else
 #define debug(...)
 #define error(str, ...) \
-   fprintf(stderr, "ERROR: %s %10s: " str, __m_main_tid == pthread_self() ? "Sim" : "Co-sim", __func__, ##__VA_ARGS__)
+   fprintf(stderr, "ERROR: %s: " str, __m_main_tid == pthread_self() ? "Sim" : "Co-sim", ##__VA_ARGS__)
 #endif
 
 extern mdpi_params_t __m_params;
@@ -314,6 +314,14 @@ EXTERN_C void m_read1024(svLogicVecVal* data, ptr_t addr)
 {
    __m_read(128, data, addr);
 }
+EXTERN_C void m_read2048(svLogicVecVal* data, ptr_t addr)
+{
+   __m_read(256, data, addr);
+}
+EXTERN_C void m_read4096(svLogicVecVal* data, ptr_t addr)
+{
+   __m_read(512, data, addr);
+}
 
 EXTERN_C void m_write8(uint16_t size, CONSTARG svLogicVecVal* data, ptr_t addr)
 {
@@ -345,13 +353,15 @@ EXTERN_C void m_write512(uint16_t size, CONSTARG svLogicVecVal* data, ptr_t addr
 }
 EXTERN_C void m_write1024(uint16_t size, CONSTARG svLogicVecVal* data, ptr_t addr)
 {
-   __m_write(32, size % 256, data, addr);
-   if(size > 256)
-      __m_write(32, (size - 256) % 256, data + 32, addr + 256);
-   if(size > 512)
-      __m_write(32, (size - 512) % 256, data + 64, addr + 512);
-   if(size > 768)
-      __m_write(32, (size - 768) % 256, data + 96, addr + 768);
+   __m_write(128, size, data, addr);
+}
+EXTERN_C void m_write2048(uint16_t size, CONSTARG svLogicVecVal* data, ptr_t addr)
+{
+   __m_write(256, size, data, addr);
+}
+EXTERN_C void m_write4096(uint16_t size, CONSTARG svLogicVecVal* data, ptr_t addr)
+{
+   __m_write(512, size, data, addr);
 }
 
 #pragma GCC pop_options

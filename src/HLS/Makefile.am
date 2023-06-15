@@ -1224,6 +1224,7 @@ noinst_HEADERS += \
    module_generator/TestbenchAcknowledgeModuleGenerator.hpp \
    module_generator/TestbenchArrayModuleGenerator.hpp \
    module_generator/TestbenchAxisModuleGenerator.hpp \
+   module_generator/TestbenchAXIMModuleGenerator.hpp \
    module_generator/TestbenchDUTModuleGenerator.hpp \
    module_generator/TestbenchFifoModuleGenerator.hpp \
    module_generator/TestbenchHandshakeModuleGenerator.hpp \
@@ -1263,6 +1264,7 @@ lib_module_generator_la_SOURCES = \
    module_generator/TestbenchAcknowledgeModuleGenerator.cpp \
    module_generator/TestbenchArrayModuleGenerator.cpp \
    module_generator/TestbenchAxisModuleGenerator.cpp \
+   module_generator/TestbenchAXIMModuleGenerator.cpp \
    module_generator/TestbenchDUTModuleGenerator.cpp \
    module_generator/TestbenchFifoModuleGenerator.cpp \
    module_generator/TestbenchHandshakeModuleGenerator.cpp \

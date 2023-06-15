@@ -432,7 +432,14 @@ DesignFlowStep_Status TestbenchGeneration::Exec()
                                                                                LIBRARY_STD, tb_cir, TechM);
                if_modules.push_back(if_port);
             }
-            // TODO: add offset port constant value
+            const auto if_port = tb_top->add_module_from_technology_library("if_addr_" + arg_name, "IF_PORT_IN",
+                                                                            LIBRARY_STD, tb_cir, TechM);
+            if_modules.push_back(if_port);
+            if_port->SetParameter("index", STR(idx));
+
+            THROW_ASSERT(arg_port, "Top level interface is missing port for argument '" + arg_name + "'");
+            const auto val_port = if_port->find_member("val_port", port_o_K, if_port);
+            add_internal_connection(val_port, arg_port);
          }
          else
          {

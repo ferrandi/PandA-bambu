@@ -13120,7 +13120,7 @@ wire valid,tagsmatch;
    reg [FE_DATA_W + WRITE_POL*(FE_DATA_W*(2**WORD_OFF_W)-FE_DATA_W)-1 :0]  reg_wdata;
 
    localparam
-     aw_idle     = 1&apos;b00,
+     aw_idle     = 2&apos;b00,
      aw_address  = 2&apos;b01,
      aw_wait     = 2&apos;b10;
             
@@ -13707,6 +13707,8 @@ wire valid,tagsmatch;
    always @(posedge clk)
       if(r_en)
         r_data &lt;= mem[r_addr];
+      else
+        r_data &lt;= 0;
 
    //write port
    always @(posedge clk)
@@ -13993,7 +13995,7 @@ wire valid,tagsmatch;
    reg r_empty;
    reg w_full;
 
-   reg error = 0, next_error;
+   reg error = 0, next_error = 0;
    reg w_full_nxt = 0;
    reg write_fail_reg;
 
