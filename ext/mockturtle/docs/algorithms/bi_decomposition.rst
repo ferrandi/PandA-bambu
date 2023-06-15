@@ -1,5 +1,5 @@
 Bi-decomposition
----------------
+----------------
 
 **Header:** ``mockturtle/algorithms/bi_decomposition.hpp``
 

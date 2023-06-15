@@ -70,5 +70,5 @@ TEST_CASE( "Equivalence check on two non-equivalent AIGs", "[equivalence_checkin
 
   CHECK( result );
   CHECK( !*result );
-  CHECK( st.counter_example == std::vector<bool>( {true, true} ) );
+  CHECK( st.counter_example == std::vector<bool>( { true, true } ) );
 }

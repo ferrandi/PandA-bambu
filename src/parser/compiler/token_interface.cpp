@@ -57,6 +57,8 @@
 REF_FORWARD_DECL(BisonParserData);
 REF_FORWARD_DECL(TreeFlexLexer);
 
+#include "APInt.hpp"
+
 /// Tree include
 #if HAVE_BISON_2_7_OR_GREATER
 #include "treeParser.hpp"

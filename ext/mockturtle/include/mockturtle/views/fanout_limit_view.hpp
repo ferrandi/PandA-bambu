@@ -1,5 +1,5 @@
 /* mockturtle: C++ logic network library
- * Copyright (C) 2018-2021  EPFL
+ * Copyright (C) 2018-2022  EPFL
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -26,7 +26,9 @@
 /*!
   \file fanout_limit_view.hpp
   \brief View that replicates nodes whose fanout size exceed a limit
+
   \author Heinz Riener
+  \author Siang-Yun (Sonia) Lee
 */
 
 #pragma once
@@ -39,42 +41,40 @@ namespace mockturtle
 
 struct fanout_limit_view_params
 {
-  uint64_t fanout_limit{16};
+  uint64_t fanout_limit{ 16 };
 };
-
 
 template<typename Ntk>
 class fanout_limit_view : public Ntk
 {
 public:
   using storage = typename Ntk::storage;
-  using node    = typename Ntk::node;
-  using signal  = typename Ntk::signal;
+  using node = typename Ntk::node;
+  using signal = typename Ntk::signal;
 
 public:
   fanout_limit_view( fanout_limit_view_params const ps = {} )
-    : replicas( *this )
-    , ps( ps )
+      : replicas( *this ), ps( ps )
   {
     static_assert( is_network_type_v<Ntk>, "Ntk is not a network type" );
     assert( ps.fanout_limit > 0u );
   }
 
-  uint32_t create_po( signal const& f, std::string const& name = std::string() )
+  uint32_t create_po( signal const& f )
   {
     if ( Ntk::is_maj( Ntk::get_node( f ) ) && Ntk::fanout_size( Ntk::get_node( f ) ) + 1 > ps.fanout_limit )
     {
-      return Ntk::create_po( replicate_node( f ), name );
+      return Ntk::create_po( replicate_node( f ) );
     }
     else
     {
-      return Ntk::create_po( f, name );
+      return Ntk::create_po( f );
     }
   }
 
   signal create_maj( signal const& a, signal const& b, signal const& c )
   {
-    std::array<signal,3u> fanins;
+    std::array<signal, 3u> fanins;
     fanins[0u] = ( Ntk::is_maj( Ntk::get_node( a ) ) && Ntk::fanout_size( Ntk::get_node( a ) ) > ps.fanout_limit - 1 ) ? replicate_node( a ) : a;
     fanins[1u] = ( Ntk::is_maj( Ntk::get_node( b ) ) && Ntk::fanout_size( Ntk::get_node( b ) ) > ps.fanout_limit - 1 ) ? replicate_node( b ) : b;
     fanins[2u] = ( Ntk::is_maj( Ntk::get_node( c ) ) && Ntk::fanout_size( Ntk::get_node( c ) ) > ps.fanout_limit - 1 ) ? replicate_node( c ) : c;
@@ -121,7 +121,7 @@ public:
 
   signal create_ite( signal cond, signal f_then, signal f_else )
   {
-    bool f_compl{false};
+    bool f_compl{ false };
     if ( f_then.index < f_else.index )
     {
       std::swap( f_then, f_else );
@@ -188,10 +188,10 @@ public:
       }
     }
 
-    std::array<signal,3u> fanins;
-    Ntk::foreach_fanin( n, [&]( signal const& f, auto index ){
-        fanins[index] = ( Ntk::is_maj( Ntk::get_node( f ) ) && Ntk::fanout_size( Ntk::get_node( f ) ) > ps.fanout_limit - 1u ) ? replicate_node( f ) : f;
-      });
+    std::array<signal, 3u> fanins;
+    Ntk::foreach_fanin( n, [&]( signal const& f, auto index ) {
+      fanins[index] = ( Ntk::is_maj( Ntk::get_node( f ) ) && Ntk::fanout_size( Ntk::get_node( f ) ) > ps.fanout_limit - 1u ) ? replicate_node( f ) : f;
+    } );
 
     auto const new_signal = create_maj_overwrite_strash( fanins[0u], fanins[1u], fanins[2u] );
     replicas[n] = Ntk::get_node( new_signal );
@@ -278,14 +278,14 @@ protected:
 
     for ( auto const& fn : Ntk::_events->on_add )
     {
-      fn( index );
+      ( *fn )( index );
     }
 
-    return {index, node_complement};
+    return { index, node_complement };
   }
 
 protected:
-  uint32_t count_hash_overwrites{0};
+  uint32_t count_hash_overwrites{ 0 };
   unordered_node_map<node, Ntk> replicas;
   fanout_limit_view_params const ps;
 };

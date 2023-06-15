@@ -25,400 +25,750 @@ GRLIB/gaisler/misc/rstgen.vhd \
 GRLIB/gaisler/pci/pci.vhd \
 GRLIB/gaisler/pci/pci_target.vhd \
 GRLIB/gaisler/pci/pcipads.vhd\
-mockturtle/experiments/experiments.hpp\
-mockturtle/include/mockturtle/algorithms/aig_resub.hpp\
-mockturtle/include/mockturtle/algorithms/akers_synthesis.hpp\
-mockturtle/include/mockturtle/algorithms/bi_decomposition.hpp\
-mockturtle/include/mockturtle/algorithms/cell_window.hpp\
-mockturtle/include/mockturtle/algorithms/cleanup.hpp\
-mockturtle/include/mockturtle/algorithms/cnf.hpp\
-mockturtle/include/mockturtle/algorithms/collapse_mapped.hpp\
-mockturtle/include/mockturtle/algorithms/cut_enumeration/cnf_cut.hpp\
-mockturtle/include/mockturtle/algorithms/cut_enumeration/gia_cut.hpp\
-mockturtle/include/mockturtle/algorithms/cut_enumeration.hpp\
-mockturtle/include/mockturtle/algorithms/cut_enumeration/mf_cut.hpp\
-mockturtle/include/mockturtle/algorithms/cut_enumeration/spectr_cut.hpp\
-mockturtle/include/mockturtle/algorithms/cut_rewriting.hpp\
-mockturtle/include/mockturtle/algorithms/detail/mffc_utils.hpp\
-mockturtle/include/mockturtle/algorithms/dont_cares.hpp\
-mockturtle/include/mockturtle/algorithms/dsd_decomposition.hpp\
-mockturtle/include/mockturtle/algorithms/equivalence_checking.hpp\
-mockturtle/include/mockturtle/algorithms/gates_to_nodes.hpp\
-mockturtle/include/mockturtle/algorithms/lut_mapping.hpp\
-mockturtle/include/mockturtle/algorithms/mig_algebraic_rewriting.hpp\
-mockturtle/include/mockturtle/algorithms/mig_resub.hpp\
-mockturtle/include/mockturtle/algorithms/miter.hpp\
-mockturtle/include/mockturtle/algorithms/node_resynthesis/akers.hpp\
-mockturtle/include/mockturtle/algorithms/node_resynthesis/bidecomposition.hpp\
-mockturtle/include/mockturtle/algorithms/node_resynthesis/direct.hpp\
-mockturtle/include/mockturtle/algorithms/node_resynthesis/dsd.hpp\
-mockturtle/include/mockturtle/algorithms/node_resynthesis/exact.hpp\
-mockturtle/include/mockturtle/algorithms/node_resynthesis.hpp\
-mockturtle/include/mockturtle/algorithms/node_resynthesis/mig_npn.hpp\
-mockturtle/include/mockturtle/algorithms/node_resynthesis/shannon.hpp\
-mockturtle/include/mockturtle/algorithms/node_resynthesis/xag_minmc.hpp\
-mockturtle/include/mockturtle/algorithms/node_resynthesis/xag_npn.hpp\
-mockturtle/include/mockturtle/algorithms/node_resynthesis/xmg_npn.hpp\
-mockturtle/include/mockturtle/algorithms/reconv_cut.hpp\
-mockturtle/include/mockturtle/algorithms/refactoring.hpp\
-mockturtle/include/mockturtle/algorithms/resubstitution.hpp\
-mockturtle/include/mockturtle/algorithms/satlut_mapping.hpp\
-mockturtle/include/mockturtle/algorithms/simulation.hpp\
-mockturtle/include/mockturtle/algorithms/xag_optimization.hpp\
-mockturtle/include/mockturtle/algorithms/xmg_algebraic_rewriting.hpp\
-mockturtle/include/mockturtle/generators/arithmetic.hpp\
-mockturtle/include/mockturtle/generators/control.hpp\
-mockturtle/include/mockturtle/generators/majority.hpp\
-mockturtle/include/mockturtle/generators/modular_arithmetic.hpp\
-mockturtle/include/mockturtle/generators/random_logic_generator.hpp\
-mockturtle/include/mockturtle/generators/sorting.hpp\
-mockturtle/include/mockturtle/interface.hpp\
-mockturtle/include/mockturtle/io/aiger_reader.hpp\
-mockturtle/include/mockturtle/io/bench_reader.hpp\
-mockturtle/include/mockturtle/io/blif_reader.hpp\
-mockturtle/include/mockturtle/io/pla_reader.hpp\
-mockturtle/include/mockturtle/io/verilog_reader.hpp\
-mockturtle/include/mockturtle/io/write_bench.hpp\
-mockturtle/include/mockturtle/io/write_blif.hpp\
-mockturtle/include/mockturtle/io/write_dimacs.hpp\
-mockturtle/include/mockturtle/io/write_dot.hpp\
-mockturtle/include/mockturtle/io/write_verilog.hpp\
-mockturtle/include/mockturtle/mockturtle.hpp\
-mockturtle/include/mockturtle/networks/aig.hpp\
-mockturtle/include/mockturtle/networks/detail/foreach.hpp\
-mockturtle/include/mockturtle/networks/events.hpp\
-mockturtle/include/mockturtle/networks/klut.hpp\
-mockturtle/include/mockturtle/networks/mig.hpp\
-mockturtle/include/mockturtle/networks/storage.hpp\
-mockturtle/include/mockturtle/networks/xag.hpp\
-mockturtle/include/mockturtle/networks/xmg.hpp\
-mockturtle/include/mockturtle/properties/migcost.hpp\
-mockturtle/include/mockturtle/traits.hpp\
-mockturtle/include/mockturtle/utils/algorithm.hpp\
-mockturtle/include/mockturtle/utils/cuts.hpp\
-mockturtle/include/mockturtle/utils/mixed_radix.hpp\
-mockturtle/include/mockturtle/utils/node_map.hpp\
-mockturtle/include/mockturtle/utils/progress_bar.hpp\
-mockturtle/include/mockturtle/utils/stopwatch.hpp\
-mockturtle/include/mockturtle/utils/string_utils.hpp\
-mockturtle/include/mockturtle/utils/truth_table_cache.hpp\
-mockturtle/include/mockturtle/views/cut_view.hpp\
-mockturtle/include/mockturtle/views/depth_view.hpp\
-mockturtle/include/mockturtle/views/fanout_view.hpp\
-mockturtle/include/mockturtle/views/immutable_view.hpp\
-mockturtle/include/mockturtle/views/mapping_view.hpp\
-mockturtle/include/mockturtle/views/mffc_view.hpp\
-mockturtle/include/mockturtle/views/names_view.hpp\
-mockturtle/include/mockturtle/views/topo_view.hpp\
-mockturtle/include/mockturtle/views/window_view.hpp\
-mockturtle/include/mockturtle/algorithms/balancing.hpp\
-mockturtle/include/mockturtle/algorithms/balancing/sop_balancing.hpp\
-mockturtle/include/mockturtle/algorithms/circuit_validator.hpp\
-mockturtle/include/mockturtle/algorithms/decomposition.hpp\
-mockturtle/include/mockturtle/algorithms/detail/database_generator.hpp\
-mockturtle/include/mockturtle/algorithms/detail/minmc_xags.hpp\
-mockturtle/include/mockturtle/algorithms/equivalence_classes.hpp\
-mockturtle/include/mockturtle/algorithms/exact_mc_synthesis.hpp\
-mockturtle/include/mockturtle/algorithms/exorcism.hpp\
-mockturtle/include/mockturtle/algorithms/node_resynthesis/cached.hpp\
-mockturtle/include/mockturtle/algorithms/node_resynthesis/composed.hpp\
-mockturtle/include/mockturtle/algorithms/node_resynthesis/davio.hpp\
-mockturtle/include/mockturtle/algorithms/node_resynthesis/null.hpp\
-mockturtle/include/mockturtle/algorithms/node_resynthesis/traits.hpp\
-mockturtle/include/mockturtle/algorithms/node_resynthesis/xag_minmc2.hpp\
-mockturtle/include/mockturtle/algorithms/node_resynthesis/xmg3_npn.hpp\
-mockturtle/include/mockturtle/algorithms/xag_resub_withDC.hpp\
-mockturtle/include/mockturtle/algorithms/xmg_optimization.hpp\
-mockturtle/include/mockturtle/algorithms/xmg_resub.hpp\
-mockturtle/include/mockturtle/generators/self_dualize.hpp\
-mockturtle/include/mockturtle/io/bristol_reader.hpp\
-mockturtle/include/mockturtle/networks/abstract_xag.hpp\
-mockturtle/include/mockturtle/properties/xmgcost.hpp\
-mockturtle/include/mockturtle/utils/cost_functions.hpp\
-mockturtle/include/mockturtle/utils/include/percy.hpp\
-mockturtle/include/mockturtle/utils/json_utils.hpp\
-mockturtle/include/mockturtle/utils/network_cache.hpp\
-mockturtle/include/mockturtle/views/cnf_view.hpp\
-mockturtle/include/mockturtle/algorithms/balancing/esop_balancing.hpp\
-mockturtle/include/mockturtle/algorithms/balancing/utils.hpp\
-mockturtle/include/mockturtle/algorithms/detail/resub_utils.hpp\
-mockturtle/include/mockturtle/algorithms/functional_reduction.hpp\
-mockturtle/include/mockturtle/algorithms/network_fuzz_tester.hpp\
-mockturtle/include/mockturtle/algorithms/pattern_generation.hpp\
-mockturtle/include/mockturtle/algorithms/sim_resub.hpp\
-mockturtle/include/mockturtle/algorithms/window_rewriting.hpp\
-mockturtle/include/mockturtle/io/dimacs_reader.hpp\
-mockturtle/include/mockturtle/io/genlib_reader.hpp\
-mockturtle/include/mockturtle/io/serialize.hpp\
-mockturtle/include/mockturtle/io/write_aiger.hpp\
-mockturtle/include/mockturtle/io/write_patterns.hpp\
-mockturtle/include/mockturtle/utils/abc_resub.hpp\
-mockturtle/include/mockturtle/utils/debugging_utils.hpp\
-mockturtle/include/mockturtle/utils/index_list.hpp\
-mockturtle/include/mockturtle/utils/truth_table_utils.hpp\
-mockturtle/include/mockturtle/utils/window_utils.hpp\
-mockturtle/include/mockturtle/views/aqfp_view.hpp\
-mockturtle/include/mockturtle/views/color_view.hpp\
-mockturtle/include/mockturtle/views/fanout_limit_view.hpp\
-mockturtle/include/mockturtle/algorithms/aqfp/mig_algebraic_rewriting_splitters.hpp\
-mockturtle/include/mockturtle/algorithms/aqfp/mig_resub_splitters.hpp\
-mockturtle/include/mockturtle/algorithms/resyn_engines/mig_resyn_engines.hpp\
-mockturtle/include/mockturtle/algorithms/resyn_engines/xag_resyn_engines.hpp\
-mockturtle/lib/abcresub/abcresub/abc_global.hpp\
-mockturtle/lib/abcresub/abcresub/abcresub2.hpp\
-mockturtle/lib/abcresub/abcresub/abcresub.hpp\
-mockturtle/lib/abcresub/abcresub/tt.hpp\
-mockturtle/lib/abcresub/abcresub/vec_int.hpp\
-mockturtle/lib/abcresub/abcresub/vec_ptr.hpp\
-mockturtle/lib/abcresub/abcresub/vec_wec.hpp\
-mockturtle/lib/abcresub/abcresub/vec_wrd.hpp\
-mockturtle/lib/abcsat/abc/abc_global.h\
-mockturtle/lib/abcsat/abc/AbcGlucose.h\
-mockturtle/lib/abcsat/abc/abc_namespaces.h\
-mockturtle/lib/abcsat/abc/Alg.h\
-mockturtle/lib/abcsat/abc/Alloc.h\
-mockturtle/lib/abcsat/abc/BoundedQueue.h\
-mockturtle/lib/abcsat/abc/Constants.h\
-mockturtle/lib/abcsat/abc/Dimacs.h\
-mockturtle/lib/abcsat/abc/Heap.h\
-mockturtle/lib/abcsat/abc/IntTypes.h\
-mockturtle/lib/abcsat/abc/Map.h\
-mockturtle/lib/abcsat/abc/pstdint.h\
-mockturtle/lib/abcsat/abc/Queue.h\
-mockturtle/lib/abcsat/abc/satClause.h\
-mockturtle/lib/abcsat/abc/satSolver.h\
-mockturtle/lib/abcsat/abc/satStore.h\
-mockturtle/lib/abcsat/abc/satVec.h\
-mockturtle/lib/abcsat/abc/SimpSolver.h\
-mockturtle/lib/abcsat/abc/Solver.h\
-mockturtle/lib/abcsat/abc/SolverTypes.h\
-mockturtle/lib/abcsat/abc/Sort.h\
-mockturtle/lib/abcsat/abc/system.h\
-mockturtle/lib/abcsat/abc/utilDouble.h\
-mockturtle/lib/abcsat/abc/Vec.h\
-mockturtle/lib/abcsat/abc/vecInt.h\
-mockturtle/lib/abcsat/abc/vecWec.h\
-mockturtle/lib/abcsat/abc/XAlloc.h\
-mockturtle/lib/fmt/fmt/chrono.h\
-mockturtle/lib/fmt/fmt/color.h\
-mockturtle/lib/fmt/fmt/core.h\
-mockturtle/lib/fmt/fmt/format.h\
-mockturtle/lib/fmt/fmt/format-inl.h\
-mockturtle/lib/fmt/fmt/locale.h\
-mockturtle/lib/fmt/fmt/ostream.h\
-mockturtle/lib/fmt/fmt/posix.h\
-mockturtle/lib/fmt/fmt/printf.h\
-mockturtle/lib/fmt/fmt/ranges.h\
-mockturtle/lib/json/nlohmann/json.hpp\
-mockturtle/lib/kitty/kitty/affine.hpp\
-mockturtle/lib/kitty/kitty/algorithm.hpp\
-mockturtle/lib/kitty/kitty/bit_operations.hpp\
-mockturtle/lib/kitty/kitty/cnf.hpp\
-mockturtle/lib/kitty/kitty/constructors.hpp\
-mockturtle/lib/kitty/kitty/cube.hpp\
-mockturtle/lib/kitty/kitty/decomposition.hpp\
-mockturtle/lib/kitty/kitty/detail/constants.hpp\
-mockturtle/lib/kitty/kitty/detail/linear_constants.hpp\
-mockturtle/lib/kitty/kitty/detail/mscfix.hpp\
-mockturtle/lib/kitty/kitty/detail/shift.hpp\
-mockturtle/lib/kitty/kitty/detail/utils.hpp\
-mockturtle/lib/kitty/kitty/dynamic_truth_table.hpp\
-mockturtle/lib/kitty/kitty/enumeration.hpp\
-mockturtle/lib/kitty/kitty/esop.hpp\
-mockturtle/lib/kitty/kitty/hash.hpp\
-mockturtle/lib/kitty/kitty/implicant.hpp\
-mockturtle/lib/kitty/kitty/isop.hpp\
-mockturtle/lib/kitty/kitty/kitty.hpp\
-mockturtle/lib/kitty/kitty/npn.hpp\
-mockturtle/lib/kitty/kitty/operations.hpp\
-mockturtle/lib/kitty/kitty/operators.hpp\
-mockturtle/lib/kitty/kitty/permutation.hpp\
-mockturtle/lib/kitty/kitty/print.hpp\
-mockturtle/lib/kitty/kitty/properties.hpp\
-mockturtle/lib/kitty/kitty/spectral.hpp\
-mockturtle/lib/kitty/kitty/static_truth_table.hpp\
-mockturtle/lib/kitty/kitty/traits.hpp\
-mockturtle/lib/lorina/lorina/aiger.hpp\
-mockturtle/lib/lorina/lorina/bench.hpp\
-mockturtle/lib/lorina/lorina/blif.hpp\
-mockturtle/lib/lorina/lorina/common.hpp\
-mockturtle/lib/lorina/lorina/detail/tokenizer.hpp\
-mockturtle/lib/lorina/lorina/detail/utils.hpp\
-mockturtle/lib/lorina/lorina/diagnostics.hpp\
-mockturtle/lib/lorina/lorina/lorina.hpp\
-mockturtle/lib/lorina/lorina/pla.hpp\
-mockturtle/lib/lorina/lorina/verilog.hpp\
-mockturtle/lib/lorina/lorina/verilog_regex.hpp\
-mockturtle/lib/percy/percy/chain.hpp\
-mockturtle/lib/percy/percy/cnf.hpp\
-mockturtle/lib/percy/percy/concurrentqueue.h\
-mockturtle/lib/percy/percy/dag_generation.hpp\
-mockturtle/lib/percy/percy/dag.hpp\
-mockturtle/lib/percy/percy/encoders/aig_encoder.hpp\
-mockturtle/lib/percy/percy/encoders/ditt_encoder.hpp\
-mockturtle/lib/percy/percy/encoders/ditt_maj_encoder.hpp\
-mockturtle/lib/percy/percy/encoders/encoder.hpp\
-mockturtle/lib/percy/percy/encoders.hpp\
-mockturtle/lib/percy/percy/encoders/maj_encoder.hpp\
-mockturtle/lib/percy/percy/encoders/mig_encoder.hpp\
-mockturtle/lib/percy/percy/encoders/msv_encoder.hpp\
-mockturtle/lib/percy/percy/encoders/partial_dag_encoder.hpp\
-mockturtle/lib/percy/percy/encoders/ssv_dag_encoder.hpp\
-mockturtle/lib/percy/percy/encoders/ssv_encoder.hpp\
-mockturtle/lib/percy/percy/encoders/ssv_fence2_encoder.hpp\
-mockturtle/lib/percy/percy/encoders/ssv_fence_encoder.hpp\
-mockturtle/lib/percy/percy/fence.hpp\
-mockturtle/lib/percy/percy/io.hpp\
-mockturtle/lib/percy/percy/mig.hpp\
-mockturtle/lib/percy/percy/misc.hpp\
-mockturtle/lib/percy/percy/partial_dag.hpp\
-mockturtle/lib/percy/percy/percy.hpp\
-mockturtle/lib/percy/percy/sat_circuits.hpp\
-mockturtle/lib/percy/percy/solvers/bmcg_sat.hpp\
-mockturtle/lib/percy/percy/solvers/bsat2.hpp\
-mockturtle/lib/percy/percy/solvers/cmsat.hpp\
-mockturtle/lib/percy/percy/solvers/glucose.hpp\
-mockturtle/lib/percy/percy/solvers.hpp\
-mockturtle/lib/percy/percy/solvers/satoko.hpp\
-mockturtle/lib/percy/percy/solvers/solver_wrapper.hpp\
-mockturtle/lib/percy/percy/spec.hpp\
-mockturtle/lib/percy/percy/tt_utils.hpp\
-mockturtle/lib/rang/rang/rang.hpp\
-mockturtle/test/catch2/catch.hpp\
-mockturtle/test/test_networks.hpp\
-mockturtle/docs/algorithms/extract_linear.rst\
-mockturtle/docs/algorithms/linear_resynthesis.rst\
-mockturtle/docs/algorithms/balancing.rst\
-mockturtle/docs/algorithms/circuit_validator.rst\
-mockturtle/docs/algorithms/decomposition.rst\
-mockturtle/docs/algorithms/equivalence_classes.rst\
-mockturtle/docs/algorithms/xmg_optimization.rst\
-mockturtle/docs/io/other.rst\
-mockturtle/docs/algorithms/functional_reduction.rst\
-mockturtle/docs/algorithms/pattern_generation.rst\
-mockturtle/docs/algorithms/resyn_engines.rst\
-mockturtle/docs/algorithms/xmg_optimization.rst\
-mockturtle/include/mockturtle/algorithms/extract_linear.hpp\
-mockturtle/include/mockturtle/algorithms/linear_resynthesis.hpp\
-mockturtle/include/mockturtle/generators/legacy.hpp\
-mockturtle/include/mockturtle/generators/majority_n.hpp\
-mockturtle/include/mockturtle/properties/mccost.hpp\
-mockturtle/test/algorithms/extract_linear.cpp\
-mockturtle/test/algorithms/linear_resynthesis.cpp\
-mockturtle/test/generators/majority_n.cpp\
-mockturtle/test/properties/mccost.cpp\
-mockturtle/test/views/names_view.cpp\
-mockturtle/lib/abcesop/exor.cpp\
-mockturtle/lib/abcesop/exorCubes.cpp\
-mockturtle/lib/abcesop/eabc/abc_global.h\
-mockturtle/lib/abcesop/eabc/exor.h\
-mockturtle/lib/abcesop/eabc/vecWec.h\
-mockturtle/lib/abcesop/eabc/vecInt.h\
-mockturtle/lib/abcesop/eabc/vecPtr.h\
-mockturtle/lib/abcesop/exorBits.cpp\
-mockturtle/lib/abcesop/exorUtil.cpp\
-mockturtle/lib/abcesop/exorLink.cpp\
-mockturtle/lib/abcesop/exorList.cpp\
-mockturtle/lib/bill/bill/bill.hpp\
-mockturtle/lib/bill/bill/sat/incremental_totalizer_cardinality.hpp\
-mockturtle/lib/bill/bill/sat/interface/maple.hpp\
-mockturtle/lib/bill/bill/sat/interface/abc_bmcg.hpp\
-mockturtle/lib/bill/bill/sat/interface/abc_bsat2.hpp\
-mockturtle/lib/bill/bill/sat/interface/glucose.hpp\
-mockturtle/lib/bill/bill/sat/interface/types.hpp\
-mockturtle/lib/bill/bill/sat/interface/z3.hpp\
-mockturtle/lib/bill/bill/sat/interface/common.hpp\
-mockturtle/lib/bill/bill/sat/interface/ghack.hpp\
-mockturtle/lib/bill/bill/sat/tseytin.hpp\
-mockturtle/lib/bill/bill/sat/xor_clauses.hpp\
-mockturtle/lib/bill/bill/sat/solver/maple.hpp\
-mockturtle/lib/bill/bill/sat/solver/glucose.hpp\
-mockturtle/lib/bill/bill/sat/solver/abc.hpp\
-mockturtle/lib/bill/bill/sat/solver/abc/XAlloc.h\
-mockturtle/lib/bill/bill/sat/solver/abc/abc_global.h\
-mockturtle/lib/bill/bill/sat/solver/abc/Solver.h\
-mockturtle/lib/bill/bill/sat/solver/abc/pstdint.h\
-mockturtle/lib/bill/bill/sat/solver/abc/satVec.h\
-mockturtle/lib/bill/bill/sat/solver/abc/IntTypes.h\
-mockturtle/lib/bill/bill/sat/solver/abc/Heap.h\
-mockturtle/lib/bill/bill/sat/solver/abc/vecWec.h\
-mockturtle/lib/bill/bill/sat/solver/abc/SimpSolver.h\
-mockturtle/lib/bill/bill/sat/solver/abc/Alg.h\
-mockturtle/lib/bill/bill/sat/solver/abc/satSolver.h\
-mockturtle/lib/bill/bill/sat/solver/abc/Vec.h\
-mockturtle/lib/bill/bill/sat/solver/abc/utilDouble.h\
-mockturtle/lib/bill/bill/sat/solver/abc/system.h\
-mockturtle/lib/bill/bill/sat/solver/abc/AbcGlucose.h\
-mockturtle/lib/bill/bill/sat/solver/abc/Dimacs.h\
-mockturtle/lib/bill/bill/sat/solver/abc/vecInt.h\
-mockturtle/lib/bill/bill/sat/solver/abc/Alloc.h\
-mockturtle/lib/bill/bill/sat/solver/abc/BoundedQueue.h\
-mockturtle/lib/bill/bill/sat/solver/abc/Constants.h\
-mockturtle/lib/bill/bill/sat/solver/abc/abc_namespaces.h\
-mockturtle/lib/bill/bill/sat/solver/abc/satStore.h\
-mockturtle/lib/bill/bill/sat/solver/abc/SolverTypes.h\
-mockturtle/lib/bill/bill/sat/solver/abc/satClause.h\
-mockturtle/lib/bill/bill/sat/solver/abc/Sort.h\
-mockturtle/lib/bill/bill/sat/solver/abc/Map.h\
-mockturtle/lib/bill/bill/sat/solver/abc/Queue.h\
-mockturtle/lib/bill/bill/sat/solver/ghack.hpp\
-mockturtle/lib/bill/bill/sat/solver.hpp\
-mockturtle/lib/bill/bill/sat/unsat_cores.hpp\
-mockturtle/lib/bill/bill/sat/cardinality.hpp\
-mockturtle/lib/bill/bill/dd/zdd.hpp\
-mockturtle/lib/bill/bill/dd/cudd_zdd.hpp\
-mockturtle/lib/bill/bill/utils/platforms.hpp\
-mockturtle/lib/bill/bill/utils/hash.hpp\
-mockturtle/lib/fmt/fmt/compile.h\
-mockturtle/lib/fmt/fmt/os.cc\
-mockturtle/lib/fmt/fmt/os.h\
-mockturtle/lib/kitty/kitty/partial_truth_table.hpp\
-mockturtle/lib/kitty/kitty/spp.hpp\
-mockturtle/lib/lorina/lorina/bristol.hpp\
-mockturtle/lib/lorina/lorina/dimacs.hpp\
-mockturtle/lib/lorina/lorina/genlib.hpp\
-mockturtle/lib/percy/percy/generators/partial_dag_generator.hpp\
-mockturtle/lib/percy/percy/generators/partial_dag3_generator.hpp\
-mockturtle/lib/percy/percy/majority_chain.hpp\
-mockturtle/lib/percy/percy/printer.hpp\
-mockturtle/lib/matplot/matplot/matplotlibcpp.h\
-mockturtle/lib/parallel_hashmap/parallel_hashmap/btree.h\
-mockturtle/lib/parallel_hashmap/parallel_hashmap/conanfile.py\
-mockturtle/lib/parallel_hashmap/parallel_hashmap/meminfo.h\
-mockturtle/lib/parallel_hashmap/parallel_hashmap/phmap_base.h\
-mockturtle/lib/parallel_hashmap/parallel_hashmap/phmap_bits.h\
-mockturtle/lib/parallel_hashmap/parallel_hashmap/phmap_config.h\
-mockturtle/lib/parallel_hashmap/parallel_hashmap/phmap_dump.h\
-mockturtle/lib/parallel_hashmap/parallel_hashmap/phmap_fwd_decl.h\
-mockturtle/lib/parallel_hashmap/parallel_hashmap/phmap.h\
-mockturtle/lib/parallel_hashmap/parallel_hashmap/phmap_utils.h\
-mockturtle/test/algorithms/balancing.cpp\
-mockturtle/test/algorithms/circuit_validator.cpp\
-mockturtle/test/algorithms/decomposition.cpp\
-mockturtle/test/algorithms/equivalence_classes.cpp\
-mockturtle/test/algorithms/exact_mc_synthesis.cpp\
-mockturtle/test/algorithms/exorcism.cpp\
-mockturtle/test/algorithms/node_resynthesis/cached.cpp\
-mockturtle/test/algorithms/xag_optimization.cpp\
-mockturtle/test/generators/control.cpp\
-mockturtle/test/generators/self_dualize.cpp\
-mockturtle/test/io/blif_reader.cpp\
-mockturtle/test/networks/abstract_xag.cpp\
-mockturtle/test/views/cnf_view.cpp\
-mockturtle/test/algorithms/functional_reduction.cpp\
-mockturtle/test/algorithms/mig_resyn_engines.cpp\
-mockturtle/test/algorithms/minmc_xags.cpp\
-mockturtle/test/algorithms/pattern_generation.cpp\
-mockturtle/test/algorithms/xag_resyn_engines.cpp\
-mockturtle/test/io/dimacs_reader.cpp\
-mockturtle/test/io/genlib_reader.cpp\
-mockturtle/test/io/serialize.cpp\
-mockturtle/test/io/write_aiger.cpp\
-mockturtle/test/io/write_patterns.cpp\
-mockturtle/test/utils/index_list.cpp\
-mockturtle/test/utils/window_utils.cpp\
-mockturtle/test/views/aqfp_view.cpp\
-mockturtle/test/views/color_view.cpp\
+mockturtle/LICENSE \
+mockturtle/lib/bill/bill/bill.hpp \
+mockturtle/lib/bill/bill/sat/solver/ghack.hpp \
+mockturtle/lib/bill/bill/sat/solver/maple.hpp \
+mockturtle/lib/bill/bill/sat/solver/glucose.hpp \
+mockturtle/lib/bill/bill/sat/solver/abc/Dimacs.h \
+mockturtle/lib/bill/bill/sat/solver/abc/satStore.h \
+mockturtle/lib/bill/bill/sat/solver/abc/abc_namespaces.h \
+mockturtle/lib/bill/bill/sat/solver/abc/utilDouble.h \
+mockturtle/lib/bill/bill/sat/solver/abc/Queue.h \
+mockturtle/lib/bill/bill/sat/solver/abc/vecInt.h \
+mockturtle/lib/bill/bill/sat/solver/abc/abc_global.h \
+mockturtle/lib/bill/bill/sat/solver/abc/Vec.h \
+mockturtle/lib/bill/bill/sat/solver/abc/Alg.h \
+mockturtle/lib/bill/bill/sat/solver/abc/Constants.h \
+mockturtle/lib/bill/bill/sat/solver/abc/Sort.h \
+mockturtle/lib/bill/bill/sat/solver/abc/Heap.h \
+mockturtle/lib/bill/bill/sat/solver/abc/BoundedQueue.h \
+mockturtle/lib/bill/bill/sat/solver/abc/SimpSolver.h \
+mockturtle/lib/bill/bill/sat/solver/abc/Solver.h \
+mockturtle/lib/bill/bill/sat/solver/abc/pstdint.h \
+mockturtle/lib/bill/bill/sat/solver/abc/satVec.h \
+mockturtle/lib/bill/bill/sat/solver/abc/system.h \
+mockturtle/lib/bill/bill/sat/solver/abc/AbcGlucose.h \
+mockturtle/lib/bill/bill/sat/solver/abc/XAlloc.h \
+mockturtle/lib/bill/bill/sat/solver/abc/Map.h \
+mockturtle/lib/bill/bill/sat/solver/abc/SolverTypes.h \
+mockturtle/lib/bill/bill/sat/solver/abc/vecWec.h \
+mockturtle/lib/bill/bill/sat/solver/abc/satSolver.h \
+mockturtle/lib/bill/bill/sat/solver/abc/IntTypes.h \
+mockturtle/lib/bill/bill/sat/solver/abc/satClause.h \
+mockturtle/lib/bill/bill/sat/solver/abc/Alloc.h \
+mockturtle/lib/bill/bill/sat/solver/abc.hpp \
+mockturtle/lib/bill/bill/sat/cardinality.hpp \
+mockturtle/lib/bill/bill/sat/interface/abc_bmcg.hpp \
+mockturtle/lib/bill/bill/sat/interface/abc_bsat2.hpp \
+mockturtle/lib/bill/bill/sat/interface/ghack.hpp \
+mockturtle/lib/bill/bill/sat/interface/types.hpp \
+mockturtle/lib/bill/bill/sat/interface/common.hpp \
+mockturtle/lib/bill/bill/sat/interface/maple.hpp \
+mockturtle/lib/bill/bill/sat/interface/glucose.hpp \
+mockturtle/lib/bill/bill/sat/interface/z3.hpp \
+mockturtle/lib/bill/bill/sat/incremental_totalizer_cardinality.hpp \
+mockturtle/lib/bill/bill/sat/solver.hpp \
+mockturtle/lib/bill/bill/sat/xor_clauses.hpp \
+mockturtle/lib/bill/bill/sat/tseytin.hpp \
+mockturtle/lib/bill/bill/sat/unsat_cores.hpp \
+mockturtle/lib/bill/bill/dd/cudd_zdd.hpp \
+mockturtle/lib/bill/bill/dd/zdd.hpp \
+mockturtle/lib/bill/bill/utils/platforms.hpp \
+mockturtle/lib/bill/bill/utils/hash.hpp \
+mockturtle/lib/parallel_hashmap/parallel_hashmap \
+mockturtle/lib/parallel_hashmap/parallel_hashmap/phmap_fwd_decl.h \
+mockturtle/lib/parallel_hashmap/parallel_hashmap/conanfile.py \
+mockturtle/lib/parallel_hashmap/parallel_hashmap/meminfo.h \
+mockturtle/lib/parallel_hashmap/parallel_hashmap/phmap_config.h \
+mockturtle/lib/parallel_hashmap/parallel_hashmap/btree.h \
+mockturtle/lib/parallel_hashmap/parallel_hashmap/phmap_bits.h \
+mockturtle/lib/parallel_hashmap/parallel_hashmap/phmap_dump.h \
+mockturtle/lib/parallel_hashmap/parallel_hashmap/phmap.h \
+mockturtle/lib/parallel_hashmap/parallel_hashmap/phmap_base.h \
+mockturtle/lib/parallel_hashmap/parallel_hashmap/phmap_utils.h \
+mockturtle/lib/lorina/lorina/verilog.hpp \
+mockturtle/lib/lorina/lorina/lorina.hpp \
+mockturtle/lib/lorina/lorina/super.hpp \
+mockturtle/lib/lorina/lorina/detail/call_in_topological_order.hpp \
+mockturtle/lib/lorina/lorina/detail/tokenizer.hpp \
+mockturtle/lib/lorina/lorina/detail/utils.hpp \
+mockturtle/lib/lorina/lorina/bristol.hpp \
+mockturtle/lib/lorina/lorina/blif.hpp \
+mockturtle/lib/lorina/lorina/verilog_regex.hpp \
+mockturtle/lib/lorina/lorina/pla.hpp \
+mockturtle/lib/lorina/lorina/diagnostics.hpp \
+mockturtle/lib/lorina/lorina/common.hpp \
+mockturtle/lib/lorina/lorina/diagnostics.inc \
+mockturtle/lib/lorina/lorina/dimacs.hpp \
+mockturtle/lib/lorina/lorina/genlib.hpp \
+mockturtle/lib/lorina/lorina/bench.hpp \
+mockturtle/lib/lorina/lorina/aiger.hpp \
+mockturtle/lib/fmt/LICENSE.rst \
+mockturtle/lib/fmt/fmt/format.h \
+mockturtle/lib/fmt/fmt/color.h \
+mockturtle/lib/fmt/fmt/printf.h \
+mockturtle/lib/fmt/fmt/ranges.h \
+mockturtle/lib/fmt/fmt/compile.h \
+mockturtle/lib/fmt/fmt/chrono.h \
+mockturtle/lib/fmt/fmt/format-inl.h \
+mockturtle/lib/fmt/fmt/locale.h \
+mockturtle/lib/fmt/fmt/core.h \
+mockturtle/lib/fmt/fmt/os.h \
+mockturtle/lib/fmt/fmt/ostream.h \
+mockturtle/lib/fmt/fmt/posix.h \
+mockturtle/lib/fmt/fmt/format.cc \
+mockturtle/lib/fmt/fmt/os.cc \
+mockturtle/lib/matplot/matplot \
+mockturtle/lib/matplot/matplot/matplotlibcpp.h \
+mockturtle/lib/abcresub/abcresub/tt.hpp \
+mockturtle/lib/abcresub/abcresub/abcresub.hpp \
+mockturtle/lib/abcresub/abcresub/abc_global.hpp \
+mockturtle/lib/abcresub/abcresub/vec_int.hpp \
+mockturtle/lib/abcresub/abcresub/vec_ptr.hpp \
+mockturtle/lib/abcresub/abcresub/abcresub2.hpp \
+mockturtle/lib/abcresub/abcresub/vec_wrd.hpp \
+mockturtle/lib/abcresub/abcresub/vec_wec.hpp \
+mockturtle/lib/json/nlohmann/json.hpp \
+mockturtle/lib/abcsat/satSolver.cpp \
+mockturtle/lib/abcsat/Glucose.cpp \
+mockturtle/lib/abcsat/SimpSolver.cpp \
+mockturtle/lib/abcsat/AbcGlucose.cpp \
+mockturtle/lib/abcsat/CMakeLists.txt \
+mockturtle/lib/abcsat/abc/Dimacs.h \
+mockturtle/lib/abcsat/abc/satStore.h \
+mockturtle/lib/abcsat/abc/abc_namespaces.h \
+mockturtle/lib/abcsat/abc/utilDouble.h \
+mockturtle/lib/abcsat/abc/Queue.h \
+mockturtle/lib/abcsat/abc/vecInt.h \
+mockturtle/lib/abcsat/abc/abc_global.h \
+mockturtle/lib/abcsat/abc/Vec.h \
+mockturtle/lib/abcsat/abc/Alg.h \
+mockturtle/lib/abcsat/abc/Constants.h \
+mockturtle/lib/abcsat/abc/Sort.h \
+mockturtle/lib/abcsat/abc/Heap.h \
+mockturtle/lib/abcsat/abc/BoundedQueue.h \
+mockturtle/lib/abcsat/abc/SimpSolver.h \
+mockturtle/lib/abcsat/abc/Solver.h \
+mockturtle/lib/abcsat/abc/pstdint.h \
+mockturtle/lib/abcsat/abc/satVec.h \
+mockturtle/lib/abcsat/abc/system.h \
+mockturtle/lib/abcsat/abc/AbcGlucose.h \
+mockturtle/lib/abcsat/abc/XAlloc.h \
+mockturtle/lib/abcsat/abc/Map.h \
+mockturtle/lib/abcsat/abc/SolverTypes.h \
+mockturtle/lib/abcsat/abc/vecWec.h \
+mockturtle/lib/abcsat/abc/satSolver.h \
+mockturtle/lib/abcsat/abc/IntTypes.h \
+mockturtle/lib/abcsat/abc/satClause.h \
+mockturtle/lib/abcsat/abc/Alloc.h \
+mockturtle/lib/abcsat/satStore.cpp \
+mockturtle/lib/percy/percy/sat_circuits.hpp \
+mockturtle/lib/percy/percy/misc.hpp \
+mockturtle/lib/percy/percy/chain.hpp \
+mockturtle/lib/percy/percy/fence.hpp \
+mockturtle/lib/percy/percy/encoders/mig_encoder.hpp \
+mockturtle/lib/percy/percy/encoders/ditt_encoder.hpp \
+mockturtle/lib/percy/percy/encoders/ssv_encoder.hpp \
+mockturtle/lib/percy/percy/encoders/encoder.hpp \
+mockturtle/lib/percy/percy/encoders/ditt_maj_encoder.hpp \
+mockturtle/lib/percy/percy/encoders/ssv_dag_encoder.hpp \
+mockturtle/lib/percy/percy/encoders/maj_encoder.hpp \
+mockturtle/lib/percy/percy/encoders/aig_encoder.hpp \
+mockturtle/lib/percy/percy/encoders/msv_encoder.hpp \
+mockturtle/lib/percy/percy/encoders/partial_dag_encoder.hpp \
+mockturtle/lib/percy/percy/encoders/ssv_fence_encoder.hpp \
+mockturtle/lib/percy/percy/encoders/ssv_fence2_encoder.hpp \
+mockturtle/lib/percy/percy/spec.hpp \
+mockturtle/lib/percy/percy/percy.hpp \
+mockturtle/lib/percy/percy/tt_utils.hpp \
+mockturtle/lib/percy/percy/solvers/bmcg_sat.hpp \
+mockturtle/lib/percy/percy/solvers/solver_wrapper.hpp \
+mockturtle/lib/percy/percy/solvers/satoko.hpp \
+mockturtle/lib/percy/percy/solvers/cmsat.hpp \
+mockturtle/lib/percy/percy/solvers/bsat2.hpp \
+mockturtle/lib/percy/percy/solvers/glucose.hpp \
+mockturtle/lib/percy/percy/cnf.hpp \
+mockturtle/lib/percy/percy/solvers.hpp \
+mockturtle/lib/percy/percy/mig.hpp \
+mockturtle/lib/percy/percy/encoders.hpp \
+mockturtle/lib/percy/percy/majority_chain.hpp \
+mockturtle/lib/percy/percy/printer.hpp \
+mockturtle/lib/percy/percy/generators \
+mockturtle/lib/percy/percy/generators/partial_dag_generator.hpp \
+mockturtle/lib/percy/percy/generators/partial_dag3_generator.hpp \
+mockturtle/lib/percy/percy/io.hpp \
+mockturtle/lib/percy/percy/dag_generation.hpp \
+mockturtle/lib/percy/percy/concurrentqueue.h \
+mockturtle/lib/percy/percy/partial_dag.hpp \
+mockturtle/lib/percy/percy/dag.hpp \
+mockturtle/lib/kitty/kitty/print.hpp \
+mockturtle/lib/kitty/kitty/karnaugh_map.hpp \
+mockturtle/lib/kitty/kitty/constructors.hpp \
+mockturtle/lib/kitty/kitty/spectral.hpp \
+mockturtle/lib/kitty/kitty/dynamic_truth_table.hpp \
+mockturtle/lib/kitty/kitty/isop.hpp \
+mockturtle/lib/kitty/kitty/detail/linear_constants.hpp \
+mockturtle/lib/kitty/kitty/detail/shift.hpp \
+mockturtle/lib/kitty/kitty/detail/constants.hpp \
+mockturtle/lib/kitty/kitty/detail/utils.hpp \
+mockturtle/lib/kitty/kitty/detail/mscfix.hpp \
+mockturtle/lib/kitty/kitty/npn.hpp \
+mockturtle/lib/kitty/kitty/decomposition.hpp \
+mockturtle/lib/kitty/kitty/operators.hpp \
+mockturtle/lib/kitty/kitty/enumeration.hpp \
+mockturtle/lib/kitty/kitty/algorithm.hpp \
+mockturtle/lib/kitty/kitty/static_truth_table.hpp \
+mockturtle/lib/kitty/kitty/bit_operations.hpp \
+mockturtle/lib/kitty/kitty/partial_truth_table.hpp \
+mockturtle/lib/kitty/kitty/cnf.hpp \
+mockturtle/lib/kitty/kitty/implicant.hpp \
+mockturtle/lib/kitty/kitty/spp.hpp \
+mockturtle/lib/kitty/kitty/properties.hpp \
+mockturtle/lib/kitty/kitty/cube.hpp \
+mockturtle/lib/kitty/kitty/hash.hpp \
+mockturtle/lib/kitty/kitty/permutation.hpp \
+mockturtle/lib/kitty/kitty/affine.hpp \
+mockturtle/lib/kitty/kitty/kitty.hpp \
+mockturtle/lib/kitty/kitty/operations.hpp \
+mockturtle/lib/kitty/kitty/traits.hpp \
+mockturtle/lib/kitty/kitty/ternary_truth_table.hpp \
+mockturtle/lib/kitty/kitty/quaternary_truth_table.hpp \
+mockturtle/lib/kitty/kitty/esop.hpp \
+mockturtle/lib/CMakeLists.txt \
+mockturtle/lib/abcesop/exor.cpp \
+mockturtle/lib/abcesop/exorList.cpp \
+mockturtle/lib/abcesop/exorBits.cpp \
+mockturtle/lib/abcesop/exorUtil.cpp \
+mockturtle/lib/abcesop/exorLink.cpp \
+mockturtle/lib/abcesop/CMakeLists.txt \
+mockturtle/lib/abcesop/exorCubes.cpp \
+mockturtle/lib/abcesop/eabc/vecInt.h \
+mockturtle/lib/abcesop/eabc/abc_global.h \
+mockturtle/lib/abcesop/eabc/exor.h \
+mockturtle/lib/abcesop/eabc/vecPtr.h \
+mockturtle/lib/abcesop/eabc/vecWec.h \
+mockturtle/lib/rang/rang/rang.hpp \
+mockturtle/tools/cleanup.py \
+mockturtle/_typos.toml \
+mockturtle/.readthedocs.yml \
+mockturtle/docs/Makefile \
+mockturtle/docs/getting_started.rst \
+mockturtle/docs/sequential.rst \
+mockturtle/docs/requirements.txt \
+mockturtle/docs/algorithms/buffer_insertion.rst \
+mockturtle/docs/algorithms/resyn_engines.rst \
+mockturtle/docs/algorithms/cleanup.rst \
+mockturtle/docs/algorithms/cut_rewriting.rst \
+mockturtle/docs/algorithms/balancing.rst \
+mockturtle/docs/algorithms/dsd_decomposition.rst \
+mockturtle/docs/algorithms/lut_mapping.rst \
+mockturtle/docs/algorithms/aig_balancing.rst \
+mockturtle/docs/algorithms/cover_to_graph.rst \
+mockturtle/docs/algorithms/linear_resynthesis.rst \
+mockturtle/docs/algorithms/collapse_mapped.rst \
+mockturtle/docs/algorithms/index_information.rst \
+mockturtle/docs/algorithms/gates_to_nodes.rst \
+mockturtle/docs/algorithms/cnf.rst \
+mockturtle/docs/algorithms/reconv_cut.rst \
+mockturtle/docs/algorithms/pattern_generation.rst \
+mockturtle/docs/algorithms/simulation.rst \
+mockturtle/docs/algorithms/cost_generic_resub.rst \
+mockturtle/docs/algorithms/index_validation.rst \
+mockturtle/docs/algorithms/decomposition.rst \
+mockturtle/docs/algorithms/akers_synthesis.rst \
+mockturtle/docs/algorithms/xmg_optimization.rst \
+mockturtle/docs/algorithms/aqfp_resynthesis.rst \
+mockturtle/docs/algorithms/dont_cares.rst \
+mockturtle/docs/algorithms/refactoring.rst \
+mockturtle/docs/algorithms/index_decompositions.rst \
+mockturtle/docs/algorithms/index_restructuring.rst \
+mockturtle/docs/algorithms/equivalence_checking.rst \
+mockturtle/docs/algorithms/rewrite.rst \
+mockturtle/docs/algorithms/cut_enumeration.rst \
+mockturtle/docs/algorithms/index_transformations.rst \
+mockturtle/docs/algorithms/bi_decomposition.rst \
+mockturtle/docs/algorithms/xag_optimization.rst \
+mockturtle/docs/algorithms/mapper.rst \
+mockturtle/docs/algorithms/node_resynthesis.rst \
+mockturtle/docs/algorithms/functional_reduction.rst \
+mockturtle/docs/algorithms/miter.rst \
+mockturtle/docs/algorithms/equivalence_classes.rst \
+mockturtle/docs/algorithms/extract_linear.rst \
+mockturtle/docs/algorithms/retiming.rst \
+mockturtle/docs/algorithms/resubstitution.rst \
+mockturtle/docs/algorithms/circuit_validator.rst \
+mockturtle/docs/algorithms/klut_to_graph.rst \
+mockturtle/docs/algorithms/xag_algebraic_rewriting.rst \
+mockturtle/docs/algorithms/mig_algebraic_rewriting.rst \
+mockturtle/docs/changelog.rst \
+mockturtle/docs/properties.rst \
+mockturtle/docs/index.rst \
+mockturtle/docs/io/lorina_readers.rst \
+mockturtle/docs/io/writers.rst \
+mockturtle/docs/views.rst \
+mockturtle/docs/philosophy.rst \
+mockturtle/docs/implementations.rst \
+mockturtle/docs/debugging.rst \
+mockturtle/docs/network.rst \
+mockturtle/docs/conf.py \
+mockturtle/docs/Doxyfile \
+mockturtle/docs/generators/majority.rst \
+mockturtle/docs/generators/control.rst \
+mockturtle/docs/generators/arithmetic.rst \
+mockturtle/docs/generators/modular_arithmetic.rst \
+mockturtle/docs/utils/util_functions.rst \
+mockturtle/docs/utils/util_data_structures.rst \
+mockturtle/docs/_static/flow.svg \
+mockturtle/docs/acknowledgments.rst \
+mockturtle/docs/events.rst \
+mockturtle/.clang-format \
+mockturtle/include/mockturtle/networks/cover.hpp \
+mockturtle/include/mockturtle/networks/detail \
+mockturtle/include/mockturtle/networks/detail/foreach.hpp \
+mockturtle/include/mockturtle/networks/klut.hpp \
+mockturtle/include/mockturtle/networks/aqfp.hpp \
+mockturtle/include/mockturtle/networks/buffered.hpp \
+mockturtle/include/mockturtle/networks/aig.hpp \
+mockturtle/include/mockturtle/networks/crossed.hpp \
+mockturtle/include/mockturtle/networks/generic.hpp \
+mockturtle/include/mockturtle/networks/mig.hpp \
+mockturtle/include/mockturtle/networks/muxig.hpp \
+mockturtle/include/mockturtle/networks/events.hpp \
+mockturtle/include/mockturtle/networks/abstract_xag.hpp \
+mockturtle/include/mockturtle/networks/xmg.hpp \
+mockturtle/include/mockturtle/networks/sequential.hpp \
+mockturtle/include/mockturtle/networks/xag.hpp \
+mockturtle/include/mockturtle/networks/tig.hpp \
+mockturtle/include/mockturtle/networks/storage.hpp \
+mockturtle/include/mockturtle/mockturtle.hpp \
+mockturtle/include/mockturtle/views/fanout_view.hpp \
+mockturtle/include/mockturtle/views/mapping_view.hpp \
+mockturtle/include/mockturtle/views/cnf_view.hpp \
+mockturtle/include/mockturtle/views/depth_view.hpp \
+mockturtle/include/mockturtle/views/window_view.hpp \
+mockturtle/include/mockturtle/views/names_view.hpp \
+mockturtle/include/mockturtle/views/topo_view.hpp \
+mockturtle/include/mockturtle/views/cut_view.hpp \
+mockturtle/include/mockturtle/views/choice_view.hpp \
+mockturtle/include/mockturtle/views/rank_view.hpp \
+mockturtle/include/mockturtle/views/mffc_view.hpp \
+mockturtle/include/mockturtle/views/cost_view.hpp \
+mockturtle/include/mockturtle/views/immutable_view.hpp \
+mockturtle/include/mockturtle/views/color_view.hpp \
+mockturtle/include/mockturtle/views/fanout_limit_view.hpp \
+mockturtle/include/mockturtle/views/dont_care_view.hpp \
+mockturtle/include/mockturtle/views/binding_view.hpp \
+mockturtle/include/mockturtle/algorithms/cover_to_graph.hpp \
+mockturtle/include/mockturtle/algorithms/cut_rewriting.hpp \
+mockturtle/include/mockturtle/algorithms/aqfp/aqfp_fanout_resyn.hpp \
+mockturtle/include/mockturtle/algorithms/aqfp/mig_resub_splitters.hpp \
+mockturtle/include/mockturtle/algorithms/aqfp/optimal_buffer_insertion.hpp \
+mockturtle/include/mockturtle/algorithms/aqfp/detail/npn_cache.hpp \
+mockturtle/include/mockturtle/algorithms/aqfp/detail/db_builder.hpp \
+mockturtle/include/mockturtle/algorithms/aqfp/detail/dag_gen.hpp \
+mockturtle/include/mockturtle/algorithms/aqfp/detail/dag_util.hpp \
+mockturtle/include/mockturtle/algorithms/aqfp/detail/db_utils.hpp \
+mockturtle/include/mockturtle/algorithms/aqfp/detail/partial_dag.hpp \
+mockturtle/include/mockturtle/algorithms/aqfp/detail/dag_cost.hpp \
+mockturtle/include/mockturtle/algorithms/aqfp/detail/dag.hpp \
+mockturtle/include/mockturtle/algorithms/aqfp/aqfp_resynthesis.hpp \
+mockturtle/include/mockturtle/algorithms/aqfp/aqfp_assumptions.hpp \
+mockturtle/include/mockturtle/algorithms/aqfp/mig_algebraic_rewriting_splitters.hpp \
+mockturtle/include/mockturtle/algorithms/aqfp/aqfp_db.hpp \
+mockturtle/include/mockturtle/algorithms/aqfp/aqfp_rebuild.hpp \
+mockturtle/include/mockturtle/algorithms/aqfp/aqfp_retiming.hpp \
+mockturtle/include/mockturtle/algorithms/aqfp/aqfp_node_resyn.hpp \
+mockturtle/include/mockturtle/algorithms/aqfp/aqfp_cleanup.hpp \
+mockturtle/include/mockturtle/algorithms/aqfp/buffer_insertion.hpp \
+mockturtle/include/mockturtle/algorithms/aqfp/buffer_verification.hpp \
+mockturtle/include/mockturtle/algorithms/equivalence_classes.hpp \
+mockturtle/include/mockturtle/algorithms/cell_window.hpp \
+mockturtle/include/mockturtle/algorithms/extract_linear.hpp \
+mockturtle/include/mockturtle/algorithms/xmg_algebraic_rewriting.hpp \
+mockturtle/include/mockturtle/algorithms/mig_algebraic_rewriting.hpp \
+mockturtle/include/mockturtle/algorithms/aig_balancing.hpp \
+mockturtle/include/mockturtle/algorithms/balancing.hpp \
+mockturtle/include/mockturtle/algorithms/dsd_decomposition.hpp \
+mockturtle/include/mockturtle/algorithms/exorcism.hpp \
+mockturtle/include/mockturtle/algorithms/satlut_mapping.hpp \
+mockturtle/include/mockturtle/algorithms/detail/database_generator.hpp \
+mockturtle/include/mockturtle/algorithms/detail/switching_activity.hpp \
+mockturtle/include/mockturtle/algorithms/detail/resub_utils.hpp \
+mockturtle/include/mockturtle/algorithms/detail/mffc_utils.hpp \
+mockturtle/include/mockturtle/algorithms/detail/minmc_xags.hpp \
+mockturtle/include/mockturtle/algorithms/mapper.hpp \
+mockturtle/include/mockturtle/algorithms/dont_cares.hpp \
+mockturtle/include/mockturtle/algorithms/network_fuzz_tester.hpp \
+mockturtle/include/mockturtle/algorithms/circuit_validator.hpp \
+mockturtle/include/mockturtle/algorithms/decomposition.hpp \
+mockturtle/include/mockturtle/algorithms/node_resynthesis/composed.hpp \
+mockturtle/include/mockturtle/algorithms/node_resynthesis/xag_npn.hpp \
+mockturtle/include/mockturtle/algorithms/node_resynthesis/mig_npn.hpp \
+mockturtle/include/mockturtle/algorithms/node_resynthesis/direct.hpp \
+mockturtle/include/mockturtle/algorithms/node_resynthesis/xmg3_npn.hpp \
+mockturtle/include/mockturtle/algorithms/node_resynthesis/akers.hpp \
+mockturtle/include/mockturtle/algorithms/node_resynthesis/sop_factoring.hpp \
+mockturtle/include/mockturtle/algorithms/node_resynthesis/davio.hpp \
+mockturtle/include/mockturtle/algorithms/node_resynthesis/xag_minmc.hpp \
+mockturtle/include/mockturtle/algorithms/node_resynthesis/xag_minmc2.hpp \
+mockturtle/include/mockturtle/algorithms/node_resynthesis/dsd.hpp \
+mockturtle/include/mockturtle/algorithms/node_resynthesis/xmg_npn.hpp \
+mockturtle/include/mockturtle/algorithms/node_resynthesis/shannon.hpp \
+mockturtle/include/mockturtle/algorithms/node_resynthesis/bidecomposition.hpp \
+mockturtle/include/mockturtle/algorithms/node_resynthesis/null.hpp \
+mockturtle/include/mockturtle/algorithms/node_resynthesis/traits.hpp \
+mockturtle/include/mockturtle/algorithms/node_resynthesis/cached.hpp \
+mockturtle/include/mockturtle/algorithms/node_resynthesis/exact.hpp \
+mockturtle/include/mockturtle/algorithms/simulation.hpp \
+mockturtle/include/mockturtle/algorithms/testcase_minimizer.hpp \
+mockturtle/include/mockturtle/algorithms/klut_to_graph.hpp \
+mockturtle/include/mockturtle/algorithms/functional_reduction.hpp \
+mockturtle/include/mockturtle/algorithms/experimental/cost_generic_resub.hpp \
+mockturtle/include/mockturtle/algorithms/experimental/cost_resyn.hpp \
+mockturtle/include/mockturtle/algorithms/experimental/boolean_optimization.hpp \
+mockturtle/include/mockturtle/algorithms/experimental/window_resub.hpp \
+mockturtle/include/mockturtle/algorithms/experimental/sim_resub.hpp \
+mockturtle/include/mockturtle/algorithms/resubstitution.hpp \
+mockturtle/include/mockturtle/algorithms/collapse_mapped.hpp \
+mockturtle/include/mockturtle/algorithms/balancing/sop_balancing.hpp \
+mockturtle/include/mockturtle/algorithms/balancing/esop_balancing.hpp \
+mockturtle/include/mockturtle/algorithms/balancing/utils.hpp \
+mockturtle/include/mockturtle/algorithms/cnf.hpp \
+mockturtle/include/mockturtle/algorithms/reconv_cut.hpp \
+mockturtle/include/mockturtle/algorithms/xag_optimization.hpp \
+mockturtle/include/mockturtle/algorithms/cleanup.hpp \
+mockturtle/include/mockturtle/algorithms/resyn_engines/aig_enumerative.hpp \
+mockturtle/include/mockturtle/algorithms/resyn_engines/dump_resyn.hpp \
+mockturtle/include/mockturtle/algorithms/resyn_engines/mig_resyn.hpp \
+mockturtle/include/mockturtle/algorithms/resyn_engines/xag_resyn.hpp \
+mockturtle/include/mockturtle/algorithms/resyn_engines/mig_enumerative.hpp \
+mockturtle/include/mockturtle/algorithms/resyn_engines/mux_resyn.hpp \
+mockturtle/include/mockturtle/algorithms/xag_algebraic_rewriting.hpp \
+mockturtle/include/mockturtle/algorithms/mig_inv_propagation.hpp \
+mockturtle/include/mockturtle/algorithms/mig_resub.hpp \
+mockturtle/include/mockturtle/algorithms/linear_resynthesis.hpp \
+mockturtle/include/mockturtle/algorithms/xag_resub_withDC.hpp \
+mockturtle/include/mockturtle/algorithms/akers_synthesis.hpp \
+mockturtle/include/mockturtle/algorithms/rewrite.hpp \
+mockturtle/include/mockturtle/algorithms/miter.hpp \
+mockturtle/include/mockturtle/algorithms/refactoring.hpp \
+mockturtle/include/mockturtle/algorithms/xmg_optimization.hpp \
+mockturtle/include/mockturtle/algorithms/aig_resub.hpp \
+mockturtle/include/mockturtle/algorithms/window_rewriting.hpp \
+mockturtle/include/mockturtle/algorithms/node_resynthesis.hpp \
+mockturtle/include/mockturtle/algorithms/gates_to_nodes.hpp \
+mockturtle/include/mockturtle/algorithms/exact_mc_synthesis.hpp \
+mockturtle/include/mockturtle/algorithms/sim_resub.hpp \
+mockturtle/include/mockturtle/algorithms/equivalence_checking.hpp \
+mockturtle/include/mockturtle/algorithms/cut_enumeration/gia_cut.hpp \
+mockturtle/include/mockturtle/algorithms/cut_enumeration/spectr_cut.hpp \
+mockturtle/include/mockturtle/algorithms/cut_enumeration/cnf_cut.hpp \
+mockturtle/include/mockturtle/algorithms/cut_enumeration/mf_cut.hpp \
+mockturtle/include/mockturtle/algorithms/cut_enumeration/tech_map_cut.hpp \
+mockturtle/include/mockturtle/algorithms/cut_enumeration/rewrite_cut.hpp \
+mockturtle/include/mockturtle/algorithms/cut_enumeration/exact_map_cut.hpp \
+mockturtle/include/mockturtle/algorithms/lut_mapping.hpp \
+mockturtle/include/mockturtle/algorithms/xmg_resub.hpp \
+mockturtle/include/mockturtle/algorithms/bi_decomposition.hpp \
+mockturtle/include/mockturtle/algorithms/lut_mapper.hpp \
+mockturtle/include/mockturtle/algorithms/mig_inv_optimization.hpp \
+mockturtle/include/mockturtle/algorithms/pattern_generation.hpp \
+mockturtle/include/mockturtle/algorithms/cut_enumeration.hpp \
+mockturtle/include/mockturtle/algorithms/retiming.hpp \
+mockturtle/include/mockturtle/io/super_reader.hpp \
+mockturtle/include/mockturtle/io/write_dimacs.hpp \
+mockturtle/include/mockturtle/io/write_genlib.hpp \
+mockturtle/include/mockturtle/io/write_dot.hpp \
+mockturtle/include/mockturtle/io/write_bench.hpp \
+mockturtle/include/mockturtle/io/write_aiger.hpp \
+mockturtle/include/mockturtle/io/serialize.hpp \
+mockturtle/include/mockturtle/io/bench_reader.hpp \
+mockturtle/include/mockturtle/io/blif_reader.hpp \
+mockturtle/include/mockturtle/io/genlib_reader.hpp \
+mockturtle/include/mockturtle/io/write_patterns.hpp \
+mockturtle/include/mockturtle/io/pla_reader.hpp \
+mockturtle/include/mockturtle/io/verilog_reader.hpp \
+mockturtle/include/mockturtle/io/aiger_reader.hpp \
+mockturtle/include/mockturtle/io/dimacs_reader.hpp \
+mockturtle/include/mockturtle/io/write_verilog.hpp \
+mockturtle/include/mockturtle/io/bristol_reader.hpp \
+mockturtle/include/mockturtle/io/write_blif.hpp \
+mockturtle/include/mockturtle/properties/xmgcost.hpp \
+mockturtle/include/mockturtle/properties/mccost.hpp \
+mockturtle/include/mockturtle/properties/migcost.hpp \
+mockturtle/include/mockturtle/properties/litcost.hpp \
+mockturtle/include/mockturtle/properties/aqfpcost.hpp \
+mockturtle/include/mockturtle/interface.hpp \
+mockturtle/include/mockturtle/generators/majority.hpp \
+mockturtle/include/mockturtle/generators/random_network.hpp \
+mockturtle/include/mockturtle/generators/control.hpp \
+mockturtle/include/mockturtle/generators/modular_arithmetic.hpp \
+mockturtle/include/mockturtle/generators/sorting.hpp \
+mockturtle/include/mockturtle/generators/self_dualize.hpp \
+mockturtle/include/mockturtle/generators/arithmetic.hpp \
+mockturtle/include/mockturtle/generators/legacy.hpp \
+mockturtle/include/mockturtle/generators/majority_n.hpp \
+mockturtle/include/mockturtle/utils/index_list.hpp \
+mockturtle/include/mockturtle/utils/network_utils.hpp \
+mockturtle/include/mockturtle/utils/debugging_utils.hpp \
+mockturtle/include/mockturtle/utils/string_utils.hpp \
+mockturtle/include/mockturtle/utils/network_cache.hpp \
+mockturtle/include/mockturtle/utils/hash_functions.hpp \
+mockturtle/include/mockturtle/utils/super_utils.hpp \
+mockturtle/include/mockturtle/utils/node_map.hpp \
+mockturtle/include/mockturtle/utils/window_utils.hpp \
+mockturtle/include/mockturtle/utils/cost_functions.hpp \
+mockturtle/include/mockturtle/utils/mixed_radix.hpp \
+mockturtle/include/mockturtle/utils/algorithm.hpp \
+mockturtle/include/mockturtle/utils/progress_bar.hpp \
+mockturtle/include/mockturtle/utils/sop_utils.hpp \
+mockturtle/include/mockturtle/utils/include/percy.hpp \
+mockturtle/include/mockturtle/utils/stopwatch.hpp \
+mockturtle/include/mockturtle/utils/json_utils.hpp \
+mockturtle/include/mockturtle/utils/null_utils.hpp \
+mockturtle/include/mockturtle/utils/truth_table_cache.hpp \
+mockturtle/include/mockturtle/utils/truth_table_utils.hpp \
+mockturtle/include/mockturtle/utils/name_utils.hpp \
+mockturtle/include/mockturtle/utils/tech_library.hpp \
+mockturtle/include/mockturtle/utils/cuts.hpp \
+mockturtle/include/mockturtle/utils/recursive_cost_functions.hpp \
+mockturtle/include/mockturtle/traits.hpp \
+mockturtle/include/CMakeLists.txt \
+mockturtle/mockturtle.svg \
+mockturtle/.gitignore \
+mockturtle/Dockerfile \
+mockturtle/CMakeLists.txt \
+mockturtle/README.md \
+mockturtle/test/networks/crossed.cpp \
+mockturtle/test/networks/muxig.cpp \
+mockturtle/test/networks/buffered.cpp \
+mockturtle/test/networks/generic.cpp \
+mockturtle/test/networks/aqfp.cpp \
+mockturtle/test/networks/klut.cpp \
+mockturtle/test/networks/cover.cpp \
+mockturtle/test/networks/xag.cpp \
+mockturtle/test/networks/sequential.cpp \
+mockturtle/test/networks/mig.cpp \
+mockturtle/test/networks/xmg.cpp \
+mockturtle/test/networks/abstract_xag.cpp \
+mockturtle/test/networks/aig.cpp \
+mockturtle/test/test.cpp \
+mockturtle/test/views/mapping_view.cpp \
+mockturtle/test/views/cnf_view.cpp \
+mockturtle/test/views/fanout_view.cpp \
+mockturtle/test/views/depth_view.cpp \
+mockturtle/test/views/choice_view.cpp \
+mockturtle/test/views/rank_view.cpp \
+mockturtle/test/views/color_view.cpp \
+mockturtle/test/views/dont_care_view.cpp \
+mockturtle/test/views/topo_view.cpp \
+mockturtle/test/views/names_view.cpp \
+mockturtle/test/views/mffc_view.cpp \
+mockturtle/test/views/cost_view.cpp \
+mockturtle/test/views/binding_view.cpp \
+mockturtle/test/views/window_view.cpp \
+mockturtle/test/views/fanout_limit_view.cpp \
+mockturtle/test/views/cut_view.cpp \
+mockturtle/test/algorithms/aig_resubstitution.tc \
+mockturtle/test/algorithms/aqfp/buffer_insertion.cpp \
+mockturtle/test/algorithms/aqfp/aqfp_retiming.cpp \
+mockturtle/test/algorithms/aqfp/aqfp_resynthesis.cpp \
+mockturtle/test/algorithms/aqfp/aqfp_db_generation.cpp \
+mockturtle/test/algorithms/xag_optimization.cpp \
+mockturtle/test/algorithms/xmg_algebraic_rewriting.cpp \
+mockturtle/test/algorithms/equivalence_checking.cpp \
+mockturtle/test/algorithms/aig_balancing.cpp \
+mockturtle/test/algorithms/extract_linear.cpp \
+mockturtle/test/algorithms/cut_rewriting.cpp \
+mockturtle/test/algorithms/rewrite.cpp \
+mockturtle/test/algorithms/cnf.cpp \
+mockturtle/test/algorithms/mig_inv_propagation.cpp \
+mockturtle/test/algorithms/node_resynthesis/exact.cpp \
+mockturtle/test/algorithms/node_resynthesis/cached.cpp \
+mockturtle/test/algorithms/circuit_validator.cpp \
+mockturtle/test/algorithms/lut_mapper.cpp \
+mockturtle/test/algorithms/cut_enumeration.cpp \
+mockturtle/test/algorithms/quality.cpp \
+mockturtle/test/algorithms/pattern_generation.cpp \
+mockturtle/test/algorithms/resubstitution.cpp \
+mockturtle/test/algorithms/decomposition.cpp \
+mockturtle/test/algorithms/cover_to_graph.cpp \
+mockturtle/test/algorithms/linear_resynthesis.cpp \
+mockturtle/test/algorithms/simulation.cpp \
+mockturtle/test/algorithms/akers_synthesis.cpp \
+mockturtle/test/algorithms/resyn_engines/mig_resyn.cpp \
+mockturtle/test/algorithms/resyn_engines/mux_resyn.cpp \
+mockturtle/test/algorithms/resyn_engines/aig_resyn.cpp \
+mockturtle/test/algorithms/resyn_engines/xag_resyn.cpp \
+mockturtle/test/algorithms/klut_to_graph.cpp \
+mockturtle/test/algorithms/dsd_decomposition.cpp \
+mockturtle/test/algorithms/reconv_cut.cpp \
+mockturtle/test/algorithms/functional_reduction.cpp \
+mockturtle/test/algorithms/equivalence_classes.cpp \
+mockturtle/test/algorithms/mapper.cpp \
+mockturtle/test/algorithms/collapse_mapped.cpp \
+mockturtle/test/algorithms/gates_to_nodes.cpp \
+mockturtle/test/algorithms/exact_mc_synthesis.cpp \
+mockturtle/test/algorithms/lut_mapping.cpp \
+mockturtle/test/algorithms/mig_algebraic_rewriting.cpp \
+mockturtle/test/algorithms/cleanup.cpp \
+mockturtle/test/algorithms/minmc_xags.cpp \
+mockturtle/test/algorithms/refactoring.cpp \
+mockturtle/test/algorithms/bi_decomposition.cpp \
+mockturtle/test/algorithms/balancing.cpp \
+mockturtle/test/algorithms/miter.cpp \
+mockturtle/test/algorithms/node_resynthesis.cpp \
+mockturtle/test/algorithms/satlut_mapping.cpp \
+mockturtle/test/algorithms/dont_cares.cpp \
+mockturtle/test/algorithms/mig_inv_optimization.cpp \
+mockturtle/test/algorithms/retiming.cpp \
+mockturtle/test/algorithms/exorcism.cpp \
+mockturtle/test/algorithms/xag_algebraic_rewriting.cpp \
+mockturtle/test/io/bench_reader.cpp \
+mockturtle/test/io/write_genlib.cpp \
+mockturtle/test/io/write_dimacs.cpp \
+mockturtle/test/io/pla_reader.cpp \
+mockturtle/test/io/write_verilog.cpp \
+mockturtle/test/io/serialize.cpp \
+mockturtle/test/io/genlib_reader.cpp \
+mockturtle/test/io/write_patterns.cpp \
+mockturtle/test/io/write_aiger.cpp \
+mockturtle/test/io/aiger_reader.cpp \
+mockturtle/test/io/write_blif.cpp \
+mockturtle/test/io/write_dot.cpp \
+mockturtle/test/io/dimacs_reader.cpp \
+mockturtle/test/io/blif_reader.cpp \
+mockturtle/test/io/write_bench.cpp \
+mockturtle/test/io/super_reader.cpp \
+mockturtle/test/io/verilog_reader.cpp \
+mockturtle/test/properties/migcost.cpp \
+mockturtle/test/properties/mccost.cpp \
+mockturtle/test/properties/litcost.cpp \
+mockturtle/test/properties/xmgcost.cpp \
+mockturtle/test/traits.cpp \
+mockturtle/test/test_networks.hpp \
+mockturtle/test/catch2/catch.hpp \
+mockturtle/test/generators/majority_n.cpp \
+mockturtle/test/generators/majority.cpp \
+mockturtle/test/generators/arithmetic.cpp \
+mockturtle/test/generators/control.cpp \
+mockturtle/test/generators/sorting.cpp \
+mockturtle/test/generators/random_network.cpp \
+mockturtle/test/generators/modular_arithmetic.cpp \
+mockturtle/test/generators/self_dualize.cpp \
+mockturtle/test/CMakeLists.txt \
+mockturtle/test/utils/truth_table_cache.cpp \
+mockturtle/test/utils/network_utils.cpp \
+mockturtle/test/utils/tech_library.cpp \
+mockturtle/test/utils/index_list.cpp \
+mockturtle/test/utils/window_utils.cpp \
+mockturtle/test/utils/super_utils.cpp \
+mockturtle/test/utils/node_map.cpp \
+mockturtle/test/utils/cuts.cpp \
+mockturtle/test/utils/mixed_radix.cpp \
+mockturtle/.pre-commit-config.yaml \
+mockturtle/experiments/sop_balancing.cpp \
+mockturtle/experiments/buffer_insertion.cpp \
+mockturtle/experiments/aqfp_flow_aspdac.cpp \
+mockturtle/experiments/experiments.hpp \
+mockturtle/experiments/aqfp_flow_date.json \
+mockturtle/experiments/satlut.cpp \
+mockturtle/experiments/window_rewriting.cpp \
+mockturtle/experiments/cost_generic_resub.cpp \
+mockturtle/experiments/equivalence_checking.cpp \
+mockturtle/experiments/sop_balancing.json \
+mockturtle/experiments/cut_rewriting.json \
+mockturtle/experiments/satlut.json \
+mockturtle/experiments/cut_rewriting.cpp \
+mockturtle/experiments/pattern_generation.json \
+mockturtle/experiments/rewrite.cpp \
+mockturtle/experiments/buffer_insertion_iwls.cpp \
+mockturtle/experiments/sim_resubstitution.json \
+mockturtle/experiments/aqfp_flow_date.cpp \
+mockturtle/experiments/lut_mapper.cpp \
+mockturtle/experiments/pattern_generation.cpp \
+mockturtle/experiments/buffer_insertion_iwls.json \
+mockturtle/experiments/benchmarks/leon3.aig \
+mockturtle/experiments/benchmarks/usb_phy.aig \
+mockturtle/experiments/benchmarks/DSP.aig \
+mockturtle/experiments/benchmarks/sqrt.aig \
+mockturtle/experiments/benchmarks/dec.aig \
+mockturtle/experiments/benchmarks/router.aig \
+mockturtle/experiments/benchmarks/c432.aig \
+mockturtle/experiments/benchmarks/systemcaes.aig \
+mockturtle/experiments/benchmarks/c1908.aig \
+mockturtle/experiments/benchmarks/voter.aig \
+mockturtle/experiments/benchmarks/mem_ctrl.aig \
+mockturtle/experiments/benchmarks/iwls05_i2c.aig \
+mockturtle/experiments/benchmarks/c17.aig \
+mockturtle/experiments/benchmarks/pci_bridge32.aig \
+mockturtle/experiments/benchmarks/iwls05_mem_ctrl.aig \
+mockturtle/experiments/benchmarks/c7552.aig \
+mockturtle/experiments/benchmarks/RISC.aig \
+mockturtle/experiments/benchmarks/max.aig \
+mockturtle/experiments/benchmarks/aes_core.aig \
+mockturtle/experiments/benchmarks/hyp.aig \
+mockturtle/experiments/benchmarks/ctrl.aig \
+mockturtle/experiments/benchmarks/spi.aig \
+mockturtle/experiments/benchmarks/cavlc.aig \
+mockturtle/experiments/benchmarks/c5315.aig \
+mockturtle/experiments/benchmarks/DMA.aig \
+mockturtle/experiments/benchmarks/priority.aig \
+mockturtle/experiments/benchmarks/adder.aig \
+mockturtle/experiments/benchmarks/c2670.aig \
+mockturtle/experiments/benchmarks/log2.aig \
+mockturtle/experiments/benchmarks/c6288.aig \
+mockturtle/experiments/benchmarks/tv80.aig \
+mockturtle/experiments/benchmarks/div.aig \
+mockturtle/experiments/benchmarks/sin.aig \
+mockturtle/experiments/benchmarks/c880.aig \
+mockturtle/experiments/benchmarks/mockturtle-aig4-cache.db \
+mockturtle/experiments/benchmarks/ethernet.aig \
+mockturtle/experiments/benchmarks/netcard.aig \
+mockturtle/experiments/benchmarks/leon3mp.aig \
+mockturtle/experiments/benchmarks/i2c.aig \
+mockturtle/experiments/benchmarks/bar.aig \
+mockturtle/experiments/benchmarks/int2float.aig \
+mockturtle/experiments/benchmarks/leon3_opt.aig \
+mockturtle/experiments/benchmarks/simple_spi.aig \
+mockturtle/experiments/benchmarks/c499.aig \
+mockturtle/experiments/benchmarks/arbiter.aig \
+mockturtle/experiments/benchmarks/des_area.aig \
+mockturtle/experiments/benchmarks/ss_pcm.aig \
+mockturtle/experiments/benchmarks/square.aig \
+mockturtle/experiments/benchmarks/leon2.aig \
+mockturtle/experiments/benchmarks/wb_conmax.aig \
+mockturtle/experiments/benchmarks/sasc.aig \
+mockturtle/experiments/benchmarks/des_perf.aig \
+mockturtle/experiments/benchmarks/systemcdes.aig \
+mockturtle/experiments/benchmarks/ac97_ctrl.aig \
+mockturtle/experiments/benchmarks/c3540.aig \
+mockturtle/experiments/benchmarks/multiplier.aig \
+mockturtle/experiments/benchmarks/vga_lcd.aig \
+mockturtle/experiments/benchmarks/usb_funct.aig \
+mockturtle/experiments/benchmarks/c1355.aig \
+mockturtle/experiments/functional_reduction.json \
+mockturtle/experiments/lut_mapping.json \
+mockturtle/experiments/functional_reduction.cpp \
+mockturtle/experiments/mig_resubstitution.cpp \
+mockturtle/experiments/sim_resubstitution.cpp \
+mockturtle/experiments/mapper.cpp \
+mockturtle/experiments/exact_mc_synthesis.cpp \
+mockturtle/experiments/lut_mapping.cpp \
+mockturtle/experiments/node_resynthesis.json \
+mockturtle/experiments/databases/npn4_xag.db \
+mockturtle/experiments/databases/npn4_aig.db \
+mockturtle/experiments/equivalence_checking.json \
+mockturtle/experiments/aig_resubstitution.cpp \
+mockturtle/experiments/refactoring.cpp \
+mockturtle/experiments/experimental.cpp \
+mockturtle/experiments/CMakeLists.txt \
+mockturtle/experiments/cnf_map.cpp \
+mockturtle/experiments/mig_resubstitution.json \
+mockturtle/experiments/node_resynthesis.cpp \
+mockturtle/experiments/aig_resubstitution.json \
+mockturtle/experiments/cnf_map.json\
 or-tools/LICENSE\
 or-tools/README.md\
 or-tools/ortools/util/permutation.h\
@@ -618,7 +968,5 @@ or-tools/ortools/base/macros.h\
 or-tools/ortools/graph/ebert_graph.h\
 or-tools/ortools/graph/linear_assignment.h\
 or-tools/ortools/graph/assignment.h
-
-
 
 

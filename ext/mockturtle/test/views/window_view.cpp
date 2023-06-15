@@ -1,12 +1,12 @@
 #include <catch.hpp>
 
+#include <mockturtle/algorithms/reconv_cut.hpp>
 #include <mockturtle/networks/aig.hpp>
 #include <mockturtle/traits.hpp>
+#include <mockturtle/views/color_view.hpp>
+#include <mockturtle/views/depth_view.hpp>
 #include <mockturtle/views/fanout_view.hpp>
 #include <mockturtle/views/window_view.hpp>
-#include <mockturtle/views/depth_view.hpp>
-#include <mockturtle/algorithms/reconv_cut.hpp>
-#include <mockturtle/views/color_view.hpp>
 
 using namespace mockturtle;
 
@@ -17,9 +17,9 @@ std::vector<typename Ntk::node> collect_fanin_nodes( Ntk const& ntk, typename Nt
   using signal = typename Ntk::signal;
 
   std::vector<node> fanin_nodes;
-  ntk.foreach_fanin( n, [&]( signal const& fi ){
+  ntk.foreach_fanin( n, [&]( signal const& fi ) {
     fanin_nodes.emplace_back( ntk.get_node( fi ) );
-  });
+  } );
   return fanin_nodes;
 }
 
@@ -31,15 +31,15 @@ bool window_is_well_formed( Ntk const& ntk )
   using signal = typename Ntk::signal;
 
   bool all_fanins_belong_to_window = true;
-  ntk.foreach_node( [&]( node const& n ){
-    ntk.foreach_fanin( n, [&]( signal const& fi ){
+  ntk.foreach_node( [&]( node const& n ) {
+    ntk.foreach_fanin( n, [&]( signal const& fi ) {
       if ( !ntk.belongs_to( ntk.get_node( fi ) ) )
       {
         all_fanins_belong_to_window = false;
         return false; /* terminate */
       }
       return true; /* next */
-    });
+    } );
 
     /* check if property is already violated */
     if ( !all_fanins_belong_to_window )
@@ -47,17 +47,17 @@ bool window_is_well_formed( Ntk const& ntk )
       return false; /* terminate */
     }
     return true; /* next */
-  });
+  } );
 
   bool all_outputs_belong_to_window = true;
-  ntk.foreach_po( [&]( signal const& o ){
+  ntk.foreach_po( [&]( signal const& o ) {
     if ( !ntk.belongs_to( ntk.get_node( o ) ) )
     {
       all_outputs_belong_to_window = false;
       return false; /* terminate */
     }
     return true; /* next */
-  });
+  } );
 
   return all_fanins_belong_to_window &&
          all_outputs_belong_to_window;
@@ -92,9 +92,9 @@ TEST_CASE( "create window view on AIG", "[window_view]" )
     CHECK( view.num_cis() == 2 );
     CHECK( view.num_cos() == 1 );
 
-    CHECK(  view.belongs_to( view.get_node( f1 ) ) );
+    CHECK( view.belongs_to( view.get_node( f1 ) ) );
     CHECK( !view.belongs_to( view.get_node( f2 ) ) );
-    CHECK(  view.belongs_to( view.get_node( f3 ) ) );
+    CHECK( view.belongs_to( view.get_node( f3 ) ) );
     CHECK( !view.belongs_to( view.get_node( f4 ) ) );
 
     CHECK( collect_fanin_nodes( view, view.get_node( f1 ) ).size() == 2 );
@@ -114,9 +114,9 @@ TEST_CASE( "create window view on AIG", "[window_view]" )
     CHECK( view.num_cis() == 2 );
     CHECK( view.num_cos() == 1 );
 
-    CHECK(  view.belongs_to( view.get_node( f1 ) ) );
+    CHECK( view.belongs_to( view.get_node( f1 ) ) );
     CHECK( !view.belongs_to( view.get_node( f2 ) ) );
-    CHECK(  view.belongs_to( view.get_node( f3 ) ) );
+    CHECK( view.belongs_to( view.get_node( f3 ) ) );
     CHECK( !view.belongs_to( view.get_node( f4 ) ) );
 
     CHECK( collect_fanin_nodes( view, view.get_node( f1 ) ).size() == 0 );
@@ -137,8 +137,8 @@ TEST_CASE( "create window view on AIG", "[window_view]" )
     CHECK( view.num_cis() == 2 );
     CHECK( view.num_cos() == 1 );
 
-    CHECK(  view.belongs_to( view.get_node( f1 ) ) );
-    CHECK(  view.belongs_to( view.get_node( f2 ) ) );
+    CHECK( view.belongs_to( view.get_node( f1 ) ) );
+    CHECK( view.belongs_to( view.get_node( f2 ) ) );
     CHECK( !view.belongs_to( view.get_node( f3 ) ) );
     CHECK( !view.belongs_to( view.get_node( f4 ) ) );
 
@@ -185,9 +185,9 @@ TEST_CASE( "create window view on AIG", "[window_view]" )
     CHECK( view.num_cis() == 2 );
     CHECK( view.num_cos() == 2 );
 
-    CHECK(  view.belongs_to( view.get_node( f1 ) ) );
-    CHECK(  view.belongs_to( view.get_node( f2 ) ) );
-    CHECK(  view.belongs_to( view.get_node( f3 ) ) );
+    CHECK( view.belongs_to( view.get_node( f1 ) ) );
+    CHECK( view.belongs_to( view.get_node( f2 ) ) );
+    CHECK( view.belongs_to( view.get_node( f3 ) ) );
     CHECK( !view.belongs_to( view.get_node( f4 ) ) );
 
     CHECK( collect_fanin_nodes( view, view.get_node( f1 ) ).size() == 2 );
@@ -214,16 +214,16 @@ TEST_CASE( "collect nodes", "[window_view]" )
   using node = typename aig_network::node;
   using signal = typename aig_network::signal;
 
-  color_view aig{_aig};
+  color_view aig{ _aig };
 
-  std::vector<node> inputs{aig.get_node( a ), aig.get_node( b ), aig.get_node( c ), aig.get_node( d )};
-  std::vector<signal> outputs{f3, f4};
-  std::vector<node> const gates{collect_nodes( aig, inputs, outputs )};
+  std::vector<node> inputs{ aig.get_node( a ), aig.get_node( b ), aig.get_node( c ), aig.get_node( d ) };
+  std::vector<signal> outputs{ f3, f4 };
+  std::vector<node> const gates{ collect_nodes( aig, inputs, outputs ) };
 
   CHECK( gates.size() == aig.num_gates() );
-  aig.foreach_gate( [&]( node const& n ){
+  aig.foreach_gate( [&]( node const& n ) {
     CHECK( std::find( std::begin( gates ), std::end( gates ), n ) != std::end( gates ) );
-  });
+  } );
 }
 
 TEST_CASE( "expand towards tfo", "[window_view]" )
@@ -243,16 +243,16 @@ TEST_CASE( "expand towards tfo", "[window_view]" )
   using node = typename aig_network::node;
   using signal = typename aig_network::signal;
 
-  fanout_view faig{_aig};
-  color_view aig{faig};
+  fanout_view faig{ _aig };
+  color_view aig{ faig };
 
-  std::vector<node> inputs{aig.get_node( a ), aig.get_node( b ), aig.get_node( c ), aig.get_node( d )};
-  std::vector<signal> outputs{f1};
-  std::vector<node> gates{collect_nodes( aig, inputs, outputs )};
+  std::vector<node> inputs{ aig.get_node( a ), aig.get_node( b ), aig.get_node( c ), aig.get_node( d ) };
+  std::vector<signal> outputs{ f1 };
+  std::vector<node> gates{ collect_nodes( aig, inputs, outputs ) };
   expand_towards_tfo( aig, inputs, gates );
 
   CHECK( gates.size() == aig.num_gates() );
-  aig.foreach_gate( [&]( node const& n ){
+  aig.foreach_gate( [&]( node const& n ) {
     CHECK( std::find( std::begin( gates ), std::end( gates ), n ) != std::end( gates ) );
-  });
+  } );
 }

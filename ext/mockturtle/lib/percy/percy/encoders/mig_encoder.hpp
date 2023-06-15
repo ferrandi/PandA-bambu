@@ -76,7 +76,7 @@ namespace percy
             const auto ret = solver->add_clause(&sim_lit, &sim_lit + 1);
             assert(ret);
             if (spec.verbosity) {
-                printf("forcing bit %d=%d\n", t + 1, outbit);
+                printf("forcing bit %d=%d\n", t + 1, int(outbit));
             }
         }
 

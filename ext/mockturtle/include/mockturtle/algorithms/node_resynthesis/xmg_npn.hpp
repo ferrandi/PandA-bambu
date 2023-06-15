@@ -1,5 +1,5 @@
 /* mockturtle: C++ logic network library
- * Copyright (C) 2018-2021  EPFL
+ * Copyright (C) 2018-2022  EPFL
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -95,7 +95,7 @@ public:
     const auto it = class2signal.find( func_str );
     assert( it != class2signal.end() );
 
-    //const auto it = class2signal.find( static_cast<uint16_t>( std::get<0>( config )._bits[0] ) );
+    // const auto it = class2signal.find( static_cast<uint16_t>( std::get<0>( config )._bits[0] ) );
 
     std::vector<xmg_network::signal> pis( 4, xmg.get_constant( false ) );
     std::copy( begin, end, pis.begin() );
@@ -118,7 +118,7 @@ public:
 
     for ( auto const& po : it->second )
     {
-      topo_view topo{db, po};
+      topo_view topo{ db, po };
       auto f = cleanup_dangling( topo, xmg, pis_perm.begin(), pis_perm.end() ).front();
 
       if ( !fn( ( ( phase >> 4 ) & 1 ) ? !f : f ) )
@@ -193,7 +193,7 @@ private:
         polar.push( i > 0 && str[i - 1] == '!' ? 1 : 0 );
       }
 
-      //input signals
+      // input signals
       if ( str[i] >= 'a' && str[i] <= 'd' )
       {
         inputs.push( sig[str[i] - 'a' + 1] );
@@ -207,7 +207,7 @@ private:
         polar.push( i > 0 && str[i - 1] == '!' ? 1 : 0 );
       }
 
-      //create signals
+      // create signals
       if ( str[i] == '>' )
       {
         assert( inputs.size() >= 3u );
@@ -273,7 +273,7 @@ private:
       signals.push_back( db.create_pi() );
     }
 
-    load_optimal_xmgs( 1 ); //size optimization
+    load_optimal_xmgs( 1 ); // size optimization
 
     for ( const auto& e : opt_xmgs )
     {

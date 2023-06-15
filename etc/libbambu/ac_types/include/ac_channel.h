@@ -743,7 +743,7 @@ class ac_channel
          for(int i = 0; i < (int)rSz; i++)
          {
             write(rVal);
-      }
+         }
       }
 
       inline const T& operator[](unsigned int pos) const
@@ -777,7 +777,7 @@ class ac_channel
             if(pos)
             {
                itr += pos;
-         }
+            }
          }
          typename std::deque<T>::iterator itr;
       };
@@ -827,7 +827,7 @@ ac_channel<T>::ac_channel(int init, T val) : chan(init, val)
    for(int i = init; i > 0; i--)
    {
       write(val);
-}
+   }
 }
 
 template <class T>
@@ -919,7 +919,7 @@ void nb_read_r(ac_channel<T> (&chan)[N], T (&var)[N])
    for(int i = 0; i < N; i++)
    {
       chan[i].nb_read(var[i]);
-}
+   }
 }
 
 #if __cplusplus > 199711L

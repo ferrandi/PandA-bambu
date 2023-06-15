@@ -1,5 +1,5 @@
 /* mockturtle: C++ logic network library
- * Copyright (C) 2018-2021  EPFL
+ * Copyright (C) 2018-2022  EPFL
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -29,6 +29,7 @@
 
   \author Bruno Schmitt
   \author Heinz Riener
+  \author Siang-Yun (Sonia) Lee
 
   This file implements functions to serialize a (combinational)
   `aig_network` into a file.  The serializer should be used for
@@ -39,9 +40,9 @@
 
 #pragma once
 
-#include <mockturtle/networks/aig.hpp>
-#include <parallel_hashmap/phmap_dump.h>
+#include "../networks/aig.hpp"
 #include <fstream>
+#include <parallel_hashmap/phmap_dump.h>
 
 namespace mockturtle
 {
@@ -77,7 +78,7 @@ public:
   {
     return ar_input.load( (char*)&ptr->data, sizeof( ptr->data ) );
   }
-  
+
   bool operator()( phmap::BinaryOutputArchive& os, cauint64_t const& data ) const
   {
     return os.dump( (char*)&data.n, sizeof( data.n ) );
@@ -87,7 +88,7 @@ public:
   {
     return ar_input.load( (char*)&data->n, sizeof( data->n ) );
   }
-  
+
   template<int Fanin, int Size, int PointerFieldSize>
   bool operator()( phmap::BinaryOutputArchive& os, regular_node<Fanin, Size, PointerFieldSize> const& n ) const
   {
@@ -194,21 +195,13 @@ public:
     }
 
     /* hash */
-    if (! const_cast<aig_storage&>( storage ).hash.dump( os ) )
+    if ( !const_cast<aig_storage&>( storage ).hash.dump( os ) )
     {
       return false;
     }
 
-    /* storage data */
-    os.dump( (char*)&storage.data.num_pis, sizeof( uint32_t ) );
-    os.dump( (char*)&storage.data.num_pos, sizeof( uint32_t ) );
-    size = storage.data.latches.size();
-    for ( const auto& l : storage.data.latches )
-    {
-      os.dump( (char*)&l, sizeof( int8_t ) );
-    }
-    os.dump( (char*)&storage.data.trav_id, sizeof( uint32_t ) );    
-    
+    os.dump( (char*)&storage.trav_id, sizeof( uint32_t ) );
+
     return true;
   }
 
@@ -226,7 +219,7 @@ public:
       }
       storage->nodes.push_back( n );
     }
-  
+
     /* inputs */
     ar_input.load( (char*)&size, sizeof( uint64_t ) );
     for ( uint64_t i = 0; i < size; ++i )
@@ -253,18 +246,8 @@ public:
     {
       return false;
     }
-  
-    /* aig_storage_data */
-    ar_input.load( (char*)&storage->data.num_pis, sizeof( uint32_t ) );
-    ar_input.load( (char*)&storage->data.num_pos, sizeof( uint32_t ) );
-    ar_input.load( (char*)&size, sizeof( uint64_t ) );
-    for ( uint64_t i = 0; i < size; ++i )
-    {
-      int8_t l;
-      ar_input.load( (char*)&l, sizeof( int8_t ) );    
-      storage->data.latches.push_back( l );
-    }
-    ar_input.load( (char*)&storage->data.trav_id, sizeof( uint32_t ) );
+
+    ar_input.load( (char*)&storage->trav_id, sizeof( uint32_t ) );
 
     return true;
   }
@@ -292,7 +275,7 @@ inline void serialize_network( aig_network const& aig, phmap::BinaryOutputArchiv
  */
 inline void serialize_network( aig_network const& aig, std::string const& filename )
 {
-  phmap::BinaryOutputArchive ar_out(filename.c_str());
+  phmap::BinaryOutputArchive ar_out( filename.c_str() );
   serialize_network( aig, ar_out );
 }
 
@@ -308,13 +291,12 @@ inline aig_network deserialize_network( phmap::BinaryInputArchive& ar_input )
   storage->nodes.clear();
   storage->inputs.clear();
   storage->outputs.clear();
-  storage->latch_information.clear();
   storage->hash.clear();
 
   bool const okay = _serializer( ar_input, storage.get() );
   (void)okay;
   assert( okay && "failed to deserialize the network onto stream" );
-  return aig_network{storage};
+  return aig_network{ storage };
 }
 
 /*! \brief Deserializes a combinational AIG network from a file
@@ -324,7 +306,7 @@ inline aig_network deserialize_network( phmap::BinaryInputArchive& ar_input )
  */
 inline aig_network deserialize_network( std::string const& filename )
 {
-  phmap::BinaryInputArchive ar_input(filename.c_str());
+  phmap::BinaryInputArchive ar_input( filename.c_str() );
   auto aig = deserialize_network( ar_input );
   return aig;
 }

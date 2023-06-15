@@ -214,7 +214,15 @@ namespace clang
          {
             return getBaseTypeDecl(ty->getPointeeType());
          }
-         if(ty->isRecordType())
+         if(isa<ElaboratedType>(ty))
+         {
+            return getBaseTypeDecl(ty->getAs<ElaboratedType>()->getNamedType());
+         }
+         if(isa<TypedefType>(ty))
+         {
+            ND = ty->getAs<TypedefType>()->getDecl();
+         }
+         else if(ty->isRecordType())
          {
             ND = ty->getAs<RecordType>()->getDecl();
          }
@@ -383,6 +391,7 @@ namespace clang
                   std::string ParamTypeInclude;
                   const auto getIncludes = [&](const clang::QualType& type) {
                      std::string includes;
+
                      if(const auto BTD = getBaseTypeDecl(type))
                      {
                         includes = SM.getPresumedLoc(BTD->getSourceRange().getBegin(), false).getFilename();

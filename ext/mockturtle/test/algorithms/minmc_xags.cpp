@@ -1,10 +1,10 @@
 #include <catch.hpp>
 
+#include <kitty/spectral.hpp>
 #include <mockturtle/algorithms/detail/minmc_xags.hpp>
 #include <mockturtle/algorithms/simulation.hpp>
 #include <mockturtle/networks/xag.hpp>
 #include <mockturtle/utils/index_list.hpp>
-#include <kitty/spectral.hpp>
 
 #include <algorithm>
 #include <cstdint>
@@ -15,9 +15,10 @@ using namespace mockturtle;
 template<int NumVars>
 static void check_minmc_xags()
 {
-  for ( auto const& [cls, tt, repr, expr] : detail::minmc_xags[NumVars] ) {
+  for ( auto const& [cls, tt, repr, expr] : detail::minmc_xags[NumVars] )
+  {
     xag_network xag;
-    decode( xag, xag_index_list{repr} );
+    decode( xag, xag_index_list{ repr } );
 
     const auto f = simulate<kitty::static_truth_table<NumVars>>( xag )[0];
     auto f_tt = f.construct(), f_expr = f.construct();
@@ -42,7 +43,8 @@ TEST_CASE( "create MC-optumum XAGs from xag_index_list", "[minmc_xags]" )
 template<int NumVars>
 static void check_repr_match()
 {
-  for ( auto const& [cls, tt, repr, expr] : detail::minmc_xags[NumVars] ) {
+  for ( auto const& [cls, tt, repr, expr] : detail::minmc_xags[NumVars] )
+  {
     (void)cls;
     (void)repr;
     (void)expr;

@@ -65,7 +65,8 @@ class MinimalInterfaceTestbench : public TestbenchGenerationBaseStep
 
    void cond_load_from_queue(unsigned long long Mout_addr_ram_bitsize, unsigned int Mout_addr_ram_n_ports,
                              std::string queue_type, const std::string& post_slice, const std::string& res_string,
-                             unsigned int i, const std::string& in_else, const std::string& mem_aggregate) const;
+                             unsigned int i, const std::string& in_else_low, const std::string& in_else_high,
+                             const std::string& mem_aggregate) const;
 
    void write_call(bool hasMultiIrq) const override;
 

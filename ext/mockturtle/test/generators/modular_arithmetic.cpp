@@ -6,7 +6,6 @@
 
 #include <fmt/format.h>
 
-#include <mockturtle/traits.hpp>
 #include <mockturtle/algorithms/cleanup.hpp>
 #include <mockturtle/algorithms/simulation.hpp>
 #include <mockturtle/generators/modular_arithmetic.hpp>
@@ -16,6 +15,7 @@
 #include <mockturtle/networks/klut.hpp>
 #include <mockturtle/networks/mig.hpp>
 #include <mockturtle/networks/xag.hpp>
+#include <mockturtle/traits.hpp>
 
 using namespace mockturtle;
 
@@ -85,7 +85,7 @@ void simulate_modular_arithmetic( uint32_t k, uint64_t c, ArithFn&& operation, E
   constexpr auto NumOps = sizeof...( Ops );
   static_assert( NumOps > 0, "at least one operand must be passed" );
 
-  std::array<uint32_t, NumOps> aops{ops...};
+  std::array<uint32_t, NumOps> aops{ ops... };
 
   using signal_arr_t = std::array<std::vector<typename Ntk::signal>, NumOps>;
   signal_arr_t signals;
@@ -178,9 +178,12 @@ TEST_CASE( "build default modular halving", "[modular_arithmetic]" )
     auto c = std::uniform_int_distribution<uint64_t>( 2, ( 1 << ( k - 1 ) ) - 2 )( gen ) * 2 + 1;
     auto a = std::uniform_int_distribution<uint32_t>( 0, static_cast<uint32_t>( c ) - 1 )( gen );
 
-    simulate_modular_arithmetic<aig_network>( k, c, []( auto& ntk, auto& a, uint64_t c ) { modular_halving_inplace( ntk, a, c ); }, []( auto a, auto c ) { return a % 2 ? ( a + c ) / 2 : a / 2; }, a );
-    simulate_modular_arithmetic<mig_network>( k, c, []( auto& ntk, auto& a, uint64_t c ) { modular_halving_inplace( ntk, a, c ); }, []( auto a, auto c ) { return a % 2 ? ( a + c ) / 2 : a / 2; }, a );
-    simulate_modular_arithmetic<xag_network>( k, c, []( auto& ntk, auto& a, uint64_t c ) { modular_halving_inplace( ntk, a, c ); }, []( auto a, auto c ) { return a % 2 ? ( a + c ) / 2 : a / 2; }, a );
+    simulate_modular_arithmetic<aig_network>(
+        k, c, []( auto& ntk, auto& a, uint64_t c ) { modular_halving_inplace( ntk, a, c ); }, []( auto a, auto c ) { return a % 2 ? ( a + c ) / 2 : a / 2; }, a );
+    simulate_modular_arithmetic<mig_network>(
+        k, c, []( auto& ntk, auto& a, uint64_t c ) { modular_halving_inplace( ntk, a, c ); }, []( auto a, auto c ) { return a % 2 ? ( a + c ) / 2 : a / 2; }, a );
+    simulate_modular_arithmetic<xag_network>(
+        k, c, []( auto& ntk, auto& a, uint64_t c ) { modular_halving_inplace( ntk, a, c ); }, []( auto a, auto c ) { return a % 2 ? ( a + c ) / 2 : a / 2; }, a );
   }
 }
 
@@ -200,16 +203,16 @@ TEST_CASE( "create bool vectors from hex strings", "[modular_arithmetic]" )
     return mod;
   };
 
-  CHECK( vec_from_hex( 8, "e8", false ) == std::vector<bool>{{false, false, false, true, false, true, true, true}} );
-  CHECK( vec_from_hex( 8, "e8", true ) == std::vector<bool>{{false, false, false, true, false, true, true, true}} );
+  CHECK( vec_from_hex( 8, "e8", false ) == std::vector<bool>{ { false, false, false, true, false, true, true, true } } );
+  CHECK( vec_from_hex( 8, "e8", true ) == std::vector<bool>{ { false, false, false, true, false, true, true, true } } );
 
-  CHECK( vec_from_hex( 4, "e8", false ) == std::vector<bool>{{false, false, false, true}} );
-  CHECK( vec_from_hex( 4, "e8", true ) == std::vector<bool>{{false, false, false, true}} );
+  CHECK( vec_from_hex( 4, "e8", false ) == std::vector<bool>{ { false, false, false, true } } );
+  CHECK( vec_from_hex( 4, "e8", true ) == std::vector<bool>{ { false, false, false, true } } );
 
-  CHECK( vec_from_hex( 4, "e7", false ) == std::vector<bool>{{true, true, true, false}} );
-  CHECK( vec_from_hex( 4, "e7", true ) == std::vector<bool>{{true, true, true}} );
+  CHECK( vec_from_hex( 4, "e7", false ) == std::vector<bool>{ { true, true, true, false } } );
+  CHECK( vec_from_hex( 4, "e7", true ) == std::vector<bool>{ { true, true, true } } );
 
-  CHECK( vec_from_hex( 3, "0", false ) == std::vector<bool>{{false, false, false}} );
+  CHECK( vec_from_hex( 3, "0", false ) == std::vector<bool>{ { false, false, false } } );
   CHECK( vec_from_hex( 3, "0", true ).size() == 0 );
 }
 
@@ -222,7 +225,7 @@ TEST_CASE( "build Montgomery multiplier", "[modular_arithmetic]" )
   std::generate( ys.begin(), ys.end(), [&]() { return xag.create_pi(); } );
 
   const auto pos = montgomery_multiplication( xag, xs, ys, 17 );
-  std::for_each( pos.begin(), pos.end(), [&]( auto const& f) { xag.create_po( f ); });
+  std::for_each( pos.begin(), pos.end(), [&]( auto const& f ) { xag.create_po( f ); } );
 
   CHECK( to_int( simulate<bool>( xag, input_word_simulator( ( 14 << 6 ) + 6 ) ) ) == 13 );
   CHECK( to_int( simulate<bool>( xag, input_word_simulator( ( 6 << 6 ) + 14 ) ) ) == 13 );
@@ -240,7 +243,7 @@ TEST_CASE( "build Montgomery multiplier 10-bit", "[modular_arithmetic]" )
   std::generate( ys.begin(), ys.end(), [&]() { return xag.create_pi(); } );
 
   const auto pos = montgomery_multiplication( xag, xs, ys, 661 );
-  std::for_each( pos.begin(), pos.end(), [&]( auto const& f) { xag.create_po( f ); });
+  std::for_each( pos.begin(), pos.end(), [&]( auto const& f ) { xag.create_po( f ); } );
 
   CHECK( to_int( simulate<bool>( xag, input_word_simulator( ( 115 << 10 ) + 643 ) ) ) == 106 );
   CHECK( to_int( simulate<bool>( xag, input_word_simulator( ( 643 << 10 ) + 115 ) ) ) == 106 );
@@ -257,7 +260,7 @@ TEST_CASE( "build Montgomery multiplier 30-bit", "[modular_arithmetic]" )
   std::generate( ys.begin(), ys.end(), [&]() { return xag.create_pi(); } );
 
   const auto pos = montgomery_multiplication( xag, xs, ys, 1027761563 );
-  std::for_each( pos.begin(), pos.end(), [&]( auto const& f) { xag.create_po( f ); });
+  std::for_each( pos.begin(), pos.end(), [&]( auto const& f ) { xag.create_po( f ); } );
 
   CHECK( to_int( simulate<bool>( xag, input_word_simulator( ( 516764288ull << 30ull ) + 411767756ull ) ) ) == 287117401ull );
 }
@@ -278,7 +281,7 @@ TEST_CASE( "build Montgomery multiplier 192-bit", "[modular_arithmetic]" )
   CHECK( NN.size() == 192u );
 
   const auto pos = montgomery_multiplication( xag, xs, ys, N, NN );
-  std::for_each( pos.begin(), pos.end(), [&]( auto const& f) { xag.create_po( f ); });
+  std::for_each( pos.begin(), pos.end(), [&]( auto const& f ) { xag.create_po( f ); } );
 }
 
 TEST_CASE( "build Montgomery multiplier 224-bit", "[modular_arithmetic]" )
@@ -297,7 +300,7 @@ TEST_CASE( "build Montgomery multiplier 224-bit", "[modular_arithmetic]" )
   CHECK( NN.size() == 224u );
 
   const auto pos = montgomery_multiplication( xag, xs, ys, N, NN );
-  std::for_each( pos.begin(), pos.end(), [&]( auto const& f) { xag.create_po( f ); });
+  std::for_each( pos.begin(), pos.end(), [&]( auto const& f ) { xag.create_po( f ); } );
 }
 
 TEST_CASE( "build Montgomery multiplier 256-bit", "[modular_arithmetic]" )
@@ -316,7 +319,7 @@ TEST_CASE( "build Montgomery multiplier 256-bit", "[modular_arithmetic]" )
   CHECK( NN.size() == 256u );
 
   const auto pos = montgomery_multiplication( xag, xs, ys, N, NN );
-  std::for_each( pos.begin(), pos.end(), [&]( auto const& f) { xag.create_po( f ); });
+  std::for_each( pos.begin(), pos.end(), [&]( auto const& f ) { xag.create_po( f ); } );
 }
 
 TEST_CASE( "build Montgomery multiplier 384-bit", "[modular_arithmetic]" )
@@ -335,7 +338,7 @@ TEST_CASE( "build Montgomery multiplier 384-bit", "[modular_arithmetic]" )
   CHECK( NN.size() == 384u );
 
   const auto pos = montgomery_multiplication( xag, xs, ys, N, NN );
-  std::for_each( pos.begin(), pos.end(), [&]( auto const& f) { xag.create_po( f ); });
+  std::for_each( pos.begin(), pos.end(), [&]( auto const& f ) { xag.create_po( f ); } );
 }
 
 TEST_CASE( "build Montgomery multiplier 521-bit", "[modular_arithmetic]" )
@@ -354,7 +357,7 @@ TEST_CASE( "build Montgomery multiplier 521-bit", "[modular_arithmetic]" )
   CHECK( NN.size() == 521u );
 
   const auto pos = montgomery_multiplication( xag, xs, ys, N, NN );
-  std::for_each( pos.begin(), pos.end(), [&]( auto const& f) { xag.create_po( f ); });
+  std::for_each( pos.begin(), pos.end(), [&]( auto const& f ) { xag.create_po( f ); } );
 }
 
 TEST_CASE( "10-bit constant multiplication by 661", "[modular_arithmetic]" )
@@ -364,9 +367,9 @@ TEST_CASE( "10-bit constant multiplication by 661", "[modular_arithmetic]" )
   std::vector<xag_network::signal> xs( 10u );
   std::generate( xs.begin(), xs.end(), [&]() { return xag.create_pi(); } );
 
-  std::vector<bool> constant = {true, false, true, false, true, false, false, true, false, true};
+  std::vector<bool> constant = { true, false, true, false, true, false, false, true, false, true };
   const auto sum = modular_constant_multiplier( xag, xs, constant );
-  std::for_each( sum.begin(), sum.end(), [&]( auto const& f) { xag.create_po( f ); });
+  std::for_each( sum.begin(), sum.end(), [&]( auto const& f ) { xag.create_po( f ); } );
 
   std::default_random_engine gen;
   std::uniform_int_distribution<int> dist( 0, 1023 );
@@ -374,6 +377,6 @@ TEST_CASE( "10-bit constant multiplication by 661", "[modular_arithmetic]" )
   for ( auto i = 0u; i < 100u; ++i )
   {
     const auto v = dist( gen );
-    CHECK( to_int( simulate<bool>( xag, input_word_simulator( v ) ) ) == ( ( 661 * v ) % 1024 ) );
+    CHECK( to_int( simulate<bool>( xag, input_word_simulator( v ) ) ) == uint64_t( ( 661 * v ) % 1024 ) );
   }
 }

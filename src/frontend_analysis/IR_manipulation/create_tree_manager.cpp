@@ -226,8 +226,8 @@ void create_tree_manager::createCostTable()
       CostTable = "store_expr|32=" + STR(clock_period);
       CostTable += ",load_expr|32=" + STR(clock_period);
       CostTable += ",nop_expr|32=" + STR(clock_period);
-      for(const std::string& op_name : {"mult_expr", "plus_expr", "trunc_div_expr", "trunc_mod_expr", "lshift_expr",
-                                        "rshift_expr", "bit_and_expr", "bit_ior_expr", "bit_xor_expr", "cond_expr"})
+      for(const std::string op_name : {"mult_expr", "plus_expr", "trunc_div_expr", "trunc_mod_expr", "lshift_expr",
+                                       "rshift_expr", "bit_and_expr", "bit_ior_expr", "bit_xor_expr", "cond_expr"})
       {
          for(auto fu_prec : {1, 8, 16, 32, 64})
          {
@@ -255,7 +255,7 @@ void create_tree_manager::createCostTable()
             }
          }
       }
-      for(const std::string& op_name : {"mult_expr", "plus_expr", "rdiv_expr"})
+      for(const std::string op_name : {"mult_expr", "plus_expr", "rdiv_expr"})
       {
          for(auto fu_prec : {32, 64})
          {
