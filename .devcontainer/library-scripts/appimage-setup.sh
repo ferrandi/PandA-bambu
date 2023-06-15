@@ -53,10 +53,18 @@ fi
 echo "Latest bundled GCC version: ${max_gcc_ver}"
 
 echo "Inflating libraries..."
-mkdir -p ${pkg_dir}/lib/x86_64-linux-gnu/
+mkdir ${pkg_dir}/lib
+mkdir ${pkg_dir}/lib32
+mkdir ${pkg_dir}/libx32
+mkdir ${pkg_dir}/lib/x86_64-linux-gnu/
 cp -d /lib/x86_64-linux-gnu/libtinfo.so* ${pkg_dir}/lib/x86_64-linux-gnu/
 cp -d /usr/lib/x86_64-linux-gnu/libicu*.so* ${pkg_dir}/lib/x86_64-linux-gnu/
 cp -d /usr/lib/libbdd.so* ${pkg_dir}/usr/lib/
+cp -d /lib/x86_64-linux-gnu/libm{,-*}.so* ${pkg_dir}/lib/x86_64-linux-gnu/
+cp -d /libx32/libm{,-*}.so* ${pkg_dir}/libx32/
+cp -d /lib32/libm{,-*}.so* ${pkg_dir}/lib32/
+cp -d /usr/include/features.h ${pkg_dir}/usr/include/
+cp -d /usr/include/stdc-predef.h ${pkg_dir}/usr/include/
 
 echo "Inflating metadata..."
 cp ${repo_dir}/style/img/panda.png.in ${pkg_dir}/bambu.png

@@ -123,10 +123,17 @@ echo "::group::Package Appimage"
 
 echo "Inflating libraries..."
 mkdir $dist_dir/lib
+mkdir $dist_dir/lib32
+mkdir $dist_dir/libx32
 mkdir $dist_dir/lib/x86_64-linux-gnu/
 cp -d /lib/x86_64-linux-gnu/libtinfo.so* $dist_dir/lib/x86_64-linux-gnu/
 cp -d /usr/lib/x86_64-linux-gnu/libicu*.so* $dist_dir/lib/x86_64-linux-gnu/
 cp -d /usr/lib/libbdd.so* $dist_dir/usr/lib/
+cp -d /lib/x86_64-linux-gnu/libm{,-*}.so* $dist_dir/lib/x86_64-linux-gnu/
+cp -d /libx32/libm{,-*}.so* $dist_dir/libx32/
+cp -d /lib32/libm{,-*}.so* $dist_dir/lib32/
+cp -d /usr/include/features.h $dist_dir/usr/include/
+cp -d /usr/include/stdc-predef.h $dist_dir/usr/include/
 
 echo "Inflating metadata..."
 cp style/img/panda.png.in $dist_dir/bambu.png
