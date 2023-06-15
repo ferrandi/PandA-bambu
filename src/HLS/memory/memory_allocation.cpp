@@ -280,31 +280,40 @@ void memory_allocation::finalize_memory_allocation()
       const auto function_behavior = HLSMgr->CGetFunctionBehavior(fun_id);
       const auto behavioral_helper = function_behavior->CGetBehavioralHelper();
       const auto is_interfaced = HLSMgr->hasToBeInterfaced(behavioral_helper->get_function_index());
-      const auto is_inferred_interface = parameters->getOption<HLSFlowStep_Type>(OPT_interface_type) ==
-                                         HLSFlowStep_Type::INFERRED_INTERFACE_GENERATION;
+      const auto fname = behavioral_helper->GetMangledFunctionName();
+      const auto design_attributes = HLSMgr->design_attributes.find(fname);
+      const auto has_attributes = design_attributes != HLSMgr->design_attributes.end();
       if(function_behavior->get_has_globals() && parameters->isOption(OPT_expose_globals) &&
          parameters->getOption<bool>(OPT_expose_globals))
       {
          has_intern_shared_data = true;
       }
-      if(!is_inferred_interface)
+      const auto& function_parameters = behavioral_helper->get_parameters();
+      for(const auto function_parameter : function_parameters)
       {
-         const auto& function_parameters = behavioral_helper->get_parameters();
-         for(const auto function_parameter : function_parameters)
+         if(has_attributes)
          {
-            if(HLSMgr->Rmem->is_parm_decl_copied(function_parameter) &&
-               !HLSMgr->Rmem->is_parm_decl_stored(function_parameter))
+            const auto pname = behavioral_helper->PrintVariable(function_parameter);
+            THROW_ASSERT(design_attributes->second.count(pname), "");
+            THROW_ASSERT(design_attributes->second.at(pname).count(attr_interface_type), "");
+            const auto parameter_interface = design_attributes->second.at(pname).at(attr_interface_type);
+            if(parameter_interface != "default")
             {
-               use_databus_width = true;
-               maximum_bus_size = std::max(maximum_bus_size, 8ull);
+               continue;
             }
-            if(!use_unknown_address && is_interfaced && tree_helper::is_a_pointer(TreeM, function_parameter))
+         }
+         if(HLSMgr->Rmem->is_parm_decl_copied(function_parameter) &&
+            !HLSMgr->Rmem->is_parm_decl_stored(function_parameter))
+         {
+            use_databus_width = true;
+            maximum_bus_size = std::max(maximum_bus_size, 8ull);
+         }
+         if(!use_unknown_address && is_interfaced && tree_helper::is_a_pointer(TreeM, function_parameter))
+         {
+            use_unknown_address = true;
+            if(output_level > OUTPUT_LEVEL_NONE)
             {
-               use_unknown_address = true;
-               if(output_level > OUTPUT_LEVEL_NONE)
-               {
-                  THROW_WARNING("This function uses unknown addresses: " + behavioral_helper->get_function_name());
-               }
+               THROW_WARNING("This function uses unknown addresses: " + behavioral_helper->get_function_name());
             }
          }
       }
@@ -325,8 +334,6 @@ void memory_allocation::finalize_memory_allocation()
       graph::vertex_iterator v, v_end;
       const auto TM = HLSMgr->get_tree_manager();
       const auto fnode = TM->CGetTreeReindex(fun_id);
-      const auto fd = GetPointerS<const function_decl>(GET_CONST_NODE(fnode));
-      const auto fname = tree_helper::GetMangledFunctionName(fd);
       CustomUnorderedSet<vertex> RW_stmts;
       if(HLSMgr->design_interface_io.find(fname) != HLSMgr->design_interface_io.end())
       {

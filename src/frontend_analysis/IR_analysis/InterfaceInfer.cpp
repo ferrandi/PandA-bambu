@@ -393,6 +393,7 @@ void InterfaceInfer::Initialize()
                            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                                           "---|" + argName + "|" + interface_type + "|\n");
                            HLSMgr->design_attributes[fname][argName][attr_interface_type] = interface_type;
+                           HLSMgr->design_attributes[fname][argName][attr_typename] = interface_typename;
                            if(interface_type == "array")
                            {
                               HLSMgr->design_attributes[fname][argName][attr_size] = interfaceSize;
@@ -438,7 +439,6 @@ void InterfaceInfer::Initialize()
                            }
                         }
 
-                        HLSMgr->design_attributes[fname][argName][attr_typename] = interface_typename;
                         HLSMgr->design_interface_typename_signature[fname].push_back(interface_typename);
                         HLSMgr->design_interface_typename_orig_signature[fname].push_back(interface_typenameOrig);
                         if((interface_typenameOrig.find("ap_int<") != std::string::npos ||
@@ -564,12 +564,16 @@ DesignFlowStep_Status InterfaceInfer::Exec()
       if(parameters->getOption<HLSFlowStep_Type>(OPT_interface_type) == HLSFlowStep_Type::INFERRED_INTERFACE_GENERATION)
       {
          /* Check if there is at least one interface type associated to fname */
+
          bool type_found = false;
-         for(auto& par : HLSMgr->design_attributes[fname])
+         if(HLSMgr->design_attributes.find(fname) != HLSMgr->design_attributes.end())
          {
-            if(par.second.find(attr_interface_type) != par.second.end())
+            for(auto& par : HLSMgr->design_attributes.at(fname))
             {
-               type_found = true;
+               if(par.second.find(attr_interface_type) != par.second.end())
+               {
+                  type_found = true;
+               }
             }
          }
          if(type_found)
@@ -577,7 +581,7 @@ DesignFlowStep_Status InterfaceInfer::Exec()
             const tree_manipulationRef tree_man(new tree_manipulation(TM, parameters, AppM));
 
             INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "-->Analyzing function " + fname);
-            auto& DesignAttributes = HLSMgr->design_attributes.at(fname);
+            auto& DesignAttributes = HLSMgr->design_attributes[fname];
             for(const auto& arg : fd->list_of_args)
             {
                const auto arg_pd = GetPointerS<const parm_decl>(GET_CONST_NODE(arg));
@@ -590,10 +594,15 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                                 DesignAttributes.at(arg_name).count(attr_interface_type),
                             "Not matched parameter name: " + arg_name);
                auto& arg_attributes = DesignAttributes.at(arg_name);
+               arg_attributes[attr_interface_dir] = port_o::GetString(port_o::IN);
                arg_attributes[attr_interface_bitwidth] = STR(tree_helper::Size(arg_type));
                arg_attributes[attr_interface_alignment] = STR(get_aligned_bitsize(tree_helper::Size(arg_type)));
                auto& interface_type = arg_attributes.at(attr_interface_type);
-               if(interface_type != "default")
+               if(interface_type == "bus")
+               {
+                  interface_type = "default";
+               }
+               else if(interface_type != "default")
                {
                   const auto arg_ssa_id = AppM->getSSAFromParm(top_id, arg_id);
                   const auto arg_ssa = TM->GetTreeReindex(arg_ssa_id);
@@ -603,17 +612,14 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                      THROW_WARNING("Parameter '" + arg_name + "' not used by any statement");
                      if(tree_helper::IsPointerType(arg_type))
                      {
+                        // BEAWARE: none is used here in place of default to avoid memory allocation to consider this as
+                        // an active pointer parameter
                         interface_type = "none";
                      }
                      else
                      {
                         THROW_ERROR("parameter not used: specified interface does not make sense - " + interface_type);
                      }
-                     continue;
-                  }
-                  if(interface_type == "bus") /// TO BE FIXED
-                  {
-                     interface_type = "default";
                      continue;
                   }
                   if(tree_helper::IsPointerType(arg_type))
