@@ -84,7 +84,7 @@ bool NonDeterministicFlows::ExecuteTool(const size_t seed) const
    }
    boost::filesystem::create_directory(new_directory);
    const auto ret =
-       PandaSystem(parameters, "cd " + new_directory + "; " + arg_string, new_directory + "/tool_execution_output");
+       PandaSystem(parameters, "cd " + new_directory + "; " + arg_string, false, new_directory + "/tool_execution_output");
    if(IsError(ret))
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Failure");
