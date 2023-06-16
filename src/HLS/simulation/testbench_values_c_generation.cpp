@@ -307,7 +307,7 @@ DesignFlowStep_Status TestbenchValuesCGeneration::Exec()
          exec_name.insert(0, "ASAN_OPTIONS='symbolize=1:redzone=2048' ");
       }
    }
-   int ret = PandaSystem(parameters, exec_name, c_stdout_file);
+   int ret = PandaSystem(parameters, exec_name, false, c_stdout_file);
    if(IsError(ret))
    {
       THROW_ERROR("Error in generating the expected test results");

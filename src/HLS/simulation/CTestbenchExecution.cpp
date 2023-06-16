@@ -282,7 +282,7 @@ DesignFlowStep_Status CTestbenchExecution::Exec()
       }
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "---exec executable: " + exec_name);
-   int ret = PandaSystem(parameters, exec_name, c_stdout_file);
+   int ret = PandaSystem(parameters, exec_name, false, c_stdout_file);
    if(IsError(ret))
    {
       THROW_ERROR("Error in generating the expected test results");
