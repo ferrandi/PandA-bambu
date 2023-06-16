@@ -654,6 +654,7 @@ DesignFlowStep_Status FSM_NI_SSA_liveness::InternalExec()
       }
 
       unsigned int bb_index = get_bb_index_from_state_info(data, state_info);
+      const auto live_in_bb_index = fbb->CGetBBNodeInfo(bb_index_map[bb_index])->get_live_in();
       if(state_info->is_pipelined_state)
       {
          InEdgeIterator i_e_it, i_e_end;
@@ -672,7 +673,7 @@ DesignFlowStep_Status FSM_NI_SSA_liveness::InternalExec()
                      for(const auto& def_edge : GetPointer<const gimple_phi>(phi_node)->CGetDefEdgesList())
                      {
                         auto phi_in = def_edge.first->index;
-                        if(HLSMgr->is_register_compatible(phi_in))
+                        if(HLSMgr->is_register_compatible(phi_in) && !live_in_bb_index.contains(phi_in))
                         {
                            unsigned int step = HLS->Rliv->GetStepPhiOut(exec_op, phi_in);
                            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
@@ -765,7 +766,7 @@ DesignFlowStep_Status FSM_NI_SSA_liveness::InternalExec()
       }
       else if(prev_bb_index != bb_index)
       {
-         for(const auto li : fbb->CGetBBNodeInfo(bb_index_map[bb_index])->get_live_in())
+         for(const auto li : live_in_bb_index)
          {
             if(HLSMgr->is_register_compatible(li))
             {
