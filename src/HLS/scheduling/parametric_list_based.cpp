@@ -2000,7 +2000,8 @@ bool parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                  "operation pair " + GET_NAME(flow_graph, first_vertex) + " <- " +
                                      GET_NAME(flow_graph, last_vertex) +
-                                     " not satisfying the loop pipelining constraints-2");
+                                     " not satisfying the loop pipelining constraints:" + STR(cs_first_vertex) + "-" +
+                                     STR(cs_last_vertex) + "-" + STR(latest_cs));
                   return false;
                }
             }
@@ -2051,6 +2052,8 @@ unsigned parametric_list_based::computeLatestStep(unsigned cs_last_vertex, const
             }
          }
          auto cs_tgt_vertex = from_strongtype_cast<unsigned>(schedule->get_cstep(target).second);
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                        "cs_tgt_vertex " + STR(cs_tgt_vertex) + " of vertex " + GET_NAME(flow_graph, target));
          if(cs_tgt_vertex < latest_cs)
          {
             latest_cs = cs_tgt_vertex;
