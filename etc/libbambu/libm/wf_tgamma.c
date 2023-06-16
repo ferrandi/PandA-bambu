@@ -49,7 +49,7 @@ float tgammaf(float x)
    {
       /* Positive infinity (return positive infinity) or NaN (return
       NaN).  */
-      return x + x;
+      return X_PLUS_X(x);
    }
 
    float y;

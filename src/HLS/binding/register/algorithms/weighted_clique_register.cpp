@@ -74,12 +74,12 @@ WeightedCliqueRegisterBindingSpecialization::WeightedCliqueRegisterBindingSpecia
 {
 }
 
-const std::string WeightedCliqueRegisterBindingSpecialization::GetKindText() const
+std::string WeightedCliqueRegisterBindingSpecialization::GetKindText() const
 {
    return CliqueCovering_AlgorithmToString(clique_covering_algorithm);
 }
 
-const std::string WeightedCliqueRegisterBindingSpecialization::GetSignature() const
+std::string WeightedCliqueRegisterBindingSpecialization::GetSignature() const
 {
    return STR(static_cast<unsigned int>(clique_covering_algorithm));
 }

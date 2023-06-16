@@ -8,8 +8,8 @@
       <circuit>
         <component_o id="complex_expr_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>  
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="complex_expr_FU"/>
           <port_o id="in1" dir="IN">
@@ -20,12 +20,9 @@
           </port_o>
           <port_o id="out1" dir="OUT" is_doubled="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
-          <NP_functionality LIBRARY="complex_expr_FU in1 in2 out1" VERILOG_PROVIDED=
-"assign out1 = {in2, in1};"
-VHDL_PROVIDED=
-"begin
+          <NP_functionality LIBRARY="complex_expr_FU in1 in2 out1" VERILOG_PROVIDED="assign out1 = {in2, in1};"
+            VHDL_PROVIDED="begin
    out1 &lt;= in2 &amp; in1;
 "/>
         </component_o>
@@ -37,8 +34,8 @@ VHDL_PROVIDED=
       <circuit>
         <component_o id="realpart_expr_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2014-2023 Politecnico di Milano</copyright>  
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2014-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="realpart_expr_FU"/>
           <port_o id="in1" dir="IN" is_doubled="1">
@@ -46,12 +43,9 @@ VHDL_PROVIDED=
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
-          <NP_functionality LIBRARY="realpart_expr_FU in1 out1" VERILOG_PROVIDED=
-"assign out1 = in1[BITSIZE_out1-1:0];"
-VHDL_PROVIDED=
-"begin
+          <NP_functionality LIBRARY="realpart_expr_FU in1 out1" VERILOG_PROVIDED="assign out1 = in1[BITSIZE_out1-1:0];"
+            VHDL_PROVIDED="begin
    out1 &lt;= in1(BITSIZE_out1-1 downto 0);
 "/>
         </component_o>
@@ -63,8 +57,8 @@ VHDL_PROVIDED=
       <circuit>
         <component_o id="imagpart_expr_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2014-2023 Politecnico di Milano</copyright>  
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2014-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="imagpart_expr_FU"/>
           <port_o id="in1" dir="IN" is_doubled="1">
@@ -72,12 +66,9 @@ VHDL_PROVIDED=
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
-          <NP_functionality LIBRARY="imagpart_expr_FU in1 out1" VERILOG_PROVIDED=
-"assign out1 = in1[BITSIZE_out1*2-1:BITSIZE_out1];"
-VHDL_PROVIDED=
-"begin
+          <NP_functionality LIBRARY="imagpart_expr_FU in1 out1" VERILOG_PROVIDED="assign out1 = in1[BITSIZE_out1*2-1:BITSIZE_out1];"
+            VHDL_PROVIDED="begin
    out1 &lt;= in1(BITSIZE_out1*2-1 downto BITSIZE_out1);
 "/>
         </component_o>

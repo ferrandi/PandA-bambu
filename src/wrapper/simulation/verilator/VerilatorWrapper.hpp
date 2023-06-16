@@ -51,7 +51,7 @@ CONSTREF_FORWARD_DECL(Parameter);
 
 /**
  * @class VerilatorWrapper
- * Main class for wrapping the Icarus verilog compiler.
+ * Main class for wrapping Verilator.
  */
 class VerilatorWrapper : public SimulationTool
 {
@@ -69,7 +69,7 @@ class VerilatorWrapper : public SimulationTool
     * Constructor
     * @param Param is the set of parameters
     */
-   VerilatorWrapper(const ParameterConstRef& Param, std::string suffix);
+   VerilatorWrapper(const ParameterConstRef& Param, const std::string& suffix, const std::string& top_fname);
 
    /**
     * Destructor

@@ -186,17 +186,17 @@ bool GenerateFuList::HasToBeExecuted() const
    return ToDataFileStep::HasToBeExecuted();
 }
 
-const std::string GenerateFuList::GetSignature() const
+std::string GenerateFuList::GetSignature() const
 {
    return ToDataFileStep::GetSignature();
 }
 
-const std::string GenerateFuList::GetName() const
+std::string GenerateFuList::GetName() const
 {
    return ToDataFileStep::GetName();
 }
 
-const DesignFlowStepFactoryConstRef GenerateFuList::CGetDesignFlowStepFactory() const
+DesignFlowStepFactoryConstRef GenerateFuList::CGetDesignFlowStepFactory() const
 {
    return ToDataFileStep::CGetDesignFlowStepFactory();
 }

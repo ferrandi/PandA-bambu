@@ -127,13 +127,13 @@ class FunctionFrontendFlowStep : public FrontendFlowStep
    /**
     * Return the signature of this step
     */
-   const std::string GetSignature() const override;
+   std::string GetSignature() const override;
 
    /**
     * Return the name of this design step
     * @return the name of the pass (for debug purpose)
     */
-   const std::string GetName() const override;
+   std::string GetName() const override;
 
    /**
     * Execute the step

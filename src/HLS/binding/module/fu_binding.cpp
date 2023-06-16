@@ -745,11 +745,7 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
             {
                GetPointer<port_o>(port)->add_n_ports(static_cast<unsigned int>(max_n_ports), port);
             }
-            if(GetPointer<port_o>(port)->get_is_data_bus() || GetPointer<port_o>(port)->get_is_addr_bus() ||
-               GetPointer<port_o>(port)->get_is_size_bus() || GetPointer<port_o>(port)->get_is_tag_bus())
-            {
-               port_o::resize_busport(bus_size_bitsize, bus_addr_bitsize, bus_data_bitsize, bus_tag_bitsize, port);
-            }
+            port_o::resize_if_busport(bus_size_bitsize, bus_addr_bitsize, bus_data_bitsize, bus_tag_bitsize, port);
          }
          for(unsigned int i = 0; i < GetPointer<module>(curr_gate)->get_out_port_size(); i++)
          {
@@ -758,11 +754,7 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
             {
                GetPointer<port_o>(port)->add_n_ports(static_cast<unsigned int>(max_n_ports), port);
             }
-            if(GetPointer<port_o>(port)->get_is_data_bus() || GetPointer<port_o>(port)->get_is_addr_bus() ||
-               GetPointer<port_o>(port)->get_is_size_bus() || GetPointer<port_o>(port)->get_is_tag_bus())
-            {
-               port_o::resize_busport(bus_size_bitsize, bus_addr_bitsize, bus_data_bitsize, bus_tag_bitsize, port);
-            }
+            port_o::resize_if_busport(bus_size_bitsize, bus_addr_bitsize, bus_data_bitsize, bus_tag_bitsize, port);
          }
          manage_module_ports(HLSMgr, HLS, SM, curr_gate, 0);
          memory_modules.push_back(curr_gate);
@@ -1882,7 +1874,7 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
          if(HLSMgr->Rmem->is_private_memory(ar))
          {
             auto accessed_bitsize = std::max(required_variables[0], produced_variables);
-            accessed_bitsize = resize_to_1_8_16_32_64_128_256_512(accessed_bitsize);
+            accessed_bitsize = ceil_pow2(accessed_bitsize);
             bram_bitsize = has_misaligned_indirect_ref ? std::max(bram_bitsize, accessed_bitsize) :
                                                          std::max(bram_bitsize, accessed_bitsize / 2);
             if(bram_bitsize > HLSMgr->Rmem->get_maxbram_bitsize())
@@ -2255,11 +2247,7 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
       {
          GetPointer<port_o>(port)->add_n_ports(static_cast<unsigned int>(required_variables.size()), port);
       }
-      if(GetPointer<port_o>(port)->get_is_data_bus() || GetPointer<port_o>(port)->get_is_addr_bus() ||
-         GetPointer<port_o>(port)->get_is_size_bus() || GetPointer<port_o>(port)->get_is_tag_bus())
-      {
-         port_o::resize_busport(bus_size_bitsize, bus_addr_bitsize, bus_data_bitsize, bus_tag_bitsize, port);
-      }
+      port_o::resize_if_busport(bus_size_bitsize, bus_addr_bitsize, bus_data_bitsize, bus_tag_bitsize, port);
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Resized input ports");
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Resizing variables");
@@ -2288,11 +2276,7 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
       {
          GetPointer<port_o>(port)->add_n_ports(static_cast<unsigned int>(max_n_ports), port);
       }
-      if(GetPointer<port_o>(port)->get_is_data_bus() || GetPointer<port_o>(port)->get_is_addr_bus() ||
-         GetPointer<port_o>(port)->get_is_size_bus() || GetPointer<port_o>(port)->get_is_tag_bus())
-      {
-         port_o::resize_busport(bus_size_bitsize, bus_addr_bitsize, bus_data_bitsize, bus_tag_bitsize, port);
-      }
+      port_o::resize_if_busport(bus_size_bitsize, bus_addr_bitsize, bus_data_bitsize, bus_tag_bitsize, port);
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Resized output ports");
    if(offset < fu_module->get_out_port_size())
@@ -2341,7 +2325,7 @@ void fu_binding::specialize_memory_unit(const HLS_managerRef HLSMgr, const hlsRe
    fu_module->SetParameter("USE_SPARSE_MEMORY", is_sparse_memory ? "1" : "0");
    memory::add_memory_parameter(HLS->datapath, base_address, STR(HLSMgr->Rmem->get_base_address(ar, HLS->functionId)));
 
-   long long int vec_size = 0;
+   unsigned long long vec_size = 0;
    /// array ref initialization
    THROW_ASSERT(ar, "expected a real tree node index");
    const auto init_filename = "array_ref_" + STR(ar) + ".mem";
@@ -2374,7 +2358,7 @@ void fu_binding::specialize_memory_unit(const HLS_managerRef HLSMgr, const hlsRe
 #define CHANGE_SDS_MEMORY_LAYOUT 0
 
 void fu_binding::fill_array_ref_memory(std::ostream& init_file_a, std::ostream& init_file_b, unsigned int ar,
-                                       long long int& vec_size, unsigned long long& elts_size, const memoryRef mem,
+                                       unsigned long long& vec_size, unsigned long long& elts_size, const memoryRef mem,
                                        bool is_memory_splitted, bool is_sds, module* fu_module)
 {
    unsigned long long bram_bitsize;
@@ -2390,13 +2374,14 @@ void fu_binding::fill_array_ref_memory(std::ostream& init_file_a, std::ostream& 
       init_node = ar_node;
    }
    const auto array_type_node = tree_helper::CGetType(ar_node);
-   unsigned long long element_precision = 0;
+   unsigned long long element_align = 0;
    if(tree_helper::IsArrayEquivType(array_type_node))
    {
       std::vector<unsigned long long> dims;
       tree_helper::get_array_dim_and_bitsize(TreeM, array_type_node->index, dims, elts_size);
       THROW_ASSERT(dims.size(), "something wrong happened");
-      vec_size = std::accumulate(dims.begin(), dims.end(), 1, [](unsigned int a, unsigned int b) { return a * b; });
+      vec_size = std::accumulate(dims.begin(), dims.end(), 1ULL,
+                                 [](unsigned long long a, unsigned long long b) { return a * b; });
    }
    else if(GetPointer<const integer_type>(GET_CONST_NODE(array_type_node)) ||
            tree_helper::IsRealType(array_type_node) || tree_helper::IsEnumType(array_type_node) ||
@@ -2415,7 +2400,7 @@ void fu_binding::fill_array_ref_memory(std::ostream& init_file_a, std::ostream& 
    {
       elts_size = tree_helper::Size(array_type_node);
       const auto element_type = tree_helper::CGetElements(array_type_node);
-      element_precision = tree_helper::Size(element_type);
+      element_align = tree_helper::Size(element_type);
       vec_size = 1;
    }
    else
@@ -2430,7 +2415,7 @@ void fu_binding::fill_array_ref_memory(std::ostream& init_file_a, std::ostream& 
 #if CHANGE_SDS_MEMORY_LAYOUT
       if(vd && vd->bit_values.size())
       {
-         elts_size = element_precision = static_cast<unsigned int>(vd->bit_values.size());
+         elts_size = element_align = static_cast<unsigned int>(vd->bit_values.size());
       }
 #endif
    }
@@ -2452,9 +2437,9 @@ void fu_binding::fill_array_ref_memory(std::ostream& init_file_a, std::ostream& 
        (!GetPointer<constructor>(GET_NODE(init_node)) && !GetPointer<string_cst>(GET_NODE(init_node)))))
    {
       std::vector<std::string> init_string;
-      write_init(TreeM, ar_node, init_node, init_string, mem, element_precision);
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---element_precision " + STR(element_precision));
-      if(is_sds && (element_precision == 0 || elts_size == element_precision))
+      write_init(TreeM, ar_node, init_node, init_string, mem, element_align);
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---element_align " + STR(element_align));
+      if(is_sds && (element_align == 0 || elts_size == element_align))
       {
          THROW_ASSERT(!is_memory_splitted, "unexpected condition");
          for(const auto& init_value : init_string)
@@ -2681,8 +2666,7 @@ void fu_binding::fill_array_ref_memory(std::ostream& init_file_a, std::ostream& 
 }
 
 void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_node, tree_nodeRef _init_node,
-                            std::vector<std::string>& init_file, const memoryRef mem,
-                            unsigned long long element_precision)
+                            std::vector<std::string>& init_file, const memoryRef mem, unsigned long long element_align)
 {
    std::string trimmed_value;
    THROW_ASSERT(!var_node || var_node->get_kind() == tree_reindex_K, "");
@@ -2703,158 +2687,123 @@ void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_n
          const auto ull_value = tree_helper::GetConstValue(init_node);
          trimmed_value = "";
          auto precision = std::max(8ull, tree_helper::Size(tree_helper::CGetType(_init_node)));
-         THROW_ASSERT(precision, "expected a size greater than 0");
-         if(element_precision)
+         if(element_align)
          {
-            precision = std::min(precision, element_precision);
+            precision = std::min(precision, element_align);
          }
-         for(unsigned int ind = 0; ind < precision; ind++)
+         for(auto ind = 1U; ind <= precision; ind++)
          {
-            trimmed_value = trimmed_value + (((integer_cst_t(1) << (precision - ind - 1)) & ull_value) ? '1' : '0');
+            trimmed_value.push_back(((integer_cst_t(1) << (precision - ind)) & ull_value) ? '1' : '0');
          }
          init_file.push_back(trimmed_value);
          break;
       }
       case complex_cst_K:
       {
-         auto precision = tree_helper::Size(tree_helper::CGetType(_init_node));
-         auto* rp = GetPointer<const real_cst>(GET_CONST_NODE(GetPointerS<const complex_cst>(init_node)->real));
-         std::string trimmed_value_r;
-         if(rp)
-         {
-            std::string C_value_r = rp->valr;
-            trimmed_value_r = convert_fp_to_string(C_value_r, precision / 2);
-         }
-         else
-         {
-            const auto ull_value = tree_helper::GetConstValue(GetPointerS<const complex_cst>(init_node)->real);
-            for(unsigned int ind = 0; ind < precision / 2; ind++)
-            {
-               trimmed_value_r =
-                   trimmed_value_r + (((integer_cst_t(1) << (precision / 2 - ind - 1)) & ull_value) ? '1' : '0');
-            }
-         }
-         auto* ip = GetPointer<const real_cst>(GET_CONST_NODE(GetPointerS<const complex_cst>(init_node)->imag));
-         std::string trimmed_value_i;
-         if(ip)
-         {
-            std::string C_value_i = ip->valr;
-            trimmed_value_i = convert_fp_to_string(C_value_i, precision / 2);
-         }
-         else
-         {
-            const auto ull_value = tree_helper::GetConstValue(GetPointerS<const complex_cst>(init_node)->imag);
-            for(unsigned int ind = 0; ind < precision / 2; ind++)
-            {
-               trimmed_value_i =
-                   trimmed_value_i + (((integer_cst_t(1) << (precision / 2 - ind - 1)) & ull_value) ? '1' : '0');
-            }
-         }
-         trimmed_value = trimmed_value_i + trimmed_value_r;
-         init_file.push_back(trimmed_value);
+         const auto precision = tree_helper::Size(tree_helper::CGetType(_init_node));
+         const auto cc = GetPointerS<const complex_cst>(init_node);
+         write_init(TreeM, var_node, cc->real, init_file, mem, precision / 2);
+         write_init(TreeM, var_node, cc->imag, init_file, mem, precision / 2);
          break;
       }
       case constructor_K:
       {
-         auto* co = GetPointerS<const constructor>(init_node);
-         auto i = co->list_of_idx_valu.begin();
-         auto vend = co->list_of_idx_valu.end();
+         const auto co = GetPointerS<const constructor>(init_node);
          bool designated_initializers_used = false;
          bool is_struct = false;
          bool is_union = false;
          unsigned long long union_size = 0;
-         // unsigned int struct_or_union_align = 0;
          std::vector<tree_nodeRef>* field_list = nullptr;
          /// check if designated initializers are really used
-         tree_nodeRef firstnode = (i != vend) ? co->list_of_idx_valu.begin()->first : tree_nodeRef();
-         if(firstnode && GET_NODE(firstnode)->get_kind() == field_decl_K)
+         if(co->list_of_idx_valu.size() && GET_NODE(co->list_of_idx_valu.front().first)->get_kind() == field_decl_K)
          {
-            auto* fd = GetPointerS<field_decl>(GET_NODE(firstnode));
-            tree_nodeRef scpe = GET_NODE(fd->scpe);
+            auto iv_it = co->list_of_idx_valu.begin();
+            const auto iv_end = co->list_of_idx_valu.end();
+            const auto scpe = GET_NODE(GetPointerS<field_decl>(GET_NODE(iv_it->first))->scpe);
 
             if(scpe->get_kind() == record_type_K)
             {
-               field_list = &(GetPointerS<record_type>(scpe)->list_of_flds);
+               field_list = &GetPointerS<record_type>(scpe)->list_of_flds;
                // struct_or_union_align = GetPointer<record_type>(scpe)->algn;
                is_struct = true;
             }
             else if(scpe->get_kind() == union_type_K)
             {
-               field_list = &(GetPointerS<union_type>(scpe)->list_of_flds);
+               field_list = &GetPointerS<union_type>(scpe)->list_of_flds;
                is_union = true;
-               union_size = tree_helper::Size(fd->scpe);
+               union_size = tree_helper::Size(scpe);
             }
             else
             {
                THROW_ERROR("expected a record_type or a union_type");
             }
-            auto flend = field_list->end();
-            auto fli = field_list->begin();
-            for(; fli != flend && i != vend; ++i, ++fli)
+            auto fl_it = field_list->begin();
+            const auto fl_end = field_list->end();
+            for(; fl_it != fl_end && iv_it != iv_end; ++iv_it, ++fl_it)
             {
-               if(i->first && GET_INDEX_NODE(i->first) != GET_INDEX_NODE(*fli))
+               if(iv_it->first && GET_INDEX_NODE(iv_it->first) != GET_INDEX_NODE(*fl_it))
                {
                   break;
                }
             }
-            if(fli != flend && is_struct)
+            if(fl_it != fl_end && is_struct)
             {
                designated_initializers_used = true;
             }
          }
 
-         const auto main_element_precision = element_precision;
+         const auto main_element_align = element_align;
          if(designated_initializers_used)
          {
             THROW_ASSERT(field_list, "something wrong happened");
-            auto flend = field_list->end();
             auto fli = field_list->begin();
-            std::vector<tree_nodeRef>::const_iterator inext;
-            i = co->list_of_idx_valu.begin();
+            const auto flend = field_list->end();
+            auto iv_it = co->list_of_idx_valu.begin();
+            const auto iv_end = co->list_of_idx_valu.end();
             for(; fli != flend; ++fli)
             {
                if(!GetPointer<field_decl>(GET_NODE(*fli)))
                {
                   continue;
                }
-               inext = fli;
+               const auto is_bitfield = GetPointer<field_decl>(GET_NODE(*fli))->is_bitfield();
+               auto inext = fli;
                ++inext;
                while(inext != flend && !GetPointer<field_decl>(GET_NODE(*inext)))
                {
                   ++inext;
                }
 
-               if(GetPointer<field_decl>(GET_NODE(*fli))->is_bitfield())
+               if(is_bitfield)
                {
                   const auto size_type = tree_helper::CGetType(*fli);
                   // fix the element precision to pass to write_init
-                  element_precision = tree_helper::Size(size_type);
+                  element_align = tree_helper::Size(size_type);
                }
 
-               if(i != vend && GET_INDEX_NODE(i->first) == GET_INDEX_NODE(*fli))
+               if(iv_it != iv_end && GET_INDEX_NODE(iv_it->first) == GET_INDEX_NODE(*fli))
                {
-                  write_init(TreeM, i->first, i->second, init_file, mem, element_precision);
-                  ++i;
+                  write_init(TreeM, iv_it->first, iv_it->second, init_file, mem, element_align);
+                  ++iv_it;
                }
                else
                {
-                  write_init(TreeM, *fli, *fli, init_file, mem, element_precision);
+                  write_init(TreeM, *fli, *fli, init_file, mem, element_align);
                }
 
-               if(GetPointer<field_decl>(GET_NODE(*fli))->is_bitfield())
+               if(is_bitfield)
                {
-                  // reset the element_precision to the main value
-                  element_precision = main_element_precision;
+                  // reset the element_align to the main value
+                  element_align = main_element_align;
                }
 
-               if(!GetPointer<field_decl>(GET_NODE(*fli))->is_bitfield())
+               if(!is_bitfield)
                {
                   /// check if padding is needed
                   unsigned long long int nbits;
                   if(inext != flend)
                   {
-                     tree_nodeRef idx_next = GET_NODE(*inext);
-                     auto* idx_next_fd = GetPointerS<field_decl>(idx_next);
+                     const auto idx_next_fd = GetPointerS<field_decl>(GET_NODE(*inext));
                      THROW_ASSERT(tree_helper::GetConstValue(idx_next_fd->bpos) >= 0, "");
                      nbits = static_cast<unsigned long long int>(tree_helper::GetConstValue(idx_next_fd->bpos));
                   }
@@ -2862,60 +2811,56 @@ void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_n
                   {
                      nbits = tree_helper::Size(co->type);
                   }
-                  auto* idx_curr_fd = GetPointer<field_decl>(GET_NODE(*fli));
-                  auto field_decl_size = tree_helper::Size(tree_helper::CGetType(*fli));
-                  THROW_ASSERT(tree_helper::GetConstValue(idx_curr_fd->bpos) >= 0, "");
-                  nbits = nbits - static_cast<unsigned long long int>(tree_helper::GetConstValue(idx_curr_fd->bpos));
-                  nbits = nbits - field_decl_size;
-                  if(nbits > 0)
+                  const auto idx_curr_fd = GetPointer<field_decl>(GET_NODE(*fli));
+                  const auto field_decl_size = tree_helper::Size(tree_helper::CGetType(*fli));
+                  THROW_ASSERT(nbits >= (tree_helper::GetConstValue(idx_curr_fd->bpos) + field_decl_size), "");
+                  nbits -= static_cast<unsigned long long int>(tree_helper::GetConstValue(idx_curr_fd->bpos)) +
+                           field_decl_size;
+                  if(nbits)
                   {
                      /// add padding
-                     std::string init_string;
-                     for(unsigned int j = 0; j < nbits; ++j)
-                     {
-                        init_string += "0";
+                     init_file.push_back(std::string(nbits, '0'));
                      }
-                     init_file.push_back(init_string);
-                  }
                }
             }
          }
          else
          {
-            std::vector<std::pair<tree_nodeRef, tree_nodeRef>>::const_iterator inext;
-            for(i = co->list_of_idx_valu.begin(); i != vend; ++i)
+            auto iv_it = co->list_of_idx_valu.begin();
+            const auto iv_end = co->list_of_idx_valu.end();
+            for(; iv_it != iv_end; ++iv_it)
             {
-               if(is_struct and !GetPointer<field_decl>(GET_NODE(i->first)))
+               if(is_struct && !GetPointer<field_decl>(GET_NODE(iv_it->first)))
                {
                   continue;
                }
-               inext = i;
-               ++inext;
-               while(inext != vend && is_struct && !GetPointer<field_decl>(GET_NODE(inext->first)))
+               const auto is_bitfield = is_struct && GetPointer<field_decl>(GET_NODE(iv_it->first))->is_bitfield();
+               auto iv_next = iv_it;
+               ++iv_next;
+               while(iv_next != iv_end && is_struct && !GetPointer<field_decl>(GET_NODE(iv_next->first)))
                {
-                  ++inext;
+                  ++iv_next;
                }
-               if(is_struct and GetPointer<field_decl>(GET_NODE(i->first))->is_bitfield())
+               if(is_struct && is_bitfield)
                {
-                  const auto size_type = tree_helper::CGetType(i->first);
+                  const auto size_type = tree_helper::CGetType(iv_it->first);
                   // fix the element precision to pass to write_init
-                  element_precision = tree_helper::Size(size_type);
+                  element_align = tree_helper::Size(size_type);
                }
-               write_init(TreeM, i->first, i->second, init_file, mem, element_precision);
-               if(is_struct and GetPointer<field_decl>(GET_NODE(i->first))->is_bitfield())
+               write_init(TreeM, iv_it->first, iv_it->second, init_file, mem, element_align);
+               if(is_struct && is_bitfield)
                {
-                  // reset the element_precision to the main value
-                  element_precision = main_element_precision;
+                  // reset the element_align to the main value
+                  element_align = main_element_align;
                }
 
-               if(is_struct && !GetPointer<field_decl>(GET_NODE(i->first))->is_bitfield())
+               if(is_struct && !is_bitfield)
                {
                   /// check if padding is needed
                   unsigned long long int nbits;
-                  if(inext != vend)
+                  if(iv_next != iv_end)
                   {
-                     tree_nodeRef idx_next = GET_NODE(inext->first);
-                     auto idx_next_fd = GetPointerS<field_decl>(idx_next);
+                     const auto idx_next_fd = GetPointerS<field_decl>(GET_NODE(iv_next->first));
                      THROW_ASSERT(tree_helper::GetConstValue(idx_next_fd->bpos) >= 0, "");
                      nbits = static_cast<unsigned long long int>(tree_helper::GetConstValue(idx_next_fd->bpos));
                   }
@@ -2923,38 +2868,29 @@ void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_n
                   {
                      nbits = tree_helper::Size(co->type);
                   }
-                  auto* idx_curr_fd = GetPointerS<field_decl>(GET_NODE(i->first));
-                  auto field_decl_size = tree_helper::Size(tree_helper::CGetType(i->first));
-                  THROW_ASSERT(tree_helper::GetConstValue(idx_curr_fd->bpos) >= 0, "");
-                  nbits = nbits - static_cast<unsigned long long int>(tree_helper::GetConstValue(idx_curr_fd->bpos));
-                  nbits = nbits - field_decl_size;
-                  if(nbits > 0)
+                  const auto field_decl_size = tree_helper::Size(tree_helper::CGetType(iv_it->first));
+                  const auto idx_curr_fd = GetPointerS<field_decl>(GET_NODE(iv_it->first));
+                  THROW_ASSERT(nbits >= (tree_helper::GetConstValue(idx_curr_fd->bpos) + field_decl_size), "");
+                  nbits -= static_cast<unsigned long long int>(tree_helper::GetConstValue(idx_curr_fd->bpos)) +
+                           field_decl_size;
+                  if(nbits)
                   {
                      /// add padding
-                     std::string init_string;
-                     for(unsigned int j = 0; j < nbits; ++j)
-                     {
-                        init_string += "0";
-                     }
-                     init_file.push_back(init_string);
+                     init_file.push_back(std::string(nbits, '0'));
                   }
                }
                else if(is_union)
                {
                   /// check if padding is needed
                   THROW_ASSERT(co->list_of_idx_valu.size() == 1, "just one initializer is possible");
-                  auto field_decl_size = tree_helper::Size(i->first);
-                  if(field_decl_size != union_size)
+                  const auto field_decl_size = tree_helper::Size(iv_it->first);
+                  THROW_ASSERT(union_size >= field_decl_size, "");
+                  const auto nbits = union_size - field_decl_size;
+                  if(nbits)
                   {
                      /// add padding
-                     auto nbits = union_size - field_decl_size;
-                     std::string init_string;
-                     for(unsigned int j = 0; j < nbits; ++j)
-                     {
-                        init_string += "0";
+                     init_file.push_back(std::string(nbits, '0'));
                      }
-                     init_file.push_back(init_string);
-                  }
                }
             }
          }
@@ -2964,123 +2900,103 @@ void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_n
             unsigned long long size_of_data;
             std::vector<unsigned long long> dims;
             tree_helper::get_array_dim_and_bitsize(TreeM, type_n->index, dims, size_of_data);
-            if(element_precision)
+            if(element_align)
             {
-               size_of_data = std::min(size_of_data, element_precision);
+               size_of_data = std::min(size_of_data, element_align);
             }
             auto num_elements = dims[0];
-            std::string value;
             if(num_elements < co->list_of_idx_valu.size())
             {
                THROW_ERROR("C description not supported: Array with undefined size or not correctly initialized " +
                            STR(co->list_of_idx_valu.size()) + "-" + STR(num_elements));
             }
-            num_elements = num_elements - static_cast<unsigned int>(co->list_of_idx_valu.size());
-            for(unsigned int l = 0; l < num_elements; l++)
-            {
-               value = "";
-               for(unsigned int ii = 0; ii < size_of_data; ii++)
-               {
-                  value += "0";
-               }
-               init_file.push_back(value);
+            THROW_ASSERT(num_elements >= static_cast<unsigned long long>(co->list_of_idx_valu.size()), "");
+            num_elements -= static_cast<unsigned long long>(co->list_of_idx_valu.size());
+            init_file.insert(init_file.end(), num_elements, std::string(size_of_data, '0'));
             }
-         }
          break;
       }
       case string_cst_K:
       {
-         auto* sc = GetPointerS<const string_cst>(init_node);
-         std::string string_value = sc->strg;
+         const auto sc = GetPointerS<const string_cst>(init_node);
+         const auto string_value = [&]() {
          std::string tmp;
-         for(unsigned int index = 0; index < string_value.size(); ++index)
+            const char* c_str = sc->strg.c_str();
+            for(size_t index = 0; index < sc->strg.size(); ++index)
          {
-            if(string_value[index] == '\\' && string_value[index + 1] == '0')
+               if(c_str[index] == '\\' && c_str[index + 1] == '0')
             {
                tmp += '\0';
                ++index;
             }
             else
             {
-               tmp += string_value[index];
+                  tmp += c_str[index];
             }
          }
-         string_value = tmp;
-         boost::replace_all(string_value, "\\a", "\a");
-         boost::replace_all(string_value, "\\b", "\b");
-         boost::replace_all(string_value, "\\t", "\t");
-         boost::replace_all(string_value, "\\n", "\n");
-         boost::replace_all(string_value, "\\v", "\v");
-         boost::replace_all(string_value, "\\f", "\f");
-         boost::replace_all(string_value, "\\r", "\r");
-         boost::replace_all(string_value, "\\'", "'");
-         boost::replace_all(string_value, "\\\"", "\"");
-         boost::replace_all(string_value, "\\\\", "\\");
+            boost::replace_all(tmp, "\\a", "\a");
+            boost::replace_all(tmp, "\\b", "\b");
+            boost::replace_all(tmp, "\\t", "\t");
+            boost::replace_all(tmp, "\\n", "\n");
+            boost::replace_all(tmp, "\\v", "\v");
+            boost::replace_all(tmp, "\\f", "\f");
+            boost::replace_all(tmp, "\\r", "\r");
+            boost::replace_all(tmp, "\\'", "'");
+            boost::replace_all(tmp, "\\\"", "\"");
+            boost::replace_all(tmp, "\\\\", "\\");
+            return tmp;
+         }();
          unsigned long long elmt_bitsize;
          std::vector<unsigned long long> dims;
 
          tree_helper::get_array_dim_and_bitsize(TreeM, GET_INDEX_NODE(sc->type), dims, elmt_bitsize);
-         if(elmt_bitsize == 32) // wide char used
+         if(elmt_bitsize != 8)
          {
-            THROW_ERROR("wide char conversion not supported");
+            THROW_ERROR("non-standard 8-bit char conversion not supported");
          }
-         else
+         for(const auto j : string_value)
          {
-            for(char j : string_value)
-            {
                auto ull_value = static_cast<unsigned long int>(j);
                trimmed_value = "";
-               for(unsigned int ind = 0; ind < elmt_bitsize; ind++)
+            for(auto ind = 0U; ind < elmt_bitsize; ++ind)
                {
                   trimmed_value = trimmed_value + (((1LLU << (elmt_bitsize - ind - 1)) & ull_value) ? '1' : '0');
                }
                init_file.push_back(trimmed_value);
             }
-         }
-         trimmed_value = "";
-         for(unsigned int ind = 0; ind < elmt_bitsize; ind++)
-         {
-            trimmed_value = trimmed_value + '0';
-         }
-         init_file.push_back(trimmed_value);
+         // String terminator
+         init_file.push_back(std::string(elmt_bitsize, '0'));
+
          const auto type_n = tree_helper::CGetType(var_node);
          THROW_ASSERT(GetPointer<const array_type>(GET_CONST_NODE(type_n)), "expected an array_type");
-         unsigned long long size_of_data;
          dims.clear();
+         unsigned long long size_of_data;
          tree_helper::get_array_dim_and_bitsize(TreeM, type_n->index, dims, size_of_data);
          THROW_ASSERT(size_of_data == elmt_bitsize, "something wrong happened");
-         auto num_elements =
-             std::accumulate(dims.begin(), dims.end(), 1U, [](unsigned int a, unsigned int b) { return a * b; });
+         auto num_elements = std::accumulate(dims.begin(), dims.end(), 1ULL,
+                                             [](unsigned long long a, unsigned long long b) { return a * b; });
          std::string value;
          if(num_elements < (string_value.size() + 1))
          {
             THROW_ERROR("C description not supported: string with undefined size or not correctly initialized " +
                         STR(string_value.size() + 1) + "-" + STR(num_elements));
          }
-         num_elements = num_elements - static_cast<unsigned int>(string_value.size() + 1);
-         for(unsigned int l = 0; l < num_elements; l++)
-         {
-            value = "";
-            for(unsigned int ii = 0; ii < size_of_data; ii++)
-            {
-               value += "0";
-            }
-            init_file.push_back(value);
-         }
+         num_elements -= string_value.size() + 1;
+         init_file.insert(init_file.end(), num_elements, std::string(size_of_data, '0'));
          break;
       }
       case view_convert_expr_K:
       case nop_expr_K:
       {
-         auto* ue = GetPointerS<unary_expr>(init_node);
+         const auto ue = GetPointerS<unary_expr>(init_node);
          if(GetPointer<addr_expr>(GET_NODE(ue->op)))
          {
-            write_init(TreeM, ue->op, ue->op, init_file, mem, element_precision);
+            write_init(TreeM, ue->op, ue->op, init_file, mem, element_align);
          }
          else if(GetPointer<integer_cst>(GET_NODE(ue->op)))
          {
-            auto precision =
-                std::max(std::max(8ull, element_precision), tree_helper::Size(tree_helper::CGetType(init_node)));
+            const auto precision =
+                std::max(std::max(8ull, element_align), tree_helper::Size(tree_helper::CGetType(init_node)));
             write_init(TreeM, ue->op, ue->op, init_file, mem, precision);
          }
          else
@@ -3096,7 +3012,7 @@ void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_n
          tree_nodeRef addr_expr_op = GET_NODE(ae->op);
          auto addr_expr_op_idx = GET_INDEX_NODE(ae->op);
          unsigned long long int ull_value = 0;
-         auto precision = tree_helper::Size(tree_helper::CGetType(_init_node));
+         const auto precision = tree_helper::Size(tree_helper::CGetType(_init_node));
          switch(addr_expr_op->get_kind())
          {
             case ssa_name_K:
@@ -3110,9 +3026,8 @@ void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_n
             }
             case array_ref_K:
             {
-               auto* ar = GetPointerS<array_ref>(addr_expr_op);
-               tree_nodeRef aridx = GET_NODE(ar->op1);
-               if(aridx->get_kind() == integer_cst_K && GetPointer<integer_cst>(aridx))
+               const auto ar = GetPointerS<array_ref>(addr_expr_op);
+               if(GetPointer<integer_cst>(GET_NODE(ar->op1)))
                {
                   switch(GET_NODE(ar->op0)->get_kind())
                   {
@@ -3188,34 +3103,22 @@ void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_n
             {
                if(addr_expr_op->get_kind() == mem_ref_K)
                {
-                  auto* mr = GetPointerS<mem_ref>(addr_expr_op);
-                  tree_nodeRef offset = GET_NODE(mr->op1);
-                  if(offset->get_kind() == integer_cst_K)
+                  const auto mr = GetPointerS<mem_ref>(addr_expr_op);
+                  const auto op1 = GET_NODE(mr->op1);
+                  if(op1->get_kind() == integer_cst_K)
                   {
-                     auto base = mr->op0;
-                     auto base_index = GET_INDEX_NODE(base);
-                     auto base_node = GET_NODE(base);
-                     auto base_code = base_node->get_kind();
-                     if(base_code == var_decl_K)
+                     THROW_ASSERT(tree_helper::GetConstValue(mr->op1) >= 0, "");
+                     const auto offset = static_cast<unsigned long long>(tree_helper::GetConstValue(mr->op1));
+                     if(GET_CONST_NODE(mr->op0)->get_kind() == var_decl_K)
                      {
-                        THROW_ASSERT(mem->has_base_address(base_index), "missing base address for: " + mr->ToString());
-                        THROW_ASSERT(tree_helper::GetConstValue(mr->op1) >= 0, "");
-                        ull_value = mem->get_base_address(base_index, 0) +
-                                    static_cast<unsigned long long>(tree_helper::GetConstValue(mr->op1));
+                        ull_value = mem->get_base_address(GET_INDEX_CONST_NODE(mr->op0), 0) + offset;
                      }
-                     else if(base_code == addr_expr_K)
+                     else if(GET_CONST_NODE(mr->op0)->get_kind() == addr_expr_K)
                      {
-                        auto base1 = GetPointerS<addr_expr>(base_node)->op;
-                        auto base1_index = GET_INDEX_NODE(base1);
-                        auto base1_node = GET_NODE(base1);
-                        auto base1_code = base1_node->get_kind();
-                        if(base1_code == var_decl_K)
+                        const auto base = GetPointerS<addr_expr>(GET_CONST_NODE(mr->op0))->op;
+                        if(GET_CONST_NODE(base)->get_kind() == var_decl_K)
                         {
-                           THROW_ASSERT(mem->has_base_address(base1_index),
-                                        "missing base address for: " + base1->ToString());
-                           THROW_ASSERT(tree_helper::GetConstValue(mr->op1) >= 0, "");
-                           ull_value = mem->get_base_address(base1_index, 0) +
-                                       static_cast<unsigned long long>(tree_helper::GetConstValue(mr->op1));
+                           ull_value = mem->get_base_address(GET_INDEX_CONST_NODE(base), 0) + offset;
                         }
                         else
                         {
@@ -3311,24 +3214,19 @@ void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_n
       }
       case field_decl_K:
       {
-         auto field_decl_size = tree_helper::Size(tree_helper::CGetType(_init_node));
-         std::string init_string;
-         for(unsigned int j = 0; j < field_decl_size; ++j)
-         {
-            init_string += "0";
-         }
+         const auto field_decl_size = tree_helper::Size(tree_helper::CGetType(_init_node));
          if(field_decl_size)
          {
-            init_file.push_back(init_string);
+            init_file.push_back(std::string(field_decl_size, '0'));
          }
          break;
       }
       case vector_cst_K:
       {
-         auto* vc = GetPointerS<vector_cst>(init_node);
-         for(auto& i : vc->list_of_valu) // vector elements
+         const auto vc = GetPointerS<vector_cst>(init_node);
+         for(const auto& i : vc->list_of_valu) // vector elements
          {
-            write_init(TreeM, i, i, init_file, mem, element_precision);
+            write_init(TreeM, i, i, init_file, mem, element_align);
          }
          break;
       }

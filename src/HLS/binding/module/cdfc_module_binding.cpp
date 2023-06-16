@@ -256,12 +256,12 @@ CDFCModuleBindingSpecialization::CDFCModuleBindingSpecialization(
 {
 }
 
-const std::string CDFCModuleBindingSpecialization::GetKindText() const
+std::string CDFCModuleBindingSpecialization::GetKindText() const
 {
    return CliqueCovering_AlgorithmToString(clique_covering_algorithm);
 }
 
-const std::string CDFCModuleBindingSpecialization::GetSignature() const
+std::string CDFCModuleBindingSpecialization::GetSignature() const
 {
    return STR(static_cast<unsigned int>(clique_covering_algorithm));
 }

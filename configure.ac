@@ -2648,6 +2648,7 @@ if test "x$panda_USE_LIBBAMBU" = xyes; then
       etc/lib/technology/Makefile
       etc/libbambu/Makefile
       etc/libbambu/libm/Makefile
+      etc/libbambu/libmdpi/Makefile
       etc/libbambu/pthread/Makefile
       etc/libbambu/softfloat/Makefile
       etc/libbambu/soft-fp/Makefile

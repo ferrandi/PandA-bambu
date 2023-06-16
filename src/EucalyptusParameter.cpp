@@ -592,9 +592,9 @@ void EucalyptusParameter::CheckParameters()
    setOption(OPT_verilator, system("which verilator > /dev/null 2>&1") == 0);
    if(getOption<bool>(OPT_verilator))
    {
-      setOption(OPT_verilator_l2_name,
-                system("bash -c \"if [[ \\\"x$(verilator --l2-name v 2>&1 | head -n1 | grep -i 'Invalid Option')\\\" = "
-                       "\\\"x\\\" ]]; then exit 0; else exit 1; fi\" > /dev/null 2>&1") == 0);
+      setOption(OPT_verilator_l2_name, system("bash -c \"if [[ \\\"x$(verilator --l2-name bambu_testbench 2>&1 | head "
+                                              "-n1 | grep -i 'Invalid Option')\\\" = "
+                                              "\\\"x\\\" ]]; then exit 0; else exit 1; fi\" > /dev/null 2>&1") == 0);
       const auto has_timescale_override =
           system("bash -c \"if [[ \\\"x$(verilator --timescale-override v 2>&1 | head -n1 | grep -i 'Invalid "
                  "Option')\\\" = \\\"x\\\" ]]; then exit 0; else exit 1; fi\" > /dev/null 2>&1") == 0;
@@ -612,8 +612,8 @@ void EucalyptusParameter::CheckParameters()
       }
    }
 
-   /// Search for icarus
-   setOption(OPT_icarus, system("which iverilog > /dev/null 2>&1") == 0);
+   // /// Search for icarus
+   // setOption(OPT_icarus, system("which iverilog > /dev/null 2>&1") == 0);
 
    if(isOption(OPT_simulator))
    {
@@ -648,14 +648,6 @@ void EucalyptusParameter::CheckParameters()
       {
          setOption(OPT_simulator, "XSIM"); /// Mixed language simulator
       }
-      else if(isOption(OPT_xilinx_settings))
-      {
-         setOption(OPT_simulator, "ISIM"); /// Mixed language simulator
-      }
-      else if(isOption(OPT_icarus))
-      {
-         setOption(OPT_simulator, "ICARUS");
-      }
       else if(isOption(OPT_verilator))
       {
          setOption(OPT_simulator, "VERILATOR");
@@ -664,6 +656,14 @@ void EucalyptusParameter::CheckParameters()
       {
          THROW_ERROR("No valid simulator was found in the system.");
       }
+      // else if(isOption(OPT_xilinx_settings))
+      // {
+      //    setOption(OPT_simulator, "ISIM"); /// Mixed language simulator
+      // }
+      // else if(isOption(OPT_icarus))
+      // {
+      //    setOption(OPT_simulator, "ICARUS");
+      // }
    }
    if(not isOption(OPT_device_string))
    {

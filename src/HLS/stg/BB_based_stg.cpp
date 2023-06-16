@@ -244,11 +244,9 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
 
    const auto CGM = HLSMgr->CGetCallGraphManager();
    const auto top_functions = CGM->GetRootFunctions();
-   const auto needMemoryMappedRegisters =
-       (top_functions.find(funId) != top_functions.end() &&
-        parameters->getOption<HLSFlowStep_Type>(OPT_interface_type) == HLSFlowStep_Type::WB4_INTERFACE_GENERATION) ||
-       (HLSMgr->hasToBeInterfaced(funId) and top_functions.find(funId) == top_functions.end()) ||
-       parameters->getOption<bool>(OPT_memory_mapped_top);
+   const auto needMemoryMappedRegisters = top_functions.count(funId) ?
+                                              parameters->getOption<bool>(OPT_memory_mapped_top) :
+                                              HLSMgr->hasToBeInterfaced(funId);
    bool has_registered_inputs = HLS->registered_inputs && !needMemoryMappedRegisters;
    const auto top_function_ids = HLSMgr->CGetCallGraphManager()->GetRootFunctions();
    if(top_function_ids.count(funId) && parameters->getOption<std::string>(OPT_registered_inputs) == "top")

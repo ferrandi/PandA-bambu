@@ -17,99 +17,72 @@
           <structural_type_descriptor id_type="MEMORY_CTRL_P1N"/>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="start_port" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="in1" dir="IN">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            data to be written
-          </port_o>
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/> data to be written </port_o>
           <port_o id="in2" dir="IN" is_addr_bus="1">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            address
-          </port_o>
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/> address </port_o>
           <port_o id="in3" dir="IN" is_size_bus="1">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            data size
-          </port_o>
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/> data size </port_o>
           <port_o id="in4" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="sel_LOAD" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="sel_STORE" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="done_port" dir="OUT">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <port_vector_o id="Min_oe_ram" dir="IN" is_memory="1" is_master="1">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_vector_o>
           <port_vector_o id="Mout_oe_ram" dir="OUT" is_memory="1" is_master="1">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_vector_o>
           <port_vector_o id="Min_we_ram" dir="IN" is_memory="1" is_master="1">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_vector_o>
           <port_vector_o id="Mout_we_ram" dir="OUT" is_memory="1" is_master="1">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_vector_o>
           <port_vector_o id="Min_addr_ram" dir="IN" is_memory="1" is_master="1" is_addr_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_vector_o>
           <port_vector_o id="Mout_addr_ram" dir="OUT" is_memory="1" is_master="1" is_addr_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_vector_o>
           <port_vector_o id="M_Rdata_ram" dir="IN" is_memory="1" is_global="1" is_extern="1" is_data_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
-            <connected_objects/>
           </port_vector_o>
           <port_vector_o id="Min_Wdata_ram" dir="IN" is_memory="1" is_master="1" is_data_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
-            <connected_objects/>
           </port_vector_o>
           <port_vector_o id="Mout_Wdata_ram" dir="OUT" is_memory="1" is_master="1" is_data_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
-            <connected_objects/>
           </port_vector_o>
           <port_vector_o id="Min_data_ram_size" dir="IN" is_memory="1" is_master="1" is_size_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_vector_o>
           <port_vector_o id="Mout_data_ram_size" dir="OUT" is_memory="1" is_master="1" is_size_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_vector_o>
           <port_vector_o id="M_DataRdy" dir="IN" is_memory="1" is_global="1" is_extern="1">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_vector_o>
           <port_vector_o id="access_allowed" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_vector_o>
           <port_vector_o id="access_request" dir="OUT" is_memory="1">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_vector_o>
           <NP_functionality LIBRARY="MEMORY_CTRL_P1N in1 in2 in3 in4 out1 Min_oe_ram Min_we_ram Mout_oe_ram Mout_we_ram M_DataRdy Min_addr_ram Mout_addr_ram M_Rdata_ram Min_Wdata_ram Mout_Wdata_ram Min_data_ram_size Mout_data_ram_size access_allowed access_request" IP_COMPONENT="MC_INDEX,EXPAND,MUX" VERILOG_PROVIDED="`ifndef _SIM_HAVE_CLOG2
   function integer log2;

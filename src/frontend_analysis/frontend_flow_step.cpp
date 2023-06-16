@@ -150,7 +150,7 @@ void FrontendFlowStep::ComputeRelationships(DesignFlowStepSet& relationships,
    CreateSteps(design_flow_manager.lock(), frontend_relationships, AppM, relationships);
 }
 
-const std::string FrontendFlowStep::GetKindText() const
+std::string FrontendFlowStep::GetKindText() const
 {
    return EnumToKindText(frontend_flow_step_type);
 }
@@ -516,7 +516,7 @@ const std::string FrontendFlowStep::EnumToKindText(const FrontendFlowStepType fr
    return "";
 }
 
-const DesignFlowStepFactoryConstRef FrontendFlowStep::CGetDesignFlowStepFactory() const
+DesignFlowStepFactoryConstRef FrontendFlowStep::CGetDesignFlowStepFactory() const
 {
    return design_flow_manager.lock()->CGetDesignFlowStepFactory("Frontend");
 }

@@ -61,8 +61,9 @@ ReadWrite_arrayModuleGenerator::ReadWrite_arrayModuleGenerator(const HLS_manager
 {
 }
 
-void ReadWrite_arrayModuleGenerator::InternalExec(std::ostream& out, const module* /* mod */, unsigned int function_id,
-                                                  vertex op_v, const HDLWriter_Language /* language */,
+void ReadWrite_arrayModuleGenerator::InternalExec(std::ostream& out, structural_objectRef /* mod */,
+                                                  unsigned int function_id, vertex op_v,
+                                                  const HDLWriter_Language /* language */,
                                                   const std::vector<ModuleGenerator::parameter>& /* _p */,
                                                   const std::vector<ModuleGenerator::parameter>& _ports_in,
                                                   const std::vector<ModuleGenerator::parameter>& _ports_out,
@@ -102,7 +103,7 @@ void ReadWrite_arrayModuleGenerator::InternalExec(std::ostream& out, const modul
       }
    }
 
-   const auto isAlignedPowerOfTwo = _ports_out[1].alignment == round_to_power2(_ports_out[1].alignment);
+   const auto isAlignedPowerOfTwo = _ports_out[1].alignment == ceil_pow2(_ports_out[1].alignment);
    out << "//" << (isAlignedPowerOfTwo ? "T" : "F") << "\n";
    out << "integer ii=0;\n";
    out << "reg [" << _ports_out[1].type_size << "-1:0] " << _ports_out[1].name << ";\n";
@@ -122,7 +123,7 @@ void ReadWrite_arrayModuleGenerator::InternalExec(std::ostream& out, const modul
 
    const auto addressMaxValue = _ports_out[1].alignment * arraySize - 1U;
    const auto nbitAddress =
-       addressMaxValue == 1U ? 1U : (64u - static_cast<unsigned>(__builtin_clzll(addressMaxValue)));
+       addressMaxValue <= 1U ? 1U : (64u - static_cast<unsigned>(__builtin_clzll(addressMaxValue)));
 
    if(log2nbyte > 0U)
    {

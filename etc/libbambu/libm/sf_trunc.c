@@ -47,7 +47,7 @@ float truncf(float x)
    {
       if(exponent_less_127 == 255)
          /* x is NaN or infinite. */
-         return x + x;
+         return X_PLUS_X(x);
 
       /* All bits in the fraction field are relevant. */
    }

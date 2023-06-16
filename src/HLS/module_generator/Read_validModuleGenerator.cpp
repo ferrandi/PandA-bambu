@@ -70,8 +70,9 @@ Read_validModuleGenerator::Read_validModuleGenerator(const HLS_managerRef& _HLSM
 {
 }
 
-void Read_validModuleGenerator::InternalExec(std::ostream& out, const module* /* mod */, unsigned int /* function_id */,
-                                             vertex /* op_v */, const HDLWriter_Language /* language */,
+void Read_validModuleGenerator::InternalExec(std::ostream& out, structural_objectRef /* mod */,
+                                             unsigned int /* function_id */, vertex /* op_v */,
+                                             const HDLWriter_Language /* language */,
                                              const std::vector<ModuleGenerator::parameter>& /* _p */,
                                              const std::vector<ModuleGenerator::parameter>& _ports_in,
                                              const std::vector<ModuleGenerator::parameter>& _ports_out,
@@ -97,7 +98,7 @@ void Read_validModuleGenerator::InternalExec(std::ostream& out, const module* /*
    out << "    started <= started0;\n\n";
 
    out << "always @(*)\n";
-   out << "  validated0 <= (validated | " << _ports_in[i_vld].name << ") & !(started | " << _ports_in[i_start].name
+   out << "  validated0 = (validated | " << _ports_in[i_vld].name << ") & !(started | " << _ports_in[i_start].name
        << ");\n\n";
 
    out << "always @(posedge clock 1RESET_EDGE)\n";

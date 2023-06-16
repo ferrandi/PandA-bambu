@@ -40,39 +40,29 @@
 #ifndef CTESTBENCHEXECUTION_HPP
 #define CTESTBENCHEXECUTION_HPP
 
-// include superclass header
-#include "hls_step.hpp"
-
-/// STD include
-#include <string>
-
-/// STL includes
 #include "custom_set.hpp"
+#include "hls_step.hpp"
+#include "refcount.hpp"
+
+#include <string>
 #include <tuple>
 
-CONSTREF_FORWARD_DECL(DesignFlowManager);
-CONSTREF_FORWARD_DECL(Parameter);
+CONSTREF_FORWARD_DECL(CBackendInformation);
 
 class CTestbenchExecution : public HLS_step
 {
  protected:
    const std::string output_directory;
 
-   const std::string testbench_basename;
-
-   const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
-   ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
-
- public:
-   /**
-    * constructor
-    */
-   CTestbenchExecution(const ParameterConstRef Param, const HLS_managerRef AppM,
-                       const DesignFlowManagerConstRef design_flow_manager,
-                       const std::string& testbench_basename = "values");
+   const CBackendInformationConstRef c_backend_info;
 
    void ComputeRelationships(DesignFlowStepSet& relationship,
                              const DesignFlowStep::RelationshipType relationship_type) override;
+
+ public:
+   CTestbenchExecution(const ParameterConstRef Param, const HLS_managerRef AppM,
+                       const DesignFlowManagerConstRef design_flow_manager,
+                       const HLSFlowStepSpecializationConstRef hls_flow_step_specialization);
 
    DesignFlowStep_Status Exec() override;
 

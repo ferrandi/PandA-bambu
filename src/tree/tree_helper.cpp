@@ -2400,16 +2400,7 @@ static void getBuiltinFieldTypes(const tree_nodeConstRef& _type, std::list<tree_
             continue;
          }
          const auto fdType = tree_helper::CGetType(fld);
-         const auto fdType_kind = GET_CONST_NODE(fdType)->get_kind();
-         if(fdType_kind == record_type_K || fdType_kind == union_type_K || fdType_kind == array_type_K ||
-            fdType_kind == vector_type_K)
-         {
-            getBuiltinFieldTypes(fdType, listOfTypes, already_visited);
-         }
-         else
-         {
-            listOfTypes.push_back(fdType);
-         }
+         getBuiltinFieldTypes(fdType, listOfTypes, already_visited);
       }
    }
    else if(type->get_kind() == union_type_K)
@@ -2418,16 +2409,7 @@ static void getBuiltinFieldTypes(const tree_nodeConstRef& _type, std::list<tree_
       for(const auto& fld : ut->list_of_flds)
       {
          const auto fdType = tree_helper::CGetType(fld);
-         const auto fdType_kind = GET_CONST_NODE(fdType)->get_kind();
-         if(fdType_kind == record_type_K || fdType_kind == union_type_K || fdType_kind == array_type_K ||
-            fdType_kind == vector_type_K)
-         {
-            getBuiltinFieldTypes(fdType, listOfTypes, already_visited);
-         }
-         else
-         {
-            listOfTypes.push_back(fdType);
-         }
+         getBuiltinFieldTypes(fdType, listOfTypes, already_visited);
       }
    }
    else if(type->get_kind() == array_type_K)
@@ -2469,7 +2451,7 @@ static bool same_size_fields(const tree_nodeConstRef& t)
       {
          return false;
       }
-      else if(resize_to_1_8_16_32_64_128_256_512(sizeFlds) != sizeFlds)
+      else if(ceil_pow2(sizeFlds) != sizeFlds)
       {
          return false;
       }

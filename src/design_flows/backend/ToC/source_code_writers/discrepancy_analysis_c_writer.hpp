@@ -39,13 +39,14 @@
 #define DISCREPANCY_ANALYSIS_C_WRITER
 
 #include "hls_c_writer.hpp"
-
 #include "refcount.hpp"
 
 REF_FORWARD_DECL(Discrepancy);
 
 class DiscrepancyAnalysisCWriter : public HLSCWriter
 {
+   void WriteTestbenchHelperFunctions();
+
  protected:
    const DiscrepancyRef Discrepancy;
 
@@ -85,15 +86,10 @@ class DiscrepancyAnalysisCWriter : public HLSCWriter
    /**
     * Constructor
     */
-   DiscrepancyAnalysisCWriter(const HLSCBackendInformationConstRef _hls_c_backend_information,
-                              const application_managerConstRef _AppM, const InstructionWriterRef _instruction_writer,
+   DiscrepancyAnalysisCWriter(const CBackendInformationConstRef _c_backend_information,
+                              const HLS_managerConstRef _HLSMgr, const InstructionWriterRef _instruction_writer,
                               const IndentedOutputStreamRef _indented_output_stream,
                               const ParameterConstRef _parameters, bool _verbose);
-
-   /**
-    * Destructor
-    */
-   ~DiscrepancyAnalysisCWriter() override;
 
    /**
     * Declares the local variable; in case the variable used in the initialization of
@@ -115,5 +111,7 @@ class DiscrepancyAnalysisCWriter : public HLSCWriter
     * Writes implementation of __builtin_wait_call
     */
    void WriteBuiltinWaitCall() override;
+
+   void WriteMainTestbench() override;
 };
 #endif

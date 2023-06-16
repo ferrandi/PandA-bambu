@@ -14,22 +14,18 @@
           <license>PANDA_LGPLv3</license>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1" id_type="bool"/>
-            <connected_objects/>
           </port_o>
           <port_o id="reset" dir="IN">
             <structural_type_descriptor type="BOOL" size="1" id_type="bool"/>
-            <connected_objects/>
           </port_o>
           <port_o id="enable" dir="IN">
             <structural_type_descriptor type="BOOL" size="1" id_type="bool"/>
-            <connected_objects/>
           </port_o>
           <port_vector_o id="ops" dir="IN">
             <structural_type_descriptor type="BOOL" size="1" id_type="bool"/>
           </port_vector_o>
           <port_o id="sop" dir="OUT">
             <structural_type_descriptor type="BOOL" size="1" id_type="bool"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="SIMPLEJOIN_FU ops" VERILOG_PROVIDED="
 // synthesis attribute use_sync_reset of current is no;
@@ -98,31 +94,24 @@ end
           <license>PANDA_LGPLv3</license>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1" id_type="bool"/>
-            <connected_objects/>
           </port_o>
           <port_o id="reset" dir="IN">
             <structural_type_descriptor type="BOOL" size="1" id_type="bool"/>
-            <connected_objects/>
           </port_o>
           <port_o id="aop" dir="IN">
             <structural_type_descriptor type="BOOL" size="1" id_type="bool"/>
-            <connected_objects/>
           </port_o>
           <port_o id="done" dir="IN">
             <structural_type_descriptor type="BOOL" size="1" id_type="bool"/>
-            <connected_objects/>
           </port_o>
           <port_o id="eop" dir="OUT">
             <structural_type_descriptor type="BOOL" size="1" id_type="bool"/>
-            <connected_objects/>
           </port_o>
           <port_o id="sop" dir="OUT">
             <structural_type_descriptor type="BOOL" size="1" id_type="bool"/>
-            <connected_objects/>
           </port_o>
           <port_o id="op" dir="OUT">
             <structural_type_descriptor type="BOOL" size="1" id_type="bool"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="FC_FU" VERILOG_PROVIDED="
 reg state 1INIT_ZERO_VALUE;
@@ -159,23 +148,18 @@ assign sop = done &amp; (state | aop);
           <license>PANDA_LGPLv3</license>
           <port_o id="sop" dir="IN">
             <structural_type_descriptor type="BOOL" size="1" id_type="bool"/>
-            <connected_objects/>
           </port_o>
           <port_o id="case_var" dir="IN">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="case_value" dir="IN">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="t" dir="OUT">
             <structural_type_descriptor type="BOOL" size="1" id_type="bool"/>
-            <connected_objects/>
           </port_o>
           <port_o id="f" dir="OUT">
             <structural_type_descriptor type="BOOL" size="1" id_type="bool"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="SWITCH_CASE_FU case_var case_value" VERILOG_PROVIDED="
 wire temp = (case_var == case_value);    //True
@@ -196,19 +180,15 @@ assign f = sop &amp; (~temp); //False: wrong case"/>
           <license>PANDA_LGPLv3</license>
           <port_o id="sop" dir="IN">
             <structural_type_descriptor type="BOOL" size="1" id_type="bool"/>
-            <connected_objects/>
           </port_o>
           <port_o id="cond" dir="IN">
             <structural_type_descriptor type="BOOL" size="1" id_type="bool"/>
-            <connected_objects/>
           </port_o>
           <port_o id="t" dir="OUT">
             <structural_type_descriptor type="BOOL" size="1" id_type="bool"/>
-            <connected_objects/>
           </port_o>
           <port_o id="f" dir="OUT">
             <structural_type_descriptor type="BOOL" size="1" id_type="bool"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="COND_FU" VERILOG_PROVIDED="
 assign t = sop &amp; cond;    //True
@@ -228,7 +208,6 @@ assign f = sop &amp; (~cond); //False"/>
           <license>PANDA_LGPLv3</license>
           <port_o id="ENABLE" dir="IN">
             <structural_type_descriptor type="BOOL" size="1" id_type="bool"/>
-            <connected_objects/>
           </port_o>
           <port_vector_o id="rops" dir="IN">
             <structural_type_descriptor type="BOOL" size="1" id_type="bool"/>
@@ -269,7 +248,6 @@ assign ops = Priorities(rops, ENABLE);
           <license>PANDA_LGPLv3</license>
           <port_o id="ENABLE" dir="IN">
             <structural_type_descriptor type="BOOL" size="1" id_type="bool"/>
-            <connected_objects/>
           </port_o>
           <port_vector_o id="rops" dir="IN">
             <structural_type_descriptor type="BOOL" size="1" id_type="bool"/>
@@ -309,15 +287,12 @@ assign ops = Priorities(rops, ENABLE);
           <license>PANDA_LGPLv3</license>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1" id_type="bool"/>
-            <connected_objects/>
           </port_o>
           <port_o id="reset" dir="IN">
             <structural_type_descriptor type="BOOL" size="1" id_type="bool"/>
-            <connected_objects/>
           </port_o>
           <port_o id="ENABLE" dir="IN">
             <structural_type_descriptor type="BOOL" size="1" id_type="bool"/>
-            <connected_objects/>
           </port_o>
           <port_vector_o id="rops" dir="IN">
             <structural_type_descriptor type="BOOL" size="1" id_type="bool"/>
@@ -376,26 +351,21 @@ PT_FU_MEM #(.BITSIZE_ops(BITSIZE_ops), .PORTSIZE_ops(PORTSIZE_ops), .BITSIZE_rop
           <license>PANDA_LGPLv3</license>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1" id_type="bool"/>
-            <connected_objects/>
           </port_o>
           <port_o id="reset" dir="IN">
             <structural_type_descriptor type="BOOL" size="1" id_type="bool"/>
-            <connected_objects/>
           </port_o>
           <port_o id="local_reset" dir="IN">
             <structural_type_descriptor type="BOOL" size="1" id_type="bool"/>
-            <connected_objects/>
           </port_o>
           <port_o id="loop_exit_reset" dir="IN">
             <structural_type_descriptor type="BOOL" size="1" id_type="bool"/>
-            <connected_objects/>
           </port_o>
           <port_vector_o id="ops" dir="IN">
             <structural_type_descriptor type="BOOL" size="1" id_type="bool"/>
           </port_vector_o>
           <port_o id="sop" dir="OUT">
             <structural_type_descriptor type="BOOL" size="1" id_type="bool"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="JOIN_FU ops" VERILOG_PROVIDED="
 // synthesis attribute use_sync_reset of current is no;
@@ -459,27 +429,21 @@ end
           <license>PANDA_LGPLv3</license>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1" id_type="bool"/>
-            <connected_objects/>
           </port_o>
           <port_o id="reset" dir="IN">
             <structural_type_descriptor type="BOOL" size="1" id_type="bool"/>
-            <connected_objects/>
           </port_o>
           <port_o id="aop" dir="IN">
             <structural_type_descriptor type="BOOL" size="1" id_type="bool"/>
-            <connected_objects/>
           </port_o>
           <port_o id="eop" dir="OUT">
             <structural_type_descriptor type="BOOL" size="1" id_type="bool"/>
-            <connected_objects/>
           </port_o>
           <port_o id="sop" dir="OUT">
             <structural_type_descriptor type="BOOL" size="1" id_type="bool"/>
-            <connected_objects/>
           </port_o>
           <port_o id="op" dir="OUT">
             <structural_type_descriptor type="BOOL" size="1" id_type="bool"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="MC_FU EXECUTION_TIME BITSIZE INITIATION_TIME" VERILOG_PROVIDED="
 reg  [BITSIZE-1:0] state 1INIT_ZERO_VALUE;
@@ -528,23 +492,18 @@ end
           <license>PANDA_LGPLv3</license>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1" id_type="bool"/>
-            <connected_objects/>
           </port_o>
           <port_o id="reset" dir="IN">
             <structural_type_descriptor type="BOOL" size="1" id_type="bool"/>
-            <connected_objects/>
           </port_o>
           <port_o id="sop" dir="IN">
             <structural_type_descriptor type="BOOL" size="1" id_type="bool"/>
-            <connected_objects/>
           </port_o>
           <port_o id="aop" dir="IN">
             <structural_type_descriptor type="BOOL" size="1" id_type="bool"/>
-            <connected_objects/>
           </port_o>
           <port_o id="rop" dir="OUT">
             <structural_type_descriptor type="BOOL" size="1" id_type="bool"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="CE_BYPASS" VERILOG_PROVIDED="
 // synthesis attribute use_sync_reset of rop_reg is no;
@@ -578,11 +537,9 @@ assign rop = sop | rop_reg;"/>
           <license>PANDA_LGPLv3</license>
           <port_o id="sop" dir="IN">
             <structural_type_descriptor type="BOOL" size="1" id_type="bool"/>
-            <connected_objects/>
           </port_o>
           <port_o id="aop" dir="OUT">
             <structural_type_descriptor type="BOOL" size="1" id_type="bool"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="CE_VIRTUAL_FU" VERILOG_PROVIDED="assign aop = sop;"/>
         </component_o>
@@ -592,7 +549,7 @@ assign rop = sop | rop_reg;"/>
       <name>CE_FU</name>
       <operation operation_name="CE_FU"/>
       <circuit>
-        <component_o id="CE_FU" >
+        <component_o id="CE_FU">
           <structural_type_descriptor id_type="CE_FU"/>
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
           <copyright>Copyright (C) 2012-2023 Politecnico di Milano</copyright>
@@ -600,23 +557,18 @@ assign rop = sop | rop_reg;"/>
           <license>PANDA_LGPLv3</license>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1" id_type="bool"/>
-            <connected_objects/>
           </port_o>
           <port_o id="reset" dir="IN">
             <structural_type_descriptor type="BOOL" size="1" id_type="bool"/>
-            <connected_objects/>
           </port_o>
           <port_o id="sop" dir="IN">
             <structural_type_descriptor type="BOOL" size="1" id_type="bool"/>
-            <connected_objects/>
           </port_o>
           <port_o id="aop" dir="IN">
             <structural_type_descriptor type="BOOL" size="1" id_type="bool"/>
-            <connected_objects/>
           </port_o>
           <port_o id="rop" dir="OUT">
             <structural_type_descriptor type="BOOL" size="1" id_type="bool"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="CE_FU" VERILOG_PROVIDED="
 // synthesis attribute use_sync_reset of rop_out is no;
@@ -645,15 +597,12 @@ assign rop=rop_out;
           <license>PANDA_LGPLv3</license>
           <port_o id="selector" dir="IN">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <port_vector_o id="in1" dir="IN">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_vector_o>
           <port_o id="out1" dir="OUT">
-             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <NP_functionality LIBRARY="MUX selector in1 out1 NUM_ch" VERILOG_PROVIDED="
   wire[BITSIZE_in1-1:0] inputarray [0:NUM_ch-1];
@@ -671,8 +620,7 @@ assign rop=rop_out;
     </cell>
     <cell>
       <name>ALLOW_MEM_ACCESS_FU</name>
-      <operation operation_name=""/>LLOW_MEM_ACCESS_FU
-      <circuit>
+      <operation operation_name=""/>LLOW_MEM_ACCESS_FU <circuit>
         <component_o id="ALLOW_MEM_ACCESS_FU">
           <structural_type_descriptor id_type="ALLOW_MEM_ACCESS_FU"/>
           <parameter name="NUM_ch">2</parameter>
@@ -682,31 +630,24 @@ assign rop=rop_out;
           <license>PANDA_LGPLv3</license>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1" id_type="bool"/>
-            <connected_objects/>
           </port_o>
           <port_o id="reset" dir="IN">
             <structural_type_descriptor type="BOOL" size="1" id_type="bool"/>
-            <connected_objects/>
           </port_o>
           <port_vector_o id="access_allowed" dir="IN" is_global="1" is_extern="1">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_vector_o>
           <port_vector_o id="start_port" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_vector_o>
           <port_vector_o id="done" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_vector_o>
           <port_vector_o id="memory_enabled" dir="OUT" is_global="1" is_extern="1">
-             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_vector_o>
           <port_vector_o id="op" dir="OUT">
-             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_vector_o>
           <NP_functionality LIBRARY="ALLOW_MEM_ACCESS_FU access_allowed start_port done memory_enabled op" VERILOG_PROVIDED="
 reg [PORTSIZE_access_allowed-1:0] state 1INIT_ZERO_VALUE;
@@ -756,15 +697,12 @@ assign memory_enabled = ~state;"/>
           <license>PANDA_LGPLv3</license>
           <port_o id="selector" dir="IN">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <port_vector_o id="out1" dir="OUT">
-             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_vector_o>
           <NP_functionality LIBRARY="EXPAND selector in1 out1" VERILOG_PROVIDED="
   genvar i;
@@ -790,15 +728,12 @@ assign memory_enabled = ~state;"/>
           <structural_type_descriptor id_type="MEMORY_ENABLED_AND"/>
           <port_vector_o id="in1" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_vector_o>
           <port_vector_o id="in2" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_vector_o>
           <port_vector_o id="memory_enabled" dir="OUT">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_vector_o>
           <NP_functionality LIBRARY="MEMORY_ENABLED in1 in2 memory_enabled" VERILOG_PROVIDED="assign memory_enabled = in1 &amp; in2;" VHDL_PROVIDED="begin
 memory_enabled &lt;= std_logic_vector(resize(unsigned(in1), PORTSIZE_memory_enabled*BITSIZE_memory_enabled)) and std_logic_vector(resize(unsigned(in2), PORTSIZE_memory_enabled*BITSIZE_memory_enabled));"/>
@@ -817,11 +752,9 @@ memory_enabled &lt;= std_logic_vector(resize(unsigned(in1), PORTSIZE_memory_enab
           <license>PANDA_LGPLv3</license>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="MC_INDEX in1 out1" VERILOG_PROVIDED="
   genvar i;

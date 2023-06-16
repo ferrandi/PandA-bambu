@@ -325,7 +325,7 @@ class language_writer
     */
    static unsigned int bitnumber(unsigned long long n);
 
-   virtual bool check_keyword(std::string id) const = 0;
+   virtual bool check_keyword(const std::string& id) const = 0;
 
    /**
     * Write a builtin component

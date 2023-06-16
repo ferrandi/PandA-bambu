@@ -143,7 +143,7 @@ class fu_binding
     * @param is_memory_splitted is true when the allocated memory is splitted into two sets of BRAMs
     */
    void fill_array_ref_memory(std::ostream& init_file_a, std::ostream& init_file_b, unsigned int ar,
-                              long long int& vec_size, unsigned long long& elts_size, const memoryRef mem,
+                              unsigned long long& vec_size, unsigned long long& elts_size, const memoryRef mem,
                               bool is_memory_splitted, bool is_sds, module* fu_module);
 
    /**

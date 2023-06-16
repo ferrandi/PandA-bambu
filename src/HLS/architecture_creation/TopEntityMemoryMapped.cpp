@@ -96,10 +96,8 @@ void TopEntityMemoryMapped::Initialize()
    const auto CGM = HLSMgr->CGetCallGraphManager();
    const auto& top_function_ids = CGM->GetRootFunctions();
    is_root_function = top_function_ids.count(funId);
-   const auto is_wb4_root = is_root_function && parameters->getOption<HLSFlowStep_Type>(OPT_interface_type) ==
-                                                    HLSFlowStep_Type::WB4_INTERFACE_GENERATION;
-   const auto is_addressed_fun = HLSMgr->hasToBeInterfaced(funId) && !is_root_function;
-   needMemoryMappedRegisters = is_wb4_root || is_addressed_fun || parameters->getOption<bool>(OPT_memory_mapped_top);
+   needMemoryMappedRegisters =
+       is_root_function ? parameters->getOption<bool>(OPT_memory_mapped_top) : HLSMgr->hasToBeInterfaced(funId);
    AddedComponents.clear();
    const auto FB = HLSMgr->CGetFunctionBehavior(funId);
    _channels_number = FB->GetChannelsNumber();
@@ -193,11 +191,7 @@ void TopEntityMemoryMapped::resizing_IO(module* fu_module, unsigned int max_n_po
          GetPointerS<port_o>(port)->add_n_ports(max_n_ports, port);
       }
 
-      if(GetPointerS<port_o>(port)->get_is_data_bus() || GetPointerS<port_o>(port)->get_is_addr_bus() ||
-         GetPointerS<port_o>(port)->get_is_size_bus() || GetPointerS<port_o>(port)->get_is_tag_bus())
-      {
-         port_o::resize_busport(bus_size_bitsize, bus_addr_bitsize, bus_data_bitsize, bus_tag_bitsize, port);
-      }
+      port_o::resize_if_busport(bus_size_bitsize, bus_addr_bitsize, bus_data_bitsize, bus_tag_bitsize, port);
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Resized input ports");
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Resizing output ports");
@@ -208,11 +202,7 @@ void TopEntityMemoryMapped::resizing_IO(module* fu_module, unsigned int max_n_po
       {
          GetPointerS<port_o>(port)->add_n_ports(max_n_ports, port);
       }
-      if(GetPointerS<port_o>(port)->get_is_data_bus() || GetPointerS<port_o>(port)->get_is_addr_bus() ||
-         GetPointerS<port_o>(port)->get_is_size_bus() || GetPointerS<port_o>(port)->get_is_tag_bus())
-      {
-         port_o::resize_busport(bus_size_bitsize, bus_addr_bitsize, bus_data_bitsize, bus_tag_bitsize, port);
-      }
+      port_o::resize_if_busport(bus_size_bitsize, bus_addr_bitsize, bus_data_bitsize, bus_tag_bitsize, port);
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Resized output ports");
 }

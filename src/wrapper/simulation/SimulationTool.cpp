@@ -35,39 +35,76 @@
  * @brief Implementation of some methods for the interface with simulation tools
  *
  * @author Christian Pilato <pilato@elet.polimi.it>
+ * @author Michele Fiorito <michele.fiorito@polimi.it>
  *
  */
 #include "SimulationTool.hpp"
-#include "config_HAVE_ASSERTS.hpp" // for HAVE_ASSERTS
 
-#include "ToolManager.hpp"
+#include "config_HAVE_ASSERTS.hpp"
+#include "config_PANDA_INCLUDE_INSTALLDIR.hpp"
 
 #include "ISE_isim_wrapper.hpp"
 #include "IcarusWrapper.hpp"
+#include "Parameter.hpp"
+#include "ToolManager.hpp"
 #include "VIVADO_xsim_wrapper.hpp"
 #include "VerilatorWrapper.hpp"
-#include "modelsimWrapper.hpp"
-
-#include "Parameter.hpp"
+#include "compiler_wrapper.hpp"
+#include "constants.hpp"
+#include "custom_set.hpp"
 #include "fileIO.hpp"
+#include "modelsimWrapper.hpp"
 #include "string_manipulation.hpp"
 #include "testbench_generation_constants.hpp"
+#include "utility.hpp"
 
+#include <boost/lexical_cast/try_lexical_convert.hpp>
+#include <boost/regex.hpp>
 #include <cmath>
 #include <string>
 #include <vector>
 
-SimulationTool::SimulationTool(const ParameterConstRef& _Param)
+SimulationTool::type_t SimulationTool::to_sim_type(const std::string& str)
+{
+   if(str == "MODELSIM")
+   {
+      return SimulationTool::MODELSIM;
+   }
+   else if(str == "ISIM")
+   {
+      return SimulationTool::ISIM;
+   }
+   else if(str == "XSIM")
+   {
+      return SimulationTool::XSIM;
+   }
+   else if(str == "ICARUS")
+   {
+      return SimulationTool::ICARUS;
+   }
+   else if(str == "VERILATOR")
+   {
+      return SimulationTool::VERILATOR;
+   }
+   else
+   {
+      THROW_ERROR("Unknown simulator: " + str);
+   }
+   return SimulationTool::UNKNOWN;
+}
+
+SimulationTool::SimulationTool(const ParameterConstRef& _Param, const std::string& _top_fname)
     : Param(_Param),
       debug_level(Param->getOption<int>(OPT_debug_level)),
-      output_level(Param->getOption<unsigned int>(OPT_output_level))
+      output_level(Param->getOption<unsigned int>(OPT_output_level)),
+      top_fname(_top_fname)
 {
 }
 
 SimulationTool::~SimulationTool() = default;
 
 SimulationToolRef SimulationTool::CreateSimulationTool(type_t type, const ParameterConstRef& _Param,
-                                                       const std::string& suffix)
+                                                       const std::string& suffix, const std::string& top_fname)
 {
    switch(type)
    {
@@ -75,19 +112,19 @@ SimulationToolRef SimulationTool::CreateSimulationTool(type_t type, const Parame
          THROW_ERROR("Simulation tool not specified");
          break;
       case MODELSIM:
-         return SimulationToolRef(new modelsimWrapper(_Param, suffix));
+         return SimulationToolRef(new modelsimWrapper(_Param, suffix, top_fname));
          break;
       case ISIM:
-         return SimulationToolRef(new ISE_isim_wrapper(_Param, suffix));
+         return SimulationToolRef(new ISE_isim_wrapper(_Param, suffix, top_fname));
          break;
       case XSIM:
-         return SimulationToolRef(new VIVADO_xsim_wrapper(_Param, suffix));
+         return SimulationToolRef(new VIVADO_xsim_wrapper(_Param, suffix, top_fname));
          break;
       case ICARUS:
-         return SimulationToolRef(new IcarusWrapper(_Param, suffix));
+         return SimulationToolRef(new IcarusWrapper(_Param, suffix, top_fname));
          break;
       case VERILATOR:
-         return SimulationToolRef(new VerilatorWrapper(_Param, suffix));
+         return SimulationToolRef(new VerilatorWrapper(_Param, suffix, top_fname));
          break;
       default:
          THROW_ERROR("Simulation tool currently not supported");
@@ -125,11 +162,6 @@ unsigned long long int SimulationTool::Simulate(unsigned long long int& accum_cy
    tool->execute(parameters, input_files, output_files,
                  Param->getOption<std::string>(OPT_output_temporary_directory) + "/simulation_output");
 
-   if(!log_file.empty() && output_level == OUTPUT_LEVEL_VERBOSE)
-   {
-      CopyStdout(log_file);
-   }
-
    return DetermineCycles(accum_cycles, n_testcases);
 }
 
@@ -137,256 +169,111 @@ unsigned long long int SimulationTool::DetermineCycles(unsigned long long int& a
 {
    unsigned long long int num_cycles = 0;
    unsigned int i = 0;
-   auto result_file = Param->getOption<std::string>(OPT_simulation_output);
-   auto profiling_result_file = Param->getOption<std::string>(OPT_profiling_output);
-   if(!boost::filesystem::exists(profiling_result_file))
+   const auto sim_period = 2.0l;
+   const auto result_file = Param->getOption<std::string>(OPT_simulation_output);
+   const auto profiling_result_file = Param->getOption<std::string>(OPT_profiling_output);
+   const auto discrepancy_enabled = Param->isOption(OPT_discrepancy) && Param->getOption<bool>(OPT_discrepancy);
+   const auto profiling_enabled = boost::filesystem::exists(profiling_result_file);
+   if(!boost::filesystem::exists(result_file))
    {
-      if(!boost::filesystem::exists(result_file))
+      THROW_ERROR("The simulation does not end correctly");
+   }
+
+   std::ifstream res_file(result_file);
+   if(!res_file.is_open())
+   {
+      THROW_ERROR("Unable to open results file");
+   }
+   PRINT_OUT_MEX(OUTPUT_LEVEL_PEDANTIC, output_level, "File \"" + result_file + "\" opened");
+   std::string values;
+   std::getline(res_file, values);
+   if(values.empty())
+   {
+      THROW_ERROR("Result file was empty");
+   }
+   const auto sim_times = convert_string_to_vector<std::string>(values, ",");
+   for(const auto& start_end : sim_times)
+   {
+      if(start_end.back() == 'X')
       {
-         if(output_level != OUTPUT_LEVEL_VERBOSE)
+         if(discrepancy_enabled)
          {
-            CopyStdout(log_file);
+            num_cycles = i = 1;
+            break;
          }
-         THROW_ERROR("The simulation does not end correctly");
+         THROW_ERROR("Simulation not terminated!");
       }
-      std::ifstream res_file(result_file.c_str());
-      if(res_file.is_open())
+      else if(start_end.back() == 'A')
       {
-         PRINT_OUT_MEX(OUTPUT_LEVEL_PEDANTIC, output_level, "File \"" + result_file + "\" opened");
-         while(!res_file.eof())
-         {
-            std::string line;
-            getline(res_file, line);
-            if(line.empty())
-            {
-               continue;
-            }
-            line = TrimSpaces(line);
-            std::vector<std::string> filevalues = SplitString(line, "\t ");
-            if(filevalues[0] == "X")
-            {
-               CopyStdout(log_file);
-               if(not Param->isOption(OPT_discrepancy) or not Param->getOption<bool>(OPT_discrepancy))
-               {
-                  THROW_ERROR("Simulation not terminated!");
-               }
-               else
-               {
-                  break;
-               }
-            }
-            else if(filevalues[0] == "0")
-            {
-               CopyStdout(log_file);
-               if(not Param->isOption(OPT_discrepancy) or not Param->getOption<bool>(OPT_discrepancy))
-               {
-                  THROW_ERROR("Simulation not correct!");
-               }
-               else
-               {
-                  break;
-               }
-            }
-            else if(filevalues[0] == "-")
-            {
-               THROW_WARNING("Simulation completed but it is not possible to determine if it is correct!");
-            }
-            else if(filevalues[0] != "1" && filevalues[0] != "3")
-            {
-               CopyStdout(log_file);
-               THROW_ERROR("String not valid: " + line);
-            }
-            auto sim_cycles = boost::lexical_cast<unsigned long long int>(filevalues[1]);
-            if(filevalues.size() == 3)
-            {
-               auto offset = 0ull;
-               if(filevalues[2] == "ns")
-               {
-                  if(filevalues[0] == "3")
-                  {
-                     /// __builtin_exit has been called
-                     offset = 1ull;
-                     auto init_time = std::stoull(STR_CST_INIT_TIME);
-                     sim_cycles -= init_time;
-                  }
-                  if(Param->getOption<std::string>(OPT_simulator) == "VERILATOR")
-                  {
-                     sim_cycles =
-                         offset + (static_cast<unsigned long long int>(static_cast<long double>(sim_cycles) / 2)) - 2;
-                  }
-                  else
-                  {
-                     sim_cycles =
-                         offset +
-                         (static_cast<unsigned long long int>(static_cast<long double>(sim_cycles) /
-                                                              Param->getOption<long double>(OPT_clock_period))) -
-                         2;
-                  }
-               }
-               else if(filevalues[2] == "ps")
-               {
-                  if(filevalues[0] == "3")
-                  {
-                     offset = 1ull;
-                     auto init_time = std::stoull(STR_CST_INIT_TIME);
-                     sim_cycles -= 1000 * init_time;
-                  }
-                  sim_cycles = offset +
-                               static_cast<unsigned long long int>(static_cast<long double>(sim_cycles) / 1000 /
-                                                                   Param->getOption<long double>(OPT_clock_period)) -
-                               2;
-               }
-               else
-               {
-                  THROW_ERROR("Unexpected time unit: " + filevalues[2]);
-               }
-            }
-            PRINT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level,
-                          (i + 1) << ". Simulation completed with SUCCESS; Execution time " << sim_cycles
-                                  << " cycles;");
-            num_cycles += sim_cycles;
-            i++;
-         }
+         THROW_ERROR("Simulation terminated with abort call!");
       }
-      else
+      if(!profiling_enabled)
       {
-         CopyStdout(log_file);
-         THROW_ERROR("Result file not correctly created");
+         const auto times = SplitString(start_end, "|");
+         THROW_ASSERT(times.size() == 2, "Unexpected simulation time format");
+         const auto start_time = boost::lexical_cast<unsigned long long>(times.at(0));
+         const auto end_time = boost::lexical_cast<unsigned long long>(times.at(1));
+         THROW_ASSERT(end_time >= start_time, "Simulation went back in time");
+         const auto sim_time = static_cast<long double>(end_time - start_time);
+         const auto sim_cycles = static_cast<unsigned long long int>(std::ceil(sim_time / sim_period));
+         num_cycles += sim_cycles;
+         ++i;
+         PRINT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level,
+                       i << ". Simulation completed with SUCCESS; Execution time " << sim_cycles << " cycles;");
       }
    }
-   else
+
+   if(profiling_enabled)
    {
-      /// check for Not correct termination
-      if(!boost::filesystem::exists(result_file))
-      {
-         if(output_level != OUTPUT_LEVEL_VERBOSE)
-         {
-            CopyStdout(log_file);
-         }
-         THROW_ERROR("The simulation does not end correctly");
-      }
-      std::ifstream res_file(result_file.c_str());
-      if(res_file.is_open())
-      {
-         PRINT_OUT_MEX(OUTPUT_LEVEL_PEDANTIC, output_level, "File \"" + result_file + "\" opened");
-         while(!res_file.eof())
-         {
-            std::string line;
-            getline(res_file, line);
-            if(line.empty())
-            {
-               continue;
-            }
-            line = TrimSpaces(line);
-            std::vector<std::string> filevalues = SplitString(line, "\t ");
-            if(filevalues[0] == "X")
-            {
-               CopyStdout(log_file);
-               if(not Param->isOption(OPT_discrepancy) or not Param->getOption<bool>(OPT_discrepancy))
-               {
-                  THROW_ERROR("Simulation not terminated!");
-               }
-               else
-               {
-                  break;
-               }
-            }
-            else if(filevalues[0] == "0")
-            {
-               CopyStdout(log_file);
-               if(not Param->isOption(OPT_discrepancy) or not Param->getOption<bool>(OPT_discrepancy))
-               {
-                  THROW_ERROR("Simulation not correct!");
-               }
-               else
-               {
-                  break;
-               }
-            }
-            else if(filevalues[0] != "1")
-            {
-               CopyStdout(log_file);
-               THROW_ERROR("String not valid: " + line);
-            }
-         }
-      }
-      else
-      {
-         CopyStdout(log_file);
-         THROW_ERROR("Result file not correctly created");
-      }
       std::ifstream profiling_res_file(profiling_result_file.c_str());
-      if(profiling_res_file.is_open())
+      if(!profiling_res_file.is_open())
       {
-         PRINT_OUT_MEX(OUTPUT_LEVEL_PEDANTIC, output_level, "File \"" + profiling_result_file + "\" opened");
-         double clock_period = Param->isOption(OPT_clock_period) ? Param->getOption<double>(OPT_clock_period) : 10;
-         double time_stamp = 0.0;
-#if HAVE_ASSERTS
-         unsigned int prev_state = 3;
-         bool first_iteration = true;
-#endif
-         while(!profiling_res_file.eof())
-         {
-            std::string line;
-            getline(profiling_res_file, line);
-            if(line.empty())
-            {
-               continue;
-            }
-            std::vector<std::string> filevalues = SplitString(line, "\t");
-            boost::trim(filevalues[0]);
-            boost::trim(filevalues[1]);
-            if(filevalues[0] != "2" && filevalues[0] != "3")
-            {
-               CopyStdout(log_file);
-               THROW_ERROR("String not valid: " + line);
-            }
-            if(filevalues[0] == "2")
-            {
-               THROW_ASSERT(prev_state == 3, "Something wrong happen during the reading of the profiling results");
-#if HAVE_ASSERTS
-               prev_state = 2;
-#endif
-               time_stamp = time_stamp - boost::lexical_cast<double>(filevalues[1]);
-            }
-            else
-            {
-               THROW_ASSERT(prev_state == 2 || first_iteration,
-                            "Something wrong happen during the reading of the profiling results");
-#if HAVE_ASSERTS
-               prev_state = 3;
-#endif
-               time_stamp = time_stamp + clock_period + boost::lexical_cast<double>(filevalues[1]);
-            }
-            i++;
-#if HAVE_ASSERTS
-            first_iteration = false;
-#endif
-         }
-         num_cycles = static_cast<unsigned long long int>(std::round(time_stamp / clock_period));
-         i = i / 2;
-         PRINT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level,
-                       "Simulation completed with SUCCESS; Total Execution time "
-                           << num_cycles << " cycles; Number of executions " << i << ";");
-      }
-      else
-      {
-         CopyStdout(log_file);
          THROW_ERROR("Profiling result file not correctly created");
       }
+
+      PRINT_OUT_MEX(OUTPUT_LEVEL_PEDANTIC, output_level, "File \"" + profiling_result_file + "\" opened");
+      std::getline(profiling_res_file, values);
+      const auto profile_times = convert_string_to_vector<std::string>(values, ",");
+      for(const auto& start_end : profile_times)
+      {
+         const auto times = SplitString(start_end, "|");
+         THROW_ASSERT(times.size() == 2, "Unexpected simulation time format");
+         const auto start_time = boost::lexical_cast<unsigned long long>(times.at(0));
+         const auto end_time = boost::lexical_cast<unsigned long long>(times.at(1));
+         THROW_ASSERT(end_time >= start_time, "Profiling went back in time");
+         const auto sim_time = static_cast<long double>(end_time - start_time);
+         const auto sim_cycles = static_cast<unsigned long long int>(std::ceil(sim_time / sim_period));
+         num_cycles += sim_cycles;
+         ++i;
+         PRINT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level,
+                       i << ". Simulation completed with SUCCESS; Profiled execution time " << sim_cycles
+                         << " cycles;");
+      }
+   }
+
+   std::getline(res_file, values);
+   if(values.back() == 'A')
+   {
+      THROW_ERROR("Co-simulation main aborted");
+   }
+   int cosim_retval;
+   try
+   {
+      cosim_retval = boost::lexical_cast<int>(values);
+   }
+   catch(...)
+   {
+      THROW_ERROR("Co-simulation completed unexpectedly.");
+   }
+
+   if(cosim_retval)
+   {
+      THROW_ERROR("Co-simulation main returned non-zero value: " + values);
    }
 
    if(i == 0)
    {
-      if(not Param->isOption(OPT_discrepancy) or not Param->getOption<bool>(OPT_discrepancy))
-      {
-         THROW_ERROR(
-             "Expected a number of cycles different from zero. Something wrong happened during the simulation!");
-      }
-      else
-      {
-         num_cycles = i = 1;
-      }
+      THROW_ERROR("Expected a number of cycles different from zero. Something wrong happened during the simulation!");
    }
    accum_cycles = num_cycles;
    n_testcases = i;
@@ -406,11 +293,6 @@ std::string SimulationTool::GenerateSimulationScript(const std::string& top_file
 
    GenerateScript(script, top_filename, file_list);
 
-   if(!log_file.empty() && output_level >= OUTPUT_LEVEL_VERBOSE)
-   {
-      script << "cat " << log_file << std::endl << std::endl;
-   }
-
    // Create the simulation script
    generated_script = GetPath("./" + std::string("simulate_") + top_filename + std::string(".sh"));
    std::ofstream file_stream(generated_script.c_str());
@@ -428,6 +310,141 @@ std::string SimulationTool::GenerateSimulationScript(const std::string& top_file
                      "/simulation_generation_scripts_output");
 
    return generated_script;
+}
+
+std::string SimulationTool::GenerateLibraryBuildScript(std::ostringstream& script, const std::string& output_dir,
+                                                       std::string& cflags) const
+{
+   const auto default_compiler = Param->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler);
+   const auto opt_lvl = Param->getOption<CompilerWrapper_OptimizationSet>(OPT_compiler_opt_level);
+   const CompilerWrapperConstRef compiler_wrapper(new CompilerWrapper(Param, default_compiler, opt_lvl));
+
+   const auto extra_compiler_flags = [&]() {
+      std::string flags = cflags +
+                          " -fwrapv -ffloat-store -flax-vector-conversions -msse2 -mfpmath=sse -fno-strict-aliasing "
+                          "-D__builtin_bambu_time_start()= -D__builtin_bambu_time_stop()= -D__BAMBU_SIM__";
+      if(!Param->isOption(OPT_input_format) ||
+         Param->getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_C)
+      {
+         flags += " -fexcess-precision=standard";
+      }
+      if(Param->isOption(OPT_gcc_optimizations))
+      {
+         const auto gcc_parameters = Param->getOption<const CustomSet<std::string>>(OPT_gcc_optimizations);
+         if(gcc_parameters.find("tree-vectorize") != gcc_parameters.end())
+         {
+            boost::replace_all(flags, "-msse2", "");
+            flags += " -m32";
+         }
+      }
+      return flags;
+   }();
+   cflags = compiler_wrapper->GetCompilerParameters(extra_compiler_flags);
+   boost::cmatch what;
+   std::string kill_printf;
+   if(boost::regex_search(cflags.c_str(), what, boost::regex("\\s*(\\-D'?printf[^=]*='?)'*")))
+   {
+      kill_printf.append(what[1].first, what[1].second);
+      cflags.erase(static_cast<size_t>(what[0].first - cflags.c_str()),
+                   static_cast<size_t>(what[0].second - what[0].first));
+   }
+
+   const auto input_files = Param->getOption<const CustomSet<std::string>>(OPT_input_file);
+   const auto top_dfname = string_demangle(top_fname);
+   const auto add_fname_prefix = [&](const std::string& prefix) {
+      if(top_dfname.size() && top_fname != top_dfname)
+      {
+         const auto fname = top_dfname.substr(0, top_dfname.find('('));
+         return boost::replace_first_copy(top_fname, STR(fname.size()) + fname,
+                                          STR(fname.size() + prefix.size()) + prefix + fname);
+      }
+      return prefix + top_fname;
+   };
+   const auto m_top_fname = add_fname_prefix("__m_");
+
+   auto compiler_env = boost::regex_replace("\n" + compiler_wrapper->GetCompiler().gcc,
+                                            boost::regex("([\\w\\d]+=(\".*\"|[^\\s]+))\\s*"), "export $1\n");
+   boost::replace_last(compiler_env, "\n", "\nexport CC=\"");
+   compiler_env += "\"";
+   script << compiler_env << "\n"
+          << "export CFLAGS=\"" << cflags << "\"\n"
+          << "srcs=(\n";
+   for(const auto& src : input_files)
+   {
+      script << "  \"" << src << "\"\n";
+   }
+   if(Param->isOption(OPT_no_parse_files))
+   {
+      const auto no_parse_files = Param->getOption<const CustomSet<std::string>>(OPT_no_parse_files);
+      for(const auto& no_parse_file : no_parse_files)
+      {
+         script << "  \"" << no_parse_file << "\"\n";
+      }
+   }
+   script << ")\n"
+          << "objs=()\n"
+          << "for src in \"${srcs[@]}\"\n"
+          << "do\n"
+          << "  obj=\"$(basename ${src})\"\n"
+          << "  case \"${obj}\" in\n"
+          << "  *.gimplePSSA)\n"
+          << "    continue\n"
+          << "    ;;\n"
+          << "  *)\n"
+          << "    obj=\"" << output_dir << "/${obj%.*}.o\"\n"
+          << "    ${CC} -c ${CFLAGS} " << kill_printf << " -fPIC -o ${obj} ${src}\n"
+          << "    objcopy --weaken --redefine-sym " << top_fname << "=" << m_top_fname << " ${obj}\n"
+          << "    objs+=(\"${obj}\")\n"
+          << "    ;;\n"
+          << "  esac\n"
+          << "done\n\n";
+
+   if(Param->isOption(OPT_pretty_print))
+   {
+      const auto m_pp_top_fname = add_fname_prefix("__m_pp_");
+      const auto pp_file = boost::filesystem::path(Param->getOption<std::string>(OPT_pretty_print));
+      const auto pp_fileo = output_dir + "/" + pp_file.stem().string() + ".o";
+      script << "${CC} -c ${CFLAGS} -fno-strict-aliasing -fPIC -o " << pp_fileo << " " << pp_file.string() << "\n"
+             << "objcopy --keep-global-symbol " << top_fname << " $(nm " << pp_fileo
+             << " | grep -o '[^[:space:]]*get_pc_thunk[^[:space:]]*' | sed 's/^/--keep-global-symbol /' | tr '\n' ' ') "
+             << pp_fileo << "\n"
+             << "objcopy --redefine-sym " << top_fname << "=" << m_pp_top_fname << " " << pp_fileo << "\n"
+             << "objs+=(\"" << pp_fileo << "\")\n\n";
+   }
+
+   const auto dpi_cwrapper_file =
+       Param->getOption<std::string>(OPT_output_directory) + "/simulation/" STR_CST_testbench_generation_basename ".c";
+   script << "${CC} -c ${CFLAGS} -I" << relocate_compiler_path(PANDA_INCLUDE_INSTALLDIR);
+   if(Param->isOption(OPT_pretty_print) && top_fname != "main")
+   {
+      script << " -DPP_VERIFICATION";
+   }
+   script << " -fPIC -o " << output_dir << "/m_wrapper.o " << dpi_cwrapper_file << std::endl
+          << "objs+=(\"" << output_dir << "/m_wrapper.o\")" << std::endl;
+   if(Param->isOption(OPT_testbench_input_string))
+   {
+      const auto tb_file = Param->getOption<std::string>(OPT_testbench_input_string);
+      if(boost::ends_with(tb_file, ".c") || boost::ends_with(tb_file, ".cc") || boost::ends_with(tb_file, ".cpp"))
+      {
+         script << "${CC} -c ${CFLAGS} -I" << relocate_compiler_path(PANDA_INCLUDE_INSTALLDIR) << " -fPIC";
+         if(Param->isOption(OPT_testbench_extra_gcc_flags))
+         {
+            script << " " << Param->getOption<std::string>(OPT_testbench_extra_gcc_flags);
+         }
+         script << " -o " << output_dir << "/tb.o " << tb_file << "\n"
+                << "objcopy -W " << top_fname << " " << output_dir << "/tb.o\n"
+                << "objs+=(\"" << output_dir << "/tb.o\")\n";
+      }
+   }
+   const auto libtb_filename = output_dir + "/libtb.so";
+   if(Param->getOption<int>(OPT_output_level) < OUTPUT_LEVEL_VERY_PEDANTIC)
+   {
+      script << "CFLAGS+=\" -DNDEBUG\"\n";
+   }
+   script << "bash " << relocate_compiler_path(PANDA_INCLUDE_INSTALLDIR "/mdpi/build.sh") << " ${objs[*]} -o "
+          << libtb_filename << std::endl
+          << std::endl;
+   return libtb_filename;
 }
 
 void SimulationTool::Clean() const

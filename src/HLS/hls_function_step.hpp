@@ -116,7 +116,7 @@ class HLSFunctionStep : public HLS_step
     * Return a unified identifier of this design step
     * @return the signature of the design step
     */
-   const std::string GetSignature() const override;
+   std::string GetSignature() const override final;
 
    /**
     * Compute the signature of a hls flow step
@@ -125,15 +125,15 @@ class HLSFunctionStep : public HLS_step
     * @param function_id is the index of the function
     * @return the corresponding signature
     */
-   static const std::string ComputeSignature(const HLSFlowStep_Type hls_flow_step_type,
-                                             const HLSFlowStepSpecializationConstRef hls_flow_step_specialization,
-                                             const unsigned int function_id);
+   static std::string ComputeSignature(const HLSFlowStep_Type hls_flow_step_type,
+                                       const HLSFlowStepSpecializationConstRef hls_flow_step_specialization,
+                                       const unsigned int function_id);
 
    /**
     * Return the name of this design step
     * @return the name of the pass (for debug purpose)
     */
-   const std::string GetName() const override;
+   std::string GetName() const override final;
 
    /**
     * Execute the step

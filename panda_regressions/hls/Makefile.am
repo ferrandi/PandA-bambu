@@ -108,8 +108,6 @@ bambu_specific_test2/par-bool1.c \
 bambu_specific_test2/port_swapping_test.c \
 bambu_specific_test2/port_swapping_test2.c \
 bambu_specific_test2/ps_constraints.xml \
-bambu_specific_test2/test_without_c.c \
-bambu_specific_test2/test_without_c.xml \
 bambu_specific_test2/reverse.c \
 bambu_specific_test2_list \
 bambu_specific_test3.sh \

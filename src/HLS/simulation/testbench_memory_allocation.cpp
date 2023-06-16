@@ -57,7 +57,7 @@
 #include "math_function.hpp"
 #include "memory.hpp"
 #include "string_manipulation.hpp" // for STR
-#include "testbench_generation_base_step.hpp"
+#include "testbench_generation.hpp"
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
 #include "tree_node.hpp"
@@ -172,7 +172,7 @@ DesignFlowStep_Status TestbenchMemoryAllocation::Exec()
          std::string test_v = "0";
          if(is_memory)
          {
-            test_v = TestbenchGenerationBaseStep::print_var_init(TM, p, HLSMgr->Rmem);
+            // test_v = TestbenchGeneration::print_var_init(TM, p, HLSMgr->Rmem);
          }
          else if(curr_test_vector.find(param) != curr_test_vector.end())
          {
