@@ -29,19 +29,22 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 /**
- * @file
- * @author Marco Minutoli <mminutoli@gmail.com>
+ * @file TopEntityMemoryMapped.hpp
  * @brief Construction of top entity memory mapped interface.
+ *
+ * @author Marco Minutoli <mminutoli@gmail.com>
+ *
  */
 
 #ifndef _TOPENTITYMEMORYMAPPED_H_
 #define _TOPENTITYMEMORYMAPPED_H_
 
+#include "custom_set.hpp"
 #include "top_entity.hpp"
 
-#include "custom_set.hpp"
 #include <list>
 #include <string>
+
 class module;
 enum class MemoryAllocation_ChannelsType;
 
@@ -109,8 +112,6 @@ class TopEntityMemoryMapped : public top_entity
    void insertStartDoneLogic(structural_managerRef SM, structural_objectRef wrappedObj);
 
    void insertStatusRegister(structural_managerRef SM, structural_objectRef wrappedObj);
-
-   void forwardPorts(structural_managerRef SM, structural_objectRef wrappedObj);
 
    void resizing_IO(module* fu_module, unsigned int max_n_ports) const;
 
