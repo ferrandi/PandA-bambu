@@ -1,5 +1,5 @@
 /* mockturtle: C++ logic network library
- * Copyright (C) 2018-2021  EPFL
+ * Copyright (C) 2018-2022  EPFL
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -43,8 +43,8 @@
 
 #include <kitty/cube.hpp>
 #include <kitty/dynamic_truth_table.hpp>
-#include <kitty/isop.hpp>
 #include <kitty/hash.hpp>
+#include <kitty/isop.hpp>
 #include <kitty/operations.hpp>
 
 #include "../../traits.hpp"
@@ -92,7 +92,7 @@ private:
         if ( cube.get_mask( i ) )
         {
           const auto [f, l] = arrival_times[i];
-          product_queue.push( {cube.get_bit( i ) ? f : dest.create_not( f ), l} );
+          product_queue.push( { cube.get_bit( i ) ? f : dest.create_not( f ), l } );
         }
       }
       if ( !product_queue.empty() )
@@ -101,14 +101,14 @@ private:
       }
       and_terms.push( balanced_tree( dest, product_queue ) );
     }
-    return {and_terms, num_and_gates};
+    return { and_terms, num_and_gates };
   }
 
   arrival_time_pair<Ntk> balanced_tree( Ntk& dest, arrival_time_queue<Ntk>& queue, bool _and = true ) const
   {
     if ( queue.empty() )
     {
-      return {dest.get_constant( true ), 0u};
+      return { dest.get_constant( true ), 0u };
     }
 
     while ( queue.size() > 1u )
@@ -119,7 +119,7 @@ private:
       queue.pop();
       const auto s = _and ? dest.create_and( s1, s2 ) : dest.create_or( s1, s2 );
       const auto l = std::max( l1, l2 ) + 1;
-      queue.push( {s, l} );
+      queue.push( { s, l } );
     }
     return queue.top();
   }

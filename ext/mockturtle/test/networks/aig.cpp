@@ -1,13 +1,13 @@
 #include <catch.hpp>
 
-#include <mockturtle/algorithms/cleanup.hpp>
-#include <mockturtle/algorithms/simulation.hpp>
-#include <mockturtle/networks/aig.hpp>
-#include <mockturtle/traits.hpp>
 #include <kitty/constructors.hpp>
 #include <kitty/dynamic_truth_table.hpp>
 #include <kitty/operations.hpp>
 #include <kitty/operators.hpp>
+#include <mockturtle/algorithms/cleanup.hpp>
+#include <mockturtle/algorithms/simulation.hpp>
+#include <mockturtle/networks/aig.hpp>
+#include <mockturtle/traits.hpp>
 
 using namespace mockturtle;
 
@@ -52,9 +52,15 @@ TEST_CASE( "create and use primary inputs in an AIG", "[aig]" )
   CHECK( has_create_pi_v<aig_network> );
 
   auto a = aig.create_pi();
+  auto b = aig.create_pi();
 
-  CHECK( aig.size() == 2 );
-  CHECK( aig.num_pis() == 1 );
+  CHECK( aig.size() == 3 ); // constant + two primary inputs
+  CHECK( aig.num_pis() == 2 );
+  CHECK( aig.num_gates() == 0 );
+  CHECK( aig.is_pi( aig.get_node( a ) ) );
+  CHECK( aig.is_pi( aig.get_node( b ) ) );
+  CHECK( aig.pi_index( aig.get_node( a ) ) == 0 );
+  CHECK( aig.pi_index( aig.get_node( b ) ) == 1 );
 
   CHECK( std::is_same_v<std::decay_t<decltype( a )>, aig_network::signal> );
 
@@ -133,59 +139,6 @@ TEST_CASE( "create and use primary outputs in an AIG", "[aig]" )
   } );
 }
 
-TEST_CASE( "create and use register in an AIG", "[aig]" )
-{
-  aig_network aig;
-
-  CHECK( has_foreach_po_v<aig_network> );
-  CHECK( has_create_po_v<aig_network> );
-  CHECK( has_create_pi_v<aig_network> );
-  CHECK( has_create_ro_v<aig_network> );
-  CHECK( has_create_ri_v<aig_network> );
-  CHECK( has_create_and_v<aig_network> );
-
-  const auto x1 = aig.create_pi();
-  const auto x2 = aig.create_pi();
-  const auto x3 = aig.create_pi();
-
-  CHECK( aig.size() == 4 );
-  CHECK( aig.num_registers() == 0 );
-  CHECK( aig.num_pis() == 3 );
-  CHECK( aig.num_pos() == 0 );
-
-  const auto f1 = aig.create_and( x1, x2 );
-  aig.create_po( f1 );
-  aig.create_po( !f1 );
-
-  const auto f2 = aig.create_and( f1, x3 );
-  aig.create_ri( f2 );
-
-  const auto ro = aig.create_ro();
-  aig.create_po( ro );
-
-  CHECK( aig.num_pos() == 3 );
-  CHECK( aig.num_registers() == 1 );
-
-  aig.foreach_po( [&]( auto s, auto i ) {
-    switch ( i )
-    {
-    case 0:
-      CHECK( s == f1 );
-      break;
-    case 1:
-      CHECK( s == !f1 );
-      break;
-    case 2:
-      // Check if the output (connected to the register) data is the same as the node data being registered.
-      CHECK( f2.data == aig.po_at( i ).data );
-      break;
-    default:
-      CHECK( false );
-      break;
-    }
-  } );
-}
-
 TEST_CASE( "create unary operations in an AIG", "[aig]" )
 {
   aig_network aig;
@@ -259,6 +212,29 @@ TEST_CASE( "hash nodes in AIG network", "[aig]" )
   CHECK( aig.get_node( f ) == aig.get_node( g ) );
 }
 
+TEST_CASE( "clone a AIG network", "[aig]" )
+{
+  CHECK( has_clone_v<aig_network> );
+
+  aig_network aig0;
+  auto a = aig0.create_pi();
+  auto b = aig0.create_pi();
+  auto f0 = aig0.create_and( a, b );
+  CHECK( aig0.size() == 4 );
+  CHECK( aig0.num_gates() == 1 );
+
+  auto aig1 = aig0;
+  auto aig_clone = aig0.clone();
+
+  auto c = aig1.create_pi();
+  aig1.create_and( f0, c );
+  CHECK( aig0.size() == 6 );
+  CHECK( aig0.num_gates() == 2 );
+
+  CHECK( aig_clone.size() == 4 );
+  CHECK( aig_clone.num_gates() == 1 );
+}
+
 TEST_CASE( "clone a node in AIG network", "[aig]" )
 {
   aig_network aig1, aig2;
@@ -274,7 +250,7 @@ TEST_CASE( "clone a node in AIG network", "[aig]" )
   auto b2 = aig2.create_pi();
   CHECK( aig2.size() == 3 );
 
-  auto f2 = aig2.clone_node( aig1, aig1.get_node( f1 ), {a2, b2} );
+  auto f2 = aig2.clone_node( aig1, aig1.get_node( f1 ), { a2, b2 } );
   CHECK( aig2.size() == 4 );
 
   aig2.foreach_fanin( aig2.get_node( f2 ), [&]( auto const& s, auto ) {
@@ -316,6 +292,30 @@ TEST_CASE( "structural properties of an AIG", "[aig]" )
   CHECK( aig.fanout_size( aig.get_node( f2 ) ) == 1 );
 }
 
+TEST_CASE( "check has_and in AIG", "[aig]" )
+{
+  aig_network aig;
+  auto const x1 = aig.create_pi();
+  auto const x2 = aig.create_pi();
+  auto const x3 = aig.create_pi();
+
+  auto const n4 = aig.create_and( !x1, x2 );
+  auto const n5 = aig.create_and( x1, n4 );
+  auto const n6 = aig.create_and( x3, n5 );
+  auto const n7 = aig.create_and( n4, x2 );
+  auto const n8 = aig.create_and( !n5, !n7 );
+  auto const n9 = aig.create_and( !n8, n4 );
+
+  aig.create_po( n6 );
+  aig.create_po( n9 );
+
+  CHECK( aig.has_and( !x1, x2 ).has_value() == true );
+  CHECK( *aig.has_and( !x1, x2 ) == n4 );
+  CHECK( aig.has_and( !x1, x3 ).has_value() == false );
+  CHECK( aig.has_and( !n7, !n5 ).has_value() == true );
+  CHECK( *aig.has_and( !n7, !n5 ) == n8 );
+}
+
 TEST_CASE( "node and signal iteration in an AIG", "[aig]" )
 {
   aig_network aig;
@@ -336,7 +336,7 @@ TEST_CASE( "node and signal iteration in an AIG", "[aig]" )
   CHECK( aig.size() == 5 );
 
   /* iterate over nodes */
-  uint32_t mask{0}, counter{0};
+  uint32_t mask{ 0 }, counter{ 0 };
   aig.foreach_node( [&]( auto n, auto i ) { mask |= ( 1 << n ); counter += i; } );
   CHECK( mask == 31 );
   CHECK( counter == 10 );
@@ -448,14 +448,14 @@ TEST_CASE( "compute values in AIGs", "[aig]" )
   aig.create_po( f2 );
 
   {
-    std::vector<bool> values{{true, false}};
+    std::vector<bool> values{ { true, false } };
 
     CHECK( aig.compute( aig.get_node( f1 ), values.begin(), values.end() ) == false );
     CHECK( aig.compute( aig.get_node( f2 ), values.begin(), values.end() ) == true );
   }
 
   {
-    std::vector<kitty::dynamic_truth_table> xs{2, kitty::dynamic_truth_table( 2 )};
+    std::vector<kitty::dynamic_truth_table> xs{ 2, kitty::dynamic_truth_table( 2 ) };
     kitty::create_nth_var( xs[0], 0 );
     kitty::create_nth_var( xs[1], 1 );
 
@@ -464,55 +464,71 @@ TEST_CASE( "compute values in AIGs", "[aig]" )
   }
 
   {
-    std::vector<kitty::partial_truth_table> xs{2};
+    std::vector<kitty::partial_truth_table> xs{ 2 };
 
     CHECK( aig.compute( aig.get_node( f1 ), xs.begin(), xs.end() ) == ( ~xs[0] & xs[1] ) );
     CHECK( aig.compute( aig.get_node( f2 ), xs.begin(), xs.end() ) == ( xs[0] & ~xs[1] ) );
 
-    xs[0].add_bit( 0 ); xs[1].add_bit( 1 );
+    xs[0].add_bit( 0 );
+    xs[1].add_bit( 1 );
 
     CHECK( aig.compute( aig.get_node( f1 ), xs.begin(), xs.end() ) == ( ~xs[0] & xs[1] ) );
     CHECK( aig.compute( aig.get_node( f2 ), xs.begin(), xs.end() ) == ( xs[0] & ~xs[1] ) );
 
-    xs[0].add_bit( 1 ); xs[1].add_bit( 0 );
+    xs[0].add_bit( 1 );
+    xs[1].add_bit( 0 );
 
     CHECK( aig.compute( aig.get_node( f1 ), xs.begin(), xs.end() ) == ( ~xs[0] & xs[1] ) );
     CHECK( aig.compute( aig.get_node( f2 ), xs.begin(), xs.end() ) == ( xs[0] & ~xs[1] ) );
 
-    xs[0].add_bit( 0 ); xs[1].add_bit( 0 );
+    xs[0].add_bit( 0 );
+    xs[1].add_bit( 0 );
 
     CHECK( aig.compute( aig.get_node( f1 ), xs.begin(), xs.end() ) == ( ~xs[0] & xs[1] ) );
     CHECK( aig.compute( aig.get_node( f2 ), xs.begin(), xs.end() ) == ( xs[0] & ~xs[1] ) );
 
-    xs[0].add_bit( 1 ); xs[1].add_bit( 1 );
+    xs[0].add_bit( 1 );
+    xs[1].add_bit( 1 );
 
     CHECK( aig.compute( aig.get_node( f1 ), xs.begin(), xs.end() ) == ( ~xs[0] & xs[1] ) );
     CHECK( aig.compute( aig.get_node( f2 ), xs.begin(), xs.end() ) == ( xs[0] & ~xs[1] ) );
   }
 
   {
-    std::vector<kitty::partial_truth_table> xs{2};
+    std::vector<kitty::partial_truth_table> xs{ 2 };
     kitty::partial_truth_table result;
 
-    xs[0].add_bit( 0 ); xs[1].add_bit( 1 );
+    xs[0].add_bit( 0 );
+    xs[1].add_bit( 1 );
 
-    aig.compute( aig.get_node( f1 ), result, xs.begin(), xs.end() ); CHECK( result == ( ~xs[0] & xs[1] ) );
-    aig.compute( aig.get_node( f2 ), result, xs.begin(), xs.end() ); CHECK( result == ( xs[0] & ~xs[1] ) );
+    aig.compute( aig.get_node( f1 ), result, xs.begin(), xs.end() );
+    CHECK( result == ( ~xs[0] & xs[1] ) );
+    aig.compute( aig.get_node( f2 ), result, xs.begin(), xs.end() );
+    CHECK( result == ( xs[0] & ~xs[1] ) );
 
-    xs[0].add_bit( 1 ); xs[1].add_bit( 0 );
+    xs[0].add_bit( 1 );
+    xs[1].add_bit( 0 );
 
-    aig.compute( aig.get_node( f1 ), result, xs.begin(), xs.end() ); CHECK( result == ( ~xs[0] & xs[1] ) );
-    aig.compute( aig.get_node( f2 ), result, xs.begin(), xs.end() ); CHECK( result == ( xs[0] & ~xs[1] ) );
+    aig.compute( aig.get_node( f1 ), result, xs.begin(), xs.end() );
+    CHECK( result == ( ~xs[0] & xs[1] ) );
+    aig.compute( aig.get_node( f2 ), result, xs.begin(), xs.end() );
+    CHECK( result == ( xs[0] & ~xs[1] ) );
 
-    xs[0].add_bit( 0 ); xs[1].add_bit( 0 );
+    xs[0].add_bit( 0 );
+    xs[1].add_bit( 0 );
 
-    aig.compute( aig.get_node( f1 ), result, xs.begin(), xs.end() ); CHECK( result == ( ~xs[0] & xs[1] ) );
-    aig.compute( aig.get_node( f2 ), result, xs.begin(), xs.end() ); CHECK( result == ( xs[0] & ~xs[1] ) );
+    aig.compute( aig.get_node( f1 ), result, xs.begin(), xs.end() );
+    CHECK( result == ( ~xs[0] & xs[1] ) );
+    aig.compute( aig.get_node( f2 ), result, xs.begin(), xs.end() );
+    CHECK( result == ( xs[0] & ~xs[1] ) );
 
-    xs[0].add_bit( 1 ); xs[1].add_bit( 1 );
+    xs[0].add_bit( 1 );
+    xs[1].add_bit( 1 );
 
-    aig.compute( aig.get_node( f1 ), result, xs.begin(), xs.end() ); CHECK( result == ( ~xs[0] & xs[1] ) );
-    aig.compute( aig.get_node( f2 ), result, xs.begin(), xs.end() ); CHECK( result == ( xs[0] & ~xs[1] ) );
+    aig.compute( aig.get_node( f1 ), result, xs.begin(), xs.end() );
+    CHECK( result == ( ~xs[0] & xs[1] ) );
+    aig.compute( aig.get_node( f2 ), result, xs.begin(), xs.end() );
+    CHECK( result == ( xs[0] & ~xs[1] ) );
   }
 }
 
@@ -601,7 +617,7 @@ TEST_CASE( "simulate some special functions in AIGs", "[aig]" )
   CHECK( result[1]._bits[0] == 0xd8u );
 }
 
-TEST_CASE( "substitude nodes with propagation in AIGs (test case 1)", "[aig]" )
+TEST_CASE( "substitute nodes with propagation in AIGs (test case 1)", "[aig]" )
 {
   CHECK( has_substitute_node_v<aig_network> );
   CHECK( has_replace_in_node_v<aig_network> );
@@ -654,7 +670,7 @@ TEST_CASE( "substitude nodes with propagation in AIGs (test case 1)", "[aig]" )
   CHECK( aig.num_gates() == 4u );
 }
 
-TEST_CASE( "substitude nodes with propagation in AIGs (test case 2)", "[aig]" )
+TEST_CASE( "substitute nodes with propagation in AIGs (test case 2)", "[aig]" )
 {
   aig_network aig;
   const auto x1 = aig.create_pi();
@@ -844,7 +860,7 @@ TEST_CASE( "substitute node and restrash", "[aig]" )
   CHECK( aig.fanout_size( aig.get_node( f2 ) ) == 1 );
 }
 
-TEST_CASE( "substitute node with complemented node", "[aig]" )
+TEST_CASE( "substitute node with complemented node in aig_network", "[aig]" )
 {
   aig_network aig;
   auto const x1 = aig.create_pi();
@@ -892,9 +908,8 @@ TEST_CASE( "substitute multiple nodes", "[aig]" )
   aig.create_po( n9 );
 
   aig.substitute_nodes( std::list<std::pair<node, signal>>{
-      {aig.get_node( n5 ), aig.get_constant( false )},
-      {aig.get_node( n9 ), n4}
-    } );
+      { aig.get_node( n5 ), aig.get_constant( false ) },
+      { aig.get_node( n9 ), n4 } } );
 
   CHECK( !aig.is_dead( aig.get_node( aig.get_constant( false ) ) ) );
   CHECK( !aig.is_dead( aig.get_node( x1 ) ) );
@@ -918,7 +933,7 @@ TEST_CASE( "substitute multiple nodes", "[aig]" )
   CHECK( aig.fanout_size( aig.get_node( n8 ) ) == 0u );
   CHECK( aig.fanout_size( aig.get_node( n9 ) ) == 0u );
 
-  aig.foreach_po( [&]( signal const o, uint32_t index ){
+  aig.foreach_po( [&]( signal const o, uint32_t index ) {
     switch ( index )
     {
     case 0:
@@ -930,5 +945,139 @@ TEST_CASE( "substitute multiple nodes", "[aig]" )
     default:
       CHECK( false );
     }
-  });
+  } );
+}
+
+TEST_CASE( "substitute node with dependency in aig_network", "[aig]" )
+{
+  aig_network aig{};
+
+  auto const a = aig.create_pi();
+  auto const b = aig.create_pi();
+  auto const c = aig.create_pi();          /* place holder */
+  auto const tmp = aig.create_and( b, c ); /* place holder */
+  auto const f1 = aig.create_and( a, b );
+  auto const f2 = aig.create_and( f1, tmp );
+  auto const f3 = aig.create_and( f1, a );
+  aig.create_po( f2 );
+  aig.substitute_node( aig.get_node( tmp ), f3 );
+
+  /**
+   * issue #545
+   *
+   *      f2
+   *     /  \
+   *    /   f3
+   *    \  /  \
+   *  1->f1    a
+   *
+   * stack:
+   * 1. push (f2->f3)
+   * 2. push (f3->a)
+   * 3. pop (f3->a)
+   * 4. pop (f2->f3) but, f3 is dead !!!
+   */
+
+  aig.substitute_node( aig.get_node( f1 ), aig.get_constant( 1 ) /* constant 1 */ );
+
+  CHECK( aig.is_dead( aig.get_node( f1 ) ) );
+  CHECK( aig.is_dead( aig.get_node( f2 ) ) );
+  CHECK( aig.is_dead( aig.get_node( f3 ) ) );
+  aig.foreach_po( [&]( auto s ) {
+    CHECK( aig.is_dead( aig.get_node( s ) ) == false );
+  } );
+}
+
+TEST_CASE( "substitute node and re-strash case 2", "[aig]" )
+{
+  aig_network aig;
+
+  auto const x1 = aig.create_pi();
+  auto const x2 = aig.create_pi();
+  auto const x3 = aig.create_pi();
+  auto const n4 = aig.create_and( x2, x3 );
+  auto const n5 = aig.create_and( x1, n4 );
+  auto const n6 = aig.create_and( n5, x3 );
+  auto const n7 = aig.create_and( x1, n6 );
+  aig.create_po( n7 );
+
+  aig.substitute_node( aig.get_node( n6 ), n4 );
+  /* replace in node n7: n6 <- n4 => re-strash with fanins (x1, n4) => n7 <- n5
+   * take out node n6 => take out node n5 => take out node n4 (MFFC)
+   * execute n7 <- n5, but n5 is dead => revive n5 and n4 */
+
+  CHECK( !aig.is_dead( aig.get_node( n4 ) ) );
+  CHECK( !aig.is_dead( aig.get_node( n5 ) ) );
+  CHECK( aig.is_dead( aig.get_node( n6 ) ) );
+  CHECK( aig.is_dead( aig.get_node( n7 ) ) );
+  aig.foreach_fanin( aig.get_node( aig.po_at( 0 ) ), [&]( auto f, auto i ){
+    switch ( i )
+    {
+    case 0:
+      CHECK( f == x1 );
+      break;
+    case 1:
+      CHECK( f == n4 );
+      break;
+    default:
+      CHECK( false );
+    }
+  } );
+  CHECK( aig.fanout_size( aig.get_node( n4 ) ) == 1 );
+}
+
+TEST_CASE( "substitute node without re-strashing case 1", "[aig]" )
+{
+  aig_network aig;
+  auto const x1 = aig.create_pi();
+  auto const x2 = aig.create_pi();
+  auto const f1 = aig.create_and( x1, x2 );
+  auto const f2 = aig.create_and( f1, x2 );
+  aig.create_po( f2 );
+
+  aig.substitute_node_no_restrash( aig.get_node( f1 ), x1 );
+  aig = cleanup_dangling( aig );
+  CHECK( aig.num_gates() == 1 );
+  CHECK( simulate<kitty::static_truth_table<2u>>( aig )[0]._bits == 0x8 );
+}
+
+TEST_CASE( "substitute node without re-strashing case 2", "[aig]" )
+{
+  aig_network aig;
+
+  auto const a = aig.create_pi();
+  auto const b = aig.create_pi();
+  auto const c = aig.create_pi();
+  auto const tmp = aig.create_and( b, c );
+  auto const f1 = aig.create_and( a, b );
+  auto const f2 = aig.create_and( f1, tmp );
+  auto const f3 = aig.create_and( f1, a );
+  aig.create_po( f2 );
+
+  aig.substitute_node_no_restrash( aig.get_node( tmp ), f3 );
+  aig.substitute_node_no_restrash( aig.get_node( f1 ), aig.get_constant( 1 ) );
+  aig = cleanup_dangling( aig );
+
+  CHECK( aig.num_gates() == 0 );
+  CHECK( !aig.is_dead( aig.get_node( aig.po_at( 0 ) ) ) );
+  CHECK( aig.get_node( aig.po_at( 0 ) ) == aig.pi_at( 0 ) );
+}
+
+TEST_CASE( "substitute node without re-strashing case 3", "[aig]" )
+{
+  aig_network aig;
+
+  auto const x1 = aig.create_pi();
+  auto const x2 = aig.create_pi();
+  auto const x3 = aig.create_pi();
+  auto const n4 = aig.create_and( x2, x3 );
+  auto const n5 = aig.create_and( x1, n4 );
+  auto const n6 = aig.create_and( n5, x3 );
+  auto const n7 = aig.create_and( x1, n6 );
+  aig.create_po( n7 );
+
+  aig.substitute_node_no_restrash( aig.get_node( n6 ), n4 );
+  aig = cleanup_dangling( aig );
+  CHECK( aig.num_gates() == 2 );
+  CHECK( simulate<kitty::static_truth_table<3u>>( aig )[0]._bits == 0x80 );
 }

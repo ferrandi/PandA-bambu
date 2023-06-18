@@ -1,9 +1,12 @@
 #include <catch.hpp>
 
-#include <mockturtle/traits.hpp>
 #include <mockturtle/algorithms/lut_mapping.hpp>
+#include <mockturtle/algorithms/collapse_mapped.hpp>
 #include <mockturtle/generators/arithmetic.hpp>
 #include <mockturtle/networks/aig.hpp>
+#include <mockturtle/networks/klut.hpp>
+#include <mockturtle/networks/sequential.hpp>
+#include <mockturtle/traits.hpp>
 #include <mockturtle/views/mapping_view.hpp>
 
 using namespace mockturtle;
@@ -140,4 +143,91 @@ TEST_CASE( "LUT mapping with functions of full adder", "[lut_mapping]" )
   CHECK( mapped_aig.is_cell_root( aig.get_node( carry ) ) );
   CHECK( mapped_aig.cell_function( aig.get_node( sum ) )._bits[0] == 0x96 );
   CHECK( mapped_aig.cell_function( aig.get_node( carry ) )._bits[0] == 0x17 );
+}
+
+
+TEST_CASE( "3-LUT mapping of a sequential k-LUT", "[sequential_lut_mapping]" )
+{
+  sequential<klut_network> klut;
+
+  const auto a = klut.create_pi();
+  const auto b = klut.create_pi();
+  const auto c = klut.create_pi();
+  const auto d = klut.create_pi();
+  const auto e = klut.create_pi();
+
+  const auto f1 = klut.create_or( a, b );
+  const auto f2 = klut.create_or( f1, c );
+  const auto f3 = klut.create_or( f2, d );
+  const auto f4 = klut.create_or( f3, e ); // f4 = a+b+c+d+e
+
+  const auto f5 = klut.create_ro(); // f5 <- f4
+  const auto fo = klut.create_or( f5, d ); // fo = f5+d
+  klut.create_po( fo );
+
+  klut.create_ri( f4 ); // f5 <- f4
+
+  /* check sequential network interfaces */
+  using Ntk = decltype( klut );
+  CHECK( has_foreach_po_v<Ntk> );
+  CHECK( has_create_po_v<Ntk> );
+  CHECK( has_create_pi_v<Ntk> );
+  CHECK( has_create_ro_v<Ntk> );
+  CHECK( has_create_ri_v<Ntk> );
+
+  CHECK( klut.num_gates() == 5 );
+  CHECK( klut.num_registers() == 1 );
+
+  /* sequential mapping */
+  mapping_view<Ntk, true> viewed{ klut };
+  lut_mapping_params ps;
+  ps.cut_enumeration_ps.cut_size = 3;
+  lut_mapping<decltype(viewed), true>( viewed, ps );
+  auto mapped_klut = *collapse_mapped_network<Ntk>( viewed );
+
+  CHECK( mapped_klut.num_gates() == 3 );
+  CHECK( mapped_klut.num_registers() == 1 );
+}
+
+TEST_CASE( "6-LUT mapping of a sequential k-LUT", "[sequential_lut_mapping]" )
+{
+  sequential<klut_network> klut;
+
+  const auto a = klut.create_pi();
+  const auto b = klut.create_pi();
+  const auto c = klut.create_pi();
+  const auto d = klut.create_pi();
+  const auto e = klut.create_pi();
+
+  const auto f1 = klut.create_or( a, b );
+  const auto f2 = klut.create_or( f1, c );
+  const auto f3 = klut.create_or( f2, d );
+  const auto f4 = klut.create_or( f3, e ); // f4 = a+b+c+d+e
+
+  const auto f5 = klut.create_ro(); // f5 <- f4
+  const auto fo = klut.create_or( f5, d ); // fo = f5+d
+  klut.create_po( fo );
+
+  klut.create_ri( f4 ); // f5 <- f4
+
+  /* check sequential network interfaces */
+  using Ntk = decltype( klut );
+  CHECK( has_foreach_po_v<Ntk> );
+  CHECK( has_create_po_v<Ntk> );
+  CHECK( has_create_pi_v<Ntk> );
+  CHECK( has_create_ro_v<Ntk> );
+  CHECK( has_create_ri_v<Ntk> );
+
+  CHECK( klut.num_gates() == 5 );
+  CHECK( klut.num_registers() == 1 );
+
+  /* sequential mapping */
+  mapping_view<Ntk, true> viewed{ klut };
+  lut_mapping_params ps;
+  ps.cut_enumeration_ps.cut_size = 6;
+  lut_mapping<decltype(viewed), true>( viewed, ps );
+  auto mapped_klut = *collapse_mapped_network<Ntk>( viewed );
+
+  CHECK( mapped_klut.num_gates() == 2 );
+  CHECK( mapped_klut.num_registers() == 1 );
 }

@@ -1,5 +1,5 @@
 /* mockturtle: C++ logic network library
- * Copyright (C) 2018-2021  EPFL
+ * Copyright (C) 2018-2022  EPFL
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -34,10 +34,10 @@
 
 #pragma once
 
+#include "../networks/xag.hpp"
 #include "dont_cares.hpp"
+#include "resubstitution.hpp"
 #include <kitty/operations.hpp>
-#include <mockturtle/algorithms/resubstitution.hpp>
-#include <mockturtle/networks/xag.hpp>
 
 namespace mockturtle
 {
@@ -45,55 +45,55 @@ namespace mockturtle
 struct xag_resub_stats
 {
   /*! \brief Accumulated runtime for const-resub */
-  stopwatch<>::duration time_resubC{0};
+  stopwatch<>::duration time_resubC{ 0 };
 
   /*! \brief Accumulated runtime for zero-resub */
-  stopwatch<>::duration time_resub0{0};
+  stopwatch<>::duration time_resub0{ 0 };
 
   /*! \brief Accumulated runtime for one-resub */
-  stopwatch<>::duration time_resub1{0};
+  stopwatch<>::duration time_resub1{ 0 };
 
   /*! \brief Accumulated runtime for two-resub. */
-  stopwatch<>::duration time_resub2{0};
+  stopwatch<>::duration time_resub2{ 0 };
 
   /*! \brief Accumulated runtime for three-resub. */
-  stopwatch<>::duration time_resub3{0};
+  stopwatch<>::duration time_resub3{ 0 };
 
   /*! \brief Accumulated runtime for one-resub */
-  stopwatch<>::duration time_resub1_and{0};
+  stopwatch<>::duration time_resub1_and{ 0 };
 
   /*! \brief Accumulated runtime for one-resub */
-  stopwatch<>::duration time_resub2_and{0};
+  stopwatch<>::duration time_resub2_and{ 0 };
 
   /*! \brief Accumulated runtime for collecting unate divisors. */
-  stopwatch<>::duration time_collect_unate_divisors{0};
+  stopwatch<>::duration time_collect_unate_divisors{ 0 };
 
   /*! \brief Accumulated runtime for collecting unate divisors. */
-  stopwatch<>::duration time_collect_binate_divisors{0};
+  stopwatch<>::duration time_collect_binate_divisors{ 0 };
 
   /*! \brief Accumulated runtime for 12-resub. */
-  stopwatch<>::duration time_resub12{0};
+  stopwatch<>::duration time_resub12{ 0 };
 
   /*! \brief Number of accepted constant resubsitutions */
-  uint32_t num_const_accepts{0};
+  uint32_t num_const_accepts{ 0 };
 
   /*! \brief Number of accepted zero resubsitutions */
-  uint32_t num_div0_accepts{0};
+  uint32_t num_div0_accepts{ 0 };
 
   /*! \brief Number of accepted one resubsitutions */
-  uint64_t num_div1_accepts{0};
+  uint64_t num_div1_accepts{ 0 };
 
   /*! \brief Number of accepted two resubsitutions */
-  uint64_t num_div2_accepts{0};
+  uint64_t num_div2_accepts{ 0 };
 
   /*! \brief Number of accepted one resubsitutions for AND */
-  uint64_t num_div1_and_accepts{0};
+  uint64_t num_div1_and_accepts{ 0 };
 
   /*! \brief Number of accepted one resubsitutions for AND */
-  uint64_t num_div2_and_accepts{0};
+  uint64_t num_div2_and_accepts{ 0 };
 
   /*! \brief Number of accepted two resubsitutions using triples of unate divisors */
-  uint64_t num_div12_accepts{0};
+  uint64_t num_div12_accepts{ 0 };
 
   void report() const
   {
@@ -165,7 +165,7 @@ private:
   {
 
     if ( ntk.is_pi( n ) )
-      return {0, 0};
+      return { 0, 0 };
 
     int32_t counter_and = 0;
     int32_t counter_xor = 0;
@@ -191,14 +191,14 @@ private:
       }
     } );
 
-    return {counter_and, counter_xor};
+    return { counter_and, counter_xor };
   }
 
   /* ! \brief Reference the node's MFFC */
   std::pair<int32_t, int32_t> node_ref_rec( node const& n )
   {
     if ( ntk.is_pi( n ) )
-      return {0, 0};
+      return { 0, 0 };
 
     int32_t counter_and = 0;
     int32_t counter_xor = 0;
@@ -225,7 +225,7 @@ private:
       }
     } );
 
-    return {counter_and, counter_xor};
+    return { counter_and, counter_xor };
   }
 
   void node_mffc_cone_rec( node const& n, std::vector<node>& cone, bool top_most )
@@ -527,9 +527,9 @@ public:
 
           if ( binary_and( ( tt_s0 ^ tt_s1 ^ tt_s2 ), care ) == binary_and( tt, care ) )
           {
-            auto const max_level = std::max( {ntk.level( s0 ),
-                                              ntk.level( s1 ),
-                                              ntk.level( s2 )} );
+            auto const max_level = std::max( { ntk.level( s0 ),
+                                               ntk.level( s1 ),
+                                               ntk.level( s2 ) } );
             assert( max_level <= required - 1 );
 
             signal max = ntk.make_signal( s0 );
@@ -556,9 +556,9 @@ public:
           }
           else if ( binary_and( ( tt_s0 ^ tt_s1 ^ tt_s2 ), care ) == binary_and( kitty::unary_not( tt ), care ) )
           {
-            auto const max_level = std::max( {ntk.level( s0 ),
-                                              ntk.level( s1 ),
-                                              ntk.level( s2 )} );
+            auto const max_level = std::max( { ntk.level( s0 ),
+                                               ntk.level( s1 ),
+                                               ntk.level( s2 ) } );
             assert( max_level <= required - 1 );
 
             signal max = ntk.make_signal( s0 );
@@ -703,9 +703,9 @@ public:
 
           if ( binary_and( ( tt_s0 | tt_s1 | tt_s2 ), care ) == binary_and( tt, care ) )
           {
-            auto const max_level = std::max( {ntk.level( ntk.get_node( s0 ) ),
-                                              ntk.level( ntk.get_node( s1 ) ),
-                                              ntk.level( ntk.get_node( s2 ) )} );
+            auto const max_level = std::max( { ntk.level( ntk.get_node( s0 ) ),
+                                               ntk.level( ntk.get_node( s1 ) ),
+                                               ntk.level( ntk.get_node( s2 ) ) } );
             assert( max_level <= required - 1 );
 
             signal max = s0;
@@ -753,9 +753,9 @@ public:
 
           if ( binary_and( ( tt_s0 & tt_s1 & tt_s2 ), care ) == binary_and( tt, care ) )
           {
-            auto const max_level = std::max( {ntk.level( ntk.get_node( s0 ) ),
-                                              ntk.level( ntk.get_node( s1 ) ),
-                                              ntk.level( ntk.get_node( s2 ) )} );
+            auto const max_level = std::max( { ntk.level( ntk.get_node( s0 ) ),
+                                               ntk.level( ntk.get_node( s1 ) ),
+                                               ntk.level( ntk.get_node( s2 ) ) } );
             assert( max_level <= required - 1 );
 
             signal max = s0;
@@ -959,8 +959,8 @@ void resubstitution_minmc_withDC( Ntk& ntk, resubstitution_params const& ps = {}
   static_assert( has_visited_v<Ntk>, "Ntk does not implement the has_visited method" );
 
   using resub_view_t = fanout_view<depth_view<Ntk>>;
-  depth_view<Ntk> depth_view{ntk};
-  resub_view_t resub_view{depth_view};
+  depth_view<Ntk> depth_view{ ntk };
+  resub_view_t resub_view{ depth_view };
 
   using truthtable_t = kitty::dynamic_truth_table;
   using mffc_result_t = std::pair<uint32_t, uint32_t>;

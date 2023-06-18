@@ -24,18 +24,20 @@ Write into BLIF files
 
 **Header:** ``mockturtle/io/write_blif.hpp``
 
-.. doxygenfunction:: mockturtle::write_blif(Ntk const&, std::string const&)
+.. doxygenfunction:: mockturtle::write_blif(Ntk const&, std::string const&, write_blif_params const&)
 
-.. doxygenfunction:: mockturtle::write_blif(Ntk const&, std::ostream&)
+.. doxygenfunction:: mockturtle::write_blif(Ntk const&, std::ostream&, write_blif_params const&)
 
 Write into structural Verilog files
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 **Header:** ``mockturtle/io/write_verilog.hpp``
 
-.. doxygenfunction:: mockturtle::write_verilog(Ntk const&, std::string const&)
+.. doxygenfunction:: mockturtle::write_verilog(Ntk const&, std::string const&, write_verilog_params const&)
 
-.. doxygenfunction:: mockturtle::write_verilog(Ntk const&, std::ostream&)
+.. doxygenfunction:: mockturtle::write_verilog(Ntk const&, std::ostream&, write_verilog_params const&)
+
+.. doxygenfunction:: mockturtle::write_verilog_with_binding(Ntk const&, std::ostream&, write_verilog_params const&)
 
 Write into DIMACS files (CNF)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -45,6 +47,8 @@ Write into DIMACS files (CNF)
 .. doxygenfunction:: mockturtle::write_dimacs(Ntk const&, std::string const&)
 
 .. doxygenfunction:: mockturtle::write_dimacs(Ntk const&, std::ostream&)
+
+.. _write_dot:
 
 Write into DOT files (Graphviz)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -60,6 +64,15 @@ Write simulation patterns into file
 
 **Header:** ``mockturtle/io/write_patterns.hpp``
 
-.. doxygenfunction:: mockturtle::write_patterns(partial_simulator const&, std::string const&)
+.. doxygenfunction:: mockturtle::write_patterns(Simulator const&, std::string const&)
 
-.. doxygenfunction:: mockturtle::write_patterns(partial_simulator const&, std::ostream&)
+.. doxygenfunction:: mockturtle::write_patterns(Simulator const&, std::ostream&)
+
+Write library into GENLIB file
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+**Header:** ``mockturtle/io/write_genlib.hpp``
+
+.. doxygenfunction:: mockturtle::write_genlib(std::vector<gate> const&, std::string const&)
+
+.. doxygenfunction:: mockturtle::write_genlib(std::vector<gate> const&, std::ostream&)

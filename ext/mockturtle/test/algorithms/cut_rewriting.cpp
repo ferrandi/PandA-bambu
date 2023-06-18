@@ -7,15 +7,15 @@
 #include <mockturtle/algorithms/node_resynthesis/xag_minmc2.hpp>
 #include <mockturtle/algorithms/node_resynthesis/xag_npn.hpp>
 #include <mockturtle/algorithms/node_resynthesis/xmg3_npn.hpp>
-#include <mockturtle/views/fanout_view.hpp>
 #include <mockturtle/networks/aig.hpp>
 #include <mockturtle/networks/klut.hpp>
 #include <mockturtle/networks/mig.hpp>
 #include <mockturtle/networks/xag.hpp>
 #include <mockturtle/networks/xmg.hpp>
 #include <mockturtle/properties/mccost.hpp>
-#include <mockturtle/utils/cost_functions.hpp>
 #include <mockturtle/traits.hpp>
+#include <mockturtle/utils/cost_functions.hpp>
+#include <mockturtle/views/fanout_view.hpp>
 
 using namespace mockturtle;
 
@@ -415,8 +415,8 @@ TEST_CASE( "Cut rewriting with stacked fanout-depth views", "[cut_rewriting]" )
   using resyn_fn = xag_npn_resynthesis<aig_network>;
 
   resyn_fn resyn;
-  fanout_view fanout_aig{aig};
-  depth_view<fanout_view<aig_network>, cost_fn> depth_aig{fanout_aig};
+  fanout_view fanout_aig{ aig };
+  depth_view<fanout_view<aig_network>, cost_fn> depth_aig{ fanout_aig };
 
   cut_rewriting_params ps;
   cut_rewriting_stats st;
@@ -450,8 +450,8 @@ TEST_CASE( "Cut rewriting with stacked depth-fanout views", "[cut_rewriting]" )
   using resyn_fn = xag_npn_resynthesis<aig_network>;
 
   resyn_fn resyn;
-  fanout_view fanout_aig{aig};
-  depth_view<fanout_view<aig_network>, cost_fn> depth_aig{fanout_aig};
+  fanout_view fanout_aig{ aig };
+  depth_view<fanout_view<aig_network>, cost_fn> depth_aig{ fanout_aig };
 
   cut_rewriting_params ps;
   cut_rewriting_stats st;

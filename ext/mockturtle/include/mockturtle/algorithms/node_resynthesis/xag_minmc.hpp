@@ -1,5 +1,5 @@
 /* mockturtle: C++ logic network library
- * Copyright (C) 2018-2021  EPFL
+ * Copyright (C) 2018-2022  EPFL
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -51,12 +51,12 @@
 #include <kitty/print.hpp>
 #include <kitty/spectral.hpp>
 
-#include "../cleanup.hpp"
-#include "../simulation.hpp"
-#include "../../traits.hpp"
 #include "../../networks/xag.hpp"
+#include "../../traits.hpp"
 #include "../../utils/stopwatch.hpp"
 #include "../../views/cut_view.hpp"
+#include "../cleanup.hpp"
+#include "../simulation.hpp"
 
 namespace mockturtle
 {
@@ -65,7 +65,7 @@ namespace mockturtle
 struct xag_minmc_resynthesis_params
 {
   /*! \brief Print statistics when resynthesis object is destroyed. */
-  bool print_stats{false};
+  bool print_stats{ false };
 
   /*! \brief Threshold for exhaustive don't care search.
    *
@@ -73,41 +73,41 @@ struct xag_minmc_resynthesis_params
    * respect to the don't cares are explored.  Otherwise all covers are created
    * that the on-set is extended by at most one element from the don't care set.
    */
-  uint32_t exhaustive_dc_limit{10u};
+  uint32_t exhaustive_dc_limit{ 10u };
 
   /*! \brief Verify database when parsing. */
-  bool verify_database{false};
+  bool verify_database{ false };
 };
 
 /*! \brief Statistics for xag_minmc_resynthesis. */
 struct xag_minmc_resynthesis_stats
 {
   /*! \brief Total time. */
-  stopwatch<>::duration time_total{0};
+  stopwatch<>::duration time_total{ 0 };
 
   /*! \brief Time to parse database. */
-  stopwatch<>::duration time_parse_db{0};
+  stopwatch<>::duration time_parse_db{ 0 };
 
   /*! \brief Overall time to classify functions. */
-  stopwatch<>::duration time_classify{0};
+  stopwatch<>::duration time_classify{ 0 };
 
   /*! \brief Overall time to construct candidate. */
-  stopwatch<>::duration time_construct{0};
+  stopwatch<>::duration time_construct{ 0 };
 
   /*! \brief Cache hits for classified functions. */
-  uint32_t cache_hits{0};
+  uint32_t cache_hits{ 0 };
 
   /*! \brief Cache misses for classified functions. */
-  uint32_t cache_misses{0};
+  uint32_t cache_misses{ 0 };
 
   /*! \brief Number of aborts due to classification. */
-  uint32_t classify_aborts{0};
+  uint32_t classify_aborts{ 0 };
 
   /*! \brief Number of aborts due to unknown function. */
-  uint32_t unknown_function_aborts{0};
+  uint32_t unknown_function_aborts{ 0 };
 
   /*! \brief Total number of don't cares considered. */
-  uint32_t dont_cares{0};
+  uint32_t dont_cares{ 0 };
 
   /*! \brief Prints report. */
   void report() const
@@ -252,7 +252,7 @@ public:
                                                                                                             std::copy( ops.begin(), ops.end(),
                                                                                                                        std::back_inserter( trans ) );
                                                                                                           } ); } );
-      classify_cache->insert( {func_ext, {spectral.second, spectral.first, trans}} );
+      classify_cache->insert( { func_ext, { spectral.second, spectral.first, trans } } );
       if ( !spectral.second )
       {
         st.classify_aborts++;
@@ -266,7 +266,7 @@ public:
     auto search = func_mc->find( kitty::to_hex( tt_ext ) );
     if ( search != func_mc->end() )
     {
-      unsigned int mc{0u};
+      unsigned int mc{ 0u };
       std::string original_f;
 
       std::tie( original_f, mc, circuit ) = search->second;
@@ -286,12 +286,12 @@ public:
     }
     else
     {
-      //std::cout << "[w] unknown " << kitty::to_hex( tt_ext ) << " from " << kitty::to_hex( func_ext ) << "\n";
+      // std::cout << "[w] unknown " << kitty::to_hex( tt_ext ) << " from " << kitty::to_hex( func_ext ) << "\n";
       st.unknown_function_aborts++;
       return; /* quit */
     }
 
-    bool out_neg{false};
+    bool out_neg{ false };
     std::vector<xag_network::signal> final_xor;
     std::vector<xag_network::signal> pis( 6, xag.get_constant( false ) );
     std::copy( begin, end, pis.begin() );
@@ -343,7 +343,7 @@ public:
     }
     else
     {
-      cut_view<xag_network> topo{*db, *db_pis, circuit};
+      cut_view<xag_network> topo{ *db, *db_pis, circuit };
       output = cleanup_dangling( topo, xag, pis.begin(), pis.end() ).front();
     }
 
@@ -365,9 +365,9 @@ private:
 
     std::ifstream file1( filename.c_str(), std::ifstream::in );
     std::string line;
-    unsigned pos{0u};
+    unsigned pos{ 0u };
 
-    //std::ofstream db_file( "/tmp/db", std::ofstream::out );
+    // std::ofstream db_file( "/tmp/db", std::ofstream::out );
 
     while ( std::getline( file1, line ) )
     {
@@ -382,7 +382,7 @@ private:
       line.erase( 0, pos );
 
       auto circuit = line;
-      //auto orig_circuit = circuit;
+      // auto orig_circuit = circuit;
 
       const std::string delimiter = " ";
       std::string token = circuit.substr( 0, circuit.find( ' ' ) );
@@ -430,9 +430,9 @@ private:
       db->create_po( f );
 
       /* verify */
-      if (ps.verify_database)
+      if ( ps.verify_database )
       {
-        cut_view<xag_network> view{*db, *db_pis, f};
+        cut_view<xag_network> view{ *db, *db_pis, f };
         kitty::static_truth_table<6u> tt, tt_repr;
         kitty::create_from_hex_string( tt, original );
         kitty::create_from_hex_string( tt_repr, token_f );
@@ -442,17 +442,17 @@ private:
           std::cerr << "[w] invalid circuit for " << original << ", got " << kitty::to_hex( result ) << "\n";
           original = kitty::to_hex( result );
 
-          const auto repr = exact_spectral_canonization(tt);
+          const auto repr = exact_spectral_canonization( tt );
           if ( repr != tt_repr )
           {
             std::cerr << "[e] representatives do not match\n";
           }
         }
 
-        //db_file << name << "\t" << token_f << "\t" << original << "\t" << mc << "\t" << orig_circuit << "\n";
+        // db_file << name << "\t" << token_f << "\t" << original << "\t" << mc << "\t" << orig_circuit << "\n";
       }
 
-      func_mc->insert( {token_f, {original, mc, f}} );
+      func_mc->insert( { token_f, { original, mc, f } } );
     }
   }
 
@@ -461,7 +461,7 @@ public:
   xag_minmc_resynthesis_stats st;
 
 private:
-  xag_minmc_resynthesis_stats *pst{nullptr};
+  xag_minmc_resynthesis_stats* pst{ nullptr };
 
   std::shared_ptr<xag_network> db;
   std::shared_ptr<std::vector<xag_network::signal>> db_pis;

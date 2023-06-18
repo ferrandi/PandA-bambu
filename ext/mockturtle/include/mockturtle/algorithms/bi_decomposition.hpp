@@ -1,5 +1,5 @@
 /* mockturtle: C++ logic network library
- * Copyright (C) 2018-2021  EPFL
+ * Copyright (C) 2018-2022  EPFL
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -138,7 +138,7 @@ private:
 
 /*! \brief Bi decomposition
  *
- * This function applies bi-decomposition on a truth table inside the network.  
+ * This function applies bi-decomposition on a truth table inside the network.
  *
  * Note that the number of variables in `func` and `care` must be the same.
  * The function will create a network composed on two-input gates with as many primary inputs as the number of

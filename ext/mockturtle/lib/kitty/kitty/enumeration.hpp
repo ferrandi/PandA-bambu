@@ -1,5 +1,5 @@
 /* kitty: C++ truth table library
- * Copyright (C) 2017-2021  EPFL
+ * Copyright (C) 2017-2022  EPFL
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -64,7 +64,7 @@ void fuller_neighborhood_enumeration( std::vector<TT>& functions, CanonizationFn
   /* get number of bits from seed truth table */
   const auto num_bits = static_cast<uint64_t>( functions.front().num_bits() );
   std::vector<TT> neighborhood( num_bits );
-  uint32_t num{1};
+  uint32_t num{ 1 };
   std::stack<TT> stack;
   stack.push( functions.front() );
 
@@ -83,7 +83,7 @@ void fuller_neighborhood_enumeration( std::vector<TT>& functions, CanonizationFn
 
     for ( auto j = 0u; j < num_bits; ++j )
     {
-      bool flag{false};
+      bool flag{ false };
       for ( auto i = 0u; i < num; ++i )
       {
         if ( neighborhood[j] == functions[i] )

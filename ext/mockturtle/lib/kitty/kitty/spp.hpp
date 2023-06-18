@@ -1,5 +1,5 @@
 /* kitty: C++ truth table library
- * Copyright (C) 2017-2021  EPFL
+ * Copyright (C) 2017-2022  EPFL
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -53,7 +53,7 @@ namespace kitty
   \param esop ESOP form
   \param num_vars Number of variables in ESOP form
 */
-std::pair<std::vector<cube>, std::vector<uint64_t>> simple_spp( const std::vector<cube>& esop, uint32_t num_vars )
+inline std::pair<std::vector<cube>, std::vector<uint64_t>> simple_spp( const std::vector<cube>& esop, uint32_t num_vars )
 {
   auto next_free = num_vars;
   std::vector<uint64_t> sums;
@@ -69,7 +69,8 @@ std::pair<std::vector<cube>, std::vector<uint64_t>> simple_spp( const std::vecto
     }
 
     const auto it = std::find_if( copy.begin() + i, copy.begin() + e,
-                                  [&]( auto const& c2 ) {
+                                  [&]( auto const& c2 )
+                                  {
                                     bool cnd1 = ( c2._mask & var_mask ) == c2._mask;
                                     const auto same_mask = c._mask & c2._mask;
                                     bool cnd2 = ( c._bits & same_mask ) == ( c2._bits & same_mask );
@@ -91,7 +92,7 @@ std::pair<std::vector<cube>, std::vector<uint64_t>> simple_spp( const std::vecto
   }
 
   copy.resize( e );
-  return {copy, sums};
+  return { copy, sums };
 }
 
 /*! \brief Creates truth table from SPP

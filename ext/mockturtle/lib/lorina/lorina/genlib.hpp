@@ -29,6 +29,7 @@
 
   \author Heinz Riener
   \author Shubham Rai
+  \author Alessandro Tempia Calvino
 */
 
 #pragma once
@@ -45,6 +46,26 @@
 namespace lorina
 {
 
+enum class phase_type : uint8_t
+{
+  INV = 0,
+  NONINV = 1,
+  UNKNOWN = 2,
+};
+
+// PIN <pin-name> <phase> <input-load> <max-load> <rise-block-delay> <rise-fanout-delay> <fall-block-delay> <fall-fanout-delay>
+struct pin_spec
+{
+  std::string name;
+  phase_type phase;
+  double input_load;
+  double max_load;
+  double rise_block_delay;
+  double rise_fanout_delay;
+  double fall_block_delay;
+  double fall_fanout_delay;
+}; /* pin_spec */
+
 /*! \brief A reader visitor for a GENLIB format.
  *
  * Callbacks for the GENLIB format.
@@ -52,12 +73,13 @@ namespace lorina
 class genlib_reader
 {
 public:
-  virtual void on_gate( std::string const& name, std::string const& expression, double area, std::optional<double> delay ) const
+  virtual void on_gate( std::string const& name, std::string const& expression, double area, std::vector<pin_spec> const& pins, std::string const& output_pin ) const
   {
     (void)name;
     (void)expression;
     (void)area;
-    (void)delay;
+    (void)pins;
+    (void)output_pin;
   }
 }; /* genlib_reader */
 
@@ -77,8 +99,42 @@ public:
   bool run()
   {
     std::string line;
-    while ( std::getline( in, line ) )
+    std::string entry;
+    bool new_line;
+
+    while ( true )
     {
+      new_line = std::getline( in, line ) ? true : false;
+
+      if ( new_line == false )
+      {
+        break;
+      }
+
+      /* remove whitespaces */
+      detail::trim( line );
+
+      /* skip comments and empty lines */
+      if ( line[0] != '#' && !line.empty() )
+      {
+        entry = line + " ";
+        break;
+      }
+    }
+
+    while ( new_line )
+    {
+      new_line = std::getline( in, line ) ? true : false;
+
+      if ( new_line == false )
+      {
+        if ( !parse_gate_definition( entry ) )
+        {
+          return false;
+        }
+        break;
+      }
+
       /* remove whitespaces */
       detail::trim( line );
 
@@ -88,9 +144,17 @@ public:
         continue;
       }
 
-      if ( !parse_gate_definition( line ) )
+      if ( line.find( "GATE" ) != std::string::npos )
       {
-        return false;
+        if ( !parse_gate_definition( entry ) )
+        {
+          return false;
+        }
+        entry = line + " ";
+      }
+      else
+      {
+        entry.append( line + " " );
       }
     }
 
@@ -104,13 +168,39 @@ private:
     std::string const deliminators{" \t\r\n"};
 
     std::string token;
+    bool in_equation = false;
 
     std::vector<std::string> tokens;
     while ( std::getline( ss, token ) )
     {
-      std::size_t prev = 0, pos;
+      std::size_t prev = 0, pos, eq_pos;
       while ( ( pos = line.find_first_of( deliminators, prev ) ) != std::string::npos )
       {
+        /* equation */
+        if ( tokens.size() == 3 && !in_equation )
+        {
+          /* equation is not finished */
+          if ( token.substr( prev, pos - prev ).find_first_of( ";" ) == std::string::npos )
+          {
+            in_equation = true;
+            eq_pos = prev;
+            prev = pos + 1;
+            continue;
+          }
+        }
+        if ( in_equation )
+        {
+          if ( token.substr( prev, pos - prev ).find_first_of( ";" ) != std::string::npos )
+          {
+            in_equation = false;
+            prev = eq_pos;
+          }
+          else
+          {
+            prev = pos + 1;
+            continue;
+          }
+        }
         if ( pos > prev )
         {
           tokens.emplace_back( token.substr( prev, pos - prev ) );
@@ -124,50 +214,109 @@ private:
       }
     }
 
-    if ( diag && tokens.size() < 4u )
+    if ( tokens.size() < 4u )
     {
-      diag->report( diagnostic_level::error, fmt::format( "line `{}` has unexpected structure (expected `GATE <name> <area> <expression>;`)`",
-                                                          line ) );
+      if ( diag )
+      {
+        diag->report( diag_id::ERR_GENLIB_UNEXPECTED_STRUCTURE ).add_argument( line );
+      }
       return false;
     }
 
-    if ( diag && tokens[0] != "GATE" )
+    if ( tokens[0] != "GATE" )
     {
-      diag->report( diagnostic_level::error, fmt::format( "line `{}` does not start with keyword `GATE`",
-                                                          line ) );
+      if ( diag )
+      {
+        diag->report( diag_id::ERR_GENLIB_GATE ).add_argument( line );
+      }
       return false;
     }
     auto const beg = tokens[3].find_first_of( "=" );
     auto const end = tokens[3].find_first_of( ";" );
-    if ( diag && ( beg == std::string::npos || end == std::string::npos ) )
+    if ( beg == std::string::npos || end == std::string::npos )
     {
-      diag->report( diagnostic_level::error, fmt::format( "expression `{}` is not immediately terminated with `;``",
-                                                          tokens[3] ) );
+      if ( diag )
+      {
+        diag->report( diag_id::ERR_GENLIB_EXPRESSION ).add_argument( tokens[3] );
+      }
       return false;
     }
 
     std::string const& name = tokens[1];
     std::string const& expression = tokens[3].substr( beg + 1, end - beg - 1 );
+    std::string const& output_name = detail::trim_copy( tokens[3].substr( 0, beg ) );
     double const area = std::stod( tokens[2] );
-    if ( tokens.size() > 4u )
+
+    std::vector<pin_spec> pins;
+
+    bool generic_pin{false};
+    uint64_t i{4};
+    for ( ; i+8 < tokens.size(); i += 9 )
     {
-      /* find delay information for gate */
-      double delay{0.0};
-      for ( auto i = 4u; i < tokens.size(); ++i )
+      /* check PIN specification */
+      if ( tokens[i] != "PIN" )
       {
-        if ( tokens[i] == "PIN" )
+        if ( diag )
         {
-          delay = std::stod( tokens[ i + 3 ] );
+          diag->report( diag_id::ERR_GENLIB_PIN ).add_argument( tokens[i] );
+        }
+        return false;
+      }
+
+      std::string const& name = tokens[i+1];
+      if ( tokens[i+1] == "*" )
+      {
+        generic_pin = true;
+      }
+      phase_type phase{phase_type::UNKNOWN};
+      if ( tokens[i+2] == "INV" )
+      {
+        phase = phase_type::INV;
+      }
+      else if ( tokens[i+2] == "NONINV" )
+      {
+        phase = phase_type::NONINV;
+      }
+      else
+      {
+        if ( tokens[i+2] != "UNKNOWN" )
+        {
+          if ( diag )
+          {
+            diag->report( diag_id::ERR_GENLIB_PIN_PHASE ).add_argument( tokens[i+1] );
+          }
         }
       }
 
-      reader.on_gate( name, expression, area, delay );
-    }
-    else
-    {
-      reader.on_gate( name, expression, area, std::nullopt );
+      double const input_load = std::stod( tokens[i+3] );
+      double const max_load = std::stod( tokens[i+4] );
+      double const rise_block_delay = std::stod( tokens[i+5] );
+      double const rise_fanout_delay = std::stod( tokens[i+6] );
+      double const fall_block_delay = std::stod( tokens[i+7] );
+      double const fall_fanout_delay = std::stod( tokens[i+8] );
+
+      pins.emplace_back( pin_spec{name,phase,input_load,max_load,rise_block_delay,rise_fanout_delay,fall_block_delay,fall_fanout_delay} );
     }
 
+    if ( pins.size() > 1 && generic_pin )
+    {
+      if ( diag )
+      {
+        diag->report( diag_id::ERR_GENLIB_PIN ).add_argument( line );
+      }
+      return false;
+    }
+
+    if ( i != tokens.size() )
+    {
+      if ( diag )
+      {
+        diag->report( diag_id::ERR_GENLIB_FAILED ).add_argument( tokens[i] );
+      }
+      return false;
+    }
+
+    reader.on_gate( name, expression, area, pins, output_name );
     return true;
   }
 
@@ -188,7 +337,7 @@ protected:
  * \param diag An optional diagnostic engine with callback methods for parse errors
  * \return Success if parsing has been successful, or parse error if parsing has failed
  */
-inline return_code read_genlib( std::istream& in, const genlib_reader& reader, diagnostic_engine* diag = nullptr )
+[[nodiscard]] inline return_code read_genlib( std::istream& in, const genlib_reader& reader, diagnostic_engine* diag = nullptr )
 {
   genlib_parser parser( in, reader, diag );
   auto result = parser.run();
@@ -212,15 +361,14 @@ inline return_code read_genlib( std::istream& in, const genlib_reader& reader, d
  * \param diag An optional diagnostic engine with callback methods for parse errors
  * \return Success if parsing has been successful, or parse error if parsing has failed
  */
-inline return_code read_genlib( const std::string& filename, const genlib_reader& reader, diagnostic_engine* diag = nullptr )
+[[nodiscard]] inline return_code read_genlib( const std::string& filename, const genlib_reader& reader, diagnostic_engine* diag = nullptr )
 {
   std::ifstream in( detail::word_exp_filename( filename ), std::ifstream::in );
   if ( !in.is_open() )
   {
     if ( diag )
     {
-      diag->report( diagnostic_level::fatal,
-                    fmt::format( "could not open file `{0}`", filename ) );
+      diag->report( diag_id::ERR_FILE_OPEN ).add_argument( filename );
     }
     return return_code::parse_error;
   }

@@ -63,6 +63,8 @@ Resynthesis functions
 
 .. doxygenclass:: mockturtle::shannon_resynthesis
 
+.. doxygenclass:: mockturtle::sop_factoring
+
 .. doxygenclass:: mockturtle::positive_davio_resynthesis
 
 .. doxygenclass:: mockturtle::negative_davio_resynthesis

@@ -1,5 +1,5 @@
 /* mockturtle: C++ logic network library
- * Copyright (C) 2018-2021  EPFL
+ * Copyright (C) 2018-2022  EPFL
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -23,13 +23,13 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include <mockturtle/algorithms/mig_resub.hpp>
+#include <lorina/aiger.hpp>
 #include <mockturtle/algorithms/cleanup.hpp>
+#include <mockturtle/algorithms/mig_resub.hpp>
 #include <mockturtle/io/aiger_reader.hpp>
 #include <mockturtle/networks/mig.hpp>
 #include <mockturtle/views/depth_view.hpp>
 #include <mockturtle/views/fanout_view.hpp>
-#include <lorina/aiger.hpp>
 
 #include <experiments.hpp>
 #include <fmt/format.h>
@@ -41,14 +41,17 @@ int main()
   using namespace mockturtle;
 
   experiment<std::string, uint32_t, uint32_t, float, bool>
-    exp( "mig_resubstitution", "benchmark", "size_before", "size_after", "runtime", "equivalent" );
+      exp( "mig_resubstitution", "benchmark", "size_before", "size_after", "runtime", "equivalent" );
 
   for ( auto const& benchmark : epfl_benchmarks() )
   {
     fmt::print( "[i] processing {}\n", benchmark );
 
     mig_network mig;
-    lorina::read_aiger( benchmark_path( benchmark ), aiger_reader( mig ) );
+    if ( lorina::read_aiger( benchmark_path( benchmark ), aiger_reader( mig ) ) != lorina::return_code::success )
+    {
+      continue;
+    }
 
     resubstitution_params ps;
     resubstitution_stats st;
@@ -56,8 +59,8 @@ int main()
     ps.max_inserts = 1u;
     ps.progress = false;
 
-    depth_view depth_mig{mig};
-    fanout_view fanout_mig{depth_mig};
+    depth_view depth_mig{ mig };
+    fanout_view fanout_mig{ depth_mig };
 
     uint32_t const size_before = fanout_mig.num_gates();
     mig_resubstitution( fanout_mig, ps, &st );

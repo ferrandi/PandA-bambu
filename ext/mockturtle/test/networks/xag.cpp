@@ -9,6 +9,7 @@
 #include <kitty/dynamic_truth_table.hpp>
 #include <kitty/operations.hpp>
 #include <kitty/operators.hpp>
+#include <mockturtle/algorithms/cleanup.hpp>
 #include <mockturtle/algorithms/simulation.hpp>
 #include <mockturtle/networks/xag.hpp>
 #include <mockturtle/traits.hpp>
@@ -92,9 +93,15 @@ TEST_CASE( "create and use primary inputs in an xag", "[xag]" )
   CHECK( has_create_pi_v<xag_network> );
 
   auto a = xag.create_pi();
+  auto b = xag.create_pi();
 
-  CHECK( xag.size() == 2 );
-  CHECK( xag.num_pis() == 1 );
+  CHECK( xag.size() == 3 ); // constant + two primary inputs
+  CHECK( xag.num_pis() == 2 );
+  CHECK( xag.num_gates() == 0 );
+  CHECK( xag.is_pi( xag.get_node( a ) ) );
+  CHECK( xag.is_pi( xag.get_node( b ) ) );
+  CHECK( xag.pi_index( xag.get_node( a ) ) == 0 );
+  CHECK( xag.pi_index( xag.get_node( b ) ) == 1 );
 
   CHECK( std::is_same_v<std::decay_t<decltype( a )>, xag_network::signal> );
 
@@ -173,122 +180,6 @@ TEST_CASE( "create and use primary outputs in an xag", "[xag]" )
   } );
 }
 
-TEST_CASE( "create and use register in an xag network", "[xag]" )
-{
-  xag_network xag;
-
-  CHECK( has_foreach_po_v<xag_network> );
-  CHECK( has_create_po_v<xag_network> );
-  CHECK( has_create_pi_v<xag_network> );
-  CHECK( has_create_ro_v<xag_network> );
-  CHECK( has_create_ri_v<xag_network> );
-  CHECK( has_create_maj_v<xag_network> );
-
-  const auto c0 = xag.get_constant( false );
-  const auto x1 = xag.create_pi();
-  const auto x2 = xag.create_pi();
-  const auto x3 = xag.create_pi();
-  const auto x4 = xag.create_pi();
-
-  CHECK( xag.size() == 5 );
-  CHECK( xag.num_registers() == 0 );
-  CHECK( xag.num_cis() == 4 );
-  CHECK( xag.num_cos() == 0 );
-
-  const auto f1 = xag.create_xor3( x1, x2, x3 );
-  xag.create_po( f1 );
-
-  CHECK( xag.num_pos() == 1 );
-
-  const auto s1 = xag.create_ro(); // ntk. input
-  xag.create_po( s1 );             // po
-
-  const auto f2 = xag.create_xor3( f1, x4, c0 );
-  xag.create_ri( f2 ); // ntk. output
-
-  CHECK( xag.num_registers() == 1 );
-  CHECK( xag.num_cis() == 4 + 1 );
-  CHECK( xag.num_cos() == 2 + 1 );
-
-  xag.foreach_pi( [&]( auto const& node, auto index ) {
-    CHECK( xag.is_pi( node ) );
-    switch ( index )
-    {
-    case 0:
-      CHECK( xag.make_signal( node ) == x1 ); /* first pi */
-      break;
-    case 1:
-      CHECK( xag.make_signal( node ) == x2 ); /* second pi */
-      break;
-    case 2:
-      CHECK( xag.make_signal( node ) == x3 ); /* third pi */
-      break;
-    case 3:
-      CHECK( xag.make_signal( node ) == x4 ); /* fourth pi */
-      break;
-    default:
-      CHECK( false );
-    }
-  } );
-
-  xag.foreach_ci( [&]( auto const& node, auto index ) {
-    CHECK( xag.is_ci( node ) );
-    switch ( index )
-    {
-    case 0:
-      CHECK( xag.make_signal( node ) == x1 ); /* first pi */
-      break;
-    case 1:
-      CHECK( xag.make_signal( node ) == x2 ); /* second pi */
-      break;
-    case 2:
-      CHECK( xag.make_signal( node ) == x3 ); /* third pi */
-      break;
-    case 3:
-      CHECK( xag.make_signal( node ) == x4 ); /* fourth pi */
-      break;
-    case 4:
-      CHECK( xag.make_signal( node ) == s1 ); /* first state-bit */
-      CHECK( xag.is_ci( node ) );
-      CHECK( !xag.is_pi( node ) );
-      break;
-    default:
-      CHECK( false );
-    }
-  } );
-
-  xag.foreach_po( [&]( auto const& node, auto index ) {
-    switch ( index )
-    {
-    case 0:
-      CHECK( node == f1 ); /* first po */
-      break;
-    case 1:
-      CHECK( node == s1 ); /* second po */
-      break;
-    default:
-      CHECK( false );
-    }
-  } );
-
-  xag.foreach_co( [&]( auto const& node, auto index ) {
-    switch ( index )
-    {
-    case 0:
-      CHECK( node == f1 ); /* first po */
-      break;
-    case 1:
-      CHECK( node == s1 ); /* second po */
-      break;
-    case 2:
-      CHECK( node == f2 ); /* first next-state bit */
-      break;
-    default:
-      CHECK( false );
-    }
-  } );
-}
-
 TEST_CASE( "create unary operations in an xag", "[xag]" )
 {
   xag_network xag;
@@ -362,6 +253,29 @@ TEST_CASE( "hash nodes in xag network", "[xag]" )
   CHECK( xag.get_node( f ) == xag.get_node( g ) );
 }
 
+TEST_CASE( "clone a XAG network", "[xag]" )
+{
+  CHECK( has_clone_v<xag_network> );
+
+  xag_network xag0;
+  auto a = xag0.create_pi();
+  auto b = xag0.create_pi();
+  auto f0 = xag0.create_and( a, b );
+  CHECK( xag0.size() == 4 );
+  CHECK( xag0.num_gates() == 1 );
+
+  auto xag1 = xag0;
+  auto xag_clone = xag0.clone();
+
+  auto c = xag1.create_pi();
+  xag1.create_xor( f0, c );
+  CHECK( xag0.size() == 6 );
+  CHECK( xag0.num_gates() == 2 );
+
+  CHECK( xag_clone.size() == 4 );
+  CHECK( xag_clone.num_gates() == 1 );
+}
+
 TEST_CASE( "clone a node in xag network", "[xag]" )
 {
   xag_network xag1, xag2;
@@ -377,7 +291,7 @@ TEST_CASE( "clone a node in xag network", "[xag]" )
   auto b2 = xag2.create_pi();
   CHECK( xag2.size() == 3 );
 
-  auto f2 = xag2.clone_node( xag1, xag1.get_node( f1 ), {a2, b2} );
+  auto f2 = xag2.clone_node( xag1, xag1.get_node( f1 ), { a2, b2 } );
   CHECK( xag2.size() == 4 );
 
   xag2.foreach_fanin( xag2.get_node( f2 ), [&]( auto const& s, auto ) {
@@ -441,7 +355,7 @@ TEST_CASE( "node and signal iteration in an xag", "[xag]" )
   CHECK( xag.size() == 5 );
 
   /* iterate over nodes */
-  uint32_t mask{0}, counter{0};
+  uint32_t mask{ 0 }, counter{ 0 };
   xag.foreach_node( [&]( auto n, auto i ) { mask |= ( 1 << n ); counter += i; } );
   CHECK( mask == 31 );
   CHECK( counter == 10 );
@@ -553,14 +467,14 @@ TEST_CASE( "compute values in XAGs", "[xag]" )
   xag.create_po( f2 );
 
   {
-    std::vector<bool> values{{true, false}};
+    std::vector<bool> values{ { true, false } };
 
     CHECK( xag.compute( xag.get_node( f1 ), values.begin(), values.end() ) == false );
     CHECK( xag.compute( xag.get_node( f2 ), values.begin(), values.end() ) == true );
   }
 
   {
-    std::vector<kitty::dynamic_truth_table> xs{2, kitty::dynamic_truth_table( 2 )};
+    std::vector<kitty::dynamic_truth_table> xs{ 2, kitty::dynamic_truth_table( 2 ) };
     kitty::create_nth_var( xs[0], 0 );
     kitty::create_nth_var( xs[1], 1 );
 
@@ -569,55 +483,71 @@ TEST_CASE( "compute values in XAGs", "[xag]" )
   }
 
   {
-    std::vector<kitty::partial_truth_table> xs{2};
+    std::vector<kitty::partial_truth_table> xs{ 2 };
 
     CHECK( xag.compute( xag.get_node( f1 ), xs.begin(), xs.end() ) == ( ~xs[0] & xs[1] ) );
     CHECK( xag.compute( xag.get_node( f2 ), xs.begin(), xs.end() ) == ( xs[0] & ~xs[1] ) );
 
-    xs[0].add_bit( 0 ); xs[1].add_bit( 1 );
+    xs[0].add_bit( 0 );
+    xs[1].add_bit( 1 );
 
     CHECK( xag.compute( xag.get_node( f1 ), xs.begin(), xs.end() ) == ( ~xs[0] & xs[1] ) );
     CHECK( xag.compute( xag.get_node( f2 ), xs.begin(), xs.end() ) == ( xs[0] & ~xs[1] ) );
 
-    xs[0].add_bit( 1 ); xs[1].add_bit( 0 );
+    xs[0].add_bit( 1 );
+    xs[1].add_bit( 0 );
 
     CHECK( xag.compute( xag.get_node( f1 ), xs.begin(), xs.end() ) == ( ~xs[0] & xs[1] ) );
     CHECK( xag.compute( xag.get_node( f2 ), xs.begin(), xs.end() ) == ( xs[0] & ~xs[1] ) );
 
-    xs[0].add_bit( 0 ); xs[1].add_bit( 0 );
+    xs[0].add_bit( 0 );
+    xs[1].add_bit( 0 );
 
     CHECK( xag.compute( xag.get_node( f1 ), xs.begin(), xs.end() ) == ( ~xs[0] & xs[1] ) );
     CHECK( xag.compute( xag.get_node( f2 ), xs.begin(), xs.end() ) == ( xs[0] & ~xs[1] ) );
 
-    xs[0].add_bit( 1 ); xs[1].add_bit( 1 );
+    xs[0].add_bit( 1 );
+    xs[1].add_bit( 1 );
 
     CHECK( xag.compute( xag.get_node( f1 ), xs.begin(), xs.end() ) == ( ~xs[0] & xs[1] ) );
     CHECK( xag.compute( xag.get_node( f2 ), xs.begin(), xs.end() ) == ( xs[0] & ~xs[1] ) );
   }
 
   {
-    std::vector<kitty::partial_truth_table> xs{2};
+    std::vector<kitty::partial_truth_table> xs{ 2 };
     kitty::partial_truth_table result;
 
-    xs[0].add_bit( 0 ); xs[1].add_bit( 1 );
+    xs[0].add_bit( 0 );
+    xs[1].add_bit( 1 );
 
-    xag.compute( xag.get_node( f1 ), result, xs.begin(), xs.end() ); CHECK( result == ( ~xs[0] & xs[1] ) );
-    xag.compute( xag.get_node( f2 ), result, xs.begin(), xs.end() ); CHECK( result == ( xs[0] & ~xs[1] ) );
+    xag.compute( xag.get_node( f1 ), result, xs.begin(), xs.end() );
+    CHECK( result == ( ~xs[0] & xs[1] ) );
+    xag.compute( xag.get_node( f2 ), result, xs.begin(), xs.end() );
+    CHECK( result == ( xs[0] & ~xs[1] ) );
 
-    xs[0].add_bit( 1 ); xs[1].add_bit( 0 );
+    xs[0].add_bit( 1 );
+    xs[1].add_bit( 0 );
 
-    xag.compute( xag.get_node( f1 ), result, xs.begin(), xs.end() ); CHECK( result == ( ~xs[0] & xs[1] ) );
-    xag.compute( xag.get_node( f2 ), result, xs.begin(), xs.end() ); CHECK( result == ( xs[0] & ~xs[1] ) );
+    xag.compute( xag.get_node( f1 ), result, xs.begin(), xs.end() );
+    CHECK( result == ( ~xs[0] & xs[1] ) );
+    xag.compute( xag.get_node( f2 ), result, xs.begin(), xs.end() );
+    CHECK( result == ( xs[0] & ~xs[1] ) );
 
-    xs[0].add_bit( 0 ); xs[1].add_bit( 0 );
+    xs[0].add_bit( 0 );
+    xs[1].add_bit( 0 );
 
-    xag.compute( xag.get_node( f1 ), result, xs.begin(), xs.end() ); CHECK( result == ( ~xs[0] & xs[1] ) );
-    xag.compute( xag.get_node( f2 ), result, xs.begin(), xs.end() ); CHECK( result == ( xs[0] & ~xs[1] ) );
+    xag.compute( xag.get_node( f1 ), result, xs.begin(), xs.end() );
+    CHECK( result == ( ~xs[0] & xs[1] ) );
+    xag.compute( xag.get_node( f2 ), result, xs.begin(), xs.end() );
+    CHECK( result == ( xs[0] & ~xs[1] ) );
 
-    xs[0].add_bit( 1 ); xs[1].add_bit( 1 );
+    xs[0].add_bit( 1 );
+    xs[1].add_bit( 1 );
 
-    xag.compute( xag.get_node( f1 ), result, xs.begin(), xs.end() ); CHECK( result == ( ~xs[0] & xs[1] ) );
-    xag.compute( xag.get_node( f2 ), result, xs.begin(), xs.end() ); CHECK( result == ( xs[0] & ~xs[1] ) );    
+    xag.compute( xag.get_node( f1 ), result, xs.begin(), xs.end() );
+    CHECK( result == ( ~xs[0] & xs[1] ) );
+    xag.compute( xag.get_node( f2 ), result, xs.begin(), xs.end() );
+    CHECK( result == ( xs[0] & ~xs[1] ) );
   }
 }
 
@@ -685,6 +615,38 @@ TEST_CASE( "visited values in xags", "[xag]" )
   } );
 }
 
+TEST_CASE( "check has_and and has_xor in XAG", "[xag]" )
+{
+  xag_network xag;
+  auto const x1 = xag.create_pi();
+  auto const x2 = xag.create_pi();
+  auto const x3 = xag.create_pi();
+
+  auto const n4 = xag.create_and( !x1, x2 );
+  auto const n5 = xag.create_and( x1, n4 );
+  auto const n6 = xag.create_xor( x3, n5 );
+  auto const n7 = xag.create_and( n4, x2 );
+  auto const n8 = xag.create_and( !n5, !n7 );
+  auto const n9 = xag.create_xor( !n8, n4 );
+
+  xag.create_po( n6 );
+  xag.create_po( n9 );
+
+  CHECK( xag.has_and( !x1, x2 ).has_value() == true );
+  CHECK( *xag.has_and( !x1, x2 ) == n4 );
+  CHECK( xag.has_xor( !x1, x2 ).has_value() == false );
+  CHECK( xag.has_and( !x1, x3 ).has_value() == false );
+  CHECK( xag.has_xor( !x1, x3 ).has_value() == false );
+  CHECK( xag.has_xor( n5, x3 ).has_value() == true );
+  CHECK( *xag.has_xor( n5, x3 ) == n6 );
+  CHECK( xag.has_xor( !n5, !x3 ).has_value() == true );
+  CHECK( *xag.has_xor( !n5, !x3 ) == n6 );
+  CHECK( xag.has_xor( !n5, x3 ).has_value() == true );
+  CHECK( *xag.has_xor( !n5, x3 ) == !n6 );
+  CHECK( xag.has_and( !n7, !n5 ).has_value() == true );
+  CHECK( *xag.has_and( !n7, !n5 ) == n8 );
+}
+
 TEST_CASE( "simulate some special functions in XAGs", "[xag]" )
 {
   xag_network xag;
@@ -728,4 +690,157 @@ TEST_CASE( "create nary functions in XAGs", "[xag]" )
   auto copy = result[2].construct();
   kitty::create_parity( copy );
   CHECK( result[2] == copy );
+}
+
+TEST_CASE( "invoke take_out_node two times on the same node in XAG", "[xag]" )
+{
+  xag_network xag;
+  const auto x1 = xag.create_pi();
+  const auto x2 = xag.create_pi();
+
+  const auto f1 = xag.create_and( x1, x2 );
+  const auto f2 = xag.create_or( x1, x2 );
+  (void)f2;
+
+  CHECK( xag.fanout_size( xag.get_node( x1 ) ) == 2u );
+  CHECK( xag.fanout_size( xag.get_node( x2 ) ) == 2u );
+
+  /* delete node */
+  CHECK( !xag.is_dead( xag.get_node( f1 ) ) );
+  xag.take_out_node( xag.get_node( f1 ) );
+  CHECK( xag.is_dead( xag.get_node( f1 ) ) );
+  CHECK( xag.fanout_size( xag.get_node( x1 ) ) == 1u );
+  CHECK( xag.fanout_size( xag.get_node( x2 ) ) == 1u );
+
+  /* ensure that double-deletion has no effect on the fanout-size of x1 and x2 */
+  CHECK( xag.is_dead( xag.get_node( f1 ) ) );
+  xag.take_out_node( xag.get_node( f1 ) );
+  CHECK( xag.is_dead( xag.get_node( f1 ) ) );
+  CHECK( xag.fanout_size( xag.get_node( x1 ) ) == 1u );
+  CHECK( xag.fanout_size( xag.get_node( x2 ) ) == 1u );
+}
+
+TEST_CASE( "substitute node and restrash in XAG", "[xag]" )
+{
+  xag_network xag;
+  auto const x1 = xag.create_pi();
+  auto const x2 = xag.create_pi();
+
+  auto const f1 = xag.create_and( x1, x2 );
+  auto const f2 = xag.create_and( f1, x2 );
+  xag.create_po( f2 );
+
+  CHECK( xag.fanout_size( xag.get_node( x1 ) ) == 1 );
+  CHECK( xag.fanout_size( xag.get_node( x2 ) ) == 2 );
+  CHECK( xag.fanout_size( xag.get_node( f1 ) ) == 1 );
+  CHECK( xag.fanout_size( xag.get_node( f2 ) ) == 1 );
+
+  CHECK( simulate<kitty::static_truth_table<2u>>( xag )[0]._bits == 0x8 );
+
+  /* substitute f1 with x1
+   *
+   * this is a very interesting test case because replacing f1 with x1
+   * in f2 makes f2 and f1 equal.  a correct implementation will
+   * create a new entry in the hash, although (x1, x2) is already
+   * there, because (x1, x2) will be deleted in the next step.
+   */
+  xag.substitute_node( xag.get_node( f1 ), x1 );
+  CHECK( simulate<kitty::static_truth_table<2u>>( xag )[0]._bits == 0x8 );
+
+  CHECK( xag.fanout_size( xag.get_node( x1 ) ) == 1 );
+  CHECK( xag.fanout_size( xag.get_node( x2 ) ) == 1 );
+  CHECK( xag.fanout_size( xag.get_node( f1 ) ) == 0 );
+  CHECK( xag.fanout_size( xag.get_node( f2 ) ) == 1 );
+}
+
+TEST_CASE( "trivial case (constant) detection in replace_in_node of xag_network", "[xag]" )
+{
+  xag_network xag;
+  auto const x1 = xag.create_pi();
+  auto const x2 = xag.create_pi();
+
+  auto const f1 = xag.create_xor( x1, x2 );
+  auto const f2 = xag.create_and( x1, x2 );
+  xag.create_po( f1 );
+  xag.create_po( f2 );
+
+  CHECK( xag.fanout_size( xag.get_node( x1 ) ) == 2 );
+  CHECK( xag.fanout_size( xag.get_node( x2 ) ) == 2 );
+  CHECK( xag.fanout_size( xag.get_node( f1 ) ) == 1 );
+  CHECK( xag.fanout_size( xag.get_node( f2 ) ) == 1 );
+
+  xag.substitute_node( xag.get_node( x1 ), xag.get_constant( true ) );
+
+  CHECK( xag.is_dead( xag.get_node( f1 ) ) );
+  CHECK( xag.fanout_size( xag.get_node( x1 ) ) == 0 );
+  CHECK( xag.fanout_size( xag.get_node( x2 ) ) == 2 );
+  CHECK( xag.get_node( xag.po_at( 0 ) ) == xag.get_node( x2 ) );
+  CHECK( xag.get_node( xag.po_at( 1 ) ) == xag.get_node( x2 ) );
+}
+
+TEST_CASE( "substitute node with complemented node in xag_network", "[xag]" )
+{
+  xag_network xag;
+  auto const x1 = xag.create_pi();
+  auto const x2 = xag.create_pi();
+
+  auto const f1 = xag.create_and( x1, x2 );
+  auto const f2 = xag.create_and( x1, f1 );
+  xag.create_po( f2 );
+
+  CHECK( xag.fanout_size( xag.get_node( x1 ) ) == 2 );
+  CHECK( xag.fanout_size( xag.get_node( x2 ) ) == 1 );
+  CHECK( xag.fanout_size( xag.get_node( f1 ) ) == 1 );
+  CHECK( xag.fanout_size( xag.get_node( f2 ) ) == 1 );
+
+  CHECK( simulate<kitty::static_truth_table<2u>>( xag )[0]._bits == 0x8 );
+
+  xag.substitute_node( xag.get_node( f2 ), !f2 );
+
+  CHECK( xag.fanout_size( xag.get_node( x1 ) ) == 2 );
+  CHECK( xag.fanout_size( xag.get_node( x2 ) ) == 1 );
+  CHECK( xag.fanout_size( xag.get_node( f1 ) ) == 1 );
+  CHECK( xag.fanout_size( xag.get_node( f2 ) ) == 1 );
+
+  CHECK( simulate<kitty::static_truth_table<2u>>( xag )[0]._bits == 0x7 );
+}
+
+TEST_CASE( "substitute node with dependency in xag_network", "[xag]" )
+{
+  xag_network xag{};
+
+  auto const a = xag.create_pi();
+  auto const b = xag.create_pi();
+  auto const c = xag.create_pi();          /* place holder */
+  auto const tmp = xag.create_and( b, c ); /* place holder */
+  auto const f1 = xag.create_and( a, b );
+  auto const f2 = xag.create_and( f1, tmp );
+  auto const f3 = xag.create_and( f1, a );
+  xag.create_po( f2 );
+  xag.substitute_node( xag.get_node( tmp ), f3 );
+
+  /**
+   * issue #545
+   *
+   *      f2
+   *     /  \
+   *    /   f3
+   *    \  /  \
+   *  1->f1    a
+   *
+   * stack:
+   * 1. push (f2->f3)
+   * 2. push (f3->a)
+   * 3. pop (f3->a)
+   * 4. pop (f2->f3) but, f3 is dead !!!
+   */
+
+  xag.substitute_node( xag.get_node( f1 ), xag.get_constant( 1 ) /* constant 1 */ );
+
+  CHECK( xag.is_dead( xag.get_node( f1 ) ) );
+  CHECK( xag.is_dead( xag.get_node( f2 ) ) );
+  CHECK( xag.is_dead( xag.get_node( f3 ) ) );
+  xag.foreach_po( [&]( auto s ) {
+    CHECK( xag.is_dead( xag.get_node( s ) ) == false );
+  } );
 }

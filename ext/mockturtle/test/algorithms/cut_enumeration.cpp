@@ -7,6 +7,7 @@
 #include <mockturtle/algorithms/cut_enumeration.hpp>
 #include <mockturtle/networks/aig.hpp>
 #include <mockturtle/networks/klut.hpp>
+#include <mockturtle/networks/sequential.hpp>
 
 using namespace mockturtle;
 
@@ -34,7 +35,7 @@ TEST_CASE( "enumerate cuts for an AIG", "[cut_enumeration]" )
       return;
 
     auto const& set = cuts.cuts( aig.node_to_index( n ) );
-    CHECK( to_vector( set[static_cast<uint32_t>( set.size() - 1 )] ) == std::vector<uint32_t>{aig.node_to_index( n )} );
+    CHECK( to_vector( set[static_cast<uint32_t>( set.size() - 1 )] ) == std::vector<uint32_t>{ aig.node_to_index( n ) } );
   } );
 
   const auto i1 = aig.node_to_index( aig.get_node( f1 ) );
@@ -47,18 +48,18 @@ TEST_CASE( "enumerate cuts for an AIG", "[cut_enumeration]" )
   CHECK( cuts.cuts( i3 ).size() == 3 );
   CHECK( cuts.cuts( i4 ).size() == 5 );
 
-  CHECK( to_vector( cuts.cuts( i1 )[0] ) == std::vector<uint32_t>{1, 2} );
+  CHECK( to_vector( cuts.cuts( i1 )[0] ) == std::vector<uint32_t>{ 1, 2 } );
 
-  CHECK( to_vector( cuts.cuts( i2 )[0] ) == std::vector<uint32_t>{1, 3} );
-  CHECK( to_vector( cuts.cuts( i2 )[1] ) == std::vector<uint32_t>{1, 2} );
+  CHECK( to_vector( cuts.cuts( i2 )[0] ) == std::vector<uint32_t>{ 1, 3 } );
+  CHECK( to_vector( cuts.cuts( i2 )[1] ) == std::vector<uint32_t>{ 1, 2 } );
 
-  CHECK( to_vector( cuts.cuts( i3 )[0] ) == std::vector<uint32_t>{2, 3} );
-  CHECK( to_vector( cuts.cuts( i3 )[1] ) == std::vector<uint32_t>{1, 2} );
+  CHECK( to_vector( cuts.cuts( i3 )[0] ) == std::vector<uint32_t>{ 2, 3 } );
+  CHECK( to_vector( cuts.cuts( i3 )[1] ) == std::vector<uint32_t>{ 1, 2 } );
 
-  CHECK( to_vector( cuts.cuts( i4 )[0] ) == std::vector<uint32_t>{4, 5} );
-  CHECK( to_vector( cuts.cuts( i4 )[1] ) == std::vector<uint32_t>{1, 2} );
-  CHECK( to_vector( cuts.cuts( i4 )[2] ) == std::vector<uint32_t>{2, 3, 4} );
-  CHECK( to_vector( cuts.cuts( i4 )[3] ) == std::vector<uint32_t>{1, 3, 5} );
+  CHECK( to_vector( cuts.cuts( i4 )[0] ) == std::vector<uint32_t>{ 4, 5 } );
+  CHECK( to_vector( cuts.cuts( i4 )[1] ) == std::vector<uint32_t>{ 1, 2 } );
+  CHECK( to_vector( cuts.cuts( i4 )[2] ) == std::vector<uint32_t>{ 2, 3, 4 } );
+  CHECK( to_vector( cuts.cuts( i4 )[3] ) == std::vector<uint32_t>{ 1, 3, 5 } );
 }
 
 TEST_CASE( "enumerate smaller cuts for an AIG", "[cut_enumeration]" )
@@ -91,16 +92,16 @@ TEST_CASE( "enumerate smaller cuts for an AIG", "[cut_enumeration]" )
   CHECK( cuts.cuts( i3 ).size() == 3 );
   CHECK( cuts.cuts( i4 ).size() == 3 );
 
-  CHECK( to_vector( cuts.cuts( i1 )[0] ) == std::vector<uint32_t>{1, 2} );
+  CHECK( to_vector( cuts.cuts( i1 )[0] ) == std::vector<uint32_t>{ 1, 2 } );
 
-  CHECK( to_vector( cuts.cuts( i2 )[0] ) == std::vector<uint32_t>{1, 3} );
-  CHECK( to_vector( cuts.cuts( i2 )[1] ) == std::vector<uint32_t>{1, 2} );
+  CHECK( to_vector( cuts.cuts( i2 )[0] ) == std::vector<uint32_t>{ 1, 3 } );
+  CHECK( to_vector( cuts.cuts( i2 )[1] ) == std::vector<uint32_t>{ 1, 2 } );
 
-  CHECK( to_vector( cuts.cuts( i3 )[0] ) == std::vector<uint32_t>{2, 3} );
-  CHECK( to_vector( cuts.cuts( i3 )[1] ) == std::vector<uint32_t>{1, 2} );
+  CHECK( to_vector( cuts.cuts( i3 )[0] ) == std::vector<uint32_t>{ 2, 3 } );
+  CHECK( to_vector( cuts.cuts( i3 )[1] ) == std::vector<uint32_t>{ 1, 2 } );
 
-  CHECK( to_vector( cuts.cuts( i4 )[0] ) == std::vector<uint32_t>{4, 5} );
-  CHECK( to_vector( cuts.cuts( i4 )[1] ) == std::vector<uint32_t>{1, 2} );
+  CHECK( to_vector( cuts.cuts( i4 )[0] ) == std::vector<uint32_t>{ 4, 5 } );
+  CHECK( to_vector( cuts.cuts( i4 )[1] ) == std::vector<uint32_t>{ 1, 2 } );
 }
 
 TEST_CASE( "compute truth tables of AIG cuts", "[cut_enumeration]" )
@@ -152,7 +153,7 @@ TEST_CASE( "compute XOR network cuts in 2-LUT network", "[cut_enumeration]" )
 
   kitty::dynamic_truth_table or_func( 2u );
   kitty::create_from_binary_string( or_func, "1110" );
-  const auto g5 = klut.create_node( {g2, g4}, or_func );
+  const auto g5 = klut.create_node( { g2, g4 }, or_func );
   klut.create_po( g5 );
 
   cut_enumeration_params ps;
@@ -161,16 +162,20 @@ TEST_CASE( "compute XOR network cuts in 2-LUT network", "[cut_enumeration]" )
   CHECK( cuts.cuts( klut.node_to_index( klut.get_node( g1 ) ) ).size() == 2u );
   CHECK( cuts.cuts( klut.node_to_index( klut.get_node( g3 ) ) ).size() == 2u );
 
-  for ( auto const& cut : cuts.cuts( klut.node_to_index( klut.get_node( g1 ) ) ) ) {
+  for ( auto const& cut : cuts.cuts( klut.node_to_index( klut.get_node( g1 ) ) ) )
+  {
     CHECK( cut->size() == 1u );
   }
 
-  for ( auto const& cut : cuts.cuts( klut.node_to_index( klut.get_node( g3 ) ) ) ) {
+  for ( auto const& cut : cuts.cuts( klut.node_to_index( klut.get_node( g3 ) ) ) )
+  {
     CHECK( cut->size() == 1u );
   }
 
-  for ( auto const& cut : cuts.cuts( klut.node_to_index( klut.get_node( g5 ) ) ) ) {
-    if ( cut->size() == 2u && *cut->begin() == 2u ) {
+  for ( auto const& cut : cuts.cuts( klut.node_to_index( klut.get_node( g5 ) ) ) )
+  {
+    if ( cut->size() == 2u && *cut->begin() == 2u )
+    {
       CHECK( cuts.truth_table( *cut )._bits[0] == 0x6u );
     }
   }
@@ -195,11 +200,13 @@ TEST_CASE( "enumerate cuts for an AIG (small graph version)", "[fast_small_cut_e
 
   auto cuts = *cuts_optional;
 
-  const auto bitcut_to_vector = [] ( uint64_t bitcut ) {
+  const auto bitcut_to_vector = []( uint64_t bitcut ) {
     std::vector<uint32_t> v;
 
-    for ( auto i = 0U; i < 64; i++ ) {
-      if ( bitcut & ( static_cast<uint64_t>( 1 ) << i ) ) {
+    for ( auto i = 0U; i < 64; i++ )
+    {
+      if ( bitcut & ( static_cast<uint64_t>( 1 ) << i ) )
+      {
         v.push_back( i );
       }
     }
@@ -209,21 +216,22 @@ TEST_CASE( "enumerate cuts for an AIG (small graph version)", "[fast_small_cut_e
 
   // Check primary input cuts.
   aig.foreach_pi(
-    [&] ( auto n ) {
-      if ( aig.is_constant( n ) ) {
-        return;
-      }
+      [&]( auto n ) {
+        if ( aig.is_constant( n ) )
+        {
+          return;
+        }
 
-      auto const n_idx = aig.node_to_index( n );
-      auto const& cut_set = cuts.at( n_idx );
+        auto const n_idx = aig.node_to_index( n );
+        auto const& cut_set = cuts.at( n_idx );
 
-      for ( auto const& cut_set_i : cut_set ) {
-        auto const& cut_node_indices = bitcut_to_vector( cut_set_i );
-        // Primary inputs only have themselves as cuts.
-        CHECK( cut_node_indices == std::vector<uint32_t>{ n_idx } );
-      }
-    }
-  );
+        for ( auto const& cut_set_i : cut_set )
+        {
+          auto const& cut_node_indices = bitcut_to_vector( cut_set_i );
+          // Primary inputs only have themselves as cuts.
+          CHECK( cut_node_indices == std::vector<uint32_t>{ n_idx } );
+        }
+      } );
 
   // Check gate cuts.
   const auto i1 = aig.node_to_index( aig.get_node( f1 ) );
@@ -273,11 +281,13 @@ TEST_CASE( "enumerate smaller cuts for an AIG (small graph version)", "[fast_sma
 
   auto cuts = *cuts_optional;
 
-  const auto bitcut_to_vector = [] ( uint64_t bitcut ) {
+  const auto bitcut_to_vector = []( uint64_t bitcut ) {
     std::vector<uint32_t> v;
 
-    for ( auto i = 0U; i < 64; i++ ) {
-      if ( bitcut & ( static_cast<uint64_t>( 1 ) << i ) ) {
+    for ( auto i = 0U; i < 64; i++ )
+    {
+      if ( bitcut & ( static_cast<uint64_t>( 1 ) << i ) )
+      {
         v.push_back( i );
       }
     }
@@ -287,21 +297,22 @@ TEST_CASE( "enumerate smaller cuts for an AIG (small graph version)", "[fast_sma
 
   // Check primary input cuts.
   aig.foreach_pi(
-    [&] ( auto n ) {
-      if ( aig.is_constant( n ) ) {
-        return;
-      }
+      [&]( auto n ) {
+        if ( aig.is_constant( n ) )
+        {
+          return;
+        }
 
-      auto const n_idx = aig.node_to_index( n );
-      auto const& cut_set = cuts.at( n_idx );
+        auto const n_idx = aig.node_to_index( n );
+        auto const& cut_set = cuts.at( n_idx );
 
-      for ( auto const& cut_set_i : cut_set ) {
-        auto const& cut_node_indices = bitcut_to_vector( cut_set_i );
-        // Primary inputs only have themselves as cuts.
-        CHECK( cut_node_indices == std::vector<uint32_t>{ n_idx } );
-      }
-    }
-  );
+        for ( auto const& cut_set_i : cut_set )
+        {
+          auto const& cut_node_indices = bitcut_to_vector( cut_set_i );
+          // Primary inputs only have themselves as cuts.
+          CHECK( cut_node_indices == std::vector<uint32_t>{ n_idx } );
+        }
+      } );
 
   // Check gate cuts.
   const auto i1 = aig.node_to_index( aig.get_node( f1 ) );
@@ -328,4 +339,53 @@ TEST_CASE( "enumerate smaller cuts for an AIG (small graph version)", "[fast_sma
   CHECK( bitcut_to_vector( cuts.at( i4 )[0] ) == std::vector<uint32_t>{ 1, 2 } );
   CHECK( bitcut_to_vector( cuts.at( i4 )[1] ) == std::vector<uint32_t>{ 4, 5 } );
   CHECK( bitcut_to_vector( cuts.at( i4 )[2] ) == std::vector<uint32_t>{ 6 } );
+}
+
+
+TEST_CASE( "enumerate cuts for a sequential k-LUT network", "[sequential_cut_enumeration]" )
+{
+  sequential<klut_network> klut;
+
+  const auto a = klut.create_pi();
+  const auto b = klut.create_pi();
+  const auto c = klut.create_pi();
+
+  const auto f1 = klut.create_maj( a, b, c );
+  const auto f2 = klut.create_ro(); // f2 <- f1
+  const auto f3 = klut.create_ro(); // f3 <- f1
+  const auto f4 = klut.create_xor( f2, f3 );
+
+  klut.create_po( f4 );
+  klut.create_ri( f1 ); // f2 <- f1
+  klut.create_ri( f1 ); // f3 <- f1
+
+  CHECK( klut.num_gates() == 2 );
+  CHECK( klut.num_registers() == 2 );
+  CHECK( klut.num_pis() == 3 );
+  CHECK( klut.num_pos() == 1 );
+
+  const auto cuts = cut_enumeration( klut );
+
+  const auto to_vector = []( auto const& cut ) {
+    return std::vector<uint32_t>( cut.begin(), cut.end() );
+  };
+
+  /* all unit cuts are in the back */
+  klut.foreach_node( [&]( auto n ) {
+    if ( klut.is_constant( n ) )
+      return;
+
+    auto const& set = cuts.cuts( klut.node_to_index( n ) );
+    CHECK( to_vector( set[static_cast<uint32_t>( set.size() - 1 )] ) == std::vector<uint32_t>{ klut.node_to_index( n ) } );
+  } );
+
+  const auto i1 = klut.node_to_index( klut.get_node( f1 ) );
+  const auto i2 = klut.node_to_index( klut.get_node( f2 ) );
+  const auto i3 = klut.node_to_index( klut.get_node( f3 ) );
+  const auto i4 = klut.node_to_index( klut.get_node( f4 ) );
+
+  CHECK( cuts.cuts( i1 ).size() == 2 );
+  CHECK( cuts.cuts( i2 ).size() == 1 ); /* unit cutset at ROs */
+  CHECK( cuts.cuts( i3 ).size() == 1 ); /* unit cutset at ROs */
+  CHECK( cuts.cuts( i4 ).size() == 2 ); /* cut merge stops at ROs */
 }

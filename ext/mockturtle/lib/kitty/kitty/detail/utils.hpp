@@ -1,5 +1,5 @@
 /* kitty: C++ truth table library
- * Copyright (C) 2017-2021  EPFL
+ * Copyright (C) 2017-2022  EPFL
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -45,16 +45,14 @@ namespace detail
 /* string utils are from https://stackoverflow.com/a/217605 */
 inline void ltrim( std::string& s )
 {
-  s.erase( s.begin(), std::find_if( s.begin(), s.end(), []( int ch ) {
-             return std::isspace( ch ) == 0;
-           } ) );
+  s.erase( s.begin(), std::find_if( s.begin(), s.end(), []( int ch )
+                                    { return std::isspace( ch ) == 0; } ) );
 }
 
 inline void rtrim( std::string& s )
 {
-  s.erase( std::find_if( s.rbegin(), s.rend(), []( int ch ) {
-             return std::isspace( ch ) == 0;
-           } )
+  s.erase( std::find_if( s.rbegin(), s.rend(), []( int ch )
+                         { return std::isspace( ch ) == 0; } )
                .base(),
            s.end() );
 }
@@ -84,4 +82,4 @@ inline std::string trim_copy( std::string s )
 }
 } /* namespace detail */
 } /* namespace kitty */
-/*! \endcond */
+  /*! \endcond */
