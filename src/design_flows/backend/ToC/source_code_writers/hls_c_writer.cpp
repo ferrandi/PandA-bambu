@@ -535,7 +535,7 @@ memmap_init[i].addr = malloc(memmap_init[i].size);
 }
 if(fread(memmap_init[i].addr, 1, memmap_init[i].size, fp) != memmap_init[i].size)
 {
-error("Unable to read %u bytes from file: %s", memmap_init[i].size, memmap_init[i].filename);
+error("Unable to read %zu bytes from file: %s", memmap_init[i].size, memmap_init[i].filename);
 perror("");
 exit(EXIT_FAILURE);
 }
@@ -838,7 +838,7 @@ template <typename T> T* m_getptr(T* obj) { return obj; }
    {                                                                                                            \
       if(m_cmp##cmp((m_getptrt(P##idx))P##idx##_##suffix + i, &m_getptr(P##idx)[i]))                            \
       {                                                                                                         \
-         error("Memory parameter %u (%u/%u) mismatch with respect to " #suffix " reference.\n", idx)" +
+         error("Memory parameter %u (%zu/%zu) mismatch with respect to " #suffix " reference.\n", idx)" +
        (return_type ? " - 1" : "") + ", i" + (return_type ? " + 1" : "") +
        R"(, \
                P##idx##_count_##suffix);                                                                        \
@@ -865,7 +865,7 @@ template <typename T> T* m_getptr(T* obj) { return obj; }
    {                                                                                                        \
       if(m_cmp##cmp((m_getvalt(m_getptr(P##idx))::element_type*)P##idx##_sim + i, &(*m_getptr(P##idx))[i])) \
       {                                                                                                     \
-         error("Channel parameter %u (%u/%u) mismatch with respect to golden reference.\n", idx)" +
+         error("Channel parameter %u (%zu/%zu) mismatch with respect to golden reference.\n", idx)" +
        (return_type ? " - 1" : "") +
        R"(, i + 1,     \
                P##idx##_count);                                                                             \

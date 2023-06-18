@@ -121,21 +121,17 @@ EXTERN_C int m_fini()
    return retval;
 }
 
-static FORCE_INLINE ab_uint8_t load(ptr_t addr)
+static FORCE_INLINE ab_uint8_t load(bptr_t addr)
 {
    ab_uint8_t mem;
    try
    {
-      mem.aval = *((uint8_t*)addr);
+      mem.aval = *addr;
       mem.bval = 0;
    }
    catch(std::exception& e)
    {
-#if __WORDSIZE == 64
-      error("Memory load exception: illegal access at 0x%016llX\n", addr);
-#else
-      error("Memory load exception: illegal access at 0x%08X\n", addr);
-#endif
+      error("Memory load exception: illegal access at " BPTR_FORMAT "\n", bptr_to_int(addr));
       mem.aval = 0xFF;
       mem.bval = 0xFF;
    }
@@ -192,36 +188,28 @@ EXTERN_C unsigned int m_getptrargsize(unsigned int index)
    return __m_param_size(index);
 }
 
-static FORCE_INLINE void store(ptr_t addr, uint8_t val)
+static FORCE_INLINE void store(bptr_t addr, uint8_t val)
 {
    try
    {
-      *((uint8_t*)addr) = val;
+      *addr = val;
    }
    catch(std::exception& e)
    {
-#if __WORDSIZE == 64
-      error("Memory store exception: illegal access at 0x%016llX\n", addr);
-#else
-      error("Memory store exception: illegal access at 0x%08X\n", addr);
-#endif
+      error("Memory store exception: illegal access at " BPTR_FORMAT "\n", bptr_to_int(addr));
       abort();
    }
 }
 
-static FORCE_INLINE void __m_read(uint16_t size, svLogicVecVal* data, ptr_t addr)
+static FORCE_INLINE void __m_read(uint16_t bsize, svLogicVecVal* data, ptr_t addr)
 {
-#if __WORDSIZE == 64
-   debug("Read %u bytes at 0x%016llX\n", size, addr);
-#else
-   debug("Read %u bytes at 0x%08X\n", size, addr);
-#endif
-   addr = __m_memaddr(addr);
-   if(addr)
+   debug("Read %u bytes at " PTR_FORMAT "\n", bsize, addr);
+   bptr_t __addr = __m_memaddr(addr);
+   if(__addr)
    {
-      for(uint16_t i = 0; i < size; ++i)
+      for(uint16_t i = 0; i < bsize; ++i)
       {
-         ab_uint8_t mem = load(addr + i);
+         ab_uint8_t mem = load(__addr + i);
          if(i % 4)
          {
             data[i / 4].aval |= static_cast<unsigned int>(mem.aval) << (8 * (i % 4));
@@ -233,7 +221,6 @@ static FORCE_INLINE void __m_read(uint16_t size, svLogicVecVal* data, ptr_t addr
             data[i / 4].bval = mem.bval;
          }
       }
-      debug("Read completed\n");
    }
    else
    {
@@ -241,18 +228,14 @@ static FORCE_INLINE void __m_read(uint16_t size, svLogicVecVal* data, ptr_t addr
    }
 }
 
-static FORCE_INLINE void __m_write(uint16_t max_size, uint16_t size, CONSTARG svLogicVecVal* data, ptr_t addr)
+static FORCE_INLINE void __m_write(uint16_t max_bsize, uint16_t size, CONSTARG svLogicVecVal* data, ptr_t addr)
 {
-#if __WORDSIZE == 64
-   debug("Write %u bits at 0x%016llX\n", size, addr);
-#else
-   debug("Write %u bits at 0x%08X\n", size, addr);
-#endif
-   addr = __m_memaddr(addr);
-   if(addr)
+   debug("Write %u bits at " PTR_FORMAT "\n", size, addr);
+   bptr_t __addr = __m_memaddr(addr);
+   if(__addr)
    {
-      assert(max_size >= (size / 8) && "Memory write bitsize must be smaller than bus size");
-      for(uint16_t i = 0; i < max_size; ++i)
+      assert(max_bsize >= (size / 8) && "Memory write bitsize must be smaller than bus size");
+      for(uint16_t i = 0; i < max_bsize; ++i)
       {
          const uint8_t data_byte = data[i / 4].aval >> (8 * (i % 4));
          const uint8_t bdata_byte = data[i / 4].bval >> (8 * (i % 4));
@@ -260,18 +243,17 @@ static FORCE_INLINE void __m_write(uint16_t max_size, uint16_t size, CONSTARG sv
          {
             assert((bdata_byte == 0) && "Memory write data must not contain undefined states X or Z from "
                                         "the simulation");
-            store(addr + i, data[i / 4].aval >> (8 * (i % 4)));
+            store(__addr + i, data[i / 4].aval >> (8 * (i % 4)));
          }
          else
          {
             const uint8_t mask = static_cast<uint8_t>((1 << (size % 8)) - 1);
             assert(((bdata_byte & mask) == 0) && "Memory write data must not contain undefined states X or Z from "
                                                  "the simulation");
-            const uint8_t mem_val = (load(addr + i).aval & ~mask) | (data_byte & mask);
-            store(addr + i, mem_val);
+            const uint8_t mem_val = (load(__addr + i).aval & ~mask) | (data_byte & mask);
+            store(__addr + i, mem_val);
          }
       }
-      debug("Write completed\n");
    }
    else
    {

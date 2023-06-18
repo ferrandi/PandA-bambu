@@ -57,7 +57,7 @@ static pthread_cond_t __m_sig;
 
 mdpi_params_t __m_params;
 static std::map<uint8_t, size_t> __m_params_size;
-static std::map<ptr_t, ptr_t> __m_mmu;
+static std::map<ptr_t, bptr_t> __m_mmu;
 
 void __m_arg_init(uint8_t argcount)
 {
@@ -77,54 +77,42 @@ void __m_arg_fini()
    __m_params.size = 0;
 }
 
-void __m_setarg(uint8_t index, void* bits, uint16_t bitsize)
+void __m_setarg(uint8_t index, bptr_t bits, uint16_t bitsize)
 {
    if(index >= __m_params.size)
    {
       error("Parameter index out of bounds %u\n", (unsigned int)index);
       exit(EXIT_FAILURE);
    }
-#if __WORDSIZE == 64
-   debug("Parameter %u is %u bits at 0x%016llX\n", index, bitsize, (ptr_t)bits);
-#else
-   debug("Parameter %u is %u bits at 0x%08X\n", index, bitsize, (ptr_t)bits);
-#endif
+   debug("Parameter %u is %u bits at " BPTR_FORMAT "\n", index, bitsize, bptr_to_int(bits));
    __m_params.prms[index].bits = bits;
    __m_params.prms[index].bitsize = bitsize;
 }
 
 struct addr_search_s
 {
-   const ptr_t _addr;
-   addr_search_s(ptr_t addr) : _addr(addr)
+   const bptr_t _addr;
+   addr_search_s(const bptr_t addr) : _addr(addr)
    {
    }
-   bool operator()(std::pair<const ptr_t, ptr_t>& _t)
+   bool operator()(std::pair<const ptr_t, bptr_t>& _t)
    {
-      return _t.first + _t.second == _addr;
+      return (_t.second + _t.first) == _addr;
    }
 };
 
-void __m_setptrarg(uint8_t index, void* bits, uint16_t bitsize)
+void __m_setptrarg(uint8_t index, bptr_t* bits, uint16_t bitsize)
 {
-   assert((bitsize == (sizeof(ptr_t) * 8)) && "Unexpected pointer size");
-   const ptr_t addr = *static_cast<ptr_t*>(bits);
-   const std::map<ptr_t, ptr_t>::iterator mmu_it = std::find_if(__m_mmu.begin(), __m_mmu.end(), addr_search_s(addr));
+   assert((bitsize == PTR_SIZE) && "Unexpected pointer size");
+   const bptr_t addr = *bits;
+   const std::map<ptr_t, bptr_t>::iterator mmu_it = std::find_if(__m_mmu.begin(), __m_mmu.end(), addr_search_s(addr));
    if(mmu_it != __m_mmu.end())
    {
-#if __WORDSIZE == 64
-      debug("Pointer parameter 0x%016llX mapped at 0x%016llX\n", addr, mmu_it->first);
-#else
-      debug("Pointer parameter 0x%08X mapped at 0x%08X\n", addr, mmu_it->first);
-#endif
-      *static_cast<ptr_t*>(bits) = mmu_it->first;
-      return __m_setarg(index, bits, sizeof(ptr_t) * 8);
+      debug("Pointer parameter " BPTR_FORMAT " mapped at " PTR_FORMAT "\n", bptr_to_int(addr), mmu_it->first);
+      *bits = ptr_to_bptr(mmu_it->first);
+      return __m_setarg(index, reinterpret_cast<bptr_t>(bits), PTR_SIZE);
    }
-#if __WORDSIZE == 64
-   error("Unknown parameter address mapping for 0x%016llX\n", addr);
-#else
-   error("Unknown parameter address mapping for 0x%08X\n", addr);
-#endif
+   error("Unknown parameter address mapping for " BPTR_FORMAT "\n", bptr_to_int(addr));
    exit(EXIT_FAILURE);
 }
 
@@ -132,37 +120,26 @@ void __m_memmap_init()
 {
    debug("Initializing co-simulation MMU\n");
    __m_mmu.clear();
-   __m_mmu[0] = 0;
+   __m_mmu[0] = NULL;
 }
 
-void __m_memmap(ptr_t dst, void* bits)
+void __m_memmap(ptr_t dst, void* _bits)
 {
-#if __WORDSIZE == 64
-   debug("Address 0x%016llX mapped at 0x%016llX\n", reinterpret_cast<ptr_t>(bits), dst);
-#else
-   debug("Address 0x%08X mapped at 0x%08X\n", reinterpret_cast<ptr_t>(bits), dst);
-#endif
-   __m_mmu[dst] = reinterpret_cast<ptr_t>(bits) - dst;
+   bptr_t bits = reinterpret_cast<bptr_t>(_bits);
+   debug("Address " BPTR_FORMAT " mapped at " PTR_FORMAT "\n", bptr_to_int(bits), dst);
+   __m_mmu[dst] = bits - dst;
 }
 
-ptr_t __m_memaddr(ptr_t sim_addr)
+bptr_t __m_memaddr(ptr_t sim_addr)
 {
-   const std::map<ptr_t, ptr_t>::iterator mmu_it = --__m_mmu.upper_bound(sim_addr);
+   const std::map<ptr_t, bptr_t>::iterator mmu_it = --__m_mmu.upper_bound(sim_addr);
    if(mmu_it != __m_mmu.begin())
    {
-      const ptr_t addr = sim_addr + mmu_it->second;
-#if __WORDSIZE == 64
-      debug("Address 0x%016llX mapped back at 0x%016llX\n", sim_addr, addr);
-#else
-      debug("Address 0x%08X mapped back at 0x%08X\n", sim_addr, addr);
-#endif
+      bptr_t addr = mmu_it->second + sim_addr;
+      debug("Address " PTR_FORMAT " mapped back at " BPTR_FORMAT "\n", sim_addr, bptr_to_int(addr));
       return addr;
    }
-#if __WORDSIZE == 64
-   error("Unknown address mapping for 0x%016llX\n", sim_addr);
-#else
-   error("Unknown address mapping for 0x%08X\n", sim_addr);
-#endif
+   error("Unknown address mapping for " PTR_FORMAT "\n", sim_addr);
    return 0;
 }
 
@@ -183,13 +160,13 @@ void __m_alloc_param(uint8_t idx, size_t size)
    if(!__m_params_size.count(idx))
    {
       __m_params_size[idx] = size;
-      debug("Memory size for parameter %u set to %u bytes.\n", idx, size);
+      debug("Memory size for parameter %u set to %zu bytes.\n", idx, size);
    }
 }
 
 void m_alloc_param(uint8_t idx, size_t size)
 {
-   info("Memory size for parameter %u set to %u bytes.\n", idx, size);
+   info("Memory size for parameter %u set to %zu bytes.\n", idx, size);
    __m_params_size[idx] = size;
 }
 

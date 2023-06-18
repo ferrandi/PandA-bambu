@@ -53,6 +53,45 @@
 #include <bits/wordsize.h>
 #include <stdint.h>
 
+#if defined(VERILATOR) // Verilator
+typedef long long sv_longint_t;
+typedef unsigned long long sv_longint_unsigned_t;
+#define NO_SHORTREAL
+#define CONSTARG const
+#define EXPORT
+#elif defined(MODEL_TECH) || defined(XILINX_SIMULATOR) // ModelSim or XSim
+typedef int64_t sv_longint_t;
+typedef uint64_t sv_longint_unsigned_t;
+#define CONSTARG const
+#define EXPORT DPI_DLLESPEC
+#else
+#error "Unknown simulator for DPI"
+#endif
+
+#define bptr_t uint8_t*
+#if __WORDSIZE == 32
+#define bptr_to_int(v) reinterpret_cast<unsigned>(v)
+#define ptr_to_bptr(v) reinterpret_cast<bptr_t>(static_cast<unsigned>(v))
+#define BPTR_FORMAT "0x%08X"
+#else
+#define bptr_to_int(v) reinterpret_cast<unsigned long long>(v)
+#define ptr_to_bptr(v) reinterpret_cast<bptr_t>(static_cast<unsigned long long>(v))
+#define BPTR_FORMAT "0x%016llX"
+#endif
+
+#if __WORDSIZE == 32
+#define ptr_t unsigned int
+#define PTR_FORMAT "0x%08X"
+#else
+#define ptr_t sv_longint_unsigned_t
+#if defined(MODEL_TECH) || defined(XILINX_SIMULATOR)
+#define PTR_FORMAT "0x%016zX"
+#else
+#define PTR_FORMAT "0x%016llX"
+#endif
+#endif
+#define PTR_SIZE (sizeof(ptr_t) * 8)
+
 struct ab_uint8_t
 {
    uint8_t aval, bval;
@@ -60,7 +99,7 @@ struct ab_uint8_t
 
 struct mdpi_parm_t
 {
-   void* bits;
+   bptr_t bits;
    uint16_t bitsize;
 };
 
@@ -104,26 +143,5 @@ enum mdpi_entity
 };
 
 #define mdpi_entity_str(s) s == MDPI_ENTITY_SIM ? "Sim" : (s == MDPI_ENTITY_COSIM ? "Co-sim" : "Unknown")
-
-#if defined(VERILATOR) // Verilator
-typedef long long sv_longint_t;
-typedef unsigned long long sv_longint_unsigned_t;
-#define NO_SHORTREAL
-#define CONSTARG const
-#define EXPORT
-#elif defined(MODEL_TECH) || defined(XILINX_SIMULATOR) // ModelSim or XSim
-typedef int64_t sv_longint_t;
-typedef uint64_t sv_longint_unsigned_t;
-#define CONSTARG const
-#define EXPORT DPI_DLLESPEC
-#else
-#error "Unknown simulator for DPI"
-#endif
-
-#if __WORDSIZE == 32
-#define ptr_t unsigned int
-#else
-#define ptr_t sv_longint_unsigned_t
-#endif
 
 #endif // __MDPI_TYPES_H

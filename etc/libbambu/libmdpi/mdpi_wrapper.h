@@ -47,11 +47,11 @@
 
 EXTERN_C void __m_arg_init(uint8_t argcount);
 EXTERN_C void __m_arg_fini();
-EXTERN_C void __m_setarg(uint8_t index, void* bits, uint16_t bitsize);
-EXTERN_C void __m_setptrarg(uint8_t index, void* bits, uint16_t bitsize);
+EXTERN_C void __m_setarg(uint8_t index, bptr_t bits, uint16_t bitsize);
+EXTERN_C void __m_setptrarg(uint8_t index, bptr_t* bits, uint16_t bitsize);
 EXTERN_C void __m_memmap_init();
 EXTERN_C void __m_memmap(ptr_t dst, void* src);
-EXTERN_C ptr_t __m_memaddr(ptr_t sim_addr);
+EXTERN_C bptr_t __m_memaddr(ptr_t sim_addr);
 EXTERN_C void __m_alloc_param(uint8_t idx, size_t size);
 EXTERN_C size_t __m_param_size(uint8_t idx);
 
@@ -60,7 +60,7 @@ EXTERN_C void __m_signal_to(enum mdpi_entity entity, enum mdpi_state state);
 EXTERN_C enum mdpi_state __m_wait_for(enum mdpi_entity entity);
 
 #define __m_setargptr(index, bits, bitsize) \
-   ptr_t __ptrval_##index = (ptr_t)bits;    \
-   __m_setptrarg(index, (void*)&__ptrval_##index, bitsize)
+   bptr_t __ptrval_##index = (bptr_t)bits;  \
+   __m_setptrarg(index, &__ptrval_##index, bitsize)
 
 #endif // __MDPI_WRAPPER_H
