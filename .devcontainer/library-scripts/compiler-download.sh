@@ -26,10 +26,10 @@ extract() {
          wget ${url} -nv -t 5 -T 5 -O ${backup_file}
       fi
       echo "Extracting ${filename} from backup directory"
-      tar -C $2 --skip-old-files -xJf ${backup_file}
+      tar -C $2 --skip-old-files --no-same-owner -xJf ${backup_file}
    else
       echo "Inflating ${filename} from url"
-      wget ${url} $wget_opt | tar -C $2 -xJf -
+      wget ${url} $wget_opt | tar -C $2 --no-same-owner -xJf -
    fi
 }
 

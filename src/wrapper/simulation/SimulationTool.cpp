@@ -290,6 +290,7 @@ std::string SimulationTool::GenerateSimulationScript(const std::string& top_file
    script << "##########################################################" << std::endl << std::endl;
    script << "# Simulation script for COMPONENT: " << top_filename << std::endl << std::endl;
    script << "cd " << GetCurrentPath() << std::endl;
+   script << "if [ ! -z \"$APPDIR\" ]; then LD_LIBRARY_PATH=\"\"; fi" << std::endl;
 
    GenerateScript(script, top_filename, file_list);
 

@@ -323,12 +323,6 @@ mockturtle/docs/_static/flow.svg \
 mockturtle/docs/acknowledgments.rst \
 mockturtle/docs/events.rst \
 mockturtle/.clang-format \
-mockturtle/examples/minimize.cpp \
-mockturtle/examples/cut_enumeration.cpp \
-mockturtle/examples/fuzz.cpp \
-mockturtle/examples/draw.cpp \
-mockturtle/examples/CMakeLists.txt \
-mockturtle/examples/fuzz_abc.cpp \
 mockturtle/include/mockturtle/networks/cover.hpp \
 mockturtle/include/mockturtle/networks/detail \
 mockturtle/include/mockturtle/networks/detail/foreach.hpp \
