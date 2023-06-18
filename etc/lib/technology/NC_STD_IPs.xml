@@ -417,10 +417,15 @@ end"/>
           <parameter name="MEM_DELAY_READ">2</parameter>
           <parameter name="MEM_DELAY_WRITE">1</parameter>
           <parameter name="base_addr">1073741824</parameter>
+          <parameter name="MEM_DUMP">0</parameter>
+          <parameter name="MEM_DUMP_FILE">&quot;&quot;memdump.csv&quot;&quot;</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <port_o id="reset" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="done_port" dir="IN">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <port_o id="M_DataRdy" dir="OUT" is_memory="1" is_global="1" is_extern="1">
@@ -446,188 +451,161 @@ end"/>
           </port_o>
           <NP_functionality
             IP_COMPONENT="mem_utils"
-            LIBRARY="TestbenchMEMMinimal MEM_DELAY_READ MEM_DELAY_WRITE base_addr M_DataRdy M_Rdata_ram Mout_oe_ram Mout_we_ram Mout_addr_ram Mout_data_ram_size Mout_Wdata_ram"
+            LIBRARY="TestbenchMEMMinimal MEM_DELAY_READ MEM_DELAY_WRITE base_addr MEM_DUMP MEM_DUMP_FILE M_DataRdy M_Rdata_ram Mout_oe_ram Mout_we_ram Mout_addr_ram Mout_data_ram_size Mout_Wdata_ram"
             VERILOG_PROVIDED="
 parameter MEM_DELAY_MAX= MEM_DELAY_READ > MEM_DELAY_WRITE ? MEM_DELAY_READ : MEM_DELAY_WRITE,
-  CHANNELS_NUMBER= BITSIZE_Mout_oe_ram,
-  elm_BITSIZE_Mout_addr_ram= BITSIZE_Mout_addr_ram / CHANNELS_NUMBER,
-  elm_BITSIZE_Mout_data_ram_size= BITSIZE_Mout_data_ram_size / CHANNELS_NUMBER,
-  elm_BITSIZE_Mout_Wdata_ram= BITSIZE_Mout_Wdata_ram / CHANNELS_NUMBER,
-  elm_BITSIZE_M_Rdata_ram= BITSIZE_M_Rdata_ram / CHANNELS_NUMBER;
-
-reg [BITSIZE_Mout_Wdata_ram-1:0] mask;
-reg [BITSIZE_M_Rdata_ram-1:0] M_Rdata_ram_temp;
-reg [CHANNELS_NUMBER-1:0] M_DataRdy_temp;
-
-reg [CHANNELS_NUMBER*MEM_DELAY_READ-1:0] Mout_oe_ram_queue_next;
-reg [CHANNELS_NUMBER*MEM_DELAY_READ-1:0] Mout_oe_ram_queue_curr;
-reg [CHANNELS_NUMBER*MEM_DELAY_WRITE-1:0] Mout_we_ram_queue_next;
-reg [CHANNELS_NUMBER*MEM_DELAY_WRITE-1:0] Mout_we_ram_queue_curr;
-reg [BITSIZE_Mout_addr_ram*MEM_DELAY_MAX-1:0] Mout_addr_ram_queue_next;
-reg [BITSIZE_Mout_addr_ram*MEM_DELAY_MAX-1:0] Mout_addr_ram_queue_curr;
-reg [BITSIZE_Mout_data_ram_size*MEM_DELAY_MAX-1:0] Mout_data_ram_size_queue_next;
-reg [BITSIZE_Mout_data_ram_size*MEM_DELAY_MAX-1:0] Mout_data_ram_size_queue_curr;
-reg [BITSIZE_Mout_Wdata_ram*MEM_DELAY_WRITE-1:0] Mout_Wdata_ram_queue_next;
-reg [BITSIZE_Mout_Wdata_ram*MEM_DELAY_WRITE-1:0] Mout_Wdata_ram_queue_curr;
+  CHANNELS_NUMBER=BITSIZE_Mout_oe_ram,
+  BITSIZE_oe=1,
+  BITSIZE_we=1,
+  BITSIZE_addr=BITSIZE_Mout_addr_ram/CHANNELS_NUMBER,
+  BITSIZE_Wsize=BITSIZE_Mout_data_ram_size/CHANNELS_NUMBER,
+  BITSIZE_Wdata=BITSIZE_Mout_Wdata_ram/CHANNELS_NUMBER,
+  BITSIZE_ready=1,
+  BITSIZE_Rdata=BITSIZE_M_Rdata_ram/CHANNELS_NUMBER,
+  BITSIZE_item=BITSIZE_Wdata+BITSIZE_Wsize+BITSIZE_addr+BITSIZE_we+BITSIZE_oe,
+  BITSIZE_chunk=CHANNELS_NUMBER*BITSIZE_item,
+  OFFSET_oe=0,
+  OFFSET_we=OFFSET_oe+BITSIZE_oe,
+  OFFSET_addr=OFFSET_we+BITSIZE_we,
+  OFFSET_Wsize=OFFSET_addr+BITSIZE_addr,
+  OFFSET_Wdata=OFFSET_Wsize+BITSIZE_Wsize;
 
 genvar i;
+integer dump_file;
+reg [MEM_DELAY_MAX*BITSIZE_chunk-1:0] queue, queue_next = 0;
 
-mem_utils #(elm_BITSIZE_M_Rdata_ram) m_utils();
-
-initial
-begin
-  Mout_oe_ram_queue_next = 0;
-  Mout_oe_ram_queue_curr = 0;
-  Mout_we_ram_queue_next = 0;
-  Mout_we_ram_queue_curr = 0;
-  Mout_addr_ram_queue_next = 0;
-  Mout_addr_ram_queue_curr = 0;
-  Mout_Wdata_ram_queue_next = 0;
-  Mout_Wdata_ram_queue_curr = 0;
-  Mout_data_ram_size_queue_next = 0;
-  Mout_data_ram_size_queue_curr = 0;
-  M_DataRdy_temp = 0;
-  M_Rdata_ram_temp = 0;
-end
-
-// Memory queue update
 generate
-  if(MEM_DELAY_READ != 1)
+  if(MEM_DUMP)
   begin
-    always @(posedge clock)
+    initial
     begin
-      Mout_oe_ram_queue_next[CHANNELS_NUMBER*MEM_DELAY_READ-1:1] &lt;= 
-        Mout_oe_ram_queue_curr[CHANNELS_NUMBER*(MEM_DELAY_READ-1)-1:0];
+      dump_file = $fopen(MEM_DUMP_FILE, &quot;w&quot;);
+      $fwrite(dump_file, &quot;Channel,Operation,Address,Bitwidth,Data\\n&quot;);
     end
-    always @(*)
+
+    always@(posedge clock)
     begin
-      Mout_oe_ram_queue_curr[CHANNELS_NUMBER*MEM_DELAY_READ-1:1] = 
-        Mout_oe_ram_queue_next[CHANNELS_NUMBER*MEM_DELAY_READ-1:1];
-      Mout_oe_ram_queue_curr[CHANNELS_NUMBER-1:0] = Mout_oe_ram;
-    end
-  end
-  else
-  begin
-    always @(*)
-    begin
-      Mout_oe_ram_queue_curr[CHANNELS_NUMBER-1:0] = Mout_oe_ram;
+      if(done_port)
+      begin
+        $fflush(dump_file);
+      end
     end
   end
 endgenerate
 
+mem_utils #(BITSIZE_Rdata) m_utils();
+
 generate
-  if(MEM_DELAY_WRITE != 1)
+  if(MEM_DELAY_MAX &gt; 1)
   begin
-    always @(posedge clock)
+    always@(*)
     begin
-      Mout_we_ram_queue_next[CHANNELS_NUMBER*MEM_DELAY_WRITE-1:CHANNELS_NUMBER] &lt;= 
-        Mout_we_ram_queue_curr[CHANNELS_NUMBER*(MEM_DELAY_WRITE-1)-1:0];
-      Mout_Wdata_ram_queue_next[MEM_DELAY_WRITE*BITSIZE_Mout_Wdata_ram-1:BITSIZE_Mout_Wdata_ram] &lt;= 
-        Mout_Wdata_ram_queue_curr[CHANNELS_NUMBER*(MEM_DELAY_WRITE-1)*BITSIZE_Mout_Wdata_ram-1:0];
+      queue_next = {queue[(MEM_DELAY_MAX-1)*BITSIZE_chunk-1:0], queue[BITSIZE_chunk-1:0]};
     end
-    always @(*)
+    always@(posedge clock)
     begin
-      Mout_we_ram_queue_curr[CHANNELS_NUMBER*MEM_DELAY_WRITE-1:CHANNELS_NUMBER] = 
-        Mout_we_ram_queue_next[CHANNELS_NUMBER*MEM_DELAY_WRITE-1:CHANNELS_NUMBER];
-      Mout_we_ram_queue_curr[CHANNELS_NUMBER-1:0] = Mout_we_ram;
-      Mout_Wdata_ram_queue_curr[MEM_DELAY_WRITE*BITSIZE_Mout_Wdata_ram-1:BITSIZE_Mout_Wdata_ram] = 
-        Mout_Wdata_ram_queue_next[MEM_DELAY_WRITE*BITSIZE_Mout_Wdata_ram-1:BITSIZE_Mout_Wdata_ram];
-      Mout_Wdata_ram_queue_curr[BITSIZE_Mout_Wdata_ram-1:0] = Mout_Wdata_ram;
+      if(1RESET_VALUE)
+      begin
+        queue[MEM_DELAY_MAX*BITSIZE_chunk-1:BITSIZE_chunk] &lt;= 0;
+      end
+      else
+      begin
+        queue[MEM_DELAY_MAX*BITSIZE_chunk-1:BITSIZE_chunk] &lt;= queue_next[MEM_DELAY_MAX*BITSIZE_chunk-1:BITSIZE_chunk];
+      end
     end
   end
   else
   begin
-    always @(*)
+    always@(*)
     begin
-      Mout_we_ram_queue_curr[CHANNELS_NUMBER-1:0] = Mout_we_ram;
-      Mout_Wdata_ram_queue_curr[BITSIZE_Mout_Wdata_ram-1:0] = Mout_Wdata_ram;
+      queue_next = queue;
     end
   end
 endgenerate
 
-generate
-  if(MEM_DELAY_MAX != 1)
-  begin
-    always @(posedge clock)
-    begin
-      Mout_addr_ram_queue_next[MEM_DELAY_MAX*BITSIZE_Mout_addr_ram-1:BITSIZE_Mout_addr_ram] &lt;= 
-        Mout_addr_ram_queue_curr[(MEM_DELAY_MAX-1)*BITSIZE_Mout_addr_ram-1:0];
-      Mout_data_ram_size_queue_next[MEM_DELAY_MAX*BITSIZE_Mout_data_ram_size-1:BITSIZE_Mout_data_ram_size] &lt;= 
-        Mout_data_ram_size_queue_curr[(MEM_DELAY_MAX-1)*BITSIZE_Mout_data_ram_size-1:0];
-    end
-    always @(*)
-    begin
-      Mout_addr_ram_queue_curr[MEM_DELAY_MAX*BITSIZE_Mout_addr_ram-1:BITSIZE_Mout_addr_ram] = 
-        Mout_addr_ram_queue_next[MEM_DELAY_MAX*BITSIZE_Mout_addr_ram-1:BITSIZE_Mout_addr_ram];
-      Mout_addr_ram_queue_curr[BITSIZE_Mout_addr_ram-1:0] = Mout_addr_ram;
-      Mout_data_ram_size_queue_curr[MEM_DELAY_MAX*BITSIZE_Mout_data_ram_size-1:BITSIZE_Mout_data_ram_size] = 
-        Mout_data_ram_size_queue_next[MEM_DELAY_MAX*BITSIZE_Mout_data_ram_size-1:BITSIZE_Mout_data_ram_size];
-      Mout_data_ram_size_queue_curr[BITSIZE_Mout_data_ram_size-1:0] = Mout_data_ram_size;
-    end
-  end
-  else
-  begin
-    always @(*)
-    begin
-      Mout_addr_ram_queue_curr[BITSIZE_Mout_addr_ram-1:0] = Mout_addr_ram;
-      Mout_data_ram_size_queue_curr[BITSIZE_Mout_data_ram_size-1:0] = Mout_data_ram_size;
-    end
-  end
-endgenerate
-
-// OffChip Memory write
 generate
   for(i = 0; i &lt; CHANNELS_NUMBER; i = i + 1)
-  begin : memory_port
-    always @(negedge clock)
-    begin : write_channel
-      automatic shortint unsigned size =
-        Mout_data_ram_size_queue_curr[(elm_BITSIZE_Mout_data_ram_size*(i+1))-1+(MEM_DELAY_WRITE-1)*BITSIZE_Mout_data_ram_size:
-                                      elm_BITSIZE_Mout_data_ram_size*i+(MEM_DELAY_WRITE-1)*BITSIZE_Mout_data_ram_size];
-      automatic ptr_t addr = Mout_addr_ram_queue_curr[(elm_BITSIZE_Mout_addr_ram*(i+1))-1+(MEM_DELAY_WRITE-1)*BITSIZE_Mout_addr_ram:
-                                                      elm_BITSIZE_Mout_addr_ram*i+(MEM_DELAY_WRITE-1)*BITSIZE_Mout_addr_ram];
-      automatic reg [elm_BITSIZE_Mout_Wdata_ram-1:0] data =
-        Mout_Wdata_ram_queue_curr[(elm_BITSIZE_Mout_Wdata_ram*(i+1))-1+(MEM_DELAY_WRITE-1)*BITSIZE_Mout_Wdata_ram:
-                                   elm_BITSIZE_Mout_Wdata_ram*i+(MEM_DELAY_WRITE-1)*BITSIZE_Mout_Wdata_ram];
-      if (Mout_we_ram_queue_curr[CHANNELS_NUMBER*(MEM_DELAY_WRITE-1)+i] === 1&apos;b1 
-          &amp;&amp; base_addr &lt;= Mout_addr_ram_queue_curr[(elm_BITSIZE_Mout_addr_ram*(i+1))-1+(MEM_DELAY_WRITE-1)*BITSIZE_Mout_addr_ram:
-                                                   elm_BITSIZE_Mout_addr_ram*i+(MEM_DELAY_WRITE-1)*BITSIZE_Mout_addr_ram])
-      begin
-        m_utils.write(size, data, addr);
-      end
-    end
-    always @(*)
-    begin : read_channel
-      automatic ptr_t addr = Mout_addr_ram_queue_curr[(elm_BITSIZE_Mout_addr_ram*(i+1))-1+(MEM_DELAY_READ-1)*BITSIZE_Mout_addr_ram:
-                                                      elm_BITSIZE_Mout_addr_ram*i+(MEM_DELAY_READ-1)*BITSIZE_Mout_addr_ram];
-      automatic reg [elm_BITSIZE_M_Rdata_ram-1:0] data = 0;
-      M_Rdata_ram_temp[(elm_BITSIZE_M_Rdata_ram*(i+1))-1:elm_BITSIZE_M_Rdata_ram*i] = 0;
-      if(base_addr &lt;= Mout_addr_ram_queue_curr[(elm_BITSIZE_Mout_addr_ram*(i+1))-1+(MEM_DELAY_READ-1)*BITSIZE_Mout_addr_ram:
-                                               elm_BITSIZE_Mout_addr_ram*i+(MEM_DELAY_READ-1)*BITSIZE_Mout_addr_ram])
-      begin
-        M_Rdata_ram_temp[(elm_BITSIZE_M_Rdata_ram*(i+1))-1:elm_BITSIZE_M_Rdata_ram*i] = m_utils.read(addr);
-      end
-    end
-    always @(*)
+  begin
+    reg [BITSIZE_oe-1:0] oe;
+    reg [BITSIZE_we-1:0] we;
+    ptr_t Waddr, Raddr;
+    shortint unsigned Wsize;
+    reg [BITSIZE_Wdata-1:0] Wdata;
+    reg [BITSIZE_ready-1:0] Wready, Rready;
+    reg [BITSIZE_Rdata-1:0] Rdata;
+    assign oe = queue_next[(MEM_DELAY_READ-1)*BITSIZE_chunk+BITSIZE_item*i+OFFSET_oe+:BITSIZE_oe];
+    assign we = queue_next[(MEM_DELAY_WRITE-1)*BITSIZE_chunk+BITSIZE_item*i+OFFSET_we+:BITSIZE_we];
+    assign Raddr = queue_next[(MEM_DELAY_READ-1)*BITSIZE_chunk+BITSIZE_item*i+OFFSET_addr+:BITSIZE_addr];
+    assign Waddr = queue_next[(MEM_DELAY_WRITE-1)*BITSIZE_chunk+BITSIZE_item*i+OFFSET_addr+:BITSIZE_addr];
+    assign Wsize = queue_next[(MEM_DELAY_WRITE-1)*BITSIZE_chunk+BITSIZE_item*i+OFFSET_Wsize+:BITSIZE_Wsize];
+    assign Wdata = queue_next[(MEM_DELAY_WRITE-1)*BITSIZE_chunk+BITSIZE_item*i+OFFSET_Wdata+:BITSIZE_Wdata];
+    assign M_DataRdy[BITSIZE_ready*i+:BITSIZE_ready] = Wready | Rready;
+    assign M_Rdata_ram[BITSIZE_Rdata*i+:BITSIZE_Rdata] = Rdata;
+    
+    assign queue[BITSIZE_item*i+:BITSIZE_item] = {
+      Mout_Wdata_ram[BITSIZE_Wdata*i+:BITSIZE_Wdata], 
+      Mout_data_ram_size[BITSIZE_Wsize*i+:BITSIZE_Wsize],
+      Mout_addr_ram[BITSIZE_addr*i+:BITSIZE_addr],
+      Mout_we_ram[BITSIZE_we*i+:BITSIZE_we],
+      Mout_oe_ram[BITSIZE_oe*i+:BITSIZE_oe]};
+    
+    if(MEM_DELAY_READ &gt; 1)
     begin
-      M_DataRdy_temp[i] = 0;
-      if(Mout_we_ram_queue_curr[CHANNELS_NUMBER*(MEM_DELAY_WRITE-1) + i] === 1&apos;b1)
-      begin
-        M_DataRdy_temp[i] = 
-          base_addr &lt;= Mout_addr_ram_queue_curr[(elm_BITSIZE_Mout_addr_ram*(i+1))-1+(MEM_DELAY_WRITE-1)*BITSIZE_Mout_addr_ram:
-                                                elm_BITSIZE_Mout_addr_ram*i+(MEM_DELAY_WRITE-1)*BITSIZE_Mout_addr_ram];
+      always@(posedge clock)
+      begin : read_channel
+        automatic reg [BITSIZE_Rdata-1:0] data;
+        Rready &lt;= 0;
+        Rdata &lt;= 0;
+        if(oe &amp;&amp; base_addr &lt;= Raddr)
+        begin
+          data = m_utils.read(Raddr);
+          Rready &lt;= 1;
+          Rdata &lt;= data;
+          $fwrite(dump_file, &quot;%0d,r,%0X,%0d,%0X\\n&quot;, i, Raddr, BITSIZE_Rdata, data);
+        end
       end
-      else if(Mout_oe_ram_queue_curr[CHANNELS_NUMBER*(MEM_DELAY_READ-1) + i] === 1&apos;b1)
-      begin
-        M_DataRdy_temp[i] = 
-          base_addr &lt;= Mout_addr_ram_queue_curr[(elm_BITSIZE_Mout_addr_ram*(i+1))-1+(MEM_DELAY_READ-1)*BITSIZE_Mout_addr_ram:
-                                                elm_BITSIZE_Mout_addr_ram*i+(MEM_DELAY_READ-1)*BITSIZE_Mout_addr_ram];
+    end
+    else
+    begin
+      assign Rready = oe &amp;&amp; base_addr &lt;= Raddr;
+      always@(negedge clock)
+      begin : read_channel
+        Rdata = 0;
+        if(oe &amp;&amp; base_addr &lt;= Raddr)
+        begin
+          Rdata = m_utils.read(Raddr);
+          $fwrite(dump_file, &quot;%0d,r,%0X,%0d,%0X\\n&quot;, i, Raddr, BITSIZE_Rdata, Rdata);
+        end
+      end
+    end
+
+    if(MEM_DELAY_WRITE &gt; 1)
+    begin
+      always@(posedge clock)
+      begin : write_channel
+        Wready &lt;= 0;
+        if(we &amp;&amp; base_addr &lt;= Waddr)
+        begin
+          Wready &lt;= 1;
+          m_utils.write(Wsize, Wdata, Waddr);
+          $fwrite(dump_file, &quot;%0d,w,%0X,%0d,%0X\\n&quot;, i, Waddr, Wsize, Wdata);
+        end
+      end
+    end
+    else
+    begin
+      assign Wready = we &amp;&amp; base_addr &lt;= Waddr;
+      always@(negedge clock)
+      begin : write_channel
+        if(we &amp;&amp; base_addr &lt;= Waddr)
+        begin
+          m_utils.write(Wsize, Wdata, Waddr);
+          $fwrite(dump_file, &quot;%0d,w,%0X,%0d,%0X\\n&quot;, i, Waddr, Wsize, Wdata);
+        end
       end
     end
   end
 endgenerate
-assign M_Rdata_ram = M_Rdata_ram_temp;
-assign M_DataRdy = M_DataRdy_temp;
 
 always @(posedge clock)
 begin
@@ -847,9 +825,9 @@ end"/>
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <NP_functionality IP_COMPONENT="arg_utils" LIBRARY="TestbenchArgMapMinimal index tgt_addr bitsize S_oe_ram S_we_ram S_addr_ram S_Wdata_ram S_data_ram_size Sout_Rdata_ram Sout_DataRdy" VERILOG_PROVIDED="reg [bitsize-1:0] val, val_next;
-reg oe, oe_next, we, we_next, rdy, start;
+reg we, we_next, rdy, start;
 reg [BITSIZE_S_addr_ram-1:0] addr, addr_next;
-reg [BITSIZE_S_data_ram-1:0] data, data_next;
+reg [BITSIZE_Sout_Rdata_ram-1:0] data, data_next;
 reg [BITSIZE_S_data_ram_size-1:0] data_size, data_size_next;
 
 arg_utils #(bitsize) a_utils();
@@ -858,8 +836,6 @@ initial
 begin
   val = 0;
   val_next = 0;
-  oe = 0;
-  oe_next = 0;
   we = 0;
   we_next = 0;
   addr = 0;
@@ -871,7 +847,7 @@ begin
   start = 0;
 end
 
-assign S_oe_ram = oe_next;
+assign S_oe_ram = 0;
 assign S_we_ram = we_next;
 assign S_addr_ram = addr_next;
 assign S_Wdata_ram = data_next;
@@ -881,14 +857,13 @@ assign start_port = start;
 
 always @(posedge clock) 
 begin
-  automatic reg active_tx = (oe_next) &amp; !rdy;
+  automatic reg active_tx = (we_next) &amp; !rdy;
   val &lt;= val_next;
-  oe &lt;= active_tx;
-  we &lt;= we_next &amp; active_tx;
+  we &lt;= active_tx;
   addr &lt;= addr_next &amp; {BITSIZE_S_addr_ram{active_tx}};
-  data &lt;= data_next &amp; {BITSIZE_S_data_ram{active_tx}};
+  data &lt;= data_next &amp; {BITSIZE_Sout_Rdata_ram{active_tx}};
   data_size &lt;= data_size_next &amp; {BITSIZE_S_data_ram_size{active_tx}};
-  start &lt;= rdy &amp; oe_next;
+  start &lt;= rdy &amp; we_next;
   if(1RESET_VALUE)
   begin
     val &lt;= a_utils.getarg(index);
@@ -898,14 +873,12 @@ end
 always @(*)
 begin
   val_next = val;
-  oe_next = oe;
   we_next = we;
   addr_next = addr;
   data_next = data;
   data_size_next = data_size;
   if(i_start_port)
   begin
-    oe_next = 1;
     we_next = 1;
     addr_next = tgt_addr;
     data_next[bitsize-1:0] = val;
@@ -958,15 +931,13 @@ end"/>
           <port_o id="Sout_DataRdy" dir="IN" is_memory="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="TestbenchStartMapMinimal tgt_addr S_oe_ram S_we_ram S_addr_ram S_Wdata_ram S_data_ram_size Sout_Rdata_ram Sout_DataRdy" VERILOG_PROVIDED="reg oe, oe_next, we, we_next, rdy, start;
+          <NP_functionality LIBRARY="TestbenchStartMapMinimal tgt_addr S_oe_ram S_we_ram S_addr_ram S_Wdata_ram S_data_ram_size Sout_Rdata_ram Sout_DataRdy" VERILOG_PROVIDED="reg we, we_next, rdy, start;
 reg [BITSIZE_S_addr_ram-1:0] addr, addr_next;
-reg [BITSIZE_S_data_ram-1:0] data, data_next;
+reg [BITSIZE_Sout_Rdata_ram-1:0] data, data_next;
 reg [BITSIZE_S_data_ram_size-1:0] data_size, data_size_next;
 
 initial
 begin
-  oe = 0;
-  oe_next = 0;
   we = 0;
   we_next = 0;
   addr = 0;
@@ -978,7 +949,7 @@ begin
   start = 0;
 end
 
-assign S_oe_ram = oe_next;
+assign S_oe_ram = 0;
 assign S_we_ram = we_next;
 assign S_addr_ram = addr_next;
 assign S_Wdata_ram = data_next;
@@ -988,29 +959,26 @@ assign start_port = start;
 
 always @(posedge clock) 
 begin
-  automatic reg active_tx = (oe_next) &amp; !rdy;
-  oe &lt;= active_tx;
-  we &lt;= we_next &amp; active_tx;
+  automatic reg active_tx = (we_next) &amp; !rdy;
+  we &lt;= active_tx;
   addr &lt;= addr_next &amp; {BITSIZE_S_addr_ram{active_tx}};
-  data &lt;= data_next &amp; {BITSIZE_S_data_ram{active_tx}};
+  data &lt;= data_next &amp; {BITSIZE_Sout_Rdata_ram{active_tx}};
   data_size &lt;= data_size_next &amp; {BITSIZE_S_data_ram_size{active_tx}};
-  start &lt;= rdy &amp; oe_next;
+  start &lt;= rdy &amp; we_next;
 end
 
 always @(*)
 begin
-  oe_next = oe;
   we_next = we;
   addr_next = addr;
   data_next = data;
   data_size_next = data_size;
   if(i_start_port)
   begin
-    oe_next = 1;
     we_next = 1;
     addr_next = tgt_addr;
-    data_next[0:0] = 1;
-    data_size_next = bitsize;
+    data_next = 1;
+    data_size_next = 1;
   end
 end"/>
         </component_o>
@@ -1254,7 +1222,7 @@ begin
     stb_next = 1;
     we_next = 1;
     addr_next = tgt_addr;
-    data_next[0:0] = 1;
+    data_next = 1;
     sel_next = {bytesize{1&apos;b1}};
   end
 end"/>
