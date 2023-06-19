@@ -91,7 +91,7 @@ static const std::string& create_project_file(const std::string& project_filenam
       }
       else if(extension == "v" || extension == "V" || extension == "sv")
       {
-         prj_file << "VERILOG";
+         prj_file << "SV";
       }
       else
       {
@@ -128,7 +128,7 @@ void VIVADO_xsim_wrapper::GenerateScript(std::ostringstream& script, const std::
 
    const auto prj_file = create_project_file(XSIM_SUBDIR + suffix + "/" + top_filename + ".prj", file_list);
    std::string libtb_filename = GenerateLibraryBuildScript(script, "${work_dir}", cflags);
-   libtb_filename.erase(12, libtb_filename.size() - 15);
+   libtb_filename = libtb_filename.substr(12, libtb_filename.size() - 15);
    const auto vflags = [&]() {
       std::string flags;
       if(cflags.find("-m32") != std::string::npos)
