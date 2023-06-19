@@ -211,8 +211,12 @@ unsigned long long int SimulationTool::DetermineCycles(unsigned long long int& a
       {
          const auto times = SplitString(start_end, "|");
          THROW_ASSERT(times.size() == 2, "Unexpected simulation time format");
-         const auto start_time = boost::lexical_cast<unsigned long long>(times.at(0));
-         const auto end_time = boost::lexical_cast<unsigned long long>(times.at(1));
+         unsigned long long start_time, end_time;
+         if(!boost::conversion::try_lexical_convert<unsigned long long>(times.at(0), start_time) ||
+            !boost::conversion::try_lexical_convert<unsigned long long>(times.at(1), end_time))
+         {
+            THROW_ERROR("Unable to parse simulation time report: check simulator output for errors.");
+         }
          THROW_ASSERT(end_time >= start_time, "Simulation went back in time");
          const auto sim_time = static_cast<long double>(end_time - start_time);
          const auto sim_cycles = static_cast<unsigned long long int>(std::ceil(sim_time / sim_period));
@@ -238,8 +242,12 @@ unsigned long long int SimulationTool::DetermineCycles(unsigned long long int& a
       {
          const auto times = SplitString(start_end, "|");
          THROW_ASSERT(times.size() == 2, "Unexpected simulation time format");
-         const auto start_time = boost::lexical_cast<unsigned long long>(times.at(0));
-         const auto end_time = boost::lexical_cast<unsigned long long>(times.at(1));
+         unsigned long long start_time, end_time;
+         if(!boost::conversion::try_lexical_convert<unsigned long long>(times.at(0), start_time) ||
+            !boost::conversion::try_lexical_convert<unsigned long long>(times.at(1), end_time))
+         {
+            THROW_ERROR("Unable to parse simulation time report: check simulator output for errors.");
+         }
          THROW_ASSERT(end_time >= start_time, "Profiling went back in time");
          const auto sim_time = static_cast<long double>(end_time - start_time);
          const auto sim_cycles = static_cast<unsigned long long int>(std::ceil(sim_time / sim_period));
