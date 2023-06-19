@@ -112,13 +112,13 @@ struct mdpi_params_t
 enum mdpi_state
 {
    MDPI_UNDEFINED = 0,
-   MDPI_SIM_READY,
-   MDPI_COSIM_INIT,
-   MDPI_SIM_SETUP,
-   MDPI_SIM_RUNNING,
-   MDPI_SIM_END,
-   MDPI_COSIM_END,
-   MDPI_COSIM_ABORT,
+   MDPI_SIM_READY = 1,
+   MDPI_COSIM_INIT = 2,
+   MDPI_SIM_SETUP = 4,
+   MDPI_SIM_RUNNING = 8,
+   MDPI_SIM_END = 16,
+   MDPI_COSIM_END = 32,
+   MDPI_COSIM_ABORT = 64,
 };
 
 #define mdpi_state_str(s)                                       \

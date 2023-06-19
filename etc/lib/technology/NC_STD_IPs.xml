@@ -215,7 +215,7 @@ endfunction"/>
           <structural_type_descriptor id_type="TestbenchFSM"/>
           <parameter name="RESFILE">&quot;&quot;results.txt&quot;&quot;</parameter>
           <parameter name="RESET_ACTIVE">0</parameter>
-          <parameter name="CLOCK_PERIOD">10.0</parameter>
+          <parameter name="CLOCK_PERIOD">2.0</parameter>
           <parameter name="MAX_SIM_CYCLES">200000000</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
@@ -235,16 +235,15 @@ import &quot;DPI-C&quot; function void m_init();
 import &quot;DPI-C&quot; function int unsigned m_next(input int unsigned state);
 import &quot;DPI-C&quot; function int m_fini();
 
-enum bit[2:0] {
-  SIM_READY = 1,
-  COSIM_INIT,
-  SIM_SETUP,
-  SIM_RUNNING,
-  SIM_END,
-  COSIM_END,
-  COSIM_ABORT
-} mdpi_state;
-reg [2:0] state, state_next, state_succ, state_succ_next;
+parameter [6:0] 
+  SIM_READY   =7'd1,
+  COSIM_INIT  =7'd2,
+  SIM_SETUP   =7'd4,
+  SIM_RUNNING =7'd8,
+  SIM_END     =7'd16,
+  COSIM_END   =7'd32,
+  COSIM_ABORT =7'd64;
+reg [$bits(SIM_READY)-1:0] state, state_next, state_succ, state_succ_next;
 
 reg rst, rst_next, start, start_next;
 time over_time;
@@ -290,11 +289,11 @@ begin
   case(state_next)
   SIM_READY:
     begin
-      automatic integer unsigned next_state = m_next(int&apos;(COSIM_INIT));
+      automatic integer unsigned next_state = m_next(COSIM_INIT);
       `ifndef NDEBUG
       $display(&quot;Sim: next state: %0d&quot;, next_state);
       `endif
-      state_succ &lt;= next_state[2:0];
+      state_succ &lt;= next_state[$bits(state_succ)-1:0];
     end
   SIM_SETUP:
     begin

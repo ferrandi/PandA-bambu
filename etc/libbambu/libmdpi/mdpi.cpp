@@ -104,7 +104,7 @@ EXTERN_C unsigned int m_next(unsigned int state)
          state_next = __m_wait_for(MDPI_ENTITY_SIM);
          break;
       default:
-         error("Sim: Unexpected state received from simulator: %s\n", mdpi_state_str(state));
+         error("Sim: Unexpected state received from simulator: %s (%u)\n", mdpi_state_str(state), state);
          exit(EXIT_FAILURE);
          break;
    }
