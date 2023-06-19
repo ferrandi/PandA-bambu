@@ -47,7 +47,7 @@
 
 EXTERN_C void __m_arg_init(uint8_t argcount);
 EXTERN_C void __m_arg_fini();
-EXTERN_C void __m_setarg(uint8_t index, bptr_t bits, uint16_t bitsize);
+EXTERN_C void __m_setarg(uint8_t index, void* bits, uint16_t bitsize);
 EXTERN_C void __m_setptrarg(uint8_t index, bptr_t* bits, uint16_t bitsize);
 EXTERN_C void __m_memmap_init();
 EXTERN_C void __m_memmap(ptr_t dst, void* src);

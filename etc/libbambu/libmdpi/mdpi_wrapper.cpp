@@ -77,7 +77,7 @@ void __m_arg_fini()
    __m_params.size = 0;
 }
 
-void __m_setarg(uint8_t index, bptr_t bits, uint16_t bitsize)
+void __m_setarg(uint8_t index, void* bits, uint16_t bitsize)
 {
    if(index >= __m_params.size)
    {
@@ -85,7 +85,7 @@ void __m_setarg(uint8_t index, bptr_t bits, uint16_t bitsize)
       exit(EXIT_FAILURE);
    }
    debug("Parameter %u is %u bits at " BPTR_FORMAT "\n", index, bitsize, bptr_to_int(bits));
-   __m_params.prms[index].bits = bits;
+   __m_params.prms[index].bits = static_cast<bptr_t>(bits);
    __m_params.prms[index].bitsize = bitsize;
 }
 
