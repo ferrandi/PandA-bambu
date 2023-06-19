@@ -563,6 +563,10 @@ namespace llvm
                   case llvm::Intrinsic::lifetime_start:
                   case llvm::Intrinsic::lifetime_end:
                   case llvm::Intrinsic::dbg_value:
+#ifdef VVD
+                  case llvm::Intrinsic::directive_scope_entry:
+                  case llvm::Intrinsic::directive_scope_exit:
+#endif
                      return assignCode(t, GT(GIMPLE_NOPMEM));
                   case llvm::Intrinsic::memcpy:
                   case llvm::Intrinsic::memset:
@@ -828,7 +832,6 @@ namespace llvm
             report_fatal_error("Plugin Error");
          }
 #endif
-
          case llvm::Intrinsic::rint:
          {
             if(fd->getReturnType()->isFloatTy())
@@ -871,6 +874,16 @@ namespace llvm
             fd->print(llvm::errs());
             report_fatal_error("Plugin Error");
          }
+#ifdef VVD
+         case llvm::Intrinsic::directive_scope_entry:
+         {
+            return "directive_scope_entry";
+         }
+         case llvm::Intrinsic::directive_scope_exit:
+         {
+            return "directive_scope_exit";
+         }
+#endif
          default:
             fd->print(llvm::errs());
             report_fatal_error("Plugin Error");
@@ -5513,7 +5526,12 @@ namespace llvm
          case llvm::Intrinsic::bitreverse:
 #endif
 #endif
-            return true;
+#ifdef VVD
+         case llvm::Intrinsic::directive_scope_entry:
+         case llvm::Intrinsic::directive_scope_exit:
+#endif
+         return true;
+
          default:
             return false;
       }
@@ -6361,10 +6379,14 @@ namespace llvm
       {
          PRINT_DBG("Building metadata\n");
          buildMetaDataMap(M);
+         PRINT_DBG("Metadata built\n");
 
+         PRINT_DBG("Rebuilding Constants\n");
          res |= RebuildConstants(M);
 
+         PRINT_DBG("Lowering Intrinsics\n");
          res |= lowerIntrinsics(M);
+         PRINT_DBG("done\n");
 #if __clang_major__ < 16
 #if HAVE_LIBBDD
          if(!onlyGlobals)
@@ -6383,6 +6405,7 @@ namespace llvm
          }
 #endif
 #endif
+         PRINT_DBG("done\n");
       }
 
       if(!earlyAnalysis)
