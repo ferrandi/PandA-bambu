@@ -86,6 +86,8 @@
 
 #define CST_STR_BAMBU_TESTBENCH "bambu_testbench"
 
+#define SETUP_PORT_NAME "setup_port"
+
 TestbenchGeneration::TestbenchGeneration(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr,
                                          const DesignFlowManagerConstRef _design_flow_manager)
     : HLS_step(_parameters, _HLSMgr, _design_flow_manager, HLSFlowStep_Type::TESTBENCH_GENERATION),
@@ -251,6 +253,7 @@ DesignFlowStep_Status TestbenchGeneration::Exec()
    THROW_ASSERT(dut_done, "");
    const auto fsm_done = tb_fsm->find_member(DONE_PORT_NAME, port_o_K, tb_fsm);
    add_internal_connection(fsm_done, dut_done);
+   const auto fsm_setup = tb_fsm->find_member(SETUP_PORT_NAME, port_o_K, tb_fsm);
    auto fsm_start = tb_fsm->find_member(START_PORT_NAME, port_o_K, tb_fsm);
 
    std::list<structural_objectRef> if_modules;
@@ -516,11 +519,11 @@ DesignFlowStep_Status TestbenchGeneration::Exec()
                            "---" + in_port->get_path() + " <-> " + fsm_reset->get_path());
             add_internal_connection(in_port, fsm_reset);
          }
-         else if(in_port->get_id() == DONE_PORT_NAME)
+         else if(in_port->get_id() == SETUP_PORT_NAME)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level,
-                           "---" + in_port->get_path() + " <-> " + dut_done->get_path());
-            add_internal_connection(in_port, dut_done);
+                           "---" + in_port->get_path() + " <-> " + fsm_setup->get_path());
+            add_internal_connection(in_port, fsm_setup);
          }
          else
          {

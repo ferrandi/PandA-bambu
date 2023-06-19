@@ -215,6 +215,7 @@ endfunction"/>
           <structural_type_descriptor id_type="TestbenchFSM"/>
           <parameter name="RESFILE">&quot;&quot;results.txt&quot;&quot;</parameter>
           <parameter name="RESET_ACTIVE">0</parameter>
+          <parameter name="RESET_CYCLES">1</parameter>
           <parameter name="CLOCK_PERIOD">2.0</parameter>
           <parameter name="MAX_SIM_CYCLES">200000000</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
@@ -226,10 +227,13 @@ endfunction"/>
           <port_o id="reset" dir="OUT">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
+          <port_o id="setup_port" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
           <port_o id="start_port" dir="OUT">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="TestbenchFSM RESFILE RESET_ACTIVE CLOCK_PERIOD MAX_SIM_CYCLES" VERILOG_PROVIDED="
+          <NP_functionality LIBRARY="TestbenchFSM RESFILE RESET_ACTIVE RESET_CYCLES CLOCK_PERIOD MAX_SIM_CYCLES" VERILOG_PROVIDED="
 
 import &quot;DPI-C&quot; function void m_init();
 import &quot;DPI-C&quot; function int unsigned m_next(input int unsigned state);
@@ -245,7 +249,8 @@ parameter [6:0]
   COSIM_ABORT =7'd64;
 reg [$bits(SIM_READY)-1:0] state, state_next, state_succ, state_succ_next;
 
-reg rst, rst_next, start, start_next;
+reg rst, rst_next, setup, setup_next, start, start_next;
+integer rst_count, rst_count_next;
 time over_time;
 
 initial
@@ -267,8 +272,12 @@ begin
   state_succ_next = SIM_READY;
   rst = !RESET_ACTIVE;
   rst_next = !RESET_ACTIVE;
-  start = 1&apos;b0;
-  start_next = 1&apos;b0;
+  rst_count = RESET_CYCLES - 1;
+  rst_count_next = RESET_CYCLES - 1;
+  setup = 0;
+  setup_next = 0;
+  start = 0;
+  start_next = 0;
   over_time = 0;
   
   $display(&quot;Results file: %s&quot;, RESFILE);
@@ -278,6 +287,7 @@ begin
 end
 
 assign reset = rst;
+assign setup_port = setup;
 assign start_port = start;
 
 always @(posedge clock)
@@ -285,6 +295,8 @@ begin
   state &lt;= state_next;
   state_succ &lt;= state_succ_next;
   rst &lt;= rst_next;
+  rst_count &lt;= rst_count_next;
+  setup &lt;= setup_next;
   start &lt;= start_next;
   case(state_next)
   SIM_READY:
@@ -360,6 +372,8 @@ end
 always @(*)
 begin
   rst_next = rst;
+  rst_count_next = rst_count;
+  setup_next = setup;
   start_next = start;
   state_next = state;
   state_succ_next = state_succ;
@@ -367,20 +381,31 @@ begin
   SIM_READY:
     begin
       state_next = state_succ;
-      if(state_next == int&apos;(SIM_SETUP))
+      if(state_next == SIM_SETUP)
       begin
         rst_next = RESET_ACTIVE;
+        setup_next = RESET_CYCLES == 1;
+        rst_count_next = RESET_CYCLES - 1;
       end
     end
   SIM_SETUP:
     begin
-      state_next = SIM_RUNNING;
-      rst_next = !RESET_ACTIVE;
-      start_next = 1&apos;b1;
+      if(rst_count > 0)
+      begin
+        setup_next = rst_count == 1;
+        rst_count_next = rst_count - 1;
+      end
+      else
+      begin
+        state_next = SIM_RUNNING;
+        rst_next = !RESET_ACTIVE;
+        setup_next = 0;
+        start_next = 1;
+      end
     end
   SIM_RUNNING:
     begin
-      start_next = 1&apos;b0;
+      start_next = 0;
       if(done_port)
       begin
         state_next = SIM_END;
@@ -632,9 +657,6 @@ end"/>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
-          <port_o id="reset" dir="IN">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-          </port_o>
           <port_o id="cyc_om" dir="IN" is_memory="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
@@ -746,7 +768,7 @@ end
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
-          <port_o id="reset" dir="IN">
+          <port_o id="setup_port" dir="IN">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <port_o id="val_port" dir="OUT">
@@ -765,7 +787,7 @@ end
 always @(posedge clock) 
 begin
   val &lt;= val_next;
-  if(1RESET_VALUE)
+  if(setup_port)
   begin
     val &lt;= m_utils.getarg(index);
   end
@@ -793,7 +815,7 @@ end"/>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
-          <port_o id="reset" dir="IN">
+          <port_o id="setup_port" dir="IN">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <port_o id="i_start_port" dir="IN">
@@ -863,7 +885,7 @@ begin
   data &lt;= data_next &amp; {BITSIZE_Sout_Rdata_ram{active_tx}};
   data_size &lt;= data_size_next &amp; {BITSIZE_S_data_ram_size{active_tx}};
   start &lt;= rdy &amp; we_next;
-  if(1RESET_VALUE)
+  if(setup_port)
   begin
     val &lt;= a_utils.getarg(index);
   end
@@ -898,9 +920,6 @@ end"/>
           <structural_type_descriptor id_type="TestbenchStartMapMinimal"/>
           <parameter name="tgt_addr">1024</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-          </port_o>
-          <port_o id="reset" dir="IN">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <port_o id="i_start_port" dir="IN">
@@ -998,7 +1017,7 @@ end"/>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
-          <port_o id="reset" dir="IN">
+          <port_o id="setup_port" dir="IN">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <port_o id="i_start_port" dir="IN">
@@ -1084,7 +1103,7 @@ begin
   data &lt;= data_next &amp; {BITSIZE_dat_is{wait_tx}};
   sel &lt;= sel_next &amp; {BITSIZE_sel_is{wait_tx}};
   start &lt;= ack &amp; cyc_next;
-  if(1RESET_VALUE)
+  if(setup_port)
   begin
     val &lt;= a_utils.getarg(index);
   end
@@ -1123,9 +1142,6 @@ end"/>
           <structural_type_descriptor id_type="TestbenchStartMapWishboneB4"/>
           <parameter name="tgt_addr">1024</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-          </port_o>
-          <port_o id="reset" dir="IN">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <port_o id="i_start_port" dir="IN">
@@ -1277,7 +1293,7 @@ end"/>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
-          <port_o id="reset" dir="IN">
+          <port_o id="setup_port" dir="IN">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <NP_functionality IP_COMPONENT="arg_utils,mem_utils" LIBRARY="TestbenchArray index WRITE_DELAY READ_DELAY" VERILOG_GENERATOR="TestbenchArrayModuleGenerator"/>
@@ -1297,7 +1313,7 @@ end"/>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
-          <port_o id="reset" dir="IN">
+          <port_o id="setup_port" dir="IN">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <port_o id="done_port" dir="IN">
@@ -1320,7 +1336,7 @@ end"/>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
-          <port_o id="reset" dir="IN">
+          <port_o id="setup_port" dir="IN">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <port_o id="done_port" dir="IN">
@@ -1343,7 +1359,7 @@ end"/>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
-          <port_o id="reset" dir="IN">
+          <port_o id="setup_port" dir="IN">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <port_o id="done_port" dir="IN">
@@ -1366,7 +1382,7 @@ end"/>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
-          <port_o id="reset" dir="IN">
+          <port_o id="setup_port" dir="IN">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <port_o id="done_port" dir="IN">
@@ -1389,7 +1405,7 @@ end"/>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
-          <port_o id="reset" dir="IN">
+          <port_o id="setup_port" dir="IN">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <port_o id="done_port" dir="IN">
@@ -1412,7 +1428,7 @@ end"/>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
-          <port_o id="reset" dir="IN">
+          <port_o id="setup_port" dir="IN">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <port_o id="done_port" dir="IN">
@@ -1435,7 +1451,7 @@ end"/>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
-          <port_o id="reset" dir="IN">
+          <port_o id="setup_port" dir="IN">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <port_o id="done_port" dir="IN">
@@ -1458,7 +1474,7 @@ end"/>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
-          <port_o id="reset" dir="IN">
+          <port_o id="setup_port" dir="IN">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <port_o id="done_port" dir="IN">

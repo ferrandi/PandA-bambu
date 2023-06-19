@@ -107,7 +107,7 @@ end
 
 always @(posedge clock)
 begin
-  if(1RESET_VALUE)
+  if(setup_port)
   begin
     automatic ptr_t addr = a_utils.getptrarg(index);
     val <= m_utils.read(addr);
@@ -153,7 +153,7 @@ end
 
 always @(posedge clock)
 begin
-  if(1RESET_VALUE)
+  if(setup_port)
   begin
     addr <= a_utils.getptrarg(index);
     enable <= 1'b1;
