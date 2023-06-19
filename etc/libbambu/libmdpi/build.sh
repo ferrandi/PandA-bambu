@@ -5,7 +5,7 @@
 #       object file, top function wrapper object file and output 
 #       flag for the shared object file (any additional options too)
 #     - CFLAGS environment variable with include path to svdpi.h, 
-#       -m flag, and -D<ACTIVE_SIM>
+#       -m flag, and -D<ACTIVE_SIM> (additional flags will be discarded)
 # i.e.: build.sh user_tb.o wrapper.o -o libtb.so
 # Optional arguments:
 #     - CC environment variable is used to specify the compiler
@@ -16,11 +16,6 @@
 #####################################################################
 script_dir="$(dirname $(readlink -e $0))"
 args="$@"
-
-if [ -z "$CFLAGS" ]; then
-   echo "CFLAGS not provided"
-   exit 1
-fi
 
 if [ -z "$CC" ]; then
    echo "Compiler not provided, fallback to gcc"
@@ -37,27 +32,9 @@ m_option="$(grep -oE '(-m[0-9]+)' <<< ${CFLAGS})"
 if [ -z "${m_option}" ]; then
    echo "-m option not provided, default will be used $($CC -dumpmachine)"
 fi
-CFLAGS="$(sed -E "s/--std=[^[:space:]]+[[:space:]]*//g" <<< ${CFLAGS})"
-CFLAGS+=" -fPIC -fexceptions -fnon-call-exceptions -O2"
-case "$CC" in
-   */gcc*) ;&
-   */xsc*)
-   unsupported_flags=( "-fexcess-precision=standard" )
-   echo "Removing unsupported C flags: ${unsupported_flags[*]}"
-   for flag in ${unsupported_flags[@]}
-   do
-      CFLAGS="${CFLAGS/$flag}"
-   done
-   ;;
-   *) ;;
-esac
-if [ "$CC" = "xsc" ]; then
-   echo "Xilinx XCS compiler detected"
-   CFLAGS="${CFLAGS/(/\\(}"
-   CFLAGS="${CFLAGS/)/\\)}"
-   IFS=' ' read -r -a CFLAGS <<< "${CFLAGS}"
-   CFLAGS="${CFLAGS[@]/#/-gcc_compile_options=}"
-fi
+includes="$(grep -oE '((-I|-isystem) ?[^ ]+)' <<< ${CFLAGS} | tr '\n' ' ')"
+defines="$(grep -oE '(-D(\\.|[^ ])+)' <<< ${CFLAGS} | tr '\n' ' ')"
+CFLAGS="${m_option} -fPIC -fexceptions -fnon-call-exceptions -funroll-loops -O3 ${includes} ${defines}"
 
 objs=($(echo "$@" | grep -oE "[^ ]+\.o"))
 for obj in "${objs[@]}"
@@ -86,15 +63,14 @@ do
    fi
 done
 
-LDFLAGS="$(grep -oE '( -l|-W,l)\w+' <<< ${CFLAGS}) -lm"
+LDFLAGS="-lpthread -lstdc++ -lm"
 if [ "$LD" = "xsc" ]; then
    IFS=' ' read -r -a LDFLAGS <<< "${LDFLAGS}"
-   LDFLAGS="${LDFLAGS[@]/#/-gcc_link_options=}"
-   LDFLAGS+=" -shared -work work -gcc_link_options=-lpthread -gcc_link_options=-lstdc++"
+   LDFLAGS="-shared -work work ${LDFLAGS[@]/#/-gcc_link_options=}"
    objs=( "${objs[@]/#/-i }" )
 else
-   LDFLAGS+=" ${m_option} -shared -fPIC -Bsymbolic -Wl,-z,defs -lpthread -lstdc++"
+   LDFLAGS="${m_option} -shared -fPIC -Bsymbolic -Wl,-z,defs ${LDFLAGS}"
 fi
 
-$LD ${objs[*]} ${LDFLAGS} ${args}
+$LD ${objs[*]} ${args} ${LDFLAGS}
 rm -rf ${build_dir}
