@@ -115,11 +115,11 @@ DesignFlowStep_Status CTestbenchExecution::Exec()
    const auto default_compiler = parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler);
    // NOTE: starting from version 13 on it seems clang is not respecting the -fno-strict-aliasing flag generating
    // incorrect code when type punning is present
-   const auto opt_lvl = default_compiler == CompilerWrapper_CompilerTarget::CT_I386_CLANG13 ||
+   const auto opt_set = default_compiler == CompilerWrapper_CompilerTarget::CT_I386_CLANG13 ||
                                 default_compiler == CompilerWrapper_CompilerTarget::CT_I386_CLANG16 ?
                             CompilerWrapper_OptimizationSet::O0 :
                             CompilerWrapper_OptimizationSet::O2;
-   const CompilerWrapperConstRef compiler_wrapper(new CompilerWrapper(parameters, default_compiler, opt_lvl));
+   const CompilerWrapperConstRef compiler_wrapper(new CompilerWrapper(parameters, default_compiler, opt_set));
    const auto is_clang = CompilerWrapper::isClangCheck(default_compiler);
    std::string compiler_flags = "-fwrapv -flax-vector-conversions -msse2 -mfpmath=sse -fno-strict-aliasing "
                                 "-D'__builtin_bambu_time_start()=' -D'__builtin_bambu_time_stop()=' ";

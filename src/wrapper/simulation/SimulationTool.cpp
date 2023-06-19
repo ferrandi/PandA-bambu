@@ -317,8 +317,8 @@ std::string SimulationTool::GenerateLibraryBuildScript(std::ostringstream& scrip
                                                        std::string& cflags) const
 {
    const auto default_compiler = Param->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler);
-   const auto opt_lvl = Param->getOption<CompilerWrapper_OptimizationSet>(OPT_compiler_opt_level);
-   const CompilerWrapperConstRef compiler_wrapper(new CompilerWrapper(Param, default_compiler, opt_lvl));
+   const auto opt_set = Param->getOption<CompilerWrapper_OptimizationSet>(OPT_gcc_optimization_set);
+   const CompilerWrapperConstRef compiler_wrapper(new CompilerWrapper(Param, default_compiler, opt_set));
 
    const auto extra_compiler_flags = [&]() {
       std::string flags = cflags +
@@ -406,12 +406,13 @@ std::string SimulationTool::GenerateLibraryBuildScript(std::ostringstream& scrip
       const auto m_pp_top_fname = add_fname_prefix("__m_pp_");
       const auto pp_file = boost::filesystem::path(Param->getOption<std::string>(OPT_pretty_print));
       const auto pp_fileo = output_dir + "/" + pp_file.stem().string() + ".o";
-      script << "${CC} -c ${CFLAGS} -fno-strict-aliasing -fPIC -o " << pp_fileo << " " << pp_file.string() << "\n"
-             << "objcopy --keep-global-symbol " << top_fname << " $(nm " << pp_fileo
-             << " | grep -o '[^[:space:]]*get_pc_thunk[^[:space:]]*' | sed 's/^/--keep-global-symbol /' | tr '\n' ' ') "
-             << pp_fileo << "\n"
-             << "objcopy --redefine-sym " << top_fname << "=" << m_pp_top_fname << " " << pp_fileo << "\n"
-             << "objs+=(\"" << pp_fileo << "\")\n\n";
+      script
+          << "${CC} -c ${CFLAGS} -fno-strict-aliasing -fPIC -o " << pp_fileo << " " << pp_file.string() << "\n"
+          << "objcopy --keep-global-symbol " << top_fname << " $(nm " << pp_fileo
+          << " | grep -o '[^[:space:]]*get_pc_thunk[^[:space:]]*' | sed 's/^/--keep-global-symbol /' | tr '\\n' ' ') "
+          << pp_fileo << "\n"
+          << "objcopy --redefine-sym " << top_fname << "=" << m_pp_top_fname << " " << pp_fileo << "\n"
+          << "objs+=(\"" << pp_fileo << "\")\n\n";
    }
 
    const auto dpi_cwrapper_file =
