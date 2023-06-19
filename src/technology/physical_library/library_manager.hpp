@@ -48,8 +48,8 @@
 #include "config_HAVE_FROM_LIBERTY.hpp"
 #include "config_HAVE_LIBRARY_COMPILER.hpp"
 
-#include <boost/lexical_cast.hpp>
 #include "refcount.hpp"
+#include <boost/lexical_cast.hpp>
 
 /**
  * @name Forward declarations.
