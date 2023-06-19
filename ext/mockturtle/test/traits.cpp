@@ -44,8 +44,8 @@ TEST_CASE( "specialize functions with enable_if", "[traits]" )
   uint64_t storage;
   dummy_network_with_compute s( storage );
 
-  std::vector<bool> bools{{true, false, true}};
-  std::vector<uint32_t> ints{{1, 2, 3, 4}};
+  std::vector<bool> bools{ { true, false, true } };
+  std::vector<uint32_t> ints{ { 1, 2, 3, 4 } };
 
   CHECK( is_network_type_v<dummy_network_with_compute> == true );
   CHECK( has_compute_v<dummy_network_with_compute, bool> == true );

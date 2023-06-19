@@ -82,7 +82,7 @@ int ToolManager::execute_command(const std::string& _command_, const std::string
    /// on Ubuntu sh is different from bash so we enforce it
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Executing command: " + _command_);
    THROW_ASSERT(!log_file.empty(), "Log file not set");
-   int ret = PandaSystem(Param, _command_, log_file);
+   int ret = PandaSystem(Param, _command_, true, log_file);
    if(IsError(ret))
    {
       if(permissive)

@@ -1,5 +1,5 @@
 /* mockturtle: C++ logic network library
- * Copyright (C) 2018-2021  EPFL
+ * Copyright (C) 2018-2022  EPFL
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -29,6 +29,7 @@
 
   \author Heinz Riener
   \author Mathias Soeken
+  \author Marcel Walter
 */
 
 #pragma once
@@ -68,7 +69,7 @@ public: /* callbacks */
     {
       return "box";
     }
-    else if ( ntk.is_pi( n ) )
+    else if ( ntk.is_ci( n ) )
     {
       return "triangle";
     }
@@ -97,7 +98,7 @@ public: /* callbacks */
 
   virtual std::string node_fillcolor( Ntk const& ntk, node<Ntk> const& n ) const
   {
-    return ( ntk.is_constant( n ) || ntk.is_pi( n ) ) ? "snow2" : "white";
+    return ( ntk.is_constant( n ) || ntk.is_ci( n ) ) ? "snow2" : "white";
   }
 
   virtual std::string po_fillcolor( Ntk const& ntk, uint32_t i ) const
@@ -158,7 +159,7 @@ public:
     {
       if ( ntk.is_maj( n ) )
       {
-        std::string label{"MAJ"};
+        std::string label{ "MAJ" };
         ntk.foreach_fanin( n, [&]( auto const& f ) {
           if ( ntk.is_constant( ntk.get_node( f ) ) )
           {
@@ -204,6 +205,22 @@ public:
       }
     }
 
+    if constexpr ( has_is_buf_v<Ntk> )
+    {
+      if ( ntk.is_buf( n ) && !ntk.is_ci( n ) )
+      {
+        return "BUF";
+      }
+    }
+
+    if constexpr ( has_is_crossing_v<Ntk> )
+    {
+      if ( ntk.is_crossing( n ) )
+      {
+        return "CROSS";
+      }
+    }
+
     return default_dot_drawer<Ntk>::node_label( ntk, n );
   }
 
@@ -237,7 +254,7 @@ public:
     {
       if ( ntk.is_maj( n ) )
       {
-        std::string color{"lightsalmon"};
+        std::string color{ "lightsalmon" };
         ntk.foreach_fanin( n, [&]( auto const& f ) {
           if ( ntk.is_constant( ntk.get_node( f ) ) )
           {
@@ -283,6 +300,22 @@ public:
       }
     }
 
+    if constexpr ( has_is_buf_v<Ntk> )
+    {
+      if ( ntk.is_buf( n ) && !ntk.is_ci( n ) )
+      {
+        return "palegoldenrod";
+      }
+    }
+
+    if constexpr ( has_is_crossing_v<Ntk> )
+    {
+      if ( ntk.is_crossing( n ) )
+      {
+        return "palegoldenrod";
+      }
+    }
+
     return default_dot_drawer<Ntk>::node_fillcolor( ntk, n );
   }
 
@@ -306,7 +339,7 @@ public:
  *
  * **Required network functions:**
  * - is_constant
- * - is_pi
+ * - is_ci
  * - foreach_node
  * - foreach_fanin
  * - foreach_po
@@ -319,7 +352,7 @@ void write_dot( Ntk const& ntk, std::ostream& os, Drawer const& drawer = {} )
 {
   static_assert( is_network_type_v<Ntk>, "Ntk is not a network type" );
   static_assert( has_is_constant_v<Ntk>, "Ntk does not implement the is_constant method" );
-  static_assert( has_is_pi_v<Ntk>, "Ntk does not implement the is_pi method" );
+  static_assert( has_is_ci_v<Ntk>, "Ntk does not implement the is_ci method" );
   static_assert( has_foreach_node_v<Ntk>, "Ntk does not implement the foreach_node method" );
   static_assert( has_foreach_fanin_v<Ntk>, "Ntk does not implement the foreach_fanin method" );
   static_assert( has_foreach_po_v<Ntk>, "Ntk does not implement the foreach_po method" );
@@ -334,7 +367,7 @@ void write_dot( Ntk const& ntk, std::ostream& os, Drawer const& drawer = {} )
                           drawer.node_label( ntk, n ),
                           drawer.node_shape( ntk, n ),
                           drawer.node_fillcolor( ntk, n ) );
-    if ( !ntk.is_constant( n ) && !ntk.is_pi( n ) )
+    if ( !ntk.is_constant( n ) && !ntk.is_ci( n ) )
     {
       ntk.foreach_fanin( n, [&]( auto const& f ) {
         if ( !drawer.draw_signal( ntk, n, f ) )
@@ -382,7 +415,7 @@ void write_dot( Ntk const& ntk, std::ostream& os, Drawer const& drawer = {} )
  *
  * **Required network functions:**
  * - is_constant
- * - is_pi
+ * - is_ci
  * - foreach_node
  * - foreach_fanin
  * - foreach_po

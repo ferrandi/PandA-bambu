@@ -21,10 +21,6 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #ifndef Abc_Glucose_System_h
 #define Abc_Glucose_System_h
 
-#if defined(__linux__)
-//#include <fpu_control.h>
-#endif
-
 #include "IntTypes.h"
 
 ABC_NAMESPACE_CXX_HEADER_START

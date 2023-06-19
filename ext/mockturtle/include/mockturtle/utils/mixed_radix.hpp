@@ -1,5 +1,5 @@
 /* mockturtle: C++ logic network library
- * Copyright (C) 2018-2021  EPFL
+ * Copyright (C) 2018-2022  EPFL
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -48,7 +48,7 @@ namespace mockturtle
  * called on the index lists \f$0, 0, 0\f$, \f$0, 0, 1\f$, \f$0, 0, 2\f$,
  * \f$\dots\f$, \f$1, 2, 1\f$, \f$1, 2, 2\f$.
  *
- * The callable `fn` expects two parameters which are an interator pair of the
+ * The callable `fn` expects two parameters which are an iterator pair of the
  * indexes.  If it returns a `bool`, the iteration is stopped, if the return
  * value is `false`.
  *
@@ -106,8 +106,8 @@ void foreach_mixed_radix_tuple( Iterator begin, Iterator end, Fn&& fn )
       break;
     }
 
-    (*itp)++;
+    ( *itp )++;
   }
 }
 
-}
+} // namespace mockturtle

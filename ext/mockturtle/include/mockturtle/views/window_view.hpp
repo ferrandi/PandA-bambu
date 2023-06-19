@@ -1,5 +1,5 @@
 /* mockturtle: C++ logic network library
- * Copyright (C) 2018-2021  EPFL
+ * Copyright (C) 2018-2022  EPFL
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -29,12 +29,13 @@
 
   \author Heinz Riener
   \author Mathias Soeken
+  \author Siang-Yun (Sonia) Lee
 */
 
 #pragma once
 
-#include "../traits.hpp"
 #include "../networks/detail/foreach.hpp"
+#include "../traits.hpp"
 #include "../utils/window_utils.hpp"
 #include "immutable_view.hpp"
 
@@ -71,7 +72,7 @@ namespace mockturtle
  *       only if the corresponding node belongs to the window
  *   2.) `foreach_internal_fanout`: takes a node and invokes a predicate
          on all fanout nodes of the node that belong to the window
- *   3.) `foreach_exnteral_fanout`: takes a node and invokes a predicate
+ *   3.) `foreach_external_fanout`: takes a node and invokes a predicate
          on all fanouts of the node that do not belong to the window
  */
 template<typename Ntk>
@@ -85,24 +86,21 @@ public:
 public:
   template<typename _Ntk = Ntk, typename = std::enable_if_t<!std::is_same_v<typename _Ntk::signal, typename _Ntk::node>>>
   explicit window_view( Ntk const& ntk, std::vector<node> const& inputs, std::vector<signal> const& outputs, std::vector<node> const& gates )
-    : immutable_view<Ntk>( ntk )
-    , _inputs( inputs )
-    , _outputs( outputs )
+      : immutable_view<Ntk>( ntk ), _inputs( inputs ), _outputs( outputs )
   {
     construct( inputs, gates );
   }
 
   explicit window_view( Ntk const& ntk, std::vector<node> const& inputs, std::vector<node> const& outputs, std::vector<node> const& gates )
-    : immutable_view<Ntk>( ntk )
-    , _inputs( inputs )
+      : immutable_view<Ntk>( ntk ), _inputs( inputs )
   {
     construct( inputs, gates );
 
     /* convert output nodes to signals */
     std::transform( std::begin( outputs ), std::end( outputs ), std::back_inserter( _outputs ),
-                    [this]( node const& n ){
+                    [this]( node const& n ) {
                       return this->make_signal( n );
-                    });
+                    } );
   }
 
 #pragma region Window
@@ -132,11 +130,6 @@ public:
   inline uint32_t num_cos() const
   {
     return num_pos();
-  }
-
-  inline uint32_t num_latches() const
-  {
-    return 0u;
   }
 
   inline uint32_t num_pis() const
@@ -266,23 +259,23 @@ public:
   template<typename Fn>
   void foreach_internal_fanout( node const& n, Fn&& fn ) const
   {
-    this->foreach_fanout( n, [&]( node const& fo ){
+    this->foreach_fanout( n, [&]( node const& fo ) {
       if ( tbelongs_to( fo ) )
       {
         fn( fo );
       }
-    });
+    } );
   }
 
   template<typename Fn>
   void foreach_external_fanout( node const& n, Fn&& fn ) const
   {
-    this->foreach_fanout( n, [&]( node const& fo ){
+    this->foreach_fanout( n, [&]( node const& fo ) {
       if ( !belongs_to( fo ) )
       {
         fn( fo );
       }
-    });
+    } );
   }
 #pragma endregion
 

@@ -1735,7 +1735,7 @@ void mux_connection_binding::create_connections()
                              "Pre-Managing phi operation2 " + GET_NAME(data, *op) + " ending in state " +
                                  HLS->Rliv->get_name(estate) +
                                  (cur_phi_tree_var ? " for variable " + BH->PrintVariable(cur_phi_tree_var) : ""));
-               THROW_ASSERT(cur_phi_tree_var, "something of wrong happen");
+               THROW_ASSERT(cur_phi_tree_var, "something wrong happened");
                THROW_ASSERT(!HLSMgr->Rmem->has_base_address(tree_temp),
                             "phi cannot manage memory objects: @" + STR(tree_temp));
                THROW_ASSERT(!HLSMgr->Rmem->has_base_address(var_written),

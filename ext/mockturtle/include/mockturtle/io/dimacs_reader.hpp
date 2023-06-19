@@ -1,5 +1,5 @@
 /* mockturtle: C++ logic network library
- * Copyright (C) 2018-2021  EPFL
+ * Copyright (C) 2018-2022  EPFL
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -81,11 +81,15 @@ public:
   {
     std::vector<signal<Ntk>> literals;
 
-    for ( int lit : clause ) {
+    for ( int lit : clause )
+    {
       uint32_t var = std::abs( lit ) - 1;
-      if ( lit < 0 ) {
+      if ( lit < 0 )
+      {
         literals.push_back( !_pis.at( var ) );
-      } else {
+      }
+      else
+      {
         literals.push_back( _pis.at( var ) );
       }
     }
@@ -94,10 +98,10 @@ public:
     _sums.push_back( sum );
   }
 
-  void on_end( ) const override
+  void on_end() const override
   {
     const auto output = _ntk.create_nary_and( _sums );
-     _ntk.create_po( output );
+    _ntk.create_po( output );
   }
 
 private:

@@ -1,5 +1,5 @@
 /* mockturtle: C++ logic network library
- * Copyright (C) 2018-2021  EPFL
+ * Copyright (C) 2018-2022  EPFL
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -27,6 +27,7 @@
   \file functional_reduction.hpp
   \brief Functional reduction for any network type
 
+  \author Heinz Riener
   \author Siang-Yun (Sonia) Lee
 */
 
@@ -39,9 +40,9 @@
 #include <bill/sat/interface/abc_bsat2.hpp>
 #include <kitty/partial_truth_table.hpp>
 
-#include <mockturtle/algorithms/circuit_validator.hpp>
-#include <mockturtle/algorithms/simulation.hpp>
-#include <mockturtle/io/write_patterns.hpp>
+#include "../io/write_patterns.hpp"
+#include "circuit_validator.hpp"
+#include "simulation.hpp"
 
 namespace mockturtle
 {
@@ -49,13 +50,13 @@ namespace mockturtle
 struct functional_reduction_params
 {
   /*! \brief Show progress. */
-  bool progress{false};
+  bool progress{ false };
 
   /*! \brief Be verbose. */
-  bool verbose{false};
+  bool verbose{ false };
 
-  /*! \brief Whether to repeat until no further improvement can be found. */
-  bool saturation{false};
+  /*! \brief Maximum number of iterations to run. 0 = repeat until no further improvement can be found. */
+  uint32_t max_iterations{ 10 };
 
   /*! \brief Whether to use pre-generated patterns stored in a file.
    * If not, by default, 256 random patterns will be used.
@@ -66,43 +67,49 @@ struct functional_reduction_params
   std::optional<std::string> save_patterns{};
 
   /*! \brief Maximum number of nodes in the transitive fanin cone (and their fanouts) to be compared to. */
-  uint32_t max_TFI_nodes{1000};
+  uint32_t max_TFI_nodes{ 1000 };
 
   /*! \brief Maximum fanout count of a node in the transitive fanin cone to explore its fanouts. */
-  uint32_t skip_fanout_limit{100};
+  uint32_t skip_fanout_limit{ 100 };
 
   /*! \brief Conflict limit for the SAT solver. */
-  uint32_t conflict_limit{100};
+  uint32_t conflict_limit{ 100 };
 
   /*! \brief Maximum number of clauses of the SAT solver. (incremental CNF construction) */
-  uint32_t max_clauses{1000};
+  uint32_t max_clauses{ 1000 };
+
+  /*! \brief Initial number of (random) simulation patterns. */
+  uint32_t num_patterns{ 256 };
+
+  /*! \brief Maximum number of simulation patterns. Discards all patterns and re-seeds with random patterns when exceeded. */
+  uint32_t max_patterns{ 1024 };
 };
 
 struct functional_reduction_stats
 {
   /*! \brief Total runtime. */
-  stopwatch<>::duration time_total{0};
+  stopwatch<>::duration time_total{ 0 };
 
   /*! \brief Time for simulation. */
-  stopwatch<>::duration time_sim{0};
+  stopwatch<>::duration time_sim{ 0 };
 
   /*! \brief Time for SAT solving. */
-  stopwatch<>::duration time_sat{0};
+  stopwatch<>::duration time_sat{ 0 };
 
   /*! \brief Number of accepted constant nodes. */
-  uint32_t num_const_accepts{0};
+  uint32_t num_const_accepts{ 0 };
 
   /*! \brief Number of accepted functionally equivalent nodes. */
-  uint32_t num_equ_accepts{0};
+  uint32_t num_equ_accepts{ 0 };
 
   /*! \brief Number of counter-examples (SAT calls). */
-  uint32_t num_cex{0};
+  uint32_t num_cex{ 0 };
 
   /*! \brief Number of successful node reductions (UNSAT calls). */
-  uint32_t num_reduction{0};
+  uint32_t num_reduction{ 0 };
 
   /*! \brief Number of SAT solver timeout. */
-  uint32_t num_timeout{0};
+  uint32_t num_timeout{ 0 };
 
   void report() const
   {
@@ -135,7 +142,7 @@ public:
 
   explicit functional_reduction_impl( Ntk& ntk, functional_reduction_params const& ps, validator_params const& vps, functional_reduction_stats& st )
       : ntk( ntk ), ps( ps ), st( st ), tts( ntk ),
-        sim( ps.pattern_filename ? partial_simulator( *ps.pattern_filename ) : partial_simulator( ntk.num_pis(), 256 ) ), validator( ntk, vps )
+        sim( ps.pattern_filename ? partial_simulator( *ps.pattern_filename ) : partial_simulator( ntk.num_pis(), ps.num_patterns, std::rand() ) ), validator( ntk, vps )
   {
     static_assert( !validator_t::use_odc_, "`circuit_validator::use_odc` flag should be turned off." );
   }
@@ -163,7 +170,8 @@ public:
     /* substitute functional equivalent nodes. */
     auto size_before = ntk.size();
     substitute_equivalent_nodes();
-    while ( ps.saturation && ntk.size() != size_before )
+    uint32_t iterations{0};
+    while ( ps.max_iterations && iterations++ <= ps.max_iterations && ntk.size() != size_before )
     {
       size_before = ntk.size();
       substitute_equivalent_nodes();
@@ -173,7 +181,7 @@ public:
 private:
   void substitute_constants()
   {
-    progress_bar pbar{ntk.size(), "FR-const |{0}| node = {1:>4}   cand = {2:>4}", ps.progress};
+    progress_bar pbar{ ntk.size(), "FR-const |{0}| node = {1:>4}   cand = {2:>4}", ps.progress };
 
     auto zero = sim.compute_constant( false );
     auto one = sim.compute_constant( true );
@@ -225,7 +233,7 @@ private:
 
   void substitute_equivalent_nodes()
   {
-    progress_bar pbar{ntk.size(), "FR-equ |{0}| node = {1:>4}   cand = {2:>4}", ps.progress};
+    progress_bar pbar{ ntk.size(), "FR-equ |{0}| node = {1:>4}   cand = {2:>4}", ps.progress };
     ntk.foreach_gate( [&]( auto const& root, auto i ) {
       pbar( i, i, candidates );
 
@@ -240,7 +248,7 @@ private:
         {
           return false;
         }
-        
+
         keep_trying = try_node( tt, ntt, root, n );
         return keep_trying;
       } );
@@ -251,12 +259,16 @@ private:
         {
           auto& n = tfi.at( j );
           if ( ntk.fanout_size( n ) > ps.skip_fanout_limit )
-            { continue; }
+          {
+            continue;
+          }
 
           /* if the fanout has all fanins in the set, add it */
           ntk.foreach_fanout( n, [&]( node const& p ) {
             if ( ntk.visited( p ) == ntk.trav_id() )
-              { return true; /* next fanout */ }
+            {
+              return true; /* next fanout */
+            }
 
             bool all_fanins_visited = true;
             ntk.foreach_fanin( p, [&]( const auto& g ) {
@@ -268,7 +280,9 @@ private:
               return true; /* next fanin */
             } );
             if ( !all_fanins_visited )
-              { return true; /* next fanout */ }
+            {
+              return true; /* next fanout */
+            }
 
             bool has_root_as_child = false;
             ntk.foreach_fanin( p, [&]( const auto& g ) {
@@ -280,7 +294,9 @@ private:
               return true; /* next fanin */
             } );
             if ( has_root_as_child )
-              { return true; /* next fanout */ }
+            {
+              return true; /* next fanout */
+            }
 
             tfi.emplace_back( p );
             ntk.set_visited( p, ntk.trav_id() );
@@ -346,6 +362,12 @@ private:
     ++st.num_cex;
     sim.add_pattern( validator.cex );
 
+    if ( sim.num_bits() > ps.max_patterns )
+    {
+      reseed_patterns();
+      return;
+    }
+
     /* re-simulate the whole circuit (for the last block) when a block is full */
     if ( sim.num_bits() % 64 == 0 )
     {
@@ -365,6 +387,15 @@ private:
     }
   }
 
+  void reseed_patterns()
+  {
+    sim = partial_simulator( ntk.num_pis(), ps.num_patterns, std::rand() );
+    tts.reset();
+    call_with_stopwatch( st.time_sim, [&]() {
+      simulate_nodes<Ntk>( ntk, tts, sim, true );
+    } );
+  }
+
   template<typename Fn>
   void foreach_transitive_fanin( node const& n, Fn&& fn )
   {
@@ -373,7 +404,7 @@ private:
 
     ntk.foreach_fanin( n, [&]( auto const& f ) {
       return foreach_transitive_fanin_rec( ntk.get_node( f ), fn );
-    });
+    } );
   }
 
   template<typename Fn>
@@ -406,7 +437,7 @@ private:
   partial_simulator sim;
   validator_t validator;
 
-  uint32_t candidates{0};
+  uint32_t candidates{ 0 };
 }; /* functional_reduction_impl */
 
 } /* namespace detail */
@@ -437,7 +468,7 @@ void functional_reduction( Ntk& ntk, functional_reduction_params const& ps = {},
   vps.conflict_limit = ps.conflict_limit;
 
   using fanout_view_t = fanout_view<Ntk>;
-  fanout_view_t fanout_view{ntk};
+  fanout_view_t fanout_view{ ntk };
 
   functional_reduction_stats st;
   detail::functional_reduction_impl p( fanout_view, ps, vps, st );

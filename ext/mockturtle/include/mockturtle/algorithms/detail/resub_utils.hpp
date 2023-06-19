@@ -1,5 +1,5 @@
 /* mockturtle: C++ logic network library
- * Copyright (C) 2018-2021  EPFL
+ * Copyright (C) 2018-2022  EPFL
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -31,15 +31,356 @@
   and class `default_resub_functor` moved from resubstitution.hpp
 
   \author Heinz Riener
+  \author Siang-Yun (Sonia) Lee
 */
 
 #pragma once
 
-#include <vector>
-#include <optional>
+#include <algorithm>
 #include <iostream>
+#include <optional>
+#include <vector>
 
 #include <kitty/constructors.hpp>
+
+namespace mockturtle::experimental::detail
+{
+
+struct divisor_collector_params
+{
+  /*! \brief Maximum number of nodes to be collected in the transitive fanin cone. */
+  uint32_t max_num_tfi{ std::numeric_limits<uint32_t>::max() };
+
+  /*! \brief Maximum number of nodes to collect (in total). */
+  uint32_t max_num_collect{ std::numeric_limits<uint32_t>::max() };
+
+  /*! \brief Maximum fanout size when considering a node in the "wings". */
+  uint32_t max_fanouts{ std::numeric_limits<uint32_t>::max() };
+
+  /*! \brief Maximum level when considering a node in the "wings".
+   *
+   * The network should be wrapped with `depth_view` for this parameter
+   * to be in effect.
+   */
+  uint32_t max_level{ std::numeric_limits<uint32_t>::max() };
+};
+
+/*! \brief Implements helper functions for collecting divisors/supported nodes. */
+template<typename Ntk>
+class divisor_collector
+{
+public:
+  using node = typename Ntk::node;
+
+  divisor_collector( Ntk const& ntk, divisor_collector_params ps = {} )
+      : ntk( ntk ), ps( ps )
+  {
+    static_assert( has_foreach_fanout_v<Ntk>, "Ntk does not implement the foreach_fanout method (please wrap with fanout_view)" );
+    static_assert( has_incr_trav_id_v<Ntk>, "Ntk does not implement the incr_trav_id method" );
+    static_assert( has_trav_id_v<Ntk>, "Ntk does not implement the trav_id method" );
+    static_assert( has_set_visited_v<Ntk>, "Ntk does not implement the set_visited method" );
+    static_assert( has_visited_v<Ntk>, "Ntk does not implement the visited method" );
+    static_assert( has_foreach_fanin_v<Ntk>, "Ntk does not implement the foreach_fanin method" );
+    static_assert( has_get_node_v<Ntk>, "Ntk does not implement the get_node method" );
+    static_assert( has_is_constant_v<Ntk>, "Ntk does not implement the is_constant method" );
+    assert( ps.max_num_collect >= ps.max_num_tfi );
+  }
+
+  void set_max_level( uint32_t max_level )
+  {
+    ps.max_level = max_level;
+  }
+
+  /*! \brief Collect nodes in the transitive fanin cone of root until leaves in a topological order.
+   *
+   * `root` itself is included and will be the last element.
+   * Constant node(s) is not collected.
+   * Leaves are not collected.
+   *
+   * \param root The root node
+   * \param leaves The leaf nodes forming a cut supporting the root node
+   * \param tfi The container where TFI nodes are collected
+   */
+  void collect_tfi( node const& root, std::vector<node> const& leaves, std::vector<node>& tfi )
+  {
+    ntk.incr_trav_id();
+    for ( const auto& l : leaves )
+    {
+      ntk.set_visited( l, ntk.trav_id() );
+    }
+    collect_tfi_rec( root, tfi );
+  }
+
+  /*! \brief Collect nodes in the TFI (BFS) and wings.
+   *
+   * Constant node(s) is not collected.
+   * Any node in the TFO of root is not collected.
+   * Collects TFI nodes with breadth-first search until PIs (unbounded)
+   * or until the limit on `max_num_tfi` exceeds, and then collects "wings"
+   * nodes until the limit on `max_num_collect` exceeds.
+   * Collected nodes are in a topological order, with `root` itself being the last element.
+   *
+   * \param root The root node
+   * \param collected The container where TFI and "wings" nodes are collected
+   */
+  void collect_tfi_and_wings( node const& root, std::vector<node>& collected )
+  {
+    collect_tfi_bfs( root, collected );
+    std::reverse( collected.begin(), collected.end() ); /* now in topo order */
+    collected.pop_back();                               /* remove `root` */
+
+    /* note: we cannot use range-based loop here because we push to the vector in the loop */
+    for ( auto i = 0u; i < collected.size(); ++i )
+    {
+      if ( !collect_wings( root, collected.at( i ), collected ) )
+      {
+        break;
+      }
+    }
+
+    collected.emplace_back( root );
+    return;
+  }
+
+  /*! \brief Collect all nodes that are supported by the leaves until the root (TFI + wings).
+   *
+   * Constant node(s) is not collected.
+   * Leaves are not collected.
+   * Any node in the TFO of root is not collected.
+   * Collected nodes are in a topological order, with `root` itself being the last element.
+   *
+   * \param root The root node
+   * \param leaves The leaf nodes forming a cut supporting the root node
+   * \param supported The container where supported nodes are collected
+   */
+  void collect_supported_nodes( node const& root, std::vector<node> const& leaves, std::vector<node>& supported )
+  {
+    /* collect TFI nodes until (excluding) leaves */
+    collect_tfi( root, leaves, supported );
+    supported.pop_back(); /* remove `root` */
+
+    if ( supported.size() > ps.max_num_tfi )
+    {
+      return;
+    }
+
+    /* collect "wings" */
+    for ( auto const& l : leaves )
+    {
+      if ( !collect_wings( root, l, supported ) )
+      {
+        supported.emplace_back( root );
+        return;
+      }
+    }
+
+    /* note: we cannot use range-based loop here because we push to the vector in the loop */
+    for ( auto i = 0u; i < supported.size(); ++i )
+    {
+      if ( !collect_wings( root, supported.at( i ), supported ) )
+      {
+        break;
+      }
+    }
+
+    supported.emplace_back( root );
+    return;
+  }
+
+private:
+  void collect_tfi_rec( node const& n, std::vector<node>& tfi )
+  {
+    /* collect until leaves and skip visited nodes */
+    if ( ntk.visited( n ) == ntk.trav_id() )
+    {
+      return;
+    }
+    ntk.set_visited( n, ntk.trav_id() );
+
+    /* collect in topological order -- lower nodes first */
+    ntk.foreach_fanin( n, [&]( const auto& f ) {
+      collect_tfi_rec( ntk.get_node( f ), tfi );
+    } );
+
+    if ( !ntk.is_constant( n ) )
+    {
+      tfi.emplace_back( n );
+    }
+  }
+
+  /*! \brief Collect nodes in the transitive fanin cone of root with breadth-first search.
+   *
+   * `root` itself is included and will be the first element.
+   * Constant node(s) is not collected.
+   * Collects until PIs (unbounded) or until the limit on `max_num_tfi` exceeds.
+   * Collected nodes are NOT in a topological order.
+   *
+   * \param root The root node
+   * \param tfi The container where TFI nodes are collected
+   */
+  void collect_tfi_bfs( node const& root, std::vector<node>& tfi )
+  {
+    ntk.incr_trav_id();
+    assert( tfi.size() == 0 );
+    tfi.reserve( ps.max_num_tfi );
+    tfi.emplace_back( root );
+    ntk.set_visited( root, ntk.trav_id() );
+    ntk.set_visited( ntk.get_node( ntk.get_constant( false ) ), ntk.trav_id() ); /* don't collect constant node */
+    uint32_t i{ 0 };
+    while ( i < tfi.size() && tfi.size() < ps.max_num_tfi )
+    {
+      node const& n = tfi.at( i++ );
+      ntk.foreach_fanin( n, [&]( const auto& f ) {
+        node const& ni = ntk.get_node( f );
+        if ( ntk.visited( ni ) != ntk.trav_id() )
+        {
+          tfi.emplace_back( ni );
+          ntk.set_visited( ni, ntk.trav_id() );
+        }
+      } );
+    }
+  }
+
+  /*\return Whether to continue collecting */
+  bool collect_wings( node const& root, node const& n, std::vector<node>& supported )
+  {
+    if ( ntk.fanout_size( n ) > ps.max_fanouts )
+    {
+      return true;
+    }
+
+    /* if the fanout has all fanins in the set, add it */
+    ntk.foreach_fanout( n, [&]( node const& p ) {
+      if ( ntk.visited( p ) == ntk.trav_id() )
+      {
+        return true; /* next fanout */
+      }
+
+      if constexpr ( has_level_v<Ntk> )
+      {
+        if ( ntk.level( p ) > ps.max_level )
+        {
+          return true; /* next fanout */
+        }
+      }
+
+      bool all_fanins_visited = true;
+      ntk.foreach_fanin( p, [&]( const auto& g ) {
+        if ( ntk.visited( ntk.get_node( g ) ) != ntk.trav_id() )
+        {
+          all_fanins_visited = false;
+          return false; /* terminate fanin-loop */
+        }
+        return true; /* next fanin */
+      } );
+
+      if ( !all_fanins_visited )
+      {
+        return true; /* next fanout */
+      }
+
+      bool has_root_as_child = false;
+      ntk.foreach_fanin( p, [&]( const auto& g ) {
+        if ( ntk.get_node( g ) == root )
+        {
+          has_root_as_child = true;
+          return false; /* terminate fanin-loop */
+        }
+        return true; /* next fanin */
+      } );
+
+      if ( has_root_as_child )
+      {
+        return true; /* next fanout */
+      }
+
+      supported.emplace_back( p );
+      ntk.set_visited( p, ntk.trav_id() );
+
+      /* quit fanout-loop if there are too many nodes collected */
+      return supported.size() < ps.max_num_collect;
+    } );
+    return supported.size() < ps.max_num_collect;
+  }
+
+private:
+  Ntk const& ntk;
+  divisor_collector_params ps;
+}; /* divisor_collector */
+
+template<typename Ntk, typename TT>
+class window_simulator
+{
+public:
+  using node = typename Ntk::node;
+  using signal = typename Ntk::signal;
+
+  explicit window_simulator( Ntk const& ntk, std::vector<TT>& tts, uint32_t num_pis )
+      : ntk( ntk ), tts( tts ), node_to_id( ntk ), num_pis( num_pis )
+  {
+    static_assert( is_network_type_v<Ntk>, "Ntk is not a network type" );
+    static_assert( has_get_constant_v<Ntk>, "Ntk does not implement the get_constant method" );
+    static_assert( has_get_node_v<Ntk>, "Ntk does not implement the get_node method" );
+    static_assert( has_foreach_fanin_v<Ntk>, "Ntk does not implement the foreach_fanin method" );
+    static_assert( has_fanin_size_v<Ntk>, "Ntk does not implement the fanin_size method" );
+    static_assert( has_compute_v<Ntk, TT>, "Ntk does not implement the compute method for TT" );
+    assert( ntk.get_node( ntk.get_constant( false ) ) == ntk.get_node( ntk.get_constant( true ) ) && "network types whose constant nodes are different are not supported" );
+
+    tts.resize( num_pis + 1 );
+    auto tt = kitty::create<TT>( num_pis );
+    tts[0] = tt;
+    node_to_id[ntk.get_constant( false )] = 0;
+
+    for ( auto i = 0u; i < num_pis; ++i )
+    {
+      kitty::create_nth_var( tt, i );
+      tts[i + 1] = tt;
+    }
+  }
+
+  /*! \brief Simulates a window in a network.
+   *
+   * Every node in `nodes` must have all of its fanins either in `leaves`, or in
+   * `nodes` and precedes it (i.e., supported and in a topological order).
+   *
+   * After simulation, `tts` contains:
+   * - `tts[0]` is the constant-zero truth table
+   * - `tts[1]` to `tts[num_pis]` are the projection functions (primary inputs)
+   * - `tts[num_pis + 1 + i]` is the truth table for the node `nodes[i]`
+   */
+  std::vector<TT>& simulate( std::vector<node> const& leaves, std::vector<node> const& nodes )
+  {
+    node_to_id.resize();
+    assert( leaves.size() <= num_pis );
+    for ( auto i = 0u; i < leaves.size(); ++i )
+    {
+      node_to_id[leaves[i]] = i + 1;
+    }
+
+    tts.resize( num_pis + 1 );
+    for ( auto const& n : nodes )
+    {
+      ntk.foreach_fanin( n, [&]( auto const& f, auto i ) {
+        assert( node_to_id.has( f ) && node_to_id[f] < tts.size() && "some node in `nodes` has a fanin outside of `nodes` and `leaves`, or `nodes` is not in a topological order" );
+        fanin_values[i] = tts[node_to_id[f]];
+      } );
+      node_to_id[n] = tts.size();
+      tts.emplace_back( ntk.compute( n, std::begin( fanin_values ), std::begin( fanin_values ) + ntk.fanin_size( n ) ) );
+    }
+
+    assert( tts.size() == num_pis + 1 + nodes.size() );
+    return tts;
+  }
+
+private:
+  Ntk const& ntk;
+  std::vector<TT>& tts;
+  incomplete_node_map<uint32_t, Ntk> node_to_id;
+  std::array<TT, Ntk::max_fanin_size> fanin_values;
+  uint32_t num_pis;
+}; /* window_simulator */
+
+} /* namespace mockturtle::experimental::detail */
 
 namespace mockturtle::detail
 {
@@ -55,9 +396,20 @@ public:
   explicit node_mffc_inside( Ntk const& ntk )
       : ntk( ntk )
   {
+    static_assert( has_incr_fanout_size_v<Ntk>, "Ntk does not implement the incr_fanout_size method" );
+    static_assert( has_decr_fanout_size_v<Ntk>, "Ntk does not implement the decr_fanout_size method" );
+    static_assert( has_fanout_size_v<Ntk>, "Ntk does not implement the fanout_size method" );
+    static_assert( has_incr_trav_id_v<Ntk>, "Ntk does not implement the incr_trav_id method" );
+    static_assert( has_trav_id_v<Ntk>, "Ntk does not implement the trav_id method" );
+    static_assert( has_set_visited_v<Ntk>, "Ntk does not implement the set_visited method" );
+    static_assert( has_visited_v<Ntk>, "Ntk does not implement the visited method" );
+    static_assert( has_foreach_fanin_v<Ntk>, "Ntk does not implement the foreach_fanin method" );
+    static_assert( has_get_node_v<Ntk>, "Ntk does not implement the get_node method" );
+    static_assert( has_is_pi_v<Ntk>, "Ntk does not implement the is_pi method" );
   }
 
-  int32_t run( node const& n, std::vector<node> const& leaves, std::vector<node>& inside )
+  template<typename Fn>
+  int32_t call_on_mffc_and_count( node const& n, std::vector<node> const& leaves, Fn&& fn )
   {
     /* increment the fanout counters for the leaves */
     for ( const auto& l : leaves )
@@ -66,8 +418,9 @@ public:
     /* dereference the node */
     auto count1 = node_deref_rec( n );
 
-    /* collect the nodes inside the MFFC */
-    node_mffc_cone( n, inside );
+    /* call `fn` on MFFC nodes */
+    ntk.incr_trav_id();
+    node_mffc_cone_rec( n, true, fn );
 
     /* reference it back */
     auto count2 = node_ref_rec( n );
@@ -78,6 +431,12 @@ public:
       ntk.decr_fanout_size( l );
 
     return count1;
+  }
+
+  int32_t run( node const& n, std::vector<node> const& leaves, std::vector<node>& inside )
+  {
+    inside.clear();
+    return call_on_mffc_and_count( n, leaves, [&inside]( node const& m ) { inside.emplace_back( m ); } );
   }
 
 private:
@@ -122,7 +481,8 @@ private:
     return counter;
   }
 
-  void node_mffc_cone_rec( node const& n, std::vector<node>& cone, bool top_most )
+  template<typename Fn>
+  void node_mffc_cone_rec( node const& n, bool top_most, Fn&& fn )
   {
     /* skip visited nodes */
     if ( ntk.visited( n ) == ntk.trav_id() )
@@ -138,18 +498,11 @@ private:
 
     /* recurse on children */
     ntk.foreach_fanin( n, [&]( const auto& f ) {
-      node_mffc_cone_rec( ntk.get_node( f ), cone, false );
+      node_mffc_cone_rec( ntk.get_node( f ), false, fn );
     } );
 
     /* collect the internal nodes */
-    cone.emplace_back( n );
-  }
-
-  void node_mffc_cone( node const& n, std::vector<node>& cone )
-  {
-    cone.clear();
-    ntk.incr_trav_id();
-    node_mffc_cone_rec( n, cone, true );
+    fn( n );
   }
 
 private:
@@ -250,16 +603,16 @@ private:
 struct default_resub_functor_stats
 {
   /*! \brief Accumulated runtime for const-resub */
-  stopwatch<>::duration time_resubC{0};
+  stopwatch<>::duration time_resubC{ 0 };
 
   /*! \brief Accumulated runtime for zero-resub */
-  stopwatch<>::duration time_resub0{0};
+  stopwatch<>::duration time_resub0{ 0 };
 
   /*! \brief Number of accepted constant resubsitutions */
-  uint32_t num_const_accepts{0};
+  uint32_t num_const_accepts{ 0 };
 
   /*! \brief Number of accepted zero resubsitutions */
-  uint32_t num_div0_accepts{0};
+  uint32_t num_div0_accepts{ 0 };
 
   void report() const
   {
@@ -362,5 +715,68 @@ private:
   uint32_t num_divs;
   stats& st;
 }; /* default_resub_functor */
+
+template<typename Ntk, typename node>
+void update_node_level_once( Ntk& ntk, node const& n, bool first_node )
+{
+  uint32_t curr_level = ntk.level( n );
+
+  uint32_t max_level = 0;
+  ntk.foreach_fanin( n, [&]( const auto& f ) {
+    auto const p = ntk.get_node( f );
+    auto const fanin_level = ntk.level( p );
+    if ( fanin_level > max_level )
+    {
+      max_level = fanin_level;
+    }
+  } );
+  ++max_level;
+
+  if ( curr_level != max_level )
+  {
+    ntk.set_level( n, max_level );
+
+    /* update only one more level */
+    if ( first_node )
+    {
+      ntk.foreach_fanout( n, [&]( const auto& p ) {
+        update_node_level_once( ntk, p, false );
+      } );
+    }
+  }
+}
+
+/*! \brief Register an `on_modified` event that lazily updates node levels.
+ *
+ * This is a trick learnt from ABC's implementation and is used in
+ * enumeration-based resubstitution algorithms. It only updates the level of
+ * the modified node and its fanout nodes. The update is not propagated to
+ * the fanouts' fanouts, thus being fast but inaccurate.
+ *
+ * This method can be called in the constructor of an algorithm's implementation
+ * class. Note that its return value should be stored and
+ * `release_lazy_level_update_events` should then be called in the destructor
+ * of the class.
+ */
+template<class Ntk, typename event_t = std::shared_ptr<typename network_events<Ntk>::modified_event_type>>
+event_t register_lazy_level_update_events( Ntk& ntk )
+{
+  static_assert( has_foreach_fanout_v<Ntk>, "Ntk does not have fanout interface." );
+  using node = typename Ntk::node;
+
+  auto const update_level_of_existing_node = [&]( node const& n, const auto& old_children ) {
+    (void)old_children;
+    ntk.resize_levels();
+    update_node_level_once( ntk, n, true );
+  };
+
+  return ntk.events().register_modified_event( update_level_of_existing_node );
+}
+
+template<class Ntk, typename event_t = std::shared_ptr<typename network_events<Ntk>::modified_event_type>>
+void release_lazy_level_update_events( Ntk& ntk, event_t& event )
+{
+  ntk.events().release_modified_event( event );
+}
 
 } /* namespace mockturtle::detail */

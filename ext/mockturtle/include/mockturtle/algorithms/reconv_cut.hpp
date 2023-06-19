@@ -1,5 +1,5 @@
 /* mockturtle: C++ logic network library
- * Copyright (C) 2018-2021  EPFL
+ * Copyright (C) 2018-2022  EPFL
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -35,9 +35,9 @@
 
 #include "../traits.hpp"
 
-#include <optional>
 #include <cassert>
 #include <iostream>
+#include <optional>
 
 namespace mockturtle
 {
@@ -50,13 +50,13 @@ namespace mockturtle
 struct reconvergence_driven_cut_parameters
 {
   /* Maximum number of leaves */
-  uint64_t max_leaves{8u};
+  uint64_t max_leaves{ 8u };
 
   /* Skip nodes with many fanouts */
-  uint64_t max_fanouts{100000u};
+  uint64_t max_fanouts{ 100000u };
 
   /* Initially reserve memory for a fixed number of nodes */
-  uint64_t reserve_memory_for_nodes{300u};
+  uint64_t reserve_memory_for_nodes{ 300u };
 };
 
 /*! \brief Statistics for reconvergence-driven cut computation
@@ -68,13 +68,13 @@ struct reconvergence_driven_cut_parameters
 struct reconvergence_driven_cut_statistics
 {
   /* Total number of calls */
-  uint64_t num_calls{0};
+  uint64_t num_calls{ 0 };
 
   /* Total number of leaves */
-  uint64_t num_leaves{0};
+  uint64_t num_leaves{ 0 };
 
   /* Total number of nodes */
-  uint64_t num_nodes{0};
+  uint64_t num_nodes{ 0 };
 };
 
 /*! \cond PRIVATE */
@@ -93,12 +93,10 @@ public:
 
 public:
   explicit reconvergence_driven_cut_impl( Ntk const& ntk, reconvergence_driven_cut_parameters const& ps, reconvergence_driven_cut_statistics& st )
-    : ntk( ntk )
-    , ps( ps )
-    , st( st )
+      : ntk( ntk ), ps( ps ), st( st )
   {
     leaves.reserve( ps.max_leaves );
-    if constexpr( compute_nodes )
+    if constexpr ( compute_nodes )
     {
       nodes.reserve( ps.reserve_memory_for_nodes );
     }
@@ -134,7 +132,8 @@ public:
     }
 
     /* compute the cut */
-    while ( construct_cut() );
+    while ( construct_cut() )
+      ;
     assert( leaves.size() <= ps.max_leaves );
 
     /* update statistics */
@@ -148,15 +147,15 @@ public:
 private:
   bool construct_cut()
   {
-    uint64_t best_cost{std::numeric_limits<uint64_t>::max()};
+    uint64_t best_cost{ std::numeric_limits<uint64_t>::max() };
     std::optional<node> best_fanin;
     uint64_t best_position;
 
     /* evaluate fanins of the cut */
-    uint64_t position{0};
+    uint64_t position{ 0 };
     for ( const auto& l : leaves )
     {
-      uint64_t const current_cost{cost( l )};
+      uint64_t const current_cost{ cost( l ) };
       if constexpr ( sort_equal_cost_by_level )
       {
         if ( best_cost > current_cost ||
@@ -199,18 +198,18 @@ private:
     leaves.erase( std::begin( leaves ) + best_position );
 
     /* add the fanins of best to leaves and nodes */
-    ntk.foreach_fanin( *best_fanin, [&]( signal const& fi ){
-        node const& n = ntk.get_node( fi );
-        if ( n != 0 && ( ntk.visited( n ) != ntk.trav_id() ) )
+    ntk.foreach_fanin( *best_fanin, [&]( signal const& fi ) {
+      node const& n = ntk.get_node( fi );
+      if ( n != 0 && ( ntk.visited( n ) != ntk.trav_id() ) )
+      {
+        ntk.set_visited( n, ntk.trav_id() );
+        if constexpr ( compute_nodes )
         {
-          ntk.set_visited( n, ntk.trav_id() );
-          if constexpr ( compute_nodes )
-          {
-            nodes.emplace_back( n );
-          }
-          leaves.emplace_back( n );
+          nodes.emplace_back( n );
         }
-      });
+        leaves.emplace_back( n );
+      }
+    } );
 
     assert( leaves.size() <= ps.max_leaves );
     return true;
@@ -228,10 +227,10 @@ private:
     }
 
     /* count the number of leaves that we haven't visited */
-    uint64_t cost{0};
-    ntk.foreach_fanin( n, [&]( signal const& fi ){
-        cost += ntk.visited( ntk.get_node( fi ) ) != ntk.trav_id();
-      });
+    uint64_t cost{ 0 };
+    ntk.foreach_fanin( n, [&]( signal const& fi ) {
+      cost += ntk.visited( ntk.get_node( fi ) ) != ntk.trav_id();
+    } );
 
     /* always accept if the number of leaves does not increase */
     if ( cost < ntk.fanin_size( n ) )
@@ -270,9 +269,7 @@ public:
 
 public:
   explicit reconvergence_driven_cut_impl2( Ntk const& ntk, reconvergence_driven_cut_parameters const& ps, reconvergence_driven_cut_statistics& st )
-    : ntk( ntk )
-    , ps( ps )
-    , st( st )
+      : ntk( ntk ), ps( ps ), st( st )
   {
   }
 
@@ -291,7 +288,8 @@ public:
       ntk.set_visited( pivot, ntk.trav_id() );
     }
 
-    while ( construct_cut() );
+    while ( construct_cut() )
+      ;
     assert( leaves.size() <= ps.max_leaves );
 
     /* update statistics */
@@ -306,17 +304,15 @@ public:
   {
     assert( leaves.size() <= ps.max_leaves && "cut-size overflow" );
     std::sort( std::begin( leaves ), std::end( leaves ),
-               [this]( node const& a, node const& b )
-               {
+               [this]( node const& a, node const& b ) {
                  return cost( a ) < cost( b );
                } );
 
     /* find the first non-pi node to extend the cut (because the vector is sorted, this non-pi is cost-minimal) */
     auto const it = std::find_if( std::begin( leaves ), std::end( leaves ),
-                                 [&]( node const& n )
-                                 {
-                                   return !ntk.is_ci( n );
-                                 } );
+                                  [&]( node const& n ) {
+                                    return !ntk.is_ci( n );
+                                  } );
     if ( std::end( leaves ) == it )
     {
       /* if all nodes are pis, then the cut cannot be extended */
@@ -334,21 +330,21 @@ public:
     /* otherwise expand the cut with the children of *it and mark *it visited */
     node const n = *it;
     leaves.erase( it );
-    ntk.foreach_fanin( n, [&]( signal const& fi ){
-        node const& child = ntk.get_node( fi );
-        if ( !ntk.is_constant( child ) && std::find( std::begin( leaves ), std::end( leaves ), child ) == std::end( leaves ) && ntk.visited( child ) != ntk.trav_id() )
-        {
-          leaves.emplace_back( child );
-          ntk.set_visited( child, ntk.trav_id() );
-        }
-      });
+    ntk.foreach_fanin( n, [&]( signal const& fi ) {
+      node const& child = ntk.get_node( fi );
+      if ( !ntk.is_constant( child ) && std::find( std::begin( leaves ), std::end( leaves ), child ) == std::end( leaves ) && ntk.visited( child ) != ntk.trav_id() )
+      {
+        leaves.emplace_back( child );
+        ntk.set_visited( child, ntk.trav_id() );
+      }
+    } );
 
     assert( leaves.size() <= ps.max_leaves );
     return true;
   }
 
   /* counts the number of non-constant leaves */
-  int64_t cost( node const &n ) const
+  int64_t cost( node const& n ) const
   {
     int32_t current_cost = -1;
     ntk.foreach_fanin( n, [&]( signal const& s ) {
@@ -376,7 +372,7 @@ std::pair<std::vector<node<Ntk>>, std::vector<node<Ntk>>> reconvergence_driven_c
   return Impl( ntk, ps, st ).run( pivots );
 }
 
-} /* detail */
+} // namespace detail
 /*! \endcond */
 
 /*! \brief Reconvergence-driven cut towards inputs.
@@ -395,7 +391,7 @@ std::pair<std::vector<node<Ntk>>, std::vector<node<Ntk>>> reconvergence_driven_c
  *
  */
 template<typename Ntk, bool compute_nodes = false, bool sort_equal_cost_by_level = true>
-std::pair<std::vector<node<Ntk>>, std::vector<node<Ntk>>> reconvergence_driven_cut( Ntk const& ntk, std::vector<node<Ntk>> const& pivots, reconvergence_driven_cut_parameters const& ps = {}, reconvergence_driven_cut_statistics *pst = nullptr )
+std::pair<std::vector<node<Ntk>>, std::vector<node<Ntk>>> reconvergence_driven_cut( Ntk const& ntk, std::vector<node<Ntk>> const& pivots, reconvergence_driven_cut_parameters const& ps = {}, reconvergence_driven_cut_statistics* pst = nullptr )
 {
   static_assert( is_network_type_v<Ntk>, "Ntk is not a network type" );
   static_assert( has_is_constant_v<Ntk>, "Ntk does not implement the is_constant method" );
@@ -436,7 +432,7 @@ std::pair<std::vector<node<Ntk>>, std::vector<node<Ntk>>> reconvergence_driven_c
  *
  */
 template<typename Ntk, bool compute_nodes = false, bool sort_equal_cost_by_level = true>
-std::pair<std::vector<node<Ntk>>, std::vector<node<Ntk>>> reconvergence_driven_cut( Ntk const& ntk, node<Ntk> const& pivot, reconvergence_driven_cut_parameters const& ps = {}, reconvergence_driven_cut_statistics *pst = nullptr )
+std::pair<std::vector<node<Ntk>>, std::vector<node<Ntk>>> reconvergence_driven_cut( Ntk const& ntk, node<Ntk> const& pivot, reconvergence_driven_cut_parameters const& ps = {}, reconvergence_driven_cut_statistics* pst = nullptr )
 {
   return reconvergence_driven_cut<Ntk, compute_nodes, sort_equal_cost_by_level>( ntk, std::vector<node<Ntk>>{ pivot }, ps, pst );
 }
@@ -457,9 +453,9 @@ std::pair<std::vector<node<Ntk>>, std::vector<node<Ntk>>> reconvergence_driven_c
  *
  */
 template<typename Ntk, bool compute_nodes = false, bool sort_equal_cost_by_level = true>
-std::pair<std::vector<node<Ntk>>, std::vector<node<Ntk>>> reconvergence_driven_cut( Ntk const& ntk, signal<Ntk> const& pivot, reconvergence_driven_cut_parameters const& ps = {}, reconvergence_driven_cut_statistics *pst = nullptr )
+std::pair<std::vector<node<Ntk>>, std::vector<node<Ntk>>> reconvergence_driven_cut( Ntk const& ntk, signal<Ntk> const& pivot, reconvergence_driven_cut_parameters const& ps = {}, reconvergence_driven_cut_statistics* pst = nullptr )
 {
   return reconvergence_driven_cut<Ntk, compute_nodes, sort_equal_cost_by_level>( ntk, std::vector<node<Ntk>>{ ntk.get_node( pivot ) }, ps, pst );
 }
 
-} /* mockturtle */
+} // namespace mockturtle

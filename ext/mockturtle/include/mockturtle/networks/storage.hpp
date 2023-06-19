@@ -1,5 +1,5 @@
 /* mockturtle: C++ logic network library
- * Copyright (C) 2018-2021  EPFL
+ * Copyright (C) 2018-2022  EPFL
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -27,10 +27,14 @@
   \file storage.hpp
   \brief Configurable storage container
 
+  \author Alessandro Tempia Calvino
+  \author Andrea Costamagna
   \author Bruno Schmitt
   \author Heinz Riener
+  \author Jinzheng Tu
   \author Mathias Soeken
   \author Max Austin
+  \author Siang-Yun (Sonia) Lee
 */
 
 #pragma once
@@ -54,8 +58,10 @@ private:
 public:
   node_pointer() = default;
   node_pointer( uint64_t index, uint64_t weight ) : weight( weight ), index( index ) {}
+  node_pointer( uint64_t data ) : data( data ) {}
 
-  union {
+  union
+  {
     struct
     {
       uint64_t weight : PointerFieldSize;
@@ -68,16 +74,22 @@ public:
   {
     return data == other.data;
   }
+
+  bool operator!=( node_pointer<PointerFieldSize> const& other ) const
+  {
+    return data != other.data;
+  }
 };
 
 template<>
 struct node_pointer<0>
 {
 public:
-  node_pointer<0>() = default;
-  node_pointer<0>( uint64_t index ) : index( index ) {}
+  node_pointer() = default;
+  node_pointer( uint64_t index ) : index( index ) {}
 
-  union {
+  union
+  {
     uint64_t index;
     uint64_t data;
   };
@@ -88,8 +100,9 @@ public:
   }
 };
 
-union cauint64_t {
-  uint64_t n{0};
+union cauint64_t
+{
+  uint64_t n{ 0 };
   struct
   {
     uint64_t h1 : 32;
@@ -178,13 +191,6 @@ struct node_hash
   }
 };
 
-struct latch_info
-{
-  std::string control = "";
-  uint64_t init = 3;
-  std::string type = "";
-};
-
 struct empty_storage_data
 {
 };
@@ -203,12 +209,35 @@ struct storage
 
   using node_type = Node;
 
+  uint32_t trav_id = 0u;
+
   std::vector<node_type> nodes;
   std::vector<uint64_t> inputs;
   std::vector<typename node_type::pointer_type> outputs;
-  std::unordered_map<uint64_t, latch_info> latch_information;
 
   phmap::flat_hash_map<node_type, uint64_t, NodeHasher> hash;
+
+  T data;
+};
+
+template<typename Node, typename T = empty_storage_data>
+struct storage_no_hash
+{
+  storage_no_hash()
+  {
+    nodes.reserve( 10000u );
+
+    /* we generally reserve the first node for a constant */
+    nodes.emplace_back();
+  }
+
+  using node_type = Node;
+
+  uint32_t trav_id = 0u;
+
+  std::vector<node_type> nodes;
+  std::vector<uint64_t> inputs;
+  std::vector<typename node_type::pointer_type> outputs;
 
   T data;
 };

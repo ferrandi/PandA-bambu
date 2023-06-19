@@ -97,7 +97,16 @@ Pre-defined cut types
 
 .. doxygenstruct:: mockturtle::cut_enumeration_spectr_cut
 
+**Header:** ``mockturtle/algorithms/cut_enumeration/tech_map_cut.hpp``
+
+.. doxygenstruct:: mockturtle::cut_enumeration_tech_map_cut
+
+**Header:** ``mockturtle/algorithms/cut_enumeration/exact_map_cut.hpp``
+
+.. doxygenstruct:: mockturtle::cut_enumeration_exact_map_cut
+
 Special-purpose implementations
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. doxygenfunction:: mockturtle::fast_cut_enumeration
 
 .. doxygenfunction:: mockturtle::fast_small_cut_enumeration

@@ -1,5 +1,5 @@
 /* mockturtle: C++ logic network library
- * Copyright (C) 2018-2021  EPFL
+ * Copyright (C) 2018-2022  EPFL
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -41,8 +41,8 @@
 #include <vector>
 
 #include "../algorithms/cnf.hpp"
-#include "../utils/include/percy.hpp"
 #include "../traits.hpp"
+#include "../utils/include/percy.hpp"
 
 #include <bill/sat/interface/common.hpp>
 #include <bill/sat/interface/glucose.hpp>
@@ -56,9 +56,9 @@ struct cnf_view_params
   /*! \brief Write DIMACS file, whenever solve is called. */
   std::optional<std::string> write_dimacs{};
 
-  /*! \brief Automatically update clauses when network is modified. 
+  /*! \brief Automatically update clauses when network is modified.
              Only meaningful when AllowModify = true. */
-  bool auto_update{true};
+  bool auto_update{ true };
 };
 
 /* forward declaration */
@@ -72,7 +72,11 @@ template<typename CnfView, typename Ntk, bool AllowModify = false, bill::solvers
 class cnf_view_impl : public Ntk
 {
 public:
-  cnf_view_impl( CnfView& cnf_view ) : Ntk() { (void)cnf_view; }
+  cnf_view_impl( CnfView& cnf_view )
+      : Ntk()
+  {
+    (void)cnf_view;
+  }
 };
 
 template<typename CnfView, typename Ntk, bill::solvers Solver>
@@ -94,9 +98,6 @@ public:
 
   ~cnf_view_impl()
   {
-    Ntk::events().on_add.erase( Ntk::events().on_add.begin() + event_ptr_[0] );
-    Ntk::events().on_modified.erase( Ntk::events().on_modified.begin() + event_ptr_[1] );
-    Ntk::events().on_delete.erase( Ntk::events().on_delete.begin() + event_ptr_[2] );
   }
 
   void init()
@@ -121,10 +122,6 @@ public:
       literals_[n] = bill::lit_type( ++v, bill::lit_type::polarities::positive );
       cnf_view_.on_add( n, false );
     } );
-
-    event_ptr_[0] = Ntk::events().on_add.size();
-    event_ptr_[1] = Ntk::events().on_modified.size();
-    event_ptr_[2] = Ntk::events().on_delete.size();
   }
 
   inline bill::var_type add_var()
@@ -183,8 +180,6 @@ private:
 
   node_map<bill::lit_type, Ntk> literals_;
   std::vector<bill::lit_type> switches_;
-
-  std::size_t event_ptr_[3];
 };
 
 } /* namespace detail */
@@ -273,9 +268,25 @@ public:
     register_events();
   }
 
-  signal create_pi( std::string const& name = std::string() )
+  ~cnf_view()
   {
-    const auto f = Ntk::create_pi( name );
+    if ( add_event )
+    {
+      Ntk::events().release_add_event( add_event );
+    }
+    if ( modified_event )
+    {
+      Ntk::events().release_modified_event( modified_event );
+    }
+    if ( delete_event )
+    {
+      Ntk::events().release_delete_event( delete_event );
+    }
+  }
+
+  signal create_pi()
+  {
+    const auto f = Ntk::create_pi();
 
     const auto v = solver_.add_variable();
 
@@ -338,10 +349,10 @@ public:
         }
         dimacs_.set_nr_vars( solver_.num_variables() );
 #ifdef _MSC_VER
-        FILE *fd = nullptr;
+        FILE* fd = nullptr;
         fopen_s( &fd, ps_.write_dimacs->c_str(), "w" );
 #else
-        FILE *fd = fopen( ps_.write_dimacs->c_str(), "w" );
+        FILE* fd = fopen( ps_.write_dimacs->c_str(), "w" );
 #endif
         dimacs_.to_dimacs( fd );
         fclose( fd );
@@ -480,19 +491,19 @@ public:
   {
     if constexpr ( std::conjunction_v<std::is_same<Lit, bill::lit_type>...> )
     {
-      add_clause( bill::result::clause_type{{lits...}} );
+      add_clause( bill::result::clause_type{ { lits... } } );
     }
     else
     {
-      add_clause( bill::result::clause_type{{lit( lits )...}} );
+      add_clause( bill::result::clause_type{ { lit( lits )... } } );
     }
   }
 
 private:
   void register_events()
   {
-    Ntk::events().on_add.push_back( [this]( auto const& n ) { on_add( n ); } );
-    Ntk::events().on_modified.push_back( [this]( auto const& n, auto const& previous ) {
+    add_event = Ntk::events().register_add_event( [this]( auto const& n ) { on_add( n ); } );
+    modified_event = Ntk::events().register_modified_event( [this]( auto const& n, auto const& previous ) {
       (void)previous;
       if constexpr ( AllowModify )
       {
@@ -508,7 +519,7 @@ private:
       assert( false && "nodes should not be modified in cnf_view" );
       std::abort();
     } );
-    Ntk::events().on_delete.push_back( [this]( auto const& n ) {
+    delete_event = Ntk::events().register_delete_event( [this]( auto const& n ) {
       if constexpr ( AllowModify )
       {
         if ( ps_.auto_update )
@@ -633,7 +644,7 @@ private:
     {
       if ( Ntk::is_nary_and( n ) )
       {
-        fmt::print( "[e] nary-AND not yet supported in generate_cnf" );
+        fmt::print( stderr, "[e] nary-AND not yet supported in generate_cnf" );
         std::abort();
         return;
       }
@@ -643,7 +654,7 @@ private:
     {
       if ( Ntk::is_nary_or( n ) )
       {
-        fmt::print( "[e] nary-OR not yet supported in generate_cnf" );
+        fmt::print( stderr, "[e] nary-OR not yet supported in generate_cnf" );
         std::abort();
         return;
       }
@@ -653,7 +664,7 @@ private:
     {
       if ( Ntk::is_nary_xor( n ) )
       {
-        fmt::print( "[e] nary-XOR not yet supported in generate_cnf" );
+        fmt::print( stderr, "[e] nary-XOR not yet supported in generate_cnf" );
         std::abort();
         return;
       }
@@ -668,9 +679,13 @@ private:
   percy::cnf_formula dimacs_;
 
   cnf_view_params ps_;
+
+  std::shared_ptr<typename network_events<Ntk>::add_event_type> add_event;
+  std::shared_ptr<typename network_events<Ntk>::modified_event_type> modified_event;
+  std::shared_ptr<typename network_events<Ntk>::delete_event_type> delete_event;
 };
 
 template<class T>
-cnf_view(T const&) -> cnf_view<T, true>;
+cnf_view( T const& ) -> cnf_view<T, true>;
 
 } /* namespace mockturtle */

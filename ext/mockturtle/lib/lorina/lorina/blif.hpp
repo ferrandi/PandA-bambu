@@ -274,11 +274,36 @@ static std::regex end( R"(.end)" );
  * \param diag An optional diagnostic engine with callback methods for parse errors
  * \return Success if parsing has been successful, or parse error if parsing has failed
  */
-inline return_code read_blif( std::istream& in, const blif_reader& reader, diagnostic_engine* diag = nullptr )
+[[nodiscard]] inline return_code read_blif( std::istream& in, const blif_reader& reader, diagnostic_engine* diag = nullptr )
 {
   return_code result = return_code::success;
 
-  const auto dispatch_function = [&]( std::vector<std::string> inputs, std::string output, std::vector<std::pair<std::string, std::string>> tt )
+  /* Function signature */
+  using GateFn = detail::Func<
+                   std::vector<std::string>,
+                   std::string,
+                   std::vector<std::pair<std::string, std::string>>
+                 >;
+
+  /* Parameter maps */
+  using GateParamMap = detail::ParamPackMap<
+                         /* Key */
+                         std::string,
+                         /* Params */
+                         std::vector<std::string>,
+                         std::string,
+                         std::vector<std::pair<std::string, std::string>>
+                       >;
+
+  constexpr static const int GATE_FN{0};
+
+  using ParamMaps = detail::ParamPackMapN<GateParamMap>;
+  using PackedFns = detail::FuncPackN<GateFn>;
+
+  detail::call_in_topological_order<PackedFns, ParamMaps>
+    on_action( PackedFns( GateFn( [&]( std::vector<std::string> inputs,
+				       std::string output,
+				       std::vector<std::pair<std::string, std::string>> tt )
     {
       /* ignore latches */
       if ( output == "" )
@@ -288,9 +313,7 @@ inline return_code read_blif( std::istream& in, const blif_reader& reader, diagn
       }
 
       reader.on_gate( inputs, output, tt );
-    };
-
-  detail::call_in_topological_order<std::vector<std::string>, std::string, std::vector<std::pair<std::string, std::string>>> on_action( dispatch_function );
+    } ) ) );
 
   std::smatch m;
   detail::foreach_line_in_file_escape( in, [&]( std::string line ) {
@@ -328,7 +351,7 @@ inline return_code read_blif( std::istream& in, const blif_reader& reader, diagn
           return false;
         } );
 
-        on_action.call_deferred( args, output, args, output, tt );
+        on_action.call_deferred<GATE_FN>( args, { output }, std::tuple( args, output, tt ) );
 
         if ( in.eof() )
         {
@@ -394,13 +417,12 @@ inline return_code read_blif( std::istream& in, const blif_reader& reader, diagn
 
           on_action.declare_known( output );
           reader.on_latch( input, output, type, control, init_value );
-          on_action.compute_dependencies( output );
+          on_action.compute_dependencies<GATE_FN>( { output } );
 
           return true;
         }
 
-        diag->report( diagnostic_level::error,
-                      fmt::format( "latch format not supported `{0}`", line ) );
+        diag->report( diag_id::ERR_BLIF_LATCH_FORMAT ).add_argument( line );
 
         result = return_code::parse_error;
       }
@@ -425,8 +447,7 @@ inline return_code read_blif( std::istream& in, const blif_reader& reader, diagn
 
       if ( diag )
       {
-        diag->report( diagnostic_level::error,
-                      fmt::format( "cannot parse line `{0}`", line ) );
+        diag->report( diag_id::ERR_PARSE_LINE ).add_argument( line );
       }
 
       result = return_code::parse_error;
@@ -442,8 +463,9 @@ inline return_code read_blif( std::istream& in, const blif_reader& reader, diagn
   {
     if ( diag )
     {
-      diag->report( diagnostic_level::warning,
-                    fmt::format( "unresolved dependencies: `{0}` requires `{1}`",  r.first, r.second ) );
+      diag->report( diag_id::WRN_UNRESOLVED_DEPENDENCY )
+        .add_argument( r.first )
+        .add_argument( r.second );
     }
   }
 
@@ -460,15 +482,14 @@ inline return_code read_blif( std::istream& in, const blif_reader& reader, diagn
  * \param diag An optional diagnostic engine with callback methods for parse errors
  * \return Success if parsing has been successful, or parse error if parsing has failed
  */
-inline return_code read_blif( const std::string& filename, const blif_reader& reader, diagnostic_engine* diag = nullptr )
+[[nodiscard]] inline return_code read_blif( const std::string& filename, const blif_reader& reader, diagnostic_engine* diag = nullptr )
 {
   std::ifstream in( detail::word_exp_filename( filename ), std::ifstream::in );
   if ( !in.is_open() )
   {
     if ( diag )
     {
-      diag->report( diagnostic_level::fatal,
-                    fmt::format( "could not open file `{0}`", filename ) );
+      diag->report( diag_id::ERR_FILE_OPEN ).add_argument( filename );
     }
     return return_code::parse_error;
   }

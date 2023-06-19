@@ -480,12 +480,6 @@ void CompilerWrapper::CompileFile(const std::string& original_file_name, std::st
    if(cm == CompilerWrapper_CompilerMode::CM_ANALYZER && !compiler.is_clang)
    {
       command = GetAnalyzeCompiler();
-      if(getenv("APPDIR"))
-      {
-         const auto inc_dir = std::string(getenv("APPDIR")) + "/usr/include/c++";
-         command =
-             "CPLUS_INCLUDE_PATH=\"" + inc_dir + "/$(ls -x -v -1a " + inc_dir + " 2> /dev/null | tail -1)\" " + command;
-      }
    }
    command += " -D__NO_INLINE__ "; /// needed to avoid problem with glibc inlines
 #ifdef _WIN32
@@ -578,9 +572,8 @@ void CompilerWrapper::CompileFile(const std::string& original_file_name, std::st
          (Param->getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_CPP ||
           Param->getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_LLVM_CPP))
       {
-         command += " -Xclang -plugin-arg-" +
-                    compiler.ASTAnalyzer_plugin_name + " -Xclang -cppflag -Xclang -plugin-arg-" +
-                    compiler.ASTAnalyzer_plugin_name + " -Xclang 1";
+         command += " -Xclang -plugin-arg-" + compiler.ASTAnalyzer_plugin_name +
+                    " -Xclang -cppflag -Xclang -plugin-arg-" + compiler.ASTAnalyzer_plugin_name + " -Xclang 1";
       }
       if(addTopFName)
       {
@@ -733,7 +726,7 @@ void CompilerWrapper::CompileFile(const std::string& original_file_name, std::st
       if(compiler.is_clang)
       {
          if(Param->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
-             CompilerWrapper_CompilerTarget::CT_I386_CLANG16)
+            CompilerWrapper_CompilerTarget::CT_I386_CLANG16)
          {
             command += " -c -fplugin=" + compiler.ASTAnnotate_plugin_obj;
             command += " -Xclang -add-plugin -Xclang " + compiler.ASTAnnotate_plugin_name;
@@ -764,6 +757,11 @@ void CompilerWrapper::CompileFile(const std::string& original_file_name, std::st
    }
    else if(cm == CompilerWrapper_CompilerMode::CM_LTO)
    {
+      if(Param->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
+         CompilerWrapper_CompilerTarget::CT_I386_CLANG16)
+      {
+         command += " -Xclang -no-opaque-pointers";
+      }
       command += " -c -flto -o " + Param->getOption<std::string>(OPT_output_temporary_directory) + "/" +
                  GetBaseName(real_file_name) + ".o ";
    }
@@ -822,7 +820,7 @@ void CompilerWrapper::CompileFile(const std::string& original_file_name, std::st
       START_TIME(gcc_compilation_time);
    }
 #endif
-   int ret = PandaSystem(Param, command, gcc_output_file_name);
+   int ret = PandaSystem(Param, command, false, gcc_output_file_name);
 #if !NPROFILE
    if(output_level >= OUTPUT_LEVEL_VERBOSE)
    {
@@ -1047,7 +1045,7 @@ void CompilerWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::st
       auto command = compiler.llvm_link + " " + object_files + " -o " + temporary_file_o_bc;
       const auto llvm_link_output_file_name =
           Param->getOption<std::string>(OPT_output_temporary_directory) + STR_CST_gcc_output;
-      auto ret = PandaSystem(Param, command, llvm_link_output_file_name);
+      auto ret = PandaSystem(Param, command, false, llvm_link_output_file_name);
       if(IsError(ret))
       {
          PRINT_OUT_MEX(OUTPUT_LEVEL_NONE, 0, "Error in llvm-link");
@@ -1089,6 +1087,8 @@ void CompilerWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::st
       {
          if(compiler.is_clang)
          {
+            auto plugin_prefix =
+                add_plugin_prefix(Param->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler));
             command = compiler.llvm_opt;
 #ifndef _WIN32
             command += load_plugin_opt(compiler.topfname_plugin_obj,
@@ -1096,6 +1096,11 @@ void CompilerWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::st
 #endif
             command += " -internalize-outputdir=" + Param->getOption<std::string>(OPT_output_temporary_directory);
             command += " -panda-TFN=" + fname;
+            if(Param->isOption(OPT_interface_type) && Param->getOption<HLSFlowStep_Type>(OPT_interface_type) ==
+                                                          HLSFlowStep_Type::INFERRED_INTERFACE_GENERATION)
+            {
+               command += " -add-noalias";
+            }
             std::string extern_symbols;
             std::vector<std::string> xml_files;
             if(Param->isOption(OPT_xml_memory_allocation))
@@ -1180,7 +1185,7 @@ void CompilerWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::st
             {
                command += " -panda-Internalize";
             }
-            command += " -" + compiler.topfname_plugin_name;
+            command += plugin_prefix + compiler.topfname_plugin_name;
             command += " " + temporary_file_o_bc;
             temporary_file_o_bc =
                 boost::filesystem::path(Param->getOption<std::string>(OPT_output_temporary_directory) + "/" +
@@ -1189,7 +1194,7 @@ void CompilerWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::st
             command += " -o " + temporary_file_o_bc;
             const auto tfn_output_file_name =
                 Param->getOption<std::string>(OPT_output_temporary_directory) + STR_CST_gcc_output;
-            ret = PandaSystem(Param, command, tfn_output_file_name);
+            ret = PandaSystem(Param, command, false, tfn_output_file_name);
             if(IsError(ret))
             {
                PRINT_OUT_MEX(OUTPUT_LEVEL_NONE, 0, "Error in opt");
@@ -1210,7 +1215,7 @@ void CompilerWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::st
             command += " " + temporary_file_o_bc;
             command +=
                 " --internalize-public-api-file=" + Param->getOption<std::string>(OPT_output_temporary_directory) +
-                "external-symbols.txt -internalize ";
+                "external-symbols.txt " + plugin_prefix + "internalize ";
             temporary_file_o_bc =
                 boost::filesystem::path(Param->getOption<std::string>(OPT_output_temporary_directory) + "/" +
                                         boost::filesystem::unique_path(std::string(STR_CST_llvm_obj_file)).string())
@@ -1218,7 +1223,7 @@ void CompilerWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::st
             command += " -o " + temporary_file_o_bc;
             const auto int_output_file_name =
                 Param->getOption<std::string>(OPT_output_temporary_directory) + STR_CST_gcc_output;
-            ret = PandaSystem(Param, command, int_output_file_name);
+            ret = PandaSystem(Param, command, false, int_output_file_name);
             if(IsError(ret))
             {
                PRINT_OUT_MEX(OUTPUT_LEVEL_NONE, 0, "Error in opt");
@@ -1254,7 +1259,7 @@ void CompilerWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::st
          command += " -o " + temporary_file_o_bc;
          const auto o2_output_file_name =
              Param->getOption<std::string>(OPT_output_temporary_directory) + STR_CST_gcc_output;
-         ret = PandaSystem(Param, command, o2_output_file_name);
+         ret = PandaSystem(Param, command, false, o2_output_file_name);
          if(IsError(ret))
          {
             PRINT_OUT_MEX(OUTPUT_LEVEL_NONE, 0, "Error in opt");
@@ -1292,6 +1297,7 @@ void CompilerWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::st
       }
       if(compiler.is_clang)
       {
+         auto plugin_prefix = add_plugin_prefix(Param->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler));
          command = compiler.llvm_opt;
 #ifndef _WIN32
          command += load_plugin_opt(compiler.ssa_plugin_obj,
@@ -1305,27 +1311,30 @@ void CompilerWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::st
          {
             command += " -panda-topfname=" + fname;
          }
-         command += " -vectorize-loops=false -vectorize-slp=false -domfrontier -domtree -memdep -memoryssa "
-                    "-lazy-value-info -aa ";
+         command += plugin_prefix + "vectorize-loops=false" + plugin_prefix + "vectorize-slp=false" + plugin_prefix +
+                    "domfrontier " + plugin_prefix + "domtree " + plugin_prefix + "memdep " + plugin_prefix +
+                    "memoryssa " + plugin_prefix + "lazy-value-info " + plugin_prefix + "aa ";
          command += (Param->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
                          CompilerWrapper_CompilerTarget::CT_I386_CLANG13 ||
                      Param->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
                          CompilerWrapper_CompilerTarget::CT_I386_CLANG16) ?
                         "" :
-                        "-assumption-cache-tracker ";
+                        plugin_prefix + "assumption-cache-tracker ";
 
-         command +=
-             "-targetlibinfo -loops -simplifycfg -mem2reg  -globalopt -break-crit-edges -dse -adce -loop-load-elim";
+         command += plugin_prefix + "targetlibinfo " + plugin_prefix + "loops " + plugin_prefix + "simplifycfg " +
+                    plugin_prefix + "mem2reg  " + plugin_prefix + "globalopt " + plugin_prefix + "break-crit-edges " +
+                    plugin_prefix + "dse " + plugin_prefix + "adce " + plugin_prefix + "loop-load-elim";
          command += " " + temporary_file_o_bc;
          temporary_file_o_bc =
              boost::filesystem::path(Param->getOption<std::string>(OPT_output_temporary_directory) + "/" +
                                      boost::filesystem::unique_path(std::string(STR_CST_llvm_obj_file)).string())
                  .string();
          command += " -o " + temporary_file_o_bc;
-         command += " -" + compiler.ssa_plugin_name;
+         command += add_plugin_prefix(Param->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler)) +
+                    compiler.ssa_plugin_name;
          const auto gimpledump_output_file_name =
              Param->getOption<std::string>(OPT_output_temporary_directory) + STR_CST_gcc_output;
-         ret = PandaSystem(Param, command, gimpledump_output_file_name);
+         ret = PandaSystem(Param, command, false, gimpledump_output_file_name);
          if(IsError(ret))
          {
             PRINT_OUT_MEX(OUTPUT_LEVEL_NONE, 0, "Error in opt");
@@ -2903,14 +2912,6 @@ CompilerWrapper::Compiler CompilerWrapper::GetCompiler() const
       THROW_ERROR("Not found any compatible compiler");
    }
 
-   if(compiler.is_clang && getenv("APPDIR"))
-   {
-      const auto inc_dir = std::string(getenv("APPDIR")) + "/usr/include/c++";
-      compiler.gcc = "CPLUS_INCLUDE_PATH=\"" + inc_dir + "/$(ls -x -v -1a " + inc_dir + " 2> /dev/null | tail -1)\" " +
-                     compiler.gcc;
-      compiler.cpp = "CPLUS_INCLUDE_PATH=\"" + inc_dir + "/$(ls -x -v -1a " + inc_dir + " 2> /dev/null | tail -1)\" " +
-                     compiler.cpp;
-   }
    return compiler;
 }
 
@@ -2963,7 +2964,7 @@ void CompilerWrapper::GetSystemIncludes(std::vector<std::string>& includes) cons
        "-quiet|COMPILER_PATH|LIBRARY_PATH|COLLECT_GCC|OFFLOAD_TARGET_NAMES|OFFLOAD_TARGET_DEFAULT|ignoring duplicate "
        "directory|ignoring nonexistent directory|InstalledDir|clang version|Found candidate|Selected GCC "
        "installation|Candidate multilib|Selected multilib|-cc1)\" | tr '\\n' ' ' | tr '\\r' ' '  | sed 's/\\\\/\\//g'";
-   int ret = PandaSystem(Param, command, STR_CST_gcc_include);
+   int ret = PandaSystem(Param, command, false, STR_CST_gcc_include);
    PRINT_OUT_MEX(OUTPUT_LEVEL_PEDANTIC, output_level, "");
    if(IsError(ret))
    {
@@ -3009,7 +3010,7 @@ void CompilerWrapper::QueryCompilerConfig(const std::string& compiler_option) co
    const std::string command = gcc + " " + compiler_option;
    const std::string output_file_name =
        Param->getOption<std::string>(OPT_output_temporary_directory) + STR_CST_file_IO_shell_output_file;
-   int ret = PandaSystem(Param, command, output_file_name);
+   int ret = PandaSystem(Param, command, false, output_file_name);
    if(IsError(ret))
    {
       THROW_ERROR("Error in retrieving gcc configuration");
@@ -3036,7 +3037,7 @@ size_t CompilerWrapper::GetSourceCodeLines(const ParameterConstRef Param)
       command += source_file + " ";
    }
    command += std::string(" 2> /dev/null | wc -l");
-   int ret = PandaSystem(Param, command, output_file_name);
+   int ret = PandaSystem(Param, command, true, output_file_name);
    if(IsError(ret))
    {
       THROW_ERROR("Error during execution of computing word lines");
@@ -3128,7 +3129,7 @@ void CompilerWrapper::CreateExecutable(const std::list<std::string>& file_names,
    const std::string gcc_output_file_name =
        Param->getOption<std::string>(OPT_output_temporary_directory) + STR_CST_gcc_output;
 
-   int ret = PandaSystem(Param, command, gcc_output_file_name);
+   int ret = PandaSystem(Param, command, false, gcc_output_file_name);
    if(IsError(ret))
    {
       CopyStdout(gcc_output_file_name);
@@ -3633,6 +3634,7 @@ std::string CompilerWrapper::clang_recipes(const CompilerWrapper_OptimizationSet
                                            ,
                                            const std::string& CSROA_plugin_name, const std::string& fname)
 {
+   auto plugin_prefix = add_plugin_prefix(compiler);
    std::string recipe = "";
 #ifndef _WIN32
    recipe +=
@@ -3808,8 +3810,9 @@ std::string CompilerWrapper::clang_recipes(const CompilerWrapper_OptimizationSet
    {
       const auto opt_level =
           optimization_level == CompilerWrapper_OptimizationSet::O0 ? "1" : WriteOptimizationLevel(optimization_level);
-      recipe += " -O" + opt_level + " --disable-vector-combine -vectorize-loops=false -vectorize-slp=false -scalarizer";
-      recipe += " -" + expandMemOps_plugin_name + " -simplifycfg ";
+      recipe += add_plugin_prefix(compiler, opt_level) +
+                " --disable-vector-combine -vectorize-loops=false -vectorize-slp=false " + plugin_prefix + "scalarizer";
+      recipe += plugin_prefix + expandMemOps_plugin_name + plugin_prefix + "simplifycfg ";
    }
    else if(compiler == CompilerWrapper_CompilerTarget::CT_I386_CLANGVVD)
    {
@@ -4456,6 +4459,34 @@ std::string CompilerWrapper::load_plugin_opt(std::string plugin_obj, CompilerWra
       target == CompilerWrapper_CompilerTarget::CT_I386_CLANG16)
    {
       flags += " -load-pass-plugin=" + plugin_obj;
+   }
+   return flags;
+}
+
+std::string CompilerWrapper::add_plugin_prefix(CompilerWrapper_CompilerTarget target, std::string O_level)
+{
+   std::string flags;
+   if(O_level != "")
+   {
+      if(target == CompilerWrapper_CompilerTarget::CT_I386_CLANG16)
+      {
+         flags += " -p 'default<O" + O_level + ">'";
+      }
+      else
+      {
+         flags += " -O" + O_level;
+      }
+   }
+   else
+   {
+      if(target == CompilerWrapper_CompilerTarget::CT_I386_CLANG16)
+      {
+         flags += " -p ";
+      }
+      else
+      {
+         flags += " -";
+      }
    }
    return flags;
 }

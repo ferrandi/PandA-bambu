@@ -2745,32 +2745,27 @@ void TestbenchGenerationBaseStep::testbench_controller_machine() const
                           "currAddr % (1 << " + portPrefix + "awqueue[_i_][" + STR(SIZE_HIGH_INDEX) + " : " +
                           STR(SIZE_LOW_INDEX) + "]));\n");
 
-            /* Compute aggregate memory for WDATA */
+            /* Compute bitmask and overwrite data */
             const auto portWDATA = mod->find_member(portPrefix + "WDATA", port_o_K, cir);
             const auto bitsizeWDATA = GetPointer<port_o>(portWDATA)->get_typeRef()->size *
                                       GetPointer<port_o>(portWDATA)->get_typeRef()->vector_size;
-            std::string mem_aggregated;
-            {
-               mem_aggregated = "{";
-               for(unsigned int bitsize_index = 0; bitsize_index < bitsizeWDATA; bitsize_index = bitsize_index + 8)
-               {
-                  if(bitsize_index)
-                  {
-                     mem_aggregated += ", ";
-                  }
-                  mem_aggregated += "_bambu_testbench_mem_[" + portPrefix + "currAddr + " +
-                                    STR((bitsizeWDATA - bitsize_index) / 8 - 1) + " - base_addr]";
-               }
-               mem_aggregated += "}";
-            }
 
             for(unsigned bitsize_index = 0; bitsize_index < bitsizeWDATA; bitsize_index = bitsize_index + 8)
             {
                writer->write("    " + portPrefix + "wBitmask[" + STR(bitsize_index + 7) + " : " + STR(bitsize_index) +
                              "] = {8{" + portPrefix + "WSTRB[" + STR(bitsize_index / 8) + "]}};\n");
             }
-            writer->write("    " + mem_aggregated + " <= (" + mem_aggregated + " & ~" + portPrefix + "wBitmask) | (" +
-                          portPrefix + "WDATA & " + portPrefix + "wBitmask);\n");
+            for(unsigned bitsize_index = 0; bitsize_index < bitsizeWDATA; bitsize_index = bitsize_index + 8)
+            {
+               writer->write("    _bambu_testbench_mem_[" + portPrefix + "currAddr + " +
+                             STR((bitsizeWDATA - bitsize_index) / 8 - 1) + " - base_addr] <= (_bambu_testbench_mem_[" +
+                             portPrefix + "currAddr + " + STR((bitsizeWDATA - bitsize_index) / 8 - 1) +
+                             " - base_addr] & ~" + portPrefix + "wBitmask[" + STR(bitsizeWDATA - bitsize_index - 1) +
+                             " : " + STR(bitsizeWDATA - bitsize_index - 8) + "]) | (" + portPrefix + "WDATA[" +
+                             STR(bitsizeWDATA - bitsize_index - 1) + " : " + STR(bitsizeWDATA - bitsize_index - 8) +
+                             "] & " + portPrefix + "wBitmask[" + STR(bitsizeWDATA - bitsize_index - 1) + " : " +
+                             STR(bitsizeWDATA - bitsize_index - 8) + "]);\n");
+            }
             writer->write("    if(" + portPrefix + "WLAST) begin\n");
             writer->write("      " + portPrefix + "awqueue[_i_][" + STR(COUNT_HIGH_INDEX) + " : " +
                           STR(COUNT_LOW_INDEX) + "] <= -(32'd`MEM_DELAY_WRITE - 1);\n");
@@ -2824,6 +2819,7 @@ void TestbenchGenerationBaseStep::testbench_controller_machine() const
                           STR(SIZE_LOW_INDEX) + "]));\n");
 
             /* Compute aggregate memory for RDATA */
+            std::string mem_aggregated;
             const auto portRDATA = mod->find_member(portPrefix + "RDATA", port_o_K, cir);
             const auto bitsizeRDATA = GetPointer<port_o>(portRDATA)->get_typeRef()->size *
                                       GetPointer<port_o>(portRDATA)->get_typeRef()->vector_size;

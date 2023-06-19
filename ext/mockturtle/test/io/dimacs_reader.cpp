@@ -37,6 +37,6 @@ TEST_CASE( "read a DIMACS file into an XAG", "[dimacs_reader]" )
   CHECK( xag.num_gates() == 8 );
 
   kitty::static_truth_table<5u> expected;
-  kitty::create_from_expression(expected, "({a!ed}{!aecd}{!c!d})");
+  kitty::create_from_expression( expected, "({a!ed}{!aecd}{!c!d})" );
   CHECK( simulate<kitty::static_truth_table<5u>>( xag )[0] == expected );
 }
