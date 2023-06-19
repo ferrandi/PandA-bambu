@@ -2784,30 +2784,7 @@ void BambuParameter::CheckParameters()
    // /// Search for icarus
    // setOption(OPT_icarus, system("which iverilog > /dev/null 2>&1") == 0);
 
-   if(isOption(OPT_simulator))
-   {
-      if(getOption<std::string>(OPT_simulator) == "MODELSIM" && !isOption(OPT_mentor_modelsim_bin))
-      {
-         THROW_ERROR("Mentor Modelsim was not detected by Bambu. Please check --mentor-root option is correct.");
-      }
-      else if(getOption<std::string>(OPT_simulator) == "XSIM" && !isOption(OPT_xilinx_vivado_settings))
-      {
-         THROW_ERROR("Xilinx XSim was not detected by Bambu. Please check --xilinx-root option is correct.");
-      }
-      else if(getOption<std::string>(OPT_simulator) == "VERILATOR" && !isOption(OPT_verilator))
-      {
-         THROW_ERROR("Verilator was not detected by Bambu. Please make sure it is installed in the system.");
-      }
-      // else if(getOption<std::string>(OPT_simulator) == "ISIM" && !isOption(OPT_xilinx_settings))
-      // {
-      //    THROW_ERROR("Xilinx ISim was not detected by Bambu. Please check --xilinx-root option is correct.");
-      // }
-      // else if(getOption<std::string>(OPT_simulator) == "ICARUS" && !isOption(OPT_icarus))
-      // {
-      //    THROW_ERROR("Icarus was not detected by Bambu. Please make sure it is installed in the system.");
-      // }
-   }
-   else
+   if(!isOption(OPT_simulator))
    {
       if(isOption(OPT_mentor_modelsim_bin))
       {
@@ -2817,13 +2794,9 @@ void BambuParameter::CheckParameters()
       {
          setOption(OPT_simulator, "XSIM"); /// Mixed language simulator
       }
-      else if(getOption<bool>(OPT_verilator))
-      {
-         setOption(OPT_simulator, "VERILATOR");
-      }
       else
       {
-         THROW_ERROR("No valid simulator was found in the system.");
+         setOption(OPT_simulator, "VERILATOR");
       }
       // else if(isOption(OPT_xilinx_settings))
       // {
@@ -2931,6 +2904,27 @@ void BambuParameter::CheckParameters()
             is_evaluation_objective_string(objective_vector, "CYCLES") ||
             is_evaluation_objective_string(objective_vector, "TOTAL_CYCLES"))
          {
+            if(getOption<std::string>(OPT_simulator) == "MODELSIM" && !isOption(OPT_mentor_modelsim_bin))
+            {
+               THROW_ERROR("Mentor Modelsim was not detected by Bambu. Please check --mentor-root option is correct.");
+            }
+            else if(getOption<std::string>(OPT_simulator) == "XSIM" && !isOption(OPT_xilinx_vivado_settings))
+            {
+               THROW_ERROR("Xilinx XSim was not detected by Bambu. Please check --xilinx-root option is correct.");
+            }
+            else if(getOption<std::string>(OPT_simulator) == "VERILATOR" && !isOption(OPT_verilator))
+            {
+               THROW_ERROR("Verilator was not detected by Bambu. Please make sure it is installed in the system.");
+            }
+            // else if(getOption<std::string>(OPT_simulator) == "ISIM" && !isOption(OPT_xilinx_settings))
+            // {
+            //    THROW_ERROR("Xilinx ISim was not detected by Bambu. Please check --xilinx-root option is
+            //    correct.");
+            // }
+            // else if(getOption<std::string>(OPT_simulator) == "ICARUS" && !isOption(OPT_icarus))
+            // {
+            //    THROW_ERROR("Icarus was not detected by Bambu. Please make sure it is installed in the system.");
+            // }
             if(!getOption<bool>(OPT_generate_testbench))
             {
                setOption(OPT_generate_testbench, true);
