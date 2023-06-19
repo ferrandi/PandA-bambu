@@ -594,6 +594,13 @@ void EucalyptusParameter::CheckParameters()
       setOption(OPT_verilator_l2_name,
                 system("bash -c \"if [[ \\\"x$(verilator --l2-name v 2>&1 | head -n1 | grep -i 'Invalid Option')\\\" = "
                        "\\\"x\\\" ]]; then exit 0; else exit 1; fi\" > /dev/null 2>&1") == 0);
+      const auto has_timescale_override =
+          system("bash -c \"if [[ \\\"x$(verilator --timescale-override v 2>&1 | head -n1 | grep -i 'Invalid "
+                 "Option')\\\" = \\\"x\\\" ]]; then exit 0; else exit 1; fi\" > /dev/null 2>&1") == 0;
+      if(has_timescale_override)
+      {
+         setOption(OPT_verilator_timescale_override, "1ps/1ps");
+      }
       const auto thread_support =
           system("bash -c \"if [ $(verilator --version | grep Verilator | sed -E 's/Verilator ([0-9]+).*/\1/') -ge 4 "
                  "]; then exit 0; else exit 1; fi\" > /dev/null 2>&1") == 0;
