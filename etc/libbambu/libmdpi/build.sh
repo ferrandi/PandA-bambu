@@ -86,7 +86,7 @@ do
    fi
 done
 
-LDFLAGS="$(grep -oE '(-l|-W,l)\w+' <<< ${CFLAGS}) -lm"
+LDFLAGS="$(grep -oE '( -l|-W,l)\w+' <<< ${CFLAGS}) -lm"
 if [ "$LD" = "xsc" ]; then
    IFS=' ' read -r -a LDFLAGS <<< "${LDFLAGS}"
    LDFLAGS="${LDFLAGS[@]/#/-gcc_link_options=}"
