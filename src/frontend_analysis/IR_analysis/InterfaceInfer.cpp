@@ -537,7 +537,11 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Argument " + pname);
                const std::string tname(*typename_it);
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Typename " + tname);
-               HLSMgr->design_attributes[fname][pname][attr_typename] = tname;
+               if(parameters->getOption<HLSFlowStep_Type>(OPT_interface_type) ==
+                  HLSFlowStep_Type::INFERRED_INTERFACE_GENERATION)
+               {
+                  HLSMgr->design_attributes[fname][pname][attr_typename] = tname;
+               }
                top_design_interface_typename_signature.push_back(tname);
                top_design_interface_typename_orig_signature.push_back(tname);
                if(tname.find("_fixed<") != std::string::npos)
