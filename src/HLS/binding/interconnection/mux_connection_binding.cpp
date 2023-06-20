@@ -1441,15 +1441,27 @@ void mux_connection_binding::create_connections()
                {
                   Prec = GetPointerS<const integer_type>(GET_CONST_NODE(type))->prec;
                }
+               else if(type && (GET_CONST_NODE(type)->get_kind() == boolean_type_K))
+               {
+                  Prec = 8;
+               }
+               else if(type && (GET_CONST_NODE(type)->get_kind() == enumeral_type_K))
+               {
+                  Prec = GetPointerS<const enumeral_type>(GET_CONST_NODE(type))->prec;
+               }
                unsigned int algn = 0;
                if(type && (GET_CONST_NODE(type)->get_kind() == integer_type_K))
                {
                   algn = GetPointerS<const integer_type>(GET_CONST_NODE(type))->algn;
                }
+               else if(type && (GET_CONST_NODE(type)->get_kind() == boolean_type_K))
+               {
+                  algn = 8;
+               }
 #if USE_ALIGNMENT_INFO
                if(type && GetPointer<const type_node>(GET_CONST_NODE(type)))
                {
-                  alignment = GetPointerS<const type_node>(GET_CONST_NODE(type))->algn;
+                  algn = alignment = GetPointerS<const type_node>(GET_CONST_NODE(type))->algn;
                }
 #endif
                if(GET_TYPE(data, *op) & TYPE_STORE)
@@ -1551,28 +1563,19 @@ void mux_connection_binding::create_connections()
                                     bus_addr_bitsize, alignment);
                if(Prec != algn && Prec % algn)
                {
+                  HLS_manager::check_bitwidth(Prec);
                   determine_connection(
                       *op, HLS_manager::io_binding_type(0, Prec), fu_obj, 2, port_index, data,
                       static_cast<unsigned>(object_bitsize(TreeM, HLS_manager::io_binding_type(0, Prec))));
                }
                else
                {
-                  const auto IR_var_bitsize = tree_helper::Size(tn);
+                  const auto IR_var_bitsize = Prec != 0 ? Prec : tree_helper::Size(tn);
+                  HLS_manager::check_bitwidth(IR_var_bitsize);
                   unsigned int var_bitsize;
-                  if(Prec != algn && Prec % algn)
-                  {
-                     HLS_manager::check_bitwidth(Prec);
-                     var_bitsize = static_cast<unsigned int>(Prec);
-                  }
-                  else
-                  {
-                     var_bitsize = static_cast<unsigned int>(IR_var_bitsize);
-                  }
+                  var_bitsize = static_cast<unsigned int>(IR_var_bitsize);
                   determine_connection(
-                      *op,
-                      HLS_manager::io_binding_type(
-                          GET_INDEX_NODE(GetPointerS<const type_node>(GET_CONST_NODE(tn))->size), 0),
-                      fu_obj, 2, port_index, data,
+                      *op, HLS_manager::io_binding_type(0, var_bitsize), fu_obj, 2, port_index, data,
                       static_cast<unsigned>(object_bitsize(TreeM, HLS_manager::io_binding_type(0, var_bitsize))));
                }
             }
