@@ -233,7 +233,10 @@ endfunction"/>
           <port_o id="start_port" dir="OUT">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="TestbenchFSM RESFILE RESET_ACTIVE RESET_CYCLES CLOCK_PERIOD MAX_SIM_CYCLES" VERILOG_PROVIDED="
+          <NP_functionality LIBRARY="TestbenchFSM RESFILE RESET_ACTIVE RESET_CYCLES CLOCK_PERIOD MAX_SIM_CYCLES" VERILOG_PROVIDED="`ifdef VERILATOR
+timeunit 1ps;
+timeprecision 1ps;
+`endif
 
 import &quot;DPI-C&quot; function void m_init();
 import &quot;DPI-C&quot; function int unsigned m_next(input int unsigned state);
