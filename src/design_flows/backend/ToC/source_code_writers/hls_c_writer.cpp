@@ -621,6 +621,10 @@ void HLSCWriter::WriteMainTestbench()
          {
             return has_subnormals ? "flts" : "flt";
          }
+         else if(tree_helper::IsVoidType(t))
+         {
+            return "mem";
+         }
       }
       return "val";
    };
