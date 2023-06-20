@@ -48,8 +48,8 @@
 #include "reg_binding.hpp"
 
 #include "Parameter.hpp"
-#include "boost/lexical_cast.hpp"
 #include "dbgPrintHelper.hpp"
+#include <boost/lexical_cast.hpp>
 
 /// HLS/binding/storage_value_insertion includes
 #include "storage_value_information.hpp"

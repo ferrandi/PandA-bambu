@@ -485,12 +485,6 @@ void CompilerWrapper::CompileFile(const std::string& original_file_name, std::st
    if(cm == CompilerWrapper_CompilerMode::CM_ANALYZER && !compiler.is_clang)
    {
       command = GetAnalyzeCompiler();
-      if(getenv("APPDIR"))
-      {
-         const auto inc_dir = std::string(getenv("APPDIR")) + "/usr/include/c++";
-         command =
-             "CPLUS_INCLUDE_PATH=\"" + inc_dir + "/$(ls -x -v -1a " + inc_dir + " 2> /dev/null | tail -1)\" " + command;
-      }
    }
    command += " -D__NO_INLINE__ "; /// needed to avoid problem with glibc inlines
 #ifdef _WIN32
@@ -831,7 +825,7 @@ void CompilerWrapper::CompileFile(const std::string& original_file_name, std::st
       START_TIME(gcc_compilation_time);
    }
 #endif
-   int ret = PandaSystem(Param, command, gcc_output_file_name);
+   int ret = PandaSystem(Param, command, false, gcc_output_file_name);
 #if !NPROFILE
    if(output_level >= OUTPUT_LEVEL_VERBOSE)
    {
@@ -1052,7 +1046,7 @@ void CompilerWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::st
       auto command = compiler.llvm_link + " " + object_files + " -o " + temporary_file_o_bc;
       const auto llvm_link_output_file_name =
           Param->getOption<std::string>(OPT_output_temporary_directory) + STR_CST_gcc_output;
-      auto ret = PandaSystem(Param, command, llvm_link_output_file_name);
+      auto ret = PandaSystem(Param, command, false, llvm_link_output_file_name);
       if(IsError(ret))
       {
          PRINT_OUT_MEX(OUTPUT_LEVEL_NONE, 0, "Error in llvm-link");
@@ -1201,7 +1195,7 @@ void CompilerWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::st
             command += " -o " + temporary_file_o_bc;
             const auto tfn_output_file_name =
                 Param->getOption<std::string>(OPT_output_temporary_directory) + STR_CST_gcc_output;
-            ret = PandaSystem(Param, command, tfn_output_file_name);
+            ret = PandaSystem(Param, command, false, tfn_output_file_name);
             if(IsError(ret))
             {
                PRINT_OUT_MEX(OUTPUT_LEVEL_NONE, 0, "Error in opt");
@@ -1230,7 +1224,7 @@ void CompilerWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::st
             command += " -o " + temporary_file_o_bc;
             const auto int_output_file_name =
                 Param->getOption<std::string>(OPT_output_temporary_directory) + STR_CST_gcc_output;
-            ret = PandaSystem(Param, command, int_output_file_name);
+            ret = PandaSystem(Param, command, false, int_output_file_name);
             if(IsError(ret))
             {
                PRINT_OUT_MEX(OUTPUT_LEVEL_NONE, 0, "Error in opt");
@@ -1266,7 +1260,7 @@ void CompilerWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::st
          command += " -o " + temporary_file_o_bc;
          const auto o2_output_file_name =
              Param->getOption<std::string>(OPT_output_temporary_directory) + STR_CST_gcc_output;
-         ret = PandaSystem(Param, command, o2_output_file_name);
+         ret = PandaSystem(Param, command, false, o2_output_file_name);
          if(IsError(ret))
          {
             PRINT_OUT_MEX(OUTPUT_LEVEL_NONE, 0, "Error in opt");
@@ -1341,7 +1335,7 @@ void CompilerWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::st
                     compiler.ssa_plugin_name;
          const auto gimpledump_output_file_name =
              Param->getOption<std::string>(OPT_output_temporary_directory) + STR_CST_gcc_output;
-         ret = PandaSystem(Param, command, gimpledump_output_file_name);
+         ret = PandaSystem(Param, command, false, gimpledump_output_file_name);
          if(IsError(ret))
          {
             PRINT_OUT_MEX(OUTPUT_LEVEL_NONE, 0, "Error in opt");
@@ -2828,7 +2822,7 @@ CompilerWrapper::Compiler CompilerWrapper::GetCompiler() const
       compiler.gcc = flag_cpp ? relocate_compiler_path(I386_CLANGPPVVD_EXE) : relocate_compiler_path(I386_CLANGVVD_EXE);
       compiler.cpp = relocate_compiler_path(I386_CLANG_CPPVVD_EXE);
       compiler.extra_options =
-          " -D_FORTIFY_SOURCE=0 " + gcc_extra_options + (flag_cpp ? EXTRA_CLANGPP_COMPILER_OPTION : "");
+          " -D__VIVADO__ -D_FORTIFY_SOURCE=0 " + gcc_extra_options + (flag_cpp ? EXTRA_CLANGPP_COMPILER_OPTION : "");
       compiler.extra_options += " " + Param->getOption<std::string>(OPT_gcc_m32_mx32);
       compiler.extra_options += " -target fpga64-xilinx-linux-gnu";
       compiler.empty_plugin_obj = clang_plugin_dir + I386_CLANGVVD_EMPTY_PLUGIN + plugin_ext;
@@ -2894,14 +2888,6 @@ CompilerWrapper::Compiler CompilerWrapper::GetCompiler() const
       THROW_ERROR("Not found any compatible compiler");
    }
 
-   if(compiler.is_clang && getenv("APPDIR"))
-   {
-      const auto inc_dir = std::string(getenv("APPDIR")) + "/usr/include/c++";
-      compiler.gcc = "CPLUS_INCLUDE_PATH=\"" + inc_dir + "/$(ls -x -v -1a " + inc_dir + " 2> /dev/null | tail -1)\" " +
-                     compiler.gcc;
-      compiler.cpp = "CPLUS_INCLUDE_PATH=\"" + inc_dir + "/$(ls -x -v -1a " + inc_dir + " 2> /dev/null | tail -1)\" " +
-                     compiler.cpp;
-   }
    return compiler;
 }
 
@@ -2954,7 +2940,7 @@ void CompilerWrapper::GetSystemIncludes(std::vector<std::string>& includes) cons
        "-quiet|COMPILER_PATH|LIBRARY_PATH|COLLECT_GCC|OFFLOAD_TARGET_NAMES|OFFLOAD_TARGET_DEFAULT|ignoring duplicate "
        "directory|ignoring nonexistent directory|InstalledDir|clang version|Found candidate|Selected GCC "
        "installation|Candidate multilib|Selected multilib|-cc1)\" | tr '\\n' ' ' | tr '\\r' ' '  | sed 's/\\\\/\\//g'";
-   int ret = PandaSystem(Param, command, STR_CST_gcc_include);
+   int ret = PandaSystem(Param, command, false, STR_CST_gcc_include);
    PRINT_OUT_MEX(OUTPUT_LEVEL_PEDANTIC, output_level, "");
    if(IsError(ret))
    {
@@ -3000,7 +2986,7 @@ void CompilerWrapper::QueryCompilerConfig(const std::string& compiler_option) co
    const std::string command = gcc + " " + compiler_option;
    const std::string output_file_name =
        Param->getOption<std::string>(OPT_output_temporary_directory) + STR_CST_file_IO_shell_output_file;
-   int ret = PandaSystem(Param, command, output_file_name);
+   int ret = PandaSystem(Param, command, false, output_file_name);
    if(IsError(ret))
    {
       THROW_ERROR("Error in retrieving gcc configuration");
@@ -3027,7 +3013,7 @@ size_t CompilerWrapper::GetSourceCodeLines(const ParameterConstRef Param)
       command += source_file + " ";
    }
    command += std::string(" 2> /dev/null | wc -l");
-   int ret = PandaSystem(Param, command, output_file_name);
+   int ret = PandaSystem(Param, command, true, output_file_name);
    if(IsError(ret))
    {
       THROW_ERROR("Error during execution of computing word lines");
@@ -3121,7 +3107,7 @@ void CompilerWrapper::CreateExecutable(const std::list<std::string>& file_names,
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Compilation command is " + command);
    const auto gcc_output_file_name = Param->getOption<std::string>(OPT_output_temporary_directory) + STR_CST_gcc_output;
 
-   int ret = PandaSystem(Param, command, gcc_output_file_name);
+   int ret = PandaSystem(Param, command, false, gcc_output_file_name);
    if(IsError(ret))
    {
       CopyStdout(gcc_output_file_name);

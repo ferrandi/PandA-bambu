@@ -77,8 +77,8 @@
 #include "var_pp_functor.hpp"
 
 /// Utility include
-#include "boost/graph/topological_sort.hpp"
 #include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
+#include <boost/graph/topological_sort.hpp>
 
 #define PP_MAX_CYCLES_BOUNDED "max-cycles-bounded"
 #define DEFAULT_MAX_CYCLES_BOUNDED (8)

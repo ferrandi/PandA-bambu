@@ -368,11 +368,6 @@ void WB4_interface::build_WB4_complete_logic(structural_managerRef SM, structura
    connect_with_signal_name(SM, wrappedObj, DONE_PORT_NAME, interfaceObj, WB_IRQ_PORT_NAME,
                             STR(DONE_PORT_NAME) + "_INT");
 
-   structural_objectRef constBitZero = SM->add_module_from_technology_library(
-       "constBitZero", CONSTANT_STD, LIBRARY_STD, interfaceObj, HLS->HLS_T->get_technology_manager());
-   constBitZero->SetParameter("value", "1'b0");
-   connect_with_signal(SM, wrappedObj, START_PORT_NAME, constBitZero, "out1");
-
    auto data_bus_bitsize = get_data_bus_bitsize();
    auto addr_bus_bitsize = get_addr_bus_bitsize();
 

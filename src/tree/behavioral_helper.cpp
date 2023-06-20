@@ -97,10 +97,10 @@
 #endif
 
 /// Utility include
-#include "boost/lexical_cast.hpp"
 #include "exceptions.hpp"
 #include "string_manipulation.hpp" // for STR
 #include "var_pp_functor.hpp"
+#include <boost/lexical_cast.hpp>
 
 #include "type_casting.hpp"
 

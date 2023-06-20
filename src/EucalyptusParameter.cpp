@@ -341,14 +341,13 @@ void EucalyptusParameter::CheckParameters()
    const auto search_quartus = [&](const std::string& dir) {
       if(boost::filesystem::exists(dir + "/quartus/bin/quartus_sh"))
       {
-         if(system(STR("bash -c \"if [[ \\\"$(" + dir +
-                       "/quartus/bin/quartus_sh --version | grep Version | awk '{print $2}' | awk -F'.' '{print "
-                       "$1}')\\\" -lt \\\"14\\\" ]]; then exit 1; else exit 0; fi\" > /dev/null 2>&1")
+         if(system(STR("bash -c \"if [ $(" + dir +
+                       "/quartus/bin/quartus_sh --version | grep Version | sed -E 's/Version ([0-9]+).*/\\1/') -lt 14 "
+                       "]; then exit 1; else exit 0; fi\" > /dev/null 2>&1")
                        .c_str()))
          {
             setOption(OPT_quartus_13_settings, "export PATH=$PATH:" + dir + "/quartus/bin/");
-            if(system(STR("bash -c \"" + dir +
-                          "/quartus/bin/quartus_sh --help | grep \\\"\\-\\-64bit\\\"\" > /dev/null 2>&1")
+            if(system(STR("bash -c \"" + dir + "/quartus/bin/quartus_sh --help | grep '--64bit'\" > /dev/null 2>&1")
                           .c_str()) == 0)
             {
                setOption(OPT_quartus_13_64bit, true);
@@ -592,19 +591,12 @@ void EucalyptusParameter::CheckParameters()
    setOption(OPT_verilator, system("which verilator > /dev/null 2>&1") == 0);
    if(getOption<bool>(OPT_verilator))
    {
-      setOption(OPT_verilator_l2_name, system("bash -c \"if [[ \\\"x$(verilator --l2-name bambu_testbench 2>&1 | head "
-                                              "-n1 | grep -i 'Invalid Option')\\\" = "
-                                              "\\\"x\\\" ]]; then exit 0; else exit 1; fi\" > /dev/null 2>&1") == 0);
-      const auto has_timescale_override =
-          system("bash -c \"if [[ \\\"x$(verilator --timescale-override v 2>&1 | head -n1 | grep -i 'Invalid "
-                 "Option')\\\" = \\\"x\\\" ]]; then exit 0; else exit 1; fi\" > /dev/null 2>&1") == 0;
-      if(has_timescale_override)
-      {
-         setOption(OPT_verilator_timescale_override, "1ps/1ps");
-      }
+      setOption(OPT_verilator_l2_name,
+                system("bash -c \"if [[ \\\"x$(verilator --l2-name v 2>&1 | head -n1 | grep -i 'Invalid Option')\\\" = "
+                       "\\\"x\\\" ]]; then exit 0; else exit 1; fi\" > /dev/null 2>&1") == 0);
       const auto thread_support =
-          system("bash -c \"if [[ \\\"$(verilator --version | head -n1 | awk -F' ' '{print $2}'| awk -F'.' '{print "
-                 "$1}')\\\" = \\\"4\\\" ]]; then exit 0; else exit 1; fi\" > /dev/null 2>&1") == 0;
+          system("bash -c \"if [ $(verilator --version | grep Verilator | sed -E 's/Verilator ([0-9]+).*/\1/') -ge 4 "
+                 "]; then exit 0; else exit 1; fi\" > /dev/null 2>&1") == 0;
       if(getOption<bool>(OPT_verilator_parallel) && !thread_support)
       {
          THROW_WARNING("Installed version of Verilator does not support multi-threading.");

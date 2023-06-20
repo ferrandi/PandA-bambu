@@ -86,6 +86,8 @@
 
 #define CST_STR_BAMBU_TESTBENCH "bambu_testbench"
 
+#define SETUP_PORT_NAME "setup_port"
+
 TestbenchGeneration::TestbenchGeneration(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr,
                                          const DesignFlowManagerConstRef _design_flow_manager)
     : HLS_step(_parameters, _HLSMgr, _design_flow_manager, HLSFlowStep_Type::TESTBENCH_GENERATION),
@@ -251,6 +253,7 @@ DesignFlowStep_Status TestbenchGeneration::Exec()
    THROW_ASSERT(dut_done, "");
    const auto fsm_done = tb_fsm->find_member(DONE_PORT_NAME, port_o_K, tb_fsm);
    add_internal_connection(fsm_done, dut_done);
+   const auto fsm_setup = tb_fsm->find_member(SETUP_PORT_NAME, port_o_K, tb_fsm);
    auto fsm_start = tb_fsm->find_member(START_PORT_NAME, port_o_K, tb_fsm);
 
    std::list<structural_objectRef> if_modules;
@@ -294,18 +297,15 @@ DesignFlowStep_Status TestbenchGeneration::Exec()
       if(master_ports.size())
       {
          const auto master_mod = GetPointerS<module>(master_ports.front());
-         THROW_ASSERT(master_mod->get_in_port_size() >= 3, "At least three in ports must be present.");
-         THROW_ASSERT(master_mod->get_out_port_size() >= 1, "At least an out port must be present.");
          unsigned int k = 0;
 
          // Daisy chain start_port signal through all memory master modules
          for(const auto& master_port : master_ports)
          {
-            const auto mmod = GetPointerS<module>(master_port);
-            const auto m_start = mmod->get_in_port(2);
-            const auto m_start_o = mmod->get_out_port(0);
-            THROW_ASSERT(m_start->get_id() == "i_" START_PORT_NAME, "");
-            THROW_ASSERT(m_start_o->get_id() == START_PORT_NAME, "");
+            const auto m_start = master_port->find_member("i_" START_PORT_NAME, port_o_K, master_port);
+            const auto m_start_o = master_port->find_member(START_PORT_NAME, port_o_K, master_port);
+            THROW_ASSERT(m_start, "Port i_" START_PORT_NAME " not found in module " + master_port->get_path());
+            THROW_ASSERT(m_start_o, "Port " START_PORT_NAME " not found in module " + master_port->get_path());
             const auto sig = tb_top->add_sign("sig_" START_PORT_NAME + STR(k), tb_cir, fsm_start->get_typeRef());
             tb_top->add_connection(fsm_start, sig);
             tb_top->add_connection(sig, m_start);
@@ -516,11 +516,11 @@ DesignFlowStep_Status TestbenchGeneration::Exec()
                            "---" + in_port->get_path() + " <-> " + fsm_reset->get_path());
             add_internal_connection(in_port, fsm_reset);
          }
-         else if(in_port->get_id() == DONE_PORT_NAME)
+         else if(in_port->get_id() == SETUP_PORT_NAME)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level,
-                           "---" + in_port->get_path() + " <-> " + dut_done->get_path());
-            add_internal_connection(in_port, dut_done);
+                           "---" + in_port->get_path() + " <-> " + fsm_setup->get_path());
+            add_internal_connection(in_port, fsm_setup);
          }
          else
          {
@@ -735,17 +735,17 @@ std::string TestbenchGeneration::write_verilator_testbench() const
    simple_indent PP('{', '}', 3);
 
    std::string top_fname = mod->get_typeRef()->id_type;
-   PP(os, "#include <iostream>\n");
-   PP(os, "#include <string>\n");
+   PP(os, "#include <memory>\n");
+   PP(os, "\n");
    PP(os, "#include <verilated.h>\n");
-   PP(os, "#include \"Vbambu_testbench.h\"\n");
    PP(os, "\n");
    PP(os, "#if VM_TRACE\n");
    PP(os, "# include <verilated_vcd_c.h>\n");
    PP(os, "#endif\n");
    PP(os, "\n");
+   PP(os, "#include \"Vbambu_testbench.h\"\n");
    PP(os, "\n");
-   PP(os, "#define SIMULATION_MAX " + STR(2 * parameters->getOption<long long int>(OPT_max_sim_cycles)) + "ULL\n\n");
+   PP(os, "\n");
    PP(os, "static vluint64_t CLOCK_PERIOD = 2;\n");
    PP(os, "static vluint64_t HALF_CLOCK_PERIOD = CLOCK_PERIOD/2;\n");
    PP(os, "\n");
@@ -755,50 +755,38 @@ std::string TestbenchGeneration::write_verilator_testbench() const
    PP(os, "\n");
    PP(os, "int main (int argc, char **argv, char **env)\n");
    PP(os, "{\n");
-   PP(os, "   Vbambu_testbench *top;\n");
+   PP(os, "Verilated::commandArgs(argc, argv);\n");
+   PP(os, "Verilated::debug(0);\n");
+   PP(os,
+      "const std::unique_ptr<Vbambu_testbench> top{new Vbambu_testbench{\"clocked_" CST_STR_BAMBU_TESTBENCH "\"}};");
    PP(os, "\n");
-   PP(os, "   std::string vcd_output_filename = \"" + output_directory + "test.vcd\";\n");
-   PP(os, "   Verilated::commandArgs(argc, argv);\n");
-   PP(os, "   Verilated::debug(0);\n");
-   PP(os, "   top = new Vbambu_testbench{\"clocked_" CST_STR_BAMBU_TESTBENCH "\"};\n");
-   PP(os, "   \n");
-   PP(os, "   \n");
-   PP(os, "   #if VM_TRACE\n");
-   PP(os, "   Verilated::traceEverOn(true);\n");
-   PP(os, "   VerilatedVcdC* tfp = new VerilatedVcdC;\n");
-   PP(os, "   #endif\n");
-   PP(os, "   main_time=0;\n");
+   PP(os, "\n");
+   PP(os, "main_time=0;\n");
    PP(os, "#if VM_TRACE\n");
-   PP(os, "   top->trace (tfp, 99);\n");
-   PP(os, "   tfp->set_time_unit(\"n\");\n");
-   PP(os, "   tfp->set_time_resolution(\"p\");\n");
-   PP(os, "   tfp->open (vcd_output_filename.c_str());\n");
+   PP(os, "Verilated::traceEverOn(true);\n");
+   PP(os, "const std::unique_ptr<VerilatedVcdC> tfp{new VerilatedVcdC};\n");
+   PP(os, "top->trace (tfp.get(), 99);\n");
+   PP(os, "tfp->set_time_unit(\"p\");\n");
+   PP(os, "tfp->set_time_resolution(\"p\");\n");
+   PP(os, "tfp->open (\"" + output_directory + "test.vcd\");\n");
    PP(os, "#endif\n");
-   PP(os, "   long long int cycleCounter = 0;\n");
-   PP(os, "   top->" CLOCK_PORT_NAME " = 1;\n");
-   PP(os, "   while (!Verilated::gotFinish() && cycleCounter < SIMULATION_MAX)\n");
-   PP(os, "   {\n");
-   PP(os, "     top->" CLOCK_PORT_NAME " = top->" CLOCK_PORT_NAME " == 0 ? 1 : 0;\n");
-   PP(os, "     top->eval();\n");
+   PP(os, "top->" CLOCK_PORT_NAME " = 1;\n");
+   PP(os, "while (!Verilated::gotFinish())\n");
+   PP(os, "{\n");
+   PP(os, "top->" CLOCK_PORT_NAME " = !top->" CLOCK_PORT_NAME ";\n");
+   PP(os, "top->eval();\n");
    PP(os, "#if VM_TRACE\n");
-   PP(os, "     if (tfp) tfp->dump (main_time);\n");
+   PP(os, "tfp->dump (main_time);\n");
    PP(os, "#endif\n");
-   PP(os, "     main_time += HALF_CLOCK_PERIOD;\n");
-   PP(os, "     cycleCounter++;\n");
-   PP(os, "   }\n");
-   PP(os, "if(cycleCounter>=SIMULATION_MAX)\n");
-   PP(os, "  std::cerr << \"Simulation not completed into " +
-              STR(parameters->getOption<long long int>(OPT_max_sim_cycles)) + " cycles\\n\";\n");
+   PP(os, "main_time += HALF_CLOCK_PERIOD;\n");
+   PP(os, "}\n");
    PP(os, "#if VM_TRACE\n");
-   PP(os, "   if (tfp) tfp->dump (main_time);\n");
+   PP(os, "tfp->dump (main_time);\n");
+   PP(os, "tfp->close();\n");
    PP(os, "#endif\n");
-   PP(os, "   top->final();\n");
-   PP(os, "   #if VM_TRACE\n");
-   PP(os, "   tfp->close();\n");
-   PP(os, "   delete tfp;\n");
-   PP(os, "   #endif\n");
-   PP(os, "   delete top;\n");
-   PP(os, "   exit(0L);\n");
+   PP(os, "top->final();\n");
+   PP(os, "\n");
+   PP(os, "return 0;\n");
    PP(os, "}");
 
    return filename;

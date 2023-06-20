@@ -173,8 +173,12 @@ mem_utils #(BITSIZE_data) m_utils();
 
 initial
 begin
+  arqueue = 0;
+  next_arqueue = 0;
   arqueue_size = 0;
   next_arqueue_size = 0;
+  awqueue = 0;
+  next_awqueue = 0;
   awqueue_size = 0;
   next_awqueue_size = 0;
   AWREADY = 0;

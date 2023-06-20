@@ -115,11 +115,11 @@ DesignFlowStep_Status CTestbenchExecution::Exec()
    const auto default_compiler = parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler);
    // NOTE: starting from version 13 on it seems clang is not respecting the -fno-strict-aliasing flag generating
    // incorrect code when type punning is present
-   const auto opt_lvl = default_compiler == CompilerWrapper_CompilerTarget::CT_I386_CLANG13 ||
+   const auto opt_set = default_compiler == CompilerWrapper_CompilerTarget::CT_I386_CLANG13 ||
                                 default_compiler == CompilerWrapper_CompilerTarget::CT_I386_CLANG16 ?
                             CompilerWrapper_OptimizationSet::O0 :
                             CompilerWrapper_OptimizationSet::O2;
-   const CompilerWrapperConstRef compiler_wrapper(new CompilerWrapper(parameters, default_compiler, opt_lvl));
+   const CompilerWrapperConstRef compiler_wrapper(new CompilerWrapper(parameters, default_compiler, opt_set));
    const auto is_clang = CompilerWrapper::isClangCheck(default_compiler);
    std::string compiler_flags = "-fwrapv -flax-vector-conversions -msse2 -mfpmath=sse -fno-strict-aliasing "
                                 "-D'__builtin_bambu_time_start()=' -D'__builtin_bambu_time_stop()=' ";
@@ -162,15 +162,6 @@ DesignFlowStep_Status CTestbenchExecution::Exec()
       {
          compiler_flags += "-fsanitize=undefined -fsanitize-recover=undefined ";
       }
-      if(!is_clang &&
-         CompilerWrapper::isCurrentOrNewer(default_compiler, CompilerWrapper_CompilerTarget::CT_I386_GCC48))
-      {
-         compiler_flags += "-static-libasan ";
-      }
-      if(!is_clang && CompilerWrapper::isCurrentOrNewer(default_compiler, CompilerWrapper_CompilerTarget::CT_I386_GCC5))
-      {
-         compiler_flags += "-static-libubsan ";
-      }
    }
    // setup source files
    std::list<std::string> file_sources = {c_backend_info->src_filename};
@@ -197,7 +188,7 @@ DesignFlowStep_Status CTestbenchExecution::Exec()
       }
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "---exec executable: " + exec_name);
-   const auto ret = PandaSystem(parameters, exec_name, c_backend_info->out_filename);
+   const auto ret = PandaSystem(parameters, exec_name, false, c_backend_info->out_filename);
    if(IsError(ret))
    {
       THROW_ERROR("Error in generating the expected test results");

@@ -2820,7 +2820,7 @@ void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_n
                   {
                      /// add padding
                      init_file.push_back(std::string(nbits, '0'));
-                     }
+                  }
                }
             }
          }
@@ -2890,7 +2890,7 @@ void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_n
                   {
                      /// add padding
                      init_file.push_back(std::string(nbits, '0'));
-                     }
+                  }
                }
             }
          }
@@ -2913,27 +2913,27 @@ void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_n
             THROW_ASSERT(num_elements >= static_cast<unsigned long long>(co->list_of_idx_valu.size()), "");
             num_elements -= static_cast<unsigned long long>(co->list_of_idx_valu.size());
             init_file.insert(init_file.end(), num_elements, std::string(size_of_data, '0'));
-            }
+         }
          break;
       }
       case string_cst_K:
       {
          const auto sc = GetPointerS<const string_cst>(init_node);
          const auto string_value = [&]() {
-         std::string tmp;
+            std::string tmp;
             const char* c_str = sc->strg.c_str();
             for(size_t index = 0; index < sc->strg.size(); ++index)
-         {
+            {
                if(c_str[index] == '\\' && c_str[index + 1] == '0')
-            {
-               tmp += '\0';
-               ++index;
-            }
-            else
-            {
+               {
+                  tmp += '\0';
+                  ++index;
+               }
+               else
+               {
                   tmp += c_str[index];
+               }
             }
-         }
             boost::replace_all(tmp, "\\a", "\a");
             boost::replace_all(tmp, "\\b", "\b");
             boost::replace_all(tmp, "\\t", "\t");
@@ -2956,14 +2956,14 @@ void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_n
          }
          for(const auto j : string_value)
          {
-               auto ull_value = static_cast<unsigned long int>(j);
-               trimmed_value = "";
+            auto ull_value = static_cast<unsigned long int>(j);
+            trimmed_value = "";
             for(auto ind = 0U; ind < elmt_bitsize; ++ind)
-               {
-                  trimmed_value = trimmed_value + (((1LLU << (elmt_bitsize - ind - 1)) & ull_value) ? '1' : '0');
-               }
-               init_file.push_back(trimmed_value);
+            {
+               trimmed_value = trimmed_value + (((1LLU << (elmt_bitsize - ind - 1)) & ull_value) ? '1' : '0');
             }
+            init_file.push_back(trimmed_value);
+         }
          // String terminator
          init_file.push_back(std::string(elmt_bitsize, '0'));
 

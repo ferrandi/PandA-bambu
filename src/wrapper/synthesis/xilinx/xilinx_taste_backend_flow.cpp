@@ -187,7 +187,7 @@ std::string XilinxTasteBackendFlow::GenerateSynthesisScripts(const std::string&,
       temp_file.close();
       const auto xst_prj_file = GetPath(actual_parameters->parameter_values.at(PARAM_xst_prj_file));
       const auto cat_ret =
-          PandaSystem(Param, "cat " + output_temporary_directory + "/temp_xst_prj_file0 " + xst_prj_file,
+          PandaSystem(Param, "cat " + output_temporary_directory + "/temp_xst_prj_file0 " + xst_prj_file, true,
                       output_temporary_directory + "/temp_xst_prj_file1");
       if(IsError(cat_ret))
       {

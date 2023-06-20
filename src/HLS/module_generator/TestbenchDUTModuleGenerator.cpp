@@ -101,6 +101,9 @@ void TestbenchDUTModuleGenerator::InternalExec(std::ostream& out, structural_obj
          modules += "assign done_port = irq;\n\n";
          internal_ports.insert("irq");
       }
+      else if(interface_type == HLSFlowStep_Type::MINIMAL_INTERFACE_GENERATION)
+      {
+      }
       else
       {
          THROW_ERROR("Interface type not supported for memory mapped top simulation.");

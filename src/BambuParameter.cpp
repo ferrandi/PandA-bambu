@@ -1972,8 +1972,14 @@ int BambuParameter::Exec()
          }
          case INPUT_OPT_C_NO_PARSE:
          {
+            std::string no_parse;
+            if(isOption(OPT_no_parse_files))
+            {
+               no_parse += getOption<std::string>(OPT_no_parse_files) + STR_CST_string_separator;
+            }
             setOption(OPT_no_parse_files,
-                      boost::regex_replace(std::string(optarg), boost::regex("\\s*,\\s*"), STR_CST_string_separator));
+                      no_parse + boost::regex_replace(std::string(optarg), boost::regex("\\s*,\\s*"),
+                                                      STR_CST_string_separator));
             break;
          }
          case INPUT_OPT_C_PYTHON_NO_PARSE:
@@ -2497,14 +2503,13 @@ void BambuParameter::CheckParameters()
    const auto search_quartus = [&](const std::string& dir) {
       if(boost::filesystem::exists(dir + "/quartus/bin/quartus_sh"))
       {
-         if(system(STR("bash -c \"if [[ \\\"$(" + dir +
-                       "/quartus/bin/quartus_sh --version | grep Version | awk '{print $2}' | awk -F'.' '{print "
-                       "$1}')\\\" -lt \\\"14\\\" ]]; then exit 1; else exit 0; fi\" > /dev/null 2>&1")
+         if(system(STR("bash -c \"if [ $(" + dir +
+                       "/quartus/bin/quartus_sh --version | grep Version | sed -E 's/Version ([0-9]+).*/\\1/') -lt 14 "
+                       "]; then exit 1; else exit 0; fi\" > /dev/null 2>&1")
                        .c_str()))
          {
             setOption(OPT_quartus_13_settings, "export PATH=$PATH:" + dir + "/quartus/bin/");
-            if(system(STR("bash -c \"" + dir +
-                          "/quartus/bin/quartus_sh --help | grep \\\"\\-\\-64bit\\\"\" > /dev/null 2>&1")
+            if(system(STR("bash -c \"" + dir + "/quartus/bin/quartus_sh --help | grep '--64bit'\" > /dev/null 2>&1")
                           .c_str()) == 0)
             {
                setOption(OPT_quartus_13_64bit, true);
@@ -2752,19 +2757,12 @@ void BambuParameter::CheckParameters()
    setOption(OPT_verilator, system("which verilator > /dev/null 2>&1") == 0);
    if(getOption<bool>(OPT_verilator))
    {
-      setOption(OPT_verilator_l2_name, system("bash -c \"if [[ \\\"x$(verilator --l2-name bambu_testbench 2>&1 | head "
-                                              "-n1 | grep -i 'Invalid Option')\\\" = "
-                                              "\\\"x\\\" ]]; then exit 0; else exit 1; fi\" > /dev/null 2>&1") == 0);
-      const auto has_timescale_override =
-          system("bash -c \"if [[ \\\"x$(verilator --timescale-override v 2>&1 | head -n1 | grep -i 'Invalid "
-                 "Option')\\\" = \\\"x\\\" ]]; then exit 0; else exit 1; fi\" > /dev/null 2>&1") == 0;
-      if(has_timescale_override)
-      {
-         setOption(OPT_verilator_timescale_override, "1ps/1ps");
-      }
+      setOption(OPT_verilator_l2_name,
+                system("bash -c \"if [[ \\\"x$(verilator --l2-name v 2>&1 | head -n1 | grep -i 'Invalid Option')\\\" = "
+                       "\\\"x\\\" ]]; then exit 0; else exit 1; fi\" > /dev/null 2>&1") == 0);
       const auto thread_support =
-          system("bash -c \"if [[ \\\"$(verilator --version | head -n1 | awk -F' ' '{print $2}'| awk -F'.' '{print "
-                 "$1}')\\\" = \\\"4\\\" ]]; then exit 0; else exit 1; fi\" > /dev/null 2>&1") == 0;
+          system("bash -c \"if [ $(verilator --version | grep Verilator | sed -E 's/Verilator ([0-9]+).*/\1/') -ge 4 "
+                 "]; then exit 0; else exit 1; fi\" > /dev/null 2>&1") == 0;
       if(getOption<bool>(OPT_verilator_parallel) && !thread_support)
       {
          THROW_WARNING("Installed version of Verilator does not support multi-threading.");
@@ -2775,30 +2773,7 @@ void BambuParameter::CheckParameters()
    // /// Search for icarus
    // setOption(OPT_icarus, system("which iverilog > /dev/null 2>&1") == 0);
 
-   if(isOption(OPT_simulator))
-   {
-      if(getOption<std::string>(OPT_simulator) == "MODELSIM" && !isOption(OPT_mentor_modelsim_bin))
-      {
-         THROW_ERROR("Mentor Modelsim was not detected by Bambu. Please check --mentor-root option is correct.");
-      }
-      else if(getOption<std::string>(OPT_simulator) == "XSIM" && !isOption(OPT_xilinx_vivado_settings))
-      {
-         THROW_ERROR("Xilinx XSim was not detected by Bambu. Please check --xilinx-root option is correct.");
-      }
-      else if(getOption<std::string>(OPT_simulator) == "VERILATOR" && !isOption(OPT_verilator))
-      {
-         THROW_ERROR("Verilator was not detected by Bambu. Please make sure it is installed in the system.");
-      }
-      // else if(getOption<std::string>(OPT_simulator) == "ISIM" && !isOption(OPT_xilinx_settings))
-      // {
-      //    THROW_ERROR("Xilinx ISim was not detected by Bambu. Please check --xilinx-root option is correct.");
-      // }
-      // else if(getOption<std::string>(OPT_simulator) == "ICARUS" && !isOption(OPT_icarus))
-      // {
-      //    THROW_ERROR("Icarus was not detected by Bambu. Please make sure it is installed in the system.");
-      // }
-   }
-   else
+   if(!isOption(OPT_simulator))
    {
       if(isOption(OPT_mentor_modelsim_bin))
       {
@@ -2808,13 +2783,9 @@ void BambuParameter::CheckParameters()
       {
          setOption(OPT_simulator, "XSIM"); /// Mixed language simulator
       }
-      else if(getOption<bool>(OPT_verilator))
-      {
-         setOption(OPT_simulator, "VERILATOR");
-      }
       else
       {
-         THROW_ERROR("No valid simulator was found in the system.");
+         setOption(OPT_simulator, "VERILATOR");
       }
       // else if(isOption(OPT_xilinx_settings))
       // {
@@ -2922,6 +2893,27 @@ void BambuParameter::CheckParameters()
             is_evaluation_objective_string(objective_vector, "CYCLES") ||
             is_evaluation_objective_string(objective_vector, "TOTAL_CYCLES"))
          {
+            if(getOption<std::string>(OPT_simulator) == "MODELSIM" && !isOption(OPT_mentor_modelsim_bin))
+            {
+               THROW_ERROR("Mentor Modelsim was not detected by Bambu. Please check --mentor-root option is correct.");
+            }
+            else if(getOption<std::string>(OPT_simulator) == "XSIM" && !isOption(OPT_xilinx_vivado_settings))
+            {
+               THROW_ERROR("Xilinx XSim was not detected by Bambu. Please check --xilinx-root option is correct.");
+            }
+            else if(getOption<std::string>(OPT_simulator) == "VERILATOR" && !isOption(OPT_verilator))
+            {
+               THROW_ERROR("Verilator was not detected by Bambu. Please make sure it is installed in the system.");
+            }
+            // else if(getOption<std::string>(OPT_simulator) == "ISIM" && !isOption(OPT_xilinx_settings))
+            // {
+            //    THROW_ERROR("Xilinx ISim was not detected by Bambu. Please check --xilinx-root option is
+            //    correct.");
+            // }
+            // else if(getOption<std::string>(OPT_simulator) == "ICARUS" && !isOption(OPT_icarus))
+            // {
+            //    THROW_ERROR("Icarus was not detected by Bambu. Please make sure it is installed in the system.");
+            // }
             if(!getOption<bool>(OPT_generate_testbench))
             {
                setOption(OPT_generate_testbench, true);

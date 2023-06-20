@@ -129,7 +129,7 @@ DesignFlowStep_Status BasicBlocksProfiling::Exec()
       boost::filesystem::remove(profile_data_name);
 
       const auto command = change_directory + "\"" + run_name.string() + "\" " + exec_argv + " ";
-      const auto ret = PandaSystem(parameters, command, temporary_path.string() + STR_CST_host_profiling_output);
+      const auto ret = PandaSystem(parameters, command, false, temporary_path.string() + STR_CST_host_profiling_output);
       if(IsError(ret))
       {
          if(errno and not parameters->getOption<bool>(OPT_no_return_zero))
