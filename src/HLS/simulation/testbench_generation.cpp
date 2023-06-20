@@ -297,18 +297,15 @@ DesignFlowStep_Status TestbenchGeneration::Exec()
       if(master_ports.size())
       {
          const auto master_mod = GetPointerS<module>(master_ports.front());
-         THROW_ASSERT(master_mod->get_in_port_size() >= 3, "At least three in ports must be present.");
-         THROW_ASSERT(master_mod->get_out_port_size() >= 1, "At least an out port must be present.");
          unsigned int k = 0;
 
          // Daisy chain start_port signal through all memory master modules
          for(const auto& master_port : master_ports)
          {
-            const auto mmod = GetPointerS<module>(master_port);
-            const auto m_start = mmod->get_in_port(2);
-            const auto m_start_o = mmod->get_out_port(0);
-            THROW_ASSERT(m_start->get_id() == "i_" START_PORT_NAME, "");
-            THROW_ASSERT(m_start_o->get_id() == START_PORT_NAME, "");
+            const auto m_start = master_port->find_member("i_" START_PORT_NAME, port_o_K, master_port);
+            const auto m_start_o = master_port->find_member(START_PORT_NAME, port_o_K, master_port);
+            THROW_ASSERT(m_start, "Port i_" START_PORT_NAME " not found in module " + master_port->get_path());
+            THROW_ASSERT(m_start_o, "Port " START_PORT_NAME " not found in module " + master_port->get_path());
             const auto sig = tb_top->add_sign("sig_" START_PORT_NAME + STR(k), tb_cir, fsm_start->get_typeRef());
             tb_top->add_connection(fsm_start, sig);
             tb_top->add_connection(sig, m_start);
