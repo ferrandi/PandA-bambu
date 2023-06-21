@@ -1805,13 +1805,23 @@ int BambuParameter::Exec()
          {
             setOption(OPT_generate_testbench, true);
             const auto arg = TrimSpaces(std::string(optarg));
-            if(boost::regex_match(arg, boost::regex("^[\\w\\d\\-\\./]+\\.\\w+$")))
+            if(boost::filesystem::exists(arg))
             {
-               setOption(OPT_testbench_input_string, GetPath(arg));
+               std::string prev;
+               if(isOption(OPT_testbench_input_file))
+               {
+                  prev = getOption<std::string>(OPT_testbench_input_file) + STR_CST_string_separator;
+               }
+               setOption(OPT_testbench_input_file, prev + GetPath(arg));
             }
             else
             {
-               setOption(OPT_testbench_input_string, optarg);
+               std::string prev;
+               if(isOption(OPT_testbench_input_string))
+               {
+                  prev = getOption<std::string>(OPT_testbench_input_string) + STR_CST_string_separator;
+               }
+               setOption(OPT_testbench_input_string, prev + arg);
             }
             break;
          }
@@ -1988,9 +1998,12 @@ int BambuParameter::Exec()
             {
                no_parse += getOption<std::string>(OPT_no_parse_files) + STR_CST_string_separator;
             }
-            setOption(OPT_no_parse_files,
-                      no_parse + boost::regex_replace(std::string(optarg), boost::regex("\\s*,\\s*"),
-                                                      STR_CST_string_separator));
+            auto paths = SplitString(optarg, ",");
+            for(auto& path : paths)
+            {
+               path = GetPath(path);
+            }
+            setOption(OPT_no_parse_files, no_parse + convert_vector_to_string(paths, STR_CST_string_separator));
             break;
          }
          case INPUT_OPT_C_PYTHON_NO_PARSE:
@@ -2928,7 +2941,7 @@ void BambuParameter::CheckParameters()
             if(!getOption<bool>(OPT_generate_testbench))
             {
                setOption(OPT_generate_testbench, true);
-               setOption(OPT_testbench_input_string, GetPath("test.xml"));
+               setOption(OPT_testbench_input_file, GetPath("test.xml"));
             }
          }
          const auto is_valid_evaluation_mode = [](const std::string& s) -> bool {
