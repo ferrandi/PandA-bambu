@@ -1198,12 +1198,14 @@ int BambuParameter::Exec()
          }
          case INPUT_OPT_FILE_INPUT_DATA:
          {
-            const auto in_files = convert_string_to_vector<boost::filesystem::path>(optarg, ",");
+            const auto in_files = convert_string_to_vector<std::string>(optarg, ",");
             for(const auto& in_file : in_files)
             {
-               if(in_file.parent_path() != GetCurrentPath())
+               boost::filesystem::path file_path(GetPath(in_file));
+               boost::filesystem::path local_file(GetPath(file_path.filename().string()));
+               if(!boost::filesystem::exists(local_file))
                {
-                  boost::filesystem::create_symlink(GetPath(in_file.string()), in_file.filename());
+                  boost::filesystem::create_symlink(file_path.lexically_normal(), local_file);
                }
             }
             break;
