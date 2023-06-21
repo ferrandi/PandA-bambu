@@ -2359,7 +2359,7 @@ DesignFlowStep_Status parametric_list_based::InternalExec()
    {
       START_TIME(step_time);
    }
-   const FunctionBehaviorConstRef FB = HLSMgr->CGetFunctionBehavior(funId);
+   FunctionBehaviorRef FB = HLSMgr->GetFunctionBehavior(funId);
    const BBGraphConstRef bbg = FB->CGetBBGraph();
    const OpGraphConstRef op_graph = FB->CGetOpGraph(FunctionBehavior::CFG);
    std::deque<vertex> vertices;
@@ -2478,19 +2478,16 @@ DesignFlowStep_Status parametric_list_based::InternalExec()
          auto doLP = false;
          doLP =
              compute_minmaxII(bb_operations, operations, ctrl_steps, BBI->block->number, minII, maxII, toBeScheduled);
+         std::cerr << "maxII=" << maxII << "\n";
          if(FB->is_function_pipelined())
          {
-            if(!doLP)
+            if(!doLP && FB->get_initiation_time() != maxII)
             {
                THROW_ERROR("Function pipelining not possible with II=" + STR(FB->get_initiation_time()));
             }
             if(FB->get_initiation_time() > minII)
             {
                minII = FB->get_initiation_time();
-            }
-            if(!doLP || FB->get_initiation_time() != minII)
-            {
-               THROW_ERROR("Function pipelining not possible with II=" + STR(minII));
             }
          }
          if(doLP)
@@ -2544,6 +2541,18 @@ DesignFlowStep_Status parametric_list_based::InternalExec()
                bool stopSearch;
                exec<false>(operations, ctrl_steps, 0, emptyVector, stopSearch);
             }
+         }
+         else if(FB->is_function_pipelined())
+         {
+            /// revert to the no solution case
+            for(auto& op : operations)
+            {
+               HLS->Rsch->remove_sched(op);
+            }
+            std::vector<std::pair<vertex, vertex>> emptyVector;
+            bool stopSearch;
+            exec<false>(operations, ctrl_steps, 0, emptyVector, stopSearch);
+            FB->disable_function_pipelining();
          }
       }
       else

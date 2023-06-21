@@ -803,6 +803,11 @@ class FunctionBehavior
       return pipeline_enabled;
    }
 
+   void disable_function_pipelining()
+   {
+      pipeline_enabled = false;
+   }
+
    unsigned int get_initiation_time() const
    {
       return initiation_time;
