@@ -211,7 +211,7 @@ unsigned long long int SimulationTool::DetermineCycles(unsigned long long int& a
       {
          const auto times = SplitString(start_end, "|");
          THROW_ASSERT(times.size() == 2, "Unexpected simulation time format");
-         unsigned long long start_time=0, end_time=0;
+         unsigned long long start_time = 0, end_time = 0;
          if(!boost::conversion::try_lexical_convert<unsigned long long>(times.at(0), start_time) ||
             !boost::conversion::try_lexical_convert<unsigned long long>(times.at(1), end_time))
          {
@@ -242,7 +242,7 @@ unsigned long long int SimulationTool::DetermineCycles(unsigned long long int& a
       {
          const auto times = SplitString(start_end, "|");
          THROW_ASSERT(times.size() == 2, "Unexpected simulation time format");
-         unsigned long long start_time=0, end_time=0;
+         unsigned long long start_time = 0, end_time = 0;
          if(!boost::conversion::try_lexical_convert<unsigned long long>(times.at(0), start_time) ||
             !boost::conversion::try_lexical_convert<unsigned long long>(times.at(1), end_time))
          {
@@ -440,34 +440,40 @@ std::string SimulationTool::GenerateLibraryBuildScript(std::ostringstream& scrip
       }
       return srcs;
    }();
-   script << "tb_srcs=(\n";
-   for(const auto& src : tb_srcs)
+   if(tb_srcs.size())
    {
-      script << "  \"" << src << "\"\n";
+      script << "tb_srcs=(\n";
+      for(const auto& src : tb_srcs)
+      {
+         if(!boost::ends_with(src, ".xml"))
+         {
+            script << "  \"" << src << "\"\n";
+         }
+      }
+      script << ")\n"
+             << "TB_CFLAGS=\""
+             << (Param->isOption(OPT_testbench_extra_gcc_flags) ?
+                     Param->getOption<std::string>(OPT_testbench_extra_gcc_flags) :
+                     "")
+             << "\"\n"
+             << "for src in \"${tb_srcs[@]}\"\n"
+             << "do\n"
+             << "  obj=\"$(basename ${src})\"\n"
+             << "  case \"${obj}\" in\n"
+             << "  *.c)  ;&\n"
+             << "  *.cc) ;&\n"
+             << "  *.cpp)\n"
+             << "    obj=\"" << output_dir << "/${obj%.*}.o\"\n"
+             << "    ${CC} -c ${CFLAGS} ${TB_CFLAGS} -fPIC -o ${obj} ${src}\n"
+             << "    objcopy -W " << top_fname << " ${obj}\n"
+             << "    objs+=(\"${obj}\")\n"
+             << "    ;;\n"
+             << "  *)\n"
+             << "    objs+=(\"${src}\")\n"
+             << "    ;;\n"
+             << "  esac\n"
+             << "done\n\n";
    }
-   script << ")\n"
-          << "TB_CFLAGS=\""
-          << (Param->isOption(OPT_testbench_extra_gcc_flags) ?
-                  Param->getOption<std::string>(OPT_testbench_extra_gcc_flags) :
-                  "")
-          << "\"\n"
-          << "for src in \"${tb_srcs[@]}\"\n"
-          << "do\n"
-          << "  obj=\"$(basename ${src})\"\n"
-          << "  case \"${obj}\" in\n"
-          << "  *.c)  ;&\n"
-          << "  *.cc) ;&\n"
-          << "  *.cpp)\n"
-          << "    obj=\"" << output_dir << "/${obj%.*}.o\"\n"
-          << "    ${CC} -c ${CFLAGS} ${TB_CFLAGS} -fPIC -o ${obj} ${src}\n"
-          << "    objcopy -W " << top_fname << " ${obj}\n"
-          << "    objs+=(\"${obj}\")\n"
-          << "    ;;\n"
-          << "  *)\n"
-          << "    objs+=(\"${src}\")\n"
-          << "    ;;\n"
-          << "  esac\n"
-          << "done\n\n";
    const auto libtb_filename = output_dir + "/libtb.so";
    if(Param->getOption<int>(OPT_output_level) < OUTPUT_LEVEL_VERY_PEDANTIC)
    {
