@@ -11,4 +11,4 @@
 
 --configuration-name=simple_asm simple_asm/asm.c --top-fname=main --generate-tb=BENCHMARKS_ROOT/simple_asm/test.xml --C-no-parse=BENCHMARKS_ROOT/simple_asm/c_stub.c
 
---configuration-name=aes MachSuite/aes/aes/aes.c MachSuite/common/harness.c --benchmark-name=aes --file-input-data=BENCHMARKS_ROOT/MachSuite/aes/aes/input.data,BENCHMARKS_ROOT/MachSuite/aes/aes/check.data --experimental-setup=BAMBU-PERFORMANCE-MP --top-fname=main --top-rtldesign-name=run_benchmark -mx32 -fno-tree-vectorize -DBAMBU_PROFILING
+--configuration-name=aes MachSuite/aes/aes/aes.c --generate-tb=BENCHMARKS_ROOT/MachSuite/common/harness.c --benchmark-name=aes --file-input-data=BENCHMARKS_ROOT/MachSuite/aes/aes/input.data,BENCHMARKS_ROOT/MachSuite/aes/aes/check.data --experimental-setup=BAMBU-PERFORMANCE-MP --top-fname=run_benchmark -mx32 -fno-tree-vectorize

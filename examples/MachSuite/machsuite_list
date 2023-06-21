@@ -1,4 +1,4 @@
-aes/aes/aes.c           common/harness.c --benchmark-name=aes           --file-input-data=BENCHMARKS_ROOT/aes/aes/input.data,BENCHMARKS_ROOT/aes/aes/check.data
+aes/aes/aes.c           --generate-tb=BENCHMARKS_ROOT/common/harness.c --benchmark-name=aes           --file-input-data=BENCHMARKS_ROOT/aes/aes/input.data,BENCHMARKS_ROOT/aes/aes/check.data
 backprop/backprop/net.c common/harness.c --benchmark-name=backprop      --file-input-data=BENCHMARKS_ROOT/backprop/backprop/input.data,BENCHMARKS_ROOT/backprop/backprop/check.data -DNO_FINAL_MEMCMP_CHECK -lm
 bfs/bulk/bulk.c         common/harness.c --benchmark-name=bfs_bulk      --file-input-data=BENCHMARKS_ROOT/bfs/bulk/input.data,BENCHMARKS_ROOT/bfs/bulk/check.data
 bfs/queue/queue.c       common/harness.c --benchmark-name=bfs_queue     --file-input-data=BENCHMARKS_ROOT/bfs/queue/input.data,BENCHMARKS_ROOT/bfs/queue/check.data
