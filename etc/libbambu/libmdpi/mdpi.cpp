@@ -149,7 +149,7 @@ EXTERN_C void m_getarg(svLogicVecVal* data, unsigned int index)
    mdpi_parm_t* p = &__m_params.prms[index];
    uint8_t* prm = (uint8_t*)__m_params.prms[index].bits;
    uint16_t i, byte_count = (p->bitsize / 8) + ((p->bitsize % 8) != 0);
-   for(uint8_t i = 0; i < byte_count; ++i)
+   for(i = 0; i < byte_count; ++i)
    {
       uint8_t mem = prm[i];
       if(i % 4)

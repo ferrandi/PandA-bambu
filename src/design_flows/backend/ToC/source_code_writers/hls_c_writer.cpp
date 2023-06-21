@@ -966,7 +966,7 @@ template <typename T> T* m_getptr(T* obj) { return obj; }
    indented_output_stream->Append("{\n");
    indented_output_stream->Append("error(\"Unexpected simulator state : %s\\n\", mdpi_state_str(state));\n");
    indented_output_stream->Append("__m_signal_to(MDPI_ENTITY_SIM, MDPI_COSIM_END);\n");
-   indented_output_stream->Append("pthread_exit((void*)((ptr_t)(MDPI_COSIM_ABORT)));\n");
+   indented_output_stream->Append("pthread_exit((void*)((size_t)(MDPI_COSIM_ABORT)));\n");
    indented_output_stream->Append("}\n");
 
    if(gold_cmp.size() || return_type)
@@ -993,7 +993,7 @@ if(mismatch_count)
 {
 error("Memory parameter mismatch has been found.\n");
 __m_signal_to(MDPI_ENTITY_SIM, MDPI_COSIM_END);
-pthread_exit((void*)((ptr_t)(MDPI_COSIM_ABORT)));
+pthread_exit((void*)((size_t)(MDPI_COSIM_ABORT)));
 }
 
 #ifdef __clang__
