@@ -1198,7 +1198,14 @@ int BambuParameter::Exec()
          }
          case INPUT_OPT_FILE_INPUT_DATA:
          {
-            setOption(OPT_file_input_data, optarg);
+            const auto in_files = convert_string_to_vector<boost::filesystem::path>(optarg, ",");
+            for(const auto& in_file : in_files)
+            {
+               if(in_file.parent_path() != GetCurrentPath())
+               {
+                  boost::filesystem::create_symlink(GetPath(in_file.string()), in_file.filename());
+               }
+            }
             break;
          }
          case OPT_LIST_BASED: // enable list based scheduling
@@ -3501,26 +3508,6 @@ void BambuParameter::CheckParameters()
    if(isOption(OPT_top_functions_names) && getOption<const std::list<std::string>>(OPT_top_functions_names).size() > 1)
    {
       setOption(OPT_disable_function_proxy, true);
-   }
-   /// In case copy input files
-   if(isOption(OPT_file_input_data))
-   {
-      auto input_data = getOption<std::string>(OPT_file_input_data);
-      std::vector<std::string> splitted = SplitString(input_data, ",");
-      size_t i_end = splitted.size();
-      for(size_t i = 0; i < i_end; i++)
-      {
-         const auto filename = GetPath(splitted[i]);
-         if(boost::filesystem::path(filename).parent_path() != GetCurrentPath())
-         {
-            std::string command = "cp " + filename + " " + GetCurrentPath();
-            int ret = PandaSystem(ParameterConstRef(this, null_deleter()), command);
-            if(IsError(ret))
-            {
-               THROW_ERROR("cp returns an error");
-            }
-         }
-      }
    }
 
    if(isOption(OPT_no_parse_c_python) && !isOption(OPT_testbench_extra_gcc_flags))
