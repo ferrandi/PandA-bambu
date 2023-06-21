@@ -467,10 +467,15 @@ DesignFlowStep_Status TestbenchGeneration::Exec()
    INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "Generating memory interface...");
    structural_objectRef tb_mem;
    if(interface_type == HLSFlowStep_Type::MINIMAL_INTERFACE_GENERATION ||
-      interface_type == HLSFlowStep_Type::INFERRED_INTERFACE_GENERATION)
+      interface_type == HLSFlowStep_Type::INFERRED_INTERFACE_GENERATION ||
+      interface_type == HLSFlowStep_Type::INTERFACE_CS_GENERATION)
    {
       tb_mem =
           tb_top->add_module_from_technology_library("SystemMEM", "TestbenchMEMMinimal", LIBRARY_STD, tb_cir, TechM);
+      if(interface_type == HLSFlowStep_Type::INTERFACE_CS_GENERATION)
+      {
+         tb_mem->SetParameter("MEM_PIPELINED", "0");
+      }
    }
    else if(interface_type == HLSFlowStep_Type::WB4_INTERFACE_GENERATION ||
            interface_type == HLSFlowStep_Type::WB4_INTERCON_INTERFACE_GENERATION)
