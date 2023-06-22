@@ -69,7 +69,7 @@ void* __m_cosim_main(void*)
    }
 
    __m_signal_to(MDPI_ENTITY_SIM, MDPI_COSIM_END);
-   return reinterpret_cast<void*>(static_cast<size_t>((retval & 0xFF) << 8 | MDPI_COSIM_END));
+   return reinterpret_cast<void*>(static_cast<long>(((retval & 0xFF) << 8) | MDPI_COSIM_END));
 }
 
 void __m_exit(int __status)
@@ -80,7 +80,7 @@ void __m_exit(int __status)
    state = __m_wait_for(MDPI_ENTITY_COSIM);
    debug("Simulator reported state: %s\n", mdpi_state_str(state));
    __m_signal_to(MDPI_ENTITY_SIM, MDPI_COSIM_END);
-   pthread_exit(reinterpret_cast<void*>(static_cast<size_t>((__status & 0xFF) << 8 | MDPI_COSIM_END)));
+   pthread_exit(reinterpret_cast<void*>(static_cast<long>(((__status & 0xFF) << 8) | MDPI_COSIM_END)));
 }
 
 void __m_abort()
@@ -91,5 +91,5 @@ void __m_abort()
    state = __m_wait_for(MDPI_ENTITY_COSIM);
    debug("Simulator reported state: %s\n", mdpi_state_str(state));
    __m_signal_to(MDPI_ENTITY_SIM, MDPI_COSIM_END);
-   pthread_exit(reinterpret_cast<void*>(static_cast<size_t>(MDPI_COSIM_ABORT)));
+   pthread_exit(reinterpret_cast<void*>(static_cast<long>(MDPI_COSIM_ABORT)));
 }

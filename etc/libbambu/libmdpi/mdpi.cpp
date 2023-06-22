@@ -114,11 +114,11 @@ EXTERN_C unsigned int m_next(unsigned int state)
 
 EXTERN_C int m_fini()
 {
-   int retval = 0;
+   long retval = 0;
    pthread_join(__m_cosim_thread, (void**)&retval);
 
    debug("Finalization successful\n");
-   return retval;
+   return static_cast<int>(retval);
 }
 
 static FORCE_INLINE ab_uint8_t load(bptr_t addr)
