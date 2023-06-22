@@ -6048,7 +6048,7 @@ std::string tree_helper::PrintType(const tree_managerConstRef& TM, const tree_no
       case CASE_UNARY_EXPRESSION:
       default:
          THROW_UNREACHABLE("Type not yet supported " + STR(original_type) + " " + node_type->get_kind_text() + " " +
-                           STR(node_var));
+                           (node_var ? STR(node_var) : ""));
    }
    if(!skip_var_printing)
    {
