@@ -261,8 +261,36 @@ DesignFlowStep_Status TestbenchGeneration::Exec()
       const std::string if_suffix =
           interface_type == HLSFlowStep_Type::MINIMAL_INTERFACE_GENERATION ? "Minimal" : "WishboneB4";
       const auto master_port_module = "TestbenchArgMap" + if_suffix;
-      size_t idx = top_bh->GetFunctionReturnType(top_id) ? 1 : 0;
+      size_t idx = 0;
       std::list<structural_objectRef> master_ports;
+      const auto return_type = tree_helper::GetFunctionReturnType(HLSMgr->get_tree_manager()->CGetTreeReindex(top_id));
+      if(return_type)
+      {
+         INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "-->Return value port");
+         const auto return_bitsize = tree_helper::Size(return_type);
+         const auto return_symbol = HLSMgr->Rmem->get_symbol(GET_INDEX_CONST_NODE(return_type), top_id);
+         INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level,
+                        "---Interface: " + STR(return_bitsize) + "-bits memory mapped at " +
+                            STR(return_symbol->get_address()));
+         const auto master_port = tb_top->add_module_from_technology_library(
+             "master_return_port", "TestbenchReturnMap" + if_suffix, LIBRARY_STD, tb_cir, TechM);
+         master_port->SetParameter("index", STR(idx));
+         master_port->SetParameter("bitsize", STR(return_bitsize));
+         master_port->SetParameter("tgt_addr", STR(return_symbol->get_address()));
+
+         const auto m_i_done = master_port->find_member("i_" DONE_PORT_NAME, port_o_K, master_port);
+         const auto m_done = master_port->find_member(DONE_PORT_NAME, port_o_K, master_port);
+         THROW_ASSERT(m_i_done, "Port i_" DONE_PORT_NAME " not found in module " + master_port->get_path());
+         THROW_ASSERT(m_done, "Port " DONE_PORT_NAME " not found in module " + master_port->get_path());
+         const auto sig = tb_top->add_sign("sig_map_" DONE_PORT_NAME, tb_cir, dut_done->get_typeRef());
+         tb_top->add_connection(dut_done, sig);
+         tb_top->add_connection(sig, m_i_done);
+         dut_done = m_done;
+
+         master_ports.push_back(master_port);
+         ++idx;
+         INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "<--");
+      }
       for(const auto& par : top_bh->GetParameters())
       {
          const auto par_name = top_bh->PrintVariable(GET_INDEX_CONST_NODE(par));
