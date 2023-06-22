@@ -758,15 +758,19 @@ void HLSCWriter::WriteMainTestbench()
                             "Attribute 'bitwidth' is missing for array parameter " + param_name);
                THROW_ASSERT(arg_attributes->second.at(param_name).count(attr_interface_alignment),
                             "Attribute 'alignment' is missing for array parameter " + param_name);
+               THROW_ASSERT(arg_attributes->second.at(param_name).count(attr_interface_factor),
+                            "Attribute 'factor' is missing for array parameter " + param_name);
                const auto item_bw = boost::lexical_cast<unsigned long long>(
                    arg_attributes->second.at(param_name).at(attr_interface_bitwidth));
                const auto item_align = boost::lexical_cast<unsigned long long>(
                    arg_attributes->second.at(param_name).at(attr_interface_alignment));
+               const auto item_factor = boost::lexical_cast<unsigned long long>(
+                   arg_attributes->second.at(param_name).at(attr_interface_factor));
                const auto item_count =
                    arg_attributes->second.at(param_name).count(attr_size) ?
                        boost::lexical_cast<unsigned long long>(arg_attributes->second.at(param_name).at(attr_size)) :
                        1ULL;
-               const auto array_bytes = get_aligned_bitsize(item_bw, item_align) / 8 * item_count;
+               const auto array_bytes = get_aligned_bitsize(item_bw, item_align) / 8 * item_count * item_factor;
                args_init += "__m_alloc_param(" + STR(param_idx) + ", " + STR(array_bytes) + ");\n";
             }
             else

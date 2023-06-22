@@ -83,6 +83,7 @@ void ReadWrite_arrayModuleGenerator::InternalExec(std::ostream& out, structural_
    const auto parameter_name = fname.substr(0, fname.find(STR_CST_interface_parameter_keyword));
    auto foundParam = false;
    auto arraySize = 1U;
+   auto factor = 1U;
    const auto TM = HLSMgr->get_tree_manager();
    const auto top_functions = HLSMgr->CGetCallGraphManager()->GetRootFunctions();
 
@@ -95,6 +96,7 @@ void ReadWrite_arrayModuleGenerator::InternalExec(std::ostream& out, structural_
          props.at(parameter_name).find(attr_size) != props.at(parameter_name).end() && !foundParam)
       {
          arraySize = boost::lexical_cast<decltype(arraySize)>(props.at(parameter_name).at(attr_size));
+         factor = boost::lexical_cast<decltype(factor)>(props.at(parameter_name).at(attr_interface_factor));
          foundParam = true;
       }
       else if(foundParam)
@@ -121,7 +123,7 @@ void ReadWrite_arrayModuleGenerator::InternalExec(std::ostream& out, structural_
                               0U :
                               (64u - static_cast<unsigned>(__builtin_clzll(_ports_out[1].alignment - 1U)));
 
-   const auto addressMaxValue = _ports_out[1].alignment * arraySize - 1U;
+   const auto addressMaxValue = factor * _ports_out[1].alignment * arraySize - 1U;
    const auto nbitAddress =
        addressMaxValue <= 1U ? 1U : (64u - static_cast<unsigned>(__builtin_clzll(addressMaxValue)));
 
