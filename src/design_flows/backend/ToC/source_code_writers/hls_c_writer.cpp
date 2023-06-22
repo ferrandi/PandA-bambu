@@ -339,125 +339,64 @@ void HLSCWriter::WriteTestbenchFunctionCall(const BehavioralHelperConstRef BH)
    {
       const auto is_discrepancy = (Param->isOption(OPT_discrepancy) && Param->getOption<bool>(OPT_discrepancy)) ||
                                   (Param->isOption(OPT_discrepancy_hw) && Param->getOption<bool>(OPT_discrepancy_hw));
-      if(!is_discrepancy)
-      {
-         function_name = "system";
-      }
-      else
+      if(is_discrepancy)
       {
          function_name = "_main";
       }
    }
-
-   bool is_system;
-   const auto decl = std::get<0>(BH->get_definition(function_index, is_system));
-   if((is_system || decl == "<built-in>") && return_type_index && BH->is_real(return_type_index))
-   {
-      indented_output_stream->Append("extern " + BH->print_type(return_type_index) + " " + function_name + "(");
-      bool is_first_parameter = true;
-      for(const auto& p : BH->GetParameters())
-      {
-         if(is_first_parameter)
-         {
-            is_first_parameter = false;
-         }
-         else
-         {
-            indented_output_stream->Append(", ");
-         }
-
-         const auto parm_type = tree_helper::CGetType(p);
-         const auto type_name = tree_helper::PrintType(TM, parm_type);
-         const auto param = BH->PrintVariable(GET_INDEX_CONST_NODE(p));
-
-         if(tree_helper::IsPointerType(p))
-         {
-            const auto var_functor = var_pp_functorRef(new std_var_pp_functor(BH));
-            indented_output_stream->Append(tree_helper::PrintType(TM, parm_type, false, false, false, p, var_functor));
-         }
-         else
-         {
-            indented_output_stream->Append(type_name + " " + param + "");
-         }
-      }
-      indented_output_stream->Append(");\n");
-   }
-
    if(return_type_index)
    {
       indented_output_stream->Append(RETURN_PORT_NAME " = ");
    }
 
    indented_output_stream->Append(function_name + "(");
-   // function arguments
-   if(function_name != "system")
+   bool is_first_argument = true;
+   unsigned par_index = 0;
+   const auto top_fname_mngl = BH->GetMangledFunctionName();
+   const auto& DesignInterfaceTypenameOrig = HLSMgr->design_interface_typename_orig_signature;
+   for(const auto& par : BH->GetParameters())
    {
-      bool is_first_argument = true;
-      unsigned par_index = 0;
-      const auto top_fname_mngl = BH->GetMangledFunctionName();
-      const auto& DesignInterfaceTypenameOrig = HLSMgr->design_interface_typename_orig_signature;
-      for(const auto& par : BH->GetParameters())
+      if(!is_first_argument)
       {
-         if(!is_first_argument)
-         {
-            indented_output_stream->Append(", ");
-         }
-         else
-         {
-            is_first_argument = false;
-         }
-         if(tree_helper::IsPointerType(par))
-         {
-            if(DesignInterfaceTypenameOrig.find(top_fname_mngl) != DesignInterfaceTypenameOrig.end())
-            {
-               auto arg_typename = DesignInterfaceTypenameOrig.find(top_fname_mngl)->second.at(par_index);
-               if(arg_typename.find("(*)") != std::string::npos)
-               {
-                  arg_typename = arg_typename.substr(0, arg_typename.find("(*)")) + "*";
-               }
-               if(arg_typename.back() != '*')
-               {
-                  indented_output_stream->Append("*(");
-                  indented_output_stream->Append(
-                      arg_typename.substr(0, arg_typename.size() - (arg_typename.back() == '&')) + "*");
-                  indented_output_stream->Append(") ");
-               }
-               else
-               {
-                  indented_output_stream->Append("(");
-                  indented_output_stream->Append(arg_typename);
-                  indented_output_stream->Append(") ");
-               }
-            }
-            else
-            {
-               indented_output_stream->Append("(" + tree_helper::PrintType(TM, par) + ")");
-            }
-         }
-         const auto param = BH->PrintVariable(GET_INDEX_CONST_NODE(par));
-         indented_output_stream->Append(param);
-         ++par_index;
-      }
-   }
-   else
-   {
-      indented_output_stream->Append("\"" + Param->getOption<std::string>(OPT_output_directory) +
-                                     "/simulation/main_exec\"");
-   }
-   indented_output_stream->Append(");\n");
-
-   if(function_name == "system" && return_type_index)
-   {
-      if(!Param->getOption<bool>(OPT_no_return_zero))
-      {
-         indented_output_stream->Append("if(" RETURN_PORT_NAME " != 0) exit(1);\n");
+         indented_output_stream->Append(", ");
       }
       else
       {
-         indented_output_stream->Append("if(!WIFEXITED(" RETURN_PORT_NAME ")) exit(1);\n");
-         indented_output_stream->Append(RETURN_PORT_NAME " = WEXITSTATUS(" RETURN_PORT_NAME ");\n");
+         is_first_argument = false;
       }
+      if(tree_helper::IsPointerType(par))
+      {
+         if(DesignInterfaceTypenameOrig.find(top_fname_mngl) != DesignInterfaceTypenameOrig.end())
+         {
+            auto arg_typename = DesignInterfaceTypenameOrig.find(top_fname_mngl)->second.at(par_index);
+            if(arg_typename.find("(*)") != std::string::npos)
+            {
+               arg_typename = arg_typename.substr(0, arg_typename.find("(*)")) + "*";
+            }
+            if(arg_typename.back() != '*')
+            {
+               indented_output_stream->Append("*(");
+               indented_output_stream->Append(
+                   arg_typename.substr(0, arg_typename.size() - (arg_typename.back() == '&')) + "*");
+               indented_output_stream->Append(") ");
+            }
+            else
+            {
+               indented_output_stream->Append("(");
+               indented_output_stream->Append(arg_typename);
+               indented_output_stream->Append(") ");
+            }
+         }
+         else
+         {
+            indented_output_stream->Append("(" + tree_helper::PrintType(TM, par) + ")");
+         }
+      }
+      const auto param = BH->PrintVariable(GET_INDEX_CONST_NODE(par));
+      indented_output_stream->Append(param);
+      ++par_index;
    }
+   indented_output_stream->Append(");\n");
 }
 
 void HLSCWriter::WriteSimulatorInitMemory(const unsigned int function_id)
