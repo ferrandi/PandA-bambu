@@ -169,7 +169,7 @@ std::vector<std::map<std::string, std::string>> TestVectorParser::ParseUserStrin
          std::vector<std::string> temp = SplitString(parameter, "=");
          if(temp.size() != 2)
          {
-            THROW_ERROR("Error in processing --simulate arg");
+            THROW_ERROR("Error in processing --generate-tb arg");
          }
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---" + temp[0] + "=" + temp[1]);
          test_vectors.back()[temp[0]] = temp[1];

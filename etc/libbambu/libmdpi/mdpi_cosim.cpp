@@ -48,18 +48,21 @@
 #include <cstdio>
 #include <pthread.h>
 
-EXTERN_C int m_cosim_main();
+EXTERN_C int m_cosim_main(int argc, const char** argv);
+static const char* __m_cosim_argv[] = {"m_cosim_main"};
+
+volatile int __m_cosim_retval;
 
 void* __m_cosim_main(void*)
 {
-   int retval = -1;
+   __m_cosim_retval = -1;
    debug("Thread started\n");
 
    enum mdpi_state sim_state = __m_wait_for(MDPI_ENTITY_COSIM);
    if(sim_state == MDPI_COSIM_INIT)
    {
       info("Co-simulation started\n");
-      retval = m_cosim_main();
+      __m_cosim_retval = m_cosim_main(1, __m_cosim_argv);
       info("Co-simulation finished\n");
    }
    else
@@ -67,8 +70,9 @@ void* __m_cosim_main(void*)
       error("Co-simulation startup failed. Unexpected state recived from simulator: %s\n", mdpi_state_str(sim_state));
    }
 
+   __m_cosim_retval = ((__m_cosim_retval & 0xFF) << 8) | MDPI_COSIM_END;
    __m_signal_to(MDPI_ENTITY_SIM, MDPI_COSIM_END);
-   return reinterpret_cast<void*>(static_cast<size_t>((retval & 0xFF) << 8 | MDPI_COSIM_END));
+   return NULL;
 }
 
 void __m_exit(int __status)
@@ -78,8 +82,9 @@ void __m_exit(int __status)
    debug("Waiting for simulator to complete...\n");
    state = __m_wait_for(MDPI_ENTITY_COSIM);
    debug("Simulator reported state: %s\n", mdpi_state_str(state));
+   __m_cosim_retval = ((__status & 0xFF) << 8) | MDPI_COSIM_END;
    __m_signal_to(MDPI_ENTITY_SIM, MDPI_COSIM_END);
-   pthread_exit(reinterpret_cast<void*>(static_cast<size_t>((__status & 0xFF) << 8 | MDPI_COSIM_END)));
+   pthread_exit(NULL);
 }
 
 void __m_abort()
@@ -89,6 +94,7 @@ void __m_abort()
    debug("Waiting for simulator to complete...\n");
    state = __m_wait_for(MDPI_ENTITY_COSIM);
    debug("Simulator reported state: %s\n", mdpi_state_str(state));
+   __m_cosim_retval = MDPI_COSIM_ABORT;
    __m_signal_to(MDPI_ENTITY_SIM, MDPI_COSIM_END);
-   pthread_exit(reinterpret_cast<void*>(static_cast<size_t>(MDPI_COSIM_ABORT)));
+   pthread_exit(NULL);
 }
