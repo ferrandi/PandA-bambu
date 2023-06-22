@@ -2197,6 +2197,10 @@ int BambuParameter::Exec()
             if(strcmp(long_options[option_index].name, "channels-number") == 0)
             {
                setOption(OPT_channels_number, optarg);
+               if(std::string(optarg) == "1" && !isOption(OPT_channels_type))
+               {
+                  setOption(OPT_channels_type, MemoryAllocation_ChannelsType::MEM_ACC_11);
+               }
                break;
             }
             if(strcmp(long_options[option_index].name, "memory-ctrl-type") == 0)
