@@ -134,29 +134,29 @@ function automatic void write(
   input shortint size,
   input logic [BITSIZE_data-1:0] data,
   input ptr_t addr);
-  automatic reg [BITSIZE_mem_bus-1:0] tmp = 0;
-  
-  tmp = data[BITSIZE_data-1:0];
+  automatic reg [4095:0] wtmp = 0;
+    
+  wtmp[BITSIZE_data-1:0] = data[BITSIZE_data-1:0];
   if(BITSIZE_mem_bus == 8)
-    m_write8(size, tmp, addr);
+    m_write8(size, wtmp[7:0], addr);
   else if(BITSIZE_mem_bus == 16)
-    m_write16(size, tmp, addr);
+    m_write16(size, wtmp[15:0], addr);
   else if(BITSIZE_mem_bus == 32)
-    m_write32(size, tmp, addr);
+    m_write32(size, wtmp[31:0], addr);
   else if(BITSIZE_mem_bus == 64)
-    m_write64(size, tmp, addr);
+    m_write64(size, wtmp[63:0], addr);
   else if(BITSIZE_mem_bus == 128)
-    m_write128(size, tmp, addr);
+    m_write128(size, wtmp[127:0], addr);
   else if(BITSIZE_mem_bus == 256)
-    m_write256(size, tmp, addr);
+    m_write256(size, wtmp[255:0], addr);
   else if(BITSIZE_mem_bus == 512)
-    m_write512(size, tmp, addr);
+    m_write512(size, wtmp[511:0], addr);
   else if(BITSIZE_mem_bus == 1024)
-    m_write1024(size, tmp, addr);
+    m_write1024(size, wtmp[1023:0], addr);
   else if(BITSIZE_mem_bus == 2048)
-    m_write2048(size, tmp, addr);
+    m_write2048(size, wtmp[2047:0], addr);
   else if(BITSIZE_mem_bus == 4096)
-    m_write4096(size, tmp, addr);
+    m_write4096(size, wtmp[4095:0], addr);
   else
   begin
     $display(&quot;Unsupported memory bus size: %0d&quot;, BITSIZE_mem_bus);
@@ -353,7 +353,7 @@ begin
       automatic integer r = m_fini();
       automatic integer res_file;
       res_file = $fopen(RESFILE, &quot;a&quot;);
-      if(r[2:0] == int&apos;(COSIM_ABORT))
+      if(r[$bits(SIM_READY)-1:0] == COSIM_ABORT)
       begin
         $fwrite(res_file, &quot;\\nA\\n&quot;);
         $display(&quot;Sim: Testbench aborted&quot;);
@@ -469,10 +469,10 @@ end"/>
             <structural_type_descriptor type="VECTOR_BOOL" size="1"/>
           </port_o>
           <port_o id="Mout_addr_ram" dir="IN" is_memory="1" is_master="1" is_addr_bus="1">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="32"/>
           </port_o>
           <port_o id="Mout_data_ram_size" dir="IN" is_memory="1" is_master="1" is_size_bus="1">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="4"/>
           </port_o>
           <port_o id="Mout_Wdata_ram" dir="IN" is_memory="1" is_master="1" is_data_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
@@ -536,7 +536,7 @@ generate
     assign we = queue_next[(MEM_DELAY_WRITE-1)*BITSIZE_item+OFFSET_we+:BITSIZE_we];
     assign Raddr = queue_next[(MEM_DELAY_READ-1)*BITSIZE_item+OFFSET_addr+:BITSIZE_addr];
     assign Waddr = queue_next[(MEM_DELAY_WRITE-1)*BITSIZE_item+OFFSET_addr+:BITSIZE_addr];
-    assign Wsize = queue_next[(MEM_DELAY_WRITE-1)*BITSIZE_item+OFFSET_Wsize+:BITSIZE_Wsize];
+    assign Wsize = {{16-BITSIZE_Wsize{1&apos;b0}}, queue_next[(MEM_DELAY_WRITE-1)*BITSIZE_item+OFFSET_Wsize+:BITSIZE_Wsize]};
     assign Wdata = queue_next[(MEM_DELAY_WRITE-1)*BITSIZE_item+OFFSET_Wdata+:BITSIZE_Wdata];
     assign M_DataRdy[BITSIZE_ready*i+:BITSIZE_ready] = Wready | Rready;
     assign M_Rdata_ram[BITSIZE_Rdata*i+:BITSIZE_Rdata] = Rdata;
@@ -705,7 +705,7 @@ endgenerate"/>
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="addr_om" dir="IN" is_memory="1" is_addr_bus="1">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="32"/>
           </port_o>
           <port_o id="dat_om" dir="IN" is_memory="1" is_data_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
