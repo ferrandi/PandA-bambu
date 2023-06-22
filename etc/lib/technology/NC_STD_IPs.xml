@@ -219,19 +219,19 @@ endfunction"/>
           <parameter name="CLOCK_PERIOD">2.0</parameter>
           <parameter name="MAX_SIM_CYCLES">200000000</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="done_port" dir="IN">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="reset" dir="OUT">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="setup_port" dir="OUT">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="start_port" dir="OUT">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+            <structural_type_descriptor type="BOOL" size="1" vector_size="1"/>
           </port_o>
           <NP_functionality LIBRARY="TestbenchFSM RESFILE RESET_ACTIVE RESET_CYCLES CLOCK_PERIOD MAX_SIM_CYCLES" VERILOG_PROVIDED="`ifdef VERILATOR
 timeunit 1ps;
@@ -448,13 +448,13 @@ end"/>
           <parameter name="MEM_DUMP">0</parameter>
           <parameter name="MEM_DUMP_FILE">&quot;&quot;memdump.csv&quot;&quot;</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="reset" dir="IN">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="done_port" dir="IN">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="M_DataRdy" dir="OUT" is_memory="1" is_global="1" is_extern="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1"/>
@@ -693,7 +693,7 @@ endgenerate"/>
           <parameter name="MEM_DELAY_WRITE">1</parameter>
           <parameter name="base_addr">1073741824</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="cyc_om" dir="IN" is_memory="1">
             <structural_type_descriptor type="BOOL" size="1"/>
@@ -804,10 +804,10 @@ end
           <structural_type_descriptor id_type="IF_PORT_IN"/>
           <parameter name="index">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="setup_port" dir="IN">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="val_port" dir="OUT">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
@@ -851,16 +851,16 @@ end"/>
           <parameter name="tgt_addr">1024</parameter>
           <parameter name="bitsize">32</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="setup_port" dir="IN">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="i_start_port" dir="IN">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="start_port" dir="OUT">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="S_oe_ram" dir="OUT" is_memory="1">
             <structural_type_descriptor type="BOOL" size="1"/>
@@ -948,6 +948,105 @@ end"/>
       </circuit>
     </cell>
     <cell>
+      <name>TestbenchReturnMapMinimal</name>
+      <circuit>
+        <component_o id="TestbenchReturnMapMinimal">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2023 Politecnico di Milano</copyright>
+          <authors>Michele Fiorito &lt;michele.fiorito@polimi.it&gt;</authors>
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="TestbenchReturnMapMinimal"/>
+          <parameter name="index">0</parameter>
+          <parameter name="tgt_addr">1024</parameter>
+          <parameter name="bitsize">32</parameter>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="setup_port" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="i_start_port" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="start_port" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="i_done_port" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="done_port" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="S_oe_ram" dir="OUT" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="S_we_ram" dir="OUT" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="S_addr_ram" dir="OUT" is_memory="1" is_addr_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="S_Wdata_ram" dir="OUT" is_memory="1" is_data_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
+          </port_o>
+          <port_o id="S_data_ram_size" dir="OUT" is_memory="1" is_size_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="Sout_Rdata_ram" dir="IN" is_memory="1" is_data_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
+          </port_o>
+          <port_o id="Sout_DataRdy" dir="IN" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <NP_functionality IP_COMPONENT="arg_utils" LIBRARY="TestbenchReturnMapMinimal index tgt_addr bitsize S_oe_ram S_we_ram S_addr_ram S_Wdata_ram S_data_ram_size Sout_Rdata_ram Sout_DataRdy" VERILOG_PROVIDED="reg oe, oe_next, rdy, done;
+reg [BITSIZE_S_addr_ram-1:0] addr, addr_next;
+
+arg_utils #(bitsize) a_utils();
+
+initial
+begin
+  oe = 0;
+  oe_next = 0;
+  addr = 0;
+  addr_next = 0;
+  start = 0;
+end
+
+assign S_oe_ram = oe_next;
+assign S_we_ram = 0;
+assign S_addr_ram = addr_next;
+assign S_Wdata_ram = 0;
+assign S_data_ram_size = 0;
+assign rdy = Sout_DataRdy;
+assign start_port = i_start_port;
+assign done_port = done;
+
+always @(posedge clock) 
+begin
+  automatic reg active_tx = (oe_next) &amp; !rdy;
+  oe &lt;= active_tx;
+  addr &lt;= addr_next &amp; {BITSIZE_S_addr_ram{active_tx}};
+  done &lt;= rdy &amp; oe_next;
+  if(rdy &amp; oe_next)
+  begin
+    a_utils.setarg(Sout_Rdata_ram, index);
+  end
+end
+
+always @(*)
+begin
+  oe_next = oe;
+  addr_next = addr;
+  if(i_done_port)
+  begin
+    oe_next = 1;
+    addr_next = tgt_addr;
+  end
+end"/>
+        </component_o>
+      </circuit>
+    </cell>
+    <cell>
       <name>TestbenchStartMapMinimal</name>
       <circuit>
         <component_o id="TestbenchStartMapMinimal">
@@ -958,13 +1057,13 @@ end"/>
           <structural_type_descriptor id_type="TestbenchStartMapMinimal"/>
           <parameter name="tgt_addr">1024</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="i_start_port" dir="IN">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="start_port" dir="OUT">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="S_oe_ram" dir="OUT" is_memory="1">
             <structural_type_descriptor type="BOOL" size="1"/>
@@ -1053,16 +1152,16 @@ end"/>
           <parameter name="tgt_addr">1024</parameter>
           <parameter name="bitsize">32</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="setup_port" dir="IN">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="i_start_port" dir="IN">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="start_port" dir="OUT">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="cyc_is" dir="OUT" is_memory="1">
             <structural_type_descriptor type="BOOL" size="1"/>
@@ -1170,6 +1269,120 @@ end"/>
       </circuit>
     </cell>
     <cell>
+      <name>TestbenchReturnMapWishboneB4</name>
+      <circuit>
+        <component_o id="TestbenchReturnMapWishboneB4">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2023 Politecnico di Milano</copyright>
+          <authors>Michele Fiorito &lt;michele.fiorito@polimi.it&gt;</authors>
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="TestbenchReturnMapWishboneB4"/>
+          <parameter name="index">0</parameter>
+          <parameter name="tgt_addr">1024</parameter>
+          <parameter name="bitsize">32</parameter>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="setup_port" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="i_start_port" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="start_port" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="i_done_port" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="done_port" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="cyc_is" dir="OUT" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="stb_is" dir="OUT" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="we_is" dir="OUT" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="addr_is" dir="OUT" is_memory="1" is_addr_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="dat_is" dir="OUT" is_memory="1" is_data_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
+          </port_o>
+          <port_o id="sel_is" dir="OUT" is_memory="1" is_size_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="dat_os" dir="IN" is_memory="1" is_data_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
+          </port_o>
+          <port_o id="stall_os" dir="IN" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="ack_os" dir="IN" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <NP_functionality IP_COMPONENT="arg_utils" LIBRARY="TestbenchReturnMapWishboneB4 index tgt_addr bitsize addr_is dat_is sel_is dat_os" VERILOG_PROVIDED="parameter bytesize=((bitsize&gt;&gt;3)&lt;&lt;3) == bitsize ? (bitsize&gt;&gt;3) : ((bitsize&gt;&gt;3) + 1);
+reg cyc, cyc_next, stb, stb_next, stall, ack, done;
+reg [BITSIZE_addr_is-1:0] addr, addr_next;
+
+arg_utils #(bitsize) a_utils();
+
+initial
+begin
+  cyc = 0;
+  cyc_next = 0;
+  stb = 0;
+  stb_next = 0;
+  addr = 0;
+  addr_next = 0;
+  done = 0;
+end
+
+assign cyc_is = cyc_next;
+assign stb_is = stb_next;
+assign we_is = 0;
+assign addr_is = addr_next;
+assign dat_is = 0;
+assign sel_is = 0;
+assign stall = !ack_os; // TODO: this should be stall_os
+assign ack = ack_os;
+assign start_port = i_start_port;
+assign done_port = done;
+
+always @(posedge clock) 
+begin
+  automatic reg active_tx = cyc_next &amp; !ack;
+  automatic reg wait_tx = active_tx &amp; stall;
+  cyc &lt;= active_tx;
+  stb &lt;= stb_next &amp; wait_tx;
+  addr &lt;= addr_next &amp; {BITSIZE_addr_is{wait_tx}};
+  done &lt;= ack &amp; cyc_next;
+  if(ack &amp; cyc_next)
+  begin
+    a_utils.setarg(dat_os, index);
+  end
+end
+
+always @(*)
+begin
+  cyc_next = cyc;
+  stb_next = stb;
+  addr_next = addr;
+  if(i_done_port)
+  begin
+    cyc_next = 1;
+    stb_next = 1;
+    addr_next = tgt_addr;
+  end
+end"/>
+        </component_o>
+      </circuit>
+    </cell>
+    <cell>
       <name>TestbenchStartMapWishboneB4</name>
       <circuit>
         <component_o id="TestbenchStartMapWishboneB4">
@@ -1180,13 +1393,13 @@ end"/>
           <structural_type_descriptor id_type="TestbenchStartMapWishboneB4"/>
           <parameter name="tgt_addr">1024</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="i_start_port" dir="IN">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="start_port" dir="OUT">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="cyc_is" dir="OUT" is_memory="1">
             <structural_type_descriptor type="BOOL" size="1"/>
@@ -1293,10 +1506,10 @@ end"/>
           <structural_type_descriptor id_type="IF_PORT_OUT"/>
           <parameter name="index">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="done_port" dir="IN">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="val_port" dir="IN">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
@@ -1329,10 +1542,10 @@ end"/>
           <parameter name="WRITE_DELAY">1</parameter>
           <parameter name="READ_DELAY">2</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="setup_port" dir="IN">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <NP_functionality IP_COMPONENT="arg_utils,mem_utils" LIBRARY="TestbenchArray index WRITE_DELAY READ_DELAY" VERILOG_GENERATOR="TestbenchArrayModuleGenerator"/>
         </component_o>
@@ -1349,13 +1562,13 @@ end"/>
           <structural_type_descriptor id_type="TestbenchAcknowledge"/>
           <parameter name="index">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="setup_port" dir="IN">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="done_port" dir="IN">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <NP_functionality IP_COMPONENT="arg_utils,mem_utils" LIBRARY="TestbenchAcknowledge index" VERILOG_GENERATOR="TestbenchAcknowledgeModuleGenerator"/>
         </component_o>
@@ -1372,13 +1585,13 @@ end"/>
           <structural_type_descriptor id_type="TestbenchValid"/>
           <parameter name="index">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="setup_port" dir="IN">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="done_port" dir="IN">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <NP_functionality IP_COMPONENT="arg_utils,mem_utils" LIBRARY="TestbenchValid index" VERILOG_GENERATOR="TestbenchValidModuleGenerator"/>
         </component_o>
@@ -1395,13 +1608,13 @@ end"/>
           <structural_type_descriptor id_type="TestbenchOvalid"/>
           <parameter name="index">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="setup_port" dir="IN">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="done_port" dir="IN">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <NP_functionality IP_COMPONENT="arg_utils,mem_utils" LIBRARY="TestbenchOvalid index" VERILOG_GENERATOR="TestbenchOvalidModuleGenerator"/>
         </component_o>
@@ -1418,13 +1631,13 @@ end"/>
           <structural_type_descriptor id_type="TestbenchHandshake"/>
           <parameter name="index">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="setup_port" dir="IN">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="done_port" dir="IN">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <NP_functionality IP_COMPONENT="arg_utils,mem_utils" LIBRARY="TestbenchHandshake index" VERILOG_GENERATOR="TestbenchHandshakeModuleGenerator"/>
         </component_o>
@@ -1441,13 +1654,13 @@ end"/>
           <structural_type_descriptor id_type="TestbenchAxis"/>
           <parameter name="index">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="setup_port" dir="IN">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="done_port" dir="IN">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <NP_functionality IP_COMPONENT="arg_utils,mem_utils" LIBRARY="TestbenchAxis index" VERILOG_GENERATOR="TestbenchAxisModuleGenerator"/>
         </component_o>
@@ -1464,13 +1677,13 @@ end"/>
           <structural_type_descriptor id_type="TestbenchFifo"/>
           <parameter name="index">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="setup_port" dir="IN">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="done_port" dir="IN">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <NP_functionality IP_COMPONENT="arg_utils,mem_utils" LIBRARY="TestbenchFifo index" VERILOG_GENERATOR="TestbenchFifoModuleGenerator"/>
         </component_o>
@@ -1487,13 +1700,13 @@ end"/>
           <structural_type_descriptor id_type="TestbenchNone"/>
           <parameter name="index">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="setup_port" dir="IN">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="done_port" dir="IN">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <NP_functionality IP_COMPONENT="arg_utils,mem_utils" LIBRARY="TestbenchNone index" VERILOG_GENERATOR="TestbenchNoneModuleGenerator"/>
         </component_o>
@@ -1510,13 +1723,13 @@ end"/>
           <structural_type_descriptor id_type="TestbenchNone_registered"/>
           <parameter name="index">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="setup_port" dir="IN">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="done_port" dir="IN">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <NP_functionality IP_COMPONENT="arg_utils,mem_utils" LIBRARY="TestbenchNone_registered index" VERILOG_GENERATOR="TestbenchNoneModuleGenerator"/>
         </component_o>
@@ -1535,13 +1748,13 @@ end"/>
           <parameter name="READ_DELAY">2</parameter>
           <parameter name="QUEUE_SIZE">12</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="reset" dir="IN">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="done_port" dir="IN">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <NP_functionality IP_COMPONENT="mem_utils" LIBRARY="TestbenchAXIM WRITE_DELAY READ_DELAY QUEUE_SIZE" VERILOG_GENERATOR="TestbenchAXIMModuleGenerator"/>
         </component_o>

@@ -245,16 +245,12 @@ DesignFlowStep_Status TestbenchGeneration::Exec()
    tb_fsm->SetParameter("MAX_SIM_CYCLES", parameters->getOption<std::string>(OPT_max_sim_cycles));
    const auto fsm_clock = tb_fsm->find_member(CLOCK_PORT_NAME, port_o_K, tb_fsm);
    tb_top->add_connection(clock_port, fsm_clock);
-   const auto dut_reset = dut->find_member(RESET_PORT_NAME, port_o_K, dut);
-   THROW_ASSERT(dut_reset, "");
+
    const auto fsm_reset = tb_fsm->find_member(RESET_PORT_NAME, port_o_K, tb_fsm);
-   add_internal_connection(fsm_reset, dut_reset);
-   const auto dut_done = dut->find_member(DONE_PORT_NAME, port_o_K, dut);
-   THROW_ASSERT(dut_done, "");
-   const auto fsm_done = tb_fsm->find_member(DONE_PORT_NAME, port_o_K, tb_fsm);
-   add_internal_connection(fsm_done, dut_done);
    const auto fsm_setup = tb_fsm->find_member(SETUP_PORT_NAME, port_o_K, tb_fsm);
    auto fsm_start = tb_fsm->find_member(START_PORT_NAME, port_o_K, tb_fsm);
+   auto dut_done = dut->find_member(DONE_PORT_NAME, port_o_K, dut);
+   THROW_ASSERT(dut_done, "DUT done_port is missing.");
 
    std::list<structural_objectRef> if_modules;
    const auto interface_type = parameters->getOption<HLSFlowStep_Type>(OPT_interface_type);
@@ -265,8 +261,36 @@ DesignFlowStep_Status TestbenchGeneration::Exec()
       const std::string if_suffix =
           interface_type == HLSFlowStep_Type::MINIMAL_INTERFACE_GENERATION ? "Minimal" : "WishboneB4";
       const auto master_port_module = "TestbenchArgMap" + if_suffix;
-      size_t idx = top_bh->GetFunctionReturnType(top_id) ? 1 : 0;
+      size_t idx = 0;
       std::list<structural_objectRef> master_ports;
+      const auto return_type = tree_helper::GetFunctionReturnType(HLSMgr->get_tree_manager()->CGetTreeReindex(top_id));
+      if(return_type)
+      {
+         INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "-->Return value port");
+         const auto return_bitsize = tree_helper::Size(return_type);
+         const auto return_symbol = HLSMgr->Rmem->get_symbol(GET_INDEX_CONST_NODE(return_type), top_id);
+         INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level,
+                        "---Interface: " + STR(return_bitsize) + "-bits memory mapped at " +
+                            STR(return_symbol->get_address()));
+         const auto master_port = tb_top->add_module_from_technology_library(
+             "master_return_port", "TestbenchReturnMap" + if_suffix, LIBRARY_STD, tb_cir, TechM);
+         master_port->SetParameter("index", STR(idx));
+         master_port->SetParameter("bitsize", STR(return_bitsize));
+         master_port->SetParameter("tgt_addr", STR(return_symbol->get_address()));
+
+         const auto m_i_done = master_port->find_member("i_" DONE_PORT_NAME, port_o_K, master_port);
+         const auto m_done = master_port->find_member(DONE_PORT_NAME, port_o_K, master_port);
+         THROW_ASSERT(m_i_done, "Port i_" DONE_PORT_NAME " not found in module " + master_port->get_path());
+         THROW_ASSERT(m_done, "Port " DONE_PORT_NAME " not found in module " + master_port->get_path());
+         const auto sig = tb_top->add_sign("sig_map_" DONE_PORT_NAME, tb_cir, dut_done->get_typeRef());
+         tb_top->add_connection(dut_done, sig);
+         tb_top->add_connection(sig, m_i_done);
+         dut_done = m_done;
+
+         master_ports.push_back(master_port);
+         ++idx;
+         INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "<--");
+      }
       for(const auto& par : top_bh->GetParameters())
       {
          const auto par_name = top_bh->PrintVariable(GET_INDEX_CONST_NODE(par));
@@ -302,21 +326,25 @@ DesignFlowStep_Status TestbenchGeneration::Exec()
          // Daisy chain start_port signal through all memory master modules
          for(const auto& master_port : master_ports)
          {
-            const auto m_start = master_port->find_member("i_" START_PORT_NAME, port_o_K, master_port);
-            const auto m_start_o = master_port->find_member(START_PORT_NAME, port_o_K, master_port);
-            THROW_ASSERT(m_start, "Port i_" START_PORT_NAME " not found in module " + master_port->get_path());
-            THROW_ASSERT(m_start_o, "Port " START_PORT_NAME " not found in module " + master_port->get_path());
+            const auto m_i_start = master_port->find_member("i_" START_PORT_NAME, port_o_K, master_port);
+            const auto m_start = master_port->find_member(START_PORT_NAME, port_o_K, master_port);
+            THROW_ASSERT(m_i_start, "Port i_" START_PORT_NAME " not found in module " + master_port->get_path());
+            THROW_ASSERT(m_start, "Port " START_PORT_NAME " not found in module " + master_port->get_path());
             const auto sig = tb_top->add_sign("sig_" START_PORT_NAME + STR(k), tb_cir, fsm_start->get_typeRef());
             tb_top->add_connection(fsm_start, sig);
-            tb_top->add_connection(sig, m_start);
-            fsm_start = m_start_o;
+            tb_top->add_connection(sig, m_i_start);
+            fsm_start = m_start;
             ++k;
          }
 
          // Merge all matching out signals from memory master modules
-         for(unsigned int i = 1; i < master_mod->get_out_port_size(); ++i)
+         for(unsigned int i = 0; i < master_mod->get_out_port_size(); ++i)
          {
             const auto out_port = master_mod->get_out_port(i);
+            if(!GetPointerS<const port_o>(out_port)->get_is_memory())
+            {
+               continue;
+            }
             const auto bus_merger = tb_top->add_module_from_technology_library(
                 "merge_" + out_port->get_id(), "bus_merger", LIBRARY_STD, tb_cir, TechM);
             const auto merge_out = GetPointerS<module>(bus_merger)->get_out_port(0);
@@ -330,7 +358,7 @@ DesignFlowStep_Status TestbenchGeneration::Exec()
             k = 0;
             for(const auto& master_port : master_ports)
             {
-               const auto m_port = GetPointerS<module>(master_port)->get_out_port(i);
+               const auto m_port = master_port->find_member(out_port->get_id(), port_o_K, master_port);
                m_port->type_resize(STD_GET_SIZE(dut_port->get_typeRef()));
                const auto sig =
                    tb_top->add_sign("sig_" + out_port->get_id() + "_" + STR(k), tb_cir, dut_port->get_typeRef());
@@ -343,11 +371,7 @@ DesignFlowStep_Status TestbenchGeneration::Exec()
    }
    else
    {
-      const auto dut_start = dut->find_member(START_PORT_NAME, port_o_K, dut);
-      THROW_ASSERT(dut_start, "");
-      add_internal_connection(fsm_start, dut_start);
-
-      // Add interface components relative to each top function argument
+      // Add interface components relative to each top function parameter
       auto idx = 0U;
       {
          const auto return_port = dut->find_member(RETURN_PORT_NAME, port_o_K, dut);
@@ -462,6 +486,10 @@ DesignFlowStep_Status TestbenchGeneration::Exec()
          INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "<--");
          ++idx;
       }
+
+      const auto dut_start = dut->find_member(START_PORT_NAME, port_o_K, dut);
+      THROW_ASSERT(dut_start, "");
+      add_internal_connection(fsm_start, dut_start);
    }
 
    INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "Generating memory interface...");
@@ -497,6 +525,13 @@ DesignFlowStep_Status TestbenchGeneration::Exec()
    if_modules.push_back(tb_mem);
 
    INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "Connecting testbench modules...");
+   {
+      const auto dut_reset = dut->find_member(RESET_PORT_NAME, port_o_K, dut);
+      THROW_ASSERT(dut_reset, "");
+      add_internal_connection(fsm_reset, dut_reset);
+      const auto fsm_done = tb_fsm->find_member(DONE_PORT_NAME, port_o_K, tb_fsm);
+      add_internal_connection(fsm_done, dut_done);
+   }
    for(const auto& if_obj : if_modules)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "-->Module " + if_obj->get_id());

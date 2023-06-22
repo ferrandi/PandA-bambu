@@ -1803,7 +1803,7 @@ int BambuParameter::Exec()
          {
             setOption(OPT_generate_testbench, true);
             const auto arg = TrimSpaces(std::string(optarg));
-            if(boost::filesystem::exists(arg))
+            if(boost::filesystem::exists(GetPath(arg)))
             {
                std::string prev;
                if(isOption(OPT_testbench_input_file))
