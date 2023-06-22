@@ -1,4 +1,4 @@
---configuration-name=ads add_device_simple/module.c --top-fname=main --generate-tb=BENCHMARKS_ROOT/add_device_simple/test.xml --simulator=XSIM --experimental-setup=BAMBU -O2 --pretty-print=a.c --target-file=BENCHMARKS_ROOT/add_device_simple/xc7z045-2ffg900-VVD.xml
+--configuration-name=ads add_device_simple/module.c --top-fname=main --generate-tb=BENCHMARKS_ROOT/add_device_simple/test.xml --simulator=XSIM --experimental-setup=BAMBU -O2 -m64 --pretty-print=a.c --target-file=BENCHMARKS_ROOT/add_device_simple/xc7z045-2ffg900-VVD.xml
 
 --configuration-name=arf --benchmark-name=arf_simple arf/module.c --top-fname=arf --generate-tb=BENCHMARKS_ROOT/arf/test.xml
 
