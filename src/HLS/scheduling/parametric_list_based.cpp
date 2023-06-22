@@ -2478,7 +2478,6 @@ DesignFlowStep_Status parametric_list_based::InternalExec()
          auto doLP = false;
          doLP =
              compute_minmaxII(bb_operations, operations, ctrl_steps, BBI->block->number, minII, maxII, toBeScheduled);
-         std::cerr << "maxII=" << maxII << "\n";
          if(FB->is_function_pipelined())
          {
             if(!doLP && FB->get_initiation_time() != maxII)
