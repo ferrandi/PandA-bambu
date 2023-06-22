@@ -211,7 +211,7 @@ unsigned long long int SimulationTool::DetermineCycles(unsigned long long int& a
       {
          const auto times = SplitString(start_end, "|");
          THROW_ASSERT(times.size() == 2, "Unexpected simulation time format");
-         unsigned long long start_time=0, end_time=0;
+         unsigned long long start_time = 0, end_time = 0;
          if(!boost::conversion::try_lexical_convert<unsigned long long>(times.at(0), start_time) ||
             !boost::conversion::try_lexical_convert<unsigned long long>(times.at(1), end_time))
          {
@@ -242,7 +242,7 @@ unsigned long long int SimulationTool::DetermineCycles(unsigned long long int& a
       {
          const auto times = SplitString(start_end, "|");
          THROW_ASSERT(times.size() == 2, "Unexpected simulation time format");
-         unsigned long long start_time=0, end_time=0;
+         unsigned long long start_time = 0, end_time = 0;
          if(!boost::conversion::try_lexical_convert<unsigned long long>(times.at(0), start_time) ||
             !boost::conversion::try_lexical_convert<unsigned long long>(times.at(1), end_time))
          {
