@@ -129,7 +129,7 @@ StorageValueInformation::get_variable_index(unsigned int storage_value_index) co
 {
    THROW_ASSERT(variable_index_map.find(storage_value_index) != variable_index_map.end(),
                 "the storage value is missing");
-   return variable_index_map.find(storage_value_index)->second;
+   return variable_index_map.at(storage_value_index);
 }
 
 int StorageValueInformation::get_compatibility_weight(unsigned int storage_value_index1,
