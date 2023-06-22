@@ -463,7 +463,7 @@ std::string SimulationTool::GenerateLibraryBuildScript(std::ostringstream& scrip
              << "  *.c)  ;&\n"
              << "  *.cc) ;&\n"
              << "  *.cpp)\n"
-             << "    obj=\"" << output_dir << "/${obj%.*}.o\"\n"
+             << "    obj=\"" << output_dir << "/${obj%.*}.tb.o\"\n"
              << "    ${CC} -c ${CFLAGS} ${TB_CFLAGS} -fPIC -o ${obj} ${src}\n"
              << "    objcopy -W " << top_fname << " ${obj}\n"
              << "    objs+=(\"${obj}\")\n"
