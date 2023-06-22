@@ -28,7 +28,7 @@ if [ -z "$LD" ]; then
 fi
 
 # Retrieve -m option if present
-m_option="$(grep -oE '(-m[0-9]+)' <<< ${CFLAGS})"
+m_option="$(grep -oE '(-mx?[0-9]+)' <<< ${CFLAGS})"
 if [ -z "${m_option}" ]; then
    echo "-m option not provided, default will be used $($CC -dumpmachine)"
 fi

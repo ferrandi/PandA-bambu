@@ -306,7 +306,7 @@ std::string SimulationTool::GenerateSimulationScript(const std::string& top_file
    // Create the simulation script
    generated_script = GetPath("./" + std::string("simulate_") + top_filename + std::string(".sh"));
    std::ofstream file_stream(generated_script.c_str());
-   file_stream << script.str() << std::endl;
+   file_stream << script.str() << "\n";
    file_stream.close();
 
    ToolManagerRef tool(new ToolManager(Param));
@@ -384,14 +384,6 @@ std::string SimulationTool::GenerateLibraryBuildScript(std::ostringstream& scrip
    {
       script << "  \"" << src << "\"\n";
    }
-   if(Param->isOption(OPT_no_parse_files))
-   {
-      const auto no_parse_files = Param->getOption<const CustomSet<std::string>>(OPT_no_parse_files);
-      for(const auto& no_parse_file : no_parse_files)
-      {
-         script << "  \"" << no_parse_file << "\"\n";
-      }
-   }
    script << ")\n"
           << "objs=()\n"
           << "for src in \"${srcs[@]}\"\n"
@@ -431,22 +423,56 @@ std::string SimulationTool::GenerateLibraryBuildScript(std::ostringstream& scrip
    {
       script << " -DPP_VERIFICATION";
    }
-   script << " -fPIC -o " << output_dir << "/m_wrapper.o " << dpi_cwrapper_file << std::endl
-          << "objs+=(\"" << output_dir << "/m_wrapper.o\")" << std::endl;
-   if(Param->isOption(OPT_testbench_input_string))
-   {
-      const auto tb_file = Param->getOption<std::string>(OPT_testbench_input_string);
-      if(boost::ends_with(tb_file, ".c") || boost::ends_with(tb_file, ".cc") || boost::ends_with(tb_file, ".cpp"))
+   script << " -fPIC -o " << output_dir << "/m_wrapper.o " << dpi_cwrapper_file << "\n"
+          << "objs+=(\"" << output_dir << "/m_wrapper.o\")\n\n";
+
+   const auto tb_srcs = [&]() {
+      CustomSet<std::string> srcs;
+      if(Param->isOption(OPT_testbench_input_file))
       {
-         script << "${CC} -c ${CFLAGS} -fPIC";
-         if(Param->isOption(OPT_testbench_extra_gcc_flags))
-         {
-            script << " " << Param->getOption<std::string>(OPT_testbench_extra_gcc_flags);
-         }
-         script << " -o " << output_dir << "/tb.o " << tb_file << "\n"
-                << "objcopy -W " << top_fname << " " << output_dir << "/tb.o\n"
-                << "objs+=(\"" << output_dir << "/tb.o\")\n";
+         const auto tb_files = Param->getOption<const CustomSet<std::string>>(OPT_testbench_input_file);
+         srcs.insert(tb_files.begin(), tb_files.end());
       }
+      if(Param->isOption(OPT_no_parse_files))
+      {
+         const auto no_parse_files = Param->getOption<const CustomSet<std::string>>(OPT_no_parse_files);
+         srcs.insert(no_parse_files.begin(), no_parse_files.end());
+      }
+      return srcs;
+   }();
+   if(tb_srcs.size())
+   {
+      script << "tb_srcs=(\n";
+      for(const auto& src : tb_srcs)
+      {
+         if(!boost::ends_with(src, ".xml"))
+         {
+            script << "  \"" << src << "\"\n";
+         }
+      }
+      script << ")\n"
+             << "TB_CFLAGS=\""
+             << (Param->isOption(OPT_testbench_extra_gcc_flags) ?
+                     Param->getOption<std::string>(OPT_testbench_extra_gcc_flags) :
+                     "")
+             << "\"\n"
+             << "for src in \"${tb_srcs[@]}\"\n"
+             << "do\n"
+             << "  obj=\"$(basename ${src})\"\n"
+             << "  case \"${obj}\" in\n"
+             << "  *.c)  ;&\n"
+             << "  *.cc) ;&\n"
+             << "  *.cpp)\n"
+             << "    obj=\"" << output_dir << "/${obj%.*}.o\"\n"
+             << "    ${CC} -c ${CFLAGS} ${TB_CFLAGS} -fPIC -o ${obj} ${src}\n"
+             << "    objcopy -W " << top_fname << " ${obj}\n"
+             << "    objs+=(\"${obj}\")\n"
+             << "    ;;\n"
+             << "  *)\n"
+             << "    objs+=(\"${src}\")\n"
+             << "    ;;\n"
+             << "  esac\n"
+             << "done\n\n";
    }
    const auto libtb_filename = output_dir + "/libtb.so";
    if(Param->getOption<int>(OPT_output_level) < OUTPUT_LEVEL_VERY_PEDANTIC)
@@ -454,8 +480,7 @@ std::string SimulationTool::GenerateLibraryBuildScript(std::ostringstream& scrip
       script << "CFLAGS+=\" -DNDEBUG\"\n";
    }
    script << "bash " << relocate_compiler_path(PANDA_INCLUDE_INSTALLDIR "/mdpi/build.sh") << " ${objs[*]} -o "
-          << libtb_filename << std::endl
-          << std::endl;
+          << libtb_filename << "\n\n";
    return libtb_filename;
 }
 

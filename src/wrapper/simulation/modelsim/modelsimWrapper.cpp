@@ -104,14 +104,10 @@ void modelsimWrapper::GenerateScript(std::ostringstream& script, const std::stri
    const auto modelsim_bin = MODELSIM_BIN;
    std::string cflags = "-DMODEL_TECH " + (modelsim_bin.size() ? (" -I" + modelsim_bin + "../include") : "");
 
-   std::string MODELSIM_OPTIMIZER_FLAGS_DEF;
+   std::string MODELSIM_OPTIMIZER_FLAGS_DEF = "";
    if(Param->getOption<bool>(OPT_mentor_optimizer))
    {
       MODELSIM_OPTIMIZER_FLAGS_DEF = "-O5";
-   }
-   else
-   {
-      MODELSIM_OPTIMIZER_FLAGS_DEF = "";
    }
    script << "beh_dir=\"" << SIM_SUBDIR << suffix << "\"" << std::endl;
    script << "work_dir=\"${beh_dir}/modelsim_work\"" << std::endl;
@@ -197,35 +193,25 @@ void modelsimWrapper::GenerateScript(std::ostringstream& script, const std::stri
       {
          THROW_UNREACHABLE("Extension not recognized! " + file_path.string());
       }
-   };
+   }
 
    script << MODELSIM_VSIM << " " << vflags << " -dpicpppath \"${CC}\" -sv_lib " << libtb_filename;
-   if(MODELSIM_OPTIMIZER_FLAGS_DEF.empty())
+   if(Param->isOption(OPT_mentor_visualizer) && Param->isOption(OPT_visualizer) &&
+      Param->getOption<bool>(OPT_visualizer))
    {
-      script << " -c";
-      if(Param->isOption(OPT_assert_debug) && Param->getOption<bool>(OPT_assert_debug))
-      {
-         script << " -pedanticerrors -assertdebug";
-      }
-      script << " -do \"onerror {quit -f -code 1;}; run -all; exit -f;\"";
+      script << " -qwavedb=+memory+signal+class+glitch+vhdlvariable";
+      MODELSIM_OPTIMIZER_FLAGS_DEF += " -debug -designfile design.bin";
    }
-   else
+   if(Param->isOption(OPT_assert_debug) && Param->getOption<bool>(OPT_assert_debug))
    {
-      if(Param->isOption(OPT_mentor_visualizer) && Param->isOption(OPT_visualizer) &&
-         Param->getOption<bool>(OPT_visualizer))
-      {
-         script << " -qwavedb=+memory+signal+class+glitch+vhdlvariable";
-         MODELSIM_OPTIMIZER_FLAGS_DEF += " -debug -designfile design.bin";
-      }
-      script << " -c -voptargs=\"+acc -hazards " + MODELSIM_OPTIMIZER_FLAGS_DEF << "\"";
-      if(Param->isOption(OPT_assert_debug) && Param->getOption<bool>(OPT_assert_debug))
-      {
-         script << " -pedanticerrors -assertdebug";
-      }
-      script << " -do \"set StdArithNoWarnings 1; set StdNumNoWarnings 1; set NumericStdNoWarnings 1; onerror {quit "
-                "-f -code 1;}; run -all; exit -f;\"";
+      script << " -pedanticerrors -assertdebug";
+      MODELSIM_OPTIMIZER_FLAGS_DEF = "+acc -hazards " + MODELSIM_OPTIMIZER_FLAGS_DEF;
    }
-   script << " work.clocked_bambu_testbench 2>&1 | tee " << log_file << std::endl << std::endl;
+   script << " -c -voptargs=\"" + MODELSIM_OPTIMIZER_FLAGS_DEF << "\"";
+   script << " -do \"set StdArithNoWarnings 1; set StdNumNoWarnings 1; set NumericStdNoWarnings 1; onerror {quit "
+             "-f -code 1;}; run -all; exit -f;\"  work.clocked_bambu_testbench 2>&1 | tee "
+          << log_file << std::endl
+          << std::endl;
    if(Param->isOption(OPT_mentor_visualizer) && Param->isOption(OPT_visualizer) &&
       Param->getOption<bool>(OPT_visualizer))
    {

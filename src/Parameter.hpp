@@ -131,7 +131,7 @@ enum class DiopsisInstrumentWriter_Type;
        skip_pipe_parameter)(gcc_serialize_memory_accesses)(unaligned_access)(aligned_access)(                          \
        backend_script_extensions)(backend_sdc_extensions)(VHDL_library)(bitvalue_ipa)(use_asynchronous_memories)(      \
        do_not_chain_memories)(bram_high_latency)(cdfc_module_binding_algorithm)(function_allocation_algorithm)(        \
-       testbench_input_string)(testbench_input_xml)(weighted_clique_register_algorithm)(disable_function_proxy)(       \
+       testbench_input_string)(testbench_input_file)(weighted_clique_register_algorithm)(disable_function_proxy)(      \
        memory_mapped_top)(expose_globals)(connect_iob)(profiling_output)(disable_bounded_function)(discrepancy)(       \
        discrepancy_force)(discrepancy_hw)(discrepancy_no_load_pointers)(discrepancy_only)(                             \
        discrepancy_permissive_ptrs)(dry_run_evaluation)(generate_taste_architecture)(initial_internal_address)(        \

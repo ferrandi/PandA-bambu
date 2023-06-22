@@ -472,7 +472,7 @@ void HLSCWriter::WriteSimulatorInitMemory(const unsigned int function_id)
    const auto parameters = BH->get_parameters();
    indented_output_stream->Append(R"(
 typedef struct
-      {
+{
 const char* filename;
 const size_t size;
 const ptr_t addrmap;
@@ -483,7 +483,7 @@ static int cmpptr(const ptr_t a, const ptr_t b) { return a < b ? -1 : (a > b); }
 static int cmpaddr(const void* a, const void* b) { return cmpptr(*(ptr_t*)a, *(ptr_t*)b); }
 
 static void __m_memsetup(void* args[], size_t args_size)
-   {
+{
 size_t m_extmem_size, i;
 void **m_extmem;
 ptr_t prev, curr_base;
@@ -525,50 +525,50 @@ ptr_t prev, curr_base;
       indented_output_stream->Append(R"(
 // Memory-mapped internal variables initialization
 for(i = 0; i < sizeof(memmap_init) / sizeof(*memmap_init); ++i)
-            {
+{
 FILE* fp = fopen(memmap_init[i].filename, "rb");
 if(!fp)
-                  {
+{
 error("Unable to open file: %s", memmap_init[i].filename);
 perror("");
 exit(EXIT_FAILURE);
-                  }
+}
 if(memmap_init[i].addr == NULL)
-               {
+{
 memmap_init[i].addr = malloc(memmap_init[i].size);
-               }
+}
 if(fread(memmap_init[i].addr, 1, memmap_init[i].size, fp) != memmap_init[i].size)
-               {
+{
 error("Unable to read %zu bytes from file: %s", memmap_init[i].size, memmap_init[i].filename);
 perror("");
 exit(EXIT_FAILURE);
-                     }
+}
 fclose(fp);
 __m_memmap(memmap_init[i].addrmap, memmap_init[i].addr);
-                     }
+}
 )");
    }
 
    indented_output_stream->Append(R"(
 m_extmem = (void**)malloc(sizeof(void*) * m_extmem_size);
 for(i = 0; i < args_size; ++i)
-               {
+{
 m_extmem[i] = args[i];
-                  }
+}
 
 qsort(m_extmem, m_extmem_size, sizeof(void*), cmpaddr);
 prev = (ptr_t)m_extmem[0];
 curr_base = base_addr;
 __m_memmap(curr_base, m_extmem[0]);
 for(i = 1; i < m_extmem_size; ++i)
-                  {
+{
 const ptr_t curr = (ptr_t)m_extmem[i];
 curr_base += curr - prev;
 __m_memmap(curr_base, m_extmem[i]);
 prev = curr;
-                  }
+}
 free(m_extmem);
-               }
+}
 
 )");
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Written simulator init memory");
@@ -623,6 +623,10 @@ void HLSCWriter::WriteMainTestbench()
          if(tree_helper::IsRealType(t))
          {
             return has_subnormals ? "flts" : "flt";
+         }
+         else if(tree_helper::IsVoidType(t))
+         {
+            return "mem";
          }
       }
       return "val";
@@ -855,7 +859,7 @@ template <typename T> T* m_getptr(T* obj) { return obj; }
    {                                                                           \
       error("Return value mismatch with respect to " #suffix " reference.\n"); \
       ++mismatch_count;                                                        \
-                           }
+   }
 
 #ifndef CUSTOM_VERIFICATION
 #define _m_setargptr(idx, ptr) _ms_setargptr(gold, idx, ptr)
@@ -925,7 +929,7 @@ template <typename T> T* m_getptr(T* obj) { return obj; }
    for(i = 0; i < P##idx##_count; ++i)                                                                              \
    {                                                                                                                \
       memcpy((m_getvalt(m_getptr(P##idx))::element_type*)P##idx##_sim + i, &(*m_getptr(P##idx))[i], P##idx##_item); \
-                           }
+   }
 )");
 
    // write C code used to print initialization values for the HDL simulator's memory
@@ -965,7 +969,7 @@ template <typename T> T* m_getptr(T* obj) { return obj; }
    indented_output_stream->Append("{\n");
    indented_output_stream->Append("error(\"Unexpected simulator state : %s\\n\", mdpi_state_str(state));\n");
    indented_output_stream->Append("__m_signal_to(MDPI_ENTITY_SIM, MDPI_COSIM_END);\n");
-   indented_output_stream->Append("pthread_exit((void*)((ptr_t)(MDPI_COSIM_ABORT)));\n");
+   indented_output_stream->Append("pthread_exit((void*)((size_t)(MDPI_COSIM_ABORT)));\n");
    indented_output_stream->Append("}\n");
 
    if(gold_cmp.size() || return_type)
@@ -989,11 +993,11 @@ template <typename T> T* m_getptr(T* obj) { return obj; }
       }
       indented_output_stream->Append(R"(
 if(mismatch_count)
-            {
+{
 error("Memory parameter mismatch has been found.\n");
 __m_signal_to(MDPI_ENTITY_SIM, MDPI_COSIM_END);
-pthread_exit((void*)((ptr_t)(MDPI_COSIM_ABORT)));
-         }
+pthread_exit((void*)((size_t)(MDPI_COSIM_ABORT)));
+}
 
 #ifdef __clang__
 #pragma clang diagnostic pop

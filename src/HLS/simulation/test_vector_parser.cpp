@@ -45,6 +45,7 @@
 #include "call_graph.hpp"
 #include "call_graph_manager.hpp"
 #include "compiler_wrapper.hpp"
+#include "constants.hpp"
 #include "custom_set.hpp"
 #include "dbgPrintHelper.hpp"
 #include "design_flow_graph.hpp"
@@ -57,6 +58,7 @@
 #include "hls_manager.hpp"
 #include "string_manipulation.hpp"
 #include "tree_helper.hpp"
+#include "utility.hpp"
 #include "xml_document.hpp"
 #include "xml_dom_parser.hpp"
 
@@ -105,35 +107,33 @@ bool TestVectorParser::HasToBeExecuted() const
 
 DesignFlowStep_Status TestVectorParser::Exec()
 {
-   if(!parameters->isOption(OPT_testbench_input_string))
-   {
-      THROW_UNREACHABLE("");
-   }
    HLSMgr->RSim = SimulationInformationRef(new SimulationInformation());
 
-   const auto input_string = parameters->getOption<std::string>(OPT_testbench_input_string);
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Examining " + input_string);
-   if(boost::regex_match(input_string, boost::regex("^[\\w\\d\\-\\.\\/]+\\.\\w+$")))
+   if(parameters->isOption(OPT_testbench_input_file))
    {
-      if(boost::ends_with(input_string, ".xml"))
+      const auto tb_files = parameters->getOption<const CustomSet<std::string>>(OPT_testbench_input_file);
+      if(boost::ends_with(*tb_files.begin(), ".xml"))
       {
-         HLSMgr->RSim->test_vectors = ParseXMLFile(input_string);
-      }
-      else if(boost::ends_with(input_string, ".c") || boost::ends_with(input_string, ".cc") ||
-              boost::ends_with(input_string, ".cpp"))
-      {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                        "<--User provided co-simulation will be used for test vectors generation");
-         return DesignFlowStep_Status::SUCCESS;
+         THROW_ASSERT(tb_files.size() == 1, "XML testbench initialization must be in a single file.");
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Examining " + *tb_files.begin());
+         HLSMgr->RSim->test_vectors = ParseXMLFile(*tb_files.begin());
       }
       else
       {
-         THROW_UNREACHABLE("Unsupported testbench file format");
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                        "<--User provided co-simulation files will be used for test vectors generation");
+         return DesignFlowStep_Status::SUCCESS;
       }
+   }
+   else if(parameters->isOption(OPT_testbench_input_string))
+   {
+      const auto input_string = parameters->getOption<std::string>(OPT_testbench_input_string);
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Examining " + input_string);
+      HLSMgr->RSim->test_vectors = ParseUserString(input_string);
    }
    else
    {
-      HLSMgr->RSim->test_vectors = ParseUserString(input_string);
+      THROW_UNREACHABLE("");
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level,
                   "<--Number of input test vectors: " + STR(HLSMgr->RSim->test_vectors.size()));
@@ -143,36 +143,39 @@ DesignFlowStep_Status TestVectorParser::Exec()
 std::vector<std::map<std::string, std::string>> TestVectorParser::ParseUserString(const std::string& input_string) const
 {
    std::vector<std::map<std::string, std::string>> test_vectors;
-   std::string local_string = input_string;
-
-   /// pre-processing to support arrays
-   std::string::iterator last_comma = local_string.end();
-   for(auto it = local_string.begin(), it_end = local_string.end(); it != it_end; ++it)
+   auto tb_strings = convert_string_to_vector<std::string>(input_string, STR_CST_string_separator);
+   for(auto& tb_string : tb_strings)
    {
-      if(*it == ',')
+      /// pre-processing to support arrays
+      std::string::iterator last_comma = tb_string.end();
+      for(auto it = tb_string.begin(), it_end = tb_string.end(); it != it_end; ++it)
       {
-         last_comma = it;
+         if(*it == ',')
+         {
+            last_comma = it;
+         }
+         else if(*it == '=' && last_comma != it_end)
+         {
+            *last_comma = '$';
+         }
       }
-      else if(*it == '=' && last_comma != it_end)
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Preprocessed string " + tb_string);
+      test_vectors.push_back(std::map<std::string, std::string>());
+      std::vector<std::string> testbench_parameters = SplitString(tb_string, "$");
+      unsigned int index = 0;
+      for(const auto& parameter : testbench_parameters)
       {
-         *last_comma = '$';
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Examining " + parameter);
+         std::vector<std::string> temp = SplitString(parameter, "=");
+         if(temp.size() != 2)
+         {
+            THROW_ERROR("Error in processing --simulate arg");
+         }
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---" + temp[0] + "=" + temp[1]);
+         test_vectors.back()[temp[0]] = temp[1];
+         ++index;
       }
-   }
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Preprocessed string " + local_string);
-   test_vectors.push_back(std::map<std::string, std::string>());
-   std::vector<std::string> testbench_parameters = SplitString(local_string, "$");
-   unsigned int index = 0;
-   for(const auto& parameter : testbench_parameters)
-   {
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Examining " + parameter);
-      std::vector<std::string> temp = SplitString(parameter, "=");
-      if(temp.size() != 2)
-      {
-         THROW_ERROR("Error in processing --simulate arg");
-      }
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---" + temp[0] + "=" + temp[1]);
-      test_vectors.back()[temp[0]] = temp[1];
-      ++index;
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
    }
    return test_vectors;
 }

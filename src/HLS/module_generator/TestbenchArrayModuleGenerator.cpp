@@ -136,24 +136,24 @@ parameter )";
   MAX_DELAY= WRITE_DELAY > READ_DELAY ? WRITE_DELAY : READ_DELAY,
   BITSIZE_item=BITSIZE_dq+BITSIZE_address+BITSIZE_ce+BITSIZE_we,
   BITSIZE_chunk=BITSIZE_item*CHANNELS_NUMBER,
-  BITSIZE_ce_offset=0,
-  BITSIZE_we_offset=BITSIZE_ce_offset+BITSIZE_ce,
-  BITSIZE_address_offset=BITSIZE_we_offset+BITSIZE_we,
-  BITSIZE_data_offset=BITSIZE_address_offset+BITSIZE_address;
+  OFFSET_ce=0,
+  OFFSET_we=OFFSET_ce+BITSIZE_ce,
+  OFFSET_address=OFFSET_we+BITSIZE_we,
+  OFFSET_data=OFFSET_address+BITSIZE_address;
 genvar i;
 
 mem_utils #(BITSIZE_dq) m_utils();
 arg_utils a_utils();
 
-ptr_t base_addr, base_addr_next;
-reg [BITSIZE_chunk*MAX_DELAY-1:0] queue, queue_next;
-reg [CHANNELS_NUMBER*BITSIZE_dq-1:0] q, q_next;
+ptr_t base_addr, base_addr_next = 0;
+reg [BITSIZE_chunk*MAX_DELAY-1:0] queue, queue_next = 0;
+reg [CHANNELS_NUMBER*BITSIZE_dq-1:0] q, q_next = 0;
 
 )";
 
    for(unsigned i = 0; i < n_channels; ++i)
    {
-      out << "assign queue[BITSIZE_item*" << (i + 1) << "-1:BITSIZE_item*" << i << "] = {";
+      out << "assign queue[BITSIZE_item*" << i << "+:BITSIZE_item] = {";
       if(if_dir != port_o::IN)
       {
          out << arg_name << "_d" << i << ", ";
@@ -174,25 +174,19 @@ reg [CHANNELS_NUMBER*BITSIZE_dq-1:0] q, q_next;
       out << arg_name << "_ce" << i << "};\n";
       if(if_dir != port_o::OUT)
       {
-         out << "assign " << arg_name << "_q" << i << " = q[BITSIZE_dq*" << (i + 1) << "-1:BITSIZE_dq*" << i << "];\n";
+         out << "assign " << arg_name << "_q" << i << " = q[BITSIZE_dq*" << i << "+:BITSIZE_dq];\n";
       }
    }
 
    out << R"(
 always @(posedge clock)
 begin
+  base_addr <= base_addr_next;
   if(setup_port)
   begin
     base_addr <= a_utils.getptrarg(index);
-    queue[BITSIZE_chunk*MAX_DELAY-1:BITSIZE_chunk] <= 0;
-  end
-  else
-  begin
-    base_addr <= base_addr_next;
-    queue[BITSIZE_chunk*MAX_DELAY-1:BITSIZE_chunk] <= queue_next[BITSIZE_chunk*MAX_DELAY-1:BITSIZE_chunk];
   end
 end
-
 always @(*)
 begin
   base_addr_next = base_addr;
@@ -202,6 +196,17 @@ end
 generate
   if(MAX_DELAY > 1)
   begin
+    always @(posedge clock)
+    begin
+      if(setup_port)
+      begin
+        queue[BITSIZE_chunk*MAX_DELAY-1:BITSIZE_chunk] <= 0;
+      end
+      else
+      begin
+        queue[BITSIZE_chunk*MAX_DELAY-1:BITSIZE_chunk] <= queue_next[BITSIZE_chunk*MAX_DELAY-1:BITSIZE_chunk];
+      end
+    end
     always @(*)
     begin
       queue_next[BITSIZE_chunk*MAX_DELAY-1:BITSIZE_chunk] = queue[BITSIZE_chunk*(MAX_DELAY-1)-1:0];
@@ -218,23 +223,15 @@ generate
   begin : write_port
     if(WRITE_DELAY > 1)
     begin
-      always @(negedge clock)
+      always @(posedge clock)
       begin
-        if(~setup_port)
+        automatic ptr_t address = queue_next[(WRITE_DELAY-1)*BITSIZE_chunk+BITSIZE_item*i+OFFSET_address+:BITSIZE_address];
+        automatic ptr_t mem_address = base_addr_next + (address * ALIGNMENT);
+        automatic reg [BITSIZE_dq-1:0] data = queue_next[(WRITE_DELAY-1)*BITSIZE_chunk+BITSIZE_item*i+OFFSET_data+:BITSIZE_dq];
+        if(queue_next[(WRITE_DELAY-1)*BITSIZE_chunk+BITSIZE_item*i+OFFSET_ce+:BITSIZE_ce] == 1'b1
+          && queue_next[(WRITE_DELAY-1)*BITSIZE_chunk+BITSIZE_item*i+OFFSET_we+:BITSIZE_we] == 1'b1)
         begin
-          if(queue_next[BITSIZE_chunk*(WRITE_DELAY-1)+BITSIZE_item*i+BITSIZE_ce_offset+BITSIZE_ce-1:
-                        BITSIZE_chunk*(WRITE_DELAY-1)+BITSIZE_item*i+BITSIZE_ce_offset] == 1'b1
-            && queue_next[BITSIZE_chunk*(WRITE_DELAY-1)+BITSIZE_item*i+BITSIZE_we_offset+BITSIZE_we-1:
-                          BITSIZE_chunk*(WRITE_DELAY-1)+BITSIZE_item*i+BITSIZE_we_offset] == 1'b1)
-          begin
-            automatic ptr_t address = base_addr_next +
-              queue_next[BITSIZE_chunk*(WRITE_DELAY-1)+BITSIZE_item*i+BITSIZE_address_offset+BITSIZE_address-1:
-                        BITSIZE_chunk*(WRITE_DELAY-1)+BITSIZE_item*i+BITSIZE_address_offset] * ALIGNMENT;
-            automatic reg [BITSIZE_dq-1:0] data =
-              queue_next[BITSIZE_chunk*(WRITE_DELAY-1)+BITSIZE_item*i+BITSIZE_data_offset+BITSIZE_dq-1:
-                        BITSIZE_chunk*(WRITE_DELAY-1)+BITSIZE_item*i+BITSIZE_data_offset];
-            m_utils.write(BITSIZE_dq, data, address);
-          end
+          m_utils.write(BITSIZE_dq, data, mem_address);
         end
       end
     end
@@ -242,15 +239,12 @@ generate
     begin
       always @(negedge clock)
       begin
-        if(queue[BITSIZE_item*i+BITSIZE_ce_offset+BITSIZE_ce-1:BITSIZE_item*i+BITSIZE_ce_offset] == 1'b1
-          && queue[BITSIZE_item*i+BITSIZE_we_offset+BITSIZE_we-1:BITSIZE_item*i+BITSIZE_we_offset] == 1'b1)
+        automatic ptr_t address = queue_next[BITSIZE_item*i+OFFSET_address+:BITSIZE_address];
+        automatic ptr_t mem_address = base_addr + (address * ALIGNMENT);
+        automatic reg [BITSIZE_dq-1:0] data = queue_next[BITSIZE_item*i+OFFSET_data+BITSIZE_dq-1:BITSIZE_item*i+OFFSET_data];
+        if(queue_next[BITSIZE_item*i+OFFSET_ce+:BITSIZE_ce] == 1'b1 && queue_next[BITSIZE_item*i+OFFSET_we+:BITSIZE_we] == 1'b1)
         begin
-          automatic ptr_t address = base_addr +
-            queue[BITSIZE_item*i+BITSIZE_address_offset+BITSIZE_address-1:
-                  BITSIZE_item*i+BITSIZE_address_offset] * ALIGNMENT;
-          automatic reg [BITSIZE_dq-1:0] data =
-            queue[BITSIZE_item*i+BITSIZE_data_offset+BITSIZE_dq-1:BITSIZE_item*i+BITSIZE_data_offset];
-          m_utils.write(BITSIZE_dq, data, address);
+          m_utils.write(BITSIZE_dq, data, mem_address);
         end
       end
     end
@@ -268,48 +262,34 @@ generate
     begin
       always @(posedge clock)
       begin
-        if(~setup_port)
+        q[BITSIZE_dq*i+:BITSIZE_dq] <= q_next[BITSIZE_dq*i+:BITSIZE_dq];
+        if(queue_next[(READ_DELAY-1)*BITSIZE_chunk+BITSIZE_item*i+OFFSET_ce+:BITSIZE_ce] == 1'b1
+            && queue_next[(READ_DELAY-1)*BITSIZE_chunk+BITSIZE_item*i+OFFSET_we+:BITSIZE_we] == 1'b0)
         begin
-          if(queue_next[BITSIZE_chunk*(READ_DELAY-1)+BITSIZE_item*i+BITSIZE_ce_offset+BITSIZE_ce-1:
-                        BITSIZE_chunk*(READ_DELAY-1)+BITSIZE_item*i+BITSIZE_ce_offset] == 1'b1
-            && queue_next[BITSIZE_chunk*(READ_DELAY-1)+BITSIZE_item*i+BITSIZE_we_offset+BITSIZE_we-1:
-                          BITSIZE_chunk*(READ_DELAY-1)+BITSIZE_item*i+BITSIZE_we_offset] == 1'b0)
-          begin
-            automatic ptr_t address = base_addr_next +
-              queue_next[BITSIZE_chunk*(READ_DELAY-1)+BITSIZE_item*i+BITSIZE_address_offset+BITSIZE_address-1:
-                         BITSIZE_chunk*(READ_DELAY-1)+BITSIZE_item*i+BITSIZE_address_offset] * ALIGNMENT;
-            q[BITSIZE_dq*(i+1)-1:BITSIZE_dq*i] <= m_utils.read(address);
-          end
-          else
-          begin
-            q[BITSIZE_dq*(i+1)-1:BITSIZE_dq*i] <= q_next[BITSIZE_dq*(i+1)-1:BITSIZE_dq*i];
-          end
+          automatic ptr_t address = queue_next[(READ_DELAY-1)*BITSIZE_chunk+BITSIZE_item*i+OFFSET_address+:BITSIZE_address];
+          automatic ptr_t mem_address = base_addr_next + (address * ALIGNMENT);
+          q[BITSIZE_dq*i+:BITSIZE_dq] <= m_utils.read(mem_address);
         end
       end
       always @(*)
       begin
-        q_next[BITSIZE_dq*(i+1)-1:BITSIZE_dq*i] = q[BITSIZE_dq*(i+1)-1:BITSIZE_dq*i];
+        q_next[BITSIZE_dq*i+:BITSIZE_dq] = q[BITSIZE_dq*i+:BITSIZE_dq];
       end
     end
     else
     begin
       always @(posedge clock)
       begin
-        q[BITSIZE_dq*(i+1)-1:BITSIZE_dq*i] <= q_next[BITSIZE_dq*(i+1)-1:BITSIZE_dq*i];
+        q[BITSIZE_dq*i+:BITSIZE_dq] <= q_next[BITSIZE_dq*i+:BITSIZE_dq];
       end
-      always @(*)
+      always @(negedge clock)
       begin
-        if(queue[BITSIZE_item*i+BITSIZE_ce_offset+BITSIZE_ce-1:BITSIZE_item*i+BITSIZE_ce_offset] == 1'b1
-            && queue[BITSIZE_item*i+BITSIZE_we_offset+BITSIZE_we-1:BITSIZE_item*i+BITSIZE_we_offset] == 1'b0)
+        q_next[BITSIZE_dq*i+:BITSIZE_dq] = q[BITSIZE_dq*i+:BITSIZE_dq];
+        if(queue_next[BITSIZE_item*i+OFFSET_ce+:BITSIZE_ce] == 1'b1 && queue_next[BITSIZE_item*i+OFFSET_we+:BITSIZE_we] == 1'b0)
         begin
-          automatic ptr_t address = base_addr +
-            queue[BITSIZE_item*i+BITSIZE_address_offset+BITSIZE_address-1:
-                  BITSIZE_item*i+BITSIZE_address_offset] * ALIGNMENT;
-          q_next[BITSIZE_dq*(i+1)-1:BITSIZE_dq*i] = m_utils.read(address);
-        end
-        else
-        begin
-          q_next[BITSIZE_dq*(i+1)-1:BITSIZE_dq*i] = q[BITSIZE_dq*(i+1)-1:BITSIZE_dq*i];
+          automatic ptr_t address = queue_next[BITSIZE_item*i+OFFSET_address+:BITSIZE_address];
+          automatic ptr_t mem_address = base_addr + (address * ALIGNMENT);
+          q_next[BITSIZE_dq*i+:BITSIZE_dq] = m_utils.read(mem_address);
         end
       end
     end

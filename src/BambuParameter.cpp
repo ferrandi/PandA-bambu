@@ -1192,7 +1192,16 @@ int BambuParameter::Exec()
          }
          case INPUT_OPT_FILE_INPUT_DATA:
          {
-            setOption(OPT_file_input_data, optarg);
+            const auto in_files = convert_string_to_vector<std::string>(optarg, ",");
+            for(const auto& in_file : in_files)
+            {
+               boost::filesystem::path file_path(GetPath(in_file));
+               boost::filesystem::path local_file(GetPath(file_path.filename().string()));
+               if(!boost::filesystem::exists(local_file))
+               {
+                  boost::filesystem::create_symlink(file_path.lexically_normal(), local_file);
+               }
+            }
             break;
          }
          case OPT_LIST_BASED: // enable list based scheduling
@@ -1794,13 +1803,23 @@ int BambuParameter::Exec()
          {
             setOption(OPT_generate_testbench, true);
             const auto arg = TrimSpaces(std::string(optarg));
-            if(boost::regex_match(arg, boost::regex("^[\\w\\d\\-\\./]+\\.\\w+$")))
+            if(boost::filesystem::exists(arg))
             {
-               setOption(OPT_testbench_input_string, GetPath(arg));
+               std::string prev;
+               if(isOption(OPT_testbench_input_file))
+               {
+                  prev = getOption<std::string>(OPT_testbench_input_file) + STR_CST_string_separator;
+               }
+               setOption(OPT_testbench_input_file, prev + GetPath(arg));
             }
             else
             {
-               setOption(OPT_testbench_input_string, optarg);
+               std::string prev;
+               if(isOption(OPT_testbench_input_string))
+               {
+                  prev = getOption<std::string>(OPT_testbench_input_string) + STR_CST_string_separator;
+               }
+               setOption(OPT_testbench_input_string, prev + arg);
             }
             break;
          }
@@ -1977,9 +1996,12 @@ int BambuParameter::Exec()
             {
                no_parse += getOption<std::string>(OPT_no_parse_files) + STR_CST_string_separator;
             }
-            setOption(OPT_no_parse_files,
-                      no_parse + boost::regex_replace(std::string(optarg), boost::regex("\\s*,\\s*"),
-                                                      STR_CST_string_separator));
+            auto paths = SplitString(optarg, ",");
+            for(auto& path : paths)
+            {
+               path = GetPath(path);
+            }
+            setOption(OPT_no_parse_files, no_parse + convert_vector_to_string(paths, STR_CST_string_separator));
             break;
          }
          case INPUT_OPT_C_PYTHON_NO_PARSE:
@@ -2921,7 +2943,7 @@ void BambuParameter::CheckParameters()
             if(!getOption<bool>(OPT_generate_testbench))
             {
                setOption(OPT_generate_testbench, true);
-               setOption(OPT_testbench_input_string, GetPath("test.xml"));
+               setOption(OPT_testbench_input_file, GetPath("test.xml"));
             }
          }
          const auto is_valid_evaluation_mode = [](const std::string& s) -> bool {
@@ -3481,26 +3503,6 @@ void BambuParameter::CheckParameters()
    if(isOption(OPT_top_functions_names) && getOption<const std::list<std::string>>(OPT_top_functions_names).size() > 1)
    {
       setOption(OPT_disable_function_proxy, true);
-   }
-   /// In case copy input files
-   if(isOption(OPT_file_input_data))
-   {
-      auto input_data = getOption<std::string>(OPT_file_input_data);
-      std::vector<std::string> splitted = SplitString(input_data, ",");
-      size_t i_end = splitted.size();
-      for(size_t i = 0; i < i_end; i++)
-      {
-         const auto filename = GetPath(splitted[i]);
-         if(boost::filesystem::path(filename).parent_path() != GetCurrentPath())
-         {
-            std::string command = "cp " + filename + " " + GetCurrentPath();
-            int ret = PandaSystem(ParameterConstRef(this, null_deleter()), command);
-            if(IsError(ret))
-            {
-               THROW_ERROR("cp returns an error");
-            }
-         }
-      }
    }
 
    if(isOption(OPT_no_parse_c_python) && !isOption(OPT_testbench_extra_gcc_flags))

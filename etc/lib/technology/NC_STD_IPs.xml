@@ -443,6 +443,7 @@ end"/>
           <structural_type_descriptor id_type="TestbenchMEMMinimal"/>
           <parameter name="MEM_DELAY_READ">2</parameter>
           <parameter name="MEM_DELAY_WRITE">1</parameter>
+          <parameter name="MEM_PIPELINED">1</parameter>
           <parameter name="base_addr">1073741824</parameter>
           <parameter name="MEM_DUMP">0</parameter>
           <parameter name="MEM_DUMP_FILE">&quot;&quot;memdump.csv&quot;&quot;</parameter>
@@ -478,7 +479,7 @@ end"/>
           </port_o>
           <NP_functionality
             IP_COMPONENT="mem_utils"
-            LIBRARY="TestbenchMEMMinimal MEM_DELAY_READ MEM_DELAY_WRITE base_addr MEM_DUMP MEM_DUMP_FILE M_DataRdy M_Rdata_ram Mout_oe_ram Mout_we_ram Mout_addr_ram Mout_data_ram_size Mout_Wdata_ram"
+            LIBRARY="TestbenchMEMMinimal MEM_DELAY_READ MEM_DELAY_WRITE MEM_PIPELINED base_addr MEM_DUMP MEM_DUMP_FILE M_DataRdy M_Rdata_ram Mout_oe_ram Mout_we_ram Mout_addr_ram Mout_data_ram_size Mout_Wdata_ram"
             VERILOG_PROVIDED="
 parameter MEM_DELAY_MAX= MEM_DELAY_READ > MEM_DELAY_WRITE ? MEM_DELAY_READ : MEM_DELAY_WRITE,
   CHANNELS_NUMBER=BITSIZE_Mout_oe_ram,
@@ -490,7 +491,6 @@ parameter MEM_DELAY_MAX= MEM_DELAY_READ > MEM_DELAY_WRITE ? MEM_DELAY_READ : MEM
   BITSIZE_ready=1,
   BITSIZE_Rdata=BITSIZE_M_Rdata_ram/CHANNELS_NUMBER,
   BITSIZE_item=BITSIZE_Wdata+BITSIZE_Wsize+BITSIZE_addr+BITSIZE_we+BITSIZE_oe,
-  BITSIZE_chunk=CHANNELS_NUMBER*BITSIZE_item,
   OFFSET_oe=0,
   OFFSET_we=OFFSET_oe+BITSIZE_oe,
   OFFSET_addr=OFFSET_we+BITSIZE_we,
@@ -499,7 +499,6 @@ parameter MEM_DELAY_MAX= MEM_DELAY_READ > MEM_DELAY_WRITE ? MEM_DELAY_READ : MEM
 
 genvar i;
 integer dump_file;
-reg [MEM_DELAY_MAX*BITSIZE_chunk-1:0] queue, queue_next = 0;
 
 generate
   if(MEM_DUMP)
@@ -523,36 +522,9 @@ endgenerate
 mem_utils #(BITSIZE_Rdata) m_utils();
 
 generate
-  if(MEM_DELAY_MAX &gt; 1)
-  begin
-    always@(*)
-    begin
-      queue_next = {queue[(MEM_DELAY_MAX-1)*BITSIZE_chunk-1:0], queue[BITSIZE_chunk-1:0]};
-    end
-    always@(posedge clock)
-    begin
-      if(1RESET_VALUE)
-      begin
-        queue[MEM_DELAY_MAX*BITSIZE_chunk-1:BITSIZE_chunk] &lt;= 0;
-      end
-      else
-      begin
-        queue[MEM_DELAY_MAX*BITSIZE_chunk-1:BITSIZE_chunk] &lt;= queue_next[MEM_DELAY_MAX*BITSIZE_chunk-1:BITSIZE_chunk];
-      end
-    end
-  end
-  else
-  begin
-    always@(*)
-    begin
-      queue_next = queue;
-    end
-  end
-endgenerate
-
-generate
   for(i = 0; i &lt; CHANNELS_NUMBER; i = i + 1)
-  begin
+  begin : channel
+    reg [MEM_DELAY_MAX*BITSIZE_item-1:0] queue, queue_next = 0;
     reg [BITSIZE_oe-1:0] oe;
     reg [BITSIZE_we-1:0] we;
     ptr_t Waddr, Raddr;
@@ -560,24 +532,75 @@ generate
     reg [BITSIZE_Wdata-1:0] Wdata;
     reg [BITSIZE_ready-1:0] Wready, Rready;
     reg [BITSIZE_Rdata-1:0] Rdata;
-    assign oe = queue_next[(MEM_DELAY_READ-1)*BITSIZE_chunk+BITSIZE_item*i+OFFSET_oe+:BITSIZE_oe];
-    assign we = queue_next[(MEM_DELAY_WRITE-1)*BITSIZE_chunk+BITSIZE_item*i+OFFSET_we+:BITSIZE_we];
-    assign Raddr = queue_next[(MEM_DELAY_READ-1)*BITSIZE_chunk+BITSIZE_item*i+OFFSET_addr+:BITSIZE_addr];
-    assign Waddr = queue_next[(MEM_DELAY_WRITE-1)*BITSIZE_chunk+BITSIZE_item*i+OFFSET_addr+:BITSIZE_addr];
-    assign Wsize = queue_next[(MEM_DELAY_WRITE-1)*BITSIZE_chunk+BITSIZE_item*i+OFFSET_Wsize+:BITSIZE_Wsize];
-    assign Wdata = queue_next[(MEM_DELAY_WRITE-1)*BITSIZE_chunk+BITSIZE_item*i+OFFSET_Wdata+:BITSIZE_Wdata];
+    assign oe = queue_next[(MEM_DELAY_READ-1)*BITSIZE_item+OFFSET_oe+:BITSIZE_oe];
+    assign we = queue_next[(MEM_DELAY_WRITE-1)*BITSIZE_item+OFFSET_we+:BITSIZE_we];
+    assign Raddr = queue_next[(MEM_DELAY_READ-1)*BITSIZE_item+OFFSET_addr+:BITSIZE_addr];
+    assign Waddr = queue_next[(MEM_DELAY_WRITE-1)*BITSIZE_item+OFFSET_addr+:BITSIZE_addr];
+    assign Wsize = queue_next[(MEM_DELAY_WRITE-1)*BITSIZE_item+OFFSET_Wsize+:BITSIZE_Wsize];
+    assign Wdata = queue_next[(MEM_DELAY_WRITE-1)*BITSIZE_item+OFFSET_Wdata+:BITSIZE_Wdata];
     assign M_DataRdy[BITSIZE_ready*i+:BITSIZE_ready] = Wready | Rready;
     assign M_Rdata_ram[BITSIZE_Rdata*i+:BITSIZE_Rdata] = Rdata;
     
-    assign queue[BITSIZE_item*i+:BITSIZE_item] = {
+    assign queue[BITSIZE_item-1:0] = {
       Mout_Wdata_ram[BITSIZE_Wdata*i+:BITSIZE_Wdata], 
       Mout_data_ram_size[BITSIZE_Wsize*i+:BITSIZE_Wsize],
       Mout_addr_ram[BITSIZE_addr*i+:BITSIZE_addr],
       Mout_we_ram[BITSIZE_we*i+:BITSIZE_we],
       Mout_oe_ram[BITSIZE_oe*i+:BITSIZE_oe]};
     
-    if(MEM_DELAY_READ &gt; 1)
+    if(MEM_DELAY_MAX &gt; 1)
+    begin : requests_queue
+      if(MEM_PIPELINED)
+      begin : pipelined_handler
+        always@(*)
+        begin
+          queue_next = {queue[(MEM_DELAY_MAX-1)*BITSIZE_item-1:0], queue[BITSIZE_item-1:0]};
+        end
+        always@(posedge clock)
+        begin
+          if(1RESET_VALUE)
+          begin
+            queue[MEM_DELAY_MAX*BITSIZE_item-1:BITSIZE_item] &lt;= 0;
+          end
+          else
+          begin
+            queue[MEM_DELAY_MAX*BITSIZE_item-1:BITSIZE_item] &lt;= queue_next[MEM_DELAY_MAX*BITSIZE_item-1:BITSIZE_item];
+          end
+        end
+      end
+      else
+      begin : sequential_handler
+        reg tx_active, tx_active_next = 0;
+        always@(*)
+        begin
+          tx_active_next = queue[OFFSET_oe+:BITSIZE_we] | queue[OFFSET_we+:BITSIZE_we];
+          queue_next = {queue[(MEM_DELAY_MAX-1)*BITSIZE_item-1:0], queue[BITSIZE_item-1:0]} &amp; {{(MEM_DELAY_MAX-2)*BITSIZE_item{1&apos;b1}}, {BITSIZE_item*2{~tx_active}}};
+        end
+        always@(posedge clock)
+        begin
+          if(1RESET_VALUE)
+          begin
+            tx_active &lt;= 0;
+            queue[MEM_DELAY_MAX*BITSIZE_item-1:BITSIZE_item] &lt;= 0;
+          end
+          else
+          begin
+            tx_active &lt;= tx_active_next;
+            queue[MEM_DELAY_MAX*BITSIZE_item-1:BITSIZE_item] &lt;= queue_next[MEM_DELAY_MAX*BITSIZE_item-1:BITSIZE_item];
+          end
+        end
+      end
+    end
+    else
     begin
+      always@(*)
+      begin
+        queue_next = queue;
+      end
+    end
+
+    if(MEM_DELAY_READ &gt; 1)
+    begin : read_channel
       always@(posedge clock)
       begin : read_channel
         automatic reg [BITSIZE_Rdata-1:0] data;
@@ -588,7 +611,10 @@ generate
           data = m_utils.read(Raddr);
           Rready &lt;= 1;
           Rdata &lt;= data;
-          $fwrite(dump_file, &quot;%0d,r,%0X,%0d,%0X\\n&quot;, i, Raddr, BITSIZE_Rdata, data);
+          if(MEM_DUMP)
+          begin
+            $fwrite(dump_file, &quot;%0d,r,%0X,%0d,%0X\\n&quot;, i, Raddr, BITSIZE_Rdata, data);
+          end
         end
       end
     end
@@ -601,13 +627,16 @@ generate
         if(oe &amp;&amp; base_addr &lt;= Raddr)
         begin
           Rdata = m_utils.read(Raddr);
-          $fwrite(dump_file, &quot;%0d,r,%0X,%0d,%0X\\n&quot;, i, Raddr, BITSIZE_Rdata, Rdata);
+          if(MEM_DUMP)
+          begin
+            $fwrite(dump_file, &quot;%0d,r,%0X,%0d,%0X\\n&quot;, i, Raddr, BITSIZE_Rdata, Rdata);
+          end
         end
       end
     end
 
     if(MEM_DELAY_WRITE &gt; 1)
-    begin
+    begin : write_channel
       always@(posedge clock)
       begin : write_channel
         Wready &lt;= 0;
@@ -615,7 +644,10 @@ generate
         begin
           Wready &lt;= 1;
           m_utils.write(Wsize, Wdata, Waddr);
-          $fwrite(dump_file, &quot;%0d,w,%0X,%0d,%0X\\n&quot;, i, Waddr, Wsize, Wdata);
+          if(MEM_DUMP)
+          begin
+            $fwrite(dump_file, &quot;%0d,w,%0X,%0d,%0X\\n&quot;, i, Waddr, Wsize, Wdata);
+          end
         end
       end
     end
@@ -627,21 +659,24 @@ generate
         if(we &amp;&amp; base_addr &lt;= Waddr)
         begin
           m_utils.write(Wsize, Wdata, Waddr);
-          $fwrite(dump_file, &quot;%0d,w,%0X,%0d,%0X\\n&quot;, i, Waddr, Wsize, Wdata);
+          if(MEM_DUMP)
+          begin
+            $fwrite(dump_file, &quot;%0d,w,%0X,%0d,%0X\\n&quot;, i, Waddr, Wsize, Wdata);
+          end
         end
       end
     end
-  end
-endgenerate
 
-always @(posedge clock)
-begin
-  if ((Mout_we_ram &amp; Mout_oe_ram) != 0)
-  begin
-    $display(&quot;ERROR - Mout_we_ram and Mout_oe_ram both enabled&quot;);
-    $finish;
+    always @(posedge clock)
+    begin
+      if (queue[OFFSET_oe+:BITSIZE_we] &amp; queue[OFFSET_we+:BITSIZE_we])
+      begin
+        $display(&quot;ERROR - Mout_we_ram and Mout_oe_ram both enabled on channel %0d!&quot;, i);
+        $finish;
+      end
+    end
   end
-end"/>
+endgenerate"/>
         </component_o>
       </circuit>
     </cell>
