@@ -389,7 +389,9 @@ void HLSCWriter::WriteTestbenchFunctionCall(const BehavioralHelperConstRef BH)
          }
          else
          {
-            indented_output_stream->Append("(" + tree_helper::PrintType(TM, par) + ")");
+            const auto parm_type = tree_helper::CGetType(par);
+            const auto type_name = tree_helper::PrintType(TM, parm_type);
+            indented_output_stream->Append("(" + type_name + ")");
          }
       }
       const auto param = BH->PrintVariable(GET_INDEX_CONST_NODE(par));
