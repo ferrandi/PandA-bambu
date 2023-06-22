@@ -70,8 +70,6 @@ volatile pthread_t __m_main_tid;
 
 extern mdpi_params_t __m_params;
 
-extern volatile int __m_cosim_retval;
-
 static pthread_t __m_cosim_thread;
 
 EXTERN_C void m_init()
@@ -116,10 +114,11 @@ EXTERN_C unsigned int m_next(unsigned int state)
 
 EXTERN_C int m_fini()
 {
-   pthread_join(__m_cosim_thread, NULL);
+   long retval = 0;
+   pthread_join(__m_cosim_thread, (void**)&retval);
 
    debug("Finalization successful\n");
-   return __m_cosim_retval;
+   return static_cast<int>(retval);
 }
 
 static FORCE_INLINE ab_uint8_t load(bptr_t addr)

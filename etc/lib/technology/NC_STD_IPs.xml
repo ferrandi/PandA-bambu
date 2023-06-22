@@ -135,7 +135,7 @@ function automatic void write(
   input logic [BITSIZE_data-1:0] data,
   input ptr_t addr);
   automatic reg [4095:0] wtmp = 0;
-    
+  
   wtmp[BITSIZE_data-1:0] = data[BITSIZE_data-1:0];
   if(BITSIZE_mem_bus == 8)
     m_write8(size, wtmp[7:0], addr);
