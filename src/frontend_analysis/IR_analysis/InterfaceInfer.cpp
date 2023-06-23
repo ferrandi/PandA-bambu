@@ -568,7 +568,7 @@ DesignFlowStep_Status InterfaceInfer::Exec()
       if(parameters->getOption<HLSFlowStep_Type>(OPT_interface_type) == HLSFlowStep_Type::INFERRED_INTERFACE_GENERATION)
       {
          /* Check if there is at least one interface type associated to fname */
-
+#if HAVE_ASSERTS
          bool type_found = false;
          if(HLSMgr->design_attributes.find(fname) != HLSMgr->design_attributes.end())
          {
@@ -580,229 +580,245 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                }
             }
          }
-         if(type_found)
-         {
-            const tree_manipulationRef tree_man(new tree_manipulation(TM, parameters, AppM));
+#endif
+         THROW_ASSERT(type_found, "");
+         const tree_manipulationRef tree_man(new tree_manipulation(TM, parameters, AppM));
 
-            INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "-->Analyzing function " + fname);
-            auto& DesignAttributes = HLSMgr->design_attributes[fname];
-            for(const auto& arg : fd->list_of_args)
+         INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "-->Analyzing function " + fname);
+         auto& DesignAttributes = HLSMgr->design_attributes[fname];
+         std::map<std::string, TreeNodeSet> bundle_vdefs;
+         for(const auto& arg : fd->list_of_args)
+         {
+            const auto arg_pd = GetPointerS<const parm_decl>(GET_CONST_NODE(arg));
+            const auto arg_id = GET_INDEX_NODE(arg);
+            const auto& arg_type = arg_pd->type;
+            THROW_ASSERT(GetPointer<const identifier_node>(GET_CONST_NODE(arg_pd->name)), "unexpected condition");
+            const auto& arg_name = GetPointerS<const identifier_node>(GET_CONST_NODE(arg_pd->name))->strg;
+            INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Parameter @" + STR(arg_id) + " " + arg_name);
+            THROW_ASSERT(DesignAttributes.count(arg_name) && DesignAttributes.at(arg_name).count(attr_interface_type),
+                         "Not matched parameter name: " + arg_name);
+            auto& arg_attributes = DesignAttributes.at(arg_name);
+            arg_attributes[attr_interface_dir] = port_o::GetString(port_o::IN);
+            arg_attributes[attr_interface_bitwidth] = STR(tree_helper::Size(arg_type));
+            arg_attributes[attr_interface_alignment] = STR(get_aligned_bitsize(tree_helper::Size(arg_type)));
+            auto& interface_type = arg_attributes.at(attr_interface_type);
+            if(interface_type == "bus")
             {
-               const auto arg_pd = GetPointerS<const parm_decl>(GET_CONST_NODE(arg));
-               const auto arg_id = GET_INDEX_NODE(arg);
-               const auto& arg_type = arg_pd->type;
-               THROW_ASSERT(GetPointer<const identifier_node>(GET_CONST_NODE(arg_pd->name)), "unexpected condition");
-               const auto& arg_name = GetPointerS<const identifier_node>(GET_CONST_NODE(arg_pd->name))->strg;
-               INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Parameter @" + STR(arg_id) + " " + arg_name);
-               THROW_ASSERT(DesignAttributes.count(arg_name) &&
-                                DesignAttributes.at(arg_name).count(attr_interface_type),
-                            "Not matched parameter name: " + arg_name);
-               auto& arg_attributes = DesignAttributes.at(arg_name);
-               arg_attributes[attr_interface_dir] = port_o::GetString(port_o::IN);
-               arg_attributes[attr_interface_bitwidth] = STR(tree_helper::Size(arg_type));
-               arg_attributes[attr_interface_alignment] = STR(get_aligned_bitsize(tree_helper::Size(arg_type)));
-               auto& interface_type = arg_attributes.at(attr_interface_type);
-               if(interface_type == "bus")
+               interface_type = "default";
+            }
+            else if(interface_type != "default")
+            {
+               const auto arg_ssa_id = AppM->getSSAFromParm(top_id, arg_id);
+               const auto arg_ssa = TM->GetTreeReindex(arg_ssa_id);
+               THROW_ASSERT(GET_CONST_NODE(arg_ssa)->get_kind() == ssa_name_K, "");
+               if(GetPointerS<const ssa_name>(GET_CONST_NODE(arg_ssa))->CGetUseStmts().empty())
                {
-                  interface_type = "default";
-               }
-               else if(interface_type != "default")
-               {
-                  const auto arg_ssa_id = AppM->getSSAFromParm(top_id, arg_id);
-                  const auto arg_ssa = TM->GetTreeReindex(arg_ssa_id);
-                  THROW_ASSERT(GET_CONST_NODE(arg_ssa)->get_kind() == ssa_name_K, "");
-                  if(GetPointerS<const ssa_name>(GET_CONST_NODE(arg_ssa))->CGetUseStmts().empty())
-                  {
-                     THROW_WARNING("Parameter '" + arg_name + "' not used by any statement");
-                     if(tree_helper::IsPointerType(arg_type))
-                     {
-                        // BEAWARE: none is used here in place of default to avoid memory allocation to consider this as
-                        // an active pointer parameter
-                        interface_type = "none";
-                     }
-                     else
-                     {
-                        THROW_ERROR("parameter not used: specified interface does not make sense - " + interface_type);
-                     }
-                     continue;
-                  }
+                  THROW_WARNING("Parameter '" + arg_name + "' not used by any statement");
                   if(tree_helper::IsPointerType(arg_type))
                   {
-                     INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Is a pointer type");
-                     interface_info info(interface_type == "array" || interface_type == "fifo" ||
-                                         interface_type == "axis");
-                     info.update(arg_ssa, HLSMgr->design_attributes.at(fname).at(arg_name).at(attr_typename),
-                                 parameters);
-
-                     std::list<tree_nodeRef> writeStmt;
-                     std::list<tree_nodeRef> readStmt;
-                     ChasePointerInterface(arg_ssa, writeStmt, readStmt, info);
-                     const auto isRead = !readStmt.empty();
-                     const auto isWrite = !writeStmt.empty();
-
-                     if(!isRead && !isWrite)
-                     {
-                        THROW_ERROR("Parameter '" + arg_name + "' cannot have interface type '" + interface_type +
-                                    "' since no load/store is associated with it");
-                     }
-
-                     info.name = [&]() -> std::string {
-                        if(isRead && isWrite)
-                        {
-                           arg_attributes[attr_interface_dir] = port_o::GetString(port_o::IO);
-                           INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---I/O interface");
-                           if(interface_type == "ptrdefault")
-                           {
-                              if(parameters->IsParameter("none-ptrdefault") &&
-                                 parameters->GetParameter<int>("none-ptrdefault") == 1)
-                              {
-                                 return "none";
-                              }
-                              else if(parameters->IsParameter("none-registered-ptrdefault") &&
-                                      parameters->GetParameter<int>("none-registered-ptrdefault") == 1)
-                              {
-                                 return "none_registered";
-                              }
-                              return "ovalid";
-                           }
-                           else if(interface_type == "fifo" || interface_type == "axis")
-                           {
-                              THROW_ERROR("parameter " + arg_name + " cannot have interface " + interface_type +
-                                          " because it cannot be read and written at the same time");
-                           }
-                        }
-                        else if(isRead)
-                        {
-                           arg_attributes[attr_interface_dir] = port_o::GetString(port_o::IN);
-                           INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Read-only interface");
-                           if(interface_type == "ptrdefault")
-                           {
-                              return "none";
-                           }
-                           else if(interface_type == "ovalid")
-                           {
-                              THROW_ERROR("parameter " + arg_name + " cannot have interface " + interface_type +
-                                          " because it is read only");
-                           }
-                        }
-                        else if(isWrite)
-                        {
-                           arg_attributes[attr_interface_dir] = port_o::GetString(port_o::OUT);
-                           INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Write-only interface");
-                           if(interface_type == "ptrdefault")
-                           {
-                              if(parameters->IsParameter("none-ptrdefault") &&
-                                 parameters->GetParameter<int>("none-ptrdefault") == 1)
-                              {
-                                 return "none";
-                              }
-                              else if(parameters->IsParameter("none-registered-ptrdefault") &&
-                                      parameters->GetParameter<int>("none-registered-ptrdefault") == 1)
-                              {
-                                 return "none_registered";
-                              }
-                              return "valid";
-                           }
-                        }
-                        return interface_type;
-                     }();
-                     arg_attributes[attr_interface_bitwidth] = STR(info.bitwidth);
-                     arg_attributes[attr_interface_alignment] = STR(info.alignment);
-                     interface_type = info.name;
-
-                     INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "-->Interface specification:");
-                     INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Protocol  : " + interface_type);
-                     INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Bitwidth  : " + STR(info.bitwidth));
-                     INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Alignment : " + STR(info.alignment));
-                     INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "<--");
-                     THROW_ASSERT(info.bitwidth, "");
-
-                     std::set<std::string> operationsR, operationsW;
-                     const auto interface_datatype = tree_man->GetCustomIntegerType(info.bitwidth, true);
-                     const auto commonRWSignature = interface_type == "array" || interface_type == "m_axi";
-                     for(const auto& stmt : readStmt)
-                     {
-                        setReadInterface(stmt, arg_name, operationsR, commonRWSignature, interface_datatype, tree_man,
-                                         TM);
-                        add_to_modified(stmt);
-                     }
-                     for(const auto& stmt : writeStmt)
-                     {
-                        setWriteInterface(stmt, arg_name, operationsW, commonRWSignature, interface_datatype, tree_man,
-                                          TM);
-                        add_to_modified(stmt);
-                     }
-                     create_resource(operationsR, operationsW, arg_name, info, fname, top_id);
-                  }
-                  else if(interface_type == "none")
-                  {
-                     THROW_ERROR("Interface type '" + interface_type + "' for parameter '" + arg_name + "' unexpected");
+                     // BEAWARE: none is used here in place of default to avoid memory allocation to consider this as
+                     // an active pointer parameter
+                     interface_type = "none";
                   }
                   else
                   {
-                     THROW_ERROR("Interface type '" + interface_type + "' for parameter '" + arg_name +
-                                 "' is not supported");
+                     THROW_ERROR("parameter not used: specified interface does not make sense - " + interface_type);
                   }
+                  continue;
                }
-            }
-            /* Add cache flush operation */
-            std::set<std::string> bundle_names;
-            for(const auto& par : HLSMgr->design_attributes.at(fname))
-            {
-               if(par.second.find(attr_bundle_name) != par.second.end())
+               if(tree_helper::IsPointerType(arg_type))
                {
-                  const auto name = par.second.at(attr_bundle_name);
-                  /* Only check once per bundle */
-                  if(bundle_names.insert(name).second)
+                  INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Is a pointer type");
+                  interface_info info(interface_type == "array" || interface_type == "fifo" ||
+                                      interface_type == "axis");
+                  info.update(arg_ssa, HLSMgr->design_attributes.at(fname).at(arg_name).at(attr_typename), parameters);
+
+                  std::list<tree_nodeRef> writeStmt;
+                  std::list<tree_nodeRef> readStmt;
+                  ChasePointerInterface(arg_ssa, writeStmt, readStmt, info);
+                  const auto isRead = !readStmt.empty();
+                  const auto isWrite = !writeStmt.empty();
+
+                  if(!isRead && !isWrite)
                   {
-                     const auto interface_type = par.second.at(attr_interface_type);
-                     if(interface_type == "m_axi" && par.second.find(attr_way_lines) != par.second.end() &&
-                        boost::lexical_cast<unsigned>(par.second.at(attr_way_lines)) > 0)
+                     THROW_ERROR("Parameter '" + arg_name + "' cannot have interface type '" + interface_type +
+                                 "' since no load/store is associated with it");
+                  }
+
+                  info.name = [&]() -> std::string {
+                     if(isRead && isWrite)
                      {
-                        const auto instanceFname = ENCODE_FDNAME(name, "_Flush_", interface_type);
-
-                        const auto stmt_sl = GetPointerS<statement_list>(GET_NODE(fd->body));
-
-                        const auto boolean_type = tree_man->GetBooleanType();
-                        const auto bitsize_type = tree_man->GetUnsignedIntegerType();
-
-                        const auto function_decl_node = [&]() {
-                           std::vector<tree_nodeConstRef> argsT;
-                           argsT.push_back(boolean_type);
-                           argsT.push_back(bitsize_type);
-                           return tree_man->create_function_decl(instanceFname, fd->scpe, argsT,
-                                                                 tree_man->GetVoidType(), BUILTIN_SRCP, false);
-                        }();
-
-                        // Cache flush is indicated by a write of size 0.
-                        std::vector<tree_nodeRef> args;
-                        args.push_back(TM->CreateUniqueIntegerCst(1, boolean_type));
-                        args.push_back(TM->CreateUniqueIntegerCst(0, bitsize_type));
-                        for(const auto& bb : stmt_sl->list_of_bloc)
+                        arg_attributes[attr_interface_dir] = port_o::GetString(port_o::IO);
+                        INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---I/O interface");
+                        if(interface_type == "ptrdefault")
                         {
-                           if(bb.first != BB_ENTRY)
+                           if(parameters->IsParameter("none-ptrdefault") &&
+                              parameters->GetParameter<int>("none-ptrdefault") == 1)
                            {
-                              if(std::find(bb.second->list_of_succ.begin(), bb.second->list_of_succ.end(), BB_EXIT) !=
-                                 bb.second->list_of_succ.end())
-                              {
-                                 const auto gc = tree_man->create_gimple_call(function_decl_node, args,
-                                                                              GET_INDEX_NODE(fd->scpe), BUILTIN_SRCP);
-                                 THROW_ASSERT(stmt_sl->list_of_bloc.find(bb.first) != stmt_sl->list_of_bloc.end(),
-                                              "BB not found in statement list");
-                                 THROW_ASSERT(stmt_sl->list_of_bloc.at(bb.first)->CGetStmtList().size() > 0,
-                                              "No statements in BB");
-                                 const auto return_stmt = stmt_sl->list_of_bloc.at(bb.first)->CGetStmtList().back();
-                                 stmt_sl->list_of_bloc.at(bb.first)->PushBefore(gc, return_stmt, AppM);
-                              }
+                              return "none";
                            }
+                           else if(parameters->IsParameter("none-registered-ptrdefault") &&
+                                   parameters->GetParameter<int>("none-registered-ptrdefault") == 1)
+                           {
+                              return "none_registered";
+                           }
+                           return "ovalid";
+                        }
+                        else if(interface_type == "fifo" || interface_type == "axis")
+                        {
+                           THROW_ERROR("parameter " + arg_name + " cannot have interface " + interface_type +
+                                       " because it cannot be read and written at the same time");
                         }
                      }
+                     else if(isRead)
+                     {
+                        arg_attributes[attr_interface_dir] = port_o::GetString(port_o::IN);
+                        INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Read-only interface");
+                        if(interface_type == "ptrdefault")
+                        {
+                           return "none";
+                        }
+                        else if(interface_type == "ovalid")
+                        {
+                           THROW_ERROR("parameter " + arg_name + " cannot have interface " + interface_type +
+                                       " because it is read only");
+                        }
+                     }
+                     else if(isWrite)
+                     {
+                        arg_attributes[attr_interface_dir] = port_o::GetString(port_o::OUT);
+                        INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Write-only interface");
+                        if(interface_type == "ptrdefault")
+                        {
+                           if(parameters->IsParameter("none-ptrdefault") &&
+                              parameters->GetParameter<int>("none-ptrdefault") == 1)
+                           {
+                              return "none";
+                           }
+                           else if(parameters->IsParameter("none-registered-ptrdefault") &&
+                                   parameters->GetParameter<int>("none-registered-ptrdefault") == 1)
+                           {
+                              return "none_registered";
+                           }
+                           return "valid";
+                        }
+                     }
+                     return interface_type;
+                  }();
+                  arg_attributes[attr_interface_bitwidth] = STR(info.bitwidth);
+                  arg_attributes[attr_interface_alignment] = STR(info.alignment);
+                  interface_type = info.name;
+
+                  INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "-->Interface specification:");
+                  INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Protocol  : " + interface_type);
+                  INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Bitwidth  : " + STR(info.bitwidth));
+                  INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Alignment : " + STR(info.alignment));
+                  INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "<--");
+                  THROW_ASSERT(info.bitwidth, "");
+
+                  std::set<std::string> operationsR, operationsW;
+                  const auto interface_datatype = tree_man->GetCustomIntegerType(info.bitwidth, true);
+                  const auto commonRWSignature = interface_type == "array" || interface_type == "m_axi";
+                  const auto bundle_name = [&]() -> std::string {
+                     if(interface_type == "m_axi" && arg_attributes.count(attr_way_lines) &&
+                        boost::lexical_cast<unsigned>(arg_attributes.at(attr_way_lines)))
+                     {
+                        THROW_ASSERT(arg_attributes.count(attr_bundle_name), "");
+                        return arg_attributes.at(attr_bundle_name);
+                     }
+                     return "";
+                  }();
+                  const auto store_vdef = [&](const tree_nodeRef& stmt) {
+                     if(bundle_name.size())
+                     {
+                        const auto& vdef = GetPointerS<const gimple_node>(GET_CONST_NODE(stmt))->vdef;
+                        if(vdef)
+                        {
+                           bundle_vdefs[bundle_name].insert(vdef);
+                        }
+                     }
+                  };
+                  for(const auto& stmt : readStmt)
+                  {
+                     setReadInterface(stmt, arg_name, operationsR, commonRWSignature, interface_datatype, tree_man, TM);
+                     add_to_modified(stmt);
+                     store_vdef(stmt);
                   }
+                  for(const auto& stmt : writeStmt)
+                  {
+                     setWriteInterface(stmt, arg_name, operationsW, commonRWSignature, interface_datatype, tree_man,
+                                       TM);
+                     add_to_modified(stmt);
+                     store_vdef(stmt);
+                  }
+                  create_resource(operationsR, operationsW, arg_name, info, fname, top_id);
+               }
+               else if(interface_type == "none")
+               {
+                  THROW_ERROR("Interface type '" + interface_type + "' for parameter '" + arg_name + "' unexpected");
+               }
+               else
+               {
+                  THROW_ERROR("Interface type '" + interface_type + "' for parameter '" + arg_name +
+                              "' is not supported");
                }
             }
-
-            INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "<--Analyzed function " + fname);
          }
+         /* Add cache flush operation */
+         for(const auto& bundle_vdef : bundle_vdefs)
+         {
+            const auto& bundle_name = bundle_vdef.first;
+            const auto& vdefs = bundle_vdef.second;
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Interface finalizer for bundle " + bundle_name);
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Virtuals count: " + STR(vdefs.size()));
+            const auto generate_fini_call = [&]() {
+               const auto fini_fname = ENCODE_FDNAME(bundle_name, "_Flush_", "m_axi");
+               std::vector<tree_nodeConstRef> argsT;
+               argsT.push_back(tree_man->GetBooleanType());
+               argsT.push_back(tree_man->GetUnsignedIntegerType());
+               const auto fini_fd = tree_man->create_function_decl(fini_fname, fd->scpe, argsT, tree_man->GetVoidType(),
+                                                                   BUILTIN_SRCP, false);
+
+               // Cache flush is indicated by a write of size 0.
+               std::vector<tree_nodeRef> args;
+               args.push_back(TM->CreateUniqueIntegerCst(1, argsT.at(0)));
+               args.push_back(TM->CreateUniqueIntegerCst(0, argsT.at(1)));
+               const auto fini_call =
+                   tree_man->create_gimple_call(fini_fd, args, GET_INDEX_NODE(fd->scpe), BUILTIN_SRCP);
+               const auto fini_node = GetPointerS<gimple_node>(GET_CONST_NODE(fini_call));
+               for(const auto& vdef : vdefs)
+               {
+                  fini_node->AddVuse(vdef);
+               }
+               return fini_call;
+            };
+
+            const auto sl = GetPointerS<const statement_list>(GET_CONST_NODE(fd->body));
+            for(const auto& bbi_bb : sl->list_of_bloc)
+            {
+               const auto& bb = bbi_bb.second;
+               const auto is_last = std::count(bb->list_of_succ.cbegin(), bb->list_of_succ.cend(), BB_EXIT);
+               if(bb->number != BB_ENTRY && is_last)
+               {
+                  const auto fini_call = generate_fini_call();
+                  THROW_ASSERT(bb->CGetStmtList().size(), "BB" + STR(bb->number) + " should not be empty");
+                  const auto last_stmt = bb->CGetStmtList().back();
+                  if(GetPointer<const gimple_return>(GET_CONST_NODE(last_stmt)))
+                  {
+                     bb->PushBefore(fini_call, last_stmt, AppM);
+                  }
+                  else
+                  {
+                     bb->PushBack(fini_call, AppM);
+                  }
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                 "---Added function call " + STR(fini_call) + " to BB" + STR(bb->number));
+               }
+            }
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
+         }
+
+         INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "<--Analyzed function " + fname);
       }
    }
    already_executed = true;
