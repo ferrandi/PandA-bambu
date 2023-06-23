@@ -13707,8 +13707,6 @@ wire valid,tagsmatch;
    always @(posedge clk)
       if(r_en)
         r_data &lt;= mem[r_addr];
-      else
-        r_data &lt;= 0;
 
    //write port
    always @(posedge clk)
@@ -13751,7 +13749,6 @@ wire valid,tagsmatch;
           <port_o id="ext_mem_r_data" dir="IN">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
-
           <port_o id="w_en" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
@@ -13770,10 +13767,9 @@ wire valid,tagsmatch;
           <port_o id="r_data" dir="OUT">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
-
           <NP_functionality LIBRARY="IOB_ram_2p_asym W_DATA_W R_DATA_W ADDR_W ext_mem_w_en ext_mem_w_data ext_mem_w_addr ext_mem_r_addr ext_mem_r_data w_data w_addr r_addr r_data" VERILOG_PROVIDED="
-   `define IOB_MAX(a,b) {((a) > (b)) ? (a) : (b)}
-   `define IOB_MIN(a,b) {((a) < (b)) ? (a) : (b)}
+   `define IOB_MAX(a,b) {((a) &gt; (b)) ? (a) : (b)}
+   `define IOB_MIN(a,b) {((a) &lt; (b)) ? (a) : (b)}
    
    reg [BITSIZE_r_data - 1 : 0] r_data;
 
@@ -13801,7 +13797,7 @@ wire valid,tagsmatch;
    integer j,k,l;
    generate
 
-      if (W_DATA_W > R_DATA_W) begin
+      if (W_DATA_W &gt; R_DATA_W) begin
 
          //write parallel
          always @* begin
@@ -13995,7 +13991,7 @@ wire valid,tagsmatch;
    reg r_empty;
    reg w_full;
 
-   reg error = 0, next_error = 0;
+   reg error = 0, next_error;
    reg w_full_nxt = 0;
    reg write_fail_reg;
 
@@ -14857,8 +14853,8 @@ wire valid,tagsmatch;
    `define WRITE_THROUGH 0 //write-through not allocate: implements a write-through buffer
    `define WRITE_BACK 1    //write-back allocate: implementes a dirty-memory
 
-   `define IOB_MAX(a,b) {((a) > (b)) ? (a) : (b)}
-   `define IOB_MIN(a,b) {((a) < (b)) ? (a) : (b)}
+   `define IOB_MAX(a,b) {((a) &gt; (b)) ? (a) : (b)}
+   `define IOB_MIN(a,b) {((a) &lt; (b)) ? (a) : (b)}
 
      
    localparam FE_DATA_W = BITSIZE_rdata;
@@ -14870,7 +14866,7 @@ wire valid,tagsmatch;
    localparam BE_BYTE_W = $clog2(BE_NBYTES);
    localparam LINE2MEM_W = WORD_OFF_W-$clog2(BE_DATA_W/FE_DATA_W);
    /* To avoid 0 size when using fully associative cache. Signals are ignored if the size should be 0  */
-   localparam INDEX_W = LINE_OFF_W > 0 ? LINE_OFF_W : 1;
+   localparam INDEX_W = LINE_OFF_W &gt; 0 ? LINE_OFF_W : 1;
 
    localparam TAG_W = FE_ADDR_W - (FE_BYTE_W + WORD_OFF_W + LINE_OFF_W);
    localparam BUF_DATA_SIZE = WRITE_POL == `WRITE_THROUGH ? FE_NBYTES+(FE_ADDR_W-FE_BYTE_W)+(FE_DATA_W) : FE_ADDR_W-FE_BYTE_W + (2**WORD_OFF_W)*FE_DATA_W;
@@ -15397,7 +15393,7 @@ wire valid,tagsmatch;
                    for(k = 0; k &lt; N_WAYS; k = k+1) begin : dirty_block
                       //valid-memory output stage register - 1 c.c. read-latency (cleaner simulation during rep.)
                       always @(posedge clk)
-                         dirty[k] <= dirty_reg [k];
+                         dirty[k] &lt;= dirty_reg [k];
                    end
                 end
 
@@ -15469,7 +15465,7 @@ wire valid,tagsmatch;
                      dirty_reg &lt;= dirty_reg &amp; ~(1 &lt;&lt; flush_addr);
                    end else if(!flush) begin
                     if(write_access &amp; hit)
-                      dirty_reg &lt;= dirty_reg | (1<<(index_reg)); //updates position with 1 (needs to be index_reg otherwise updates the new index if the previous access was a write)
+                      dirty_reg &lt;= dirty_reg | (1&lt;&lt;(index_reg)); //updates position with 1 (needs to be index_reg otherwise updates the new index if the previous access was a write)
                    end else
                       dirty_reg &lt;= dirty_reg;
                 end
@@ -15666,7 +15662,7 @@ wire valid,tagsmatch;
            always @ (posedge clk)
              begin
 	        rdata &lt;= {FE_DATA_W{1&apos;b0}};
-	        invalidate <= 1&apos;b0;
+	        invalidate &lt;= 1&apos;b0;
 	        counter_reset &lt;= 1&apos;b0;
 	        ready &lt;= valid; // Sends acknowlege the next clock cycle after request (handshake)               
 	        if(valid)
@@ -16207,8 +16203,8 @@ wire valid,tagsmatch;
       <circuit>
         <component_o id="IOB_cache_minimal_axi">
           <description>This component is based on the work available at https://github.com/IObundle/iob-cache and it is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2023 Politecnico di Milano</copyright>  
-          <authors>Claudio Barone &lt;claudio.barone@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2023 Politecnico di Milano</copyright>
+          <authors>Claudio Barone &lt;claudio.barone@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="IOB_cache_minimal_axi"/>
           <parameter name="FE_ADDR_W"> 32 </parameter>
@@ -16224,49 +16220,49 @@ wire valid,tagsmatch;
           <parameter name="CTRL_CACHE"> 0 </parameter>
           <parameter name="CTRL_CNT"> 0 </parameter>
           <port_o id="clock" dir="IN" is_clock="1">
-            <structural_type_descriptor type="BOOL" size="1" />
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="reset" dir="IN">
-            <structural_type_descriptor type="BOOL" size="1" />
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="done_input" dir="IN">
-            <structural_type_descriptor type="BOOL" size="1" />
-          </port_o>          
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
           <port_o id="done" dir="OUT">
-            <structural_type_descriptor type="BOOL" size="1" />
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="Min_oe_ram" dir="IN">
-            <structural_type_descriptor type="BOOL" size="1" />
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="Min_we_ram" dir="IN">
-            <structural_type_descriptor type="BOOL" size="1" />
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="Min_addr_ram" dir="IN">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="32" />
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="32"/>
           </port_o>
           <port_o id="Min_Wdata_ram" dir="IN">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="32" />
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="32"/>
           </port_o>
           <port_o id="Min_data_size_ram" dir="IN">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="5" />
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="5"/>
           </port_o>
           <port_o id="Min_accelerator_context_in" dir="IN">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1" />
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <port_o id="Min_back_pressure" dir="OUT">
-            <structural_type_descriptor type="BOOL" size="1" />
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="Min_datardy" dir="OUT">
-            <structural_type_descriptor type="BOOL" size="1" />
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="Min_Rdata_ram" dir="OUT">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="32" />
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="32"/>
           </port_o>
           <port_o id="Min_accelerator_context" dir="OUT">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1" />
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <port_o id="Min_back_pressure_in" dir="IN">
-            <structural_type_descriptor type="BOOL" size="1" />
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="m_axi_awid" dir="OUT">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
@@ -16339,10 +16335,10 @@ wire valid,tagsmatch;
           </port_o>
           <port_o id="m_axi_arsize" dir="OUT">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="3"/>
-          </port_o>       
+          </port_o>
           <port_o id="m_axi_arburst" dir="OUT">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="2"/>
-          </port_o>  
+          </port_o>
           <port_o id="m_axi_arlock" dir="OUT">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
@@ -16718,42 +16714,42 @@ wire valid,tagsmatch;
       <circuit>
         <component_o id="IOB_read_channel_minimal">
           <description>This component is based on the work available at https://github.com/IObundle/iob-cache and it is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2023 Politecnico di Milano</copyright>  
-          <authors>Claudio Barone &lt;claudio.barone@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2023 Politecnico di Milano</copyright>
+          <authors>Claudio Barone &lt;claudio.barone@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="IOB_read_channel_minimal"/>
           <parameter name="FE_ADDR_W"> 32 </parameter>
           <parameter name="FE_DATA_W"> 32 </parameter>
           <parameter name="WORD_OFF_W"> 3 </parameter>
           <port_o id="clk" dir="IN" is_clock="1">
-            <structural_type_descriptor type="BOOL" size="1" />
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="reset" dir="IN">
-            <structural_type_descriptor type="BOOL" size="1" />
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="replace_valid" dir="IN">
-            <structural_type_descriptor type="BOOL" size="1" />
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="replace_addr" dir="IN">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1" />
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <port_o id="replace" dir="OUT">
-            <structural_type_descriptor type="BOOL" size="1" />
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="read_valid" dir="OUT">
-            <structural_type_descriptor type="BOOL" size="1" />
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="read_addr" dir="OUT">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1" />
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <port_o id="read_rdata" dir="OUT">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1" />
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <port_o id="mem_addr" dir="OUT">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <port_o id="mem_valid" dir="OUT">
-            <structural_type_descriptor type="BOOL" size="1" />
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="mem_ready" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
@@ -16961,8 +16957,8 @@ wire valid,tagsmatch;
       <circuit>
         <component_o id="IOB_write_channel_minimal">
           <description>This component is based on the work available at https://github.com/IObundle/iob-cache and it is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2023 Politecnico di Milano</copyright>  
-          <authors>Claudio Barone &lt;claudio.barone@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2023 Politecnico di Milano</copyright>
+          <authors>Claudio Barone &lt;claudio.barone@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="IOB_write_channel_minimal"/>
           <parameter name="FE_ADDR_W"> 32 </parameter>
@@ -16970,28 +16966,28 @@ wire valid,tagsmatch;
           <parameter name="WRITE_POL"> 0 </parameter>
           <parameter name="WORD_OFF_W"> 3 </parameter>
           <port_o id="clk" dir="IN" is_clock="1">
-            <structural_type_descriptor type="BOOL" size="1" />
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="reset" dir="IN">
-            <structural_type_descriptor type="BOOL" size="1" />
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="valid" dir="IN">
-            <structural_type_descriptor type="BOOL" size="1" />
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="addr" dir="IN">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1" />
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <port_o id="wstrb" dir="IN">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1" />
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <port_o id="wdata" dir="IN">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1" />
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <port_o id="ready" dir="OUT">
-            <structural_type_descriptor type="BOOL" size="1" />
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="mem_addr" dir="OUT">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1" />
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <port_o id="mem_valid" dir="OUT">
             <structural_type_descriptor type="BOOL" size="1"/>
@@ -16999,7 +16995,7 @@ wire valid,tagsmatch;
           <port_o id="mem_ready" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
-           <port_o id="write_done" dir="OUT">
+          <port_o id="write_done" dir="OUT">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="write_fail" dir="OUT">
@@ -17270,8 +17266,8 @@ wire valid,tagsmatch;
       <circuit>
         <component_o id="IOB_back_end_minimal">
           <description>This component is based on the work available at https://github.com/IObundle/iob-cache and it is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2023 Politecnico di Milano</copyright>  
-          <authors>Claudio Barone &lt;claudio.barone@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2023 Politecnico di Milano</copyright>
+          <authors>Claudio Barone &lt;claudio.barone@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="IOB_back_end_minimal"/>
           <parameter name="FE_ADDR_W"> 32 </parameter>
@@ -17280,55 +17276,55 @@ wire valid,tagsmatch;
           <parameter name="BE_ADDR_W"> 32 </parameter>
           <parameter name="WRITE_POL"> 0 </parameter>
           <port_o id="clk" dir="IN" is_clock="1">
-            <structural_type_descriptor type="BOOL" size="1" />
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="reset" dir="IN">
-            <structural_type_descriptor type="BOOL" size="1" />
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="write_valid" dir="IN">
-            <structural_type_descriptor type="BOOL" size="1" />
-          </port_o>          
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
           <port_o id="write_addr" dir="IN">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1" />
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <port_o id="write_wdata" dir="IN">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1" />
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <port_o id="write_wstrb" dir="IN">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1" />
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <port_o id="write_ready" dir="OUT">
-            <structural_type_descriptor type="BOOL" size="1" />
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="replace_valid" dir="IN">
-            <structural_type_descriptor type="BOOL" size="1" />
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="replace_addr" dir="IN">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1" />
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <port_o id="replace" dir="OUT">
-            <structural_type_descriptor type="BOOL" size="1" />
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="read_valid" dir="OUT">
-            <structural_type_descriptor type="BOOL" size="1" />
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="read_addr" dir="OUT">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1" />
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <port_o id="read_rdata" dir="OUT">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1" />
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <port_o id="acc_ctxt" dir="IN">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1" />
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <port_o id="back_pressure" dir="IN">
-            <structural_type_descriptor type="BOOL" size="1" />
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="Mout_oe_ram" dir="OUT">
-            <structural_type_descriptor type="BOOL" size="1" />
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="Mout_we_ram" dir="OUT">
-            <structural_type_descriptor type="BOOL" size="1" />
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="Mout_addr_ram" dir="OUT">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
@@ -17343,24 +17339,24 @@ wire valid,tagsmatch;
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <port_o id="Mout_back_pressure" dir="IN">
-            <structural_type_descriptor type="BOOL" size="1" />
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="M_data_ready" dir="IN">
-            <structural_type_descriptor type="BOOL" size="1" />
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="M_Rdata_ram" dir="IN">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <port_o id="M_accelerator_context" dir="IN">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1" />
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <port_o id="M_back_pressure" dir="OUT">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
-           <port_o id="write_done" dir="OUT">
+          <port_o id="write_done" dir="OUT">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
-           <port_o id="write_fail" dir="OUT">
+          <port_o id="write_fail" dir="OUT">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <NP_functionality LIBRARY="IOB_back_end_minimal FE_ADDR_W FE_DATA_W WORD_OFF_W BE_ADDR_W WRITE_POL write_addr write_wdata write_wstrb replace_addr read_addr read_rdata acc_ctxt Mout_addr_ram Mout_Wdata_ram Mout_data_ram_size Mout_accelerator_context M_Rdata_ram M_accelerator_context" IP_COMPONENT="IOB_read_channel_minimal,IOB_write_channel_minimal" VERILOG_PROVIDED="
@@ -17456,7 +17452,7 @@ wire valid,tagsmatch;
           <copyright>Copyright (C) 2023 Politecnico di Milano</copyright>
           <authors>Claudio Barone &lt;claudio.barone@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
-          <structural_type_descriptor id_type="IOB_cache_minimal_minimal" />
+          <structural_type_descriptor id_type="IOB_cache_minimal_minimal"/>
           <parameter name="FE_ADDR_W"> 32 </parameter>
           <parameter name="BE_ADDR_W"> 32 </parameter>
           <parameter name="BE_DATA_W"> 32 </parameter>
@@ -17469,82 +17465,82 @@ wire valid,tagsmatch;
           <parameter name="CTRL_CACHE"> 0 </parameter>
           <parameter name="CTRL_CNT"> 0 </parameter>
           <port_o id="clock" dir="IN" is_clock="1">
-            <structural_type_descriptor type="BOOL" size="1" />
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
-          <port_o id="reset" dir="IN" >
-            <structural_type_descriptor type="BOOL" size="1" />
+          <port_o id="reset" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
-          <port_o id="done_input" dir="IN" >
-            <structural_type_descriptor type="BOOL" size="1" />
-          </port_o>          
-          <port_o id="done" dir="OUT" >
-            <structural_type_descriptor type="BOOL" size="1" />
+          <port_o id="done_input" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="done" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="Min_oe_ram" dir="IN">
-            <structural_type_descriptor type="BOOL" size="1" />
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="Min_we_ram" dir="IN">
-            <structural_type_descriptor type="BOOL" size="1" />
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="Min_addr_ram" dir="IN">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1" />
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <port_o id="Min_Wdata_ram" dir="IN">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1" />
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <port_o id="Min_data_size_ram" dir="IN">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1" />
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <port_o id="Min_accelerator_context_in" dir="IN">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1" />
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <port_o id="Min_back_pressure" dir="OUT">
-            <structural_type_descriptor type="BOOL" size="1" />
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="Min_datardy" dir="OUT">
-            <structural_type_descriptor type="BOOL" size="1" />
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="Min_Rdata_ram" dir="OUT">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1" />
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <port_o id="Min_accelerator_context" dir="OUT">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1" />
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <port_o id="Min_back_pressure_in" dir="IN">
-            <structural_type_descriptor type="BOOL" size="1" />
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="Mout_oe_ram" dir="OUT">
-            <structural_type_descriptor type="BOOL" size="1" />
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="Mout_we_ram" dir="OUT">
-            <structural_type_descriptor type="BOOL" size="1" />
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="Mout_addr_ram" dir="OUT">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1" />
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <port_o id="Mout_Wdata_ram" dir="OUT">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1" />
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <port_o id="Mout_data_ram_size" dir="OUT">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1" />
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <port_o id="Mout_accelerator_context" dir="OUT">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1" />
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <port_o id="Mout_back_pressure" dir="IN">
-            <structural_type_descriptor type="BOOL" size="1" />
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="M_DataRdy" dir="IN">
-            <structural_type_descriptor type="BOOL" size="1" />
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="M_Rdata_ram" dir="IN">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1" />
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <port_o id="M_accelerator_context" dir="IN">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1" />
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <port_o id="M_back_pressure" dir="OUT">
-            <structural_type_descriptor type="BOOL" size="1" />
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <NP_functionality LIBRARY="IOB_cache_minimal_minimal FE_ADDR_W BE_ADDR_W BE_DATA_W N_WAYS LINE_OFF_W WORD_OFF_W WTBUF_DEPTH_W REP_POLICY WRITE_POL CTRL_CACHE CTRL_CNT Min_addr_ram Min_Wdata_ram  Min_data_size_ram Min_accelerator_context_in Min_Rdata_ram Min_accelerator_context Mout_addr_ram Mout_Wdata_ram Mout_data_ram_size Mout_accelerator_context M_Rdata_ram M_accelerator_context" IP_COMPONENT="IOB_front_end,IOB_cache_memory,IOB_back_end_minimal" VERILOG_PROVIDED="
    //Cache-Control
@@ -17839,7 +17835,7 @@ wire valid,tagsmatch;
    `undef CTRL_ADDR_W
    `undef WORD_ADDR
      
-" />
+"/>
         </component_o>
       </circuit>
     </cell>
