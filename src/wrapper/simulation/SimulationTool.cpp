@@ -360,7 +360,6 @@ std::string SimulationTool::GenerateLibraryBuildScript(std::ostringstream& scrip
                    static_cast<size_t>(what[0].second - what[0].first));
    }
 
-   const auto input_files = Param->getOption<const CustomSet<std::string>>(OPT_input_file);
    const auto top_dfname = string_demangle(top_fname);
    const auto add_fname_prefix = [&](const std::string& prefix) {
       if(top_dfname.size() && top_fname != top_dfname)
@@ -371,36 +370,56 @@ std::string SimulationTool::GenerateLibraryBuildScript(std::ostringstream& scrip
       }
       return prefix + top_fname;
    };
-   const auto m_top_fname = add_fname_prefix("__m_");
+   const auto tb_srcs = [&]() {
+      CustomSet<std::string> srcs;
+      if(Param->isOption(OPT_testbench_input_file))
+      {
+         const auto tb_files = Param->getOption<const CustomSet<std::string>>(OPT_testbench_input_file);
+         srcs.insert(tb_files.begin(), tb_files.end());
+      }
+      if(Param->isOption(OPT_no_parse_files))
+      {
+         const auto no_parse_files = Param->getOption<const CustomSet<std::string>>(OPT_no_parse_files);
+         srcs.insert(no_parse_files.begin(), no_parse_files.end());
+      }
+      return srcs;
+   }();
 
    auto compiler_env = boost::regex_replace("\n" + compiler_wrapper->GetCompiler().gcc,
                                             boost::regex("([\\w\\d]+=(\".*\"|[^\\s]+))\\s*"), "export $1\n");
    boost::replace_last(compiler_env, "\n", "\nexport CC=\"");
    compiler_env += "\"";
    script << compiler_env << "\n"
-          << "export CFLAGS=\"" << cflags << "\"\n"
-          << "srcs=(\n";
-   for(const auto& src : input_files)
+          << "export CFLAGS=\"" << cflags << "\"\n\n";
+
+   if(!Param->isOption(OPT_input_format) ||
+      Param->getOption<Parameters_FileFormat>(OPT_input_format) != Parameters_FileFormat::FF_RAW)
    {
-      script << "  \"" << src << "\"\n";
+      const auto input_files = Param->getOption<const CustomSet<std::string>>(OPT_input_file);
+      const auto m_top_fname = add_fname_prefix("__m_");
+      script << "srcs=(\n";
+      for(const auto& src : input_files)
+      {
+         script << "  \"" << src << "\"\n";
+      }
+      script << ")\n"
+             << "objs=()\n"
+             << "for src in \"${srcs[@]}\"\n"
+             << "do\n"
+             << "  obj=\"$(basename ${src})\"\n"
+             << "  case \"${obj}\" in\n"
+             << "  *.gimplePSSA)\n"
+             << "    continue\n"
+             << "    ;;\n"
+             << "  *)\n"
+             << "    obj=\"" << output_dir << "/${obj%.*}.o\"\n"
+             << "    ${CC} -c ${CFLAGS} " << kill_printf << " -fPIC -o ${obj} ${src}\n"
+             << "    objcopy --weaken --redefine-sym " << top_fname << "=" << m_top_fname << " ${obj}\n"
+             << "    objs+=(\"${obj}\")\n"
+             << "    ;;\n"
+             << "  esac\n"
+             << "done\n\n";
    }
-   script << ")\n"
-          << "objs=()\n"
-          << "for src in \"${srcs[@]}\"\n"
-          << "do\n"
-          << "  obj=\"$(basename ${src})\"\n"
-          << "  case \"${obj}\" in\n"
-          << "  *.gimplePSSA)\n"
-          << "    continue\n"
-          << "    ;;\n"
-          << "  *)\n"
-          << "    obj=\"" << output_dir << "/${obj%.*}.o\"\n"
-          << "    ${CC} -c ${CFLAGS} " << kill_printf << " -fPIC -o ${obj} ${src}\n"
-          << "    objcopy --weaken --redefine-sym " << top_fname << "=" << m_top_fname << " ${obj}\n"
-          << "    objs+=(\"${obj}\")\n"
-          << "    ;;\n"
-          << "  esac\n"
-          << "done\n\n";
 
    if(Param->isOption(OPT_pretty_print))
    {
@@ -426,20 +445,6 @@ std::string SimulationTool::GenerateLibraryBuildScript(std::ostringstream& scrip
    script << " -fPIC -o " << output_dir << "/m_wrapper.o " << dpi_cwrapper_file << "\n"
           << "objs+=(\"" << output_dir << "/m_wrapper.o\")\n\n";
 
-   const auto tb_srcs = [&]() {
-      CustomSet<std::string> srcs;
-      if(Param->isOption(OPT_testbench_input_file))
-      {
-         const auto tb_files = Param->getOption<const CustomSet<std::string>>(OPT_testbench_input_file);
-         srcs.insert(tb_files.begin(), tb_files.end());
-      }
-      if(Param->isOption(OPT_no_parse_files))
-      {
-         const auto no_parse_files = Param->getOption<const CustomSet<std::string>>(OPT_no_parse_files);
-         srcs.insert(no_parse_files.begin(), no_parse_files.end());
-      }
-      return srcs;
-   }();
    if(tb_srcs.size())
    {
       script << "tb_srcs=(\n";
@@ -474,6 +479,7 @@ std::string SimulationTool::GenerateLibraryBuildScript(std::ostringstream& scrip
              << "  esac\n"
              << "done\n\n";
    }
+
    const auto libtb_filename = output_dir + "/libtb.so";
    if(Param->getOption<int>(OPT_output_level) < OUTPUT_LEVEL_VERY_PEDANTIC)
    {
