@@ -456,10 +456,10 @@ end"/>
           <port_o id="done_port" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
-          <port_o id="M_DataRdy" dir="OUT" is_memory="1" is_global="1" is_extern="1">
+          <port_o id="M_DataRdy" dir="OUT" is_memory="1" is_master="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1"/>
           </port_o>
-          <port_o id="M_Rdata_ram" dir="OUT" is_memory="1" is_global="1" is_extern="1" is_data_bus="1">
+          <port_o id="M_Rdata_ram" dir="OUT" is_memory="1" is_master="1" is_data_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
           </port_o>
           <port_o id="Mout_oe_ram" dir="IN" is_memory="1" is_master="1">
@@ -477,9 +477,30 @@ end"/>
           <port_o id="Mout_Wdata_ram" dir="IN" is_memory="1" is_master="1" is_data_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
           </port_o>
+          <port_o id="Sout_DataRdy" dir="IN" is_memory="1" is_slave="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1"/>
+          </port_o>
+          <port_o id="Sout_Rdata_ram" dir="IN" is_memory="1" is_slave="1" is_data_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
+          </port_o>
+          <port_o id="S_oe_ram" dir="OUT" is_memory="1" is_slave="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1"/>
+          </port_o>
+          <port_o id="S_we_ram" dir="OUT" is_memory="1" is_slave="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1"/>
+          </port_o>
+          <port_o id="S_addr_ram" dir="OUT" is_memory="1" is_slave="1" is_addr_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="32"/>
+          </port_o>
+          <port_o id="S_data_ram_size" dir="OUT" is_memory="1" is_slave="1" is_size_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="4"/>
+          </port_o>
+          <port_o id="S_Wdata_ram" dir="OUT" is_memory="1" is_slave="1" is_data_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
+          </port_o>
           <NP_functionality
             IP_COMPONENT="mem_utils"
-            LIBRARY="TestbenchMEMMinimal MEM_DELAY_READ MEM_DELAY_WRITE MEM_PIPELINED base_addr MEM_DUMP MEM_DUMP_FILE M_DataRdy M_Rdata_ram Mout_oe_ram Mout_we_ram Mout_addr_ram Mout_data_ram_size Mout_Wdata_ram"
+            LIBRARY="TestbenchMEMMinimal MEM_DELAY_READ MEM_DELAY_WRITE MEM_PIPELINED base_addr MEM_DUMP MEM_DUMP_FILE M_DataRdy M_Rdata_ram Mout_oe_ram Mout_we_ram Mout_addr_ram Mout_data_ram_size Mout_Wdata_ram Sout_DataRdy Sout_Rdata_ram S_oe_ram S_we_ram S_addr_ram S_data_ram_size S_Wdata_ram"
             VERILOG_PROVIDED="
 parameter MEM_DELAY_MAX= MEM_DELAY_READ > MEM_DELAY_WRITE ? MEM_DELAY_READ : MEM_DELAY_WRITE,
   CHANNELS_NUMBER=BITSIZE_Mout_oe_ram,
@@ -499,6 +520,16 @@ parameter MEM_DELAY_MAX= MEM_DELAY_READ > MEM_DELAY_WRITE ? MEM_DELAY_READ : MEM
 
 genvar i;
 integer dump_file;
+reg [BITSIZE_M_DataRdy-1:0] _M_DataRdy;
+reg [BITSIZE_M_Rdata_ram-1:0] _M_Rdata_ram;
+
+assign S_oe_ram = Mout_oe_ram;
+assign S_we_ram = Mout_we_ram;
+assign S_addr_ram = Mout_addr_ram;
+assign S_data_ram_size = Mout_data_ram_size;
+assign S_Wdata_ram = Mout_Wdata_ram;
+assign M_DataRdy = _M_DataRdy | Sout_DataRdy;
+assign M_Rdata_ram = _M_Rdata_ram | Sout_Rdata_ram;
 
 generate
   if(MEM_DUMP)
@@ -538,8 +569,8 @@ generate
     assign Waddr = queue_next[(MEM_DELAY_WRITE-1)*BITSIZE_item+OFFSET_addr+:BITSIZE_addr];
     assign Wsize = {{16-BITSIZE_Wsize{1&apos;b0}}, queue_next[(MEM_DELAY_WRITE-1)*BITSIZE_item+OFFSET_Wsize+:BITSIZE_Wsize]};
     assign Wdata = queue_next[(MEM_DELAY_WRITE-1)*BITSIZE_item+OFFSET_Wdata+:BITSIZE_Wdata];
-    assign M_DataRdy[BITSIZE_ready*i+:BITSIZE_ready] = Wready | Rready;
-    assign M_Rdata_ram[BITSIZE_Rdata*i+:BITSIZE_Rdata] = Rdata;
+    assign _M_DataRdy[BITSIZE_ready*i+:BITSIZE_ready] = Wready | Rready;
+    assign _M_Rdata_ram[BITSIZE_Rdata*i+:BITSIZE_Rdata] = Rdata;
     
     assign queue[BITSIZE_item-1:0] = {
       Mout_Wdata_ram[BITSIZE_Wdata*i+:BITSIZE_Wdata], 
