@@ -124,8 +124,14 @@ void TestbenchDUTModuleGenerator::InternalExec(std::ostream& out, structural_obj
       if(!internal_ports.count(port_id))
       {
          const auto port_bitsize = GET_TYPE_SIZE(top_port);
-         const auto port_size =
-             top_port->get_kind() == port_vector_o_K ? (port_bitsize * top_port->get_ports_size()) : port_bitsize;
+         const auto port_size = [&]() {
+            if(top_port->get_id() == CLOCK_PORT_NAME || top_port->get_id() == RESET_PORT_NAME ||
+               top_port->get_id() == START_PORT_NAME || top_port->get_id() == DONE_PORT_NAME)
+            {
+               return 0ULL;
+            }
+            return top_port->get_kind() == port_vector_o_K ? (port_bitsize * top_port->get_ports_size()) : port_bitsize;
+         }();
          structural_manager::add_port(port_id, top_port->get_port_direction(), dut_cir,
                                       structural_type_descriptorRef(new structural_type_descriptor("bool", port_size)));
       }

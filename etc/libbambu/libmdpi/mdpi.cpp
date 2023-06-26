@@ -234,8 +234,8 @@ static FORCE_INLINE void __m_write(uint16_t max_bsize, uint16_t size, CONSTARG s
    bptr_t __addr = __m_memaddr(addr);
    if(__addr)
    {
-      assert(max_bsize >= (size / 8) && "Memory write bitsize must be smaller than bus size");
-      max_bsize = size / 8;
+      assert((max_bsize * 8) >= size && "Memory write bitsize must be smaller than bus size");
+      max_bsize = (size / 8) + ((size % 8) != 0);
       for(uint16_t i = 0; i < max_bsize; ++i)
       {
          const uint8_t data_byte = data[i / 4].aval >> (8 * (i % 4));

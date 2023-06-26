@@ -1264,6 +1264,10 @@ end process;
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <NP_functionality LIBRARY="__builtin_exit RESFILE" VERILOG_PROVIDED="
+`ifdef VERILATOR
+timeunit 1ps;
+timeprecision 1ps;
+`endif
 reg done_port 1INIT_ZERO_VALUE;
 // synthesis translate_off
 always @(posedge clock)
@@ -1332,6 +1336,10 @@ end process;
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <NP_functionality LIBRARY="__builtin_abort RESFILE" VERILOG_PROVIDED="
+`ifdef VERILATOR
+timeunit 1ps;
+timeprecision 1ps;
+`endif
 reg done_port 1INIT_ZERO_VALUE;
 // synthesis translate_off
 always @(negedge clock)
