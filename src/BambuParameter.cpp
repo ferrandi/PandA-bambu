@@ -553,7 +553,7 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "        Enable multi-threaded simulation when using verilator\n\n"
       << "    --max-sim-cycles=<cycles>\n"
       << "        Specify the maximum number of cycles a HDL simulation may run.\n"
-      << "        (default 20000000).\n\n"
+      << "        (default 200000000).\n\n"
       << "    --accept-nonzero-return\n"
       << "        Do not assume that application main must return 0.\n\n"
       << "    --generate-vcd\n"
@@ -2235,6 +2235,10 @@ int BambuParameter::Exec()
             if(strcmp(long_options[option_index].name, "channels-number") == 0)
             {
                setOption(OPT_channels_number, optarg);
+               if(std::string(optarg) == "1" && !isOption(OPT_channels_type))
+               {
+                  setOption(OPT_channels_type, MemoryAllocation_ChannelsType::MEM_ACC_11);
+               }
                break;
             }
             if(strcmp(long_options[option_index].name, "memory-ctrl-type") == 0)
