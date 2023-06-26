@@ -529,7 +529,7 @@ assign S_addr_ram = Mout_addr_ram;
 assign S_data_ram_size = Mout_data_ram_size;
 assign S_Wdata_ram = Mout_Wdata_ram;
 assign M_DataRdy = _M_DataRdy | (Sout_DataRdy === 1&apos;b1);
-assign M_Rdata_ram = _M_Rdata_ram | (Sout_Rdata_ram === 1&apos;b1);
+assign M_Rdata_ram = _M_Rdata_ram | (Sout_Rdata_ram &amp; {BITSIZE_M_Rdata_ram{Sout_DataRdy === 1&apos;b1}});
 
 generate
   if(MEM_DUMP)
