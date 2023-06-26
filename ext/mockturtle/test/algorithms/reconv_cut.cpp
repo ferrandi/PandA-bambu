@@ -1,8 +1,8 @@
 #include <catch.hpp>
 
 #include <mockturtle/algorithms/reconv_cut.hpp>
-#include <mockturtle/views/fanout_view.hpp>
 #include <mockturtle/networks/aig.hpp>
+#include <mockturtle/views/fanout_view.hpp>
 #include <set>
 
 using namespace mockturtle;
@@ -22,7 +22,7 @@ TEST_CASE( "generate fanin-cuts for an AIG using function API", "[reconv_cut]" )
   using set_t = std::set<node<aig_network>>;
 
   /* helper functions for extracting leave sets */
-  auto leaves = [&]( auto const& p, uint64_t size = 10u ){
+  auto leaves = [&]( auto const& p, uint64_t size = 10u ) {
     const auto leaves = reconvergence_driven_cut<aig_network, false, false>( aig, p, reconvergence_driven_cut_parameters{ size } ).first;
     return set_t( std::begin( leaves ), std::end( leaves ) );
   };
@@ -63,8 +63,8 @@ TEST_CASE( "generate fanin-cuts for an AIG using manager class API", "[reconv_cu
   using set_t = std::set<node<aig_network>>;
 
   /* helper functions for extracting leave sets */
-  auto leaves = [&]( signal const& p, uint64_t size = 10u ){
-    typename cuts_impl::parameters_type ps{size};
+  auto leaves = [&]( signal const& p, uint64_t size = 10u ) {
+    typename cuts_impl::parameters_type ps{ size };
     typename cuts_impl::statistics_type st;
     auto const leaves = cuts_impl( aig, ps, st ).run( { aig.get_node( p ) } ).first;
     return set_t( std::begin( leaves ), std::end( leaves ) );
@@ -72,12 +72,12 @@ TEST_CASE( "generate fanin-cuts for an AIG using manager class API", "[reconv_cu
 
   CHECK( leaves( a ) == set_t{ aig.get_node( a ) } );
   CHECK( leaves( b ) == set_t{ aig.get_node( b ) } );
-  CHECK( leaves( f1 ) == set_t{aig.get_node( a ), aig.get_node( b )} );
-  CHECK( leaves( f2 ) == set_t{aig.get_node( a ), aig.get_node( b )} );
-  CHECK( leaves( f3 ) == set_t{aig.get_node( a ), aig.get_node( b )} );
-  CHECK( leaves( f4 ) == set_t{aig.get_node( a ), aig.get_node( b )} );
+  CHECK( leaves( f1 ) == set_t{ aig.get_node( a ), aig.get_node( b ) } );
+  CHECK( leaves( f2 ) == set_t{ aig.get_node( a ), aig.get_node( b ) } );
+  CHECK( leaves( f3 ) == set_t{ aig.get_node( a ), aig.get_node( b ) } );
+  CHECK( leaves( f4 ) == set_t{ aig.get_node( a ), aig.get_node( b ) } );
 
   CHECK( leaves( f4, 1u ) == set_t{ aig.get_node( f4 ) } );
-  CHECK( leaves( f4, 2u ) == set_t{aig.get_node( f2 ), aig.get_node( f3 )} );
-  CHECK( leaves( f4, 3u ) == set_t{aig.get_node( a ), aig.get_node( b )} );
+  CHECK( leaves( f4, 2u ) == set_t{ aig.get_node( f2 ), aig.get_node( f3 ) } );
+  CHECK( leaves( f4, 3u ) == set_t{ aig.get_node( a ), aig.get_node( b ) } );
 }

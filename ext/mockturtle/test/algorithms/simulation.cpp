@@ -20,10 +20,10 @@ TEST_CASE( "Simulate XOR AIG circuit with Booleans", "[simulation]" )
   const auto f4 = aig.create_nand( f2, f3 );
   aig.create_po( f4 );
 
-  CHECK( !simulate<bool>( aig, default_simulator<bool>( {false, false} ) )[0] );
-  CHECK( simulate<bool>( aig, default_simulator<bool>( {false, true} ) )[0] );
-  CHECK( simulate<bool>( aig, default_simulator<bool>( {true, false} ) )[0] );
-  CHECK( !simulate<bool>( aig, default_simulator<bool>( {false, false} ) )[0] );
+  CHECK( !simulate<bool>( aig, default_simulator<bool>( { false, false } ) )[0] );
+  CHECK( simulate<bool>( aig, default_simulator<bool>( { false, true } ) )[0] );
+  CHECK( simulate<bool>( aig, default_simulator<bool>( { true, false } ) )[0] );
+  CHECK( !simulate<bool>( aig, default_simulator<bool>( { false, false } ) )[0] );
 }
 
 TEST_CASE( "Simulate XOR AIG circuit with static truth table", "[simulation]" )
@@ -41,7 +41,6 @@ TEST_CASE( "Simulate XOR AIG circuit with static truth table", "[simulation]" )
   const auto tt = simulate<kitty::static_truth_table<2u>>( aig )[0];
   CHECK( tt._bits == 0x6 );
 }
-
 
 TEST_CASE( "Simulate XOR AIG circuit with dynamic truth table", "[simulation]" )
 {
@@ -82,7 +81,7 @@ TEST_CASE( "Simulate XOR AIG circuit with pre-defined values", "[simulation]" )
   node_to_value.reset();
 
   /* set node f1 to false, such that function f1 becomes true */
-  node_to_value[ aig.get_node( f1 ) ] = kitty::dynamic_truth_table( 2 );
+  node_to_value[aig.get_node( f1 )] = kitty::dynamic_truth_table( 2 );
 
   /* re-simulated with the fixed value for f1 */
   simulate_nodes<kitty::dynamic_truth_table>( aig, node_to_value, sim );
@@ -141,9 +140,13 @@ TEST_CASE( "Add pattern and re-simulate with partial_simulator", "[simulation]" 
   CHECK( ( xag.is_complemented( f2 ) ? ~node_to_value[f2] : node_to_value[f2] )._bits[0] == 0x1 ); /* f2 = 01 */
 
   std::vector<bool> pattern( 3 );
-  pattern[0] = 0; pattern[1] = 1; pattern[2] = 0;
+  pattern[0] = 0;
+  pattern[1] = 1;
+  pattern[2] = 0;
   sim.add_pattern( pattern );
-  pattern[0] = 1; pattern[1] = 0; pattern[2] = 0;
+  pattern[0] = 1;
+  pattern[1] = 0;
+  pattern[2] = 0;
   sim.add_pattern( pattern );
   /* a = 1001, b = 0101, c = 0001 */
 
@@ -175,10 +178,12 @@ TEST_CASE( "Incremental simulation with partial_simulator", "[simulation]" )
   unordered_node_map<kitty::partial_truth_table, aig_network> node_to_value( aig );
   simulate_nodes( aig, node_to_value, sim );
   CHECK( ( aig.is_complemented( f2 ) ? ~node_to_value[f2] : node_to_value[f2] )._bits[0] == 0 );
-  CHECK( ( aig.is_complemented( f4 ) ? ~node_to_value[f4] : node_to_value[f4] )._bits[0] == ~0 );
+  CHECK( ( aig.is_complemented( f4 ) ? ~node_to_value[f4] : node_to_value[f4] )._bits[0] == ~uint64_t( 0 ) );
 
   std::vector<bool> pattern( 3 );
-  pattern[0] = 0; pattern[1] = 1; pattern[2] = 0;
+  pattern[0] = 0;
+  pattern[1] = 1;
+  pattern[2] = 0;
   sim.add_pattern( pattern );
 
   simulate_node( aig, aig.get_node( f2 ), node_to_value, sim );
@@ -195,32 +200,56 @@ TEST_CASE( "Incremental simulation with partial_simulator", "[simulation]" )
 TEST_CASE( "Bit packing", "[simulation]" )
 {
   std::vector<kitty::partial_truth_table> pats( 5 );
-  pats[0].add_bits( 0x1, 2 ); /* x0 = 01 */
-  pats[1].add_bits( 0x1, 2 ); /* x1 = 01 */
-  pats[2].add_bits( 0x1, 2 ); /* x2 = 01 */
-  pats[3].add_bits( 0x1, 2 ); /* x3 = 01 */
-  pats[4].add_bits( 0x1, 2 ); /* x4 = 01 */
+  pats[0].add_bits( 0x1, 2 );       /* x0 = 01 */
+  pats[1].add_bits( 0x1, 2 );       /* x1 = 01 */
+  pats[2].add_bits( 0x1, 2 );       /* x2 = 01 */
+  pats[3].add_bits( 0x1, 2 );       /* x3 = 01 */
+  pats[4].add_bits( 0x1, 2 );       /* x4 = 01 */
   bit_packed_simulator sim( pats ); /* initial patterns are not packable (all bits are cared) */
 
   std::vector<bool> p( 5 ); /* pattern */
   std::vector<bool> c( 5 ); /* care */
 
   /* first pattern */
-  p[0] = 0; p[1] = 1; p[2] = 0; p[3] = 1; p[4] = 1;
-  c[0] = 0; c[1] = 0; c[2] = 0; c[3] = 1; c[4] = 1;
+  p[0] = 0;
+  p[1] = 1;
+  p[2] = 0;
+  p[3] = 1;
+  p[4] = 1;
+  c[0] = 0;
+  c[1] = 0;
+  c[2] = 0;
+  c[3] = 1;
+  c[4] = 1;
   sim.add_pattern( p, c );
 
   /* second pattern */
-  p[0] = 1; p[1] = 0; p[2] = 1; p[3] = 0; p[4] = 1;
-  c[0] = 0; c[1] = 0; c[2] = 1; c[3] = 0; c[4] = 1;
+  p[0] = 1;
+  p[1] = 0;
+  p[2] = 1;
+  p[3] = 0;
+  p[4] = 1;
+  c[0] = 0;
+  c[1] = 0;
+  c[2] = 1;
+  c[3] = 0;
+  c[4] = 1;
   sim.add_pattern( p, c );
 
   CHECK( sim.pack_bits() == false );
   CHECK( sim.num_bits() == 4u );
 
   /* third pattern: can be packed into the third bit */
-  p[0] = 1; p[1] = 0; p[2] = 1; p[3] = 0; p[4] = 0;
-  c[0] = 0; c[1] = 1; c[2] = 1; c[3] = 0; c[4] = 0;
+  p[0] = 1;
+  p[1] = 0;
+  p[2] = 1;
+  p[3] = 0;
+  p[4] = 0;
+  c[0] = 0;
+  c[1] = 1;
+  c[2] = 1;
+  c[3] = 0;
+  c[4] = 0;
   sim.add_pattern( p, c );
 
   CHECK( sim.pack_bits() == true );
@@ -232,18 +261,42 @@ TEST_CASE( "Bit packing", "[simulation]" )
   CHECK( ( sim.compute_pi( 4 )._bits[0] & 0xf ) == 0xd ); /* x4 = x1101 -> 1101 */
 
   /* fourth pattern: can be packed into the fourth bit */
-  p[0] = 1; p[1] = 0; p[2] = 0; p[3] = 1; p[4] = 0;
-  c[0] = 1; c[1] = 1; c[2] = 0; c[3] = 1; c[4] = 0;
+  p[0] = 1;
+  p[1] = 0;
+  p[2] = 0;
+  p[3] = 1;
+  p[4] = 0;
+  c[0] = 1;
+  c[1] = 1;
+  c[2] = 0;
+  c[3] = 1;
+  c[4] = 0;
   sim.add_pattern( p, c );
 
   /* fifth pattern */
-  p[0] = 0; p[1] = 1; p[2] = 0; p[3] = 1; p[4] = 1;
-  c[0] = 1; c[1] = 0; c[2] = 0; c[3] = 0; c[4] = 1;
+  p[0] = 0;
+  p[1] = 1;
+  p[2] = 0;
+  p[3] = 1;
+  p[4] = 1;
+  c[0] = 1;
+  c[1] = 0;
+  c[2] = 0;
+  c[3] = 0;
+  c[4] = 1;
   sim.add_pattern( p, c );
 
   /* sixth pattern: can be packed into the third bit */
-  p[0] = 1; p[1] = 0; p[2] = 0; p[3] = 1; p[4] = 0;
-  c[0] = 1; c[1] = 0; c[2] = 0; c[3] = 0; c[4] = 0;
+  p[0] = 1;
+  p[1] = 0;
+  p[2] = 0;
+  p[3] = 1;
+  p[4] = 0;
+  c[0] = 1;
+  c[1] = 0;
+  c[2] = 0;
+  c[3] = 0;
+  c[4] = 0;
   sim.add_pattern( p, c );
 
   CHECK( sim.pack_bits() == true );

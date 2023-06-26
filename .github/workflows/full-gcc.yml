@@ -28,7 +28,7 @@ jobs:
     runs-on: [self-hosted, long, mentor]
     env:
       report-dir: test-reports
-      args: -c=--simulator=MODELSIM
+      args: -c=--simulator=MODELSIM -c=--assert-debug
     strategy:
       max-parallel: 2
       fail-fast: false

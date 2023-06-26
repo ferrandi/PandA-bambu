@@ -416,7 +416,7 @@ double AllocationInformation::get_attribute_of_fu_per_op(const vertex v, const O
    unsigned int fu_name;
    bool flag;
    double res = get_attribute_of_fu_per_op(v, g, allocation_min_max, target, fu_name, flag);
-   THROW_ASSERT(flag, "something of wrong happen");
+   THROW_ASSERT(flag, "something wrong happened");
    return res;
 }
 
@@ -608,7 +608,7 @@ unsigned int AllocationInformation::min_number_of_resources(const vertex v) cons
    for(auto f_i = fu_set.begin(); f_i != f_end; ++f_i)
    {
       unsigned int num_res = tech_constraints[*f_i];
-      THROW_ASSERT(num_res != 0, "something of wrong happen");
+      THROW_ASSERT(num_res != 0, "something wrong happened");
       min_num_res = min_num_res > num_res ? num_res : min_num_res;
    }
    return min_num_res;
@@ -1259,7 +1259,7 @@ unsigned int AllocationInformation::max_number_of_resources(const vertex v) cons
    for(auto f_i = fu_set.begin(); f_i != f_end; ++f_i)
    {
       auto num_res = tech_constraints[*f_i];
-      THROW_ASSERT(num_res != 0, "something of wrong happen");
+      THROW_ASSERT(num_res != 0, "something wrong happened");
       if(num_res == INFINITE_UINT)
       {
          return num_res;

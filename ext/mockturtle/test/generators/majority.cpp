@@ -18,7 +18,7 @@ inline std::pair<Ntk, std::array<typename Ntk::signal, Count>> init_network()
   Ntk ntk;
   std::array<typename Ntk::signal, Count> pis;
   std::generate( pis.begin(), pis.end(), [&]() { return ntk.create_pi(); } );
-  return {ntk, pis};
+  return { ntk, pis };
 }
 
 template<class Ntk>

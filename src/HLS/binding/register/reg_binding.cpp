@@ -57,7 +57,7 @@
 #include "omp_functions.hpp"
 #include "reg_binding_cs.hpp"
 
-#include "boost/lexical_cast.hpp"
+#include <boost/lexical_cast.hpp>
 #include "structural_manager.hpp"
 #include "technology_manager.hpp"
 

@@ -1,5 +1,5 @@
 /* mockturtle: C++ logic network library
- * Copyright (C) 2018-2021  EPFL
+ * Copyright (C) 2018-2022  EPFL
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -79,10 +79,10 @@ struct xmg_algebraic_depth_rewriting_params
    * When comparing to the initial size in aggressive depth rewriting, also the
    * number of dangling nodes are taken into account.
    */
-  float overhead{2.0f};
+  float overhead{ 2.0f };
 
   /*! \brief Allow area increase while optimizing depth. */
-  bool allow_area_increase{true};
+  bool allow_area_increase{ true };
 };
 
 namespace detail
@@ -120,7 +120,7 @@ private:
       const auto driver = ntk.get_node( po );
       if ( ntk.level( driver ) < ntk.depth() )
         return;
-      topo_view topo{ntk, po};
+      topo_view topo{ ntk, po };
       topo.foreach_node( [this]( auto n ) {
         reduce_depth( n );
         reduce_depth_xor_associativity( n );
@@ -132,12 +132,12 @@ private:
 
   void run_selective()
   {
-    uint32_t counter{0};
+    uint32_t counter{ 0 };
     while ( true )
     {
       mark_critical_paths();
 
-      topo_view topo{ntk};
+      topo_view topo{ ntk };
       topo.foreach_node( [this, &counter]( auto n ) {
         if ( ntk.fanout_size( n ) == 0 || ntk.value( n ) == 0 )
           return;
@@ -159,10 +159,10 @@ private:
 
   void run_aggressive()
   {
-    uint32_t counter{0}, init_size{ntk.size()};
+    uint32_t counter{ 0 }, init_size{ ntk.size() };
     while ( true )
     {
-      topo_view topo{ntk};
+      topo_view topo{ ntk };
       topo.foreach_node( [this, &counter]( auto n ) {
         if ( ntk.fanout_size( n ) == 0 )
           return;
@@ -245,19 +245,19 @@ private:
   {
     if ( v.index == x.index )
     {
-      return candidate_t{w, y, z, v, v.complement == x.complement};
+      return candidate_t{ w, y, z, v, v.complement == x.complement };
     }
     if ( v.index == y.index )
     {
-      return candidate_t{w, x, z, v, v.complement == y.complement};
+      return candidate_t{ w, x, z, v, v.complement == y.complement };
     }
     if ( w.index == x.index )
     {
-      return candidate_t{v, y, z, w, w.complement == x.complement};
+      return candidate_t{ v, y, z, w, w.complement == x.complement };
     }
     if ( w.index == y.index )
     {
-      return candidate_t{v, x, z, w, w.complement == y.complement};
+      return candidate_t{ v, x, z, w, w.complement == y.complement };
     }
 
     return std::nullopt;
@@ -343,8 +343,8 @@ private:
       return false;
 
     /* multiple child fanout is allowable */
-    //if ( !ps.allow_area_increase && ntk.fanout_size( ntk.get_node( ocs[2] ) ) != 1 )
-    //  return false;
+    // if ( !ps.allow_area_increase && ntk.fanout_size( ntk.get_node( ocs[2] ) ) != 1 )
+    //   return false;
 
     /* get children of last child */
     auto ocs2 = ordered_children( ntk.get_node( ocs[2] ) );
@@ -391,27 +391,27 @@ private:
   {
     if ( v.index == x.index )
     {
-      return candidate_t{w, y, z, v, v.complement == x.complement};
+      return candidate_t{ w, y, z, v, v.complement == x.complement };
     }
     if ( v.index == y.index )
     {
-      return candidate_t{w, x, z, v, v.complement == y.complement};
+      return candidate_t{ w, x, z, v, v.complement == y.complement };
     }
     if ( v.index == z.index )
     {
-      return candidate_t{w, x, y, v, v.complement == z.complement};
+      return candidate_t{ w, x, y, v, v.complement == z.complement };
     }
     if ( w.index == x.index )
     {
-      return candidate_t{v, y, z, w, w.complement == x.complement};
+      return candidate_t{ v, y, z, w, w.complement == x.complement };
     }
     if ( w.index == y.index )
     {
-      return candidate_t{v, x, z, w, w.complement == y.complement};
+      return candidate_t{ v, x, z, w, w.complement == y.complement };
     }
     if ( w.index == z.index )
     {
-      return candidate_t{v, x, y, w, w.complement == z.complement};
+      return candidate_t{ v, x, y, w, w.complement == z.complement };
     }
 
     return std::nullopt;

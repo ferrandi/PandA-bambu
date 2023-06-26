@@ -1,5 +1,5 @@
 /* kitty: C++ truth table library
- * Copyright (C) 2017-2021  EPFL
+ * Copyright (C) 2017-2022  EPFL
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -273,9 +273,18 @@ public: /* fields */
 };
 
 template<uint32_t NumVars>
-struct is_truth_table<kitty::static_truth_table<NumVars>> : std::true_type {};
+struct is_truth_table<kitty::static_truth_table<NumVars>> : std::true_type
+{
+};
 
 template<uint32_t NumVars>
-struct is_complete_truth_table<kitty::static_truth_table<NumVars>> : std::true_type {};
+struct is_complete_truth_table<kitty::static_truth_table<NumVars>> : std::true_type
+{
+};
+
+template<uint32_t NumVars>
+struct is_completely_specified_truth_table<kitty::static_truth_table<NumVars>> : std::true_type
+{
+};
 
 } // namespace kitty

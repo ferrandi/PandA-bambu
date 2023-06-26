@@ -32,7 +32,6 @@ TEST_CASE( "serialize aig_network into a file", "[serialize]" )
   CHECK( aig._storage->nodes == aig2._storage->nodes );
   CHECK( aig._storage->inputs == aig2._storage->inputs );
   CHECK( aig._storage->outputs == aig2._storage->outputs );
-  // CHECK( aig._storage->latch_information == aig2._storage->latch_information );
   CHECK( aig._storage->hash == aig2._storage->hash );
 
   CHECK( aig2._storage->hash.size() == 4u );

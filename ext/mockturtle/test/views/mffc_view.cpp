@@ -50,7 +50,7 @@ TEST_CASE( "create a MFFC view", "[mffc_view]" )
   CHECK( aig.get_node( f7 ) == 12 );
   CHECK( aig.get_node( f8 ) == 13 );
 
-  mffc_view mffc1{aig, aig.get_node( f1 )};
+  mffc_view mffc1{ aig, aig.get_node( f1 ) };
 
   CHECK( mffc1.size() == 4 );
   CHECK( mffc1.num_pis() == 2 );
@@ -106,7 +106,7 @@ TEST_CASE( "create a MFFC view", "[mffc_view]" )
   } );
   mffc1.foreach_po( [&]( auto const& f ) { CHECK( mffc1.get_node( f ) == aig.get_node( f1 ) ); } );
 
-  mffc_view mffc2{aig, aig.get_node( f3 )};
+  mffc_view mffc2{ aig, aig.get_node( f3 ) };
 
   CHECK( mffc2.size() == 4 );
   CHECK( mffc2.num_pis() == 2 );
@@ -162,7 +162,7 @@ TEST_CASE( "create a MFFC view", "[mffc_view]" )
   } );
   mffc2.foreach_po( [&]( auto const& f ) { CHECK( mffc2.get_node( f ) == aig.get_node( f3 ) ); } );
 
-  mffc_view mffc3{aig, aig.get_node( f5 )};
+  mffc_view mffc3{ aig, aig.get_node( f5 ) };
 
   CHECK( mffc3.size() == 4 );
   CHECK( mffc3.num_pis() == 2 );
@@ -218,7 +218,7 @@ TEST_CASE( "create a MFFC view", "[mffc_view]" )
   } );
   mffc3.foreach_po( [&]( auto const& f ) { CHECK( mffc3.get_node( f ) == aig.get_node( f5 ) ); } );
 
-  mffc_view mffc4{aig, aig.get_node( f7 )};
+  mffc_view mffc4{ aig, aig.get_node( f7 ) };
 
   CHECK( mffc4.size() == 9 );
   CHECK( mffc4.num_pis() == 3 );
@@ -304,7 +304,7 @@ TEST_CASE( "create a MFFC view", "[mffc_view]" )
   } );
   mffc4.foreach_po( [&]( auto const& f ) { CHECK( mffc4.get_node( f ) == aig.get_node( f7 ) ); } );
 
-  mffc_view mffc5{aig, aig.get_node( f8 )};
+  mffc_view mffc5{ aig, aig.get_node( f8 ) };
 
   CHECK( mffc5.size() == 14 );
   CHECK( mffc5.num_pis() == 5 );

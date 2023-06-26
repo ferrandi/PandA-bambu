@@ -1,5 +1,5 @@
 /* mockturtle: C++ logic network library
- * Copyright (C) 2018-2021  EPFL
+ * Copyright (C) 2018-2022  EPFL
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -29,6 +29,7 @@
 
   \author Heinz Riener
   \author Mathias Soeken
+  \author Siang-Yun (Sonia) Lee
 */
 
 #pragma once
@@ -56,7 +57,7 @@ template<>
 struct mapping_view_storage<true>
 {
   std::vector<uint32_t> mappings;
-  uint32_t mapping_size{0};
+  uint32_t mapping_size{ 0 };
   std::vector<uint32_t> functions;
   truth_table_cache<kitty::dynamic_truth_table> cache;
 };
@@ -65,13 +66,13 @@ template<>
 struct mapping_view_storage<false>
 {
   std::vector<uint32_t> mappings;
-  uint32_t mapping_size{0};
+  uint32_t mapping_size{ 0 };
 };
 
 } // namespace detail
 
 template<typename Ntk, bool StoreFunction>
-inline constexpr bool implements_mapping_interface_v = has_has_mapping_v<Ntk> && (!StoreFunction || has_cell_function_v<Ntk>);
+inline constexpr bool implements_mapping_interface_v = has_has_mapping_v<Ntk> && ( !StoreFunction || has_cell_function_v<Ntk> );
 
 /*! \brief Adds mapping API methods to network.
  *
@@ -82,6 +83,13 @@ inline constexpr bool implements_mapping_interface_v = has_has_mapping_v<Ntk> &&
  * `true`, it also adds functions for `cell_function` and `set_cell_function`.
  * For the latter case, this view requires more memory to also store the cells'
  * truth tables.
+ *
+ * These methods are used to represent a mapping that is annotated to a
+ * subject graph.  The interface can, e.g., be used for LUT mapping or standard
+ * cell mapping.  For a common terminology, we call a collection of nodes that
+ * belong to the same unit a cell, which has a single root.  The *mapped node* is
+ * the cell root.  A cell root, and therefore the cell it represents, may be
+ * assigned a function by means of a truth table.
  *
  * **Required network functions:**
  * - `size`
@@ -154,16 +162,19 @@ public:
     }
   }
 
+  /*! \brief Returns true, if network has a mapping. */
   bool has_mapping() const
   {
     return _mapping_storage->mapping_size > 0;
   }
 
+  /*! \brief Returns true, if node is the root of a mapped cell. */
   bool is_cell_root( node const& n ) const
   {
     return _mapping_storage->mappings[this->node_to_index( n )] != 0;
   }
 
+  /*! \brief Clears a mapping. */
   void clear_mapping()
   {
     _mapping_storage->mappings.clear();
@@ -171,11 +182,13 @@ public:
     _mapping_storage->mapping_size = 0;
   }
 
+  /*! \brief Number of cells, i.e, mapped nodes. */
   uint32_t num_cells() const
   {
     return _mapping_storage->mapping_size;
   }
 
+  /*! \brief Adds a node to the mapping. */
   template<typename LeavesIterator>
   void add_to_mapping( node const& n, LeavesIterator begin, LeavesIterator end )
   {
@@ -200,6 +213,7 @@ public:
     }
   }
 
+  /*! \brief Remove from mapping. */
   void remove_from_mapping( node const& n )
   {
     auto& mindex = _mapping_storage->mappings[this->node_to_index( n )];
@@ -212,26 +226,44 @@ public:
     _mapping_storage->mappings[this->node_to_index( n )] = 0;
   }
 
+  /*! \brief Gets function of the cell.
+   *
+   * The parameter `n` is a node that must be a cell root.
+   */
   template<bool enabled = StoreFunction, typename = std::enable_if_t<std::is_same_v<Ntk, Ntk> && enabled>>
   kitty::dynamic_truth_table cell_function( node const& n ) const
   {
     return _mapping_storage->cache[_mapping_storage->functions[this->node_to_index( n )]];
   }
 
+  /*! \brief Sets cell function.
+   *
+   * The parameter `n` is a node that must be a cell root.
+   */
   template<bool enabled = StoreFunction, typename = std::enable_if_t<std::is_same_v<Ntk, Ntk> && enabled>>
   void set_cell_function( node const& n, kitty::dynamic_truth_table const& function )
   {
     _mapping_storage->functions[this->node_to_index( n )] = _mapping_storage->cache.insert( function );
   }
 
+  /*! \brief Iterators over cell's fan-ins.
+   * The parameter `n` is a node that must be a cell root.
+   * The parameter ``fn`` is any callable that must have one of the
+   * following four signatures.
+   * - ``void(node const&)``
+   * - ``void(node const&, uint32_t)``
+   * - ``bool(node const&)``
+   * - ``bool(node const&, uint32_t)``
+   */
   template<typename Fn>
   void foreach_cell_fanin( node const& n, Fn&& fn ) const
   {
     auto it = _mapping_storage->mappings.begin() + _mapping_storage->mappings[this->node_to_index( n )];
     const auto size = *it++;
     using IteratorType = decltype( it );
-    detail::foreach_element_transform<IteratorType, typename Ntk::node>( it, it + size,
-                                                                         [&]( auto i ) { return this->index_to_node( i ); }, fn );
+    detail::foreach_element_transform<IteratorType, typename Ntk::node>(
+        it, it + size,
+        [&]( auto i ) { return this->index_to_node( i ); }, fn );
   }
 
 private:
@@ -239,6 +271,6 @@ private:
 };
 
 template<class T>
-mapping_view(T const&) -> mapping_view<T>;
+mapping_view( T const& ) -> mapping_view<T>;
 
 } // namespace mockturtle

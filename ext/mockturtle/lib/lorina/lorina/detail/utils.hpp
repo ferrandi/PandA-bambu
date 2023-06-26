@@ -30,6 +30,7 @@
 #include <fmt/format.h>
 
 #include <algorithm>
+#include <cassert>
 #include <cctype>
 #include <cstdio>
 #include <cstdlib>
@@ -48,6 +49,8 @@
 #include <libgen.h>
 #include <wordexp.h>
 #endif
+
+#include "call_in_topological_order.hpp"
 
 namespace lorina
 {
@@ -98,118 +101,6 @@ inline std::istream& getline( std::istream& is, std::string& t )
     }
   }
 }
-
-/* std::apply in C++14 taken from https://stackoverflow.com/a/36656413 */
-template<typename Function, typename Tuple, size_t ... I>
-auto apply(Function f, Tuple t, std::index_sequence<I ...>)
-{
-  return f(std::get<I>(t) ...);
-}
-
-template<typename Function, typename Tuple>
-auto apply(Function f, Tuple t)
-{
-  static constexpr auto size = std::tuple_size<Tuple>::value;
-  return apply(f, t, std::make_index_sequence<size>{});
-}
-
-template<typename... Args>
-class call_in_topological_order
-{
-public:
-  call_in_topological_order( std::function<void(Args...)> f )
-    : f( f )
-  {
-  }
-
-  void declare_known( const std::string& known )
-  {
-    _known.emplace( known );
-  }
-
-  void call_deferred( const std::vector<std::string>& inputs, const std::string& output, Args... params )
-  {
-    /* do we have all inputs */
-    std::unordered_set<std::string> unknown;
-    for ( const auto& input : inputs )
-    {
-      if ( _known.find( input ) != _known.end() )
-        continue;
-
-      auto it = _waits_for.find( input );
-      if ( it == _waits_for.end() || !it->second.empty() )
-      {
-        unknown.insert( input );
-      }
-    }
-
-    std::tuple<Args...> args = std::make_tuple( params... );
-    _stored_params.emplace( output, args );
-
-    if ( !unknown.empty() )
-    {
-      /* defer computation */
-      for ( const auto& input : unknown )
-      {
-        _triggers[input].insert( output );
-        _waits_for[output].insert( input );
-      }
-      return;
-    }
-
-    /* trigger dependency computation */
-    compute_dependencies( output );
-  }
-
-  void compute_dependencies( const std::string& output )
-  {
-     /* init empty, makes sure nothing is waiting for this output */
-    _waits_for[output];
-    std::stack<std::string> computed;
-    computed.push( output );
-    while ( !computed.empty() )
-    {
-      auto next = computed.top();
-      computed.pop();
-
-      // C++17: std::apply( f, _stored_params[next] );
-      detail::apply( f, _stored_params[next] );
-
-      for ( const auto& other : _triggers[next] )
-      {
-        _waits_for[other].erase( next );
-        if ( _waits_for[other].empty() )
-        {
-          computed.push( other );
-        }
-      }
-      _triggers[next].clear();
-    }
-  }
-
-  std::vector<std::pair<std::string,std::string>> unresolved_dependencies()
-  {
-    std::vector<std::pair<std::string,std::string>> deps;
-    for ( const auto& w : _waits_for )
-    {
-      if ( !w.second.empty() )
-      {
-        for ( const auto& v : w.second )
-        {
-          deps.push_back( std::make_pair( w.first, v ) );
-        }
-      }
-    }
-    return deps;
-  }
-
-private:
-  std::unordered_set<std::string> _known;
-  std::unordered_map<std::string, std::unordered_set<std::string>> _triggers;
-  std::unordered_map<std::string, std::unordered_set<std::string>> _waits_for;
-  std::function<void(Args...)> f;
-  std::unordered_map<std::string, std::tuple<Args...>> _stored_params;
-}; /* call_in_topological_order */
 
 template<typename T>
 inline std::string join( const T& t, const std::string& sep )

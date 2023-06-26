@@ -1,10 +1,10 @@
 #include <catch.hpp>
 
-#include <mockturtle/networks/xag.hpp>
+#include <lorina/verilog.hpp>
 #include <mockturtle/algorithms/simulation.hpp>
 #include <mockturtle/algorithms/xag_optimization.hpp>
 #include <mockturtle/io/verilog_reader.hpp>
-#include <lorina/verilog.hpp>
+#include <mockturtle/networks/xag.hpp>
 
 #include <algorithm>
 #include <vector>
@@ -38,18 +38,18 @@ TEST_CASE( "Test XAG constant fanin optimization", "[xag_optimization]" )
 {
   /* regression test that leads to a segmentation violation */
   std::string const test_case =
-    "module top( x0 , x1 , y0 );\n"
-    "  input x0 , x1 ;\n"
-    "  output y0 ;\n"
-    "  wire n2 , n3 , n4 , n5 , n6 , n7 ;\n"
-    "  assign n2 = x1 ^ x0 ;\n"
-    "  assign n3 = n2 ^ x1 ;\n"
-    "  assign n4 = n3 ^ n2 ;\n"
-    "  assign n5 = n2 & n4 ;\n"
-    "  assign n6 = n5 ^ n2 ;\n"
-    "  assign n7 = n6 ^ n2 ;\n"
-    "  assign y0 = n7 ;\n"
-    "endmodule\n" ;
+      "module top( x0 , x1 , y0 );\n"
+      "  input x0 , x1 ;\n"
+      "  output y0 ;\n"
+      "  wire n2 , n3 , n4 , n5 , n6 , n7 ;\n"
+      "  assign n2 = x1 ^ x0 ;\n"
+      "  assign n3 = n2 ^ x1 ;\n"
+      "  assign n4 = n3 ^ n2 ;\n"
+      "  assign n5 = n2 & n4 ;\n"
+      "  assign n6 = n5 ^ n2 ;\n"
+      "  assign n7 = n6 ^ n2 ;\n"
+      "  assign y0 = n7 ;\n"
+      "endmodule\n";
 
   std::stringstream ss( test_case );
   mockturtle::xag_network xag;

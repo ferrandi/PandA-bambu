@@ -1,5 +1,5 @@
 /* mockturtle: C++ logic network library
- * Copyright (C) 2018-2021  EPFL
+ * Copyright (C) 2018-2022  EPFL
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -36,11 +36,11 @@
 #include <cstdint>
 #include <string>
 
-#include "cleanup.hpp"
-#include "dont_cares.hpp"
 #include "../networks/xmg.hpp"
 #include "../utils/node_map.hpp"
 #include "../views/topo_view.hpp"
+#include "cleanup.hpp"
+#include "dont_cares.hpp"
 
 namespace mockturtle
 {
@@ -65,8 +65,9 @@ inline xmg_network xmg_dont_cares_optimization( xmg_network const& xmg )
 
   satisfiability_dont_cares_checker<xmg_network> checker( xmg );
 
-  topo_view<xmg_network>{xmg}.foreach_node( [&]( auto const& n ) {
-    if ( xmg.is_constant( n ) || xmg.is_pi( n ) ) return;
+  topo_view<xmg_network>{ xmg }.foreach_node( [&]( auto const& n ) {
+    if ( xmg.is_constant( n ) || xmg.is_pi( n ) )
+      return;
 
     std::array<xmg_network::signal, 3> fanin;
     xmg.foreach_fanin( n, [&]( auto const& f, auto i ) {
@@ -75,7 +76,7 @@ inline xmg_network xmg_dont_cares_optimization( xmg_network const& xmg )
 
     if ( xmg.is_maj( n ) )
     {
-      if ( checker.is_dont_care( n, {false, false, false} ) && checker.is_dont_care( n, {true, true, true} ) )
+      if ( checker.is_dont_care( n, { false, false, false } ) && checker.is_dont_care( n, { true, true, true } ) )
       {
         old_to_new[n] = dest.create_xor3( !fanin[0], fanin[1], fanin[2] );
       }
@@ -92,7 +93,7 @@ inline xmg_network xmg_dont_cares_optimization( xmg_network const& xmg )
 
   xmg.foreach_po( [&]( auto const& f ) {
     dest.create_po( old_to_new[f] ^ xmg.is_complemented( f ) );
-  });
+  } );
 
   return dest;
 }

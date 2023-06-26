@@ -1,5 +1,5 @@
 /* mockturtle: C++ logic network library
- * Copyright (C) 2018-2021  EPFL
+ * Copyright (C) 2018-2022  EPFL
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -30,6 +30,7 @@
   \author Heinz Riener
   \author Mathias Soeken
   \author Max Austin
+  \author Siang-Yun (Sonia) Lee
 */
 
 #pragma once
@@ -54,7 +55,7 @@ namespace mockturtle
 struct node_resynthesis_params
 {
   /*! \brief Be verbose. */
-  bool verbose{false};
+  bool verbose{ false };
 };
 
 /*! \brief Statistics for node_resynthesis.
@@ -65,7 +66,7 @@ struct node_resynthesis_params
 struct node_resynthesis_stats
 {
   /*! \brief Total runtime. */
-  stopwatch<>::duration time_total{0};
+  stopwatch<>::duration time_total{ 0 };
 
   void report() const
   {
@@ -81,11 +82,11 @@ class node_resynthesis_impl
 {
 public:
   node_resynthesis_impl( NtkDest& ntk_dest, NtkSource const& ntk, ResynthesisFn&& resynthesis_fn, node_resynthesis_params const& ps, node_resynthesis_stats& st )
-    : ntk_dest( ntk_dest ),
-      ntk( ntk ),
-      resynthesis_fn( resynthesis_fn ),
-      ps( ps ),
-      st( st )
+      : ntk_dest( ntk_dest ),
+        ntk( ntk ),
+        resynthesis_fn( resynthesis_fn ),
+        ps( ps ),
+        st( st )
   {
   }
 
@@ -111,20 +112,23 @@ public:
         if ( ntk.has_name( ntk.make_signal( n ) ) )
           ntk_dest.set_name( node2new[n], ntk.get_name( ntk.make_signal( n ) ) );
       }
-      } );
+    } );
 
-    ntk.foreach_ro( [&]( auto n ) {
-      node2new[n] = ntk_dest.create_ro();
-      ntk_dest._storage->latch_information[ntk_dest.get_node(node2new[n])] = ntk._storage->latch_information[n];
-      if constexpr ( has_has_name_v<NtkSource> && has_get_name_v<NtkSource> && has_set_name_v<NtkDest> )
-      {
-        if ( ntk.has_name( ntk.make_signal( n ) ) )
-          ntk_dest.set_name( node2new[n], ntk.get_name( ntk.make_signal( n ) ) );
-      }
+    if constexpr ( has_foreach_ro_v<NtkSource> && has_create_ro_v<NtkDest> )
+    {
+      ntk.foreach_ro( [&]( auto n, auto i ) {
+        node2new[n] = ntk_dest.create_ro();
+        ntk_dest.set_register( i, ntk.register_at( i ) );
+        if constexpr ( has_has_name_v<NtkSource> && has_get_name_v<NtkSource> && has_set_name_v<NtkDest> )
+        {
+          if ( ntk.has_name( ntk.make_signal( n ) ) )
+            ntk_dest.set_name( node2new[n], ntk.get_name( ntk.make_signal( n ) ) );
+        }
       } );
+    }
 
     /* map nodes */
-    topo_view ntk_topo{ntk};
+    topo_view ntk_topo{ ntk };
     ntk_topo.foreach_node( [&]( auto n ) {
       if ( ntk.is_constant( n ) || ntk.is_ci( n ) )
         return;
@@ -157,21 +161,23 @@ public:
 
     /* map primary outputs */
     ntk.foreach_po( [&]( auto const& f, auto index ) {
-        (void)index;
+      (void)index;
 
-        auto const o = ntk.is_complemented( f ) ? ntk_dest.create_not( node2new[f] ) : node2new[f];
-        ntk_dest.create_po( o );
+      auto const o = ntk.is_complemented( f ) ? ntk_dest.create_not( node2new[f] ) : node2new[f];
+      ntk_dest.create_po( o );
 
-        if constexpr ( has_has_output_name_v<NtkSource> && has_get_output_name_v<NtkSource> && has_set_output_name_v<NtkDest> )
+      if constexpr ( has_has_output_name_v<NtkSource> && has_get_output_name_v<NtkSource> && has_set_output_name_v<NtkDest> )
+      {
+        if ( ntk.has_output_name( index ) )
         {
-          if ( ntk.has_output_name( index ) )
-          {
-            ntk_dest.set_output_name( index, ntk.get_output_name( index ) );
-          }
+          ntk_dest.set_output_name( index, ntk.get_output_name( index ) );
         }
-      } );
+      }
+    } );
 
-    ntk.foreach_ri( [&]( auto const& f, auto index ) {
+    if constexpr ( has_foreach_ri_v<NtkSource> && has_create_ri_v<NtkDest> )
+    {
+      ntk.foreach_ri( [&]( auto const& f, auto index ) {
         (void)index;
 
         auto const o = ntk.is_complemented( f ) ? ntk_dest.create_not( node2new[f] ) : node2new[f];
@@ -185,6 +191,7 @@ public:
           }
         }
       } );
+    }
 
     return ntk_dest;
   }

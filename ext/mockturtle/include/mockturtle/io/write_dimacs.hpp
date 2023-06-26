@@ -1,5 +1,5 @@
 /* mockturtle: C++ logic network library
- * Copyright (C) 2018-2021  EPFL
+ * Copyright (C) 2018-2022  EPFL
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -65,8 +65,8 @@
 
 #include <fmt/format.h>
 
-#include "../traits.hpp"
 #include "../algorithms/cnf.hpp"
+#include "../traits.hpp"
 
 namespace mockturtle
 {
@@ -86,7 +86,8 @@ void write_dimacs( Ntk const& ntk, std::ostream& out = std::cout )
   uint32_t num_clauses = 0u;
 
   const auto lits = generate_cnf( ntk, [&]( std::vector<uint32_t> const& clause ) {
-    for ( auto lit : clause ) {
+    for ( auto lit : clause )
+    {
       const auto var = ( lit / 2 ) + 1;
       const auto pol = lit % 2;
       clauses << fmt::format( "{}{} ", pol ? "-" : "", var );
@@ -95,7 +96,8 @@ void write_dimacs( Ntk const& ntk, std::ostream& out = std::cout )
     ++num_clauses;
   } );
 
-  for ( auto lit : lits ) {
+  for ( auto lit : lits )
+  {
     const auto var = ( lit / 2 ) + 1;
     const auto pol = lit % 2;
     clauses << fmt::format( "{}{} 0\n", pol ? "-" : "", var );

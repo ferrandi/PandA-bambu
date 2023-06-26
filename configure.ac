@@ -2545,6 +2545,7 @@ AM_CONDITIONAL(BUILD_I386_CLANG16_GEPICANON_PLUGIN, test "x$build_I386_CLANG16_G
 AM_CONDITIONAL(BUILD_I386_CLANG16_CSROA_PLUGIN, test "x$build_I386_CLANG16_CSROA_PLUGIN" = xyes)
 AM_CONDITIONAL(BUILD_I386_CLANG16_TOPFNAME_PLUGIN, test "x$build_I386_CLANG16_TOPFNAME_PLUGIN" = xyes)
 AM_CONDITIONAL(BUILD_I386_CLANG16_ASTANALYZER_PLUGIN, test "x$build_I386_CLANG16_ASTANALYZER_PLUGIN" = xyes)
+AM_CONDITIONAL(BUILD_I386_CLANG16_ASTANNOTATE_PLUGIN, test "x$build_I386_CLANG16_ASTANNOTATE_PLUGIN" = xyes)
 
 AM_CONDITIONAL(BUILD_I386_CLANGVVD, test "x$build_I386_CLANGVVD" = xyes)
 AM_CONDITIONAL(BUILD_I386_CLANGVVD_EMPTY_PLUGIN, test "x$build_I386_CLANGVVD_EMPTY_PLUGIN" = xyes)
@@ -2824,6 +2825,7 @@ if test "x$panda_WERROR" = xyes; then
    AX_CHECK_COMPILE_FLAG("-Wunused-local-typedefs", CXXFLAGS+=" -Wunused-local-typedefs ",,"-Werror")
    #Disabled as error because of BOOST_FOREACH
    AX_CXXFLAGS_GCC_OPTION(-Wzero-as-null-pointer-constant,, CXXFLAGS+=" -Wzero-as-null-pointer-constant -Wno-error=zero-as-null-pointer-constant ",)
+   AX_CXXFLAGS_GCC_OPTION(-Wuse-after-free,, CXXFLAGS+=" -Wuse-after-free -Wno-error=use-after-free ",)
 
    AC_COMPILE_WPEDANTIC
    if test "x$panda_WPEDANTIC" = xyes; then

@@ -2,7 +2,6 @@
 
 #include <vector>
 
-#include <mockturtle/traits.hpp>
 #include <mockturtle/algorithms/simulation.hpp>
 #include <mockturtle/generators/arithmetic.hpp>
 #include <mockturtle/io/write_verilog.hpp>
@@ -10,6 +9,7 @@
 #include <mockturtle/networks/klut.hpp>
 #include <mockturtle/networks/mig.hpp>
 #include <mockturtle/networks/xag.hpp>
+#include <mockturtle/traits.hpp>
 
 #include <kitty/static_truth_table.hpp>
 
@@ -259,7 +259,7 @@ TEST_CASE( "build an 8-bit multiplier with different networks", "[arithmetic]" )
 }
 
 template<typename Ntk>
-Ntk create_sideways_sum_adder(uint32_t size)
+Ntk create_sideways_sum_adder( uint32_t size )
 {
   Ntk ntk;
 
@@ -272,7 +272,7 @@ Ntk create_sideways_sum_adder(uint32_t size)
   }
 
   CHECK( ntk.num_pis() == size );
-  CHECK( ntk.num_pos() == floor(log2(double(size))) + 1 );
+  CHECK( ntk.num_pos() == floor( log2( double( size ) ) ) + 1 );
 
   return ntk;
 }

@@ -46,7 +46,7 @@
 #ifndef CYCLIC_TOPOLOGICAL_SORT_HPP
 #define CYCLIC_TOPOLOGICAL_SORT_HPP
 
-#include "boost/graph/depth_first_search.hpp"
+#include <boost/graph/depth_first_search.hpp>
 
 template <typename OutputIterator>
 struct cyclic_topological_sort_visitor : public boost::dfs_visitor<>

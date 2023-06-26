@@ -1,5 +1,5 @@
 /* mockturtle: C++ logic network library
- * Copyright (C) 2018-2021  EPFL
+ * Copyright (C) 2018-2022  EPFL
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -62,18 +62,18 @@ inline std::pair<IntType, IntType> compute_montgomery_parameters( IntType c, Int
   // egcd
   IntType y = k % c;
   IntType x = c;
-  IntType a{0}, b{1};
+  IntType a{ 0 }, b{ 1 };
 
   while ( y )
   {
-    std::tie( a, b ) = std::pair<IntType, IntType>{b, a - ( x / y ) * b};
-    std::tie( x, y ) = std::pair<IntType, IntType>{y, x % y};
+    std::tie( a, b ) = std::pair<IntType, IntType>{ b, a - ( x / y ) * b };
+    std::tie( x, y ) = std::pair<IntType, IntType>{ y, x % y };
   }
 
-  const IntType ki = ( a > 0 ) ? ( a % c ) : ( c + (a % c) % c );
+  const IntType ki = ( a > 0 ) ? ( a % c ) : ( c + ( a % c ) % c );
   const IntType factor = ( k * ki - 1 ) / c;
 
-  return {k, factor};
+  return { k, factor };
 }
 
 template<class Ntk>
@@ -83,7 +83,7 @@ std::vector<signal<Ntk>> to_montgomery_form( Ntk& ntk, std::vector<signal<Ntk>> 
   uint32_t nbits = t.size() - rbits;
 
   std::vector<signal<Ntk>> t_rpart( t.begin(), t.begin() + rbits );
-  auto m = carry_ripple_multiplier( ntk, t_rpart, constant_word( ntk, np, rbits) );
+  auto m = carry_ripple_multiplier( ntk, t_rpart, constant_word( ntk, np, rbits ) );
   assert( m.size() == 2 * rbits );
   m.resize( rbits );
   assert( m.size() == rbits );
@@ -111,7 +111,7 @@ std::vector<signal<Ntk>> to_montgomery_form( Ntk& ntk, std::vector<signal<Ntk>> 
  *
  * Given two input words of the same size *k*, this function creates a circuit
  * that computes *k* output signals that represent \f$(a + b) \bmod (2^k -
- * c)\f$.  The first input word `a` is overriden and stores the output signals.
+ * c)\f$.  The first input word `a` is overridden and stores the output signals.
  */
 template<class Ntk>
 inline void modular_adder_inplace( Ntk& ntk, std::vector<signal<Ntk>>& a, std::vector<signal<Ntk>> const& b, uint64_t c )
@@ -144,7 +144,7 @@ inline void modular_adder_inplace( Ntk& ntk, std::vector<signal<Ntk>>& a, std::v
  *
  * Given two input words of the same size *k*, this function creates a circuit
  * that computes *k* output signals that represent \f$(a - b) \bmod (2^k -
- * c)\f$.  The first input word `a` is overriden and stores the output signals.
+ * c)\f$.  The first input word `a` is overridden and stores the output signals.
  */
 template<class Ntk>
 inline void modular_subtractor_inplace( Ntk& ntk, std::vector<signal<Ntk>>& a, std::vector<signal<Ntk>> const& b, uint64_t c )
@@ -174,7 +174,7 @@ inline void modular_subtractor_inplace( Ntk& ntk, std::vector<signal<Ntk>>& a, s
  *
  * Given two inputs words of the same size *k*, this function creates a circuit
  * that computes *k* output signals that represent \f$(ab) \bmod (2^k - c)\f$.
- * The first input word `a` is overriden and stores the output signals.
+ * The first input word `a` is overridden and stores the output signals.
  *
  * The implementation is based on Montgomery multiplication and includes the
  * encoding and decoding in and from the Montgomery number representation.
@@ -204,6 +204,6 @@ inline void modular_multiplication_inplace( Ntk& ntk, std::vector<signal<Ntk>>& 
   a = detail::to_montgomery_form( ntk, zero_extend( ntk, a, nbits + rbits ), n, rbits, np );
 }
 
-}
+} // namespace legacy
 
 } // namespace mockturtle

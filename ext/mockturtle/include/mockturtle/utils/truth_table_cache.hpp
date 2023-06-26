@@ -1,5 +1,5 @@
 /* mockturtle: C++ logic network library
- * Copyright (C) 2018-2021  EPFL
+ * Copyright (C) 2018-2022  EPFL
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -27,18 +27,20 @@
   \file truth_table_cache.hpp
   \brief Truth table cache
 
+  \author Alessandro Tempia Calvino
   \author Heinz Riener
   \author Mathias Soeken
 */
 
 #pragma once
 
-#include <unordered_map>
 #include <vector>
 
 #include <kitty/hash.hpp>
 #include <kitty/operations.hpp>
 #include <kitty/operators.hpp>
+
+#include <parallel_hashmap/phmap.h>
 
 namespace mockturtle
 {
@@ -102,15 +104,21 @@ public:
 
   /*! \brief Returns truth table for a given literal.
    *
-   * The funtion requires that `lit` is smaller than `size()`.
+   * The function requires that `lit` is smaller than `size()`.
    */
   TT operator[]( uint32_t lit ) const;
 
   /*! \brief Returns number of normalized truth tables in the cache. */
   auto size() const { return _data.size(); }
 
+  /*! \brief Resizes the cache.
+   *
+   * Reserve additional space for cache and data.
+   */
+  void resize( uint32_t capacity );
+
 private:
-  std::unordered_map<TT, uint32_t, kitty::hash<TT>> _indexes;
+  phmap::flat_hash_map<TT, uint32_t, kitty::hash<TT>> _indexes;
   std::vector<TT> _data;
 };
 
@@ -124,7 +132,7 @@ truth_table_cache<TT>::truth_table_cache( uint32_t capacity )
 template<typename TT>
 uint32_t truth_table_cache<TT>::insert( TT tt )
 {
-  uint32_t is_compl{0};
+  uint32_t is_compl{ 0 };
 
   if ( kitty::get_bit( tt, 0 ) )
   {
@@ -152,6 +160,13 @@ TT truth_table_cache<TT>::operator[]( uint32_t index ) const
 {
   auto& entry = _data[index >> 1];
   return ( index & 1 ) ? ~entry : entry;
+}
+
+template<typename TT>
+void truth_table_cache<TT>::resize( uint32_t capacity )
+{
+  _indexes.reserve( capacity );
+  _data.reserve( capacity );
 }
 
 } /* namespace mockturtle */
