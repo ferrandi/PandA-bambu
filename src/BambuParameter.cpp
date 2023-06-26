@@ -549,7 +549,7 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "        Enable multi-threaded simulation when using verilator\n\n"
       << "    --max-sim-cycles=<cycles>\n"
       << "        Specify the maximum number of cycles a HDL simulation may run.\n"
-      << "        (default 20000000).\n\n"
+      << "        (default 200000000).\n\n"
       << "    --accept-nonzero-return\n"
       << "        Do not assume that application main must return 0.\n\n"
       << "    --generate-vcd\n"
