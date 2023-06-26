@@ -2439,6 +2439,16 @@ static bool same_size_fields(const tree_nodeConstRef& t)
    {
       return false;
    }
+   if(tree_helper::IsStructType(t))
+   {
+      for(const auto& fld : GetPointerS<const record_type>(GET_CONST_NODE(t))->list_of_flds)
+      {
+         if(GetPointerS<const field_decl>(GET_CONST_NODE(fld))->is_bitfield())
+         {
+            return false;
+         }
+      }
+   }
 
    auto sizeFlds = 0ull;
    for(const auto& fldType : listOfTypes)
