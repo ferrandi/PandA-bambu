@@ -2048,7 +2048,12 @@ int BambuParameter::Exec()
          }
          case OPT_INTERFACE_XML_FILENAME:
          {
-            setOption(OPT_interface_xml_filename, GetPath(optarg));
+            auto XMLfilename = GetPath(optarg);
+            if(!boost::filesystem::exists(boost::filesystem::path(XMLfilename)))
+            {
+               THROW_ERROR("The file " + XMLfilename + " passed to --interface-xml-filename option does not exist");
+            }
+            setOption(OPT_interface_xml_filename, XMLfilename);
             break;
          }
          case OPT_ALTERA_ROOT:
