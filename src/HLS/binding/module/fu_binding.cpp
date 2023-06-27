@@ -2340,9 +2340,14 @@ void fu_binding::specialize_memory_unit(const HLS_managerRef HLSMgr, const hlsRe
       init_file_b.open(GetPath("0_" + init_filename));
    }
    unsigned long long elts_size;
-   fill_array_ref_memory(init_file_a, init_file_b, ar, vec_size, elts_size, HLSMgr->Rmem, is_memory_splitted, is_sds,
-                         fu_module);
+   fill_array_ref_memory(init_file_a, init_file_b, ar, vec_size, elts_size, HLSMgr->Rmem, TreeM, is_sds,
+                         boost::lexical_cast<unsigned int>(fu_module->GetParameter("BRAM_BITSIZE")));
    THROW_ASSERT(vec_size, "at least one element is expected");
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---elts_size " + STR(elts_size));
+   if(is_sds)
+   {
+      fu_module->SetParameter("ALIGNMENT", STR(elts_size));
+   }
    if(is_memory_splitted)
    {
       fu_module->SetParameter("MEMORY_INIT_file_a", "\"\"" + GetPath(init_filename) + "\"\"");
@@ -2359,14 +2364,16 @@ void fu_binding::specialize_memory_unit(const HLS_managerRef HLSMgr, const hlsRe
    fu_module->SetParameter("PRIVATE_MEMORY", HLSMgr->Rmem->is_private_memory(ar) ? "1" : "0");
    fu_module->SetParameter("READ_ONLY_MEMORY", HLSMgr->Rmem->is_read_only_variable(ar) ? "1" : "0");
 }
-#define CHANGE_SDS_MEMORY_LAYOUT 0
 
 void fu_binding::fill_array_ref_memory(std::ostream& init_file_a, std::ostream& init_file_b, unsigned int ar,
                                        unsigned long long& vec_size, unsigned long long& elts_size, const memoryRef mem,
-                                       bool is_memory_splitted, bool is_sds, module* fu_module)
+                                       tree_managerConstRef TM, bool is_sds, unsigned long long bitsize_align)
 {
-   unsigned long long bram_bitsize;
-   const auto ar_node = TreeM->CGetTreeReindex(ar);
+   init_file_b.put(0);
+   const auto is_memory_splitted = init_file_b.good();
+   init_file_b.seekp(std::ios_base::beg);
+
+   const auto ar_node = TM->CGetTreeReindex(ar);
    tree_nodeRef init_node;
    const auto vd = GetPointer<const var_decl>(GET_CONST_NODE(ar_node));
    if(vd && vd->init)
@@ -2382,7 +2389,7 @@ void fu_binding::fill_array_ref_memory(std::ostream& init_file_a, std::ostream& 
    if(tree_helper::IsArrayEquivType(array_type_node))
    {
       std::vector<unsigned long long> dims;
-      tree_helper::get_array_dim_and_bitsize(TreeM, array_type_node->index, dims, elts_size);
+      tree_helper::get_array_dim_and_bitsize(TM, array_type_node->index, dims, elts_size);
       THROW_ASSERT(dims.size(), "something wrong happened");
       vec_size = std::accumulate(dims.begin(), dims.end(), 1ULL,
                                  [](unsigned long long a, unsigned long long b) { return a * b; });
@@ -2411,38 +2418,25 @@ void fu_binding::fill_array_ref_memory(std::ostream& init_file_a, std::ostream& 
    {
       THROW_ERROR("Type not supported: " + GET_CONST_NODE(array_type_node)->get_kind_text());
    }
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---elts_size " + STR(elts_size));
    if(is_sds)
    {
-      fu_module->SetParameter("ALIGNMENT", STR(elts_size));
-      bram_bitsize = elts_size;
-#if CHANGE_SDS_MEMORY_LAYOUT
-      if(vd && vd->bit_values.size())
-      {
-         elts_size = element_align = static_cast<unsigned int>(vd->bit_values.size());
-      }
-#endif
+      bitsize_align = elts_size;
    }
    else
    {
-      bram_bitsize = boost::lexical_cast<unsigned int>(fu_module->GetParameter("BRAM_BITSIZE"));
-      if(elts_size % 8)
-      {
-         elts_size = 8 * (elts_size / 8) + 8;
-      }
+      elts_size = get_aligned_bitsize(elts_size, 8ULL);
    }
 
-   auto nbyte_on_memory = bram_bitsize / 8;
+   const auto nbyte_on_memory = bitsize_align / 8;
 
    if(init_node &&
       ((GetPointer<constructor>(GET_NODE(init_node)) &&
-        GetPointer<constructor>(GET_NODE(init_node))->list_of_idx_valu.size()) ||
-       (GetPointer<string_cst>(GET_NODE(init_node)) && GetPointer<string_cst>(GET_NODE(init_node))->strg != "") ||
+        GetPointerS<constructor>(GET_NODE(init_node))->list_of_idx_valu.size()) ||
+       (GetPointer<string_cst>(GET_NODE(init_node)) && GetPointerS<string_cst>(GET_NODE(init_node))->strg.size()) ||
        (!GetPointer<constructor>(GET_NODE(init_node)) && !GetPointer<string_cst>(GET_NODE(init_node)))))
    {
       std::vector<std::string> init_string;
-      write_init(TreeM, ar_node, init_node, init_string, mem, element_align);
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---element_align " + STR(element_align));
+      write_init(TM, ar_node, init_node, init_string, mem, element_align);
       if(is_sds && (element_align == 0 || elts_size == element_align))
       {
          THROW_ASSERT(!is_memory_splitted, "unexpected condition");
@@ -2468,7 +2462,6 @@ void fu_binding::fill_array_ref_memory(std::ostream& init_file_a, std::ostream& 
       {
          std::vector<std::string> eightbit_string;
          std::string bits_offset = "";
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---nbyte_on_memory " + STR(nbyte_on_memory));
          for(unsigned int l = 0; l < init_string.size(); ++l)
          {
             if(init_string[l].size() < 8 && init_string.size() == 1)

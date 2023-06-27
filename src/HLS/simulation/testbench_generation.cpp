@@ -876,47 +876,19 @@ unsigned long long TestbenchGeneration::generate_init_file(const std::string& da
                                                            const tree_managerConstRef TM, unsigned int var,
                                                            const memoryRef mem)
 {
+   std::stringstream init_bits;
+   std::ofstream useless;
+   unsigned long long vec_size = 0, elts_size;
+   const auto var_type = tree_helper::CGetType(TM->CGetTreeReindex(var));
+   const auto bitsize_align = GetPointer<const type_node>(GET_CONST_NODE(var_type))->algn;
+   THROW_ASSERT((bitsize_align % 8) == 0, "Alignement is not byte aligned.");
+   fu_binding::fill_array_ref_memory(init_bits, useless, var, vec_size, elts_size, mem, TM, false, bitsize_align);
+
    std::ofstream init_dat(dat_filename, std::ios::binary);
-   std::vector<std::string> init_els;
-   const auto tn = TM->CGetTreeReindex(var);
-   const auto init_node = [&]() -> tree_nodeRef {
-      const auto vd = GetPointer<const var_decl>(GET_CONST_NODE(tn));
-      if(vd && vd->init)
-      {
-         return vd->init;
-      }
-      return nullptr;
-   }();
-
-   if(init_node && (!GetPointer<const constructor>(GET_CONST_NODE(init_node)) ||
-                    GetPointerS<const constructor>(GET_CONST_NODE(init_node))->list_of_idx_valu.size()))
+   while(!init_bits.eof())
    {
-      fu_binding::write_init(TM, tn, init_node, init_els, mem, 0);
-   }
-   else if(GET_CONST_NODE(tn)->get_kind() == string_cst_K || GET_CONST_NODE(tn)->get_kind() == integer_cst_K ||
-           GET_CONST_NODE(tn)->get_kind() == real_cst_K)
-   {
-      fu_binding::write_init(TM, tn, tn, init_els, mem, 0);
-   }
-   else if(!GetPointer<gimple_call>(GET_CONST_NODE(tn)))
-   {
-      const auto zero_bytes_count = [&]() {
-         if(tree_helper::IsArrayType(tn))
-         {
-            const auto type = tree_helper::CGetType(tn);
-            const auto data_bitsize = tree_helper::GetArrayElementSize(type);
-            const auto num_elements = tree_helper::GetArrayTotalSize(type);
-            return get_aligned_bitsize(data_bitsize) * num_elements;
-         }
-         return get_aligned_bitsize(tree_helper::Size(tn));
-      }();
-      std::fill_n(std::ostream_iterator<char>(init_dat), zero_bytes_count, 0);
-      return zero_bytes_count;
-   }
-
-   unsigned long long byte_count = 0;
-   for(const auto& bitstring : init_els)
-   {
+      std::string bitstring;
+      init_bits >> bitstring;
       THROW_ASSERT(bitstring.size() % 8 == 0, "Memory word initializer is not aligned");
       size_t i;
       // Memory is little-endian, thus last byte goes in first
@@ -929,7 +901,8 @@ unsigned long long TestbenchGeneration::generate_init_file(const std::string& da
          }
          init_dat.put(byteval);
       }
-      byte_count += bitstring.size() / 8;
    }
-   return byte_count;
+   unsigned long long bytes = static_cast<unsigned long long>(init_dat.tellp());
+   THROW_ASSERT((bytes % (bitsize_align / 8)) == 0, "Memory initalization bytes not aligned");
+   return bytes;
 }
