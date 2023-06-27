@@ -464,19 +464,25 @@ for(i = 0; i < sizeof(memmap_init) / sizeof(*memmap_init); ++i)
 FILE* fp = fopen(memmap_init[i].filename, "rb");
 if(!fp)
 {
-error("Unable to open file: %s", memmap_init[i].filename);
-perror("");
-exit(EXIT_FAILURE);
+error("Unable to open file: %s\n", memmap_init[i].filename);
+perror("Unable to open memory variable initialization file");
+__m_signal_to(MDPI_ENTITY_SIM, MDPI_COSIM_END);
+pthread_exit((void*)((size_t)(MDPI_COSIM_ABORT)));
 }
 if(memmap_init[i].addr == NULL)
 {
 memmap_init[i].addr = malloc(memmap_init[i].size);
 }
-if(fread(memmap_init[i].addr, 1, memmap_init[i].size, fp) != memmap_init[i].size)
+size_t nbytes = fread(memmap_init[i].addr, 1, memmap_init[i].size, fp);
+if(nbytes != memmap_init[i].size)
 {
-error("Unable to read %zu bytes from file: %s", memmap_init[i].size, memmap_init[i].filename);
-perror("");
-exit(EXIT_FAILURE);
+error("Only %zu/%zu bytes were read from file: %s\n", nbytes, memmap_init[i].size, memmap_init[i].filename);
+if(ferror(fp))
+{
+perror("Unable to read from memory variable initialization file");
+}
+__m_signal_to(MDPI_ENTITY_SIM, MDPI_COSIM_END);
+pthread_exit((void*)((size_t)(MDPI_COSIM_ABORT)));
 }
 fclose(fp);
 __m_memmap(memmap_init[i].addrmap, memmap_init[i].addr);

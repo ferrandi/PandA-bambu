@@ -85,6 +85,7 @@ EXTERN_C void m_init()
    retval = pthread_create(&__m_cosim_thread, NULL, __m_cosim_main, NULL);
    if(retval)
    {
+      error("An error occurred on co-simulation thread creation.\n");
       perror("MDPI library initialization error");
       exit(EXIT_FAILURE);
    }
@@ -203,7 +204,7 @@ static void __attribute__((noinline)) __m_read(const uint16_t bsize, svLogicVecV
       }
       catch(std::exception& e)
       {
-         error("Memory load exception: illegal access at " BPTR_FORMAT "\n", bptr_to_int(addr));
+         error("Memory load exception: illegal access at " BPTR_FORMAT "\n", bptr_to_int(__addr));
          abort();
       }
    }
