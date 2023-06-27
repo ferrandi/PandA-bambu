@@ -95,13 +95,13 @@
     end
   endfunction
 `endif
- parameter NUM_ch = PORTSIZE_Min_oe_ram;
+ localparam NUM_ch = PORTSIZE_Min_oe_ram;
 `ifdef _SIM_HAVE_CLOG2
-  parameter BITSIZE_ch = $clog2(NUM_ch);
+  localparam BITSIZE_ch = $clog2(NUM_ch);
 `else
-  parameter BITSIZE_ch = log2(NUM_ch);
+  localparam BITSIZE_ch = log2(NUM_ch);
 `endif
- parameter SEL_SIZE = BITSIZE_ch;
+ localparam SEL_SIZE = BITSIZE_ch;
 wire [(NUM_ch*BITSIZE_in2)-1:0] tmp_addr;
 wire [NUM_ch-1:0] temp_done_port;
 wire [NUM_ch-1:0] sel_LOAD_wire;

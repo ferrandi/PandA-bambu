@@ -1264,13 +1264,13 @@ assign proxy_sel_STORE = int_sel_STORE;"/>
   endfunction
 `endif
 `ifdef _SIM_HAVE_CLOG2
-  parameter nbit_addr = BITSIZE_S_addr_ram/*n_bytes ==  1 ? 1 : $clog2(n_bytes)*/;
-  parameter nbits_address_space_rangesize = $clog2(address_space_rangesize);
-  parameter nbits_byte_offset = n_byte_on_databus==1 ? 1 : $clog2(n_byte_on_databus);
+  localparam nbit_addr = BITSIZE_S_addr_ram/*n_bytes ==  1 ? 1 : $clog2(n_bytes)*/;
+  localparam nbits_address_space_rangesize = $clog2(address_space_rangesize);
+  localparam nbits_byte_offset = n_byte_on_databus==1 ? 1 : $clog2(n_byte_on_databus);
 `else
-  parameter nbit_addr = BITSIZE_S_addr_ram/*n_bytes ==  1 ? 1 : log2(n_bytes)*/;
-  parameter nbits_address_space_rangesize = log2(address_space_rangesize);
-  parameter nbits_byte_offset = n_byte_on_databus==1 ? 1 : log2(n_byte_on_databus);
+  localparam nbit_addr = BITSIZE_S_addr_ram/*n_bytes ==  1 ? 1 : log2(n_bytes)*/;
+  localparam nbits_address_space_rangesize = log2(address_space_rangesize);
+  localparam nbits_byte_offset = n_byte_on_databus==1 ? 1 : log2(n_byte_on_databus);
 `endif
 
 
@@ -1925,15 +1925,15 @@ begin
   endfunction
 `endif
 `ifdef _SIM_HAVE_CLOG2
-  parameter nbit_addr = BITSIZE_S_addr_ram/*n_bytes ==  1 ? 1 : $clog2(n_bytes)*/;
-  parameter nbits_byte_offset = n_byte_on_databus==1 ? 1 : $clog2(n_byte_on_databus);
-  parameter nbits_address_space_rangesize = $clog2(address_space_rangesize);
+  localparam nbit_addr = BITSIZE_S_addr_ram/*n_bytes ==  1 ? 1 : $clog2(n_bytes)*/;
+  localparam nbits_byte_offset = n_byte_on_databus==1 ? 1 : $clog2(n_byte_on_databus);
+  localparam nbits_address_space_rangesize = $clog2(address_space_rangesize);
 `else
-  parameter nbit_addr = BITSIZE_S_addr_ram/*n_bytes ==  1 ? 1 : log2(n_bytes)*/;
-  parameter nbits_address_space_rangesize = log2(address_space_rangesize);
-  parameter nbits_byte_offset = n_byte_on_databus==1 ? 1 : log2(n_byte_on_databus);
+  localparam nbit_addr = BITSIZE_S_addr_ram/*n_bytes ==  1 ? 1 : log2(n_bytes)*/;
+  localparam nbits_address_space_rangesize = log2(address_space_rangesize);
+  localparam nbits_byte_offset = n_byte_on_databus==1 ? 1 : log2(n_byte_on_databus);
 `endif
- parameter memory_bitsize = 2*BRAM_BITSIZE;
+ localparam memory_bitsize = 2*BRAM_BITSIZE;
 
 function [n_byte_on_databus*max_n_writes-1:0] CONV;
   input [n_byte_on_databus*max_n_writes-1:0] po2;
@@ -5185,9 +5185,9 @@ parameter n_bytes = (n_elements*data_size)/8 == 0 ? 1 : (n_elements*data_size)/8
 parameter n_byte_on_databus = BRAM_BITSIZE/8;
 parameter n_mem_elements = n_bytes/(n_byte_on_databus) + (n_bytes%(n_byte_on_databus) == 0 ? 0 : 1);
 `ifdef _SIM_HAVE_CLOG2
-  parameter nbit_read_addr = n_mem_elements == 1 ? 1 : $clog2(n_mem_elements);
+  localparam nbit_read_addr = n_mem_elements == 1 ? 1 : $clog2(n_mem_elements);
 `else
-  parameter nbit_read_addr = n_mem_elements == 1 ? 1 : log2(n_mem_elements);
+  localparam nbit_read_addr = n_mem_elements == 1 ? 1 : log2(n_mem_elements);
 `endif
   
 wire [nbit_read_addr-1:0] memory_addr_a;
@@ -5402,9 +5402,9 @@ parameter memory_bitsize = 2*BRAM_BITSIZE;
 parameter n_byte_on_databus = memory_bitsize/8;
 parameter n_mem_elements = n_bytes/(n_byte_on_databus) + (n_bytes%(n_byte_on_databus) == 0 ? 0 : 1);
 `ifdef _SIM_HAVE_CLOG2
-  parameter nbit_read_addr = n_mem_elements == 1 ? 1 : $clog2(n_mem_elements);
+  localparam nbit_read_addr = n_mem_elements == 1 ? 1 : $clog2(n_mem_elements);
 `else
-  parameter nbit_read_addr = n_mem_elements == 1 ? 1 : log2(n_mem_elements);
+  localparam nbit_read_addr = n_mem_elements == 1 ? 1 : log2(n_mem_elements);
 `endif
 parameter max_n_writes = PORTSIZE_sel_STORE &gt; PORTSIZE_S_we_ram ? PORTSIZE_sel_STORE : PORTSIZE_S_we_ram;
 parameter max_n_reads = PORTSIZE_sel_LOAD &gt; PORTSIZE_S_oe_ram ? PORTSIZE_sel_LOAD : PORTSIZE_S_oe_ram;
@@ -5575,9 +5575,9 @@ parameter n_bytes = (n_elements*data_size)/8 == 0 ? 1 : (n_elements*data_size)/8
 parameter n_byte_on_databus = BRAM_BITSIZE/8;
 parameter n_mem_elements = n_bytes/(n_byte_on_databus) + (n_bytes%(n_byte_on_databus) == 0 ? 0 : 1);
 `ifdef _SIM_HAVE_CLOG2
-  parameter nbit_read_addr = n_mem_elements == 1 ? 1 : $clog2(n_mem_elements);
+  localparam nbit_read_addr = n_mem_elements == 1 ? 1 : $clog2(n_mem_elements);
 `else
-  parameter nbit_read_addr = n_mem_elements == 1 ? 1 : log2(n_mem_elements);
+  localparam nbit_read_addr = n_mem_elements == 1 ? 1 : log2(n_mem_elements);
 `endif
   
 wire [nbit_read_addr-1:0] memory_addr_a;
@@ -5822,9 +5822,9 @@ parameter memory_bitsize = 2*BRAM_BITSIZE;
 parameter n_byte_on_databus = memory_bitsize/8;
 parameter n_mem_elements = n_bytes/(n_byte_on_databus) + (n_bytes%(n_byte_on_databus) == 0 ? 0 : 1);
 `ifdef _SIM_HAVE_CLOG2
-  parameter nbit_read_addr = n_mem_elements == 1 ? 1 : $clog2(n_mem_elements);
+  localparam nbit_read_addr = n_mem_elements == 1 ? 1 : $clog2(n_mem_elements);
 `else
-  parameter nbit_read_addr = n_mem_elements == 1 ? 1 : log2(n_mem_elements);
+  localparam nbit_read_addr = n_mem_elements == 1 ? 1 : log2(n_mem_elements);
 `endif
 parameter max_n_writes = PORTSIZE_sel_STORE &gt; PORTSIZE_S_we_ram ? PORTSIZE_sel_STORE : PORTSIZE_S_we_ram;
 parameter max_n_reads = PORTSIZE_sel_LOAD &gt; PORTSIZE_S_oe_ram ? PORTSIZE_sel_LOAD : PORTSIZE_S_oe_ram;
@@ -5995,9 +5995,9 @@ parameter n_bytes = (n_elements*data_size)/8;
 parameter n_byte_on_databus = BRAM_BITSIZE/8;
 parameter n_mem_elements = n_bytes/(n_byte_on_databus) + (n_bytes%(n_byte_on_databus) == 0 ? 0 : 1);
 `ifdef _SIM_HAVE_CLOG2
-  parameter nbit_read_addr = n_mem_elements == 1 ? 1 : $clog2(n_mem_elements);
+  localparam nbit_read_addr = n_mem_elements == 1 ? 1 : $clog2(n_mem_elements);
 `else
-  parameter nbit_read_addr = n_mem_elements == 1 ? 1 : log2(n_mem_elements);
+  localparam nbit_read_addr = n_mem_elements == 1 ? 1 : log2(n_mem_elements);
 `endif
   
 wire [nbit_read_addr-1:0] memory_addr_a;
@@ -6121,9 +6121,9 @@ parameter memory_bitsize = 2*BRAM_BITSIZE;
 parameter n_byte_on_databus = memory_bitsize/8;
 parameter n_mem_elements = n_bytes/(n_byte_on_databus) + (n_bytes%(n_byte_on_databus) == 0 ? 0 : 1);
 `ifdef _SIM_HAVE_CLOG2
-  parameter nbit_read_addr = n_mem_elements == 1 ? 1 : $clog2(n_mem_elements);
+  localparam nbit_read_addr = n_mem_elements == 1 ? 1 : $clog2(n_mem_elements);
 `else
-  parameter nbit_read_addr = n_mem_elements == 1 ? 1 : log2(n_mem_elements);
+  localparam nbit_read_addr = n_mem_elements == 1 ? 1 : log2(n_mem_elements);
 `endif
 parameter max_n_writes = PORTSIZE_sel_STORE &gt; PORTSIZE_S_we_ram ? PORTSIZE_sel_STORE : PORTSIZE_S_we_ram;
 parameter max_n_reads = PORTSIZE_sel_LOAD &gt; PORTSIZE_S_oe_ram ? PORTSIZE_sel_LOAD : PORTSIZE_S_oe_ram;
@@ -6747,9 +6747,9 @@ endgenerate"/>
   endfunction
 `endif
 `ifdef _SIM_HAVE_CLOG2
-  parameter nbit_write = PORTSIZE_Waddr == 1 ? 1 : $clog2(PORTSIZE_Waddr);
+  localparam nbit_write = PORTSIZE_Waddr == 1 ? 1 : $clog2(PORTSIZE_Waddr);
 `else
-  parameter nbit_write = PORTSIZE_Waddr == 1 ? 1 : log2(PORTSIZE_Waddr);
+  localparam nbit_write = PORTSIZE_Waddr == 1 ? 1 : log2(PORTSIZE_Waddr);
 `endif
 wire [PORTSIZE_Raddr*PORTSIZE_Waddr*BITSIZE_dout_value-1:0] dout_a;
 wire [PORTSIZE_Raddr*PORTSIZE_Waddr*BITSIZE_dout_value-1:0]dout_a_swapped;
@@ -6808,7 +6808,7 @@ STD_LIVE_VALUE_TABLE #(.BITSIZE_we_a(BITSIZE_we_a), .PORTSIZE_we_a(PORTSIZE_we_a
           <port_o id="dout_value" dir="OUT">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
           </port_o>
-          <NP_functionality LIBRARY="STD_SP_BRAM_B we_a Raddr Waddr din_value dout_value MEMORY_INIT_file n_mem_elements BRAM_BITSIZE HIGH_LATENCY" IP_COMPONENT="STD_SP_BRAM_BYTE" VERILOG_PROVIDED="parameter nbytes_per_word = BRAM_BITSIZE / 8;
+          <NP_functionality LIBRARY="STD_SP_BRAM_B we_a Raddr Waddr din_value dout_value MEMORY_INIT_file n_mem_elements BRAM_BITSIZE HIGH_LATENCY" IP_COMPONENT="STD_SP_BRAM_BYTE" VERILOG_PROVIDED="localparam nbytes_per_word = BRAM_BITSIZE / 8;
 generate
 genvar i1;
   for (i1=0; i1&lt;nbytes_per_word; i1=i1+1)
@@ -6900,9 +6900,9 @@ endgenerate"/>
   endfunction
 `endif
 `ifdef _SIM_HAVE_CLOG2
-  parameter nbit_write = PORTSIZE_Addr == 1 ? 1 : $clog2(PORTSIZE_Addr);
+  localparam nbit_write = PORTSIZE_Addr == 1 ? 1 : $clog2(PORTSIZE_Addr);
 `else
-  parameter nbit_write = PORTSIZE_Addr == 1 ? 1 : log2(PORTSIZE_Addr);
+  localparam nbit_write = PORTSIZE_Addr == 1 ? 1 : log2(PORTSIZE_Addr);
 `endif
 wire [PORTSIZE_Addr*PORTSIZE_Addr*BITSIZE_dout_value-1:0] dout_a;
 wire [PORTSIZE_Addr-1:0] we_a_merged;
@@ -6964,7 +6964,7 @@ STD_LIVE_VALUE_TABLE #(.BITSIZE_we_a(1), .PORTSIZE_we_a(PORTSIZE_we_a), .BITSIZE
           <port_vector_o id="dout_value" dir="OUT">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_vector_o>
-          <NP_functionality LIBRARY="STD_NRNW_BRAM_SB we_a Addr din_value dout_value MEMORY_INIT_file n_mem_elements BRAM_BITSIZE HIGH_LATENCY" IP_COMPONENT="STD_NRNW_BRAM_BYTE" VERILOG_PROVIDED="parameter nbytes_per_word = BRAM_BITSIZE / 8;
+          <NP_functionality LIBRARY="STD_NRNW_BRAM_SB we_a Addr din_value dout_value MEMORY_INIT_file n_mem_elements BRAM_BITSIZE HIGH_LATENCY" IP_COMPONENT="STD_NRNW_BRAM_BYTE" VERILOG_PROVIDED="localparam nbytes_per_word = BRAM_BITSIZE / 8;
 wire [(PORTSIZE_din_value*BITSIZE_din_value)+(-1):0] din_value_swapped;
 wire [(PORTSIZE_dout_value*BITSIZE_dout_value)+(-1):0] dout_value_swapped;
 wire [(PORTSIZE_we_a*BITSIZE_we_a)+(-1):0] we_swapped;
@@ -9105,9 +9105,9 @@ parameter n_bytes = (n_elements*data_size)/8;
 parameter n_byte_on_databus = BRAM_BITSIZE/8;
 parameter n_mem_elements = n_bytes/(n_byte_on_databus) + (n_bytes%(n_byte_on_databus) == 0 ? 0 : 1);
 `ifdef _SIM_HAVE_CLOG2
-  parameter nbit_read_addr = n_mem_elements == 1 ? 1 : $clog2(n_mem_elements);
+  localparam nbit_read_addr = n_mem_elements == 1 ? 1 : $clog2(n_mem_elements);
 `else
-  parameter nbit_read_addr = n_mem_elements == 1 ? 1 : log2(n_mem_elements);
+  localparam nbit_read_addr = n_mem_elements == 1 ? 1 : log2(n_mem_elements);
 `endif
   
 wire [nbit_read_addr-1:0] memory_addr_a;
@@ -9225,9 +9225,9 @@ parameter n_bytes = (n_elements*data_size)/8;
 parameter n_byte_on_databus = BRAM_BITSIZE/8;
 parameter n_mem_elements = n_bytes/(n_byte_on_databus) + (n_bytes%(n_byte_on_databus) == 0 ? 0 : 1);
 `ifdef _SIM_HAVE_CLOG2
-  parameter nbit_read_addr = n_mem_elements == 1 ? 1 : $clog2(n_mem_elements);
+  localparam nbit_read_addr = n_mem_elements == 1 ? 1 : $clog2(n_mem_elements);
 `else
-  parameter nbit_read_addr = n_mem_elements == 1 ? 1 : log2(n_mem_elements);
+  localparam nbit_read_addr = n_mem_elements == 1 ? 1 : log2(n_mem_elements);
 `endif
   
 wire [nbit_read_addr-1:0] memory_addr_a;
@@ -9351,9 +9351,9 @@ parameter memory_bitsize = 2*BRAM_BITSIZE;
 parameter n_byte_on_databus = memory_bitsize/8;
 parameter n_mem_elements = n_bytes/(n_byte_on_databus) + (n_bytes%(n_byte_on_databus) == 0 ? 0 : 1);
 `ifdef _SIM_HAVE_CLOG2
-  parameter nbit_read_addr = n_mem_elements == 1 ? 1 : $clog2(n_mem_elements);
+  localparam nbit_read_addr = n_mem_elements == 1 ? 1 : $clog2(n_mem_elements);
 `else
-  parameter nbit_read_addr = n_mem_elements == 1 ? 1 : log2(n_mem_elements);
+  localparam nbit_read_addr = n_mem_elements == 1 ? 1 : log2(n_mem_elements);
 `endif
 parameter max_n_writes = PORTSIZE_sel_STORE &gt; PORTSIZE_S_we_ram ? PORTSIZE_sel_STORE : PORTSIZE_S_we_ram;
 parameter max_n_reads = PORTSIZE_sel_LOAD &gt; PORTSIZE_S_oe_ram ? PORTSIZE_sel_LOAD : PORTSIZE_S_oe_ram;
@@ -9491,9 +9491,9 @@ parameter memory_bitsize = 2*BRAM_BITSIZE;
 parameter n_byte_on_databus = memory_bitsize/8;
 parameter n_mem_elements = n_bytes/(n_byte_on_databus) + (n_bytes%(n_byte_on_databus) == 0 ? 0 : 1);
 `ifdef _SIM_HAVE_CLOG2
-  parameter nbit_read_addr = n_mem_elements == 1 ? 1 : $clog2(n_mem_elements);
+  localparam nbit_read_addr = n_mem_elements == 1 ? 1 : $clog2(n_mem_elements);
 `else
-  parameter nbit_read_addr = n_mem_elements == 1 ? 1 : log2(n_mem_elements);
+  localparam nbit_read_addr = n_mem_elements == 1 ? 1 : log2(n_mem_elements);
 `endif
 parameter max_n_writes = PORTSIZE_sel_STORE &gt; PORTSIZE_S_we_ram ? PORTSIZE_sel_STORE : PORTSIZE_S_we_ram;
 parameter max_n_reads = PORTSIZE_sel_LOAD &gt; PORTSIZE_S_oe_ram ? PORTSIZE_sel_LOAD : PORTSIZE_S_oe_ram;
@@ -10038,13 +10038,13 @@ parameter n_byte_on_databus = ALIGNMENT/8;
 parameter nbit_addr = BITSIZE_in2 &gt; BITSIZE_proxy_in2 ? BITSIZE_in2 : BITSIZE_proxy_in2;
 
 `ifdef _SIM_HAVE_CLOG2
-  parameter nbit_read_addr = n_elements == 1 ? 1 : $clog2(n_elements);
-  parameter nbits_byte_offset = n_byte_on_databus&lt;=1 ? 0 : $clog2(n_byte_on_databus);
-  parameter nbits_address_space_rangesize = $clog2(address_space_rangesize); 
+  localparam nbit_read_addr = n_elements == 1 ? 1 : $clog2(n_elements);
+  localparam nbits_byte_offset = n_byte_on_databus&lt;=1 ? 0 : $clog2(n_byte_on_databus);
+  localparam nbits_address_space_rangesize = $clog2(address_space_rangesize); 
 `else
-  parameter nbit_read_addr = n_elements == 1 ? 1 : log2(n_elements);
-  parameter nbits_byte_offset = n_byte_on_databus&lt;=1 ? 0 : log2(n_byte_on_databus);
-  parameter nbits_address_space_rangesize = log2(address_space_rangesize); 
+  localparam nbit_read_addr = n_elements == 1 ? 1 : log2(n_elements);
+  localparam nbits_byte_offset = n_byte_on_databus&lt;=1 ? 0 : log2(n_byte_on_databus);
+  localparam nbits_address_space_rangesize = log2(address_space_rangesize); 
 `endif
   
 wire [nbit_read_addr-1:0] memory_addr_a;
@@ -10313,13 +10313,13 @@ parameter n_byte_on_databus = ALIGNMENT/8;
 parameter nbit_addr = BITSIZE_in2 &gt; BITSIZE_proxy_in2 ? BITSIZE_in2 : BITSIZE_proxy_in2;
 
 `ifdef _SIM_HAVE_CLOG2
-  parameter nbit_read_addr = n_elements == 1 ? 1 : $clog2(n_elements);
-  parameter nbits_byte_offset = n_byte_on_databus&lt;=1 ? 0 : $clog2(n_byte_on_databus);
-  parameter nbits_address_space_rangesize = $clog2(address_space_rangesize);
+  localparam nbit_read_addr = n_elements == 1 ? 1 : $clog2(n_elements);
+  localparam nbits_byte_offset = n_byte_on_databus&lt;=1 ? 0 : $clog2(n_byte_on_databus);
+  localparam nbits_address_space_rangesize = $clog2(address_space_rangesize);
 `else
-  parameter nbit_read_addr = n_elements == 1 ? 1 : log2(n_elements);
-  parameter nbits_byte_offset = n_byte_on_databus&lt;=1 ? 0 : log2(n_byte_on_databus);
-  parameter nbits_address_space_rangesize = log2(address_space_rangesize);
+  localparam nbit_read_addr = n_elements == 1 ? 1 : log2(n_elements);
+  localparam nbits_byte_offset = n_byte_on_databus&lt;=1 ? 0 : log2(n_byte_on_databus);
+  localparam nbits_address_space_rangesize = log2(address_space_rangesize);
 `endif
   
 wire [nbit_read_addr-1:0] memory_addr_a;
@@ -10778,11 +10778,11 @@ begin
 parameter n_byte_on_databus = ALIGNMENT/8;
 parameter nbit_addr = BITSIZE_in2 &gt; BITSIZE_proxy_in2 ? BITSIZE_in2 : BITSIZE_proxy_in2;
 `ifdef _SIM_HAVE_CLOG2
-  parameter nbit_read_addr = n_elements == 1 ? 1 : $clog2(n_elements);
-  parameter nbits_byte_offset = n_byte_on_databus&lt;=1 ? 0 : $clog2(n_byte_on_databus);
+  localparam nbit_read_addr = n_elements == 1 ? 1 : $clog2(n_elements);
+  localparam nbits_byte_offset = n_byte_on_databus&lt;=1 ? 0 : $clog2(n_byte_on_databus);
 `else
-  parameter nbit_read_addr = n_elements == 1 ? 1 : log2(n_elements);
-  parameter nbits_byte_offset = n_byte_on_databus&lt;=1 ? 0 : log2(n_byte_on_databus);
+  localparam nbit_read_addr = n_elements == 1 ? 1 : log2(n_elements);
+  localparam nbits_byte_offset = n_byte_on_databus&lt;=1 ? 0 : log2(n_byte_on_databus);
 `endif
 parameter max_n_writes = PORTSIZE_sel_STORE;
 parameter max_n_reads = PORTSIZE_sel_LOAD;
@@ -11068,13 +11068,13 @@ assign Sout_DataRdy = Sin_DataRdy;"/>
 parameter n_byte_on_databus = ALIGNMENT/8;
 parameter nbit_addr = BITSIZE_in2 &gt; BITSIZE_proxy_in2 ? BITSIZE_in2 : BITSIZE_proxy_in2;
 `ifdef _SIM_HAVE_CLOG2
-  parameter nbit_read_addr = n_elements == 1 ? 1 : $clog2(n_elements);
-  parameter nbits_address_space_rangesize = $clog2(address_space_rangesize);
-  parameter nbits_byte_offset = n_byte_on_databus&lt;=1 ? 0 : $clog2(n_byte_on_databus);
+  localparam nbit_read_addr = n_elements == 1 ? 1 : $clog2(n_elements);
+  localparam nbits_address_space_rangesize = $clog2(address_space_rangesize);
+  localparam nbits_byte_offset = n_byte_on_databus&lt;=1 ? 0 : $clog2(n_byte_on_databus);
 `else
-  parameter nbit_read_addr = n_elements == 1 ? 1 : log2(n_elements);
-  parameter nbits_address_space_rangesize = log2(address_space_rangesize);
-  parameter nbits_byte_offset = n_byte_on_databus&lt;=1 ? 0 : log2(n_byte_on_databus);
+  localparam nbit_read_addr = n_elements == 1 ? 1 : log2(n_elements);
+  localparam nbits_address_space_rangesize = log2(address_space_rangesize);
+  localparam nbits_byte_offset = n_byte_on_databus&lt;=1 ? 0 : log2(n_byte_on_databus);
 `endif
 parameter max_n_writes = PORTSIZE_sel_STORE;
 parameter max_n_reads = PORTSIZE_sel_LOAD;

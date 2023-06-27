@@ -268,7 +268,7 @@ end process;"/>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="INT" size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="trunc_mod_expr_FU in1 in2 out1 PIPE_PARAMETER" VERILOG_PROVIDED="parameter required_iterations = BITSIZE_in1 &gt; PIPE_PARAMETER ? BITSIZE_in1 : PIPE_PARAMETER;
+          <NP_functionality LIBRARY="trunc_mod_expr_FU in1 in2 out1 PIPE_PARAMETER" VERILOG_PROVIDED="localparam required_iterations = BITSIZE_in1 &gt; PIPE_PARAMETER ? BITSIZE_in1 : PIPE_PARAMETER;
 parameter STEPS = ((required_iterations)/(PIPE_PARAMETER+1)) + (((required_iterations)%(PIPE_PARAMETER+1)) ? 1 : 0);
 parameter num_length = STEPS * (PIPE_PARAMETER+1);
 parameter denom_length = BITSIZE_in2+1;
@@ -565,7 +565,7 @@ assign xdenom = in2 &gt;= $signed({BITSIZE_in2{1&apos;b0}}) ? in2 : -in2;
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="UINT" size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="ui_trunc_mod_expr_FU in1 in2 out1 PIPE_PARAMETER" VERILOG_PROVIDED="parameter required_iterations = BITSIZE_in1 &gt; PIPE_PARAMETER ? BITSIZE_in1 : PIPE_PARAMETER;
+          <NP_functionality LIBRARY="ui_trunc_mod_expr_FU in1 in2 out1 PIPE_PARAMETER" VERILOG_PROVIDED="localparam required_iterations = BITSIZE_in1 &gt; PIPE_PARAMETER ? BITSIZE_in1 : PIPE_PARAMETER;
 parameter STEPS = ((required_iterations)/(PIPE_PARAMETER+1)) + (((required_iterations)%(PIPE_PARAMETER+1)) ? 1 : 0);
 parameter num_length = STEPS * (PIPE_PARAMETER+1);
 parameter denom_length = BITSIZE_in2+1;
@@ -929,9 +929,9 @@ assign xdenom = in2;"/>
   endfunction
 `endif
 `ifdef _SIM_HAVE_CLOG2
-  parameter arg2_bitsize = $clog2(PRECISION);
+  localparam arg2_bitsize = $clog2(PRECISION);
 `else
-  parameter arg2_bitsize = log2(PRECISION);
+  localparam arg2_bitsize = log2(PRECISION);
 `endif
 generate
   if(BITSIZE_in2 &gt; arg2_bitsize)
@@ -981,9 +981,9 @@ endgenerate"
   endfunction
 `endif
 `ifdef _SIM_HAVE_CLOG2
-  parameter arg2_bitsize = $clog2(PRECISION);
+  localparam arg2_bitsize = $clog2(PRECISION);
 `else
-  parameter arg2_bitsize = log2(PRECISION);
+  localparam arg2_bitsize = log2(PRECISION);
 `endif
 generate
   if(BITSIZE_in2 &gt; arg2_bitsize)
@@ -1091,9 +1091,9 @@ out1 &lt;= std_logic_vector(resize(to_unsigned(1, BITSIZE_out1), BITSIZE_out1)) 
   endfunction
 `endif
 `ifdef _SIM_HAVE_CLOG2
-  parameter arg2_bitsize = $clog2(PRECISION);
+  localparam arg2_bitsize = $clog2(PRECISION);
 `else
-  parameter arg2_bitsize = log2(PRECISION);
+  localparam arg2_bitsize = log2(PRECISION);
 `endif
 parameter marg2_bitsize = arg2_bitsize &lt; BITSIZE_in2 ? arg2_bitsize : BITSIZE_in2;
 assign out1 = (in1 &lt;&lt; (in2[marg2_bitsize-1:0]))|(in1 &gt;&gt; (PRECISION-(in2[marg2_bitsize-1:0])));" VHDL_PROVIDED="begin
@@ -1138,9 +1138,9 @@ assign out1 = (in1 &lt;&lt; (in2[marg2_bitsize-1:0]))|(in1 &gt;&gt; (PRECISION-(
   endfunction
 `endif
 `ifdef _SIM_HAVE_CLOG2
-  parameter arg_bitsize = $clog2(PRECISION);
+  localparam arg_bitsize = $clog2(PRECISION);
 `else
-  parameter arg_bitsize = log2(PRECISION);
+  localparam arg_bitsize = log2(PRECISION);
 `endif
 parameter marg_bitsize = arg_bitsize &lt; BITSIZE_in3 ? arg_bitsize : BITSIZE_in3;
 assign out1 = (in1 &lt;&lt; (in3[marg_bitsize-1:0]))|(in2 &gt;&gt; (PRECISION-(in3[marg_bitsize-1:0])));" VHDL_PROVIDED="begin
@@ -1185,9 +1185,9 @@ assign out1 = (in1 &lt;&lt; (in3[marg_bitsize-1:0]))|(in2 &gt;&gt; (PRECISION-(i
   endfunction
 `endif
 `ifdef _SIM_HAVE_CLOG2
-  parameter arg_bitsize = $clog2(PRECISION);
+  localparam arg_bitsize = $clog2(PRECISION);
 `else
-  parameter arg_bitsize = log2(PRECISION);
+  localparam arg_bitsize = log2(PRECISION);
 `endif
 parameter marg_bitsize = arg_bitsize &lt; BITSIZE_in3 ? arg_bitsize : BITSIZE_in3;
 assign out1 = (in1 &lt;&lt; (PRECISION-(in3[marg_bitsize-1:0])))|(in2 &gt;&gt; (in3[marg_bitsize-1:0]));" VHDL_PROVIDED="begin
@@ -1537,9 +1537,9 @@ begin
   endfunction
 `endif
 `ifdef _SIM_HAVE_CLOG2
-  parameter arg2_bitsize = $clog2(PRECISION);
+  localparam arg2_bitsize = $clog2(PRECISION);
 `else
-  parameter arg2_bitsize = log2(PRECISION);
+  localparam arg2_bitsize = log2(PRECISION);
 `endif
 parameter marg2_bitsize = arg2_bitsize &lt; BITSIZE_in2 ? arg2_bitsize : BITSIZE_in2;
 assign out1 = (in1 &gt;&gt; (in2[marg2_bitsize-1:0]))|(in1 &lt;&lt;(PRECISION-(in2[marg2_bitsize-1:0])));" VHDL_PROVIDED="begin
@@ -1942,9 +1942,9 @@ begin
   endfunction
 `endif
 `ifdef _SIM_HAVE_CLOG2
-  parameter arg2_bitsize = $clog2(PRECISION);
+  localparam arg2_bitsize = $clog2(PRECISION);
 `else
-  parameter arg2_bitsize = log2(PRECISION);
+  localparam arg2_bitsize = log2(PRECISION);
 `endif
 generate
   if(BITSIZE_in2 &gt; arg2_bitsize)
@@ -1994,9 +1994,9 @@ endgenerate"
   endfunction
 `endif
 `ifdef _SIM_HAVE_CLOG2
-  parameter arg2_bitsize = $clog2(PRECISION);
+  localparam arg2_bitsize = $clog2(PRECISION);
 `else
-  parameter arg2_bitsize = log2(PRECISION);
+  localparam arg2_bitsize = log2(PRECISION);
 `endif
 generate
   if(BITSIZE_in2 &gt; arg2_bitsize)
@@ -2037,7 +2037,7 @@ endgenerate
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="INT" size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="exact_div_expr_FU in1 in2 out1 PIPE_PARAMETER" VERILOG_PROVIDED="parameter required_iterations = BITSIZE_in1 &gt; PIPE_PARAMETER ? BITSIZE_in1 : PIPE_PARAMETER;
+          <NP_functionality LIBRARY="exact_div_expr_FU in1 in2 out1 PIPE_PARAMETER" VERILOG_PROVIDED="localparam required_iterations = BITSIZE_in1 &gt; PIPE_PARAMETER ? BITSIZE_in1 : PIPE_PARAMETER;
 parameter STEPS = ((required_iterations)/(PIPE_PARAMETER+1)) + (((required_iterations)%(PIPE_PARAMETER+1)) ? 1 : 0);
 parameter num_length = STEPS * (PIPE_PARAMETER+1);
 parameter denom_length = BITSIZE_in2+1;
@@ -2187,7 +2187,7 @@ assign xdenom = in2 &gt;= $signed({BITSIZE_in2{1&apos;b0}}) ? in2 : -in2;"/>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="INT" size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="trunc_div_expr_FU in1 in2 out1 PIPE_PARAMETER" VERILOG_PROVIDED="parameter required_iterations = BITSIZE_in1 &gt; PIPE_PARAMETER ? BITSIZE_in1 : PIPE_PARAMETER;
+          <NP_functionality LIBRARY="trunc_div_expr_FU in1 in2 out1 PIPE_PARAMETER" VERILOG_PROVIDED="localparam required_iterations = BITSIZE_in1 &gt; PIPE_PARAMETER ? BITSIZE_in1 : PIPE_PARAMETER;
 parameter STEPS = ((required_iterations)/(PIPE_PARAMETER+1)) + (((required_iterations)%(PIPE_PARAMETER+1)) ? 1 : 0);
 parameter num_length = STEPS * (PIPE_PARAMETER+1);
 parameter denom_length = BITSIZE_in2+1;
@@ -2337,7 +2337,7 @@ assign xdenom = in2 &gt;= $signed({BITSIZE_in2{1&apos;b0}}) ? in2 : -in2;"/>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="UINT" size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="ui_trunc_div_expr_FU in1 in2 out1 PIPE_PARAMETER" VERILOG_PROVIDED="parameter required_iterations = BITSIZE_in1 &gt; PIPE_PARAMETER ? BITSIZE_in1 : PIPE_PARAMETER;
+          <NP_functionality LIBRARY="ui_trunc_div_expr_FU in1 in2 out1 PIPE_PARAMETER" VERILOG_PROVIDED="localparam required_iterations = BITSIZE_in1 &gt; PIPE_PARAMETER ? BITSIZE_in1 : PIPE_PARAMETER;
 parameter STEPS = ((required_iterations)/(PIPE_PARAMETER+1)) + (((required_iterations)%(PIPE_PARAMETER+1)) ? 1 : 0);
 parameter num_length = STEPS * (PIPE_PARAMETER+1);
 parameter denom_length = BITSIZE_in2+1;

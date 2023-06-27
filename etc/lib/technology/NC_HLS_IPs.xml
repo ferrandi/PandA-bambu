@@ -1085,7 +1085,7 @@ end integer_ternary_operator;
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="UINT" size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="ui_bit_ior_concat_expr_FU in1 in2 in3 out1 OFFSET_PARAMETER" VERILOG_PROVIDED="parameter nbit_out = BITSIZE_out1 &gt; OFFSET_PARAMETER ? BITSIZE_out1 : 1+OFFSET_PARAMETER;
+          <NP_functionality LIBRARY="ui_bit_ior_concat_expr_FU in1 in2 in3 out1 OFFSET_PARAMETER" VERILOG_PROVIDED="localparam nbit_out = BITSIZE_out1 &gt; OFFSET_PARAMETER ? BITSIZE_out1 : 1+OFFSET_PARAMETER;
 wire [nbit_out-1:0] tmp_in1;
 wire [OFFSET_PARAMETER-1:0] tmp_in2;
 generate
