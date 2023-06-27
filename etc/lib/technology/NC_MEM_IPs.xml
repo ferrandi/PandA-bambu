@@ -16767,9 +16767,6 @@ wire valid,tagsmatch;
           <port_o id="force_inv_out" dir="OUT">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
-          <port_o id="wtb_empty_in" dir="IN">
-            <structural_type_descriptor type="BOOL" size="1"/>
-          </port_o>
           <port_o id="wtb_empty_out" dir="OUT">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
@@ -16939,14 +16936,8 @@ wire valid,tagsmatch;
    wire                                                                    invalidate;
    
 `ifdef CTRL_IO
-   assign force_inv_out = invalidate;
-   
-   generate
-      if (CTRL_CACHE)
-        assign wtb_empty_out = wtbuf_empty;
-      else
-        assign wtb_empty_out = wtbuf_empty &amp; wtb_empty_in;//to remove unconnected port warning. If unused wtb_empty_in = 1&apos;b1
-   endgenerate 
+  assign force_inv_out = invalidate;
+  assign wtb_empty_out = wtbuf_empty;
 `endif
    IOB_front_end
      #(
@@ -17168,11 +17159,7 @@ wire valid,tagsmatch;
          .addr  (ctrl_addr),
          //write data
          .wtbuf_full (wtbuf_full),
-`ifdef CTRL_IO
-         .wtbuf_empty (wtbuf_empty &amp; wtb_empty_in),
-`else
          .wtbuf_empty (wtbuf_empty), 
-`endif
          .write_hit  (write_hit),
          .write_miss (write_miss),
          .read_hit   (read_hit),
@@ -17679,11 +17666,7 @@ wire valid,tagsmatch;
          .addr  (ctrl_addr),
          //write data
          .wtbuf_full (wtbuf_full),
-`ifdef CTRL_IO
-         .wtbuf_empty (wtbuf_empty &amp; wtb_empty_in),
-`else
          .wtbuf_empty (wtbuf_empty), 
-`endif
          .write_hit  (write_hit),
          .write_miss (write_miss),
          .read_hit   (read_hit),
@@ -18808,11 +18791,7 @@ wire valid,tagsmatch;
          .addr  (ctrl_addr),
          //write data
          .wtbuf_full (wtbuf_full),
-`ifdef CTRL_IO
-         .wtbuf_empty (wtbuf_empty &amp; wtb_empty_in),
-`else
          .wtbuf_empty (wtbuf_empty), 
-`endif
          .write_hit  (write_hit),
          .write_miss (write_miss),
          .read_hit   (read_hit),
