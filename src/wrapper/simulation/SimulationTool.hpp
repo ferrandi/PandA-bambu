@@ -116,14 +116,14 @@ class SimulationTool
    /**
     * Performs the simulation and returns the number of cycles
     */
-   virtual unsigned long long int Simulate(unsigned long long& accum_cycles, unsigned int& n_testcases);
+   virtual void Simulate(unsigned long long& accum_cycles, unsigned long long& n_testcases);
 
    /**
     * Determines the average number of cycles for the simulation(s)
     * @param accum_cycles is the total number of accumulated cycles
     * @param n_testcases is the number of testcases simulated
     */
-   unsigned long long int DetermineCycles(unsigned long long int& accum_cycles, unsigned int& n_testcases);
+   void DetermineCycles(unsigned long long int& accum_cycles, unsigned long long& n_testcases);
 
    /**
     * Remove files created during simulation

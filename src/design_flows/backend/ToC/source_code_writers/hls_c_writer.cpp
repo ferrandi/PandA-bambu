@@ -159,14 +159,12 @@ void HLSCWriter::WriteGlobalDeclarations()
 void HLSCWriter::WriteParamDecl(const BehavioralHelperConstRef BH)
 {
    indented_output_stream->Append("// parameters declaration\n");
-   HLSMgr->RSim->simulationArgSignature.clear();
 
    for(const auto& par : BH->GetParameters())
    {
       const auto parm_type = tree_helper::CGetType(par);
       const auto type = tree_helper::IsPointerType(par) ? "void*" : tree_helper::PrintType(TM, parm_type);
       const auto param = BH->PrintVariable(par->index);
-      HLSMgr->RSim->simulationArgSignature.push_back(param);
 
       if(tree_helper::IsVectorType(parm_type))
       {

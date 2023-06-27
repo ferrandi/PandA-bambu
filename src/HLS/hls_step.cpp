@@ -261,8 +261,6 @@ std::string HLS_step::EnumToName(const HLSFlowStep_Type hls_flow_step_type)
 #endif
       case HLSFlowStep_Type::TESTBENCH_GENERATION:
          return "TestbenchGeneration";
-      case HLSFlowStep_Type::TESTBENCH_MEMORY_ALLOCATION:
-         return "TestbenchMemoryAllocation";
       case HLSFlowStep_Type::TEST_VECTOR_PARSER:
          return "TestVectorParser";
       case HLSFlowStep_Type::TOP_ENTITY_CREATION:

@@ -111,8 +111,6 @@ TestbenchGeneration::ComputeHLSRelationships(const DesignFlowStep::RelationshipT
       {
          ret.insert(std::make_tuple(HLSFlowStep_Type::TEST_VECTOR_PARSER, HLSFlowStepSpecializationConstRef(),
                                     HLSFlowStep_Relationship::TOP_FUNCTION));
-         ret.insert(std::make_tuple(HLSFlowStep_Type::TESTBENCH_MEMORY_ALLOCATION, HLSFlowStepSpecializationConstRef(),
-                                    HLSFlowStep_Relationship::TOP_FUNCTION));
          if(parameters->isOption(OPT_discrepancy) && parameters->getOption<bool>(OPT_discrepancy))
          {
             ret.insert(std::make_tuple(HLSFlowStep_Type::VCD_SIGNAL_SELECTION, HLSFlowStepSpecializationConstRef(),
