@@ -285,11 +285,39 @@ DesignFlowStep_Status CSE::InternalExec()
             const auto ref_ssa = GetPointerS<ssa_name>(GET_NODE(ref_ga->op0));
             const auto dead_ssa = GetPointerS<const ssa_name>(GET_CONST_NODE(dead_ga->op0));
 
+            if(ref_ssa->min)
+            {
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---ref_min=" + STR(ref_ssa->min));
+            }
+            if(ref_ssa->max)
+            {
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---ref_max=" + STR(ref_ssa->max));
+            }
+            if(dead_ssa->min)
+            {
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---dead_min=" + STR(dead_ssa->min));
+            }
+            if(dead_ssa->max)
+            {
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---dead_max=" + STR(dead_ssa->max));
+            }
+
+            if(!ref_ssa->bit_values.empty())
+            {
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---ref_bit_values=" + ref_ssa->bit_values);
+            }
+            if(!dead_ssa->bit_values.empty())
+            {
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---dead_bit_values=" + dead_ssa->bit_values);
+            }
+
             bool same_range = false;
             if(!parameters->getOption<int>(OPT_gcc_openmp_simd))
             {
-               same_range = !ref_ssa->bit_values.empty() && dead_ssa->bit_values.empty() &&
-                            ref_ssa->bit_values == dead_ssa->bit_values;
+               same_range = (ref_ssa->bit_values.empty() && dead_ssa->bit_values.empty()) ||
+                            (!ref_ssa->bit_values.empty() && dead_ssa->bit_values.empty()) ||
+                            (!ref_ssa->bit_values.empty() && !dead_ssa->bit_values.empty() &&
+                             ref_ssa->bit_values == dead_ssa->bit_values);
             }
             else
             {
@@ -304,6 +332,12 @@ DesignFlowStep_Status CSE::InternalExec()
                   if(dead_min == ref_min && dead_max == ref_max)
                   {
                      same_range = true;
+                  }
+                  else
+                  {
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                    "---replace equivalent statement before: ref_min=" + STR(ref_min) + " dead_min=" +
+                                        STR(dead_min) + " ref_max=" + STR(ref_max) + " dead_max=" + STR(dead_max));
                   }
                }
             }
@@ -335,6 +369,10 @@ DesignFlowStep_Status CSE::InternalExec()
                ++n_equiv_stmt;
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                               "<--Updated/Removed duplicated statement " + STR(dead_ga->op0));
+            }
+            else
+            {
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---not the same range");
             }
          }
       }
