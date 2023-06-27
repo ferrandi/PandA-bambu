@@ -2725,6 +2725,8 @@ void TestbenchGenerationBaseStep::testbench_controller_machine() const
             writer->write("    while((counter == 0 || counter[" + STR(COUNT_HIGH_INDEX) + "] == 1) && _i_ < next_" +
                           portPrefix + "awqueue_size) begin\n");
             writer->write("      _i_ = _i_ + 1;\n");
+            writer->write("      counter = next_" + portPrefix + "awqueue[_i_ * " + STR(QUEUE_RECORD_SIZE) + " + " +
+                          STR(COUNT_HIGH_INDEX) + " -: " + STR(COUNT_HIGH_INDEX - COUNT_LOW_INDEX + 1) + "];\n");
             writer->write("    end\n");
             writer->write("    if(" + portPrefix + "WLAST) begin\n");
             writer->write("      next_" + portPrefix + "awqueue[_i_ * " + STR(QUEUE_RECORD_SIZE) + " + " +
