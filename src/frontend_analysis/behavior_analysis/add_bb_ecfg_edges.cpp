@@ -64,11 +64,11 @@
 #include <list>
 
 /// Utility include
-#include <boost/lexical_cast.hpp>
 #include "dbgPrintHelper.hpp"
 #include "exceptions.hpp"
 #include "hash_helper.hpp"
 #include "string_manipulation.hpp" // for GET_CLASS
+#include <boost/lexical_cast.hpp>
 
 AddBbEcfgEdges::AddBbEcfgEdges(const application_managerRef _AppM, unsigned int _function_id,
                                const DesignFlowManagerConstRef _design_flow_manager,

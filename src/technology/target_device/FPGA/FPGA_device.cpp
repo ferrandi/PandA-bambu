@@ -58,8 +58,8 @@
 #include "constant_strings.hpp"
 
 /// Boost includes
-#include <boost/filesystem.hpp>
 #include "string_manipulation.hpp" // for GET_CLASS
+#include <boost/filesystem.hpp>
 
 FPGA_device::FPGA_device(const ParameterConstRef& _Param, const technology_managerRef& _TM)
     : target_device(_Param, _TM, TargetDevice_Type::FPGA)
