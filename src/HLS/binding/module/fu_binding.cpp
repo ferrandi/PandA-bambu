@@ -1121,13 +1121,17 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
             kill_proxy_function_units(wrapped_units, FU, fun_call_sites_rel, reverse_function_units);
          }
 
-         SM->add_connection(FU->find_member(START_PORT_NAME, port_o_K, FU), signBitZero);
-
          SM->add_connection(FU->find_member(CLOCK_PORT_NAME, port_o_K, FU),
                             circuit->find_member(CLOCK_PORT_NAME, port_o_K, circuit));
 
          SM->add_connection(FU->find_member(RESET_PORT_NAME, port_o_K, FU),
                             circuit->find_member(RESET_PORT_NAME, port_o_K, circuit));
+
+         const auto fu_start = FU->find_member(START_PORT_NAME, port_o_K, FU);
+         if(fu_start)
+         {
+            SM->add_connection(fu_start, signBitZero);
+         }
 
          for(const auto additional_parameter :
              HLSMgr->CGetFunctionBehavior(f_id)->CGetBehavioralHelper()->get_parameters())
