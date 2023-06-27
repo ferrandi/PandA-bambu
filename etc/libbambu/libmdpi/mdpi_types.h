@@ -92,11 +92,6 @@ typedef uint64_t sv_longint_unsigned_t;
 #endif
 #define PTR_SIZE (sizeof(ptr_t) * 8)
 
-struct ab_uint8_t
-{
-   uint8_t aval, bval;
-};
-
 struct mdpi_parm_t
 {
    bptr_t bits;
