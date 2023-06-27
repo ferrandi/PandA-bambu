@@ -469,7 +469,7 @@ end"/>
             <structural_type_descriptor type="VECTOR_BOOL" size="1"/>
           </port_o>
           <port_o id="Mout_addr_ram" dir="IN" is_memory="1" is_master="1" is_addr_bus="1">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="32"/>
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <port_o id="Mout_data_ram_size" dir="IN" is_memory="1" is_master="1" is_size_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="4"/>
@@ -490,7 +490,7 @@ end"/>
             <structural_type_descriptor type="VECTOR_BOOL" size="1"/>
           </port_o>
           <port_o id="S_addr_ram" dir="OUT" is_memory="1" is_slave="1" is_addr_bus="1">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="32"/>
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <port_o id="S_data_ram_size" dir="OUT" is_memory="1" is_slave="1" is_size_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="4"/>
