@@ -88,17 +88,12 @@ void HWCallPathCalculator::start_vertex(const UnfoldedVertexDescriptor& v, const
 {
    scope = std::stack<std::string>();
    shared_fun_scope.clear();
-   top_fun_scope = "clocked_bambu_testbench" HIERARCHY_SEPARATOR "bambu_testbench" HIERARCHY_SEPARATOR
-                   "system" HIERARCHY_SEPARATOR "DUT" HIERARCHY_SEPARATOR "top";
-
    const auto top_fu_name =
        Cget_node_info<UnfoldedFunctionInfo>(v, ufcg)->behavior->CGetBehavioralHelper()->get_function_name();
-   const auto parameters = HLSMgr->get_parameter();
-   if(HLSMgr->CGetCallGraphManager()->ExistsAddressedFunction() || parameters->getOption<bool>(OPT_memory_mapped_top))
-   {
-      top_fun_scope += "_" + top_fu_name + "_int_i0" HIERARCHY_SEPARATOR;
-   }
-   top_fun_scope += HIERARCHY_SEPARATOR "_" + top_fu_name + "_i0" HIERARCHY_SEPARATOR;
+
+   top_fun_scope = "clocked_bambu_testbench" HIERARCHY_SEPARATOR "bambu_testbench" HIERARCHY_SEPARATOR
+                   "system" HIERARCHY_SEPARATOR "DUT" HIERARCHY_SEPARATOR "top" HIERARCHY_SEPARATOR "_" +
+                   top_fu_name + "_i0" HIERARCHY_SEPARATOR;
 
    HLSMgr->RDiscr->unfolded_v_to_scope[v] = top_fun_scope;
    const auto f_id = Cget_node_info<UnfoldedFunctionInfo>(v, ufcg)->f_id;
