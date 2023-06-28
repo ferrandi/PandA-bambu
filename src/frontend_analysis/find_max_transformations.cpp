@@ -102,8 +102,8 @@ bool FindMaxTransformations::ExecuteBambu(const size_t max_transformations) cons
       boost::filesystem::remove_all(new_directory);
    }
    boost::filesystem::create_directory(new_directory);
-   const auto ret =
-       PandaSystem(parameters, "cd " + new_directory + "; " + arg_string, false, new_directory + "/bambu_execution_output");
+   const auto ret = PandaSystem(parameters, "cd " + new_directory + "; " + arg_string, false,
+                                new_directory + "/bambu_execution_output");
    boost::filesystem::remove_all(new_directory);
    if(IsError(ret))
    {
