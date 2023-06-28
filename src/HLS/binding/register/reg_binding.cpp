@@ -57,9 +57,9 @@
 #include "omp_functions.hpp"
 #include "reg_binding_cs.hpp"
 
-#include <boost/lexical_cast.hpp>
 #include "structural_manager.hpp"
 #include "technology_manager.hpp"
+#include <boost/lexical_cast.hpp>
 
 #include "state_transition_graph.hpp"
 #include "state_transition_graph_manager.hpp"
