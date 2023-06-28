@@ -4080,7 +4080,7 @@ parameter max_n_rw = max_n_writes &gt; max_n_reads ? max_n_writes : max_n_reads;
 wire [PORTSIZE_sel_LOAD-1:0] int_sel_LOAD;
 wire [PORTSIZE_sel_STORE-1:0] int_sel_STORE;
 reg [PORTSIZE_sel_LOAD-1:0] sel_load_or_store_old;
-wire [PORTSIZE_sel_LOAD-1:0] ssel_load_or_store_old_next;
+wire [PORTSIZE_sel_LOAD-1:0] sel_load_or_store_old_next;
 
 always @(posedge clock)
 begin
@@ -4239,7 +4239,7 @@ reg [PORTSIZE_M_DataRdy-1:0] delayed_M_DataRdy 1INIT_ZERO_VALUE;
 wire [PORTSIZE_sel_LOAD-1:0] int_sel_LOAD;
 wire [PORTSIZE_sel_STORE-1:0] int_sel_STORE;
 reg [PORTSIZE_sel_LOAD-1:0] sel_load_or_store_old;
-wire [PORTSIZE_sel_LOAD-1:0] ssel_load_or_store_old_next;
+wire [PORTSIZE_sel_LOAD-1:0] sel_load_or_store_old_next;
 
 always @(posedge clock)
 begin
@@ -4406,7 +4406,7 @@ reg [PORTSIZE_in4*BITSIZE_in4-1:0] delayed_in4 1INIT_ZERO_VALUE;
 wire [PORTSIZE_sel_LOAD-1:0] int_sel_LOAD;
 wire [PORTSIZE_sel_STORE-1:0] int_sel_STORE;
 reg [PORTSIZE_sel_LOAD-1:0] sel_load_or_store_old;
-wire [PORTSIZE_sel_LOAD-1:0] ssel_load_or_store_old_next;
+wire [PORTSIZE_sel_LOAD-1:0] sel_load_or_store_old_next;
 
 always @(posedge clock)
 begin
@@ -4582,7 +4582,7 @@ reg [PORTSIZE_in3*BITSIZE_in3-1:0] delayed_in3 1INIT_ZERO_VALUE;
 wire [PORTSIZE_sel_LOAD-1:0] int_sel_LOAD;
 wire [PORTSIZE_sel_STORE-1:0] int_sel_STORE;
 reg [PORTSIZE_sel_LOAD-1:0] sel_load_or_store_old;
-wire [PORTSIZE_sel_LOAD-1:0] ssel_load_or_store_old_next;
+wire [PORTSIZE_sel_LOAD-1:0] sel_load_or_store_old_next;
 
 always @(posedge clock)
 begin
