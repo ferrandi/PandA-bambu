@@ -261,6 +261,26 @@ DesignFlowStep_Status TestbenchGeneration::Exec()
       const auto master_port_module = "TestbenchArgMap" + if_suffix;
       size_t idx = 0;
       std::list<structural_objectRef> master_ports;
+      for(const auto& par : top_bh->GetParameters())
+      {
+         const auto par_name = top_bh->PrintVariable(GET_INDEX_CONST_NODE(par));
+         INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "-->Parameter " + par_name);
+         const auto par_bitsize = tree_helper::Size(par);
+         const auto par_symbol = HLSMgr->Rmem->get_symbol(GET_INDEX_CONST_NODE(par), top_id);
+         INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level,
+                        "---Interface: " + STR(par_bitsize) + "-bits memory mapped at " +
+                            STR(par_symbol->get_address()));
+         const auto master_port = tb_top->add_module_from_technology_library("master_" + par_name, master_port_module,
+                                                                             LIBRARY_STD, tb_cir, TechM);
+         master_port->SetParameter("index", STR(idx));
+         master_port->SetParameter("bitsize", STR(par_bitsize));
+         master_port->SetParameter("tgt_addr", STR(par_symbol->get_address()));
+
+         master_ports.push_back(master_port);
+         ++idx;
+         INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "<--");
+      }
+
       const auto return_type = tree_helper::GetFunctionReturnType(HLSMgr->get_tree_manager()->CGetTreeReindex(top_id));
       if(return_type)
       {
@@ -286,26 +306,6 @@ DesignFlowStep_Status TestbenchGeneration::Exec()
          dut_done = m_done;
 
          master_ports.push_back(master_port);
-         ++idx;
-         INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "<--");
-      }
-      for(const auto& par : top_bh->GetParameters())
-      {
-         const auto par_name = top_bh->PrintVariable(GET_INDEX_CONST_NODE(par));
-         INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "-->Parameter " + par_name);
-         const auto par_bitsize = tree_helper::Size(par);
-         const auto par_symbol = HLSMgr->Rmem->get_symbol(GET_INDEX_CONST_NODE(par), top_id);
-         INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level,
-                        "---Interface: " + STR(par_bitsize) + "-bits memory mapped at " +
-                            STR(par_symbol->get_address()));
-         const auto master_port = tb_top->add_module_from_technology_library("master_" + par_name, master_port_module,
-                                                                             LIBRARY_STD, tb_cir, TechM);
-         master_port->SetParameter("index", STR(idx));
-         master_port->SetParameter("bitsize", STR(par_bitsize));
-         master_port->SetParameter("tgt_addr", STR(par_symbol->get_address()));
-
-         master_ports.push_back(master_port);
-         ++idx;
          INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "<--");
       }
 
@@ -370,12 +370,12 @@ DesignFlowStep_Status TestbenchGeneration::Exec()
    else
    {
       // Add interface components relative to each top function parameter
-      auto idx = 0U;
       const auto is_interface_inferred = interface_type == HLSFlowStep_Type::INFERRED_INTERFACE_GENERATION;
       const auto DesignAttributes = HLSMgr->design_attributes.find(top_bh->GetMangledFunctionName());
       THROW_ASSERT(!is_interface_inferred || DesignAttributes != HLSMgr->design_attributes.end(),
                    "Original signature not found for function: " + top_bh->GetMangledFunctionName() + " (" +
                        top_bh->get_function_name() + ")");
+      size_t idx = 0;
       for(const auto& arg : top_bh->GetParameters())
       {
          const auto arg_name = top_bh->PrintVariable(GET_INDEX_CONST_NODE(arg));
