@@ -878,7 +878,7 @@ unsigned long long TestbenchGeneration::generate_init_file(const std::string& da
 {
    std::stringstream init_bits;
    std::ofstream useless;
-   unsigned long long vec_size = 0, elts_size;
+   unsigned long long vec_size = 0, elts_size = 0;
    const auto var_type = tree_helper::CGetType(TM->CGetTreeReindex(var));
    const auto bitsize_align = GetPointer<const type_node>(GET_CONST_NODE(var_type))->algn;
    THROW_ASSERT((bitsize_align % 8) == 0, "Alignement is not byte aligned.");

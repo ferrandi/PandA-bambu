@@ -2329,7 +2329,6 @@ void fu_binding::specialize_memory_unit(const HLS_managerRef HLSMgr, const hlsRe
    fu_module->SetParameter("USE_SPARSE_MEMORY", is_sparse_memory ? "1" : "0");
    memory::add_memory_parameter(HLS->datapath, base_address, STR(HLSMgr->Rmem->get_base_address(ar, HLS->functionId)));
 
-   unsigned long long vec_size = 0;
    /// array ref initialization
    THROW_ASSERT(ar, "expected a real tree node index");
    const auto init_filename = "array_ref_" + STR(ar) + ".mem";
@@ -2339,9 +2338,10 @@ void fu_binding::specialize_memory_unit(const HLS_managerRef HLSMgr, const hlsRe
    {
       init_file_b.open(GetPath("0_" + init_filename));
    }
-   unsigned long long elts_size;
-   fill_array_ref_memory(init_file_a, init_file_b, ar, vec_size, elts_size, HLSMgr->Rmem, TreeM, is_sds,
-                         boost::lexical_cast<unsigned int>(fu_module->GetParameter("BRAM_BITSIZE")));
+   unsigned long long vec_size = 0, elts_size = 0;
+   const auto bitsize_align =
+       is_sds ? 0ULL : boost::lexical_cast<unsigned long long>(fu_module->GetParameter("BRAM_BITSIZE"));
+   fill_array_ref_memory(init_file_a, init_file_b, ar, vec_size, elts_size, HLSMgr->Rmem, TreeM, is_sds, bitsize_align);
    THROW_ASSERT(vec_size, "at least one element is expected");
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---elts_size " + STR(elts_size));
    if(is_sds)
@@ -2418,6 +2418,7 @@ void fu_binding::fill_array_ref_memory(std::ostream& init_file_a, std::ostream& 
    {
       THROW_ERROR("Type not supported: " + GET_CONST_NODE(array_type_node)->get_kind_text());
    }
+   THROW_ASSERT(elts_size && vec_size, "");
    if(is_sds)
    {
       bitsize_align = elts_size;
