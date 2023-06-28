@@ -415,12 +415,12 @@ void* addr;
 } __m_memmap_t;
 
 static int cmpptr(const ptr_t a, const ptr_t b) { return a < b ? -1 : (a > b); }
-static int cmpaddr(const void* a, const void* b) { return cmpptr(*(ptr_t*)((__m_memmap_t*)a)->addr, *(ptr_t*)((__m_memmap_t*)b)->addr); }
+static int cmpaddr(const void* a, const void* b) { return cmpptr((ptr_t)((__m_memmap_t*)a)->addr, (ptr_t)((__m_memmap_t*)b)->addr); }
 
-static void __m_memsetup(void* args[], size_t args_size)
+static void __m_memsetup(void* args[], size_t m_extmem_size)
 {
 int error = 0;
-size_t m_extmem_size, i;
+size_t i;
 __m_memmap_t* m_extmem;
 ptr_t prev, curr_base;
 )");
@@ -454,8 +454,6 @@ ptr_t prev, curr_base;
    indented_output_stream->Append("const ptr_t base_addr = " + STR(base_addr) + ";\n");
 
    indented_output_stream->Append(R"(
-m_extmem_size = args_size;
-
 __m_memmap_init();
 
 // Memory-mapped internal variables initialization
@@ -490,7 +488,7 @@ error |= __m_memmap(memmap_init[i].addrmap, memmap_init[i].addr, memmap_init[i].
 }
 
 m_extmem = (__m_memmap_t*)malloc(sizeof(__m_memmap_t) * m_extmem_size);
-for(i = 0; i < args_size; ++i)
+for(i = 0; i < m_extmem_size; ++i)
 {
 m_extmem[i].addr = args[i];
 m_extmem[i].size = __m_param_size(i);
@@ -593,7 +591,7 @@ void HLSCWriter::WriteMainTestbench()
    std::string args_decl = "void* args[] = {";
    std::string args_set;
    std::string gold_cmp;
-   size_t args_decl_idx = 0;
+   size_t param_idx = 0;
    if(return_type)
    {
       const auto return_type_str = tree_helper::PrintType(TM, return_type);
@@ -601,10 +599,10 @@ void HLSCWriter::WriteMainTestbench()
       gold_decl += return_type_str;
       gold_call += "retval_gold = ";
       pp_call += "retval_pp = ";
-      args_init = "__m_alloc_param(0, sizeof(" + return_type_str + "));\n";
-      args_decl = return_type_str + " retval, retval_gold, retval_pp;\n" + args_decl + "(void*)&retval, ";
-      args_set += "__m_setarg(0, args[0], " + STR(tree_helper::Size(return_type)) + ");\n";
-      ++args_decl_idx;
+      args_init = "__m_alloc_param(" + STR(top_params.size()) + ", sizeof(" + return_type_str + "));\n";
+      args_decl = return_type_str + " retval, retval_gold, retval_pp;\n" + args_decl;
+      args_set += "__m_setarg(" + STR(top_params.size()) + ", args[" + STR(top_params.size()) + "], " +
+                  STR(tree_helper::Size(return_type)) + ");\n";
    }
    else
    {
@@ -620,7 +618,6 @@ void HLSCWriter::WriteMainTestbench()
       for(const auto& arg : top_params)
       {
          std::string arg_typename, arg_interface, arg_size;
-         const auto param_idx = args_decl_idx - (return_type != nullptr);
          const auto arg_type = tree_helper::CGetType(arg);
          if(arg_signature_typename != HLSMgr->design_interface_typename_orig_signature.end())
          {
@@ -650,7 +647,7 @@ void HLSCWriter::WriteMainTestbench()
             arg_typename = arg_typename.substr(0, arg_typename.find("(*)")) + "*";
          }
          arg_size = STR(tree_helper::Size(arg_type));
-         const auto arg_name = "P" + STR(args_decl_idx);
+         const auto arg_name = "P" + STR(param_idx);
          const auto is_pointer_type = arg_typename.back() == '*';
          const auto is_reference_type = arg_typename.back() == '&';
          top_decl += arg_typename + " " + arg_name + ", ";
@@ -664,8 +661,8 @@ void HLSCWriter::WriteMainTestbench()
             const std::string channel_type(what[1].first, what[1].second);
             arg_typename.pop_back();
             gold_call += arg_name + ", ";
-            gold_cmp += "m_channelcmp(" + STR(args_decl_idx) + ", " + cmp_type(arg_type, channel_type) + ");\n";
-            args_init += "m_channel_init(" + STR(args_decl_idx) + ");\n";
+            gold_cmp += "m_channelcmp(" + STR(param_idx) + ", " + cmp_type(arg_type, channel_type) + ");\n";
+            args_init += "m_channel_init(" + STR(param_idx) + ");\n";
             args_decl += arg_name + "_sim, ";
             args_set += "__m_setargptr";
          }
@@ -673,7 +670,7 @@ void HLSCWriter::WriteMainTestbench()
          {
             gold_call += "(" + arg_typename + ")" + arg_name + "_gold, ";
             pp_call += "(" + tree_helper::PrintType(TM, arg_type, false, true) + ")" + arg_name + "_pp, ";
-            gold_cmp += "m_argcmp(" + STR(args_decl_idx) + ", " + cmp_type(arg_type, arg_typename) + ");\n";
+            gold_cmp += "m_argcmp(" + STR(param_idx) + ", " + cmp_type(arg_type, arg_typename) + ");\n";
             args_decl += "(void*)" + arg_name + ", ";
             args_set += "m_setargptr";
          }
@@ -682,7 +679,7 @@ void HLSCWriter::WriteMainTestbench()
             arg_typename.pop_back();
             gold_call += "*(" + arg_typename + "*)" + arg_name + "_gold, ";
             pp_call += "(" + tree_helper::PrintType(TM, arg_type, false, true) + "*)" + arg_name + "_pp, ";
-            gold_cmp += "m_argcmp(" + STR(args_decl_idx) + ", " + cmp_type(arg_type, arg_typename) + ");\n";
+            gold_cmp += "m_argcmp(" + STR(param_idx) + ", " + cmp_type(arg_type, arg_typename) + ");\n";
             args_init += "__m_alloc_param(" + STR(param_idx) + ", sizeof(" + arg_typename + "));\n";
             args_decl += "(void*)&" + arg_name + ", ";
             args_set += "m_setargptr";
@@ -732,14 +729,21 @@ void HLSCWriter::WriteMainTestbench()
                }
             }
          }
-         args_set += "(" + STR(args_decl_idx) + ", args[" + STR(args_decl_idx) + "], " + arg_size + ");\n";
-         ++args_decl_idx;
+         args_set += "(" + STR(param_idx) + ", args[" + STR(param_idx) + "], " + arg_size + ");\n";
+         ++param_idx;
       }
       top_decl.erase(top_decl.size() - 2);
       gold_decl.erase(gold_decl.size() - 2);
       gold_call.erase(gold_call.size() - 2);
       pp_call.erase(pp_call.size() - 2);
-      args_decl.erase(args_decl.size() - 2);
+      if(!return_type)
+      {
+         args_decl.erase(args_decl.size() - 2);
+      }
+   }
+   if(return_type)
+   {
+      args_decl += +"(void*)&retval";
    }
    top_decl += ")\n";
    gold_decl += ");\n";
@@ -747,8 +751,7 @@ void HLSCWriter::WriteMainTestbench()
    pp_call += ");\n";
    args_decl += "};\n";
 
-   indented_output_stream->AppendIndented(
-       std::string() + R"(
+   indented_output_stream->AppendIndented(std::string() + R"(
 #ifndef CUSTOM_VERIFICATION
 #ifdef __cplusplus
 #include <cstring>
@@ -784,26 +787,22 @@ template <typename T> T* m_getptr(T* obj) { return obj; }
 #define m_cmpflt(ptra, ptrb) __m_float_distance(*(ptra), *(ptrb)) > max_ulp
 #define m_cmpflts(ptra, ptrb) __m_floats_distance(*(ptra), *(ptrb)) > max_ulp
 
-#define _ms_setargptr(suffix, idx, ptr)                           \
-   const size_t P##idx##_size_##suffix = __m_param_size(idx)" +
-       (return_type ? " - 1" : "") +
-       R"(); \
-   void* P##idx##_##suffix = malloc(P##idx##_size_##suffix);      \
+#define _ms_setargptr(suffix, idx, ptr)                       \
+   const size_t P##idx##_size_##suffix = __m_param_size(idx); \
+   void* P##idx##_##suffix = malloc(P##idx##_size_##suffix);  \
    memcpy(P##idx##_##suffix, ptr, P##idx##_size_##suffix)
 
-#define _ms_argcmp(suffix, idx, cmp)                                                                            \
-   const size_t P##idx##_count_##suffix = P##idx##_size_##suffix / sizeof(m_getvalt(P##idx));                   \
-   for(i = 0; i < P##idx##_count_##suffix; ++i)                                                                 \
-   {                                                                                                            \
-      if(m_cmp##cmp((m_getptrt(P##idx))P##idx##_##suffix + i, &m_getptr(P##idx)[i]))                            \
-      {                                                                                                         \
-         error("Memory parameter %u (%zu/%zu) mismatch with respect to " #suffix " reference.\n", idx)" +
-       (return_type ? " - 1" : "") + ", i" + (return_type ? " + 1" : "") +
-       R"(, \
-               P##idx##_count_##suffix);                                                                        \
-         ++mismatch_count;                                                                                      \
-      }                                                                                                         \
-   }                                                                                                            \
+#define _ms_argcmp(suffix, idx, cmp)                                                                          \
+   const size_t P##idx##_count_##suffix = P##idx##_size_##suffix / sizeof(m_getvalt(P##idx));                 \
+   for(i = 0; i < P##idx##_count_##suffix; ++i)                                                               \
+   {                                                                                                          \
+      if(m_cmp##cmp((m_getptrt(P##idx))P##idx##_##suffix + i, &m_getptr(P##idx)[i]))                          \
+      {                                                                                                       \
+         error("Memory parameter %u (%zu/%zu) mismatch with respect to " #suffix " reference.\n", idx, i + 1, \
+               P##idx##_count_##suffix);                                                                      \
+         ++mismatch_count;                                                                                    \
+      }                                                                                                       \
+   }                                                                                                          \
    free(P##idx##_##suffix)
 
 #define _ms_retvalcmp(suffix, cmp)                                             \
@@ -824,9 +823,7 @@ template <typename T> T* m_getptr(T* obj) { return obj; }
    {                                                                                                        \
       if(m_cmp##cmp((m_getvalt(m_getptr(P##idx))::element_type*)P##idx##_sim + i, &(*m_getptr(P##idx))[i])) \
       {                                                                                                     \
-         error("Channel parameter %u (%zu/%zu) mismatch with respect to golden reference.\n", idx)" +
-       (return_type ? " - 1" : "") +
-       R"(, i + 1,     \
+         error("Channel parameter %u (%zu/%zu) mismatch with respect to golden reference.\n", idx, i + 1,   \
                P##idx##_count);                                                                             \
          ++mismatch_count;                                                                                  \
          break;                                                                                             \
@@ -835,7 +832,7 @@ template <typename T> T* m_getptr(T* obj) { return obj; }
    free(P##idx##_sim)
 
 )" + gold_decl +
-       R"(#else
+                                          R"(#else
 #define _m_setargptr(...)
 #define _m_argcmp(...)
 #define _m_retvalcmp(...)
@@ -854,7 +851,7 @@ template <typename T> T* m_getptr(T* obj) { return obj; }
 #define _m_pp_retvalcmp(cmp) _ms_retvalcmp(pp, cmp)
 
 )" + pp_decl +
-       R"(#else
+                                          R"(#else
 #define _m_pp_setargptr(...)
 #define _m_pp_argcmp(...)
 #define _m_pp_retvalcmp(...)
@@ -874,9 +871,7 @@ template <typename T> T* m_getptr(T* obj) { return obj; }
 #define m_channel_init(idx)                                                                                         \
    const size_t P##idx##_item = sizeof(m_getvalt(m_getptr(P##idx))::element_type);                                  \
    size_t P##idx##_count = m_getptr(P##idx)->size();                                                                \
-   __m_alloc_param(idx)" +
-       (return_type ? " - 1" : "") +
-       R"(, P##idx##_count * P##idx##_item);                                                        \
+   __m_alloc_param(idx, P##idx##_count * P##idx##_item);                                                            \
    void* P##idx##_sim = malloc(P##idx##_count * P##idx##_item);                                                     \
    for(i = 0; i < P##idx##_count; ++i)                                                                              \
    {                                                                                                                \

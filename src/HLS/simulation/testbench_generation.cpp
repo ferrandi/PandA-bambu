@@ -371,21 +371,6 @@ DesignFlowStep_Status TestbenchGeneration::Exec()
    {
       // Add interface components relative to each top function parameter
       auto idx = 0U;
-      {
-         const auto return_port = dut->find_member(RETURN_PORT_NAME, port_o_K, dut);
-         if(return_port)
-         {
-            const auto if_port =
-                tb_top->add_module_from_technology_library("if_return_port", "IF_PORT_OUT", LIBRARY_STD, tb_cir, TechM);
-            if_modules.push_back(if_port);
-            if_port->SetParameter("index", STR(idx));
-
-            const auto val_port = if_port->find_member("val_port", port_o_K, if_port);
-            add_internal_connection(val_port, return_port);
-            ++idx;
-         }
-      }
-
       const auto is_interface_inferred = interface_type == HLSFlowStep_Type::INFERRED_INTERFACE_GENERATION;
       const auto DesignAttributes = HLSMgr->design_attributes.find(top_bh->GetMangledFunctionName());
       THROW_ASSERT(!is_interface_inferred || DesignAttributes != HLSMgr->design_attributes.end(),
@@ -483,6 +468,18 @@ DesignFlowStep_Status TestbenchGeneration::Exec()
          }
          INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "<--");
          ++idx;
+      }
+
+      const auto return_port = dut->find_member(RETURN_PORT_NAME, port_o_K, dut);
+      if(return_port)
+      {
+         const auto if_port =
+             tb_top->add_module_from_technology_library("if_return_port", "IF_PORT_OUT", LIBRARY_STD, tb_cir, TechM);
+         if_modules.push_back(if_port);
+         if_port->SetParameter("index", STR(idx));
+
+         const auto val_port = if_port->find_member("val_port", port_o_K, if_port);
+         add_internal_connection(val_port, return_port);
       }
 
       const auto dut_start = dut->find_member(START_PORT_NAME, port_o_K, dut);
