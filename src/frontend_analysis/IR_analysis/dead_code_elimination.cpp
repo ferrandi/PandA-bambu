@@ -609,10 +609,10 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                                                                written_bw == read_bw &&
                                                                tree_helper::IsSameType(
                                                                    type_r,
-                                                                   type_w)) /// TODO in case read and write value are
+                                                                   type_w)) /// TODO in case read and write values are
                                                                             /// integers but of different signedness a
                                                                             /// cast could allow the load/store
-                                                                            /// semplification
+                                                                            /// simplification
                                                             {
                                                                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                                                               "---found a candidate " +
