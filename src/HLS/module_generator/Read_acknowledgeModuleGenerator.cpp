@@ -77,13 +77,9 @@ void Read_acknowledgeModuleGenerator::InternalExec(std::ostream& out, const modu
 {
    THROW_ASSERT(_ports_in.size() >= i_last, "");
    THROW_ASSERT(_ports_out.size() >= o_last, "");
-   out << "reg [BITSIZE_" << _ports_out[o_out1].name << "-1:0] " << _ports_out[o_out1].name << ";\n\n";
 
-   out << "always @(*)\n";
-   out << "begin\n";
-   out << "  " << _ports_out[o_out1].name << " = " << _ports_in[i_in3].name << " >> (8*" << _ports_in[i_in1].name
+   out << "assign " << _ports_out[o_out1].name << " = " << _ports_in[i_in3].name << " >> (8*" << _ports_in[i_in1].name
        << ");\n";
-   out << "end\n\n";
 
    out << "assign " << _ports_out[o_ack].name << " = " << _ports_in[i_start].name << ";\n";
 }

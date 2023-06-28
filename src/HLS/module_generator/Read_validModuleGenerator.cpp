@@ -79,25 +79,28 @@ void Read_validModuleGenerator::InternalExec(std::ostream& out, const module* /*
 {
    THROW_ASSERT(_ports_in.size() >= i_last, "");
    THROW_ASSERT(_ports_out.size() >= o_last, "");
-   out << "reg started 1INIT_ZERO_VALUE;\n";
-   out << "reg started0 1INIT_ZERO_VALUE;\n";
-   out << "reg validated 1INIT_ZERO_VALUE;\n";
-   out << "reg validated0 1INIT_ZERO_VALUE;\n";
-   out << "reg [BITSIZE_" << _ports_out[o_out1].name << "-1:0] " << _ports_out[o_out1].name << " ;\n";
-   out << "reg " << _ports_out[o_done].name << " 1INIT_ZERO_VALUE;\n";
-   out << "reg [" << _ports_in[i_in3].type_size << "-1:0] reg_" << _ports_in[i_in3].name << " 1INIT_ZERO_VALUE;\n\n";
+   out << "reg started;\n";
+   out << "wire started0;\n";
+   out << "reg validated;\n";
+   out << "wire validated0;\n";
+   out << "wire " << _ports_out[o_done].name << ";\n";
+   out << "reg [" << _ports_in[i_in3].type_size << "-1:0] reg_" << _ports_in[i_in3].name << ";\n\n";
 
-   out << "always @(*)\n";
-   out << "  started0 = (started | " << _ports_in[i_start].name << ") & !(validated | " << _ports_in[i_vld].name
-       << ");\n";
-   out << "always @(posedge clock 1RESET_EDGE)\n";
-   out << "  if (1RESET_VALUE)\n";
-   out << "    started <= 0;\n";
-   out << "  else\n";
-   out << "    started <= started0;\n\n";
+   out << "assign started0 = (started || " << _ports_in[i_start].name << ") && !(validated || " << _ports_in[i_vld].name
+       << ");\n"
+       << "always @(posedge clock 1RESET_EDGE)\n"
+       << "begin\n"
+       << "  if (1RESET_VALUE)\n"
+       << "  begin\n"
+       << "    started <= 0;\n"
+       << "  end\n"
+       << "  else\n"
+       << "  begin\n"
+       << "    started <= started_0;\n"
+       << "  end\n"
+       << "end\n\n";
 
-   out << "always @(*)\n";
-   out << "  validated0 <= (validated | " << _ports_in[i_vld].name << ") & !(started | " << _ports_in[i_start].name
+   out << "assign validated0 = (validated | " << _ports_in[i_vld].name << ") & !(started | " << _ports_in[i_start].name
        << ");\n\n";
 
    out << "always @(posedge clock 1RESET_EDGE)\n";
@@ -112,15 +115,10 @@ void Read_validModuleGenerator::InternalExec(std::ostream& out, const module* /*
    out << "  else if(" << _ports_in[i_vld].name << ")\n";
    out << "    reg_" << _ports_in[i_in3].name << " <= " << _ports_in[i_in3].name << ";\n\n";
 
-   out << "always @(*)\n";
-   out << "begin\n";
-   out << "  " << _ports_out[o_out1].name << " = " << _ports_in[i_vld].name << " ? " << _ports_in[i_in3].name
+   out << "assign " << _ports_out[o_out1].name << " = " << _ports_in[i_vld].name << " ? " << _ports_in[i_in3].name
        << " : reg_" << _ports_in[i_in3].name << ";\n";
    out << "end\n\n";
 
-   out << "always @(*)\n";
-   out << "begin\n";
-   out << "  " << _ports_out[o_done].name << " = (" << _ports_in[i_start].name << " & " << _ports_in[i_vld].name
+   out << "assign " << _ports_out[o_done].name << " = (" << _ports_in[i_start].name << " & " << _ports_in[i_vld].name
        << ") | (started & " << _ports_in[i_vld].name << ")  | (validated & " << _ports_in[i_start].name << ");\n";
-   out << "end\n";
 }
