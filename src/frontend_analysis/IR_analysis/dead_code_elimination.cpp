@@ -606,7 +606,13 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                                                                                " written_bw: " + STR(written_bw));
                                                             if(GET_INDEX_NODE(mr->op0) ==
                                                                    GET_INDEX_NODE(mr_used->op0) &&
-                                                               written_bw == read_bw)
+                                                               written_bw == read_bw &&
+                                                               tree_helper::IsSameType(
+                                                                   type_r,
+                                                                   type_w)) /// TODO in case read and write value are
+                                                                            /// integers but of different signedness a
+                                                                            /// cast could allow the load/store
+                                                                            /// semplification
                                                             {
                                                                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                                                               "---found a candidate " +
