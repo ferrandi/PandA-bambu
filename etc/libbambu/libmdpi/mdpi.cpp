@@ -181,10 +181,10 @@ static FORCE_INLINE uint8_t load(bptr_t addr)
 
 static void __attribute__((noinline)) __m_read(const uint16_t bsize, svLogicVecVal* data, ptr_t addr)
 {
-   debug("Read %u bytes at " PTR_FORMAT "\n", bsize, addr);
    bptr_t __addr = __m_memaddr(addr);
    if(__addr)
    {
+      debug("Read %u bytes at " PTR_FORMAT "->" BPTR_FORMAT "\n", bsize, addr, bptr_to_int(__addr));
       try
       {
 #pragma unroll(4)
@@ -210,7 +210,7 @@ static void __attribute__((noinline)) __m_read(const uint16_t bsize, svLogicVecV
    }
    else
    {
-      error("Read to invalid address " PTR_FORMAT ".\n", addr);
+      error("Read to non-mapped address " PTR_FORMAT ".\n", addr);
       abort();
    }
 }
@@ -223,10 +223,10 @@ static FORCE_INLINE void store(bptr_t addr, uint8_t val)
 static void __attribute__((noinline))
 __m_write(const uint16_t max_bsize, uint16_t size, CONSTARG svLogicVecVal* data, ptr_t addr)
 {
-   debug("Write %u bits at " PTR_FORMAT "\n", size, addr);
    bptr_t __addr = __m_memaddr(addr);
    if(__addr)
    {
+      debug("Write %u bits at " PTR_FORMAT "->" BPTR_FORMAT "\n", size, addr, bptr_to_int(__addr));
       assert((max_bsize * 8) >= size && "Memory write bitsize must be smaller than bus size");
       const uint16_t bsize = (size / 8) + ((size % 8) != 0);
       try
@@ -260,7 +260,7 @@ __m_write(const uint16_t max_bsize, uint16_t size, CONSTARG svLogicVecVal* data,
    }
    else
    {
-      error("Write to invalid address " PTR_FORMAT ".\n", addr);
+      error("Write to non-mapped address " PTR_FORMAT ".\n", addr);
       abort();
    }
 }

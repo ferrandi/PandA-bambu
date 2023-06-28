@@ -123,23 +123,83 @@ void __m_memmap_init()
    __m_mmu[0] = NULL;
 }
 
-void __m_memmap(ptr_t dst, void* _bits)
+int __m_memmap(ptr_t dst, void* _bits, size_t bytes)
 {
    bptr_t bits = reinterpret_cast<bptr_t>(_bits);
    debug("Address " BPTR_FORMAT " mapped at " PTR_FORMAT "\n", bptr_to_int(bits), dst);
-   __m_mmu[dst] = bits - dst;
+
+   const std::pair<std::map<ptr_t, bptr_t>::iterator, bool> base = __m_mmu.insert(std::make_pair(dst, bits - dst));
+   const std::pair<std::map<ptr_t, bptr_t>::iterator, bool> top =
+       __m_mmu.insert(std::make_pair<ptr_t, bptr_t>(dst + bytes, 0));
+   std::map<ptr_t, bptr_t>::iterator front = base.first, prev = base.first;
+   --prev;
+   std::map<ptr_t, bptr_t>::iterator back = top.first, next = top.first;
+   ++next;
+   if(!base.second)
+   {
+      if(!front->second)
+      {
+         front->second = bits - dst;
+         if(prev->second == front->second)
+         {
+            __m_mmu.erase(front);
+            front = prev;
+            --prev;
+         }
+      }
+      else if(front->second != (bits - dst))
+      {
+         error("Uncorrelated memory spaces overlap: " PTR_FORMAT "(" BPTR_FORMAT ") over " PTR_FORMAT "(" BPTR_FORMAT
+               ").\n",
+               dst, bptr_to_int(bits + dst), front->first, bptr_to_int(front->second + front->first));
+         return 1;
+      }
+   }
+   else if(prev->second)
+   {
+      if(prev->second != front->second)
+      {
+         error("Uncorrelated memory spaces overlap: " PTR_FORMAT "(" BPTR_FORMAT ") over " PTR_FORMAT "(" BPTR_FORMAT
+               ").\n",
+               front->first, bptr_to_int(front->second + front->first), prev->first,
+               bptr_to_int(prev->second + prev->first));
+         return 1;
+      }
+      front = prev;
+   }
+   if(top.second && next != __m_mmu.end() && !next->second)
+   {
+      back = next;
+   }
+   next = front;
+   ++next;
+   if(next != back)
+   {
+      std::map<ptr_t, bptr_t>::iterator it = next;
+      for(; it != back; ++it)
+      {
+         if(it->second && it->second != front->second)
+         {
+            error("Uncorrelated memory spaces overlap: " PTR_FORMAT "(" BPTR_FORMAT ") over " PTR_FORMAT "(" BPTR_FORMAT
+                  ").\n",
+                  front->first, bptr_to_int(front->second + front->first), it->first,
+                  bptr_to_int(it->second + it->first));
+            return 1;
+         }
+      }
+      __m_mmu.erase(next, back);
+   }
+   return 0;
 }
 
 bptr_t __m_memaddr(ptr_t sim_addr)
 {
    const std::map<ptr_t, bptr_t>::iterator mmu_it = --__m_mmu.upper_bound(sim_addr);
-   if(mmu_it != __m_mmu.begin())
+   if(mmu_it != __m_mmu.begin() && mmu_it->second)
    {
       bptr_t addr = mmu_it->second + sim_addr;
-      debug("Address " PTR_FORMAT " mapped back at " BPTR_FORMAT "\n", sim_addr, bptr_to_int(addr));
       return addr;
    }
-   error("Unknown address mapping for " PTR_FORMAT "\n", sim_addr);
    return 0;
 }
 

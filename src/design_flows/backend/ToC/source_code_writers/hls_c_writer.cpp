@@ -409,24 +409,25 @@ void HLSCWriter::WriteSimulatorInitMemory(const unsigned int function_id)
 typedef struct
 {
 const char* filename;
-const size_t size;
+size_t size;
 const ptr_t addrmap;
 void* addr;
 } __m_memmap_t;
 
 static int cmpptr(const ptr_t a, const ptr_t b) { return a < b ? -1 : (a > b); }
-static int cmpaddr(const void* a, const void* b) { return cmpptr(*(ptr_t*)a, *(ptr_t*)b); }
+static int cmpaddr(const void* a, const void* b) { return cmpptr(*(ptr_t*)((__m_memmap_t*)a)->addr, *(ptr_t*)((__m_memmap_t*)b)->addr); }
 
 static void __m_memsetup(void* args[], size_t args_size)
 {
+int error = 0;
 size_t m_extmem_size, i;
-void **m_extmem;
+__m_memmap_t* m_extmem;
 ptr_t prev, curr_base;
 )");
    auto base_addr = HLSMgr->base_address;
+   indented_output_stream->Append("static __m_memmap_t memmap_init[] = {\n");
    if(mem_vars.size())
    {
-      indented_output_stream->Append("static __m_memmap_t memmap_init[] = {\n");
       const auto output_directory = Param->getOption<std::string>(OPT_output_directory) + "/simulation/";
       for(const auto& mem_var : mem_vars)
       {
@@ -448,16 +449,15 @@ ptr_t prev, curr_base;
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
          }
       }
-      indented_output_stream->Append("};\n");
    }
-   indented_output_stream->Append("const ptr_t base_addr = " + STR(base_addr) + ";\n\n");
+   indented_output_stream->Append("};\n");
+   indented_output_stream->Append("const ptr_t base_addr = " + STR(base_addr) + ";\n");
 
-   indented_output_stream->Append("m_extmem_size = args_size;\n\n");
+   indented_output_stream->Append(R"(
+m_extmem_size = args_size;
 
-   indented_output_stream->Append("__m_memmap_init();\n");
-   if(mem_vars.size())
-   {
-      indented_output_stream->Append(R"(
+__m_memmap_init();
+
 // Memory-mapped internal variables initialization
 for(i = 0; i < sizeof(memmap_init) / sizeof(*memmap_init); ++i)
 {
@@ -466,8 +466,8 @@ if(!fp)
 {
 error("Unable to open file: %s\n", memmap_init[i].filename);
 perror("Unable to open memory variable initialization file");
-__m_signal_to(MDPI_ENTITY_SIM, MDPI_COSIM_END);
-pthread_exit((void*)((size_t)(MDPI_COSIM_ABORT)));
+error |= 2;
+continue;
 }
 if(memmap_init[i].addr == NULL)
 {
@@ -481,34 +481,38 @@ if(ferror(fp))
 {
 perror("Unable to read from memory variable initialization file");
 }
-__m_signal_to(MDPI_ENTITY_SIM, MDPI_COSIM_END);
-pthread_exit((void*)((size_t)(MDPI_COSIM_ABORT)));
+error |= 4;
+fclose(fp);
+continue;
 }
 fclose(fp);
-__m_memmap(memmap_init[i].addrmap, memmap_init[i].addr);
+error |= __m_memmap(memmap_init[i].addrmap, memmap_init[i].addr, memmap_init[i].size);
 }
-)");
-   }
 
-   indented_output_stream->Append(R"(
-m_extmem = (void**)malloc(sizeof(void*) * m_extmem_size);
+m_extmem = (__m_memmap_t*)malloc(sizeof(__m_memmap_t) * m_extmem_size);
 for(i = 0; i < args_size; ++i)
 {
-m_extmem[i] = args[i];
+m_extmem[i].addr = args[i];
+m_extmem[i].size = __m_param_size(i);
 }
 
-qsort(m_extmem, m_extmem_size, sizeof(void*), cmpaddr);
-prev = (ptr_t)m_extmem[0];
+qsort(m_extmem, m_extmem_size, sizeof(__m_memmap_t), cmpaddr);
+prev = (ptr_t)m_extmem[0].addr;
 curr_base = base_addr;
-__m_memmap(curr_base, m_extmem[0]);
+error |= __m_memmap(curr_base, m_extmem[0].addr, m_extmem[0].size);
 for(i = 1; i < m_extmem_size; ++i)
 {
-const ptr_t curr = (ptr_t)m_extmem[i];
+const ptr_t curr = (ptr_t)m_extmem[i].addr;
 curr_base += curr - prev;
-__m_memmap(curr_base, m_extmem[i]);
+error |= __m_memmap(curr_base, m_extmem[i].addr, m_extmem[i].size);
 prev = curr;
 }
 free(m_extmem);
+if(error)
+{
+__m_signal_to(MDPI_ENTITY_SIM, MDPI_COSIM_END);
+pthread_exit((void*)((size_t)(MDPI_COSIM_ABORT)));
+}
 }
 
 )");
@@ -597,6 +601,7 @@ void HLSCWriter::WriteMainTestbench()
       gold_decl += return_type_str;
       gold_call += "retval_gold = ";
       pp_call += "retval_pp = ";
+      args_init = "__m_alloc_param(0, sizeof(" + return_type_str + "));\n";
       args_decl = return_type_str + " retval, retval_gold, retval_pp;\n" + args_decl + "(void*)&retval, ";
       args_set += "__m_setarg(0, args[0], " + STR(tree_helper::Size(return_type)) + ");\n";
       ++args_decl_idx;
@@ -686,6 +691,7 @@ void HLSCWriter::WriteMainTestbench()
          {
             gold_call += arg_name + ", ";
             pp_call += arg_name + ", ";
+            args_init += "__m_alloc_param(" + STR(param_idx) + ", sizeof(" + arg_typename + "));\n";
             args_decl += "(void*)&" + arg_name + ", ";
             args_set += arg_interface == "default" ? "__m_setarg" : "m_setargptr";
          }
