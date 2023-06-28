@@ -89,30 +89,40 @@ void __m_setarg(uint8_t index, void* bits, uint16_t bitsize)
    __m_params.prms[index].bitsize = bitsize;
 }
 
-struct addr_search_s
+ptr_t __m_reverse_memmap(const bptr_t addr)
 {
-   const bptr_t _addr;
-   addr_search_s(const bptr_t addr) : _addr(addr)
+   std::map<ptr_t, bptr_t>::iterator curr = __m_mmu.begin(), prev;
+   do
    {
-   }
-   bool operator()(std::pair<const ptr_t, bptr_t>& _t)
+      if(curr->second)
+      {
+         prev = curr++;
+      }
+      else
+      {
+         prev = ++curr;
+         ++curr;
+      }
+   } while(prev != __m_mmu.end() && (addr < (prev->first + prev->second) || addr >= (curr->first + prev->second)));
+   if(prev == __m_mmu.end())
    {
-      return (_t.second + _t.first) == _addr;
+      return 0;
    }
-};
+   return addr - prev->second;
+}
 
 void __m_setptrarg(uint8_t index, bptr_t* bits, uint16_t bitsize)
 {
    assert((bitsize == PTR_SIZE) && "Unexpected pointer size");
    const bptr_t addr = *bits;
-   const std::map<ptr_t, bptr_t>::iterator mmu_it = std::find_if(__m_mmu.begin(), __m_mmu.end(), addr_search_s(addr));
-   if(mmu_it != __m_mmu.end())
+   const ptr_t dst = __m_reverse_memmap(addr);
+   if(dst)
    {
-      debug("Pointer parameter " BPTR_FORMAT " mapped at " PTR_FORMAT "\n", bptr_to_int(addr), mmu_it->first);
-      *bits = ptr_to_bptr(mmu_it->first);
+      debug("Pointer parameter " BPTR_FORMAT " mapped at " PTR_FORMAT "\n", bptr_to_int(addr), dst);
+      *bits = ptr_to_bptr(dst);
       return __m_setarg(index, reinterpret_cast<bptr_t>(bits), PTR_SIZE);
    }
-   error("Unknown parameter address mapping for " BPTR_FORMAT "\n", bptr_to_int(addr));
+   error("Unknown parameter %u address mapping for " BPTR_FORMAT "\n", index, bptr_to_int(addr));
    exit(EXIT_FAILURE);
 }
 
