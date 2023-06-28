@@ -314,10 +314,7 @@ DesignFlowStep_Status CSE::InternalExec()
             bool same_range = false;
             if(!parameters->getOption<int>(OPT_gcc_openmp_simd))
             {
-               same_range = (ref_ssa->bit_values.empty() && dead_ssa->bit_values.empty()) ||
-                            (!ref_ssa->bit_values.empty() && dead_ssa->bit_values.empty()) ||
-                            (!ref_ssa->bit_values.empty() && !dead_ssa->bit_values.empty() &&
-                             ref_ssa->bit_values == dead_ssa->bit_values);
+               same_range = dead_ssa->bit_values.empty() || ref_ssa->bit_values == dead_ssa->bit_values;
             }
             else
             {
