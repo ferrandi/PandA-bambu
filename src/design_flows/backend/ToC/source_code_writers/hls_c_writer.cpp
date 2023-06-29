@@ -417,12 +417,10 @@ void* addr;
 static int cmpptr(const ptr_t a, const ptr_t b) { return a < b ? -1 : (a > b); }
 static int cmpaddr(const void* a, const void* b) { return cmpptr((ptr_t)((__m_memmap_t*)a)->addr, (ptr_t)((__m_memmap_t*)b)->addr); }
 
-static void __m_memsetup(void* args[], size_t m_extmem_size)
+static void __m_memsetup(void* args[], size_t args_count)
 {
 int error = 0;
 size_t i;
-__m_memmap_t* m_extmem;
-ptr_t prev, curr_base;
 )");
    auto base_addr = HLSMgr->base_address;
    indented_output_stream->Append("static __m_memmap_t memmap_init[] = {\n");
@@ -451,7 +449,7 @@ ptr_t prev, curr_base;
       }
    }
    indented_output_stream->Append("};\n");
-   indented_output_stream->Append("const ptr_t base_addr = " + STR(base_addr) + ";\n");
+   indented_output_stream->Append("ptr_t base_addr = " + STR(base_addr) + ";\n");
 
    indented_output_stream->Append(R"(
 __m_memmap_init();
@@ -487,25 +485,13 @@ fclose(fp);
 error |= __m_memmap(memmap_init[i].addrmap, memmap_init[i].addr, memmap_init[i].size);
 }
 
-m_extmem = (__m_memmap_t*)malloc(sizeof(__m_memmap_t) * m_extmem_size);
-for(i = 0; i < m_extmem_size; ++i)
+for(i = 0; i < args_count; ++i)
 {
-m_extmem[i].addr = args[i];
-m_extmem[i].size = __m_param_size(i);
+const size_t size = __m_param_size(i);
+base_addr += ((base_addr % 8) != 0) ? (8 - (base_addr % 8)) : 0;
+error |= __m_memmap(base_addr, args[i], size);
+base_addr += size;
 }
-
-qsort(m_extmem, m_extmem_size, sizeof(__m_memmap_t), cmpaddr);
-prev = (ptr_t)m_extmem[0].addr;
-curr_base = base_addr;
-error |= __m_memmap(curr_base, m_extmem[0].addr, m_extmem[0].size);
-for(i = 1; i < m_extmem_size; ++i)
-{
-const ptr_t curr = (ptr_t)m_extmem[i].addr;
-curr_base += curr - prev;
-error |= __m_memmap(curr_base, m_extmem[i].addr, m_extmem[i].size);
-prev = curr;
-}
-free(m_extmem);
 if(error)
 {
 __m_signal_to(MDPI_ENTITY_SIM, MDPI_COSIM_END);
