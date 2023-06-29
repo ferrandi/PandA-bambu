@@ -4087,13 +4087,7 @@ begin
   sel_load_or_store_old &lt;= sel_load_or_store_old_next;
 end
 
-generate
-genvar j;
-  for (j = 0; j < PORTSIZE_done_port; j = j + 1)
-  begin
-    assign sel_load_or_store_old_next[j] = done_port[j] ? 1&apos;b0 : (sel_LOAD[j] | sel_STORE[j]);
-  end
-endgenerate
+assign sel_load_or_store_old_next = ~done_port &amp; (sel_LOAD | sel_STORE);
 
 assign int_sel_LOAD = (in4 &amp; sel_LOAD) &amp; (~sel_load_or_store_old | M_back_pressure);
 assign int_sel_STORE = (in4 &amp; sel_STORE)  &amp; (~sel_load_or_store_old | M_back_pressure);
@@ -4252,13 +4246,7 @@ begin
   sel_load_or_store_old &lt;= sel_load_or_store_old_next;
 end
 
-generate
-genvar j;
-  for (j = 0; j < PORTSIZE_done_port; j = j + 1)
-  begin
-    assign sel_load_or_store_old_next[j] = done_port[j] ? 1&apos;b0 : (sel_LOAD[j] | sel_STORE[j]);
-  end
-endgenerate
+assign sel_load_or_store_old_next = ~done_port &amp; (sel_LOAD | sel_STORE);
 
 assign int_sel_LOAD = (in4 &amp; sel_LOAD) &amp; (~sel_load_or_store_old | M_back_pressure);
 assign int_sel_STORE = (in4 &amp; sel_STORE)  &amp; (~sel_load_or_store_old | M_back_pressure);
@@ -4425,13 +4413,7 @@ begin
   sel_load_or_store_old &lt;= sel_load_or_store_old_next;
 end
 
-generate
-genvar j;
-  for (j = 0; j < PORTSIZE_done_port; j = j + 1)
-  begin
-    assign sel_load_or_store_old_next[j] = done_port[j] ? 1&apos;b0 : (sel_LOAD[j] | sel_STORE[j]);
-  end
-endgenerate
+assign sel_load_or_store_old_next = ~done_port &amp; (sel_LOAD | sel_STORE);
 
 assign int_sel_LOAD = (in4 &amp; delayed_sel_LOAD) &amp; (~sel_load_or_store_old | M_back_pressure);
 assign int_sel_STORE = (in4 &amp; delayed_sel_STORE)  &amp; (~sel_load_or_store_old | M_back_pressure);
@@ -4607,13 +4589,7 @@ begin
   sel_load_or_store_old &lt;= sel_load_or_store_old_next;
 end
 
-generate
-genvar j;
-  for (j = 0; j < PORTSIZE_done_port; j = j + 1)
-  begin
-    assign sel_load_or_store_old_next[j] = done_port[j] ? 1&apos;b0 : (sel_LOAD[j] | sel_STORE[j]);
-  end
-endgenerate
+assign sel_load_or_store_old_next = ~done_port &amp; (sel_LOAD | sel_STORE);
 
 assign int_sel_LOAD = (in4 &amp; delayed_sel_LOAD) &amp; (~sel_load_or_store_old | M_back_pressure);
 assign int_sel_STORE = (in4 &amp; delayed_sel_STORE)  &amp; (~sel_load_or_store_old | M_back_pressure);
