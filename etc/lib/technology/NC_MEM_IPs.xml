@@ -14847,8 +14847,6 @@ wire valid,tagsmatch;
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <NP_functionality LIBRARY="IOB_cache_memory FE_ADDR_W N_WAYS LINE_OFF_W WORD_OFF_W WTBUF_DEPTH_W REP_POLICY CTRL_CACHE CTRL_CNT WRITE_POL addr rdata addr_reg wdata_reg wstrb_reg write_addr write_wdata write_wstrb replace_addr read_addr read_rdata" IP_COMPONENT="IOB_ram_2p,IOB_fifo_sync,IOB_gen_sp_ram,IOB_gen_sp_ram_no_addr,IOB_ram_sp,IOB_ram_sp_no_addr,IOB_replacement_policy,IOB_onehot_to_bin" VERILOG_PROVIDED="
-   //Control-ports
-   `define CTRL_IO //ports that allow from outside signals to influence the invalidate and write-through buffer empty cache-control&apos;s functions.
    //Write Policy
    `define WRITE_THROUGH 0 //write-through not allocate: implements a write-through buffer
    `define WRITE_BACK 1    //write-back allocate: implementes a dirty-memory
@@ -15525,7 +15523,6 @@ wire valid,tagsmatch;
       end  
     end
   endgenerate
-   `undef CTRL_IO
    `undef WRITE_THROUGH
    `undef WRITE_BACK
    `undef IOB_MIN
@@ -15762,18 +15759,6 @@ wire valid,tagsmatch;
           <port_o id="ready" dir="OUT">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
-          <port_o id="force_inv_in" dir="IN">
-            <structural_type_descriptor type="BOOL" size="1"/>
-          </port_o>
-          <port_o id="force_inv_out" dir="OUT">
-            <structural_type_descriptor type="BOOL" size="1"/>
-          </port_o>
-          <port_o id="wtb_empty_in" dir="IN">
-            <structural_type_descriptor type="BOOL" size="1"/>
-          </port_o>
-          <port_o id="wtb_empty_out" dir="OUT">
-            <structural_type_descriptor type="BOOL" size="1"/>
-          </port_o>
           <port_o id="m_axi_awid" dir="OUT">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
@@ -15887,7 +15872,6 @@ wire valid,tagsmatch;
           </port_o>
           <NP_functionality LIBRARY="IOB_cache_axi FE_ADDR_W BE_ADDR_W BE_DATA_W N_WAYS LINE_OFF_W WORD_OFF_W WTBUF_DEPTH_W REP_POLICY WRITE_POL AXI_ID CTRL_CACHE CTRL_CNT addr wdata wstrb rdata m_axi_awid m_axi_awaddr m_axi_awlen m_axi_wdata m_axi_wstrb m_axi_bid m_axi_arid m_axi_araddr m_axi_arlen m_axi_rid m_axi_rdata" IP_COMPONENT="IOB_front_end,IOB_cache_memory,IOB_back_end_axi,IOB_cache_control" VERILOG_PROVIDED="
    //Cache-Control
-   `define CTRL_IO
    `define CTRL_ADDR_W 4
    //Address-port
    `define WORD_ADDR // Word-addressable, (BE) addr becomes word-addressable (doesn&apos;t receive the byte-offset).
@@ -15939,16 +15923,6 @@ wire valid,tagsmatch;
    wire [CTRL_CACHE*(FE_DATA_W-1):0]                                       ctrl_rdata;
    wire                                                                    invalidate;
    
-`ifdef CTRL_IO
-   assign force_inv_out = invalidate;
-   
-   generate
-      if (CTRL_CACHE)
-        assign wtb_empty_out = wtbuf_empty;
-      else
-        assign wtb_empty_out = wtbuf_empty &amp; wtb_empty_in;//to remove unconnected port warning. If unused wtb_empty_in = 1&apos;b1
-   endgenerate 
-`endif
    IOB_front_end
      #(
        .FE_ADDR_W (FE_ADDR_W),
@@ -16059,11 +16033,7 @@ wire valid,tagsmatch;
       .write_miss  (write_miss),
       .read_hit    (read_hit),
       .read_miss   (read_miss),
-`ifdef CTRL_IO
-      .invalidate  (invalidate | force_inv_in),
-`else
       .invalidate  (invalidate),
-`endif
       .flush(flush)
       );
 
@@ -16169,11 +16139,7 @@ wire valid,tagsmatch;
          .addr  (ctrl_addr),
          //write data
          .wtbuf_full (wtbuf_full),
-`ifdef CTRL_IO
-         .wtbuf_empty (wtbuf_empty &amp; wtb_empty_in),
-`else
          .wtbuf_empty (wtbuf_empty), 
-`endif
          .write_hit  (write_hit),
          .write_miss (write_miss),
          .read_hit   (read_hit),
@@ -16191,7 +16157,6 @@ wire valid,tagsmatch;
         end // else: !if(CTRL_CACHE)
       
    endgenerate
-   `undef CTRL_IO
    `undef CTRL_ADDR_W
    `undef WORD_ADDR
      "/>
@@ -16378,7 +16343,6 @@ wire valid,tagsmatch;
           <!--TODO: CB fix reset handling -->
           <NP_functionality LIBRARY="IOB_cache_minimal_axi FE_ADDR_W BE_ADDR_W BE_DATA_W N_WAYS LINE_OFF_W WORD_OFF_W WTBUF_DEPTH_W REP_POLICY WRITE_POL AXI_ID CTRL_CACHE CTRL_CNT Min_addr_ram Min_Wdata_ram Min_Rdata_ram Min_data_size_ram Min_accelerator_context_in Min_accelerator_context m_axi_awid m_axi_awaddr m_axi_awlen m_axi_wdata m_axi_wstrb m_axi_bid m_axi_arid m_axi_araddr m_axi_arlen m_axi_rid m_axi_rdata" IP_COMPONENT="IOB_front_end,IOB_cache_memory,IOB_back_end_axi,IOB_cache_control" VERILOG_PROVIDED="
    //Cache-Control
-   `define CTRL_IO
    `define CTRL_ADDR_W 4
    //Address-port
    `define WORD_ADDR // Word-addressable, (BE) addr becomes word-addressable (doesn't receive the byte-offset).
@@ -16680,11 +16644,7 @@ wire valid,tagsmatch;
          .addr  (ctrl_addr),
          //write data
          .wtbuf_full (wtbuf_full),
-`ifdef CTRL_IO
-         .wtbuf_empty (wtbuf_empty &amp; wtb_empty_in),
-`else
          .wtbuf_empty (wtbuf_empty), 
-`endif
          .write_hit  (write_hit),
          .write_miss (write_miss),
          .read_hit   (read_hit),
@@ -16702,7 +16662,6 @@ wire valid,tagsmatch;
         end // else: !if(CTRL_CACHE)
       
    endgenerate
-   `undef CTRL_IO
    `undef CTRL_ADDR_W
    `undef WORD_ADDR
      "/>
@@ -17544,7 +17503,6 @@ wire valid,tagsmatch;
           </port_o>
           <NP_functionality LIBRARY="IOB_cache_minimal_minimal FE_ADDR_W BE_ADDR_W BE_DATA_W N_WAYS LINE_OFF_W WORD_OFF_W WTBUF_DEPTH_W REP_POLICY WRITE_POL CTRL_CACHE CTRL_CNT Min_addr_ram Min_Wdata_ram  Min_data_size_ram Min_accelerator_context_in Min_Rdata_ram Min_accelerator_context Mout_addr_ram Mout_Wdata_ram Mout_data_ram_size Mout_accelerator_context M_Rdata_ram M_accelerator_context" IP_COMPONENT="IOB_front_end,IOB_cache_memory,IOB_back_end_minimal" VERILOG_PROVIDED="
    //Cache-Control
-   `define CTRL_IO
    `define CTRL_ADDR_W 4
    //Address-port
    `define WORD_ADDR // Word-addressable, (BE) addr becomes word-addressable (doesn't receive the byte-offset).
@@ -17809,11 +17767,7 @@ wire valid,tagsmatch;
          .addr  (ctrl_addr),
          //write data
          .wtbuf_full (wtbuf_full),
-`ifdef CTRL_IO
-         .wtbuf_empty (wtbuf_empty &amp; wtb_empty_in),
-`else
          .wtbuf_empty (wtbuf_empty), 
-`endif
          .write_hit  (write_hit),
          .write_miss (write_miss),
          .read_hit   (read_hit),
@@ -17831,7 +17785,6 @@ wire valid,tagsmatch;
         end // else: !if(CTRL_CACHE)
       
    endgenerate
-   `undef CTRL_IO
    `undef CTRL_ADDR_W
    `undef WORD_ADDR
      
