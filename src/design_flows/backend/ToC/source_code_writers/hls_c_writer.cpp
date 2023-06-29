@@ -163,14 +163,12 @@ void HLSCWriter::WriteGlobalDeclarations()
 void HLSCWriter::WriteParamDecl(const BehavioralHelperConstRef BH)
 {
    indented_output_stream->Append("// parameters declaration\n");
-   HLSMgr->RSim->simulationArgSignature.clear();
 
    for(const auto& par : BH->GetParameters())
    {
       const auto parm_type = tree_helper::CGetType(par);
       const auto type = tree_helper::IsPointerType(par) ? "void*" : tree_helper::PrintType(TM, parm_type);
       const auto param = BH->PrintVariable(par->index);
-      HLSMgr->RSim->simulationArgSignature.push_back(param);
 
       if(tree_helper::IsVectorType(parm_type))
       {
@@ -415,24 +413,25 @@ void HLSCWriter::WriteSimulatorInitMemory(const unsigned int function_id)
 typedef struct
 {
 const char* filename;
-const size_t size;
+size_t size;
 const ptr_t addrmap;
 void* addr;
 } __m_memmap_t;
 
 static int cmpptr(const ptr_t a, const ptr_t b) { return a < b ? -1 : (a > b); }
-static int cmpaddr(const void* a, const void* b) { return cmpptr(*(ptr_t*)a, *(ptr_t*)b); }
+static int cmpaddr(const void* a, const void* b) { return cmpptr((ptr_t)((__m_memmap_t*)a)->addr, (ptr_t)((__m_memmap_t*)b)->addr); }
 
-static void __m_memsetup(void* args[], size_t args_size)
+static void __m_memsetup(void* args[], size_t m_extmem_size)
 {
-size_t m_extmem_size, i;
-void **m_extmem;
+int error = 0;
+size_t i;
+__m_memmap_t* m_extmem;
 ptr_t prev, curr_base;
 )");
    auto base_addr = HLSMgr->base_address;
+   indented_output_stream->Append("static __m_memmap_t memmap_init[] = {\n");
    if(mem_vars.size())
    {
-      indented_output_stream->Append("static __m_memmap_t memmap_init[] = {\n");
       const auto output_directory = Param->getOption<std::string>(OPT_output_directory) + "/simulation/";
       for(const auto& mem_var : mem_vars)
       {
@@ -443,10 +442,10 @@ ptr_t prev, curr_base;
             const auto var_name = BH->PrintVariable(var_id);
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Writing initialization for " + var_name);
             const auto var_addr = HLSMgr->Rmem->get_external_base_address(var_id);
-            const auto var_init_dat = output_directory + "init." + var_name + ".dat";
+            const auto var_init_dat = output_directory + "mem_" + STR(var_id) + "." + var_name + ".dat";
             const auto byte_count = TestbenchGeneration::generate_init_file(var_init_dat, TM, var_id, HLSMgr->Rmem);
-            indented_output_stream->Append("  {\"" + var_init_dat + "\", " + STR(byte_count) + ", " + STR(var_addr) +
-                                           ", NULL},\n");
+            indented_output_stream->Append("  {\"" + boost::replace_all_copy(var_init_dat, "\"", "\\\"") + "\", " +
+                                           STR(byte_count) + ", " + STR(var_addr) + ", NULL},\n");
             base_addr = std::max(base_addr, var_addr + byte_count);
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Init file   : '" + var_init_dat + "'");
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Memory usage: " + STR(byte_count) + " bytes");
@@ -454,61 +453,68 @@ ptr_t prev, curr_base;
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
          }
       }
-      indented_output_stream->Append("};\n");
    }
-   indented_output_stream->Append("const ptr_t base_addr = " + STR(base_addr) + ";\n\n");
+   indented_output_stream->Append("};\n");
+   indented_output_stream->Append("const ptr_t base_addr = " + STR(base_addr) + ";\n");
 
-   indented_output_stream->Append("m_extmem_size = args_size;\n\n");
+   indented_output_stream->Append(R"(
+__m_memmap_init();
 
-   indented_output_stream->Append("__m_memmap_init();\n");
-   if(mem_vars.size())
-   {
-      indented_output_stream->Append(R"(
 // Memory-mapped internal variables initialization
 for(i = 0; i < sizeof(memmap_init) / sizeof(*memmap_init); ++i)
 {
 FILE* fp = fopen(memmap_init[i].filename, "rb");
 if(!fp)
 {
-error("Unable to open file: %s", memmap_init[i].filename);
-perror("");
-exit(EXIT_FAILURE);
+error("Unable to open file: %s\n", memmap_init[i].filename);
+perror("Unable to open memory variable initialization file");
+error |= 2;
+continue;
 }
 if(memmap_init[i].addr == NULL)
 {
 memmap_init[i].addr = malloc(memmap_init[i].size);
 }
-if(fread(memmap_init[i].addr, 1, memmap_init[i].size, fp) != memmap_init[i].size)
+size_t nbytes = fread(memmap_init[i].addr, 1, memmap_init[i].size, fp);
+if(nbytes != memmap_init[i].size)
 {
-error("Unable to read %zu bytes from file: %s", memmap_init[i].size, memmap_init[i].filename);
-perror("");
-exit(EXIT_FAILURE);
+error("Only %zu/%zu bytes were read from file: %s\n", nbytes, memmap_init[i].size, memmap_init[i].filename);
+if(ferror(fp))
+{
+perror("Unable to read from memory variable initialization file");
+}
+error |= 4;
+fclose(fp);
+continue;
 }
 fclose(fp);
-__m_memmap(memmap_init[i].addrmap, memmap_init[i].addr);
+error |= __m_memmap(memmap_init[i].addrmap, memmap_init[i].addr, memmap_init[i].size);
 }
-)");
-   }
 
-   indented_output_stream->Append(R"(
-m_extmem = (void**)malloc(sizeof(void*) * m_extmem_size);
-for(i = 0; i < args_size; ++i)
+m_extmem = (__m_memmap_t*)malloc(sizeof(__m_memmap_t) * m_extmem_size);
+for(i = 0; i < m_extmem_size; ++i)
 {
-m_extmem[i] = args[i];
+m_extmem[i].addr = args[i];
+m_extmem[i].size = __m_param_size(i);
 }
 
-qsort(m_extmem, m_extmem_size, sizeof(void*), cmpaddr);
-prev = (ptr_t)m_extmem[0];
+qsort(m_extmem, m_extmem_size, sizeof(__m_memmap_t), cmpaddr);
+prev = (ptr_t)m_extmem[0].addr;
 curr_base = base_addr;
-__m_memmap(curr_base, m_extmem[0]);
+error |= __m_memmap(curr_base, m_extmem[0].addr, m_extmem[0].size);
 for(i = 1; i < m_extmem_size; ++i)
 {
-const ptr_t curr = (ptr_t)m_extmem[i];
+const ptr_t curr = (ptr_t)m_extmem[i].addr;
 curr_base += curr - prev;
-__m_memmap(curr_base, m_extmem[i]);
+error |= __m_memmap(curr_base, m_extmem[i].addr, m_extmem[i].size);
 prev = curr;
 }
 free(m_extmem);
+if(error)
+{
+__m_signal_to(MDPI_ENTITY_SIM, MDPI_COSIM_END);
+pthread_exit((void*)((size_t)(MDPI_COSIM_ABORT)));
+}
 }
 
 )");
@@ -588,7 +594,7 @@ void HLSCWriter::WriteMainTestbench()
    std::string args_decl = "void* args[] = {";
    std::string args_set;
    std::string gold_cmp;
-   size_t args_decl_idx = 0;
+   size_t param_idx = 0;
    if(return_type)
    {
       const auto return_type_str = tree_helper::PrintType(TM, return_type);
@@ -596,9 +602,10 @@ void HLSCWriter::WriteMainTestbench()
       gold_decl += return_type_str;
       gold_call += "retval_gold = ";
       pp_call += "retval_pp = ";
-      args_decl = return_type_str + " retval, retval_gold, retval_pp;\n" + args_decl + "(void*)&retval, ";
-      args_set += "__m_setarg(0, args[0], " + STR(tree_helper::Size(return_type)) + ");\n";
-      ++args_decl_idx;
+      args_init = "__m_alloc_param(" + STR(top_params.size()) + ", sizeof(" + return_type_str + "));\n";
+      args_decl = return_type_str + " retval, retval_gold, retval_pp;\n" + args_decl;
+      args_set += "__m_setarg(" + STR(top_params.size()) + ", args[" + STR(top_params.size()) + "], " +
+                  STR(tree_helper::Size(return_type)) + ");\n";
    }
    else
    {
@@ -614,7 +621,6 @@ void HLSCWriter::WriteMainTestbench()
       for(const auto& arg : top_params)
       {
          std::string arg_typename, arg_interface, arg_size;
-         const auto param_idx = args_decl_idx - (return_type != nullptr);
          const auto arg_type = tree_helper::CGetType(arg);
          if(arg_signature_typename != HLSMgr->design_interface_typename_orig_signature.end())
          {
@@ -644,7 +650,7 @@ void HLSCWriter::WriteMainTestbench()
             arg_typename = arg_typename.substr(0, arg_typename.find("(*)")) + "*";
          }
          arg_size = STR(tree_helper::Size(arg_type));
-         const auto arg_name = "P" + STR(args_decl_idx);
+         const auto arg_name = "P" + STR(param_idx);
          const auto is_pointer_type = arg_typename.back() == '*';
          const auto is_reference_type = arg_typename.back() == '&';
          top_decl += arg_typename + " " + arg_name + ", ";
@@ -658,8 +664,8 @@ void HLSCWriter::WriteMainTestbench()
             const std::string channel_type(what[1].first, what[1].second);
             arg_typename.pop_back();
             gold_call += arg_name + ", ";
-            gold_cmp += "m_channelcmp(" + STR(args_decl_idx) + ", " + cmp_type(arg_type, channel_type) + ");\n";
-            args_init += "m_channel_init(" + STR(args_decl_idx) + ");\n";
+            gold_cmp += "m_channelcmp(" + STR(param_idx) + ", " + cmp_type(arg_type, channel_type) + ");\n";
+            args_init += "m_channel_init(" + STR(param_idx) + ");\n";
             args_decl += arg_name + "_sim, ";
             args_set += "__m_setargptr";
          }
@@ -667,7 +673,7 @@ void HLSCWriter::WriteMainTestbench()
          {
             gold_call += "(" + arg_typename + ")" + arg_name + "_gold, ";
             pp_call += "(" + tree_helper::PrintType(TM, arg_type, false, true) + ")" + arg_name + "_pp, ";
-            gold_cmp += "m_argcmp(" + STR(args_decl_idx) + ", " + cmp_type(arg_type, arg_typename) + ");\n";
+            gold_cmp += "m_argcmp(" + STR(param_idx) + ", " + cmp_type(arg_type, arg_typename) + ");\n";
             args_decl += "(void*)" + arg_name + ", ";
             args_set += "m_setargptr";
          }
@@ -676,7 +682,7 @@ void HLSCWriter::WriteMainTestbench()
             arg_typename.pop_back();
             gold_call += "*(" + arg_typename + "*)" + arg_name + "_gold, ";
             pp_call += "(" + tree_helper::PrintType(TM, arg_type, false, true) + "*)" + arg_name + "_pp, ";
-            gold_cmp += "m_argcmp(" + STR(args_decl_idx) + ", " + cmp_type(arg_type, arg_typename) + ");\n";
+            gold_cmp += "m_argcmp(" + STR(param_idx) + ", " + cmp_type(arg_type, arg_typename) + ");\n";
             args_init += "__m_alloc_param(" + STR(param_idx) + ", sizeof(" + arg_typename + "));\n";
             args_decl += "(void*)&" + arg_name + ", ";
             args_set += "m_setargptr";
@@ -685,6 +691,7 @@ void HLSCWriter::WriteMainTestbench()
          {
             gold_call += arg_name + ", ";
             pp_call += arg_name + ", ";
+            args_init += "__m_alloc_param(" + STR(param_idx) + ", sizeof(" + arg_typename + "));\n";
             args_decl += "(void*)&" + arg_name + ", ";
             args_set += arg_interface == "default" ? "__m_setarg" : "m_setargptr";
          }
@@ -725,14 +732,21 @@ void HLSCWriter::WriteMainTestbench()
                }
             }
          }
-         args_set += "(" + STR(args_decl_idx) + ", args[" + STR(args_decl_idx) + "], " + arg_size + ");\n";
-         ++args_decl_idx;
+         args_set += "(" + STR(param_idx) + ", args[" + STR(param_idx) + "], " + arg_size + ");\n";
+         ++param_idx;
       }
       top_decl.erase(top_decl.size() - 2);
       gold_decl.erase(gold_decl.size() - 2);
       gold_call.erase(gold_call.size() - 2);
       pp_call.erase(pp_call.size() - 2);
-      args_decl.erase(args_decl.size() - 2);
+      if(!return_type)
+      {
+         args_decl.erase(args_decl.size() - 2);
+      }
+   }
+   if(return_type)
+   {
+      args_decl += +"(void*)&retval";
    }
    top_decl += ")\n";
    gold_decl += ");\n";
@@ -740,8 +754,7 @@ void HLSCWriter::WriteMainTestbench()
    pp_call += ");\n";
    args_decl += "};\n";
 
-   indented_output_stream->AppendIndented(
-       std::string() + R"(
+   indented_output_stream->AppendIndented(std::string() + R"(
 #ifndef CUSTOM_VERIFICATION
 #ifdef __cplusplus
 #include <cstring>
@@ -777,26 +790,22 @@ template <typename T> T* m_getptr(T* obj) { return obj; }
 #define m_cmpflt(ptra, ptrb) __m_float_distance(*(ptra), *(ptrb)) > max_ulp
 #define m_cmpflts(ptra, ptrb) __m_floats_distance(*(ptra), *(ptrb)) > max_ulp
 
-#define _ms_setargptr(suffix, idx, ptr)                           \
-   const size_t P##idx##_size_##suffix = __m_param_size(idx)" +
-       (return_type ? " - 1" : "") +
-       R"(); \
-   void* P##idx##_##suffix = malloc(P##idx##_size_##suffix);      \
+#define _ms_setargptr(suffix, idx, ptr)                       \
+   const size_t P##idx##_size_##suffix = __m_param_size(idx); \
+   void* P##idx##_##suffix = malloc(P##idx##_size_##suffix);  \
    memcpy(P##idx##_##suffix, ptr, P##idx##_size_##suffix)
 
-#define _ms_argcmp(suffix, idx, cmp)                                                                            \
-   const size_t P##idx##_count_##suffix = P##idx##_size_##suffix / sizeof(m_getvalt(P##idx));                   \
-   for(i = 0; i < P##idx##_count_##suffix; ++i)                                                                 \
-   {                                                                                                            \
-      if(m_cmp##cmp((m_getptrt(P##idx))P##idx##_##suffix + i, &m_getptr(P##idx)[i]))                            \
-      {                                                                                                         \
-         error("Memory parameter %u (%zu/%zu) mismatch with respect to " #suffix " reference.\n", idx)" +
-       (return_type ? " - 1" : "") + ", i" + (return_type ? " + 1" : "") +
-       R"(, \
-               P##idx##_count_##suffix);                                                                        \
-         ++mismatch_count;                                                                                      \
-      }                                                                                                         \
-   }                                                                                                            \
+#define _ms_argcmp(suffix, idx, cmp)                                                                          \
+   const size_t P##idx##_count_##suffix = P##idx##_size_##suffix / sizeof(m_getvalt(P##idx));                 \
+   for(i = 0; i < P##idx##_count_##suffix; ++i)                                                               \
+   {                                                                                                          \
+      if(m_cmp##cmp((m_getptrt(P##idx))P##idx##_##suffix + i, &m_getptr(P##idx)[i]))                          \
+      {                                                                                                       \
+         error("Memory parameter %u (%zu/%zu) mismatch with respect to " #suffix " reference.\n", idx, i + 1, \
+               P##idx##_count_##suffix);                                                                      \
+         ++mismatch_count;                                                                                    \
+      }                                                                                                       \
+   }                                                                                                          \
    free(P##idx##_##suffix)
 
 #define _ms_retvalcmp(suffix, cmp)                                             \
@@ -817,9 +826,7 @@ template <typename T> T* m_getptr(T* obj) { return obj; }
    {                                                                                                        \
       if(m_cmp##cmp((m_getvalt(m_getptr(P##idx))::element_type*)P##idx##_sim + i, &(*m_getptr(P##idx))[i])) \
       {                                                                                                     \
-         error("Channel parameter %u (%zu/%zu) mismatch with respect to golden reference.\n", idx)" +
-       (return_type ? " - 1" : "") +
-       R"(, i + 1,     \
+         error("Channel parameter %u (%zu/%zu) mismatch with respect to golden reference.\n", idx, i + 1,   \
                P##idx##_count);                                                                             \
          ++mismatch_count;                                                                                  \
          break;                                                                                             \
@@ -828,7 +835,7 @@ template <typename T> T* m_getptr(T* obj) { return obj; }
    free(P##idx##_sim)
 
 )" + gold_decl +
-       R"(#else
+                                          R"(#else
 #define _m_setargptr(...)
 #define _m_argcmp(...)
 #define _m_retvalcmp(...)
@@ -847,7 +854,7 @@ template <typename T> T* m_getptr(T* obj) { return obj; }
 #define _m_pp_retvalcmp(cmp) _ms_retvalcmp(pp, cmp)
 
 )" + pp_decl +
-       R"(#else
+                                          R"(#else
 #define _m_pp_setargptr(...)
 #define _m_pp_argcmp(...)
 #define _m_pp_retvalcmp(...)
@@ -867,9 +874,7 @@ template <typename T> T* m_getptr(T* obj) { return obj; }
 #define m_channel_init(idx)                                                                                         \
    const size_t P##idx##_item = sizeof(m_getvalt(m_getptr(P##idx))::element_type);                                  \
    size_t P##idx##_count = m_getptr(P##idx)->size();                                                                \
-   __m_alloc_param(idx)" +
-       (return_type ? " - 1" : "") +
-       R"(, P##idx##_count * P##idx##_item);                                                        \
+   __m_alloc_param(idx, P##idx##_count * P##idx##_item);                                                            \
    void* P##idx##_sim = malloc(P##idx##_count * P##idx##_item);                                                     \
    for(i = 0; i < P##idx##_count; ++i)                                                                              \
    {                                                                                                                \

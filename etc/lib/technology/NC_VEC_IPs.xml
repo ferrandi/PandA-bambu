@@ -36,9 +36,9 @@
   endfunction
 `endif
 `ifdef _SIM_HAVE_CLOG2
-  parameter arg2_bitsize = $clog2(BITSIZE_in1*NUM_ELEM_in1);
+  localparam arg2_bitsize = $clog2(BITSIZE_in1*NUM_ELEM_in1);
 `else
-  parameter arg2_bitsize = log2(BITSIZE_in1*NUM_ELEM_in1);
+  localparam arg2_bitsize = log2(BITSIZE_in1*NUM_ELEM_in1);
 `endif
 generate
   if(BITSIZE_in3 &gt; arg2_bitsize)
@@ -94,9 +94,9 @@ endgenerate"
   endfunction
 `endif
 `ifdef _SIM_HAVE_CLOG2
-  parameter arg2_bitsize = $clog2(BITSIZE_in1*NUM_ELEM_in1);
+  localparam arg2_bitsize = $clog2(BITSIZE_in1*NUM_ELEM_in1);
 `else
-  parameter arg2_bitsize = log2(BITSIZE_in1*NUM_ELEM_in1);
+  localparam arg2_bitsize = log2(BITSIZE_in1*NUM_ELEM_in1);
 `endif
 generate
   if(BITSIZE_in3 &gt; arg2_bitsize)

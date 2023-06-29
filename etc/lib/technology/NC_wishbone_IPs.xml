@@ -61,9 +61,9 @@ always @ (address or base or max_address)
   endfunction
 `endif
 `ifdef _SIM_HAVE_CLOG2
-  parameter nbit_addr = MAX_ADDRESS == 1 ? 1 : $clog2(MAX_ADDRESS);
+  localparam nbit_addr = MAX_ADDRESS == 1 ? 1 : $clog2(MAX_ADDRESS);
 `else
-  parameter nbit_addr = MAX_ADDRESS == 1 ? 1 : log2(MAX_ADDRESS);
+  localparam nbit_addr = MAX_ADDRESS == 1 ? 1 : log2(MAX_ADDRESS);
 `endif
 
 generate

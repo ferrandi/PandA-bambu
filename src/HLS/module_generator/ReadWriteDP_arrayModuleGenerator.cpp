@@ -105,219 +105,46 @@ void ReadWriteDP_arrayModuleGenerator::InternalExec(std::ostream& out, structura
    }
 
    const auto isAlignedPowerOfTwo = _ports_out[1].alignment == ceil_pow2(_ports_out[1].alignment);
-   out << "//" << (isAlignedPowerOfTwo ? "T" : "F") << "\n";
-   out << "integer ii=0;\n";
-   out << "reg [" << _ports_out[1].type_size << "-1:0] " << _ports_out[1].name << ";\n";
-   out << "reg [" << _ports_out[2].type_size << "-1:0] " << _ports_out[2].name << ";\n";
-   if(_ports_out.size() == 9U)
-   {
-      out << "reg [" << _ports_out[7].type_size << "-1:0] " << _ports_out[7].name << ";\n";
-      out << "reg [" << _ports_out[8].type_size << "-1:0] " << _ports_out[8].name << ";\n";
-   }
-   if(_ports_in.size() == 9U)
-   {
-      out << "reg [(PORTSIZE_" << _ports_out[0].name << "*BITSIZE_" << _ports_out[0].name << ")+(-1):0] "
-          << _ports_out[0].name << ";\n";
-   }
-
-   const auto log2nbyte = _ports_out[1].alignment == 1ULL ?
-                              0U :
-                              (64u - static_cast<unsigned>(__builtin_clzll(_ports_out[1].alignment - 1U)));
-
    const auto addressMaxValue = factor * _ports_out[1].alignment * arraySize - 1U;
    const auto nbitAddress =
        addressMaxValue <= 1ULL ? 1U : (64u - static_cast<unsigned>(__builtin_clzll(addressMaxValue)));
 
-   if(log2nbyte > 0U)
-   {
-      out << "reg [(PORTSIZE_" << _ports_in[3].name << "*" << log2nbyte << ")+(-1):0] " << _ports_in[6].name << "_0;\n";
-      out << "always @(*)\n";
-      out << "begin\n";
-      out << "  for(ii=0; ii<PORTSIZE_" << _ports_in[3].name << "; ii=ii+1)\n";
-      if(isAlignedPowerOfTwo)
-      {
-         out << "    " << _ports_in[6].name << "_0[" << log2nbyte << "*ii+:" << log2nbyte << "] = " << _ports_in[6].name
-             << "[(BITSIZE_" << _ports_in[6].name << ")*ii+:" << log2nbyte << "];\n";
-      }
-      else
-      {
-         out << "    " << _ports_in[6].name << "_0[" << log2nbyte << "*ii+:" << log2nbyte << "] = " << _ports_in[6].name
-             << "[2+(BITSIZE_" << _ports_in[6].name << ")*ii+:" << nbitAddress - 2U << "] % " << log2nbyte - 2U << "'d"
-             << _ports_out[1].alignment / 4U << ";\n";
-      }
-      out << "end\n";
-   }
-   if(log2nbyte > 0U && _ports_in.size() == 9)
-   {
-      out << "reg [(PORTSIZE_" << _ports_in[3].name << "*" << log2nbyte << ")+(-1):0] " << _ports_in[6].name
-          << "_reg;\n";
-      out << "always @(posedge clock 1RESET_EDGE)\n";
-      out << "  if (1RESET_VALUE)\n";
-      out << "    " << _ports_in[6].name << "_reg <= 0;\n";
-      out << "  else\n";
-      out << "    for(ii=0; ii<PORTSIZE_" << _ports_in[3].name << "; ii=ii+1)\n";
-      out << "      " << _ports_in[6].name << "_reg[" << log2nbyte << "*ii+:" << log2nbyte
-          << "] <= " << _ports_in[6].name << "_0[" << log2nbyte << "*ii+:" << log2nbyte << "];\n";
-   }
-   out << "always @(*)\n";
-   out << "begin\n";
-   out << "  " << _ports_out[1].name << " = {" << _ports_out[1].type_size << "{1'b1}};\n";
-   out << "  " << _ports_out[2].name << " = {" << _ports_out[2].type_size << "{1'b1}};\n";
-   out << "  if(" << _ports_in[2].name << "[0])\n";
-   out << "  begin\n";
-   if(isAlignedPowerOfTwo)
-   {
-      out << "    " << _ports_out[1].name << " = " << _ports_out[1].name << " & (" << _ports_in[6].name << "[(BITSIZE_"
-          << _ports_in[6].name << ")*0+:" << nbitAddress << "] / " << _ports_out[1].alignment << ");\n";
-   }
-   else
-   {
-      out << "    " << _ports_out[1].name << " = " << _ports_out[1].name << " & (" << _ports_in[6].name
-          << "[2+(BITSIZE_" << _ports_in[6].name << ")*0+:" << nbitAddress - 2U << "] / " << _ports_out[1].alignment / 4
-          << ");\n";
-   }
-   out << "  end\n";
-   out << "  if(" << _ports_in[2].name << "[1])\n";
-   out << "  begin\n";
-   if(isAlignedPowerOfTwo)
-   {
-      out << "    " << _ports_out[2].name << " = " << _ports_out[2].name << " & (" << _ports_in[6].name << "[(BITSIZE_"
-          << _ports_in[6].name << ")*1+:" << nbitAddress << "] / " << _ports_out[2].alignment << ");\n";
-   }
-   else
-   {
-      out << "    " << _ports_out[2].name << " = " << _ports_out[2].name << " & (" << _ports_in[6].name
-          << "[2+(BITSIZE_" << _ports_in[6].name << ")*1+:" << nbitAddress - 2U << "] / " << _ports_out[2].alignment / 4
-          << ");\n";
-   }
-   out << "  end\n";
-   out << "end\n";
-
+   out << "//" << (isAlignedPowerOfTwo ? "T" : "F") << "\n";
    out << "assign " << _ports_out[3].name << " = " << _ports_in[2].name << "[0];\n";
    out << "assign " << _ports_out[4].name << " = " << _ports_in[2].name << "[1];\n";
 
+   if(isAlignedPowerOfTwo)
+   {
+      out << "assign " << _ports_out[1].name << " = " << _ports_in[6].name << "[BITSIZE_" << _ports_in[6].name
+          << "*0+:" << nbitAddress << "] / " << _ports_out[1].alignment << ";\n";
+      out << "assign " << _ports_out[2].name << " = " << _ports_in[6].name << "[BITSIZE_" << _ports_in[6].name
+          << "*1+:" << nbitAddress << "] / " << _ports_out[2].alignment << ";\n";
+   }
+   else
+   {
+      out << "assign " << _ports_out[1].name << " = " << _ports_in[6].name << "[2+(BITSIZE_" << _ports_in[6].name
+          << ")*0+:" << nbitAddress - 2U << "] / " << _ports_out[1].alignment / 4 << ";\n";
+      out << "assign " << _ports_out[2].name << " = " << _ports_in[6].name << "[2+BITSIZE_" << _ports_in[6].name
+          << "*1+:" << nbitAddress - 2U << "] / " << _ports_out[2].alignment / 4 << ";\n";
+   }
+
    if(_ports_in.size() == 9U)
    {
-      out << "always @(*)\n";
-      out << "begin\n";
-      if(log2nbyte > 0U)
-      {
-         out << "  " << _ports_out[0].name << "[(BITSIZE_" << _ports_out[0].name << ")*0+:BITSIZE_"
-             << _ports_out[0].name << "] = " << _ports_in[7].name << " >> {" << _ports_in[6].name << "_reg["
-             << log2nbyte << "*0+:" << log2nbyte << "],3'b0};\n";
-      }
-      else
-      {
-         out << "  " << _ports_out[0].name << "[(BITSIZE_" << _ports_out[0].name << ")*0+:BITSIZE_"
-             << _ports_out[0].name << "] = " << _ports_in[7].name << ";\n";
-      }
-      if(log2nbyte > 0)
-      {
-         out << "  " << _ports_out[0].name << "[(BITSIZE_" << _ports_out[0].name << ")*1+:BITSIZE_"
-             << _ports_out[0].name << "] = " << _ports_in[8].name << " >> {" << _ports_in[6].name << "_reg["
-             << log2nbyte << "*1+:" << log2nbyte << "],3'b0};\n";
-      }
-      else
-      {
-         out << "  " << _ports_out[0].name << "[(BITSIZE_" << _ports_out[0].name << ")*1+:BITSIZE_"
-             << _ports_out[0].name << "] = " << _ports_in[8].name << ";\n";
-      }
-
-      out << "end\n";
+      out << "assign " << _ports_out[0].name << "[BITSIZE_" << _ports_out[0].name << "*0+:BITSIZE_"
+          << _ports_out[0].name << "] = " << _ports_in[7].name << ";\n";
+      out << "assign " << _ports_out[0].name << "[BITSIZE_" << _ports_out[0].name << "*1+:BITSIZE_"
+          << _ports_out[0].name << "] = " << _ports_in[8].name << ";\n";
    }
 
    if(_ports_out.size() == 9U)
    {
-      out << "assign " << _ports_out[5].name << " = (" << _ports_in[2].name << "[0]) & (|(" << _ports_in[3].name
-          << "[(BITSIZE_" << _ports_in[3].name << ")*0+:BITSIZE_" << _ports_in[3].name << "]));\n";
-      out << "assign " << _ports_out[6].name << " = (" << _ports_in[2].name << "[1]) & (|(" << _ports_in[3].name
-          << "[(BITSIZE_" << _ports_in[3].name << ")*1+:BITSIZE_" << _ports_in[3].name << "]));\n";
-      out << "always @(*)\n";
-      out << "begin\n";
-      out << "  " << _ports_out[7].name << " = 0;\n";
-      out << "  " << _ports_out[8].name << " = 0;\n";
-      out << "    if(" << _ports_in[2].name << "[0])\n";
-      if(log2nbyte > 0U)
-      {
-         out << "      " << _ports_out[7].name << " = (" << _ports_in[4].name << "[(BITSIZE_" << _ports_in[4].name
-             << ")*0+:BITSIZE_" << _ports_in[4].name << "]>=" << _ports_out[7].type_size << ")?" << _ports_in[5].name
-             << "[(BITSIZE_" << _ports_in[5].name << ")*0+:BITSIZE_" << _ports_in[5].name << "]:(" << _ports_out[7].name
-             << "^((((BITSIZE_" << _ports_in[5].name << ">" << _ports_out[7].type_size << "?" << _ports_in[5].name
-             << "[(BITSIZE_" << _ports_in[5].name << ")*0+:BITSIZE_" << _ports_in[5].name << "]:{{("
-             << _ports_out[7].type_size << "< BITSIZE_" << _ports_in[5].name << " ? 1 : " << _ports_out[7].type_size
-             << "-BITSIZE_" << _ports_in[5].name << "){1'b0}}," << _ports_in[5].name << "[(BITSIZE_"
-             << _ports_in[5].name << ")*0+:BITSIZE_" << _ports_in[5].name << "]})<<{" << _ports_in[6].name << "_0["
-             << log2nbyte << "*0+:" << log2nbyte << "],3'b0})^" << _ports_out[7].name << ") & (((" << _ports_in[4].name
-             << "[(BITSIZE_" << _ports_in[4].name << ")*0+:BITSIZE_" << _ports_in[4].name << "]+{" << _ports_in[6].name
-             << "_0[" << log2nbyte << "*0+:" << log2nbyte << "],3'b0})>" << _ports_out[7].type_size << ") ? ((({("
-             << _ports_out[7].type_size << "){1'b1}})>>({" << _ports_in[6].name << "_0[" << log2nbyte
-             << "*0+:" << log2nbyte << "],3'b0}))<<({" << _ports_in[6].name << "_0[" << log2nbyte << "*0+:" << log2nbyte
-             << "],3'b0})) : ((((({(" << _ports_out[7].type_size << "){1'b1}})>>({" << _ports_in[6].name << "_0["
-             << log2nbyte << "*0+:" << log2nbyte << "],3'b0}))<<({" << _ports_in[6].name << "_0[" << log2nbyte
-             << "*0+:" << log2nbyte << "],3'b0}))<<(" << _ports_out[7].type_size << "-" << _ports_in[4].name
-             << "[(BITSIZE_" << _ports_in[4].name << ")*0+:BITSIZE_" << _ports_in[4].name << "]-{" << _ports_in[6].name
-             << "_0[" << log2nbyte << "*0+:" << log2nbyte << "],3'b0}))>>(" << _ports_out[7].type_size << "-"
-             << _ports_in[4].name << "[(BITSIZE_" << _ports_in[4].name << ")*0+:BITSIZE_" << _ports_in[4].name << "]-{"
-             << _ports_in[6].name << "_0[" << log2nbyte << "*0+:" << log2nbyte << "],3'b0})))));\n";
-      }
-      else
-      {
-         out << "      " << _ports_out[7].name << " = (" << _ports_in[4].name << "[(BITSIZE_" << _ports_in[4].name
-             << ")*0+:BITSIZE_" << _ports_in[4].name << "]>=" << _ports_out[7].type_size << ")?" << _ports_in[5].name
-             << "[(BITSIZE_" << _ports_in[5].name << ")*0+:BITSIZE_" << _ports_in[5].name << "]:(" << _ports_out[7].name
-             << "^((((BITSIZE_" << _ports_in[5].name << ">" << _ports_out[7].type_size << "?" << _ports_in[5].name
-             << "[(BITSIZE_" << _ports_in[5].name << ")*0+:BITSIZE_" << _ports_in[5].name << "]:{{("
-             << _ports_out[7].type_size << "< BITSIZE_" << _ports_in[5].name << " ? 1 : " << _ports_out[7].type_size
-             << "-BITSIZE_" << _ports_in[5].name << "){1'b0}}," << _ports_in[5].name << "[(BITSIZE_"
-             << _ports_in[5].name << ")*0+:BITSIZE_" << _ports_in[5].name << "]}))^" << _ports_out[7].name << ") & ((("
-             << _ports_in[4].name << "[(BITSIZE_" << _ports_in[4].name << ")*0+:BITSIZE_" << _ports_in[4].name << "])>"
-             << _ports_out[7].type_size << ") ? ((({(" << _ports_out[7].type_size << "){1'b1}}))) : ((((({("
-             << _ports_out[7].type_size << "){1'b1}})))<<(" << _ports_out[7].type_size << "-" << _ports_in[4].name
-             << "[(BITSIZE_" << _ports_in[4].name << ")*0+:BITSIZE_" << _ports_in[4].name << "]))>>("
-             << _ports_out[7].type_size << "-" << _ports_in[4].name << "[(BITSIZE_" << _ports_in[4].name
-             << ")*0+:BITSIZE_" << _ports_in[4].name << "])))));\n";
-      }
-      out << "    if(" << _ports_in[2].name << "[1])\n";
-      if(log2nbyte > 0U)
-      {
-         out << "      " << _ports_out[8].name << " = (" << _ports_in[4].name << "[(BITSIZE_" << _ports_in[4].name
-             << ")*1+:BITSIZE_" << _ports_in[4].name << "]>=" << _ports_out[8].type_size << ")?" << _ports_in[5].name
-             << "[(BITSIZE_" << _ports_in[5].name << ")*1+:BITSIZE_" << _ports_in[5].name << "]:(" << _ports_out[8].name
-             << "^((((BITSIZE_" << _ports_in[5].name << ">" << _ports_out[8].type_size << "?" << _ports_in[5].name
-             << "[(BITSIZE_" << _ports_in[5].name << ")*1+:BITSIZE_" << _ports_in[5].name << "]:{{("
-             << _ports_out[8].type_size << "< BITSIZE_" << _ports_in[5].name << " ? 1 : " << _ports_out[8].type_size
-             << "-BITSIZE_" << _ports_in[5].name << "){1'b0}}," << _ports_in[5].name << "[(BITSIZE_"
-             << _ports_in[5].name << ")*1+:BITSIZE_" << _ports_in[5].name << "]})<<{" << _ports_in[6].name << "_0["
-             << log2nbyte << "*1+:" << log2nbyte << "],3'b0})^" << _ports_out[8].name << ") & (((" << _ports_in[4].name
-             << "[(BITSIZE_" << _ports_in[4].name << ")*1+:BITSIZE_" << _ports_in[4].name << "]+{" << _ports_in[6].name
-             << "_0[" << log2nbyte << "*1+:" << log2nbyte << "],3'b0})>" << _ports_out[8].type_size << ") ? ((({("
-             << _ports_out[8].type_size << "){1'b1}})>>({" << _ports_in[6].name << "_0[" << log2nbyte
-             << "*1+:" << log2nbyte << "],3'b0}))<<({" << _ports_in[6].name << "_0[" << log2nbyte << "*1+:" << log2nbyte
-             << "],3'b0})) : ((((({(" << _ports_out[8].type_size << "){1'b1}})>>({" << _ports_in[6].name << "_0["
-             << log2nbyte << "*1+:" << log2nbyte << "],3'b0}))<<({" << _ports_in[6].name << "_0[" << log2nbyte
-             << "*1+:" << log2nbyte << "],3'b0}))<<(" << _ports_out[8].type_size << "-" << _ports_in[4].name
-             << "[(BITSIZE_" << _ports_in[4].name << ")*1+:BITSIZE_" << _ports_in[4].name << "]-{" << _ports_in[6].name
-             << "_0[" << log2nbyte << "*1+:" << log2nbyte << "],3'b0}))>>(" << _ports_out[8].type_size << "-"
-             << _ports_in[4].name << "[(BITSIZE_" << _ports_in[4].name << ")*1+:BITSIZE_" << _ports_in[4].name << "]-{"
-             << _ports_in[6].name << "_0[" << log2nbyte << "*1+:" << log2nbyte << "],3'b0})))));\n";
-      }
-      else
-      {
-         out << "      " << _ports_out[8].name << " = (" << _ports_in[4].name << "[(BITSIZE_" << _ports_in[4].name
-             << ")*1+:BITSIZE_" << _ports_in[4].name << "]>=" << _ports_out[8].type_size << ")?" << _ports_in[5].name
-             << "[(BITSIZE_" << _ports_in[5].name << ")*1+:BITSIZE_" << _ports_in[5].name << "]:(" << _ports_out[8].name
-             << "^((((BITSIZE_" << _ports_in[5].name << ">" << _ports_out[8].type_size << "?" << _ports_in[5].name
-             << "[(BITSIZE_" << _ports_in[5].name << ")*1+:BITSIZE_" << _ports_in[5].name << "]:{{("
-             << _ports_out[8].type_size << "< BITSIZE_" << _ports_in[5].name << " ? 1 : " << _ports_out[8].type_size
-             << "-BITSIZE_" << _ports_in[5].name << "){1'b0}}," << _ports_in[5].name << "[(BITSIZE_"
-             << _ports_in[5].name << ")*1+:BITSIZE_" << _ports_in[5].name << "]}))^" << _ports_out[8].name << ") & ((("
-             << _ports_in[4].name << "[(BITSIZE_" << _ports_in[4].name << ")*1+:BITSIZE_" << _ports_in[4].name << "])>"
-             << _ports_out[8].type_size << ") ? ((({(" << _ports_out[8].type_size << "){1'b1}}))) : ((((({("
-             << _ports_out[8].type_size << "){1'b1}})))<<(" << _ports_out[8].type_size << "-" << _ports_in[4].name
-             << "[(BITSIZE_" << _ports_in[4].name << ")*1+:BITSIZE_" << _ports_in[4].name << "]))>>("
-             << _ports_out[8].type_size << "-" << _ports_in[4].name << "[(BITSIZE_" << _ports_in[4].name
-             << ")*1+:BITSIZE_" << _ports_in[4].name << "])))));\n";
-      }
-      out << "end\n";
+      out << "assign " << _ports_out[5].name << " = " << _ports_in[2].name << "[0] & (|" << _ports_in[3].name
+          << "[BITSIZE_" << _ports_in[3].name << "*0+:BITSIZE_" << _ports_in[3].name << "]);\n";
+      out << "assign " << _ports_out[7].name << " = " << _ports_in[5].name << "[BITSIZE_" << _ports_in[5].name
+          << "*0+:BITSIZE_" << _ports_in[5].name << "];\n";
+      out << "assign " << _ports_out[6].name << " = " << _ports_in[2].name << "[1] & (|" << _ports_in[3].name
+          << "[BITSIZE_" << _ports_in[3].name << "*1+:BITSIZE_" << _ports_in[3].name << "]);\n";
+      out << "assign " << _ports_out[8].name << " = " << _ports_in[5].name << "[BITSIZE_" << _ports_in[5].name
+          << "*1+:BITSIZE_" << _ports_in[5].name << "];\n";
    }
 }

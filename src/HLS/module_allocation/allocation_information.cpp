@@ -1302,7 +1302,8 @@ bool AllocationInformation::is_one_cycle_direct_access_memory_unit(unsigned int 
 {
    technology_nodeRef current_fu = get_fu(fu_type);
    return GetPointer<functional_unit>(current_fu)->memory_type == MEMORY_TYPE_ASYNCHRONOUS ||
-          GetPointer<functional_unit>(current_fu)->memory_ctrl_type == MEMORY_CTRL_TYPE_DPROXY;
+          GetPointer<functional_unit>(current_fu)->memory_ctrl_type == MEMORY_CTRL_TYPE_DPROXY ||
+          GetPointer<functional_unit>(current_fu)->memory_ctrl_type == MEMORY_CTRL_TYPE_DPROXYN;
 }
 
 void AllocationInformation::GetNodeTypePrec(const vertex node, const OpGraphConstRef g, node_kind_prec_infoRef info,

@@ -2050,8 +2050,6 @@ src/HLS/simulation/test_vector_parser.cpp
 src/HLS/simulation/test_vector_parser.hpp
 src/HLS/simulation/testbench_generation.cpp
 src/HLS/simulation/testbench_generation.hpp
-src/HLS/simulation/testbench_memory_allocation.cpp
-src/HLS/simulation/testbench_memory_allocation.hpp
 src/HLS/stg/BB_based_stg.cpp
 src/HLS/stg/BB_based_stg.hpp
 src/HLS/stg/STG_creator.cpp

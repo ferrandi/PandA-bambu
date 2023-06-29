@@ -313,9 +313,9 @@ assign ops = Priorities(rops, ENABLE);
   endfunction
 `endif
 `ifdef _SIM_HAVE_CLOG2
-  parameter counter_bitsize =  PORTSIZE_rops == 1 ? 1 : $clog2(PORTSIZE_rops);
+  localparam counter_bitsize =  PORTSIZE_rops == 1 ? 1 : $clog2(PORTSIZE_rops);
 `else
-  parameter counter_bitsize = PORTSIZE_rops == 1 ? 1 :log2(PORTSIZE_rops);
+  localparam counter_bitsize = PORTSIZE_rops == 1 ? 1 :log2(PORTSIZE_rops);
 `endif
 reg [counter_bitsize-1:0]    counter 1INIT_ZERO_VALUE;
 reg [counter_bitsize-1:0]   next_counter;

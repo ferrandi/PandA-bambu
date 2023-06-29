@@ -671,9 +671,9 @@ endgenerate"/>
   endfunction
 `endif
 `ifdef _SIM_HAVE_CLOG2
-  parameter arg2_bitsize = $clog2(PRECISION);
+  localparam arg2_bitsize = $clog2(PRECISION);
 `else
-  parameter arg2_bitsize = log2(PRECISION);
+  localparam arg2_bitsize = log2(PRECISION);
 `endif
 generate
   if(BITSIZE_in2 &gt; arg2_bitsize)
@@ -716,9 +716,9 @@ endgenerate"/>
   endfunction
 `endif
 `ifdef _SIM_HAVE_CLOG2
-  parameter arg2_bitsize = $clog2(PRECISION);
+  localparam arg2_bitsize = $clog2(PRECISION);
 `else
-  parameter arg2_bitsize = log2(PRECISION);
+  localparam arg2_bitsize = log2(PRECISION);
 `endif
 generate
   if(BITSIZE_in2 &gt; arg2_bitsize)
@@ -762,9 +762,9 @@ endgenerate
   endfunction
 `endif
 `ifdef _SIM_HAVE_CLOG2
-  parameter arg2_bitsize = $clog2(PRECISION);
+  localparam arg2_bitsize = $clog2(PRECISION);
 `else
-  parameter arg2_bitsize = log2(PRECISION);
+  localparam arg2_bitsize = log2(PRECISION);
 `endif
 generate
   if(BITSIZE_in2 &gt; arg2_bitsize)
@@ -807,9 +807,9 @@ endgenerate"/>
   endfunction
 `endif
 `ifdef _SIM_HAVE_CLOG2
-  parameter arg2_bitsize = $clog2(PRECISION);
+  localparam arg2_bitsize = $clog2(PRECISION);
 `else
-  parameter arg2_bitsize = log2(PRECISION);
+  localparam arg2_bitsize = log2(PRECISION);
 `endif
 generate
   if(BITSIZE_in2 &gt; arg2_bitsize)

@@ -175,7 +175,6 @@
 #include "CTestbenchExecution.hpp"
 #include "test_vector_parser.hpp"
 #include "testbench_generation.hpp"
-#include "testbench_memory_allocation.hpp"
 
 /// HLS/stg
 #include "BB_based_stg.hpp"
@@ -571,12 +570,6 @@ HLSFlowStepFactory::CreateHLSFlowStep(const HLSFlowStep_Type type, const unsigne
          design_flow_step = DesignFlowStepRef(new TestbenchGeneration(parameters, HLS_mgr, design_flow_manager.lock()));
          break;
       }
-      case HLSFlowStep_Type::TESTBENCH_MEMORY_ALLOCATION:
-      {
-         design_flow_step =
-             DesignFlowStepRef(new TestbenchMemoryAllocation(parameters, HLS_mgr, design_flow_manager.lock()));
-         break;
-      }
       case HLSFlowStep_Type::TEST_VECTOR_PARSER:
       {
          design_flow_step = DesignFlowStepRef(new TestVectorParser(parameters, HLS_mgr, design_flow_manager.lock()));
@@ -694,7 +687,6 @@ const DesignFlowStepSet HLSFlowStepFactory::CreateHLSFlowSteps(
          case HLSFlowStep_Type::EVALUATION:
          case HLSFlowStep_Type::GENERATE_HDL:
          case HLSFlowStep_Type::TEST_VECTOR_PARSER:
-         case HLSFlowStep_Type::TESTBENCH_MEMORY_ALLOCATION:
          case HLSFlowStep_Type::CALL_GRAPH_UNFOLDING:
          case HLSFlowStep_Type::CLASSICAL_HLS_SYNTHESIS_FLOW:
          case HLSFlowStep_Type::DOMINATOR_ALLOCATION:

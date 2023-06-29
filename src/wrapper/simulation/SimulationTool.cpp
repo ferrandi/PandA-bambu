@@ -138,7 +138,7 @@ void SimulationTool::CheckExecution()
    /// for default, nothing to do
 }
 
-unsigned long long int SimulationTool::Simulate(unsigned long long int& accum_cycles, unsigned int& n_testcases)
+void SimulationTool::Simulate(unsigned long long int& accum_cycles, unsigned long long& n_testcases)
 {
    if(generated_script.empty())
    {
@@ -162,13 +162,13 @@ unsigned long long int SimulationTool::Simulate(unsigned long long int& accum_cy
    tool->execute(parameters, input_files, output_files,
                  Param->getOption<std::string>(OPT_output_temporary_directory) + "/simulation_output");
 
-   return DetermineCycles(accum_cycles, n_testcases);
+   DetermineCycles(accum_cycles, n_testcases);
 }
 
-unsigned long long int SimulationTool::DetermineCycles(unsigned long long int& accum_cycles, unsigned int& n_testcases)
+void SimulationTool::DetermineCycles(unsigned long long int& accum_cycles, unsigned long long& n_testcases)
 {
    unsigned long long int num_cycles = 0;
-   unsigned int i = 0;
+   unsigned long long i = 0;
    const auto sim_period = 2.0l;
    const auto result_file = Param->getOption<std::string>(OPT_simulation_output);
    const auto profiling_result_file = Param->getOption<std::string>(OPT_profiling_output);
@@ -285,7 +285,6 @@ unsigned long long int SimulationTool::DetermineCycles(unsigned long long int& a
    }
    accum_cycles = num_cycles;
    n_testcases = i;
-   return num_cycles / i;
 }
 
 std::string SimulationTool::GenerateSimulationScript(const std::string& top_filename,

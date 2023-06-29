@@ -199,9 +199,9 @@ end"/>
   endfunction
 `endif
 `ifdef _SIM_HAVE_CLOG2
-  parameter nbit_read_addr = n_elements == 1 ? 1 : $clog2(n_elements);
+  localparam nbit_read_addr = n_elements == 1 ? 1 : $clog2(n_elements);
 `else
-  parameter nbit_read_addr = n_elements == 1 ? 1 : log2(n_elements);
+  localparam nbit_read_addr = n_elements == 1 ? 1 : log2(n_elements);
 `endif
 reg [BITSIZE_in1-1:0] ram [0:n_elements-1] /* synthesis syn_ramstyle = &quot;no_rw_check&quot; */;
 wire [nbit_read_addr-1:0] memory_addr_a;

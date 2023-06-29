@@ -74,7 +74,7 @@ function automatic integer log2;
   `endif
 endfunction
 
-parameter BITSIZE_mem_bus=1&lt;&lt;(log2(BITSIZE_data) &gt; 3 ? log2(BITSIZE_data) : 3),
+localparam BITSIZE_mem_bus=1&lt;&lt;(log2(BITSIZE_data) &gt; 3 ? log2(BITSIZE_data) : 3),
   BITSIZE_strobe=BITSIZE_mem_bus/8;
 
 import &quot;DPI-C&quot; function void m_read8    (output logic    [7:0] data, input ptr_t addr);
@@ -242,7 +242,7 @@ import &quot;DPI-C&quot; function void m_init();
 import &quot;DPI-C&quot; function int unsigned m_next(input int unsigned state);
 import &quot;DPI-C&quot; function int m_fini();
 
-parameter [6:0] 
+localparam [6:0] 
   SIM_READY   =7'd1,
   COSIM_INIT  =7'd2,
   SIM_SETUP   =7'd4,
@@ -469,7 +469,7 @@ end"/>
             <structural_type_descriptor type="VECTOR_BOOL" size="1"/>
           </port_o>
           <port_o id="Mout_addr_ram" dir="IN" is_memory="1" is_master="1" is_addr_bus="1">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="32"/>
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <port_o id="Mout_data_ram_size" dir="IN" is_memory="1" is_master="1" is_size_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="4"/>
@@ -490,7 +490,7 @@ end"/>
             <structural_type_descriptor type="VECTOR_BOOL" size="1"/>
           </port_o>
           <port_o id="S_addr_ram" dir="OUT" is_memory="1" is_slave="1" is_addr_bus="1">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="32"/>
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <port_o id="S_data_ram_size" dir="OUT" is_memory="1" is_slave="1" is_size_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="4"/>
@@ -502,7 +502,7 @@ end"/>
             IP_COMPONENT="mem_utils"
             LIBRARY="TestbenchMEMMinimal MEM_DELAY_READ MEM_DELAY_WRITE MEM_PIPELINED base_addr MEM_DUMP MEM_DUMP_FILE M_DataRdy M_Rdata_ram Mout_oe_ram Mout_we_ram Mout_addr_ram Mout_data_ram_size Mout_Wdata_ram Sout_DataRdy Sout_Rdata_ram S_oe_ram S_we_ram S_addr_ram S_data_ram_size S_Wdata_ram"
             VERILOG_PROVIDED="
-parameter MEM_DELAY_MAX= MEM_DELAY_READ > MEM_DELAY_WRITE ? MEM_DELAY_READ : MEM_DELAY_WRITE,
+localparam MEM_DELAY_MAX= MEM_DELAY_READ > MEM_DELAY_WRITE ? MEM_DELAY_READ : MEM_DELAY_WRITE,
   CHANNELS_NUMBER=BITSIZE_Mout_oe_ram,
   BITSIZE_oe=1,
   BITSIZE_we=1,
@@ -756,7 +756,7 @@ endgenerate"/>
           <NP_functionality
             IP_COMPONENT="mem_utils"
             LIBRARY="TestbenchMEMWishboneB4 MEM_DELAY_READ MEM_DELAY_WRITE base_addr addr_om dat_om sel_om dat_im"
-            VERILOG_PROVIDED="parameter MEM_DELAY_MAX= MEM_DELAY_READ > MEM_DELAY_WRITE ? MEM_DELAY_READ : MEM_DELAY_WRITE,
+            VERILOG_PROVIDED="localparam MEM_DELAY_MAX= MEM_DELAY_READ > MEM_DELAY_WRITE ? MEM_DELAY_READ : MEM_DELAY_WRITE,
   BITSIZE_item=BITSIZE_dat_im+1+1;
 reg cyc, stb, we, stall, ack;
 reg [BITSIZE_addr_om-1:0] addr;
@@ -1221,7 +1221,7 @@ end"/>
           <port_o id="ack_os" dir="IN" is_memory="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
-          <NP_functionality IP_COMPONENT="arg_utils" LIBRARY="TestbenchArgMapWishboneB4 index tgt_addr bitsize addr_is dat_is sel_is dat_os" VERILOG_PROVIDED="parameter bytesize=((bitsize&gt;&gt;3)&lt;&lt;3) == bitsize ? (bitsize&gt;&gt;3) : ((bitsize&gt;&gt;3) + 1);
+          <NP_functionality IP_COMPONENT="arg_utils" LIBRARY="TestbenchArgMapWishboneB4 index tgt_addr bitsize addr_is dat_is sel_is dat_os" VERILOG_PROVIDED="localparam bytesize=((bitsize&gt;&gt;3)&lt;&lt;3) == bitsize ? (bitsize&gt;&gt;3) : ((bitsize&gt;&gt;3) + 1);
 reg [bitsize-1:0] val, val_next;
 reg cyc, cyc_next, stb, stb_next, we, we_next, stall, ack, start;
 reg [BITSIZE_addr_is-1:0] addr, addr_next;
@@ -1356,7 +1356,7 @@ end"/>
           <port_o id="ack_os" dir="IN" is_memory="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
-          <NP_functionality IP_COMPONENT="arg_utils" LIBRARY="TestbenchReturnMapWishboneB4 index tgt_addr bitsize addr_is dat_is sel_is dat_os" VERILOG_PROVIDED="parameter bytesize=((bitsize&gt;&gt;3)&lt;&lt;3) == bitsize ? (bitsize&gt;&gt;3) : ((bitsize&gt;&gt;3) + 1);
+          <NP_functionality IP_COMPONENT="arg_utils" LIBRARY="TestbenchReturnMapWishboneB4 index tgt_addr bitsize addr_is dat_is sel_is dat_os" VERILOG_PROVIDED="localparam bytesize=((bitsize&gt;&gt;3)&lt;&lt;3) == bitsize ? (bitsize&gt;&gt;3) : ((bitsize&gt;&gt;3) + 1);
 reg cyc, cyc_next, stb, stb_next, stall, ack, done;
 reg [BITSIZE_addr_is-1:0] addr, addr_next;
 
@@ -1459,7 +1459,7 @@ end"/>
           <port_o id="ack_os" dir="IN" is_memory="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="TestbenchStartMapWishboneB4 tgt_addr addr_is dat_is sel_is dat_os" VERILOG_PROVIDED="parameter bytesize=1;
+          <NP_functionality LIBRARY="TestbenchStartMapWishboneB4 tgt_addr addr_is dat_is sel_is dat_os" VERILOG_PROVIDED="localparam bytesize=1;
 reg cyc, cyc_next, stb, stb_next, we, we_next, stall, ack, start;
 reg [BITSIZE_addr_is-1:0] addr, addr_next;
 reg [BITSIZE_dat_is-1:0] data, data_next;
@@ -4466,9 +4466,9 @@ end generate nonzero_case;
           <port_o id="stall_wenable" dir="OUT">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="Stage_controller" VERILOG_PROVIDED="parameter [1:0] IDLE = 2&apos;b00;
-  parameter [1:0] SEND = 2&apos;b01;
-  parameter [1:0] FULL = 2&apos;b10;
+          <NP_functionality LIBRARY="Stage_controller" VERILOG_PROVIDED="localparam [1:0] IDLE = 2&apos;b00;
+  localparam [1:0] SEND = 2&apos;b01;
+  localparam [1:0] FULL = 2&apos;b10;
 
   reg selector_out;
   reg std_wenable;
