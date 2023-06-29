@@ -151,6 +151,10 @@ inline T exact_log2(T x)
 template <typename T, std::enable_if_t<std::is_unsigned<T>::value, bool> = true>
 inline T ceil_log2(T x)
 {
+   if(x == 0)
+   {
+      return static_cast<T>(-1LL);
+   }
    return static_cast<T>(floor_log2(static_cast<T>(x - 1)) + 1);
 }
 
