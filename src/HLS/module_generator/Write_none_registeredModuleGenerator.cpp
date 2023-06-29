@@ -84,99 +84,29 @@ void Write_none_registeredModuleGenerator::InternalExec(
       out << "constant threezeros : std_logic_vector(2 downto 0) := (others => '0');\n";
       out << "begin\n";
       out << "process(clock,reset)\n";
-      out << "  variable \\" << _ports_out[o_out1].name << "_0\\ : std_logic_vector(" << _ports_out[o_out1].type_size
-          << "-1  downto 0);\n";
+      out << "  variable \\" << _ports_out[o_out1].name << "_0\\ : std_logic_vector("
+          << (_ports_out[o_out1].type_size - 1) << " downto 0);\n";
       out << "begin\n";
       out << "  if (1RESET_VALUE) then\n";
       out << "    \\" << _ports_out[o_out1].name << "\\ <= (others => '0');\n";
       out << "  elsif (clock'event and clock='1') then\n";
       out << "    if(unsigned(" << _ports_in[i_start].name << ") /= 0 ) then\n";
-      out << "      if(PORTSIZE_" << _ports_in[i_in1].name << " /= 1 ) then\n";
-      out << "        \\" << _ports_out[o_out1].name << "_0\\ := (others => '0');\n";
-      out << "        for ii0 in 0 to PORTSIZE_" << _ports_in[i_in1].name << "-1 loop\n";
-      out << "          if(unsigned(" << _ports_in[i_in1].name << "(BITSIZE_" << _ports_in[i_in1].name
-          << "*(ii0+1)-1 downto BITSIZE_" << _ports_in[i_in1].name << "*ii0)) >=" << _ports_out[o_out1].type_size
-          << ") then\n";
-      out << "            \\" << _ports_out[o_out1].name << "_0\\ := std_logic_vector(unsigned(resize(unsigned("
-          << _ports_in[i_in2].name << "(BITSIZE_" << _ports_in[i_in2].name << "*(ii0+1)-1 downto BITSIZE_"
-          << _ports_in[i_in2].name << "*ii0)), " << _ports_out[o_out1].type_size << ")));\n";
-      out << "          elsif ((unsigned(" << _ports_in[i_in1].name << "(BITSIZE_" << _ports_in[i_in1].name
-          << "*(ii0+1)-1 downto BITSIZE_" << _ports_in[i_in1].name << "*ii0))+unsigned(" << _ports_in[i_in3].name
-          << "(BITSIZE_" << _ports_in[i_in3].name << "*(ii0+1)-1 downto BITSIZE_" << _ports_in[i_in3].name
-          << "*ii0) & threezeros))>" << _ports_out[o_out1].type_size << ") then \n";
-      out << "            \\" << _ports_out[o_out1].name << "_0\\ := \\" << _ports_out[o_out1].name
-          << "_0\\ xor (((std_logic_vector(shift_left(unsigned(resize(unsigned(" << _ports_in[i_in2].name << "(BITSIZE_"
-          << _ports_in[i_in2].name << "*(ii0+1)-1 downto BITSIZE_" << _ports_in[i_in2].name << "*ii0)),"
-          << _ports_out[o_out1].type_size << ")),to_integer(unsigned(" << _ports_in[i_in3].name << "(BITSIZE_"
-          << _ports_in[i_in3].name << "*(ii0+1)-1 downto BITSIZE_" << _ports_in[i_in3].name
-          << "*ii0) & threezeros)))) xor \\" << _ports_out[o_out1].name
-          << "_0\\) and std_logic_vector(shift_left(unsigned(shift_right(unsigned(ones), to_integer(unsigned("
-          << _ports_in[i_in3].name << "(BITSIZE_" << _ports_in[i_in3].name << "*(ii0+1)-1 downto BITSIZE_"
-          << _ports_in[i_in3].name << "*ii0) & threezeros)))), to_integer(unsigned(" << _ports_in[i_in3].name
-          << "(BITSIZE_" << _ports_in[i_in3].name << "*(ii0+1)-1 downto BITSIZE_" << _ports_in[i_in3].name
-          << "*ii0) & threezeros))))));\n";
-      out << "          else\n";
-      out << "            \\" << _ports_out[o_out1].name << "_0\\ := \\" << _ports_out[o_out1].name
-          << "_0\\ xor (((std_logic_vector(shift_left(unsigned(resize(unsigned(" << _ports_in[i_in2].name << "(BITSIZE_"
-          << _ports_in[i_in2].name << "*(ii0+1)-1 downto BITSIZE_" << _ports_in[i_in2].name << "*ii0)),"
-          << _ports_out[o_out1].type_size << ")),to_integer(unsigned(" << _ports_in[i_in3].name << "(BITSIZE_"
-          << _ports_in[i_in3].name << "*(ii0+1)-1 downto BITSIZE_" << _ports_in[i_in3].name
-          << "*ii0) & threezeros)))) xor \\" << _ports_out[o_out1].name
-          << "_0\\) and "
-             "((std_logic_vector(shift_right(unsigned(shift_left(unsigned(shift_left(unsigned(shift_right(unsigned("
-             "ones), to_integer(unsigned("
-          << _ports_in[i_in3].name << "(BITSIZE_" << _ports_in[i_in3].name << "*(ii0+1)-1 downto BITSIZE_"
-          << _ports_in[i_in3].name << "*ii0) & threezeros)))), to_integer(unsigned(" << _ports_in[i_in3].name
-          << "(BITSIZE_" << _ports_in[i_in3].name << "*(ii0+1)-1 downto BITSIZE_" << _ports_in[i_in3].name
-          << "*ii0) & threezeros)))), to_integer(" << _ports_out[o_out1].type_size << "-unsigned("
-          << _ports_in[i_in1].name << "(BITSIZE_" << _ports_in[i_in1].name << "*(ii0+1)-1 downto BITSIZE_"
-          << _ports_in[i_in1].name << "*ii0))-unsigned(" << _ports_in[i_in3].name << "(BITSIZE_"
-          << _ports_in[i_in3].name << "*(ii0+1)-1 downto BITSIZE_" << _ports_in[i_in3].name
-          << "*ii0) & threezeros)))), to_integer(" << _ports_out[o_out1].type_size << "-unsigned("
-          << _ports_in[i_in1].name << "(BITSIZE_" << _ports_in[i_in1].name << "*(ii0+1)-1 downto BITSIZE_"
-          << _ports_in[i_in1].name << "*ii0))-unsigned(" << _ports_in[i_in3].name << "(BITSIZE_"
-          << _ports_in[i_in3].name << "*(ii0+1)-1 downto BITSIZE_" << _ports_in[i_in3].name
-          << "*ii0) & threezeros))))))));\n";
-      out << "          end if;\n";
-      out << "        end loop;\n";
-      out << "        \\" << _ports_out[o_out1].name << "\\ <= \\" << _ports_out[o_out1].name << "_0\\;\n";
-      out << "      else\n";
-      out << "        \\" << _ports_out[o_out1].name << "\\ <= std_logic_vector(resize(unsigned("
-          << _ports_in[i_in2].name << "), " << _ports_out[o_out1].type_size << "));\n";
-      out << "      end if;\n";
+      out << "      \\" << _ports_out[o_out1].name << "\\ <= std_logic_vector(resize(unsigned(" << _ports_in[i_in2].name
+          << "), " << _ports_out[o_out1].type_size << "));\n";
       out << "    end if;\n";
       out << "  end if;\n";
       out << "end process;\n";
    }
    else
    {
-      out << "reg [" << _ports_out[o_out1].type_size << "-1:0] " << _ports_out[o_out1].name << ";\n";
-      out << "reg [" << _ports_out[o_out1].type_size << "-1:0] " << _ports_out[o_out1].name << "_0;\n";
+      out << "reg [" << (_ports_out[o_out1].type_size - 1) << ":0] " << _ports_out[o_out1].name << ";\n";
 
       out << "always @(posedge clock 1RESET_EDGE)\n";
       out << "begin\n";
       out << "  if (1RESET_VALUE)\n";
       out << "    " << _ports_out[o_out1].name << " <= 0;\n";
       out << "  else if(" << _ports_in[i_start].name << ")\n";
-      out << "    " << _ports_out[o_out1].name << " <= " << _ports_out[o_out1].name << "_0;\n";
-      out << "end\n\n";
-
-      out << "always @(*)\n";
-      out << "begin\n";
-      out << "  " << _ports_out[o_out1].name << "_0 = 0;\n";
-      out << "  " << _ports_out[o_out1].name << "_0 = (" << _ports_in[i_in1].name
-          << ">=" << _ports_out[o_out1].type_size << ")?" << _ports_in[i_in2].name << ":(" << _ports_out[o_out1].name
-          << "_0^((((BITSIZE_" << _ports_in[i_in2].name << ">=" << _ports_out[o_out1].type_size << "?"
-          << _ports_in[i_in2].name << ":{{(" << _ports_out[o_out1].type_size << "<BITSIZE_" << _ports_in[i_in2].name
-          << " ? 1 : " << _ports_out[o_out1].type_size << "-BITSIZE_" << _ports_in[i_in2].name << "){1'b0}},"
-          << _ports_in[i_in2].name << "})<<" << _ports_in[i_in3].name << "*8)^" << _ports_out[o_out1].name
-          << "_0) & (((" << _ports_in[i_in1].name << "+" << _ports_in[i_in3].name << "*8)>"
-          << _ports_out[o_out1].type_size << ") ? ((({(" << _ports_out[o_out1].type_size << "){1'b1}})>>("
-          << _ports_in[i_in3].name << "*8))<<(" << _ports_in[i_in3].name << "*8)) : ((((({("
-          << _ports_out[o_out1].type_size << "){1'b1}})>>(" << _ports_in[i_in3].name << "*8))<<("
-          << _ports_in[i_in3].name << "*8))<<(" << _ports_out[o_out1].type_size << "-" << _ports_in[i_in1].name << "-"
-          << _ports_in[i_in3].name << "*8))>>(" << _ports_out[o_out1].type_size << "-" << _ports_in[i_in1].name << "-"
-          << _ports_in[i_in3].name << "*8)))));\n";
-      out << "end\n\n";
+      out << "    " << _ports_out[o_out1].name << " <= " << _ports_in[i_in2].name << ";\n";
+      out << "end\n";
    }
 }
