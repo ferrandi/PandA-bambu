@@ -66,9 +66,9 @@
 #include "tree_reindex.hpp"
 
 /// Utility include
-#include <boost/lexical_cast.hpp>
 #include "dbgPrintHelper.hpp"
 #include "exceptions.hpp"
+#include <boost/lexical_cast.hpp>
 
 /// wrapper/compiler include
 #include "compiler_wrapper.hpp"
