@@ -431,12 +431,12 @@ DesignFlowStep_Status TestbenchGeneration::Exec()
             INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level,
                            "---Interface: " + arg_interface + " (bundle: " + bundle_name + ")");
             const auto axim_bundle_name = "if_m_axi_" + bundle_name;
-            const auto axim_bundle = tb_cir->find_member(axim_bundle_name, component_o_K, tb_cir);
+            const auto axim_bundle = tb_cir->find_member(axim_bundle_name + "_fu", component_o_K, tb_cir);
             if(!axim_bundle)
             {
                mgm.create_generic_module("TestbenchAXIM", nullptr, top_fb, LIBRARY_STD, axim_bundle_name);
-               const auto if_port = tb_top->add_module_from_technology_library(axim_bundle_name, axim_bundle_name,
-                                                                               LIBRARY_STD, tb_cir, TechM);
+               const auto if_port = tb_top->add_module_from_technology_library(
+                   axim_bundle_name + "_fu", axim_bundle_name, LIBRARY_STD, tb_cir, TechM);
                if_modules.push_back(if_port);
             }
             const auto if_port = tb_top->add_module_from_technology_library("if_addr_" + arg_name, "IF_PORT_IN",
@@ -455,13 +455,13 @@ DesignFlowStep_Status TestbenchGeneration::Exec()
                                DesignAttributes->second.at(arg_name).at(attr_interface_dir) +
                                (bundle_name != arg_name ? (" (bundle: " + bundle_name + ")") : ""));
             const auto if_port_name = "if_" + arg_interface + "_" + bundle_name;
-            const auto if_port_bundle = tb_cir->find_member(if_port_name, component_o_K, tb_cir);
+            const auto if_port_bundle = tb_cir->find_member(if_port_name + "_fu", component_o_K, tb_cir);
             if(!if_port_bundle)
             {
                mgm.create_generic_module("Testbench" + capitalize(arg_interface), nullptr, top_fb, LIBRARY_STD,
                                          if_port_name);
-               const auto if_port =
-                   tb_top->add_module_from_technology_library(if_port_name, if_port_name, LIBRARY_STD, tb_cir, TechM);
+               const auto if_port = tb_top->add_module_from_technology_library(if_port_name + "_fu", if_port_name,
+                                                                               LIBRARY_STD, tb_cir, TechM);
                if_port->SetParameter("index", STR(idx));
                if_modules.push_back(if_port);
             }
