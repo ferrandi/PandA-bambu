@@ -662,6 +662,8 @@ DesignFlowStep_Status SDCScheduling2::InternalExec()
       /// Phi cannot be moved
       /// Operations which depend from the phi cannot be moved before the phi and so on
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Checking which operations have to be moved");
+      CustomUnorderedSet<vertex> RW_stmts;
+      compute_RW_stmts(RW_stmts, op_graph, HLSMgr, funId);
       CustomMap<vertex, CustomSet<vertex>> bb_barrier;
       for(const auto loop_bb : loop_bbs)
       {
@@ -722,6 +724,11 @@ DesignFlowStep_Status SDCScheduling2::InternalExec()
                bb_barrier[loop_operation].insert(loop_bb);
                continue;
             }
+            if(RW_stmts.count(loop_operation))
+            {
+               bb_barrier[loop_operation].insert(loop_bb);
+               continue;
+            }
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Type is ok");
 
             /// Computing bb barrier starting from bb barrier of predecessor
@@ -744,7 +751,7 @@ DesignFlowStep_Status SDCScheduling2::InternalExec()
             if(bb_barrier.count(loop_operation) && bb_barrier.at(loop_operation).count(loop_bb))
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                              "<--Cannot be moved becaused depends from a phi in the same bb");
+                              "<--Cannot be moved because depends from a phi in the same bb");
                continue;
             }
 
@@ -760,7 +767,7 @@ DesignFlowStep_Status SDCScheduling2::InternalExec()
             while(true)
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                              "---Checking if it can be bemove in BB" +
+                              "---Checking if it can be remove in BB" +
                                   STR(basic_block_graph->CGetBBNodeInfo(candidate_bb)->block->number));
                if(candidate_bb == basic_block_graph->CGetBBGraphInfo()->entry_vertex ||
                   loop_bbs.count(candidate_bb) == 0)

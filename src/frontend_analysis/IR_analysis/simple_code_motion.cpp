@@ -1052,10 +1052,13 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
                               "<--Skipped because uses ssa defined in the same block");
                continue;
             }
-            if((gn->vuses.size() || (GetPointer<gimple_assign>(tn) &&
-                                     GET_NODE(GetPointer<gimple_assign>(tn)->op1)->get_kind() == mem_ref_K))
-               // && (!schedule)
-               && !loadCanBePredicated && !isFunctionPipelined && !parallel_bb)
+            if((gn->vuses.size() && GetPointer<gimple_assign>(tn) &&
+                GET_NODE(GetPointer<gimple_assign>(tn)->op1)->get_kind() == call_expr_K && !parallel_bb) ||
+               ((gn->vuses.size() || (GetPointer<gimple_assign>(tn) &&
+                                      (GET_NODE(GetPointer<gimple_assign>(tn)->op1)->get_kind() == mem_ref_K ||
+                                       GET_NODE(GetPointer<gimple_assign>(tn)->op1)->get_kind() == call_expr_K)))
+                // && (!schedule)
+                && !loadCanBePredicated && !isFunctionPipelined && !parallel_bb))
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Skipped because of vuses");
                continue; /// load cannot be code moved
@@ -1066,7 +1069,8 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
             auto prev_dest_bb_index = curr_bb;
             if(gn->vdef || gn->vuses.size() ||
                (tn->get_kind() == gimple_assign_K &&
-                GET_NODE(GetPointer<gimple_assign>(tn)->op1)->get_kind() == mem_ref_K))
+                (GET_NODE(GetPointer<gimple_assign>(tn)->op1)->get_kind() == mem_ref_K ||
+                 GET_NODE(GetPointer<gimple_assign>(tn)->op1)->get_kind() == call_expr_K)))
             {
                if(list_of_bloc.at(curr_bb)->list_of_pred.size() == 1 &&
                   list_of_bloc.at(curr_bb)->list_of_pred.front() != bloc::ENTRY_BLOCK_ID &&
