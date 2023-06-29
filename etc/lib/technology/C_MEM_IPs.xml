@@ -3229,7 +3229,7 @@ assign done_port = delayed_M_DataRdy;
           <port_vector_o id="M_back_pressure" dir="IN" is_memory="1" is_master="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_vector_o>
-          <NP_functionality LIBRARY="MEMORY_CTRLN in1 in2 in3 in4 sel_LOAD sel_STORE out1 done_port Min_oe_ram Min_we_ram Mout_oe_ram Mout_we_ram M_DataRdy Min_addr_ram Mout_addr_ram M_Rdata_ram Min_Wdata_ram Mout_Wdata_ram Min_data_ram_size Mout_data_ram_size M_back_pressure" VERILOG_PROVIDED="parameter max_n_writes = PORTSIZE_sel_STORE &gt; PORTSIZE_Mout_we_ram ? PORTSIZE_sel_STORE : PORTSIZE_Mout_we_ram;
+          <NP_functionality LIBRARY="MEMORY_CTRLN in1 in2 in3 in4 sel_LOAD sel_STORE out1 done_port Min_oe_ram Min_we_ram Mout_oe_ram Mout_we_ram M_DataRdy Min_addr_ram Mout_addr_ram M_Rdata_ram Min_Wdata_ram Mout_Wdata_ram Min_data_ram_size Mout_data_ram_size M_back_pressure" VERILOG_PROVIDED="localparam max_n_writes = PORTSIZE_sel_STORE &gt; PORTSIZE_Mout_we_ram ? PORTSIZE_sel_STORE : PORTSIZE_Mout_we_ram;
 parameter max_n_reads = PORTSIZE_sel_LOAD &gt; PORTSIZE_Mout_oe_ram ? PORTSIZE_sel_STORE : PORTSIZE_Mout_oe_ram;
 parameter max_n_rw = max_n_writes &gt; max_n_reads ? max_n_writes : max_n_reads;
 wire [PORTSIZE_sel_LOAD-1:0] int_sel_LOAD;
@@ -3350,7 +3350,7 @@ assign done_port = (M_DataRdy &amp; (in4 &amp; (sel_STORE | sel_LOAD))) | (~in4 
           <port_vector_o id="M_back_pressure" dir="IN" is_memory="1" is_master="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_vector_o>
-          <NP_functionality LIBRARY="MEMORY_CTRLN_D10 in1 in2 in3 in4 sel_LOAD sel_STORE out1 done_port Min_oe_ram Min_we_ram Mout_oe_ram Mout_we_ram M_DataRdy Min_addr_ram Mout_addr_ram M_Rdata_ram Min_Wdata_ram Mout_Wdata_ram Min_data_ram_size Mout_data_ram_size M_back_pressure" VERILOG_PROVIDED="parameter max_n_writes = PORTSIZE_sel_STORE &gt; PORTSIZE_Mout_we_ram ? PORTSIZE_sel_STORE : PORTSIZE_Mout_we_ram;
+          <NP_functionality LIBRARY="MEMORY_CTRLN_D10 in1 in2 in3 in4 sel_LOAD sel_STORE out1 done_port Min_oe_ram Min_we_ram Mout_oe_ram Mout_we_ram M_DataRdy Min_addr_ram Mout_addr_ram M_Rdata_ram Min_Wdata_ram Mout_Wdata_ram Min_data_ram_size Mout_data_ram_size M_back_pressure" VERILOG_PROVIDED="localparam max_n_writes = PORTSIZE_sel_STORE &gt; PORTSIZE_Mout_we_ram ? PORTSIZE_sel_STORE : PORTSIZE_Mout_we_ram;
 parameter max_n_reads = PORTSIZE_sel_LOAD &gt; PORTSIZE_Mout_oe_ram ? PORTSIZE_sel_STORE : PORTSIZE_Mout_oe_ram;
 parameter max_n_rw = max_n_writes &gt; max_n_reads ? max_n_writes : max_n_reads;
 wire  [(PORTSIZE_in2*BITSIZE_in2)-1:0] tmp_addr;
@@ -3617,7 +3617,7 @@ assign done_port = (M_DataRdy &amp; (in4 &amp; (delayed_sel_LOAD | delayed_sel_S
           <port_vector_o id="M_back_pressure" dir="IN" is_memory="1" is_master="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_vector_o>
-          <NP_functionality LIBRARY="MEMORY_CTRLN_D21 in1 in2 in3 in4 sel_LOAD sel_STORE out1 done_port Min_oe_ram Min_we_ram Mout_oe_ram Mout_we_ram M_DataRdy Min_addr_ram Mout_addr_ram M_Rdata_ram Min_Wdata_ram Mout_Wdata_ram Min_data_ram_size Mout_data_ram_size M_back_pressure" VERILOG_PROVIDED="parameter max_n_writes = PORTSIZE_sel_STORE &gt; PORTSIZE_Mout_we_ram ? PORTSIZE_sel_STORE : PORTSIZE_Mout_we_ram;
+          <NP_functionality LIBRARY="MEMORY_CTRLN_D21 in1 in2 in3 in4 sel_LOAD sel_STORE out1 done_port Min_oe_ram Min_we_ram Mout_oe_ram Mout_we_ram M_DataRdy Min_addr_ram Mout_addr_ram M_Rdata_ram Min_Wdata_ram Mout_Wdata_ram Min_data_ram_size Mout_data_ram_size M_back_pressure" VERILOG_PROVIDED="localparam max_n_writes = PORTSIZE_sel_STORE &gt; PORTSIZE_Mout_we_ram ? PORTSIZE_sel_STORE : PORTSIZE_Mout_we_ram;
 parameter max_n_reads = PORTSIZE_sel_LOAD &gt; PORTSIZE_Mout_oe_ram ? PORTSIZE_sel_STORE : PORTSIZE_Mout_oe_ram;
 parameter max_n_rw = max_n_writes &gt; max_n_reads ? max_n_writes : max_n_reads;
 wire  [(PORTSIZE_in2*BITSIZE_in2)-1:0] tmp_addr;
@@ -4076,7 +4076,7 @@ assign Mout_data_ram_size = delayed_sel_STORE || delayed_sel_LOAD ? delayed_in3[
           <port_vector_o id="M_DataRdy" dir="IN" is_memory="1" is_master="1" is_global="1" is_extern="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_vector_o>
-          <NP_functionality LIBRARY="BMEMORY_CTRLN_D10 in1 in2 in3 in4 sel_LOAD sel_STORE out1 Min_oe_ram Min_we_ram Mout_oe_ram Mout_we_ram M_DataRdy Min_addr_ram Mout_addr_ram M_Rdata_ram Min_Wdata_ram Mout_Wdata_ram Min_data_ram_size Mout_data_ram_size" VERILOG_PROVIDED="parameter max_n_writes = PORTSIZE_sel_STORE &gt; PORTSIZE_Mout_we_ram ? PORTSIZE_sel_STORE : PORTSIZE_Mout_we_ram;
+          <NP_functionality LIBRARY="BMEMORY_CTRLN_D10 in1 in2 in3 in4 sel_LOAD sel_STORE out1 Min_oe_ram Min_we_ram Mout_oe_ram Mout_we_ram M_DataRdy Min_addr_ram Mout_addr_ram M_Rdata_ram Min_Wdata_ram Mout_Wdata_ram Min_data_ram_size Mout_data_ram_size" VERILOG_PROVIDED="localparam max_n_writes = PORTSIZE_sel_STORE &gt; PORTSIZE_Mout_we_ram ? PORTSIZE_sel_STORE : PORTSIZE_Mout_we_ram;
 parameter max_n_reads = PORTSIZE_sel_LOAD &gt; PORTSIZE_Mout_oe_ram ? PORTSIZE_sel_STORE : PORTSIZE_Mout_oe_ram;
 parameter max_n_rw = max_n_writes &gt; max_n_reads ? max_n_writes : max_n_reads;
 wire  [(PORTSIZE_in2*BITSIZE_in2)-1:0] tmp_addr;
@@ -4189,7 +4189,7 @@ generate
           <port_vector_o id="M_DataRdy" dir="IN" is_memory="1" is_master="1" is_global="1" is_extern="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_vector_o>
-          <NP_functionality LIBRARY="BMEMORY_CTRLN_D11 in1 in2 in3 in4 sel_LOAD sel_STORE out1 Min_oe_ram Min_we_ram Mout_oe_ram Mout_we_ram M_DataRdy Min_addr_ram Mout_addr_ram M_Rdata_ram Min_Wdata_ram Mout_Wdata_ram Min_data_ram_size Mout_data_ram_size" VERILOG_PROVIDED="parameter max_n_writes = PORTSIZE_sel_STORE &gt; PORTSIZE_Mout_we_ram ? PORTSIZE_sel_STORE : PORTSIZE_Mout_we_ram;
+          <NP_functionality LIBRARY="BMEMORY_CTRLN_D11 in1 in2 in3 in4 sel_LOAD sel_STORE out1 Min_oe_ram Min_we_ram Mout_oe_ram Mout_we_ram M_DataRdy Min_addr_ram Mout_addr_ram M_Rdata_ram Min_Wdata_ram Mout_Wdata_ram Min_data_ram_size Mout_data_ram_size" VERILOG_PROVIDED="localparam max_n_writes = PORTSIZE_sel_STORE &gt; PORTSIZE_Mout_we_ram ? PORTSIZE_sel_STORE : PORTSIZE_Mout_we_ram;
 parameter max_n_reads = PORTSIZE_sel_LOAD &gt; PORTSIZE_Mout_oe_ram ? PORTSIZE_sel_STORE : PORTSIZE_Mout_oe_ram;
 parameter max_n_rw = max_n_writes &gt; max_n_reads ? max_n_writes : max_n_reads;
 wire  [(PORTSIZE_in2*BITSIZE_in2)-1:0] tmp_addr;
@@ -4311,7 +4311,7 @@ generate
           <port_vector_o id="M_DataRdy" dir="IN" is_memory="1" is_master="1" is_global="1" is_extern="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_vector_o>
-          <NP_functionality LIBRARY="BMEMORY_CTRLN_D21 in1 in2 in3 in4 sel_LOAD sel_STORE out1 Min_oe_ram Min_we_ram Mout_oe_ram Mout_we_ram M_DataRdy Min_addr_ram Mout_addr_ram M_Rdata_ram Min_Wdata_ram Mout_Wdata_ram Min_data_ram_size Mout_data_ram_size" VERILOG_PROVIDED="parameter max_n_writes = PORTSIZE_sel_STORE &gt; PORTSIZE_Mout_we_ram ? PORTSIZE_sel_STORE : PORTSIZE_Mout_we_ram;
+          <NP_functionality LIBRARY="BMEMORY_CTRLN_D21 in1 in2 in3 in4 sel_LOAD sel_STORE out1 Min_oe_ram Min_we_ram Mout_oe_ram Mout_we_ram M_DataRdy Min_addr_ram Mout_addr_ram M_Rdata_ram Min_Wdata_ram Mout_Wdata_ram Min_data_ram_size Mout_data_ram_size" VERILOG_PROVIDED="localparam max_n_writes = PORTSIZE_sel_STORE &gt; PORTSIZE_Mout_we_ram ? PORTSIZE_sel_STORE : PORTSIZE_Mout_we_ram;
 parameter max_n_reads = PORTSIZE_sel_LOAD &gt; PORTSIZE_Mout_oe_ram ? PORTSIZE_sel_STORE : PORTSIZE_Mout_oe_ram;
 parameter max_n_rw = max_n_writes &gt; max_n_reads ? max_n_writes : max_n_reads;
 wire  [(PORTSIZE_in2*BITSIZE_in2)-1:0] tmp_addr;
@@ -4470,11 +4470,11 @@ parameter n_byte_on_databus = ALIGNMENT/8;
 parameter nbit_addr = BITSIZE_in2 &gt; BITSIZE_proxy_in2 ? BITSIZE_in2 : BITSIZE_proxy_in2;
 
 `ifdef _SIM_HAVE_CLOG2
-  parameter nbit_read_addr = n_elements == 1 ? 1 : $clog2(n_elements);
-  parameter nbits_byte_offset = n_byte_on_databus&lt;=1 ? 0 : $clog2(n_byte_on_databus);
+  localparam nbit_read_addr = n_elements == 1 ? 1 : $clog2(n_elements);
+  localparam nbits_byte_offset = n_byte_on_databus&lt;=1 ? 0 : $clog2(n_byte_on_databus);
 `else
-  parameter nbit_read_addr = n_elements == 1 ? 1 : log2(n_elements);
-  parameter nbits_byte_offset = n_byte_on_databus&lt;=1 ? 0 : log2(n_byte_on_databus);
+  localparam nbit_read_addr = n_elements == 1 ? 1 : log2(n_elements);
+  localparam nbits_byte_offset = n_byte_on_databus&lt;=1 ? 0 : log2(n_byte_on_databus);
 `endif
   
 wire [nbit_read_addr-1:0] memory_addr_a;
@@ -4721,11 +4721,11 @@ begin
 parameter n_byte_on_databus = ALIGNMENT/8;
 parameter nbit_addr = BITSIZE_in2 &gt; BITSIZE_proxy_in2 ? BITSIZE_in2 : BITSIZE_proxy_in2;
 `ifdef _SIM_HAVE_CLOG2
-  parameter nbit_read_addr = n_elements == 1 ? 1 : $clog2(n_elements);
-  parameter nbits_byte_offset = n_byte_on_databus&lt;=1 ? 0 : $clog2(n_byte_on_databus);
+  localparam nbit_read_addr = n_elements == 1 ? 1 : $clog2(n_elements);
+  localparam nbits_byte_offset = n_byte_on_databus&lt;=1 ? 0 : $clog2(n_byte_on_databus);
 `else
-  parameter nbit_read_addr = n_elements == 1 ? 1 : log2(n_elements);
-  parameter nbits_byte_offset = n_byte_on_databus&lt;=1 ? 0 : log2(n_byte_on_databus);
+  localparam nbit_read_addr = n_elements == 1 ? 1 : log2(n_elements);
+  localparam nbits_byte_offset = n_byte_on_databus&lt;=1 ? 0 : log2(n_byte_on_databus);
 `endif
 parameter max_n_writes = PORTSIZE_sel_STORE;
 parameter max_n_reads = PORTSIZE_sel_LOAD;
@@ -4939,11 +4939,11 @@ assign Sout_DataRdy = Sin_DataRdy;"/>
 parameter n_byte_on_databus = ALIGNMENT/8;
 parameter nbit_addr = BITSIZE_in2 &gt; BITSIZE_proxy_in2 ? BITSIZE_in2 : BITSIZE_proxy_in2;
 `ifdef _SIM_HAVE_CLOG2
-  parameter nbit_read_addr = n_elements == 1 ? 1 : $clog2(n_elements);
-  parameter nbits_byte_offset = n_byte_on_databus&lt;=1 ? 0 : $clog2(n_byte_on_databus);
+  localparam nbit_read_addr = n_elements == 1 ? 1 : $clog2(n_elements);
+  localparam nbits_byte_offset = n_byte_on_databus&lt;=1 ? 0 : $clog2(n_byte_on_databus);
 `else
-  parameter nbit_read_addr = n_elements == 1 ? 1 : log2(n_elements);
-  parameter nbits_byte_offset = n_byte_on_databus&lt;=1 ? 0 : log2(n_byte_on_databus);
+  localparam nbit_read_addr = n_elements == 1 ? 1 : log2(n_elements);
+  localparam nbits_byte_offset = n_byte_on_databus&lt;=1 ? 0 : log2(n_byte_on_databus);
 `endif
 parameter max_n_writes = PORTSIZE_sel_STORE;
 parameter max_n_reads = PORTSIZE_sel_LOAD;

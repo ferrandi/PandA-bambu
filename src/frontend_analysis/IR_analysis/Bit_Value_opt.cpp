@@ -2961,6 +2961,16 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                               }
                            }
                         }
+                        else if(tree_helper::IsSameType(ga->op0, ne->op))
+                        {
+                           auto bw_op1 = tree_helper::Size(ne->op);
+                           auto bw_op0 = tree_helper::Size(ga->op0);
+
+                           if(bw_op1 <= bw_op0)
+                           {
+                              propagateValue(ssa, TM, ga->op0, ne->op, DEBUG_CALLSITE);
+                           }
+                        }
                      };
                      nop_expr_BVO();
                   }

@@ -336,8 +336,9 @@ DesignFlowStep_Status BitValueIPA::Exec()
                for(const auto& i : call_edge_info->direct_call_points)
                {
                   THROW_ASSERT(i, "unexpected condition");
-                  INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->examining direct call point " + STR(i));
                   const auto call_node = TM->CGetTreeNode(i);
+                  INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                                 "-->examining direct call point " + call_node->ToString());
                   if(call_node->get_kind() == gimple_assign_K)
                   {
                      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "gimple_assign");

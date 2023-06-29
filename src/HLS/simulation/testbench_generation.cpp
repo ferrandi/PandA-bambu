@@ -111,8 +111,6 @@ TestbenchGeneration::ComputeHLSRelationships(const DesignFlowStep::RelationshipT
       {
          ret.insert(std::make_tuple(HLSFlowStep_Type::TEST_VECTOR_PARSER, HLSFlowStepSpecializationConstRef(),
                                     HLSFlowStep_Relationship::TOP_FUNCTION));
-         ret.insert(std::make_tuple(HLSFlowStep_Type::TESTBENCH_MEMORY_ALLOCATION, HLSFlowStepSpecializationConstRef(),
-                                    HLSFlowStep_Relationship::TOP_FUNCTION));
          if(parameters->isOption(OPT_discrepancy) && parameters->getOption<bool>(OPT_discrepancy))
          {
             ret.insert(std::make_tuple(HLSFlowStep_Type::VCD_SIGNAL_SELECTION, HLSFlowStepSpecializationConstRef(),
@@ -263,6 +261,26 @@ DesignFlowStep_Status TestbenchGeneration::Exec()
       const auto master_port_module = "TestbenchArgMap" + if_suffix;
       size_t idx = 0;
       std::list<structural_objectRef> master_ports;
+      for(const auto& par : top_bh->GetParameters())
+      {
+         const auto par_name = top_bh->PrintVariable(GET_INDEX_CONST_NODE(par));
+         INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "-->Parameter " + par_name);
+         const auto par_bitsize = tree_helper::Size(par);
+         const auto par_symbol = HLSMgr->Rmem->get_symbol(GET_INDEX_CONST_NODE(par), top_id);
+         INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level,
+                        "---Interface: " + STR(par_bitsize) + "-bits memory mapped at " +
+                            STR(par_symbol->get_address()));
+         const auto master_port = tb_top->add_module_from_technology_library("master_" + par_name, master_port_module,
+                                                                             LIBRARY_STD, tb_cir, TechM);
+         master_port->SetParameter("index", STR(idx));
+         master_port->SetParameter("bitsize", STR(par_bitsize));
+         master_port->SetParameter("tgt_addr", STR(par_symbol->get_address()));
+
+         master_ports.push_back(master_port);
+         ++idx;
+         INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "<--");
+      }
+
       const auto return_type = tree_helper::GetFunctionReturnType(HLSMgr->get_tree_manager()->CGetTreeReindex(top_id));
       if(return_type)
       {
@@ -288,26 +306,6 @@ DesignFlowStep_Status TestbenchGeneration::Exec()
          dut_done = m_done;
 
          master_ports.push_back(master_port);
-         ++idx;
-         INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "<--");
-      }
-      for(const auto& par : top_bh->GetParameters())
-      {
-         const auto par_name = top_bh->PrintVariable(GET_INDEX_CONST_NODE(par));
-         INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "-->Parameter " + par_name);
-         const auto par_bitsize = tree_helper::Size(par);
-         const auto par_symbol = HLSMgr->Rmem->get_symbol(GET_INDEX_CONST_NODE(par), top_id);
-         INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level,
-                        "---Interface: " + STR(par_bitsize) + "-bits memory mapped at " +
-                            STR(par_symbol->get_address()));
-         const auto master_port = tb_top->add_module_from_technology_library("master_" + par_name, master_port_module,
-                                                                             LIBRARY_STD, tb_cir, TechM);
-         master_port->SetParameter("index", STR(idx));
-         master_port->SetParameter("bitsize", STR(par_bitsize));
-         master_port->SetParameter("tgt_addr", STR(par_symbol->get_address()));
-
-         master_ports.push_back(master_port);
-         ++idx;
          INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "<--");
       }
 
@@ -372,27 +370,12 @@ DesignFlowStep_Status TestbenchGeneration::Exec()
    else
    {
       // Add interface components relative to each top function parameter
-      auto idx = 0U;
-      {
-         const auto return_port = dut->find_member(RETURN_PORT_NAME, port_o_K, dut);
-         if(return_port)
-         {
-            const auto if_port =
-                tb_top->add_module_from_technology_library("if_return_port", "IF_PORT_OUT", LIBRARY_STD, tb_cir, TechM);
-            if_modules.push_back(if_port);
-            if_port->SetParameter("index", STR(idx));
-
-            const auto val_port = if_port->find_member("val_port", port_o_K, if_port);
-            add_internal_connection(val_port, return_port);
-            ++idx;
-         }
-      }
-
       const auto is_interface_inferred = interface_type == HLSFlowStep_Type::INFERRED_INTERFACE_GENERATION;
       const auto DesignAttributes = HLSMgr->design_attributes.find(top_bh->GetMangledFunctionName());
       THROW_ASSERT(!is_interface_inferred || DesignAttributes != HLSMgr->design_attributes.end(),
                    "Original signature not found for function: " + top_bh->GetMangledFunctionName() + " (" +
                        top_bh->get_function_name() + ")");
+      size_t idx = 0;
       for(const auto& arg : top_bh->GetParameters())
       {
          const auto arg_name = top_bh->PrintVariable(GET_INDEX_CONST_NODE(arg));
@@ -448,12 +431,12 @@ DesignFlowStep_Status TestbenchGeneration::Exec()
             INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level,
                            "---Interface: " + arg_interface + " (bundle: " + bundle_name + ")");
             const auto axim_bundle_name = "if_m_axi_" + bundle_name;
-            const auto axim_bundle = tb_cir->find_member(axim_bundle_name, component_o_K, tb_cir);
+            const auto axim_bundle = tb_cir->find_member(axim_bundle_name + "_fu", component_o_K, tb_cir);
             if(!axim_bundle)
             {
                mgm.create_generic_module("TestbenchAXIM", nullptr, top_fb, LIBRARY_STD, axim_bundle_name);
-               const auto if_port = tb_top->add_module_from_technology_library(axim_bundle_name, axim_bundle_name,
-                                                                               LIBRARY_STD, tb_cir, TechM);
+               const auto if_port = tb_top->add_module_from_technology_library(
+                   axim_bundle_name + "_fu", axim_bundle_name, LIBRARY_STD, tb_cir, TechM);
                if_modules.push_back(if_port);
             }
             const auto if_port = tb_top->add_module_from_technology_library("if_addr_" + arg_name, "IF_PORT_IN",
@@ -472,19 +455,31 @@ DesignFlowStep_Status TestbenchGeneration::Exec()
                                DesignAttributes->second.at(arg_name).at(attr_interface_dir) +
                                (bundle_name != arg_name ? (" (bundle: " + bundle_name + ")") : ""));
             const auto if_port_name = "if_" + arg_interface + "_" + bundle_name;
-            const auto if_port_bundle = tb_cir->find_member(if_port_name, component_o_K, tb_cir);
+            const auto if_port_bundle = tb_cir->find_member(if_port_name + "_fu", component_o_K, tb_cir);
             if(!if_port_bundle)
             {
                mgm.create_generic_module("Testbench" + capitalize(arg_interface), nullptr, top_fb, LIBRARY_STD,
                                          if_port_name);
-               const auto if_port =
-                   tb_top->add_module_from_technology_library(if_port_name, if_port_name, LIBRARY_STD, tb_cir, TechM);
+               const auto if_port = tb_top->add_module_from_technology_library(if_port_name + "_fu", if_port_name,
+                                                                               LIBRARY_STD, tb_cir, TechM);
                if_port->SetParameter("index", STR(idx));
                if_modules.push_back(if_port);
             }
          }
          INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "<--");
          ++idx;
+      }
+
+      const auto return_port = dut->find_member(RETURN_PORT_NAME, port_o_K, dut);
+      if(return_port)
+      {
+         const auto if_port =
+             tb_top->add_module_from_technology_library("if_return_port", "IF_PORT_OUT", LIBRARY_STD, tb_cir, TechM);
+         if_modules.push_back(if_port);
+         if_port->SetParameter("index", STR(idx));
+
+         const auto val_port = if_port->find_member("val_port", port_o_K, if_port);
+         add_internal_connection(val_port, return_port);
       }
 
       const auto dut_start = dut->find_member(START_PORT_NAME, port_o_K, dut);
@@ -878,47 +873,19 @@ unsigned long long TestbenchGeneration::generate_init_file(const std::string& da
                                                            const tree_managerConstRef TM, unsigned int var,
                                                            const memoryRef mem)
 {
+   std::stringstream init_bits;
+   std::ofstream useless;
+   unsigned long long vec_size = 0, elts_size = 0;
+   const auto var_type = tree_helper::CGetType(TM->CGetTreeReindex(var));
+   const auto bitsize_align = GetPointer<const type_node>(GET_CONST_NODE(var_type))->algn;
+   THROW_ASSERT((bitsize_align % 8) == 0, "Alignement is not byte aligned.");
+   fu_binding::fill_array_ref_memory(init_bits, useless, var, vec_size, elts_size, mem, TM, false, bitsize_align);
+
    std::ofstream init_dat(dat_filename, std::ios::binary);
-   std::vector<std::string> init_els;
-   const auto tn = TM->CGetTreeReindex(var);
-   const auto init_node = [&]() -> tree_nodeRef {
-      const auto vd = GetPointer<const var_decl>(GET_CONST_NODE(tn));
-      if(vd && vd->init)
-      {
-         return vd->init;
-      }
-      return nullptr;
-   }();
-
-   if(init_node && (!GetPointer<const constructor>(GET_CONST_NODE(init_node)) ||
-                    GetPointerS<const constructor>(GET_CONST_NODE(init_node))->list_of_idx_valu.size()))
+   while(!init_bits.eof())
    {
-      fu_binding::write_init(TM, tn, init_node, init_els, mem, 0);
-   }
-   else if(GET_CONST_NODE(tn)->get_kind() == string_cst_K || GET_CONST_NODE(tn)->get_kind() == integer_cst_K ||
-           GET_CONST_NODE(tn)->get_kind() == real_cst_K)
-   {
-      fu_binding::write_init(TM, tn, tn, init_els, mem, 0);
-   }
-   else if(!GetPointer<gimple_call>(GET_CONST_NODE(tn)))
-   {
-      const auto zero_bytes_count = [&]() {
-         if(tree_helper::IsArrayType(tn))
-         {
-            const auto type = tree_helper::CGetType(tn);
-            const auto data_bitsize = tree_helper::GetArrayElementSize(type);
-            const auto num_elements = tree_helper::GetArrayTotalSize(type);
-            return get_aligned_bitsize(data_bitsize) * num_elements;
-         }
-         return get_aligned_bitsize(tree_helper::Size(tn));
-      }();
-      std::fill_n(std::ostream_iterator<char>(init_dat), zero_bytes_count, 0);
-      return zero_bytes_count;
-   }
-
-   unsigned long long byte_count = 0;
-   for(const auto& bitstring : init_els)
-   {
+      std::string bitstring;
+      init_bits >> bitstring;
       THROW_ASSERT(bitstring.size() % 8 == 0, "Memory word initializer is not aligned");
       size_t i;
       // Memory is little-endian, thus last byte goes in first
@@ -931,7 +898,8 @@ unsigned long long TestbenchGeneration::generate_init_file(const std::string& da
          }
          init_dat.put(byteval);
       }
-      byte_count += bitstring.size() / 8;
    }
-   return byte_count;
+   unsigned long long bytes = static_cast<unsigned long long>(init_dat.tellp());
+   THROW_ASSERT((bytes % (bitsize_align / 8)) == 0, "Memory initalization bytes not aligned");
+   return bytes;
 }

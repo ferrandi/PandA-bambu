@@ -203,8 +203,6 @@ void CBackend::ComputeRelationships(DesignFlowStepSet& relationships,
                {
                   const auto hls_step_factory =
                       GetPointer<const HLSFlowStepFactory>(DFMgr->CGetDesignFlowStepFactory("HLS"));
-                  relationships.insert(hls_step_factory->CreateHLSFlowStep(
-                      HLSFlowStep_Type::TESTBENCH_MEMORY_ALLOCATION, HLSFlowStepSpecializationConstRef()));
                   relationships.insert(hls_step_factory->CreateHLSFlowStep(HLSFlowStep_Type::TEST_VECTOR_PARSER,
                                                                            HLSFlowStepSpecializationConstRef()));
                   // const auto is_hw_discrepancy =
