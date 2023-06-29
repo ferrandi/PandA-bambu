@@ -657,6 +657,22 @@ void HLSCWriter::WriteMainTestbench()
             gold_call += "(" + arg_typename + ")" + arg_name + "_gold, ";
             pp_call += "(" + tree_helper::PrintType(TM, arg_type, false, true) + ")" + arg_name + "_pp, ";
             gold_cmp += "m_argcmp(" + STR(param_idx) + ", " + cmp_type(arg_type, arg_typename) + ");\n";
+            const auto array_size = [&]() {
+               if(is_interface_inferred)
+               {
+                  const auto param_name = top_bh->PrintVariable(GET_INDEX_CONST_NODE(arg));
+                  THROW_ASSERT(arg_attributes->second.count(param_name),
+                               "Attributes missing for parameter " + param_name + " in function " + top_fname);
+                  return arg_attributes->second.at(param_name).count(attr_size) ?
+                             boost::lexical_cast<unsigned long long>(
+                                 arg_attributes->second.at(param_name).at(attr_size)) :
+                             1ULL;
+               }
+               const auto ptd_type = tree_helper::CGetPointedType(arg_type);
+               return tree_helper::IsArrayType(ptd_type) ? tree_helper::GetArrayTotalSize(ptd_type) : 1ULL;
+            }();
+            args_init +=
+                "__m_alloc_param(" + STR(param_idx) + ", sizeof(*" + arg_name + ") * " + STR(array_size) + ");\n";
             args_decl += "(void*)" + arg_name + ", ";
             args_set += "m_setargptr";
          }
@@ -677,43 +693,6 @@ void HLSCWriter::WriteMainTestbench()
             args_init += "__m_alloc_param(" + STR(param_idx) + ", sizeof(" + arg_typename + "));\n";
             args_decl += "(void*)&" + arg_name + ", ";
             args_set += arg_interface == "default" ? "__m_setarg" : "m_setargptr";
-         }
-         if(tree_helper::IsPointerType(arg_type))
-         {
-            if(is_interface_inferred && !arg_is_channel)
-            {
-               const auto param_name = top_bh->PrintVariable(GET_INDEX_CONST_NODE(arg));
-               THROW_ASSERT(arg_attributes->second.count(param_name),
-                            "Attributes missing for parameter " + param_name + " in function " + top_fname);
-               THROW_ASSERT(arg_attributes->second.at(param_name).count(attr_interface_bitwidth),
-                            "Attribute 'bitwidth' is missing for array parameter " + param_name);
-               THROW_ASSERT(arg_attributes->second.at(param_name).count(attr_interface_alignment),
-                            "Attribute 'alignment' is missing for array parameter " + param_name);
-               THROW_ASSERT(arg_attributes->second.at(param_name).count(attr_interface_factor),
-                            "Attribute 'factor' is missing for array parameter " + param_name);
-               const auto item_bw = boost::lexical_cast<unsigned long long>(
-                   arg_attributes->second.at(param_name).at(attr_interface_bitwidth));
-               const auto item_align = boost::lexical_cast<unsigned long long>(
-                   arg_attributes->second.at(param_name).at(attr_interface_alignment));
-               const auto item_factor = boost::lexical_cast<unsigned long long>(
-                   arg_attributes->second.at(param_name).at(attr_interface_factor));
-               const auto item_count =
-                   arg_attributes->second.at(param_name).count(attr_size) ?
-                       boost::lexical_cast<unsigned long long>(arg_attributes->second.at(param_name).at(attr_size)) :
-                       1ULL;
-               const auto array_bytes = get_aligned_bitsize(item_bw, item_align) / 8 * item_count * item_factor;
-               args_init += "__m_alloc_param(" + STR(param_idx) + ", " + STR(array_bytes) + ");\n";
-            }
-            else
-            {
-               const auto ptd_type = tree_helper::CGetPointedType(arg_type);
-               if(tree_helper::IsArrayType(ptd_type))
-               {
-                  const auto array_bytes = get_aligned_bitsize(tree_helper::GetArrayElementSize(ptd_type)) / 8 *
-                                           tree_helper::GetArrayTotalSize(ptd_type);
-                  args_init += "__m_alloc_param(" + STR(param_idx) + ", " + STR(array_bytes) + ");\n";
-               }
-            }
          }
          args_set += "(" + STR(param_idx) + ", args[" + STR(param_idx) + "], " + arg_size + ");\n";
          ++param_idx;
