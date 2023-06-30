@@ -107,14 +107,14 @@
 #include "var_pp_functor.hpp"
 
 /// Utility include
-#include <boost/filesystem/operations.hpp>
-#include <boost/filesystem/path.hpp>
 #include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_NONE
 #include "indented_output_stream.hpp"
 #include "refcount.hpp"
 #include "string_manipulation.hpp" // for GET_CLASS
 #include "utility.hpp"
 #include <boost/config.hpp>
+#include <boost/filesystem/operations.hpp>
+#include <boost/filesystem/path.hpp>
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/filtered_graph.hpp>
 #include <boost/graph/graph_utility.hpp>
