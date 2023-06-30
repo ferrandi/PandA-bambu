@@ -86,7 +86,7 @@ void Write_acknowledgeModuleGenerator::InternalExec(std::ostream& out, const mod
    out << "reg [" << _ports_out[o_out1].type_size << "-1:0] " << _ports_out[o_out1].name << "_0;\n";
    out << "wire " << _ports_out[o_done].name << ";\n\n";
 
-   out << "assign started0 <= (started | " << _ports_in[i_start].name << ") & !(" << _ports_in[i_ack].name << ");\n"
+   out << "assign started0 = (started | " << _ports_in[i_start].name << ") & !(" << _ports_in[i_ack].name << ");\n"
        << "always @(posedge clock 1RESET_EDGE)\n"
        << "begin\n"
        << "  if (1RESET_VALUE)\n"
