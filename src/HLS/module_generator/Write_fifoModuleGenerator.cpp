@@ -82,23 +82,26 @@ void Write_fifoModuleGenerator::InternalExec(std::ostream& out, const module* /*
 {
    THROW_ASSERT(_ports_in.size() >= i_last, "");
    THROW_ASSERT(_ports_out.size() >= o_last, "");
-   out << "reg started 1INIT_ZERO_VALUE;\n";
-   out << "reg started_0 1INIT_ZERO_VALUE;\n";
-   out << "reg " << _ports_out[o_done].name << "_0 1INIT_ZERO_VALUE;\n\n";
+   out << "reg started;\n";
+   out << "wire started_0;\n";
+   out << "wire " << _ports_out[o_done].name << "_0;\n\n";
 
-   out << "always @(*)\n"
-       << "  started_0 = (started | " << _ports_in[i_start].name << ") & !" << _ports_in[i_full_n].name << ";\n";
-   out << "always @(posedge clock 1RESET_EDGE)\n"
-       << "  if (1RESET_VALUE)\n"
-       << "    started <= 0;\n"
-       << "  else\n"
-       << "    started <= started_0;\n\n";
-
-   out << "always @(*)\n"
+   out << "assign started_0 = (started | " << _ports_in[i_start].name << ") & !" << _ports_in[i_full_n].name << ";\n"
+       << "always @(posedge clock 1RESET_EDGE)\n"
        << "begin\n"
-       << "  " << _ports_out[o_done].name << "_0 = (" << _ports_in[i_start].name << " & " << _ports_in[i_full_n].name
-       << ") | (started & " << _ports_in[i_full_n].name << ") ;\n"
+       << "  if (1RESET_VALUE)\n"
+       << "  begin\n"
+       << "    started <= 0;\n"
+       << "  end\n"
+       << "  else\n"
+       << "  begin\n"
+       << "    started <= started_0;\n"
+       << "  end\n"
        << "end\n\n";
+
+   out << "assign " << _ports_out[o_done].name << "_0 = (" << _ports_in[i_start].name << " & "
+       << _ports_in[i_full_n].name << ") | (started & " << _ports_in[i_full_n].name << ") ;\n";
+
    out << "assign " << _ports_out[o_done].name << " = " << _ports_out[o_done].name << "_0;\n"
        << "assign " << _ports_out[o_write].name << " = " << _ports_out[o_done].name << "_0;\n";
    out << "assign " << _ports_out[o_out1].name << " = " << _ports_in[i_full_n].name << ";\n";

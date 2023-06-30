@@ -126,9 +126,9 @@ void PrintfP1NModuleGenerator::InternalExec(std::ostream& out, const module* /* 
        "end\n"
        "endfunction\n"
        "// synthesis translate_on\n"
-       "reg [BITSIZE_Mout_addr_ram-1:0] _present_pointer 1INIT_ZERO_VALUE;\n"
+       "reg [BITSIZE_Mout_addr_ram-1:0] _present_pointer;\n"
        "reg [BITSIZE_Mout_addr_ram-1:0] _next_pointer;\n"
-       "reg [BITSIZE_Mout_addr_ram-1:0] _present_pointer1 1INIT_ZERO_VALUE;\n"
+       "reg [BITSIZE_Mout_addr_ram-1:0] _present_pointer1;\n"
        "reg [BITSIZE_Mout_addr_ram-1:0] _next_pointer1;\n"
        "reg mem_sel_LOAD;\n"
        "wire mem_done_port;\n"
@@ -177,16 +177,16 @@ void PrintfP1NModuleGenerator::InternalExec(std::ostream& out, const module* /* 
        "  S_5 = 3'd5,\n"
        "  S_6 = 3'd6,\n"
        "  S_7 = 3'd7;\n"
-       "reg [2:0] _present_state 1INIT_ZERO_VALUE;\n"
+       "reg [2:0] _present_state;\n"
        "reg [2:0] _next_state;\n"
        "reg [" +
        selector_left +
-       ":0] _present_selector 1INIT_ZERO_VALUE;\n"
+       ":0] _present_selector;\n"
        "reg [" +
        selector_left +
        ":0] _next_selector;\n"
        "reg [63:0] data1;\n"
-       "reg [7:0] _present_data2 1INIT_ZERO_VALUE;\n"
+       "reg [7:0] _present_data2;\n"
        "reg [7:0] _next_data2;\n"
        "reg [7:0] data1_size;\n"
        "reg write_done;\n"
