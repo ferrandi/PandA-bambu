@@ -95,7 +95,7 @@ void Write_acknowledgeModuleGenerator::InternalExec(std::ostream& out, const mod
        << "  end\n"
        << "  else\n"
        << "  begin\n"
-       << "    started <= started_0;\n"
+       << "    started <= started0;\n"
        << "  end\n"
        << "end\n\n";
 

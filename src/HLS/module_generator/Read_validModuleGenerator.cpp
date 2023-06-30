@@ -96,7 +96,7 @@ void Read_validModuleGenerator::InternalExec(std::ostream& out, const module* /*
        << "  end\n"
        << "  else\n"
        << "  begin\n"
-       << "    started <= started_0;\n"
+       << "    started <= started0;\n"
        << "  end\n"
        << "end\n\n";
 
@@ -117,7 +117,6 @@ void Read_validModuleGenerator::InternalExec(std::ostream& out, const module* /*
 
    out << "assign " << _ports_out[o_out1].name << " = " << _ports_in[i_vld].name << " ? " << _ports_in[i_in3].name
        << " : reg_" << _ports_in[i_in3].name << ";\n";
-   out << "end\n\n";
 
    out << "assign " << _ports_out[o_done].name << " = (" << _ports_in[i_start].name << " & " << _ports_in[i_vld].name
        << ") | (started & " << _ports_in[i_vld].name << ")  | (validated & " << _ports_in[i_start].name << ");\n";
