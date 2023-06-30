@@ -26,7 +26,7 @@ if [ $# -eq 0 ]; then
 fi
 
 # Variable that will hold the name of the clang-format command
-FMT="$(find $(echo $PATH | sed 's/:/ /g') -regextype posix-extended -regex '.*/clang-format-[0-9]{2}' | sort --version-sort --field-separator=- --key=2,2 | tail -n1)"
+FMT="$(find $(echo $PATH | sed 's/:/ /g') -regextype posix-extended -regex '.*/clang-format-11' | sort --version-sort --field-separator=- --key=2,2 | tail -n1)"
 
 echo "Using $($FMT --version)"
 

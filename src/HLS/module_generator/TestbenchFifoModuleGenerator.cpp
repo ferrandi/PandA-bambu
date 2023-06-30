@@ -76,7 +76,7 @@ void TestbenchFifoModuleGenerator::InternalExec(std::ostream& out, structural_ob
    const auto top_fnode = HLSMgr->get_tree_manager()->CGetTreeReindex(function_id);
    const auto return_type = tree_helper::GetFunctionReturnType(top_fnode);
    THROW_ASSERT(HLSMgr->design_attributes.count(top_fname) && HLSMgr->design_attributes.at(top_fname).count(arg_name),
-                "");
+                "Parameter " + arg_name + " not found in function " + top_fname);
    const auto DesignAttributes = HLSMgr->design_attributes.at(top_fname).at(arg_name);
    const auto if_dir = port_o::to_port_direction(DesignAttributes.at(attr_interface_dir));
    const auto if_ndir = if_dir == port_o::IN ? port_o::OUT : port_o::IN;

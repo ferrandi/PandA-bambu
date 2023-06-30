@@ -421,12 +421,10 @@ void* addr;
 static int cmpptr(const ptr_t a, const ptr_t b) { return a < b ? -1 : (a > b); }
 static int cmpaddr(const void* a, const void* b) { return cmpptr((ptr_t)((__m_memmap_t*)a)->addr, (ptr_t)((__m_memmap_t*)b)->addr); }
 
-static void __m_memsetup(void* args[], size_t m_extmem_size)
+static void __m_memsetup(void* args[], size_t args_count)
 {
 int error = 0;
 size_t i;
-__m_memmap_t* m_extmem;
-ptr_t prev, curr_base;
 )");
    auto base_addr = HLSMgr->base_address;
    indented_output_stream->Append("static __m_memmap_t memmap_init[] = {\n");
@@ -455,7 +453,7 @@ ptr_t prev, curr_base;
       }
    }
    indented_output_stream->Append("};\n");
-   indented_output_stream->Append("const ptr_t base_addr = " + STR(base_addr) + ";\n");
+   indented_output_stream->Append("ptr_t base_addr = " + STR(base_addr) + ";\n");
 
    indented_output_stream->Append(R"(
 __m_memmap_init();
@@ -491,25 +489,13 @@ fclose(fp);
 error |= __m_memmap(memmap_init[i].addrmap, memmap_init[i].addr, memmap_init[i].size);
 }
 
-m_extmem = (__m_memmap_t*)malloc(sizeof(__m_memmap_t) * m_extmem_size);
-for(i = 0; i < m_extmem_size; ++i)
+for(i = 0; i < args_count; ++i)
 {
-m_extmem[i].addr = args[i];
-m_extmem[i].size = __m_param_size(i);
+const size_t size = __m_param_size(i);
+base_addr += ((base_addr % 8) != 0) ? (8 - (base_addr % 8)) : 0;
+error |= __m_memmap(base_addr, args[i], size);
+base_addr += size;
 }
-
-qsort(m_extmem, m_extmem_size, sizeof(__m_memmap_t), cmpaddr);
-prev = (ptr_t)m_extmem[0].addr;
-curr_base = base_addr;
-error |= __m_memmap(curr_base, m_extmem[0].addr, m_extmem[0].size);
-for(i = 1; i < m_extmem_size; ++i)
-{
-const ptr_t curr = (ptr_t)m_extmem[i].addr;
-curr_base += curr - prev;
-error |= __m_memmap(curr_base, m_extmem[i].addr, m_extmem[i].size);
-prev = curr;
-}
-free(m_extmem);
 if(error)
 {
 __m_signal_to(MDPI_ENTITY_SIM, MDPI_COSIM_END);
@@ -674,6 +660,22 @@ void HLSCWriter::WriteMainTestbench()
             gold_call += "(" + arg_typename + ")" + arg_name + "_gold, ";
             pp_call += "(" + tree_helper::PrintType(TM, arg_type, false, true) + ")" + arg_name + "_pp, ";
             gold_cmp += "m_argcmp(" + STR(param_idx) + ", " + cmp_type(arg_type, arg_typename) + ");\n";
+            const auto array_size = [&]() {
+               if(is_interface_inferred)
+               {
+                  const auto param_name = top_bh->PrintVariable(GET_INDEX_CONST_NODE(arg));
+                  THROW_ASSERT(arg_attributes->second.count(param_name),
+                               "Attributes missing for parameter " + param_name + " in function " + top_fname);
+                  return arg_attributes->second.at(param_name).count(attr_size) ?
+                             boost::lexical_cast<unsigned long long>(
+                                 arg_attributes->second.at(param_name).at(attr_size)) :
+                             1ULL;
+               }
+               const auto ptd_type = tree_helper::CGetPointedType(arg_type);
+               return tree_helper::IsArrayType(ptd_type) ? tree_helper::GetArrayTotalSize(ptd_type) : 1ULL;
+            }();
+            args_init +=
+                "__m_alloc_param(" + STR(param_idx) + ", sizeof(*" + arg_name + ") * " + STR(array_size) + ");\n";
             args_decl += "(void*)" + arg_name + ", ";
             args_set += "m_setargptr";
          }
@@ -694,43 +696,6 @@ void HLSCWriter::WriteMainTestbench()
             args_init += "__m_alloc_param(" + STR(param_idx) + ", sizeof(" + arg_typename + "));\n";
             args_decl += "(void*)&" + arg_name + ", ";
             args_set += arg_interface == "default" ? "__m_setarg" : "m_setargptr";
-         }
-         if(tree_helper::IsPointerType(arg_type))
-         {
-            if(is_interface_inferred && !arg_is_channel)
-            {
-               const auto param_name = top_bh->PrintVariable(GET_INDEX_CONST_NODE(arg));
-               THROW_ASSERT(arg_attributes->second.count(param_name),
-                            "Attributes missing for parameter " + param_name + " in function " + top_fname);
-               THROW_ASSERT(arg_attributes->second.at(param_name).count(attr_interface_bitwidth),
-                            "Attribute 'bitwidth' is missing for array parameter " + param_name);
-               THROW_ASSERT(arg_attributes->second.at(param_name).count(attr_interface_alignment),
-                            "Attribute 'alignment' is missing for array parameter " + param_name);
-               THROW_ASSERT(arg_attributes->second.at(param_name).count(attr_interface_factor),
-                            "Attribute 'factor' is missing for array parameter " + param_name);
-               const auto item_bw = boost::lexical_cast<unsigned long long>(
-                   arg_attributes->second.at(param_name).at(attr_interface_bitwidth));
-               const auto item_align = boost::lexical_cast<unsigned long long>(
-                   arg_attributes->second.at(param_name).at(attr_interface_alignment));
-               const auto item_factor = boost::lexical_cast<unsigned long long>(
-                   arg_attributes->second.at(param_name).at(attr_interface_factor));
-               const auto item_count =
-                   arg_attributes->second.at(param_name).count(attr_size) ?
-                       boost::lexical_cast<unsigned long long>(arg_attributes->second.at(param_name).at(attr_size)) :
-                       1ULL;
-               const auto array_bytes = get_aligned_bitsize(item_bw, item_align) / 8 * item_count * item_factor;
-               args_init += "__m_alloc_param(" + STR(param_idx) + ", " + STR(array_bytes) + ");\n";
-            }
-            else
-            {
-               const auto ptd_type = tree_helper::CGetPointedType(arg_type);
-               if(tree_helper::IsArrayType(ptd_type))
-               {
-                  const auto array_bytes = get_aligned_bitsize(tree_helper::GetArrayElementSize(ptd_type)) / 8 *
-                                           tree_helper::GetArrayTotalSize(ptd_type);
-                  args_init += "__m_alloc_param(" + STR(param_idx) + ", " + STR(array_bytes) + ");\n";
-               }
-            }
          }
          args_set += "(" + STR(param_idx) + ", args[" + STR(param_idx) + "], " + arg_size + ");\n";
          ++param_idx;
