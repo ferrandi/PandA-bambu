@@ -1,0 +1,31 @@
+medley/nussinov/nussinov.c --top-fname=kernel_nussinov --generate-tb=BENCHMARKS_ROOT/medley/nussinov/nussinov.c -IBENCHMARKS_ROOT/utilities
+medley/floyd-warshall/floyd-warshall.c --top-fname=kernel_floyd_warshall --generate-tb=BENCHMARKS_ROOT/medley/floyd-warshall/floyd-warshall.c -IBENCHMARKS_ROOT/utilities
+medley/deriche/deriche.c --top-fname=kernel_deriche --generate-tb=BENCHMARKS_ROOT/medley/deriche/deriche.c -IBENCHMARKS_ROOT/utilities
+datamining/correlation/correlation.c --top-fname=kernel_correlation --generate-tb=BENCHMARKS_ROOT/datamining/correlation/correlation.c -IBENCHMARKS_ROOT/utilities --max-ulp=4
+datamining/covariance/covariance.c --top-fname=kernel_covariance --generate-tb=BENCHMARKS_ROOT/datamining/covariance/covariance.c -IBENCHMARKS_ROOT/utilities
+linear-algebra/kernels/mvt/mvt.c --top-fname=kernel_mvt --generate-tb=BENCHMARKS_ROOT/linear-algebra/kernels/mvt/mvt.c -IBENCHMARKS_ROOT/utilities
+linear-algebra/kernels/doitgen/doitgen.c --top-fname=kernel_doitgen --generate-tb=BENCHMARKS_ROOT/linear-algebra/kernels/doitgen/doitgen.c -IBENCHMARKS_ROOT/utilities
+linear-algebra/kernels/atax/atax.c --top-fname=kernel_atax --generate-tb=BENCHMARKS_ROOT/linear-algebra/kernels/atax/atax.c -IBENCHMARKS_ROOT/utilities
+linear-algebra/kernels/bicg/bicg.c --top-fname=kernel_bicg --generate-tb=BENCHMARKS_ROOT/linear-algebra/kernels/bicg/bicg.c -IBENCHMARKS_ROOT/utilities
+linear-algebra/kernels/3mm/3mm.c --top-fname=kernel_3mm --generate-tb=BENCHMARKS_ROOT/linear-algebra/kernels/3mm/3mm.c -IBENCHMARKS_ROOT/utilities
+linear-algebra/kernels/2mm/2mm.c --top-fname=kernel_2mm --generate-tb=BENCHMARKS_ROOT/linear-algebra/kernels/2mm/2mm.c -IBENCHMARKS_ROOT/utilities
+linear-algebra/blas/symm/symm.c --top-fname=kernel_symm --generate-tb=BENCHMARKS_ROOT/linear-algebra/blas/symm/symm.c -IBENCHMARKS_ROOT/utilities
+linear-algebra/blas/trmm/trmm.c --top-fname=kernel_trmm --generate-tb=BENCHMARKS_ROOT/linear-algebra/blas/trmm/trmm.c -IBENCHMARKS_ROOT/utilities
+linear-algebra/blas/gesummv/gesummv.c --top-fname=kernel_gesummv --generate-tb=BENCHMARKS_ROOT/linear-algebra/blas/gesummv/gesummv.c -IBENCHMARKS_ROOT/utilities
+linear-algebra/blas/syrk/syrk.c --top-fname=kernel_syrk --generate-tb=BENCHMARKS_ROOT/linear-algebra/blas/syrk/syrk.c -IBENCHMARKS_ROOT/utilities
+linear-algebra/blas/syr2k/syr2k.c --top-fname=kernel_syr2k --generate-tb=BENCHMARKS_ROOT/linear-algebra/blas/syr2k/syr2k.c -IBENCHMARKS_ROOT/utilities
+linear-algebra/blas/gemver/gemver.c --top-fname=kernel_gemver --generate-tb=BENCHMARKS_ROOT/linear-algebra/blas/gemver/gemver.c -IBENCHMARKS_ROOT/utilities
+linear-algebra/blas/gemm/gemm.c --top-fname=kernel_gemm --generate-tb=BENCHMARKS_ROOT/linear-algebra/blas/gemm/gemm.c -IBENCHMARKS_ROOT/utilities
+linear-algebra/solvers/lu/lu.c --top-fname=kernel_lu --generate-tb=BENCHMARKS_ROOT/linear-algebra/solvers/lu/lu.c -IBENCHMARKS_ROOT/utilities
+linear-algebra/solvers/trisolv/trisolv.c --top-fname=kernel_trisolv --generate-tb=BENCHMARKS_ROOT/linear-algebra/solvers/trisolv/trisolv.c -IBENCHMARKS_ROOT/utilities
+linear-algebra/solvers/ludcmp/ludcmp.c --top-fname=kernel_ludcmp --generate-tb=BENCHMARKS_ROOT/linear-algebra/solvers/ludcmp/ludcmp.c -IBENCHMARKS_ROOT/utilities
+linear-algebra/solvers/gramschmidt/gramschmidt.c --top-fname=kernel_gramschmidt --generate-tb=BENCHMARKS_ROOT/linear-algebra/solvers/gramschmidt/gramschmidt.c -IBENCHMARKS_ROOT/utilities
+linear-algebra/solvers/cholesky/cholesky.c --top-fname=kernel_cholesky --generate-tb=BENCHMARKS_ROOT/linear-algebra/solvers/cholesky/cholesky.c -IBENCHMARKS_ROOT/utilities --max-ulp=64
+linear-algebra/solvers/durbin/durbin.c --top-fname=kernel_durbin --generate-tb=BENCHMARKS_ROOT/linear-algebra/solvers/durbin/durbin.c -IBENCHMARKS_ROOT/utilities
+stencils/adi/adi.c --top-fname=kernel_adi --generate-tb=BENCHMARKS_ROOT/stencils/adi/adi.c -IBENCHMARKS_ROOT/utilities
+stencils/fdtd-2d/fdtd-2d.c --top-fname=kernel_fdtd_2d --generate-tb=BENCHMARKS_ROOT/stencils/fdtd-2d/fdtd-2d.c -IBENCHMARKS_ROOT/utilities
+stencils/heat-3d/heat-3d.c --top-fname=kernel_heat_3d --generate-tb=BENCHMARKS_ROOT/stencils/heat-3d/heat-3d.c -IBENCHMARKS_ROOT/utilities
+stencils/seidel-2d/seidel-2d.c --top-fname=kernel_seidel_2d --generate-tb=BENCHMARKS_ROOT/stencils/seidel-2d/seidel-2d.c -IBENCHMARKS_ROOT/utilities
+stencils/jacobi-1d/jacobi-1d.c --top-fname=kernel_jacobi_1d --generate-tb=BENCHMARKS_ROOT/stencils/jacobi-1d/jacobi-1d.c -IBENCHMARKS_ROOT/utilities
+stencils/jacobi-2d/jacobi-2d.c --top-fname=kernel_jacobi_2d --generate-tb=BENCHMARKS_ROOT/stencils/jacobi-2d/jacobi-2d.c -IBENCHMARKS_ROOT/utilities
+
