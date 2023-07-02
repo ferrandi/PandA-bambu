@@ -80,48 +80,72 @@ void Read_validModuleGenerator::InternalExec(std::ostream& out, structural_objec
 {
    THROW_ASSERT(_ports_in.size() >= i_last, "");
    THROW_ASSERT(_ports_out.size() >= o_last, "");
-   out << "reg started 1INIT_ZERO_VALUE;\n";
-   out << "reg started0 1INIT_ZERO_VALUE;\n";
-   out << "reg validated 1INIT_ZERO_VALUE;\n";
-   out << "reg validated0 1INIT_ZERO_VALUE;\n";
-   out << "reg [BITSIZE_" << _ports_out[o_out1].name << "-1:0] " << _ports_out[o_out1].name << " ;\n";
-   out << "reg " << _ports_out[o_done].name << " 1INIT_ZERO_VALUE;\n";
-   out << "reg [" << _ports_in[i_in3].type_size << "-1:0] reg_" << _ports_in[i_in3].name << " 1INIT_ZERO_VALUE;\n\n";
+   out << "parameter ASYNC=0;\n\n"; // TODO: this should be controlled by InterfaceInfer step
+   out << "reg started, started0;\n\n";
 
-   out << "always @(*)\n";
-   out << "  started0 = (started | " << _ports_in[i_start].name << ") & !(validated | " << _ports_in[i_vld].name
-       << ");\n";
-   out << "always @(posedge clock 1RESET_EDGE)\n";
-   out << "  if (1RESET_VALUE)\n";
-   out << "    started <= 0;\n";
-   out << "  else\n";
-   out << "    started <= started0;\n\n";
+   out << R"(generate
+if(ASYNC)
+begin
+  reg validated, validated0;
+  reg [)"
+       << (_ports_in[i_in3].type_size - 1) << R"(:0] stored;
 
-   out << "always @(*)\n";
-   out << "  validated0 = (validated | " << _ports_in[i_vld].name << ") & !(started | " << _ports_in[i_start].name
-       << ");\n\n";
+  always @(posedge clock 1RESET_EDGE)
+  begin
+    if (1RESET_VALUE)
+    begin
+      started <= 0;
+      validated <= 0;
+      stored <= 0;
+    end
+    else
+    begin
+      started <= started0;
+      validated <= validated0;
+      stored <= )"
+       << _ports_in[i_in3].name << R"(;
+    end
+  end
 
-   out << "always @(posedge clock 1RESET_EDGE)\n";
-   out << "  if (1RESET_VALUE)\n";
-   out << "    validated <= 0;\n";
-   out << "  else\n";
-   out << "    validated <= validated0;\n\n";
+  always @(*)
+  begin
+    started0 = (started | )"
+       << _ports_in[i_start].name << R"() & ~(validated | )" << _ports_in[i_vld].name << R"();
+    validated0 = (validated | )"
+       << _ports_in[i_vld].name << R"() & ~(started | )" << _ports_in[i_start].name << R"();
+  end
 
-   out << "always @(posedge clock 1RESET_EDGE)\n";
-   out << "  if (1RESET_VALUE)\n";
-   out << "    reg_" << _ports_in[i_in3].name << " <= 0;\n";
-   out << "  else if(" << _ports_in[i_vld].name << ")\n";
-   out << "    reg_" << _ports_in[i_in3].name << " <= " << _ports_in[i_in3].name << ";\n\n";
+  assign )"
+       << _ports_out[o_out1].name << " = " << _ports_in[i_vld].name << " ? " << _ports_in[i_in3].name << R"( : stored;
+  assign )"
+       << _ports_out[o_done].name << " = ((started | " << _ports_in[i_start].name << ") & " << _ports_in[i_vld].name
+       << ") | (validated & " << _ports_in[i_start].name << R"();
+end
+else
+begin
+  always @(posedge clock 1RESET_EDGE)
+  begin
+    if (1RESET_VALUE)
+    begin
+      started <= 0;
+    end
+    else
+    begin
+      started <= started0;
+    end
+  end
 
-   out << "always @(*)\n";
-   out << "begin\n";
-   out << "  " << _ports_out[o_out1].name << " = " << _ports_in[i_vld].name << " ? " << _ports_in[i_in3].name
-       << " : reg_" << _ports_in[i_in3].name << ";\n";
-   out << "end\n\n";
+  always @(*)
+  begin
+    started0 = (started | )"
+       << _ports_in[i_start].name << R"() & ~)" << _ports_in[i_vld].name << R"(;
+  end
 
-   out << "always @(*)\n";
-   out << "begin\n";
-   out << "  " << _ports_out[o_done].name << " = (" << _ports_in[i_start].name << " & " << _ports_in[i_vld].name
-       << ") | (started & " << _ports_in[i_vld].name << ")  | (validated & " << _ports_in[i_start].name << ");\n";
-   out << "end\n";
+  assign )"
+       << _ports_out[o_out1].name << " = " << _ports_in[i_in3].name << R"(;
+  assign )"
+       << _ports_out[o_done].name << " = (started | " << _ports_in[i_start].name << ") & " << _ports_in[i_vld].name
+       << R"(;
+end
+endgenerate)";
 }
