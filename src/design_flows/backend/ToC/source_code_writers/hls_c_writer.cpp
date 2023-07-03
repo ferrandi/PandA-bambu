@@ -449,6 +449,7 @@ size_t i;
       }
    }
    indented_output_stream->Append("};\n");
+   indented_output_stream->Append("const ptr_t align = 8;\n");
    indented_output_stream->Append("ptr_t base_addr = " + STR(base_addr) + ";\n");
 
    indented_output_stream->Append(R"(
@@ -488,7 +489,7 @@ error |= __m_memmap(memmap_init[i].addrmap, memmap_init[i].addr, memmap_init[i].
 for(i = 0; i < args_count; ++i)
 {
 const size_t size = __m_param_size(i);
-base_addr += ((base_addr % 8) != 0) ? (8 - (base_addr % 8)) : 0;
+base_addr += (align - 1) - ((base_addr - 1) % align);
 error |= __m_memmap(base_addr, args[i], size);
 base_addr += size;
 }
