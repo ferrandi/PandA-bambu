@@ -1,19 +1,22 @@
+#ifndef rank
 #define rank 32
+#endif
+#ifndef tile_rank
 #define tile_rank 2
-
-#include <stdio.h>
+#endif
 
 #pragma HLS_interface a m_axi direct bundle = gmem0
 #pragma HLS_interface b m_axi direct bundle = gmem0
-#pragma HLS_interface _output_ m_axi direct bundle = gmem0
-
+#pragma HLS_interface res m_axi direct bundle = gmem0
+#ifdef MEM_CACHE
 #pragma HLS_cache bundle = gmem0 way_size = 16 line_size = 16 bus_size = 32 n_ways = 1 buffer_size = 2 rep_policy = \
     lru write_policy = wt
 #pragma HLS_cache bundle = gmem1 way_size = 32 line_size = 16 bus_size = 32 n_ways = 1 buffer_size = 2 rep_policy = \
     tree write_policy = wt
 #pragma HLS_cache bundle = gmem2 way_size = 16 line_size = 16 bus_size = 32 n_ways = 1 buffer_size = 4 rep_policy = \
     tree write_policy = wb
-void mmult(int* a, int* b, int* _output_)
+#endif
+void mmult(int* a, int* b, int* res)
 {
    int running = 0;
 
@@ -25,7 +28,7 @@ void mmult(int* a, int* b, int* _output_)
          {
             for(unsigned c = 0; c < rank / tile_rank; c++)
             {
-               _output_[(r + r_tile * rank / tile_rank) * rank + (c + c_tile * rank / tile_rank)] = 0;
+               res[(r + r_tile * rank / tile_rank) * rank + (c + c_tile * rank / tile_rank)] = 0;
             }
          }
          for(unsigned i_tile = 0; i_tile < tile_rank; i_tile++)
@@ -41,7 +44,7 @@ void mmult(int* a, int* b, int* _output_)
                      unsigned bIndex = (index + i_tile * rank / tile_rank) * rank + (c + c_tile * rank / tile_rank);
                      running += a[aIndex] * b[bIndex];
                   }
-                  _output_[(r + r_tile * rank / tile_rank) * rank + (c + c_tile * rank / tile_rank)] += running;
+                  res[(r + r_tile * rank / tile_rank) * rank + (c + c_tile * rank / tile_rank)] += running;
                }
             }
          }

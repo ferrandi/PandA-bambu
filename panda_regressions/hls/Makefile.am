@@ -80,6 +80,11 @@ all_clang_CHStone-frontend.sh \
 all_clang_softfloat-tests.sh \
 all_gcc_CHStone-frontend.sh \
 all_gcc_softfloat-tests.sh \
+bambu_axi_verification.sh \
+bambu_axi_verification_list \
+bambu_axi_verification/axi_vip.tcl \
+bambu_axi_verification/mm_axi_tb.xml \
+bambu_axi_verification/mm_axi.c \
 bambu_specific_test.sh \
 bambu_specific_test/20020108-1.c.gimplePSSA \
 bambu_specific_test/990829-1.c.gimplePSSA \

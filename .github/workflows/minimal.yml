@@ -154,7 +154,7 @@ jobs:
           name: bambu_specific_test_modelsim
           path: ${{env.report-dir}}
 
-  specific-test-AXI:
+  AXI4-verification:
     needs: [build]
     runs-on: [self-hosted,mentor]
     steps:
@@ -179,8 +179,7 @@ jobs:
         shell: bash
         run: |
           export PATH=${{steps.setup.outputs.local-bin}}:$PATH
-          mkdir ${{env.report-dir}}
-          ./panda_regressions/hls/bambu_axi_test.sh --returnfail --junitdir="${{env.report-dir}}" --csv="${{env.report-dir}}/perf.csv" ${{env.args}}
+          ./panda_regressions/hls/bambu_axi_verification.sh
 
 
   gcc_regression_simple:
