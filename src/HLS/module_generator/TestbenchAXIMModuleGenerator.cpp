@@ -75,8 +75,9 @@ void TestbenchAXIMModuleGenerator::InternalExec(std::ostream& out, structural_ob
    std::string internal_port_assign;
    const auto add_port_parametric = [&](const std::string& name, port_o::port_direction dir, unsigned port_size) {
       const auto port_name = port_prefix + "_" + name;
-      structural_manager::add_port(port_name, dir, mod_cir,
-                                   structural_type_descriptorRef(new structural_type_descriptor("bool", port_size)));
+      const auto port_obj = structural_manager::add_port(
+          port_name, dir, mod_cir, structural_type_descriptorRef(new structural_type_descriptor("bool", port_size)));
+      GetPointerS<port_o>(port_obj)->set_is_memory(true);
       if(port_size)
       {
          np_library += " " + port_name;
@@ -97,65 +98,65 @@ void TestbenchAXIMModuleGenerator::InternalExec(std::ostream& out, structural_ob
       }
    };
 
-   add_port_parametric("AWREADY", port_o::OUT, 0U);
-   add_port_parametric("WREADY", port_o::OUT, 0U);
-   add_port_parametric("BID", port_o::OUT, 1U);
-   add_port_parametric("BRESP", port_o::OUT, 2U);
-   add_port_parametric("BUSER", port_o::OUT, 1U);
-   add_port_parametric("BVALID", port_o::OUT, 0U);
-   add_port_parametric("ARREADY", port_o::OUT, 0U);
-   add_port_parametric("RID", port_o::OUT, 1U);
-   add_port_parametric("RDATA", port_o::OUT, 1U);
-   add_port_parametric("RRESP", port_o::OUT, 2U);
-   add_port_parametric("RLAST", port_o::OUT, 0U);
-   add_port_parametric("RUSER", port_o::OUT, 1U);
-   add_port_parametric("RVALID", port_o::OUT, 0U);
+   add_port_parametric("awready", port_o::OUT, 0U);
+   add_port_parametric("wready", port_o::OUT, 0U);
+   add_port_parametric("bid", port_o::OUT, 1U);
+   add_port_parametric("bresp", port_o::OUT, 2U);
+   add_port_parametric("buser", port_o::OUT, 1U);
+   add_port_parametric("bvalid", port_o::OUT, 0U);
+   add_port_parametric("arready", port_o::OUT, 0U);
+   add_port_parametric("rid", port_o::OUT, 1U);
+   add_port_parametric("rdata", port_o::OUT, 1U);
+   add_port_parametric("rresp", port_o::OUT, 2U);
+   add_port_parametric("rlast", port_o::OUT, 0U);
+   add_port_parametric("ruser", port_o::OUT, 1U);
+   add_port_parametric("rvalid", port_o::OUT, 0U);
 
-   add_port_parametric("AWID", port_o::IN, 1U);
-   add_port_parametric("AWADDR", port_o::IN, 1U);
-   add_port_parametric("AWLEN", port_o::IN, 1U);
-   add_port_parametric("AWSIZE", port_o::IN, 1U);
-   add_port_parametric("AWBURST", port_o::IN, 2U);
-   add_port_parametric("AWLOCK", port_o::IN, 1U);
-   add_port_parametric("AWCACHE", port_o::IN, 1U);
-   add_port_parametric("AWPROT", port_o::IN, 1U);
-   add_port_parametric("AWQOS", port_o::IN, 1U);
-   add_port_parametric("AWREGION", port_o::IN, 1U);
-   add_port_parametric("AWUSER", port_o::IN, 1U);
-   add_port_parametric("AWVALID", port_o::IN, 0U);
+   add_port_parametric("awid", port_o::IN, 1U);
+   add_port_parametric("awaddr", port_o::IN, 1U);
+   add_port_parametric("awlen", port_o::IN, 1U);
+   add_port_parametric("awsize", port_o::IN, 1U);
+   add_port_parametric("awburst", port_o::IN, 2U);
+   add_port_parametric("awlock", port_o::IN, 1U);
+   add_port_parametric("awcache", port_o::IN, 1U);
+   add_port_parametric("awprot", port_o::IN, 1U);
+   add_port_parametric("awqos", port_o::IN, 1U);
+   add_port_parametric("awregion", port_o::IN, 1U);
+   add_port_parametric("awuser", port_o::IN, 1U);
+   add_port_parametric("awvalid", port_o::IN, 0U);
 
-   add_port_parametric("WID", port_o::IN, 1U);
-   add_port_parametric("WDATA", port_o::IN, 1U);
-   add_port_parametric("WSTRB", port_o::IN, 1U);
-   add_port_parametric("WLAST", port_o::IN, 0U);
-   add_port_parametric("WUSER", port_o::IN, 1U);
-   add_port_parametric("WVALID", port_o::IN, 0U);
+   add_port_parametric("wid", port_o::IN, 1U); // AXI3 spec only
+   add_port_parametric("wdata", port_o::IN, 1U);
+   add_port_parametric("wstrb", port_o::IN, 1U);
+   add_port_parametric("wlast", port_o::IN, 0U);
+   add_port_parametric("wuser", port_o::IN, 1U);
+   add_port_parametric("wvalid", port_o::IN, 0U);
 
-   add_port_parametric("BREADY", port_o::IN, 0U);
+   add_port_parametric("bready", port_o::IN, 0U);
 
-   add_port_parametric("ARID", port_o::IN, 1U);
-   add_port_parametric("ARADDR", port_o::IN, 1U);
-   add_port_parametric("ARLEN", port_o::IN, 1U);
-   add_port_parametric("ARSIZE", port_o::IN, 1U);
-   add_port_parametric("ARBURST", port_o::IN, 2U);
-   add_port_parametric("ARLOCK", port_o::IN, 1U);
-   add_port_parametric("ARCACHE", port_o::IN, 1U);
-   add_port_parametric("ARPROT", port_o::IN, 1U);
-   add_port_parametric("ARQOS", port_o::IN, 1U);
-   add_port_parametric("ARREGION", port_o::IN, 1U);
-   add_port_parametric("ARUSER", port_o::IN, 1U);
-   add_port_parametric("ARVALID", port_o::IN, 0U);
+   add_port_parametric("arid", port_o::IN, 1U);
+   add_port_parametric("araddr", port_o::IN, 1U);
+   add_port_parametric("arlen", port_o::IN, 1U);
+   add_port_parametric("arsize", port_o::IN, 1U);
+   add_port_parametric("arburst", port_o::IN, 2U);
+   add_port_parametric("arlock", port_o::IN, 1U);
+   add_port_parametric("arcache", port_o::IN, 1U);
+   add_port_parametric("arprot", port_o::IN, 1U);
+   add_port_parametric("arqos", port_o::IN, 1U);
+   add_port_parametric("arregion", port_o::IN, 1U);
+   add_port_parametric("aruser", port_o::IN, 1U);
+   add_port_parametric("arvalid", port_o::IN, 0U);
 
-   add_port_parametric("RREADY", port_o::IN, 0U);
+   add_port_parametric("rready", port_o::IN, 0U);
    structural_manager::add_NP_functionality(mod_cir, NP_functionality::LIBRARY, np_library);
 
    out << internal_port_assign << "\n"
-       << "parameter BITSIZE_data=BITSIZE_" << port_prefix << "_RDATA,\n"
+       << "parameter BITSIZE_data=BITSIZE_" << port_prefix << "_rdata,\n"
        << "  BITSIZE_counter=32,\n"
-       << "  BITSIZE_burst=BITSIZE_" << port_prefix << "_ARBURST,\n"
-       << "  BITSIZE_len=BITSIZE_" << port_prefix << "_ARLEN,\n"
-       << "  BITSIZE_size=BITSIZE_" << port_prefix << "_ARSIZE,\n"
-       << "  BITSIZE_addr=BITSIZE_" << port_prefix << "_ARADDR,\n"
+       << "  BITSIZE_burst=BITSIZE_" << port_prefix << "_arburst,\n"
+       << "  BITSIZE_len=BITSIZE_" << port_prefix << "_arlen,\n"
+       << "  BITSIZE_size=BITSIZE_" << port_prefix << "_arsize,\n"
+       << "  BITSIZE_addr=BITSIZE_" << port_prefix << "_araddr,\n"
        << "  OFFSET_counter=0,\n"
        << "  OFFSET_burst=OFFSET_counter+BITSIZE_counter,\n"
        << "  OFFSET_len=OFFSET_burst+BITSIZE_burst,\n"
@@ -181,19 +182,19 @@ begin
   next_awqueue = 0;
   awqueue_size = 0;
   next_awqueue_size = 0;
-  AWREADY = 0;
-  WREADY = 0;
-  BID = 0;
-  BRESP = 0;
-  BUSER = 0;
-  BVALID = 0;
-  ARREADY = 0;
-  RID = 0;
-  RDATA = 0;
-  RRESP = 0;
-  RLAST = 0;
-  RUSER = 0;
-  RVALID = 0;
+  awready = 0;
+  wready = 0;
+  bid = 0;
+  bresp = 0;
+  buser = 0;
+  bvalid = 0;
+  arready = 0;
+  rid = 0;
+  rdata = 0;
+  rresp = 0;
+  rlast = 0;
+  ruser = 0;
+  rvalid = 0;
 end
 
 // Combinatorial logic for read transactions
@@ -202,15 +203,15 @@ begin: read_comb
   automatic integer unsigned i;
   next_arqueue = arqueue;
   next_arqueue_size = arqueue_size;
-  if(ARVALID)
+  if(arvalid)
   begin
     if(arqueue_size < QUEUE_SIZE)
     begin
-      next_arqueue[arqueue_size*BITSIZE_aritem +:BITSIZE_aritem] = {ARADDR, ARSIZE, ARLEN, ARBURST, {BITSIZE_counter{1'b0}} -READ_DELAY};
+      next_arqueue[arqueue_size*BITSIZE_aritem +:BITSIZE_aritem] = {araddr, arsize, arlen, arburst, {BITSIZE_counter{1'b0}} -READ_DELAY};
       next_arqueue_size = arqueue_size + 1;
     end
   end
-  if(arqueue_size > 0 && next_arqueue[OFFSET_counter+:BITSIZE_counter] == next_arqueue[OFFSET_len+:BITSIZE_len] && RREADY)
+  if(arqueue_size > 0 && next_arqueue[OFFSET_counter+:BITSIZE_counter] == next_arqueue[OFFSET_len+:BITSIZE_len] && rready)
   begin
     for(i = 1; i < QUEUE_SIZE; i = i + 1)
     begin
@@ -218,7 +219,7 @@ begin: read_comb
     end
     next_arqueue_size = next_arqueue_size - 1;
   end
-  if(next_arqueue_size > 0 && next_arqueue[OFFSET_counter+BITSIZE_counter-1] == 1'b0 && RREADY)
+  if(next_arqueue_size > 0 && next_arqueue[OFFSET_counter+BITSIZE_counter-1] == 1'b0 && rready)
   begin
     next_arqueue[OFFSET_counter+:BITSIZE_counter] = next_arqueue[OFFSET_counter+:BITSIZE_counter] + 1;
   end
@@ -238,15 +239,15 @@ begin: write_comb
   automatic reg [BITSIZE_counter-1:0] counter;
   next_awqueue = awqueue;
   next_awqueue_size = awqueue_size;
-  if(AWVALID)
+  if(awvalid)
   begin
     if(awqueue_size < QUEUE_SIZE)
     begin
-      next_awqueue[awqueue_size*BITSIZE_awitem+:BITSIZE_awitem] = {AWADDR, AWSIZE, AWLEN, AWBURST, 32'd1};
+      next_awqueue[awqueue_size*BITSIZE_awitem+:BITSIZE_awitem] = {awaddr, awsize, awlen, awburst, 32'd1};
       next_awqueue_size = awqueue_size + 1;
     end
   end
-  if(next_awqueue_size > 0 && next_awqueue[OFFSET_counter+:BITSIZE_counter] == 0 && BREADY)
+  if(next_awqueue_size > 0 && next_awqueue[OFFSET_counter+:BITSIZE_counter] == 0 && bready)
   begin
     for(i = 1; i < QUEUE_SIZE; i = i + 1)
     begin
@@ -254,7 +255,7 @@ begin: write_comb
     end
     next_awqueue_size = next_awqueue_size - 1;
   end
-  if(WVALID)
+  if(wvalid)
   begin
     i = 0;
     counter = next_awqueue[i*BITSIZE_awitem+OFFSET_counter+:BITSIZE_counter];
@@ -262,7 +263,7 @@ begin: write_comb
     begin
       i = i + 1;
     end
-    if(WLAST)
+    if(wlast)
     begin
       next_awqueue[i*BITSIZE_awitem+OFFSET_counter+:BITSIZE_counter] = {{(BITSIZE_counter-1){1'b0}}, 1'b1} - WRITE_DELAY;
     end
@@ -286,13 +287,13 @@ begin : read_seq
   automatic ptr_t currAddr;
   automatic ptr_t endAddr;
   automatic integer i;
-  ARREADY <= (arqueue_size < QUEUE_SIZE);
-  RVALID <= 0;
-  RRESP <= 0;
-  RLAST <= 0;
+  arready <= (arqueue_size < QUEUE_SIZE) & ~(1RESET_VALUE);
+  rvalid <= 0;
+  rresp <= 0;
+  rlast <= 0;
   if(arqueue_size > 0 && arqueue[OFFSET_counter+BITSIZE_counter-1] == 1'b0)
   begin
-    RVALID <= 1;
+    rvalid <= 1;
     if(arqueue[OFFSET_burst+:BITSIZE_burst] == 2'b00)
     begin
       currAddr = arqueue[OFFSET_addr+:BITSIZE_addr];
@@ -311,11 +312,11 @@ begin : read_seq
       end
     end
     currAddr = currAddr - (currAddr % (1 << arqueue[OFFSET_size+:BITSIZE_size]));
-    RDATA <= m_utils.read(currAddr); // {_bambu_testbench_mem_[currAddr + 1 - base_addr], _bambu_testbench_mem_[currAddr + 0 - base_addr]};
-    RRESP <= 0;
+    rdata <= m_utils.read(currAddr); // {_bambu_testbench_mem_[currAddr + 1 - base_addr], _bambu_testbench_mem_[currAddr + 0 - base_addr]};
+    rresp <= 0;
     if(arqueue[OFFSET_counter+:BITSIZE_counter] == arqueue[OFFSET_len+:BITSIZE_len])
     begin
-      RLAST <= 1;
+      rlast <= 1;
     end
   end
   arqueue <= next_arqueue;
@@ -328,17 +329,17 @@ begin: write_seq
   automatic ptr_t currAddr;
   automatic ptr_t endAddr;
   automatic integer unsigned i;
-  AWREADY <= (awqueue_size < QUEUE_SIZE);
-  WREADY <= 1;
-  BVALID <= 0;
+  awready <= (awqueue_size < QUEUE_SIZE) & ~(1RESET_VALUE);
+  wready <= ~(1RESET_VALUE);
+  bvalid <= 0;
   if(awqueue_size > 0 && awqueue[OFFSET_counter+:BITSIZE_counter] == 0)
   begin 
-    BRESP <= 0;
-    BVALID <= 1;
+    bresp <= 0;
+    bvalid <= 1;
   end
-  if(WVALID)
+  if(wvalid)
   begin
-    if(awqueue_size > 0 || AWVALID == 1'b1); else $error("Received data on write channel, but no transaction in queue");
+    if(awqueue_size > 0 || awvalid == 1'b1); else $error("Received data on write channel, but no transaction in queue");
     if(awqueue_size > 0)
     begin
       i = 0;
@@ -346,7 +347,7 @@ begin: write_seq
       begin
         i = i + 1;
       end
-      if(i < awqueue_size || AWVALID == 1'b1); else $error("Received write data, but all transactions in queue are in delay phase");
+      if(i < awqueue_size || awvalid == 1'b1); else $error("Received write data, but all transactions in queue are in delay phase");
       if(i < awqueue_size)
       begin 
         if(awqueue[i*BITSIZE_awitem+OFFSET_burst+:BITSIZE_burst] == 2'b00)
@@ -373,16 +374,16 @@ begin: write_seq
       end
       else
       begin
-        currAddr = AWADDR - (AWADDR % (1 << AWSIZE));
+        currAddr = awaddr - (awaddr % (1 << awsize));
       end
     end
     else
     begin
-      currAddr = AWADDR - (AWADDR % (1 << AWSIZE));
+      currAddr = awaddr - (awaddr % (1 << awsize));
     end
-    if(WSTRB != 0)
+    if(wstrb != 0)
     begin
-      m_utils.write_strobe(WSTRB, WDATA, currAddr);
+      m_utils.write_strobe(wstrb, wdata, currAddr);
     end
   end
   awqueue <= next_awqueue;

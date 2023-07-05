@@ -103,9 +103,9 @@ void OpenP1NModuleGenerator::InternalExec(std::ostream& out, structural_objectRe
                               modes + " & " + STR(O_WRONLY) + ") != 0 ? \"wb\" : \"rb\"" + "))";
 
    const auto fsm =
-       "  reg [nbits_buffer-1:0] _present_index 1INIT_ZERO_VALUE;\n"
+       "  reg [nbits_buffer-1:0] _present_index;\n"
        "  reg [nbits_buffer-1:0] _next_index;\n"
-       "  reg [BITSIZE_Mout_addr_ram-1:0] _present_pointer 1INIT_ZERO_VALUE;\n"
+       "  reg [BITSIZE_Mout_addr_ram-1:0] _present_pointer;\n"
        "  reg [BITSIZE_Mout_addr_ram-1:0] _next_pointer;\n"
        "  reg done_port;\n"
        "  wire mem_done_port;\n"
@@ -115,7 +115,7 @@ void OpenP1NModuleGenerator::InternalExec(std::ostream& out, structural_objectRe
        "                  S_1 = 2'd1,\n"
        "                  S_2 = 2'd2,\n"
        "                  S_3 = 2'd3;\n"
-       "  reg [3:0] _present_state 1INIT_ZERO_VALUE;\n"
+       "  reg [3:0] _present_state;\n"
        "  reg [3:0] _next_state;\n"
        "  reg [63:0] data1;\n"
        "  reg [7:0] data1_size;\n"

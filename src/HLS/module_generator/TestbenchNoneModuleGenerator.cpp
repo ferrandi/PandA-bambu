@@ -76,7 +76,7 @@ void TestbenchNoneModuleGenerator::InternalExec(std::ostream& out, structural_ob
 
    const auto top_fname = HLSMgr->CGetFunctionBehavior(function_id)->CGetBehavioralHelper()->GetMangledFunctionName();
    THROW_ASSERT(HLSMgr->design_attributes.count(top_fname) && HLSMgr->design_attributes.at(top_fname).count(arg_name),
-                "");
+                "Parameter " + arg_name + " not found in function " + top_fname);
    const auto DesignAttributes = HLSMgr->design_attributes.at(top_fname).at(arg_name);
    THROW_ASSERT(DesignAttributes.count(attr_interface_dir), "");
    const auto if_dir = port_o::to_port_direction(DesignAttributes.at(attr_interface_dir));

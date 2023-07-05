@@ -126,9 +126,9 @@ void PrintfCSModuleGenerator::InternalExec(std::ostream& out, structural_objectR
        "end\n"
        "endfunction\n"
        "// synthesis translate_on\n"
-       "reg [BITSIZE_Mout_addr_ram-1:0] _present_pointer 1INIT_ZERO_VALUE;\n"
+       "reg [BITSIZE_Mout_addr_ram-1:0] _present_pointer;\n"
        "reg [BITSIZE_Mout_addr_ram-1:0] _next_pointer;\n"
-       "reg [BITSIZE_Mout_addr_ram-1:0] _present_pointer1 1INIT_ZERO_VALUE;\n"
+       "reg [BITSIZE_Mout_addr_ram-1:0] _present_pointer1;\n"
        "reg [BITSIZE_Mout_addr_ram-1:0] _next_pointer1;\n"
        "reg mem_sel_LOAD;\n"
        "reg start_memory_op;\n"
@@ -169,16 +169,16 @@ void PrintfCSModuleGenerator::InternalExec(std::ostream& out, structural_objectR
        "  S_8 = 4'd8,\n"
        "  S_9 = 4'd9,\n"
        "  S_10 = 4'd10;\n"
-       "reg [3:0] _present_state 1INIT_ZERO_VALUE;\n"
+       "reg [3:0] _present_state;\n"
        "reg [3:0] _next_state;\n"
        "reg [" +
        selector_left +
-       ":0] _present_selector 1INIT_ZERO_VALUE;\n"
+       ":0] _present_selector;\n"
        "reg [" +
        selector_left +
        ":0] _next_selector;\n"
        "reg [63:0] data1;\n"
-       "reg [7:0] _present_data2 1INIT_ZERO_VALUE;\n"
+       "reg [7:0] _present_data2;\n"
        "reg [7:0] _next_data2;\n"
        "reg [7:0] data1_size;\n"
        "reg write_done;\n"
