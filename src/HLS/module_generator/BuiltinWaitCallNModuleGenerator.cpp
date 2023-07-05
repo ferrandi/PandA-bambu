@@ -70,8 +70,7 @@ void BuiltinWaitCallNModuleGenerator::InternalExec(std::ostream& out, structural
                                                    const std::vector<ModuleGenerator::parameter>& /* _ports_out */,
                                                    const std::vector<ModuleGenerator::parameter>& /* _ports_inout */)
 {
-   const auto retval_size = [&]()
-   {
+   const auto retval_size = [&]() {
       THROW_ASSERT(function_id && op_v, "");
       const auto FB = HLSMgr->CGetFunctionBehavior(function_id);
       const auto TM = HLSMgr->get_tree_manager();
