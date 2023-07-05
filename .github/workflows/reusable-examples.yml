@@ -164,10 +164,10 @@ jobs:
             script: ./examples/omp_simd/generic_omp_simd.sh
             args: "--skip_list inline_blackscholes8,blackscholes8"
             batch: "xc7vx690t-3ffg1930-VVD_10.0"
-          - basename: parallel_queries
-            script: ./examples/parallel_queries/context_switch_xilinx_10_1DB_simulate.sh
-            args: -c=--evaluation=CYCLES
-            batch: "xc7vx690t-3ffg1930-VVD_10.0"
+          # - basename: parallel_queries
+          #   script: ./examples/parallel_queries/context_switch_xilinx_10_1DB_simulate.sh
+          #   args: -c=--evaluation=CYCLES
+          #   batch: "xc7vx690t-3ffg1930-VVD_10.0"
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3

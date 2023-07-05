@@ -92,9 +92,9 @@ void OpenModuleGenerator::InternalExec(std::ostream& out, structural_objectRef /
                               modes + " & " + STR(O_WRONLY) + ") != 0 ? \"wb\" : \"rb\"" + "))";
 
    const auto fsm =
-       "  reg [nbits_buffer-1:0] _present_index 1INIT_ZERO_VALUE;\n"
+       "  reg [nbits_buffer-1:0] _present_index;\n"
        "  reg [nbits_buffer-1:0] _next_index;\n"
-       "  reg [BITSIZE_Mout_addr_ram-1:0] _present_pointer 1INIT_ZERO_VALUE;\n"
+       "  reg [BITSIZE_Mout_addr_ram-1:0] _present_pointer;\n"
        "  reg [BITSIZE_Mout_addr_ram-1:0] _next_pointer;\n"
        "  reg done_port;\n"
        "  reg signed [BITSIZE_out1-1:0] temp_out1;\n"

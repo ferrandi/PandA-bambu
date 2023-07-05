@@ -84,7 +84,7 @@ void __m_setarg(uint8_t index, void* bits, uint16_t bitsize)
       error("Parameter index out of bounds %u\n", (unsigned int)index);
       exit(EXIT_FAILURE);
    }
-   debug("Parameter %u is %u bits at " BPTR_FORMAT "\n", index, bitsize, bptr_to_int(bits));
+   info("Parameter %u is %u bits at " BPTR_FORMAT "\n", index, bitsize, bptr_to_int(bits));
    __m_params.prms[index].bits = static_cast<bptr_t>(bits);
    __m_params.prms[index].bitsize = bitsize;
 }
@@ -118,7 +118,7 @@ void __m_setptrarg(uint8_t index, bptr_t* bits, uint16_t bitsize)
    const ptr_t dst = __m_reverse_memmap(addr);
    if(dst)
    {
-      debug("Pointer parameter " BPTR_FORMAT " mapped at " PTR_FORMAT "\n", bptr_to_int(addr), dst);
+      info("Pointer parameter " BPTR_FORMAT " mapped at " PTR_FORMAT "\n", bptr_to_int(addr), dst);
       *bits = ptr_to_bptr(dst);
       return __m_setarg(index, reinterpret_cast<bptr_t>(bits), PTR_SIZE);
    }
@@ -136,7 +136,7 @@ void __m_memmap_init()
 int __m_memmap(ptr_t dst, void* _bits, size_t bytes)
 {
    bptr_t bits = reinterpret_cast<bptr_t>(_bits);
-   debug("Address " BPTR_FORMAT " mapped at " PTR_FORMAT "\n", bptr_to_int(bits), dst);
+   info("Address " BPTR_FORMAT " mapped at " PTR_FORMAT " (%zu bytes)\n", bptr_to_int(bits), dst, bytes);
 
    const std::pair<std::map<ptr_t, bptr_t>::iterator, bool> base = __m_mmu.insert(std::make_pair(dst, bits - dst));
    const std::pair<std::map<ptr_t, bptr_t>::iterator, bool> top =
@@ -204,12 +204,26 @@ int __m_memmap(ptr_t dst, void* _bits, size_t bytes)
 
 bptr_t __m_memaddr(ptr_t sim_addr)
 {
-   const std::map<ptr_t, bptr_t>::iterator mmu_it = --__m_mmu.upper_bound(sim_addr);
+   std::map<ptr_t, bptr_t>::iterator mmu_it = --__m_mmu.upper_bound(sim_addr);
    if(mmu_it != __m_mmu.begin() && mmu_it->second)
    {
       bptr_t addr = mmu_it->second + sim_addr;
       return addr;
    }
+   std::map<ptr_t, bptr_t>::iterator mmu_base;
+   if(mmu_it == __m_mmu.begin())
+   {
+      mmu_base = ++mmu_it;
+      ++mmu_it;
+   }
+   else
+   {
+      mmu_base = mmu_it;
+      --mmu_base;
+   }
+   error("Nearest memory space is " PTR_FORMAT "->" BPTR_FORMAT " to " PTR_FORMAT "->" BPTR_FORMAT " (%u bytes).\n",
+         mmu_base->first, bptr_to_int(mmu_base->second + mmu_base->first), mmu_it->first,
+         bptr_to_int(mmu_base->second + mmu_it->first), mmu_it->first - mmu_base->first);
    return 0;
 }
 

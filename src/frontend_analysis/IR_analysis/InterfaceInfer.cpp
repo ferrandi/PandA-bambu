@@ -1966,152 +1966,153 @@ void InterfaceInfer::create_resource_m_axi(const std::set<std::string>& operatio
       const auto addrPort = CM->add_port("in4", port_o::IN, interface_top, address_interface_datatype);
       GetPointerS<port_o>(addrPort)->set_is_addr_bus(true);
 
-      const auto awready = CM->add_port("_m_axi_" + bundle_name + "_AWREADY", port_o::IN, interface_top, bool_type);
+      const auto awready = CM->add_port("_m_axi_" + bundle_name + "_awready", port_o::IN, interface_top, bool_type);
       GetPointerS<port_o>(awready)->set_port_interface(port_o::port_interface::M_AXI_AWREADY);
 
-      const auto wready = CM->add_port("_m_axi_" + bundle_name + "_WREADY", port_o::IN, interface_top, bool_type);
+      const auto wready = CM->add_port("_m_axi_" + bundle_name + "_wready", port_o::IN, interface_top, bool_type);
       GetPointerS<port_o>(wready)->set_port_interface(port_o::port_interface::M_AXI_WREADY);
 
-      const auto bid = CM->add_port_vector("_m_axi_" + bundle_name + "_BID", port_o::IN, 1, interface_top, idType);
+      const auto bid = CM->add_port_vector("_m_axi_" + bundle_name + "_bid", port_o::IN, 1, interface_top, idType);
       GetPointerS<port_o>(bid)->set_port_interface(port_o::port_interface::M_AXI_BID);
 
-      const auto bresp = CM->add_port("_m_axi_" + bundle_name + "_BRESP", port_o::IN, interface_top, respType);
+      const auto bresp = CM->add_port("_m_axi_" + bundle_name + "_bresp", port_o::IN, interface_top, respType);
       GetPointerS<port_o>(bresp)->set_port_interface(port_o::port_interface::M_AXI_BRESP);
 
       const auto buser =
-          CM->add_port_vector("_m_axi_" + bundle_name + "_BUSER", port_o::IN, 1, interface_top, userType);
+          CM->add_port_vector("_m_axi_" + bundle_name + "_buser", port_o::IN, 1, interface_top, userType);
       GetPointerS<port_o>(buser)->set_port_interface(port_o::port_interface::M_AXI_BUSER);
 
-      const auto bvalid = CM->add_port("_m_axi_" + bundle_name + "_BVALID", port_o::IN, interface_top, bool_type);
+      const auto bvalid = CM->add_port("_m_axi_" + bundle_name + "_bvalid", port_o::IN, interface_top, bool_type);
       GetPointerS<port_o>(bvalid)->set_port_interface(port_o::port_interface::M_AXI_BVALID);
 
-      const auto arready = CM->add_port("_m_axi_" + bundle_name + "_ARREADY", port_o::IN, interface_top, bool_type);
+      const auto arready = CM->add_port("_m_axi_" + bundle_name + "_arready", port_o::IN, interface_top, bool_type);
       GetPointerS<port_o>(arready)->set_port_interface(port_o::port_interface::M_AXI_ARREADY);
 
-      const auto rid = CM->add_port_vector("_m_axi_" + bundle_name + "_RID", port_o::IN, 1, interface_top, idType);
+      const auto rid = CM->add_port_vector("_m_axi_" + bundle_name + "_rid", port_o::IN, 1, interface_top, idType);
       GetPointerS<port_o>(rid)->set_port_interface(port_o::port_interface::M_AXI_RID);
 
-      const auto rdata = CM->add_port("_m_axi_" + bundle_name + "_RDATA", port_o::IN, interface_top, rwtypeOut);
+      const auto rdata = CM->add_port("_m_axi_" + bundle_name + "_rdata", port_o::IN, interface_top, rwtypeOut);
       GetPointerS<port_o>(rdata)->set_port_interface(port_o::port_interface::M_AXI_RDATA);
 
-      const auto rresp = CM->add_port("_m_axi_" + bundle_name + "_RRESP", port_o::IN, interface_top, respType);
+      const auto rresp = CM->add_port("_m_axi_" + bundle_name + "_rresp", port_o::IN, interface_top, respType);
       GetPointerS<port_o>(rresp)->set_port_interface(port_o::port_interface::M_AXI_RRESP);
 
-      const auto rlast = CM->add_port("_m_axi_" + bundle_name + "_RLAST", port_o::IN, interface_top, bool_type);
+      const auto rlast = CM->add_port("_m_axi_" + bundle_name + "_rlast", port_o::IN, interface_top, bool_type);
       GetPointerS<port_o>(rlast)->set_port_interface(port_o::port_interface::M_AXI_RLAST);
 
       const auto ruser =
-          CM->add_port_vector("_m_axi_" + bundle_name + "_RUSER", port_o::IN, 1, interface_top, userType);
+          CM->add_port_vector("_m_axi_" + bundle_name + "_ruser", port_o::IN, 1, interface_top, userType);
       GetPointerS<port_o>(ruser)->set_port_interface(port_o::port_interface::M_AXI_RUSER);
 
-      const auto rvalid = CM->add_port("_m_axi_" + bundle_name + "_RVALID", port_o::IN, interface_top, bool_type);
+      const auto rvalid = CM->add_port("_m_axi_" + bundle_name + "_rvalid", port_o::IN, interface_top, bool_type);
       GetPointerS<port_o>(rvalid)->set_port_interface(port_o::port_interface::M_AXI_RVALID);
 
       CM->add_port(DONE_PORT_NAME, port_o::OUT, interface_top, bool_type);
       CM->add_port("out1", port_o::OUT, interface_top, rwtypeIn);
 
-      const auto awid = CM->add_port_vector("_m_axi_" + bundle_name + "_AWID", port_o::OUT, 1, interface_top, idType);
+      const auto awid = CM->add_port_vector("_m_axi_" + bundle_name + "_awid", port_o::OUT, 1, interface_top, idType);
       GetPointerS<port_o>(awid)->set_port_interface(port_o::port_interface::M_AXI_AWID);
 
       const auto awaddr =
-          CM->add_port("_m_axi_" + bundle_name + "_AWADDR", port_o::OUT, interface_top, address_interface_datatype);
+          CM->add_port("_m_axi_" + bundle_name + "_awaddr", port_o::OUT, interface_top, address_interface_datatype);
       GetPointerS<port_o>(awaddr)->set_port_interface(port_o::port_interface::M_AXI_AWADDR);
 
-      const auto awlen = CM->add_port("_m_axi_" + bundle_name + "_AWLEN", port_o::OUT, interface_top, lenType);
+      const auto awlen = CM->add_port("_m_axi_" + bundle_name + "_awlen", port_o::OUT, interface_top, lenType);
       GetPointerS<port_o>(awlen)->set_port_interface(port_o::port_interface::M_AXI_AWLEN);
 
-      const auto awsize = CM->add_port("_m_axi_" + bundle_name + "_AWSIZE", port_o::OUT, interface_top, sizeType);
+      const auto awsize = CM->add_port("_m_axi_" + bundle_name + "_awsize", port_o::OUT, interface_top, sizeType);
       GetPointerS<port_o>(awsize)->set_port_interface(port_o::port_interface::M_AXI_AWSIZE);
 
-      const auto awburst = CM->add_port("_m_axi_" + bundle_name + "_AWBURST", port_o::OUT, interface_top, burstType);
+      const auto awburst = CM->add_port("_m_axi_" + bundle_name + "_awburst", port_o::OUT, interface_top, burstType);
       GetPointerS<port_o>(awburst)->set_port_interface(port_o::port_interface::M_AXI_AWBURST);
 
       const auto awlock =
-          CM->add_port_vector("_m_axi_" + bundle_name + "_AWLOCK", port_o::OUT, 1, interface_top, lockType);
+          CM->add_port_vector("_m_axi_" + bundle_name + "_awlock", port_o::OUT, 1, interface_top, lockType);
       GetPointerS<port_o>(awlock)->set_port_interface(port_o::port_interface::M_AXI_AWLOCK);
 
-      const auto awcache = CM->add_port("_m_axi_" + bundle_name + "_AWCACHE", port_o::OUT, interface_top, cacheType);
+      const auto awcache = CM->add_port("_m_axi_" + bundle_name + "_awcache", port_o::OUT, interface_top, cacheType);
       GetPointerS<port_o>(awcache)->set_port_interface(port_o::port_interface::M_AXI_AWCACHE);
 
-      const auto awprot = CM->add_port("_m_axi_" + bundle_name + "_AWPROT", port_o::OUT, interface_top, protType);
+      const auto awprot = CM->add_port("_m_axi_" + bundle_name + "_awprot", port_o::OUT, interface_top, protType);
       GetPointerS<port_o>(awprot)->set_port_interface(port_o::port_interface::M_AXI_AWPROT);
 
-      const auto awqos = CM->add_port("_m_axi_" + bundle_name + "_AWQOS", port_o::OUT, interface_top, qosType);
+      const auto awqos = CM->add_port("_m_axi_" + bundle_name + "_awqos", port_o::OUT, interface_top, qosType);
       GetPointerS<port_o>(awqos)->set_port_interface(port_o::port_interface::M_AXI_AWQOS);
 
-      const auto awregion = CM->add_port("_m_axi_" + bundle_name + "_AWREGION", port_o::OUT, interface_top, regionType);
+      const auto awregion = CM->add_port("_m_axi_" + bundle_name + "_awregion", port_o::OUT, interface_top, regionType);
       GetPointerS<port_o>(awregion)->set_port_interface(port_o::port_interface::M_AXI_AWREGION);
 
       const auto awuser =
-          CM->add_port_vector("_m_axi_" + bundle_name + "_AWUSER", port_o::OUT, 1, interface_top, userType);
+          CM->add_port_vector("_m_axi_" + bundle_name + "_awuser", port_o::OUT, 1, interface_top, userType);
       GetPointerS<port_o>(awuser)->set_port_interface(port_o::port_interface::M_AXI_AWUSER);
 
-      const auto awvalid = CM->add_port("_m_axi_" + bundle_name + "_AWVALID", port_o::OUT, interface_top, bool_type);
+      const auto awvalid = CM->add_port("_m_axi_" + bundle_name + "_awvalid", port_o::OUT, interface_top, bool_type);
       GetPointerS<port_o>(awvalid)->set_port_interface(port_o::port_interface::M_AXI_AWVALID);
 
-      const auto wid = CM->add_port_vector("_m_axi_" + bundle_name + "_WID", port_o::OUT, 1, interface_top, idType);
-      GetPointerS<port_o>(wid)->set_port_interface(port_o::port_interface::M_AXI_WID);
+      // BEAWARE: this is AXI3 spec, AXI4 does not have WID
+      // const auto wid = CM->add_port_vector("_m_axi_" + bundle_name + "_wid", port_o::OUT, 1, interface_top, idType);
+      // GetPointerS<port_o>(wid)->set_port_interface(port_o::port_interface::M_AXI_WID);
 
-      const auto wdata = CM->add_port("_m_axi_" + bundle_name + "_WDATA", port_o::OUT, interface_top, rwtypeOut);
+      const auto wdata = CM->add_port("_m_axi_" + bundle_name + "_wdata", port_o::OUT, interface_top, rwtypeOut);
       GetPointerS<port_o>(wdata)->set_port_interface(port_o::port_interface::M_AXI_WDATA);
 
       const auto wstrb =
-          CM->add_port_vector("_m_axi_" + bundle_name + "_WSTRB", port_o::OUT, 1, interface_top, strbType);
+          CM->add_port_vector("_m_axi_" + bundle_name + "_wstrb", port_o::OUT, 1, interface_top, strbType);
       GetPointerS<port_o>(wstrb)->set_port_interface(port_o::port_interface::M_AXI_WSTRB);
 
-      const auto wlast = CM->add_port("_m_axi_" + bundle_name + "_WLAST", port_o::OUT, interface_top, bool_type);
+      const auto wlast = CM->add_port("_m_axi_" + bundle_name + "_wlast", port_o::OUT, interface_top, bool_type);
       GetPointerS<port_o>(wlast)->set_port_interface(port_o::port_interface::M_AXI_WLAST);
 
       const auto wuser =
-          CM->add_port_vector("_m_axi_" + bundle_name + "_WUSER", port_o::OUT, 1, interface_top, userType);
+          CM->add_port_vector("_m_axi_" + bundle_name + "_wuser", port_o::OUT, 1, interface_top, userType);
       GetPointerS<port_o>(wuser)->set_port_interface(port_o::port_interface::M_AXI_WUSER);
 
-      const auto wvalid = CM->add_port("_m_axi_" + bundle_name + "_WVALID", port_o::OUT, interface_top, bool_type);
+      const auto wvalid = CM->add_port("_m_axi_" + bundle_name + "_wvalid", port_o::OUT, interface_top, bool_type);
       GetPointerS<port_o>(wvalid)->set_port_interface(port_o::port_interface::M_AXI_WVALID);
 
-      const auto bready = CM->add_port("_m_axi_" + bundle_name + "_BREADY", port_o::OUT, interface_top, bool_type);
+      const auto bready = CM->add_port("_m_axi_" + bundle_name + "_bready", port_o::OUT, interface_top, bool_type);
       GetPointerS<port_o>(bready)->set_port_interface(port_o::port_interface::M_AXI_BREADY);
 
-      const auto arid = CM->add_port_vector("_m_axi_" + bundle_name + "_ARID", port_o::OUT, 1, interface_top, idType);
+      const auto arid = CM->add_port_vector("_m_axi_" + bundle_name + "_arid", port_o::OUT, 1, interface_top, idType);
       GetPointerS<port_o>(arid)->set_port_interface(port_o::port_interface::M_AXI_ARID);
 
       const auto araddr =
-          CM->add_port("_m_axi_" + bundle_name + "_ARADDR", port_o::OUT, interface_top, address_interface_datatype);
+          CM->add_port("_m_axi_" + bundle_name + "_araddr", port_o::OUT, interface_top, address_interface_datatype);
       GetPointerS<port_o>(araddr)->set_port_interface(port_o::port_interface::M_AXI_ARADDR);
 
-      const auto arlen = CM->add_port("_m_axi_" + bundle_name + "_ARLEN", port_o::OUT, interface_top, lenType);
+      const auto arlen = CM->add_port("_m_axi_" + bundle_name + "_arlen", port_o::OUT, interface_top, lenType);
       GetPointerS<port_o>(arlen)->set_port_interface(port_o::port_interface::M_AXI_ARLEN);
 
-      const auto arsize = CM->add_port("_m_axi_" + bundle_name + "_ARSIZE", port_o::OUT, interface_top, sizeType);
+      const auto arsize = CM->add_port("_m_axi_" + bundle_name + "_arsize", port_o::OUT, interface_top, sizeType);
       GetPointerS<port_o>(arsize)->set_port_interface(port_o::port_interface::M_AXI_ARSIZE);
 
-      const auto arburst = CM->add_port("_m_axi_" + bundle_name + "_ARBURST", port_o::OUT, interface_top, burstType);
+      const auto arburst = CM->add_port("_m_axi_" + bundle_name + "_arburst", port_o::OUT, interface_top, burstType);
       GetPointerS<port_o>(arburst)->set_port_interface(port_o::port_interface::M_AXI_ARBURST);
 
       const auto arlock =
-          CM->add_port_vector("_m_axi_" + bundle_name + "_ARLOCK", port_o::OUT, 1, interface_top, lockType);
+          CM->add_port_vector("_m_axi_" + bundle_name + "_arlock", port_o::OUT, 1, interface_top, lockType);
       GetPointerS<port_o>(arlock)->set_port_interface(port_o::port_interface::M_AXI_ARLOCK);
 
-      const auto arcache = CM->add_port("_m_axi_" + bundle_name + "_ARCACHE", port_o::OUT, interface_top, cacheType);
+      const auto arcache = CM->add_port("_m_axi_" + bundle_name + "_arcache", port_o::OUT, interface_top, cacheType);
       GetPointerS<port_o>(arcache)->set_port_interface(port_o::port_interface::M_AXI_ARCACHE);
 
-      const auto arprot = CM->add_port("_m_axi_" + bundle_name + "_ARPROT", port_o::OUT, interface_top, protType);
+      const auto arprot = CM->add_port("_m_axi_" + bundle_name + "_arprot", port_o::OUT, interface_top, protType);
       GetPointerS<port_o>(arprot)->set_port_interface(port_o::port_interface::M_AXI_ARPROT);
 
-      const auto arqos = CM->add_port("_m_axi_" + bundle_name + "_ARQOS", port_o::OUT, interface_top, qosType);
+      const auto arqos = CM->add_port("_m_axi_" + bundle_name + "_arqos", port_o::OUT, interface_top, qosType);
       GetPointerS<port_o>(arqos)->set_port_interface(port_o::port_interface::M_AXI_ARQOS);
 
-      const auto arregion = CM->add_port("_m_axi_" + bundle_name + "_ARREGION", port_o::OUT, interface_top, regionType);
+      const auto arregion = CM->add_port("_m_axi_" + bundle_name + "_arregion", port_o::OUT, interface_top, regionType);
       GetPointerS<port_o>(arregion)->set_port_interface(port_o::port_interface::M_AXI_ARREGION);
 
       const auto aruser =
-          CM->add_port_vector("_m_axi_" + bundle_name + "_ARUSER", port_o::OUT, 1, interface_top, userType);
+          CM->add_port_vector("_m_axi_" + bundle_name + "_aruser", port_o::OUT, 1, interface_top, userType);
       GetPointerS<port_o>(aruser)->set_port_interface(port_o::port_interface::M_AXI_ARUSER);
 
-      const auto arvalid = CM->add_port("_m_axi_" + bundle_name + "_ARVALID", port_o::OUT, interface_top, bool_type);
+      const auto arvalid = CM->add_port("_m_axi_" + bundle_name + "_arvalid", port_o::OUT, interface_top, bool_type);
       GetPointerS<port_o>(arvalid)->set_port_interface(port_o::port_interface::M_AXI_ARVALID);
 
-      const auto rready = CM->add_port("_m_axi_" + bundle_name + "_RREADY", port_o::OUT, interface_top, bool_type);
+      const auto rready = CM->add_port("_m_axi_" + bundle_name + "_rready", port_o::OUT, interface_top, bool_type);
       GetPointerS<port_o>(rready)->set_port_interface(port_o::port_interface::M_AXI_RREADY);
 
       if(mat == m_axi_type::axi_slave)

@@ -1,0 +1,2 @@
+bambu_axi_verification/mm_axi.c --top-fname=mmult --generate-tb=BENCHMARKS_ROOT/bambu_axi_verification/mm_axi_tb.xml --benchmark-name=mm_axi
+# bambu_axi_verification/mm_axi.c --top-fname=mmult --generate-tb=BENCHMARKS_ROOT/bambu_axi_verification/mm_axi_tb.xml -DMEM_CACHE --benchmark-name=mm_axi_cache

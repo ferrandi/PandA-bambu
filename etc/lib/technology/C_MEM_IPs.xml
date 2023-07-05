@@ -2781,9 +2781,18 @@ ARRAY_1D_STD_BRAM_NN_instance : ARRAY_1D_STD_BRAM_NN_SDS_BUS_BASE generic map (B
           <NP_functionality LIBRARY="MEMORY_CTRL in1 in2 in3 out1 Min_addr_ram Mout_addr_ram M_Rdata_ram Min_Wdata_ram Mout_Wdata_ram Min_data_ram_size Mout_data_ram_size" VERILOG_PROVIDED="wire  [BITSIZE_in2-1:0] tmp_addr;
 wire int_sel_LOAD;
 wire int_sel_STORE;
+reg sel_load_or_store_old;
+wire sel_load_or_store_old_next;
 
-assign int_sel_LOAD = (in4 &amp;&amp; sel_LOAD) &amp;&amp; (start_port || M_back_pressure);
-assign int_sel_STORE = (in4 &amp;&amp; sel_STORE)  &amp;&amp; (start_port || M_back_pressure);
+always @(posedge clock)
+begin
+  sel_load_or_store_old &lt;= sel_load_or_store_old_next;
+end
+
+assign sel_load_or_store_old_next = done_port ? 1&apos;b0 : (sel_LOAD | sel_STORE);
+
+assign int_sel_LOAD = (in4 &amp;&amp; sel_LOAD) &amp;&amp; (~sel_load_or_store_old || M_back_pressure);
+assign int_sel_STORE = (in4 &amp;&amp; sel_STORE)  &amp;&amp; (~sel_load_or_store_old || M_back_pressure);
 assign tmp_addr = in2;
 assign Mout_addr_ram = (int_sel_LOAD || int_sel_STORE) ? tmp_addr : Min_addr_ram;
 assign Mout_oe_ram = int_sel_LOAD ? 1&apos;b1 : Min_oe_ram;
@@ -2884,9 +2893,18 @@ reg [BITSIZE_out1-1:0] delayed_out1 1INIT_ZERO_VALUE;
 reg delayed_M_DataRdy 1INIT_ZERO_VALUE;
 wire int_sel_LOAD;
 wire int_sel_STORE;
+reg sel_load_or_store_old;
+wire sel_load_or_store_old_next;
 
-assign int_sel_LOAD = (in4 &amp;&amp; sel_LOAD) &amp;&amp; (start_port || M_back_pressure);
-assign int_sel_STORE = (in4 &amp;&amp; sel_STORE)  &amp;&amp; (start_port || M_back_pressure);
+always @(posedge clock)
+begin
+  sel_load_or_store_old &lt;= sel_load_or_store_old_next;
+end
+
+assign sel_load_or_store_old_next = done_port ? 1&apos;b0 : (sel_LOAD | sel_STORE);
+
+assign int_sel_LOAD = (in4 &amp;&amp; sel_LOAD) &amp;&amp; (~sel_load_or_store_old || M_back_pressure);
+assign int_sel_STORE = (in4 &amp;&amp; sel_STORE)  &amp;&amp; (~sel_load_or_store_old || M_back_pressure);
 
 assign tmp_addr = in2;
 assign Mout_addr_ram = (int_sel_LOAD || int_sel_STORE) ? tmp_addr : Min_addr_ram;
@@ -2995,9 +3013,18 @@ reg [BITSIZE_in2-1:0] delayed_in2 1INIT_ZERO_VALUE;
 reg [BITSIZE_in3-1:0] delayed_in3 1INIT_ZERO_VALUE;
 wire int_sel_LOAD;
 wire int_sel_STORE;
+reg sel_load_or_store_old;
+wire sel_load_or_store_old_next;
 
-assign int_sel_LOAD = (in4 &amp;&amp; delayed_sel_LOAD) &amp;&amp; (start_port || M_back_pressure);
-assign int_sel_STORE = (in4 &amp;&amp; delayed_sel_STORE)  &amp;&amp; (start_port || M_back_pressure);
+always @(posedge clock)
+begin
+  sel_load_or_store_old &lt;= sel_load_or_store_old_next;
+end
+
+assign sel_load_or_store_old_next = done_port ? 1&apos;b0 : (sel_LOAD | sel_STORE);
+
+assign int_sel_LOAD = (in4 &amp;&amp; delayed_sel_LOAD) &amp;&amp; (~sel_load_or_store_old || M_back_pressure);
+assign int_sel_STORE = (in4 &amp;&amp; delayed_sel_STORE)  &amp;&amp; (~sel_load_or_store_old || M_back_pressure);
 
 always @(posedge clock)
   delayed_sel_LOAD &lt;= sel_LOAD;
@@ -3115,9 +3142,18 @@ reg [BITSIZE_in2-1:0] delayed_in2 1INIT_ZERO_VALUE;
 reg [BITSIZE_in3-1:0] delayed_in3 1INIT_ZERO_VALUE;
 wire int_sel_LOAD;
 wire int_sel_STORE;
+reg sel_load_or_store_old;
+wire sel_load_or_store_old_next;
 
-assign int_sel_LOAD = (in4 &amp;&amp; delayed_sel_LOAD) &amp;&amp; (start_port || M_back_pressure);
-assign int_sel_STORE = (in4 &amp;&amp; delayed_sel_STORE)  &amp;&amp; (start_port || M_back_pressure);
+always @(posedge clock)
+begin
+  sel_load_or_store_old &lt;= sel_load_or_store_old_next;
+end
+
+assign sel_load_or_store_old_next = done_port ? 1&apos;b0 : (sel_LOAD | sel_STORE);
+
+assign int_sel_LOAD = (in4 &amp;&amp; delayed_sel_LOAD) &amp;&amp; (~sel_load_or_store_old || M_back_pressure);
+assign int_sel_STORE = (in4 &amp;&amp; delayed_sel_STORE)  &amp;&amp; (~sel_load_or_store_old || M_back_pressure);
 
 always @(posedge clock)
   delayed_sel_LOAD &lt;= sel_LOAD &amp;&amp; !M_DataRdy &amp;&amp; !delayed_M_DataRdy;
@@ -3234,9 +3270,18 @@ parameter max_n_reads = PORTSIZE_sel_LOAD &gt; PORTSIZE_Mout_oe_ram ? PORTSIZE_s
 parameter max_n_rw = max_n_writes &gt; max_n_reads ? max_n_writes : max_n_reads;
 wire [PORTSIZE_sel_LOAD-1:0] int_sel_LOAD;
 wire [PORTSIZE_sel_STORE-1:0] int_sel_STORE;
+reg [PORTSIZE_sel_LOAD-1:0] sel_load_or_store_old;
+wire [PORTSIZE_sel_LOAD-1:0] sel_load_or_store_old_next;
 
-assign int_sel_LOAD = (in4 &amp; sel_LOAD) &amp; ({PORTSIZE_Mout_oe_ram{start_port}} | M_back_pressure);
-assign int_sel_STORE = (in4 &amp; sel_STORE)  &amp; ({PORTSIZE_Mout_oe_ram{start_port}} | M_back_pressure);
+always @(posedge clock)
+begin
+  sel_load_or_store_old &lt;= sel_load_or_store_old_next;
+end
+
+assign sel_load_or_store_old_next = ~done_port &amp; (sel_LOAD | sel_STORE);
+
+assign int_sel_LOAD = (in4 &amp; sel_LOAD) &amp; (~sel_load_or_store_old | M_back_pressure);
+assign int_sel_STORE = (in4 &amp; sel_STORE)  &amp; (~sel_load_or_store_old | M_back_pressure);
 
 wire  [(PORTSIZE_in2*BITSIZE_in2)-1:0] tmp_addr;
 assign tmp_addr = in2;
@@ -3246,7 +3291,7 @@ genvar i;
   begin : L0
     assign Mout_addr_ram[(i+1)*BITSIZE_Mout_addr_ram-1:i*BITSIZE_Mout_addr_ram] = ((i &lt; PORTSIZE_sel_LOAD &amp;&amp; int_sel_LOAD[i]) || (i &lt; PORTSIZE_sel_STORE &amp;&amp; int_sel_STORE[i])) ? (tmp_addr[(i+1)*BITSIZE_in2-1:i*BITSIZE_in2]) : Min_addr_ram[(i+1)*BITSIZE_Min_addr_ram-1:i*BITSIZE_Min_addr_ram];
   end
-  endgenerate
+endgenerate
 assign Mout_oe_ram = int_sel_LOAD | Min_oe_ram;
 assign Mout_we_ram = int_sel_STORE | Min_we_ram;
 generate
@@ -3354,14 +3399,24 @@ assign done_port = (M_DataRdy &amp; (in4 &amp; (sel_STORE | sel_LOAD))) | (~in4 
 parameter max_n_reads = PORTSIZE_sel_LOAD &gt; PORTSIZE_Mout_oe_ram ? PORTSIZE_sel_STORE : PORTSIZE_Mout_oe_ram;
 parameter max_n_rw = max_n_writes &gt; max_n_reads ? max_n_writes : max_n_reads;
 wire  [(PORTSIZE_in2*BITSIZE_in2)-1:0] tmp_addr;
-wire [PORTSIZE_sel_LOAD-1:0] int_sel_LOAD;
-wire [PORTSIZE_sel_STORE-1:0] int_sel_STORE;
 reg [PORTSIZE_out1*BITSIZE_out1-1:0] delayed_out1 1INIT_ZERO_VALUE;
 reg [PORTSIZE_M_DataRdy-1:0] delayed_M_DataRdy 1INIT_ZERO_VALUE;
+wire [PORTSIZE_sel_LOAD-1:0] int_sel_LOAD;
+wire [PORTSIZE_sel_STORE-1:0] int_sel_STORE;
+reg [PORTSIZE_sel_LOAD-1:0] sel_load_or_store_old;
+wire [PORTSIZE_sel_LOAD-1:0] sel_load_or_store_old_next;
+
+always @(posedge clock)
+begin
+  sel_load_or_store_old &lt;= sel_load_or_store_old_next;
+end
+
+assign sel_load_or_store_old_next = ~done_port &amp; (sel_LOAD | sel_STORE);
+
+assign int_sel_LOAD = (in4 &amp; sel_LOAD) &amp; (~sel_load_or_store_old | M_back_pressure);
+assign int_sel_STORE = (in4 &amp; sel_STORE)  &amp; (~sel_load_or_store_old | M_back_pressure);
 
 assign tmp_addr = in2;
-assign int_sel_LOAD = (in4 &amp; sel_LOAD) &amp; ({PORTSIZE_Mout_oe_ram{start_port}} | M_back_pressure);
-assign int_sel_STORE = (in4 &amp; sel_STORE) &amp; ({PORTSIZE_Mout_oe_ram{start_port}} | M_back_pressure);
 generate
 genvar i;
   for (i=0; i&lt;max_n_rw; i=i+1)
@@ -3483,12 +3538,24 @@ parameter max_n_rw = max_n_writes &gt; max_n_reads ? max_n_writes : max_n_reads;
 wire  [(PORTSIZE_in2*BITSIZE_in2)-1:0] tmp_addr;
 reg [PORTSIZE_sel_LOAD-1:0] delayed_sel_LOAD 1INIT_ZERO_VALUE;
 reg [PORTSIZE_sel_STORE-1:0] delayed_sel_STORE 1INIT_ZERO_VALUE;
-wire [PORTSIZE_sel_LOAD-1:0] int_sel_LOAD;
-wire [PORTSIZE_sel_STORE-1:0] int_sel_STORE;
 reg [PORTSIZE_in1*BITSIZE_in1-1:0] delayed_in1 1INIT_ZERO_VALUE;
 reg [PORTSIZE_in2*BITSIZE_in2-1:0] delayed_in2 1INIT_ZERO_VALUE;
 reg [PORTSIZE_in3*BITSIZE_in3-1:0] delayed_in3 1INIT_ZERO_VALUE;
 reg [PORTSIZE_in4*BITSIZE_in4-1:0] delayed_in4 1INIT_ZERO_VALUE;
+wire [PORTSIZE_sel_LOAD-1:0] int_sel_LOAD;
+wire [PORTSIZE_sel_STORE-1:0] int_sel_STORE;
+reg [PORTSIZE_sel_LOAD-1:0] sel_load_or_store_old;
+wire [PORTSIZE_sel_LOAD-1:0] sel_load_or_store_old_next;
+
+always @(posedge clock)
+begin
+  sel_load_or_store_old &lt;= sel_load_or_store_old_next;
+end
+
+assign sel_load_or_store_old_next = ~done_port &amp; (sel_LOAD | sel_STORE);
+
+assign int_sel_LOAD = (in4 &amp; delayed_sel_LOAD) &amp; (~sel_load_or_store_old | M_back_pressure);
+assign int_sel_STORE = (in4 &amp; delayed_sel_STORE)  &amp; (~sel_load_or_store_old | M_back_pressure);
 
 always @(posedge clock)
   delayed_sel_LOAD &lt;= sel_LOAD;
@@ -3502,9 +3569,6 @@ always @(posedge clock)
   delayed_in3 &lt;= in3;
 always @(posedge clock)
   delayed_in4 &lt;= in4;
-  
-assign int_sel_LOAD = (in4 &amp; delayed_sel_LOAD) &amp; ({PORTSIZE_Mout_oe_ram{start_port}} | M_back_pressure);
-assign int_sel_STORE = (in4 &amp; delayed_sel_STORE) &amp; ({PORTSIZE_Mout_oe_ram{start_port}} | M_back_pressure);
 
 assign tmp_addr = delayed_in2;
 generate
@@ -3625,11 +3689,23 @@ reg [PORTSIZE_out1*BITSIZE_out1-1:0] delayed_out1 1INIT_ZERO_VALUE;
 reg [PORTSIZE_M_DataRdy-1:0] delayed_M_DataRdy 1INIT_ZERO_VALUE;
 reg [PORTSIZE_sel_LOAD-1:0] delayed_sel_LOAD 1INIT_ZERO_VALUE;
 reg [PORTSIZE_sel_STORE-1:0] delayed_sel_STORE 1INIT_ZERO_VALUE;
-wire [PORTSIZE_sel_LOAD-1:0] int_sel_LOAD;
-wire [PORTSIZE_sel_STORE-1:0] int_sel_STORE;
 reg [PORTSIZE_in1*BITSIZE_in1-1:0] delayed_in1 1INIT_ZERO_VALUE;
 reg [PORTSIZE_in2*BITSIZE_in2-1:0] delayed_in2 1INIT_ZERO_VALUE;
 reg [PORTSIZE_in3*BITSIZE_in3-1:0] delayed_in3 1INIT_ZERO_VALUE;
+wire [PORTSIZE_sel_LOAD-1:0] int_sel_LOAD;
+wire [PORTSIZE_sel_STORE-1:0] int_sel_STORE;
+reg [PORTSIZE_sel_LOAD-1:0] sel_load_or_store_old;
+wire [PORTSIZE_sel_LOAD-1:0] sel_load_or_store_old_next;
+
+always @(posedge clock)
+begin
+  sel_load_or_store_old &lt;= sel_load_or_store_old_next;
+end
+
+assign sel_load_or_store_old_next = ~done_port &amp; (sel_LOAD | sel_STORE);
+
+assign int_sel_LOAD = (in4 &amp; delayed_sel_LOAD) &amp; (~sel_load_or_store_old | M_back_pressure);
+assign int_sel_STORE = (in4 &amp; delayed_sel_STORE)  &amp; (~sel_load_or_store_old | M_back_pressure);
 
 always @(posedge clock)
   delayed_sel_LOAD &lt;= sel_LOAD&amp;~M_DataRdy&amp;~delayed_M_DataRdy;
@@ -3641,10 +3717,6 @@ always @(posedge clock)
   delayed_in2 &lt;= in2;
 always @(posedge clock)
   delayed_in3 &lt;= in3;
-
-
-assign int_sel_LOAD = (in4 &amp; delayed_sel_LOAD) &amp; ({PORTSIZE_Mout_oe_ram{start_port}} | M_back_pressure);
-assign int_sel_STORE = (in4 &amp; delayed_sel_STORE) &amp; ({PORTSIZE_Mout_oe_ram{start_port}} | M_back_pressure);
 
 assign tmp_addr = delayed_in2;
 generate
