@@ -523,8 +523,8 @@ localparam MEM_DELAY_MAX= MEM_DELAY_READ &gt; MEM_DELAY_WRITE ? MEM_DELAY_READ :
 
 genvar i;
 integer dump_file;
-reg [BITSIZE_M_DataRdy-1:0] _M_DataRdy;
-reg [BITSIZE_M_Rdata_ram-1:0] _M_Rdata_ram;
+wire [BITSIZE_M_DataRdy-1:0] _M_DataRdy;
+wire [BITSIZE_M_Rdata_ram-1:0] _M_Rdata_ram;
 
 assign S_oe_ram = Mout_oe_ram;
 assign S_we_ram = Mout_we_ram;
@@ -558,12 +558,12 @@ mem_utils #(BITSIZE_Rdata) m_utils();
 generate
   for(i = 0; i &lt; CHANNELS_NUMBER; i = i + 1)
   begin : channel
-    reg [MEM_DELAY_MAX*BITSIZE_item-1:0] queue_next;
-    reg [BITSIZE_oe-1:0] oe;
-    reg [BITSIZE_we-1:0] we;
+    wire [MEM_DELAY_MAX*BITSIZE_item-1:0] queue_next;
+    wire [BITSIZE_oe-1:0] oe;
+    wire [BITSIZE_we-1:0] we;
     ptr_t Waddr, Raddr;
     shortint unsigned Wsize;
-    reg [BITSIZE_Wdata-1:0] Wdata;
+    wire [BITSIZE_Wdata-1:0] Wdata;
     reg [BITSIZE_ready-1:0] Wready, Rready;
     reg [BITSIZE_Rdata-1:0] Rdata;
     
@@ -595,18 +595,16 @@ generate
       end
       else
       begin : sequential_handler
-        reg tx_active, tx_active_next;
-        always@(*)
-        begin
-          tx_active_next = Mout_oe_ram[BITSIZE_oe*i+:BITSIZE_oe] | Mout_we_ram[BITSIZE_we*i+:BITSIZE_we];
-          queue_next = {queue[(MEM_DELAY_MAX-1)*BITSIZE_item-1:0],
+        reg tx_active;
+        wire tx_active_next;
+        assign queue_next = {queue[(MEM_DELAY_MAX-1)*BITSIZE_item-1:0],
               {Mout_Wdata_ram[BITSIZE_Wdata*i+:BITSIZE_Wdata], 
                 Mout_data_ram_size[BITSIZE_Wsize*i+:BITSIZE_Wsize],
                 Mout_addr_ram[BITSIZE_addr*i+:BITSIZE_addr],
                 Mout_we_ram[BITSIZE_we*i+:BITSIZE_we],
                 Mout_oe_ram[BITSIZE_oe*i+:BITSIZE_oe]} &amp; {BITSIZE_item{~tx_active}}
             };
-        end
+        assign  tx_active_next = Mout_oe_ram[BITSIZE_oe*i+:BITSIZE_oe] | Mout_we_ram[BITSIZE_we*i+:BITSIZE_we];
         always@(posedge clock)
         begin
           if(1RESET_VALUE)
@@ -646,8 +644,8 @@ generate
         if(oe &amp;&amp; base_addr &lt;= Raddr)
         begin
           data = m_utils.read(Raddr);
-          Rready &lt;= 1;
           Rdata &lt;= data;
+          Rready &lt;= 1;
           if(MEM_DUMP)
           begin
             $fwrite(dump_file, &quot;%0d,r,%0X,%0d,%0X\\n&quot;, i, Raddr, BITSIZE_Rdata, data);
@@ -657,16 +655,19 @@ generate
     end
     else
     begin
-      assign Rready = oe &amp;&amp; base_addr &lt;= Raddr;
       always@(negedge clock)
       begin : read_channel
-        Rdata = 0;
+        automatic reg [BITSIZE_Rdata-1:0] data;
+        Rready &lt;= 0;
+        Rdata &lt;= 0;
         if(oe &amp;&amp; base_addr &lt;= Raddr)
         begin
-          Rdata = m_utils.read(Raddr);
+          data = m_utils.read(Raddr);
+          Rdata &lt;= data;
+          Rready &lt;= 1;
           if(MEM_DUMP)
           begin
-            $fwrite(dump_file, &quot;%0d,r,%0X,%0d,%0X\\n&quot;, i, Raddr, BITSIZE_Rdata, Rdata);
+            $fwrite(dump_file, &quot;%0d,r,%0X,%0d,%0X\\n&quot;, i, Raddr, BITSIZE_Rdata, data);
           end
         end
       end
@@ -684,8 +685,8 @@ generate
         Wready &lt;= 0;
         if(we &amp;&amp; base_addr &lt;= Waddr)
         begin
-          Wready &lt;= 1;
           m_utils.write(Wsize, Wdata, Waddr);
+          Wready &lt;= 1;
           if(MEM_DUMP)
           begin
             $fwrite(dump_file, &quot;%0d,w,%0X,%0d,%0X\\n&quot;, i, Waddr, Wsize, Wdata);
@@ -695,12 +696,13 @@ generate
     end
     else
     begin
-      assign Wready = we &amp;&amp; base_addr &lt;= Waddr;
       always@(negedge clock)
       begin : write_channel
+        Wready &lt;= 0;
         if(we &amp;&amp; base_addr &lt;= Waddr)
         begin
           m_utils.write(Wsize, Wdata, Waddr);
+          Wready &lt;= 1;
           if(MEM_DUMP)
           begin
             $fwrite(dump_file, &quot;%0d,w,%0X,%0d,%0X\\n&quot;, i, Waddr, Wsize, Wdata);
