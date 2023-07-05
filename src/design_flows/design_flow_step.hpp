@@ -172,13 +172,13 @@ class DesignFlowStep
     * Return a unified identifier of this design step
     * @return the signature of the design step
     */
-   virtual const std::string GetSignature() const = 0;
+   virtual std::string GetSignature() const = 0;
 
    /**
     * Return the name of this design step
     * @return the name of the pass (for debug purpose)
     */
-   virtual const std::string GetName() const = 0;
+   virtual std::string GetName() const = 0;
 
    /**
     * Return the status of this design step
@@ -202,7 +202,7 @@ class DesignFlowStep
    /**
     * Return the factory to create this type of steps
     */
-   virtual const DesignFlowStepFactoryConstRef CGetDesignFlowStepFactory() const = 0;
+   virtual DesignFlowStepFactoryConstRef CGetDesignFlowStepFactory() const = 0;
 
    /**
     * Returns if this step is composed

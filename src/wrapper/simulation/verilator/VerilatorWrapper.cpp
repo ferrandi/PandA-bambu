@@ -40,41 +40,33 @@
  * Last modified by $Author$
  *
  */
-
-/// Includes the class definition
 #include "VerilatorWrapper.hpp"
 
-/// Autoheader include
-#include "config_HAVE_EXPERIMENTAL.hpp"
+#include "config_PANDA_INCLUDE_INSTALLDIR.hpp"
 
-/// Constants include
-#include "file_IO_constants.hpp"
-
-/// Standard PandA include
+#include "Parameter.hpp"
+#include "constant_strings.hpp"
+#include "constants.hpp"
 #include "dbgPrintHelper.hpp"
 #include "exceptions.hpp"
+#include "fileIO.hpp"
+#include "file_IO_constants.hpp"
 #include "utility.hpp"
 
-/// includes all needed Boost.Filesystem declarations
 #include <boost/algorithm/string.hpp>
 #include <boost/filesystem.hpp>
-
 #include <cerrno>
 #include <fstream>
 #include <thread>
 #include <unistd.h>
 #include <utility>
 
-#include "Parameter.hpp"
-#include "constant_strings.hpp"
-#include "fileIO.hpp"
-#include "utility.hpp"
-
 #define SIM_SUBDIR (Param->getOption<std::string>(OPT_output_directory) + std::string("/verilator"))
 
 // constructor
-VerilatorWrapper::VerilatorWrapper(const ParameterConstRef& _Param, std::string _suffix)
-    : SimulationTool(_Param), suffix(std::move(_suffix))
+VerilatorWrapper::VerilatorWrapper(const ParameterConstRef& _Param, const std::string& _suffix,
+                                   const std::string& _top_fname)
+    : SimulationTool(_Param, _top_fname), suffix(_suffix)
 {
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Creating the VERILATOR wrapper...");
    std::string verilator_beh_dir = SIM_SUBDIR + suffix;
@@ -102,31 +94,53 @@ void VerilatorWrapper::GenerateScript(std::ostringstream& script, const std::str
          THROW_ERROR_CODE(NODE_NOT_YET_SUPPORTED_EC, "Mixed simulation not supported by Verilator");
       }
    }
-   bool generate_vcd_output = (Param->isOption(OPT_generate_vcd) && Param->getOption<bool>(OPT_generate_vcd)) ||
-                              (Param->isOption(OPT_discrepancy) && Param->getOption<bool>(OPT_discrepancy)) ||
-                              (Param->isOption(OPT_discrepancy_hw) && Param->getOption<bool>(OPT_discrepancy_hw));
+   const auto generate_vcd_output = (Param->isOption(OPT_generate_vcd) && Param->getOption<bool>(OPT_generate_vcd)) ||
+                                    (Param->isOption(OPT_discrepancy) && Param->getOption<bool>(OPT_discrepancy)) ||
+                                    (Param->isOption(OPT_discrepancy_hw) && Param->getOption<bool>(OPT_discrepancy_hw));
 
-   script << "export VM_PARALLEL_BUILDS=1\n";
+   script << "export VM_PARALLEL_BUILDS=1" << std::endl;
+   script << "work_dir=\"" << SIM_SUBDIR << suffix << "\"" << std::endl;
+   script << "obj_dir=\"${work_dir}/verilator_obj\"" << std::endl;
+   script << "verilator_include=\"$(dirname $(which verilator))/../share/verilator/include/vltstd\"" << std::endl
+          << std::endl;
    const auto output_directory = Param->getOption<std::string>(OPT_output_directory);
-   log_file = SIM_SUBDIR + suffix + "/" + top_filename + "_verilator.log";
-#if HAVE_EXPERIMENTAL
+   std::string cflags = "-DVERILATOR -I${verilator_include}";
+
+   const auto libtb_filename = GenerateLibraryBuildScript(script, "${work_dir}", cflags);
+   const auto vflags = [&]() {
+      std::string flags;
+      std::string mflag;
+      if(cflags.find("-m32") != std::string::npos)
+      {
+         mflag = "-m32";
+         flags += " +define+M32";
+      }
+      else if(cflags.find("-mx32") != std::string::npos)
+      {
+         mflag = "-mx32";
+         flags += " +define+MX32";
+      }
+      else if(cflags.find("-m64") != std::string::npos)
+      {
+         mflag = "-m64";
+         flags += " +define+M64";
+      }
+      if(mflag.size())
+      {
+         flags += " -CFLAGS \"" + mflag + "\"";
+      }
+      // TODO: LDFLAGS used to say -static, it may not be necessary any more
+      return flags + " -LDFLAGS \"" + mflag + " -lpthread\"";
+   }();
+
 #ifdef _WIN32
    /// this removes the dependency from perl on MinGW32
    script << "verilator_bin";
 #else
    script << "verilator";
 #endif
-   script << " --cc --exe --Mdir " + SIM_SUBDIR + suffix +
-                 "/verilator_obj -Wall -Wno-DECLFILENAME -Wno-WIDTH -Wno-UNUSED -Wno-CASEINCOMPLETE -Wno-UNOPTFLAT "
-                 "-Wno-PINMISSING -Wno-UNDRIVEN -Wno-SYNCASYNCNET";
-#else
-#ifdef _WIN32
-   /// this removes the dependency from perl on MinGW32
-   script << "verilator_bin";
-#else
-   script << "verilator";
-#endif
-   script << " --cc --exe --Mdir " + SIM_SUBDIR + suffix + "/verilator_obj -Wno-fatal -Wno-lint -sv";
+   script << " --cc --exe --Mdir ${obj_dir} -Wno-fatal -Wno-lint -sv";
+   script << " " << vflags << " " << libtb_filename;
    script << " -O3";
    // limit the file size
    script << " --output-split-cfuncs 3000";
@@ -135,9 +149,8 @@ void VerilatorWrapper::GenerateScript(std::ostringstream& script, const std::str
    {
       script << " --x-assign fast --x-initial fast --noassert";
    }
-#endif
-   script << " -LDFLAGS -static";
-   unsigned int nThreads = Param->getOption<bool>(OPT_verilator_parallel) ? std::thread::hardware_concurrency() : 1;
+
+   const auto nThreads = Param->getOption<bool>(OPT_verilator_parallel) ? std::thread::hardware_concurrency() : 1;
    if(nThreads > 1)
    {
       script << " --threads " << nThreads;
@@ -147,38 +160,33 @@ void VerilatorWrapper::GenerateScript(std::ostringstream& script, const std::str
       script << " --trace --trace-underscore"; // --trace-params
       if(Param->getOption<bool>(OPT_verilator_l2_name))
       {
-         script << " --l2-name v";
+         script << " --l2-name bambu_testbench";
       }
-   }
-   if(Param->isOption(OPT_verilator_timescale_override))
-   {
-      script << " --timescale-override \"" << Param->getOption<std::string>(OPT_verilator_timescale_override) << "\"";
    }
    for(const auto& file : file_list)
    {
       script << " " << file;
    }
-   script << " " << output_directory + "/simulation/testbench_" + top_filename << "_tb.v";
-   script << " --top-module " << top_filename << "_tb";
+   script << " --top-module bambu_testbench";
    script << std::endl;
    script << "if [ $? -ne 0 ]; then" << std::endl;
    script << "   exit 1;" << std::endl;
    script << "fi" << std::endl;
    script << std::endl << std::endl;
-   script << "ln -s " + output_directory + " " + SIM_SUBDIR + suffix + "/verilator_obj\n";
+   script << "ln -sf " + output_directory + " ${obj_dir}\n";
 
-   script << "make -C " + SIM_SUBDIR + suffix + "/verilator_obj";
+   script << "make -C ${obj_dir}";
    script << " -j " << std::thread::hardware_concurrency();
    script << " OPT=\"-fstrict-aliasing\"";
-   script << " -f V" + top_filename + "_tb.mk V" + top_filename << "_tb";
+   script << " -f Vbambu_testbench.mk Vbambu_testbench";
 #ifdef _WIN32
    /// VM_PARALLEL_BUILDS=1 removes the dependency from perl
    script << " VM_PARALLEL_BUILDS=1 CFG_CXXFLAGS_NO_UNUSED=\"\"";
 #endif
    script << std::endl << std::endl;
 
-   script << SIM_SUBDIR + suffix + "/verilator_obj/V" + top_filename + "_tb";
-   script << " 2>&1 | tee " << log_file << std::endl << std::endl;
+   script << "${obj_dir}/Vbambu_testbench";
+   script << " 2>&1 | tee ${work_dir}/" << top_filename << "_verilator.log" << std::endl << std::endl;
 }
 
 void VerilatorWrapper::Clean() const

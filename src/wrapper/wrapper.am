@@ -121,6 +121,7 @@ if BUILD_SIMULATION
    -I$(top_srcdir)/src/constants \
    -I$(top_srcdir)/src/utility \
    -I$(top_srcdir)/src/wrapper \
+   -I$(top_srcdir)/src/wrapper/compiler/\
    -I$(top_srcdir)/src/wrapper/simulation/\
    -I$(top_srcdir)/src/wrapper/simulation/icarus \
    -I$(top_srcdir)/src/wrapper/simulation/modelsim \

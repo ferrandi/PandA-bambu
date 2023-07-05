@@ -48,8 +48,11 @@ double __hide_ieee754_atanh(double x)
       return __builtin_nans("");
    if(ix == 0x3ff00000)
       return (hx >> 31) ? -__builtin_inf() : __builtin_inf();
-   if(ix < 0x3e300000 && (huge + x) > zero)
-      return x;          /* x<2**-28 */
+   if(ix < 0x3e300000)
+   {
+      math_force_eval(huge + x);
+      return x; /* x<2**-28 */
+   }
    SET_HIGH_WORD(x, ix); /* x <- |x| */
    if(ix < 0x3fe00000)
    { /* x < 0.5 */

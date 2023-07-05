@@ -682,11 +682,11 @@ namespace __AC_NAMESPACE
       {
          return to_uint64();
       }
-      __FORCE_INLINE constexpr explicit operator double() const
+      __FORCE_INLINE constexpr operator double() const
       {
          return to_double();
       }
-      __FORCE_INLINE constexpr explicit operator float() const
+      __FORCE_INLINE constexpr operator float() const
       {
          return to_float();
       }

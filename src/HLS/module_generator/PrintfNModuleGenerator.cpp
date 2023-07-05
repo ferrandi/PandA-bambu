@@ -54,8 +54,9 @@ PrintfNModuleGenerator::PrintfNModuleGenerator(const HLS_managerRef& _HLSMgr) : 
 {
 }
 
-void PrintfNModuleGenerator::InternalExec(std::ostream& out, const module* /* mod */, unsigned int /* function_id */,
-                                          vertex /* op_v */, const HDLWriter_Language /* language */,
+void PrintfNModuleGenerator::InternalExec(std::ostream& out, structural_objectRef /* mod */,
+                                          unsigned int /* function_id */, vertex /* op_v */,
+                                          const HDLWriter_Language /* language */,
                                           const std::vector<ModuleGenerator::parameter>& _p,
                                           const std::vector<ModuleGenerator::parameter>& /* _ports_in */,
                                           const std::vector<ModuleGenerator::parameter>& /* _ports_out */,

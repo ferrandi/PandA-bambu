@@ -72,7 +72,7 @@ class IcarusWrapper : public SimulationTool
     * Constructor
     * @param Param is the set of parameters
     */
-   IcarusWrapper(const ParameterConstRef& Param, std::string suffix);
+   IcarusWrapper(const ParameterConstRef& Param, const std::string& suffix, const std::string& top_fname);
 
    /**
     * Destructor

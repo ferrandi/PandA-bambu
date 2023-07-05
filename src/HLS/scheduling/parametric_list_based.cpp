@@ -312,7 +312,7 @@ ParametricListBasedSpecialization::ParametricListBasedSpecialization(
 {
 }
 
-const std::string ParametricListBasedSpecialization::GetKindText() const
+std::string ParametricListBasedSpecialization::GetKindText() const
 {
    switch(parametric_list_based_metric)
    {
@@ -328,7 +328,7 @@ const std::string ParametricListBasedSpecialization::GetKindText() const
    return "";
 }
 
-const std::string ParametricListBasedSpecialization::GetSignature() const
+std::string ParametricListBasedSpecialization::GetSignature() const
 {
    return GetKindText();
 }

@@ -50,10 +50,6 @@ CONSTREF_FORWARD_DECL(Parameter);
 #include <string>
 #include <vector>
 
-/**
- * @class IcarusWrapper
- * Main class for wrapping the Icarus verilog compiler.
- */
 class ToolManager
 {
  protected:

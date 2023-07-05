@@ -2244,7 +2244,7 @@ DesignFlowStep_Status allocation::InternalExec()
                   {
                      if(varargs_fu)
                      {
-                        modGen->specialize_fu(fu_name, vert, lib_name, FB, specialized_fuName, new_fu);
+                        modGen->specialize_fu(fu_name, vert, FB, lib_name, specialized_fuName, new_fu);
                      }
                      else
                      {

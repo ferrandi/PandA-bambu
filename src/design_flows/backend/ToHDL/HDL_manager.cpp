@@ -402,7 +402,6 @@ void HDL_manager::hdl_gen(const std::string& filename, const std::list<structura
 
    /// generate the HDL descriptions for all the components
    write_components(filename, list_of_com, equation, hdl_files, aux_files);
-   return;
 }
 
 /**
@@ -449,47 +448,44 @@ void HDL_manager::get_post_order_structural_components(const structural_objectRe
       {
          auto* mod = GetPointer<module>(cir);
          unsigned int n_elements = mod->get_internal_objects_size();
-         if(n_elements)
+         for(unsigned int i = 0; i < n_elements; i++)
          {
-            for(unsigned int i = 0; i < n_elements; i++)
+            switch(mod->get_internal_object(i)->get_kind())
             {
-               switch(mod->get_internal_object(i)->get_kind())
+               case channel_o_K:
+               case component_o_K:
                {
-                  case channel_o_K:
-                  case component_o_K:
+                  if(!mod->get_internal_object(i)->get_black_box() &&
+                     !TM->IsBuiltin(GET_TYPE_NAME(mod->get_internal_object(i))))
                   {
-                     if(!mod->get_internal_object(i)->get_black_box() and
-                        not TM->IsBuiltin(GET_TYPE_NAME(mod->get_internal_object(i))))
-                     {
-                        get_post_order_structural_components(mod->get_internal_object(i), list_of_com);
-                     }
-                     break;
+                     get_post_order_structural_components(mod->get_internal_object(i), list_of_com);
                   }
-                  case constant_o_K:
-                  case signal_vector_o_K:
-                  case signal_o_K:
-                  case bus_connection_o_K:
-                     break; /// no action for signals and bus
-                  case action_o_K:
-                  case data_o_K:
-                  case event_o_K:
-                  case port_o_K:
-                  case port_vector_o_K:
-                  default:
-                     THROW_ERROR("Structural object not foreseen: " +
-                                 std::string(mod->get_internal_object(i)->get_kind_text()));
+                  break;
                }
+               case constant_o_K:
+               case signal_vector_o_K:
+               case signal_o_K:
+               case bus_connection_o_K:
+                  break; /// no action for signals and bus
+               case action_o_K:
+               case data_o_K:
+               case event_o_K:
+               case port_o_K:
+               case port_vector_o_K:
+               default:
+                  THROW_ERROR("Structural object not foreseen: " +
+                              std::string(mod->get_internal_object(i)->get_kind_text()));
             }
          }
-         NP_functionalityRef NPF = mod->get_NP_functionality();
-         if(NPF and NPF->exist_NP_functionality(NP_functionality::IP_COMPONENT))
+         const auto NPF = mod->get_NP_functionality();
+         if(NPF && NPF->exist_NP_functionality(NP_functionality::IP_COMPONENT))
          {
-            std::string ip_cores = NPF->get_NP_functionality(NP_functionality::IP_COMPONENT);
-            std::vector<std::string> ip_cores_list = convert_string_to_vector<std::string>(ip_cores, ",");
+            const auto ip_cores = NPF->get_NP_functionality(NP_functionality::IP_COMPONENT);
+            const auto ip_cores_list = convert_string_to_vector<std::string>(ip_cores, ",");
             for(const auto& ip_core : ip_cores_list)
             {
-               std::vector<std::string> ip_core_vec = convert_string_to_vector<std::string>(ip_core, ":");
-               if(ip_core_vec.size() < 1 or ip_core_vec.size() > 2)
+               const auto ip_core_vec = convert_string_to_vector<std::string>(ip_core, ":");
+               if(ip_core_vec.size() < 1 || ip_core_vec.size() > 2)
                {
                   THROW_ERROR("Malformed IP component definition \"" + ip_core + "\"");
                }
@@ -504,7 +500,7 @@ void HDL_manager::get_post_order_structural_components(const structural_objectRe
                   component_name = ip_core_vec[0];
                   library = TM->get_library(component_name);
                }
-               technology_nodeRef tn = TM->get_fu(component_name, library);
+               const auto tn = TM->get_fu(component_name, library);
                structural_objectRef core_cir;
                if(tn->get_kind() == functional_unit_K)
                {
@@ -872,7 +868,7 @@ void HDL_manager::write_module(const language_writerRef writer, const structural
                             GetPointer<port_o>(mod_inst->get_in_port(i))->find_bounded_object(cir);
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                        "---Bounded object is " +
-                                           (object_bounded ? object_bounded->get_path() : " nothing"));
+                                           (object_bounded ? object_bounded->get_path() : "nothing"));
                         writer->write_port_binding(mod_inst->get_in_port(i), object_bounded, first_port_analyzed);
                      }
                      else

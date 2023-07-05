@@ -96,17 +96,17 @@ bool ToDataFileStep::HasToBeExecuted() const
    return true;
 }
 
-const std::string ToDataFileStep::GetSignature() const
+std::string ToDataFileStep::GetSignature() const
 {
    return ComputeSignature(to_data_file_step_type);
 }
 
-const std::string ToDataFileStep::GetName() const
+std::string ToDataFileStep::GetName() const
 {
    return "GenerateFuList::" + EnumToName(to_data_file_step_type);
 }
 
-const DesignFlowStepFactoryConstRef ToDataFileStep::CGetDesignFlowStepFactory() const
+DesignFlowStepFactoryConstRef ToDataFileStep::CGetDesignFlowStepFactory() const
 {
    return design_flow_manager.lock()->CGetDesignFlowStepFactory("ToDataFile");
 }

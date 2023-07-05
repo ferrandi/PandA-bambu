@@ -40,16 +40,11 @@
  * Last modified by $Author$
  *
  */
-
-/// Header include
 #include "discrepancy_instruction_writer.hpp"
 
-/// behavior include
 #include "application_manager.hpp"
-#include "function_behavior.hpp"
-
-/// tree include
 #include "behavioral_helper.hpp"
+#include "function_behavior.hpp"
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
 #include "tree_node.hpp"
@@ -61,8 +56,6 @@ discrepancy_instruction_writer::discrepancy_instruction_writer(const application
     : HLSInstructionWriter(_app_man, _indented_output_stream, _parameters)
 {
 }
-
-discrepancy_instruction_writer::~discrepancy_instruction_writer() = default;
 
 void discrepancy_instruction_writer::declareFunction(const unsigned int function_id)
 {

@@ -63,13 +63,13 @@ inline double __hide_get_double(unsigned long long int x)
 #define MOVE_HI(x) ((x) << 32)
 
 /* Set a double from two 32 bit ints.  */
-#define INSERT_WORDS(d, ix0, ix1) (d) = __hide_get_double(MOVE_HI(CAST_UINT64(ix0)) | CAST_UINT64(ix1))
+#define INSERT_WORDS(d, ix0, ix1) (d) = __hide_get_double(MOVE_HI(CAST_UINT64(ix0)) | CAST_UINT64(((unsigned)ix1)))
 
 /* Set the more significant 32 bits of a double from an int.  */
 #define SET_HIGH_WORD(d, v) (d) = __hide_get_double(MOVE_HI(CAST_UINT64(v)) | GET_LO(d))
 
 /* Set the less significant 32 bits of a double from an int.  */
-#define SET_LOW_WORD(d, v) (d) = __hide_get_double(MOVE_HI(GET_HI(d)) | CAST_UINT64(v))
+#define SET_LOW_WORD(d, v) (d) = __hide_get_double(MOVE_HI(GET_HI(d)) | CAST_UINT64(((unsigned)v)))
 
 /* Set the less significant 32 bits of a double from an int.  */
 #define RESET_LOW_WORD(d) (d) = __hide_get_double(MOVE_HI(GET_HI(d)))
@@ -262,6 +262,33 @@ extern double __hide_ieee754_remainder(double, double);
 extern double __hide_ieee754_scalb(double, int);
 #else
 extern double __hide_ieee754_scalb(double, double);
+#endif
+
+#ifdef NO_RAISE_EXCEPTIONS
+#define math_opt_barrier(x)  \
+   ({                        \
+      __typeof(x) __x = (x); \
+      __x;                   \
+   })
+#define math_force_eval(x)
+#define X_PLUS_X(x) (x)
+#else
+#define math_opt_barrier(x)           \
+   ({                                 \
+      __typeof(x) __x;                \
+      __asm("" : "=f"(__x) : "0"(x)); \
+      __x;                            \
+   })
+#define math_force_eval(x)                  \
+   do                                       \
+   {                                        \
+      __typeof(x) __x = (x);                \
+      if(sizeof(x) <= sizeof(double))       \
+         __asm __volatile("" : : "m"(__x)); \
+      else                                  \
+         __asm __volatile("" : : "f"(__x)); \
+   } while(0)
+#define X_PLUS_X(x) ((x) + (x))
 #endif
 
 /* collection of costants used by libm */

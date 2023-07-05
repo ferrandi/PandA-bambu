@@ -71,8 +71,9 @@ Read_fifoModuleGenerator::Read_fifoModuleGenerator(const HLS_managerRef& _HLSMgr
 {
 }
 
-void Read_fifoModuleGenerator::InternalExec(std::ostream& out, const module* /* mod */, unsigned int /* function_id */,
-                                            vertex /* op_v */, const HDLWriter_Language /* language */,
+void Read_fifoModuleGenerator::InternalExec(std::ostream& out, structural_objectRef /* mod */,
+                                            unsigned int /* function_id */, vertex /* op_v */,
+                                            const HDLWriter_Language /* language */,
                                             const std::vector<ModuleGenerator::parameter>& /* _p */,
                                             const std::vector<ModuleGenerator::parameter>& _ports_in,
                                             const std::vector<ModuleGenerator::parameter>& _ports_out,
@@ -80,13 +81,10 @@ void Read_fifoModuleGenerator::InternalExec(std::ostream& out, const module* /* 
 {
    THROW_ASSERT(_ports_in.size() >= i_last, "");
    THROW_ASSERT(_ports_out.size() >= o_last, "");
-   out << "reg started;\n";
-   out << "wire started_0;\n";
-   out << "wire " << _ports_out[o_done].name << "_0;\n";
+   out << "reg started, started_0;\n"
+       << "reg done_0;\n\n";
 
-   out << "assign started_0 = (started || " << _ports_in[i_start].name << ") && !" << _ports_in[i_empty_n].name
-       << ";\n\n"
-       << "always @(posedge clock 1RESET_EDGE)\n"
+   out << "always @(posedge clock 1RESET_EDGE)\n"
        << "begin\n"
        << "  if (1RESET_VALUE)\n"
        << "  begin\n"
@@ -98,12 +96,14 @@ void Read_fifoModuleGenerator::InternalExec(std::ostream& out, const module* /* 
        << "  end\n"
        << "end\n\n";
 
+   out << "always @(*)\n"
+       << "begin\n"
+       << "  started_0 = (started | " << _ports_in[i_start].name << ") & ~" << _ports_in[i_empty_n].name << ";\n"
+       << "  done_0 = ( started | " << _ports_in[i_start].name << ") & " << _ports_in[i_empty_n].name << ";\n"
+       << "end\n\n";
+
    out << "assign " << _ports_out[o_out1].name << " = {" << _ports_in[i_empty_n].name << ", " << _ports_in[i_dout].name
-       << "};\n\n";
-
-   out << "assign " << _ports_out[o_done].name << "_0 = (" << _ports_in[i_start].name << " & "
-       << _ports_in[i_empty_n].name << ") | (started & " << _ports_in[i_empty_n].name << ");\n\n";
-
-   out << "assign " << _ports_out[o_done].name << " = " << _ports_out[o_done].name << "_0;\n";
-   out << "assign " << _ports_out[o_read].name << " = " << _ports_out[o_done].name << "_0;\n";
+       << "};\n";
+   out << "assign " << _ports_out[o_done].name << " = done_0;\n";
+   out << "assign " << _ports_out[o_read].name << " = done_0;\n";
 }

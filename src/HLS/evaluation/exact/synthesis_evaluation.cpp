@@ -67,25 +67,6 @@ SynthesisEvaluation::ComputeHLSRelationships(const DesignFlowStep::RelationshipT
    CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;
    switch(relationship_type)
    {
-      case PRECEDENCE_RELATIONSHIP:
-      {
-#if HAVE_SIMULATION_WRAPPER_BUILT
-         ret.insert(std::make_tuple(HLSFlowStep_Type::SIMULATION_EVALUATION, HLSFlowStepSpecializationConstRef(),
-                                    HLSFlowStep_Relationship::WHOLE_APPLICATION));
-#endif
-#if HAVE_VCD_BUILT
-         if(parameters->isOption(OPT_discrepancy) and parameters->getOption<bool>(OPT_discrepancy))
-         {
-            ret.insert(std::make_tuple(HLSFlowStep_Type::VCD_UTILITY, HLSFlowStepSpecializationConstRef(),
-                                       HLSFlowStep_Relationship::TOP_FUNCTION));
-         }
-#endif
-         break;
-      }
-      case INVALIDATION_RELATIONSHIP:
-      {
-         break;
-      }
       case DEPENDENCE_RELATIONSHIP:
       {
          ret.insert(std::make_tuple(HLSFlowStep_Type::GENERATE_HDL, HLSFlowStepSpecializationConstRef(),
@@ -103,6 +84,25 @@ SynthesisEvaluation::ComputeHLSRelationships(const DesignFlowStep::RelationshipT
             ret.insert(std::make_tuple(HLSFlowStep_Type::GENERATE_SYNTHESIS_SCRIPT, HLSFlowStepSpecializationConstRef(),
                                        HLSFlowStep_Relationship::WHOLE_APPLICATION));
          }
+         break;
+      }
+      case PRECEDENCE_RELATIONSHIP:
+      {
+#if HAVE_SIMULATION_WRAPPER_BUILT
+         ret.insert(std::make_tuple(HLSFlowStep_Type::SIMULATION_EVALUATION, HLSFlowStepSpecializationConstRef(),
+                                    HLSFlowStep_Relationship::WHOLE_APPLICATION));
+#endif
+#if HAVE_VCD_BUILT
+         if(parameters->isOption(OPT_discrepancy) && parameters->getOption<bool>(OPT_discrepancy))
+         {
+            ret.insert(std::make_tuple(HLSFlowStep_Type::VCD_UTILITY, HLSFlowStepSpecializationConstRef(),
+                                       HLSFlowStep_Relationship::TOP_FUNCTION));
+         }
+#endif
+         break;
+      }
+      case INVALIDATION_RELATIONSHIP:
+      {
          break;
       }
       default:

@@ -139,30 +139,10 @@ DesignFlowStep_Status GenerateSimulationScripts::Exec()
    THROW_ASSERT(HLSMgr->RSim->filename_bench != "", "Testbench not yet set");
    full_list.push_back(HLSMgr->RSim->filename_bench);
 
-   if(parameters->getOption<std::string>(OPT_simulator) == "MODELSIM")
-   {
-      HLSMgr->RSim->sim_tool = SimulationTool::CreateSimulationTool(SimulationTool::MODELSIM, parameters, suffix);
-   }
-   else if(parameters->getOption<std::string>(OPT_simulator) == "ISIM")
-   {
-      HLSMgr->RSim->sim_tool = SimulationTool::CreateSimulationTool(SimulationTool::ISIM, parameters, suffix);
-   }
-   else if(parameters->getOption<std::string>(OPT_simulator) == "XSIM")
-   {
-      HLSMgr->RSim->sim_tool = SimulationTool::CreateSimulationTool(SimulationTool::XSIM, parameters, suffix);
-   }
-   else if(parameters->getOption<std::string>(OPT_simulator) == "ICARUS")
-   {
-      HLSMgr->RSim->sim_tool = SimulationTool::CreateSimulationTool(SimulationTool::ICARUS, parameters, suffix);
-   }
-   else if(parameters->getOption<std::string>(OPT_simulator) == "VERILATOR")
-   {
-      HLSMgr->RSim->sim_tool = SimulationTool::CreateSimulationTool(SimulationTool::VERILATOR, parameters, suffix);
-   }
-   else
-   {
-      THROW_ERROR("Unknown simulator: " + parameters->getOption<std::string>(OPT_simulator));
-   }
+   HLSMgr->RSim->sim_tool = SimulationTool::CreateSimulationTool(
+       SimulationTool::to_sim_type(parameters->getOption<std::string>(OPT_simulator)), parameters, suffix,
+       HLSMgr->CGetFunctionBehavior(top_fun_id)->CGetBehavioralHelper()->GetMangledFunctionName());
+
    HLSMgr->RSim->sim_tool->GenerateSimulationScript(top_hls->top->get_circ()->get_id(), full_list);
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Generated simulation scripts");
    return DesignFlowStep_Status::SUCCESS;

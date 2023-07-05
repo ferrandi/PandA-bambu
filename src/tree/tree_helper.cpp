@@ -2400,16 +2400,7 @@ static void getBuiltinFieldTypes(const tree_nodeConstRef& _type, std::list<tree_
             continue;
          }
          const auto fdType = tree_helper::CGetType(fld);
-         const auto fdType_kind = GET_CONST_NODE(fdType)->get_kind();
-         if(fdType_kind == record_type_K || fdType_kind == union_type_K || fdType_kind == array_type_K ||
-            fdType_kind == vector_type_K)
-         {
-            getBuiltinFieldTypes(fdType, listOfTypes, already_visited);
-         }
-         else
-         {
-            listOfTypes.push_back(fdType);
-         }
+         getBuiltinFieldTypes(fdType, listOfTypes, already_visited);
       }
    }
    else if(type->get_kind() == union_type_K)
@@ -2418,16 +2409,7 @@ static void getBuiltinFieldTypes(const tree_nodeConstRef& _type, std::list<tree_
       for(const auto& fld : ut->list_of_flds)
       {
          const auto fdType = tree_helper::CGetType(fld);
-         const auto fdType_kind = GET_CONST_NODE(fdType)->get_kind();
-         if(fdType_kind == record_type_K || fdType_kind == union_type_K || fdType_kind == array_type_K ||
-            fdType_kind == vector_type_K)
-         {
-            getBuiltinFieldTypes(fdType, listOfTypes, already_visited);
-         }
-         else
-         {
-            listOfTypes.push_back(fdType);
-         }
+         getBuiltinFieldTypes(fdType, listOfTypes, already_visited);
       }
    }
    else if(type->get_kind() == array_type_K)
@@ -2457,6 +2439,16 @@ static bool same_size_fields(const tree_nodeConstRef& t)
    {
       return false;
    }
+   if(tree_helper::IsStructType(t))
+   {
+      for(const auto& fld : GetPointerS<const record_type>(GET_CONST_NODE(t))->list_of_flds)
+      {
+         if(GetPointerS<const field_decl>(GET_CONST_NODE(fld))->is_bitfield())
+         {
+            return false;
+         }
+      }
+   }
 
    auto sizeFlds = 0ull;
    for(const auto& fldType : listOfTypes)
@@ -2469,7 +2461,7 @@ static bool same_size_fields(const tree_nodeConstRef& t)
       {
          return false;
       }
-      else if(resize_to_1_8_16_32_64_128_256_512(sizeFlds) != sizeFlds)
+      else if(ceil_pow2(sizeFlds) != sizeFlds)
       {
          return false;
       }
@@ -6066,7 +6058,7 @@ std::string tree_helper::PrintType(const tree_managerConstRef& TM, const tree_no
       case CASE_UNARY_EXPRESSION:
       default:
          THROW_UNREACHABLE("Type not yet supported " + STR(original_type) + " " + node_type->get_kind_text() + " " +
-                           STR(node_var));
+                           (node_var ? STR(node_var) : ""));
    }
    if(!skip_var_printing)
    {

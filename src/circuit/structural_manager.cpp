@@ -196,7 +196,7 @@ structural_objectRef structural_manager::add_port(const std::string& id, port_o:
 {
    THROW_ASSERT(owner, "missing the owner");
    THROW_ASSERT(!check_object(id, owner, port_o_K), "the object " + id + " is already present in " + owner->get_path());
-   structural_objectRef cp = structural_objectRef(new port_o(debug_level, owner, pdir, port_o_K));
+   structural_objectRef cp = structural_objectRef(new port_o(owner->debug_level, owner, pdir, port_o_K));
    cp->set_id(id);
    cp->set_treenode(treenode);
    cp->set_type(type_descr);
@@ -315,7 +315,7 @@ structural_objectRef structural_manager::add_port_vector(std::string id, port_o:
    THROW_ASSERT(owner, "missing the owner");
    THROW_ASSERT(!check_object(id, owner, port_vector_o_K),
                 "the object " + id + " is already present in " + owner->get_path());
-   structural_objectRef cp = structural_objectRef(new port_o(debug_level, owner, pdir, port_vector_o_K));
+   structural_objectRef cp = structural_objectRef(new port_o(owner->debug_level, owner, pdir, port_vector_o_K));
    cp->set_id(id);
    cp->set_treenode(treenode);
    cp->set_type(type_descr);
@@ -382,7 +382,7 @@ structural_objectRef structural_manager::add_sign_vector(std::string id, unsigne
    THROW_ASSERT(owner, "missing the owner");
    THROW_ASSERT(!check_object(id, owner, signal_o_K),
                 "the object " + id + " is already present in " + owner->get_path());
-   structural_objectRef cs = structural_objectRef(new signal_o(debug_level, owner, signal_vector_o_K));
+   structural_objectRef cs = structural_objectRef(new signal_o(owner->debug_level, owner, signal_vector_o_K));
    cs->set_id(id);
    cs->set_treenode(treenode);
    cs->set_type(sign_type);
@@ -420,7 +420,7 @@ structural_objectRef structural_manager::add_sign(std::string id, structural_obj
    THROW_ASSERT(owner, "missing the owner");
    THROW_ASSERT(!check_object(id, owner, signal_o_K),
                 "the object " + id + " is already present in " + owner->get_path());
-   structural_objectRef cs = structural_objectRef(new signal_o(debug_level, owner, signal_o_K));
+   structural_objectRef cs = structural_objectRef(new signal_o(owner->debug_level, owner, signal_o_K));
    cs->set_id(id);
    cs->set_treenode(treenode);
    cs->set_type(sign_type);
@@ -551,7 +551,7 @@ void structural_manager::add_NP_functionality(structural_objectRef cir, NP_funct
                                               std::string functionality_description)
 {
    THROW_ASSERT((cir->get_kind() == component_o_K), "Only components can have a Non SystemC functionality");
-   auto* com = GetPointer<module>(cir);
+   const auto com = GetPointer<module>(cir);
    NP_functionalityRef f =
        (com->get_NP_functionality() ? com->get_NP_functionality() : NP_functionalityRef(new NP_functionality));
    f->add_NP_functionality(dt, functionality_description);

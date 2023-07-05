@@ -231,6 +231,8 @@ class BehavioralHelper
     */
    std::string get_function_name() const;
 
+   std::string GetMangledFunctionName() const;
+
    /**
     * Return the index of the function
     * @param function_name is the name of the function

@@ -115,20 +115,19 @@ void HLSFunctionStep::Initialize()
    HLS = HLSMgr->get_HLS(funId);
 }
 
-const std::string HLSFunctionStep::GetSignature() const
+std::string HLSFunctionStep::GetSignature() const
 {
    return ComputeSignature(hls_flow_step_type, hls_flow_step_specialization, funId);
 }
 
-const std::string
-HLSFunctionStep::ComputeSignature(const HLSFlowStep_Type hls_flow_step_type,
-                                  const HLSFlowStepSpecializationConstRef hls_flow_step_specialization,
-                                  const unsigned int function_id)
+std::string HLSFunctionStep::ComputeSignature(const HLSFlowStep_Type hls_flow_step_type,
+                                              const HLSFlowStepSpecializationConstRef hls_flow_step_specialization,
+                                              const unsigned int function_id)
 {
    return HLS_step::ComputeSignature(hls_flow_step_type, hls_flow_step_specialization) + "::" + STR(function_id);
 }
 
-const std::string HLSFunctionStep::GetName() const
+std::string HLSFunctionStep::GetName() const
 {
 #ifndef NDEBUG
    const std::string version = std::string(bb_version != 0 ? ("(" + STR(bb_version) + ")") : "") +

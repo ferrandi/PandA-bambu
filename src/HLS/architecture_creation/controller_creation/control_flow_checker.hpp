@@ -89,6 +89,8 @@ class ControlFlowChecker : public HLSFunctionStep
     * @return the exit status of this step
     */
    DesignFlowStep_Status InternalExec() override;
+
+   static bool IsOneHotFSM(unsigned int function_id, const HLS_managerRef HLSMgr);
 };
 
 #endif

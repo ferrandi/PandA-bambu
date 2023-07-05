@@ -73,8 +73,9 @@ Write_axisModuleGenerator::Write_axisModuleGenerator(const HLS_managerRef& _HLSM
 {
 }
 
-void Write_axisModuleGenerator::InternalExec(std::ostream& out, const module* /* mod */, unsigned int /* function_id */,
-                                             vertex /* op_v */, const HDLWriter_Language /* language */,
+void Write_axisModuleGenerator::InternalExec(std::ostream& out, structural_objectRef /* mod */,
+                                             unsigned int /* function_id */, vertex /* op_v */,
+                                             const HDLWriter_Language /* language */,
                                              const std::vector<ModuleGenerator::parameter>& /* _p */,
                                              const std::vector<ModuleGenerator::parameter>& _ports_in,
                                              const std::vector<ModuleGenerator::parameter>& _ports_out,
@@ -82,12 +83,9 @@ void Write_axisModuleGenerator::InternalExec(std::ostream& out, const module* /*
 {
    THROW_ASSERT(_ports_in.size() >= i_last, "");
    THROW_ASSERT(_ports_out.size() >= o_last, "");
-   out << "reg started;\n";
-   out << "wire started_0;\n";
-   out << "wire " << _ports_out[o_done].name << "_0;\n\n";
+   out << "reg started, started_0;\n";
 
-   out << "assign started_0 = (started | " << _ports_in[i_start].name << ") & !" << _ports_in[i_ready].name << ";\n"
-       << "always @(posedge clock 1RESET_EDGE)\n"
+   out << "always @(posedge clock 1RESET_EDGE)\n"
        << "begin\n"
        << "  if (1RESET_VALUE)\n"
        << "  begin\n"
@@ -99,11 +97,14 @@ void Write_axisModuleGenerator::InternalExec(std::ostream& out, const module* /*
        << "  end\n"
        << "end\n\n";
 
-   out << "assign " << _ports_out[o_done].name << "_0 = (" << _ports_in[i_start].name << " & "
-       << _ports_in[i_ready].name << ") | (started & " << _ports_in[i_ready].name << ") ;\n";
+   out << "always @(*)\n"
+       << "begin\n"
+       << "  started_0 = (started | " << _ports_in[i_start].name << ") & ~" << _ports_in[i_ready].name << ";\n"
+       << "end\n\n";
 
-   out << "assign " << _ports_out[o_done].name << " = " << _ports_out[o_done].name << "_0;\n";
-   out << "assign " << _ports_out[o_valid].name << " = " << _ports_in[i_start].name << " | started;\n";
+   out << "assign " << _ports_out[o_done].name << " = (started | " << _ports_in[i_start].name << ") & "
+       << _ports_in[i_ready].name << ";\n";
+   out << "assign " << _ports_out[o_valid].name << " = started | " << _ports_in[i_start].name << ";\n";
    out << "assign " << _ports_out[o_out1].name << " = " << _ports_in[i_ready].name << ";\n";
    out << "assign " << _ports_out[o_tdata].name << " = " << _ports_in[i_in2].name << ";\n";
 }

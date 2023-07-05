@@ -71,7 +71,7 @@ Read_handshakeModuleGenerator::Read_handshakeModuleGenerator(const HLS_managerRe
 {
 }
 
-void Read_handshakeModuleGenerator::InternalExec(std::ostream& out, const module* /* mod */,
+void Read_handshakeModuleGenerator::InternalExec(std::ostream& out, structural_objectRef /* mod */,
                                                  unsigned int /* function_id */, vertex /* op_v */,
                                                  const HDLWriter_Language /* language */,
                                                  const std::vector<ModuleGenerator::parameter>& /* _p */,
@@ -81,12 +81,10 @@ void Read_handshakeModuleGenerator::InternalExec(std::ostream& out, const module
 {
    THROW_ASSERT(_ports_in.size() >= i_last, "");
    THROW_ASSERT(_ports_out.size() >= o_last, "");
-   out << "reg started;\n";
-   out << "wire started0;\n";
-   out << "wire " << _ports_out[o_done].name << "0;\n\n";
+   out << "reg started, started_0;\n"
+       << "reg done_0;\n";
 
-   out << "assign started0 = (started || " << _ports_in[i_start].name << ") && !" << _ports_in[i_vld].name << ";\n"
-       << "always @(posedge clock 1RESET_EDGE)\n"
+   out << "always @(posedge clock 1RESET_EDGE)\n"
        << "begin\n"
        << "  if (1RESET_VALUE)\n"
        << "  begin\n"
@@ -94,15 +92,17 @@ void Read_handshakeModuleGenerator::InternalExec(std::ostream& out, const module
        << "  end\n"
        << "  else\n"
        << "  begin\n"
-       << "    started <= started0;\n"
+       << "    started <= started_0;\n"
        << "  end\n"
        << "end\n\n";
 
+   out << "always @(*)\n"
+       << "begin\n"
+       << "  started_0 = (started | " << _ports_in[i_start].name << ") & ~" << _ports_in[i_vld].name << ";\n"
+       << "  done_0 = (started | " << _ports_in[i_start].name << ") & " << _ports_in[i_vld].name << ";\n"
+       << "end\n\n";
+
    out << "assign " << _ports_out[o_out1].name << " = " << _ports_in[i_in3].name << ";\n";
-
-   out << "assign " << _ports_out[o_done].name << "0 = (" << _ports_in[i_start].name << " & " << _ports_in[i_vld].name
-       << ") | (started & " << _ports_in[i_vld].name << ");\n";
-
-   out << "assign " << _ports_out[o_done].name << " = " << _ports_out[o_done].name << "0;\n";
-   out << "assign " << _ports_out[o_ack].name << " = " << _ports_out[o_done].name << "0;\n";
+   out << "assign " << _ports_out[o_done].name << " = done_0;\n";
+   out << "assign " << _ports_out[o_ack].name << " = done_0;\n";
 }
