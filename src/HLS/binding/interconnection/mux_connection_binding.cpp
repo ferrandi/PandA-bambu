@@ -1298,6 +1298,7 @@ void mux_connection_binding::create_connections()
    const auto BH = FB->CGetBehavioralHelper();
    const auto data = FB->CGetOpGraph(FunctionBehavior::FDFG);
    auto bus_addr_bitsize = HLSMgr->get_address_bitsize();
+   const StateTransitionGraphConstRef astg = HLS->STG->CGetAstg();
    if(parameters->getOption<int>(OPT_memory_banks_number) > 1 && !parameters->isOption(OPT_context_switch))
    {
       HLS->Rconn = conn_bindingRef(new ParallelMemoryConnBinding(BH, parameters));
@@ -1394,12 +1395,18 @@ void mux_connection_binding::create_connections()
             const CustomOrderedSet<vertex>& running_states = HLS->Rliv->get_state_where_run(*op);
             for(const auto state : running_states)
             {
-               GetPointer<commandport_obj>(selector_obj)
-                   ->add_activation(
-                       commandport_obj::transition(state, NULL_VERTEX, commandport_obj::data_operation_pair(0, *op)));
-               PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
-                             "       - add activation for " + selector_obj->get_string() + " in state "
-                                 << HLS->Rliv->get_name(state));
+               bool is_starting_operation = std::find(astg->CGetStateInfo(state)->starting_operations.begin(),
+                                                      astg->CGetStateInfo(state)->starting_operations.end(),
+                                                      *op) != astg->CGetStateInfo(state)->starting_operations.end();
+               if(!(GET_TYPE(data, *op) & (TYPE_LOAD | TYPE_STORE)) || is_starting_operation)
+               {
+                  GetPointer<commandport_obj>(selector_obj)
+                      ->add_activation(commandport_obj::transition(state, NULL_VERTEX,
+                                                                   commandport_obj::data_operation_pair(0, *op)));
+                  PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                                "       - add activation for " + selector_obj->get_string() + " in state "
+                                    << HLS->Rliv->get_name(state));
+               }
             }
          }
 
