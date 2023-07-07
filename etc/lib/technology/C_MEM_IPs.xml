@@ -2778,7 +2778,8 @@ ARRAY_1D_STD_BRAM_NN_instance : ARRAY_1D_STD_BRAM_NN_SDS_BUS_BASE generic map (B
           <port_o id="M_back_pressure" dir="IN" is_memory="1" is_master="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="MEMORY_CTRL in1 in2 in3 out1 Min_addr_ram Mout_addr_ram M_Rdata_ram Min_Wdata_ram Mout_Wdata_ram Min_data_ram_size Mout_data_ram_size" VERILOG_PROVIDED="wire  [BITSIZE_in2-1:0] tmp_addr;
+          <NP_functionality LIBRARY="MEMORY_CTRL in1 in2 in3 out1 Min_addr_ram Mout_addr_ram M_Rdata_ram Min_Wdata_ram Mout_Wdata_ram Min_data_ram_size Mout_data_ram_size" VERILOG_PROVIDED="
+wire [BITSIZE_in2-1:0] tmp_addr;
 wire int_sel_LOAD;
 wire int_sel_STORE;
 
@@ -2879,9 +2880,10 @@ assign done_port = (M_DataRdy &amp;&amp; in4) || (!in4 &amp;&amp; (sel_STORE || 
           <port_o id="M_back_pressure" dir="IN" is_memory="1" is_master="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="MEMORY_CTRL_D10 in1 in2 in3 out1 Min_addr_ram Mout_addr_ram M_Rdata_ram Min_Wdata_ram Mout_Wdata_ram Min_data_ram_size Mout_data_ram_size" VERILOG_PROVIDED="wire [BITSIZE_in2-1:0] tmp_addr;
-reg [BITSIZE_out1-1:0] delayed_out1 1INIT_ZERO_VALUE;
-reg delayed_M_DataRdy 1INIT_ZERO_VALUE;
+          <NP_functionality LIBRARY="MEMORY_CTRL_D10 in1 in2 in3 out1 Min_addr_ram Mout_addr_ram M_Rdata_ram Min_Wdata_ram Mout_Wdata_ram Min_data_ram_size Mout_data_ram_size" VERILOG_PROVIDED="
+reg [BITSIZE_out1-1:0] delayed_out1;
+reg delayed_M_DataRdy;
+wire [BITSIZE_in2-1:0] tmp_addr;
 wire int_sel_LOAD;
 wire int_sel_STORE;
 
@@ -2987,12 +2989,13 @@ assign done_port = (delayed_M_DataRdy &amp; in4) || (!in4 &amp; (sel_STORE || se
           <port_o id="M_back_pressure" dir="IN" is_memory="1" is_master="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="MEMORY_CTRL_D11 in1 in2 in3 out1 Min_addr_ram Mout_addr_ram M_Rdata_ram Min_Wdata_ram Mout_Wdata_ram Min_data_ram_size Mout_data_ram_size" VERILOG_PROVIDED="wire  [BITSIZE_in2-1:0] tmp_addr;
-reg delayed_sel_LOAD 1INIT_ZERO_VALUE;
-reg delayed_sel_STORE 1INIT_ZERO_VALUE;
-reg [BITSIZE_in1-1:0] delayed_in1 1INIT_ZERO_VALUE;
-reg [BITSIZE_in2-1:0] delayed_in2 1INIT_ZERO_VALUE;
-reg [BITSIZE_in3-1:0] delayed_in3 1INIT_ZERO_VALUE;
+          <NP_functionality LIBRARY="MEMORY_CTRL_D11 in1 in2 in3 out1 Min_addr_ram Mout_addr_ram M_Rdata_ram Min_Wdata_ram Mout_Wdata_ram Min_data_ram_size Mout_data_ram_size" VERILOG_PROVIDED="
+reg delayed_sel_LOAD;
+reg delayed_sel_STORE;
+reg [BITSIZE_in1-1:0] delayed_in1;
+reg [BITSIZE_in2-1:0] delayed_in2;
+reg [BITSIZE_in3-1:0] delayed_in3;
+wire [BITSIZE_in2-1:0] tmp_addr;
 wire int_sel_LOAD;
 wire int_sel_STORE;
 
@@ -3105,14 +3108,15 @@ assign done_port = (M_DataRdy &amp; in4) || (!in4 &amp; (delayed_sel_STORE || de
           <port_o id="M_back_pressure" dir="IN" is_memory="1" is_master="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="MEMORY_CTRL_D21 in1 in2 in3 out1 Min_addr_ram Mout_addr_ram M_Rdata_ram Min_Wdata_ram Mout_Wdata_ram Min_data_ram_size Mout_data_ram_size" VERILOG_PROVIDED="wire  [BITSIZE_in2-1:0] tmp_addr;
-reg [BITSIZE_out1-1:0] delayed_out1 1INIT_ZERO_VALUE;
-reg delayed_M_DataRdy 1INIT_ZERO_VALUE;
-reg delayed_sel_LOAD 1INIT_ZERO_VALUE;
-reg delayed_sel_STORE 1INIT_ZERO_VALUE;
-reg [BITSIZE_in1-1:0] delayed_in1 1INIT_ZERO_VALUE;
-reg [BITSIZE_in2-1:0] delayed_in2 1INIT_ZERO_VALUE;
-reg [BITSIZE_in3-1:0] delayed_in3 1INIT_ZERO_VALUE;
+          <NP_functionality LIBRARY="MEMORY_CTRL_D21 in1 in2 in3 out1 Min_addr_ram Mout_addr_ram M_Rdata_ram Min_Wdata_ram Mout_Wdata_ram Min_data_ram_size Mout_data_ram_size" VERILOG_PROVIDED="
+reg [BITSIZE_out1-1:0] delayed_out1;
+reg delayed_M_DataRdy;
+reg delayed_sel_LOAD;
+reg delayed_sel_STORE;
+reg [BITSIZE_in1-1:0] delayed_in1;
+reg [BITSIZE_in2-1:0] delayed_in2;
+reg [BITSIZE_in3-1:0] delayed_in3;
+wire [BITSIZE_in2-1:0] tmp_addr;
 wire int_sel_LOAD;
 wire int_sel_STORE;
 
@@ -3229,9 +3233,10 @@ assign done_port = delayed_M_DataRdy;
           <port_vector_o id="M_back_pressure" dir="IN" is_memory="1" is_master="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_vector_o>
-          <NP_functionality LIBRARY="MEMORY_CTRLN in1 in2 in3 in4 sel_LOAD sel_STORE out1 done_port Min_oe_ram Min_we_ram Mout_oe_ram Mout_we_ram M_DataRdy Min_addr_ram Mout_addr_ram M_Rdata_ram Min_Wdata_ram Mout_Wdata_ram Min_data_ram_size Mout_data_ram_size M_back_pressure" VERILOG_PROVIDED="localparam max_n_writes = PORTSIZE_sel_STORE &gt; PORTSIZE_Mout_we_ram ? PORTSIZE_sel_STORE : PORTSIZE_Mout_we_ram;
-parameter max_n_reads = PORTSIZE_sel_LOAD &gt; PORTSIZE_Mout_oe_ram ? PORTSIZE_sel_STORE : PORTSIZE_Mout_oe_ram;
-parameter max_n_rw = max_n_writes &gt; max_n_reads ? max_n_writes : max_n_reads;
+          <NP_functionality LIBRARY="MEMORY_CTRLN in1 in2 in3 in4 sel_LOAD sel_STORE out1 done_port Min_oe_ram Min_we_ram Mout_oe_ram Mout_we_ram M_DataRdy Min_addr_ram Mout_addr_ram M_Rdata_ram Min_Wdata_ram Mout_Wdata_ram Min_data_ram_size Mout_data_ram_size M_back_pressure" VERILOG_PROVIDED="
+localparam max_n_writes = PORTSIZE_sel_STORE &gt; PORTSIZE_Mout_we_ram ? PORTSIZE_sel_STORE : PORTSIZE_Mout_we_ram;
+localparam max_n_reads = PORTSIZE_sel_LOAD &gt; PORTSIZE_Mout_oe_ram ? PORTSIZE_sel_STORE : PORTSIZE_Mout_oe_ram;
+localparam max_n_rw = max_n_writes &gt; max_n_reads ? max_n_writes : max_n_reads;
 wire [PORTSIZE_sel_LOAD-1:0] int_sel_LOAD;
 wire [PORTSIZE_sel_STORE-1:0] int_sel_STORE;
 
@@ -3350,12 +3355,13 @@ assign done_port = (M_DataRdy &amp; in4) | (~in4 &amp; (sel_STORE | sel_LOAD));"
           <port_vector_o id="M_back_pressure" dir="IN" is_memory="1" is_master="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_vector_o>
-          <NP_functionality LIBRARY="MEMORY_CTRLN_D10 in1 in2 in3 in4 sel_LOAD sel_STORE out1 done_port Min_oe_ram Min_we_ram Mout_oe_ram Mout_we_ram M_DataRdy Min_addr_ram Mout_addr_ram M_Rdata_ram Min_Wdata_ram Mout_Wdata_ram Min_data_ram_size Mout_data_ram_size M_back_pressure" VERILOG_PROVIDED="localparam max_n_writes = PORTSIZE_sel_STORE &gt; PORTSIZE_Mout_we_ram ? PORTSIZE_sel_STORE : PORTSIZE_Mout_we_ram;
-parameter max_n_reads = PORTSIZE_sel_LOAD &gt; PORTSIZE_Mout_oe_ram ? PORTSIZE_sel_STORE : PORTSIZE_Mout_oe_ram;
-parameter max_n_rw = max_n_writes &gt; max_n_reads ? max_n_writes : max_n_reads;
-wire  [(PORTSIZE_in2*BITSIZE_in2)-1:0] tmp_addr;
-reg [PORTSIZE_out1*BITSIZE_out1-1:0] delayed_out1 1INIT_ZERO_VALUE;
-reg [PORTSIZE_M_DataRdy-1:0] delayed_M_DataRdy 1INIT_ZERO_VALUE;
+          <NP_functionality LIBRARY="MEMORY_CTRLN_D10 in1 in2 in3 in4 sel_LOAD sel_STORE out1 done_port Min_oe_ram Min_we_ram Mout_oe_ram Mout_we_ram M_DataRdy Min_addr_ram Mout_addr_ram M_Rdata_ram Min_Wdata_ram Mout_Wdata_ram Min_data_ram_size Mout_data_ram_size M_back_pressure" VERILOG_PROVIDED="
+localparam max_n_writes = PORTSIZE_sel_STORE &gt; PORTSIZE_Mout_we_ram ? PORTSIZE_sel_STORE : PORTSIZE_Mout_we_ram;
+localparam max_n_reads = PORTSIZE_sel_LOAD &gt; PORTSIZE_Mout_oe_ram ? PORTSIZE_sel_STORE : PORTSIZE_Mout_oe_ram;
+localparam max_n_rw = max_n_writes &gt; max_n_reads ? max_n_writes : max_n_reads;
+reg [PORTSIZE_out1*BITSIZE_out1-1:0] delayed_out1;
+reg [PORTSIZE_M_DataRdy-1:0] delayed_M_DataRdy;
+wire [(PORTSIZE_in2*BITSIZE_in2)-1:0] tmp_addr;
 wire [PORTSIZE_sel_LOAD-1:0] int_sel_LOAD;
 wire [PORTSIZE_sel_STORE-1:0] int_sel_STORE;
 
@@ -3478,16 +3484,16 @@ assign done_port = delayed_M_DataRdy;"/>
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_vector_o>
           <NP_functionality LIBRARY="MEMORY_CTRLN_D11 in1 in2 in3 in4 sel_LOAD sel_STORE out1 done_port Min_oe_ram Min_we_ram Mout_oe_ram Mout_we_ram M_DataRdy Min_addr_ram Mout_addr_ram M_Rdata_ram Min_Wdata_ram Mout_Wdata_ram Min_data_ram_size Mout_data_ram_size M_back_pressure" VERILOG_PROVIDED="
-parameter max_n_writes = PORTSIZE_sel_STORE &gt; PORTSIZE_Mout_we_ram ? PORTSIZE_sel_STORE : PORTSIZE_Mout_we_ram;
-parameter max_n_reads = PORTSIZE_sel_LOAD &gt; PORTSIZE_Mout_oe_ram ? PORTSIZE_sel_STORE : PORTSIZE_Mout_oe_ram;
-parameter max_n_rw = max_n_writes &gt; max_n_reads ? max_n_writes : max_n_reads;
-wire  [(PORTSIZE_in2*BITSIZE_in2)-1:0] tmp_addr;
-reg [PORTSIZE_sel_LOAD-1:0] delayed_sel_LOAD 1INIT_ZERO_VALUE;
-reg [PORTSIZE_sel_STORE-1:0] delayed_sel_STORE 1INIT_ZERO_VALUE;
-reg [PORTSIZE_in1*BITSIZE_in1-1:0] delayed_in1 1INIT_ZERO_VALUE;
-reg [PORTSIZE_in2*BITSIZE_in2-1:0] delayed_in2 1INIT_ZERO_VALUE;
-reg [PORTSIZE_in3*BITSIZE_in3-1:0] delayed_in3 1INIT_ZERO_VALUE;
-reg [PORTSIZE_in4*BITSIZE_in4-1:0] delayed_in4 1INIT_ZERO_VALUE;
+localparam max_n_writes = PORTSIZE_sel_STORE &gt; PORTSIZE_Mout_we_ram ? PORTSIZE_sel_STORE : PORTSIZE_Mout_we_ram;
+localparam max_n_reads = PORTSIZE_sel_LOAD &gt; PORTSIZE_Mout_oe_ram ? PORTSIZE_sel_STORE : PORTSIZE_Mout_oe_ram;
+localparam max_n_rw = max_n_writes &gt; max_n_reads ? max_n_writes : max_n_reads;
+reg [PORTSIZE_sel_LOAD-1:0] delayed_sel_LOAD;
+reg [PORTSIZE_sel_STORE-1:0] delayed_sel_STORE;
+reg [PORTSIZE_in1*BITSIZE_in1-1:0] delayed_in1;
+reg [PORTSIZE_in2*BITSIZE_in2-1:0] delayed_in2;
+reg [PORTSIZE_in3*BITSIZE_in3-1:0] delayed_in3;
+reg [PORTSIZE_in4*BITSIZE_in4-1:0] delayed_in4;
+wire [(PORTSIZE_in2*BITSIZE_in2)-1:0] tmp_addr;
 wire [PORTSIZE_sel_LOAD-1:0] int_sel_LOAD;
 wire [PORTSIZE_sel_STORE-1:0] int_sel_STORE;
 
@@ -3618,17 +3624,18 @@ assign done_port = (M_DataRdy &amp; in4)) | (~in4 &amp; (delayed_sel_LOAD | dela
           <port_vector_o id="M_back_pressure" dir="IN" is_memory="1" is_master="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_vector_o>
-          <NP_functionality LIBRARY="MEMORY_CTRLN_D21 in1 in2 in3 in4 sel_LOAD sel_STORE out1 done_port Min_oe_ram Min_we_ram Mout_oe_ram Mout_we_ram M_DataRdy Min_addr_ram Mout_addr_ram M_Rdata_ram Min_Wdata_ram Mout_Wdata_ram Min_data_ram_size Mout_data_ram_size M_back_pressure" VERILOG_PROVIDED="localparam max_n_writes = PORTSIZE_sel_STORE &gt; PORTSIZE_Mout_we_ram ? PORTSIZE_sel_STORE : PORTSIZE_Mout_we_ram;
-parameter max_n_reads = PORTSIZE_sel_LOAD &gt; PORTSIZE_Mout_oe_ram ? PORTSIZE_sel_STORE : PORTSIZE_Mout_oe_ram;
-parameter max_n_rw = max_n_writes &gt; max_n_reads ? max_n_writes : max_n_reads;
-wire  [(PORTSIZE_in2*BITSIZE_in2)-1:0] tmp_addr;
-reg [PORTSIZE_out1*BITSIZE_out1-1:0] delayed_out1 1INIT_ZERO_VALUE;
-reg [PORTSIZE_M_DataRdy-1:0] delayed_M_DataRdy 1INIT_ZERO_VALUE;
-reg [PORTSIZE_sel_LOAD-1:0] delayed_sel_LOAD 1INIT_ZERO_VALUE;
-reg [PORTSIZE_sel_STORE-1:0] delayed_sel_STORE 1INIT_ZERO_VALUE;
-reg [PORTSIZE_in1*BITSIZE_in1-1:0] delayed_in1 1INIT_ZERO_VALUE;
-reg [PORTSIZE_in2*BITSIZE_in2-1:0] delayed_in2 1INIT_ZERO_VALUE;
-reg [PORTSIZE_in3*BITSIZE_in3-1:0] delayed_in3 1INIT_ZERO_VALUE;
+          <NP_functionality LIBRARY="MEMORY_CTRLN_D21 in1 in2 in3 in4 sel_LOAD sel_STORE out1 done_port Min_oe_ram Min_we_ram Mout_oe_ram Mout_we_ram M_DataRdy Min_addr_ram Mout_addr_ram M_Rdata_ram Min_Wdata_ram Mout_Wdata_ram Min_data_ram_size Mout_data_ram_size M_back_pressure" VERILOG_PROVIDED="
+localparam max_n_writes = PORTSIZE_sel_STORE &gt; PORTSIZE_Mout_we_ram ? PORTSIZE_sel_STORE : PORTSIZE_Mout_we_ram;
+localparam max_n_reads = PORTSIZE_sel_LOAD &gt; PORTSIZE_Mout_oe_ram ? PORTSIZE_sel_STORE : PORTSIZE_Mout_oe_ram;
+localparam max_n_rw = max_n_writes &gt; max_n_reads ? max_n_writes : max_n_reads;
+reg [PORTSIZE_out1*BITSIZE_out1-1:0] delayed_out1;
+reg [PORTSIZE_M_DataRdy-1:0] delayed_M_DataRdy;
+reg [PORTSIZE_sel_LOAD-1:0] delayed_sel_LOAD;
+reg [PORTSIZE_sel_STORE-1:0] delayed_sel_STORE;
+reg [PORTSIZE_in1*BITSIZE_in1-1:0] delayed_in1;
+reg [PORTSIZE_in2*BITSIZE_in2-1:0] delayed_in2;
+reg [PORTSIZE_in3*BITSIZE_in3-1:0] delayed_in3;
+wire [(PORTSIZE_in2*BITSIZE_in2)-1:0] tmp_addr;
 wire [PORTSIZE_sel_LOAD-1:0] int_sel_LOAD;
 wire [PORTSIZE_sel_STORE-1:0] int_sel_STORE;
 
@@ -3753,19 +3760,20 @@ assign done_port = delayed_M_DataRdy;"/>
           <port_o id="M_DataRdy" dir="IN" is_memory="1" is_master="1" is_global="1" is_extern="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="BMEMORY_CTRL_D10 in1 in2 in3 out1 Min_addr_ram Mout_addr_ram M_Rdata_ram Min_Wdata_ram Mout_Wdata_ram Min_data_ram_size Mout_data_ram_size" VERILOG_PROVIDED="wire [BITSIZE_in2-1:0] tmp_addr;
-reg [BITSIZE_out1-1:0] delayed_out1 1INIT_ZERO_VALUE;
+          <NP_functionality LIBRARY="BMEMORY_CTRL_D10 in1 in2 in3 out1 Min_addr_ram Mout_addr_ram M_Rdata_ram Min_Wdata_ram Mout_Wdata_ram Min_data_ram_size Mout_data_ram_size" VERILOG_PROVIDED="
+wire [BITSIZE_in2-1:0] tmp_addr;
+reg [BITSIZE_out1-1:0] delayed_out1;
 assign tmp_addr = in2;
 assign Mout_addr_ram = ((sel_LOAD &amp; in4) || (sel_STORE &amp; in4)) ? tmp_addr : Min_addr_ram;
 assign Mout_oe_ram = (sel_LOAD &amp; in4) ? 1&apos;b1 : Min_oe_ram;
 assign Mout_we_ram = (sel_STORE &amp; in4) ? 1&apos;b1 : Min_we_ram;
 always @(posedge clock)
-  begin
-    delayed_out1 &lt;= M_Rdata_ram;
-  end
+begin
+  delayed_out1 &lt;= M_Rdata_ram;
+end
 assign out1 = delayed_out1;
 assign Mout_Wdata_ram = (sel_STORE &amp; in4) ? in1 : Min_Wdata_ram;
-assign Mout_data_ram_size = (sel_STORE &amp; in4) || (sel_LOAD &amp; in4) ? in3[BITSIZE_in3-1:0] : Min_data_ram_size;
+assign Mout_data_ram_size = ((sel_STORE &amp; in4) || (sel_LOAD &amp; in4)) ? in3[BITSIZE_in3-1:0] : Min_data_ram_size;
 // Add assertion here
 // psl default clock = (posedge clock);
 // psl ERROR_LOAD_Min_oe_ram: assert never {(sel_LOAD &amp; in4) &amp;&amp; Min_oe_ram};
@@ -3845,40 +3853,41 @@ assign Mout_data_ram_size = (sel_STORE &amp; in4) || (sel_LOAD &amp; in4) ? in3[
           <port_o id="M_DataRdy" dir="IN" is_memory="1" is_master="1" is_global="1" is_extern="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="BMEMORY_CTRL_D11 in1 in2 in3 out1 Min_addr_ram Mout_addr_ram M_Rdata_ram Min_Wdata_ram Mout_Wdata_ram Min_data_ram_size Mout_data_ram_size" VERILOG_PROVIDED="wire  [BITSIZE_in2-1:0] tmp_addr;
-reg delayed_sel_LOAD 1INIT_ZERO_VALUE;
-reg delayed_sel_STORE 1INIT_ZERO_VALUE;
-reg [BITSIZE_in1-1:0] delayed_in1 1INIT_ZERO_VALUE;
-reg [BITSIZE_in2-1:0] delayed_in2 1INIT_ZERO_VALUE;
-reg [BITSIZE_in3-1:0] delayed_in3 1INIT_ZERO_VALUE;
+          <NP_functionality LIBRARY="BMEMORY_CTRL_D11 in1 in2 in3 out1 Min_addr_ram Mout_addr_ram M_Rdata_ram Min_Wdata_ram Mout_Wdata_ram Min_data_ram_size Mout_data_ram_size" VERILOG_PROVIDED="
+wire [BITSIZE_in2-1:0] tmp_addr;
+reg delayed_sel_LOAD;
+reg delayed_sel_STORE;
+reg [BITSIZE_in1-1:0] delayed_in1;
+reg [BITSIZE_in2-1:0] delayed_in2;
+reg [BITSIZE_in3-1:0] delayed_in3;
 
 assign tmp_addr = delayed_in2;
-assign Mout_addr_ram = (delayed_sel_LOAD || delayed_sel_STORE) ? tmp_addr : Min_addr_ram;
+assign Mout_addr_ram = ((delayed_sel_LOAD || delayed_sel_STORE)) ? tmp_addr : Min_addr_ram;
 assign Mout_oe_ram = delayed_sel_LOAD ? 1&apos;b1 : Min_oe_ram;
 assign Mout_we_ram = delayed_sel_STORE ? 1&apos;b1 : Min_we_ram;
 always @(posedge clock)
-  begin
-    delayed_sel_LOAD &lt;= sel_LOAD &amp; in4;
-  end
+begin
+  delayed_sel_LOAD &lt;= sel_LOAD &amp; in4;
+end
 always @(posedge clock)
-  begin
-    delayed_sel_STORE &lt;= sel_STORE &amp; in4;
-  end
+begin
+  delayed_sel_STORE &lt;= sel_STORE &amp; in4;
+end
 always @(posedge clock)
-  begin
-    delayed_in1 &lt;= in1;
-  end
+begin
+  delayed_in1 &lt;= in1;
+end
 always @(posedge clock)
-  begin
-    delayed_in2 &lt;= in2;
-  end
+begin
+  delayed_in2 &lt;= in2;
+end
 always @(posedge clock)
-  begin
-    delayed_in3 &lt;= in3;
-  end
+begin
+  delayed_in3 &lt;= in3;
+end
 assign out1 = M_Rdata_ram;
 assign Mout_Wdata_ram = delayed_sel_STORE ? delayed_in1 : Min_Wdata_ram;
-assign Mout_data_ram_size = delayed_sel_STORE || delayed_sel_LOAD ? delayed_in3[BITSIZE_in3-1:0] : Min_data_ram_size;
+assign Mout_data_ram_size = (delayed_sel_STORE || delayed_sel_LOAD) ? delayed_in3[BITSIZE_in3-1:0] : Min_data_ram_size;
 // Add assertion here
 // psl default clock = (posedge clock);
 // psl ERROR_LOAD_Min_oe_ram: assert never {delayed_sel_LOAD &amp;&amp; Min_oe_ram};
@@ -3958,45 +3967,46 @@ assign Mout_data_ram_size = delayed_sel_STORE || delayed_sel_LOAD ? delayed_in3[
           <port_o id="M_DataRdy" dir="IN" is_memory="1" is_master="1" is_global="1" is_extern="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="BMEMORY_CTRL_D21 in1 in2 in3 out1 Min_addr_ram Mout_addr_ram M_Rdata_ram Min_Wdata_ram Mout_Wdata_ram Min_data_ram_size Mout_data_ram_size" VERILOG_PROVIDED="wire  [BITSIZE_in2-1:0] tmp_addr;
-reg delayed_sel_LOAD 1INIT_ZERO_VALUE;
-reg delayed_sel_STORE 1INIT_ZERO_VALUE;
-reg [BITSIZE_in1-1:0] delayed_in1 1INIT_ZERO_VALUE;
-reg [BITSIZE_in2-1:0] delayed_in2 1INIT_ZERO_VALUE;
-reg [BITSIZE_in3-1:0] delayed_in3 1INIT_ZERO_VALUE;
-reg [BITSIZE_out1-1:0] delayed_out1 1INIT_ZERO_VALUE;
+          <NP_functionality LIBRARY="BMEMORY_CTRL_D21 in1 in2 in3 out1 Min_addr_ram Mout_addr_ram M_Rdata_ram Min_Wdata_ram Mout_Wdata_ram Min_data_ram_size Mout_data_ram_size" VERILOG_PROVIDED="
+wire [BITSIZE_in2-1:0] tmp_addr;
+reg delayed_sel_LOAD;
+reg delayed_sel_STORE;
+reg [BITSIZE_in1-1:0] delayed_in1;
+reg [BITSIZE_in2-1:0] delayed_in2;
+reg [BITSIZE_in3-1:0] delayed_in3;
+reg [BITSIZE_out1-1:0] delayed_out1;
 
 assign tmp_addr = delayed_in2;
 assign Mout_addr_ram = (delayed_sel_LOAD || delayed_sel_STORE) ? tmp_addr : Min_addr_ram;
 assign Mout_oe_ram = delayed_sel_LOAD ? 1&apos;b1 : Min_oe_ram;
 assign Mout_we_ram = delayed_sel_STORE ? 1&apos;b1 : Min_we_ram;
 always @(posedge clock)
-  begin
-    delayed_sel_LOAD &lt;= sel_LOAD &amp; in4;
-  end
+begin
+  delayed_sel_LOAD &lt;= sel_LOAD &amp; in4;
+end
 always @(posedge clock)
-  begin
-    delayed_sel_STORE &lt;= sel_STORE &amp; in4;
-  end
+begin
+  delayed_sel_STORE &lt;= sel_STORE &amp; in4;
+end
 always @(posedge clock)
-  begin
-    delayed_in1 &lt;= in1;
-  end
+begin
+  delayed_in1 &lt;= in1;
+end
 always @(posedge clock)
-  begin
-    delayed_in2 &lt;= in2;
-  end
+begin
+  delayed_in2 &lt;= in2;
+end
 always @(posedge clock)
-  begin
-    delayed_in3 &lt;= in3;
-  end
+begin
+  delayed_in3 &lt;= in3;
+end
 always @(posedge clock)
-  begin
-    delayed_out1 &lt;= M_Rdata_ram;
-  end
+begin
+  delayed_out1 &lt;= M_Rdata_ram;
+end
 assign out1 = delayed_out1;
 assign Mout_Wdata_ram = delayed_sel_STORE ? delayed_in1 : Min_Wdata_ram;
-assign Mout_data_ram_size = delayed_sel_STORE || delayed_sel_LOAD ? delayed_in3[BITSIZE_in3-1:0] : Min_data_ram_size;
+assign Mout_data_ram_size = (delayed_sel_STORE || delayed_sel_LOAD) ? delayed_in3[BITSIZE_in3-1:0] : Min_data_ram_size;
 // Add assertion here
 // psl default clock = (posedge clock);
 // psl ERROR_LOAD_Min_oe_ram: assert never {delayed_sel_LOAD &amp;&amp; Min_oe_ram};
@@ -4076,13 +4086,14 @@ assign Mout_data_ram_size = delayed_sel_STORE || delayed_sel_LOAD ? delayed_in3[
           <port_vector_o id="M_DataRdy" dir="IN" is_memory="1" is_master="1" is_global="1" is_extern="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_vector_o>
-          <NP_functionality LIBRARY="BMEMORY_CTRLN_D10 in1 in2 in3 in4 sel_LOAD sel_STORE out1 Min_oe_ram Min_we_ram Mout_oe_ram Mout_we_ram M_DataRdy Min_addr_ram Mout_addr_ram M_Rdata_ram Min_Wdata_ram Mout_Wdata_ram Min_data_ram_size Mout_data_ram_size" VERILOG_PROVIDED="localparam max_n_writes = PORTSIZE_sel_STORE &gt; PORTSIZE_Mout_we_ram ? PORTSIZE_sel_STORE : PORTSIZE_Mout_we_ram;
-parameter max_n_reads = PORTSIZE_sel_LOAD &gt; PORTSIZE_Mout_oe_ram ? PORTSIZE_sel_STORE : PORTSIZE_Mout_oe_ram;
-parameter max_n_rw = max_n_writes &gt; max_n_reads ? max_n_writes : max_n_reads;
-wire  [(PORTSIZE_in2*BITSIZE_in2)-1:0] tmp_addr;
+          <NP_functionality LIBRARY="BMEMORY_CTRLN_D10 in1 in2 in3 in4 sel_LOAD sel_STORE out1 Min_oe_ram Min_we_ram Mout_oe_ram Mout_we_ram M_DataRdy Min_addr_ram Mout_addr_ram M_Rdata_ram Min_Wdata_ram Mout_Wdata_ram Min_data_ram_size Mout_data_ram_size" VERILOG_PROVIDED="
+localparam max_n_writes = PORTSIZE_sel_STORE &gt; PORTSIZE_Mout_we_ram ? PORTSIZE_sel_STORE : PORTSIZE_Mout_we_ram;
+localparam max_n_reads = PORTSIZE_sel_LOAD &gt; PORTSIZE_Mout_oe_ram ? PORTSIZE_sel_STORE : PORTSIZE_Mout_oe_ram;
+localparam max_n_rw = max_n_writes &gt; max_n_reads ? max_n_writes : max_n_reads;
+wire [(PORTSIZE_in2*BITSIZE_in2)-1:0] tmp_addr;
 wire [PORTSIZE_sel_LOAD-1:0] int_sel_LOAD;
 wire [PORTSIZE_sel_STORE-1:0] int_sel_STORE;
-reg [PORTSIZE_out1*BITSIZE_out1-1:0] delayed_out1 1INIT_ZERO_VALUE;
+reg [PORTSIZE_out1*BITSIZE_out1-1:0] delayed_out1;
 assign tmp_addr = in2;
 assign int_sel_STORE = sel_STORE &amp; in4;
 assign int_sel_LOAD = sel_LOAD &amp; in4;
@@ -4092,7 +4103,7 @@ genvar i;
   begin : L0
     assign Mout_addr_ram[(i+1)*BITSIZE_Mout_addr_ram-1:i*BITSIZE_Mout_addr_ram] = ((i &lt; PORTSIZE_sel_LOAD &amp;&amp; int_sel_LOAD[i]) || (i &lt; PORTSIZE_sel_STORE &amp;&amp; int_sel_STORE[i])) ? (tmp_addr[(i+1)*BITSIZE_in2-1:i*BITSIZE_in2]) : Min_addr_ram[(i+1)*BITSIZE_Min_addr_ram-1:i*BITSIZE_Min_addr_ram];
   end
-  endgenerate
+endgenerate
 assign Mout_oe_ram = int_sel_LOAD | Min_oe_ram;
 assign Mout_we_ram = int_sel_STORE | Min_we_ram;
 generate
@@ -4101,20 +4112,20 @@ generate
     always @(posedge clock)
       delayed_out1[(i+1)*BITSIZE_out1-1:i*BITSIZE_out1] &lt;= M_Rdata_ram[i*BITSIZE_M_Rdata_ram+BITSIZE_out1-1:i*BITSIZE_M_Rdata_ram];
     assign out1[(i+1)*BITSIZE_out1-1:i*BITSIZE_out1] = delayed_out1[(i+1)*BITSIZE_out1-1:i*BITSIZE_out1];
-end
+  end
 endgenerate
 generate
   for (i=0; i&lt;max_n_rw; i=i+1)
   begin : L2
     assign Mout_Wdata_ram[(i+1)*BITSIZE_Mout_Wdata_ram-1:i*BITSIZE_Mout_Wdata_ram] = int_sel_STORE[i] ? in1[(i+1)*BITSIZE_in1-1:i*BITSIZE_in1] : Min_Wdata_ram[(i+1)*BITSIZE_Min_Wdata_ram-1:i*BITSIZE_Min_Wdata_ram];
-end
+  end
 endgenerate
 generate
   for (i=0; i&lt;max_n_rw; i=i+1)
   begin : L3
     assign Mout_data_ram_size[(i+1)*BITSIZE_Mout_data_ram_size-1:i*BITSIZE_Mout_data_ram_size] = ((i &lt; PORTSIZE_sel_LOAD &amp;&amp; int_sel_LOAD[i]) || (i &lt; PORTSIZE_sel_STORE &amp;&amp; int_sel_STORE[i])) ? (in3[(i+1)*BITSIZE_in3-1:i*BITSIZE_in3]) : Min_data_ram_size[(i+1)*BITSIZE_Min_data_ram_size-1:i*BITSIZE_Min_data_ram_size];
   end
-  endgenerate"/>
+endgenerate"/>
         </component_o>
       </circuit>
     </cell>
@@ -4189,15 +4200,16 @@ generate
           <port_vector_o id="M_DataRdy" dir="IN" is_memory="1" is_master="1" is_global="1" is_extern="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_vector_o>
-          <NP_functionality LIBRARY="BMEMORY_CTRLN_D11 in1 in2 in3 in4 sel_LOAD sel_STORE out1 Min_oe_ram Min_we_ram Mout_oe_ram Mout_we_ram M_DataRdy Min_addr_ram Mout_addr_ram M_Rdata_ram Min_Wdata_ram Mout_Wdata_ram Min_data_ram_size Mout_data_ram_size" VERILOG_PROVIDED="localparam max_n_writes = PORTSIZE_sel_STORE &gt; PORTSIZE_Mout_we_ram ? PORTSIZE_sel_STORE : PORTSIZE_Mout_we_ram;
-parameter max_n_reads = PORTSIZE_sel_LOAD &gt; PORTSIZE_Mout_oe_ram ? PORTSIZE_sel_STORE : PORTSIZE_Mout_oe_ram;
-parameter max_n_rw = max_n_writes &gt; max_n_reads ? max_n_writes : max_n_reads;
-wire  [(PORTSIZE_in2*BITSIZE_in2)-1:0] tmp_addr;
-reg [PORTSIZE_sel_LOAD-1:0] delayed_sel_LOAD 1INIT_ZERO_VALUE;
-reg [PORTSIZE_sel_STORE-1:0] delayed_sel_STORE 1INIT_ZERO_VALUE;
-reg [PORTSIZE_in1*BITSIZE_in1-1:0] delayed_in1 1INIT_ZERO_VALUE;
-reg [PORTSIZE_in2*BITSIZE_in2-1:0] delayed_in2 1INIT_ZERO_VALUE;
-reg [PORTSIZE_in3*BITSIZE_in3-1:0] delayed_in3 1INIT_ZERO_VALUE;
+          <NP_functionality LIBRARY="BMEMORY_CTRLN_D11 in1 in2 in3 in4 sel_LOAD sel_STORE out1 Min_oe_ram Min_we_ram Mout_oe_ram Mout_we_ram M_DataRdy Min_addr_ram Mout_addr_ram M_Rdata_ram Min_Wdata_ram Mout_Wdata_ram Min_data_ram_size Mout_data_ram_size" VERILOG_PROVIDED="
+localparam max_n_writes = PORTSIZE_sel_STORE &gt; PORTSIZE_Mout_we_ram ? PORTSIZE_sel_STORE : PORTSIZE_Mout_we_ram;
+localparam max_n_reads = PORTSIZE_sel_LOAD &gt; PORTSIZE_Mout_oe_ram ? PORTSIZE_sel_STORE : PORTSIZE_Mout_oe_ram;
+localparam max_n_rw = max_n_writes &gt; max_n_reads ? max_n_writes : max_n_reads;
+wire [(PORTSIZE_in2*BITSIZE_in2)-1:0] tmp_addr;
+reg [PORTSIZE_sel_LOAD-1:0] delayed_sel_LOAD;
+reg [PORTSIZE_sel_STORE-1:0] delayed_sel_STORE;
+reg [PORTSIZE_in1*BITSIZE_in1-1:0] delayed_in1;
+reg [PORTSIZE_in2*BITSIZE_in2-1:0] delayed_in2;
+reg [PORTSIZE_in3*BITSIZE_in3-1:0] delayed_in3;
 
 always @(posedge clock)
   delayed_sel_LOAD &lt;= sel_LOAD &amp; in4;
@@ -4216,27 +4228,27 @@ genvar i;
   begin : L0
     assign Mout_addr_ram[(i+1)*BITSIZE_Mout_addr_ram-1:i*BITSIZE_Mout_addr_ram] = ((i &lt; PORTSIZE_sel_LOAD &amp;&amp; delayed_sel_LOAD[i]) || (i &lt; PORTSIZE_sel_STORE &amp;&amp; delayed_sel_STORE[i])) ? (tmp_addr[(i+1)*BITSIZE_in2-1:i*BITSIZE_in2]) : Min_addr_ram[(i+1)*BITSIZE_Min_addr_ram-1:i*BITSIZE_Min_addr_ram];
   end
-  endgenerate
+endgenerate
 assign Mout_oe_ram = delayed_sel_LOAD | Min_oe_ram;
 assign Mout_we_ram = delayed_sel_STORE | Min_we_ram;
 generate
   for (i=0; i&lt;max_n_reads; i=i+1)
   begin : L1
     assign out1[(i+1)*BITSIZE_out1-1:i*BITSIZE_out1] = M_Rdata_ram[i*BITSIZE_M_Rdata_ram+BITSIZE_out1-1:i*BITSIZE_M_Rdata_ram];
-end
+  end
 endgenerate
 generate
   for (i=0; i&lt;max_n_rw; i=i+1)
   begin : L2
     assign Mout_Wdata_ram[(i+1)*BITSIZE_Mout_Wdata_ram-1:i*BITSIZE_Mout_Wdata_ram] = delayed_sel_STORE[i] ? delayed_in1[(i+1)*BITSIZE_in1-1:i*BITSIZE_in1] : Min_Wdata_ram[(i+1)*BITSIZE_Min_Wdata_ram-1:i*BITSIZE_Min_Wdata_ram];
-end
+  end
 endgenerate
 generate
   for (i=0; i&lt;max_n_rw; i=i+1)
   begin : L3
     assign Mout_data_ram_size[(i+1)*BITSIZE_Mout_data_ram_size-1:i*BITSIZE_Mout_data_ram_size] = ((i &lt; PORTSIZE_sel_LOAD &amp;&amp; delayed_sel_LOAD[i]) || (i &lt; PORTSIZE_sel_STORE &amp;&amp; delayed_sel_STORE[i])) ? (delayed_in3[(i+1)*BITSIZE_in3-1:i*BITSIZE_in3]) : Min_data_ram_size[(i+1)*BITSIZE_Min_data_ram_size-1:i*BITSIZE_Min_data_ram_size];
   end
-  endgenerate"/>
+endgenerate"/>
         </component_o>
       </circuit>
     </cell>
@@ -4311,16 +4323,17 @@ generate
           <port_vector_o id="M_DataRdy" dir="IN" is_memory="1" is_master="1" is_global="1" is_extern="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_vector_o>
-          <NP_functionality LIBRARY="BMEMORY_CTRLN_D21 in1 in2 in3 in4 sel_LOAD sel_STORE out1 Min_oe_ram Min_we_ram Mout_oe_ram Mout_we_ram M_DataRdy Min_addr_ram Mout_addr_ram M_Rdata_ram Min_Wdata_ram Mout_Wdata_ram Min_data_ram_size Mout_data_ram_size" VERILOG_PROVIDED="localparam max_n_writes = PORTSIZE_sel_STORE &gt; PORTSIZE_Mout_we_ram ? PORTSIZE_sel_STORE : PORTSIZE_Mout_we_ram;
-parameter max_n_reads = PORTSIZE_sel_LOAD &gt; PORTSIZE_Mout_oe_ram ? PORTSIZE_sel_STORE : PORTSIZE_Mout_oe_ram;
-parameter max_n_rw = max_n_writes &gt; max_n_reads ? max_n_writes : max_n_reads;
-wire  [(PORTSIZE_in2*BITSIZE_in2)-1:0] tmp_addr;
-reg [PORTSIZE_sel_LOAD-1:0] delayed_sel_LOAD 1INIT_ZERO_VALUE;
-reg [PORTSIZE_sel_STORE-1:0] delayed_sel_STORE 1INIT_ZERO_VALUE;
-reg [PORTSIZE_in1*BITSIZE_in1-1:0] delayed_in1 1INIT_ZERO_VALUE;
-reg [PORTSIZE_in2*BITSIZE_in2-1:0] delayed_in2 1INIT_ZERO_VALUE;
-reg [PORTSIZE_in3*BITSIZE_in3-1:0] delayed_in3 1INIT_ZERO_VALUE;
-reg [PORTSIZE_out1*BITSIZE_out1-1:0] delayed_out1 1INIT_ZERO_VALUE;
+          <NP_functionality LIBRARY="BMEMORY_CTRLN_D21 in1 in2 in3 in4 sel_LOAD sel_STORE out1 Min_oe_ram Min_we_ram Mout_oe_ram Mout_we_ram M_DataRdy Min_addr_ram Mout_addr_ram M_Rdata_ram Min_Wdata_ram Mout_Wdata_ram Min_data_ram_size Mout_data_ram_size" VERILOG_PROVIDED="
+localparam max_n_writes = PORTSIZE_sel_STORE &gt; PORTSIZE_Mout_we_ram ? PORTSIZE_sel_STORE : PORTSIZE_Mout_we_ram;
+localparam max_n_reads = PORTSIZE_sel_LOAD &gt; PORTSIZE_Mout_oe_ram ? PORTSIZE_sel_STORE : PORTSIZE_Mout_oe_ram;
+localparam max_n_rw = max_n_writes &gt; max_n_reads ? max_n_writes : max_n_reads;
+wire [(PORTSIZE_in2*BITSIZE_in2)-1:0] tmp_addr;
+reg [PORTSIZE_sel_LOAD-1:0] delayed_sel_LOAD;
+reg [PORTSIZE_sel_STORE-1:0] delayed_sel_STORE;
+reg [PORTSIZE_in1*BITSIZE_in1-1:0] delayed_in1;
+reg [PORTSIZE_in2*BITSIZE_in2-1:0] delayed_in2;
+reg [PORTSIZE_in3*BITSIZE_in3-1:0] delayed_in3;
+reg [PORTSIZE_out1*BITSIZE_out1-1:0] delayed_out1;
 
 always @(posedge clock)
   delayed_sel_LOAD &lt;= sel_LOAD &amp; in4;
@@ -4339,7 +4352,7 @@ genvar i;
   begin : L0
     assign Mout_addr_ram[(i+1)*BITSIZE_Mout_addr_ram-1:i*BITSIZE_Mout_addr_ram] = ((i &lt; PORTSIZE_sel_LOAD &amp;&amp; delayed_sel_LOAD[i]) || (i &lt; PORTSIZE_sel_STORE &amp;&amp; delayed_sel_STORE[i])) ? (tmp_addr[(i+1)*BITSIZE_in2-1:i*BITSIZE_in2]) : Min_addr_ram[(i+1)*BITSIZE_Min_addr_ram-1:i*BITSIZE_Min_addr_ram];
   end
-  endgenerate
+endgenerate
 assign Mout_oe_ram = delayed_sel_LOAD | Min_oe_ram;
 assign Mout_we_ram = delayed_sel_STORE | Min_we_ram;
 generate
@@ -4348,20 +4361,20 @@ generate
     always @(posedge clock)
       delayed_out1[(i+1)*BITSIZE_out1-1:i*BITSIZE_out1] &lt;= M_Rdata_ram[i*BITSIZE_M_Rdata_ram+BITSIZE_out1-1:i*BITSIZE_M_Rdata_ram];
     assign out1[(i+1)*BITSIZE_out1-1:i*BITSIZE_out1] = delayed_out1[(i+1)*BITSIZE_out1-1:i*BITSIZE_out1];
-end
+  end
 endgenerate
 generate
   for (i=0; i&lt;max_n_rw; i=i+1)
   begin : L2
     assign Mout_Wdata_ram[(i+1)*BITSIZE_Mout_Wdata_ram-1:i*BITSIZE_Mout_Wdata_ram] = delayed_sel_STORE[i] ? delayed_in1[(i+1)*BITSIZE_in1-1:i*BITSIZE_in1] : Min_Wdata_ram[(i+1)*BITSIZE_Min_Wdata_ram-1:i*BITSIZE_Min_Wdata_ram];
-end
+  end
 endgenerate
 generate
   for (i=0; i&lt;max_n_rw; i=i+1)
   begin : L3
     assign Mout_data_ram_size[(i+1)*BITSIZE_Mout_data_ram_size-1:i*BITSIZE_Mout_data_ram_size] = ((i &lt; PORTSIZE_sel_LOAD &amp;&amp; delayed_sel_LOAD[i]) || (i &lt; PORTSIZE_sel_STORE &amp;&amp; delayed_sel_STORE[i])) ? (delayed_in3[(i+1)*BITSIZE_in3-1:i*BITSIZE_in3]) : Min_data_ram_size[(i+1)*BITSIZE_Min_data_ram_size-1:i*BITSIZE_Min_data_ram_size];
   end
-  endgenerate"/>
+endgenerate"/>
         </component_o>
       </circuit>
     </cell>
