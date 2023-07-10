@@ -98,9 +98,10 @@ void compatibility_based_register::create_compatibility_graph()
          ++k_inner;
          while(k_inner != k_end)
          {
-            const auto tail = HLS->storage_value_information->get_storage_value_index(v, *k);
+            const auto tail = HLS->storage_value_information->get_storage_value_index(v, k->first, k->second);
             THROW_ASSERT(tail < CG_num_vertices, "wrong compatibility graph index");
-            const auto head = HLS->storage_value_information->get_storage_value_index(v, *k_inner);
+            const auto head =
+                HLS->storage_value_information->get_storage_value_index(v, k_inner->first, k_inner->second);
             THROW_ASSERT(head < CG_num_vertices, "wrong compatibility graph index");
             if(tail < head)
             {
@@ -118,7 +119,7 @@ void compatibility_based_register::create_compatibility_graph()
    {
       for(auto vi = 0U; vi < vj; ++vi)
       {
-         if(!conflict_map(vi, vj) && HLS->storage_value_information->are_value_bitsize_compatible(vi, vj))
+         if(!conflict_map(vi, vj) && HLS->storage_value_information->are_storage_value_compatible(vi, vj))
          {
             boost::graph_traits<compatibility_graph>::edge_descriptor e1;
             const auto edge_weight = HLS->storage_value_information->get_compatibility_weight(vi, vj);

@@ -175,6 +175,7 @@ bambu_specific_test4/simple_c4_handshake.c \
 bambu_specific_test4/simpleif_c1_none.c \
 bambu_specific_test4/simpleif_c1_none_test.xml \
 bambu_specific_test4/simple_test.c \
+bambu_specific_test4/ac_range.cpp \
 bambu_specific_test4_list \
 bambu_specific_test5.sh \
 bambu_specific_test5/adders.c \
@@ -188,6 +189,10 @@ bambu_specific_test6.sh \
 bambu_specific_test6/sat_op.ll \
 bambu_specific_test6_list \
 bambu_specific_test_list \
+bambu_specific_test_modelsim.sh \
+bambu_specific_test_modelsim_list \
+bambu_specific_test_modelsim/test_open.c \
+bambu_specific_test_modelsim/bin_test.dat \
 discrepancy_list \
 function_pointers.sh \
 function_pointers/bsearch_glibc/bsearch-specialized.c \

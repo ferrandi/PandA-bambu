@@ -306,8 +306,13 @@ llvm::PassPluginLibraryInfo CLANG_PLUGIN_INFO(_plugin_topfname)()
                  }
                  return false;
               });
-              PB.registerPipelineEarlySimplificationEPCallback(
-                  [&](llvm::ModulePassManager& MPM, llvm::PassBuilder::OptimizationLevel) { return load(MPM); });
+              PB.registerPipelineEarlySimplificationEPCallback([&](llvm::ModulePassManager& MPM,
+#if __clang_major__ < 16
+                                                                   llvm::PassBuilder::OptimizationLevel
+#else
+                                                                   llvm::OptimizationLevel
+#endif
+                                                               ) { return load(MPM); });
            }};
 }
 

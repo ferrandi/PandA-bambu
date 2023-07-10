@@ -178,7 +178,7 @@ namespace percy
                     return;
                 }
 
-                std::vector<int> refcount_(steps.size());
+                std::vector<int> _refcount(steps.size());
                 std::vector<dynamic_truth_table> tmps(steps.size());
                 std::vector<dynamic_truth_table> ins;
                 std::vector<dynamic_truth_table> fs(outputs.size());
@@ -187,7 +187,7 @@ namespace percy
                     const auto& v = steps[i];
                     for (const auto fid : v) {
                         if (fid > nr_in) {
-                            refcount_[fid - nr_in - 1]++;
+                            _refcount[fid - nr_in - 1]++;
                         }
                     }
                 }
@@ -195,11 +195,11 @@ namespace percy
                 for (auto i = 0u; i < outputs.size(); i++) {
                     const auto step_idx = outputs[i] >> 1;
                     if (step_idx > nr_in) {
-                        refcount_[step_idx - nr_in - 1]++;
+                        _refcount[step_idx - nr_in - 1]++;
                     }
                 }
 
-                for (auto count : refcount_) {
+                for (auto count : _refcount) {
                     assert(count > 0);
                 }
 
@@ -259,8 +259,8 @@ namespace percy
                     }
 
                     step_idx -= (nr_in + 1);
-                    assert(refcount_[step_idx] >= 1);
-                    if (refcount_[step_idx] == 1) {
+                    assert(_refcount[step_idx] >= 1);
+                    if (_refcount[step_idx] == 1) {
                         operators[step_idx] = ~operators[step_idx];
                     } else {
                         // This output points to a shared step that needs to
@@ -287,7 +287,7 @@ namespace percy
                         set_output(i, nr_in + steps.size(), false);
                         tmps.push_back(fs[i]);
 
-                        refcount_[step_idx]--;
+                        _refcount[step_idx]--;
                     }
                 }
             }
@@ -650,6 +650,7 @@ namespace percy
                 nr_in = c.nr_in;
                 fanin = c.fanin;
                 op_tt_size = c.op_tt_size;
+                compiled_functions = c.compiled_functions;
                 steps = c.steps;
                 operators = c.operators;
                 outputs = c.outputs;

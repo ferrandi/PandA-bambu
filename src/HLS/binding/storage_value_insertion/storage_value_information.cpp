@@ -124,7 +124,8 @@ unsigned int StorageValueInformation::get_number_of_storage_values() const
    return number_of_storage_values;
 }
 
-unsigned int StorageValueInformation::get_variable_index(unsigned int storage_value_index) const
+std::pair<unsigned int, unsigned int>
+StorageValueInformation::get_variable_index(unsigned int storage_value_index) const
 {
    THROW_ASSERT(variable_index_map.find(storage_value_index) != variable_index_map.end(),
                 "the storage value is missing");
@@ -134,8 +135,8 @@ unsigned int StorageValueInformation::get_variable_index(unsigned int storage_va
 int StorageValueInformation::get_compatibility_weight(unsigned int storage_value_index1,
                                                       unsigned int storage_value_index2) const
 {
-   unsigned int var1 = get_variable_index(storage_value_index1);
-   unsigned int var2 = get_variable_index(storage_value_index2);
+   unsigned int var1 = get_variable_index(storage_value_index1).first;
+   unsigned int var2 = get_variable_index(storage_value_index2).first;
 #if 0
    if(vw2vertex.find(var1) == vw2vertex.end())
    {
@@ -143,6 +144,15 @@ int StorageValueInformation::get_compatibility_weight(unsigned int storage_value
       return 1;
    }
 #endif
+   const tree_managerRef TreeM = HLS_mgr->get_tree_manager();
+   if(tree_helper::is_parameter(TreeM, var1))
+   {
+      return 1;
+   }
+   if(tree_helper::is_parameter(TreeM, var2))
+   {
+      return 1;
+   }
    THROW_ASSERT(vw2vertex.find(var1) != vw2vertex.end(), "variable not in the map " + STR(var1));
    THROW_ASSERT(vw2vertex.find(var2) != vw2vertex.end(),
                 "variable " + STR(HLS_mgr->get_tree_manager()->CGetTreeNode(var2)) + " not in the map");
@@ -374,8 +384,8 @@ bool StorageValueInformation::are_value_bitsize_compatible(unsigned int storage_
    const auto var1_nid = get_variable_index(storage_value_index1);
    const auto var2_nid = get_variable_index(storage_value_index2);
    const auto TM = HLS_mgr->get_tree_manager();
-   const auto var1 = TM->CGetTreeReindex(var1_nid);
-   const auto var2 = TM->CGetTreeReindex(var2_nid);
+   const auto var1 = TM->CGetTreeReindex(var1_nid.first);
+   const auto var2 = TM->CGetTreeReindex(var2_nid.first);
    const auto isInt1 = tree_helper::IsSignedIntegerType(var1);
    const auto isInt2 = tree_helper::IsSignedIntegerType(var2);
    const auto isReal1 = tree_helper::IsRealType(var1);

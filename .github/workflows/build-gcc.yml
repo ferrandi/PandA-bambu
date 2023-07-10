@@ -26,7 +26,7 @@ env:
   storage-url: ${{secrets.CI_STORAGE_URL}}
   storage-user: ${{secrets.CI_STORAGE_USER}}
   storage-token: ${{secrets.CI_STORAGE_TOKEN}}
-  storage-path: compilers
+  storage-path: release/compiler
   host_jobs: $J
 
 jobs:
@@ -55,10 +55,10 @@ jobs:
           dist-name: gcc-${{inputs.version}}-bambu
           config-args: -v --with-pkgversion="Ubuntu gcc-${{inputs.version}}-bambu" --with-bugurl="file:///usr/share/doc/gcc-${{inputs.version}}/README.Bugs" --program-suffix=-${{inputs.version}} ${{ inputs.configure }}
       - name: Upload GCC-${{inputs.version}} dist directory
-        uses: ./.github/actions/storage-upload
-        with:
-          path: ${{steps.build.outputs.dist-dir}}/.
-          storage-url: "${{env.storage-url}}"
-          storage-path: "${{env.storage-path}}"
-          username: "${{env.storage-user}}"
-          password: "${{env.storage-token}}"
+        shell: bash
+        run: |
+          DIST_TAR="${{steps.build.outputs.dist-dir}}.tar.xz"
+          STORAGE_URL="${{env.storage-url}}/${{env.storage-path}}/${DIST_TAR}"
+          tar -C ${{steps.build.outputs.dist-dir}} . --mode="u+rwX,g+rwX,o+rX" -cJf ${DIST_TAR}
+          curl -L --fail -u '${{env.storage-user}}':'${{env.storage-token}}' -T "${DIST_TAR}" "$STORAGE_URL"
+          echo "### New release available at https://release.bambuhls.eu/compiler/${DIST_TAR}" >> $GITHUB_STEP_SUMMARY

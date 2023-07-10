@@ -13,7 +13,7 @@ using namespace mockturtle;
 
 TEST_CASE( "Check Akers for MAJ-3", "[akers_synthesis]" )
 {
-  std::vector<kitty::dynamic_truth_table> xs{5, kitty::dynamic_truth_table( 3 )};
+  std::vector<kitty::dynamic_truth_table> xs{ 5, kitty::dynamic_truth_table( 3 ) };
 
   create_majority( xs[0] );
   for ( auto i = 0u; i < unsigned( xs[0].num_bits() ); i++ )
@@ -33,7 +33,7 @@ TEST_CASE( "Check Akers for MAJ-3", "[akers_synthesis]" )
 
 TEST_CASE( "Check Akers for MAJ-5", "[akers_synthesis]" )
 {
-  std::vector<kitty::dynamic_truth_table> xs{7, kitty::dynamic_truth_table( 5 )};
+  std::vector<kitty::dynamic_truth_table> xs{ 7, kitty::dynamic_truth_table( 5 ) };
 
   create_majority( xs[0] );
   for ( auto i = 0u; i < unsigned( xs[0].num_bits() ); i++ )
@@ -50,7 +50,7 @@ TEST_CASE( "Check Akers for MAJ-5", "[akers_synthesis]" )
   kitty::create_nth_var( xs[6], 4 );
 
   mig.foreach_gate( [&]( auto n ) {
-    std::vector<kitty::dynamic_truth_table> fanin{3, kitty::dynamic_truth_table( 5 )};
+    std::vector<kitty::dynamic_truth_table> fanin{ 3, kitty::dynamic_truth_table( 5 ) };
     mig.foreach_fanin( n, [&]( auto s, auto j ) {
       fanin[j] = xs[mig.node_to_index( mig.get_node( s ) ) + 1];
     } );
@@ -61,7 +61,7 @@ TEST_CASE( "Check Akers for MAJ-5", "[akers_synthesis]" )
 
 TEST_CASE( "Check Akers for MAJ-5 in XMG", "[akers_synthesis]" )
 {
-  std::vector<kitty::dynamic_truth_table> xs{7, kitty::dynamic_truth_table( 5 )};
+  std::vector<kitty::dynamic_truth_table> xs{ 7, kitty::dynamic_truth_table( 5 ) };
 
   create_majority( xs[0] );
   for ( auto i = 0u; i < unsigned( xs[0].num_bits() ); i++ )
@@ -78,7 +78,7 @@ TEST_CASE( "Check Akers for MAJ-5 in XMG", "[akers_synthesis]" )
   kitty::create_nth_var( xs[6], 4 );
 
   xmg.foreach_gate( [&]( auto n ) {
-    std::vector<kitty::dynamic_truth_table> fanin{3, kitty::dynamic_truth_table( 5 )};
+    std::vector<kitty::dynamic_truth_table> fanin{ 3, kitty::dynamic_truth_table( 5 ) };
     xmg.foreach_fanin( n, [&]( auto s, auto j ) {
       fanin[j] = xs[xmg.node_to_index( xmg.get_node( s ) ) + 1];
     } );
@@ -89,15 +89,17 @@ TEST_CASE( "Check Akers for MAJ-5 in XMG", "[akers_synthesis]" )
 
 TEST_CASE( "Check Akers for random - 4 inputs", "[akers_synthesis]" )
 {
+  std::array<std::string, 5> tts = { "d5d0", "fe52", "ad1b", "401a", "79e2" };
+
   for ( auto y = 0; y < 5; y++ )
   {
-    std::vector<kitty::dynamic_truth_table> xs{6, kitty::dynamic_truth_table( 4 )};
+    std::vector<kitty::dynamic_truth_table> xs{ 6, kitty::dynamic_truth_table( 4 ) };
     kitty::create_nth_var( xs[2], 0 );
     kitty::create_nth_var( xs[3], 1 );
     kitty::create_nth_var( xs[4], 2 );
     kitty::create_nth_var( xs[5], 3 );
 
-    create_random( xs[0] );
+    create_from_hex_string( xs[0], tts[y] );
 
     for ( auto i = 0u; i < unsigned( xs[0].num_bits() ); i++ )
     {
@@ -108,7 +110,7 @@ TEST_CASE( "Check Akers for random - 4 inputs", "[akers_synthesis]" )
     if ( mig.size() > 4 )
     {
       mig.foreach_gate( [&]( auto n ) {
-        std::vector<kitty::dynamic_truth_table> fanin{3, kitty::dynamic_truth_table( 4 )};
+        std::vector<kitty::dynamic_truth_table> fanin{ 3, kitty::dynamic_truth_table( 4 ) };
         mig.foreach_fanin( n, [&]( auto s, auto j ) {
           if ( mig.node_to_index( mig.get_node( s ) ) == 0 )
           {
@@ -134,16 +136,18 @@ TEST_CASE( "Check Akers for random - 4 inputs", "[akers_synthesis]" )
 
 TEST_CASE( "Check Akers for random - 5 inputs", "[akers_synthesis]" )
 {
+  std::array<std::string, 5> tts = { "e3cee67b", "bb5bee39", "b220ff4c", "fa43751f", "9ec83bf4" };
+
   for ( auto y = 0; y < 5; y++ )
   {
-    std::vector<kitty::dynamic_truth_table> xs{7, kitty::dynamic_truth_table( 5 )};
+    std::vector<kitty::dynamic_truth_table> xs{ 7, kitty::dynamic_truth_table( 5 ) };
     kitty::create_nth_var( xs[2], 0 );
     kitty::create_nth_var( xs[3], 1 );
     kitty::create_nth_var( xs[4], 2 );
     kitty::create_nth_var( xs[5], 3 );
     kitty::create_nth_var( xs[6], 4 );
 
-    create_random( xs[0] );
+    create_from_hex_string( xs[0], tts[y] );
 
     for ( auto i = 0u; i < unsigned( xs[0].num_bits() ); i++ )
     {
@@ -154,7 +158,7 @@ TEST_CASE( "Check Akers for random - 5 inputs", "[akers_synthesis]" )
     if ( mig.size() > 6 )
     {
       mig.foreach_gate( [&]( auto n ) {
-        std::vector<kitty::dynamic_truth_table> fanin{3, kitty::dynamic_truth_table( 5 )};
+        std::vector<kitty::dynamic_truth_table> fanin{ 3, kitty::dynamic_truth_table( 5 ) };
         mig.foreach_fanin( n, [&]( auto s, auto j ) {
           if ( mig.node_to_index( mig.get_node( s ) ) == 0 )
           {
@@ -182,7 +186,7 @@ TEST_CASE( "Check Akers for random - 6 inputs", "[akers_synthesis]" )
 {
   for ( auto y = 0; y < 1; y++ )
   {
-    std::vector<kitty::dynamic_truth_table> xs{8, kitty::dynamic_truth_table( 6 )};
+    std::vector<kitty::dynamic_truth_table> xs{ 8, kitty::dynamic_truth_table( 6 ) };
     kitty::create_nth_var( xs[2], 0 );
     kitty::create_nth_var( xs[3], 1 );
     kitty::create_nth_var( xs[4], 2 );
@@ -190,7 +194,7 @@ TEST_CASE( "Check Akers for random - 6 inputs", "[akers_synthesis]" )
     kitty::create_nth_var( xs[6], 4 );
     kitty::create_nth_var( xs[7], 5 );
 
-    create_random( xs[0] );
+    create_from_hex_string( xs[0], "32b43db39dde2b16" );
 
     for ( auto i = 0u; i < unsigned( xs[0].num_bits() ); i++ )
     {
@@ -201,7 +205,7 @@ TEST_CASE( "Check Akers for random - 6 inputs", "[akers_synthesis]" )
     if ( mig.size() > 6 )
     {
       mig.foreach_gate( [&]( auto n ) {
-        std::vector<kitty::dynamic_truth_table> fanin{3, kitty::dynamic_truth_table( 6 )};
+        std::vector<kitty::dynamic_truth_table> fanin{ 3, kitty::dynamic_truth_table( 6 ) };
         mig.foreach_fanin( n, [&]( auto s, auto j ) {
           if ( mig.node_to_index( mig.get_node( s ) ) == 0 )
           {
@@ -236,8 +240,8 @@ TEST_CASE( "Check leaves iterator -- easy case ", "[akers_synthesis]" )
   operations.push_back( mig.create_and( a, b ) );
   operations.push_back( mig.create_and( c, d ) );
 
-  std::vector<kitty::dynamic_truth_table> xs_in{2, kitty::dynamic_truth_table( 2 )};
-  std::vector<kitty::dynamic_truth_table> xs{5, kitty::dynamic_truth_table( 4 )};
+  std::vector<kitty::dynamic_truth_table> xs_in{ 2, kitty::dynamic_truth_table( 2 ) };
+  std::vector<kitty::dynamic_truth_table> xs{ 5, kitty::dynamic_truth_table( 4 ) };
   create_from_binary_string( xs_in[0], "0110" );
   for ( auto i = 0u; i < unsigned( xs_in[0].num_bits() ); i++ )
   {
@@ -261,7 +265,7 @@ TEST_CASE( "Check leaves iterator -- easy case ", "[akers_synthesis]" )
   if ( mig.size() > 6 )
   {
     mig.foreach_gate( [&]( auto n ) {
-      std::vector<kitty::dynamic_truth_table> fanin{3, kitty::dynamic_truth_table( 4 )};
+      std::vector<kitty::dynamic_truth_table> fanin{ 3, kitty::dynamic_truth_table( 4 ) };
       mig.foreach_fanin( n, [&]( auto s, auto j ) {
         if ( mig.node_to_index( mig.get_node( s ) ) == 0 )
         {

@@ -279,7 +279,6 @@ always @(*) begin
   next_ARSIZE = ARSIZE;
   next_ARBURST = ARBURST;
   next_ARLEN = ARLEN;
-  misalignment = 0;
   next_first_read = first_read;
   next_read_mask = read_mask;
   next_AWREADY = AWREADY;
@@ -288,6 +287,7 @@ always @(*) begin
       out << R"(
    case (_present_state)
     S_IDLE: begin 
+      misalignment = 0;
       next_axi_awaddr = 'b0;
       next_axi_awvalid = 1'b0;
       next_axi_wdata = 'b0;
@@ -314,9 +314,9 @@ always @(*) begin
 
       out << R"(
           `ifdef _SIM_HAVE_CLOG2
-            next_ARSIZE = $clog2(in2 / 8);
+            next_ARSIZE = $clog2(in2 >> 3);
           `else
-            next_ARSIZE = `CLOG2(in2 / 8);
+            next_ARSIZE = `CLOG2(in2 >> 3);
           `endif
           next_axi_bready = 1'b0;
           next_axi_rready = 1'b1;
@@ -324,16 +324,17 @@ always @(*) begin
 
       out << "          next_first_read = 1'b1;\n";
       out << "          next_axi_araddr = " << _ports_in[i_in4].name << ";\n";
-      out << "          misalignment = " << _ports_in[i_in4].name << " % (1 << next_ARSIZE);\n";
+      out << "          misalignment = " << _ports_in[i_in4].name << " & ((1 << next_ARSIZE) - 1);\n";
       out << "          if(misalignment > 'b0) begin\n";
       out << "            next_ARLEN = 'b1;\n";
       out << "            next_ARBURST = 'b1;\n";
-      out << "            next_read_mask = -(1 << (misalignment * 8));\n";
+      out << "            next_read_mask = -(1 << (misalignment << 3));\n";
       out << "          end else begin\n";
       out << "            next_ARLEN = 'b0;\n";
       out << "            next_ARBURST = 'b0;\n";
       out << "            next_read_mask = -1;\n";
       out << "          end\n";
+      out << "          next_read_mask = next_read_mask & ((1 << in2) - 1);\n";
       out << "          next_axi_arvalid = 1'b1;\n";
       out << "          _next_state = S_RD_BURST;\n";
       out << "      end else if (" << _ports_in[i_start].name << " && " << _ports_in[i_in1].name << ") begin\n";
@@ -343,14 +344,18 @@ always @(*) begin
       out << "          next_axi_awaddr = " << _ports_in[i_in4].name << ";\n";
       out << "          next_axi_awvalid = 1'b1;\n";
       out << "          `ifdef _SIM_HAVE_CLOG2\n";
-      out << "            next_AWSIZE = $clog2(in2 / 8);\n";
+      out << "            next_AWSIZE = $clog2(in2 >> 3);\n";
       out << "          `else\n";
-      out << "            next_AWSIZE = `CLOG2(in2 / 8);\n";
+      out << "            next_AWSIZE = `CLOG2(in2 >> 3);\n";
       out << "          `endif\n";
       /* Compute the misalignment, assert all the bits to the left of the misaligned one */
-      out << "          misalignment = " << _ports_in[i_in4].name << " % (1 << next_AWSIZE);\n";
-      out << "          next_WSTRB = -(1 << misalignment);\n";
-      out << "          next_axi_wdata = " << _ports_in[i_in3].name << ";\n";
+      out << "          misalignment = " << _ports_in[i_in4].name << " & ((1 << next_AWSIZE) - 1);\n";
+      for(unsigned i = 0; i < _ports_out[o_WSTRB].type_size; i++)
+      {
+         out << "          next_WSTRB[" << STR(i) << "] = " << STR(i) << " >= misalignment && (in2 >> 3 > " << STR(i)
+             << ");\n";
+      }
+      out << "          next_axi_wdata = " << _ports_in[i_in3].name << " << (misalignment << 3);\n";
       out << R"(          next_axi_wvalid = 1'b1;
           next_axi_wlast = !(misalignment > 'b0);
           if(next_axi_wlast) begin
@@ -389,8 +394,8 @@ always @(*) begin
       out << "      if(" << _ports_in[i_RVALID].name << " && axi_rready) begin\n";
       out << R"(          if(!first_read) begin
             if(~read_mask != 'b0)
-              next_acc_rdata = acc_rdata | ()" +
-                 _ports_in[i_RDATA].name + R"( & (~read_mask));
+              next_acc_rdata = acc_rdata >> (misalignment << 3) | (()" +
+                 _ports_in[i_RDATA].name + R"( & (~read_mask & ((1 << in2) - 1))) << (misalignment << 3));
             next_axi_rready = 1'b0;
 )";
       out << "             if(!" << _ports_in[i_RLAST].name << ") begin\n";
@@ -445,9 +450,10 @@ always @(*) begin
       out << R"(
         /* If the last transfer was not aligned and the slave is ready, transfer the rest */
         next_WSTRB = ~WSTRB;
-        next_axi_wdata = axi_wdata;
-        next_axi_wvalid = 1'b1;
-        next_axi_wlast = 1'b1;
+        next_axi_wdata = )"
+          << _ports_in[i_in3].name << R"( >> (misalignment << 3);
+          next_axi_wvalid = 1'b1;
+      next_axi_wlast = 1'b1;
 )";
       out << R"(      end
       else if (next_AWREADY && !WSTRB[0]) begin
@@ -558,6 +564,9 @@ end)";
   reg                                               state, state_next;
 )";
       out << "localparam S_IDLE = 1'b0, S_FLUSH = 1'b1;\n";
+      out << "initial begin\n";
+      out << "  state <= S_IDLE;\n";
+      out << "end\n";
       out << "assign " << _ports_out[o_ARUSER].name << " = 0;\n";
       out << "assign " << _ports_out[o_ARREGION].name << " = 0;\n";
       out << "assign " << _ports_out[o_WUSER].name << " = 0;\n";
@@ -593,6 +602,26 @@ end)";
       out << "      end\n";
 
       out << R"(
+`ifdef __ICARUS__
+  `define _CACHE_CNT 1
+`elsif VERILATOR
+  `define _CACHE_CNT 1
+`elsif MODEL_TECH
+  `define _CACHE_CNT 1
+`elsif VCS
+  `define _CACHE_CNT 1
+`elsif NCVERILOG
+  `define _CACHE_CNT 1
+`elsif XILINX_SIMULATOR
+  `define _CACHE_CNT 1
+`elsif XILINX_ISIM
+  `define _CACHE_CNT 1
+`else
+  `define _CACHE_CNT 0
+`endif
+      )";
+
+      out << R"(
       IOB_cache_axi #(
           .FE_ADDR_W(BITSIZE_in4),
           .BE_ADDR_W(BITSIZE_in4),
@@ -611,8 +640,8 @@ end)";
           .WRITE_POL()"
           << write_pol << R"(),
           .AXI_ID(0),
-          .CTRL_CACHE(0),
-          .CTRL_CNT(0),
+          .CTRL_CACHE(`_CACHE_CNT),
+          .CTRL_CNT(`_CACHE_CNT),
           .BITSIZE_addr(0 + BITSIZE_in4 - $clog2(BITSIZE_in3 / 8)),
           .BITSIZE_wdata(BITSIZE_in3),
           .BITSIZE_wstrb(BITSIZE_in3 / 8),
@@ -684,5 +713,6 @@ end)";
       out << "          .clk(clock),\n";
       out << "          .reset(!reset) /* IOB reset is active high */\n";
       out << "       );\n";
+      out << "`undef _CACHE_CNT\n";
    }
 }

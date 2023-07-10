@@ -173,7 +173,7 @@ fu_bindingRef fu_binding::create_fu_binding(const HLS_managerConstRef _HLSMgr, c
 void fu_binding::bind(const vertex& v, unsigned int unit, unsigned int index)
 {
    const auto key = std::make_pair(unit, index);
-   if(unique_table.count(key) == 0)
+   if(!unique_table.count(key))
    {
       unique_table[key] =
           generic_objRef(new funit_obj(allocation_information->get_string_name(unit) + "_i" + STR(index), unit, index));
@@ -203,8 +203,8 @@ OpVertexSet fu_binding::get_operations(unsigned int unit, unsigned int index) co
 const funit_obj& fu_binding::operator[](const vertex& v)
 {
    const auto statement_index = op_graph->CGetOpNodeInfo(v)->GetNodeId();
-   THROW_ASSERT(op_binding.find(statement_index) != op_binding.end(), "vertex not preset");
-   return *(GetPointer<funit_obj>(op_binding.find(statement_index)->second));
+   THROW_ASSERT(op_binding.count(statement_index), "vertex not preset");
+   return *(GetPointer<funit_obj>(op_binding.at(statement_index)));
 }
 
 bool fu_binding::is_assigned(const vertex& v) const
@@ -215,7 +215,7 @@ bool fu_binding::is_assigned(const vertex& v) const
 
 bool fu_binding::is_assigned(const unsigned int statement_index) const
 {
-   return op_binding.find(statement_index) != op_binding.end();
+   return op_binding.count(statement_index);
 }
 
 std::list<unsigned int> fu_binding::get_allocation_list() const
@@ -250,7 +250,7 @@ unsigned int fu_binding::get_assign(const unsigned int statement_index) const
    THROW_ASSERT(op_binding.find(statement_index) != op_binding.end(),
                 "Operation " + TreeM->get_tree_node_const(statement_index)->ToString() + " not assigned");
    THROW_ASSERT(GetPointer<funit_obj>(op_binding.find(statement_index)->second), "");
-   return GetPointer<funit_obj>(op_binding.find(statement_index)->second)->get_fu();
+   return GetPointer<funit_obj>(op_binding.at(statement_index))->get_fu();
 }
 
 std::string fu_binding::get_fu_name(vertex const& v) const
@@ -261,7 +261,7 @@ std::string fu_binding::get_fu_name(vertex const& v) const
 unsigned int fu_binding::get_index(vertex const& v) const
 {
    const auto statement_index = op_graph->CGetOpNodeInfo(v)->GetNodeId();
-   return GetPointer<funit_obj>(op_binding.find(statement_index)->second)->get_index();
+   return GetPointer<funit_obj>(op_binding.at(statement_index))->get_index();
 }
 
 structural_objectRef fu_binding::add_gate(const HLS_managerRef HLSMgr, const hlsRef HLS, const technology_nodeRef fu,
@@ -2395,7 +2395,7 @@ void fu_binding::fill_array_ref_memory(std::ostream& init_file_a, std::ostream& 
    {
       std::vector<unsigned long long> dims;
       tree_helper::get_array_dim_and_bitsize(TreeM, array_type_node->index, dims, elts_size);
-      THROW_ASSERT(dims.size(), "something of wrong happen");
+      THROW_ASSERT(dims.size(), "something wrong happened");
       vec_size = std::accumulate(dims.begin(), dims.end(), 1, [](unsigned int a, unsigned int b) { return a * b; });
    }
    else if(GetPointer<const integer_type>(GET_CONST_NODE(array_type_node)) ||
@@ -2806,7 +2806,7 @@ void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_n
          const auto main_element_precision = element_precision;
          if(designated_initializers_used)
          {
-            THROW_ASSERT(field_list, "something of wrong happen");
+            THROW_ASSERT(field_list, "something wrong happened");
             auto flend = field_list->end();
             auto fli = field_list->begin();
             std::vector<tree_nodeRef>::const_iterator inext;
@@ -3048,7 +3048,7 @@ void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_n
          unsigned long long size_of_data;
          dims.clear();
          tree_helper::get_array_dim_and_bitsize(TreeM, type_n->index, dims, size_of_data);
-         THROW_ASSERT(size_of_data == elmt_bitsize, "something of wrong happen");
+         THROW_ASSERT(size_of_data == elmt_bitsize, "something wrong happened");
          auto num_elements =
              std::accumulate(dims.begin(), dims.end(), 1U, [](unsigned int a, unsigned int b) { return a * b; });
          std::string value;
@@ -3085,7 +3085,7 @@ void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_n
          }
          else
          {
-            THROW_ERROR("Something of unexpected happened: " + STR(init_node->index) + " | " +
+            THROW_ERROR("Something unexpected happened: " + STR(init_node->index) + " | " +
                         GET_NODE(ue->op)->get_kind_text());
          }
          break;
@@ -3457,5 +3457,5 @@ void fu_binding::set_ports_are_swapped(vertex v, bool condition)
 generic_objRef fu_binding::get(const vertex v) const
 {
    const auto statement_index = op_graph->CGetOpNodeInfo(v)->GetNodeId();
-   return op_binding.find(statement_index)->second;
+   return op_binding.at(statement_index);
 }

@@ -13756,6 +13756,7 @@ wire valid,tagsmatch;
 
    assign m_axi_arvalid = m_axi_arvalid_int;
    assign m_axi_rready = m_axi_rready_int;
+   assign m_axi_arqos = 'b0;
            
    generate
       if(LINE2MEM_W &gt; 0)
@@ -14107,6 +14108,7 @@ wire valid,tagsmatch;
 
    assign m_axi_awvalid = m_axi_awvalid_int;
    assign m_axi_wvalid = m_axi_wvalid_int;
+   assign m_axi_awqos = 'b0;
 
    // Write failed signals
    assign b_fail = m_axi_bvalid &amp;&amp; (m_axi_bresp != 2&apos;b00);
@@ -14988,7 +14990,7 @@ wire valid,tagsmatch;
    reg r_empty;
    reg w_full;
 
-   reg error = 0;
+   reg error = 0, next_error;
    reg w_full_nxt = 0;
    reg write_fail_reg;
 
@@ -15033,10 +15035,11 @@ wire valid,tagsmatch;
    end
    
    `IOB_COMB begin
+       next_error = error;
        if(write_fail)
-        error = 1&apos;b1;
+        next_error = 1&apos;b1;
        else if(r_en_int)
-        error = 1&apos;b0;
+        next_error = 1&apos;b0;
        w_full_nxt = w_full;
        if(write_fail)
         w_full_nxt = 1&apos;b1;
@@ -15052,11 +15055,12 @@ wire valid,tagsmatch;
    
    always @(posedge clk) begin
     write_fail_reg &lt;= write_fail;
+    error &lt;= next_error;
    end
 
    //FIFO empty
    `IOB_WIRE(r_empty_nxt, 1)
-   assign r_empty_nxt = (level_nxt[0+:ADDR_W+1] &lt; r_incr) &amp;&amp; (error == 0);
+   assign r_empty_nxt = (level_nxt[0+:ADDR_W+1] &lt; r_incr) &amp;&amp; (next_error == 0);
    `IOB_REG_AR(clk, arst, 1&apos;d1, r_empty, r_empty_nxt)
 
    //FIFO full
@@ -15093,8 +15097,8 @@ wire valid,tagsmatch;
       .w_data        (write_fail_reg ? r_data : w_data),
       .w_addr        (w_addr),
 
-      .r_en          (error || r_en_int),
-      .r_addr        (error ? b_addr : r_addr),
+      .r_en          (next_error || r_en_int),
+      .r_addr        (next_error ? b_addr : r_addr),
       .r_data        (r_data)
       );
    `undef IOB_MAX
@@ -16145,9 +16149,9 @@ wire valid,tagsmatch;
         begin
            //cache-control hit-miss counters enables
            assign write_hit  = ready &amp; ( hit &amp; write_access);
-           assign write_miss = ready &amp; (~hit &amp; write_access);
+           assign write_miss = replace_valid &amp; write_access;
            assign read_hit   = ready &amp; ( hit &amp;  read_access);
-           assign read_miss  = replace_valid;//will also subtract read_hit
+           assign read_miss  = replace_valid &amp; read_access;
         end
       else
         begin
@@ -16581,16 +16585,16 @@ wire valid,tagsmatch;
           <NP_functionality LIBRARY="IOB_cache_control CTRL_CNT rdata" VERILOG_PROVIDED="
    `define CTRL_ADDR_W 4
     //Addresses for cache controller's task
-   `define ADDR_BUFFER_EMPTY     (`CTRL_ADDR_W'd1)
-   `define ADDR_BUFFER_FULL      (`CTRL_ADDR_W'd2) 
-   `define ADDR_CACHE_HIT        (`CTRL_ADDR_W'd3) 
-   `define ADDR_CACHE_MISS       (`CTRL_ADDR_W'd4) 
-   `define ADDR_CACHE_READ_HIT   (`CTRL_ADDR_W'd5) 
-   `define ADDR_CACHE_READ_MISS  (`CTRL_ADDR_W'd6) 
-   `define ADDR_CACHE_WRITE_HIT  (`CTRL_ADDR_W'd7) 
-   `define ADDR_CACHE_WRITE_MISS (`CTRL_ADDR_W'd8) 
-   `define ADDR_RESET_COUNTER    (`CTRL_ADDR_W'd9) 
-   `define ADDR_CACHE_INVALIDATE (`CTRL_ADDR_W'd10)
+   `define ADDR_BUFFER_EMPTY          (`CTRL_ADDR_W'd1)
+   `define ADDR_BUFFER_FULL           (`CTRL_ADDR_W'd2) 
+   `define ADDR_CACHE_HIT             (`CTRL_ADDR_W'd3) 
+   `define ADDR_CACHE_MISS            (`CTRL_ADDR_W'd4) 
+   `define ADDR_CACHE_READ_ACCESS     (`CTRL_ADDR_W'd5) 
+   `define ADDR_CACHE_READ_MISS       (`CTRL_ADDR_W'd6) 
+   `define ADDR_CACHE_WRITE_ACCESS    (`CTRL_ADDR_W'd7) 
+   `define ADDR_CACHE_WRITE_MISS      (`CTRL_ADDR_W'd8) 
+   `define ADDR_RESET_COUNTER         (`CTRL_ADDR_W'd9) 
+   `define ADDR_CACHE_INVALIDATE      (`CTRL_ADDR_W'd10)
 
    localparam FE_DATA_W = BITSIZE_rdata;
 
@@ -16600,46 +16604,45 @@ wire valid,tagsmatch;
 
    generate
       if(CTRL_CNT)
-        begin
+        begin : cnt
            
-           reg [FE_DATA_W-1:0]             read_hit_cnt, read_miss_cnt, write_hit_cnt, write_miss_cnt;
+           reg [FE_DATA_W-1:0]             read_access_cnt, read_miss_cnt, write_access_cnt, write_miss_cnt;
            wire [FE_DATA_W-1:0]            hit_cnt, miss_cnt;
            reg                             counter_reset;
 
-           assign hit_cnt  = read_hit_cnt  + write_hit_cnt;
+           assign hit_cnt  = read_access_cnt  + write_access_cnt;
            assign miss_cnt = read_miss_cnt + write_miss_cnt;
            
            always @ (posedge clk, posedge reset)
              begin 		
 	        if (reset) 
 	          begin
-                     read_hit_cnt  &lt;= {FE_DATA_W{1&apos;b0}};
+                     read_access_cnt  &lt;= {FE_DATA_W{1&apos;b0}};
 	             read_miss_cnt &lt;= {FE_DATA_W{1&apos;b0}};
-	             write_hit_cnt  &lt;= {FE_DATA_W{1&apos;b0}};
+	             write_access_cnt  &lt;= {FE_DATA_W{1&apos;b0}};
 	             write_miss_cnt &lt;= {FE_DATA_W{1&apos;b0}};
                   end
                 else
                   begin
                      if (counter_reset) 
 	               begin
-                          read_hit_cnt  &lt;= {FE_DATA_W{1&apos;b0}};
+                          read_access_cnt  &lt;= {FE_DATA_W{1&apos;b0}};
 	                  read_miss_cnt &lt;= {FE_DATA_W{1&apos;b0}};
-	                  write_hit_cnt  &lt;= {FE_DATA_W{1&apos;b0}};
+	                  write_access_cnt  &lt;= {FE_DATA_W{1&apos;b0}};
 	                  write_miss_cnt &lt;= {FE_DATA_W{1&apos;b0}};
                        end
                      else
 	               if (read_hit)
 	                 begin
-		            read_hit_cnt &lt;= read_hit_cnt + 1; 
+		            read_access_cnt &lt;= read_access_cnt + 1; 
 	                 end
 	               else if (write_hit)
 	                 begin
-		            write_hit_cnt &lt;= write_hit_cnt + 1;
+		            write_access_cnt &lt;= write_access_cnt + 1;
 	                 end
 	               else if (read_miss)
 	                 begin
 		            read_miss_cnt &lt;= read_miss_cnt + 1;
-                            read_hit_cnt &lt;= read_hit_cnt - 1;
                          end
 	               else if (write_miss)
 	                 begin
@@ -16647,9 +16650,9 @@ wire valid,tagsmatch;
 	                 end
 	               else
 	                 begin
-		            read_hit_cnt &lt;= read_hit_cnt;
+		            read_access_cnt &lt;= read_access_cnt;
 		            read_miss_cnt &lt;= read_miss_cnt;
-		            write_hit_cnt &lt;= write_hit_cnt;
+		            write_access_cnt &lt;= write_access_cnt;
 		            write_miss_cnt &lt;= write_miss_cnt;
 	                 end
 	          end // else: !if(ctrl_arst)   
@@ -16662,16 +16665,16 @@ wire valid,tagsmatch;
 	        counter_reset &lt;= 1&apos;b0;
 	        ready &lt;= valid; // Sends acknowlege the next clock cycle after request (handshake)               
 	        if(valid)
-                  if (addr == `ADDR_CACHE_HIT)
+            if (addr == `ADDR_CACHE_HIT)
 	            rdata &lt;= hit_cnt;
-                  else if (addr == `ADDR_CACHE_MISS)
+            else if (addr == `ADDR_CACHE_MISS)
 	            rdata &lt;= miss_cnt;
-	          else if (addr == `ADDR_CACHE_READ_HIT)
-	            rdata &lt;= read_hit_cnt;
+	          else if (addr == `ADDR_CACHE_READ_ACCESS)
+	            rdata &lt;= read_access_cnt;
 	          else if (addr == `ADDR_CACHE_READ_MISS)
 	            rdata &lt;= read_miss_cnt;
-	          else if (addr == `ADDR_CACHE_WRITE_HIT)
-	            rdata &lt;= write_hit_cnt;
+	          else if (addr == `ADDR_CACHE_WRITE_ACCESS)
+	            rdata &lt;= write_access_cnt;
 	          else if (addr == `ADDR_CACHE_WRITE_MISS)
 	            rdata &lt;= write_miss_cnt;
 	          else if (addr == `ADDR_RESET_COUNTER)
@@ -16679,9 +16682,9 @@ wire valid,tagsmatch;
 	          else if (addr == `ADDR_CACHE_INVALIDATE)
 	            invalidate &lt;= 1&apos;b1;	
 	          else if (addr == `ADDR_BUFFER_EMPTY)
-                    rdata &lt;= wtbuf_empty;
-                  else if (addr == `ADDR_BUFFER_FULL)
-                    rdata &lt;= wtbuf_full;   
+              rdata &lt;= wtbuf_empty;
+            else if (addr == `ADDR_BUFFER_FULL)
+              rdata &lt;= wtbuf_full;
              end // always @ (posedge clk)
         end // if (CTRL_CNT)
       else
@@ -16968,7 +16971,7 @@ wire valid,tagsmatch;
       .reset (reset),
       //front-end port
       .valid (valid),
-      .addr  (addr),
+      .addr  ({{CTRL_CACHE{1&apos;b0}}, addr}),
       .wdata (wdata),
       .wstrb (wstrb),
       .rdata (rdata),
@@ -17150,7 +17153,7 @@ wire valid,tagsmatch;
    
    
    generate
-      if (CTRL_CACHE)
+      if (CTRL_CACHE) begin : ctrl
         IOB_cache_control
           #(
             .CTRL_CNT   (CTRL_CNT),
@@ -17160,6 +17163,517 @@ wire valid,tagsmatch;
         (
          .clk   (clk),
          .reset (reset),
+         //control&apos;s signals
+         .valid (ctrl_valid),
+         .addr  (ctrl_addr),
+         //write data
+         .wtbuf_full (wtbuf_full),
+`ifdef CTRL_IO
+         .wtbuf_empty (wtbuf_empty &amp; wtb_empty_in),
+`else
+         .wtbuf_empty (wtbuf_empty), 
+`endif
+         .write_hit  (write_hit),
+         .write_miss (write_miss),
+         .read_hit   (read_hit),
+         .read_miss  (read_miss),
+         ////////////
+         .rdata (ctrl_rdata),
+         .ready (ctrl_ready),
+         .invalidate (invalidate)
+         );
+      end else
+        begin
+           assign ctrl_rdata = 1&apos;bx;
+           assign ctrl_ready = 1&apos;bx;
+           assign invalidate = 1&apos;b0;
+        end // else: !if(CTRL_CACHE)
+      
+   endgenerate
+   `undef CTRL_IO
+   `undef CTRL_ADDR_W
+   `undef WORD_ADDR
+     "/>
+        </component_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>IOB_cache_minimal_axi</name>
+      <circuit>
+        <component_o id="IOB_cache_minimal_axi">
+          <description>This component is based on the work available at https://github.com/IObundle/iob-cache and it is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2023 Politecnico di Milano</copyright>  
+          <authors>Claudio Barone &lt;claudio.barone@polimi.it&gt;</authors> 
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="IOB_cache_minimal_axi"/>
+          <parameter name="FE_ADDR_W"> 32 </parameter>
+          <parameter name="BE_ADDR_W"> 32 </parameter>
+          <parameter name="BE_DATA_W"> 32 </parameter>
+          <parameter name="N_WAYS"> 1 </parameter>
+          <parameter name="LINE_OFF_W"> 8 </parameter>
+          <parameter name="WORD_OFF_W"> 4 </parameter>
+          <parameter name="WTBUF_DEPTH_W"> 5 </parameter>
+          <parameter name="REP_POLICY"> 2 </parameter>
+          <parameter name="WRITE_POL"> 0 </parameter>
+          <parameter name="AXI_ID"> 0 </parameter>
+          <parameter name="CTRL_CACHE"> 0 </parameter>
+          <parameter name="CTRL_CNT"> 0 </parameter>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1" />
+          </port_o>
+          <port_o id="reset" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1" />
+          </port_o>
+          <port_o id="done_input" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1" />
+          </port_o>          
+          <port_o id="done" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1" />
+          </port_o>
+          <port_o id="Min_oe_ram" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1" />
+          </port_o>
+          <port_o id="Min_we_ram" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1" />
+          </port_o>
+          <port_o id="Min_addr_ram" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="32" />
+          </port_o>
+          <port_o id="Min_Wdata_ram" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="32" />
+          </port_o>
+          <port_o id="Min_data_size_ram" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="5" />
+          </port_o>
+          <port_o id="Min_accelerator_context_in" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1" />
+          </port_o>
+          <port_o id="Min_back_pressure" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1" />
+          </port_o>
+          <port_o id="Min_datardy" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1" />
+          </port_o>
+          <port_o id="Min_Rdata_ram" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="32" />
+          </port_o>
+          <port_o id="Min_accelerator_context" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1" />
+          </port_o>
+          <port_o id="Min_back_pressure_in" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1" />
+          </port_o>
+          <port_o id="m_axi_awid" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="m_axi_awaddr" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="m_axi_awlen" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="m_axi_awsize" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="3"/>
+          </port_o>
+          <port_o id="m_axi_awburst" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="2"/>
+          </port_o>
+          <port_o id="m_axi_awlock" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="m_axi_awcache" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="4"/>
+          </port_o>
+          <port_o id="m_axi_awprot" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="3"/>
+          </port_o>
+          <port_o id="m_axi_awqos" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="4"/>
+          </port_o>
+          <port_o id="m_axi_awvalid" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="m_axi_awready" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="m_axi_wdata" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="m_axi_wstrb" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="m_axi_wlast" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="m_axi_wvalid" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="m_axi_wready" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="m_axi_bid" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="m_axi_bresp" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="2"/>
+          </port_o>
+          <port_o id="m_axi_bvalid" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="m_axi_bready" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="m_axi_arid" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="m_axi_araddr" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="m_axi_arlen" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="m_axi_arsize" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="3"/>
+          </port_o>       
+          <port_o id="m_axi_arburst" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="2"/>
+          </port_o>  
+          <port_o id="m_axi_arlock" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="m_axi_arcache" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="4"/>
+          </port_o>
+          <port_o id="m_axi_arprot" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="3"/>
+          </port_o>
+          <port_o id="m_axi_arqos" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="4"/>
+          </port_o>
+          <port_o id="m_axi_arvalid" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="m_axi_arready" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="m_axi_rid" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="m_axi_rdata" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="m_axi_rresp" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="2"/>
+          </port_o>
+          <port_o id="m_axi_rlast" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="m_axi_rvalid" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="m_axi_rready" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <!--TODO: CB fix reset handling -->
+          <NP_functionality LIBRARY="IOB_cache_minimal_axi FE_ADDR_W BE_ADDR_W BE_DATA_W N_WAYS LINE_OFF_W WORD_OFF_W WTBUF_DEPTH_W REP_POLICY WRITE_POL AXI_ID CTRL_CACHE CTRL_CNT Min_addr_ram Min_Wdata_ram Min_Rdata_ram Min_data_size_ram Min_accelerator_context_in Min_accelerator_context m_axi_awid m_axi_awaddr m_axi_awlen m_axi_wdata m_axi_wstrb m_axi_bid m_axi_arid m_axi_araddr m_axi_arlen m_axi_rid m_axi_rdata" IP_COMPONENT="IOB_front_end,IOB_cache_memory,IOB_back_end_axi,IOB_cache_control" VERILOG_PROVIDED="
+   //Cache-Control
+   `define CTRL_IO
+   `define CTRL_ADDR_W 4
+   //Address-port
+   `define WORD_ADDR // Word-addressable, (BE) addr becomes word-addressable (doesn't receive the byte-offset).
+
+   
+   localparam FE_DATA_W = BITSIZE_Min_Wdata_ram;
+   localparam NWAY_W = $clog2(N_WAYS);
+   localparam FE_NBYTES = FE_DATA_W / 8;
+   localparam FE_BYTE_W = $clog2(FE_NBYTES);
+   localparam BE_NBYTES = BE_DATA_W / 8;
+   localparam BE_BYTE_W = $clog2(BE_NBYTES);
+   localparam LINE2MEM_W = WORD_OFF_W-$clog2(BE_DATA_W/FE_DATA_W);
+   localparam AXI_ADDR_W = BE_ADDR_W;
+   localparam AXI_DATA_W = BE_DATA_W;
+   localparam AXI_ID_W = 1;
+   localparam AXI_LEN_W = 8;
+
+   wire                                         data_valid, data_ready;
+   wire [FE_ADDR_W -1:FE_BYTE_W]                data_addr; 
+   wire [FE_DATA_W-1 : 0]                       data_wdata, data_rdata;
+   wire [FE_NBYTES-1: 0]                        data_wstrb;
+   
+   //stored signals
+   wire [FE_ADDR_W -1:FE_BYTE_W]                data_addr_reg; 
+   wire [FE_DATA_W-1 : 0]                       data_wdata_reg;
+   wire [FE_NBYTES-1: 0]                        data_wstrb_reg;
+   wire                                         data_valid_reg;
+
+   //back-end write-channel
+   wire                                         write_valid, write_ready;
+   wire [FE_ADDR_W-1:FE_BYTE_W + WRITE_POL*WORD_OFF_W] write_addr;
+   wire [FE_DATA_W + WRITE_POL*(FE_DATA_W*(2**WORD_OFF_W)-FE_DATA_W)-1 :0] write_wdata;
+   wire [FE_NBYTES-1:0]                                                    write_wstrb;
+   wire                                                                    write_fail;
+   wire                                                                    write_done;
+   
+   //back-end read-channel
+   wire                                                                    replace_valid, replace;
+   wire [FE_ADDR_W -1:BE_BYTE_W+LINE2MEM_W]                                replace_addr; 
+   wire                                                                    read_valid;
+   wire [LINE2MEM_W-1:0]                                                   read_addr;
+   wire [BE_DATA_W-1:0]                                                    read_rdata;
+   
+   //cache-control
+   wire                                                                    ctrl_valid, ctrl_ready;   
+   wire [`CTRL_ADDR_W-1:0]                                                 ctrl_addr;
+   wire                                                                    wtbuf_full, wtbuf_empty;
+   wire                                                                    write_hit, write_miss, read_hit, read_miss;
+   wire [CTRL_CACHE*(FE_DATA_W-1):0]                                       ctrl_rdata;
+   wire                                                                    invalidate;
+   
+   wire                                                                    dirty;
+   
+   reg [BITSIZE_Min_accelerator_context - 1 : 0]                           acc_ctxt;
+   reg                                                                     done_input_reg = 1'b0;
+
+   reg                                                                     done_input_reg = 1'b0, done_input_next;
+
+   reg                                                                     Min_back_pressure_progress;
+
+   reg                                                                     Min_back_pressure;
+   reg [BITSIZE_Min_addr_ram - 1 : 0]                                      addr_reg;
+
+   reg                                                                     done;
+
+   always @(*) begin
+     done_input_next = done_input ? 1'b1 : done_input_reg;
+     if((Min_oe_ram || Min_we_ram) &amp;&amp; !Min_back_pressure_in) begin
+       addr_reg = addr;
+     end
+   end
+
+   always @(posedge clock) begin
+     done_input_reg &lt;= done_input_next;
+     if((Min_oe_ram || Min_we_ram) &amp;&amp; !data_valid_reg) begin
+       acc_ctxt &lt;= Min_accelerator_context_in;
+     end
+     if(done_input_next) begin
+       done &lt;= !dirty;
+     end
+     Min_back_pressure &lt;= data_valid_reg &amp;&amp; (Min_we_ram || Min_oe_ram) ? Min_back_pressure_progress : 1'b0;
+     Min_back_pressure_progress &lt;= data_valid_reg &amp;&amp; !Min_datardy ? 1'b1 : 1'b0;
+   end
+
+   assign Min_accelerator_context = acc_ctxt;
+   
+   IOB_front_end
+     #(
+       .FE_ADDR_W (FE_ADDR_W),
+       .CTRL_CACHE(CTRL_CACHE),
+       .CTRL_CNT(CTRL_CNT),
+       .BITSIZE_addr(CTRL_CACHE + FE_ADDR_W - FE_BYTE_W),
+       .BITSIZE_wdata(FE_DATA_W),
+       .BITSIZE_wstrb(FE_NBYTES),
+       .BITSIZE_rdata(FE_DATA_W),
+       .BITSIZE_data_addr(FE_ADDR_W - FE_BYTE_W),
+       .BITSIZE_data_rdata(FE_DATA_W),
+       .BITSIZE_data_addr_reg(FE_ADDR_W - FE_BYTE_W),
+       .BITSIZE_data_wdata_reg(FE_DATA_W),
+       .BITSIZE_data_wstrb_reg(FE_NBYTES),
+       .BITSIZE_ctrl_addr(`CTRL_ADDR_W),
+       .BITSIZE_ctrl_rdata(CTRL_CACHE * (FE_DATA_W - 1) + 1)
+       )
+   front_end
+     (
+      .clk   (clock),
+      .reset (!reset),
+      //front-end port
+      .valid (Min_oe_ram || Min_we_ram),
+      .addr  (addr_reg[FE_ADDR_W - 1 : FE_BYTE_W]),
+      .wdata (Min_Wdata_ram),
+      .wstrb ({FE_NBYTES{Min_we_ram}}),
+      .rdata (Min_Rdata_ram),
+      .ready (Min_datardy),
+      //cache-memory input signals
+      .data_valid (data_valid),
+      .data_addr  (data_addr),
+      //cache-memory output
+      .data_rdata (data_rdata),
+      .data_ready (data_ready),
+      //stored input signals
+      .data_valid_reg (data_valid_reg),
+      .data_addr_reg  (data_addr_reg),
+      .data_wdata_reg (data_wdata_reg),
+      .data_wstrb_reg (data_wstrb_reg),
+      //cache-control
+      .ctrl_valid (ctrl_valid),
+      .ctrl_addr  (ctrl_addr),
+      .ctrl_rdata (ctrl_rdata),
+      .ctrl_ready (ctrl_ready)
+      );
+
+   IOB_cache_memory
+     #(
+       .FE_ADDR_W (FE_ADDR_W),
+       .N_WAYS     (N_WAYS),
+       .LINE_OFF_W (LINE_OFF_W),
+       .WORD_OFF_W (WORD_OFF_W),
+       .REP_POLICY (REP_POLICY),    
+       .WTBUF_DEPTH_W (WTBUF_DEPTH_W),
+       .CTRL_CACHE(CTRL_CACHE),
+       .CTRL_CNT  (CTRL_CNT),
+       .WRITE_POL (WRITE_POL),
+       .BITSIZE_addr(FE_ADDR_W - (BE_BYTE_W + LINE2MEM_W)),
+       .BITSIZE_rdata(FE_DATA_W),
+       .BITSIZE_addr_reg(FE_ADDR_W - FE_BYTE_W),
+       .BITSIZE_wdata_reg(FE_DATA_W),
+       .BITSIZE_wstrb_reg(FE_NBYTES),
+       .BITSIZE_write_addr(FE_ADDR_W - (FE_BYTE_W + WRITE_POL*WORD_OFF_W)),
+       .BITSIZE_write_wdata(FE_DATA_W + WRITE_POL*(FE_DATA_W*(2**WORD_OFF_W)-FE_DATA_W)),
+       .BITSIZE_write_wstrb(FE_NBYTES),
+       .BITSIZE_replace_addr(FE_ADDR_W - (BE_BYTE_W+LINE2MEM_W)),
+       .BITSIZE_read_addr(LINE2MEM_W),
+       .BITSIZE_read_rdata(BE_DATA_W)
+       )
+   cache_memory
+     (
+      .clk   (clock),
+      .reset (!reset),
+      //front-end
+      //internal data signals
+      .valid (data_valid),
+      .addr  (data_addr[FE_ADDR_W-1:BE_BYTE_W + LINE2MEM_W]),
+      //.wdata (data_wdata),
+      // .wstrb (data_wstrb),
+      .rdata (data_rdata),
+      .ready (data_ready),
+      .dirty_mem (dirty),
+      //stored data signals
+      .valid_reg (data_valid_reg),   
+      .addr_reg  (data_addr_reg),
+      .wdata_reg (data_wdata_reg),
+      .wstrb_reg (data_wstrb_reg),
+      //back-end
+      //write-through-buffer (write-channel)
+      .write_valid (write_valid),
+      .write_addr  (write_addr),
+      .write_wdata (write_wdata),
+      .write_wstrb (write_wstrb),
+      .write_ready (write_ready),
+      .write_fail  (write_fail),
+      .write_done  (write_done),
+      //cache-line replacement (read-channel)
+      .replace_valid (replace_valid),
+      .replace_addr  (replace_addr),
+      .replace (replace),
+      .read_valid (read_valid),
+      .read_addr  (read_addr),
+      .read_rdata (read_rdata),
+      //control's signals
+      .wtbuf_empty (wtbuf_empty),
+      .wtbuf_full  (wtbuf_full),
+      .write_hit   (write_hit),
+      .write_miss  (write_miss),
+      .read_hit    (read_hit),
+      .read_miss   (read_miss),
+      .flush(done_input_reg)
+      );
+
+
+   IOB_back_end_axi
+     #(
+       .FE_ADDR_W (FE_ADDR_W),
+       .FE_DATA_W (FE_DATA_W),  
+       .BE_ADDR_W (BE_ADDR_W),
+       .WORD_OFF_W(WORD_OFF_W),
+       .WRITE_POL (WRITE_POL),
+       .AXI_ID(AXI_ID),
+       .BITSIZE_write_addr(FE_ADDR_W - (FE_BYTE_W + WRITE_POL*WORD_OFF_W)),
+       .BITSIZE_write_wdata(FE_DATA_W + WRITE_POL*(FE_DATA_W*(2**WORD_OFF_W)-FE_DATA_W)),
+       .BITSIZE_write_wstrb(FE_NBYTES),
+       .BITSIZE_replace_addr(FE_ADDR_W - (FE_BYTE_W + WORD_OFF_W)),
+       .BITSIZE_read_addr(LINE2MEM_W),
+       .BITSIZE_read_rdata(BE_DATA_W),
+       .BITSIZE_m_axi_awid(AXI_ID_W),
+       .BITSIZE_m_axi_awaddr(AXI_ADDR_W),
+       .BITSIZE_m_axi_awlen(AXI_LEN_W),
+       .BITSIZE_m_axi_wdata(AXI_DATA_W),
+       .BITSIZE_m_axi_wstrb(AXI_DATA_W / 8),
+       .BITSIZE_m_axi_bid(AXI_ID_W),
+       .BITSIZE_m_axi_arid(AXI_ID_W),
+       .BITSIZE_m_axi_araddr(AXI_ADDR_W),
+       .BITSIZE_m_axi_arlen(AXI_LEN_W),
+       .BITSIZE_m_axi_rid(AXI_ID_W),
+       .BITSIZE_m_axi_rdata(AXI_DATA_W)       
+              )
+   back_end
+     (
+       //write-through-buffer (write-channel)
+      .write_valid (write_valid),
+      .write_addr  (write_addr),
+      .write_wdata (write_wdata),
+      .write_wstrb (write_wstrb),
+      .write_ready (write_ready),
+      .write_fail  (write_fail),
+      .write_done  (write_done),
+      //cache-line replacement (read-channel)
+      .replace_valid (replace_valid),
+      .replace_addr  (replace_addr),
+      .replace (replace),
+      .read_valid (read_valid),
+      .read_addr  (read_addr),
+      .read_rdata (read_rdata),
+      .m_axi_awid(m_axi_awid), //Address write channel ID
+      .m_axi_awaddr(m_axi_awaddr), //Address write channel address
+      .m_axi_awlen(m_axi_awlen), //Address write channel burst length
+      .m_axi_awsize(m_axi_awsize), //Address write channel burst size. This signal indicates the size of each transfer in the burst
+      .m_axi_awburst(m_axi_awburst), //Address write channel burst type
+      .m_axi_awlock(m_axi_awlock), //Address write channel lock type
+      .m_axi_awcache(m_axi_awcache), //Address write channel memory type. Transactions set with Normal Non-cacheable Modifiable and Bufferable (0011).
+      .m_axi_awprot(m_axi_awprot), //Address write channel protection type. Transactions set with Normal, Secure, and Data attributes (000).
+      .m_axi_awqos(m_axi_awqos), //Address write channel quality of service
+      .m_axi_awvalid(m_axi_awvalid), //Address write channel valid
+      .m_axi_awready(m_axi_awready), //Address write channel ready
+      .m_axi_wdata(m_axi_wdata), //Write channel data
+      .m_axi_wstrb(m_axi_wstrb), //Write channel write strobe
+      .m_axi_wlast(m_axi_wlast), //Write channel last word flag
+      .m_axi_wvalid(m_axi_wvalid), //Write channel valid
+      .m_axi_wready(m_axi_wready), //Write channel ready
+      .m_axi_bid(m_axi_bid), //Write response channel ID
+      .m_axi_bresp(m_axi_bresp), //Write response channel response
+      .m_axi_bvalid(m_axi_bvalid), //Write response channel valid
+      .m_axi_bready(m_axi_bready), //Write response channel ready
+      .m_axi_arid(m_axi_arid), //Address read channel ID
+      .m_axi_araddr(m_axi_araddr), //Address read channel address
+      .m_axi_arlen(m_axi_arlen), //Address read channel burst length
+      .m_axi_arsize(m_axi_arsize), //Address read channel burst size. This signal indicates the size of each transfer in the burst
+      .m_axi_arburst(m_axi_arburst), //Address read channel burst type
+      .m_axi_arlock(m_axi_arlock), //Address read channel lock type
+      .m_axi_arcache(m_axi_arcache), //Address read channel memory type. Transactions set with Normal Non-cacheable Modifiable and Bufferable (0011).
+      .m_axi_arprot(m_axi_arprot), //Address read channel protection type. Transactions set with Normal, Secure, and Data attributes (000).
+      .m_axi_arqos(m_axi_arqos), //Address read channel quality of service
+      .m_axi_arvalid(m_axi_arvalid), //Address read channel valid
+      .m_axi_arready(m_axi_arready), //Address read channel ready
+      .m_axi_rid(m_axi_rid), //Read channel ID
+      .m_axi_rdata(m_axi_rdata), //Read channel data
+      .m_axi_rresp(m_axi_rresp), //Read channel response
+      .m_axi_rlast(m_axi_rlast), //Read channel last word
+      .m_axi_rvalid(m_axi_rvalid), //Read channel valid
+      .m_axi_rready(m_axi_rready), //Read channel addr
+      .clk(clock),
+      .reset(!reset)
+      );
+   
+   
+   generate
+      if (CTRL_CACHE)
+        IOB_cache_control
+          #(
+            .CTRL_CNT   (CTRL_CNT),
+            .BITSIZE_rdata(CTRL_CNT * FE_DATA_W)
+            )
+      cache_control
+        (
+         .clk   (clock),
+         .reset (!reset),
          //control&apos;s signals
          .valid (ctrl_valid),
          .addr  (ctrl_addr),
@@ -17191,6 +17705,1136 @@ wire valid,tagsmatch;
    `undef CTRL_ADDR_W
    `undef WORD_ADDR
      "/>
+        </component_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>IOB_read_channel_minimal</name>
+      <circuit>
+        <component_o id="IOB_read_channel_minimal">
+          <description>This component is based on the work available at https://github.com/IObundle/iob-cache and it is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2023 Politecnico di Milano</copyright>  
+          <authors>Claudio Barone &lt;claudio.barone@polimi.it&gt;</authors> 
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="IOB_read_channel_minimal"/>
+          <parameter name="FE_ADDR_W"> 32 </parameter>
+          <parameter name="FE_DATA_W"> 32 </parameter>
+          <parameter name="WORD_OFF_W"> 3 </parameter>
+          <port_o id="clk" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1" />
+          </port_o>
+          <port_o id="reset" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1" />
+          </port_o>
+          <port_o id="replace_valid" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1" />
+          </port_o>
+          <port_o id="replace_addr" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1" />
+          </port_o>
+          <port_o id="replace" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1" />
+          </port_o>
+          <port_o id="read_valid" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1" />
+          </port_o>
+          <port_o id="read_addr" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1" />
+          </port_o>
+          <port_o id="read_rdata" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1" />
+          </port_o>
+          <port_o id="mem_addr" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="mem_valid" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1" />
+          </port_o>
+          <port_o id="mem_ready" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="mem_rdata" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="IOB_read_channel_minimal FE_ADDR_W FE_DATA_W WORD_OFF_W replace_addr read_addr read_rdata mem_addr mem_rdata" VERILOG_PROVIDED="
+   localparam BE_ADDR_W = BITSIZE_mem_addr;
+   localparam BE_DATA_W = BITSIZE_read_rdata;
+   localparam BE_BYTE_W = $clog2(BE_DATA_W / 8);
+   localparam LINE2MEM_W = WORD_OFF_W-$clog2(BE_DATA_W/FE_DATA_W);
+
+   reg [BITSIZE_read_addr - 1 : 0] read_addr;
+   reg read_valid;
+   reg mem_valid;
+   reg replace;
+
+   generate
+      if (LINE2MEM_W &gt; 0)
+        begin
+
+           reg [LINE2MEM_W-1:0] word_counter;
+           
+           assign mem_addr  = {BE_ADDR_W{1&apos;b0}} + {replace_addr[FE_ADDR_W -1 - (BE_BYTE_W + LINE2MEM_W): 0], word_counter, {BE_BYTE_W{1&apos;b0}}};
+           
+
+           // assign read_valid = mem_ready;
+           assign read_rdata = mem_rdata;
+
+           localparam
+             idle             = 2&apos;d0,
+             read             = 2&apos;d1, 
+             delay            = 2&apos;d2;
+
+           always @ (posedge clk)
+             read_addr &lt;= word_counter;
+           
+           reg [1:0]            state;
+
+           always @(posedge clk, posedge reset)
+             begin
+                if(reset)
+                  begin
+                     state &lt;= idle;
+                  end
+                else
+                  begin
+                     case(state)
+
+                       idle:
+                         begin
+                            if(replace_valid) //main_process flag
+                              state &lt;= read;                                        
+                            else
+                              state &lt;= idle;                      
+                         end
+                       
+                       read:
+                         begin
+                            state &lt;= delay;
+                         end
+                       
+                       delay: 
+                         begin
+                            if(mem_ready)
+                              if(read_addr == {LINE2MEM_W{1&apos;b1}})
+                                state &lt;= idle;
+                              else
+                                begin
+                                   state &lt;= read;
+                                end
+                            else
+                              begin
+                                 state &lt;= delay;
+                              end
+                         end
+                       
+                       default:;
+                       
+                     endcase                                                     
+                  end         
+             end
+           
+           
+           always @*
+             begin 
+                mem_valid     = 1&apos;b0;
+                replace       = 1&apos;b1;
+                word_counter  = 0;
+                read_valid    = 1&apos;b0;
+                
+                case(state)
+                  
+                  idle:
+                    begin
+                       replace = 1&apos;b0;
+                    end
+
+                  read:
+                    begin
+                       mem_valid = 1&apos;b1;
+                       word_counter = read_addr;
+                    end
+                  
+                  delay:
+                    begin
+                       word_counter = read_addr + mem_ready;
+                       read_valid = mem_ready;
+                    end
+                  default:;
+                  
+                  
+                endcase
+             end
+        end // if (LINE2MEM_W &gt; 0)
+      else
+        begin
+           assign mem_addr  = {BE_ADDR_W{1&apos;b0}} + {replace_addr, {BE_BYTE_W{1&apos;b0}}};
+           
+           // assign read_valid = mem_valid; //doesn require line_load since when mem_valid is HIGH, so is line_load.
+           assign read_rdata = mem_rdata;
+
+           localparam
+             idle             = 2&apos;d0,
+             read             = 2&apos;d1, 
+             delay            = 2&apos;d2;
+           
+           
+           reg [1:0]                                  state;
+
+           always @(posedge clk, posedge reset)
+             begin
+                if(reset)
+                  state &lt;= idle;
+                else
+                  begin
+                     case(state)
+
+                       idle:
+                         begin
+                            
+                            if(replace_valid)
+                              state &lt;= read;                                        
+                            else
+                              state &lt;= idle;                      
+                         end
+                       
+                       read:
+                         begin
+                            state &lt;= delay;
+                         end
+                       
+                       delay:
+                         begin
+                            if(mem_ready)
+                              state &lt;= idle;
+                            else
+                              state &lt;= delay;
+                         end
+                       
+                       default:;
+                       
+                     endcase                                                     
+                  end         
+             end
+           
+           
+           always @*
+             begin 
+                mem_valid     = 1&apos;b0;
+                replace       = 1&apos;b1;
+                read_valid    = 1&apos;b0;
+                
+                case(state)
+                  
+                  idle:
+                    begin
+                       replace = 1&apos;b0;
+                    end
+
+                  read:
+                    begin
+                       mem_valid = 1&apos;b1;
+                    end
+                  
+                  delay:
+                    begin
+                       read_valid = mem_ready;
+                    end
+                  
+                  default:;
+                  
+                endcase
+             end
+           
+        end // else: !if(MEM_OFF_W &gt; 0)
+      endgenerate
+        "/>
+        </component_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>IOB_write_channel_minimal</name>
+      <circuit>
+        <component_o id="IOB_write_channel_minimal">
+          <description>This component is based on the work available at https://github.com/IObundle/iob-cache and it is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2023 Politecnico di Milano</copyright>  
+          <authors>Claudio Barone &lt;claudio.barone@polimi.it&gt;</authors> 
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="IOB_write_channel_minimal"/>
+          <parameter name="FE_ADDR_W"> 32 </parameter>
+          <parameter name="FE_DATA_W"> 32 </parameter>
+          <parameter name="WRITE_POL"> 0 </parameter>
+          <parameter name="WORD_OFF_W"> 3 </parameter>
+          <port_o id="clk" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1" />
+          </port_o>
+          <port_o id="reset" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1" />
+          </port_o>
+          <port_o id="valid" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1" />
+          </port_o>
+          <port_o id="addr" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1" />
+          </port_o>
+          <port_o id="wstrb" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1" />
+          </port_o>
+          <port_o id="wdata" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1" />
+          </port_o>
+          <port_o id="ready" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1" />
+          </port_o>
+          <port_o id="mem_addr" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1" />
+          </port_o>
+          <port_o id="mem_valid" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="mem_ready" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+           <port_o id="write_done" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="write_fail" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="mem_wdata" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="mem_wstrb" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="IOB_write_channel_minimal FE_ADDR_W FE_DATA_W WRITE_POL WORD_OFF_W addr wstrb wdata mem_addr mem_wdata mem_wstrb" VERILOG_PROVIDED="
+    localparam FE_NBYTES = BITSIZE_wstrb;
+    localparam FE_BYTE_W = $clog2(FE_NBYTES);
+    localparam BE_ADDR_W = BITSIZE_mem_addr;
+    localparam BE_DATA_W = BITSIZE_mem_wdata;
+    localparam BE_NBYTES = BE_DATA_W / 8;
+    localparam BE_BYTE_W = $clog2(BE_NBYTES);
+    localparam LINE2MEM_W = WORD_OFF_W-$clog2(BE_DATA_W/FE_DATA_W);
+
+    reg mem_wstrb;
+    reg ready;
+    reg mem_valid;
+
+
+
+    assign write_done=mem_ready;
+    assign write_fail = 1'b0;
+    
+    genvar                                                                   i;
+
+    generate
+      if(WRITE_POL == 0) begin
+
+        assign mem_addr = {BE_ADDR_W{1&apos;b0}} + {addr[FE_ADDR_W-1 - (FE_BYTE_W + WRITE_POL*WORD_OFF_W) :BE_BYTE_W - (FE_BYTE_W + WRITE_POL*WORD_OFF_W)], {BE_BYTE_W{1&apos;b0}}};
+
+        localparam
+          idle  = 2&apos;d0,
+          write = 2&apos;d1,
+          delay  = 2&apos;d2;
+
+          reg [1:0] state;
+          if(BE_DATA_W == FE_DATA_W) begin
+            assign mem_wdata = wdata;
+            always @* begin
+              mem_wstrb = 0;
+              case(state)
+                write: mem_wstrb = wstrb;
+                default:;
+              endcase // case (state)
+            end // always @ *
+          end
+          else begin
+            wire [BE_BYTE_W-FE_BYTE_W -1 :0] word_align = addr[FE_BYTE_W - (FE_BYTE_W + WRITE_POL*WORD_OFF_W) +: (BE_BYTE_W - FE_BYTE_W)];
+
+            for (i = 0; i &lt; BE_DATA_W/FE_DATA_W; i = i +1) begin : wdata_block
+              assign mem_wdata[(i+1)*FE_DATA_W-1:i*FE_DATA_W] = wdata;
+            end
+
+            always @* begin
+              mem_wstrb = 0;
+              case(state)
+                write: mem_wstrb = wstrb &lt;&lt; word_align * FE_NBYTES;
+                default:;
+              endcase // case (state)
+            end // always @ *
+          end
+
+          always @(posedge clk, posedge reset) begin
+            if(reset)
+              state &lt;= idle;
+            else
+              case(state)
+                idle: begin
+                  if(valid)
+                    state &lt;= write;
+                  else
+                    state &lt;= idle;
+                end
+                write: begin
+                    state &lt;= delay;
+                end
+                default: begin /* delay */
+                  if(mem_ready &amp; ~valid)
+                    state &lt;= idle;
+                  else
+                    if(mem_ready &amp; valid) //still has data to write
+                      state &lt;= write;
+                    else
+                      state &lt;= delay;
+                end
+              endcase // case (state)
+          end // always @ (posedge clk, posedge reset)
+
+         always @*
+           begin
+              ready = 1&apos;b0;
+              mem_valid = 1&apos;b0;
+              case(state)
+                idle:
+                  ready = 1&apos;b1;
+                write:
+                  mem_valid = ~mem_ready;
+                default: /* delay */
+                  begin
+                     ready = mem_ready;
+                  end
+              endcase // case (state)
+           end
+      end // if (WRITE_POL == WRITE_THROUGH)
+      //////////////////////////////////////////////////////////////////////////////////////////////
+      else begin // if (WRITE_POL == WRITE_BACK)
+
+         if (LINE2MEM_W &gt; 0) begin
+
+            reg [LINE2MEM_W-1:0] word_counter, word_counter_reg;
+            always @(posedge clk) word_counter_reg &lt;= word_counter;
+
+            // memory address
+            assign mem_addr  = {BE_ADDR_W{1&apos;b0}} + {addr[FE_ADDR_W-1 - (FE_BYTE_W + WRITE_POL*WORD_OFF_W) : BE_BYTE_W + LINE2MEM_W - (FE_BYTE_W + WRITE_POL*WORD_OFF_W)], word_counter, {BE_BYTE_W{1&apos;b0}}};
+            // memory write-data
+            assign mem_wdata = wdata&gt;&gt;(BE_DATA_W*word_counter);
+
+            localparam
+              idle  = 2&apos;d0,
+              write = 2&apos;d1,
+              delay = 2&apos;d2;
+
+            reg [1:0]            state;
+
+            always @(posedge clk, posedge reset)
+              begin
+                 if(reset)
+                   state &lt;= idle;
+                 else
+                   case(state)
+
+                     idle:
+                       begin
+                          if(valid)
+                            state &lt;= write;
+                          else
+                            state &lt;= idle;
+                       end
+
+                     write:
+                       state &lt;= delay;
+                     default: /* delay */
+                       begin
+                          if(mem_ready &amp; (&amp;word_counter_reg))
+                            state &lt;= idle;
+                          else if(mem_ready)
+                            state &lt;= write;
+                          else
+                            state &lt;= delay;
+                       end
+                   endcase // case (state)
+              end // always @ (posedge clk, posedge reset)
+
+            always @*
+              begin
+                 ready        = 1&apos;b0;
+                 mem_valid    = 1&apos;b0;
+                 mem_wstrb    = 0;
+                 word_counter = 0;
+
+                 case(state)
+                   idle:
+                     begin
+                        ready = ~valid;
+                        if(valid) mem_wstrb = {BE_NBYTES{1&apos;b1}};
+                        else mem_wstrb =0;
+                     end
+
+                   write:
+                     begin
+                        mem_valid = ~(mem_ready &amp; (&amp;word_counter));
+                        mem_wstrb = {BE_NBYTES{1&apos;b1}};
+                        word_counter = word_counter_reg;
+                     end
+                   default: /* delay */
+                     begin
+                        ready = mem_ready &amp; (&amp;word_counter); //last word transfered
+                        word_counter = word_counter_reg + mem_ready;
+                     end
+                 endcase // case (state)
+              end
+
+         end // if (LINE2MEM_W &gt; 0)
+         else begin // if (LINE2MEM_W == 0)
+
+            // memory address
+            assign mem_addr  = {BE_ADDR_W{1&apos;b0}} + {addr[FE_ADDR_W-1 - (FE_BYTE_W + WRITE_POL*WORD_OFF_W) : BE_BYTE_W - (FE_BYTE_W + WRITE_POL*WORD_OFF_W)], {BE_BYTE_W{1&apos;b0}}};
+            // memory write-data
+            assign mem_wdata = wdata;
+
+            localparam
+              idle  = 2&apos;d0,
+              write = 2&apos;d1,
+              delay = 2&apos;d2;
+
+            reg [1:0]            state;
+
+            always @(posedge clk, posedge reset)
+              begin
+                 if(reset)
+                   state &lt;= idle;
+                 else
+                   case(state)
+
+                     idle:
+                       begin
+                          if(valid)
+                            state &lt;= write;
+                          else
+                            state &lt;= idle;
+                       end
+
+                     write:
+                       begin
+                         state &lt;= delay;
+                       end
+                     default:
+                       begin
+                          if(mem_ready)
+                            state &lt;= idle;
+                          else
+                            state &lt;= delay;
+                       end
+                   endcase // case (state)
+              end // always @ (posedge clk, posedge reset)
+
+            always @*
+              begin
+                 ready        = 1&apos;b0;
+                 mem_valid    = 1&apos;b0;
+                 mem_wstrb    = 0;
+
+                 case(state)
+                   idle:
+                     begin
+                        ready = ~valid;
+                        if(valid) mem_wstrb = {BE_NBYTES{1&apos;b1}};
+                        else mem_wstrb = 0;
+                     end
+
+                   write:
+                     begin
+                        mem_valid = ~mem_ready;
+                        mem_wstrb = {BE_NBYTES{1&apos;b1}};
+                     end
+                   default: /* delay */
+                     begin
+                        ready = mem_ready;
+                     end
+                 endcase // case (state)
+              end // always @ *
+
+         end // else: !if(LINE2MEM_W &gt; 0)
+      end // else: !if(WRITE_POL == WRITE_THROUGH)
+   endgenerate
+        "/>
+        </component_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>IOB_back_end_minimal</name>
+      <circuit>
+        <component_o id="IOB_back_end_minimal">
+          <description>This component is based on the work available at https://github.com/IObundle/iob-cache and it is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2023 Politecnico di Milano</copyright>  
+          <authors>Claudio Barone &lt;claudio.barone@polimi.it&gt;</authors> 
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="IOB_back_end_minimal"/>
+          <parameter name="FE_ADDR_W"> 32 </parameter>
+          <parameter name="FE_DATA_W"> 32 </parameter>
+          <parameter name="WORD_OFF_W"> 3 </parameter>
+          <parameter name="BE_ADDR_W"> 32 </parameter>
+          <parameter name="WRITE_POL"> 0 </parameter>
+          <port_o id="clk" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1" />
+          </port_o>
+          <port_o id="reset" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1" />
+          </port_o>
+          <port_o id="write_valid" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1" />
+          </port_o>          
+          <port_o id="write_addr" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1" />
+          </port_o>
+          <port_o id="write_wdata" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1" />
+          </port_o>
+          <port_o id="write_wstrb" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1" />
+          </port_o>
+          <port_o id="write_ready" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1" />
+          </port_o>
+          <port_o id="replace_valid" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1" />
+          </port_o>
+          <port_o id="replace_addr" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1" />
+          </port_o>
+          <port_o id="replace" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1" />
+          </port_o>
+          <port_o id="read_valid" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1" />
+          </port_o>
+          <port_o id="read_addr" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1" />
+          </port_o>
+          <port_o id="read_rdata" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1" />
+          </port_o>
+          <port_o id="acc_ctxt" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1" />
+          </port_o>
+          <port_o id="back_pressure" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1" />
+          </port_o>
+          <port_o id="Mout_oe_ram" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1" />
+          </port_o>
+          <port_o id="Mout_we_ram" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1" />
+          </port_o>
+          <port_o id="Mout_addr_ram" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="Mout_Wdata_ram" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="Mout_data_ram_size" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="Mout_accelerator_context" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="Mout_back_pressure" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1" />
+          </port_o>
+          <port_o id="M_data_ready" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1" />
+          </port_o>
+          <port_o id="M_Rdata_ram" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="M_accelerator_context" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1" />
+          </port_o>
+          <port_o id="M_back_pressure" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+           <port_o id="write_done" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+           <port_o id="write_fail" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="IOB_back_end_minimal FE_ADDR_W FE_DATA_W WORD_OFF_W BE_ADDR_W WRITE_POL write_addr write_wdata write_wstrb replace_addr read_addr read_rdata acc_ctxt Mout_addr_ram Mout_Wdata_ram Mout_data_ram_size Mout_accelerator_context M_Rdata_ram M_accelerator_context" IP_COMPONENT="IOB_read_channel_minimal,IOB_write_channel_minimal" VERILOG_PROVIDED="
+   localparam BE_DATA_W = BITSIZE_read_rdata;
+   localparam BE_NBYTES = BE_DATA_W / 8;
+
+   wire [BE_ADDR_W-1:0]                                                      mem_addr_read,  mem_addr_write;
+   wire                                                                      mem_valid_read, mem_valid_write;
+   
+   reg                                                                       acc_ctxt_reg;
+   
+   always @(posedge clk) begin
+     if(write_valid || replace_valid) begin
+        acc_ctxt_reg &lt;= acc_ctxt;
+     end
+   end
+
+   assign Mout_addr_ram =  mem_valid_read ? mem_addr_read : mem_valid_write ? mem_addr_write : 'b0;
+   assign Mout_oe_ram = mem_valid_read;
+   assign Mout_we_ram = mem_valid_write;
+   assign Mout_data_ram_size = BE_DATA_W;
+   assign Mout_accelerator_context = acc_ctxt_reg;
+   assign M_back_pressure = back_pressure;
+   
+   
+   IOB_read_channel_minimal
+     #(
+       .FE_ADDR_W(FE_ADDR_W),
+       .FE_DATA_W(FE_DATA_W),  
+       .WORD_OFF_W(WORD_OFF_W),
+       .BITSIZE_replace_addr(BITSIZE_replace_addr),
+       .BITSIZE_read_addr(BITSIZE_read_addr),
+       .BITSIZE_read_rdata(BITSIZE_read_rdata),
+       .BITSIZE_mem_addr(BE_ADDR_W),
+       .BITSIZE_mem_rdata(BITSIZE_M_Rdata_ram)
+       )
+   read_fsm
+     (
+      .clk(clk),
+      .reset(reset),
+      .replace_valid (replace_valid),
+      .replace_addr (replace_addr),
+      .replace (replace),
+      .read_valid (read_valid),
+      .read_addr (read_addr),
+      .read_rdata (read_rdata),
+      .mem_addr(mem_addr_read),
+      .mem_valid(mem_valid_read),
+      .mem_ready(M_data_ready),
+      .mem_rdata(M_Rdata_ram)  
+      );
+
+   IOB_write_channel_minimal
+     #(
+       .FE_ADDR_W (FE_ADDR_W),
+       .FE_DATA_W (FE_DATA_W),
+       .WRITE_POL (WRITE_POL),
+       .WORD_OFF_W(WORD_OFF_W),
+       .BITSIZE_addr(BITSIZE_write_addr),
+       .BITSIZE_wstrb(BITSIZE_write_wstrb),
+       .BITSIZE_wdata(BITSIZE_write_wdata),
+       .BITSIZE_mem_addr(BE_ADDR_W),
+       .BITSIZE_mem_wdata(BITSIZE_Mout_Wdata_ram),
+       .BITSIZE_mem_wstrb(BE_NBYTES)
+       )
+   write_fsm
+     (
+      .clk(clk),
+      .reset(reset),
+      .valid (write_valid),
+      .addr (write_addr),
+      .wstrb (write_wstrb),
+      .wdata (write_wdata),
+      .ready (write_ready),
+      .mem_addr(mem_addr_write),
+      .mem_valid(mem_valid_write),
+      .mem_ready(M_data_ready),
+      .mem_wdata(Mout_Wdata_ram),
+      .mem_wstrb(mem_wstrb),
+      .write_done(write_done),
+      .write_fail(write_fail)
+      );
+   
+        "/>
+        </component_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>IOB_cache_minimal_minimal</name>
+      <circuit>
+        <component_o id="IOB_cache_minimal_minimal">
+          <description>This component is based on the work available at https://github.com/IObundle/iob-cache and it is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2023 Politecnico di Milano</copyright>
+          <authors>Claudio Barone &lt;claudio.barone@polimi.it&gt;</authors>
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="IOB_cache_minimal_minimal" />
+          <parameter name="FE_ADDR_W"> 32 </parameter>
+          <parameter name="BE_ADDR_W"> 32 </parameter>
+          <parameter name="BE_DATA_W"> 32 </parameter>
+          <parameter name="N_WAYS"> 1 </parameter>
+          <parameter name="LINE_OFF_W"> 8 </parameter>
+          <parameter name="WORD_OFF_W"> 4 </parameter>
+          <parameter name="WTBUF_DEPTH_W"> 5 </parameter>
+          <parameter name="REP_POLICY"> 2 </parameter>
+          <parameter name="WRITE_POL"> 0 </parameter>
+          <parameter name="CTRL_CACHE"> 0 </parameter>
+          <parameter name="CTRL_CNT"> 0 </parameter>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1" />
+          </port_o>
+          <port_o id="reset" dir="IN" >
+            <structural_type_descriptor type="BOOL" size="1" />
+          </port_o>
+          <port_o id="done_input" dir="IN" >
+            <structural_type_descriptor type="BOOL" size="1" />
+          </port_o>          
+          <port_o id="done" dir="OUT" >
+            <structural_type_descriptor type="BOOL" size="1" />
+          </port_o>
+          <port_o id="Min_oe_ram" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1" />
+          </port_o>
+          <port_o id="Min_we_ram" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1" />
+          </port_o>
+          <port_o id="Min_addr_ram" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1" />
+          </port_o>
+          <port_o id="Min_Wdata_ram" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1" />
+          </port_o>
+          <port_o id="Min_data_size_ram" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1" />
+          </port_o>
+          <port_o id="Min_accelerator_context_in" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1" />
+          </port_o>
+          <port_o id="Min_back_pressure" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1" />
+          </port_o>
+          <port_o id="Min_datardy" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1" />
+          </port_o>
+          <port_o id="Min_Rdata_ram" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1" />
+          </port_o>
+          <port_o id="Min_accelerator_context" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1" />
+          </port_o>
+          <port_o id="Min_back_pressure_in" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1" />
+          </port_o>
+          <port_o id="Mout_oe_ram" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1" />
+          </port_o>
+          <port_o id="Mout_we_ram" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1" />
+          </port_o>
+          <port_o id="Mout_addr_ram" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1" />
+          </port_o>
+          <port_o id="Mout_Wdata_ram" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1" />
+          </port_o>
+          <port_o id="Mout_data_ram_size" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1" />
+          </port_o>
+          <port_o id="Mout_accelerator_context" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1" />
+          </port_o>
+          <port_o id="Mout_back_pressure" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1" />
+          </port_o>
+          <port_o id="M_DataRdy" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1" />
+          </port_o>
+          <port_o id="M_Rdata_ram" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1" />
+          </port_o>
+          <port_o id="M_accelerator_context" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1" />
+          </port_o>
+          <port_o id="M_back_pressure" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1" />
+          </port_o>
+          <NP_functionality LIBRARY="IOB_cache_minimal_minimal FE_ADDR_W BE_ADDR_W BE_DATA_W N_WAYS LINE_OFF_W WORD_OFF_W WTBUF_DEPTH_W REP_POLICY WRITE_POL CTRL_CACHE CTRL_CNT Min_addr_ram Min_Wdata_ram  Min_data_size_ram Min_accelerator_context_in Min_Rdata_ram Min_accelerator_context Mout_addr_ram Mout_Wdata_ram Mout_data_ram_size Mout_accelerator_context M_Rdata_ram M_accelerator_context" IP_COMPONENT="IOB_front_end,IOB_cache_memory,IOB_back_end_minimal" VERILOG_PROVIDED="
+   //Cache-Control
+   `define CTRL_IO
+   `define CTRL_ADDR_W 4
+   //Address-port
+   `define WORD_ADDR // Word-addressable, (BE) addr becomes word-addressable (doesn't receive the byte-offset).
+
+   
+   localparam FE_DATA_W = BITSIZE_Min_Wdata_ram;
+   localparam NWAY_W = $clog2(N_WAYS);
+   localparam FE_NBYTES = FE_DATA_W / 8;
+   localparam FE_BYTE_W = $clog2(FE_NBYTES);
+   localparam BE_NBYTES = BE_DATA_W / 8;
+   localparam BE_BYTE_W = $clog2(BE_NBYTES);
+   localparam LINE2MEM_W = WORD_OFF_W-$clog2(BE_DATA_W/FE_DATA_W);
+
+   wire                                         data_valid, data_ready;
+   wire [FE_ADDR_W -1:FE_BYTE_W]                data_addr; 
+   wire [FE_DATA_W-1 : 0]                       data_wdata, data_rdata;
+   wire [FE_NBYTES-1: 0]                        data_wstrb;
+   
+   //stored signals
+   wire [FE_ADDR_W -1:FE_BYTE_W]                data_addr_reg; 
+   wire [FE_DATA_W-1 : 0]                       data_wdata_reg;
+   wire [FE_NBYTES-1: 0]                        data_wstrb_reg;
+   wire                                         data_valid_reg;
+
+   //back-end write-channel
+   wire                                         write_valid, write_ready;
+   wire [FE_ADDR_W-1:FE_BYTE_W + WRITE_POL*WORD_OFF_W] write_addr;
+   wire [FE_DATA_W + WRITE_POL*(FE_DATA_W*(2**WORD_OFF_W)-FE_DATA_W)-1 :0] write_wdata;
+   wire [FE_NBYTES-1:0]                                                    write_wstrb;
+   wire                                                                    write_fail;
+   wire                                                                    write_done;
+   
+   //back-end read-channel
+   wire                                                                    replace_valid, replace;
+   wire [FE_ADDR_W -1:BE_BYTE_W+LINE2MEM_W]                                replace_addr; 
+   wire                                                                    read_valid;
+   wire [LINE2MEM_W-1:0]                                                   read_addr;
+   wire [BE_DATA_W-1:0]                                                    read_rdata;
+   
+   //cache-control
+   wire                                                                    ctrl_valid, ctrl_ready;   
+   wire [`CTRL_ADDR_W-1:0]                                                 ctrl_addr;
+   wire                                                                    wtbuf_full, wtbuf_empty;
+   wire                                                                    write_hit, write_miss, read_hit, read_miss;
+   wire [CTRL_CACHE*(FE_DATA_W-1):0]                                       ctrl_rdata;
+   wire                                                                    invalidate;
+   
+   wire                                                                    dirty;
+   
+   reg [BITSIZE_Min_accelerator_context - 1 : 0]                           acc_ctxt;
+   reg                                                                     done_input_reg = 1'b0, done_input_next;
+
+   reg                                                                     Min_back_pressure_progress;
+
+   reg                                                                     Min_back_pressure;
+
+   reg [BITSIZE_Min_addr_ram - 1 : 0]                                      addr_reg;
+
+   reg                                                                     done;
+   reg [BITSIZE_Min_Rdata_ram - 1 : 0]                                     rdata;
+
+   always @(*) begin
+     done_input_next = done_input ? 1'b1 : done_input_reg;
+     if((Min_oe_ram || Min_we_ram) &amp;&amp; !data_valid_reg) begin
+       addr_reg = Min_addr_ram;
+     end
+   end
+
+   always @(posedge clock) begin
+     done_input_reg &lt;= done_input_next;
+     if((Min_oe_ram || Min_we_ram) &amp;&amp; !data_valid_reg) begin
+       acc_ctxt &lt;= Min_accelerator_context_in;
+     end
+     if(done_input_next) begin
+       done &lt;= !dirty;
+     end
+     Min_back_pressure &lt;= data_valid_reg &amp;&amp; (Min_we_ram || Min_oe_ram) ? Min_back_pressure_progress : 1'b0;
+     Min_back_pressure_progress &lt;= data_valid_reg &amp;&amp; !Min_datardy ? 1'b1 : 1'b0;   
+   end
+
+   assign Min_accelerator_context = acc_ctxt;
+   assign Min_Rdata_ram = Min_datardy &amp;&amp; data_wstrb_reg == 'b0 ? rdata : 'b0;
+
+   IOB_front_end
+     #(
+       .FE_ADDR_W (FE_ADDR_W),
+       .CTRL_CACHE(CTRL_CACHE),
+       .CTRL_CNT(CTRL_CNT),
+       .BITSIZE_addr(CTRL_CACHE + FE_ADDR_W - FE_BYTE_W),
+       .BITSIZE_wdata(FE_DATA_W),
+       .BITSIZE_wstrb(FE_NBYTES),
+       .BITSIZE_rdata(FE_DATA_W),
+       .BITSIZE_data_addr(FE_ADDR_W - FE_BYTE_W),
+       .BITSIZE_data_rdata(FE_DATA_W),
+       .BITSIZE_data_addr_reg(FE_ADDR_W - FE_BYTE_W),
+       .BITSIZE_data_wdata_reg(FE_DATA_W),
+       .BITSIZE_data_wstrb_reg(FE_NBYTES),
+       .BITSIZE_ctrl_addr(`CTRL_ADDR_W),
+       .BITSIZE_ctrl_rdata(CTRL_CACHE * (FE_DATA_W - 1) + 1)
+       )
+   front_end
+     (
+      .clk   (clock),
+      .reset (!reset),
+      //front-end port
+      .valid (Min_oe_ram || Min_we_ram),
+      .addr  (addr_reg[FE_ADDR_W - 1 : FE_BYTE_W]),
+      .wdata (Min_Wdata_ram),
+      .wstrb ({FE_NBYTES{Min_we_ram}}),
+      .rdata (rdata),
+      .ready (Min_datardy),
+      //cache-memory input signals
+      .data_valid (data_valid),
+      .data_addr  (data_addr),
+      //cache-memory output
+      .data_rdata (data_rdata),
+      .data_ready (data_ready),
+      //stored input signals
+      .data_valid_reg (data_valid_reg),
+      .data_addr_reg  (data_addr_reg),
+      .data_wdata_reg (data_wdata_reg),
+      .data_wstrb_reg (data_wstrb_reg),
+      //cache-control
+      .ctrl_valid (ctrl_valid),
+      .ctrl_addr  (ctrl_addr),
+      .ctrl_rdata (ctrl_rdata),
+      .ctrl_ready (ctrl_ready)
+      );
+
+   IOB_cache_memory
+     #(
+       .FE_ADDR_W (FE_ADDR_W),
+       .N_WAYS     (N_WAYS),
+       .LINE_OFF_W (LINE_OFF_W),
+       .WORD_OFF_W (WORD_OFF_W),
+       .REP_POLICY (REP_POLICY),    
+       .WTBUF_DEPTH_W (WTBUF_DEPTH_W),
+       .CTRL_CACHE(CTRL_CACHE),
+       .CTRL_CNT  (CTRL_CNT),
+       .WRITE_POL (WRITE_POL),
+       .BITSIZE_addr(FE_ADDR_W - (BE_BYTE_W + LINE2MEM_W)),
+       .BITSIZE_rdata(FE_DATA_W),
+       .BITSIZE_addr_reg(FE_ADDR_W - FE_BYTE_W),
+       .BITSIZE_wdata_reg(FE_DATA_W),
+       .BITSIZE_wstrb_reg(FE_NBYTES),
+       .BITSIZE_write_addr(FE_ADDR_W - (FE_BYTE_W + WRITE_POL*WORD_OFF_W)),
+       .BITSIZE_write_wdata(FE_DATA_W + WRITE_POL*(FE_DATA_W*(2**WORD_OFF_W)-FE_DATA_W)),
+       .BITSIZE_write_wstrb(FE_NBYTES),
+       .BITSIZE_replace_addr(FE_ADDR_W - (BE_BYTE_W+LINE2MEM_W)),
+       .BITSIZE_read_addr(LINE2MEM_W),
+       .BITSIZE_read_rdata(BE_DATA_W)
+       )
+   cache_memory
+     (
+      .clk   (clock),
+      .reset (!reset),
+      //front-end
+      //internal data signals
+      .valid (data_valid),
+      .addr  (data_addr[FE_ADDR_W-1:BE_BYTE_W + LINE2MEM_W]),
+      //.wdata (data_wdata),
+      // .wstrb (data_wstrb),
+      .rdata (data_rdata),
+      .ready (data_ready),
+      .dirty_mem (dirty),
+      //stored data signals
+      .valid_reg (data_valid_reg),   
+      .addr_reg  (data_addr_reg),
+      .wdata_reg (data_wdata_reg),
+      .wstrb_reg (data_wstrb_reg),
+      //back-end
+      //write-through-buffer (write-channel)
+      .write_valid (write_valid),
+      .write_addr  (write_addr),
+      .write_wdata (write_wdata),
+      .write_wstrb (write_wstrb),
+      .write_ready (write_ready),
+      .write_fail  (write_fail),
+      .write_done  (write_done),
+      //cache-line replacement (read-channel)
+      .replace_valid (replace_valid),
+      .replace_addr  (replace_addr),
+      .replace (replace),
+      .read_valid (read_valid),
+      .read_addr  (read_addr),
+      .read_rdata (read_rdata),
+      //control's signals
+      .wtbuf_empty (wtbuf_empty),
+      .wtbuf_full  (wtbuf_full),
+      .write_hit   (write_hit),
+      .write_miss  (write_miss),
+      .read_hit    (read_hit),
+      .read_miss   (read_miss),
+      .flush(done_input)
+      );
+
+   IOB_back_end_minimal
+     #(
+        .FE_ADDR_W(FE_ADDR_W),
+        .FE_DATA_W(FE_DATA_W),
+        .WORD_OFF_W(WORD_OFF_W),
+        .BE_ADDR_W(BE_ADDR_W),
+        .BITSIZE_write_addr(FE_ADDR_W - (FE_BYTE_W + WRITE_POL * WORD_OFF_W)),
+        .BITSIZE_write_wdata(FE_DATA_W + WRITE_POL*(FE_DATA_W*(2**WORD_OFF_W)-FE_DATA_W)),
+        .BITSIZE_write_wstrb(FE_NBYTES),
+        .BITSIZE_replace_addr(FE_ADDR_W - (FE_BYTE_W + WORD_OFF_W)),
+        .BITSIZE_read_addr(LINE2MEM_W),
+        .BITSIZE_read_rdata(BE_DATA_W),
+        .BITSIZE_acc_ctxt(BITSIZE_Min_accelerator_context_in),
+        .BITSIZE_Mout_addr_ram(BE_ADDR_W),
+        .BITSIZE_Mout_Wdata_ram(BE_DATA_W),
+        .BITSIZE_Mout_data_ram_size(BITSIZE_Min_data_size_ram),
+        .BITSIZE_Mout_accelerator_context(BITSIZE_Mout_accelerator_context),
+        .BITSIZE_M_Rdata_ram(BE_DATA_W),
+        .BITSIZE_M_accelerator_context(BITSIZE_M_accelerator_context)
+     ) 
+     back_end (
+        .clk(clock),
+        .reset(!reset),
+        .write_valid (write_valid),
+        .write_addr  (write_addr),
+        .write_wdata (write_wdata),
+        .write_wstrb (write_wstrb),
+        .write_ready (write_ready),
+        .write_fail  (write_fail),
+        .write_done  (write_done),
+        .replace_valid (replace_valid),
+        .replace_addr  (replace_addr),
+        .replace (replace),
+        .read_valid (read_valid),
+        .read_addr  (read_addr),
+        .read_rdata (read_rdata),
+        .acc_ctxt   (acc_ctxt),
+        .back_pressure(Min_back_pressure_in),
+        .Mout_oe_ram(Mout_oe_ram),
+        .Mout_we_ram(Mout_we_ram),
+        .Mout_addr_ram(Mout_addr_ram),
+        .Mout_Wdata_ram(Mout_Wdata_ram),
+        .Mout_data_ram_size(Mout_data_ram_size),
+        .Mout_accelerator_context(Mout_accelerator_context),
+        .Mout_back_pressure(Mout_back_pressure),
+        .M_data_ready(M_DataRdy),
+        .M_Rdata_ram(M_Rdata_ram),
+        .M_accelerator_context(M_accelerator_context),
+        .M_back_pressure(M_back_pressure)
+     );
+   
+   
+   generate
+      if (CTRL_CACHE)
+        IOB_cache_control
+          #(
+            .CTRL_CNT   (CTRL_CNT),
+            .BITSIZE_rdata(CTRL_CNT * FE_DATA_W)
+            )
+      cache_control
+        (
+         .clk   (clock),
+         .reset (!reset),
+         //control&apos;s signals
+         .valid (ctrl_valid),
+         .addr  (ctrl_addr),
+         //write data
+         .wtbuf_full (wtbuf_full),
+`ifdef CTRL_IO
+         .wtbuf_empty (wtbuf_empty &amp; wtb_empty_in),
+`else
+         .wtbuf_empty (wtbuf_empty), 
+`endif
+         .write_hit  (write_hit),
+         .write_miss (write_miss),
+         .read_hit   (read_hit),
+         .read_miss  (read_miss),
+         ////////////
+         .rdata (ctrl_rdata),
+         .ready (ctrl_ready),
+         .invalidate (invalidate)
+         );
+      else
+        begin
+           assign ctrl_rdata = 1&apos;bx;
+           assign ctrl_ready = 1&apos;bx;
+           assign invalidate = 1&apos;b0;
+        end // else: !if(CTRL_CACHE)
+      
+   endgenerate
+   `undef CTRL_IO
+   `undef CTRL_ADDR_W
+   `undef WORD_ADDR
+     
+" />
         </component_o>
       </circuit>
     </cell>

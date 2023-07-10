@@ -49,16 +49,18 @@
 #endif
 
 #include <deque>
+#include <fstream>
 #include <initializer_list>
 #include <iostream>
+#include <string>
 
 #if !defined(AC_USER_DEFINED_ASSERT) && !defined(AC_ASSERT_THROW_EXCEPTION)
-#include <assert.h>
+#include <cassert>
 #endif
 
 // not directly used by this include
-#include <stdio.h>
-#include <stdlib.h>
+#include <cstdio>
+#include <cstdlib>
 
 // Macro Definitions (obsolete - provided here for backward compatibility)
 #define AC_CHAN_CTOR(varname) varname
@@ -127,13 +129,14 @@ template <class T>
 class ac_channel
 {
  public:
-   typedef T element_type;
+   using element_type = T;
 
    // constructors
    ac_channel();
    ac_channel(int init);
    ac_channel(int init, T val);
    ac_channel(std::initializer_list<T> val);
+   ac_channel(const char* bin_file);
 
    __FORCE_INLINE T read()
    {
@@ -250,7 +253,9 @@ class ac_channel
 #else
          std::cerr << "Assert";
          if(e.file)
+         {
             std::cerr << " in file " << e.file << ":" << e.line;
+         }
          std::cerr << " " << e.msg << std::endl;
          assert(0);
 #endif
@@ -283,9 +288,7 @@ class ac_channel
 #else
       struct fifo_abstract
       {
-         virtual ~fifo_abstract()
-         {
-         }
+         virtual ~fifo_abstract() = default;
          virtual fifo_type get_fifo_type() const = 0;
          virtual T read() = 0;
          virtual bool nb_read(T& t) = 0;
@@ -311,9 +314,7 @@ class ac_channel
          {
          }
 
-         ~fifo_ac_channel()
-         {
-         }
+         ~fifo_ac_channel() = default;
 
          static inline fifo_type ftype()
          {
@@ -740,7 +741,9 @@ class ac_channel
       {
          f->reset();
          for(int i = 0; i < (int)rSz; i++)
+         {
             write(rVal);
+         }
       }
 
       inline const T& operator[](unsigned int pos) const
@@ -772,7 +775,9 @@ class ac_channel
          iterator(const typename std::deque<T>::iterator& itr_, unsigned int pos = 0) : itr(itr_)
          {
             if(pos)
+            {
                itr += pos;
+            }
          }
          typename std::deque<T>::iterator itr;
       };
@@ -793,10 +798,12 @@ class ac_channel
    fifo chan;
 
  private:
+#if defined(__BAMBU__) && !defined(__BAMBU_SIM__)
    // Prevent the compiler from autogenerating these.
    //  (This enforces that channels are always passed by reference.)
-   ac_channel(const ac_channel<T>&);
-   ac_channel& operator=(const ac_channel<T>&);
+   ac_channel(const ac_channel<T>&) = delete;
+   ac_channel& operator=(const ac_channel<T>&) = delete;
+#endif
 };
 
 template <class T>
@@ -818,7 +825,9 @@ template <class T>
 ac_channel<T>::ac_channel(int init, T val) : chan(init, val)
 {
    for(int i = init; i > 0; i--)
+   {
       write(val);
+   }
 }
 
 template <class T>
@@ -831,12 +840,27 @@ ac_channel<T>::ac_channel(std::initializer_list<T> val) : chan(val.size())
 }
 
 template <class T>
+ac_channel<T>::ac_channel(const char* bin_file)
+    : chan(std::ifstream(bin_file, std::ifstream::ate | std::ifstream::binary).tellg() / sizeof(T))
+{
+   std::ifstream init_file(bin_file, std::ifstream::in | std::ifstream::binary);
+   T v;
+   while(chan.num_free())
+   {
+      init_file.read((char*)&v, sizeof(T));
+      write(v);
+   }
+}
+
+template <class T>
 __FORCE_INLINE std::ostream& operator<<(std::ostream& os, ac_channel<T>& a)
 {
    for(unsigned int i = 0; i < a.size(); i++)
    {
       if(i > 0)
+      {
          os << " ";
+      }
       os << a[i];
    }
    return os;
@@ -861,7 +885,9 @@ bool nb_read_chan_rdy(ac_channel<T> (&chan)[N])
 {
    bool r = true;
    for(int i = 0; i < N; i++)
+   {
       r &= !chan[i].empty();
+   }
    return r;
 }
 
@@ -874,7 +900,9 @@ bool nb_read_chan_rdy(Args&... args)
    bool rdy[n_args] = {(nb_read_chan_rdy(args))...};
    bool r = true;
    for(int i = 0; i < n_args; i += 2)
+   {
       r &= rdy[i];
+   }
    return r;
 }
 #endif
@@ -889,7 +917,9 @@ template <typename T, int N>
 void nb_read_r(ac_channel<T> (&chan)[N], T (&var)[N])
 {
    for(int i = 0; i < N; i++)
+   {
       chan[i].nb_read(var[i]);
+   }
 }
 
 #if __cplusplus > 199711L
@@ -904,7 +934,9 @@ template <typename T, int N, typename... Args>
 void nb_read_r(ac_channel<T> (&chan)[N], T (&var)[N], Args&... args)
 {
    for(int i = 0; i < N; i++)
+   {
       chan[i].nb_read(var[i]);
+   }
    nb_read_r(args...);
 }
 

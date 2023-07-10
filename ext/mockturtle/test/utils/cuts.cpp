@@ -8,7 +8,7 @@ using namespace mockturtle;
 
 TEST_CASE( "create cuts", "[cuts]" )
 {
-  std::vector<uint32_t> v{1, 2, 4, 5};
+  std::vector<uint32_t> v{ 1, 2, 4, 5 };
 
   cut<51> c;
   c.set_leaves( v.begin(), v.begin() + 2 );
@@ -18,14 +18,14 @@ TEST_CASE( "create cuts", "[cuts]" )
   CHECK( c.signature() == 6 );
 
   cut<51> c2;
-  c2.set_leaves( std::vector<uint32_t>{1, 2, 3, 4, 5} );
+  c2.set_leaves( std::vector<uint32_t>{ 1, 2, 3, 4, 5 } );
 
   CHECK( c2.size() == 5 );
 }
 
 TEST_CASE( "access data", "[cuts]" )
 {
-  std::vector<uint32_t> v{1, 2, 4, 5};
+  std::vector<uint32_t> v{ 1, 2, 4, 5 };
 
   cut<51, uint32_t> c1;
   c1.set_leaves( v.begin(), v.end() );
@@ -51,7 +51,7 @@ TEST_CASE( "access data", "[cuts]" )
 
 TEST_CASE( "dominate cuts", "[cuts]" )
 {
-  std::vector<uint32_t> v{1, 2, 4, 5};
+  std::vector<uint32_t> v{ 1, 2, 4, 5 };
   cut<51> c1, c2, c3;
 
   c1.set_leaves( v.begin(), v.begin() + 2 );
@@ -71,7 +71,7 @@ TEST_CASE( "dominate cuts", "[cuts]" )
 
 TEST_CASE( "merge cuts", "[cuts]" )
 {
-  std::vector<uint32_t> v{1, 2, 3, 4};
+  std::vector<uint32_t> v{ 1, 2, 3, 4 };
 
   cut<51> c1, c2, c3, r12, r13, r12t, r13f;
 
@@ -93,7 +93,7 @@ TEST_CASE( "create cut set", "[cuts]" )
 {
   using cut_type = cut<10, uint32_t>;
 
-  std::vector<uint32_t> v{1, 2, 3, 4, 5};
+  std::vector<uint32_t> v{ 1, 2, 3, 4, 5 };
   cut_set<cut_type, 25> set;
   set.add_cut( v.begin(), v.begin() + 2 ).data() = 23;
   set.add_cut( v.begin() + 2, v.end() ).data() = 37;
@@ -115,10 +115,10 @@ TEST_CASE( "insert a cut", "[cuts]" )
   using cut_type = cut<10>;
 
   cut_type c1, c2, c3, c4;
-  c1.set_leaves( std::vector<uint32_t>{1, 2, 3} );
-  c2.set_leaves( std::vector<uint32_t>{1, 2, 3, 4} );
-  c3.set_leaves( std::vector<uint32_t>{1, 2} );
-  c4.set_leaves( std::vector<uint32_t>{3} );
+  c1.set_leaves( std::vector<uint32_t>{ 1, 2, 3 } );
+  c2.set_leaves( std::vector<uint32_t>{ 1, 2, 3, 4 } );
+  c3.set_leaves( std::vector<uint32_t>{ 1, 2 } );
+  c4.set_leaves( std::vector<uint32_t>{ 3 } );
 
   cut_set<cut_type, 25> set;
 
@@ -135,15 +135,15 @@ TEST_CASE( "insert a cut", "[cuts]" )
 
   auto it = set.begin();
   CHECK( ( *it )->size() == 2 );
-  CHECK( std::vector<uint32_t>( ( *it )->begin(), ( *it )->end() ) == std::vector<uint32_t>{1, 2} );
+  CHECK( std::vector<uint32_t>( ( *it )->begin(), ( *it )->end() ) == std::vector<uint32_t>{ 1, 2 } );
 
   CHECK( !set.is_dominated( c4 ) );
   set.insert( c4 );
   CHECK( set.size() == 2u );
   it = set.begin();
-  CHECK( std::vector<uint32_t>( ( *it )->begin(), ( *it )->end() ) == std::vector<uint32_t>{3} );
+  CHECK( std::vector<uint32_t>( ( *it )->begin(), ( *it )->end() ) == std::vector<uint32_t>{ 3 } );
   ++it;
-  CHECK( std::vector<uint32_t>( ( *it )->begin(), ( *it )->end() ) == std::vector<uint32_t>{1, 2} );
+  CHECK( std::vector<uint32_t>( ( *it )->begin(), ( *it )->end() ) == std::vector<uint32_t>{ 1, 2 } );
 }
 
 TEST_CASE( "insert a cut2", "[cuts]" )
@@ -151,11 +151,11 @@ TEST_CASE( "insert a cut2", "[cuts]" )
   using cut_type = cut<10>;
 
   cut_type c1, c2, c3, c4, c5;
-  c1.set_leaves( std::vector<uint32_t>{3, 6} );
-  c2.set_leaves( std::vector<uint32_t>{1, 2, 3} );
-  c3.set_leaves( std::vector<uint32_t>{1, 2, 3, 8} );
-  c4.set_leaves( std::vector<uint32_t>{3, 4, 5} );
-  c5.set_leaves( std::vector<uint32_t>{7, 8} );
+  c1.set_leaves( std::vector<uint32_t>{ 3, 6 } );
+  c2.set_leaves( std::vector<uint32_t>{ 1, 2, 3 } );
+  c3.set_leaves( std::vector<uint32_t>{ 1, 2, 3, 8 } );
+  c4.set_leaves( std::vector<uint32_t>{ 3, 4, 5 } );
+  c5.set_leaves( std::vector<uint32_t>{ 7, 8 } );
 
   cut_set<cut_type, 25> set;
 
@@ -176,15 +176,15 @@ TEST_CASE( "merge three cuts", "[cuts]" )
   using cut_type = cut<10>;
 
   cut_type c1, c2, c3, cr, ct;
-  c1.set_leaves( std::vector{2u, 4u, 6u} );
-  c2.set_leaves( std::vector{3u, 5u, 7u} );
-  c3.set_leaves( std::vector{1u, 2u, 9u} );
+  c1.set_leaves( std::vector{ 2u, 4u, 6u } );
+  c2.set_leaves( std::vector{ 3u, 5u, 7u } );
+  c3.set_leaves( std::vector{ 1u, 2u, 9u } );
 
   c1.merge( c2, cr, 10 );
-  CHECK( std::vector<uint32_t>( cr.begin(), cr.end() ) == std::vector{2u, 3u, 4u, 5u, 6u, 7u} );
+  CHECK( std::vector<uint32_t>( cr.begin(), cr.end() ) == std::vector{ 2u, 3u, 4u, 5u, 6u, 7u } );
 
-  //ct.set_leaves( std::vector<uint32_t>( cr.begin(), cr.end() ) );
+  // ct.set_leaves( std::vector<uint32_t>( cr.begin(), cr.end() ) );
   ct = cr;
   ct.merge( c3, cr, 10 );
-  CHECK( std::vector<uint32_t>( cr.begin(), cr.end() ) == std::vector{1u, 2u, 3u, 4u, 5u, 6u, 7u, 9u} );
+  CHECK( std::vector<uint32_t>( cr.begin(), cr.end() ) == std::vector{ 1u, 2u, 3u, 4u, 5u, 6u, 7u, 9u } );
 }

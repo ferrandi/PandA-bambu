@@ -7,7 +7,7 @@ mkdir -p $basename_dir
 mkdir -p $basename_dir/hls1
 cd $basename_dir/hls1
 echo "#synthesis and simulation CORDIC"
-timeout 2h bambu --simulator=MODELSIM --print-dot $root_dir/cordic_atan2.cpp --compiler=I386_CLANG6 --no-iob --evaluation --clock-period=2.5 -DDB_CORDIC --do-not-expose-globals --device-name=xc7vx690t-3ffg1930-VVD --generate-interface=INFER --top-fname=top_atan2 --generate-tb="y0=4,x0=54,zn={0}" -DBIT_ACCURATE "$@"
+timeout 2h bambu --simulator=MODELSIM --print-dot $root_dir/cordic_atan2.cpp --compiler=I386_CLANG6 --evaluation --clock-period=2.5 -DDB_CORDIC --do-not-expose-globals --device-name=xc7vx690t-3ffg1930-VVD --generate-interface=INFER --top-fname=top_atan2 --generate-tb="y0=4,x0=54,zn={0}" -DBIT_ACCURATE "$@"
 return_value=$?
 if test $return_value != 0; then
    exit $return_value
@@ -17,7 +17,7 @@ mkdir -p $basename_dir
 mkdir -p $basename_dir/hls2
 cd $basename_dir/hls2
 echo "#synthesis and simulation CORDIC"
-timeout 2h bambu --simulator=MODELSIM --print-dot $root_dir/cordic_atan2.cpp --compiler=I386_CLANG6 --no-iob --evaluation --clock-period=2.5 -DDB_CORDIC --do-not-expose-globals --device-name=xc7vx690t-3ffg1930-VVD --generate-interface=INFER --top-fname=top_atan2 --generate-tb="y0=4,x0=54,zn={0}" "$@"
+timeout 2h bambu --simulator=MODELSIM --print-dot $root_dir/cordic_atan2.cpp --compiler=I386_CLANG6 --evaluation --clock-period=2.5 -DDB_CORDIC --do-not-expose-globals --device-name=xc7vx690t-3ffg1930-VVD --generate-interface=INFER --top-fname=top_atan2 --generate-tb="y0=4,x0=54,zn={0}" "$@"
 return_value=$?
 if test $return_value != 0; then
    exit $return_value
@@ -26,7 +26,7 @@ cd $current_dir
 mkdir -p $basename_dir/hls3
 cd $basename_dir/hls3
 echo "#synthesis and simulation + single precision"
-timeout 2h bambu --simulator=MODELSIM --print-dot $root_dir/cordic_atan2.cpp --compiler=I386_CLANG6 --no-iob --evaluation --clock-period=2.5 -DDB_SINGLE_PRECISION --do-not-expose-globals --device-name=xc7vx690t-3ffg1930-VVD --generate-interface=INFER --top-fname=top_atan2 --generate-tb="y0=4,x0=54,zn={0}" -lm "$@"
+timeout 2h bambu --simulator=MODELSIM --print-dot $root_dir/cordic_atan2.cpp --compiler=I386_CLANG6 --evaluation --clock-period=2.5 -DDB_SINGLE_PRECISION --do-not-expose-globals --device-name=xc7vx690t-3ffg1930-VVD --generate-interface=INFER --top-fname=top_atan2 --generate-tb="y0=4,x0=54,zn={0}" -lm "$@"
 return_value=$?
 if test $return_value != 0; then
    exit $return_value
@@ -36,7 +36,7 @@ mkdir -p $basename_dir
 mkdir -p $basename_dir/hls4
 cd $basename_dir/hls4
 echo "#synthesis and simulation double precision"
-timeout 2h bambu --simulator=MODELSIM --print-dot $root_dir/cordic_atan2.cpp --compiler=I386_CLANG6 --no-iob --evaluation --clock-period=2.5 -DDB_DOUBLE_PRECISION --do-not-expose-globals --device-name=xc7vx690t-3ffg1930-VVD --generate-interface=INFER --top-fname=top_atan2 --generate-tb="y0=4,x0=54,zn={0}" -lm "$@"
+timeout 2h bambu --simulator=MODELSIM --print-dot $root_dir/cordic_atan2.cpp --compiler=I386_CLANG6 --evaluation --clock-period=2.5 -DDB_DOUBLE_PRECISION --do-not-expose-globals --device-name=xc7vx690t-3ffg1930-VVD --generate-interface=INFER --top-fname=top_atan2 --generate-tb="y0=4,x0=54,zn={0}" -lm "$@"
 return_value=$?
 if test $return_value != 0; then
    exit $return_value

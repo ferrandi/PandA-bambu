@@ -211,31 +211,36 @@ llvm::PassPluginLibraryInfo CLANG_PLUGIN_INFO(_plugin_GepiCanon)()
                  MPM.addPass(llvm::createModuleToFunctionPassAdaptor(std::move(FPM)));
                  return true;
               });
-              PB.registerPipelineEarlySimplificationEPCallback(
-                  [](llvm::ModulePassManager& MPM, llvm::PassBuilder::OptimizationLevel) {
-                     llvm::FunctionPassManager FPM;
-                     FPM.addPass(llvm::PromotePass());
-                     FPM.addPass(llvm::CLANG_VERSION_SYMBOL(_plugin_GepiCanon) < SROA_intrinsic > ());
-                     FPM.addPass(llvm::VerifierPass());
-                     FPM.addPass(llvm::CLANG_VERSION_SYMBOL(_plugin_GepiCanon) < SROA_canonicalIdxs > ());
-                     FPM.addPass(llvm::VerifierPass());
-                     FPM.addPass(llvm::CLANG_VERSION_SYMBOL(_plugin_GepiCanon) < SROA_gepiExplicitation > ());
-                     FPM.addPass(llvm::VerifierPass());
-                     FPM.addPass(llvm::CLANG_VERSION_SYMBOL(_plugin_GepiCanon) < SROA_ptrIteratorSimplification > ());
-                     FPM.addPass(llvm::VerifierPass());
-                     FPM.addPass(llvm::CLANG_VERSION_SYMBOL(_plugin_GepiCanon) < SROA_chunkOperationsLowering > ());
-                     FPM.addPass(llvm::VerifierPass());
-                     FPM.addPass(llvm::CLANG_VERSION_SYMBOL(_plugin_GepiCanon) < SROA_bitcastVectorRemoval > ());
-                     FPM.addPass(llvm::VerifierPass());
-                     FPM.addPass(llvm::CLANG_VERSION_SYMBOL(_plugin_GepiCanon) < SROA_selectLowering > ());
-                     FPM.addPass(llvm::VerifierPass());
-                     FPM.addPass(llvm::CLANG_VERSION_SYMBOL(_plugin_GepiCanon) < SROA_canonicalIdxs > ());
-                     FPM.addPass(llvm::VerifierPass());
-                     FPM.addPass(llvm::CLANG_VERSION_SYMBOL(_plugin_GepiCanon) < SROA_gepiExplicitation > ());
-                     FPM.addPass(llvm::VerifierPass());
-                     MPM.addPass(llvm::createModuleToFunctionPassAdaptor(std::move(FPM)));
-                     return true;
-                  });
+              PB.registerPipelineEarlySimplificationEPCallback([](llvm::ModulePassManager& MPM,
+#if __clang_major__ < 16
+                                                                  llvm::PassBuilder::OptimizationLevel
+#else
+                 llvm::OptimizationLevel
+#endif
+                                                               ) {
+                 llvm::FunctionPassManager FPM;
+                 FPM.addPass(llvm::PromotePass());
+                 FPM.addPass(llvm::CLANG_VERSION_SYMBOL(_plugin_GepiCanon) < SROA_intrinsic > ());
+                 FPM.addPass(llvm::VerifierPass());
+                 FPM.addPass(llvm::CLANG_VERSION_SYMBOL(_plugin_GepiCanon) < SROA_canonicalIdxs > ());
+                 FPM.addPass(llvm::VerifierPass());
+                 FPM.addPass(llvm::CLANG_VERSION_SYMBOL(_plugin_GepiCanon) < SROA_gepiExplicitation > ());
+                 FPM.addPass(llvm::VerifierPass());
+                 FPM.addPass(llvm::CLANG_VERSION_SYMBOL(_plugin_GepiCanon) < SROA_ptrIteratorSimplification > ());
+                 FPM.addPass(llvm::VerifierPass());
+                 FPM.addPass(llvm::CLANG_VERSION_SYMBOL(_plugin_GepiCanon) < SROA_chunkOperationsLowering > ());
+                 FPM.addPass(llvm::VerifierPass());
+                 FPM.addPass(llvm::CLANG_VERSION_SYMBOL(_plugin_GepiCanon) < SROA_bitcastVectorRemoval > ());
+                 FPM.addPass(llvm::VerifierPass());
+                 FPM.addPass(llvm::CLANG_VERSION_SYMBOL(_plugin_GepiCanon) < SROA_selectLowering > ());
+                 FPM.addPass(llvm::VerifierPass());
+                 FPM.addPass(llvm::CLANG_VERSION_SYMBOL(_plugin_GepiCanon) < SROA_canonicalIdxs > ());
+                 FPM.addPass(llvm::VerifierPass());
+                 FPM.addPass(llvm::CLANG_VERSION_SYMBOL(_plugin_GepiCanon) < SROA_gepiExplicitation > ());
+                 FPM.addPass(llvm::VerifierPass());
+                 MPM.addPass(llvm::createModuleToFunctionPassAdaptor(std::move(FPM)));
+                 return true;
+              });
            }};
 }
 

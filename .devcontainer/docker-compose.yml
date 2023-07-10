@@ -1,0 +1,14 @@
+version: '3'
+
+volumes:
+  bambu_compilers:
+    name: bambu_compilers
+
+services:
+  buildenv:
+    image: bambuhls/dev:bionic-23.04
+    command: tail -f /dev/null
+    volumes:
+      - bambu_compilers:/compilers
+      - ../:/mirror:ro
+      - ../panda_dist:/panda_dist

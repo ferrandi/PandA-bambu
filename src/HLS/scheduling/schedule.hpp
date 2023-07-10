@@ -111,6 +111,11 @@ struct AbsControlStep : std::pair<unsigned int, ControlStep>
    bool operator<(const AbsControlStep& other) const;
 };
 
+struct loopPipelinedInfo
+{
+   unsigned int II = 0;
+};
+
 /**
  * Class managing the schedule of the operations.
  */
@@ -160,10 +165,6 @@ class Schedule
    /// The key is an operation graph edge
    CustomMap<std::pair<unsigned int, unsigned int>, double> connection_times;
 
-   /// Map for speculation property of each operation vertex. If true, it means that vertex is speculative executed,
-   /// false otherwise
-   CustomUnorderedMap<vertex, bool> spec;
-
    /// slack map
    std::map<vertex, double> op_slack;
 
@@ -175,6 +176,9 @@ class Schedule
 
    /// The debug level
    const int debug_level;
+
+   /// store for each loop pipelined the resulting II and other infos
+   CustomMap<unsigned, loopPipelinedInfo> loopPipelinedMap;
 
    /**
     * Get when in a basic block an ssa is ready
@@ -236,22 +240,6 @@ class Schedule
     * @param file_name is the file name
     */
    void WriteDot(const std::string& file_name) const;
-
-   /**
-    * Sets the speculation map
-    */
-   void set_spec(const CustomUnorderedMap<vertex, bool>& spec_map)
-   {
-      spec = spec_map;
-   }
-
-   /**
-    * Returns the speculation map
-    */
-   CustomUnorderedMap<vertex, bool> get_spec() const
-   {
-      return spec;
-   }
 
    /**
     * Sets the starting clock cycle for the given operation
@@ -332,6 +320,9 @@ class Schedule
     */
    void clear();
 
+   void remove_sched(const vertex& op);
+   void remove_sched(const unsigned int operation_index);
+
    /**
     * set the slack associated with the vertex with respect to the clock period
     */
@@ -403,6 +394,25 @@ class Schedule
     * @param value is the value of the correction
     */
    void AddConnectionTimes(unsigned int first_operation, unsigned int second_operation, const double value);
+
+   /**
+    * @brief AddLoopPipelinedInfor add info about the obtained II for a given BB
+    * @param BB_index is the basic block index of the pipelined loop
+    * @param II are the initiation interval
+    * @param fe are the data feedback edges
+    */
+   void AddLoopPipelinedInfor(unsigned BB_index, unsigned II)
+   {
+      loopPipelinedMap.insert({BB_index, {II}});
+   }
+   bool IsLoopPipelined(unsigned BB_index) const
+   {
+      return loopPipelinedMap.find(BB_index) != loopPipelinedMap.end();
+   }
+   unsigned GetLoopPipeliningII(unsigned BB_index) const
+   {
+      return loopPipelinedMap.find(BB_index)->second.II;
+   }
 };
 /// Refcount definition of the class
 using ScheduleRef = refcount<Schedule>;

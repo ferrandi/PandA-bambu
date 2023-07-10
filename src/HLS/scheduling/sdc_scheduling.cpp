@@ -72,143 +72,11 @@
 
 CONSTREF_FORWARD_DECL(Schedule);
 
-/**
- * Class used to sort operation using ALAP in ascending order as primary key and ASAP ascending order as secondary key
- */
-class SDCSorter : std::binary_function<vertex, vertex, bool>
-{
- private:
-   /// ASAP
-   const ScheduleConstRef asap;
-
-   /// ALAP
-   const ScheduleConstRef alap;
-
-   /// The function behavior
-   const FunctionBehaviorConstRef function_behavior;
-
-   /// The basic block graph
-   const BBGraphConstRef basic_block_graph;
-
-   /// The operation graph
-   const OpGraphConstRef op_graph;
-
-   /// The reachability map built on the basis of dependencies, consolidated choices and current choice
-   CustomMap<vertex, CustomSet<vertex>> reachability_map;
-
-   /// The index basic block map
-   const CustomUnorderedMap<unsigned int, vertex>& bb_index_map;
-
-   /// For each operation its level
-   CustomMap<vertex, size_t> op_levels;
-
-   /// The set of input parameters
-   const ParameterConstRef parameters;
-
-   /// The debug level
-   const int debug_level;
-
- public:
-   /**
-    * Constructor
-    * @param _asap is the asap information
-    * @param _alap is the alap information
-    * @param _function_behavior is the function behavior
-    * @param _op_graph is the operation graph
-    * @param _statements_list is the list of the statements of the basic block
-    * @param _parameters is the set of input parameters
-    */
-   SDCSorter(const ScheduleConstRef _asap, const ScheduleConstRef _alap,
-             const FunctionBehaviorConstRef _function_behavior, const OpGraphConstRef _op_graph,
-             std::set<vertex, bb_vertex_order_by_map> loop_bbs, const ParameterConstRef _parameters)
-       : asap(_asap),
-         alap(_alap),
-         function_behavior(_function_behavior),
-         basic_block_graph(_function_behavior->CGetBBGraph(FunctionBehavior::BB)),
-         op_graph(_op_graph),
-         bb_index_map(basic_block_graph->CGetBBGraphInfo()->bb_index_map),
-         parameters(_parameters),
-         debug_level(_parameters->get_class_debug_level(GET_CLASS(*this)))
-   {
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->SDC sorter constructor");
-
-      for(const auto& loop_bb : loop_bbs)
-      {
-         const auto& statements_list = basic_block_graph->CGetBBNodeInfo(loop_bb)->statements_list;
-         /// The position in the basic block
-         for(const auto vertex_to_be_analyzed : boost::adaptors::reverse(statements_list))
-         {
-            OutEdgeIterator eo, eo_end;
-            for(boost::tie(eo, eo_end) = boost::out_edges(vertex_to_be_analyzed, *op_graph); eo != eo_end; eo++)
-            {
-               vertex target = boost::target(*eo, *op_graph);
-               reachability_map[vertex_to_be_analyzed].insert(target);
-               reachability_map[vertex_to_be_analyzed].insert(reachability_map[target].begin(),
-                                                              reachability_map[target].end());
-            }
-         }
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Computed reachability");
-
-         /// We cluster candidate operations according to alap and asap - must be maps since we exploit order
-         std::map<ControlStep, std::map<ControlStep, CustomSet<vertex>>> alap_asap_cluster;
-
-         VertexIterator op, op_end;
-         for(boost::tie(op, op_end) = boost::vertices(*op_graph); op != op_end; op++)
-         {
-            alap_asap_cluster[alap->get_cstep(*op).second][asap->get_cstep(*op).second].insert(*op);
-         }
-
-         /// For each cluster
-         for(const auto& alap_cluster : alap_asap_cluster)
-         {
-            for(const auto& asap_cluster : alap_cluster.second)
-            {
-               auto to_process = std::set<vertex, op_vertex_order_by_map>(
-                   op_vertex_order_by_map(function_behavior->get_map_levels(), op_graph.get()));
-               for(const auto cluster_op : asap_cluster.second)
-               {
-                  to_process.insert(cluster_op);
-               }
-               for(const auto cluster_op : to_process)
-               {
-                  op_levels[cluster_op] = static_cast<size_t>(op_levels.size());
-               }
-            }
-         }
-      }
-   }
-
-   /**
-    * Compare position of two vertices
-    * @param x is the first vertex
-    * @param y is the second vertex
-    * @return true if x precedes y in topological sort, false otherwise
-    */
-   bool operator()(const vertex x, const vertex y) const
-   {
-      const auto first_bb_index = op_graph->CGetOpNodeInfo(x)->bb_index;
-      const auto second_bb_index = op_graph->CGetOpNodeInfo(y)->bb_index;
-      const auto first_bb_vertex = bb_index_map.at(first_bb_index);
-      const auto second_bb_vertex = bb_index_map.at(second_bb_index);
-      if(function_behavior->CheckBBReachability(first_bb_vertex, second_bb_vertex))
-      {
-         return true;
-      }
-      if(function_behavior->CheckBBReachability(second_bb_vertex, first_bb_vertex))
-      {
-         return false;
-      }
-      THROW_ASSERT(op_levels.count(x), "");
-      THROW_ASSERT(op_levels.count(y), "");
-      return op_levels.at(x) < op_levels.at(y);
-   }
-};
-
 SDCScheduling::SDCScheduling(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr,
                              unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager,
                              const HLSFlowStepSpecializationConstRef _hls_flow_step_specialization)
-    : Scheduling(_parameters, _HLSMgr, _function_id, _design_flow_manager, HLSFlowStep_Type::SDC_SCHEDULING,
-                 _hls_flow_step_specialization),
+    : SDCScheduling_base(_parameters, _HLSMgr, _function_id, _design_flow_manager, HLSFlowStep_Type::SDC_SCHEDULING,
+                         _hls_flow_step_specialization),
       clock_period(0.0),
       margin(0.0)
 {
@@ -515,14 +383,14 @@ void SDCScheduling::ComputeRelationships(DesignFlowStepSet& relationship,
          }
       }
    }
-   Scheduling::ComputeRelationships(relationship, relationship_type);
+   schedulingBaseStep::ComputeRelationships(relationship, relationship_type);
 }
 
 const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
 SDCScheduling::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret =
-       Scheduling::ComputeHLSRelationships(relationship_type);
+       schedulingBaseStep::ComputeHLSRelationships(relationship_type);
    switch(relationship_type)
    {
       case DEPENDENCE_RELATIONSHIP:
@@ -561,7 +429,7 @@ bool SDCScheduling::HasToBeExecuted() const
 {
    if(bb_version == 0)
    {
-      return Scheduling::HasToBeExecuted();
+      return schedulingBaseStep::HasToBeExecuted();
    }
    else
    {
@@ -733,11 +601,8 @@ DesignFlowStep_Status SDCScheduling::InternalExec()
                           loop_bbs);
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Added delay constraint");
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Adding sorting constraint");
-      const ASLAPRef aslap(new ASLAP(HLSMgr, HLS, true, Loop_operations, parameters, 1000));
-      aslap->compute_ASAP();
-      aslap->compute_ALAP(ASLAP::ALAP_fast);
-      SDCSorter sdc_sorter =
-          SDCSorter(aslap->CGetASAP(), aslap->CGetALAP(), FB, filtered_op_graph, loop_bbs, parameters);
+
+      SDCSorter sdc_sorter = SDCSorter(FB, filtered_op_graph);
 
       /// For each basic block, the set of unbounded operations found on the paths to it
       CustomMap<vertex, OpVertexSet> loop_unbounded_operations;
@@ -1261,7 +1126,7 @@ DesignFlowStep_Status SDCScheduling::InternalExec()
                coeffs[static_cast<int>(operation_to_varindex.at(std::make_pair(operation, 0)))] = 1.0;
                coeffs[static_cast<int>(operation_to_varindex.at(std::make_pair(
                    other_operation, allocation_information->GetCycleLatency(other_operation) - 1)))] = -1.0;
-               /// last cannot be scheduleded with unbounded operations
+               /// last cannot be scheduled with unbounded operations
                if(!allocation_information->is_operation_bounded(filtered_op_graph, other_operation,
                                                                 allocation_information->GetFuType(other_operation)))
                {
@@ -1584,7 +1449,7 @@ DesignFlowStep_Status SDCScheduling::InternalExec()
 void SDCScheduling::Initialize()
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Initializing SDCScheduling");
-   Scheduling::Initialize();
+   schedulingBaseStep::Initialize();
    const FunctionBehaviorConstRef FB = HLSMgr->CGetFunctionBehavior(funId);
    op_graph = FB->CGetOpGraph(FunctionBehavior::FLSAODG);
    behavioral_helper = FB->CGetBehavioralHelper();
@@ -1628,7 +1493,7 @@ void SDCScheduling::Initialize()
    //       }
    //    }
    // }
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Computed unbounded operations");
+   // INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Computed unbounded operations");
    limited_resources.clear();
    const auto resource_types_number = allocation_information->get_number_fu_types();
    for(auto resource_type = 0U; resource_type != resource_types_number; resource_type++)

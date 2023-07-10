@@ -321,7 +321,7 @@ inline void CopyFile(boost::filesystem::path file_source, boost::filesystem::pat
    }
    else
    {
-      boost::filesystem::copy_file(file_source, file_target, boost::filesystem::copy_option::overwrite_if_exists);
+      boost::filesystem::copy_file(file_source, file_target, boost::filesystem::copy_options::overwrite_existing);
    }
 }
 
@@ -339,6 +339,7 @@ inline std::string BuildPath(const std::string& first_part, const std::string se
  * System call forcing execution with bash
  * @param Param is the set of input parameters
  * @param system_command is the  to be executed
+ * @param host_exec specifies if the executable is expected to be in the host system or distributed within the AppImage
  * @param output is the file where output has to be saved
  * @param type specifies which streams have to be saved; possible values are 0 (none), 1 (stdout), 2 (stderr), 3(stdout
  * and stderr)
@@ -346,8 +347,9 @@ inline std::string BuildPath(const std::string& first_part, const std::string se
  * @param timeout is the timeout for the command (in minutes)
  * @return the value returned by the shell
  */
-inline int PandaSystem(const ParameterConstRef Param, const std::string& system_command, const std::string& output = "",
-                       const unsigned int type = 3, const bool background = false, const size_t timeout = 0)
+inline int PandaSystem(const ParameterConstRef Param, const std::string& system_command, bool host_exec = true,
+                       const std::string& output = "", const unsigned int type = 3, const bool background = false,
+                       const size_t timeout = 0)
 {
    static size_t counter = 0;
    const std::string actual_output = output == "" ? Param->getOption<std::string>(OPT_output_temporary_directory) +
@@ -360,6 +362,14 @@ inline int PandaSystem(const ParameterConstRef Param, const std::string& system_
    counter++;
    std::ofstream script_file(script_file_name.c_str());
    script_file << "#!/bin/bash" << std::endl;
+   if(host_exec)
+   {
+      script_file << "if [ ! -z \"$APPDIR\" ]; then\n"
+                  << "  export PATH=$(sed -E 's/\\/tmp\\/.mount[^\\:]+\\://g' <<< $PATH)\n"
+                  << "  export LD_LIBRARY_PATH=$(sed -E 's/\\/tmp\\/.mount[^\\:]+\\://g' <<< $LD_LIBRARY_PATH)\n"
+                  << "  export PERLLIB=$(sed -E 's/\\/tmp\\/.mount[^\\:]+\\://g' <<< $PERLLIB)\n"
+                  << "fi\n";
+   }
    script_file << "ulimit -s 131072" << std::endl;
    script_file << "cd " << GetCurrentPath() << std::endl;
    THROW_ASSERT(not background or timeout == 0, "Background and timeout cannot be specified at the same time");

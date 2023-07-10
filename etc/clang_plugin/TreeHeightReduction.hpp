@@ -39,31 +39,27 @@
 //
 // The code has been adapted starting from this PR: https://reviews.llvm.org/D67383.
 // The author of the original code is masakazu.ueno
-// The porting has been done by Fabrizio Ferrandi. The main change is related to the operations latencies.
+// The porting has been done by Fabrizio Ferrandi. The main change is related to the operations latencies and on some
+// assumptions.
 
+#include <iostream>
 #undef NDEBUG
 #include "llvm/ADT/DepthFirstIterator.h"
 #include "llvm/ADT/SmallVector.h"
 #include "llvm/ADT/Twine.h"
-#include "llvm/Analysis/LoopPass.h"
+#include "llvm/Analysis/LoopInfo.h"
 #include "llvm/Analysis/OptimizationRemarkEmitter.h"
-#include "llvm/Analysis/TargetTransformInfo.h"
 #include "llvm/IR/BasicBlock.h"
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/Instruction.h"
-#include "llvm/IR/LLVMContext.h"
-#include "llvm/IR/OptBisect.h"
 #include "llvm/IR/Type.h"
 #include "llvm/IR/User.h"
 #include "llvm/IR/Value.h"
-#include "llvm/Pass.h"
-#include "llvm/Support/CommandLine.h"
-#include "llvm/Support/Debug.h"
 #include "llvm/Support/raw_ostream.h"
-#include "llvm/Transforms/Scalar.h"
 #include <cstdlib>
 #include <map>
 #include <queue>
+#include <set>
 #include <sstream>
 #include <string>
 #include <utility>
@@ -117,7 +113,9 @@ namespace llvm
       {
          auto* UserInst = dyn_cast<Instruction>(U);
          if(UserInst && isa<T>(*UserInst))
+         {
             return true;
+      }
       }
       return false;
    }
@@ -127,18 +125,26 @@ namespace llvm
    static bool isIntgerInstTHRTarget(Instruction* I)
    {
       if(!I->getType()->isIntegerTy())
+      {
          return false;
+      }
       // 'I' which is used at ICmpInst may be an induction variable.
       if(isUsedAtCmpInst<ICmpInst>(I))
+      {
          return false;
+      }
       switch(I->getOpcode())
       {
          case Instruction::Add:
          case Instruction::Mul:
+         {
             return true;
+         }
          default:
+         {
             return false;
       }
+   }
    }
 
    // Return true if 'I' is floating-point type and is target instruction
@@ -146,17 +152,25 @@ namespace llvm
    static bool isFpInstTHRTarget(Instruction* I)
    {
       if(!I->getType()->isFloatingPointTy())
+      {
          return false;
+      }
       if(!I->isFast())
+      {
          return false;
+      }
       switch(I->getOpcode())
       {
          case Instruction::FAdd:
          case Instruction::FMul:
+         {
             return true;
+         }
          default:
+         {
             return false;
       }
+   }
    }
 
    class Node
@@ -183,9 +197,13 @@ namespace llvm
          {
             Node* CurNode = Nodes[i];
             if(Node* L = CurNode->getLeft())
+            {
                Nodes.push_back(L);
+            }
             if(Node* R = CurNode->getRight())
+            {
                Nodes.push_back(R);
+         }
          }
 
          return Nodes;
@@ -283,6 +301,11 @@ namespace llvm
          return !isNode();
       }
 
+      bool isPhi() const
+      {
+         return Inst && isa<PHINode>(Inst);
+      }
+
       /// Return true if current node is a root.
       bool isRoot() const
       {
@@ -297,11 +320,17 @@ namespace llvm
       bool isConsideredAsLeaf() const
       {
          if(isLeaf())
+         {
             return true;
+         }
          if(!getOrgInst()->isCommutative())
+         {
             return true;
+         }
          if(!isRoot() && getOpcode() != getParent()->getOpcode())
+         {
             return true;
+         }
          return false;
       }
 
@@ -313,6 +342,7 @@ namespace llvm
          for(auto Begin = Nodes.rbegin(), End = Nodes.rend(); Begin != End; ++Begin)
          {
             Node* CurNode = *Begin;
+            assert(CurNode);
             CurNode->updateNodeLatency();
          }
       }
@@ -338,95 +368,155 @@ namespace llvm
             case Instruction::GetElementPtr:
             case Instruction::Add:
             case Instruction::Sub:
+            {
                return getCost(bits, "plus_expr");
+            }
             case Instruction::Mul:
+            {
                return getCost(bits, "mult_expr");
-            case Instruction::Ret:
+            }
             case Instruction::PHI:
+            case Instruction::Ret:
             case Instruction::Br:
+            {
                return 0;
+            }
             case Instruction::FAdd:
             case Instruction::FSub:
+            {
                return getCost(bits, "Fplus_expr");
+            }
             case Instruction::FMul:
+            {
                return getCost(bits, "Fmult_expr");
+            }
             case Instruction::UDiv:
             case Instruction::SDiv:
+            {
                return getCost(bits, "trunc_div_expr");
+            }
             case Instruction::FDiv:
+            {
                return getCost(bits, "Frdiv_expr");
+            }
             case Instruction::URem:
             case Instruction::SRem:
+            {
                return getCost(bits, "trunc_mod_expr");
+            }
             case Instruction::FRem:
             {
                llvm_unreachable("floating point remainder not foreseen yet");
                return 0;
             }
             case Instruction::Shl:
+            {
                return getCost(bits, "lshift_expr");
+            }
             case Instruction::LShr:
             case Instruction::AShr:
+            {
                return getCost(bits, "rshift_expr");
+            }
             case Instruction::And:
+            {
                return getCost(bits, "bit_and_expr");
+            }
             case Instruction::Or:
+            {
                return getCost(bits, "bit_ior_expr");
+            }
             case Instruction::Xor:
+            {
                return getCost(bits, "bit_xor_expr");
+            }
 #if __clang_major__ >= 10
             case Instruction::FNeg:
+            {
                return 0;
+            }
 #endif
             case Instruction::Select:
+            {
                return getCost(bits, "cond_expr");
+            }
             case Instruction::ICmp:
+            {
                return 0;
+            }
             case Instruction::FCmp:
-               return getCost(bits, "Fplus_expr"); // simplified
+            {
+               // simplified
+               return getCost(bits, "Fplus_expr");
+            }
             case Instruction::Store:
+            {
                return getCost(32, "store_expr");
+            }
             case Instruction::Load:
+            {
                return getCost(32, "load_expr");
+            }
             case Instruction::ZExt:
             case Instruction::SExt:
+            {
                return 0;
+            }
             case Instruction::PtrToInt:
             case Instruction::IntToPtr:
             case Instruction::Trunc:
+            {
                return 0;
+            }
             case Instruction::FPToUI:
             case Instruction::FPToSI:
             case Instruction::FPExt:
             case Instruction::SIToFP:
             case Instruction::UIToFP:
             case Instruction::FPTrunc:
+            {
                return getCost(32, "nop_expr");
-               ;
+            }
+
             case Instruction::BitCast:
             case Instruction::AddrSpaceCast:
             case Instruction::ExtractElement:
             case Instruction::InsertElement:
             case Instruction::ExtractValue:
             case Instruction::ShuffleVector:
+            {
                return 0;
+            }
             case Instruction::Call:
             case Instruction::Switch:
+            {
                return 0;
+            }
             default:
+            {
                // We don't have any information on this instruction.
                return 0;
          }
+      }
       }
 
       /// Update current node's latency.
       void updateNodeLatency()
       {
+         if(isPhi())
+         {
+            setLatency(100000);
+            setTotalCost(100000);
+         }
+         else
+         {
          setLatency(0);
          setTotalCost(0);
-
+         }
          if(isLeaf())
+         {
             return;
+         }
 
          updateLeftOrRightNodeLatency(UpdateLatecy::UL_Left);
          updateLeftOrRightNodeLatency(UpdateLatecy::UL_Right);
@@ -462,13 +552,17 @@ namespace llvm
                break;
             }
             default:
+            {
                llvm_unreachable("Should not reach here.");
+         }
          }
 
          assert(SubNode && "Left or right node should not be nullptr.");
          const auto SubNodeLatency = SubNode->getLatency();
          if(SubNodeLatency > _Latency)
+         {
             setLatency(SubNodeLatency);
+         }
          setTotalCost(getTotalCost() + SubNode->getTotalCost());
       }
 
@@ -510,7 +604,6 @@ namespace llvm
             Iter = Nodes.erase(Iter);
          }
       }
-
       return Nodes;
    }
 
@@ -566,16 +659,18 @@ namespace llvm
          std::stringstream ss(str);
          std::string token;
          while(std::getline(ss, token, delim))
+         {
             cont.push_back(token);
+      }
       }
       void __buildMap(const std::string& input, std::map<std::pair<std::string, std::string>, double>& _map)
       {
          std::vector<std::string> vec_value;
          __split(vec_value, input, ',');
-         for(std::vector<std::string>::iterator el = vec_value.begin(); el != vec_value.end(); ++el)
+         for(auto& el : vec_value)
          {
             std::vector<std::string> vec_pair;
-            __split(vec_pair, *el, '=');
+            __split(vec_pair, el, '=');
             std::vector<std::string> key_pair;
             __split(key_pair, vec_pair.at(0), '|');
             _map[std::make_pair(key_pair.at(0), key_pair.at(1))] = std::atof(vec_pair.at(1).c_str());
@@ -583,13 +678,11 @@ namespace llvm
       }
 
     public:
-      explicit TreeHeightReduction()
-      {
-      }
+      explicit TreeHeightReduction() = default;
 
       bool runOnModule(const llvm::Module& M, llvm::function_ref<llvm::LoopInfo&(llvm::Function&)> _GetLI,
                        llvm::function_ref<llvm::OptimizationRemarkEmitter&(llvm::Function&)> _GetORE,
-                       const std::string& costTable, bool DisableIntTHR = false, bool EnableFpTHR = false)
+                       const std::string& costTable, bool DisableIntTHR = false, bool EnableFpTHR = true)
       {
          __buildMap(costTable, Node::InstructionLatencyTable);
          bool changed = false;
@@ -597,50 +690,58 @@ namespace llvm
          {
             if(!fun.isIntrinsic() && !fun.isDeclaration())
             {
-               llvm::Function* currentFunction = const_cast<llvm::Function*>(&fun);
+               auto* currentFunction = const_cast<llvm::Function*>(&fun);
                auto& LI = _GetLI(*currentFunction);
                auto ORE = &_GetORE(*currentFunction);
-
                if(!LI.empty())
                {
-                  for(auto it = LI.begin(); it != LI.end(); ++it)
+                  for(auto L : LI)
                   {
-                     auto L = *it;
-
                      // Tree height reduction is applied only to inner-most loop.
                      SmallVector<Loop*, 4> Worklist;
-                     for(Loop* CurLoop : depth_first(L))
+                     for(Loop* CurLoop : llvm::depth_first(L))
+                     {
 #if __clang_major__ >= 12
                         if(CurLoop->isInnermost())
 #else
                         if(CurLoop->empty())
 #endif
+                        {
                            Worklist.push_back(CurLoop);
-
+                        }
+                     }
                      for(Loop* l : Worklist)
                      {
                         auto& LoopBlocks = l->getBlocksVector();
                         for(auto* BB : LoopBlocks)
                         {
                            if(!DisableIntTHR)
+                           {
                               changed |= runOnBasicBlock(BB, TargetInstTy::INTEGER, ORE);
+                           }
                            if(EnableFpTHR)
+                           {
                               changed |= runOnBasicBlock(BB, TargetInstTy::FLOATING_POINT, ORE);
                         }
                      }
                   }
                }
-               else if(!currentFunction->getBasicBlockList().empty())
+               }
+               else if(!currentFunction->empty())
                {
-                  for(auto& BB : currentFunction->getBasicBlockList())
+                  for(auto& BB : *currentFunction)
                   {
                      if(!DisableIntTHR)
+                     {
                         changed |= runOnBasicBlock(&BB, TargetInstTy::INTEGER, ORE);
+                     }
                      if(EnableFpTHR)
+                     {
                         changed |= runOnBasicBlock(&BB, TargetInstTy::FLOATING_POINT, ORE);
                   }
                }
             }
+         }
          }
          return changed;
       }
@@ -664,11 +765,15 @@ namespace llvm
          for(auto* N : Worklist)
          {
             if(N->isLeaf())
+            {
                ++NumLeaves;
+            }
             // We consider that it is worth applying tree height reduction
-            // if the number of leaves is equal to or more than 4.
-            if(NumLeaves >= 4)
+            // if the number of leaves is equal to or more than 2.
+            if(NumLeaves >= 2)
+            {
                return true;
+         }
          }
 
          return false;
@@ -677,8 +782,12 @@ namespace llvm
       static void eraseOrgInsts(std::vector<Instruction*>& Insts)
       {
          for(auto* I : Insts)
+         {
             if(I)
+            {
                I->eraseFromParent();
+      }
+         }
       }
 
       // Tree height reduction is applied to each basic block which
@@ -692,16 +801,22 @@ namespace llvm
          {
             Instruction& I = *Begin;
             if(GeneratedInsts.count(&I) == 1)
+            {
                continue;
+            }
             if(!isRootCandidate(I, TIT))
+            {
                continue;
+            }
 
             // Construct operation tree from root instruction.
             auto* V = dyn_cast<Value>(&I);
             assert(V && "Defined value should not be nullptr.");
             Node* OrgTree = constructTree(V, TIT);
             if(!OrgTree)
+            {
                continue;
+            }
 
             if(!isLegalToApply(OrgTree))
             {
@@ -753,19 +868,27 @@ namespace llvm
          switch(CurTargetInstTy)
          {
             case TargetInstTy::INTEGER:
+            {
                return isIntgerInstTHRTarget(I);
+            }
             case TargetInstTy::FLOATING_POINT:
+            {
                return isFpInstTHRTarget(I);
+            }
             default:
+            {
                return false;
          }
+      }
       }
 
       // Construct operation tree from value 'V'.
       Node* constructTree(Value* V, TargetInstTy CurTargetInstTy)
       {
          if(!isNodeCandidate(V, CurTargetInstTy))
+         {
             return new Node(V);
+         }
 
          auto* I = dyn_cast<Instruction>(V);
          assert(I && "Instruction should not be nullptr.");
@@ -801,7 +924,9 @@ namespace llvm
       {
          std::vector<Node*> Nodes = Node::getNodesAndLeavesByBFS(N);
          for(auto* CurNode : Nodes)
+         {
             delete CurNode;
+      }
       }
 
       // Collect original instructions to be erased from BasicBlock.
@@ -809,11 +934,13 @@ namespace llvm
       {
          std::vector<Node*> Nodes = Node::getNodesAndLeavesByBFS(N);
          for(auto* CurNode : Nodes)
+         {
             // Instruction belonging to leaf node should be saved.
             if(!CurNode->isLeaf())
             {
                Insts.push_back(CurNode->getOrgInst());
             }
+      }
       }
 
       // Apply tree height reduction to 'N'.
@@ -822,15 +949,23 @@ namespace llvm
       {
          // Postorder depth-first search.
          if(!N->isNode())
+         {
             return N;
+         }
 
          if(Node* Left = N->getLeft())
+         {
             applyTreeHeightReduction(Left, true, CurTargetInstTy);
+         }
          if(Node* Right = N->getRight())
+         {
             applyTreeHeightReduction(Right, false, CurTargetInstTy);
+         }
 
          if(!isTHRTargetInst(N->getOrgInst(), CurTargetInstTy))
+         {
             return N;
+         }
 
          // Save original parent information.
          Node* Parent = N->getParent();
@@ -847,9 +982,13 @@ namespace llvm
          if(Parent)
          {
             if(isLeft)
+            {
                Parent->setLeft(NewNode);
+            }
             else
+            {
                Parent->setRight(NewNode);
+         }
          }
          // Return value has meaning only if 'Parent' is nullptr because
          // this means 'Node' is a root node.
@@ -876,10 +1015,14 @@ namespace llvm
 
             ReusedNodes.push_back(CurNode);
             if(Node* Left = CurNode->getLeft())
+            {
                Worklist.push_back(Left);
+            }
             if(Node* Right = CurNode->getRight())
+            {
                Worklist.push_back(Right);
          }
+      }
       }
 
       // Apply tree height reduction to under a node 'N', and construct
@@ -905,9 +1048,13 @@ namespace llvm
          {
             std::sort(Leaves.begin(), Leaves.end(), [](Node* LHS, Node* RHS) -> bool {
                if(LHS->getLatency() != RHS->getLatency())
+               {
                   return LHS->getLatency() < RHS->getLatency();
+               }
                if(LHS->getTotalCost() != RHS->getTotalCost())
+               {
                   return LHS->getTotalCost() < RHS->getTotalCost();
+               }
                return false;
             });
             // printLeaves(Leaves, true);
@@ -930,6 +1077,9 @@ namespace llvm
       void combineLeaves(std::vector<Node*>& Leaves, Node* Op1, Node* Op2, std::vector<Node*>& ReusedNodes)
       {
          Node* N = ReusedNodes.back();
+         assert(N);
+         assert(Op1);
+         assert(Op2);
          ReusedNodes.pop_back();
 
          // Update child and its parent relationship.
@@ -1000,14 +1150,18 @@ namespace llvm
                break;
             }
             default:
+            {
                assert(0);
                return nullptr;
+         }
          }
 
          // Take over the original instruction IR flags.
          auto* NewInst = dyn_cast<Instruction>(V);
          if(Value* OrgDef = N->getDefinedValue())
+         {
             NewInst->copyIRFlags(OrgDef, true);
+         }
 
          return V;
       }
@@ -1016,10 +1170,16 @@ namespace llvm
       bool isRootCandidate(Instruction& I, TargetInstTy CurTargetInstTy) const
       {
          if(!isTHRTargetInst(&I, CurTargetInstTy))
+         {
             return false;
+         }
          for(unsigned i = 0; i < I.getNumOperands(); ++i)
+         {
             if(isNodeCandidate(I.getOperand(i), CurTargetInstTy))
+            {
                return true;
+            }
+         }
          return false;
       }
 
@@ -1028,16 +1188,30 @@ namespace llvm
       {
          assert(Op && "Operand should not be nullptr");
          if(!Op->hasOneUse())
+         {
+            for(auto U : Op->users())
+            {
+               auto* UserInst = dyn_cast<Instruction>(U);
+               if(UserInst && isTHRTargetInst(UserInst, CurTargetInstTy))
+               {
             return false;
+         }
+            }
+            return true;
+         }
          if(auto* I = dyn_cast<Instruction>(Op))
+         {
             return isTHRTargetInst(I, CurTargetInstTy);
+         }
          return false;
       }
 
       void printTree(Node* N, const int Indent) const
       {
          for(int i = 0; i < Indent; ++i)
+         {
             errs() << " ";
+         }
          auto _Inst = dyn_cast<Instruction>(N->getDefinedValue());
          if(_Inst)
          {
@@ -1048,24 +1222,36 @@ namespace llvm
             N->getDefinedValue()->print(llvm::errs(), true);
          }
          for(int i = 0; i < Indent + 4; ++i)
+         {
             errs() << " ";
+         }
          errs() << "Latency: " << N->getLatency();
          errs() << ", TotalCost: " << N->getTotalCost() << "\n";
 
          if(Node* Left = N->getLeft())
+         {
             printTree(Left, Indent + 2);
+         }
          if(Node* Right = N->getRight())
+         {
             printTree(Right, Indent + 2);
+      }
       }
 
       void printLeaves(const std::vector<Node*>& Leaves, bool isBefore) const
       {
          if(isBefore)
+         {
             errs() << "  --- Before ---\n";
+         }
          else
+         {
             errs() << "  --- After ---\n";
+         }
          for(auto* Node : Leaves)
+         {
             printTree(Node, 2);
+      }
       }
    };
 

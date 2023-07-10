@@ -48,7 +48,6 @@
 
 /// HLS/binding/storage_value_information includes
 #include "storage_value_information_fsm.hpp"
-#include "storage_value_information_pipeline.hpp"
 
 /// HLS/liveness include
 #include "liveness.hpp"
@@ -76,15 +75,9 @@ values_scheme::~values_scheme() = default;
 void values_scheme::Initialize()
 {
    HLSFunctionStep::Initialize();
-   if(HLSMgr->CGetFunctionBehavior(HLS->functionId)->is_simple_pipeline())
-   {
-      HLS->storage_value_information =
-          StorageValueInformationPipelineRef(new StorageValueInformationPipeline(HLSMgr, funId));
-   }
-   else
-   {
-      HLS->storage_value_information = StorageValueInformationFsmRef(new StorageValueInformationFsm(HLSMgr, funId));
-   }
+
+   HLS->storage_value_information = StorageValueInformationFsmRef(new StorageValueInformationFsm(HLSMgr, funId));
+
    HLS->storage_value_information->Initialize();
 }
 
@@ -98,54 +91,25 @@ DesignFlowStep_Status values_scheme::InternalExec()
    THROW_ASSERT(HLS->Rliv, "Liveness analysis not yet computed");
    const tree_managerRef TreeM = HLSMgr->get_tree_manager();
    unsigned int i = 0;
-   vertex current_vertex;
-   vertex start_state = HLS->STG->get_entry_state();
    const std::list<vertex>& support = HLS->Rliv->get_support();
-   last_intermediate_state fetch_previous(HLS->STG->GetStg(),
-                                          HLSMgr->CGetFunctionBehavior(funId)->is_simple_pipeline());
-   next_unique_state get_next(HLS->STG->GetStg());
+   auto stg = HLS->STG->GetAstg();
+   const FunctionBehaviorConstRef FB = HLSMgr->CGetFunctionBehavior(funId);
+   const BehavioralHelperConstRef BH = FB->CGetBehavioralHelper();
 
-   const auto vEnd = support.end();
-   for(auto vIt = support.begin(); vIt != vEnd; ++vIt)
+   for(auto vIt : support)
    {
-      // std::cerr << "current state for sv " << HLS->Rliv->get_name(*vIt) << std::endl;
-      const CustomOrderedSet<unsigned int>& live = HLS->Rliv->get_live_in(*vIt);
-      const CustomOrderedSet<unsigned int>::const_iterator k_end = live.end();
-      for(auto k = live.begin(); k != k_end; ++k)
+      // std::cerr << "current state for sv " << HLS->Rliv->get_name(vIt) << std::endl;
+      const auto& live = HLS->Rliv->get_live_in(vIt);
+      auto si = HLS->STG->GetStg()->GetStateInfo(vIt);
+      for(auto k : live)
       {
-         if(!HLS->storage_value_information->is_a_storage_value(*vIt, *k))
+         if(!HLS->storage_value_information->is_a_storage_value(vIt, k.first, k.second))
          {
-            HLS->storage_value_information->set_storage_value_index(*vIt, *k, i);
-            HLS->storage_value_information->variable_index_map[i] = *k;
+            // std::cerr << BH->PrintVariable(k.first) << "(" << k.first << ")"
+            //           << "=" << k.second << " ->" << i << "\n";
+            HLS->storage_value_information->set_storage_value_index(vIt, k.first, k.second, i);
+            HLS->storage_value_information->variable_index_map[i] = k;
             i++;
-         }
-      }
-      if(HLSMgr->CGetFunctionBehavior(HLS->functionId)->is_simple_pipeline())
-      {
-         std::list<vertex> running_ops = HLS->STG->GetStg()->GetStateInfo(*vIt)->executing_operations;
-         const auto opEnd = running_ops.end();
-         vertex state_0 = get_next(start_state);
-         for(auto opIt = running_ops.begin(); opIt != opEnd; ++opIt)
-         {
-            std::vector<HLS_manager::io_binding_type> inVars = HLSMgr->get_required_values(HLS->functionId, *opIt);
-            for(unsigned int num = 0; num != inVars.size(); num++)
-            {
-               unsigned int var = std::get<0>(inVars[num]);
-               if(var != 0 && tree_helper::is_parameter(TreeM, var))
-               {
-                  current_vertex = *vIt;
-                  while(current_vertex != state_0)
-                  {
-                     if(!HLS->storage_value_information->is_a_storage_value(current_vertex, var))
-                     {
-                        HLS->storage_value_information->set_storage_value_index(current_vertex, var, i);
-                        HLS->storage_value_information->variable_index_map[i] = var;
-                        i++;
-                     }
-                     current_vertex = fetch_previous(start_state, current_vertex);
-                  }
-               }
-            }
          }
       }
    }
@@ -155,8 +119,7 @@ DesignFlowStep_Status values_scheme::InternalExec()
       INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "");
    }
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
-                  "-->Storage Value Information of function " +
-                      HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->get_function_name() + ":");
+                  "-->Storage Value Information of function " + BH->get_function_name() + ":");
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Number of storage values inserted: " + std::to_string(i));
    if(output_level >= OUTPUT_LEVEL_MINIMUM and output_level <= OUTPUT_LEVEL_PEDANTIC)
    {

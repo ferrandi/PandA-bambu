@@ -51,7 +51,6 @@
 #include "config_HAVE_BAMBU_BUILT.hpp"
 #include "config_HAVE_CODE_ESTIMATION_BUILT.hpp"
 #include "config_HAVE_FROM_PRAGMA_BUILT.hpp"
-#include "config_HAVE_TUCANO_BUILT.hpp"
 #include "config_HAVE_UNORDERED.hpp"
 
 #include <cstddef>    // for size_t
@@ -1172,7 +1171,7 @@ struct gimple_node : public srcp, public WeightedNode
    /// The basic block to which this gimple_node belongs
    unsigned int bb_index;
 
-#if HAVE_BAMBU_BUILT || HAVE_TUCANO_BUILT
+#if HAVE_BAMBU_BUILT
    /// The operation
    std::string operation;
 #endif
@@ -2828,11 +2827,8 @@ struct function_decl : public decl_node, public attr
    /// True if pipelining is enabled for the function
    bool pipeline_enabled;
 
-   /// True if the pipeline does not contain any unbounded operation
-   bool simple_pipeline;
-
-   /// Used for pipelined with unbounded operations
-   int initiation_time;
+   /// initiation time in case function is pipelined
+   unsigned initiation_time;
 
 #if HAVE_FROM_PRAGMA_BUILT
    /// If different from zero, the parallel degree of the contained openmp loop
@@ -2955,13 +2951,9 @@ struct function_decl : public decl_node, public attr
 
    void set_pipelining(bool v);
 
-   bool is_simple_pipeline();
+   unsigned get_initiation_time();
 
-   void set_simple_pipeline(bool v);
-
-   int get_initiation_time();
-
-   void set_initiation_time(int time);
+   void set_initiation_time(unsigned time);
 
    /// Redefinition of get_kind_text.
    GET_KIND_TEXT(function_decl)

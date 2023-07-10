@@ -59,7 +59,7 @@ IndentedOutputStream::IndentedOutputStream(char o, char c, unsigned int d)
 IndentedOutputStream::~IndentedOutputStream()
 {
 #ifndef NDEBUG
-   /// This corresponds to a THROW_ASSERT, however it is against C++ rules throw an errror inside a destructor
+   /// This corresponds to a THROW_ASSERT, however it is against C++ rules throw an error inside a destructor
    if(indent_spaces != 0)
    {
       std::cerr << "Not all indentations have been closed: " << indentation << std::endl;

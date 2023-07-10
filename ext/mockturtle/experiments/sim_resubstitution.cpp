@@ -1,5 +1,5 @@
 /* mockturtle: C++ logic network library
- * Copyright (C) 2018-2020  EPFL
+ * Copyright (C) 2018-2022  EPFL
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -46,13 +46,18 @@ int main()
   {
     fmt::print( "[i] processing {}\n", benchmark );
     aig_network aig;
-    lorina::read_aiger( benchmark_path( benchmark ), aiger_reader( aig ) );
+    if ( lorina::read_aiger( benchmark_path( benchmark ), aiger_reader( aig ) ) != lorina::return_code::success )
+    {
+      continue;
+    }
 
     resubstitution_params ps;
     resubstitution_stats st;
 
-    //ps.pattern_filename = "1024sa1/" + benchmark + ".pat";
-    ps.max_inserts = 1;
+    // ps.pattern_filename = "1024sa1/" + benchmark + ".pat";
+    ps.max_inserts = 20;
+    ps.max_pis = 8;
+    ps.max_divisors = std::numeric_limits<uint32_t>::max();
 
     const uint32_t size_before = aig.num_gates();
     sim_resubstitution( aig, ps, &st );

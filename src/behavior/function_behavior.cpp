@@ -44,32 +44,33 @@
  */
 #include "function_behavior.hpp"
 
-#include "config_HAVE_EXPERIMENTAL.hpp"
 #include "config_HAVE_HOST_PROFILING_BUILT.hpp"
 #include "config_HAVE_POLIXML_BUILT.hpp"
 
-#include "Dominance.hpp"                        // for dominance
-#include "Parameter.hpp"                        // for ParameterConstRef
-#include "application_manager.hpp"              // for application_manager
-#include "basic_block.hpp"                      // for BBGraph, BBGraphInfo
-#include "basic_blocks_graph_constructor.hpp"   // for BBGraphRef, BasicBl...
-#include "behavioral_helper.hpp"                // for BehavioralHelper
-#include "cdfg_edge_info.hpp"                   // for CFG_SELECTOR, CDG_S...
-#include "config_HAVE_EXPERIMENTAL.hpp"         // for HAVE_EXPERIMENTAL
-#include "config_HAVE_HOST_PROFILING_BUILT.hpp" // for HAVE_HOST_PROFILING...
-#include "config_HAVE_POLIXML_BUILT.hpp"        // for HAVE_POLIXML_BUILT
-#include "custom_set.hpp"                       // for CustomSet
-#include "exceptions.hpp"                       // for THROW_ASSERT, THROW...
-#include "graph.hpp"                            // for vertex, VertexIterator
-#include "level_constructor.hpp"                // for level_constructor
-#include "loop.hpp"                             // for LoopsRef
-#include "loops.hpp"                            // for ProfilingInformatio...
-#include "op_graph.hpp"                         // for OpGraph, OpGraphCon...
-#include "operations_graph_constructor.hpp"     // for OpGraphRef, operati...
+#include "Dominance.hpp"                      // for dominance
+#include "Parameter.hpp"                      // for ParameterConstRef
+#include "application_manager.hpp"            // for application_manager
+#include "basic_block.hpp"                    // for BBGraph, BBGraphInfo
+#include "basic_blocks_graph_constructor.hpp" // for BBGraphRef, BasicBl...
+#include "behavioral_helper.hpp"              // for BehavioralHelper
+#include "cdfg_edge_info.hpp"                 // for CFG_SELECTOR, CDG_S...
+#include "custom_set.hpp"                     // for CustomSet
+#include "exceptions.hpp"                     // for THROW_ASSERT, THROW...
+#include "graph.hpp"                          // for vertex, VertexIterator
+#include "level_constructor.hpp"              // for level_constructor
+#include "loop.hpp"                           // for LoopsRef
+#include "loops.hpp"                          // for ProfilingInformatio...
+#include "op_graph.hpp"                       // for OpGraph, OpGraphCon...
+#include "operations_graph_constructor.hpp"   // for OpGraphRef, operati...
 #include "tree_helper.hpp"
 #include "tree_manager.hpp" // for pipeline_enabled
 #include "tree_node.hpp"    // for pipeline_enabled
 #include "utility.hpp"
+#if HAVE_HOST_PROFILING_BUILT
+#include "profiling_information.hpp" // for BBGraphConstRef
+#endif
+#include "typed_node_info.hpp" // for GET_NAME
+
 #include <boost/graph/adjacency_list.hpp>     // for adjacency_list
 #include <boost/graph/filtered_graph.hpp>     // for filtered_graph<>::v...
 #include <boost/iterator/filter_iterator.hpp> // for filter_iterator
@@ -79,18 +80,6 @@
 #include <ostream>                            // for operator<<, basic_o...
 #include <string>                             // for operator+, char_traits
 #include <utility>                            // for pair
-#if HAVE_HOST_PROFILING_BUILT
-#include "profiling_information.hpp" // for BBGraphConstRef
-#endif
-#include "typed_node_info.hpp" // for GET_NAME
-
-#if HAVE_EXPERIMENTAL
-#include "epd_graph.hpp"
-#include "extended_pdg_constructor.hpp"
-#include "op_graph.hpp"
-#include "parallel_regions_graph.hpp"
-#include "parallel_regions_graph_constructor.hpp"
-#endif
 
 #if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)
 #pragma GCC diagnostic push
@@ -139,30 +128,7 @@ FunctionBehavior::FunctionBehavior(const application_managerConstRef _AppM, cons
       fsaodg(new OpGraph(op_graphs_collection, FSDG_SELECTOR | FADG_SELECTOR | FODG_SELECTOR)),
       sdg(new OpGraph(op_graphs_collection, SDG_SELECTOR)),
       fsdg(new OpGraph(op_graphs_collection, FSDG_SELECTOR)),
-#if HAVE_EXPERIMENTAL
-      rpdg(new OpGraph(op_graphs_collection, RPDG_SELECTOR)),
-#endif
       sg(new OpGraph(op_graphs_collection, SG_SELECTOR | FLG_SELECTOR)),
-#if HAVE_EXPERIMENTAL
-      epdg_bulk(new EpdGraphsCollection(saodg, _parameters)),
-      cepdg(new EpdGraph(epdg_bulk, EpdEdgeInfo::EDGE_CONTROL /*| EpdEdgeInfo::EDGE_CONTROL_FLOW*/)),
-      depdg(new EpdGraph(epdg_bulk, EpdEdgeInfo::EDGE_DATA_RAW | EpdEdgeInfo::EDGE_DATA_WAW_WAR)),
-      cdepdg(new EpdGraph(epdg_bulk,
-                          EpdEdgeInfo::EDGE_DATA_RAW | EpdEdgeInfo::EDGE_DATA_WAW_WAR | EpdEdgeInfo::EDGE_CONTROL)),
-      cdcfepdg(new EpdGraph(epdg_bulk, EpdEdgeInfo::EDGE_DATA_RAW | EpdEdgeInfo::EDGE_DATA_WAW_WAR |
-                                           EpdEdgeInfo::EDGE_CONTROL | EpdEdgeInfo::EDGE_CONTROL_FLOW)),
-      epdg(new EpdGraph(epdg_bulk, EpdEdgeInfo::EDGE_DATA_RAW | EpdEdgeInfo::EDGE_DATA_WAW_WAR |
-                                       EpdEdgeInfo::EDGE_CONTROL | EpdEdgeInfo::EDGE_OUTPUT |
-                                       EpdEdgeInfo::EDGE_CONTROL_FLOW)),
-      fepdg(new EpdGraph(epdg_bulk, EpdEdgeInfo::EDGE_DATA_RAW | EpdEdgeInfo::EDGE_DATA_WAW_WAR |
-                                        EpdEdgeInfo::EDGE_CONTROL | EpdEdgeInfo::EDGE_FEEDBACK |
-                                        EpdEdgeInfo::EDGE_OUTPUT | EpdEdgeInfo::EDGE_CONTROL_FLOW)),
-      afg(new EpdGraph(epdg_bulk, EpdEdgeInfo::EDGE_AF_STANDARD)),
-      fafg(new EpdGraph(epdg_bulk, EpdEdgeInfo::EDGE_AF_STANDARD | EpdEdgeInfo::EDGE_AF_FEEDBACK)),
-      prg_bulk(new ParallelRegionsGraphsCollection(_parameters)),
-      prg(new ParallelRegionsGraph(prg_bulk,
-                                   ParallelRegionsEdgeInfo::EDGE_CONTROL | ParallelRegionsEdgeInfo::EDGE_DATA)),
-#endif
       agg_virtualg(new OpGraph(op_graphs_collection, DFG_AGG_SELECTOR | ADG_AGG_SELECTOR)),
 #if HAVE_HOST_PROFILING_BUILT
       profiling_information(ProfilingInformationRef(new ProfilingInformation(bb))),
@@ -186,7 +152,6 @@ FunctionBehavior::FunctionBehavior(const application_managerConstRef _AppM, cons
       has_undefined_function_receiveing_pointers(false),
       state_variables(),
       pipeline_enabled(false),
-      simple_pipeline(false),
       initiation_time(1),
       _channels_number(
           _parameters->isOption(OPT_channels_number) ? _parameters->getOption<unsigned int>(OPT_channels_number) : 0),
@@ -196,10 +161,6 @@ FunctionBehavior::FunctionBehavior(const application_managerConstRef _AppM, cons
       feedback_bb_reachability(),
       ogc(new operations_graph_constructor(op_graphs_collection)),
       bbgc(new BasicBlocksGraphConstructor(bb_graphs_collection)),
-#if HAVE_EXPERIMENTAL
-      epdgc(new extended_pdg_constructor(epdg_bulk, saodg)),
-      prgc(new ParallelRegionsGraphConstructor(prg_bulk, _parameters)),
-#endif
       lm(new level_constructor(map_levels, deque_levels)),
       bb_lm(new level_constructor(bb_map_levels, bb_deque_levels)),
       dominators(nullptr),
@@ -214,14 +175,8 @@ FunctionBehavior::FunctionBehavior(const application_managerConstRef _AppM, cons
    if(!_parameters->isOption(OPT_pipelining))
    {
       pipeline_enabled = decl_node->is_pipelined();
-      simple_pipeline = decl_node->is_simple_pipeline();
       initiation_time = decl_node->get_initiation_time();
-      if(pipeline_enabled && simple_pipeline)
-      {
-         INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, _parameters->getOption<int>(OPT_output_level),
-                        "Required pipelining with II=1 for function: " + fname);
-      }
-      else if(pipeline_enabled)
+      if(pipeline_enabled)
       {
          INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, _parameters->getOption<int>(OPT_output_level),
                         "Required pipelining with II=" + STR(initiation_time) + " for function: " + fname);
@@ -237,7 +192,7 @@ FunctionBehavior::FunctionBehavior(const application_managerConstRef _AppM, cons
       else if(tmp_string == "@ll")
       {
          pipeline_enabled = true;
-         simple_pipeline = true;
+         initiation_time = 1;
          INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, _parameters->getOption<int>(OPT_output_level),
                         "Required pipelining with II=1 for function: " + fname);
       }
@@ -257,18 +212,14 @@ FunctionBehavior::FunctionBehavior(const application_managerConstRef _AppM, cons
                if(splitted.size() == 1)
                {
                   pipeline_enabled = true;
-                  simple_pipeline = true;
+                  initiation_time = 1;
                   INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, _parameters->getOption<int>(OPT_output_level),
                                  "Required pipelining with II=1 for function: " + fname);
                }
                else if(splitted.size() == 2)
                {
                   pipeline_enabled = true;
-                  initiation_time = boost::lexical_cast<int>(splitted.at(1));
-                  if(initiation_time == 1)
-                  {
-                     simple_pipeline = true;
-                  }
+                  initiation_time = boost::lexical_cast<unsigned int>(splitted.at(1));
                   INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, _parameters->getOption<int>(OPT_output_level),
                                  "Required pipelining with II=" + STR(initiation_time) + " for function: " + fname);
                }
@@ -340,10 +291,6 @@ OpGraphRef FunctionBehavior::GetOpGraph(FunctionBehavior::graph_type gt)
          return flg;
       case SG:
          return sg;
-#if HAVE_EXPERIMENTAL
-      case RPDG:
-         return rpdg;
-#endif
       case AGG_VIRTUALG:
          return agg_virtualg;
       default:
@@ -402,10 +349,6 @@ const OpGraphConstRef FunctionBehavior::CGetOpGraph(FunctionBehavior::graph_type
          return flg;
       case SG:
          return sg;
-#if HAVE_EXPERIMENTAL
-      case RPDG:
-         return rpdg;
-#endif
       case AGG_VIRTUALG:
          return agg_virtualg;
       default:
@@ -428,6 +371,10 @@ const BehavioralHelperConstRef FunctionBehavior::CGetBehavioralHelper() const
 const OpGraphConstRef FunctionBehavior::CGetOpGraph(FunctionBehavior::graph_type gt,
                                                     const OpVertexSet& statements) const
 {
+   if(statements.size() == boost::num_vertices(*op_graphs_collection))
+   {
+      return CGetOpGraph(gt);
+   }
    /// This "transformation" is necessary because of graph constructor
    CustomUnorderedSet<vertex> subset;
    subset.insert(statements.begin(), statements.end());
@@ -505,10 +452,6 @@ const OpGraphConstRef FunctionBehavior::CGetOpGraph(FunctionBehavior::graph_type
       case SG:
          return OpGraphRef(new OpGraph(op_graphs_collection, SG_SELECTOR, subset));
 
-#if HAVE_EXPERIMENTAL
-      case RPDG:
-         return OpGraphRef(new OpGraph(op_graphs_collection, SAODG_SELECTOR & RPDG_SELECTOR, subset));
-#endif
       case AGG_VIRTUALG:
          return OpGraphRef(new OpGraph(op_graphs_collection, DFG_AGG_SELECTOR | ADG_AGG_SELECTOR, subset));
       default:
@@ -516,47 +459,6 @@ const OpGraphConstRef FunctionBehavior::CGetOpGraph(FunctionBehavior::graph_type
    }
    return OpGraphConstRef();
 }
-
-#if HAVE_EXPERIMENTAL
-
-const EpdGraphRef FunctionBehavior::CGetEpdGraph(EpdGraph::Type type) const
-{
-   switch(type)
-   {
-      case EpdGraph::EPDG:
-         return epdg;
-      case EpdGraph::FEPDG:
-         return fepdg;
-      case EpdGraph::CEPDG:
-         return cepdg;
-      case EpdGraph::DEPDG:
-         return depdg;
-      case EpdGraph::CDEPDG:
-         return cdepdg;
-      case EpdGraph::CDCFEPDG:
-         return cdcfepdg;
-      case EpdGraph::AFG:
-         return afg;
-      case EpdGraph::FAFG:
-         return fafg;
-      default:
-         THROW_UNREACHABLE("");
-   }
-   return EpdGraphRef();
-}
-
-const ParallelRegionsGraphRef FunctionBehavior::GetPrgGraph(ParallelRegionsGraph::Type gt) const
-{
-   switch(gt)
-   {
-      case ParallelRegionsGraph::PRG:
-         return this->prg;
-      default:
-         THROW_UNREACHABLE("");
-   }
-   return ParallelRegionsGraphRef();
-}
-#endif
 
 BBGraphRef FunctionBehavior::GetBBGraph(FunctionBehavior::bb_graph_type gt)
 {

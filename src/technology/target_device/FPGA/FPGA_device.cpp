@@ -43,7 +43,6 @@
  */
 #include "FPGA_device.hpp"
 
-#include "config_HAVE_EXPERIMENTAL.hpp"
 #include "config_PANDA_DATA_INSTALLDIR.hpp"
 
 #include "target_technology.hpp"
@@ -59,7 +58,7 @@
 #include "constant_strings.hpp"
 
 /// Boost includes
-#include "boost/filesystem.hpp"
+#include <boost/filesystem.hpp>
 #include "string_manipulation.hpp" // for GET_CLASS
 
 FPGA_device::FPGA_device(const ParameterConstRef& _Param, const technology_managerRef& _TM)
@@ -92,10 +91,6 @@ void FPGA_device::load_devices(const target_deviceRef device)
    default_device_data["xc7a100t-1csg324-VVD"] = "xc7a100t-1csg324-VVD.data";
    default_device_data["xcku060-3ffva1156-VVD"] = "xcku060-3ffva1156-VVD.data";
    default_device_data["xcu280-2Lfsvh2892-VVD"] = "xcu280-2Lfsvh2892-VVD.data";
-
-#if(0 && HAVE_EXPERIMENTAL)
-   default_device_data["xc3s1500l-4fg676"] = "Spartan-3-xc3s1500l-4fg676.data";
-#endif
 
    default_device_data["EP2C70F896C6"] = "EP2C70F896C6.data";
    default_device_data["EP2C70F896C6-R"] = "EP2C70F896C6-R.data";

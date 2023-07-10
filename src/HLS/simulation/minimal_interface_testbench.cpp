@@ -100,17 +100,21 @@ void MinimalInterfaceTestbench::cond_load(unsigned long long Mout_addr_ram_bitsi
 void MinimalInterfaceTestbench::cond_load_from_queue(unsigned long long Mout_addr_ram_bitsize,
                                                      unsigned int Mout_addr_ram_n_ports, std::string queue_type,
                                                      const std::string& post_slice, const std::string& res_string,
-                                                     unsigned int i, const std::string& in_else,
+                                                     unsigned int i, const std::string& in_else_low,
+                                                     const std::string& in_else_high,
                                                      const std::string& mem_aggregate) const
 {
-   writer->write(res_string + post_slice + " = ((base_addr <= Mout_addr_ram_queue_curr[" +
+   /* In case of address not belonging to the bambu address space return  different values. Low addresses can be
+    * associated to BRAMS */
+   writer->write(res_string + post_slice + " = base_addr <= Mout_addr_ram_queue_curr[" +
                  STR((i + 1) * Mout_addr_ram_bitsize - 1) + "+(" + queue_type + "-1)*" +
                  STR(Mout_addr_ram_bitsize * Mout_addr_ram_n_ports) + ":" + STR(i * Mout_addr_ram_bitsize) + "+(" +
                  queue_type + "-1)*" + STR(Mout_addr_ram_bitsize * Mout_addr_ram_n_ports) +
-                 "] && Mout_addr_ram_queue_curr[" + STR((i + 1) * Mout_addr_ram_bitsize - 1) + "+(" + queue_type +
+                 "] ? (Mout_addr_ram_queue_curr[" + STR((i + 1) * Mout_addr_ram_bitsize - 1) + "+(" + queue_type +
                  "-1)*" + STR(Mout_addr_ram_bitsize * Mout_addr_ram_n_ports) + ":" + STR(i * Mout_addr_ram_bitsize) +
                  "+(" + queue_type + "-1)*" + STR(Mout_addr_ram_bitsize * Mout_addr_ram_n_ports) +
-                 "] < (base_addr + MEMSIZE)))" + " ? " + mem_aggregate + " : " + in_else + ";\n");
+                 "] < (base_addr + MEMSIZE)" + " ? " + mem_aggregate + " : " + in_else_high + ") : " + in_else_low +
+                 ";\n");
 }
 
 void MinimalInterfaceTestbench::write_call(bool) const
@@ -733,7 +737,8 @@ void MinimalInterfaceTestbench::write_memory_handler() const
             writer->write("begin");
             writer->write(STR(STD_OPENING_CHAR) + "\n");
             cond_load_from_queue(Mout_addr_ram_bitsize, Mout_addr_ram_n_ports, "`MEM_DELAY_READ", post_slice,
-                                 "M_Rdata_ram_temp", i, STR(M_Rdata_ram_bitsize) + "'b0", mem_aggregate);
+                                 "M_Rdata_ram_temp", i, STR(M_Rdata_ram_bitsize) + "'b0",
+                                 STR(M_Rdata_ram_bitsize) + "'bX", mem_aggregate);
             writer->write(STR(STD_CLOSING_CHAR));
             writer->write("end\n");
             if(Sout_Rdata_ram_port)
@@ -793,30 +798,22 @@ void MinimalInterfaceTestbench::write_memory_handler() const
                           "*(`MEM_DELAY_WRITE-1) + " + STR(i * Mout_we_ram_bitsize) + "] === 1'b1)\n");
             writer->write("begin");
             writer->write(STR(STD_OPENING_CHAR) + "\n");
-            writer->write("M_DataRdy_temp" + post_slice + " =");
-            writer->write("(base_addr <= Mout_addr_ram_queue_curr[" + STR((i + 1) * Mout_addr_ram_bitsize - 1) +
+            writer->write("M_DataRdy_temp" + post_slice + " = ");
+            writer->write("Mout_addr_ram_queue_curr[" + STR((i + 1) * Mout_addr_ram_bitsize - 1) +
                           "+(`MEM_DELAY_WRITE-1)*" + STR(Mout_addr_ram_bitsize * Mout_addr_ram_n_ports) + ":" +
                           STR(i * Mout_addr_ram_bitsize) + "+(`MEM_DELAY_WRITE-1)*" +
-                          STR(Mout_addr_ram_bitsize * Mout_addr_ram_n_ports) + "] && Mout_addr_ram_queue_curr[" +
-                          STR((i + 1) * Mout_addr_ram_bitsize - 1) + "+(`MEM_DELAY_WRITE-1)*" +
-                          STR(Mout_addr_ram_bitsize * Mout_addr_ram_n_ports) + ":" + STR(i * Mout_addr_ram_bitsize) +
-                          "+(`MEM_DELAY_WRITE-1)*" + STR(Mout_addr_ram_bitsize * Mout_addr_ram_n_ports) +
-                          "] < (base_addr + MEMSIZE));");
+                          STR(Mout_addr_ram_bitsize * Mout_addr_ram_n_ports) + "] >= base_addr;");
             writer->write(STR(STD_CLOSING_CHAR) + "\n");
             writer->write("end\n");
             writer->write("else if(Mout_oe_ram_queue_curr[" + STR(Mout_oe_ram_bitsize * Mout_oe_ram_n_ports) +
                           "*(`MEM_DELAY_READ-1) + " + STR(i * Mout_oe_ram_bitsize) + "] === 1'b1)\n");
             writer->write("begin");
             writer->write(STR(STD_OPENING_CHAR) + "\n");
-            writer->write("M_DataRdy_temp" + post_slice + " =");
-            writer->write("(base_addr <= Mout_addr_ram_queue_curr[" + STR((i + 1) * Mout_addr_ram_bitsize - 1) +
+            writer->write("M_DataRdy_temp" + post_slice + " = ");
+            writer->write("Mout_addr_ram_queue_curr[" + STR((i + 1) * Mout_addr_ram_bitsize - 1) +
                           "+(`MEM_DELAY_READ-1)*" + STR(Mout_addr_ram_bitsize * Mout_addr_ram_n_ports) + ":" +
                           STR(i * Mout_addr_ram_bitsize) + "+(`MEM_DELAY_READ-1)*" +
-                          STR(Mout_addr_ram_bitsize * Mout_addr_ram_n_ports) + "] && Mout_addr_ram_queue_curr[" +
-                          STR((i + 1) * Mout_addr_ram_bitsize - 1) + "+(`MEM_DELAY_READ-1)*" +
-                          STR(Mout_addr_ram_bitsize * Mout_addr_ram_n_ports) + ":" + STR(i * Mout_addr_ram_bitsize) +
-                          "+(`MEM_DELAY_READ-1)*" + STR(Mout_addr_ram_bitsize * Mout_addr_ram_n_ports) +
-                          "] < (base_addr + MEMSIZE));");
+                          STR(Mout_addr_ram_bitsize * Mout_addr_ram_n_ports) + "] >= base_addr;");
             writer->write(STR(STD_CLOSING_CHAR) + "\n");
             writer->write("end");
             writer->write(STR(STD_CLOSING_CHAR) + "\n");
@@ -909,11 +906,25 @@ void MinimalInterfaceTestbench::write_memory_handler() const
 
 void MinimalInterfaceTestbench::write_interface_handler() const
 {
+   const auto get_elem_count = [&](const std::string& parm_name, const std::string& data_port) -> unsigned long long {
+      THROW_ASSERT(HLSMgr->RSim->test_vectors.size() && HLSMgr->RSim->test_vectors.front().count(parm_name),
+                   "Unable to find initialization for FIFO parameter " + parm_name);
+      const auto dport = mod->find_member(data_port, port_o_K, cir);
+      THROW_ASSERT(dport, "Port '" + data_port + "' not found");
+      const auto& test_v = HLSMgr->RSim->test_vectors.front().at(parm_name);
+      if(boost::ends_with(test_v, ".dat"))
+      {
+         const auto elem_bytes = local_port_size(dport) / 8;
+         const auto file_bytes = std::ifstream(test_v, std::ios::ate | std::ios::binary).tellg();
+         return static_cast<unsigned long long>(file_bytes) / elem_bytes;
+      }
+      return SplitString(test_v, ",").size();
+   };
+
    if(mod->get_in_port_size())
    {
       bool firstRValid = true;
       bool firstWAck = true;
-      bool firstM_axis_tready = true;
       for(unsigned int i = 0; i < mod->get_in_port_size(); i++)
       {
          const auto portInst = mod->get_in_port(i);
@@ -946,11 +957,6 @@ void MinimalInterfaceTestbench::write_interface_handler() const
                {
                   firstWAck = false;
                   writer->write("integer __ack_port_state = 0;\n");
-               }
-               if(firstM_axis_tready && InterfaceType == port_o::port_interface::PI_M_AXIS_TREADY)
-               {
-                  firstM_axis_tready = false;
-                  writer->write("integer __m_axis_tready_port_state = 0;\n");
                }
                writer->write_comment(port_o::GetString(InterfaceType) + " handler\n");
                writer->write("always @ (posedge " + std::string(CLOCK_PORT_NAME) + ")\n");
@@ -985,11 +991,7 @@ void MinimalInterfaceTestbench::write_interface_handler() const
                   else if(InterfaceType == port_o::port_interface::PI_FULL_N)
                   {
                      const auto parm_name = boost::replace_last_copy(portInst->get_id(), "_full_n", "");
-                     THROW_ASSERT(HLSMgr->RSim->test_vectors.size() &&
-                                      HLSMgr->RSim->test_vectors.front().count(parm_name),
-                                  "Unable to find initialization for FIFO parameter " + parm_name);
-                     const auto& test_v = HLSMgr->RSim->test_vectors.front().at(parm_name);
-                     const auto fifo_depth = SplitString(test_v, ",").size();
+                     const auto fifo_depth = get_elem_count(parm_name, parm_name + "_din");
                      const auto write_counter =
                          "fifo_counter_" + HDL_manager::convert_to_identifier(writer.get(), parm_name + "_din");
                      writer->write(HDL_manager::convert_to_identifier(writer.get(), portInst->get_id()) +
@@ -998,11 +1000,7 @@ void MinimalInterfaceTestbench::write_interface_handler() const
                   else if(InterfaceType == port_o::port_interface::PI_EMPTY_N)
                   {
                      const auto parm_name = boost::replace_last_copy(portInst->get_id(), "_empty_n", "");
-                     THROW_ASSERT(HLSMgr->RSim->test_vectors.size() &&
-                                      HLSMgr->RSim->test_vectors.front().count(parm_name),
-                                  "Unable to find initialization for FIFO parameter " + parm_name);
-                     const auto& test_v = HLSMgr->RSim->test_vectors.front().at(parm_name);
-                     const auto fifo_depth = SplitString(test_v, ",").size();
+                     const auto fifo_depth = get_elem_count(parm_name, parm_name + "_dout");
                      const auto read_counter =
                          "fifo_counter_" + HDL_manager::convert_to_identifier(writer.get(), parm_name + "_dout");
                      writer->write(HDL_manager::convert_to_identifier(writer.get(), portInst->get_id()) +
@@ -1010,9 +1008,23 @@ void MinimalInterfaceTestbench::write_interface_handler() const
                   }
                   else if(InterfaceType == port_o::port_interface::PI_M_AXIS_TREADY)
                   {
+                     const auto parm_name = boost::replace_last_copy(
+                         boost::replace_first_copy(portInst->get_id(), "m_axis_", ""), "_TREADY", "");
+                     const auto fifo_depth = get_elem_count(parm_name, "m_axis_" + parm_name + "_TDATA");
+                     const auto read_counter = "fifo_counter_" + HDL_manager::convert_to_identifier(
+                                                                     writer.get(), "m_axis_" + parm_name + "_TDATA");
                      writer->write(HDL_manager::convert_to_identifier(writer.get(), portInst->get_id()) +
-                                   " <= __m_axis_tready_port_state < 3 ? 1'b0 : 1'b1;\n");
-                     writer->write("__m_axis_tready_port_state <= __m_axis_tready_port_state + 1;");
+                                   " <= " + read_counter + " < " + STR(fifo_depth) + " ? 1'b1 : 1'b0;\n");
+                  }
+                  else if(InterfaceType == port_o::port_interface::PI_S_AXIS_TVALID)
+                  {
+                     const auto parm_name = boost::replace_last_copy(
+                         boost::replace_first_copy(portInst->get_id(), "s_axis_", ""), "_TVALID", "");
+                     const auto fifo_depth = get_elem_count(parm_name, "s_axis_" + parm_name + "_TDATA");
+                     const auto read_counter = "fifo_counter_" + HDL_manager::convert_to_identifier(
+                                                                     writer.get(), "s_axis_" + parm_name + "_TDATA");
+                     writer->write(HDL_manager::convert_to_identifier(writer.get(), portInst->get_id()) +
+                                   " <= " + read_counter + " < " + STR(fifo_depth) + " ? 1'b1 : 1'b0;\n");
                   }
                   else
                   {
@@ -1034,19 +1046,20 @@ void MinimalInterfaceTestbench::write_interface_handler() const
                writer->write("end\n");
             }
 
-            if(InterfaceType == port_o::port_interface::PI_FDOUT)
+            if(InterfaceType == port_o::port_interface::PI_FDOUT ||
+               InterfaceType == port_o::port_interface::PI_S_AXIS_TDATA)
             {
                const auto bitsize = local_port_size(portInst);
                const auto port_id = portInst->get_id();
                std::string valid_suffix, par_name;
-               if(boost::ends_with(port_id, "_dout"))
+               if(InterfaceType == port_o::port_interface::PI_FDOUT)
                {
                   valid_suffix = "_read";
                   par_name = port_id.substr(0, port_id.size() - sizeof("_dout") + 1U);
                }
-               else if(boost::ends_with(port_id, "_TDATA"))
+               else if(InterfaceType == port_o::port_interface::PI_S_AXIS_TDATA)
                {
-                  valid_suffix = "_TVALID";
+                  valid_suffix = "_TREADY";
                   par_name = port_id.substr(0, port_id.size() - sizeof("_TDATA") + 1U);
                }
                else
@@ -1105,6 +1118,8 @@ void MinimalInterfaceTestbench::write_input_signal_declaration(const tree_manage
       for(unsigned int i = 0; i < mod->get_in_port_size(); i++)
       {
          const auto portInst = mod->get_in_port(i);
+         const auto port_if = GetPointer<port_o>(portInst)->get_port_interface();
+         auto port_name = mod->get_in_port(i)->get_id();
          if(GetPointer<port_o>(portInst)->get_is_memory())
          {
             if(GetPointer<port_o>(portInst)->get_id().find('M') == 0)
@@ -1128,7 +1143,6 @@ void MinimalInterfaceTestbench::write_input_signal_declaration(const tree_manage
          }
          writer->write(writer->type_converter(portInst->get_typeRef()) + writer->type_converter_size(portInst));
 
-         auto port_name = mod->get_in_port(i)->get_id();
          if(parameters->isOption(OPT_clock_name) &&
             GetPointer<port_o>(portInst)->get_id() == parameters->getOption<std::string>(OPT_clock_name))
          {
@@ -1145,8 +1159,7 @@ void MinimalInterfaceTestbench::write_input_signal_declaration(const tree_manage
             port_name = START_PORT_NAME;
          }
          /* Add next_* to any input AXI signals */
-         if(GetPointer<port_o>(portInst)->get_port_interface() >= port_o::port_interface::M_AXI_AWVALID &&
-            GetPointer<port_o>(portInst)->get_port_interface() <= port_o::port_interface::M_AXI_BUSER)
+         if(port_if >= port_o::port_interface::M_AXI_AWVALID && port_if <= port_o::port_interface::M_AXI_BUSER)
          {
             const auto ptName = HDL_manager::convert_to_identifier(writer.get(), port_name);
             writer->write(ptName + ", next_" + ptName + ";\n");
@@ -1175,7 +1188,7 @@ void MinimalInterfaceTestbench::write_input_signal_declaration(const tree_manage
                writer->write("reg [7:0] ex_" + portInst->get_id() + ";\n");
             }
          }
-         if(GetPointer<port_o>(portInst)->get_port_interface() == port_o::port_interface::PI_FDOUT)
+         if(port_if == port_o::port_interface::PI_FDOUT || port_if == port_o::port_interface::PI_S_AXIS_TDATA)
          {
             writer->write("integer fifo_counter_" + HDL_manager::convert_to_identifier(writer.get(), port_name) +
                           ";\n");
@@ -1194,10 +1207,11 @@ void MinimalInterfaceTestbench::write_output_signal_declaration() const
       writer->write_comment("OUTPUT SIGNALS\n");
       for(unsigned int i = 0; i < mod->get_out_port_size(); i++)
       {
-         auto portInst = mod->get_out_port(i);
+         const auto portInst = mod->get_out_port(i);
+         const auto port_if = GetPointer<port_o>(portInst)->get_port_interface();
+         auto port_name = portInst->get_id();
          writer->write("wire " + writer->type_converter(portInst->get_typeRef()) +
                        writer->type_converter_size(portInst));
-         auto port_name = portInst->get_id();
          if(parameters->isOption(OPT_done_name) && port_name == parameters->getOption<std::string>(OPT_done_name))
          {
             port_name = DONE_PORT_NAME;
@@ -1212,7 +1226,7 @@ void MinimalInterfaceTestbench::write_output_signal_declaration() const
                           writer->type_converter_size(portInst));
             writer->write("registered_" + HDL_manager::convert_to_identifier(writer.get(), port_name) + ";\n");
          }
-         if(GetPointer<port_o>(portInst)->get_port_interface() == port_o::port_interface::PI_WNONE)
+         if(port_if == port_o::port_interface::PI_WNONE)
          {
             writer->write("reg " + writer->type_converter(portInst->get_typeRef()) +
                           writer->type_converter_size(portInst));
@@ -1221,13 +1235,13 @@ void MinimalInterfaceTestbench::write_output_signal_declaration() const
                           writer->type_converter_size(portInst));
             writer->write("registered_" + HDL_manager::convert_to_identifier(writer.get(), port_name) + ";\n");
          }
-         else if(GetPointer<port_o>(portInst)->get_port_interface() == port_o::port_interface::PI_DOUT)
+         else if(port_if == port_o::port_interface::PI_DOUT)
          {
             writer->write("reg " + writer->type_converter(portInst->get_typeRef()) +
                           writer->type_converter_size(portInst));
             writer->write("ex_" + HDL_manager::convert_to_identifier(writer.get(), port_name) + ";\n");
          }
-         else if(GetPointer<port_o>(portInst)->get_port_interface() == port_o::port_interface::PI_FDIN)
+         else if(port_if == port_o::port_interface::PI_FDIN || port_if == port_o::port_interface::PI_M_AXIS_TDATA)
          {
             writer->write("reg " + writer->type_converter(portInst->get_typeRef()) +
                           writer->type_converter_size(portInst));
@@ -1541,7 +1555,9 @@ void MinimalInterfaceTestbench::write_file_reading_operations() const
       }
       else if(InterfaceType == port_o::port_interface::PI_WNONE || InterfaceType == port_o::port_interface::PI_DIN ||
               InterfaceType == port_o::port_interface::PI_DOUT || InterfaceType == port_o::port_interface::PI_FDOUT ||
-              InterfaceType == port_o::port_interface::PI_FDIN)
+              InterfaceType == port_o::port_interface::PI_S_AXIS_TDATA ||
+              InterfaceType == port_o::port_interface::PI_FDIN ||
+              InterfaceType == port_o::port_interface::PI_M_AXIS_TDATA)
       {
          read_input_value_from_file("paddr" + input_name, first_valid_input);
       }

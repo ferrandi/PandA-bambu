@@ -2842,16 +2842,19 @@ unsigned int tree_manipulation::InlineFunctionCall(const tree_nodeRef& call_stmt
 
    auto sl = GetPointerS<statement_list>(GET_NODE(fd->body));
    const auto splitBBI = sl->list_of_bloc.rbegin()->first + 1;
+   THROW_ASSERT(!sl->list_of_bloc.count(splitBBI), "");
    const auto splitBB = sl->list_of_bloc[splitBBI] = blocRef(new bloc(splitBBI));
    splitBB->loop_id = block->loop_id;
    splitBB->SetSSAUsesComputed();
-   splitBB->schedule = block->schedule;
+   THROW_ASSERT(!block->schedule, "Inlining should not be allowed after scheduling");
 
    std::replace(block->list_of_pred.begin(), block->list_of_pred.end(), block->number, splitBB->number);
    splitBB->list_of_succ.assign(block->list_of_succ.cbegin(), block->list_of_succ.cend());
    block->list_of_succ.clear();
    splitBB->false_edge = block->false_edge;
    splitBB->true_edge = block->true_edge;
+   block->false_edge = 0;
+   block->true_edge = 0;
 
    for(const auto& bbi : splitBB->list_of_succ)
    {

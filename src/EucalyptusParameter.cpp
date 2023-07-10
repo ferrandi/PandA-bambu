@@ -41,16 +41,10 @@
  * Last modified by $Author$
  *
  */
-
-/// Autoheader include
-#include "config_HAVE_EXPERIMENTAL.hpp"
-
-/// Header include
 #include "EucalyptusParameter.hpp"
 
-#include "target_device.hpp"
-
 #include "language_writer.hpp"
+#include "target_device.hpp"
 
 #define TOOL_OPT_BASE 256
 #define INPUT_OPT_CHARACTERIZE (1 + TOOL_OPT_BASE)
@@ -99,15 +93,7 @@ void EucalyptusParameter::PrintHelp(std::ostream& os) const
       << "    --target-scriptfile=file        Specify a script XML file including the scripts for the synthesis w.r.t. "
          "the target device.\n"
       << "    --clock-period=value            Specify the period of the clock signal (default 10 nanoseconds)\n"
-      << "    --characterize=<component_name> Characterize the given component"
-#if HAVE_EXPERIMENTAL
-      << "\n"
-      << "  Component Integration:\n"
-      << "    --import-ip-core=<file>         Converts the specified file into an XML-based representation.\n"
-      << "    --export-ip-core=<name>         Generates the HDL description of the specified component.\n"
-      << "    --output=<file>                 Specifies the name of the output file.\n"
-#endif
-      << "\n"
+      << "    --characterize=<component_name> Characterize the given component\n"
       << std::endl;
    // options defining where backend tools could be found
    os << "  Backend configuration:\n\n"
@@ -155,29 +141,22 @@ int EucalyptusParameter::Exec()
    // this is a GNU extension.
    const char* const short_options = COMMON_SHORT_OPTIONS_STRING "w:";
 
-   const struct option long_options[] = {
-      COMMON_LONG_OPTIONS,
-      {"characterize", required_argument, nullptr, INPUT_OPT_CHARACTERIZE},
-      {"clock-period", required_argument, nullptr, 0},
-#if HAVE_EXPERIMENTAL
-      {"export-ip-core", required_argument, nullptr, 0},
-      {"import-ip-core", required_argument, nullptr, 0},
-      {"output", required_argument, nullptr, 0},
-#endif
-      {"target-datafile", required_argument, nullptr, INPUT_OPT_TARGET_DATAFILE},
-      {"target-device", required_argument, nullptr, 0},
-      {"target-scriptfile", required_argument, nullptr, INPUT_OPT_TARGET_SCRIPTFILE},
-      {"writer", required_argument, nullptr, 'w'},
-      {"altera-root", optional_argument, nullptr, OPT_ALTERA_ROOT},
-      {"lattice-root", optional_argument, nullptr, OPT_LATTICE_ROOT},
-      {"mentor-root", optional_argument, nullptr, OPT_MENTOR_ROOT},
-      {"mentor-optimizer", optional_argument, nullptr, OPT_MENTOR_OPTIMIZER},
-      {"nanoxplore-root", optional_argument, nullptr, OPT_NANOXPLORE_ROOT},
-      {"nanoxplore-bypass", optional_argument, nullptr, OPT_NANOXPLORE_BYPASS},
-      {"xilinx-root", optional_argument, nullptr, OPT_XILINX_ROOT},
-      {"parallel-backend", no_argument, nullptr, OPT_PARALLEL_BACKEND},
-      {nullptr, 0, nullptr, 0}
-   };
+   const struct option long_options[] = {COMMON_LONG_OPTIONS,
+                                         {"characterize", required_argument, nullptr, INPUT_OPT_CHARACTERIZE},
+                                         {"clock-period", required_argument, nullptr, 0},
+                                         {"target-datafile", required_argument, nullptr, INPUT_OPT_TARGET_DATAFILE},
+                                         {"target-device", required_argument, nullptr, 0},
+                                         {"target-scriptfile", required_argument, nullptr, INPUT_OPT_TARGET_SCRIPTFILE},
+                                         {"writer", required_argument, nullptr, 'w'},
+                                         {"altera-root", optional_argument, nullptr, OPT_ALTERA_ROOT},
+                                         {"lattice-root", optional_argument, nullptr, OPT_LATTICE_ROOT},
+                                         {"mentor-root", optional_argument, nullptr, OPT_MENTOR_ROOT},
+                                         {"mentor-optimizer", optional_argument, nullptr, OPT_MENTOR_OPTIMIZER},
+                                         {"nanoxplore-root", optional_argument, nullptr, OPT_NANOXPLORE_ROOT},
+                                         {"nanoxplore-bypass", optional_argument, nullptr, OPT_NANOXPLORE_BYPASS},
+                                         {"xilinx-root", optional_argument, nullptr, OPT_XILINX_ROOT},
+                                         {"parallel-backend", no_argument, nullptr, OPT_PARALLEL_BACKEND},
+                                         {nullptr, 0, nullptr, 0}};
 
    if(argc == 1) // Bambu called without arguments, it simple prints help message
    {
@@ -258,10 +237,6 @@ int EucalyptusParameter::Exec()
             if(std::string(optarg) == "V")
             {
                setOption(OPT_writer_language, static_cast<int>(HDLWriter_Language::VERILOG));
-#if HAVE_EXPERIMENTAL
-               else if(std::string(optarg) == "S")
-                   setOption(OPT_writer_language, static_cast<int>(HDLWriter_Language::SYSTEMC));
-#endif
             }
             else if(std::string(optarg) == "H")
             {
@@ -309,20 +284,6 @@ int EucalyptusParameter::Exec()
             {
                setOption(OPT_clock_period, optarg);
             }
-#if HAVE_EXPERIMENTAL
-            else if(long_options[option_index].name == std::string("import-ip-core"))
-            {
-               setOption(OPT_import_ip_core, optarg);
-            }
-            else if(long_options[option_index].name == std::string("export-ip-core"))
-            {
-               setOption(OPT_export_ip_core, optarg);
-            }
-            else if(long_options[option_index].name == std::string("output"))
-            {
-               setOption(OPT_output_file, GetPath(optarg));
-            }
-#endif
             else
             {
                THROW_ERROR("Not supported option: " + std::string(long_options[option_index].name));
@@ -380,14 +341,13 @@ void EucalyptusParameter::CheckParameters()
    const auto search_quartus = [&](const std::string& dir) {
       if(boost::filesystem::exists(dir + "/quartus/bin/quartus_sh"))
       {
-         if(system(STR("bash -c \"if [[ \\\"$(" + dir +
-                       "/quartus/bin/quartus_sh --version | grep Version | awk '{print $2}' | awk -F'.' '{print "
-                       "$1}')\\\" -lt \\\"14\\\" ]]; then exit 1; else exit 0; fi\" > /dev/null 2>&1")
+         if(system(STR("bash -c \"if [ $(" + dir +
+                       "/quartus/bin/quartus_sh --version | grep Version | sed -E 's/Version ([0-9]+).*/\\1/') -lt 14 "
+                       "]; then exit 1; else exit 0; fi\" > /dev/null 2>&1")
                        .c_str()))
          {
             setOption(OPT_quartus_13_settings, "export PATH=$PATH:" + dir + "/quartus/bin/");
-            if(system(STR("bash -c \"" + dir +
-                          "/quartus/bin/quartus_sh --help | grep \\\"\\-\\-64bit\\\"\" > /dev/null 2>&1")
+            if(system(STR("bash -c \"" + dir + "/quartus/bin/quartus_sh --help | grep '--64bit'\" > /dev/null 2>&1")
                           .c_str()) == 0)
             {
                setOption(OPT_quartus_13_64bit, true);
@@ -634,16 +594,9 @@ void EucalyptusParameter::CheckParameters()
       setOption(OPT_verilator_l2_name,
                 system("bash -c \"if [[ \\\"x$(verilator --l2-name v 2>&1 | head -n1 | grep -i 'Invalid Option')\\\" = "
                        "\\\"x\\\" ]]; then exit 0; else exit 1; fi\" > /dev/null 2>&1") == 0);
-      const auto has_timescale_override =
-          system("bash -c \"if [[ \\\"x$(verilator --timescale-override v 2>&1 | head -n1 | grep -i 'Invalid "
-                 "Option')\\\" = \\\"x\\\" ]]; then exit 0; else exit 1; fi\" > /dev/null 2>&1") == 0;
-      if(has_timescale_override)
-      {
-         setOption(OPT_verilator_timescale_override, "1ps/1ps");
-      }
       const auto thread_support =
-          system("bash -c \"if [[ \\\"$(verilator --version | head -n1 | awk -F' ' '{print $2}'| awk -F'.' '{print "
-                 "$1}')\\\" = \\\"4\\\" ]]; then exit 0; else exit 1; fi\" > /dev/null 2>&1") == 0;
+          system("bash -c \"if [ $(verilator --version | grep Verilator | sed -E 's/Verilator ([0-9]+).*/\1/') -ge 4 "
+                 "]; then exit 0; else exit 1; fi\" > /dev/null 2>&1") == 0;
       if(getOption<bool>(OPT_verilator_parallel) && !thread_support)
       {
          THROW_WARNING("Installed version of Verilator does not support multi-threading.");
@@ -714,17 +667,6 @@ void EucalyptusParameter::CheckParameters()
       }
       setOption(OPT_device_string, device_string);
    }
-#if HAVE_EXPERIMENTAL
-   /// checking of import/export of IP cores
-   if(isOption(OPT_import_ip_core) and isOption(OPT_export_ip_core))
-   {
-      THROW_ERROR("Importing and exporting of IP cores are mutually exclusive");
-   }
-   if((isOption(OPT_import_ip_core) or isOption(OPT_export_ip_core)) and !isOption(OPT_output_file))
-   {
-      THROW_ERROR("Importing/Exporting of IP cores requires to specify the name of the output file (--output)");
-   }
-#endif
 }
 
 void EucalyptusParameter::SetDefaults()
@@ -764,7 +706,5 @@ void EucalyptusParameter::SetDefaults()
    setOption(OPT_output_directory, GetCurrentPath() + "/HLS_output/");
    setOption(OPT_rtl, true);
    setOption(OPT_reset_level, false);
-#if HAVE_EXPERIMENTAL
    setOption(OPT_mixed_design, true);
-#endif
 }

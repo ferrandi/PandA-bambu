@@ -42,8 +42,6 @@
  */
 #include "evaluation.hpp"
 
-#include "config_HAVE_EXPERIMENTAL.hpp"
-
 #include "BackendFlow.hpp"
 #include "Parameter.hpp"
 #include "SimulationInformation.hpp"
@@ -92,27 +90,6 @@ Evaluation::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relat
                                           HLSFlowStep_Relationship::WHOLE_APPLICATION));
                break;
             }
-#if HAVE_EXPERIMENTAL
-            case Evaluation_Mode::ESTIMATION:
-            {
-               for(const auto objective : objective_vector)
-               {
-                  if(objective == "AREA")
-                     ret.insert(std::make_tuple(HLSFlowStep_Type::AREA_ESTIMATION, HLSFlowStepSpecializationConstRef(),
-                                                HLSFlowStep_Relationship::WHOLE_APPLICATION));
-                  else if(objective == "CLOCK_SLACK")
-                     ret.insert(std::make_tuple(HLSFlowStep_Type::CLOCK_SLACK_ESTIMATION,
-                                                HLSFlowStepSpecializationConstRef(),
-                                                HLSFlowStep_Relationship::WHOLE_APPLICATION));
-                  else if(objective == "TIME")
-                     ret.insert(std::make_tuple(HLSFlowStep_Type::TIME_ESTIMATION, HLSFlowStepSpecializationConstRef(),
-                                                HLSFlowStep_Relationship::WHOLE_APPLICATION));
-                  else
-                     THROW_ERROR("Estimation objective not yet supported " + objective);
-               }
-               break;
-            }
-#endif
             case Evaluation_Mode::EXACT:
             {
                for(const auto& objective : objective_vector)
@@ -169,12 +146,6 @@ Evaluation::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relat
                                                 HLSFlowStep_Relationship::WHOLE_APPLICATION));
                   }
 #endif
-#if HAVE_EXPERIMENTAL
-                  else if(objective == "EDGES_REDUCTION_EVALUATION")
-                     ret.insert(std::make_tuple(HLSFlowStep_Type::EDGES_REDUCTION_EVALUATION,
-                                                HLSFlowStepSpecializationConstRef(),
-                                                HLSFlowStep_Relationship::ALL_FUNCTIONS));
-#endif
 #if HAVE_LIBRARY_CHARACTERIZATION_BUILT
                   else if(objective == "FREQUENCY")
                   {
@@ -194,12 +165,6 @@ Evaluation::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relat
                                                 HLSFlowStepSpecializationConstRef(),
                                                 HLSFlowStep_Relationship::WHOLE_APPLICATION));
                   }
-#endif
-#if HAVE_EXPERIMENTAL
-                  else if(objective == "NUM_AF_EDGES")
-                     ret.insert(std::make_tuple(HLSFlowStep_Type::NUM_AF_EDGES_EVALUATION,
-                                                HLSFlowStepSpecializationConstRef(),
-                                                HLSFlowStep_Relationship::ALL_FUNCTIONS));
 #endif
 #if HAVE_LIBRARY_CHARACTERIZATION_BUILT && HAVE_SIMULATION_WRAPPER_BUILT
                   else if(objective == "TIME" || objective == "TOTAL_TIME")

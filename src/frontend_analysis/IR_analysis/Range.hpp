@@ -158,7 +158,7 @@ class Range
    virtual RangeRef intersectWith(const RangeConstRef& other) const;
    virtual RangeRef unionWith(const RangeConstRef& other) const;
 
-   static const bw_t MAX_BIT_INT;
+   static const bw_t max_digits;
    static const APInt Min;
    static const APInt Max;
    static const APInt MinDelta;

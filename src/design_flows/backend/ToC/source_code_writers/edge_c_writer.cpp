@@ -1383,7 +1383,7 @@ void EdgeCWriter::writeRoutineInstructions_rec(vertex current_vertex, bool brack
       // recurse on the post dominator
       bb_frontier.erase(bb_PD);
       THROW_ASSERT(bb_analyzed.find(bb_PD) == bb_analyzed.end(),
-                   "something of wrong happen " +
+                   "something wrong happened " +
                        boost::lexical_cast<std::string>(bb_fcfgGraph->CGetBBNodeInfo(bb_PD)->block->number) + " Fun(" +
                        boost::lexical_cast<std::string>(funId) + ")");
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Printing the post dominator");

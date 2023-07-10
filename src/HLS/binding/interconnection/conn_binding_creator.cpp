@@ -46,7 +46,6 @@
 #include "Parameter.hpp"
 #include "call_graph_manager.hpp"
 #include "cdfc_module_binding.hpp"
-#include "config_HAVE_EXPERIMENTAL.hpp"
 #include "conn_binding.hpp"
 #include "conn_binding_creator.hpp"
 #include "dbgPrintHelper.hpp"
@@ -79,35 +78,11 @@ conn_binding_creator::ComputeHLSRelationships(const DesignFlowStep::Relationship
          }
          if(HLSMgr->get_HLS(funId))
          {
-            if(HLSMgr->GetFunctionBehavior(funId)->is_simple_pipeline())
-            {
-               ret.insert(std::make_tuple(HLSFlowStep_Type::UNIQUE_MODULE_BINDING, HLSFlowStepSpecializationConstRef(),
-                                          HLSFlowStep_Relationship::SAME_FUNCTION));
-            }
-            else
-            {
-               ret.insert(std::make_tuple(HLSMgr->get_HLS(funId)->module_binding_algorithm,
-                                          HLSFlowStepSpecializationConstRef(),
-                                          HLSFlowStep_Relationship::SAME_FUNCTION));
-            }
-         }
-         if(HLSMgr->GetFunctionBehavior(funId)->is_simple_pipeline())
-         {
-            ret.insert(std::make_tuple(HLSFlowStep_Type::UNIQUE_REGISTER_BINDING, HLSFlowStepSpecializationConstRef(),
-                                       HLSFlowStep_Relationship::SAME_FUNCTION));
-         }
-         else
-         {
-            ret.insert(std::make_tuple(parameters->getOption<HLSFlowStep_Type>(OPT_register_allocation_algorithm),
+            ret.insert(std::make_tuple(HLSMgr->get_HLS(funId)->module_binding_algorithm,
                                        HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
          }
-#if HAVE_EXPERIMENTAL
-         if(parameters->IsParameter("MemoryConflictGraph") and parameters->GetParameter<bool>("MemoryConflictGraph"))
-         {
-            ret.insert(std::make_tuple(HLSFlowStep_Type::MEMORY_CONFLICT_GRAPH, HLSFlowStepSpecializationConstRef(),
-                                       HLSFlowStep_Relationship::SAME_FUNCTION));
-         }
-#endif
+         ret.insert(std::make_tuple(parameters->getOption<HLSFlowStep_Type>(OPT_register_allocation_algorithm),
+                                    HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
          break;
       }
       case INVALIDATION_RELATIONSHIP:

@@ -130,7 +130,8 @@ class mux_connection_binding : public conn_binding_creator
     */
    void determine_connection(const vertex& op, const HLS_manager::io_binding_type& var, generic_objRef fu_obj,
                              unsigned int port_num, unsigned int port_index, const OpGraphConstRef data,
-                             unsigned int precision, unsigned int alignment = 0);
+                             unsigned int precision, unsigned int alignment, vertex state_src, vertex state_tgt,
+                             unsigned int src_phi_bb_index);
 
    /**
     * Compute the bitsize given a io_binding type
@@ -141,22 +142,26 @@ class mux_connection_binding : public conn_binding_creator
    /**
     *  create the connection object and update the unique table
     */
-   void create_single_conn(const OpGraphConstRef data, const vertex& op, generic_objRef fu_obj_src,
-                           generic_objRef fu_obj, unsigned int port_num, unsigned int port_index, unsigned int tree_var,
-                           unsigned int precision, const bool is_not_a_phi);
+   void create_single_conn(const vertex& op, generic_objRef fu_obj_src, generic_objRef fu_obj, unsigned int port_num,
+                           unsigned int port_index, unsigned int tree_var, unsigned int precision,
+                           const bool is_not_a_phi, vertex state_src, vertex state_tgt);
 
    /**
     * connect the fu_obj with the associated registers.
     */
    void connect_to_registers(vertex op, const OpGraphConstRef data, generic_objRef fu_obj, unsigned int port_num,
                              unsigned int port_index, unsigned int tree_var, unsigned long long precision,
-                             const bool is_not_a_phi);
+                             const bool is_not_a_phi, vertex state_src, vertex state_tgt,
+                             unsigned int src_phi_bb_index);
 
    unsigned int extract_parm_decl(unsigned int tree_var, const tree_managerRef TreeM);
 
+   void connect_pipelined_registers(vertex state);
+
    void add_conversion(unsigned int num, vertex op, unsigned int form_par_type, unsigned long long form_par_bitsize,
                        unsigned int port_index, const generic_objRef fu_obj, const OpGraphConstRef data,
-                       const tree_managerRef TreeM, unsigned int tree_var);
+                       const tree_managerRef TreeM, unsigned int tree_var, unsigned int alignment, vertex state_src,
+                       vertex state_tgt, unsigned int src_phi_bb_index);
 
    unsigned int address_precision(unsigned int precision, const vertex& op, const OpGraphConstRef data,
                                   const tree_managerRef TreeM);

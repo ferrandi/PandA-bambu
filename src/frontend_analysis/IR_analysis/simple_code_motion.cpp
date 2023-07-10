@@ -134,9 +134,6 @@ simple_code_motion::ComputeFrontendRelationships(const DesignFlowStep::Relations
       }
       case(PRECEDENCE_RELATIONSHIP):
       {
-#if HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT && HAVE_EXPERIMENTAL
-         relationships.insert(std::make_pair(CHECK_CRITICAL_SESSION, SAME_FUNCTION));
-#endif
 #if HAVE_ILP_BUILT
          relationships.insert(std::make_pair(SDC_CODE_MOTION, SAME_FUNCTION));
 #endif
@@ -197,7 +194,7 @@ FunctionFrontendFlowStep_Movable simple_code_motion::CheckMovable(const unsigned
                                                                   tree_nodeRef tn, bool& zero_delay,
                                                                   const tree_managerRef TM)
 {
-   if(AppM->CGetFunctionBehavior(function_id)->is_simple_pipeline())
+   if(AppM->CGetFunctionBehavior(function_id)->is_function_pipelined())
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Yes because we aim to full pipelining");
       return FunctionFrontendFlowStep_Movable::MOVABLE;
@@ -685,7 +682,7 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
    const auto fd = GetPointerS<const function_decl>(TM->CGetTreeNode(function_id));
    const auto sl = GetPointerS<const statement_list>(GET_CONST_NODE(fd->body));
 
-   const auto isFunctionPipelined = AppM->CGetFunctionBehavior(function_id)->is_simple_pipeline();
+   const auto isFunctionPipelined = AppM->CGetFunctionBehavior(function_id)->is_function_pipelined();
 
    /// store the GCC BB graph ala boost::graph
    const auto bb_graph_info = BBGraphInfoRef(new BBGraphInfo(AppM, function_id));
@@ -970,37 +967,6 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
                                                                FunctionFrontendFlowStep_Movable::MOVABLE))
                {
                   THROW_ASSERT(bb_dominator_map.find(bb_vertex) != bb_dominator_map.end(), "unexpected condition");
-#if HAVE_EXPERIMENTAL
-                  std::map<std::pair<unsigned int, blocRef>, std::pair<unsigned int, blocRef>> dom_diff;
-                  vertex curr_dom_bb = bb_dominator_map.find(bb_vertex)->second;
-                  loop_pipelined(*statement, TM, curr_bb, list_of_bloc.at(curr_bb)->loop_id, to_be_removed,
-                                 to_be_added_back, to_be_added_front, list_of_bloc, dom_diff,
-                                 direct_vertex_map[curr_dom_bb]);
-                  const std::map<std::pair<unsigned int, blocRef>, std::pair<unsigned int, blocRef>>::const_iterator
-                      dd_it_end = dom_diff.end();
-                  for(std::map<std::pair<unsigned int, blocRef>, std::pair<unsigned int, blocRef>>::const_iterator
-                          dd_it = dom_diff.begin();
-                      dd_it != dd_it_end; ++dd_it)
-                  {
-                     if(inverse_vertex_map.find(dd_it->first.first) == inverse_vertex_map.end())
-                     {
-                        inverse_vertex_map[dd_it->first.first] =
-                            GCC_bb_graphs_collection->AddVertex(BBNodeInfoRef(new BBNodeInfo(dd_it->first.second)));
-                        direct_vertex_map[inverse_vertex_map[dd_it->first.first]] = dd_it->first.first;
-                        bb_sorted_vertices.push_back(inverse_vertex_map[dd_it->first.first]);
-                     }
-                     if(inverse_vertex_map.find(dd_it->second.first) == inverse_vertex_map.end())
-                     {
-                        inverse_vertex_map[dd_it->second.first] =
-                            GCC_bb_graphs_collection->AddVertex(BBNodeInfoRef(new BBNodeInfo(dd_it->second.second)));
-                        direct_vertex_map[inverse_vertex_map[dd_it->second.first]] = dd_it->second.first;
-                        bb_sorted_vertices.push_back(inverse_vertex_map[dd_it->second.first]);
-                     }
-                     vertex dd_curr_vertex = inverse_vertex_map[dd_it->first.first];
-                     curr_dom_bb = inverse_vertex_map[dd_it->second.first];
-                     bb_dominator_map[dd_curr_vertex] = curr_dom_bb;
-                  }
-#endif
                }
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                               "<--Skipped because uses ssa defined in the same block");
@@ -1390,31 +1356,6 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
 
    modified ? function_behavior->UpdateBBVersion() : 0;
    return modified ? DesignFlowStep_Status::SUCCESS : DesignFlowStep_Status::UNCHANGED;
-}
-
-bool simple_code_motion::HasToBeExecuted() const
-{
-#if HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
-   if(parameters->getOption<bool>(OPT_parse_pragma))
-   {
-#if HAVE_EXPERIMENTAL
-      /// If unroll loop has not yet been executed skip simple code motion
-      const auto unroll_loops = design_flow_manager.lock()->GetDesignFlowStep(
-          FunctionFrontendFlowStep::ComputeSignature(FrontendFlowStepType::UNROLL_LOOPS, function_id));
-      if(unroll_loops)
-      {
-         const DesignFlowGraphConstRef design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
-         const DesignFlowStepRef design_flow_step =
-             design_flow_graph->CGetDesignFlowStepInfo(unroll_loops)->design_flow_step;
-         if(GetPointer<const FunctionFrontendFlowStep>(design_flow_step)->CGetBBVersion() == 0)
-         {
-            return false;
-         }
-      }
-#endif
-   }
-#endif
-   return FunctionFrontendFlowStep::HasToBeExecuted();
 }
 
 bool simple_code_motion::IsScheduleBased() const

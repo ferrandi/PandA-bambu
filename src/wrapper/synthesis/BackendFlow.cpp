@@ -44,7 +44,6 @@
 
 /// Autoheader include
 #include "config_HAVE_CMOS_BUILT.hpp"
-#include "config_HAVE_EXPERIMENTAL.hpp"
 
 /// wrapper/synthesis/altera includes
 #include "AlteraBackendFlow.hpp"
@@ -95,13 +94,6 @@
 // Generic
 #include "bash_flow_wrapper.hpp"
 
-// Under development
-#if HAVE_EXPERIMENTAL
-#include "FormalityWrapper.hpp"
-#include "LibraryCompilerWrapper.hpp"
-#include "PrimeTimeWrapper.hpp"
-#endif
-
 #include "area_model.hpp"
 #include "target_device.hpp"
 #include "technology_node.hpp"
@@ -113,7 +105,7 @@
 
 #include "exceptions.hpp"
 
-#include "boost/filesystem.hpp"
+#include <boost/filesystem.hpp>
 
 #include <iosfwd>
 #include <utility>
@@ -561,18 +553,6 @@ void BackendFlow::xload(const xml_element* node)
                step->script_name = "script.dc";
             }
          }
-#if HAVE_EXPERIMENTAL
-         else if(id == LIBRARY_COMPILER_TOOL_ID)
-         {
-            type = SynthesisTool::LIBRARY_COMPILER;
-         }
-         else if(id == PRIME_TIME_TOOL_ID)
-         {
-            type = SynthesisTool::PRIME_TIME;
-            if(step->script_name.size() == 0)
-               step->script_name = "script.pt";
-         }
-#endif
          else if(id == XST_TOOL_ID)
          {
             type = SynthesisTool::XST;

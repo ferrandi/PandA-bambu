@@ -87,43 +87,74 @@
 #define ENCODE_FDNAME(arg_name, MODE, interface_type) \
    ((arg_name) + STR_CST_interface_parameter_keyword + (MODE) + (interface_type))
 
-InterfaceInfer::interface_info::interface_info() : name(""), alignment(1U), bitwidth(1ULL), type(datatype::generic)
+enum class InterfaceInfer::m_axi_type
 {
-}
+   none,
+   direct,
+   axi_slave
+};
 
-void InterfaceInfer::interface_info::update(const tree_nodeRef& tn, std::string type_name, ParameterConstRef parameters)
+enum class InterfaceInfer::datatype
 {
-   const auto ptd_type = tree_helper::CGetPointedType(tree_helper::CGetType(tn));
-   bool is_signed = tree_helper::IsSignedIntegerType(ptd_type);
-   bool is_fixed = false;
-   type_name = boost::regex_replace(type_name, boost::regex("(ac_channel|stream|hls::stream)<(.*)>"), "$2");
-   const auto ac_bitwidth = ac_type_bitwidth(type_name, is_signed, is_fixed);
-   const auto _type = ac_bitwidth != 0ULL ? datatype::ac_type :
-                                            (tree_helper::IsRealType(ptd_type) ? datatype::real : datatype::generic);
-   if(type != datatype::ac_type)
+   generic,
+   ac_type,
+   real
+};
+
+struct InterfaceInfer::interface_info
+{
+   bool _fixed_size;
+
+ public:
+   std::string name;
+   unsigned alignment;
+   unsigned long long bitwidth;
+   datatype type;
+
+   interface_info(bool fixed_size)
+       : _fixed_size(fixed_size), name(""), alignment(1U), bitwidth(0ULL), type(datatype::generic)
    {
-      const auto _bitwidth = [&]() {
-         if(_type == datatype::ac_type)
-         {
-            return ac_bitwidth;
-         }
-         else if(tree_helper::IsArrayEquivType(ptd_type))
-         {
-            return tree_helper::GetArrayElementSize(ptd_type);
-         }
-         else if(tree_helper::IsPointerType(ptd_type) || tree_helper::IsStructType(ptd_type))
-         {
-            return static_cast<unsigned long long>(CompilerWrapper::CGetPointerSize(parameters));
-         }
-         return tree_helper::Size(ptd_type);
-      }();
-      const auto _alignment = static_cast<unsigned>(
-          (_type == datatype::ac_type ? get_aligned_ac_bitsize(_bitwidth) : get_aligned_bitsize(_bitwidth)) >> 3);
-      alignment = std::max(alignment, _alignment);
-      bitwidth = std::max(bitwidth, _bitwidth);
-      type = (_type == datatype::ac_type || _type == type) ? _type : datatype::generic;
    }
-}
+
+   void update(const tree_nodeRef& tn, const std::string& _type_name, ParameterConstRef parameters)
+   {
+      const auto ptd_type = tree_helper::CGetPointedType(tree_helper::CGetType(tn));
+      bool is_signed = tree_helper::IsSignedIntegerType(ptd_type);
+      bool is_fixed = false;
+      const auto type_name =
+          boost::regex_replace(_type_name, boost::regex("(ac_channel|stream|hls::stream)<(.*)>"), "$2");
+      const auto ac_bitwidth = ac_type_bitwidth(type_name, is_signed, is_fixed);
+      const auto _type = ac_bitwidth != 0ULL ? datatype::ac_type :
+                                               (tree_helper::IsRealType(ptd_type) ? datatype::real : datatype::generic);
+      if(type != datatype::ac_type)
+      {
+         const auto _bitwidth = [&]() {
+            if(_type == datatype::ac_type)
+            {
+               return ac_bitwidth;
+            }
+            else if(tree_helper::IsArrayEquivType(ptd_type))
+            {
+               return tree_helper::GetArrayElementSize(ptd_type);
+            }
+            else if(tree_helper::IsPointerType(ptd_type) || tree_helper::IsStructType(ptd_type))
+            {
+               return static_cast<unsigned long long>(CompilerWrapper::CGetPointerSize(parameters));
+            }
+            return tree_helper::Size(ptd_type);
+         }();
+         const auto _alignment = static_cast<unsigned>(
+             (_type == datatype::ac_type ? get_aligned_ac_bitsize(_bitwidth) : get_aligned_bitsize(_bitwidth)) >> 3);
+         alignment = std::max(alignment, _alignment);
+         if(_fixed_size && bitwidth && bitwidth != _bitwidth)
+         {
+            THROW_ERROR("Unaligned access not allowed for required interface!");
+         }
+         bitwidth = std::max(bitwidth, _bitwidth);
+         type = (_type == datatype::ac_type || _type == type) ? _type : datatype::generic;
+      }
+   }
+};
 
 InterfaceInfer::InterfaceInfer(const application_managerRef _AppM, const DesignFlowManagerConstRef _design_flow_manager,
                                const ParameterConstRef _parameters)
@@ -208,7 +239,7 @@ void InterfaceInfer::Initialize()
 {
    const auto HLSMgr = GetPointer<HLS_manager>(AppM);
    THROW_ASSERT(HLSMgr, "");
-   const auto parseInterfaceXML = [&](const std::string& XMLfilename) {
+   const auto parseInterfaceXML = [&](const std::string& XMLfilename, bool check) {
       if(boost::filesystem::exists(boost::filesystem::path(XMLfilename)))
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->parsing " + XMLfilename);
@@ -436,10 +467,14 @@ void InterfaceInfer::Initialize()
          }
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--parsed file " + XMLfilename);
       }
+      else if(check)
+      {
+         THROW_ERROR("The file " + XMLfilename + " passed to --interface-xml-filename option does not exist");
+      }
    };
    if(parameters->isOption(OPT_interface_xml_filename))
    {
-      parseInterfaceXML(parameters->getOption<std::string>(OPT_interface_xml_filename));
+      parseInterfaceXML(parameters->getOption<std::string>(OPT_interface_xml_filename), true);
    }
    else
    {
@@ -449,7 +484,7 @@ void InterfaceInfer::Initialize()
          const auto output_temporary_directory = parameters->getOption<std::string>(OPT_output_temporary_directory);
          const std::string leaf_name = source_file.second == "-" ? "stdin-" : GetLeafFileName(source_file.second);
          const auto XMLfilename = output_temporary_directory + "/" + leaf_name + ".interface.xml";
-         parseInterfaceXML(XMLfilename);
+         parseInterfaceXML(XMLfilename, false);
       }
    }
 }
@@ -554,7 +589,7 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                const auto& arg_type = arg_pd->type;
                THROW_ASSERT(GetPointer<const identifier_node>(GET_CONST_NODE(arg_pd->name)), "unexpected condition");
                const auto& arg_name = GetPointerS<const identifier_node>(GET_CONST_NODE(arg_pd->name))->strg;
-               INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Parameter @" + STR(arg_id) + " " + arg_name);
+               INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Parameter @" + STR(arg_id) + " " + arg_name);
                THROW_ASSERT(DesignAttributes.count(arg_name) &&
                                 DesignAttributes.at(arg_name).count(attr_interface_type),
                             "Not matched parameter name: " + arg_name);
@@ -585,7 +620,8 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                   if(tree_helper::IsPointerType(arg_type))
                   {
                      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Is a pointer type");
-                     interface_info info;
+                     interface_info info(interface_type == "array" || interface_type == "fifo" ||
+                                         interface_type == "axis");
                      info.update(arg_ssa, HLSMgr->design_attributes.at(fname).at(arg_name).at(attr_typename),
                                  parameters);
 
@@ -665,6 +701,7 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                      INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Bitwidth  : " + STR(info.bitwidth));
                      INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Alignment : " + STR(info.alignment));
                      INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "<--");
+                     THROW_ASSERT(info.bitwidth, "");
 
                      std::set<std::string> operationsR, operationsW;
                      const auto interface_datatype = tree_man->GetCustomIntegerType(info.bitwidth, true);
@@ -1127,19 +1164,8 @@ void InterfaceInfer::setReadInterface(tree_nodeRef stmt, const std::string& arg_
          const auto sel_value = TM->CreateUniqueIntegerCst(0, boolean_type);
          const auto size_value =
              TM->CreateUniqueIntegerCst(static_cast<long long>(tree_helper::Size(actual_type)), bit_size_type);
-         const auto data_value = [&]() -> tree_nodeRef {
-            if(tree_helper::IsEnumType(interface_datatype) || tree_helper::IsPointerType(interface_datatype) ||
-               GET_CONST_NODE(interface_datatype)->get_kind() == integer_type_K)
-            {
-               return TM->CreateUniqueIntegerCst(0, interface_datatype);
-            }
-            else if(tree_helper::IsRealType(interface_datatype))
-            {
-               return TM->CreateUniqueRealCst(0.l, interface_datatype);
-            }
-            THROW_ERROR("unexpected data type");
-            return nullptr;
-         }();
+
+         const auto data_value = TM->CreateUniqueIntegerCst(0, interface_datatype);
          args.push_back(sel_value);
          args.push_back(size_value);
          args.push_back(data_value);
@@ -1388,20 +1414,25 @@ void InterfaceInfer::create_resource_Read_simple(const std::set<std::string>& op
       GetPointerS<port_o>(addrPort)->set_is_addr_bus(true);
       CM->add_port("out1", port_o::OUT, interface_top, outType);
 
-      std::string port_data_name;
+      std::string port_data_name = "_" + arg_name;
+      port_o::port_interface port_if = port_o::port_interface::PI_RNONE;
       if(if_name == "axis")
       {
          port_data_name = "_s_axis_" + arg_name + "_TDATA";
+         port_if = port_o::port_interface::PI_S_AXIS_TDATA;
       }
-      else
+      else if(if_name == "fifo")
       {
-         port_data_name = "_" + arg_name + (if_name == "fifo" ? "_dout" : (IO_port ? "_i" : ""));
+         port_data_name += "_dout";
+         port_if = port_o::port_interface::PI_FDOUT;
+      }
+      else if(IO_port)
+      {
+         port_data_name += "_i";
       }
       const auto inPort = CM->add_port(port_data_name, port_o::IN, interface_top, dataType);
       GetPointerS<port_o>(inPort)->set_port_alignment(info.alignment);
-      GetPointerS<port_o>(inPort)->set_port_interface((if_name == "axis" || if_name == "fifo") ?
-                                                          port_o::port_interface::PI_FDOUT :
-                                                          port_o::port_interface::PI_RNONE);
+      GetPointerS<port_o>(inPort)->set_port_interface(port_if);
       if(if_name == "acknowledge" || if_name == "handshake")
       {
          const auto inPort_o_ack =
@@ -1534,23 +1565,29 @@ void InterfaceInfer::create_resource_Write_simple(const std::set<std::string>& o
       CM->add_port("in2", port_o::IN, interface_top, rwtype);
       const auto addrPort = CM->add_port("in3", port_o::IN, interface_top, addrType);
       GetPointerS<port_o>(addrPort)->set_is_addr_bus(true);
-      std::string port_data_name;
-      if(if_name == "axis")
-      {
-         port_data_name = "_m_axis_" + arg_name + "_TDATA";
-      }
-      else
-      {
-         port_data_name = "_" + arg_name + (if_name == "fifo" ? "_din" : (IO_port ? "_o" : ""));
-      }
-      if(if_name == "fifo")
+      if(if_name == "fifo" || if_name == "axis")
       {
          CM->add_port("out1", port_o::OUT, interface_top, bool_type);
       }
+      std::string port_data_name = "_" + arg_name;
+      port_o::port_interface port_if = port_o::port_interface::PI_WNONE;
+      if(if_name == "axis")
+      {
+         port_data_name = "_m_axis_" + arg_name + "_TDATA";
+         port_if = port_o::port_interface::PI_M_AXIS_TDATA;
+      }
+      else if(if_name == "fifo")
+      {
+         port_data_name += "_din";
+         port_if = port_o::port_interface::PI_FDIN;
+      }
+      else if(IO_port)
+      {
+         port_data_name += "_o";
+      }
       const auto inPort_o = CM->add_port(port_data_name, port_o::OUT, interface_top, dataType);
-      GetPointerS<port_o>(inPort_o)->set_port_interface((if_name == "axis" || if_name == "fifo") ?
-                                                            port_o::port_interface::PI_FDIN :
-                                                            port_o::port_interface::PI_WNONE);
+      // GetPointerS<port_o>(inPort_o)->set_port_alignment(info.alignment);
+      GetPointerS<port_o>(inPort_o)->set_port_interface(port_if);
       if(if_name == "acknowledge" || if_name == "handshake")
       {
          const auto inPort_o_ack =
@@ -1644,7 +1681,7 @@ void InterfaceInfer::create_resource_array(const std::set<std::string>& operatio
                                            unsigned int top_id) const
 {
    const auto n_channels = parameters->getOption<unsigned int>(OPT_channels_number);
-   const auto isDP = info.bitwidth <= 64ULL && n_channels == 2;
+   const auto isDP = n_channels == 2;
    const auto n_resources = isDP ? 2U : 1U;
    const auto read_write_string = (isDP ? std::string("ReadWriteDP_") : std::string("ReadWrite_"));
    const auto ResourceName = ENCODE_FDNAME(bundle_name, "", "");

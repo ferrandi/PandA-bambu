@@ -54,7 +54,6 @@ ext/vflib/include
 ext/vflib/src
 src
 src/algorithms
-src/algorithms/bipartite_matching
 src/algorithms/boolean_functions
 src/algorithms/clique_covering
 src/algorithms/clustering
@@ -199,10 +198,7 @@ src/HLS/hls_flow/design_space_exploration/SA
 src/HLS/hls_flow/design_space_exploration/TS
 src/HLS/hls_flow/synthesis
 src/HLS/interface
-src/HLS/interface/AXI
-src/HLS/interface/FSL
 src/HLS/interface/minimal
-src/HLS/interface/NPI
 src/HLS/interface/WB4
 src/HLS/liveness
 src/HLS/liveness/algorithms
@@ -415,3 +411,16 @@ ext/mockturtle/lib/bill/bill/sat/solver
 ext/mockturtle/lib/bill/bill/sat/solver/abc
 ext/mockturtle/lib/bill/bill/utils
 ext/mockturtle/lib/bill/bill/dd
+ext/
+ext/gbbs
+ext/gbbs/parlay
+ext/gbbs/parlay/internal
+ext/gbbs/parlay/internal/posix
+ext/gbbs/parlay/internal/scheduler_plugins
+ext/gbbs/parlay/internal/windows
+src/algorithms/sdc_solver
+ext/or-tools/
+ext/or-tools/ortools/graph
+ext/or-tools/ortools/base
+ext/or-tools/ortools/util
+

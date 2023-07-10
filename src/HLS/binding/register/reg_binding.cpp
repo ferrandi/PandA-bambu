@@ -48,7 +48,6 @@
 #include "behavioral_helper.hpp"
 #include "function_behavior.hpp"
 
-#include "FPGA_device.hpp"
 #include "Parameter.hpp"
 #include "hls.hpp"
 #include "hls_manager.hpp"
@@ -57,7 +56,7 @@
 #include "omp_functions.hpp"
 #include "reg_binding_cs.hpp"
 
-#include "boost/lexical_cast.hpp"
+#include <boost/lexical_cast.hpp>
 #include "structural_manager.hpp"
 #include "technology_manager.hpp"
 
@@ -124,16 +123,17 @@ reg_bindingRef reg_binding::create_reg_binding(const hlsRef& HLS, const HLS_mana
 
 void reg_binding::print_el(const_iterator& it) const
 {
-   INDENT_OUT_MEX(
-       OUTPUT_LEVEL_VERY_PEDANTIC, HLS->output_level,
-       "---Storage Value: " + STR(it->first) + " for variable " +
-           FB->CGetBehavioralHelper()->PrintVariable(HLS->storage_value_information->get_variable_index(it->first)) +
-           " stored into register " + it->second->get_string());
+   INDENT_OUT_MEX(OUTPUT_LEVEL_VERY_PEDANTIC, HLS->output_level,
+                  "---Storage Value: " + STR(it->first) + " for variable " +
+                      FB->CGetBehavioralHelper()->PrintVariable(
+                          HLS->storage_value_information->get_variable_index(it->first).first) +
+                      " step " + STR(HLS->storage_value_information->get_variable_index(it->first).second) +
+                      " stored into register " + it->second->get_string());
 }
 
-CustomOrderedSet<unsigned int> reg_binding::get_vars(const unsigned int& r) const
+CustomOrderedSet<std::pair<unsigned int, unsigned int>> reg_binding::get_vars(const unsigned int& r) const
 {
-   CustomOrderedSet<unsigned int> vars;
+   CustomOrderedSet<std::pair<unsigned int, unsigned int>> vars;
    THROW_ASSERT(reg2storage_values.count(r) && reg2storage_values.at(r).size(),
                 "at least a storage value has to be mapped on register r");
 
@@ -146,16 +146,17 @@ CustomOrderedSet<unsigned int> reg_binding::get_vars(const unsigned int& r) cons
 
 unsigned long long reg_binding::compute_bitsize(unsigned int r)
 {
-   const auto reg_vars = get_vars(r);
-   unsigned long long max_bits = 0;
-   for(const auto reg_var : reg_vars)
+   auto reg_vars = get_vars(r);
+   auto max_bits = 0ull;
+   for(auto reg_var : reg_vars)
    {
-      structural_type_descriptor node_type0(reg_var, FB->CGetBehavioralHelper());
+      structural_type_descriptor node_type0(reg_var.first, FB->CGetBehavioralHelper());
       auto node_size = STD_GET_SIZE(&node_type0);
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, HLS->debug_level,
-                    "- Analyzing node " + STR(reg_var) + ", whose type is " + node_type0.get_name() +
-                        " (size: " + STR(node_type0.size) + ", vector_size: " + STR(node_type0.vector_size) + ")");
-      max_bits = max_bits < node_size ? node_size : max_bits;
+                    "- Analyzing node " + STR(reg_var.first) + "(" + STR(reg_var.second) + "), whose type is " +
+                        node_type0.get_name() + " (size: " + STR(node_type0.size) +
+                        ", vector_size: " + STR(node_type0.vector_size) + ")");
+      max_bits = std::max(max_bits, node_size);
    }
    bitsize_map[r] = max_bits;
    return max_bits;
@@ -196,13 +197,13 @@ void reg_binding::specialise_reg(structural_objectRef& reg, unsigned int r)
 
 void reg_binding::compute_is_without_enable()
 {
-   std::map<unsigned int, unsigned int> n_in;
-   std::map<unsigned int, unsigned int> n_out;
+   std::map<std::pair<unsigned int, unsigned int>, unsigned int> n_in;
+   std::map<std::pair<unsigned int, unsigned int>, unsigned int> n_out;
    for(const auto v : HLS->Rliv->get_support())
    {
       const auto dummy_offset = HLS->Rliv->is_a_dummy_state(v) ? 1U : 0U;
       const auto& live_in = HLS->Rliv->get_live_in(v);
-      for(const auto li : live_in)
+      for(const auto& li : live_in)
       {
          if(n_in.find(li) == n_in.end())
          {
@@ -214,7 +215,7 @@ void reg_binding::compute_is_without_enable()
          }
       }
       const auto& live_out = HLS->Rliv->get_live_out(v);
-      for(const auto lo : live_out)
+      for(const auto& lo : live_out)
       {
          if(!n_out.count(lo))
          {
@@ -234,8 +235,8 @@ void reg_binding::compute_is_without_enable()
    for(auto i = 0U; i < get_used_regs(); i++)
    {
       const auto all_woe = [&]() {
-         const auto store_vars_set = get_vars(i);
-         for(const auto sv : store_vars_set)
+         const auto& store_vars_set = get_vars(i);
+         for(const auto& sv : store_vars_set)
          {
             if(n_in.find(sv) == n_in.end() || n_in.find(sv)->second != 1 || n_out.find(sv) == n_out.end() ||
                n_out.find(sv)->second != 1)
@@ -258,32 +259,15 @@ void reg_binding::bind(unsigned int sv, unsigned int index)
    if(!unique_table.count(index))
    {
       unique_table[index] = generic_objRef(new register_obj(index));
-      if(HLSMgr->GetFunctionBehavior(HLS->functionId)->is_simple_pipeline())
-      {
-         for(const auto v : HLS->Rliv->get_support())
-         {
-            if(HLS->STG->GetStg()->GetStateInfo(v)->loopId != 0)
-            {
-               auto live_in = HLS->Rliv->get_live_in(v);
-               for(unsigned int var : live_in)
-               {
-                  if(sv == HLS->storage_value_information->get_storage_value_index(v, var))
-                  {
-                     stall_reg_table[index] = generic_objRef(new register_obj(index + used_regs));
-                  }
-               }
-            }
-         }
-      }
    }
    auto i = this->find(sv);
    if(i == this->end())
    {
-      this->insert(std::make_pair(sv, unique_table[index]));
+      this->insert(std::make_pair(sv, unique_table.at(index)));
    }
    else
    {
-      i->second = unique_table[index];
+      i->second = unique_table.at(index);
    }
    reg2storage_values[index].insert(sv);
 }
@@ -301,20 +285,7 @@ void reg_binding::add_to_SM(structural_objectRef clock_port, structural_objectRe
 
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug, "reg_binding::add_registers - Start");
 
-   const auto stallable_pipeline = FB->is_pipeline_enabled() && !FB->is_simple_pipeline();
-   if(stallable_pipeline)
-   {
-      PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug,
-                    "Number of registers: " + STR(get_used_regs() + stall_reg_table.size()) + ", " +
-                        STR(stall_reg_table.size()) + " introduced for supporting pipelined loops");
-   }
-   else
-   {
-      PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug, "Number of registers: " + STR(get_used_regs()));
-
-      // all registers need an enable in stallable pipelines
-      compute_is_without_enable();
-   }
+   compute_is_without_enable();
    /// define boolean type for command signals
    all_regs_without_enable = get_used_regs() != 0;
    for(auto i = 0U; i < get_used_regs(); ++i)
@@ -339,22 +310,6 @@ void reg_binding::add_to_SM(structural_objectRef clock_port, structural_objectRe
       }
       regis->set_structural_obj(reg_mod);
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug, "Register " + STR(i) + " successfully allocated");
-      if(stallable_pipeline && stall_reg_table.count(i))
-      {
-         PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug,
-                       "Register " + STR(i) + " also needs a stall register, allocating it...");
-         name = "stall_" + name;
-         reg_mod = SM->add_module_from_technology_library(name, register_type_name, library, circuit,
-                                                          HLS->HLS_T->get_technology_manager());
-         specialise_reg(reg_mod, i);
-         port_ck = reg_mod->find_member(CLOCK_PORT_NAME, port_o_K, reg_mod);
-         SM->add_connection(clock_port, port_ck);
-         port_rst = reg_mod->find_member(RESET_PORT_NAME, port_o_K, reg_mod);
-         THROW_ASSERT(port_rst != nullptr, "The stall register was not allocated a reset port");
-         SM->add_connection(reset_port, port_rst);
-         regis->set_structural_obj(reg_mod);
-         PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug, "Successfully allocated stall register for std reg " + STR(i));
-      }
    }
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug, "reg_binding::add_registers - End");
    if(HLS->output_level >= OUTPUT_LEVEL_MINIMUM)
@@ -377,7 +332,7 @@ void reg_binding::add_to_SM(structural_objectRef clock_port, structural_objectRe
 
 std::string reg_binding::GetRegisterFUName(unsigned int i)
 {
-   if(is_without_enable.count(i) || FB->is_simple_pipeline())
+   if(is_without_enable.count(i))
    {
       return register_STD;
    }

@@ -1,9 +1,9 @@
 #include <catch.hpp>
 
-#include <mockturtle/networks/aig.hpp>
 #include <mockturtle/algorithms/simulation.hpp>
-#include <mockturtle/generators/self_dualize.hpp>
 #include <mockturtle/generators/arithmetic.hpp>
+#include <mockturtle/generators/self_dualize.hpp>
+#include <mockturtle/networks/aig.hpp>
 
 #include <kitty/kitty.hpp>
 

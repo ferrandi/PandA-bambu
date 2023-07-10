@@ -54,6 +54,8 @@
 #include "hls_manager.hpp"
 #include "liveness.hpp"
 #include "reg_binding.hpp"
+#include "state_transition_graph.hpp"
+#include "state_transition_graph_manager.hpp"
 #include "storage_value_information.hpp"
 #include "string_manipulation.hpp"
 #include "token_interface.hpp"
@@ -86,28 +88,11 @@ port_swapping::ComputeHLSRelationships(const DesignFlowStep::RelationshipType re
       {
          if(HLSMgr->get_HLS(funId))
          {
-            if(HLSMgr->GetFunctionBehavior(funId)->is_simple_pipeline())
-            {
-               ret.insert(std::make_tuple(HLSFlowStep_Type::UNIQUE_MODULE_BINDING, HLSFlowStepSpecializationConstRef(),
-                                          HLSFlowStep_Relationship::SAME_FUNCTION));
-            }
-            else
-            {
-               ret.insert(std::make_tuple(HLSMgr->get_HLS(funId)->module_binding_algorithm,
-                                          HLSFlowStepSpecializationConstRef(),
-                                          HLSFlowStep_Relationship::SAME_FUNCTION));
-            }
-         }
-         if(HLSMgr->GetFunctionBehavior(funId)->is_simple_pipeline())
-         {
-            ret.insert(std::make_tuple(HLSFlowStep_Type::UNIQUE_REGISTER_BINDING, HLSFlowStepSpecializationConstRef(),
-                                       HLSFlowStep_Relationship::SAME_FUNCTION));
-         }
-         else
-         {
-            ret.insert(std::make_tuple(parameters->getOption<HLSFlowStep_Type>(OPT_register_allocation_algorithm),
+            ret.insert(std::make_tuple(HLSMgr->get_HLS(funId)->module_binding_algorithm,
                                        HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
          }
+         ret.insert(std::make_tuple(parameters->getOption<HLSFlowStep_Type>(OPT_register_allocation_algorithm),
+                                    HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
          break;
       }
       case INVALIDATION_RELATIONSHIP:
@@ -444,12 +429,9 @@ std::vector<std::pair<port_swapping::PSVertex, unsigned int>> port_swapping::p_s
 {
    auto g_vertices = vertices(g);
    std::vector<PSMultiStart> vector_sets;
-   int count = 0;
    for(auto iterator = g_vertices.first; iterator != g_vertices.second; ++iterator)
    {
       port_swapping_algorithm(g, vector_sets, boost::num_vertices(g), *iterator);
-
-      count++;
    }
    long unsigned int max = boost::num_vertices(g);
    PSMultiStart best_candidate;
@@ -497,7 +479,7 @@ DesignFlowStep_Status port_swapping::InternalExec()
    const OpGraphConstRef data = FB->CGetOpGraph(FunctionBehavior::FDFG);
    const BehavioralHelperConstRef behavioral_helper = FB->CGetBehavioralHelper();
    const tree_managerRef TreeM = HLSMgr->get_tree_manager();
-
+   const StateTransitionGraphConstRef stg = HLS->STG->CGetStg();
    using Operands = struct
    {
       vertex op;
@@ -570,6 +552,8 @@ DesignFlowStep_Status port_swapping::InternalExec()
                   {
                      vertex def_op = HLS->Rliv->get_op_where_defined(tree_var);
                      const CustomOrderedSet<vertex>& def_op_ending_states = HLS->Rliv->get_state_where_end(def_op);
+                     const auto state_info = stg->CGetStateInfo(state);
+
                      if((GET_TYPE(data, def_op) & TYPE_PHI) == 0)
                      {
                         if(def_op_ending_states.find(state) != def_op_ending_states.end())
@@ -584,23 +568,28 @@ DesignFlowStep_Status port_swapping::InternalExec()
                               key_value = std::make_tuple(2, 0, tree_var);
                            }
                         }
-                        else if(HLS->storage_value_information->is_a_storage_value(state, tree_var))
-                        {
-                           unsigned int storage_value =
-                               HLS->storage_value_information->get_storage_value_index(state, tree_var);
-                           unsigned int r_index = HLS->Rreg->get_register(storage_value);
-                           INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Register: " + STR(r_index));
-                           key_value = std::make_tuple(3, 0, r_index);
-                        }
                         else
                         {
-                           THROW_UNREACHABLE("unexpected");
+                           auto step = HLS->Rliv->GetStep(state, fu_operation, tree_var, true);
+                           if(HLS->storage_value_information->is_a_storage_value(state, tree_var, step))
+                           {
+                              unsigned int storage_value =
+                                  HLS->storage_value_information->get_storage_value_index(state, tree_var, step);
+                              unsigned int r_index = HLS->Rreg->get_register(storage_value);
+                              INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Register: " + STR(r_index));
+                              key_value = std::make_tuple(3, 0, r_index);
+                           }
+                           else
+                           {
+                              THROW_UNREACHABLE("unexpected");
+                           }
                         }
                      }
                      else
                      {
+                        auto step = HLS->Rliv->GetStep(state, fu_operation, tree_var, true);
                         unsigned int storage_value =
-                            HLS->storage_value_information->get_storage_value_index(state, tree_var);
+                            HLS->storage_value_information->get_storage_value_index(state, tree_var, step);
                         unsigned int r_index = HLS->Rreg->get_register(storage_value);
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Register: " + STR(r_index));
                         key_value = std::make_tuple(3, 0, r_index);

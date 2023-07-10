@@ -2,7 +2,11 @@ extern void abort (void);
 
 typedef struct Bar {
       char c[129];
-} Bar __attribute__((__aligned__(128)));
+} Bar
+ #ifndef __clang__
+ __attribute__((__aligned__(128)))
+ #endif
+ ;
 
 typedef struct Foo {
       Bar bar[4];

@@ -62,7 +62,7 @@ class StorageValueInformation
    unsigned int number_of_storage_values;
 
    /// put into relation storage value index with variables
-   CustomUnorderedMap<unsigned int, unsigned int> variable_index_map;
+   CustomUnorderedMap<unsigned int, std::pair<unsigned int, unsigned int>> variable_index_map;
 
    /// relation between var written and operations
    CustomUnorderedMap<unsigned int, vertex> vw2vertex;
@@ -78,6 +78,13 @@ class StorageValueInformation
 
    /// functional unit assignments
    Wrefcount<const fu_binding> fu;
+
+   /**
+    * return the in case the storage values have compatible size
+    * @param storage_value_index1 is the first storage value
+    * @param storage_value_index2 is the second storage value
+    */
+   bool are_value_bitsize_compatible(unsigned int storage_value_index1, unsigned int storage_value_index2) const;
 
  public:
    /**
@@ -104,20 +111,22 @@ class StorageValueInformation
     * return true in case a storage value exist for the pair vertex variable
     * @param curr_vertex is the vertex
     * @param var_index is the variable
+    * @param stage is the stage in case of pipelined state
     */
-   virtual bool is_a_storage_value(vertex curr_vertex, unsigned int var_index) = 0;
+   virtual bool is_a_storage_value(vertex curr_vertex, unsigned int var_index, unsigned int stage) = 0;
 
    /**
     * Returns the index of the storage value associated with the variable in a given vertex
     * @param curr_vertex is the vertex
     * @param var_index is the variable
+    * @param stage is the stage in case of pipelined state
     */
-   virtual unsigned int get_storage_value_index(vertex curr_vertex, unsigned int var_index) = 0;
+   virtual unsigned int get_storage_value_index(vertex curr_vertex, unsigned int var_index, unsigned int stage) = 0;
 
    /**
     * Returns the index of the variable associated with the storage value in a given vertex
     */
-   unsigned int get_variable_index(unsigned int storage_value_index) const;
+   std::pair<unsigned int, unsigned int> get_variable_index(unsigned int storage_value_index) const;
 
    /**
     * return a weight that estimate how much two storage values are compatible.
@@ -129,15 +138,18 @@ class StorageValueInformation
     * assign a storage value to a couple state-variable
     * @param curr_state is the current state
     * @param variable is the assigned variable
+    * @param stage is the stage in case of pipelined state
     * @param sv is the assigned storage value*/
-   virtual void set_storage_value_index(vertex curr_state, unsigned int variable, unsigned int sv) = 0;
+   virtual void set_storage_value_index(vertex curr_state, unsigned int variable, unsigned int stage,
+                                        unsigned int sv) = 0;
 
    /**
-    * return the in case the storage values have compatible size
+    * return true in case the storage values are compatible
     * @param storage_value_index1 is the first storage value
     * @param storage_value_index2 is the second storage value
     */
-   bool are_value_bitsize_compatible(unsigned int storage_value_index1, unsigned int storage_value_index2) const;
+   virtual bool are_storage_value_compatible(unsigned int storage_value_index1,
+                                             unsigned int storage_value_index2) const = 0;
 };
 using StorageValueInformationRef = refcount<StorageValueInformation>;
 #endif

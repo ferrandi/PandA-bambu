@@ -1,5 +1,5 @@
 /* mockturtle: C++ logic network library
- * Copyright (C) 2018-2021  EPFL
+ * Copyright (C) 2018-2022  EPFL
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -59,36 +59,36 @@ namespace mockturtle
 struct resubstitution_params
 {
   /*! \brief Maximum number of PIs of reconvergence-driven cuts. */
-  uint32_t max_pis{8};
+  uint32_t max_pis{ 8 };
 
   /*! \brief Maximum number of divisors to consider. */
-  uint32_t max_divisors{150};
+  uint32_t max_divisors{ 150 };
 
   /*! \brief Maximum number of nodes added by resubstitution. */
-  uint32_t max_inserts{2};
+  uint32_t max_inserts{ 2 };
 
   /*! \brief Maximum fanout of a node to be considered as root. */
-  uint32_t skip_fanout_limit_for_roots{1000};
+  uint32_t skip_fanout_limit_for_roots{ 1000 };
 
   /*! \brief Maximum fanout of a node to be considered as divisor. */
-  uint32_t skip_fanout_limit_for_divisors{100};
+  uint32_t skip_fanout_limit_for_divisors{ 100 };
 
   /*! \brief Show progress. */
-  bool progress{false};
+  bool progress{ false };
 
   /*! \brief Be verbose. */
-  bool verbose{false};
+  bool verbose{ false };
 
   /****** window-based resub engine ******/
 
   /*! \brief Use don't cares for optimization. Only used by window-based resub engine. */
-  bool use_dont_cares{false};
+  bool use_dont_cares{ false };
 
   /*! \brief Window size for don't cares calculation. Only used by window-based resub engine. */
-  uint32_t window_size{12u};
+  uint32_t window_size{ 12u };
 
   /*! \brief Whether to prevent from increasing depth. Currently only used by window-based resub engine. */
-  bool preserve_depth{false};
+  bool preserve_depth{ false };
 
   /****** simulation-based resub engine ******/
 
@@ -100,21 +100,24 @@ struct resubstitution_params
   /*! \brief Whether to save the appended patterns (with CEXs) into file. Only used by simulation-based resub engine. */
   std::optional<std::string> save_patterns{};
 
+  /*! \brief Maximum number of clauses of the SAT solver. Only used by simulation-based resub engine. */
+  uint32_t max_clauses{ 1000 };
+
   /*! \brief Conflict limit for the SAT solver. Only used by simulation-based resub engine. */
-  uint32_t conflict_limit{1000};
+  uint32_t conflict_limit{ 1000 };
 
   /*! \brief Random seed for the SAT solver (influences the randomness of counter-examples). Only used by simulation-based resub engine. */
-  uint32_t random_seed{1};
+  uint32_t random_seed{ 1 };
 
   /*! \brief Whether to utilize ODC, and how many levels. 0 = no. -1 = Consider TFO until PO. Only used by simulation-based resub engine. */
-  int32_t odc_levels{0};
+  int32_t odc_levels{ 0 };
 
   /*! \brief Maximum number of trials to call the resub functor. Only used by simulation-based resub engine. */
-  uint32_t max_trials{100};
+  uint32_t max_trials{ 100 };
 
   /* k-resub engine specific */
   /*! \brief Maximum number of divisors to consider in k-resub engine. Only used by `abc_resub_functor` with simulation-based resub engine. */
-  uint32_t max_divisors_k{50};
+  uint32_t max_divisors_k{ 50 };
 };
 
 /*! \brief Statistics for resubstitution.
@@ -125,39 +128,39 @@ struct resubstitution_params
 struct resubstitution_stats
 {
   /*! \brief Total runtime. */
-  stopwatch<>::duration time_total{0};
+  stopwatch<>::duration time_total{ 0 };
 
   /*! \brief Accumulated runtime of the divisor collector. */
-  stopwatch<>::duration time_divs{0};
+  stopwatch<>::duration time_divs{ 0 };
 
   /*! \brief Accumulated runtime of the resub engine. */
-  stopwatch<>::duration time_resub{0};
+  stopwatch<>::duration time_resub{ 0 };
 
   /*! \brief Accumulated runtime of the callback function. */
-  stopwatch<>::duration time_callback{0};
+  stopwatch<>::duration time_callback{ 0 };
 
   /*! \brief Total number of divisors. */
-  uint64_t num_total_divisors{0};
+  uint64_t num_total_divisors{ 0 };
 
   /*! \brief Total number of gain. */
-  uint64_t estimated_gain{0};
+  uint64_t estimated_gain{ 0 };
 
   /*! \brief Initial network size (before resubstitution). */
-  uint64_t initial_size{0};
+  uint64_t initial_size{ 0 };
 
   void report() const
   {
     // clang-format off
-    std::cout <<              "[i] <Top level>\n";
-    std::cout <<              "[i]     ========  Stats  ========\n";
-    std::cout << fmt::format( "[i]     #divisors = {:8d}\n", num_total_divisors );
-    std::cout << fmt::format( "[i]     est. gain = {:8d} ({:>5.2f}%)\n", estimated_gain, ( 100.0 * estimated_gain ) / initial_size );
-    std::cout <<              "[i]     ======== Runtime ========\n";
-    std::cout << fmt::format( "[i]     total         : {:>5.2f} secs\n", to_seconds( time_total ) );
-    std::cout << fmt::format( "[i]       DivCollector: {:>5.2f} secs\n", to_seconds( time_divs ) );
-    std::cout << fmt::format( "[i]       ResubEngine : {:>5.2f} secs\n", to_seconds( time_resub ) );
-    std::cout << fmt::format( "[i]       callback    : {:>5.2f} secs\n", to_seconds( time_callback ) );
-    std::cout <<              "[i]     =========================\n\n";
+    fmt::print( "[i] <Top level>\n" );
+    fmt::print( "[i]     ========  Stats  ========\n" );
+    fmt::print( "[i]     #divisors = {:8d}\n", num_total_divisors );
+    fmt::print( "[i]     est. gain = {:8d} ({:>5.2f}%)\n", estimated_gain, ( 100.0 * estimated_gain ) / initial_size );
+    fmt::print( "[i]     ======== Runtime ========\n" );
+    fmt::print( "[i]     total         : {:>5.2f} secs\n", to_seconds( time_total ) );
+    fmt::print( "[i]       DivCollector: {:>5.2f} secs\n", to_seconds( time_divs ) );
+    fmt::print( "[i]       ResubEngine : {:>5.2f} secs\n", to_seconds( time_resub ) );
+    fmt::print( "[i]       callback    : {:>5.2f} secs\n", to_seconds( time_callback ) );
+    fmt::print( "[i]     =========================\n\n" );
     // clang-format on
   }
 };
@@ -170,40 +173,39 @@ bool substitute_fn( Ntk& ntk, typename Ntk::node const& n, typename Ntk::signal 
 {
   ntk.substitute_node( n, g );
   return true;
-};
+}
 
 template<typename Ntk>
 bool report_fn( Ntk& ntk, typename Ntk::node const& n, typename Ntk::signal const& g )
 {
-  (void)ntk;
-  std::cout << "substitute node " << unsigned( n ) << " with node " << unsigned( ntk.get_node( g ) ) << std::endl;
+  fmt::print( "[i] Substitute node {} with signal {}{}\n", n, ntk.is_complemented( g ) ? "!" : "", ntk.get_node( g ) );
   return false;
-};
+}
 
 struct default_collector_stats
 {
   /*! \brief Total number of leaves. */
-  uint64_t num_total_leaves{0};
+  uint64_t num_total_leaves{ 0 };
 
   /*! \brief Accumulated runtime for cut computation. */
-  stopwatch<>::duration time_cuts{0};
+  stopwatch<>::duration time_cuts{ 0 };
 
   /*! \brief Accumulated runtime for mffc computation. */
-  stopwatch<>::duration time_mffc{0};
+  stopwatch<>::duration time_mffc{ 0 };
 
   /*! \brief Accumulated runtime for divisor computation. */
-  stopwatch<>::duration time_divs{0};
+  stopwatch<>::duration time_divs{ 0 };
 
   void report() const
   {
     // clang-format off
-    std::cout <<              "[i] <DivCollector: default_divisor_collector>\n";
-    std::cout << fmt::format( "[i]     #leaves = {:6d}\n", num_total_leaves );
-    std::cout <<              "[i]     ======== Runtime ========\n";
-    std::cout << fmt::format( "[i]     reconv. cut : {:>5.2f} secs\n", to_seconds( time_cuts ) );
-    std::cout << fmt::format( "[i]     MFFC        : {:>5.2f} secs\n", to_seconds( time_mffc ) );
-    std::cout << fmt::format( "[i]     divs collect: {:>5.2f} secs\n", to_seconds( time_divs ) );
-    std::cout <<              "[i]     =========================\n\n";
+    fmt::print( "[i] <DivCollector: default_divisor_collector>\n" );
+    fmt::print( "[i]     #leaves = {:6d}\n", num_total_leaves );
+    fmt::print( "[i]     ======== Runtime ========\n" );
+    fmt::print( "[i]     reconv. cut : {:>5.2f} secs\n", to_seconds( time_cuts ) );
+    fmt::print( "[i]     MFFC        : {:>5.2f} secs\n", to_seconds( time_mffc ) );
+    fmt::print( "[i]     divs collect: {:>5.2f} secs\n", to_seconds( time_divs ) );
+    fmt::print( "[i]     =========================\n\n" );
     // clang-format on
   }
 };
@@ -238,7 +240,7 @@ public:
 
 public:
   explicit default_divisor_collector( Ntk const& ntk, resubstitution_params const& ps, stats& st )
-    : ntk( ntk ), ps( ps ), st( st ), cuts( ntk, cut_comp_parameters_type{ps.max_pis}, cuts_st )
+      : ntk( ntk ), ps( ps ), st( st ), cuts( ntk, cut_comp_parameters_type{ ps.max_pis }, cuts_st )
   {
   }
 
@@ -252,20 +254,20 @@ public:
 
     /* compute a reconvergence-driven cut */
     leaves = call_with_stopwatch( st.time_cuts, [&]() {
-        return cuts.run( { n } ).first;
-    });
+      return cuts.run( { n } ).first;
+    } );
     st.num_total_leaves += leaves.size();
 
     /* collect the MFFC */
     MffcMgr mffc_mgr( ntk );
     potential_gain = call_with_stopwatch( st.time_mffc, [&]() {
       return mffc_mgr.run( n, leaves, mffc );
-    });
+    } );
 
     /* collect the divisor nodes in the cut */
     bool div_comp_success = call_with_stopwatch( st.time_divs, [&]() {
       return collect_divisors( n );
-    });
+    } );
 
     if ( !div_comp_success )
     {
@@ -329,27 +331,25 @@ private:
     }
 
     /* check if the number of divisors is not exceeded */
-    if ( divs.size() - leaves.size() + mffc.size() >= ps.max_divisors - ps.max_pis )
+    if ( divs.size() + mffc.size() - leaves.size() > ps.max_divisors - ps.max_pis )
     {
       return false;
     }
-
-    /* get the number of divisors to collect */
-    int32_t limit = ps.max_divisors - ps.max_pis - ( uint32_t( divs.size() ) + 1 - uint32_t( leaves.size() ) + uint32_t( mffc.size() ) );
+    uint32_t limit = ps.max_divisors - ps.max_pis - mffc.size() + leaves.size();
 
     /* explore the fanouts, which are not in the MFFC */
-    int32_t counter = 0;
     bool quit = false;
-
-    /* note: this is tricky and cannot be converted to a range-based loop */
-    auto size = divs.size();
-    for ( auto i = 0u; i < size; ++i )
+    for ( auto i = 0u; i < divs.size(); ++i )
     {
       auto const d = divs.at( i );
 
       if ( ntk.fanout_size( d ) > ps.skip_fanout_limit_for_divisors )
       {
         continue;
+      }
+      if ( divs.size() >= limit )
+      {
+        break;
       }
 
       /* if the fanout has all fanins in the set, add it */
@@ -388,11 +388,10 @@ private:
         }
 
         divs.emplace_back( p );
-        ++size;
         ntk.set_visited( p, ntk.trav_id() );
 
         /* quit computing divisors if there are too many of them */
-        if ( ++counter == limit )
+        if ( divs.size() >= limit )
         {
           quit = true;
           return false; /* terminate fanout-loop */
@@ -409,6 +408,7 @@ private:
 
     /* note: different from the previous version, now we do not add MFFC nodes into divs */
     assert( root == mffc.at( mffc.size() - 1u ) );
+    /* note: this assertion makes sure window_simulator does not go out of bounds */
     assert( divs.size() + mffc.size() - leaves.size() <= ps.max_divisors - ps.max_pis );
 
     return true;
@@ -432,31 +432,31 @@ template<typename ResubFnSt>
 struct window_resub_stats
 {
   /*! \brief Number of successful resubstitutions. */
-  uint32_t num_resub{0};
+  uint32_t num_resub{ 0 };
 
   /*! \brief Time for simulation. */
-  stopwatch<>::duration time_sim{0};
+  stopwatch<>::duration time_sim{ 0 };
 
   /*! \brief Time for don't-care computation. */
-  stopwatch<>::duration time_dont_care{0};
+  stopwatch<>::duration time_dont_care{ 0 };
 
   /*! \brief Time of the resub functor. */
-  stopwatch<>::duration time_compute_function{0};
+  stopwatch<>::duration time_compute_function{ 0 };
 
   ResubFnSt functor_st;
 
   void report() const
   {
     // clang-format off
-    std::cout <<              "[i] <ResubEngine: window_based_resub_engine>\n";
-    std::cout << fmt::format( "[i]     #resub = {:6d}\n", num_resub );
-    std::cout <<              "[i]     ======== Runtime ========\n";
-    std::cout << fmt::format( "[i]     simulation: {:>5.2f} secs\n", to_seconds( time_sim ) );
-    std::cout << fmt::format( "[i]     don't care: {:>5.2f} secs\n", to_seconds( time_dont_care ) );
-    std::cout << fmt::format( "[i]     functor   : {:>5.2f} secs\n", to_seconds( time_compute_function ) );
-    std::cout <<              "[i]     ======== Details ========\n";
+    fmt::print( "[i] <ResubEngine: window_based_resub_engine>\n" );
+    fmt::print( "[i]     #resub = {:6d}\n", num_resub );
+    fmt::print( "[i]     ======== Runtime ========\n" );
+    fmt::print( "[i]     simulation: {:>5.2f} secs\n", to_seconds( time_sim ) );
+    fmt::print( "[i]     don't care: {:>5.2f} secs\n", to_seconds( time_dont_care ) );
+    fmt::print( "[i]     functor   : {:>5.2f} secs\n", to_seconds( time_compute_function ) );
+    fmt::print( "[i]     ======== Details ========\n" );
     functor_st.report();
-    std::cout <<              "[i]     =========================\n\n";
+    fmt::print( "[i]     =========================\n\n" );
     // clang-format on
   }
 };
@@ -504,14 +504,17 @@ public:
   {
   }
 
+  void init() {}
+  void update() {}
+
   std::optional<signal> run( node const& n, std::vector<node> const& leaves, std::vector<node> const& divs, std::vector<node> const& mffc, mffc_result_t potential_gain, uint32_t& last_gain )
   {
     /* simulate the collected divisors */
     call_with_stopwatch( st.time_sim, [&]() {
       simulate( leaves, divs, mffc );
-    });
+    } );
 
-    auto care = kitty::create<TTdc>( static_cast<unsigned int>( leaves.size() ) );
+    auto care = kitty::create<TTdc>( ps.max_pis );
     call_with_stopwatch( st.time_dont_care, [&]() {
       if ( ps.use_dont_cares )
       {
@@ -521,7 +524,7 @@ public:
       {
         care = ~care;
       }
-    });
+    } );
 
     ResubFn resub_fn( ntk, sim, divs, divs.size(), st.functor_st );
     auto res = call_with_stopwatch( st.time_compute_function, [&]() {
@@ -531,7 +534,7 @@ public:
         max_depth = ntk.level( n ) - 1;
       }
       return resub_fn( n, care, max_depth, ps.max_inserts, potential_gain, last_gain );
-    });
+    } );
     if ( res )
     {
       ++st.num_resub;
@@ -625,26 +628,14 @@ public:
 
     st.initial_size = ntk.num_gates();
 
-    auto const update_level_of_new_node = [&]( const auto& n ) {
-      ntk.resize_levels();
-      update_node_level( n );
-    };
+    register_events();
+  }
 
-    auto const update_level_of_existing_node = [&]( node const& n, const auto& old_children ) {
-      (void)old_children;
-      ntk.resize_levels();
-      update_node_level( n );
-    };
-
-    auto const update_level_of_deleted_node = [&]( const auto& n ) {
-      ntk.set_level( n, -1 );
-    };
-
-    ntk._events->on_add.emplace_back( update_level_of_new_node );
-
-    ntk._events->on_modified.emplace_back( update_level_of_existing_node );
-
-    ntk._events->on_delete.emplace_back( update_level_of_deleted_node );
+  ~resubstitution_impl()
+  {
+    ntk.events().release_add_event( add_event );
+    ntk.events().release_modified_event( modified_event );
+    ntk.events().release_delete_event( delete_event );
   }
 
   void run( resub_callback_t const& callback = substitute_fn<Ntk> )
@@ -654,8 +645,11 @@ public:
     /* start the managers */
     DivCollector collector( ntk, ps, collector_st );
     ResubEngine resub_engine( ntk, ps, engine_st );
+    call_with_stopwatch( st.time_resub, [&]() {
+      resub_engine.init();
+    } );
 
-    progress_bar pbar{ntk.size(), "resub |{0}| node = {1:>4}   cand = {2:>4}   est. gain = {3:>5}", ps.progress};
+    progress_bar pbar{ ntk.size(), "resub |{0}| node = {1:>4}   cand = {2:>4}   est. gain = {3:>5}", ps.progress };
 
     auto const size = ntk.num_gates();
     ntk.foreach_gate( [&]( auto const& n, auto i ) {
@@ -670,7 +664,7 @@ public:
       mffc_result_t potential_gain;
       const auto collector_success = call_with_stopwatch( st.time_divs, [&]() {
         return collector.run( n, potential_gain );
-      });
+      } );
       if ( !collector_success )
       {
         return true; /* next */
@@ -690,7 +684,7 @@ public:
         {
           return resub_engine.run( n, collector.divs, potential_gain, last_gain );
         }
-      });
+      } );
       if ( !g )
       {
         return true; /* next */
@@ -701,15 +695,41 @@ public:
       st.estimated_gain += last_gain;
 
       /* update network */
-      call_with_stopwatch( st.time_callback, [&]() {
+      bool updated = call_with_stopwatch( st.time_callback, [&]() {
         return callback( ntk, n, *g );
       } );
+      if ( updated )
+      {
+        resub_engine.update();
+      }
 
       return true; /* next */
     } );
   }
 
 private:
+  void register_events()
+  {
+    auto const update_level_of_new_node = [&]( const auto& n ) {
+      ntk.resize_levels();
+      update_node_level( n );
+    };
+
+    auto const update_level_of_existing_node = [&]( node const& n, const auto& old_children ) {
+      (void)old_children;
+      ntk.resize_levels();
+      update_node_level( n );
+    };
+
+    auto const update_level_of_deleted_node = [&]( const auto& n ) {
+      ntk.set_level( n, -1 );
+    };
+
+    add_event = ntk.events().register_add_event( update_level_of_new_node );
+    modified_event = ntk.events().register_modified_event( update_level_of_existing_node );
+    delete_event = ntk.events().register_delete_event( update_level_of_deleted_node );
+  }
+
   /* maybe should move to depth_view */
   void update_node_level( node const& n, bool top_most = true )
   {
@@ -749,8 +769,13 @@ private:
   collector_st_t& collector_st;
 
   /* temporary statistics for progress bar */
-  uint32_t candidates{0};
-  uint32_t last_gain{0};
+  uint32_t candidates{ 0 };
+  uint32_t last_gain{ 0 };
+
+  /* events */
+  std::shared_ptr<typename network_events<Ntk>::add_event_type> add_event;
+  std::shared_ptr<typename network_events<Ntk>::modified_event_type> modified_event;
+  std::shared_ptr<typename network_events<Ntk>::delete_event_type> delete_event;
 };
 
 } /* namespace detail */
@@ -778,8 +803,8 @@ void default_resubstitution( Ntk& ntk, resubstitution_params const& ps = {}, res
   static_assert( has_visited_v<Ntk>, "Ntk does not implement the visited method" );
 
   using resub_view_t = fanout_view<depth_view<Ntk>>;
-  depth_view<Ntk> depth_view{ntk};
-  resub_view_t resub_view{depth_view};
+  depth_view<Ntk> depth_view{ ntk };
+  resub_view_t resub_view{ depth_view };
 
   if ( ps.max_pis == 8 )
   {

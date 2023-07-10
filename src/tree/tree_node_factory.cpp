@@ -1063,7 +1063,6 @@ void tree_node_factory::operator()(const function_decl* obj, unsigned int& mask)
    SET_VALUE_OPT(TOK_WRITING_MEMORY, writing_memory, function_decl);
    SET_VALUE_OPT(TOK_READING_MEMORY, reading_memory, function_decl);
    SET_VALUE_OPT(TOK_PIPELINE_ENABLED, pipeline_enabled, function_decl);
-   SET_VALUE_OPT(TOK_SIMPLE_PIPELINE, simple_pipeline, function_decl);
    SET_VALUE_OPT(TOK_INITIATION_TIME, initiation_time, function_decl);
 #if HAVE_FROM_PRAGMA_BUILT
    SET_VALUE_OPT(TOK_OMP_ATOMIC, omp_atomic, function_decl);

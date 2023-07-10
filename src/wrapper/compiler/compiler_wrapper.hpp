@@ -50,28 +50,7 @@
 #include "config_HAVE_ARM_COMPILER.hpp"
 #include "config_HAVE_BAMBU_BUILT.hpp"
 #include "config_HAVE_FROM_RTL_BUILT.hpp"
-#include "config_HAVE_I386_CLANG10_COMPILER.hpp"
-#include "config_HAVE_I386_CLANG11_COMPILER.hpp"
-#include "config_HAVE_I386_CLANG12_COMPILER.hpp"
-#include "config_HAVE_I386_CLANG13_COMPILER.hpp"
-#include "config_HAVE_I386_CLANG4_COMPILER.hpp"
-#include "config_HAVE_I386_CLANG5_COMPILER.hpp"
-#include "config_HAVE_I386_CLANG6_COMPILER.hpp"
-#include "config_HAVE_I386_CLANG7_COMPILER.hpp"
-#include "config_HAVE_I386_CLANG8_COMPILER.hpp"
-#include "config_HAVE_I386_CLANG9_COMPILER.hpp"
-#include "config_HAVE_I386_CLANGVVD_COMPILER.hpp"
-#include "config_HAVE_I386_GCC45_COMPILER.hpp"
-#include "config_HAVE_I386_GCC46_COMPILER.hpp"
-#include "config_HAVE_I386_GCC47_COMPILER.hpp"
-#include "config_HAVE_I386_GCC48_COMPILER.hpp"
-#include "config_HAVE_I386_GCC49_COMPILER.hpp"
-#include "config_HAVE_I386_GCC5_COMPILER.hpp"
-#include "config_HAVE_I386_GCC6_COMPILER.hpp"
-#include "config_HAVE_I386_GCC7_COMPILER.hpp"
-#include "config_HAVE_I386_GCC8_COMPILER.hpp"
 #include "config_HAVE_SPARC_COMPILER.hpp"
-#include "config_HAVE_TUCANO_BUILT.hpp"
 #include "config_HAVE_ZEBU_BUILT.hpp"
 
 /// boost include
@@ -110,9 +89,6 @@ enum class CompilerWrapper_OptimizationSet
    OBAMBU, /**< Bambu optimizationss + OPT_compiler_opt_level */
    OSF,    /**< Bambu optimizations for soft float: O3 + -finline-limit=10000 */
 #endif
-#if HAVE_TUCANO_BUILT
-   OTUCANO, /**< Tucano optimizations + OPT_compiler_opt_level */
-#endif
 #if HAVE_ZEBU_BUILT
    OZEBU, /**< Zebu optimizations + OPT_compiler_opt_level */
 #endif
@@ -124,73 +100,30 @@ enum class CompilerWrapper_OptimizationSet
 enum class CompilerWrapper_CompilerTarget
 {
    CT_NO_COMPILER = 0,
-#if HAVE_I386_GCC45_COMPILER
    CT_I386_GCC45 = 1,
-#endif
-#if HAVE_I386_GCC46_COMPILER
    CT_I386_GCC46 = 2,
-#endif
-#if HAVE_I386_GCC47_COMPILER
    CT_I386_GCC47 = 4,
-#endif
-#if HAVE_I386_GCC48_COMPILER
    CT_I386_GCC48 = 8,
-#endif
-#if HAVE_I386_GCC49_COMPILER
    CT_I386_GCC49 = 16,
-#endif
-#if HAVE_I386_GCC5_COMPILER
    CT_I386_GCC5 = 32,
-#endif
-#if HAVE_I386_GCC6_COMPILER
    CT_I386_GCC6 = 64,
-#endif
-#if HAVE_I386_GCC7_COMPILER
    CT_I386_GCC7 = 128,
-#endif
-#if HAVE_I386_GCC8_COMPILER
    CT_I386_GCC8 = 256,
-#endif
-#if HAVE_I386_CLANG4_COMPILER
    CT_I386_CLANG4 = 512,
-#endif
-#if HAVE_I386_CLANG5_COMPILER
    CT_I386_CLANG5 = 1024,
-#endif
-#if HAVE_I386_CLANG6_COMPILER
    CT_I386_CLANG6 = 2048,
-#endif
-#if HAVE_I386_CLANG7_COMPILER
    CT_I386_CLANG7 = 4096,
-#endif
-#if HAVE_I386_CLANG8_COMPILER
    CT_I386_CLANG8 = 8192,
-#endif
-#if HAVE_I386_CLANG9_COMPILER
    CT_I386_CLANG9 = 16384,
-#endif
-#if HAVE_I386_CLANG10_COMPILER
    CT_I386_CLANG10 = 32768,
-#endif
-#if HAVE_I386_CLANG11_COMPILER
    CT_I386_CLANG11 = 65536,
-#endif
-#if HAVE_I386_CLANG12_COMPILER
    CT_I386_CLANG12 = 131072,
-#endif
-#if HAVE_I386_CLANG13_COMPILER
    CT_I386_CLANG13 = 262144,
-#endif
-#if HAVE_I386_CLANGVVD_COMPILER
-   CT_I386_CLANGVVD = 524288,
-#endif
-#if HAVE_ARM_COMPILER
-   CT_ARM_GCC = 1048576,
-#endif
-#if HAVE_SPARC_COMPILER
-   CT_SPARC_GCC = 2097152,
-   CT_SPARC_ELF_GCC = 4194304
-#endif
+   CT_I386_CLANG16 = 524288,
+   CT_I386_CLANGVVD = 1048576,
+   CT_ARM_GCC = 2097152,
+   CT_SPARC_GCC = 4194304,
+   CT_SPARC_ELF_GCC = 8388608
 };
 
 enum class CompilerWrapper_CompilerMode
@@ -246,9 +179,13 @@ class CompilerWrapper
       std::string topfname_plugin_obj;
       std::string topfname_plugin_name;
 
-      /// The plugin making visible only the top function
+      /// AST analysis
       std::string ASTAnalyzer_plugin_obj;
       std::string ASTAnalyzer_plugin_name;
+
+      /// AST annotation
+      std::string ASTAnnotate_plugin_obj;
+      std::string ASTAnnotate_plugin_name;
 
       /// The clang llvm-link executable
       std::string llvm_link;
@@ -321,6 +258,8 @@ class CompilerWrapper
     */
    Compiler GetCompiler() const;
 
+   std::string GetAnalyzeCompiler() const;
+
    /**
     * Initialize the frontend compiler parameters line
     * @param OS is the optimizations set to be considered
@@ -328,7 +267,7 @@ class CompilerWrapper
     */
    void InitializeCompilerParameters();
 
-#if HAVE_BAMBU_BUILT || HAVE_TUCANO_BUILT || HAVE_ZEBU_BUILT
+#if HAVE_BAMBU_BUILT || HAVE_ZEBU_BUILT
    /**
     * Analyze the command line options
     */
@@ -385,6 +324,8 @@ class CompilerWrapper
    std::string load_plugin(const std::string& plugin_obj, CompilerWrapper_CompilerTarget target);
 
    std::string load_plugin_opt(std::string plugin_obj, CompilerWrapper_CompilerTarget target);
+
+   std::string add_plugin_prefix(CompilerWrapper_CompilerTarget target, std::string O_level = "");
 
  public:
    /// The version of the frontend compiler
@@ -490,11 +431,12 @@ class CompilerWrapper
     */
    static size_t CGetPointerSize(const ParameterConstRef parameters);
 
+   static bool isCurrentOrNewer(CompilerWrapper_CompilerTarget ct, CompilerWrapper_CompilerTarget compare);
    static bool isClangCheck(CompilerWrapper_CompilerTarget ct);
    static bool isGccCheck(CompilerWrapper_CompilerTarget ct);
    static int getCompatibleCompilers();
    static int getDefaultCompiler();
-   static std::string getCompilerSuffix(int pc);
+   static std::string getCompilerSuffix(CompilerWrapper_CompilerTarget pc);
    static bool hasCompilerM64(CompilerWrapper_CompilerTarget ct);
    static bool hasCompilerMX32(CompilerWrapper_CompilerTarget ct);
    static bool hasCompilerGCCM32(CompilerWrapper_CompilerTarget ct);

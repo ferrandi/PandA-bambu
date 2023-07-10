@@ -169,7 +169,7 @@ class ScheduleWriter : public GraphWriter
    }
 
    /**
-    * Redifinition of operator()
+    * Redefinition of operator()
     */
    void operator()(std::ostream& os) const override
    {
@@ -314,9 +314,25 @@ unsigned int Schedule::num_scheduled() const
 void Schedule::clear()
 {
    tot_csteps = ControlStep(0u);
-   spec.clear();
    op_starting_cycle.clear();
    starting_cycles_to_ops.clear();
+   loopPipelinedMap.clear();
+}
+
+void Schedule::remove_sched(const vertex& op)
+{
+   const auto operation_index = op_graph->CGetOpNodeInfo(op)->GetNodeId();
+   remove_sched(operation_index);
+}
+void Schedule::remove_sched(const unsigned int operation_index)
+{
+   if(op_starting_cycle.find(operation_index) == op_starting_cycle.end())
+   {
+      return;
+   }
+   auto cstep = op_starting_cycle.at(operation_index);
+   starting_cycles_to_ops.at(cstep).erase(operation_index);
+   op_starting_cycle.erase(operation_index);
 }
 
 void Schedule::UpdateTime(const unsigned int operation_index, bool update_cs)
@@ -1388,8 +1404,8 @@ void Schedule::Initialize()
    op_ending_cycle.clear();
    starting_times.clear();
    ending_times.clear();
-   spec.clear();
    op_slack.clear();
+   loopPipelinedMap.clear();
    const FunctionBehaviorConstRef FB = hls_manager.lock()->CGetFunctionBehavior(function_index);
    op_graph = FB->CGetOpGraph(FunctionBehavior::FLSAODG);
 }

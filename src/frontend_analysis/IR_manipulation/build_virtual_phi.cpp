@@ -98,7 +98,7 @@ void BuildVirtualPhi::ComputeRelationships(DesignFlowStepSet& relationship,
       case INVALIDATION_RELATIONSHIP:
       {
          if(design_flow_manager.lock()->GetStatus(GetSignature()) == DesignFlowStep_Status::SUCCESS &&
-            AppM->CGetFunctionBehavior(function_id)->is_simple_pipeline())
+            AppM->CGetFunctionBehavior(function_id)->is_function_pipelined())
          {
             const auto step_signature =
                 FunctionFrontendFlowStep::ComputeSignature(FrontendFlowStepType::SIMPLE_CODE_MOTION, function_id);

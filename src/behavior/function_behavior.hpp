@@ -48,24 +48,17 @@
 #define FUNCTION_BEHAVIOR_HPP
 
 #include "config_HAVE_ASSERTS.hpp"
-#include "config_HAVE_EXPERIMENTAL.hpp"
 #include "config_HAVE_HOST_PROFILING_BUILT.hpp"
+
+#include "custom_map.hpp"
+#include "custom_set.hpp"
+#include "graph.hpp"
+#include "refcount.hpp"
+
 #include <deque>      // for deque
 #include <functional> // for binary_function
 #include <iosfwd>     // for ostream, size_t
 #include <typeindex>  // for hash
-
-#include "custom_map.hpp"
-#include "custom_set.hpp"
-
-/// Behavior include (because of enums)
-#if HAVE_EXPERIMENTAL
-#include "epd_graph.hpp"
-#include "parallel_regions_graph.hpp"
-#endif
-/// Graph include
-#include "graph.hpp"
-#include "refcount.hpp"
 
 /**
  * @name forward declarations
@@ -138,9 +131,6 @@ enum class FunctionBehavior_VariableAccessType
 enum class FunctionBehavior_VariableType
 {
    UNKNOWN = 0,
-#if HAVE_EXPERIMENTAL
-   AGGREGATE,
-#endif
    MEMORY,
    SCALAR,
    VIRTUAL
@@ -308,48 +298,8 @@ class FunctionBehavior
    /// The system dependence graph with feedback
    const OpGraphRef fsdg;
 
-#if HAVE_EXPERIMENTAL
-   /// The reduced program dependence graph
-   const OpGraphRef rpdg;
-#endif
-
    /// The speculation graph
    const OpGraphRef sg;
-
-#if HAVE_EXPERIMENTAL
-   /// bulk graph for extended PDG
-   const EpdGraphsCollectionRef epdg_bulk;
-
-   /// extended PDG with only control edges
-   EpdGraphRef cepdg;
-
-   /// extended PDG with only data edges
-   EpdGraphRef depdg;
-
-   /// extended PDG with only control and data edges
-   EpdGraphRef cdepdg;
-
-   /// extended PDG with only control, data edges and control flow
-   EpdGraphRef cdcfepdg;
-
-   /// extended PDG (acyclic version)
-   EpdGraphRef epdg;
-
-   /// extended PDG with feedback edges
-   EpdGraphRef fepdg;
-
-   /// represents activation functions (acyclic version)
-   EpdGraphRef afg;
-
-   /// represents activation functions
-   EpdGraphRef fafg;
-
-   /// bulk graph for the PRG
-   const ParallelRegionsGraphsCollectionRef prg_bulk;
-
-   /// parallel regions graph (Basic Block version)
-   const ParallelRegionsGraphRef prg;
-#endif
 
    /// Anti + Data flow graph on aggregates
    const OpGraphRef agg_virtualg;
@@ -421,11 +371,8 @@ class FunctionBehavior
    /// true when pipelining is enabled for the function
    bool pipeline_enabled;
 
-   /// true when the requested pipeline does not include unbounded functions
-   bool simple_pipeline;
-
-   /// used only for stallable pipelines
-   int initiation_time;
+   /// initiation time of the pipelined function
+   unsigned initiation_time;
 
    /// Function scope channels number
    unsigned int _channels_number;
@@ -476,13 +423,10 @@ class FunctionBehavior
 #ifndef NDEBUG
       FLSAODDG, /**< System dependence + anti-dependence + output dependence graph + flow graph + debug graph*/
 #endif
-      FFLSAODG, /**< System dependence + anti-dependence + output dependence graph + flow graph with feedback */
-      FLAODDG,  /**< Anti-dependence + data dependence + output dependence + flow graph */
-      FFLAODDG, /**< Anti dependence + data dependence + output dependence + flow graph with feedback */
-      SG,       /**< Speculation graph */
-#if HAVE_EXPERIMENTAL
-      RPDG, /**< Reduced Program Dependence graph */
-#endif
+      FFLSAODG,    /**< System dependence + anti-dependence + output dependence graph + flow graph with feedback */
+      FLAODDG,     /**< Anti-dependence + data dependence + output dependence + flow graph */
+      FFLAODDG,    /**< Anti dependence + data dependence + output dependence + flow graph with feedback */
+      SG,          /**< Speculation graph */
       AGG_VIRTUALG /**< Anti + Data flow graph dependence between aggregates */
    };
 
@@ -513,14 +457,6 @@ class FunctionBehavior
 
    /// reference to the basic block graph constructor
    const BasicBlocksGraphConstructorRef bbgc;
-
-#if HAVE_EXPERIMENTAL
-   /// reference to the extended PDG constructor
-   const extended_pdg_constructorRef epdgc;
-
-   /// reference to the basic block PRG constructor
-   const ParallelRegionsGraphConstructorRef prgc;
-#endif
 
    /// reference to the level constructor
    const level_constructorRef lm;
@@ -610,29 +546,6 @@ class FunctionBehavior
     * @return the pointer to the bb_graph.
     */
    const BBGraphConstRef CGetBBGraph(FunctionBehavior::bb_graph_type gt = FunctionBehavior::BB) const;
-
-#if HAVE_EXPERIMENTAL
-   /**
-    * This method returns the extended PDG graph.
-    * @param type is the type of the graph to be returned
-    * @return the corresponding EpdGraph.
-    */
-   EpdGraphRef GetEpdGraph(EpdGraph::Type type);
-
-   /**
-    * This method returns the extended PDG graph.
-    * @param type is the type of the graph to be returned
-    * @return the corresponding EpdGraph.
-    */
-   const EpdGraphRef CGetEpdGraph(EpdGraph::Type type) const;
-
-   /**
-    * This method returns the PRG.
-    * @param type is the type of the graph to be returned
-    * @return the pointer to the corresponding ParallelRegionsGraph.
-    */
-   const ParallelRegionsGraphRef GetPrgGraph(ParallelRegionsGraph::Type type) const;
-#endif
 
    /**
     * Function that prints the class behavioral_manager.
@@ -885,24 +798,13 @@ class FunctionBehavior
       return packed_vars;
    }
 
-   bool is_pipeline_enabled() const
+   bool is_function_pipelined() const
    {
       return pipeline_enabled;
    }
 
-   bool is_simple_pipeline() const
+   unsigned int get_initiation_time() const
    {
-      if(simple_pipeline)
-      {
-         THROW_ASSERT(pipeline_enabled, "Simple pipeline is true but pipeline is not enabled");
-      }
-      return simple_pipeline;
-   }
-
-   int get_initiation_time() const
-   {
-      THROW_ASSERT(pipeline_enabled && !simple_pipeline,
-                   "Should not request initiation time when pipeline is not enabled or simple pipeline is requested");
       return initiation_time;
    }
 

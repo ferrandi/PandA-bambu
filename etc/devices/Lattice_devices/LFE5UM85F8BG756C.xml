@@ -6,7 +6,7 @@
     <model value="LFE5UM-85F-8BG756C"/>
     <package value="BG756C"/>
     <speed_grade value="-8"/>
-    <BRAM_bitsize_max value="128"/>
+    <BRAM_bitsize_max value="4096"/>
     <BRAM_bitsize_min value="8"/>
     <DSPs_rx_sizes value="16"/>
     <DSPs_ry_sizes value="16"/>
@@ -2177,12 +2177,6 @@
         <attribute name="LUT_FF_PAIRS" value_type="float64">58</attribute>
         <characterization_timestamp>2021-08-21T19:56:33</characterization_timestamp>
         <operation operation_name="nop_expr" execution_time="5"/>
-      </cell>
-      <cell>
-        <name>FSL_handler</name>
-        <attribute name="area" value_type="float64">0</attribute>
-        <characterization_timestamp>1970-01-01T00:00:00</characterization_timestamp>
-        <operation operation_name="FSL_handler"/>
       </cell>
       <cell>
         <name>IIconvert_expr_FU</name>

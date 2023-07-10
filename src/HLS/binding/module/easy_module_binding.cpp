@@ -182,24 +182,25 @@ DesignFlowStep_Status easy_module_binding::InternalExec()
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
                   "-->Easy binding information for function " + FB->CGetBehavioralHelper()->get_function_name() + ":");
    /// check easy binding and compute the list of vertices for which a sharing is possible
-   if(HLSMgr->GetFunctionBehavior(funId)->is_simple_pipeline())
+
+   CustomOrderedSet<vertex> easy_bound_vertices;
+   for(const auto op : sdg->CGetOperations())
    {
-      std::set<vertex> bound_vertices;
-      std::map<unsigned int, unsigned int> fu_instances;
-      for(const auto op : sdg->CGetOperations())
+      if(fu.get_index(op) != INFINITE_UINT)
       {
-         if(fu.get_index(op) != INFINITE_UINT)
-         {
-            continue;
-         }
-         fu_unit = fu.get_assign(op);
-         if(fu_instances.find(fu_unit) == fu_instances.end())
-         {
-            fu_instances.insert(std::pair<unsigned int, unsigned int>(fu_unit, 0));
-         }
-         fu.bind(op, fu_unit, fu_instances[fu_unit]);
-         fu_instances[fu_unit]++;
-         bound_vertices.insert(op);
+         continue;
+      }
+      fu_unit = fu.get_assign(op);
+      if(allocation_information->is_vertex_bounded(fu_unit) ||
+         (allocation_information->is_memory_unit(fu_unit) &&
+          (!allocation_information->is_readonly_memory_unit(fu_unit) ||
+           (!allocation_information->is_one_cycle_direct_access_memory_unit(fu_unit) &&
+            (!parameters->isOption(OPT_rom_duplication) || !parameters->getOption<bool>(OPT_rom_duplication)))) &&
+          allocation_information->get_number_channels(fu_unit) == 1) ||
+         n_shared_fu.find(fu_unit)->second == 1)
+      {
+         fu.bind(op, fu_unit, 0);
+         easy_bound_vertices.insert(op);
          const auto node_id = sdg->CGetOpNodeInfo(op)->GetNodeId();
          if(node_id)
          {
@@ -212,41 +213,9 @@ DesignFlowStep_Status easy_module_binding::InternalExec()
          }
       }
    }
-   else
-   {
-      CustomOrderedSet<vertex> easy_bound_vertices;
-      for(const auto op : sdg->CGetOperations())
-      {
-         if(fu.get_index(op) != INFINITE_UINT)
-         {
-            continue;
-         }
-         fu_unit = fu.get_assign(op);
-         if(allocation_information->is_vertex_bounded(fu_unit) ||
-            (allocation_information->is_memory_unit(fu_unit) &&
-             (!allocation_information->is_readonly_memory_unit(fu_unit) ||
-              (!allocation_information->is_one_cycle_direct_access_memory_unit(fu_unit) &&
-               (!parameters->isOption(OPT_rom_duplication) || !parameters->getOption<bool>(OPT_rom_duplication)))) &&
-             allocation_information->get_number_channels(fu_unit) == 1) ||
-            n_shared_fu.find(fu_unit)->second == 1)
-         {
-            fu.bind(op, fu_unit, 0);
-            easy_bound_vertices.insert(op);
-            const auto node_id = sdg->CGetOpNodeInfo(op)->GetNodeId();
-            if(node_id)
-            {
-               INDENT_OUT_MEX(OUTPUT_LEVEL_VERY_PEDANTIC, output_level,
-                              "---" + GET_NAME(sdg, op) + "(" +
-                                  (node_id == ENTRY_ID ?
-                                       "ENTRY" :
-                                       (node_id == EXIT_ID ? "EXIT" : TM->get_tree_node_const(node_id)->ToString())) +
-                                  ") bound to " + allocation_information->get_fu_name(fu_unit).first + "(0)");
-            }
-         }
-      }
-      INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
-                     "---Bound operations:" + STR(easy_bound_vertices.size()) + "/" + STR(boost::num_vertices(*sdg)));
-   }
+   INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
+                  "---Bound operations:" + STR(easy_bound_vertices.size()) + "/" + STR(boost::num_vertices(*sdg)));
+
    if(output_level >= OUTPUT_LEVEL_MINIMUM && output_level <= OUTPUT_LEVEL_PEDANTIC)
    {
       STOP_TIME(step_time);

@@ -46,7 +46,6 @@
 #include "DesignCompilerWrapper.hpp"
 #include "DesignParameters.hpp"
 #include "ToolManager.hpp"
-#include "config_HAVE_EXPERIMENTAL.hpp"
 #include "config_HAVE_LOGIC_SYNTHESIS_FLOW_BUILT.hpp"
 #include "xml_script_command.hpp"
 
@@ -60,12 +59,6 @@
 #include "target_device.hpp"
 #include "technology_manager.hpp"
 #include "time_model.hpp"
-
-#if HAVE_EXPERIMENTAL
-#include "Design.hpp"
-#include "Design_manager.hpp"
-#include "design_compiler_constants.hpp"
-#endif
 
 #include "HDL_manager.hpp"
 #include "language_writer.hpp"
@@ -313,7 +306,7 @@ std::string DesignCompilerWrapper::import_input_design(const DesignParametersRef
       var_file_set->multiValues.push_back(entry);
 
       boost::filesystem::path verilog(v);
-      std::string extension = boost::filesystem::extension(verilog);
+      const auto extension = verilog.extension().string();
       if(extension == ".v" || extension == ".verilog")
       {
          language = HDLWriter_Language::VERILOG;

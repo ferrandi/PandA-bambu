@@ -22,7 +22,7 @@ TEST_CASE( "Create n-to-2^n binary decoder using XAGs", "[control]" )
     const auto ds = binary_decoder( xag, xs );
     std::for_each( ds.begin(), ds.end(), [&]( auto const& d ) { xag.create_po( d ); } );
 
-    const auto sim = simulate<kitty::dynamic_truth_table>( xag, {n} );
+    const auto sim = simulate<kitty::dynamic_truth_table>( xag, { n } );
 
     for ( auto i = 0u; i < sim.size(); ++i )
     {

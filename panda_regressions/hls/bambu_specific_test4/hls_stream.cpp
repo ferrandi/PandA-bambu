@@ -1,5 +1,5 @@
-#include "hls_stream.h"
-#include "ap_int.h"
+#include <ap_int.h>
+#include <hls_stream.h>
 
 void sum3numbers(hls::stream<ap_uint<16>>& a, hls::stream<ap_uint<16>>& b, hls::stream<ap_uint<16>>& c,
                  hls::stream<ap_uint<16>>& d)

@@ -40,7 +40,7 @@ endif
 $(I386_CLANG5_SSA_PLUGIN) : clang5_plugin_dumpGimpleSSA.so clang5_plugin_dumpGimpleSSA_opt.so
 clang5_plugin_dumpGimpleSSA_opt.so : clang5_plugin_dumpGimpleSSA.so
 if BUILD_PTAA
-clang5_plugin_dumpGimpleSSA.so : clang5_plugin_dumpGimpleSSA.o clang5_dumpGimple.o clang5_HardekopfLin_AA.o clang5_RangeAnalysis.o clang5_eSSA.o
+clang5_plugin_dumpGimpleSSA.so : clang5_plugin_dumpGimpleSSA.o clang5_dumpGimple.o clang5_HardekopfLin_AA.o
 	case $(host_os) in \
 	  mingw*) \
 	    compile_options='$(CLANG5_LIBS) -lversion `$(I386_LLVM_CONFIG5_EXE) --ldflags --libs --system-libs` -lbdd';\
@@ -50,13 +50,13 @@ clang5_plugin_dumpGimpleSSA.so : clang5_plugin_dumpGimpleSSA.o clang5_dumpGimple
 	  *) \
 	    compile_options='-fPIC -shared -fno-rtti -Wl,-znodelete -lbdd';;\
 	esac;\
-	obj_list='clang5_dumpGimple.o clang5_HardekopfLin_AA.o clang5_RangeAnalysis.o clang5_eSSA.o';\
+	obj_list='clang5_dumpGimple.o clang5_HardekopfLin_AA.o';\
 	if test -n "$$compile_options"; then \
 	  $(I386_CLANG5_PLUGIN_COMPILER) opt_clang5_plugin_dumpGimpleSSA.o $$obj_list $$compile_options -o clang5_plugin_dumpGimpleSSA_opt.so;\
 	  $(I386_CLANG5_PLUGIN_COMPILER) clang5_plugin_dumpGimpleSSA.o $$obj_list $$compile_options -o clang5_plugin_dumpGimpleSSA.so ; \
 	fi;
 else
-clang5_plugin_dumpGimpleSSA.so : clang5_plugin_dumpGimpleSSA.o clang5_dumpGimple.o clang5_RangeAnalysis.o clang5_eSSA.o
+clang5_plugin_dumpGimpleSSA.so : clang5_plugin_dumpGimpleSSA.o clang5_dumpGimple.o
 	case $(host_os) in \
 	  mingw*) \
 	    compile_options='$(CLANG5_LIBS) -lversion `$(I386_LLVM_CONFIG5_EXE) --ldflags --libs --system-libs`'; \
@@ -66,7 +66,7 @@ clang5_plugin_dumpGimpleSSA.so : clang5_plugin_dumpGimpleSSA.o clang5_dumpGimple
 	  *) \
 	    compile_options='-fPIC -shared -fno-rtti -Wl,-znodelete';;\
 	esac;\
-	obj_list='clang5_dumpGimple.o clang5_RangeAnalysis.o clang5_eSSA.o';\
+	obj_list='clang5_dumpGimple.o';\
 	if test -n "$$compile_options"; then \
 	  $(I386_CLANG5_PLUGIN_COMPILER) opt_clang5_plugin_dumpGimpleSSA.o $$obj_list $$compile_options -o clang5_plugin_dumpGimpleSSA_opt.so;\
 	  $(I386_CLANG5_PLUGIN_COMPILER) clang5_plugin_dumpGimpleSSA.o $$obj_list $$compile_options -o clang5_plugin_dumpGimpleSSA.so ; \
@@ -76,7 +76,7 @@ endif
 $(I386_CLANG5_SSA_PLUGINCPP) : clang5_plugin_dumpGimpleSSACpp.so clang5_plugin_dumpGimpleSSACpp_opt.so
 clang5_plugin_dumpGimpleSSACpp_opt.so : clang5_plugin_dumpGimpleSSACpp.so
 if BUILD_PTAA
-clang5_plugin_dumpGimpleSSACpp.so : clang5_plugin_dumpGimpleSSACpp.o clang5_dumpGimple.o clang5_HardekopfLin_AA.o clang5_RangeAnalysis.o clang5_eSSA.o
+clang5_plugin_dumpGimpleSSACpp.so : clang5_plugin_dumpGimpleSSACpp.o clang5_dumpGimple.o clang5_HardekopfLin_AA.o
 	case $(host_os) in \
 	  mingw*) \
 	    compile_options='$(CLANG5_LIBS) -lversion `$(I386_LLVM_CONFIG5_EXE) --ldflags --libs --system-libs` -lbdd'; \
@@ -86,13 +86,13 @@ clang5_plugin_dumpGimpleSSACpp.so : clang5_plugin_dumpGimpleSSACpp.o clang5_dump
 	  *) \
 	    compile_options='-fPIC -shared -fno-rtti -Wl,-znodelete -lbdd';;\
 	esac;\
-	obj_list='clang5_dumpGimple.o clang5_HardekopfLin_AA.o clang5_RangeAnalysis.o clang5_eSSA.o';\
+	obj_list='clang5_dumpGimple.o clang5_HardekopfLin_AA.o';\
 	if test -n "$$compile_options"; then \
 	  $(I386_CLANG5_PLUGIN_COMPILER) opt_clang5_plugin_dumpGimpleSSACpp.o $$obj_list $$compile_options -o clang5_plugin_dumpGimpleSSACpp_opt.so;\
 	  $(I386_CLANG5_PLUGIN_COMPILER) clang5_plugin_dumpGimpleSSACpp.o $$obj_list $$compile_options -o clang5_plugin_dumpGimpleSSACpp.so;\
 	fi;
 else
-clang5_plugin_dumpGimpleSSACpp.so : clang5_plugin_dumpGimpleSSACpp.o clang5_dumpGimple.o clang5_RangeAnalysis.o clang5_eSSA.o
+clang5_plugin_dumpGimpleSSACpp.so : clang5_plugin_dumpGimpleSSACpp.o
 	case $(host_os) in \
 	  mingw*) \
 	    compile_options='$(CLANG5_LIBS) -lversion `$(I386_LLVM_CONFIG5_EXE) --ldflags --libs --system-libs`'; \
@@ -102,7 +102,7 @@ clang5_plugin_dumpGimpleSSACpp.so : clang5_plugin_dumpGimpleSSACpp.o clang5_dump
 	  *) \
 	    compile_options='-fPIC -shared -fno-rtti -Wl,-znodelete';;\
 	esac;\
-	obj_list='clang5_dumpGimple.o clang5_RangeAnalysis.o clang5_eSSA.o';\
+	obj_list='clang5_dumpGimple.o';\
 	if test -n "$$compile_options"; then \
 	  $(I386_CLANG5_PLUGIN_COMPILER) opt_clang5_plugin_dumpGimpleSSACpp.o $$obj_list $$compile_options -o clang5_plugin_dumpGimpleSSACpp_opt.so;\
 	  $(I386_CLANG5_PLUGIN_COMPILER) clang5_plugin_dumpGimpleSSACpp.o $$obj_list $$compile_options -o clang5_plugin_dumpGimpleSSACpp.so;\
@@ -112,7 +112,7 @@ endif
 $(I386_CLANG5_EMPTY_PLUGIN) : clang5_plugin_dumpGimpleEmpty.so clang5_plugin_dumpGimpleEmpty_opt.so
 clang5_plugin_dumpGimpleEmpty_opt.so : clang5_plugin_dumpGimpleEmpty.so
 if BUILD_PTAA
-clang5_plugin_dumpGimpleEmpty.so : clang5_plugin_dumpGimpleEmpty.o clang5_dumpGimple.o clang5_HardekopfLin_AA.o clang5_RangeAnalysis.o clang5_eSSA.o
+clang5_plugin_dumpGimpleEmpty.so : clang5_plugin_dumpGimpleEmpty.o clang5_dumpGimple.o clang5_HardekopfLin_AA.o
 	case $(host_os) in \
 	  mingw*) \
 	    compile_options='$(CLANG5_LIBS) -lversion `$(I386_LLVM_CONFIG5_EXE) --ldflags --libs --system-libs` -lbdd'; \
@@ -122,13 +122,13 @@ clang5_plugin_dumpGimpleEmpty.so : clang5_plugin_dumpGimpleEmpty.o clang5_dumpGi
 	  *) \
 	    compile_options='-fPIC -shared -fno-rtti -Wl,-znodelete -lbdd';;\
 	esac;\
-	obj_list='clang5_dumpGimple.o clang5_HardekopfLin_AA.o clang5_RangeAnalysis.o clang5_eSSA.o';\
+	obj_list='clang5_dumpGimple.o clang5_HardekopfLin_AA.o';\
 	if test -n "$$compile_options"; then \
 	  $(I386_CLANG5_PLUGIN_COMPILER) opt_clang5_plugin_dumpGimpleEmpty.o $$obj_list $$compile_options -o clang5_plugin_dumpGimpleEmpty_opt.so; \
 	  $(I386_CLANG5_PLUGIN_COMPILER) clang5_plugin_dumpGimpleEmpty.o $$obj_list $$compile_options -o clang5_plugin_dumpGimpleEmpty.so; \
 	fi;
 else
-clang5_plugin_dumpGimpleEmpty.so : clang5_plugin_dumpGimpleEmpty.o clang5_dumpGimple.o clang5_RangeAnalysis.o clang5_eSSA.o
+clang5_plugin_dumpGimpleEmpty.so : clang5_plugin_dumpGimpleEmpty.o clang5_dumpGimple.o
 	case $(host_os) in \
 	  mingw*) \
 	    compile_options='$(CLANG5_LIBS) -lversion `$(I386_LLVM_CONFIG5_EXE) --ldflags --libs --system-libs`'; \
@@ -138,7 +138,7 @@ clang5_plugin_dumpGimpleEmpty.so : clang5_plugin_dumpGimpleEmpty.o clang5_dumpGi
 	  *) \
 	    compile_options='-fPIC -shared -fno-rtti -Wl,-znodelete';;\
 	esac;\
-	obj_list='clang5_dumpGimple.o clang5_RangeAnalysis.o clang5_eSSA.o';\
+	obj_list='clang5_dumpGimple.o';\
 	if test -n "$$compile_options"; then \
 	  $(I386_CLANG5_PLUGIN_COMPILER) opt_clang5_plugin_dumpGimpleEmpty.o $$obj_list $$compile_options -o clang5_plugin_dumpGimpleEmpty_opt.so; \
 	  $(I386_CLANG5_PLUGIN_COMPILER) clang5_plugin_dumpGimpleEmpty.o $$obj_list $$compile_options -o clang5_plugin_dumpGimpleEmpty.so; \
@@ -356,30 +356,6 @@ clang5_HardekopfLin_AA.o : $(top_srcdir)/etc/clang_plugin/HardekopfLin_AA.cpp $(
 	  $(I386_CLANG5_PLUGIN_COMPILER) $$compile_options -c $(top_srcdir)/etc/clang_plugin/HardekopfLin_AA.cpp $(CLANG_PLUGIN_ADDITIONAL_OPTIONS) -o clang5_HardekopfLin_AA.o ; \
 	fi;
 endif
-
-clang5_RangeAnalysis.o : $(top_srcdir)/etc/clang_plugin/llvm/RangeAnalysis.cpp $(top_srcdir)/etc/clang_plugin/llvm/RangeAnalysis.hpp
-	case $(host_os) in \
-	  mingw*) \
-	    compile_options=' -fPIC $(I386_LLVM5_CXXFLAGS) $(WFLAGS) -I.'; \
-	    compile_options='';; \
-	  *) \
-	    compile_options=' -fPIC $(I386_LLVM5_CXXFLAGS) $(WFLAGS) -I.';; \
-	esac;\
-	if test -n "$$compile_options"; then \
-	    $(I386_CLANG5_PLUGIN_COMPILER) $$compile_options -c $(top_srcdir)/etc/clang_plugin/llvm/RangeAnalysis.cpp $(CLANG_PLUGIN_ADDITIONAL_OPTIONS) -o clang5_RangeAnalysis.o; \
-	fi;
-
-clang5_eSSA.o : $(top_srcdir)/etc/clang_plugin/llvm/eSSA.cpp $(top_srcdir)/etc/clang_plugin/llvm/eSSA.hpp
-	case $(host_os) in \
-	  mingw*) \
-	    compile_options=' -fPIC $(I386_LLVM5_CXXFLAGS) -DPANDA_PLUGIN_VERSION="$(PANDA_PLUGIN_VERSION)" $(WFLAGS) -I.'; \
-	    compile_options='';; \
-	  *) \
-	    compile_options=' -fPIC $(I386_LLVM5_CXXFLAGS) -DPANDA_PLUGIN_VERSION="$(PANDA_PLUGIN_VERSION)" $(WFLAGS) -I.';; \
-	esac;\
-	if test -n "$$compile_options"; then \
-	    $(I386_CLANG5_PLUGIN_COMPILER) $$compile_options -c $(top_srcdir)/etc/clang_plugin/llvm/eSSA.cpp $(CLANG_PLUGIN_ADDITIONAL_OPTIONS) -o clang5_eSSA.o; \
-	fi;
 
 clang5_GepiCanon.o : $(top_srcdir)/etc/clang_plugin/GepiCanonicalizationPass.cpp $(top_srcdir)/etc/clang_plugin/GepiCanonicalizationPass.hpp
 	case $(host_os) in \

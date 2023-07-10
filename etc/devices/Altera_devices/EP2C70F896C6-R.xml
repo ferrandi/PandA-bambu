@@ -6,7 +6,7 @@
     <model value="EP2C70F896C6"/>
     <package value="896PinFineLineBGA"/>
     <speed_grade value="-6"/>
-    <BRAM_bitsize_max value="128"/>
+    <BRAM_bitsize_max value="4096"/>
     <BRAM_bitsize_min value="8"/>
     <DSPs_rx_sizes value="8,16"/>
     <DSPs_ry_sizes value="8,16"/>
@@ -2164,12 +2164,6 @@
         <attribute name="LUT_FF_PAIRS" value_type="float64">72</attribute>
         <characterization_timestamp>1970-01-01T00:00:00</characterization_timestamp>
         <operation operation_name="nop_expr" execution_time="3.8430498443564818"/>
-      </cell>
-      <cell>
-        <name>FSL_handler</name>
-        <attribute name="area" value_type="float64">0</attribute>
-        <characterization_timestamp>1970-01-01T00:00:00</characterization_timestamp>
-        <operation operation_name="FSL_handler"/>
       </cell>
       <cell>
         <name>IIconvert_expr_FU</name>

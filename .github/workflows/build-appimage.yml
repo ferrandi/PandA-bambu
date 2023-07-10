@@ -45,6 +45,11 @@ on:
         required: false
         type: string
         default: "--enable-glpk --enable-flopoco --enable-opt --with-opt-level=2 --enable-release CC=gcc-8 CXX=g++-8 --with-gcc8=/bin/false"
+      upload_config:
+        description: "Upload configuration <CI|release|both>"
+        required: false
+        type: string
+        default: "CI"
     secrets:
       CI_STORAGE_URL:
         required: true
@@ -69,6 +74,7 @@ env:
   dist-dir: dist
   bcompiler-dir: compiler
   host_jobs: $J
+  upload_config: ${{inputs.upload_config}}
 
 jobs:
   build:
@@ -125,7 +131,7 @@ jobs:
           config-args: ${{env.configure}} --enable-Werror
           jobs: ${{steps.setup.outputs.jobs}}
       - name: Upload PandA Bambu HLS AppImage for CI
-        if: ${{ github.event_name != 'workflow_dispatch' }}
+        if: ${{ env.upload_config != '' && env.upload_config != 'release' }}
         uses: ./.github/actions/storage-upload
         with:
           name: ${{env.package-name}}
@@ -135,10 +141,10 @@ jobs:
           password: "${{env.storage-token}}"
           storage-compression: false
       - name: Upload Panda Bambu HLS Release
-        if: ${{ github.event_name == 'workflow_dispatch' }}
+        if: ${{ env.upload_config != 'CI' }}
         shell: bash
         run: |
           APP_FILE="${{env.package-name}}.AppImage"
           STORAGE_URL="${{env.storage-url}}/${{env.storage-path}}/$APP_FILE"
           curl -L --fail -u '${{env.storage-user}}':'${{env.storage-token}}' -T "${{steps.build.outputs.appimage}}" "$STORAGE_URL"
-          echo "::notice New release available at https://release.bambuhls.eu/appimage/$APP_FILE"
+          echo "### New release available at https://release.bambuhls.eu/appimage/$APP_FILE" >> $GITHUB_STEP_SUMMARY

@@ -50,7 +50,6 @@
 #include "config_HAVE_BAMBU_BUILT.hpp"
 #include "config_HAVE_KOALA_BUILT.hpp"
 #include "config_HAVE_TECHNOLOGY_BUILT.hpp"
-#include "config_HAVE_TUCANO_BUILT.hpp"
 
 #include "NP_functionality.hpp"
 #include "custom_map.hpp"
@@ -72,9 +71,6 @@
  * @name Forward declarations.
  */
 //@{
-#if HAVE_TUCANO_BUILT
-REF_FORWARD_DECL(tree_manager);
-#endif
 #if HAVE_BAMBU_BUILT
 CONSTREF_FORWARD_DECL(BehavioralHelper);
 #endif
@@ -200,14 +196,6 @@ struct structural_type_descriptor
          treenode(treenode_DEFAULT)
    {
    }
-
-#if HAVE_TUCANO_BUILT
-   /**
-    * Object factory for SystemC objects.
-    * @param treenode is the treenode descriptor of the type.
-    */
-   structural_type_descriptor(unsigned int treenode, tree_managerRef tm);
-#endif
 
 #if HAVE_BAMBU_BUILT
    /**
@@ -635,7 +623,8 @@ using structural_objectRef = refcount<structural_object>;
        M_AXI_RUSER)(M_AXI_RRESP)(M_AXI_BVALID)(M_AXI_BREADY)(M_AXI_BRESP)(M_AXI_BID)(M_AXI_BUSER)(S_AXIL_AWVALID)(     \
        S_AXIL_AWREADY)(S_AXIL_AWADDR)(S_AXIL_WVALID)(S_AXIL_WREADY)(S_AXIL_WDATA)(S_AXIL_WSTRB)(S_AXIL_ARVALID)(       \
        S_AXIL_ARREADY)(S_AXIL_ARADDR)(S_AXIL_RVALID)(S_AXIL_RREADY)(S_AXIL_RDATA)(S_AXIL_RRESP)(S_AXIL_BVALID)(        \
-       S_AXIL_BREADY)(S_AXIL_BRESP)(PI_S_AXIS_TVALID)(PI_S_AXIS_TREADY)(PI_M_AXIS_TREADY)(PI_M_AXIS_TVALID)
+       S_AXIL_BREADY)(S_AXIL_BRESP)(PI_S_AXIS_TVALID)(PI_S_AXIS_TREADY)(PI_S_AXIS_TDATA)(PI_M_AXIS_TVALID)(            \
+       PI_M_AXIS_TREADY)(PI_M_AXIS_TDATA)
 
 #define PORT_DIRECTION_ENUM (IN)(OUT)(IO)(GEN)(UNKNOWN)(TLM_IN)(TLM_OUT)(TLM_INOUT)
 

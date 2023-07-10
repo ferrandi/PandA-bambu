@@ -91,7 +91,10 @@ class StateTransitionGraph_constructor
     * @return the created vertex
     */
    vertex create_state(const std::list<vertex>& exec_op, const std::list<vertex>& start_op,
-                       const std::list<vertex>& end_op, const CustomOrderedSet<unsigned int>& BB_ids);
+                       const std::list<vertex>& end_op, const CustomOrderedSet<unsigned int>& BB_ids,
+                       const std::map<vertex, unsigned int>& vertex_step_in,
+                       const std::map<vertex, unsigned int>& vertex_step_out, unsigned int vertex_LP_II,
+                       unsigned int max_steps, bool is_last_state);
 
    /**
     *  create the STG entry vertex
@@ -101,6 +104,7 @@ class StateTransitionGraph_constructor
     *  create the STG exit vertex
     */
    void create_exit_state();
+   void set_exit_state(vertex ex);
 
    /**
     * Creates a connection between two vertices into the graph. You can also specify the edge kind. The method checks
@@ -150,6 +154,13 @@ class StateTransitionGraph_constructor
    /** Removes the specified state from the graph.
     * If the graph does not contain a vertex representing that state, this method throws an exception. */
    void delete_state(const vertex& src);
+
+   /**
+    * @brief set_pipelined_state change the pipeling state value of a state
+    * @param curr is the state
+    * @param first_iteration in case the pipelined state is run on the first loop iteration
+    */
+   void set_pipelined_state(const vertex& curr, std::set<vertex>& is_prologue);
 };
 
 /// refcount definition to StateTransitionGraph_constructor class

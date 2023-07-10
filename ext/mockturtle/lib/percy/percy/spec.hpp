@@ -111,6 +111,7 @@ namespace percy
             int tt_size; ///< Size of the truth tables to synthesize (in nr. of bits)
             int nr_steps; ///< The number of Boolean operators to use
             int initial_steps = 1; ///< The number of steps from which to start synthesis
+            int max_nr_steps = 100; ///< The maximum number of steps to try
             int verbosity = 0; ///< Verbosity level for debugging purposes
             uint64_t out_inv; ///< Is 1 at index i if output i must be inverted
             uint64_t triv_flag; ///< Is 1 at index i if output i is constant zero or one or a projection.
@@ -372,14 +373,7 @@ namespace percy
 
             void add_primitive( kitty::dynamic_truth_table const& tt )
             {
-              if ( kitty::is_normal( tt ) )
-              {
-                compiled_primitives.push_back( tt );
-              }
-              else
-              {
-                compiled_primitives.push_back( ~tt ); 
-              }
+              compiled_primitives.push_back( tt );
             }
 
             bool is_primitive_set() const

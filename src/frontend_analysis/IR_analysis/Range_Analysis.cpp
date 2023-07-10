@@ -3530,8 +3530,8 @@ unsigned int evaluateBranch(const tree_nodeRef br_op, const blocRef branchBB
       {
          const auto lc = tree_helper::get_integer_cst_value(l);
          const auto rc = tree_helper::get_integer_cst_value(r);
-         RangeRef lhs(new Range(Regular, Range::MAX_BIT_INT, lc, lc));
-         RangeRef rhs(new Range(Regular, Range::MAX_BIT_INT, rc, rc));
+         RangeRef lhs(new Range(Regular, Range::max_digits, lc, lc));
+         RangeRef rhs(new Range(Regular, Range::max_digits, rc, rc));
          const auto branchValue = BinaryOpNode::evaluate(bin_op->get_kind(), 1, lhs, rhs, isSignedType(bin_op->op0));
          THROW_ASSERT(branchValue->isConstant(), "Constant binary operation should resolve to either true or false");
          if(branchValue->getUnsignedMax())
@@ -4242,7 +4242,7 @@ ControlDepNode::ControlDepNode(VarNode* _sink, VarNode* _source)
 
 RangeRef ControlDepNode::eval() const
 {
-   return RangeRef(new Range(Regular, Range::MAX_BIT_INT));
+   return RangeRef(new Range(Regular, Range::max_digits));
 }
 
 void ControlDepNode::print(std::ostream& /*OS*/) const

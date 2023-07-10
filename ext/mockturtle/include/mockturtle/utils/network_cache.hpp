@@ -1,5 +1,5 @@
 /* mockturtle: C++ logic network library
- * Copyright (C) 2018-2021  EPFL
+ * Copyright (C) 2018-2022  EPFL
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -42,10 +42,10 @@
 #include <kitty/print.hpp>
 #include <nlohmann/json.hpp>
 
-#include "../traits.hpp"
 #include "../algorithms/simulation.hpp"
 #include "../io/verilog_reader.hpp"
 #include "../io/write_verilog.hpp"
+#include "../traits.hpp"
 #include "../views/topo_view.hpp"
 
 namespace mockturtle
@@ -56,11 +56,11 @@ namespace mockturtle
  * ...
  *
    \verbatim embed:rst
-  
+
    Example
-   
+
    .. code-block:: c++
-   
+
       ...
    \endverbatim
  */
@@ -160,7 +160,7 @@ public:
     std::stringstream sstr;
     write_verilog( _db, sstr );
 
-    return nlohmann::json{{"num_pis", _pis.size()}, {"output_functions", _output_functions}, {"db", sstr.str()}};
+    return nlohmann::json{ { "num_pis", _pis.size() }, { "output_functions", _output_functions }, { "db", sstr.str() } };
   }
 
 private:

@@ -15,4 +15,4 @@ timeout 2h bambu $root_dir/11_conv2d_b.parallel.c \
       --memory-allocation-policy=NO_BRAM \
       --mem-delay-read=20 --mem-delay-write=20 --simulator=VERILATOR \
       --generate-tb=$root_dir/test.xml \
-      --pretty-print=a.c --no-iob --device-name=xc7vx690t-3ffg1930-VVD --clock-period=3.3 --evaluation 
+      --pretty-print=a.c --device-name=xc7vx690t-3ffg1930-VVD --clock-period=3.3 --evaluation 

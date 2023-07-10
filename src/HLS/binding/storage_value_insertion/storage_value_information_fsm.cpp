@@ -41,6 +41,8 @@
 /// Header include
 #include "storage_value_information_fsm.hpp"
 
+#include "hls_manager.hpp"
+
 StorageValueInformationFsm::StorageValueInformationFsm(const HLS_managerConstRef _HLS_mgr,
                                                        const unsigned int _function_id)
     : StorageValueInformation(_HLS_mgr, _function_id)
@@ -49,18 +51,26 @@ StorageValueInformationFsm::StorageValueInformationFsm(const HLS_managerConstRef
 
 StorageValueInformationFsm::~StorageValueInformationFsm() = default;
 
-bool StorageValueInformationFsm::is_a_storage_value(vertex, unsigned int var_index)
+bool StorageValueInformationFsm::is_a_storage_value(vertex, unsigned int var_index, unsigned int stage)
 {
-   return storage_index_map.find(var_index) != storage_index_map.end();
+   return storage_index_map.find(std::make_pair(var_index, stage)) != storage_index_map.end();
 }
 
-unsigned int StorageValueInformationFsm::get_storage_value_index(vertex, unsigned int var_index)
+unsigned int StorageValueInformationFsm::get_storage_value_index(vertex, unsigned int var_index, unsigned int stage)
 {
-   THROW_ASSERT(storage_index_map.find(var_index) != storage_index_map.end(), "the storage value is missing");
-   return storage_index_map.find(var_index)->second;
+   THROW_ASSERT(storage_index_map.find(std::make_pair(var_index, stage)) != storage_index_map.end(),
+                "the storage value is missing");
+   return storage_index_map.find(std::make_pair(var_index, stage))->second;
 }
 
-void StorageValueInformationFsm::set_storage_value_index(vertex, unsigned int variable, unsigned int sv)
+void StorageValueInformationFsm::set_storage_value_index(vertex, unsigned int variable, unsigned int stage,
+                                                         unsigned int sv)
 {
-   storage_index_map[variable] = sv;
+   storage_index_map[std::make_pair(variable, stage)] = sv;
+}
+
+bool StorageValueInformationFsm::are_storage_value_compatible(unsigned int storage_value_index1,
+                                                              unsigned int storage_value_index2) const
+{
+   return StorageValueInformation::are_value_bitsize_compatible(storage_value_index1, storage_value_index2);
 }

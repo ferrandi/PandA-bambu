@@ -42,7 +42,7 @@
 #define SDC_SCHEDULING_HPP
 
 /// Superclass include
-#include "scheduling.hpp"
+#include "sdc_scheduling_base.hpp"
 
 /// Utility include
 #include "custom_map.hpp"
@@ -59,10 +59,8 @@ CONSTREF_FORWARD_DECL(BBGraph);
 CONSTREF_FORWARD_DECL(BehavioralHelper);
 REF_FORWARD_DECL(fu_binding);
 REF_FORWARD_DECL(meilp_solver);
-class OpVertexSet;
-REF_FORWARD_DECL(SDCSorter);
 
-class SDCScheduling : public Scheduling
+class SDCScheduling : public SDCScheduling_base
 {
    /// The operation graph used to perform scheduling
    OpGraphConstRef op_graph;
@@ -107,11 +105,6 @@ class SDCScheduling : public Scheduling
    /// The set of temporary flow edges added to the op_graph
    CustomUnorderedSet<EdgeDescriptor> temp_edges;
 #endif
-
-   /**
-    * Execute the SDCScheduling_Algorithm::SPECULATIVE_LOOP version of the algorithm
-    */
-   void ExecLoop();
 
    /**
     * Initialize the step
@@ -159,10 +152,6 @@ class SDCScheduling : public Scheduling
                              const DesignFlowStep::RelationshipType relationship_type) override;
 
  public:
-   /// Result of SPECULATIVE_LOOP: the list of movement to be performed (first element is the operation, second element
-   /// is the old basic block, third element is the new basic block) Movements have to be performed in order
-   std::list<std::vector<unsigned int>> movements_list;
-
    /**
     * Constructor
     * @param parameters is the set of input parameters

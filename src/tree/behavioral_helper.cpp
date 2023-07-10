@@ -97,7 +97,7 @@
 #endif
 
 /// Utility include
-#include "boost/lexical_cast.hpp"
+#include <boost/lexical_cast.hpp>
 #include "exceptions.hpp"
 #include "string_manipulation.hpp" // for STR
 #include "var_pp_functor.hpp"
@@ -744,14 +744,10 @@ std::string BehavioralHelper::PrintConstant(const tree_nodeConstRef& _node, cons
          {
             if(it && it->unsigned_flag)
             {
-               THROW_ASSERT(value <= std::numeric_limits<unsigned long long>::max(), "");
-               res += STR(static_cast<unsigned long long>(value & ((integer_cst_t(1) << it->prec) - 1)));
+               res += STR(value & ((integer_cst_t(1) << it->prec) - 1));
             }
             else
             {
-               THROW_ASSERT(std::numeric_limits<long long>::min() <= value &&
-                                value <= std::numeric_limits<long long>::max(),
-                            "Printing " + STR(node) + " as " + STR(value));
                res += STR(value);
             }
          }

@@ -47,9 +47,6 @@
 /// Header include
 #include "hls.hpp"
 
-/// Autoheader include
-#include "config_HAVE_EXPERIMENTAL.hpp"
-
 #include "hls_target.hpp"
 #include "technology_manager.hpp"
 #include "technology_node.hpp"

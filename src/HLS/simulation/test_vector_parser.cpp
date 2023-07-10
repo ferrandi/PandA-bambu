@@ -200,10 +200,10 @@ void TestVectorParser::ParseXMLFile(std::vector<std::map<std::string, std::strin
                }
                else if((Enode)->get_attribute(param + ":init_file"))
                {
-                  const auto test_directory = GetDirectory(input_xml_filename);
+                  const auto test_directory = GetPath(GetDirectory(input_xml_filename));
                   const auto input_file_name =
                       BuildPath(test_directory, Enode->get_attribute(param + ":init_file")->get_value());
-                  if(input_file_name.size() > 4 && input_file_name.substr(input_file_name.size() - 4) == ".dat")
+                  if(boost::ends_with(input_file_name, ".dat"))
                   {
                      test_vector[param] = input_file_name;
                   }
@@ -226,7 +226,7 @@ void TestVectorParser::ParseXMLFile(std::vector<std::map<std::string, std::strin
                else if((Enode)->get_attribute(param + ":init_output_file"))
                {
                   HLSMgr->RSim->results_available = true;
-                  const auto test_directory = GetDirectory(input_xml_filename);
+                  const auto test_directory = GetPath(GetDirectory(input_xml_filename));
                   const auto input_file_name =
                       BuildPath(test_directory, Enode->get_attribute(param + ":init_output_file")->get_value());
                   const auto input_file = fileIO_istream_open(input_file_name);

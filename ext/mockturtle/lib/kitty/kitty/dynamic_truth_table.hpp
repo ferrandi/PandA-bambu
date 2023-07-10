@@ -1,5 +1,5 @@
 /* kitty: C++ truth table library
- * Copyright (C) 2017-2021  EPFL
+ * Copyright (C) 2017-2022  EPFL
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -43,7 +43,7 @@ namespace kitty
 {
 
 /*! Truth table in which number of variables is known at runtime.
-*/
+ */
 struct dynamic_truth_table
 {
   /*! Standard constructor.
@@ -174,8 +174,18 @@ public: /* fields */
 };
 
 template<>
-struct is_truth_table<kitty::dynamic_truth_table> : std::true_type {};
+struct is_truth_table<kitty::dynamic_truth_table> : std::true_type
+{
+};
 
 template<>
-struct is_complete_truth_table<kitty::dynamic_truth_table> : std::true_type {};
+struct is_complete_truth_table<kitty::dynamic_truth_table> : std::true_type
+{
+};
+
+template<>
+struct is_completely_specified_truth_table<kitty::dynamic_truth_table> : std::true_type
+{
+};
+
 } // namespace kitty

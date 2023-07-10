@@ -1,5 +1,5 @@
 /* mockturtle: C++ logic network library
- * Copyright (C) 2018-2021  EPFL
+ * Copyright (C) 2018-2022  EPFL
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -86,7 +86,7 @@ struct has_add_function<ResynFn, Ntk, std::void_t<decltype( std::declval<ResynFn
 };
 
 template<class ResynFn, class Ntk>
-inline constexpr bool has_add_function_v = has_add_function<ResynFn,Ntk>::value;
+inline constexpr bool has_add_function_v = has_add_function<ResynFn, Ntk>::value;
 #pragma endregion
 
 } /* namespace mockturtle */

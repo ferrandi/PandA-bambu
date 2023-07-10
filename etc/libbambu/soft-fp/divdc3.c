@@ -68,6 +68,7 @@ __complex__ double ___divdc3(double a, double b, double c, double d)
 {
    double denom, ratio, x, y;
    __complex__ double res;
+   extern double fabs(double x);
 
    if(fabs(c) < fabs(d))
    {

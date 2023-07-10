@@ -44,8 +44,8 @@
 
 #include "exceptions.hpp"
 
-#include "boost/algorithm/string/case_conv.hpp"
-#include "boost/algorithm/string/trim.hpp"
+#include <boost/algorithm/string/case_conv.hpp>
+#include <boost/algorithm/string/trim.hpp>
 
 #include "xml_script_command.hpp"
 #include <boost/algorithm/string/predicate.hpp>

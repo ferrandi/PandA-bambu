@@ -1,0 +1,4 @@
+/benchmarks/SCAN/IndexBased/ @tomtseng
+/benchmarks/SCAN/Naive/ @tomtseng
+/internal_tools/build_defs.bzl @tomtseng
+/utils/snap_converter.cc @tomtseng
