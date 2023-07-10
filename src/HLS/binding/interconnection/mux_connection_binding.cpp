@@ -1262,9 +1262,9 @@ void mux_connection_binding::create_connections()
             /// adding activation's state of selector related to operation op
             const auto tmp_ops_node_size =
                 GetPointer<functional_unit>(HLS->allocation_information->get_fu(fu))->get_operations().size();
-bool is_starting_operation = std::find(astg->CGetStateInfo(rstate)->starting_operations.begin(),
-                                                      astg->CGetStateInfo(rstate)->starting_operations.end(),
-                                                      *op) != astg->CGetStateInfo(rstate)->starting_operations.end();
+            bool is_starting_operation = std::find(astg->CGetStateInfo(rstate)->starting_operations.begin(),
+                                                   astg->CGetStateInfo(rstate)->starting_operations.end(),
+                                                   *op) != astg->CGetStateInfo(rstate)->starting_operations.end();
 
             if(tmp_ops_node_size > 1U && (!(GET_TYPE(data, *op) & (TYPE_LOAD | TYPE_STORE)) || is_starting_operation))
             {
