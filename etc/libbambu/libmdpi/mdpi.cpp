@@ -161,6 +161,12 @@ EXTERN_C void m_setarg(CONSTARG svLogicVecVal* data, unsigned int index)
    if(index >= __m_params.size)
    {
       error("Simulator required parameter index out of bounds: %u\n", index);
+      if(__m_params.size == 0)
+      {
+         /// TO BE FIXED
+         /// currently pipelined functions may write after the end of simulation
+         return;
+      }
       exit(EXIT_FAILURE);
    }
    mdpi_parm_t* p = &__m_params.prms[index];
