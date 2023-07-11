@@ -1149,7 +1149,23 @@ double Schedule::GetBBEndingTime(const unsigned int basic_block_index) const
    }
    const auto ending_time =
        std::max_element(stmt_list.begin(), stmt_list.end(), [=](const tree_nodeRef first, const tree_nodeRef second) {
-          return ending_times.at(first->index) < ending_times.at(second->index);
+          if(ending_times.find(first->index) != ending_times.end() &&
+             ending_times.find(second->index) != ending_times.end())
+          {
+             return ending_times.at(first->index) < ending_times.at(second->index);
+          }
+          else
+          {
+             if(ending_times.find(first->index) == ending_times.end() &&
+                ending_times.find(second->index) == ending_times.end())
+             {
+                return first->index < second->index;
+             }
+             else
+             {
+                return ending_times.find(first->index) == ending_times.end();
+             }
+          }
        });
    THROW_ASSERT(ending_time != stmt_list.end(), "");
    return ceil((ending_times.at((*ending_time)->index) + margin) / clock_period) * clock_period;
