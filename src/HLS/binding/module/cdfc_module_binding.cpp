@@ -2126,6 +2126,10 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
                {
                   module_clique->max_resources(allocation_information->get_number_channels(partition.first));
                }
+               else if(!dfp_P && (lib_name == WORK_LIBRARY || lib_name == PROXY_LIBRARY))
+               {
+                  module_clique->max_resources(allocation_information->get_number_fu(partition.first));
+               }
             }
 
             /// Specify the minimum number of resources in case we have to use all the memory ports.
@@ -2246,6 +2250,10 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
                      if(allocation_information->get_number_channels(partition.first) > 0)
                      {
                         module_clique->max_resources(allocation_information->get_number_channels(partition.first));
+                     }
+                     else if(!dfp_P && (lib_name == WORK_LIBRARY || lib_name == PROXY_LIBRARY))
+                     {
+                        module_clique->max_resources(allocation_information->get_number_fu(partition.first));
                      }
                   }
 
