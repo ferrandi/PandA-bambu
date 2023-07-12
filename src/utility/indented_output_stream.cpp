@@ -144,6 +144,11 @@ void IndentedOutputStream::Append(const std::string& str)
    }
 }
 
+void IndentedOutputStream::AppendIndented(const std::string& str)
+{
+   output_stream << str;
+}
+
 void IndentedOutputStream::AppendIndent()
 {
    for(unsigned int i = 0; i < indent_spaces; i++)

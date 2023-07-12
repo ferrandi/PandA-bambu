@@ -436,7 +436,7 @@ double tgamma(double x)
    {
       /* Positive infinity (return positive infinity) or NaN (return
       NaN).  */
-      return x + x;
+      return X_PLUS_X(x);
    }
    double y;
    int local_signgam = 0;

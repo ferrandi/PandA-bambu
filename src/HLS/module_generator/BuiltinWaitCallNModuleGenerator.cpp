@@ -62,14 +62,16 @@ BuiltinWaitCallNModuleGenerator::BuiltinWaitCallNModuleGenerator(const HLS_manag
 {
 }
 
-void BuiltinWaitCallNModuleGenerator::InternalExec(std::ostream& out, const module* /* mod */, unsigned int function_id,
-                                                   vertex op_v, const HDLWriter_Language /* language */,
+void BuiltinWaitCallNModuleGenerator::InternalExec(std::ostream& out, structural_objectRef /* mod */,
+                                                   unsigned int function_id, vertex op_v,
+                                                   const HDLWriter_Language /* language */,
                                                    const std::vector<ModuleGenerator::parameter>& _p,
                                                    const std::vector<ModuleGenerator::parameter>& /* _ports_in */,
                                                    const std::vector<ModuleGenerator::parameter>& /* _ports_out */,
                                                    const std::vector<ModuleGenerator::parameter>& /* _ports_inout */)
 {
-   const auto retval_size = [&]() {
+   const auto retval_size = [&]()
+   {
       THROW_ASSERT(function_id && op_v, "");
       const auto FB = HLSMgr->CGetFunctionBehavior(function_id);
       const auto TM = HLSMgr->get_tree_manager();
@@ -109,7 +111,7 @@ void BuiltinWaitCallNModuleGenerator::InternalExec(std::ostream& out, const modu
       out << "wire [BITSIZE_Mout_addr_ram-1:0] paramAddressRead;\n\n";
    }
 
-   out << "reg [31:0] step 1INIT_ZERO_VALUE;\n"
+   out << "reg [31:0] step;\n"
        << "reg [31:0] next_step;\n"
        << "reg done_port;\n"
        << "reg [PORTSIZE_Sout_DataRdy-1:0] Sout_DataRdy;\n"

@@ -54,8 +54,9 @@ OpenCSModuleGenerator::OpenCSModuleGenerator(const HLS_managerRef& _HLSMgr) : Re
 {
 }
 
-void OpenCSModuleGenerator::InternalExec(std::ostream& out, const module* /* mod */, unsigned int /* function_id */,
-                                         vertex /* op_v */, const HDLWriter_Language /* language */,
+void OpenCSModuleGenerator::InternalExec(std::ostream& out, structural_objectRef /* mod */,
+                                         unsigned int /* function_id */, vertex /* op_v */,
+                                         const HDLWriter_Language /* language */,
                                          const std::vector<ModuleGenerator::parameter>& _p,
                                          const std::vector<ModuleGenerator::parameter>& /* _ports_in */,
                                          const std::vector<ModuleGenerator::parameter>& /* _ports_out */,
@@ -101,9 +102,9 @@ void OpenCSModuleGenerator::InternalExec(std::ostream& out, const module* /* mod
                               modes + " & " + STR(O_WRONLY) + ") != 0 ? \"wb\" : \"rb\"" + "))";
 
    const auto fsm =
-       "  reg [nbits_buffer-1:0] _present_index 1INIT_ZERO_VALUE;\n"
+       "  reg [nbits_buffer-1:0] _present_index;\n"
        "  reg [nbits_buffer-1:0] _next_index;\n"
-       "  reg [BITSIZE_Mout_addr_ram-1:0] _present_pointer 1INIT_ZERO_VALUE;\n"
+       "  reg [BITSIZE_Mout_addr_ram-1:0] _present_pointer;\n"
        "  reg [BITSIZE_Mout_addr_ram-1:0] _next_pointer;\n"
        "  reg done_port;\n"
        "  wire mem_done_port;\n"
@@ -114,7 +115,7 @@ void OpenCSModuleGenerator::InternalExec(std::ostream& out, const module* /* mod
        "                  S_2 = 3'd2,\n"
        "                  S_3 = 3'd3,\n"
        "                  S_4 = 3'd4;\n"
-       "  reg [2:0] _present_state 1INIT_ZERO_VALUE;\n"
+       "  reg [2:0] _present_state;\n"
        "  reg [2:0] _next_state;\n"
        "  reg [63:0] data1;\n"
        "  reg [7:0] data1_size;\n"

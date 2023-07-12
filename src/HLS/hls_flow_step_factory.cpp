@@ -172,13 +172,8 @@
 
 /// HLS/simulation includes
 #include "CTestbenchExecution.hpp"
-#include "minimal_interface_testbench.hpp"
 #include "test_vector_parser.hpp"
 #include "testbench_generation.hpp"
-#include "testbench_memory_allocation.hpp"
-#include "testbench_values_c_generation.hpp"
-#include "testbench_values_xml_generation.hpp"
-#include "wishbone_interface_testbench.hpp"
 
 /// HLS/stg
 #include "BB_based_stg.hpp"
@@ -306,7 +301,8 @@ HLSFlowStepFactory::CreateHLSFlowStep(const HLSFlowStep_Type type, const unsigne
       }
       case HLSFlowStep_Type::C_TESTBENCH_EXECUTION:
       {
-         design_flow_step = DesignFlowStepRef(new CTestbenchExecution(parameters, HLS_mgr, design_flow_manager.lock()));
+         design_flow_step = DesignFlowStepRef(
+             new CTestbenchExecution(parameters, HLS_mgr, design_flow_manager.lock(), hls_flow_step_specialization));
          break;
       }
       case HLSFlowStep_Type::DOMINATOR_ALLOCATION:
@@ -460,12 +456,6 @@ HLSFlowStepFactory::CreateHLSFlowStep(const HLSFlowStep_Type type, const unsigne
              DesignFlowStepRef(new minimal_interface(parameters, HLS_mgr, funId, design_flow_manager.lock()));
          break;
       }
-      case HLSFlowStep_Type::MINIMAL_TESTBENCH_GENERATION:
-      {
-         design_flow_step =
-             DesignFlowStepRef(new MinimalInterfaceTestbench(parameters, HLS_mgr, design_flow_manager.lock()));
-         break;
-      }
       case HLSFlowStep_Type::MUX_INTERCONNECTION_BINDING:
       {
          design_flow_step =
@@ -569,24 +559,6 @@ HLSFlowStepFactory::CreateHLSFlowStep(const HLSFlowStep_Type type, const unsigne
          design_flow_step = DesignFlowStepRef(new TestbenchGeneration(parameters, HLS_mgr, design_flow_manager.lock()));
          break;
       }
-      case HLSFlowStep_Type::TESTBENCH_MEMORY_ALLOCATION:
-      {
-         design_flow_step =
-             DesignFlowStepRef(new TestbenchMemoryAllocation(parameters, HLS_mgr, design_flow_manager.lock()));
-         break;
-      }
-      case HLSFlowStep_Type::TESTBENCH_VALUES_C_GENERATION:
-      {
-         design_flow_step =
-             DesignFlowStepRef(new TestbenchValuesCGeneration(parameters, HLS_mgr, design_flow_manager.lock()));
-         break;
-      }
-      case HLSFlowStep_Type::TESTBENCH_VALUES_XML_GENERATION:
-      {
-         design_flow_step =
-             DesignFlowStepRef(new TestbenchValuesXMLGeneration(parameters, HLS_mgr, design_flow_manager.lock()));
-         break;
-      }
       case HLSFlowStep_Type::TEST_VECTOR_PARSER:
       {
          design_flow_step = DesignFlowStepRef(new TestVectorParser(parameters, HLS_mgr, design_flow_manager.lock()));
@@ -665,12 +637,6 @@ HLSFlowStepFactory::CreateHLSFlowStep(const HLSFlowStep_Type type, const unsigne
              DesignFlowStepRef(new WB4Intercon_interface(parameters, HLS_mgr, funId, design_flow_manager.lock()));
          break;
       }
-      case HLSFlowStep_Type::WB4_TESTBENCH_GENERATION:
-      {
-         design_flow_step =
-             DesignFlowStepRef(new WishboneInterfaceTestbench(parameters, HLS_mgr, design_flow_manager.lock()));
-         break;
-      }
       case HLSFlowStep_Type::WEIGHTED_CLIQUE_REGISTER_BINDING:
       {
          design_flow_step = DesignFlowStepRef(new weighted_clique_register(
@@ -710,13 +676,6 @@ const DesignFlowStepSet HLSFlowStepFactory::CreateHLSFlowSteps(
          case HLSFlowStep_Type::EVALUATION:
          case HLSFlowStep_Type::GENERATE_HDL:
          case HLSFlowStep_Type::TEST_VECTOR_PARSER:
-         case HLSFlowStep_Type::TESTBENCH_MEMORY_ALLOCATION:
-         case HLSFlowStep_Type::TESTBENCH_VALUES_C_GENERATION:
-         case HLSFlowStep_Type::TESTBENCH_VALUES_XML_GENERATION:
-         {
-            ret.insert(CreateHLSFlowStep(hls_flow_step.first, 0, hls_flow_step.second));
-            break;
-         }
          case HLSFlowStep_Type::CALL_GRAPH_UNFOLDING:
          case HLSFlowStep_Type::CLASSICAL_HLS_SYNTHESIS_FLOW:
          case HLSFlowStep_Type::DOMINATOR_ALLOCATION:
@@ -770,7 +729,6 @@ const DesignFlowStepSet HLSFlowStepFactory::CreateHLSFlowSteps(
          case HLSFlowStep_Type::INTERFACE_CS_GENERATION:
          case HLSFlowStep_Type::LIST_BASED_SCHEDULING:
          case HLSFlowStep_Type::MINIMAL_INTERFACE_GENERATION:
-         case HLSFlowStep_Type::MINIMAL_TESTBENCH_GENERATION:
          case HLSFlowStep_Type::MUX_INTERCONNECTION_BINDING:
 #if HAVE_FROM_PRAGMA_BUILT
          case HLSFlowStep_Type::OMP_ALLOCATION:
@@ -813,7 +771,6 @@ const DesignFlowStepSet HLSFlowStepFactory::CreateHLSFlowSteps(
          case HLSFlowStep_Type::VIRTUAL_DESIGN_FLOW:
          case HLSFlowStep_Type::WB4_INTERCON_INTERFACE_GENERATION:
          case HLSFlowStep_Type::WB4_INTERFACE_GENERATION:
-         case HLSFlowStep_Type::WB4_TESTBENCH_GENERATION:
          case HLSFlowStep_Type::WEIGHTED_CLIQUE_REGISTER_BINDING:
          default:
             THROW_UNREACHABLE("Step not expected: " + HLS_step::EnumToName(hls_flow_step.first));

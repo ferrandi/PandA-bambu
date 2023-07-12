@@ -70,12 +70,12 @@ DesignFlowStep_Status AuxDesignFlowStep::Exec()
    return DesignFlowStep_Status::EMPTY;
 }
 
-const std::string AuxDesignFlowStep::GetName() const
+std::string AuxDesignFlowStep::GetName() const
 {
    return name;
 }
 
-const std::string AuxDesignFlowStep::GetSignature() const
+std::string AuxDesignFlowStep::GetSignature() const
 {
    return ComputeSignature(name, type);
 }
@@ -85,7 +85,7 @@ void AuxDesignFlowStep::WriteDot(std::ostream& out) const
    out << "shape=Msquare, label=\"" << name << "\"";
 }
 
-const DesignFlowStepFactoryConstRef AuxDesignFlowStep::CGetDesignFlowStepFactory() const
+DesignFlowStepFactoryConstRef AuxDesignFlowStep::CGetDesignFlowStepFactory() const
 {
    THROW_UNREACHABLE("This method should never be called");
    return DesignFlowStepFactoryConstRef();

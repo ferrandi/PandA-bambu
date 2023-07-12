@@ -81,7 +81,7 @@
 #include "ext_tree_node.hpp"
 #include "hls_manager.hpp"
 #include "hls_target.hpp"
-#include "math_function.hpp"       // for resize_to_1_8_16_32_64_128_256_512
+#include "math_function.hpp"       // for ceil_pow2
 #include "string_manipulation.hpp" // for GET_CLASS
 #include "tree_basic_block.hpp"
 #include "tree_helper.hpp"
@@ -722,10 +722,8 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                         const auto op0 = GET_CONST_NODE(me->op0);
                         const auto op1 = GET_CONST_NODE(me->op1);
                         bool squareP = GET_INDEX_CONST_NODE(me->op0) == GET_INDEX_CONST_NODE(me->op1);
-                        const auto data_bitsize_in0 =
-                            resize_to_1_8_16_32_64_128_256_512(BitLatticeManipulator::Size(op0));
-                        const auto data_bitsize_in1 =
-                            resize_to_1_8_16_32_64_128_256_512(BitLatticeManipulator::Size(op1));
+                        const auto data_bitsize_in0 = ceil_pow2(BitLatticeManipulator::Size(op0));
+                        const auto data_bitsize_in1 = ceil_pow2(BitLatticeManipulator::Size(op1));
                         const auto isSigned = tree_helper::is_int(TM, GET_INDEX_CONST_NODE(ga_op_type));
                         if(!isSigned && GET_CONST_NODE(ga->op1)->get_kind() == mult_expr_K &&
                            (data_bitsize_in0 == 1 || data_bitsize_in1 == 1))
@@ -2961,6 +2959,16 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                                     AppM->RegisterTransformation(GetName(), stmt);
                                  }
                               }
+                           }
+                        }
+                        else if(tree_helper::IsSameType(ga->op0, ne->op))
+                        {
+                           auto bw_op1 = tree_helper::Size(ne->op);
+                           auto bw_op0 = tree_helper::Size(ga->op0);
+
+                           if(bw_op1 <= bw_op0)
+                           {
+                              propagateValue(ssa, TM, ga->op0, ne->op, DEBUG_CALLSITE);
                            }
                         }
                      };

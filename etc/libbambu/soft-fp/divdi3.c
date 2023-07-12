@@ -29,10 +29,6 @@
 #endif
 #include <stdlib.h>
 
-#if __WORDSIZE != 32
-#error This is for 32-bit targets only
-#endif
-
 typedef unsigned int UQItype __attribute__((mode(QI)));
 typedef int SItype __attribute__((mode(SI)));
 typedef unsigned int USItype __attribute__((mode(SI)));

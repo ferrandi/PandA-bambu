@@ -88,7 +88,7 @@ MemoryAllocationSpecialization::MemoryAllocationSpecialization(
 {
 }
 
-const std::string MemoryAllocationSpecialization::GetKindText() const
+std::string MemoryAllocationSpecialization::GetKindText() const
 {
    std::string ret;
    switch(memory_allocation_policy)
@@ -136,7 +136,7 @@ const std::string MemoryAllocationSpecialization::GetKindText() const
    return ret;
 }
 
-const std::string MemoryAllocationSpecialization::GetSignature() const
+std::string MemoryAllocationSpecialization::GetSignature() const
 {
    return STR(static_cast<unsigned int>(memory_allocation_policy)) +
           "::" + STR(static_cast<unsigned int>(memory_allocation_channels_type));
@@ -280,32 +280,40 @@ void memory_allocation::finalize_memory_allocation()
       const auto function_behavior = HLSMgr->CGetFunctionBehavior(fun_id);
       const auto behavioral_helper = function_behavior->CGetBehavioralHelper();
       const auto is_interfaced = HLSMgr->hasToBeInterfaced(behavioral_helper->get_function_index());
-      const auto is_inferred_interface =
-          parameters->isOption(OPT_interface_type) && parameters->getOption<HLSFlowStep_Type>(OPT_interface_type) ==
-                                                          HLSFlowStep_Type::INFERRED_INTERFACE_GENERATION;
+      const auto fname = behavioral_helper->GetMangledFunctionName();
+      const auto design_attributes = HLSMgr->design_attributes.find(fname);
+      const auto has_attributes = design_attributes != HLSMgr->design_attributes.end();
       if(function_behavior->get_has_globals() && parameters->isOption(OPT_expose_globals) &&
          parameters->getOption<bool>(OPT_expose_globals))
       {
          has_intern_shared_data = true;
       }
-      if(!is_inferred_interface)
+      const auto& function_parameters = behavioral_helper->get_parameters();
+      for(const auto function_parameter : function_parameters)
       {
-         const auto& function_parameters = behavioral_helper->get_parameters();
-         for(const auto function_parameter : function_parameters)
+         if(has_attributes)
          {
-            if(HLSMgr->Rmem->is_parm_decl_copied(function_parameter) &&
-               !HLSMgr->Rmem->is_parm_decl_stored(function_parameter))
+            const auto pname = behavioral_helper->PrintVariable(function_parameter);
+            THROW_ASSERT(design_attributes->second.count(pname), "");
+            THROW_ASSERT(design_attributes->second.at(pname).count(attr_interface_type), "");
+            const auto parameter_interface = design_attributes->second.at(pname).at(attr_interface_type);
+            if(parameter_interface != "default")
             {
-               use_databus_width = true;
-               maximum_bus_size = std::max(maximum_bus_size, 8ull);
+               continue;
             }
-            if(!use_unknown_address && is_interfaced && tree_helper::is_a_pointer(TreeM, function_parameter))
+         }
+         if(HLSMgr->Rmem->is_parm_decl_copied(function_parameter) &&
+            !HLSMgr->Rmem->is_parm_decl_stored(function_parameter))
+         {
+            use_databus_width = true;
+            maximum_bus_size = std::max(maximum_bus_size, 8ull);
+         }
+         if(!use_unknown_address && is_interfaced && tree_helper::is_a_pointer(TreeM, function_parameter))
+         {
+            use_unknown_address = true;
+            if(output_level > OUTPUT_LEVEL_NONE)
             {
-               use_unknown_address = true;
-               if(output_level > OUTPUT_LEVEL_NONE)
-               {
-                  THROW_WARNING("This function uses unknown addresses: " + behavioral_helper->get_function_name());
-               }
+               THROW_WARNING("This function uses unknown addresses: " + behavioral_helper->get_function_name());
             }
          }
       }
@@ -326,8 +334,6 @@ void memory_allocation::finalize_memory_allocation()
       graph::vertex_iterator v, v_end;
       const auto TM = HLSMgr->get_tree_manager();
       const auto fnode = TM->CGetTreeReindex(fun_id);
-      const auto fd = GetPointerS<const function_decl>(GET_CONST_NODE(fnode));
-      const auto fname = tree_helper::GetMangledFunctionName(fd);
       CustomUnorderedSet<vertex> RW_stmts;
       if(HLSMgr->design_interface_io.find(fname) != HLSMgr->design_interface_io.end())
       {
@@ -464,11 +470,9 @@ void memory_allocation::finalize_memory_allocation()
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed " + GET_NAME(g, *v));
       }
       const auto top_functions = HLSMgr->CGetCallGraphManager()->GetRootFunctions();
-      const auto local_needMemoryMappedRegisters =
-          (top_functions.count(fun_id) ? parameters->getOption<HLSFlowStep_Type>(OPT_interface_type) ==
-                                             HLSFlowStep_Type::WB4_INTERFACE_GENERATION :
-                                         HLSMgr->hasToBeInterfaced(fun_id)) ||
-          parameters->getOption<bool>(OPT_memory_mapped_top);
+      const auto local_needMemoryMappedRegisters = top_functions.count(fun_id) ?
+                                                       parameters->getOption<bool>(OPT_memory_mapped_top) :
+                                                       HLSMgr->hasToBeInterfaced(fun_id);
       needMemoryMappedRegisters = needMemoryMappedRegisters || local_needMemoryMappedRegisters;
       if(local_needMemoryMappedRegisters)
       {
@@ -506,13 +510,13 @@ void memory_allocation::finalize_memory_allocation()
    }
 
    const auto HLS_T = HLSMgr->get_HLS_target();
-   unsigned long long bram_bitsize = 0, data_bus_bitsize = 0, size_bus_bitsize = 0;
+   unsigned long long bram_bitsize = 0;
    unsigned addr_bus_bitsize = 0;
    const auto bram_bitsize_min = HLS_T->get_target_device()->get_parameter<unsigned int>("BRAM_bitsize_min");
    const auto bram_bitsize_max = HLS_T->get_target_device()->get_parameter<unsigned int>("BRAM_bitsize_max");
    HLSMgr->Rmem->set_maxbram_bitsize(bram_bitsize_max);
 
-   maximum_bus_size = resize_to_1_8_16_32_64_128_256_512(maximum_bus_size);
+   maximum_bus_size = ceil_pow2(maximum_bus_size);
 
    if(has_misaligned_indirect_ref || has_unaligned_accesses)
    {
@@ -585,19 +589,14 @@ void memory_allocation::finalize_memory_allocation()
       }
    }
 
-   HLSMgr->set_address_bitsize(addr_bus_bitsize);
    if(needMemoryMappedRegisters)
    {
       HLS_manager::check_bitwidth(maximum_bus_size);
       maximum_bus_size = std::max(maximum_bus_size, static_cast<unsigned long long>(addr_bus_bitsize));
    }
-   data_bus_bitsize = maximum_bus_size;
-   HLSMgr->Rmem->set_bus_data_bitsize(data_bus_bitsize);
-   for(size_bus_bitsize = 4; data_bus_bitsize >= (1u << size_bus_bitsize); ++size_bus_bitsize)
-   {
-      ;
-   }
-   HLSMgr->Rmem->set_bus_size_bitsize(size_bus_bitsize);
+   HLSMgr->set_address_bitsize(addr_bus_bitsize);
+   HLSMgr->Rmem->set_bus_data_bitsize(maximum_bus_size);
+   HLSMgr->Rmem->set_bus_size_bitsize(std::max(4ULL, ceil_log2(maximum_bus_size + 1ULL)));
 
    HLSMgr->Rmem->set_bram_bitsize(bram_bitsize);
    HLSMgr->Rmem->set_intern_shared_data(has_intern_shared_data);
@@ -605,7 +604,7 @@ void memory_allocation::finalize_memory_allocation()
    HLSMgr->Rmem->set_unaligned_accesses(has_unaligned_accesses);
 
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "-->");
-   INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---BRAM bitsize: " + STR(bram_bitsize));
+   INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---BRAM bitsize: " + STR(HLSMgr->Rmem->get_bram_bitsize()));
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
                   "---" + (use_databus_width ? std::string("Spec may exploit DATA bus width") :
                                                std::string("Spec may not exploit DATA bus width")));
@@ -616,9 +615,11 @@ void memory_allocation::finalize_memory_allocation()
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
                   "---" + (!has_intern_shared_data ? std::string("Internal data is not externally accessible") :
                                                      std::string("Internal data may be accessed")));
-   INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---DATA bus bitsize: " + STR(data_bus_bitsize));
-   INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---ADDRESS bus bitsize: " + STR(addr_bus_bitsize));
-   INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---SIZE bus bitsize: " + STR(size_bus_bitsize));
+   INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
+                  "---DATA bus bitsize: " + STR(HLSMgr->Rmem->get_bus_data_bitsize()));
+   INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---ADDRESS bus bitsize: " + STR(HLSMgr->get_address_bitsize()));
+   INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
+                  "---SIZE bus bitsize: " + STR(HLSMgr->Rmem->get_bus_size_bitsize()));
    if(HLSMgr->Rmem->has_all_pointers_resolved())
    {
       INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---ALL pointers have been resolved");

@@ -40,17 +40,10 @@
  * Last modified by $Author$
  *
  */
-
 #ifndef DISCREPANCY_INSTRUCTION_WRITER_HPP
 #define DISCREPANCY_INSTRUCTION_WRITER_HPP
 
-/// Superclass include
 #include "hls_instruction_writer.hpp"
-
-/// Utility include
-#include "refcount.hpp"
-
-CONSTREF_FORWARD_DECL(Parameter);
 
 class discrepancy_instruction_writer : public HLSInstructionWriter
 {
@@ -65,11 +58,6 @@ class discrepancy_instruction_writer : public HLSInstructionWriter
                                   const IndentedOutputStreamRef indented_output_stream,
                                   const ParameterConstRef parameters);
 
-   /**
-    * Destructor
-    */
-   ~discrepancy_instruction_writer() override;
-
-   void declareFunction(const unsigned int function_id) override;
+   void declareFunction(const unsigned int function_id) override final;
 };
 #endif

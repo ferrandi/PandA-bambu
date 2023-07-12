@@ -37,55 +37,33 @@
 
 #include "discrepancy_analysis_c_writer.hpp"
 
-// behavior/ includes
+#include "Discrepancy.hpp"
+#include "Parameter.hpp"
+#include "SimulationInformation.hpp"
+#include "allocation_information.hpp"
 #include "application_manager.hpp"
+#include "behavioral_helper.hpp"
+#include "c_backend_information.hpp"
 #include "call_graph.hpp"
 #include "call_graph_manager.hpp"
-
-// HLS/ includes
+#include "fu_binding.hpp"
 #include "hls.hpp"
 #include "hls_manager.hpp"
-
-// includes from HLS/binding/module/
-#include "fu_binding.hpp"
-
-// include from HLS/memory
+#include "indented_output_stream.hpp"
+#include "language_writer.hpp"
+#include "math_function.hpp"
 #include "memory.hpp"
-
-// includes from HLS/module_allocation/
-#include "allocation_information.hpp"
-
-// HLS/stg/ includes
 #include "state_transition_graph.hpp"
 #include "state_transition_graph_manager.hpp"
-
-// includes from HLS/vcd
-#include "Discrepancy.hpp"
-
-// design_flow/backend/ToC/ includes
-#include "hls_c_backend_information.hpp"
-
-// include from design_flow/ToHDL/
-#include "language_writer.hpp"
-
-// include from technology/physical_library/
+#include "structural_objects.hpp"
 #include "technology_node.hpp"
-
-// include from technology/physical_library/models/
 #include "time_model.hpp"
-
-// tree/ include
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
 #include "tree_reindex.hpp"
-
-// utility/ includes
-#include "behavioral_helper.hpp"
-#include "indented_output_stream.hpp"
-#include "math_function.hpp"
 #include "utility.hpp"
 
-#include "Parameter.hpp"
+#include <boost/filesystem.hpp>
 
 #define INT_TYPE 0
 #define UINT_TYPE 1
@@ -121,22 +99,225 @@ static inline bool is_large_integer(const tree_nodeConstRef& _tn)
    return false;
 }
 
-DiscrepancyAnalysisCWriter::DiscrepancyAnalysisCWriter(const HLSCBackendInformationConstRef _hls_c_backend_information,
-                                                       const application_managerConstRef _AppM,
+DiscrepancyAnalysisCWriter::DiscrepancyAnalysisCWriter(const CBackendInformationConstRef _c_backend_information,
+                                                       const HLS_managerConstRef _HLSMgr,
                                                        const InstructionWriterRef _instruction_writer,
                                                        const IndentedOutputStreamRef _indented_output_stream,
                                                        const ParameterConstRef _parameters, bool _verbose)
-    : HLSCWriter(_hls_c_backend_information, _AppM, _instruction_writer, _indented_output_stream, _parameters,
-                 _verbose),
-      Discrepancy(_hls_c_backend_information->HLSMgr->RDiscr)
+    : HLSCWriter(_c_backend_information, _HLSMgr, _instruction_writer, _indented_output_stream, _parameters, _verbose),
+      Discrepancy(_HLSMgr->RDiscr)
 {
-   THROW_ASSERT((Param->isOption(OPT_discrepancy) and Param->getOption<bool>(OPT_discrepancy)) or
-                    (Param->isOption(OPT_discrepancy_hw) and Param->getOption<bool>(OPT_discrepancy_hw)),
+   THROW_ASSERT((Param->isOption(OPT_discrepancy) && Param->getOption<bool>(OPT_discrepancy)) ||
+                    (Param->isOption(OPT_discrepancy_hw) && Param->getOption<bool>(OPT_discrepancy_hw)),
                 "Step " + STR(__PRETTY_FUNCTION__) + " should not be added without discrepancy");
    THROW_ASSERT(Discrepancy, "Discrepancy data structure is not correctly initialized");
 }
 
-DiscrepancyAnalysisCWriter::~DiscrepancyAnalysisCWriter() = default;
+void DiscrepancyAnalysisCWriter::WriteTestbenchHelperFunctions()
+{
+   // exit function
+   indented_output_stream->Append(R"(
+void _Dec2Bin_(FILE* __bambu_testbench_fp, long long int num, unsigned int precision)
+{
+unsigned int i;
+unsigned long long int ull_value = (unsigned long long int)num;
+for(i = 0; i < precision; ++i)
+   fprintf(__bambu_testbench_fp, "%c", (((1LLU << (precision - i - 1)) & ull_value) ? '1' : '0'));
+}
+
+void _Ptd2Bin_(FILE* __bambu_testbench_fp, unsigned char* num, unsigned int precision)
+{
+unsigned int i, j;
+char value;
+if(precision % 8)
+{
+value = *(num + precision / 8);
+for(j = 8 - precision % 8; j < 8; ++j)
+   fprintf(__bambu_testbench_fp, "%c", (((1LLU << (8 - j - 1)) & value) ? '1' : '0'));
+}
+for(i = 0; i < 8 * (precision / 8); i = i + 8)
+{
+value = *(num + (precision / 8) - (i / 8) - 1);
+for(j = 0; j < 8; ++j)
+   fprintf(__bambu_testbench_fp, "%c", (((1LLU << (8 - j - 1)) & value) ? '1' : '0'));
+}
+}
+
+float _Int32_ViewConvert(unsigned int i)
+{
+union
+{
+unsigned int bits;
+float fp32;
+} vc;
+vc.bits = i;
+return vc.fp32;
+}
+
+double _Int64_ViewConvert(unsigned long long i)
+{
+union
+{
+unsigned long long bits;
+double fp64;
+} vc;
+vc.bits = i;
+return vc.fp64;
+}
+
+unsigned char _FPs32Mismatch_(float c, float e, float max_ulp)
+{
+unsigned int binary_c = *((unsigned int*)&c);
+unsigned int binary_e = *((unsigned int*)&e);
+unsigned int binary_abs_c = binary_c & (~(1U << 31));
+unsigned int binary_abs_e = binary_e & (~(1U << 31));
+unsigned int denom_0 = 0x34000000;
+unsigned int denom_e = ((binary_abs_e >> 23) - 23) << 23;
+float cme = c - e;
+unsigned int binary_cme = *((unsigned int*)&cme);
+unsigned int binary_abs_cme = binary_cme & (~(1U << 31));
+float abs_cme = *((float*)&binary_abs_cme);
+float ulp = 0.0;
+if(binary_abs_c > 0X7F800000 && binary_abs_c > 0X7F800000)
+   return 0;
+else if(binary_abs_c == 0X7F800000 && binary_abs_e == 0X7F800000)
+{
+if((binary_c >> 31) != (binary_e >> 31))
+   return 1;
+else
+   return 0;
+}
+else if(binary_abs_c == 0X7F800000 || binary_abs_e == 0X7F800000 || binary_abs_c > 0X7F800000 ||
+        binary_abs_e == 0X7F800000)
+   return 0;
+else
+{
+if(binary_abs_e == 0)
+   ulp = abs_cme / (*((float*)&denom_0));
+else
+   ulp = abs_cme / (*((float*)&denom_e));
+return ulp > max_ulp;
+}
+}
+
+unsigned char _FPs64Mismatch_(double c, double e, double max_ulp)
+{
+unsigned long long int binary_c = *((unsigned long long int*)&c);
+unsigned long long int binary_e = *((unsigned long long int*)&e);
+unsigned long long int binary_abs_c = binary_c & (~(1ULL << 63));
+unsigned long long int binary_abs_e = binary_e & (~(1ULL << 63));
+unsigned long long int denom_0 = 0x3CB0000000000000;
+unsigned long long int denom_e = ((binary_abs_e >> 52) - 52) << 52;
+double cme = c - e;
+unsigned long long int binary_cme = *((unsigned int*)&cme);
+unsigned long long int binary_abs_cme = binary_cme & (~(1U << 31));
+double abs_cme = *((double*)&binary_abs_cme);
+double ulp = 0.0;
+if(binary_abs_c > 0X7FF0000000000000 && binary_abs_c > 0X7FF0000000000000)
+   return 0;
+else if(binary_abs_c == 0X7FF0000000000000 && binary_abs_e == 0X7FF0000000000000)
+{
+if((binary_c >> 63) != (binary_e >> 63))
+   return 1;
+else
+   return 0;
+}
+else if(binary_abs_c == 0X7FF0000000000000 || binary_abs_e == 0X7FF0000000000000 ||
+        binary_abs_c > 0X7FF0000000000000 || binary_abs_e == 0X7FF0000000000000)
+   return 0;
+else
+{
+if(binary_abs_e == 0)
+   ulp = abs_cme / (*((double*)&denom_0));
+else
+   ulp = abs_cme / (*((double*)&denom_e));
+return ulp > max_ulp;
+}
+}
+
+void _CheckBuiltinFPs32_(char* chk_str, unsigned char neq, float par_expected, float par_res, float par_a, float par_b)
+{
+if(neq)
+{
+printf("\n\n***********************************************************\nERROR ON A BASIC FLOATING POINT "
+       "OPERATION : %s : expected=%a (%.20e) res=%a (%.20e) a=%a (%.20e) b=%a "
+       "(%.20e)\n***********************************************************\n\n",
+       chk_str, par_expected, par_expected, par_res, par_res, par_a, par_a, par_b, par_b);
+exit(1);
+}
+}
+
+void _CheckBuiltinFPs64_(char* chk_str, unsigned char neq, double par_expected, double par_res, double par_a,
+                  double par_b)
+{
+if(neq)
+{
+printf("\n\n***********************************************************\nERROR ON A BASIC FLOATING POINT "
+       "OPERATION : %s : expected=%a (%.35e) res=%a (%.35e) a=%a (%.35e) b=%a "
+       "(%.35e)\n***********************************************************\n\n",
+       chk_str, par_expected, par_expected, par_res, par_res, par_a, par_a, par_b, par_b);
+exit(1);
+}
+}
+)");
+}
+
+void DiscrepancyAnalysisCWriter::WriteMainTestbench()
+{
+   THROW_ASSERT(HLSMgr->CGetCallGraphManager()->GetRootFunctions().size() == 1, "Multiple top functions not supported");
+   const auto top_id = *HLSMgr->CGetCallGraphManager()->GetRootFunctions().begin();
+   const auto top_fb = HLSMgr->CGetFunctionBehavior(top_id);
+   const auto top_bh = top_fb->CGetBehavioralHelper();
+   const auto top_fnode = TM->CGetTreeReindex(top_id);
+   const auto top_fname = top_bh->get_function_name();
+   const auto return_type = tree_helper::GetFunctionReturnType(top_fnode);
+
+   const auto& test_vectors = HLSMgr->RSim->test_vectors;
+
+   indented_output_stream->Append("int main()\n{\n");
+   // write additional initialization code needed by subclasses
+   WriteExtraInitCode();
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Written extra init code");
+
+   // parameters declaration
+   WriteParamDecl(top_bh);
+
+   // ---- WRITE VARIABLES DECLARATIONS ----
+   // declaration of the return variable of the top function, if not void
+   if(return_type)
+   {
+      const auto ret_type = tree_helper::PrintType(TM, return_type);
+      if(tree_helper::IsVectorType(return_type))
+      {
+         THROW_ERROR("return type of function under test " + top_fname + " is " + STR(ret_type) +
+                     "\nco-simulation does not support vectorized return types at top level");
+      }
+      indented_output_stream->Append("// return variable initialization\n");
+      indented_output_stream->Append(ret_type + " " RETURN_PORT_NAME ";\n");
+   }
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Written parameters declaration");
+   // ---- WRITE PARAMETERS INITIALIZATION AND FUNCTION CALLS ----
+   for(unsigned int v_idx = 0; v_idx < test_vectors.size(); v_idx++)
+   {
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Writing initialization for test vector " + STR(v_idx));
+      indented_output_stream->Append("{\n");
+      const auto& curr_test_vector = test_vectors.at(v_idx);
+      // write parameter initialization
+      indented_output_stream->Append("// parameter initialization\n");
+      WriteParamInitialization(top_bh, curr_test_vector);
+      WriteExtraCodeBeforeEveryMainCall();
+      // write the call to the top function to be tested
+      indented_output_stream->Append("// function call\n");
+      WriteTestbenchFunctionCall(top_bh);
+
+      indented_output_stream->Append("}\n");
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Written initialization for test vector " + STR(v_idx));
+   }
+   // print exit statements
+   indented_output_stream->Append("__standard_exit = 1;\n");
+   indented_output_stream->Append("exit(0);\n");
+   indented_output_stream->Append("}\n");
+}
 
 void DiscrepancyAnalysisCWriter::writePreInstructionInfo(const FunctionBehaviorConstRef FB, const vertex statement)
 {
@@ -155,7 +336,7 @@ void DiscrepancyAnalysisCWriter::writePreInstructionInfo(const FunctionBehaviorC
    }
    else if(kind == gimple_call_K)
    {
-      THROW_ASSERT(not node_info->called.empty(),
+      THROW_ASSERT(!node_info->called.empty(),
                    "tree node " + STR(st_tn_id) + " is a gimple_call but does not actually call a function");
       THROW_ASSERT(node_info->called.size() == 1, "tree node " + STR(st_tn_id) + " calls more than a function");
       const auto called_id = *node_info->called.begin();
@@ -172,8 +353,8 @@ void DiscrepancyAnalysisCWriter::writePreInstructionInfo(const FunctionBehaviorC
          indented_output_stream->Append("fprintf(__bambu_discrepancy_fp, \"CALL_ID " + STR(st_tn_id) + "\\n\");\n");
          return;
       }
-      const BehavioralHelperConstRef BH = AppM->CGetFunctionBehavior(called_id)->CGetBehavioralHelper();
-      if(BH->has_implementation() and BH->function_has_to_be_printed(called_id))
+      const BehavioralHelperConstRef BH = HLSMgr->CGetFunctionBehavior(called_id)->CGetBehavioralHelper();
+      if(BH->has_implementation() && BH->function_has_to_be_printed(called_id))
       {
          indented_output_stream->Append("fprintf(__bambu_discrepancy_fp, \"CALL_ID " + STR(st_tn_id) + "\\n\");\n");
       }
@@ -184,13 +365,13 @@ void DiscrepancyAnalysisCWriter::writePreInstructionInfo(const FunctionBehaviorC
       tree_nodeRef rhs = GET_NODE(g_as_node->op1);
       if(rhs->get_kind() == call_expr_K || rhs->get_kind() == aggr_init_expr_K)
       {
-         THROW_ASSERT(not node_info->called.empty(), "rhs of gimple_assign node " + STR(st_tn_id) +
-                                                         " is a call_expr but does not actually call a function");
+         THROW_ASSERT(!node_info->called.empty(), "rhs of gimple_assign node " + STR(st_tn_id) +
+                                                      " is a call_expr but does not actually call a function");
          THROW_ASSERT(node_info->called.size() == 1,
                       "rhs of gimple_assign node " + STR(st_tn_id) + " is a call_expr but calls more than a function");
          const auto called_id = *node_info->called.begin();
-         const BehavioralHelperConstRef BH = AppM->CGetFunctionBehavior(called_id)->CGetBehavioralHelper();
-         if(BH->has_implementation() and BH->function_has_to_be_printed(called_id))
+         const BehavioralHelperConstRef BH = HLSMgr->CGetFunctionBehavior(called_id)->CGetBehavioralHelper();
+         if(BH->has_implementation() && BH->function_has_to_be_printed(called_id))
          {
             indented_output_stream->Append("fprintf(__bambu_discrepancy_fp, \"CALL_ID " + STR(st_tn_id) + "\\n\");\n");
          }
@@ -202,7 +383,7 @@ void DiscrepancyAnalysisCWriter::writePreInstructionInfo(const FunctionBehaviorC
 void DiscrepancyAnalysisCWriter::writePostInstructionInfo(const FunctionBehaviorConstRef fun_behavior,
                                                           const vertex statement)
 {
-   if(Param->isOption(OPT_discrepancy_hw) and Param->getOption<bool>(OPT_discrepancy_hw))
+   if(Param->isOption(OPT_discrepancy_hw) && Param->getOption<bool>(OPT_discrepancy_hw))
    {
       /*
        * if we're using hw discrepancy don't print anything after the
@@ -217,7 +398,7 @@ void DiscrepancyAnalysisCWriter::writePostInstructionInfo(const FunctionBehavior
       return;
    }
    const tree_nodeConstRef curr_tn = TM->CGetTreeNode(st_tn_id);
-   if(curr_tn->get_kind() != gimple_assign_K and curr_tn->get_kind() != gimple_phi_K)
+   if(curr_tn->get_kind() != gimple_assign_K && curr_tn->get_kind() != gimple_phi_K)
    {
       return;
    }
@@ -227,13 +408,13 @@ void DiscrepancyAnalysisCWriter::writePostInstructionInfo(const FunctionBehavior
    {
       const auto discrepancy_functions = Param->getOption<const CustomSet<std::string>>(OPT_discrepancy_only);
       std::string fu_name = BH->get_function_name();
-      if(not discrepancy_functions.empty() and discrepancy_functions.find(fu_name) == discrepancy_functions.end())
+      if(!discrepancy_functions.empty() && discrepancy_functions.find(fu_name) == discrepancy_functions.end())
       {
          return;
       }
    }
    const auto funId = BH->get_function_index();
-   const hlsConstRef hls = hls_c_backend_information->HLSMgr->get_HLS(funId);
+   const hlsConstRef hls = HLSMgr->get_HLS(funId);
 
    technology_nodeRef fu_tech_n = hls->allocation_information->get_fu(hls->Rfu->get_assign(statement));
    technology_nodeRef op_tech_n = GetPointer<functional_unit>(fu_tech_n)->get_operation(
@@ -494,13 +675,13 @@ void DiscrepancyAnalysisCWriter::writePostInstructionInfo(const FunctionBehavior
          {
             indented_output_stream->Append("//" + oper->get_name() + "\n");
             const auto node_info = instrGraph->CGetOpNodeInfo(statement);
-            THROW_ASSERT(not node_info->called.empty(), "rhs of gimple_assign node " + STR(st_tn_id) +
-                                                            " is a call_expr but does not actually call a function");
+            THROW_ASSERT(!node_info->called.empty(), "rhs of gimple_assign node " + STR(st_tn_id) +
+                                                         " is a call_expr but does not actually call a function");
             THROW_ASSERT(node_info->called.size() == 1, "rhs of gimple_assign node " + STR(st_tn_id) +
                                                             " is a call_expr but calls more than a function");
             const auto called_id = *node_info->called.begin();
-            const auto BHC = AppM->CGetFunctionBehavior(called_id)->CGetBehavioralHelper();
-            if(BHC->has_implementation() and BHC->function_has_to_be_printed(called_id))
+            const auto BHC = HLSMgr->CGetFunctionBehavior(called_id)->CGetBehavioralHelper();
+            if(BHC->has_implementation() && BHC->function_has_to_be_printed(called_id))
             {
                const auto ce = GetPointerS<const call_expr>(rhs);
                const auto& actual_args = ce->args;
@@ -652,32 +833,29 @@ void DiscrepancyAnalysisCWriter::writePostInstructionInfo(const FunctionBehavior
 void DiscrepancyAnalysisCWriter::WriteGlobalDeclarations()
 {
    CWriter::WriteGlobalDeclarations();
-   WriteTestbenchGlobalVars();
    WriteTestbenchHelperFunctions();
-   const bool is_hw_discrepancy = Param->isOption(OPT_discrepancy_hw) and Param->getOption<bool>(OPT_discrepancy_hw);
+   const bool is_hw_discrepancy = Param->isOption(OPT_discrepancy_hw) && Param->getOption<bool>(OPT_discrepancy_hw);
 
-   indented_output_stream->Append("// Global declarations for printing of discrepancy data\n");
-   /* global variable for fprintf to print discrepancy data */
-   indented_output_stream->Append("FILE * __bambu_discrepancy_fp;\n\n");
+   indented_output_stream->Append("unsigned int __standard_exit;\n");
+   indented_output_stream->Append("FILE* __bambu_discrepancy_fp;\n");
    indented_output_stream->Append("long long unsigned int __bambu_discrepancy_context = 0;\n");
 
-   if(not is_hw_discrepancy)
+   if(!is_hw_discrepancy)
    {
-      indented_output_stream->Append("long long unsigned int __bambu_discrepancy_tot_assigned_ssa = 0;\n");
-
-      indented_output_stream->Append("long long unsigned int __bambu_discrepancy_tot_lost_ssa = 0;\n");
-      indented_output_stream->Append("long long unsigned int __bambu_discrepancy_tot_check_ssa = 0;\n");
-
-      indented_output_stream->Append("long long unsigned int __bambu_discrepancy_tot_lost_addr_ssa = 0;\n");
-      indented_output_stream->Append("long long unsigned int __bambu_discrepancy_temp_lost_addr_ssa = 0;\n");
-      indented_output_stream->Append("long long unsigned int __bambu_discrepancy_opt_lost_addr_ssa = 0;\n");
-      indented_output_stream->Append("long long unsigned int __bambu_discrepancy_tot_lost_int_ssa = 0;\n");
-      indented_output_stream->Append("long long unsigned int __bambu_discrepancy_temp_lost_int_ssa = 0;\n");
-
-      indented_output_stream->Append("long long unsigned int __bambu_discrepancy_tot_check_addr_ssa = 0;\n");
-      indented_output_stream->Append("long long unsigned int __bambu_discrepancy_temp_check_addr_ssa = 0;\n");
-      indented_output_stream->Append("long long unsigned int __bambu_discrepancy_tot_check_int_ssa = 0;\n");
-      indented_output_stream->Append("long long unsigned int __bambu_discrepancy_temp_check_int_ssa = 0;\n");
+      indented_output_stream->Append(R"(
+long long unsigned int __bambu_discrepancy_tot_assigned_ssa = 0;
+long long unsigned int __bambu_discrepancy_tot_lost_ssa = 0;
+long long unsigned int __bambu_discrepancy_tot_check_ssa = 0;
+long long unsigned int __bambu_discrepancy_tot_lost_addr_ssa = 0;
+long long unsigned int __bambu_discrepancy_temp_lost_addr_ssa = 0;
+long long unsigned int __bambu_discrepancy_opt_lost_addr_ssa = 0;
+long long unsigned int __bambu_discrepancy_tot_lost_int_ssa = 0;
+long long unsigned int __bambu_discrepancy_temp_lost_int_ssa = 0;
+long long unsigned int __bambu_discrepancy_tot_check_addr_ssa = 0;
+long long unsigned int __bambu_discrepancy_temp_check_addr_ssa = 0;
+long long unsigned int __bambu_discrepancy_tot_check_int_ssa = 0;
+long long unsigned int __bambu_discrepancy_temp_check_int_ssa = 0;
+)");
    }
 
    /*
@@ -691,13 +869,14 @@ void DiscrepancyAnalysisCWriter::WriteGlobalDeclarations()
    indented_output_stream->Append("fprintf(__bambu_discrepancy_fp, \"CONTEXT_END\\n\");\n");
    indented_output_stream->Append("}\n");
    indented_output_stream->Append("fflush(__bambu_discrepancy_fp);\n");
+   indented_output_stream->Append("fclose(__bambu_discrepancy_fp);\n");
 
    /*
     * if we're using hw discrepancy don't print anything related to ssa
     * variables or to results of operations, because only control flow is
     * checked
     */
-   if(not is_hw_discrepancy)
+   if(!is_hw_discrepancy)
    {
       indented_output_stream->Append("fputs(\"DISCREPANCY REPORT\\n\", stdout);\n");
       if(Param->isOption(OPT_cat_args))
@@ -735,18 +914,19 @@ void DiscrepancyAnalysisCWriter::WriteGlobalDeclarations()
 
 void DiscrepancyAnalysisCWriter::WriteExtraInitCode()
 {
-   const auto top_function_ids = AppM->CGetCallGraphManager()->GetRootFunctions();
+   const auto top_function_ids = HLSMgr->CGetCallGraphManager()->GetRootFunctions();
    THROW_ASSERT(top_function_ids.size() == 1, "Multiple top function");
    const auto top_fun_id = *(top_function_ids.begin());
-   const auto fun_behavior = AppM->CGetFunctionBehavior(top_fun_id);
+   const auto fun_behavior = HLSMgr->CGetFunctionBehavior(top_fun_id);
    const auto behavioral_helper = fun_behavior->CGetBehavioralHelper();
-   const auto discrepancy_data_filename = Param->getOption<std::string>(OPT_output_directory) + "/simulation/" +
-                                          behavioral_helper->get_function_name() + "_discrepancy.data";
-   Discrepancy->c_trace_filename = discrepancy_data_filename;
+   Discrepancy->c_trace_filename = boost::filesystem::path(c_backend_info->out_filename).parent_path().string() +
+                                   behavioral_helper->get_function_name() + "_discrepancy.data";
 
-   indented_output_stream->Append("__bambu_discrepancy_fp = fopen(\"" + discrepancy_data_filename + "\", \"w\");\n");
+   indented_output_stream->Append("__standard_exit = 0;\n");
+   indented_output_stream->Append("__bambu_discrepancy_fp = fopen(\"" + Discrepancy->c_trace_filename +
+                                  "\", \"w\");\n");
    indented_output_stream->Append("if (!__bambu_discrepancy_fp) {\n");
-   indented_output_stream->Append("perror(\"can't open file: " + discrepancy_data_filename + "\");\n");
+   indented_output_stream->Append("perror(\"can't open file: " + Discrepancy->c_trace_filename + "\");\n");
    indented_output_stream->Append("exit(1);\n");
    indented_output_stream->Append("}\n\n");
 
@@ -760,10 +940,9 @@ void DiscrepancyAnalysisCWriter::WriteExtraInitCode()
        */
       return;
    }
-   for(const auto& var_node : hls_c_backend_information->HLSMgr->GetGlobalVariables())
+   for(const auto& var_node : HLSMgr->GetGlobalVariables())
    {
-      if(hls_c_backend_information->HLSMgr->Rmem->has_base_address(var_node->index) &&
-         !tree_helper::IsSystemType(var_node))
+      if(HLSMgr->Rmem->has_base_address(var_node->index) && !tree_helper::IsSystemType(var_node))
       {
          const auto bitsize = tree_helper::Size(var_node);
          THROW_ASSERT(bitsize % 8 == 0 || bitsize == 1,
@@ -774,7 +953,6 @@ void DiscrepancyAnalysisCWriter::WriteExtraInitCode()
                                         STR(compute_n_bytes(bitsize)) + "\n");
       }
    }
-   return;
 }
 
 void DiscrepancyAnalysisCWriter::WriteExtraCodeBeforeEveryMainCall()
@@ -794,7 +972,7 @@ void DiscrepancyAnalysisCWriter::DeclareLocalVariables(const CustomSet<unsigned 
        "fprintf(__bambu_discrepancy_fp, \"CONTEXT LL_%llu\\n\", __bambu_discrepancy_context);\n");
    indented_output_stream->Append("fprintf(__bambu_discrepancy_fp, \"CALLED_ID " + STR(BH->get_function_index()) +
                                   "\\n\");\n");
-   if(Param->isOption(OPT_discrepancy_hw) and Param->getOption<bool>(OPT_discrepancy_hw))
+   if(Param->isOption(OPT_discrepancy_hw) && Param->getOption<bool>(OPT_discrepancy_hw))
    {
       /*
        * if we're using hw discrepancy don't print anything related memory,
@@ -802,7 +980,7 @@ void DiscrepancyAnalysisCWriter::DeclareLocalVariables(const CustomSet<unsigned 
        */
       return;
    }
-   const auto FB = hls_c_backend_information->HLSMgr->CGetFunctionBehavior(BH->get_function_index());
+   const auto FB = HLSMgr->CGetFunctionBehavior(BH->get_function_index());
    for(const auto& par : BH->GetParameters())
    {
       if(FB->is_variable_mem(GET_INDEX_CONST_NODE(par)))
@@ -832,13 +1010,13 @@ void DiscrepancyAnalysisCWriter::DeclareLocalVariables(const CustomSet<unsigned 
 
 void DiscrepancyAnalysisCWriter::WriteFunctionImplementation(unsigned int function_index)
 {
-   const FunctionBehaviorConstRef FB = AppM->CGetFunctionBehavior(function_index);
+   const FunctionBehaviorConstRef FB = HLSMgr->CGetFunctionBehavior(function_index);
    const BehavioralHelperConstRef behavioral_helper = FB->CGetBehavioralHelper();
    const std::string& funName = behavioral_helper->get_function_name();
    tree_nodeRef node_fun = TM->GetTreeNode(function_index);
    THROW_ASSERT(GetPointer<function_decl>(node_fun), "expected a function decl");
-   bool prepend_static = not tree_helper::is_static(TM, function_index) and
-                         not tree_helper::is_extern(TM, function_index) and (funName != "main");
+   bool prepend_static = !tree_helper::is_static(TM, function_index) && !tree_helper::is_extern(TM, function_index) &&
+                         (funName != "main");
    if(prepend_static)
    {
       GetPointer<function_decl>(node_fun)->static_flag = true;
@@ -858,13 +1036,13 @@ void DiscrepancyAnalysisCWriter::WriteBBHeader(const unsigned int bb_number, con
 
 void DiscrepancyAnalysisCWriter::WriteFunctionDeclaration(const unsigned int funId)
 {
-   const FunctionBehaviorConstRef FB = AppM->CGetFunctionBehavior(funId);
+   const FunctionBehaviorConstRef FB = HLSMgr->CGetFunctionBehavior(funId);
    const BehavioralHelperConstRef behavioral_helper = FB->CGetBehavioralHelper();
    const std::string& funName = behavioral_helper->get_function_name();
    tree_nodeRef node_fun = TM->GetTreeNode(funId);
    THROW_ASSERT(GetPointer<function_decl>(node_fun), "expected a function decl");
    bool prepend_static =
-       not tree_helper::is_static(TM, funId) and not tree_helper::is_extern(TM, funId) and (funName != "main");
+       !tree_helper::is_static(TM, funId) && !tree_helper::is_extern(TM, funId) && (funName != "main");
    if(prepend_static)
    {
       GetPointer<function_decl>(node_fun)->static_flag = true;

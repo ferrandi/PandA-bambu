@@ -57,12 +57,36 @@
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
 
+enum in_port
+{
+   i_clock = 0,
+   i_reset,
+   i_start,
+   i_in1,
+   i_in2,
+   i_in3,
+   i_in4,
+   i_q,
+   i_last
+};
+
+enum out_port
+{
+   o_out1 = 0,
+   o_address,
+   o_ce,
+   o_we,
+   o_d,
+   o_last
+};
+
 ReadWrite_arrayModuleGenerator::ReadWrite_arrayModuleGenerator(const HLS_managerRef& _HLSMgr) : Registrar(_HLSMgr)
 {
 }
 
-void ReadWrite_arrayModuleGenerator::InternalExec(std::ostream& out, const module* /* mod */, unsigned int function_id,
-                                                  vertex op_v, const HDLWriter_Language /* language */,
+void ReadWrite_arrayModuleGenerator::InternalExec(std::ostream& out, structural_objectRef /* mod */,
+                                                  unsigned int function_id, vertex op_v,
+                                                  const HDLWriter_Language /* language */,
                                                   const std::vector<ModuleGenerator::parameter>& /* _p */,
                                                   const std::vector<ModuleGenerator::parameter>& _ports_in,
                                                   const std::vector<ModuleGenerator::parameter>& _ports_out,
@@ -79,177 +103,48 @@ void ReadWrite_arrayModuleGenerator::InternalExec(std::ostream& out, const modul
    }();
    THROW_ASSERT(fname.find(STR_CST_interface_parameter_keyword) != std::string::npos,
                 "Unexpected array interface module name");
-   const auto parameter_name = fname.substr(0, fname.find(STR_CST_interface_parameter_keyword));
-   auto foundParam = false;
-   auto arraySize = 1U;
-   const auto TM = HLSMgr->get_tree_manager();
-   const auto top_functions = HLSMgr->CGetCallGraphManager()->GetRootFunctions();
+   const auto arg_name = fname.substr(0, fname.find(STR_CST_interface_parameter_keyword));
+   const auto top_id = *HLSMgr->CGetCallGraphManager()->GetRootFunctions().begin();
+   const auto top_fname = HLSMgr->CGetFunctionBehavior(top_id)->CGetBehavioralHelper()->GetMangledFunctionName();
+   THROW_ASSERT(HLSMgr->design_attributes.count(top_fname) && HLSMgr->design_attributes.at(top_fname).count(arg_name),
+                "Parameter " + arg_name + " not found in function " + top_fname);
+   const auto DesignAttributes = HLSMgr->design_attributes.at(top_fname).at(arg_name);
+   THROW_ASSERT(DesignAttributes.count(attr_interface_factor), "");
+   THROW_ASSERT(DesignAttributes.count(attr_size), "");
+   const auto factor = boost::lexical_cast<unsigned>(DesignAttributes.at(attr_interface_factor));
+   const auto arraySize = boost::lexical_cast<unsigned>(DesignAttributes.at(attr_size));
 
-   for(const auto& f_props : HLSMgr->design_attributes)
-   {
-      const auto& name = f_props.first;
-      const auto& props = f_props.second;
-      const auto id = TM->function_index_mngl(name);
-      if(top_functions.count(id) && props.find(parameter_name) != props.end() &&
-         props.at(parameter_name).find(attr_size) != props.at(parameter_name).end() && !foundParam)
-      {
-         arraySize = boost::lexical_cast<decltype(arraySize)>(props.at(parameter_name).at(attr_size));
-         foundParam = true;
-      }
-      else if(foundParam)
-      {
-         THROW_ERROR("At least two top functions have the same array parameter");
-      }
-   }
-
-   const auto isAlignedPowerOfTwo = _ports_out[1].alignment == round_to_power2(_ports_out[1].alignment);
-   out << "//" << (isAlignedPowerOfTwo ? "T" : "F") << "\n";
-   out << "integer ii=0;\n";
-   out << "reg [" << _ports_out[1].type_size << "-1:0] " << _ports_out[1].name << ";\n";
-   if(_ports_out.size() == 5U)
-   {
-      out << "reg [" << _ports_out[4].type_size << "-1:0] " << _ports_out[4].name << ";\n";
-   }
-   if(_ports_in.size() == 8U)
-   {
-      out << "reg [(PORTSIZE_" << _ports_out[0].name << "*BITSIZE_" << _ports_out[0].name << ")+(-1):0] "
-          << _ports_out[0].name << ";\n";
-   }
-
-   const auto log2nbyte = _ports_out[1].alignment == 1ULL ?
-                              0U :
-                              (64u - static_cast<unsigned>(__builtin_clzll(_ports_out[1].alignment - 1U)));
-
-   const auto addressMaxValue = _ports_out[1].alignment * arraySize - 1U;
+   const auto isAlignedPowerOfTwo = _ports_in[i_in4].alignment == ceil_pow2(_ports_in[i_in4].alignment);
+   const auto addressMaxValue = factor * _ports_in[i_in4].alignment * arraySize - 1U;
    const auto nbitAddress =
-       addressMaxValue == 1U ? 1U : (64u - static_cast<unsigned>(__builtin_clzll(addressMaxValue)));
+       addressMaxValue <= 1U ? 1U : (64u - static_cast<unsigned>(__builtin_clzll(addressMaxValue)));
 
-   if(log2nbyte > 0U)
-   {
-      out << "reg [(PORTSIZE_" << _ports_in[3].name << "*" << log2nbyte << ")+(-1):0] " << _ports_in[6].name << "_0;\n";
-      out << "always @(*)\n";
-      out << "begin\n";
-      out << "  for(ii=0; ii<PORTSIZE_" << _ports_in[3].name << "; ii=ii+1)\n";
-      if(isAlignedPowerOfTwo)
-      {
-         out << "    " << _ports_in[6].name << "_0[" << log2nbyte << "*ii+:" << log2nbyte << "] = " << _ports_in[6].name
-             << "[(BITSIZE_" << _ports_in[6].name << ")*ii+:" << log2nbyte << "];\n";
-      }
-      else
-      {
-         out << "    " << _ports_in[6].name << "_0[" << log2nbyte << "*ii+:" << log2nbyte << "] = " << _ports_in[6].name
-             << "[2+(BITSIZE_" << _ports_in[6].name << ")*ii+:" << nbitAddress - 2U << "] % " << log2nbyte - 2U << "'d"
-             << _ports_out[1].alignment / 4U << ";\n";
-      }
-      out << "end\n";
-   }
-   if(log2nbyte > 0U && _ports_in.size() == 8U)
-   {
-      out << "reg [(PORTSIZE_" << _ports_in[3].name << "*" << log2nbyte << ")+(-1):0] " << _ports_in[6].name
-          << "_reg;\n";
-      out << "always @(posedge clock 1RESET_EDGE)\n";
-      out << "  if (1RESET_VALUE)\n";
-      out << "    " << _ports_in[6].name << "_reg <= 0;\n";
-      out << "  else\n";
-      out << "    for(ii=0; ii<PORTSIZE_" << _ports_in[3].name << "; ii=ii+1)\n";
-      out << "      " << _ports_in[6].name << "_reg[" << log2nbyte << "*ii+:" << log2nbyte
-          << "] <= " << _ports_in[6].name << "_0[" << log2nbyte << "*ii+:" << log2nbyte << "];\n";
-   }
-   out << "always @(*)\n";
-   out << "begin\n";
-   out << "  " << _ports_out[1].name << " = {" << _ports_out[1].type_size << "{1'b1}};\n";
-   out << "  for(ii=0; ii<PORTSIZE_" << _ports_in[3].name << "; ii=ii+1)\n";
-   out << "  begin\n";
-   out << "    if(" << _ports_in[2].name << "[ii])\n";
-   out << "    begin\n";
+   out << "//" << (isAlignedPowerOfTwo ? "T" : "F") << "\n";
+   out << "assign " << _ports_out[o_ce].name << " = " << _ports_in[i_start].name << "[0];\n";
+
    if(isAlignedPowerOfTwo)
    {
-      out << "      " << _ports_out[1].name << " = " << _ports_out[1].name << " & (" << _ports_in[6].name
-          << "[(BITSIZE_" << _ports_in[6].name << ")*ii+:" << nbitAddress << "] / " << _ports_out[1].alignment
-          << ");\n";
+      out << "assign " << _ports_out[o_address].name << " = " << _ports_in[i_in4].name << "[BITSIZE_"
+          << _ports_in[i_in4].name << "*0+:" << nbitAddress << "] / " << _ports_in[i_in4].alignment << ";\n";
    }
    else
    {
-      out << "      " << _ports_out[1].name << " = " << _ports_out[1].name << " & (" << _ports_in[6].name
-          << "[2+(BITSIZE_" << _ports_in[6].name << ")*ii+:" << nbitAddress - 2U << "] / "
-          << _ports_out[1].alignment / 4 << ");\n";
-   }
-   out << "    end\n";
-   out << "  end\n";
-   out << "end\n";
-
-   out << "assign " << _ports_out[2].name << " = |" << _ports_in[2].name << ";\n";
-
-   if(_ports_in.size() == 8)
-   {
-      out << "always @(*)\n";
-      out << "begin\n";
-      out << "  for(ii=0; ii<PORTSIZE_" << _ports_out[0].name << "; ii=ii+1)\n";
-      if(log2nbyte > 0)
-      {
-         out << "    " << _ports_out[0].name << "[(BITSIZE_" << _ports_out[0].name << ")*ii+:BITSIZE_"
-             << _ports_out[0].name << "] = " << _ports_in[7].name << " >> {" << _ports_in[6].name << "_reg["
-             << log2nbyte << "*ii+:" << log2nbyte << "],3'b0};\n";
-      }
-      else
-      {
-         out << "    " << _ports_out[0].name << "[(BITSIZE_" << _ports_out[0].name << ")*ii+:BITSIZE_"
-             << _ports_out[0].name << "] = " << _ports_in[7].name << ";\n";
-      }
-      out << "end\n";
+      out << "assign " << _ports_out[o_address].name << " = " << _ports_in[i_in4].name << "[2+BITSIZE_"
+          << _ports_in[i_in4].name << "*0+:" << nbitAddress - 2U << "] / " << _ports_in[i_in4].alignment / 4 << ";\n";
    }
 
-   if(_ports_out.size() == 5U)
+   if(_ports_in.size() > i_q)
    {
-      out << "assign " << _ports_out[3].name << " = (|" << _ports_in[2].name << ") & (|" << _ports_in[3].name << ");\n";
-      out << "always @(*)\n";
-      out << "begin\n";
-      out << "  " << _ports_out[4].name << " = 0;\n";
-      out << "  for(ii=0; ii<PORTSIZE_" << _ports_in[3].name << "; ii=ii+1)\n";
-      out << "  begin\n";
-      out << "    if(ii==0 || " << _ports_in[2].name << "[ii])\n";
-      if(log2nbyte > 0U)
-      {
-         out << "      " << _ports_out[4].name << " = (" << _ports_in[4].name << "[(BITSIZE_" << _ports_in[4].name
-             << ")*ii+:BITSIZE_" << _ports_in[4].name << "]>=" << _ports_out[4].type_size << ")?" << _ports_in[5].name
-             << "[(BITSIZE_" << _ports_in[5].name << ")*ii+:BITSIZE_" << _ports_in[5].name << "]:("
-             << _ports_out[4].name << "^((((BITSIZE_" << _ports_in[5].name << ">" << _ports_out[4].type_size << "?"
-             << _ports_in[5].name << "[(BITSIZE_" << _ports_in[5].name << ")*ii+:BITSIZE_" << _ports_in[5].name
-             << "]:{{(" << _ports_out[4].type_size << "< BITSIZE_" << _ports_in[5].name
-             << " ? 1 : " << _ports_out[4].type_size << "-BITSIZE_" << _ports_in[5].name << "){1'b0}},"
-             << _ports_in[5].name << "[(BITSIZE_" << _ports_in[5].name << ")*ii+:BITSIZE_" << _ports_in[5].name
-             << "]})<<{" << _ports_in[6].name << "_0[" << log2nbyte << "*ii+:" << log2nbyte << "],3'b0})^"
-             << _ports_out[4].name << ") & (((" << _ports_in[4].name << "[(BITSIZE_" << _ports_in[4].name
-             << ")*ii+:BITSIZE_" << _ports_in[4].name << "]+{" << _ports_in[6].name << "_0[" << log2nbyte
-             << "*ii+:" << log2nbyte << "],3'b0})>" << _ports_out[4].type_size << ") ? ((({(" << _ports_out[4].type_size
-             << "){1'b1}})>>({" << _ports_in[6].name << "_0[" << log2nbyte << "*ii+:" << log2nbyte << "],3'b0}))<<({"
-             << _ports_in[6].name << "_0[" << log2nbyte << "*ii+:" << log2nbyte << "],3'b0})) : ((((({("
-             << _ports_out[4].type_size << "){1'b1}})>>({" << _ports_in[6].name << "_0[" << log2nbyte
-             << "*ii+:" << log2nbyte << "],3'b0}))<<({" << _ports_in[6].name << "_0[" << log2nbyte
-             << "*ii+:" << log2nbyte << "],3'b0}))<<(" << _ports_out[4].type_size << "-" << _ports_in[4].name
-             << "[(BITSIZE_" << _ports_in[4].name << ")*ii+:BITSIZE_" << _ports_in[4].name << "]-{" << _ports_in[6].name
-             << "_0[" << log2nbyte << "*ii+:" << log2nbyte << "],3'b0}))>>(" << _ports_out[4].type_size << "-"
-             << _ports_in[4].name << "[(BITSIZE_" << _ports_in[4].name << ")*ii+:BITSIZE_" << _ports_in[4].name << "]-{"
-             << _ports_in[6].name << "_0[" << log2nbyte << "*ii+:" << log2nbyte << "],3'b0})))));\n";
-      }
-      else
-      {
-         out << "      " << _ports_out[4].name << " = (" << _ports_in[4].name << "[(BITSIZE_" << _ports_in[4].name
-             << ")*ii+:BITSIZE_" << _ports_in[4].name << "]>=" << _ports_out[4].type_size << ")?" << _ports_in[5].name
-             << "[(BITSIZE_" << _ports_in[5].name << ")*ii+:BITSIZE_" << _ports_in[5].name << "]:("
-             << _ports_out[4].name << "^((((BITSIZE_" << _ports_in[5].name << ">" << _ports_out[4].type_size << "?"
-             << _ports_in[5].name << "[(BITSIZE_" << _ports_in[5].name << ")*ii+:BITSIZE_" << _ports_in[5].name
-             << "]:{{(" << _ports_out[4].type_size << "< BITSIZE_" << _ports_in[5].name
-             << " ? 1 : " << _ports_out[4].type_size << "-BITSIZE_" << _ports_in[5].name << "){1'b0}},"
-             << _ports_in[5].name << "[(BITSIZE_" << _ports_in[5].name << ")*ii+:BITSIZE_" << _ports_in[5].name
-             << "]}))^" << _ports_out[4].name << ") & (((" << _ports_in[4].name << "[(BITSIZE_" << _ports_in[4].name
-             << ")*ii+:BITSIZE_" << _ports_in[4].name << "])>" << _ports_out[4].type_size << ") ? ((({("
-             << _ports_out[4].type_size << "){1'b1}}))) : ((((({(" << _ports_out[4].type_size << "){1'b1}})))<<("
-             << _ports_out[4].type_size << "-" << _ports_in[4].name << "[(BITSIZE_" << _ports_in[4].name
-             << ")*ii+:BITSIZE_" << _ports_in[4].name << "]))>>(" << _ports_out[4].type_size << "-" << _ports_in[4].name
-             << "[(BITSIZE_" << _ports_in[4].name << ")*ii+:BITSIZE_" << _ports_in[4].name << "])))));\n";
-      }
-      out << "  end\n";
-      out << "end\n";
+      out << "assign " << _ports_out[o_out1].name << "[BITSIZE_" << _ports_out[o_out1].name << "*0+:BITSIZE_"
+          << _ports_out[o_out1].name << "] = " << _ports_in[i_q].name << ";\n";
+   }
+
+   if(_ports_out.size() > o_d)
+   {
+      out << "assign " << _ports_out[o_we].name << " = " << _ports_in[i_start].name << "[0] & (|"
+          << _ports_in[i_in1].name << "[BITSIZE_" << _ports_in[i_in1].name << "*0+:BITSIZE_" << _ports_in[i_in1].name
+          << "]);\n";
+      out << "assign " << _ports_out[o_d].name << " = " << _ports_in[i_in3].name << "[BITSIZE_" << _ports_in[i_in3].name
+          << "*0+:BITSIZE_" << _ports_in[i_in3].name << "];\n";
    }
 }

@@ -3318,6 +3318,14 @@ namespace llvm
          if(st->hasName())
          {
             std::string declname = st->getName().data();
+            if(declname.find("struct.") == 0)
+            {
+               declname = declname.substr(sizeof("struct.") - 1U);
+            }
+            else if(declname.find("class.") == 0)
+            {
+               declname = declname.substr(sizeof("class.") - 1U);
+            }
             if(identifierTable.find(declname) == identifierTable.end())
                identifierTable.insert(declname);
             const void* dn = identifierTable.find(declname)->c_str();

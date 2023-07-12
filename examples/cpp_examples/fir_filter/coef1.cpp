@@ -116,12 +116,6 @@ firFixed( short int input)
 //////////////////////////////////////////////////////////////
 //  Test program
 //////////////////////////////////////////////////////////////
-#ifndef __builtin_bambu_time_start
-extern "C" void __builtin_bambu_time_start();
-#endif
-#ifndef __builtin_bambu_time_stop
-extern "C" void __builtin_bambu_time_stop();
-#endif
 
 int main( void )
 {
@@ -157,9 +151,7 @@ int main( void )
         if(size)
         {
             assert(size==1);
-            __builtin_bambu_time_start();
             output = firFixed( input );
-            __builtin_bambu_time_stop();
             // write samples to file
             write(out_fid, &output, sizeof(int16_t));
         }

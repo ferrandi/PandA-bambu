@@ -70,12 +70,12 @@ class AddLibrarySpecialization : public HLSFlowStepSpecialization
    /**
     * Return the string representation of this
     */
-   const std::string GetKindText() const override;
+   std::string GetKindText() const override;
 
    /**
     * Return the contribution to the signature of a step given by the specialization
     */
-   const std::string GetSignature() const override;
+   std::string GetSignature() const override;
 };
 
 class add_library : public HLSFunctionStep

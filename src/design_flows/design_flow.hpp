@@ -88,13 +88,13 @@ class DesignFlow : public DesignFlowStep
    /**
     * Return the signature of this step
     */
-   const std::string GetSignature() const override;
+   std::string GetSignature() const override;
 
    /**
     * Return the name of this design step
     * @return the name of the pass (for debug purpose)
     */
-   const std::string GetName() const override;
+   std::string GetName() const override;
 
    /**
     * Return the name of the type
@@ -107,7 +107,7 @@ class DesignFlow : public DesignFlowStep
     * Return the factory to create this type of steps
     * @return the factory to create frontend flow step
     */
-   const DesignFlowStepFactoryConstRef CGetDesignFlowStepFactory() const override;
+   DesignFlowStepFactoryConstRef CGetDesignFlowStepFactory() const override;
 
    /**
     * Given the name of design flow, return the enum

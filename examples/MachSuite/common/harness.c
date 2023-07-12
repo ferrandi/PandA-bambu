@@ -7,9 +7,8 @@
 extern int INPUT_SIZE;
 __attribute((noinline)) void run_benchmark( void *args );
 
-#ifdef BAMBU_PROFILING
-extern void __builtin_bambu_time_start();
-extern void __builtin_bambu_time_stop();
+#ifdef __BAMBU_SIM__
+#include <mdpi/mdpi_user.h>
 #endif
 
 int main(/*int argc, char **argv*/)
@@ -41,14 +40,10 @@ int main(/*int argc, char **argv*/)
 
   //run_benchmark( input );
   // Unpack and call
-#ifdef BAMBU_PROFILING
-  __builtin_bambu_time_start();
-#endif
-  run_benchmark( input );
-#ifdef BAMBU_PROFILING
-  __builtin_bambu_time_stop();
-#endif
-  #if WRITE_OUTPUT
+  m_alloc_param(0, INPUT_SIZE);
+  run_benchmark(input);
+
+#if WRITE_OUTPUT
   //FIXME: Maybe remove this.
   int out_fd, i, written=0;
   char *ptr = input;

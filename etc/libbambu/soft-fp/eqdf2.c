@@ -1,9 +1,7 @@
 /* Software floating-point emulation.
    Return 0 iff a == b, 1 otherwise
-   Copyright (C) 1997-2018 Free Software Foundation, Inc.
+   Copyright (C) 1997-2023 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
-   Contributed by Richard Henderson (rth@cygnus.com) and
-        Jakub Jelinek (jj@ultra.linux.cz).
 
    The GNU C Library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Lesser General Public
@@ -26,7 +24,7 @@
 
    You should have received a copy of the GNU Lesser General Public
    License along with the GNU C Library; if not, see
-   <http://www.gnu.org/licenses/>.  */
+   <https://www.gnu.org/licenses/>.  */
 
 static __FORCE_INLINE CMPtype __eqdf2(DFtype a, DFtype b)
 {
@@ -38,9 +36,7 @@ static __FORCE_INLINE CMPtype __eqdf2(DFtype a, DFtype b)
    FP_INIT_EXCEPTIONS;
    FP_UNPACK_RAW_D(A, a);
    FP_UNPACK_RAW_D(B, b);
-   FP_CMP_EQ_D(r, A, B);
-   if(r && (FP_ISSIGNAN_D(A) || FP_ISSIGNAN_D(B)))
-      FP_SET_EXCEPTION(FP_EX_INVALID);
+   FP_CMP_EQ_D(r, A, B, 1);
    FP_HANDLE_EXCEPTIONS;
 
    return r;

@@ -76,6 +76,10 @@ std::string TrimSpaces(const std::string& value);
 
 std::string string_demangle(const std::string& input);
 
+std::string capitalize(const std::string& str);
+
+std::string& capitalize(std::string& str);
+
 /**
  * Function with print number in desired format
  * @param number is the number to be printed

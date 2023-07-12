@@ -35,6 +35,7 @@
  * @brief Base class to pass information to a c backend
  *
  * @author Marco Lattuada <lattuada@elet.polimi.it>
+ * @author Michele Fiorito <michele.fiorito@polimi.it>
  * $Revision: $
  * $Date: $
  * Last modified by $Author: $
@@ -44,22 +45,53 @@
 #ifndef C_BACKEND_INFORMATION_HPP
 #define C_BACKEND_INFORMATION_HPP
 
-/// Utility include
+#include "config_HAVE_BAMBU_BUILT.hpp"
+#include "config_HAVE_HLS_BUILT.hpp"
+#include "config_HAVE_HOST_PROFILING_BUILT.hpp"
+#include "config_HAVE_ZEBU_BUILT.hpp"
+
+#include "hls_step.hpp"
 #include "refcount.hpp"
 
+#include <string>
+
 /// Base class to pass information to a c backend
-class CBackendInformation
+class CBackendInformation : public HLSFlowStepSpecialization
 {
  public:
-   /**
-    * Constructor
-    */
-   CBackendInformation();
+   using Type = enum {
+#if HAVE_HOST_PROFILING_BUILT
+      CB_BBP, /** Sequential c with instrumentation for basic block profiling */
+#endif
+#if HAVE_HLS_BUILT
+      /**
+       * Sequential C code instrumented to dump information on the state
+       *  machine and the clock cycles when C statements are executed
+       */
+      CB_DISCREPANCY_ANALYSIS,
+#endif
+#if HAVE_BAMBU_BUILT
+      CB_HLS, /** Sequential c code for HLS testing */
+#endif
+#if HAVE_ZEBU_BUILT
+      CB_POINTED_DATA_EVALUATION, /** Sequential instrumented for pointed data evaluation*/
+#endif
+      CB_SEQUENTIAL, /**< Sequential c without instrumentation */
+   };
 
-   /**
-    * Destructor
-    */
+   Type type;
+
+   std::string src_filename;
+
+   std::string out_filename;
+
+   CBackendInformation(Type type, const std::string& src_filename, const std::string& out_filename = "");
+
    virtual ~CBackendInformation();
+
+   std::string GetKindText() const override;
+
+   std::string GetSignature() const override;
 };
 using CBackendInformationConstRef = refcount<const CBackendInformation>;
 using CBackendInformationRef = refcount<CBackendInformation>;

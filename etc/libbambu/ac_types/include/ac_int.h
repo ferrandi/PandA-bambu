@@ -3671,11 +3671,11 @@ using Slong = long long;
          bool fully_normalized = true;
          ac_int<WE, SE> min_exp;
          min_exp.template set_val<AC_VAL_MIN>();
-         int max_shift = exp - min_exp - reserved_min_exp;
+         int max_shift = exp - min_exp - ac_int<WE, false>(reserved_min_exp);
          if(lshift > max_shift)
          {
             lshift = ac_int<WE, false>(max_shift);
-            expt = min_exp + reserved_min_exp;
+            expt = min_exp + ac_int<WE, false>(reserved_min_exp);
             fully_normalized = false;
          }
          else
@@ -3920,56 +3920,56 @@ using Slong = long long;
          return W;
       }
 
-      __FORCE_INLINE explicit operator bool() const
+      __FORCE_INLINE operator bool() const
       {
          return !Base::equal_zero();
       }
 
-      __FORCE_INLINE explicit operator char() const
+      __FORCE_INLINE operator char() const
       {
          return (char)to_int();
       }
 
-      __FORCE_INLINE explicit operator signed char() const
+      __FORCE_INLINE operator signed char() const
       {
          return (signed char)to_int();
       }
 
-      __FORCE_INLINE explicit operator unsigned char() const
+      __FORCE_INLINE operator unsigned char() const
       {
          return (unsigned char)to_uint();
       }
 
-      __FORCE_INLINE explicit operator short() const
+      __FORCE_INLINE operator short() const
       {
          return (short)to_int();
       }
 
-      __FORCE_INLINE explicit operator unsigned short() const
+      __FORCE_INLINE operator unsigned short() const
       {
          return (unsigned short)to_uint();
       }
-      __FORCE_INLINE explicit operator int() const
+      __FORCE_INLINE operator int() const
       {
          return to_int();
       }
-      __FORCE_INLINE explicit operator unsigned() const
+      __FORCE_INLINE operator unsigned() const
       {
          return to_uint();
       }
-      __FORCE_INLINE explicit operator long() const
+      __FORCE_INLINE operator long() const
       {
          return to_long();
       }
-      __FORCE_INLINE explicit operator unsigned long() const
+      __FORCE_INLINE operator unsigned long() const
       {
          return to_ulong();
       }
-      __FORCE_INLINE explicit operator double() const
+      __FORCE_INLINE operator double() const
       {
          return to_double();
       }
-      __FORCE_INLINE explicit operator float() const
+      __FORCE_INLINE operator float() const
       {
          return to_float();
       }

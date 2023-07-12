@@ -221,7 +221,7 @@ tree_nodeRef tree_manager::GetFunction(const std::string& function_name) const
             auto* in = GetPointer<identifier_node>(mangled_id_name);
             if(!in->operator_flag)
             {
-                mangled_name = in->strg;
+               mangled_name = in->strg;
             }
          }
       }

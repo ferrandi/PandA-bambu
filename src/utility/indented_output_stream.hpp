@@ -106,9 +106,15 @@ class IndentedOutputStream
 
    /**
     * Append a string to the output
-    * @param message is the string to be printed
+    * @param str is the string to be printed
     */
    void Append(const std::string& str);
+
+   /**
+    * Append a pre-indented string to the output
+    * @param str is the string to be printed
+    */
+   void AppendIndented(const std::string& str);
 
    /**
     * Manually increase the indenting of the code

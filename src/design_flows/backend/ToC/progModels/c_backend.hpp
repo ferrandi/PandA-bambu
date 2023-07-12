@@ -45,26 +45,12 @@
 #ifndef C_BACKEND_HPP
 #define C_BACKEND_HPP
 
-/// Autoheader include
-#include "config_HAVE_BAMBU_BUILT.hpp"
-#include "config_HAVE_GRAPH_PARTITIONING_BUILT.hpp"
-#include "config_HAVE_HLS_BUILT.hpp"
-#include "config_HAVE_HOST_PROFILING_BUILT.hpp"
-#include "config_HAVE_TARGET_PROFILING.hpp"
-#include "config_HAVE_ZEBU_BUILT.hpp"
-
-/// Superclass include
-#include "design_flow_step.hpp"
-
-/// graph include
-#include "graph.hpp"
-
-/// utility include
 #include "custom_map.hpp"
 #include "custom_set.hpp"
+#include "design_flow_step.hpp"
+#include "graph.hpp"
 #include "refcount.hpp"
 
-/// Std include
 #include <fstream>
 #include <iosfwd>
 #include <list>
@@ -98,9 +84,6 @@ class CBackend : public DesignFlowStep
 
    /// the writer
    const CWriterRef writer;
-
-   /// The name of the file to be created
-   const std::string file_name;
 
    /// the manager of the application
    const application_managerConstRef AppM;
@@ -144,45 +127,8 @@ class CBackend : public DesignFlowStep
     * @param dependencies is where relationships will be stored
     * @param relationship_type is the type of relationship to be computed
     */
-   void ComputeRelationships(DesignFlowStepSet& relationship,
-                             const DesignFlowStep::RelationshipType relationship_type) override;
-
- public:
-   /// The types of backend
-   using Type = enum {
-#if HAVE_HOST_PROFILING_BUILT
-      CB_BBP, /** Sequential c with instrumentation for basic block profiling */
-#endif
-#if HAVE_HLS_BUILT
-      /**
-       * Sequential C code instrumented to dump information on the state
-       *  machine and the clock cycles when C statements are executed
-       */
-      CB_DISCREPANCY_ANALYSIS,
-#endif
-#if HAVE_TARGET_PROFILING
-      CB_ESCAPED_SEQUENTIAL, /** Sequential c with instrumentation to escape from execution at arbitrary point */
-#endif
-#if HAVE_BAMBU_BUILT
-      CB_HLS, /** Sequential c code for HLS testing */
-#endif
-#if HAVE_GRAPH_PARTITIONING_BUILT && HAVE_TARGET_PROFILING
-      CB_INSTRUMENTED_PARALLEL, /** Parallel instrumented c */
-#endif
-#if HAVE_TARGET_PROFILING
-      CB_INSTRUMENTED_SEQUENTIAL, /** Sequential c instrumented for target performance profiling*/
-#endif
-#if HAVE_ZEBU_BUILT
-      CB_POINTED_DATA_EVALUATION, /** Sequential instrumented for pointed data evaluation*/
-#endif
-#if HAVE_GRAPH_PARTITIONING_BUILT
-      CB_PARALLEL, /**< Parallel c without instrumentation */
-#endif
-      CB_SEQUENTIAL, /**< Sequential c without instrumentation */
-   };
-
-   /// The type of this instance
-   const Type c_backend_type;
+   virtual void ComputeRelationships(DesignFlowStepSet& relationship,
+                                     const DesignFlowStep::RelationshipType relationship_type) override;
 
  private:
    // CBackendStepFactory is the only class allowed to construct CBackend
@@ -203,59 +149,34 @@ class CBackend : public DesignFlowStep
     * @param file_name is the file to be created
     * @param Param is the set of input parameters
     */
-   CBackend(const Type type, const CBackendInformationConstRef c_backend_information,
+   CBackend(const CBackendInformationConstRef c_backend_information,
             const DesignFlowManagerConstRef design_flow_manager, const application_managerConstRef AppM,
-            std::string file_name, const ParameterConstRef _parameters);
+            const ParameterConstRef _parameters);
 
  public:
-   /**
-    * Destructor
-    */
-   ~CBackend() override;
+   const CBackendInformationConstRef c_backend_info;
 
-   /**
-    * Initialize the step (i.e., like a constructor, but executed just before exec
-    */
-   void Initialize() override;
+   virtual bool HasToBeExecuted() const override;
 
-   /**
-    * Execute the step
-    * @return the exit status of this step
-    */
-   DesignFlowStep_Status Exec() override;
+   virtual void Initialize() override;
 
-   /**
-    * Check if this step has actually to be executed
-    * @return true if the step has to be executed
-    */
-   bool HasToBeExecuted() const override;
+   virtual DesignFlowStep_Status Exec() override;
 
-   /**
-    * Compute the signature for a c backend step
-    */
-   static const std::string ComputeSignature(const Type type);
+   std::string GetSignature() const override final;
 
-   /**
-    * Return a unified identifier of this design step
-    * @return the signature of the design step
-    */
-   const std::string GetSignature() const override;
+   std::string GetName() const override final;
 
-   /**
-    * Return the name of this design step
-    * @return the name of the pass (for debug purpose)
-    */
-   const std::string GetName() const override;
-
-   /**
-    * Return the factory to create this type of steps
-    */
-   const DesignFlowStepFactoryConstRef CGetDesignFlowStepFactory() const override;
+   DesignFlowStepFactoryConstRef CGetDesignFlowStepFactory() const override;
 
    /**
     * @return the associated c writer
     */
    const CWriterRef GetCWriter() const;
+
+   /**
+    * Compute the signature for a c backend step
+    */
+   static std::string ComputeSignature(const CBackendInformationConstRef type);
 };
 using CBackendRef = refcount<CBackend>;
 using CBackendConstRef = refcount<const CBackend>;

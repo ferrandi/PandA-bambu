@@ -198,6 +198,11 @@ class ac_channel
       return chan[pos];
    }
 
+   __FORCE_INLINE T& operator[](unsigned int pos)
+   {
+      return chan[pos];
+   }
+
    __FORCE_INLINE int get_size_call_count()
    {
       return chan.get_size_call_count();
@@ -300,6 +305,7 @@ class ac_channel
          virtual unsigned int num_free() const = 0;
          virtual void reset() = 0;
          virtual const T& operator_sb(const unsigned int& pos, const T& default_value) const = 0;
+         virtual T& operator_sb(const unsigned int& pos, const T& default_value) = 0;
       };
 
       struct fifo_ac_channel : fifo_abstract
@@ -393,6 +399,11 @@ class ac_channel
          }
 
          const T& operator_sb(const unsigned int& pos, const T&) const
+         {
+            return ch[pos];
+         }
+
+         T& operator_sb(const unsigned int& pos, const T&)
          {
             return ch[pos];
          }
@@ -747,6 +758,11 @@ class ac_channel
       }
 
       inline const T& operator[](unsigned int pos) const
+      {
+         return f->operator_sb(pos, rVal);
+      }
+
+      inline T& operator[](unsigned int pos)
       {
          return f->operator_sb(pos, rVal);
       }

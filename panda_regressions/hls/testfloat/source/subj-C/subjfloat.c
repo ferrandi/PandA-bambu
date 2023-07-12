@@ -40,7 +40,29 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <stdbool.h>
 #include <stdint.h>
 
+#ifdef SOFT_FP_LIB
+
+#include "../../../../../etc/libbambu/soft-fp/softfloat.c"
+
+#define IEEE16_FRAC_BITS 10
+#define IEEE16_EXP_BITS 5
+#define IEEE16_EXP_BIAS -15
+#define IEEE32_FRAC_BITS 23
+#define IEEE32_EXP_BITS 8
+#define IEEE32_EXP_BIAS -127
+#define IEEE64_FRAC_BITS 52
+#define IEEE64_EXP_BITS 11
+#define IEEE64_EXP_BIAS -1023
+#define IEEE_RND 1
+#define FLOAT_EXC_STD 1
+#define IEEE_ONE 1
+#define IEEE_SIGN -1
+
+#else
+
 #include "../../../../../etc/libbambu/softfloat/softfloat.c"
+
+#endif
 
 #define IEEE_SUBJ_EXC FLOAT_EXC_STD
 #ifndef IEEE_SUBJ_SUBNORM
@@ -146,7 +168,11 @@ float16_t subj_f16_mul(float16_t a, float16_t b)
 float16_t subj_f16_div(float16_t a, float16_t b)
 {
    float16_t f16;
+#ifdef SOFT_FP_LIB
+   f16.v = __float_div(a.v, b.v, IEEE16_SUBJ_SPEC);
+#else
    f16.v = __float_divSRT4(a.v, b.v, IEEE16_SUBJ_SPEC);
+#endif
    return f16;
 }
 
@@ -242,7 +268,11 @@ float32_t subj_f32_mul(float32_t a, float32_t b)
 float32_t subj_f32_div(float32_t a, float32_t b)
 {
    float32_t f32;
+#ifdef SOFT_FP_LIB
+   f32.v = __float_div(a.v, b.v, IEEE32_SUBJ_SPEC);
+#else
    f32.v = __float_divSRT4(a.v, b.v, IEEE32_SUBJ_SPEC);
+#endif
    return f32;
 }
 
@@ -297,7 +327,11 @@ float64_t subj_i64_to_f64(int64_t a)
 float64_t subj_f32_to_f64(float32_t a)
 {
    float64_t f64;
+#ifdef SOFT_FP_LIB
+   f64.v = __float_cast(a.v, IEEE32_SUBJ_SPEC, IEEE64_SUBJ_SPEC);
+#else
    f64.v = __float32_to_float64_ieee(a.v, IEEE_SUBJ_EXC, IEEE_SUBJ_SUBNORM);
+#endif
    return f64;
 }
 
@@ -324,7 +358,11 @@ int_fast64_t subj_f64_to_i64_rx_minMag(float64_t a)
 float32_t subj_f64_to_f32(float64_t a)
 {
    float32_t f32;
+#ifdef SOFT_FP_LIB
+   f32.v = __float_cast(a.v, IEEE64_SUBJ_SPEC, IEEE32_SUBJ_SPEC);
+#else
    f32.v = __float64_to_float32_ieee(a.v, IEEE_SUBJ_EXC, IEEE_SUBJ_SUBNORM);
+#endif
    return f32;
 }
 
@@ -352,7 +390,11 @@ float64_t subj_f64_mul(float64_t a, float64_t b)
 float64_t subj_f64_div(float64_t a, float64_t b)
 {
    float64_t f64;
+#ifdef SOFT_FP_LIB
+   f64.v = __float_div(a.v, b.v, IEEE64_SUBJ_SPEC);
+#else
    f64.v = __float_divSRT4(a.v, b.v, IEEE64_SUBJ_SPEC);
+#endif
    return f64;
 }
 

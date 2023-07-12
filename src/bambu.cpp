@@ -64,8 +64,8 @@
 #include "design_flow_manager.hpp"
 
 /// design_flows/c_backend/ToC includes
+#include "c_backend_information.hpp"
 #include "c_backend_step_factory.hpp"
-#include "hls_c_backend_information.hpp"
 
 #if HAVE_ACTOR_GRAPHS_BUILT
 /// design_flows/codesign include
@@ -279,10 +279,10 @@ int main(int argc, char* argv[])
       /// pretty printing
       if(parameters->isOption(OPT_pretty_print))
       {
-         const auto filename = parameters->getOption<std::string>(OPT_pretty_print);
          const auto c_backend =
              GetPointer<const CBackendStepFactory>(c_backend_step_factory)
-                 ->CreateCBackendStep(CBackend::CB_SEQUENTIAL, filename, CBackendInformationConstRef());
+                 ->CreateCBackendStep(CBackendInformationConstRef(new CBackendInformation(
+                     CBackendInformation::CB_SEQUENTIAL, parameters->getOption<std::string>(OPT_pretty_print))));
          design_flow_manager->AddStep(c_backend);
       }
 

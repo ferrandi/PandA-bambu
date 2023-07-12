@@ -38,38 +38,26 @@
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
  */
-
-/// Header include
 #include "basic_blocks_profiling_c_writer.hpp"
 
-///. include
 #include "Parameter.hpp"
-
-/// behavior includes
-#include "application_manager.hpp"
 #include "basic_block.hpp"
-#include "function_behavior.hpp"
-
-/// constants include
-#include "host_profiling_constants.hpp"
-
-/// tree includes
 #include "behavioral_helper.hpp"
+#include "function_behavior.hpp"
+#include "hls_manager.hpp"
+#include "host_profiling_constants.hpp"
+#include "indented_output_stream.hpp"
+#include "string_manipulation.hpp"
 #include "tree_basic_block.hpp"
 #include "tree_manager.hpp"
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
 
-/// utility include
-#include "indented_output_stream.hpp"
-#include "string_manipulation.hpp"
-
-BasicBlocksProfilingCWriter::BasicBlocksProfilingCWriter(const application_managerConstRef _AppM,
+BasicBlocksProfilingCWriter::BasicBlocksProfilingCWriter(const HLS_managerConstRef _HLSMgr,
                                                          const InstructionWriterRef _instruction_writer,
                                                          const IndentedOutputStreamRef _indented_output_stream,
                                                          const ParameterConstRef _Param, bool _verbose)
-    : CWriter(_AppM, _instruction_writer, _indented_output_stream, _Param, _verbose),
-      EdgeCWriter(_AppM, _instruction_writer, _indented_output_stream, _Param, _verbose)
+    : EdgeCWriter(_HLSMgr, _instruction_writer, _indented_output_stream, _Param, _verbose)
 {
    debug_level = _Param->get_class_debug_level(GET_CLASS(*this));
 }
@@ -94,7 +82,7 @@ void BasicBlocksProfilingCWriter::print_loop_starting(EdgeDescriptor e)
 void BasicBlocksProfilingCWriter::print_edge(EdgeDescriptor e, unsigned int)
 {
    const auto target_id = support_cfg->CGetBBNodeInfo(boost::target(e, *support_cfg))->block->number;
-   const auto function_name = AppM->CGetFunctionBehavior(fun_id)->CGetBehavioralHelper()->get_function_name();
+   const auto function_name = HLSMgr->CGetFunctionBehavior(fun_id)->CGetBehavioralHelper()->get_function_name();
    indented_output_stream->Append(function_name + "_counter[" + STR(target_id) + "]++;\n");
    dumped_edges.insert(e);
 }
@@ -110,10 +98,10 @@ void BasicBlocksProfilingCWriter::WriteGlobalDeclarations()
    indented_output_stream->Append("#include <stdlib.h>\n");
    indented_output_stream->Append("#include <stdio.h>\n");
    indented_output_stream->Append("\n");
-   CustomOrderedSet<unsigned int> functions = AppM->get_functions_with_body();
+   CustomOrderedSet<unsigned int> functions = HLSMgr->get_functions_with_body();
    for(const auto function : functions)
    {
-      const auto function_behavior = AppM->CGetFunctionBehavior(function);
+      const auto function_behavior = HLSMgr->CGetFunctionBehavior(function);
       const auto function_name = function_behavior->CGetBehavioralHelper()->get_function_name();
       const auto fd = GetPointer<const function_decl>(TM->CGetTreeNode(function));
       const auto sl = GetPointer<statement_list>(GET_CONST_NODE(fd->body));
@@ -126,7 +114,7 @@ void BasicBlocksProfilingCWriter::WriteGlobalDeclarations()
    indented_output_stream->Append("int i = 0;\n");
    for(const auto function : functions)
    {
-      const auto function_behavior = AppM->CGetFunctionBehavior(function);
+      const auto function_behavior = HLSMgr->CGetFunctionBehavior(function);
       const auto function_name = function_behavior->CGetBehavioralHelper()->get_function_name();
       const auto fd = GetPointer<const function_decl>(TM->CGetTreeNode(function));
       const auto sl = GetPointer<statement_list>(GET_NODE(fd->body));
@@ -144,7 +132,7 @@ void BasicBlocksProfilingCWriter::WriteGlobalDeclarations()
    indented_output_stream->Append("int i = 0;\n");
    for(const auto function : functions)
    {
-      const auto function_behavior = AppM->CGetFunctionBehavior(function);
+      const auto function_behavior = HLSMgr->CGetFunctionBehavior(function);
       const auto function_name = function_behavior->CGetBehavioralHelper()->get_function_name();
       const auto fd = GetPointer<const function_decl>(TM->CGetTreeNode(function));
       const auto sl = GetPointer<statement_list>(GET_NODE(fd->body));

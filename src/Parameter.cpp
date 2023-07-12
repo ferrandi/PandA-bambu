@@ -633,25 +633,7 @@ bool Parameter::ManageGccOptions(int next_option, char* optarg_param)
          {
             defines = getOption<std::string>(OPT_gcc_defines) + STR_CST_string_separator;
          }
-         if(std::string(optarg_param).find('=') != std::string::npos)
-         {
-            bool has_parenthesis = std::string(optarg_param).find('(') != std::string::npos &&
-                                   std::string(optarg_param).find(')') != std::string::npos;
-            std::string temp_var = std::string(optarg_param);
-            boost::replace_first(temp_var, "=", "=\'");
-            if(has_parenthesis)
-            {
-               defines += "\'" + temp_var + "\'" + "\'";
-            }
-            else
-            {
-               defines += temp_var + "\'";
-            }
-         }
-         else
-         {
-            defines += std::string(optarg_param);
-         }
+         defines += std::string(optarg_param);
          setOption(OPT_gcc_defines, defines);
          break;
       }

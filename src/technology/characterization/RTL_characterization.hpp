@@ -206,13 +206,13 @@ class RTLCharacterization : public FunctionalUnitStep
     * Return a unified identifier of this design step
     * @return the signature of the design step
     */
-   const std::string GetSignature() const override;
+   std::string GetSignature() const override;
 
    /**
     * Return the name of this design step
     * @return the name of the pass (for debug purpose)
     */
-   const std::string GetName() const override;
+   std::string GetName() const override;
 
    /**
     * Compute the relationships of a step with other steps
@@ -225,7 +225,7 @@ class RTLCharacterization : public FunctionalUnitStep
    /**
     * Return the factory to create this type of steps
     */
-   const DesignFlowStepFactoryConstRef CGetDesignFlowStepFactory() const override;
+   DesignFlowStepFactoryConstRef CGetDesignFlowStepFactory() const override;
 
    /**
     * Initialize the step (i.e., like a constructor, but executed just before exec
