@@ -25,6 +25,7 @@
 
 typedef int SItype __attribute__((mode(SI)));
 typedef unsigned int USItype __attribute__((mode(SI)));
+#define USI__WORDSIZE 32
 typedef unsigned int UDItype __attribute__((mode(DI)));
 /* Define ALIASNAME as a strong alias for NAME.  */
 #define strong_alias(name, aliasname) _strong_alias(name, aliasname)
@@ -72,11 +73,11 @@ static inline USItype __udivmodsi4(USItype x, USItype y, USItype* res)
    USItype lshifted_y = lsl(y, k);
    /// remove the leading 1
    lshifted_y = lshifted_y << 1;
-   USItype ty = lsr(lshifted_y, __WORDSIZE - 8);
+   USItype ty = lsr(lshifted_y, USI__WORDSIZE - 8);
    // table lookup
    USItype t = unrt[ty] | 256;
    // postscaling
-   USItype z = lsr(lsl(t, __WORDSIZE - 9), __WORDSIZE - k - 1);
+   USItype z = lsr(lsl(t, USI__WORDSIZE - 9), USI__WORDSIZE - k - 1);
    // z recurrence, 2 iterations
    USItype my = 0 - y;
    USItype z0, d0, q0, q1;
