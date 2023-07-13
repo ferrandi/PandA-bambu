@@ -258,7 +258,8 @@
 #define INPUT_OPT_TEST_MULTIPLE_NON_DETERMINISTIC_FLOWS (1 + OPT_SPECULATIVE)
 #define INPUT_OPT_TEST_SINGLE_NON_DETERMINISTIC_FLOW (1 + INPUT_OPT_TEST_MULTIPLE_NON_DETERMINISTIC_FLOWS)
 #define OPT_TESTBENCH (1 + INPUT_OPT_TEST_SINGLE_NON_DETERMINISTIC_FLOW)
-#define OPT_TESTBENCH_EXTRA_GCC_FLAGS (1 + OPT_TESTBENCH)
+#define OPT_TESTBENCH_ARGV (1 + OPT_TESTBENCH)
+#define OPT_TESTBENCH_EXTRA_GCC_FLAGS (1 + OPT_TESTBENCH_ARGV)
 #define OPT_TIME_WEIGHT (1 + OPT_TESTBENCH_EXTRA_GCC_FLAGS)
 #define OPT_TIMING_MODEL (1 + OPT_TIME_WEIGHT)
 #define OPT_TIMING_VIOLATION (1 + OPT_TIMING_MODEL)
@@ -331,8 +332,11 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "    --no-mixed-design\n"
       << "        Avoid mixed output RTL language designs.\n\n"
       << "    --generate-tb=<file>\n"
-      << "        Generate testbench for the input values defined in the specified XML\n"
-      << "        file.\n\n"
+      << "        Generate testbench using the given files. \n"
+      << "        <file> must be a valid testbench XML file or a C/C++ file specifying\n"
+      << "        a main function calling the top-level interface.\n\n"
+      << "    --tb-arg=<arg string>\n"
+      << "        Command line options to pass to testbench main function. (May be repeated)\n\n"
       << "    --top-fname=<fun_name>\n"
       << "        Define the top function to be synthesized. (default=main)\n\n"
       << "    --top-rtldesign-name=<top_name>\n"
@@ -1084,6 +1088,7 @@ int BambuParameter::Exec()
       {"data-bus-bitsize", required_argument, nullptr, 0},
       {"addr-bus-bitsize", required_argument, nullptr, 0},
       {"generate-tb", required_argument, nullptr, OPT_TESTBENCH},
+      {"tb-arg", required_argument, nullptr, OPT_TESTBENCH_ARGV},
       {"testbench-extra-gcc-flags", required_argument, nullptr, OPT_TESTBENCH_EXTRA_GCC_FLAGS},
       {"max-sim-cycles", required_argument, nullptr, OPT_MAX_SIM_CYCLES},
       {"generate-vcd", no_argument, nullptr, OPT_GENERATE_VCD},
@@ -1150,6 +1155,7 @@ int BambuParameter::Exec()
       // no more options are available
       if(next_option == -1)
       {
+         std::cout << "completed\n";
          break;
       }
 
@@ -1832,6 +1838,16 @@ int BambuParameter::Exec()
                }
                setOption(OPT_testbench_input_string, prev + arg);
             }
+            break;
+         }
+         case OPT_TESTBENCH_ARGV:
+         {
+            std::string cosim_argv;
+            if(isOption(OPT_testbench_argv))
+            {
+               cosim_argv = getOption<std::string>(OPT_testbench_argv) + " ";
+            }
+            setOption(OPT_testbench_argv, cosim_argv + std::string(optarg));
             break;
          }
          case OPT_TESTBENCH_EXTRA_GCC_FLAGS:

@@ -131,19 +131,19 @@ enum class DiopsisInstrumentWriter_Type;
        skip_pipe_parameter)(gcc_serialize_memory_accesses)(unaligned_access)(aligned_access)(                          \
        backend_script_extensions)(backend_sdc_extensions)(VHDL_library)(bitvalue_ipa)(use_asynchronous_memories)(      \
        do_not_chain_memories)(bram_high_latency)(cdfc_module_binding_algorithm)(function_allocation_algorithm)(        \
-       testbench_input_string)(testbench_input_file)(weighted_clique_register_algorithm)(disable_function_proxy)(      \
-       memory_mapped_top)(expose_globals)(connect_iob)(profiling_output)(disable_bounded_function)(discrepancy)(       \
-       discrepancy_force)(discrepancy_hw)(discrepancy_no_load_pointers)(discrepancy_only)(                             \
-       discrepancy_permissive_ptrs)(dry_run_evaluation)(generate_taste_architecture)(initial_internal_address)(        \
-       mem_delay_read)(mem_delay_write)(memory_banks_number)(mixed_design)(no_parse_c_python)(num_accelerators)(       \
-       post_rescheduling)(technology_file)(testbench_extra_gcc_flags)(timing_violation_abort)(top_design_name)(        \
-       visualizer)(serialize_output)(use_ALUs)(range_analysis_mode)(fp_format)(fp_format_propagate)(                   \
-       fp_format_interface)(fp_rounding_mode)(fp_exception_mode)(parallel_backend)(interface_xml_filename)(            \
-       lattice_root)(lattice_settings)(lattice_pmi_def)(lattice_pmi_tdpbe)(lattice_pmi_mul)(xilinx_root)(              \
-       xilinx_settings)(xilinx_vivado_settings)(xilinx_glbl)(mentor_root)(mentor_modelsim_bin)(mentor_visualizer)(     \
-       mentor_optimizer)(verilator)(verilator_l2_name)(verilator_timescale_override)(verilator_parallel)(icarus)(      \
-       altera_root)(quartus_settings)(quartus_13_settings)(quartus_13_64bit)(nanoxplore_root)(nanoxplore_settings)(    \
-       nanoxplore_bypass)(shared_input_registers)(inline_functions)
+       testbench_input_string)(testbench_input_file)(testbench_argv)(weighted_clique_register_algorithm)(              \
+       disable_function_proxy)(memory_mapped_top)(expose_globals)(connect_iob)(profiling_output)(                      \
+       disable_bounded_function)(discrepancy)(discrepancy_force)(discrepancy_hw)(discrepancy_no_load_pointers)(        \
+       discrepancy_only)(discrepancy_permissive_ptrs)(dry_run_evaluation)(generate_taste_architecture)(                \
+       initial_internal_address)(mem_delay_read)(mem_delay_write)(memory_banks_number)(mixed_design)(                  \
+       no_parse_c_python)(num_accelerators)(post_rescheduling)(technology_file)(testbench_extra_gcc_flags)(            \
+       timing_violation_abort)(top_design_name)(visualizer)(serialize_output)(use_ALUs)(range_analysis_mode)(          \
+       fp_format)(fp_format_propagate)(fp_format_interface)(fp_rounding_mode)(fp_exception_mode)(parallel_backend)(    \
+       interface_xml_filename)(lattice_root)(lattice_settings)(lattice_pmi_def)(lattice_pmi_tdpbe)(lattice_pmi_mul)(   \
+       xilinx_root)(xilinx_settings)(xilinx_vivado_settings)(xilinx_glbl)(mentor_root)(mentor_modelsim_bin)(           \
+       mentor_visualizer)(mentor_optimizer)(verilator)(verilator_l2_name)(verilator_timescale_override)(               \
+       verilator_parallel)(icarus)(altera_root)(quartus_settings)(quartus_13_settings)(quartus_13_64bit)(              \
+       nanoxplore_root)(nanoxplore_settings)(nanoxplore_bypass)(shared_input_registers)(inline_functions)
 
 #define FRAMEWORK_OPTIONS                                                                                            \
    (architecture)(benchmark_name)(cat_args)(find_max_transformations)(max_transformations)(compatible_compilers)(    \
