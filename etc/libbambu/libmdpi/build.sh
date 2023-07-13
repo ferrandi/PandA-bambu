@@ -34,7 +34,7 @@ if [ -z "${m_option}" ]; then
 fi
 includes="$(grep -oE '((-I|-isystem) ?[^ ]+)' <<< ${CFLAGS} | tr '\n' ' ')"
 defines="$(grep -oE '(-D(\\.|[^ ])+)' <<< ${CFLAGS} | tr '\n' ' ')"
-CFLAGS="${m_option} -fPIC -fexceptions -fnon-call-exceptions -funroll-loops -O2 ${includes} ${defines}"
+CFLAGS="${m_option} -fPIC -funroll-loops -O2 ${includes} ${defines}"
 
 objs=($(echo "$@" | grep -oE "[^ ]+\.o"))
 for obj in "${objs[@]}"
@@ -49,7 +49,6 @@ srcs=(
    "${script_dir}/mdpi_user.cpp"
    "${script_dir}/mdpi_wrapper.cpp"
    "${script_dir}/mdpi.cpp"
-   "${script_dir}/segvcatch/segvcatch.cpp"
    )
 build_dir="$(mktemp -d /tmp/build_XXXX)"
 for file in "${srcs[@]}"
