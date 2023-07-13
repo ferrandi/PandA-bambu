@@ -5247,8 +5247,6 @@ assign Sout_Rdata_ram =Sin_Rdata_ram;
 assign Sout_DataRdy = Sin_DataRdy;
 assign int_sel_LOAD = sel_LOAD &amp; in4;
 assign int_sel_STORE = sel_STORE &amp; in4;
-
-assign Sout_DataRdy = Sin_DataRdy;
 " VHDL_PROVIDED="  function integer_ternary_operator(cond : boolean; op1 : integer; op2 : integer) return integer is
   begin
     if cond then
