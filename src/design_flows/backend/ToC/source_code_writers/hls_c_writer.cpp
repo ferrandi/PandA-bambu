@@ -285,7 +285,7 @@ void HLSCWriter::WriteParamInitialization(const BehavioralHelperConstRef BH,
             indented_output_stream->Append("}\n");
             indented_output_stream->Append("fclose(" + fp + ");\n");
             indented_output_stream->Append(param + " = " + param + "_buf;\n");
-            indented_output_stream->Append("m_alloc_param(" + STR(par_idx) + ", " + param + "_size);\n");
+            indented_output_stream->Append("m_param_alloc(" + STR(par_idx) + ", " + param + "_size);\n");
          }
          else
          {
@@ -298,7 +298,7 @@ void HLSCWriter::WriteParamInitialization(const BehavioralHelperConstRef BH,
             indented_output_stream->Append(param + " = (void*)" + (is_a_true_pointer ? "" : "&") + param + "_temp;\n");
             if(!arg_channel)
             {
-               indented_output_stream->Append("m_alloc_param(" + STR(par_idx) + ", sizeof(" + param + "_temp));\n");
+               indented_output_stream->Append("m_param_alloc(" + STR(par_idx) + ", sizeof(" + param + "_temp));\n");
             }
          }
       }
@@ -586,7 +586,7 @@ void HLSCWriter::WriteMainTestbench()
       gold_decl += return_type_str;
       gold_call += "retval_gold = ";
       pp_call += "retval_pp = ";
-      args_init = "__m_alloc_param(" + STR(top_params.size()) + ", sizeof(" + return_type_str + "));\n";
+      args_init = "__m_param_alloc(" + STR(top_params.size()) + ", sizeof(" + return_type_str + "));\n";
       args_decl = return_type_str + " retval, retval_gold, retval_pp;\n" + args_decl;
       args_set += "__m_setarg(" + STR(top_params.size()) + ", args[" + STR(top_params.size()) + "], " +
                   STR(tree_helper::Size(return_type)) + ");\n";
@@ -673,7 +673,7 @@ void HLSCWriter::WriteMainTestbench()
                return tree_helper::IsArrayType(ptd_type) ? tree_helper::GetArrayTotalSize(ptd_type) : 1ULL;
             }();
             args_init +=
-                "__m_alloc_param(" + STR(param_idx) + ", sizeof(*" + arg_name + ") * " + STR(array_size) + ");\n";
+                "__m_param_alloc(" + STR(param_idx) + ", sizeof(*" + arg_name + ") * " + STR(array_size) + ");\n";
             args_decl += "(void*)" + arg_name + ", ";
             args_set += "m_setargptr";
          }
@@ -683,7 +683,7 @@ void HLSCWriter::WriteMainTestbench()
             gold_call += "*(" + arg_typename + "*)" + arg_name + "_gold, ";
             pp_call += "(" + tree_helper::PrintType(TM, arg_type, false, true) + "*)" + arg_name + "_pp, ";
             gold_cmp += "m_argcmp(" + STR(param_idx) + ", " + cmp_type(arg_type, arg_typename) + ");\n";
-            args_init += "__m_alloc_param(" + STR(param_idx) + ", sizeof(" + arg_typename + "));\n";
+            args_init += "__m_param_alloc(" + STR(param_idx) + ", sizeof(" + arg_typename + "));\n";
             args_decl += "(void*)&" + arg_name + ", ";
             args_set += "m_setargptr";
          }
@@ -691,7 +691,7 @@ void HLSCWriter::WriteMainTestbench()
          {
             gold_call += arg_name + ", ";
             pp_call += arg_name + ", ";
-            args_init += "__m_alloc_param(" + STR(param_idx) + ", sizeof(" + arg_typename + "));\n";
+            args_init += "__m_param_alloc(" + STR(param_idx) + ", sizeof(" + arg_typename + "));\n";
             args_decl += "(void*)&" + arg_name + ", ";
             args_set += arg_interface == "default" ? "__m_setarg" : "m_setargptr";
          }
@@ -837,7 +837,7 @@ template <typename T> T* m_getptr(T* obj) { return obj; }
 #define m_channel_init(idx)                                                                                         \
    const size_t P##idx##_item = sizeof(m_getvalt(m_getptr(P##idx))::element_type);                                  \
    size_t P##idx##_count = m_getptr(P##idx)->size();                                                                \
-   __m_alloc_param(idx, P##idx##_count * P##idx##_item);                                                            \
+   __m_param_alloc(idx, P##idx##_count * P##idx##_item);                                                            \
    void* P##idx##_sim = malloc(P##idx##_count * P##idx##_item);                                                     \
    for(i = 0; i < P##idx##_count; ++i)                                                                              \
    {                                                                                                                \

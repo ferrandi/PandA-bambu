@@ -21,7 +21,7 @@ int main()
    UINT64 A[25] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
 #ifdef __BAMBU_SIM__
-   m_alloc_param(0, sizeof(A));
+   m_param_alloc(0, sizeof(A));
 #endif
    keccak_coproc(A);
 

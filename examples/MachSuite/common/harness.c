@@ -1,11 +1,11 @@
-#include <stdlib.h>
+#include <assert.h>
+#include <fcntl.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <fcntl.h>
-#include <assert.h>
 extern int INPUT_SIZE;
-__attribute((noinline)) void run_benchmark( void *args );
+__attribute((noinline)) void run_benchmark(void* args);
 
 #ifdef __BAMBU_SIM__
 #include <mdpi/mdpi_user.h>
@@ -13,69 +13,73 @@ __attribute((noinline)) void run_benchmark( void *args );
 
 int main(/*int argc, char **argv*/)
 {
-  int status;
-  char *in_file, *check_file;
-  int in_fd, check_fd;
-  char *input, *check;
-  int n, final_check;
+   int status;
+   char *in_file, *check_file;
+   int in_fd, check_fd;
+   char *input, *check;
+   int n, final_check;
 
-  //assert( argc==3 && "Usage: ./benchmark <input_file> <check_file>" );
-  //in_file = argv[1];
-  //check_file = argv[2];
-  in_file = "input.data";
-  check_file = "check.data";
+   // assert( argc==3 && "Usage: ./benchmark <input_file> <check_file>" );
+   // in_file = argv[1];
+   // check_file = argv[2];
+   in_file = "input.data";
+   check_file = "check.data";
 
-  // Load input data
-  input = malloc(INPUT_SIZE);
-  assert( input!=NULL && "Out of memory" );
-  in_fd = open( in_file, O_RDONLY );
-  
-  n = 0;
-  while(n<INPUT_SIZE) {
-    status = read(in_fd, &input[n], INPUT_SIZE-n);
-    assert( status>=0 && "Failed to read input" );
-    n += status;
-  }
-  close(in_fd);
+   // Load input data
+   input = malloc(INPUT_SIZE);
+   assert(input != NULL && "Out of memory");
+   in_fd = open(in_file, O_RDONLY);
 
-  //run_benchmark( input );
-  // Unpack and call
-  m_alloc_param(0, INPUT_SIZE);
-  run_benchmark(input);
+   n = 0;
+   while(n < INPUT_SIZE)
+   {
+      status = read(in_fd, &input[n], INPUT_SIZE - n);
+      assert(status >= 0 && "Failed to read input");
+      n += status;
+   }
+   close(in_fd);
+
+   // run_benchmark( input );
+   // Unpack and call
+   m_param_alloc(0, INPUT_SIZE);
+   run_benchmark(input);
 
 #if WRITE_OUTPUT
-  //FIXME: Maybe remove this.
-  int out_fd, i, written=0;
-  char *ptr = input;
-  out_fd = open("output.data", O_WRONLY|O_CREAT|O_TRUNC, S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH|S_IWOTH);
-  assert( out_fd>0 && "Couldn't open output data file" );
-  while( written<INPUT_SIZE ) {
-    status = write( out_fd, ptr, INPUT_SIZE-written );
-    assert( status>=0 && "Couldn't write output data file" );
-    written += status;
-  }
-  #endif
-
-  // Load check data
-  check = malloc(INPUT_SIZE);
-  assert( check!=NULL && "Out of memory" );
-  check_fd = open( check_file, O_RDONLY );
-  n = 0;
-  while(n<INPUT_SIZE) {
-    status = read(check_fd, &check[n], INPUT_SIZE-n);
-    assert( status>=0 && "Failed to read input" );
-    n += status;
-  }
-  close(check_fd);
-
-  // Validate benchmark results
-#ifndef NO_FINAL_MEMCMP_CHECK
-  final_check = memcmp(input,check,INPUT_SIZE);
-  assert(!final_check  && "Benchmark results are incorrect" );
-#else
-  final_check = 0;
+   // FIXME: Maybe remove this.
+   int out_fd, i, written = 0;
+   char* ptr = input;
+   out_fd =
+       open("output.data", O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
+   assert(out_fd > 0 && "Couldn't open output data file");
+   while(written < INPUT_SIZE)
+   {
+      status = write(out_fd, ptr, INPUT_SIZE - written);
+      assert(status >= 0 && "Couldn't write output data file");
+      written += status;
+   }
 #endif
 
-  printf("Success.\n");
-  return final_check;
+   // Load check data
+   check = malloc(INPUT_SIZE);
+   assert(check != NULL && "Out of memory");
+   check_fd = open(check_file, O_RDONLY);
+   n = 0;
+   while(n < INPUT_SIZE)
+   {
+      status = read(check_fd, &check[n], INPUT_SIZE - n);
+      assert(status >= 0 && "Failed to read input");
+      n += status;
+   }
+   close(check_fd);
+
+   // Validate benchmark results
+#ifndef NO_FINAL_MEMCMP_CHECK
+   final_check = memcmp(input, check, INPUT_SIZE);
+   assert(!final_check && "Benchmark results are incorrect");
+#else
+   final_check = 0;
+#endif
+
+   printf("Success.\n");
+   return final_check;
 }
