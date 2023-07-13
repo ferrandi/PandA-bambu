@@ -1,7 +1,10 @@
 /**
- * SoftFloat package modified by Fabrizio Ferrandi - Politecnico di Milano
+ * SoftFloat package modified by:
+ *    Fabrizio Ferrandi - Politecnico di Milano
+ *    Michele Fiorito - Politecnico di Milano
  * Changes made are mainly oriented to improve the results of a generic high
- * level synthesis framework.
+ * level synthesis framework and to add support for custom floating-point
+ * data types.
  */
 /*============================================================================
 
