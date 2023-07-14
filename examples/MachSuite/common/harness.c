@@ -11,7 +11,7 @@ __attribute((noinline)) void run_benchmark(void* args);
 #include <mdpi/mdpi_user.h>
 #endif
 
-int main(/*int argc, char **argv*/)
+int main(int argc, char **argv)
 {
    int status;
    char *in_file, *check_file;
@@ -19,11 +19,9 @@ int main(/*int argc, char **argv*/)
    char *input, *check;
    int n, final_check;
 
-   // assert( argc==3 && "Usage: ./benchmark <input_file> <check_file>" );
-   // in_file = argv[1];
-   // check_file = argv[2];
-   in_file = "input.data";
-   check_file = "check.data";
+   assert( argc==3 && "Usage: ./benchmark <input_file> <check_file>" );
+   in_file = argv[1];
+   check_file = argv[2];
 
    // Load input data
    input = malloc(INPUT_SIZE);
@@ -41,7 +39,9 @@ int main(/*int argc, char **argv*/)
 
    // run_benchmark( input );
    // Unpack and call
+#ifdef __BAMBU_SIM__
    m_param_alloc(0, INPUT_SIZE);
+#endif
    run_benchmark(input);
 
 #if WRITE_OUTPUT
