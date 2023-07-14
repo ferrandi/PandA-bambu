@@ -44,9 +44,10 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 coord_t input_data[TEST_COUNT][2];
 phase_t ref_results[TEST_COUNT][1];
 
-int main(void)
+int main(int argc, char** argv)
 {
-	coord_t inp_x, inp_y, out_x, out_y;
+   printf("argc: %d\n", argc);
+   coord_t inp_x, inp_y, out_x, out_y;
 	phase_t inp_rad, out_rad;
 	float res, ref_res;
 
