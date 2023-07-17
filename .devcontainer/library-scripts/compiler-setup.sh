@@ -9,12 +9,6 @@
 ###
 set -e
 
-if [[ "$PATH" != */usr/lib/ccache* ]]; then
-   echo "export PATH=/usr/lib/ccache:$PATH" >> /etc/profile
-fi
-if [[ "$LIBRARY_PATH" != /usr/lib/x86_64-linux-gnu* ]]; then
-   echo "export LIBRARY_PATH=/usr/lib/x86_64-linux-gnu:$LIBRARY_PATH" >> /etc/profile
-fi
 ln -sf /usr/include/x86_64-linux-gnu/gmp.h /usr/include/gmp.h
 
 GCC_BINS=("`find /usr/bin -type f -regextype posix-extended -regex '.*g(cc|\+\+)-[0-9]+\.?[0-9]?'`")
