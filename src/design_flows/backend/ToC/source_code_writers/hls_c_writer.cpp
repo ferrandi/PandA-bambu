@@ -565,7 +565,7 @@ void HLSCWriter::WriteMainTestbench()
          {
             return has_subnormals ? "flts" : "flt";
          }
-         else if(tree_helper::IsVoidType(t))
+         else if(tree_helper::IsVoidType(t) || boost::starts_with(tname, "void"))
          {
             return "mem";
          }
