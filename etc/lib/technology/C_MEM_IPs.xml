@@ -2720,6 +2720,9 @@ ARRAY_1D_STD_BRAM_NN_instance : ARRAY_1D_STD_BRAM_NN_SDS_BUS_BASE generic map (B
           <port_o id="start_port" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
+          <port_o id="reset" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/> data to be written </port_o>
           <port_o id="in2" dir="IN" is_addr_bus="1">
@@ -2795,6 +2798,12 @@ generate
     assign int_sel_LOAD_old_next = Mout_back_pressure &amp;&amp; (sel_LOAD || int_sel_LOAD_old);
     assign int_sel_STORE_old_next = Mout_back_pressure &amp;&amp; (sel_STORE || int_sel_STORE_old);
     always @(posedge clock)
+    if(1RESET_VALUE)
+    begin
+      int_sel_LOAD_old &lt;= 0;
+      int_sel_STORE_old &lt;= 0;
+    end
+    else
     begin
       int_sel_LOAD_old &lt;= int_sel_LOAD_old_next;
       int_sel_STORE_old &lt;= int_sel_STORE_old_next;
@@ -2844,6 +2853,9 @@ assign done_port = (M_DataRdy &amp;&amp; in4) || (!in4 &amp;&amp; (sel_STORE || 
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="start_port" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="reset" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="in1" dir="IN">
@@ -2923,6 +2935,12 @@ generate
     assign int_sel_LOAD_old_next = Mout_back_pressure &amp;&amp; (sel_LOAD || int_sel_LOAD_old);
     assign int_sel_STORE_old_next = Mout_back_pressure &amp;&amp; (sel_STORE || int_sel_STORE_old);
     always @(posedge clock)
+    if(1RESET_VALUE)
+    begin
+      int_sel_LOAD_old &lt;= 0;
+      int_sel_STORE_old &lt;= 0;
+    end
+    else
     begin
       int_sel_LOAD_old &lt;= int_sel_LOAD_old_next;
       int_sel_STORE_old &lt;= int_sel_STORE_old_next;
@@ -2976,6 +2994,9 @@ assign done_port = (delayed_M_DataRdy &amp; in4) || (!in4 &amp; (sel_STORE || se
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="start_port" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="reset" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="in1" dir="IN">
@@ -3058,6 +3079,12 @@ generate
     assign int_sel_LOAD_old_next = Mout_back_pressure &amp;&amp; (delayed_sel_LOAD || int_sel_LOAD_old);
     assign int_sel_STORE_old_next = Mout_back_pressure &amp;&amp; (delayed_sel_STORE || int_sel_STORE_old);
     always @(posedge clock)
+    if(1RESET_VALUE)
+    begin
+      int_sel_LOAD_old &lt;= 0;
+      int_sel_STORE_old &lt;= 0;
+    end
+    else
     begin
       int_sel_LOAD_old &lt;= int_sel_LOAD_old_next;
       int_sel_STORE_old &lt;= int_sel_STORE_old_next;
@@ -3118,6 +3145,9 @@ assign done_port = (M_DataRdy &amp; in4) || (!in4 &amp; (delayed_sel_STORE || de
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="start_port" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="reset" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="in1" dir="IN">
@@ -3202,6 +3232,12 @@ generate
     assign int_sel_LOAD_old_next = Mout_back_pressure &amp;&amp; (delayed_sel_LOAD || int_sel_LOAD_old);
     assign int_sel_STORE_old_next = Mout_back_pressure &amp;&amp; (delayed_sel_STORE || int_sel_STORE_old);
     always @(posedge clock)
+    if(1RESET_VALUE)
+    begin
+      int_sel_LOAD_old &lt;= 0;
+      int_sel_STORE_old &lt;= 0;
+    end
+    else
     begin
       int_sel_LOAD_old &lt;= int_sel_LOAD_old_next;
       int_sel_STORE_old &lt;= int_sel_STORE_old_next;
@@ -3266,6 +3302,9 @@ assign done_port = delayed_M_DataRdy;
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="start_port" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="reset" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_vector_o id="in1" dir="IN">
@@ -3345,6 +3384,12 @@ generate
     assign int_sel_LOAD_old_next = Mout_back_pressure &amp; (sel_LOAD | int_sel_LOAD_old);
     assign int_sel_STORE_old_next = Mout_back_pressure &amp; (sel_STORE | int_sel_STORE_old);
     always @(posedge clock)
+    if(1RESET_VALUE)
+    begin
+      int_sel_LOAD_old &lt;= 0;
+      int_sel_STORE_old &lt;= 0;
+    end
+    else
     begin
       int_sel_LOAD_old &lt;= int_sel_LOAD_old_next;
       int_sel_STORE_old &lt;= int_sel_STORE_old_next;
@@ -3410,6 +3455,9 @@ assign done_port = (M_DataRdy &amp; in4) | (~in4 &amp; (sel_STORE | sel_LOAD));"
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="start_port" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="reset" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_vector_o id="in1" dir="IN">
@@ -3493,6 +3541,12 @@ generate
     assign int_sel_LOAD_old_next = Mout_back_pressure &amp; (sel_LOAD | int_sel_LOAD_old);
     assign int_sel_STORE_old_next = Mout_back_pressure &amp; (sel_STORE | int_sel_STORE_old);
     always @(posedge clock)
+    if(1RESET_VALUE)
+    begin
+      int_sel_LOAD_old &lt;= 0;
+      int_sel_STORE_old &lt;= 0;
+    end
+    else
     begin
       int_sel_LOAD_old &lt;= int_sel_LOAD_old_next;
       int_sel_STORE_old &lt;= int_sel_STORE_old_next;
@@ -3561,6 +3615,9 @@ assign done_port = delayed_M_DataRdy;"/>
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="start_port" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="reset" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_vector_o id="in1" dir="IN">
@@ -3648,6 +3705,12 @@ generate
     assign int_sel_LOAD_old_next = Mout_back_pressure &amp; (delayed_sel_LOAD | int_sel_LOAD_old);
     assign int_sel_STORE_old_next = Mout_back_pressure &amp; (delayed_sel_STORE | int_sel_STORE_old);
     always @(posedge clock)
+    if(1RESET_VALUE)
+    begin
+      int_sel_LOAD_old &lt;= 0;
+      int_sel_STORE_old &lt;= 0;
+    end
+    else
     begin
       int_sel_LOAD_old &lt;= int_sel_LOAD_old_next;
       int_sel_STORE_old &lt;= int_sel_STORE_old_next;
@@ -3725,6 +3788,9 @@ assign done_port = (M_DataRdy &amp; in4)) | (~in4 &amp; (delayed_sel_LOAD | dela
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="start_port" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="reset" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_vector_o id="in1" dir="IN">
@@ -3813,6 +3879,12 @@ generate
     assign int_sel_LOAD_old_next = Mout_back_pressure &amp; (delayed_sel_LOAD | int_sel_LOAD_old);
     assign int_sel_STORE_old_next = Mout_back_pressure &amp; (delayed_sel_STORE | int_sel_STORE_old);
     always @(posedge clock)
+    if(1RESET_VALUE)
+    begin
+      int_sel_LOAD_old &lt;= 0;
+      int_sel_STORE_old &lt;= 0;
+    end
+    else
     begin
       int_sel_LOAD_old &lt;= int_sel_LOAD_old_next;
       int_sel_STORE_old &lt;= int_sel_STORE_old_next;
@@ -5247,8 +5319,6 @@ assign Sout_Rdata_ram =Sin_Rdata_ram;
 assign Sout_DataRdy = Sin_DataRdy;
 assign int_sel_LOAD = sel_LOAD &amp; in4;
 assign int_sel_STORE = sel_STORE &amp; in4;
-
-assign Sout_DataRdy = Sin_DataRdy;
 " VHDL_PROVIDED="  function integer_ternary_operator(cond : boolean; op1 : integer; op2 : integer) return integer is
   begin
     if cond then

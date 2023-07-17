@@ -48,8 +48,13 @@
 #include <cstdio>
 #include <pthread.h>
 
-EXTERN_C int m_cosim_main(int argc, const char** argv);
+#ifdef __M_COSIM_ARGV
+#include __M_COSIM_ARGV
+#else
 static const char* __m_cosim_argv[] = {"m_cosim_main"};
+#endif
+
+EXTERN_C int m_cosim_main(int argc, const char** argv);
 
 void* __m_cosim_main(void*)
 {
@@ -60,7 +65,7 @@ void* __m_cosim_main(void*)
    if(sim_state == MDPI_COSIM_INIT)
    {
       info("Co-simulation started\n");
-      retval = m_cosim_main(1, __m_cosim_argv);
+      retval = m_cosim_main(sizeof(__m_cosim_argv) / sizeof(*__m_cosim_argv), __m_cosim_argv);
       info("Co-simulation finished\n");
    }
    else

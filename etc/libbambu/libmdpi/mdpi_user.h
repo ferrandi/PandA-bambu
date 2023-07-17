@@ -53,7 +53,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-EXTERN_C void m_alloc_param(uint8_t idx, size_t size);
+EXTERN_C void m_param_alloc(uint8_t idx, size_t size);
 
 #ifndef __cplusplus
 EXTERN_C float m_float_distancef(float, float) __attribute__((const));
