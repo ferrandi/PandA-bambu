@@ -81,8 +81,6 @@ void __m_exit(int __status)
 {
    enum mdpi_state state;
    info("Exit called with value %d\n", __status);
-   debug("Waiting for simulator to complete...\n");
-   state = __m_wait_for(MDPI_ENTITY_COSIM);
    debug("Simulator reported state: %s\n", mdpi_state_str(state));
    __m_signal_to(MDPI_ENTITY_SIM, MDPI_COSIM_END);
    pthread_exit(reinterpret_cast<void*>(static_cast<long>(((__status & 0xFF) << 8) | MDPI_COSIM_END)));
@@ -92,9 +90,13 @@ void __m_abort()
 {
    enum mdpi_state state;
    error("Co-simulation called abort\n");
-   debug("Waiting for simulator to complete...\n");
-   state = __m_wait_for(MDPI_ENTITY_COSIM);
    debug("Simulator reported state: %s\n", mdpi_state_str(state));
    __m_signal_to(MDPI_ENTITY_SIM, MDPI_COSIM_END);
    pthread_exit(reinterpret_cast<void*>(static_cast<long>(MDPI_COSIM_ABORT)));
+}
+
+void __m_assert_fail(const char* __assertion, const char* __file, unsigned int __line, const char* __function)
+{
+   error("%s: %d: %s: Assertion `%s' failed.\n", __file, __line, __function, __assertion);
+   __m_abort();
 }
