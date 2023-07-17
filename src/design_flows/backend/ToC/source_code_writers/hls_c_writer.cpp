@@ -126,6 +126,14 @@ extern void exit(int status);
 using namespace __AC_NAMESPACE;
 #endif
 
+#ifdef __clang__
+#define GCC_VERSION 0
+#else
+#define GCC_VERSION (__GNUC__ * 10000 \
+                     + __GNUC_MINOR__ * 100 \
+                     + __GNUC_PATCHLEVEL__)
+#endif
+
 )");
 
    // get the root function to be tested by the testbench
@@ -918,7 +926,7 @@ template <typename T> T* m_getptr(T* obj) { return obj; }
 #ifdef __clang__
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wpointer-type-mismatch"
-#else
+#elif GCC_VERSION >= 40600
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wpointer-type-mismatch"
 #endif
@@ -941,7 +949,7 @@ pthread_exit((void*)((size_t)(MDPI_COSIM_ABORT)));
 
 #ifdef __clang__
 #pragma clang diagnostic pop
-#else
+#elif GCC_VERSION >= 40600
 #pragma GCC diagnostic pop
 #endif
 )");
