@@ -47,5 +47,6 @@
 EXTERN_C void* __m_cosim_main(void*);
 EXTERN_C void __m_exit(int __status);
 EXTERN_C void __m_abort();
+EXTERN_C void __m_assert_fail(const char* __assertion, const char* __file, unsigned int __line, const char* __function);
 
 #endif // __MDPI_COSIM_H
