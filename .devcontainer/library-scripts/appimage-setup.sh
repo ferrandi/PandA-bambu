@@ -35,7 +35,7 @@ for clang_exe in ${CLANG_BINS}
 do
    CLANG_VER=$(sed 's/clang-//g' <<< "$(basename ${clang_exe})")
    CLANG_DIR=$(dirname ${clang_exe#${pkg_dir}})
-   echo "Generating system links for clang/llvm ${CLANG_VER}"
+   echo "Generating usr/bin links for clang/llvm ${CLANG_VER}"
    for app in "${CLANG_EXES[@]}"
    do
       if [[ -f "${CLANG_DIR}/${app}" ]]; then
