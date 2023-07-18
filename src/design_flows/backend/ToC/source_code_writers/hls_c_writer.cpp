@@ -414,7 +414,7 @@ void HLSCWriter::WriteSimulatorInitMemory(const unsigned int function_id)
    const auto mem_vars = HLSMgr->Rmem->get_ext_memory_variables();
    const auto BH = HLSMgr->CGetFunctionBehavior(function_id)->CGetBehavioralHelper();
    const auto parameters = BH->get_parameters();
-   const auto align = HLSMgr->Rmem->get_bus_data_bitsize() / 8ULL;
+   const auto align = std::max(8ULL, HLSMgr->Rmem->get_bus_data_bitsize() / 8ULL);
    indented_output_stream->Append(R"(
 typedef struct
 {
