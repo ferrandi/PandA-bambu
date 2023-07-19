@@ -1628,7 +1628,16 @@ namespace llvm
       auto op0Value = inst->getAggregateOperand();
       auto op0 = getOperand(op0Value, currentFunction);
       auto op1 = getOperand(inst->getInsertedValueOperand(), currentFunction);
-      llvm::APInt Offset(DL->getPointerTypeSizeInBits(op0Value->getType()), 0);
+      unsigned SizeInBits;
+      if(op0Value->getType()->isPtrOrPtrVectorTy())
+      {
+         SizeInBits = DL->getPointerTypeSizeInBits(op0Value->getType());
+      }
+      else
+      {
+         SizeInBits = 64;
+      }
+      llvm::APInt Offset(SizeInBits, 0);
       accumulateConstantOffset(DL, Offset, inst);
       auto offset_node = assignCodeAuto(llvm::ConstantInt::get(inst->getContext(), Offset));
       return build3(GT(INSERTVALUE), type, op0, op1, offset_node);
@@ -1642,7 +1651,16 @@ namespace llvm
       auto currentFunction = inst->getFunction();
       auto op0 = getOperand(inst->getAggregateOperand(), currentFunction);
       auto op0Value = inst->getAggregateOperand();
-      llvm::APInt Offset(DL->getPointerTypeSizeInBits(op0Value->getType()), 0);
+      unsigned SizeInBits;
+      if(op0Value->getType()->isPtrOrPtrVectorTy())
+      {
+         SizeInBits = DL->getPointerTypeSizeInBits(op0Value->getType());
+      }
+      else
+      {
+         SizeInBits = 64;
+      }
+      llvm::APInt Offset(SizeInBits, 0);
       accumulateConstantOffset(DL, Offset, inst);
       auto offset_node = assignCodeAuto(llvm::ConstantInt::get(inst->getContext(), Offset));
       return build2(GT(EXTRACTVALUE), type, op0, offset_node);
@@ -5530,7 +5548,7 @@ namespace llvm
          case llvm::Intrinsic::directive_scope_entry:
          case llvm::Intrinsic::directive_scope_exit:
 #endif
-         return true;
+            return true;
 
          default:
             return false;
