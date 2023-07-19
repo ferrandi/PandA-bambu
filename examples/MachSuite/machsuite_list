@@ -1,0 +1,19 @@
+aes/aes/aes.c                aes/aes/local_support.c           --benchmark-name=aes           --tb-arg=BENCHMARKS_ROOT/aes/aes/input.data           --tb-arg=BENCHMARKS_ROOT/aes/aes/check.data
+backprop/backprop/backprop.c backprop/backprop/local_support.c --benchmark-name=backprop      --tb-arg=BENCHMARKS_ROOT/backprop/backprop/input.data --tb-arg=BENCHMARKS_ROOT/../backprop/backprop/check.data -lm
+bfs/bulk/bfs.c               bfs/bulk/local_support.c          --benchmark-name=bfs_bulk      --tb-arg=BENCHMARKS_ROOT/bfs/bulk/input.data          --tb-arg=BENCHMARKS_ROOT/bfs/bulk/check.data
+bfs/queue/bfs.c              bfs/queue/local_support.c         --benchmark-name=bfs_queue     --tb-arg=BENCHMARKS_ROOT/bfs/queue/input.data         --tb-arg=BENCHMARKS_ROOT/bfs/queue/check.data
+fft/strided/fft.c            fft/strided/local_support.c       --benchmark-name=fft_strided   --tb-arg=BENCHMARKS_ROOT/fft/strided/input.data       --tb-arg=BENCHMARKS_ROOT/fft/strided/check.data -lm
+fft/transpose/fft.c          fft/transpose/local_support.c     --benchmark-name=fft_transpose --tb-arg=BENCHMARKS_ROOT/fft/transpose/input.data     --tb-arg=BENCHMARKS_ROOT/fft/transpose/check.data -lm
+gemm/blocked/gemm.c          gemm/blocked/local_support.c      --benchmark-name=gemm_blocked  --tb-arg=BENCHMARKS_ROOT/gemm/blocked/input.data      --tb-arg=BENCHMARKS_ROOT/gemm/blocked/check.data
+gemm/ncubed/gemm.c           gemm/ncubed/local_support.c       --benchmark-name=gemm_ncubed   --tb-arg=BENCHMARKS_ROOT/gemm/ncubed/input.data       --tb-arg=BENCHMARKS_ROOT/gemm/ncubed/check.data
+kmp/kmp/kmp.c                kmp/kmp/local_support.c           --benchmark-name=kmp           --tb-arg=BENCHMARKS_ROOT/kmp/kmp/input.data           --tb-arg=BENCHMARKS_ROOT/kmp/kmp/check.data
+md/grid/md.c                 md/grid/local_support.c           --benchmark-name=md_grid       --tb-arg=BENCHMARKS_ROOT/md/grid/input.data           --tb-arg=BENCHMARKS_ROOT/md/grid/check.data
+md/knn/md.c                  md/knn/local_support.c            --benchmark-name=md_knn        --tb-arg=BENCHMARKS_ROOT/md/knn/input.data            --tb-arg=BENCHMARKS_ROOT/md/knn/check.data
+nw/nw/nw.c                   nw/nw/local_support.c             --benchmark-name=nw            --tb-arg=BENCHMARKS_ROOT/nw/nw/input.data             --tb-arg=BENCHMARKS_ROOT/nw/nw/check.data
+sort/merge/sort.c            sort/merge/local_support.c        --benchmark-name=merge         --tb-arg=BENCHMARKS_ROOT/sort/merge/input.data        --tb-arg=BENCHMARKS_ROOT/sort/merge/check.data
+sort/radix/sort.c            sort/radix/local_support.c        --benchmark-name=radix         --tb-arg=BENCHMARKS_ROOT/sort/radix/input.data        --tb-arg=BENCHMARKS_ROOT/sort/radix/check.data
+spmv/crs/spmv.c              spmv/crs/local_support.c          --benchmark-name=spmv_crs      --tb-arg=BENCHMARKS_ROOT/spmv/crs/input.data          --tb-arg=BENCHMARKS_ROOT/spmv/crs/check.data
+spmv/ellpack/spmv.c          spmv/ellpack/local_support.c      --benchmark-name=spmv_ellpack  --tb-arg=BENCHMARKS_ROOT/spmv/ellpack/input.data      --tb-arg=BENCHMARKS_ROOT/spmv/ellpack/check.data
+stencil/stencil2d/stencil.c  stencil/stencil2d/local_support.c --benchmark-name=stencil2d     --tb-arg=BENCHMARKS_ROOT/stencil/stencil2d/input.data --tb-arg=BENCHMARKS_ROOT/stencil/stencil2d/check.data
+stencil/stencil3d/stencil.c  stencil/stencil3d/local_support.c --benchmark-name=stencil3d     --tb-arg=BENCHMARKS_ROOT/stencil/stencil3d/input.data --tb-arg=BENCHMARKS_ROOT/stencil/stencil3d/check.data
+viterbi/viterbi/viterbi.c    viterbi/viterbi/local_support.c   --benchmark-name=viterbi       --tb-arg=BENCHMARKS_ROOT/viterbi/viterbi/input.data   --tb-arg=BENCHMARKS_ROOT/viterbi/viterbi/check.data

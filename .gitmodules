@@ -1,0 +1,3 @@
+[submodule "MachSuite"]
+	path = examples/MachSuite/MachSuite
+	url = https://github.com/breagen/MachSuite.git
