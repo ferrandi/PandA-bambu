@@ -137,7 +137,7 @@ enum class DiopsisInstrumentWriter_Type;
        discrepancy_no_load_pointers)(discrepancy_only)(discrepancy_permissive_ptrs)(dry_run_evaluation)(               \
        generate_taste_architecture)(initial_internal_address)(mem_delay_read)(mem_delay_write)(memory_banks_number)(   \
        mixed_design)(no_parse_c_python)(num_accelerators)(post_rescheduling)(technology_file)(                         \
-       testbench_extra_gcc_flags)(timing_violation_abort)(top_design_name)(visualizer)(serialize_output)(use_ALUs)(    \
+       testbench_extra_gcc_flags)(timing_violation_abort)(visualizer)(serialize_output)(use_ALUs)(                     \
        range_analysis_mode)(fp_format)(fp_format_propagate)(fp_format_interface)(fp_rounding_mode)(fp_exception_mode)( \
        parallel_backend)(interface_xml_filename)(lattice_root)(lattice_settings)(lattice_pmi_def)(lattice_pmi_tdpbe)(  \
        lattice_pmi_mul)(xilinx_root)(xilinx_settings)(xilinx_vivado_settings)(xilinx_glbl)(mentor_root)(               \

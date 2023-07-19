@@ -114,14 +114,7 @@ std::string XilinxTasteBackendFlow::GenerateSynthesisScripts(const std::string&,
       connect_iob = true;
    }
    actual_parameters->parameter_values[PARAM_connect_iob] = STR(connect_iob);
-   if(Param->isOption(OPT_top_design_name))
-   {
-      actual_parameters->parameter_values[PARAM_top_id] = Param->getOption<std::string>(OPT_top_design_name);
-   }
-   else
-   {
-      actual_parameters->parameter_values[PARAM_top_id] = actual_parameters->component_name;
-   }
+   actual_parameters->parameter_values[PARAM_top_id] = actual_parameters->component_name;
    if(Param->isOption(OPT_backend_script_extensions))
    {
       actual_parameters->parameter_values[PARAM_has_script_extensions] = STR(true);

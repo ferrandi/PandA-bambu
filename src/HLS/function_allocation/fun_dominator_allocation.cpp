@@ -142,16 +142,6 @@ DesignFlowStep_Status fun_dominator_allocation::Exec()
    already_executed = true;
    const auto CGM = HLSMgr->GetCallGraphManager();
    auto root_functions = CGM->GetRootFunctions();
-   if(parameters->isOption(OPT_top_design_name)) // top design function become the top_vertex
-   {
-      const auto top_rtldesign_function =
-          HLSMgr->get_tree_manager()->GetFunction(parameters->getOption<std::string>(OPT_top_design_name));
-      if(top_rtldesign_function && root_functions.count(top_rtldesign_function->index))
-      {
-         root_functions.clear();
-         root_functions.insert(top_rtldesign_function->index);
-      }
-   }
    if(parameters->isOption(OPT_disable_function_proxy) && parameters->getOption<bool>(OPT_disable_function_proxy))
    {
       return DesignFlowStep_Status::UNCHANGED;

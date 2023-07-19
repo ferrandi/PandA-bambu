@@ -317,13 +317,7 @@ DesignFlowStep_Status FunctionCallOpt::InternalExec()
       opt_call.erase(function_id);
    }
 
-   if(parameters->isOption(OPT_top_design_name) &&
-      TM->GetFunction(parameters->getOption<std::string>(OPT_top_design_name))->index == function_id)
-   {
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                     "Current function is marked as top RTL design, skipping...");
-   }
-   else if(never_inline.count(function_id))
+   if(never_inline.count(function_id))
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Current function is marked as never inline, skipping...");
    }

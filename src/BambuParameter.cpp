@@ -265,8 +265,7 @@
 #define OPT_TIMING_MODEL (1 + OPT_TIME_WEIGHT)
 #define OPT_TIMING_VIOLATION (1 + OPT_TIMING_MODEL)
 #define OPT_TOP_FNAME (1 + OPT_TIMING_VIOLATION)
-#define OPT_TOP_RTLDESIGN_NAME (1 + OPT_TOP_FNAME)
-#define OPT_UNALIGNED_ACCESS_PARAMETER (1 + OPT_TOP_RTLDESIGN_NAME)
+#define OPT_UNALIGNED_ACCESS_PARAMETER (1 + OPT_TOP_FNAME)
 #define OPT_VHDL_LIBRARY_PARAMETER (1 + OPT_UNALIGNED_ACCESS_PARAMETER)
 #define OPT_VISUALIZER (1 + OPT_VHDL_LIBRARY_PARAMETER)
 #define OPT_XML_CONFIG (1 + OPT_VISUALIZER)
@@ -344,8 +343,6 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "        automated top-level function verification.\n\n"
       << "    --top-fname=<fun_name>\n"
       << "        Define the top function to be synthesized. (default=main)\n\n"
-      << "    --top-rtldesign-name=<top_name>\n"
-      << "        Define the top module name for the RTL backend.\n\n"
       << "    --inline-fname=<fun_name>[,<fun_name>]*\n"
       << "        Define functions to be always inlined.\n"
       << "        Automatic inlining is always performed using internal metrics.\n"
@@ -986,7 +983,6 @@ int BambuParameter::Exec()
       COMMON_LONG_OPTIONS,
       /// General options
       {"top-fname", required_argument, nullptr, OPT_TOP_FNAME},
-      {"top-rtldesign-name", required_argument, nullptr, OPT_TOP_RTLDESIGN_NAME},
       {"time", required_argument, nullptr, 't'},
       {"file-input-data", required_argument, nullptr, INPUT_OPT_FILE_INPUT_DATA},
       /// Frontend options
@@ -1188,11 +1184,6 @@ int BambuParameter::Exec()
             {
                setOption(OPT_top_file, optarg);
             }
-            break;
-         }
-         case OPT_TOP_RTLDESIGN_NAME:
-         {
-            setOption(OPT_top_design_name, optarg);
             break;
          }
          case 'o':
@@ -2500,23 +2491,13 @@ void BambuParameter::add_experimental_setup_compiler_options(bool kill_printf)
          optimizations = getOption<std::string>(OPT_gcc_optimizations);
       }
       THROW_ASSERT(isOption(OPT_input_file), "Input file not specified");
-      if(getOption<std::string>(OPT_input_file).find(STR_CST_string_separator) == std::string::npos &&
-         !isOption(OPT_top_design_name))
+      if(getOption<std::string>(OPT_input_file).find(STR_CST_string_separator) == std::string::npos)
       {
          if(optimizations != "")
          {
             optimizations = optimizations + STR_CST_string_separator;
          }
          optimizations = optimizations + "whole-program";
-         setOption(OPT_gcc_optimizations, optimizations);
-      }
-      if(isOption(OPT_top_design_name))
-      {
-         if(optimizations != "")
-         {
-            optimizations = optimizations + STR_CST_string_separator;
-         }
-         optimizations = optimizations + "no-ipa-cp" + STR_CST_string_separator + "no-ipa-cp-clone";
          setOption(OPT_gcc_optimizations, optimizations);
       }
    }

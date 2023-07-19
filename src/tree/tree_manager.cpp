@@ -2924,14 +2924,6 @@ bool tree_manager::is_top_function(const function_decl* fd) const
                   }
                }
             }
-            if(Param->isOption(OPT_top_design_name))
-            {
-               const auto top_rtldesign_function = Param->getOption<std::string>(OPT_top_design_name);
-               if(simple_name == top_rtldesign_function)
-               {
-                  return true;
-               }
-            }
          }
       }
    }
