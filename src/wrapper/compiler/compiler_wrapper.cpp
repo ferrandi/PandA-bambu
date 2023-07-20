@@ -748,11 +748,6 @@ void CompilerWrapper::CompileFile(const std::string& original_file_name, std::st
             command += " -mllvm -panda-topfname=" + fname;
          }
          command += "  -emit-llvm";
-         if(Param->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
-            CompilerWrapper_CompilerTarget::CT_I386_CLANG16)
-         {
-            command += " -Xclang -no-opaque-pointers";
-         }
       }
       else
       {
@@ -762,11 +757,6 @@ void CompilerWrapper::CompileFile(const std::string& original_file_name, std::st
    }
    else if(cm == CompilerWrapper_CompilerMode::CM_LTO)
    {
-      if(Param->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
-         CompilerWrapper_CompilerTarget::CT_I386_CLANG16)
-      {
-         command += " -Xclang -no-opaque-pointers";
-      }
       command += " -c -flto -o " + Param->getOption<std::string>(OPT_output_temporary_directory) + "/" +
                  GetBaseName(real_file_name) + ".o ";
    }
@@ -899,7 +889,7 @@ void CompilerWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::st
 
 #if HAVE_I386_CLANG4_COMPILER || HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER ||    \
     HAVE_I386_CLANG7_COMPILER || HAVE_I386_CLANG8_COMPILER || HAVE_I386_CLANG9_COMPILER ||    \
-    HAVE_I386_CLANG10_COMPILER || HAVE_I386_CLANG11_COMPILER || HAVE_I386_CLANG11_COMPILER || \
+    HAVE_I386_CLANG10_COMPILER || HAVE_I386_CLANG11_COMPILER || HAVE_I386_CLANG12_COMPILER || \
     HAVE_I386_CLANG13_COMPILER || HAVE_I386_CLANG16_COMPILER || HAVE_I386_CLANGVVD_COMPILER
    if(Param->IsParameter("disable-pragma-parsing") && Param->GetParameter<int>("disable-pragma-parsing") == 1)
    {

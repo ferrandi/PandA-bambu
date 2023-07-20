@@ -6189,12 +6189,12 @@ tree_nodeConstRef tree_helper::GetFormalIth(const tree_nodeConstRef& _obj, unsig
       {
          const auto pt = GetPointerS<const pointer_type>(fn_type);
          THROW_ASSERT(pt->ptd, "unexpected pattern");
-         const auto ft = GetPointerS<const function_type>(GET_CONST_NODE(pt->ptd));
-         if(ft->varargs_flag)
+         const auto ft = GetPointer<const function_type>(GET_CONST_NODE(pt->ptd));
+         if(ft && ft->varargs_flag)
          {
             return tree_nodeConstRef();
          }
-         else if(ft->prms)
+         else if(ft && ft->prms)
          {
             auto tl = GetPointerS<const tree_list>(GET_CONST_NODE(ft->prms));
             THROW_ASSERT(tl, "unexpected condition");
@@ -6245,12 +6245,12 @@ tree_nodeConstRef tree_helper::GetFormalIth(const tree_nodeConstRef& _obj, unsig
       {
          const auto pt = GetPointerS<const pointer_type>(fn_type);
          THROW_ASSERT(pt->ptd, "unexpected pattern");
-         const auto ft = GetPointerS<const function_type>(GET_CONST_NODE(pt->ptd));
-         if(ft->varargs_flag)
+         const auto ft = GetPointer<const function_type>(GET_CONST_NODE(pt->ptd));
+         if(ft && ft->varargs_flag)
          {
             return tree_nodeConstRef();
          }
-         else if(ft->prms)
+         else if(ft && ft->prms)
          {
             auto tl = GetPointerS<const tree_list>(GET_CONST_NODE(ft->prms));
             unsigned int ith = 0;
