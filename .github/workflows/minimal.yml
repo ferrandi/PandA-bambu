@@ -121,7 +121,12 @@ jobs:
   specific-test-modelsim:
     needs: [build]
     runs-on: [self-hosted,mentor]
+    strategy:
+      fail-fast: false
+      matrix:
+        id: ["4", "_modelsim"]
     env:
+      script: ./panda_regressions/hls/bambu_specific_test${{matrix.id}}.sh
       args: -c=--simulator=MODELSIM -c=--assert-debug
     steps:
       - name: Checkout repository
@@ -141,17 +146,31 @@ jobs:
           ln -s $PWD/*.AppImage bin/bambu
           ln -s $PWD/*.AppImage bin/spider
           echo "local-bin=$PWD/bin" >> $GITHUB_OUTPUT
-      - name: Launch Bambu specific tests
+      - name: Launch Bambu specific tests ${{matrix.id}}
         shell: bash
         run: |
           export PATH=${{steps.setup.outputs.local-bin}}:$PATH
           mkdir ${{env.report-dir}}
-          ./panda_regressions/hls/bambu_specific_test_modelsim.sh --returnfail --junitdir="${{env.report-dir}}" --csv="${{env.report-dir}}/perf.csv" ${{env.args}}
+          ${{env.script}} --returnfail --junitdir="${{env.report-dir}}" --csv="${{env.report-dir}}/perf.csv" ${{env.args}}
+      - name: Compare results
+        id: perf-check
+        uses: ./.github/actions/perf-check
+        with:
+          test-id: bambu_specific_test${{matrix.id}}
+          new-results: ${{env.report-dir}}/perf.csv
+          storage-url: "${{env.storage-url}}"
+          username: "${{env.storage-user}}"
+          password: "${{env.storage-token}}"
+      - name: Add performance results
+        if: ${{ steps.perf-check.outputs.compare-csv != '' }}
+        shell: bash
+        run: |
+          mv ${{ steps.perf-check.outputs.compare-csv }} ${{env.report-dir}}
       - name: Upload test reports
         if: ${{ always() }}
         uses: actions/upload-artifact@v3
         with:
-          name: bambu_specific_test_modelsim
+          name: bambu_specific_test${{matrix.id}}
           path: ${{env.report-dir}}
 
   AXI4-verification:
@@ -686,7 +705,7 @@ jobs:
 
   CHStone-memarch:
     needs: [build, CHStone-multi]
-    runs-on: [self-hosted, altera, intelFPGA, lattice, mentor, xilinx]
+    runs-on: [self-hosted, mentor]
     strategy:
       fail-fast: false
       matrix:

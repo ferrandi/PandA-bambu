@@ -1,5 +1,5 @@
 /* Software floating-point emulation.
-   Convert a 64bit signed integer to IEEE double
+   Return a * b
    Copyright (C) 1997-2023 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
 
@@ -26,16 +26,20 @@
    License along with the GNU C Library; if not, see
    <https://www.gnu.org/licenses/>.  */
 
-static __FORCE_INLINE DFtype __floatdidf(DItype i)
+static __FORCE_INLINE HFtype __mulhf3(HFtype a, HFtype b)
 {
    FP_DECL_EX;
-   FP_DECL_D(A);
-   DFtype a;
+   FP_DECL_H(A);
+   FP_DECL_H(B);
+   FP_DECL_H(R);
+   HFtype r;
 
    FP_INIT_ROUNDMODE;
-   FP_FROM_INT_D(A, i, DI_BITS, UDItype);
-   FP_PACK_RAW_D(a, A);
+   FP_UNPACK_H(A, a);
+   FP_UNPACK_H(B, b);
+   FP_MUL_H(R, A, B);
+   FP_PACK_H(r, R);
    FP_HANDLE_EXCEPTIONS;
 
-   return a;
+   return r;
 }

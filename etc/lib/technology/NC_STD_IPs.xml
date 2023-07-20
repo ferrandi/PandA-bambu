@@ -478,6 +478,9 @@ end"/>
           <port_o id="Mout_Wdata_ram" dir="IN" is_memory="1" is_master="1" is_data_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
           </port_o>
+          <port_o id="Mout_back_pressure" dir="OUT" is_memory="1" is_master="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1"/>
+          </port_o>
           <port_o id="Sout_DataRdy" dir="IN" is_memory="1" is_slave="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1"/>
           </port_o>
@@ -501,7 +504,7 @@ end"/>
           </port_o>
           <NP_functionality
             IP_COMPONENT="mem_utils"
-            LIBRARY="TestbenchMEMMinimal MEM_DELAY_READ MEM_DELAY_WRITE MEM_PIPELINED base_addr MEM_DUMP MEM_DUMP_FILE M_DataRdy M_Rdata_ram Mout_oe_ram Mout_we_ram Mout_addr_ram Mout_data_ram_size Mout_Wdata_ram Sout_DataRdy Sout_Rdata_ram S_oe_ram S_we_ram S_addr_ram S_data_ram_size S_Wdata_ram"
+            LIBRARY="TestbenchMEMMinimal MEM_DELAY_READ MEM_DELAY_WRITE MEM_PIPELINED base_addr MEM_DUMP MEM_DUMP_FILE M_DataRdy M_Rdata_ram Mout_oe_ram Mout_we_ram Mout_addr_ram Mout_data_ram_size Mout_Wdata_ram Mout_back_pressure Sout_DataRdy Sout_Rdata_ram S_oe_ram S_we_ram S_addr_ram S_data_ram_size S_Wdata_ram"
             VERILOG_PROVIDED="
 localparam MEM_DELAY_MAX= MEM_DELAY_READ &gt; MEM_DELAY_WRITE ? MEM_DELAY_READ : MEM_DELAY_WRITE,
   ACTIVE_READ= MEM_DELAY_READ &gt; 1 ? (MEM_DELAY_READ-2) : 0,
@@ -533,6 +536,7 @@ assign S_data_ram_size = Mout_data_ram_size;
 assign S_Wdata_ram = Mout_Wdata_ram;
 assign M_DataRdy = _M_DataRdy | (Sout_DataRdy === 1&apos;b1);
 assign M_Rdata_ram = _M_Rdata_ram | (Sout_Rdata_ram &amp; {BITSIZE_M_Rdata_ram{Sout_DataRdy === 1&apos;b1}});
+assign Mout_back_pressure = 0;
 
 generate
   if(MEM_DUMP)

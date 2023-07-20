@@ -2713,10 +2713,14 @@ ARRAY_1D_STD_BRAM_NN_instance : ARRAY_1D_STD_BRAM_NN_SDS_BUS_BASE generic map (B
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="MEMORY_CTRL"/>
+          <parameter name="USE_BACK_PRESSURE">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="start_port" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="reset" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="in1" dir="IN">
@@ -2775,16 +2779,45 @@ ARRAY_1D_STD_BRAM_NN_instance : ARRAY_1D_STD_BRAM_NN_SDS_BUS_BASE generic map (B
           <port_o id="M_DataRdy" dir="IN" is_memory="1" is_master="1" is_global="1" is_extern="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
-          <port_o id="M_back_pressure" dir="IN" is_memory="1" is_master="1">
+          <port_o id="Mout_back_pressure" dir="IN" is_memory="1" is_master="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="MEMORY_CTRL in1 in2 in3 out1 Min_addr_ram Mout_addr_ram M_Rdata_ram Min_Wdata_ram Mout_Wdata_ram Min_data_ram_size Mout_data_ram_size" VERILOG_PROVIDED="
+          <NP_functionality LIBRARY="MEMORY_CTRL USE_BACK_PRESSURE in1 in2 in3 out1 Min_addr_ram Mout_addr_ram M_Rdata_ram Min_Wdata_ram Mout_Wdata_ram Min_data_ram_size Mout_data_ram_size" VERILOG_PROVIDED="
 wire [BITSIZE_in2-1:0] tmp_addr;
 wire int_sel_LOAD;
 wire int_sel_STORE;
 
-assign int_sel_LOAD = (in4 &amp;&amp; sel_LOAD) || M_back_pressure;
-assign int_sel_STORE = (in4 &amp;&amp; sel_STORE)  || M_back_pressure;
+generate 
+  if(USE_BACK_PRESSURE == 1)
+  begin
+    reg int_sel_LOAD_old;
+    reg int_sel_STORE_old;
+    wire int_sel_LOAD_old_next;
+    wire int_sel_STORE_old_next;
+
+    assign int_sel_LOAD_old_next = Mout_back_pressure &amp;&amp; (sel_LOAD || int_sel_LOAD_old);
+    assign int_sel_STORE_old_next = Mout_back_pressure &amp;&amp; (sel_STORE || int_sel_STORE_old);
+    always @(posedge clock)
+    if(1RESET_VALUE)
+    begin
+      int_sel_LOAD_old &lt;= 0;
+      int_sel_STORE_old &lt;= 0;
+    end
+    else
+    begin
+      int_sel_LOAD_old &lt;= int_sel_LOAD_old_next;
+      int_sel_STORE_old &lt;= int_sel_STORE_old_next;
+    end
+    assign int_sel_LOAD = (in4 &amp;&amp; sel_LOAD) || int_sel_LOAD_old;
+    assign int_sel_STORE = (in4 &amp;&amp; sel_STORE) || int_sel_STORE_old;
+  end
+  else
+  begin
+    assign int_sel_LOAD = in4 &amp;&amp; sel_LOAD;
+    assign int_sel_STORE = in4 &amp;&amp; sel_STORE;
+  end
+endgenerate
+
 assign tmp_addr = in2;
 assign Mout_addr_ram = (int_sel_LOAD || int_sel_STORE) ? tmp_addr : Min_addr_ram;
 assign Mout_oe_ram = int_sel_LOAD ? 1&apos;b1 : Min_oe_ram;
@@ -2815,10 +2848,14 @@ assign done_port = (M_DataRdy &amp;&amp; in4) || (!in4 &amp;&amp; (sel_STORE || 
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="MEMORY_CTRL_D10"/>
+          <parameter name="USE_BACK_PRESSURE">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="start_port" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="reset" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="in1" dir="IN">
@@ -2877,18 +2914,46 @@ assign done_port = (M_DataRdy &amp;&amp; in4) || (!in4 &amp;&amp; (sel_STORE || 
           <port_o id="M_DataRdy" dir="IN" is_memory="1" is_master="1" is_global="1" is_extern="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
-          <port_o id="M_back_pressure" dir="IN" is_memory="1" is_master="1">
+          <port_o id="Mout_back_pressure" dir="IN" is_memory="1" is_master="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="MEMORY_CTRL_D10 in1 in2 in3 out1 Min_addr_ram Mout_addr_ram M_Rdata_ram Min_Wdata_ram Mout_Wdata_ram Min_data_ram_size Mout_data_ram_size" VERILOG_PROVIDED="
+          <NP_functionality LIBRARY="MEMORY_CTRL_D10 USE_BACK_PRESSURE in1 in2 in3 out1 Min_addr_ram Mout_addr_ram M_Rdata_ram Min_Wdata_ram Mout_Wdata_ram Min_data_ram_size Mout_data_ram_size" VERILOG_PROVIDED="
 reg [BITSIZE_out1-1:0] delayed_out1;
 reg delayed_M_DataRdy;
 wire [BITSIZE_in2-1:0] tmp_addr;
 wire int_sel_LOAD;
 wire int_sel_STORE;
 
-assign int_sel_LOAD = (in4 &amp;&amp; sel_LOAD) || M_back_pressure;
-assign int_sel_STORE = (in4 &amp;&amp; sel_STORE) || M_back_pressure;
+generate 
+  if(USE_BACK_PRESSURE == 1)
+  begin
+    reg int_sel_LOAD_old;
+    reg int_sel_STORE_old;
+    wire int_sel_LOAD_old_next;
+    wire int_sel_STORE_old_next;
+
+    assign int_sel_LOAD_old_next = Mout_back_pressure &amp;&amp; (sel_LOAD || int_sel_LOAD_old);
+    assign int_sel_STORE_old_next = Mout_back_pressure &amp;&amp; (sel_STORE || int_sel_STORE_old);
+    always @(posedge clock)
+    if(1RESET_VALUE)
+    begin
+      int_sel_LOAD_old &lt;= 0;
+      int_sel_STORE_old &lt;= 0;
+    end
+    else
+    begin
+      int_sel_LOAD_old &lt;= int_sel_LOAD_old_next;
+      int_sel_STORE_old &lt;= int_sel_STORE_old_next;
+    end
+    assign int_sel_LOAD = (in4 &amp;&amp; sel_LOAD) || int_sel_LOAD_old;
+    assign int_sel_STORE = (in4 &amp;&amp; sel_STORE) || int_sel_STORE_old;
+  end
+  else
+  begin
+    assign int_sel_LOAD = in4 &amp;&amp; sel_LOAD;
+    assign int_sel_STORE = in4 &amp;&amp; sel_STORE;
+  end
+endgenerate
 
 assign tmp_addr = in2;
 assign Mout_addr_ram = (int_sel_LOAD || int_sel_STORE) ? tmp_addr : Min_addr_ram;
@@ -2924,10 +2989,14 @@ assign done_port = (delayed_M_DataRdy &amp; in4) || (!in4 &amp; (sel_STORE || se
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="MEMORY_CTRL_D11"/>
+          <parameter name="USE_BACK_PRESSURE">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="start_port" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="reset" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="in1" dir="IN">
@@ -2986,10 +3055,10 @@ assign done_port = (delayed_M_DataRdy &amp; in4) || (!in4 &amp; (sel_STORE || se
           <port_o id="M_DataRdy" dir="IN" is_memory="1" is_master="1" is_global="1" is_extern="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
-          <port_o id="M_back_pressure" dir="IN" is_memory="1" is_master="1">
+          <port_o id="Mout_back_pressure" dir="IN" is_memory="1" is_master="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="MEMORY_CTRL_D11 in1 in2 in3 out1 Min_addr_ram Mout_addr_ram M_Rdata_ram Min_Wdata_ram Mout_Wdata_ram Min_data_ram_size Mout_data_ram_size" VERILOG_PROVIDED="
+          <NP_functionality LIBRARY="MEMORY_CTRL_D11 USE_BACK_PRESSURE in1 in2 in3 out1 Min_addr_ram Mout_addr_ram M_Rdata_ram Min_Wdata_ram Mout_Wdata_ram Min_data_ram_size Mout_data_ram_size" VERILOG_PROVIDED="
 reg delayed_sel_LOAD;
 reg delayed_sel_STORE;
 reg [BITSIZE_in1-1:0] delayed_in1;
@@ -2999,8 +3068,36 @@ wire [BITSIZE_in2-1:0] tmp_addr;
 wire int_sel_LOAD;
 wire int_sel_STORE;
 
-assign int_sel_LOAD = (in4 &amp;&amp; delayed_sel_LOAD) || M_back_pressure;
-assign int_sel_STORE = (in4 &amp;&amp; delayed_sel_STORE) || M_back_pressure;
+generate 
+  if(USE_BACK_PRESSURE == 1)
+  begin
+    reg int_sel_LOAD_old;
+    reg int_sel_STORE_old;
+    wire int_sel_LOAD_old_next;
+    wire int_sel_STORE_old_next;
+
+    assign int_sel_LOAD_old_next = Mout_back_pressure &amp;&amp; (delayed_sel_LOAD || int_sel_LOAD_old);
+    assign int_sel_STORE_old_next = Mout_back_pressure &amp;&amp; (delayed_sel_STORE || int_sel_STORE_old);
+    always @(posedge clock)
+    if(1RESET_VALUE)
+    begin
+      int_sel_LOAD_old &lt;= 0;
+      int_sel_STORE_old &lt;= 0;
+    end
+    else
+    begin
+      int_sel_LOAD_old &lt;= int_sel_LOAD_old_next;
+      int_sel_STORE_old &lt;= int_sel_STORE_old_next;
+    end
+    assign int_sel_LOAD = (in4 &amp;&amp; delayed_sel_LOAD) || int_sel_LOAD_old;
+    assign int_sel_STORE = (in4 &amp;&amp; delayed_sel_STORE) || int_sel_STORE_old;
+  end
+  else
+  begin
+    assign int_sel_LOAD = in4 &amp;&amp; delayed_sel_LOAD;
+    assign int_sel_STORE = in4 &amp;&amp; delayed_sel_STORE;
+  end
+endgenerate
 
 always @(posedge clock)
   delayed_sel_LOAD &lt;= sel_LOAD;
@@ -3043,10 +3140,14 @@ assign done_port = (M_DataRdy &amp; in4) || (!in4 &amp; (delayed_sel_STORE || de
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="MEMORY_CTRL_D21"/>
+          <parameter name="USE_BACK_PRESSURE">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="start_port" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="reset" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="in1" dir="IN">
@@ -3105,10 +3206,10 @@ assign done_port = (M_DataRdy &amp; in4) || (!in4 &amp; (delayed_sel_STORE || de
           <port_o id="M_DataRdy" dir="IN" is_memory="1" is_master="1" is_global="1" is_extern="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
-          <port_o id="M_back_pressure" dir="IN" is_memory="1" is_master="1">
+          <port_o id="Mout_back_pressure" dir="IN" is_memory="1" is_master="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="MEMORY_CTRL_D21 in1 in2 in3 out1 Min_addr_ram Mout_addr_ram M_Rdata_ram Min_Wdata_ram Mout_Wdata_ram Min_data_ram_size Mout_data_ram_size" VERILOG_PROVIDED="
+          <NP_functionality LIBRARY="MEMORY_CTRL_D21 USE_BACK_PRESSURE in1 in2 in3 out1 Min_addr_ram Mout_addr_ram M_Rdata_ram Min_Wdata_ram Mout_Wdata_ram Min_data_ram_size Mout_data_ram_size" VERILOG_PROVIDED="
 reg [BITSIZE_out1-1:0] delayed_out1;
 reg delayed_M_DataRdy;
 reg delayed_sel_LOAD;
@@ -3120,8 +3221,36 @@ wire [BITSIZE_in2-1:0] tmp_addr;
 wire int_sel_LOAD;
 wire int_sel_STORE;
 
-assign int_sel_LOAD = (in4 &amp;&amp; delayed_sel_LOAD) || M_back_pressure;
-assign int_sel_STORE = (in4 &amp;&amp; delayed_sel_STORE) || M_back_pressure;
+generate 
+  if(USE_BACK_PRESSURE == 1)
+  begin
+    reg int_sel_LOAD_old;
+    reg int_sel_STORE_old;
+    wire int_sel_LOAD_old_next;
+    wire int_sel_STORE_old_next;
+
+    assign int_sel_LOAD_old_next = Mout_back_pressure &amp;&amp; (delayed_sel_LOAD || int_sel_LOAD_old);
+    assign int_sel_STORE_old_next = Mout_back_pressure &amp;&amp; (delayed_sel_STORE || int_sel_STORE_old);
+    always @(posedge clock)
+    if(1RESET_VALUE)
+    begin
+      int_sel_LOAD_old &lt;= 0;
+      int_sel_STORE_old &lt;= 0;
+    end
+    else
+    begin
+      int_sel_LOAD_old &lt;= int_sel_LOAD_old_next;
+      int_sel_STORE_old &lt;= int_sel_STORE_old_next;
+    end
+    assign int_sel_LOAD = (in4 &amp;&amp; delayed_sel_LOAD) || int_sel_LOAD_old;
+    assign int_sel_STORE = (in4 &amp;&amp; delayed_sel_STORE) || int_sel_STORE_old;
+  end
+  else
+  begin
+    assign int_sel_LOAD = in4 &amp;&amp; delayed_sel_LOAD;
+    assign int_sel_STORE = in4 &amp;&amp; delayed_sel_STORE;
+  end
+endgenerate
 
 always @(posedge clock)
   delayed_sel_LOAD &lt;= sel_LOAD &amp;&amp; !M_DataRdy &amp;&amp; !delayed_M_DataRdy;
@@ -3168,10 +3297,14 @@ assign done_port = delayed_M_DataRdy;
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="MEMORY_CTRLN"/>
+          <parameter name="USE_BACK_PRESSURE">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="start_port" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="reset" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_vector_o id="in1" dir="IN">
@@ -3230,18 +3363,46 @@ assign done_port = delayed_M_DataRdy;
           <port_vector_o id="M_DataRdy" dir="IN" is_memory="1" is_master="1" is_global="1" is_extern="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_vector_o>
-          <port_vector_o id="M_back_pressure" dir="IN" is_memory="1" is_master="1">
+          <port_vector_o id="Mout_back_pressure" dir="IN" is_memory="1" is_master="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_vector_o>
-          <NP_functionality LIBRARY="MEMORY_CTRLN in1 in2 in3 in4 sel_LOAD sel_STORE out1 done_port Min_oe_ram Min_we_ram Mout_oe_ram Mout_we_ram M_DataRdy Min_addr_ram Mout_addr_ram M_Rdata_ram Min_Wdata_ram Mout_Wdata_ram Min_data_ram_size Mout_data_ram_size M_back_pressure" VERILOG_PROVIDED="
+          <NP_functionality LIBRARY="MEMORY_CTRLN USE_BACK_PRESSURE in1 in2 in3 in4 sel_LOAD sel_STORE out1 done_port Min_oe_ram Min_we_ram Mout_oe_ram Mout_we_ram M_DataRdy Min_addr_ram Mout_addr_ram M_Rdata_ram Min_Wdata_ram Mout_Wdata_ram Min_data_ram_size Mout_data_ram_size Mout_back_pressure" VERILOG_PROVIDED="
 localparam max_n_writes = PORTSIZE_sel_STORE &gt; PORTSIZE_Mout_we_ram ? PORTSIZE_sel_STORE : PORTSIZE_Mout_we_ram;
 localparam max_n_reads = PORTSIZE_sel_LOAD &gt; PORTSIZE_Mout_oe_ram ? PORTSIZE_sel_STORE : PORTSIZE_Mout_oe_ram;
 localparam max_n_rw = max_n_writes &gt; max_n_reads ? max_n_writes : max_n_reads;
 wire [PORTSIZE_sel_LOAD-1:0] int_sel_LOAD;
 wire [PORTSIZE_sel_STORE-1:0] int_sel_STORE;
 
-assign int_sel_LOAD = (in4 &amp; sel_LOAD) | M_back_pressure;
-assign int_sel_STORE = (in4 &amp; sel_STORE)  | M_back_pressure;
+generate 
+  if(USE_BACK_PRESSURE == 1)
+  begin
+    reg [PORTSIZE_sel_LOAD-1:0] int_sel_LOAD_old;
+    reg [PORTSIZE_sel_STORE-1:0] int_sel_STORE_old;
+    wire [PORTSIZE_sel_LOAD-1:0] int_sel_LOAD_old_next;
+    wire [PORTSIZE_sel_STORE-1:0] int_sel_STORE_old_next;
+
+    assign int_sel_LOAD_old_next = Mout_back_pressure &amp; (sel_LOAD | int_sel_LOAD_old);
+    assign int_sel_STORE_old_next = Mout_back_pressure &amp; (sel_STORE | int_sel_STORE_old);
+    always @(posedge clock)
+    if(1RESET_VALUE)
+    begin
+      int_sel_LOAD_old &lt;= 0;
+      int_sel_STORE_old &lt;= 0;
+    end
+    else
+    begin
+      int_sel_LOAD_old &lt;= int_sel_LOAD_old_next;
+      int_sel_STORE_old &lt;= int_sel_STORE_old_next;
+    end
+    assign int_sel_LOAD = (in4 &amp; sel_LOAD) | int_sel_LOAD_old;
+    assign int_sel_STORE = (in4 &amp; sel_STORE) | int_sel_STORE_old;
+  end
+  else
+  begin
+    assign int_sel_LOAD = in4 &amp; sel_LOAD;
+    assign int_sel_STORE = in4 &amp; sel_STORE;
+  end
+endgenerate
 
 wire  [(PORTSIZE_in2*BITSIZE_in2)-1:0] tmp_addr;
 assign tmp_addr = in2;
@@ -3289,10 +3450,14 @@ assign done_port = (M_DataRdy &amp; in4) | (~in4 &amp; (sel_STORE | sel_LOAD));"
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="MEMORY_CTRLN_D10"/>
+          <parameter name="USE_BACK_PRESSURE">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="start_port" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="reset" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_vector_o id="in1" dir="IN">
@@ -3352,10 +3517,10 @@ assign done_port = (M_DataRdy &amp; in4) | (~in4 &amp; (sel_STORE | sel_LOAD));"
           <port_vector_o id="M_DataRdy" dir="IN" is_memory="1" is_master="1" is_global="1" is_extern="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_vector_o>
-          <port_vector_o id="M_back_pressure" dir="IN" is_memory="1" is_master="1">
+          <port_vector_o id="Mout_back_pressure" dir="IN" is_memory="1" is_master="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_vector_o>
-          <NP_functionality LIBRARY="MEMORY_CTRLN_D10 in1 in2 in3 in4 sel_LOAD sel_STORE out1 done_port Min_oe_ram Min_we_ram Mout_oe_ram Mout_we_ram M_DataRdy Min_addr_ram Mout_addr_ram M_Rdata_ram Min_Wdata_ram Mout_Wdata_ram Min_data_ram_size Mout_data_ram_size M_back_pressure" VERILOG_PROVIDED="
+          <NP_functionality LIBRARY="MEMORY_CTRLN_D10 USE_BACK_PRESSURE in1 in2 in3 in4 sel_LOAD sel_STORE out1 done_port Min_oe_ram Min_we_ram Mout_oe_ram Mout_we_ram M_DataRdy Min_addr_ram Mout_addr_ram M_Rdata_ram Min_Wdata_ram Mout_Wdata_ram Min_data_ram_size Mout_data_ram_size Mout_back_pressure" VERILOG_PROVIDED="
 localparam max_n_writes = PORTSIZE_sel_STORE &gt; PORTSIZE_Mout_we_ram ? PORTSIZE_sel_STORE : PORTSIZE_Mout_we_ram;
 localparam max_n_reads = PORTSIZE_sel_LOAD &gt; PORTSIZE_Mout_oe_ram ? PORTSIZE_sel_STORE : PORTSIZE_Mout_oe_ram;
 localparam max_n_rw = max_n_writes &gt; max_n_reads ? max_n_writes : max_n_reads;
@@ -3365,8 +3530,36 @@ wire [(PORTSIZE_in2*BITSIZE_in2)-1:0] tmp_addr;
 wire [PORTSIZE_sel_LOAD-1:0] int_sel_LOAD;
 wire [PORTSIZE_sel_STORE-1:0] int_sel_STORE;
 
-assign int_sel_LOAD = (in4 &amp; sel_LOAD) | M_back_pressure;
-assign int_sel_STORE = (in4 &amp; sel_STORE) | M_back_pressure;
+generate 
+  if(USE_BACK_PRESSURE == 1)
+  begin
+    reg [PORTSIZE_sel_LOAD-1:0] int_sel_LOAD_old;
+    reg [PORTSIZE_sel_STORE-1:0] int_sel_STORE_old;
+    wire [PORTSIZE_sel_LOAD-1:0] int_sel_LOAD_old_next;
+    wire [PORTSIZE_sel_STORE-1:0] int_sel_STORE_old_next;
+
+    assign int_sel_LOAD_old_next = Mout_back_pressure &amp; (sel_LOAD | int_sel_LOAD_old);
+    assign int_sel_STORE_old_next = Mout_back_pressure &amp; (sel_STORE | int_sel_STORE_old);
+    always @(posedge clock)
+    if(1RESET_VALUE)
+    begin
+      int_sel_LOAD_old &lt;= 0;
+      int_sel_STORE_old &lt;= 0;
+    end
+    else
+    begin
+      int_sel_LOAD_old &lt;= int_sel_LOAD_old_next;
+      int_sel_STORE_old &lt;= int_sel_STORE_old_next;
+    end
+    assign int_sel_LOAD = (in4 &amp; sel_LOAD) | int_sel_LOAD_old;
+    assign int_sel_STORE = (in4 &amp; sel_STORE) | int_sel_STORE_old;
+  end
+  else
+  begin
+    assign int_sel_LOAD = in4 &amp; sel_LOAD;
+    assign int_sel_STORE = in4 &amp; sel_STORE;
+  end
+endgenerate
 
 assign tmp_addr = in2;
 generate
@@ -3417,10 +3610,14 @@ assign done_port = delayed_M_DataRdy;"/>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="MEMORY_CTRLN_D11"/>
+          <parameter name="USE_BACK_PRESSURE">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="start_port" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="reset" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_vector_o id="in1" dir="IN">
@@ -3480,10 +3677,10 @@ assign done_port = delayed_M_DataRdy;"/>
           <port_vector_o id="M_DataRdy" dir="IN" is_memory="1" is_master="1" is_global="1" is_extern="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_vector_o>
-          <port_vector_o id="M_back_pressure" dir="IN" is_memory="1" is_master="1">
+          <port_vector_o id="Mout_back_pressure" dir="IN" is_memory="1" is_master="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_vector_o>
-          <NP_functionality LIBRARY="MEMORY_CTRLN_D11 in1 in2 in3 in4 sel_LOAD sel_STORE out1 done_port Min_oe_ram Min_we_ram Mout_oe_ram Mout_we_ram M_DataRdy Min_addr_ram Mout_addr_ram M_Rdata_ram Min_Wdata_ram Mout_Wdata_ram Min_data_ram_size Mout_data_ram_size M_back_pressure" VERILOG_PROVIDED="
+          <NP_functionality LIBRARY="MEMORY_CTRLN_D11 USE_BACK_PRESSURE in1 in2 in3 in4 sel_LOAD sel_STORE out1 done_port Min_oe_ram Min_we_ram Mout_oe_ram Mout_we_ram M_DataRdy Min_addr_ram Mout_addr_ram M_Rdata_ram Min_Wdata_ram Mout_Wdata_ram Min_data_ram_size Mout_data_ram_size Mout_back_pressure" VERILOG_PROVIDED="
 localparam max_n_writes = PORTSIZE_sel_STORE &gt; PORTSIZE_Mout_we_ram ? PORTSIZE_sel_STORE : PORTSIZE_Mout_we_ram;
 localparam max_n_reads = PORTSIZE_sel_LOAD &gt; PORTSIZE_Mout_oe_ram ? PORTSIZE_sel_STORE : PORTSIZE_Mout_oe_ram;
 localparam max_n_rw = max_n_writes &gt; max_n_reads ? max_n_writes : max_n_reads;
@@ -3497,8 +3694,36 @@ wire [(PORTSIZE_in2*BITSIZE_in2)-1:0] tmp_addr;
 wire [PORTSIZE_sel_LOAD-1:0] int_sel_LOAD;
 wire [PORTSIZE_sel_STORE-1:0] int_sel_STORE;
 
-assign int_sel_LOAD = (in4 &amp; delayed_sel_LOAD) | M_back_pressure;
-assign int_sel_STORE = (in4 &amp; delayed_sel_STORE) | M_back_pressure;
+generate 
+  if(USE_BACK_PRESSURE == 1)
+  begin
+    reg [PORTSIZE_sel_LOAD-1:0] int_sel_LOAD_old;
+    reg [PORTSIZE_sel_STORE-1:0] int_sel_STORE_old;
+    wire [PORTSIZE_sel_LOAD-1:0] int_sel_LOAD_old_next;
+    wire [PORTSIZE_sel_STORE-1:0] int_sel_STORE_old_next;
+
+    assign int_sel_LOAD_old_next = Mout_back_pressure &amp; (delayed_sel_LOAD | int_sel_LOAD_old);
+    assign int_sel_STORE_old_next = Mout_back_pressure &amp; (delayed_sel_STORE | int_sel_STORE_old);
+    always @(posedge clock)
+    if(1RESET_VALUE)
+    begin
+      int_sel_LOAD_old &lt;= 0;
+      int_sel_STORE_old &lt;= 0;
+    end
+    else
+    begin
+      int_sel_LOAD_old &lt;= int_sel_LOAD_old_next;
+      int_sel_STORE_old &lt;= int_sel_STORE_old_next;
+    end
+    assign int_sel_LOAD = (in4 &amp; delayed_sel_LOAD) | int_sel_LOAD_old;
+    assign int_sel_STORE = (in4 &amp; delayed_sel_STORE) | int_sel_STORE_old;
+  end
+  else
+  begin
+    assign int_sel_LOAD = in4 &amp; delayed_sel_LOAD;
+    assign int_sel_STORE = in4 &amp; delayed_sel_STORE;
+  end
+endgenerate
 
 always @(posedge clock)
   delayed_sel_LOAD &lt;= sel_LOAD;
@@ -3558,10 +3783,14 @@ assign done_port = (M_DataRdy &amp; in4)) | (~in4 &amp; (delayed_sel_LOAD | dela
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="MEMORY_CTRLN_D21"/>
+          <parameter name="USE_BACK_PRESSURE">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="start_port" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="reset" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_vector_o id="in1" dir="IN">
@@ -3621,10 +3850,10 @@ assign done_port = (M_DataRdy &amp; in4)) | (~in4 &amp; (delayed_sel_LOAD | dela
           <port_vector_o id="M_DataRdy" dir="IN" is_memory="1" is_master="1" is_global="1" is_extern="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_vector_o>
-          <port_vector_o id="M_back_pressure" dir="IN" is_memory="1" is_master="1">
+          <port_vector_o id="Mout_back_pressure" dir="IN" is_memory="1" is_master="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_vector_o>
-          <NP_functionality LIBRARY="MEMORY_CTRLN_D21 in1 in2 in3 in4 sel_LOAD sel_STORE out1 done_port Min_oe_ram Min_we_ram Mout_oe_ram Mout_we_ram M_DataRdy Min_addr_ram Mout_addr_ram M_Rdata_ram Min_Wdata_ram Mout_Wdata_ram Min_data_ram_size Mout_data_ram_size M_back_pressure" VERILOG_PROVIDED="
+          <NP_functionality LIBRARY="MEMORY_CTRLN_D21 USE_BACK_PRESSURE in1 in2 in3 in4 sel_LOAD sel_STORE out1 done_port Min_oe_ram Min_we_ram Mout_oe_ram Mout_we_ram M_DataRdy Min_addr_ram Mout_addr_ram M_Rdata_ram Min_Wdata_ram Mout_Wdata_ram Min_data_ram_size Mout_data_ram_size Mout_back_pressure" VERILOG_PROVIDED="
 localparam max_n_writes = PORTSIZE_sel_STORE &gt; PORTSIZE_Mout_we_ram ? PORTSIZE_sel_STORE : PORTSIZE_Mout_we_ram;
 localparam max_n_reads = PORTSIZE_sel_LOAD &gt; PORTSIZE_Mout_oe_ram ? PORTSIZE_sel_STORE : PORTSIZE_Mout_oe_ram;
 localparam max_n_rw = max_n_writes &gt; max_n_reads ? max_n_writes : max_n_reads;
@@ -3639,8 +3868,36 @@ wire [(PORTSIZE_in2*BITSIZE_in2)-1:0] tmp_addr;
 wire [PORTSIZE_sel_LOAD-1:0] int_sel_LOAD;
 wire [PORTSIZE_sel_STORE-1:0] int_sel_STORE;
 
-assign int_sel_LOAD = (in4 &amp; delayed_sel_LOAD) | M_back_pressure;
-assign int_sel_STORE = (in4 &amp; delayed_sel_STORE) | M_back_pressure;
+generate 
+  if(USE_BACK_PRESSURE == 1)
+  begin
+    reg [PORTSIZE_sel_LOAD-1:0] int_sel_LOAD_old;
+    reg [PORTSIZE_sel_STORE-1:0] int_sel_STORE_old;
+    wire [PORTSIZE_sel_LOAD-1:0] int_sel_LOAD_old_next;
+    wire [PORTSIZE_sel_STORE-1:0] int_sel_STORE_old_next;
+
+    assign int_sel_LOAD_old_next = Mout_back_pressure &amp; (delayed_sel_LOAD | int_sel_LOAD_old);
+    assign int_sel_STORE_old_next = Mout_back_pressure &amp; (delayed_sel_STORE | int_sel_STORE_old);
+    always @(posedge clock)
+    if(1RESET_VALUE)
+    begin
+      int_sel_LOAD_old &lt;= 0;
+      int_sel_STORE_old &lt;= 0;
+    end
+    else
+    begin
+      int_sel_LOAD_old &lt;= int_sel_LOAD_old_next;
+      int_sel_STORE_old &lt;= int_sel_STORE_old_next;
+    end
+    assign int_sel_LOAD = (in4 &amp; delayed_sel_LOAD) | int_sel_LOAD_old;
+    assign int_sel_STORE = (in4 &amp; delayed_sel_STORE) | int_sel_STORE_old;
+  end
+  else
+  begin
+    assign int_sel_LOAD = in4 &amp; delayed_sel_LOAD;
+    assign int_sel_STORE = in4 &amp; delayed_sel_STORE;
+  end
+endgenerate
 
 always @(posedge clock)
   delayed_sel_LOAD &lt;= sel_LOAD&amp;~M_DataRdy&amp;~delayed_M_DataRdy;
@@ -5062,8 +5319,6 @@ assign Sout_Rdata_ram =Sin_Rdata_ram;
 assign Sout_DataRdy = Sin_DataRdy;
 assign int_sel_LOAD = sel_LOAD &amp; in4;
 assign int_sel_STORE = sel_STORE &amp; in4;
-
-assign Sout_DataRdy = Sin_DataRdy;
 " VHDL_PROVIDED="  function integer_ternary_operator(cond : boolean; op1 : integer; op2 : integer) return integer is
   begin
     if cond then

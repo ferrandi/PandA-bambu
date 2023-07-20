@@ -18,5 +18,11 @@ if test $return_value != 0; then
    echo "C based test of softfloat not passed."
    exit $return_value
 fi
+#$dir_script/testfloat/build/bambu/testfloat-sf -rnear_even -level 2 -all2 -skipSubnormals
+#return_value=$?
+#if test $return_value != 0; then
+#   echo "C based test of soft-fp not passed."
+#   exit $return_value
+#fi
 touch $dir_script/testfloat/finished
 exit 0

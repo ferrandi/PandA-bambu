@@ -213,7 +213,6 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
       portsToConstant.insert(wrappedObj->find_member("Min_addr_ram", port_o_K, wrappedObj));
       portsToConstant.insert(wrappedObj->find_member("Min_Wdata_ram", port_o_K, wrappedObj));
       portsToConstant.insert(wrappedObj->find_member("Min_data_ram_size", port_o_K, wrappedObj));
-      portsToConstant.insert(wrappedObj->find_member("M_back_pressure", port_o_K, wrappedObj));
    }
 
    std::map<structural_objectRef, structural_objectRef> portsToConnect;

@@ -47,6 +47,7 @@
 #include "behavioral_helper.hpp"
 #include "c_initialization_parser.hpp"
 #include "call_graph_manager.hpp"
+#include "constants.hpp"
 #include "custom_map.hpp"
 #include "custom_set.hpp"
 #include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_NONE
@@ -289,7 +290,7 @@ void HLSCWriter::WriteParamInitialization(const BehavioralHelperConstRef BH,
             indented_output_stream->Append("}\n");
             indented_output_stream->Append("fclose(" + fp + ");\n");
             indented_output_stream->Append(param + " = " + param + "_buf;\n");
-            indented_output_stream->Append("m_alloc_param(" + STR(par_idx) + ", " + param + "_size);\n");
+            indented_output_stream->Append("m_param_alloc(" + STR(par_idx) + ", " + param + "_size);\n");
          }
          else
          {
@@ -302,7 +303,7 @@ void HLSCWriter::WriteParamInitialization(const BehavioralHelperConstRef BH,
             indented_output_stream->Append(param + " = (void*)" + (is_a_true_pointer ? "" : "&") + param + "_temp;\n");
             if(!arg_channel)
             {
-               indented_output_stream->Append("m_alloc_param(" + STR(par_idx) + ", sizeof(" + param + "_temp));\n");
+               indented_output_stream->Append("m_param_alloc(" + STR(par_idx) + ", sizeof(" + param + "_temp));\n");
             }
          }
       }
@@ -565,6 +566,25 @@ void HLSCWriter::WriteMainTestbench()
       }
       return "val";
    };
+   const auto param_size_default = [&]() {
+      CustomMap<size_t, std::string> idx_size;
+      if(Param->isOption(OPT_testbench_param_size))
+      {
+         const auto param_size_str = Param->getOption<std::string>(OPT_testbench_param_size);
+         size_t param_idx = 0;
+         for(const auto& param : top_bh->GetParameters())
+         {
+            const auto param_name = top_bh->PrintVariable(GET_INDEX_CONST_NODE(param));
+            boost::cmatch what;
+            if(boost::regex_search(param_size_str.c_str(), what, boost::regex("\\b" + param_name + ":(\\d+)")))
+            {
+               idx_size[param_idx] = what[1u].str();
+            }
+            ++param_idx;
+         }
+      }
+      return idx_size;
+   }();
    const auto extern_decl = top_fname == top_fname_mngl ? "EXTERN_C " : "";
 
    std::string top_decl = extern_decl;
@@ -589,7 +609,7 @@ void HLSCWriter::WriteMainTestbench()
       gold_decl += return_type_str;
       gold_call += "retval_gold = ";
       pp_call += "retval_pp = ";
-      args_init = "__m_alloc_param(" + STR(top_params.size()) + ", sizeof(" + return_type_str + "));\n";
+      args_init = "__m_param_alloc(" + STR(top_params.size()) + ", sizeof(" + return_type_str + "));\n";
       args_decl = return_type_str + " retval, retval_gold, retval_pp;\n" + args_decl;
       args_set += "__m_setarg(" + STR(top_params.size()) + ", args[" + STR(top_params.size()) + "], " +
                   STR(tree_helper::Size(return_type)) + ");\n";
@@ -661,22 +681,29 @@ void HLSCWriter::WriteMainTestbench()
             gold_call += "(" + arg_typename + ")" + arg_name + "_gold, ";
             pp_call += "(" + tree_helper::PrintType(TM, arg_type, false, true) + ")" + arg_name + "_pp, ";
             gold_cmp += "m_argcmp(" + STR(param_idx) + ", " + cmp_type(arg_type, arg_typename) + ");\n";
-            const auto array_size = [&]() {
-               if(is_interface_inferred)
-               {
-                  const auto param_name = top_bh->PrintVariable(GET_INDEX_CONST_NODE(arg));
-                  THROW_ASSERT(arg_attributes->second.count(param_name),
-                               "Attributes missing for parameter " + param_name + " in function " + top_fname);
-                  return arg_attributes->second.at(param_name).count(attr_size) ?
-                             boost::lexical_cast<unsigned long long>(
-                                 arg_attributes->second.at(param_name).at(attr_size)) :
-                             1ULL;
-               }
-               const auto ptd_type = tree_helper::CGetPointedType(arg_type);
-               return tree_helper::IsArrayType(ptd_type) ? tree_helper::GetArrayTotalSize(ptd_type) : 1ULL;
-            }();
-            args_init +=
-                "__m_alloc_param(" + STR(param_idx) + ", sizeof(*" + arg_name + ") * " + STR(array_size) + ");\n";
+            if(param_size_default.find(param_idx) != param_size_default.end())
+            {
+               args_init += "__m_param_alloc(" + STR(param_idx) + ", " + param_size_default.at(param_idx) + ");\n";
+            }
+            else
+            {
+               const auto array_size = [&]() {
+                  if(is_interface_inferred)
+                  {
+                     const auto param_name = top_bh->PrintVariable(GET_INDEX_CONST_NODE(arg));
+                     THROW_ASSERT(arg_attributes->second.count(param_name),
+                                  "Attributes missing for parameter " + param_name + " in function " + top_fname);
+                     return arg_attributes->second.at(param_name).count(attr_size) ?
+                                boost::lexical_cast<unsigned long long>(
+                                    arg_attributes->second.at(param_name).at(attr_size)) :
+                                1ULL;
+                  }
+                  const auto ptd_type = tree_helper::CGetPointedType(arg_type);
+                  return tree_helper::IsArrayType(ptd_type) ? tree_helper::GetArrayTotalSize(ptd_type) : 1ULL;
+               }();
+               args_init +=
+                   "__m_param_alloc(" + STR(param_idx) + ", sizeof(*" + arg_name + ") * " + STR(array_size) + ");\n";
+            }
             args_decl += "(void*)" + arg_name + ", ";
             args_set += "m_setargptr";
          }
@@ -686,7 +713,7 @@ void HLSCWriter::WriteMainTestbench()
             gold_call += "*(" + arg_typename + "*)" + arg_name + "_gold, ";
             pp_call += "(" + tree_helper::PrintType(TM, arg_type, false, true) + "*)" + arg_name + "_pp, ";
             gold_cmp += "m_argcmp(" + STR(param_idx) + ", " + cmp_type(arg_type, arg_typename) + ");\n";
-            args_init += "__m_alloc_param(" + STR(param_idx) + ", sizeof(" + arg_typename + "));\n";
+            args_init += "__m_param_alloc(" + STR(param_idx) + ", sizeof(" + arg_typename + "));\n";
             args_decl += "(void*)&" + arg_name + ", ";
             args_set += "m_setargptr";
          }
@@ -694,7 +721,7 @@ void HLSCWriter::WriteMainTestbench()
          {
             gold_call += arg_name + ", ";
             pp_call += arg_name + ", ";
-            args_init += "__m_alloc_param(" + STR(param_idx) + ", sizeof(" + arg_typename + "));\n";
+            args_init += "__m_param_alloc(" + STR(param_idx) + ", sizeof(" + arg_typename + "));\n";
             args_decl += "(void*)&" + arg_name + ", ";
             args_set += arg_interface == "default" ? "__m_setarg" : "m_setargptr";
          }
@@ -840,7 +867,7 @@ template <typename T> T* m_getptr(T* obj) { return obj; }
 #define m_channel_init(idx)                                                                                         \
    const size_t P##idx##_item = sizeof(m_getvalt(m_getptr(P##idx))::element_type);                                  \
    size_t P##idx##_count = m_getptr(P##idx)->size();                                                                \
-   __m_alloc_param(idx, P##idx##_count * P##idx##_item);                                                            \
+   __m_param_alloc(idx, P##idx##_count * P##idx##_item);                                                            \
    void* P##idx##_sim = malloc(P##idx##_count * P##idx##_item);                                                     \
    for(i = 0; i < P##idx##_count; ++i)                                                                              \
    {                                                                                                                \

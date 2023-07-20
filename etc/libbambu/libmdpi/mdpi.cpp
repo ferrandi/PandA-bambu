@@ -44,7 +44,6 @@
 #include "mdpi_cosim.h"
 #include "mdpi_types.h"
 #include "mdpi_wrapper.h"
-#include "segvcatch/segvcatch.h"
 
 #include <cassert>
 #include <cstdio>
@@ -56,9 +55,17 @@
 
 volatile pthread_t __m_main_tid;
 
-#define info(str, ...) fprintf(stdout, "%s: " str, __m_main_tid == pthread_self() ? "Sim" : "Co-sim", ##__VA_ARGS__)
+#ifndef __M_OUT_LVL
+#define __M_OUT_LVL 5
+#endif
 
-#ifndef NDEBUG
+#if __M_OUT_LVL >= 3
+#define info(str, ...) fprintf(stdout, "%s: " str, __m_main_tid == pthread_self() ? "Sim" : "Co-sim", ##__VA_ARGS__)
+#else
+#define info(...)
+#endif
+
+#if __M_OUT_LVL >= 4
 #define debug(str, ...) \
    fprintf(stdout, "%s %10s: " str, __m_main_tid == pthread_self() ? "Sim" : "Co-sim", __func__, ##__VA_ARGS__)
 #define error(str, ...) debug("ERROR: " str, ##__VA_ARGS__)
@@ -89,8 +96,6 @@ EXTERN_C void m_init()
       perror("MDPI library initialization error");
       exit(EXIT_FAILURE);
    }
-
-   segvcatch::init_segv();
 
    debug("Initialization successful\n");
 }
@@ -185,27 +190,19 @@ static void __attribute__((noinline)) __m_read(const uint16_t bsize, svLogicVecV
    if(__addr)
    {
       debug("Read %u bytes at " PTR_FORMAT "->" BPTR_FORMAT "\n", bsize, addr, bptr_to_int(__addr));
-      try
-      {
 #pragma unroll(4)
-         for(uint16_t i = 0; i < bsize; ++i)
-         {
-            uint8_t mem = load(__addr + i);
-            if(i % 4)
-            {
-               data[i / 4].aval |= static_cast<unsigned int>(mem) << byte_offset(i);
-            }
-            else
-            {
-               data[i / 4].aval = mem;
-               data[i / 4].bval = 0;
-            }
-         }
-      }
-      catch(std::exception& e)
+      for(uint16_t i = 0; i < bsize; ++i)
       {
-         error("Memory load exception: illegal access at " BPTR_FORMAT "\n", bptr_to_int(__addr));
-         abort();
+         uint8_t mem = load(__addr + i);
+         if(i % 4)
+         {
+            data[i / 4].aval |= static_cast<unsigned int>(mem) << byte_offset(i);
+         }
+         else
+         {
+            data[i / 4].aval = mem;
+            data[i / 4].bval = 0;
+         }
       }
    }
    else
@@ -229,33 +226,25 @@ __m_write(const uint16_t max_bsize, uint16_t size, CONSTARG svLogicVecVal* data,
       debug("Write %u bits at " PTR_FORMAT "->" BPTR_FORMAT "\n", size, addr, bptr_to_int(__addr));
       assert((max_bsize * 8) >= size && "Memory write bitsize must be smaller than bus size");
       const uint16_t bsize = (size / 8) + ((size % 8) != 0);
-      try
-      {
 #pragma unroll(4)
-         for(uint16_t i = 0; i < bsize; ++i)
-         {
-            const uint8_t data_byte = data[i / 4].aval >> byte_offset(i);
-            const uint8_t bdata_byte = data[i / 4].bval >> byte_offset(i);
-            if(size >= (i * 8))
-            {
-               assert((bdata_byte == 0) && "Memory write data must not contain undefined states X or Z from "
-                                           "the simulation");
-               store(__addr + i, data[i / 4].aval >> byte_offset(i));
-            }
-            else
-            {
-               const uint8_t mask = static_cast<uint8_t>((1 << (size & 7)) - 1);
-               assert(((bdata_byte & mask) == 0) && "Memory write data must not contain undefined states X or Z from "
-                                                    "the simulation");
-               const uint8_t mem_val = (load(__addr + i) & ~mask) | (data_byte & mask);
-               store(__addr + i, mem_val);
-            }
-         }
-      }
-      catch(std::exception& e)
+      for(uint16_t i = 0; i < bsize; ++i)
       {
-         error("Memory store exception: illegal access at " BPTR_FORMAT "\n", bptr_to_int(__addr));
-         abort();
+         const uint8_t data_byte = data[i / 4].aval >> byte_offset(i);
+         const uint8_t bdata_byte = data[i / 4].bval >> byte_offset(i);
+         if(size >= (i * 8))
+         {
+            assert((bdata_byte == 0) && "Memory write data must not contain undefined states X or Z from "
+                                        "the simulation");
+            store(__addr + i, data[i / 4].aval >> byte_offset(i));
+         }
+         else
+         {
+            const uint8_t mask = static_cast<uint8_t>((1 << (size & 7)) - 1);
+            assert(((bdata_byte & mask) == 0) && "Memory write data must not contain undefined states X or Z from "
+                                                 "the simulation");
+            const uint8_t mem_val = (load(__addr + i) & ~mask) | (data_byte & mask);
+            store(__addr + i, mem_val);
+         }
       }
    }
    else
