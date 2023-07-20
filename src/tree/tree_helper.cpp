@@ -4957,14 +4957,7 @@ void tree_helper::get_array_dim_and_bitsize(const tree_managerConstRef& TM, cons
    if(node->get_kind() == record_type_K || node->get_kind() == union_type_K)
    {
       elts_bitsize = get_array_data_bitsize(TM, index);
-      if(node->get_kind() == union_type_K)
-      {
-         dims.push_back(Size(node) / elts_bitsize);
-      }
-      else
-      {
-         dims.push_back(GetPointerS<const record_type>(node)->list_of_flds.size());
-      }
+      dims.push_back(Size(node) / elts_bitsize);
       return;
    }
    THROW_ASSERT(node->get_kind() == array_type_K, "array_type expected: @" + STR(index));
