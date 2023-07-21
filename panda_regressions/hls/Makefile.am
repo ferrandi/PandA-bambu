@@ -1123,11 +1123,6 @@ gcc_regression_simple/widechar-1.c \
 gcc_regression_simple/zero-struct-1.c \
 gcc_regression_simple/zerolen-1.c \
 gcc_regression_simple/zerolen-2.c \
-gcc_regression_simple_CII.sh \
-gcc_regression_simple_CIIR.sh \
-gcc_regression_simple_ECP3.sh \
-gcc_regression_simple_Zynq.sh \
-gcc_regression_simple_Zynq_VVD.sh \
 gcc_regression_simple_reset.sh \
 gcc_regression_simple_verilator \
 generic_CHStone-frontend.sh \
@@ -1202,10 +1197,6 @@ libm-tests/uClib_impl/test-double.c \
 libm-tests/uClib_impl/test-float.c \
 libm-tests_list \
 multi_CHStone-frontend.sh \
-panda_regression_hls_all_gcc.sh \
-panda_regression_hls_all_gcc1.sh \
-panda_regression_hls_no_gcc.sh \
-panda_regression_hls_no_gcc1.sh \
 softfloat-tests/f64div.c \
 softfloat-tests/f64mul.c \
 softfloat-tests/f64sub.c \
@@ -1915,7 +1906,6 @@ testfloat/source/writeCase_z_f64.c \
 testfloat/source/writeCase_z_ui32.c \
 testfloat/source/writeCase_z_ui64.c \
 testfloat/source/writeHex.c \
-testfloat/source/writeHex.h \
-wb4_interface.sh
+testfloat/source/writeHex.h
 
 TESTS = test_libm_expf.sh test_libm_logf.sh test_libm_powf.sh test_libm_sinecosine.sh test_libm_sqrt.sh test_libm_sqrtf.sh test_softfloat.sh
