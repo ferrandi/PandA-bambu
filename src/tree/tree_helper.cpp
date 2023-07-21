@@ -2450,22 +2450,14 @@ static bool same_size_fields(const tree_nodeConstRef& t)
       }
    }
 
-   auto sizeFlds = 0ull;
+   const auto sizeFlds = tree_helper::Size(listOfTypes.front());
+   if(ceil_pow2(sizeFlds) != sizeFlds)
+   {
+      return false;
+   }
    for(const auto& fldType : listOfTypes)
    {
-      if(!sizeFlds)
-      {
-         sizeFlds = tree_helper::Size(fldType);
-      }
-      else if(sizeFlds != tree_helper::Size(fldType))
-      {
-         return false;
-      }
-      else if(ceil_pow2(sizeFlds) != sizeFlds)
-      {
-         return false;
-      }
-      else if(1 != sizeFlds)
+      if(sizeFlds != tree_helper::Size(fldType))
       {
          return false;
       }
