@@ -1,4 +1,4 @@
-adpcm/adpcm.c altera_O3_adpcm_constraints.xml
+adpcm/adpcm.c ../constraints/altera/adpcm_constraints.O3.xml
 aes/aes.c
 blowfish/bf.c
 dfadd/dfadd.c
