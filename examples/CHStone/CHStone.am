@@ -1,120 +1,81 @@
 EXTRA_DIST += \
-%D%/adpcm/adpcm.c \
-%D%/aes/aes.c \
-%D%/aes/aes.h \
-%D%/aes/aes_dec.c \
-%D%/aes/aes_enc.c \
-%D%/aes/aes_func.c \
-%D%/aes/aes_key.c \
-%D%/blowfish/bf.c \
-%D%/blowfish/bf_cfb64.c \
-%D%/blowfish/bf_enc.c \
-%D%/blowfish/bf_locl.h \
-%D%/blowfish/bf_pi.h \
-%D%/blowfish/bf_skey.c \
-%D%/blowfish/blowfish.h \
-%D%/altera_O3_adpcm_constraints.xml \
-%D%/CHStone_5CSEMA5F31C6_10.0_O2_sdc_aligned_access.tex \
-%D%/CHStone_5CSEMA5F31C6_10.0_O3_sdc.tex \
-%D%/CHStone_5CSEMA5F31C6_15.0_O2_sdc_aligned_access.tex \
-%D%/CHStone_5CSEMA5F31C6_15.0_O3_sdc.tex \
-%D%/CHStone_5SGXEA7N2F45C1_05.0_O2_sdc_aligned_access.tex \
-%D%/CHStone_5SGXEA7N2F45C1_05.0_O3_sdc.tex \
-%D%/CHStone_5SGXEA7N2F45C1_10.0_O2_sdc_aligned_access.tex \
-%D%/CHStone_5SGXEA7N2F45C1_10.0_O3_sdc.tex \
-%D%/chstone_altera_O3_list \
-%D%/chstone_ECP3_list \
-%D%/CHStone_EP2C70F896C6-R_10.0_O2_sdc_aligned_access.tex \
-%D%/CHStone_EP2C70F896C6-R_10.0_O3_sdc.tex \
-%D%/CHStone_EP2C70F896C6-R_15.0_O2_sdc_aligned_access.tex \
-%D%/CHStone_EP2C70F896C6-R_15.0_O3_sdc.tex \
-%D%/CHStone_LFE335EA8FN484C_15.0_O2_sdc_aligned_access.tex \
-%D%/CHStone_LFE335EA8FN484C_15.0_O3_sdc.tex \
-%D%/chstone_list \
-%D%/chstone_list_CSROA \
-%D%/CHStone_xc7vx330t-1ffg1157_10.0_O2_sdc_aligned_access.tex \
-%D%/CHStone_xc7vx330t-1ffg1157_10.0_O3_sdc.tex \
-%D%/CHStone_xc7vx690t-3ffg1930-VVD_05.0_O2_sdc_aligned_access.tex \
-%D%/CHStone_xc7vx690t-3ffg1930-VVD_05.0_O3_sdc.tex \
-%D%/CHStone_xc7vx690t-3ffg1930-VVD_10.0_O2_sdc_aligned_access.tex \
-%D%/CHStone_xc7vx690t-3ffg1930-VVD_10.0_O3_sdc.tex \
-%D%/CHStone_xc7z020-1clg484-VVD_10.0_O2_sdc_aligned_access.tex \
-%D%/CHStone_xc7z020-1clg484-VVD_10.0_O3_sdc.tex \
-%D%/CHStone_xc7z020-1clg484-VVD_15.0_O2_sdc_aligned_access.tex \
-%D%/CHStone_xc7z020-1clg484-VVD_15.0_O2_sdc_aligned_accessClang10.tex \
-%D%/CHStone_xc7z020-1clg484-VVD_15.0_O2_sdc_aligned_accessClang11.tex \
-%D%/CHStone_xc7z020-1clg484-VVD_15.0_O2_sdc_aligned_accessClang12.tex \
-%D%/CHStone_xc7z020-1clg484-VVD_15.0_O2_sdc_aligned_accessClang4.tex \
-%D%/CHStone_xc7z020-1clg484-VVD_15.0_O2_sdc_aligned_accessClang4_CSROA.tex \
-%D%/CHStone_xc7z020-1clg484-VVD_15.0_O2_sdc_aligned_accessClang5.tex \
-%D%/CHStone_xc7z020-1clg484-VVD_15.0_O2_sdc_aligned_accessClang6.tex \
-%D%/CHStone_xc7z020-1clg484-VVD_15.0_O2_sdc_aligned_accessClang7.tex \
-%D%/CHStone_xc7z020-1clg484-VVD_15.0_O2_sdc_aligned_accessClang8.tex \
-%D%/CHStone_xc7z020-1clg484-VVD_15.0_O2_sdc_aligned_accessClang9.tex \
-%D%/CHStone_xc7z020-1clg484-VVD_15.0_O2_sdc_aligned_accessGCC5.tex \
-%D%/CHStone_xc7z020-1clg484-VVD_15.0_O2_sdc_aligned_accessGCC6.tex \
-%D%/CHStone_xc7z020-1clg484-VVD_15.0_O2_sdc_aligned_accessGCC7.tex \
-%D%/CHStone_xc7z020-1clg484-VVD_15.0_O2_sdc_aligned_accessGCC8.tex \
-%D%/CHStone_xc7z020-1clg484-VVD_15.0_O3_sdc.tex \
-%D%/dfadd/SPARC-GCC.h \
-%D%/dfadd/dfadd.c \
-%D%/dfadd/milieu.h \
-%D%/dfadd/softfloat-macros \
-%D%/dfadd/softfloat-specialize \
-%D%/dfadd/softfloat.c \
-%D%/dfadd/softfloat.h \
-%D%/dfdiv/SPARC-GCC.h \
-%D%/dfdiv/dfdiv.c \
-%D%/dfdiv/milieu.h \
-%D%/dfdiv/softfloat-macros \
-%D%/dfdiv/softfloat-specialize \
-%D%/dfdiv/softfloat.c \
-%D%/dfdiv/softfloat.h \
-%D%/dfmul/SPARC-GCC.h \
-%D%/dfmul/dfmul.c \
-%D%/dfmul/milieu.h \
-%D%/dfmul/softfloat-macros \
-%D%/dfmul/softfloat-specialize \
-%D%/dfmul/softfloat.c \
-%D%/dfmul/softfloat.h \
-%D%/dfsin/SPARC-GCC.h \
-%D%/dfsin/dfsin.c \
-%D%/dfsin/milieu.h \
-%D%/dfsin/softfloat-macros \
-%D%/dfsin/softfloat-specialize \
-%D%/dfsin/softfloat.c \
-%D%/dfsin/softfloat.h \
-%D%/ECP3_CHStone_constraints/adpcm_constraints.xml \
-%D%/ECP3_CHStone_constraints/dfdiv_hls_div_constraints.xml \
-%D%/ECP3_CHStone_constraints/dfsin_hls_div_constraints.xml \
-%D%/ECP3_CHStone_constraints/jpeg_constraints.xml \
-%D%/generic_CHStone.sh \
-%D%/gsm/add.c \
-%D%/gsm/gsm.c \
-%D%/gsm/lpc.c \
-%D%/gsm/private.h \
-%D%/jpeg/chenidct.c \
-%D%/jpeg/decode.c \
-%D%/jpeg/decode.h \
-%D%/jpeg/global.h \
-%D%/jpeg/huffman.c \
-%D%/jpeg/huffman.h \
-%D%/jpeg/init.h \
-%D%/jpeg/jfif_read.c \
-%D%/jpeg/jpeg2bmp.c \
-%D%/jpeg/main.c \
-%D%/jpeg/marker.c \
-%D%/mips/imem.h \
-%D%/mips/mips.c \
-%D%/motion/config.h \
-%D%/motion/getbits.c \
-%D%/motion/getvlc.c \
-%D%/motion/getvlc.h \
-%D%/motion/global.h \
-%D%/motion/motion.c \
-%D%/motion/mpeg2.c \
-%D%/motion/mpeg2dec.h \
-%D%/README_CHSTONE.txt \
-%D%/sha/sha.c \
-%D%/sha/sha.h \
-%D%/sha/sha_driver.c
+   %D%/chstone_list \
+   %D%/chstone_list.altera \
+   %D%/constraints/altera/adpcm_constraints.O3.xml \
+   %D%/constraints/lattice/ECP3/adpcm_constraints.xml \
+   %D%/constraints/lattice/ECP3/jpeg_constraints.xml \
+   %D%/constraints/lattice/ECP3/dfdiv_hls_div_constraints.xml \
+   %D%/constraints/lattice/ECP3/dfsin_hls_div_constraints.xml \
+   %D%/CHStone/dfsin/softfloat-specialize \
+   %D%/CHStone/dfsin/softfloat.c \
+   %D%/CHStone/dfsin/softfloat-macros \
+   %D%/CHStone/dfsin/dfsin.c \
+   %D%/CHStone/dfsin/SPARC-GCC.h \
+   %D%/CHStone/dfsin/softfloat.h \
+   %D%/CHStone/dfsin/milieu.h \
+   %D%/CHStone/blowfish/bf.c \
+   %D%/CHStone/blowfish/blowfish.h \
+   %D%/CHStone/blowfish/bf_enc.c \
+   %D%/CHStone/blowfish/bf_pi.h \
+   %D%/CHStone/blowfish/bf_skey.c \
+   %D%/CHStone/blowfish/bf_locl.h \
+   %D%/CHStone/blowfish/bf_cfb64.c \
+   %D%/CHStone/motion/getbits.c \
+   %D%/CHStone/motion/global.h \
+   %D%/CHStone/motion/mpeg2.c \
+   %D%/CHStone/motion/getvlc.c \
+   %D%/CHStone/motion/getvlc.h \
+   %D%/CHStone/motion/mpeg2dec.h \
+   %D%/CHStone/motion/config.h \
+   %D%/CHStone/motion/motion.c \
+   %D%/CHStone/dfmul/softfloat-specialize \
+   %D%/CHStone/dfmul/softfloat.c \
+   %D%/CHStone/dfmul/softfloat-macros \
+   %D%/CHStone/dfmul/SPARC-GCC.h \
+   %D%/CHStone/dfmul/softfloat.h \
+   %D%/CHStone/dfmul/milieu.h \
+   %D%/CHStone/dfmul/dfmul.c \
+   %D%/CHStone/jpeg/chenidct.c \
+   %D%/CHStone/jpeg/main.c \
+   %D%/CHStone/jpeg/global.h \
+   %D%/CHStone/jpeg/decode.h \
+   %D%/CHStone/jpeg/jfif_read.c \
+   %D%/CHStone/jpeg/huffman.c \
+   %D%/CHStone/jpeg/init.h \
+   %D%/CHStone/jpeg/huffman.h \
+   %D%/CHStone/jpeg/decode.c \
+   %D%/CHStone/jpeg/jpeg2bmp.c \
+   %D%/CHStone/jpeg/marker.c \
+   %D%/CHStone/dfdiv/softfloat-specialize \
+   %D%/CHStone/dfdiv/softfloat.c \
+   %D%/CHStone/dfdiv/softfloat-macros \
+   %D%/CHStone/dfdiv/SPARC-GCC.h \
+   %D%/CHStone/dfdiv/softfloat.h \
+   %D%/CHStone/dfdiv/dfdiv.c \
+   %D%/CHStone/dfdiv/milieu.h \
+   %D%/CHStone/sha/sha.c \
+   %D%/CHStone/sha/sha_driver.c \
+   %D%/CHStone/sha/sha.h \
+   %D%/CHStone/README \
+   %D%/CHStone/dfadd/softfloat-specialize \
+   %D%/CHStone/dfadd/softfloat.c \
+   %D%/CHStone/dfadd/softfloat-macros \
+   %D%/CHStone/dfadd/SPARC-GCC.h \
+   %D%/CHStone/dfadd/softfloat.h \
+   %D%/CHStone/dfadd/dfadd.c \
+   %D%/CHStone/dfadd/milieu.h \
+   %D%/CHStone/gsm/add.c \
+   %D%/CHStone/gsm/lpc.c \
+   %D%/CHStone/gsm/private.h \
+   %D%/CHStone/gsm/gsm.c \
+   %D%/CHStone/aes/aes.c \
+   %D%/CHStone/aes/aes_func.c \
+   %D%/CHStone/aes/aes_enc.c \
+   %D%/CHStone/aes/aes.h \
+   %D%/CHStone/aes/aes_dec.c \
+   %D%/CHStone/aes/aes_key.c \
+   %D%/CHStone/adpcm/adpcm.c \
+   %D%/CHStone/mips/imem.h \
+   %D%/CHStone/mips/mips.c \
+   %D%/generic_CHStone.sh \
+   %D%/chstone_list.lattice
