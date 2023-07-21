@@ -44,6 +44,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
+        with:
+          submodule: 'true'
       - name: Download Bambu AppImage
         uses: ./.github/actions/storage-download
         with:
