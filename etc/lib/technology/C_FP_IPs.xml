@@ -44,7 +44,8 @@
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="REAL" size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="fp_assert_expr_FU in1 out1" VERILOG_PROVIDED="assign out1 = in1;" VHDL_PROVIDED="begin\n  out1 &lt;= in1;"/>
+          <NP_functionality LIBRARY="fp_assert_expr_FU in1 out1" VERILOG_PROVIDED="assign out1 = in1;" VHDL_PROVIDED="begin
+  out1 &lt;= in1;"/>
         </component_o>
       </circuit>
     </cell>
@@ -70,7 +71,9 @@
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="REAL" size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="fp_cond_expr_FU in1 in2 in3 out1" VERILOG_PROVIDED="assign out1 = in1 != 0 ? in2 : in3;" VHDL_PROVIDED="begin\n  out1 &lt;= in2 when(unsigned(in1) /= 0) else in3;\n"/>
+          <NP_functionality LIBRARY="fp_cond_expr_FU in1 in2 in3 out1" VERILOG_PROVIDED="assign out1 = in1 != 0 ? in2 : in3;" VHDL_PROVIDED="begin
+  out1 &lt;= in2 when(unsigned(in1) /= 0) else in3;
+"/>
         </component_o>
       </circuit>
     </template>
@@ -150,7 +153,9 @@
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="REAL" size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="fp_negate_expr_FU in1 out1" VERILOG_PROVIDED="assign out1 = {~in1[BITSIZE_in1-1],in1[BITSIZE_in1-2:0]};" VHDL_PROVIDED="begin\n  out1 &lt;= not in1(BITSIZE_in1-1) &amp; in1(BITSIZE_in1-2 downto 0);\n"/>
+          <NP_functionality LIBRARY="fp_negate_expr_FU in1 out1" VERILOG_PROVIDED="assign out1 = {~in1[BITSIZE_in1-1],in1[BITSIZE_in1-2:0]};" VHDL_PROVIDED="begin
+  out1 &lt;= not in1(BITSIZE_in1-1) &amp; in1(BITSIZE_in1-2 downto 0);
+"/>
         </component_o>
       </circuit>
     </template>
@@ -173,7 +178,9 @@
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="fp_eq_expr_FU in1 in2 out1" VERILOG_PROVIDED="assign out1 = in1 == in2 || (in1[BITSIZE_in1-2:0] == in2[BITSIZE_in2-2:0] &amp;&amp; in1[BITSIZE_in1-2:0] == {BITSIZE_in1-2{1&apos;b0}});" VHDL_PROVIDED="begin\n  out1 &lt;= (0 =&gt; &apos;1&apos;, others =&gt; &apos;0&apos;) when ((in1 = in2) or (in1(BITSIZE_in1-2 downto 0) = in2(BITSIZE_in2-2 downto 0) and unsigned(in1(BITSIZE_in1-2 downto 0)) = 0)) else (others =&gt; &apos;0&apos;);\n"/>
+          <NP_functionality LIBRARY="fp_eq_expr_FU in1 in2 out1" VERILOG_PROVIDED="assign out1 = in1 == in2 || (in1[BITSIZE_in1-2:0] == in2[BITSIZE_in2-2:0] &amp;&amp; in1[BITSIZE_in1-2:0] == {BITSIZE_in1-2{1&apos;b0}});" VHDL_PROVIDED="begin
+  out1 &lt;= (0 =&gt; &apos;1&apos;, others =&gt; &apos;0&apos;) when ((in1 = in2) or (in1(BITSIZE_in1-2 downto 0) = in2(BITSIZE_in2-2 downto 0) and unsigned(in1(BITSIZE_in1-2 downto 0)) = 0)) else (others =&gt; &apos;0&apos;);
+"/>
         </component_o>
       </circuit>
     </template>
@@ -257,7 +264,9 @@
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="fp_ne_expr_FU in1 in2 out1" VERILOG_PROVIDED="assign out1 = !(in1 == in2 || (in1[BITSIZE_in1-2:0] == in2[BITSIZE_in2-2:0] &amp;&amp; in1[BITSIZE_in1-2:0] == {BITSIZE_in1-2{1&apos;b0}}));" VHDL_PROVIDED="begin\n  out1 &lt;= (others =&gt; &apos;0&apos;) when ((in1 = in2) or (in1(BITSIZE_in1-2 downto 0) = in2(BITSIZE_in2-2 downto 0) and unsigned(in1(BITSIZE_in1-2 downto 0)) = 0)) else (0 =&gt; &apos;1&apos;, others =&gt; &apos;0&apos;);\n"/>
+          <NP_functionality LIBRARY="fp_ne_expr_FU in1 in2 out1" VERILOG_PROVIDED="assign out1 = !(in1 == in2 || (in1[BITSIZE_in1-2:0] == in2[BITSIZE_in2-2:0] &amp;&amp; in1[BITSIZE_in1-2:0] == {BITSIZE_in1-2{1&apos;b0}}));" VHDL_PROVIDED="begin
+  out1 &lt;= (others =&gt; &apos;0&apos;) when ((in1 = in2) or (in1(BITSIZE_in1-2 downto 0) = in2(BITSIZE_in2-2 downto 0) and unsigned(in1(BITSIZE_in1-2 downto 0)) = 0)) else (0 =&gt; &apos;1&apos;, others =&gt; &apos;0&apos;);
+"/>
         </component_o>
       </circuit>
     </template>
@@ -843,7 +852,8 @@
           <port_o id="R" dir="OUT">
             <structural_type_descriptor type="INT" size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="__builtin_signbit X R" VERILOG_PROVIDED="assign R = X[BITSIZE_X-1];\nassign done_port = start_port;"
+          <NP_functionality LIBRARY="__builtin_signbit X R" VERILOG_PROVIDED="assign R = X[BITSIZE_X-1];
+assign done_port = start_port;"
             VHDL_PROVIDED="begin
   R &lt;= (others =&gt; X(BITSIZE_X-1));
   done_port &lt;= start_port;
@@ -881,7 +891,10 @@
           <port_o id="R" dir="OUT">
             <structural_type_descriptor type="REAL" size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="__builtin_fabs X R" VERILOG_PROVIDED="assign R = {1&apos;b0,X[BITSIZE_X-2:0]};\nassign done_port = start_port;" VHDL_PROVIDED="begin\n  R &lt;= &apos;0&apos; &amp; X(BITSIZE_X-2 downto 0);\n  done_port &lt;= start_port;"/>
+          <NP_functionality LIBRARY="__builtin_fabs X R" VERILOG_PROVIDED="assign R = {1&apos;b0,X[BITSIZE_X-2:0]};
+assign done_port = start_port;" VHDL_PROVIDED="begin
+  R &lt;= &apos;0&apos; &amp; X(BITSIZE_X-2 downto 0);
+  done_port &lt;= start_port;"/>
         </component_o>
       </circuit>
     </cell>
@@ -915,7 +928,10 @@
           <port_o id="R" dir="OUT">
             <structural_type_descriptor type="REAL" size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="__builtin_fabsf X R" VERILOG_PROVIDED="assign R = {1&apos;b0,X[BITSIZE_X-2:0]};\nassign done_port = start_port;" VHDL_PROVIDED="begin\n  R &lt;= &apos;0&apos; &amp; X(BITSIZE_X-2 downto 0);\n  done_port &lt;= start_port;"/>
+          <NP_functionality LIBRARY="__builtin_fabsf X R" VERILOG_PROVIDED="assign R = {1&apos;b0,X[BITSIZE_X-2:0]};
+assign done_port = start_port;" VHDL_PROVIDED="begin
+  R &lt;= &apos;0&apos; &amp; X(BITSIZE_X-2 downto 0);
+  done_port &lt;= start_port;"/>
         </component_o>
       </circuit>
     </cell>
@@ -941,7 +957,9 @@
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="UINT" size="32"/>
           </port_o>
-          <NP_functionality LIBRARY="__builtin_cond_expr32 sel" VERILOG_PROVIDED="assign out1 = sel != 0 ? a : b;" VHDL_PROVIDED="begin\n  out1 &lt;= a when (sel /= 0) else b;\n"/>
+          <NP_functionality LIBRARY="__builtin_cond_expr32 sel" VERILOG_PROVIDED="assign out1 = sel != 0 ? a : b;" VHDL_PROVIDED="begin
+  out1 &lt;= a when (sel /= 0) else b;
+"/>
         </component_o>
       </circuit>
     </cell>
