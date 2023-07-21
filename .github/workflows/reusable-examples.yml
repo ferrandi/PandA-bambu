@@ -54,11 +54,11 @@ jobs:
             batch: "5SGXEA7N2F45C1_3.3 --flopoco,5SGXEA7N2F45C1_5.0 --flopoco,5SGXEA7N2F45C1_10.0 --flopoco"
           - basename: CHStone_O2
             script: ./examples/CHStone/generic_CHStone.sh
-            args: -c=--experimental-setup=BAMBU-BALANCED-MP -lchstone_aa_list
+            args: -c=--experimental-setup=BAMBU-BALANCED-MP
             batch: "5CSEMA5F31C6_10.0,5CSEMA5F31C6_15.0,5SGXEA7N2F45C1_5.0,5SGXEA7N2F45C1_10.0"
           - basename: CHStone_O3
             script: ./examples/CHStone/generic_CHStone.sh
-            args: -c=--experimental-setup=BAMBU-PERFORMANCE-MP -lchstone_altera_O3_list
+            args: -c=--experimental-setup=BAMBU-PERFORMANCE-MP -lchstone_list.altera
             batch: "5CSEMA5F31C6_10.0,5CSEMA5F31C6_15.0,5SGXEA7N2F45C1_5.0,5SGXEA7N2F45C1_10.0"
           - basename: hls_study
             script: ./examples/hls_study/generic_hls_study.sh
@@ -148,11 +148,11 @@ jobs:
             batch: "xc7vx330t-1ffg1157_10.0 --flopoco,xc7vx690t-3ffg1930-VVD_5.0 --flopoco,xc7vx690t-3ffg1930-VVD_10.0 --flopoco,xc7z020-1clg484-VVD_5.0 --flopoco,xc7z020-1clg484-VVD_10.0 --flopoco"
           - basename: CHStone_O2
             script: ./examples/CHStone/generic_CHStone.sh
-            args: -c=--experimental-setup=BAMBU-BALANCED-MP -lchstone_aa_list
+            args: -c=--experimental-setup=BAMBU-BALANCED-MP
             batch: "xc7vx330t-1ffg1157_10.0,xc7vx690t-3ffg1930-VVD_5.0,xc7vx690t-3ffg1930-VVD_10.0,xc7z020-1clg484-VVD_10.0,xc7z020-1clg484-VVD_15.0"
           - basename: CHStone_O3
             script: ./examples/CHStone/generic_CHStone.sh
-            args: -c=--experimental-setup=BAMBU-PERFORMANCE-MP -lchstone_altera_O3_list
+            args: -c=--experimental-setup=BAMBU-PERFORMANCE-MP
             batch: "xc7vx330t-1ffg1157_10.0,xc7vx690t-3ffg1930-VVD_5.0,xc7vx690t-3ffg1930-VVD_10.0,xc7z020-1clg484-VVD_10.0,xc7z020-1clg484-VVD_15.0"
           - basename: MachSuite
             script: ./examples/MachSuite/generic_MachSuite.sh
@@ -250,12 +250,12 @@ jobs:
           - basename: CHStone_O2
             script: ./examples/CHStone/generic_CHStone.sh
             known-issues: true
-            args: -c=--experimental-setup=BAMBU-BALANCED-MP -c=--aligned-access -lchstone_aa_ECP3_list
+            args: -c=--experimental-setup=BAMBU-BALANCED-MP -lchstone_list.lattice
             batch: "LFE335EA8FN484C_15.0"
           - basename: CHStone_O3
             script: ./examples/CHStone/generic_CHStone.sh
             known-issues: true
-            args: -c=--experimental-setup=BAMBU-PERFORMANCE-MP -c=--aligned-access -lchstone_ECP3_list
+            args: -c=--experimental-setup=BAMBU-PERFORMANCE-MP -lchstone_list.lattice
             batch: "LFE335EA8FN484C_15.0"
     steps:
       - name: Checkout repository
