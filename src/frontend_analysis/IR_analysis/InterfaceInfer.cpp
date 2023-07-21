@@ -129,6 +129,18 @@ struct InterfaceInfer::interface_info
                                                (tree_helper::IsRealType(ptd_type) ? datatype::real : datatype::generic);
       if(type != datatype::ac_type)
       {
+         const auto base_type = [&]() {
+            if(tree_helper::IsArrayEquivType(ptd_type))
+            {
+               const auto elt_type = tree_helper::CGetArrayBaseType(ptd_type);
+               if(tree_helper::IsStructType(elt_type) && tree_helper::IsArrayEquivType(elt_type))
+               {
+                  return tree_helper::CGetArrayBaseType(elt_type);
+               }
+               return tree_helper::CGetArrayBaseType(elt_type);
+            }
+            return ptd_type;
+         }();
          const auto _bitwidth = [&]() {
             if(_type == datatype::ac_type)
             {
@@ -136,17 +148,17 @@ struct InterfaceInfer::interface_info
             }
             else if(tree_helper::IsArrayEquivType(ptd_type))
             {
-               return tree_helper::GetArrayElementSize(ptd_type);
+               return tree_helper::Size(base_type);
             }
             else if(tree_helper::IsPointerType(ptd_type) || tree_helper::IsStructType(ptd_type))
             {
                return static_cast<unsigned long long>(CompilerWrapper::CGetPointerSize(parameters));
             }
-            return tree_helper::Size(ptd_type);
+            return tree_helper::Size(base_type);
          }();
-         if(tree_helper::IsStructType(ptd_type) && tree_helper::IsArrayEquivType(ptd_type))
+         if(tree_helper::IsStructType(base_type) && tree_helper::IsArrayEquivType(base_type))
          {
-            const auto rt = GetPointerS<const record_type>(GET_CONST_NODE(ptd_type));
+            const auto rt = GetPointerS<const record_type>(GET_CONST_NODE(base_type));
             auto nfields = rt->list_of_flds.size();
             if(nfields != 1)
             {
