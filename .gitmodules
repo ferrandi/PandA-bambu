@@ -1,6 +1,9 @@
 [submodule "polybench-c-4.2.1-beta"]
 	path = examples/polybench-c-4.2.1-beta
 	url = https://github.com/ferrandi/polybench-c-4.2.1-beta.git
+[submodule "MachSuite"]
+	path = examples/MachSuite/MachSuite
+	url = https://github.com/breagen/MachSuite.git
 [submodule "CHStone"]
 	path = examples/CHStone/CHStone
 	url = https://github.com/ferrandi/CHStone.git
