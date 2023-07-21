@@ -14,6 +14,6 @@ python3 $script_dir/../../etc/scripts/test_panda.py --tool=bambu \
    --args="--configuration-name=CLANG11-O0-wp-NN --compiler=I386_CLANG11 ${BATCH_ARGS[*]}" \
    --args="--configuration-name=CLANG13-O0-wp-NN --compiler=I386_CLANG13 ${BATCH_ARGS[*]}" \
    --args="--configuration-name=CLANG16-O0-wp-NN --compiler=I386_CLANG16 ${BATCH_ARGS[*]}" \
-   -lCHStone_list \
-   -o "out_${OUT_SUFFIX}" -b$script_dir \
+   -l../chstone_list \
+   -o "out_${OUT_SUFFIX}" -b${script_dir}/../../examples/CHStone/CHStone \
    --name="${OUT_SUFFIX}" "$@"
