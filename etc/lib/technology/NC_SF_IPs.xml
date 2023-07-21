@@ -22,7 +22,8 @@
 wire is_exp_zero;
 wire is_all_ones;
 wire [10:0] exp_tmp;
-\nassign exponent1 = in1[30:23];
+
+assign exponent1 = in1[30:23];
 assign is_exp_zero = exponent1 == 8&apos;d0;
 assign is_all_ones = exponent1 == {8{1&apos;b1}};
 assign exp_tmp = {3&apos;d0, exponent1} + 11&apos;d896;
@@ -75,17 +76,21 @@ wire [31:0] expmantissa;
 wire is_NaN;
 wire is_zero;
 wire is_infinite;
-\nassign exponent1 = in1[62:52];
+
+assign exponent1 = in1[62:52];
 assign mantissa1 = in1[51:0];
 assign is_exp_zero = exponent1 == 11&apos;d0;
 assign is_all_ones = exponent1 == {11{1&apos;b1}};
 assign is_mantissa_zero = mantissa1 == 52&apos;d0;
-\nassign underflow = exponent1 &lt;= 11&apos;d896;
+
+assign underflow = exponent1 &lt;= 11&apos;d896;
 assign overflow = 11&apos;d1151 &lt;= exponent1;
 assign rounding = mantissa1[28] &amp;&amp; ((mantissa1[27:0] != 28&apos;d0) | mantissa1[29]);
-\nassign exp_temp = {!exponent1[7], exponent1[6:0]};
+
+assign exp_temp = {!exponent1[7], exponent1[6:0]};
 assign expmantissa = {1&apos;b0, exp_temp, mantissa1[51:29]}  +  {31&apos;d0, rounding};
-\n assign is_NaN = is_all_ones &amp; !is_mantissa_zero;
+
+ assign is_NaN = is_all_ones &amp; !is_mantissa_zero;
  assign is_zero = is_exp_zero | underflow;
  assign is_infinite = (is_all_ones &amp; is_mantissa_zero) | (!is_NaN &amp; (overflow | expmantissa[31]));
  assign out1[31] = in1[63];
