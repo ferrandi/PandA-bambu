@@ -6,12 +6,13 @@ ggo_require_compiler=1
 
 BATCH_ARGS=("--simulate" "-fwhole-program" "--clock-period=15" "-D'printf(fmt, ...)='" "--channels-type=MEM_ACC_NN" "--experimental-setup=BAMBU")
 OUT_SUFFIX="${compiler}_CHStone-frontend"
+BENCHMARKS_ROOT="${script_dir}/../../examples/CHStone/CHStone"
 
 python3 $script_dir/../../etc/scripts/test_panda.py --tool=bambu \
    --args="--configuration-name=${compiler}-O0-wp-NN -O0 ${BATCH_ARGS[*]}" \
    --args="--configuration-name=${compiler}-O1-wp-NN -O1 ${BATCH_ARGS[*]}" \
    --args="--configuration-name=${compiler}-O2-wp-NN -O2 ${BATCH_ARGS[*]}" \
    --args="--configuration-name=${compiler}-O3-wp-NN -O3 ${BATCH_ARGS[*]}" \
-   -l../chstone_list \
-   -o "out_${OUT_SUFFIX}" -b${script_dir}/../../examples/CHStone/CHStone \
+   -l${BENCHMARKS_ROOT}/../chstone_list \
+   -o "out_${OUT_SUFFIX}" -b${BENCHMARKS_ROOT} \
    --name="${OUT_SUFFIX}" "$@"
