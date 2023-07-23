@@ -237,7 +237,7 @@ void OpenCSModuleGenerator::InternalExec(std::ostream& out, structural_objectRef
        "              _next_state=S_1;\n"
        "             end\n"
        "           end\n"
-       "      endcase\n "
+       "      endcase\n"
        "  end\n";
 
    out << fsm;

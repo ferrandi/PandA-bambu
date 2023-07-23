@@ -233,7 +233,7 @@ void OpenP1NModuleGenerator::InternalExec(std::ostream& out, structural_objectRe
        "              _next_state=S_1;\n"
        "             end\n"
        "           end\n"
-       "      endcase\n "
+       "      endcase\n"
        "  end\n";
 
    out << fsm;

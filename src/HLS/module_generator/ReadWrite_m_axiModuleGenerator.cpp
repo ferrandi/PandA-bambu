@@ -185,7 +185,8 @@ void ReadWrite_m_axiModuleGenerator::InternalExec(std::ostream& out, structural_
       out << R"(
 localparam [2:0] S_IDLE = 3'b000,
   S_RD_BURST = 3'b001,
-  S_WR_BURST = 3'b101;\n)";
+  S_WR_BURST = 3'b101;
+)";
 
       out << R"(
 reg [2:0] _present_state, _next_state;
@@ -367,7 +368,7 @@ always @(*) begin
           next_axi_rready = 0;
 )";
       out << R"(               _next_state = S_WR_BURST;
-        end\n
+        end
       end else begin
         _next_state = S_IDLE;
       end
