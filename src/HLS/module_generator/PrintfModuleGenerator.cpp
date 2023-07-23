@@ -224,7 +224,7 @@ void PrintfModuleGenerator::InternalExec(std::ostream& out, structural_objectRef
        "                active_request_next =1'b1;\n"
        "                _next_selector=" +
        selector_dimension +
-       "'d2;\n "
+       "'d2;\n"
        "              end\n"
        "            \n"
        "         S_1:\n"
@@ -891,7 +891,7 @@ void PrintfModuleGenerator::InternalExec(std::ostream& out, structural_objectRef
        "             else\n"
        "               _next_state=S_6;\n"
        "           end\n"
-       "      endcase\n "
+       "      endcase\n"
        "  end\n";
 
    out << fsm;

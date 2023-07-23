@@ -234,7 +234,7 @@ void PrintfCSModuleGenerator::InternalExec(std::ostream& out, structural_objectR
        "                _next_state=S_1;  \n"
        "                _next_selector=" +
        selector_dimension +
-       "'d2;\n "
+       "'d2;\n"
        "              end\n"
        "            \n"
        "         S_1:\n"
@@ -900,7 +900,7 @@ void PrintfCSModuleGenerator::InternalExec(std::ostream& out, structural_objectR
        "             else\n"
        "               _next_state=S_6;\n"
        "           end\n"
-       "      endcase\n "
+       "      endcase\n"
        "  end\n";
 
    out << fsm;
