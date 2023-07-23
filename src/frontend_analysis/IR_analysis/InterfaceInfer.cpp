@@ -129,48 +129,53 @@ struct InterfaceInfer::interface_info
                                                (tree_helper::IsRealType(ptd_type) ? datatype::real : datatype::generic);
       if(type != datatype::ac_type)
       {
-         const auto base_type = [&]() {
-            if(tree_helper::IsArrayEquivType(ptd_type))
+         unsigned long long _bitwidth;
+         if(_type == datatype::ac_type)
+         {
+            _bitwidth = ac_bitwidth;
+         }
+         else if(tree_helper::IsArrayEquivType(ptd_type))
+         {
+            if(tree_helper::IsStructType(ptd_type))
+            {
+               const auto fld_count = tree_helper::GetArrayTotalSize(ptd_type);
+               if(factor != 1 && factor != fld_count)
+               {
+                  THROW_ERROR("Unexpected struct type aliasing");
+               }
+               factor = fld_count;
+               _bitwidth = tree_helper::Size(tree_helper::CGetArrayBaseType(ptd_type));
+            }
+            else
             {
                const auto elt_type = tree_helper::CGetArrayBaseType(ptd_type);
-               if(tree_helper::IsStructType(elt_type) && tree_helper::IsArrayEquivType(elt_type))
+               if(tree_helper::IsStructType(elt_type))
                {
-                  return tree_helper::CGetArrayBaseType(elt_type);
+                  if(!tree_helper::IsArrayEquivType(elt_type))
+                  {
+                     THROW_ERROR("Struct type not supported for interfacing: " + STR(elt_type));
+                  }
+                  const auto fld_count = tree_helper::GetArrayTotalSize(elt_type);
+                  if(factor != 1 && factor != fld_count)
+                  {
+                     THROW_ERROR("Unexpected struct type aliasing");
+                  }
+                  factor = fld_count;
+                  _bitwidth = tree_helper::Size(tree_helper::CGetArrayBaseType(elt_type));
                }
-               return tree_helper::CGetArrayBaseType(elt_type);
+               else
+               {
+                  _bitwidth = tree_helper::Size(elt_type);
+               }
             }
-            return ptd_type;
-         }();
-         const auto _bitwidth = [&]() {
-            if(_type == datatype::ac_type)
-            {
-               return ac_bitwidth;
-            }
-            else if(tree_helper::IsArrayEquivType(ptd_type))
-            {
-               return tree_helper::Size(base_type);
-            }
-            else if(tree_helper::IsPointerType(ptd_type) || tree_helper::IsStructType(ptd_type))
-            {
-               return static_cast<unsigned long long>(CompilerWrapper::CGetPointerSize(parameters));
-            }
-            return tree_helper::Size(base_type);
-         }();
-         if(tree_helper::IsStructType(base_type) && tree_helper::IsArrayEquivType(base_type))
+         }
+         else if(tree_helper::IsPointerType(ptd_type) || tree_helper::IsStructType(ptd_type))
          {
-            const auto rt = GetPointerS<const record_type>(GET_CONST_NODE(base_type));
-            auto nfields = rt->list_of_flds.size();
-            if(nfields != 1)
-            {
-               if(factor == 1)
-               {
-                  factor = nfields;
-               }
-               else if(nfields != factor)
-               {
-                  THROW_ERROR("unexpected case");
-               }
-            }
+            _bitwidth = static_cast<unsigned long long>(CompilerWrapper::CGetPointerSize(parameters));
+         }
+         else
+         {
+            _bitwidth = tree_helper::Size(ptd_type);
          }
 
          const auto _alignment = static_cast<unsigned>(
@@ -683,8 +688,13 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---I/O interface");
                         if(interface_type == "ptrdefault")
                         {
-                           if(parameters->IsParameter("none-ptrdefault") &&
-                              parameters->GetParameter<int>("none-ptrdefault") == 1)
+                           if(info.factor > 1)
+                           {
+                              arg_attributes[attr_size] = "1";
+                              return "array";
+                           }
+                           else if(parameters->IsParameter("none-ptrdefault") &&
+                                   parameters->GetParameter<int>("none-ptrdefault") == 1)
                            {
                               return "none";
                            }
@@ -707,6 +717,11 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Read-only interface");
                         if(interface_type == "ptrdefault")
                         {
+                           if(info.factor > 1)
+                           {
+                              arg_attributes[attr_size] = "1";
+                              return "array";
+                           }
                            return "none";
                         }
                         else if(interface_type == "ovalid")
@@ -721,8 +736,13 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Write-only interface");
                         if(interface_type == "ptrdefault")
                         {
-                           if(parameters->IsParameter("none-ptrdefault") &&
-                              parameters->GetParameter<int>("none-ptrdefault") == 1)
+                           if(info.factor > 1)
+                           {
+                              arg_attributes[attr_size] = "1";
+                              return "array";
+                           }
+                           else if(parameters->IsParameter("none-ptrdefault") &&
+                                   parameters->GetParameter<int>("none-ptrdefault") == 1)
                            {
                               return "none";
                            }
@@ -744,8 +764,13 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                   INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "-->Interface specification:");
                   INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Protocol  : " + interface_type);
                   INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Bitwidth  : " + STR(info.bitwidth));
+                  if(arg_attributes.find(attr_size) != arg_attributes.end())
+                  {
+                     INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
+                                    "---Size      : " +
+                                        STR(boost::lexical_cast<unsigned>(arg_attributes.at(attr_size)) * info.factor));
+                  }
                   INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Alignment : " + STR(info.alignment));
-                  INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Factor : " + STR(info.factor));
                   INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "<--");
                   THROW_ASSERT(info.bitwidth, "");
 
@@ -893,8 +918,16 @@ void InterfaceInfer::ChasePointerInterfaceRecurse(CustomOrderedSet<unsigned>& Vi
       }();
       if(!call_fd->body)
       {
-         const auto called_fname = string_demangle(tree_helper::print_function_name(TM, call_fd));
-         if(called_fname.find("ac_channel") != std::string::npos)
+         const auto called_fname = [&]() {
+            const auto fname = tree_helper::print_function_name(TM, call_fd);
+            const auto demangled = string_demangle(fname);
+            return demangled.size() ? demangled : fname;
+         }();
+         if(called_fname.find(STR_CST_interface_parameter_keyword) != std::string::npos)
+         {
+            return call_type::ct_forward;
+         }
+         else if(called_fname.find("ac_channel") != std::string::npos)
          {
             if(called_fname.find("::_read") != std::string::npos)
             {
@@ -933,13 +966,20 @@ void InterfaceInfer::ChasePointerInterfaceRecurse(CustomOrderedSet<unsigned>& Vi
          if(GetPointerS<const ssa_name>(GET_CONST_NODE(call_arg_ssa))->CGetUseStmts().size())
          {
             /// propagate design interfaces
-            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Pointer forwarded as function argument");
+            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                           "-->Pointer forwarded as function argument " + STR(par_index));
             ChasePointerInterfaceRecurse(Visited, call_arg_ssa, writeStmt, readStmt, info);
             INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Sub-function done");
          }
       }
       return call_type::ct_forward;
    };
+   if(!Visited.insert(GET_INDEX_CONST_NODE(ssa_node)).second)
+   {
+      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                     "---SKIPPED FUNCTION: already visited through argument " + ssa_node->ToString());
+      return;
+   }
 
    std::queue<tree_nodeRef> pointer_ssa;
    pointer_ssa.push(ssa_node);
@@ -960,11 +1000,6 @@ void InterfaceInfer::ChasePointerInterfaceRecurse(CustomOrderedSet<unsigned>& Vi
       {
          const auto use_stmt = GET_CONST_NODE(stmt_count.first);
          const auto& use_count = stmt_count.second;
-         if(!Visited.insert(GET_INDEX_CONST_NODE(stmt_count.first)).second)
-         {
-            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---SKIPPED STMT: " + use_stmt->ToString());
-            continue;
-         }
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---STMT: " + use_stmt->ToString());
          if(const auto ga = GetPointer<const gimple_assign>(use_stmt))
          {
