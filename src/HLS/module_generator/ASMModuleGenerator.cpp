@@ -71,7 +71,7 @@ void ASMModuleGenerator::InternalExec(std::ostream& out, structural_objectRef /*
    std::string asm_string = FB->CGetBehavioralHelper()->get_asm_string(cfg->CGetOpNodeInfo(op_v)->GetNodeId());
    boost::replace_all(asm_string, "%%", "&percent;");
    boost::replace_all(asm_string, "&percent;", "%");
-   boost::replace_all(asm_string, "\n", "\\n");
+   boost::replace_all(asm_string, "\\n", "\n");
    boost::replace_all(asm_string, "\\\"", "\"");
    boost::replace_all(asm_string, "\\\'", "\'");
 
