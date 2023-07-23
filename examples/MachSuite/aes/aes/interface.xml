@@ -1,8 +1,0 @@
-<?xml version="1.0"?>
-<module>
-  <function id="aes256_encrypt_ecb">
-    <arg id="ctx" interface_type="array" interface_typename="unsigned char*" interface_typename_include="" interface_typename_orig="unsigned char*" size="96"/>
-    <arg id="k" interface_type="array" interface_typename="unsigned char*" interface_typename_include="" interface_typename_orig="unsigned char*" size="32"/>
-    <arg id="buf" interface_type="array" interface_typename="unsigned char*" interface_typename_include="" interface_typename_orig="unsigned char*" size="16"/>
-  </function>
-</module>
