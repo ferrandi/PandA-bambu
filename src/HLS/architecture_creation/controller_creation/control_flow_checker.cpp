@@ -763,7 +763,6 @@ DesignFlowStep_Status ControlFlowChecker::InternalExec()
 
    std::string verilog_cf_checker_description = create_control_flow_checker(
        epp_trace_bitsize, funId, HLS->STG, HLSMgr, discr_info, one_hot_encoding, max_value, state_bitsize, debug_level);
-   add_escape(verilog_cf_checker_description, "\\");
    HLS->control_flow_checker->add_NP_functionality(checker_circuit, NP_functionality::VERILOG_PROVIDED,
                                                    verilog_cf_checker_description);
    return DesignFlowStep_Status::SUCCESS;
