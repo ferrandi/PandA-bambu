@@ -664,11 +664,11 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                               if(GET_CONST_NODE(ga->predicate)->get_kind() != integer_cst_K ||
                                  tree_helper::GetConstValue(ga->predicate) != 0)
                               {
-                                 INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                                "---zero predicated statement: " + stmt->ToString());
                                  const auto bt = IRman->GetBooleanType();
                                  const auto zeroval = TM->CreateUniqueIntegerCst(static_cast<long long int>(0), bt);
                                  TM->ReplaceTreeNode(stmt, ga->predicate, zeroval);
+                                 INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                                "---zero predicated statement: " + stmt->ToString());
                                  modified = true;
                                  AppM->RegisterTransformation(GetName(), stmt);
                               }
