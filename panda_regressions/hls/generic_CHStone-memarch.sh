@@ -36,6 +36,6 @@ python3 $script_dir/../../etc/scripts/test_panda.py --tool=bambu \
    --args="--configuration-name=${compiler}-O3-wp-VVD-NN-D00-LSS --memory-allocation-policy=LSS --channels-type=MEM_ACC_NN --memory-ctrl-type=D00 ${BATCH_ARGS[*]}"\
    --args="--configuration-name=${compiler}-O3-wp-VVD-NN-D00-GSS --memory-allocation-policy=GSS --channels-type=MEM_ACC_NN --memory-ctrl-type=D00 ${BATCH_ARGS[*]}"\
    --args="--configuration-name=${compiler}-O3-wp-VVD-NN-D00-NO-BRAM --memory-allocation-policy=NO_BRAM --channels-type=MEM_ACC_NN --memory-ctrl-type=D00 ${BATCH_ARGS[*]}"\
-   -l${BENCHMARKS_ROOT}/../chstone_list \
+   -l${script_dir}/chstone_memarch_list \
    -o "out_${OUT_SUFFIX}" -b${BENCHMARKS_ROOT} \
    --name="${OUT_SUFFIX}" $ARGS
