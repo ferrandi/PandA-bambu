@@ -546,9 +546,9 @@ void HLSCWriter::WriteMainTestbench()
    const auto args_decl_size = top_params.size() + (return_type != nullptr);
    const auto has_subnormals = Param->isOption(OPT_fp_subnormal) && Param->getOption<bool>(OPT_fp_subnormal);
    const auto cmp_type = [&](tree_nodeConstRef t, const std::string& tname) -> std::string {
-      if(boost::starts_with(tname, "struct") || boost::starts_with(tname, "union"))
+      if(boost::regex_search(tname, boost::regex("^a[pc]_u?(int|fixed)")))
       {
-         return "mem";
+         return "val";
       }
       else if(t)
       {
@@ -564,7 +564,8 @@ void HLSCWriter::WriteMainTestbench()
          {
             return has_subnormals ? "flts" : "flt";
          }
-         else if(tree_helper::IsVoidType(t) || boost::starts_with(tname, "void"))
+         else if(tree_helper::IsStructType(t) || tree_helper::IsUnionType(t) || tree_helper::IsVoidType(t) ||
+                 boost::starts_with(tname, "void"))
          {
             return "mem";
          }
