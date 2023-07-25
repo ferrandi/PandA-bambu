@@ -107,13 +107,20 @@ struct InterfaceInfer::interface_info
 
  public:
    std::string name;
+   const std::string interface_id;
    unsigned alignment;
    unsigned long long bitwidth;
    unsigned long long factor;
    datatype type;
 
-   interface_info(bool fixed_size)
-       : _fixed_size(fixed_size), name(""), alignment(1U), bitwidth(0ULL), factor(1ULL), type(datatype::generic)
+   interface_info(const std::string& _interface_id, bool fixed_size)
+       : _fixed_size(fixed_size),
+         name(""),
+         interface_id(_interface_id),
+         alignment(1U),
+         bitwidth(0ULL),
+         factor(1ULL),
+         type(datatype::generic)
    {
    }
 
@@ -665,8 +672,18 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                if(tree_helper::IsPointerType(arg_type))
                {
                   INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Is a pointer type");
-                  interface_info info(interface_type == "array" || interface_type == "fifo" ||
-                                      interface_type == "axis");
+                  const auto bundle_name = [&]() -> std::string {
+                     if(interface_type == "m_axi" && arg_attributes.count(attr_way_lines) &&
+                        boost::lexical_cast<unsigned>(arg_attributes.at(attr_way_lines)))
+                     {
+                        THROW_ASSERT(arg_attributes.count(attr_bundle_name), "");
+                        return arg_attributes.at(attr_bundle_name);
+                     }
+                     return "";
+                  }();
+                  interface_info info(bundle_name.size() ? bundle_name : arg_name, interface_type == "array" ||
+                                                                                       interface_type == "fifo" ||
+                                                                                       interface_type == "axis");
                   info.update(arg_ssa, HLSMgr->design_attributes.at(fname).at(arg_name).at(attr_typename), parameters);
 
                   std::list<tree_nodeRef> writeStmt;
@@ -763,6 +780,10 @@ DesignFlowStep_Status InterfaceInfer::Exec()
 
                   INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "-->Interface specification:");
                   INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Protocol  : " + interface_type);
+                  if(bundle_name.size())
+                  {
+                     INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Bundle    : " + bundle_name);
+                  }
                   INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Bitwidth  : " + STR(info.bitwidth));
                   if(arg_attributes.find(attr_size) != arg_attributes.end())
                   {
@@ -777,15 +798,6 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                   std::set<std::string> operationsR, operationsW;
                   const auto interface_datatype = tree_man->GetCustomIntegerType(info.bitwidth, true);
                   const auto commonRWSignature = interface_type == "array" || interface_type == "m_axi";
-                  const auto bundle_name = [&]() -> std::string {
-                     if(interface_type == "m_axi" && arg_attributes.count(attr_way_lines) &&
-                        boost::lexical_cast<unsigned>(arg_attributes.at(attr_way_lines)))
-                     {
-                        THROW_ASSERT(arg_attributes.count(attr_bundle_name), "");
-                        return arg_attributes.at(attr_bundle_name);
-                     }
-                     return "";
-                  }();
                   const auto store_vdef = [&](const tree_nodeRef& stmt) {
                      if(bundle_name.size())
                      {
@@ -925,6 +937,10 @@ void InterfaceInfer::ChasePointerInterfaceRecurse(CustomOrderedSet<unsigned>& Vi
          }();
          if(called_fname.find(STR_CST_interface_parameter_keyword) != std::string::npos)
          {
+            if(!boost::starts_with(called_fname, info.interface_id + STR_CST_interface_parameter_keyword))
+            {
+               THROW_ERROR("Shared memory operation is not supported with required I/O interface setup.");
+            }
             return call_type::ct_forward;
          }
          else if(called_fname.find("ac_channel") != std::string::npos)
