@@ -1921,6 +1921,6 @@ EXTRA_DIST= \
    %D%/test_libm_sinecosine.sh \
    %D%/test_libm_sqrtf.sh \
    %D%/test_libm_sqrt.sh \
-   %D%/test_softfloat.sh \
+   %D%/test_softfloat.sh
 
 TESTS = test_libm_expf.sh test_libm_logf.sh test_libm_powf.sh test_libm_sinecosine.sh test_libm_sqrt.sh test_libm_sqrtf.sh test_softfloat.sh
