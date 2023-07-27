@@ -821,7 +821,7 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                      add_to_modified(stmt);
                      store_vdef(stmt);
                   }
-                  create_resource(operationsR, operationsW, arg_name, info, fname, top_id);
+                  create_resource(operationsR, operationsW, arg_name, info, fname);
                }
                else if(interface_type == "none")
                {
@@ -1480,7 +1480,7 @@ void InterfaceInfer::setWriteInterface(tree_nodeRef stmt, const std::string& arg
 }
 
 void InterfaceInfer::create_resource_Read_simple(const std::set<std::string>& operations, const std::string& arg_name,
-                                                 const interface_info& info, bool IO_port, unsigned int top_id) const
+                                                 const interface_info& info, bool IO_port) const
 {
    if(operations.empty())
    {
@@ -1615,14 +1615,13 @@ void InterfaceInfer::create_resource_Read_simple(const std::set<std::string>& op
          }
          op->time_m->set_synthesis_dependent(true);
       }
-      HLSMgr->design_interface_constraints[top_id][INTERFACE_LIBRARY][ResourceName] = 1U;
-      /// otherwise no constraints are required for this resource
+      HLSMgr->global_resource_constraints[std::make_pair(INTERFACE_LIBRARY, ResourceName)] = 1U;
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Interface resource created");
    }
 }
 
 void InterfaceInfer::create_resource_Write_simple(const std::set<std::string>& operations, const std::string& arg_name,
-                                                  const interface_info& info, bool IO_port, unsigned int top_id) const
+                                                  const interface_info& info, bool IO_port) const
 {
    if(operations.empty())
    {
@@ -1784,15 +1783,14 @@ void InterfaceInfer::create_resource_Write_simple(const std::set<std::string>& o
          }
          op->time_m->set_synthesis_dependent(true);
       }
-      HLSMgr->design_interface_constraints[top_id][INTERFACE_LIBRARY][ResourceName] = 1U;
+      HLSMgr->global_resource_constraints[std::make_pair(INTERFACE_LIBRARY, ResourceName)] = 1U;
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Interface resource created");
    }
 }
 
 void InterfaceInfer::create_resource_array(const std::set<std::string>& operationsR,
                                            const std::set<std::string>& operationsW, const std::string& bundle_name,
-                                           const interface_info& info, unsigned int arraySize,
-                                           unsigned int top_id) const
+                                           const interface_info& info, unsigned int arraySize) const
 {
    const auto n_channels = parameters->getOption<unsigned int>(OPT_channels_number);
    const auto isDP = n_channels == 2;
@@ -1907,9 +1905,7 @@ void InterfaceInfer::create_resource_array(const std::set<std::string>& operatio
       const auto fu = GetPointerS<functional_unit>(TechMan->get_fu(ResourceName, INTERFACE_LIBRARY));
       fu->area_m = area_model::create_model(device_type, parameters);
       fu->area_m->set_area_value(0);
-
-      /// add constraint on resource
-      HLSMgr->design_interface_constraints[top_id][INTERFACE_LIBRARY][ResourceName] = n_resources;
+      HLSMgr->global_resource_constraints[std::make_pair(INTERFACE_LIBRARY, ResourceName)] = n_resources;
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Interface resource created");
    }
    for(const auto& fdName : operationsR)
@@ -1960,7 +1956,6 @@ void InterfaceInfer::create_resource_array(const std::set<std::string>& operatio
 void InterfaceInfer::create_resource_m_axi(const std::set<std::string>& operationsR,
                                            const std::set<std::string>& operationsW, const std::string& arg_name,
                                            const std::string& bundle_name, const interface_info& info, m_axi_type mat,
-                                           unsigned int top_id,
                                            const std::map<interface_attributes, std::string>& bundle_attr_map) const
 {
    const auto ResourceName = ENCODE_FDNAME(bundle_name, "", "");
@@ -2270,8 +2265,7 @@ void InterfaceInfer::create_resource_m_axi(const std::set<std::string>& operatio
       const auto device = HLS_T->get_target_device();
       fu->area_m = area_model::create_model(device->get_type(), parameters);
       fu->area_m->set_area_value(0);
-
-      HLSMgr->design_interface_constraints[top_id][INTERFACE_LIBRARY][ResourceName] = 1U;
+      HLSMgr->global_resource_constraints[std::make_pair(INTERFACE_LIBRARY, ResourceName)] = 1U;
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Interface resource created");
    }
 
@@ -2334,16 +2328,16 @@ void InterfaceInfer::create_resource_m_axi(const std::set<std::string>& operatio
 }
 
 void InterfaceInfer::create_resource(const std::set<std::string>& operationsR, const std::set<std::string>& operationsW,
-                                     const std::string& arg_name, const interface_info& info, const std::string& fname,
-                                     unsigned int top_id) const
+                                     const std::string& arg_name, const interface_info& info,
+                                     const std::string& fname) const
 {
    if(info.name == "none" || info.name == "none_registered" || info.name == "acknowledge" || info.name == "valid" ||
       info.name == "ovalid" || info.name == "handshake" || info.name == "fifo" || info.name == "axis")
    {
       THROW_ASSERT(!operationsR.empty() || !operationsW.empty(), "unexpected condition");
       const auto IO_P = !operationsR.empty() && !operationsW.empty();
-      create_resource_Read_simple(operationsR, arg_name, info, IO_P, top_id);
-      create_resource_Write_simple(operationsW, arg_name, info, IO_P, top_id);
+      create_resource_Read_simple(operationsR, arg_name, info, IO_P);
+      create_resource_Write_simple(operationsW, arg_name, info, IO_P);
    }
    else if(info.name == "array")
    {
@@ -2370,7 +2364,7 @@ void InterfaceInfer::create_resource(const std::set<std::string>& operationsR, c
          bundle_name = HLSMgr->design_attributes.at(fname).at(arg_name).at(attr_bundle_name);
       }
 
-      create_resource_array(operationsR, operationsW, bundle_name, info, arraySize, top_id);
+      create_resource_array(operationsR, operationsW, bundle_name, info, arraySize);
    }
    else if(info.name == "m_axi")
    {
@@ -2499,7 +2493,7 @@ void InterfaceInfer::create_resource(const std::set<std::string>& operationsR, c
             }
          }
       }
-      create_resource_m_axi(operationsR, operationsW, arg_name, bundle_name, info, mat, top_id, bundle_attr_map);
+      create_resource_m_axi(operationsR, operationsW, arg_name, bundle_name, info, mat, bundle_attr_map);
    }
    else
    {
