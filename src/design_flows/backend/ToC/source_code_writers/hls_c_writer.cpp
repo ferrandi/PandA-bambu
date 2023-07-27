@@ -153,10 +153,12 @@ using namespace __AC_NAMESPACE;
          const auto incls = convert_string_to_vector<std::string>(argInclude.second, ";");
          includes.insert(incls.begin(), incls.end());
       }
+      indented_output_stream->Append("#define " + fname + " __keep_your_declaration_out_of_my_code\n");
       for(const auto& inc : includes)
       {
          indented_output_stream->Append("#include \"" + inc + "\"\n");
       }
+      indented_output_stream->Append("#undef " + fname + "\n");
    }
 }
 
