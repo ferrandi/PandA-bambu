@@ -202,22 +202,19 @@ void HLS_constraints::set_number_fu(const std::string& name, const std::string& 
 
 unsigned int HLS_constraints::get_number_fu(const std::string& name, const std::string& library) const
 {
-   if(tech_constraints.find(ENCODE_FU_LIB(name, library)) == tech_constraints.end())
+   return get_number_fu(ENCODE_FU_LIB(name, library));
+}
+
+unsigned int HLS_constraints::get_number_fu(const std::string& combined) const
+{
+   if(tech_constraints.find(combined) == tech_constraints.end())
    {
       return INFINITE_UINT;
    }
    else
    {
-      return tech_constraints.find(ENCODE_FU_LIB(name, library))->second;
+      return tech_constraints.find(combined)->second;
    }
-}
-
-unsigned int HLS_constraints::get_number_fu(const std::string& combined) const
-{
-   std::string fu_name;
-   std::string lib_name;
-   DECODE_FU_LIB(fu_name, lib_name, combined);
-   return get_number_fu(fu_name, lib_name);
 }
 
 void HLS_constraints::bind_vertex_to_fu(const std::string& vertex_name, const std::string& fu_name,
