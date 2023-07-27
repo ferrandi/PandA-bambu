@@ -62,7 +62,7 @@ jobs:
             batch: "5CSEMA5F31C6_10.0,5CSEMA5F31C6_15.0,5SGXEA7N2F45C1_5.0,5SGXEA7N2F45C1_10.0"
           - basename: hls_study
             script: ./examples/hls_study/generic_hls_study.sh
-            batch: "5SGXEA7N2F45C1_2.5 --aligned-access"
+            batch: "5SGXEA7N2F45C1_2.5"
           - basename: omp_simd
             script: ./examples/omp_simd/generic_omp_simd.sh
             args: "--skip_list inline_blackscholes8,blackscholes8"
@@ -161,7 +161,7 @@ jobs:
             batch: "xc7vx690t-3ffg1930-VVD_10.0"
           - basename: hls_study
             script: ./examples/hls_study/generic_hls_study.sh
-            batch: "xc7vx690t-3ffg1930-VVD_2.5 --aligned-access"
+            batch: "xc7vx690t-3ffg1930-VVD_2.5"
           - basename: omp_simd
             script: ./examples/omp_simd/generic_omp_simd.sh
             args: "--skip_list inline_blackscholes8,blackscholes8"
