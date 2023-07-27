@@ -143,6 +143,8 @@ DesignFlowStep_Status fun_dominator_allocation::Exec()
    const auto CGM = HLSMgr->GetCallGraphManager();
    const auto HLS_T = HLSMgr->get_HLS_target();
    const auto TechM = HLS_T->get_technology_manager();
+   const auto io_proxies_only =
+       parameters->isOption(OPT_disable_function_proxy) && parameters->getOption<bool>(OPT_disable_function_proxy);
    auto root_functions = CGM->GetRootFunctions();
    if(parameters->isOption(OPT_top_design_name)) // top design function become the top_vertex
    {
@@ -153,10 +155,6 @@ DesignFlowStep_Status fun_dominator_allocation::Exec()
          root_functions.clear();
          root_functions.insert(top_rtldesign_function->index);
       }
-   }
-   if(parameters->isOption(OPT_disable_function_proxy) && parameters->getOption<bool>(OPT_disable_function_proxy))
-   {
-      return DesignFlowStep_Status::UNCHANGED;
    }
 
    CustomOrderedSet<unsigned int> reached_from_all;
@@ -205,7 +203,8 @@ DesignFlowStep_Status fun_dominator_allocation::Exec()
       {
          INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---" + fname);
       }
-      if(!function_behavior->is_simple_pipeline())
+      if(!(io_proxies_only && fname.find(STR_CST_interface_parameter_keyword) == std::string::npos) &&
+         !function_behavior->is_simple_pipeline())
       {
          const auto fu_name = functions::GetFUName(fname, HLSMgr);
          HLSMgr->global_resource_constraints[std::make_pair(fu_name, WORK_LIBRARY)] = 1;
@@ -435,13 +434,15 @@ DesignFlowStep_Status fun_dominator_allocation::Exec()
       }
 
       /// really allocate
-      const auto HLS_T = HLSMgr->get_HLS_target();
-      const auto TechM = HLS_T->get_technology_manager();
-
       for(const auto& funID : reached_from_top)
       {
          for(const auto& fu_name : function_allocation_map.at(funID))
          {
+            if(io_proxies_only && fu_name.find(STR_CST_interface_parameter_keyword) == std::string::npos)
+            {
+               INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Unconstrained allocation for " + fu_name);
+               continue;
+            }
             INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                            "Allocating " + fu_name + " in " +
                                HLSMgr->CGetFunctionBehavior(funID)->CGetBehavioralHelper()->get_function_name());
