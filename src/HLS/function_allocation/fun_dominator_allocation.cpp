@@ -141,6 +141,8 @@ DesignFlowStep_Status fun_dominator_allocation::Exec()
 {
    already_executed = true;
    const auto CGM = HLSMgr->GetCallGraphManager();
+   const auto HLS_T = HLSMgr->get_HLS_target();
+   const auto TechM = HLS_T->get_technology_manager();
    auto root_functions = CGM->GetRootFunctions();
    if(parameters->isOption(OPT_top_design_name)) // top design function become the top_vertex
    {
@@ -205,7 +207,8 @@ DesignFlowStep_Status fun_dominator_allocation::Exec()
       }
       if(!function_behavior->is_simple_pipeline())
       {
-         HLSMgr->global_resource_constraints[std::make_pair(fname, WORK_LIBRARY)] = 1;
+         const auto fu_name = functions::GetFUName(fname, HLSMgr);
+         HLSMgr->global_resource_constraints[std::make_pair(fu_name, WORK_LIBRARY)] = 1;
       }
    }
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "<--");
