@@ -12576,11 +12576,6 @@ wire valid,tagsmatch;
    reg [FE_DATA_W-1:0]                          wdata_reg;
    reg [FE_NBYTES-1:0]                          wstrb_reg;
 
-   assign data_valid_reg = valid_reg;
-   assign data_addr_reg = addr_reg;
-   assign data_wdata_reg = wdata_reg;
-   assign data_wstrb_reg = wstrb_reg;
-
    
    //////////////////////////////////////////////////////////////////////////////////
      //    Cache-selection - cache-memory or cache-control 
@@ -13985,7 +13980,7 @@ wire valid,tagsmatch;
    localparam R_ADDR_W = (R_DATA_W == MAXDATA_W) ? MINADDR_W : ADDR_W;
 
    localparam ADDR_W_DIFF = $clog2(N);
-   localparam [ADDR_W:0] FIFO_SIZE = (1&apos;b1 &lt;&lt; ADDR_W); //in bytes
+   localparam [ADDR_W:0] FIFO_SIZE = (1 &lt;&lt; ADDR_W); //in bytes
 
    reg [BITSIZE_level - 1 : 0] level;
    reg r_empty;
@@ -14016,8 +14011,8 @@ wire valid,tagsmatch;
     assign dirty = w_full || r_addr != b_addr; 
 
    //assign according to assymetry type
-   localparam [ADDR_W:0] w_incr = (W_DATA_W > R_DATA_W) ? 1&apos;b1 &lt;&lt; ADDR_W_DIFF : 1&apos;b1 ;
-   localparam [ADDR_W:0] r_incr = (R_DATA_W > W_DATA_W) ? 1&apos;b1 &lt;&lt; ADDR_W_DIFF : 1&apos;b1 ;
+   localparam [ADDR_W:0] w_incr = (W_DATA_W > R_DATA_W) ? 1 &lt;&lt; ADDR_W_DIFF : 1 ;
+   localparam [ADDR_W:0] r_incr = (R_DATA_W > W_DATA_W) ? 1 &lt;&lt; ADDR_W_DIFF : 1 ;
    
    //FIFO level
    reg [ADDR_W+1:0]         level_nxt;
@@ -14041,6 +14036,7 @@ wire valid,tagsmatch;
         next_error = 1&apos;b1;
        else if(r_en_int)
         next_error = 1&apos;b0;
+       w_addr_next = w_addr;
        w_full_nxt = w_full;
        if(write_fail)
         w_full_nxt = 1&apos;b1;
