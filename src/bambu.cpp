@@ -77,6 +77,7 @@
 #include "frontend_flow_step_factory.hpp"
 
 /// HLS includes
+#include "evaluation.hpp"
 #include "hls_flow_step_factory.hpp"
 #include "hls_manager.hpp"
 #include "hls_step.hpp"
@@ -248,7 +249,7 @@ int main(int argc, char* argv[])
       design_flow_manager->RegisterFactory(parser_flow_step_factory);
 #endif
 
-      if(parameters->isOption(OPT_dry_run_evaluation) and parameters->getOption<bool>(OPT_dry_run_evaluation))
+      if(parameters->getOption<Evaluation_Mode>(OPT_evaluation_mode) == Evaluation_Mode::DRY_RUN)
       {
          design_flow_manager->AddStep(GetPointer<const HLSFlowStepFactory>(hls_flow_step_factory)
                                           ->CreateHLSFlowStep(HLSFlowStep_Type::EVALUATION, 0));
