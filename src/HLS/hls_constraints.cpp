@@ -69,8 +69,6 @@
 #include "fileIO.hpp"
 #include "string_manipulation.hpp"
 
-const double HLS_constraints::clock_period_resource_fraction_DEFAULT = 1.0;
-
 /// function used to extract the functional unit name and its library from a string.
 void DECODE_FU_LIB(std::string& fu_name, std::string& fu_library, const std::string& combined)
 {
@@ -81,7 +79,7 @@ void DECODE_FU_LIB(std::string& fu_name, std::string& fu_library, const std::str
 
 HLS_constraints::HLS_constraints(const ParameterConstRef& _Param, std::string _fun_name)
     : clock_period(_Param->getOption<double>(OPT_clock_period)),
-      clock_period_resource_fraction(clock_period_resource_fraction_DEFAULT),
+      clock_period_resource_fraction(_Param->getOption<double>(OPT_clock_period_resource_fraction)),
       registers(INFINITE_UINT),
       fun_name(std::move(_fun_name)),
       parameters(_Param)
