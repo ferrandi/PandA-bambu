@@ -346,10 +346,6 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
        parameters->isOption(OPT_unaligned_access) && parameters->getOption<bool>(OPT_unaligned_access);
    const auto assume_aligned_access_p =
        parameters->isOption(OPT_aligned_access) && parameters->getOption<bool>(OPT_aligned_access);
-   if(unaligned_access_p && assume_aligned_access_p)
-   {
-      THROW_ERROR("Both --unaligned-access and --aligned-access have been specified");
-   }
    const auto max_bram = HLS_T->get_target_device()->get_parameter<unsigned int>("BRAM_bitsize_max");
    /// TODO: to be fixed with information coming out from the target platform description
    HLSMgr->base_address = user_defined_base_address != UINT64_MAX ?
