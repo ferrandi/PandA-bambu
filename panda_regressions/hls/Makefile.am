@@ -48,19 +48,7 @@ EXTRA_DIST= \
    %D%/bambu_specific_test4/ac_types2_array_7bits.cpp \
    %D%/bambu_specific_test4/ac_types2_array_7bits_fixed.cpp \
    %D%/bambu_specific_test4/ac_types3.cpp \
-   %D%/bambu_specific_test4/axi_mm_big_buffer_cache.c \
-   %D%/bambu_specific_test4/axi_mm_big_bus_cache.c \
-   %D%/bambu_specific_test4/axi_mm_big_cache.c \
-   %D%/bambu_specific_test4/axi_mm_big_line_cache.c \
-   %D%/bambu_specific_test4/axi_mm_cache_tb.xml \
-   %D%/bambu_specific_test4/axi_mm_fully_ass_cache.c \
-   %D%/bambu_specific_test4/axi_mm_no_cache.c \
-   %D%/bambu_specific_test4/axi_mm_set_ass_cache.c \
-   %D%/bambu_specific_test4/axi_mm_simple_cache.c \
-   %D%/bambu_specific_test4/axi_mm_small_line_cache.c \
-   %D%/bambu_specific_test4/axi_mm_tiled_cache.c \
-   %D%/bambu_specific_test4/axi_mm_wb_big_buffer_cache.c \
-   %D%/bambu_specific_test4/axi_mm_wb_cache.c \
+   %D%/bambu_specific_test4/2mm.c \
    %D%/bambu_specific_test4/duplicate_axi_m.c \
    %D%/bambu_specific_test4/ex1.cpp \
    %D%/bambu_specific_test4/hls_stream_axis.cpp \
